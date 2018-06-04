@@ -1,0 +1,12 @@
+diff --git a/nixos/modules/services/ttys/agetty.nix b/nixos/modules/services/ttys/agetty.nix
+index b50de49..e7b8f9b 100644
+--- a/nixos/modules/services/ttys/agetty.nix
++++ b/nixos/modules/services/ttys/agetty.nix
+@@ -108,6 +108,7 @@ in
+ 
+           [1;32m${config.services.mingetty.greetingLine}[0m
+           ${config.services.mingetty.helpLine}
++          *** PATCHED ISSUE ***
+ 
+         '';
+         target = "issue";
