@@ -12,4 +12,4 @@ if [[ -z $nixpkgs ]]; then
     echo "$0: failed to build nixpkgs+overlay" >&2
     exit 1
 fi
-echo "NIX_PATH=$NIX_PATH:nixos-config=$base/fc/configuration.nix:$base"
+echo "NIX_PATH=$NIX_PATH:nixos-config=$base/fc/configuration.nix"

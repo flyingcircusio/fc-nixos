@@ -2,30 +2,27 @@
 { supportedSystems ? [ "x86_64-linux" ]
 , ...  } @ args:
 let
-  # source tree
+  # source tree variants
   nixpkgsSrc = import ./nixpkgs.nix {};
+  nixpkgsSrcWithExtras = import ./nixpkgs.nix {
+    channelExtras = { fc = ./fc; };
+  };
 
-  # attrset w/ overlay
+  # both upstream and own packages
   pkgs = import nixpkgsSrc { overlays = [ (import ./fc/pkgs/overlay.nix) ]; };
 
   lib = pkgs.lib;
-
-  # special source tree which includes ./fc
-  # this is normally not necessary since we use fc/pkg/overlay.nix
-  channel = let
-    src = import ./nixpkgs.nix { channelExtras = { fc = ./fc; }; };
-  in
-    (import "${src}/nixos/release.nix" {
-      inherit supportedSystems;
-    }).channel;
 
 in
 
 with builtins;
 rec {
-  nixos = (import "${nixpkgsSrc}/nixos/release.nix" {
+  nixos = (import "${nixpkgsSrcWithExtras}/nixos/release.nix" {
+    # FIXME get revCount and shortRev from hydra
+    nixpkgs = { outPath = nixpkgsSrcWithExtras; revCount = 0; shortRev = "fcextra"; };
+    stableBranch = true;
     inherit supportedSystems;
-  }) // { inherit channel; };
+  });
 
   nixpkgs = removeAttrs
     (import "${nixpkgsSrc}/pkgs/top-level/release.nix" {
