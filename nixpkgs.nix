@@ -3,34 +3,33 @@
 # Usage example:
 #   nix-build -o nixpkgs ./nixpkgs.nix
 #   export NIX_PATH=nixpkgs=$PWD/nixpkgs
-
-{ channelExtras ? {}  # extra paths for channel compilation
+{ nixpkgs ? import <nixpkgs> {}
+, channelExtras ? {}  # extra paths for channel compilation
 }:
 
 let
-  version = "94d80eb";
+  bootstrap = nixpkgs;
 
-  nixpkgsOrig = fetchTarball {
+  version = "2f06e04";
+  nixpkgsPatched = bootstrap.fetchurl {
     name = "nixpkgs-${version}.tar.gz";
     url = "https://github.com/flyingcircusio/nixpkgs-channels/archive/${version}.tar.gz";
-    # update with `nix-prefetch-url --unpack $url`
-    sha256 = "1l4hdxwcqv5izxcgv3v4njq99yai8v38wx7v02v5sd96g7jj2i8f";
+    # update with `nix-prefetch-url $url`
+    sha256 = "10vzjry6x8ray4h6q9r2g6a0nx0jpkac6w5qcv72qsz1bmn0ngb8";
   };
-
-  nixpkgs' = import nixpkgsOrig { system = builtins.currentSystem; };
 
 in
 
-with nixpkgs';
+with bootstrap;
 
 let
   copyExtras = builtins.concatStringsSep "\n"
     (lib.mapAttrsToList (tgt: src: "cp -r ${src} $out/${tgt}") channelExtras);
 
 in stdenv.mkDerivation {
-  name = "fc.nixpkgs";
+  name = "fc-nixpkgs";
   phases = [ "unpackPhase" "installPhase" ];
-  src = nixpkgsOrig;
+  src = nixpkgsPatched;
   installPhase = ''
     mkdir $out
     mv * .version $out
