@@ -1,8 +1,14 @@
 # nixpkgs with our overlay packages.
 # Upstream pacakge: `nix-build default.nix -A hello`
 # Own package: `nix-build default.nix -A fc-userscan`
-{ system ? builtins.currentSystem } @ args:
+{
+  localSystem ? builtins.intersectAttrs { system = null; platform = null; } args
+, system ? localSystem.system
+, platform ? localSystem.platform
+, crossSystem ? null
+, overlays ? []
+} @ args:
 
-import (import ./nixpkgs.nix {}) {
-  overlays = [ (import ./fc/pkgs/overlay.nix) ];
+import ./nixpkgs {
+  overlays = overlays ++ [ (import ./pkgs/overlay.nix) ];
 } // args

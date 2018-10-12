@@ -1,7 +1,7 @@
 self: super:
 {
-  # FCIO generic library functions - access with pkgs.fclib.*
-  fclib = super.callPackage ./fclib {};
+  # XXX move to config.lib
+  #fclib = super.callPackage ./fclib {};
 
   collectdproxy = super.callPackage ./collectdproxy {};
 

@@ -17,5 +17,4 @@ with builtins;
   };
 
   nixpkgs.overlays = [ (import ../../pkgs/overlay.nix) ];
-
 }
