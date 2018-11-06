@@ -4,17 +4,17 @@ with rustPlatform;
 
 buildRustPackage rec {
   name = "fc-userscan-${version}";
-  version = "0.4.1";
+  version = "0.4.2";
 
   src = fetchFromGitHub {
     name = "fc-userscan-src-${version}";
     owner = "flyingcircusio";
     repo = "userscan";
     rev = version;
-    sha256 = "1lflac09r34l6vk7nvca7kgh790f7fdpws1ibbq3r98x93skzj9s";
+    sha256 = "003ilmygqd675h3kkwpa236xkkzavx7ivjjaz1478gn25gxv8004";
   };
 
-  cargoSha256 = "1dnrnjk8nqw7wxwhsla3k5iyzkwd1plglqb4gf9r6193sba0rqm0";
+  cargoSha256 = "1jq0dhhk9hl3yx7038n4csahaxm6a0ycmrgyhl881i31w1p7ylvf";
   nativeBuildInputs = with pkgs; [ git docutils ];
   propagatedBuildInputs = with pkgs; [ lzo ];
 

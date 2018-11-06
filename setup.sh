@@ -12,4 +12,7 @@ if [[ -z $nixpkgs ]]; then
     echo "$0: failed to build nixpkgs+overlay" >&2
     exit 1
 fi
-echo "NIX_PATH=nixpkgs=$base/nixpkgs:fc=$base:nixos-config=$base/configuration.nix"
+cat <<_EOT_
+NIX_PATH=nixpkgs=$base/nixpkgs:fc=$base:nixos-config=$base/configuration.nix
+export NIX_PATH
+_EOT_

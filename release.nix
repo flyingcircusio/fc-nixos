@@ -1,14 +1,18 @@
-{ nixpkgs ? { outPath = (import nixpkgs/lib).cleanSource ./nixpkgs; revCount = 130979; shortRev = "gfedcba"; }
+{ nixpkgs ? {
+  outPath = (import ./nixpkgs.nix {});
+  revCount = 130979;
+  shortRev = "gfedcba";
+}
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
 }:
 
-with import nixpkgs/pkgs/top-level/release-lib.nix { inherit supportedSystems; };
-with import nixpkgs/lib;
+with import "${nixpkgs}/pkgs/top-level/release-lib.nix" { inherit supportedSystems; };
+with import "${nixpkgs}/lib";
 
 let
 
-  version = fileContents nixpkgs/.version;
+  version = fileContents "${nixpkgs}/.version";
   versionSuffix =
     (if stableBranch then "." else "beta") + "${toString (nixpkgs.revCount - 151577)}.${nixpkgs.shortRev}";
 
@@ -46,15 +50,13 @@ let
     { config, lib, pkgs, ... }:
     {
       imports =
-        [ nixpkgs/nixos/modules/profiles/clone-config.nix
-        ];
+        [ ];
 
       config = {
-        system.build.virtualBoxOVA = import nixpkgs/nixos/lib/make-disk-image.nix {
+        system.build.virtualBoxOVA = import "${nixpkgs}/nixos/lib/make-disk-image.nix" {
           name = "virtualbox-ova-image";
 
           inherit pkgs lib config;
-          partitionTableType = "legacy";
           diskSize = 5 * 1024;  # MiB
 
           postVM =
@@ -105,16 +107,34 @@ let
       };
     };
 
+    fcNixpkgs = {
+      outPath = ./.;
+      revCount = 1;
+      shortRev = "gfedcba";
+    };
+
 in rec {
 
-  channel = import lib/make-channel.nix { inherit pkgs nixpkgs version versionSuffix; };
+  nixosChannel = import "${nixpkgs}/nixos/lib/make-channel.nix" {
+    inherit pkgs nixpkgs version versionSuffix;
+  };
+
+  fcChannel = import ./fc-channel.nix {
+    inherit pkgs version;
+    officialRelease = stableBranch;
+    nixpkgs = lib.cleanSource ./.;
+  };
+
+  channels = pkgs.buildEnv {
+    name = "channels";
+    paths = [ nixosChannel fcChannel ];
+  };
 
   # A bootable VirtualBox virtual appliance as an OVA file (i.e. packaged OVF).
   ova = forMatchingSystems [ "x86_64-linux" ] (system:
+    with pkgs;
 
-    with import nixpkgs { inherit system; };
-
-    hydraJob ((import nixpkgs/nixos/lib/eval-config.nix {
+    hydraJob ((import "${nixpkgs}/nixos/lib/eval-config.nix" {
       inherit system;
       modules =
         [ versionModule
