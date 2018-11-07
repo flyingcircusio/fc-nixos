@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: export `./setup.sh`
+# Usage: export `./dev-setup.sh`
 base=$PWD
 nixpkgsBootstrap=$(realpath $HOME/.nix-defexpr/channels_root/nixpkgs)
 if [[ -z nixpkgsBootstrap ]]; then
@@ -13,6 +13,6 @@ if [[ -z $nixpkgs ]]; then
     exit 1
 fi
 cat <<_EOT_
-NIX_PATH=nixpkgs=$base/nixpkgs:fc=$base:nixos-config=$base/configuration.nix
+NIX_PATH=nixpkgs=$base/nixpkgs:fc=$base:nixos-config=$base/nixos/configuration.nix
 export NIX_PATH
 _EOT_
