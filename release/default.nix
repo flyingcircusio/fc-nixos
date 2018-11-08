@@ -1,21 +1,23 @@
 # everything in release/ MUST NOT import from <nixpkgs> to get repeatable builds
 { nixpkgs ? {
-  outPath = (import ../nixpkgs.nix {});
-  revCount = 130979;
-  shortRev = "gfedcba";
+  outPath = "${import ../nixpkgs.nix {}}/nixpkgs";
+  revCount = 1;
+  shortRev = "aaaaaaa";
 }
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
 }:
 
-with import "${nixpkgs}/pkgs/top-level/release-lib.nix" { inherit supportedSystems; };
-with import "${nixpkgs}/lib";
+let
+  pkgs = import nixpkgs {};
+
+in
+with pkgs.lib;
 
 let
-
   version = fileContents "${nixpkgs}/.version";
   versionSuffix =
-    (if stableBranch then "." else "beta") + "${toString (nixpkgs.revCount - 151577)}.${nixpkgs.shortRev}";
+    (if stableBranch then "." else "beta") + "${toString nixpkgs.revCount}.${nixpkgs.shortRev}";
 
   importTest = fn: args: system: import fn ({
     inherit system;
@@ -37,46 +39,41 @@ let
     discoverForSystem = system: mapAttrs (_: test: {
       ${system} = test;
     }) (discover (importTest fn args system));
-
   in foldAttrs mergeAttrs {} (map discoverForSystem (intersectLists systems supportedSystems));
-
-  pkgs = import nixpkgs {};
 
   versionModule =
     { system.nixos.versionSuffix = versionSuffix;
       system.nixos.revision = nixpkgs.rev or nixpkgs.shortRev;
     };
 
-  cleanedFcNixOS = lib.cleanSource ../.;
-
-  arrangeChannels =
-    builtins.toFile "arrange-channels.sh" ''
-      mkdir $out
-      ln -s $nixpkgs $out/nixos
-      ln -s $cleanedFcNixOS $out/fc
-    '';
+  fcSrc = lib.cleanSource ../.;
 
 in rec {
-
-  nixosChannel = import "${nixpkgs}/nixos/lib/make-channel.nix" {
+  # XXX broken
+  nixpkgsChannel = import "${nixpkgs}/nixos/lib/make-channel.nix" {
     inherit pkgs nixpkgs version versionSuffix;
   };
 
-  fcChannel = import ./fc-channel.nix {
+  fcChanne = import ./fc-channel.nix {
     inherit pkgs version;
     officialRelease = stableBranch;
-    nixpkgs = cleanedFcNixOS;
+    nixpkgs = fcSrc;
   };
+
+  upstreamSrcs = import ../nixpkgs.nix {};
 
   channelSources =
     builtins.derivation {
-      inherit nixpkgs cleanedFcNixOS;
-
+      inherit fcSrc upstreamSrcs;
       name = "channel-sources";
       system = builtins.currentSystem;
       builder = pkgs.stdenv.shell;
       PATH = with pkgs; lib.makeBinPath [ coreutils utillinux ];
-      args = [ "-e" arrangeChannels ];
+      args = [ "-ec" ''
+        mkdir $out
+        cp -r $upstreamSrcs/* $out
+        ln -s $fcSrc $out/fc
+      ''];
       preferLocalBuild = true;
     };
 

@@ -6,13 +6,13 @@ if [[ -z nixpkgsBootstrap ]]; then
     echo "$0: need <nixpkgs> available in system channels" >&2
     exit 1
 fi
-export NIX_PATH="nixpkgs=$nixpkgsBootstrap:fc-nixos=$base"
-nixpkgs=`nix-build -Q -o nixpkgs $base/nixpkgs.nix`
-if [[ -z $nixpkgs ]]; then
+export NIX_PATH="nixpkgs=$nixpkgsBootstrap"
+channels=`nix-build -Q -o channels $base/nixpkgs.nix`
+if [[ -z $channels ]]; then
     echo "$0: failed to build nixpkgs+overlay" >&2
     exit 1
 fi
 cat <<_EOT_
-NIX_PATH=nixpkgs=$base/nixpkgs:fc=$base:nixos-config=$base/nixos/configuration.nix
+NIX_PATH=$base/channels:fc=$base:nixos-config=$base/nixos/configuration.nix
 export NIX_PATH
 _EOT_

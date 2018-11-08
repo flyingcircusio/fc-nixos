@@ -1,10 +1,39 @@
 { pkgs ? import <nixpkgs> {}
+, lib ? pkgs.lib
 }:
 
 let
-  versionInfo = pkgs.lib.importJSON ./version.json;
+  versions = pkgs.lib.importJSON ./versions.json;
 
-in pkgs.fetchFromGitHub rec {
-  inherit (versionInfo) owner repo rev sha256;
-  name = "nixpkgs-${rev}";
+  channels =
+    lib.mapAttrs (
+      name: repoInfo:
+      pkgs.fetchFromGitHub rec {
+        inherit (repoInfo) owner repo rev sha256;
+        inherit name;
+      })
+      versions;
+
+  arrangeChannels =
+    builtins.toFile "arrange-channels.sh" ''
+      mkdir $out
+      set -- ''${channels[@]}
+      # 1=name 2=path
+      while [[ -n "$1" && -n "$2" ]]; do
+        ln -s $2 $out/"$1"
+        shift 2
+      done
+    '';
+
+in
+assert channels ? "nixpkgs";
+
+builtins.derivation {
+  args = [ "-e" arrangeChannels ];
+  builder = pkgs.stdenv.shell;
+  channels = lib.mapAttrsToList (name: path: "${name} ${path}") channels;
+  name = "channel-sources";
+  PATH = with pkgs; lib.makeBinPath [ coreutils utillinux ];
+  preferLocalBuild = true;
+  system = builtins.currentSystem;
 }

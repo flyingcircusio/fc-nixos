@@ -1,0 +1,14 @@
+{
+  "nixpkgs": {
+    "owner": "flyingcircusio",
+    "repo": "nixpkgs",
+    "rev": "9660896",
+    "sha256": "1dfvi3fyfc9s5gx2sdc02qndk2vhzfgvl3q4kbrbwl9s9r0p572c"
+  },
+  "nixos-18.03": {
+    "owner": "NixOS",
+    "repo": "nixpkgs-channels",
+    "rev": "21b7f59",
+    "sha256": "1l0mxncgmxjc4rcxz5nmmi057gk5v001xnfk49ipafp7y05bajdp"
+  }
+}
