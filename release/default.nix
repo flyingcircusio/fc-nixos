@@ -46,32 +46,36 @@ let
       system.nixos.revision = nixpkgs.rev or nixpkgs.shortRev;
     };
 
-  fcSrc = lib.cleanSource ../.;
+  fcSrc = cleanSource ../.;
 
 in rec {
-  # XXX broken
+  # always use checked in version (not workdir) to ensure repeatable builds
   nixpkgsChannel = import "${nixpkgs}/nixos/lib/make-channel.nix" {
-    inherit pkgs nixpkgs version versionSuffix;
+    inherit pkgs version versionSuffix;
+    nixpkgs = pkgs.fetchFromGitHub {
+      inherit ((importJSON ../versions.json).nixpkgs) owner repo rev sha256;
+      name = "nixpkgs";
+    };
   };
 
-  fcChanne = import ./fc-channel.nix {
+  fcChannel = import ./fc-channel.nix {
     inherit pkgs version;
     officialRelease = stableBranch;
     nixpkgs = fcSrc;
   };
 
-  upstreamSrcs = import ../nixpkgs.nix {};
+  upstreamSources = import ../nixpkgs.nix {};
 
   channelSources =
     builtins.derivation {
-      inherit fcSrc upstreamSrcs;
+      inherit fcSrc upstreamSources;
       name = "channel-sources";
       system = builtins.currentSystem;
       builder = pkgs.stdenv.shell;
       PATH = with pkgs; lib.makeBinPath [ coreutils utillinux ];
       args = [ "-ec" ''
         mkdir $out
-        cp -r $upstreamSrcs/* $out
+        cp -r $upstreamSources/* $out
         ln -s $fcSrc $out/fc
       ''];
       preferLocalBuild = true;
