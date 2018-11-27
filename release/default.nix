@@ -13,6 +13,9 @@ let
 
 in
 with pkgs.lib;
+with import "${nixpkgs}/pkgs/top-level/release-lib.nix" {
+  inherit supportedSystems;
+};
 
 let
   version = fileContents "${nixpkgs}/.version";
@@ -48,28 +51,28 @@ let
 
   fcSrc = cleanSource ../.;
 
-in rec {
-  # always use checked in version (not workdir) to ensure repeatable builds
-  nixpkgsChannel = import "${nixpkgs}/nixos/lib/make-channel.nix" {
-    inherit pkgs version versionSuffix;
-    nixpkgs = pkgs.fetchFromGitHub {
-      inherit ((importJSON ../versions.json).nixpkgs) owner repo rev sha256;
-      name = "nixpkgs";
-    };
-  };
+  initialVMContents = [
+    {
+      source = ../nixos/etc_nixos_local.nix;
+      target = "/etc/nixos/local.nix";
+    }
+  ];
 
+in rec {
   fcChannel = import ./fc-channel.nix {
     inherit pkgs version;
     officialRelease = stableBranch;
     nixpkgs = fcSrc;
   };
 
-  upstreamSources = import ../nixpkgs.nix {};
+  # Double import necessary to make this independent of <nixpkgs> used for
+  # bootstrapping
+  upstreamSources = import ../nixpkgs.nix { pkgs = (import nixpkgs {}); };
 
   channelSources =
     builtins.derivation {
       inherit fcSrc upstreamSources;
-      name = "channel-sources";
+      name = "channel-sources-fc";
       system = builtins.currentSystem;
       builder = pkgs.stdenv.shell;
       PATH = with pkgs; lib.makeBinPath [ coreutils utillinux ];
@@ -89,7 +92,11 @@ in rec {
       inherit system;
       modules =
         [ versionModule
-          (import ./ova.nix { inherit nixpkgs channelSources; })
+          (import ./ova.nix {
+            inherit nixpkgs channelSources;
+            contents = initialVMContents;
+          })
+          ../nixos/platform
         ];
     }).config.system.build.virtualBoxOVA)
   );

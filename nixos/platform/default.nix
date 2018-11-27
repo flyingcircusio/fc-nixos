@@ -3,16 +3,17 @@
 with builtins;
 
 {
+  imports = (import ../module-list.nix);
+
   users.mutableUsers = false;
-  users.users.root.password = "root";
 
   environment = {
     systemPackages = with pkgs; [
-      hello
       fc-userscan
+      vim
     ];
     etc = {
-      "nixos/configuration.nix".text = readFile ../../configuration.nix;
+      "nixos/configuration.nix".text = readFile ../etc_nixos_configuration.nix;
     };
   };
 

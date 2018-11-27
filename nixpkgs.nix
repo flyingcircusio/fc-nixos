@@ -8,9 +8,9 @@ let
   channels =
     lib.mapAttrs (
       name: repoInfo:
-      pkgs.fetchFromGitHub rec {
+      pkgs.fetchFromGitHub {
         inherit (repoInfo) owner repo rev sha256;
-        inherit name;
+        name = "${name}-${builtins.substring 0 7 repoInfo.rev}";
       })
       versions;
 

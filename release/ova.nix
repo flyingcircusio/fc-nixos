@@ -1,5 +1,6 @@
-{ nixpkgs         # path of upstream source tree
-, channelSources  # initial contents of /root/.nix-defexpr
+{ nixpkgs        # path of upstream source tree
+, channelSources # initial contents of /root/.nix-defexpr
+, contents ? []  # files to be placed inside the image (see make-disk-image.nix)
 }:
 
 { config, lib, pkgs, system, ... }:
@@ -7,15 +8,15 @@
 with lib;
 {
   imports =
-    [ # "${nixpkgs}/nixos/modules/profiles/minimal.nix"
+    [ "${nixpkgs}/nixos/modules/profiles/minimal.nix"
     ];
 
   config = {
     system.build.virtualBoxOVA = import ./make-disk-image.nix {
       name = "virtualbox-ova-image";
 
-      inherit pkgs lib config nixpkgs channelSources;
-      diskSize = 5 * 1024;  # MiB
+      inherit pkgs lib config nixpkgs channelSources contents;
+      diskSize = 10 * 1024;  # MiB
 
       postVM =
         ''
@@ -42,6 +43,7 @@ with lib;
           mkdir -p $out
           fn="$out/nixos-dev.ova"
           VBoxManage export "$vmName" --output "$fn"
+          rm $out/nixos.img
 
           mkdir -p $out/nix-support
           echo "file ova $fn" >> $out/nix-support/hydra-build-products
