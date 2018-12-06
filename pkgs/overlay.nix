@@ -1,9 +1,8 @@
 self: super:
 {
-  # XXX move to config.lib
-  #fclib = super.callPackage ./fclib {};
+  # own packages
+  inherit (import ./. { pkgs = self; }) fc;
 
+  # overrides for upstream packages
   collectdproxy = super.callPackage ./collectdproxy {};
-
-  fc-userscan = super.callPackage ./fc-userscan.nix {};
 }

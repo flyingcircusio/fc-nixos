@@ -1,21 +1,18 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 with builtins;
 
 {
   imports = (import ../module-list.nix);
 
-  users.mutableUsers = false;
-
-  environment = {
-    systemPackages = with pkgs; [
-      fc-userscan
-      vim
-    ];
-    etc = {
-      "nixos/configuration.nix".text = readFile ../etc_nixos_configuration.nix;
+  config = {
+    environment = {
+      etc."nixos/configuration.nix".text =
+        readFile ../etc_nixos_configuration.nix;
     };
-  };
 
-  nixpkgs.overlays = [ (import ../../pkgs/overlay.nix) ];
+    nixpkgs.overlays = [ (import ../../pkgs/overlay.nix) ];
+
+    system.stateVersion = mkDefault "18.09";
+  };
 }

@@ -50,19 +50,6 @@ with lib;
         '';
       };
 
-    fileSystems."/" = {
-      device = "/dev/disk/by-label/nixos";
-      autoResize = true;
-    };
-
-    boot.growPartition = true;
-    boot.loader.grub.fsIdentifier = "provided";
-    boot.loader.grub.device = "/dev/sda";
-
-    users.users.root.password = "";
-
-    virtualisation.virtualbox.guest.enable = true;
-
-    system.stateVersion = mkDefault "18.09";
+    flyingcircus.infrastructureModule = "virtualbox";
   };
 }

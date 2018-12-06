@@ -1,5 +1,5 @@
 [
-  ./platform
+  ./infrastructure
   ./roles
   ./services
 ]

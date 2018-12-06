@@ -1,7 +1,7 @@
 nixos.qcow2
 nixos.raw
 /nixpkgs
-/result
-/result-*
+result
+result-*
 .*.sw?
 dev-channels

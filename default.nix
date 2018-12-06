@@ -1,6 +1,6 @@
 # nixpkgs with our overlay packages.
 # Upstream pacakge: `nix-build default.nix -A hello`
-# Own package: `nix-build default.nix -A fc-userscan`
+# Own package: `nix-build default.nix -A fc.userscan`
 # ===
 # <nixpkgs> should usually point to FC patched upstream nixpkgs
 { nixpkgs ? <nixpkgs>
