@@ -9,7 +9,7 @@ if [[ -z "$NIX_PATH" ]]; then
     fi
     export NIX_PATH="nixpkgs=$nixpkgsBootstrap"
 fi
-channels=`nix-build -Q -o dev-channels $base/nixpkgs.nix`
+channels=`nix-build -Q -o dev-channels $base/nixpkgs.nix -A all`
 if [[ -z $channels ]]; then
     echo "$0: failed to build nixpkgs+overlay" >&2
     exit 1

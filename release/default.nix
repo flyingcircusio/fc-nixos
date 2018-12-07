@@ -1,6 +1,8 @@
 # everything in release/ MUST NOT import from <nixpkgs> to get repeatable builds
 { system ? builtins.currentSystem
-, nixpkgs ? "${import ../nixpkgs.nix {}}/nixpkgs"
+, bootstrap ? <nixpkgs>
+, pinnedSources ? (import ../nixpkgs.nix { pkgs = import bootstrap {}; }).all
+, nixpkgs ? "${pinnedSources}/nixpkgs"
 , fc ? { outPath = ./.; revCount = 1; rev = "0000000"; }
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
@@ -21,31 +23,30 @@ let
 
   fcSrc = lib.cleanSource ../.;
 
+  upstreamSources = (import ../nixpkgs.nix { pkgs = (import nixpkgs {}); });
+
+  allSources =
+    lib.hydraJob (
+      pkgs.stdenv.mkDerivation {
+        inherit fcSrc;
+        inherit (upstreamSources) all;
+        name = "channel-sources-fc";
+        builder = pkgs.stdenv.shell;
+        PATH = with pkgs; lib.makeBinPath [ coreutils ];
+        args = [ "-ec" ''
+          mkdir $out
+          cp -r $all/* $out
+          ln -s $fcSrc $out/fc
+        ''];
+        preferLocalBuild = true;
+      });
+
   initialVMContents = [
     {
       source = ../nixos/etc_nixos_local.nix;
       target = "/etc/nixos/local.nix";
     }
   ];
-
-  # Double import necessary to make this independent of <nixpkgs> used for
-  # bootstrapping
-  upstreamSources = import ../nixpkgs.nix { pkgs = (import nixpkgs {}); };
-
-  allSources =
-    lib.hydraJob (
-      pkgs.stdenv.mkDerivation {
-        inherit fcSrc upstreamSources;
-        name = "channel-sources-fc";
-        builder = pkgs.stdenv.shell;
-        PATH = with pkgs; lib.makeBinPath [ coreutils ];
-        args = [ "-ec" ''
-          mkdir $out
-          cp -r $upstreamSources/* $out
-          ln -s $fcSrc $out/fc
-        ''];
-        preferLocalBuild = true;
-      });
 
   # A bootable VirtualBox OVA (i.e. packaged OVF image).
   ova =
@@ -63,16 +64,27 @@ let
     }).config.system.build.virtualBoxOVA);
 
   jobs = {
-    inherit ova allSources;
+    inherit ova;
     # inherit tests pkgs manual;
   };
 
-in jobs // {
+in
+
+jobs
+//
+(lib.mapAttrs
+  (name: val: pkgs.releaseTools.channel {
+    inherit name;
+    src = val;
+  })
+  upstreamSources)
+//
+{
   # The name `fc` if important because if channel is added without an explicit
   # name argument, it will be available as <nixcloud-webservices>.
   fcChannel = pkgs.releaseTools.channel {
     name = "fc";
-    constituents = lib.collect lib.isDerivation jobs;
+    #constituents = lib.collect lib.isDerivation jobs;
     src = fcSrc;
   };
 }

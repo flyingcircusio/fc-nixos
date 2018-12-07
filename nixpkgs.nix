@@ -1,12 +1,12 @@
-{ pkgs ? import <nixpkgs> {}
-, lib ? pkgs.lib
-}:
+{ pkgs ? import <nixpkgs> {} }:
+
+with pkgs.lib;
 
 let
-  versions = pkgs.lib.importJSON ./versions.json;
+  versions = importJSON ./versions.json;
 
   channels =
-    lib.mapAttrs (
+    mapAttrs (
       name: repoInfo:
       pkgs.fetchFromGitHub {
         inherit (repoInfo) owner repo rev sha256;
@@ -27,13 +27,18 @@ let
 
 in
 assert channels ? "nixpkgs";
-
-builtins.derivation {
-  args = [ "-e" arrangeChannels ];
-  builder = pkgs.stdenv.shell;
-  channels = lib.mapAttrsToList (name: path: "${name} ${path}") channels;
-  name = "channel-sources";
-  PATH = with pkgs; lib.makeBinPath [ coreutils utillinux ];
-  preferLocalBuild = true;
-  system = builtins.currentSystem;
+# export "nixos-18_03" instead of "nixos-18.03" for example
+(mapAttrs'
+  (name: val: nameValuePair (replaceStrings [ "." ] [ "_" ] name) val) channels)
+//
+{
+  all = builtins.derivation {
+    args = [ "-e" arrangeChannels ];
+    builder = pkgs.stdenv.shell;
+    channels = mapAttrsToList (name: path: "${name} ${path}") channels;
+    name = "all-upstream-sources";
+    PATH = with pkgs; makeBinPath [ coreutils ];
+    preferLocalBuild = true;
+    system = builtins.currentSystem;
+  };
 }
