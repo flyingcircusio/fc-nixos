@@ -1,8 +1,7 @@
 # everything in release/ MUST NOT import from <nixpkgs> to get repeatable builds
 { system ? builtins.currentSystem
 , bootstrap ? <nixpkgs>
-, pinnedSources ? (import ../nixpkgs.nix { pkgs = import bootstrap {}; }).all
-, nixpkgs ? "${pinnedSources}/nixpkgs"
+, nixpkgs ? (import ../nixpkgs.nix { pkgs = import bootstrap {}; }).nixpkgs
 , fc ? { outPath = ./.; revCount = 1; rev = "0000000"; }
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
@@ -81,7 +80,7 @@ jobs
 //
 {
   # The name `fc` if important because if channel is added without an explicit
-  # name argument, it will be available as <nixcloud-webservices>.
+  # name argument, it will be available as <fc>.
   fcChannel = pkgs.releaseTools.channel {
     name = "fc";
     #constituents = lib.collect lib.isDerivation jobs;
