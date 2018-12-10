@@ -8,7 +8,7 @@
 }:
 
 let
-  pkgs = import nixpkgs { inherit system; };
+  pkgs = import ../. { inherit nixpkgs system; };
   inherit (pkgs) lib;
 
   version = lib.fileContents "${nixpkgs}/.version";
@@ -47,6 +47,12 @@ let
     }
   ];
 
+  pkgsFc = lib.hydraJob (pkgs.releaseTools.aggregate {
+    name = "pkgs-fc";
+    meta.description = "All FC-specific packages";
+    constituents = lib.collect lib.isDerivation pkgs.fc;
+  });
+
   # A bootable VirtualBox OVA (i.e. packaged OVF image).
   ova =
     lib.hydraJob ((import "${nixpkgs}/nixos/lib/eval-config.nix" {
@@ -63,8 +69,8 @@ let
     }).config.system.build.virtualBoxOVA);
 
   jobs = {
-    inherit ova;
-    # inherit tests pkgs manual;
+    inherit pkgsFc ova;
+    # inherit tests manual;
   };
 
 in
@@ -72,18 +78,18 @@ in
 jobs
 //
 (lib.mapAttrs
-  (name: val: pkgs.releaseTools.channel {
-    inherit name;
-    src = val;
+  (name: src: pkgs.releaseTools.channel {
+    inherit name src;
+    constituents = [ src ];
   })
   upstreamSources)
 //
-{
+rec {
   # The name `fc` if important because if channel is added without an explicit
   # name argument, it will be available as <fc>.
   fcChannel = pkgs.releaseTools.channel {
     name = "fc";
-    #constituents = lib.collect lib.isDerivation jobs;
+    constituents = lib.collect lib.isDerivation (jobs // upstreamSources);
     src = fcSrc;
   };
 }
