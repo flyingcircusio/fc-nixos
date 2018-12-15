@@ -5,12 +5,16 @@
 , fc ? { outPath = ./.; revCount = 1; rev = "0000000"; }
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
+, scrubJobs ? true  # Strip most of attributes when evaluating
 }:
 
-let
-  pkgs = import ../. { inherit nixpkgs system; };
-  inherit (pkgs) lib;
+with import "${bootstrap}/pkgs/top-level/release-lib.nix" {
+  inherit supportedSystems scrubJobs;
+  packageSet = import ../.;
+};
+# pkgs and lib imported from release-lib.nix
 
+let
   version = lib.fileContents "${nixpkgs}/.version";
   versionSuffix =
     (if stableBranch then "." else "beta") + "${toString fc.revCount}.${fc.rev}";
@@ -47,11 +51,7 @@ let
     }
   ];
 
-  pkgsFc = lib.hydraJob (pkgs.releaseTools.aggregate {
-    name = "pkgs-fc";
-    meta.description = "All FC-specific packages";
-    constituents = lib.collect lib.isDerivation pkgs.fc;
-  });
+  nixpkgs' = import ../pkgs/overlay.nix pkgs pkgs;
 
   # A bootable VirtualBox OVA (i.e. packaged OVF image).
   ova =
@@ -69,7 +69,7 @@ let
     }).config.system.build.virtualBoxOVA);
 
   jobs = {
-    inherit pkgsFc ova;
+    pkgs = mapTestOn (packagePlatforms nixpkgs');
     # inherit tests manual;
   };
 
@@ -77,19 +77,26 @@ in
 
 jobs
 //
-(lib.mapAttrs
-  (name: src: pkgs.releaseTools.channel {
-    inherit name src;
-    constituents = [ src ];
-  })
-  upstreamSources)
-//
 rec {
-  # The name `fc` if important because if channel is added without an explicit
-  # name argument, it will be available as <fc>.
-  fcChannel = pkgs.releaseTools.channel {
-    name = "fc";
-    constituents = lib.collect lib.isDerivation (jobs // upstreamSources);
-    src = fcSrc;
+  inherit ova;
+
+  channels = (
+    lib.mapAttrs (name: src: (
+      pkgs.releaseTools.channel {
+        inherit src;
+        name = src.name;
+        constituents = [ src ];
+        meta.description = "${src.name} channel";
+      }))
+      upstreamSources
+  ) // {
+    # The name `fc` if important because if channel is added without an
+    # explicit name argument, it will be available as <fc>.
+    fc = pkgs.releaseTools.channel {
+      name = "fc";
+      constituents = lib.collect lib.isDerivation (jobs // upstreamSources);
+      src = fcSrc;
+      meta.description = "Main channel of the <fc> overlay";
+    };
   };
 }

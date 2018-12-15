@@ -1,8 +1,8 @@
 self: super:
 {
-  # own packages
-  inherit (import ./. { pkgs = self; }) fc;
+  # own packages go here
+  inherit (import ./default.nix { pkgs = self; }) fc;
 
-  # overrides for upstream packages
+  # overrides for upstream packages follow
   collectdproxy = super.callPackage ./collectdproxy {};
 }

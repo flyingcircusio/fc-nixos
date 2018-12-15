@@ -30,5 +30,6 @@ buildRustPackage rec {
     description = "Scan and register Nix store references from arbitrary files";
     homepage = https://github.com/flyingcircusio/userscan;
     license = with licenses; [ bsd3 ];
+    platforms = platforms.all;
   };
 }

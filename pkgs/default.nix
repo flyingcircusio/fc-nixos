@@ -1,3 +1,4 @@
+# Collection of own packages
 { pkgs ? import <nixpkgs> {} }:
 
 let

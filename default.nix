@@ -9,6 +9,7 @@
 , platform ? localSystem.platform
 , crossSystem ? null
 , overlays ? []
+, config ? {}
 } @ args:
 
 import nixpkgs {

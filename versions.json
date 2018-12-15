@@ -8,7 +8,7 @@
   "nixos-18.03": {
     "owner": "NixOS",
     "repo": "nixpkgs-channels",
-    "rev": "21b7f59",
-    "sha256": "1l0mxncgmxjc4rcxz5nmmi057gk5v001xnfk49ipafp7y05bajdp"
+    "rev": "b551f89e2568a0ee444a39972943dbadd488063d",
+    "sha256": "0p9f7mpd5cpy4mf8j2dq78mqbvwfcdzmhp95hn3lklmrpf8wam2j"
   }
 }
