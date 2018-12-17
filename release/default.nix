@@ -8,7 +8,7 @@
 , scrubJobs ? true  # Strip most of attributes when evaluating
 }:
 
-with import "${bootstrap}/pkgs/top-level/release-lib.nix" {
+with import "${nixpkgs}/pkgs/top-level/release-lib.nix" {
   inherit supportedSystems scrubJobs;
   packageSet = import ../.;
 };
