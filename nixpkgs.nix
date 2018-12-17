@@ -35,7 +35,7 @@ assert channels ? "nixpkgs";
   nameValuePair (replaceStrings [ "." ] [ "_" ] name) val) channels)
 //
 {
-  all = builtins.derivation {
+  allUpstreams = builtins.derivation {
     args = [ "-e" arrangeChannels ];
     builder = pkgs.stdenv.shell;
     channels = mapAttrsToList (name: path: "${name} ${path}") channels;
