@@ -2,7 +2,7 @@
 { system ? builtins.currentSystem
 , bootstrap ? <nixpkgs>
 , nixpkgs ? (import ../nixpkgs.nix { pkgs = import bootstrap {}; }).nixpkgs
-, fc ? { outPath = ./.; revCount = 1; rev = "aaaaaaa"; }
+, fc ? { outPath = ./.; revCount = 0; rev = "00000000000"; }
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
 , scrubJobs ? true  # Strip most of attributes when evaluating
@@ -18,7 +18,7 @@ let
   version = lib.fileContents "${nixpkgs}/.version";
   versionSuffix =
     (if stableBranch then "." else ".dev") +
-    "${toString fc.revCount}.${fc.rev}";
+    "${toString fc.revCount}.${builtins.substring 0 7 fc.rev}";
 
   versionModule = {
     system.nixos.versionSuffix = "${versionSuffix}-fc";
@@ -52,8 +52,6 @@ let
     }
   ];
 
-  nixpkgs' = import ../pkgs/overlay.nix pkgs pkgs;
-
   # A bootable VirtualBox OVA (i.e. packaged OVF image).
   ova =
     lib.hydraJob ((import "${nixpkgs}/nixos/lib/eval-config.nix" {
@@ -64,22 +62,17 @@ let
             channelSources = allSources;
             contents = initialVMContents;
           })
-          ../nixos/platform
+          ../nixos
           versionModule
         ];
     }).config.system.build.virtualBoxOVA);
 
+  nixpkgsCustomized = import ../pkgs/overlay.nix pkgs pkgs;
+
   jobs = {
-    pkgs = mapTestOn (packagePlatforms nixpkgs');
+    pkgs = mapTestOn (packagePlatforms nixpkgsCustomized);
     # inherit tests manual;
   };
-
-in
-
-jobs
-//
-rec {
-  inherit ova;
 
   channels = (
     lib.mapAttrs (name: src: (
@@ -89,23 +82,32 @@ rec {
         constituents = [ src ];
         meta.description = "${src.name} according to versions.json";
       }))
-      upstreamSources
-  ) // {
+      upstreamSources);
+
+in
+
+jobs //
+{ inherit ova ; } // {
+  channels = {
+    inherit channels;
+
     # The name `fc` if important because if channel is added without an
     # explicit name argument, it will be available as <fc>.
-    fc = pkgs.releaseTools.channel {
+    fc = with lib; pkgs.releaseTools.channel {
       name = "fc-${version}${versionSuffix}";
-      constituents = lib.collect lib.isDerivation (jobs // upstreamSources);
+      constituents = collect isDerivation (jobs // { inherit channels; });
       src = fcSrc;
+      patchPhase = ''
+        touch .update-on-nixos-rebuild
+        echo "${version}" > .version
+        echo "${versionSuffix}" > .version-suffix
+        echo "${fc.rev}" > .git-revision
+      '';
       meta = {
         description = "Main channel of the <fc> overlay";
         homepage = "https://flyingcircus.io/doc/";
+        license = [ licenses.bsd3 ];
       };
-      patchPhase = ''
-        touch .update-on-nixos-rebuild
-        echo ${version} > .version
-        echo ${versionSuffix} > .version-suffix
-      '';
     };
   };
 }

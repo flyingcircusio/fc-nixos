@@ -1,7 +1,7 @@
 { ... }:
 {
-  imports =
-    [ <fc/nixos/platform>
-      /etc/nixos/local.nix
-    ];
+  imports = [
+    <fc/nixos>
+    /etc/nixos/local.nix
+  ];
 }

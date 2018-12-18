@@ -4,4 +4,4 @@ nixos.raw
 result
 result-*
 .*.sw?
-dev-channels
+channels

@@ -98,32 +98,36 @@ let
         (builtins.head listOfSets)
         (mergeSets (builtins.tail listOfSets));
 
+  accessConf = pkgs.writeText "access.conf" ''
+    # Local logins are always fine. This is to unblock any automation like
+    # systemd services
+    + : ALL : LOCAL
+    # Remote logins are restricted to admins and the login group.
+    + : root (admins) (login): ALL
+    # Other remote logins are not allowed.
+    - : ALL : ALL
+  '';
+
 in
 
 {
 
   options = {
     flyingcircus.users.serviceUsers.extraGroups = lib.mkOption {
-        type = with lib.types; listOf str;
-        default = [ ];
-        description = ''
-          Names of groups that service users should (additionally)
-          be members of.
-        '';
-      };
+      type = with lib.types; listOf str;
+      default = [ ];
+      description = ''
+        Names of groups that service users should (additionally)
+        be members of.
+      '';
+    };
   };
 
   config = {
 
     security.pam.services.sshd.showMotd = true;
-    security.pam.access = ''
-      # Local logins are always fine. This is to unblock any automation like
-      # systemd services
-      + : ALL : LOCAL
-      # Remote logins are restricted to admins and the login group.
-      + : root (admins) (login): ALL
-      # Other remote logins are not allowed.
-      - : ALL : ALL
+    security.pam.services.sshd.text = lib.mkBefore ''
+      auth required pam_access.so accessfile=${accessConf}
     '';
 
     users = {
