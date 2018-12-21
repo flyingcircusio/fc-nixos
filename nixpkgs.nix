@@ -12,7 +12,7 @@ let
       assert builtins.stringLength repoInfo.rev == 40;
       pkgs.fetchFromGitHub {
         inherit (repoInfo) owner repo rev sha256;
-        name = "${name}-${builtins.substring 0 7 repoInfo.rev}";
+        name = "${name}.${builtins.substring 0 7 repoInfo.rev}";
       })
       versions;
 

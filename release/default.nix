@@ -106,11 +106,8 @@ let
 
 in
 
-jobs //
-{ inherit ova ; } // {
-  channels = {
-    inherit channels;
-  };
+jobs // {
+  inherit ova channels;
 
   tested = with lib; pkgs.releaseTools.aggregate {
     name = "tested-${version}${versionSuffix}";
