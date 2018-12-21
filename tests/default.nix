@@ -1,5 +1,11 @@
-{ pkgs, lib, supportedSystems, ... }:
+{ system ? builtins.currentSystem
+, pkgs ? import <nixpkgs> { inherit system; }
+, nixpkgs ? pkgs.path
+}:
 
-{
-  memcached = import ./memcached.nix {};
+let
+  callTest = f: f.test;
+  makeTest = import "${nixpkgs}/nixos/tests/make-test.nix";
+
+in {
 }

@@ -82,7 +82,27 @@ let
         constituents = [ src ];
         meta.description = "${src.name} according to versions.json";
       }))
-      upstreamSources);
+      upstreamSources) // {
+
+      # The name `fc` if important because if channel is added without an
+      # explicit name argument, it will be available as <fc>.
+      fc = with lib; pkgs.releaseTools.channel {
+        name = "fc-${version}${versionSuffix}";
+        constituents = [ fcSrc ];
+        src = fcSrc;
+        patchPhase = ''
+          touch .update-on-nixos-rebuild
+          echo "${version}" > .version
+          echo "${versionSuffix}" > .version-suffix
+          echo "${fc.rev}" > .git-revision
+        '';
+        meta = {
+          description = "Main channel of the <fc> overlay";
+          homepage = "https://flyingcircus.io/doc/";
+          license = [ licenses.bsd3 ];
+        };
+      };
+    };
 
 in
 
@@ -90,24 +110,11 @@ jobs //
 { inherit ova ; } // {
   channels = {
     inherit channels;
+  };
 
-    # The name `fc` if important because if channel is added without an
-    # explicit name argument, it will be available as <fc>.
-    fc = with lib; pkgs.releaseTools.channel {
-      name = "fc-${version}${versionSuffix}";
-      constituents = collect isDerivation (jobs // { inherit channels; });
-      src = fcSrc;
-      patchPhase = ''
-        touch .update-on-nixos-rebuild
-        echo "${version}" > .version
-        echo "${versionSuffix}" > .version-suffix
-        echo "${fc.rev}" > .git-revision
-      '';
-      meta = {
-        description = "Main channel of the <fc> overlay";
-        homepage = "https://flyingcircus.io/doc/";
-        license = [ licenses.bsd3 ];
-      };
-    };
+  tested = with lib; pkgs.releaseTools.aggregate {
+    name = "tested-${version}${versionSuffix}";
+    constituents = collect isDerivation (jobs // { inherit channels; });
+    meta.description = "Everything is fine";
   };
 }
