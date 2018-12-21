@@ -15,10 +15,11 @@ with import "${nixpkgs}/pkgs/top-level/release-lib.nix" {
 # pkgs and lib imported from release-lib.nix
 
 let
+  shortRev = builtins.substring 0 7 fc.rev;
   version = lib.fileContents "${nixpkgs}/.version";
   versionSuffix =
     (if stableBranch then "." else ".dev") +
-    "${toString fc.revCount}.${builtins.substring 0 7 fc.rev}";
+    "${toString fc.revCount}.${shortRev}";
 
   versionModule = {
     system.nixos.versionSuffix = "${versionSuffix}-fc";
@@ -74,44 +75,45 @@ let
     # inherit tests manual;
   };
 
-  channels = (
-    lib.mapAttrs (name: src: (
-      pkgs.releaseTools.channel {
-        inherit src;
-        name = src.name;
-        constituents = [ src ];
-        meta.description = "${src.name} according to versions.json";
-      }))
-      upstreamSources) // {
+  channelsUpstream = lib.mapAttrs
+    (name: src: pkgs.releaseTools.channel {
+      inherit name src;
+      constituents = [ src ];
+      isNixOS = true;
+      meta.description = "${src.name} according to versions.json";
+    })
+    (removeAttrs upstreamSources [ "allUpstreams" ]);
 
-      # The name `fc` if important because if channel is added without an
-      # explicit name argument, it will be available as <fc>.
-      fc = with lib; pkgs.releaseTools.channel {
-        name = "fc-${version}${versionSuffix}";
-        constituents = [ fcSrc ];
-        src = fcSrc;
-        patchPhase = ''
-          touch .update-on-nixos-rebuild
-          echo "${version}" > .version
-          echo "${versionSuffix}" > .version-suffix
-          echo "${fc.rev}" > .git-revision
-        '';
-        meta = {
-          description = "Main channel of the <fc> overlay";
-          homepage = "https://flyingcircus.io/doc/";
-          license = [ licenses.bsd3 ];
-        };
+  channels = channelsUpstream // {
+    # The name `fc` if important because if channel is added without an
+    # explicit name argument, it will be available as <fc>.
+    fc = with lib; pkgs.releaseTools.channel {
+      name = "fc-${version}${versionSuffix}";
+      constituents = [ (attrValues channelsUpstream) ];
+      src = fcSrc;
+      patchPhase = ''
+        touch .update-on-nixos-rebuild
+        echo "${version}" > .version
+        echo "${versionSuffix}" > .version-suffix
+        echo "${fc.rev}" > .git-revision
+      '';
+      meta = {
+        description = "Main channel of the <fc> overlay";
+        homepage = "https://flyingcircus.io/doc/";
+        license = [ licenses.bsd3 ];
+        maintainer = with maintainers; [ ckauhaus ];
       };
     };
+  };
 
 in
 
 jobs // {
-  inherit ova channels;
+  inherit ova channels sources;
 
   tested = with lib; pkgs.releaseTools.aggregate {
     name = "tested-${version}${versionSuffix}";
     constituents = collect isDerivation (jobs // { inherit channels; });
-    meta.description = "Everything is fine";
+    meta.description = "Indication that pkgs, tests and channels are fine";
   };
 }
