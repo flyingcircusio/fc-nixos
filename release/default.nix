@@ -15,14 +15,14 @@ with import "${nixpkgs}/pkgs/top-level/release-lib.nix" {
 # pkgs and lib imported from release-lib.nix
 
 let
-  shortRev = builtins.substring 0 7 fc.rev;
+  shortRev = builtins.substring 0 11 fc.rev;
   version = lib.fileContents "${nixpkgs}/.version";
   versionSuffix =
     (if stableBranch then "." else ".dev") +
     "${toString fc.revCount}.${shortRev}";
 
   versionModule = {
-    system.nixos.versionSuffix = "${versionSuffix}-fc";
+    system.nixos.versionSuffix = versionSuffix;
     system.nixos.revision = fc.rev;
   };
 
@@ -77,7 +77,8 @@ let
 
   channelsUpstream = lib.mapAttrs
     (name: src: pkgs.releaseTools.channel {
-      inherit name src;
+      inherit src;
+      name = src.name;
       constituents = [ src ];
       isNixOS = true;
       meta.description = "${src.name} according to versions.json";
