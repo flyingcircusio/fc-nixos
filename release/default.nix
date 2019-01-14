@@ -94,9 +94,9 @@ let
       src = fcSrc;
       patchPhase = ''
         touch .update-on-nixos-rebuild
-        echo "${version}" > .version
-        echo "${versionSuffix}" > .version-suffix
-        echo "${fc.rev}" > .git-revision
+        echo -n "${version}" > .version
+        echo -n "${versionSuffix}" > .version-suffix
+        echo -n "${fc.rev}" > .git-revision
       '';
       meta = {
         description = "Main channel of the <fc> overlay";
