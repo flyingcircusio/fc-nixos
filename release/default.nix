@@ -22,6 +22,7 @@ let
     "${toString fc.revCount}.${shortRev}";
 
   versionModule = {
+    system.nixos.version = version;
     system.nixos.versionSuffix = versionSuffix;
     system.nixos.revision = fc.rev;
   };
@@ -60,6 +61,7 @@ let
       modules = [
           (import ./ova.nix {
             inherit nixpkgs;
+            version = "${version}${versionSuffix}";
             channelSources = allSources;
             contents = initialVMContents;
           })

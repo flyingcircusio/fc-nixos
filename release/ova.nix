@@ -1,6 +1,7 @@
 { nixpkgs        # path of upstream source tree
 , channelSources # initial contents of /root/.nix-defexpr
 , contents ? []  # files to be placed inside the image (see make-disk-image.nix)
+, version ? "0"
 }:
 
 { config, lib, pkgs, system, ... }:
@@ -13,7 +14,7 @@ with lib;
 
   config = {
     system.build.virtualBoxOVA = import ./make-disk-image.nix {
-      name = "virtualbox-ova-image";
+      name = "virtualbox-ova-${version}";
 
       inherit pkgs lib config nixpkgs channelSources contents;
       diskSize = 10 * 1024;  # MiB
