@@ -41,7 +41,7 @@ with lib;
           mkdir -p $out
           fn="$out/nixos-dev.ova"
           VBoxManage export "$vmName" --output "$fn"
-          #rm $out/nixos.img
+          rm $out/nixos.img
 
           mkdir -p $out/nix-support
           echo "file ova $fn" >> $out/nix-support/hydra-build-products
