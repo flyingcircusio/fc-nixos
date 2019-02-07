@@ -15,6 +15,5 @@ if [[ -z $channels ]]; then
     exit 1
 fi
 cat <<_EOT_
-NIX_PATH=$base/channels:fc=$base:nixos-config=$base/nixos/platform
-export NIX_PATH
+export NIX_PATH=$base/channels:fc=$base:nixos-config=$base/nixos/platform
 _EOT_

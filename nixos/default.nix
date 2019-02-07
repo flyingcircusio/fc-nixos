@@ -11,7 +11,7 @@ with builtins;
   config = {
     environment = {
       etc."nixos/configuration.nix".text =
-        readFile ./etc_nixos_configuration.nix;
+        import ./etc_nixos_configuration.nix { inherit config; };
     };
 
     nixpkgs.overlays = [ (import ../pkgs/overlay.nix) ];

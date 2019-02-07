@@ -2,11 +2,13 @@
 { system ? builtins.currentSystem
 , bootstrap ? <nixpkgs>
 , nixpkgs ? (import ../nixpkgs.nix { pkgs = import bootstrap {}; }).nixpkgs
-, fc ? { outPath = ./.; revCount = 0; rev = "00000000000"; }
+, fc ? { outPath = ./.; revCount = 0; rev = "00000000000"; shortRev = "0000000"; }
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
 , scrubJobs ? true  # Strip most of attributes when evaluating
 }:
+
+with builtins;
 
 with import "${nixpkgs}/pkgs/top-level/release-lib.nix" {
   inherit supportedSystems scrubJobs;
@@ -15,20 +17,13 @@ with import "${nixpkgs}/pkgs/top-level/release-lib.nix" {
 # pkgs and lib imported from release-lib.nix
 
 let
-  shortRev = builtins.substring 0 11 fc.rev;
+  shortRev = fc.shortRev or (substring 0 11 fc.rev);
   version = lib.fileContents "${nixpkgs}/.version";
   versionSuffix =
     (if stableBranch then "." else ".dev") +
     "${toString fc.revCount}.${shortRev}";
 
-  versionModule = {
-    system.nixos.version = version;
-    system.nixos.versionSuffix = versionSuffix;
-    system.nixos.revision = fc.rev;
-  };
-
   fcSrc = lib.cleanSource ../.;
-
   upstreamSources = (import ../nixpkgs.nix { pkgs = (import nixpkgs {}); });
 
   allSources =
@@ -66,23 +61,24 @@ let
             contents = initialVMContents;
           })
           ../nixos
-          versionModule
         ];
     }).config.system.build.virtualBoxOVA);
 
-  nixpkgsCustomized = import ../pkgs/overlay.nix pkgs pkgs;
+  customizedPackages = import ../pkgs/overlay.nix pkgs pkgs;
 
   jobs = {
-    pkgs = mapTestOn (packagePlatforms nixpkgsCustomized);
-    # inherit tests manual;
+    pkgs = mapTestOn (packagePlatforms customizedPackages);
+    # inherit fc-manual tests;
   };
 
   channelsUpstream = lib.mapAttrs
     (name: src: pkgs.releaseTools.channel {
       inherit src;
-      name = src.name;
+      name = "${src.name}-0.${substring 0 11 src.rev}";
       constituents = [ src ];
-      isNixOS = true;
+      patchPhase = ''
+        echo -n "${src.rev}" > .git-revision
+      '';
       meta.description = "${src.name} according to versions.json";
     })
     (removeAttrs upstreamSources [ "allUpstreams" ]);
@@ -92,10 +88,9 @@ let
     # explicit name argument, it will be available as <fc>.
     fc = with lib; pkgs.releaseTools.channel {
       name = "fc-${version}${versionSuffix}";
-      constituents = [ (attrValues channelsUpstream) ];
+      constituents = [ fcSrc ];
       src = fcSrc;
       patchPhase = ''
-        touch .update-on-nixos-rebuild
         echo -n "${version}" > .version
         echo -n "${versionSuffix}" > .version-suffix
         echo -n "${fc.rev}" > .git-revision

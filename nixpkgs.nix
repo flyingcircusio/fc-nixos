@@ -12,7 +12,7 @@ let
       assert builtins.stringLength repoInfo.rev == 40;
       pkgs.fetchFromGitHub {
         inherit (repoInfo) owner repo rev sha256;
-        name = "${name}.${builtins.substring 0 11 repoInfo.rev}";
+        inherit name;
       })
       versions;
 
@@ -30,9 +30,8 @@ let
 in
 assert channels ? "nixpkgs";
 # export "nixos-18_03" instead of "nixos-18.03" for example
-(mapAttrs' (
-  name: val:
-  nameValuePair (replaceStrings [ "." ] [ "_" ] name) val) channels)
+(mapAttrs' (name: val: nameValuePair (replaceStrings [ "." ] [ "_" ] name) val)
+  channels)
 //
 {
   allUpstreams = builtins.derivation {

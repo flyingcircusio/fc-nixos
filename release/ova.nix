@@ -8,11 +8,8 @@
 
 with lib;
 {
-  imports =
-    [ "${nixpkgs}/nixos/modules/profiles/minimal.nix"
-    ];
-
   config = {
+
     system.build.virtualBoxOVA = import ./make-disk-image.nix {
       name = "virtualbox-ova-${version}";
 
@@ -44,7 +41,7 @@ with lib;
           mkdir -p $out
           fn="$out/nixos-dev.ova"
           VBoxManage export "$vmName" --output "$fn"
-          rm $out/nixos.img
+          #rm $out/nixos.img
 
           mkdir -p $out/nix-support
           echo "file ova $fn" >> $out/nix-support/hydra-build-products
@@ -52,5 +49,6 @@ with lib;
       };
 
     flyingcircus.infrastructureModule = "virtualbox";
+
   };
 }
