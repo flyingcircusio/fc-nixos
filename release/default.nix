@@ -106,7 +106,7 @@ let
 
 in
 
-jobs // {
+jobs // rec {
   inherit ova channels;
 
   tested = with lib; pkgs.releaseTools.aggregate {
@@ -115,20 +115,19 @@ jobs // {
     meta.description = "Indication that pkgs, tests and channels are fine";
   };
 
+  # XXX this is probably not exactly what we want...
   release = lib.hydraJob (
     pkgs.stdenv.mkDerivation {
-      inherit channels;
+      CHANNELS = lib.mapAttrsToList (k: v: "${v.name} ${v}") channels;
       name = "release-${version}${versionSuffix}";
       src = tested;
-
-      buildInputs = channels;
       phases = [ "installPhase" ];
       installPhase = ''
         mkdir $out
-        set -- ''${channels[@]}
+        set -- ''${CHANNELS[@]}
         # 1=name 2=path
         while [[ -n "$1" && -n "$2" ]]; do
-          cp $2/nixexprs.tar.xz $1.tar.xz
+          cp $2/tarballs/nixexprs.tar.xz $out/$1.tar.xz
           shift 2
         done
       '';
