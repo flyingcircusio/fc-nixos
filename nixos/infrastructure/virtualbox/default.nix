@@ -2,17 +2,16 @@
 
 {
   config = lib.mkIf (config.flyingcircus.infrastructureModule == "virtualbox") {
-    fileSystems."/" = {
+    fileSystems."/" = lib.mkDefault {
       device = "/dev/disk/by-label/nixos";
       autoResize = true;
     };
 
-    boot.growPartition = true;
-    boot.loader.grub.fsIdentifier = "provided";
-    boot.loader.grub.device = "/dev/sda";
+    boot.growPartition = lib.mkDefault true;
+    boot.loader.grub.device = lib.mkDefault "/dev/sda";
+
+    virtualisation.virtualbox.guest.enable = lib.mkDefault true;
 
     users.users.root.password = "";
-
-    virtualisation.virtualbox.guest.enable = true;
   };
 }

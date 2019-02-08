@@ -62,12 +62,12 @@ let
           })
           ../nixos
         ];
-    }).config.system.build.virtualBoxOVA);
+    }).config.system.build.virtualBoxOVA_FC);
 
-  customizedPackages = import ../pkgs/overlay.nix pkgs pkgs;
+  modifiedPkgs = import ../pkgs/overlay.nix pkgs pkgs;
 
   jobs = {
-    pkgs = mapTestOn (packagePlatforms customizedPackages);
+    pkgs = mapTestOn (packagePlatforms modifiedPkgs);
     # inherit fc-manual tests;
   };
 
@@ -110,8 +110,27 @@ jobs // {
   inherit ova channels;
 
   tested = with lib; pkgs.releaseTools.aggregate {
-    name = "tested-${version}${versionSuffix}";
+    name = "tested";
     constituents = collect isDerivation (jobs // { inherit channels; });
     meta.description = "Indication that pkgs, tests and channels are fine";
   };
+
+  release = lib.hydraJob (
+    pkgs.stdenv.mkDerivation {
+      inherit channels;
+      name = "release-${version}${versionSuffix}";
+      src = tested;
+
+      buildInputs = channels;
+      phases = [ "installPhase" ];
+      installPhase = ''
+        mkdir $out
+        set -- ''${channels[@]}
+        # 1=name 2=path
+        while [[ -n "$1" && -n "$2" ]]; do
+          cp $2/nixexprs.tar.xz $1.tar.xz
+          shift 2
+        done
+      '';
+    });
 }

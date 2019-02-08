@@ -7,27 +7,36 @@
 { config, lib, pkgs, system, ... }:
 
 with lib;
-{
+
+let
+  cfg = config.virtualbox;
+
+in {
+  imports = [ "${nixpkgs}/nixos/modules/virtualisation/virtualbox-image.nix" ];
+
   config = {
 
-    system.build.virtualBoxOVA = import ./make-disk-image.nix {
-      name = "virtualbox-ova-${version}";
+    system.build.virtualBoxOVA_FC = import ./make-disk-image.nix {
+      name = cfg.vmDerivationName;
 
       inherit pkgs lib config nixpkgs channelSources contents;
-      diskSize = 10 * 1024;  # MiB
+      diskSize = cfg.baseImageSize;
 
+      # copied from nixos/modules/virtualisation/virtualbox-image.nix
       postVM =
         ''
           export HOME=$PWD
           export PATH=${pkgs.virtualbox}/bin:$PATH
 
+          echo "creating VirtualBox pass-through disk wrapper (no copying invovled)..."
           VBoxManage internalcommands createrawvmdk -filename disk.vmdk -rawdisk $diskImage
+
           echo "creating VirtualBox VM..."
-          vmName="NixOS VBox dev VM";
+          vmName="${cfg.vmName}";
           VBoxManage createvm --name "$vmName" --register \
             --ostype ${if pkgs.stdenv.hostPlatform.system == "x86_64-linux" then "Linux26_64" else "Linux26"}
           VBoxManage modifyvm "$vmName" \
-            --memory 1536 --acpi on --vram 32 \
+            --memory ${toString cfg.memorySize} --acpi on --vram 32 \
             ${optionalString (pkgs.stdenv.hostPlatform.system == "i686-linux") "--pae on"} \
             --nictype1 virtio --nic1 nat \
             --audiocontroller ac97 --audio alsa \
@@ -39,9 +48,10 @@ with lib;
 
           echo "exporting VirtualBox VM..."
           mkdir -p $out
-          fn="$out/nixos-dev.ova"
+          fn="$out/${cfg.vmFileName}"
           VBoxManage export "$vmName" --output "$fn"
-          rm $out/nixos.img
+
+          rm -v $diskImage
 
           mkdir -p $out/nix-support
           echo "file ova $fn" >> $out/nix-support/hydra-build-products

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Usage: export `./dev-setup`
+# Usage: eval `./dev-setup`
+set -e
 base=$PWD
 if [[ -z "$NIX_PATH" ]]; then
     nixpkgsBootstrap=$(realpath $HOME/.nix-defexpr/channels_root/nixpkgs)
@@ -9,11 +10,16 @@ if [[ -z "$NIX_PATH" ]]; then
     fi
     export NIX_PATH="nixpkgs=$nixpkgsBootstrap"
 fi
-channels=`nix-build -Q -o channels $base/nixpkgs.nix -A allUpstreams`
+channels=`nix-build -Q nixpkgs.nix -A allUpstreams --no-out-link`
 if [[ -z $channels ]]; then
     echo "$0: failed to build nixpkgs+overlay" >&2
     exit 1
 fi
-cat <<_EOT_
-export NIX_PATH=$base/channels:fc=$base:nixos-config=$base/nixos/platform
-_EOT_
+mkdir -p channels
+find $channels -maxdepth 1 -type l | while read channel; do
+    ln -fs $channel channels/
+done
+if ! [[ -e channels/fc ]]; then
+    ln -s .. channels/fc
+fi
+echo "export NIX_PATH=$base/channels:fc=$base:nixos-config=$base/nixos/platform"
