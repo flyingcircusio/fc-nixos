@@ -126,17 +126,19 @@ jobs // rec {
     phases = [ "installPhase" ];
     installPhase = ''
       mkdir -p $out/{tarballs,nix-support}
+      hbp="$out/nix-support/hydra-build-products"
 
       set -- ''${CHANNELS[@]}
       # 1=nix_name 2=channel_name 3=path
       while [[ -n "$1" ]]; do
-        dest=$out/tarballs/$1.tar.xz
+        dest=$out/tarballs/$2.tar.xz
         ln -s $3/tarballs/nixexprs.tar.xz $dest
-        echo "channel - $dest" >> "$out/nix-support/hydra-build-products"
+        echo "channel - $dest" >> $hbp
         echo "$1 $2" >> $out/nix-channels
         shift 3
       done
 
+      echo "file channels $out/nix-channels" >> $hbp
       echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
 
       # Propagate build failures.
