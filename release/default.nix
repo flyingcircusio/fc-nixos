@@ -79,6 +79,7 @@ let
       patchPhase = ''
         echo -n "${src.rev}" > .git-revision
       '';
+      passthru.channelName = src.name;
       meta.description = "${src.name} according to versions.json";
     })
     (removeAttrs upstreamSources [ "allUpstreams" ]);
@@ -95,6 +96,7 @@ let
         echo -n "${versionSuffix}" > .version-suffix
         echo -n "${fc.rev}" > .git-revision
       '';
+      passthru.channelName = "fc";
       meta = {
         description = "Main channel of the <fc> overlay";
         homepage = "https://flyingcircus.io/doc/";
@@ -115,21 +117,34 @@ jobs // rec {
     meta.description = "Indication that pkgs, tests and channels are fine";
   };
 
-  # XXX this is probably not exactly what we want...
-  release = lib.hydraJob (
-    pkgs.stdenv.mkDerivation {
-      CHANNELS = lib.mapAttrsToList (k: v: "${v.name} ${v}") channels;
-      name = "release-${version}${versionSuffix}";
-      src = tested;
-      phases = [ "installPhase" ];
-      installPhase = ''
-        mkdir $out
-        set -- ''${CHANNELS[@]}
-        # 1=name 2=path
-        while [[ -n "$1" && -n "$2" ]]; do
-          cp $2/tarballs/nixexprs.tar.xz $out/$1.tar.xz
-          shift 2
-        done
-      '';
-    });
+  release = with lib; pkgs.releaseTools.channel rec {
+    CHANNELS =
+      lib.mapAttrsToList (k: v: "${v.name} ${v.channelName} ${v}") channels;
+    constituents = attrValues channels;
+    src = constituents;
+    name = "release-${version}${versionSuffix}";
+    phases = [ "installPhase" ];
+    installPhase = ''
+      mkdir -p $out/{tarballs,nix-support}
+
+      set -- ''${CHANNELS[@]}
+      # 1=nix_name 2=channel_name 3=path
+      while [[ -n "$1" ]]; do
+        dest=$out/tarballs/$1.tar.xz
+        ln -s $3/tarballs/nixexprs.tar.xz $dest
+        echo "channel - $dest" >> "$out/nix-support/hydra-build-products"
+        echo "$1 $2" >> $out/nix-channels
+        shift 3
+      done
+
+      echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
+
+      # Propagate build failures.
+      for i in $constituents; do
+        if [ -e "$i/nix-support/failed" ]; then
+          touch "$out/nix-support/failed"
+        fi
+      done
+    '';
+  };
 }
