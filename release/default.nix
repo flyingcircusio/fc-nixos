@@ -71,10 +71,16 @@ let
     # inherit fc-manual tests;
   };
 
-  channelsUpstream = lib.mapAttrs
-    (name: src: pkgs.releaseTools.channel {
+  channelsUpstream =
+    lib.mapAttrs (name: src:
+    let
+      fullName =
+        if (parseDrvName name).version != ""
+        then "${src.name}.${substring 0 11 src.rev}"
+        else "${src.name}-0.${substring 0 11 src.rev}";
+    in pkgs.releaseTools.channel {
       inherit src;
-      name = "${src.name}-0.${substring 0 11 src.rev}";
+      name = fullName;
       constituents = [ src ];
       patchPhase = ''
         echo -n "${src.rev}" > .git-revision
@@ -119,7 +125,7 @@ jobs // rec {
 
   release = with lib; pkgs.releaseTools.channel rec {
     CHANNELS =
-      lib.mapAttrsToList (k: v: "${v.name} ${v.channelName} ${v}") channels;
+      lib.mapAttrsToList (k: v: "${k} ${v.name} ${v.channelName} ${v}") channels;
     constituents = attrValues channels;
     src = constituents;
     name = "release-${version}${versionSuffix}";
@@ -129,13 +135,13 @@ jobs // rec {
       hbp="$out/nix-support/hydra-build-products"
 
       set -- ''${CHANNELS[@]}
-      # 1=nix_name 2=channel_name 3=path
+      # 1=key (cleaned nix_name) 2=nix_name 3=channel_name 4=path
       while [[ -n "$1" ]]; do
-        dest=$out/tarballs/$1.tar.xz
-        cp $3/tarballs/nixexprs.tar.xz $dest
-        echo "channel $2 $dest" >> $hbp
-        echo "$1 $2" >> $out/nix-channels
-        shift 3
+        dest=$out/tarballs/$2.tar.xz
+        cp $4/tarballs/nixexprs.tar.xz $dest
+        echo "channel $1 $dest" >> $hbp
+        echo "$2 $3" >> $out/nix-channels
+        shift 4
       done
 
       echo "file - $out/nix-channels" >> $hbp
