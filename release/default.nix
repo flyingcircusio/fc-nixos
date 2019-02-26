@@ -131,14 +131,14 @@ jobs // rec {
       set -- ''${CHANNELS[@]}
       # 1=nix_name 2=channel_name 3=path
       while [[ -n "$1" ]]; do
-        dest=$out/tarballs/$2.tar.xz
+        dest=$out/tarballs/$1.tar.xz
         cp $3/tarballs/nixexprs.tar.xz $dest
-        echo "channel - $dest" >> $hbp
+        echo "channel $2 $dest" >> $hbp
         echo "$1 $2" >> $out/nix-channels
         shift 3
       done
 
-      echo "channel conf $out/nix-channels" >> $hbp
+      echo "file - $out/nix-channels" >> $hbp
       echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
 
       # Propagate build failures.
