@@ -17,9 +17,16 @@ if [[ -z $channels ]]; then
 fi
 mkdir -p channels
 find $channels -maxdepth 1 -type l | while read channel; do
-    ln -fs $channel channels/
+    target="channels/${channel##*/}"
+    # don't toucn anything which is not a link into the nix store
+    if [[ ! -L $target && -d $target ]]; then
+        continue
+    elif [[ -L $target && $(readlink $target) != /nix/store/* ]]; then
+        continue
+    fi
+    ln -fs $channel channels
 done
 if ! [[ -e channels/fc ]]; then
     ln -s .. channels/fc
 fi
-echo "export NIX_PATH=$base/channels:fc=$base:nixos-config=$base/nixos/platform"
+echo "export NIX_PATH=fc=$base:$base/channels:nixos-config=$base/nixos/platform"
