@@ -36,8 +36,11 @@ let
         PATH = with pkgs; lib.makeBinPath [ coreutils ];
         args = [ "-ec" ''
           mkdir $out
-          cp -r $allUpstreams/* $out
-          ln -s $fcSrc $out/fc
+          cp -rH $allUpstreams/* $out
+          cp -rH -s $fcSrc $out/fc
+          echo -n ${fc.rev} > $out/.git-revision
+          echo -n ${version} > $out/.version
+          echo -n ${versionSuffix} > $out/.version-suffix
         ''];
         preferLocalBuild = true;
       });
@@ -98,9 +101,9 @@ let
       constituents = [ fcSrc ];
       src = fcSrc;
       patchPhase = ''
-        echo -n "${version}" > .version
-        echo -n "${versionSuffix}" > .version-suffix
         echo -n "${fc.rev}" > .git-revision
+        echo -n "${versionSuffix}" > .version-suffix
+        echo -n "${version}" > .version
       '';
       passthru.channelName = "fc";
       meta = {
@@ -124,35 +127,8 @@ jobs // rec {
   };
 
   release = with lib; pkgs.releaseTools.channel rec {
-    CHANNELS =
-      lib.mapAttrsToList (k: v: "${k} ${v.name} ${v.channelName} ${v}") channels;
-    constituents = attrValues channels;
-    src = constituents;
     name = "release-${version}${versionSuffix}";
-    phases = [ "installPhase" ];
-    installPhase = ''
-      mkdir -p $out/{tarballs,nix-support}
-      hbp="$out/nix-support/hydra-build-products"
-
-      set -- ''${CHANNELS[@]}
-      # 1=key (cleaned nix_name) 2=nix_name 3=channel_name 4=path
-      while [[ -n "$1" ]]; do
-        dest=$out/tarballs/$2.tar.xz
-        cp $4/tarballs/nixexprs.tar.xz $dest
-        echo "channel $1 $dest" >> $hbp
-        echo "$2 $3" >> $out/nix-channels
-        shift 4
-      done
-
-      echo "file - $out/nix-channels" >> $hbp
-      echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
-
-      # Propagate build failures.
-      for i in $constituents; do
-        if [ -e "$i/nix-support/failed" ]; then
-          touch "$out/nix-support/failed"
-        fi
-      done
-    '';
+    src = allSources.out;
+    constituents = [ src ];
   };
 }
