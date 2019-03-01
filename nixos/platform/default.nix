@@ -4,7 +4,6 @@ with lib;
 {
 
   # make the image smaller
-  environment.noXlibs = mkDefault true;
   sound.enable = mkDefault false;
   documentation.enable = mkDefault false;
   services.nixosManual.enable = mkDefault false;

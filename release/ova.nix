@@ -1,5 +1,6 @@
 { nixpkgs        # path of upstream source tree
-, channelSources # initial contents of /root/.nix-defexpr
+, channelSources # initial content of /root/.nix-defexprs/channels/nixos
+, configFile     # initial /etc/nixos/configuration.nix
 , contents ? []  # files to be placed inside the image (see make-disk-image.nix)
 , version ? "0"
 }:
@@ -16,10 +17,10 @@ in {
 
   config = {
 
-    system.build.virtualBoxOVA_FC = import ./make-disk-image.nix {
+    system.build.virtualBoxOVA_FC = import "${nixpkgs}/nixos/lib/make-disk-image.nix" {
       name = cfg.vmDerivationName;
 
-      inherit pkgs lib config nixpkgs channelSources contents;
+      inherit pkgs lib config configFile;
       diskSize = cfg.baseImageSize;
 
       # copied from nixos/modules/virtualisation/virtualbox-image.nix

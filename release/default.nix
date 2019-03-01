@@ -26,29 +26,32 @@ let
   fcSrc = lib.cleanSource ../.;
   upstreamSources = (import ../nixpkgs.nix { pkgs = (import nixpkgs {}); });
 
-  allSources =
-    lib.hydraJob (
-      pkgs.stdenv.mkDerivation {
-        inherit fcSrc;
-        inherit (upstreamSources) allUpstreams;
-        name = "channel-sources-fc";
-        builder = pkgs.stdenv.shell;
-        PATH = with pkgs; lib.makeBinPath [ coreutils ];
-        args = [ "-ec" ''
-          mkdir $out
-          cp -rH $allUpstreams/* $out
-          cp -rH -s $fcSrc $out/fc
-          echo -n ${fc.rev} > $out/.git-revision
-          echo -n ${version} > $out/.version
-          echo -n ${versionSuffix} > $out/.version-suffix
-        ''];
-        preferLocalBuild = true;
-      });
+  combinedSources =
+    pkgs.stdenv.mkDerivation {
+      inherit fcSrc;
+      inherit (upstreamSources) allUpstreams;
+      name = "channel-sources-combined";
+      builder = pkgs.stdenv.shell;
+      PATH = with pkgs; lib.makeBinPath [ coreutils ];
+      args = [ "-ec" ''
+        mkdir $out
+        cp -r $allUpstreams/* $out
+        ln -s $fcSrc $out/fc
+        echo -n ${fc.rev} > $out/.git-revision
+        echo -n ${version} > $out/.version
+        echo -n ${versionSuffix} > $out/.version-suffix
+        echo -n ${versionSuffix} > $out/svn-revision
+      ''];
+      preferLocalBuild = true;
+    };
+
+  initialNixChannels = pkgs.writeText "nix-channels" ''
+    https://hydra.flyingcircus.io/channel/custom/flyingcircus/fc-${version}-dev/release nixos
+  '';
 
   initialVMContents = [
-    {
-      source = ../nixos/etc_nixos_local.nix;
-      target = "/etc/nixos/local.nix";
+    { source = initialNixChannels;
+      target = "/root/.nix-channels";
     }
   ];
 
@@ -60,7 +63,8 @@ let
           (import ./ova.nix {
             inherit nixpkgs;
             version = "${version}${versionSuffix}";
-            channelSources = allSources;
+            channelSources = combinedSources.out;
+            configFile = ../nixos/etc_nixos_local.nix;
             contents = initialVMContents;
           })
           ../nixos
@@ -128,7 +132,28 @@ jobs // rec {
 
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";
-    src = allSources.out;
+    src = combinedSources;
     constituents = [ src ];
+    preferLocalBuild = true;
+    XZ_OPT = "-1";
+
+    installPhase = ''
+      mkdir -p $out/{tarballs,nix-support}
+
+      tar cJhf "$out/tarballs/nixexprs.tar.xz" \
+        --owner=0 --group=0 --mtime="1970-01-01 00:00:00 UTC" \
+        --exclude fc/channels --exclude fc/result \
+        --transform='s!^\.!${name}!' .
+
+      echo "channel - $out/tarballs/nixexprs.tar.xz" > "$out/nix-support/hydra-build-products"
+      echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
+
+      # Propagate build failures.
+      for i in $constituents; do
+        if [ -e "$i/nix-support/failed" ]; then
+          touch "$out/nix-support/failed"
+        fi
+      done
+    '';
   };
 }
