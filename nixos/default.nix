@@ -6,6 +6,7 @@ with builtins;
   imports = [
     ./infrastructure
     ./platform
+    ./version.nix
   ];
 
   config = {

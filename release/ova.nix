@@ -17,10 +17,10 @@ in {
 
   config = {
 
-    system.build.virtualBoxOVA_FC = import "${nixpkgs}/nixos/lib/make-disk-image.nix" {
+    system.build.virtualBoxOVA_FC = import ./make-disk-image.nix {
       name = cfg.vmDerivationName;
 
-      inherit pkgs lib config configFile;
+      inherit pkgs lib config channelSources configFile contents;
       diskSize = cfg.baseImageSize;
 
       # copied from nixos/modules/virtualisation/virtualbox-image.nix

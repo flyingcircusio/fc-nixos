@@ -2,9 +2,14 @@
 { system ? builtins.currentSystem
 , bootstrap ? <nixpkgs>
 , nixpkgs ? (import ../nixpkgs.nix { pkgs = import bootstrap {}; }).nixpkgs
-, fc ? { outPath = ./.; revCount = 0; rev = "00000000000"; shortRev = "0000000"; }
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
+, fc ? {
+    outPath = ./.;
+    revCount = 0;
+    rev = "0000000000000000000000000000000000000000";
+    shortRev = "0000000";
+  }
 , scrubJobs ? true  # Strip most of attributes when evaluating
 }:
 
@@ -22,9 +27,27 @@ let
   versionSuffix =
     (if stableBranch then "." else ".dev") +
     "${toString fc.revCount}.${shortRev}";
+  version_nix = pkgs.writeText "version.nix" ''
+    { ... }:
+    {
+      system.nixos.revision = "${fc.rev}";
+      system.nixos.versionSuffix = "${versionSuffix}";
+    }
+  '';
 
-  fcSrc = lib.cleanSource ../.;
   upstreamSources = (import ../nixpkgs.nix { pkgs = (import nixpkgs {}); });
+  fcSrc = pkgs.stdenv.mkDerivation {
+    name = "fc-src";
+    src = lib.cleanSource ../.;
+    builder = pkgs.stdenv.shell;
+    PATH = with pkgs; lib.makeBinPath [ coreutils ];
+    args = [ "-ec" ''
+      cp -r $src $out
+      chmod +w $out/nixos/version.nix
+      cat ${version_nix} > $out/nixos/version.nix
+    ''];
+    preferLocalBuild = true;
+  };
 
   combinedSources =
     pkgs.stdenv.mkDerivation {
@@ -34,13 +57,12 @@ let
       builder = pkgs.stdenv.shell;
       PATH = with pkgs; lib.makeBinPath [ coreutils ];
       args = [ "-ec" ''
-        mkdir $out
-        cp -r $allUpstreams/* $out
-        ln -s $fcSrc $out/fc
-        echo -n ${fc.rev} > $out/.git-revision
-        echo -n ${version} > $out/.version
-        echo -n ${versionSuffix} > $out/.version-suffix
-        echo -n ${versionSuffix} > $out/svn-revision
+        mkdir -p $out/nixos
+        cp -r $allUpstreams/* $out/nixos/
+        ln -s $fcSrc $out/nixos/fc
+        echo -n ${fc.rev} > $out/nixos/.git-revision
+        echo -n ${version} > $out/nixos/.version
+        echo -n ${versionSuffix} > $out/nixos/.version-suffix
       ''];
       preferLocalBuild = true;
     };
@@ -53,6 +75,9 @@ let
     { source = initialNixChannels;
       target = "/root/.nix-channels";
     }
+    { source = ../nixos/etc_nixos_local.nix;
+      target = "/etc/nixos/local.nix";
+    }
   ];
 
   # A bootable VirtualBox OVA (i.e. packaged OVF image).
@@ -63,10 +88,11 @@ let
           (import ./ova.nix {
             inherit nixpkgs;
             version = "${version}${versionSuffix}";
-            channelSources = combinedSources.out;
+            channelSources = combinedSources;
             configFile = ../nixos/etc_nixos_local.nix;
             contents = initialVMContents;
           })
+          (import version_nix {})
           ../nixos
         ];
     }).config.system.build.virtualBoxOVA_FC);
@@ -98,8 +124,8 @@ let
     (removeAttrs upstreamSources [ "allUpstreams" ]);
 
   channels = channelsUpstream // {
-    # The name `fc` if important because if channel is added without an
-    # explicit name argument, it will be available as <fc>.
+    # The attribut ename `fc` if important because if channel is added without
+    # an explicit name argument, it will be available as <fc>.
     fc = with lib; pkgs.releaseTools.channel {
       name = "fc-${version}${versionSuffix}";
       constituents = [ fcSrc ];
@@ -133,17 +159,19 @@ jobs // rec {
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";
     src = combinedSources;
-    constituents = [ src ];
+    constituents = [ src tested ];
     preferLocalBuild = true;
     XZ_OPT = "-1";
+    tarOpts = ''
+      --owner=0 --group=0 --mtime="1970-01-01 00:00:00 UTC" \
+      --exclude fc/channels \
+      --transform='s!^\.!${name}!' \
+    '';
 
     installPhase = ''
       mkdir -p $out/{tarballs,nix-support}
-
-      tar cJhf "$out/tarballs/nixexprs.tar.xz" \
-        --owner=0 --group=0 --mtime="1970-01-01 00:00:00 UTC" \
-        --exclude fc/channels --exclude fc/result \
-        --transform='s!^\.!${name}!' .
+      cd nixos
+      tar cJhf $out/tarballs/nixexprs.tar.xz ${tarOpts} .
 
       echo "channel - $out/tarballs/nixexprs.tar.xz" > "$out/nix-support/hydra-build-products"
       echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
