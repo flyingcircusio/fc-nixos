@@ -37,7 +37,7 @@ let
 
   upstreamSources = (import ../nixpkgs.nix { pkgs = (import nixpkgs {}); });
   fcSrc = pkgs.stdenv.mkDerivation {
-    name = "fc-src";
+    name = "fc-overlay";
     src = lib.cleanSource ../.;
     builder = pkgs.stdenv.shell;
     PATH = with pkgs; lib.makeBinPath [ coreutils ];

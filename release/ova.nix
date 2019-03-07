@@ -51,10 +51,9 @@ in {
           mkdir -p $out
           fn="$out/${cfg.vmFileName}"
           VBoxManage export "$vmName" --output "$fn"
+          rm $diskImage
 
-          rm -v $diskImage
-
-          mkdir -p $out/nix-support
+          mkdir $out/nix-support
           echo "file ova $fn" >> $out/nix-support/hydra-build-products
         '';
       };

@@ -22,10 +22,10 @@
   #   installed in legacy mode.
   # For "none", no partition table is created. Enabling `installBootLoader`
   #   most likely fails as GRUB will probably refuse to install.
-  partitionTableType ? "legacy"
+  partitionTableType ? "efi"
 
-, # The root file system type.
-  fsType ? "ext4"
+, # the root filesystems fslabel (not partition label!)
+  rootLabel ? "nixos"
 
 , # The initial NixOS configuration file to be copied to
   # /etc/nixos/configuration.nix.
@@ -44,8 +44,6 @@
 }:
 
 assert partitionTableType == "legacy" || partitionTableType == "efi" || partitionTableType == "none";
-# We use -E offset=X below, which is only supported by e2fsprogs
-assert partitionTableType != "none" -> fsType == "ext4";
 
 with lib;
 
@@ -61,11 +59,6 @@ let format' = format; in let
     raw   = "img";
   }.${format};
 
-  rootPartition = { # switch-case
-    legacy = "1";
-    efi = "2";
-  }.${partitionTableType};
-
   partitionDiskScript = { # switch-case
     legacy = ''
       parted --script $diskImage -- \
@@ -73,11 +66,9 @@ let format' = format; in let
         mkpart primary ext4 1MiB -1
     '';
     efi = ''
-      parted --script $diskImage -- \
-        mklabel gpt \
-        mkpart ESP fat32 8MiB 256MiB \
-        set 1 boot on \
-        mkpart primary ext4 256MiB -1
+      sgdisk $diskImage -o -a 2048 \
+        -n 1:8192:0   -c 1:ROOT      -t 1:8300 \
+        -n 2:2048:+1M -c 2:BIOS-BOOT -t 2:EF02
     '';
     none = "";
   }.${partitionTableType};
@@ -88,7 +79,8 @@ let format' = format; in let
     [ rsync
       utillinux
       parted
-      e2fsprogs
+      gptfdisk
+      xfsprogs
       lkl
       config.system.build.nixos-install
       config.system.build.nixos-enter
@@ -105,16 +97,6 @@ let format' = format; in let
 
   prepareImage = ''
     export PATH=${binPath}
-
-    # Yes, mkfs.ext4 takes different units in different contexts. Fun.
-    sectorsToKilobytes() {
-      echo $(( ( "$1" * 512 ) / 1024 ))
-    }
-
-    sectorsToBytes() {
-      echo $(( "$1" * 512  ))
-    }
-
     mkdir $out
     diskImage=nixos.raw
     truncate -s ${toString diskSize}M $diskImage
@@ -123,11 +105,18 @@ let format' = format; in let
 
     ${if partitionTableType != "none" then ''
       # Get start & length of the root partition in sectors to $START and $SECTORS.
-      eval $(partx $diskImage -o START,SECTORS --nr ${rootPartition} --pairs)
-
-      mkfs.${fsType} -F -L nixos $diskImage -E offset=$(sectorsToBytes $START) $(sectorsToKilobytes $SECTORS)K
+      eval $(partx $diskImage -o START,SECTORS --nr 1 --pairs)
+      startMB=$((START / 2048))
+      sizeMB=$((SECTORS / 2048))
+      # mkfs.xfs does not support --offset, so we must place a separately
+      # generated XFS image into the main disk image.
+      truncate -s ''${sizeMB}M rootfs.img
+      mkfs.xfs -L ${rootLabel} rootfs.img
+      dd if=rootfs.img of=$diskImage bs=1M seek=$startMB count=$sizeMB \
+        conv=sparse,notrunc iflag=direct
+      rm rootfs.img
     '' else ''
-      mkfs.${fsType} -F -L nixos $diskImage
+      mkfs.xfs -L ${rootLabel} $diskImage
     ''}
 
     root="$PWD/root"
@@ -173,16 +162,17 @@ let format' = format; in let
       --system ${config.system.build.toplevel} --channel ${channelSources} --substituters ""
 
     echo "copying staging root to image..."
-    cptofs -p ${optionalString (partitionTableType != "none") "-P ${rootPartition}"} -t ${fsType} -i $diskImage $root/* /
+    cptofs ${optionalString (partitionTableType != "none") "-P 1"} -t xfs -i $diskImage $root/* /
   '';
 
-in pkgs.vmTools.runInLinuxVM (
+in
+pkgs.vmTools.runInLinuxVM (
   pkgs.runCommand name
     { preVM = prepareImage;
       buildInputs = with pkgs; [ utillinux e2fsprogs dosfstools ];
       postVM = ''
         ${if format == "raw" then ''
-          cp --sparse=always $diskImage $out/${filename}
+          mv $diskImage $out/${filename}
         '' else ''
           ${pkgs.qemu}/bin/qemu-img convert -f raw -O ${format} ${compress} $diskImage $out/${filename}
         ''}
@@ -193,8 +183,7 @@ in pkgs.vmTools.runInLinuxVM (
     }
     ''
       export PATH=${binPath}:$PATH
-
-      rootDisk=${if partitionTableType != "none" then "/dev/vda${rootPartition}" else "/dev/vda"}
+      rootDisk=${if partitionTableType != "none" then "/dev/vda1" else "/dev/vda"}
 
       # Some tools assume these exist
       ln -s vda /dev/xvda
@@ -203,14 +192,6 @@ in pkgs.vmTools.runInLinuxVM (
       mountPoint=/mnt
       mkdir $mountPoint
       mount $rootDisk $mountPoint
-
-      # Create the ESP and mount it. Unlike e2fsprogs, mkfs.vfat doesn't support an
-      # '-E offset=X' option, so we can't do this outside the VM.
-      ${optionalString (partitionTableType == "efi") ''
-        mkdir -p /mnt/boot
-        mkfs.vfat -n ESP /dev/vda1
-        mount /dev/vda1 /mnt/boot
-      ''}
 
       # Install a configuration.nix
       mkdir -p /mnt/etc/nixos
@@ -225,12 +206,5 @@ in pkgs.vmTools.runInLinuxVM (
       rm -f $mountPoint/etc/machine-id
 
       umount -R /mnt
-
-      # Make sure resize2fs works. Note that resize2fs has stricter criteria for resizing than a normal
-      # mount, so the `-c 0` and `-i 0` don't affect it. Setting it to `now` doesn't produce deterministic
-      # output, of course, but we can fix that when/if we start making images deterministic.
-      ${optionalString (fsType == "ext4") ''
-        tune2fs -T now -c 0 -i 0 $rootDisk
-      ''}
     ''
 )
