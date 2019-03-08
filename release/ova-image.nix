@@ -17,7 +17,9 @@ in {
 
   config = {
 
-    system.build.virtualBoxOVA_FC = import ./make-disk-image.nix {
+    flyingcircus.infrastructureModule = "virtualbox";
+
+    system.build.ovaImage = import ./make-disk-image.nix {
       name = cfg.vmDerivationName;
 
       inherit pkgs lib config channelSources configFile contents;
@@ -57,8 +59,6 @@ in {
           echo "file ova $fn" >> $out/nix-support/hydra-build-products
         '';
       };
-
-    flyingcircus.infrastructureModule = "virtualbox";
 
   };
 }

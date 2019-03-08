@@ -1,8 +1,8 @@
-nixos.qcow2
-nixos.raw
-/nixpkgs
+channels
+*.ova
+*.qcow2
+*.raw
 result
 result-*
 .*.sw?
-channels
-/tmp/
+tmp

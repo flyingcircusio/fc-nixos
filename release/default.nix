@@ -80,23 +80,6 @@ let
     }
   ];
 
-  # A bootable VirtualBox OVA (i.e. packaged OVF image).
-  ova =
-    lib.hydraJob ((import "${nixpkgs}/nixos/lib/eval-config.nix" {
-      inherit system;
-      modules = [
-          (import ./ova.nix {
-            inherit nixpkgs;
-            version = "${version}${versionSuffix}";
-            channelSources = combinedSources;
-            configFile = ../nixos/etc_nixos_local.nix;
-            contents = initialVMContents;
-          })
-          (import version_nix {})
-          ../nixos
-        ];
-    }).config.system.build.virtualBoxOVA_FC);
-
   modifiedPkgs = import ../pkgs/overlay.nix pkgs pkgs;
 
   jobs = {
@@ -145,26 +128,60 @@ let
     };
   };
 
-in
-
-jobs // rec {
-  inherit ova channels;
-
   tested = with lib; pkgs.releaseTools.aggregate {
     name = "tested";
     constituents = collect isDerivation (jobs // { inherit channels; });
     meta.description = "Indication that pkgs, tests and channels are fine";
   };
 
+  images =
+    let
+      imgArgs = {
+        inherit nixpkgs;
+        version = "${version}${versionSuffix}";
+        channelSources = combinedSources;
+        configFile = ../nixos/etc_nixos_local.nix;
+        contents = initialVMContents;
+      };
+    in
+    {
+    # A bootable VirtualBox OVA (i.e. packaged OVF image).
+    ova = lib.hydraJob (import "${nixpkgs}/nixos/lib/eval-config.nix" {
+      inherit system;
+      modules = [
+        (import ./ova-image.nix imgArgs)
+        (import version_nix {})
+        ../nixos
+      ];
+    }).config.system.build.ovaImage;
+
+    # VM image for the Flying Circus infrastructure.
+    fc = lib.hydraJob (import "${nixpkgs}/nixos/lib/eval-config.nix" {
+      inherit system;
+      modules = [
+        (import ./fc-image.nix imgArgs)
+        (import version_nix {})
+        ../nixos
+      ];
+    }).config.system.build.fcImage;
+    };
+
+in
+
+jobs // {
+  inherit channels tested images;
+
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";
     src = combinedSources;
     constituents = [ src tested ];
     preferLocalBuild = true;
+    patchPhase = "touch .update-on-nixos-rebuild";
+
     XZ_OPT = "-1";
     tarOpts = ''
       --owner=0 --group=0 --mtime="1970-01-01 00:00:00 UTC" \
-      --exclude fc/channels \
+      --exclude-vcs-ignores \
       --transform='s!^\.!${name}!' \
     '';
 

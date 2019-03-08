@@ -1,0 +1,106 @@
+{ config, lib, ... }:
+
+with lib;
+mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
+
+  nix.extraOptions = ''
+    http-connections = 2
+  '';
+
+  boot = {
+    consoleLogLevel = 7;
+
+    initrd.kernelModules = [
+      "i6300esb"
+      "virtio_blk"
+      "virtio_console"
+      "virtio_net"
+      "virtio_pci"
+      "virtio-rng"
+      "virtio_scsi"
+    ];
+
+    kernelParams = [
+      # Crash management
+      "panic=1"
+      "boot.panic_on_fail"
+
+      # Output management
+      "console=ttyS0"
+      "systemd.journald.forward_to_console=no"
+      "systemd.log_target=kmsg"
+      "nosetmode"
+    ];
+
+    loader.timeout = 3;
+    loader.grub = {
+      device = "/dev/disk/device-by-alias/root";
+      fsIdentifier = "provided";
+      gfxmodeBios = "text";
+    };
+
+    kernel.sysctl."vm.swappiness" = mkDefault 10;
+  };
+
+  fileSystems = {
+    "/" = {
+      device = "/dev/disk/by-label/root";
+      fsType = "xfs";
+    };
+    "/tmp" = {
+      device = "/dev/disk/by-label/tmp";
+      fsType = "xfs";
+    };
+  };
+
+  networking = {
+    domain = "fcio.net";
+    hostName = "default";  # XXX ENC hostname
+  };
+
+  swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
+
+  services = {
+    qemuGuest.enable = true;
+
+    openssh.permitRootLogin = "without-password";
+
+    # installs /dev/disk/device-by-alias/*
+    udev.extraRules = ''
+      # Select GRUB boot device
+      SUBSYSTEM=="block", KERNEL=="[vs]da", SYMLINK+="disk/device-by-alias/root"
+    '';
+
+    timesyncd.servers = [ "pool.ntp.org" ]; # XXX ENC NTP servers
+  };
+
+  systemd = {
+    ctrlAltDelUnit = "poweroff.target";
+    extraConfig = ''
+      RuntimeWatchdogSec=60
+    '';
+
+    timers.serial-console-liveness = {
+      description = "Timer for Serial console liveness marker";
+      requiredBy = [ "serial-getty@ttyS0.service" ];
+      timerConfig = {
+        Unit = "serial-console-liveness.service";
+        OnBootSec = "10m";
+        OnUnitActiveSec = "10m";
+      };
+    };
+
+    services.serial-console-liveness = {
+      description = "Serial console liveness marker";
+      serviceConfig.Type = "oneshot";
+      script = "echo \"$(date) -- SERIAL CONSOLE IS LIVE --\" > /dev/ttyS0";
+    };
+  };
+
+  users.users.root = {
+    initialHashedPassword = "*";
+    openssh.authorizedKeys.keys =
+      attrValues config.flyingcircus.static.adminKeys;
+  };
+
+}

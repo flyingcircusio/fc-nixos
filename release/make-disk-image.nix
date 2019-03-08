@@ -159,7 +159,8 @@ let format' = format; in let
 
     echo "running nixos-install..."
     nixos-install --root $root --no-bootloader --no-root-passwd \
-      --system ${config.system.build.toplevel} --channel ${channelSources} --substituters ""
+      --system ${config.system.build.toplevel} --channel ${channelSources} \
+      --substituters ""
 
     echo "copying staging root to image..."
     cptofs ${optionalString (partitionTableType != "none") "-P 1"} -t xfs -i $diskImage $root/* /
@@ -171,12 +172,10 @@ pkgs.vmTools.runInLinuxVM (
     { preVM = prepareImage;
       buildInputs = with pkgs; [ utillinux e2fsprogs dosfstools ];
       postVM = ''
-        ${if format == "raw" then ''
-          mv $diskImage $out/${filename}
-        '' else ''
+        ${lib.optionalString (format != "raw") ''
           ${pkgs.qemu}/bin/qemu-img convert -f raw -O ${format} ${compress} $diskImage $out/${filename}
+          diskImage=$out/${filename}
         ''}
-        diskImage=$out/${filename}
         ${postVM}
       '';
       memSize = 1024;
@@ -189,9 +188,8 @@ pkgs.vmTools.runInLinuxVM (
       ln -s vda /dev/xvda
       ln -s vda /dev/sda
 
-      mountPoint=/mnt
-      mkdir $mountPoint
-      mount $rootDisk $mountPoint
+      mkdir /mnt
+      mount $rootDisk /mnt
 
       # Install a configuration.nix
       mkdir -p /mnt/etc/nixos
@@ -199,11 +197,11 @@ pkgs.vmTools.runInLinuxVM (
         cp ${configFile} /mnt/etc/nixos/configuration.nix
       ''}
 
-      # Set up core system link, GRUB, etc.
-      NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+      echo "configuring core system link, GRUB, etc..."
+      NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 
       # The above scripts will generate a random machine-id and we don't want to bake a single ID into all our images
-      rm -f $mountPoint/etc/machine-id
+      rm -f /mnt/etc/machine-id
 
       umount -R /mnt
     ''

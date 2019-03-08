@@ -2,12 +2,15 @@
 
 {
 
-  imports = [ ./flyingcircus ./virtualbox ./vagrant ];
+  imports = [
+    ./flyingcircus.nix
+    ./virtualbox.nix
+    ./vagrant.nix
+  ];
 
   options = with lib; {
     flyingcircus.infrastructureModule = mkOption {
-      type = types.enum [ "flyingcircus" "virtualbox" "vagrant" ];
-      default = "flyingcircus";
+      type = with types; nullOr (enum [ "flyingcircus" "virtualbox" "vagrant" ]);
       example = "flyingcircus";
       description = "Load config module for specific infrastructure.";
     };
