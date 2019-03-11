@@ -32,7 +32,6 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
       "nosetmode"
     ];
 
-    loader.timeout = 3;
     loader.grub = {
       device = "/dev/disk/device-by-alias/root";
       fsIdentifier = "provided";

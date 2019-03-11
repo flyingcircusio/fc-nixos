@@ -4,6 +4,7 @@ with builtins;
 
 {
   imports = [
+    ./lib
     ./infrastructure
     ./platform
     ./version.nix

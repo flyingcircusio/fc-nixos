@@ -3,11 +3,15 @@
 with lib;
 {
   imports = [
-    ./network.nix
     ./static.nix
+    ./enc.nix
+    ./users.nix
+    ./network.nix
   ];
 
   config = {
+
+    boot.loader.timeout = 3;
 
     # make the image smaller
     sound.enable = mkDefault false;
