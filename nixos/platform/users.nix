@@ -13,18 +13,22 @@
 # 30.000 - 31.000: reserved for NixOS-specific stuff
 # 31.000 - 65.534: reserved for Flying Circus-specific system groups
 
+with builtins;
+
 let
 
-  cfg = config.flyingcircus;
+  cfg = config.flyingcircus.users;
+
+  fclib = config.fclib;
 
   primaryGroup = user:
-    builtins.getAttr user.class {
+    getAttr user.class {
       human = "users";
       service = "service";
     };
 
   # Data read from Directory (list) -> users.users structure (list)
-  map_userdata = users: serviceUserExtraGroups:
+  mapUserData = users: serviceUserExtraGroups:
     lib.listToAttrs
       (map
         (user: {
@@ -32,7 +36,8 @@ let
           value = {
             description = user.name;
             group = primaryGroup user;
-            extraGroups = (if user.class == "service" then serviceUserExtraGroups else []);
+            extraGroups =
+              lib.optionals (user.class == "service") serviceUserExtraGroups;
             hashedPassword = lib.removePrefix "{CRYPT}" user.password;
             home = user.home_directory;
             isNormalUser = true;
@@ -43,35 +48,30 @@ let
         })
       users);
 
-  admins_group =
-    lib.optionalAttrs
-      (cfg.admins_group_data != {})
-      { ${cfg.admins_group_data.name}.gid = cfg.admins_group_data.gid; };
-
-  current_rg =
-    if lib.hasAttrByPath ["parameters" "resource_group"] cfg.enc
-    then cfg.enc.parameters.resource_group
+  currentRG = with config.flyingcircus;
+    if lib.hasAttrByPath [ "parameters" "resource_group" ] enc
+    then enc.parameters.resource_group
     else null;
 
-  get_group_memberships_for_user = user:
-    if current_rg != null && builtins.hasAttr current_rg user.permissions
+  groupMembershipsFor = user:
+    if currentRG != null && lib.hasAttr currentRG user.permissions
     then
       lib.listToAttrs
         (map
           # making members a scalar here so that zipAttrs automatically joins
           # them but doesn't create a list of lists.
           (perm: { name = perm; value = { members = user.uid; }; })
-          (builtins.getAttr current_rg user.permissions))
+          (getAttr currentRG user.permissions))
     else {};
 
   # user list from directory -> { groupname.members = [a b c], ...}
-  get_group_memberships = users:
+  groupMemberships = users:
     lib.mapAttrs (name: groupdata: lib.zipAttrs groupdata)
-      (lib.zipAttrs (map get_group_memberships_for_user users));
+      (lib.zipAttrs (map groupMembershipsFor users));
 
-  get_permission_groups = permissions:
+  permissionGroups = permissions:
     lib.listToAttrs
-      (builtins.filter
+      (filter
         (group: group.name != "wheel")  # This group already exists
         (map
           (permission: {
@@ -82,91 +82,129 @@ let
           })
           permissions));
 
-  home_dir_permissions =
-    userdata: map
-    (user: ''
+  homeDirPermissions = userdata:
+    map (user: ''
       install -d -o ${toString user.id} -g ${primaryGroup user} -m 0755 ${user.home_directory}
     '')
     userdata;
 
   # merge a list of sets recursively
   mergeSets = listOfSets:
-    if (builtins.length listOfSets) == 1 then
-      builtins.head listOfSets
+    if (length listOfSets) == 1 then
+      head listOfSets
     else
       lib.recursiveUpdate
-        (builtins.head listOfSets)
-        (mergeSets (builtins.tail listOfSets));
-
-  accessConf = pkgs.writeText "access.conf" ''
-    # Local logins are always fine. This is to unblock any automation like
-    # systemd services
-    + : ALL : LOCAL
-    # Remote logins are restricted to admins and the login group.
-    + : root (admins) (login): ALL
-    # Other remote logins are not allowed.
-    - : ALL : ALL
-  '';
+        (head listOfSets)
+        (mergeSets (tail listOfSets));
 
 in
-
 {
 
-  options = {
-    flyingcircus.users.serviceUsers.extraGroups = lib.mkOption {
+  options.flyingcircus.users = with lib.types; {
+
+    serviceUsers.extraGroups = lib.mkOption {
       type = with lib.types; listOf str;
-      default = [ ];
+      default = [];
       description = ''
         Names of groups that service users should (additionally)
         be members of.
       '';
     };
+
+    userData = lib.mkOption {
+      type = listOf attrs;
+      description = "All users local to this system.";
+    };
+
+    userDataPath = lib.mkOption {
+      default = /etc/nixos/users.json;
+      type = path;
+      description = "Where to find the user json file.";
+    };
+
+    permissions = lib.mkOption {
+      type = listOf attrs;
+      description = "All permissions known on this system.";
+    };
+
+    permissionsPath = lib.mkOption {
+      default = /etc/nixos/permissions.json;
+      type = path;
+      description = ''
+        Where to find the permissions json file.
+      '';
+    };
+
+    adminsGroup = lib.mkOption {
+      type = attrs;
+      description = "Super admins GID and contact addresses.";
+    };
+
+    adminsGroupPath = lib.mkOption {
+      default = /etc/nixos/admins.json;
+      type = path;
+      description = ''
+        Where to find the admins group json file.
+      '';
+    };
+
   };
 
   config = {
 
+    flyingcircus.users = with lib; {
+      userData = mkDefault (fclib.jsonFromFile cfg.userDataPath "[]");
+      permissions = mkDefault (fclib.jsonFromFile cfg.permissionsPath "[]");
+      adminsGroup = mkDefault (fclib.jsonFromFile cfg.adminsGroupPath "{}");
+    };
+
     security.pam.services.sshd.showMotd = true;
-    security.pam.services.sshd.text = lib.mkBefore ''
-      auth required pam_access.so accessfile=${accessConf}
+
+    security.sudo = {
+      extraConfig = ''
+        Defaults set_home,!authenticate,!mail_no_user
+        Defaults lecture = never
+      '';
+
+      # needs to be first in sudoers because of the %admins rule
+      extraRules = lib.mkBefore [
+        # Allow unrestricted access to super admins
+        {
+          groups = [ "admins" ];
+          commands = [ { command = "ALL"; options = [ "PASSWD" ]; } ];
+        }
+        # Allow sudo-srv users to become service user
+        { groups = [ "sudo-srv" ]; runAs = "%service"; commands = [ "ALL" ]; }
+        # Allow applying config and restarting services to service users
+        {
+          groups = [ "sudo-srv" "service" ];
+          commands = [ "${pkgs.systemd}/bin/systemctl" ];
+        }
+      ];
+    };
+
+    services.openssh.extraConfig = ''
+      AllowGroups=admin login
     '';
 
-    users = {
+    users =
+      let adminsGroup =
+        lib.optionalAttrs (cfg.adminsGroup != {})
+        { ${cfg.adminsGroup.name}.gid = cfg.adminsGroup.gid; };
+      in {
       mutableUsers = false;
-      users = map_userdata cfg.userdata cfg.users.serviceUsers.extraGroups;
+      users = mapUserData cfg.userData cfg.serviceUsers.extraGroups;
       groups = mergeSets [
-          admins_group
+          adminsGroup
           { service.gid = config.ids.gids.service; }
-          (get_group_memberships cfg.userdata)
-          (get_permission_groups cfg.permissionsdata)
+          (groupMemberships cfg.userData)
+          (permissionGroups cfg.permissions)
         ];
     };
 
-    # needs to be first in sudoers because of the %admins rule
-    security.sudo.extraConfig = lib.mkBefore ''
-      Defaults set_home,!authenticate,!mail_no_user
-      Defaults lecture = never
-
-      # Allow unrestricted access to super admins
-      %admins ALL=(ALL) PASSWD: ALL
-
-      # Allow sudo-srv users to become service user.
-      %sudo-srv ALL=(%service) ALL
-
-      # Allow applying config and restarting services to service users
-      Cmnd_Alias  SYSTEMCTL = ${pkgs.systemd}/bin/systemctl
-      %sudo-srv ALL=(root) SYSTEMCTL
-      %service  ALL=(root) SYSTEMCTL
-
-      # XXX move to more appropiate location
-      # Allow iotop to anaylyze disk io.
-      Cmnd_Alias  IOTOP = ${pkgs.iotop}/bin/iotop
-      %sudo-srv ALL=(root) IOTOP
-      %service  ALL=(root) IOTOP
-
-    '';
-
-    system.activationScripts.fcio-homedirpermissions = lib.stringAfter [ "users" ]
-      (builtins.concatStringsSep "\n" (home_dir_permissions cfg.userdata));
+    system.activationScripts.fc-homedir-permissions =
+      lib.stringAfter [ "users" ]
+      (concatStringsSep "\n" (homeDirPermissions cfg.userData));
 
   };
 }

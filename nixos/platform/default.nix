@@ -24,6 +24,10 @@ with lib;
       "nixos-config=/etc/nixos/configuration.nix"
     ];
 
+    nix.extraOptions = ''
+      substituters = https://hydra.flyingcircus.io https://cache.nixos.org
+    '';
+
     services.openssh.enable = true;
 
     i18n.supportedLocales = [ (config.i18n.defaultLocale + "/UTF-8") ];
