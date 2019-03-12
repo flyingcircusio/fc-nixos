@@ -18,15 +18,27 @@ with lib;
     documentation.enable = mkDefault false;
     services.nixosManual.enable = mkDefault false;
 
-    nix.nixPath = [
-      "/nix/var/nix/profiles/per-user/root/channels/nixos"
-      "/nix/var/nix/profiles/per-user/root/channels"
-      "nixos-config=/etc/nixos/configuration.nix"
-    ];
+    nix = {
+      nixPath = [
+        "/nix/var/nix/profiles/per-user/root/channels/nixos"
+        "/nix/var/nix/profiles/per-user/root/channels"
+        "nixos-config=/etc/nixos/configuration.nix"
+      ];
 
-    nix.extraOptions = ''
-      substituters = https://hydra.flyingcircus.io https://cache.nixos.org
-    '';
+      binaryCaches = [
+        https://cache.nixos.org
+        https://hydra.flyingcircus.io
+      ];
+
+      binaryCachePublicKeys = [
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        "flyingcircus.io-1:Rr9CwiPv8cdVf3EQu633IOTb6iJKnWbVfCC8x8gVz2o="
+      ];
+
+      extraOptions = ''
+        fallback = true
+      '';
+    };
 
     services.openssh.enable = true;
 
