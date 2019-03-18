@@ -41,6 +41,11 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
     kernel.sysctl."vm.swappiness" = mkDefault 10;
   };
 
+  environment.systemPackages = with pkgs; [
+    fc.box
+    fc.userscan
+  ];
+
   fileSystems = {
     "/" = {
       device = "/dev/disk/by-label/root";
@@ -59,10 +64,12 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
 
   swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
 
+  security.setuidPrograms = [ "box" ];
+
   services = {
     qemuGuest.enable = true;
 
-    openssh.permitRootLogin = "without-password";
+    openssh.passwordAuthentication = false;
 
     # installs /dev/disk/device-by-alias/*
     udev.extraRules = ''

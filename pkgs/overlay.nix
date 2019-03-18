@@ -5,4 +5,9 @@ self: super:
 
   # overrides for upstream packages follow
   collectdproxy = super.callPackage ./collectdproxy {};
+
+  # we use a newer version than on upstream
+  vulnix = super.callPackage ./vulnix.nix {
+    pythonPackages = self.python3Packages;
+  };
 }

@@ -1,0 +1,14 @@
+[package]
+name = "logcheck-helper"
+version = "1.0.0"
+authors = ["Christian Kauhaus <kc@flyingcircus.io>"]
+description = "Derive a correct regular expression for logcheck ignore patterns"
+
+[dependencies]
+linefeed = "0.5"
+regex = "1"
+serde_yaml = "0.7"
+colored = "1"
+
+[profile.release]
+lto = true

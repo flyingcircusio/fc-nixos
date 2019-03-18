@@ -3,10 +3,12 @@
 with lib;
 {
   imports = [
-    ./static.nix
     ./enc.nix
-    ./users.nix
     ./network.nix
+    ./packages.nix
+    ./shell.nix
+    ./static.nix
+    ./users.nix
   ];
 
   config = {
