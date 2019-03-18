@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 with lib;
 mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
@@ -42,7 +42,7 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
   };
 
   environment.systemPackages = with pkgs; [
-    fc.box
+    #fc.box  # XXX
     fc.userscan
   ];
 
@@ -64,7 +64,8 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
 
   swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
 
-  security.setuidPrograms = [ "box" ];
+  # XXX doesn't work anymore -- switch to security.wrappers
+  #security.setuidPrograms = [ "box" ];
 
   services = {
     qemuGuest.enable = true;
