@@ -48,6 +48,6 @@ pythonPackages.buildPythonApplication rec {
     description = "NixOS vulnerability scanner";
     homepage = https://github.com/flyingcircusio/vulnix;
     license = licenses.bsd3;
-    maintainers = with maintainers; [ ckauhaus plumps ];
+    maintainers = with maintainers; [ ckauhaus ];
   };
 }

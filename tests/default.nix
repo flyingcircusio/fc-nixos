@@ -1,11 +1,15 @@
 { system ? builtins.currentSystem
-, pkgs ? import <nixpkgs> { inherit system; }
-, nixpkgs ? pkgs.path
+, nixpkgs ? (import ../nixpkgs.nix {}).nixpkgs
+, pkgs ? import nixpkgs { inherit system; }
 }:
 
 let
-  callTest = f: f.test;
-  makeTest = import "${nixpkgs}/nixos/tests/make-test.nix";
+  importTest = fn: args: system: import fn ({
+    inherit system;
+  } // args);
+
+  callTest = fn: args: pkgs.lib.hydraJob (importTest fn args system);
 
 in {
+  login = callTest ./login.nix {};
 }

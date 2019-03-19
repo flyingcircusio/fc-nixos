@@ -9,6 +9,7 @@ let
       inherit (self) callPackage;
       inherit pkgs;
     };
+
   };
 
-in self
+in self.fc

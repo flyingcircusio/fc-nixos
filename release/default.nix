@@ -80,11 +80,14 @@ let
     }
   ];
 
-  modifiedPkgs = import ../pkgs/overlay.nix pkgs pkgs;
+  modifiedPkgNames = attrNames (import ../pkgs/overlay.nix pkgs pkgs);
+
+  modifiedPkgs =
+    listToAttrs (map (n: { name = n; value = pkgs.${n}; }) modifiedPkgNames);
 
   jobs = {
     pkgs = mapTestOn (packagePlatforms modifiedPkgs);
-    # inherit fc-manual tests;
+    tests = import ../tests { inherit system nixpkgs pkgs; };
   };
 
   channelsUpstream =
