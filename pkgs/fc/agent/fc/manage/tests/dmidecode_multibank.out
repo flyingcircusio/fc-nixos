@@ -1,0 +1,188 @@
+# SMBIOS implementations newer than version 2.7 are not
+# fully supported by this version of dmidecode.
+BIOS Information
+	Vendor: SeaBIOS
+	Version: rel-1.8.2-0-g33fbe13 by qemu-project.org
+	Release Date: 04/01/2014
+	Address: 0xE8000
+	Runtime Size: 96 kB
+	ROM Size: 64 kB
+	Characteristics:
+		BIOS characteristics not supported
+		Targeted content distribution is supported
+	BIOS Revision: 0.0
+
+System Information
+	Manufacturer: QEMU
+	Product Name: Standard PC (i440FX + PIIX, 1996)
+	Version: pc-i440fx-2.5
+	Serial Number: Not Specified
+	UUID: Not Settable
+	Wake-up Type: Power Switch
+	SKU Number: Not Specified
+	Family: Not Specified
+
+Chassis Information
+	Manufacturer: QEMU
+	Type: Other
+	Lock: Not Present
+	Version: pc-i440fx-2.5
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Boot-up State: Safe
+	Power Supply State: Safe
+	Thermal State: Safe
+	Security Status: Unknown
+	OEM Information: 0x00000000
+	Height: Unspecified
+	Number Of Power Cords: Unspecified
+	Contained Elements: 0
+
+Processor Information
+	Socket Designation: CPU 0
+	Type: Central Processor
+	Family: Other
+	Manufacturer: QEMU
+	ID: 63 06 00 00 FD FB 8B 07
+	Version: pc-i440fx-2.5
+	Voltage: Unknown
+	External Clock: Unknown
+	Max Speed: 2000 MHz
+	Current Speed: 2000 MHz
+	Status: Populated, Enabled
+	Upgrade: Other
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Core Count: 1
+	Core Enabled: 1
+	Thread Count: 1
+	Characteristics: None
+
+Processor Information
+	Socket Designation: CPU 1
+	Type: Central Processor
+	Family: Other
+	Manufacturer: QEMU
+	ID: 63 06 00 00 FD FB 8B 07
+	Version: pc-i440fx-2.5
+	Voltage: Unknown
+	External Clock: Unknown
+	Max Speed: 2000 MHz
+	Current Speed: 2000 MHz
+	Status: Populated, Enabled
+	Upgrade: Other
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Core Count: 1
+	Core Enabled: 1
+	Thread Count: 1
+	Characteristics: None
+
+Processor Information
+	Socket Designation: CPU 2
+	Type: Central Processor
+	Family: Other
+	Manufacturer: QEMU
+	ID: 63 06 00 00 FD FB 8B 07
+	Version: pc-i440fx-2.5
+	Voltage: Unknown
+	External Clock: Unknown
+	Max Speed: 2000 MHz
+	Current Speed: 2000 MHz
+	Status: Populated, Enabled
+	Upgrade: Other
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Core Count: 1
+	Core Enabled: 1
+	Thread Count: 1
+	Characteristics: None
+
+Processor Information
+	Socket Designation: CPU 3
+	Type: Central Processor
+	Family: Other
+	Manufacturer: QEMU
+	ID: 63 06 00 00 FD FB 8B 07
+	Version: pc-i440fx-2.5
+	Voltage: Unknown
+	External Clock: Unknown
+	Max Speed: 2000 MHz
+	Current Speed: 2000 MHz
+	Status: Populated, Enabled
+	Upgrade: Other
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Core Count: 1
+	Core Enabled: 1
+	Thread Count: 1
+	Characteristics: None
+
+Physical Memory Array
+	Location: Other
+	Use: System Memory
+	Error Correction Type: Multi-bit ECC
+	Maximum Capacity: 24 GB
+	Number Of Devices: 2
+
+Memory Device
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: 16384 MB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM 0
+	Bank Locator: Not Specified
+	Type: RAM
+	Type Detail: Other
+	Speed: Unknown
+	Manufacturer: QEMU
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: Unknown
+	Configured Clock Speed: Unknown
+	Minimum voltage:  Unknown
+	Maximum voltage:  Unknown
+	Configured voltage:  Unknown
+
+Memory Device
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: 8192 MB
+	Form Factor: DIMM
+	Set: None
+	Locator: DIMM 1
+	Bank Locator: Not Specified
+	Type: RAM
+	Type Detail: Other
+	Speed: Unknown
+	Manufacturer: QEMU
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+	Rank: Unknown
+	Configured Clock Speed: Unknown
+	Minimum voltage:  Unknown
+	Maximum voltage:  Unknown
+	Configured voltage:  Unknown
+
+Memory Array Mapped Address
+	Starting Address: 0x00000000000
+	Ending Address: 0x000BFFFFFFF
+	Range Size: 3 GB
+	Partition Width: 1
+
+Memory Array Mapped Address
+	Starting Address: 0x00100000000
+	Ending Address: 0x0063FFFFFFF
+	Range Size: 21 GB
+	Partition Width: 1
+
+System Boot Information
+	Status: No errors detected
+

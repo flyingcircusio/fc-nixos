@@ -1,0 +1,3 @@
+recursive-include fc *.py *.out
+include README.rst
+include *.nix

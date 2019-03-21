@@ -1,8 +1,16 @@
+bin/
 channels
+dist/
+*.egg-info/
+.eggs/
+lib64
 *.ova
+__pycache__/
+pyvenv.cfg
 *.qcow2
 *.raw
 result
 result-*
+share/
 .*.sw?
-tmp
+tmp/

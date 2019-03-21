@@ -42,7 +42,7 @@ with lib;
       '';
     };
 
-    services.openssh.enable = true;
+    services.openssh.enable = mkDefault true;
 
     i18n.supportedLocales = [ (config.i18n.defaultLocale + "/UTF-8") ];
 
