@@ -12,4 +12,5 @@ let
 
 in {
   login = callTest ./login.nix {};
+  sudo = callTest ./sudo.nix {};
 }

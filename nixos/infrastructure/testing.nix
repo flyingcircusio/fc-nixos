@@ -15,6 +15,7 @@
       name = "testvm";
     };
     # flyingcircus.ssl.generate_dhparams = false;
+    services.openssh.enable = lib.mkOverride 60 false;
     security.rngd.enable = false;
   };
 }
