@@ -39,6 +39,7 @@ py.buildPythonPackage rec {
     py.freezegun
     py.pytest
     py.pytestcov
+    py.pytestrunner
   ];
   propagatedBuildInputs = [
     dmidecode

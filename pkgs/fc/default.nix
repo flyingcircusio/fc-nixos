@@ -3,7 +3,8 @@
 {
   recurseForDerivations = true;
 
-  userscan = callPackage ./userscan.nix {};
-  multiping = callPackage ./multiping.nix {};
+  agent = callPackage ./agent {};
   logcheckhelper = callPackage ./logcheckhelper {};
+  multiping = callPackage ./multiping.nix {};
+  userscan = callPackage ./userscan.nix {};
 }

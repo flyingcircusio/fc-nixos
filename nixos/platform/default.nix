@@ -3,6 +3,7 @@
 with lib;
 {
   imports = [
+    ./agent.nix
     ./enc.nix
     ./network.nix
     ./packages.nix
@@ -17,7 +18,8 @@ with lib;
 
     # make the image smaller
     sound.enable = mkDefault false;
-    documentation.enable = mkDefault false;
+    documentation.dev.enable = mkDefault false;
+    documentation.doc.enable = mkDefault false;
     services.nixosManual.enable = mkDefault false;
 
     nix = {

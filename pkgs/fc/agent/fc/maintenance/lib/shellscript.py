@@ -5,9 +5,9 @@ or as a separate file. In case that there is no shebang line in the
 file, it is executed with /bin/sh.
 """
 
-from fc.maintenance.activity import Activity
-from fc.maintenance.reqmanager import ReqManager, DEFAULT_DIR, setup_logging
-from fc.maintenance.request import Request
+from ..activity import Activity
+from ..reqmanager import ReqManager, DEFAULT_DIR, setup_logging
+from ..request import Request
 
 import argparse
 import io

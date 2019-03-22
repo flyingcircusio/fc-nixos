@@ -4,9 +4,9 @@ This activity does nothing if the machine has been booted for another reason in
 the time between creation and execution.
 """
 
-from fc.maintenance.activity import Activity
-from fc.maintenance.reqmanager import ReqManager, DEFAULT_DIR, setup_logging
-from fc.maintenance.request import Request
+from ..activity import Activity
+from ..reqmanager import ReqManager, DEFAULT_DIR, setup_logging
+from ..request import Request
 
 import argparse
 import subprocess

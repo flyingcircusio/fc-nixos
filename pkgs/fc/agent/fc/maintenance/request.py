@@ -1,6 +1,7 @@
 from .estimate import Estimate
 from .state import State, evaluate_state
 
+
 import contextlib
 import copy
 import datetime
@@ -94,6 +95,9 @@ class Request:
 
     @classmethod
     def load(cls, dir):
+        # need imports because such objects may be loaded via YAML
+        import fc.maintenance.lib.reboot
+        import fc.maintenance.lib.shellscript
         with open(p.join(dir, 'request.yaml')) as f:
             instance = yaml.load(f, Loader=yaml.FullLoader)
             if instance.next_due and not instance.next_due.tzinfo:

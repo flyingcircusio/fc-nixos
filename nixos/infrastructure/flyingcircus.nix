@@ -59,7 +59,7 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
 
   networking = {
     domain = "fcio.net";
-    hostName = "default";  # XXX ENC hostname
+    hostName = attrByPath [ "name" ] "default" config.flyingcircus.enc;
   };
 
   swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
