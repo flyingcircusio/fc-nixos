@@ -36,7 +36,6 @@ setup(
     version='0.1',
     description=__doc__,
     long_description=long_description,
-    url='https://XXXX',
     author='Christian Zagrodnick',
     author_email='cz@flyingcircus.io',
     license='ZPL',

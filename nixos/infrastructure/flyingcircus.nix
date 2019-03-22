@@ -1,7 +1,10 @@
 { config, lib, pkgs, ... }:
 
+let
+  cfg = config.flyingcircus;
+in
 with lib;
-mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
+mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   nix.extraOptions = ''
     http-connections = 2
@@ -42,7 +45,7 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
   };
 
   environment.systemPackages = with pkgs; [
-    #fc.box  # XXX
+    fc.box
     fc.userscan
   ];
 
@@ -62,13 +65,12 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
 
   networking = {
     domain = "fcio.net";
-    hostName = attrByPath [ "name" ] "default" config.flyingcircus.enc;
+    hostName = attrByPath [ "name" ] "default" cfg.enc;
   };
 
   swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
 
-  # XXX doesn't work anymore -- switch to security.wrappers
-  #security.setuidPrograms = [ "box" ];
+  security.wrappers.box.source = "${pkgs.fc.box}/bin/box";
 
   services = {
     qemuGuest.enable = true;
@@ -81,7 +83,11 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
       SUBSYSTEM=="block", KERNEL=="[vs]da", SYMLINK+="disk/device-by-alias/root"
     '';
 
-    timesyncd.servers = [ "pool.ntp.org" ]; # XXX ENC NTP servers
+    timesyncd.servers =
+      let
+        loc = attrByPath [ "parameters" "location" ] "" cfg.enc;
+      in
+      attrByPath [ "static" "ntpServers" loc ] [ "pool.ntp.org" ] cfg;
   };
 
   systemd = {
@@ -110,7 +116,7 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
   users.users.root = {
     initialHashedPassword = "*";
     openssh.authorizedKeys.keys =
-      attrValues config.flyingcircus.static.adminKeys;
+      attrValues cfg.static.adminKeys;
   };
 
 }

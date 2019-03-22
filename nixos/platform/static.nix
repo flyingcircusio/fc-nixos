@@ -96,15 +96,13 @@ with lib;
         ];
       };
 
-      ntpservers = {
+      ntpServers = {
         # Those are the routers and backup servers. This needs to move to the
         # directory service discovery.
         dev = [ "barney" "eddie" "patty"];
         whq = [ "barbrady01" "terri" "bob" "lou" ];
         rzob = [ "kenny06" "kenny07" "barbrady02" ];
         rzrl1 = [ "kenny02" "kenny03" "barbrady03" ];
-        # Location-independent NTP servers from the global public pool.
-        standalone = [ "0.pool.ntp.org" "1.pool.ntp.org" "2.pool.ntp.org" ];
       };
 
       adminKeys = {
