@@ -54,8 +54,11 @@ mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
     "/tmp" = {
       device = "/dev/disk/by-label/tmp";
       fsType = "xfs";
+      noCheck = true;
     };
   };
+
+  flyingcircus.quota.enable = true;
 
   networking = {
     domain = "fcio.net";

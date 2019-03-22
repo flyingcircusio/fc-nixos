@@ -40,20 +40,29 @@ class Channel:
 
     # global, to avoid re-connecting (with ssl handshake and all)
     session = requests.session()
-    hydra_reachable = True
     is_local = False
 
-    def __init__(self, url):
+    def __init__(self, url, name=None):
         self.url = url
+        self.name = name
         if url.startswith("file://"):
             self.is_local = True
             self.resolved_url = url.replace('file://', '')
             return
         self.resolved_url = url.rstrip('/')
 
+    def version(self):
+        label_comp = [
+            '/root/.nix-defexpr/channels/{}/{}'.format(self.name, c)
+            for c in ['.version', '.version-suffix']]
+        if all(p.exists(f) for f in label_comp):
+            return ''.join(open(f).read() for f in label_comp)
+
     def __str__(self):
-        # XXX look up version
-        return '<Channel {}>'.format(self.resolved_url)
+        v = self.version()
+        if v:
+            return '<Channel {} {}>'.format(self.name, v)
+        return '<Channel {} {}>'.format(self.name, self.resolved_url)
 
     def __eq__(self, other):
         if isinstance(other, Channel):
@@ -62,6 +71,7 @@ class Channel:
 
     @classmethod
     def current(cls, channel_name):
+        """Looks up existing channel by name."""
         if not p.exists('/root/.nix-channels'):
             return
         try:
@@ -69,7 +79,7 @@ class Channel:
                 for line in f.readlines():
                     url, name = line.strip().split(' ', 1)
                     if name == channel_name:
-                        return Channel(url)
+                        return Channel(url, name)
         except OSError:
             _log.exception('Failed to read .nix-channels')
             raise
@@ -78,25 +88,32 @@ class Channel:
         """Load channel as given name."""
         if self.is_local:
             raise RuntimeError("`load` not applicable for local channels")
-        if not self.hydra_reachable:
-            _log.warn("Hydra not reachable - skipping update")
-            return
-        _log.info("Performing channel update from %s", self.resolved_url)
+        _log.info("Updating channel from %s", self.resolved_url)
         subprocess.check_call(
             ['nix-channel', '--add', self.resolved_url, name])
         subprocess.check_call(['nix-channel', '--update', name])
+        self.name = name
+
+    def check_local_channel(self):
+        if not p.exists(p.join(self.resolved_url, 'fc')):
+            _log.warn(
+                "Expected NIX_PATH element 'fc' not found in %s. Did you "
+                "create a 'channels' directory via `dev-setup` and point "
+                "the channel URL towards that directory?",
+                self.resolved_url)
 
     def switch(self, build_options):
         """Build the "self" channel and switch system to it."""
-        _log.info('Building {}'.format(self))
+        _log.info('Building %s', self)
         args = ['nixos-rebuild', '--no-build-output']
         if self.is_local:
-            args.extend(['-I', 'nixpkgs=' + self.resolved_url])
+            self.check_local_channel()
+            args.extend(['-I', self.resolved_url])
         args.extend(['switch'] + build_options)
         subprocess.check_call(args)
 
     def prepare_maintenance(self):
-        _log.info('Preparing maintenance')
+        _log.debug('Preparing maintenance')
         self.load('next')
         call = subprocess.Popen(
              ['nixos-rebuild',
@@ -192,7 +209,7 @@ def inplace_update(filename, data):
 
 
 def retrieve(directory_lookup, tgt):
-    _log.info('Retrieving {} ...'.format(tgt))
+    _log.info('Retrieving %s', tgt)
     try:
         data = directory_lookup()
     except Exception:
@@ -275,8 +292,8 @@ def build_channel_with_maintenance(build_options):
         rm = fc.maintenance.ReqManager()
         rm.scan()
         if rm.requests:
-            _log.info('Channel update prebooked @ {}'.format(
-                list(rm.requests.values())[0].next_due))
+            _log.info('Channel update prebooked @ %s',
+                      list(rm.requests.values())[0].next_due)
             return
     # scheduled update available?
     next_channel = Channel(enc['parameters'].get('environment_url'))
@@ -285,8 +302,8 @@ def build_channel_with_maintenance(build_options):
         sys.exit(1)
     current_channel = Channel.current('nixos')
     if next_channel != current_channel:
-        _log.info('Preparing switch from {} to {}.'.format(
-            current_channel, next_channel))
+        _log.info('Preparing switch from %s to %s.',
+                  current_channel, next_channel)
         next_channel.prepare_maintenance()
 
 
@@ -294,6 +311,7 @@ def build_channel(build_options, update=True):
     global spread
     try:
         if enc and enc.get('parameters'):
+            _log.info('Environment: %s', enc['parameters']['environment'])
             channel = Channel(enc['parameters']['environment_url'])
         else:
             channel = Channel.current('nixos')
@@ -323,10 +341,6 @@ Note: there is no need to switch off `flyingcircus.agent.enable`.""")
 
 
 def build_no_update(build_options):
-    try:
-        os.unlink('/root/nixpkgs')  # we don't need that anymore
-    except EnvironmentError:
-        pass
     return build_channel(build_options, update=False)
 
 

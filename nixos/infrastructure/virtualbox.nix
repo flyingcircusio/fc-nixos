@@ -10,6 +10,8 @@
       device = "/dev/disk/by-label/nixos";
     };
 
+    flyingcircus.agent.enable = false;
+
     users.users.root.password = "";
 
     virtualisation.virtualbox.guest.enable = lib.mkDefault true;

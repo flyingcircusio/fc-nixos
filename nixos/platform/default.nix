@@ -7,6 +7,7 @@ with lib;
     ./enc.nix
     ./network.nix
     ./packages.nix
+    ./quota.nix
     ./shell.nix
     ./static.nix
     ./users.nix
