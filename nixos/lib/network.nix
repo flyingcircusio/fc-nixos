@@ -1,6 +1,6 @@
 # generic networking functions for use in all of the flyingcircus Nix stuff
 
-{ lib, ... }:
+{ pkgs, lib, ... }:
 
 with builtins;
 
@@ -126,8 +126,8 @@ rec {
 
   # ENC networks to NixOS option for both address families
   interfaceConfig = networks:
-    { ip4 = ipAddressesOption isIp4 networks;
-      ip6 = ipAddressesOption isIp6 networks;
+    { ipv4.addresses = ipAddressesOption isIp4 networks;
+      ipv6.addresses = ipAddressesOption isIp6 networks;
     };
 
   # Collects a complete list of configured addresses from all networks.
@@ -291,9 +291,8 @@ rec {
     else "${n}.${domain}";
 
   # Convert for example "172.22.48.0/22" into "172.22.48.0 255.255.252.0".
-  # Note 1: this is IPv4 only.
-  # Note 2: don't want to import pkgs into fclib.
-  decomposeCIDR = pkgs: cidr:
+  # Note: this is IPv4 only.
+  decomposeCIDR = cidr:
     let
       drvname = "cidr-${replaceStrings [ "/" ":" ] [ "_" "-" ] cidr}";
     in

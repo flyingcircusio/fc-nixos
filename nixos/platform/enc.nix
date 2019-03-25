@@ -7,7 +7,7 @@ let
 
   enc = fclib.jsonFromFile cfg.encPath {};
 
-  encAddresses.srv = fclib.jsonFromFile cfg.encAddressesPath.srv "[]";
+  encAddresses = fclib.jsonFromFile cfg.encAddressesPath "[]";
 
   encServices = fclib.jsonFromFile cfg.encServicesPath "[]";
 
@@ -17,8 +17,7 @@ let
 
 in
 {
-  options.flyingcircus = with lib.types;
-  {
+  options.flyingcircus = with lib.types; {
 
     enc = lib.mkOption {
       type = attrs;
@@ -31,7 +30,7 @@ in
       description = "Where to find the ENC json file.";
     };
 
-    encAddresses.srv = lib.mkOption {
+    encAddresses = lib.mkOption {
       type = listOf attrs;
       description = "List of addresses of machines in the neighbourhood.";
       example = [ {
@@ -45,7 +44,7 @@ in
       } ];
     };
 
-    encAddressesPath.srv = lib.mkOption {
+    encAddressesPath = lib.mkOption {
       default = /etc/nixos/addresses_srv.json;
       type = path;
       description = "Where to find the address list json file.";
@@ -100,8 +99,8 @@ in
     flyingcircus = {
       enc =
         mkDefault (fclib.jsonFromFile cfg.encPath "{}");
-      encAddresses.srv =
-        mkDefault (fclib.jsonFromFile cfg.encAddressesPath.srv "[]");
+      encAddresses =
+        mkDefault (fclib.jsonFromFile cfg.encAddressesPath "[]");
       encServices =
         mkDefault (fclib.jsonFromFile cfg.encServicesPath "[]");
       encServiceClients =

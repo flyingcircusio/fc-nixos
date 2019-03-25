@@ -29,7 +29,7 @@ if ! [[ -e channels/fc ]]; then
     ln -s .. channels/fc
 fi
 
-NIX_PATH="fc=$base:$base/channels"
+NIX_PATH="$base/channels"
 if [[ -n "$config" ]]; then
     NIX_PATH="${NIX_PATH}:nixos-config=$config"
 else
