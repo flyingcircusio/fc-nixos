@@ -1,0 +1,9 @@
+{
+    "checks": {
+        "ssl_cert": {
+            "command": "check_http -H example.org -p 443 -S --sni -C 25,14",
+            "interval": 60,
+            "standalone": true
+        },
+    }
+}

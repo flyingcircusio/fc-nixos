@@ -10,5 +10,6 @@
   fix-so-rpath = callPackage ./fix-so-rpath { };
   logcheckhelper = callPackage ./logcheckhelper {};
   multiping = callPackage ./multiping.nix {};
+  sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};
 }

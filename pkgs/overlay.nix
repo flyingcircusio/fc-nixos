@@ -18,10 +18,14 @@ in {
     php56
     php56Packages;
 
+  busybox = super.busybox.overrideAttrs (oldAttrs: {
+      meta.priority = 10;
+    });
   docsplit = super.callPackage ./docsplit { };
 
   # we use a newer version than on upstream
   vulnix = super.callPackage ./vulnix.nix {
     pythonPackages = self.python3Packages;
   };
+
 }

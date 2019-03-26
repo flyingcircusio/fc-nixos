@@ -1,0 +1,22 @@
+[package]
+name = "fc-sensu-syntax"
+version = "0.1.0"
+authors = ["Christian Kauhaus <kc@flyingcircus.io>"]
+description = "Checks local sensu config for syntax and plausibility."
+edition = "2018"
+
+[profile.release]
+opt-level = "s"
+panic = "abort"
+
+[dependencies]
+clap = "2.32"
+failure = "0.1.5"
+serde = "1"
+serde_derive = "1"
+serde_json = "1"
+walkdir = "2.2"
+
+[dev-dependencies]
+lazy_static = "1.2"
+tempdir = "0.3"
