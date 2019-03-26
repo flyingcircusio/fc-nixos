@@ -3,6 +3,7 @@
 {
   recurseForDerivations = true;
 
+  check-journal = pkgs.callPackage ./check-journal.nix { };
   agent = callPackage ./agent {};
   box = callPackage ./box {};
   logcheckhelper = callPackage ./logcheckhelper {};
