@@ -1,6 +1,8 @@
 # nixpkgs with our overlay packages.
-# Upstream pacakge: `nix-build default.nix -A hello`
-# Own package: `nix-build default.nix -A fc.userscan`
+# This file gets referenced when you import <fc>.
+# Set up environment: eval $(./dev-setup)
+# Build upstream pacakge: nix-build -A hello
+# Build own package: nix-build -A fc.userscan
 # ===
 # <nixpkgs> should usually point to FC patched upstream nixpkgs
 { nixpkgs ? <nixpkgs>

@@ -193,7 +193,7 @@ in
               requires = [ "network-addresses-eth${vlan}.service" ];
               after = requires;
               before = [ "network-local-commands.service" ];
-              wantedBy = before;
+              wantedBy = [ "network.target" ];
               bindsTo = [ "sys-subsystem-net-devices-eth${vlan}.device" ];
               path = [ relaxedIp ];
               script = startStopScript {
