@@ -19,6 +19,7 @@ in {
     php56Packages;
 
   collectdproxy = super.callPackage ./collectdproxy {};
+  docsplit = super.callPackage ./docsplit { };
 
   # we use a newer version than on upstream
   vulnix = super.callPackage ./vulnix.nix {
