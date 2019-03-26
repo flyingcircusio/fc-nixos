@@ -11,5 +11,6 @@
   logcheckhelper = callPackage ./logcheckhelper {};
   multiping = callPackage ./multiping.nix {};
   sensusyntax = callPackage ./sensusyntax {};
+  sensuplugins = callPackage ./sensuplugins {};
   userscan = callPackage ./userscan.nix {};
 }
