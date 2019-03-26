@@ -22,6 +22,7 @@ in {
       meta.priority = 10;
     });
   docsplit = super.callPackage ./docsplit { };
+  influxdb = super.callPackage ./influxdb { };
 
   # we use a newer version than on upstream
   vulnix = super.callPackage ./vulnix.nix {
