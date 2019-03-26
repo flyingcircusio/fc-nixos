@@ -61,8 +61,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     };
   };
 
-  flyingcircus.quota.enable = true;
-
   networking = {
     domain = "fcio.net";
     hostName = attrByPath [ "name" ] "default" cfg.enc;
