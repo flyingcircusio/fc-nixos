@@ -184,7 +184,7 @@ in
           config.environment.etc."host.conf".source
         ];
       } //
-      listToAttrs
+      (listToAttrs
         (map
           (vlan: lib.nameValuePair
             "network-routing-eth${vlan}"
@@ -193,7 +193,7 @@ in
               requires = [ "network-addresses-eth${vlan}.service" ];
               after = requires;
               before = [ "network-local-commands.service" ];
-              wantedBy = [ "network.target" ];
+              wantedBy = before;
               bindsTo = [ "sys-subsystem-net-devices-eth${vlan}.device" ];
               path = [ relaxedIp ];
               script = startStopScript {
@@ -210,8 +210,8 @@ in
                 RemainAfterExit = true;
               };
             })
-          (attrNames interfaces)) //
-      (lib.optionalAttrs (interfaces != {}) (listToAttrs
+          (attrNames interfaces))) //
+      (listToAttrs
         (map (vlan:
           let
             mac = lib.toLower interfaces.${vlan}.mac;
@@ -235,7 +235,7 @@ in
                 RemainAfterExit = true;
               };
             })
-          (attrNames interfaces))));
+          (attrNames interfaces)));
 
     boot.kernel.sysctl = {
       "net.ipv4.ip_nonlocal_bind" = "1";

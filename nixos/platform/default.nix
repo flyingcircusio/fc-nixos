@@ -8,6 +8,7 @@ with lib;
     ./network.nix
     ./packages.nix
     ./shell.nix
+    ./systemd.nix
     ./static.nix
     ./users.nix
   ];
