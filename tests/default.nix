@@ -11,6 +11,8 @@ let
   callTest = fn: args: pkgs.lib.hydraJob (importTest fn args system);
 
 in {
+  garbagecollect = callTest ./garbagecollect.nix {};
   login = callTest ./login.nix {};
+  logrotate = callTest ./logrotate.nix {};
   sudo = callTest ./sudo.nix {};
 }

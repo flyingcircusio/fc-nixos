@@ -63,7 +63,10 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     };
   };
 
-  flyingcircus.agent.collect-garbage = true;
+  flyingcircus = {
+    agent.collect-garbage = true;
+    logrotate.enable = true;
+  };
 
   networking = {
     domain = "fcio.net";
@@ -72,6 +75,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
 
+  security.dhparams.enable = true;
   security.wrappers.box.source = "${pkgs.fc.box}/bin/box";
 
   services = {

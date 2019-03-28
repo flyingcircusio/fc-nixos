@@ -10,10 +10,6 @@ let
 
   isStaging = !(attrByPath [ "parameters" "production" ] true cfg.enc);
 
-  collectCmd = if cfg.agent.collect-garbage
-    then "nix-collect-garbage --delete-older-than 3d --max-freed 104857600"
-    else "echo 'flyingcircus.agent.collect-garbage disabled'";
-
   humanGid = toString config.ids.gids.users;
   serviceGid = toString config.ids.gids.service;
   log = "/var/log/fc-collect-garbage.log";
@@ -26,21 +22,22 @@ let
       if [[ $home == /var/empty ]]; then
         continue
       fi
+      echo "$(date -Is) Scanning $home as $user"
       sudo -u $user -H -- \
-        fc-userscan -v -S -s 2 -c $home/.cache/fc-userscan.cache -L 10000000 \
+        fc-userscan -vrS -s 2 -c $home/.cache/fc-userscan.cache -L 10000000 \
         -z '*.egg' -E ${./userscan.exclude} \
         $home || failed=1
     done < <(getent passwd | awk -F: '$4 == ${humanGid} || $4 == ${serviceGid} \
-              { print $1 " " $6 }')
+              { print $1 " " $6 }') >> ${log}
 
     if (( failed )); then
       echo "ERROR: fc-userscan failed"
       exit 1
     else
-      ${collectCmd}
+      nix-collect-garbage --delete-older-than 3d --max-freed 104857600
     fi
     stopped=$(date +%s)
-    echo "$(date -R) time=$((stopped - started))s" >> ${log}
+    echo "$(date -Is) time=$((stopped - started))s" >> ${log}
   '';
 
 in {
@@ -67,25 +64,6 @@ in {
           ${pkgs.nagiosPluginsOfficial}/bin/check_file_age \
             -f ${log} -w 216000 -c 432000
         '';
-      };
-
-      services.logrotate.config = ''
-        ${log} {
-          monthly
-          rotate 6
-        }
-      '';
-
-      flyingcircus.telegraf.inputs = {
-        logparser = [ {
-          files = [ "/var/log/fc-collect-garbage.log" ];
-          grok = {
-            patterns = [
-              "%{DATESTAMP_RFC2822:timestamp} time=%{DURATION:time:duration}"
-            ];
-            measurement = "fc_collect_garbage";
-          };
-        } ];
       };
 
       systemd.services.fc-collect-garbage = {
