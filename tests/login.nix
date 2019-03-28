@@ -2,10 +2,6 @@ import ./make-test.nix ({ pkgs, latestKernel ? false, ... }:
 
 {
   name = "login";
-  meta = with pkgs.stdenv.lib.maintainers; {
-    maintainers = [ ckauhaus ];
-  };
-
   machine =
     { pkgs, lib, config, ... }:
     {

@@ -77,6 +77,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
   services = {
 
     qemuGuest.enable = true;
+    openssh.challengeResponseAuthentication = false;
     openssh.passwordAuthentication = false;
     telegraf.enable = mkDefault true;
 
