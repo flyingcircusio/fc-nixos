@@ -36,8 +36,8 @@ rec {
         let
           interface_config = getAttr interface config.networking.interfaces;
         in
-          (map (addr: addr.address) interface_config.ip4) ++
-          (map (addr: addr.address) interface_config.ip6)
+          (map (addr: addr.address) interface_config.ipv4.addresses) ++
+          (map (addr: addr.address) interface_config.ipv6.addresses)
       else [];
 
   listenAddressesQuotedV6 = config: interface:
@@ -53,7 +53,7 @@ rec {
     (service: service.address)
     (filter
       (s: s.service == service)
-      config.flyingcircus.enc_services));
+      config.flyingcircus.encServices));
 
   listServiceIPs = config: service:
   (lib.flatten
@@ -61,7 +61,7 @@ rec {
       (service: service.ips)
       (filter
         (s: s.service == service)
-        config.flyingcircus.enc_services)));
+        config.flyingcircus.encServices)));
 
 
   # Return service address (string) or null, if no service

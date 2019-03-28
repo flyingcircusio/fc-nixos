@@ -5,11 +5,13 @@ with lib;
   imports = [
     ./agent.nix
     ./enc.nix
+    ./garbagecollect
+    ./monitoring.nix
     ./network.nix
     ./packages.nix
     ./shell.nix
-    ./systemd.nix
     ./static.nix
+    ./systemd.nix
     ./users.nix
   ];
 

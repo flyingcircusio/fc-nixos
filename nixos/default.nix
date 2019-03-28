@@ -7,6 +7,7 @@ with builtins;
     ./lib
     ./infrastructure
     ./platform
+    ./services
     ./version.nix
   ];
 
