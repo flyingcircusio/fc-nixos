@@ -1,6 +1,6 @@
 f: {
   system ? builtins.currentSystem
-  , nixpkgs ? (import ../nixpkgs.nix {}).nixpkgs
+  , nixpkgs ? (import ../versions.nix {}).nixpkgs
   , pkgs ? import ../. {}
   , minimal ? false
   , config ? {}

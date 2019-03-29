@@ -9,7 +9,7 @@ if [[ -z "$NIX_PATH" ]]; then
     # bootstrapping with what we find on the system
     export NIX_PATH="$HOME/.nix-defexpr/channels/nixos:$HOME/.nix-defexpr/channels_root/nixos:$HOME/.nix-defexpr/channels:$HOME/.nix-defexpr/channels_root"
 fi
-channels=`nix-build -Q nixpkgs.nix -A allUpstreams --no-out-link 2>/dev/null`
+channels=`nix-build -Q --quiet versions.nix -A allUpstreams --no-out-link`
 if [[ -z $channels ]]; then
     echo "$0: failed to build nixpkgs+overlay" >&2
     exit 1

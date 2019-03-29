@@ -1,7 +1,7 @@
 # everything in release/ MUST NOT import from <nixpkgs> to get repeatable builds
 { system ? builtins.currentSystem
 , bootstrap ? <nixpkgs>
-, nixpkgs ? (import ../nixpkgs.nix { pkgs = import bootstrap {}; }).nixpkgs
+, nixpkgs ? (import ../versions.nix { pkgs = import bootstrap {}; }).nixpkgs
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
 , fc ? {
@@ -35,7 +35,7 @@ let
     }
   '';
 
-  upstreamSources = (import ../nixpkgs.nix { pkgs = (import nixpkgs {}); });
+  upstreamSources = (import ../versions.nix { pkgs = (import nixpkgs {}); });
   fcSrc = pkgs.stdenv.mkDerivation {
     name = "fc-overlay";
     src = lib.cleanSource ../.;
