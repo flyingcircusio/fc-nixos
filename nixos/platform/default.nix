@@ -5,6 +5,7 @@ with lib;
   imports = [
     ./agent.nix
     ./enc.nix
+    ./firewall.nix
     ./garbagecollect
     ./monitoring.nix
     ./network.nix

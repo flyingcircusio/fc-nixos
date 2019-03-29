@@ -179,7 +179,7 @@ rec {
   ipRoutes = vlan: encInterface: filteredNets: verb:
     let
       prio = routingPriority vlan;
-      dev' = dev vlan encInterface.bridged;
+      dev' = dev vlan (encInterface.bridged or false);
 
       networkRoutesStr = lib.concatMapStrings
         (net: ''

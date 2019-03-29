@@ -140,10 +140,6 @@ in
 
       useDHCP = (interfaces == {});
 
-      # firewall configuration: generic options XXX move to firewall.nix
-      firewall.allowPing = true;
-      firewall.rejectPackets = true;
-
       # DHCP settings: never do IPv4ll and don't use DHCP if there is explicit
       # network configuration present
       dhcpcd.extraConfig = ''
