@@ -26,6 +26,7 @@ in {
   innotop = super.callPackage ./percona/innotop.nix { };
 
   mc = super.callPackage ./mc.nix { };
+  mysql = super.mariadb;
 
   # We use a (our) newer version than on upstream.
   vulnix = super.callPackage ./vulnix.nix {
