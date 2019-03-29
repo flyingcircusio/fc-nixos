@@ -1,9 +1,11 @@
 { config, lib, pkgs, ... }:
 
+with lib;
+
 let
   cfg = config.flyingcircus;
+
 in
-with lib;
 mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   nix.extraOptions = ''
@@ -61,6 +63,11 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     };
   };
 
+  flyingcircus = {
+    agent.collect-garbage = true;
+    logrotate.enable = true;
+  };
+
   networking = {
     domain = "fcio.net";
     hostName = attrByPath [ "name" ] "default" cfg.enc;
@@ -68,12 +75,21 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
 
+  security.dhparams.enable = true;
   security.wrappers.box.source = "${pkgs.fc.box}/bin/box";
 
   services = {
-    qemuGuest.enable = true;
 
+    qemuGuest.enable = true;
+    openssh.challengeResponseAuthentication = false;
     openssh.passwordAuthentication = false;
+    telegraf.enable = mkDefault true;
+
+    timesyncd.servers =
+      let
+        loc = attrByPath [ "parameters" "location" ] "" cfg.enc;
+      in
+      attrByPath [ "static" "ntpServers" loc ] [ "pool.ntp.org" ] cfg;
 
     # installs /dev/disk/device-by-alias/*
     udev.extraRules = ''
@@ -81,11 +97,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       SUBSYSTEM=="block", KERNEL=="[vs]da", SYMLINK+="disk/device-by-alias/root"
     '';
 
-    timesyncd.servers =
-      let
-        loc = attrByPath [ "parameters" "location" ] "" cfg.enc;
-      in
-      attrByPath [ "static" "ntpServers" loc ] [ "pool.ntp.org" ] cfg;
   };
 
   systemd = {

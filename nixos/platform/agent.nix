@@ -87,10 +87,8 @@ in {
         script =
           let interval = toString cfg.agent.interval;
           in ''
-            failed=0
-            timeout 14400 fc-manage -E ${cfg.encPath} -i ${interval} ${cfg.agent.steps} || failed=$?
-            timeout 900 fc-resize -E ${cfg.encPath} || failed=$?
-            exit $failed
+            timeout 14400 fc-manage -E ${cfg.encPath} -i ${interval} ${cfg.agent.steps}
+            timeout 900 fc-resize -E ${cfg.encPath}
           '';
       };
 
@@ -118,9 +116,10 @@ in {
         description = "Timer for fc-agent";
         wantedBy = [ "timers.target" ];
         timerConfig = {
+          AccuracySec = "1us";
           OnStartupSec = "10s";
           OnUnitInactiveSec = "10m";
-          RandomSec = "3m";
+          RandomizedDelaySec = "10s";
         };
       };
     })

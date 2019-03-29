@@ -11,7 +11,7 @@ rec {
       (attrNames
         (filterAttrs
           (filename: type: (type == "regular"))
-          (readDir path)));
+          (builtins.readDir path)));
 
   # Get all regular files with their absolute name
   files = path:

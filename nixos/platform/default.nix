@@ -5,10 +5,13 @@ with lib;
   imports = [
     ./agent.nix
     ./enc.nix
+    ./garbagecollect
+    ./monitoring.nix
     ./network.nix
     ./packages.nix
     ./shell.nix
     ./static.nix
+    ./systemd.nix
     ./users.nix
   ];
 
@@ -20,7 +23,8 @@ with lib;
     sound.enable = mkDefault false;
     documentation.dev.enable = mkDefault false;
     documentation.doc.enable = mkDefault false;
-    services.nixosManual.enable = mkDefault false;
+
+    i18n.supportedLocales = [ (config.i18n.defaultLocale + "/UTF-8") ];
 
     nix = {
       nixPath = [
@@ -44,11 +48,25 @@ with lib;
       '';
     };
 
-    services.openssh.enable = mkDefault true;
+    services = {
+      # reduce build time
+      nixosManual.enable = mkDefault false;
 
-    i18n.supportedLocales = [ (config.i18n.defaultLocale + "/UTF-8") ];
+      nscd.enable = true;
+      openssh.enable = mkDefault true;
+    };
 
-    system.stateVersion = mkDefault "18.09";
+    systemd.tmpfiles.rules = [
+      # d instead of r to a) respect the age rule and b) allow exclusion
+      # of fc-data to avoid killing the seeded ENC upon boot.
+      "d /tmp 1777 root root 3d"
+      "d /var/tmp 1777 root root 7d"
+      "d /srv"
+      "z /srv 0755 root root"
+    ];
+
+    time.timeZone =
+      attrByPath [ "parameters" "timezone" ] "UTC" config.flyingcircus.enc;
 
   };
 }

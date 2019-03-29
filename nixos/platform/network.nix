@@ -184,16 +184,15 @@ in
           config.environment.etc."host.conf".source
         ];
       } //
-      listToAttrs
+      (listToAttrs
         (map
           (vlan: lib.nameValuePair
             "network-routing-eth${vlan}"
             rec {
               description = "Custom IP routing for eth${vlan}";
-              requires = [ "network-addresses-eth${vlan}.service" ];
-              after = requires;
+              after = [ "network-addresses-eth${vlan}.service" ];
               before = [ "network-local-commands.service" ];
-              wantedBy = [ "network.target" ];
+              wantedBy = after;
               bindsTo = [ "sys-subsystem-net-devices-eth${vlan}.device" ];
               path = [ relaxedIp ];
               script = startStopScript {
@@ -210,8 +209,8 @@ in
                 RemainAfterExit = true;
               };
             })
-          (attrNames interfaces)) //
-      (lib.optionalAttrs (interfaces != {}) (listToAttrs
+          (attrNames interfaces))) //
+      (listToAttrs
         (map (vlan:
           let
             mac = lib.toLower interfaces.${vlan}.mac;
@@ -235,16 +234,13 @@ in
                 RemainAfterExit = true;
               };
             })
-          (attrNames interfaces))));
+          (attrNames interfaces)));
 
     boot.kernel.sysctl = {
       "net.ipv4.ip_nonlocal_bind" = "1";
       "net.ipv6.ip_nonlocal_bind" = "1";
       "net.ipv4.ip_local_port_range" = "32768 60999";
       "net.ipv4.ip_local_reserved_ports" = "61000-61999";
-      # work around CVE-2016-5696
-      # obsolete on Linux 4.7+
-      "net.ipv4.tcp_challenge_ack_limit" = "999999999";
       "net.core.rmem_max" = 8388608;
     };
   };
