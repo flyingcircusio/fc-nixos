@@ -25,7 +25,9 @@ in {
   influxdb = super.callPackage ./influxdb { };
   innotop = super.callPackage ./percona/innotop.nix { };
 
-  # we use a newer version than on upstream
+  mc = super.callPackage ./mc.nix { };
+
+  # We use a (our) newer version than on upstream.
   vulnix = super.callPackage ./vulnix.nix {
     pythonPackages = self.python3Packages;
   };
