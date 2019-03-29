@@ -25,6 +25,7 @@ in {
   influxdb = super.callPackage ./influxdb { };
   innotop = super.callPackage ./percona/innotop.nix { };
 
+  mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
   mysql = super.mariadb;
 
