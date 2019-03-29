@@ -1,10 +1,5 @@
-{ stdenv, lib, rust_1_31, recurseIntoAttrs, makeRustPlatform, docutils }:
+{ stdenv, lib, rustPlatform, docutils }:
 
-let
-  # switch back to default rustPlatform once upgraded to >= 19.03
-  rustPlatform = recurseIntoAttrs (makeRustPlatform rust_1_31);
-
-in
 rustPlatform.buildRustPackage rec {
   name = "sensu-syntax-${version}";
   version = "0.1.0";

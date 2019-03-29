@@ -1,7 +1,7 @@
 self: super:
 
 let
-  versions = import ../nixpkgs.nix { pkgs = super; };
+  versions = import ../versions.nix { pkgs = super; };
   pkgs-18_03 = import versions.nixos-18_03 {};
 
 in {

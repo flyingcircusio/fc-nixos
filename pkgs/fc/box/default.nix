@@ -1,12 +1,7 @@
-{ stdenv, rust_1_31, recurseIntoAttrs, makeRustPlatform, docutils }:
+{ stdenv, lib, rustPlatform, docutils }:
 
-with stdenv.lib;
+with lib;
 
-let
-  # switch back to default rustPlatform once upgraded to 19.03+
-  rustPlatform = recurseIntoAttrs (makeRustPlatform rust_1_31);
-
-in
 rustPlatform.buildRustPackage rec {
   name = "fc-box-${version}";
   version = "0.2.1";

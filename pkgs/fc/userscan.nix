@@ -1,17 +1,12 @@
-{ pkgs
+{ lib
 , docutils
 , fetchFromGitHub
-, lib
-, makeRustPlatform
-, recurseIntoAttrs
-, rust_1_31
+, git
+, lzo
+, rustPlatform
 }:
 
-let
-  # switch back to default rustPlatform once upgraded to >= 19.03
-  rustPlatform = recurseIntoAttrs (makeRustPlatform rust_1_31);
-
-in rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage rec {
   name = "fc-userscan-${version}";
   version = "0.4.3";
 
@@ -24,8 +19,8 @@ in rustPlatform.buildRustPackage rec {
   };
 
   cargoSha256 = "0jnqkl4g5m2rdlijf6hvns52rxpqagz5d9vhyny6w9clz3ssd14w";
-  nativeBuildInputs = with pkgs; [ git docutils ];
-  propagatedBuildInputs = with pkgs; [ lzo ];
+  nativeBuildInputs = [ git docutils ];
+  propagatedBuildInputs = [ lzo ];
 
   postBuild = ''
     substituteAll $src/userscan.1.rst $TMP/userscan.1.rst
