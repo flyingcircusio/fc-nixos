@@ -23,6 +23,6 @@ in {
   garbagecollect = callTest ./garbagecollect.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
-  network = callSubTests ./network.nix {};
+  network = callSubTests ./network {};
   sudo = callTest ./sudo.nix {};
 }
