@@ -184,7 +184,7 @@ in
     };
 
     services.openssh.extraConfig = ''
-      AllowGroups root admin login
+      AllowGroups root admins login
     '';
 
     users =
