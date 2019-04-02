@@ -7,7 +7,7 @@
   box = callPackage ./box {
     rustPlatform = pkgs.rustPlatform_1_31;
   };
-  check-journal = pkgs.callPackage ./check-journal.nix { };
+  check-journal = callPackage ./check-journal.nix { };
   collectdproxy = callPackage ./collectdproxy { };
   fix-so-rpath = callPackage ./fix-so-rpath { };
   logcheckhelper = callPackage ./logcheckhelper {};

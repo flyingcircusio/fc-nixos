@@ -69,7 +69,7 @@ impl ClientDef {
 fn check(sensu_client_check: &Path) -> Status {
     let def = match ClientDef::decode(sensu_client_check) {
         Ok(def) => def,
-        Err(e) => return Status::Error(e.into()),
+        Err(e) => return Status::Error(e),
     };
     if def.checks.is_empty() {
         Status::Warning("does not contain any check definition")
@@ -95,15 +95,17 @@ fn walk<P: AsRef<Path>>(sensu_config_dir: P) -> Fallible<CheckResults> {
         .collect())
 }
 
-fn output(mut res: CheckResults) -> i32 {
+fn output(mut res: CheckResults, show_statusline: bool) -> i32 {
     res.sort_by_key(|(_, s)| -s.code());
     let max = res.iter().map(|e| e.1.code()).max().unwrap_or_default();
-    let ncrit = res.iter().filter(|e| e.1.code() >= 2).count();
-    let nwarn = res.iter().filter(|e| e.1.code() == 1).count();
-    match max {
-        0 => println!("OK: {} Sensu check config(s) found", res.len()),
-        1 => println!("WARNING: {} warning(s)", nwarn),
-        _ => println!("CRITICAL: {} error(s), {} warning(s)", ncrit, nwarn),
+    if show_statusline {
+        let ncrit = res.iter().filter(|e| e.1.code() >= 2).count();
+        let nwarn = res.iter().filter(|e| e.1.code() == 1).count();
+        match max {
+            0 => println!("OK: {} Sensu check config(s) found", res.len()),
+            1 => println!("WARNING: {} warning(s)", nwarn),
+            _ => println!("CRITICAL: {} error(s), {} warning(s)", ncrit, nwarn),
+        }
     }
     res.iter()
         .for_each(|(p, s)| println!("[{}] {}: {}", s.marker(), p.display(), s));
@@ -112,13 +114,16 @@ fn output(mut res: CheckResults) -> i32 {
 
 fn main() {
     let m = app_from_crate!()
+        .arg(Arg::from_usage(
+            "[NOSTATUS] -S --no-status 'Omit first line (status) from output'",
+        ))
         .arg(
             Arg::from_usage("[DIR] -d --directory 'Searches for local sensu checks in DIR'")
                 .default_value("/etc/local/sensu-client"),
         )
         .get_matches();
     match walk(m.value_of_os("DIR").unwrap()) {
-        Ok(results) => process::exit(output(results)),
+        Ok(results) => process::exit(output(results, !m.is_present("NOSTATUS"))),
         Err(e) => {
             let causes: Vec<_> = e.iter_chain().map(|c| c.to_string()).collect();
             println!("UNKOWN: {}", causes.join(": "));

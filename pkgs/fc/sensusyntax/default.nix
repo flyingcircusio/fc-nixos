@@ -2,10 +2,10 @@
 
 rustPlatform.buildRustPackage rec {
   name = "sensu-syntax-${version}";
-  version = "0.1.0";
+  version = "0.2.0";
 
   src = lib.cleanSource ./.;
-  cargoSha256 = "068v020zia1cnzmjgb36v39ldh90pv30wvh3s84qmf1nqdvv9laf";
+  cargoSha256 = "0p0kwbbr8camiaragbs8yi3jk91l7d6psmhkw5f3x1p76134i4k7";
   doCheck = true;
 
   meta = with stdenv.lib; {
