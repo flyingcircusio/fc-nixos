@@ -129,7 +129,7 @@ in
 
       firewall-active = {
         notification = "Firewall rules not properly activated";
-        command = "sudo ${checkIPTables}";
+        command = "/run/wrappers/bin/sudo ${checkIPTables}";
       };
     };
 

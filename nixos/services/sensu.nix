@@ -11,6 +11,8 @@ let
 
   ntpServers = config.services.timesyncd.servers;
 
+  sudo = "/run/wrappers/bin/sudo";
+
   check_timer = pkgs.writeScript "check-timer.sh" ''
     #!${pkgs.runtimeShell}
     timer=$1
@@ -157,16 +159,16 @@ in {
       expectedLoad = {
         warning = mkOption {
           type = types.str;
-          default = ''
-            ${toString (cores * 8)},${toString (cores * 5)},${toString (cores * 2)}
-          '';
+          default =
+            "${toString (cores * 8)},${toString (cores * 5)}," +
+            "${toString (cores * 2)}";
           description = "Limit of load thresholds before warning.";
         };
         critical = mkOption {
           type = types.str;
-          default = ''
-            ${toString (cores * 10)},${toString (cores * 8)},${toString (cores * 3)}
-          '';
+          default =
+            "${toString (cores * 10)},${toString (cores * 8)}," +
+            "${toString (cores * 3)}";
           description = "Limit of load thresholds before reaching critical.";
         };
       };
@@ -285,26 +287,24 @@ in {
       uplink = ipvers: {
         notification = "Internet uplink IPv${ipvers} slow/unavailable";
         command = ''
-          sudo multiping -${ipvers} google.com dns.quad9.net heise.de
+          ${sudo} multiping -${ipvers} google.com dns.quad9.net heise.de
         '';
         interval = 300;
       };
     in {
       load = {
         notification = "Load is too high";
-        command =  ''
-          check_load -r -w ${cfg.expectedLoad.warning} \
-            -c ${cfg.expectedLoad.critical}
-        '';
+        command =
+          "check_load -r -w ${cfg.expectedLoad.warning} " +
+          "-c ${cfg.expectedLoad.critical}";
         interval = 10;
       };
       swap = {
         notification = "Swap usage is too high";
-        command = ''
-          ${fc.sensuplugins}/bin/check_swap_abs \
-            -w ${toString cfg.expectedSwap.warning} \
-            -c ${toString cfg.expectedSwap.critical}
-        '';
+        command =
+          "${fc.sensuplugins}/bin/check_swap_abs " +
+          "-w ${toString cfg.expectedSwap.warning} " +
+          "-c ${toString cfg.expectedSwap.critical}";
         interval = 300;
       };
       ssh = {
@@ -314,9 +314,9 @@ in {
       };
       cpu_steal = {
         notification = "CPU has high amount of `%steal` ";
-        command = ''
-          ${fc.sensuplugins}/bin/check_cpu_steal --mpstat ${sysstat}/bin/mpstat
-        '';
+        command =
+          "${fc.sensuplugins}/bin/check_cpu_steal " +
+          "--mpstat ${sysstat}/bin/mpstat";
         interval = 600;
       };
       ntp_time = {
@@ -345,10 +345,9 @@ in {
       };
       systemd_units = {
         notification = "systemd has failed units";
-        command = ''
-          check-failed-units.rb -m logrotate.service \
-            -m fc-collect-garbage.service
-        '';
+        command =
+          "check-failed-units.rb -m logrotate.service " +
+          "-m fc-collect-garbage.service";
       };
       disk = {
         notification = "Disk usage too high";
@@ -357,10 +356,9 @@ in {
       };
       writable = {
         notification = "Disks are writable";
-        command = ''
-          ${fc.sensuplugins}/bin/check_writable /tmp/.sensu_writable \
-            /var/tmp/sensu/.sensu_writable
-        '';
+        command =
+          "${fc.sensuplugins}/bin/check_writable /tmp/.sensu_writable " +
+          "/var/tmp/sensu/.sensu_writable";
         interval = 60;
         ttl = 120;
         warnIsCritical = true;
@@ -375,10 +373,9 @@ in {
       };
       journal = {
         notification = "Journal errors in the last 10 minutes";
-        command = ''
-          check_journal -j ${systemd}/bin/journalctl \
-          https://bitbucket.org/flyingcircus/fc-logcheck-config/raw/tip/nixos-journal.yaml
-        '';
+        command =
+          "check_journal -j ${systemd}/bin/journalctl " +
+          "https://bitbucket.org/flyingcircus/fc-logcheck-config/raw/tip/nixos-journal.yaml";
         interval = 600;
       };
       journal_file = {
@@ -388,12 +385,11 @@ in {
 
       vulnix = {
         notification = "Security vulnerabilities in the last 6h";
-        command = ''
-          NIX_REMOTE=daemon nice timeout 15m ${vulnix}/bin/vulnix --system \
-          --cache-dir /var/cache/vulnix \
-          -w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.yaml \
-          -w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.toml
-        '';
+        command =
+          "NIX_REMOTE=daemon nice timeout 15m ${vulnix}/bin/vulnix --system " +
+          "--cache-dir /var/cache/vulnix " +
+          "-w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.yaml " +
+          "-w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.toml ";
         interval = 6 * 3600;
       };
 
@@ -403,10 +399,10 @@ in {
       };
       netstat_tcp = {
         notification = "Netstat TCP connections";
-        command = ''
-          check-netstat-tcp.rb -w ${toString cfg.expectedConnections.warning} \
-            -c ${toString cfg.expectedConnections.critical}
-        '';
+        command =
+          "check-netstat-tcp.rb " +
+          "-w ${toString cfg.expectedConnections.warning} " +
+          "-c ${toString cfg.expectedConnections.critical}";
       };
       ethsrv_mtu = {
         notification = "ethsrv MTU @ 1500";
