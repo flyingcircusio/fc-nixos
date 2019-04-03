@@ -1,4 +1,3 @@
-# XXX TODO adapt permissions/exchanges on RabbitMQ server
 { config, pkgs, lib, ... }:
 
 with lib;
@@ -129,7 +128,7 @@ in {
         description = ''
           Checks that should be run by this client.
           Defined as attribute sets that conform to the JSON structure
-          defined by Sensu: https://sensuapp.org/docs/latest/checks
+          defined by Sensu: <https://sensuapp.org/docs/latest/checks>.
         '';
       };
       extraOpts = mkOption {
@@ -158,25 +157,29 @@ in {
       expectedLoad = {
         warning = mkOption {
           type = types.str;
-          default = "${toString (cores * 8)},${toString (cores * 5)},${toString (cores * 2)}";
-          description = ''Limit of load thresholds before warning.'';
+          default = ''
+            ${toString (cores * 8)},${toString (cores * 5)},${toString (cores * 2)}
+          '';
+          description = "Limit of load thresholds before warning.";
         };
         critical = mkOption {
           type = types.str;
-          default = "${toString (cores * 10)},${toString (cores * 8)},${toString (cores * 3)}";
-          description = ''Limit of load thresholds before reaching critical.'';
+          default = ''
+            ${toString (cores * 10)},${toString (cores * 8)},${toString (cores * 3)}
+          '';
+          description = "Limit of load thresholds before reaching critical.";
         };
       };
       expectedSwap = {
         warning = mkOption {
-          type = types.str;
-          default = "1024";
-          description = ''Limit of swap usage in MiB before warning.'';
+          type = types.int;
+          default = 1024;
+          description = "Limit of swap usage in MiB before warning.";
         };
         critical = mkOption {
-          type = types.str;
-          default = "2048";
-          description = ''Limit of swap usage in MiB before reaching critical.'';
+          type = types.int;
+          default = 2048;
+          description = "Limit of swap usage in MiB before reaching critical.";
         };
       };
     };
@@ -256,6 +259,7 @@ in {
         lm_sensors
         nagiosPluginsOfficial
         sensu
+        sudo
         sysstat
       ];
       script = ''
@@ -281,8 +285,7 @@ in {
       uplink = ipvers: {
         notification = "Internet uplink IPv${ipvers} slow/unavailable";
         command = ''
-          /var/setuid-wrappers/sudo ${fc.multiping}/bin/multiping -${ipvers} \
-          google.com dns.quad9.net heise.de
+          sudo multiping -${ipvers} google.com dns.quad9.net heise.de
         '';
         interval = 300;
       };
@@ -298,8 +301,9 @@ in {
       swap = {
         notification = "Swap usage is too high";
         command = ''
-          ${fc.sensuplugins}/bin/check_swap_abs -w ${cfg.expectedSwap.warning} \
-            -c ${cfg.expectedSwap.critical}
+          ${fc.sensuplugins}/bin/check_swap_abs \
+            -w ${toString cfg.expectedSwap.warning} \
+            -c ${toString cfg.expectedSwap.critical}
         '';
         interval = 300;
       };
