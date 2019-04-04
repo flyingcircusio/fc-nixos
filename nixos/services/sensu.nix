@@ -256,6 +256,7 @@ in {
         bash
         coreutils
         fc.check-journal
+        fc.multiping
         fc.sensusyntax
         glibc
         lm_sensors

@@ -99,7 +99,7 @@ with lib;
       ntpServers = {
         # Those are the routers and backup servers. This needs to move to the
         # directory service discovery.
-        dev = [ "barney" "eddie" "patty"];
+        dev = [ "selma" "eddie" "sherry" ];
         whq = [ "barbrady01" "terri" "bob" "lou" ];
         rzob = [ "kenny06" "kenny07" "barbrady02" ];
         rzrl1 = [ "kenny02" "kenny03" "barbrady03" ];
