@@ -16,9 +16,14 @@ let
   cfgProxyGlobal = config.flyingcircus.roles.statshostproxy;
   cfgProxyRG = config.flyingcircus.roles.statshost-relay;
 
+  retentionHours = cfgStatsGlobal.prometheusRetention * 3600;
   promFlags = [
-    "--storage.tsdb.retention ${toString cfgStatsGlobal.prometheusRetention}d"
-  ];
+    "-storage.local.retention ${toString retentionHours}h"
+  ] ++
+  (optional
+    (cfgStatsGlobal.prometheusRetention > 30)
+    "-storage.local.series-file-shrink-ratio .2"
+  );
   prometheusListenAddress = cfgStatsGlobal.prometheusListenAddress;
 
   # It's common to have stathost and loghost on the same node. Each should
@@ -35,8 +40,7 @@ let
     pkgs.runCommand "${baseNameOf filename}.json" {
       buildInputs = [ pkgs.remarshal ];
       preferLocalBuild = true;
-    # XXX why /. ?
-    } "remarshal -if yaml -of json < ${/. + filename} > $out";
+    } "remarshal -if yaml -of json < ${filename} > $out";
 
   relabelConfiguration = filename:
     if pathExists filename
@@ -346,8 +350,7 @@ in
           timerConfig = {
             Unit = "fc-prometheus-update-relayed-nodes";
             OnUnitActiveSec = "11m";
-            # Not yet supported by our systemd version.
-            # RandomSec = "3m";
+            RandomSec = "3m";
           };
         });
       }
@@ -504,6 +507,15 @@ in
 
     # Grafana
     (mkIf (cfgStatsGlobal.enable || cfgStatsRG.enable) {
+
+      networking.firewall = {
+        allowedTCPPorts = [ 80 443 2004 ];
+        allowedUDPPorts = [ 2003 ];
+      };
+
+      security.acme.certs.${cfgStatsGlobal.hostName}.email =
+        "admin@flyingcircus.io";
+
       services.grafana = {
         enable = true;
         port = 3001;
@@ -517,12 +529,32 @@ in
         };
       };
 
+      services.nginx = {
+        enable = true;
+        recommendedGzipSettings = true;
+        recommendedOptimisation = true;
+        recommendedProxySettings = true;
+        recommendedTlsSettings = true;
+        virtualHosts.${cfgStatsGlobal.hostName} = {
+          enableACME = true;
+          addSSL = true;
+          locations = {
+            "/".extraConfig = ''
+              rewrite ^/$ /grafana/ redirect;
+              auth_basic "FCIO user";
+              auth_basic_user_file "/etc/local/nginx/htpasswd_fcio_users";
+              proxy_pass http://${prometheusListenAddress};
+            '';
+            "/grafana/".proxyPass = "http://127.0.0.1:3001/";
+          };
+        };
+      };
+
       systemd.services.grafana.preStart = let
         fcioDashboards = pkgs.writeTextFile {
           name = "fcio.yaml";
           text = ''
             apiVersion: 1
-
             providers:
             - name: 'default'
               orgId: 1
@@ -555,65 +587,6 @@ in
         ln -fs ${prometheusDatasource} ${grafanaProvisioningPath}/datasources/prometheus.yaml
 
       '';
-
-      # XXX use native nixos service instead
-      # flyingcircus.roles.nginx.enable = true;
-      # flyingcircus.roles.nginx.httpConfig =
-      #   let
-      #     httpHost = cfgStatsGlobal.hostName;
-      #     common = ''
-      #       server_name ${httpHost};
-
-      #       location /.well-known {
-      #         root /tmp/letsencrypt;
-      #       }
-
-      #       location = / {
-      #           rewrite ^ /grafana/ redirect;
-      #       }
-
-      #       location / {
-      #           # Allow access to prometheus
-      #           auth_basic "FCIO user";
-      #           auth_basic_user_file "/etc/local/nginx/htpasswd_fcio_users";
-      #           proxy_pass http://${prometheusListenAddress};
-      #       }
-
-      #       location /grafana/ {
-      #           proxy_pass http://127.0.0.1:3001/;
-      #       }
-
-      #     '';
-      #   in
-      #   if cfgStatsGlobal.useSSL then ''
-      #     server {
-      #         ${fclib.nginxListenOn config "ethfe" 80}
-      #         server_name ${httpHost};
-
-      #         location / {
-      #           rewrite ^ https://$server_name$request_uri redirect;
-      #         }
-      #     }
-
-      #     server {
-      #         ${fclib.nginxListenOn config "ethfe" "443 ssl http2"}
-      #         ${common}
-
-      #         ssl_certificate ${/etc/local/nginx/stats.crt};
-      #         ssl_certificate_key ${/etc/local/nginx/stats.key};
-      #         # add_header Strict-Transport-Security "max-age=31536000";
-      #     }
-      #   ''
-      #   else
-      #   ''
-      #     server {
-      #         ${fclib.nginxListenOn config "ethfe" 80}
-      #         ${common}
-      #     }
-      #   '';
-
-      networking.firewall.allowedTCPPorts = [ 2004 ];
-      networking.firewall.allowedUDPPorts = [ 2003 ];
 
       # Provide FC dashboards, and update them automatically.
       systemd.services.fc-grafana-load-dashboards = {
