@@ -86,15 +86,14 @@ in {
       flyingcircus.services.sensu-client.checks = {
         telegraf_prometheus_output = {
           notification = "Telegraf prometheus output alive";
-          command = ''
-            check_http -v -j HEAD -H ${config.networking.hostName} \
-              -p ${telegrafPort} -u /metrics
-          '';
+          command =
+            "check_http -v -j HEAD -H ${config.networking.hostName} " +
+            "-p ${telegrafPort} -u /metrics";
         };
       };
 
       networking.firewall.extraCommands =
-        "# fcio/telegraf\n" +
+        "# FC telegraf\n" +
         (concatStringsSep ""
           (map (ip: ''
             ${fclib.iptables ip} -A nixos-fw -i ethsrv -s ${ip} \

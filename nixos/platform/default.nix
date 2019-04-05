@@ -16,6 +16,9 @@ with lib;
     ./users.nix
   ];
 
+  options.flyingcircus.roles.generic.enable =
+    mkEnableOption "Generic role, which does nothing";
+
   config = {
 
     boot.loader.timeout = 3;

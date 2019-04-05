@@ -14,7 +14,8 @@
       parameters.location = "testloc";
       name = "testvm";
     };
-    services.openssh.enable = lib.mkOverride 60 false;
     security.rngd.enable = false;
+    services.haveged.enable = true;  # use pseudo-entropy to speed up tests
+    services.openssh.enable = lib.mkOverride 60 false;
   };
 }

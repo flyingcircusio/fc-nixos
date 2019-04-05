@@ -7,8 +7,6 @@ size as basis), and the implementation of a magic dampening factor
 analogous to check_mk.
 """
 
-# XXX keep in sync with fc.platform/puppet/modules/sys_apps/files/check_disk.py
-
 import argparse
 import logging
 import nagiosplugin

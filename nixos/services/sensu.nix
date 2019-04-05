@@ -38,7 +38,7 @@ let
       ],
       "client": {
         "name": "${config.networking.hostName}",
-        "address": "${config.networking.hostName}.gocept.net",
+        "address": "${config.networking.hostName}",
         "subscriptions": ["default"],
         "signature": "${cfg.password}"
       },
@@ -396,7 +396,7 @@ in {
 
       manage = {
         notification = "The FC manage job is not enabled.";
-        command = "${check_timer} fc-manage";
+        command = "${check_timer} fc-agent";
       };
       netstat_tcp = {
         notification = "Netstat TCP connections";

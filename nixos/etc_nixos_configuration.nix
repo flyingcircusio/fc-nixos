@@ -1,12 +1,10 @@
 { config }:
 # returns the verbatim contents of /etc/nixos/configuration.nix
 ''
-  { lib, ... }:
-
-  with builtins;
   {
     imports = [
       <fc/nixos>
+      <fc/nixos/roles>
       /etc/nixos/local.nix
     ];
 

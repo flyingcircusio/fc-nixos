@@ -73,7 +73,6 @@ def write_checks(directory=None, config_file=None, **kw):
 def handle_result(directory=None, enc=None, **kw):
     result = json.load(sys.stdin)
     check = result['check']
-    # XXX We should aggregate multiple results into one call.
     directory.register_servicecheck_results([
         dict(
             id=check['check_id'],
@@ -114,6 +113,7 @@ def main():
     kw.pop('enc', None)
 
     args.func(directory=directory, enc=enc, **kw)
+
 
 if __name__ == '__main__':
     main()
