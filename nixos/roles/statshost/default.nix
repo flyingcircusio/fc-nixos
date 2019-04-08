@@ -141,17 +141,6 @@ in
 
       enable = mkEnableOption "Grafana/InfluxDB stats host (global)";
 
-      useSSL = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Enables SSL in the virtual host.
-
-          Expects the SSL certificates and keys to be placed in
-          /etc/local/nginx/stats.crt and /etc/local/nginx/stats.key
-        '';
-      };
-
       hostName = mkOption {
         type = types.str;
         description = "HTTP virtual host for the frontend. Must be set.";
@@ -537,7 +526,7 @@ in
         recommendedTlsSettings = true;
         virtualHosts.${cfgStatsGlobal.hostName} = {
           enableACME = true;
-          addSSL = true;
+          forceSSL = true;
           locations = {
             "/".extraConfig = ''
               rewrite ^/$ /grafana/ redirect;
