@@ -24,5 +24,8 @@ in {
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
   network = callSubTests ./network {};
+  prometheus = callTest ./prometheus.nix {};
+  statshost-master = callTest ./statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
+  systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
 }

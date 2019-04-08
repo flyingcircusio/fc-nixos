@@ -144,7 +144,14 @@ in
       hostName = mkOption {
         type = types.str;
         description = "HTTP virtual host for the frontend. Must be set.";
+        default = config.networking.hostName;
         example = "stats.example.com";
+      };
+
+      useSSL = mkOption {
+        type = types.bool;
+        description = "Whether to require HTTPS for Grafana dashboard access.";
+        default = true;
       };
 
       prometheusMetricRelabel = mkOption {
@@ -502,8 +509,9 @@ in
         allowedUDPPorts = [ 2003 ];
       };
 
-      security.acme.certs.${cfgStatsGlobal.hostName}.email =
-        "admin@flyingcircus.io";
+      security.acme.certs = mkIf cfgStatsGlobal.useSSL {
+        ${cfgStatsGlobal.hostName}.email = "admin@flyingcircus.io";
+      };
 
       services.grafana = {
         enable = true;
@@ -525,8 +533,8 @@ in
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
         virtualHosts.${cfgStatsGlobal.hostName} = {
-          enableACME = true;
-          forceSSL = true;
+          enableACME = cfgStatsGlobal.useSSL;
+          forceSSL = cfgStatsGlobal.useSSL;
           locations = {
             "/".extraConfig = ''
               rewrite ^/$ /grafana/ redirect;
