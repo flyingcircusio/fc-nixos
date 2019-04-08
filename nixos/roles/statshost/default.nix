@@ -92,7 +92,7 @@ let
       relayLocationNodes
       (relayNode: "/etc/current-config/statshost-relay-${relayNode.job_name}.json");
 
-  statshostService = lib.findFirst
+  statshostService = findFirst
     (s: s.service == "statshost-collector")
     null
     config.flyingcircus.encServices;
@@ -168,7 +168,7 @@ in
 
       prometheusListenAddress = mkOption {
         type = types.str;
-        default = "${lib.head(fclib.listenAddressesQuotedV6 config "ethsrv")}:9090";
+        default = "${head (fclib.listenAddressesQuotedV6 "ethsrv")}:9090";
         description = "Prometheus listen address";
       };
 
@@ -266,7 +266,7 @@ in
         ];
       };
 
-      boot.kernel.sysctl."net.core.rmem_max" = lib.mkOverride 90 25165824;
+      boot.kernel.sysctl."net.core.rmem_max" = mkOverride 90 25165824;
 
       flyingcircus.services.collectdproxy.statshost = {
         enable = true;
@@ -290,7 +290,7 @@ in
 
     (mkIf (cfgStatsRG.enable || cfgProxyRG.enable) {
       environment.etc."local/statshost/scrape-rg.json".text = toJSON [{
-        targets = sort lessThan (lib.unique
+        targets = sort lessThan (unique
           (map
             (host: "${host.name}.fcio.net:9126")
             config.flyingcircus.encAddresses));
@@ -539,7 +539,7 @@ in
             "/".extraConfig = ''
               rewrite ^/$ /grafana/ redirect;
               auth_basic "FCIO user";
-              auth_basic_user_file "/etc/local/nginx/htpasswd_fcio_users";
+              auth_basic_user_file "/etc/local/htpasswd_fcio_users";
               proxy_pass http://${prometheusListenAddress};
             '';
             "/grafana/".proxyPass = "http://127.0.0.1:3001/";

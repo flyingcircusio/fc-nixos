@@ -29,6 +29,15 @@ in {
   mc = super.callPackage ./mc.nix { };
   mysql = super.mariadb;
 
+  nginx = super.nginx.override {
+    modules = [
+      self.nginxModules.dav
+      self.nginxModules.modsecurity
+      self.nginxModules.moreheaders
+      self.nginxModules.rtmp
+    ];
+  };
+
   # We use a (our) newer version than on upstream.
   vulnix = super.callPackage ./vulnix.nix {
     pythonPackages = self.python3Packages;

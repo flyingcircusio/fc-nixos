@@ -66,6 +66,7 @@
         unzip
         vim
         vulnix
+        wdiff
         wget
         xfsprogs
     ] ++

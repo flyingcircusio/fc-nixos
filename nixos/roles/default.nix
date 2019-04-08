@@ -10,6 +10,7 @@ let
 in {
   imports = [
     ./statshost
+    ./webgateway.nix
   ];
 
   flyingcircus.roles = roleSet;

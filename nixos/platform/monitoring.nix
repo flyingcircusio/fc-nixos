@@ -78,7 +78,7 @@ in {
         outputs = {
           prometheus_client = map
             (a: { listen = "${a}:${telegrafPort}"; })
-            (fclib.listenAddressesQuotedV6 config "ethsrv");
+            (fclib.listenAddressesQuotedV6 "ethsrv");
         };
         inputs = telegrafInputs;
       };
@@ -99,7 +99,7 @@ in {
             ${fclib.iptables ip} -A nixos-fw -i ethsrv -s ${ip} \
               -p tcp --dport ${telegrafPort} -j nixos-fw-accept
           '')
-          (fclib.listServiceIPs config "statshostproxy-collector")));
+          (fclib.listServiceIPs "statshostproxy-collector")));
 
     })
 
