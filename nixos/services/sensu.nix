@@ -279,7 +279,6 @@ in {
         RestartSec = "5s";
       };
       environment = {
-        EMBEDDED_RUBY = "true";
         LANG = "en_US.utf8";
       };
     };
