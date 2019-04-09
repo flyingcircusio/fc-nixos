@@ -258,6 +258,7 @@ in {
       path = with pkgs; [
         bash
         coreutils
+        fc.sensuplugins-rb
         glibc
         lm_sensors
         nagiosPluginsOfficial
