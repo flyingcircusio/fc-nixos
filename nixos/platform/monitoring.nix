@@ -1,3 +1,7 @@
+# Generic monitoring infrastructure and basic config option wire-up. For
+# individual monitoring/telemetry services, see nixos/services/sensu.nix and
+# nixos/services/telegraf.nix.  Monitoring *servers* are configured according to
+# their respective roles.
 { config, pkgs, lib, ... }:
 
 with lib;
