@@ -94,7 +94,7 @@ in
   };
 
   config = lib.mkMerge [
-    {
+    (lib.mkIf cfg.enable {
 
       environment.etc = {
         "local/nginx/README.txt".text = ''
@@ -198,7 +198,7 @@ in
         "d /etc/local/nginx 2775 nginx service"
         "d /etc/local/nginx/modsecurity 2775 nginx service"
       ];
-    }
+    })
 
     {
       flyingcircus.roles.statshost.globalAllowedMetrics = [ "nginx" ];
