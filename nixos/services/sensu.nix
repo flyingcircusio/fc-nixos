@@ -244,7 +244,10 @@ in {
 
     security.sudo.extraRules = [
       {
-        commands = [ "${pkgs.fc.multiping}/bin/multiping" ];
+        commands = with pkgs; [
+          "${fc.multiping}/bin/multiping"
+          "${fc.sensuplugins}/bin/check_disk"
+        ];
         groups = [ "sensuclient" ];
       }
     ];
@@ -255,9 +258,6 @@ in {
       path = with pkgs; [
         bash
         coreutils
-        fc.check-journal
-        fc.multiping
-        fc.sensusyntax
         glibc
         lm_sensors
         nagiosPluginsOfficial
@@ -329,7 +329,7 @@ in {
         notification = ''
           Problematic check definitions in /etc/local/sensu-client
         '';
-        command = "fc-sensu-syntax";
+        command = "${fc.sensusyntax}/bin/fc-sensu-syntax";
         interval = 60;
       };
       internet_uplink_ipv4 = uplink "4";
@@ -352,7 +352,7 @@ in {
       };
       disk = {
         notification = "Disk usage too high";
-        command = "${fc.sensuplugins}/bin/check_disk -v -w 90 -c 95";
+        command = "${sudo} ${fc.sensuplugins}/bin/check_disk -v -w 90 -c 95";
         interval = 300;
       };
       writable = {
@@ -375,7 +375,8 @@ in {
       journal = {
         notification = "Journal errors in the last 10 minutes";
         command =
-          "check_journal -j ${systemd}/bin/journalctl " +
+          "${fc.check-journal}/bin/check_journal " +
+          "-j ${systemd}/bin/journalctl " +
           "https://bitbucket.org/flyingcircus/fc-logcheck-config/raw/tip/nixos-journal.yaml";
         interval = 600;
       };
