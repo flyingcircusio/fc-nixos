@@ -80,8 +80,8 @@ in {
         wantedBy = [ "timers.target" ];
         timerConfig = {
           OnStartupSec = "49m";
-          OnUnitInactiveSec = "1d";
-          RandomizedDelaySec = "1h";
+          OnUnitActiveSec = "1d";
+          RandomizedDelaySec = "30m";
         };
       };
 

@@ -5,6 +5,12 @@ with builtins;
 let
   cfg = config.flyingcircus.services.nginx;
   fclib = config.fclib;
+  stateDir = config.services.nginx.stateDir;
+  package = config.services.nginx.package;
+  currentConf = "/etc/current-config/nginx.conf";
+
+  localConfig =
+    lib.optionalString (pathExists /etc/local/nginx) "${/etc/local/nginx}";
 
   baseConfig = ''
     worker_processes ${toString (fclib.current_cores config 1)};
@@ -114,11 +120,11 @@ in
         '';
 
         "local/nginx/fastcgi_params" = {
-          source = "${pkgs.nginx}/conf/fastcgi_params";
+          source = "${package}/conf/fastcgi_params";
         };
 
         "local/nginx/uwsgi_params" = {
-          source = "${pkgs.nginx}/conf/uwsgi_params";
+          source = "${package}/conf/uwsgi_params";
         };
 
         "local/nginx/example-configuration".text =
@@ -154,7 +160,7 @@ in
       };
 
       flyingcircus.services.sensu-client.checks = {
-        nginx_port_80 = {
+        nginx_status = {
           notification = "nginx does not listen on port 80";
           command =
             "check_http -H localhost -u /nginx_status -s server -c 5 -w 2";
@@ -187,17 +193,33 @@ in
         {
             rotate 92
             create 0644 nginx service
-            postrotate
+            postrotatr
                 systemctl kill nginx -s USR1 --kill-who=main
             endscript
         }
       '';
+
+      systemd.services.nginx.restartTriggers = [ /etc/local/nginx ];
 
       systemd.tmpfiles.rules = [
         "d /var/log/nginx 0755 nginx"
         "d /etc/local/nginx 2775 nginx service"
         "d /etc/local/nginx/modsecurity 2775 nginx service"
       ];
+
+      system.activationScripts.nginx = lib.stringAfter [ "etc" ] ''
+        touch ${stateDir}/reload.conf
+        if [[ $(< ${stateDir}/reload.conf ) != ${localConfig} ]]; then
+          echo "nginx: config change detected, reloading"
+          if ${package}/bin/nginx -t -c ${currentConf} -p ${stateDir}; then
+            ${pkgs.systemd}/bin/systemctl reload nginx.service
+            echo -n "${localConfig}" > ${stateDir}/reload.conf
+          else
+            echo "nginx: not reloading due to error"
+            false
+          fi
+        fi
+      '';
     })
 
     {

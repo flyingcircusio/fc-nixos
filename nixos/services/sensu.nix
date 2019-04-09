@@ -287,9 +287,9 @@ in {
     let
       uplink = ipvers: {
         notification = "Internet uplink IPv${ipvers} slow/unavailable";
-        command = ''
-          ${sudo} multiping -${ipvers} google.com dns.quad9.net heise.de
-        '';
+        command =
+          "${sudo} ${fc.multiping}/bin/multiping -${ipvers} " +
+          "google.com dns.quad9.net heise.de";
         interval = 300;
       };
     in {
