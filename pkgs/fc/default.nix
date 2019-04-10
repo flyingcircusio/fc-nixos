@@ -22,6 +22,7 @@
     rustPlatform = pkgs.rustPlatform_1_31;
   };
   sensuplugins = callPackage ./sensuplugins {};
+  sensuplugins-rb = callPackage ./sensuplugins-rb {};
   userscan = callPackage ./userscan.nix {
     rustPlatform = pkgs.rustPlatform_1_31;
   };

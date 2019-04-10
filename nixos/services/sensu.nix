@@ -258,6 +258,7 @@ in {
       path = with pkgs; [
         bash
         coreutils
+        fc.sensuplugins-rb
         glibc
         lm_sensors
         nagiosPluginsOfficial
@@ -278,7 +279,6 @@ in {
         RestartSec = "5s";
       };
       environment = {
-        EMBEDDED_RUBY = "true";
         LANG = "en_US.utf8";
       };
     };
@@ -292,7 +292,72 @@ in {
           "google.com dns.quad9.net heise.de";
         interval = 300;
       };
+
+      debugBundlerEnv = pkgs.writeScript "debug-bundler-env" ''
+        #!/nix/store/1hil95zzfqi62ldak5ijwjllf8j5yp0g-ruby-2.5.3/bin/ruby      
+        # A modified debugging binstub based on the stub created by bundlerEnv.
+        # Dumps out env vars to /tmp before and after running Bundler.setup().
+        require 'yaml'
+
+        # vars from original binstub
+        ENV['BUNDLE_GEMFILE'] = "/nix/store/h098i6n5y9j9mkczaknav1da1rw0yx2x-gemfile-and-lockfile/Gemfile"
+        ENV['BUNDLE_PATH'] = "/nix/store/fnwah9m69lj25ha2barzx1k84l9alsr8-sensuplugins-rb/lib/ruby/gems/2.5.0"
+        ENV['BUNDLE_FROZEN'] = '1'
+
+        # XXX: Messing around with env vars trying to create a env that works with nested Bundler.
+        # XXX: Doesn't work currently. Included for reference purposes only.
+        ENV['BUNDLE_BIN_PATH'] = '/nix/store/hpm2hmwbk1arhj26b34wkk1v3m732cr1-bundler-1.16.3/lib/ruby/gems/2.5.0/gems/bundler-1.16.3/exe/bundle'
+        ENV['GEM_PATH'] = ""
+        ENV['GEM_HOME'] = ENV['BUNDLE_PATH']
+        ENV['BUNDLER_ORIG_BUNDLE_GEMFILE'] = ENV['BUNDLE_GEMFILE']
+        ENV['BUNDLER_ORIG_PATH'] = 'BUNDLER_ENVIRONMENT_PRESERVER_INTENTIONALLY_NIL'
+        ENV['PATH'] = '/nix/store/fnwah9m69lj25ha2barzx1k84l9alsr8-sensuplugins-rb/lib/ruby/gems/2.5.0/bin'
+
+        env_to_delete = %w[
+          EMBEDDED_RUBY
+          INVOCATION_ID
+          JOURNAL_STREAM
+          LOGNAME
+          LOCALE_ARCHIVE
+          SENSU_LOADED_TEMPFILE
+          BUNDLE_BIN_PATH
+          BUNDLER_ORIG_BUNDLE_BIN_PATH
+          BUNDLER_ORIG_BUNDLE_GEMFILE
+          BUNDLER_ORIG_BUNDLER_ORIG_MANPATH
+          BUNDLER_ORIG_BUNDLER_VERSION
+          BUNDLER_ORIG_GEM_HOME
+          BUNDLER_ORIG_GEM_PATH
+          BUNDLER_ORIG_MANPATH
+          BUNDLER_ORIG_PATH
+          BUNDLER_ORIG_RB_USER_INSTALL
+          BUNDLER_ORIG_RUBYLIB
+          BUNDLER_ORIG_RUBYOPT
+          BUNDLER_VERSION
+          GEM_HOME
+          GEM_PATH
+          PATH
+          RUBYLIB
+          RUBYOPT
+        ]
+        env_to_delete.each { |e| ENV.delete(e) }
+
+        Gem.use_paths("/nix/store/hpm2hmwbk1arhj26b34wkk1v3m732cr1-bundler-1.16.3/lib/ruby/gems/2.5.0", ENV["GEM_PATH"])
+
+        File.write('/tmp/debugRb-before.yml', ENV.to_h.to_yaml)
+        require 'bundler'
+        Bundler.setup("default")
+
+        File.write('/tmp/debugRb.yml', ENV.to_h.to_yaml)
+        load Gem.bin_path("sensu-plugins-systemd", "check-failed-units.rb")
+      '';
+
     in {
+       # debug_bundled_ruby_checks = {
+       #   command = "${debugBundlerEnv}";
+       #   notification = "debugging Bundler, dumping vars locally...";
+       #   interval = 60;
+       # };
+
       load = {
         notification = "Load is too high";
         command =
