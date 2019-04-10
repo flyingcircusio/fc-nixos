@@ -16,21 +16,23 @@ let
   systemState = fclib.jsonFromFile cfg.systemStatePath "{}";
 
 in
-{
-  options.flyingcircus = with lib.types; {
 
-    enc = lib.mkOption {
+with lib;
+{
+  options.flyingcircus = with types; {
+
+    enc = mkOption {
       type = attrs;
       description = "Data from the external node classifier.";
     };
 
-    encPath = lib.mkOption {
+    encPath = mkOption {
       default = "/etc/nixos/enc.json";
       type = path;
       description = "Where to find the ENC json file.";
     };
 
-    encAddresses = lib.mkOption {
+    encAddresses = mkOption {
       type = listOf attrs;
       description = "List of addresses of machines in the neighbourhood.";
       example = [ {
@@ -44,50 +46,59 @@ in
       } ];
     };
 
-    encAddressesPath = lib.mkOption {
+    encAddressesPath = mkOption {
       default = /etc/nixos/addresses_srv.json;
       type = path;
       description = "Where to find the address list json file.";
     };
 
-    systemState = lib.mkOption {
+    systemState = mkOption {
       type = attrs;
       description = "The current system state as put out by fc-manage";
     };
 
-    encServicesPath = lib.mkOption {
+    encServicesPath = mkOption {
       default = /etc/nixos/services.json;
       type = path;
       description = "Where to find the ENC services json file.";
     };
 
-    encServiceClients = lib.mkOption {
+    encServiceClients = mkOption {
       type = listOf attrs;
       description = ''
         Service clients in the environment as provided by the ENC.
       '';
     };
 
-    encServiceClientsPath = lib.mkOption {
+    encServiceClientsPath = mkOption {
       default = /etc/nixos/service_clients.json;
       type = path;
       description = "Where to find the ENC service clients json file.";
     };
 
-    systemStatePath = lib.mkOption {
+    systemStatePath = mkOption {
       default = /etc/nixos/system_state.json;
       type = path;
       description = "Where to find the system state json file.";
     };
 
-    encServices = lib.mkOption {
+    encServices = mkOption {
       type = listOf attrs;
       description = "Services in the environment as provided by the ENC.";
     };
 
+    active-roles = mkOption {
+      default = attrByPath [ "roles" ] [] cfg.enc;
+      type = types.listOf types.str;
+      example = [ "generic" "webgateway" "webproxy" ];
+      description = ''
+        Which roles to activate.  Defaults to the roles provided by the ENC.
+      '';
+    };
+
   };
 
-  config = with lib; {
+  config = {
 
     environment.etc = optionalAttrs
       (hasAttrByPath ["parameters" "directory_secret"] cfg.enc)

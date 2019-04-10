@@ -13,7 +13,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
   '';
 
   boot = {
-    consoleLogLevel = 7;
+    consoleLogLevel = mkDefault 7;
 
     initrd.kernelModules = [
       "i6300esb"
@@ -70,7 +70,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   networking = {
     domain = "fcio.net";
-    hostName = attrByPath [ "name" ] "default" cfg.enc;
+    hostName = mkDefault (attrByPath [ "name" ] "default" cfg.enc);
   };
 
   swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];

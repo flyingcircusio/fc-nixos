@@ -1,7 +1,7 @@
 # telegraf adaptions.
-# Note that there are both `services.telegraf` and `flyingcircus.telegraf` in
-# use. The latter is the home for FC additions whilst the former referes to what
-# upstream defines.
+# Note that there are both `services.telegraf` and
+# `flyingcircus.services.telegraf` in use. The latter is the home for FC
+# additions whilst the former referes to what upstream defines.
 { config, lib, pkgs, ... }:
 
 with lib;
@@ -21,7 +21,7 @@ let
 
 in {
   options = {
-    flyingcircus.telegraf = {
+    flyingcircus.services.telegraf = {
 
       inputs = mkOption {
         default = {};
@@ -53,7 +53,7 @@ in {
     '';
 
     services.telegraf.extraConfig = {
-      inputs = config.flyingcircus.telegraf.inputs;
+      inputs = config.flyingcircus.services.telegraf.inputs;
     };
 
     system.activationScripts.telegraf = {

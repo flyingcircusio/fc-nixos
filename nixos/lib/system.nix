@@ -11,15 +11,15 @@ with lib;
 
   # Return the currently available memory. That is the minimum of the "should"
   # and the "actual" memory.
-  current_memory = default:
+  currentMemory = default:
     let
       enc_memory =
         if hasAttrByPath ["parameters" "memory"] cfg.enc
         then cfg.enc.parameters.memory
         else null;
       system_memory =
-        if hasAttr "memory" cfg.system_state
-        then cfg.system_state.memory
+        if hasAttr "memory" cfg.systemState
+        then cfg.systemState.memory
         else null;
       options = remove null [enc_memory system_memory];
     in
@@ -27,9 +27,9 @@ with lib;
       then default
       else head (sort (options));
 
-  current_cores = default:
-      if cfg.system_state ? cores
-      then cfg.system_state.cores
+  currentCores = default:
+      if cfg.systemState ? cores
+      then cfg.systemState.cores
       else default;
 
 }

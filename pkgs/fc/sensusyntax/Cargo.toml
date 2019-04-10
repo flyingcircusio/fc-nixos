@@ -1,6 +1,6 @@
 [package]
 name = "fc-sensu-syntax"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Christian Kauhaus <kc@flyingcircus.io>"]
 description = "Checks local sensu config for syntax and plausibility."
 edition = "2018"

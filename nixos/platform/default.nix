@@ -5,6 +5,7 @@ with lib;
   imports = [
     ./agent.nix
     ./enc.nix
+    ./firewall.nix
     ./garbagecollect
     ./monitoring.nix
     ./network.nix
@@ -14,6 +15,9 @@ with lib;
     ./systemd.nix
     ./users.nix
   ];
+
+  options.flyingcircus.roles.generic.enable =
+    mkEnableOption "Generic role, which does nothing";
 
   config = {
 
@@ -59,10 +63,11 @@ with lib;
     systemd.tmpfiles.rules = [
       # d instead of r to a) respect the age rule and b) allow exclusion
       # of fc-data to avoid killing the seeded ENC upon boot.
-      "d /tmp 1777 root root 3d"
-      "d /var/tmp 1777 root root 7d"
+      "d /etc/current-config"  # used by various FC roles
       "d /srv"
       "z /srv 0755 root root"
+      "d /tmp 1777 root root 3d"
+      "d /var/tmp 1777 root root 7d"
     ];
 
     time.timeZone =

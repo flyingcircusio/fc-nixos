@@ -97,6 +97,17 @@ let
         (head listOfSets)
         (mergeSets (tail listOfSets));
 
+  htpasswdUsers = lib.optionalString
+    (config.users.groups ? login)
+    (concatStringsSep "\n"
+      (map
+       (user: "${user.name}:${user.hashedPassword}")
+       (filter
+        (user: (stringLength user.hashedPassword) > 0)
+        (map
+         (username: config.users.users.${username})
+         (config.users.groups.login.members)))));
+
 in
 {
 
@@ -152,6 +163,9 @@ in
 
   config = {
 
+    # All login users as htpasswd compatible file
+    environment.etc."local/htpasswd_fcio_users".text = htpasswdUsers;
+
     flyingcircus.users = with lib; {
       userData = mkDefault (fclib.jsonFromFile cfg.userDataPath "[]");
       permissions = mkDefault (fclib.jsonFromFile cfg.permissionsPath "[]");
@@ -184,7 +198,7 @@ in
     };
 
     services.openssh.extraConfig = ''
-      AllowGroups root admin login
+      AllowGroups root admins login
     '';
 
     users =

@@ -1,6 +1,6 @@
 # generic networking functions for use in all of the flyingcircus Nix stuff
 
-{ pkgs, lib, ... }:
+{ config, pkgs, lib, ... }:
 
 with builtins;
 
@@ -26,7 +26,7 @@ rec {
   ip' = a: "ip " + (if isIp4 a then "-4" else if isIp6 a then "-6" else "");
 
   # list IP addresses for service configuration (e.g. nginx)
-  listenAddresses = config: interface:
+  listenAddresses = interface:
     if interface == "lo"
     # lo isn't part of the enc. Hard code it here.
     then [ "127.0.0.1" "::1" ]
@@ -40,22 +40,19 @@ rec {
           (map (addr: addr.address) interface_config.ipv6.addresses)
       else [];
 
-  listenAddressesQuotedV6 = config: interface:
+  listenAddressesQuotedV6 = interface:
     map
-      (addr:
-        if isIp6 addr then
-          "[${addr}]"
-        else addr)
-      (listenAddresses config interface);
+      (addr: if isIp6 addr then "[${addr}]" else addr)
+      (listenAddresses interface);
 
-  listServiceAddresses = config: service:
+  listServiceAddresses = service:
   (map
     (service: service.address)
     (filter
       (s: s.service == service)
       config.flyingcircus.encServices));
 
-  listServiceIPs = config: service:
+  listServiceIPs = service:
   (lib.flatten
     (map
       (service: service.ips)
@@ -65,13 +62,13 @@ rec {
 
 
   # Return service address (string) or null, if no service
-  listServiceAddress = config: service:
+  listServiceAddress = service:
     let
       addresses = listServiceAddresses config service;
     in
       if addresses == [] then null else head addresses;
 
-  listServiceAddressesWithPort = config: service: port:
+  listServiceAddressesWithPort = service: port:
     map
       (address: "${address}:${toString port}")
       (listServiceAddresses config service);
@@ -80,7 +77,7 @@ rec {
   # of the given interface with modifications.
   # E.g. nginxListenOn config ethfe "443 ssl http2"
   # NOTE: "mod" *must* must start with the port number.
-  nginxListenOn  = config: interface: mod:
+  nginxListenOn  = interface: mod:
     lib.concatMapStringsSep "\n  "
       (addr: "listen ${addr}:${toString mod};")
       (listenAddressesQuotedV6 config interface);
@@ -179,7 +176,7 @@ rec {
   ipRoutes = vlan: encInterface: filteredNets: verb:
     let
       prio = routingPriority vlan;
-      dev' = dev vlan encInterface.bridged;
+      dev' = dev vlan (encInterface.bridged or false);
 
       networkRoutesStr = lib.concatMapStrings
         (net: ''

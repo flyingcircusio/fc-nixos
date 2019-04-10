@@ -1,3 +1,7 @@
+# Generic monitoring infrastructure and basic config option wire-up. For
+# individual monitoring/telemetry services, see nixos/services/sensu.nix and
+# nixos/services/telegraf.nix.  Monitoring *servers* are configured according to
+# their respective roles.
 { config, pkgs, lib, ... }:
 
 with lib;
@@ -77,10 +81,8 @@ in {
         global_tags = globalTags;
         outputs = {
           prometheus_client = map
-            (a: {
-              listen = "${a}:${telegrafPort}";
-              })
-            (fclib.listenAddressesQuotedV6 config "ethsrv");
+            (a: { listen = "${a}:${telegrafPort}"; })
+            (fclib.listenAddressesQuotedV6 "ethsrv");
         };
         inputs = telegrafInputs;
       };
@@ -88,21 +90,20 @@ in {
       flyingcircus.services.sensu-client.checks = {
         telegraf_prometheus_output = {
           notification = "Telegraf prometheus output alive";
-          command = ''
-            check_http -v -j HEAD -H ${config.networking.hostName} \
-              -p ${telegrafPort} -u /metrics
-          '';
+          command =
+            "check_http -v -j HEAD -H ${config.networking.hostName} " +
+            "-p ${telegrafPort} -u /metrics";
         };
       };
 
       networking.firewall.extraCommands =
-        "# fcio/telegraf\n" +
+        "# FC telegraf\n" +
         (concatStringsSep ""
           (map (ip: ''
             ${fclib.iptables ip} -A nixos-fw -i ethsrv -s ${ip} \
               -p tcp --dport ${telegrafPort} -j nixos-fw-accept
           '')
-          (fclib.listServiceIPs config "statshostproxy-collector")));
+          (fclib.listServiceIPs "statshostproxy-collector")));
 
     })
 

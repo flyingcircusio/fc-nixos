@@ -1,4 +1,4 @@
-{ pkgs, stdenv, fetchFromGitHub, rustPlatform }:
+{ stdenv, fetchFromGitHub, rustPlatform, openssl, ronn }:
 
 with rustPlatform;
 
@@ -13,9 +13,10 @@ buildRustPackage rec {
     sha256 = "1b4sy6kykav751jrjifism1n6xx8xfm7s7fvcaanmwrxq7j9ixxl";
   };
 
-  cargoDepsSha256 = "0znsf3f1nrfiivcszdzlz5gkxam2v97wyz5yil47z3109k3jlgp8";
-  nativeBuildInputs = with pkgs; [ ronn ];
-  OPENSSL_DIR = pkgs.openssl;
+  cargoSha256 = "0mvzbx98k0ccnwn82xcswf4jqjf2slg3sbklv36yy71skk9s2az2";
+  nativeBuildInputs = [ ronn ];
+  OPENSSL_DIR = openssl.dev;
+  OPENSSL_LIB_DIR = "${openssl.out}/lib";
 
   postBuild = "make";
   postInstall = ''

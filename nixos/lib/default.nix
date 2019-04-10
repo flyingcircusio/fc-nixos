@@ -3,7 +3,7 @@
 let
   files = import ./files.nix { inherit pkgs lib; };
   math = import ./math.nix { inherit pkgs lib; };
-  network = import ./network.nix { inherit pkgs lib; };
+  network = import ./network.nix { inherit config pkgs lib; };
   system = import ./system.nix { inherit config pkgs lib; };
   utils = import ./utils.nix { inherit config pkgs lib; };
 
