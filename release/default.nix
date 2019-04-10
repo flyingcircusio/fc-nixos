@@ -90,6 +90,28 @@ let
     tests = import ../tests { inherit system nixpkgs pkgs; };
   };
 
+  makeNetboot = config:
+    let
+      configEvaled = import "${nixpkgs}/nixos/lib/eval-config.nix" config;
+      build = configEvaled.config.system.build;
+      kernelTarget = configEvaled.pkgs.stdenv.hostPlatform.platform.kernelTarget;
+    in
+      pkgs.symlinkJoin {
+        name = "netboot";
+        paths = [
+          build.netbootRamdisk
+          build.kernel
+          build.netbootIpxeScript
+        ];
+        postBuild = ''
+          mkdir -p $out/nix-support
+          echo "file ${kernelTarget} ${build.kernel}/${kernelTarget}" >> $out/nix-support/hydra-build-products
+          echo "file initrd ${build.netbootRamdisk}/initrd" >> $out/nix-support/hydra-build-products
+          echo "file ipxe ${build.netbootIpxeScript}/netboot.ipxe" >> $out/nix-support/hydra-build-products
+        '';
+        preferLocalBuild = true;
+      };
+
   channelsUpstream =
     lib.mapAttrs (name: src:
     let
@@ -157,6 +179,15 @@ let
         ../nixos
       ];
     }).config.system.build.ovaImage;
+
+    # Netboot-Image
+    netboot = makeNetboot {
+      inherit system;
+      modules = [
+        "${nixpkgs}/nixos/modules/installer/netboot/netboot-minimal.nix"
+        (import version_nix {})
+      ];
+    };
 
     # VM image for the Flying Circus infrastructure.
     fc = lib.hydraJob (import "${nixpkgs}/nixos/lib/eval-config.nix" {
