@@ -9,7 +9,7 @@ let
   package = config.services.nginx.package;
   currentConf = "/etc/current-config/nginx.conf";
 
-  vhostsJSON = fclib.jsonFromFile "/etc/local/nginx/vhosts.json" {};
+  vhostsJSON = fclib.jsonFromFile "/etc/local/nginx/vhosts.json" "{}";
   virtualHosts = lib.mapAttrs (
     _: val:
     (lib.optionalAttrs
@@ -164,7 +164,12 @@ in
             "check_http -H localhost -u /nginx_status -s server -c 5 -w 2";
           interval = 60;
         };
-      };
+      } //
+      (lib.mapAttrs' (name: _: (lib.nameValuePair "nginx_cert_${name}" {
+        notification = "HTTPS cert for ${name} (Let's encrypt)";
+        command = "check_http -H ${name} -p 443 -S -C 3";
+        interval = 600;
+      })) acmeEmails);
 
       networking.firewall.allowedTCPPorts = [ 80 443 ];
 
@@ -199,19 +204,22 @@ in
         }
       '';
 
-      systemd.services.nginx.restartTriggers = [ /etc/local/nginx ];
-
       systemd.tmpfiles.rules = [
         "d /var/log/nginx 0755 nginx"
         "d /etc/local/nginx 2775 nginx service"
         "d /etc/local/nginx/modsecurity 2775 nginx service"
       ];
 
-      system.activationScripts.nginx = lib.stringAfter [ "etc" ] ''
+      system.activationScripts.nginx-reload = lib.stringAfter [ "etc" ] ''
         if [[ ! -e ${stateDir}/reload.conf ]]; then
           install -D /dev/null ${stateDir}/reload.conf
         fi
-        if [[ "$(< ${stateDir}/reload.conf )" != "${localConfig}" ]]; then
+        # reload not possible when structured vhosts have changed -> skip
+        if [[ -n "$(find /etc/local/nginx -name '*.json' \
+                    -newer ${stateDir}/reload.conf)" ]]; then
+          echo -n "${localConfig}" > ${stateDir}/reload.conf
+        # check if local config has changed
+        elif [[ "$(< ${stateDir}/reload.conf )" != "${localConfig}" ]]; then
           echo "nginx: config change detected, reloading"
           if ${package}/bin/nginx -t -c ${currentConf} -p ${stateDir}; then
             ${pkgs.systemd}/bin/systemctl reload nginx.service || true

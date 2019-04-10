@@ -9,7 +9,7 @@ let
     mapAttrs (
       name: repoInfo:
       # Hydra expects fixed length rev ids
-      assert builtins.stringLength repoInfo.rev == 40;
+      assert stringLength repoInfo.rev == 40;
       pkgs.fetchFromGitHub {
         inherit (repoInfo) owner repo rev sha256;
         inherit name;
