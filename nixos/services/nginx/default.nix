@@ -9,8 +9,20 @@ let
   package = config.services.nginx.package;
   currentConf = "/etc/current-config/nginx.conf";
 
+  vhostsJSON = fclib.jsonFromFile "/etc/local/nginx/vhosts.json" {};
+  virtualHosts = lib.mapAttrs (
+    _: val:
+    (lib.optionalAttrs
+      ((val ? addSSL || val ? onlySSL || val ? forceSSL) && val ? acmeEmail)
+      { enableACME = true; }) // removeAttrs val [ "acmeEmail" ])
+    vhostsJSON;
+
+  acmeEmails =
+    lib.mapAttrs (name: val: { email = val.acmeEmail; })
+    (lib.filterAttrs (_: val: val ? acmeEmail ) vhostsJSON);
+
   localConfig =
-    lib.optionalString (pathExists /etc/local/nginx) "${/etc/local/nginx}";
+    lib.optionalString (pathExists "/etc/local/nginx") "${/etc/local/nginx}";
 
   baseConfig = ''
     worker_processes ${toString (fclib.current_cores config 1)};
@@ -103,21 +115,7 @@ in
     (lib.mkIf cfg.enable {
 
       environment.etc = {
-        "local/nginx/README.txt".text = ''
-          Nginx is enabled on this machine.
-
-          Put your site configuration into this directory as `*.conf`. You may
-          add other files, like SSL keys, as well.
-
-          If you want to authenticate against the Flying Circus users with login permission,
-          use the following snippet, and *USE SSL*:
-
-            auth_basic "FCIO user";
-            auth_basic_user_file "/etc/local/nginx/htpasswd_fcio_users";
-
-          There is also an `example-configuration` here. Copy to some file ending with
-          *.conf and adapt.
-        '';
+        "local/nginx/README.txt".source = ./README.txt;
 
         "local/nginx/fastcgi_params" = {
           source = "${package}/conf/fastcgi_params";
@@ -170,6 +168,8 @@ in
 
       networking.firewall.allowedTCPPorts = [ 80 443 ];
 
+      security.acme.certs = acmeEmails;
+
       services.nginx = {
         enable = true;
         appendConfig = "";
@@ -183,7 +183,7 @@ in
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
         statusPage = true;
-        virtualHosts = lib.mkDefault {};
+        inherit virtualHosts;
       };
 
       services.logrotate.config = ''
@@ -193,7 +193,7 @@ in
         {
             rotate 92
             create 0644 nginx service
-            postrotatr
+            postrotate
                 systemctl kill nginx -s USR1 --kill-who=main
             endscript
         }
@@ -208,11 +208,13 @@ in
       ];
 
       system.activationScripts.nginx = lib.stringAfter [ "etc" ] ''
-        touch ${stateDir}/reload.conf
-        if [[ $(< ${stateDir}/reload.conf ) != ${localConfig} ]]; then
+        if [[ ! -e ${stateDir}/reload.conf ]]; then
+          install -D /dev/null ${stateDir}/reload.conf
+        fi
+        if [[ "$(< ${stateDir}/reload.conf )" != "${localConfig}" ]]; then
           echo "nginx: config change detected, reloading"
           if ${package}/bin/nginx -t -c ${currentConf} -p ${stateDir}; then
-            ${pkgs.systemd}/bin/systemctl reload nginx.service
+            ${pkgs.systemd}/bin/systemctl reload nginx.service || true
             echo -n "${localConfig}" > ${stateDir}/reload.conf
           else
             echo "nginx: not reloading due to error"
