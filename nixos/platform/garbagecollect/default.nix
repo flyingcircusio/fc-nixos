@@ -61,7 +61,7 @@ in {
       flyingcircus.services.sensu-client.checks.fc-collect-garbage = {
         notification = "nix-collect-garbage stamp recent";
         command = ''
-          ${pkgs.nagiosPluginsOfficial}/bin/check_file_age \
+          ${pkgs.monitoring-plugins}/bin/check_file_age \
             -f ${log} -w 216000 -c 432000
         '';
       };

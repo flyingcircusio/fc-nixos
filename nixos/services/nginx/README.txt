@@ -15,6 +15,10 @@ auth_basic_user_file "/etc/local/nginx/htpasswd_fcio_users";
 There is also an `example-configuration` here. Copy to some file ending with
 *.conf and adapt.
 
+Changes to *.conf will cause nginx only to reload, not to restart, on the next
+nixos-rebuild run.
+
+
 Structured configuration
 ------------------------
 
@@ -45,3 +49,5 @@ All options are documented in
 https://nixos.org/nixos/options.html#services.nginx.virtualhosts. Note that an
 non-standard attribute "acmeEmail" must be set to a contact mail address
 in order to activate Let's encrypt.
+
+Changes to *.json will cause nginx to restart on the next nixos-rebuild run.

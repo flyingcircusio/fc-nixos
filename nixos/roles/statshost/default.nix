@@ -510,7 +510,7 @@ in
       };
 
       security.acme.certs = mkIf cfgStatsGlobal.useSSL {
-        ${cfgStatsGlobal.hostName}.email = "admin@flyingcircus.io";
+        ${cfgStatsGlobal.hostName}.email = mkDefault "admin@flyingcircus.io";
       };
 
       services.grafana = {
