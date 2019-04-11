@@ -24,5 +24,6 @@ import ./make-test.nix ({ ... }:
       curl -v http://localhost/nginx_status | \
       grep "server accepts handled requests"
     _EOT_
+    $machine->succeed('grep mysite.conf /var/log/nginx/access.log');
   '';
 })
