@@ -215,7 +215,7 @@ in
           install -D /dev/null ${stateDir}/reload.conf
         fi
         # reload not possible when structured vhosts have changed -> skip
-        if [[ -n "$(find /etc/local/nginx -name '*.json' \
+        if [[ -n "$(find -L /etc/local/nginx -type f -name '*.json' \
                     -newer ${stateDir}/reload.conf)" ]]; then
           echo -n "${localConfig}" > ${stateDir}/reload.conf
         # check if local config has changed

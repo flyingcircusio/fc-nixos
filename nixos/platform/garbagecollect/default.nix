@@ -15,7 +15,6 @@ let
   log = "/var/log/fc-collect-garbage.log";
 
   script = ''
-    sleep $[ $RANDOM % 30 ]
     started=$(date +%s)
     failed=0
     while read user home; do
@@ -34,7 +33,7 @@ let
       echo "ERROR: fc-userscan failed"
       exit 1
     else
-      nix-collect-garbage --delete-older-than 3d --max-freed 104857600
+      nice nix-collect-garbage --delete-older-than 3d --max-freed 10485760
     fi
     stopped=$(date +%s)
     echo "$(date -Is) time=$((stopped - started))s" >> ${log}
