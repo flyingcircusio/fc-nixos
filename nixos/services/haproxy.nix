@@ -49,23 +49,19 @@ let
 
 in
 {
-  options = with lib; {
+  options.flyingcircus.services.haproxy = with lib; {
 
-    flyingcircus.services.haproxy = {
+    enable = mkEnableOption "FC-customized HAproxy";
 
-      enable = mkEnableOption "FC-customized HAproxy";
+    haConfig = mkOption {
+      type = types.lines;
+      default = example;
+      description = "Full HAProxy configuration.";
+    };
 
-      haConfig = mkOption {
-        type = types.lines;
-        default = example;
-        description = "Full HAProxy configuration.";
-      };
-
-      statsSocket = mkOption {
-        type = types.string;
-        default = "/run/haproxy_admin.sock";
-      };
-
+    statsSocket = mkOption {
+      type = types.string;
+      default = "/run/haproxy_admin.sock";
     };
 
   };
@@ -101,19 +97,13 @@ in
         };
       };
 
+      flyingcircus.syslog.separateFacilities = {
+        local2 = "/var/log/haproxy.log";
+      };
+
       services.haproxy.enable = true;
       services.haproxy.config =
         if configFiles == [] then example else haproxyCfgContent;
-
-      services.logrotate.config = ''
-        /var/log/haproxy.log {}
-      '';
-
-      # XXX use flyingcircus.services.syslog instead
-      services.rsyslogd.enable = lib.mkDefault true;
-      services.rsyslogd.extraConfig = ''
-        local2.* -/var/log/haproxy.log
-      '';
 
       systemd.services.haproxy = {
         reloadIfChanged = true;

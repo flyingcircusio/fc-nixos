@@ -5,6 +5,7 @@
     ./logrotate
     ./nginx
     ./sensu.nix
+    ./syslog.nix
     ./telegraf.nix
   ];
 }
