@@ -55,6 +55,18 @@ let
     }
   '';
 
+  ifJsonSyntaxError = ''
+    sensu_json_present=$(
+      # tricky exit code:
+      # 0 -> one file; 1 -> no files; 2 -> more than one file
+      test -e /etc/local/sensu-client/*.json 2>/dev/null
+      echo $?
+    )
+    if [[ $sensu_json_present != 1 ]] && ! ${sensusyntax} -S; then
+  '';
+
+  sensusyntax = "${pkgs.fc.sensusyntax}/bin/fc-sensu-syntax";
+
   checkOptions = {
     options = {
       notification = mkOption {
@@ -193,13 +205,9 @@ in {
       install -d -o sensuclient -g service -m 0775 \
         /etc/local/sensu-client /var/tmp/sensu /var/cache/vulnix
       install -d -o sensuclient -g service -m 0775 /var/cache/vulnix
-      # 0 -> one file; 1 -> no files; 2 -> more than one file
-      sensu_json_present=$(
-        test -e /etc/local/sensu-client/*.json 2>/dev/null
-        echo $?
-      )
-      if [[ $sensu_json_present != 1 ]]; then
-        ${pkgs.fc.sensusyntax}/bin/fc-sensu-syntax -S
+      ${ifJsonSyntaxError}
+        echo "Errors in /etc/local/sensu-client, aborting"
+        exit 3
       fi
       unset sensu_json_present
     '';
@@ -230,18 +238,6 @@ in {
         }
     '';
 
-    users.groups.sensuclient.gid = config.ids.gids.sensuclient;
-
-    users.users.sensuclient = {
-      description = "sensu client daemon user";
-      uid = config.ids.uids.sensuclient;
-      group = "sensuclient";
-      # Allow sensuclient to interact with services, adm stuff and the journal.
-      # This especially helps to check supervisor with a group-writable
-      # socket:
-      extraGroups = [ "service" "adm" "systemd-journal" ];
-    };
-
     security.sudo.extraRules = [
       {
         commands = with pkgs; [
@@ -255,6 +251,7 @@ in {
     systemd.services.sensu-client = {
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
+      stopIfChanged = false;
       path = with pkgs; [
         bash
         coreutils
@@ -267,9 +264,14 @@ in {
         sysstat
       ];
       script = ''
-        sensu-client -L ${cfg.loglevel} \
-          -c ${client_json} \
-          -d ${localSensuConf} \
+        ${ifJsonSyntaxError}
+          confDir=""
+        else
+          confDir="-d ${localSensuConf}"
+        fi
+        # omit localSensuConf dir if syntax errors have been detected
+        exec sensu-client -L ${cfg.loglevel} \
+          -c ${client_json} $confDir \
           ${concatStringsSep " " cfg.extraOpts}
       '';
       serviceConfig = {
@@ -281,6 +283,18 @@ in {
       environment = {
         LANG = "en_US.utf8";
       };
+    };
+
+    users.groups.sensuclient.gid = config.ids.gids.sensuclient;
+
+    users.users.sensuclient = {
+      description = "sensu client daemon user";
+      uid = config.ids.uids.sensuclient;
+      group = "sensuclient";
+      # Allow sensuclient to interact with services, adm stuff and the journal.
+      # This especially helps to check supervisor with a group-writable
+      # socket:
+      extraGroups = [ "service" "adm" "systemd-journal" ];
     };
 
     flyingcircus.services.sensu-client.checks = with pkgs;
@@ -329,7 +343,7 @@ in {
         notification = ''
           Problematic check definitions in /etc/local/sensu-client
         '';
-        command = "${fc.sensusyntax}/bin/fc-sensu-syntax";
+        command = sensusyntax;
         interval = 60;
       };
       internet_uplink_ipv4 = uplink "4";
@@ -380,7 +394,6 @@ in {
         notification = "Journal file too small.";
         command = "${fc.sensuplugins}/bin/check_journal_file";
       };
-
       vulnix = {
         notification = "Security vulnerabilities in the last 6h";
         command =
@@ -390,7 +403,6 @@ in {
           "-w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.toml ";
         interval = 6 * 3600;
       };
-
       manage = {
         notification = "The FC manage job is not enabled.";
         command = "${check_timer} fc-agent";
