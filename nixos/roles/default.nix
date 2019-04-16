@@ -11,6 +11,7 @@ in {
   imports = [
     ./statshost
     ./webgateway.nix
+    ./webproxy.nix
   ];
 
   flyingcircus.roles = roleSet;

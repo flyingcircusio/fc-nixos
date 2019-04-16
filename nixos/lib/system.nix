@@ -25,7 +25,7 @@ with lib;
     in
       if options == []
       then default
-      else head (sort (options));
+      else head (sort lessThan options);
 
   currentCores = default:
       if cfg.systemState ? cores
