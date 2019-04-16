@@ -116,7 +116,7 @@ in {
         description = "Timer for fc-agent";
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnStartupSec = "10m";
+          OnActiveSec = "10m";
           OnUnitInactiveSec = "10m";
           RandomizedDelaySec = "10s";
         };

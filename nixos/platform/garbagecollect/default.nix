@@ -15,6 +15,16 @@ let
   log = "/var/log/fc-collect-garbage.log";
 
   script = ''
+    # load dependent delay
+    ncpu=$(awk '/^processor/ { ncpu+=1 }; END { print ncpu }' /proc/cpuinfo)
+    load=""
+    max_wait=0
+    while [[ "$load" != "low" && $max_wait -lt 3600 ]]; do
+      echo "load too high, waiting"
+      sleep 10
+      max_wait=$((max_wait + 10))
+      load=$(awk "1 { if (\$1 / "$ncpu" < .5) print \"low\" }" /proc/loadavg)
+    done
     started=$(date +%s)
     failed=0
     while read user home; do
@@ -78,7 +88,7 @@ in {
         description = "Timer for fc-collect-garbage";
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnStartupSec = "49m";
+          OnActiveSec = "2h 30m";
           OnUnitActiveSec = "1d";
           RandomizedDelaySec = "30m";
         };
