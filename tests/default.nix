@@ -28,4 +28,5 @@ in {
   statshost-master = callTest ./statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
+  webproxy = callTest ./webproxy.nix {};
 }

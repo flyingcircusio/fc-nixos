@@ -70,16 +70,22 @@ in
         };
         varnish_http = {
           notification = "varnish port 8008 HTTP response";
-          command = "check_http -H localhost -p 8008 -c 10 -w 3 -t 20 -f ok";
+          command = "check_http -H localhost -p 8008 -c 10 -w 3 -t 20 -e HTTP";
         };
       };
 
       flyingcircus.services.telegraf.inputs = {
         varnish = [{
           binary = "${cfg.package}/bin/varnishstat";
-          stats = ["all"];
+          stats = [ "all" ];
         }];
       };
+
+      services.logrotate.config = ''
+        /var/log/varnish {
+          create 0644 varnish varnish
+        }
+      '';
 
       services.varnish = {
         enable = true;
@@ -92,16 +98,30 @@ in
         extraCommandLine = "-s malloc,${toString cacheMemory}M";
       };
 
-      system.activationScripts.varnish-local = stringAfter [] ''
-        install -d -o varnish -g service -m 02775 /etc/local/varnish
-      '';
-
-      systemd.services.varnish = {
-        stopIfChanged = false;
-        serviceConfig = {
-          RestartSec = mkOverride 90 "10s";
+      systemd.services = {
+        varnish = {
+          stopIfChanged = false;
+          serviceConfig = {
+            RestartSec = mkOverride 90 "10s";
+          };
+        };
+        varnishncsa = {
+          after = [ "varnish.service" ];
+          description = "Varnish logging daemon";
+          script =
+            "exec ${cfg.package}/bin/varnishncsa -a -w /var/log/varnish.log";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig = {
+            User = "varnish";
+            Group = "varnish";
+          };
         };
       };
+
+      systemd.tmpfiles.rules = [
+        "d /etc/local/varnish 2775 varnish service"
+        "f /var/log/varnish.log 644 varnish varnish"
+      ];
 
     })
 
