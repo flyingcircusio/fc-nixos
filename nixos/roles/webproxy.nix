@@ -21,8 +21,6 @@ let
 
   configFile = pkgs.writeText "default.vcl" cfg.config;
 
-  varnishadm = "${cfg.package}/bin/varnishadm";
-
 in
 {
 
@@ -55,17 +53,10 @@ in
         "current-config/varnish.vcl".source = configFile;
       };
 
-      security.sudo.extraRules = [
-        {
-          commands = [ varnishadm ];
-          groups = [ "sensuclient" ];
-        }
-      ];
-
       flyingcircus.services.sensu-client.checks = {
         varnish_status = {
           notification = "varnishadm status reports errors";
-          command = "/run/wrappers/bin/sudo ${varnishadm} status";
+          command = "${cfg.package}/bin/varnishadm status";
           timeout = 60;
         };
         varnish_http = {
@@ -74,15 +65,17 @@ in
         };
       };
 
-      flyingcircus.services.telegraf.inputs = {
-        varnish = [{
+      flyingcircus.services.telegraf.inputs.varnish = [
+        {
           binary = "${cfg.package}/bin/varnishstat";
           stats = [ "all" ];
-        }];
-      };
+        }
+      ];
+
+      flyingcircus.users.serviceUsers.extraGroups = [ "varnish" ];
 
       services.logrotate.config = ''
-        /var/log/varnish {
+        /var/log/varnish.log {
           create 0644 varnish varnish
         }
       '';
@@ -123,6 +116,10 @@ in
         "f /var/log/varnish.log 644 varnish varnish"
       ];
 
+      users.groups.varnish.members = [
+        "sensuclient"
+        "telegraf"
+      ];
     })
 
     {

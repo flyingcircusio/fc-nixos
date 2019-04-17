@@ -201,17 +201,6 @@ in {
 
   config = mkIf cfg.enable {
 
-    system.activationScripts.sensu-client = ''
-      install -d -o sensuclient -g service -m 0775 \
-        /etc/local/sensu-client /var/tmp/sensu /var/cache/vulnix
-      install -d -o sensuclient -g service -m 0775 /var/cache/vulnix
-      ${ifJsonSyntaxError}
-        echo "Errors in /etc/local/sensu-client, aborting"
-        exit 3
-      fi
-      unset sensu_json_present
-    '';
-
     environment.etc."local/sensu-client/README.txt".text = ''
       Put local sensu checks here.
 
@@ -248,6 +237,14 @@ in {
       }
     ];
 
+    system.activationScripts.sensu-client = ''
+      ${ifJsonSyntaxError}
+        echo "Errors in /etc/local/sensu-client, aborting"
+        exit 3
+      fi
+      unset sensu_json_present
+    '';
+
     systemd.services.sensu-client = {
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
@@ -265,6 +262,7 @@ in {
       ];
       script = ''
         ${ifJsonSyntaxError}
+          # graceful degradation -> leave local config out
           confDir=""
         else
           confDir="-d ${localSensuConf}"
@@ -284,6 +282,12 @@ in {
         LANG = "en_US.utf8";
       };
     };
+
+    systemd.tmpfiles.rules = [
+      "d /etc/local/sensu-client 0775 sensuclient service"
+      "d /var/cache/vulnix 0775 sensuclient service"
+      "d /var/tmp/sensu 0775 sensuclient service"
+    ];
 
     users.groups.sensuclient.gid = config.ids.gids.sensuclient;
 

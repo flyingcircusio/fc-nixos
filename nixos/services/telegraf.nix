@@ -9,13 +9,17 @@ with lib;
 let
   cfg = config.services.telegraf;
 
+  unifiedConfig = lib.recursiveUpdate
+    cfg.extraConfig
+    { inputs = config.flyingcircus.services.telegraf.inputs; };
+
   # Copied from nixos/modules/services/monitoring/telegraf.nix.
   # I don't know a better way to get the -config-directory option into ExecStart.
   configFile = pkgs.runCommand "config.toml" {
     buildInputs = [ pkgs.remarshal ];
   } ''
     remarshal -if json -of toml \
-      < ${pkgs.writeText "config.json" (builtins.toJSON cfg.extraConfig)} \
+      < ${pkgs.writeText "config.json" (builtins.toJSON unifiedConfig)} \
       > $out
   '';
 
@@ -33,7 +37,7 @@ in {
         example = {
           varnish = [{
             binary = "${pkgs.varnish}/bin/varnishstat";
-            stats = ["all"];
+            stats = [ "all" ];
           }];
         };
       };
@@ -52,17 +56,10 @@ in {
       for details on how to configure telegraf.
     '';
 
-    services.telegraf.extraConfig = {
-      inputs = config.flyingcircus.services.telegraf.inputs;
-    };
-
-    system.activationScripts.telegraf = {
-      text = ''
-        install -d -o root -g service -m 02775 /etc/local/telegraf
-        install -d -o telegraf /run/telegraf
-      '';
-      deps = [];
-    };
+    systemd.tmpfiles.rules = [
+      "d /etc/local/telegraf 2775 root service"
+      "d /run/telegraf 0755 telegraf"
+    ];
 
     systemd.services.telegraf = {
       serviceConfig = {
