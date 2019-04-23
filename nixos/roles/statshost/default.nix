@@ -144,7 +144,6 @@ in
       hostName = mkOption {
         type = types.str;
         description = "HTTP virtual host for the frontend. Must be set.";
-        default = config.networking.hostName;
         example = "stats.example.com";
       };
 
