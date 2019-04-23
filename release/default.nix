@@ -92,12 +92,12 @@ let
 
   makeNetboot = config:
     let
-      configEvaled = import "${nixpkgs}/nixos/lib/eval-config.nix" config;
-      build = configEvaled.config.system.build;
-      kernelTarget = configEvaled.pkgs.stdenv.hostPlatform.platform.kernelTarget;
+      evaled = import "${nixpkgs}/nixos/lib/eval-config.nix" config;
+      build = evaled.config.system.build;
+      kernelTarget = evaled.pkgs.stdenv.hostPlatform.platform.kernelTarget;
     in
       pkgs.symlinkJoin {
-        name = "netboot";
+        name = "netboot-${evaled.config.system.nixos.label}-${system}";
         paths = [
           build.netbootRamdisk
           build.kernel
@@ -180,7 +180,7 @@ let
       ];
     }).config.system.build.ovaImage;
 
-    # Netboot-Image
+    # iPXE netboot image
     netboot = makeNetboot {
       inherit system;
       modules = [
