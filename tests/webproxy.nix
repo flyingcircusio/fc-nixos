@@ -23,7 +23,7 @@ import ./make-test.nix ({ pkgs, ... }:
       die "expected output missing";
 
     # check log file entry
-    sleep 0.5;
+    sleep 1;
     $webproxy->succeed(<<_EOT_);
     grep "GET http://localhost:8008/hello.txt HTTP/" /var/log/varnish.log
     _EOT_
