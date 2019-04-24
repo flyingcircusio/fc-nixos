@@ -34,7 +34,7 @@ bundlerEnv rec {
     for prog in $out/bin/*.rb; do
       hidden="$(dirname "$prog")/.$(basename "$prog")"-wrapped
       mv $prog $hidden
-      echo "/usr/bin/env -i - $hidden \"$@\"" > $prog
+      echo /usr/bin/env -i - $hidden '"$@"' > $prog
       chmod a+x $prog
     done
   '';
