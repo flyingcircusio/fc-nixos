@@ -87,8 +87,11 @@ in {
         script =
           let interval = toString cfg.agent.interval;
           in ''
-            timeout 14400 fc-manage -E ${cfg.encPath} -i ${interval} ${cfg.agent.steps}
-            timeout 900 fc-resize -E ${cfg.encPath}
+            rc=0
+            timeout 14400 fc-manage -E ${cfg.encPath} -i ${interval} \
+              ${cfg.agent.steps} || rc=$?
+            timeout 900 fc-resize -E ${cfg.encPath} || rc=$?
+            exit $rc
           '';
       };
 
