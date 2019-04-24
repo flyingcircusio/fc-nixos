@@ -5,10 +5,17 @@ base=$PWD
 # preserve nixos-config
 config=$(nix-instantiate --find-file nixos-config 2>/dev/null) || true
 
-if [[ -z "$NIX_PATH" ]]; then
-    # bootstrapping with what we find on the system
-    export NIX_PATH="$HOME/.nix-defexpr/channels/nixos:$HOME/.nix-defexpr/channels_root/nixos:$HOME/.nix-defexpr/channels:$HOME/.nix-defexpr/channels_root"
-fi
+# bootstrapping with what we find on the system
+for candidate in \
+        $HOME/.nix-defexpr/channels/nixos \
+        $HOME/.nix-defexpr/channels_root/nixos \
+        $HOME/.nix-defexpr/channels \
+        $HOME/.nix-defexpr/channels_root; do
+    if [[ -e ${candidate} ]]; then
+        NIX_PATH="${NIX_PATH}${NIX_PATH:+:}${candidate}"
+    fi
+done
+export NIX_PATH
 channels=`nix-build -Q --quiet versions.nix -A allUpstreams --no-out-link`
 if [[ -z $channels ]]; then
     echo "$0: failed to build nixpkgs+overlay" >&2
