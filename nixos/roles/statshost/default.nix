@@ -18,12 +18,8 @@ let
 
   retentionHours = cfgStatsGlobal.prometheusRetention * 3600;
   promFlags = [
-    "-storage.local.retention ${toString retentionHours}h"
-  ] ++
-  (optional
-    (cfgStatsGlobal.prometheusRetention > 30)
-    "-storage.local.series-file-shrink-ratio .2"
-  );
+    "--storage.tsdb.retention ${toString retentionHours}h"
+  ];
   prometheusListenAddress = cfgStatsGlobal.prometheusListenAddress;
 
   # It's common to have stathost and loghost on the same node. Each should
@@ -354,15 +350,14 @@ in
     # An actual statshost. Enable Prometheus.
     (mkIf (cfgStatsGlobal.enable || cfgStatsRG.enable) {
 
-      systemd.services.prometheus.serviceConfig = {
+      systemd.services.prometheus2.serviceConfig = {
         # Prometheus can take a few minutes to shut down. If it is forcefully
         # killed, a crash recovery process is started, which takes even longer.
         TimeoutStopSec = "10m";
       };
 
-      services.prometheus =
+      services.prometheus2 =
         let
-          cfg = config.services.prometheus;
           remote_read = [
             { url = "http://localhost:8086/api/v1/prom/read?db=downsampled"; }
           ];
@@ -377,7 +372,6 @@ in
           enable = true;
           extraFlags = promFlags;
           listenAddress = prometheusListenAddress;
-          dataDir = "/srv/prometheus";
           scrapeConfigs = [
             {
               job_name = "prometheus";

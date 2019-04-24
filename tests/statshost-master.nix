@@ -39,7 +39,7 @@ import ./make-test.nix ({ pkgs, ... }:
       api = "http://192.168.101.1:9090/api/v1";
     in
     ''
-      $machine->waitForUnit("prometheus.service");
+      $machine->waitForUnit("prometheus2.service");
       $machine->waitForUnit("telegraf.service");
       $machine->waitForFile("/run/telegraf/influx.sock");
 
