@@ -9,6 +9,7 @@ let
 
 in {
   imports = [
+    ./memcached.nix
     ./redis.nix
     ./statshost
     ./webgateway.nix

@@ -23,6 +23,7 @@ in {
   garbagecollect = callTest ./garbagecollect.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
+  memcached = callTest ./memcached.nix {};
   network = callSubTests ./network {};
   prometheus = callTest ./prometheus.nix {};
   redis = callTest ./redis.nix {};
