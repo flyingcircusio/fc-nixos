@@ -9,6 +9,7 @@ let
 
 in {
   imports = [
+    ./redis.nix
     ./statshost
     ./webgateway.nix
     ./webproxy.nix

@@ -124,6 +124,9 @@ with lib;
       uchiwa = 31003;
       sensuclient = 31004;
       powerdns = 31005;
+      
+      # removed by upstream, we want to keep it
+      redis = 181; 
     };
 
     ids.gids = {
