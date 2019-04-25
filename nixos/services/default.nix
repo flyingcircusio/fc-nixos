@@ -10,6 +10,7 @@
     ./logrotate
     ./nginx
     ./prometheus.nix
+    ./redis.nix
     ./sensu.nix
     ./syslog.nix
     ./telegraf.nix

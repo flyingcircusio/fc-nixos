@@ -8,12 +8,12 @@ if ! echo "$releaseid" | egrep -q '^[0-9]{4}_[0-9]{3}$'; then
     exit 64
 fi
 
-dev="fc-18.09-dev"
+dev="master"
 stag="fc-18.09-staging"
 prod="fc-18.09-production"
 echo "$0: performing release based on $stag"
 
-if ! git remote -v | egrep -q "^origin\s.*github.com.flyingcircusio/nixpkgs"
+if ! git remote -v | egrep -q "^origin\s.*github.com.flyingcircusio/fc-nixos"
 then
     echo "$0: please perform release in a clean checkout with proper origin" >&2
     exit 64

@@ -31,8 +31,10 @@ class RebootActivity(Activity):
     def boom(self):
         with open('starttime', 'w') as f:
             print(time.time(), file=f)
-        opt = '-h' if self.coldboot else '-r'
-        subprocess.check_call(['shutdown', opt, '1', self.request.comment])
+        if self.coldboot:
+            subprocess.check_call(['poweroff'])
+        else:
+            subprocess.check_call(['reboot'])
         self.finish('shutdown at {}'.format(
             time.strftime('%Y-%m-%d %H:%M:%S UTC',
                           time.gmtime(time.time() + 60))))
