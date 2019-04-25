@@ -38,6 +38,10 @@ in {
     ];
   };
 
+  rum = super.callPackage ./postgresql/rum { };
+  #postgis = super.callPackage ./postgis { };
+  temporal_tables = super.callPackage ./postgresql/temporal_tables { };
+
   # We use a (our) newer version than on upstream.
   vulnix = super.callPackage ./vulnix.nix {
     pythonPackages = self.python3Packages;
