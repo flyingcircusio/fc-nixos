@@ -57,7 +57,7 @@ in
         varnish_status = {
           notification = "varnishadm status reports errors";
           command = "${cfg.package}/bin/varnishadm status";
-          timeout = 60;
+          timeout = 180;
         };
         varnish_http = {
           notification = "varnish port 8008 HTTP response";
