@@ -98,8 +98,9 @@ in
             RestartSec = mkOverride 90 "10s";
           };
         };
-        varnishncsa = {
+        varnishncsa = rec {
           after = [ "varnish.service" ];
+          requires = after;
           description = "Varnish logging daemon";
           script =
             "exec ${cfg.package}/bin/varnishncsa -a -w /var/log/varnish.log";
