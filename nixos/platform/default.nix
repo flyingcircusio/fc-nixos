@@ -64,7 +64,7 @@ with lib;
       # d instead of r to a) respect the age rule and b) allow exclusion
       # of fc-data to avoid killing the seeded ENC upon boot.
       "d /etc/current-config"  # used by various FC roles
-      "d /srv"
+      "d /srv 0755"
       "d /tmp 1777 root root 3d"
       "d /var/tmp 1777 root root 7d"
       # remove old (pre-16.09) setuid wrappers first reboot after upgrade
