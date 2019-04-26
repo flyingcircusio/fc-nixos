@@ -65,9 +65,10 @@ with lib;
       # of fc-data to avoid killing the seeded ENC upon boot.
       "d /etc/current-config"  # used by various FC roles
       "d /srv"
-      "z /srv 0755 root root"
       "d /tmp 1777 root root 3d"
       "d /var/tmp 1777 root root 7d"
+      # remove old (pre-16.09) setuid wrappers first reboot after upgrade
+      "R! /var/setuid-wrappers"
     ];
 
     time.timeZone =
