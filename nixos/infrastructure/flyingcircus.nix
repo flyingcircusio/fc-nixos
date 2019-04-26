@@ -47,7 +47,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
   };
 
   environment.systemPackages = with pkgs; [
-    fc.box
     fc.userscan
   ];
 
@@ -65,6 +64,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   flyingcircus = {
     agent.collect-garbage = true;
+    box.enable = true;
     logrotate.enable = true;
   };
 
@@ -76,7 +76,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
   swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
 
   security.dhparams.enable = true;
-  security.wrappers.box.source = "${pkgs.fc.box}/bin/box";
 
   services = {
 
