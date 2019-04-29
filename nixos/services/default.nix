@@ -5,6 +5,7 @@
   ];
 
   imports = [
+    ./box/client.nix
     ./collectdproxy.nix
     ./haproxy.nix
     ./logrotate
