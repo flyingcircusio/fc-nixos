@@ -37,11 +37,12 @@
         links
         lsof
         lynx
+        mailx
         mercurial
         mmv
         nano
-        netcat
         ncdu
+        netcat
         netcat
         ngrep
         nmap

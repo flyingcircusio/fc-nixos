@@ -10,9 +10,11 @@
     ./haproxy.nix
     ./logrotate
     ./nginx
+    ./postfix.nix
     ./prometheus.nix
     ./redis.nix
     ./sensu.nix
+    ./ssmtp.nix
     ./syslog.nix
     ./telegraf.nix
   ];

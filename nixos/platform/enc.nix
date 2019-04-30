@@ -2,21 +2,9 @@
 
 let
   cfg = config.flyingcircus;
-
   fclib = config.fclib;
 
-  enc = fclib.jsonFromFile cfg.encPath {};
-
-  encAddresses = fclib.jsonFromFile cfg.encAddressesPath "[]";
-
-  encServices = fclib.jsonFromFile cfg.encServicesPath "[]";
-
-  encServiceClients = fclib.jsonFromFile cfg.encServiceClientsPath "[]";
-
-  systemState = fclib.jsonFromFile cfg.systemStatePath "{}";
-
 in
-
 with lib;
 {
   options.flyingcircus = with types; {

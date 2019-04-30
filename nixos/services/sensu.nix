@@ -250,6 +250,7 @@ in {
       after = [ "network.target" ];
       stopIfChanged = false;
       path = with pkgs; [
+        "/run/wrappers"
         bash
         coreutils
         fc.sensuplugins-rb
@@ -257,7 +258,6 @@ in {
         lm_sensors
         monitoring-plugins
         sensu
-        sudo
         sysstat
       ];
       script = ''
