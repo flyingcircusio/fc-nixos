@@ -88,9 +88,8 @@ in {
         description = "Timer for fc-collect-garbage";
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnActiveSec = "2h 30m";
-          OnUnitActiveSec = "1d";
-          RandomizedDelaySec = "30m";
+          OnCalendar = "00:00:00";
+          RandomizedDelaySec = "24h";
         };
       };
 
