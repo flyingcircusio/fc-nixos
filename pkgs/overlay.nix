@@ -27,6 +27,10 @@ in {
 
   mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
+  mongodb_3_2 = super.callPackage ./mongodb/3.2.nix {
+    sasl = super.cyrus_sasl;
+    boost = super.boost160;
+  };
   mysql = super.mariadb;
 
   nginx = super.nginx.override {

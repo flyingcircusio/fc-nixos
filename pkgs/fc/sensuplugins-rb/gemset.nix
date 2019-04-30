@@ -76,16 +76,6 @@
     };
     version = "0.6.0";
   };
-  bson = {
-    groups = ["default"];
-    platforms = [];
-    source = {
-      remotes = ["http://rubygems.org"];
-      sha256 = "1kgim98b41cj0njlqv1bwvx2m6gw9n7ilwklfn9hivfg096bzl8l";
-      type = "gem";
-    };
-    version = "4.4.2";
-  };
   builder = {
     groups = ["default"];
     platforms = [];
@@ -337,17 +327,6 @@
     };
     version = "2.0.3";
   };
-  mongo = {
-    dependencies = ["bson"];
-    groups = ["default"];
-    platforms = [];
-    source = {
-      remotes = ["http://rubygems.org"];
-      sha256 = "07gs4ll8hm1paj3liblpy0zqxidvcxb76cxa47l0i23mbf5hp46v";
-      type = "gem";
-    };
-    version = "2.4.1";
-  };
   multi_json = {
     groups = ["default"];
     platforms = [];
@@ -546,17 +525,6 @@
       type = "gem";
     };
     version = "0.1.3";
-  };
-  sensu-plugins-mongodb = {
-    dependencies = ["bson" "mongo" "sensu-plugin"];
-    groups = ["default"];
-    platforms = [];
-    source = {
-      remotes = ["http://rubygems.org"];
-      sha256 = "0r4pgn06n3pyvas75igfy969z3hv1gbrwbf4cqvy88h9aqn5dw5a";
-      type = "gem";
-    };
-    version = "1.4.1";
   };
   sensu-plugins-mysql = {
     dependencies = ["inifile" "ruby-mysql" "sensu-plugin"];
