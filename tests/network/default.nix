@@ -81,7 +81,7 @@ let
       nodes.router = router;
       testScript = ''
         startAll;
-        $client->waitForUnit("network.target");
+        $client->waitForUnit("network-online.target");
         $router->waitForUnit("network-online.target");
 
         print("\n* Router network overview\n");
