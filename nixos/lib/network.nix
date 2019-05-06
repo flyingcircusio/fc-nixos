@@ -26,24 +26,24 @@ rec {
   ip' = a: "ip " + (if isIp4 a then "-4" else if isIp6 a then "-6" else "");
 
   # list IP addresses for service configuration (e.g. nginx)
-  listenAddresses = interface:
-    if interface == "lo"
+  listenAddresses = iface:
+    if iface == "lo"
     # lo isn't part of the enc. Hard code it here.
     then [ "127.0.0.1" "::1" ]
     else
-      if hasAttr interface config.networking.interfaces
+      if hasAttr iface config.networking.interfaces
       then
         let
-          interface_config = getAttr interface config.networking.interfaces;
+          interface_config = getAttr iface config.networking.interfaces;
         in
           (map (addr: addr.address) interface_config.ipv4.addresses) ++
           (map (addr: addr.address) interface_config.ipv6.addresses)
       else [];
 
-  listenAddressesQuotedV6 = interface:
-    map
-      (addr: if isIp6 addr then "[${addr}]" else addr)
-      (listenAddresses interface);
+  quoteIPv6Address = addr: if isIp6 addr then "[${addr}]" else addr;
+
+  listenAddressesQuotedV6 =
+    iface: map quoteIPv6Address (listenAddresses iface);
 
   listServiceAddresses = service:
   (map
