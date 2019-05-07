@@ -56,7 +56,10 @@ with lib;
       # reduce build time
       nixosManual.enable = mkDefault false;
 
-      cron.enable = mkDefault true;
+      # upstream uses cron.enable = mkDefault ... (prio 1000),
+      # so we must go a bit lower to set a new default
+      cron.enable = mkOverride 900 true; 
+
       nscd.enable = true;
       openssh.enable = mkDefault true;
     };
