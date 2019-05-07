@@ -56,6 +56,7 @@ with lib;
       # reduce build time
       nixosManual.enable = mkDefault false;
 
+      cron.enable = mkDefault true;
       nscd.enable = true;
       openssh.enable = mkDefault true;
     };
