@@ -11,6 +11,7 @@
     ./logrotate
     ./nginx
     ./postfix.nix
+    ./postgresql.nix
     ./prometheus.nix
     ./redis.nix
     ./sensu.nix

@@ -26,6 +26,9 @@ in {
   mail = callSubTests ./mail.nix {};
   memcached = callTest ./memcached.nix {};
   network = callSubTests ./network {};
+  postgresql95 = callTest ./postgresql.nix { rolename = "postgresql95"; };
+  postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };
+  postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
   prometheus = callTest ./prometheus.nix {};
   redis = callTest ./redis.nix {};
   statshost-master = callTest ./statshost-master.nix {};

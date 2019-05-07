@@ -11,6 +11,7 @@ in {
   imports = [
     ./mailserver.nix
     ./memcached.nix
+    ./postgresql.nix
     ./redis.nix
     ./statshost
     ./webgateway.nix

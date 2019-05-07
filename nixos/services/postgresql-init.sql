@@ -1,0 +1,2 @@
+CREATE USER root SUPERUSER;
+CREATE DATABASE root owner=root;
