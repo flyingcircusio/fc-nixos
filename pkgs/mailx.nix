@@ -25,7 +25,7 @@ stdenv.mkDerivation rec {
     makeFlagsArray=(
     MANDIR=$out/share/man1
     PREFIX=$out
-    SENDMAIL=/run/current-system/sw/bin/sendmail
+    SENDMAIL=/run/wrappers/bin/sendmail
     SYSCONFDIR=$out/etc
     UCBINSTALL=${pkgs.coreutils}/bin/install
     BINDIR=$out/bin

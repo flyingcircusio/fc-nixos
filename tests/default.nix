@@ -23,8 +23,14 @@ in {
   garbagecollect = callTest ./garbagecollect.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
+  mail = callSubTests ./mail.nix {};
   memcached = callTest ./memcached.nix {};
+  mongodb32 = callTest ./mongodb.nix { rolename = "mongodb32"; };
+  mongodb34 = callTest ./mongodb.nix { rolename = "mongodb34"; };
   network = callSubTests ./network {};
+  postgresql95 = callTest ./postgresql.nix { rolename = "postgresql95"; };
+  postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };
+  postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
   prometheus = callTest ./prometheus.nix {};
   redis = callTest ./redis.nix {};
   statshost-master = callTest ./statshost-master.nix {};

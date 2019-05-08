@@ -27,6 +27,10 @@ in {
 
   mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
+  mongodb_3_2 = super.callPackage ./mongodb/3.2.nix {
+    sasl = super.cyrus_sasl;
+    boost = super.boost160;
+  };
   mysql = super.mariadb;
 
   nginx = super.nginx.override {
@@ -37,6 +41,10 @@ in {
       self.nginxModules.rtmp
     ];
   };
+
+  rum = super.callPackage ./postgresql/rum { };
+  #postgis = super.callPackage ./postgis { };
+  temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
   # We use a (our) newer version than on upstream.
   vulnix = super.callPackage ./vulnix.nix {

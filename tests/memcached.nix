@@ -26,8 +26,9 @@ in {
   testScript = ''
     $machine->waitForUnit('memcached.service');
     $machine->waitForOpenPort(11211);
-    # connecting with ipv6 often fails if we don't wait a bit
-    $machine->execute('sleep 0.3'); 
+    # connecting with ipv6 often fails if we don't wait
+    $machine->waitUntilSucceeds("ping -c1 ${ipv6}");
+
     $machine->succeed("echo -e 'add my_key 0 60 11\\r\\nhello world\\r\\nquit' | nc ::1 11211 | grep STORED");
     $machine->succeed("echo -e 'get my_key\\r\\nquit' | nc ${ipv4} 11211 | grep 'hello world'");
     $machine->succeed("echo -e 'get my_key\\r\\nquit' | nc ${ipv6} 11211 | grep 'hello world'");

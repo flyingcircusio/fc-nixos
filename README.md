@@ -38,6 +38,10 @@ Interactive test execution (gives a Perl REPL capable to run the test script):
     nix-build test/$test.nix -A driver
     ./result/bin/nixos-test-driver
 
+For test files with sub tests use:
+
+    nix-build test/$test.nix -A $subtest-attrname.driver 
+
 
 Update nixpkgs version
 ----------------------
