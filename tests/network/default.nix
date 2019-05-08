@@ -88,6 +88,9 @@ let
         print($router->succeed("ip a"));
         print("\n* Client network overview\n");
         print($client->succeed("ip a"));
+        # ipv6 needs more time, wait until self-ping works
+        $router->waitUntilSucceeds("ping -c1 2001:db8:1::1");
+        $client->waitUntilSucceeds("ping -c1 2001:db8:1::11");
 
         subtest "ping fe", sub {
           $client->succeed("ping -I ethfe -c1 10.51.1.1");
