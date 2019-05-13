@@ -13,6 +13,7 @@ in {
     ./memcached.nix
     ./mongodb
     ./postgresql.nix
+    ./rabbitmq.nix
     ./redis.nix
     ./statshost
     ./webgateway.nix
