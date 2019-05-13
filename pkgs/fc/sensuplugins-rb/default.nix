@@ -1,4 +1,5 @@
-{ lib, bundlerEnv, ruby, mysql, redis, which, defaultGemConfig, zlib, libxml2, graphicsmagick, pkgconfig, imagemagickBig, cyrus_sasl, makeWrapper }:
+{ lib, bundlerEnv, callPackage, defaultGemConfig, ruby, mysql, redis, which,
+  zlib, libxml2, graphicsmagick, pkgconfig, imagemagickBig, cyrus_sasl }:
 
 bundlerEnv rec {
   inherit ruby;
@@ -27,17 +28,8 @@ bundlerEnv rec {
     };
   };
 
-  # Calling ruby binstubs directly from Sensu doesn't work, because the Sensu bundle interferes with the plugin bundle.
-  # Wrap ruby binstubs and call them with an empty environment (env -i).
-  # makeWrapper has no option for that, so we wrap manually here.
-  postBuild = ''
-    for prog in $out/bin/*.rb; do
-      hidden="$(dirname "$prog")/.$(basename "$prog")"-wrapped
-      mv $prog $hidden
-      echo /usr/bin/env -i - $hidden '"$@"' > $prog
-      chmod a+x $prog
-    done
-  '';
+  # bundled sensu plugins need a clean env so that they don't inherit the bundle from sensu itself
+  postBuild = (callPackage ./common.nix {}).postBuildCleanEnv;
 
   meta = with lib; {
     description = "A collection of Sensu plugins distributed as Rubygems";

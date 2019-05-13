@@ -31,6 +31,7 @@ let
       (lib.readFile /etc/local/postfix/master.cf))
   ];
 
+  checkMailq = pkgs.fc.sensu-plugins-postfix + /bin/check-mailq.rb;
 in
 {
   options = {
@@ -83,14 +84,12 @@ in
     environment.systemPackages = with pkgs; [ mailutils ];
 
     flyingcircus.services.sensu-client.checks = {
-      # FIXME check_mailq does not call `mailq` correctly
-      # - needs patch
-      # postfix_mailq = {
-      #   command =
-      #     "sudo ${pkgs.monitoring-plugins}/bin/check_mailq " +
-      #     "-M postfix -w 200 -c 400";
-      #   notification = "Too many undelivered mails in Postfix mail queue.";
-      # };
+      postfix_mailq = {
+        command = ''
+          sudo ${checkMailq} -w 200 -c 400
+        '';
+        notification = "Too many undelivered mails in Postfix mail queue.";
+      };
 
       postfix_smtp_port = {
         command = ''
@@ -109,7 +108,7 @@ in
 
     security.sudo.extraRules = [
       {
-        commands = [ "${pkgs.monitoring-plugins}/bin/check_mailq" ];
+        commands = [ checkMailq ];
         groups = [ "sensuclient" ];
       }
     ];
