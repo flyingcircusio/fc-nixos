@@ -1,0 +1,23 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    dentaku (2.0.4)
+    json (1.8.6)
+    mixlib-cli (1.7.0)
+    pg (0.18.3)
+    sensu-plugin (1.4.7)
+      json (< 2.0.0)
+      mixlib-cli (~> 1.5)
+    sensu-plugins-postgres (2.3.2)
+      dentaku (= 2.0.4)
+      pg (= 0.18.3)
+      sensu-plugin (~> 1.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  sensu-plugins-postgres
+
+BUNDLED WITH
+   1.17.2

@@ -1,0 +1,23 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    inifile (3.0.0)
+    json (1.8.6)
+    mixlib-cli (1.7.0)
+    ruby-mysql (2.9.14)
+    sensu-plugin (1.4.7)
+      json (< 2.0.0)
+      mixlib-cli (~> 1.5)
+    sensu-plugins-mysql (3.1.1)
+      inifile (= 3.0.0)
+      ruby-mysql (~> 2.9)
+      sensu-plugin (~> 1.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  sensu-plugins-mysql
+
+BUNDLED WITH
+   1.17.2

@@ -31,7 +31,7 @@ let
       (lib.readFile /etc/local/postfix/master.cf))
   ];
 
-  checkMailq = pkgs.fc.sensu-plugins-postfix + /bin/check-mailq.rb;
+  checkMailq = pkgs.sensu-plugins-postfix + /bin/check-mailq.rb;
 in
 {
   options = {

@@ -21,9 +21,7 @@
   sensusyntax = callPackage ./sensusyntax {
     rustPlatform = pkgs.rustPlatform_1_31;
   };
-  sensu-plugins-postfix = callPackage ./sensuplugins-rb/sensu-plugins-postfix {};
   sensuplugins = callPackage ./sensuplugins {};
-  sensuplugins-rb = callPackage ./sensuplugins-rb {};
   userscan = callPackage ./userscan.nix {
     rustPlatform = pkgs.rustPlatform_1_31;
   };

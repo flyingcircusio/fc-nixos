@@ -3,6 +3,11 @@
 #
 # Runs bundler (creates Gemfile.lock) and bundix (creates gemset.nix)
 # Works for initial creation and later updates.
+#
+# Example: 
+# cd sensu-plugins-postgres
+# ../update.sh
+
 set -x
 set -e
 rm -f Gemfile.lock

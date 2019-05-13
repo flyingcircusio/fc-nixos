@@ -1,0 +1,21 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    json (2.2.0)
+    mixlib-cli (1.7.0)
+    redis (3.3.5)
+    sensu-plugin (4.0.0)
+      json (< 3.0.0)
+      mixlib-cli (~> 1.5)
+    sensu-plugins-redis (4.1.0)
+      redis (~> 3.3)
+      sensu-plugin (~> 4.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  sensu-plugins-redis
+
+BUNDLED WITH
+   1.17.2
