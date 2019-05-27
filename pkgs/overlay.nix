@@ -55,7 +55,6 @@ in {
   sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
-  sensuplugins-rb = super.callPackage ./sensuplugins-rb { };
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
   # We use a (our) newer version than on upstream.
