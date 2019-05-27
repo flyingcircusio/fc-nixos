@@ -22,6 +22,9 @@ in
     # at this stage
     boot.loader.grub.device = lib.mkForce "/dev/vda";
 
+    # telegraf service doesn't work on initial boot and is unneeded, disable it
+    services.telegraf.enable = mkForce false;
+
     flyingcircus.infrastructureModule = "flyingcircus";
 
     system.build.fcImage = import ./make-disk-image.nix {
