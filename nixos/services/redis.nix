@@ -83,7 +83,10 @@ in {
       flyingcircus.services = {
         sensu-client.checks.redis = {
           notification = "Redis alive";
-          command = "check-redis-ping.rb -h localhost -P ${lib.escapeShellArg password}";
+          command = ''
+            ${pkgs.sensu-plugins-redis}/bin/check-redis-ping.rb \
+              -h localhost -P ${lib.escapeShellArg password}
+          '';
         };
 
         telegraf.inputs.redis = [

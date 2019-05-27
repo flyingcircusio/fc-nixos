@@ -64,7 +64,10 @@ in
     flyingcircus.services = {
       sensu-client.checks.memcached = {
         notification = "memcached alive";
-        command = "check-memcached-stats.rb -h localhost -p ${toString port}";
+        command = ''
+          ${pkgs.sensu-plugins-memcached}/bin/check-memcached-stats.rb \
+            -h localhost -p ${toString port}
+        '';
       };
 
       telegraf.inputs.memcached = [

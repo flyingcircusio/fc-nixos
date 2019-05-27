@@ -253,7 +253,6 @@ in {
         "/run/wrappers"
         bash
         coreutils
-        fc.sensuplugins-rb
         glibc
         lm_sensors
         monitoring-plugins
@@ -364,9 +363,11 @@ in {
       };
       systemd_units = {
         notification = "systemd has failed units";
-        command =
-          "check-failed-units.rb -m logrotate.service " +
-          "-m fc-collect-garbage.service";
+        command = ''
+          ${pkgs.sensu-plugins-systemd}/bin/check-failed-units.rb \
+            -m logrotate.service \
+            -m fc-collect-garbage.service
+        '';
       };
       disk = {
         notification = "Disk usage too high";
@@ -384,7 +385,10 @@ in {
       };
       entropy = {
         notification = "Too little entropy available";
-        command = "check-entropy.rb -w 120 -c 60";
+        command = ''
+          ${pkgs.sensu-plugins-entropy-checks}/bin/check-entropy.rb \
+            -w 120 -c 60
+        '';
       };
       journal = {
         notification = "Journal errors in the last 10 minutes";
@@ -413,10 +417,11 @@ in {
       };
       netstat_tcp = {
         notification = "Netstat TCP connections";
-        command =
-          "check-netstat-tcp.rb " +
-          "-w ${toString cfg.expectedConnections.warning} " +
-          "-c ${toString cfg.expectedConnections.critical}";
+        command = ''
+          ${pkgs.sensu-plugins-network-checks}/bin/check-netstat-tcp.rb \
+            -w ${toString cfg.expectedConnections.warning} \
+            -c ${toString cfg.expectedConnections.critical}
+        '';
       };
     };
 
