@@ -1,0 +1,19 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    json (1.8.6)
+    mixlib-cli (1.7.0)
+    sensu-plugin (1.4.7)
+      json (< 2.0.0)
+      mixlib-cli (~> 1.5)
+    sensu-plugins-postfix (1.0.0)
+      sensu-plugin (~> 1.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  sensu-plugins-postfix
+
+BUNDLED WITH
+   1.16.3

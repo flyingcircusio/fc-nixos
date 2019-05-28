@@ -18,6 +18,7 @@ in {
     php56
     php56Packages;
 
+  bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
     });
@@ -44,6 +45,16 @@ in {
 
   rum = super.callPackage ./postgresql/rum { };
   #postgis = super.callPackage ./postgis { };
+  sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
+  sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
+  sensu-plugins-mysql = super.callPackage ./sensuplugins-rb/sensu-plugins-mysql { };
+  sensu-plugins-entropy-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-entropy-checks { };
+  sensu-plugins-network-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-network-checks { };
+  sensu-plugins-postfix = super.callPackage ./sensuplugins-rb/sensu-plugins-postfix { };
+  sensu-plugins-postgres = super.callPackage ./sensuplugins-rb/sensu-plugins-postgres { };
+  sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
+  sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
+  sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
   # We use a (our) newer version than on upstream.

@@ -105,6 +105,22 @@ let
     };
   };
 
+  sensu-check-env = with pkgs; buildEnv {
+    name = "sensu-check-env";
+    paths = [
+      "/run/wrappers"
+      bash
+      coreutils
+      glibc
+      lm_sensors
+      monitoring-plugins
+      nix
+      openssl
+      sensu
+      sysstat
+    ];
+  };
+
 in {
   options = {
 
@@ -249,17 +265,10 @@ in {
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
       stopIfChanged = false;
-      path = with pkgs; [
-        "/run/wrappers"
-        bash
-        coreutils
-        fc.sensuplugins-rb
-        glibc
-        lm_sensors
-        monitoring-plugins
-        sensu
-        sysstat
-      ];
+      # Sensu check scripts inherit the PATH of sensu-client by default.
+      # We provide common external dependencies in sensu-check-env. 
+      # Checks can define their own PATH in a wrapper to include other dependencies.
+      path = [ sensu-check-env ];
       script = ''
         ${ifJsonSyntaxError}
           # graceful degradation -> leave local config out
@@ -364,9 +373,11 @@ in {
       };
       systemd_units = {
         notification = "systemd has failed units";
-        command =
-          "check-failed-units.rb -m logrotate.service " +
-          "-m fc-collect-garbage.service";
+        command = ''
+          ${pkgs.sensu-plugins-systemd}/bin/check-failed-units.rb \
+            -m logrotate.service \
+            -m fc-collect-garbage.service
+        '';
       };
       disk = {
         notification = "Disk usage too high";
@@ -384,7 +395,10 @@ in {
       };
       entropy = {
         notification = "Too little entropy available";
-        command = "check-entropy.rb -w 120 -c 60";
+        command = ''
+          ${pkgs.sensu-plugins-entropy-checks}/bin/check-entropy.rb \
+            -w 120 -c 60
+        '';
       };
       journal = {
         notification = "Journal errors in the last 10 minutes";
@@ -413,10 +427,11 @@ in {
       };
       netstat_tcp = {
         notification = "Netstat TCP connections";
-        command =
-          "check-netstat-tcp.rb " +
-          "-w ${toString cfg.expectedConnections.warning} " +
-          "-c ${toString cfg.expectedConnections.critical}";
+        command = ''
+          ${pkgs.sensu-plugins-network-checks}/bin/check-netstat-tcp.rb \
+            -w ${toString cfg.expectedConnections.warning} \
+            -c ${toString cfg.expectedConnections.critical}
+        '';
       };
     };
 

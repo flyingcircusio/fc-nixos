@@ -1,0 +1,28 @@
+GIT
+  remote: https://github.com/nyxcharon/sensu-plugins-systemd.git
+  revision: be972959c5f6cdc989b1122db72a4b10a1ecce77
+  specs:
+    sensu-plugins-systemd (0.0.1)
+      sensu-plugin (= 1.2.0)
+      systemd-bindings (= 0.0.1.1)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    json (2.2.0)
+    mixlib-cli (2.0.6)
+    ruby-dbus (0.11.0)
+    sensu-plugin (1.2.0)
+      json
+      mixlib-cli (>= 1.1.0)
+    systemd-bindings (0.0.1.1)
+      ruby-dbus (= 0.11.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  sensu-plugins-systemd!
+
+BUNDLED WITH
+   1.17.2
