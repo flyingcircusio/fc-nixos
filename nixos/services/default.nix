@@ -13,6 +13,8 @@
     ./postfix.nix
     ./postgresql.nix
     ./prometheus.nix
+    ./rabbitmq36.nix
+    ./rabbitmq37.nix
     ./redis.nix
     ./sensu.nix
     ./ssmtp.nix

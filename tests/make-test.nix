@@ -13,6 +13,10 @@ with import "${nixpkgs}/nixos/lib/testing.nix" {
 
 makeTest (
   if pkgs.lib.isFunction f
-  then f (args // { inherit pkgs; inherit (pkgs) lib; })
+  then f (args // { 
+    inherit pkgs;
+    inherit (pkgs) lib;
+    testlib = pkgs.callPackage ./testlib.nix {};
+  })
   else f
 )
