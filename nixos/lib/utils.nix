@@ -13,11 +13,11 @@ rec {
   getLdapNodeDN = config:
     "cn=${config.networking.hostName},ou=Nodes,dc=gocept,dc=com";
 
-  # Compute LDAP password for this node.
-  getLdapNodePassword = config:
+  # Derives a password from host data and a custom prefix
+  derivePasswordForHost = prefix:
     builtins.hashString "sha256" (concatStringsSep "/" [
-      "ldap"
-      config.flyingcircus.enc.parameters.directory_password
+      prefix
+      (lib.attrByPath ["directory_password"] "" config.flyingcircus.enc.parameters)
       config.networking.hostName
     ]);
 
