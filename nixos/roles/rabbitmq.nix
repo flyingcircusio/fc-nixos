@@ -190,7 +190,7 @@ with builtins;
       flyingcircus.roles.statshost.globalAllowedMetrics = [ "rabbitmq" ];
       flyingcircus.roles.statshost.prometheusMetricRelabel = [
         { regex = "idle_since";
-          action = "labeldrop"; }
+          action = "drop"; }
       ];
     }
   ];
