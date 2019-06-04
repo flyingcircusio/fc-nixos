@@ -8,7 +8,7 @@
     networking.useDHCP = lib.mkForce false;
     users.users.root.password = "";
 
-    flyingcircus.agent.install = false;
+    flyingcircus.agent.enable = lib.mkOverride 200 false;
     flyingcircus.enc = {
       parameters.resource_group = "testrg";
       parameters.location = "testloc";
