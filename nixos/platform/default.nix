@@ -20,7 +20,6 @@ in {
     ./static.nix
     ./systemd.nix
     ./users.nix
-    ../services/vxlan-client.nix
   ];
 
   options = with lib.types; {

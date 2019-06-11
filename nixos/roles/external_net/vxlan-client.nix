@@ -1,6 +1,5 @@
 # Access external networks like VxLAN tunnels to Kamp DHP.
-# This service should be included unconditionally from platform/default.nix. It
-# activates itself if an appropriate ENC service is present and the host isn't a VxLAN gateway.
+# The role activates itself if an appropriate ENC service is present and the host isn't a VxLAN gateway.
 
 { config, lib, pkgs, ... }:
 

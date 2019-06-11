@@ -32,6 +32,7 @@ in
   imports = [
     ./openvpn.nix
     ./vxlan.nix
+    ./vxlan-client.nix
   ];
 
   options = {
