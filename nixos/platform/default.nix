@@ -1,7 +1,13 @@
 { lib, config, ... }:
 
 with lib;
-{
+
+let 
+  cfg = config.flyingcircus;
+  enc_services = fclib.jsonFromFile cfg.enc_services_path "[]";
+  fclib = config.fclib;
+
+in {
   imports = [
     ./agent.nix
     ./enc.nix
@@ -16,8 +22,23 @@ with lib;
     ./users.nix
   ];
 
-  options.flyingcircus.roles.generic.enable =
-    mkEnableOption "Generic role, which does nothing";
+  options = with lib.types; {
+    flyingcircus.roles.generic.enable =
+      mkEnableOption "Generic role, which does nothing";
+
+    flyingcircus.enc_services = mkOption {
+      default = [];
+      type = listOf attrs;
+      description = "Services in the environment as provided by the ENC.";
+    };
+
+    flyingcircus.enc_services_path = mkOption {
+      default = /etc/nixos/services.json;
+      type = path;
+      description = "Where to find the ENC services json file.";
+    };
+
+  };
 
   config = {
 
@@ -51,6 +72,8 @@ with lib;
         fallback = true
       '';
     };
+
+    flyingcircus.enc_services = enc_services;
 
     services = {
       # reduce build time

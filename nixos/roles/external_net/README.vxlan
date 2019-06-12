@@ -1,0 +1,28 @@
+VxLAN gateway
+=============
+
+The VxLAN gateway is part of the external_net role but must be activated
+explicitely by placing a configuration in /etc/local/vxlan/config.json.
+
+This role provides bidirectional connectivity between all SRV addresses of the
+local resource groups and hosts on a network on the remote side of the VxLAN
+tunnel. Please note that currently only point-to-point VxLAN topologies are
+supported.
+
+Tunables
+--------
+
+The local and remote tunnel endpoints, the VID and (optional) a MTU must be set
+in /etc/local/vxlan/config.json. Refer to the example for the file format. If
+this file does not exist, no tunnel device will be created.
+
+Additionally, two local.nix options exist:
+
+- flyingcircus.roles.external_net.vxlan4
+- flyingcircus.roles.external_net.vxlan6
+
+The IP subnets configured here are used as address pools for dnsmasq. dnsmasq
+will assign IP addresses via DHCP/RA from these pools to hosts on the remote
+VxLAN network. Please note that this setting must be the same on all nodes of
+the local RG to ensure complete srv connectivity. It is probably best to leave
+it alone if no address space collisions occur.
