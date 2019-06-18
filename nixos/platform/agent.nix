@@ -29,7 +29,7 @@ in {
       };
 
       with-maintenance = mkOption {
-        default = config.flyingcircus.enc.parameters.production;
+        default = attrByPath [ "parameters" "production" ] false cfg.enc;
         description = "Perform channel updates in scheduled maintenance. Default: all production VMs";
         type = types.bool;
       };
