@@ -29,8 +29,8 @@ in {
       };
 
       with-maintenance = mkOption {
-        default = false;
-        description = "Perform channel updates in scheduled maintenance.";
+        default = config.flyingcircus.enc.parameters.production;
+        description = "Perform channel updates in scheduled maintenance. Default: all production VMs";
         type = types.bool;
       };
 
