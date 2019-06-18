@@ -20,6 +20,7 @@ let
   in discover (importTest fn args system);
 
 in {
+  fcagent = callTest ./fcagent.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};

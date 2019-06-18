@@ -29,8 +29,8 @@ in {
       };
 
       with-maintenance = mkOption {
-        default = false;
-        description = "Perform channel updates in scheduled maintenance.";
+        default = attrByPath [ "parameters" "production" ] false cfg.enc;
+        description = "Perform channel updates in scheduled maintenance. Default: all production VMs";
         type = types.bool;
       };
 
