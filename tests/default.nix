@@ -29,6 +29,7 @@ in {
   mongodb32 = callTest ./mongodb.nix { rolename = "mongodb32"; };
   mongodb34 = callTest ./mongodb.nix { rolename = "mongodb34"; };
   network = callSubTests ./network {};
+  openvpn = callTest ./openvpn.nix {};
   postgresql95 = callTest ./postgresql.nix { rolename = "postgresql95"; };
   postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };
   postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
@@ -40,5 +41,6 @@ in {
   statshost-master = callTest ./statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
+  vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
 }

@@ -189,7 +189,7 @@ in
               after = [ "network-addresses-eth${vlan}.service" ];
               before = [ "network-local-commands.service" ];
               wantedBy = after;
-              bindsTo = [ "sys-subsystem-net-devices-eth${vlan}.device" ];
+              bindsTo = [ "sys-subsystem-net-devices-eth${vlan}.device" ] ++ after;
               path = [ relaxedIp ];
               script = startStopScript {
                 vlan = "${vlan}";

@@ -15,6 +15,7 @@ with builtins;
 let
   fclib = config.fclib;
   cfg = config.flyingcircus;
+  vxlanRole = config.flyingcircus.roles.vxlan;
   extnet = cfg.roles.external_net;
   parameters = lib.attrByPath [ "enc" "parameters" ] {} cfg;
   interfaces = lib.attrByPath [ "interfaces" ] {} parameters;
@@ -35,7 +36,7 @@ let
     }
   '';
 
-  localConfig = (fromJSON
+  jsonConfig = (fromJSON
     (fclib.configFromFile /etc/local/vxlan/config.json "{}"));
 
     # Compute all necessary parameters with Python and funnel them into Nix
@@ -66,7 +67,7 @@ let
         '';
       }).out);
 
-    mtu = lib.attrByPath [ "mtu" ] 1430 localConfig;
+    mtu = lib.attrByPath [ "mtu" ] 1430 vxlanRole.config;
 
     domain =
       if resource_group != null
@@ -100,14 +101,24 @@ let
 
 in
 {
-  options = {
-    flyingcircus.roles.vxlan.gateway = lib.mkEnableOption { };
+  options = with lib; {
+    flyingcircus.roles.vxlan.gateway = mkEnableOption { };
+
+    flyingcircus.roles.vxlan.config = mkOption {
+      type = types.attrs;
+      default = jsonConfig;
+      description = ''
+        Set containing the parameters needed for setting up the VxLAN tunnel.
+        If nothing is specified here, the config is loaded from /etc/local/vxlan/config.json.
+        See /etc/local/vxlan/config.json.example for required parameters.
+      '';
+    };
   };
 
   config = lib.mkMerge [
   
-    # vxlan service is only loaded if config.json is present
-    (lib.mkIf (cfg.roles.vxlan.gateway && localConfig != {}) {
+    # vxlan service is only loaded if config is present
+    (lib.mkIf (cfg.roles.vxlan.gateway && vxlanRole.config != {}) {
       services.dnsmasq = {
         enable = true;
         extraConfig = dnsmasqConf;
@@ -130,7 +141,7 @@ in
         serviceConfig = let 
           ip = "${pkgs.iproute}/bin/ip";
           inherit (params) gw4 gw6;
-          inherit (localConfig) vid remote local;
+          inherit (vxlanRole.config) vid remote local;
         in {
           Type = "oneshot";
           RemainAfterExit = true;
