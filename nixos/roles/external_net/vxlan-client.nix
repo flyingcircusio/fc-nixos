@@ -45,6 +45,8 @@ in
             echo "Adding routes via external network gateway ${gwHost}"
             gw4=$(getent ahostsv4 ${gwHost} | awk 'NR==1 {print $1}')
             gw6=$(getent ahostsv6 ${gwHost} | awk 'NR==1 {print $1}')
+            echo IPv4 gateway: $gw4
+            echo IPv6 gateway: $gw6
             ip -4 route add ${extnet.vxlan4} via $gw4 dev ethsrv
             ip -6 route add ${extnet.vxlan6} via $gw6 dev ethsrv
             iptables -I nixos-fw 3 -i ethsrv -s ${extnet.vxlan4} \
