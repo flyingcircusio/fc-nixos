@@ -4,8 +4,8 @@ with lib;
 
 let 
   cfg = config.flyingcircus;
-  enc_services = fclib.jsonFromFile cfg.enc_services_path "[]";
   fclib = config.fclib;
+  enc_services = fclib.jsonFromFile cfg.enc_services_path "[]";
 
 in {
   imports = [
@@ -79,9 +79,8 @@ in {
       # reduce build time
       nixosManual.enable = mkDefault false;
 
-      # upstream uses cron.enable = mkDefault ... (prio 1000),
-      # so we must go a bit lower to set a new default
-      cron.enable = mkOverride 900 true; 
+      # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform overrides it
+      cron.enable = fclib.mkPlatform true; 
 
       nscd.enable = true;
       openssh.enable = mkDefault true;
