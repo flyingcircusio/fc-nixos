@@ -2,6 +2,7 @@
 with builtins;
 let
   cfg = config.flyingcircus.syslog;
+  fclib = config.fclib;
 in
 {
   options.flyingcircus.syslog = with lib; {
@@ -35,63 +36,70 @@ in
       (facility: file: "${facility}.info -${file}\n")
       cfg.separateFacilities);
     extraLogFiles = lib.concatStringsSep " " (attrValues cfg.separateFacilities);
-  in
-  {
 
-    services.rsyslogd = {
-      enable =
-        lib.mkDefault (cfg.extraRules != "" || cfg.separateFacilities != {});
+  in lib.mkMerge [
 
-      defaultConfig = ''
-        $AbortOnUncleanConfig on
+    {
+      services.rsyslogd.enable =
+        fclib.mkPlatform (cfg.extraRules != "" || cfg.separateFacilities != {});
 
-        # Reduce repeating messages (default off)
-        $RepeatedMsgReduction on
+      # fall-back clean rule for "forgotten" logs
+      systemd.tmpfiles.rules = [
+        "d /var/log 0755 root root 180d"
+      ];
+    }
 
-        # Carry complete tracebacks etc.: large messages and don't escape newlines
-        $DropTrailingLFOnReception off
-        $EscapeControlCharactersOnReceive off
-        $MaxMessageSize 64k
-        $SpaceLFOnReceive on
+    (lib.mkIf config.services.rsyslogd.enable {
 
-        # Inject "--MARK--" messages every $Interval (seconds)
-        module(load="immark" Interval="600")
+      services.rsyslogd = {
 
-        # Read syslog messages from UDP
-        module(load="imudp")
-        input(type="imudp" address="127.0.0.1" port="514")
-        input(type="imudp" address="::1" port="514")
+        defaultConfig = ''
+          $AbortOnUncleanConfig on
+
+          # Reduce repeating messages (default off)
+          $RepeatedMsgReduction on
+
+          # Carry complete tracebacks etc.: large messages and don't escape newlines
+          $DropTrailingLFOnReception off
+          $EscapeControlCharactersOnReceive off
+          $MaxMessageSize 64k
+          $SpaceLFOnReceive on
+
+          # Inject "--MARK--" messages every $Interval (seconds)
+          module(load="immark" Interval="600")
+
+          # Read syslog messages from UDP
+          module(load="imudp")
+          input(type="imudp" address="127.0.0.1" port="514")
+          input(type="imudp" address="::1" port="514")
+        '';
+
+        extraConfig =
+          let
+            exclude = lib.concatMapStrings
+              (facility: ";${facility}.none")
+              (attrNames cfg.separateFacilities);
+          in ''
+            *.info${exclude} -/var/log/messages
+            ${extraRules}
+            ${separateFacilities}
+          '';
+      };
+
+      services.logrotate.config = ''
+        /var/log/messages /var/log/lastlog /var/log/wtmp ${extraLogFiles}
+        {
+          postrotate
+            if [[ -f /run/rsyslogd.pid ]]; then
+              ${pkgs.systemd}/bin/systemctl kill --signal=HUP syslog
+            fi
+          endscript
+        }
       '';
 
-      extraConfig =
-        let
-          exclude = lib.concatMapStrings
-            (facility: ";${facility}.none")
-            (attrNames cfg.separateFacilities);
-        in ''
-          *.info${exclude} -/var/log/messages
-          ${extraRules}
-          ${separateFacilities}
-        '';
-    };
+      # keep syslog running during system configurations
+      systemd.services.syslog.stopIfChanged = false;
+    })
 
-    services.logrotate.config = ''
-      /var/log/messages /var/log/lastlog /var/log/wtmp ${extraLogFiles}
-      {
-        postrotate
-          if [[ -f /run/rsyslogd.pid ]]; then
-            ${pkgs.systemd}/bin/systemctl kill --signal=HUP syslog
-          fi
-        endscript
-      }
-    '';
-
-    # fall-back clean rule for "forgotten" logs
-    systemd.tmpfiles.rules = [
-      "d /var/log 0755 root root 180d"
-    ];
-
-    # keep syslog running during system configurations
-    systemd.services.syslog.stopIfChanged = false;
-  };
+  ];
 }
