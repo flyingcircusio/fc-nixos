@@ -176,7 +176,9 @@ in
 
     security.sudo = {
       extraConfig = ''
-        Defaults set_home,!authenticate,!mail_no_user
+        # authenticate is the default, just for clarity
+        # => sudo expects a password unless a NOPASSWD rule matches
+        Defaults set_home,authenticate,!mail_no_user
         Defaults lecture = never
       '';
 
@@ -184,15 +186,20 @@ in
       extraRules = lib.mkBefore [
         # Allow unrestricted access to super admins
         {
-          groups = [ "admins" ];
           commands = [ { command = "ALL"; options = [ "PASSWD" ]; } ];
+          groups = [ "admins" ];
         }
         # Allow sudo-srv users to become service user
-        { groups = [ "sudo-srv" ]; runAs = "%service"; commands = [ "ALL" ]; }
+        { 
+          commands = [ { command = "ALL"; options = [ "NOPASSWD" ]; } ];
+          groups = [ "sudo-srv" ]; 
+          runAs = "%service";
+        }
         # Allow applying config and restarting services to service users
         {
+          commands = [ { command = "${pkgs.systemd}/bin/systemctl"; 
+                         options = [ "NOPASSWD" ]; } ];
           groups = [ "sudo-srv" "service" ];
-          commands = [ "${pkgs.systemd}/bin/systemctl" ];
         }
       ];
     };

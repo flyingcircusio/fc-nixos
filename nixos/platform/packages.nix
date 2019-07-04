@@ -74,8 +74,10 @@
     lib.optional (!config.services.postgresql.enable) pkgs.postgresql;
 
     security.sudo.extraRules = [
-      { groups = [ "sudo-srv" "service" ];
-        commands = [ "${pkgs.iotop}/bin/iotop" ];
+      { 
+        commands = [ { command = "${pkgs.iotop}/bin/iotop"; 
+                       options = [ "NOPASSWD" ]; } ];
+        groups = [ "sudo-srv" "service" ];
       }
     ];
 
