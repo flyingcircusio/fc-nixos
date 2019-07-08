@@ -13,7 +13,7 @@ let
       regex = "yes";
       action = "keep"; }
     { regex = "__tmp_globally_allowed";
-      action = "labeldrop"; }
+      action = "drop"; }
   ];
 
 in mkIf config.flyingcircus.roles.statshost.enable
