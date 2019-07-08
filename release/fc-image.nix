@@ -27,6 +27,10 @@ in
 
     flyingcircus.infrastructureModule = "flyingcircus";
 
+    # Always update the channel on first run of the agent
+    # without waiting for scheduled maintenance.
+    flyingcircus.agent.with-maintenance = false;
+
     system.build.fcImage = import ./make-disk-image.nix {
       inherit pkgs lib config channelSources configFile contents name;
       rootLabel = "root";
