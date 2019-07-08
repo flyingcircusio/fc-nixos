@@ -223,7 +223,7 @@ in
         ];
     };
 
-    system.activationScripts.fc-homedir-permissions =
+    flyingcircus.activationScripts.homedir-permissions =
       lib.stringAfter [ "users" ]
       (concatStringsSep "\n" (homeDirPermissions cfg.userData));
 

@@ -65,6 +65,9 @@ in {
       # should not trust connections via TCP
       $machine->fail('psql --no-password -h localhost -l');
 
+      # service user should be able to write to local config dir
+      $machine->succeed('sudo -u postgres touch `echo /etc/local/postgresql/*`/test');
+
       # test extensions that work on all versions
       $machine->succeed('sudo -u postgres -- sh ${createExtensions}');
     '' +
@@ -72,4 +75,5 @@ in {
     ''# Do the rum extension test. Rum is not available for 9.5.
       $machine->succeed('sudo -u postgres -- psql employees -c "CREATE EXTENSION rum;"');
     '';
+
 })

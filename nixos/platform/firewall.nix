@@ -164,10 +164,9 @@ in
         }
       ];
 
-    system.activationScripts.local-firewall =
-      lib.stringAfter [ "users" "groups" ] ''
-        install -d -o root -g service -m 02775 ${cfg.firewall.localDir}
-      '';
+    flyingcircus.localConfigDirs.firewall = {
+      dir = cfg.firewall.localDir; 
+    };
 
   };
 }

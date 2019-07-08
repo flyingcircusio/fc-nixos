@@ -279,7 +279,7 @@ in
 
     services.openvpn.servers.access.config = serverConfig;
 
-    system.activationScripts.openvpn-pki =
+    flyingcircus.activationScripts.openvpn-pki =
       lib.stringAfter [] ''
         # generate pki / certificates
         ${pki.generate}

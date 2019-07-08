@@ -40,5 +40,10 @@ in {
       $machine->waitForUnit("mongodb.service");
       $machine->waitForOpenPort(27017);
       $machine->waitUntilSucceeds('mongo --eval db');
-    '' + lib.concatMapStringsSep "\n" check [ "127.0.0.1" "[::1]" ipv4 "[${ipv6}]" ];
+    '' + lib.concatMapStringsSep "\n" check [ "127.0.0.1" "[::1]" ipv4 "[${ipv6}]" ]
+    + '' 
+      # service user should be able to write to local config dir
+      $machine->succeed('sudo -u mongodb touch /etc/local/mongodb/mongodb.yaml');
+    '';
+
 })

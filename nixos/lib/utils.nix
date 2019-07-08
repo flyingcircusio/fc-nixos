@@ -21,6 +21,9 @@ rec {
       config.networking.hostName
     ]);
 
+  installDirWithPermissions = { user, group, permissions, dir }:
+    "install -d -o ${user} -g ${group} -m ${permissions} ${dir}";
+
   mkPlatform = lib.mkOverride 900;
 
   coalesce = list: findFirst (el: el != null) null list;

@@ -67,6 +67,7 @@ in {
     postgresqlPkg = getAttr cfg.majorVersion packages;
 
   in {
+
     services.postgresql.enable = true;
     services.postgresql.package = postgresqlPkg;
     services.postgresql.extraPlugins = [
@@ -98,11 +99,18 @@ in {
       home = lib.mkForce "/srv/postgresql";
     };
 
-    system.activationScripts.flyingcircus_postgresql = ''
-      install -d -o ${toString config.ids.uids.postgres} /srv/postgresql
-      install -d -o ${toString config.ids.uids.postgres} -g service -m 02775 \
-        /etc/local/postgresql/${cfg.majorVersion}
-    '';
+    flyingcircus.activationScripts = {
+
+      postgresql-srv = lib.stringAfter [ "users" "groups" ] ''
+        install -d -o postgres /srv/postgresql
+      '';
+
+    };
+
+    flyingcircus.localConfigDirs.postgresql = {
+      dir = (toString localConfigPath);
+      user = "postgres";
+    };
 
     security.sudo.extraConfig = ''
       # Service users may switch to the postgres system user

@@ -41,10 +41,10 @@ in
 
   (mkIf cfg.enable {
 
-    system.activationScripts.fcio-memcached = ''
-      install -d -o ${toString config.ids.uids.memcached} -g service -m 02775 \
-        /etc/local/memcached
-    '';
+    flyingcircus.localConfigDirs.memcached = { 
+      dir = "/etc/local/memcached";
+      user = "memcached"; 
+    };
 
     environment.etc = {
       "local/memcached/README.txt".text = ''
@@ -78,6 +78,10 @@ in
         }
       ];
     };
+
+    # We want a fixed uid that is compatible with older releases.
+    # Upstream doesn't set the uid.
+    users.users.memcached.uid = config.ids.uids.memcached;
   })
 
   {

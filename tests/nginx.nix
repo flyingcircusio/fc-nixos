@@ -25,5 +25,8 @@ import ./make-test.nix ({ ... }:
       grep "server accepts handled requests"
     _EOT_
     $machine->succeed('grep mysite.conf /var/log/nginx/access.log');
+
+    # service user should be able to write to local config dir
+    $machine->succeed('sudo -u nginx touch /etc/local/nginx/vhosts.json');
   '';
 })

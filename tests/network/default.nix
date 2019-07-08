@@ -30,6 +30,12 @@ let
             ];
           })));
       };
+
+      users.users.s-test = {
+        isNormalUser = true;
+        extraGroups = [ "service" ]; 
+      };
+
     };
 
   encInterfaces = id: {
@@ -158,6 +164,9 @@ let
             $router->fail("curl http://10.51.2.13/default.nix");
             $router->fail("curl http://[2001:db8:2::13]/default.nix");
           };
+
+          # service user should be able to write to its local config dir
+          $router->succeed('sudo -u s-test touch /etc/local/firewall/test');
         '';
       };
 

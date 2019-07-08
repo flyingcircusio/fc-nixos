@@ -16,5 +16,11 @@ import ./make-test.nix ({ ... }:
     $redis->waitUntilSucceeds("$cli ping | grep PONG");
     $redis->succeed("$cli set msg 'hello world'");
     $redis->succeed("$cli get msg | grep 'hello world'");
+
+    # service user should be able to local config dir
+    $redis->succeed('sudo -u redis touch /etc/local/redis/custom.conf');
+
+    # service user should be able to write the password file
+    $redis->succeed('sudo -u redis touch /etc/local/redis/password');
   '';
 })
