@@ -40,6 +40,7 @@ in {
   redis = callTest ./redis.nix {};
   statshost-master = callTest ./statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
+  syslog = callSubTests ./syslog.nix {};
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
   vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
