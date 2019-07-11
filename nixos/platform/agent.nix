@@ -105,7 +105,8 @@ in {
 
       security.sudo.extraRules = [
         {
-          commands = [ "${pkgs.fc.agent}/bin/fc-manage" ];
+          commands = [ { command = "${pkgs.fc.agent}/bin/fc-manage"; 
+                         options = [ "NOPASSWD" ]; } ];
           groups = [ "sudo-srv" "service" ];
         }
       ];

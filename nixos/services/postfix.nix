@@ -86,7 +86,7 @@ in
     flyingcircus.services.sensu-client.checks = {
       postfix_mailq = {
         command = ''
-          sudo ${checkMailq} -w 200 -c 400
+          /run/wrappers/bin/sudo ${checkMailq} -w 200 -c 400
         '';
         notification = "Too many undelivered mails in Postfix mail queue.";
       };
@@ -108,8 +108,9 @@ in
 
     security.sudo.extraRules = [
       {
-        commands = [ checkMailq ];
+        commands = [ { command = checkMailq; options = [ "NOPASSWD" ]; } ];
         groups = [ "sensuclient" ];
+        
       }
     ];
 
