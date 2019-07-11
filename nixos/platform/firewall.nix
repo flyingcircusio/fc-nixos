@@ -154,11 +154,12 @@ in
       let ipt = x: "${pkgs.iptables}/bin/ip${x}tables";
       in [
         {
-          commands = [ "${ipt ""} -L*" "${ipt "6"} -L*" ];
+          commands = [ { command = "${ipt ""} -L*"; options = [ "NOPASSWD" ]; }
+                       { command = "${ipt "6"} -L*"; options = [ "NOPASSWD" ]; } ];
           groups = [ "users" "service" ];
         }
         {
-          commands = [ "${checkIPTables}" ];
+          commands = [ { command = "${checkIPTables}"; options = [ "NOPASSWD" ]; } ];
           users = [ "sensuclient" ];
         }
       ];

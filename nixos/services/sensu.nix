@@ -246,8 +246,8 @@ in {
     security.sudo.extraRules = [
       {
         commands = with pkgs; [
-          "${fc.multiping}/bin/multiping"
-          "${fc.sensuplugins}/bin/check_disk"
+          { command = "${fc.multiping}/bin/multiping"; options = [ "NOPASSWD" ]; }
+          { command = "${fc.sensuplugins}/bin/check_disk"; options = [ "NOPASSWD" ]; }
         ];
         groups = [ "sensuclient" ];
       }
