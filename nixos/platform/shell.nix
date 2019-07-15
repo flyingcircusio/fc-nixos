@@ -16,7 +16,7 @@ in
       export TMOUT=43200
     '';
 
-    environment.shellInit = ''
+    environment.shellInit = lib.mkAfter (''
       # help building locally compiled programs
       export LIBRARY_PATH=$HOME/.nix-profile/lib
       # header files
@@ -35,17 +35,31 @@ in
         done
       fi
       unset f
+
+      # Make our overlayed nixpkgs (in fc) available as nixos.* for nix-env for normal users. 
+      # This is same the behaviour as on standard NixOS and our old 15.09 plattform.
+
+      if [ "$USER" != root ]; then
+
+        if [ -e "$HOME/.nix-defexpr/channels_root" ]; then
+          rm $HOME/.nix-defexpr/channels_root
+        fi
+
+        ln -sfT /nix/var/nix/profiles/per-user/root/channels/nixos/fc $HOME/.nix-defexpr/nixos
+      fi
     '' +
-    (opt
-      (enc ? name && parameters ? location && parameters ? environment)
-      # FCIO_* only exported if ENC data is present.
-      ''
-        # Grant easy access to the machine's ENC data for some variables to
-        # shell scripts.
-        export FCIO_LOCATION="${parameters.location}"
-        export FCIO_ENVIRONMENT="${parameters.environment}"
-        export FCIO_HOSTNAME="${enc.name}"
-      '');
+      (opt
+        (enc ? name && parameters ? location && parameters ? environment)
+        # FCIO_* only exported if ENC data is present.
+        ''
+          # Grant easy access to the machine's ENC data for some variables to
+          # shell scripts.
+          export FCIO_LOCATION="${parameters.location}"
+          export FCIO_ENVIRONMENT="${parameters.environment}"
+          export FCIO_HOSTNAME="${enc.name}"
+        ''
+      )
+    );
 
     users.motd = ''
       Welcome to the Flying Circus!
