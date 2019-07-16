@@ -29,6 +29,7 @@ in {
   mongodb32 = callTest ./mongodb.nix { rolename = "mongodb32"; };
   mongodb34 = callTest ./mongodb.nix { rolename = "mongodb34"; };
   network = callSubTests ./network {};
+  nginx = callTest ./nginx.nix {};
   openvpn = callTest ./openvpn.nix {};
   postgresql95 = callTest ./postgresql.nix { rolename = "postgresql95"; };
   postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };

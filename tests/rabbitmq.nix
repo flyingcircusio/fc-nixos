@@ -55,5 +55,8 @@ in {
     # sensu checks should be red when service has stopped
     $machine->mustFail("${amqpAliveCheck}");
     $machine->mustFail("${nodeHealthCheck}");
+
+    # service user should be able to write to local config dir
+    $machine->succeed('sudo -u rabbitmq touch /etc/local/rabbitmq/rabbitmq.config');
   '';
 })

@@ -32,6 +32,12 @@ import ./make-test.nix ({ pkgs, ... }:
       '';
 
       services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
+
+      users.users.s-test = {
+        isNormalUser = true;
+        extraGroups = [ "service" ]; 
+      };
+
     };
 
   testScript =
@@ -62,5 +68,8 @@ import ./make-test.nix ({ pkgs, ... }:
         curl -s ${api}/query?query='my_custom_metric' | \
          jq -e '.data.result[].value[1] == "42"'
       EOF
+
+      # service user should be able to write to local config dir
+      $machine->succeed('sudo -u s-test touch /etc/local/statshost/test');
     '';
 })

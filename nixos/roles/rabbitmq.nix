@@ -78,12 +78,10 @@ with builtins;
         %service ALL=(rabbitmq) ALL
       '';
 
-      # We use this in this way in favor of setting PermissionsStartOnly to
-      # true as other script expect running as rabbitmq user
-      system.activationScripts.fcio-rabbitmq = ''
-        install -d -o ${toString config.ids.uids.rabbitmq} -g service -m 02775 \
-          /etc/local/rabbitmq/
-      '';
+      flyingcircus.localConfigDirs.rabbitmq = {
+        dir = "/etc/local/rabbitmq";
+        user = "rabbitmq";
+      };
 
       environment.etc."local/rabbitmq/README.txt".text = ''
         RabbitMQ (${package.version}) is running on this machine.

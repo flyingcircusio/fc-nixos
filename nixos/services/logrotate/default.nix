@@ -72,13 +72,13 @@ in
       # We create one directory for each service user. I decided not to remove
       # old directories as this may be manually placed data that I don't want
       # to delete accidentally.
-      system.activationScripts.logrotate-user =
-        let
-          installDir = u: ''
-            install -d -m 0755 -o ${u.name} -g service ${localDir}/${u.name}
-          '';
-        in
-        stringAfter [ "users" ] (concatStrings (map installDir serviceUsers));
+      flyingcircus.localConfigDirs = let 
+        cfgDir = u: 
+          lib.nameValuePair
+            "logrotate-${u.name}"
+            { dir = "${localDir}/${u.name}"; user = u.name; permissions = "0755"; };
+
+        in listToAttrs (map cfgDir serviceUsers);
 
       systemd.services =
         listToAttrs (
