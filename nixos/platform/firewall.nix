@@ -7,6 +7,8 @@ let
 
   fclib = config.fclib;
 
+  localCfgDir = "/etc/local/firewall"; 
+
   # Technically, snippets in /etc/local/firewall are plain shell scripts. We
   # don't want to support full (root) shell expressiveness here, so restrict
   # commands to iptables and friends and quote all shell special chars.
@@ -29,7 +31,7 @@ let
         else:
           fn = fileinput.filename()
           print('ERROR: only iptables statements or comments allowed:'
-                '\n{}\n(included from ${cfg.firewall.localDir}/{})'.\
+                '\n{}\n(included from ${localCfgDir}/{})'.\
                 format(line.strip(), p.basename(fn)),
                 file=sys.stderr)
           sys.exit(1)
@@ -39,10 +41,10 @@ let
     let
       suf = lib.hasSuffix;
     in
-    lib.optionalString (pathExists cfg.firewall.localDir)
+    lib.optionalString (pathExists localCfgDir)
       (filterSource
         (p: t: t != "directory" && !(suf "~" p) && !(suf "/README" p))
-        cfg.firewall.localDir);
+        localCfgDir);
 
   filteredRules =
     pkgs.runCommand "firewall-local-rules" { inherit localRules; }
@@ -79,14 +81,6 @@ let
 
 in
 {
-  options = {
-    flyingcircus.firewall.localDir = lib.mkOption {
-      type = lib.types.path;
-      default = "/etc/local/firewall";
-      description = "Directory containing firewall configuration snippets.";
-    };
-  };
-
   config = {
 
     environment.etc."local/firewall/README".text = ''
@@ -165,7 +159,7 @@ in
       ];
 
     flyingcircus.localConfigDirs.firewall = {
-      dir = cfg.firewall.localDir; 
+      dir = localCfgDir;
     };
 
   };
