@@ -32,5 +32,8 @@ in {
     $machine->succeed("echo -e 'add my_key 0 60 11\\r\\nhello world\\r\\nquit' | nc ::1 11211 | grep STORED");
     $machine->succeed("echo -e 'get my_key\\r\\nquit' | nc ${ipv4} 11211 | grep 'hello world'");
     $machine->succeed("echo -e 'get my_key\\r\\nquit' | nc ${ipv6} 11211 | grep 'hello world'");
+
+    # service user should be able to write to local config dir
+    $machine->succeed('sudo -u memcached touch /etc/local/memcached/memcached.json');
   '';
 })

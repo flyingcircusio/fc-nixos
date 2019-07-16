@@ -253,13 +253,22 @@ in {
       }
     ];
 
-    system.activationScripts.sensu-client = ''
-      ${ifJsonSyntaxError}
-        echo "Errors in /etc/local/sensu-client, aborting"
-        exit 3
-      fi
-      unset sensu_json_present
-    '';
+    flyingcircus.activationScripts = {
+      
+      sensu-client = ''
+        ${ifJsonSyntaxError}
+          echo "Errors in /etc/local/sensu-client, aborting"
+          exit 3
+        fi
+        unset sensu_json_present
+      '';
+
+    };
+
+    flyingcircus.localConfigDirs.sensu-client = {
+      dir = "/etc/local/sensu-client";
+      user = "sensuclient";
+    };
 
     systemd.services.sensu-client = {
       wantedBy = [ "multi-user.target" ];
@@ -293,7 +302,6 @@ in {
     };
 
     systemd.tmpfiles.rules = [
-      "d /etc/local/sensu-client 0775 sensuclient service"
       "d /var/cache/vulnix 0775 sensuclient service"
       "d /var/tmp/sensu 0775 sensuclient service"
     ];

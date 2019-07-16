@@ -206,30 +206,38 @@ in
 
       systemd.tmpfiles.rules = [
         "d /var/log/nginx 0755 nginx"
-        "d /etc/local/nginx 2775 nginx service"
         "d /etc/local/nginx/modsecurity 2775 nginx service"
       ];
 
-      system.activationScripts.nginx-reload = lib.stringAfter [ "etc" ] ''
-        if [[ ! -e ${stateDir}/reload.conf ]]; then
-          install -D /dev/null ${stateDir}/reload.conf
-        fi
-        # reload not possible when structured vhosts have changed -> skip
-        if [[ -n "$(find -L /etc/local/nginx -type f -name '*.json' \
-                    -newer ${stateDir}/reload.conf)" ]]; then
-          echo -n "${localConfig}" > ${stateDir}/reload.conf
-        # check if local config has changed
-        elif [[ "$(< ${stateDir}/reload.conf )" != "${localConfig}" ]]; then
-          echo "nginx: config change detected, reloading"
-          if ${package}/bin/nginx -t -c ${currentConf} -p ${stateDir}; then
-            ${pkgs.systemd}/bin/systemctl reload nginx.service || true
-            echo -n "${localConfig}" > ${stateDir}/reload.conf
-          else
-            echo "nginx: not reloading due to error"
-            false
+      flyingcircus.activationScripts = {
+
+        nginx-reload = lib.stringAfter [ "etc" ] ''
+          if [[ ! -e ${stateDir}/reload.conf ]]; then
+            install -D /dev/null ${stateDir}/reload.conf
           fi
-        fi
-      '';
+          # reload not possible when structured vhosts have changed -> skip
+          if [[ -n "$(find -L /etc/local/nginx -type f -name '*.json' \
+                      -newer ${stateDir}/reload.conf)" ]]; then
+            echo -n "${localConfig}" > ${stateDir}/reload.conf
+          # check if local config has changed
+          elif [[ "$(< ${stateDir}/reload.conf )" != "${localConfig}" ]]; then
+            echo "nginx: config change detected, reloading"
+            if ${package}/bin/nginx -t -c ${currentConf} -p ${stateDir}; then
+              ${pkgs.systemd}/bin/systemctl reload nginx.service || true
+              echo -n "${localConfig}" > ${stateDir}/reload.conf
+            else
+              echo "nginx: not reloading due to error"
+              false
+            fi
+          fi
+        '';
+      };
+
+      flyingcircus.localConfigDirs.nginx = {
+        dir = "/etc/local/nginx";
+        user = "nginx";
+      };
+        
     })
 
     {

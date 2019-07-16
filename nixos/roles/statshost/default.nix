@@ -479,9 +479,8 @@ in
         }];
       };
 
-      system.activationScripts.statshost = {
-        text = "install -d -g service -m 2775 ${localDir}";
-        deps = [];
+      flyingcircus.localConfigDirs.statshost = {
+        dir = localDir;
       };
 
       flyingcircus.services.sensu-client.checks = {

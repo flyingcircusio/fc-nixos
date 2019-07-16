@@ -109,6 +109,11 @@ in
         reloadIfChanged = true;
       };
 
+      flyingcircus.localConfigDirs.haproxy = {
+        dir = "/etc/local/haproxy";
+        user = "haproxy";
+      };
+
       systemd.services.prometheus-haproxy-exporter = {
         description = "Prometheus exporter for haproxy metrics";
         wantedBy = [ "multi-user.target" ];

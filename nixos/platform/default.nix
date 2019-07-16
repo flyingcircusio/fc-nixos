@@ -23,8 +23,21 @@ in {
   ];
 
   options = with lib.types; {
-    flyingcircus.roles.generic.enable =
-      mkEnableOption "Generic role, which does nothing";
+
+    flyingcircus.activationScripts = mkOption {
+      description = ''
+        This does the same as system.activationScripts, 
+        but script / attribute names are prefixed with "fc-" automatically:
+
+        flyingcircus.activationScripts.script-name becomes
+        system.activationScripts.fc-script-name
+
+        Dependencies specified with lib.stringAfter must include the prefix.
+      '';
+      default = {};
+      # like in system.activationScripts, can be a string or a set (lib.stringAfter)
+      type = types.attrsOf types.unspecified; 
+    };
 
     flyingcircus.enc_services = mkOption {
       default = [];
@@ -37,6 +50,79 @@ in {
       type = path;
       description = "Where to find the ENC services json file.";
     };
+
+    flyingcircus.localConfigDirs = mkOption {
+      description = ''
+        Create a directory where local config files for a service can be placed.
+        The attribute path, for example flyingcircus.localConfigDirs.myservice
+        is echoed in the activation script for debugging purposes.
+
+        Other activation scripts that need a local config dir
+        can create a dependency on fc-local-config with stringAfter:
+
+        flyingcircus.activationScripts.needsCfg = lib.stringAfter ["fc-local-config"] "script..."
+      '';
+      default = {};
+
+      example = { myservice = { dir = "/etc/local/myservice"; user = "myservice"; }; };
+
+      type = types.attrsOf (types.submodule {
+
+        options = {
+
+          dir = mkOption {
+            description = "Path to the directory, typically starting with /etc/local.";
+            type = types.string;
+          };
+
+          user = mkOption {
+            default = "root";
+            description = ''
+              Name of the user owning the config directory,
+              typically the name of the service or root.
+            '';
+            type = types.string;
+          };
+
+          group = mkOption {
+            default = "service";
+            description = "Name of the group.";
+            type = types.string;
+          };
+
+          permissions = mkOption {
+            default = "02775";
+            description = ''
+              Directory permissions.
+              By default, owner and group can write to the directory and the sticky bit is set.
+            '';
+            type = types.string;
+          };
+
+        };
+
+      });
+    };
+
+    flyingcircus.localConfigPath = mkOption {
+      description = ''
+        This option is only needed for tests.
+        WARNING: Do not change this outside of tests, it will break stuff!
+
+        The local config must be present at built time for some tests but
+        the default path references /etc/local on the machine where the tests
+        are run. This option can be used to set a path relative to the test 
+        (path starting with ./ without double quotes) where the local config
+        can be found. For example, custom firewall rules can be put into
+        ./test_cfg/firewall/firewall.conf for testing.
+      '';
+      type = types.path;
+      default = "/etc/local";
+      example = ./test_cfg;
+    };
+
+    flyingcircus.roles.generic.enable =
+      mkEnableOption "Generic role, which does nothing";
 
   };
 
@@ -85,6 +171,34 @@ in {
       nscd.enable = true;
       openssh.enable = mkDefault true;
     };
+
+    system.activationScripts = let
+
+      cfgDirs = cfg.localConfigDirs;
+
+      snippet = name: ''
+        # flyingcircus.localConfigDirs.${name}
+        ${fclib.installDirWithPermissions { 
+          inherit (cfgDirs.${name}) user group permissions dir; 
+        }}
+      '';
+
+      # concat script snippets for all local config dirs
+      cfgScript = lib.fold 
+                    (name: acc: acc + "\n" + (snippet name)) 
+                    ""
+                    (lib.attrNames cfgDirs);
+
+      fromCfgDirs = { 
+        fc-local-config = lib.stringAfter ["users" "groups"] cfgScript; 
+      };
+
+      # prefix our activation scripts with "fc-"
+      fromActivationScripts = lib.mapAttrs' 
+                                (name: value: lib.nameValuePair ("fc-" + name) value) 
+                                cfg.activationScripts;
+
+    in fromCfgDirs // fromActivationScripts;
 
     systemd.tmpfiles.rules = [
       # d instead of r to a) respect the age rule and b) allow exclusion

@@ -104,14 +104,19 @@ in {
         home = "/srv/mongodb";
       };
 
-      system.activationScripts.flyingcircus-mongodb =
-      let
-        uid = toString config.ids.uids.mongodb;
-      in ''
-        install -d -o ${uid} /{srv,var/log}/mongodb
-        install -d -o ${uid} -g service -m 02775 /etc/local/mongodb
-      '';
+      flyingcircus.activationScripts = {
 
+        mongodb-dirs = lib.stringAfter [ "users" "groups" ] ''
+          install -d -o mongodb /{srv,var/log}/mongodb
+        '';
+
+      };      
+
+      flyingcircus.localConfigDirs.mongodb = {
+        dir = "/etc/local/mongodb";
+        user = "mongodb"; 
+      };
+      
       security.sudo.extraConfig = ''
         # Service users may switch to the mongodb system user
         %sudo-srv ALL=(mongodb) ALL

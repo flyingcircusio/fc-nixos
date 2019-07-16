@@ -2,6 +2,10 @@
 { config, lib, pkgs, ... }:
 
 with lib;
+
+let
+  fclib = config.fclib;
+in
 {
   config = {
 
@@ -11,14 +15,18 @@ with lib;
       ForwardToSyslog=true
     '';
 
-    system.activationScripts.systemd-journal-acl = ''
-      # Ensure journal access for all users.
-      chmod -R a+rX /var/log/journal
-    '';
+    flyingcircus.activationScripts = {
 
-    system.activationScripts.systemd-local = ''
-      install -d -o root -g service -m 02775 /etc/local/systemd
-    '';
+      systemd-journal-acl = lib.stringAfter [ "systemd" ] ''
+        # Ensure journal access for all users.
+        chmod -R a+rX /var/log/journal
+      '';
+
+    };
+
+    flyingcircus.localConfigDirs.systemd = {
+      dir = "/etc/local/systemd";
+    };
 
     systemd.extraConfig = ''
       DefaultRestartSec=3

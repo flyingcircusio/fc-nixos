@@ -30,6 +30,7 @@ let
             ];
           })));
       };
+
     };
 
   encInterfaces = id: {
@@ -120,15 +121,19 @@ let
     firewall =
       let
         firewalledServer =
-          { hostId, localDir ? "/etc/local/firewall" } :
+          { hostId, localConfigPath ? "/etc/local" } :
           {
             imports = [ ../../nixos ];
             virtualisation.vlans = [ 1 2 ];
             flyingcircus.infrastructureModule = "flyingcircus";
             flyingcircus.enc.parameters.interfaces = encInterfaces hostId;
-            flyingcircus.firewall.localDir = localDir;
+            flyingcircus.localConfigPath = localConfigPath;
             services.nginx.enable = true;
             services.nginx.virtualHosts."srv${hostId}" = { root = ./.; };
+            users.users.s-test = {
+              isNormalUser = true;
+              extraGroups = [ "service" ]; 
+            };
           };
       in {
         name = "firewall";
@@ -137,7 +142,7 @@ let
         nodes.srv2 = firewalledServer { hostId = "2"; };
         nodes.srv3 = firewalledServer {
           hostId = "3";
-          localDir = ./open-fe-80;
+          localConfigPath = ./open-fe-80;
         };
         testScript = ''
           startAll;
@@ -158,6 +163,9 @@ let
             $router->fail("curl http://10.51.2.13/default.nix");
             $router->fail("curl http://[2001:db8:2::13]/default.nix");
           };
+
+          # service user should be able to write to its local config dir
+          $srv2->succeed('sudo -u s-test touch /etc/local/firewall/test');
         '';
       };
 

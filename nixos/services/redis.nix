@@ -56,17 +56,22 @@ in {
       services.redis.bind = concatStringsSep " " listen_addresses;
       services.redis.extraConfig = extraConfig;
 
-      system.activationScripts.fcio-redis = ''
-        install -d -o ${toString config.ids.uids.redis} -g service -m 02775 \
-          /etc/local/redis/
-        if [[ ! -e /etc/local/redis/password ]]; then
-          ( umask 007;
-            echo ${lib.escapeShellArg password} > /etc/local/redis/password
-            chown redis:service /etc/local/redis/password
-          )
-        fi
-        chmod 0660 /etc/local/redis/password
-      '';
+
+      flyingcircus.activationScripts.redis = 
+        lib.stringAfter [ "fc-local-config" ] ''
+          if [[ ! -e /etc/local/redis/password ]]; then
+            ( umask 007;
+              echo ${lib.escapeShellArg password} > /etc/local/redis/password
+              chown redis:service /etc/local/redis/password
+            )
+          fi
+          chmod 0660 /etc/local/redis/password
+        '';
+
+      flyingcircus.localConfigDirs.redis = { 
+        dir = "/etc/local/redis";
+        user = "redis"; 
+      };
 
       systemd.services.redis = rec {
         serviceConfig = {
@@ -112,5 +117,9 @@ in {
         To change the redis configuration, add a file `custom.conf`, which will be
         appended to the redis configuration.
       '';
+
+      # We want a fixed uid that is compatible with older releases.
+      # Upstream doesn't set the uid.
+      users.users.redis.uid = config.ids.uids.redis;
     };
 }

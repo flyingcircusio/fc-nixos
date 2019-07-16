@@ -51,5 +51,8 @@ import ./make-test.nix ({ pkgs, ... }:
     $haproxyVM->succeed(<<_EOT_);
     grep "haproxy.* http-in server/python .* /hello.txt" /var/log/haproxy.log
     _EOT_
+
+    # service user should be able to write to local config dir
+    $machine->succeed('sudo -u haproxy touch /etc/local/haproxy/haproxy.cfg');
   '';
 })
