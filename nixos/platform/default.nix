@@ -104,6 +104,23 @@ in {
       });
     };
 
+    flyingcircus.localConfigPath = mkOption {
+      description = ''
+        This option is only needed for tests.
+        WARNING: Do not change this outside of tests, it will break stuff!
+
+        The local config must be present at built time for some tests but
+        the default path references /etc/local on the machine where the tests
+        are run. This option can be used to set a path relative to the test 
+        (path starting with ./ without double quotes) where the local config
+        can be found. For example, custom firewall rules can be put into
+        ./test_cfg/firewall/firewall.conf for testing.
+      '';
+      type = types.path;
+      default = "/etc/local";
+      example = ./test_cfg;
+    };
+
     flyingcircus.roles.generic.enable =
       mkEnableOption "Generic role, which does nothing";
 

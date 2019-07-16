@@ -7,7 +7,7 @@ let
 
   fclib = config.fclib;
 
-  localCfgDir = "/etc/local/firewall"; 
+  localCfgDir = cfg.localConfigPath + "/firewall"; 
 
   # Technically, snippets in /etc/local/firewall are plain shell scripts. We
   # don't want to support full (root) shell expressiveness here, so restrict
@@ -159,7 +159,7 @@ in
       ];
 
     flyingcircus.localConfigDirs.firewall = {
-      dir = localCfgDir;
+      dir = toString localCfgDir;
     };
 
   };
