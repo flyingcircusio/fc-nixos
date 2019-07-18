@@ -161,9 +161,10 @@ in {
 
     flyingcircus.enc_services = enc_services;
 
+    # reduce build time
+    documentation.nixos.enable = mkDefault false;
+
     services = {
-      # reduce build time
-      nixosManual.enable = mkDefault false;
 
       # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform overrides it
       cron.enable = fclib.mkPlatform true; 
