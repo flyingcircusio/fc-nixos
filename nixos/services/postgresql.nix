@@ -8,7 +8,7 @@ let
   packages = {
     "9.5" = pkgs.postgresql95;
     "9.6" = pkgs.postgresql96;
-    "10" = pkgs.postgresql100;
+    "10" = pkgs.postgresql_10;
   };
 
   listenAddresses =
