@@ -37,8 +37,7 @@ let
     ${localConfig}
   '';
 
-  mongo_check = pkgs.callPackage ./check.nix { };
-
+  checkMongoCmd = (pkgs.callPackage ./check.nix {}) + /bin/check_mongo;
 
 in {
   options = 
@@ -117,12 +116,19 @@ in {
         user = "mongodb"; 
       };
       
-      security.sudo.extraConfig = ''
+      security.sudo.extraRules = [
         # Service users may switch to the mongodb system user
-        %sudo-srv ALL=(mongodb) ALL
-        %service ALL=(mongodb) ALL
-        %sensuclient ALL=(mongodb) ALL
-      '';
+        {
+          commands = [ { command = "ALL"; options = [ "NOPASSWD" ]; } ];
+          groups = [ "sudo-srv" "service" ];
+          runAs = "mongodb";
+        }
+        {
+          commands = [ { command = checkMongoCmd; options = [ "NOPASSWD" ]; } ];
+          users = [ "sensuclient" ];
+          runAs = "mongodb";
+        }
+      ];
 
       environment.etc."local/mongodb/README.txt".text = ''
         Put your local mongodb configuration into `mongodb.yaml` here.
@@ -144,8 +150,7 @@ in {
           mongodb = {
             notification = "MongoDB alive";
             command = ''
-              /run/wrappers/bin/sudo -u mongodb -- \
-                ${mongo_check}/bin/check_mongo -d mongodb
+              /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb
             '';
           };
         };

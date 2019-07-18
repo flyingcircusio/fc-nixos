@@ -72,11 +72,14 @@ with builtins;
         shell = "/run/current-system/sw/bin/bash";
       };
 
-      security.sudo.extraConfig = ''
+      security.sudo.extraRules = [
         # Service users may switch to the rabbitmq system user
-        %sudo-srv ALL=(rabbitmq) ALL
-        %service ALL=(rabbitmq) ALL
-      '';
+        {
+          commands = [ { command = "ALL"; options = [ "NOPASSWD" ]; } ];
+          groups = [ "sudo-srv" "service" ];
+          runAs = "rabbitmq";
+        }
+      ];
 
       flyingcircus.localConfigDirs.rabbitmq = {
         dir = "/etc/local/rabbitmq";

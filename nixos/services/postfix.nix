@@ -110,7 +110,6 @@ in
       {
         commands = [ { command = checkMailq; options = [ "NOPASSWD" ]; } ];
         groups = [ "sensuclient" ];
-        
       }
     ];
 

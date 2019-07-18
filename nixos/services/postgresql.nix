@@ -112,12 +112,14 @@ in {
       user = "postgres";
     };
 
-    security.sudo.extraConfig = ''
+    security.sudo.extraRules = [
       # Service users may switch to the postgres system user
-      %sudo-srv ALL=(postgres) ALL
-      %service ALL=(postgres) ALL
-      %sensuclient ALL=(postgres) ALL
-    '';
+      {
+        commands = [ { command = "ALL"; options = [ "NOPASSWD" ]; } ];
+        groups = [ "sudo-srv" "service" ];
+        runAs = "postgres";
+      }
+    ];
 
     # System tweaks
     boot.kernel.sysctl = {
