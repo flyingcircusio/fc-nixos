@@ -95,7 +95,6 @@ in stdenv.mkDerivation rec {
     homepage = http://www.mongodb.org;
     license = licenses.agpl3;
 
-    maintainers = with maintainers; [ bluescreen303 offline wkennington cstrahan ];
     platforms = platforms.unix;
   };
 }

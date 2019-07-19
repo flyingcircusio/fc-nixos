@@ -23,6 +23,8 @@ in {
   mongodb_3_2 = super.callPackage ./mongodb/3.2.nix {
     sasl = super.cyrus_sasl;
     boost = super.boost160;
+    # 3.2 is too old for the current libpcap version 1.9, use 1.8.1
+    inherit (pkgs-18_09) libpcap;
   };
   mysql = super.mariadb;
 
