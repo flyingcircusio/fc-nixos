@@ -2,13 +2,13 @@
   "nixpkgs": {
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "4154aa6260e69bd5531954a86accdcdb51364287",
-    "sha256": "13047scfx4jm7jr78mw8dpk29h9ik4vyr98dfsc2k9mxzwiaprga"
+    "rev": "fd0aff0181edef0bad830af8e70f664e85838f19",
+    "sha256": "0j25wbr00hzqvv3pnji1qif3w6f8wqmp7lw8a9ih5xxrcwzf1sgw"
   },
-  "nixos-18.03": {
-    "owner": "NixOS",
-    "repo": "nixpkgs-channels",
-    "rev": "cb0e20d6db96fe09a501076c7a2c265359982814",
-    "sha256": "0d9pkbax0phh392j6pzkn365wbsgd0h1cmm58rwq8zf9lb0pgkg2"
+  "nixos-18.09": {
+    "owner": "nixos",
+    "repo": "nixpkgs",
+    "rev": "9f9806d63d4cf428c1e08ea4a9f3862a90b1b580",
+    "sha256": "0sa5b02hrj0wsa4jxda2ylai7zqldfi27q35d2cdadkq1gyl1a7p"
   }
 }

@@ -29,7 +29,7 @@ let
 
 in
 assert channels ? "nixpkgs";
-# export "nixos-18_03" instead of "nixos-18.03" for example
+# export "nixos-18_09" instead of "nixos-18.09" for example
 (mapAttrs' (name: val: nameValuePair (replaceStrings [ "." ] [ "_" ] name) val)
   channels)
 //

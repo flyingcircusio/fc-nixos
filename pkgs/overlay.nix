@@ -2,21 +2,13 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  pkgs-18_03 = import versions.nixos-18_03 {};
+  pkgs-18_09 = import versions.nixos-18_09 {};
 
 in {
   #
   # == our own stuff
   #
   fc = (import ./default.nix { pkgs = self; });
-
-  #
-  # == imports from older nixpkgs ==
-  #
-  inherit (pkgs-18_03)
-    nodejs-9_x
-    php56
-    php56Packages;
 
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
