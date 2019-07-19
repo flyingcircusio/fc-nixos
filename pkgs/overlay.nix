@@ -35,11 +35,13 @@ in {
     ];
   };
 
-  rabbitmq_server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix { 
-    erlang = self.erlangR18; 
+  rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix { 
+    erlang = self.erlangR19; 
   };
-  rabbitmq_server_3_6_15 = super.rabbitmq_server;
-  rabbitmq_server_3_7 = super.callPackage ./rabbitmq-server/3.7.nix { };
+  rabbitmq-server_3_6_15 = super.callPackage ./rabbitmq-server/3.6.15.nix { 
+    erlang = self.erlangR19; 
+  };
+  rabbitmq-server_3_7 = super.rabbitmq-server;
 
   rum = super.callPackage ./postgresql/rum { };
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };

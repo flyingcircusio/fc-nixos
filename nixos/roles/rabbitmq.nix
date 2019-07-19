@@ -39,7 +39,7 @@ with builtins;
     enabled = enabledRolesCount > 0;
     roleVersion = head (lib.attrNames enabledRoles);
     majorMinorVersion = lib.concatStringsSep "." (lib.take 2 (splitVersion roleVersion));
-    package = pkgs."rabbitmq_server_${replaceStrings ["."] ["_"] roleVersion}";
+    package = pkgs."rabbitmq-server_${replaceStrings ["."] ["_"] roleVersion}";
   
     extraConfig = fclib.configFromFile /etc/local/rabbitmq/rabbitmq.config "";
 
