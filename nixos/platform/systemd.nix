@@ -17,7 +17,7 @@ in
 
     flyingcircus.activationScripts = {
 
-      systemd-journal-acl = lib.stringAfter [ "systemd" ] ''
+      systemd-journal-acl = ''
         # Ensure journal access for all users.
         chmod -R a+rX /var/log/journal
       '';
