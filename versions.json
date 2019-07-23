@@ -2,8 +2,8 @@
   "nixpkgs": {
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "fd0aff0181edef0bad830af8e70f664e85838f19",
-    "sha256": "0j25wbr00hzqvv3pnji1qif3w6f8wqmp7lw8a9ih5xxrcwzf1sgw"
+    "rev": "9bc51a466db15db1d791a066981538d556f135b8",
+    "sha256": "0hz5bpihckghjdq30bcwxwb5x7i41gpaywi8gbhq17v7xv7h2cjh"
   },
   "nixos-18.09": {
     "owner": "nixos",

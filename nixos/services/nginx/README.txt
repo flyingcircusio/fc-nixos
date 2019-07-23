@@ -1,38 +1,33 @@
 Nginx is enabled on this machine.
 
-Manual configuration
---------------------
+We provide basic config. You can use two ways to add custom configuration.
 
-Put your site configuration into this directory as `*.conf`. You may
-add other files, like SSL keys, as well.
+Changes to your custom config will cause nginx to reload without downtime on 
+the next fc-manage run if the config is valid. It will display a warning if
+invalid settings are found in the nginx config.
 
-If you want to authenticate against the Flying Circus users with login permission,
-use the following snippet, and *USE SSL*:
-
-auth_basic "FCIO user";
-auth_basic_user_file "/etc/local/nginx/htpasswd_fcio_users";
-
-There is also an `example-configuration` here. Copy to some file ending with
-*.conf and adapt.
-
-Changes to *.conf will cause nginx only to reload, not to restart, on the next
-nixos-rebuild run.
-
+The combined nginx config file can be shown with: `nginx-show-config`
 
 Structured configuration
 ------------------------
 
-Alternatively, you can place virtual host definition in
-`/etc/local/nginx/vhosts.json` which resembles NixOS nginx virtualHosts options
+You can place virtual host definitions in `/etc/local/nginx/*.json`
+that are managed by NixOS. They are built into the combined config file by
+running fc-manage.
 
-Example vhosts.json containing a virtual with static root directory, a bit of
-custom configuration, and Let's encrypt SSL:
+You may add other files to the directory, like SSL keys, as well.
+
+The config snippets must contain a single JSON object that defines one or
+more virtual hosts. Multiple JSON config files will be merged into one object.
+It's a good idea to use one config file per virtual host.
+
+example.json containing a virtual with static root directory, a bit of
+custom configuration, and SSL with a default certificate from Let's Encrypt:
 
 ```
 {
   "www.example.org": {
     "serverAliases": ["example.org"],
-    "acmeEmail"
     "forceSSL": true,
     "root": "/srv/webroot",
     "extraConfig": "add_header Strict-Transport-Security max-age=31536000; rewrite ^/old_url /new_url redirect;",
@@ -45,9 +40,31 @@ custom configuration, and Let's encrypt SSL:
 }
 ```
 
-All options are documented in
-https://nixos.org/nixos/options.html#services.nginx.virtualhosts. Note that an
-non-standard attribute "acmeEmail" must be set to a contact mail address
-in order to activate Let's encrypt.
+All options are documented at
+https://nixos.org/nixos/options.html#services.nginx.virtualhosts.%3Cname%3E 
 
-Changes to *.json will cause nginx to restart on the next nixos-rebuild run.
+For SSL support with redirection from HTTP to HTTPS, use `forceSSL`.
+Let's Encrypt (`enableACME`) is activated automatically if one of `forceSSL`, `onlySSL` or `addSSL`
+is set to true.
+To use a custom certificate, set the certificate options and set `"enableACME" = false`.
+
+We support the custom option `emailACME` to set the contact address for Let's Encrypt.
+
+Manual configuration
+--------------------
+
+You can also use plain nginx config files /etc/local/nginx/*.conf for configuration. 
+The contents are included verbatim into the combined config by running fc-manage.
+
+You may add other files to the directory, like SSL keys, as well.
+
+If you want to authenticate against the Flying Circus users with login permission,
+use the following snippet, and *USE SSL*:
+
+auth_basic "FCIO user";
+auth_basic_user_file "/etc/local/nginx/htpasswd_fcio_users";
+
+There is also an `example-configuration` here. Copy to some file ending with
+*.conf and adapt.
+
+You can check if the config is valid with: `nginx-check-config`

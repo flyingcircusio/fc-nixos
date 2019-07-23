@@ -30,6 +30,7 @@ in {
   mongodb34 = callTest ./mongodb.nix { rolename = "mongodb34"; };
   network = callSubTests ./network {};
   nginx = callTest ./nginx.nix {};
+  nginx_reload = callTest (nixpkgs + /nixos/tests/nginx.nix) {};
   openvpn = callTest ./openvpn.nix {};
   postgresql95 = callTest ./postgresql.nix { rolename = "postgresql95"; };
   postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };

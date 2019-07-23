@@ -1,4 +1,8 @@
-{ lib, ... }:
+{ config, lib, ... }:
+
+let
+  fclib = config.fclib;
+in
 
 with lib;
 
@@ -26,4 +30,31 @@ rec {
   jsonFromFile = file: default:
     builtins.fromJSON (configFromFile file default);
 
+  # Reads JSON config snippets from a directory and merges them into one object.
+  # Each snippet must contain a single top-level object. 
+  # The keys in the top-level objects must be unique for all snippets.
+  # Throws an error if duplicate keys are found. 
+  jsonFromDir = path: let
+    objects =
+      map
+        (filename: builtins.fromJSON (readFile filename)) 
+        (filter 
+          (filename: hasSuffix "json" filename) 
+          (files path));
+
+    mergedObject = 
+      fold
+        (obj: acc: acc // obj)
+        {} 
+        objects;
+
+    duplicates = fclib.duplicateAttrNames objects; 
+  in 
+    if duplicates == []
+    then mergedObject
+    else throw ''
+      Top-level JSON config keys are not unique in ${path}!
+      Duplicate keys: ${concatStringsSep ", " duplicates}
+    ''
+  ;
 }
