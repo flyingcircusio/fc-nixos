@@ -1,5 +1,5 @@
 { system ? builtins.currentSystem
-, nixpkgs ? <nixpkgs>
+, nixpkgs ? (import ../../versions.nix { inherit pkgs; }).nixpkgs
 , pkgs ? import ../.. {}
 }:
 

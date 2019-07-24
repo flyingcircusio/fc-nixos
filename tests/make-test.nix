@@ -36,7 +36,7 @@
 
 f: {
   system ? builtins.currentSystem
-  , nixpkgs ? <nixpkgs>
+  , nixpkgs ? (import ../versions.nix {}).nixpkgs
   , pkgs ? import ../. {}
   , minimal ? false
   , config ? {}
