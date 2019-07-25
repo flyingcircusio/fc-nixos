@@ -34,6 +34,7 @@ in {
   postgresql95 = callTest ./postgresql.nix { rolename = "postgresql95"; };
   postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };
   postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
+  postgresql11 = callTest ./postgresql.nix { rolename = "postgresql11"; };
   prometheus = callTest ./prometheus.nix {};
   rabbitmq36_5 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_5"; };
   rabbitmq36_15 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_15"; };
