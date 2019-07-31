@@ -1,5 +1,7 @@
 # statshost: an InfluxDB/Grafana server. Accepts incoming graphite traffic,
 # stores it and renders graphs.
+# TODO: don't build if more than one location relay is active in the same location.
+# Having more than one breaks prometheus.
 { config, lib, pkgs, ... }:
 
 with lib;
@@ -126,7 +128,7 @@ in
 
   imports = [
     ./global-relabel.nix
-    ./location-relay.nix
+    ./location-proxy.nix
     ./rg-relay.nix
   ];
 
