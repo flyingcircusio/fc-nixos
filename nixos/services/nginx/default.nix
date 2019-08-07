@@ -5,24 +5,57 @@ with builtins;
 let
   cfg = config.flyingcircus.services.nginx;
   fclib = config.fclib;
+
+  nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
+    $(systemctl cat nginx | grep "X-CheckConfigCmd" | cut -d= -f2)
+  '';
+
+  nginxShowConfig = pkgs.writeScriptBin "nginx-show-config" ''
+    cat $(systemctl cat nginx | grep "X-ConfigFile" | cut -d= -f2)
+  '';
+
+  nginxCheckWorkerAge = pkgs.writeScript "nginx-check-worker-age" ''
+    config_age=$(expr $(date +%s) - $(stat --format=%Y /run/nginx/config) )
+    main_pid=$(systemctl show nginx | grep -e '^MainPID=' | cut -d= -f 2)
+
+    workers_too_old=0
+
+    for pid in $(pgrep -P $main_pid); do
+        worker_age=$(ps -o etimes= $pid)
+        agediff=$(expr $worker_age - $config_age)
+
+        if (( $agediff > 300 )); then
+        echo "Worker process $pid is $agediff seconds older than the config file (started $(ps -o lstart= $pid))"
+        workers_too_old=1
+        fi
+    done
+
+    if (( $workers_too_old > 0 )); then
+        exit 2
+    else
+        echo "worker age OK"
+    fi
+  '';
+
   stateDir = config.services.nginx.stateDir;
   package = config.services.nginx.package;
-  currentConf = "/etc/current-config/nginx.conf";
+  localDir = config.flyingcircus.localConfigDirs.nginx.dir;
 
-  vhostsJSON = fclib.jsonFromFile "/etc/local/nginx/vhosts.json" "{}";
+  vhostsJSON = fclib.jsonFromDir localDir;
+
   virtualHosts = lib.mapAttrs (
     _: val:
     (lib.optionalAttrs
-      ((val ? addSSL || val ? onlySSL || val ? forceSSL) && val ? acmeEmail)
-      { enableACME = true; }) // removeAttrs val [ "acmeEmail" ])
+      ((val ? addSSL || val ? onlySSL || val ? forceSSL))
+      { enableACME = true; }) // removeAttrs val [ "emailACME" ])
     vhostsJSON;
 
-  acmeEmails =
-    lib.mapAttrs (name: val: { email = val.acmeEmail; })
-    (lib.filterAttrs (_: val: val ? acmeEmail ) vhostsJSON);
+  # only email setting supported at the moment
+  acmeSettings =
+    lib.mapAttrs (name: val: { email = val.emailACME; })
+    (lib.filterAttrs (_: val: val ? emailACME ) vhostsJSON);
 
-  localConfig =
-    lib.optionalString (pathExists "/etc/local/nginx") "${/etc/local/nginx}";
+  acmeVhosts = (lib.filterAttrs (_: val: val ? enableACME ) vhostsJSON);
 
   baseConfig = ''
     worker_processes ${toString (fclib.current_cores config 1)};
@@ -85,10 +118,10 @@ let
     request_pool_size 4k;
     send_timeout 10m;
     server_names_hash_bucket_size ${toString cfg.mapHashBucketSize};
-
-    # === User-provided config ===
-    include /etc/local/nginx/*.conf;
   '';
+
+  plainConfigFiles = filter (p: lib.hasSuffix ".conf" p) (fclib.files localDir);
+  localHttpConfig = concatStringsSep "\n" (map readFile plainConfigFiles);
 
 in
 {
@@ -158,27 +191,59 @@ in
       };
 
       flyingcircus.services.sensu-client.checks = {
+
+        nginx_config = {
+          notification = "Nginx configuration check problems";
+          command = "/run/wrappers/bin/sudo ${nginxCheckConfig}/bin/nginx-check-config || exit 2";
+          interval = 300;
+        };
+
         nginx_status = {
           notification = "nginx does not listen on port 80";
           command =
             "check_http -H localhost -u /nginx_status -s server -c 5 -w 2";
           interval = 60;
         };
+
+        nginx_worker_age = {
+          notification = "worker processes are more than 300s older than config file";
+          command = "${nginxCheckWorkerAge}";
+          interval = 300;
+        };
+
       } //
       (lib.mapAttrs' (name: _: (lib.nameValuePair "nginx_cert_${name}" {
         notification = "HTTPS cert for ${name} (Let's encrypt)";
         command = "check_http -H ${name} -p 443 -S -C 5";
         interval = 600;
-      })) acmeEmails);
+      })) acmeVhosts);
 
       networking.firewall.allowedTCPPorts = [ 80 443 ];
 
-      security.acme.certs = acmeEmails;
+      security.acme.certs = acmeSettings;
+
+      security.sudo.extraRules = [
+        # sensuclient can run config check script as nginx user
+        {
+          commands = [ { command = "${nginxCheckConfig}/bin/nginx-check-config"; 
+                         options = [ "NOPASSWD" ]; } ];
+          groups = [ "sensuclient" ];
+        }
+      ];
 
       services.nginx = {
         enable = true;
         appendConfig = "";
-        appendHttpConfig = baseHttpConfig + "\n" + cfg.httpConfig;
+        appendHttpConfig = ''
+          ${baseHttpConfig}
+          
+          # === User-provided config from ${localDir}/*.conf ===
+          ${localHttpConfig}
+
+          # === Config from flyingcircus.services.nginx ===
+          ${cfg.httpConfig}
+        '';
+
         eventsConfig = ''
           worker_connections 4096;
           multi_accept on;
@@ -209,35 +274,16 @@ in
         "d /etc/local/nginx/modsecurity 2775 nginx service"
       ];
 
-      flyingcircus.activationScripts = {
-
-        nginx-reload = lib.stringAfter [ "etc" ] ''
-          if [[ ! -e ${stateDir}/reload.conf ]]; then
-            install -D /dev/null ${stateDir}/reload.conf
-          fi
-          # reload not possible when structured vhosts have changed -> skip
-          if [[ -n "$(find -L /etc/local/nginx -type f -name '*.json' \
-                      -newer ${stateDir}/reload.conf)" ]]; then
-            echo -n "${localConfig}" > ${stateDir}/reload.conf
-          # check if local config has changed
-          elif [[ "$(< ${stateDir}/reload.conf )" != "${localConfig}" ]]; then
-            echo "nginx: config change detected, reloading"
-            if ${package}/bin/nginx -t -c ${currentConf} -p ${stateDir}; then
-              ${pkgs.systemd}/bin/systemctl reload nginx.service || true
-              echo -n "${localConfig}" > ${stateDir}/reload.conf
-            else
-              echo "nginx: not reloading due to error"
-              false
-            fi
-          fi
-        '';
-      };
-
       flyingcircus.localConfigDirs.nginx = {
         dir = "/etc/local/nginx";
         user = "nginx";
       };
-        
+
+      environment.systemPackages = [
+        nginxCheckConfig
+        nginxShowConfig
+      ];
+
     })
 
     {

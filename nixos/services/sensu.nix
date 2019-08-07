@@ -108,7 +108,7 @@ let
   sensu-check-env = with pkgs; buildEnv {
     name = "sensu-check-env";
     paths = [
-      "/run/wrappers"
+      "/run/wrappers/sudo"
       bash
       coreutils
       glibc
@@ -116,6 +116,7 @@ let
       monitoring-plugins
       nix
       openssl
+      procps
       sensu
       sysstat
     ];
