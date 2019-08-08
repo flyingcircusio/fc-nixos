@@ -21,6 +21,26 @@ rec {
       config.networking.hostName
     ]);
 
+  # Returns service from /etc/nixos/services.json
+  # that matches the given name or null, if nothing matches.
+  # If there are multiple matches, an error is thrown.
+  findOneService = name: 
+    let 
+      found = filter (s: s.service == name) config.flyingcircus.encServices;
+      len = length found;
+    in if len == 0 then null
+      else if len == 1 then head found
+      else throw ("Multiple matches for service ${name}: " 
+        + lib.concatMapStringsSep "; " (s: s.address or "<no address>") found);
+
+
+  # Returns all service clients from /etc/nixos/service_clients.json
+  # that match the given name or an empty list, if nothing matches.
+  findServiceClients = name:
+    filter
+      (s: s.service == name)
+      config.flyingcircus.encServiceClients;
+
   installDirWithPermissions = { user, group, permissions, dir }:
     "install -d -o ${user} -g ${group} -m ${permissions} ${dir}";
 
