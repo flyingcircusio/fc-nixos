@@ -1,12 +1,14 @@
-{ stdenv, fetchurl, pkgconfig, postgresql }:
+{ stdenv, fetchFromGitHub, pkgconfig, postgresql }:
 
 stdenv.mkDerivation rec {
   name = "temporal_tables-${version}";
-  version = "1.2.0";
+  version = "20190530-6cc86eb-git";
 
-  src = fetchurl {
-    url = "https://github.com/arkhipov/temporal_tables/archive/v1.2.0.tar.gz";
-    sha256 = "e6d1b31a124e8597f61b86f08b6a18168f9cd9da1db77f2a8dd1970b407b7610";
+  src = fetchFromGitHub {
+    owner = "mlt";
+    repo = "temporal_tables";
+    rev = "6cc86eb03d618d6b9fc09ae523f1a1e5228d22b5";
+    sha256 = "0ykv37rm511n5955mbh9dcp7pgg88z1nwgszav7z6pziaj3nba8x";
   };
 
   nativeBuildInputs = [ pkgconfig ];

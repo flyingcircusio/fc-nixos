@@ -11,6 +11,7 @@ with builtins;
       postgresql95.enable = mkRole "9.5";
       postgresql96.enable = mkRole "9.6";
       postgresql10.enable = mkRole "10";
+      postgresql11.enable = mkRole "11";
     };
   };
 
@@ -20,6 +21,7 @@ with builtins;
       "9.5" = postgresql95.enable;
       "9.6" = postgresql96.enable;
       "10" = postgresql10.enable;
+      "11" = postgresql11.enable;
     };
     enabledRoles = lib.filterAttrs (n: v: v) pgroles;
     enabledRolesCount = length (lib.attrNames enabledRoles);

@@ -1,4 +1,4 @@
-import ./make-test.nix ({ rolename ? "postgresql10", lib, pkgs, ... }:
+import ./make-test.nix ({ rolename ? "postgresql11", lib, pkgs, ... }:
 let 
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
