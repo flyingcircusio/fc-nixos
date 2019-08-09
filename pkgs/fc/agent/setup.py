@@ -13,6 +13,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 test_deps = [
     'freezegun>=0.3',
+    'responses',
     'pytest>=3',
     'pytest-cov',
 ]
