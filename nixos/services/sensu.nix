@@ -252,6 +252,12 @@ in {
         ];
         groups = [ "sensuclient" ];
       }
+      # Allow sensuclient group to become service user for running custom checks
+      { 
+        commands = [ { command = "ALL"; options = [ "NOPASSWD" ]; } ];
+        groups = [ "sensuclient" ]; 
+        runAs = "%service";
+      }
     ];
 
     flyingcircus.activationScripts = {
