@@ -29,6 +29,7 @@ in {
   mongodb32 = callTest ./mongodb.nix { rolename = "mongodb32"; };
   mongodb34 = callTest ./mongodb.nix { rolename = "mongodb34"; };
   network = callSubTests ./network {};
+  nfs = callTest ./nfs.nix {};
   nginx = callTest ./nginx.nix {};
   nginx_reload = callTest (nixpkgs + /nixos/tests/nginx.nix) {};
   openvpn = callTest ./openvpn.nix {};
