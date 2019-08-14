@@ -108,7 +108,7 @@ let
   sensu-check-env = with pkgs; buildEnv {
     name = "sensu-check-env";
     paths = [
-      "/run/wrappers/sudo"
+      "/run/wrappers/bin"
       bash
       coreutils
       glibc

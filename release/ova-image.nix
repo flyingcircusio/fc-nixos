@@ -3,6 +3,7 @@
 , configFile     # initial /etc/nixos/configuration.nix
 , contents ? []  # files to be placed inside the image (see make-disk-image.nix)
 , version ? "0"
+, infrastructureModule ? "virtualbox"
 }:
 
 { config, lib, pkgs, system, ... }:
@@ -17,7 +18,7 @@ in {
 
   config = {
 
-    flyingcircus.infrastructureModule = "virtualbox";
+    flyingcircus.infrastructureModule = infrastructureModule;
 
     system.build.ovaImage = import ./make-disk-image.nix {
       name = cfg.vmDerivationName;

@@ -180,6 +180,15 @@ let
       ];
     }).config.system.build.ovaImage;
 
+    vagrant = lib.hydraJob (import "${nixpkgs}/nixos/lib/eval-config.nix" {
+      inherit system;
+      modules = [
+        (import ./ova-image.nix (imgArgs // {infrastructureModule = "vagrant"; }))
+        (import version_nix {})
+        ../nixos
+      ];
+    }).config.system.build.ovaImage;
+
     # iPXE netboot image
     netboot = makeNetboot {
       inherit system;

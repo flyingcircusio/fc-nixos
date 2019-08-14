@@ -13,8 +13,10 @@
     flyingcircus.agent.enable = false;
 
     services.timesyncd.servers = [ "pool.ntp.org" ];
+
     users.users.root.password = "";
     virtualisation.virtualbox.guest.enable = lib.mkDefault true;
     zramSwap.enable = true;
+
   };
 }
