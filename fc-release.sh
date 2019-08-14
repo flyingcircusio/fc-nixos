@@ -8,7 +8,7 @@ if ! echo "$releaseid" | egrep -q '^[0-9]{4}_[0-9]{3}$'; then
     exit 64
 fi
 
-dev="master"
+dev="fc-19.03-dev"
 stag="fc-19.03-staging"
 prod="fc-19.03-production"
 echo "$0: performing release based on $stag"
