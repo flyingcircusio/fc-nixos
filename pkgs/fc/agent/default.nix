@@ -40,6 +40,7 @@ py.buildPythonPackage rec {
     py.pytest
     py.pytestcov
     py.pytestrunner
+    py.responses
   ];
   propagatedBuildInputs = [
     dmidecode
