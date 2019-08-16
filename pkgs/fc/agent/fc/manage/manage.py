@@ -33,10 +33,9 @@ nixos-rebuild switch
 nix-channel --remove next
 """
 
-
 class Channel:
 
-    PHRASES = re.compile('would (\w+) the following units: (.*)$')
+    PHRASES = re.compile(r'would (\w+) the following units: (.*)$')
 
     # global, to avoid re-connecting (with ssl handshake and all)
     session = requests.session()
@@ -49,7 +48,14 @@ class Channel:
             self.is_local = True
             self.resolved_url = url.replace('file://', '')
             return
-        self.resolved_url = url.rstrip('/')
+
+        if not url.endswith("nixexprs.tar.xz"):
+            url = p.join(url, 'nixexprs.tar.xz')
+
+        res = Channel.session.head(url, allow_redirects=True)
+        res.raise_for_status()
+
+        self.resolved_url = res.url
 
     def version(self):
         label_comp = [
@@ -297,6 +303,7 @@ def build_channel_with_maintenance(build_options):
             return
     # scheduled update available?
     next_channel = Channel(enc['parameters'].get('environment_url'))
+
     if not next_channel or next_channel.is_local:
         _log.error("switch-in-maintenance incompatible with local checkout")
         sys.exit(1)
@@ -319,7 +326,12 @@ def build_channel(build_options, update=True):
             return
         if update and spread.is_due() and not channel.is_local:
             channel.load('nixos')
-        channel.switch(build_options)
+
+        if not channel.is_local:
+            channel = Channel.current('nixos')
+
+        if channel:
+            channel.switch(build_options)
     except Exception:
         _log.exception('Error switching channel')
         sys.exit(1)
