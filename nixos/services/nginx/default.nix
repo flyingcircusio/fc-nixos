@@ -24,7 +24,7 @@ let
         worker_age=$(ps -o etimes= $pid)
         agediff=$(expr $worker_age - $config_age)
 
-        if (( $agediff > 300 )); then
+        if (( $agediff > ${toString (cfg.workerShutdownTimeout + 60)} )); then
         echo "Worker process $pid is $agediff seconds older than the config file (started $(ps -o lstart= $pid))"
         workers_too_old=1
         fi
@@ -57,9 +57,10 @@ let
 
   acmeVhosts = (lib.filterAttrs (_: val: val ? enableACME ) vhostsJSON);
 
-  baseConfig = ''
-    worker_processes ${toString (fclib.current_cores config 1)};
+  mainConfig = ''
+    worker_processes ${toString (fclib.currentCores 1)};
     worker_rlimit_nofile 8192;
+    worker_shutdown_timeout ${toString cfg.workerShutdownTimeout};
   '';
 
   baseHttpConfig = ''
@@ -140,6 +141,21 @@ in
       type = types.int;
       default = 64;
       description = "Bucket size for the 'map' variables hash tables.";
+    };
+
+    workerShutdownTimeout = mkOption {
+      type = types.int;
+      default = 240;
+      description = ''
+        Configures a timeout (seconds) for a graceful shutdown of worker processes.
+        When the time expires, nginx will try to close all the connections currently 
+        open to facilitate shutdown.
+        This also affects the waiting time for the Sensu check nginx_worker_age:
+        the check will report an error if workers are more than workerShutdownTimeout + 60 seconds
+        older than the current config file.
+        By default, nginx will try to close connections 4 minutes after a reload
+        and the check will report workers that are more than 5 minutes older than the config file.
+      '';
     };
 
   };
@@ -233,7 +249,7 @@ in
 
       services.nginx = {
         enable = true;
-        appendConfig = "";
+        appendConfig = mainConfig;
         appendHttpConfig = ''
           ${baseHttpConfig}
           
