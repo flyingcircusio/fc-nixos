@@ -24,9 +24,14 @@ let
         worker_age=$(ps -o etimes= $pid)
         agediff=$(expr $worker_age - $config_age)
 
-        if (( $agediff > 300 )); then
-        echo "Worker process $pid is $agediff seconds older than the config file (started $(ps -o lstart= $pid))"
-        workers_too_old=1
+        # We want to ignore workers that are already shutting down after a reload request.
+        # They don't accept new connections and should get killed after worker_shutdown_timeout expires.
+        shutting_down=$(ps --no-headers $pid | grep 'shutting down')
+
+        if [[ $agediff -gt 1 && -z $shutting_down ]]; then
+            start_time=$(ps -o lstart= $pid)
+            echo "Worker process $pid is $agediff seconds older than the config file (started $start_time)"
+            workers_too_old=1
         fi
     done
 
@@ -57,9 +62,10 @@ let
 
   acmeVhosts = (lib.filterAttrs (_: val: val ? enableACME ) vhostsJSON);
 
-  baseConfig = ''
-    worker_processes ${toString (fclib.current_cores config 1)};
+  mainConfig = ''
+    worker_processes ${toString (fclib.currentCores 1)};
     worker_rlimit_nofile 8192;
+    worker_shutdown_timeout ${toString cfg.workerShutdownTimeout};
   '';
 
   baseHttpConfig = ''
@@ -142,6 +148,17 @@ in
       description = "Bucket size for the 'map' variables hash tables.";
     };
 
+    workerShutdownTimeout = mkOption {
+      type = types.int;
+      default = 240;
+      description = ''
+        Configures a timeout (seconds) for a graceful shutdown of worker processes.
+        When the time expires, nginx will try to close all the connections currently 
+        open to facilitate shutdown.
+        By default, nginx will try to close connections 4 minutes after a reload.
+      '';
+    };
+
   };
 
   config = lib.mkMerge [
@@ -200,13 +217,15 @@ in
 
         nginx_status = {
           notification = "nginx does not listen on port 80";
-          command =
-            "check_http -H localhost -u /nginx_status -s server -c 5 -w 2";
+          command = ''
+            ${pkgs.monitoring-plugins}/bin/check_http \
+              -H localhost -u /nginx_status -s server -c 5 -w 2
+          '';
           interval = 60;
         };
 
         nginx_worker_age = {
-          notification = "worker processes are more than 300s older than config file";
+          notification = "worker processes are older than config file";
           command = "${nginxCheckWorkerAge}";
           interval = 300;
         };
@@ -214,7 +233,7 @@ in
       } //
       (lib.mapAttrs' (name: _: (lib.nameValuePair "nginx_cert_${name}" {
         notification = "HTTPS cert for ${name} (Let's encrypt)";
-        command = "check_http -H ${name} -p 443 -S -C 5";
+        command = "${pkgs.monitoring-plugins}/bin/check_http -H ${name} -p 443 -S -C 5";
         interval = 600;
       })) acmeVhosts);
 
@@ -233,7 +252,7 @@ in
 
       services.nginx = {
         enable = true;
-        appendConfig = "";
+        appendConfig = mainConfig;
         appendHttpConfig = ''
           ${baseHttpConfig}
           
