@@ -57,7 +57,7 @@ in {
       services.redis.extraConfig = extraConfig;
 
 
-      flyingcircus.activationScripts.redis = 
+      flyingcircus.activationScripts.redis =
         lib.stringAfter [ "fc-local-config" ] ''
           if [[ ! -e /etc/local/redis/password ]]; then
             ( umask 007;
@@ -68,15 +68,16 @@ in {
           chmod 0660 /etc/local/redis/password
         '';
 
-      flyingcircus.localConfigDirs.redis = { 
+      flyingcircus.localConfigDirs.redis = {
         dir = "/etc/local/redis";
-        user = "redis"; 
+        user = "redis";
       };
 
       systemd.services.redis = rec {
         serviceConfig = {
           LimitNOFILE = 64000;
           PermissionsStartOnly = true;
+          Restart = "always";
         };
 
         after = [ "network.target" ];
