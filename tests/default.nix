@@ -29,10 +29,14 @@ in {
   mongodb32 = callTest ./mongodb.nix { rolename = "mongodb32"; };
   mongodb34 = callTest ./mongodb.nix { rolename = "mongodb34"; };
   network = callSubTests ./network {};
+  mysql55 = callTest ./mysql.nix { rolename = "mysql55"; };
+  mysql56 = callTest ./mysql.nix { rolename = "mysql56"; };
+  mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   nfs = callTest ./nfs.nix {};
   nginx = callTest ./nginx.nix {};
   nginx_reload = callTest (nixpkgs + /nixos/tests/nginx.nix) {};
   openvpn = callTest ./openvpn.nix {};
+  percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   postgresql95 = callTest ./postgresql.nix { rolename = "postgresql95"; };
   postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };
   postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };

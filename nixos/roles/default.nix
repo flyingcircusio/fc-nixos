@@ -13,6 +13,7 @@ in {
     ./mailserver.nix
     ./memcached.nix
     ./mongodb
+    ./mysql.nix
     ./nfs.nix
     ./postgresql.nix
     ./rabbitmq.nix

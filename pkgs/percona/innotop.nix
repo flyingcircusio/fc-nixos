@@ -11,6 +11,8 @@ pkgs.buildPerlPackage rec {
     sha256 = "0l284mmjzkadb17yrj9avyhbh5dqgdx3f5kj0yldlid28n1mx0kd";
   };
 
+  patches = [ ./innotop.patch ];
+
   outputs = [ "out" ];
 
   propagatedBuildInputs = [
