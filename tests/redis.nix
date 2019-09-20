@@ -22,5 +22,11 @@ import ./make-test.nix ({ ... }:
 
     # service user should be able to write the password file
     $redis->succeed('sudo -u redis touch /etc/local/redis/password');
+
+    # killing the redis process should trigger an automatic restart
+    $redis->succeed("kill \$(systemctl show redis.service --property MainPID | sed -e 's/MainPID=//')");
+    $redis->waitForUnit("redis.service");
+    $redis->waitUntilSucceeds("$cli ping | grep PONG");
+
   '';
 })
