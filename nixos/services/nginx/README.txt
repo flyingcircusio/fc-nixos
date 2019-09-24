@@ -73,7 +73,7 @@ If you want to authenticate against the Flying Circus users with login permissio
 use the following snippet, and *USE SSL*:
 
 auth_basic "FCIO user";
-auth_basic_user_file "/etc/local/nginx/htpasswd_fcio_users";
+auth_basic_user_file "/etc/local/htpasswd_fcio_users";
 
 There is also an `example-configuration` here. Copy to some file ending with
 *.conf and adapt.
