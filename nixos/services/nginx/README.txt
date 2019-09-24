@@ -40,15 +40,26 @@ custom configuration, and SSL with a default certificate from Let's Encrypt:
 }
 ```
 
-All options are documented at
+### Available Options
+
+Options provided by NixOS are documented at
 https://nixos.org/nixos/options.html#services.nginx.virtualhosts.%3Cname%3E 
+
+We support the following custom options:
+* `emailACME`: set the contact address for Let's Encrypt, defaults to none.
+* `listenAddress`: IPv4 address for vhost, defaults to `0.0.0.0`.
+* `listenAddress6`: IPv6 address for vhost, defaults to `[::]`.
+
+### HTTPS and Let's Encrypt
 
 For SSL support with redirection from HTTP to HTTPS, use `forceSSL`.
 Let's Encrypt (`enableACME`) is activated automatically if one of `forceSSL`, `onlySSL` or `addSSL`
 is set to true.
+Selfsigned certificates are created for new vhosts before Nginx starts or reloads.
+They are replaced by the proper certificates after some seconds.
+A systemd timer checks the age of the certificates and renews them automatically if needed.
 To use a custom certificate, set the certificate options and set `"enableACME" = false`.
 
-We support the custom option `emailACME` to set the contact address for Let's Encrypt.
 
 Manual configuration
 --------------------
