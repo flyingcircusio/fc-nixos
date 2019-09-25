@@ -175,6 +175,11 @@ in
           source = "${package}/conf/uwsgi_params";
         };
 
+        # file has moved; link back to the old location for compatibility reasons
+        "local/nginx/htpasswd_fcio_users" = { 
+          source = "/etc/local/htpasswd_fcio_users";
+        };
+
         "local/nginx/example-configuration".text =
           import ./example-config.nix { inherit config lib; };
 
