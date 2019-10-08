@@ -11,5 +11,11 @@ in {
   config = {
       flyingcircus.services.redis.enable = roles.redis.enable;
       flyingcircus.roles.statshost.globalAllowedMetrics = [ "redis" ];
+      flyingcircus.roles.statshost.prometheusMetricRelabel = [
+        { 
+          regex = "aof_last_bgrewrite_status|aof_last_write_status|maxmemory_policy|rdb_last_bgsave_status|used_memory_dataset_perc|used_memory_peak_perc";
+          action = "drop";
+        }
+      ];
     };
 }

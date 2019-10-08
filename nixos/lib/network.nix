@@ -64,7 +64,7 @@ rec {
   # Return service address (string) or null, if no service
   listServiceAddress = service:
     let
-      addresses = listServiceAddresses config service;
+      addresses = listServiceAddresses service;
     in
       if addresses == [] then null else head addresses;
 
@@ -80,7 +80,7 @@ rec {
   nginxListenOn  = interface: mod:
     lib.concatMapStringsSep "\n  "
       (addr: "listen ${addr}:${toString mod};")
-      (listenAddressesQuotedV6 config interface);
+      (listenAddressesQuotedV6 interface);
 
 
   /*

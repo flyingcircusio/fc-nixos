@@ -37,6 +37,22 @@ in {
     ];
   };
 
+  percona = self.percona80;
+  percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
+    # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
+    # This doesn't work. Looks like a bug in Nixpkgs.
+    # Replacing the interpreter path before the Perl builder touches it fixes this.
+    postPatch = ''
+      patchShebangs .
+    '';
+  });
+
+  percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
+  percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
+  percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost169; };
+
+  qpress = super.callPackage ./percona/qpress.nix { };
+
   rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix { 
     erlang = self.erlangR19; 
   };
@@ -61,6 +77,11 @@ in {
   # We use a (our) newer version than on upstream.
   vulnix = super.callPackage ./vulnix.nix {
     pythonPackages = self.python3Packages;
+  };
+
+  xtrabackup = super.callPackage ./percona/xtrabackup.nix {
+    inherit (self) percona;
+    boost = self.boost169;
   };
 
 }

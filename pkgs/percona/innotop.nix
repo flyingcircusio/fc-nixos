@@ -11,7 +11,16 @@ pkgs.buildPerlPackage rec {
     sha256 = "0l284mmjzkadb17yrj9avyhbh5dqgdx3f5kj0yldlid28n1mx0kd";
   };
 
+  patches = [ ./innotop.patch ];
+
   outputs = [ "out" ];
+
+  # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
+  # This doesn't work. Looks like a bug in Nixpkgs.
+  # Replacing the interpreter path before the Perl builder touches it fixes this.
+  postPatch = ''
+    patchShebangs .
+  '';
 
   propagatedBuildInputs = [
     pkgs.perlPackages.DBI

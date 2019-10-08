@@ -1,27 +1,32 @@
-# Relay stats of a resource group via NGINX
+# Relay stats of a resource group via NGINX.
+# TODO: rename, the role name should say that it's acting as a resource group proxy.
 { config, lib, pkgs, ... }:
+
 with lib;
+
 {
   config = mkIf config.flyingcircus.roles.statshost-relay.enable {
 
-    # XXX use upstream nginx service instead
-    # flyingcircus.roles.nginx.enable = true;
-    # flyingcircus.roles.nginx.httpConfig = ''
-    #   server {
-    #     listen ${config.services.prometheus.listenAddress};
-    #     access_log /var/log/nginx/loghost_access.log;
-    #     error_log /var/log/nginx/loghost_error.log;
+    services.nginx.enable = true;
+    systemd.tmpfiles.rules = [
+      "d /var/log/nginx 0755 nginx"
+    ];
+    services.nginx.appendHttpConfig = ''
+      server {
+        listen ${config.services.prometheus.listenAddress};
+        access_log /var/log/nginx/statshost-relay_access.log;
+        error_log /var/log/nginx/statshost-relay_error.log;
 
-    #     location = /scrapeconfig.json {
-    #       alias /etc/local/statshost/scrape-rg.json;
-    #     }
+        location = /scrapeconfig.json {
+          alias /etc/local/statshost/scrape-rg.json;
+        }
 
-    #     location / {
-    #         resolver ${concatStringsSep " " config.networking.nameservers};
-    #         proxy_pass http://$http_host$request_uri$is_args$args;
-    #     }
-    #   }
-    # '';
+        location / {
+            resolver ${concatStringsSep " " config.networking.nameservers};
+            proxy_pass http://$http_host$request_uri$is_args$args;
+        }
+      }
+    '';
 
   };
 }
