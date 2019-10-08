@@ -38,7 +38,15 @@ in {
   };
 
   percona = self.percona80;
-  percona-toolkit = super.perlPackages.PerconaToolkit;
+  percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
+    # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
+    # This doesn't work. Looks like a bug in Nixpkgs.
+    # Replacing the interpreter path before the Perl builder touches it fixes this.
+    postPatch = ''
+      patchShebangs .
+    '';
+  });
+
   percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost169; };

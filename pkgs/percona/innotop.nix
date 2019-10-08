@@ -15,6 +15,13 @@ pkgs.buildPerlPackage rec {
 
   outputs = [ "out" ];
 
+  # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
+  # This doesn't work. Looks like a bug in Nixpkgs.
+  # Replacing the interpreter path before the Perl builder touches it fixes this.
+  postPatch = ''
+    patchShebangs .
+  '';
+
   propagatedBuildInputs = [
     pkgs.perlPackages.DBI
     pkgs.perlPackages.DBDmysql
