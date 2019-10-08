@@ -10,6 +10,7 @@
     ./haproxy.nix
     ./logrotate
     ./nginx
+    ./percona.nix
     ./postfix.nix
     ./postgresql.nix
     ./prometheus.nix
