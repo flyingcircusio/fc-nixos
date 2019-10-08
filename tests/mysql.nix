@@ -80,7 +80,7 @@ in
     $master->waitForUnit("mysql");
 
     subtest "mysql works", sub {
-      $master->succeed("mysqladmin ping");
+      $master->waitUntilSucceeds("mysqladmin ping");
     };
 
     subtest "can login with root password", sub {
