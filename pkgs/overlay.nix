@@ -38,7 +38,7 @@ in {
   };
 
   percona = self.percona80;
-  percona-toolkit = super.callPackage ./percona/toolkit.nix { };
+  percona-toolkit = super.perlPackages.PerconaToolkit;
   percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost169; };
