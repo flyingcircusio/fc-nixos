@@ -15,6 +15,7 @@ in {
     ./mongodb
     ./mysql.nix
     ./nfs.nix
+    ./nginx.nix
     ./postgresql.nix
     ./rabbitmq.nix
     ./redis.nix
