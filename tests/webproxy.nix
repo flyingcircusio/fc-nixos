@@ -1,6 +1,6 @@
 import ./make-test.nix ({ pkgs, ... }:
 {
-  name = "haproxy";
+  name = "webproxy";
   nodes = {
     webproxy =
       { lib, ... }:
