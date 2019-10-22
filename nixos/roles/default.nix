@@ -11,6 +11,7 @@ in {
   imports = [
     ./docker.nix
     ./external_net
+    ./antivirus.nix
     ./mailserver.nix
     ./memcached.nix
     ./mongodb
