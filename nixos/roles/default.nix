@@ -9,6 +9,7 @@ let
 
 in {
   imports = [
+    ./docker.nix
     ./external_net
     ./mailserver.nix
     ./memcached.nix

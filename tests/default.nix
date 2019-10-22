@@ -20,6 +20,7 @@ let
   in discover (importTest fn args system);
 
 in {
+  docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
   fcagent = callTest ./fcagent.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
   login = callTest ./login.nix {};
