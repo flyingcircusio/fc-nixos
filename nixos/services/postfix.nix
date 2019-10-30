@@ -106,9 +106,9 @@ in
       };
     };
 
-    security.sudo.extraRules = [
+    flyingcircus.passwordlessSudoRules = [
       {
-        commands = [ { command = checkMailq; options = [ "NOPASSWD" ]; } ];
+        commands = [ checkMailq ];
         groups = [ "sensuclient" ];
       }
     ];

@@ -172,6 +172,20 @@ in
       adminsGroup = mkDefault (fclib.jsonFromFile cfg.adminsGroupPath "{}");
     };
 
+    flyingcircus.passwordlessSudoRules = [
+      # Allow sudo-srv users to become service user
+      { 
+        commands = [ "ALL" ];
+        groups = [ "sudo-srv" ]; 
+        runAs = "%service";
+      }
+      # Allow applying config and restarting services to service users
+      {
+        commands = [ "${pkgs.systemd}/bin/systemctl" ];
+        groups = [ "sudo-srv" "service" ];
+      }
+    ];
+
     security.pam.services.sshd.showMotd = true;
 
     security.sudo = {
@@ -188,18 +202,6 @@ in
         {
           commands = [ { command = "ALL"; options = [ "PASSWD" ]; } ];
           groups = [ "admins" ];
-        }
-        # Allow sudo-srv users to become service user
-        { 
-          commands = [ { command = "ALL"; options = [ "NOPASSWD" ]; } ];
-          groups = [ "sudo-srv" ]; 
-          runAs = "%service";
-        }
-        # Allow applying config and restarting services to service users
-        {
-          commands = [ { command = "${pkgs.systemd}/bin/systemctl"; 
-                         options = [ "NOPASSWD" ]; } ];
-          groups = [ "sudo-srv" "service" ];
         }
       ];
     };
