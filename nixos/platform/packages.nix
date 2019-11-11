@@ -73,10 +73,9 @@
     ] ++
     lib.optional (!config.services.postgresql.enable) pkgs.postgresql;
 
-    security.sudo.extraRules = [
+    flyingcircus.passwordlessSudoRules = [
       { 
-        commands = [ { command = "${pkgs.iotop}/bin/iotop"; 
-                       options = [ "NOPASSWD" ]; } ];
+        commands = [ "${pkgs.iotop}/bin/iotop" ];
         groups = [ "sudo-srv" "service" ];
       }
     ];

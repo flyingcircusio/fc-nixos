@@ -7,7 +7,7 @@ let
 
   fclib = config.fclib;
 
-  localCfgDir = cfg.localConfigPath + "/firewall"; 
+  localCfgDir = cfg.localConfigPath + "/firewall";
 
   # Technically, snippets in /etc/local/firewall are plain shell scripts. We
   # don't want to support full (root) shell expressiveness here, so restrict
@@ -144,17 +144,17 @@ in
           in rg + local;
       };
 
-    security.sudo.extraRules =
+    flyingcircus.passwordlessSudoRules =
       let ipt = x: "${pkgs.iptables}/bin/ip${x}tables";
       in [
         {
-          commands = [ { command = "${ipt ""} -L*"; options = [ "NOPASSWD" ]; }
-                       { command = "${ipt "6"} -L*"; options = [ "NOPASSWD" ]; } ];
+          commands = [ "${ipt ""} -L*"
+                       "${ipt "6"} -L*" ];
           groups = [ "users" "service" ];
         }
         {
-          commands = [ { command = "${checkIPTables}"; options = [ "NOPASSWD" ]; } ];
-          users = [ "sensuclient" ];
+          commands = [ "${checkIPTables}" ];
+          groups = [ "sensuclient" ];
         }
       ];
 

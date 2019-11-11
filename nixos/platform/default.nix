@@ -121,6 +121,15 @@ in {
       example = ./test_cfg;
     };
 
+    flyingcircus.passwordlessSudoRules = mkOption {
+      description = ''
+        Works like security.sudo.extraRules, but sets passwordless mode and
+        places rules after rules with default order number (uses mkOrder 1100).
+      '';
+      
+      default = [];
+    };
+
     flyingcircus.roles.generic.enable =
       mkEnableOption "Generic role, which does nothing";
 
@@ -163,6 +172,21 @@ in {
 
     # reduce build time
     documentation.nixos.enable = mkDefault false;
+
+    # implementation for flyingcircus.passwordlessSudoRules
+    security.sudo.extraRules = let
+      nopasswd = [ "NOPASSWD" ];
+      addPasswordOption = c:
+        if builtins.typeOf c == "string" 
+        then { command = c; options = nopasswd; }
+        else c // { options = (c.options or []) ++ nopasswd; };
+
+      in 
+      lib.mkOrder
+        1100 
+        (map 
+          (rule: rule // { commands = (map addPasswordOption rule.commands); })
+          config.flyingcircus.passwordlessSudoRules);
 
     services = {
 

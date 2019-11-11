@@ -103,10 +103,9 @@ in {
         "d /var/spool/maintenance/archive - - - 90d"
       ];
 
-      security.sudo.extraRules = [
+      flyingcircus.passwordlessSudoRules = [
         {
-          commands = [ { command = "${pkgs.fc.agent}/bin/fc-manage"; 
-                         options = [ "NOPASSWD" ]; } ];
+          commands = [ "${pkgs.fc.agent}/bin/fc-manage" ];
           groups = [ "sudo-srv" "service" ];
         }
       ];

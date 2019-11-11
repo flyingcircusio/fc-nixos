@@ -44,15 +44,13 @@
 	    ];
 	};
 
-    security.sudo = {
-      extraRules = lib.mkBefore [
-        # Allow unrestricted access to vagrant
-        {
-          commands = [ { command = "ALL"; options = [ "NOPASSWD" ]; } ];
-          users = [ "vagrant" ];
-        }
-      ];
-    };
+    flyingcircus.passwordlessSudoRules = [
+      # Allow unrestricted access to vagrant
+      {
+        commands = [ "ALL" ];
+        users = [ "vagrant" ];
+      }
+    ];
 
     # General vagrant optimizations
 

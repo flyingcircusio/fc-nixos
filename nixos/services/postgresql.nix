@@ -113,10 +113,10 @@ in {
       user = "postgres";
     };
 
-    security.sudo.extraRules = [
+    flyingcircus.passwordlessSudoRules = [
       # Service users may switch to the postgres system user
       {
-        commands = [ { command = "ALL"; options = [ "NOPASSWD" ]; } ];
+        commands = [ "ALL" ];
         groups = [ "sudo-srv" "service" ];
         runAs = "postgres";
       }
