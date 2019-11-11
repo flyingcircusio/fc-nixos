@@ -20,6 +20,7 @@ let
       "1001" = [ "admins" ];
       "1002" = [ "sudo-srv" ];
       "1003" = [ "wheel" ];
+      "1004" = [ "wheel" "sudo-srv" ];
     }) ++ [
       {
         class = "service";
@@ -75,6 +76,12 @@ in
         or die $out;
       $out = $machine->succeed("id u1002");
       $out eq "uid=1002(u1002) gid=100(users) groups=503(sudo-srv),100(users)\n"
+        or die $out;
+      $out = $machine->succeed("id u1003");
+      $out eq "uid=1003(u1003) gid=100(users) groups=1(wheel),100(users)\n"
+        or die $out;
+      $out = $machine->succeed("id u1004");
+      $out eq "uid=1004(u1004) gid=100(users) groups=1(wheel),503(sudo-srv),100(users)\n"
         or die $out;
       $out = $machine->succeed("id s-service");
       $out eq "uid=1074(s-service) gid=900(service) groups=900(service)\n"
@@ -164,29 +171,36 @@ in
       $machine->waitUntilTTYMatches(4, "pw required wheel");
     };
 
-    login("s-service", 5);
+    login("u1004", 5);
+
+    subtest "wheel+sudo-srv should be able to use service user without password", sub {
+      $machine->sendChars("sudo -l -u s-service id || echo failed7\n");
+      $machine->waitUntilTTYMatches(5, "/run/current-system/sw/bin/id");
+    };
+
+    login("s-service", 6);
 
     subtest "service user should be able to run systemctl without password", sub {
       $machine->sendChars("sudo -n systemctl --no-pager && echo 'pw not required systemctl'\n");
-      $machine->waitUntilTTYMatches(5, "pw not required systemctl");
+      $machine->waitUntilTTYMatches(6, "pw not required systemctl");
     };
 
     subtest "service user should be able to run fc-manage without password", sub {
       $machine->sendChars("sudo -n fc-manage  && echo 'pw not required fc-manage'\n");
-      $machine->waitUntilTTYMatches(5, "pw not required fc-manage");
+      $machine->waitUntilTTYMatches(6, "pw not required fc-manage");
     };
 
     subtest "service user should be able to run iotop without password", sub {
       $machine->sendChars("sudo -n iotop -n1 && echo 'pw not required iotop'\n");
-      $machine->waitUntilTTYMatches(5, "pw not required iotop");
+      $machine->waitUntilTTYMatches(6, "pw not required iotop");
     };
 
     subtest "service user should be able to run ipXtables without password", sub {
       $machine->sendChars("sudo -n iptables && echo 'pw not required iptables'\n");
-      $machine->waitUntilTTYMatches(5, "pw not required iptables");
+      $machine->waitUntilTTYMatches(6, "pw not required iptables");
 
       $machine->sendChars("sudo -n ip6tables && echo 'pw not required ip6tables'\n");
-      $machine->waitUntilTTYMatches(5, "pw not required ip6tables");
+      $machine->waitUntilTTYMatches(6, "pw not required ip6tables");
     };
 
   '';

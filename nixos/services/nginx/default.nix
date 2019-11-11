@@ -246,11 +246,10 @@ in
 
       security.acme.certs = acmeSettings;
 
-      security.sudo.extraRules = [
+      flyingcircus.passwordlessSudoRules = [
         # sensuclient can run config check script as nginx user
         {
-          commands = [ { command = "${nginxCheckConfig}/bin/nginx-check-config"; 
-                         options = [ "NOPASSWD" ]; } ];
+          commands = [ "${nginxCheckConfig}/bin/nginx-check-config" ];
           groups = [ "sensuclient" ];
         }
       ];

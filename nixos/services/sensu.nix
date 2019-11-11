@@ -243,17 +243,17 @@ in {
         }
     '';
 
-    security.sudo.extraRules = [
+    flyingcircus.passwordlessSudoRules = [
       {
         commands = with pkgs; [
-          { command = "${fc.multiping}/bin/multiping"; options = [ "NOPASSWD" ]; }
-          { command = "${fc.sensuplugins}/bin/check_disk"; options = [ "NOPASSWD" ]; }
+          "${fc.multiping}/bin/multiping"
+          "${fc.sensuplugins}/bin/check_disk"
         ];
         groups = [ "sensuclient" ];
       }
       # Allow sensuclient group to become service user for running custom checks
       { 
-        commands = [ { command = "ALL"; options = [ "NOPASSWD" ]; } ];
+        commands = [ "ALL" ];
         groups = [ "sensuclient" ]; 
         runAs = "%service";
       }
