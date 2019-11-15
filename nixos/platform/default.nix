@@ -2,7 +2,7 @@
 
 with lib;
 
-let 
+let
   cfg = config.flyingcircus;
   fclib = config.fclib;
   enc_services = fclib.jsonFromFile cfg.enc_services_path "[]";
@@ -26,7 +26,7 @@ in {
 
     flyingcircus.activationScripts = mkOption {
       description = ''
-        This does the same as system.activationScripts, 
+        This does the same as system.activationScripts,
         but script / attribute names are prefixed with "fc-" automatically:
 
         flyingcircus.activationScripts.script-name becomes
@@ -36,7 +36,7 @@ in {
       '';
       default = {};
       # like in system.activationScripts, can be a string or a set (lib.stringAfter)
-      type = types.attrsOf types.unspecified; 
+      type = types.attrsOf types.unspecified;
     };
 
     flyingcircus.enc_services = mkOption {
@@ -94,7 +94,8 @@ in {
             default = "02775";
             description = ''
               Directory permissions.
-              By default, owner and group can write to the directory and the sticky bit is set.
+              By default, owner and group can write to the directory and the
+              sticky bit is set.
             '';
             type = types.string;
           };
@@ -111,7 +112,7 @@ in {
 
         The local config must be present at built time for some tests but
         the default path references /etc/local on the machine where the tests
-        are run. This option can be used to set a path relative to the test 
+        are run. This option can be used to set a path relative to the test
         (path starting with ./ without double quotes) where the local config
         can be found. For example, custom firewall rules can be put into
         ./test_cfg/firewall/firewall.conf for testing.
@@ -126,7 +127,7 @@ in {
         Works like security.sudo.extraRules, but sets passwordless mode and
         places rules after rules with default order number (uses mkOrder 1100).
       '';
-      
+
       default = [];
     };
 
@@ -171,57 +172,56 @@ in {
     flyingcircus.enc_services = enc_services;
 
     # reduce build time
-    documentation.nixos.enable = mkDefault false;
+    #documentation.nixos.enable = mkDefault false;
 
     # implementation for flyingcircus.passwordlessSudoRules
     security.sudo.extraRules = let
       nopasswd = [ "NOPASSWD" ];
       addPasswordOption = c:
-        if builtins.typeOf c == "string" 
+        if builtins.typeOf c == "string"
         then { command = c; options = nopasswd; }
         else c // { options = (c.options or []) ++ nopasswd; };
 
-      in 
+      in
       lib.mkOrder
-        1100 
-        (map 
+        1100
+        (map
           (rule: rule // { commands = (map addPasswordOption rule.commands); })
           config.flyingcircus.passwordlessSudoRules);
 
     services = {
-
-      # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform overrides it
-      cron.enable = fclib.mkPlatform true; 
+      # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform
+      # overrides it
+      cron.enable = fclib.mkPlatform true;
 
       nscd.enable = true;
       openssh.enable = mkDefault true;
     };
 
     system.activationScripts = let
-
       cfgDirs = cfg.localConfigDirs;
 
       snippet = name: ''
         # flyingcircus.localConfigDirs.${name}
-        ${fclib.installDirWithPermissions { 
-          inherit (cfgDirs.${name}) user group permissions dir; 
+        ${fclib.installDirWithPermissions {
+          inherit (cfgDirs.${name}) user group permissions dir;
         }}
       '';
 
       # concat script snippets for all local config dirs
-      cfgScript = lib.fold 
-                    (name: acc: acc + "\n" + (snippet name)) 
-                    ""
-                    (lib.attrNames cfgDirs);
+      cfgScript = lib.fold
+        (name: acc: acc + "\n" + (snippet name))
+        ""
+        (lib.attrNames cfgDirs);
 
-      fromCfgDirs = { 
-        fc-local-config = lib.stringAfter ["users" "groups"] cfgScript; 
+      fromCfgDirs = {
+        fc-local-config = lib.stringAfter ["users" "groups"] cfgScript;
       };
 
       # prefix our activation scripts with "fc-"
-      fromActivationScripts = lib.mapAttrs' 
-                                (name: value: lib.nameValuePair ("fc-" + name) value) 
-                                cfg.activationScripts;
+      fromActivationScripts = lib.mapAttrs'
+        (name: value: lib.nameValuePair ("fc-" + name) value)
+        cfg.activationScripts;
 
     in fromCfgDirs // fromActivationScripts;
 
