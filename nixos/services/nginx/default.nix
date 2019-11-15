@@ -153,7 +153,7 @@ in
       default = 240;
       description = ''
         Configures a timeout (seconds) for a graceful shutdown of worker processes.
-        When the time expires, nginx will try to close all the connections currently 
+        When the time expires, nginx will try to close all the connections currently
         open to facilitate shutdown.
         By default, nginx will try to close connections 4 minutes after a reload.
       '';
@@ -176,7 +176,7 @@ in
         };
 
         # file has moved; link back to the old location for compatibility reasons
-        "local/nginx/htpasswd_fcio_users" = { 
+        "local/nginx/htpasswd_fcio_users" = {
           source = "/etc/local/htpasswd_fcio_users";
         };
 
@@ -259,7 +259,7 @@ in
         appendConfig = mainConfig;
         appendHttpConfig = ''
           ${baseHttpConfig}
-          
+
           # === User-provided config from ${localDir}/*.conf ===
           ${localHttpConfig}
 
@@ -292,8 +292,12 @@ in
         }
       '';
 
+      # Config check fails on first run if /var/spool/nginx/logs is missing.
+      # Nginx creates it, but we create it here to avoid that useless error.
+      # It's only used on Nginx startup, "real" logging goes to /var/log/nginx.
       systemd.tmpfiles.rules = [
         "d /var/log/nginx 0755 nginx"
+        "d /var/spool/nginx/logs 0755 nginx nginx 7d"
         "d /etc/local/nginx/modsecurity 2775 nginx service"
       ];
 
