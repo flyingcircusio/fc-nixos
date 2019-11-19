@@ -53,11 +53,11 @@ in {
 
   qpress = super.callPackage ./percona/qpress.nix { };
 
-  rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix { 
-    erlang = self.erlangR19; 
+  rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix {
+    erlang = self.erlangR19;
   };
-  rabbitmq-server_3_6_15 = super.callPackage ./rabbitmq-server/3.6.15.nix { 
-    erlang = self.erlangR19; 
+  rabbitmq-server_3_6_15 = super.callPackage ./rabbitmq-server/3.6.15.nix {
+    erlang = self.erlangR19;
   };
   rabbitmq-server_3_7 = super.rabbitmq-server;
 
@@ -74,10 +74,7 @@ in {
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
-  # We use a (our) newer version than on upstream.
-  vulnix = super.callPackage ./vulnix.nix {
-    pythonPackages = self.python3Packages;
-  };
+  vulnix = super.callPackage ./vulnix.nix { };
 
   xtrabackup = super.callPackage ./percona/xtrabackup.nix {
     inherit (self) percona;
