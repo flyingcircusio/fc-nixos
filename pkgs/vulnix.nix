@@ -1,12 +1,19 @@
-{ stdenv, python3Packages, nix, ronn }:
+{ stdenv, python3Packages, nix, ronn, fetchFromGitHub }:
 
 python3Packages.buildPythonApplication rec {
   pname = "vulnix";
-  version = "1.9.2";
+  version = "1.9.3-pre";
 
-  src = python3Packages.fetchPypi {
-    inherit pname version;
-    sha256 = "06mi4a80g6nzvqxj51c7lc0q0dpdr603ly2r77ksf5m3k4glb6dm";
+  # src = python3Packages.fetchPypi {
+  #   inherit pname version;
+  #   sha256 = "06mi4a80g6nzvqxj51c7lc0q0dpdr603ly2r77ksf5m3k4glb6dm";
+  # };
+
+  src = fetchFromGitHub {
+    owner = "flyingcircusio";
+    repo = "vulnix";
+    rev = "6d22b78ca498fb00198c1c010ff86d99daf2c17c";
+    sha256 = "1678fl5zs730ynvkc6vxmsd89miaxvzbrg3ga5yjg32gcchdi8hl";
   };
 
   outputs = [ "out" "doc" "man" ];
