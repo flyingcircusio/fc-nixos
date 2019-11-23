@@ -12,8 +12,8 @@ python3Packages.buildPythonApplication rec {
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "vulnix";
-    rev = "6d22b78ca498fb00198c1c010ff86d99daf2c17c";
-    sha256 = "1678fl5zs730ynvkc6vxmsd89miaxvzbrg3ga5yjg32gcchdi8hl";
+    rev = "c9a257e68989e75c3f310c06a91bb238a225b422";
+    sha256 = "1r91vx4g6349qk6z6d1666w75hwhl8jm19c5mgblp1ms8d8p1ly5";
   };
 
   outputs = [ "out" "doc" "man" ];

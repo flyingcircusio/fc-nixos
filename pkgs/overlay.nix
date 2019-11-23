@@ -61,6 +61,7 @@ in {
   };
   rabbitmq-server_3_7 = super.rabbitmq-server;
 
+  remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
   sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
@@ -79,6 +80,20 @@ in {
   xtrabackup = super.callPackage ./percona/xtrabackup.nix {
     inherit (self) percona;
     boost = self.boost169;
+  };
+
+  # === Python ===
+
+  python = super.python.override {
+    packageOverrides = import ./overlay-python.nix super;
+  };
+
+  python3 = super.python3.override {
+    packageOverrides = import ./overlay-python.nix super;
+  };
+
+  python37 = super.python37.override {
+    packageOverrides = import ./overlay-python.nix super;
   };
 
 }

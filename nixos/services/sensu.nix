@@ -252,15 +252,14 @@ in {
         groups = [ "sensuclient" ];
       }
       # Allow sensuclient group to become service user for running custom checks
-      { 
+      {
         commands = [ "ALL" ];
-        groups = [ "sensuclient" ]; 
+        groups = [ "sensuclient" ];
         runAs = "%service";
       }
     ];
 
     flyingcircus.activationScripts = {
-      
       sensu-client = ''
         ${ifJsonSyntaxError}
           echo "Errors in /etc/local/sensu-client, aborting"
@@ -268,7 +267,6 @@ in {
         fi
         unset sensu_json_present
       '';
-
     };
 
     flyingcircus.localConfigDirs.sensu-client = {
@@ -281,10 +279,10 @@ in {
       after = [ "network.target" ];
       stopIfChanged = false;
       # Sensu check scripts inherit the PATH of sensu-client by default.
-      # We provide common external dependencies in sensu-check-env. 
-      # Checks can define their own PATH in a wrapper to include other dependencies.
-      path = [ 
-        sensu-check-env 
+      # We provide common external dependencies in sensu-check-env.  Checks can
+      # define their own PATH in a wrapper to include other dependencies.
+      path = [
+        sensu-check-env
         "/run/wrappers"
       ];
       script = ''
@@ -432,11 +430,11 @@ in {
       vulnix = {
         notification = "Security vulnerabilities in the last 6h";
         command =
-          "NIX_REMOTE=daemon nice timeout 15m ${vulnix}/bin/vulnix --system " +
+          "NIX_REMOTE=daemon nice timeout 15m ${vulnix}/bin/vulnix -vS " +
           "--cache-dir /var/cache/vulnix " +
-          "-w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.yaml " +
-          "-w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.toml ";
+          "-w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.yaml";
         interval = 6 * 3600;
+        timeout = 120;
       };
       manage = {
         notification = "The FC manage job is not enabled.";
