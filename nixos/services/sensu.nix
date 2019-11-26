@@ -281,10 +281,7 @@ in {
       # Sensu check scripts inherit the PATH of sensu-client by default.
       # We provide common external dependencies in sensu-check-env.  Checks can
       # define their own PATH in a wrapper to include other dependencies.
-      path = [
-        sensu-check-env
-        "/run/wrappers"
-      ];
+      path = [ sensu-check-env "/run/wrappers" ];
       script = ''
         ${ifJsonSyntaxError}
           # graceful degradation -> leave local config out
@@ -434,7 +431,7 @@ in {
           "--cache-dir /var/cache/vulnix " +
           "-w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.yaml";
         interval = 6 * 3600;
-        timeout = 120;
+        timeout = 900;
       };
       manage = {
         notification = "The FC manage job is not enabled.";

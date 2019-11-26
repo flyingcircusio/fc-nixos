@@ -2,18 +2,11 @@
 
 python3Packages.buildPythonApplication rec {
   pname = "vulnix";
-  version = "1.9.3-pre";
+  version = "1.9.3";
 
-  # src = python3Packages.fetchPypi {
-  #   inherit pname version;
-  #   sha256 = "06mi4a80g6nzvqxj51c7lc0q0dpdr603ly2r77ksf5m3k4glb6dm";
-  # };
-
-  src = fetchFromGitHub {
-    owner = "flyingcircusio";
-    repo = "vulnix";
-    rev = "c9a257e68989e75c3f310c06a91bb238a225b422";
-    sha256 = "1r91vx4g6349qk6z6d1666w75hwhl8jm19c5mgblp1ms8d8p1ly5";
+  src = python3Packages.fetchPypi {
+    inherit pname version;
+    sha256 = "04fpl9avzss6fc4p1qif42g3fzdmklriv1np4xivzkn0ymawiq8r";
   };
 
   outputs = [ "out" "doc" "man" ];
