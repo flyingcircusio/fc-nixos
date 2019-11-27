@@ -53,14 +53,15 @@ in {
 
   qpress = super.callPackage ./percona/qpress.nix { };
 
-  rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix { 
-    erlang = self.erlangR19; 
+  rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix {
+    erlang = self.erlangR19;
   };
-  rabbitmq-server_3_6_15 = super.callPackage ./rabbitmq-server/3.6.15.nix { 
-    erlang = self.erlangR19; 
+  rabbitmq-server_3_6_15 = super.callPackage ./rabbitmq-server/3.6.15.nix {
+    erlang = self.erlangR19;
   };
   rabbitmq-server_3_7 = super.rabbitmq-server;
 
+  remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
   sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
@@ -74,14 +75,25 @@ in {
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
-  # We use a (our) newer version than on upstream.
-  vulnix = super.callPackage ./vulnix.nix {
-    pythonPackages = self.python3Packages;
-  };
+  vulnix = super.callPackage ./vulnix.nix { };
 
   xtrabackup = super.callPackage ./percona/xtrabackup.nix {
     inherit (self) percona;
     boost = self.boost169;
+  };
+
+  # === Python ===
+
+  python = super.python.override {
+    packageOverrides = import ./overlay-python.nix super;
+  };
+
+  python3 = super.python3.override {
+    packageOverrides = import ./overlay-python.nix super;
+  };
+
+  python37 = super.python37.override {
+    packageOverrides = import ./overlay-python.nix super;
   };
 
 }
