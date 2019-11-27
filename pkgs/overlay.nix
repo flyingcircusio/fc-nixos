@@ -15,6 +15,9 @@ in {
       meta.priority = 10;
     });
   docsplit = super.callPackage ./docsplit { };
+
+  grub2_full = super.callPackage ./grub/2.0x.nix { };
+
   influxdb = super.callPackage ./influxdb { };
   innotop = super.callPackage ./percona/innotop.nix { };
 
