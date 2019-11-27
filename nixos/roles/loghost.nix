@@ -1,0 +1,57 @@
+{ config, lib, pkgs, ... }:
+
+with builtins;
+
+let
+  cfg = config.flyingcircus.roles.loghost;
+  fclib = config.fclib;
+
+  loghostService = lib.findFirst
+    (s: s.service == "loghost-server")
+    null
+    config.flyingcircus.encServices;
+
+  # It's common to have stathost and loghost on the same node. Each should
+  # use half of the memory then. A general approach for this kind of
+  # multi-service would be nice.
+  heapCorrection =
+    if config.flyingcircus.roles.statshost-master.enable
+    then 50
+    else 100;
+
+in
+{
+
+  options = {
+
+    flyingcircus.roles.loghost.enable = lib.mkEnableOption ''
+      Flying Circus Loghost role.
+      This role enables the full graylog stack at once (GL, ES, Mongo).
+    '';
+
+  };
+
+  config = lib.mkIf cfg.enable {
+
+    flyingcircus.roles.graylog = fclib.mkPlatform {
+      enable = true;
+      cluster = false;
+    };
+
+    flyingcircus.services.graylog = fclib.mkPlatform {
+      heapPercentage = 15 * heapCorrection / 100;
+      elasticsearchHosts = [
+        "http://${config.networking.hostName}.${config.networking.domain}:9200"
+      ];
+    };
+
+    flyingcircus.roles.elasticsearch5.enable = true;
+    flyingcircus.roles.elasticsearch = fclib.mkPlatform {
+      dataDir = "/var/lib/elasticsearch";
+      clusterName = "graylog";
+      heapPercentage = 35 * heapCorrection / 100;
+    };
+
+  };
+
+}

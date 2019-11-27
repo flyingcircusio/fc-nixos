@@ -9,10 +9,6 @@ in
 with lib;
 rec {
 
-  # get the DN of this node for LDAP logins.
-  getLdapNodeDN = config:
-    "cn=${config.networking.hostName},ou=Nodes,dc=gocept,dc=com";
-
   # Derives a password from host data and a custom prefix
   derivePasswordForHost = prefix:
     builtins.hashString "sha256" (concatStringsSep "/" [
@@ -21,16 +17,22 @@ rec {
       config.networking.hostName
     ]);
 
+  getLdapNodePassword = derivePasswordForHost "ldap";
+
+  # get the DN of this node for LDAP logins.
+  getLdapNodeDN =
+    "cn=${config.networking.hostName},ou=Nodes,dc=gocept,dc=com";
+
   # Returns service from /etc/nixos/services.json
   # that matches the given name or null, if nothing matches.
   # If there are multiple matches, an error is thrown.
-  findOneService = name: 
-    let 
+  findOneService = name:
+    let
       found = filter (s: s.service == name) config.flyingcircus.encServices;
       len = length found;
     in if len == 0 then null
       else if len == 1 then head found
-      else throw ("Multiple matches for service ${name}: " 
+      else throw ("Multiple matches for service ${name}: "
         + lib.concatMapStringsSep "; " (s: s.address or "<no address>") found);
 
 

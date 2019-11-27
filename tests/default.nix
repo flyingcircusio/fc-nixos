@@ -24,6 +24,7 @@ in {
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
   fcagent = callTest ./fcagent.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
+  graylog = callTest ./graylog.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callSubTests ./mail.nix {};
