@@ -41,9 +41,9 @@ in
 
   (mkIf cfg.enable {
 
-    flyingcircus.localConfigDirs.memcached = { 
+    flyingcircus.localConfigDirs.memcached = {
       dir = "/etc/local/memcached";
-      user = "memcached"; 
+      user = "memcached";
     };
 
     environment.etc = {
@@ -62,11 +62,17 @@ in
     } // localConfig;
 
     flyingcircus.services = {
-      sensu-client.checks.memcached = {
+      sensu-client.checks.memcached =
+      let
+        host =
+          if localConfig ? listen
+          then elemAt (lib.splitString "," localConfig.listen) 0
+          else "localhost";
+      in {
         notification = "memcached alive";
         command = ''
           ${pkgs.sensu-plugins-memcached}/bin/check-memcached-stats.rb \
-            -h localhost -p ${toString port}
+          -h ${host} -p ${toString port}
         '';
       };
 
