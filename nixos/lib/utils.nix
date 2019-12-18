@@ -17,7 +17,7 @@ rec {
   derivePasswordForHost = prefix:
     builtins.hashString "sha256" (concatStringsSep "/" [
       prefix
-      (lib.attrByPath ["directory_password"] "" config.flyingcircus.enc.parameters)
+      (lib.attrByPath ["parameters" "directory_password"] "" config.flyingcircus.enc)
       config.networking.hostName
     ]);
 
