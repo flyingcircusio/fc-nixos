@@ -7,46 +7,53 @@ with lib;
 
 let
   cfg = config.flyingcircus;
-
-  isStaging = !(attrByPath [ "parameters" "production" ] true cfg.enc);
-
-  humanGid = toString config.ids.gids.users;
-  serviceGid = toString config.ids.gids.service;
   log = "/var/log/fc-collect-garbage.log";
 
-  script = ''
-    # load dependent delay
-    ncpu=$(awk '/^processor/ { ncpu+=1 }; END { print ncpu }' /proc/cpuinfo)
-    load=""
-    max_wait=0
-    while [[ "$load" != "low" && $max_wait -lt 3600 ]]; do
-      echo "load too high, waiting"
-      sleep 10
-      max_wait=$((max_wait + 10))
-      load=$(awk "1 { if (\$1 / "$ncpu" < .5) print \"low\" }" /proc/loadavg)
-    done
-    started=$(date +%s)
-    failed=0
-    while read user home; do
-      if [[ $home == /var/empty ]]; then
-        continue
-      fi
-      echo "$(date -Is) Scanning $home as $user"
-      sudo -u $user -H -- \
-        fc-userscan -vrS -s 2 -c $home/.cache/fc-userscan.cache -L 10000000 \
-        -z '*.egg' -E ${./userscan.exclude} \
-        $home || failed=1
-    done < <(getent passwd | awk -F: '$4 == ${humanGid} || $4 == ${serviceGid} \
-              { print $1 " " $6 }') >> ${log}
+  garbagecollect = pkgs.writeScript "fc-collect-garbage.py" ''
+    #! ${pkgs.python3.interpreter}
 
-    if (( failed )); then
-      echo "ERROR: fc-userscan failed"
-      exit 1
-    else
-      nice nix-collect-garbage --delete-older-than 3d --max-freed 10485760
-    fi
-    stopped=$(date +%s)
-    echo "$(date -Is) time=$((stopped - started))s" >> ${log}
+    import datetime
+    import os
+    import pwd
+    import subprocess
+    import sys
+
+    EXCLUDE="${./userscan.exclude}"
+
+    def main():
+        rc = []
+        for user in pwd.getpwall():
+            if user.pw_uid < 1000 or user.pw_dir == '/var/empty':
+                continue
+            print(f'Scanning {user.pw_dir} as {user.pw_name}')
+            p = subprocess.Popen([
+                    "ionice", "-c3", "fc-userscan", "-r", "-c",
+                    user.pw_dir + "/.cache/fc-userscan.cache", "-L10000000",
+                    "--unzip=*.egg", "-E", EXCLUDE, user.pw_dir],
+                stdin=subprocess.DEVNULL,
+                preexec_fn=lambda: os.seteuid(user.pw_uid))
+            rc.append(p.wait())
+
+        status = max(rc)
+        print('Overall status:', status)
+        if status >= 2:
+            print('ERROR: fc-userscan had hard errors (see above). Aborting')
+            sys.exit(2)
+        if status >= 1:
+            print('WARNING: fc-userscan had soft errors (see above). Aborting')
+            sys.exit(1)
+        print('Running nix-collect-garbage')
+        rc = subprocess.run([
+                "ionice", "-c3", "nix-collect-garbage",
+                "--delete-older-than", "3d", "--max-freed", "10485760"],
+            check=True, stdin=subprocess.DEVNULL).returncode
+        print('nix-collect-garbage status:', rc)
+        open('${log}', 'w').write(str(datetime.datetime.now()) + '\n')
+        sys.exit(rc)
+
+
+    if __name__ == '__main__':
+        main()
   '';
 
 in {
@@ -79,9 +86,9 @@ in {
         description = "Scan users for Nix store references and collect garbage";
         restartIfChanged = false;
         serviceConfig.Type = "oneshot";
-        path = with pkgs; [ fc.userscan gawk nix glibc sudo ];
+        path = with pkgs; [ fc.userscan nix glibc utillinux ];
         environment = { LANG = "en_US.utf8"; };
-        inherit script;
+        script = "${pkgs.python3.interpreter} ${garbagecollect}";
       };
 
       systemd.timers.fc-collect-garbage = {

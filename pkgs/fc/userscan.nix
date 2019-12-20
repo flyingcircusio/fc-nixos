@@ -1,25 +1,24 @@
 { lib
 , docutils
 , fetchFromGitHub
-, git
 , lzo
 , rustPlatform
 }:
 
 rustPlatform.buildRustPackage rec {
   name = "fc-userscan-${version}";
-  version = "0.4.3";
+  version = "0.4.4";
 
   src = fetchFromGitHub {
     name = "fc-userscan-src-${version}";
     owner = "flyingcircusio";
     repo = "userscan";
     rev = version;
-    sha256 = "03jpkgzhlql4q1g3hhlkafk6q6q7cw2aqz2qcw4a8b37kpkidqi7";
+    sha256 = "172q2ywdpg3q7picbl99cv45rcca2vhl7pvb7d4ilc66mhq6b265";
   };
 
-  cargoSha256 = "0jnqkl4g5m2rdlijf6hvns52rxpqagz5d9vhyny6w9clz3ssd14w";
-  nativeBuildInputs = [ git docutils ];
+  cargoSha256 = "0ma6ng94r963pn0bdnnmkq27khg031vrb4s3g17kk0kdl30yb9vn";
+  nativeBuildInputs = [ docutils ];
   propagatedBuildInputs = [ lzo ];
 
   postBuild = ''
@@ -32,8 +31,8 @@ rustPlatform.buildRustPackage rec {
 
   meta = with lib; {
     description = "Scan and register Nix store references from arbitrary files";
-    homepage = https://github.com/flyingcircusio/userscan;
-    license = with licenses; [ bsd3 ];
+    homepage = "https://github.com/flyingcircusio/userscan";
+    license = licenses.bsd3;
     platforms = platforms.all;
   };
 }

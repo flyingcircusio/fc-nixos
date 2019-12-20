@@ -8,8 +8,8 @@
 with builtins;
 
 {
-  options = with lib; 
-  let  
+  options = with lib;
+  let
     mkRole = v: lib.mkEnableOption
       "Enable the Flying Circus MySQL / Percona ${v} server role.";
   in {
@@ -38,7 +38,7 @@ with builtins;
 
   };
 
-  config = 
+  config =
   let
     mysqlRoles = with config.flyingcircus.roles; {
       "5.5" = mysql55.enable;
@@ -47,7 +47,7 @@ with builtins;
       "8.0" = percona80.enable;
     };
 
-    mysqlPackages = with pkgs; { 
+    mysqlPackages = with pkgs; {
       "5.5" = mysql55;
       "5.6" = percona56;
       "5.7" = percona57;
@@ -78,7 +78,7 @@ with builtins;
     enabledRoles = lib.filterAttrs (n: v: v) mysqlRoles;
     enabledRolesCount = length (lib.attrNames enabledRoles);
     version = head (lib.attrNames enabledRoles);
-    package = mysqlPackages.${version} or null; 
+    package = mysqlPackages.${version} or null;
 
     telegrafPassword = fclib.derivePasswordForHost "mysql-telegraf";
     sensuPassword = fclib.derivePasswordForHost "mysql-sensu";
@@ -92,13 +92,13 @@ with builtins;
   in lib.mkMerge [
 
   (lib.mkIf (enabledRolesCount > 0) {
-    assertions = 
-      [ 
-        { 
+    assertions =
+      [
+        {
           assertion = enabledRolesCount == 1;
           message = "MySQL / Percona roles are mutually exclusive. Only one may be enabled.";
         }
-      ]; 
+      ];
 
     services.percona = {
       enable = true;
@@ -281,15 +281,15 @@ with builtins;
         RemainAfterExit = true;
       };
 
-      script = 
+      script =
       let
-        ensureUserAndDatabase = username: password: 
+        ensureUserAndDatabase = username: password:
           if (lib.versionAtLeast version "8.0") then ''
             CREATE USER IF NOT EXISTS ${username}@localhost IDENTIFIED BY '${password}';
             ALTER USER ${username}@localhost IDENTIFIED BY '${password}';
             CREATE DATABASE IF NOT EXISTS ${username};
             GRANT SELECT ON ${username}.* TO ${username}@localhost;
-          '' 
+          ''
           else ''
             CREATE DATABASE IF NOT EXISTS ${username};
             GRANT SELECT ON ${username}.* TO ${username}@localhost IDENTIFIED BY '${password}';
@@ -323,7 +323,7 @@ with builtins;
 
     services.udev.extraRules = ''
       # increase readahead for mysql
-      SUBSYSTEM=="block", ATTR{queue/rotational}=="1", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
+      SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
     '';
 
     environment.systemPackages = with pkgs; [

@@ -2,7 +2,7 @@
 
 with builtins;
 {
-  options = 
+  options =
   let
     mkRole = v: lib.mkEnableOption
       "Enable the Flying Circus PostgreSQL ${v} server role.";
@@ -15,7 +15,7 @@ with builtins;
     };
   };
 
-  config = 
+  config =
   let
     pgroles = with config.flyingcircus.roles; {
       "9.5" = postgresql95.enable;
@@ -25,19 +25,19 @@ with builtins;
     };
     enabledRoles = lib.filterAttrs (n: v: v) pgroles;
     enabledRolesCount = length (lib.attrNames enabledRoles);
-  
+
   in lib.mkMerge [
     (lib.mkIf (enabledRolesCount > 0) {
-      assertions = 
-        [ 
-          { 
+      assertions =
+        [
+          {
             assertion = enabledRolesCount == 1;
             message = "PostgreSQL roles are mutually exclusive. Only one may be enabled.";
           }
-        ]; 
+        ];
 
       flyingcircus.services.postgresql.enable = true;
-      flyingcircus.services.postgresql.majorVersion = 
+      flyingcircus.services.postgresql.majorVersion =
         head (lib.attrNames enabledRoles);
     })
 

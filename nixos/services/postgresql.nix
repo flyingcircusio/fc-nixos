@@ -62,7 +62,7 @@ in {
 
   };
 
-  config = 
+  config =
   (lib.mkIf cfg.enable (
   let
     postgresqlPkg = getAttr cfg.majorVersion packages;
@@ -130,7 +130,7 @@ in {
 
     services.udev.extraRules = ''
       # increase readahead for postgresql
-      SUBSYSTEM=="block", ATTR{queue/rotational}=="1", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
+      SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
     '';
 
     # Custom postgresql configuration
@@ -207,7 +207,7 @@ in {
 
     flyingcircus.services = {
 
-      sensu-client.checks = 
+      sensu-client.checks =
         lib.listToAttrs (
         map (host:
             let saneHost = replaceStrings [":"] ["_"] host;

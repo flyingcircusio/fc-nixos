@@ -3,12 +3,13 @@ self: super:
 let
   versions = import ../versions.nix { pkgs = super; };
   pkgs-18_09 = import versions.nixos-18_09 {};
+  pkgs-19_09 = import versions.nixos-19_09 {};
 
 in {
   #
   # == our own stuff
   #
-  fc = (import ./default.nix { pkgs = self; });
+  fc = (import ./default.nix { pkgs = self; inherit pkgs-19_09; });
 
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
@@ -67,6 +68,7 @@ in {
 
   remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
+
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
   sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
   sensu-plugins-mysql = super.callPackage ./sensuplugins-rb/sensu-plugins-mysql { };
