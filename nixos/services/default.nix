@@ -7,6 +7,7 @@
   imports = [
     ./box/client.nix
     ./collectdproxy.nix
+    ./graylog.nix
     ./haproxy.nix
     ./logrotate
     ./nginx
