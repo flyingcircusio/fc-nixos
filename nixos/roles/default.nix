@@ -12,6 +12,9 @@ in {
     ./docker.nix
     ./external_net
     ./antivirus.nix
+    ./elasticsearch.nix
+    ./graylog.nix
+    ./loghost.nix
     ./mailserver.nix
     ./memcached.nix
     ./mongodb
