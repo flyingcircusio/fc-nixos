@@ -75,7 +75,7 @@ in
 
   config = lib.mkMerge [
 
-    (lib.mkIf cfg.publicFrontend.enable {
+    (lib.mkIf (cfg.enable && cfg.publicFrontend.enable) {
       services.nginx.virtualHosts."${cfg.publicFrontend.hostName}" = {
         enableACME = cfg.publicFrontend.ssl;
         forceSSL = cfg.publicFrontend.ssl;
