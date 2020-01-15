@@ -75,6 +75,7 @@ in {
 
         path = with pkgs; [
           fc.agent
+          utillinux
           config.system.build.nixos-rebuild
         ];
 
@@ -88,7 +89,8 @@ in {
           let interval = toString cfg.agent.interval;
           in ''
             rc=0
-            timeout 14400 fc-manage -E ${cfg.encPath} -i ${interval} \
+            timeout 14400 ionice -c3 \
+              fc-manage -E ${cfg.encPath} -i ${interval} \
               ${cfg.agent.steps} || rc=$?
             timeout 900 fc-resize -E ${cfg.encPath} || rc=$?
             exit $rc
