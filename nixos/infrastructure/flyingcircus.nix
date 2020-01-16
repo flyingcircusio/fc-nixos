@@ -16,6 +16,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     consoleLogLevel = mkDefault 7;
 
     initrd.kernelModules = [
+      "bfq"
       "i6300esb"
       "virtio_blk"
       "virtio_console"
@@ -90,10 +91,11 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       in
       attrByPath [ "static" "ntpServers" loc ] [ "pool.ntp.org" ] cfg;
 
-    # installs /dev/disk/device-by-alias/*
     udev.extraRules = ''
-      # Select GRUB boot device
-      SUBSYSTEM=="block", KERNEL=="[vs]da", SYMLINK+="disk/device-by-alias/root"
+      # GRUB boot device should be device-by-alias/root
+      SUBSYSTEM=="block", KERNEL=="vda", SYMLINK+="disk/device-by-alias/root"
+      # Use BFQ for better fairness
+      SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{queue/scheduler}="bfq", ATTR{queue/rotational}="0"
     '';
 
   };
