@@ -1,5 +1,7 @@
 # Collection of own packages
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import <nixpkgs> {}
+, pkgs-19_09 ? import <nixpkgs> {}
+}:
 
 let
   self = {
@@ -7,7 +9,7 @@ let
 
     fc = import ./fc {
       inherit (self) callPackage;
-      inherit pkgs;
+      inherit pkgs pkgs-19_09;
     };
 
   };

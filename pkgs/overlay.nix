@@ -3,12 +3,13 @@ self: super:
 let
   versions = import ../versions.nix { pkgs = super; };
   pkgs-18_09 = import versions.nixos-18_09 {};
+  pkgs-19_09 = import versions.nixos-19_09 {};
 
 in {
   #
   # == our own stuff
   #
-  fc = (import ./default.nix { pkgs = self; });
+  fc = (import ./default.nix { pkgs = self; inherit pkgs-19_09; });
 
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
@@ -17,6 +18,17 @@ in {
   docsplit = super.callPackage ./docsplit { };
 
   grub2_full = super.callPackage ./grub/2.0x.nix { };
+
+  linux_4_19 = super.linux_4_19.override {
+    argsOverride = rec {
+      src = super.fetchurl {
+            url = "mirror://kernel/linux/kernel/v4.x/linux-${version}.tar.xz";
+            sha256 = "0rvlz94mjl7ygpmhz0yn2whx9dq9fmy0w1472bj16hkwbaki0an6";
+      };
+      version = "4.19.94";
+      modDirVersion = "4.19.94";
+      };
+  };
 
   influxdb = super.callPackage ./influxdb { };
   innotop = super.callPackage ./percona/innotop.nix { };
@@ -67,6 +79,7 @@ in {
 
   remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
+
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
   sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
   sensu-plugins-mysql = super.callPackage ./sensuplugins-rb/sensu-plugins-mysql { };
