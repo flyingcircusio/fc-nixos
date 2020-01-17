@@ -5,37 +5,21 @@ with lib;
 
 let
   cfg = config.services.prometheus;
-  cfg2 = config.services.prometheus2;
   promUser = "prometheus";
   promGroup = "prometheus";
 
-  stateDir =
-    if cfg.stateDir != null
-    then cfg.stateDir
-    else
-      if cfg.dataDir != null
-      then
-        # This assumes /var/lib/ is a prefix of cfg.dataDir.
-        # This is checked as an assertion below.
-        removePrefix stateDirBase cfg.dataDir
-      else "prometheus";
-  stateDirBase = "/var/lib/";
-  workingDir  = stateDirBase + stateDir;
-  workingDir2 = stateDirBase + cfg2.stateDir;
+  dataDir = "${cfg.workingDir}/metrics";
+
+  _filter = attrs:
+    filterAttrs
+      (k: v: k != "_module" && v != null)
+      attrs;
 
   # a wrapper that verifies that the configuration is valid
-  promtoolCheck = what: name: file: pkgs.runCommand "${name}-${what}-checked"
-    { buildInputs = [ cfg.package ]; } ''
-    ln -s ${file} $out
-    promtool ${what} $out
-  '';
-
-  # a wrapper that verifies that the configuration is valid for
-  # prometheus 2
-  prom2toolCheck = what: name: file:
+  promtoolCheck = what: name: file:
     pkgs.runCommand
       "${name}-${replaceStrings [" "] [""] what}-checked"
-      { buildInputs = [ cfg2.package ]; } ''
+      { buildInputs = [ cfg.package ]; } ''
     ln -s ${file} $out
     promtool ${what} $out
   '';
@@ -46,13 +30,20 @@ let
       echo '${builtins.toJSON x}' | ${pkgs.jq}/bin/jq . > $out
     '';
 
-  # This becomes the main config file for Prometheus 1
   promConfig = {
     global = filterValidPrometheus cfg.globalConfig;
-    rule_files = map (promtoolCheck "check-rules" "rules") (cfg.ruleFiles ++ [
+    rule_files = map (promtoolCheck "check rules" "rules") (cfg.ruleFiles ++ [
       (pkgs.writeText "prometheus.rules" (concatStringsSep "\n" cfg.rules))
     ]);
     scrape_configs = filterValidPrometheus cfg.scrapeConfigs;
+    inherit (cfg) remote_write remote_read;
+    alerting = optionalAttrs (cfg.alertmanagerURL != []) {
+      alertmanagers = [{
+        static_configs = [{
+          targets = cfg.alertmanagerURL;
+        }];
+      }];
+    };
   };
 
   generatedPrometheusYml = writePrettyJSON "prometheus.yml" promConfig;
@@ -61,50 +52,19 @@ let
     yml = if cfg.configText != null then
       pkgs.writeText "prometheus.yml" cfg.configText
       else generatedPrometheusYml;
-    in promtoolCheck "check-config" "prometheus.yml" yml;
+    in promtoolCheck "check config" "prometheus.yml" yml;
 
   cmdlineArgs = cfg.extraFlags ++ [
-    "-storage.local.path=${workingDir}/metrics"
-    "-config.file=${prometheusYml}"
-    "-web.listen-address=${cfg.listenAddress}"
-    "-alertmanager.notification-queue-capacity=${toString cfg.alertmanagerNotificationQueueCapacity}"
-    "-alertmanager.timeout=${toString cfg.alertmanagerTimeout}s"
+    "--storage.tsdb.path=${dataDir}"
+    "--config.file=${prometheusYml}"
+    "--web.listen-address=${cfg.listenAddress}"
+    "--alertmanager.notification-queue-capacity=${toString cfg.alertmanagerNotificationQueueCapacity}"
+    "--alertmanager.timeout=${toString cfg.alertmanagerTimeout}s"
   ] ++
-  optional (cfg.alertmanagerURL != []) "-alertmanager.url=${concatStringsSep "," cfg.alertmanagerURL}" ++
-  optional (cfg.webExternalUrl != null) "-web.external-url=${cfg.webExternalUrl}";
+  optional (cfg.webExternalUrl != null) "--web.external-url=${cfg.webExternalUrl}";
 
-  # This becomes the main config file for Prometheus 2
-  promConfig2 = {
-    global = filterValidPrometheus cfg2.globalConfig;
-    rule_files = map (prom2toolCheck "check rules" "rules") (cfg2.ruleFiles ++ [
-      (pkgs.writeText "prometheus.rules" (concatStringsSep "\n" cfg2.rules))
-    ]);
-    scrape_configs = filterValidPrometheus cfg2.scrapeConfigs;
-    alerting = optionalAttrs (cfg2.alertmanagerURL != []) {
-      alertmanagers = [{
-        static_configs = [{
-          targets = cfg2.alertmanagerURL;
-        }];
-      }];
-    };
-  };
-
-  generatedPrometheus2Yml = writePrettyJSON "prometheus.yml" promConfig2;
-
-  prometheus2Yml = let
-    yml = if cfg2.configText != null then
-      pkgs.writeText "prometheus.yml" cfg2.configText
-      else generatedPrometheus2Yml;
-    in prom2toolCheck "check config" "prometheus.yml" yml;
-
-  cmdlineArgs2 = cfg2.extraFlags ++ [
-    "--storage.tsdb.path=${workingDir2}/data/"
-    "--config.file=${prometheus2Yml}"
-    "--web.listen-address=${cfg2.listenAddress}"
-    "--alertmanager.notification-queue-capacity=${toString cfg2.alertmanagerNotificationQueueCapacity}"
-    "--alertmanager.timeout=${toString cfg2.alertmanagerTimeout}s"
-  ] ++
-  optional (cfg2.webExternalUrl != null) "--web.external-url=${cfg2.webExternalUrl}";
+  prometheusShowConfig =
+    pkgs.writeScriptBin "prometheus-show-config" "cat ${prometheusYml}";
 
   filterValidPrometheus = filterAttrsListRecursive (n: v: !(n == "_module" || v == null));
   filterAttrsListRecursive = pred: x:
@@ -534,8 +494,8 @@ let
         '';
       };
       write_relabel_configs = mkOption {
-        type = types.nullOr (types.listOf promTypes.relabel_config);
-        default = null;
+        type = types.listOf promTypes.relabel_config;
+        default = [];
         apply = x: map _filter x;
         description = ''
           List of remote write relabel configurations.
@@ -593,7 +553,7 @@ let
       tls_config = mkOption {
         type = types.nullOr promTypes.tls_config;
         default = null;
-        apply = x: map _filter x;
+        apply = x: mapNullable _filter x;
         description = ''
           Configures the remote write request's TLS settings.
         '';
@@ -608,9 +568,6 @@ let
       queue_config = mkOption {
         type = types.nullOr types.attrs;
         default = null;
-        description = ''
-          Configures the queue used to write to remote storage.
-        '';
       };
     };
   };
@@ -698,7 +655,7 @@ let
       tls_config = mkOption {
         type = types.nullOr promTypes.tls_config;
         default = null;
-        apply = x: map _filter x;
+        apply = x: mapNullable _filter x;
         description = ''
           Configures the remote read request's TLS settings.
         '';
@@ -708,13 +665,6 @@ let
         default = null;
         description = ''
           Optional proxy URL.
-        '';
-      };
-      queue_config = mkOption {
-        type = types.nullOr types.attrs;
-        default = null;
-        description = ''
-          Configures the queue used to read to remote storage.
         '';
       };
     };
@@ -734,8 +684,8 @@ in {
 
       package = mkOption {
         type = types.package;
-        default = pkgs.prometheus;
-        defaultText = "pkgs.prometheus";
+        default = pkgs.prometheus_2;
+        defaultText = "pkgs.prometheus_2";
         description = ''
           The prometheus package that should be used.
         '';
@@ -746,147 +696,6 @@ in {
         default = "0.0.0.0:9090";
         description = ''
           Address to listen on for the web interface, API, and telemetry.
-        '';
-      };
-
-      dataDir = mkOption {
-        type = types.nullOr types.path;
-        default = null;
-        description = ''
-          Directory to store Prometheus metrics data.
-          This option is deprecated, please use <option>services.prometheus.stateDir</option>.
-        '';
-      };
-
-      stateDir = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = ''
-          Directory below <literal>${stateDirBase}</literal> to store Prometheus metrics data.
-          This directory will be created automatically using systemd's StateDirectory mechanism.
-          Defaults to <literal>prometheus</literal>.
-        '';
-      };
-
-      extraFlags = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = ''
-          Extra commandline options when launching Prometheus.
-        '';
-      };
-
-      configText = mkOption {
-        type = types.nullOr types.lines;
-        default = null;
-        description = ''
-          If non-null, this option defines the text that is written to
-          prometheus.yml. If null, the contents of prometheus.yml is generated
-          from the structured config options.
-        '';
-      };
-
-      globalConfig = mkOption {
-        type = promTypes.globalConfig;
-        default = {};
-        description = ''
-          Parameters that are valid in all  configuration contexts. They
-          also serve as defaults for other configuration sections
-        '';
-      };
-
-      rules = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = ''
-          Alerting and/or Recording rules to evaluate at runtime.
-        '';
-      };
-
-      ruleFiles = mkOption {
-        type = types.listOf types.path;
-        default = [];
-        description = ''
-          Any additional rules files to include in this configuration.
-        '';
-      };
-
-      scrapeConfigs = mkOption {
-        type = types.listOf promTypes.scrape_config;
-        default = [];
-        description = ''
-          A list of scrape configurations.
-        '';
-      };
-
-      alertmanagerURL = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = ''
-          List of Alertmanager URLs to send notifications to.
-        '';
-      };
-
-      alertmanagerNotificationQueueCapacity = mkOption {
-        type = types.int;
-        default = 10000;
-        description = ''
-          The capacity of the queue for pending alert manager notifications.
-        '';
-      };
-
-      alertmanagerTimeout = mkOption {
-        type = types.int;
-        default = 10;
-        description = ''
-          Alert manager HTTP API timeout (in seconds).
-        '';
-      };
-
-      webExternalUrl = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        example = "https://example.com/";
-        description = ''
-          The URL under which Prometheus is externally reachable (for example,
-          if Prometheus is served via a reverse proxy).
-        '';
-      };
-    };
-    services.prometheus2 = {
-
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Enable the Prometheus 2 monitoring daemon.
-        '';
-      };
-
-      package = mkOption {
-        type = types.package;
-        default = pkgs.prometheus_2;
-        defaultText = "pkgs.prometheus_2";
-        description = ''
-          The prometheus2 package that should be used.
-        '';
-      };
-
-      listenAddress = mkOption {
-        type = types.str;
-        default = "0.0.0.0:9090";
-        description = ''
-          Address to listen on for the web interface, API, and telemetry.
-        '';
-      };
-
-      stateDir = mkOption {
-        type = types.str;
-        default = "prometheus2";
-        description = ''
-          Directory below <literal>${stateDirBase}</literal> to store Prometheus metrics data.
-          This directory will be created automatically using systemd's StateDirectory mechanism.
-          Defaults to <literal>prometheus2</literal>.
         '';
       };
 
@@ -975,6 +784,14 @@ in {
         '';
       };
 
+      workingDir = mkOption {
+        type = types.str;
+        default = "/srv/prometheus";
+        example = "/srv/prometheus";
+        description = ''
+          Prometheus working directory.
+        '';
+      };
       remote_write = mkOption {
         type = types.listOf promTypes.remote_write_config;
         default = [];
@@ -997,7 +814,7 @@ in {
    };
 
   config = mkMerge [
-    (mkIf (cfg.enable || cfg2.enable) {
+    (mkIf (cfg.enable) {
       users.groups.${promGroup}.gid = config.ids.gids.prometheus;
       users.users.${promUser} = {
         description = "Prometheus daemon user";
@@ -1006,36 +823,10 @@ in {
       };
     })
     (mkIf cfg.enable {
-      warnings =
-        optional (cfg.dataDir != null) ''
-          The option services.prometheus.dataDir is deprecated, please use
-          services.prometheus.stateDir.
-        '';
-      assertions = [
-        {
-          assertion = !(cfg.dataDir != null && cfg.stateDir != null);
-          message =
-            "The options services.prometheus.dataDir and services.prometheus.stateDir" +
-            " can't both be set at the same time! It's recommended to only set the latter" +
-            " since the former is deprecated.";
-        }
-        {
-          assertion = cfg.dataDir != null -> hasPrefix stateDirBase cfg.dataDir;
-          message =
-            "The option services.prometheus.dataDir should have ${stateDirBase} as a prefix!";
-        }
-        {
-          assertion = cfg.stateDir != null -> !hasPrefix "/" cfg.stateDir;
-          message =
-            "The option services.prometheus.stateDir shouldn't be an absolute directory." +
-            " It should be a directory relative to ${stateDirBase}.";
-        }
-        {
-          assertion = cfg2.stateDir != null -> !hasPrefix "/" cfg2.stateDir;
-          message =
-            "The option services.prometheus2.stateDir shouldn't be an absolute directory." +
-            " It should be a directory relative to ${stateDirBase}.";
-        }
+      environment.systemPackages = [ prometheusShowConfig ];
+      systemd.tmpfiles.rules = [
+        "d '${cfg.workingDir}' 0700 ${promUser} ${promGroup} - -"
+        "d '${dataDir}' 0700 ${promUser} ${promGroup} - -"
       ];
       systemd.services.prometheus = {
         wantedBy = [ "multi-user.target" ];
@@ -1046,23 +837,7 @@ in {
               concatStringsSep " \\\n  " cmdlineArgs);
           User = promUser;
           Restart  = "always";
-          WorkingDirectory = workingDir;
-          StateDirectory = stateDir;
-        };
-      };
-    })
-    (mkIf cfg2.enable {
-      systemd.services.prometheus2 = {
-        wantedBy = [ "multi-user.target" ];
-        after    = [ "network.target" ];
-        serviceConfig = {
-          ExecStart = "${cfg2.package}/bin/prometheus" +
-            optionalString (length cmdlineArgs2 != 0) (" \\\n  " +
-              concatStringsSep " \\\n  " cmdlineArgs2);
-          User = promUser;
-          Restart  = "always";
-          WorkingDirectory = workingDir2;
-          StateDirectory = cfg2.stateDir;
+          WorkingDirectory = cfg.workingDir;
         };
       };
     })

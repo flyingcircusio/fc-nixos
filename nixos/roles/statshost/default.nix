@@ -55,17 +55,17 @@ let
     (proxy: { job_name = proxy.location;
               proxy_url = "http://${proxy.address}:9090"; })
     relayLocationProxies;
+
   relayLocationProxies =
     # We need the FE address, which is not published by directory. I'd think
     # "interface" should become an attribute in the services table.
     let
       makeFE = s: "${removeSuffix ".gocept.net" s.address}.fe.${s.location}.gocept.net";
-    in
-  map
-    (service: service // { address = makeFE service; })
-    (filter
-      (s: s.service == "statshostproxy-location")
-      config.flyingcircus.encServices);
+    in map
+      (service: service // { address = makeFE service; })
+      (filter
+        (s: s.service == "statshostproxy-location")
+        config.flyingcircus.encServices);
 
   buildRelayConfig = relayNodes: nodeConfig: map
     (relayNode: {
@@ -82,13 +82,13 @@ let
       } // relayNode)
       relayNodes;
 
-    relayRGConfig = buildRelayConfig
-      relayRGNodes
-      (relayNode: "/var/cache/statshost-relay-${relayNode.job_name}.json");
+  relayRGConfig = buildRelayConfig
+    relayRGNodes
+    (relayNode: "/var/cache/statshost-relay-${relayNode.job_name}.json");
 
-    relayLocationConfig = buildRelayConfig
-      relayLocationNodes
-      (relayNode: "/etc/current-config/statshost-relay-${relayNode.job_name}.json");
+  relayLocationConfig = buildRelayConfig
+    relayLocationNodes
+    (relayNode: "/etc/current-config/statshost-relay-${relayNode.job_name}.json");
 
   statshostService = findFirst
     (s: s.service == "statshost-collector")
@@ -353,13 +353,13 @@ in
     # An actual statshost. Enable Prometheus.
     (mkIf (cfgStatsGlobal.enable || cfgStatsRG.enable) {
 
-      systemd.services.prometheus2.serviceConfig = {
+      systemd.services.prometheus.serviceConfig = {
         # Prometheus can take a few minutes to shut down. If it is forcefully
         # killed, a crash recovery process is started, which takes even longer.
         TimeoutStopSec = "10m";
       };
 
-      services.prometheus2 =
+      services.prometheus =
         let
           remote_read = [
             { url = "http://localhost:8086/api/v1/prom/read?db=downsampled"; }
