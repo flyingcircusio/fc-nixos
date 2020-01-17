@@ -1,6 +1,6 @@
 import ./make-test.nix ({ pkgs, ... }:
 {
-  name = "prometheus";
+  name = "statshost-master";
   machine =
     { config, ... }:
     {
@@ -35,7 +35,7 @@ import ./make-test.nix ({ pkgs, ... }:
 
       users.users.s-test = {
         isNormalUser = true;
-        extraGroups = [ "service" ]; 
+        extraGroups = [ "service" ];
       };
 
     };
@@ -45,7 +45,7 @@ import ./make-test.nix ({ pkgs, ... }:
       api = "http://192.168.101.1:9090/api/v1";
     in
     ''
-      $machine->waitForUnit("prometheus2.service");
+      $machine->waitForUnit("prometheus.service");
       $machine->waitForUnit("telegraf.service");
       $machine->waitForFile("/run/telegraf/influx.sock");
 

@@ -5,11 +5,18 @@ import ./make-test.nix ({ ... }:
     { config, ... }:
     {
       imports = [ ../nixos ];
-      config.services.prometheus2.enable = true;
+      config.services.prometheus.enable = true;
     };
   testScript = ''
-    $machine->waitForUnit("prometheus2.service");
+    $machine->waitForUnit("prometheus.service");
     $machine->sleep(5);
-    $machine->succeed("curl 'localhost:9090/metrics' | grep go_goroutines");
+
+    subtest "Prometheus should serve its own metrics", sub {
+      $machine->succeed("curl 'localhost:9090/metrics' | grep go_goroutines");
+    };
+
+    subtest "Metrics dir should only allow access for prometheus user", sub {
+      $machine->succeed("stat /srv/prometheus/metrics -c %a:%U:%G | grep '700:prometheus:prometheus'");
+    };
   '';
 })
