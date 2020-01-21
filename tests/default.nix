@@ -25,6 +25,7 @@ in {
   fcagent = callTest ./fcagent.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
   graylog = callTest ./graylog.nix {};
+  login = callTest ./journal.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callSubTests ./mail.nix {};

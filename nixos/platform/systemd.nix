@@ -17,9 +17,31 @@ in
 
     flyingcircus.activationScripts = {
 
-      systemd-journal-acl = ''
-        # Ensure journal access for all users.
-        chmod -R a+rX /var/log/journal
+      systemd-journal-acl = let
+        # wheel is allowed to see the journal by default, we add some groups
+        journalReadGroups = [
+          "wheel"
+          "sudo-srv"
+          "service"
+          "admins"
+        ];
+        acl =
+          lib.concatMapStringsSep
+            ","
+            (group: "g:${group}:rx,d:g:${group}:rx")
+            journalReadGroups;
+
+      in ''
+        # Note: journald seems to change some permissions and the group if they
+        # differ from its expectations for /var/log/journal.
+        # Changing permissions via ACL like here is supported by journald.
+
+        # Create journal dir if it's missing.
+        mkdir /var/log/journal 2> /dev/null || true
+        # Reset permissions that were granted in earlier versions.
+        chmod -R 640 /var/log/journal/*/* 2> /dev/null || true
+        # Ensure journal read access for some groups
+        ${pkgs.acl}/bin/setfacl -Rnm ${acl} /var/log/journal
       '';
 
     };
