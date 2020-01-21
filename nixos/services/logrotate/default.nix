@@ -72,28 +72,31 @@ in
       # We create one directory for each service user. I decided not to remove
       # old directories as this may be manually placed data that I don't want
       # to delete accidentally.
-      flyingcircus.localConfigDirs = let 
-        cfgDir = u: 
+      flyingcircus.localConfigDirs = let
+        cfgDir = u:
           lib.nameValuePair
             "logrotate-${u.name}"
             { dir = "${localDir}/${u.name}"; user = u.name; permissions = "0755"; };
 
         in listToAttrs (map cfgDir serviceUsers);
 
-      systemd.services =
-        listToAttrs (
-          map (u: nameValuePair "user-logrotate-${u.name}" {
-            description = "logrotate for ${u.name}";
-            path = with pkgs; [ bash logrotate ];
-            restartIfChanged = false;
-            script = "${./user-logrotate.sh} ${localDir}/${u.name}";
-            serviceConfig = {
-              User = u.name;
-              Type = "oneshot";
-            };
-            stopIfChanged = false;
-          })
-          serviceUsers);
+      systemd.services = {
+        # Upstream puts logrotate in multi-user.target which triggers unwanted
+        # service starts on fc-manage. It should only be activated by the timer.
+        logrotate.wantedBy = lib.mkForce [ ];
+      } // listToAttrs (
+        map (u: nameValuePair "user-logrotate-${u.name}" {
+          description = "logrotate for ${u.name}";
+          path = with pkgs; [ bash logrotate ];
+          restartIfChanged = false;
+          script = "${./user-logrotate.sh} ${localDir}/${u.name}";
+          serviceConfig = {
+            User = u.name;
+            Type = "oneshot";
+          };
+          stopIfChanged = false;
+        })
+        serviceUsers);
 
       systemd.timers =
         listToAttrs (
