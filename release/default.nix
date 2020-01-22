@@ -1,7 +1,7 @@
 # everything in release/ MUST NOT import from <nixpkgs> to get repeatable builds
 { system ? builtins.currentSystem
 , bootstrap ? <nixpkgs>
-, nixpkgs ? (import ../versions.nix { pkgs = import bootstrap {}; }).nixpkgs
+, nixpkgs_ ? (import ../versions.nix { pkgs = import bootstrap {}; }).nixpkgs
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
 , fc ? {
@@ -15,7 +15,7 @@
 
 with builtins;
 
-with import "${nixpkgs}/pkgs/top-level/release-lib.nix" {
+with import "${nixpkgs_}/pkgs/top-level/release-lib.nix" {
   inherit supportedSystems scrubJobs;
   packageSet = import ../.;
 };
@@ -23,7 +23,7 @@ with import "${nixpkgs}/pkgs/top-level/release-lib.nix" {
 
 let
   shortRev = fc.shortRev or (substring 0 11 fc.rev);
-  version = lib.fileContents "${nixpkgs}/.version";
+  version = lib.fileContents "${nixpkgs_}/.version";
   versionSuffix =
     (if stableBranch then "." else ".dev") +
     "${toString fc.revCount}.${shortRev}";
@@ -35,7 +35,7 @@ let
     }
   '';
 
-  upstreamSources = (import ../versions.nix { pkgs = (import nixpkgs {}); });
+  upstreamSources = (import ../versions.nix { pkgs = (import nixpkgs_ {}); });
   fcSrc = pkgs.stdenv.mkDerivation {
     name = "fc-overlay";
     src = lib.cleanSource ../.;
@@ -87,12 +87,12 @@ let
 
   jobs = {
     pkgs = mapTestOn (packagePlatforms modifiedPkgs);
-    tests = import ../tests { inherit system nixpkgs pkgs; };
+    tests = import ../tests { inherit system pkgs; nixpkgs = nixpkgs_; };
   };
 
   makeNetboot = config:
     let
-      evaled = import "${nixpkgs}/nixos/lib/eval-config.nix" config;
+      evaled = import "${nixpkgs_}/nixos/lib/eval-config.nix" config;
       build = evaled.config.system.build;
       kernelTarget = evaled.pkgs.stdenv.hostPlatform.platform.kernelTarget;
     in
@@ -162,7 +162,7 @@ let
   images =
     let
       imgArgs = {
-        inherit nixpkgs;
+        nixpkgs = nixpkgs_;
         version = "${version}${versionSuffix}";
         channelSources = combinedSources;
         configFile = ../nixos/etc_nixos_local.nix;
@@ -171,7 +171,7 @@ let
     in
     {
     # A bootable VirtualBox OVA (i.e. packaged OVF image).
-    ova = lib.hydraJob (import "${nixpkgs}/nixos/lib/eval-config.nix" {
+    ova = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
       inherit system;
       modules = [
         (import ./ova-image.nix imgArgs)
@@ -180,7 +180,7 @@ let
       ];
     }).config.system.build.ovaImage;
 
-    vagrant = lib.hydraJob (import "${nixpkgs}/nixos/lib/eval-config.nix" {
+    vagrant = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
       inherit system;
       modules = [
         (import ./ova-image.nix (imgArgs // {infrastructureModule = "vagrant"; }))
@@ -193,13 +193,13 @@ let
     netboot = makeNetboot {
       inherit system;
       modules = [
-        "${nixpkgs}/nixos/modules/installer/netboot/netboot-minimal.nix"
+        "${nixpkgs_}/nixos/modules/installer/netboot/netboot-minimal.nix"
         (import version_nix {})
       ];
     };
 
     # VM image for the Flying Circus infrastructure.
-    fc = lib.hydraJob (import "${nixpkgs}/nixos/lib/eval-config.nix" {
+    fc = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
       inherit system;
       modules = [
         (import ./fc-image.nix imgArgs)
