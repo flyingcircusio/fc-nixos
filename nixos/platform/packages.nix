@@ -37,6 +37,7 @@
         links
         lsof
         lynx
+        magic-wormhole
         mailx
         mercurial
         mmv
