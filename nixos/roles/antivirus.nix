@@ -25,8 +25,6 @@ in
         LogVerbose yes
         ExtendedDetectionInfo yes
         ExitOnOOM yes
-        Debug yes
-
         TCPSocket 3310
       '' + lib.concatMapStringsSep "\n" (ip: "TCPAddr ${ip}") listenAddresses;
 
