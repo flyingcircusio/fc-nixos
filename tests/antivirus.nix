@@ -1,13 +1,13 @@
-# It's hard to test the real functionality because the updater needs internet access
-# and the daemon need large binary files in order to run.
-# We just check the generated config.
+# It's hard to test the real functionality because the updater needs internet
+# access and the daemon need large binary files in order to run. We just check
+# the generated config.
 import ./make-test.nix ({ lib, ... }:
-let 
+let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
 in {
   name = "antivirus";
-  machine = 
+  machine =
     { lib, pkgs, ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
@@ -34,5 +34,5 @@ in {
     $machine->succeed('systemctl cat clamav-daemon.service');
     $machine->succeed('systemctl cat clamav-freshclam.service');
     $machine->succeed('systemctl cat clamav-freshclam.timer');
-  '' + lib.concatMapStringsSep "\n" check [ "127.0.0.1" "::1" ipv4 ipv6 ];
+  '' + lib.concatMapStrings check [ "127.0.0.1" "::1" ipv4 ipv6 ];
 })
