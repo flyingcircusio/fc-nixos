@@ -426,6 +426,15 @@ in
         [ "influxdb" ] ++
         (attrNames config.flyingcircus.services.telegraf.inputs);
 
+      flyingcircus.roles.statshost.prometheusMetricRelabel = let
+        removeLabel = label: {
+          source_labels = [ "__name__" label ];
+          regex = "influxdb_(tsm1|shard)_.*;.+";
+          replacement = "";
+          target_label = label;
+        };
+        in map removeLabel [ "path" "walPath" "id" "url" ];
+
       services.influxdb = {
         enable = true;
         dataDir = "/srv/influxdb";
