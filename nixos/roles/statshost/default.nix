@@ -76,7 +76,7 @@ let
             refresh_interval = "10m";
           }
         ];
-        relabel_configs =
+        metric_relabel_configs =
           prometheusMetricRelabel ++
           (relabelConfiguration "${localDir}/metric-relabel.${relayNode.job_name}.yaml");
       } // relayNode)
@@ -396,7 +396,7 @@ in
                 files = [ "${localDir}/scrape-*.json" ];
                 refresh_interval = "10m";
               }];
-              relabel_configs =
+              metric_relabel_configs =
                 prometheusMetricRelabel ++
                 (relabelConfiguration
                   "${localDir}/metric-relabel.${job_name}.yaml");
@@ -413,7 +413,7 @@ in
                 files = [ "${localDir}/federate-*.json" ];
                 refresh_interval = "10m";
               }];
-              relabel_configs = prometheusMetricRelabel;
+              metric_relabel_configs = prometheusMetricRelabel;
             }
 
           ] ++ relayRGConfig ++ relayLocationConfig;
