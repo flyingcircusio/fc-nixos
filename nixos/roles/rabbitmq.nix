@@ -3,9 +3,9 @@
 with builtins;
 
 {
-  options = 
+  options =
   let
-    mkRole = v: { 
+    mkRole = v: {
       enable = lib.mkEnableOption
         "Enable the Flying Circus RabbitMQ ${v} server role.";
     };
@@ -17,7 +17,7 @@ with builtins;
     };
   };
 
-  config = 
+  config =
   let
     # XXX: We choose the first IP of ethsrv here, as the 3.6 service is not capable
     # of handling more than one IP.
@@ -40,7 +40,7 @@ with builtins;
     roleVersion = head (lib.attrNames enabledRoles);
     majorMinorVersion = lib.concatStringsSep "." (lib.take 2 (splitVersion roleVersion));
     package = pkgs."rabbitmq-server_${replaceStrings ["."] ["_"] roleVersion}";
-  
+
     extraConfig = fclib.configFromFile /etc/local/rabbitmq/rabbitmq.config "";
 
     serviceConfig = {
@@ -49,7 +49,7 @@ with builtins;
       plugins = [ "rabbitmq_management" ];
       config = extraConfig;
     };
-  
+
   in lib.mkMerge [
     (lib.mkIf (enabled && majorMinorVersion == "3.6") {
       flyingcircus.services.rabbitmq36 = serviceConfig;
@@ -60,13 +60,13 @@ with builtins;
     })
 
     (lib.mkIf enabled {
-      assertions = 
-        [ 
-          { 
+      assertions =
+        [
+          {
             assertion = enabledRolesCount == 1;
             message = "RabbitMQ roles are mutually exclusive. Only one may be enabled.";
           }
-        ]; 
+        ];
 
       users.extraUsers.rabbitmq = {
         shell = "/run/current-system/sw/bin/bash";
@@ -113,10 +113,10 @@ with builtins;
           RemainAfterExit = true;
         };
 
-        script = 
+        script =
         let
           # 3.7 returns table headers in list_* results, we must suppress that with -s
-          quietParam = if (lib.versionOlder package.version "3.7") then "-q" else "-s"; 
+          quietParam = if (lib.versionOlder package.version "3.7") then "-q" else "-s";
         in ''
             # Delete user guest, if it's there with default password, and
             # administrator privileges.
@@ -190,8 +190,12 @@ with builtins;
     {
       flyingcircus.roles.statshost.globalAllowedMetrics = [ "rabbitmq" ];
       flyingcircus.roles.statshost.prometheusMetricRelabel = [
-        { regex = "idle_since";
-          action = "drop"; }
+        {
+          source_labels = [ "__name__" "idle_since" ];
+          regex = "rabbitmq_.*;idle_since";
+          target_label = "idle_since";
+          replacement = "";
+        }
       ];
     }
   ];

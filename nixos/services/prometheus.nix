@@ -235,8 +235,12 @@ let
         List of labeled target groups for this job.
       '';
 
+      metric_relabel_configs = mkOpt (types.listOf promTypes.relabel_config) ''
+        List of metric relabel configurations (after scrape).
+      '';
+
       relabel_configs = mkOpt (types.listOf promTypes.relabel_config) ''
-        List of relabel configurations.
+        List of relabel configurations (before scrape).
       '';
 
       sample_limit = mkDefOpt types.int "0" ''
@@ -446,10 +450,12 @@ let
         regular expression matches.
       '';
 
-      action = mkDefOpt (types.enum ["replace" "keep" "drop"]) "replace" ''
-        Action to perform based on regex matching.
-      '';
-
+      action = mkDefOpt
+        (types.enum [
+          "replace" "keep" "drop" "hashmod" "labelmap" "labeldrop" "labelkeep"
+        ])
+        "replace"
+        "Action to perform based on regex matching.";
     };
   };
 
