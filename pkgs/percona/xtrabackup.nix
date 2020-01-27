@@ -5,25 +5,23 @@ stdenv.mkDerivation rec {
   version = "8.0.7";
 
   src = fetchurl {
-    # warning: strange naming, multiple version strings in the URL...
-    url = "https://www.percona.com/downloads/Percona-XtraBackup-8.0/Percona-XtraBackup-8.0-7/source/tarball/percona-xtrabackup-${version}.tar.gz";
+    url = "https://www.percona.com/downloads/Percona-XtraBackup-8.0/Percona-XtraBackup-${version}/source/tarball/percona-xtrabackup-${version}.tar.gz";
     sha256 = "1qiwynlrs63fwbrmrl6gv5q86zyh5fgyv6w0vjnahwry18gnjk52";
-
   };
 
   buildInputs = with pkgs; [
-     bison
-     boost
-     cmake
-     curl
-     libaio
-     libev
-     libgcrypt
-     libgpgerror
-     ncurses
-     percona
-     vim
-     ];
+    bison
+    boost
+    cmake
+    curl
+    libaio
+    libev
+    libgcrypt
+    libgpgerror
+    ncurses
+    percona
+    vim
+  ];
 
   enableParallelBuilding = true;
   cmakeFlags = [
