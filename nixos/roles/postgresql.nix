@@ -42,6 +42,20 @@ with builtins;
     })
 
     {
+      flyingcircus.roles.statshost.prometheusMetricRelabel = [
+        {
+          source_labels = [ "__name__" "datname" ];
+          regex = "postgresql_.+;(.+)-[a-f0-9]{12}";
+          replacement = "$1";
+          target_label = "datname";
+        }
+        {
+          source_labels = [ "__name__" "db" ];
+          regex = "postgresql_.+;(.+)-[a-f0-9]{12}";
+          replacement = "$1";
+          target_label = "db";
+        }
+      ];
       flyingcircus.roles.statshost.globalAllowedMetrics = [ "postgresql" ];
     }
   ];
