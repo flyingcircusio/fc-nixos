@@ -4,7 +4,9 @@
 }:
 
 pkgs.buildPerlPackage rec {
-  name = "innotop-1.12.0";
+  name = "${pname}-${version}";
+  pname = "innotop";
+  version = "1.12.0";
   src = fetchgit {
     url = "https://github.com/innotop/innotop.git";
     rev = "2fa43e316893b208ff5ce0375e5c2d62287ec4d5";
@@ -27,6 +29,7 @@ pkgs.buildPerlPackage rec {
     pkgs.perlPackages.DBDmysql
     pkgs.perlPackages.TermReadKey
   ];
+
   meta = {
     description = "innotop is a 'top' clone for MySQL with many features and flexibility.";
     license = stdenv.lib.licenses.gpl2;
