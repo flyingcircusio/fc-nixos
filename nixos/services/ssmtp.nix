@@ -27,7 +27,7 @@ in
       domain =
         lib.optionalString (net.domain != null) "${net.hostName}.${net.domain}";
       hostName = mailoutService;
-      root = "admin@flyingcircus.io";
+      root = "root@${mailoutService}";
     };
   };
 }
