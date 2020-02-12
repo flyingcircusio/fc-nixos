@@ -35,10 +35,11 @@ in {
     $machine->succeed("$cli node_health_check");
     $machine->succeed("$cli status | grep 'amqp,5672,\"${ipv4}\"'");
 
-    # user setup takes a while...
+    # make sure this is run before continuing
+    $machine->succeed("systemctl start fc-rabbitmq-settings");
 
     # settings script must create monitoring users and set their monitoring tag
-    $machine->waitUntilSucceeds("$cli list_users | grep fc-telegraf | grep monitoring");
+    $machine->succeed("$cli list_users | grep fc-telegraf | grep monitoring");
     $machine->succeed("$cli list_users | grep fc-sensu | grep monitoring");
 
     # settings script must delete default guest user
