@@ -1,5 +1,5 @@
 import ./make-test.nix ({ rolename ? "rabbitmq36_15", lib, pkgs, testlib, ... }:
-let 
+let
   ipv4 = "192.168.101.1";
   amqpPortCheck = "nc -z ${ipv4} 5672";
   sensuOpts = "-u fc-sensu -w ${ipv4} -p ${testlib.derivePasswordForHost "sensu"}";
@@ -8,7 +8,7 @@ let
 
 in {
   name = "rabbitmq";
-  machine = 
+  machine =
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
@@ -36,10 +36,9 @@ in {
     $machine->succeed("$cli status | grep 'amqp,5672,\"${ipv4}\"'");
 
     # user setup takes a while...
-    $machine->waitForUnit("fc-rabbitmq-settings.service");
 
     # settings script must create monitoring users and set their monitoring tag
-    $machine->succeed("$cli list_users | grep fc-telegraf | grep monitoring");
+    $machine->waitUntilSucceeds("$cli list_users | grep fc-telegraf | grep monitoring");
     $machine->succeed("$cli list_users | grep fc-sensu | grep monitoring");
 
     # settings script must delete default guest user
