@@ -8,8 +8,8 @@
   "nixos-19.09": {
     "owner": "NixOS",
     "repo": "nixpkgs",
-    "rev": "274e095f761b2da76a376d105c41591739350b14",
-    "sha256": "0iw0k1a28ff7qwh3pi7kzlgrgjr61q46qnaryv25m78iig2lkp1y"
+    "rev": "c49da6435f314e04fc58ca29807221817ac2ac6b",
+    "sha256": "17zsqhaf098bvcfarnq0h9601z6smkfd1kz1px6xfg6xqfmr80r7"
   },
   "nixpkgs": {
     "owner": "flyingcircusio",

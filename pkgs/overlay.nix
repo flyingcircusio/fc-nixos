@@ -67,7 +67,6 @@ in {
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost169; };
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
-  qpress = super.callPackage ./percona/qpress.nix { };
 
   rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix {
     erlang = self.erlangR19;

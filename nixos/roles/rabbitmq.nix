@@ -101,7 +101,7 @@ with builtins;
         '';
 
       systemd.services.fc-rabbitmq-settings = {
-        description = "Prepare rabbitmq for operation in FC.";
+        description = "Check/update FCIO rabbitmq settings (for monitoring)";
         requires = [ "rabbitmq.service" ];
         after = [ "rabbitmq.service" ];
         wantedBy = [ "multi-user.target" ];
@@ -110,7 +110,6 @@ with builtins;
           Type = "oneshot";
           User = "rabbitmq";
           Group = "rabbitmq";
-          RemainAfterExit = true;
         };
 
         script =
@@ -150,7 +149,6 @@ with builtins;
         description = "Runs the FC RabbitMQ preparation script regularly.";
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          Unit = "fc-rabbitmq-settings";
           OnUnitActiveSec = "1h";
           AccuracySec = "10m";
         };

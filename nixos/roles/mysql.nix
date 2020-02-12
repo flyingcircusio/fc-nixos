@@ -328,7 +328,6 @@ with builtins;
 
     environment.systemPackages = with pkgs; [
       innotop
-      qpress
       xtrabackup
     ];
 
