@@ -1,5 +1,5 @@
 import ./make-test.nix ({ rolename ? "percona80", lib, pkgs, ... }:
-let 
+let
   net6Fe = "2001:db8:1::";
   net6Srv = "2001:db8:2::";
 
@@ -54,8 +54,8 @@ in
     };
   };
 
-  testScript = { nodes, ... }: 
-  let 
+  testScript = { nodes, ... }:
+  let
     config = nodes.master.config;
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
     mysqlCheck = sensuChecks.mysql.command;
@@ -67,7 +67,7 @@ in
       ":::33060"
       "${master6Srv}:3306"
       "::1:3306"
-    ] 
+    ]
     else [
       # older versions listen on all ipv4 interfaces
       "0.0.0.0:3306"
@@ -83,15 +83,15 @@ in
       $master->waitUntilSucceeds("mysqladmin ping");
     };
 
+    $master->sleep(5);
+
     subtest "can login with root password", sub {
       $master->succeed("mysql mysql -u root -p\$(< /etc/local/mysql/mysql.passwd) -e 'select 1'");
     };
 
-    $master->sleep(3);
-
     subtest "mysql only opens expected ports", sub {
       # check for expected ports
-      ${lib.concatMapStringsSep 
+      ${lib.concatMapStringsSep
          "\n"
           (a: ''  $master->succeed("netstat -tlpn | grep mysqld | grep '${a}'");'')
           expectedAddresses
@@ -103,8 +103,7 @@ in
     subtest "killing the mysql process should trigger an automatic restart", sub {
       $master->succeed("kill -9 \$(systemctl show mysql.service --property MainPID --value)");
       $master->waitForUnit("mysql");
-      $master->sleep(1);
-      $master->succeed("mysqladmin ping");
+      $master->waitUntilSucceeds("mysqladmin ping");
     };
 
     subtest "all sensu checks should be green", sub {
@@ -119,8 +118,16 @@ in
 
     subtest "secret files should have correct permissions", sub {
       $master->succeed("stat /etc/local/mysql/mysql.passwd -c %a:%U:%G | grep '640:root:service'");
-      $master->succeed("stat /root/.my.cnf -c %a:%U:%G | grep '640:root:root'");
+      $master->succeed("stat /root/.my.cnf -c %a:%U:%G | grep '440:root:root'");
+      $master->succeed("stat /run/mysqld/init_set_root_password.sql -c %a:%U:%G | grep '440:mysql:root'");
     };
+
+    subtest "root should be able to connect after changing the password", sub {
+      $master->succeed("echo tt > /etc/local/mysql/mysql.passwd");
+      $master->succeed("systemctl restart mysql");
+      $master->waitUntilSucceeds("mysql mysql -u root -ptt -e 'select 1'");
+    };
+
   '';
 
 })

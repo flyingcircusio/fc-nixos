@@ -1,7 +1,5 @@
 { config, lib, pkgs, ... }:
 
-# Root password is stored in /root/.my.cnf and /etc/local/mysql/mysql.password
-# These files must be modified manually if the root password is changed in MySQL.
 # TODO:
 # consistency check / automatic maintenance?
 
@@ -216,55 +214,26 @@ with builtins;
       user = "mysql";
     };
 
-    flyingcircus.activationScripts.mysql =
-    let
-      mysql = config.services.percona.package;
-    in
-      lib.stringAfter
-        [ "fc-local-config" ]
-        ''
-          # Configure initial root password for mysql.
-          # * set password
-          # * write password to /etc/mysql/mysql.passwd
-          # * write /root/.my.cnf
-
-          umask 0066
-          if [[ ! -f ${rootPasswordFile} ]]; then
-            pw=`${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 12`
-            echo -n "''${pw}" > ${rootPasswordFile}
-          fi
-          chown root:service ${rootPasswordFile}
-          chmod 640 ${rootPasswordFile}
-
-          if [[ ! -f /root/.my.cnf ]]; then
-            touch /root/.my.cnf
-            chmod 640 /root/.my.cnf
-            pw=$(<${rootPasswordFile})
-            cat > /root/.my.cnf <<__EOT__
-          # The following options will be passed to all MySQL clients
-          [client]
-          password = ''${pw}
-          user = root
-          __EOT__
-          fi
-        '';
-
     environment.etc."local/mysql/README.txt".text = ''
       MySQL / Percona (${package.name}) is running on this machine.
 
-      You can find the password for the mysql root user in the file `mysql.passwd`.
+      You can find the password for the MySQL root user in the file `mysql.passwd`.
       Service users can read the password file.
 
       To connect as root, run:
 
       $ mysql -h localhost -uroot -p$(< /etc/local/mysql/mysql.passwd)
 
-      This directory (/etc/local/mysql) is included in the mysql configuration.
-      To set custom options, add a `local.cnf` (or any other *.cnf) file here, and
-      run `sudo fc-manage --build`.
+      Config files from this directory (/etc/local/mysql) are included in the
+      mysql configuration. To set custom options, add a `local.cnf`
+      (or any other *.cnf) file here, and run `sudo fc-manage --build`.
 
-      ATTENTION: Changes in this directory will restart MySQL to activate the
-      new configuration.
+      ATTENTION: Changes to *.cnf files in this directory will restart MySQL
+      to activate the new configuration.
+
+      You can change the password for the mysql root user in the file `mysql.passwd`.
+      The MySQL service must be restarted to pick up the new password:
+      `sudo systemctl restart mysql`
 
       For more information, see our documentation at
       https://flyingcircus.io/doc/guide/platform_nixos2/mysql.html.

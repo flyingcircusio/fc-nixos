@@ -8,10 +8,12 @@ let
 
   mysql = cfg.package;
 
+  initFile = "/run/mysqld/init_set_root_password.sql";
+
   pidFile = "${cfg.pidDir}/mysqld.pid";
 
   mysqldOptions =
-    "--user=${cfg.user} --datadir=${cfg.dataDir} --basedir=${mysql}";
+    "--user=${cfg.user} --datadir=${cfg.dataDir} --basedir=${mysql} --init-file=${initFile}";
 
   myCnf = pkgs.writeText "my.cnf"
   ''
@@ -31,6 +33,55 @@ let
       "${mysql}/bin/mysqld --initialize-insecure ${mysqldOptions}"
     else
       "${pkgs.perl}/bin/perl ${mysql}/bin/mysql_install_db ${mysqldOptions}";
+
+  setPasswordSql =
+    if (lib.versionAtLeast mysql.mysqlVersion "5.7") then
+      "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY \'$pw\';"
+    else
+      "SET PASSWORD FOR 'root'@'localhost' = PASSWORD(\'$pw\');";
+
+  mysqlPreStart = ''
+    umask 0066
+
+    mkdir -p /run/mysqld
+    chmod 0755 /run/mysqld
+    chown -R ${cfg.user} /run/mysqld
+
+    # Generate mysql root password file if it's not present.
+    if [[ ! -f ${cfg.rootPasswordFile} ]]; then
+      pw=`${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 12`
+      echo -n "''${pw}" > ${cfg.rootPasswordFile}
+    fi
+    chown root:service ${cfg.rootPasswordFile}
+    chmod 640 ${cfg.rootPasswordFile}
+
+    pw=$(<${cfg.rootPasswordFile})
+    cat > /root/.my.cnf <<__EOT__
+    # Do not modify this file, it will be overwritten when MySQL starts!
+    # The following options will be passed to all MySQL clients
+    [client]
+    password = ''${pw}
+    user = root
+    __EOT__
+    chmod 440 /root/.my.cnf
+
+    # write init file for mysqld to set the root password
+    cat > ${initFile} <<__EOT__
+    ${setPasswordSql}
+    __EOT__
+    chmod 440 ${initFile}
+
+    if ! test -e ${cfg.dataDir}/mysql; then
+        mkdir -m 0700 -p ${cfg.dataDir}
+        chown -R ${cfg.user} ${cfg.dataDir}
+        ${mysqlInit}
+        touch /run/mysql_init
+    fi
+
+    mkdir -m 0755 -p ${cfg.pidDir}
+    chown -R ${cfg.user} ${cfg.pidDir}
+  '';
+
 in
 
 {
@@ -171,28 +222,14 @@ in
       description = "MySQL Server";
       wantedBy = [ "multi-user.target" ];
       unitConfig.RequiresMountsFor = "${cfg.dataDir}";
-      preStart =
-        ''
-          if ! test -e ${cfg.dataDir}/mysql; then
-              mkdir -m 0700 -p ${cfg.dataDir}
-              chown -R ${cfg.user} ${cfg.dataDir}
-              ${mysqlInit}
-              touch /run/mysql_init
-          fi
 
-          mkdir -m 0755 -p ${cfg.pidDir}
-          chown -R ${cfg.user} ${cfg.pidDir}
-
-          # Make the socket directory
-          mkdir -p /run/mysqld
-          chmod 0755 /run/mysqld
-          chown -R ${cfg.user} /run/mysqld
-        '';
       serviceConfig = {
         ExecStart = "${mysql}/bin/mysqld --defaults-extra-file=${myCnf} ${mysqldOptions}";
         Restart = "always";
         TimeoutSec = 300;
       };
+
+      preStart = mysqlPreStart;
       postStart =
         ''
           # Wait until the MySQL server is available for use
@@ -247,20 +284,6 @@ in
                   cat ${cfg.initialScript} | ${mysql}/bin/mysql -u root -N
                 ''}
 
-                  # Change root password
-                  ${# For 8.0 we still use native password because there are
-                    # too many non 8.0 client libs out there, which cannot
-                    # connect otherwise.
-                    if versionAtLeast mysql.version "8.0"
-                    then ''
-                      (echo "ALTER USER 'root'@'localhost' "
-                       echo "IDENTIFIED WITH mysql_native_password "
-                       echo "BY '$(< ${cfg.rootPasswordFile})';") |\
-                        ${mysql}/bin/mysql -u root -N
-                    ''
-                    else ''
-                    ${mysql}/bin/mysqladmin --no-defaults password "$(< ${cfg.rootPasswordFile})"
-                  ''}
             rm /run/mysql_init
           fi
         '';  # */
