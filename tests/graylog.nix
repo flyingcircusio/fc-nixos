@@ -2,6 +2,7 @@ import ./make-test.nix ({ pkgs, lib, ... }:
 let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
+  host = "machine.fcio.net";
 in {
   name = "graylog";
   machine =
@@ -12,12 +13,15 @@ in {
         ../nixos/roles
       ];
 
-      virtualisation.memorySize = 4096;
+      virtualisation.memorySize = 6000;
 
       flyingcircus.roles.loghost.enable = true;
       networking.domain = "fcio.net";
 
       services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
+
+      flyingcircus.roles.elasticsearch.heapPercentage = 30;
+      flyingcircus.services.graylog.heapPercentage = 35;
 
       flyingcircus.enc.parameters = {
         directory_password = "asdf";
@@ -38,21 +42,28 @@ in {
 
       flyingcircus.encServices = [
         { service = "loghost-server";
-          address = "machine.fcio.net";
+          address = host;
+          ips = [ ipv4 ipv6 ];
         }
       ];
       networking.extraHosts = ''
-        ${ipv4} machine.fcio.net
-        ${ipv6} machine.fcio.net
+        ${ipv4} ${host}
+        ${ipv6} ${host}
       '';
 
+      flyingcircus.roles.graylog.publicFrontend = {
+        enable = true;
+        hostName = host;
+      };
+
     };
+
   testScript = { nodes, ... }:
   let
     config = nodes.machine.config;
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
     graylogCheck = lib.replaceChars ["\n"] [" "] sensuChecks.graylog_ui.command;
-    graylogApi = "${pkgs.fc.agent}/bin/fc-graylog --api http://machine.fcio.net:9001/api get -l";
+    graylogApi = "${pkgs.fc.agent}/bin/fc-graylog --api http://${host}:9001/api get -l";
   in ''
     $machine->waitForUnit("haproxy.service");
     $machine->waitForUnit("mongodb.service");
@@ -61,7 +72,7 @@ in {
     $machine->waitForUnit("nginx.service");
 
     subtest "elasticsearch should have a graylog index", sub {
-      $machine->succeed("curl http://machine.fcio.net:9200/_cat/indices?v | grep -q graylog_0");
+      $machine->succeed("curl http://${host}:9200/_cat/indices?v | grep -q graylog_0");
     };
 
     subtest "graylog API should respond", sub {
@@ -75,6 +86,10 @@ in {
 
     subtest "sensu check should be green", sub {
       $machine->succeed("${graylogCheck}");
+    };
+
+    subtest "public HTTPS should serve graylog dashboard", sub {
+      $machine->succeed("curl -k https://${host} | grep -q 'Graylog Web Interface'");
     };
 
     subtest "sensu check should be red after shutting down graylog", sub {

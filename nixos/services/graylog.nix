@@ -278,18 +278,18 @@ in {
       postStart = ''
         # Wait until GL is available for use
         for count in {0..120}; do
-            ${pkgs.curl}/bin/curl -s ${webListenUri} && exit
+            ${pkgs.curl}/bin/curl -m 2 -s ${webListenUri} && exit
             echo "Trying to connect to ${webListenUri} for ''${count}s"
             sleep 1
         done
-        echo "No connection to ${webListenUri} for 120s, giving up"
+        echo "Tried to connect to ${webListenUri} 120 times, giving up"
         exit 1
       '';
 
       serviceConfig = {
         Restart = "always";
         # Starting just takes a long time...
-        TimeoutStartSec = 240;
+        TimeoutStartSec = 360;
         PermissionsStartOnly = true;
         User = "${cfg.user}";
         StateDirectory = "graylog";
@@ -415,7 +415,7 @@ in {
         Unit = "graylog-update-geolite.service";
         OnStartupSec = "10m";
         OnUnitActiveSec = "30d";
-        RandomSec = "3m";
+        RandomizedDelaySec = "3m";
       };
     };
 
