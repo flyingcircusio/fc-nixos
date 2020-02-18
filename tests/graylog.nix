@@ -13,7 +13,7 @@ in {
         ../nixos/roles
       ];
 
-      virtualisation.memorySize = 5000;
+      virtualisation.memorySize = 6000;
 
       flyingcircus.roles.loghost.enable = true;
       networking.domain = "fcio.net";
