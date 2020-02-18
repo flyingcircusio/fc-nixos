@@ -415,7 +415,7 @@ in {
         Unit = "graylog-update-geolite.service";
         OnStartupSec = "10m";
         OnUnitActiveSec = "30d";
-        RandomSec = "3m";
+        RandomizedDelaySec = "3m";
       };
     };
 

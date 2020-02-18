@@ -344,7 +344,7 @@ in
           timerConfig = {
             Unit = "fc-prometheus-update-relayed-nodes";
             OnUnitActiveSec = "11m";
-            RandomSec = "3m";
+            RandomizedDelaySec = "3m";
           };
         });
       }
@@ -621,8 +621,7 @@ in
         timerConfig = {
           Unit = "fc-grafana-load-dashboards.service";
           OnUnitActiveSec = "1h";
-          # Not yet supported by our systemd version.
-          # RandomSec = "3m";
+          RandomizedDelaySec = "3m";
         };
       };
 
