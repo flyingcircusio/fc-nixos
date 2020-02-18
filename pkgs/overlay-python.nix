@@ -35,4 +35,20 @@ python-self: python-super:
     };
   });
 
+  nagiosplugin = python-super.buildPythonPackage rec {
+    pname = "nagiosplugin";
+    version = "1.2.4";
+    src = python-super.fetchPypi {
+      inherit pname version;
+      sha256 = "1fzq6mhwrlz1nbcp8f7sg3rnnaghhb9nd21p0anl6dkga750l0kb";
+    };
+
+    # "cannot determine number of users (who failed)"
+    preCheck = ''
+      substituteInPlace src/nagiosplugin/tests/test_examples.py \
+        --replace "test_check_users" "_disabled"
+    '';
+
+    dontStrip = true;
+  };
 }

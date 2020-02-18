@@ -114,6 +114,10 @@ in
         user = "haproxy";
       };
 
+      flyingcircus.services.sensu-client.checkEnvPackages = [
+        pkgs.fc.check-haproxy
+      ];
+
       systemd.services.prometheus-haproxy-exporter = {
         description = "Prometheus exporter for haproxy metrics";
         wantedBy = [ "multi-user.target" ];
