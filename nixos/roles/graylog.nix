@@ -198,10 +198,17 @@ in
       flyingcircus.services.haproxy.enable = true;
 
       services.haproxy.config = lib.mkForce (let
-        backendConfig = node_config: lib.concatStringsSep "\n"
+        nodes =
+          filter
+            (s: s.service == "loghost-server" || s.service == "graylog-server")
+            config.flyingcircus.encServices;
+
+        # graylog is only listening for IPv6
+        backendConfig = config: lib.concatStringsSep "\n"
           (map
-            (node: "    " + (node_config node))
-            glNodes);
+            (node: "    " + (config node.address (head (filter fclib.isIp6 node.ips))))
+            nodes);
+
         listenConfig = port: lib.concatStringsSep "\n"
           (map
             (addr: "    bind ${addr}:${toString port}")
@@ -249,15 +256,15 @@ in
             option httpchk HEAD /api/system/lbstatus
             timeout server 10s
             timeout tunnel 61s
-        ${backendConfig (node:
-            "server ${node}  ${node}:${toString gelfTCPGraylogPort} check port ${toString glAPIPort} inter 10s rise 2 fall 1")}
+        ${backendConfig (name: ip:
+            "server ${name}  ${ip}:${toString gelfTCPGraylogPort} check port ${toString glAPIPort} inter 10s rise 2 fall 1")}
 
         backend graylog
             balance roundrobin
             option httpchk GET /
             timeout server 121s    # should be equal to client timeout
-        ${backendConfig (node:
-            "server ${node}  ${node}:${toString glAPIPort} check fall 1 rise 2 inter 10s maxconn 20")}
+        ${backendConfig (name: ip:
+            "server ${name}  ${ip}:${toString glAPIPort} check fall 1 rise 2 inter 10s maxconn 20")}
 
         backend stats
             stats uri /
