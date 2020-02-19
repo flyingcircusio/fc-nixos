@@ -27,10 +27,13 @@
     # Vagrant box protocol
     users.users.root.password = "vagrant";
 
-    # The login group gets created through the ENC normally which
+    # We expect some groups in our platform code.
+    # These groups are created through the ENC normally which
     # doesn't exist in vagrant or at least here, yet.
     users.groups.login = {};
     users.groups.service = {};
+    users.groups.sudo-srv = {};
+    users.groups.admins = {};
 
     users.users.vagrant = {
     	description = "Vagrant user";
