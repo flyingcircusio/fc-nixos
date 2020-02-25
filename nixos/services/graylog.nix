@@ -208,6 +208,8 @@ in {
     systemd.tmpfiles.rules = [
       "d '${cfg.messageJournalDir}' - ${cfg.user} - - -"
       "d '/run/graylog' - ${cfg.user} - - -"
+      # Purge geolite DB that has been created by a timer in earlier releases.
+      "r /var/lib/graylog/GeoLite2-City.mmdb"
     ];
 
     environment.etc."local/graylog/api_url".text = restListenUri;
@@ -389,34 +391,6 @@ in {
 
         ${callApi "ensure-user telegraf '${toJSON telegrafUser}'"}
       '';
-    };
-
-    systemd.services.graylog-update-geolite = {
-      description = "Update geolite db for graylog";
-      restartIfChanged = false;
-      after = [ "graylog.service" ];
-      path = with pkgs; [ gzip curl ];
-      serviceConfig = {
-        User = config.services.graylog.user;
-        Type = "oneshot";
-      };
-
-      script = ''
-        cd /var/lib/graylog
-        curl -O http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz
-        gunzip -f GeoLite2-City.mmdb.gz
-      '';
-    };
-
-    systemd.timers.graylog-update-geolite = {
-      description = "Timer for updating the geolite db for graylog";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        Unit = "graylog-update-geolite.service";
-        OnStartupSec = "10m";
-        OnUnitActiveSec = "30d";
-        RandomizedDelaySec = "3m";
-      };
     };
 
     systemd.services.graylog-collect-journal-age-metric = rec {
