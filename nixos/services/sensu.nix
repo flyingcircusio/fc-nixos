@@ -105,21 +105,14 @@ let
     };
   };
 
-  sensu-check-env = with pkgs; buildEnv {
+  sensuCheckEnv = pkgs.buildEnv {
     name = "sensu-check-env";
-    paths = [
-      bash
-      coreutils
-      glibc
-      lm_sensors
-      monitoring-plugins
-      nix
-      openssl
-      procps
-      sensu
-      sysstat
-    ];
+    paths = cfg.checkEnvPackages;
   };
+
+  sensuCheckEnvCmd = pkgs.writeScriptBin "sensu-check-env" ''
+    echo ${sensuCheckEnv}/bin/
+  '';
 
 in {
   options = {
@@ -161,6 +154,16 @@ in {
           defined by Sensu: <https://sensuapp.org/docs/latest/checks>.
         '';
       };
+
+      checkEnvPackages = mkOption {
+        type = with types; listOf package;
+        description = ''
+          List of packages to include in the PATH visible in Sensu checks.
+          This can be used to add custom check scripts or external programs
+          you want to call from your check.
+        '';
+      };
+
       extraOpts = mkOption {
         type = with types; listOf str;
         default = [];
@@ -243,6 +246,10 @@ in {
         }
     '';
 
+    environment.systemPackages = [
+      sensuCheckEnvCmd
+    ];
+
     flyingcircus.passwordlessSudoRules = [
       {
         commands = with pkgs; [
@@ -274,14 +281,27 @@ in {
       user = "sensuclient";
     };
 
+    flyingcircus.services.sensu-client.checkEnvPackages = with pkgs; [
+      bash
+      coreutils
+      glibc
+      lm_sensors
+      monitoring-plugins
+      nix
+      openssl
+      procps
+      sensu
+      sysstat
+    ];
+
     systemd.services.sensu-client = {
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
       stopIfChanged = false;
       # Sensu check scripts inherit the PATH of sensu-client by default.
-      # We provide common external dependencies in sensu-check-env.  Checks can
+      # We provide common external dependencies in sensuCheckEnv.  Checks can
       # define their own PATH in a wrapper to include other dependencies.
-      path = [ sensu-check-env "/run/wrappers" ];
+      path = [ sensuCheckEnv "/run/wrappers" ];
       script = ''
         ${ifJsonSyntaxError}
           # graceful degradation -> leave local config out

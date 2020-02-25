@@ -5,15 +5,12 @@ let
 
 in
   py.buildPythonApplication rec {
-    name = "fc-sensuplugins-${version}";
+    name = "fc-check-haproxy-${version}";
     version = "1.0";
     src = ./.;
     dontStrip = true;
     propagatedBuildInputs = [
-      libyaml
       py.nagiosplugin
-      py.requests
-      py.psutil
-      py.pyyaml
+      py.numpy
     ];
   }

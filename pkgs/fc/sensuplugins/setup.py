@@ -12,14 +12,14 @@ setup(
     author_email='mail@flyingcircus.io',
     license='ZPL',
     classifiers=[
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.7'
     ],
     packages=['fc.sensuplugins'],
     install_requires=[
         'PyYAML',
         'nagiosplugin',
-        'requests',
+        'psutil',
+        'requests'
     ],
     entry_points={
         'console_scripts': [
