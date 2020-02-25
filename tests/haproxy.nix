@@ -2,7 +2,7 @@ import ./make-test.nix ({ pkgs, ... }:
 {
   name = "haproxy";
   nodes = {
-    haproxyVM =
+    machine =
       { lib, ... }:
       {
         imports = [ ../nixos ];
@@ -33,26 +33,29 @@ import ./make-test.nix ({ pkgs, ... }:
       };
   };
   testScript = ''
-    $haproxyVM->waitForUnit("haproxy.service");
-    $haproxyVM->waitForUnit("syslog.service");
+    $machine->waitForUnit("haproxy.service");
+    $machine->waitForUnit("syslog.service");
 
-    $haproxyVM->execute(<<__SETUP__);
+    $machine->execute(<<__SETUP__);
     echo 'Hello World!' > hello.txt
     ${pkgs.python3.interpreter} -m http.server 7000 &
     __SETUP__
 
-    # request goes through haproxy
-    my $curl = 'curl -s http://localhost:8888/hello.txt';
-    $haproxyVM->succeed($curl) =~ /Hello World!/ or
-      die "expected output missing";
+    subtest "request through haproxy should succeed", sub {
+      $machine->succeed("curl -s http://localhost:8888/hello.txt | grep -q 'Hello World!'");
+    };
 
-    # check log file entry
-    sleep 0.5;
-    $haproxyVM->succeed(<<_EOT_);
-    grep "haproxy.* http-in server/python .* /hello.txt" /var/log/haproxy.log
-    _EOT_
+    subtest "log file entry should be present for request", sub {
+      $machine->sleep(0.5);
+      $machine->succeed('grep "haproxy.* http-in server/python .* /hello.txt" /var/log/haproxy.log');
+    };
 
-    # service user should be able to write to local config dir
-    $machine->succeed('sudo -u haproxy touch /etc/local/haproxy/haproxy.cfg');
+    subtest "service user should be able to write to local config dir", sub {
+      $machine->succeed('sudo -u haproxy touch /etc/local/haproxy/haproxy.cfg');
+    };
+
+    subtest "haproxy check script should be green", sub {
+      $machine->succeed("${pkgs.fc.check-haproxy}/bin/check_haproxy /var/log/haproxy.log");
+    };
   '';
 })

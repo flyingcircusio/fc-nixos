@@ -68,6 +68,7 @@ postgresql/*/pg_*
 redis/*.rdb
 *.rpm
 *.rss
+*.sock
 solr/data/
 *.spl
 *.sql
