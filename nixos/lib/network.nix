@@ -301,4 +301,18 @@ rec {
       _EOF_
     '');
 
+  # Adapted 'ip' command which says what it is doing and ignores errno 2 (file
+  # exists) to make it idempotent.
+  relaxedIp = pkgs.writeScriptBin "ip" ''
+    #! ${pkgs.stdenv.shell} -e
+    echo ip "$@"
+    rc=0
+    ${pkgs.iproute}/bin/ip "$@" || rc=$?
+    if ((rc == 2)); then
+      exit 0
+    else
+      exit $rc
+    fi
+  '';
+
 }

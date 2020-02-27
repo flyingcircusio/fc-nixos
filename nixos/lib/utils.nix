@@ -6,8 +6,14 @@ let
   fclib = config.fclib;
 
 in
+with builtins;
 with lib;
 rec {
+
+  currentRG = with config.flyingcircus;
+    if lib.hasAttrByPath [ "parameters" "resource_group" ] enc
+    then enc.parameters.resource_group
+    else null;
 
   # Derives a password from host data and a custom prefix
   derivePasswordForHost = prefix:
@@ -42,6 +48,13 @@ rec {
     filter
       (s: s.service == name)
       config.flyingcircus.encServiceClients;
+
+  # Returns all services from /etc/nixos/services.json
+  # that match the given name or an empty list, if nothing matches.
+  findServices = name:
+    filter
+      (s: s.service == name)
+      config.flyingcircus.encServices;
 
   installDirWithPermissions = { user, group, permissions, dir }:
     "install -d -o ${user} -g ${group} -m ${permissions} ${dir}";
@@ -93,5 +106,13 @@ rec {
       # to be stored in nix store. A warning is issued.
       value = removeSuffix "\n" (fclib.configFromFile file generatedPassword);
     };
+
+  usersInGroup = group:
+    map
+      (getAttr "uid")
+      (filter
+        (u: any (g: g == group) (getAttr currentRG u.permissions))
+        config.flyingcircus.users.userData
+      );
 
 }

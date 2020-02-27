@@ -6,6 +6,8 @@ let
   pkgs-19_09 = import versions.nixos-19_09 {};
 
 in {
+
+  inherit (pkgs-19_09) kubernetes;
   #
   # == our own stuff
   #
@@ -80,6 +82,7 @@ in {
   rum = super.callPackage ./postgresql/rum { };
 
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
+  sensu-plugins-kubernetes = super.callPackage ./sensuplugins-rb/sensu-plugins-kubernetes { };
   sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
   sensu-plugins-mysql = super.callPackage ./sensuplugins-rb/sensu-plugins-mysql { };
   sensu-plugins-entropy-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-entropy-checks { };
