@@ -25,6 +25,7 @@ in {
     ./rabbitmq.nix
     ./redis.nix
     ./statshost
+    ./webdata_blackbee.nix
     ./webgateway.nix
     ./webproxy.nix
   ];
