@@ -129,6 +129,7 @@ in
   imports = [
     ./global-relabel.nix
     ./location-proxy.nix
+    ./relabel.nix
     ./rg-relay.nix
   ];
 
