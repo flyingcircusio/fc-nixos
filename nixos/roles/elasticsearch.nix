@@ -62,6 +62,10 @@ let
     [ (currentMemory * cfg.heapPercentage / 100)
       (31 * 1024)];
 
+  esShowConfig = pkgs.writeScriptBin "elasticsearch-show-config" ''
+    cat /srv/elasticsearch/config/elasticsearch.yml
+  '';
+
 in
 {
 
@@ -106,11 +110,18 @@ in
 
     flyingcircus.roles.elasticsearch6.enable =
       mkEnableOption "Enable the Flying Circus elasticsearch6 role.";
-
   };
 
   config = lib.mkMerge [
+
     (lib.mkIf enabled {
+
+    environment.systemPackages = [
+      esShowConfig
+    ];
+
+    # The 'elastic' license is considered unfree.
+    nixpkgs.config.allowUnfree = true;
 
     services.elasticsearch = {
       enable = true;
@@ -119,14 +130,16 @@ in
       dataDir = cfg.dataDir;
       cluster_name = clusterName;
       extraJavaOptions = [
-       "-Des.path.scripts=${cfg_service.dataDir}/scripts"
-       "-Des.security.manager.enabled=false"
-       # Xms and Xmx are already defined as cmdline args by config/jvm.options.
-       # Appending the next two lines overrides the former.
-       "-Xms${toString esHeap}m"
-       "-Xmx${toString esHeap}m"
-
+        "-Des.path.scripts=${cfg_service.dataDir}/scripts"
+        "-Des.security.manager.enabled=false"
+        # Xms and Xmx are already defined as cmdline args by config/jvm.options.
+        # Appending the next two lines overrides the former.
+        "-Xms${toString esHeap}m"
+        "-Xmx${toString esHeap}m"
+        # Use ES7 style for the publish address to avoid the annoying warning in ES6.
+        (lib.optionalString (esVersion == "6") "-Des.http.cname_in_publish_address=true")
       ];
+
       extraConf = ''
         node.name: ${config.networking.hostName}
         discovery.zen.ping.unicast.hosts: ${builtins.toJSON esNodes}
