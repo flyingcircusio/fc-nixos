@@ -6,6 +6,16 @@ let
   cfg = config.flyingcircus;
   fclib = config.fclib;
   enc_services = fclib.jsonFromFile cfg.enc_services_path "[]";
+  localModulesDir = "/etc/local/nixos";
+  localModules =
+    if builtins.pathExists localModulesDir
+    then
+      map
+        (name: "${localModulesDir}/${name}")
+        (filter
+          (fn: lib.hasSuffix ".nix" fn)
+          (lib.attrNames (builtins.readDir "/etc/local/nixos")))
+    else [];
 
 in {
   imports = [
@@ -20,7 +30,7 @@ in {
     ./static.nix
     ./systemd.nix
     ./users.nix
-  ];
+  ] ++ localModules;
 
   options = with lib.types; {
 
@@ -169,6 +179,20 @@ in {
       '';
     };
 
+    environment.etc."local/nixos/README.txt".text = ''
+      To add custom NixOS config, create *.nix files here.
+      here. These files must define a NixOS module.
+      See `custom.nix.example` for the basic structure.
+    '';
+
+    environment.etc."local/nixos/custom.nix.example".text = ''
+      { pkgs, lib, ... }:
+      {
+        environment.systemPackages = with pkgs; [
+        ];
+      }
+    '';
+
     flyingcircus.enc_services = enc_services;
 
     # reduce build time
@@ -229,6 +253,7 @@ in {
       # d instead of r to a) respect the age rule and b) allow exclusion
       # of fc-data to avoid killing the seeded ENC upon boot.
       "d /etc/current-config"  # used by various FC roles
+      "d /etc/local/nixos 2775 root service"
       "d /srv 0755"
       "d /tmp 1777 root root 3d"
       "d /var/tmp 1777 root root 7d"
