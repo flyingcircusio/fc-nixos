@@ -14,6 +14,7 @@ in {
     ./antivirus.nix
     ./elasticsearch.nix
     ./graylog.nix
+    ./kibana.nix
     ./loghost.nix
     ./mailserver.nix
     ./memcached.nix
