@@ -9,34 +9,6 @@ let
 
   localCfgDir = cfg.localConfigPath + "/firewall";
 
-  # Technically, snippets in /etc/local/firewall are plain shell scripts. We
-  # don't want to support full (root) shell expressiveness here, so restrict
-  # commands to iptables and friends and quote all shell special chars.
-  filterRules =
-    pkgs.writeScript "filter-firewall-local-rules.py" ''
-      #!${pkgs.python3.interpreter}
-      import fileinput
-      import re
-      import shlex
-      import sys
-      import os.path as p
-      R_ALLOWED = re.compile(r'^(#.*|ip(6|46)?tables .*)?''$')
-
-      for line in fileinput.input():
-        atoms = (shlex.quote(s) for s in shlex.split(line.strip(), comments=True))
-        m = R_ALLOWED.match(' '.join(atoms))
-        if m:
-          if m.group(1):
-            print(m.group(1))
-        else:
-          fn = fileinput.filename()
-          print('ERROR: only iptables statements or comments allowed:'
-                '\n{}\n(included from ${localCfgDir}/{})'.\
-                format(line.strip(), p.basename(fn)),
-                file=sys.stderr)
-          sys.exit(1)
-    '';
-
   localRules =
     let
       suf = lib.hasSuffix;
@@ -50,7 +22,7 @@ let
     pkgs.runCommand "firewall-local-rules" { inherit localRules; }
     ''
       if [[ -d $localRules ]]; then
-        ${filterRules} $localRules/* > $out
+        ${pkgs.python3.interpreter} ${./filter-rules.py} $localRules/* > $out
       else
         touch $out
       fi
