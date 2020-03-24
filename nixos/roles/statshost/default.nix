@@ -343,7 +343,6 @@ in
           description = "Timer for updating relayed targets";
           wantedBy = [ "timers.target" ];
           timerConfig = {
-            Unit = "fc-prometheus-update-relayed-nodes";
             OnUnitActiveSec = "11m";
             RandomizedDelaySec = "3m";
           };
@@ -620,7 +619,6 @@ in
         description = "Timer for updating the grafana dashboards";
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          Unit = "fc-grafana-load-dashboards.service";
           OnUnitActiveSec = "1h";
           RandomizedDelaySec = "3m";
         };

@@ -110,7 +110,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       description = "Timer for Serial console liveness marker";
       requiredBy = [ "serial-getty@ttyS0.service" ];
       timerConfig = {
-        Unit = "serial-console-liveness.service";
         OnBootSec = "10m";
         OnUnitActiveSec = "10m";
       };
