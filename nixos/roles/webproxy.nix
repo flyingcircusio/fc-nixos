@@ -1,15 +1,11 @@
 { config, lib, pkgs, ... }:
 
-with lib;
-
 let
   cfg = config.services.varnish;
   fccfg = config.flyingcircus.roles.webproxy;
   fclib = config.fclib;
 
-  varnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl vcl_example;
-
-  vcl_example = ''
+  vclExample = ''
     vcl 4.0;
     backend test {
       .host = "127.0.0.1";
@@ -17,14 +13,27 @@ let
     }
   '';
 
+  varnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl vclExample;
+  configFile = pkgs.writeText "default.vcl" varnishCfg;
+
   cacheMemory = (fclib.currentMemory 256) / 100 * fccfg.mallocMemoryPercentage;
 
-  configFile = pkgs.writeText "default.vcl" cfg.config;
+  varnishCmd =
+    "${cfg.package}/sbin/varnishd -a ${cfg.http_address}" +
+    " -f /etc/current-config/varnish.vcl -n ${cfg.stateDir}" +
+    " -s malloc,${toString cacheMemory}M" +
+    lib.optionalString
+      (cfg.extraCommandLine != "")
+      " ${cfg.extraCommandLine}" +
+    lib.optionalString
+      (cfg.extraModules != [])
+      " -p vmod_path='${lib.makeSearchPathOutput "lib" "lib/varnish/vmods" ([cfg.package] ++ cfg.extraModules)}' -r vmod_path" +
+    " -F";
 
 in
 {
 
-  options = {
+  options = with lib; {
 
     flyingcircus.roles.webproxy = {
       enable = mkEnableOption "Flying Circus varnish server role";
@@ -38,8 +47,8 @@ in
     };
   };
 
-  config = mkMerge [
-    (mkIf fccfg.enable {
+  config = lib.mkMerge [
+    (lib.mkIf fccfg.enable {
 
       environment.etc = {
         "local/varnish/README.txt".text = ''
@@ -49,7 +58,7 @@ in
 
           Put your configuration into `default.vcl`.
         '';
-        "local/varnish/default.vcl.example".text = vcl_example;
+        "local/varnish/default.vcl.example".text = vclExample;
         "current-config/varnish.vcl".source = configFile;
       };
 
@@ -88,15 +97,38 @@ in
             ((fclib.listenAddressesQuotedV6 "ethsrv") ++
              (fclib.listenAddressesQuotedV6 "lo"));
         config = varnishCfg;
-        extraCommandLine = "-s malloc,${toString cacheMemory}M";
       };
 
       systemd.services = {
         varnish = {
           stopIfChanged = false;
+          path = with pkgs; [ varnish procps gawk ];
+          reloadIfChanged = true;
+          restartTriggers = [ configFile ];
+          reload = ''
+            if pgrep -a varnish | grep  -Fq '${varnishCmd}'
+            then
+              config=$(readlink -e /etc/current-config/varnish.vcl)
+              # Varnish doesn't like slashes and numbers in config names.
+              name=$(tr -dc 'a-z' <<< $config)
+              varnishadm vcl.list | grep -q $name && echo "Config unchanged." && exit
+              varnishadm vcl.load $name $config && varnishadm vcl.use $name
+
+              for vcl in $(varnishadm vcl.list | grep ^available | awk {'print $4'});
+              do
+                varnishadm vcl.discard $vcl
+              done
+            else
+              echo "Binary or parameters changed. Restarting."
+              systemctl restart varnish
+            fi
+          '';
+
           serviceConfig = {
-            RestartSec = mkOverride 90 "10s";
+            ExecStart = lib.mkOverride 90 varnishCmd;
+            RestartSec = lib.mkOverride 90 "10s";
           };
+
         };
         varnishncsa = rec {
           after = [ "varnish.service" ];
