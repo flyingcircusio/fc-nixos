@@ -15,6 +15,7 @@ in {
     ./elasticsearch.nix
     ./graylog.nix
     ./kibana.nix
+    ./kubernetes
     ./loghost.nix
     ./mailserver.nix
     ./memcached.nix
