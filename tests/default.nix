@@ -27,6 +27,7 @@ in {
   graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
   journal = callTest ./journal.nix {};
+  kubernetes = callTest ./kubernetes {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callSubTests ./mail.nix {};
