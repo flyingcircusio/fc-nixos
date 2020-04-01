@@ -37,7 +37,7 @@ let
     "services/misc/etcd.nix"
   ];
 
-  modules-19_09 = <nixos-19.09/nixos/modules>;
+  nixos-19_09 = (import ../../../versions.nix {}).nixos-19_09;
 in
 {
 
@@ -47,7 +47,7 @@ in
     ./frontend.nix
     ./master.nix
     ./node.nix
-  ] ++ map (m: "${modules-19_09}/${m}") kubernetesModules;
+  ] ++ map (m: "${nixos-19_09}/nixos/modules/${m}") kubernetesModules;
 
   options = with lib; {
     flyingcircus.kubernetes.lib = mkOption {
