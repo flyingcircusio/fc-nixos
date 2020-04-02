@@ -66,6 +66,11 @@ in
 
     {
       flyingcircus.kubernetes.lib = { inherit mkUnitWaitForCerts; };
+
+      systemd.services.kube-certmgr-bootstrap.preStart = ''
+        mkdir -p ${config.services.kubernetes.secretsPath}
+      '';
+
     }
   ];
 
