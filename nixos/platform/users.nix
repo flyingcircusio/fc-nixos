@@ -48,10 +48,7 @@ let
         })
       users);
 
-  currentRG = with config.flyingcircus;
-    if lib.hasAttrByPath [ "parameters" "resource_group" ] enc
-    then enc.parameters.resource_group
-    else null;
+  currentRG = fclib.currentRG;
 
   groupMembershipsFor = user:
     if currentRG != null && lib.hasAttr currentRG user.permissions
@@ -174,9 +171,9 @@ in
 
     flyingcircus.passwordlessSudoRules = [
       # Allow sudo-srv users to become service user
-      { 
+      {
         commands = [ "ALL" ];
-        groups = [ "sudo-srv" ]; 
+        groups = [ "sudo-srv" ];
         runAs = "%service";
       }
       # Allow applying config and restarting services to service users

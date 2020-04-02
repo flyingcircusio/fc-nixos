@@ -1,0 +1,65 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    activesupport (4.2.11.1)
+      i18n (~> 0.7)
+      minitest (~> 5.1)
+      thread_safe (~> 0.3, >= 0.3.4)
+      tzinfo (~> 1.1)
+    addressable (2.7.0)
+      public_suffix (>= 2.0.2, < 5.0)
+    concurrent-ruby (1.1.6)
+    domain_name (0.5.20190701)
+      unf (>= 0.0.5, < 1.0.0)
+    http (2.2.2)
+      addressable (~> 2.3)
+      http-cookie (~> 1.0)
+      http-form_data (~> 1.0.1)
+      http_parser.rb (~> 0.6.0)
+    http-accept (1.7.0)
+    http-cookie (1.0.3)
+      domain_name (~> 0.5)
+    http-form_data (1.0.3)
+    http_parser.rb (0.6.0)
+    i18n (0.9.5)
+      concurrent-ruby (~> 1.0)
+    json (2.3.0)
+    kubeclient (2.5.2)
+      http (>= 0.98, < 3)
+      recursive-open-struct (~> 1.0.0)
+      rest-client
+    mime-types (3.3.1)
+      mime-types-data (~> 3.2015)
+    mime-types-data (3.2019.1009)
+    minitest (5.14.0)
+    mixlib-cli (1.7.0)
+    netrc (0.11.0)
+    public_suffix (4.0.3)
+    recursive-open-struct (1.0.5)
+    rest-client (2.1.0)
+      http-accept (>= 1.7.0, < 2.0)
+      http-cookie (>= 1.0.2, < 2.0)
+      mime-types (>= 1.16, < 4.0)
+      netrc (~> 0.8)
+    sensu-plugin (2.7.1)
+      json (< 3.0.0)
+      mixlib-cli (~> 1.5)
+    sensu-plugins-kubernetes (4.0.0)
+      activesupport (< 5.0.0)
+      kubeclient (~> 2.3)
+      sensu-plugin (~> 2.7)
+    thread_safe (0.3.6)
+    tzinfo (1.2.6)
+      thread_safe (~> 0.1)
+    unf (0.1.4)
+      unf_ext
+    unf_ext (0.0.7.6)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  sensu-plugins-kubernetes
+
+BUNDLED WITH
+   1.17.3
