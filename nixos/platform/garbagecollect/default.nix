@@ -45,7 +45,7 @@ let
         print('Running nix-collect-garbage')
         rc = subprocess.run([
                 "ionice", "-c3", "nix-collect-garbage",
-                "--delete-older-than", "3d", "--max-freed", "250M"],
+                "--delete-older-than", "3d", "--max-freed", "100M"],
             check=True, stdin=subprocess.DEVNULL).returncode
         print('nix-collect-garbage status:', rc)
         open('${log}', 'w').write(str(datetime.datetime.now()) + '\n')
