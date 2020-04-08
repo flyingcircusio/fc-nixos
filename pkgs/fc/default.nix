@@ -13,5 +13,5 @@
   multiping = callPackage ./multiping.nix { };
   sensusyntax = callPackage ./sensusyntax { };
   sensuplugins = callPackage ./sensuplugins {};
-  userscan = pkgs-19_09.callPackage ./userscan.nix { };
+  userscan = callPackage ./userscan.nix { rustPlatform = pkgs-19_09.rustPlatform; };
 }

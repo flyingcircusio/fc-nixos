@@ -11,6 +11,5 @@ rustPlatform.buildRustPackage rec {
   meta = with stdenv.lib; {
     description = "Sensu client config self-check";
     license = with licenses; [ bsd3 ];
-    platforms = platforms.all;
   };
 }

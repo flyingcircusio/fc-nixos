@@ -22,6 +22,5 @@ buildRustPackage rec {
     '';
     homepage = "https://flyingcircus.io";
     license = with licenses; [ bsd3 ];
-    platforms = platforms.all;
   };
 }
