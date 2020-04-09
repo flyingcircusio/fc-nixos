@@ -11,6 +11,5 @@ buildRustPackage rec {
   meta = with stdenv.lib; {
     description = "Derive a correct regular expression for logcheck ignore patterns";
     license = with licenses; [ bsd3 ];
-    platforms = platforms.all;
   };
 }

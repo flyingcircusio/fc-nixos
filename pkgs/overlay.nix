@@ -6,13 +6,20 @@ let
   pkgs-19_09 = import versions.nixos-19_09 {};
 
 in {
+  # keep in sync with nixos/platform/garbagecollect/default.nix
+  nixpkgs-19_09-src = versions.nixos-19_09;
 
-  inherit (pkgs-19_09) kubernetes;
   #
   # == our own stuff
   #
-  fc = (import ./default.nix { pkgs = self; inherit pkgs-19_09; });
+  fc = (import ./default.nix {
+    pkgs = self;
+    inherit pkgs-19_09;
+  });
 
+  #
+  # imports from other nixpkgs versions
+  #
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
@@ -34,6 +41,8 @@ in {
 
   influxdb = super.callPackage ./influxdb { };
   innotop = super.callPackage ./percona/innotop.nix { };
+
+  inherit (pkgs-19_09) kubernetes;
 
   mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };

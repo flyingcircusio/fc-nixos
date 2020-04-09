@@ -28,6 +28,5 @@ buildRustPackage rec {
       "output for matching lines.";
     homepage = https://github.com/flyingcircusio/check_journal;
     license = with licenses; [ bsd3 ];
-    platforms = platforms.all;
   };
 }
