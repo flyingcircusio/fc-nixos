@@ -24,8 +24,10 @@ in {
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
     });
-  docsplit = super.callPackage ./docsplit { };
 
+  cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-19_09) buildGoPackage; };
+
+  docsplit = super.callPackage ./docsplit { };
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
   linux_4_19 = super.linux_4_19.override {
