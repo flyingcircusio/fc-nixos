@@ -87,6 +87,8 @@ in {
         inputs = telegrafInputs;
       };
 
+      flyingcircus.roles.statshost-global.allowedMetricPrefixes = attrNames telegrafInputs;
+
       flyingcircus.services.sensu-client.checks = {
         telegraf_prometheus_output = {
           notification = "Telegraf prometheus output alive";

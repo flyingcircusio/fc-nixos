@@ -1,10 +1,10 @@
-import ./make-test.nix ({ pkgs, ... }:
+import ../make-test.nix ({ pkgs, ... }:
 {
   name = "statshost-master";
   machine =
     { config, ... }:
     {
-      imports = [ ../nixos ../nixos/roles ];
+      imports = [ ../../nixos ../../nixos/roles ];
       flyingcircus.roles.statshost-master.enable = true;
       flyingcircus.roles.statshost = {
         hostName = "myself";

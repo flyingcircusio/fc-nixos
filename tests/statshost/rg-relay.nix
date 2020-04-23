@@ -1,9 +1,9 @@
-import ./make-test.nix ({ pkgs, ... }:
+import ../make-test.nix ({ pkgs, ... }:
 {
   name = "rg-relay";
   nodes = {
     relay = {
-      imports = [ ../nixos ../nixos/roles ];
+      imports = [ ../../nixos ../../nixos/roles ];
       flyingcircus.roles.statshost-relay.enable = true;
       networking.nameservers = [ "127.0.0.53" ];
       services.resolved.enable = true;
@@ -16,12 +16,12 @@ import ./make-test.nix ({ pkgs, ... }:
     };
 
     statsSource = {
-      imports = [ ../nixos ];
+      imports = [ ../../nixos ../../nixos/roles ];
       networking.firewall.allowedTCPPorts = [ 9126 ];
     };
 
     statshost = {
-      imports = [ ../nixos ];
+      imports = [ ../../nixos ../../nixos/roles ];
       environment.systemPackages = [ pkgs.curl ];
     };
   };

@@ -138,9 +138,5 @@ in
       };
 
     })
-
-    {
-      flyingcircus.roles.statshost.globalAllowedMetrics = [ "haproxy" ];
-    }
   ];
 }

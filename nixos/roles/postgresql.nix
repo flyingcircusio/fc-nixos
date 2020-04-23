@@ -56,7 +56,6 @@ with builtins;
           target_label = "db";
         }
       ];
-      flyingcircus.roles.statshost.globalAllowedMetrics = [ "postgresql" ];
     }
   ];
 }

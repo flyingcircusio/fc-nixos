@@ -40,9 +40,9 @@ let
   checkMongoCmd = (pkgs.callPackage ./check.nix {}) + /bin/check_mongo;
 
 in {
-  options = 
+  options =
   let
-    mkRole = v: { 
+    mkRole = v: {
       enable = lib.mkEnableOption "Enable the Flying Circus MongoDB ${v} server role.";
     };
   in {
@@ -52,24 +52,24 @@ in {
     };
   };
 
-  config = 
-  let 
+  config =
+  let
     package =
       if roles.mongodb32.enable
       then pkgs.mongodb_3_2
       else if roles.mongodb34.enable
-      then pkgs.mongodb 
+      then pkgs.mongodb
       else null;
 
-  in lib.mkMerge [ 
+  in lib.mkMerge [
    (lib.mkIf (package != null) {
 
-      assertions = [ 
-        { 
+      assertions = [
+        {
           assertion = roles.mongodb32.enable != roles.mongodb34.enable;
           message = "MongoDB roles are mutually exclusive. Only one may be enabled.";
         }
-      ]; 
+      ];
 
       environment.systemPackages = [
         pkgs.mongodb-tools
@@ -109,13 +109,13 @@ in {
           install -d -o mongodb /{srv,var/log}/mongodb
         '';
 
-      };      
+      };
 
       flyingcircus.localConfigDirs.mongodb = {
         dir = "/etc/local/mongodb";
-        user = "mongodb"; 
+        user = "mongodb";
       };
-      
+
       security.sudo.extraRules = [
         # Service users may switch to the mongodb system user
         {
@@ -171,9 +171,5 @@ in {
 
       };
     })
-
-    {
-      flyingcircus.roles.statshost.globalAllowedMetrics = [ "mongodb" ];
-    }
   ];
 }

@@ -52,8 +52,9 @@ in {
   rabbitmq36_5 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_5"; };
   rabbitmq37 = callTest ./rabbitmq.nix { rolename = "rabbitmq37"; };
   redis = callTest ./redis.nix {};
-  rg-relay = callTest ./rg-relay.nix {};
-  statshost-master = callTest ./statshost-master.nix {};
+  rg-relay = callTest ./statshost/rg-relay.nix {};
+  statshost-global = callTest ./statshost/statshost-global.nix {};
+  statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
   syslog = callSubTests ./syslog.nix {};
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
