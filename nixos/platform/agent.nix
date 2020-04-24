@@ -74,9 +74,13 @@ in {
         };
 
         path = with pkgs; [
-          fc.agent
-          utillinux
+          bzip2
           config.system.build.nixos-rebuild
+          fc.agent
+          gnutar
+          gzip
+          utillinux
+          xz
         ];
 
         environment = config.nix.envVars // {
