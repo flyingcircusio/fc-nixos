@@ -25,6 +25,7 @@ in {
       meta.priority = 10;
     });
 
+  certmgr = super.callPackage ./certmgr.nix { inherit (pkgs-19_09) buildGoPackage; };
   cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-19_09) buildGoPackage; };
 
   docsplit = super.callPackage ./docsplit { };
