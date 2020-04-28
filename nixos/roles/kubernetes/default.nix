@@ -20,7 +20,8 @@ let
         '';
       };
 
-  kubernetesModules = [
+  # Pull in kubernetes modules from NixOS 19.09.
+  kubernetesModulesFrom1909 = [
     "services/cluster/kubernetes/addons/dns.nix"
     "services/cluster/kubernetes/addons/dashboard.nix"
     "services/cluster/kubernetes/addon-manager.nix"
@@ -29,26 +30,31 @@ let
     "services/cluster/kubernetes/default.nix"
     "services/cluster/kubernetes/flannel.nix"
     "services/cluster/kubernetes/kubelet.nix"
-    "services/cluster/kubernetes/pki.nix"
     "services/cluster/kubernetes/proxy.nix"
     "services/cluster/kubernetes/scheduler.nix"
     "services/networking/flannel.nix"
-    "services/security/certmgr.nix"
-    "services/security/cfssl.nix"
     "services/misc/etcd.nix"
+    "services/security/cfssl.nix"
+  ];
+
+  kubernetesModulesFromHere = [
+    "services/security/certmgr.nix"
+    "services/cluster/kubernetes/pki.nix"
   ];
 
   nixpkgs-19_09-src = (import ../../../versions.nix {}).nixos-19_09;
 
 in {
 
-  disabledModules = kubernetesModules;
+  disabledModules = kubernetesModulesFrom1909 ++ kubernetesModulesFromHere;
 
   imports = [
     ./frontend.nix
     ./master.nix
+    ./certmgr.nix
+    ./pki.nix
     ./node.nix
-  ] ++ map (m: "${nixpkgs-19_09-src}/nixos/modules/${m}") kubernetesModules;
+  ] ++ map (m: "${nixpkgs-19_09-src}/nixos/modules/${m}") kubernetesModulesFrom1909;
 
   options = with lib; {
     flyingcircus.kubernetes.lib = mkOption {
