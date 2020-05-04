@@ -6,7 +6,7 @@ let
 
 in lib.mkMerge [
   (lib.mkIf (role.enable && role.webmailHost != null) {
-    services.postgresql.enable = lib.mkForce true;
+    services.postgresql.enable = true;
 
     security.wrappers = {
       roundcube-chpasswd = {

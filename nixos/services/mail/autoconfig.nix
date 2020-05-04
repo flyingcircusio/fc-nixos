@@ -7,7 +7,7 @@ pkgs.writeTextFile {
   name = "mozilla-mail-config-v1.1.xml";
   text = ''
     <clientConfig version="1.1">
-      <emailProvider id="kauhaus.de">
+      <emailProvider id="${mailHost}">
         <domain>${domain}</domain>
         <displayName>${domain}</displayName>
         <displayShortName>${head (lib.splitString "." domain)}</displayShortName>

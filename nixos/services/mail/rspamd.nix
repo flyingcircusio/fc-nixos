@@ -53,14 +53,6 @@ in
         enabled = true;
       '';
 
-      "rbl.conf".text = ''
-        rbls {
-          # abusech {
-          #   disabled = true;
-          # }
-        }
-      '';
-
       "redis.conf".text = ''
         server = "127.0.0.1";
         db = ${toString role.redisDatabase};
@@ -84,7 +76,7 @@ in
         enabled = true;
       '';
 
-      # XXX generate passwd
+      # controller web UI not reachable from the outside
       "worker-controller.inc".text = ''
         password = "";
         enable_password = "";

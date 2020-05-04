@@ -11,7 +11,6 @@ let
   listenFe4 = filter fclib.isIp4 listenFe;
   listenFe6 = filter fclib.isIp6 listenFe;
 
-  # default domain should be changed to to fcio.net once #14970 is finished
   defaultFQDN =
     if (params ? location &&
         lib.hasAttrByPath [ "interfaces" "fe" ] params &&
@@ -28,11 +27,8 @@ in
   options = {
 
     flyingcircus.roles.mailserver = with lib; {
-      # The mailserver role was/is thought to implement an entire mailserver,
-      # and would be billed as component.
-
       enable = mkEnableOption ''
-        Flying Circus mailserver role with web UI.
+        Flying Circus mailserver role with web mail.
         Mailout on all nodes in this RG/location.
       '';
 
@@ -81,14 +77,18 @@ in
 
       smtpBind4 = mkOption {
         type = types.str;
-        description = "IPv4 address for outgoing connections";
+        description = ''
+          IPv4 address for outgoing connections. Must match forward/reverse DNS.
+        '';
         default =
           if listenFe4 != [] then lib.head listenFe4 else "";
       };
 
       smtpBind6 = mkOption {
         type = types.str;
-        description = "IPv6 address for outgoing connections";
+        description = ''
+          IPv6 address for outgoing connections. Must match forward/reverse DNS.
+        '';
         default =
           if listenFe6 != [] then lib.head listenFe6 else "";
       };
@@ -104,7 +104,7 @@ in
   config = lib.mkIf role.enable {
     flyingcircus.services.mail.enable = true;
     flyingcircus.services.nginx.enable = true;
-    flyingcircus.services.redis.enable = lib.mkForce true;
+    flyingcircus.services.redis.enable = true;
   };
 
   # see nixos/services/mail/ for further config

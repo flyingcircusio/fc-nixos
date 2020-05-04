@@ -106,6 +106,8 @@ in {
         };
       };
 
+      # SNM specific configuration, see
+      # https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/blob/master/default.nix
       mailserver = {
         enable = true;
         inherit (role) domains;
