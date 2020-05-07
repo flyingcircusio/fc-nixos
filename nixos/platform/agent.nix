@@ -106,7 +106,7 @@ in {
         "f /etc/nixos/local.nix 644"
         "d /var/lib/fc-manage"
         "r /var/lib/fc-manage/stamp-channel-update"
-        "d /var/spool/maintenance/archive - - - 90d"
+        "d /var/spool/maintenance/archive - - - 180d"
       ];
 
       flyingcircus.passwordlessSudoRules = [
