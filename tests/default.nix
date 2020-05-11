@@ -35,6 +35,7 @@ in {
   mongodb32 = callTest ./mongodb.nix { rolename = "mongodb32"; };
   mongodb34 = callTest ./mongodb.nix { rolename = "mongodb34"; };
   network = callSubTests ./network {};
+  mail = callSubTests ./mail {};
   mysql55 = callTest ./mysql.nix { rolename = "mysql55"; };
   mysql56 = callTest ./mysql.nix { rolename = "mysql56"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };

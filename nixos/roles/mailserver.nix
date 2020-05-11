@@ -5,75 +5,107 @@ with builtins;
 let
   params = lib.attrByPath [ "parameters" ] {} config.flyingcircus.enc;
   fclib = config.fclib;
-  roles = config.flyingcircus.roles;
+  role = config.flyingcircus.roles.mailserver;
 
   listenFe = fclib.listenAddresses "ethfe";
+  listenFe4 = filter fclib.isIp4 listenFe;
+  listenFe6 = filter fclib.isIp6 listenFe;
 
-  # default domain should be changed to to fcio.net once #14970 is finished
-  defaultHostname =
+  defaultFQDN =
     if (params ? location &&
         lib.hasAttrByPath [ "interfaces" "fe" ] params &&
         (length listenFe > 0))
-    then "${config.networking.hostName}.fe.${params.location}.gocept.net"
-    else "${config.networking.hostName}.gocept.net";
+    then "${config.networking.hostName}.fe.${params.location}.fcio.net"
+    else "${config.networking.hostName}.fcio.net";
 
 in
 {
+  imports = [
+    ../services/mail
+  ];
+
   options = {
 
     flyingcircus.roles.mailserver = with lib; {
-      # The mailserver role was/is thought to implement an entire mailserver,
-      # and would be billed as component.
-
       enable = mkEnableOption ''
-        Enable the Flying Circus mailserver out role and configure
-        mailout on all nodes in this RG/location.
+        Flying Circus mailserver role with web mail.
+        Mailout on all nodes in this RG/location.
       '';
 
-      hostname = mkOption {
+      domains = mkOption {
+        type = types.listOf types.str;
+        example = [ "example.com" ];
+        default = [];
+        description = ''
+          List of virtual domains that this mail server serves. The first value
+          is the canonical domain used to construct internal addresses in
+          various places.
+        '';
+      };
+
+      mailHost = mkOption {
         type = types.str;
-        default = fclib.configFromFile
-          /etc/local/postfix/myhostname defaultHostname;
+        default = defaultFQDN;
         description = ''
-          Set the FQDN the mail server announces in its SMTP dialogues. Must
-          match forward and reverse DNS.
+          FQDN of the mail server's frontend address. IP adresses and
+          forward/reverse DNS must match exactly.
         '';
-        example = "mail.project.example.com";
+        example = "mail.example.com";
       };
 
-      smtpBindAddresses = mkOption {
-        type = with types; listOf str;
-        default = listenFe;
-        description = ''
-          List of IP addresses for outgoing SMTP connections. If there is more
-          than one address for any address family, only the first one will be
-          used.
-        '';
+      webmailHost = mkOption {
+        type = with types; nullOr str;
+        description = "(Virtual) host name of the webmail service.";
+        example = "webmail.example.com";
+        default = null;
       };
-    };
 
-    flyingcircus.roles.mailout = {
-      # Mailout is considered to be included in the webgateway, but only
-      # sometimes required. So it's a separate role, which is not a billable
-      # component.
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
+      redisDatabase = mkOption {
+        type = types.int;
         description = ''
-          Enable the Flying Circus mailserver out role and configure
-          mailout on all nodes in this RG/location.
+          Redis DB id to store spam-related data. Should be set to an unique
+          number (machine-local )to avoid conflicts.
         '';
+        default = 5;
+      };
+
+      rootAlias = mkOption {
+        type = types.str;
+        description = "Address to receive all mail to root@localhost.";
+        default = "admin@flyingcircus.io";
+      };
+
+      smtpBind4 = mkOption {
+        type = types.str;
+        description = ''
+          IPv4 address for outgoing connections. Must match forward/reverse DNS.
+        '';
+        default =
+          if listenFe4 != [] then lib.head listenFe4 else "";
+      };
+
+      smtpBind6 = mkOption {
+        type = types.str;
+        description = ''
+          IPv6 address for outgoing connections. Must match forward/reverse DNS.
+        '';
+        default =
+          if listenFe6 != [] then lib.head listenFe6 else "";
+      };
+
+      passwdFile = mkOption {
+        type = types.str;
+        description = "Virtual mail user passwd file (shared Postfix/Dovecot)";
+        default = "/var/lib/dovecot/passwd";
       };
     };
   };
 
-  # `mailserver` will grow into a full-featured mail solution some day while
-  # `mailout` configures SMTP sending serivces for its RG.
-  config = {
-    flyingcircus.services.postfix.enable =
-      (roles.mailserver.enable || roles.mailout.enable);
-
-    flyingcircus.services.ssmtp.enable =
-      !(roles.mailserver.enable || roles.mailout.enable);
+  config = lib.mkIf role.enable {
+    flyingcircus.services.mail.enable = true;
+    flyingcircus.services.nginx.enable = true;
+    flyingcircus.services.redis.enable = true;
   };
+
+  # see nixos/services/mail/ for further config
 }

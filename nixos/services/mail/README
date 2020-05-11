@@ -1,0 +1,71 @@
+Mail server role
+================
+
+Settings in /etc/local/nixos/mailserver.nix
+-------------------------------------------
+
+The following options need to be set in via NixOS. The prefix for all
+options is `flyingcircus.roles.mailserver`:
+
+- domains: List of domains which form the domain part of mail addresses serviced
+    by this mail server. Each domain needs a MX record pointing to mailHost.
+
+- mailHost: Public FQDN of the mail server itself. Must match forward and
+    reverse DNS (A/AAAA/PTR) of the frontend interface's IP addresses.
+
+- smtpBind4, smtpBind6: Optional IP addresses to bind on the FE interface in
+    case the FE interface has several of these.
+
+- webmailHost: Optional host name for the web mail interfaces powered by
+    Roundcube.
+
+
+Configuration files in /etc/local/mail
+--------------------------------------
+
+- users.json: All local mail accounts. The most important keys:
+    - name: E-mail address. Domain part must match of the domains configured in
+        /etc/nixos/local.nix. Mandatory.
+    - hashedPassword: SHA-256 hash of the login password (SMTP/IMAP). If set to
+        an empty string, the password is read during runtime from the password
+        file (see below). Mandatory.
+    - aliases: List of additional e-mail addresses for this account. Domain part
+        must match one of the configured domains as in 'name'. Optional.
+    - catchAll: List of domains for which all mails are collected into this user
+        account. Optional.
+    - quota: Maximum mail data stored on the IMAP server. Must be a number endng
+        with "M" or "G". Optional.
+    - sieveScript: Fixed sieve configuration for that user. Alternatively, users
+        may set their own sieve scripts via Roundcube's web UI.
+
+    Refer to `loginAccounts` in
+    https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/blob/master/default.nix
+    for a full description of options.
+
+- dns.zone: DNS settings to be copied into the relevant zone files. The DKIM key
+    is already the correct one. Users with advanced feedback loop requirements
+    may configure more elaborate DMARC policies. DMARC report handling
+    infrastructure is currently left to the user.
+
+- local_valiases.json: Additional virtual aliases. Equivalent to setting
+    `aliases` entries in `users.json`. Target domains must be configured
+    locally.
+
+- remote_valiases.map: Arbitrary virtual aliases in postmap format. No
+    restrictions apply to targets. See
+    http://www.postfix.org/VIRTUAL_README.html for details.
+
+- main.cf: Additional configuration statements to be appended to
+    /etc/postfix/main.cf. See postconf(5) for a full list of options.
+
+
+Password file
+-------------
+
+The mail server role allows users to set their own password if the Roundcube web
+UI is enabled (set webmailHost). To make this happen, passwords must not be
+statically set in users.json but dynamically in `/var/lib/dovecot/passwd`.
+
+To set an initial password, run:
+
+    echo "USER@DOMAIN:$(mkpasswd -m SHA-256 PASSWORD)" >> /var/lib/dovecot/passwd

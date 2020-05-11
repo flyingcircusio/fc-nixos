@@ -5,13 +5,13 @@
 
   agent = callPackage ./agent {};
   box = callPackage ./box { };
-  check-haproxy = callPackage ./check-haproxy { };
-  check-journal = callPackage ./check-journal.nix { };
+  check-journal = callPackage ./check-journal.nix {};
   collectdproxy = callPackage ./collectdproxy {};
+  roundcube-chpasswd = pkgs-19_09.callPackage ./roundcube-chpasswd {};
   fix-so-rpath = callPackage ./fix-so-rpath {};
   logcheckhelper = callPackage ./logcheckhelper { };
-  multiping = callPackage ./multiping.nix { };
-  sensusyntax = callPackage ./sensusyntax { };
+  multiping = callPackage ./multiping.nix {};
   sensuplugins = callPackage ./sensuplugins {};
-  userscan = callPackage ./userscan.nix { rustPlatform = pkgs-19_09.rustPlatform; };
+  sensusyntax = callPackage ./sensusyntax {};
+  userscan = pkgs-19_09.callPackage ./userscan.nix {};
 }
