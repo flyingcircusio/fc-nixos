@@ -30,7 +30,7 @@ in {
   kubernetes = callTest ./kubernetes {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
-  mail = callSubTests ./mail {};
+  mail = callTest ./mail {};
   memcached = callTest ./memcached.nix {};
   mongodb32 = callTest ./mongodb.nix { rolename = "mongodb32"; };
   mongodb34 = callTest ./mongodb.nix { rolename = "mongodb34"; };
