@@ -6,6 +6,7 @@
   agent = callPackage ./agent {};
   box = callPackage ./box { };
   check-journal = callPackage ./check-journal.nix {};
+  check-haproxy = callPackage ./check-haproxy {};
   collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = pkgs-19_09.callPackage ./roundcube-chpasswd {};
   fix-so-rpath = callPackage ./fix-so-rpath {};
