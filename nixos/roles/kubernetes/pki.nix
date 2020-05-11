@@ -171,7 +171,7 @@ in
     systemd.services.kube-certmgr-bootstrap = {
       description = "Kubernetes certmgr bootstrapper";
       wantedBy = [ "certmgr.service" ];
-      after = [ "cfssl.target" ];
+      after = [ "cfssl.target" "network.target" ];
       script = concatStringsSep "\n" [''
         set -e
 

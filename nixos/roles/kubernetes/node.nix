@@ -40,6 +40,7 @@ in
       systemd.services = lib.mapAttrs'
         mkUnitWaitForCerts
         {
+          "flannel" = [ "flannel-client" ];
           "kube-proxy" = [ "kube-proxy-client" ];
 
           "kubelet" = [
