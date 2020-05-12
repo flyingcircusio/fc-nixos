@@ -17,6 +17,7 @@ in {
     ./kibana.nix
     ./kubernetes
     ./loghost.nix
+    ./mailout.nix
     ./mailserver.nix
     ./memcached.nix
     ./mongodb
