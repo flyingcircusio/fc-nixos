@@ -270,9 +270,5 @@ in
     };
   })
 
-  {
-    flyingcircus.roles.statshost.globalAllowedMetrics = [ "elasticsearch" ];
-  }
-
   ];
 }

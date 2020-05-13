@@ -1,53 +1,60 @@
 # Relay stats of a location via NGINX.
-# TODO: Write a test.
-# TODO: HTTPS!
-# TODO: Rename, the role name should say that it's acting as a location proxy.
 
 { config, lib, pkgs, ... }:
 with lib;
 let
   fclib = config.fclib;
   statshostServiceIPs = fclib.listServiceIPs "statshost-collector";
-  port = 9090;
+  feFQDN = "${config.networking.hostName}.fe.${location}.${domain}";
+  httpPort = 9090;
+  httpsPort = 9443;
 in
 {
   config = mkIf (
-      config.flyingcircus.roles.statshostproxy.enable &&
+      config.flyingcircus.roles.statshost-location-proxy.enable &&
       statshostServiceIPs != []) {
 
-    assertions = [ 
-      { 
-        assertion = false;
-        message = ''
-          Role statshostproxy is untested and may break things.
-          Don't enable this multiple times in a location!
+    networking.firewall.extraCommands = let
+      rule = ip: port: ''
+        ${fclib.iptables ip} -A nixos-fw -i ethfe -s ${ip} -p tcp \
+          --dport ${toString port} -j nixos-fw-accept
+      '';
+     in "# statshost-collector\n" + concatStringsSep ""
+        (map (ip: (rule ip httpPort) + (rule ip httpsPort)) statshostServiceIPs);
+
+    services.nginx = {
+      enable = true;
+      recommendedGzipSettings = true;
+      recommendedOptimisation = true;
+      recommendedProxySettings = true;
+      recommendedTlsSettings = true;
+      virtualHosts."${config.networking.hostName}.${config.networking.domain}" = {
+        enableACME = true;
+        addSSL = true;
+        listen =
+          flatten
+            (map
+              (a: [{ addr = a; port = httpsPort; ssl = true; }
+                   { addr = a; port = httpPort; }])
+              (fclib.listenAddressesQuotedV6 "ethfe"));
+        locations = {
+          "/" = {
+            extraConfig = ''
+              resolver ${concatStringsSep " " config.networking.nameservers};
+            '';
+            proxyPass = "http://$http_host$request_uri$is_args$args";
+          };
+        };
+        extraConfig = ''
+          access_log /var/log/nginx/statshost-location-proxy_access.log;
+          error_log /var/log/nginx/statshost-location-proxy_error.log;
         '';
-      }
+      };
+    };
+
+    systemd.tmpfiles.rules = [
+      "d /var/log/nginx 0755 nginx"
     ];
-
-    networking.firewall.extraCommands =
-     "# statshost-collector\n" + concatStringsSep ""
-        (map
-          (ip: ''
-            ${fclib.iptables ip} -A nixos-fw -i ethfe -s ${ip} -p tcp \
-              --dport ${toString port} -j nixos-fw-accept
-          '')
-          statshostServiceIPs);
-
-    services.nginx.enable = true;
-    services.nginx.appendHttpConfig = ''
-      server {
-        ${fclib.nginxListenOn "ethfe" port}
-
-        access_log /var/log/nginx/statshostproxy_access.log;
-        error_log /var/log/nginx/statshostproxy_error.log;
-
-        location / {
-            resolver ${concatStringsSep " " config.networking.nameservers};
-            proxy_pass http://$http_host$request_uri$is_args$args;
-        }
-      }
-    '';
 
   };
 }

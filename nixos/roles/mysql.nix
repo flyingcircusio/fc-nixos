@@ -368,7 +368,6 @@ with builtins;
         target_label = "__name__";
       }
     ];
-    flyingcircus.roles.statshost.globalAllowedMetrics = [ "mysql" ];
   }
   ];
 }

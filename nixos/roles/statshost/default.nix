@@ -13,16 +13,17 @@ let
   localDir = "/etc/local/statshost";
 
   # For details, see the option description below
-  cfgStatsGlobal = config.flyingcircus.roles.statshost;
+  cfgStats = config.flyingcircus.roles.statshost;
+  cfgStatsGlobal = config.flyingcircus.roles.statshost-global;
   cfgStatsRG = config.flyingcircus.roles.statshost-master;
-  cfgProxyGlobal = config.flyingcircus.roles.statshostproxy;
+  cfgProxyLocation = config.flyingcircus.roles.statshost-location-proxy;
   cfgProxyRG = config.flyingcircus.roles.statshost-relay;
 
-  retentionHours = cfgStatsGlobal.prometheusRetention * 3600;
+  retentionHours = cfgStats.prometheusRetention * 3600;
   promFlags = [
     "--storage.tsdb.retention ${toString retentionHours}h"
   ];
-  prometheusListenAddress = cfgStatsGlobal.prometheusListenAddress;
+  prometheusListenAddress = cfgStats.prometheusListenAddress;
 
   # It's common to have stathost and loghost on the same node. Each should
   # use half of the memory then. A general approach for this kind of
@@ -46,7 +47,7 @@ let
     else [];
 
   prometheusMetricRelabel =
-    cfgStatsGlobal.prometheusMetricRelabel ++ customRelabelConfig;
+    cfgStats.prometheusMetricRelabel ++ customRelabelConfig;
 
   relayRGNodes =
     fclib.jsonFromFile "${localDir}/relays.json" "[]";
@@ -60,7 +61,10 @@ let
     # We need the FE address, which is not published by directory. I'd think
     # "interface" should become an attribute in the services table.
     let
-      makeFE = s: "${removeSuffix ".gocept.net" s.address}.fe.${s.location}.gocept.net";
+      makeFE = s:
+        let
+          proxyHostname = removeSuffix ".fcio.net" (removeSuffix ".gocept.net" s.address);
+        in "${proxyHostname}.fe.${s.location}.fcio.net";
     in map
       (service: service // { address = makeFE service; })
       (filter
@@ -127,7 +131,7 @@ in
 {
 
   imports = [
-    ./global-relabel.nix
+    ./global-metrics.nix
     ./location-proxy.nix
     ./relabel.nix
     ./rg-relay.nix
@@ -135,10 +139,9 @@ in
 
   options = {
 
-    # FC infrastructure global stats host
-    flyingcircus.roles.statshost = {
 
-      enable = mkEnableOption "Grafana/InfluxDB stats host (global)";
+    # Options that are used by RG and the global statshost.
+    flyingcircus.roles.statshost = {
 
       hostName = mkOption {
         type = types.str;
@@ -182,21 +185,27 @@ in
         description = "How long to keep data (influx duration)";
       };
 
-      globalAllowedMetrics = mkOption {
+    };
+
+    # FC infrastructure global stats host
+    flyingcircus.roles.statshost-global = {
+
+      enable = mkEnableOption "Grafana/InfluxDB stats host (global)";
+
+      allowedMetricPrefixes = mkOption {
         type = types.listOf types.str;
         default = [];
         description = ''
           List of globally allowed metric prefixes. Metrics not matching the
-          prefix will be droped on the *central* prometheus. This is useful
+          prefix will be dropped on the *central* prometheus. This is useful
           to avoid indexing customer metrics, which have no meaning for us
           anyway.
         '';
       };
 
     };
-
     # Relays stats from an entire location to the global stats host.
-    flyingcircus.roles.statshostproxy = {
+    flyingcircus.roles.statshost-location-proxy = {
       enable = mkEnableOption "Stats proxy, which relays an entire location";
     };
 
@@ -268,7 +277,7 @@ in
 
       flyingcircus.services.collectdproxy.statshost = {
         enable = true;
-        sendTo = "${cfgStatsGlobal.hostName}:2003";
+        sendTo = "${cfgStats.hostName}:2003";
       };
 
       # Global prometheus configuration
@@ -422,19 +431,6 @@ in
 
       environment.systemPackages = [ pkgs.influxdb ];
 
-      flyingcircus.roles.statshost.globalAllowedMetrics =
-        [ "influxdb" ] ++
-        (attrNames config.flyingcircus.services.telegraf.inputs);
-
-      flyingcircus.roles.statshost.prometheusMetricRelabel = let
-        removeLabel = label: {
-          source_labels = [ "__name__" label ];
-          regex = "influxdb_(tsm1|shard)_.*;.+";
-          replacement = "";
-          target_label = label;
-        };
-        in map removeLabel [ "path" "walPath" "id" "url" ];
-
       services.influxdb = {
         enable = true;
         dataDir = "/srv/influxdb";
@@ -471,7 +467,7 @@ in
               CREATE DATABASE downsampled;
               CREATE RETENTION POLICY "5m"
                 ON downsampled
-                DURATION ${cfgStatsGlobal.influxdbRetention}
+                DURATION ${cfgStats.influxdbRetention}
                 REPLICATION 1 DEFAULT;
 
               CREATE CONTINUOUS QUERY PROM_5M
@@ -513,15 +509,15 @@ in
         allowedUDPPorts = [ 2003 ];
       };
 
-      security.acme.certs = mkIf cfgStatsGlobal.useSSL {
-        ${cfgStatsGlobal.hostName}.email = mkDefault "admin@flyingcircus.io";
+      security.acme.certs = mkIf cfgStats.useSSL {
+        ${cfgStats.hostName}.email = mkDefault "admin@flyingcircus.io";
       };
 
       services.grafana = {
         enable = true;
         port = 3001;
         addr = "127.0.0.1";
-        rootUrl = "http://${cfgStatsGlobal.hostName}/grafana";
+        rootUrl = "http://${cfgStats.hostName}/grafana";
         extraOptions = {
           AUTH_LDAP_ENABLED = "true";
           AUTH_LDAP_CONFIG_FILE = toString grafanaLdapConfig;
@@ -536,9 +532,9 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
-        virtualHosts.${cfgStatsGlobal.hostName} = {
-          enableACME = cfgStatsGlobal.useSSL;
-          forceSSL = cfgStatsGlobal.useSSL;
+        virtualHosts.${cfgStats.hostName} = {
+          enableACME = cfgStats.useSSL;
+          forceSSL = cfgStats.useSSL;
           locations = {
             "/".extraConfig = ''
               rewrite ^/$ /grafana/ redirect;
@@ -610,7 +606,7 @@ in
             git pull
           else
             rm -rf ${grafanaJsonDashboardPath}
-            git clone ${cfgStatsGlobal.dashboardsRepository} ${grafanaJsonDashboardPath}
+            git clone ${cfgStats.dashboardsRepository} ${grafanaJsonDashboardPath}
           fi
         '';
       };
@@ -627,13 +623,14 @@ in
     })
 
     # outgoing collectd proxy for this location
-    (mkIf (cfgProxyGlobal.enable && statshostService != null) {
+    (mkIf (cfgProxyLocation.enable && statshostService != null) {
       flyingcircus.services.collectdproxy.location = {
         enable = true;
-        statshost = cfgStatsGlobal.hostName;
-        listenAddr = config.networking.hostName;
+        statshost = cfgStats.hostName;
+        listenAddr = "::";
       };
-      networking.firewall.allowedUDPPorts = [ 2003 ];
+      networking.firewall.extraCommands =
+        "ip6tables -A nixos-fw -i ethsrv -p udp --dport 2003 -j nixos-fw-accept";
     })
   ];
 }

@@ -129,7 +129,6 @@ in
         target_label = "__name__";
       }
     ];
-    flyingcircus.roles.statshost.globalAllowedMetrics = [ "memcached" ];
   }
   ];
 }
