@@ -280,7 +280,6 @@ in
     })
 
     {
-
       flyingcircus.roles.statshost.prometheusMetricRelabel = [
         {
           source_labels = [ "__name__" ];
@@ -289,7 +288,6 @@ in
           target_label = "__name__";
         }
       ];
-      flyingcircus.roles.statshost.globalAllowedMetrics = [ "graylog" ];
     }
 
   ];

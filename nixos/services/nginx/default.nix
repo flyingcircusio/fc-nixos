@@ -312,9 +312,5 @@ in
       ];
 
     })
-
-    {
-      flyingcircus.roles.statshost.globalAllowedMetrics = [ "nginx" ];
-    }
   ];
 }

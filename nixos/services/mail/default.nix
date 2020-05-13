@@ -250,9 +250,5 @@ in {
             /var/lib/postfix/queue/{active,hold,incoming,deferred,maildrop}
         '';
     })
-
-    {
-      flyingcircus.roles.statshost.globalAllowedMetrics = [ "postfix_queue" ];
-    }
   ];
 }

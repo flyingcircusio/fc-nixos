@@ -186,7 +186,6 @@ with builtins;
     })
 
     {
-      flyingcircus.roles.statshost.globalAllowedMetrics = [ "rabbitmq" ];
       flyingcircus.roles.statshost.prometheusMetricRelabel = [
         {
           source_labels = [ "__name__" "idle_since" ];
