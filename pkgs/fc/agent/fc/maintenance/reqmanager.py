@@ -188,8 +188,6 @@ class ReqManager:
             LOG.error('failed to set "out of service" directory flag')
 
     def leave_maintenance(self):
-        if not self.in_maintenance:
-            return
         try:
             LOG.debug('marking node as "in service"')
             self.directory.mark_node_service_status(socket.gethostname(),
