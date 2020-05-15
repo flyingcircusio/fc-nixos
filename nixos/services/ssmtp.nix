@@ -8,16 +8,15 @@ let
 
   mailoutService =
     let services =
-      # Prefer mailout. This would allow splitting in and out automagically.
-      (fclib.listServiceAddresses "mailout-mailout" ++
-       fclib.listServiceAddresses "mailserver-mailout");
+      (fclib.listServiceAddresses "mailserver-mailout" ++
+       fclib.listServiceAddresses "mailstub-mailout" ++
+       fclib.listServiceAddresses "mailout-mailout");
     in
       if services == [] then null else head services;
 
-in
-{
+in {
   options.flyingcircus.services.ssmtp.enable = lib.mkEnableOption ''
-    Dumb mail relay to the next 'mailout' server
+    Simple mail relay to the next mail server
   '';
 
   config = lib.mkIf (config.flyingcircus.services.ssmtp.enable &&

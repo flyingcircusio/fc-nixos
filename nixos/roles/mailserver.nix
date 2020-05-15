@@ -5,7 +5,7 @@ with builtins;
 let
   params = lib.attrByPath [ "parameters" ] {} config.flyingcircus.enc;
   fclib = config.fclib;
-  role = config.flyingcircus.roles.mailserver;
+  roles = config.flyingcircus.roles;
 
   listenFe = fclib.listenAddresses "ethfe";
   listenFe4 = filter fclib.isIp4 listenFe;
@@ -99,13 +99,67 @@ in
         default = "/var/lib/dovecot/passwd";
       };
     };
+
+    flyingcircus.roles.mailstub = with lib; {
+      enable = mkEnableOption ''
+        Flying Circus mail stub role which creates a simple Postfix instance for
+        manual configuration.
+      '';
+
+      mailHost = mkOption {
+        type = types.str;
+        default = defaultFQDN;
+        description = ''
+          FQDN of the mail server's frontend address. IP adresses and
+          forward/reverse DNS must match exactly.
+        '';
+        example = "mail.example.com";
+      };
+
+      rootAlias = mkOption {
+        type = types.str;
+        description = "Address to receive all mail to root@localhost.";
+        default = "admin@flyingcircus.io";
+      };
+
+      smtpBind4 = mkOption {
+        type = types.str;
+        description = ''
+          IPv4 address for outgoing connections. Must match forward/reverse DNS.
+        '';
+        default =
+          if listenFe4 != [] then lib.head listenFe4 else "";
+      };
+
+      smtpBind6 = mkOption {
+        type = types.str;
+        description = ''
+          IPv6 address for outgoing connections. Must match forward/reverse DNS.
+        '';
+        default =
+          if listenFe6 != [] then lib.head listenFe6 else "";
+      };
+    };
   };
 
-  config = lib.mkIf role.enable {
-    flyingcircus.services.mail.enable = true;
-    flyingcircus.services.nginx.enable = true;
-    flyingcircus.services.redis.enable = true;
-  };
+  config = lib.mkMerge [
 
-  # see nixos/services/mail/ for further config
+    (lib.mkIf roles.mailserver.enable {
+      flyingcircus.services.mail.enable = assert !roles.mailstub.enable; true;
+      flyingcircus.services.nginx.enable = true;
+      flyingcircus.services.redis.enable = true;
+    })
+
+    (lib.mkIf roles.mailstub.enable {
+      flyingcircus.services.postfix.enable =
+        assert !roles.mailserver.enable; true;
+    })
+
+    (lib.mkIf (!roles.mailserver.enable && !roles.mailstub.enable) {
+      flyingcircus.services.ssmtp.enable = true;
+    })
+
+  ];
+
+  # For all mail related service definitions, see nixos/services/mail/*
 }

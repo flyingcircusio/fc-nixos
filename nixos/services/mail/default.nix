@@ -29,13 +29,15 @@ let
     concatStringsSep "\n" (
       (map (e: "${e.uid}: ${concatStringsSep ", " e.email_addresses}"))
       config.flyingcircus.users.userData);
+  checkMailq = "${pkgs.fc.check-postfix}/bin/check_mailq";
 
 in {
   imports = [
     # XXX conditional import?
     snm
-    ./rspamd.nix
     ./roundcube.nix
+    ./rspamd.nix
+    ./stub.nix
   ];
 
   options = {
@@ -84,8 +86,14 @@ in {
       };
 
       flyingcircus.services.sensu-client.checks =
-      let plug = "${pkgs.monitoring-plugins}/libexec";
+      let
+        plug = "${pkgs.monitoring-plugins}/libexec";
+        mailq = "${pkgs.postfix}/bin/mailq";
       in {
+        postfix_mailq = {
+          command = "sudo ${checkMailq} -w 200 -c 2000 --mailq ${mailq}";
+          notification = "Too many undelivered mails in Postfix mail queue";
+        };
         postfix_smtp = {
           notification = "Postfix listening on SMTP port 25";
           command = "${plug}/check_smtp -H ${role.mailHost} -S -F ${fqdn} " +
@@ -105,6 +113,13 @@ in {
           command = "${plug}/check_imap -H ${role.mailHost} -p 993 -S -w 5 -c 30";
         };
       };
+
+      flyingcircus.passwordlessSudoRules = [
+        {
+          commands = [ checkMailq ];
+          groups = [ "sensuclient" ];
+        }
+      ];
 
       # SNM specific configuration, see
       # https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/blob/master/default.nix
@@ -240,15 +255,29 @@ in {
         queue_directory = "/var/lib/postfix/queue";
       }];
 
-      systemd.services.postfix.postStart =
-        let
-          setfacl = "${pkgs.acl}/bin/setfacl";
-        in ''
-          ${setfacl} -m u:telegraf:rX,m:rX \
-            /var/lib/postfix/queue/{active,hold,incoming,deferred,maildrop}
-          ${setfacl} -dm u:telegraf:rX,m:rX \
-            /var/lib/postfix/queue/{active,hold,incoming,deferred,maildrop}
+      # This is a hack. Postfix seems to create subdirs in its queue directories
+      # which always lack group and other access bits. So we set up our access
+      # policies on an ongoing basis.
+      systemd.services.postfix-queue-perms =
+      let
+        dirs = "/var/lib/postfix/queue/{active,hold,incoming,deferred,maildrop}";
+      in rec {
+        after = [ "postfix.service" ];
+        requires = after;
+        path = with pkgs; [ acl inotify-tools ];
+        script = ''
+          while true; do
+            inotifywait -r -e create /var/lib/postfix/queue
+            setfacl -Rm u:telegraf:rX ${dirs}
+            setfacl -Rdm u:telegraf:rX ${dirs}
+            sleep 1
+          done
         '';
+        serviceConfig = {
+          RestartSec = 5;
+          Restart = "always";
+        };
+      };
     })
   ];
 }

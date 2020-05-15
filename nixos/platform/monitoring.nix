@@ -37,6 +37,8 @@ let
     (params ? resource_group)
     { resource_group = params.resource_group; };
 
+  # New metrics added here must be also added to globalAllowedMetrics
+  # roles/statshost/global-metrics.nix if they should be ingested by the central statshost.
   telegrafInputs = {
     cpu = [{
       percpu = false;
@@ -86,8 +88,6 @@ in {
         };
         inputs = telegrafInputs;
       };
-
-      flyingcircus.roles.statshost-global.allowedMetricPrefixes = attrNames telegrafInputs;
 
       flyingcircus.services.sensu-client.checks = {
         telegraf_prometheus_output = {
