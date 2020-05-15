@@ -1,3 +1,4 @@
+# XXX deprecated - migrate to mailstub
 { config, lib, pkgs, ... }:
 
 with builtins;

@@ -144,20 +144,22 @@ in
 
   config = lib.mkMerge [
 
-    (lib.mkIf roles.mailserver.enable
-    {
+    (lib.mkIf roles.mailserver.enable {
       flyingcircus.services.mail.enable = assert !roles.mailstub.enable; true;
       flyingcircus.services.nginx.enable = true;
       flyingcircus.services.redis.enable = true;
     })
 
-    (lib.mkIf roles.mailstub.enable
-    {
+    (lib.mkIf roles.mailstub.enable {
       flyingcircus.services.postfix.enable =
         assert !roles.mailserver.enable; true;
     })
 
+    (lib.mkIf (!roles.mailserver.enable && !roles.mailstub.enable) {
+      flyingcircus.services.ssmtp.enable = true;
+    })
+
   ];
 
-  # All service definitions reside in nixos/services/mail
+  # For all mail related service definitions, see nixos/services/mail/*
 }

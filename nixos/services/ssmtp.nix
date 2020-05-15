@@ -5,7 +5,6 @@ with builtins;
 let
   fclib = config.fclib;
   net = config.networking;
-  roles = config.flyingcircus.roles;
 
   mailoutService =
     let services =
@@ -15,21 +14,10 @@ let
     in
       if services == [] then null else head services;
 
-in
-{
-  options.flyingcircus.services.ssmtp.enable = lib.mkOption {
-    description = ''
-      Dumb mail relay to the next 'mailout' server
-    '';
-    type = lib.types.bool;
-    default = false;
-
-    #(
-    #  mailoutService != [] &&
-    #  !roles.mailserver.enable &&
-    #  !roles.mailstub.enable &&
-    #  !roles.mailout.enable);
-  };
+in {
+  options.flyingcircus.services.ssmtp.enable = lib.mkEnableOption ''
+    Simple mail relay to the next mail server
+  '';
 
   config = lib.mkIf (config.flyingcircus.services.ssmtp.enable &&
                      mailoutService != null) {
