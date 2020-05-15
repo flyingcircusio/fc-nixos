@@ -5,8 +5,9 @@
 
   agent = callPackage ./agent {};
   box = callPackage ./box { };
-  check-journal = callPackage ./check-journal.nix {};
   check-haproxy = callPackage ./check-haproxy {};
+  check-journal = callPackage ./check-journal.nix {};
+  check-postfix = pkgs-19_09.callPackage ./check-postfix {};
   collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = pkgs-19_09.callPackage ./roundcube-chpasswd {};
   fix-so-rpath = callPackage ./fix-so-rpath {};
