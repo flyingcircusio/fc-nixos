@@ -140,10 +140,6 @@ in {
 
       default = [];
     };
-
-    flyingcircus.roles.generic.enable =
-      mkEnableOption "Generic role, which does nothing";
-
   };
 
   config = {

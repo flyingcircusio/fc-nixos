@@ -1,10 +1,11 @@
+{ lib, ... }:
 {
   disabledModules = [
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
   ];
 
-  imports = [
+  imports = with lib; [
     ./box/client.nix
     ./collectdproxy.nix
     ./graylog.nix
@@ -21,5 +22,7 @@
     ./ssmtp.nix
     ./syslog.nix
     ./telegraf.nix
+
+    (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")
   ];
 }

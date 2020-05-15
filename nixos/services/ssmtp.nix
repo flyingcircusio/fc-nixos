@@ -22,11 +22,13 @@ in
       Dumb mail relay to the next 'mailout' server
     '';
     type = lib.types.bool;
-    default = (
-      mailoutService != [] &&
-      !roles.mailserver.enable &&
-      !roles.mailstub.enable &&
-      !roles.mailout.enable);
+    default = false;
+
+    #(
+    #  mailoutService != [] &&
+    #  !roles.mailserver.enable &&
+    #  !roles.mailstub.enable &&
+    #  !roles.mailout.enable);
   };
 
   config = lib.mkIf (config.flyingcircus.services.ssmtp.enable &&

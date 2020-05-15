@@ -8,7 +8,7 @@ let
       config.flyingcircus.active-roles);
 
 in {
-  imports = [
+  imports = with lib; [
     ./docker.nix
     ./external_net
     ./antivirus.nix
@@ -31,7 +31,21 @@ in {
     ./webdata_blackbee.nix
     ./webgateway.nix
     ./webproxy.nix
+
+    (mkRemovedOptionModule [ "flyingcircus" "roles" "mysql" "rootPassword" ] "Change the root password via MySQL and modify secret files")
+    (mkRenamedOptionModule [ "flyingcircus" "roles" "redis4" ] [ "flyingcircus" "roles" "redis" ])
+    (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "enable" ] [ "flyingcircus" "roles" "statshost-global" "enable" ])
+    (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "globalAllowedMetrics" ] [ "flyingcircus" "roles" "statshost-global" "allowedMetricPrefixes" ])
+    (mkRenamedOptionModule [ "flyingcircus" "roles" "statshostproxy" ] [ "flyingcircus" "roles" "statshost-location-proxy" ])
   ];
 
-  flyingcircus.roles = roleSet;
+  options = {
+    flyingcircus.roles.generic.enable =
+      lib.mkEnableOption "Generic role, which does nothing";
+  };
+
+  config = {
+    flyingcircus.roles = roleSet;
+  };
+
 }
