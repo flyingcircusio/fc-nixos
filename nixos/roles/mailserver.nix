@@ -93,6 +93,16 @@ in
           if listenFe6 != [] then lib.head listenFe6 else "";
       };
 
+      explicitSmtpBind = mkOption {
+        type = types.bool;
+        description = ''
+          Whether to include smtp_bind_address* statements explicitely in
+          main.cf or not. Set to false in case mail must be relayed both to the
+          public Internet and to other nodes inside the RG via srv.
+        '';
+        default = (length listenFe4 > 1) || (length listenFe6 > 1);
+      };
+
       passwdFile = mkOption {
         type = types.str;
         description = "Virtual mail user passwd file (shared Postfix/Dovecot)";
@@ -125,7 +135,8 @@ in
       smtpBind4 = mkOption {
         type = types.str;
         description = ''
-          IPv4 address for outgoing connections. Must match forward/reverse DNS.
+          Select IPv4 FE address for outgoing connections. Must match
+          forward/reverse DNS.
         '';
         default =
           if listenFe4 != [] then lib.head listenFe4 else "";
@@ -134,10 +145,21 @@ in
       smtpBind6 = mkOption {
         type = types.str;
         description = ''
-          IPv6 address for outgoing connections. Must match forward/reverse DNS.
+          Select IPv6 FE address for outgoing connections. Must match
+          forward/reverse DNS.
         '';
         default =
           if listenFe6 != [] then lib.head listenFe6 else "";
+      };
+
+      explicitSmtpBind = mkOption {
+        type = types.bool;
+        description = ''
+          Whether to include smtp_bind_address* statements explicitely in
+          main.cf or not. Set to false in case mail must be relayed both to the
+          public Internet and to other nodes inside the RG via SRV.
+        '';
+        default = (length listenFe4 > 1) || (length listenFe6 > 1);
       };
     };
   };
