@@ -195,8 +195,7 @@ in {
           recipient_canonical_classes = envelope_recipient, header_recipient
           sender_canonical_maps = tcp:localhost:10001
           sender_canonical_classes = envelope_sender
-          smtp_bind_address = ${role.smtpBind4}
-          smtp_bind_address6 = ${role.smtpBind6}
+
           smtpd_client_restrictions =
             permit_mynetworks,
             reject_rbl_client ix.dnsbl.manitu.net,
@@ -205,7 +204,10 @@ in {
           smtpd_helo_restrictions =
             permit_sasl_authenticated,
             reject_unknown_helo_hostname
-
+        '' + (lib.optionalString role.explicitSmtpBind ''
+          smtp_bind_address = ${role.smtpBind4}
+          smtp_bind_address6 = ${role.smtpBind6}
+        '') + ''
           # included from /etc/local/mail/main.cf
           ${fclib.configFromFile "/etc/local/mail/main.cf" ""}
         '';
@@ -264,6 +266,7 @@ in {
       in rec {
         after = [ "postfix.service" ];
         requires = after;
+        wantedBy = [ "multi-user.target" ];
         path = with pkgs; [ acl inotify-tools ];
         script = ''
           while true; do

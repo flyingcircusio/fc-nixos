@@ -9,11 +9,11 @@ let
   interfaces =
     lib.attrByPath [ "parameters" "interfaces" ] {} config.flyingcircus.enc;
 
-  mainCf = [
-    "smtp_bind_address=${role.smtpBind4}"
-    "smtp_bind_address6=${role.smtpBind6}"
-    (fclib.configFromFile "/etc/local/postfix/main.cf" "")
-  ];
+  mainCf =
+    lib.optional role.explicitSmtpBind [
+      "smtp_bind_address=${role.smtpBind4}"
+      "smtp_bind_address6=${role.smtpBind6}"
+    ] ++ [ (fclib.configFromFile "/etc/local/postfix/main.cf" "") ];
 
   masterCf = [
     (fclib.configFromFile "/etc/local/postfix/master.cf" "")
