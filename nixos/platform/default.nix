@@ -151,8 +151,6 @@ in {
     documentation.dev.enable = mkDefault false;
     documentation.doc.enable = mkDefault false;
 
-    i18n.supportedLocales = [ (config.i18n.defaultLocale + "/UTF-8") ];
-
     nix = {
       nixPath = [
         "/nix/var/nix/profiles/per-user/root/channels/nixos"
