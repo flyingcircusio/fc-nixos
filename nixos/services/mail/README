@@ -25,7 +25,7 @@ Configuration files in /etc/local/mail
 
 - users.json: All local mail accounts. The most important keys:
     - name: E-mail address. Domain part must match of the domains configured in
-        /etc/nixos/local.nix. Mandatory.
+        /etc/local/nixos/. Mandatory.
     - hashedPassword: SHA-256 hash of the login password (SMTP/IMAP). If set to
         an empty string, the password is read during runtime from the password
         file (see below). Mandatory.
