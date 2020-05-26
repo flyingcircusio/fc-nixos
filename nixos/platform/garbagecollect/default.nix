@@ -76,7 +76,7 @@ in {
 
       # keep in sync with pkgs/overlay.nix
       environment.etc."nixos/garbagecollect-protect-references".text = ''
-        nixpkgs-20.03=${pkgs.nixpkgs-20_03-src}
+        nixpkgs-unstable=${pkgs.nixpkgs-unstable-src}
       '';
 
       flyingcircus.services.sensu-client.checks.fc-collect-garbage = {

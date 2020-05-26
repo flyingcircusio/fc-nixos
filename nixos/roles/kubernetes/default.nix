@@ -20,8 +20,8 @@ let
         '';
       };
 
-  # Pull in kubernetes modules from NixOS 20.03.
-  kubernetesModulesFrom2003 = [
+  # Pull in kubernetes modules from a newer NixOS version.
+  kubernetesModulesFromUnstable = [
     "services/networking/flannel.nix"
     "services/misc/etcd.nix"
     "services/security/cfssl.nix"
@@ -43,11 +43,11 @@ let
     "services/cluster/kubernetes/pki.nix"
   ];
 
-  nixpkgs-20_03-src = (import ../../../versions.nix {}).nixos-20_03;
+  nixpkgs-unstable-src = (import ../../../versions.nix {}).nixos-unstable;
 
 in {
 
-  disabledModules = kubernetesModulesFrom2003 ++ kubernetesModulesFromHere;
+  disabledModules = kubernetesModulesFromUnstable ++ kubernetesModulesFromHere;
 
   imports = [
     ./frontend.nix
@@ -55,7 +55,7 @@ in {
     ./node.nix
     ./certmgr.nix
     ./pki.nix
-  ] ++ map (m: "${nixpkgs-20_03-src}/nixos/modules/${m}") kubernetesModulesFrom2003;
+  ] ++ map (m: "${nixpkgs-unstable-src}/nixos/modules/${m}") kubernetesModulesFromUnstable;
 
   options = with lib; {
     flyingcircus.kubernetes.lib = mkOption {
