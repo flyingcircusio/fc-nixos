@@ -178,6 +178,9 @@ with builtins;
             username = "fc-telegraf";
             password = telegrafPassword;
             nodes = [ "rabbit@${config.networking.hostName}" ];
+            # Drop string fields. They are converted to labels in Prometheus
+            # which blows up the number of metrics.
+            fielddrop = [ "idle_since" ];
           }
         ];
 
@@ -188,10 +191,8 @@ with builtins;
     {
       flyingcircus.roles.statshost.prometheusMetricRelabel = [
         {
-          source_labels = [ "__name__" "idle_since" ];
-          regex = "rabbitmq_.*;idle_since";
-          target_label = "idle_since";
-          replacement = "";
+          regex = "idle_since";
+          action = "labeldrop";
         }
       ];
     }

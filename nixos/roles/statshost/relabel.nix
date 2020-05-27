@@ -20,15 +20,17 @@ let
     }
   ];
 
+  removeLabel = prefix: label: {
+    source_labels = [ "__name__" label ];
+    regex = "${prefix}.*;.+";
+    replacement = "";
+    target_label = label;
+  };
+
   # Drop unwanted labels from InfluxDB metrics.
   influxdbRelabel = let
-    removeLabel = label: {
-      source_labels = [ "__name__" label ];
-      regex = "influxdb_(tsm1|shard)_.*;.+";
-      replacement = "";
-      target_label = label;
-    };
-    in map removeLabel [ "path" "walPath" "id" "url" ];
+    removeInfluxLabel = removeLabel "influxdb_(tsm1|shard)_";
+    in map removeInfluxLabel [ "path" "walPath" "id" "url" ];
 
 in
 {
