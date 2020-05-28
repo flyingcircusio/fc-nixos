@@ -2,19 +2,18 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  pkgs-18_09 = import versions.nixos-18_09 {};
-  pkgs-19_09 = import versions.nixos-19_09 {};
+  pkgs-20_03 = import versions.nixos-20_03 {};
 
 in {
   # keep in sync with nixos/platform/garbagecollect/default.nix
-  nixpkgs-19_09-src = versions.nixos-19_09;
+  nixpkgs-20_03-src = versions.nixos-20_03;
 
   #
   # == our own stuff
   #
   fc = (import ./default.nix {
     pkgs = self;
-    inherit pkgs-19_09;
+    inherit pkgs-20_03;
   });
 
   #
@@ -25,8 +24,8 @@ in {
       meta.priority = 10;
     });
 
-  certmgr = super.callPackage ./certmgr.nix { inherit (pkgs-19_09) buildGoPackage; };
-  cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-19_09) buildGoPackage; };
+  certmgr = super.callPackage ./certmgr.nix { inherit (pkgs-20_03) buildGoPackage; };
+  cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-20_03) buildGoPackage; };
 
   docsplit = super.callPackage ./docsplit { };
   grub2_full = super.callPackage ./grub/2.0x.nix { };
@@ -45,7 +44,9 @@ in {
   influxdb = super.callPackage ./influxdb { };
   innotop = super.callPackage ./percona/innotop.nix { };
 
-  inherit (pkgs-19_09) kubernetes;
+  inherit (pkgs-20_03) kubernetes;
+
+  libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
 
   mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
@@ -53,7 +54,7 @@ in {
     sasl = super.cyrus_sasl;
     boost = super.boost160;
     # 3.2 is too old for the current libpcap version 1.9, use 1.8.1
-    inherit (pkgs-18_09) libpcap;
+    libpcap = self.libpcap_1_8;
   };
   mysql = super.mariadb;
 

@@ -1,20 +1,14 @@
 {
-  "nixos-18.09": {
+  "nixos-20.03": {
     "owner": "NixOS",
     "repo": "nixpkgs",
-    "rev": "a7e559a5504572008567383c3dc8e142fa7a8633",
-    "sha256": "16j95q58kkc69lfgpjkj76gw5sx8rcxwi3civm0mlfaxxyw9gzp6"
-  },
-  "nixos-19.09": {
-    "owner": "NixOS",
-    "repo": "nixpkgs",
-    "rev": "c49da6435f314e04fc58ca29807221817ac2ac6b",
-    "sha256": "17zsqhaf098bvcfarnq0h9601z6smkfd1kz1px6xfg6xqfmr80r7"
+    "rev": "48723f48ab92381f0afd50143f38e45cf3080405",
+    "sha256": "0h3b3l867j3ybdgimfn76lw7w6yjhszd5x02pq5827l659ihcf53"
   },
   "nixpkgs": {
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "92c7b4b23a60ad437bf501b86aa0ef5f493227ad",
-    "sha256": "1yyy1p6rfjinvhsl4rprfw40gckgcgjqcy3wq2klb3xg0zs260c3"
+    "rev": "fe0db4a6230502165054a3b423d7ec66e08e8a69",
+    "sha256": "043hf3gbkarhkks4ymnnyk76j4gl7q4iaykmlayhd86fvy34i7qd"
   }
 }
