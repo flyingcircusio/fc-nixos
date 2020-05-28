@@ -19,9 +19,8 @@ let
   cfgProxyLocation = config.flyingcircus.roles.statshost-location-proxy;
   cfgProxyRG = config.flyingcircus.roles.statshost-relay;
 
-  retentionHours = cfgStats.prometheusRetention * 3600;
   promFlags = [
-    "--storage.tsdb.retention ${toString retentionHours}h"
+    "--storage.tsdb.retention.time ${toString cfgStats.prometheusRetention}d"
   ];
   prometheusListenAddress = cfgStats.prometheusListenAddress;
 
@@ -366,6 +365,8 @@ in
         # Prometheus can take a few minutes to shut down. If it is forcefully
         # killed, a crash recovery process is started, which takes even longer.
         TimeoutStopSec = "10m";
+        # Prometheus uses a lot of connections, 1024 is not enough.
+        LimitNOFILE = 65536;
       };
 
       services.prometheus =
