@@ -690,8 +690,8 @@ in {
 
       package = mkOption {
         type = types.package;
-        default = pkgs.prometheus_2;
-        defaultText = "pkgs.prometheus_2";
+        default = pkgs.prometheus;
+        defaultText = "pkgs.prometheus";
         description = ''
           The prometheus package that should be used.
         '';

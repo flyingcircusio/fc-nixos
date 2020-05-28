@@ -28,6 +28,7 @@ in {
   cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-20_03) buildGoPackage; };
 
   docsplit = super.callPackage ./docsplit { };
+  inherit (pkgs-20_03) grafana;
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
   linux_4_19 = super.linux_4_19.override {
@@ -81,6 +82,7 @@ in {
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost169; };
 
+  inherit (pkgs-20_03) prometheus;
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
   rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix {
