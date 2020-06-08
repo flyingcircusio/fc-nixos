@@ -326,7 +326,6 @@ in {
     };
 
     systemd.tmpfiles.rules = [
-      "d /var/cache/vulnix 0775 sensuclient service"
       "d /var/tmp/sensu 0775 sensuclient service"
     ];
 
@@ -443,15 +442,6 @@ in {
       journal_file = {
         notification = "Journal file too small.";
         command = "${fc.sensuplugins}/bin/check_journal_file";
-      };
-      vulnix = {
-        notification = "Security vulnerabilities in the last 6h";
-        command =
-          "NIX_REMOTE=daemon nice timeout 15m ${vulnix}/bin/vulnix -S " +
-          "--cache-dir /var/cache/vulnix " +
-          "-w https://raw.githubusercontent.com/flyingcircusio/vulnix.whitelist/master/fcio-whitelist.yaml";
-        interval = 6 * 3600;
-        timeout = 900;
       };
       manage = {
         notification = "The FC manage job is not enabled.";
