@@ -109,8 +109,6 @@ in {
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
-  vulnix = super.callPackage ./vulnix.nix { };
-
   xtrabackup = super.callPackage ./percona/xtrabackup.nix {
     inherit (self) percona;
     boost = self.boost169;
