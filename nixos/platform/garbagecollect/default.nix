@@ -10,8 +10,6 @@ let
   log = "/var/log/fc-collect-garbage.log";
 
   garbagecollect = pkgs.writeScript "fc-collect-garbage.py" ''
-    #! ${pkgs.python3.interpreter}
-
     import datetime
     import os
     import pwd
@@ -37,10 +35,10 @@ let
         status = max(rc)
         print('Overall status:', status)
         if status >= 2:
-            print('ERROR: fc-userscan had hard errors (see above). Aborting')
+            print('Aborting garbagecollect. See above for fc-userscan errors')
             sys.exit(2)
         if status >= 1:
-            print('WARNING: fc-userscan had soft errors (see above). Aborting')
+            print('Aborting garbagecollect. See above for fc-userscan warnings')
             sys.exit(1)
         print('Running nix-collect-garbage')
         rc = subprocess.run([
