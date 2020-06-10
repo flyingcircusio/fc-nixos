@@ -3,7 +3,7 @@
 with lib;
 
 let
-  cfg = config.flyingcircus.services.rabbitmq37;
+  cfg = config.flyingcircus.services.rabbitmq;
 
   inherit (builtins) concatStringsSep;
 
@@ -15,21 +15,21 @@ let
 in {
   ###### interface
   options = {
-    flyingcircus.services.rabbitmq37 = {
+    flyingcircus.services.rabbitmq = {
       enable = mkOption {
         default = false;
         description = ''
           Whether to enable the RabbitMQ server, an Advanced Message
-          Queuing Protocol (AMQP) broker (3.7.x series).
+          Queuing Protocol (AMQP) broker.
         '';
       };
 
       package = mkOption {
-        default = pkgs.rabbitmq_server_3_7;
+        default = pkgs.rabbitmq_server_3_8;
         type = types.package;
-        defaultText = "pkgs.rabbitmq_server_3_7";
+        defaultText = "pkgs.rabbitmq_server_3_8";
         description = ''
-          Which rabbitmq package (3.7.x) to use.
+          Which rabbitmq package (3.7.x or 3.8.x) to use.
         '';
       };
 
@@ -152,7 +152,7 @@ in {
 
     users.groups.rabbitmq.gid = config.ids.gids.rabbitmq;
 
-    flyingcircus.services.rabbitmq37.configItems = {
+    flyingcircus.services.rabbitmq.configItems = {
       "listeners.tcp.1" = mkDefault "${cfg.listenAddress}:${toString cfg.port}";
     };
 

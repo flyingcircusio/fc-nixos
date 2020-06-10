@@ -92,6 +92,7 @@ in {
     erlang = self.erlangR19;
   };
   rabbitmq-server_3_7 = super.rabbitmq-server;
+  rabbitmq-server_3_8 = pkgs-20_03.rabbitmq-server;
 
   remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };

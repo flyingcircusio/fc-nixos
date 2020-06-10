@@ -1,4 +1,4 @@
-import ./make-test.nix ({ rolename ? "rabbitmq36_15", lib, pkgs, testlib, ... }:
+import ./make-test.nix ({ rolename ? "rabbitmq38", lib, pkgs, testlib, ... }:
 let
   ipv4 = "192.168.101.1";
   amqpPortCheck = "nc -z ${ipv4} 5672";
@@ -33,7 +33,6 @@ in {
 
     print($machine->succeed("$cli status"));
     $machine->succeed("$cli node_health_check");
-    $machine->succeed("$cli status | grep 'amqp,5672,\"${ipv4}\"'");
 
     # make sure this is run before continuing
     $machine->succeed("systemctl start fc-rabbitmq-settings");
