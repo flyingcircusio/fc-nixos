@@ -269,11 +269,16 @@ in {
         wantedBy = [ "multi-user.target" ];
         path = with pkgs; [ acl inotify-tools ];
         script = ''
-          while true; do
-            inotifywait -r -e create /var/lib/postfix/queue
+          fix() {
             setfacl -Rm u:telegraf:rX ${dirs}
             setfacl -Rdm u:telegraf:rX ${dirs}
             sleep 1
+          }
+
+          fix
+          while true; do
+            inotifywait -r -t 60 -e create /var/lib/postfix/queue
+            fix
           done
         '';
         serviceConfig = {
