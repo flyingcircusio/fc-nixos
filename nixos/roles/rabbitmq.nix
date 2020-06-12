@@ -14,6 +14,7 @@ with builtins;
       rabbitmq36_5 = mkRole "3.6.5";
       rabbitmq36_15 = mkRole "3.6.15";
       rabbitmq37 = mkRole "3.7";
+      rabbitmq38 = mkRole "3.8";
     };
   };
 
@@ -33,6 +34,7 @@ with builtins;
       "3.6.5" = rabbitmq36_5.enable;
       "3.6.15" = rabbitmq36_15.enable;
       "3.7" = rabbitmq37.enable;
+      "3.8" = rabbitmq38.enable;
     };
     enabledRoles = lib.filterAttrs (n: v: v) rabbitRoles;
     enabledRolesCount = length (lib.attrNames enabledRoles);
@@ -55,8 +57,8 @@ with builtins;
       flyingcircus.services.rabbitmq36 = serviceConfig;
     })
 
-    (lib.mkIf (enabled && majorMinorVersion == "3.7") {
-      flyingcircus.services.rabbitmq37 = serviceConfig;
+    (lib.mkIf (enabled && majorMinorVersion != "3.6") {
+      flyingcircus.services.rabbitmq = serviceConfig;
     })
 
     (lib.mkIf enabled {
