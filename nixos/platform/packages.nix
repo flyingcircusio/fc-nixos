@@ -64,6 +64,7 @@
         sysstat
         tcpdump
         telnet
+        tmux
         tree
         unzip
         vim
