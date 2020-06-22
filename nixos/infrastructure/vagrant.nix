@@ -38,7 +38,7 @@
     users.users.vagrant = {
     	description = "Vagrant user";
     	group = "users";
-    	extraGroups = [ "login" "service" ];
+    	extraGroups = [ "login" "service" "docker" ];
     	password = "vagrant";
     	home = "/home/vagrant";
     	isNormalUser = true;
