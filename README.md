@@ -17,6 +17,10 @@ Run in development mode:
 
     nix-build -A $package
 
+Or build package by directly calling a Nix expression:
+
+    nix-build -E 'with import <nixpkgs> {}; callPackage path/to/file.nix {}'
+
 
 (Dry) system build
 ------------------

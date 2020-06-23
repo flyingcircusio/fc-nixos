@@ -1,9 +1,10 @@
-{ pkgs ? import <nixpkgs> { }
-, stdenv ? pkgs.stdenv
-, fetchgit ? pkgs.fetchgit
+{ stdenv
+, fetchgit
+, buildPerlPackage
+, perlPackages
 }:
 
-pkgs.buildPerlPackage rec {
+buildPerlPackage rec {
   name = "${pname}-${version}";
   pname = "innotop";
   version = "1.12.0";
@@ -24,11 +25,7 @@ pkgs.buildPerlPackage rec {
     patchShebangs .
   '';
 
-  propagatedBuildInputs = [
-    pkgs.perlPackages.DBI
-    pkgs.perlPackages.DBDmysql
-    pkgs.perlPackages.TermReadKey
-  ];
+  propagatedBuildInputs = with perlPackages; [ DBI DBDmysql TermReadKey ];
 
   meta = {
     description = "innotop is a 'top' clone for MySQL with many features and flexibility.";
