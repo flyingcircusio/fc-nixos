@@ -30,6 +30,7 @@ let
       " -p vmod_path='${lib.makeSearchPathOutput "lib" "lib/varnish/vmods" ([cfg.package] ++ cfg.extraModules)}' -r vmod_path" +
     " -F";
 
+  kill = "${pkgs.coreutils}/bin/kill";
 in
 {
 
@@ -86,6 +87,9 @@ in
       services.logrotate.config = ''
         /var/log/varnish.log {
           create 0644 varnish varnish
+          postrotate
+            systemctl reload varnishncsa
+          endscript
         }
       '';
 
@@ -134,12 +138,16 @@ in
           after = [ "varnish.service" ];
           requires = after;
           description = "Varnish logging daemon";
-          script =
-            "exec ${cfg.package}/bin/varnishncsa -a -w /var/log/varnish.log";
           wantedBy = [ "multi-user.target" ];
+          # We want to reopen logs with HUP. Varnishncsa must run in daemon mode for that.
           serviceConfig = {
+            Type = "forking";
+            RuntimeDirectory = "varnish";
+            PIDFile = "/run/varnish/varnishncsa.pid";
             User = "varnish";
             Group = "varnish";
+            ExecStart = "${cfg.package}/bin/varnishncsa -D -a -w /var/log/varnish.log -P /run/varnish/varnishncsa.pid";
+            ExecReload = "${kill} -HUP $MAINPID";
           };
         };
       };
