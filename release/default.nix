@@ -17,6 +17,7 @@ with builtins;
 
 with import "${nixpkgs_}/pkgs/top-level/release-lib.nix" {
   inherit supportedSystems scrubJobs;
+  nixpkgsArgs = { config = { allowUnfree = false; inHydra = true; }; nixpkgs = nixpkgs_; };
   packageSet = import ../.;
 };
 # pkgs and lib imported from release-lib.nix

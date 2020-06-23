@@ -37,7 +37,7 @@
 f: {
   system ? builtins.currentSystem
   , nixpkgs ? (import ../versions.nix {}).nixpkgs
-  , pkgs ? import ../. {}
+  , pkgs ? import ../. { inherit nixpkgs; }
   , minimal ? false
   , config ? {}
   , ...
@@ -47,17 +47,17 @@ with import "${nixpkgs}/nixos/lib/testing.nix" {
   inherit system minimal config;
 };
 
-let 
+let
   lib = pkgs.lib;
   test =
     if lib.isFunction f
-    then f (args // { 
+    then f (args // {
       inherit pkgs lib;
       testlib = pkgs.callPackage ./testlib.nix {};
     })
     else f;
 
-in if test ? testCases 
+in if test ? testCases
 then lib.mapAttrs
   (testCaseName: testCase: makeTest (
     testCase // { name = "${test.name}-${testCaseName}"; }))

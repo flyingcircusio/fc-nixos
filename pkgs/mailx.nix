@@ -1,9 +1,8 @@
-{ pkgs ? import <nixpkgs> { }
-, stdenv ? pkgs.stdenv
-, lib ? pkgs.lib
-, fetchurl ? pkgs.fetchurl
+{ stdenv
+, fetchurl
+, openssl
+, coreutils
 }:
-
 
 stdenv.mkDerivation rec {
   name = "mailx-${version}";
@@ -14,12 +13,7 @@ stdenv.mkDerivation rec {
     sha256 = "1b91ljly5hl7p23354anv6z8narrb8ij4p94l0vpz1imj4ha8nq1";
   };
 
-  propagatedBuildInputs = [
-    pkgs.openssl
-  ];
-
-  buildInputs = [
-  ];
+  propagatedBuildInputs = [ openssl ];
 
   preBuild = ''
     makeFlagsArray=(
@@ -27,7 +21,7 @@ stdenv.mkDerivation rec {
     PREFIX=$out
     SENDMAIL=/run/wrappers/bin/sendmail
     SYSCONFDIR=$out/etc
-    UCBINSTALL=${pkgs.coreutils}/bin/install
+    UCBINSTALL=${coreutils}/bin/install
     BINDIR=$out/bin
   )
   '';

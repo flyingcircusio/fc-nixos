@@ -31,7 +31,7 @@ import ./make-test.nix ({ pkgs, ... }:
     $webproxy->waitUntilSucceeds($curl);
 
     subtest "request should return expected output", sub {
-      $webproxy->succeed("$curl | grep -q 'Hello World!'");
+      $webproxy->waitUntilSucceeds("$curl | grep -q 'Hello World!'");
     };
 
     subtest "varnishncsa should log requests", sub {

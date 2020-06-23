@@ -1,6 +1,6 @@
 # Collection of own packages
-{ pkgs ? import <nixpkgs> {}
-, pkgs-20_03 ? import <nixpkgs> {}
+{ pkgs
+, pkgs-20_03
 }:
 
 let

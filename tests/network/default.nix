@@ -1,6 +1,6 @@
 { system ? builtins.currentSystem
-, nixpkgs ? (import ../../versions.nix { inherit pkgs; }).nixpkgs
-, pkgs ? import ../.. {}
+, nixpkgs ? (import ../../versions.nix {}).nixpkgs
+, pkgs ? import ../.. { inherit nixpkgs; }
 }:
 
 with import "${nixpkgs}/nixos/lib/testing.nix" { inherit system; };
@@ -132,7 +132,7 @@ let
             services.nginx.virtualHosts."srv${hostId}" = { root = ./.; };
             users.users.s-test = {
               isNormalUser = true;
-              extraGroups = [ "service" ]; 
+              extraGroups = [ "service" ];
             };
           };
       in {

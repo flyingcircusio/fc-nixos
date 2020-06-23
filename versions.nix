@@ -29,6 +29,9 @@ let
 
 in
 assert channels ? "nixpkgs";
+let
+  pkgs = import channels.nixpkgs {};
+in
 # export "nixos-18_09" instead of "nixos-18.09" for example
 (mapAttrs' (name: val: nameValuePair (replaceStrings [ "." ] [ "_" ] name) val)
   channels)
