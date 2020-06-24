@@ -280,9 +280,7 @@ in
       };
 
       services.logrotate.config = ''
-        /var/log/nginx/*access*log
-        /var/log/nginx/*error*log
-        /var/log/nginx/performance.log
+        /var/log/nginx/*.log
         {
             rotate 92
             create 0644 nginx service
