@@ -277,7 +277,7 @@ in {
 
           fix
           while true; do
-            inotifywait -r -t 60 -e create /var/lib/postfix/queue
+            inotifywait -q -r -e create /var/lib/postfix/queue
             fix
           done
         '';
