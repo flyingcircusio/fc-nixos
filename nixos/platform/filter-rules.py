@@ -3,7 +3,6 @@ import fileinput
 import re
 import shlex
 import sys
-import os.path as p
 
 R_ALLOWED = re.compile(r'^(ip(6|46)?tables .*)?''$')
 
@@ -53,7 +52,7 @@ def exit_with_error(message, line):
 
 for line in fileinput.input():
     line = line.strip()
-    if line.startswith('#'):
+    if line.startswith('#') or line.strip() == '':
         print(line)
         continue
     atoms = list(shlex.quote(s) for s in shlex.split(line.strip()))
@@ -75,9 +74,9 @@ for line in fileinput.input():
     # Are we using a default chain? Don't.
     for option, value in find_arguments_with_values(
             ['-A', '-C', '-D', '-I', '-R', '-S', '-F', '-L', '-Z', '-N', '-X',
-            '-P', '-E'], atoms):
-        if value in ['INPUT', 'OUTPUT', 'FORWARD', 'PREROUTING', 'POSTROUTING'
-                      'SECMARK', 'CONNSECMARK']:
+             '-P', '-E'], atoms):
+        if value in ['INPUT', 'OUTPUT', 'FORWARD', 'PREROUTING',
+                     'SECMARK', 'CONNSECMARK']:
             exit_with_error('builtin chains are not allowed here', line)
 
     print(m.group(1))
