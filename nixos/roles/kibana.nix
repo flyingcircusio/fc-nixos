@@ -29,12 +29,19 @@ let
     cat $(systemctl cat kibana | grep "ExecStart" | cut -d" " -f3)
   '';
 
+  kibanaVersion =
+    if config.flyingcircus.roles.kibana6.enable
+    then "6"
+    else if config.flyingcircus.roles.kibana7.enable
+    then "7"
+    else null;
+
+  enabled = kibanaVersion != null;
 in
 {
-  options = {
+  options = with lib; {
 
-    flyingcircus.roles.kibana = with lib; {
-      enable = mkEnableOption "Enable the Flying Circus Kibana server role.";
+    flyingcircus.roles.kibana = {
 
       elasticSearchUrl = mkOption {
         type = types.nullOr types.str;
@@ -44,10 +51,15 @@ in
 
     };
 
+    flyingcircus.roles.kibana6.enable =
+      mkEnableOption "Enable the Flying Circus Kibana 6 role.";
+
+    flyingcircus.roles.kibana7.enable =
+      mkEnableOption "Enable the Flying Circus Kibana 7 role.";
   };
 
   config = lib.mkMerge [
-    (lib.mkIf (cfg.enable && elasticSearchUrl != null) {
+    (lib.mkIf (enabled && elasticSearchUrl != null) {
 
       environment.systemPackages = [
         kibanaShowConfig
@@ -58,7 +70,11 @@ in
         # Unlike elasticsearch, kibana cannot listen to both IPv4 and IPv6.
         # We choose to use IPv4 here.
         listenAddress = head (fclib.listenAddresses "ethsrv");
-        elasticsearch.url = elasticSearchUrl;
+        package = pkgs."kibana${kibanaVersion}";
+      } // lib.optionalAttrs (kibanaVersion == "6") {
+          elasticsearch.url = elasticSearchUrl;
+      } // lib.optionalAttrs (kibanaVersion == "7") {
+          elasticsearch.hosts = [ elasticSearchUrl ];
       };
 
       systemd.services.kibana.serviceConfig = {
@@ -66,7 +82,7 @@ in
       };
     })
 
-    (lib.mkIf cfg.enable {
+    (lib.mkIf enabled {
       environment.etc."local/kibana/README.txt".text = ''
         Kibana local configuration
 
