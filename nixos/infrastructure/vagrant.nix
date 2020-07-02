@@ -1,14 +1,24 @@
 { config, lib, ... }:
 
-{
+with builtins;
 
-  imports = if (builtins.pathExists /etc/nixos/vagrant.nix) then [
-  	/etc/nixos/vagrant.nix
+let
+  expandLocal = dirs:
+  listToAttrs (
+    map (dir: (
+      lib.nameValuePair dir {
+        dir = "/etc/local/${dir}"; permissions = "02775"; group = "service"; }))
+      dirs);
+
+in {
+
+  imports = if (pathExists /etc/nixos/vagrant.nix) then [
+    /etc/nixos/vagrant.nix
   ] else [];
 
   config = lib.mkIf (config.flyingcircus.infrastructureModule == "vagrant") {
-  	# Partially copied from generic virtualbox image.
 
+    # Partially copied from generic virtualbox image
     boot.growPartition = lib.mkDefault true;
     boot.loader.grub.device = lib.mkDefault "/dev/sda";
 
@@ -16,8 +26,6 @@
       fsType = "xfs";
       device = "/dev/disk/by-label/nixos";
     };
-
-    flyingcircus.agent.enable = false;
 
     services.timesyncd.servers = [ "pool.ntp.org" ];
 
@@ -30,41 +38,47 @@
     # We expect some groups in our platform code.
     # These groups are created through the ENC normally which
     # doesn't exist in vagrant or at least here, yet.
-    users.groups.login = {};
-    users.groups.service = {};
-    users.groups.sudo-srv = {};
-    users.groups.admins = {};
+    users.groups = {
+      login = {};
+      service = {};
+      sudo-srv = {};
+      admins = {};
+    };
 
     users.users.vagrant = {
-    	description = "Vagrant user";
-    	group = "users";
-    	extraGroups = [ "login" "service" "docker" ];
-    	password = "vagrant";
-    	home = "/home/vagrant";
-    	isNormalUser = true;
-    	openssh.authorizedKeys.keys = [
-	    	"ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
-	    ];
-	};
-
-    flyingcircus.passwordlessSudoRules = [
-      # Allow unrestricted access to vagrant
-      {
-        commands = [ "ALL" ];
-        users = [ "vagrant" ];
-      }
-    ];
+      description = "Vagrant user";
+      group = "users";
+      extraGroups = [ "login" "service" "docker" ];
+      password = "vagrant";
+      home = "/home/vagrant";
+      isNormalUser = true;
+      openssh.authorizedKeys.keys = [
+        "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
+      ];
+    };
 
     # General vagrant optimizations
-
     networking.firewall.enable = false;
+    services.openssh.extraConfig = "UseDNS no";
+    swapDevices = [ { device = "/var/swapfile"; size = 2048; }];
 
-    services.openssh.extraConfig = ''
-      UseDNS no
+    # FC specific customizations
+    flyingcircus = {
+      agent.enable = false;
+
+      localConfigDirs = expandLocal
+        [ "logrotate" "nixos" "sensu-client" "telegraf" ];
+
+      passwordlessSudoRules = [
+        { # Grant unrestricted access to vagrant
+          commands = [ "ALL" ];
+          users = [ "vagrant" ];
+        }
+      ];
+    };
+
+    system.activationScripts.relaxHomePermissions = lib.stringAfter [] ''
+      chmod 755 /home/*
     '';
-
-    swapDevices = [ { device = "/var/swapfile";
-                      size = 2048; }];
-
   };
 }
