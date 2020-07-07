@@ -10,16 +10,38 @@ let
     lib.attrByPath [ "parameters" "interfaces" ] {} config.flyingcircus.enc;
 
   mainCf =
-    lib.optional role.explicitSmtpBind [
+    lib.optionals role.explicitSmtpBind [
       "smtp_bind_address=${role.smtpBind4}"
       "smtp_bind_address6=${role.smtpBind6}"
     ] ++ [ (fclib.configFromFile "/etc/local/postfix/main.cf" "") ];
 
-  masterCf = [
-    (fclib.configFromFile "/etc/local/postfix/master.cf" "")
-  ];
+  masterCf = [ (fclib.configFromFile "/etc/local/postfix/master.cf" "") ];
+
+  recipientCanonical = toFile "generic.pcre" ''
+    /.*@.*\.fcio\.net$/ ${role.rootAlias}
+  '';
 
   checkMailq = "${pkgs.fc.check-postfix}/bin/check_mailq";
+
+  readme = ''
+    Mail server stub is a minimally pre-configured Postfix instance.
+
+    Put local Postfix configuration into this directory.
+
+    - Postfix configuration statements should go into `main.cf`
+    - Postfix service definitions should go into `master.cf`
+
+    If you need to send mails to the outside world, this role needs quite an
+    amount of manual configuration. Consider switching to the more
+    fully-featured 'mailserver' role. Services provided by this role are,
+    however, sufficient to send cron mails to a central address or dispatch
+    incoming mails to application servers.
+
+    This role shares some configuration options which the 'mailserver' role:
+    mailHost, rootAlias, smtpBind[46], explicitSmtpBind. Refer to
+    https://flyingcircus.io/doc/guide/platform_nixos_2/mailserver.html for
+    explanation.
+  '';
 
 in {
   options = {
@@ -35,27 +57,23 @@ in {
       hostname = role.mailHost;
       extraConfig = lib.concatStringsSep "\n" mainCf;
       extraMasterConf = lib.concatStringsSep "\n" masterCf;
+      config.recipient_canonical_maps =
+        lib.mkDefault "pcre:${recipientCanonical}";
       # Trust all networks on the SRV interface.
-      networks =
+      networks = lib.mkDefault (
         map fclib.quoteIPv6Address
-        (attrNames (lib.attrByPath [ "srv" "networks" ] {} interfaces));
-      destination = [
+        (attrNames (lib.attrByPath [ "srv" "networks" ] {} interfaces)));
+      destination = lib.mkDefault [
         "localhost"
         role.mailHost
         config.networking.hostName
         "${config.networking.hostName}.fcio.net"
+        "${config.networking.hostName}.gocept.net"
       ];
       rootAlias = role.rootAlias;
     };
 
-    environment.etc."local/postfix/README.txt".text = ''
-      Put local Postfix configuration into this directory.
-
-      * Postfix configuration statements should go into `main.cf`
-
-      * Postfix service definitions should go into `master.cf`
-    '';
-
+    environment.etc."local/postfix/README.txt".text = readme;
     environment.systemPackages = with pkgs; [ mailutils ];
 
     flyingcircus.services.sensu-client.checks = {
@@ -65,6 +83,7 @@ in {
         in {
           command = "sudo ${checkMailq} -w 50 -c 500 --mailq ${mailq}";
           notification = "Too many undelivered mails in Postfix mail queue";
+          interval = 300;
         };
 
       postfix_smtp_port = {
