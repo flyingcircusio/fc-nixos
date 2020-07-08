@@ -42,7 +42,8 @@ let
       description = ''
         IPv4 address for outgoing connections. Must match forward/reverse DNS.
       '';
-      default = if hasFE then head listenFe4 else head listenSrv4;
+      default = if hasFE then head listenFe4 else
+                if listenSrv4 != [] then head listenSrv4 else "";
     };
 
     smtpBind6 = mkOption {
@@ -50,7 +51,8 @@ let
       description = ''
         IPv6 address for outgoing connections. Must match forward/reverse DNS.
       '';
-      default = if hasFE then head listenFe6 else head listenSrv6;
+      default = if hasFE then head listenFe6 else
+                if listenSrv6 != [] then head listenSrv6 else "";
     };
 
     explicitSmtpBind = mkOption {
