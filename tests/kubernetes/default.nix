@@ -173,7 +173,7 @@ in {
     };
 
     subtest "creating a deployment should work", sub {
-      $kubmaster->succeed("docker load < ${redis.image}");
+      $kubmaster->waitUntilSucceeds("docker load < ${redis.image}");
       $kubmaster->succeed("kubectl apply -f ${redis.deployment}");
       $kubmaster->succeed("kubectl apply -f ${redis.service}");
     };
@@ -184,7 +184,7 @@ in {
     };
 
     subtest "scaling the deployment should start 4 pods", sub {
-      $kubnode->succeed("docker load < ${redis.image}");
+      $kubnode->waitUntilSucceeds("docker load < ${redis.image}");
       $kubmaster->succeed("kubectl scale deployment redis --replicas=4");
       $kubmaster->waitUntilSucceeds("kubectl get deployment redis | grep -q 4/4");
     };
