@@ -1,9 +1,9 @@
 {
-  "nixos-20.03": {
+  "nixos-unstable": {
     "owner": "NixOS",
     "repo": "nixpkgs",
-    "rev": "2b417708c282d84316366f4125b00b29c49df10f",
-    "sha256": "0426qaxw09h0kkn5zwh126hfb2j12j5xan6ijvv2c905pqi401zq"
+    "rev": "dc80d7bc4a244120b3d766746c41c0d9c5f81dfa",
+    "sha256": "0dy0mp7alc7m34zxall14x42qx9yjm7b0m6psgmw0lb6j1iy1pla"
   },
   "nixpkgs": {
     "owner": "flyingcircusio",
