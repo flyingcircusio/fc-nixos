@@ -33,6 +33,14 @@ in {
 
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
+  inherit (pkgs-unstable) influxdb;
+
+  innotop = super.callPackage ./percona/innotop.nix { };
+
+  inherit (pkgs-unstable) kubernetes;
+
+  libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
+
   linux_4_19 = super.linux_4_19.override {
     argsOverride = rec {
       src = super.fetchurl {
@@ -43,13 +51,6 @@ in {
       modDirVersion = "4.19.94";
       };
   };
-
-  influxdb = super.callPackage ./influxdb { };
-  innotop = super.callPackage ./percona/innotop.nix { };
-
-  inherit (pkgs-unstable) kubernetes;
-
-  libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
 
   mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
