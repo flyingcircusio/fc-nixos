@@ -2,18 +2,18 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  pkgs-20_03 = import versions.nixos-20_03 {};
+  pkgs-unstable = import versions.nixos-unstable {};
 
 in {
   # keep in sync with nixos/platform/garbagecollect/default.nix
-  nixpkgs-20_03-src = versions.nixos-20_03;
+  nixpkgs-unstable-src = versions.nixos-unstable;
 
   #
   # == our own stuff
   #
   fc = (import ./default.nix {
     pkgs = self;
-    inherit pkgs-20_03;
+    inherit pkgs-unstable;
   });
 
   #
@@ -24,12 +24,22 @@ in {
       meta.priority = 10;
     });
 
-  certmgr = super.callPackage ./certmgr.nix { inherit (pkgs-20_03) buildGoPackage; };
-  cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-20_03) buildGoPackage; };
+  certmgr = super.callPackage ./certmgr.nix { inherit (pkgs-unstable) buildGoPackage; };
+  cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-unstable) buildGoPackage; };
 
   docsplit = super.callPackage ./docsplit { };
-  inherit (pkgs-20_03) grafana;
+
+  inherit (pkgs-unstable) grafana;
+
   grub2_full = super.callPackage ./grub/2.0x.nix { };
+
+  inherit (pkgs-unstable) influxdb;
+
+  innotop = super.callPackage ./percona/innotop.nix { };
+
+  inherit (pkgs-unstable) kubernetes;
+
+  libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
 
   linux_4_19 = super.linux_4_19.override {
     argsOverride = rec {
@@ -41,13 +51,6 @@ in {
       modDirVersion = "4.19.94";
       };
   };
-
-  influxdb = super.callPackage ./influxdb { };
-  innotop = super.callPackage ./percona/innotop.nix { };
-
-  inherit (pkgs-20_03) kubernetes;
-
-  libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
 
   mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
@@ -82,7 +85,8 @@ in {
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost169; };
 
-  inherit (pkgs-20_03) prometheus;
+  inherit (pkgs-unstable) prometheus;
+
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
   rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix {
@@ -92,7 +96,7 @@ in {
     erlang = self.erlangR19;
   };
   rabbitmq-server_3_7 = super.rabbitmq-server;
-  rabbitmq-server_3_8 = pkgs-20_03.rabbitmq-server;
+  rabbitmq-server_3_8 = pkgs-unstable.rabbitmq-server;
 
   remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
@@ -109,6 +113,8 @@ in {
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
+
+  inherit (pkgs-unstable) writeShellScript;
 
   xtrabackup = super.callPackage ./percona/xtrabackup.nix {
     inherit (self) percona;
