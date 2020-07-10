@@ -52,7 +52,7 @@ def exit_with_error(message, line):
 
 for line in fileinput.input():
     line = line.strip()
-    if line.startswith('#') or line.strip() == '':
+    if line.startswith('#') or line == '':
         print(line)
         continue
     atoms = list(shlex.quote(s) for s in shlex.split(line.strip()))
@@ -75,7 +75,7 @@ for line in fileinput.input():
     for option, value in find_arguments_with_values(
             ['-A', '-C', '-D', '-I', '-R', '-S', '-F', '-L', '-Z', '-N', '-X',
              '-P', '-E'], atoms):
-        if value in ['INPUT', 'OUTPUT', 'FORWARD', 'PREROUTING',
+        if value in ['INPUT', 'OUTPUT', 'FORWARD', 'PREROUTING', 'POSTROUTING',
                      'SECMARK', 'CONNSECMARK']:
             exit_with_error('builtin chains are not allowed here', line)
 
