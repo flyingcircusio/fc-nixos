@@ -1,6 +1,6 @@
-import ./make-test.nix ({ pkgs, ... }:
+import ./make-test.nix ({ version ? "6", pkgs, ... }:
 let
-  ipv4 = "192.168.101.1";
+  ipv4 = "192.168.1.1";
 in
 {
   name = "kibana";
@@ -16,16 +16,18 @@ in
         interfaces.srv = {
           mac = "52:54:00:12:34:56";
           networks = {
-            "192.168.101.0/24" = [ ipv4 ];
+            "192.168.1.0/24" = [ ipv4 ];
           };
           gateways = {};
         };
       };
 
+      networking.domain = "test";
       virtualisation.memorySize = 3072;
       virtualisation.qemu.options = [ "-smp 2" ];
-      flyingcircus.roles.elasticsearch6.enable = true;
-      flyingcircus.roles.kibana.enable = true;
+      flyingcircus.roles."elasticsearch${version}".enable = true;
+      flyingcircus.roles.elasticsearch.esNodes = [ "machine" ];
+      flyingcircus.roles."kibana${version}".enable = true;
     };
 
   testScript = ''

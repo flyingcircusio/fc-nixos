@@ -22,11 +22,16 @@ let
 in {
   antivirus = callTest ./antivirus.nix {};
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
+  elasticsearch5 = callTest ./elasticsearch.nix { version = "5"; };
+  elasticsearch6 = callTest ./elasticsearch.nix { version = "6"; };
+  elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };
   fcagent = callTest ./fcagent.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
   graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
   journal = callTest ./journal.nix {};
+  kibana6 = callTest ./kibana.nix { version = "6"; };
+  kibana7 = callTest ./kibana.nix { version = "7"; };
   kubernetes = callTest ./kubernetes {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};

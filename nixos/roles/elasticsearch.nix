@@ -8,10 +8,12 @@ let
   fclib = config.fclib;
 
   esVersion =
-    if config.flyingcircus.roles.elasticsearch6.enable
-    then "6"
-    else if config.flyingcircus.roles.elasticsearch5.enable
+    if config.flyingcircus.roles.elasticsearch5.enable
     then "5"
+    else if config.flyingcircus.roles.elasticsearch6.enable
+    then "6"
+    else if config.flyingcircus.roles.elasticsearch7.enable
+    then "7"
     else null;
 
   package = versionConfiguration.${esVersion}.package;
@@ -26,6 +28,10 @@ let
       package = pkgs.elasticsearch6;
       serviceName = "elasticsearch6-node";
     };
+    "7" = {
+      package = pkgs.elasticsearch7;
+      serviceName = "elasticsearch7-node";
+    };
     null = {
       package = null;
       serviceName = null;
@@ -35,7 +41,7 @@ let
   esNodes =
     if cfg.esNodes == null
     then map
-      (service: service.address)
+      (service: head (lib.splitString "." service.address))
       (filter
         (s: s.service == versionConfiguration.${esVersion}.serviceName)
         config.flyingcircus.encServices)
@@ -101,8 +107,21 @@ in
       esNodes = mkOption {
         type = types.nullOr (types.listOf types.string);
         default = null;
+        description = ''
+          Names of the nodes that join this cluster.
+          By default, all ES nodes in a resource group are part of this cluster.
+          ES7: Values must use the same format as nodeName (just the hostname by default)
+          or cluster initialization will fail. All esNodes are possible initial masters.
+        '';
       };
 
+      nodeName = mkOption {
+        type = types.nullOr types.string;
+        default = config.networking.hostName;
+        description = ''
+          The name for this node. Defaults to the hostname.
+        '';
+      };
     };
 
     flyingcircus.roles.elasticsearch5.enable =
@@ -110,6 +129,9 @@ in
 
     flyingcircus.roles.elasticsearch6.enable =
       mkEnableOption "Enable the Flying Circus elasticsearch6 role.";
+
+    flyingcircus.roles.elasticsearch7.enable =
+      mkEnableOption "Enable the Flying Circus elasticsearch7 role.";
   };
 
   config = lib.mkMerge [
@@ -136,16 +158,19 @@ in
         # Appending the next two lines overrides the former.
         "-Xms${toString esHeap}m"
         "-Xmx${toString esHeap}m"
-        # Use ES7 style for the publish address to avoid the annoying warning in ES6.
+        # Use new ES7 style for the publish address to avoid the annoying warning in ES6/7.
         (lib.optionalString (esVersion == "6") "-Des.http.cname_in_publish_address=true")
+        (lib.optionalString (esVersion == "7") "-Des.transport.cname_in_publish_address=true")
       ];
 
       extraConf = ''
-        node.name: ${config.networking.hostName}
-        discovery.zen.ping.unicast.hosts: ${builtins.toJSON esNodes}
+        node.name: ${cfg.nodeName}
+        discovery.zen.ping.unicast.hosts: ${toJSON esNodes}
         bootstrap.memory_lock: true
         ${additionalConfig}
-      '';
+      '' + (lib.optionalString (esVersion == "7") ''
+        cluster.initial_master_nodes: ${toJSON esNodes}
+      '');
     };
 
     systemd.services.elasticsearch = {
