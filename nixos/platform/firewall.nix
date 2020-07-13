@@ -68,21 +68,13 @@ in
 
       Activating the rules listed here by calling `fc-manage`.
 
+      Standard chains:
 
-      Examples
-      --------
+      - nixos-fw: normal accept/reject rules
+      - nixos-nat-pre: prerouting rules, e.g. port redirects (-t nat)
+      - nixos-nat-post: postrouting rules, e.g. masquerding (-t nat)
 
-      Accept TCP traffic from ethfe to port 32542:
-
-      ip46tables -A nixos-fw -p tcp -i ethfe --dport 32542 -j nixos-fw-accept
-
-
-      Reject traffic from certain networks in separate chain:
-
-      ip46tables -N blackhole
-      iptables -A blackhole -s 192.0.2.0/24 -j DROP
-      ip6tables -A blackhole -s 2001:db8::/32 -j DROP
-      ip46tables -A nixos-fw -j blackhole
+      See also https://flyingcircus.io/doc/guide/platform_nixos_2/firewall.html
     '';
 
     flyingcircus.services.sensu-client.checks = {
@@ -98,6 +90,11 @@ in
         command = "/run/wrappers/bin/sudo ${checkIPTables}";
       };
     };
+
+    # This is just to create nixos-nat-(pre|post) ruleset. No further
+    # configuration on the NixOS side. Users may set additional networking.nat.*
+    # options in /etc/local/nixos.
+    networking.nat.enable = true;
 
     networking.firewall =
       # our code generally assumes IPv6
