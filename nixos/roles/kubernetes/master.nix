@@ -26,8 +26,8 @@ let
   # We allow frontend access to the dashboard and the apiserver for external
   # dashboards and kubectl. Names can be used for both dashboard and API server.
   addresses = [
-    feFQDN
     "kubernetes.${fclib.currentRG}.fcio.net"
+    feFQDN
     srvFQDN
   ];
 
@@ -103,6 +103,24 @@ let
   allCerts = adminCerts // {
     sensu = sensuCert;
   };
+
+  # Grant view permission for sensu check (identified by sensuCert).
+  sensuClusterRoleBinding = pkgs.writeText "sensu-crb.json" (toJSON {
+    apiVersion = "rbac.authorization.k8s.io/v1";
+    kind = "ClusterRoleBinding";
+    metadata = {
+      name = "sensu";
+    };
+    roleRef = {
+      apiGroup = "rbac.authorization.k8s.io";
+      kind = "ClusterRole";
+      name = "view";
+    };
+    subjects = [{
+      kind = "User";
+      name = "sensu";
+    }];
+  });
 
   # The dashboard service defined in NixOS uses a floating ClusterIP, but we
   # want a fixed one that can be included in the nginx config.
@@ -247,16 +265,17 @@ in
     services.kubernetes.pki.certs = allCerts;
 
     systemd.services = {
-      kubernetes-monitoring-setup = rec {
+      fc-kubernetes-monitoring-setup = rec {
         description = "Setup permissions for monitoring";
-        after = [ "kubernetes-apiserver.service" ];
+        requires = [ "kube-apiserver.service" ];
+        after = requires;
         wantedBy = [ "multi-user.target" ];
         path = [ pkgs.kubectl ];
         script = ''
-          export KUBECONFIG=/etc/kubernetes/cluster-admin.kubeconfig
-          kubectl create clusterrolebinding sensu --clusterrole=view --user=sensu || true
+          kubectl apply -f ${sensuClusterRoleBinding}
         '';
         serviceConfig = {
+          Environment = "KUBECONFIG=/etc/kubernetes/cluster-admin.kubeconfig";
           Type = "oneshot";
           RemainAfterExit = true;
         };
