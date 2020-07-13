@@ -21,6 +21,7 @@ let
 
 in {
   antivirus = callTest ./antivirus.nix {};
+  coturn = callTest ./coturn.nix {};
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
   fcagent = callTest ./fcagent.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};

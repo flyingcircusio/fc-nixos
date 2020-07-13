@@ -27,6 +27,8 @@ in {
   certmgr = super.callPackage ./certmgr.nix { inherit (pkgs-unstable) buildGoPackage; };
   cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-unstable) buildGoPackage; };
 
+  inherit (pkgs-unstable) coturn;
+
   docsplit = super.callPackage ./docsplit { };
 
   inherit (pkgs-unstable) grafana;
