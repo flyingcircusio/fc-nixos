@@ -65,9 +65,14 @@ in {
     # FC specific customizations
     flyingcircus = {
       agent.enable = false;
+      logrotate.enable = true;
 
-      localConfigDirs = expandLocal
-        [ "logrotate" "nixos" "sensu-client" "telegraf" ];
+      localConfigDirs = {
+        logrotate-vagrant = {
+          user = "vagrant";
+          dir = "/etc/local/logrotate/vagrant";
+        };
+      } // expandLocal [ "nixos" "sensu-client" "telegraf" ];
 
       passwordlessSudoRules = [
         { # Grant unrestricted access to vagrant
