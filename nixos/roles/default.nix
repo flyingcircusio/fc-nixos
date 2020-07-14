@@ -9,9 +9,10 @@ let
 
 in {
   imports = with lib; [
+    ./antivirus.nix
+    ./coturn.nix
     ./docker.nix
     ./external_net
-    ./antivirus.nix
     ./elasticsearch.nix
     ./graylog.nix
     ./kibana.nix

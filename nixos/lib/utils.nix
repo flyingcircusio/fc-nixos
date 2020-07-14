@@ -115,4 +115,9 @@ rec {
         config.flyingcircus.users.userData
       );
 
+  writePrettyJSON = name: x:
+  let json = pkgs.writeText "write-pretty-json-input" (toJSON x);
+  in pkgs.runCommand name { preferLocalBuild = true; } ''
+      ${pkgs.jq}/bin/jq . < ${json} > $out
+    '';
 }
