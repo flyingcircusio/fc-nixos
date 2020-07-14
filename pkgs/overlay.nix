@@ -110,6 +110,8 @@ in {
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost169; };
 
+  inherit (pkgs-unstable) postgresql_12;
+
   inherit (pkgs-unstable) prometheus;
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
@@ -137,6 +139,7 @@ in {
   sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
+
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
   inherit (pkgs-unstable) writeShellScript;
