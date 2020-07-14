@@ -72,11 +72,11 @@ in {
     $machine->waitForUnit("nginx.service");
 
     subtest "elasticsearch should have a graylog index", sub {
-      $machine->succeed("curl http://${host}:9200/_cat/indices?v | grep -q graylog_0");
+      $machine->waitUntilSucceeds("curl http://${host}:9200/_cat/indices?v | grep -q graylog_0");
     };
 
     subtest "graylog API should respond", sub {
-      $machine->succeed("${graylogApi} / | grep -q cluster_id");
+      $machine->waitUntilSucceeds("${graylogApi} / | grep -q cluster_id");
     };
 
     subtest "config script must create telegraf user", sub {
@@ -89,7 +89,7 @@ in {
     };
 
     subtest "public HTTPS should serve graylog dashboard", sub {
-      $machine->succeed("curl -k https://${host} | grep -q 'Graylog Web Interface'");
+      $machine->waitUntilSucceeds("curl -k https://${host} | grep -q 'Graylog Web Interface'");
     };
 
     subtest "sensu check should be red after shutting down graylog", sub {
