@@ -3,8 +3,11 @@
 
 { config, lib, pkgs, ... }:
 
+with builtins;
+
 let
   cfg = config.flyingcircus;
+  fclib = config.fclib;
   gw = lib.findFirst
     (s: s.service == "external_net-gateway") null cfg.enc_services;
   fqdn = "${cfg.enc.name}.${config.networking.domain}";
@@ -24,6 +27,8 @@ in
   config = lib.mkIf cfg.roles.external_net_client.enable (
     let
       gwHost = gw.address;
+      gwIp4 = toString (filter fclib.isIp4 gw.ips);
+      gwIp6 = toString (filter fclib.isIp6 gw.ips);
       extnet = cfg.roles.external_net;
     in
     {
@@ -43,12 +48,14 @@ in
           ExecStart = pkgs.writeScript "network-external-routing-start" ''
             #! ${pkgs.stdenv.shell} -e
             echo "Adding routes via external network gateway ${gwHost}"
-            gw4=$(getent ahostsv4 ${gwHost} | awk 'NR==1 {print $1}')
-            gw6=$(getent ahostsv6 ${gwHost} | awk 'NR==1 {print $1}')
-            echo IPv4 gateway: $gw4
-            echo IPv6 gateway: $gw6
-            ip -4 route add ${extnet.vxlan4} via $gw4 dev ethsrv
-            ip -6 route add ${extnet.vxlan6} via $gw6 dev ethsrv
+            echo IPv4 gateway(s): ${gwIp4}
+            echo IPv6 gateway(s): ${gwIp6}
+            for gw in ${gwIp4}; do
+              ip -4 route add ${extnet.vxlan4} via $gw dev ethsrv
+            done
+            for gw in ${gwIp6}; do
+              ip -6 route add ${extnet.vxlan6} via $gw dev ethsrv
+            done
             iptables -I nixos-fw 3 -i ethsrv -s ${extnet.vxlan4} \
               -j nixos-fw-accept
             ip6tables -I nixos-fw 3 -i ethsrv -s ${extnet.vxlan6} \
@@ -57,14 +64,16 @@ in
           ExecStop = pkgs.writeScript "network-external-routing-stop" ''
             #! ${pkgs.stdenv.shell}
             echo "Removing routes via external network gateway ${gwHost}"
-            gw4=$(getent ahostsv4 ${gwHost} | awk 'NR==1 {print $1}')
-            gw6=$(getent ahostsv6 ${gwHost} | awk 'NR==1 {print $1}')
-            ip -4 route del ${extnet.vxlan4} via $gw4 dev ethsrv
-            ip -6 route del ${extnet.vxlan6} via $gw6 dev ethsrv
             iptables -D nixos-fw -i ethsrv -s ${extnet.vxlan4} \
               -j nixos-fw-accept
             ip6tables -D nixos-fw -i ethsrv -s ${extnet.vxlan6} \
               -j nixos-fw-accept
+            for gw in ${gwIp4}; do
+              ip -4 route del ${extnet.vxlan4} via $gw dev ethsrv
+            done
+            for gw in ${gwIp6}; do
+              ip -6 route del ${extnet.vxlan6} via $gw dev ethsrv
+            done
           '';
           RemainAfterExit = true;
         };
