@@ -9,9 +9,10 @@ let
 
 in {
   imports = with lib; [
+    ./antivirus.nix
+    ./coturn.nix
     ./docker.nix
     ./external_net
-    ./antivirus.nix
     ./elasticsearch.nix
     ./graylog.nix
     ./kibana.nix
@@ -37,6 +38,7 @@ in {
     (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "enable" ] [ "flyingcircus" "roles" "statshost-global" "enable" ])
     (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "globalAllowedMetrics" ] [ "flyingcircus" "roles" "statshost-global" "allowedMetricPrefixes" ])
     (mkRenamedOptionModule [ "flyingcircus" "roles" "statshostproxy" ] [ "flyingcircus" "roles" "statshost-location-proxy" ])
+    (mkRenamedOptionModule [ "flyingcircus" "roles" "kibana" "enable" ] [ "flyingcircus" "roles" "kibana6" "enable" ])
   ];
 
   options = {
