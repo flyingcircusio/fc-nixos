@@ -3,6 +3,7 @@ self: super:
 let
   versions = import ../versions.nix { pkgs = super; };
   pkgs-unstable = import versions.nixos-unstable {};
+  elk7Version = "7.8.0";
 
 in {
   # keep in sync with nixos/platform/garbagecollect/default.nix
@@ -27,7 +28,31 @@ in {
   certmgr = super.callPackage ./certmgr.nix { inherit (pkgs-unstable) buildGoPackage; };
   cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-unstable) buildGoPackage; };
 
+  inherit (pkgs-unstable) coturn;
+
   docsplit = super.callPackage ./docsplit { };
+
+  elasticsearch7 = pkgs-unstable.elasticsearch7.overrideAttrs(_: rec {
+    version = elk7Version;
+    name = "elasticsearch-${version}";
+
+    src = super.fetchurl {
+      url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
+      sha256 = "1vy3z5f3zn9a2caa9jq1w4iagqrdmd27wr51bl6yf8v74169vpr4";
+    };
+    meta.license = null;
+  });
+
+  kibana7 = pkgs-unstable.kibana7.overrideAttrs(_: rec {
+    version = elk7Version;
+    name = "kibana-${version}";
+
+    src = super.fetchurl {
+      url = "https://artifacts.elastic.co/downloads/kibana/${name}-linux-x86_64.tar.gz";
+      sha256 = "0xnh07n894f170ahawcg03jm3xk4qpjjbfwkvd955vdgihpy60gh";
+    };
+    meta.license = null;
+  });
 
   inherit (pkgs-unstable) grafana;
 

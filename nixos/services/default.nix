@@ -7,6 +7,8 @@ let
 
   modulesFromUnstable = [
     "services/monitoring/grafana.nix"
+    "services/search/elasticsearch.nix"
+    "services/search/kibana.nix"
   ];
 
   nixpkgs-unstable-src = (import ../../versions.nix {}).nixos-unstable;

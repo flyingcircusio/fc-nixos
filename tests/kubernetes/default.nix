@@ -35,6 +35,7 @@ let
     ${masterSrv} kubmaster.fcio.net
     ${nodeSrv} kubnode.fcio.net
     ${masterFe} kubmaster.fe.test.fcio.net
+    ${masterFe} kubernetes.test.fcio.net
   '';
 
   redis = import ./redis.nix { inherit pkgs; };
@@ -200,5 +201,6 @@ in {
     subtest "secret key for test user should have correct permissions", sub {
       $kubmaster->succeed("stat /var/lib/kubernetes/secrets/test-key.pem -c %a:%U:%G | grep '600:test:nogroup'");
     };
+
   '';
 })

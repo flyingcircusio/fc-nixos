@@ -523,6 +523,9 @@ in
         extraOptions = {
           AUTH_LDAP_ENABLED = "true";
           AUTH_LDAP_CONFIG_FILE = toString grafanaLdapConfig;
+          # Grafana 7 changed the cookie path, so login fails if old session cookies are present.
+          # Changing the cookie name helps.
+          AUTH_LOGIN_COOKIE_NAME = "grafana7_session";
           LOG_LEVEL = "info";
           PATHS_PROVISIONING = grafanaProvisioningPath;
         };
