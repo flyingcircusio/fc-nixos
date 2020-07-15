@@ -1,12 +1,7 @@
 import ./make-test.nix ({ lib, pkgs, testlib, ... }:
-let 
+let
   vxlanId = 2;
   mtu = 1430;
-
-  encServices = [{
-    address = "gw";
-    service = "external_net-gateway";
-  }];
 
   net6Fe = "2001:db8:1::";
   net6Srv = "2001:db8:2::";
@@ -18,7 +13,7 @@ let
   remote6Fe = net6Fe + "2";
   remote6Vxlan = net6Vxlan + "2";
   vclient6Srv = net6Srv + "3";
-  
+
   net4Srv = "10.0.2";
   net4Vxlan = "10.0.3";
 
@@ -26,6 +21,15 @@ let
   gw4Vxlan = net4Vxlan + ".1"; # set by role, don't change it here
   remote4Vxlan = net4Vxlan + ".2";
   vclient4Srv = net4Srv + ".3";
+
+  encServices = [{
+    address = "gw";
+    service = "external_net-gateway";
+    ips = [
+      gw4Srv
+      gw6Srv
+    ];
+  }];
 
 in {
 
@@ -146,7 +150,7 @@ in {
     $vclient->waitUntilSucceeds("ping -c1 ${gw6Srv}");
     $vclient->succeed("ping -c1 ${gw4Srv}");
 
-    # ping nx0 interface of gateway 
+    # ping nx0 interface of gateway
     $vclient->waitUntilSucceeds("ping -c1 ${gw6Vxlan}");
     $vclient->succeed("ping -c1 ${gw4Vxlan}");
 

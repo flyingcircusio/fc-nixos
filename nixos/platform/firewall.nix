@@ -109,8 +109,12 @@ in
             rg = lib.optionalString
               (rgRules != "")
               "# Accept traffic within the same resource group.\n${rgRules}\n\n";
-            local = "# Local firewall rules.\n${readFile filteredRules}\n";
-          in rg + local;
+            local = ''
+              # Local firewall rules.
+              set -v
+              ${readFile filteredRules}
+            '';
+          in lib.mkAfter (rg + local);
       };
 
     flyingcircus.passwordlessSudoRules =
