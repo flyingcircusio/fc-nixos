@@ -48,8 +48,8 @@ in
           ExecStart = pkgs.writeScript "network-external-routing-start" ''
             #! ${pkgs.stdenv.shell} -e
             echo "Adding routes via external network gateway ${gwHost}"
-            echo IPv4 gateway(s): ${gwIp4}
-            echo IPv6 gateway(s): ${gwIp6}
+            echo "IPv4 gateway(s): ${gwIp4}"
+            echo "IPv6 gateway(s): ${gwIp6}"
             for gw in ${gwIp4}; do
               ip -4 route add ${extnet.vxlan4} via $gw dev ethsrv
             done
