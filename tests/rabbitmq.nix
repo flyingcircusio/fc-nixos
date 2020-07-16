@@ -45,7 +45,7 @@ in {
 
     # sensu checks should be green
     $machine->succeed("${amqpAliveCheck}");
-    $machine->succeed("${nodeHealthCheck}");
+    $machine->waitUntilSucceeds("${nodeHealthCheck}");
 
     $machine->stopJob("rabbitmq.service");
     $machine->waitUntilFails("${amqpPortCheck}");
