@@ -32,7 +32,6 @@ in {
     $machine->waitUntilSucceeds("${amqpPortCheck}");
 
     print($machine->succeed("$cli status"));
-    $machine->succeed("$cli node_health_check");
 
     # make sure this is run before continuing
     $machine->succeed("systemctl start fc-rabbitmq-settings");
