@@ -32,7 +32,6 @@ in {
     $machine->waitUntilSucceeds("${amqpPortCheck}");
 
     print($machine->succeed("$cli status"));
-    $machine->succeed("$cli node_health_check");
 
     # make sure this is run before continuing
     $machine->succeed("systemctl start fc-rabbitmq-settings");
@@ -46,7 +45,7 @@ in {
 
     # sensu checks should be green
     $machine->succeed("${amqpAliveCheck}");
-    $machine->succeed("${nodeHealthCheck}");
+    $machine->waitUntilSucceeds("${nodeHealthCheck}");
 
     $machine->stopJob("rabbitmq.service");
     $machine->waitUntilFails("${amqpPortCheck}");

@@ -8,7 +8,7 @@
   "nixpkgs": {
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "a3a114102ca9c55fc95df5a92d4724b13c612c3a",
-    "sha256": "0xnxq2ykgr2qxwrb7dl342l2sb9c9153zr0hpc5x9pm23mcbj7ji"
+    "rev": "0a92f12c2f6462c5843ce325a1d47116e6a030eb",
+    "sha256": "1kh7b3pg3mqd86w5r3fxbyvzg2q2l5885ipwfs76d5j5056x521y"
   }
 }
