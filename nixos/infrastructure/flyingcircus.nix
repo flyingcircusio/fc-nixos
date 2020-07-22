@@ -44,7 +44,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       gfxmodeBios = "text";
     };
 
-    kernel.sysctl."vm.swappiness" = mkDefault 10;
+    kernel.sysctl."vm.swappiness" = mkDefault 1;
   };
 
   environment.systemPackages = with pkgs; [
