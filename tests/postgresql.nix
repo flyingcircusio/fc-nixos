@@ -1,10 +1,10 @@
 import ./make-test.nix ({ rolename ? "postgresql11", lib, pkgs, ... }:
-let 
+let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
 in {
   name = "postgresql";
-  machine = 
+  machine =
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
@@ -44,11 +44,12 @@ in {
         psql --echo-all -d employees < ${selectSql} | grep -5 "John Doe"
       '';
 
-      createExtensions = pkgs.writeScript "extension-tests" ''
-        set -e
-        psql employees -c "CREATE EXTENSION postgis;"
-        psql employees -c "CREATE EXTENSION temporal_tables;"
-      '';
+      psql = "sudo -u postgres -- psql";
+
+      createTemporalExtension =
+        if rolename == "postgresql12"
+        then "CREATE EXTENSION periods CASCADE"
+        else "CREATE EXTENSION temporal_tables";
     in
     ''
       $machine->waitForUnit("postgresql.service");
@@ -58,9 +59,9 @@ in {
       $machine->succeed('sudo -u postgres -- sh ${dataTest}');
 
       # connection tests with password
-      $machine->succeed('sudo -u postgres -- psql -c "CREATE USER test; ALTER USER test WITH PASSWORD \'test\'"');
-      $machine->succeed('sudo -u postgres -- psql postgresql://test:test@${ipv4}:5432/postgres -c "SELECT \'hello\'" | grep hello');
-      $machine->succeed('sudo -u postgres -- psql postgresql://test:test@[${ipv6}]:5432/postgres -c "SELECT \'hello\'" | grep hello');
+      $machine->succeed('${psql} -c "CREATE USER test; ALTER USER test WITH PASSWORD \'test\'"');
+      $machine->succeed('${psql} postgresql://test:test@${ipv4}:5432/postgres -c "SELECT \'hello\'" | grep hello');
+      $machine->succeed('${psql} postgresql://test:test@[${ipv6}]:5432/postgres -c "SELECT \'hello\'" | grep hello');
 
       # should not trust connections via TCP
       $machine->fail('psql --no-password -h localhost -l');
@@ -68,12 +69,9 @@ in {
       # service user should be able to write to local config dir
       $machine->succeed('sudo -u postgres touch `echo /etc/local/postgresql/*`/test');
 
-      # test extensions that work on all versions
-      $machine->succeed('sudo -u postgres -- sh ${createExtensions}');
-    '' +
-      lib.optionalString  (rolename != "postgresql95")
-    ''# Do the rum extension test. Rum is not available for 9.5.
-      $machine->succeed('sudo -u postgres -- psql employees -c "CREATE EXTENSION rum;"');
+      $machine->succeed('${psql} employees -c "CREATE EXTENSION postgis;"');
+      $machine->succeed('${psql} employees -c "CREATE EXTENSION rum;"');
+      $machine->succeed('${psql} employees -c "${createTemporalExtension};"');
     '';
 
 })

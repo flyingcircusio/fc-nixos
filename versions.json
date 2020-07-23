@@ -2,13 +2,13 @@
   "nixos-unstable": {
     "owner": "NixOS",
     "repo": "nixpkgs",
-    "rev": "dc80d7bc4a244120b3d766746c41c0d9c5f81dfa",
-    "sha256": "0dy0mp7alc7m34zxall14x42qx9yjm7b0m6psgmw0lb6j1iy1pla"
+    "rev": "8d05772134f17180fb2711d0660702dae2a67313",
+    "sha256": "0pnyg26c1yhnp3ymzglc71pd9j0567ymqy6il5ywc82bbm1zy25a"
   },
   "nixpkgs": {
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "0a92f12c2f6462c5843ce325a1d47116e6a030eb",
-    "sha256": "1kh7b3pg3mqd86w5r3fxbyvzg2q2l5885ipwfs76d5j5056x521y"
+    "rev": "9d57ce89bae75371996c40481d39924309234d67",
+    "sha256": "0zwn31dy5jhxdg3yx6m4asxb69rdyllfybm1c8ghvmdpyrb72jsv"
   }
 }
