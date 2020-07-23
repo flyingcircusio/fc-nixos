@@ -236,9 +236,16 @@ in {
           listenAddresses);
 
       telegraf.inputs = {
-        postgresql = [{
-          address = "host=/tmp user=root sslmode=disable dbname=postgres";
-        }];
+        postgresql = [
+          (if (lib.versionOlder cfg.majorVersion "12") then {
+            address = "host=/tmp user=root sslmode=disable dbname=postgres";
+          }
+          else {
+            address = "host=/run/postgresql user=root sslmode=disable dbname=postgres";
+            # Workaround for a telegraf bug: https://github.com/influxdata/telegraf/issues/6712
+            ignored_databases = [ "postgres" "template0" "template1" ];
+          })
+        ];
       };
     };
 
