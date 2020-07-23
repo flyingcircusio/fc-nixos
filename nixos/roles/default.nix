@@ -17,12 +17,14 @@ in {
     ./graylog.nix
     ./kibana.nix
     ./kubernetes
+    ./lamp.nix
     ./loghost.nix
     ./mailout.nix
     ./mailserver.nix
     ./memcached.nix
     ./mongodb
     ./mysql.nix
+    ./lamp.nix
     ./nfs.nix
     ./nginx.nix
     ./postgresql.nix
