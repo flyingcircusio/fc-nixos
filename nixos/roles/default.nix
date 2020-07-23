@@ -24,7 +24,6 @@ in {
     ./memcached.nix
     ./mongodb
     ./mysql.nix
-    ./lamp.nix
     ./nfs.nix
     ./nginx.nix
     ./postgresql.nix

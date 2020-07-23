@@ -13,8 +13,6 @@ in {
       apacheConfFile = /etc/local/lamp/apache.conf;
       phpiniConfFile = /etc/local/lamp/php.ini;
 
-      services.httpd.user = "s-vmonitor";
-
       phpOptions = ''
           extension=${pkgs.php73Packages.memcached}/lib/php/extensions/memcached.so
           extension=${pkgs.php73Packages.imagick}/lib/php/extensions/imagick.so
@@ -30,25 +28,31 @@ in {
 
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           ; Tideways
+          ;
+          ; This is intended to be production-ready so it doesn't create too 
+          ; much overhead. If you need to increase tracing, then you can 
+          ; adjust this in your local php.ini
 
           extension=${pkgs.tideways_module}/lib/php/extensions/tideways-php-7.3-zts.so
-          tideways.sample_rate=100
-          tideways.connection=tcp://127.0.0.1:9135
-          tideways.collect=full
-          tideways.features.phpinfo=1
-          tideways.dynamic_tracepoints.enable_web=1
-          tideways.dynamic_tracepoints.enable_cli=1
+
+          tideways.connection = tcp://127.0.0.1:9135
+
+          tideways.features.phpinfo = 1
+
+          tideways.dynamic_tracepoints.enable_web = 1
+          tideways.dynamic_tracepoints.enable_cli = 1
+
           ; customers need to add their api key locally
-          ; tideways.api_key=xxxxx
+          ; tideways.api_key = xxxxx
 
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           ; opcache
 
           zend_extension = opcache.so
-          opcache.enable=1
-          opcache.enable_cli=0
-          opcache.interned_strings_buffer=8
-          opcache.max_accelerated_files=40000
+          opcache.enable = 1
+          opcache.enable_cli = 0
+          opcache.interned_strings_buffer = 8
+          opcache.max_accelerated_files = 40000
           opcache.memory_consumption = 512
           opcache.validate_timestamps = 0
 
@@ -142,12 +146,15 @@ Listen localhost:8001
         after = wants;
         serviceConfig = {
           ExecStart = ''
-            ${pkgs.tideways_daemon}/tideways-daemon --debug --dryrun --address=127.0.0.1:9135
+            ${pkgs.tideways_daemon}/tideways-daemon --address=127.0.0.1:9135
           '';
           Restart = "always";
           After = [ "httpd.service" ];
           RestartSec = "60s";
-          User = "tideways";
+          # The daemon currently crashes when run with the tideways user.
+          # We have a ticket with tideways, run with nobody until this is
+          # fixed.
+          User = "nobody";
           Type = "simple";
         };
       };
