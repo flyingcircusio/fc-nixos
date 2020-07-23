@@ -17,6 +17,7 @@ in {
     ./graylog.nix
     ./kibana.nix
     ./kubernetes
+    ./lamp.nix
     ./loghost.nix
     ./mailout.nix
     ./mailserver.nix
