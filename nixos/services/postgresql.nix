@@ -6,10 +6,10 @@ let
   cfg = config.flyingcircus.services.postgresql;
   fclib = config.fclib;
   packages = {
-    "9.5" = pkgs.postgresql95;
     "9.6" = pkgs.postgresql96;
     "10" = pkgs.postgresql_10;
     "11" = pkgs.postgresql_11;
+    "12" = pkgs.postgresql_12;
   };
 
   listenAddresses =
@@ -55,7 +55,7 @@ in {
       majorVersion = mkOption {
           type = types.string;
           description = ''
-            The major version of PostgreSQL to use (9.5, 9.6, 10, 11).
+            The major version of PostgreSQL to use (9.6, 10, 11, 12).
           '';
         };
     };
@@ -67,19 +67,25 @@ in {
   let
     postgresqlPkg = getAttr cfg.majorVersion packages;
 
+    extensions = lib.optionals (lib.versionOlder cfg.majorVersion "12") [
+      (pkgs.postgis.override { postgresql = postgresqlPkg; })
+      (pkgs.temporal_tables.override { postgresql = postgresqlPkg; })
+      (pkgs.rum.override { postgresql = postgresqlPkg; })
+    ] ++ lib.optionals (lib.versionAtLeast cfg.majorVersion "12") [
+      postgresqlPkg.pkgs.periods
+      postgresqlPkg.pkgs.postgis
+      (pkgs.rum.override { postgresql = postgresqlPkg; postgresqlFromUnstable = true; })
+    ];
+
   in {
 
     services.postgresql.enable = true;
     services.postgresql.package = postgresqlPkg;
-    services.postgresql.extraPlugins = [
-      (pkgs.temporal_tables.override { postgresql = postgresqlPkg; })
-      (pkgs.postgis.override { postgresql = postgresqlPkg; })
-    ] ++ lib.optionals
-      (lib.versionAtLeast cfg.majorVersion "9.6")
-      [ (pkgs.rum.override { postgresql = postgresqlPkg; }) ];
+    services.postgresql.extraPlugins = extensions;
 
     services.postgresql.initialScript = ./postgresql-init.sql;
     services.postgresql.dataDir = "/srv/postgresql/${cfg.majorVersion}";
+
     systemd.services.postgresql.bindsTo = [ "network-addresses-ethsrv.service" ];
 
     systemd.services.postgresql.postStart =
@@ -94,6 +100,11 @@ in {
       fi
       ${psql} -q -d nagios -c 'REVOKE ALL ON SCHEMA public FROM PUBLIC CASCADE;'
     '';
+
+    systemd.services.postgresql.serviceConfig =
+      lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "12") {
+        RuntimeDirectory = "postgresql";
+      };
 
     users.users.postgres = {
       shell = "/run/current-system/sw/bin/bash";
