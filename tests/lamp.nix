@@ -11,13 +11,16 @@ import ./make-test.nix ({ ... }:
   };
 
 
-  # the tideways daemon crashes, for some reason
-  # // $lamp->waitForUnit("tideways-daemon.service");
 
   testScript = ''
     $lamp->waitForUnit("httpd.service");
-
     $lamp->waitForOpenPort(8000);
+
+    # it crashes in the test but works in production. we are in touch with
+    # tideways to figure this out
+    #
+    # $lamp->waitForUnit("tideways-daemon.service");
+    # $lamp->waitForOpenPort(9135);
 
     $lamp->succeed('mkdir -p /srv/docroot');
     $lamp->succeed('ln -s /srv/docroot /etc/local/lamp/docroot');

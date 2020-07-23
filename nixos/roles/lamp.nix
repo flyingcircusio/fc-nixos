@@ -24,7 +24,7 @@ in {
           output_buffering = On
           short_open_tag = On
           curl.cainfo = /etc/ssl/certs/ca-certificates.crt
-          sendmail_path = /var/setuid-wrappers/sendmail -t -i
+          sendmail_path = /run/wrappers/bin/sendmail -t -i
 
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           ; Tideways
@@ -128,7 +128,6 @@ Listen localhost:8001
         user = "nobody";
       };
 
-
       # tideways daemon
       users.groups.tideways.gid = config.ids.gids.tideways;
 
@@ -149,7 +148,6 @@ Listen localhost:8001
             ${pkgs.tideways_daemon}/tideways-daemon --address=127.0.0.1:9135
           '';
           Restart = "always";
-          After = [ "httpd.service" ];
           RestartSec = "60s";
           # The daemon currently crashes when run with the tideways user.
           # We have a ticket with tideways, run with nobody until this is
