@@ -163,4 +163,7 @@ in {
     packageOverrides = import ./overlay-python.nix super;
   };
 
+  tideways_daemon = super.callPackage ./tideways/daemon.nix {};
+  tideways_module = super.callPackage ./tideways/module.nix {};
+
 }

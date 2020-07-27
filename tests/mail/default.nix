@@ -66,6 +66,9 @@ in
 
             # conflicts with dnsmasq
             services.kresd.enable = lib.mkForce false;
+
+            # ... but build the package at least
+            environment.systemPackages = [ pkgs.knot-dns ];
           }
         ];
       };
