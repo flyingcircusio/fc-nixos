@@ -11,8 +11,8 @@ with builtins;
 
 let
   snm = fetchTarball {
-    url = "https://github.com/flyingcircusio/nixos-mailserver/archive/d1bc7eb2b532bc0f65f52cfd4b99368a0e2bb3dc.tar.gz";
-    sha256 = "1j6bfafng0309mp7r2bd02nlhfy1zyl6r8cbs03yrwz70y20q4ka";
+    url = "https://github.com/flyingcircusio/nixos-mailserver/archive/e4f8e0c154f3f60487fd9ca8c39f90771c700195.tar.gz";
+    sha256 = "0q535b14h7jln09v1q833ixily6c7vbksbg4bl9pzn86k11fcxff";
   };
 
   role = config.flyingcircus.roles.mailserver;
@@ -33,7 +33,6 @@ let
 
 in {
   imports = [
-    # XXX conditional import?
     snm
     ./roundcube.nix
     ./rspamd.nix
