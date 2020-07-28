@@ -176,6 +176,8 @@ with builtins;
 
         telegraf.inputs.rabbitmq = [
           {
+            client_timeout = "10s";
+            header_timeout = "10s";
             url = "http://${config.networking.hostName}:15672";
             username = "fc-telegraf";
             password = telegrafPassword;
