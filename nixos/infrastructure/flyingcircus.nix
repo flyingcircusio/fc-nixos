@@ -4,6 +4,9 @@ with lib;
 
 let
   cfg = config.flyingcircus;
+  telegrafShowConfig = pkgs.writeScriptBin "telegraf-show-config" ''
+    cat $(systemctl cat telegraf | grep "ExecStart=" | cut -d" " -f3 | tr -d '"')
+  '';
 
 in
 mkIf (cfg.infrastructureModule == "flyingcircus") {
@@ -49,6 +52,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   environment.systemPackages = with pkgs; [
     fc.userscan
+    telegrafShowConfig
   ];
 
   fileSystems = {
