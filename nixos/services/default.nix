@@ -12,8 +12,10 @@ let
     "services/continuous-integration/gitlab-runner.nix"
     "services/misc/docker-registry.nix"
     "services/monitoring/grafana.nix"
+    "services/networking/prosody.nix"
     "services/search/elasticsearch.nix"
     "services/search/kibana.nix"
+    "services/web-apps/jitsi-meet.nix"
   ];
 
   nixpkgs-unstable-src = (import ../../versions.nix {}).nixos-unstable;
@@ -27,6 +29,8 @@ in {
     ./gitlab
     ./graylog.nix
     ./haproxy.nix
+    ./jitsi/jicofo.nix
+    ./jitsi/jitsi-videobridge.nix
     ./logrotate
     ./nginx
     ./percona.nix
