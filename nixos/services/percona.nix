@@ -53,7 +53,7 @@ let
       echo -n "''${pw}" > ${cfg.rootPasswordFile}
     fi
     chown root:service ${cfg.rootPasswordFile}
-    chmod 640 ${cfg.rootPasswordFile}
+    chmod 660 ${cfg.rootPasswordFile}
 
     pw=$(<${cfg.rootPasswordFile})
     cat > /root/.my.cnf <<__EOT__
