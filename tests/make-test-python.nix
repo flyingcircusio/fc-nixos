@@ -1,4 +1,4 @@
-# Make a test using Perl test scripts, possibly with multiple test cases.
+# Make a test using Python test scripts, possibly with multiple test cases.
 # f can be a set or a function returning a set.
 # A single test case is defined by a name, test script and machine / nodes specification.
 # Multiple test cases can be defined in a set called 'testCases'.
@@ -37,14 +37,16 @@
 f: {
   system ? builtins.currentSystem
   , nixpkgs ? (import ../versions.nix {}).nixpkgs
+  , nixpkgs-unstable ? (import ../versions.nix {}).nixos-unstable
   , pkgs ? import ../. { inherit nixpkgs; }
   , minimal ? false
   , config ? {}
   , ...
 } @ args:
 
-with import "${nixpkgs}/nixos/lib/testing.nix" {
-  inherit system minimal config;
+with import ./testing-python.nix {
+  inherit system pkgs;
+  pkgs-unstable = (import nixpkgs-unstable {});
 };
 
 let
