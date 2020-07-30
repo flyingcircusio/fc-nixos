@@ -79,12 +79,34 @@ in {
 
   mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
-  mongodb_3_2 = super.callPackage ./mongodb/3.2.nix {
+
+  mongodb-3_2 = super.callPackage ./mongodb/3.2.nix {
     sasl = super.cyrus_sasl;
     boost = super.boost160;
     # 3.2 is too old for the current libpcap version 1.9, use 1.8.1
     libpcap = self.libpcap_1_8;
   };
+  mongodb_3_2 = self.mongodb-3_2;
+  mongodb-3_4 = super.mongodb;
+  mongodb-3_6 = pkgs-unstable.mongodb-3_6.overrideAttrs(_: rec {
+    meta.license = null;
+    version = "3.6.19";
+    name = "mongodb-${version}";
+    src = super.fetchurl {
+      url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
+      sha256 = "0y0k5lc2czvg8zirvqfnmpv9z0xz2slp2zfacp0hm0kzcnq82m51";
+    };
+  });
+  mongodb-4_0 = pkgs-unstable.mongodb-4_0.overrideAttrs(_: rec {
+    meta.license = null;
+    version = "4.0.19";
+    name = "mongodb-${version}";
+    src = super.fetchurl {
+      url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
+      sha256 = "1kbw8vjbwlh94y58am0cxdz92mpb4amf575x0p456h1k3kh87rjg";
+    };
+  });
+
   mysql = super.mariadb;
 
   nginx = super.nginx.override {

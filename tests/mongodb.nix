@@ -1,10 +1,12 @@
-import ./make-test.nix ({ rolename ? "mongodb34", lib, pkgs, ... }:
-let 
+import ./make-test.nix ({ version ? "4.0", lib, pkgs, ... }:
+let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
+  rolename = "mongodb${lib.replaceStrings ["."] [""] version}";
+
 in {
   name = "mongodb";
-  machine = 
+  machine =
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
@@ -35,13 +37,15 @@ in {
     check = ipaddr: ''
       $machine->succeed('mongo --ipv6 ${ipaddr}:27017/test ${testJs} | grep hellomongo');
     '';
-  
+
   in ''
       $machine->waitForUnit("mongodb.service");
+      # Check if we are using the correct version.
+      $machine->succeed("systemctl show mongodb --property ExecStart --value | grep -q mongodb-${version}");
       $machine->waitForOpenPort(27017);
       $machine->waitUntilSucceeds('mongo --eval db');
     '' + lib.concatMapStringsSep "\n" check [ "127.0.0.1" "[::1]" ipv4 "[${ipv6}]" ]
-    + '' 
+    + ''
       # service user should be able to write to local config dir
       $machine->succeed('sudo -u mongodb touch /etc/local/mongodb/mongodb.yaml');
     '';

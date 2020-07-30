@@ -39,6 +39,16 @@ let
 
   checkMongoCmd = (pkgs.callPackage ./check.nix {}) + /bin/check_mongo;
 
+  mongodbRoles = with config.flyingcircus.roles; {
+    "3.2" = mongodb32.enable;
+    "3.4" = mongodb34.enable;
+    "3.6" = mongodb36.enable;
+    "4.0" = mongodb40.enable;
+  };
+  enabledRoles = lib.filterAttrs (n: v: v) mongodbRoles;
+  enabledRolesCount = length (lib.attrNames enabledRoles);
+  majorVersion = head (lib.attrNames enabledRoles);
+
 in {
   options =
   let
@@ -49,27 +59,21 @@ in {
     flyingcircus.roles = {
       mongodb32 = mkRole "3.2";
       mongodb34 = mkRole "3.4";
+      mongodb36 = mkRole "3.6";
+      mongodb40 = mkRole "4.0";
     };
   };
 
-  config =
-  let
-    package =
-      if roles.mongodb32.enable
-      then pkgs.mongodb_3_2
-      else if roles.mongodb34.enable
-      then pkgs.mongodb
-      else null;
+  config = lib.mkMerge [
 
-  in lib.mkMerge [
-   (lib.mkIf (package != null) {
-
-      assertions = [
-        {
-          assertion = roles.mongodb32.enable != roles.mongodb34.enable;
-          message = "MongoDB roles are mutually exclusive. Only one may be enabled.";
-        }
-      ];
+    (lib.mkIf (enabledRolesCount > 0) {
+      assertions =
+        [
+          {
+            assertion = enabledRolesCount == 1;
+            message = "MongoDB roles are mutually exclusive. Only one may be enabled.";
+          }
+        ];
 
       environment.systemPackages = [
         pkgs.mongodb-tools
@@ -79,7 +83,7 @@ in {
       services.mongodb.dbpath = "/srv/mongodb";
       services.mongodb.bind_ip = lib.concatStringsSep "," listenAddresses;
       services.mongodb.pidFile = "/run/mongodb.pid";
-      services.mongodb.package = package;
+      services.mongodb.package = pkgs."mongodb-${lib.replaceStrings ["."] ["_"] majorVersion}";
 
       systemd.services.mongodb = {
         preStart = "echo never > /sys/kernel/mm/transparent_hugepage/defrag";
