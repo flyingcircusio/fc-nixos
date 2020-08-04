@@ -25,7 +25,20 @@ let
   # First graylog or loghost node becomes master
   glNodes =
     fclib.listServiceAddresses "loghost-server" ++
+    fclib.listServiceAddresses "loghost-location-server" ++
+    fclib.listServiceAddresses "graylog-server";  
+
+  localTargets = 
+    fclib.listServiceAddresses "loghost-server" ++
     fclib.listServiceAddresses "graylog-server";
+
+  logTargets = 
+    # Pick one of the regular graylog servers ...
+    (if (length localTargets > 0) then
+      [(head localTargets)] else []) ++
+
+    # ... and add the central one (if it exists).
+    (fclib.listServiceAddresses "loghost-location-server");
 
   masterHostname =
     (head
@@ -114,6 +127,9 @@ in
 
       networking.firewall.allowedTCPPorts = [ 9002 ];
 
+      networking.firewall.extraCommands =
+        "ip46tables -A nixos-fw -i ethsrv -p udp --dport ${toString syslogInputPort} -j nixos-fw-accept";
+
       flyingcircus.services.graylog = {
 
         enable = true;
@@ -200,7 +216,7 @@ in
       services.haproxy.config = lib.mkForce (let
         nodes =
           filter
-            (s: s.service == "loghost-server" || s.service == "graylog-server")
+            (s: s.service == "loghost-server" || s.service == "graylog-server" || s.service == "loghost-location-server")
             config.flyingcircus.encServices;
 
         # graylog is only listening for IPv6
@@ -272,11 +288,10 @@ in
       '');
     })
 
-    (lib.mkIf (length glNodes > 0) {
+    (lib.mkIf (length logTargets > 0) {
       # Forward all syslog to graylog, if there is one in the RG.
-      flyingcircus.syslog.extraRules = ''
-        *.* @${head glNodes}:${toString syslogInputPort};RSYSLOG_SyslogProtocol23Format
-      '';
+      flyingcircus.syslog.extraRules = concatStringsSep "\n"
+              (map (target: "*.* @${target}:${toString syslogInputPort};RSYSLOG_SyslogProtocol23Format") logTargets);
     })
 
     {

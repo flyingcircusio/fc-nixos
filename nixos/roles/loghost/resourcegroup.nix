@@ -6,11 +6,6 @@ let
   cfg = config.flyingcircus.roles.loghost;
   fclib = config.fclib;
 
-  loghostService = lib.findFirst
-    (s: s.service == "loghost-server")
-    null
-    config.flyingcircus.encServices;
-
   # It's common to have stathost and loghost on the same node. Each should
   # use half of the memory then. A general approach for this kind of
   # multi-service would be nice.
@@ -29,9 +24,17 @@ in
       This role enables the full graylog stack at once (GL, ES, Mongo).
     '';
 
+    # flyingcircus.roles.loghost-location.enable = lib.mkEnableOption ''
+    #   Flying Circus central Loghost role.
+    #   This role enables the full graylog stack at once (GL, ES, Mongo).
+
+    #   Used for location-central log hosts that aggregate system logs from
+    #   all systems in that location.
+    # '';
+
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf (cfg.enable) {
 
     flyingcircus.roles.graylog = fclib.mkPlatform {
       enable = true;
