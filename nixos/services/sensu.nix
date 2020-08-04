@@ -28,7 +28,7 @@ let
       filter = name: _: (baseNameOf name) != "README.txt";
       src = /etc/local/sensu-client;
     }
-    else /var/empty;
+    else "/var/empty";
 
   client_json = pkgs.writeText "client.json" ''
     {

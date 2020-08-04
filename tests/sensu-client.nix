@@ -7,11 +7,6 @@ import ./make-test-python.nix ({ pkgs, lib, ... }:
   machine = {
     imports = [ ../nixos ];
 
-    # Hydra fails when trying to build the local sensu
-    # config which is referenced in the start script so
-    # we have to patch it here...
-    systemd.services.sensu-client.script = lib.mkForce "sleep 100";
-
     flyingcircus.services.sensu-client = {
       password = "sensu";
       server = "127.0.0.1";
