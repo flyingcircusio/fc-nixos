@@ -62,6 +62,7 @@ in {
   rabbitmq38 = callTest ./rabbitmq.nix { rolename = "rabbitmq38"; };
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
+  sensu-client = callTest ./sensu-client.nix {};
   statshost-global = callTest ./statshost/statshost-global.nix {};
   statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
