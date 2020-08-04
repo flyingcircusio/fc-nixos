@@ -1,4 +1,4 @@
-import ./make-test.nix ({ version ? "6", pkgs, ... }:
+import ./make-test-python.nix ({ pkgs, version ? "6", ... }:
 let
   ipv4 = "192.168.1.1";
 in
@@ -31,12 +31,12 @@ in
     };
 
   testScript = ''
-    startAll;
+    start_all()
 
-    $machine->waitForUnit("elasticsearch");
-    $machine->waitForUnit("kibana");
+    machine.wait_for_unit("elasticsearch")
+    machine.wait_for_unit("kibana")
 
-    my $statusCheck = <<'END';
+    status_check = """
       for count in {0..100}; do
         echo "Checking..." | logger -t kibana-status
         curl -s "${ipv4}:5601/api/status" | grep -q '"state":"green' && exit
@@ -45,16 +45,16 @@ in
       echo "Failed" | logger -t kibana-status
       curl -s "${ipv4}:5601/api/status"
       exit 1
-    END
+    """
 
-    subtest "cluster healthy?", sub {
-      $machine->succeed($statusCheck);
-    };
+    with subtest("cluster healthy?"):
+        machine.succeed(status_check)
 
-    subtest "killing the kibana process should trigger an automatic restart", sub {
-      $machine->succeed("kill -9 \$(systemctl show kibana.service --property MainPID --value)");
-      $machine->waitForUnit("kibana");
-      $machine->succeed($statusCheck);
-    };
+    with subtest("killing the kibana process should trigger an automatic restart"):
+        machine.succeed(
+            "kill -9 $(systemctl show kibana.service --property MainPID --value)"
+        )
+        machine.wait_for_unit("kibana")
+        machine.succeed(status_check)
   '';
 })

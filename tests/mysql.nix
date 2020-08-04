@@ -117,7 +117,7 @@ in
     };
 
     subtest "secret files should have correct permissions", sub {
-      $master->succeed("stat /etc/local/mysql/mysql.passwd -c %a:%U:%G | grep '640:root:service'");
+      $master->succeed("stat /etc/local/mysql/mysql.passwd -c %a:%U:%G | grep '660:root:service'");
       $master->succeed("stat /root/.my.cnf -c %a:%U:%G | grep '440:root:root'");
       $master->succeed("stat /run/mysqld/init_set_root_password.sql -c %a:%U:%G | grep '440:mysql:root'");
     };
