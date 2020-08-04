@@ -2,7 +2,7 @@
 
 assert stdenv.hostPlatform.system == "x86_64-linux";
 
-let version = "1.6.14"; in
+let version = "1.6.16"; in
 
 stdenv.mkDerivation {
   name = "tideways-daemon-${version}";
@@ -11,7 +11,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://s3-eu-west-1.amazonaws.com/tideways/daemon/${version}/tideways-daemon_linux_amd64-${version}.tar.gz";
-    sha256 = "1fnhi63h7nk80fbzz7vw3dsgdb0bg1fa3g0zj3jr4xcmp48fdrz3";
+    sha256 = "0b1i9n7916vis26d75f119hxr0q89vps9hw7cqbx8473f31l6my3";
   };
 
   meta = {
