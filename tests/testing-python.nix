@@ -13,7 +13,7 @@
 , extraConfigurations ? [] }:
 
 
-with import "${pkgs.path}/nixos/lib/build-vms.nix" {
+with import (pkgs.path + "/nixos/lib/build-vms.nix") {
   inherit system minimal extraConfigurations pkgs;
   };
 
