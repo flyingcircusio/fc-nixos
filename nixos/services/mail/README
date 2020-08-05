@@ -51,10 +51,6 @@ Configuration files in /etc/local/mail
     `aliases` entries in `users.json`. Target domains must be configured
     locally.
 
-- remote_valiases.map: Arbitrary virtual aliases in postmap format. No
-    restrictions apply to targets. See
-    http://www.postfix.org/VIRTUAL_README.html for details.
-
 - main.cf: Additional configuration statements to be appended to
     /etc/postfix/main.cf. See postconf(5) for a full list of options.
 
