@@ -206,9 +206,11 @@ in
               path = [ pkgs.nettools pkgs.procps ];
               script = ''
                 nameif eth${vlan} ${mac}
+                sysctl net.ipv6.conf.eth${vlan}.accept_ra=0
                 sysctl net.ipv6.conf.eth${vlan}.autoconf=0
               '';
               preStop = ''
+                sysctl net.ipv6.conf.eth${vlan}.accept_ra=1
                 sysctl net.ipv6.conf.eth${vlan}.autoconf=1
               '';
               serviceConfig = {
