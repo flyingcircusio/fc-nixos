@@ -16,11 +16,10 @@ import ./make-test.nix ({ ... }:
     $lamp->waitForUnit("httpd.service");
     $lamp->waitForOpenPort(8000);
 
-    # it crashes in the test but works in production. we are in touch with
-    # tideways to figure this out
-    #
-    # $lamp->waitForUnit("tideways-daemon.service");
-    # $lamp->waitForOpenPort(9135);
+    $lamp->waitForUnit("tideways-daemon.service");
+    $lamp->waitForOpenPort(9135);
+
+    $lamp->succeed('journalctl -u tideways.daemon');
 
     $lamp->succeed('mkdir -p /srv/docroot');
     $lamp->succeed('ln -s /srv/docroot /etc/local/lamp/docroot');

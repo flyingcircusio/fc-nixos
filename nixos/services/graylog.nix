@@ -279,12 +279,11 @@ in {
 
       postStart = ''
         # Wait until GL is available for use
-        for count in {0..120}; do
+        for count in {0..10000}; do
             ${pkgs.curl}/bin/curl -m 2 -s ${webListenUri} && exit
             echo "Trying to connect to ${webListenUri} for ''${count}s"
             sleep 1
         done
-        echo "Tried to connect to ${webListenUri} 120 times, giving up"
         exit 1
       '';
 

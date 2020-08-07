@@ -38,8 +38,10 @@ in {
   logrotate = callTest ./logrotate.nix {};
   mail = callTest ./mail {};
   memcached = callTest ./memcached.nix {};
-  mongodb32 = callTest ./mongodb.nix { rolename = "mongodb32"; };
-  mongodb34 = callTest ./mongodb.nix { rolename = "mongodb34"; };
+  mongodb32 = callTest ./mongodb.nix { version = "3.2"; };
+  mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
+  mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
+  mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
   mysql55 = callTest ./mysql.nix { rolename = "mysql55"; };
   mysql56 = callTest ./mysql.nix { rolename = "mysql56"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
@@ -60,6 +62,7 @@ in {
   rabbitmq38 = callTest ./rabbitmq.nix { rolename = "rabbitmq38"; };
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
+  sensu-client = callTest ./sensu-client.nix {};
   statshost-global = callTest ./statshost/statshost-global.nix {};
   statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};

@@ -149,10 +149,7 @@ Listen localhost:8001
           '';
           Restart = "always";
           RestartSec = "60s";
-          # The daemon currently crashes when run with the tideways user.
-          # We have a ticket with tideways, run with nobody until this is
-          # fixed.
-          User = "nobody";
+          User = "tideways";
           Type = "simple";
         };
       };
