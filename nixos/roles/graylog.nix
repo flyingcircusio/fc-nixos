@@ -25,20 +25,15 @@ let
   # First graylog or loghost node becomes master
   glNodes =
     fclib.listServiceAddresses "loghost-server" ++
-    fclib.listServiceAddresses "loghost-location-server" ++
-    fclib.listServiceAddresses "graylog-server";  
-
-  localTargets = 
-    fclib.listServiceAddresses "loghost-server" ++
     fclib.listServiceAddresses "graylog-server";
 
-  logTargets = 
+  logTargets = lib.unique (
     # Pick one of the regular graylog servers ...
-    (if (length localTargets > 0) then
-      [(head localTargets)] else []) ++
+    (if (length glNodes > 0) then
+      [(head glNodes)] else []) ++
 
     # ... and add the central one (if it exists).
-    (fclib.listServiceAddresses "loghost-location-server");
+    (fclib.listServiceAddresses "loghost-location-server"));
 
   masterHostname =
     (head
@@ -289,7 +284,7 @@ in
     })
 
     (lib.mkIf (length logTargets > 0) {
-      # Forward all syslog to graylog, if there is one in the RG.
+      # Forward all syslog to graylog, if there is one.
       flyingcircus.syslog.extraRules = concatStringsSep "\n"
               (map (target: "*.* @${target}:${toString syslogInputPort};RSYSLOG_SyslogProtocol23Format") logTargets);
     })
