@@ -135,7 +135,7 @@ in
     $mail->succeed('grep testmail5 /srv/mail/example.local/user2/new/*');
 
     # IMAP
-    $client->waitForOpenPort(143);
+    $mail->waitForOpenPort(143);
     $client->succeed('python3 ${./test_imap.py}');
 
     # SMTP outgoing
