@@ -163,6 +163,8 @@ in {
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
 
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
+  tideways_daemon = super.callPackage ./tideways/daemon.nix {};
+  tideways_module = super.callPackage ./tideways/module.nix {};
 
   inherit (pkgs-unstable) writeShellScript;
 
@@ -173,19 +175,25 @@ in {
 
   # === Python ===
 
-  python = super.python.override {
+  # python2
+  python27 = super.python27.override {
     packageOverrides = import ./overlay-python.nix super;
   };
+  python27Packages = self.python27.pkgs;
 
-  python3 = super.python3.override {
+  python35 = super.python35.override {
     packageOverrides = import ./overlay-python.nix super;
   };
+  python35Packages = self.python35.pkgs;
+
+  python36 = super.python36.override {
+    packageOverrides = import ./overlay-python.nix super;
+  };
+  python36Packages = self.python36.pkgs;
 
   python37 = super.python37.override {
     packageOverrides = import ./overlay-python.nix super;
   };
-
-  tideways_daemon = super.callPackage ./tideways/daemon.nix {};
-  tideways_module = super.callPackage ./tideways/module.nix {};
+  python37Packages = self.python37.pkgs;
 
 }
