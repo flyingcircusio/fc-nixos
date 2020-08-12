@@ -83,11 +83,15 @@ let
 
   modifiedPkgNames = attrNames (import ../pkgs/overlay.nix pkgs pkgs);
 
-  modifiedPkgs =
-    listToAttrs (map (n: { name = n; value = pkgs.${n}; }) modifiedPkgNames);
+  testPkgNames = [
+    "wkhtmltopdf"
+  ] ++ modifiedPkgNames;
+
+  testPkgs =
+    listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
 
   jobs = {
-    pkgs = mapTestOn (packagePlatforms modifiedPkgs);
+    pkgs = mapTestOn (packagePlatforms testPkgs);
     tests = import ../tests { inherit system pkgs; nixpkgs = nixpkgs_; };
   };
 
