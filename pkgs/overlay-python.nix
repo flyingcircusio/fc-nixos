@@ -3,9 +3,10 @@ super:
 python-self: python-super:
 {
 
-  pytoml = python-super.zodbpickle.overrideAttrs (old: rec {
+  pytoml = python-super.pytoml.overrideAttrs (old: rec {
     pname = "pytoml";
     version = "0.1.20";
+    name = "${pname}-${version}";
     src = super.fetchFromGitHub {
       owner = "avakar";
       repo = "pytoml";
