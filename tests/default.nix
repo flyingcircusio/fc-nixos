@@ -37,6 +37,7 @@ in {
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callTest ./mail {};
+  mailstub = callTest ./mail/stub.nix {};
   memcached = callTest ./memcached.nix {};
   mongodb32 = callTest ./mongodb.nix { version = "3.2"; };
   mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
