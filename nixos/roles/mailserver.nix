@@ -62,8 +62,17 @@ let
         main.cf or not. Set to false in case mail must be relayed both to the
         public Internet and to other nodes inside the RG via srv.
       '';
-      default = (length (listenFe4 ++ listenSrv4) > 1)
-             || (length (listenFe6 ++ listenSrv6) > 1);
+      default = (length listenFe4 > 1) || (length listenFe6 > 1);
+    };
+
+    dynamicMaps = mkOption {
+      description = ''
+      '';
+      type = with types; attrsOf (listOf path);
+      default = {};
+      example = {
+        virtual_alias_maps = [ "/srv/test/valias" ];
+      };
     };
 
   };
@@ -131,6 +140,9 @@ in
       flyingcircus.services.mail.enable = assert !roles.mailstub.enable; true;
       flyingcircus.services.nginx.enable = true;
       flyingcircus.services.redis.enable = true;
+
+      flyingcircus.roles.mailserver =
+        fclib.jsonFromFile "/etc/local/mail/config.json" "{}";
     })
 
     (lib.mkIf roles.mailstub.enable {

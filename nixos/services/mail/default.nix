@@ -18,8 +18,8 @@ let
   role = config.flyingcircus.roles.mailserver;
   svc = config.flyingcircus.services.mail;
   fclib = config.fclib;
-  fqdn = with config.networking; "${hostName}.${domain}";
-  primaryDomain = if role.domains != [] then elemAt role.domains 0 else fqdn;
+  primaryDomain =
+    if role.domains != [] then elemAt role.domains 0 else "example.org";
   vmailDir = "/srv/mail";
   fallbackGenericVirtual = ''
     postmaster@${primaryDomain} root@${role.mailHost}
@@ -45,30 +45,46 @@ in {
     '';
   };
 
-  config = lib.mkMerge [
+  config =
+  let
+    dynamicMapFiles = lib.flatten (lib.attrValues role.dynamicMaps);
+    dynamicMapHash = p: "${baseNameOf p}-${substring 0 8 (hashString "sha1" p)}";
+  in lib.mkMerge [
     (lib.mkIf svc.enable {
       environment.etc."local/mail/README.txt".source = ./README;
     })
 
-    (lib.mkIf (svc.enable && role.domains != []) {
+    (lib.mkIf svc.enable {
+      environment.etc = {
+        "local/mail/config.json.example".text = (toJSON {
+          domains = [ primaryDomain "subdomain.${primaryDomain}" ];
+          mailHost = "mail.${primaryDomain}";
+          webmailHost = "webmail.${primaryDomain}";
+          dynamicMaps = { transport = [ "/etc/local/mail/transport" ]; };
+        });
 
+        # refer to the source for a comprehensive list of options:
+        # https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/blob/master/default.nix
+        # generate password with `mkpasswd -m sha-256 PASSWD` and put it either
+        # here (read-only) or into passwdFile (user-changeable)
+        "local/mail/users.json.example".text = (toJSON {
+          "user@${primaryDomain}" = {
+            hashedPassword = "(use 'mkpasswd -m sha-256 PASSWORD')";
+            aliases = [ "user1@${primaryDomain}" ];
+            quota = "4G";
+            sieveScript = null;
+            catchAll = [ "subdomain.${primaryDomain}" ];
+          };
+        });
+      };
+    })
+
+    (lib.mkIf (svc.enable && role.domains != []) (
+    let
+      fqdn = with config.networking; "${hostName}.${domain}";
+    in {
       environment = {
         etc = {
-          # refer to the source for a comprehensive list of options:
-          # https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/blob/master/default.nix
-          # generate password with `mkpasswd -m sha-256 PASSWD` and put it either
-          # here (read-only) or into passwdFile (user-changeable)
-          "local/mail/users.json.example".text = (toJSON {
-            "user@${primaryDomain}" = {
-              hashedPassword = "";
-              aliases = [ "user1@${primaryDomain}" ];
-              quota = "4G";
-              sieveScript = null;
-              catchAll = [ "subdomain.${primaryDomain}" ] ++ (
-                tail role.domains);
-            };
-          });
-
           "local/mail/dns.zone".text =
             import ./zone.nix { inherit config lib; };
 
@@ -184,41 +200,58 @@ in {
           fqdn
           "localhost"
         ];
-        extraConfig = ''
-          empty_address_recipient = postmaster
-          enable_long_queue_ids = yes
-          local_header_rewrite_clients =
-            permit_mynetworks,
-            permit_sasl_authenticated
-          recipient_canonical_maps = tcp:localhost:10002
-          recipient_canonical_classes = envelope_recipient, header_recipient
-          sender_canonical_maps = tcp:localhost:10001
-          sender_canonical_classes = envelope_sender
 
-          smtpd_client_restrictions =
-            permit_mynetworks,
-            reject_rbl_client ix.dnsbl.manitu.net,
-            reject_unknown_client_hostname
-          smtpd_data_restrictions = reject_unauth_pipelining
-          smtpd_helo_restrictions =
-            permit_sasl_authenticated,
-            reject_unknown_helo_hostname
-        '' + (lib.optionalString role.explicitSmtpBind ''
-          smtp_bind_address = ${role.smtpBind4}
-          smtp_bind_address6 = ${role.smtpBind6}
-        '') + ''
+        config = {
+          empty_address_recipient = "postmaster";
+          enable_long_queue_ids = true;
+          local_header_rewrite_clients = [
+            "permit_mynetworks"
+            "permit_sasl_authenticated"
+          ];
+          recipient_canonical_maps = "tcp:localhost:10002";
+          recipient_canonical_classes = [
+            "envelope_recipient"
+            "header_recipient"
+          ];
+          sender_canonical_maps = "tcp:localhost:10001";
+          sender_canonical_classes = "envelope_sender";
+          smtpd_client_restrictions = [
+            "permit_mynetworks"
+            "reject_rbl_client ix.dnsbl.manitu.net"
+            "reject_unknown_client_hostname"
+          ];
+          smtpd_data_restrictions = "reject_unauth_pipelining";
+          smtpd_helo_restrictions = [
+            "permit_sasl_authenticated"
+            "reject_unknown_helo_hostname"
+          ];
+        } //
+        (lib.optionalAttrs role.explicitSmtpBind {
+          smtp_bind_address = role.smtpBind4;
+          smtp_bind_address6 = role.smtpBind6;
+        }) //
+        (lib.mapAttrs (_mainCfParam: paths:
+          (map (p: "hash:/var/lib/postfix/conf/${dynamicMapHash p}") paths))
+          role.dynamicMaps);
+
+        mapFiles = listToAttrs (map (path: {
+          name = dynamicMapHash path;
+          value = path;
+        }) dynamicMapFiles);
+
+        extraConfig = ''
           # included from /etc/local/mail/main.cf
           ${fclib.configFromFile "/etc/local/mail/main.cf" ""}
         '';
+
         extraAliases = ''
           abuse: root
           devnull: /dev/null
           mail: root
         '' + userAliases;
+
         inherit (role) rootAlias;
-        virtual =
-          fclib.configFromFile
-          "/etc/local/mail/remote_valiases.map" fallbackGenericVirtual;
+        virtual = lib.mkDefault fallbackGenericVirtual;
       };
 
       services.postsrsd = {
@@ -229,6 +262,18 @@ in {
           then tail config.mailserver.domains ++ [ role.mailHost fqdn ]
           else [];
       };
+
+      system.activationScripts.postfix-dynamicMaps-permissions =
+        lib.stringAfter [] (
+          lib.concatStrings (map (file: ''
+            if [[ ! -e "${file}" ]]; then
+              # create file with the containing directory's group
+              dirowner=$(stat -c %g $(dirname "${file}"))
+              install /dev/null -g $dirowner -m 0664 "${file}"
+            fi
+            chown root "${file}"
+            chmod g+w "${file}"
+          '') dynamicMapFiles));
 
       systemd.services.dovecot2-expunge = {
         script = ''
@@ -243,12 +288,11 @@ in {
         "f ${role.passwdFile} 0660 vmail service"
         "d /etc/local/mail 02775 postfix service"
         "f /etc/local/mail/local_valiases.json 0664 postfix service - {}"
-        "f /etc/local/mail/remote_valiases.map 0664 postfix service"
         "f /etc/local/mail/users.json 0664 postfix service - {}"
         "f /etc/local/mail/main.cf 0664 postfix service"
       ];
 
-    })
+    }))
 
     (lib.mkIf (svc.enable && config.services.telegraf.enable &&
                role.domains != []) {
