@@ -24,14 +24,6 @@ in
       This role enables the full graylog stack at once (GL, ES, Mongo).
     '';
 
-    # flyingcircus.roles.loghost-location.enable = lib.mkEnableOption ''
-    #   Flying Circus central Loghost role.
-    #   This role enables the full graylog stack at once (GL, ES, Mongo).
-
-    #   Used for location-central log hosts that aggregate system logs from
-    #   all systems in that location.
-    # '';
-
   };
 
   config = lib.mkIf (cfg.enable) {
