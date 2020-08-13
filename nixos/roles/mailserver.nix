@@ -23,7 +23,7 @@ let
       type = types.str;
       default = with config.networking; if hasFE
         then "${hostName}.fe.${params.location}.${domain}"
-        else "${hostName}.${domain}";
+        else if domain != null then "${hostName}.${domain}" else hostName;
       description = ''
         FQDN of the mail server's frontend address. IP adresses and
         forward/reverse DNS must match exactly.
