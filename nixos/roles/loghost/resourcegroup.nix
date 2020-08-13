@@ -6,11 +6,6 @@ let
   cfg = config.flyingcircus.roles.loghost;
   fclib = config.fclib;
 
-  loghostService = lib.findFirst
-    (s: s.service == "loghost-server")
-    null
-    config.flyingcircus.encServices;
-
   # It's common to have stathost and loghost on the same node. Each should
   # use half of the memory then. A general approach for this kind of
   # multi-service would be nice.
@@ -31,7 +26,7 @@ in
 
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf (cfg.enable) {
 
     flyingcircus.roles.graylog = fclib.mkPlatform {
       enable = true;

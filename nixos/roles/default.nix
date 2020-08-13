@@ -18,7 +18,7 @@ in {
     ./kibana.nix
     ./kubernetes
     ./lamp.nix
-    ./loghost.nix
+    ./loghost
     ./mailout.nix
     ./mailserver.nix
     ./memcached.nix

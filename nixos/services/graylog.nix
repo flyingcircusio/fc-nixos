@@ -92,6 +92,9 @@ let
       root_password_sha2 = $(sha256sum ${rootPassword.file} | cut -f1 -d " ")
       password_secret = $(cat "${passwordSecret.file}")
 
+      # disable version check as its really annoying and obscures real errors
+      versionchecks = false
+
       # Settings here can be overridden by flyingcircus.services.graylog.config.
     '' + lib.concatStringsSep
             "\n"
