@@ -12,7 +12,7 @@ let
       assert stringLength repoInfo.rev == 40;
       pkgs.fetchFromGitHub {
         inherit (repoInfo) owner repo rev sha256;
-        inherit name;
+        name = "${name}-${substring 0 11 repoInfo.rev}";
       })
       versions;
 
