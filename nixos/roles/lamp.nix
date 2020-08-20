@@ -92,7 +92,7 @@ Listen localhost:8001
     StartServers 5
     MinSpareServers 2
     MaxSpareServers 5
-    MaxRequestWorkers 10
+    MaxRequestWorkers 25
     MaxConnectionsPerChild 20
 </IfModule>
 
