@@ -92,7 +92,7 @@ Listen localhost:8001
     StartServers 5
     MinSpareServers 2
     MaxSpareServers 5
-    MaxRequestWorkers 10
+    MaxRequestWorkers 25
     MaxConnectionsPerChild 20
 </IfModule>
 
@@ -122,6 +122,34 @@ Listen localhost:8001
       services.httpd.phpPackage = pkgs.php73;
 
       services.httpd.listen = [ { port = 8000;} ];
+
+      flyingcircus.services.sensu-client.checks = {
+        httpd_status = {
+          notification = "Apache status page";
+          command = "check_http -H localhost -p 8001 -u /server-status?auto -v";
+          timeout = 30;
+        };
+      };
+
+      flyingcircus.services.telegraf.inputs = {
+        apache  = [{
+          urls = [ "http://localhost:8001/server-status?auto" ];
+        }];
+      };
+
+      systemd.tmpfiles.rules = [
+        "d /var/log/httpd 0750 root service"
+        "a+ /var/log/httpd - - - - group:sudo-srv:r-x"
+      ];
+
+      services.logrotate.config = ''
+        /var/log/httpd/*.log {
+          create 0644 root root
+          postrotate
+            systemctl reload httpd
+          endscript
+        }
+      '';
 
       flyingcircus.localConfigDirs.lamp = {
         dir = "/etc/local/lamp";
