@@ -65,17 +65,9 @@ in {
   inherit (pkgs-unstable) kubernetes;
 
   libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
-
-  linux_4_19 = super.linux_4_19.override {
-    argsOverride = rec {
-      src = super.fetchurl {
-            url = "mirror://kernel/linux/kernel/v4.x/linux-${version}.tar.xz";
-            sha256 = "0rvlz94mjl7ygpmhz0yn2whx9dq9fmy0w1472bj16hkwbaki0an6";
-      };
-      version = "4.19.94";
-      modDirVersion = "4.19.94";
-      };
-  };
+  
+  linuxPackages_5_4 = pkgs-unstable.linuxPackages_5_4;
+  linuxPackages = pkgs-unstable.linuxPackages_5_4;
 
   mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
