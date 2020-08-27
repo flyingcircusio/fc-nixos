@@ -51,12 +51,27 @@ let
 
   vhostsJSON = fclib.jsonFromDir localDir;
 
-  virtualHosts = lib.mapAttrs (
-    _: val:
-    (lib.optionalAttrs
-      ((val ? addSSL || val ? onlySSL || val ? forceSSL))
-      { enableACME = true; }) // removeAttrs val [ "emailACME" ])
-    vhostsJSON;
+  mkVhostFromJSON = name: vhost:
+  let
+    onlySSL = vhost.onlySSL or false || vhost.enableSSL or false;
+    hasSSL = onlySSL || vhost.addSSL or false || vhost.forceSSL or false;
+    defaultListen = addr:
+      (lib.optional hasSSL { inherit addr; port = 443; ssl = true; })
+        ++ (lib.optional (!onlySSL) { inherit addr; port = 80;  ssl = false; });
+    addrs =
+      if (vhost ? "listenAddress" || vhost ? "listenAddress6")
+      then filter (x: x != null) [
+        (vhost.listenAddress or null)
+        (vhost.listenAddress6 or null)
+      ]
+      else fclib.listenAddressesQuotedV6 "ethfe";
+  in
+    # listen and enableACME defaults are overridden if the JSON spec has them.
+    { listen = lib.flatten (map defaultListen addrs); }
+    // (lib.optionalAttrs hasSSL { enableACME = true; })
+    // (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
+
+  virtualHosts = lib.mapAttrs mkVhostFromJSON vhostsJSON;
 
   # only email setting supported at the moment
   acmeSettings =
