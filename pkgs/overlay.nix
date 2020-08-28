@@ -9,7 +9,7 @@ let
   # Taken from nixpkgs all-packages.nix reduced to the kernel packages we need.
   linuxPackages_5_4 = super.recurseIntoAttrs
     (lib.makeExtensible (self: with self; {
-        inherit (pkgs-unstable.linuxPackages_5_4) kernel virtualbox;
+        inherit (pkgs-unstable.linuxPackages_5_4) kernel virtualbox virtualboxGuestAdditions;
     }));
 
 in {
