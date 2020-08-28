@@ -34,6 +34,7 @@ in {
   kibana6 = callTest ./kibana.nix { version = "6"; };
   kibana7 = callTest ./kibana.nix { version = "7"; };
   kubernetes = callTest ./kubernetes {};
+  lamp = callTest ./lamp.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callTest ./mail {};

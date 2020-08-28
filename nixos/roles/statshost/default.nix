@@ -450,7 +450,7 @@ in
       systemd.services.influxdb = {
         serviceConfig = {
           LimitNOFILE = 65535;
-          TimoutStartSec = "1h";
+          TimeoutStartSec = "1h";
           Restart = "always";
         };
         postStart =
