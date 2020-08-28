@@ -4,6 +4,13 @@ let
   versions = import ../versions.nix { pkgs = super; };
   pkgs-unstable = import versions.nixos-unstable {};
   elk7Version = "7.8.0";
+  inherit (super) lib;
+
+  # Taken from nixpkgs all-packages.nix reduced to the kernel packages we need.
+  linuxPackages_5_4 = super.recurseIntoAttrs
+    (lib.makeExtensible (self: with self; {
+        inherit (pkgs-unstable.linuxPackages_5_4) kernel virtualbox;
+    }));
 
 in {
   # keep in sync with nixos/platform/garbagecollect/default.nix
@@ -65,9 +72,9 @@ in {
   inherit (pkgs-unstable) kubernetes;
 
   libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
-  
-  linuxPackages_5_4 = pkgs-unstable.linuxPackages_5_4;
-  linuxPackages = pkgs-unstable.linuxPackages_5_4;
+
+  inherit linuxPackages_5_4;
+  linuxPackages = self.linuxPackages_5_4;
 
   mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
