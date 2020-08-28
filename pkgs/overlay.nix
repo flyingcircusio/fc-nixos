@@ -5,7 +5,7 @@ let
   pkgs-unstable = import versions.nixos-unstable {};
   elk7Version = "7.8.0";
 
-in rec {
+in {
   # keep in sync with nixos/platform/garbagecollect/default.nix
   nixpkgs-unstable-src = versions.nixos-unstable;
 
@@ -166,8 +166,10 @@ in rec {
   tideways_daemon = super.callPackage ./tideways/daemon.nix {};
   tideways_module = super.callPackage ./tideways/module.nix {};
 
-  wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf_0_12_6.nix { };
-  wkhtmltopdf = wkhtmltopdf_0_12_6;
+  wkhtmltopdf_0_12_4 = super.callPackage ./wkhtmltopdf/0_12_4.nix { };
+  wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };
+  wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
+  wkhtmltopdf = self.wkhtmltopdf_0_12_6;
 
   inherit (pkgs-unstable) writeShellScript;
 
