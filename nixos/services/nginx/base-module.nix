@@ -65,7 +65,7 @@ let
   pre-configFile = pkgs.writeText "pre-nginx.conf" ''
     user ${cfg.user} ${cfg.group};
     error_log ${cfg.logError};
-    daemon off;
+    pid /run/nginx/nginx.pid;
 
     ${cfg.config}
 
@@ -304,6 +304,35 @@ let
   );
 
   checkConfigCmd = "${cfg.package}/bin/nginx -t -c ${configFile} -p ${cfg.stateDir}";
+
+  nginxReloadMaster =
+    let
+      pkill = "${pkgs.procps}/bin/pkill";
+    in
+    pkgs.writeScriptBin "nginx-reload-master" ''
+      set -e
+      echo "Starting new nginx master process..."
+      ${pkill} -USR2 -F /run/nginx/nginx.pid
+
+      for x in {1..10}; do
+          echo "Waiting for new master process to appear, try $x..."
+          sleep 1
+          if [[ -s /run/nginx/nginx.pid && -s /run/nginx/nginx.pid.oldbin ]]; then
+              echo "Stopping old nginx workers..."
+              ${pkill} -WINCH -F /run/nginx/nginx.pid.oldbin
+              echo "Stopping old nginx master process..."
+              ${pkill} -QUIT -F /run/nginx/nginx.pid.oldbin
+              echo "Nginx master process replacement complete."
+              exit 0
+          fi
+      done
+
+      echo "Warning: new master process did not start."
+      echo "This can be caused by changes to listen directives that are incompatible with the running nginx master process."
+      echo "Check journalctl -eu nginx and try systemctl restart nginx to activate changes."
+      exit 1
+    '';
+
 in
 
 {
@@ -651,6 +680,8 @@ in
       }
     ];
 
+    environment.systemPackages = [ nginxReloadMaster ];
+
     systemd.services.nginx = {
       description = "Nginx Web Server";
       wantedBy = [ "multi-user.target" ];
@@ -673,26 +704,45 @@ in
         ${checkConfigCmd} || rc=$?
 
         if [[ -n $rc ]]; then
-          echo Error: Not restarting / reloading because of config errors.
-          echo New configuration not activated!
+          echo "Error: Not restarting / reloading because of config errors."
+          echo "New configuration not activated!"
           # We must use 0 as exit code, otherwise systemd would kill the nginx process.
           # This is a bug in systemd: https://github.com/systemd/systemd/issues/11238
           exit 0
         fi
 
-        # Check if the package changed
+        ln -sf ${configFile} /run/nginx/config
 
-        if [[ $(readlink /run/nginx/package) != ${cfg.package} ]]; then
-          # If it changed, we need to restart nginx. So we kill nginx
-          # gracefully. We can't send a restart to systemd while in the
-          # reload script. Nginx will be restarted by systemd automatically.
-          echo "Nginx package changed, gracefully quitting so systemd can restart it"
-          ${pkgs.coreutils}/bin/kill -QUIT $MAINPID
+        # Check if the package changed
+        current_pkg=$(readlink /run/nginx/package)
+
+        if [[ $current_pkg != ${cfg.package} ]]; then
+          echo "Nginx package changed: $current_pkg -> ${cfg.package}."
+          ln -sfT ${cfg.package} /run/nginx/package
+
+          if ${nginxReloadMaster}/bin/nginx-reload-master; then
+            echo "Master process replacement completed."
+          else
+            echo "Master process replacement failed, trying again on next reload."
+            ln -sfT $current_pkg /run/nginx/package
+          fi
+
         else
-          # We only need to change the configuration, so update it and reload nginx
-          echo "Reloading Nginx now"
-          ln -sf ${configFile} /run/nginx/config
+          # Package unchanged, we only need to change the configuration.
+          echo "Reloading nginx config now."
+
+          # Check journal for errors after the reload signal.
+          datetime=$(date +'%Y-%m-%d %H:%M:%S')
           ${pkgs.coreutils}/bin/kill -HUP $MAINPID
+
+          # Give Nginx some time to try changing the configuration.
+          sleep 3
+
+          if [[ $(journalctl --since="$datetime" -u nginx -q -g '\[emerg\]') != "" ]]; then
+            echo "Warning: Possible failure when changing to new configuration."
+            echo "This happens when changes to listen directives are incompatible with the running nginx master process."
+            echo "Try systemctl restart nginx to activate the new config."
+          fi
         fi
       '';
       reloadIfChanged = true;

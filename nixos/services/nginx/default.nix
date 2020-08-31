@@ -1,3 +1,7 @@
+# Note that Nginx is reloaded when config, unit file or package change.
+# Future changes may require a full Nginx restart to become active.
+# We can use systemd.services.nginx.restartTriggers to force a restart.
+# This may also affect other services that use reloading.
 { lib, config, pkgs, ... }:
 
 with builtins;
@@ -301,6 +305,11 @@ in
         "d /var/spool/nginx/logs 0755 nginx nginx 7d"
         "d /etc/local/nginx/modsecurity 2775 nginx service"
       ];
+
+      systemd.services.nginx.serviceConfig = {
+        Type="forking";
+        PIDFile="/run/nginx/nginx.pid";
+      };
 
       flyingcircus.localConfigDirs.nginx = {
         dir = "/etc/local/nginx";
