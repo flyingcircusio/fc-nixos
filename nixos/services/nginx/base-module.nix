@@ -151,8 +151,8 @@ let
 
       ${optionalString cfg.statusPage ''
         server {
-          listen 80;
-          ${optionalString enableIPv6 "listen [::]:80;" }
+          listen 127.0.0.1:80;
+          ${optionalString enableIPv6 "listen [::1]:80;" }
 
           server_name localhost;
 
