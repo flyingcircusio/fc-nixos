@@ -131,6 +131,9 @@ let
 
 in
 {
+
+  imports = [ ./base-module.nix ];
+
   options.flyingcircus.services.nginx = with lib; {
     enable = mkEnableOption "FC-customized nginx";
 
