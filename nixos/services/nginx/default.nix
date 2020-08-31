@@ -22,8 +22,6 @@ let
     config_age=$(expr $(date +%s) - $(stat --format=%Y /run/nginx/config) )
     main_pid=$(systemctl show nginx | grep -e '^MainPID=' | cut -d= -f 2)
 
-    workers_too_old=0
-
     for pid in $(pgrep -P $main_pid); do
         worker_age=$(ps -o etimes= $pid)
         agediff=$(expr $worker_age - $config_age)
@@ -35,12 +33,19 @@ let
         if [[ $agediff -gt 1 && -z $shutting_down ]]; then
             start_time=$(ps -o lstart= $pid)
             echo "Worker process $pid is $agediff seconds older than the config file (started $start_time)"
-            workers_too_old=1
+
+            if (( $agediff > 300 )); then
+              workers_too_old_crit=1
+            else
+              workers_too_old_warn=1
+            fi
         fi
     done
 
-    if (( $workers_too_old > 0 )); then
+    if [[ $workers_too_old_crit ]]; then
         exit 2
+    elif [[ $workers_too_old_warn ]]; then
+        exit 1
     else
         echo "worker age OK"
     fi
@@ -251,9 +256,9 @@ in
         };
 
         nginx_worker_age = {
-          notification = "worker processes are older than config file";
+          notification = "Some nginx worker processes don't use the current config";
           command = "${nginxCheckWorkerAge}";
-          interval = 300;
+          interval = 60;
         };
 
       } //
