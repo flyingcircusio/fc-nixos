@@ -108,12 +108,24 @@ in {
 
   mysql = super.mariadb;
 
-  nginx = super.nginx.override {
-    modules = [
-      self.nginxModules.dav
-      self.nginxModules.modsecurity
-      self.nginxModules.moreheaders
-      self.nginxModules.rtmp
+  # This is our default version.
+  nginxStable = pkgs-unstable.nginxStable.override {
+    modules = with pkgs-unstable.nginxModules; [
+      dav
+      modsecurity
+      moreheaders
+      rtmp
+    ];
+  };
+
+  nginx = self.nginxStable;
+
+  nginxMainline = pkgs-unstable.nginxMainline.override {
+    modules = with pkgs-unstable.nginxModules; [
+      dav
+      modsecurity
+      moreheaders
+      rtmp
     ];
   };
 

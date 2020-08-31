@@ -46,7 +46,6 @@ let
     fi
   '';
 
-  stateDir = config.services.nginx.stateDir;
   package = config.services.nginx.package;
   localDir = config.flyingcircus.localConfigDirs.nginx.dir;
 
@@ -297,12 +296,7 @@ in
         }
       '';
 
-      # Config check fails on first run if /var/spool/nginx/logs is missing.
-      # Nginx creates it, but we create it here to avoid that useless error.
-      # It's only used on Nginx startup, "real" logging goes to /var/log/nginx.
       systemd.tmpfiles.rules = [
-        "d /var/log/nginx 0755 nginx"
-        "d /var/spool/nginx/logs 0755 nginx nginx 7d"
         "d /etc/local/nginx/modsecurity 2775 nginx service"
       ];
 

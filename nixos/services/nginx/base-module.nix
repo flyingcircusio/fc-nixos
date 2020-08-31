@@ -303,7 +303,7 @@ let
     '') authDef)
   );
 
-  checkConfigCmd = "${cfg.package}/bin/nginx -t -c ${configFile} -p ${cfg.stateDir}";
+  checkConfigCmd = "${cfg.package}/bin/nginx -t -c ${configFile}";
 
   nginxReloadMaster =
     let
@@ -336,6 +336,13 @@ let
 in
 
 {
+  imports = [
+    (mkRemovedOptionModule [ "services" "nginx" "stateDir" ] ''
+      The Nginx log directory has been moved to /var/log/nginx, the cache directory
+      to /var/cache/nginx. The option services.nginx.stateDir has been removed.
+    '')
+  ];
+
   options = {
     services.nginx = {
       enable = mkEnableOption "Nginx Web Server";
@@ -409,12 +416,7 @@ in
 
       preStart =  mkOption {
         type = types.lines;
-        default = ''
-          test -d ${cfg.stateDir}/logs || mkdir -m 750 -p ${cfg.stateDir}/logs
-          test `stat -c %a ${cfg.stateDir}` = "750" || chmod 750 ${cfg.stateDir}
-          test `stat -c %a ${cfg.stateDir}/logs` = "750" || chmod 750 ${cfg.stateDir}/logs
-          chown -R ${cfg.user}:${cfg.group} ${cfg.stateDir}
-        '';
+        default = "";
         description = "
           Shell commands executed before the service's nginx is started.
         ";
@@ -487,13 +489,6 @@ in
           Configuration lines to be appended to the generated http block.
           This is mutually exclusive with using config and httpConfig for
           specifying the whole http block verbatim.
-        ";
-      };
-
-      stateDir = mkOption {
-        default = "/var/spool/nginx";
-        description = "
-          Directory holding all state for nginx to run.
         ";
       };
 
@@ -692,9 +687,6 @@ in
       preStart =
         ''
         ${cfg.preStart}
-        mkdir -p ${cfg.stateDir}/logs
-        chmod 700 ${cfg.stateDir}
-        chown -R ${cfg.user}:${cfg.group} ${cfg.stateDir}
         ln -sf ${configFile} /run/nginx/config
         ln -sf ${cfg.package} /run/nginx/package
       '';
@@ -747,9 +739,17 @@ in
       '';
       reloadIfChanged = true;
       serviceConfig = {
-        ExecStart = "${cfg.package}/bin/nginx -c /run/nginx/config -p ${cfg.stateDir}";
+        ExecStart = "/run/nginx/package/bin/nginx -c /run/nginx/config";
         Restart = "always";
+        # Runtime directory and mode
         RuntimeDirectory = "nginx";
+        RuntimeDirectoryMode = "0755";
+        # Cache directory and mode
+        CacheDirectory = "nginx";
+        CacheDirectoryMode = "0750";
+        # Logs directory and mode
+        LogsDirectory = "nginx";
+        LogsDirectoryMode = "0755";
         # X- options are ignored by systemd.
         # To show the last running config, use:
         # cat `systemctl cat nginx | grep "X-ConfigFile" | cut -d= -f2`
