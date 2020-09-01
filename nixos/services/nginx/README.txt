@@ -2,9 +2,13 @@ Nginx is enabled on this machine.
 
 We provide basic config. You can use two ways to add custom configuration.
 
-Changes to your custom config will cause nginx to reload without downtime on 
+Changes to your custom config will cause nginx to reload without downtime on
 the next fc-manage run if the config is valid. It will display a warning if
 invalid settings are found in the nginx config.
+
+Note that changes to listen directives that are incompatible with the running config
+require a manual Ngnix restart that drops connections. This happens when changing
+`listenAddress` from 0.0.0.0 to a single IP address 123.123.123.123, for example.
 
 The combined nginx config file can be shown with: `nginx-show-config`
 
@@ -21,8 +25,9 @@ The config snippets must contain a single JSON object that defines one or
 more virtual hosts. Multiple JSON config files will be merged into one object.
 It's a good idea to use one config file per virtual host.
 
-example.json containing a virtual with static root directory, a bit of
-custom configuration, and SSL with a default certificate from Let's Encrypt:
+This example.json defines a virtual host listening on all frontend IP addresses.
+Requests to Port 80 are redirected to 443 which serves SSL using a managed
+certificate from Let's Encrypt:
 
 ```
 {
@@ -43,12 +48,19 @@ custom configuration, and SSL with a default certificate from Let's Encrypt:
 ### Available Options
 
 Options provided by NixOS are documented at
-https://nixos.org/nixos/options.html#services.nginx.virtualhosts.%3Cname%3E 
+https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance&channel=19.09
 
 We support the following custom options:
 * `emailACME`: set the contact address for Let's Encrypt, defaults to none.
-* `listenAddress`: IPv4 address for vhost, defaults to `0.0.0.0`.
-* `listenAddress6`: IPv6 address for vhost, defaults to `[::]`.
+* `listenAddress`: Single IPv4 address for vhost.
+* `listenAddress6`: Single IPv6 address for vhost.
+
+If only one of the listenAddress* options is given, the vhost listens only on IPv4 or IPv6.
+If none of the `listenAddress*` options is given, all frontend IPs are used.
+
+The `listen` option overrides our defaults: the `listenAddress*` options have
+no effect and no IP is used automatically in this case.
+
 
 ### HTTPS and Let's Encrypt
 
@@ -64,7 +76,7 @@ To use a custom certificate, set the certificate options and set `"enableACME" =
 Manual configuration
 --------------------
 
-You can also use plain nginx config files /etc/local/nginx/*.conf for configuration. 
+You can also use plain nginx config files /etc/local/nginx/*.conf for configuration.
 The contents are included verbatim into the combined config by running fc-manage.
 
 You may add other files to the directory, like SSL keys, as well.

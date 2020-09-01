@@ -1,3 +1,7 @@
+# Note that Nginx is reloaded when config, unit file or package change.
+# Future changes may require a full Nginx restart to become active.
+# We can use systemd.services.nginx.restartTriggers to force a restart.
+# This may also affect other services that use reloading.
 { lib, config, pkgs, ... }:
 
 with builtins;
@@ -18,8 +22,6 @@ let
     config_age=$(expr $(date +%s) - $(stat --format=%Y /run/nginx/config) )
     main_pid=$(systemctl show nginx | grep -e '^MainPID=' | cut -d= -f 2)
 
-    workers_too_old=0
-
     for pid in $(pgrep -P $main_pid); do
         worker_age=$(ps -o etimes= $pid)
         agediff=$(expr $worker_age - $config_age)
@@ -31,29 +33,50 @@ let
         if [[ $agediff -gt 1 && -z $shutting_down ]]; then
             start_time=$(ps -o lstart= $pid)
             echo "Worker process $pid is $agediff seconds older than the config file (started $start_time)"
-            workers_too_old=1
+
+            if (( $agediff > 300 )); then
+              workers_too_old_crit=1
+            else
+              workers_too_old_warn=1
+            fi
         fi
     done
 
-    if (( $workers_too_old > 0 )); then
+    if [[ $workers_too_old_crit ]]; then
         exit 2
+    elif [[ $workers_too_old_warn ]]; then
+        exit 1
     else
         echo "worker age OK"
     fi
   '';
 
-  stateDir = config.services.nginx.stateDir;
   package = config.services.nginx.package;
   localDir = config.flyingcircus.localConfigDirs.nginx.dir;
 
   vhostsJSON = fclib.jsonFromDir localDir;
 
-  virtualHosts = lib.mapAttrs (
-    _: val:
-    (lib.optionalAttrs
-      ((val ? addSSL || val ? onlySSL || val ? forceSSL))
-      { enableACME = true; }) // removeAttrs val [ "emailACME" ])
-    vhostsJSON;
+  mkVhostFromJSON = name: vhost:
+  let
+    onlySSL = vhost.onlySSL or false || vhost.enableSSL or false;
+    hasSSL = onlySSL || vhost.addSSL or false || vhost.forceSSL or false;
+    defaultListen = addr:
+      (lib.optional hasSSL { inherit addr; port = 443; ssl = true; })
+        ++ (lib.optional (!onlySSL) { inherit addr; port = 80;  ssl = false; });
+    addrs =
+      if (vhost ? "listenAddress" || vhost ? "listenAddress6")
+      then filter (x: x != null) [
+        (vhost.listenAddress or null)
+        (vhost.listenAddress6 or null)
+      ]
+      else fclib.listenAddressesQuotedV6 "ethfe";
+  in
+    # listen and enableACME defaults are overridden if the JSON spec has them.
+    { listen = lib.flatten (map defaultListen addrs); }
+    // (lib.optionalAttrs hasSSL { enableACME = true; })
+    // (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
+
+  virtualHosts = lib.mapAttrs mkVhostFromJSON vhostsJSON;
 
   # only email setting supported at the moment
   acmeSettings =
@@ -131,6 +154,9 @@ let
 
 in
 {
+
+  imports = [ ./base-module.nix ];
+
   options.flyingcircus.services.nginx = with lib; {
     enable = mkEnableOption "FC-customized nginx";
 
@@ -230,9 +256,9 @@ in
         };
 
         nginx_worker_age = {
-          notification = "worker processes are older than config file";
+          notification = "Some nginx worker processes don't use the current config";
           command = "${nginxCheckWorkerAge}";
-          interval = 300;
+          interval = 60;
         };
 
       } //
@@ -290,14 +316,14 @@ in
         }
       '';
 
-      # Config check fails on first run if /var/spool/nginx/logs is missing.
-      # Nginx creates it, but we create it here to avoid that useless error.
-      # It's only used on Nginx startup, "real" logging goes to /var/log/nginx.
       systemd.tmpfiles.rules = [
-        "d /var/log/nginx 0755 nginx"
-        "d /var/spool/nginx/logs 0755 nginx nginx 7d"
         "d /etc/local/nginx/modsecurity 2775 nginx service"
       ];
+
+      systemd.services.nginx.serviceConfig = {
+        Type="forking";
+        PIDFile="/run/nginx/nginx.pid";
+      };
 
       flyingcircus.localConfigDirs.nginx = {
         dir = "/etc/local/nginx";

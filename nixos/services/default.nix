@@ -3,6 +3,7 @@ let
   modulesFromHere = [
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
+    "services/web-servers/nginx/default.nix"
   ];
 
   modulesFromUnstable = [
