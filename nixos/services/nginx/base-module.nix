@@ -688,7 +688,7 @@ in
         ''
         ${cfg.preStart}
         ln -sf ${configFile} /run/nginx/config
-        ln -sf ${cfg.package} /run/nginx/package
+        ln -sfT ${cfg.package} /run/nginx/package
       '';
       reload = ''
         echo "Reload triggered, checking config file..."
