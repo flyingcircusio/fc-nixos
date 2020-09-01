@@ -8,9 +8,6 @@ with lib;
   config = mkIf config.flyingcircus.roles.statshost-relay.enable {
 
     services.nginx.enable = true;
-    systemd.tmpfiles.rules = [
-      "d /var/log/nginx 0755 nginx"
-    ];
     services.nginx.appendHttpConfig = ''
       server {
         listen ${config.services.prometheus.listenAddress};

@@ -52,9 +52,5 @@ in
       };
     };
 
-    systemd.tmpfiles.rules = [
-      "d /var/log/nginx 0755 nginx"
-    ];
-
   };
 }
