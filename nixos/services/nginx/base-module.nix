@@ -688,7 +688,7 @@ in
         ''
         ${cfg.preStart}
         ln -sf ${configFile} /run/nginx/config
-        ln -sf ${cfg.package} /run/nginx/package
+        ln -sfT ${cfg.package} /run/nginx/package
       '';
       reload = ''
         echo "Reload triggered, checking config file..."
@@ -743,12 +743,6 @@ in
         PIDFile = "/run/nginx/nginx.pid";
         ExecStart = "/run/nginx/package/bin/nginx -c /run/nginx/config";
         Restart = "always";
-        # Runtime directory and mode
-        RuntimeDirectory = "nginx";
-        RuntimeDirectoryMode = "0755";
-        # Cache directory and mode
-        CacheDirectory = "nginx";
-        CacheDirectoryMode = "0750";
         # Logs directory and mode
         LogsDirectory = "nginx";
         LogsDirectoryMode = "0755";
@@ -761,6 +755,11 @@ in
         X-CheckConfigCmd = checkConfigCmd;
       };
     };
+
+    systemd.tmpfiles.rules = [
+      "d /var/cache/nginx 0750 nginx nginx"
+      "d /run/nginx 0755 root root"
+    ];
 
     system.activationScripts.nginx-reload-check = lib.stringAfter [ "resolvconf" ] ''
       if ${pkgs.procps}/bin/pgrep nginx &> /dev/null; then
