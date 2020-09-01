@@ -308,7 +308,7 @@ in
       services.logrotate.config = ''
         /var/log/nginx/*.log
         {
-            rotate 92
+            rotate 7
             create 0644 nginx service
             postrotate
                 systemctl kill nginx -s USR1 --kill-who=main || systemctl restart nginx
@@ -318,6 +318,8 @@ in
 
       systemd.tmpfiles.rules = [
         "d /etc/local/nginx/modsecurity 2775 nginx service"
+        # clean up whatever logrotate may have missed after 10 days
+        "d /var/log/nginx 0755 nginx service 10d"
       ];
 
       systemd.services.nginx.serviceConfig = {
