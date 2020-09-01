@@ -322,11 +322,6 @@ in
         "d /var/log/nginx 0755 nginx service 10d"
       ];
 
-      systemd.services.nginx.serviceConfig = {
-        Type="forking";
-        PIDFile="/run/nginx/nginx.pid";
-      };
-
       flyingcircus.localConfigDirs.nginx = {
         dir = "/etc/local/nginx";
         user = "nginx";

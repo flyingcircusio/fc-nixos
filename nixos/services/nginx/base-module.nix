@@ -739,6 +739,8 @@ in
       '';
       reloadIfChanged = true;
       serviceConfig = {
+        Type = "forking";
+        PIDFile = "/run/nginx/nginx.pid";
         ExecStart = "/run/nginx/package/bin/nginx -c /run/nginx/config";
         Restart = "always";
         # Runtime directory and mode
