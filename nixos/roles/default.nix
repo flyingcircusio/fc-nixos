@@ -14,6 +14,7 @@ in {
     ./docker.nix
     ./external_net
     ./elasticsearch.nix
+    ./gitlab.nix
     ./graylog.nix
     ./kibana.nix
     ./kubernetes

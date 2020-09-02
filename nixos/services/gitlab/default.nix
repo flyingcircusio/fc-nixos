@@ -60,18 +60,19 @@ let
     http_settings.self_signed_cert = false;
     repos_path = "${cfg.statePath}/repositories";
     secret_file = "${cfg.statePath}/gitlab_shell_secret";
-    log_file = "${cfg.statePath}/log/gitlab-shell.log";
+    log_file = "/var/log/gitlab/gitlab-shell.log";
     custom_hooks_dir = "${cfg.statePath}/custom_hooks";
     redis = {
       bin = "${pkgs.redis}/bin/redis-cli";
       host = "127.0.0.1";
       port = 6379;
       database = 0;
+      password = cfg.redisPassword;
       namespace = "resque:gitlab";
     };
   };
 
-  redisConfig.production.url = "redis://localhost:6379/";
+  redisConfig.production.url = "redis://:${cfg.redisPassword}@localhost:6379/";
 
   gitlabConfig = {
     # These are the default settings from config/gitlab.example.yml
@@ -91,7 +92,7 @@ let
           wiki = true;
           snippets = true;
           builds = true;
-          container_registry = true;
+          container_registry = cfg.registry.defaultForProjects;
         };
       };
       repositories.storages.default.path = "${cfg.statePath}/repositories";
@@ -123,6 +124,14 @@ let
           port = 3807;
         };
       };
+      registry = lib.optionalAttrs cfg.registry.enable {
+        enabled = true;
+        host = cfg.registry.externalAddress;
+        port = cfg.registry.externalPort;
+        key = cfg.registry.keyFile;
+        api_url = "http://${config.services.dockerRegistry.listenAddress}:${toString config.services.dockerRegistry.port}/";
+        issuer = "gitlab-issuer";
+      };
       extra = {};
       uploads.storage_path = cfg.statePath;
     };
@@ -134,7 +143,7 @@ let
     GITLAB_PATH = "${cfg.packages.gitlab}/share/gitlab/";
     SCHEMA = "${cfg.statePath}/db/structure.sql";
     GITLAB_UPLOADS_PATH = "${cfg.statePath}/uploads";
-    GITLAB_LOG_PATH = "${cfg.statePath}/log";
+    GITLAB_LOG_PATH = "/var/log/gitlab";
     GITLAB_REDIS_CONFIG_FILE = pkgs.writeText "redis.yml" (builtins.toJSON redisConfig);
     prometheus_multiproc_dir = "/run/gitlab";
     RAILS_ENV = "production";
@@ -145,6 +154,7 @@ let
     buildInputs = [ pkgs.makeWrapper ];
     dontBuild = true;
     dontUnpack = true;
+    unpackPhase = ":";
     installPhase = ''
       mkdir -p $out/bin
       makeWrapper ${cfg.packages.gitlab.rubyEnv}/bin/rake $out/bin/gitlab-rake \
@@ -160,6 +170,7 @@ let
     buildInputs = [ pkgs.makeWrapper ];
     dontBuild = true;
     dontUnpack = true;
+    unpackPhase = ":";
     installPhase = ''
       mkdir -p $out/bin
       makeWrapper ${cfg.packages.gitlab.rubyEnv}/bin/rails $out/bin/gitlab-rails \
@@ -191,11 +202,6 @@ let
   '';
 
 in {
-
-  imports = [
-    (mkRenamedOptionModule [ "services" "gitlab" "stateDir" ] [ "services" "gitlab" "statePath" ])
-    (mkRemovedOptionModule [ "services" "gitlab" "satelliteDir" ] "")
-  ];
 
   options = {
     services.gitlab = {
@@ -382,6 +388,60 @@ in {
           This should be a string, not a nix path, since nix paths are
           copied into the world-readable nix store.
         '';
+      };
+
+      redisPassword = mkOption {
+        type = types.str;
+      };
+
+      registry = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Enable gitLab container registry.";
+        };
+        host = mkOption {
+          type = types.str;
+          default = config.services.gitlab.host;
+          description = "GitLab container registry host name.";
+        };
+        port = mkOption {
+          type = types.int;
+          default = 4567;
+          description = "GitLab container registry port.";
+        };
+        certFile = mkOption {
+          type = types.path;
+          default = null;
+          description = "Path to gitLab container registry certificate.";
+        };
+        keyFile = mkOption {
+          type = types.path;
+          default = null;
+          description = "Path to gitLab container registry certificate-key.";
+        };
+        defaultForProjects = mkOption {
+          type = types.bool;
+          default = cfg.registry.enable;
+          description = "If gitlab container registry is project default.";
+        };
+        issuer = mkOption {
+          type = types.str;
+          default = "gitlab-issuer";
+          description = "Gitlab container registry issuer.";
+        };
+        serviceName = mkOption {
+          type = types.str;
+          default = "container_registry";
+          description = "Gitlab container registry service name.";
+        };
+        externalAddress = mkOption {
+          type = types.str;
+          default = "";
+        };
+        externalPort = mkOption {
+          type = types.int;
+        };
       };
 
       smtp = {
@@ -610,7 +670,6 @@ in {
     # We use postgres as the main data store.
     services.postgresql = optionalAttrs databaseActuallyCreateLocally {
       enable = true;
-      ensureUsers = singleton { name = cfg.databaseUsername; };
     };
     # The postgresql module doesn't currently support concepts like
     # objects owners and extensions; for now we tack on what's needed
@@ -633,8 +692,19 @@ in {
       $PSQL '${cfg.databaseName}' -tAc "CREATE EXTENSION IF NOT EXISTS pg_trgm"
     '');
 
-    # Use postfix to send out mails.
-    services.postfix.enable = mkDefault true;
+    # Enable Docker Registry, if GitLab-Container Registry is enabled
+    services.dockerRegistry = optionalAttrs cfg.registry.enable {
+      enable = true;
+      enableDelete = true; # This must be true, otherwise GitLab won't manage it correctly
+      extraConfig = {
+        auth.token = {
+          realm = "http${if cfg.https == true then "s" else ""}://${cfg.host}/jwt/auth";
+          service = cfg.registry.serviceName;
+          issuer = cfg.registry.issuer;
+          rootcertbundle = cfg.registry.certFile;
+        };
+      };
+    };
 
     users.users.${cfg.user} =
       { group = cfg.group;
@@ -655,7 +725,7 @@ in {
       "d ${cfg.statePath}/config 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/config/initializers 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/db 0750 ${cfg.user} ${cfg.group} -"
-      "d ${cfg.statePath}/log 0750 ${cfg.user} ${cfg.group} -"
+      "d /var/log/gitlab 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/repositories 2770 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/shell 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/tmp 0750 ${cfg.user} ${cfg.group} -"
@@ -671,7 +741,7 @@ in {
       "d ${gitlabConfig.production.shared.path}/lfs-objects 0750 ${cfg.user} ${cfg.group} -"
       "d ${gitlabConfig.production.shared.path}/pages 0750 ${cfg.user} ${cfg.group} -"
       "L+ /run/gitlab/config - - - - ${cfg.statePath}/config"
-      "L+ /run/gitlab/log - - - - ${cfg.statePath}/log"
+      "L+ /run/gitlab/log - - - - /var/log/gitlab"
       "L+ /run/gitlab/tmp - - - - ${cfg.statePath}/tmp"
       "L+ /run/gitlab/uploads - - - - ${cfg.statePath}/uploads"
 
@@ -875,7 +945,5 @@ in {
     };
 
   };
-
-  meta.doc = ./gitlab.xml;
 
 }
