@@ -737,7 +737,10 @@ in
           fi
         fi
       '';
-      reloadIfChanged = true;
+      # Changed to false to force a restart once to activate the changes for binary reloading.
+      # We can change this to true after the next release.
+      reloadIfChanged = false;
+
       serviceConfig = {
         Type = "forking";
         PIDFile = "/run/nginx/nginx.pid";
