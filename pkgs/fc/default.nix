@@ -5,6 +5,7 @@
 
   agent = callPackage ./agent {};
   box = callPackage ./box { };
+  check-age = pkgs-unstable.callPackage ./check-age {};
   check-haproxy = callPackage ./check-haproxy {};
   check-journal = callPackage ./check-journal.nix {};
   check-postfix = pkgs-unstable.callPackage ./check-postfix {};
