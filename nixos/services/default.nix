@@ -1,12 +1,16 @@
 { lib, ... }:
 let
   modulesFromHere = [
+    "services/misc/gitlab.nix"
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
     "services/web-servers/nginx/default.nix"
   ];
 
   modulesFromUnstable = [
+    "misc/extra-arguments.nix"
+    "services/continuous-integration/gitlab-runner.nix"
+    "services/misc/docker-registry.nix"
     "services/monitoring/grafana.nix"
     "services/search/elasticsearch.nix"
     "services/search/kibana.nix"
@@ -20,6 +24,7 @@ in {
   imports = with lib; [
     ./box/client.nix
     ./collectdproxy.nix
+    ./gitlab
     ./graylog.nix
     ./haproxy.nix
     ./logrotate

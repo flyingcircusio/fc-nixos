@@ -37,6 +37,8 @@ in {
 
   inherit (pkgs-unstable) coturn;
 
+  inherit (pkgs-unstable) docker-distribution;
+
   docsplit = super.callPackage ./docsplit { };
 
   elasticsearch7 = pkgs-unstable.elasticsearch7.overrideAttrs(_: rec {
@@ -60,6 +62,8 @@ in {
     };
     meta.license = null;
   });
+
+  inherit (pkgs-unstable) gitlab gitlab-shell gitaly gitlab-workhorse gitlab-runner;
 
   inherit (pkgs-unstable) grafana;
 
