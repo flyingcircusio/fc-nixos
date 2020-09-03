@@ -83,9 +83,13 @@ let
 
   modifiedPkgNames = attrNames (import ../pkgs/overlay.nix pkgs pkgs);
 
-  testPkgNames = [
-    "wkhtmltopdf"
-  ] ++ modifiedPkgNames;
+  excludedPkgNames = [
+    # Build fails with patch errors.
+    "gitlab"
+    "gitlab-workhorse"
+  ];
+
+  testPkgNames = lib.subtractLists excludedPkgNames modifiedPkgNames;
 
   testPkgs =
     listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
