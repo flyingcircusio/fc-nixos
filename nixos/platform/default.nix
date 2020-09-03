@@ -150,6 +150,8 @@ in {
     sound.enable = mkDefault false;
     documentation.dev.enable = mkDefault false;
     documentation.doc.enable = mkDefault false;
+    # reduce build time
+    documentation.nixos.enable = mkDefault false;
 
     nix = {
       nixPath = [
@@ -188,9 +190,6 @@ in {
     '';
 
     flyingcircus.enc_services = enc_services;
-
-    # reduce build time
-    #documentation.nixos.enable = mkDefault false;
 
     # implementation for flyingcircus.passwordlessSudoRules
     security.sudo.extraRules = let
