@@ -460,7 +460,7 @@ in {
         notification = ''
           Obsolete 'result' symlinks possibly causing Nix store bloat
         '';
-        command = "${fc.check-age}/bin/check_age -m /result /root/result";
+        command = "${fc.check-age}/bin/check_age -m -w 1d /result /root/result";
         interval = 300;
       };
     };

@@ -27,7 +27,7 @@ where
         let full = dir.path().join(localname);
         symlink("/no/such/file", &full)?;
         let tv = TimeVal::seconds(
-            (SystemTime::now() - *age.parse::<HDuration>()?)
+            (SystemTime::now() - *age.parse::<HDur>()?)
                 .duration_since(SystemTime::UNIX_EPOCH)?
                 .as_secs() as i64,
         );
@@ -36,21 +36,13 @@ where
     Ok(Setup { dir })
 }
 
-const DEF_WARN: usize = 86400;
-const DEF_CRIT: usize = 259200;
-
 #[test]
 fn no_threshold() {
     let s = setup(&[("link1", "30s")]).unwrap();
     let mut c = Check::new(Opt::from_iter(&["prog", &s.path("link1")]));
     assert_eq!(0, c.run().unwrap());
     assert_eq!(
-        format!(
-            "OK: no outdated files | {}=30s;{};{};0",
-            s.path("link1"),
-            DEF_WARN,
-            DEF_CRIT
-        ),
+        format!("OK: no outdated items | {}=30s;;;0", s.path("link1")),
         c.to_string()
     );
 }
@@ -67,12 +59,10 @@ fn warning_1() {
     assert_eq!(1, c.run().unwrap());
     assert_eq!(
         format!(
-            "WARNING: older than 35s: {} | {}=30s;35;{};0 {}=40s;35;{};0",
+            "WARNING: older than 35s: {} | {}=30s;35;;0 {}=40s;35;;0",
             s.path("l2"),
             s.path("l1"),
-            DEF_CRIT,
             s.path("l2"),
-            DEF_CRIT,
         ),
         c.to_string()
     );
@@ -90,13 +80,11 @@ fn critical_2() {
     assert_eq!(2, c.run().unwrap());
     assert_eq!(
         format!(
-            "CRITICAL: older than 10s: {}, {} | {}=30s;{};10;0 {}=40s;{};10;0",
+            "CRITICAL: older than 10s: {}, {} | {}=30s;;10;0 {}=40s;;10;0",
             s.path("l1"),
             s.path("l2"),
             s.path("l1"),
-            DEF_WARN,
             s.path("l2"),
-            DEF_WARN,
         ),
         c.to_string()
     );
@@ -143,10 +131,9 @@ fn human_format_in_msg_but_not_in_perfdata() {
     assert_eq!(2, c.run().unwrap());
     assert_eq!(
         format!(
-            "CRITICAL: older than 1day 5s: {} | {}=86410s;{};86405;0",
+            "CRITICAL: older than 1day 5s: {} | {}=86410s;;86405;0",
             s.path("l"),
             s.path("l"),
-            DEF_WARN
         ),
         c.to_string()
     );
@@ -165,5 +152,15 @@ fn read_error() -> Result<()> {
         format!("{}: Permission denied (os error 13)", file.display()),
         format!("{:#}", c.run().unwrap_err())
     );
+    fs::set_permissions(&dir, fs::Permissions::from_mode(0o755))?; // else it won't be deleted
     Ok(())
+}
+
+#[test]
+fn no_file() {
+    let mut c = Check::new(Opt::from_iter(&["prog"]));
+    assert_eq!(
+        "No file/symlink to check",
+        format!("{:#}", c.run().unwrap_err())
+    );
 }

@@ -1,5 +1,5 @@
-use anyhow::{Context, Result};
-use humantime::Duration as HDuration;
+use anyhow::{ensure, Context, Result};
+use humantime::Duration as HDur;
 use std::fmt;
 use std::fs::symlink_metadata;
 use std::io::ErrorKind;
@@ -45,20 +45,21 @@ impl Check {
     }
 
     fn run(&mut self) -> Result<i32> {
+        ensure!(!self.opt.paths.is_empty(), "No file/symlink to check");
         let mut res = vec![0];
         for p in &self.opt.paths {
             let age = self.age(p).with_context(|| string(p))?;
             self.ages.push(age);
-            match age {
-                Some(a) if a > *self.opt.critical => {
+            match (age, self.opt.critical, self.opt.warning) {
+                (Some(a), Some(c), _) if a > *c => {
                     self.crit.push(string(p));
                     res.push(2)
                 }
-                Some(a) if a > *self.opt.warning => {
+                (Some(a), _, Some(w)) if a > *w => {
                     self.warn.push(string(p));
                     res.push(1)
                 }
-                None if !self.opt.ignore_missing => {
+                (None, _, _) if !self.opt.ignore_missing => {
                     self.miss.push(string(p));
                     res.push(2)
                 }
@@ -71,11 +72,15 @@ impl Check {
     // format textual message
     fn deviations(&self) -> String {
         let mut res = vec![];
-        let msg = |thres: HDuration, paths: &[String]| {
-            if paths.is_empty() {
-                None
+        let msg = |thres: Option<HDur>, paths: &[String]| {
+            if thres.is_some() && !paths.is_empty() {
+                Some(format!(
+                    "older than {}: {}",
+                    thres.unwrap(),
+                    paths.join(", ")
+                ))
             } else {
-                Some(format!("older than {}: {}", thres, paths.join(", ")))
+                None
             }
         };
         res.extend(msg(self.opt.critical, &self.crit));
@@ -88,8 +93,16 @@ impl Check {
 
     // format perfdata
     fn performance<'a>(&'a self) -> impl Iterator<Item = String> + 'a {
-        let warn = self.opt.warning.as_secs();
-        let crit = self.opt.critical.as_secs();
+        let warn: String = self
+            .opt
+            .warning
+            .map(|w| w.as_secs().to_string())
+            .unwrap_or_default();
+        let crit: String = self
+            .opt
+            .critical
+            .map(|w| w.as_secs().to_string())
+            .unwrap_or_default();
         self.ages
             .iter()
             .zip(&self.opt.paths)
@@ -102,7 +115,7 @@ impl Check {
 impl fmt::Display for Check {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match (self.crit.len() + self.miss.len(), self.warn.len()) {
-            (0, 0) => write!(f, "OK: no outdated files")?,
+            (0, 0) => write!(f, "OK: no outdated items")?,
             (0, _) => write!(f, "WARNING: {}", self.deviations())?,
             _ => write!(f, "CRITICAL: {}", self.deviations())?,
         }
@@ -113,14 +126,20 @@ impl fmt::Display for Check {
 /// Checks for outdated files and symlinks like stale `result` Nix store references. Note that this
 /// check uses lstat() to determine the mtime of the symlink itself, not the target file.
 #[derive(StructOpt, Debug)]
+#[structopt(
+    author,
+    after_help = "DURATION accepts the following suffixes: s/m/h/d/w/y. \
+                  Leaving -w/-c empty means no threshold.",
+    max_term_width = 80
+)]
 struct Opt {
-    /// warning if symlink is older than DURATION
-    #[structopt(short, long, value_name = "DURATION", default_value = "1d")]
-    warning: HDuration,
-    /// critical if symlink is older than DURATION
-    #[structopt(short, long, value_name = "DURATION", default_value = "3d")]
-    critical: HDuration,
-    /// a missing file/symlink is silently ignored
+    /// Warning if at least one item is older than DURATION
+    #[structopt(short, long, value_name = "DURATION")]
+    warning: Option<HDur>,
+    /// Critical if at least one item is older than DURATION
+    #[structopt(short, long, value_name = "DURATION")]
+    critical: Option<HDur>,
+    /// Ignores missing files/symlinks silently
     #[structopt(short = "m", long)]
     ignore_missing: bool,
     /// file/symlink to check
