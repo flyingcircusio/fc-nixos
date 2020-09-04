@@ -104,6 +104,7 @@ in {
       systemd.tmpfiles.rules = [
         "r! /reboot"
         "f /etc/nixos/local.nix 644"
+        "d /root 0711"
         "d /var/lib/fc-manage"
         "r /var/lib/fc-manage/stamp-channel-update"
         "d /var/spool/maintenance/archive - - - 180d"

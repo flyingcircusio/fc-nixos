@@ -436,7 +436,8 @@ in {
         command =
           "${fc.check-journal}/bin/check_journal " +
           "-j ${systemd}/bin/journalctl " +
-          "https://gitlab.flyingcircus.io/flyingcircus/fc-logcheck-config/raw/master/nixos-journal.yaml";
+          "https://gitlab.flyingcircus.io/flyingcircus/fc-logcheck-config/" +
+          "raw/master/nixos-journal.yaml";
         interval = 600;
       };
       journal_file = {
@@ -454,6 +455,13 @@ in {
             -w ${toString cfg.expectedConnections.warning} \
             -c ${toString cfg.expectedConnections.critical}
         '';
+      };
+      obsolete-result-links = {
+        notification = ''
+          Obsolete 'result' symlinks possibly causing Nix store bloat
+        '';
+        command = "${fc.check-age}/bin/check_age -m /result /root/result";
+        interval = 300;
       };
     };
 
