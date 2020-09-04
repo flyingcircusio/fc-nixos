@@ -712,11 +712,18 @@ in
           echo "Nginx package changed: $current_pkg -> ${cfg.package}."
           ln -sfT ${cfg.package} /run/nginx/package
 
-          if ${nginxReloadMaster}/bin/nginx-reload-master; then
-            echo "Master process replacement completed."
+          if [[ -s /run/nginx/nginx.pid ]]; then
+            if ${nginxReloadMaster}/bin/nginx-reload-master; then
+              echo "Master process replacement completed."
+            else
+              echo "Master process replacement failed, trying again on next reload."
+              ln -sfT $current_pkg /run/nginx/package
+            fi
           else
-            echo "Master process replacement failed, trying again on next reload."
-            ln -sfT $current_pkg /run/nginx/package
+            # We are still running an old version that didn't write a PID file or something is broken.
+            # We can only force a restart now.
+            echo "Warning: cannot replace master process because PID is missing. Restarting Nginx now..."
+            ${pkgs.coreutils}/bin/kill -QUIT $MAINPID
           fi
 
         else
@@ -737,9 +744,7 @@ in
           fi
         fi
       '';
-      # Changed to false to force a restart once to activate the changes for binary reloading.
-      # We can change this to true after the next release.
-      reloadIfChanged = false;
+      reloadIfChanged = true;
 
       serviceConfig = {
         Type = "forking";
