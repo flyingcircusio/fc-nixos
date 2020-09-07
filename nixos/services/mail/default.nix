@@ -284,6 +284,15 @@ in {
         startAt = "04:39:47";
       };
 
+      systemd.services.postfix.serviceConfig.ExecReload = lib.mkOverride 50 (
+        pkgs.writeScript "postfix-reload" ''
+          #! ${pkgs.stdenv.shell} -e
+          # Include pre-start script here to have maps regenerated:
+          ${config.systemd.services.postfix.preStart}
+
+          ${pkgs.postfix}/bin/postfix reload
+        '');
+
       systemd.tmpfiles.rules = [
         "f ${role.passwdFile} 0660 vmail service"
         "d /etc/local/mail 02775 postfix service"
