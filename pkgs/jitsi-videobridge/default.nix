@@ -5,7 +5,7 @@ let
   version = "2.1-315-g40ba83c6";
 
   src = fetchurl {
-    url = "https://download.jitsi.org/unstable/${pname}_${version}-1_all.deb";
+    url = "https://downloads.fcio.net/packages/${pname}_${version}-1_all.deb";
     sha256 = "0knwjx48aj1zhqkkfm2ra8cc44mavnfc2lbczv4zna8j4m7nzb1j";
   };
 in
