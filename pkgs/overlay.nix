@@ -210,11 +210,11 @@ in {
 
   # === Python ===
 
-  # python2
   python27 = super.python27.override {
     packageOverrides = import ./overlay-python.nix super;
   };
-  python27Packages = self.python27.pkgs;
+  python27Packages = super.recurseIntoAttrs self.python27.pkgs;
+  python2Packages = self.python27Packages;
 
   python35 = super.python35.override {
     packageOverrides = import ./overlay-python.nix super;
@@ -229,6 +229,7 @@ in {
   python37 = super.python37.override {
     packageOverrides = import ./overlay-python.nix super;
   };
-  python37Packages = self.python37.pkgs;
+  python37Packages = super.recurseIntoAttrs self.python37.pkgs;
+  python3Packages = self.python37Packages;
 
 }
