@@ -97,20 +97,6 @@ let
     charset UTF-8;
 
     # === Logging ===
-    map $remote_addr $remote_addr_anon_head {
-      default 0.0.0;
-      "~(?P<ip>\d+\.\d+\.\d+)\.\d+" $ip;
-      "~(?P<ip>[^:]+:[^:]+:[^:]+):" $ip;
-    }
-    map $remote_addr $remote_addr_anon_tail {
-      default .0;
-      "~(?P<ip>\d+\.\d+\.\d+)\.\d+" .0;
-      "~(?P<ip>[^:]+:[^:]+:[^:]+):" ::;
-    }
-    map $remote_addr_anon_head$remote_addr_anon_tail $remote_addr_anon {
-        default 0.0.0.0;
-        "~(?P<ip>.*)" $ip;
-    }
 
     # same as 'anonymized'
     log_format main
