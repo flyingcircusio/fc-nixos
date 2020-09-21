@@ -73,6 +73,10 @@ in {
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
+  jicofo = super.callPackage ./jicofo { };
+  jitsi-meet = super.callPackage ./jitsi-meet { };
+  jitsi-videobridge = super.callPackage ./jitsi-videobridge { };
+
   inherit (pkgs-unstable) kubernetes;
 
   libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
@@ -150,6 +154,8 @@ in {
   inherit (pkgs-unstable) postgresql_12;
 
   inherit (pkgs-unstable) prometheus;
+
+  inherit (pkgs-unstable) prosody;
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 

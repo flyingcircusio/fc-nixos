@@ -16,6 +16,7 @@ in {
     ./elasticsearch.nix
     ./gitlab.nix
     ./graylog.nix
+    ./jitsi
     ./kibana.nix
     ./kubernetes
     ./lamp.nix

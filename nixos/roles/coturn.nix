@@ -18,7 +18,6 @@ let
 
   domain = config.networking.domain;
   location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
-  feFQDN = "${config.networking.hostName}.fe.${location}.${domain}";
   cfg = config.flyingcircus.roles.coturn;
 
   ourSettings = [
@@ -27,14 +26,14 @@ let
     ];
 
   defaultConfig = {
-    hostname = feFQDN;
+    hostname = cfg.hostName;
     alt-listening-port = 3479;
     alt-tls-listening-port = 5350;
     listening-ips = listenAddresses;
     listening-port = 3478;
     lt-cred-mech = false;
     no-cli = true;
-    realm = feFQDN;
+    realm = cfg.hostName;
     tls-listening-port = 5349;
     use-auth-secret = true;
     extraConfig = [];
@@ -44,13 +43,19 @@ let
     (fclib.configFromFile /etc/local/coturn/config.json "{}");
 
 
-  hostname = jsonConfig.hostname or defaultConfig.hostname;
+  hostname = jsonConfig.hostname or cfg.hostName;
   kill = "${pkgs.coreutils}/bin/kill";
 in
 {
   options = with lib; {
     flyingcircus.roles.coturn = {
-      enable = lib.mkEnableOption "Coturn TURN server";
+      enable = mkEnableOption "Coturn TURN server";
+
+      hostName = mkOption {
+        type = types.string;
+        default = "${config.networking.hostName}.fe.${location}.${domain}";
+      };
+
     };
   };
 
@@ -65,7 +70,8 @@ in
 
     networking.firewall.allowedTCPPorts = [ 80 ];
 
-    # We need this only for the Letsencrypt HTTP challenge.
+    # We need this only for the Letsencrypt HTTP challenge on port 80.
+    # 443 can be used by coturn.
     services.nginx = {
       enable = true;
       virtualHosts."${hostname}" = {

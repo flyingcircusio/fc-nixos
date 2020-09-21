@@ -57,6 +57,13 @@ in {
     (mkIf cfg.agent.install {
       environment.systemPackages = [ pkgs.fc.agent ];
 
+      flyingcircus.passwordlessSudoRules = [
+        {
+          commands = [ "${pkgs.fc.agent}/bin/fc-manage" ];
+          groups = [ "sudo-srv" "service" ];
+        }
+      ];
+
       systemd.services.fc-agent = rec {
         description = "Flying Circus Management Task";
         enable = cfg.agent.enable;
@@ -110,12 +117,12 @@ in {
         "d /var/spool/maintenance/archive - - - 180d"
       ];
 
-      flyingcircus.passwordlessSudoRules = [
-        {
-          commands = [ "${pkgs.fc.agent}/bin/fc-manage" ];
-          groups = [ "sudo-srv" "service" ];
-        }
-      ];
+      # Remove obsolete `/result` symlink
+      system.activationScripts.result-symlink = stringAfter [] ''
+        ${pkgs.fc.check-age}/bin/check_age -m -w 3d /result >/dev/null || \
+          rm /result
+      '';
+
     })
 
     (mkIf (cfg.agent.install && cfg.agent.enable) {
