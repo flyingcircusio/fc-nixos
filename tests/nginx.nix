@@ -58,8 +58,13 @@ in {
       machine.wait_until_succeeds("curl machine | grep -q 'initial content'")
 
     with subtest("nginx should use changed binary after reload"):
-      # Change to mainline nginx version.
+      # Prepare change to mainline nginx. We are not interested in testing mainline itself here.
+      # We only need it as a different version so we can test binary reloading.
       machine.execute("ln -sfT ${pkgs.nginxMainline} /run/nginx/package")
+      # Mainline doesn't know about our custom remote_addr_anon variable, patch our config.
+      machine.execute("sed 's#remote_addr_anon#remote_addr#' /run/nginx/config > /run/nginx/changed_config")
+      machine.execute("mv /run/nginx/changed_config /run/nginx/config")
+      # Go to mainline.
       machine.succeed("nginx-reload-master")
       machine.wait_until_succeeds("curl machine/404 | grep -q ${mainlineMajorVersion}")
       # Back to initial binary from nginx stable.

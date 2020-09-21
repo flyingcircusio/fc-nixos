@@ -117,14 +117,23 @@ in {
   mysql = super.mariadb;
 
   # This is our default version.
-  nginxStable = pkgs-unstable.nginxStable.override {
+  nginxStable = (pkgs-unstable.nginxStable.override {
     modules = with pkgs-unstable.nginxModules; [
       dav
       modsecurity
       moreheaders
       rtmp
     ];
-  };
+  }).overrideAttrs(_: rec {
+    src = super.fetchFromGitHub {
+      owner = "flyingcircusio";
+      repo = "nginx";
+      rev = "2ad7b63de0391df4c49c887f2929a72658bce329";
+      sha256 = "02rnpy1w8ia2yxlbcfvx5d4swdrs8a58grffch9pgr1x11kakvl6";
+    };
+
+    configureScript = "./auto/configure";
+  });
 
   nginx = self.nginxStable;
 
