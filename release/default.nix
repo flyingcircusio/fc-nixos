@@ -87,6 +87,17 @@ let
     # Build fails with patch errors.
     "gitlab"
     "gitlab-workhorse"
+    # The kernel universe is _huge_ and contains a lot of unfree stuff. Kernel
+    # packages which are really needed are pulled in as dependencies anyway.
+    "linux"
+    "linux_5_4"
+    "linuxPackages"
+    "linuxPackages_5_4"
+    # Same as above, don't pull everything in here
+    "python2Packages"
+    "python27Packages"
+    "python3Packages"
+    "python37Packages"
   ];
 
   testPkgNames = lib.subtractLists excludedPkgNames modifiedPkgNames;
