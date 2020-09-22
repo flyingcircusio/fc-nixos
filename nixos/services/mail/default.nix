@@ -134,6 +134,11 @@ in {
           commands = [ checkMailq ];
           groups = [ "sensuclient" ];
         }
+        {
+          commands = [ "ALL" ];
+          groups = [ "sudo-srv" ];
+          runAs = "vmail";
+        }
       ];
 
       # SNM specific configuration, see
