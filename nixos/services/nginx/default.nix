@@ -132,7 +132,6 @@ let
     large_client_header_buffers 4 16k;
     request_pool_size 4k;
     send_timeout 10m;
-    server_names_hash_bucket_size ${toString cfg.mapHashBucketSize};
   '';
 
   plainConfigFiles = filter (p: lib.hasSuffix ".conf" p) (fclib.files localDir);
@@ -152,12 +151,6 @@ in
       description = ''
         Configuration lines to be appended inside of the http {} block.
       '';
-    };
-
-    mapHashBucketSize = mkOption {
-      type = types.int;
-      default = 64;
-      description = "Bucket size for the 'map' variables hash tables.";
     };
 
     workerShutdownTimeout = mkOption {
@@ -287,6 +280,7 @@ in
         recommendedOptimisation = true;
         recommendedProxySettings = true;
         recommendedTlsSettings = true;
+        serverNamesHashBucketSize = fclib.mkPlatform 64;
         statusPage = true;
         inherit virtualHosts;
       };
