@@ -24,7 +24,7 @@ in {
     ./mailout.nix
     ./mailserver.nix
     ./memcached.nix
-    ./mongodb
+    ./mongodb.nix
     ./mysql.nix
     ./nfs.nix
     ./nginx.nix
