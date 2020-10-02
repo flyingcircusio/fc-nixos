@@ -596,8 +596,8 @@ in {
 
         logPath = mkOption {
           type = types.path;
-          default = "${cfg.statePath}/log/mail_room.log";
-          description = "mail_room.log location. Will be rotated automatically.";
+          default = "/var/log/gitlab/mail_room_json.log";
+          description = "Log file location. Logs will be rotated automatically.";
         };
       };
 
@@ -821,7 +821,7 @@ in {
       "d ${cfg.statePath}/config 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/config/initializers 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/db 0750 ${cfg.user} ${cfg.group} -"
-      "d /var/log/gitlab 0750 ${cfg.user} ${cfg.group} -"
+      "d /var/log/gitlab 0755 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/repositories 2770 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/shell 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/tmp 0750 ${cfg.user} ${cfg.group} -"
@@ -1046,14 +1046,7 @@ in {
       requires = [ "gitlab.service" ];
       wantedBy = [ "multi-user.target" ];
       environment = gitlabEnv;
-      path = with pkgs; [
-        postgresqlPackage
-        gitAndTools.git
-        ruby
-        openssh
-        nodejs
-        gnupg
-      ];
+      path = with pkgs; [ ruby ];
       restartTriggers = with builtins; [ (
         # need a different value each time anything changes
         hashString "sha256" (toJSON gitlabConfig.production.incoming_email))
@@ -1069,20 +1062,6 @@ in {
         RestartSec = 30;
         WorkingDirectory = "${cfg.statePath}/home";
       };
-    };
-
-    services.logrotate = mkIf cfg.incomingEmail.enable {
-      enable = mkDefault true;
-      config = ''
-        ${cfg.incomingEmail.logPath} {
-          compress
-          daily
-          dateext
-          delaycompress
-          missingok
-          rotate 7
-        }
-      '';
     };
 
   };
