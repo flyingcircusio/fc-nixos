@@ -7,10 +7,10 @@ let
 
   ruby = cfg.packages.gitlab.ruby;
 
-  postgresqlPackage = if config.services.postgresql.enable then
-                        config.services.postgresql.package
-                      else
-                        pkgs.postgresql;
+  postgresqlPackage =
+    if config.services.postgresql.enable
+    then config.services.postgresql.package
+    else pkgs.postgresql;
 
   gitlabSocket = "${cfg.statePath}/tmp/sockets/gitlab.socket";
   gitalySocket = "${cfg.statePath}/tmp/sockets/gitaly.socket";
@@ -134,6 +134,22 @@ let
       };
       extra = {};
       uploads.storage_path = cfg.statePath;
+      incoming_email = {
+        enabled = cfg.incomingEmail.enable;
+        address = cfg.incomingEmail.address;
+        user = cfg.incomingEmail.user;
+        host = cfg.incomingEmail.host;
+        port = cfg.incomingEmail.port;
+        ssl = cfg.incomingEmail.ssl;
+        start_tls = cfg.incomingEmail.startTLS;
+        mailbox = cfg.incomingEmail.mailbox;
+        idle_timeout = cfg.incomingEmail.idleTimeout;
+        expunge_deleted = cfg.incomingEmail.expungeDeleted;
+        log_path = cfg.incomingEmail.logPath;
+      } //
+      (optionalAttrs (cfg.incomingEmail.passwordFile != null) {
+        password = fileContents cfg.incomingEmail.passwordFile;
+      });
     };
   };
 
@@ -505,6 +521,86 @@ in {
         };
       };
 
+      incomingEmail = {
+        enable = mkEnableOption "incoming mail processing via mail_room";
+
+        host = mkOption {
+          type = types.str;
+          default = "localhost";
+          description = "Address of the IMAP server";
+        };
+
+        port = mkOption {
+          type = types.int;
+          default = 143;
+          description = "Port of the IMAP server";
+        };
+
+        user = mkOption {
+          type = with types; nullOr str;
+          default = null;
+          description = "Login name for the IMAP account";
+          example = "gitlab@example.org";
+        };
+
+        passwordFile = mkOption {
+          type = with types; nullOr path;
+          default = null;
+          description = ''
+            File containing the password of the IMAP account.
+
+            This should be a string, not a Nix path, since nix paths
+            are copied into the world-readable nix store.
+          '';
+        };
+
+        address = mkOption {
+          type = with types; nullOr str;
+          default = null;
+          description = ''
+            E-mail address template for incoming mail processing. Must contain
+            the placeholder "%{key}" somewhere.
+          '';
+          example = "gitlab-issue+%{key}@gitlab.example.com";
+        };
+
+        ssl = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Whether to use IMAPs.";
+        };
+
+        startTLS = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether to use STARTTLS over IMAP.";
+        };
+
+        mailbox = mkOption {
+          type = types.string;
+          default = "INBOX";
+          description = "IMAP mailbox to search for incoming mails.";
+        };
+
+        idleTimeout = mkOption {
+          type = types.int;
+          default = 300;
+          description = "IMAP IDLE interval.";
+        };
+
+        expungeDeleted = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Whether to delete processed mails permantently.";
+        };
+
+        logPath = mkOption {
+          type = types.path;
+          default = "/var/log/gitlab/mail_room_json.log";
+          description = "Log file location. Logs will be rotated automatically.";
+        };
+      };
+
       secrets.secretFile = mkOption {
         type = with types; nullOr path;
         default = null;
@@ -725,7 +821,7 @@ in {
       "d ${cfg.statePath}/config 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/config/initializers 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/db 0750 ${cfg.user} ${cfg.group} -"
-      "d /var/log/gitlab 0750 ${cfg.user} ${cfg.group} -"
+      "d /var/log/gitlab 0755 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/repositories 2770 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/shell 0750 ${cfg.user} ${cfg.group} -"
       "d ${cfg.statePath}/tmp 0750 ${cfg.user} ${cfg.group} -"
@@ -942,6 +1038,30 @@ in {
         ExecStart = "${cfg.packages.gitlab.rubyEnv}/bin/unicorn -c ${cfg.statePath}/config/unicorn.rb -E production";
       };
 
+    };
+
+    systemd.services.gitlab-mail_room = {
+      enable = mkDefault cfg.incomingEmail.enable;
+      after = [ "network.target" "gitlab.service" ];
+      requires = [ "gitlab.service" ];
+      wantedBy = [ "multi-user.target" ];
+      environment = gitlabEnv;
+      path = with pkgs; [ ruby ];
+      restartTriggers = with builtins; [ (
+        # need a different value each time anything changes
+        hashString "sha256" (toJSON gitlabConfig.production.incoming_email))
+      ];
+      script = ''
+        ${cfg.packages.gitlab.rubyEnv}/bin/mail_room \
+          -c "${cfg.statePath}/config/mail_room.yml"
+      '';
+      serviceConfig = {
+        User = cfg.user;
+        Group = cfg.group;
+        Restart = "on-failure";
+        RestartSec = 30;
+        WorkingDirectory = "${cfg.statePath}/home";
+      };
     };
 
   };

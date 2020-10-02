@@ -11,8 +11,8 @@ with builtins;
 
 let
   snm = fetchTarball {
-    url = "https://github.com/flyingcircusio/nixos-mailserver/archive/e4f8e0c154f3f60487fd9ca8c39f90771c700195.tar.gz";
-    sha256 = "0q535b14h7jln09v1q833ixily6c7vbksbg4bl9pzn86k11fcxff";
+    url = "https://github.com/flyingcircusio/nixos-mailserver/archive/937db90f45e33c7aba1f3a00570d40783a6aed4e.tar.gz";
+    sha256 = "1nhg80dlldm3jgmapg5xxwbhgskqfgzsa265i6s7y1hq3vx7wkan";
   };
 
   role = config.flyingcircus.roles.mailserver;
