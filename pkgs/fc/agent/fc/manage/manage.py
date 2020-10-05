@@ -290,6 +290,7 @@ def update_inventory():
 
 
 def build_channel_with_maintenance(build_options):
+    global spread
     if not enc or not enc.get('parameters'):
         _log.warning('No ENC data. Not building channel.')
         return
@@ -303,12 +304,17 @@ def build_channel_with_maintenance(build_options):
             _log.info('Channel update prebooked @ %s',
                       list(rm.requests.values())[0].next_due)
             return
+
+    if not spread.is_due():
+        return
+
     # scheduled update available?
     next_channel = Channel(enc['parameters'].get('environment_url'))
 
     if not next_channel or next_channel.is_local:
         _log.error("switch-in-maintenance incompatible with local checkout")
         sys.exit(1)
+
     current_channel = Channel.current('nixos')
     if next_channel != current_channel:
         _log.info('Preparing switch from %s to %s.',
