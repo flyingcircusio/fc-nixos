@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   pname = "jitsi-meet";
-  version = "1.0.4383";
+  version = "1.0.4428";
 
   src = fetchurl {
     url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-    sha256 = "1jfxfz6qqn98pdgyhn90pizzwx3nqzjrm6dgx8bxwqnjmad1c4cj";
+    sha256 = "15v686vdw6kvsrmykkk82zhif65v2nr478zp84kzsx3rqlfm9gwh";
   };
 
   dontBuild = true;

@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 {
   options = {
     flyingcircus.roles.docker = {
@@ -7,8 +7,9 @@
   };
 
   config = lib.mkIf config.flyingcircus.roles.docker.enable {
-    virtualisation.docker.enable = true;
+    environment.systemPackages = [ pkgs.docker-compose ];
     flyingcircus.users.serviceUsers.extraGroups = [ "docker" ];
+    virtualisation.docker.enable = true;
   };
 
 }
