@@ -23,7 +23,6 @@ import tempfile
 
 _log = logging.getLogger()
 enc = {}
-spread = NullSpread()
 
 ACTIVATE = """\
 set -e
@@ -289,12 +288,12 @@ def update_inventory():
     ])
 
 
-def build_channel_with_maintenance(build_options):
+def build_channel_with_maintenance(build_options, spread):
     if not enc or not enc.get('parameters'):
         _log.warning('No ENC data. Not building channel.')
         return
     # always rebuild current channel (ENC updates, activation scripts etc.)
-    build_channel(build_options, update=False)
+    build_channel(build_options, spread, update=False)
     # scheduled update already present?
     if Channel.current('next'):
         rm = fc.maintenance.ReqManager()
@@ -303,12 +302,17 @@ def build_channel_with_maintenance(build_options):
             _log.info('Channel update prebooked @ %s',
                       list(rm.requests.values())[0].next_due)
             return
+
+    if not spread.is_due():
+        return
+
     # scheduled update available?
     next_channel = Channel(enc['parameters'].get('environment_url'))
 
     if not next_channel or next_channel.is_local:
         _log.error("switch-in-maintenance incompatible with local checkout")
         sys.exit(1)
+
     current_channel = Channel.current('nixos')
     if next_channel != current_channel:
         _log.info('Preparing switch from %s to %s.',
@@ -316,8 +320,7 @@ def build_channel_with_maintenance(build_options):
         next_channel.prepare_maintenance()
 
 
-def build_channel(build_options, update=True):
-    global spread
+def build_channel(build_options, spread, update=True):
     try:
         if enc and enc.get('parameters'):
             _log.info('Environment: %s', enc['parameters']['environment'])
@@ -339,23 +342,8 @@ def build_channel(build_options, update=True):
         sys.exit(1)
 
 
-def build_dev(build_options):
-    print("""\
-fc-manage -d/--development has been deprecated. Use dev environment instead.
-
-HOWTO:
-
-- Create an environment `dev-$USER` which points to
-  `file:///home/$USER/nixpkgs` (or similar).
-- Switch node to `dev-$USER` in directory.
-- rsync nixpkgs to location mentioned in environment.
-- Run `fc-manage -b -e`.
-
-Note: there is no need to switch off `flyingcircus.agent.enable`.""")
-
-
-def build_no_update(build_options):
-    return build_channel(build_options, update=False)
+def build_no_update(build_options, spread):
+    return build_channel(build_options, spread, update=False)
 
 
 def maintenance():
@@ -414,9 +402,6 @@ def parse_args():
                        const='build_channel_with_maintenance',
                        help='switch machine to FCIO channel during scheduled '
                        'maintenance')
-    build.add_argument('-d', '--development', default=False, dest='build',
-                       action='store_const', const='build_dev',
-                       help='(deprecated, use dev-* environment)')
     build.add_argument('-b', '--build', default=False, dest='build',
                        action='store_const', const='build_no_update',
                        help='rebuild channel or local checkout whatever '
@@ -447,12 +432,13 @@ def transaction(args):
     load_enc(args.enc_path)
 
     if args.automatic:
-        global spread
         spread = Spread(args.stampfile, args.interval * 60, 'Channel update')
         spread.configure()
+    else:
+        spread = NullSpread()
 
     if args.build:
-        globals()[args.build](build_options)
+        globals()[args.build](build_options, spread)
 
     if args.maintenance:
         maintenance()
