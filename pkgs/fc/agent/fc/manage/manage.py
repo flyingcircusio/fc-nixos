@@ -318,6 +318,8 @@ def build_channel_with_maintenance(build_options, spread):
         _log.info('Preparing switch from %s to %s.',
                   current_channel, next_channel)
         next_channel.prepare_maintenance()
+    else:
+        _log.info('Current channel is still up-to-date.')
 
 
 def build_channel(build_options, spread, update=True):
