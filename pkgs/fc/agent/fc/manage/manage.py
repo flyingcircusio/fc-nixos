@@ -432,7 +432,7 @@ def transaction(args):
     load_enc(args.enc_path)
 
     if args.automatic:
-        spread = Spread(args.stampfile, args.interval * 60, 'Channel update')
+        spread = Spread(args.stampfile, args.interval * 60, 'Channel update check')
         spread.configure()
     else:
         spread = NullSpread()
