@@ -24,10 +24,6 @@ let
   defaultJvbConfig = {
     videobridge = {
       ice = {
-        tcp = {
-          enabled = true;
-          port = 4443;
-        };
         udp.port = 10000;
       };
       stats = {

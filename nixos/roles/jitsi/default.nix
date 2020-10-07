@@ -176,6 +176,7 @@ in {
       };
 
       networking.firewall.allowedUDPPorts = lib.optional cfg.enablePublicUDP 10000;
+      networking.firewall.allowedTCPPorts = [ 3478 ];
 
       services.jicofo.config =
         lib.optionalAttrs cfg.enableRoomAuthentication {
@@ -255,6 +256,16 @@ in {
         extraConfig = ''
           turncredentials_secret = "${turnSecret}";
           turncredentials = {
+            { type = "turn",
+              host = "${turnHostName}",
+              port = "3478",
+              transport = "tcp"
+            },
+            { type = "turn",
+              host = "${turnHostName}",
+              port = "443",
+              transport = "tcp"
+            },
             { type = "turns",
               host = "${turnHostName}",
               port = "443",
@@ -305,6 +316,12 @@ in {
 
       };
 
+      services.jitsi-videobridge.extraProperties =
+        lib.optionalAttrs (!cfg.enablePublicUDP) {
+          "org.ice4j.ice.harvest.ALLOWED_ADDRESSES" =
+            lib.concatStringsSep ";" (fclib.listenAddresses "ethsrv");
+        };
+
     })
 
     (lib.mkIf (cfg.enable && cfg.coturn.enable) {
@@ -316,7 +333,7 @@ in {
 
       services.coturn = {
         listening-ips = [ cfg.coturn.listenAddress cfg.coturn.listenAddress6 ];
-        no-tcp = true;
+        no-tcp = false;
         static-auth-secret = turnSecret;
         tls-listening-port = 443;
         extraConfig = ''
