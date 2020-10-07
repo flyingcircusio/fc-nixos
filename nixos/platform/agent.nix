@@ -46,7 +46,7 @@ in {
 
       interval = mkOption {
         type = types.int;
-        default = 120;
+        default = 60;
         description = "Run channel updates every N minutes.";
       };
 
