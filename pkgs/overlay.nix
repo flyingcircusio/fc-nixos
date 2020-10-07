@@ -35,6 +35,7 @@ in {
   certmgr = super.callPackage ./certmgr.nix { inherit (pkgs-unstable) buildGoPackage; };
   cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-unstable) buildGoPackage; };
 
+  inherit (pkgs-unstable) coredns;
   inherit (pkgs-unstable) coturn;
 
   inherit (pkgs-unstable) docker-distribution;
@@ -62,6 +63,8 @@ in {
     };
     meta.license = null;
   });
+
+  kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
 
   inherit (pkgs-unstable) gitlab gitlab-shell gitaly gitlab-workhorse gitlab-runner;
 

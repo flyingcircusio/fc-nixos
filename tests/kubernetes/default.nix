@@ -1,4 +1,4 @@
-import ../make-test.nix ({ lib, pkgs, testlib, ... }:
+import ../make-test-python.nix ({ lib, pkgs, testlib, ... }:
 with builtins;
 
 let
@@ -9,8 +9,6 @@ let
 
   net4Fe = "10.0.2";
   masterFe = net4Fe + ".1";
-
-  dashboardFQDN = "kubernetes-dashboard.kube-system.svc.cluster.local";
 
   encServices = [
     {
@@ -78,6 +76,7 @@ in {
         networking.extraHosts = hosts;
 
         networking.firewall.allowedTCPPorts = [ 8888 6443 ];
+        networking.firewall.allowedUDPPorts = [ 53 ];
         users.groups = {
           sudo-srv = {};
         };
@@ -149,6 +148,7 @@ in {
             gateways = {};
           };
         };
+        networking.extraHosts = hosts;
         flyingcircus.encServices = encServices;
         virtualisation.vlans = [ 1 ];
       };
@@ -156,51 +156,66 @@ in {
 
   };
 
-  testScript = { nodes, ... }:
-  let
-    dashboardIP = nodes.master.config.flyingcircus.roles.kubernetes-master.dashboardClusterIP;
+  testScript = { nodes, ... }: let
+    masterSensuCheck = testlib.sensuCheckCmd nodes.master;
   in ''
-    subtest "kube master should work", sub {
-      $kubmaster->waitForUnit("kubernetes.target");
-      $kubmaster->succeed('kubectl cluster-info | grep -q https://kubmaster.fcio.net:6443');
-    };
 
-    subtest "frontend vm should reach the dashboard via service IP", sub {
-      $frontend->waitUntilSucceeds('curl -k https://${dashboardIP}');
-    };
+    with subtest("kube master should work"):
+      kubmaster.wait_for_unit("kubernetes.target")
+      kubmaster.wait_until_succeeds('kubectl cluster-info | grep -q https://kubmaster.fcio.net:6443')
+      kubmaster.systemctl("restart fc-kubernetes-setup")
 
-    subtest "frontend vm should be able to use cluster DNS", sub {
-      $frontend->waitUntilSucceeds('dig @10.0.0.254 ${dashboardFQDN} | grep -q ${dashboardIP}');
-    };
+    with subtest("dashboard sensu check should be green"):
+      kubmaster.wait_for_unit("kube-dashboard")
+      kubmaster.wait_until_succeeds("${masterSensuCheck "kube-dashboard"}")
 
-    subtest "creating a deployment should work", sub {
-      $kubmaster->waitUntilSucceeds("docker load < ${redis.image}");
-      $kubmaster->succeed("kubectl apply -f ${redis.deployment}");
-      $kubmaster->succeed("kubectl apply -f ${redis.service}");
-    };
+    with subtest("coredns sensu check should be green"):
+      kubmaster.wait_for_unit("coredns")
+      kubmaster.wait_until_succeeds("${masterSensuCheck "cluster-dns"}")
 
-    subtest "adding a second node should work", sub {
-      $kubnode->waitForUnit("kubernetes.target");
-      $kubmaster->waitUntilSucceeds("kubectl get nodes | grep kubnode | grep -vq NotReady");
-    };
+    with subtest("frontend vm should reach the dashboard"):
+      frontend.wait_until_succeeds('curl -k https://kubmaster.fcio.net')
 
-    subtest "scaling the deployment should start 4 pods", sub {
-      $kubnode->waitUntilSucceeds("docker load < ${redis.image}");
-      $kubmaster->succeed("kubectl scale deployment redis --replicas=4");
-      $kubmaster->waitUntilSucceeds("kubectl get deployment redis | grep -q 4/4");
-    };
+    with subtest("creating a deployment should work"):
+      kubmaster.wait_for_unit("docker")
+      kubmaster.wait_for_unit("kubelet")
+      kubmaster.wait_until_succeeds("docker load < ${redis.image}")
+      kubmaster.succeed("kubectl apply -f ${redis.deployment}")
+      kubmaster.succeed("kubectl apply -f ${redis.service}")
 
-    subtest "script should generate kubeconfig for test user", sub {
-      $kubmaster->succeed("kubernetes-make-kubeconfig test > /home/test/kubeconfig");
-    };
+    with subtest("script should generate kubeconfig for test user"):
+      kubmaster.succeed("kubernetes-make-kubeconfig test > /home/test/kubeconfig")
 
-    subtest "test user should be able to use kubectl with generated kubeconfig", sub {
-      $kubmaster->succeed("KUBECONFIG=/home/test/kubeconfig kubectl cluster-info");
-    };
+    with subtest("test user should be able to use kubectl with generated kubeconfig"):
+      kubmaster.succeed("KUBECONFIG=/home/test/kubeconfig kubectl cluster-info")
 
-    subtest "secret key for test user should have correct permissions", sub {
-      $kubmaster->succeed("stat /var/lib/kubernetes/secrets/test-key.pem -c %a:%U:%G | grep '600:test:nogroup'");
-    };
+    with subtest("secret key for test user should have correct permissions"):
+      kubmaster.succeed("stat /var/lib/kubernetes/secrets/test-key.pem -c %a:%U:%G | grep '600:test:nogroup'")
 
+    with subtest("master should be able to use cluster DNS"):
+      kubmaster.wait_until_succeeds('dig redis.default.svc.cluster.local | grep -q 10.0.0')
+
+    with subtest("adding a second node should work"):
+      kubnode.wait_for_unit("kubernetes.target")
+      kubmaster.wait_until_succeeds("kubectl get nodes | grep kubnode | grep -vq NotReady")
+
+    with subtest("scaling the deployment should start 4 pods"):
+      kubnode.wait_until_succeeds("docker load < ${redis.image}")
+      kubmaster.succeed("kubectl scale deployment redis --replicas=4")
+      kubmaster.wait_until_succeeds("kubectl get deployment redis | grep -q 4/4")
+
+    with subtest("node should be able to use cluster DNS"):
+      kubnode.wait_until_succeeds('dig redis.default.svc.cluster.local | grep -q 10.0.0')
+
+    with subtest("frontend should be able to use cluster DNS"):
+      frontend.wait_until_succeeds('dig redis.default.svc.cluster.local | grep -q 10.0.0')
+
+    with subtest("coredns sensu check should be red after shutting down coredns"):
+      kubmaster.systemctl("stop coredns")
+      kubmaster.fail("${masterSensuCheck "cluster-dns"}")
+
+    with subtest("dashboard sensu check should be red after shutting down dashboard"):
+      kubmaster.systemctl("stop kube-dashboard")
+      kubmaster.fail("${masterSensuCheck "kube-dashboard"}")
   '';
 })

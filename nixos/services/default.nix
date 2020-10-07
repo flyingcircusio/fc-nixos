@@ -12,6 +12,7 @@ let
     "services/continuous-integration/gitlab-runner.nix"
     "services/misc/docker-registry.nix"
     "services/monitoring/grafana.nix"
+    "services/networking/coredns.nix"
     "services/networking/prosody.nix"
     "services/search/elasticsearch.nix"
     "services/search/kibana.nix"
