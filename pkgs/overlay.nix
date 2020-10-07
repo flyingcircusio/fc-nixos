@@ -53,6 +53,8 @@ in {
     meta.license = null;
   });
 
+  kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
+
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
   innotop = super.callPackage ./percona/innotop.nix { };
