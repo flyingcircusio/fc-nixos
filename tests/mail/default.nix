@@ -32,6 +32,7 @@ in
               rootAlias = "user2@example.local";
             };
 
+            mailserver.certificateScheme = lib.mkOverride 50 2;
             mailserver.loginAccounts = lib.mkForce {
               "user1@example.local" = {
                 # User1User1
@@ -44,11 +45,6 @@ in
               };
             };
 
-            # take some shortcuts in certificate handling for speedy startup
-            services.dovecot2.sslServerCert =
-              lib.mkForce "/var/lib/acme/mail.example.local/fullchain.pem";
-            services.dovecot2.sslServerKey =
-              lib.mkForce  "/var/lib/acme/mail.example.local/key.pem";
             # avoid time-consuming generation
             systemd.services.dhparams-gen-dovecot2.script = lib.mkForce ''
               mkdir -p /var/lib/dhparams
@@ -114,31 +110,44 @@ in
   };
   testScript = ''
     startAll;
-
-    # SMTP incoming to users and (root) aliases
-    $mail->execute('rm -rf /srv/mail/example.local/*');
+    $mail->execute('rm -rf /srv/mail/example.local');
     $mail->waitForOpenPort(25);
+    # potential race condition - cf files will be created asynchronously
+    $mail->waitForFile('/etc/postfix/main.cf');
+    $mail->waitForFile('/etc/postfix/virtual.db');
     $client->waitForUnit('dnsmasq');
+    $client->sleep(1);
+
+    print("### SMTP incoming to users and (root) aliases ###\n");
     $client->succeed('echo | mailx -s testmail1 user1@example.local');
     $client->succeed('echo | mailx -s testmail2 user2@example.local');
     $client->succeed('echo | mailx -s testmail3 alias1@example.local');
     $client->succeed('echo | mailx -s testmail4 root');
+    $client->succeed('echo | mailx -s testmail6 user1+detail@example.local');
     $mail->succeed('echo | mailx -s testmail5 root');
     $mail->waitUntilSucceeds(
-      'test `ls /srv/mail/example.local/user1/new/* | wc -l` == 2');
+      'test `ls /srv/mail/example.local/user1/new/* | wc -l` == 3');
+    # check simple delivery
     $mail->succeed('grep testmail1 /srv/mail/example.local/user1/new/*');
+    # check alias
     $mail->succeed('grep testmail3 /srv/mail/example.local/user1/new/*');
+    # check address detail
+    $mail->succeed('grep testmail6 /srv/mail/example.local/user1/new/*');
+    $mail->succeed('fgrep "Delivered-To: user1+detail@" /srv/mail/example.local/user1/new/*');
     $mail->waitUntilSucceeds(
       'test `ls /srv/mail/example.local/user2/new/* | wc -l` == 3');
+    # check simple delivery
     $mail->succeed('grep testmail2 /srv/mail/example.local/user2/new/*');
+    # check root alias
     $mail->succeed('grep testmail4 /srv/mail/example.local/user2/new/*');
+    # check root delivery on mail server
     $mail->succeed('grep testmail5 /srv/mail/example.local/user2/new/*');
 
-    # IMAP
+    print("### IMAP ###\n");
     $mail->waitForOpenPort(143);
     $client->succeed('python3 ${./test_imap.py}');
 
-    # SMTP outgoing
+    print("### SMTP outgoing ###\n");
     $ext->execute('rm -f /tmp/mh/*');
     $ext->waitForOpenPort(25);
     $mail->succeed('echo | mailx -s testmail6 user1@external.local');
@@ -146,7 +155,7 @@ in
     $ext->succeed("fgrep 'HELO:<mail.example.local>\n" .
       "FROM:<root\@mail.example.local>\nTO:<user1\@external.local>' /tmp/mh/*");
 
-    # Relaying & SMTP AUTH
+    print("### Relaying & SMTP AUTH ###\n");
     $ext->execute('rm -f /tmp/mh/*');
     $client->succeed('python3 ${./test_smtpauth.py}');
     $ext->waitUntilSucceeds('ls /tmp/mh/*');
@@ -154,5 +163,9 @@ in
     $ext->succeed("fgrep 'DKIM-Signature: v=1; a=rsa-sha256; " .
       "c=relaxed/simple; d=example.local;' /tmp/mh/*");
     $ext->succeed("egrep 'Message-Id: <.*\@mail\.example\.local>' /tmp/mh/*");
+
+    $client->shutdown;
+    $mail->shutdown;
+    $ext->shutdown;
   '';
 })
