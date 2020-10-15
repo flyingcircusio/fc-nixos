@@ -1,17 +1,44 @@
 { config, pkgs, lib, ... }:
 let
   role = config.flyingcircus.roles.lamp;
-
+  localDir = "/etc/local/lamp";
+  vhosts =
+    if builtins.pathExists localDir
+    then
+    map
+      (filename: builtins.fromJSON (builtins.readFile (localDir + "/" + filename)))
+      (lib.filter
+        (fn: lib.hasSuffix ".vhost.json" fn)
+        (lib.attrNames (builtins.readDir localDir)))
+    else [];
 in {
-  options = {
-    flyingcircus.roles.lamp.enable =
-      lib.mkEnableOption "Flying Circus LAMP stack";
+  options = with lib; {
+    flyingcircus.roles.lamp = {
+      enable = mkEnableOption "Flying Circus LAMP stack";
+
+      simple_docroot = mkOption {
+          type = types.bool;
+          default = (builtins.pathExists (localDir + "/docroot"));
+      };
+
+      vhosts = mkOption {
+        type = with types; listOf (submodule {
+          options = {
+            port = mkOption { type = int; };
+            docroot = mkOption { type = str; };
+          };
+        });
+        default = vhosts;
+      };
+    };
   };
 
   config = lib.mkIf role.enable (
     let
-      apacheConfFile = /etc/local/lamp/apache.conf;
-      phpiniConfFile = /etc/local/lamp/php.ini;
+      apacheConfFile = localDir + "/apache.conf";
+      phpiniConfFile = localDir + "/php.ini";
+
+
 
       phpOptions = ''
           extension=${pkgs.php73Packages.memcached}/lib/php/extensions/memcached.so
@@ -80,60 +107,87 @@ in {
                 (builtins.pathExists phpiniConfFile)
                 (builtins.readFile phpiniConfFile));
     in {
+
       services.httpd.enable = true;
       services.httpd.adminAddr = "admin@flyingcircus.io";
       services.httpd.logPerVirtualHost = true;
       services.httpd.group = "service";
       services.httpd.user = "nobody";
       services.httpd.extraConfig = ''
-Listen localhost:8001
+        <IfModule mpm_prefork_module>
+            StartServers 5
+            MinSpareServers 2
+            MaxSpareServers 5
+            MaxRequestWorkers 25
+            MaxConnectionsPerChild 20
+        </IfModule>
 
-<IfModule mpm_prefork_module>
-    StartServers 5
-    MinSpareServers 2
-    MaxSpareServers 5
-    MaxRequestWorkers 25
-    MaxConnectionsPerChild 20
-</IfModule>
+        <VirtualHost localhost:7999>
+        <Location "/server-status">
+            SetHandler server-status
+        </Location>
+        </VirtualHost>
+        '' +
+        # Original simple one-host-one-port-one-docroot setup
+        # BBB This can be phased out at some point.
+        (lib.optionalString
+          role.simple_docroot
+          ''
 
-<VirtualHost localhost:8001>
-<Location "/server-status">
-    SetHandler server-status
-</Location>
-</VirtualHost>
+          Listen *:8000
+          <VirtualHost *:8000>
+              ServerName "${config.networking.hostName}"
+              DocumentRoot "${localDir}/docroot"
+              <Directory "${localDir}/docroot">
+                  AllowOverride all
+                  Require all granted
+                  Options FollowSymlinks
+                  DirectoryIndex index.html index.php
+              </Directory>
+          </VirtualHost>
+          '') +
+        # * vhost configs
+        (lib.concatMapStrings (vhost:
+          ''
 
-<VirtualHost *:8000>
-    ServerName "${config.networking.hostName}"
-    DocumentRoot "/etc/local/lamp/docroot"
-    <Directory "/etc/local/lamp/docroot">
-        AllowOverride all
-        Require all granted
-        Options FollowSymlinks
-        DirectoryIndex index.html index.php
-    </Directory>
-</VirtualHost>
-      '' + (lib.optionalString
-        (builtins.pathExists apacheConfFile)
-        (builtins.readFile apacheConfFile));
+          Listen *:${toString vhost.port}
+          <VirtualHost *:${toString vhost.port}>
+              ServerName "${config.networking.hostName}"
+              DocumentRoot "${vhost.docroot}"
+              <Directory "${vhost.docroot}">
+                  AllowOverride all
+                  Require all granted
+                  Options FollowSymlinks
+                  DirectoryIndex index.html index.php
+              </Directory>
+          </VirtualHost>
+          ''
+        ) role.vhosts) +
+        # Custom Apache config
+        (lib.optionalString
+          (builtins.pathExists apacheConfFile)
+          (builtins.readFile apacheConfFile));
+
       services.httpd.phpOptions = phpOptions;
 
       services.httpd.extraModules = [ "rewrite" "version" "status" ];
       services.httpd.enablePHP = true;
       services.httpd.phpPackage = pkgs.php73;
 
-      services.httpd.listen = [ { port = 8000;} ];
+      services.httpd.listen = [
+        { port = 7999; } ];
 
       flyingcircus.services.sensu-client.checks = {
         httpd_status = {
           notification = "Apache status page";
-          command = "check_http -H localhost -p 8001 -u /server-status?auto -v";
+          command = "check_http -H localhost -p 7999 -u /server-status?auto -v";
           timeout = 30;
         };
       };
 
       flyingcircus.services.telegraf.inputs = {
         apache  = [{
-          urls = [ "http://localhost:8001/server-status?auto" ];
+          urls = [ "http://localhost:7999/server-status?auto" ];
         }];
       };
 
@@ -152,7 +206,7 @@ Listen localhost:8001
       '';
 
       flyingcircus.localConfigDirs.lamp = {
-        dir = "/etc/local/lamp";
+        dir = localDir;
         user = "nobody";
       };
 
