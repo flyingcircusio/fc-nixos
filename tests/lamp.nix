@@ -7,10 +7,13 @@ import ./make-test.nix ({ ... }:
       {
         imports = [ ../nixos ../nixos/roles ];
         flyingcircus.roles.lamp.enable = true;
+
+        # On real machines this is fed via /etc/local/lamp/docroot and 
+        flyingcircus.roles.lamp.simple_docroot = true;
+        # ... /etc/local/lamp/*.vhost.json
+        flyingcircus.roles.lamp.vhosts = [ { port = 8100; docroot = "/srv/docroot2"; } ];
       };
   };
-
-
 
   testScript = ''
     $lamp->waitForUnit("httpd.service");
@@ -21,10 +24,11 @@ import ./make-test.nix ({ ... }:
 
     $lamp->succeed('journalctl -u tideways.daemon');
 
+    # The simple docroot
     $lamp->succeed('mkdir -p /srv/docroot');
     $lamp->succeed('ln -s /srv/docroot /etc/local/lamp/docroot');
     $lamp->succeed('echo "<? phpinfo(); ?>" > /srv/docroot/test.php');
-    
+
     $lamp->succeed("curl -f -v http://localhost:8000/test.php -o result");
     $lamp->succeed("grep 'tideways.api_key' result");
     $lamp->succeed("grep 'files user memcached redis rediscluster' result");
@@ -45,6 +49,13 @@ import ./make-test.nix ({ ... }:
     $lamp->succeed("grep -e 'memory_limit.*1024m' result");
     $lamp->succeed("grep -e 'max_execution_time.*800' result");
     $lamp->succeed("grep -e 'session.auto_start.*Off' result");
+
+    # The .vhost.json based docroot
+    $lamp->succeed('mkdir -p /srv/docroot2');
+    $lamp->succeed('echo "{\"port\": 8100, \"docroot\": \"/srv/docroot2\"}" > /etc/local/lamp/test2.vhost.json');
+    $lamp->succeed('echo "<? phpinfo(); ?>" > /srv/docroot2/test2.php');
+    $lamp->succeed("curl -f -v http://localhost:8100/test2.php -o result2");
+    $lamp->succeed("grep 'tideways.api_key' result2");
   '';
 
 })
