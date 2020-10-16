@@ -119,12 +119,12 @@ in
     $client->sleep(1);
 
     print("### SMTP incoming to users and (root) aliases ###\n");
-    $client->succeed('echo | mailx -s testmail1 user1@example.local');
-    $client->succeed('echo | mailx -s testmail2 user2@example.local');
-    $client->succeed('echo | mailx -s testmail3 alias1@example.local');
-    $client->succeed('echo | mailx -s testmail4 root');
-    $client->succeed('echo | mailx -s testmail6 user1+detail@example.local');
-    $mail->succeed('echo | mailx -s testmail5 root');
+    $client->succeed('echo | mail -s testmail1 user1@example.local');
+    $client->succeed('echo | mail -s testmail2 user2@example.local');
+    $client->succeed('echo | mail -s testmail3 alias1@example.local');
+    $client->succeed('echo | mail -s testmail4 root');
+    $client->succeed('echo | mail -s testmail6 user1+detail@example.local');
+    $mail->succeed('echo | mail -s testmail5 root');
     $mail->waitUntilSucceeds(
       'test `ls /srv/mail/example.local/user1/new/* | wc -l` == 3');
     # check simple delivery
@@ -150,7 +150,7 @@ in
     print("### SMTP outgoing ###\n");
     $ext->execute('rm -f /tmp/mh/*');
     $ext->waitForOpenPort(25);
-    $mail->succeed('echo | mailx -s testmail6 user1@external.local');
+    $mail->succeed('echo | mail -s testmail6 user1@external.local');
     $ext->waitUntilSucceeds('ls /tmp/mh/*');
     $ext->succeed("fgrep 'HELO:<mail.example.local>\n" .
       "FROM:<root\@mail.example.local>\nTO:<user1\@external.local>' /tmp/mh/*");

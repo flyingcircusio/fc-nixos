@@ -2,8 +2,11 @@
 let
   modulesFromHere = [
     "services/misc/gitlab.nix"
-    "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
+    "services/monitoring/prometheus.nix"
+    "services/networking/jicofo.nix"
+    "services/networking/jitsi-videobridge.nix"
+    "services/web-apps/jitsi-meet.nix"
     "services/web-servers/nginx/default.nix"
   ];
 

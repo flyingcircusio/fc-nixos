@@ -756,13 +756,13 @@ in {
         '';
       };
 
-      alertmanagerURL = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = ''
-          List of Alertmanager URLs to send notifications to.
-        '';
-      };
+      # alertmanagerURL = mkOption {
+      #   type = types.listOf types.str;
+      #   default = [];
+      #   description = ''
+      #     List of Alertmanager URLs to send notifications to.
+      #   '';
+      # };
 
       alertmanagerNotificationQueueCapacity = mkOption {
         type = types.int;

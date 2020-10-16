@@ -85,7 +85,7 @@ in
     environment.systemPackages = with pkgs; [
       htop
       innotop
-      mailx
+      mailutils
       mc
       percona # client is required on almost all nodes
       sshpass

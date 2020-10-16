@@ -26,8 +26,10 @@ find $channels -maxdepth 1 -type l | while read channel; do
     target="channels/${channel##*/}"
     # don't toucn anything which is not a link into the nix store
     if [[ ! -L $target && -d $target ]]; then
+        echo "$0: warning: $target appears to be a local dev checkout" >&2
         continue
     elif [[ -L $target && $(readlink $target) != /nix/store/* ]]; then
+        echo "$0: warning: $target appears to be a local dev checkout" >&2
         continue
     fi
     ln -fs $channel channels

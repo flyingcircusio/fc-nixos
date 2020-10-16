@@ -6,12 +6,6 @@ let
   elk7Version = "7.8.0";
   inherit (super) lib;
 
-  # Taken from nixpkgs all-packages.nix reduced to the kernel packages we need.
-  linuxPackages_5_4 = super.recurseIntoAttrs
-    (lib.makeExtensible (self: with self; {
-        inherit (pkgs-unstable.linuxPackages_5_4) kernel virtualbox virtualboxGuestAdditions;
-    }));
-
 in {
   # keep in sync with nixos/platform/garbagecollect/default.nix
   nixpkgs-unstable-src = versions.nixos-unstable;
@@ -81,10 +75,6 @@ in {
 
   libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
 
-  inherit linuxPackages_5_4;
-  linuxPackages = self.linuxPackages_5_4;
-
-  mailx = super.callPackage ./mailx.nix { };
   mc = super.callPackage ./mc.nix { };
 
   mongodb-3_2 = super.callPackage ./mongodb/3.2.nix {

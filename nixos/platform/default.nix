@@ -82,7 +82,7 @@ in {
 
           dir = mkOption {
             description = "Path to the directory, typically starting with /etc/local.";
-            type = types.string;
+            type = types.path;
           };
 
           user = mkOption {
@@ -91,13 +91,13 @@ in {
               Name of the user owning the config directory,
               typically the name of the service or root.
             '';
-            type = types.string;
+            type = types.str;
           };
 
           group = mkOption {
             default = "service";
             description = "Name of the group.";
-            type = types.string;
+            type = types.str;
           };
 
           permissions = mkOption {
@@ -107,7 +107,7 @@ in {
               By default, owner and group can write to the directory and the
               sticky bit is set.
             '';
-            type = types.string;
+            type = types.str;
           };
 
         };

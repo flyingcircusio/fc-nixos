@@ -116,7 +116,7 @@ in
               (fclib.interfaceConfig iface.networks))
           interfaces;
 
-      resolvconfOptions = [ "ndots:1" "timeout:1" "attempts:6" ];
+      resolvconf.extraOptions = [ "ndots:1" "timeout:1" "attempts:6" ];
 
       search = lib.optionals
         (location != "" && config.networking.domain != null)

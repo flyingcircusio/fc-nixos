@@ -38,7 +38,7 @@
         lsof
         lynx
         magic-wormhole
-        mailx
+        mailutils
         mercurial
         mmv
         nano
@@ -75,7 +75,7 @@
     lib.optional (!config.services.postgresql.enable) pkgs.postgresql;
 
     flyingcircus.passwordlessSudoRules = [
-      { 
+      {
         commands = [ "${pkgs.iotop}/bin/iotop" ];
         groups = [ "sudo-srv" "service" ];
       }
