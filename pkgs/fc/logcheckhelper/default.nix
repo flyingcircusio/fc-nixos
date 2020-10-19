@@ -3,13 +3,17 @@
 with rustPlatform;
 
 buildRustPackage rec {
-  name = "logcheck-helper";
+  name = "logcheck-helper-${version}";
+  version = "1.0.1";
   src = ./logcheck-helper;
-  cargoSha256 = "1kg6lrmc348y87pz1ivpaz8cbv88vzzdi7pa7v41371kh718m6mw";
+  cargoSha256 = "1m6wnyi8zimy5nznyxqvhb1brmjzcpagmddy0cvcfrfa4xsm98ap";
   doCheck = false;
 
   meta = with stdenv.lib; {
-    description = "Derive a correct regular expression for logcheck ignore patterns";
+    description = ''
+      Derive a correct regular expression for logcheck ignore patterns
+    '';
     license = with licenses; [ bsd3 ];
+    maintainer = with maintainers; [ ckauhaus ];
   };
 }

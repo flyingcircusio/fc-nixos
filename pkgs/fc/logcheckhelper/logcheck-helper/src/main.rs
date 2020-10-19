@@ -1,6 +1,7 @@
 use colored::Colorize;
-use linefeed::{Interface, ReadResult};
+use gumdrop::Options;
 use regex::Regex;
+use rustyline::Editor;
 use std::collections::BTreeMap;
 use std::error::Error;
 
@@ -13,52 +14,55 @@ fn format(re: &str) -> Result<String, Box<dyn Error>> {
 
 /// Queries the user as long as a matching pattern has been entered.
 fn record_pattern(logmsg: &str) -> Result<String, Box<dyn Error>> {
-    let readline = Interface::new("")?;
-    readline.add_history(logmsg.to_owned());
-    readline
-        .set_prompt(&format!("{}> ", "ignore pattern".purple()))
-        .ok();
+    let mut rl = Editor::<()>::new();
+    rl.add_history_entry(logmsg);
     loop {
-        if let ReadResult::Input(pat) = readline.read_line()? {
-            match Regex::new(&pat) {
-                Err(e) => println!("{}\n{}", e, "invalid regex, try again".yellow()),
-                Ok(re) => {
-                    if re.is_match(&logmsg) {
-                        println!("{}", "match".green());
-                        return format(re.as_str());
-                    } else {
-                        println!("{}", "no match, try again".yellow());
-                    }
+        let pat = rl.readline(&format!("{} ", "ignore pattern>".purple().bold()))?;
+        if pat.is_empty() {
+            return Ok("".into());
+        }
+        match Regex::new(&pat) {
+            Err(e) => println!("{}\n{}", e, "invalid regex, try again".yellow()),
+            Ok(re) => {
+                if re.is_match(&logmsg) {
+                    println!("{}", "match".green());
+                    return format(re.as_str());
+                } else {
+                    println!("{}", "no match, try again".yellow());
                 }
             }
-            readline.add_history_unique(pat);
+        }
+        rl.add_history_entry(pat);
+    }
+}
+
+#[derive(Debug, Options)]
+struct Opts {
+    #[options(free)]
+    log_message: Option<String>,
+    help: bool,
+}
+
+fn run(opt: Opts) -> Result<String, Box<dyn Error>> {
+    let mut rl = Editor::<()>::new();
+    if let Some(logmsg) = opt.log_message {
+        println!("{}> {}", "log message".cyan(), logmsg);
+        record_pattern(&logmsg)
+    } else {
+        let logmsg = rl.readline(&format!("{} ", "log message>".cyan()))?;
+        if !logmsg.is_empty() {
+            record_pattern(&logmsg)
         } else {
-            // empty pattern / eol / signalled
-            return Ok(String::new());
+            Err("no log message".into())
         }
     }
 }
 
-fn run() -> Result<String, Box<dyn Error>> {
-    if let Some(logmsg) = std::env::args().nth(1) {
-        println!("{}> {}", "log message".cyan(), logmsg);
-        return record_pattern(&logmsg);
-    }
-    let readline = Interface::new("")?;
-    readline
-        .set_prompt(&format!("{}> ", "log message".cyan()))
-        .ok();
-    if let ReadResult::Input(logmsg) = readline.read_line()? {
-        return record_pattern(&logmsg);
-    }
-    Err("no log message".into())
-}
-
 fn main() {
-    match run() {
+    match run(Opts::parse_args_default_or_exit()) {
         Ok(yaml) => println!("{}", yaml),
         Err(e) => {
-            eprintln!("{}", e.to_string().red());
+            eprintln!("{}", e);
             std::process::exit(1)
         }
     }

@@ -6,10 +6,11 @@ description = "Derive a correct regular expression for logcheck ignore patterns"
 edition = "2018"
 
 [dependencies]
-linefeed = "0.5"
+colored = "2"
+gumdrop = "0.8"
+rustyline = "6"
 regex = "1"
-serde_yaml = "0.7"
-colored = "1"
+serde_yaml = "0.8"
 
 [profile.release]
 lto = true
