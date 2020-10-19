@@ -1,8 +1,3 @@
-extern crate colored;
-extern crate linefeed;
-extern crate regex;
-extern crate serde_yaml;
-
 use colored::Colorize;
 use linefeed::{Interface, ReadResult};
 use regex::Regex;
@@ -10,17 +5,19 @@ use std::collections::BTreeMap;
 use std::error::Error;
 
 /// Formats the regex as dict-of-lists YAML fragment.
-fn format(re: &str) -> Result<String, Box<Error>> {
+fn format(re: &str) -> Result<String, Box<dyn Error>> {
     let mut ignore = BTreeMap::new();
     ignore.insert("ignore".to_owned(), vec![re.to_owned()]);
     Ok(serde_yaml::to_string(&ignore)?)
 }
 
 /// Queries the user as long as a matching pattern has been entered.
-fn record_pattern(logmsg: &str) -> Result<String, Box<Error>> {
+fn record_pattern(logmsg: &str) -> Result<String, Box<dyn Error>> {
     let readline = Interface::new("")?;
     readline.add_history(logmsg.to_owned());
-    readline.set_prompt(&format!("{}> ", "ignore pattern".purple()));
+    readline
+        .set_prompt(&format!("{}> ", "ignore pattern".purple()))
+        .ok();
     loop {
         if let ReadResult::Input(pat) = readline.read_line()? {
             match Regex::new(&pat) {
@@ -42,13 +39,15 @@ fn record_pattern(logmsg: &str) -> Result<String, Box<Error>> {
     }
 }
 
-fn run() -> Result<String, Box<Error>> {
+fn run() -> Result<String, Box<dyn Error>> {
     if let Some(logmsg) = std::env::args().nth(1) {
         println!("{}> {}", "log message".cyan(), logmsg);
         return record_pattern(&logmsg);
     }
     let readline = Interface::new("")?;
-    readline.set_prompt(&format!("{}> ", "log message".cyan()));
+    readline
+        .set_prompt(&format!("{}> ", "log message".cyan()))
+        .ok();
     if let ReadResult::Input(logmsg) = readline.read_line()? {
         return record_pattern(&logmsg);
     }

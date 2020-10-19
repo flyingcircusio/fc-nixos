@@ -5,7 +5,7 @@ with rustPlatform;
 buildRustPackage rec {
   name = "logcheck-helper";
   src = ./logcheck-helper;
-  cargoSha256 = "0cngyxlhskrb616qck0hidn879nwbyvh7p4p14134y65gp3ckn6i";
+  cargoSha256 = "1kg6lrmc348y87pz1ivpaz8cbv88vzzdi7pa7v41371kh718m6mw";
   doCheck = false;
 
   meta = with stdenv.lib; {

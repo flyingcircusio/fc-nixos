@@ -1,8 +1,9 @@
 [package]
 name = "logcheck-helper"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Christian Kauhaus <kc@flyingcircus.io>"]
 description = "Derive a correct regular expression for logcheck ignore patterns"
+edition = "2018"
 
 [dependencies]
 linefeed = "0.5"

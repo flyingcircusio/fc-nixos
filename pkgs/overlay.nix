@@ -26,16 +26,12 @@ in {
       meta.priority = 10;
     });
 
-  certmgr = super.callPackage ./certmgr.nix { inherit (pkgs-unstable) buildGoPackage; };
-  cfssl = super.callPackage ./cfssl.nix { inherit (pkgs-unstable) buildGoPackage; };
-
-  inherit (pkgs-unstable) coturn;
-
-  inherit (pkgs-unstable) docker-distribution;
+  certmgr = super.callPackage ./certmgr.nix {  };
+  cfssl = super.callPackage ./cfssl.nix { };
 
   docsplit = super.callPackage ./docsplit { };
 
-  elasticsearch7 = pkgs-unstable.elasticsearch7.overrideAttrs(_: rec {
+  elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
     version = elk7Version;
     name = "elasticsearch-${version}";
 
@@ -46,7 +42,7 @@ in {
     meta.license = null;
   });
 
-  kibana7 = pkgs-unstable.kibana7.overrideAttrs(_: rec {
+  kibana7 = super.kibana7.overrideAttrs(_: rec {
     version = elk7Version;
     name = "kibana-${version}";
 
@@ -57,23 +53,13 @@ in {
     meta.license = null;
   });
 
-  inherit (pkgs-unstable) gitlab gitlab-shell gitaly gitlab-workhorse gitlab-runner;
-
-  inherit (pkgs-unstable) grafana;
-
   grub2_full = super.callPackage ./grub/2.0x.nix { };
-
-  inherit (pkgs-unstable) influxdb;
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
   jicofo = super.callPackage ./jicofo { };
   jitsi-meet = super.callPackage ./jitsi-meet { };
   jitsi-videobridge = super.callPackage ./jitsi-videobridge { };
-
-  inherit (pkgs-unstable) kubernetes;
-
-  libpcap_1_8 = super.callPackage ./libpcap-1.8.nix { };
 
   mc = super.callPackage ./mc.nix { };
 
@@ -85,7 +71,7 @@ in {
   };
   mongodb_3_2 = self.mongodb-3_2;
   mongodb-3_4 = super.mongodb;
-  mongodb-3_6 = pkgs-unstable.mongodb-3_6.overrideAttrs(_: rec {
+  mongodb-3_6 = super.mongodb-3_6.overrideAttrs(_: rec {
     meta.license = null;
     version = "3.6.19";
     name = "mongodb-${version}";
@@ -94,7 +80,7 @@ in {
       sha256 = "0y0k5lc2czvg8zirvqfnmpv9z0xz2slp2zfacp0hm0kzcnq82m51";
     };
   });
-  mongodb-4_0 = pkgs-unstable.mongodb-4_0.overrideAttrs(_: rec {
+  mongodb-4_0 = super.mongodb-4_0.overrideAttrs(_: rec {
     meta.license = null;
     version = "4.0.19";
     name = "mongodb-${version}";
@@ -107,8 +93,8 @@ in {
   mysql = super.mariadb;
 
   # This is our default version.
-  nginxStable = (pkgs-unstable.nginxStable.override {
-    modules = with pkgs-unstable.nginxModules; [
+  nginxStable = (super.nginxStable.override {
+    modules = with super.nginxModules; [
       dav
       modsecurity
       moreheaders
@@ -127,8 +113,8 @@ in {
 
   nginx = self.nginxStable;
 
-  nginxMainline = pkgs-unstable.nginxMainline.override {
-    modules = with pkgs-unstable.nginxModules; [
+  nginxMainline = super.nginxMainline.override {
+    modules = with super.nginxModules; [
       dav
       modsecurity
       moreheaders
@@ -150,12 +136,6 @@ in {
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost169; };
 
-  inherit (pkgs-unstable) postgresql_12;
-
-  inherit (pkgs-unstable) prometheus;
-
-  inherit (pkgs-unstable) prosody;
-
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
   rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix {
@@ -164,8 +144,8 @@ in {
   rabbitmq-server_3_6_15 = super.callPackage ./rabbitmq-server/3.6.15.nix {
     erlang = self.erlangR19;
   };
-  rabbitmq-server_3_7 = super.rabbitmq-server;
-  rabbitmq-server_3_8 = pkgs-unstable.rabbitmq-server;
+  rabbitmq-server_3_7 = super.rabbitmq-server; # XXX this is actually 3.8
+  rabbitmq-server_3_8 = super.rabbitmq-server;
 
   remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
@@ -190,8 +170,6 @@ in {
   wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };
   wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
   wkhtmltopdf = self.wkhtmltopdf_0_12_6;
-
-  inherit (pkgs-unstable) writeShellScript;
 
   xtrabackup = super.callPackage ./percona/xtrabackup.nix {
     inherit (self) percona;
