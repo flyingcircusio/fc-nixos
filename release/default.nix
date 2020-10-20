@@ -98,6 +98,7 @@ let
     "python27Packages"
     "python3Packages"
     "python37Packages"
+    "python38Packages"
   ];
 
   testPkgNames = lib.subtractLists excludedPkgNames modifiedPkgNames;
