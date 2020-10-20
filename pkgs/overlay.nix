@@ -39,6 +39,19 @@ in {
     meta.license = null;
   });
 
+  gitlab = super.callPackage ./gitlab { };
+  gitaly = super.callPackage ./gitlab/gitaly { };
+  gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
+  gitlab-shell = super.callPackage ./gitlab/gitlab-shell { };
+
+  grub2_full = super.callPackage ./grub/2.0x.nix { };
+
+  innotop = super.callPackage ./percona/innotop.nix { };
+
+  jicofo = super.callPackage ./jicofo { };
+  jitsi-meet = super.callPackage ./jitsi-meet { };
+  jitsi-videobridge = super.callPackage ./jitsi-videobridge { };
+
   kibana7 = super.kibana7.overrideAttrs(_: rec {
     version = elk7Version;
     name = "kibana-${version}";
@@ -51,14 +64,6 @@ in {
   });
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
-
-  grub2_full = super.callPackage ./grub/2.0x.nix { };
-
-  innotop = super.callPackage ./percona/innotop.nix { };
-
-  jicofo = super.callPackage ./jicofo { };
-  jitsi-meet = super.callPackage ./jitsi-meet { };
-  jitsi-videobridge = super.callPackage ./jitsi-videobridge { };
 
   mc = super.callPackage ./mc.nix { };
 
