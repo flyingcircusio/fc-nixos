@@ -2,23 +2,26 @@
 let
   role = config.flyingcircus.roles.lamp;
   localDir = "/etc/local/lamp";
-  vhosts =
-    if builtins.pathExists localDir
-    then
-    map
-      (filename: builtins.fromJSON (builtins.readFile (localDir + "/" + filename)))
-      (lib.filter
-        (fn: lib.hasSuffix ".vhost.json" fn)
-        (lib.attrNames (builtins.readDir localDir)))
-    else [];
+  apacheConfFile = localDir + "/apache.conf";
+  phpiniConfFile = localDir + "/php.ini";
+
 in {
   options = with lib; {
     flyingcircus.roles.lamp = {
       enable = mkEnableOption "Flying Circus LAMP stack";
 
-      simple_docroot = mkOption {
-          type = types.bool;
-          default = (builtins.pathExists (localDir + "/docroot"));
+      apache_conf = mkOption {
+        type = types.lines;
+        default = (lib.optionalString
+          (builtins.pathExists apacheConfFile)
+          (builtins.readFile apacheConfFile));
+      };
+
+      php_ini = mkOption {
+        type = types.lines;
+        default = (lib.optionalString
+                (builtins.pathExists phpiniConfFile)
+                (builtins.readFile phpiniConfFile));
       };
 
       vhosts = mkOption {
@@ -28,17 +31,19 @@ in {
             docroot = mkOption { type = str; };
           };
         });
-        default = vhosts;
+        default = [];
+      };
+
+      # BBB deprecated
+      simple_docroot = mkOption {
+          type = types.bool;
+          default = (builtins.pathExists (localDir + "/docroot"));
       };
     };
   };
 
   config = lib.mkIf role.enable (
     let
-      apacheConfFile = localDir + "/apache.conf";
-      phpiniConfFile = localDir + "/php.ini";
-
-
 
       phpOptions = ''
           extension=${pkgs.php73Packages.memcached}/lib/php/extensions/memcached.so
@@ -101,11 +106,9 @@ in {
 
           session.auto_start = Off
 
-          ; 
-
-        '' + (lib.optionalString
-                (builtins.pathExists phpiniConfFile)
-                (builtins.readFile phpiniConfFile));
+          ; Custom PHP ini
+          ${role.php_ini}
+        '';
     in {
 
       services.httpd.enable = true;
@@ -163,10 +166,7 @@ in {
           </VirtualHost>
           ''
         ) role.vhosts) +
-        # Custom Apache config
-        (lib.optionalString
-          (builtins.pathExists apacheConfFile)
-          (builtins.readFile apacheConfFile));
+        role.apache_conf;
 
       services.httpd.phpOptions = phpOptions;
 
