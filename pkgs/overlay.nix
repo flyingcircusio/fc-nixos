@@ -63,13 +63,6 @@ in {
 
   mc = super.callPackage ./mc.nix { };
 
-  mongodb-3_2 = super.callPackage ./mongodb/3.2.nix {
-    sasl = super.cyrus_sasl;
-    boost = super.boost160;
-    # 3.2 is too old for the current libpcap version 1.9, use 1.8.1
-    libpcap = self.libpcap_1_8;
-  };
-  mongodb_3_2 = self.mongodb-3_2;
   mongodb-3_4 = super.mongodb;
   mongodb-3_6 = super.mongodb-3_6.overrideAttrs(_: rec {
     meta.license = null;
@@ -184,11 +177,6 @@ in {
   python27Packages = super.recurseIntoAttrs self.python27.pkgs;
   python2Packages = self.python27Packages;
 
-  python35 = super.python35.override {
-    packageOverrides = import ./overlay-python.nix super;
-  };
-  python35Packages = self.python35.pkgs;
-
   python36 = super.python36.override {
     packageOverrides = import ./overlay-python.nix super;
   };
@@ -198,6 +186,11 @@ in {
     packageOverrides = import ./overlay-python.nix super;
   };
   python37Packages = super.recurseIntoAttrs self.python37.pkgs;
-  python3Packages = self.python37Packages;
+
+  python38 = super.python38.override {
+    packageOverrides = import ./overlay-python.nix super;
+  };
+  python38Packages = super.recurseIntoAttrs self.python38.pkgs;
+  python3Packages = self.python38Packages;
 
 }
