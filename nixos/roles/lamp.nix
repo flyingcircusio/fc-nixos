@@ -196,7 +196,7 @@ in {
         "a+ /var/log/httpd - - - - group:sudo-srv:r-x"
       ];
 
-      services.logrotate.config = ''
+      services.logrotate.extraConfig = ''
         /var/log/httpd/*.log {
           create 0644 root root
           postrotate

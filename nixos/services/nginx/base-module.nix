@@ -527,7 +527,7 @@ in
       };
 
       clientMaxBodySize = mkOption {
-        type = types.string;
+        type = types.str;
         default = "10m";
         description = "Set nginx global client_max_body_size.";
       };
@@ -681,180 +681,185 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    # TODO: test user supplied config file pases syntax test
+  config = mkIf cfg.enable ( mkMerge [
+    {
+      # TODO: test user supplied config file pases syntax test
 
-    warnings =
-    let
-      deprecatedSSL = name: config: optional config.enableSSL
-      ''
-        config.services.nginx.virtualHosts.<name>.enableSSL is deprecated,
-        use config.services.nginx.virtualHosts.<name>.onlySSL instead.
-      '';
-
-    in flatten (mapAttrsToList deprecatedSSL virtualHosts);
-
-    assertions =
-    let
-      hostOrAliasIsNull = l: l.root == null || l.alias == null;
-    in [
-      {
-        assertion = all (host: all hostOrAliasIsNull (attrValues host.locations)) (attrValues virtualHosts);
-        message = "Only one of nginx root or alias can be specified on a location.";
-      }
-
-      {
-        assertion = all (conf: with conf;
-          !(addSSL && (onlySSL || enableSSL)) &&
-          !(forceSSL && (onlySSL || enableSSL)) &&
-          !(addSSL && forceSSL)
-        ) (attrValues virtualHosts);
-        message = ''
-          Options services.nginx.service.virtualHosts.<name>.addSSL,
-          services.nginx.virtualHosts.<name>.onlySSL and services.nginx.virtualHosts.<name>.forceSSL
-          are mutually exclusive.
-        '';
-      }
-
-      {
-        assertion = all (conf: !(conf.enableACME && conf.useACMEHost != null)) (attrValues virtualHosts);
-        message = ''
-          Options services.nginx.service.virtualHosts.<name>.enableACME and
-          services.nginx.virtualHosts.<name>.useACMEHost are mutually exclusive.
-        '';
-      }
-    ];
-
-    environment.systemPackages = [ nginxReloadMaster ];
-
-    systemd.services.nginx = {
-      description = "Nginx Web Server";
-      wantedBy = [ "multi-user.target" ];
-      wants = concatLists (map (vhostConfig: ["acme-${vhostConfig.serverName}.service" "acme-selfsigned-${vhostConfig.serverName}.service"]) acmeEnabledVhosts);
-      after = [ "network.target" ] ++ map (vhostConfig: "acme-selfsigned-${vhostConfig.serverName}.service") acmeEnabledVhosts;
-      before = map (vhostConfig: "acme-${vhostConfig.serverName}.service") acmeEnabledVhosts;
-      stopIfChanged = false;
-      preStart =
-        ''
-        ${cfg.preStart}
-        ln -sf ${configFile} /run/nginx/config
-        ln -sfT ${cfg.package} /run/nginx/package
-      '';
-      reload = ''
-        echo "Reload triggered, checking config file..."
-        # Check if the new config is valid
-        ${checkConfigCmd} || rc=$?
-
-        if [[ -n $rc ]]; then
-          echo "Error: Not restarting / reloading because of config errors."
-          echo "New configuration not activated!"
-          # We must use 0 as exit code, otherwise systemd would kill the nginx process.
-          # This is a bug in systemd: https://github.com/systemd/systemd/issues/11238
-          exit 0
-        fi
-
-        ln -sf ${configFile} /run/nginx/config
-
-        # Check if the package changed
-        current_pkg=$(readlink /run/nginx/package)
-
-        if [[ $current_pkg != ${cfg.package} ]]; then
-          echo "Nginx package changed: $current_pkg -> ${cfg.package}."
-          ln -sfT ${cfg.package} /run/nginx/package
-
-          if [[ -s /run/nginx/nginx.pid ]]; then
-            if ${nginxReloadMaster}/bin/nginx-reload-master; then
-              echo "Master process replacement completed."
-            else
-              echo "Master process replacement failed, trying again on next reload."
-              ln -sfT $current_pkg /run/nginx/package
-            fi
-          else
-            # We are still running an old version that didn't write a PID file or something is broken.
-            # We can only force a restart now.
-            echo "Warning: cannot replace master process because PID is missing. Restarting Nginx now..."
-            ${pkgs.coreutils}/bin/kill -QUIT $MAINPID
-          fi
-
-        else
-          # Package unchanged, we only need to change the configuration.
-          echo "Reloading nginx config now."
-
-          # Check journal for errors after the reload signal.
-          datetime=$(date +'%Y-%m-%d %H:%M:%S')
-          ${pkgs.coreutils}/bin/kill -HUP $MAINPID
-
-          # Give Nginx some time to try changing the configuration.
-          sleep 3
-
-          if [[ $(journalctl --since="$datetime" -u nginx -q -g '\[emerg\]') != "" ]]; then
-            echo "Warning: Possible failure when changing to new configuration."
-            echo "This happens when changes to listen directives are incompatible with the running nginx master process."
-            echo "Try systemctl restart nginx to activate the new config."
-          fi
-        fi
-      '';
-      reloadIfChanged = true;
-
-      serviceConfig = {
-        Type = "forking";
-        PIDFile = "/run/nginx/nginx.pid";
-        ExecStart = "/run/nginx/package/bin/nginx -c /run/nginx/config";
-        Restart = "always";
-        # Logs directory and mode
-        LogsDirectory = "nginx";
-        LogsDirectoryMode = "0755";
-        # X- options are ignored by systemd.
-        # To show the last running config, use:
-        # cat `systemctl cat nginx | grep "X-ConfigFile" | cut -d= -f2`
-        X-ConfigFile = configFile;
-        # To check the current config file:
-        # `systemctl cat nginx | grep "X-CheckConfigCmd" | cut -d= -f2`
-        X-CheckConfigCmd = checkConfigCmd;
-      };
-    };
-
-    systemd.tmpfiles.rules = [
-      "d /var/cache/nginx 0750 nginx nginx"
-      "d /run/nginx 0755 root root"
-    ];
-
-    system.activationScripts.nginx-reload-check = lib.stringAfter [ "resolvconf" ] ''
-      if ${pkgs.procps}/bin/pgrep nginx &> /dev/null; then
-        nginx_check_msg=$(${checkConfigCmd} 2>&1) || rc=$?
-
-        if [[ -n $rc ]]; then
-          printf "\033[0;31mWarning: \033[0mNginx config is invalid at this point:\n$nginx_check_msg\n"
-          echo Reload may still work if missing Let\'s Encrypt SSL certs are the reason, for example.
-          echo Please check the output of journalctl -eu nginx
-        fi
-      fi
-    '';
-
-    security.acme.certs = filterAttrs (n: v: v != {}) (
+      warnings =
       let
-        acmePairs = map (vhostConfig: { name = vhostConfig.serverName; value = {
-            user = cfg.user;
-            group = lib.mkDefault cfg.group;
-            webroot = vhostConfig.acmeRoot;
-            extraDomains = genAttrs vhostConfig.serverAliases (alias: null);
-            postRun = ''
-              systemctl reload nginx
-            '';
-          }; }) acmeEnabledVhosts;
-      in
-        listToAttrs acmePairs
-    );
+        deprecatedSSL = name: config: optional config.enableSSL
+        ''
+          config.services.nginx.virtualHosts.<name>.enableSSL is deprecated,
+          use config.services.nginx.virtualHosts.<name>.onlySSL instead.
+        '';
 
-    users.users = optionalAttrs (cfg.user == "nginx") (singleton
-      { name = "nginx";
+      in flatten (mapAttrsToList deprecatedSSL virtualHosts);
+
+      assertions =
+      let
+        hostOrAliasIsNull = l: l.root == null || l.alias == null;
+      in [
+        {
+          assertion = all (host: all hostOrAliasIsNull (attrValues host.locations)) (attrValues virtualHosts);
+          message = "Only one of nginx root or alias can be specified on a location.";
+        }
+
+        {
+          assertion = all (conf: with conf;
+            !(addSSL && (onlySSL || enableSSL)) &&
+            !(forceSSL && (onlySSL || enableSSL)) &&
+            !(addSSL && forceSSL)
+          ) (attrValues virtualHosts);
+          message = ''
+            Options services.nginx.service.virtualHosts.<name>.addSSL,
+            services.nginx.virtualHosts.<name>.onlySSL and services.nginx.virtualHosts.<name>.forceSSL
+            are mutually exclusive.
+          '';
+        }
+
+        {
+          assertion = all (conf: !(conf.enableACME && conf.useACMEHost != null)) (attrValues virtualHosts);
+          message = ''
+            Options services.nginx.service.virtualHosts.<name>.enableACME and
+            services.nginx.virtualHosts.<name>.useACMEHost are mutually exclusive.
+          '';
+        }
+      ];
+
+      environment.systemPackages = [ nginxReloadMaster ];
+
+      systemd.services.nginx = {
+        description = "Nginx Web Server";
+        wantedBy = [ "multi-user.target" ];
+        wants = concatLists (map (vhostConfig: ["acme-${vhostConfig.serverName}.service" "acme-selfsigned-${vhostConfig.serverName}.service"]) acmeEnabledVhosts);
+        after = [ "network.target" ] ++ map (vhostConfig: "acme-selfsigned-${vhostConfig.serverName}.service") acmeEnabledVhosts;
+        before = map (vhostConfig: "acme-${vhostConfig.serverName}.service") acmeEnabledVhosts;
+        stopIfChanged = false;
+        preStart =
+          ''
+          ${cfg.preStart}
+          ln -sf ${configFile} /run/nginx/config
+          ln -sfT ${cfg.package} /run/nginx/package
+        '';
+        reload = ''
+          echo "Reload triggered, checking config file..."
+          # Check if the new config is valid
+          ${checkConfigCmd} || rc=$?
+
+          if [[ -n $rc ]]; then
+            echo "Error: Not restarting / reloading because of config errors."
+            echo "New configuration not activated!"
+            # We must use 0 as exit code, otherwise systemd would kill the nginx process.
+            # This is a bug in systemd: https://github.com/systemd/systemd/issues/11238
+            exit 0
+          fi
+
+          ln -sf ${configFile} /run/nginx/config
+
+          # Check if the package changed
+          current_pkg=$(readlink /run/nginx/package)
+
+          if [[ $current_pkg != ${cfg.package} ]]; then
+            echo "Nginx package changed: $current_pkg -> ${cfg.package}."
+            ln -sfT ${cfg.package} /run/nginx/package
+
+            if [[ -s /run/nginx/nginx.pid ]]; then
+              if ${nginxReloadMaster}/bin/nginx-reload-master; then
+                echo "Master process replacement completed."
+              else
+                echo "Master process replacement failed, trying again on next reload."
+                ln -sfT $current_pkg /run/nginx/package
+              fi
+            else
+              # We are still running an old version that didn't write a PID file or something is broken.
+              # We can only force a restart now.
+              echo "Warning: cannot replace master process because PID is missing. Restarting Nginx now..."
+              ${pkgs.coreutils}/bin/kill -QUIT $MAINPID
+            fi
+
+          else
+            # Package unchanged, we only need to change the configuration.
+            echo "Reloading nginx config now."
+
+            # Check journal for errors after the reload signal.
+            datetime=$(date +'%Y-%m-%d %H:%M:%S')
+            ${pkgs.coreutils}/bin/kill -HUP $MAINPID
+
+            # Give Nginx some time to try changing the configuration.
+            sleep 3
+
+            if [[ $(journalctl --since="$datetime" -u nginx -q -g '\[emerg\]') != "" ]]; then
+              echo "Warning: Possible failure when changing to new configuration."
+              echo "This happens when changes to listen directives are incompatible with the running nginx master process."
+              echo "Try systemctl restart nginx to activate the new config."
+            fi
+          fi
+        '';
+        reloadIfChanged = true;
+
+        serviceConfig = {
+          Type = "forking";
+          PIDFile = "/run/nginx/nginx.pid";
+          ExecStart = "/run/nginx/package/bin/nginx -c /run/nginx/config";
+          Restart = "always";
+          # Logs directory and mode
+          LogsDirectory = "nginx";
+          LogsDirectoryMode = "0755";
+          # X- options are ignored by systemd.
+          # To show the last running config, use:
+          # cat `systemctl cat nginx | grep "X-ConfigFile" | cut -d= -f2`
+          X-ConfigFile = configFile;
+          # To check the current config file:
+          # `systemctl cat nginx | grep "X-CheckConfigCmd" | cut -d= -f2`
+          X-CheckConfigCmd = checkConfigCmd;
+        };
+      };
+
+      systemd.tmpfiles.rules = [
+        "d /var/cache/nginx 0750 nginx nginx"
+        "d /run/nginx 0755 root root"
+      ];
+
+      system.activationScripts.nginx-reload-check = lib.stringAfter [ "wrappers" ] ''
+        if ${pkgs.procps}/bin/pgrep nginx &> /dev/null; then
+          nginx_check_msg=$(${checkConfigCmd} 2>&1) || rc=$?
+
+          if [[ -n $rc ]]; then
+            printf "\033[0;31mWarning: \033[0mNginx config is invalid at this point:\n$nginx_check_msg\n"
+            echo Reload may still work if missing Let\'s Encrypt SSL certs are the reason, for example.
+            echo Please check the output of journalctl -eu nginx
+          fi
+        fi
+      '';
+
+      security.acme.certs = filterAttrs (n: v: v != {}) (
+        let
+          acmePairs = map (vhostConfig: { name = vhostConfig.serverName; value = {
+              user = cfg.user;
+              group = lib.mkDefault cfg.group;
+              webroot = vhostConfig.acmeRoot;
+              extraDomains = genAttrs vhostConfig.serverAliases (alias: null);
+              postRun = ''
+                systemctl reload nginx
+              '';
+            }; }) acmeEnabledVhosts;
+        in
+          listToAttrs acmePairs
+      );
+    }
+
+    (mkIf (cfg.user == "nginx") {
+      users.users.nginx = {
         group = cfg.group;
         uid = config.ids.uids.nginx;
-      });
+      };
+    })
 
-    users.groups = optionalAttrs (cfg.group == "nginx") (singleton
-      { name = "nginx";
+    (mkIf (cfg.group == "nginx") {
+      users.groups.nginx = {
         gid = config.ids.gids.nginx;
-      });
-  };
+      };
+    })
+
+  ]);
 }

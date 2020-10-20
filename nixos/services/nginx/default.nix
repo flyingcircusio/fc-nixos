@@ -285,7 +285,7 @@ in
         inherit virtualHosts;
       };
 
-      services.logrotate.config = ''
+      services.logrotate.extraConfig = ''
         /var/log/nginx/*.log
         {
             rotate 7

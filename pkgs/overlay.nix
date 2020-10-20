@@ -63,7 +63,6 @@ in {
 
   mc = super.callPackage ./mc.nix { };
 
-  mongodb-3_4 = super.mongodb;
   mongodb-3_6 = super.mongodb-3_6.overrideAttrs(_: rec {
     meta.license = null;
     version = "3.6.19";
