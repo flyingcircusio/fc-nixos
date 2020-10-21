@@ -40,7 +40,6 @@ in {
   mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
   memcached = callTest ./memcached.nix {};
-  mongodb32 = callTest ./mongodb.nix { version = "3.2"; };
   mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
   mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
   mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
