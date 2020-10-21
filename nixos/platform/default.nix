@@ -191,6 +191,10 @@ in {
 
     flyingcircus.enc_services = enc_services;
 
+    # fallback ACME contact
+    security.acme.acceptTerms = true;
+    security.acme.email = "admin@flyingcircus.io";
+
     # implementation for flyingcircus.passwordlessSudoRules
     security.sudo.extraRules = let
       nopasswd = [ "NOPASSWD" ];

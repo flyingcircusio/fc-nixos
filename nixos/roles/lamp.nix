@@ -125,6 +125,7 @@ in {
             MaxConnectionsPerChild 20
         </IfModule>
 
+        Listen localhost:7999
         <VirtualHost localhost:7999>
         <Location "/server-status">
             SetHandler server-status
@@ -173,9 +174,6 @@ in {
       services.httpd.extraModules = [ "rewrite" "version" "status" ];
       services.httpd.enablePHP = true;
       services.httpd.phpPackage = pkgs.php73;
-
-      services.httpd.listen = [
-        { port = 7999; } ];
 
       flyingcircus.services.sensu-client.checks = {
         httpd_status = {

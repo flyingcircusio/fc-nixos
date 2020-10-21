@@ -95,7 +95,7 @@ in
         Run `sudo fc-manage --build` to activate the configuration.
       '';
 
-      flyingcircus.localConfigDirs.systemd = {
+      flyingcircus.localConfigDirs.kibana = {
         dir = "/etc/local/kibana";
       };
     })

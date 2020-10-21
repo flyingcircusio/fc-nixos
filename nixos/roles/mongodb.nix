@@ -40,7 +40,6 @@ let
   checkMongoCmd = "${pkgs.fc.check-mongodb}/bin/check_mongodb";
 
   mongodbRoles = with config.flyingcircus.roles; {
-    "3.2" = mongodb32.enable;
     "3.4" = mongodb34.enable;
     "3.6" = mongodb36.enable;
     "4.0" = mongodb40.enable;
@@ -57,7 +56,6 @@ in {
     };
   in {
     flyingcircus.roles = {
-      mongodb32 = mkRole "3.2";
       mongodb34 = mkRole "3.4";
       mongodb36 = mkRole "3.6";
       mongodb40 = mkRole "4.0";
@@ -157,8 +155,7 @@ in {
               /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb
             '';
           };
-        } // lib.optionalAttrs (majorVersion != "3.2") {
-          # There's no feature compatibility version in 3.2 so we can't check it.
+
           mongodb_feature_compat_version = {
             notification = "MongoDB is running on an outdated feature compatibility version";
             command = ''
