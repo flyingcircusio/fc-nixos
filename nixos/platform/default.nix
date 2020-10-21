@@ -191,7 +191,7 @@ in {
 
     flyingcircus.enc_services = enc_services;
 
-    # fallback ACME contact
+    # fallback ACME settings
     security.acme.acceptTerms = true;
     security.acme.email = "admin@flyingcircus.io";
 

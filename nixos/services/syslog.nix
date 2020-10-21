@@ -86,7 +86,7 @@ in
           '';
       };
 
-      services.logrotate.config = ''
+      services.logrotate.extraConfig = ''
         /var/log/messages /var/log/lastlog /var/log/wtmp ${extraLogFiles}
         {
           postrotate

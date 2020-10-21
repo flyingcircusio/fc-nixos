@@ -60,7 +60,7 @@ in
     };
 
     statsSocket = mkOption {
-      type = types.string;
+      type = types.str;
       default = "/run/haproxy_admin.sock";
     };
 

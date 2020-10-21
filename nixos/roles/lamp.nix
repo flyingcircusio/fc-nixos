@@ -46,9 +46,9 @@ in {
     let
 
       phpOptions = ''
-          extension=${pkgs.php73Packages.memcached}/lib/php/extensions/memcached.so
-          extension=${pkgs.php73Packages.imagick}/lib/php/extensions/imagick.so
-          extension=${pkgs.php73Packages.redis}/lib/php/extensions/redis.so
+          extension=${pkgs.php73Extensions.memcached}/lib/php/extensions/memcached.so
+          extension=${pkgs.php73Extensions.imagick}/lib/php/extensions/imagick.so
+          extension=${pkgs.php73Extensions.redis}/lib/php/extensions/redis.so
 
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           ; General settings

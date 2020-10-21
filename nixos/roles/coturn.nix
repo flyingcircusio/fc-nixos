@@ -42,9 +42,9 @@ let
   jsonConfig = fromJSON
     (fclib.configFromFile /etc/local/coturn/config.json "{}");
 
-
   hostname = jsonConfig.hostname or cfg.hostName;
   kill = "${pkgs.coreutils}/bin/kill";
+
 in
 {
   options = with lib; {
@@ -52,7 +52,7 @@ in
       enable = mkEnableOption "Coturn TURN server";
 
       hostName = mkOption {
-        type = types.string;
+        type = types.str;
         default = "${config.networking.hostName}.fe.${location}.${domain}";
       };
 
@@ -88,8 +88,6 @@ in
     };
 
     security.acme.certs."${hostname}" = {
-      allowKeysForGroup = true;
-      user = lib.mkForce "root";
       group = "turnserver";
       postRun = "systemctl kill -s USR2 coturn.service";
     };

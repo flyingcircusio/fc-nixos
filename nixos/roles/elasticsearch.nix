@@ -8,9 +8,7 @@ let
   fclib = config.fclib;
 
   esVersion =
-    if config.flyingcircus.roles.elasticsearch5.enable
-    then "5"
-    else if config.flyingcircus.roles.elasticsearch6.enable
+    if config.flyingcircus.roles.elasticsearch6.enable
     then "6"
     else if config.flyingcircus.roles.elasticsearch7.enable
     then "7"
@@ -20,10 +18,6 @@ let
   enabled = esVersion != null;
 
   versionConfiguration = {
-    "5" = {
-      package = pkgs.elasticsearch5;
-      serviceName = "elasticsearch5-node";
-    };
     "6" = {
       package = pkgs.elasticsearch6;
       serviceName = "elasticsearch6-node";

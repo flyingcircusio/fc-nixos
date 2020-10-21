@@ -835,7 +835,6 @@ in
       security.acme.certs = filterAttrs (n: v: v != {}) (
         let
           acmePairs = map (vhostConfig: { name = vhostConfig.serverName; value = {
-              user = cfg.user;
               group = lib.mkDefault cfg.group;
               webroot = vhostConfig.acmeRoot;
               extraDomains = genAttrs vhostConfig.serverAliases (alias: null);
