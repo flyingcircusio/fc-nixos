@@ -2,7 +2,6 @@
 # The Kubernetes API server assigns virtual IPs for services from that subnet.
 # This must not overlap with "real" subnets.
 # It can be set with services.kubernetes.apiserver.serviceClusterIpRange.
-# You also have to change flyingcircus.roles.kubernetes.dashboardClusterIP then.
 
 { config, lib, pkgs, ... }:
 
@@ -20,6 +19,7 @@ let
   feFQDN = "${config.networking.hostName}.fe.${location}.${domain}";
   srvFQDN = "${config.networking.hostName}.fcio.net";
 
+
   # Nginx uses default HTTP(S) ports, API server must use an alternative port.
   apiserverPort = 6443;
 
@@ -35,6 +35,8 @@ let
   # the auto-generated configs.
   apiserverMainUrl = "https://${head addresses}:${toString apiserverPort}";
 
+  fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
+
   mkAdminCert = username:
     kublib.mkCert {
       name = username;
@@ -43,16 +45,6 @@ let
         O = "system:masters";
       };
       privateKeyOwner = username;
-    };
-
-  sensuCert =
-    kublib.mkCert {
-      name = "sensu";
-      CN = "sensu";
-      fields = {
-        O = "default:sensu";
-      };
-      privateKeyOwner = "sensuclient";
     };
 
   mkUserKubeConfig = cert:
@@ -101,7 +93,32 @@ let
       );
 
   allCerts = adminCerts // {
-    sensu = sensuCert;
+    coredns = kublib.mkCert {
+      name = "coredns";
+      CN = "coredns";
+      fields = {
+        O = "default:coredns";
+      };
+      action = "systemctl restart coredns.service";
+    };
+
+    kube-dashboard = kublib.mkCert {
+      name = "kube-dashboard";
+      CN = "kube-dashboard";
+      fields = {
+        O = "system:masters";
+      };
+      action = "systemctl restart kube-dashboard.service";
+    };
+
+    sensu = kublib.mkCert {
+      name = "sensu";
+      CN = "sensu";
+      fields = {
+        O = "default:sensu";
+      };
+      privateKeyOwner = "sensuclient";
+    };
   };
 
   # Grant view permission for sensu check (identified by sensuCert).
@@ -122,44 +139,108 @@ let
     }];
   });
 
-  # The dashboard service defined in NixOS uses a floating ClusterIP, but we
-  # want a fixed one that can be included in the nginx config.
-  # We have to override the whole service for that.
-  dashboardSvc = {
-    apiVersion = "v1";
-    kind = "Service";
+  # Grant view permission for coredns (identified by coredns cert).
+  corednsClusterRoleBinding = pkgs.writeText "coredns-crb.json" (toJSON {
+    apiVersion = "rbac.authorization.k8s.io/v1";
+    kind = "ClusterRoleBinding";
     metadata = {
-      labels = {
-        k8s-addon = "kubernetes-dashboard.addons.k8s.io";
-        k8s-app = "kubernetes-dashboard";
-        "kubernetes.io/cluster-service" = "true";
-        "kubernetes.io/name" = "KubeDashboard";
-        "addonmanager.kubernetes.io/mode" = "Reconcile";
+      name = "coredns";
+    };
+    roleRef = {
+      apiGroup = "rbac.authorization.k8s.io";
+      kind = "ClusterRole";
+      name = "view";
+    };
+    subjects = [{
+      kind = "User";
+      name = "coredns";
+    }];
+  });
+
+  systemdServices = {
+
+      coredns = rec {
+        requires = [ "kube-apiserver.service" ];
+        after = requires;
+        serviceConfig = {
+          Restart = lib.mkForce "always";
+          ExecStartPre = ''
+            +${pkgs.coreutils}/bin/chown coredns \
+              /var/lib/kubernetes/secrets/coredns.pem \
+              /var/lib/kubernetes/secrets/coredns-key.pem
+          '';
+        };
       };
-      name = "kubernetes-dashboard";
-      namespace  = "kube-system";
+
+      kube-dashboard = rec {
+        requires = [ "kube-apiserver.service" ];
+        after = requires;
+        description = "Backend for Kubernetes Dashboard";
+        script = ''
+          ${pkgs.kubernetes-dashboard}/dashboard \
+            --insecure-port 11000 \
+            --kubeconfig /etc/kubernetes/kube-dashboard.kubeconfig
+        '';
+
+        serviceConfig = {
+          Restart = "always";
+          ExecStartPre = ''
+            +${pkgs.coreutils}/bin/chown kube-dashboard \
+              /var/lib/kubernetes/secrets/kube-dashboard.pem \
+              /var/lib/kubernetes/secrets/kube-dashboard-key.pem
+          '';
+          DynamicUser = true;
+        };
+
+      };
+
+      fc-kubernetes-setup = rec {
+        description = "Setup permissions for monitoring and dns";
+        requires = [ "kube-apiserver.service" ];
+        after = requires;
+        wantedBy = [ "multi-user.target" ];
+        path = [ pkgs.kubectl ];
+        script = ''
+          kubectl apply -f ${sensuClusterRoleBinding}
+          kubectl apply -f ${corednsClusterRoleBinding}
+        '';
+        serviceConfig = {
+          Environment = "KUBECONFIG=/etc/kubernetes/cluster-admin.kubeconfig";
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+      };
     };
-    spec = {
-      clusterIP = cfg.dashboardClusterIP;
-      ports = [{
-        port = 443;
-        targetPort = 8443;
-      }];
-      selector.k8s-app = "kubernetes-dashboard";
-    };
-  };
+
+   waitForCerts =
+    lib.mapAttrs'
+        mkUnitWaitForCerts
+        {
+          "etcd" = [ "etcd" ];
+          "fc-kubernetes-setup" = [ "coredns" "sensu" ];
+          "flannel" = [ "flannel-client" ];
+
+          "kube-apiserver" = [
+            "kube-apiserver"
+            "kube-apiserver-kubelet-client"
+            "kube-apiserver-etcd-client"
+            "service-account"
+          ];
+
+          "kube-proxy" = [ "kube-proxy-client" ];
+
+          "kube-controller-manager" = [
+            "kube-controller-manager"
+            "kube-controller-manager-client"
+            "service-account"
+          ];
+        };
 
 in
 {
   options = {
     flyingcircus.roles.kubernetes-master = {
-
       enable = lib.mkEnableOption "Enable Kubernetes Master (only one per RG; experimental)";
-
-      dashboardClusterIP = lib.mkOption {
-        default = "10.0.0.250";
-      };
-
     };
   };
 
@@ -206,6 +287,14 @@ in
       cfg = "--kube-config /etc/kubernetes/sensu.kubeconfig";
     in
     {
+
+      cluster-dns = {
+        notification = "Cluster DNS (CoreDNS) is not healthy";
+        command = ''
+          ${pkgs.monitoring-plugins}/bin/check_http -v -j HEAD -H localhost -p 10054 -u /health
+        '';
+      };
+
       kube-apiserver = {
         notification = "Kubernetes API server is not working";
         command = ''
@@ -214,28 +303,46 @@ in
       };
 
       kube-dashboard = {
-        notification = "Kubernetes dashboard is not working";
+        notification = "Kubernetes dashboard backend is not working";
         command = ''
-          ${bin}/check-kube-service-available.rb -l kubernetes-dashboard ${cfg}
-        '';
-      };
-
-      kube-dns = {
-        notification = "Kubernetes DNS is not working";
-        command = ''
-          ${bin}/check-kube-service-available.rb -l kube-dns ${cfg}
+          ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 11000 -u /api/v1/namespace
         '';
       };
 
     };
+
+    networking.nameservers = [ "127.0.0.1" ];
 
     networking.firewall = {
       allowedTCPPorts = [ apiserverPort ];
     };
 
+    services.coredns = {
+      enable = true;
+      config = ''
+      . {
+        kubernetes cluster.local {
+          endpoint https://${srvFQDN}:${toString apiserverPort}
+          tls /var/lib/kubernetes/secrets/coredns.pem /var/lib/kubernetes/secrets/coredns-key.pem /var/lib/kubernetes/secrets/ca.pem
+          pods verified
+        }
+
+        ${lib.optionalString (fcNameservers != []) ''forward . ${lib.concatStringsSep " " fcNameservers}''}
+
+        cache 30
+        errors
+        health :10054
+        loadbalance
+        log
+        loop
+        metadata
+        prometheus :10055
+        reload
+      }
+      '';
+    };
+
     services.kubernetes = {
-      addons.dashboard.enable = true;
-      addonManager.addons.kubernetes-dashboard-svc = lib.mkForce dashboardSvc;
       apiserver.extraSANs = addresses;
       # Changing the masterAddress is tricky and requires manual intervention.
       # This would break automatic certificate management with certmgr.
@@ -253,10 +360,22 @@ in
       "${head addresses}" = {
         enableACME = true;
         serverAliases = tail addresses;
+        extraConfig = ''
+          auth_basic "FCIO";
+          auth_basic_user_file /etc/local/nginx/htpasswd_fcio_users;
+        '';
         forceSSL = true;
         locations = {
           "/" = {
-            proxyPass = "https://${cfg.dashboardClusterIP}";
+            root = "${pkgs.kubernetes-dashboard}/public/en";
+          };
+
+          "/api" = {
+            proxyPass = "http://localhost:11000/api";
+          };
+
+          "/config" = {
+            proxyPass = "http://localhost:11000/config";
           };
         };
       };
@@ -264,44 +383,7 @@ in
 
     services.kubernetes.pki.certs = allCerts;
 
-    systemd.services = {
-      fc-kubernetes-monitoring-setup = rec {
-        description = "Setup permissions for monitoring";
-        requires = [ "kube-apiserver.service" ];
-        after = requires;
-        wantedBy = [ "multi-user.target" ];
-        path = [ pkgs.kubectl ];
-        script = ''
-          kubectl apply -f ${sensuClusterRoleBinding}
-        '';
-        serviceConfig = {
-          Environment = "KUBECONFIG=/etc/kubernetes/cluster-admin.kubeconfig";
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-      };
-    } // lib.mapAttrs'
-      mkUnitWaitForCerts
-      {
-        "etcd" = [ "etcd" ];
-        "flannel" = [ "flannel-client" ];
-        "kube-addon-manager" = [ "kube-addon-manager" ];
-
-        "kube-apiserver" = [
-          "kube-apiserver"
-          "kube-apiserver-kubelet-client"
-          "kube-apiserver-etcd-client"
-          "service-account"
-        ];
-
-        "kube-proxy" = [ "kube-proxy-client" ];
-
-        "kube-controller-manager" = [
-          "kube-controller-manager"
-          "kube-controller-manager-client"
-          "service-account"
-        ];
-      };
+    systemd.services = lib.recursiveUpdate systemdServices waitForCerts;
 
   };
 
