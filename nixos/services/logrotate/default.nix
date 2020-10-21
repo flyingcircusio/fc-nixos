@@ -66,7 +66,7 @@ in
 
       services.logrotate = {
         enable = true;
-        config = mkOrder 50 globalOptions;
+        extraConfig = mkOrder 50 globalOptions;
       };
 
       # We create one directory for each service user. I decided not to remove
