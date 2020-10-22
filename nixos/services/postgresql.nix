@@ -74,7 +74,7 @@ in {
     ] ++ lib.optionals (lib.versionAtLeast cfg.majorVersion "12") [
       postgresqlPkg.pkgs.periods
       postgresqlPkg.pkgs.postgis
-      (pkgs.rum.override { postgresql = postgresqlPkg; postgresqlFromUnstable = true; })
+      (pkgs.rum.override { postgresql = postgresqlPkg; })
     ];
 
   in {

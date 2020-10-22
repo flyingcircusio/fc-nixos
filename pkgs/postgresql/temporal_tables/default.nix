@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
   installPhase = ''
     mkdir -p $out/bin
     install -D temporal_tables.so -t $out/lib/
-    install -D ./{temporal_tables-*.sql,temporal_tables.control} -t $out/share/extension
+    install -D ./{temporal_tables-*.sql,temporal_tables.control} -t $out/share/postgresql/extension
   '';
 
   meta = with stdenv.lib; {

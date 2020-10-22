@@ -1,18 +1,11 @@
-{ stdenv, fetchFromGitHub, postgresql, postgresqlFromUnstable ? false }:
+{ stdenv, fetchFromGitHub, postgresql }:
 
-let
-  # We use 12 from unstable which changed the location for extensions.
-  extPath =
-    if postgresqlFromUnstable
-    then "share/postgresql/extension"
-    else "share/extension";
-
-in stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   pname = "rum";
-  version = "2020-04-07";
+  version = "1.3.7";
 
   src = fetchFromGitHub {
-    rev = "bc917c9f0d667432412df998a3fe6b6c935b3053";
+    rev = version;
     owner = "postgrespro";
     repo = "rum";
     sha256 = "185bmjd236qis5gqdv2vi52k5bg13cghs95ch5z0vqx59xqs17bm";
@@ -28,7 +21,7 @@ in stdenv.mkDerivation {
    ''
      mkdir -p $out/{bin,lib}
      cp ./rum.so $out/lib
-     ext_dir=$out/${extPath}
+     ext_dir=$out/share/postgresql/extension
      mkdir -p $ext_dir
      echo .............
      echo *
