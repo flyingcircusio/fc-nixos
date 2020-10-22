@@ -37,13 +37,6 @@ let
     ]);
     scrape_configs = filterValidPrometheus cfg.scrapeConfigs;
     inherit (cfg) remote_write remote_read;
-    alerting = optionalAttrs (cfg.alertmanagerURL != []) {
-      alertmanagers = [{
-        static_configs = [{
-          targets = cfg.alertmanagerURL;
-        }];
-      }];
-    };
   };
 
   generatedPrometheusYml = writePrettyJSON "prometheus.yml" promConfig;
@@ -58,8 +51,6 @@ let
     "--storage.tsdb.path=${dataDir}"
     "--config.file=${prometheusYml}"
     "--web.listen-address=${cfg.listenAddress}"
-    "--alertmanager.notification-queue-capacity=${toString cfg.alertmanagerNotificationQueueCapacity}"
-    "--alertmanager.timeout=${toString cfg.alertmanagerTimeout}s"
   ] ++
   optional (cfg.webExternalUrl != null) "--web.external-url=${cfg.webExternalUrl}";
 
@@ -753,30 +744,6 @@ in {
         default = [];
         description = ''
           A list of scrape configurations.
-        '';
-      };
-
-      # alertmanagerURL = mkOption {
-      #   type = types.listOf types.str;
-      #   default = [];
-      #   description = ''
-      #     List of Alertmanager URLs to send notifications to.
-      #   '';
-      # };
-
-      alertmanagerNotificationQueueCapacity = mkOption {
-        type = types.int;
-        default = 10000;
-        description = ''
-          The capacity of the queue for pending alert manager notifications.
-        '';
-      };
-
-      alertmanagerTimeout = mkOption {
-        type = types.int;
-        default = 10;
-        description = ''
-          Alert manager HTTP API timeout (in seconds).
         '';
       };
 
