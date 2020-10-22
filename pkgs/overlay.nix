@@ -29,7 +29,7 @@ in {
   certmgr = super.callPackage ./certmgr.nix {  };
   cfssl = super.callPackage ./cfssl.nix { };
 
-  docsplit = super.callPackage ./docsplit { };
+  #docsplit = super.callPackage ./docsplit { };
 
   elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
     version = elk7Version;
@@ -115,6 +115,8 @@ in {
       rtmp
     ];
   };
+
+  qt4-5 = super.callPackage ./wkhtmltopdf/qt4-5.nix {};
 
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
