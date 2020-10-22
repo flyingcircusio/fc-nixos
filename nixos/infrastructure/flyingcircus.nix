@@ -75,7 +75,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   networking = {
     domain = "fcio.net";
-    hostName = mkDefault (attrByPath [ "name" ] "default" cfg.enc);
+    hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
   };
 
   swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
