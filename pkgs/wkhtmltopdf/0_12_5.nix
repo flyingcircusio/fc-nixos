@@ -45,8 +45,10 @@ let
     excludePatches = [
       "clang-5-darwin.patch"
       "libressl.patch"
-      "qt4-gcc6.patch" ];
-    patches = builtins.filter (
+      "qt4-openssl-1.1.patch"
+      "qt4-gcc6.patch"
+    ];
+    patches = [ ./qt4-gcc9.patch ] ++ builtins.filter (
       patch: ! lib.any (exclude: builtins.baseNameOf patch == exclude)
                        excludePatches ) oldAttrs.patches;
     configureFlags =
