@@ -18,5 +18,11 @@ with builtins;
     };
 
     nixpkgs.overlays = [ (import ../pkgs/overlay.nix) ];
+
+    nixpkgs.config.permittedInsecurePackages = [
+      # needed for tests.rabbitmq36_5
+      "openssl-1.0.2u"
+    ];
+
   };
 }
