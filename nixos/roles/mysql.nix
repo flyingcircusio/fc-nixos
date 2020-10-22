@@ -28,7 +28,6 @@ with builtins;
         };
       };
 
-      mysql56.enable = mkRole "5.6";
       mysql57.enable = mkRole "5.7";
       percona80.enable = mkRole "8.0";
     };
@@ -38,13 +37,11 @@ with builtins;
   config =
   let
     mysqlRoles = with config.flyingcircus.roles; {
-      "5.6" = mysql56.enable;
       "5.7" = mysql57.enable;
       "8.0" = percona80.enable;
     };
 
     mysqlPackages = with pkgs; {
-      "5.6" = percona56;
       "5.7" = percona57;
       "8.0" = percona80;
     };
@@ -173,9 +170,7 @@ with builtins;
         innodb_read_io_threads          = ${toString (cores * 4)}
         innodb_write_io_threads         = ${toString (cores * 4)}
         # Percentage. Probably needs local tuning depending on the workload.
-        ${lib.optionalString
-          (lib.versionAtLeast package.mysqlVersion "5.6")
-          "innodb_change_buffer_max_size   = 50"}
+        innodb_change_buffer_max_size   = 50
         innodb_doublewrite              = 1
         innodb_log_file_size            = 512M
         innodb_log_files_in_group       = 4

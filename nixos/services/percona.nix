@@ -28,19 +28,12 @@ let
     ${cfg.extraOptions}
   '';
 
-  mysqlInit =
-    if versionAtLeast mysql.mysqlVersion "5.7" then
-      "${mysql}/bin/mysqld --initialize-insecure ${mysqldOptions}"
-    else
-      "${pkgs.perl}/bin/perl ${mysql}/bin/mysql_install_db ${mysqldOptions}";
+  mysqlInit = "${mysql}/bin/mysqld --initialize-insecure ${mysqldOptions}";
 
-  setPasswordSql =
-    if (lib.versionAtLeast mysql.mysqlVersion "5.7") then
-      "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY \'$pw\';"
-    else
-      "SET PASSWORD FOR 'root'@'localhost' = PASSWORD(\'$pw\');";
+  setPasswordSql = "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY \'$pw\';";
 
   mysqlPreStart = ''
+    set -x
     umask 0066
 
     mkdir -p /run/mysqld
@@ -70,6 +63,7 @@ let
     ${setPasswordSql}
     __EOT__
     chmod 440 ${initFile}
+    chown ${cfg.user} ${initFile}
 
     if ! test -e ${cfg.dataDir}/mysql; then
         mkdir -m 0700 -p ${cfg.dataDir}

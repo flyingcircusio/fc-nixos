@@ -1,4 +1,4 @@
-import ./make-test.nix ({ rolename ? "percona80", lib, pkgs, ... }:
+import ./make-test-python.nix ({ rolename ? "percona80", lib, pkgs, ... }:
 let
   net6Fe = "2001:db8:1::";
   net6Srv = "2001:db8:2::";
@@ -76,58 +76,49 @@ in
     expectedAddressesExpr = lib.concatStringsSep " |" expectedAddresses;
 
   in ''
-    startAll;
-    $master->waitForUnit("mysql");
+    start_all()
+    master.wait_for_unit("mysql")
 
-    subtest "mysql works", sub {
-      $master->waitUntilSucceeds("mysqladmin ping");
-    };
+    with subtest("mysql works"):
+        master.wait_until_succeeds("mysqladmin ping")
 
-    $master->sleep(5);
+    master.sleep(5)
 
-    subtest "can login with root password", sub {
-      $master->succeed("mysql mysql -u root -p\$(< /etc/local/mysql/mysql.passwd) -e 'select 1'");
-    };
+    with subtest("can login with root password"):
+        master.succeed("mysql mysql -u root -p$(< /etc/local/mysql/mysql.passwd) -e 'select 1'")
 
-    subtest "mysql only opens expected ports", sub {
-      # check for expected ports
-      ${lib.concatMapStringsSep
-         "\n"
-          (a: ''  $master->succeed("netstat -tlpn | grep mysqld | grep '${a}'");'')
-          expectedAddresses
-      }
-      # check for unexpected ports
-      $master->mustFail("netstat -tlpn | grep mysqld | egrep -v '${expectedAddressesExpr}'");
-    };
+    with subtest("mysql only opens expected ports"):
+        # check for expected ports
+        ${lib.concatMapStringsSep
+          "\n    "
+            (a: ''master.succeed("netstat -tlpn | grep mysqld | grep '${a}'")'')
+            expectedAddresses
+        }
+        # check for unexpected ports
+        master.fail("netstat -tlpn | grep mysqld | egrep -v '${expectedAddressesExpr}'")
 
-    subtest "killing the mysql process should trigger an automatic restart", sub {
-      $master->succeed("kill -9 \$(systemctl show mysql.service --property MainPID --value)");
-      $master->waitForUnit("mysql");
-      $master->waitUntilSucceeds("mysqladmin ping");
-    };
+    with subtest("killing the mysql process should trigger an automatic restart"):
+        master.succeed("kill -9 $(systemctl show mysql.service --property MainPID --value)")
+        master.wait_for_unit("mysql")
+        master.wait_until_succeeds("mysqladmin ping")
 
-    subtest "all sensu checks should be green", sub {
-      $master->waitForUnit("fc-mysql-post-init.service");
-      $master->succeed('${mysqlCheck}');
-    };
+    with subtest("all sensu checks should be green"):
+        master.wait_for_unit("fc-mysql-post-init.service")
+        master.succeed("""${mysqlCheck}""")
 
-    subtest "status check should be red after shutting down mysql", sub {
-      $master->succeed('systemctl stop mysql');
-      $master->mustFail('${mysqlCheck}');
-    };
+    with subtest("status check should be red after shutting down mysql"):
+        master.succeed('systemctl stop mysql')
+        master.fail("""${mysqlCheck}""")
 
-    subtest "secret files should have correct permissions", sub {
-      $master->succeed("stat /etc/local/mysql/mysql.passwd -c %a:%U:%G | grep '660:root:service'");
-      $master->succeed("stat /root/.my.cnf -c %a:%U:%G | grep '440:root:root'");
-      $master->succeed("stat /run/mysqld/init_set_root_password.sql -c %a:%U:%G | grep '440:mysql:root'");
-    };
+    with subtest("secret files should have correct permissions"):
+        master.succeed("stat /etc/local/mysql/mysql.passwd -c %a:%U:%G | grep '660:root:service'")
+        master.succeed("stat /root/.my.cnf -c %a:%U:%G | grep '440:root:root'")
+        master.succeed("stat /run/mysqld/init_set_root_password.sql -c %a:%U:%G | grep '440:mysql:root'")
 
-    subtest "root should be able to connect after changing the password", sub {
-      $master->succeed("echo tt > /etc/local/mysql/mysql.passwd");
-      $master->succeed("systemctl restart mysql");
-      $master->waitUntilSucceeds("mysql mysql -u root -ptt -e 'select 1'");
-    };
-
+    with subtest("root should be able to connect after changing the password"):
+        master.succeed("echo tt > /etc/local/mysql/mysql.passwd")
+        master.succeed("systemctl restart mysql")
+        master.wait_until_succeeds("mysql mysql -u root -ptt -e 'select 1'")
   '';
 
 })
