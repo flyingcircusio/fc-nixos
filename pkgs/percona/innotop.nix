@@ -5,7 +5,6 @@
 }:
 
 buildPerlPackage rec {
-  name = "${pname}-${version}";
   pname = "innotop";
   version = "1.12.0";
   src = fetchgit {
