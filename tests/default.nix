@@ -43,7 +43,6 @@ in {
   mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
   mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
   mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
-  mysql56 = callTest ./mysql.nix { rolename = "mysql56"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
