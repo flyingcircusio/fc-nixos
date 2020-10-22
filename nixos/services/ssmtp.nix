@@ -21,7 +21,8 @@ in {
 
   config = lib.mkIf (config.flyingcircus.services.ssmtp.enable &&
                      mailoutService != null) {
-    networking.defaultMailServer = {
+    services.ssmtp = {
+      enable = true;
       directDelivery = true;
       domain =
         lib.optionalString (net.domain != null) "${net.hostName}.${net.domain}";

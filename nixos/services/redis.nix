@@ -50,12 +50,16 @@ in {
   config =
     lib.mkIf cfg.enable {
 
-      services.redis.enable = true;
-      services.redis.package = cfg.package;
-      services.redis.requirePass = password;
-      services.redis.bind = concatStringsSep " " listen_addresses;
-      services.redis.extraConfig = extraConfig;
+      services.redis = {
+        enable = true;
+        bind = concatStringsSep " " listen_addresses;
+        extraConfig = extraConfig;
+        package = cfg.package;
+        requirePass = password;
+        vmOverCommit = true;
+      };
 
+      systemd.services.redis.serviceConfig.Restart = "always";
 
       flyingcircus.activationScripts.redis =
         lib.stringAfter [ "fc-local-config" ] ''
@@ -71,19 +75,6 @@ in {
       flyingcircus.localConfigDirs.redis = {
         dir = "/etc/local/redis";
         user = "redis";
-      };
-
-      systemd.services.redis = rec {
-        serviceConfig = {
-          LimitNOFILE = 64000;
-          PermissionsStartOnly = true;
-          Restart = "always";
-        };
-
-        after = [ "network.target" ];
-        wants = after;
-        preStart = "echo never > /sys/kernel/mm/transparent_hugepage/enabled";
-        postStop = "echo madvise > /sys/kernel/mm/transparent_hugepage/enabled";
       };
 
       flyingcircus.services = {
@@ -115,7 +106,6 @@ in {
       };
 
       boot.kernel.sysctl = {
-        "vm.overcommit_memory" = 1;
         "net.core.somaxconn" = 512;
       };
 
@@ -132,5 +122,6 @@ in {
       # We want a fixed uid that is compatible with older releases.
       # Upstream doesn't set the uid.
       users.users.redis.uid = config.ids.uids.redis;
+
     };
 }

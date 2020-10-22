@@ -252,10 +252,6 @@ in {
       "d /etc/current-config"  # used by various FC roles
       "d /etc/local/nixos 2775 root service"
       "d /srv 0755"
-      "d /tmp 1777 root root 3d"
-      "d /var/tmp 1777 root root 7d"
-      # remove old (pre-16.09) setuid wrappers first reboot after upgrade
-      "R! /var/setuid-wrappers"
     ];
 
     time.timeZone =
