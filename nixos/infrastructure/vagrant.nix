@@ -39,8 +39,8 @@ in {
     # These groups are created through the ENC normally which
     # doesn't exist in vagrant or at least here, yet.
     users.groups = {
-      login = {};
-      service = {};
+      login = { members = ["vagrant"]; };
+      service = { members = ["vagrant"]; };
       sudo-srv = {};
       admins = {};
     };
@@ -48,8 +48,9 @@ in {
     users.users.vagrant = {
       description = "Vagrant user";
       group = "users";
-      extraGroups = [ "login" "service" "docker" ];
-      password = "vagrant";
+      extraGroups = [ "docker" ];
+      # password: vagrant
+      hashedPassword = "$5$xS9kX8R5VNC0g$ZS7QkUYTk/61dUyUgq9r0jLAX1NbiScBT5v1PODz4UC";
       home = "/home/vagrant";
       isNormalUser = true;
       openssh.authorizedKeys.keys = [
