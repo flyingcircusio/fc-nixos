@@ -116,8 +116,6 @@ in {
     ];
   };
 
-  qt4-5 = super.callPackage ./wkhtmltopdf/qt4-5.nix {};
-
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
