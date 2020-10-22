@@ -3,12 +3,12 @@
 # Note: zlib is not required; MySQL can use an internal zlib.
 
 stdenv.mkDerivation rec {
-  name = "percona-${version}";
-  version = "5.7.27-30";
+  pname = "percona";
+  version = "5.7.31-34";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-5.7/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "09m2cn7qp1zfk3xa57bwc81i3a14vx9cca7kix348r1c48yzy3dm";
+    sha256 = "003013jkvghp71qqfx1aknsh2fsscff8v3kzrsb7s1s2w53s7bv0";
 
   };
 

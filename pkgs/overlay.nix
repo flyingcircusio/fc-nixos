@@ -126,9 +126,8 @@ in {
     '';
   });
 
-  percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
-  percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost169; };
+  percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost172; };
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
@@ -167,7 +166,7 @@ in {
 
   xtrabackup = super.callPackage ./percona/xtrabackup.nix {
     inherit (self) percona;
-    boost = self.boost169;
+    boost = self.boost172;
   };
 
   # === Python ===

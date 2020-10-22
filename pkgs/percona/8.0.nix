@@ -1,16 +1,16 @@
 { stdenv, fetchurl, fetchFromGitHub, cmake, pkgconfig, ncurses, zlib, xz, lzo, lz4, bzip2, snappy
 , libiconv, openssl, pcre, boost, judy, bison, libxml2
 , libaio, jemalloc, cracklib, systemd, numactl
-, asio, buildEnv, check, scons, curl, perl
+, asio, buildEnv, check, scons, curl, perl, openldap
 }:
 
 stdenv.mkDerivation rec {
-  name = "percona-${version}";
-  version = "8.0.16-7";
+  pname = "percona";
+  version = "8.0.21-12";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-8.0/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "1677jm271l8jy7566r7lb5z1bfbfrc50yfkvggs58w4i4df6i3wg";
+    sha256 = "1lvds94r0244rjd08chhqy2z4ma17wgdj4qqd9y5ifkn8yjhxkrd";
   };
 
   preConfigure = stdenv.lib.optional stdenv.isDarwin ''
@@ -20,7 +20,7 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ cmake pkgconfig ];
   buildInputs = [
-    ncurses openssl zlib pcre jemalloc libiconv libaio systemd boost curl perl
+    ncurses openssl zlib pcre jemalloc libiconv libaio systemd boost curl perl openldap.dev
   ];
 
   enableParallelBuilding = true;

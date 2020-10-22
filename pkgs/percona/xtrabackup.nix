@@ -2,11 +2,11 @@
 
 stdenv.mkDerivation rec {
   name = "xtrabackup-${version}";
-  version = "8.0.7";
+  version = "8.0.14";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-XtraBackup-8.0/Percona-XtraBackup-${version}/source/tarball/percona-xtrabackup-${version}.tar.gz";
-    sha256 = "1qiwynlrs63fwbrmrl6gv5q86zyh5fgyv6w0vjnahwry18gnjk52";
+    sha256 = "0p9xlzapn88id6m8viycaf9c0mdxplp5hhj99gr6n0bbd8n6v3fv";
   };
 
   buildInputs = with pkgs; [
