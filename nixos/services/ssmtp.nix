@@ -23,7 +23,6 @@ in {
                      mailoutService != null) {
     services.ssmtp = {
       enable = true;
-      directDelivery = true;
       domain =
         lib.optionalString (net.domain != null) "${net.hostName}.${net.domain}";
       hostName = mailoutService;
