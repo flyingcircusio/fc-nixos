@@ -44,8 +44,8 @@ let
 
   localConfig =
     if pathExists localConfigPath
-    then "include_dir '${localConfigPath}'"
-    else "";
+    then { include_dir = localConfigPath; }
+    else {};
 
 in {
   options = with lib; {
@@ -53,7 +53,7 @@ in {
     flyingcircus.services.postgresql = {
       enable = mkEnableOption "Enable preconfigured PostgreSQL";
       majorVersion = mkOption {
-          type = types.string;
+          type = types.str;
           description = ''
             The major version of PostgreSQL to use (9.6, 10, 11, 12).
           '';
@@ -111,12 +111,15 @@ in {
       home = lib.mkForce "/srv/postgresql";
     };
 
-    flyingcircus.activationScripts = {
+    environment.etc."local/postgresql/${cfg.majorVersion}/README.txt".text = ''
+        Put your local postgresql configuration here. This directory
+        is being included with include_dir.
+        '';
 
+    flyingcircus.activationScripts = {
       postgresql-srv = lib.stringAfter [ "users" "groups" ] ''
         install -d -o postgres /srv/postgresql
       '';
-
     };
 
     flyingcircus.localConfigDirs.postgresql = {
@@ -144,77 +147,74 @@ in {
       SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
     '';
 
-    # Custom postgresql configuration
-    services.postgresql.extraConfig = ''
-      #------------------------------------------------------------------------------
-      # CONNECTIONS AND AUTHENTICATION
-      #------------------------------------------------------------------------------
-      listen_addresses = '${concatStringsSep "," listenAddresses}'
-      max_connections = 400
-      #------------------------------------------------------------------------------
-      # RESOURCE USAGE (except WAL)
-      #------------------------------------------------------------------------------
-      # available memory: ${toString currentMemory}MB
-      shared_buffers = ${toString sharedBuffers}MB   # starting point is 25% RAM
-      temp_buffers = 16MB
-      work_mem = ${toString workMem}MB
-      maintenance_work_mem = ${toString maintenanceWorkMem}MB
-      #------------------------------------------------------------------------------
-      # QUERY TUNING
-      #------------------------------------------------------------------------------
-      effective_cache_size = ${toString (sharedBuffers * 2)}MB
+    services.postgresql = {
 
-      random_page_cost = ${toString randomPageCost}
-      # version-specific resource settings for >=9.3
-      effective_io_concurrency = 100
+      authentication = ''
+        local postgres root       trust
+        # trusted access for Nagios
+        host    nagios          nagios          0.0.0.0/0               trust
+        host    nagios          nagios          ::/0                    trust
+        # authenticated access for others
+        host all  all  0.0.0.0/0  md5
+        host all  all  ::/0       md5
+      '';
 
-      #------------------------------------------------------------------------------
-      # WRITE AHEAD LOG
-      #------------------------------------------------------------------------------
-      wal_level = hot_standby
-      wal_buffers = ${toString walBuffers}MB
-      checkpoint_completion_target = 0.9
-      archive_mode = off
+      logLinePrefix = "user=%u,db=%d ";
 
-      #------------------------------------------------------------------------------
-      # ERROR REPORTING AND LOGGING
-      #------------------------------------------------------------------------------
-      log_min_duration_statement = 1000
-      log_checkpoints = on
-      log_connections = on
-      log_line_prefix = 'user=%u,db=%d '
-      log_lock_waits = on
-      log_autovacuum_min_duration = 5000
-      log_temp_files = 1kB
-      shared_preload_libraries = 'auto_explain'
-      auto_explain.log_min_duration = '3s'
+      settings = {
+        #------------------------------------------------------------------------------
+        # CONNECTIONS AND AUTHENTICATION
+        #------------------------------------------------------------------------------
+        listen_addresses = lib.mkOverride 50 (concatStringsSep "," listenAddresses);
+        max_connections = 400;
+        #------------------------------------------------------------------------------
+        # RESOURCE USAGE (except WAL)
+        #------------------------------------------------------------------------------
+        # available memory: ${toString currentMemory}MB
+        shared_buffers = "${toString sharedBuffers}MB"; # starting point is 25% RAM
+        temp_buffers = "16MB";
+        work_mem = "${toString workMem}MB";
+        maintenance_work_mem = "${toString maintenanceWorkMem}MB";
+        #------------------------------------------------------------------------------
+        # QUERY TUNING
+        #------------------------------------------------------------------------------
+        effective_cache_size = "${toString (sharedBuffers * 2)}MB";
 
-      #------------------------------------------------------------------------------
-      # CLIENT CONNECTION DEFAULTS
-      #------------------------------------------------------------------------------
-      datestyle = 'iso, mdy'
-      lc_messages = 'en_US.utf8'
-      lc_monetary = 'en_US.utf8'
-      lc_numeric = 'en_US.utf8'
-      lc_time = 'en_US.utf8'
+        random_page_cost = randomPageCost;
+        # version-specific resource settings for >=9.3
+        effective_io_concurrency = 100;
 
-      ${localConfig}
-    '';
+        #------------------------------------------------------------------------------
+        # WRITE AHEAD LOG
+        #------------------------------------------------------------------------------
+        wal_level = "hot_standby";
+        wal_buffers = "${toString walBuffers}MB";
+        checkpoint_completion_target = 0.9;
+        archive_mode = false;
 
-    environment.etc."local/postgresql/${cfg.majorVersion}/README.txt".text = ''
-        Put your local postgresql configuration here. This directory
-        is being included with include_dir.
-        '';
+        #------------------------------------------------------------------------------
+        # ERROR REPORTING AND LOGGING
+        #------------------------------------------------------------------------------
+        log_min_duration_statement = 100;
+        log_checkpoints = true;
+        log_connections = true;
+        log_lock_waits = true;
+        log_autovacuum_min_duration = 5000;
+        log_temp_files = "1kB";
+        shared_preload_libraries = "auto_explain";
+        "auto_explain.log_min_duration" = "3s";
 
-    services.postgresql.authentication = ''
-      local postgres root       trust
-      # trusted access for Nagios
-      host    nagios          nagios          0.0.0.0/0               trust
-      host    nagios          nagios          ::/0                    trust
-      # authenticated access for others
-      host all  all  0.0.0.0/0  md5
-      host all  all  ::/0       md5
-    '';
+        #------------------------------------------------------------------------------
+        # CLIENT CONNECTION DEFAULTS
+        #------------------------------------------------------------------------------
+        datestyle = "iso, mdy";
+        lc_messages = "en_US.utf8";
+        lc_monetary = "en_US.utf8";
+        lc_numeric = "en_US.utf8";
+        lc_time = "en_US.utf8";
+      } // localConfig;
+
+    };
 
     flyingcircus.services = {
 
