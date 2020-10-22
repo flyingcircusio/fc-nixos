@@ -13,7 +13,7 @@ buildRustPackage rec {
     sha256 = "1b4sy6kykav751jrjifism1n6xx8xfm7s7fvcaanmwrxq7j9ixxl";
   };
 
-  cargoSha256 = "0mvzbx98k0ccnwn82xcswf4jqjf2slg3sbklv36yy71skk9s2az2";
+  cargoSha256 = "091yr17df0qf2n4dv0xifrv25z774ikmw9ysk4kd8xl2shijkxr9";
   nativeBuildInputs = [ ronn ];
   OPENSSL_DIR = openssl.dev;
   OPENSSL_LIB_DIR = "${openssl.out}/lib";

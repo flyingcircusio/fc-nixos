@@ -5,7 +5,7 @@ rustPlatform.buildRustPackage rec {
   version = "0.2.0";
 
   src = lib.cleanSource ./.;
-  cargoSha256 = "0p0kwbbr8camiaragbs8yi3jk91l7d6psmhkw5f3x1p76134i4k7";
+  cargoSha256 = "1q5qs3yj7w01vpcjqc9nyid24q0z7pa3hb301icjhapfv69rfy3y";
   doCheck = true;
 
   meta = with stdenv.lib; {

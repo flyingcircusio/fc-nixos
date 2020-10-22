@@ -13,7 +13,7 @@ buildRustPackage rec {
     sha256 = "19whh7xzk2sqnrgkyw6gmmq5kn9pmbma5nnl6zc4iz4wa9slysl4";
   };
 
-  cargoSha256 = "17qxbm0wchqhlg2xmqghvvmgxa7rg6qfa200w90bp5hm0v350439";
+  cargoSha256 = "091yr17df0qf2n4dv0xifrv25z774ikmw9ysk4kd8xl2shijkxr9";
   RUSTFLAGS = "--cfg feature=\"oldglibc\"";
 
   meta = with stdenv.lib; {

@@ -8,7 +8,7 @@ rustPlatform.buildRustPackage rec {
   outputs = [ "out" "man" ];
 
   src = ./box;
-  cargoSha256 = "15lggzybljgrk9kqs672f0m6fl8zgax4f42a0vj38d0wv0pq1bfl";
+  cargoSha256 = "0gvf8qkyg52f269vh7nxa55hi2aqpf0amcyk54li1ijya4s0qysw";
 
   postBuild = ''
     substituteAllInPlace box.1.rst
