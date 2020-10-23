@@ -55,6 +55,12 @@ in {
     })
 
     (lib.mkIf svc.enable {
+
+      flyingcircus.localConfigDirs.mail = {
+        dir = "/etc/local/mail/";
+        user = "root";
+      };
+
       environment.etc = {
         "local/mail/config.json.example".text = (toJSON {
           domains = [ primaryDomain "subdomain.${primaryDomain}" ];
