@@ -79,13 +79,6 @@ in {
 
   in {
 
-    services.postgresql.enable = true;
-    services.postgresql.package = postgresqlPkg;
-    services.postgresql.extraPlugins = extensions;
-
-    services.postgresql.initialScript = ./postgresql-init.sql;
-    services.postgresql.dataDir = "/srv/postgresql/${cfg.majorVersion}";
-
     systemd.services.postgresql.bindsTo = [ "network-addresses-ethsrv.service" ];
 
     systemd.services.postgresql.postStart =
@@ -149,6 +142,13 @@ in {
 
     services.postgresql = {
 
+      enable = true;
+      dataDir = "/srv/postgresql/${cfg.majorVersion}";
+      extraPlugins = extensions;
+      initialScript = ./postgresql-init.sql;
+      logLinePrefix = "user=%u,db=%d ";
+      package = postgresqlPkg;
+
       authentication = ''
         local postgres root       trust
         # trusted access for Nagios
@@ -158,8 +158,6 @@ in {
         host all  all  0.0.0.0/0  md5
         host all  all  ::/0       md5
       '';
-
-      logLinePrefix = "user=%u,db=%d ";
 
       settings = {
         #------------------------------------------------------------------------------
