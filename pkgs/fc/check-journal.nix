@@ -1,32 +1,38 @@
-{ stdenv, fetchFromGitHub, rustPlatform, openssl, ronn }:
+{ stdenv, fetchFromGitHub, rustPlatform, ronn, utillinux, systemd }:
 
 with rustPlatform;
 
 buildRustPackage rec {
   name = "check-journal-${version}";
-  version = "1.0.5";
+  version = "838bf68aa87";
 
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "check_journal";
     rev = version;
-    sha256 = "1b4sy6kykav751jrjifism1n6xx8xfm7s7fvcaanmwrxq7j9ixxl";
+    sha256 = "1p4l1j1qh7chsrikkvhv86w6a5nxpqifhl55jmga8w30rv11x645";
   };
 
-  cargoSha256 = "091yr17df0qf2n4dv0xifrv25z774ikmw9ysk4kd8xl2shijkxr9";
-  nativeBuildInputs = [ ronn ];
-  OPENSSL_DIR = openssl.dev;
-  OPENSSL_LIB_DIR = "${openssl.out}/lib";
+  cargoSha256 = "1kjcc92x0hxkxa9nl65lc9vvh5dzj2ybighspy3mjgqdf1zbvsv8";
 
-  postBuild = "make";
+  # used in src/main.rs to set default path for journalctl
+  JOURNALCTL = "${systemd}/bin/journalctl";
+
+  nativeBuildInputs = [ ronn utillinux ];
+  postBuild = "make man";
+
+  preCheck = "patchShebangs fixtures/journalctl-cursor-file.sh";
+
   postInstall = ''
-    install -D check_journal.1 $out/share/man/man1/check_journal.1
+    install -m 0644 -D -t $out/share/man/man1 man/check_journal.1
+    install -m 0644 -D -t $out/share/doc/check_journal README.md
   '';
 
   meta = with stdenv.lib; {
     description = "Nagios/Icinga compatible plugin to search `journalctl` " +
       "output for matching lines.";
-    homepage = https://github.com/flyingcircusio/check_journal;
+    homepage = "https://github.com/flyingcircusio/check_journal";
+    maintainer = with maintainers; [ ckauhaus ];
     license = with licenses; [ bsd3 ];
   };
 }
