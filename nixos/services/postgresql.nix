@@ -44,7 +44,7 @@ let
 
   localConfig =
     if pathExists localConfigPath
-    then { include_dir = localConfigPath; }
+    then { include_dir = "${localConfigPath}"; }
     else {};
 
 in {
