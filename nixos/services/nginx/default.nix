@@ -52,9 +52,9 @@ let
   '';
 
   package = config.services.nginx.package;
-  localDir = config.flyingcircus.localConfigDirs.nginx.dir;
+  localCfgDir = config.flyingcircus.localConfigPath + "/nginx";
 
-  vhostsJSON = fclib.jsonFromDir localDir;
+  vhostsJSON = fclib.jsonFromDir localCfgDir;
 
   mkVhostFromJSON = name: vhost:
   let
@@ -134,7 +134,7 @@ let
     send_timeout 10m;
   '';
 
-  plainConfigFiles = filter (p: lib.hasSuffix ".conf" p) (fclib.files localDir);
+  plainConfigFiles = filter (p: lib.hasSuffix ".conf" p) (fclib.files localCfgDir);
   localHttpConfig = concatStringsSep "\n" (map readFile plainConfigFiles);
 
 in
@@ -265,7 +265,7 @@ in
         appendHttpConfig = ''
           ${baseHttpConfig}
 
-          # === User-provided config from ${localDir}/*.conf ===
+          # === User-provided config from ${localCfgDir}/*.conf ===
           ${localHttpConfig}
 
           # === Config from flyingcircus.services.nginx ===
