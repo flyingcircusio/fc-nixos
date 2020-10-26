@@ -1,5 +1,5 @@
 # This replaces the NixOS nginx module.
-# Taken from upstream nixos-19.03.
+# Taken from upstream nixos-20.09.
 # Modifications:
 # * Support config reloading without restart.
 { config, lib, pkgs, ... }:
@@ -10,23 +10,23 @@ let
   cfg = config.services.nginx;
   certs = config.security.acme.certs;
   vhostsConfigs = mapAttrsToList (vhostName: vhostConfig: vhostConfig) virtualHosts;
-  acmeEnabledVhosts = filter (vhostConfig: vhostConfig.enableACME && vhostConfig.useACMEHost == null) vhostsConfigs;
+  acmeEnabledVhosts = filter (vhostConfig: vhostConfig.enableACME || vhostConfig.useACMEHost != null) vhostsConfigs;
+  dependentCertNames = unique (map (hostOpts: hostOpts.certName) acmeEnabledVhosts);
   virtualHosts = mapAttrs (vhostName: vhostConfig:
     let
       serverName = if vhostConfig.serverName != null
         then vhostConfig.serverName
         else vhostName;
+      certName = if vhostConfig.useACMEHost != null
+        then vhostConfig.useACMEHost
+        else serverName;
     in
     vhostConfig // {
-      inherit serverName;
-    } // (optionalAttrs vhostConfig.enableACME {
-      sslCertificate = "${certs.${serverName}.directory}/fullchain.pem";
-      sslCertificateKey = "${certs.${serverName}.directory}/key.pem";
-      sslTrustedCertificate = "${certs.${serverName}.directory}/full.pem";
-    }) // (optionalAttrs (vhostConfig.useACMEHost != null) {
-      sslCertificate = "${certs.${vhostConfig.useACMEHost}.directory}/fullchain.pem";
-      sslCertificateKey = "${certs.${vhostConfig.useACMEHost}.directory}/key.pem";
-      sslTrustedCertificate = "${certs.${vhostConfig.useACMEHost}.directory}/fullchain.pem";
+      inherit serverName certName;
+    } // (optionalAttrs (vhostConfig.enableACME || vhostConfig.useACMEHost != null) {
+      sslCertificate = "${certs.${certName}.directory}/fullchain.pem";
+      sslCertificateKey = "${certs.${certName}.directory}/key.pem";
+      sslTrustedCertificate = "${certs.${certName}.directory}/chain.pem";
     })
   ) cfg.virtualHosts;
   enableIPv6 = config.networking.enableIPv6;
@@ -50,22 +50,18 @@ let
     }
   ''));
 
-  awkFormat = builtins.toFile "awkFormat-nginx.awk" ''
-    awk -f
-    {sub(/^[ \t]+/,"");idx=0}
-    /\{/{ctx++;idx=1}
-    /\}/{ctx--}
-    {id="";for(i=idx;i<ctx;i++)id=sprintf("%s%s", id, "\t");printf "%s%s\n", id, $0}
+  commonHttpConfig = ''
+      # The mime type definitions included with nginx are very incomplete, so
+      # we use a list of mime types from the mailcap package, which is also
+      # used by most other Linux distributions by default.
+      include ${pkgs.mailcap}/etc/nginx/mime.types;
+      include ${cfg.package}/conf/fastcgi.conf;
+      include ${cfg.package}/conf/uwsgi_params;
   '';
 
-  configFile = pkgs.runCommand "nginx.conf" {} (''
-    awk -f ${awkFormat} ${pre-configFile} | sed '/^\s*$/d' > $out
-  '');
-
-  pre-configFile = pkgs.writeText "pre-nginx.conf" ''
-    user ${cfg.user} ${cfg.group};
-    error_log ${cfg.logError};
+  configFile = pkgs.writers.writeNginxConfig "nginx.conf" ''
     pid /run/nginx/nginx.pid;
+    error_log ${cfg.logError};
 
     ${cfg.config}
 
@@ -77,12 +73,10 @@ let
 
     ${optionalString (cfg.httpConfig == "" && cfg.config == "") ''
     http {
-      include ${cfg.package}/conf/mime.types;
-      include ${cfg.package}/conf/fastcgi.conf;
-      include ${cfg.package}/conf/uwsgi_params;
+      ${commonHttpConfig}
 
       ${optionalString (cfg.resolver.addresses != []) ''
-        resolver ${toString cfg.resolver.addresses} ${optionalString (cfg.resolver.valid != "") "valid=${cfg.resolver.valid}"};
+        resolver ${toString cfg.resolver.addresses} ${optionalString (cfg.resolver.valid != "") "valid=${cfg.resolver.valid}"} ${optionalString (!cfg.resolver.ipv6) "ipv6=off"};
       ''}
       ${upstreamConfig}
 
@@ -92,7 +86,7 @@ let
         tcp_nopush on;
         tcp_nodelay on;
         keepalive_timeout 65;
-        types_hash_max_size 2048;
+        types_hash_max_size 4096;
       ''}
 
       ssl_protocols ${cfg.sslProtocols};
@@ -100,17 +94,23 @@ let
       ${optionalString (cfg.sslDhparam != null) "ssl_dhparam ${cfg.sslDhparam};"}
 
       ${optionalString (cfg.recommendedTlsSettings) ''
-        ssl_session_cache shared:SSL:42m;
-        ssl_session_timeout 23m;
-        ssl_ecdh_curve secp384r1;
-        ssl_prefer_server_ciphers on;
+        # Keep in sync with https://ssl-config.mozilla.org/#server=nginx&config=intermediate
+
+        ssl_session_timeout 1d;
+        ssl_session_cache shared:SSL:10m;
+        # Breaks forward secrecy: https://github.com/mozilla/server-side-tls/issues/135
+        ssl_session_tickets off;
+        # We don't enable insecure ciphers by default, so this allows
+        # clients to pick the most performant, per https://github.com/mozilla/server-side-tls/issues/260
+        ssl_prefer_server_ciphers off;
+
+        # OCSP stapling
         ssl_stapling on;
         ssl_stapling_verify on;
       ''}
 
       ${optionalString (cfg.recommendedGzipSettings) ''
         gzip on;
-        gzip_disable "msie6";
         gzip_proxied any;
         gzip_comp_level 5;
         gzip_types
@@ -187,9 +187,7 @@ let
 
     ${optionalString (cfg.httpConfig != "") ''
     http {
-      include ${cfg.package}/conf/mime.types;
-      include ${cfg.package}/conf/fastcgi.conf;
-      include ${cfg.package}/conf/uwsgi_params;
+      ${commonHttpConfig}
       ${cfg.httpConfig}
     }''}
 
@@ -298,21 +296,11 @@ let
       ${optionalString (config.tryFiles != null) "try_files ${config.tryFiles};"}
       ${optionalString (config.root != null) "root ${config.root};"}
       ${optionalString (config.alias != null) "alias ${config.alias};"}
+      ${optionalString (config.return != null) "return ${config.return};"}
       ${config.extraConfig}
       ${optionalString (config.proxyPass != null && cfg.recommendedProxySettings) "include ${recommendedProxyConfig};"}
     }
   '') (sortProperties (mapAttrsToList (k: v: v // { location = k; }) locations)));
-  mkBasicAuth = vhostName: authDef: let
-    htpasswdFile = pkgs.writeText "${vhostName}.htpasswd" (
-      concatStringsSep "\n" (mapAttrsToList (user: password: ''
-        ${user}:{PLAIN}${password}
-      '') authDef)
-    );
-  in ''
-    auth_basic secured;
-    auth_basic_user_file ${htpasswdFile};
-  '';
-
   mkHtpasswd = vhostName: authDef: pkgs.writeText "${vhostName}.htpasswd" (
     concatStringsSep "\n" (mapAttrsToList (user: password: ''
       ${user}:{PLAIN}${password}
@@ -352,13 +340,6 @@ let
 in
 
 {
-  imports = [
-    (mkRemovedOptionModule [ "services" "nginx" "stateDir" ] ''
-      The Nginx log directory has been moved to /var/log/nginx, the cache directory
-      to /var/cache/nginx. The option services.nginx.stateDir has been removed.
-    '')
-  ];
-
   options = {
     services.nginx = {
       enable = mkEnableOption "Nginx Web Server";
@@ -534,8 +515,9 @@ in
 
       sslCiphers = mkOption {
         type = types.str;
-        default = "EECDH+aRSA+AESGCM:EDH+aRSA:EECDH+aRSA:+AES256:+AES128:+SHA1:!CAMELLIA:!SEED:!3DES:!DES:!RC4:!eNULL";
-        description = "Ciphers to choose from when negotiating tls handshakes.";
+        # Keep in sync with https://ssl-config.mozilla.org/#server=nginx&config=intermediate
+        default = "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384";
+        description = "Ciphers to choose from when negotiating TLS handshakes.";
       };
 
       sslProtocols = mkOption {
@@ -614,6 +596,15 @@ in
                 An optional valid parameter allows overriding it
               '';
             };
+            ipv6 = mkOption {
+              type = types.bool;
+              default = true;
+              description = ''
+                By default, nginx will look up both IPv4 and IPv6 addresses while resolving.
+                If looking up of IPv6 addresses is not desired, the ipv6=off parameter can be
+                specified.
+              '';
+            };
           };
         };
         description = ''
@@ -681,184 +672,239 @@ in
     };
   };
 
-  config = mkIf cfg.enable ( mkMerge [
-    {
-      # TODO: test user supplied config file pases syntax test
+  imports = [
+    (mkRemovedOptionModule [ "services" "nginx" "stateDir" ] ''
+      The Nginx log directory has been moved to /var/log/nginx, the cache directory
+      to /var/cache/nginx. The option services.nginx.stateDir has been removed.
+    '')
+  ];
 
-      warnings =
-      let
-        deprecatedSSL = name: config: optional config.enableSSL
+  config = mkIf cfg.enable {
+    # TODO: test user supplied config file pases syntax test
+
+    warnings =
+    let
+      deprecatedSSL = name: config: optional config.enableSSL
+      ''
+        config.services.nginx.virtualHosts.<name>.enableSSL is deprecated,
+        use config.services.nginx.virtualHosts.<name>.onlySSL instead.
+      '';
+
+    in flatten (mapAttrsToList deprecatedSSL virtualHosts);
+
+    assertions =
+    let
+      hostOrAliasIsNull = l: l.root == null || l.alias == null;
+    in [
+      {
+        assertion = all (host: all hostOrAliasIsNull (attrValues host.locations)) (attrValues virtualHosts);
+        message = "Only one of nginx root or alias can be specified on a location.";
+      }
+
+      {
+        assertion = all (conf: with conf;
+          !(addSSL && (onlySSL || enableSSL)) &&
+          !(forceSSL && (onlySSL || enableSSL)) &&
+          !(addSSL && forceSSL)
+        ) (attrValues virtualHosts);
+        message = ''
+          Options services.nginx.service.virtualHosts.<name>.addSSL,
+          services.nginx.virtualHosts.<name>.onlySSL and services.nginx.virtualHosts.<name>.forceSSL
+          are mutually exclusive.
+        '';
+      }
+
+      {
+        assertion = all (conf: !(conf.enableACME && conf.useACMEHost != null)) (attrValues virtualHosts);
+        message = ''
+          Options services.nginx.service.virtualHosts.<name>.enableACME and
+          services.nginx.virtualHosts.<name>.useACMEHost are mutually exclusive.
+        '';
+      }
+    ];
+    environment.systemPackages = [ nginxReloadMaster ];
+
+    systemd.services.nginx = {
+      description = "Nginx Web Server";
+      wantedBy = [ "multi-user.target" ];
+      wants = concatLists (map (certName: [ "acme-finished-${certName}.target" ]) dependentCertNames);
+      after = [ "network.target" ] ++ map (certName: "acme-selfsigned-${certName}.service") dependentCertNames;
+      # Nginx needs to be started in order to be able to request certificates
+      # (it's hosting the acme challenge after all)
+      # This fixes https://github.com/NixOS/nixpkgs/issues/81842
+      before = map (certName: "acme-${certName}.service") dependentCertNames;
+      stopIfChanged = false;
+      preStart =
         ''
-          config.services.nginx.virtualHosts.<name>.enableSSL is deprecated,
-          use config.services.nginx.virtualHosts.<name>.onlySSL instead.
-        '';
+        ${cfg.preStart}
+        ln -sf ${configFile} /run/nginx/config
+        ln -sfT ${cfg.package} /run/nginx/package
+      '';
+      reload = ''
+        echo "Reload triggered, checking config file..."
+        # Check if the new config is valid
+        ${checkConfigCmd} || rc=$?
 
-      in flatten (mapAttrsToList deprecatedSSL virtualHosts);
+        if [[ -n $rc ]]; then
+          echo "Error: Not restarting / reloading because of config errors."
+          echo "New configuration not activated!"
+          # We must use 0 as exit code, otherwise systemd would kill the nginx process.
+          # This is a bug in systemd: https://github.com/systemd/systemd/issues/11238
+          exit 0
+        fi
 
-      assertions =
-      let
-        hostOrAliasIsNull = l: l.root == null || l.alias == null;
-      in [
-        {
-          assertion = all (host: all hostOrAliasIsNull (attrValues host.locations)) (attrValues virtualHosts);
-          message = "Only one of nginx root or alias can be specified on a location.";
-        }
+        ln -sf ${configFile} /run/nginx/config
 
-        {
-          assertion = all (conf: with conf;
-            !(addSSL && (onlySSL || enableSSL)) &&
-            !(forceSSL && (onlySSL || enableSSL)) &&
-            !(addSSL && forceSSL)
-          ) (attrValues virtualHosts);
-          message = ''
-            Options services.nginx.service.virtualHosts.<name>.addSSL,
-            services.nginx.virtualHosts.<name>.onlySSL and services.nginx.virtualHosts.<name>.forceSSL
-            are mutually exclusive.
-          '';
-        }
+        # Check if the package changed
+        current_pkg=$(readlink /run/nginx/package)
 
-        {
-          assertion = all (conf: !(conf.enableACME && conf.useACMEHost != null)) (attrValues virtualHosts);
-          message = ''
-            Options services.nginx.service.virtualHosts.<name>.enableACME and
-            services.nginx.virtualHosts.<name>.useACMEHost are mutually exclusive.
-          '';
-        }
-      ];
-
-      environment.systemPackages = [ nginxReloadMaster ];
-
-      systemd.services.nginx = {
-        description = "Nginx Web Server";
-        wantedBy = [ "multi-user.target" ];
-        wants = concatLists (map (vhostConfig: ["acme-${vhostConfig.serverName}.service" "acme-selfsigned-${vhostConfig.serverName}.service"]) acmeEnabledVhosts);
-        after = [ "network.target" ] ++ map (vhostConfig: "acme-selfsigned-${vhostConfig.serverName}.service") acmeEnabledVhosts;
-        before = map (vhostConfig: "acme-${vhostConfig.serverName}.service") acmeEnabledVhosts;
-        stopIfChanged = false;
-        preStart =
-          ''
-          ${cfg.preStart}
-          ln -sf ${configFile} /run/nginx/config
+        if [[ $current_pkg != ${cfg.package} ]]; then
+          echo "Nginx package changed: $current_pkg -> ${cfg.package}."
           ln -sfT ${cfg.package} /run/nginx/package
-        '';
-        reload = ''
-          echo "Reload triggered, checking config file..."
-          # Check if the new config is valid
-          ${checkConfigCmd} || rc=$?
 
-          if [[ -n $rc ]]; then
-            echo "Error: Not restarting / reloading because of config errors."
-            echo "New configuration not activated!"
-            # We must use 0 as exit code, otherwise systemd would kill the nginx process.
-            # This is a bug in systemd: https://github.com/systemd/systemd/issues/11238
-            exit 0
-          fi
-
-          ln -sf ${configFile} /run/nginx/config
-
-          # Check if the package changed
-          current_pkg=$(readlink /run/nginx/package)
-
-          if [[ $current_pkg != ${cfg.package} ]]; then
-            echo "Nginx package changed: $current_pkg -> ${cfg.package}."
-            ln -sfT ${cfg.package} /run/nginx/package
-
-            if [[ -s /run/nginx/nginx.pid ]]; then
-              if ${nginxReloadMaster}/bin/nginx-reload-master; then
-                echo "Master process replacement completed."
-              else
-                echo "Master process replacement failed, trying again on next reload."
-                ln -sfT $current_pkg /run/nginx/package
-              fi
+          if [[ -s /run/nginx/nginx.pid ]]; then
+            if ${nginxReloadMaster}/bin/nginx-reload-master; then
+              echo "Master process replacement completed."
             else
-              # We are still running an old version that didn't write a PID file or something is broken.
-              # We can only force a restart now.
-              echo "Warning: cannot replace master process because PID is missing. Restarting Nginx now..."
-              ${pkgs.coreutils}/bin/kill -QUIT $MAINPID
+              echo "Master process replacement failed, trying again on next reload."
+              ln -sfT $current_pkg /run/nginx/package
             fi
-
           else
-            # Package unchanged, we only need to change the configuration.
-            echo "Reloading nginx config now."
-
-            # Check journal for errors after the reload signal.
-            datetime=$(date +'%Y-%m-%d %H:%M:%S')
-            ${pkgs.coreutils}/bin/kill -HUP $MAINPID
-
-            # Give Nginx some time to try changing the configuration.
-            sleep 3
-
-            if [[ $(journalctl --since="$datetime" -u nginx -q -g '\[emerg\]') != "" ]]; then
-              echo "Warning: Possible failure when changing to new configuration."
-              echo "This happens when changes to listen directives are incompatible with the running nginx master process."
-              echo "Try systemctl restart nginx to activate the new config."
-            fi
+            # We are still running an old version that didn't write a PID file or something is broken.
+            # We can only force a restart now.
+            echo "Warning: cannot replace master process because PID is missing. Restarting Nginx now..."
+            ${pkgs.coreutils}/bin/kill -QUIT $MAINPID
           fi
-        '';
-        reloadIfChanged = true;
 
-        serviceConfig = {
-          Type = "forking";
-          PIDFile = "/run/nginx/nginx.pid";
-          ExecStart = "/run/nginx/package/bin/nginx -c /run/nginx/config";
-          Restart = "always";
-          # Logs directory and mode
-          LogsDirectory = "nginx";
-          LogsDirectoryMode = "0755";
-          # X- options are ignored by systemd.
-          # To show the last running config, use:
-          # cat `systemctl cat nginx | grep "X-ConfigFile" | cut -d= -f2`
-          X-ConfigFile = configFile;
-          # To check the current config file:
-          # `systemctl cat nginx | grep "X-CheckConfigCmd" | cut -d= -f2`
-          X-CheckConfigCmd = checkConfigCmd;
-        };
-      };
+        else
+          # Package unchanged, we only need to change the configuration.
+          echo "Reloading nginx config now."
 
-      systemd.tmpfiles.rules = [
-        "d /var/cache/nginx 0750 nginx nginx"
-        "d /run/nginx 0755 root root"
-      ];
+          # Check journal for errors after the reload signal.
+          datetime=$(date +'%Y-%m-%d %H:%M:%S')
+          ${pkgs.coreutils}/bin/kill -HUP $MAINPID
 
-      system.activationScripts.nginx-reload-check = lib.stringAfter [ "wrappers" ] ''
-        if ${pkgs.procps}/bin/pgrep nginx &> /dev/null; then
-          nginx_check_msg=$(${checkConfigCmd} 2>&1) || rc=$?
+          # Give Nginx some time to try changing the configuration.
+          sleep 3
 
-          if [[ -n $rc ]]; then
-            printf "\033[0;31mWarning: \033[0mNginx config is invalid at this point:\n$nginx_check_msg\n"
-            echo Reload may still work if missing Let\'s Encrypt SSL certs are the reason, for example.
-            echo Please check the output of journalctl -eu nginx
+          if [[ $(journalctl --since="$datetime" -u nginx -q -g '\[emerg\]') != "" ]]; then
+            echo "Warning: Possible failure when changing to new configuration."
+            echo "This happens when changes to listen directives are incompatible with the running nginx master process."
+            echo "Try systemctl restart nginx to activate the new config."
           fi
         fi
       '';
+      reloadIfChanged = true;
 
-      security.acme.certs = filterAttrs (n: v: v != {}) (
-        let
-          acmePairs = map (vhostConfig: { name = vhostConfig.serverName; value = {
-              group = lib.mkDefault cfg.group;
-              webroot = vhostConfig.acmeRoot;
-              extraDomains = genAttrs vhostConfig.serverAliases (alias: null);
-              postRun = ''
-                systemctl reload nginx
-              '';
-            }; }) acmeEnabledVhosts;
-        in
-          listToAttrs acmePairs
-      );
-    }
+      serviceConfig = {
+        Type = "forking";
+        PIDFile = "/run/nginx/nginx.pid";
+        ExecStart = "/run/nginx/package/bin/nginx -c /run/nginx/config";
+        Restart = "always";
+        RestartSec = "10s";
+        StartLimitInterval = "1min";
+        # User and group
+        User = cfg.user;
+        Group = cfg.group;
+        # Runtime directory and mode
+        RuntimeDirectory = "nginx";
+        RuntimeDirectoryMode = "0750";
+        # Cache directory and mode
+        CacheDirectory = "nginx";
+        CacheDirectoryMode = "0750";
+        # Logs directory and mode
+        LogsDirectory = "nginx";
+        LogsDirectoryMode = "0755";
+        # Capabilities
+        AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" "CAP_SYS_RESOURCE" ];
+        CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" "CAP_SYS_RESOURCE" ];
+        # Security
+        NoNewPrivileges = true;
+        # Sandboxing
+        ProtectSystem = "strict";
+        ProtectHome = mkDefault true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        ProtectHostname = true;
+        ProtectKernelTunables = true;
+        ProtectKernelModules = true;
+        ProtectControlGroups = true;
+        RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+        LockPersonality = true;
+        MemoryDenyWriteExecute = !(builtins.any (mod: (mod.allowMemoryWriteExecute or false)) pkgs.nginx.modules);
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        PrivateMounts = true;
+        # System Call Filtering
+        SystemCallArchitectures = "native";
+        # X- options are ignored by systemd.
+        # To show the last running config, use:
+        # cat `systemctl cat nginx | grep "X-ConfigFile" | cut -d= -f2`
+        X-ConfigFile = configFile;
+        # To check the current config file:
+        # `systemctl cat nginx | grep "X-CheckConfigCmd" | cut -d= -f2`
+        X-CheckConfigCmd = checkConfigCmd;
+      };
+    };
 
-    (mkIf (cfg.user == "nginx") {
-      users.users.nginx = {
+    # postRun hooks on cert renew can't be used to restart Nginx since renewal
+    # runs as the unprivileged acme user. sslTargets are added to wantedBy + before
+    # which allows the acme-finished-$cert.target to signify the successful updating
+    # of certs end-to-end.
+    systemd.services.nginx-config-reload = let
+      sslServices = map (certName: "acme-${certName}.service") dependentCertNames;
+      sslTargets = map (certName: "acme-finished-${certName}.target") dependentCertNames;
+    in {
+      wants = [ "nginx.service" ];
+      wantedBy = sslServices ++ [ "multi-user.target" ];
+      # Before the finished targets, after the renew services.
+      # This service might be needed for HTTP-01 challenges, but we only want to confirm
+      # certs are updated _after_ config has been reloaded.
+      before = sslTargets;
+      after = sslServices;
+      restartTriggers = [ configFile ];
+      # Block reloading if not all certs exist yet.
+      # Happens when config changes add new vhosts/certs.
+      unitConfig.ConditionPathExists = optionals (sslServices != []) (map (certName: certs.${certName}.directory + "/fullchain.pem") dependentCertNames);
+      serviceConfig = {
+        Type = "oneshot";
+        TimeoutSec = 60;
+        ExecCondition = "/run/current-system/systemd/bin/systemctl -q is-active nginx.service";
+        ExecStart = "/run/current-system/systemd/bin/systemctl reload nginx.service";
+      };
+    };
+
+    system.activationScripts.nginx-reload-check = lib.stringAfter [ "wrappers" ] ''
+      if ${pkgs.procps}/bin/pgrep nginx &> /dev/null; then
+        nginx_check_msg=$(${checkConfigCmd} 2>&1) || rc=$?
+
+        if [[ -n $rc ]]; then
+          printf "\033[0;31mWarning: \033[0mNginx config is invalid at this point:\n$nginx_check_msg\n"
+          echo Reload may still work if missing Let\'s Encrypt SSL certs are the reason, for example.
+          echo Please check the output of journalctl -eu nginx
+        fi
+      fi
+    '';
+
+    security.acme.certs = let
+      acmePairs = map (vhostConfig: nameValuePair vhostConfig.serverName {
+        group = mkDefault cfg.group;
+        webroot = vhostConfig.acmeRoot;
+        extraDomainNames = vhostConfig.serverAliases;
+      # Filter for enableACME-only vhosts. Don't want to create dud certs
+      }) (filter (vhostConfig: vhostConfig.useACMEHost == null) acmeEnabledVhosts);
+    in listToAttrs acmePairs;
+
+    users.users = optionalAttrs (cfg.user == "nginx") {
+      nginx = {
         group = cfg.group;
         uid = config.ids.uids.nginx;
       };
-    })
+    };
 
-    (mkIf (cfg.group == "nginx") {
-      users.groups.nginx = {
-        gid = config.ids.gids.nginx;
-      };
-    })
+    users.groups = optionalAttrs (cfg.group == "nginx") {
+      nginx.gid = config.ids.gids.nginx;
+    };
 
-  ]);
+  };
 }
