@@ -80,7 +80,7 @@ in
       configFile = "/etc/gitlab-runner/config.toml";
     };
 
-    services.logrotate.config = ''
+    services.logrotate.extraConfig = ''
       /var/log/gitlab/*.log {
         copytruncate
       }

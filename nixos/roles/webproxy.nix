@@ -84,7 +84,7 @@ in
 
       flyingcircus.users.serviceUsers.extraGroups = [ "varnish" ];
 
-      services.logrotate.config = ''
+      services.logrotate.extraConfig = ''
         /var/log/varnish.log {
           create 0644 varnish varnish
           postrotate

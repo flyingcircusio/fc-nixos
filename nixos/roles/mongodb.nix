@@ -137,7 +137,7 @@ in {
         It will be joined with the basic config.
       '';
 
-      services.logrotate.config = ''
+      services.logrotate.extraConfig = ''
         /var/log/mongodb/*.log {
           nocreate
           postrotate
