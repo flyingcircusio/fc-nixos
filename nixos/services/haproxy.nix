@@ -18,11 +18,8 @@ let
     global
         daemon
         chroot /var/empty
-        user haproxy
-        group haproxy
         maxconn 4096
         log localhost local2
-        stats socket ${cfg.statsSocket} mode 660 group nogroup level operator
 
     defaults
         mode http
@@ -50,20 +47,7 @@ let
 in
 {
   options.flyingcircus.services.haproxy = with lib; {
-
     enable = mkEnableOption "FC-customized HAproxy";
-
-    haConfig = mkOption {
-      type = types.lines;
-      default = example;
-      description = "Full HAProxy configuration.";
-    };
-
-    statsSocket = mkOption {
-      type = types.str;
-      default = "/run/haproxy_admin.sock";
-    };
-
   };
 
   config = lib.mkMerge [
@@ -107,6 +91,16 @@ in
 
       systemd.services.haproxy = {
         reloadIfChanged = true;
+        serviceConfig = {
+          AmbientCapabilities = lib.mkOverride 90 [
+            "CAP_NET_BIND_SERVICE"
+            "CAP_SYS_CHROOT"
+          ];
+          CapabilityBoundingSet = [
+            "CAP_NET_BIND_SERVICE"
+            "CAP_SYS_CHROOT"
+          ];
+        };
       };
 
       flyingcircus.localConfigDirs.haproxy = {
@@ -126,7 +120,7 @@ in
         script = ''
           exec ${pkgs.prometheus-haproxy-exporter}/bin/haproxy_exporter \
             --web.listen-address localhost:9127 \
-            --haproxy.scrape-uri=unix:${cfg.statsSocket}
+            --haproxy.scrape-uri=unix:/run/haproxy/haproxy_admin.sock
         '';
         serviceConfig = {
           User = "nobody";

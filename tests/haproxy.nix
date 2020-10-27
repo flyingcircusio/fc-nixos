@@ -11,8 +11,6 @@ import ./make-test.nix ({ pkgs, ... }:
           global
             daemon
             chroot /var/empty
-            user haproxy
-            group haproxy
             log localhost local2
 
           defaults
