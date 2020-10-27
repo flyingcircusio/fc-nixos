@@ -40,7 +40,8 @@ in
       ];
     };
 
-    flyingcircus.roles.elasticsearch5.enable = true;
+    # Graylog 3.x wants Elasticsearch 6, ES7 does not work (yet).
+    flyingcircus.roles.elasticsearch6.enable = true;
     flyingcircus.roles.elasticsearch = fclib.mkPlatform {
       dataDir = "/var/lib/elasticsearch";
       clusterName = "graylog";

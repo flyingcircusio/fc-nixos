@@ -118,9 +118,6 @@ in
       };
     };
 
-    flyingcircus.roles.elasticsearch5.enable =
-      mkEnableOption "Enable the Flying Circus elasticsearch5 role.";
-
     flyingcircus.roles.elasticsearch6.enable =
       mkEnableOption "Enable the Flying Circus elasticsearch6 role.";
 
