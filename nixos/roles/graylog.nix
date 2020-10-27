@@ -228,11 +228,8 @@ in
         global
             daemon
             chroot /var/empty
-            user haproxy
-            group haproxy
             maxconn 4096
             log localhost local2
-            stats socket ${config.flyingcircus.services.haproxy.statsSocket} mode 660 group nogroup level operator
 
         defaults
             mode http
