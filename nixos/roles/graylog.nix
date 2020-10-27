@@ -141,7 +141,7 @@ in
 
       };
 
-      flyingcircus.roles.mongodb34.enable = true;
+      flyingcircus.roles.mongodb36.enable = true;
       services.mongodb.replSetName = replSetName;
       services.mongodb.extraConfig = ''
         storage.wiredTiger.engineConfig.cacheSizeGB: 1
