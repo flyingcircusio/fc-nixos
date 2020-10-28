@@ -1,7 +1,7 @@
 { stdenv, buildGoPackage, fetchFromGitHub, fetchpatch }:
 
 buildGoPackage rec {
-  version = "3.0.0";
+  version = "3.0.3";
   pname = "certmgr";
 
   goPackagePath = "github.com/cloudflare/certmgr/";
@@ -10,7 +10,7 @@ buildGoPackage rec {
     owner = "cloudflare";
     repo = "certmgr";
     rev = "v${version}";
-    sha256 = "0v1sxp7qalbf4mjlxd718r40b4y2406xd6pihs5av22zznl17sn3";
+    sha256 = "09wsggr1ydrqk7fbad7dbi6i9pvj4q3ql9zmfmnpvgwv9r9ly0rj";
   };
 
   meta = with stdenv.lib; {
