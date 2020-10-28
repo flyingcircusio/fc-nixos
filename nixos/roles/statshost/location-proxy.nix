@@ -41,8 +41,10 @@ in
           "/" = {
             extraConfig = ''
               resolver ${concatStringsSep " " config.networking.nameservers};
+              limit_except GET { deny all; }
             '';
-            proxyPass = "http://$http_host$request_uri$is_args$args";
+            proxyPass = "http://$host:9126$request_uri$is_args$args";
+
           };
         };
         extraConfig = ''
