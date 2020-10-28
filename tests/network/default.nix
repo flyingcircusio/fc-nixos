@@ -1,11 +1,4 @@
-{ system ? builtins.currentSystem
-, nixpkgs ? (import ../../versions.nix {}).nixpkgs
-, pkgs ? import ../.. { inherit nixpkgs; }
-}:
-
-with import "${nixpkgs}/nixos/lib/testing.nix" { inherit system; };
-with pkgs.lib;
-
+import ../make-test-python.nix ({ pkgs, ... }:
 let
   router =
     { config, pkgs, ... }:
@@ -58,15 +51,17 @@ let
     };
   };
 
+in {
+  name = "network";
   testCases = {
 
     loopback = {
       name = "loopback";
       machine.imports = [ ../../nixos ];
       testScript = ''
-        $machine->waitForUnit("network.target");
-        $machine->succeed("ip addr show lo | grep -q 'inet 127.0.0.1/8 '");
-        $machine->succeed("ip addr show lo | grep -q 'inet6 ::1/128 '");
+        machine.wait_for_unit("network.target")
+        machine.succeed("ip addr show lo | grep -q 'inet 127.0.0.1/8 '")
+        machine.succeed("ip addr show lo | grep -q 'inet6 ::1/128 '")
       '';
     };
 
@@ -81,60 +76,59 @@ let
         };
       nodes.router = router;
       testScript = ''
-        startAll;
-        $client->waitForUnit("network-online.target");
-        $router->waitForUnit("network-online.target");
+        start_all()
+        client.wait_for_unit("network-online.target")
+        router.wait_for_unit("network-online.target")
 
-        print("\n* Router network overview\n");
-        print($router->succeed("ip a"));
-        print("\n* Client network overview\n");
-        print($client->succeed("ip a"));
+        print("\n* Router network overview\n")
+        print(router.succeed("ip a"))
+        print("\n* Client network overview\n")
+        print(client.succeed("ip a"))
         # ipv6 needs more time, wait until self-ping works
-        $router->waitUntilSucceeds("ping -c1 2001:db8:1::1");
-        $client->waitUntilSucceeds("ping -c1 2001:db8:1::11");
+        router.wait_until_succeeds("ping -c1 2001:db8:1::1")
+        client.wait_until_succeeds("ping -c1 2001:db8:1::11")
 
-        subtest "ping fe", sub {
-          $client->succeed("ping -I ethfe -c1 10.51.1.1");
-          $client->succeed("ping -I ethfe -c1 2001:db8:1::1");
-          $router->succeed("ping -c1 10.51.1.11");
-          $router->succeed("ping -c1 10.51.1.21");
-          $router->succeed("ping -c1 2001:db8:1::11");
-          $router->succeed("ping -c1 2001:db8:1::21");
-        };
+        with subtest("ping fe"):
+          client.succeed("ping -I ethfe -c1 10.51.1.1")
+          client.succeed("ping -I ethfe -c1 2001:db8:1::1")
+          router.succeed("ping -c1 10.51.1.11")
+          router.succeed("ping -c1 10.51.1.21")
+          router.succeed("ping -c1 2001:db8:1::11")
+          router.succeed("ping -c1 2001:db8:1::21")
 
-        subtest "ping srv", sub {
-          $client->succeed("ping -I ethsrv -c1 10.51.2.1");
-          $client->succeed("ping -I ethsrv -c1 2001:db8:2::1");
-          $router->succeed("ping -c1 10.51.2.11");
-          $router->succeed("ping -c1 10.51.2.21");
-          $router->succeed("ping -c1 2001:db8:2::11");
-          $router->succeed("ping -c1 2001:db8:2::21");
-        };
+        with subtest("ping srv"):
+          client.succeed("ping -I ethsrv -c1 10.51.2.1")
+          client.succeed("ping -I ethsrv -c1 2001:db8:2::1")
+          router.succeed("ping -c1 10.51.2.11")
+          router.succeed("ping -c1 10.51.2.21")
+          router.succeed("ping -c1 2001:db8:2::11")
+          router.succeed("ping -c1 2001:db8:2::21")
 
-        subtest "ping default gateway", sub {
-          $client->succeed("ping -c1 10.51.3.1");
-          $client->succeed("ping -c1 2001:db8:3::1");
-        };
+        with subtest("ping default gateway"):
+          client.succeed("ping -c1 10.51.3.1")
+          client.succeed("ping -c1 2001:db8:3::1")
       '';
     };
 
     firewall =
       let
         firewalledServer =
-          { hostId, localConfigPath ? "/etc/local" } :
-          {
-            imports = [ ../../nixos ];
-            virtualisation.vlans = [ 1 2 ];
-            flyingcircus.infrastructureModule = "flyingcircus";
-            flyingcircus.enc.parameters.interfaces = encInterfaces hostId;
-            flyingcircus.localConfigPath = localConfigPath;
-            services.nginx.enable = true;
-            services.nginx.virtualHosts."srv${hostId}" = { root = ./.; };
-            users.users.s-test = {
-              isNormalUser = true;
-              extraGroups = [ "service" ];
+          { hostId, localConfigPath ? "/etc/local" }:
+            { config, pkgs, ... }:
+            {
+              networking.hostName = "srv${hostId}";
+              imports = [ ../../nixos ];
+              virtualisation.vlans = [ 1 2 ];
+              flyingcircus.infrastructureModule = "flyingcircus";
+              flyingcircus.enc.parameters.interfaces = encInterfaces hostId;
+              flyingcircus.localConfigPath = localConfigPath;
+              services.nginx.enable = true;
+              services.nginx.virtualHosts."srv${hostId}" = { root = ./.; };
+              users.users.s-test = {
+                isNormalUser = true;
+                extraGroups = [ "service" ];
+              };
             };
-          };
       in {
         name = "firewall";
         # encInterfaces defines MAC addresses for the first node
@@ -145,33 +139,27 @@ let
           localConfigPath = ./open-fe-80;
         };
         testScript = ''
-          startAll;
-          $router->waitForUnit("network-online.target");
+          start_all()
+          router.wait_for_unit("network-online.target")
 
-          $srv2->waitForUnit("nginx.service");
-          subtest "default firewall", sub {
-            $router->fail("curl http://10.51.1.12/default.nix");
-            $router->fail("curl http://[2001:db8:1::12]/default.nix");
-            $router->fail("curl http://10.51.2.12/default.nix");
-            $router->fail("curl http://[2001:db8:2::12]/default.nix");
-          };
+          srv2.wait_for_unit("nginx.service")
 
-          $srv3->waitForUnit("nginx.service");
-          subtest "firewall opens FE", sub {
-            $router->succeed("curl http://10.51.1.13/default.nix");
-            $router->succeed("curl http://[2001:db8:1::13]/default.nix");
-            $router->fail("curl http://10.51.2.13/default.nix");
-            $router->fail("curl http://[2001:db8:2::13]/default.nix");
-          };
+          with subtest("default firewall"):
+            router.fail("curl http://10.51.1.12/default.nix")
+            router.fail("curl http://[2001:db8:1::12]/default.nix")
+            router.fail("curl http://10.51.2.12/default.nix")
+            router.fail("curl http://[2001:db8:2::12]/default.nix")
+
+          srv3.wait_for_unit("nginx.service");
+          with subtest("firewall opens FE"):
+            router.succeed("curl http://10.51.1.13/default.nix")
+            router.succeed("curl http://[2001:db8:1::13]/default.nix")
+            router.fail("curl http://10.51.2.13/default.nix")
+            router.fail("curl http://[2001:db8:2::13]/default.nix")
 
           # service user should be able to write to its local config dir
-          $srv2->succeed('sudo -u s-test touch /etc/local/firewall/test');
+          srv2.succeed('sudo -u s-test touch /etc/local/firewall/test')
         '';
       };
-
   };
-
-in
-mapAttrs (const (attrs: makeTest (attrs // {
-  name = "network-${attrs.name}";
-}))) testCases
+})
