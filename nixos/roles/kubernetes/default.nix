@@ -20,43 +20,22 @@ let
         '';
       };
 
-  # Pull in kubernetes modules from a newer NixOS version.
-  kubernetesModulesFromUnstable = [
-    "services/networking/flannel.nix"
-    "services/misc/etcd.nix"
-    "services/security/cfssl.nix"
-    "services/cluster/kubernetes/proxy.nix"
-    "services/cluster/kubernetes/controller-manager.nix"
-    "services/cluster/kubernetes/addons/dns.nix"
-    "services/cluster/kubernetes/addon-manager.nix"
-    "services/cluster/kubernetes/apiserver.nix"
-    "services/cluster/kubernetes/default.nix"
-    "services/cluster/kubernetes/flannel.nix"
-    "services/cluster/kubernetes/kubelet.nix"
-    "services/cluster/kubernetes/scheduler.nix"
-    "services/cluster/kubernetes/default.nix"
-  ];
-
   kubernetesModulesFromHere = [
     "services/security/certmgr.nix"
     "services/cluster/kubernetes/pki.nix"
-    "services/cluster/kubernetes/addons/dashboard.nix"
   ];
-
-  nixpkgs-unstable-src = (import ../../../versions.nix {}).nixos-unstable;
 
 in {
 
-  disabledModules = kubernetesModulesFromUnstable ++ kubernetesModulesFromHere;
+  disabledModules = kubernetesModulesFromHere;
 
   imports = [
-    ./dashboard.nix
+    ./certmgr.nix
     ./frontend.nix
     ./master.nix
     ./node.nix
-    ./certmgr.nix
     ./pki.nix
-  ] ++ map (m: "${nixpkgs-unstable-src}/nixos/modules/${m}") kubernetesModulesFromUnstable;
+  ];
 
   options = with lib; {
     flyingcircus.kubernetes.lib = mkOption {
