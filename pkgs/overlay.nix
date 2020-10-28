@@ -29,6 +29,8 @@ in {
   certmgr = super.callPackage ./certmgr.nix {  };
   cfssl = super.callPackage ./cfssl.nix { };
 
+  cgmemtime = super.callPackage ./cgmemtime.nix { };
+
   #docsplit = super.callPackage ./docsplit { };
 
   elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
