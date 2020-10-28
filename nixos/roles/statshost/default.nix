@@ -549,6 +549,7 @@ in
               proxy_pass http://${prometheusListenAddress};
             '';
             "/grafana/".proxyPass = "http://127.0.0.1:3001/";
+            "/grafana/public/".alias = "${pkgs.grafana}/share/grafana/public/";
           };
         };
       };
