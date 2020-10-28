@@ -1,4 +1,4 @@
-import ../make-test.nix ({ pkgs, ... }:
+import ../make-test-python.nix ({ pkgs, ... }:
 {
   name = "rg-relay";
   nodes = {
@@ -27,30 +27,26 @@ import ../make-test.nix ({ pkgs, ... }:
   };
 
   testScript = ''
-    startAll;
-    $statsSource->execute(<<__SETUP__);
-    echo 'system_uptime' > metrics
-    ${pkgs.python3.interpreter} -m http.server 9126 &
-    __SETUP__
+    start_all()
+    statsSource.execute("""
+      echo 'system_uptime' > metrics
+      ${pkgs.python3.interpreter} -m http.server 9126 &
+    """)
 
-    $relay->waitForUnit("nginx.service");
-    $relay->waitForOpenPort(9090);
+    relay.wait_for_unit("nginx.service")
+    relay.wait_for_open_port(9090)
 
-    subtest "scrapeconfig.json from relay should return config", sub {
-      $statshost->succeed('curl relay:9090/scrapeconfig.json | grep -q statsSource:9126');
-    };
+    with subtest("scrapeconfig.json from relay should return config"):
+      statshost.succeed('curl relay:9090/scrapeconfig.json | grep -q statsSource:9126')
 
-    subtest "proxied request through relay should return metrics from statsSource", sub {
-      $statshost->succeed('curl -x relay:9090 statsSource:9126/metrics | grep -q system_uptime');
-    };
+    with subtest("proxied request through relay should return metrics from statsSource"):
+      statshost.succeed('curl -x relay:9090 statsSource:9126/metrics | grep system_uptime')
 
-    subtest "nginx access log file should show metrics request", sub {
-      $relay->succeed('grep "metrics" /var/log/nginx/statshost-relay_access.log');
-    };
+    with subtest("nginx access log file should show metrics request"):
+      relay.succeed('grep "metrics" /var/log/nginx/statshost-relay_access.log')
 
-    subtest "nginx only opens expected ports", sub {
+    with subtest("nginx only opens expected ports"):
       # look for ports that are not 80 (nginx default for status info) or 9090
-      $relay->mustFail("netstat -tlpn | grep nginx | egrep -v ':80 |:9090 '");
-    }
+      relay.fail("netstat -tlpn | grep nginx | egrep -v ':80 |:9090 '")
   '';
 })

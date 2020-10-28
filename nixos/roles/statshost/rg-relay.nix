@@ -20,7 +20,8 @@ with lib;
 
         location / {
             resolver ${concatStringsSep " " config.networking.nameservers};
-            proxy_pass http://$http_host$request_uri$is_args$args;
+            proxy_pass http://$host:9126$request_uri$is_args$args;
+            limit_except GET { deny all; }
         }
       }
     '';
