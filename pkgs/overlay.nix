@@ -2,20 +2,15 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  pkgs-unstable = import versions.nixos-unstable {};
   elk7Version = "7.8.0";
   inherit (super) lib;
 
 in {
-  # keep in sync with nixos/platform/garbagecollect/default.nix
-  nixpkgs-unstable-src = versions.nixos-unstable;
-
   #
   # == our own stuff
   #
   fc = (import ./default.nix {
     pkgs = self;
-    inherit pkgs-unstable;
   });
 
   #

@@ -37,7 +37,6 @@
 f: {
   system ? builtins.currentSystem
   , nixpkgs ? (import ../versions.nix {}).nixpkgs
-  , nixpkgs-unstable ? (import ../versions.nix {}).nixos-unstable
   , pkgs ? import ../. { inherit nixpkgs; }
   , minimal ? false
   , config ? {}
@@ -46,7 +45,6 @@ f: {
 
 with import ./testing-python.nix {
   inherit system pkgs;
-  pkgs-unstable = (import nixpkgs-unstable {});
 };
 
 let

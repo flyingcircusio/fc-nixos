@@ -6,26 +6,11 @@ let
     "services/monitoring/prometheus.nix"
     "services/networking/jicofo.nix"
     "services/networking/jitsi-videobridge.nix"
-    "services/web-apps/jitsi-meet.nix"
     "services/web-servers/nginx/default.nix"
   ];
 
-  modulesFromUnstable = [
-    "misc/extra-arguments.nix"
-    "services/continuous-integration/gitlab-runner.nix"
-    "services/misc/docker-registry.nix"
-    "services/monitoring/grafana.nix"
-    "services/networking/coredns.nix"
-    "services/networking/prosody.nix"
-    "services/search/elasticsearch.nix"
-    "services/search/kibana.nix"
-    "services/web-apps/jitsi-meet.nix"
-  ];
-
-  nixpkgs-unstable-src = (import ../../versions.nix {}).nixos-unstable;
-
 in {
-  disabledModules = modulesFromUnstable ++ modulesFromHere;
+  disabledModules = modulesFromHere;
 
   imports = with lib; [
     ./box/client.nix
@@ -49,5 +34,5 @@ in {
     ./telegraf.nix
 
     (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")
-  ] ++ map (m: "${nixpkgs-unstable-src}/nixos/modules/${m}") modulesFromUnstable;
+  ];
 }

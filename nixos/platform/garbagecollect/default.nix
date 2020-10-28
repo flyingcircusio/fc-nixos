@@ -72,11 +72,6 @@ in {
 
     (mkIf cfg.agent.collect-garbage {
 
-      # keep in sync with pkgs/overlay.nix
-      environment.etc."nixos/garbagecollect-protect-references".text = ''
-        nixpkgs-unstable=${pkgs.nixpkgs-unstable-src}
-      '';
-
       flyingcircus.services.sensu-client.checks.fc-collect-garbage = {
         notification = "nix-collect-garbage stamp recent";
         command = ''

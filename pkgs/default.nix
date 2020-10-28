@@ -1,7 +1,5 @@
 # Collection of own packages
-{ pkgs
-, pkgs-unstable
-}:
+{ pkgs }:
 
 let
   self = {
@@ -9,7 +7,7 @@ let
 
     fc = import ./fc {
       inherit (self) callPackage;
-      inherit pkgs pkgs-unstable;
+      inherit pkgs;
     };
 
   };

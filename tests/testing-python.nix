@@ -4,7 +4,6 @@
 
 { system
 , pkgs
-, pkgs-unstable
   # Use a minimal kernel?
 , minimal ? false
   # Ignored
@@ -17,7 +16,7 @@ with import (pkgs.path + "/nixos/lib/build-vms.nix") {
   inherit system minimal extraConfigurations pkgs;
   };
 
-with pkgs-unstable;
+with pkgs;
 
 rec {
 
@@ -25,7 +24,7 @@ rec {
 
 
   testDriver = let
-    testDriverScript = "${pkgs-unstable.path}/nixos/lib/test-driver/test-driver.py";
+    testDriverScript = "${pkgs.path}/nixos/lib/test-driver/test-driver.py";
   in stdenv.mkDerivation {
     name = "nixos-test-driver";
 
