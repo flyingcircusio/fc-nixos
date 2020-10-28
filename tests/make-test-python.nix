@@ -43,7 +43,7 @@ f: {
   , ...
 } @ args:
 
-with import ./testing-python.nix {
+with import "${nixpkgs}/nixos/lib/testing-python.nix" {
   inherit system pkgs;
 };
 
@@ -57,9 +57,11 @@ let
     })
     else f;
 
+  makeTestSkipLint = args: makeTest ({ skipLint = true; } // args);
+
 in if test ? testCases
 then lib.mapAttrs
-  (testCaseName: testCase: makeTest (
+  (testCaseName: testCase: makeTestSkipLint (
     testCase // { name = "${test.name}-${testCaseName}"; }))
   test.testCases
-else makeTest test
+else makeTestSkipLint test
