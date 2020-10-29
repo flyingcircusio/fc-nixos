@@ -4,7 +4,6 @@ let
     "services/misc/gitlab.nix"
     "services/monitoring/prometheus/default.nix"
     "services/monitoring/prometheus.nix"
-    "services/networking/jicofo.nix"
     "services/networking/jitsi-videobridge.nix"
     "services/web-servers/nginx/default.nix"
   ];
@@ -18,7 +17,6 @@ in {
     ./gitlab
     ./graylog.nix
     ./haproxy.nix
-    ./jitsi/jicofo.nix
     ./jitsi/jitsi-videobridge.nix
     ./logrotate
     ./nginx

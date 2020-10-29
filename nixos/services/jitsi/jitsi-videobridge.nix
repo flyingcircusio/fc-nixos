@@ -221,7 +221,7 @@ in
       '';
 
       serviceConfig = {
-        Type = "simple";
+        Type = "exec";
 
         DynamicUser = true;
         User = "jitsi-videobridge";
@@ -268,5 +268,5 @@ in
     }];
   };
 
-  meta.maintainers = with lib.maintainers; [ ];
+  meta.maintainers = lib.teams.jitsi.members;
 }
