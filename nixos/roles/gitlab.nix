@@ -155,8 +155,8 @@ in
             '';
           };
 
-          "/assets" = {
-            alias = "${pkgs.gitlab}/share/gitlab/public/assets";
+          "/assets/" = {
+            alias = "${pkgs.gitlab}/share/gitlab/public/assets/";
           };
 
         };
