@@ -151,7 +151,7 @@ in
     })
 
     (lib.mkIf (!roles.mailserver.enable && !roles.mailstub.enable) {
-      flyingcircus.services.ssmtp.enable = true;
+      flyingcircus.services.nullmailer.enable = true;
     })
 
   ];

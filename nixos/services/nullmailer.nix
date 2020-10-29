@@ -16,18 +16,23 @@ let
 
   mailout = mailoutService + (
     lib.optionalString (net.domain != null) ".${net.domain}");
+  fqdn = net.hostName + (
+    lib.optionalString (net.domain != null) ".${net.domain}");
 
 in {
-  options.flyingcircus.services.ssmtp.enable = lib.mkEnableOption ''
+  options.flyingcircus.services.nullmailer.enable = lib.mkEnableOption ''
     Simple mail relay to the next mail server
   '';
 
-  config = lib.mkIf (config.flyingcircus.services.ssmtp.enable &&
+  config = lib.mkIf (config.flyingcircus.services.nullmailer.enable &&
                      mailoutService != null) {
-    services.ssmtp = {
+    services.nullmailer = {
       enable = true;
-      hostName = mailout;
-      root = "root@${mailout}";
+      config = {
+        me = fqdn;
+        adminaddr = "root@${mailout}";
+        remotes = "${mailout} smtp port=25";
+      };
     };
   };
 }

@@ -22,6 +22,7 @@ in {
     ./jitsi/jitsi-videobridge.nix
     ./logrotate
     ./nginx
+    ./nullmailer.nix
     ./percona.nix
     ./postgresql.nix
     ./prometheus.nix
@@ -29,7 +30,6 @@ in {
     ./rabbitmq.nix
     ./redis.nix
     ./sensu.nix
-    ./ssmtp.nix
     ./syslog.nix
     ./telegraf.nix
 

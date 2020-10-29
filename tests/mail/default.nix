@@ -82,7 +82,7 @@ in
         config = lib.mkMerge [
           commonConfig
           {
-            flyingcircus.services.ssmtp.enable = true;
+            flyingcircus.services.nullmailer.enable = true;
             flyingcircus.encServices = [
               {
                 service = "mailout-mailout";
