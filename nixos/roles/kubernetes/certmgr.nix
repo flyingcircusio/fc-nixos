@@ -206,6 +206,9 @@ in
       inherit preStart;
 
       serviceConfig = {
+        Environment = [
+          "GODEBUG=x509ignoreCN=0"
+        ];
         Restart = "always";
         RestartSec = "10s";
         ExecStart = "${cfg.package}/bin/certmgr -f ${certmgrYaml}";
