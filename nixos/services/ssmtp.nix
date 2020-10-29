@@ -14,6 +14,9 @@ let
     in
       if services == [] then null else head services;
 
+  mailout = mailoutService + (
+    lib.optionalString (net.domain != null) ".${net.domain}");
+
 in {
   options.flyingcircus.services.ssmtp.enable = lib.mkEnableOption ''
     Simple mail relay to the next mail server
@@ -23,10 +26,8 @@ in {
                      mailoutService != null) {
     services.ssmtp = {
       enable = true;
-      domain =
-        lib.optionalString (net.domain != null) "${net.hostName}.${net.domain}";
-      hostName = mailoutService;
-      root = "root@${mailoutService}";
+      hostName = mailout;
+      root = "root@${mailout}";
     };
   };
 }

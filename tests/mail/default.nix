@@ -25,6 +25,8 @@ in
         config = lib.mkMerge [
           commonConfig
           {
+            virtualisation.memorySize = 2048;
+
             flyingcircus.roles.mailserver = {
               enable = true;
               mailHost = "mail.example.local";
@@ -62,6 +64,12 @@ in
 
             # conflicts with dnsmasq
             services.kresd.enable = lib.mkForce false;
+
+            # LEC is not able to call remote services
+            services.nginx.virtualHosts."autoconfig.example.local" = {
+              addSSL = lib.mkForce false;
+              enableACME = lib.mkForce false;
+            };
 
             # ... but build the package at least
             environment.systemPackages = [ pkgs.knot-dns ];
@@ -111,6 +119,7 @@ in
   testScript = ''
     startAll;
     $mail->execute('rm -rf /srv/mail/example.local');
+    $mail->waitForFile('/run/rspamd/rspamd-milter.sock');
     $mail->waitForOpenPort(25);
     # potential race condition - cf files will be created asynchronously
     $mail->waitForFile('/etc/postfix/main.cf');

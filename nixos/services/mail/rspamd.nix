@@ -53,13 +53,6 @@ in
         enabled = true;
       '';
 
-      "redis.conf".text = ''
-        server = "127.0.0.1";
-        db = ${toString role.redisDatabase};
-        password = "${config.services.redis.requirePass}";
-        expand_keys = true;
-      '';
-
       "replies.conf".text = ''
         action = "no action";
         expire = 3d;

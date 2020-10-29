@@ -11,8 +11,8 @@ with builtins;
 
 let
   snm = fetchTarball {
-    url = "https://github.com/flyingcircusio/nixos-mailserver/archive/937db90f45e33c7aba1f3a00570d40783a6aed4e.tar.gz";
-    sha256 = "1nhg80dlldm3jgmapg5xxwbhgskqfgzsa265i6s7y1hq3vx7wkan";
+    url = "https://github.com/flyingcircusio/nixos-mailserver/archive/5d2d0dd6e92b1fee5f875dd5472a2c1cca7f8215.tar.gz";
+    sha256 = "1jg1gcgl4wdja5yxf2jqyr4wsxnybbfbzirla2qy5svhxixkjyrc";
   };
 
   role = config.flyingcircus.roles.mailserver;
@@ -159,14 +159,15 @@ in {
         certificateScheme = 3;
         enableImapSsl = true;
         enableManageSieve = true;
+        lmtpSaveToDetailMailbox = "no";
         mailDirectory = vmailDir;
-        mailboxes = [
-          { name = "Trash"; auto = "create"; specialUse = "Trash"; }
-          { name = "Junk"; auto = "subscribe"; specialUse = "Junk"; }
-          { name = "Drafts"; auto = "subscribe"; specialUse = "Drafts"; }
-          { name = "Sent"; auto = "subscribe"; specialUse = "Sent"; }
-          { name = "Archives"; auto = "subscribe"; specialUse = "Archive"; }
-        ];
+        mailboxes = {
+          "Trash" = { auto = "create"; specialUse = "Trash"; };
+          "Junk" = { auto = "subscribe"; specialUse = "Junk"; };
+          "Drafts" = { auto = "subscribe"; specialUse = "Drafts"; };
+          "Sent" = { auto = "subscribe"; specialUse = "Sent"; };
+          "Archives" = { auto = "subscribe"; specialUse = "Archive"; };
+        };
         policydSPFExtraConfig = ''
           skip_addresses = 127.0.0.0/8,::ffff:127.0.0.0/104,::/64,${
             concatStringsSep "," (fclib.listenAddresses "ethfe")}
@@ -197,7 +198,7 @@ in {
           lib.nameValuePair "autoconfig.${domain}" {
             addSSL = true;
             enableACME = true;
-            locations."/mail/config-v1.1.xml".alias = (import ./autoconfig.nix {
+            locations."=/mail/config-v1.1.xml".alias = (import ./autoconfig.nix {
               inherit domain pkgs lib;
               inherit (role) mailHost webmailHost;
             });
