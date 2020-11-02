@@ -19,13 +19,13 @@ bundlerApp {
   gemdir = ./. + "/${pname}";
 
   # Calling ruby binstubs directly from Sensu doesn't work, because the Sensu bundle interferes with the plugin bundle.
-  # Wrap ruby binstubs and call them with an empty environment (env -i).
+  # Wrap ruby binstubs and call them with an emptied environment (env -i) that only sets HOME.
   # makeWrapper has no option for that, so we wrap manually here.
   postBuild = ''
     for prog in $out/bin/*.rb; do
       hidden="$(dirname "$prog")/.$(basename "$prog")"-wrapped
       mv $prog $hidden
-      echo /usr/bin/env -i - $hidden '"$@"' > $prog
+      echo /usr/bin/env -i HOME=/tmp $hidden '"$@"' > $prog
       chmod a+x $prog
     done
   '' + postBuild;
