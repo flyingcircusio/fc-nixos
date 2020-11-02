@@ -1,4 +1,4 @@
-import ../make-test.nix ({ pkgs, lib, ... }:
+import ../make-test-python.nix ({ pkgs, lib, ... }:
 let
 
   netLoc4Srv = "10.0.1";
@@ -89,7 +89,7 @@ in {
       networking.domain = "fcio.net";
       services.resolved.enable = true;
       # Overwrite auto-generated entries for the 192.168.* net.
-      environment.etc.hosts.text = lib.mkForce hosts;
+      environment.etc.hosts.source = lib.mkForce (pkgs.writeText "hosts" hosts);
 
       flyingcircus.enc.parameters = {
         resource_group = "test";
@@ -143,7 +143,7 @@ in {
 
         flyingcircus.encServices = encServices;
 
-        environment.etc.hosts.text = lib.mkForce hosts;
+        environment.etc.hosts.source = lib.mkForce (pkgs.writeText "hosts" hosts);
         networking.domain = "fcio.net";
 
         services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
@@ -182,74 +182,65 @@ in {
   testScript = let
     api = "http://${statshostSrv}:9090/api/v1";
   in ''
-    $statshost->waitForUnit("prometheus.service");
-    $statshost->waitForUnit("influxdb.service");
-    $statshost->waitForUnit("grafana.service");
-    $statshost->waitForUnit("collectdproxy-statshost.service");
+    statshost.wait_for_unit("prometheus.service");
+    statshost.wait_for_unit("influxdb.service");
+    statshost.wait_for_unit("grafana.service");
+    statshost.wait_for_unit("collectdproxy-statshost.service");
 
-    $statssource->execute(<<__SETUP__);
-    echo 'system_test 42' > metrics
-    echo 'org_graylog2_test 42' >> metrics
-    echo 'not_allowed_globally 42' >> metrics
-    ${pkgs.python3.interpreter} -m http.server 9126 &
-    __SETUP__
+    statssource.execute("""
+      echo 'system_test 42' > metrics
+      echo 'org_graylog2_test 42' >> metrics
+      echo 'not_allowed_globally 42' >> metrics
+      ${pkgs.python3.interpreter} -m http.server 9126 &
+    """)
 
-    $proxy->waitForUnit("nginx.service");
+    proxy.wait_for_unit("nginx.service");
 
-    subtest "request through location proxy should return metrics (HTTP)", sub {
-      $statshost->succeed('curl -x http://${proxyFe}:9090 ${statssourceSrv}:9126/metrics | grep -q system_test');
-    };
+    with subtest("request through location proxy should return metrics (HTTP)"):
+      statshost.succeed('curl -x http://${proxyFe}:9090 ${statssourceSrv}:9126/metrics | grep -q system_test');
 
-    subtest "nginx access log file should show metrics request", sub {
-      $proxy->succeed('grep "metrics" /var/log/nginx/statshost-location-proxy_access.log');
-    };
+    with subtest("nginx access log file should show metrics request"):
+      proxy.succeed('grep "metrics" /var/log/nginx/statshost-location-proxy_access.log');
 
-    subtest "request through location proxy should return metrics (HTTPS)", sub {
-      $statshost->succeed('curl --proxy-insecure -kx https://${proxyFe}:9443 ${statssourceSrv}:9126/metrics | grep -q system_test');
-    };
+    with subtest("request through location proxy should return metrics (HTTPS)"):
+      statshost.succeed('curl --proxy-insecure -kx https://${proxyFe}:9443 ${statssourceSrv}:9126/metrics | grep -q system_test');
 
-    my $checkRemoteTarget = <<'EOF';
+    check_remote_target = """
       curl -s ${api}/targets | \
         jq -e \
         '.data.activeTargets[] |
           select(.health == "up" and .labels.job == "remote")'
-    EOF
+    """
 
-    subtest "Prometheus job for RG remote should be configured and up", sub {
-      $statshost->succeed('stat /etc/current-config/statshost-relay-remote.json');
-      $statshost->waitUntilSucceeds($checkRemoteTarget);
-    };
+    with subtest("Prometheus job for RG remote should be configured and up"):
+      statshost.succeed('stat /etc/current-config/statshost-relay-remote.json');
+      statshost.wait_until_succeeds(check_remote_target);
 
-    subtest "prometheus should ingest metric from statssource", sub {
-      $statshost->waitUntilSucceeds("curl -s ${api}/query?query=system_test | jq -e '.data.result[].value[1] == \"42\"'");
-    };
+    with subtest("prometheus should ingest metric from statssource"):
+      statshost.wait_until_succeeds("curl -s ${api}/query?query=system_test | jq -e '.data.result[].value[1] == \"42\"'");
 
-    subtest "prometheus should keep renamed metric for graylog", sub {
-      $statshost->succeed("curl -s ${api}/query?query=graylog_test | jq -e '.data.result[].value[1] == \"42\"'");
-    };
+    with subtest("prometheus should keep renamed metric for graylog"):
+      statshost.succeed("curl -s ${api}/query?query=graylog_test | jq -e '.data.result[].value[1] == \"42\"'");
 
-    subtest "prometheus should drop metric that is not allowed globally", sub {
-      $statshost->mustFail("curl -s ${api}/query?query=not_allowed_globally | jq -e '.data.result[].value[1] == \"42\"'");
-    };
+    with subtest("prometheus should drop metric that is not allowed globally"):
+      statshost.fail("curl -s ${api}/query?query=not_allowed_globally | jq -e '.data.result[].value[1] == \"42\"'");
 
-    subtest "nginx only opens expected ports", sub {
+    with subtest("nginx only opens expected ports"):
       # look for ports that are not 80 (nginx default for status info) 9090 (metrics HTTP), 9443 (metrics HTTPS)
-      $proxy->mustFail("netstat -tlpn | grep nginx | egrep -v ':80 |:9090 |:9443 '");
-    };
+      proxy.fail("netstat -tlpn | grep nginx | egrep -v ':80 |:9090 |:9443 '");
 
-    $proxy->waitForUnit("collectdproxy-location.service");
+    proxy.wait_for_unit("collectdproxy-location.service");
 
     # Generate a lot of metric lines to fill up the buffer of collectdproxy.
     # Collectdproxy only sends metrics when the buffer is full.
-    $statssource->execute('seq -f "statssource 1 %03g" 800 > collectd_metrics');
+    statssource.execute('seq -f "statssource 1 %03g" 800 > collectd_metrics');
 
-    $proxy->waitUntilSucceeds("netstat -nl | grep 2003");
-    $statshost->waitUntilSucceeds("netstat -nl | grep 2003");
-    $statshost->waitUntilSucceeds("netstat -nl | grep 2004");
+    proxy.wait_until_succeeds("netstat -nl | grep 2003");
+    statshost.wait_until_succeeds("netstat -nl | grep 2003");
+    statshost.wait_until_succeeds("netstat -nl | grep 2004");
 
-    subtest "metrics sent from statssource should appear in influx", sub {
-      $statssource->succeed('nc -u -w5 ${proxy6Srv} 2003 < collectd_metrics');
-      $statshost->waitUntilSucceeds('influx -database graphite -execute "show measurements" | grep -q statssource');
-    };
+    with subtest("metrics sent from statssource should appear in influx"):
+      statssource.succeed('nc -u -w5 ${proxy6Srv} 2003 < collectd_metrics');
+      statshost.wait_until_succeeds('influx -database graphite -execute "show measurements" | grep -q statssource');
   '';
 })
