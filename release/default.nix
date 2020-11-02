@@ -238,8 +238,7 @@ jobs // {
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";
     src = combinedSources;
-    # constituents = [ src tested ]; <- this is how it should be XXX
-    constituents = [ src ];
+    constituents = [ src tested ];
     preferLocalBuild = true;
     patchPhase = "touch .update-on-nixos-rebuild";
 

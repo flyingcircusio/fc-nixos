@@ -33,7 +33,6 @@ import ./make-test.nix (
       # fc-collect-garbage again
       print($machine->succeed(<<_EOT_));
         set -e
-        install -d -o u0 /nix/var/nix/gcroots/per-user/u0
         echo -e "#!${py}\nprint('hello world')" > ${home}/script.py
         chmod +x ${home}/script.py
         grep -r /nix/store/ ${home}
