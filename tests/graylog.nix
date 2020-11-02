@@ -1,4 +1,4 @@
-import ./make-test.nix ({ pkgs, lib, ... }:
+import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
 let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
@@ -12,6 +12,8 @@ in {
         ../nixos
         ../nixos/roles
       ];
+
+      environment.systemPackages = [ pkgs.tcpdump ];
 
       virtualisation.memorySize = 6000;
 
@@ -46,10 +48,10 @@ in {
           ips = [ ipv4 ipv6 ];
         }
       ];
-      networking.extraHosts = ''
+      environment.etc.hosts.source = lib.mkForce (pkgs.writeText "hosts" ''
         ${ipv4} ${host}
         ${ipv6} ${host}
-      '';
+      '');
 
       flyingcircus.roles.graylog.publicFrontend = {
         enable = true;
@@ -62,50 +64,42 @@ in {
   let
     config = nodes.machine.config;
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
-    graylogCheck = lib.replaceChars ["\n"] [" "] sensuChecks.graylog_ui.command;
+    graylogCheck = testlib.sensuCheckCmd nodes.machine "graylog_ui";
     graylogApi = "${pkgs.fc.agent}/bin/fc-graylog --api http://${host}:9001/api get -l";
   in ''
-    $machine->waitForUnit("haproxy.service");
-    $machine->waitForUnit("mongodb.service");
-    $machine->waitForUnit("elasticsearch.service");
-    $machine->waitForUnit("graylog.service");
-    $machine->waitForUnit("nginx.service");
+    machine.wait_for_unit("haproxy.service")
+    machine.wait_for_unit("mongodb.service")
+    machine.wait_for_unit("elasticsearch.service")
+    machine.wait_for_unit("graylog.service")
+    machine.wait_for_unit("nginx.service")
 
-    subtest "elasticsearch should have a graylog index", sub {
-      $machine->waitUntilSucceeds("curl http://${host}:9200/_cat/indices?v | grep -q graylog_0");
-    };
+    with subtest("elasticsearch should have a graylog index"):
+      machine.wait_until_succeeds("curl http://${host}:9200/_cat/indices?v | grep -q graylog_0")
 
-    subtest "graylog API should respond", sub {
-      $machine->waitUntilSucceeds("${graylogApi} / | grep -q cluster_id");
-    };
+    with subtest("graylog API should respond"):
+      machine.wait_until_succeeds("${graylogApi} / | grep -q cluster_id")
 
-    subtest "config script must create telegraf user", sub {
-      $machine->waitForUnit("fc-graylog-config.service");
-      $machine->succeed("${graylogApi} /users | grep -q telegraf");
-    };
+    with subtest("config script must create telegraf user"):
+      machine.wait_for_unit("fc-graylog-config.service")
+      machine.succeed("${graylogApi} /users | grep -q telegraf")
 
-    subtest "sensu check should be green", sub {
-      $machine->succeed("${graylogCheck}");
-    };
+    with subtest("public HTTPS should serve graylog dashboard"):
+      machine.wait_until_succeeds("curl -k https://${host} | grep -q 'Graylog Web Interface'")
 
-    subtest "public HTTPS should serve graylog dashboard", sub {
-      $machine->waitUntilSucceeds("curl -k https://${host} | grep -q 'Graylog Web Interface'");
-    };
+    with subtest("sensu check should be green"):
+      machine.succeed("${graylogCheck}")
 
-    subtest "sensu check should be red after shutting down graylog", sub {
-      $machine->stopJob("graylog.service");
-      $machine->waitUntilFails("${graylogApi} / | grep -q cluster_id");
-      $machine->mustFail("${graylogCheck}");
-    };
+    with subtest("sensu check should be red after shutting down graylog"):
+      machine.stop_job("graylog.service")
+      machine.wait_until_fails("${graylogApi} / | grep -q cluster_id")
+      machine.fail("${graylogCheck}")
 
-    subtest "service user should be able to write to local config dir", sub {
-      $machine->succeed('sudo -u graylog touch /etc/local/graylog/graylog.json');
-    };
+    with subtest("service user should be able to write to local config dir"):
+      machine.succeed('sudo -u graylog touch /etc/local/graylog/graylog.json')
 
-    subtest "secret files should have correct permissions", sub {
-      $machine->succeed("stat /etc/local/graylog/password -c %a:%U:%G | grep '660:graylog:service'");
-      $machine->succeed("stat /etc/local/graylog/password_secret -c %a:%U:%G | grep '660:graylog:service'");
-      $machine->succeed("stat /run/graylog/graylog.conf -c %a:%U:%G | grep '440:graylog:service'");
-    };
+    with subtest("secret files should have correct permissions"):
+      machine.succeed("stat /etc/local/graylog/password -c %a:%U:%G | grep '660:graylog:service'")
+      machine.succeed("stat /etc/local/graylog/password_secret -c %a:%U:%G | grep '660:graylog:service'")
+      machine.succeed("stat /run/graylog/graylog.conf -c %a:%U:%G | grep '440:graylog:service'")
   '';
 })
