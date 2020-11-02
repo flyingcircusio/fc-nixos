@@ -158,6 +158,7 @@ let format' = format; in let
     nix-store --load-db < ${closureInfo}/registration
 
     echo "running nixos-install..."
+    chmod 0755 $PWD
     nixos-install --root $root --no-bootloader --no-root-passwd \
       --system ${config.system.build.toplevel} --channel ${channelSources} \
       --substituters ""
