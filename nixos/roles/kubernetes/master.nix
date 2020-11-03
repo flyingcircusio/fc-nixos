@@ -194,6 +194,14 @@ let
 
       };
 
+      kube-apiserver = {
+        serviceConfig = {
+          Environment = [
+            "GODEBUG=x509ignoreCN=0"
+          ];
+        };
+      };
+
       fc-kubernetes-setup = rec {
         description = "Setup permissions for monitoring and dns";
         requires = [ "kube-apiserver.service" ];
