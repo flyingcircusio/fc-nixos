@@ -222,9 +222,10 @@ in
         ];
     };
 
-    flyingcircus.activationScripts.homedir-permissions =
+    flyingcircus.activationScripts.homedirs =
       lib.stringAfter [ "users" ]
-      (concatStringsSep "\n" (homeDirPermissions cfg.userData));
+      ((concatStringsSep "\n" (homeDirPermissions cfg.userData)) +
+      "find /home -type l -name box -print0 | xargs -r0 rm");
 
   };
 }

@@ -69,7 +69,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   flyingcircus = {
     agent.collect-garbage = true;
-    box.enable = true;
     logrotate.enable = true;
   };
 
