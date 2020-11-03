@@ -351,6 +351,7 @@ in
     };
 
     services.kubernetes = {
+      addons.dns.enable = lib.mkForce false;
       apiserver.extraSANs = addresses;
       # Changing the masterAddress is tricky and requires manual intervention.
       # This would break automatic certificate management with certmgr.
