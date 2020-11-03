@@ -12,7 +12,6 @@ in {
   disabledModules = modulesFromHere;
 
   imports = with lib; [
-    ./box/client.nix
     ./collectdproxy.nix
     ./gitlab
     ./graylog.nix
