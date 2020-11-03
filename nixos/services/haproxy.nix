@@ -120,10 +120,10 @@ in
         script = ''
           exec ${pkgs.prometheus-haproxy-exporter}/bin/haproxy_exporter \
             --web.listen-address localhost:9127 \
-            --haproxy.scrape-uri=unix:/run/haproxy/haproxy_admin.sock
+            --haproxy.scrape-uri=unix:/run/haproxy/haproxy.sock
         '';
         serviceConfig = {
-          User = "nobody";
+          User = "haproxy";
           Restart = "always";
           PrivateTmp = true;
           WorkingDirectory = "/tmp";
