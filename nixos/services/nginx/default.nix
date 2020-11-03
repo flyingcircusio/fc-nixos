@@ -19,7 +19,7 @@ let
   '';
 
   nginxCheckWorkerAge = pkgs.writeScript "nginx-check-worker-age" ''
-    config_age=$(expr $(date +%s) - $(stat --format=%Y /run/nginx/config) )
+    config_age=$(expr $(date +%s) - $(stat --format=%Y /etc/nginx/nginx.conf) )
     main_pid=$(systemctl show nginx | grep -e '^MainPID=' | cut -d= -f 2)
 
     for pid in $(pgrep -P $main_pid); do

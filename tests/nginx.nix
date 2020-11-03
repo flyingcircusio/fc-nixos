@@ -94,26 +94,22 @@ in {
 
     with subtest("nginx should use changed config after reload"):
       # Replace config symlink with a new config file.
-      server.execute("sed 's#${rootInitial}#${rootChanged}#' /run/nginx/config > /run/nginx/changed_config")
-      server.execute("mv /run/nginx/changed_config /run/nginx/config")
-      # Trigger reload manually because the reload script would reset the symlink.
-      server.systemctl("kill -s HUP nginx")
-      server.wait_until_succeeds("curl server | grep -q 'changed content'")
-      # Back to initial configuration from Nix store.
+      server.execute("sed 's#${rootInitial}#${rootChanged}#' /etc/nginx/nginx.conf > /etc/nginx/changed_nginx.conf")
+      server.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
       server.systemctl("reload nginx")
-      server.wait_until_succeeds("curl server | grep -q 'initial content'")
+      server.wait_until_succeeds("curl server | grep -q 'changed content'")
 
     with subtest("nginx should use changed binary after reload"):
       # Prepare change to mainline nginx. We are not interested in testing mainline itself here.
       # We only need it as a different version so we can test binary reloading.
       server.execute("ln -sfT ${pkgs.nginxMainline} /run/nginx/package")
       # Mainline doesn't know about our custom remote_addr_anon variable, patch our config.
-      server.execute("sed 's#remote_addr_anon#remote_addr#' /run/nginx/config > /run/nginx/changed_config")
-      server.execute("mv /run/nginx/changed_config /run/nginx/config")
-      # Go to mainline.
+      server.execute("sed 's#remote_addr_anon#remote_addr#' /etc/nginx/nginx.conf > /etc/nginx/changed_nginx.conf")
+      server.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
+      # Go to mainline (this doesn't overwrite /run/nginx/package).
       server.succeed("nginx-reload-master")
       server.wait_until_succeeds("curl server/404 | grep -q ${mainlineMajorVersion}")
-      # Back to initial binary from nginx stable.
+      # Back to initial binary from nginx stable (this does overwrite /run/nginx/package with the default package).
       server.systemctl("reload nginx")
       server.wait_until_succeeds("curl server/404 | grep -q ${stableMajorVersion}")
 

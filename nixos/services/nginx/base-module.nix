@@ -194,6 +194,8 @@ let
     ${cfg.appendConfig}
   '';
 
+  configPath = "/etc/nginx/nginx.conf";
+
   vhosts = concatStringsSep "\n" (mapAttrsToList (vhostName: vhost:
     let
         onlySSL = vhost.onlySSL || vhost.enableSSL;
@@ -307,8 +309,60 @@ let
     '') authDef)
   );
 
-  checkConfigCmd = "${cfg.package}/bin/nginx -t -c ${configFile}";
+  checkConfigCmd = "${cfg.package}/bin/nginx -t -c ${configPath}";
 
+  nginxReloadConfig = pkgs.writeScriptBin "nginx-reload" ''
+    #!${pkgs.runtimeShell} -e
+    echo "Reload triggered, checking config file..."
+    # Check if the new config is valid
+    ${checkConfigCmd} || rc=$?
+
+    if [[ -n $rc ]]; then
+      echo "Error: Not restarting / reloading because of config errors."
+      echo "New configuration not activated!"
+      exit 1
+    fi
+
+    # Check if the package changed
+    current_pkg=$(readlink /run/nginx/package)
+
+    if [[ $current_pkg != ${cfg.package} ]]; then
+      echo "Nginx package changed: $current_pkg -> ${cfg.package}."
+      ln -sfT ${cfg.package} /run/nginx/package
+
+      if [[ -s /run/nginx/nginx.pid ]]; then
+        if ${nginxReloadMaster}/bin/nginx-reload-master; then
+          echo "Master process replacement completed."
+        else
+          echo "Master process replacement failed, trying again on next reload."
+          ln -sfT $current_pkg /run/nginx/package
+        fi
+      else
+        # We are still running an old version that didn't write a PID file or something is broken.
+        # We can only force a restart now.
+        echo "Warning: cannot replace master process because PID is missing. Restarting Nginx now..."
+        ${pkgs.coreutils}/bin/kill -QUIT $MAINPID
+      fi
+
+    else
+      # Package unchanged, we only need to change the configuration.
+      echo "Reloading nginx config now."
+
+      # Check journal for errors after the reload signal.
+      datetime=$(date +'%Y-%m-%d %H:%M:%S')
+      ${pkgs.coreutils}/bin/kill -HUP $MAINPID
+
+      # Give Nginx some time to try changing the configuration.
+      sleep 3
+
+      if [[ $(journalctl --since="$datetime" -u nginx -q -g '\[emerg\]') != "" ]]; then
+        echo "Warning: Possible failure when changing to new configuration."
+        echo "This happens when changes to listen directives are incompatible with the running nginx master process."
+        echo "Try systemctl restart nginx to activate the new config."
+        exit 1
+      fi
+    fi
+  '';
   nginxReloadMaster =
     let
       pkill = "${pkgs.procps}/bin/pkill";
@@ -724,6 +778,8 @@ in
     ];
     environment.systemPackages = [ nginxReloadMaster ];
 
+    environment.etc."nginx/nginx.conf".source = configFile;
+
     systemd.services.nginx = {
       description = "Nginx Web Server";
       wantedBy = [ "multi-user.target" ];
@@ -737,69 +793,14 @@ in
       preStart =
         ''
         ${cfg.preStart}
-        ln -sf ${configFile} /run/nginx/config
         ln -sfT ${cfg.package} /run/nginx/package
       '';
-      reload = ''
-        echo "Reload triggered, checking config file..."
-        # Check if the new config is valid
-        ${checkConfigCmd} || rc=$?
-
-        if [[ -n $rc ]]; then
-          echo "Error: Not restarting / reloading because of config errors."
-          echo "New configuration not activated!"
-          # We must use 0 as exit code, otherwise systemd would kill the nginx process.
-          # This is a bug in systemd: https://github.com/systemd/systemd/issues/11238
-          exit 0
-        fi
-
-        ln -sf ${configFile} /run/nginx/config
-
-        # Check if the package changed
-        current_pkg=$(readlink /run/nginx/package)
-
-        if [[ $current_pkg != ${cfg.package} ]]; then
-          echo "Nginx package changed: $current_pkg -> ${cfg.package}."
-          ln -sfT ${cfg.package} /run/nginx/package
-
-          if [[ -s /run/nginx/nginx.pid ]]; then
-            if ${nginxReloadMaster}/bin/nginx-reload-master; then
-              echo "Master process replacement completed."
-            else
-              echo "Master process replacement failed, trying again on next reload."
-              ln -sfT $current_pkg /run/nginx/package
-            fi
-          else
-            # We are still running an old version that didn't write a PID file or something is broken.
-            # We can only force a restart now.
-            echo "Warning: cannot replace master process because PID is missing. Restarting Nginx now..."
-            ${pkgs.coreutils}/bin/kill -QUIT $MAINPID
-          fi
-
-        else
-          # Package unchanged, we only need to change the configuration.
-          echo "Reloading nginx config now."
-
-          # Check journal for errors after the reload signal.
-          datetime=$(date +'%Y-%m-%d %H:%M:%S')
-          ${pkgs.coreutils}/bin/kill -HUP $MAINPID
-
-          # Give Nginx some time to try changing the configuration.
-          sleep 3
-
-          if [[ $(journalctl --since="$datetime" -u nginx -q -g '\[emerg\]') != "" ]]; then
-            echo "Warning: Possible failure when changing to new configuration."
-            echo "This happens when changes to listen directives are incompatible with the running nginx master process."
-            echo "Try systemctl restart nginx to activate the new config."
-          fi
-        fi
-      '';
-      reloadIfChanged = true;
 
       serviceConfig = {
         Type = "forking";
         PIDFile = "/run/nginx/nginx.pid";
-        ExecStart = "/run/nginx/package/bin/nginx -c /run/nginx/config";
+        ExecStart = "/run/nginx/package/bin/nginx -c ${configPath}";
+        ExecReload = "+${nginxReloadConfig}/bin/nginx-reload";
         Restart = "always";
         RestartSec = "10s";
         StartLimitInterval = "1min";
@@ -808,7 +809,7 @@ in
         Group = cfg.group;
         # Runtime directory and mode
         RuntimeDirectory = "nginx";
-        RuntimeDirectoryMode = "0750";
+        RuntimeDirectoryMode = "0755";
         # Cache directory and mode
         CacheDirectory = "nginx";
         CacheDirectoryMode = "0750";
@@ -838,9 +839,6 @@ in
         # System Call Filtering
         SystemCallArchitectures = "native";
         # X- options are ignored by systemd.
-        # To show the last running config, use:
-        # cat `systemctl cat nginx | grep "X-ConfigFile" | cut -d= -f2`
-        X-ConfigFile = configFile;
         # To check the current config file:
         # `systemctl cat nginx | grep "X-CheckConfigCmd" | cut -d= -f2`
         X-CheckConfigCmd = checkConfigCmd;
