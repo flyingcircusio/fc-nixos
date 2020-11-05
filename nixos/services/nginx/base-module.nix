@@ -311,6 +311,11 @@ let
 
   checkConfigCmd = ''${cfg.package}/bin/nginx -g "user ${cfg.user} ${cfg.group};" -t -c ${configPath}'';
 
+  nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
+    #!${pkgs.runtimeShell} -e
+    ${checkConfigCmd}
+  '';
+
   nginxReloadConfig = pkgs.writeScriptBin "nginx-reload" ''
     #!${pkgs.runtimeShell} -e
     echo "Reload triggered, checking config file..."
@@ -776,7 +781,7 @@ in
         '';
       }
     ];
-    environment.systemPackages = [ nginxReloadMaster ];
+    environment.systemPackages = [ nginxReloadMaster nginxCheckConfig ];
 
     environment.etc."nginx/nginx.conf".source = configFile;
 
@@ -838,10 +843,6 @@ in
         PrivateMounts = true;
         # System Call Filtering
         SystemCallArchitectures = "native";
-        # X- options are ignored by systemd.
-        # To check the current config file:
-        # `systemctl cat nginx | grep "X-CheckConfigCmd" | cut -d= -f2`
-        X-CheckConfigCmd = checkConfigCmd;
       };
     };
 

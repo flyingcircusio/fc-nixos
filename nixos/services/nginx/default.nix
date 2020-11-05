@@ -11,7 +11,7 @@ let
   fclib = config.fclib;
 
   nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
-    $(systemctl cat nginx | grep "X-CheckConfigCmd" | cut -d= -f2)
+
   '';
 
   nginxShowConfig = pkgs.writeScriptBin "nginx-show-config" ''
@@ -221,7 +221,7 @@ in
 
         nginx_config = {
           notification = "Nginx configuration check problems";
-          command = "/run/wrappers/bin/sudo ${nginxCheckConfig}/bin/nginx-check-config || exit 2";
+          command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config || exit 2";
           interval = 300;
         };
 
@@ -252,9 +252,8 @@ in
       security.acme.certs = acmeSettings;
 
       flyingcircus.passwordlessSudoRules = [
-        # sensuclient can run config check script as nginx user
         {
-          commands = [ "${nginxCheckConfig}/bin/nginx-check-config" ];
+          commands = [ "/run/current-system/sw/bin/nginx-check-config" ];
           groups = [ "sensuclient" ];
         }
       ];
@@ -308,7 +307,6 @@ in
       };
 
       environment.systemPackages = [
-        nginxCheckConfig
         nginxShowConfig
       ];
 
