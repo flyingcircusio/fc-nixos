@@ -309,7 +309,7 @@ let
     '') authDef)
   );
 
-  checkConfigCmd = "${cfg.package}/bin/nginx -t -c ${configPath}";
+  checkConfigCmd = ''${cfg.package}/bin/nginx -g "user ${cfg.user} ${cfg.group};" -t -c ${configPath}'';
 
   nginxReloadConfig = pkgs.writeScriptBin "nginx-reload" ''
     #!${pkgs.runtimeShell} -e

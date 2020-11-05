@@ -15,7 +15,7 @@ let
   '';
 
   nginxShowConfig = pkgs.writeScriptBin "nginx-show-config" ''
-    cat $(systemctl cat nginx | grep "X-ConfigFile" | cut -d= -f2)
+    cat /etc/nginx/nginx.conf
   '';
 
   nginxCheckWorkerAge = pkgs.writeScript "nginx-check-worker-age" ''
