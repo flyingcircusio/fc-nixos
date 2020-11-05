@@ -142,6 +142,7 @@ in
           # We want to reopen logs with HUP. Varnishncsa must run in daemon mode for that.
           serviceConfig = {
             Type = "forking";
+            Restart = "always";
             RuntimeDirectory = "varnish";
             PIDFile = "/run/varnish/varnishncsa.pid";
             User = "varnish";
