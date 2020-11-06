@@ -29,6 +29,7 @@ in
 
       environment.systemPackages = with pkgs; [
         bridge-utils
+        nfs-utils
       ];
 
       services.kubernetes = {
