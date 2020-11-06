@@ -19,6 +19,15 @@ in {
     { lib, pkgs, ... }:
     {
       imports = [ ../nixos ];
+      networking.hosts."192.168.1.1" = [ "other" ];
+      environment.etc."proxy.http".text = ''
+        HTTP/1.1 200 OK
+        Content-Type: text/html; charset=UTF-8
+        Server: netcat!
+
+        <!doctype html>
+        <html><body><h1>A webpage served by netcat</h1></body></html>
+      '';
       flyingcircus.services.nginx.enable = true;
 
       # Vhost for localhost is predefined by the nginx module and serves the
@@ -27,6 +36,8 @@ in {
       # Vhost for config reload check.
       services.nginx.virtualHosts.machine = {
         root = rootInitial;
+        serverAliases = [ "other" ];
+        locations."/proxy".proxyPass = "http://127.0.0.1:8008";
       };
 
       # Display the nginx version on the 404 page.
@@ -39,6 +50,22 @@ in {
   in ''
     machine.wait_for_unit('nginx.service')
     machine.wait_for_open_port(80)
+
+    with subtest("nginx should forward proxied host and server headers (primary name)"):
+      machine.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
+      machine.succeed("curl http://machine/proxy/")
+      _, proxy_log = machine.execute("cat /tmp/proxy.log")
+      print(proxy_log)
+      assert 'X-Forwarded-Host: machine' in proxy_log
+      assert 'X-Forwarded-Server: machine' in proxy_log
+
+    with subtest("nginx should forward proxied host and server headers (alias)"):
+      machine.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
+      machine.succeed("curl http://other/proxy/")
+      _, proxy_log = machine.execute("cat /tmp/proxy.log")
+      print(proxy_log)
+      assert 'X-Forwarded-Host: other' in proxy_log
+      assert 'X-Forwarded-Server: machine' in proxy_log
 
     with subtest("nginx should respond with configured content"):
       machine.succeed("curl machine | grep -q 'initial content'")
