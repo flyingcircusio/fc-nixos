@@ -32,18 +32,6 @@ in
       ];
 
       services.kubernetes = {
-        # Kubelet doesn't start with swap by default but we want to use swap.
-        kubelet = {
-          extraOpts = lib.mkForce "--fail-swap-on=false";
-          clusterDns = head master.ips;
-        };
-        proxy = {
-          # Works without proper hostname but avoids the error in kube-proxy log
-          extraOpts = "--hostname-override=${config.networking.hostName}.fcio.net";
-          # I don't really know what this bind address is for (has no visible effect)
-          # but limiting it to srv is better than the default 0.0.0.0 default.
-          bindAddress = head (fclib.listenAddresses "ethsrv");
-        };
         roles = [ "node" ];
       };
 
