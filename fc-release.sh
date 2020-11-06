@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
+nixos_version="20.09"
 releaseid="${1:?no release id given}"
 
 if ! echo "$releaseid" | egrep -q '^[0-9]{4}_[0-9]{3}$'; then
@@ -8,9 +9,9 @@ if ! echo "$releaseid" | egrep -q '^[0-9]{4}_[0-9]{3}$'; then
     exit 64
 fi
 
-dev="fc-19.03-dev"
-stag="fc-19.03-staging"
-prod="fc-19.03-production"
+dev="fc-${nixos_version}-dev"
+stag="fc-${nixos_version}-staging"
+prod="fc-${nixos_version}-production"
 echo "$0: performing release based on $stag"
 
 if ! git remote -v | egrep -q "^origin\s.*github.com.flyingcircusio/fc-nixos"
