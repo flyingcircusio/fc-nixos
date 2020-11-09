@@ -37,15 +37,28 @@ let
 
   fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
 
-  mkAdminCert = username:
-    kublib.mkCert {
-      name = username;
-      CN = username;
-      fields = {
-        O = "system:masters";
-      };
-      privateKeyOwner = username;
+  secret = name: "${config.services.kubernetes.secretsPath}/${name}.pem";
+
+  mkAdminCert = username: rec {
+    action = "";
+    hosts = [];
+    profile = "user";
+    name = username;
+
+    caCert = secret "ca";
+    cert = secret username;
+    CN = username;
+    fields = {
+      O = "system:masters";
     };
+    key = secret "${username}-key";
+    privateKeyOptions = {
+      owner = username;
+      group = "nogroup";
+      mode = "0600";
+      path = key;
+    };
+  };
 
   mkUserKubeConfig = cert:
    kublib.mkKubeConfig cert.name {

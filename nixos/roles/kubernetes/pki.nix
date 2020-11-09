@@ -145,6 +145,12 @@ in
               auth_key = "default";
               expiry = "720h";
             };
+            # user certs live (about) 1 year
+            user = {
+              usages = ["digital signature"];
+              auth_key = "default";
+              expiry = "8760h";
+            };
           };
         };
         auth_keys = {
@@ -218,7 +224,7 @@ in
             authority = {
               inherit remote;
               root_ca = cert.caCert;
-              profile = "default";
+              profile = cert.profile or "default";
               auth_key_file = certmgrAPITokenPath;
             };
             certificate = {
