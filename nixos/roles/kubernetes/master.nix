@@ -113,6 +113,7 @@ let
         O = "default:coredns";
       };
       action = "systemctl restart coredns.service";
+      privateKeyOwner = "coredns";
     };
 
     kube-dashboard = kublib.mkCert {
@@ -177,11 +178,7 @@ let
         after = requires;
         serviceConfig = {
           Restart = lib.mkForce "always";
-          ExecStartPre = ''
-            +${pkgs.coreutils}/bin/chown coredns \
-              /var/lib/kubernetes/secrets/coredns.pem \
-              /var/lib/kubernetes/secrets/coredns-key.pem
-          '';
+          User = "coredns";
         };
       };
 
@@ -197,12 +194,7 @@ let
 
         serviceConfig = {
           Restart = "always";
-          ExecStartPre = ''
-            +${pkgs.coreutils}/bin/chown kube-dashboard \
-              /var/lib/kubernetes/secrets/kube-dashboard.pem \
-              /var/lib/kubernetes/secrets/kube-dashboard-key.pem
-          '';
-          DynamicUser = true;
+          User = "kubernetes";
         };
 
       };
@@ -407,6 +399,13 @@ in
     services.kubernetes.pki.certs = allCerts;
 
     systemd.services = lib.recursiveUpdate systemdServices waitForCerts;
+
+    users.users = {
+      coredns = {
+        uid = config.ids.uids.coredns;
+        home = "/var/empty";
+      };
+    };
 
   };
 
