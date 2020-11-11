@@ -331,6 +331,10 @@ in
       allowedTCPPorts = [ apiserverPort ];
     };
 
+    services.certmgr = {
+      renewInterval = "240h";
+    };
+
     services.coredns = {
       enable = true;
       config = ''

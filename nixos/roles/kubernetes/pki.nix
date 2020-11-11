@@ -143,7 +143,7 @@ in
             default = {
               usages = ["digital signature"];
               auth_key = "default";
-              expiry = "720h";
+              expiry = "8760h";
             };
             # user certs live (about) 1 year
             user = {
