@@ -208,7 +208,6 @@ in {
           defaultLanguage = cfg.defaultLanguage;
           enableLipSync = false;
           enableAutomaticUrlCopy = true;
-          useStunTurn = true;
           p2p.enabled = false;
           inherit (cfg) resolution;
           startVideoMuted = 8;

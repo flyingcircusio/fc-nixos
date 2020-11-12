@@ -1,8 +1,8 @@
 { lib
 , dmidecode
+, gitMinimal
 , gptfdisk
 , libyaml
-, lvm2
 , multipath_tools
 , nix
 , python3Packages
@@ -44,8 +44,8 @@ py.buildPythonPackage rec {
   ];
   propagatedBuildInputs = [
     dmidecode
+    gitMinimal
     gptfdisk
-    lvm2
     multipath_tools
     nix
     py.click

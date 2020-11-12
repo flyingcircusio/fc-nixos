@@ -18,8 +18,8 @@ let
   hosts = {
     "127.0.0.1" = [ "localhost" ];
     "::1" = [ "localhost" ];
-    ${server6Fe} = [ "server" ];
-    ${server4Fe} = [ "server" ];
+    ${server6Fe} = [ "server" "other" ];
+    ${server4Fe} = [ "server" "other" ];
   };
 
   stableMajorVersion = "1.18";
@@ -62,6 +62,14 @@ in {
         };
       };
 
+      environment.etc."proxy.http".text = ''
+        HTTP/1.1 200 OK
+        Content-Type: text/html; charset=UTF-8
+        Server: netcat!
+
+        <!doctype html>
+        <html><body><h1>A webpage served by netcat</h1></body></html>
+      '';
       flyingcircus.services.nginx.enable = true;
 
       # Vhost for localhost is predefined by the nginx module and serves the
@@ -70,6 +78,8 @@ in {
       # Vhost for config reload check.
       services.nginx.virtualHosts.server = {
         root = rootInitial;
+        serverAliases = [ "other" ];
+        locations."/proxy".proxyPass = "http://127.0.0.1:8008";
       };
 
       # Display the nginx version on the 404 page.
@@ -85,6 +95,22 @@ in {
   in ''
     server.wait_for_unit('nginx.service')
     server.wait_for_open_port(80)
+
+    with subtest("nginx should forward proxied host and server headers (primary name)"):
+      server.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
+      server.succeed("curl http://server/proxy/")
+      _, proxy_log = server.execute("cat /tmp/proxy.log")
+      print(proxy_log)
+      assert 'X-Forwarded-Host: server' in proxy_log
+      assert 'X-Forwarded-Server: server' in proxy_log
+
+    with subtest("nginx should forward proxied host and server headers (alias)"):
+      server.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
+      server.succeed("curl http://other/proxy/")
+      _, proxy_log = server.execute("cat /tmp/proxy.log")
+      print(proxy_log)
+      assert 'X-Forwarded-Host: other' in proxy_log
+      assert 'X-Forwarded-Server: server' in proxy_log
 
     with subtest("nginx should respond with configured content"):
       server.succeed("curl server | grep -q 'initial content'")

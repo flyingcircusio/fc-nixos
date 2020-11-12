@@ -273,6 +273,7 @@ in
 
     environment.systemPackages = with pkgs; [
       kubectl
+      kubernetes-helm
       kubernetesEtcdctl
       kubernetesMakeKubeconfig
       sensu-plugins-kubernetes
