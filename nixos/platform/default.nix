@@ -29,6 +29,7 @@ in {
     ./shell.nix
     ./static.nix
     ./systemd.nix
+    ./upgrade.nix
     ./users.nix
   ] ++ localModules;
 
@@ -190,6 +191,7 @@ in {
     '';
 
     flyingcircus.enc_services = enc_services;
+
 
     # fallback ACME settings
     security.acme.acceptTerms = true;
