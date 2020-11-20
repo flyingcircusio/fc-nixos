@@ -199,6 +199,8 @@ let
   '';
 
   configPath = "/etc/nginx/nginx.conf";
+  runningPackagePath = "/etc/nginx/running-package";
+  wantedPackagePath = "/etc/nginx/wanted-package";
 
   vhosts = concatStringsSep "\n" (mapAttrsToList (vhostName: vhost:
     let
@@ -313,7 +315,7 @@ let
     '') authDef)
   );
 
-  checkConfigCmd = ''${cfg.package}/bin/nginx -g "user ${cfg.user} ${cfg.group};" -t -c ${configPath}'';
+  checkConfigCmd = ''${wantedPackagePath}/bin/nginx -g "user ${cfg.user} ${cfg.group};" -t -c ${configPath}'';
 
   nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
     #!${pkgs.runtimeShell} -e
@@ -333,18 +335,19 @@ let
     fi
 
     # Check if the package changed
-    current_pkg=$(readlink /run/nginx/package)
+    running_pkg=$(readlink ${runningPackagePath})
+    wanted_pkg=$(readlink ${wantedPackagePath})
 
-    if [[ $current_pkg != ${cfg.package} ]]; then
-      echo "Nginx package changed: $current_pkg -> ${cfg.package}."
-      ln -sfT ${cfg.package} /run/nginx/package
+    if [[ $running_pkg != $wanted_pkg ]]; then
+      echo "Nginx package changed: $running_pkg -> $wanted_pkg."
+      ln -sfT $wanted_pkg ${runningPackagePath}
 
       if [[ -s /run/nginx/nginx.pid ]]; then
         if ${nginxReloadMaster}/bin/nginx-reload-master; then
           echo "Master process replacement completed."
         else
           echo "Master process replacement failed, trying again on next reload."
-          ln -sfT $current_pkg /run/nginx/package
+          ln -sfT $running_pkg ${runningPackagePath}
         fi
       else
         # We are still running an old version that didn't write a PID file or something is broken.
@@ -791,21 +794,25 @@ in
 
     systemd.services = {
 
-      nginx = {
+      nginx =
+      let
+        setRunningPackageLink = pkgs.writeScript "nginx-set-running-package-link" ''
+          #!${pkgs.runtimeShell} -e
+          ln -sfT $(readlink -f ${wantedPackagePath}) ${runningPackagePath}
+        '';
+      in {
         description = "Nginx Web Server";
         after = [ "network.target" ];
         wantedBy = [ "multi-user.target" ];
         stopIfChanged = false;
-        preStart =
-          ''
-          ${cfg.preStart}
-          ln -sfT ${cfg.package} /run/nginx/package
-        '';
 
         serviceConfig = {
           Type = "forking";
           PIDFile = "/run/nginx/nginx.pid";
-          ExecStart = "/run/nginx/package/bin/nginx -c ${configPath}";
+          ExecStartPre = [
+            "+${setRunningPackageLink}"
+          ];
+          ExecStart = "${runningPackagePath}/bin/nginx -c ${configPath}";
           ExecReload = "+${nginxReloadConfig}/bin/nginx-reload";
           Restart = "always";
           RestartSec = "10s";
@@ -881,6 +888,10 @@ in
         (map
           (name: lib.nameValuePair name { wantedBy = [ "nginx.service" ]; })
           sslTargetNames);
+
+    system.activationScripts.nginx-set-package = lib.stringAfter [ "etc" ] ''
+      ln -sfT ${cfg.package} ${wantedPackagePath}
+    '';
 
     system.activationScripts.nginx-reload-check = lib.stringAfter [ "wrappers" ] ''
       if ${pkgs.procps}/bin/pgrep nginx &> /dev/null; then

@@ -128,14 +128,14 @@ in {
     with subtest("nginx should use changed binary after reload"):
       # Prepare change to mainline nginx. We are not interested in testing mainline itself here.
       # We only need it as a different version so we can test binary reloading.
-      server.execute("ln -sfT ${pkgs.nginxMainline} /run/nginx/package")
+      server.execute("ln -sfT ${pkgs.nginxMainline} /etc/nginx/running-package")
       # Mainline doesn't know about our custom remote_addr_anon variable, patch our config.
       server.execute("sed 's#remote_addr_anon#remote_addr#' /etc/nginx/nginx.conf > /etc/nginx/changed_nginx.conf")
       server.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
-      # Go to mainline (this doesn't overwrite /run/nginx/package).
+      # Go to mainline (this doesn't overwrite /etc/nginx/running-package).
       server.succeed("nginx-reload-master")
       server.wait_until_succeeds("curl server/404 | grep -q ${mainlineMajorVersion}")
-      # Back to initial binary from nginx stable (this does overwrite /run/nginx/package with the default package).
+      # Back to initial binary from nginx stable (this does overwrite /etc/nginx/running-package with the wanted package).
       server.systemctl("reload nginx")
       server.wait_until_succeeds("curl server/404 | grep -q ${stableMajorVersion}")
 
