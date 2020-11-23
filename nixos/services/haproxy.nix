@@ -69,6 +69,12 @@ in
         "current-config/haproxy.cfg".source = haproxyCfg;
       };
 
+      environment.systemPackages = [
+        (pkgs.writeScriptBin
+          "haproxy-show-config"
+          "cat /etc/current-config/haproxy.cfg")
+      ];
+
       flyingcircus.services = {
         sensu-client.checks.haproxy_config = {
           notification = "HAProxy configuration check problems";
