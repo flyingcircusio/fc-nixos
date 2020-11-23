@@ -171,6 +171,11 @@ in {
         description = "How much RAM should go to graylog heap.";
       };
 
+      beatsTCPGraylogPort = mkOption {
+        type = types.int;
+        default = 12302;
+      };
+
       gelfTCPGraylogPort = mkOption {
         type = types.int;
         default = 12202;
@@ -233,6 +238,7 @@ in {
 
         javaOpts = [
           "-Djava.library.path=${pkg}/lib/sigar"
+          "-Dlog4j.configurationFile=file://${./log4j2.xml}"
           "-Xms${javaHeap}"
           "-Xmx${javaHeap}"
           "-XX:NewRatio=1"
@@ -336,6 +342,17 @@ in {
           global = true;
         };
 
+        beatsTcpConfiguration = {
+          configuration = {
+            bind_address = "0.0.0.0";
+            no_beats_prefix = true;
+            port = cfg.beatsTCPGraylogPort;
+          };
+          title = "Beats TCP";
+          type = "org.graylog.plugins.beats.Beats2Input";
+          global = true;
+        };
+
         geodbConfiguration = {
           enabled = true;
           db_type = "MAXMIND_CITY";
@@ -374,6 +391,7 @@ in {
       in ''
         ${configureInput syslogUdpConfiguration}
         ${configureInput gelfTcpConfiguration}
+        ${configureInput beatsTcpConfiguration}
 
         ${callApi ''
           call \

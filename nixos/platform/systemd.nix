@@ -10,10 +10,12 @@ in
   config = {
 
     services.journald.extraConfig = ''
-      SystemMaxUse=1G
+      SystemMaxUse=2G
       MaxLevelConsole=notice
-      ForwardToSyslog=true
+      ForwardToWall=no
     '';
+
+    services.journald.forwardToSyslog = lib.mkOverride 90 false;
 
     flyingcircus.activationScripts = {
 

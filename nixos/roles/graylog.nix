@@ -12,10 +12,12 @@ let
   fclib = config.fclib;
   glAPIHAPort = 8002;
   gelfTCPHAPort = 12201;
+  beatsTCPHAPort = 12301;
   listenFQDN = "${config.networking.hostName}.${config.networking.domain}";
   slash = addr: if fclib.isIp4 addr then "/32" else "/128";
   syslogInputPort = config.flyingcircus.services.graylog.syslogInputPort;
   gelfTCPGraylogPort = config.flyingcircus.services.graylog.gelfTCPGraylogPort;
+  beatsTCPGraylogPort = config.flyingcircus.services.graylog.beatsTCPGraylogPort;
   glAPIPort = config.flyingcircus.services.graylog.apiPort;
   replSetName = if cfg.cluster then "graylog" else "";
 
@@ -128,8 +130,10 @@ in
 
       networking.firewall.allowedTCPPorts = [ 9002 ];
 
-      networking.firewall.extraCommands =
-        "ip46tables -A nixos-fw -i ethsrv -p udp --dport ${toString syslogInputPort} -j nixos-fw-accept";
+      networking.firewall.extraCommands = ''
+        ip46tables -A nixos-fw -i ethsrv -p udp --dport ${toString syslogInputPort} -j nixos-fw-accept
+        ip46tables -A nixos-fw -i ethsrv -p tcp --dport ${toString beatsTCPHAPort} -j nixos-fw-accept
+      '';
 
       flyingcircus.services.graylog = {
 
@@ -239,7 +243,7 @@ in
       # node, talking to all known graylog nodes.
       flyingcircus.services.haproxy.enable = true;
 
-      services.haproxy.config = lib.mkForce (let
+      services.haproxy.config = lib.mkOverride 90 (let
         # graylog is only listening for IPv6
         backendConfig = config: lib.concatStringsSep "\n"
           (map
@@ -277,6 +281,14 @@ in
 
             default_backend gelf_tcp
 
+        frontend beats-tcp-in
+        ${listenConfig beatsTCPHAPort}
+            mode tcp
+            option tcplog
+            timeout client 10s # should be equal to server timeout
+
+            default_backend beats_tcp
+
         frontend graylog_http
         ${listenConfig glAPIHAPort}
             use_backend stats if { path_beg /admin/stats }
@@ -292,6 +304,15 @@ in
             timeout tunnel 61s
         ${backendConfig (name: ip:
             "server ${name}  ${ip}:${toString gelfTCPGraylogPort} check port ${toString glAPIPort} inter 10s rise 2 fall 1")}
+
+        backend beats_tcp
+            mode tcp
+            balance leastconn
+            option httpchk HEAD /api/system/lbstatus
+            timeout server 10s
+            timeout tunnel 61s
+        ${backendConfig (name: ip:
+            "server ${name}  ${ip}:${toString beatsTCPGraylogPort} check port ${toString glAPIPort} inter 10s rise 2 fall 1")}
 
         backend graylog
             balance roundrobin
