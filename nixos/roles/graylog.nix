@@ -147,7 +147,32 @@ in
 
       };
 
-      flyingcircus.roles.mongodb36.enable = true;
+      flyingcircus.roles.mongodb40.enable = true;
+
+      systemd.services.fc-loghost-mongodb-set-feature-compat-version = {
+        partOf = [ "mongodb.service" ];
+        wantedBy = [ "mongodb.service" ];
+        after = [ "mongodb.service" ];
+
+        serviceConfig = {
+          ExecStart = let
+            js = pkgs.writeText "mongodb_set_feature_compat_version_4_0.js" ''
+              res = db.adminCommand({"getParameter": 1, "featureCompatibilityVersion": 1});
+              compat_version = res["featureCompatibilityVersion"]["version"];
+
+              if (db.version().startsWith("4.0") && compat_version == "3.6") {
+                  print("MongoDB: current feature compat version is 3.6, updating to 4.0");
+                  db.adminCommand( { setFeatureCompatibilityVersion: "4.0" } );
+              }
+            '';
+          in "${pkgs.mongodb-4_0}/bin/mongo ${js}";
+
+          Restart = "on-failure";
+          Type = "oneshot";
+          RemainAfterExit = "true";
+        };
+      };
+
       services.mongodb.replSetName = replSetName;
       services.mongodb.extraConfig = ''
         storage.wiredTiger.engineConfig.cacheSizeGB: 1
