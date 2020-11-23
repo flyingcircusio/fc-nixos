@@ -893,7 +893,7 @@ in
       ln -sfT ${cfg.package} ${wantedPackagePath}
     '';
 
-    system.activationScripts.nginx-reload-check = lib.stringAfter [ "wrappers" ] ''
+    system.activationScripts.nginx-reload-check = lib.stringAfter [ "nginx-set-package" ] ''
       if ${pkgs.procps}/bin/pgrep nginx &> /dev/null; then
         nginx_check_msg=$(${checkConfigCmd} 2>&1) || rc=$?
 
