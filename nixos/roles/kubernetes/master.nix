@@ -37,15 +37,28 @@ let
 
   fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
 
-  mkAdminCert = username:
-    kublib.mkCert {
-      name = username;
-      CN = username;
-      fields = {
-        O = "system:masters";
-      };
-      privateKeyOwner = username;
+  secret = name: "${config.services.kubernetes.secretsPath}/${name}.pem";
+
+  mkAdminCert = username: rec {
+    action = "";
+    hosts = [];
+    profile = "user";
+    name = username;
+
+    caCert = secret "ca";
+    cert = secret username;
+    CN = username;
+    fields = {
+      O = "system:masters";
     };
+    key = secret "${username}-key";
+    privateKeyOptions = {
+      owner = username;
+      group = "nogroup";
+      mode = "0600";
+      path = key;
+    };
+  };
 
   mkUserKubeConfig = cert:
    kublib.mkKubeConfig cert.name {
@@ -100,6 +113,7 @@ let
         O = "default:coredns";
       };
       action = "systemctl restart coredns.service";
+      privateKeyOwner = "coredns";
     };
 
     kube-dashboard = kublib.mkCert {
@@ -164,11 +178,7 @@ let
         after = requires;
         serviceConfig = {
           Restart = lib.mkForce "always";
-          ExecStartPre = ''
-            +${pkgs.coreutils}/bin/chown coredns \
-              /var/lib/kubernetes/secrets/coredns.pem \
-              /var/lib/kubernetes/secrets/coredns-key.pem
-          '';
+          User = "coredns";
         };
       };
 
@@ -184,12 +194,7 @@ let
 
         serviceConfig = {
           Restart = "always";
-          ExecStartPre = ''
-            +${pkgs.coreutils}/bin/chown kube-dashboard \
-              /var/lib/kubernetes/secrets/kube-dashboard.pem \
-              /var/lib/kubernetes/secrets/kube-dashboard-key.pem
-          '';
-          DynamicUser = true;
+          User = "kubernetes";
         };
 
       };
@@ -326,6 +331,10 @@ in
       allowedTCPPorts = [ apiserverPort ];
     };
 
+    services.certmgr = {
+      renewInterval = "240h";
+    };
+
     services.coredns = {
       enable = true;
       config = ''
@@ -394,6 +403,13 @@ in
     services.kubernetes.pki.certs = allCerts;
 
     systemd.services = lib.recursiveUpdate systemdServices waitForCerts;
+
+    users.users = {
+      coredns = {
+        uid = config.ids.uids.coredns;
+        home = "/var/empty";
+      };
+    };
 
   };
 

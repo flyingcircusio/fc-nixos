@@ -22,24 +22,21 @@ let
   jsonConfig = (fromJSON
     (fclib.configFromFile /etc/local/graylog/graylog.json "{}"));
 
-  # First graylog or loghost node becomes master
-  glNodes =
-    fclib.listServiceAddresses "loghost-server" ++
-    fclib.listServiceAddresses "graylog-server";
-
-  logTargets = lib.unique (
-    # Pick one of the regular graylog servers ...
-    (if (length glNodes > 0) then
-      [(head glNodes)] else []) ++
-
-    # ... and add the central one (if it exists).
-    (fclib.listServiceAddresses "loghost-location-server"));
+  # First cluster node becomes master
+  clusterNodes =
+    if cfg.cluster then
+      lib.unique
+        (filter
+          (s: lib.any (serviceType: s.service == serviceType) cfg.serviceTypes)
+          config.flyingcircus.encServices)
+    # single-node "cluster"
+    else [ { address = "${config.networking.hostName}.fcio.net"; ips = (fclib.listenAddresses "ethsrv"); } ];
 
   masterHostname =
     (head
       (lib.splitString
         "."
-        (head glNodes)));
+        (head clusterNodes).address));
 in
 {
 
@@ -52,6 +49,15 @@ in
 
           Note: there can be multiple graylogs per RG, unlike loghost.
         '';
+
+      serviceTypes = mkOption {
+        type = types.listOf types.str;
+        default = [ "graylog-server" ];
+        description = ''
+          Service types that should be considered when forming the cluster.
+          Supported: graylog-server, loghost-server and loghost-location-graylog
+        '';
+      };
 
       cluster = mkOption {
         type = types.bool;
@@ -131,9 +137,9 @@ in
         isMaster = masterHostname == config.networking.hostName;
 
         mongodbUri = let
-          repl = if cfg.cluster then "?replicaSet=${replSetName}" else "";
+          repl = if (length clusterNodes) > 1 then "?replicaSet=${replSetName}" else "";
           mongodbNodes = concatStringsSep ","
-              (map (node: "${node}:27017") glNodes);
+              (map (node: "${fclib.quoteIPv6Address (head (filter fclib.isIp6 node.ips))}:27017") clusterNodes);
           in
             "mongodb://${mongodbNodes}/graylog${repl}";
 
@@ -141,13 +147,38 @@ in
 
       };
 
-      flyingcircus.roles.mongodb36.enable = true;
+      flyingcircus.roles.mongodb40.enable = true;
+
+      systemd.services.fc-loghost-mongodb-set-feature-compat-version = {
+        partOf = [ "mongodb.service" ];
+        wantedBy = [ "mongodb.service" ];
+        after = [ "mongodb.service" ];
+
+        serviceConfig = {
+          ExecStart = let
+            js = pkgs.writeText "mongodb_set_feature_compat_version_4_0.js" ''
+              res = db.adminCommand({"getParameter": 1, "featureCompatibilityVersion": 1});
+              compat_version = res["featureCompatibilityVersion"]["version"];
+
+              if (db.version().startsWith("4.0") && compat_version == "3.6") {
+                  print("MongoDB: current feature compat version is 3.6, updating to 4.0");
+                  db.adminCommand( { setFeatureCompatibilityVersion: "4.0" } );
+              }
+            '';
+          in "${pkgs.mongodb-4_0}/bin/mongo ${js}";
+
+          Restart = "on-failure";
+          Type = "oneshot";
+          RemainAfterExit = "true";
+        };
+      };
+
       services.mongodb.replSetName = replSetName;
       services.mongodb.extraConfig = ''
         storage.wiredTiger.engineConfig.cacheSizeGB: 1
       '';
 
-      flyingcircus.roles.nginx.enable = true;
+      flyingcircus.services.nginx.enable = true;
 
       flyingcircus.localConfigDirs.graylog = {
         dir = "/etc/local/graylog";
@@ -209,16 +240,11 @@ in
       flyingcircus.services.haproxy.enable = true;
 
       services.haproxy.config = lib.mkForce (let
-        nodes =
-          filter
-            (s: s.service == "loghost-server" || s.service == "graylog-server" || s.service == "loghost-location-server")
-            config.flyingcircus.encServices;
-
         # graylog is only listening for IPv6
         backendConfig = config: lib.concatStringsSep "\n"
           (map
             (node: "    " + (config node.address (head (filter fclib.isIp6 node.ips))))
-            nodes);
+            clusterNodes);
 
         listenConfig = port: lib.concatStringsSep "\n"
           (map
@@ -278,12 +304,6 @@ in
             stats uri /
             stats refresh 5s
       '');
-    })
-
-    (lib.mkIf (length logTargets > 0) {
-      # Forward all syslog to graylog, if there is one.
-      flyingcircus.syslog.extraRules = concatStringsSep "\n"
-              (map (target: "*.* @${target}:${toString syslogInputPort};RSYSLOG_SyslogProtocol23Format") logTargets);
     })
 
     {

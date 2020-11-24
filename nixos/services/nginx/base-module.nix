@@ -12,6 +12,10 @@ let
   vhostsConfigs = mapAttrsToList (vhostName: vhostConfig: vhostConfig) virtualHosts;
   acmeEnabledVhosts = filter (vhostConfig: vhostConfig.enableACME || vhostConfig.useACMEHost != null) vhostsConfigs;
   dependentCertNames = unique (map (hostOpts: hostOpts.certName) acmeEnabledVhosts);
+  sslServices = map (certName: "acme-${certName}") dependentCertNames;
+  sslSelfSignedServices = map (certName: "acme-selfsigned-${certName}") dependentCertNames;
+  sslTargetNames = map (certName: "acme-finished-${certName}") dependentCertNames;
+  sslTargets = map (targetName: "${targetName}.target") sslTargetNames;
   virtualHosts = mapAttrs (vhostName: vhostConfig:
     let
       serverName = if vhostConfig.serverName != null
@@ -195,6 +199,8 @@ let
   '';
 
   configPath = "/etc/nginx/nginx.conf";
+  runningPackagePath = "/etc/nginx/running-package";
+  wantedPackagePath = "/etc/nginx/wanted-package";
 
   vhosts = concatStringsSep "\n" (mapAttrsToList (vhostName: vhost:
     let
@@ -309,7 +315,7 @@ let
     '') authDef)
   );
 
-  checkConfigCmd = ''${cfg.package}/bin/nginx -g "user ${cfg.user} ${cfg.group};" -t -c ${configPath}'';
+  checkConfigCmd = ''${wantedPackagePath}/bin/nginx -g "user ${cfg.user} ${cfg.group};" -t -c ${configPath}'';
 
   nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
     #!${pkgs.runtimeShell} -e
@@ -329,18 +335,19 @@ let
     fi
 
     # Check if the package changed
-    current_pkg=$(readlink /run/nginx/package)
+    running_pkg=$(readlink ${runningPackagePath})
+    wanted_pkg=$(readlink ${wantedPackagePath})
 
-    if [[ $current_pkg != ${cfg.package} ]]; then
-      echo "Nginx package changed: $current_pkg -> ${cfg.package}."
-      ln -sfT ${cfg.package} /run/nginx/package
+    if [[ $running_pkg != $wanted_pkg ]]; then
+      echo "Nginx package changed: $running_pkg -> $wanted_pkg."
+      ln -sfT $wanted_pkg ${runningPackagePath}
 
       if [[ -s /run/nginx/nginx.pid ]]; then
         if ${nginxReloadMaster}/bin/nginx-reload-master; then
           echo "Master process replacement completed."
         else
           echo "Master process replacement failed, trying again on next reload."
-          ln -sfT $current_pkg /run/nginx/package
+          ln -sfT $running_pkg ${runningPackagePath}
         fi
       else
         # We are still running an old version that didn't write a PID file or something is broken.
@@ -785,95 +792,108 @@ in
 
     environment.etc."nginx/nginx.conf".source = configFile;
 
-    systemd.services.nginx = {
-      description = "Nginx Web Server";
-      wantedBy = [ "multi-user.target" ];
-      wants = concatLists (map (certName: [ "acme-finished-${certName}.target" ]) dependentCertNames);
-      after = [ "network.target" ] ++ map (certName: "acme-selfsigned-${certName}.service") dependentCertNames;
+    systemd.services = {
+
+      nginx =
+      let
+        setRunningPackageLink = pkgs.writeScript "nginx-set-running-package-link" ''
+          #!${pkgs.runtimeShell} -e
+          ln -sfT $(readlink -f ${wantedPackagePath}) ${runningPackagePath}
+        '';
+      in {
+        description = "Nginx Web Server";
+        after = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
+        stopIfChanged = false;
+
+        serviceConfig = {
+          Type = "forking";
+          PIDFile = "/run/nginx/nginx.pid";
+          ExecStartPre = [
+            "+${setRunningPackageLink}"
+          ];
+          ExecStart = "${runningPackagePath}/bin/nginx -c ${configPath}";
+          ExecReload = "+${nginxReloadConfig}/bin/nginx-reload";
+          Restart = "always";
+          RestartSec = "10s";
+          StartLimitInterval = "1min";
+          # User and group
+          User = cfg.user;
+          Group = cfg.group;
+          # Runtime directory and mode
+          RuntimeDirectory = "nginx";
+          RuntimeDirectoryMode = "0755";
+          # Cache directory and mode
+          CacheDirectory = "nginx";
+          CacheDirectoryMode = "0750";
+          # Logs directory and mode
+          LogsDirectory = "nginx";
+          LogsDirectoryMode = "0755";
+          # Capabilities
+          AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" "CAP_SYS_RESOURCE" ];
+          CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" "CAP_SYS_RESOURCE" ];
+          # Security
+          NoNewPrivileges = true;
+          # Sandboxing
+          ProtectSystem = "strict";
+          ProtectHome = mkDefault true;
+          PrivateTmp = true;
+          PrivateDevices = true;
+          ProtectHostname = true;
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectControlGroups = true;
+          RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
+          LockPersonality = true;
+          MemoryDenyWriteExecute = !(builtins.any (mod: (mod.allowMemoryWriteExecute or false)) pkgs.nginx.modules);
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          PrivateMounts = true;
+          # System Call Filtering
+          SystemCallArchitectures = "native";
+        };
+      };
+      # postRun hooks on cert renew can't be used to restart Nginx since renewal
+      # runs as the unprivileged acme user. sslTargets are added to wantedBy + before
+      # which allows the acme-finished-$cert.target to signify the successful updating
+      # of certs end-to-end.
+      nginx-config-reload = {
+        wants = [ "nginx.service" ];
+        wantedBy = sslServices ++ [ "multi-user.target" ];
+        # Before the finished targets, after the renew services.
+        # This service might be needed for HTTP-01 challenges, but we only want to confirm
+        # certs are updated _after_ config has been reloaded.
+        before = sslTargets;
+        after = sslServices;
+        restartTriggers = [ configFile ];
+        # Block reloading if not all certs exist yet.
+        # Happens when config changes add new vhosts/certs.
+        unitConfig.ConditionPathExists = optionals (sslServices != []) (map (certName: certs.${certName}.directory + "/fullchain.pem") dependentCertNames);
+        serviceConfig = {
+          Type = "oneshot";
+          TimeoutSec = 60;
+          ExecCondition = "/run/current-system/systemd/bin/systemctl -q is-active nginx.service";
+          ExecStart = "/run/current-system/systemd/bin/systemctl reload nginx.service";
+        };
+      };
+    } //
       # Nginx needs to be started in order to be able to request certificates
       # (it's hosting the acme challenge after all)
       # This fixes https://github.com/NixOS/nixpkgs/issues/81842
-      before = map (certName: "acme-${certName}.service") dependentCertNames;
-      stopIfChanged = false;
-      preStart =
-        ''
-        ${cfg.preStart}
-        ln -sfT ${cfg.package} /run/nginx/package
-      '';
+      lib.listToAttrs (map (name: lib.nameValuePair name { after = [ "nginx.service" ]; }) sslServices) //
+      lib.listToAttrs (map (name: lib.nameValuePair name { before = [ "nginx.service" ]; }) sslSelfSignedServices);
 
-      serviceConfig = {
-        Type = "forking";
-        PIDFile = "/run/nginx/nginx.pid";
-        ExecStart = "/run/nginx/package/bin/nginx -c ${configPath}";
-        ExecReload = "+${nginxReloadConfig}/bin/nginx-reload";
-        Restart = "always";
-        RestartSec = "10s";
-        StartLimitInterval = "1min";
-        # User and group
-        User = cfg.user;
-        Group = cfg.group;
-        # Runtime directory and mode
-        RuntimeDirectory = "nginx";
-        RuntimeDirectoryMode = "0755";
-        # Cache directory and mode
-        CacheDirectory = "nginx";
-        CacheDirectoryMode = "0750";
-        # Logs directory and mode
-        LogsDirectory = "nginx";
-        LogsDirectoryMode = "0755";
-        # Capabilities
-        AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" "CAP_SYS_RESOURCE" ];
-        CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" "CAP_SYS_RESOURCE" ];
-        # Security
-        NoNewPrivileges = true;
-        # Sandboxing
-        ProtectSystem = "strict";
-        ProtectHome = mkDefault true;
-        PrivateTmp = true;
-        PrivateDevices = true;
-        ProtectHostname = true;
-        ProtectKernelTunables = true;
-        ProtectKernelModules = true;
-        ProtectControlGroups = true;
-        RestrictAddressFamilies = [ "AF_UNIX" "AF_INET" "AF_INET6" ];
-        LockPersonality = true;
-        MemoryDenyWriteExecute = !(builtins.any (mod: (mod.allowMemoryWriteExecute or false)) pkgs.nginx.modules);
-        RestrictRealtime = true;
-        RestrictSUIDSGID = true;
-        PrivateMounts = true;
-        # System Call Filtering
-        SystemCallArchitectures = "native";
-      };
-    };
+    systemd.targets =
+      lib.listToAttrs
+        (map
+          (name: lib.nameValuePair name { wantedBy = [ "nginx.service" ]; })
+          sslTargetNames);
 
-    # postRun hooks on cert renew can't be used to restart Nginx since renewal
-    # runs as the unprivileged acme user. sslTargets are added to wantedBy + before
-    # which allows the acme-finished-$cert.target to signify the successful updating
-    # of certs end-to-end.
-    systemd.services.nginx-config-reload = let
-      sslServices = map (certName: "acme-${certName}.service") dependentCertNames;
-      sslTargets = map (certName: "acme-finished-${certName}.target") dependentCertNames;
-    in {
-      wants = [ "nginx.service" ];
-      wantedBy = sslServices ++ [ "multi-user.target" ];
-      # Before the finished targets, after the renew services.
-      # This service might be needed for HTTP-01 challenges, but we only want to confirm
-      # certs are updated _after_ config has been reloaded.
-      before = sslTargets;
-      after = sslServices;
-      restartTriggers = [ configFile ];
-      # Block reloading if not all certs exist yet.
-      # Happens when config changes add new vhosts/certs.
-      unitConfig.ConditionPathExists = optionals (sslServices != []) (map (certName: certs.${certName}.directory + "/fullchain.pem") dependentCertNames);
-      serviceConfig = {
-        Type = "oneshot";
-        TimeoutSec = 60;
-        ExecCondition = "/run/current-system/systemd/bin/systemctl -q is-active nginx.service";
-        ExecStart = "/run/current-system/systemd/bin/systemctl reload nginx.service";
-      };
-    };
+    system.activationScripts.nginx-set-package = lib.stringAfter [ "etc" ] ''
+      ln -sfT ${cfg.package} ${wantedPackagePath}
+    '';
 
-    system.activationScripts.nginx-reload-check = lib.stringAfter [ "wrappers" ] ''
+    system.activationScripts.nginx-reload-check = lib.stringAfter [ "nginx-set-package" ] ''
       if ${pkgs.procps}/bin/pgrep nginx &> /dev/null; then
         nginx_check_msg=$(${checkConfigCmd} 2>&1) || rc=$?
 

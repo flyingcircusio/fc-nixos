@@ -22,9 +22,10 @@ in
 
   config = lib.mkIf (cfg.enable) {
 
-    # Currently just a glorified alias.
-
     flyingcircus.roles.loghost = fclib.mkPlatform { enable = true; };
+    flyingcircus.roles.graylog = {
+      serviceTypes = fclib.mkPlatform [ "loghost-location-graylog" ];
+    };
 
   };
 

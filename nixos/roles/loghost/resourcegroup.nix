@@ -31,6 +31,7 @@ in
     flyingcircus.roles.graylog = fclib.mkPlatform {
       enable = true;
       cluster = false;
+      serviceTypes = [ "loghost-server" ];
     };
 
     flyingcircus.services.graylog = fclib.mkPlatform {
