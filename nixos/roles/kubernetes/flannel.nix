@@ -12,6 +12,9 @@ let
     SubnetMax = cfg.subnetMax;
     Backend = cfg.backend;
   };
+
+  networkConfigFile = pkgs.writeText "net-conf.json" (builtins.toJSON networkConfig);
+
 in {
   options.services.flannel = {
     enable = mkEnableOption "flannel";
@@ -132,60 +135,90 @@ in {
 
     backend = mkOption {
       description = "Type of backend to use and specific configurations for that backend.";
-      type = types.attrs;
-      default = {
-        Type = "vxlan";
+      type = types.submodule {
+        freeformType = types.attrsOf types.unspecified;
+
+        options.Type = mkOption {
+          type = types.str;
+          default = "vxlan";
+        };
+
       };
+    };
+
+    verbosity = mkOption {
+      description = "log level for V logs. Set to 1 to see messages related to data path.";
+      type = types.int;
+      default = 0;
     };
   };
 
-  config = mkIf cfg.enable {
-    systemd.services.flannel = {
-      description = "Flannel Service";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
-      environment = {
-        FLANNELD_PUBLIC_IP = cfg.publicIp;
-        FLANNELD_IFACE = cfg.iface;
-      } // optionalAttrs (cfg.storageBackend == "etcd") {
-        FLANNELD_ETCD_ENDPOINTS = concatStringsSep "," cfg.etcd.endpoints;
-        FLANNELD_ETCD_KEYFILE = cfg.etcd.keyFile;
-        FLANNELD_ETCD_CERTFILE = cfg.etcd.certFile;
-        FLANNELD_ETCD_CAFILE = cfg.etcd.caFile;
-        ETCDCTL_CERT_FILE = cfg.etcd.certFile;
-        ETCDCTL_KEY_FILE = cfg.etcd.keyFile;
-        ETCDCTL_CA_FILE = cfg.etcd.caFile;
-        ETCDCTL_PEERS = concatStringsSep "," cfg.etcd.endpoints;
-      } // optionalAttrs (cfg.storageBackend == "kubernetes") {
-        FLANNELD_KUBE_SUBNET_MGR = "true";
-        FLANNELD_KUBECONFIG_FILE = cfg.kubeconfig;
-        NODE_NAME = cfg.nodeName;
+  config = mkMerge [
+    (mkIf cfg.enable {
+      systemd.services.flannel = {
+        description = "Flannel Service";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        environment = {
+          FLANNELD_PUBLIC_IP = cfg.publicIp;
+          FLANNELD_IFACE = cfg.iface;
+        } // optionalAttrs (cfg.storageBackend == "etcd") {
+          FLANNELD_ETCD_ENDPOINTS = concatStringsSep "," cfg.etcd.endpoints;
+          FLANNELD_ETCD_KEYFILE = cfg.etcd.keyFile;
+          FLANNELD_ETCD_CERTFILE = cfg.etcd.certFile;
+          FLANNELD_ETCD_CAFILE = cfg.etcd.caFile;
+          ETCDCTL_CERT_FILE = cfg.etcd.certFile;
+          ETCDCTL_KEY_FILE = cfg.etcd.keyFile;
+          ETCDCTL_CA_FILE = cfg.etcd.caFile;
+          ETCDCTL_PEERS = concatStringsSep "," cfg.etcd.endpoints;
+        } // optionalAttrs (cfg.storageBackend == "kubernetes") {
+          FLANNELD_KUBE_SUBNET_MGR = "true";
+          FLANNELD_KUBECONFIG_FILE = cfg.kubeconfig;
+          NODE_NAME = cfg.nodeName;
+        };
+        path = [ pkgs.iptables ];
+        preStart = ''
+          mkdir -p /run/flannel
+          touch /run/flannel/docker
+        '' + optionalString (cfg.storageBackend == "etcd") ''
+          echo "setting network configuration"
+          until ${pkgs.etcdctl}/bin/etcdctl set /coreos.com/network/config '${builtins.toJSON networkConfig}'
+          do
+            echo "setting network configuration, retry"
+            sleep 1
+          done
+        '';
+        serviceConfig = {
+          ExecStart = "${cfg.package}/bin/flannel -v=${toString cfg.verbosity}";
+          Restart = "always";
+          RestartSec = "10s";
+        };
       };
-      path = [ pkgs.iptables ];
-      preStart = ''
-        mkdir -p /run/flannel
-        touch /run/flannel/docker
-      '' + optionalString (cfg.storageBackend == "etcd") ''
-        echo "setting network configuration"
-        until ${pkgs.etcdctl}/bin/etcdctl set /coreos.com/network/config '${builtins.toJSON networkConfig}'
-        do
-          echo "setting network configuration, retry"
-          sleep 1
-        done
-      '';
-      serviceConfig = {
-        ExecStart = "${cfg.package}/bin/flannel";
-        Restart = "always";
-        RestartSec = "10s";
+
+      services.etcd.enable = mkDefault (cfg.storageBackend == "etcd" && cfg.etcd.endpoints == ["http://127.0.0.1:2379"]);
+
+      # Stops SystemD from assigning a random MAC address to the flannel interfaces which causes MAC mismatches.
+      # The MAC address should only be set by flannel itself.
+      # https://github.com/coreos/flannel/issues/1155
+      systemd.network.links."10-flannel" = mkIf (cfg.backend.Type == "vxlan") {
+        enable = true;
+        matchConfig = { "OriginalName" = "flannel*"; };
+        linkConfig = { "MACAddressPolicy" = "none"; };
       };
-    };
+    })
 
-    services.etcd.enable = mkDefault (cfg.storageBackend == "etcd" && cfg.etcd.endpoints == ["http://127.0.0.1:2379"]);
+    (mkIf (cfg.enable && cfg.storageBackend == "kubernetes") {
+      # for some reason, flannel doesn't let you configure this path
+      # see: https://github.com/coreos/flannel/blob/master/Documentation/configuration.md#configuration
+      environment.etc."kube-flannel/net-conf.json" = {
+        source = networkConfigFile;
+      };
 
-    # for some reason, flannel doesn't let you configure this path
-    # see: https://github.com/coreos/flannel/blob/master/Documentation/configuration.md#configuration
-    environment.etc."kube-flannel/net-conf.json" = mkIf (cfg.storageBackend == "kubernetes") {
-      source = pkgs.writeText "net-conf.json" (builtins.toJSON networkConfig);
-    };
-  };
+      systemd.services.flannel = {
+        restartTriggers = [ networkConfigFile ];
+      };
+    })
+
+
+  ];
 }
