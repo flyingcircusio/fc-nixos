@@ -99,7 +99,6 @@ in {
 
         virtualisation.memorySize = 2000;
         virtualisation.diskSize = lib.mkForce 1000;
-        services.flannel.iface = "ethsrv";
         virtualisation.vlans = [ 1 2 ];
       };
 
@@ -126,7 +125,6 @@ in {
         networking.extraHosts = hosts;
         networking.hostName = lib.mkForce "kubnode";
         virtualisation.memorySize = 2000;
-        services.flannel.iface = "ethsrv";
         virtualisation.diskSize = 1000;
         virtualisation.vlans = [ 1 ];
         virtualisation.docker.storageDriver = "devicemapper";
