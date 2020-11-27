@@ -39,6 +39,18 @@ in {
     meta.license = null;
   });
 
+  flannel = super.flannel.overrideAttrs(_: rec {
+    version = "0.13.1-rc1";
+    rev = "v${version}";
+
+    src = super.fetchFromGitHub {
+      inherit rev;
+      owner = "coreos";
+      repo = "flannel";
+      sha256 = "119sf1fziznrx7y9ml7h4cqfy0hyl34sbxm81rwjg2svwz0qx6x1";
+    };
+  });
+
   gitlab = super.callPackage ./gitlab { };
   gitaly = super.callPackage ./gitlab/gitaly { };
   gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
