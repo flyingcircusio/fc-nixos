@@ -9,11 +9,7 @@ import ./make-test.nix ({ ... }:
         flyingcircus.roles.lamp = {
           enable = true;
 
-          # BBB
-          # On real machines this is fed via /etc/local/lamp/docroot and 
-          simple_docroot = true;
-
-          vhosts = [ { port = 8100; docroot = "/srv/docroot2"; } ];
+          vhosts = [ { port = 8000; docroot = "/srv/docroot"; } ];
 
           apache_conf = ''
             # XXX test-i-am-the-custom-apache-conf
@@ -40,9 +36,7 @@ import ./make-test.nix ({ ... }:
     $lamp->succeed("grep 'custom-apache-conf' ${nodes.lamp.config.services.httpd.configFile}");
     $lamp->succeed("grep 'custom-php-ini' ${nodes.lamp.config.systemd.services.httpd.environment.PHPRC}");
 
-    # The simple docroot
     $lamp->succeed('mkdir -p /srv/docroot');
-    $lamp->succeed('ln -s /srv/docroot /etc/local/lamp/docroot');
     $lamp->succeed('echo "<? phpinfo(); ?>" > /srv/docroot/test.php');
 
     $lamp->succeed("curl -f -v http://localhost:8000/test.php -o result");
@@ -65,13 +59,6 @@ import ./make-test.nix ({ ... }:
     $lamp->succeed("grep -e 'memory_limit.*1024m' result");
     $lamp->succeed("grep -e 'max_execution_time.*800' result");
     $lamp->succeed("grep -e 'session.auto_start.*Off' result");
-
-    # The .vhost.json based docroot
-    $lamp->succeed('mkdir -p /srv/docroot2');
-    $lamp->succeed('echo "{\"port\": 8100, \"docroot\": \"/srv/docroot2\"}" > /etc/local/lamp/test2.vhost.json');
-    $lamp->succeed('echo "<? phpinfo(); ?>" > /srv/docroot2/test2.php');
-    $lamp->succeed("curl -f -v http://localhost:8100/test2.php -o result2");
-    $lamp->succeed("grep 'tideways.api_key' result2");
     '';
 
 })

@@ -26,6 +26,7 @@ let
   kubernetesModulesFromHere = [
     "services/security/certmgr.nix"
     "services/cluster/kubernetes/pki.nix"
+    "services/networking/flannel.nix"
   ];
 
   master = fclib.findOneService "kubernetes-master-master";
@@ -39,6 +40,7 @@ in {
     ./master.nix
     ./node.nix
     ./pki.nix
+    ./flannel.nix
   ];
 
   options = with lib; {
@@ -49,6 +51,14 @@ in {
   };
 
   config = lib.mkMerge [
+
+    (lib.mkIf config.services.flannel.enable {
+      services.flannel = {
+        iface = "ethsrv";
+        backend = { Type = "vxlan"; DirectRouting = true; };
+        verbosity = 4;
+      };
+    })
 
     (lib.mkIf config.services.kubernetes.kubelet.enable {
       # Kubelet doesn't start with swap by default but we want to use swap.

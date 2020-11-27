@@ -184,6 +184,7 @@ let
 
       kube-dashboard = rec {
         requires = [ "kube-apiserver.service" ];
+        wantedBy = [ "multi-user.target" ];
         after = requires;
         description = "Backend for Kubernetes Dashboard";
         script = ''
@@ -282,6 +283,7 @@ in
       kubernetesEtcdctl
       kubernetesMakeKubeconfig
       sensu-plugins-kubernetes
+      stern
     ];
 
     # Policy routing interferes with virtual ClusterIPs handled by kube-proxy, disable it.

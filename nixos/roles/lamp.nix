@@ -1,9 +1,6 @@
 { config, pkgs, lib, ... }:
 let
   role = config.flyingcircus.roles.lamp;
-  localDir = "/etc/local/lamp";
-  apacheConfFile = localDir + "/apache.conf";
-  phpiniConfFile = localDir + "/php.ini";
 
 in {
   options = with lib; {
@@ -12,16 +9,12 @@ in {
 
       apache_conf = mkOption {
         type = types.lines;
-        default = (lib.optionalString
-          (builtins.pathExists apacheConfFile)
-          (builtins.readFile apacheConfFile));
+        default = "";
       };
 
       php_ini = mkOption {
         type = types.lines;
-        default = (lib.optionalString
-                (builtins.pathExists phpiniConfFile)
-                (builtins.readFile phpiniConfFile));
+        default = "";
       };
 
       vhosts = mkOption {
@@ -34,11 +27,6 @@ in {
         default = [];
       };
 
-      # BBB deprecated
-      simple_docroot = mkOption {
-          type = types.bool;
-          default = (builtins.pathExists (localDir + "/docroot"));
-      };
     };
   };
 
@@ -132,24 +120,6 @@ in {
         </Location>
         </VirtualHost>
         '' +
-        # Original simple one-host-one-port-one-docroot setup
-        # BBB This can be phased out at some point.
-        (lib.optionalString
-          role.simple_docroot
-          ''
-
-          Listen *:8000
-          <VirtualHost *:8000>
-              ServerName "${config.networking.hostName}"
-              DocumentRoot "${localDir}/docroot"
-              <Directory "${localDir}/docroot">
-                  AllowOverride all
-                  Require all granted
-                  Options FollowSymlinks
-                  DirectoryIndex index.html index.php
-              </Directory>
-          </VirtualHost>
-          '') +
         # * vhost configs
         (lib.concatMapStrings (vhost:
           ''
@@ -202,11 +172,6 @@ in {
           endscript
         }
       '';
-
-      flyingcircus.localConfigDirs.lamp = {
-        dir = localDir;
-        user = "nobody";
-      };
 
       # tideways daemon
       users.groups.tideways.gid = config.ids.gids.tideways;
