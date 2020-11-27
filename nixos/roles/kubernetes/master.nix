@@ -184,6 +184,7 @@ let
 
       kube-dashboard = rec {
         requires = [ "kube-apiserver.service" ];
+        wantedBy = [ "multi-user.target" ];
         after = requires;
         description = "Backend for Kubernetes Dashboard";
         script = ''
