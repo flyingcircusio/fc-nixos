@@ -283,6 +283,7 @@ in
       kubernetesEtcdctl
       kubernetesMakeKubeconfig
       sensu-plugins-kubernetes
+      stern
     ];
 
     # Policy routing interferes with virtual ClusterIPs handled by kube-proxy, disable it.
