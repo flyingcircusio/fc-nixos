@@ -70,6 +70,18 @@ in {
         <!doctype html>
         <html><body><h1>A webpage served by netcat</h1></body></html>
       '';
+
+      environment.etc = {
+        "local/nginx/modsecurity/modsecurity.conf".source =
+          ../nixos/services/nginx/modsecurity.conf;
+
+        "local/nginx/modsecurity/modsecurity_includes.conf".text =
+          ''
+          include modsecurity.conf
+          SecRule ARGS:testparam "@contains test" "id:1234,deny,status:999"
+          '';
+      };
+
       flyingcircus.services.nginx.enable = true;
 
       # Vhost for localhost is predefined by the nginx module and serves the
@@ -80,6 +92,11 @@ in {
         root = rootInitial;
         serverAliases = [ "other" ];
         locations."/proxy".proxyPass = "http://127.0.0.1:8008";
+
+        extraConfig = ''
+          ModSecurityEnabled on;
+          ModSecurityConfig /etc/local/nginx/modsecurity/modsecurity_includes.conf;
+        '';
       };
 
       # Display the nginx version on the 404 page.
@@ -143,6 +160,11 @@ in {
       # Back to initial binary from nginx stable (this does overwrite /etc/nginx/running-package with the wanted package).
       server.systemctl("reload nginx")
       server.wait_until_succeeds("curl server/404 | grep -q ${stableMajorVersion}")
+
+    with subtest("nginx modsecurity rules apply"):
+      out, err = server.execute("curl -v http://server/?testparam=test")
+      print(out)
+      print(err)
 
     with subtest("service user should be able to write to local config dir"):
       server.succeed('sudo -u nginx touch /etc/local/nginx/vhosts.json')
