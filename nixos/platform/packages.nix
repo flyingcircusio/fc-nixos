@@ -71,11 +71,12 @@
         wdiff
         wget
         xfsprogs
+        zip
     ] ++
     lib.optional (!config.services.postgresql.enable) pkgs.postgresql;
 
     flyingcircus.passwordlessSudoRules = [
-      { 
+      {
         commands = [ "${pkgs.iotop}/bin/iotop" ];
         groups = [ "sudo-srv" "service" ];
       }
