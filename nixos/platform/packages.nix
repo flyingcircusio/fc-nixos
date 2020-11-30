@@ -71,6 +71,7 @@
         wdiff
         wget
         xfsprogs
+        zip
     ] ++
     lib.optional (!config.services.postgresql.enable) pkgs.postgresql;
 
