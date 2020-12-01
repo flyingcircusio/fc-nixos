@@ -24,7 +24,6 @@ git merge --ff-only  # expected to fail on unclean/unpushed workdirs
 
 git checkout $stag
 git merge --ff-only
-git tag -a -m "Release r$releaseid" "fc/r$releaseid"
 
 git checkout $prod
 git merge --ff-only
