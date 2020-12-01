@@ -96,6 +96,11 @@ in {
     server.wait_for_unit('nginx.service')
     server.wait_for_open_port(80)
 
+    with subtest("proxy cache directory should be accessible only for nginx"):
+      permissions = server.succeed("stat /var/cache/nginx/proxy -c %a:%U:%G").strip()
+      expected = "700:nginx:nginx"
+      assert permissions == expected, f"expected: {expected}, got {permissions}"
+
     with subtest("nginx should forward proxied host and server headers (primary name)"):
       server.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
       server.succeed("curl http://server/proxy/")
