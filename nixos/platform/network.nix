@@ -16,8 +16,28 @@ let
     then cfg.static.allowDHCP.${location}
     else false;
 
-  # Policy routing
+  udevRenameRules = pkgs.writeTextFile {
+    name = "persistent-net-rules";
+    destination = "/etc/udev/rules.d/61-fc-persistent-net.rules";
+    text = if (interfaces != {}) then
+        lib.concatMapStrings
+          (vlan:
+            let
+              fallback = "02:00:00:${fclib.byteToHex (lib.toInt n)}:??:??";
+              mac = lib.toLower
+                (lib.attrByPath [ vlan "mac" ] fallback interfaces);
+            in ''
+              KERNEL=="eth*", ATTR{address}=="${mac}", NAME="eth${vlan}"
+            '')
+          (attrNames interfaces)
+      else ''
+        # static fallback rules for VMs
+        KERNEL=="eth*", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
+        KERNEL=="eth*", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
+      '';
+  };
 
+  # Policy routing
   rt_tables = ''
     # reserved values
     #
@@ -139,23 +159,10 @@ in
         (hostsFromEncAddresses cfg.encAddresses);
     };
 
-    services.udev.extraRules =
-      if (interfaces != {}) then
-        lib.concatMapStrings
-          (vlan:
-            let
-              fallback = "02:00:00:${fclib.byteToHex (lib.toInt n)}:??:??";
-              mac = lib.toLower
-                (lib.attrByPath [ vlan "mac" ] fallback interfaces);
-            in ''
-              KERNEL=="eth*", ATTR{address}=="${mac}", NAME="eth${vlan}"
-            '')
-          (attrNames interfaces)
-      else ''
-        # static fallback rules for VMs
-        KERNEL=="eth*", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
-        KERNEL=="eth*", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
-      '';
+    boot.initrd.extraUdevRulesCommands = ''
+      cp ${udevRenameRules}/etc/udev/rules.d/* $out/
+    '';
+    services.udev.packages = [ udevRenameRules ];
 
     systemd.services =
       let startStopScript = if cfg.network.policyRouting.enable
@@ -205,7 +212,6 @@ in
               before = wantedBy;
               path = [ pkgs.nettools pkgs.procps ];
               script = ''
-                nameif eth${vlan} ${mac}
                 sysctl net.ipv6.conf.eth${vlan}.accept_ra=0
                 sysctl net.ipv6.conf.eth${vlan}.autoconf=0
               '';
