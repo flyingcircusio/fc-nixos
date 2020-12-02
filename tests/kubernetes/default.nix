@@ -8,7 +8,8 @@ let
   nodeSrv = net4Srv + ".3";
 
   net4Fe = "10.0.2";
-  masterFe = net4Fe + ".1";
+  frontendFe = net4Fe + ".1";
+  masterFe = net4Fe + ".2";
 
   encServices = [
     {
@@ -27,11 +28,17 @@ let
       ips = [ nodeSrv ];
       service = "kubernetes-node-node";
     }
+    {
+      address = "frontend.fcio.net";
+      ips = [ frontendFe ];
+      service = "kubernetes-frontend-frontend";
+    }
   ];
 
   hosts = ''
     ${masterSrv} kubmaster.fcio.net
     ${nodeSrv} kubnode.fcio.net
+    ${frontendFe} frontend.fcio.net
     ${masterFe} kubmaster.fe.test.fcio.net
     ${masterFe} kubernetes.test.fcio.net
   '';
@@ -135,6 +142,7 @@ in {
       {
         imports = [ ../../nixos ../../nixos/roles ];
 
+        flyingcircus.roles.kubernetes-frontend.enable = true;
         flyingcircus.enc.parameters = {
           resource_group = "test";
           interfaces.srv = {
@@ -145,10 +153,19 @@ in {
             };
             gateways = {};
           };
+          interfaces.fe = {
+            bridged = false;
+            mac = "52:54:00:12:02:01";
+            networks = {
+              "${net4Fe}.0/24" = [ frontendFe ];
+            };
+            gateways = {};
+          };
         };
+        networking.domain = "fcio.net";
         networking.extraHosts = hosts;
         flyingcircus.encServices = encServices;
-        virtualisation.vlans = [ 1 ];
+        virtualisation.vlans = [ 1 2 ];
       };
 
 
@@ -207,6 +224,9 @@ in {
 
     with subtest("frontend should be able to use cluster DNS"):
       frontend.wait_until_succeeds('dig redis.default.svc.cluster.local | grep -q 10.0.0')
+
+    with subtest("frontend should be able to ping redis pods"):
+      print(frontend.succeed("dig +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
 
     with subtest("coredns sensu check should be red after shutting down coredns"):
       kubmaster.systemctl("stop coredns")
