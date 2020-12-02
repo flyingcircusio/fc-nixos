@@ -17,6 +17,7 @@ in {
   options = {
     flyingcircus.services.rabbitmq = {
       enable = mkOption {
+        type = types.bool;
         default = false;
         description = ''
           Whether to enable the RabbitMQ server, an Advanced Message
@@ -142,6 +143,8 @@ in {
     # This is needed so we will have 'rabbitmqctl' in our PATH
     environment.systemPackages = [ cfg.package ];
 
+    services.epmd.enable = true;
+
     users.users.rabbitmq = {
       description = "RabbitMQ server user";
       home = "${cfg.dataDir}";
@@ -160,10 +163,13 @@ in {
       description = "RabbitMQ Server";
 
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
-      wants = [ "network.target" ];
+      after = [ "network.target" "epmd.socket" ];
+      wants = [ "network.target" "epmd.socket" ];
 
-      path = [ cfg.package pkgs.procps ];
+      path = [
+        cfg.package
+        pkgs.coreutils # mkdir/chown/chmod for preStart
+      ];
 
       environment = {
         RABBITMQ_MNESIA_BASE = "${cfg.dataDir}/mnesia";
@@ -171,7 +177,6 @@ in {
         SYS_PREFIX = "";
         RABBITMQ_CONFIG_FILE = config_file;
         RABBITMQ_PLUGINS_DIR = concatStringsSep ":" cfg.pluginDirs;
-        RABBITMQ_PID_FILE = "${cfg.dataDir}/pid";
         RABBITMQ_ENABLED_PLUGINS_FILE = pkgs.writeText "enabled_plugins" ''
           [ ${concatStringsSep "," cfg.plugins} ].
         '';
@@ -184,6 +189,8 @@ in {
         Group = "rabbitmq";
         LogsDirectory = "rabbitmq";
         WorkingDirectory = cfg.dataDir;
+        Type = "notify";
+        NotifyAccess = "all";
         UMask = "0027";
         LimitNOFILE = "100000";
         Restart = "on-failure";
@@ -197,11 +204,6 @@ in {
             chmod 600 ${cfg.dataDir}/.erlang.cookie
         ''}
       '';
-
-      postStart = ''
-        rabbitmqctl wait ${cfg.dataDir}/pid
-      '';
-
     };
 
   };
