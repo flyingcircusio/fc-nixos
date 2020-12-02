@@ -36,16 +36,20 @@ in
       fi
       unset f
 
-      # Make our overlayed nixpkgs (in fc) available as nixos.* for nix-env for normal users. 
-      # This is same the behaviour as on standard NixOS and our old 15.09 plattform.
+      # Make our overlayed nixpkgs (in fc) available as nixos.* for nix-env for
+      # normal users. This is same the behaviour as on standard NixOS and our
+      # old 15.09 plattform.
 
-      if [ "$USER" != root ]; then
-
-        if [ -e "$HOME/.nix-defexpr/channels_root" ]; then
+      if [[ "$USER" != root ]]; then
+        if [[ -e $HOME/.nix-defexpr/channels_root ]]; then
           rm $HOME/.nix-defexpr/channels_root
         fi
 
-        ln -sfT /nix/var/nix/profiles/per-user/root/channels/nixos/fc $HOME/.nix-defexpr/nixos
+        if [[ ! -d $HOME/.nix-defexpr ]]; then
+          mkdir -p $HOME/.nix-defexpr
+          ln -sfT /nix/var/nix/profiles/per-user/root/channels/nixos/fc \
+            $HOME/.nix-defexpr/nixos
+        fi
       fi
     '' +
       (opt
