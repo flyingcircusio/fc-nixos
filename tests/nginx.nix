@@ -70,6 +70,18 @@ in {
         <!doctype html>
         <html><body><h1>A webpage served by netcat</h1></body></html>
       '';
+
+      environment.etc = {
+        "local/nginx/modsecurity/modsecurity.conf".source =
+          ../nixos/services/nginx/modsecurity.conf;
+
+        "local/nginx/modsecurity/modsecurity_includes.conf".text =
+          ''
+          include modsecurity.conf
+          SecRule ARGS:testparam "@contains test" "id:1234,deny,status:999"
+          '';
+      };
+
       flyingcircus.services.nginx.enable = true;
 
       # Vhost for localhost is predefined by the nginx module and serves the
@@ -80,6 +92,11 @@ in {
         root = rootInitial;
         serverAliases = [ "other" ];
         locations."/proxy".proxyPass = "http://127.0.0.1:8008";
+
+        extraConfig = ''
+          ModSecurityEnabled on;
+          ModSecurityConfig /etc/local/nginx/modsecurity/modsecurity_includes.conf;
+        '';
       };
 
       # Display the nginx version on the 404 page.
@@ -95,6 +112,11 @@ in {
   in ''
     server.wait_for_unit('nginx.service')
     server.wait_for_open_port(80)
+
+    with subtest("proxy cache directory should be accessible only for nginx"):
+      permissions = server.succeed("stat /var/cache/nginx/proxy -c %a:%U:%G").strip()
+      expected = "700:nginx:nginx"
+      assert permissions == expected, f"expected: {expected}, got {permissions}"
 
     with subtest("nginx should forward proxied host and server headers (primary name)"):
       server.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
@@ -138,6 +160,11 @@ in {
       # Back to initial binary from nginx stable (this does overwrite /etc/nginx/running-package with the wanted package).
       server.systemctl("reload nginx")
       server.wait_until_succeeds("curl server/404 | grep -q ${stableMajorVersion}")
+
+    with subtest("nginx modsecurity rules apply"):
+      out, err = server.execute("curl -v http://server/?testparam=test")
+      print(out)
+      print(err)
 
     with subtest("service user should be able to write to local config dir"):
       server.succeed('sudo -u nginx touch /etc/local/nginx/vhosts.json')

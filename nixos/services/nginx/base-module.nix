@@ -64,6 +64,8 @@ let
   '';
 
   configFile = pkgs.writers.writeNginxConfig "nginx.conf" ''
+    user ${cfg.user} ${cfg.group};
+
     pid /run/nginx/nginx.pid;
     error_log ${cfg.logError};
 
@@ -315,7 +317,7 @@ let
     '') authDef)
   );
 
-  checkConfigCmd = ''${wantedPackagePath}/bin/nginx -g "user ${cfg.user} ${cfg.group};" -t -c ${configPath}'';
+  checkConfigCmd = ''${wantedPackagePath}/bin/nginx -t -c ${configPath}'';
 
   nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
     #!${pkgs.runtimeShell} -e
@@ -800,6 +802,13 @@ in
           #!${pkgs.runtimeShell} -e
           ln -sfT $(readlink -f ${wantedPackagePath}) ${runningPackagePath}
         '';
+        capabilities =[
+          "CAP_NET_BIND_SERVICE"
+          "CAP_SYS_RESOURCE"
+          "CAP_SETUID"
+          "CAP_SETGID"
+          "CAP_CHOWN"
+        ];
       in {
         description = "Nginx Web Server";
         after = [ "network.target" ];
@@ -818,20 +827,21 @@ in
           RestartSec = "10s";
           StartLimitInterval = "1min";
           # User and group
-          User = cfg.user;
+          # XXX: We start nginx as root and drop later for compatibility reasons, this should change.
+          # User = cfg.user;
           Group = cfg.group;
           # Runtime directory and mode
           RuntimeDirectory = "nginx";
           RuntimeDirectoryMode = "0755";
           # Cache directory and mode
           CacheDirectory = "nginx";
-          CacheDirectoryMode = "0750";
+          CacheDirectoryMode = "0775";
           # Logs directory and mode
           LogsDirectory = "nginx";
           LogsDirectoryMode = "0755";
           # Capabilities
-          AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" "CAP_SYS_RESOURCE" ];
-          CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" "CAP_SYS_RESOURCE" ];
+          AmbientCapabilities = capabilities;
+          CapabilityBoundingSet = capabilities;
           # Security
           NoNewPrivileges = true;
           # Sandboxing
