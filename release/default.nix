@@ -117,8 +117,9 @@ let
   in lib.hydraJob (
     pkgs.runCommandLocal "platform-role-doc" { inherit html; } ''
       mkdir -p $out/nix-support
-      tar czf $out/platform-role-doc.tar.gz -C $html .
-      echo "file tarball platform-role-doc.tar.gz" > $out/nix-support/hydra-build-products
+      tarball=$out/platform-role-doc.tar.gz
+      tar czf $tarball -C $html .
+      echo "file tarball $tarball" > $out/nix-support/hydra-build-products
     ''
   );
 
