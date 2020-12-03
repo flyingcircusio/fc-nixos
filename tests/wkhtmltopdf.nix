@@ -136,7 +136,6 @@ in
     print("${pkgs.wkhtmltopdf_0_12_6}")
     machine.succeed('${pkgs.wkhtmltopdf_0_12_6}/bin/wkhtmltopdf --orientation Landscape --footer-spacing 0 --header-spacing 5 ${sample} /tmp/sample1.pdf')
     machine.succeed('${pkgs.poppler_utils}/bin/pdftohtml -s -fontfullname /tmp/sample1.pdf')
-    _, output = machine.execute('cat /etc/font')
     _, output = machine.execute('cat sample1-html.html')
     print(output)
     # This is kind of insane, but the PDF appears to create a *bold* header
