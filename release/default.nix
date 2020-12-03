@@ -2,6 +2,7 @@
 { system ? builtins.currentSystem
 , bootstrap ? <nixpkgs>
 , nixpkgs_ ? (import ../versions.nix { pkgs = import bootstrap {}; }).nixpkgs
+, branch ? null  # e.g. "fc-20.09-dev"
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
 , fc ? {
@@ -106,9 +107,25 @@ let
   testPkgs =
     listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
 
+  platformRoleDoc =
+  let
+    html = import ../doc {
+      inherit pkgs;
+      branch = if branch != null then branch else "fc-${version}";
+      updated = "${toString fc.revCount}.${shortRev}";
+    };
+  in lib.hydraJob (
+    pkgs.runCommandLocal "platform-role-doc" { inherit html; } ''
+      mkdir -p $out/nix-support
+      tar czf $out/platform-role-doc.tar.gz -C $html .
+      echo "file tarball platform-role-doc.tar.gz" > $out/nix-support/hydra-build-products
+    ''
+  );
+
   jobs = {
     pkgs = mapTestOn (packagePlatforms testPkgs);
     tests = import ../tests { inherit system pkgs; nixpkgs = nixpkgs_; };
+    doc = platformRoleDoc;
   };
 
   makeNetboot = config:

@@ -1,0 +1,10 @@
+
+img.logo {
+    float: right;
+    margin-left: 2em;
+    margin-bottom: 2em;
+}
+
+img.logo.frame {
+    border:2px solid black;
+}
