@@ -44,7 +44,6 @@
         nano
         ncdu
         netcat
-        netcat
         ngrep
         nmap
         nodejs
@@ -72,8 +71,7 @@
         wget
         xfsprogs
         zip
-    ] ++
-    lib.optional (!config.services.postgresql.enable) pkgs.postgresql;
+    ];
 
     flyingcircus.passwordlessSudoRules = [
       {

@@ -38,6 +38,7 @@ with builtins;
           }
         ];
 
+      environment.systemPackages = [ config.services.postgresql.package ];
       flyingcircus.services.postgresql.enable = true;
       flyingcircus.services.postgresql.majorVersion =
         head (lib.attrNames enabledRoles);
