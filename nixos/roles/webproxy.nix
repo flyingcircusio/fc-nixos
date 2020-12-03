@@ -118,7 +118,7 @@ in
               varnishadm vcl.list | grep -q $name && echo "Config unchanged." && exit
               varnishadm vcl.load $name $config && varnishadm vcl.use $name
 
-              for vcl in $(varnishadm vcl.list | grep ^available | awk {'print $4'});
+              for vcl in $(varnishadm vcl.list | grep ^available | awk {'print $5'});
               do
                 varnishadm vcl.discard $vcl
               done
