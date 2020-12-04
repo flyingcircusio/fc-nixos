@@ -40,7 +40,7 @@ import ./make-test.nix ({ pkgs, ... }:
 
     subtest "changing config and reloading should activate new config", sub {
       $webproxy->execute('ln -sf /etc/local/varnish/newconfig.vcl /etc/current-config/varnish.vcl');
-      $webproxy->execute('systemctl reload varnish');
+      $webproxy->succeed('systemctl reload varnish');
       $webproxy->succeed('varnishadm vcl.list | grep active | grep -q newconfig');
     };
   '';

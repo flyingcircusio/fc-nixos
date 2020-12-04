@@ -33,75 +33,47 @@ stdenv.mkDerivation rec {
       + # This is taken from the wkhtml build script that we don't run
       ''
         -confirm-license
-        -exceptions
+        -opensource
         -fast
+        -release
+        -static
         -graphicssystem raster
-        -iconv
-        -largefile
-        -no-3dnow
-        -no-accessibility
-        -no-audio-backend
-        -no-avx
-        -no-cups
-        -no-dbus
-        -no-declarative
-        -no-glib
-        -no-gstreamer
-        -no-gtkstyle
-        -no-icu
-        -no-javascript-jit
+        -webkit
+        -exceptions
+        -xmlpatterns
+        -system-libjpeg
+        -system-libpng
+        -system-zlib
         -no-libmng
         -no-libtiff
+        -no-accessibility
+        -no-stl
+        -no-qt3support
+        -no-phonon
+        -no-phonon-backend
+        -no-opengl
+        -no-declarative
+        -no-scripttools
+        -no-sql-db2
+        -no-sql-ibase
+        -no-sql-mysql
+        -no-sql-oci
+        -no-sql-odbc
+        -no-sql-psql
+        -no-sql-sqlite
+        -no-sql-sqlite2
+        -no-sql-tds
+        -no-mmx
+        -no-3dnow
+        -no-sse
+        -no-sse2
+        -no-multimedia
         -nomake demos
         -nomake docs
         -nomake examples
         -nomake tests
         -nomake tools
         -nomake translations
-        -no-mitshm
-        -no-mmx
-        -no-multimedia
-        -no-nas-sound
-        -no-neon
-        -no-nis
-        -no-opengl
-        -no-openvg
-        -no-pch
-        -no-phonon
-        -no-phonon-backend
-        -no-qt3support
-        -no-rpath
-        -no-scripttools
-        -no-sm
-        -no-sql-ibase
-        -no-sql-mysql
-        -no-sql-odbc
-        -no-sql-psql
-        -no-sql-sqlite
-        -no-sql-sqlite2
-        -no-sse
-        -no-sse2
-        -no-sse3
-        -no-sse4.1
-        -no-sse4.2
-        -no-ssse3
-        -no-stl
-        -no-xcursor
-        -no-xfixes
-        -no-xinerama
-        -no-xinput
-        -no-xkb
-        -no-xrandr
-        -no-xshape
-        -no-xsync
-        -opensource
-        -release
-        -static
-        -system-libjpeg
-        -system-libpng
-        -system-zlib
-        -webkit
-        -xmlpatterns
       '';
   });
 

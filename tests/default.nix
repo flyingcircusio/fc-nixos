@@ -67,4 +67,5 @@ in {
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
   vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
+  wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
 }

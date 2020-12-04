@@ -164,6 +164,16 @@ in
       '';
     };
 
+    rotateLogs = mkOption {
+      type = types.int;
+      default = 7;
+      description = ''
+       Configures how often log files are rotated before being removed.
+       If count is 0, old versions are removed rather than rotated.
+      '';
+    };
+
+
   };
 
   config = lib.mkMerge [
@@ -221,7 +231,7 @@ in
 
         nginx_config = {
           notification = "Nginx configuration check problems";
-          command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config || exit 2";
+          command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config";
           interval = 300;
         };
 
@@ -287,7 +297,7 @@ in
       services.logrotate.extraConfig = ''
         /var/log/nginx/*.log
         {
-            rotate 7
+            rotate ${toString config.flyingcircus.services.nginx.rotateLogs}
             create 0644 nginx service
             postrotate
                 systemctl kill nginx -s USR1 --kill-who=main || systemctl restart nginx

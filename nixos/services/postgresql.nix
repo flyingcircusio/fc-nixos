@@ -214,6 +214,12 @@ in {
 
     };
 
+    # PostgreSQL used /tmp as socket location in earlier NixOS versions.
+    # That has been changed to /run/postgresql but users may still expect the old location.
+    systemd.tmpfiles.rules = [
+      "L /tmp/.s.PGSQL.5432 - - - - /run/postgresql/.s.PGSQL.5432"
+    ];
+
     flyingcircus.services = {
 
       sensu-client.checks =
