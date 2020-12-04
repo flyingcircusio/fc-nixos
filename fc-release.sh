@@ -39,7 +39,7 @@ git merge -m "$msg" $prod
 echo "$0: committed changes:"
 PAGER= git log --graph --decorate --format=short -n3
 
-cmd="git push origin $dev $stag $prod fc/r$releaseid"
+cmd="git push origin $dev $stag $prod"
 echo "$0: If this looks correct, press Enter to push (or use ^C to abort)."
 echo "$0: This will issue: $cmd"
 read
