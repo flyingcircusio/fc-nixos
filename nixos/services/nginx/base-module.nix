@@ -63,7 +63,18 @@ let
       include ${cfg.package}/conf/uwsgi_params;
   '';
 
-  configFile = pkgs.writers.writeNginxConfig "nginx.conf" ''
+  writeNginxConfig = name: text: pkgs.runCommandLocal name {
+    inherit text;
+    passAsFile = [ "text" ];
+  } /* sh */ ''
+    # nginx-config-formatter has an error - https://github.com/1connect/nginx-config-formatter/issues/16
+    ${pkgs.gawk}/bin/awk -f ${pkgs.writers.awkFormatNginx} "$textPath" | ${pkgs.gnused}/bin/sed '/^\s*$/d' > $out
+    # XXX: The gixy security check fails even for low-impact issues and the builder
+    # cuts off the output which makes finding the problem annoying.
+    # ${pkgs.gixy}/bin/gixy $out
+  '';
+
+  configFile = writeNginxConfig "nginx.conf" ''
     user ${cfg.user} ${cfg.group};
 
     pid /run/nginx/nginx.pid;
@@ -320,8 +331,11 @@ let
   checkConfigCmd = ''${wantedPackagePath}/bin/nginx -t -c ${configPath}'';
 
   nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
-    #!${pkgs.runtimeShell} -e
-    ${checkConfigCmd}
+    #!${pkgs.runtimeShell}
+    echo "Running built-in Nginx config validation (must pass in order to activate a config)..."
+    ${checkConfigCmd} || exit 2
+    echo "Running gixy security checker (just informational)..."
+    ${pkgs.gixy}/bin/gixy ${configPath} || exit 1
   '';
 
   nginxReloadConfig = pkgs.writeScriptBin "nginx-reload" ''
