@@ -231,7 +231,7 @@ in
 
         nginx_config = {
           notification = "Nginx configuration check problems";
-          command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config || exit 2";
+          command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config";
           interval = 300;
         };
 
