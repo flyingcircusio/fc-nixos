@@ -1,7 +1,7 @@
 .. _platform-nixos2:
 
-Platform: NixOS @branch@
-========================
+NixOS |release| edition
+=======================
 
 Roles reference documentation for Flying Circus `NixOS`_ Platform edition
 @branch@.
