@@ -175,7 +175,6 @@ let
     buildInputs = [ pkgs.makeWrapper ];
     dontBuild = true;
     dontUnpack = true;
-    unpackPhase = ":";
     installPhase = ''
       mkdir -p $out/bin
       makeWrapper ${cfg.packages.gitlab.rubyEnv}/bin/rake $out/bin/gitlab-rake \
@@ -191,7 +190,6 @@ let
     buildInputs = [ pkgs.makeWrapper ];
     dontBuild = true;
     dontUnpack = true;
-    unpackPhase = ":";
     installPhase = ''
       mkdir -p $out/bin
       makeWrapper ${cfg.packages.gitlab.rubyEnv}/bin/rails $out/bin/gitlab-rails \
@@ -223,6 +221,11 @@ let
   '';
 
 in {
+
+  imports = [
+    (mkRenamedOptionModule [ "services" "gitlab" "stateDir" ] [ "services" "gitlab" "statePath" ])
+    (mkRemovedOptionModule [ "services" "gitlab" "satelliteDir" ] "")
+  ];
 
   options = {
     services.gitlab = {
