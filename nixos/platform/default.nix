@@ -19,6 +19,7 @@ let
 
 in {
   imports = [
+    ./acme.nix
     ./agent.nix
     ./enc.nix
     ./firewall.nix
@@ -192,10 +193,6 @@ in {
 
     flyingcircus.enc_services = enc_services;
 
-
-    # fallback ACME settings
-    security.acme.acceptTerms = true;
-    security.acme.email = "admin@flyingcircus.io";
 
     # implementation for flyingcircus.passwordlessSudoRules
     security.sudo.extraRules = let
