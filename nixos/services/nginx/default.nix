@@ -91,6 +91,17 @@ let
     worker_shutdown_timeout ${toString cfg.workerShutdownTimeout};
   '';
 
+  # Temp dirs that are expected by Nginx under /var/cache/nginx.
+  # We manage them with tmpfiles ourselves to make sure permissions
+  # are correct in all cases.
+  tempSubdirs = [
+    "proxy"
+    "client_body"
+    "fastcgi"
+    "scgi"
+    "uwsgi"
+  ];
+
   baseHttpConfig = ''
     # === Defaults ===
     default_type application/octet-stream;
@@ -132,6 +143,12 @@ let
     large_client_header_buffers 4 16k;
     request_pool_size 4k;
     send_timeout 10m;
+
+    # === Temp Dirs ===
+    # By default, Nginx creates another two levels of directories under the
+    # temp dirs which doesn't make sense on a XFS filesystem.
+    # By setting the options explicitly here we avoid that.
+    ${lib.concatMapStringsSep "\n" (d: "${d}_temp_path /var/cache/nginx/${d};") tempSubdirs}
   '';
 
   plainConfigFiles = filter (p: lib.hasSuffix ".conf" p) (fclib.files localCfgDir);
@@ -309,7 +326,14 @@ in
         "d /etc/local/nginx/modsecurity 2775 nginx service"
         # clean up whatever logrotate may have missed after 10 days
         "d /var/log/nginx 0755 nginx service 10d"
-      ];
+      ]
+      # d: Create temp subdirs if they don't exist and clean up files after 10 days
+      # Z: recursively change permissions if they already exist
+      ++ map (subdir: ''
+        d /var/cache/nginx/${subdir} 0700 nginx nginx 10d
+        Z /var/cache/nginx/${subdir} 0700 nginx nginx
+      ''
+      ) tempSubdirs;
 
       flyingcircus.localConfigDirs.nginx = {
         dir = "/etc/local/nginx";

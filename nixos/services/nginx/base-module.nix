@@ -816,8 +816,9 @@ in
           #!${pkgs.runtimeShell} -e
           ln -sfT $(readlink -f ${wantedPackagePath}) ${runningPackagePath}
         '';
-        capabilities =[
+        capabilities = [
           "CAP_NET_BIND_SERVICE"
+          "CAP_DAC_READ_SEARCH"
           "CAP_SYS_RESOURCE"
           "CAP_SETUID"
           "CAP_SETGID"
@@ -853,8 +854,11 @@ in
           # Logs directory and mode
           LogsDirectory = "nginx";
           LogsDirectoryMode = "0755";
-          # Capabilities
-          AmbientCapabilities = capabilities;
+          # This limits the capabilities to the given list but does not grant anything by default.
+          # Nginx does the right thing: it gives all of these capabilities to the
+          # master process but none to the workers. This means that the master
+          # can access certificates even if the permissions wouldn't allow it
+          # but workers cannot access arbitrary files without proper permissions.
           CapabilityBoundingSet = capabilities;
           # Security
           NoNewPrivileges = true;
