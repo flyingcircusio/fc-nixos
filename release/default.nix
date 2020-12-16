@@ -102,7 +102,12 @@ let
     "python38Packages"
   ];
 
-  testPkgNames = lib.subtractLists excludedPkgNames modifiedPkgNames;
+  includedPkgNames = [
+    "calibre"
+  ];
+
+  testPkgNames = includedPkgNames ++
+    lib.subtractLists excludedPkgNames modifiedPkgNames;
 
   testPkgs =
     listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
