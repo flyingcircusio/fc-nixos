@@ -51,11 +51,6 @@ in {
     };
   });
 
-  gitlab = super.callPackage ./gitlab { };
-  gitaly = super.callPackage ./gitlab/gitaly { };
-  gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
-  gitlab-shell = super.callPackage ./gitlab/gitlab-shell { };
-
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
   innotop = super.callPackage ./percona/innotop.nix { };
