@@ -12,8 +12,8 @@ let
   vhostsConfigs = mapAttrsToList (vhostName: vhostConfig: vhostConfig) virtualHosts;
   acmeEnabledVhosts = filter (vhostConfig: vhostConfig.enableACME || vhostConfig.useACMEHost != null) vhostsConfigs;
   dependentCertNames = unique (map (hostOpts: hostOpts.certName) acmeEnabledVhosts);
-  sslServices = map (certName: "acme-${certName}") dependentCertNames;
-  sslSelfSignedServices = map (certName: "acme-selfsigned-${certName}") dependentCertNames;
+  sslServices = map (certName: "acme-${certName}.service") dependentCertNames;
+  sslSelfSignedServices = map (certName: "acme-selfsigned-${certName}.service") dependentCertNames;
   sslTargetNames = map (certName: "acme-finished-${certName}") dependentCertNames;
   sslTargets = map (targetName: "${targetName}.target") sslTargetNames;
   virtualHosts = mapAttrs (vhostName: vhostConfig:
