@@ -26,6 +26,7 @@ in {
   elasticsearch6 = callTest ./elasticsearch.nix { version = "6"; };
   elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };
   fcagent = callTest ./fcagent.nix {};
+  ffmpeg = callTest ./ffmpeg.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
   graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
