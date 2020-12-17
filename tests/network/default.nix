@@ -65,6 +65,54 @@ in {
       '';
     };
 
+    name-resolution = {
+      machine =
+        { pkgs, ... }:
+        {
+          imports = [ ../../nixos ];
+          virtualisation.vlans = [ 1 2 ];
+          flyingcircus.enc.parameters.interfaces = encInterfaces "1";
+          flyingcircus.encAddresses = [
+            {
+              name = "machine";
+              ip = "10.51.2.11";
+            }
+            {
+              name = "other";
+              ip = "10.51.2.12";
+            }
+          ];
+
+          networking.domain = "fcio.net";
+        };
+
+      testScript = let
+        gethostbyname = pkgs.writeScript "gethostbyname.py" ''
+          #!${pkgs.python3}/bin/python
+          import socket
+          import sys
+          print(socket.gethostbyname(sys.argv[1]), end="")
+        '';
+      in ''
+        machine.wait_for_unit("network.target")
+        with subtest("'machine' should resolve to own srv address"):
+          ip = machine.succeed("${gethostbyname} machine")
+          assert ip == "10.51.2.11", f"resolved to {ip}"
+
+        with subtest("'machine.fcio.net' should resolve to own srv address"):
+          ip = machine.succeed("${gethostbyname} machine.fcio.net")
+          assert ip == "10.51.2.11", f"resolved to {ip}"
+
+        with subtest("'other' should resolve to foreign srv address"):
+          ip = machine.succeed("${gethostbyname} other")
+          assert ip == "10.51.2.12", f"resolved to {ip}"
+
+        with subtest("'other.fcio.net' should resolve to foreign srv address"):
+          ip = machine.succeed("${gethostbyname} other.fcio.net")
+          assert ip == "10.51.2.12", f"resolved to {ip}"
+      '';
+    };
+
     ping-vlans = {
       name = "ping-vlans";
       nodes.client =
