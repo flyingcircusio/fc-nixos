@@ -91,6 +91,8 @@ in {
       services.nginx.virtualHosts.server = {
         root = rootInitial;
         serverAliases = [ "other" ];
+        addSSL = true;
+        enableACME = true;
         locations."/proxy".proxyPass = "http://127.0.0.1:8008";
 
         extraConfig = ''
@@ -117,6 +119,13 @@ in {
       permissions = server.succeed("stat /var/cache/nginx/proxy -c %a:%U:%G").strip()
       expected = "700:nginx:nginx"
       assert permissions == expected, f"expected: {expected}, got {permissions}"
+
+    with subtest("dependencies between acme services and nginx-config-reload should be present"):
+      after = server.succeed("systemctl show --property After --value nginx-config-reload.service")
+      assert "acme-server.service" in after, f"acme.server.service missing: {after}"
+      before = server.succeed("systemctl show --property Before --value nginx-config-reload.service")
+      assert "acme-finished-server.target" in before, f"acme-finished-server.target missing: {before}"
+      server.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload.service")
 
     with subtest("nginx should forward proxied host and server headers (primary name)"):
       server.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
