@@ -176,7 +176,7 @@ You can still use the **LoadBalancer** service type but the service will show up
 This example listens to external IPv4 and IPv6 on port 443 and load-balances the
 traffic to the pods belonging to the *ingress* service in the default namespace:
 
-.. code-block:: haproxy
+.. code-block::
 
     defaults
         balance leastconn

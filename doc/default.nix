@@ -1,6 +1,12 @@
-# Builds roles documentation for his specific branch. A checkout of the general
-# platform docs may be passed to get backreferences right, e.g.:
-# nix-build --arg platformDoc '{ outPath = path/to/doc; gitTag = ""; revCount = ""; shortRev = ""; }'
+# Builds roles documentation for his specific branch.
+#
+# Run without arguments to get a local build:
+#
+# nix-build
+#
+# A checkout of the general platform docs may be passed to get backreferences
+# right, e.g.:
+# --arg platformDoc '{ outPath = path/to/doc; gitTag = ""; revCount = ""; shortRev = ""; }'
 
 { pkgs ? import <nixpkgs> {}
 , lib ? pkgs.lib
