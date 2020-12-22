@@ -80,7 +80,7 @@ Edit :file:`/etc/local/mail/users.json` to add user accounts. Example::
   {
     "user1@test.fcio.net": {
       "aliases": ["first.last@test.fcio.net"],
-      "hashedPassword": "$5$NTTg86onSoM1MK$Xir/pTc9G/TLM1LResKlyAip1oO9XcsmUKXaf7ALIS2"
+      "hashedPassword": "$5$NTTg86onSoM1MK$Xir/pTc9G/TLM1LResKlyAip1oO9XcsmUKXaf7ALIS2",
       "quota": "4G",
       "sieveScript": null
     }
@@ -151,6 +151,27 @@ and not immediately.
 .. _mail-into-backends:
 
 
+How do I forward mails to remote addresses?
+-------------------------------------------
+
+Declare a `virtual alias`_ map and create remote aliases there. Add the
+following snippet to config.json::
+
+  "dynamicMaps": {
+    "virtual_alias_maps": ["/etc/local/mail/virtual_aliases"]
+  }
+
+Create :file:`/etc/local/mail/virtual_aliases`. Example contents::
+
+  alias@test.fcio.net remote@address
+
+Invoke :command:`sudo systemctl reload postfix` to recompile maps after map
+contents has been changed. Invoke :command:`sudo fc-manage --build` as usual if
+the contents of config.json has been changed.
+
+.. _virtual alias: http://www.postfix.org/postconf.5.html#virtual_alias_maps
+
+
 How do I feed mails into an application?
 ----------------------------------------
 
@@ -171,7 +192,7 @@ In case a whole subdomain should be piped into an application server, we need
 both a transport and a relay_domains_ map. Both map declarations may point to
 the same source as *relay_domains* uses only the first field of each line.
 
-Example `config.json` snippet::
+Example config.json snippet::
 
   dynamicMaps": {
     "transport_maps": [ "/etc/local/mail/transport" ],
@@ -186,7 +207,7 @@ An DNS MX record for that subdomain must be present as well.
 
 Invoke :command:`sudo systemctl reload postfix` to recompile maps after map
 contents has been changed. Invoke :command:`sudo fc-manage --build` as usual if
-the contents of `config.json` has been changed.
+the contents of config.json has been changed.
 
 .. _relay_domains: http://www.postfix.org/postconf.5.html#relay_domains
 

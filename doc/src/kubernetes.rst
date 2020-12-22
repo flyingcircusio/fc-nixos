@@ -27,7 +27,7 @@ Roles
 
 
 By using our Kubernetes roles, you can set up a Kubernetes cluster for your
-project automatically. We provide two roles:
+project automatically. We provide three roles:
 
 The **kubernetes-master** role runs cluster management services and the Kubernetes API.
 There must be exactly one VM per project with the master role.
@@ -36,6 +36,9 @@ Multi-master setups are not supported (yet).
 VMs with the **kubernetes-node** role run pods that are assigned to them by the master.
 There must be at least one node per project. Using at least 3 nodes is recommended.
 Additional node VMs can be added at any time. They automatically register with the master.
+
+**kubernetes-frontend** allows a VM to access the cluster network of the project.
+HAProxy can be used to load-balance incoming traffic to pods.
 
 The roles can be combined on a machine.
 
@@ -69,14 +72,6 @@ Check that the nodes are working:
 .. code-block:: console
 
     $ kubectl get nodes
-
-Check that Cluster DNS and dashboard pods are running:
-
-.. code-block:: console
-
-    $ kubectl get pods -n kube-system
-
-This should show that 2 coredns pods and a dashboard pod are running.
 
 
 .. _nixos2-dashboard-and-external-api:
@@ -135,48 +130,75 @@ should look like this:
    :width: 500px
 
 
-Services: Accessing Applications Running on Kubernetes
-------------------------------------------------------
+Services
+--------
 
 A Service provides a way to access an application running on a set of pods
 independent of the real location of the pods in the cluster.
 
-Every Kubernetes node runs a `kube-proxy` that sets up iptables rules that allow
+Every VM with a Kubernetes role runs a `kube-proxy` that sets up iptables rules that allows
 access of Kubernetes services via their **Service IP** (also called **Cluster IP**)
 in the virtual service network. The default is *10.0.0.0/24*.
 
 The `kube-proxy` provides load-balancing if there are multiple pods running behind a
 a service.
 
-Services can use fixed or floating IPs.
-The dashboard uses *10.0.0.250* by default.
-Service IPs can be resolved using the cluster DNS service:
+Services can use fixed or floating ClusterIPs. They can be resolved from all Kubernetes VMs:
 
 .. code-block:: console
 
-    $ dig @10.0.0.254 myapp.default.svc.cluster.local
+    $ dig myapp.default.svc.cluster.local
 
 
 where *myapp* is a service in the namespace *default*.
 
-Other VMs in a project with a Kubernetes cluster can access services using a
-Kubernetes node as router. A route for the service IP network is set up
-automatically if Kubernetes nodes are found in the project.
+Pod networks (subnets of 10.1.0.0/16) can also be accessed directly from any Kubernetes VM.
+You can get the Pod IPs belonging to a service with a wildcard DNS query:
 
-Web applications running on the Kubernetes cluster should be
-exposed to the public through frontend VMs using the :ref:`nixos2-webgateway`
-role.
-The easiest way to use a Kubernetes application as backend/upstream is to a
-assign a fixed IP to the service and point to it in the Webgateway config.
+.. code-block:: console
+
+    $ dig *.myapp.default.svc.cluster.local
 
 For more information about Kubernetes services, refer to the
 `Service chapter in the Kubernetes manual <https://v1-19.docs.kubernetes.io/docs/concepts/services-networking/>`_.
 
 
+External Access to Services and Load Balancing
+----------------------------------------------
+
+HAProxy on a **kubernetes-frontend** VM can be used to proxy traffic to services and load-balance between pods.
+It can discover backends via cluster DNS and scale automatically with the number of pods.
+
+We don't support automatic configuration of external load balancers yet.
+We plan to fully support that in the future.
+You can still use the **LoadBalancer** service type but the service will show up as "Pending" forever.
+
+This example listens to external IPv4 and IPv6 on port 443 and load-balances the
+traffic to the pods belonging to the *ingress* service in the default namespace:
+
+.. code-block:: haproxy
+
+    defaults
+        balance leastconn
+
+    listen ingress
+        bind 198.51.100.2:443
+        bind [2a02:238:f030:::1000]:443
+        server-template pod 20 *.ingress.default.svc.cluster.local:443 check resolvers cluster init-addr none
+
+
+For more information, see this article about `DNS for Service Discovery in HAProxy
+<https://www.haproxy.com/blog/dns-service-discovery-haproxy/>`_.
+
+For details on how to configure HAProxy, please refer to the
+`documentation <http://cbonte.github.io/haproxy-dconv/2.2/configuration.html>`_.
+
+
 .. _nixos2-changing-kubernetes-networks:
 
+
 Changing Kubernetes Networks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------
 
 .. warning::
 
