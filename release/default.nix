@@ -153,10 +153,11 @@ let
     ''
   );
 
+  doc = { platform = platformDoc'; roles = platformRoleDoc; };
+
   jobs = {
     pkgs = mapTestOn (packagePlatforms testPkgs);
     tests = import ../tests { inherit system pkgs; nixpkgs = nixpkgs_; };
-    doc = { platform = platformDoc'; roles = platformRoleDoc; };
   };
 
   makeNetboot = config:
@@ -281,7 +282,7 @@ let
 in
 
 jobs // {
-  inherit channels tested images;
+  inherit channels tested images doc;
 
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";
