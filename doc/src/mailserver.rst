@@ -1,4 +1,4 @@
-.. _nixos2-mailserver:
+.. _nixos-mailserver:
 
 Mail server
 ===========

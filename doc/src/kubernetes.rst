@@ -1,4 +1,4 @@
-.. _nixos2-kubernetes:
+.. _nixos-kubernetes:
 
 Kubernetes Cluster
 ==================
@@ -23,7 +23,7 @@ Roles
     The networks `10.0.0.0/24` and `10.1.0.0/16` will be used by Kubernetes for
     services and pods. They must not overlap with existing networks.
     Modify the defaults if needed before activating Kubernetes roles as
-    described in :ref:`nixos2-changing-kubernetes-networks`!
+    described in :ref:`nixos-changing-kubernetes-networks`!
 
 
 By using our Kubernetes roles, you can set up a Kubernetes cluster for your
@@ -56,7 +56,7 @@ Cluster Management
 
 **sudo-srv** users can run :command:`kubectl` on the master VM to manage the
 cluster. You can also use the dashboard or :command:`kubectl` on your local
-machine as described in :ref:`nixos2-dashboard-and-external-api`.
+machine as described in :ref:`nixos-dashboard-and-external-api`.
 
 Basic Health Checks
 ^^^^^^^^^^^^^^^^^^^
@@ -74,7 +74,7 @@ Check that the nodes are working:
     $ kubectl get nodes
 
 
-.. _nixos2-dashboard-and-external-api:
+.. _nixos-dashboard-and-external-api:
 
 External API Access
 -------------------
@@ -174,9 +174,8 @@ We plan to fully support that in the future.
 You can still use the **LoadBalancer** service type but the service will show up as "Pending" forever.
 
 This example listens to external IPv4 and IPv6 on port 443 and load-balances the
-traffic to the pods belonging to the *ingress* service in the default namespace:
-
-.. code-block::
+traffic to the pods belonging to the *ingress* service in the default
+namespace::
 
     defaults
         balance leastconn
@@ -186,7 +185,6 @@ traffic to the pods belonging to the *ingress* service in the default namespace:
         bind [2a02:238:f030:::1000]:443
         server-template pod 20 *.ingress.default.svc.cluster.local:443 check resolvers cluster init-addr none
 
-
 For more information, see this article about `DNS for Service Discovery in HAProxy
 <https://www.haproxy.com/blog/dns-service-discovery-haproxy/>`_.
 
@@ -194,8 +192,7 @@ For details on how to configure HAProxy, please refer to the
 `documentation <http://cbonte.github.io/haproxy-dconv/2.2/configuration.html>`_.
 
 
-.. _nixos2-changing-kubernetes-networks:
-
+.. _nixos-changing-kubernetes-networks:
 
 Changing Kubernetes Networks
 ----------------------------

@@ -1,10 +1,8 @@
-.. _platform-nixos2:
-
 NixOS |release| edition
 =======================
 
-Roles reference documentation for Flying Circus `NixOS`_ Platform edition
-@branch@.
+Platform & roles documentation for Flying Circus `NixOS`_ edition
+|release|.
 
 .. _NixOS: https://nixos.org
 
@@ -21,7 +19,7 @@ Roles reference documentation for Flying Circus `NixOS`_ Platform edition
    firewall
    monitoring
 
-.. _nixos2-components:
+.. _nixos-components:
 
 Components/Roles
 ----------------

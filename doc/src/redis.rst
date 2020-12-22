@@ -1,4 +1,4 @@
-.. _nixos2-redis:
+.. _nixos-redis:
 
 Redis
 =====
@@ -27,7 +27,7 @@ Available configuration options can be found in the
 `official documentation <https://redis.io/topics/config>`_.
 
 For further information on how to activate changes on our NixOS-environment,
-please consult :ref:`nixos2-local`.
+please consult :ref:`nixos-local`.
 
 The authentication password is automatically generated upon installation
 and can be read *and changed* by service users. It can be found in

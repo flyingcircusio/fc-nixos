@@ -1,4 +1,4 @@
-.. _nixos2-docker:
+.. _nixos-docker:
 
 Docker
 ======
@@ -25,7 +25,7 @@ run with the :command:`--network host` option to ensure proper integration.
 
 If you want your container to be reachable from the public internet, make sure
 it binds to an address on the :file:`ethfe` interface (or ``0.0.0.0`` or ``::``).
-You then need to :ref:`open up appropriate ports in the firewall <nixos2-firewall>`.
+You then need to :ref:`open up appropriate ports in the firewall <nixos-firewall>`.
 
 Other hosts in the same project can automatically connect to all the ports your
 container provides by connecting to ``<$hostname>:<port>`` (which ends up on

@@ -1,4 +1,4 @@
-.. _nixos2-rabbitmq:
+.. _nixos-rabbitmq:
 
 RabbitMQ
 ========

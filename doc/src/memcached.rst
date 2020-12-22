@@ -1,4 +1,4 @@
-.. _nixos2-memcached:
+.. _nixos-memcached:
 
 Memcached
 =========
@@ -18,7 +18,7 @@ changed options into a JSON file and save it
 to :file:`/etc/local/memcached/memcached.json`.
 
 For further information on how to activate changes on our NixOS-environment,
-please consult section :ref:`nixos2-local`.
+please consult section :ref:`nixos-local`.
 
 Supported options are:
 

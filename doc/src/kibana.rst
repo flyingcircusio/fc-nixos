@@ -1,4 +1,4 @@
-.. _nixos2-kibana:
+.. _nixos-kibana:
 
 Kibana
 ======
@@ -9,7 +9,7 @@ There's a role for each supported major version, currently:
 * kibana6: 6.7.2 (NixOS 20.09: 6.8.3)
 * kibana7: 7.8.0
 
-We provide :ref:`nixos2-elasticsearch` as a separate component.
+We provide :ref:`nixos-elasticsearch` as a separate component.
 You need at least one VM with an Elasticsearch role matching the version of the Kibana role.
 Both can be activated on the same VM which is the easiest way to run Kibana.
 

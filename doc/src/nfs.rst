@@ -1,4 +1,4 @@
-.. _nixos2-nfs:
+.. _nixos-nfs:
 
 NFS
 ===

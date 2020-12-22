@@ -1,4 +1,4 @@
-.. _nixos2-elasticsearch:
+.. _nixos-elasticsearch:
 
 Elasticsearch
 =============
@@ -10,7 +10,7 @@ There's a role for each supported major version, currently:
 * elasticsearch6: 6.7.2 (20.09: 6.8.3)
 * elasticsearch7: 7.8.0
 
-We also provide :ref:`nixos2-kibana` as a separate component.
+We also provide :ref:`nixos-kibana` as a separate component.
 
 
 Configuration

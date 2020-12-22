@@ -1,4 +1,4 @@
-.. _nixos2-loghost:
+.. _nixos-loghost:
 
 Loghost
 =======

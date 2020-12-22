@@ -1,4 +1,4 @@
-.. _nixos2-lamp:
+.. _nixos-lamp:
 
 LAMP (Apache/mod_php)
 =====================
@@ -11,7 +11,7 @@ used to easily run a production-ready PHP application server.
 	The Apache configured by this role does not bind / open firewall ports to the
 	frontend network automatically. It is not intended to serve applications
 	directly to consumers but should be placed behind a :ref:`webgateway
-	<nixos2-webgateway>`.
+	<nixos-webgateway>`.
 
 Configuration
 -------------

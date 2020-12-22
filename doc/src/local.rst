@@ -1,4 +1,4 @@
-.. _nixos2-local:
+.. _nixos-local:
 
 Local Configuration
 ===================

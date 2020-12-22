@@ -1,4 +1,4 @@
-.. _nixos2-base:
+.. _nixos-base:
 
 Base environment
 ================
@@ -95,7 +95,8 @@ Interaction
 -----------
 
 Service users may invoke :command:`sudo systemctl` to restart individual
-services manually. See also :ref:`nixos2-local` for information about how to activate configuration changes.
+services manually. See also :ref:`nixos-local` for information about how to
+activate configuration changes.
 
 
 .. vim: set spell spelllang=en:

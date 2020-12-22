@@ -1,4 +1,4 @@
-.. _nixos2-firewall:
+.. _nixos-firewall:
 
 Firewall
 ========

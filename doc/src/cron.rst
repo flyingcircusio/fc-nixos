@@ -1,4 +1,4 @@
-.. _nixos2-cron:
+.. _nixos-cron:
 
 Cron
 ====

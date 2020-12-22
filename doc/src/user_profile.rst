@@ -1,4 +1,4 @@
-.. _nixos2-user-package-management:
+.. _nixos-user-package-management:
 
 User Package Management
 =======================
