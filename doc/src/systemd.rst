@@ -1,4 +1,4 @@
-.. _nixos2-systemd-units:
+.. _nixos-systemd-units:
 
 SystemD units
 =============

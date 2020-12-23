@@ -1,4 +1,4 @@
-.. _nixos2-webgateway:
+.. _nixos-webgateway:
 
 Webgateway (NGINX, HAProxy)
 ===========================
@@ -41,7 +41,7 @@ and how you are used to configure, start, stop and maintain these packages.
   like :command:`sudo systemctl restart nginx.service` to control services.
   However, remember that invoking :command:`sudo fc-manage --build` is
   necessary to put configuration changes into effect. A simple restart is not
-  sufficient. For further information, also see :ref:`nixos2-local`.
+  sufficient. For further information, also see :ref:`nixos-local`.
 
 Role configuration
 ------------------
@@ -59,7 +59,7 @@ fit your needs. For reference, please refer to the
 `official documentation <http://cbonte.github.io/haproxy-dconv/1.9/configuration.html>`_.
 
 
-.. _nixos2-nginx:
+.. _nixos-nginx:
 
 nginx
 ~~~~~

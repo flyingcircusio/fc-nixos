@@ -1,4 +1,4 @@
-.. _nixos2-webproxy:
+.. _nixos-webproxy:
 
 Varnish (Webproxy)
 ==================
@@ -26,7 +26,7 @@ and how you are used to configure, start, stop and maintain these packages.
   like :command:`sudo systemctl restart varnish` to control services.
   However, remember that invoking :command:`sudo fc-manage --build` is
   necessary to put configuration changes into effect. A simple restart is not
-  sufficient. For further information, also see :ref:`nixos2-local`.
+  sufficient. For further information, also see :ref:`nixos-local`.
 
 Role configuration
 ------------------

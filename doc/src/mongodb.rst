@@ -1,4 +1,4 @@
-.. _nixos2-mongodb:
+.. _nixos-mongodb:
 
 MongoDB
 =======

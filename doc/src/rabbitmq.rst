@@ -1,15 +1,12 @@
-.. _nixos2-rabbitmq:
+.. _nixos-rabbitmq:
 
 RabbitMQ
 ========
 
 A managed instance of the `RabbitMQ <http://rabbitmq.com>`_ message broker.
-There are multiple roles for the available versions:
+On NixOS 20.09, RabbitMQ 3.8 should be used.
 
-* On NixOS 19.03, the role rabbitmq37 should be used.
-* On NixOS 20.09, both rabbitmq37 and rabbitmq38 install use RabbitMQ 3.8.
-
-We still provide RabbitMQ versions 3.6.5 and 3.6.15 on NixOS 19.03 and 20.09.
+We still provide RabbitMQ versions 3.6.5 and 3.6.15.
 They are end-of-life and should not be used anymore.
 
 Configuration

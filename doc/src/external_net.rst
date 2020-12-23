@@ -1,4 +1,4 @@
-.. _nixos2-external_net:
+.. _nixos-external_net:
 
 External network gateway
 ========================

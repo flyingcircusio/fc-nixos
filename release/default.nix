@@ -11,6 +11,12 @@
     rev = "0000000000000000000000000000000000000000";
     shortRev = "0000000";
   }
+, platformDoc ? {
+    outPath = null;
+    revCount = 0;
+    shortRev = "0000000";
+    gitTag = "master";
+  }
 , scrubJobs ? true  # Strip most of attributes when evaluating
 }:
 
@@ -38,6 +44,7 @@ let
   '';
 
   upstreamSources = (import ../versions.nix { pkgs = (import nixpkgs_ {}); });
+
   fcSrc = pkgs.stdenv.mkDerivation {
     name = "fc-overlay";
     src = lib.cleanSource ../.;
@@ -112,26 +119,45 @@ let
   testPkgs =
     listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
 
+  dummyPlatformDoc = pkgs.stdenv.mkDerivation {
+    name = "dummy-platform-doc";
+    # creates nothing but an empty objects.inv to enable independent builds
+    unpackPhase = ":";
+    installPhase = ''
+      mkdir $out
+    '';
+  };
+
+  mkPlatformDoc = path: (import "${path}/release.nix" {
+    inherit pkgs;
+    src = platformDoc;
+  }).platformDoc;
+
+  platformDoc' = lib.mapNullable mkPlatformDoc platformDoc.outPath;
+
   platformRoleDoc =
   let
     html = import ../doc {
       inherit pkgs;
       branch = if branch != null then branch else "fc-${version}";
       updated = "${toString fc.revCount}.${shortRev}";
+      platformDoc = platformDoc';
+      failOnWarnings = true;
     };
   in lib.hydraJob (
     pkgs.runCommandLocal "platform-role-doc" { inherit html; } ''
       mkdir -p $out/nix-support
       tarball=$out/platform-role-doc.tar.gz
-      tar czf $tarball -C $html .
+      tar czf $tarball --mode +w -C $html .
       echo "file tarball $tarball" > $out/nix-support/hydra-build-products
     ''
   );
 
+  doc = { platform = platformDoc'; roles = platformRoleDoc; };
+
   jobs = {
     pkgs = mapTestOn (packagePlatforms testPkgs);
     tests = import ../tests { inherit system pkgs; nixpkgs = nixpkgs_; };
-    doc = platformRoleDoc;
   };
 
   makeNetboot = config:
@@ -256,7 +282,7 @@ let
 in
 
 jobs // {
-  inherit channels tested images;
+  inherit channels tested images doc;
 
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";

@@ -1,4 +1,4 @@
-.. _nixos2-monitoring:
+.. _nixos-monitoring:
 
 Monitoring
 ==========
@@ -40,7 +40,7 @@ Example:
     }
 
 To activate the checks, run :command:`sudo fc-manage --build`.
-For further information about local configuration, also see :ref:`nixos2-local`.
+For further information about local configuration, also see :ref:`nixos-local`.
 
 The following packages are available in the sensu check PATH:
 
