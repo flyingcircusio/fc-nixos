@@ -29,7 +29,7 @@ let
                     user.pw_dir + "/.cache/fc-userscan.cache", "-L10000000",
                     "--unzip=*.egg", "-E", EXCLUDE, user.pw_dir],
                 stdin=subprocess.DEVNULL,
-                preexec_fn=lambda: os.setuid(user.pw_uid))
+                preexec_fn=lambda: os.setresuid(user.pw_uid, 0, 0))
             rc.append(p.wait())
 
         status = max(rc)
