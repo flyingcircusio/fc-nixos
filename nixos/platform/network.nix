@@ -121,6 +121,13 @@ in
     '';
 
     networking = {
+
+      # FQDN and host name should resolve to the SRV address
+      # (set by hostsFromEncAddresses) and not 127.0.0.1.
+      # Restores old behaviour that we know from 15.09.
+      # -> #PL-129549
+      hosts = lib.mkOverride 90 {};
+
       nameservers =
         if (hasAttr location cfg.static.nameservers)
         then cfg.static.nameservers.${location}
