@@ -140,6 +140,17 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  prosody = super.prosody.overrideAttrs(_: {
+    version = "0.11.7"; # also update communityModules
+    sha256 = "0iw73ids6lv09pg2fn0cxsm2pvi593md71xk48zbcp28advc1zr8";
+
+    communityModules = super.fetchhg {
+      url = "https://hg.prosody.im/prosody-modules";
+      rev = "7678b4880719";
+      sha256 = "1rpk3jcfhsa9hl7d7y638kprs9in0ljjp1nqxg30w1689v5h85d2";
+    };
+  });
+
   rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix {
     erlang = self.erlangR19;
   };

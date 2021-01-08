@@ -77,6 +77,11 @@ in {
         default = false;
       };
 
+      enableXMPPWebsockets = mkOption {
+        type = types.bool;
+        default = false;
+      };
+
       enableRoomAuthentication = mkOption {
         description =  ''
           Require a username and password to create new rooms.
@@ -114,7 +119,7 @@ in {
 
       resolution = mkOption {
         type = types.int;
-        default = 480;
+        default = 720;
       };
 
       defaultLanguage = mkOption {
@@ -144,6 +149,11 @@ in {
 
         (writeScriptBin "jitsi-jicofo-show-config" ''
           cat /etc/jitsi/jicofo/sip-communicator.properties
+        '')
+
+        (writeScriptBin "jitsi-webclient-show-config" ''
+          cat $(nginx-show-config | grep '\-config.js' | cut -d' ' -f 2 | tr -d ';')
+          cat $(nginx-show-config | grep '\-interfaceConfig.js' | cut -d' ' -f 2 | tr -d ';')
         '')
 
         (writeScriptBin "jitsi-prosody-show-config" ''
@@ -201,13 +211,24 @@ in {
               height = {
                 ideal = cfg.resolution;
                 max = cfg.resolution;
-                min = cfg.resolution;
+                min = 144;
               };
             };
           };
+          enableTcc = true;
+          enableRemb = true;
+          minHDHeight = 540;
+          startBitrate = "800";
+          disableSimulcast = false;
           defaultLanguage = cfg.defaultLanguage;
           enableLipSync = false;
           enableAutomaticUrlCopy = true;
+          enableLayerSuspension = true;
+          openBridgeChannel = "websocket";
+          desktopSharingFrameRate = {
+            min = 5;
+            max = 20;
+          };
           p2p.enabled = false;
           inherit (cfg) resolution;
           startVideoMuted = 8;
@@ -220,12 +241,16 @@ in {
         } //
         lib.optionalAttrs enableJibriIntegration {
           hiddenDomain = "recorder.${cfg.hostName}";
+        } //
+        lib.optionalAttrs cfg.enableXMPPWebsockets {
+          websocket = "wss://${cfg.hostName}/xmpp-websocket";
         };
 
         hostName = cfg.hostName;
 
         interfaceConfig = {
           DISABLE_VIDEO_BACKGROUND = true;
+          DISPLAY_WELCOME_PAGE_CONTENT = true;
           MOBILE_APP_PROMO = false;
           SHOW_JITSI_WATERMARK = false;
           SHOW_WATERMARK_FOR_GUESTS = false;
@@ -237,22 +262,58 @@ in {
         "${cfg.hostName}" = {
           listenAddress = cfg.listenAddress;
           listenAddress6 = fclib.quoteIPv6Address cfg.listenAddress6;
-        } //
-        lib.optionalAttrs (pathExists /etc/local/jitsi/welcomePageAdditionalContent.html) {
-          locations."=/static/welcomePageAdditionalContent.html" = {
-            alias = "${/etc/local/jitsi/welcomePageAdditionalContent.html}";
+
+          locations = {
+            "= /xmpp-websocket" = {
+              proxyPass = http://127.0.0.1:5280/xmpp-websocket;
+              extraConfig = ''
+                proxy_buffer_size 128k;
+                proxy_buffers 4 256k;
+                proxy_busy_buffers_size  256k;
+                proxy_http_version 1.1;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host $http_host;
+                proxy_set_header X-Forwarded-For $remote_addr;
+                tcp_nodelay on;
+              '';
+            };
+
+            "~ ^/colibri-ws/jvb1/(.*)" = {
+              proxyPass = "http://127.0.0.1:9090/colibri-ws/jvb1/$1$is_args$args";
+              extraConfig = ''
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                tcp_nodelay on;
+              '';
+            };
+          } //
+          lib.optionalAttrs (pathExists /etc/local/jitsi/welcomePageAdditionalContent.html) {
+            "= /static/welcomePageAdditionalContent.html" = {
+              alias = "${/etc/local/jitsi/welcomePageAdditionalContent.html}";
+            };
           };
         };
       };
 
       services.prosody = {
 
+        modules = {
+          ping = true;
+          websocket = true;
+        };
+
         extraModules = [
-          "ping"
+          "pinger"
           "turncredentials"
         ];
 
         extraConfig = ''
+          archive_expires_after = "10s";
+          cross_domain_websocket = true;
+          consider_websocket_secure = true;
+
+
           turncredentials_secret = "${turnSecret}";
           turncredentials = {
             { type = "turn",
@@ -296,6 +357,10 @@ in {
               extraConfig = ''
                 authentication = "anonymous"
                 c2s_require_encryption = false
+                smacks_max_unacked_stanzas = 5;
+                smacks_hibernation_time = 60;
+                smacks_max_hibernated_sessions = 1;
+                smacks_max_old_sessions = 1;
               '';
             };
           } //
@@ -315,11 +380,35 @@ in {
 
       };
 
-      services.jitsi-videobridge.extraProperties =
-        lib.optionalAttrs (!cfg.enablePublicUDP) {
-          "org.ice4j.ice.harvest.ALLOWED_ADDRESSES" =
-            lib.concatStringsSep ";" (fclib.listenAddresses "ethsrv");
+      services.jitsi-videobridge = {
+        config = {
+          videobridge = {
+            http-servers = {
+              private = {
+                host = "127.0.0.1";
+                port = 8080;
+              };
+              public = {
+                host = "127.0.0.1";
+                port = 9090;
+              };
+            };
+
+            websockets = {
+              enabled = true;
+              tls = true;
+              server-id = "jvb1";
+              domain = "${cfg.hostName}:443";
+            };
+          };
         };
+
+        extraProperties =
+          lib.optionalAttrs (!cfg.enablePublicUDP) {
+            "org.ice4j.ice.harvest.ALLOWED_ADDRESSES" =
+              lib.concatStringsSep ";" (fclib.listenAddresses "ethsrv");
+          };
+      };
 
     })
 
