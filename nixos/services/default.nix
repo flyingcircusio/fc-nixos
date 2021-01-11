@@ -26,7 +26,10 @@ in {
     ./rabbitmq36.nix
     ./rabbitmq.nix
     ./redis.nix
-    ./sensu.nix
+    ./sensu/api.nix
+    ./sensu/client.nix
+    ./sensu/server.nix
+    ./sensu/uchiwa.nix
     ./syslog.nix
     ./telegraf.nix
 

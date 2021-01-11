@@ -30,7 +30,7 @@ let
     }
     else "/var/empty";
 
-  client_json = pkgs.writeText "client.json" ''
+  sensuClientConfigFile = pkgs.writeText "client.json" ''
     {
       "_comment": [
         "This is a comment to help restarting sensu when necessary.",
@@ -248,6 +248,9 @@ in {
 
     environment.systemPackages = [
       sensuCheckEnvCmd
+      (pkgs.writeScriptBin
+        "sensu-client-show-config"
+        "cat ${sensuClientConfigFile}")
     ];
 
     flyingcircus.passwordlessSudoRules = [
@@ -311,7 +314,7 @@ in {
         fi
         # omit localSensuConf dir if syntax errors have been detected
         exec sensu-client -L ${cfg.loglevel} \
-          -c ${client_json} $confDir \
+          -c ${sensuClientConfigFile} $confDir \
           ${concatStringsSep " " cfg.extraOpts}
       '';
       serviceConfig = {
