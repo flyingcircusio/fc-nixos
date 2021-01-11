@@ -73,9 +73,6 @@ in  {
       group = "sensuapi";
     };
 
-    flyingcircus.roles.rabbitmq38.enable = true;
-    services.redis.enable = true;
-
     systemd.services.sensu-api = rec {
       wantedBy = [ "multi-user.target" ];
       requires = [
