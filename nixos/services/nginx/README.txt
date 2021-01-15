@@ -7,8 +7,8 @@ the next fc-manage run if the config is valid. It will display a warning if
 invalid settings are found in the nginx config.
 
 Note that changes to listen directives that are incompatible with the running config
-require a manual Ngnix restart that drops connections. This happens when changing
-`listenAddress` from 0.0.0.0 to a single IP address 123.123.123.123, for example.
+may require a manual Nginx restart that drops connections.
+Using `reuseport` can avoid such situations (see below).
 
 The combined nginx config file can be shown with: `nginx-show-config`
 
@@ -61,6 +61,11 @@ If none of the `listenAddress*` options is given, all frontend IPs are used.
 The `listen` option overrides our defaults: the `listenAddress*` options have
 no effect and no IP is used automatically in this case.
 
+We also support a custom `reuseport` option for `listen` which is true by default.
+The effect is that Nginx will start a separate socket listener for each worker.
+This helps performance and also allows changing listen IPs on config reload
+without the need to restart Nginx.
+
 
 ### HTTPS and Let's Encrypt
 
@@ -87,7 +92,13 @@ use the following snippet, and *USE SSL*:
 auth_basic "FCIO user";
 auth_basic_user_file "/etc/local/htpasswd_fcio_users";
 
-There is also an `example-configuration` here. Copy to some file ending with
-*.conf and adapt.
+There is also an `example-configuration` here. Copy to some file with the extension
+.conf and adapt.
 
-You can check if the config is valid with: `nginx-check-config`
+We recommend to use `listen ... reuseport` like in the example configuration.
+The effect is that Nginx will start a separate socket listener for each worker.
+This helps performance and also allows changing listen IPs on config reload
+without the need to restart Nginx.
+
+You can check if the config is valid with: `nginx-check-config`.
+The script also warns about potential security issues with your config.

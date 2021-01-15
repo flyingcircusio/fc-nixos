@@ -235,11 +235,12 @@ let
             then filter (x: x.ssl) defaultListen
             else defaultListen;
 
-        listenString = { addr, port, ssl, extraParameters ? [], ... }:
+        listenString = { addr, port, ssl, reuseport ? true, extraParameters ? [], ... }:
           "listen ${addr}:${toString port} "
           + optionalString ssl "ssl "
           + optionalString (ssl && vhost.http2) "http2 "
           + optionalString vhost.default "default_server "
+          + optionalString reuseport "reuseport "
           + optionalString (extraParameters != []) (concatStringsSep " " extraParameters)
           + ";";
 

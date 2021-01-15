@@ -7,8 +7,8 @@ let
     builtins.concatStringsSep "\n    "
       (lib.concatMap
         (formatted_addr: [
-          "listen ${formatted_addr}:80;"
-          "listen ${formatted_addr}:443 ssl;"])
+          "listen ${formatted_addr}:80 reuseport;"
+          "listen ${formatted_addr}:443 ssl reuseport;"])
         (map
           (addr:
             if fclib.isIp4 addr then addr else "[${addr}]")
