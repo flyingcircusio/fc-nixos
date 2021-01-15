@@ -327,7 +327,12 @@ in
 
     };
 
-    networking.nameservers = [ "127.0.0.1" ];
+    networking.nameservers = lib.mkOverride 90 ([ "127.0.0.1" ] ++ fcNameservers);
+    networking.resolvconf.extraConfig = ''
+      # resolvconf only adds the local resolver to resolv.conf by default,
+      # but we want all of the servers as fallback.
+      resolv_conf_local_only=NO
+    '';
 
     networking.firewall = {
       allowedTCPPorts = [ apiserverPort ];

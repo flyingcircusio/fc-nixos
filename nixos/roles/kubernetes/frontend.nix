@@ -15,6 +15,8 @@ let
 
   masterRoleEnabled = config.flyingcircus.roles.kubernetes-master.enable;
   nodeRoleEnabled = config.flyingcircus.roles.kubernetes-node.enable;
+  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
+  fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
 
   haproxyCfg = ''
     global
@@ -96,7 +98,7 @@ in
         echo ${master.password} | md5sum | head -c32 > /var/lib/kubernetes/secrets/apitoken.secret
       '';
 
-      networking.nameservers = lib.mkOverride 90 master.ips;
+      networking.nameservers = lib.mkOverride 90 (master.ips ++ fcNameservers);
 
       services.kubernetes = {
         easyCerts = true;

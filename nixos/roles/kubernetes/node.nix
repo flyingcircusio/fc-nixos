@@ -8,6 +8,8 @@ let
   fclib = config.fclib;
   kublib = config.services.kubernetes.lib;
   master = fclib.findOneService "kubernetes-master-master";
+  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
+  fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
 in
 {
   options = {
@@ -72,7 +74,7 @@ in
         echo ${master.password} | md5sum | head -c32 > /var/lib/kubernetes/secrets/apitoken.secret
       '';
 
-      networking.nameservers = lib.mkOverride 90 master.ips;
+      networking.nameservers = lib.mkOverride 90 (master.ips ++ fcNameservers);
 
       services.kubernetes = {
         # The certificates only support fcio.net but the directory still uses gocept.net
