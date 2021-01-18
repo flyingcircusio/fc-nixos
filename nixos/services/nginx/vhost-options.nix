@@ -35,6 +35,7 @@ with lib;
         addr = mkOption { type = str;  description = "IP address.";  };
         port = mkOption { type = int;  description = "Port number."; default = 80; };
         ssl  = mkOption { type = bool; description = "Enable SSL.";  default = false; };
+        reuseport = mkOption { type = bool; description = "Each worker gets its own socket listener.";  default = true; };
         extraParameters = mkOption { type = listOf str; description = "Extra parameters of this listen directive."; default = []; example = [ "reuseport" "deferred" ]; };
       }; });
       default = [];
