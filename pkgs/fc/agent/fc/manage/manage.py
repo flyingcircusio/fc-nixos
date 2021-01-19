@@ -24,13 +24,22 @@ import tempfile
 _log = logging.getLogger()
 enc = {}
 
-ACTIVATE = """\
+# nixos-rebuild doesn't support changing the result link name so we
+# create a dir with a meaningful name (like /run/current-system) and
+# let nixos-rebuild put it there.
+# The link goes away after a reboot. It's possible that the new system
+# will be garbage-collected before the switch in that case but the switch
+# will still work.
+NEXT_SYSTEM = "/run/next-system"
+
+ACTIVATE = f"""\
 set -e
-nix-channel --add {url} nixos
+nix-channel --add {{url}} nixos
 nix-channel --update nixos
 nix-channel --remove next
 # Retry once in case nixos-build fails e.g. due to updates to Nix itself
 nixos-rebuild switch || nixos-rebuild switch
+rm -rf {NEXT_SYSTEM}
 """
 
 
@@ -122,12 +131,18 @@ class Channel:
     def prepare_maintenance(self):
         _log.debug('Preparing maintenance')
         self.load('next')
+
+        if not p.exists(NEXT_SYSTEM):
+            os.mkdir(NEXT_SYSTEM)
+
         call = subprocess.Popen(
              ['nixos-rebuild',
               '-I', 'nixpkgs=' + '/root/.nix-defexpr/channels/next',
               '--no-build-output',
               'dry-activate'],
+             cwd=NEXT_SYSTEM,
              stderr=subprocess.PIPE)
+
         output = []
         for line in call.stderr.readlines():
             line = line.decode('UTF-8').strip()
