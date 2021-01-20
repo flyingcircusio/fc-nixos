@@ -63,8 +63,8 @@ in
           #proxy_pass http://@varnish;
 
           # enable mod_security
-          #ModSecurityEnabled on;
-          #ModSecurityConfig /etc/local/nginx/modsecurity/modsecurity_includes.conf;
+          #modsecurity on;
+          #modsecurity_rules_file /etc/local/nginx/modsecurity/modsecurity_includes.conf;
       }
   }
 ''
