@@ -138,6 +138,14 @@ in {
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost172; };
 
+  postgis_2_5 = super.postgis.overrideAttrs(_: rec {
+    version = "2.5.5";
+    src = super.fetchurl {
+      url = "https://download.osgeo.org/postgis/source/postgis-${version}.tar.gz";
+      sha256 = "0547xjk6jcwx44s6dsfp4f4j93qrbf2d2j8qhd23w55a58hs05qj";
+    };
+  });
+
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
   prosody = super.prosody.overrideAttrs(_: {
