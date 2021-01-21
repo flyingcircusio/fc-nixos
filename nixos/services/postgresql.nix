@@ -68,7 +68,7 @@ in {
     postgresqlPkg = getAttr cfg.majorVersion packages;
 
     extensions = lib.optionals (lib.versionOlder cfg.majorVersion "12") [
-      (pkgs.postgis.override { postgresql = postgresqlPkg; })
+      (pkgs.postgis_2_5.override { postgresql = postgresqlPkg; })
       (pkgs.temporal_tables.override { postgresql = postgresqlPkg; })
       (pkgs.rum.override { postgresql = postgresqlPkg; })
     ] ++ lib.optionals (lib.versionAtLeast cfg.majorVersion "12") [
