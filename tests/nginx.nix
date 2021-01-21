@@ -96,8 +96,8 @@ in {
         locations."/proxy".proxyPass = "http://127.0.0.1:8008";
 
         extraConfig = ''
-          ModSecurityEnabled on;
-          ModSecurityConfig /etc/local/nginx/modsecurity/modsecurity_includes.conf;
+          modsecurity on;
+          modsecurity_rules_file /etc/local/nginx/modsecurity/modsecurity_includes.conf;
         '';
       };
 

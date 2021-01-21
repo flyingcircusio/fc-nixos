@@ -235,7 +235,7 @@ in
           ./modsecurity_includes.conf;
 
         "local/nginx/modsecurity/unicode.mapping".source =
-          "${pkgs.modsecurity_standalone.nginx}/unicode.mapping";
+          "${pkgs.libmodsecurity.src}/unicode.mapping";
       };
 
       flyingcircus.services.telegraf.inputs = {

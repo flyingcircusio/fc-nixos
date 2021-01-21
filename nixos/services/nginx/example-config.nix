@@ -7,8 +7,8 @@ let
     builtins.concatStringsSep "\n    "
       (lib.concatMap
         (formatted_addr: [
-          "listen ${formatted_addr}:80;"
-          "listen ${formatted_addr}:443 ssl;"])
+          "listen ${formatted_addr}:80 default_server reuseport;"
+          "listen ${formatted_addr}:443 ssl default_server reuseport;"])
         (map
           (addr:
             if fclib.isIp4 addr then addr else "[${addr}]")
@@ -63,8 +63,8 @@ in
           #proxy_pass http://@varnish;
 
           # enable mod_security
-          #ModSecurityEnabled on;
-          #ModSecurityConfig /etc/local/nginx/modsecurity/modsecurity_includes.conf;
+          #modsecurity on;
+          #modsecurity_rules_file /etc/local/nginx/modsecurity/modsecurity_includes.conf;
       }
   }
 ''
