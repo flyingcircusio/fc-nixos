@@ -240,7 +240,7 @@ let
           + optionalString ssl "ssl "
           + optionalString (ssl && vhost.http2) "http2 "
           + optionalString vhost.default "default_server "
-          + optionalString reuseport "reuseport "
+          + optionalString (vhost.default && reuseport) "reuseport "
           + optionalString (extraParameters != []) (concatStringsSep " " extraParameters)
           + ";";
 

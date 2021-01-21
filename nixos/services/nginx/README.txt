@@ -61,7 +61,13 @@ If none of the `listenAddress*` options is given, all frontend IPs are used.
 The `listen` option overrides our defaults: the `listenAddress*` options have
 no effect and no IP is used automatically in this case.
 
+One vhost definition should set the `default` option.
+Otherwise, the first vhost entry will be the default one.
+Because we combine config from multiple files, setting an explicit default is
+strongly encouraged to avoid surprises with server name matching.
+
 We also support a custom `reuseport` option for `listen` which is true by default.
+The option only has an effect on the default vhost and is ignored on others.
 The effect is that Nginx will start a separate socket listener for each worker.
 This helps performance and also allows changing listen IPs on config reload
 without the need to restart Nginx.
@@ -95,7 +101,8 @@ auth_basic_user_file "/etc/local/htpasswd_fcio_users";
 There is also an `example-configuration` here. Copy to some file with the extension
 .conf and adapt.
 
-We recommend to use `listen ... reuseport` like in the example configuration.
+We recommend to use `listen ... default_server reuseport` like in the example
+configuration for the default vhost.
 The effect is that Nginx will start a separate socket listener for each worker.
 This helps performance and also allows changing listen IPs on config reload
 without the need to restart Nginx.
