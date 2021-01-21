@@ -100,6 +100,7 @@ in {
     modules = with super.nginxModules; [
       dav
       modsecurity
+      modsecurity-nginx
       moreheaders
       rtmp
     ];
@@ -120,6 +121,7 @@ in {
     modules = with super.nginxModules; [
       dav
       modsecurity
+      modsecurity-nginx
       moreheaders
       rtmp
     ];
