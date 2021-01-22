@@ -33,21 +33,21 @@ in {
             '';
 
             listenAddress = mkOption {
-              type = with types; string;
+              type = types.str;
               description = ''
                 Specify here which IPv4 address to use for coturn.";
               '';
             };
 
             listenAddress6 = mkOption {
-              type = with types; string;
+              type = types.str;
               description = ''
                 Specify here which IPv6 address to use for coturn.";
               '';
             };
 
             hostName = mkOption {
-              type = types.string;
+              type = types.str;
             };
           };
         };
@@ -92,25 +92,25 @@ in {
       };
 
       listenAddress = mkOption {
-        type = with types; string;
+        type = types.str;
         description = ''
           IPv4 address to use for Jitsi.
         '';
       };
 
       listenAddress6 = mkOption {
-        type = with types; string;
+        type = types.str;
         description = ''
           IPv6 address to use for Jitsi.
         '';
       };
 
       hostName = mkOption {
-        type = types.string;
+        type = types.str;
       };
 
       turnHostName = mkOption {
-        type = with types; nullOr string;
+        type = with types; nullOr str;
         default = null;
         description = ''
           Only needed for an external TURN server.
@@ -123,7 +123,7 @@ in {
       };
 
       defaultLanguage = mkOption {
-        type = types.string;
+        type = types.str;
         default = "de";
       };
 
