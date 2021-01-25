@@ -14,7 +14,7 @@ in {
   imports = with lib; [
     ./collectdproxy.nix
     ./gitlab
-    ./graylog.nix
+    ./graylog
     ./haproxy.nix
     ./jitsi/jitsi-videobridge.nix
     ./logrotate
@@ -30,7 +30,6 @@ in {
     ./sensu/client.nix
     ./sensu/server.nix
     ./sensu/uchiwa.nix
-    ./syslog.nix
     ./telegraf.nix
 
     (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")

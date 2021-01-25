@@ -23,12 +23,14 @@ in {
     ./agent.nix
     ./enc.nix
     ./firewall.nix
+    ./journalbeat.nix
     ./garbagecollect
     ./monitoring.nix
     ./network.nix
     ./packages.nix
     ./shell.nix
     ./static.nix
+    ./syslog.nix
     ./systemd.nix
     ./upgrade.nix
     ./users.nix

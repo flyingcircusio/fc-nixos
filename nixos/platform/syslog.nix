@@ -1,23 +1,13 @@
 { pkgs, lib, config, ... }:
+
 with builtins;
+
 let
   cfg = config.flyingcircus.syslog;
   fclib = config.fclib;
   syslogShowConfig = pkgs.writeScriptBin "syslog-show-config" ''
     cat $(systemctl cat syslog | grep "ExecStart=" | cut -d" " -f4 | tr -d '"')
   '';
-
-  resourceGroupLoghosts =
-    fclib.listServiceAddresses "graylog-server" ++
-    fclib.listServiceAddresses "loghost-server";
-
-  logTargets = lib.unique (
-    # Pick one of the resource group loghosts or a graylog from the cluster...
-    (if (length resourceGroupLoghosts > 0) then
-      [(head resourceGroupLoghosts)] else []) ++
-
-    # ... and always add the central location loghost (if it exists).
-    (fclib.listServiceAddresses "loghost-location-server"));
 
 in
 {
@@ -92,6 +82,8 @@ in
           module(load="imudp")
           input(type="imudp" address="127.0.0.1" port="514")
           input(type="imudp" address="::1" port="514")
+
+          module(load="omjournal")
         '';
 
         extraConfig =
@@ -100,7 +92,7 @@ in
               (facility: ";${facility}.none")
               (attrNames cfg.separateFacilities);
           in ''
-            *.info${exclude} -/var/log/messages
+            *.info${exclude} action(type="omjournal")
             ${extraRules}
             ${separateFacilities}
           '';
@@ -119,12 +111,6 @@ in
 
       # keep syslog running during system configurations
       systemd.services.syslog.stopIfChanged = false;
-    })
-
-    (lib.mkIf (length logTargets > 0) {
-      # Forward all syslog to graylog, if there is one.
-      flyingcircus.syslog.extraRules = concatStringsSep "\n"
-        (map (target: "*.* @${target}:5140;RSYSLOG_SyslogProtocol23Format") logTargets);
     })
 
   ];
