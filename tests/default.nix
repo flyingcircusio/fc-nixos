@@ -36,6 +36,7 @@ in {
   kubernetes = callTest ./kubernetes {};
   lamp = callTest ./lamp.nix {};
   login = callTest ./login.nix {};
+  logging = callTest ./logging.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
@@ -64,7 +65,6 @@ in {
   statshost-global = callTest ./statshost/statshost-global.nix {};
   statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
-  syslog = callSubTests ./syslog.nix {};
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
   vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
