@@ -34,6 +34,12 @@ let
     mkdir $out
     echo changed content > $out/index.html
   '';
+
+  owaspCoreRules = pkgs.fetchgit {
+    url = "https://github.com/coreruleset/coreruleset.git";
+    rev = "v3.3.0";
+    sha256 = "0n8q5pa913cjbxhgmdi8jaivqnrc8y4pyqcv0y3si1i5dzn15lgw";
+  };
 in {
   name = "nginx";
   nodes = {
@@ -78,6 +84,8 @@ in {
         "local/nginx/modsecurity/modsecurity_includes.conf".text =
           ''
           include modsecurity.conf
+          include ${owaspCoreRules}/crs-setup.conf.example
+          include ${owaspCoreRules}/rules/*.conf
           SecRule ARGS:testparam "@contains test" "id:1234,deny,status:999"
           '';
       };
