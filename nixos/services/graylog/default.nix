@@ -104,6 +104,7 @@ let
 
   graylogConfPath = "/run/graylog/graylog.conf";
 
+  telegrafUsername = "telegraf-${config.networking.hostName}";
   telegrafPassword = fclib.derivePasswordForHost "graylog-telegraf";
 
 in {
@@ -409,7 +410,7 @@ in {
 
         ${callApi "ensure-role Metrics '${toJSON metricsRole}'"}
 
-        ${callApi "ensure-user telegraf '${toJSON telegrafUser}'"}
+        ${callApi "ensure-user ${telegrafUsername} '${toJSON telegrafUser}'"}
       '';
     };
 
@@ -423,7 +424,7 @@ in {
         RestartSec = "10";
         ExecStart = ''
           ${pkgs.fc.agent}/bin/fc-graylog \
-            -u telegraf \
+            -u ${telegrafUsername} \
             -p '${telegrafPassword}' \
             collect-journal-age-metric --socket-path /run/telegraf/influx.sock
 
@@ -491,7 +492,7 @@ in {
                     "org.graylog2.journal.size-limit"
                     "org.graylog2.throughput.input"
                     "org.graylog2.throughput.output" ];
-        username = "telegraf";
+        username = telegrafUsername;
         password = telegrafPassword;
       }
     ];

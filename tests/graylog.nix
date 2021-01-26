@@ -81,7 +81,7 @@ in {
 
     with subtest("config script must create telegraf user"):
       machine.wait_for_unit("fc-graylog-config.service")
-      machine.succeed("${graylogApi} /users | grep -q telegraf")
+      machine.succeed("${graylogApi} /users | grep -q telegraf-machine")
 
     with subtest("public HTTPS should serve graylog dashboard"):
       machine.wait_until_succeeds("curl -k https://${host} | grep -q 'Graylog Web Interface'")
