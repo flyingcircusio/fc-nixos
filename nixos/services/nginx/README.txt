@@ -33,6 +33,7 @@ certificate from Let's Encrypt:
 {
   "www.example.org": {
     "serverAliases": ["example.org"],
+    "default": true,
     "forceSSL": true,
     "root": "/srv/webroot",
     "extraConfig": "add_header Strict-Transport-Security max-age=31536000; rewrite ^/old_url /new_url redirect;",
