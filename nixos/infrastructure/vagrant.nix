@@ -58,6 +58,13 @@ in {
       ];
     };
 
+    users.users.s-test = {
+      description = "A service user for deployment testing";
+      home = "/srv/s-test/";
+      isNormalUser = true;
+      extraGroups = [ "service" ];
+    };
+
     # General vagrant optimizations
     networking.firewall.enable = false;
     services.openssh.extraConfig = "UseDNS no";
