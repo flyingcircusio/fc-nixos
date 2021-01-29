@@ -343,6 +343,7 @@ let
     echo "Reload triggered, checking config file..."
     # Check if the new config is valid
     ${checkConfigCmd} || rc=$?
+    chown -R root:${cfg.group} /var/log/nginx
 
     if [[ -n $rc ]]; then
       echo "Error: Not restarting / reloading because of config errors."
@@ -369,7 +370,7 @@ let
         # We are still running an old version that didn't write a PID file or something is broken.
         # We can only force a restart now.
         echo "Warning: cannot replace master process because PID is missing. Restarting Nginx now..."
-        ${pkgs.coreutils}/bin/kill -QUIT $MAINPID
+        kill -QUIT $MAINPID
       fi
 
     else
@@ -378,7 +379,7 @@ let
 
       # Check journal for errors after the reload signal.
       datetime=$(date +'%Y-%m-%d %H:%M:%S')
-      ${pkgs.coreutils}/bin/kill -HUP $MAINPID
+      kill -HUP $MAINPID
 
       # Give Nginx some time to try changing the configuration.
       sleep 3
@@ -392,22 +393,19 @@ let
     fi
   '';
   nginxReloadMaster =
-    let
-      pkill = "${pkgs.procps}/bin/pkill";
-    in
     pkgs.writeScriptBin "nginx-reload-master" ''
-      set -e
+      #!${pkgs.runtimeShell} -e
       echo "Starting new nginx master process..."
-      ${pkill} -USR2 -F /run/nginx/nginx.pid
+      kill -USR2 $(< /run/nginx/nginx.pid)
 
       for x in {1..10}; do
           echo "Waiting for new master process to appear, try $x..."
           sleep 1
           if [[ -s /run/nginx/nginx.pid && -s /run/nginx/nginx.pid.oldbin ]]; then
               echo "Stopping old nginx workers..."
-              ${pkill} -WINCH -F /run/nginx/nginx.pid.oldbin
+              kill -WINCH $(< /run/nginx/nginx.pid.oldbin)
               echo "Stopping old nginx master process..."
-              ${pkill} -QUIT -F /run/nginx/nginx.pid.oldbin
+              kill -QUIT $(< /run/nginx/nginx.pid.oldbin)
               echo "Nginx master process replacement complete."
               exit 0
           fi
@@ -812,9 +810,10 @@ in
 
       nginx =
       let
-        setRunningPackageLink = pkgs.writeScript "nginx-set-running-package-link" ''
+        preStartScript = pkgs.writeScript "nginx-pre-start" ''
           #!${pkgs.runtimeShell} -e
           ln -sfT $(readlink -f ${wantedPackagePath}) ${runningPackagePath}
+          chown root:${cfg.group} -R /var/log/nginx
         '';
         capabilities = [
           "CAP_NET_BIND_SERVICE"
@@ -834,7 +833,7 @@ in
           Type = "forking";
           PIDFile = "/run/nginx/nginx.pid";
           ExecStartPre = [
-            "+${setRunningPackageLink}"
+            "+${preStartScript}"
           ];
           ExecStart = "${runningPackagePath}/bin/nginx -c ${configPath}";
           ExecReload = "+${nginxReloadConfig}/bin/nginx-reload";
