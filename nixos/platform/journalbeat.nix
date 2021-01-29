@@ -21,7 +21,11 @@ let
   mkJournalbeatConfig = { host, port, extraSettings }:
     lib.recursiveUpdate {
       # Logstash output is compatible to Beats input in Graylog.
-      output.logstash.hosts = [ "${host}:${toString port}" ];
+      output.logstash = {
+        hosts = [ "${host}:${toString port}" ];
+        ttl = "120s";
+        pipelining = 0;
+      };
       # Read the system journal.
       journalbeat.inputs  = [ { paths = []; } ];
       # "info" would have some helpful information but also logs every single
