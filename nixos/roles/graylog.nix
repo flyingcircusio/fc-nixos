@@ -285,7 +285,10 @@ in
         ${listenConfig beatsTCPHAPort}
             mode tcp
             option tcplog
-            timeout client 10s # should be equal to server timeout
+            # Journalbeat uses long-running connections and may send nothing
+            # for a while. Use ttl 120s for Journalbeat to make sure it
+            # reconnects before it's thrown out by HAproxy.
+            timeout client 121s
 
             default_backend beats_tcp
 
@@ -309,8 +312,7 @@ in
             mode tcp
             balance leastconn
             option httpchk HEAD /api/system/lbstatus
-            timeout server 10s
-            timeout tunnel 61s
+            timeout server 121s
         ${backendConfig (name: ip:
             "server ${name}  ${ip}:${toString beatsTCPGraylogPort} check port ${toString glAPIPort} inter 10s rise 2 fall 1")}
 
