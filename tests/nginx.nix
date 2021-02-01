@@ -90,6 +90,7 @@ in {
           '';
       };
 
+      flyingcircus.logrotate.enable = true;
       flyingcircus.services.nginx.enable = true;
 
       # Vhost for localhost is predefined by the nginx module and serves the
@@ -123,10 +124,21 @@ in {
     server.wait_for_unit('nginx.service')
     server.wait_for_open_port(80)
 
-    with subtest("proxy cache directory should be accessible only for nginx"):
-      permissions = server.succeed("stat /var/cache/nginx/proxy -c %a:%U:%G").strip()
-      expected = "700:nginx:nginx"
+    def assert_file_permissions(expected, path):
+      permissions = server.succeed(f"stat {path} -c %a:%U:%G").strip()
       assert permissions == expected, f"expected: {expected}, got {permissions}"
+
+    def assert_logdir():
+      assert_file_permissions("755:root:nginx", "/var/log/nginx")
+      assert_file_permissions("644:root:nginx", "/var/log/nginx/performance.log")
+      assert_file_permissions("644:root:nginx", "/var/log/nginx/error.log")
+      assert_file_permissions("644:root:nginx", "/var/log/nginx/access.log")
+
+    with subtest("proxy cache directory should be accessible only for nginx"):
+      assert_file_permissions("700:nginx:nginx", "/var/cache/nginx/proxy")
+
+    with subtest("log directory should have correct permissions"):
+      assert_logdir()
 
     with subtest("dependencies between acme services and nginx-config-reload should be present"):
       after = server.succeed("systemctl show --property After --value nginx-config-reload.service")
@@ -164,6 +176,9 @@ in {
       server.systemctl("reload nginx")
       server.wait_until_succeeds("curl server | grep -q 'changed content'")
 
+    with subtest("logs should have correct permissions after reload"):
+      assert_logdir()
+
     with subtest("nginx should use changed binary after reload"):
       # Prepare change to mainline nginx. We are not interested in testing mainline itself here.
       # We only need it as a different version so we can test binary reloading.
@@ -177,6 +192,27 @@ in {
       # Back to initial binary from nginx stable (this does overwrite /etc/nginx/running-package with the wanted package).
       server.systemctl("reload nginx")
       server.wait_until_succeeds("curl server/404 | grep -q ${stableMajorVersion}")
+
+    with subtest("log directory should have correct permissions after binary reload"):
+      assert_logdir()
+
+    with subtest("logs should have correct permissions after logrotate"):
+      server.succeed("logrotate -f $(logrotate-config-file)")
+      assert_logdir()
+
+    with subtest("reload should fix wrong log permissions and recreate missing files"):
+      server.execute("chown nginx:nginx /var/log/nginx/performance.log")
+      server.execute("chown nobody:nobody /var/log/nginx/access.log")
+      server.execute("rm /var/log/nginx/error.log")
+      server.succeed("systemctl reload nginx")
+      assert_logdir()
+
+    with subtest("restart should fix wrong log permissions and recreate missing files"):
+      server.execute("chown nginx:nginx /var/log/nginx/performance.log")
+      server.execute("chown nobody:nobody /var/log/nginx/access.log")
+      server.execute("rm /var/log/nginx/error.log")
+      server.succeed("systemctl restart nginx")
+      assert_logdir()
 
     with subtest("nginx modsecurity rules apply"):
       out, err = server.execute("curl -v http://server/?testparam=test")

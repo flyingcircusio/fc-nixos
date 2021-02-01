@@ -64,6 +64,13 @@ in
         "logrotate.options".text = globalOptions;
       };
 
+      environment.systemPackages = with pkgs; [
+        logrotate
+        (pkgs.writeScriptBin "logrotate-config-file" ''
+          grep exec $(systemctl cat logrotate | grep ExecStart= | cut -f 2 -d=) | cut -f 3 -d" "
+        '')
+      ];
+
       services.logrotate = {
         enable = true;
         extraConfig = mkOrder 50 globalOptions;

@@ -314,21 +314,24 @@ in
       services.logrotate.extraConfig = ''
         /var/log/nginx/*.log
         {
-            rotate ${toString config.flyingcircus.services.nginx.rotateLogs}
-            create 0644 nginx service
+            rotate ${toString cfg.rotateLogs}
+            create 0644 root nginx
+            su root nginx
             postrotate
-                systemctl kill nginx -s USR1 --kill-who=main || systemctl restart nginx
+                systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
+                chown root:nginx /var/log/nginx/*
             endscript
         }
       '';
 
+      # Z: Recursively change permissions if they already exist.
       systemd.tmpfiles.rules = [
         "d /etc/local/nginx/modsecurity 2775 nginx service"
-        # clean up whatever logrotate may have missed after 10 days
-        "d /var/log/nginx 0755 nginx service 10d"
+        # Clean up whatever logrotate may have missed three days later.
+        "d /var/log/nginx 0755 root nginx ${toString (cfg.rotateLogs + 3)}d"
+        "Z /var/log/nginx/* - root nginx"
       ]
-      # d: Create temp subdirs if they don't exist and clean up files after 10 days
-      # Z: recursively change permissions if they already exist
+      # d: Create temp subdirs if they don't exist and clean up files after 10 days.
       ++ map (subdir: ''
         d /var/cache/nginx/${subdir} 0700 nginx nginx 10d
         Z /var/cache/nginx/${subdir} 0700 nginx nginx
