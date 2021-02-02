@@ -92,6 +92,7 @@ in {
       environment.etc.hosts.source = lib.mkForce (pkgs.writeText "hosts" hosts);
 
       flyingcircus.enc.parameters = {
+        location = "remote";
         resource_group = "test";
         interfaces.fe = {
           mac = "52:54:00:12:02:01";
@@ -122,6 +123,7 @@ in {
 
         flyingcircus.encServiceClients = encServiceClients;
         flyingcircus.enc.parameters = {
+          location = "loc";
           resource_group = "test";
           interfaces.srv = {
             mac = "52:54:00:12:01:02";
@@ -148,6 +150,14 @@ in {
 
         services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
 
+        flyingcircus.roles.statshost.prometheusLocationProxyExtraSettings = {
+          tls_config = { ca_file = "/proxy_cert.pem"; };
+        };
+
+        systemd.services.prometheus.serviceConfig.Environment = [
+          "SSL_CERT_FILE=/tmp/shared/proxy_cert.pem"
+        ];
+
         users.users.s-test = {
           isNormalUser = true;
           extraGroups = [ "service" ];
@@ -165,6 +175,7 @@ in {
       environment.etc.hosts.text = lib.mkForce hosts;
       networking.domain = "fcio.net";
       flyingcircus.enc.parameters = {
+        location = "remote";
         resource_group = "test";
         interfaces.srv = {
           mac = "52:54:00:12:01:03";
@@ -182,11 +193,6 @@ in {
   testScript = let
     api = "http://${statshostSrv}:9090/api/v1";
   in ''
-    statshost.wait_for_unit("prometheus.service");
-    statshost.wait_for_unit("influxdb.service");
-    statshost.wait_for_unit("grafana.service");
-    statshost.wait_for_unit("collectdproxy-statshost.service");
-
     statssource.execute("""
       echo 'system_test 42' > metrics
       echo 'org_graylog2_test 42' >> metrics
@@ -194,53 +200,62 @@ in {
       ${pkgs.python3.interpreter} -m http.server 9126 &
     """)
 
-    proxy.wait_for_unit("nginx.service");
+    proxy.wait_for_unit("nginx.service")
+    proxy.execute("systemctl stop acme-proxy.fe.remote.fcio.net.service")
+    _, cert = proxy.execute("cat /var/lib/acme/proxy.fe.remote.fcio.net/chain.pem")
+    statshost.execute(f"echo '{cert}' > /proxy_cert.pem")
+    statshost.execute("systemctl restart prometheus")
+
+    statshost.execute("systemctl stop acme-statshost.fe.loc.fcio.net.service")
+    statshost.wait_for_unit("prometheus.service")
+    statshost.wait_for_unit("influxdb.service")
+    statshost.wait_for_unit("grafana.service")
+    statshost.wait_for_unit("collectdproxy-statshost.service")
+
+    statssource.wait_for_open_port(9126)
 
     with subtest("request through location proxy should return metrics (HTTP)"):
-      statshost.succeed('curl -x http://${proxyFe}:9090 ${statssourceSrv}:9126/metrics | grep -q system_test');
+      statshost.succeed('curl -x http://${proxyFe}:9090 ${statssourceSrv}:9126/metrics | grep -q system_test')
 
     with subtest("nginx access log file should show metrics request"):
-      proxy.succeed('grep "metrics" /var/log/nginx/statshost-location-proxy_access.log');
+      proxy.succeed('grep "metrics" /var/log/nginx/statshost-location-proxy_access.log')
 
     with subtest("request through location proxy should return metrics (HTTPS)"):
-      statshost.succeed('curl --proxy-insecure -kx https://${proxyFe}:9443 ${statssourceSrv}:9126/metrics | grep -q system_test');
+      statshost.succeed('SSL_CERT_FILE=/proxy_cert.pem curl -x https://${proxyFe}:9443 ${statssourceSrv}:9126/metrics | grep -q system_test')
 
     check_remote_target = """
-      curl -s ${api}/targets | \
-        jq -e \
-        '.data.activeTargets[] |
-          select(.health == "up" and .labels.job == "remote")'
+      curl -s ${api}/targets | jq -e '.data.activeTargets[] | select(.health == "up" and .labels.job == "remote")'
     """
 
     with subtest("Prometheus job for RG remote should be configured and up"):
-      statshost.succeed('stat /etc/current-config/statshost-relay-remote.json');
-      statshost.wait_until_succeeds(check_remote_target);
+      statshost.succeed('stat /etc/current-config/statshost-relay-remote.json')
+      statshost.wait_until_succeeds(check_remote_target)
 
     with subtest("prometheus should ingest metric from statssource"):
-      statshost.wait_until_succeeds("curl -s ${api}/query?query=system_test | jq -e '.data.result[].value[1] == \"42\"'");
+      statshost.wait_until_succeeds("curl -s ${api}/query?query=system_test | jq -e '.data.result[].value[1] == \"42\"'")
 
     with subtest("prometheus should keep renamed metric for graylog"):
-      statshost.succeed("curl -s ${api}/query?query=graylog_test | jq -e '.data.result[].value[1] == \"42\"'");
+      statshost.succeed("curl -s ${api}/query?query=graylog_test | jq -e '.data.result[].value[1] == \"42\"'")
 
     with subtest("prometheus should drop metric that is not allowed globally"):
-      statshost.fail("curl -s ${api}/query?query=not_allowed_globally | jq -e '.data.result[].value[1] == \"42\"'");
+      statshost.fail("curl -s ${api}/query?query=not_allowed_globally | jq -e '.data.result[].value[1] == \"42\"'")
 
     with subtest("nginx only opens expected ports"):
       # look for ports that are not 80 (nginx default for status info) 9090 (metrics HTTP), 9443 (metrics HTTPS)
-      proxy.fail("netstat -tlpn | grep nginx | egrep -v ':80 |:9090 |:9443 '");
+      proxy.fail("netstat -tlpn | grep nginx | egrep -v ':80 |:9090 |:9443 '")
 
-    proxy.wait_for_unit("collectdproxy-location.service");
+    proxy.wait_for_unit("collectdproxy-location.service")
 
     # Generate a lot of metric lines to fill up the buffer of collectdproxy.
     # Collectdproxy only sends metrics when the buffer is full.
-    statssource.execute('seq -f "statssource 1 %03g" 800 > collectd_metrics');
+    statssource.execute('seq -f "statssource 1 %03g" 800 > collectd_metrics')
 
-    proxy.wait_until_succeeds("netstat -nl | grep 2003");
-    statshost.wait_until_succeeds("netstat -nl | grep 2003");
-    statshost.wait_until_succeeds("netstat -nl | grep 2004");
+    proxy.wait_until_succeeds("netstat -nl | grep 2003")
+    statshost.wait_until_succeeds("netstat -nl | grep 2003")
+    statshost.wait_until_succeeds("netstat -nl | grep 2004")
 
     with subtest("metrics sent from statssource should appear in influx"):
-      statssource.succeed('nc -u -w5 ${proxy6Srv} 2003 < collectd_metrics');
-      statshost.wait_until_succeeds('influx -database graphite -execute "show measurements" | grep -q statssource');
+      statssource.succeed('nc -u -w5 ${proxy6Srv} 2003 < collectd_metrics')
+      statshost.wait_until_succeeds('influx -database graphite -execute "show measurements" | grep -q statssource')
   '';
 })

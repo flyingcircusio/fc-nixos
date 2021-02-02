@@ -53,7 +53,8 @@ let
 
   relayLocationNodes = map
     (proxy: { job_name = proxy.location;
-              proxy_url = "http://${proxy.address}:9090"; })
+              proxy_url = "https://${proxy.address}:9443";
+            } // cfgStats.prometheusLocationProxyExtraSettings)
     relayLocationProxies;
 
   relayLocationProxies =
@@ -158,6 +159,18 @@ in
         type = types.listOf types.attrs;
         default = [];
         description = "Prometheus metric relabel configuration.";
+      };
+
+      prometheusLocationProxyExtraSettings = mkOption {
+        type = types.attrs;
+        description = "Additional settings for jobs fetching from location proxies.";
+        example = ''
+        {
+          tls_config = {
+            ca_file = "/srv/prometheus/proxy_cert.pem";
+          };
+        }
+        '';
       };
 
       dashboardsRepository = mkOption {
