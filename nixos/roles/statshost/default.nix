@@ -163,6 +163,7 @@ in
 
       prometheusLocationProxyExtraSettings = mkOption {
         type = types.attrs;
+        default = {};
         description = "Additional settings for jobs fetching from location proxies.";
         example = ''
         {
