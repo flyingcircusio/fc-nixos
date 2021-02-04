@@ -24,6 +24,6 @@ Vagrant.configure("2") do |config|
     # The nixos provisioner somehow kills the automatic shared folder mount.
     inline: "mountpoint -q /vagrant || mount -t vboxsf -o uid=1000,gid=100 vagrant /vagrant"
 
-  config.vm.network "private_network", mac: "020000021255", ip: "192.168.12.146" # srv
-  config.vm.network "private_network", mac: "020000031225", ip: "192.168.13.146" # fe
+  config.vm.network "private_network", mac: "020000021146", ip: "192.168.21.146" # ethfe
+  config.vm.network "private_network", mac: "020000031146", ip: "192.168.31.146" # ethsrv
 end
