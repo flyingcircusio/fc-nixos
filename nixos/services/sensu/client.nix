@@ -293,6 +293,7 @@ in {
       nix
       openssl
       procps
+      python3
       sensu
       sysstat
     ];
