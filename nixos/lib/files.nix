@@ -8,16 +8,16 @@ with lib;
 
 rec {
 
-  # Get all regular files with their name relative to path
+  # Get all regular files and symlinks with their name relative to path
   filesRel = path:
     optionals
       (pathExists path)
       (attrNames
         (filterAttrs
-          (filename: type: (type == "regular"))
+          (filename: type: (type == "regular" || type == "symlink"))
           (builtins.readDir path)));
 
-  # Get all regular files with their absolute name
+  # Get all regular files and symlinks with their absolute name
   files = path:
     (map
       (filename: path + ("/" + filename))
