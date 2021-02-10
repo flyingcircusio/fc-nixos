@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ pkgs, ... }:
+import ./make-test-python.nix ({ pkgs, testlib, ... }:
 {
   name = "haproxy";
   nodes = {
@@ -30,7 +30,7 @@ import ./make-test-python.nix ({ pkgs, ... }:
         '';
       };
   };
-  testScript = ''
+  testScript = { nodes, ... }: ''
     machine.wait_for_unit("haproxy.service")
     machine.wait_for_unit("syslog.service")
 
@@ -58,6 +58,9 @@ import ./make-test-python.nix ({ pkgs, ... }:
       machine.succeed("systemctl reload haproxy")
       machine.wait_until_succeeds("stat /run/haproxy/haproxy.sock 2> /dev/null")
       machine.wait_until_succeeds('journalctl -u haproxy -g "Socket not present which is needed for reloading, restarting instead"')
+
+    with subtest("sensu haproxy config check should be green"):
+      machine.succeed("${testlib.sensuCheckCmd nodes.machine "haproxy_config"}")
 
     with subtest("haproxy check script should be green"):
       machine.succeed("${pkgs.fc.check-haproxy}/bin/check_haproxy /var/log/haproxy.log")

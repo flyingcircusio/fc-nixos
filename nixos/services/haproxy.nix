@@ -94,7 +94,7 @@ in
       flyingcircus.services = {
         sensu-client.checks.haproxy_config = {
           notification = "HAProxy configuration check problems";
-          command = "${daemon} -f /etc/current-config/haproxy.cfg -c || exit 2";
+          command = "${daemon} -f /etc/haproxy.cfg -c || exit 2";
           interval = 300;
         };
 
