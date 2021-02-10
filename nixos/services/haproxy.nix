@@ -10,7 +10,25 @@ let
 
   configFiles = filter (p: lib.hasSuffix ".cfg" p) (fclib.files /etc/local/haproxy);
 
-  haproxyCfgContent = concatStringsSep "\n" (map readFile configFiles);
+  # This was included in our old example config. Breaks on 20.09 because HAProxy
+  # isn't allowed to write to /run/ anymore and is unneeded because a stats socket
+  # is added by the NixOS module automatically.
+  oldStatsLine = "stats socket /run/haproxy_admin.sock mode 660 group nogroup level operator";
+
+  importedCfgContent = concatStringsSep "\n" (map readFile configFiles);
+  modifiedCfgContent =
+    replaceStrings
+      [ oldStatsLine ]
+      [ ("# XXX: you can remove this after upgrading to 20.09: " + oldStatsLine) ]
+      importedCfgContent;
+
+  haproxyCfgContent =
+    if importedCfgContent != modifiedCfgContent
+    then lib.info
+      ("HAProxy: you can remove the 'stats socket' line from your config."
+      + " It's ignored on NixOS 20.09.")
+      modifiedCfgContent
+    else importedCfgContent;
 
   example = ''
     # haproxy configuration example - copy to haproxy.cfg and adapt.
@@ -65,20 +83,18 @@ in
           in alphabetical order and used as `haproxy.cfg`.
         '';
         "local/haproxy/haproxy.cfg.example".text = example;
-
-        "current-config/haproxy.cfg".source = haproxyCfg;
       };
 
       environment.systemPackages = [
         (pkgs.writeScriptBin
           "haproxy-show-config"
-          "cat /etc/current-config/haproxy.cfg")
+          "cat /etc/haproxy.cfg")
       ];
 
       flyingcircus.services = {
         sensu-client.checks.haproxy_config = {
           notification = "HAProxy configuration check problems";
-          command = "${daemon} -f /etc/current-config/haproxy.cfg -c || exit 2";
+          command = "${daemon} -f /etc/haproxy.cfg -c || exit 2";
           interval = 300;
         };
 
@@ -116,6 +132,22 @@ in
 
       flyingcircus.services.sensu-client.checkEnvPackages = [
         pkgs.fc.check-haproxy
+      ];
+
+      # Upstream reload code hangs for a long time when the socket is missing.
+      systemd.services.haproxy.serviceConfig.ExecReload = lib.mkOverride 90 [
+        (pkgs.writeScript "haproxy-reload" ''
+          #!${pkgs.runtimeShell} -e
+
+          if [[ -S /run/haproxy/haproxy.sock ]]; then
+            ${pkgs.haproxy}/sbin/haproxy -c -f /etc/haproxy.cfg
+            ${pkgs.coreutils}/bin/ln -sf ${pkgs.haproxy}/sbin/haproxy /run/haproxy/haproxy
+            ${pkgs.coreutils}/bin/kill -USR2 $MAINPID
+          else
+            echo Socket not present which is needed for reloading, restarting instead...
+            ${pkgs.coreutils}/bin/kill $MAINPID
+          fi
+        '')
       ];
 
       systemd.services.prometheus-haproxy-exporter = {
