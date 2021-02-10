@@ -1,4 +1,4 @@
-import ./make-test.nix ({ pkgs, ... }:
+import ./make-test-python.nix ({ pkgs, ... }:
 {
   name = "haproxy";
   nodes = {
@@ -31,29 +31,36 @@ import ./make-test.nix ({ pkgs, ... }:
       };
   };
   testScript = ''
-    $machine->waitForUnit("haproxy.service");
-    $machine->waitForUnit("syslog.service");
+    machine.wait_for_unit("haproxy.service")
+    machine.wait_for_unit("syslog.service")
 
-    $machine->execute(<<__SETUP__);
-    echo 'Hello World!' > hello.txt
-    ${pkgs.python3.interpreter} -m http.server 7000 &
-    __SETUP__
+    machine.execute("""
+      echo 'Hello World!' > hello.txt
+      ${pkgs.python3.interpreter} -m http.server 7000 &
+    """)
 
-    subtest "request through haproxy should succeed", sub {
-      $machine->succeed("curl -s http://localhost:8888/hello.txt | grep -q 'Hello World!'");
-    };
+    with subtest("request through haproxy should succeed"):
+      machine.succeed("curl -s http://localhost:8888/hello.txt | grep -q 'Hello World!'")
 
-    subtest "log file entry should be present for request", sub {
-      $machine->sleep(0.5);
-      $machine->succeed('grep "haproxy.* http-in server/python .* /hello.txt" /var/log/haproxy.log');
-    };
+    with subtest("log file entry should be present for request"):
+      machine.sleep(1)
+      machine.succeed('grep "haproxy.* http-in server/python .* /hello.txt" /var/log/haproxy.log')
 
-    subtest "service user should be able to write to local config dir", sub {
-      $machine->succeed('sudo -u haproxy touch /etc/local/haproxy/haproxy.cfg');
-    };
+    with subtest("service user should be able to write to local config dir"):
+      machine.succeed('sudo -u haproxy touch /etc/local/haproxy/haproxy.cfg')
 
-    subtest "haproxy check script should be green", sub {
-      $machine->succeed("${pkgs.fc.check-haproxy}/bin/check_haproxy /var/log/haproxy.log");
-    };
+    with subtest("reload should work"):
+      machine.succeed("systemctl reload haproxy")
+      machine.wait_until_succeeds('journalctl -u haproxy -g "Reloaded HAProxy"')
+
+    with subtest("reload should trigger a restart if /run/haproxy is missing"):
+      machine.execute("rm -rf /run/haproxy")
+      machine.succeed("systemctl reload haproxy")
+      machine.wait_until_succeeds("stat /run/haproxy/haproxy.sock 2> /dev/null")
+      machine.wait_until_succeeds('journalctl -u haproxy -g "Socket not present which is needed for reloading, restarting instead"')
+
+    with subtest("haproxy check script should be green"):
+      machine.succeed("${pkgs.fc.check-haproxy}/bin/check_haproxy /var/log/haproxy.log")
   '';
+
 })
