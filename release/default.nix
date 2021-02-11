@@ -301,6 +301,9 @@ jobs // {
     installPhase = ''
       mkdir -p $out/{tarballs,nix-support}
       cd nixos
+      # default.nix is needed when the channel is imported directly, for example
+      # from a fetchTarball.
+      echo "{ ... }: import ./fc { nixpkgs = ./nixpkgs; }" > default.nix
       tar cJhf $out/tarballs/nixexprs.tar.xz ${tarOpts} .
 
       echo "channel - $out/tarballs/nixexprs.tar.xz" > "$out/nix-support/hydra-build-products"
