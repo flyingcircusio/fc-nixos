@@ -25,6 +25,10 @@ in lib.mkMerge [
         $config['password_confirm_current'] = true;
         $config['password_driver'] = 'chpasswd';
         $config['password_minimum_length'] = 10;
+        $config['smtp_server'] = 'tls://${role.mailHost}';
+        $config['smtp_user'] = '%u';
+        $config['smtp_pass'] = '%p';
+
       '';
       database = {
         username = "roundcube";

@@ -36,19 +36,17 @@ in
       fi
       unset f
 
-      # Make our overlayed nixpkgs (in fc) available as nixos.* for nix-env for
-      # normal users. This is same the behaviour as on standard NixOS and our
-      # old 15.09 plattform.
-
       if [[ "$USER" != root ]]; then
-        if [[ -e $HOME/.nix-defexpr/channels_root ]]; then
-          rm $HOME/.nix-defexpr/channels_root
+
+        # We don't need that hack anymore because our combined channel works
+        # as expected by Nix tools now.
+        if [[ -e $HOME/.nix-defexpr/nixos ]]; then
+          rm $HOME/.nix-defexpr/nixos
         fi
 
-        if [[ ! -d $HOME/.nix-defexpr ]]; then
-          mkdir -p $HOME/.nix-defexpr
-          ln -sfT /nix/var/nix/profiles/per-user/root/channels/nixos/fc \
-            $HOME/.nix-defexpr/nixos
+        # Delete empty dir, nix-env will recreate it with the correct channel links
+        if [[ ! "$(ls -A $HOME/.nix-defexpr 2> /dev/null)" ]]; then
+          rmdir $HOME/.nix-defexpr 2> /dev/null || true
         fi
       fi
     '' +

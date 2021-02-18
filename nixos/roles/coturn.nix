@@ -16,8 +16,6 @@ let
     cat $(systemctl cat coturn.service | grep "ExecStart" | cut -d" " -f3)
   '';
 
-  domain = config.networking.domain;
-  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
   cfg = config.flyingcircus.roles.coturn;
 
   ourSettings = [
@@ -53,7 +51,12 @@ in
 
       hostName = mkOption {
         type = types.str;
-        default = "${config.networking.hostName}.fe.${location}.${domain}";
+        default = fclib.feFQDN;
+        description = ''
+          Public host name for the TURN server.
+          A Letsencrypt certificate is generated for it.
+          Defaults to the FE FQDN.
+        '';
       };
 
     };

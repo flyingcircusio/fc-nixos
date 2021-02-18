@@ -5,9 +5,6 @@ with builtins;
 let
   cfg = config.flyingcircus.roles.gitlab;
   fclib = config.fclib;
-  domain = config.networking.domain;
-  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
-  feFQDN = "${config.networking.hostName}.fe.${location}.${domain}";
 in
 
 {
@@ -27,8 +24,12 @@ in
 
       hostName = mkOption {
         type = types.str;
-        description = "HTTP virtual host for the Gitlab frontend.";
-        default = feFQDN;
+        description = ''
+          Public host name for the Gitlab frontend.
+          A Letsencrypt certificate is generated for it.
+          Defaults to the FE FQDN.
+        '';
+        default = fclib.feFQDN;
         example = "gitlab.test.fcio.net";
       };
 

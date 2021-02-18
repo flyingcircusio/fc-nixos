@@ -72,6 +72,9 @@ let
         echo -n ${fc.rev} > $out/nixos/.git-revision
         echo -n ${version} > $out/nixos/.version
         echo -n ${versionSuffix} > $out/nixos/.version-suffix
+        # default.nix is needed when the channel is imported directly, for example
+        # from a fetchTarball.
+        echo "{ ... }: import ./fc { nixpkgs = ./nixpkgs; }" > $out/nixos/default.nix
       ''];
       preferLocalBuild = true;
     };
@@ -289,6 +292,9 @@ jobs // {
     src = combinedSources;
     constituents = [ src tested ];
     preferLocalBuild = true;
+
+    passthru.src = combinedSources;
+
     patchPhase = "touch .update-on-nixos-rebuild";
 
     XZ_OPT = "-1";
@@ -301,9 +307,6 @@ jobs // {
     installPhase = ''
       mkdir -p $out/{tarballs,nix-support}
       cd nixos
-      # default.nix is needed when the channel is imported directly, for example
-      # from a fetchTarball.
-      echo "{ ... }: import ./fc { nixpkgs = ./nixpkgs; }" > default.nix
       tar cJhf $out/tarballs/nixexprs.tar.xz ${tarOpts} .
 
       echo "channel - $out/tarballs/nixexprs.tar.xz" > "$out/nix-support/hydra-build-products"
