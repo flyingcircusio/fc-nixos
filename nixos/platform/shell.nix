@@ -45,7 +45,7 @@ in
         fi
 
         # Delete empty dir, nix-env will recreate it with the correct channel links
-        if [[ ! "$(ls -A $HOME/.nix-defexpr)" ]]; then
+        if [[ ! "$(ls -A $HOME/.nix-defexpr 2> /dev/null)" ]]; then
           rmdir $HOME/.nix-defexpr 2> /dev/null || true
         fi
       fi
