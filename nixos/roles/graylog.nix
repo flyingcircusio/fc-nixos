@@ -157,20 +157,28 @@ in
         partOf = [ "mongodb.service" ];
         wantedBy = [ "mongodb.service" ];
         after = [ "mongodb.service" ];
+        script = let
+          mongoCmd = "${pkgs.mongodb-4_0}/bin/mongo";
+          js = pkgs.writeText "mongodb_set_feature_compat_version_4_0.js" ''
+            res = db.adminCommand({"getParameter": 1, "featureCompatibilityVersion": 1});
+            compat_version = res["featureCompatibilityVersion"]["version"];
+
+            if (db.version().startsWith("4.0") && compat_version == "3.6") {
+                print("MongoDB: current feature compat version is 3.6, updating to 4.0");
+                db.adminCommand( { setFeatureCompatibilityVersion: "4.0" } );
+            }
+          '';
+        in ''
+          while ! ${mongoCmd} --eval "db.version()" > /dev/null 2>&1
+          do
+            echo "Waiting for MongoDB to respond..."
+            sleep 1
+          done
+          ${mongoCmd} ${js}
+          echo "Done."
+        '';
 
         serviceConfig = {
-          ExecStart = let
-            js = pkgs.writeText "mongodb_set_feature_compat_version_4_0.js" ''
-              res = db.adminCommand({"getParameter": 1, "featureCompatibilityVersion": 1});
-              compat_version = res["featureCompatibilityVersion"]["version"];
-
-              if (db.version().startsWith("4.0") && compat_version == "3.6") {
-                  print("MongoDB: current feature compat version is 3.6, updating to 4.0");
-                  db.adminCommand( { setFeatureCompatibilityVersion: "4.0" } );
-              }
-            '';
-          in "${pkgs.mongodb-4_0}/bin/mongo ${js}";
-
           Restart = "on-failure";
           Type = "oneshot";
           RemainAfterExit = "true";
