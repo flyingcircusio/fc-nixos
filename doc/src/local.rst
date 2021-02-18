@@ -30,19 +30,55 @@ To inspect the result of this call, you can check the journal:
 
   $ journalctl --since -1h --unit fc-manage
 
-Custom NixOS Configuration
---------------------------
+fc-manage
+---------
 
-You can put custom NixOS modules in :file:`/etc/local/nixos` that are
-included in the system's configuration. See :file:`custom.nix.example`
-for the basic structure of a NixOS module.
-All options offered by NixOS and our platform code can be set there.
+:command:`fc-manage` is our utility that updates a system's configuration and
+calls the underlying NixOS commands.
+
+The basic call to apply changed configuration is:
+
+.. code-block:: console
+
+  $ sudo fc-manage --build
+  # Short form
+  $ sudo fc-manage -b
+
+This will pick up locally changed configuration but will not perform general OS
+updates or fetch new data from our configuration management database (like
+adding new users or IPs).
+
+The call to perform extensive updates including potential OS updates (the
+"channel") and changes from the configuration management database (CMDB,
+directory, "ENC") is:
+
+.. code-block:: console
+
+  $ sudo fc-manage --directory --channel
+  # Short form:
+  $ sudo fc-manage -ec
+
+A mixed form (no OS updates but include changes from the CMDB) is:
+
+.. code-block:: console
+
+  $ sudo fc-manage --directory --build
+  # Short form:
+  $ sudo fc-manage -eb
+
+
+Custom NixOS-native configuration
+---------------------------------
+
+You can put custom NixOS configuration (called modules) in
+:file:`/etc/local/nixos`. See :file:`custom.nix.example` for the basic structure
+of a NixOS module. All options offered by NixOS and our platform code can be set
+there.
 
 .. warning::
 
   Care must be taken to avoid breaking the system.
-  Overriding options set by platform can be dangerous.
-  Use component-specific local config dirs if possible.
+  Overriding options already set by the platform can be dangerous.
 
 For more information about writing NixOS modules, refer to the
 `NixOS manual <https://nixos.org/nixos/manual/index.html#sec-writing-modules>`_
