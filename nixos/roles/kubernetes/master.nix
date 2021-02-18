@@ -14,9 +14,7 @@ let
   kublib = config.services.kubernetes.lib;
   master = fclib.findOneService "kubernetes-master-master";
 
-  domain = config.networking.domain;
   location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
-  feFQDN = "${config.networking.hostName}.fe.${location}.${domain}";
   srvFQDN = "${config.networking.hostName}.fcio.net";
 
 
@@ -27,7 +25,7 @@ let
   # dashboards and kubectl. Names can be used for both dashboard and API server.
   addresses = [
     "kubernetes.${fclib.currentRG}.fcio.net"
-    feFQDN
+    fclib.feFQDN
     srvFQDN
   ];
 

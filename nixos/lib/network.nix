@@ -25,6 +25,17 @@ rec {
   # choose correct "ip" invocation depending on the address
   ip' = a: "ip " + (if isIp4 a then "-4" else if isIp6 a then "-6" else "");
 
+  feFQDN =
+    let
+      inherit (config.networking) domain hostName;
+      location =
+        lib.attrByPath
+          [ "parameters" "location" ]
+          "standalone"
+          config.flyingcircus.enc;
+    in
+      "${hostName}.fe.${location}.${domain}";
+
   # list IP addresses for service configuration (e.g. nginx)
   listenAddresses = iface:
     if iface == "lo"

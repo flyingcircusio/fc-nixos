@@ -5,9 +5,6 @@ with lib;
 let
   fclib = config.fclib;
   statshostServiceIPs = fclib.listServiceIPs "statshost-collector";
-  domain = config.networking.domain;
-  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
-  feFQDN = "${config.networking.hostName}.fe.${location}.${domain}";
   httpPort = 9090;
   httpsPort = 9443;
 in
@@ -30,7 +27,7 @@ in
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
-      virtualHosts."${feFQDN}" = {
+      virtualHosts."${fclib.feFQDN}" = {
         serverAliases = [ "${config.networking.hostName}.${config.networking.domain}" ];
         enableACME = true;
         addSSL = true;
