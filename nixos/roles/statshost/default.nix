@@ -144,8 +144,14 @@ in
     flyingcircus.roles.statshost = {
 
       hostName = mkOption {
+        default = fclib.feFQDN;
         type = types.str;
-        description = "HTTP virtual host for the frontend. Must be set.";
+        description = ''
+          Host name for the Grafana frontend.
+          A Letsencrypt certificate is generated for it.
+          Defaults to the FE FQDN.
+          Also used by collectdproxy if it's the global FCIO statshost.
+        '';
         example = "stats.example.com";
       };
 
