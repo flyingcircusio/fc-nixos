@@ -14,8 +14,6 @@ let
     in
       if services == [] then null else head services;
 
-  mailout = mailoutService + (
-    lib.optionalString (net.domain != null) ".${net.domain}");
   fqdn = net.hostName + (
     lib.optionalString (net.domain != null) ".${net.domain}");
 
@@ -30,8 +28,8 @@ in {
       enable = true;
       config = {
         me = fqdn;
-        adminaddr = "root@${mailout}";
-        remotes = "${mailout} smtp port=25";
+        adminaddr = "root@${mailoutService}";
+        remotes = "${mailoutService} smtp port=25";
       };
     };
   };
