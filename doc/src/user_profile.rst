@@ -34,9 +34,9 @@ Create a file like :file:`myproject_env.nix` which specifies the packages to be 
 
    let
      # Imports. Which package sources should be used?
-     # Use a pinned NixOS version, see https://nixos.org/channels
-     # pkgs = import (fetchTarball https://releases.nixos.org/nixos/19.09/nixos-19.09.2149.58a9acf75a3/nixexprs.tar.xz) {};
-     # ...or just use the current NixOS version of the platform
+     # Use a pinned platform version
+     # pkgs = import (fetchTarball https://hydra.flyingcircus.io/build/81551/download/1/nixexprs.tar.xz) {};
+     # ...or just use the current version of the platform
      pkgs = import <nixpkgs> {};
    in
    pkgs.buildEnv {
@@ -51,13 +51,30 @@ Create a file like :file:`myproject_env.nix` which specifies the packages to be 
      extraOutputsToInstall = [ "dev" ];
    }
 
-The code shown above defines an environment with 5 packages installed from a specific
-build of NixOS 19.09. The pinned NixOS version can be newer or older than the
-installed system version.
+The code shown above defines an environment with 5 packages installed from a
+specific build of our NixOS 20.09 platform.
+The pinned version can be newer or older than the installed system version.
 
 Pinning the version of the import prevents unwanted changes in your
 application's dependencies but you are responsible for updating
-the imports to get security fixes from upstream.
+the imports to get security fixes.
+
+We recommend to keep the pinned version close to the system version to get the
+latest security fixes. NixOS re-uses packages if the wanted version is already
+in the Nix store, saving disk space and reducing installation time.
+
+The URL for the current release can be found in the :ref:`changelog` for the
+20.09 platform.
+
+If you want to try NixOS unstable with the newest packages, get the URL from the channel::
+
+  $ curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null https://nixos.org/channels/nixos-unstable/nixexprs.tar.xz
+  https://releases.nixos.org/nixos/unstable/nixos-21.05pre270709.6b1057b452c/nixexprs.tar.xz
+
+Note that the unstable channel may be broken and that upstream NixOS channels
+don't have some additional packages we provide on our platform.
+
+Older NixOS versions than 20.09 usually don't get security updates anymore.
 
 See https://nixos.org/nixos/packages.html for a list of packages.
 Use the *attribute name* from the list and include it in `paths`.
