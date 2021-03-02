@@ -1,11 +1,23 @@
-Mail server role
-================
+Mailserver role
+===============
 
-Settings in /etc/local/nixos/mailserver.nix
--------------------------------------------
+This role installs a complete mail server for incoming and outgoing mail.
+Incoming mail is either delivered to IMAP mailboxes, or forwarded to an application via alias/transport configs.
+It uses Postfix for mail delivery, Dovecot as IMAP access server, and Roundcube as optional web frontend.
 
-The following options need to be set in via NixOS. The prefix for all
-options is `flyingcircus.roles.mailserver`:
+Refer to the platform documentation for detailed information on how to configure this:
+
+https://doc.flyingcircus.io/roles/fc-20.09-production/mailserver.html
+
+
+Role Settings
+-------------
+
+The role is configured by a file named `config.json` in this directory or
+via NixOS options in a module in /etc/local/nixos.
+
+You can find a JSON config example in `config.json.example`.
+Prefix options with `flyingcircus.roles.mailserver` if using NixOS config.
 
 - domains: List of domains which form the domain part of mail addresses serviced
     by this mail server. Each domain needs a MX record pointing to mailHost.
@@ -16,52 +28,33 @@ options is `flyingcircus.roles.mailserver`:
 - smtpBind4, smtpBind6: Optional IP addresses to bind on the FE interface in
     case the FE interface has several of these.
 
-- webmailHost: Optional host name for the web mail interfaces powered by
+- webmailHost: Setting the host name here enables the web mail interface powered by
     Roundcube.
 
 
-Configuration files in /etc/local/mail
---------------------------------------
+Managing Users
+--------------
 
-- users.json: All local mail accounts. The most important keys:
-    - name: E-mail address. Domain part must match of the domains configured in
-        /etc/local/nixos/. Mandatory.
-    - hashedPassword: SHA-256 hash of the login password (SMTP/IMAP). If set to
-        an empty string, the password is read during runtime from the password
-        file (see below). Mandatory.
-    - aliases: List of additional e-mail addresses for this account. Domain part
-        must match one of the configured domains as in 'name'. Optional.
-    - catchAll: List of domains for which all mails are collected into this user
-        account. Optional.
-    - quota: Maximum mail data stored on the IMAP server. Must be a number endng
-        with "M" or "G". Optional.
-    - sieveScript: Fixed sieve configuration for that user. Alternatively, users
-        may set their own sieve scripts via Roundcube's web UI.
+User accounts are created by configuring them in `users.json`.
+See `users.json.example` for an example.
 
-    Refer to `loginAccounts` in
-    https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/blob/master/default.nix
-    for a full description of options.
+Crypted passwords can be set directly in the config file.
 
-- dns.zone: DNS settings to be copied into the relevant zone files. The DKIM key
-    is already the correct one. Users with advanced feedback loop requirements
-    may configure more elaborate DMARC policies. DMARC report handling
-    infrastructure is currently left to the user.
+It's also possible for users to set their own password if the Roundcube web
+UI is enabled (set webmailHost).
+To make this happen, leave the `hashedPassword` empty in `users.json` and set an
+initial password in `/var/lib/dovecot/passwd` instead.
 
-- local_valiases.json: Additional virtual aliases. Equivalent to setting
-    `aliases` entries in `users.json`. Target domains must be configured
-    locally.
+Entries in the passwd file look like this:
 
-- main.cf: Additional configuration statements to be appended to
-    /etc/postfix/main.cf. See postconf(5) for a full list of options.
+user1@test.fcio.net:$5$NwBmrzj2vPlIdoa0$Go0zrVY5ZQncFXlCAxA.Gqj.e4Ym6Ic242O6Mj3BK1
+
+The password string can be created with `mkpasswd -m SHA-256`.
 
 
-Password file
--------------
+Further Configuration Files
+---------------------------
 
-The mail server role allows users to set their own password if the Roundcube web
-UI is enabled (set webmailHost). To make this happen, passwords must not be
-statically set in users.json but dynamically in `/var/lib/dovecot/passwd`.
-
-To set an initial password, run:
-
-    echo "USER@DOMAIN:$(mkpasswd -m SHA-256 PASSWORD)" >> /var/lib/dovecot/passwd
+- dns.zone: Copy-and-paste DNS records for inclusion in zone files.
+- local_valiases.json: Additional aliases which are not mentioned in users.json.
+- main.cf: Additional Postfix postconf(5) settings.
