@@ -49,8 +49,8 @@ in {
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           ; Tideways
           ;
-          ; This is intended to be production-ready so it doesn't create too 
-          ; much overhead. If you need to increase tracing, then you can 
+          ; This is intended to be production-ready so it doesn't create too
+          ; much overhead. If you need to increase tracing, then you can
           ; adjust this in your local php.ini
 
           extension=${pkgs.tideways_module}/lib/php/extensions/tideways-php-7.3-zts.so
@@ -144,6 +144,9 @@ in {
       services.httpd.extraModules = [ "rewrite" "version" "status" ];
       services.httpd.enablePHP = true;
       services.httpd.phpPackage = pkgs.php73;
+      # The upstream module has a default that makes Apache listen on port 80
+      # which conflicts with our webgateway role.
+      services.httpd.virtualHosts = {};
 
       flyingcircus.services.sensu-client.checks = {
         httpd_status = {
