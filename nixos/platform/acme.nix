@@ -1,5 +1,16 @@
 { config, pkgs, lib, ... }:
 {
+  # Generate a sensu check for each acme cert to check its validity and warn
+  # when it expires.
+  flyingcircus.services.sensu-client.checks =
+    lib.listToAttrs
+      (map (n: lib.nameValuePair "ssl_cert_acme_${n}" {
+        notification = "ACME (Letsencrypt) certificate for ${n} is invalid or will expire soon";
+        command = "check_http -p 443 -S -–sni -C 25,14 -H ${n}";
+        interval = 600;
+      })
+      (lib.attrNames config.security.acme.certs));
+
   systemd.services =
   let
     # Retry certificate renewal 30s after a failure.
