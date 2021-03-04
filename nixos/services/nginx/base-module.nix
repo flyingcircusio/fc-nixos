@@ -12,8 +12,10 @@ let
   vhostsConfigs = mapAttrsToList (vhostName: vhostConfig: vhostConfig) virtualHosts;
   acmeEnabledVhosts = filter (vhostConfig: vhostConfig.enableACME || vhostConfig.useACMEHost != null) vhostsConfigs;
   dependentCertNames = unique (map (hostOpts: hostOpts.certName) acmeEnabledVhosts);
-  sslServices = map (certName: "acme-${certName}.service") dependentCertNames;
-  sslSelfSignedServices = map (certName: "acme-selfsigned-${certName}.service") dependentCertNames;
+  sslServiceNames = map (certName: "acme-${certName}") dependentCertNames;
+  sslServices = map (serviceName: "${serviceName}.service") sslServiceNames;
+  sslSelfSignedServiceNames = map (certName: "acme-selfsigned-${certName}") dependentCertNames;
+  sslSelfSignedServices = map (serviceName: "${serviceName}.service") sslSelfSignedServiceNames;
   sslTargetNames = map (certName: "acme-finished-${certName}") dependentCertNames;
   sslTargets = map (targetName: "${targetName}.target") sslTargetNames;
   virtualHosts = mapAttrs (vhostName: vhostConfig:
@@ -907,8 +909,14 @@ in
       # Nginx needs to be started in order to be able to request certificates
       # (it's hosting the acme challenge after all)
       # This fixes https://github.com/NixOS/nixpkgs/issues/81842
-      lib.listToAttrs (map (name: lib.nameValuePair name { after = [ "nginx.service" ]; }) sslServices) //
-      lib.listToAttrs (map (name: lib.nameValuePair name { before = [ "nginx.service" ]; }) sslSelfSignedServices);
+      lib.listToAttrs
+        (map
+          (name: lib.nameValuePair name { after = [ "nginx.service" ]; })
+          sslServiceNames) //
+      lib.listToAttrs
+        (map
+          (name: lib.nameValuePair name { before = [ "nginx.service" ]; })
+          sslSelfSignedServiceNames);
 
     systemd.targets =
       lib.listToAttrs

@@ -2,7 +2,7 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  elk7Version = "7.8.0";
+  elk7Version = "7.10.2";
   inherit (super) lib;
 
 in {
@@ -34,7 +34,7 @@ in {
 
     src = super.fetchurl {
       url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
-      sha256 = "1vy3z5f3zn9a2caa9jq1w4iagqrdmd27wr51bl6yf8v74169vpr4";
+      sha256 = "07p16n53fg513l4f04zq10hh5j9q6rjwz8hs8jj8y97jynvf6yiv";
     };
     meta.license = null;
   });
@@ -65,7 +65,7 @@ in {
 
     src = super.fetchurl {
       url = "https://artifacts.elastic.co/downloads/kibana/${name}-linux-x86_64.tar.gz";
-      sha256 = "0xnh07n894f170ahawcg03jm3xk4qpjjbfwkvd955vdgihpy60gh";
+      sha256 = "06p0v39ih606mdq2nsdgi5m7y1iynk9ljb9457h5rrx6jakc2cwm";
     };
     meta.license = null;
   });

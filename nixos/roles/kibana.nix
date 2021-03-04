@@ -67,6 +67,10 @@ in
 
       services.kibana = {
         enable = true;
+        extraConf = lib.optionalAttrs (kibanaVersion == "7") {
+          xpack.reporting.enabled = false;
+        };
+
         # Unlike elasticsearch, kibana cannot listen to both IPv4 and IPv6.
         # We choose to use IPv4 here.
         listenAddress = head (fclib.listenAddresses "ethsrv");
