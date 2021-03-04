@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, pkgs, ... }:
 
 with lib;
 
@@ -16,6 +16,9 @@ let
           (fn: lib.hasSuffix ".nix" fn)
           (lib.attrNames (builtins.readDir "/etc/local/nixos")))
     else [];
+  telegrafShowConfig = pkgs.writeScriptBin "telegraf-show-config" ''
+    cat $(systemctl cat telegraf | grep "ExecStart=" | cut -d" " -f3 | tr -d '"')
+  '';
 
 in {
   imports = [
@@ -25,6 +28,8 @@ in {
     ./firewall.nix
     ./journalbeat.nix
     ./garbagecollect
+    ./ipmi.nix
+    ./kernel.nix
     ./monitoring.nix
     ./network.nix
     ./packages.nix
@@ -148,7 +153,33 @@ in {
 
   config = {
 
-    boot.loader.timeout = 3;
+    boot = {
+      consoleLogLevel = mkDefault 7;
+
+      initrd.kernelModules = [
+        "bfq"
+      ];
+
+      kernelParams = [
+        # Crash management
+        "panic=1"
+        "boot.panic_on_fail"
+
+        # Output management
+        "systemd.journald.forward_to_console=no"
+        "systemd.log_target=kmsg"
+      ];
+
+      kernel.sysctl."vm.swappiness" = mkDefault 1;
+
+      loader.timeout = 3;
+    };
+
+    environment.systemPackages = with pkgs; [
+      fc.userscan
+      telegrafShowConfig
+      dmidecode
+    ];
 
     # make the image smaller
     sound.enable = mkDefault false;
@@ -176,8 +207,11 @@ in {
 
       extraOptions = ''
         fallback = true
+        http-connections = 2
       '';
     };
+
+    nixpkgs.config.allowUnfree = true;
 
     environment.etc."local/nixos/README.txt".text = ''
       To add custom NixOS config, create *.nix files here.
@@ -193,8 +227,11 @@ in {
       }
     '';
 
-    flyingcircus.enc_services = enc_services;
-
+    flyingcircus = {
+      enc_services = enc_services;
+      logrotate.enable = true;
+      agent.collect-garbage = true;
+    };
 
     # implementation for flyingcircus.passwordlessSudoRules
     security.sudo.extraRules = let
@@ -211,6 +248,8 @@ in {
           (rule: rule // { commands = (map addPasswordOption rule.commands); })
           config.flyingcircus.passwordlessSudoRules);
 
+    security.dhparams.enable = true;
+
     services = {
       # upstream uses cron.enable = mkDefault ... (prio 1000), mkPlatform
       # overrides it
@@ -218,6 +257,16 @@ in {
 
       nscd.enable = true;
       openssh.enable = mkDefault true;
+      openssh.challengeResponseAuthentication = false;
+      openssh.passwordAuthentication = false;
+
+      telegraf.enable = mkDefault true;
+
+      timesyncd.servers =
+        let
+          loc = attrByPath [ "parameters" "location" ] "" cfg.enc;
+        in
+        attrByPath [ "static" "ntpServers" loc ] [ "pool.ntp.org" ] cfg;
     };
 
     system.activationScripts = let
@@ -247,13 +296,21 @@ in {
 
     in fromCfgDirs // fromActivationScripts;
 
-    systemd.tmpfiles.rules = [
-      # d instead of r to a) respect the age rule and b) allow exclusion
-      # of fc-data to avoid killing the seeded ENC upon boot.
-      "d /etc/current-config"  # used by various FC roles
-      "d /etc/local/nixos 2775 root service"
-      "d /srv 0755"
-    ];
+    systemd = {
+      tmpfiles.rules = [
+        # d instead of r to a) respect the age rule and b) allow exclusion
+        # of fc-data to avoid killing the seeded ENC upon boot.
+        "d /etc/current-config"  # used by various FC roles
+        "d /etc/local/nixos 2775 root service"
+        "d /srv 0755"
+      ];
+
+      ctrlAltDelUnit = "poweroff.target";
+      extraConfig = ''
+        RuntimeWatchdogSec=60
+      '';
+    };
+
 
     time.timeZone =
       attrByPath [ "parameters" "timezone" ] "UTC" config.flyingcircus.enc;

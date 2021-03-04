@@ -3,14 +3,22 @@
 { config, pkgs, lib, ... }:
 
 with builtins;
-
+let 
+  fclib = config.fclib;
+in 
 rec {
   stripNetmask = cidr: head (lib.splitString "/" cidr);
 
   prefixLength = cidr: lib.toInt (elemAt (lib.splitString "/" cidr) 1);
-
   # The same as prefixLength, but returns a string not an int
   prefix = cidr: elemAt (lib.splitString "/" cidr) 1;
+
+  netmaskFromPrefixLength = prefix:
+     (ip4.fromNumber
+       (((fclib.pow 2 prefix) - 1) * (fclib.pow 2 (32-prefix)))
+       prefix).address;
+  netmaskFromCIDR = cidr:
+    netmaskFromPrefixLength (prefixLength cidr);
 
   isIp4 = cidr: length (lib.splitString "." cidr) == 4;
 
@@ -132,10 +140,16 @@ rec {
       (n: transformAddrs n networks.${n})
       (attrNames relevantNetworks);
 
+  vlanMTU = vlan:
+      if hasAttr vlan config.flyingcircus.static.mtus
+      then config.flyingcircus.static.mtus.${vlan}
+      else 1500;
+
   # ENC networks to NixOS option for both address families
-  interfaceConfig = networks:
+  interfaceConfig = networks: vlan:
     { ipv4.addresses = ipAddressesOption isIp4 networks;
       ipv6.addresses = ipAddressesOption isIp6 networks;
+      mtu = vlanMTU vlan;
     };
 
   # Collects a complete list of configured addresses from all networks.
@@ -325,5 +339,48 @@ rec {
       exit $rc
     fi
   '';
+
+  # Taken from 
+  # https://github.com/LumiGuide/lumi-example/blob/master/nix/lib.nix
+  ip4 = rec {
+    ip = a : b : c : d : prefixLength : {
+      inherit a b c d prefixLength;
+      address = "${toString a}.${toString b}.${toString c}.${toString d}";
+    };
+
+    toCIDR = addr : "${addr.address}/${toString addr.prefixLength}";
+    toNetworkAddress = addr : with addr; { inherit address prefixLength; };
+    toNumber = addr : with addr; a * 16777216 + b * 65536 + c * 256 + d;
+    fromNumber = addr : prefixLength :
+      let
+        aBlock = a * 16777216;
+        bBlock = b * 65536;
+        cBlock = c * 256;
+        a      =  addr / 16777216;
+        b      = (addr - aBlock) / 65536;
+        c      = (addr - aBlock - bBlock) / 256;
+        d      =  addr - aBlock - bBlock - cBlock;
+      in
+        ip a b c d prefixLength;
+
+    fromString = with lib; str :
+      let
+        splits1 = splitString "." str;
+        splits2 = flatten (map (x: splitString "/" x) splits1);
+
+        e = i : toInt (builtins.elemAt splits2 i);
+      in
+        ip (e 0) (e 1) (e 2) (e 3) (e 4);
+
+    fromIPString = str : prefixLength :
+      fromString "${str}/${toString prefixLength}";
+
+    network = addr :
+      let
+        pfl = addr.prefixLength;
+        shiftAmount = fclib.pow 2 (32 - pfl);
+      in
+        fromNumber ((toNumber addr) / shiftAmount * shiftAmount) pfl;
+  };
 
 }

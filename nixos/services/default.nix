@@ -25,6 +25,7 @@ in {
     ./prometheus.nix
     ./rabbitmq36.nix
     ./rabbitmq.nix
+    ./raid
     ./redis.nix
     ./sensu/api.nix
     ./sensu/client.nix

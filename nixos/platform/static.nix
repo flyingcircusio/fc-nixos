@@ -50,6 +50,11 @@ with lib;
         "19" = "dhp";
       };
 
+      mtus = {
+        "sto" = 9000;
+        "stb" = 9000;
+      };
+
       nameservers = {
         # ns.$location.gocept.net, ns2.$location.gocept.net
         # We are currently not using IPv6 resolvers as we have seen obscure bugs
