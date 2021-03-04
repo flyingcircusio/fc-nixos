@@ -32,10 +32,11 @@ in {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  #docsplit = super.callPackage ./docsplit { };
   ceph = (super.callPackage ./ceph {
       boost = super.boost155;
   });
+
+  docsplit = super.callPackage ./docsplit { };
 
   elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
     version = elk7Version;
