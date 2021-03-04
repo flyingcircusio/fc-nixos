@@ -145,10 +145,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "158fawfwmv2sq4whqqaksfykkiad2xxrrj0nmpnc6vnlzi1bp7iz";
+      sha256 = "0lrirj0gw420kw71bjjlqkqhqbrplla61gbv1jzgsz6bv90qr3ci";
       type = "gem";
     };
-    version = "2.3.1";
+    version = "2.5.1";
   };
   mime-types = {
     dependencies = ["mime-types-data"];
@@ -166,10 +166,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1z75svngyhsglx0y2f9rnil2j08f9ab54b3l95bpgz67zq2if753";
+      sha256 = "1phcq7z0zpipwd7y4fbqmlaqghv07fjjgrx99mwq3z3n0yvy7fmi";
       type = "gem";
     };
-    version = "3.2020.0512";
+    version = "3.2021.0225";
   };
   mixlib-cli = {
     source = {
@@ -235,10 +235,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1m35giv30f29cwrbddla090z8smbxn2axrjrin4fv6w2pjp4bdr9";
+      sha256 = "11hqhy9rjkpzfqsl52cnxc47llajy4m4bj1lkm3miv0zja7cdk4i";
       type = "gem";
     };
-    version = "4.2.0";
+    version = "4.2.2";
   };
   unf = {
     dependencies = ["unf_ext"];
