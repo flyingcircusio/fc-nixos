@@ -12,6 +12,7 @@ in {
     ./antivirus.nix
     ./coturn.nix
     ./docker.nix
+    ./ceph/osd.nix
     ./external_net
     ./elasticsearch.nix
     ./gitlab.nix

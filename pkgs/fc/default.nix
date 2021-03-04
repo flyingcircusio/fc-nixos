@@ -1,6 +1,6 @@
 { pkgs, callPackage }:
 
-{
+rec {
   recurseForDerivations = true;
 
   agent = callPackage ./agent {};
@@ -9,6 +9,7 @@
   check-journal = callPackage ./check-journal.nix {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
+  ceph = callPackage ./ceph { inherit blockdev; };
   blockdev = callPackage ./blockdev {};
   collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};

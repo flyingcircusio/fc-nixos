@@ -12,6 +12,8 @@ in {
   disabledModules = modulesFromHere;
 
   imports = with lib; [
+    ./ceph/client.nix
+    ./ceph/server.nix
     ./collectdproxy.nix
     ./gitlab
     ./graylog
