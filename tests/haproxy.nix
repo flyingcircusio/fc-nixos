@@ -51,13 +51,13 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
 
     with subtest("reload should work"):
       machine.succeed("systemctl reload haproxy")
-      machine.wait_until_succeeds('journalctl -u haproxy -g "Reloaded HAProxy"')
+      machine.wait_until_succeeds('journalctl -g "Reloaded HAProxy" --no-pager')
 
     with subtest("reload should trigger a restart if /run/haproxy is missing"):
       machine.execute("rm -rf /run/haproxy")
       machine.succeed("systemctl reload haproxy")
       machine.wait_until_succeeds("stat /run/haproxy/haproxy.sock 2> /dev/null")
-      machine.wait_until_succeeds('journalctl -u haproxy -g "Socket not present which is needed for reloading, restarting instead"')
+      machine.wait_until_succeeds('journalctl -g "Socket not present which is needed for reloading, restarting instead" --no-pager')
 
     with subtest("sensu haproxy config check should be green"):
       machine.succeed("${testlib.sensuCheckCmd nodes.machine "haproxy_config"}")

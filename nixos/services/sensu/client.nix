@@ -250,7 +250,7 @@ in {
       sensuCheckEnvCmd
       (pkgs.writeScriptBin
         "sensu-client-show-config"
-        "cat ${sensuClientConfigFile}")
+        "${pkgs.perl}/bin/json_pp < ${sensuClientConfigFile}")
     ];
 
     flyingcircus.passwordlessSudoRules = [
@@ -466,6 +466,13 @@ in {
         '';
         # see also activationScript in nixos/platform/agent.nix
         command = "${fc.check-age}/bin/check_age -m -w 3h /result /root/result";
+        interval = 300;
+      };
+      root_lost_and_found = {
+        notification = ''
+          lost+found indicating filesystem issues on /
+        '';
+        command = "${fc.check-age}/bin/check_age -m /lost+found -w 2h -c 1d";
         interval = 300;
       };
     };

@@ -52,7 +52,7 @@ Place the following NixOS module in :file:`/etc/local/nixos/systemd-mytask.nix`:
         "/run/wrappers" # if you need something from /run/wrappers/bin, sudo, for example
       ];
       serviceConfig = {
-        Description = "Run daily maintenance script."
+        Description = "Run daily maintenance script.";
         Type = "oneshot";
         User = "test";
         ExecStart = "/srv/test/mytask.sh";
