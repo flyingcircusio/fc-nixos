@@ -14,8 +14,11 @@ in {
   });
 
   #
-  # imports from other nixpkgs versions
+  # imports from other nixpkgs versions or local definitions
   #
+  backy = super.callPackage ./backy.nix { };
+  backyExtract = super.callPackage ./backyextract { };
+
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;

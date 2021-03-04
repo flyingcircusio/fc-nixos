@@ -10,6 +10,7 @@ let
 in {
   imports = with lib; [
     ./antivirus.nix
+    ./backyserver.nix
     ./coturn.nix
     ./docker.nix
     ./ceph/osd.nix

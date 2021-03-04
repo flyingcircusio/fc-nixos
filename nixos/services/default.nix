@@ -15,6 +15,7 @@ in {
     ./ceph/client.nix
     ./ceph/server.nix
     ./collectdproxy.nix
+    ./consul.nix
     ./gitlab
     ./graylog
     ./haproxy.nix
