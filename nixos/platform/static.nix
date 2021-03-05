@@ -21,6 +21,17 @@ with lib;
         "rzrl1" = { id = 4; site = "Norderstedt"; };
       };
 
+      ceph.fsids = {
+        # These are needed once per cluster.
+        # Generate a new one via: `uuidgen -t` and record
+        # it here with the ${location}.${resourcegroup} key
+        dev.services = "b67bad36-3273-11e3-a2ed-0200000311bf";
+        whq.services = "be45fd6c-ea68-11e2-ad96-0200000311c0";
+        rzob.services = "d4b91002-eaf4-11e2-bc7c-0200000311c1";
+        rzob.risclog = "1f417812-eafa-11e2-aa4f-0200000311c1";
+        rzrl1.risclog = "ad1d2380-81da-11e3-9c5f-0200000311bf";
+      };
+
       # Note: this list of VLAN classes should be kept in sync with
       # fc.directory/src/fc/directory/vlan.py
       vlans = {
@@ -48,6 +59,11 @@ with lib;
         "18" = "tr3";
         # dynamic hardware pool: local endpoints for Kamp DHP tunnels
         "19" = "dhp";
+      };
+
+      mtus = {
+        "sto" = 9000;
+        "stb" = 9000;
       };
 
       nameservers = {

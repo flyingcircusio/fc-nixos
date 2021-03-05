@@ -7,7 +7,10 @@ let
 
   fclib = config.fclib;
 
-  interfaces = lib.attrByPath [ "parameters" "interfaces" ] {} cfg.enc;
+  interfaces = (lib.filterAttrs
+    (n: v: n != "ipmi")
+    (lib.attrByPath [ "parameters" "interfaces" ] {} cfg.enc));
+
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
 
   # generally use DHCP in the current location?
@@ -120,6 +123,10 @@ in
       multi on
     '';
 
+    environment.systemPackages = with pkgs; [
+      ethtool
+    ];
+
     networking = {
 
       # FQDN and host name should resolve to the SRV address
@@ -140,8 +147,7 @@ in
           (vlan: iface:
             lib.nameValuePair
               "eth${vlan}"
-              (fclib.interfaceConfig iface.networks))
-          interfaces;
+              (fclib.interfaceConfig iface.networks vlan)) interfaces;
 
       resolvconf.extraOptions = [ "ndots:1" "timeout:1" "attempts:6" ];
 
@@ -212,19 +218,47 @@ in
             mac = lib.toLower interfaces.${vlan}.mac;
           in
           lib.nameValuePair
-            "network-no-autoconf-eth${vlan}"
+            "network-link-properties-eth${vlan}"
             rec {
-              description = "Disable IPv6 SLAAC (autconf) on eth${vlan}";
-              wantedBy = [ "network-addresses-eth${vlan}.service" ];
+              description = "Ensure link properties for eth${vlan}";
+              # We need to explicitly be wanted by the multi-user target,
+              # otherwise we will not get initially added as the individual
+              # address units won't get restarted because triggering
+              # the multi-user alone does not propagated to the network-target
+              # etc. etc.
+              wantedBy = [ "network-addresses-eth${vlan}.service"
+                           "multi-user.target" ];
               before = wantedBy;
-              path = [ pkgs.nettools pkgs.procps ];
+              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp];
               script = ''
-                sysctl net.ipv6.conf.eth${vlan}.accept_ra=0
-                sysctl net.ipv6.conf.eth${vlan}.autoconf=0
-              '';
-              preStop = ''
-                sysctl net.ipv6.conf.eth${vlan}.accept_ra=1
-                sysctl net.ipv6.conf.eth${vlan}.autoconf=1
+                IFACE=eth${vlan}
+
+                IFACE_DRIVER=$(ethtool -i $IFACE | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
+                case $IFACE_DRIVER in
+                    e1000|e1000e|igb|ixgbe|i40e)
+                        # Disable interrupt moderation. We want traffic to leave the buffers
+                        # as fast as possible. Specifically on 10G links this can otherwise
+                        # quickly saturate the buffers and cause discards or pauses.
+                        echo "Disabling interrupt moderation ..."
+                        ethtool -C "$IFACE" rx-usecs 0 || true
+                        # Larger buffers.
+                        echo "Setting ring buffer ..."
+                        ethtool -G "$IFACE" rx 4096 tx 4096 || true
+                        # Large receive offload to reduce small packet CPU/interrupt impact.
+                        echo "Disabling large receive offload ..."
+                        ethtool -K "$IFACE" lro off || true
+                        ;;
+                esac
+
+                echo "Disabling flow control"
+                ethtool -A $IFACE autoneg off rx off tx off || true
+
+                # Ensure MTU
+                ip l set $IFACE mtu ${toString (fclib.vlanMTU vlan)}
+
+                # Disable IPv6 SLAAC (autconf) on 
+                sysctl net.ipv6.conf.$IFACE.accept_ra=0
+                sysctl net.ipv6.conf.$IFACE.autoconf=0
               '';
               serviceConfig = {
                 Type = "oneshot";
@@ -234,11 +268,15 @@ in
           (attrNames interfaces)));
 
     boot.kernel.sysctl = {
+      "net.ipv4.tcp_congestion_control" = "bbr";
       "net.ipv4.ip_nonlocal_bind" = "1";
       "net.ipv6.ip_nonlocal_bind" = "1";
       "net.ipv4.ip_local_port_range" = "32768 60999";
       "net.ipv4.ip_local_reserved_ports" = "61000-61999";
       "net.core.rmem_max" = 8388608;
+      # Linux currently has 4096 as default and that includes
+      # neighbour discovery. Seen on #denog on 2020-11-19
+      "net.ipv6.route.max_size" = 2147483647;
     };
   };
 }

@@ -29,4 +29,11 @@ rec {
   min = list: head (sort lessThan list);
   max = list: lib.last (sort lessThan list);
 
+  # Taken from 
+  # https://github.com/NixOS/nixpkgs/issues/41251
+  pow = n : i :
+            if i == 1 then n
+            else if i == 0 then 1
+            else n * pow n (i - 1);
+
 }

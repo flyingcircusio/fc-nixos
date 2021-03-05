@@ -250,15 +250,16 @@ def main():
     if args.verbose > 0:
         globals()['verbose'] = lambda msg: print(msg)
 
-    check_qemu_reboot()
-    check_kernel_reboot()
+    with open(args.enc_path) as f:
+        enc = json.load(f)
 
-    if args.enc_path:
-        with open(args.enc_path) as f:
-            enc = json.load(f)
+    if enc['parameters']['machine'] == 'virtual':
         resize_filesystems(enc)
         memory_change(enc)
         cpu_change(enc)
+        check_qemu_reboot()
+
+    check_kernel_reboot()
 
 
 if __name__ == '__main__':

@@ -44,6 +44,16 @@ in {
         '';
       };
 
+      extraCommands = mkOption {
+        type = types.lines;
+        default = "";
+        description = ''
+          Additional commands to execute within an agent run
+          after the main NixOS configuration/build has been 
+          activated.
+        '';
+      };
+
       interval = mkOption {
         type = types.int;
         default = 60;
@@ -104,6 +114,7 @@ in {
               fc-manage -E ${cfg.encPath} -i ${interval} \
               ${cfg.agent.steps} || rc=$?
             timeout 900 fc-resize -E ${cfg.encPath} || rc=$?
+            ${cfg.agent.extraCommands}
             exit $rc
           '';
       };

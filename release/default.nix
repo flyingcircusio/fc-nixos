@@ -24,7 +24,7 @@ with builtins;
 
 with import "${nixpkgs_}/pkgs/top-level/release-lib.nix" {
   inherit supportedSystems scrubJobs;
-  nixpkgsArgs = { config = { allowUnfree = false; inHydra = true; }; nixpkgs = nixpkgs_; };
+  nixpkgsArgs = { config = { allowUnfree = true; inHydra = true; }; nixpkgs = nixpkgs_; };
   packageSet = import ../.;
 };
 # pkgs and lib imported from release-lib.nix
@@ -168,19 +168,80 @@ let
       evaled = import "${nixpkgs_}/nixos/lib/eval-config.nix" config;
       build = evaled.config.system.build;
       kernelTarget = evaled.pkgs.stdenv.hostPlatform.platform.kernelTarget;
+
+      customIPXEScript = pkgs.writeText "netboot.ipxe" ''
+        #!ipxe
+
+        set console ttyS2,115200
+
+        :start
+        menu Flying Circus Installer boot menu
+        item --gap --          --- Info ---
+        item --gap --           Console: ''${console}
+        item --gap --          --- Settings ---
+        item console_tty0      console=tty0
+        item console_ttys1     console=ttyS1,115200
+        item console_ttys2     console=ttyS2,115200
+        item --gap --          --- Install ---
+        item boot_installer    Boot installer
+        item --gap --          --- Other ---
+        item exit              Continue BIOS boot
+        item local             Continue boot from local disk
+        item shell             Drop to iPXE shell
+        item reboot            Reboot computer
+
+        choose selected
+        goto ''${selected}
+        goto error
+
+        :console_tty0
+        set console tty0
+        goto start
+
+        :console_ttys1
+        set console ttyS1,115200
+        goto start
+
+        :console_ttys2
+        set console ttyS2,115200
+        goto start
+
+        :local
+        sanboot || goto error
+
+        :reboot
+        reboot
+
+        :shell
+        echo Type 'exit' to get the back to the menu
+        shell
+        set menu-timeout 0
+        set submenu-timeout 0
+        goto start
+
+        :boot_installer
+        kernel ${kernelTarget} init=${build.toplevel}/init console=''${console} initrd=initrd loglevel=4
+        initrd initrd
+        boot || goto error
+
+        :error
+        echo An error occured. Will fall back to menu in 15 seconds.
+        sleep 15
+        goto start
+        '';
     in
       pkgs.symlinkJoin {
         name = "netboot-${evaled.config.system.nixos.label}-${system}";
         paths = [
           build.netbootRamdisk
           build.kernel
-          build.netbootIpxeScript
         ];
         postBuild = ''
           mkdir -p $out/nix-support
+          ln -s ${customIPXEScript} $out/netboot.ipxe
           echo "file ${kernelTarget} ${build.kernel}/${kernelTarget}" >> $out/nix-support/hydra-build-products
           echo "file initrd ${build.netbootRamdisk}/initrd" >> $out/nix-support/hydra-build-products
-          echo "file ipxe ${build.netbootIpxeScript}/netboot.ipxe" >> $out/nix-support/hydra-build-products
+          echo "file ipxe $out/netboot.ipxe " >> $out/nix-support/hydra-build-products
         '';
         preferLocalBuild = true;
       };
@@ -263,23 +324,26 @@ let
     }).config.system.build.ovaImage;
 
     # iPXE netboot image
-    netboot = makeNetboot {
+    netboot = lib.hydraJob (makeNetboot {
       inherit system;
+
       modules = [
         "${nixpkgs_}/nixos/modules/installer/netboot/netboot-minimal.nix"
         (import version_nix {})
+        (import ./netboot-installer-config.nix {})
       ];
-    };
+    });
 
     # VM image for the Flying Circus infrastructure.
     fc = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
       inherit system;
       modules = [
-        (import ./fc-image.nix imgArgs)
+        (import ./vm-image.nix imgArgs)
         (import version_nix {})
         ../nixos
       ];
     }).config.system.build.fcImage;
+
     };
 
 in

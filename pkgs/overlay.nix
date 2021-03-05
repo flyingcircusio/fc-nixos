@@ -14,8 +14,11 @@ in {
   });
 
   #
-  # imports from other nixpkgs versions
+  # imports from other nixpkgs versions or local definitions
   #
+  backy = super.callPackage ./backy.nix { };
+  backyExtract = super.callPackage ./backyextract { };
+
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
@@ -25,8 +28,15 @@ in {
   cfssl = super.callPackage ./cfssl.nix { };
 
   cgmemtime = super.callPackage ./cgmemtime.nix { };
+  check_ipmi_sensor = super.callPackage ./check_ipmi_sensor.nix { };
+  check_md_raid = super.callPackage ./check_md_raid { };
+  check_megaraid = super.callPackage ./check_megaraid { };
 
-  #docsplit = super.callPackage ./docsplit { };
+  ceph = (super.callPackage ./ceph {
+      boost = super.boost155;
+  });
+
+  docsplit = super.callPackage ./docsplit { };
 
   elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
     version = elk7Version;
@@ -108,6 +118,25 @@ in {
     });
 
   mysql = super.mariadb;
+
+  monitoring-plugins = super.monitoring-plugins.overrideAttrs(_: rec {
+    name = "monitoring-plugins-2.3.0";
+
+      src = super.fetchFromGitHub {
+        owner  = "monitoring-plugins";
+        repo   = "monitoring-plugins";
+        rev    = "v2.3";
+        sha256 = "125w3rnslk9wfpzafbviwag0xvix1fzkhnjdxzb1h5fg58wlgf68";
+      };
+
+      patches = [];
+
+      postInstall = super.monitoring-plugins.postInstall + ''
+        cp plugins-root/check_dhcp $out/bin
+        cp plugins-root/check_icmp $out/bin
+      '';
+
+    });
 
   # This is our default version.
   nginxStable = (super.nginxStable.override {

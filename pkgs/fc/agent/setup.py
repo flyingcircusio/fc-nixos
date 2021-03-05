@@ -57,6 +57,7 @@ setup(
     extras_require={'test': test_deps},
     entry_points={
         'console_scripts': [
+            'fc-backy=fc.manage.backy:main',
             'fc-graylog=fc.manage.graylog:main',
             'fc-maintenance=fc.maintenance.reqmanager:main',
             'fc-manage=fc.manage.manage:main',

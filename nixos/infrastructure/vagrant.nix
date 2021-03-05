@@ -73,7 +73,6 @@ in {
     # FC specific customizations
     flyingcircus = {
       agent.enable = false;
-      logrotate.enable = true;
 
       localConfigDirs = {
         logrotate-vagrant = {

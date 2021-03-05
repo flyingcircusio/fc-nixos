@@ -28,9 +28,12 @@
         graphviz
         htop
         imagemagick
+        multipath_tools  # kpartx
         iotop
         jq
+        latencytop
         libjpeg
+        libsmbios
         libtiff
         libxml2
         libxslt
@@ -49,6 +52,7 @@
         nodejs
         openldap
         openssl
+        parted
         php
         pkgconfig
         protobuf
@@ -66,6 +70,7 @@
         tmux
         tree
         unzip
+        usbutils
         vim
         wdiff
         wget
