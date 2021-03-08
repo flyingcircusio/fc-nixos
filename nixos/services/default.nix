@@ -12,7 +12,10 @@ in {
   disabledModules = modulesFromHere;
 
   imports = with lib; [
+    ./ceph/client.nix
+    ./ceph/server.nix
     ./collectdproxy.nix
+    ./consul.nix
     ./gitlab
     ./graylog
     ./haproxy.nix
@@ -25,6 +28,7 @@ in {
     ./prometheus.nix
     ./rabbitmq36.nix
     ./rabbitmq.nix
+    ./raid
     ./redis.nix
     ./sensu/api.nix
     ./sensu/client.nix

@@ -227,5 +227,14 @@ in
       ((concatStringsSep "\n" (homeDirPermissions cfg.userData)) +
       "find /home -type l -name box -print0 | xargs -r0 rm");
 
+
+    flyingcircus.services.sensu-client.checks = {
+      users = {
+        notification = "Number of users logged in";
+        command =
+          "check_users -w 8 -c 16";
+      };
+    };
+
   };
 }

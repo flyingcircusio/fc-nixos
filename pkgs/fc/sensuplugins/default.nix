@@ -1,4 +1,4 @@
-{ pkgs, libyaml, python3Packages }:
+{ pkgs, libyaml, iproute, ethtool, python3Packages, megacli }:
 
 let
   py = python3Packages;
@@ -11,6 +11,9 @@ in
     dontStrip = true;
     propagatedBuildInputs = [
       libyaml
+      iproute
+      ethtool
+      megacli
       py.nagiosplugin
       py.requests
       py.psutil

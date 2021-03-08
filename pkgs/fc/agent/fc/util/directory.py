@@ -4,7 +4,6 @@ import contextlib
 import json
 import xmlrpc.client
 
-
 DIRECTORY_URL_RING0 = (
     'https://{enc[name]}:{enc[parameters][directory_password]}@'
     'directory.fcio.net/v2/api')
@@ -26,13 +25,16 @@ def connect(enc_data=None, ring=1):
     Alternatively, the parsed JSON content can be passed directly as
     dict.
 
-    Selects ring0/ring1 API according to the `ring` parameter.
+    Selects ring0/ring1 API according to the `ring` parameter. Giving `max`
+    results in selecting the highest ring available according to the ENC.
     """
     if not enc_data:
         enc_data = load_default_enc_json()
-    url = {0: DIRECTORY_URL_RING0,
-           1: DIRECTORY_URL_RING1}[ring]
-    return xmlrpc.client.Server(url.format(enc=enc_data), allow_none=True,
+    if ring == 'max':
+        ring = enc_data['parameters']['directory_ring']
+    url = {0: DIRECTORY_URL_RING0, 1: DIRECTORY_URL_RING1}[ring]
+    return xmlrpc.client.Server(url.format(enc=enc_data),
+                                allow_none=True,
                                 use_datetime=True)
 
 
