@@ -29,6 +29,7 @@ in {
   fcagent = callTest ./fcagent.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
+  gitlab = callTest ./gitlab.nix {};
   graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
   journal = callTest ./journal.nix {};
