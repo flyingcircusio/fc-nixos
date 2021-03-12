@@ -410,8 +410,11 @@ in {
           };
       };
 
-      systemd.services.jicofo.stopIfChanged = false;
-      systemd.services.jitsi-videobridge2.stopIfChanged = false;
+      systemd.services.jicofo = {
+        after = [ "prosody.service" ];
+        stopIfChanged = false;
+      };
+
     })
 
     (lib.mkIf (cfg.enable && cfg.coturn.enable) {

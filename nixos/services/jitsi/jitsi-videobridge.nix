@@ -213,6 +213,8 @@ in
 
       environment.JAVA_SYS_PROPS = attrsToArgs jvbProps;
 
+      stopIfChanged = false;
+
       script = (concatStrings (mapAttrsToList (name: xmppConfig:
         "export ${toVarName name}=$(cat ${xmppConfig.passwordFile})\n"
       ) cfg.xmppConfigs))
@@ -247,6 +249,28 @@ in
         LimitNPROC = 65000;
         LimitNOFILE = 65000;
       };
+    };
+
+    systemd.services.delay-jitsi-videobridge-start = {
+
+      partOf = [ "jicofo.service" ];
+      after = [ "jicofo.service" ];
+      requiredBy = [ "jitsi-videobridge2.service" ];
+      before = [ "jitsi-videobridge2.service" ];
+
+      restartIfChanged = false;
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        echo "Jicofo was just started, waiting 5 seconds..."
+        for x in {1..5}; do
+          sleep 1
+          echo "$x..."
+        done
+      '';
     };
 
     environment.etc."jitsi/videobridge/logging.properties".source =
