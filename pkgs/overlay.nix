@@ -36,8 +36,6 @@ in {
       boost = super.boost155;
   });
 
-  docsplit = super.callPackage ./docsplit { };
-
   elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
     version = elk7Version;
     name = "elasticsearch-${version}";
