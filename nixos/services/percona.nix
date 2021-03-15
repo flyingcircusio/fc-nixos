@@ -28,12 +28,19 @@ let
     ${cfg.extraOptions}
   '';
 
-  mysqlInit = "${mysql}/bin/mysqld --initialize-insecure ${mysqldOptions}";
+  mysqlInit =
+  if versionAtLeast mysql.mysqlVersion "5.7" then
+    "${mysql}/bin/mysqld --initialize-insecure ${mysqldOptions}"
+  else
+    "${pkgs.perl}/bin/perl ${mysql}/bin/mysql_install_db ${mysqldOptions}";
 
-  setPasswordSql = "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY \'$pw\';";
+  setPasswordSql =
+    if (lib.versionAtLeast mysql.mysqlVersion "5.7") then
+      "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY \'$pw\';"
+    else
+      "SET PASSWORD FOR 'root'@'localhost' = PASSWORD(\'$pw\');";
 
   mysqlPreStart = ''
-    set -x
     umask 0066
 
     mkdir -p /run/mysqld
@@ -220,7 +227,7 @@ in
       serviceConfig = {
         ExecStart = "${mysql}/bin/mysqld --defaults-extra-file=${myCnf} ${mysqldOptions}";
         Restart = "always";
-        TimeoutSec = 300;
+        TimeoutSec = 360;
       };
 
       preStart = mysqlPreStart;
@@ -230,9 +237,9 @@ in
           count=0
           while [ ! -e /run/mysqld/mysqld.sock ]
           do
-              if [ $count -eq 60 ]
+              if [ $count -eq 300 ]
               then
-                  echo "Tried 60 times, giving up..."
+                  echo "Tried 300 seconds, giving up..."
                   exit 1
               fi
 
