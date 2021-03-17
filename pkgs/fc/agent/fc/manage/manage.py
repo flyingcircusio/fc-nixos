@@ -3,6 +3,7 @@
 from fc.util.directory import connect
 from fc.util.lock import locked
 from .spread import Spread, NullSpread
+from subprocess import PIPE, STDOUT
 import argparse
 import fc.maintenance
 import fc.maintenance.lib.shellscript
@@ -42,6 +43,21 @@ nixos-rebuild switch || nixos-rebuild switch
 rm -rf {NEXT_SYSTEM}
 """
 
+class ChannelException(Exception):
+    pass
+
+
+class BuildFailed(ChannelException):
+    pass
+
+
+class SwitchFailed(ChannelException):
+    pass
+
+
+class RegisterFailed(ChannelException):
+    pass
+
 
 class Channel:
 
@@ -54,6 +70,8 @@ class Channel:
     def __init__(self, url, name=None):
         self.url = url
         self.name = name
+        self.result_path = None
+
         if url.startswith("file://"):
             self.is_local = True
             self.resolved_url = url.replace('file://', '')
@@ -118,15 +136,92 @@ class Channel:
                 "the channel URL towards that directory?",
                 self.resolved_url)
 
-    def switch(self, build_options):
-        """Build the "self" channel and switch system to it."""
+    def switch(self, build_options, lazy=False):
+        """
+        Build system with this channel and switch to it.
+        Replicates the behaviour of nixos-rebuild switch and adds an optional
+        lazy mode which only switches to the built system if it actually changed.
+        """
+        self.build(build_options)
+        switched = self.switch_to_configuration(lazy)
+        if switched:
+            self.register_system_profile()
+
+    def build(self, build_options):
+        """
+        Build system with this channel. Works like nixos-rebuild build.
+        Does not modify the running system.
+        """
         _log.info('Building %s', self)
-        args = ['nixos-rebuild', '--no-build-output']
+        cmd = [
+            "nix-build", "--no-build-output", "--no-out-link",
+            "<nixpkgs/nixos>", "-A", "system"
+        ]
         if self.is_local:
             self.check_local_channel()
-            args.extend(['-I', self.resolved_url])
-        args.extend(['switch'] + build_options)
-        subprocess.check_call(args)
+            cmd.extend(['-I', self.resolved_url])
+        cmd.extend(build_options)
+        _log.debug("Build command is: %s", " ".join(cmd))
+
+        stderr_lines = []
+        proc = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
+        while proc.poll() is None:
+            line = proc.stderr.readline()
+            print(line, end="")
+            stderr_lines.append(line)
+
+        if proc.returncode != 0:
+            _log.error("Building channel failed!")
+            _log.debug("Output from failed build:\n%s", stderr_lines)
+            raise BuildFailed()
+
+        result_path = proc.stdout.read().strip()
+        _log.debug("Built channel, result is: %s", result_path)
+        assert result_path.startswith("/nix/store/"), \
+            f"Output doesn't look like a Nix store path: {result_path}"
+        self.result_path = result_path
+
+    def switch_to_configuration(self, lazy):
+        if self.result_path is None:
+            _log.error("This channel hasn't been built yet, cannot switch!")
+            return False
+
+        if lazy and p.realpath("/run/current-system") == self.result_path:
+            _log.info("Lazy: system config did not change, skipping switch.")
+            return False
+
+        _log.info("Switching to system: %s", self.result_path)
+
+        cmd = [f"{self.result_path}/bin/switch-to-configuration", "switch"]
+        _log.debug("Switch command is: %s", " ".join(cmd))
+
+        stdout_lines = []
+        proc = subprocess.Popen(cmd, stdout=PIPE, stderr=STDOUT, text=True)
+        while proc.poll() is None:
+            line = proc.stdout.readline()
+            print(line, end="")
+            stdout_lines.append(line)
+
+        if proc.returncode != 0:
+            _log.error("Switch to new system config failed!")
+            _log.debug("Output from failed switch:\n%s", stdout_lines)
+            raise SwitchFailed()
+
+        return True
+
+    def register_system_profile(self):
+        cmd = [
+            "nix-env", "--profile", "/nix/var/nix/profiles/system", "--set",
+            self.result_path
+        ]
+        _log.debug("Register command is: %s", " ".join(cmd))
+
+        try:
+            subprocess.run(cmd, check=True, stdout=PIPE, stderr=STDOUT, text=True)
+        except subprocess.CalledProcessError as e:
+            _log.error("Registering the new system in the profile failed:\n%s",
+                       e.stdout)
+            raise RegisterFailed()
 
     def prepare_maintenance(self):
         _log.debug('Preparing maintenance')
@@ -303,12 +398,12 @@ def update_inventory():
     ])
 
 
-def build_channel_with_maintenance(build_options, spread):
+def build_channel_with_maintenance(build_options, spread, lazy):
     if not enc or not enc.get('parameters'):
         _log.warning('No ENC data. Not building channel.')
         return
     # always rebuild current channel (ENC updates, activation scripts etc.)
-    build_channel(build_options, spread, update=False)
+    build_channel(build_options, spread, lazy, update=False)
     # scheduled update already present?
     if Channel.current('next'):
         rm = fc.maintenance.ReqManager()
@@ -337,30 +432,30 @@ def build_channel_with_maintenance(build_options, spread):
         _log.info('Current channel is still up-to-date.')
 
 
-def build_channel(build_options, spread, update=True):
-    try:
-        if enc and enc.get('parameters'):
-            _log.info('Environment: %s', enc['parameters']['environment'])
-            channel = Channel(enc['parameters']['environment_url'])
-        else:
-            channel = Channel.current('nixos')
-        if not channel:
-            return
-        if update and spread.is_due() and not channel.is_local:
-            channel.load('nixos')
+def build_channel(build_options, spread, lazy, update=True):
+    if enc and enc.get('parameters'):
+        env_name = enc['parameters']['environment']
+        _log.info('Environment: %s', env_name)
+        channel = Channel(enc['parameters']['environment_url'], env_name)
+    else:
+        channel = Channel.current('nixos')
+    if not channel:
+        return
+    if update and spread.is_due() and not channel.is_local:
+        channel.load('nixos')
 
-        if not channel.is_local:
-            channel = Channel.current('nixos')
+    if not channel.is_local:
+        channel = Channel.current('nixos')
 
-        if channel:
-            channel.switch(build_options)
-    except Exception:
-        _log.exception('Error switching channel')
-        sys.exit(1)
+    if channel:
+        try:
+            channel.switch(build_options, lazy)
+        except ChannelException:
+            sys.exit(2)
 
 
-def build_no_update(build_options, spread):
-    return build_channel(build_options, spread, update=False)
+def build_no_update(build_options, spread, lazy):
+    return build_channel(build_options, spread, lazy, update=False)
 
 
 def maintenance():
@@ -397,6 +492,8 @@ def parse_args():
                    'to system_state.json')
     a.add_argument('-m', '--maintenance', default=False, action='store_true',
                    help='run scheduled maintenance')
+    a.add_argument('-l', '--lazy', default=False, action='store_true',
+                   help="only switch to new system if build result changed")
     a.add_argument('-t', '--timeout', default=3600, type=int,
                    help='abort execution after <TIMEOUT> seconds')
     a.add_argument('-i', '--interval', default=120, type=int, metavar='INT',
@@ -455,7 +552,7 @@ def transaction(args):
         spread = NullSpread()
 
     if args.build:
-        globals()[args.build](build_options, spread)
+        globals()[args.build](build_options, spread, args.lazy)
 
     if args.maintenance:
         maintenance()
