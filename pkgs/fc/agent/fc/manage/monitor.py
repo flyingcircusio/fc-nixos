@@ -3,6 +3,7 @@
 import argparse
 import datetime
 import json
+import pathlib
 import shlex
 import socket
 import sys
@@ -68,6 +69,8 @@ def write_checks(directory=None, config_file=None, **kw):
     if old_check_configuration != sensu_checks:
         with open(config_file, 'w') as f:
             json.dump(sensu_checks, f, indent=2, sort_keys=True)
+    else:
+        pathlib.Path(config_file).touch()
 
 
 def handle_result(directory=None, enc=None, **kw):
