@@ -167,15 +167,6 @@ in {
         "a+ /var/log/httpd - - - - group:sudo-srv:r-x"
       ];
 
-      services.logrotate.extraConfig = ''
-        /var/log/httpd/*.log {
-          create 0644 root root
-          postrotate
-            systemctl reload httpd
-          endscript
-        }
-      '';
-
       # tideways daemon
       users.groups.tideways.gid = config.ids.gids.tideways;
 
