@@ -1,4 +1,4 @@
-import ./make-test.nix ({ pkgs, ... }:
+import ./make-test-python.nix ({ pkgs, ... }:
 let
   agent_updates_channel_with_maintenance = pkgs.writeScript "agent-updates-channel-with-maintenance" ''
       #!/bin/sh
@@ -34,11 +34,11 @@ in
 
   };
   testScript = ''
-    $nonprod->waitForUnit('multi-user.target');
-    $nonprod->fail('${agent_updates_channel_with_maintenance}');
+    nonprod.wait_for_unit('multi-user.target')
+    nonprod.fail('${agent_updates_channel_with_maintenance}')
 
-    $prod->waitForUnit('multi-user.target');
-    $prod->succeed('${agent_updates_channel_with_maintenance}');
+    prod.wait_for_unit('multi-user.target')
+    prod.succeed('${agent_updates_channel_with_maintenance}')
   '';
 })
 
