@@ -1,4 +1,4 @@
-import ./make-test.nix ({ ... }:
+import ./make-test-python.nix ({ ... }:
 
 # Checks that systemd does not detect any circular service dependencies on boot.
 {
@@ -10,8 +10,8 @@ import ./make-test.nix ({ ... }:
     };
 
   testScript = ''
-    $machine->waitForUnit('multi-user.target');
-    $machine->waitUntilSucceeds('pgrep -f "agetty.*tty1"');
-    $machine->fail('journalctl -b | egrep "systemd.*cycle"');
+    machine.wait_for_unit('multi-user.target')
+    machine.wait_until_succeeds('pgrep -f "agetty.*tty1"')
+    machine.fail('journalctl -b | egrep "systemd.*cycle"')
   '';
 })

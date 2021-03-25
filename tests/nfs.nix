@@ -1,6 +1,6 @@
-import ./make-test.nix ({ ... }:
+import ./make-test-python.nix ({ ... }:
 
-let 
+let
   user = {
     isNormalUser = true;
     uid = 1001;
@@ -23,14 +23,14 @@ let
 in {
   name = "nfs";
   nodes = {
-    client = 
+    client =
       { lib, ... }:
       {
         imports = [ ../nixos ../nixos/roles ];
         config = {
           flyingcircus.roles.nfs_rg_client.enable = true;
           # XXX: same as upstream test, let's see how they fix this
-          networking.firewall.enable = false; 
+          networking.firewall.enable = false;
           flyingcircus.encServices = encServices;
 
           # The test framework overrides the fileSystems setting from the role,
@@ -46,8 +46,8 @@ in {
                 "rsize=8192"
                 "wsize=8192"
                 "noauto"
-                "x-systemd.automount" 
-                "nfsvers=4" 
+                "x-systemd.automount"
+                "nfsvers=4"
               ];
             noCheck = true;
           };
@@ -74,29 +74,31 @@ in {
 
   testScript = ''
 
-    $server->start();
-    $server->waitForUnit("nfs-server");
-    $server->waitForUnit("nfs-idmapd");
-    $server->waitForUnit("nfs-mountd");
-    $client->start();
+    server.start()
+    server.wait_for_unit("nfs-server")
+    server.wait_for_unit("nfs-idmapd")
+    server.wait_for_unit("nfs-mountd")
+    client.start()
 
-    $server->succeed("chown test ${sdir}");
+    server.succeed("chown test ${sdir}")
 
     # user test on server should be able to write to shared dir
-    $server->succeed("sudo -u test echo test_on_server > ${sdir}/test");
-    
+    server.succeed("sudo -u test echo test_on_server > ${sdir}/test")
+
     # share should be mounted upon access
-    $client->succeed("cd ${cdir}");
-    $client->waitForUnit("mnt-nfs-shared.mount");
+    client.succeed("cd ${cdir}")
+    client.wait_for_unit("mnt-nfs-shared.mount")
 
+    # The commented code below was originaly writen in perl and was converted to python.
+    # It ist not tested and the comment below may not apply anymore!
     # XXX: results in permission denied, why?
-    #$client->succeed("grep test_on_server ${cdir}/test");
+    #client.succeed("grep test_on_server ${cdir}/test")
 
-    #$client->succeed("sudo -u test echo test_on_client > $cdir/test");
-    #$server->succeed("grep test_on_client $sdir/test");
+    #client.succeed("sudo -u test echo test_on_client > $cdir/test")
+    #server.succeed("grep test_on_client $sdir/test")
 
-    #$client->fail("echo from_root_user > $cdir/test");
-    #$server->succeed("grep from_test_user $sdir/test");
+    #client.fail("echo from_root_user > $cdir/test")
+    #server.succeed("grep from_test_user $sdir/test")
   '';
 
 })
