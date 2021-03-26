@@ -15,7 +15,7 @@ let
   client6Fe = net6Fe + "1";
   turnserver6Fe = net6Fe + "2";
 
-  turnserverFe = "turnserver.fe.loc.fcio.net";
+  turnserverFe = "turnserver.fe.standalone.fcio.net";
 
   hosts = ''
     127.0.0.1 localhost
@@ -76,6 +76,14 @@ in {
         networking.domain = "fcio.net";
         networking.firewall.allowedTCPPorts = [ 5349 ];
         virtualisation.vlans = [ 1 2 ];
+
+        # ACME does not work in tests so coturn always uses the preliminary
+        # self-signed certs. They don't have the right permissions so we fix it
+        # here like the postRun script would normally do it on a real VM with
+        # network access (see nixos/roles/coturn.nix).
+        systemd.services.coturn.serviceConfig.ExecStartPre = [
+          "+${pkgs.acl}/bin/setfacl -Rm u:turnserver:rX /var/lib/acme/${turnserverFe}"
+        ];
       };
   };
 
@@ -85,18 +93,22 @@ in {
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
     coturnCheck = lib.replaceChars ["\n"] [" "] sensuChecks.coturn.command;
   in ''
+    startAll();
     $turnserver->waitForUnit("coturn.service");
     $turnserver->waitForOpenPort(3478);
     $turnserver->waitForOpenPort(3479);
     $turnserver->waitForOpenPort(5349);
     $turnserver->waitForOpenPort(5350);
 
+    # -w1 specifies a timeout of one second for the connection.
+    # Coturn should respond much faster that that. Also fixes a problem that
+    # caused nc to hang forever sometimes.
     subtest "coturn should be reachable on fe (IPv4)", sub {
-      $client->waitUntilSucceeds('nc -z ${turnserver4Fe} 5349');
+      $client->waitUntilSucceeds('nc -z -w1 ${turnserver4Fe} 5349');
     };
 
     subtest "coturn should be reachable on fe (IPv6)", sub {
-      $client->waitUntilSucceeds('nc -z ${turnserver6Fe} 5349');
+      $client->waitUntilSucceeds('nc -z -w1 ${turnserver6Fe} 5349');
     };
 
     subtest "sensu check should be green", sub {
