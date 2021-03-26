@@ -91,8 +91,10 @@ in
     };
 
     security.acme.certs."${hostname}" = {
-      group = "turnserver";
-      postRun = "systemctl kill -s USR2 coturn.service";
+      postRun = ''
+        ${pkgs.acl}/bin/setfacl -Rm u:turnserver:rX .
+        systemctl kill -s USR2 coturn.service
+      '';
     };
 
     flyingcircus.services = {

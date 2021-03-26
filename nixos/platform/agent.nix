@@ -49,7 +49,7 @@ in {
         default = "";
         description = ''
           Additional commands to execute within an agent run
-          after the main NixOS configuration/build has been 
+          after the main NixOS configuration/build has been
           activated.
         '';
       };
@@ -60,6 +60,20 @@ in {
         description = "Run channel updates every N minutes.";
       };
 
+      lazySwitch = mkOption {
+        default = true;
+        description = ''
+          Only switch to the new configuration if the system has actually
+          changed.
+        '';
+        type = types.bool;
+      };
+
+      verbose = mkOption {
+        default = false;
+        description = "Enable additional logging for agent debugging.";
+        type = types.bool;
+      };
     };
   };
 
@@ -107,12 +121,15 @@ in {
         };
 
         script =
-          let interval = toString cfg.agent.interval;
+          let
+            interval = toString cfg.agent.interval;
+            lazy = lib.optionalString cfg.agent.lazySwitch "-l";
+            verbose = lib.optionalString cfg.agent.verbose "-v";
           in ''
             rc=0
             timeout 14400 ionice -c3 \
               fc-manage -E ${cfg.encPath} -i ${interval} \
-              ${cfg.agent.steps} || rc=$?
+              ${lazy} ${verbose} ${cfg.agent.steps} || rc=$?
             timeout 900 fc-resize -E ${cfg.encPath} || rc=$?
             ${cfg.agent.extraCommands}
             exit $rc
