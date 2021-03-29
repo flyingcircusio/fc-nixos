@@ -90,6 +90,7 @@ in {
         serviceConfig.TimeoutStartSec = fclib.mkPlatform 1200;
         serviceConfig.LimitNOFILE = 64000;
         serviceConfig.LimitNPROC = 32000;
+        serviceConfig.Restart = "always";
         serviceConfig.ExecStart = lib.mkForce ''
           ${mcfg.package}/bin/mongod --config ${mongoCnf}
         '';

@@ -62,6 +62,21 @@ in {
       with subtest("mongodb sensu check should be red after shutting down mongodb"):
         machine.systemctl("stop mongodb")
         machine.fail("${sensuCheck "mongodb"}")
+
+      with subtest("mongodb restarts on crash"):
+        machine.systemctl("start mongodb")
+        machine.wait_for_unit("mongodb.service")
+        _, out = machine.execute('pgrep mongod')
+        print(out)
+        previous_pid = int(out.strip())
+        machine.succeed("killall -11 mongod")
+        import time
+        time.sleep(5)
+        machine.succeed("systemctl show mongodb | grep ActiveState=active")
+        _, out = machine.execute('pgrep mongod')
+        new_pid = int(out.strip())
+        print("new pid:", new_pid, "old pid:", previous_pid)
+        assert new_pid != previous_pid;
     '';
 
 })
