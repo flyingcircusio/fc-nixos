@@ -1,4 +1,4 @@
-import ./make-test.nix ({ lib, ... }:
+import ./make-test-python.nix ({ lib, ... }:
 
 {
   name = "journal";
@@ -37,28 +37,23 @@ import ./make-test.nix ({ lib, ... }:
     };
 
   testScript = ''
-    $machine->waitForUnit('multi-user.target');
+    machine.wait_for_unit('multi-user.target')
 
-    subtest "user without allowed groups should not see the journal", sub {
-      $machine->mustFail('sudo -iu \#1000 journalctl');
-    };
+    with subtest("user without allowed groups should not see the journal"):
+        machine.fail('sudo -iu \#1000 journalctl')
 
-    subtest "admin user should see the journal", sub {
-      $machine->succeed('sudo -iu \#1001 journalctl');
-    };
+    with subtest("admin user should see the journal"):
+        machine.succeed('sudo -iu \#1001 journalctl')
 
-    subtest "admin user should see the journal", sub {
-      $machine->succeed('sudo -iu \#1002 journalctl');
-    };
+    with subtest("admin user should see the journal"):
+        machine.succeed('sudo -iu \#1002 journalctl')
 
-    subtest "wheel user should see the journal", sub {
-      $machine->succeed('sudo -iu \#1003 journalctl');
-    };
+    with subtest("wheel user should see the journal"):
+        machine.succeed('sudo -iu \#1003 journalctl')
 
-    subtest "service user should see the journal", sub {
-      $machine->succeed('sudo -iu \#1004 journalctl');
-    };
+    with subtest("service user should see the journal"):
+        machine.succeed('sudo -iu \#1004 journalctl')
 
-    print($machine->succeed('getfacl /var/log/journal'));
+    print(machine.succeed('getfacl /var/log/journal'))
   '';
 })

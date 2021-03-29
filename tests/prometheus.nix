@@ -1,4 +1,4 @@
-import ./make-test.nix ({ ... }:
+import ./make-test-python.nix ({ ... }:
 {
   name = "prometheus";
   machine =
@@ -8,15 +8,13 @@ import ./make-test.nix ({ ... }:
       config.services.prometheus.enable = true;
     };
   testScript = ''
-    $machine->waitForUnit("prometheus.service");
-    $machine->sleep(5);
+    machine.wait_for_unit("prometheus.service")
+    machine.sleep(5)
 
-    subtest "Prometheus should serve its own metrics", sub {
-      $machine->succeed("curl 'localhost:9090/metrics' | grep go_goroutines");
-    };
+    with subtest("Prometheus should serve its own metrics"):
+        machine.succeed("curl 'localhost:9090/metrics' | grep go_goroutines")
 
-    subtest "Metrics dir should only allow access for prometheus user", sub {
-      $machine->succeed("stat /srv/prometheus/metrics -c %a:%U:%G | grep '700:prometheus:prometheus'");
-    };
+    with subtest("Metrics dir should only allow access for prometheus user"):
+        machine.succeed("stat /srv/prometheus/metrics -c %a:%U:%G | grep '700:prometheus:prometheus'")
   '';
 })
