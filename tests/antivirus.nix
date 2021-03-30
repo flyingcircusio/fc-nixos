@@ -1,7 +1,7 @@
 # It's hard to test the real functionality because the updater needs internet
 # access and the daemon need large binary files in order to run. We just check
 # the generated config.
-import ./make-test.nix ({ lib, ... }:
+import ./make-test-python.nix ({ lib, ... }:
 let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
@@ -28,11 +28,11 @@ in {
   testScript =
   let
     check = ipaddr: ''
-      $machine->succeed('grep ${ipaddr} /etc/clamav/clamd.conf');
+      machine.succeed('grep ${ipaddr} /etc/clamav/clamd.conf')
     '';
   in ''
-    $machine->succeed('systemctl cat clamav-daemon.service');
-    $machine->succeed('systemctl cat clamav-freshclam.service');
-    $machine->succeed('systemctl cat clamav-freshclam.timer');
+    machine.succeed('systemctl cat clamav-daemon.service')
+    machine.succeed('systemctl cat clamav-freshclam.service')
+    machine.succeed('systemctl cat clamav-freshclam.timer')
   '' + lib.concatMapStrings check [ "127.0.0.1" "::1" ipv4 ipv6 ];
 })
