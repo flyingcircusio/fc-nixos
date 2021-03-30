@@ -1,9 +1,9 @@
 {
   "nixpkgs": {
-    "owner": "flyingcircusio",
+    "owner": "NixOS",
     "repo": "nixpkgs",
-    "rev": "d31f3c6c5154f5574979e3e1d6230ebd50733761",
-    "sha256": "1vzfdwmhzm19zd5wqnfdc3q8cdi16dykxcyp67ay4zk4nwljpfak"
+    "rev": "d3f7e969b9860fb80750147aeb56dab1c730e756",
+    "sha256": "13z5lsgfgpw2wisglicy7krjrhypcc2y7krzxn54ybcninyiwhsn"
   },
   "nixpkgs_18_03": {
     "owner": "nixos",
