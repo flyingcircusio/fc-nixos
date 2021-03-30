@@ -25,7 +25,6 @@ in {
     });
 
   certmgr = super.callPackage ./certmgr.nix {  };
-  cfssl = super.callPackage ./cfssl.nix { };
 
   cgmemtime = super.callPackage ./cgmemtime.nix { };
   check_ipmi_sensor = super.callPackage ./check_ipmi_sensor.nix { };
