@@ -227,7 +227,6 @@ in {
   rabbitmq-server_3_6_15 = super.callPackage ./rabbitmq-server/3.6.15.nix {
     erlang = self.erlangR19;
   };
-  rabbitmq-server_3_7 = super.rabbitmq-server; # XXX this is actually 3.8
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
   remarshal = super.callPackage ./remarshal.nix { };
