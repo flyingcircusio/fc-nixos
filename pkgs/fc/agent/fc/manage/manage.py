@@ -142,21 +142,32 @@ class Channel:
         Replicates the behaviour of nixos-rebuild switch and adds an optional
         lazy mode which only switches to the built system if it actually changed.
         """
-        self.build(build_options)
-        switched = self.switch_to_configuration(lazy)
-        if switched:
-            self.register_system_profile()
+        # Put a temporary result link in /run to avoid a race condition
+        # with the garbage collector which may remove the system we just built.
+        # If register fails, we still hold a GC root until the next reboot.
+        out_link = "/run/fc-agent-built-system"
+        self.build(build_options, out_link)
+        self.register_system_profile()
+        # New system is registered, delete the temporary result link.
+        os.unlink(out_link)
+        self.switch_to_configuration(lazy)
 
-    def build(self, build_options):
+    def build(self, build_options, out_link=None):
         """
         Build system with this channel. Works like nixos-rebuild build.
         Does not modify the running system.
         """
         _log.info('Building %s', self)
         cmd = [
-            "nix-build", "--no-build-output", "--no-out-link",
+            "nix-build", "--no-build-output",
             "<nixpkgs/nixos>", "-A", "system"
         ]
+
+        if out_link:
+            cmd.extend(["--out-link", out_link])
+        else:
+            cmd.append("--no-out-link")
+
         if self.is_local:
             self.check_local_channel()
             cmd.extend(['-I', self.resolved_url])
@@ -210,6 +221,10 @@ class Channel:
         return True
 
     def register_system_profile(self):
+        if self.result_path is None:
+            _log.error("This channel hasn't been built yet, cannot register!")
+            raise RegisterFailed()
+
         cmd = [
             "nix-env", "--profile", "/nix/var/nix/profiles/system", "--set",
             self.result_path
