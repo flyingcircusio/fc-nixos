@@ -1,4 +1,4 @@
-import ../make-test.nix ({pkgs, lib, ...}:
+import ../make-test-python.nix ({pkgs, lib, ...}:
 {
   name = "mailstub";
   nodes = {
@@ -12,8 +12,8 @@ import ../make-test.nix ({pkgs, lib, ...}:
       };
   };
   testScript = ''
-    startAll;
+    start_all()
     # basic smoke test, should be expanded
-    $mail->waitForOpenPort(25);
+    mail.wait_for_open_port(25)
   '';
 })

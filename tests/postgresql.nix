@@ -1,4 +1,4 @@
-import ./make-test.nix ({ rolename ? "postgresql11", lib, pkgs, ... }:
+import ./make-test-python.nix ({ rolename ? "postgresql11", lib, pkgs, ... }:
 let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
@@ -52,26 +52,26 @@ in {
         else "CREATE EXTENSION temporal_tables";
     in
     ''
-      $machine->waitForUnit("postgresql.service");
-      $machine->waitForOpenPort(5432);
+      machine.wait_for_unit("postgresql.service")
+      machine.wait_for_open_port(5432)
 
       # simple data round trip
-      $machine->succeed('sudo -u postgres -- sh ${dataTest}');
+      machine.succeed('sudo -u postgres -- sh ${dataTest}')
 
       # connection tests with password
-      $machine->succeed('${psql} -c "CREATE USER test; ALTER USER test WITH PASSWORD \'test\'"');
-      $machine->succeed('${psql} postgresql://test:test@${ipv4}:5432/postgres -c "SELECT \'hello\'" | grep hello');
-      $machine->succeed('${psql} postgresql://test:test@[${ipv6}]:5432/postgres -c "SELECT \'hello\'" | grep hello');
+      machine.succeed('${psql} -c "CREATE USER test; ALTER USER test WITH PASSWORD \'test\'"')
+      machine.succeed('${psql} postgresql://test:test@${ipv4}:5432/postgres -c "SELECT \'hello\'" | grep hello')
+      machine.succeed('${psql} postgresql://test:test@[${ipv6}]:5432/postgres -c "SELECT \'hello\'" | grep hello')
 
       # should not trust connections via TCP
-      $machine->fail('psql --no-password -h localhost -l');
+      machine.fail('psql --no-password -h localhost -l')
 
       # service user should be able to write to local config dir
-      $machine->succeed('sudo -u postgres touch `echo /etc/local/postgresql/*`/test');
+      machine.succeed('sudo -u postgres touch `echo /etc/local/postgresql/*`/test')
 
-      $machine->succeed('${psql} employees -c "CREATE EXTENSION postgis;"');
-      $machine->succeed('${psql} employees -c "CREATE EXTENSION rum;"');
-      $machine->succeed('${psql} employees -c "${createTemporalExtension};"');
+      machine.succeed('${psql} employees -c "CREATE EXTENSION postgis;"')
+      machine.succeed('${psql} employees -c "CREATE EXTENSION rum;"')
+      machine.succeed('${psql} employees -c "${createTemporalExtension};"')
     '';
 
 })
