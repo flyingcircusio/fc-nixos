@@ -1,4 +1,4 @@
-import ./make-test.nix ({ lib, ... }:
+import ./make-test-python.nix ({ lib, ... }:
 
 let
   userData =
@@ -65,143 +65,120 @@ in
     };
 
   testScript = ''
-    $machine->waitForUnit('multi-user.target');
+    machine.wait_for_unit('multi-user.target')
 
-    subtest "check uids", sub {
-      my $out = $machine->succeed("id u1000");
-      $out eq "uid=1000(u1000) gid=100(users) groups=100(users)\n"
-        or die $out;
-      $out = $machine->succeed("id u1001");
-      $out eq "uid=1001(u1001) gid=100(users) groups=2003(admins),100(users)\n"
-        or die $out;
-      $out = $machine->succeed("id u1002");
-      $out eq "uid=1002(u1002) gid=100(users) groups=503(sudo-srv),100(users)\n"
-        or die $out;
-      $out = $machine->succeed("id u1003");
-      $out eq "uid=1003(u1003) gid=100(users) groups=1(wheel),100(users)\n"
-        or die $out;
-      $out = $machine->succeed("id u1004");
-      $out eq "uid=1004(u1004) gid=100(users) groups=1(wheel),503(sudo-srv),100(users)\n"
-        or die $out;
-      $out = $machine->succeed("id s-service");
-      $out eq "uid=1074(s-service) gid=900(service) groups=900(service)\n"
-        or die $out;
-    };
+    with subtest("check uids"):
+        out = machine.succeed("id u1000")
+        assert (out == "uid=1000(u1000) gid=100(users) groups=100(users)\n"), out
+        out = machine.succeed("id u1001")
+        assert (out == "uid=1001(u1001) gid=100(users) groups=2003(admins),100(users)\n"), out
+        out = machine.succeed("id u1002")
+        assert (out == "uid=1002(u1002) gid=100(users) groups=503(sudo-srv),100(users)\n"), out
+        out = machine.succeed("id u1003")
+        assert (out == "uid=1003(u1003) gid=100(users) groups=1(wheel),100(users)\n"), out
+        out = machine.succeed("id u1004")
+        assert (out == "uid=1004(u1004) gid=100(users) groups=1(wheel),503(sudo-srv),100(users)\n"), out
+        out = machine.succeed("id s-service")
+        assert (out == "uid=1074(s-service) gid=900(service) groups=900(service)\n"), out
 
-    sub login {
-      my ($user, $tty) = @_;
-      $machine->sendKeys("alt-f$tty");
-      $machine->sleep(1);
-      $machine->waitUntilTTYMatches($tty, "login:");
-      $machine->sendChars($user . "\n");
-      $machine->waitUntilTTYMatches($tty, "Password:");
-      $machine->sendChars("hum1pass\n");
-      $machine->waitUntilTTYMatches($tty, "\$");
-    };
+    def login(user, tty):
+        machine.send_key(f"alt-f{tty}")
+        machine.sleep(1)
+        machine.wait_until_tty_matches(tty, "login:")
+        machine.send_chars(f"{user}\n")
+        machine.sleep(1)
+        machine.wait_until_tty_matches(tty, "Password:")
+        machine.send_chars("hum1pass\n")
+        machine.sleep(1)
+        machine.wait_until_tty_matches(tty, "$")
 
-    # Each user gets its own tty. 
+    # Each user gets its own tty.
     # Avoids strange logout problems and keeps the output for interactive inspection.
-    # Inspect tty contents in the interactive test driver with: 
-    # print($machine->getTTYText(1));
+    # Inspect tty contents in the interactive test driver with:
+    # print(machine.get_tty_text(1))
 
-    login("u1000", 1);
+    login("u1000", 1)
 
-    subtest "unprivileged user should not be able to sudo", sub {
-      $machine->sendChars("sudo -l -u root id || echo failed1\n");
-      $machine->waitUntilTTYMatches(1, "failed1");
-      $machine->sendChars("sudo -l -u s-service id || echo failed2\n");
-      $machine->waitUntilTTYMatches(1, "failed2");
-    };
+    with subtest("unprivileged user should not be able to sudo"):
+        machine.send_chars("sudo -l -u root id || echo failed1\n")
+        machine.wait_until_tty_matches(1, "failed1")
+        machine.send_chars("sudo -l -u s-service id || echo failed2\n")
+        machine.wait_until_tty_matches(1, "failed2")
 
-    subtest "unprivileged user should be able to run ipXtables without password", sub {
-      $machine->sendChars("sudo -n iptables && echo 'pw not required iptables'\n");
-      $machine->waitUntilTTYMatches(1, "pw not required iptables");
+    with subtest("unprivileged user should be able to run ipXtables without password"):
+        machine.send_chars("sudo -n iptables && echo 'pw not required iptables'\n")
+        machine.wait_until_tty_matches(1, "pw not required iptables")
 
-      $machine->sendChars("sudo -n ip6tables && echo 'pw not required ip6tables'\n");
-      $machine->waitUntilTTYMatches(1, "pw not required ip6tables");
-    };
+        machine.send_chars("sudo -n ip6tables && echo 'pw not required ip6tables'\n")
+        machine.wait_until_tty_matches(1, "pw not required ip6tables")
 
-    login("u1001", 2);
+    login("u1001", 2)
 
-    subtest "admins should be able to sudo", sub {
-      $machine->sendChars("sudo -l -u root id || echo failed3\n");
-      $machine->waitUntilTTYMatches(2, "/run/current-system/sw/bin/id");
-      $machine->sendChars("sudo -l -u s-service id || echo failed4\n");
-      $machine->waitUntilTTYMatches(2, "/run/current-system/sw/bin/id");
-    };
+    with subtest("admins should be able to sudo"):
+        machine.send_chars("sudo -l -u root id || echo failed3\n")
+        machine.wait_until_tty_matches(2, "/run/current-system/sw/bin/id")
+        machine.send_chars("sudo -l -u s-service id || echo failed4\n")
+        machine.wait_until_tty_matches(2, "/run/current-system/sw/bin/id")
 
-    subtest "admins sudo should require a password", sub {
-      $machine->sendChars("sudo -n true || echo 'pw required admins'\n");
-      $machine->waitUntilTTYMatches(2, "pw required admins");
-    };
+    with subtest("admins sudo should require a password"):
+        machine.send_chars("sudo -n true || echo 'pw required admins'\n")
+        machine.wait_until_tty_matches(2, "pw required admins")
 
-    login("u1002", 3);
+    login("u1002", 3)
 
-    subtest "sudo-srv should grant restricted sudo", sub {
-      $machine->sendChars("sudo -l -u root id || echo failed5\n");
-      $machine->waitUntilTTYMatches(3, "failed5");
-      $machine->sendChars("sudo -l -u s-service id || echo failed6\n");
-      $machine->waitUntilTTYMatches(3, "/run/current-system/sw/bin/id");
-    };
+    with subtest("sudo-srv should grant restricted sudo"):
+        machine.send_chars("sudo -l -u root id || echo failed5\n")
+        machine.wait_until_tty_matches(3, "failed5")
+        machine.send_chars("sudo -l -u s-service id || echo failed6\n")
+        machine.wait_until_tty_matches(3, "/run/current-system/sw/bin/id")
 
-    subtest "sudo-srv should be able to become service user without password", sub {
-      $machine->sendChars("sudo -niu s-service\n");
-      $machine->waitUntilTTYMatches(3, 's-service@machine');
-    };
-    
-    subtest "sudo-srv should be able to run systemctl without password", sub {
-      $machine->sendChars("sudo -n systemctl --no-pager && echo 'pw not required systemctl'\n");
-      $machine->waitUntilTTYMatches(3, "pw not required systemctl");
-    };
+    with subtest("sudo-srv should be able to become service user without password"):
+        machine.send_chars("sudo -niu s-service\n")
+        machine.wait_until_tty_matches(3, 's-service@machine')
 
-    subtest "sudo-srv should be able to run fc-manage without password", sub {
-      $machine->sendChars("sudo -n fc-manage && echo 'pw not required fc-manage'\n");
-      $machine->waitUntilTTYMatches(3, "pw not required fc-manage");
-    };
+    with subtest("sudo-srv should be able to run systemctl without password"):
+        machine.send_chars("sudo -n systemctl --no-pager && echo 'pw not required systemctl'\n")
+        machine.wait_until_tty_matches(3, "pw not required systemctl")
 
-    subtest "sudo-srv user should be able to run iotop without password", sub {
-      $machine->sendChars("sudo -n iotop -n1 && echo 'pw not required iotop'\n");
-      $machine->waitUntilTTYMatches(3, "pw not required iotop");
-    };
+    with subtest("sudo-srv should be able to run fc-manage without password"):
+        machine.send_chars("sudo -n fc-manage && echo 'pw not required fc-manage'\n")
+        machine.wait_until_tty_matches(3, "pw not required fc-manage")
 
-    login("u1003", 4);
+    with subtest("sudo-srv user should be able to run iotop without password"):
+        machine.send_chars("sudo -n iotop -n1 && echo 'pw not required iotop'\n")
+        machine.wait_until_tty_matches(3, "pw not required iotop")
 
-    subtest "wheel sudo should require a password", sub {
-      $machine->sendChars("sudo -n true || echo 'pw required wheel'\n");
-      $machine->waitUntilTTYMatches(4, "pw required wheel");
-    };
+    login("u1003", 4)
 
-    login("u1004", 5);
+    with subtest("wheel sudo should require a password"):
+        machine.send_chars("sudo -n true || echo 'pw required wheel'\n")
+        machine.wait_until_tty_matches(4, "pw required wheel")
 
-    subtest "wheel+sudo-srv should be able to use service user without password", sub {
-      $machine->sendChars("sudo -l -u s-service id || echo failed7\n");
-      $machine->waitUntilTTYMatches(5, "/run/current-system/sw/bin/id");
-    };
+    login("u1004", 5)
 
-    login("s-service", 6);
+    with subtest("wheel+sudo-srv should be able to use service user without password"):
+        machine.send_chars("sudo -l -u s-service id || echo failed7\n")
+        machine.wait_until_tty_matches(5, "/run/current-system/sw/bin/id")
 
-    subtest "service user should be able to run systemctl without password", sub {
-      $machine->sendChars("sudo -n systemctl --no-pager && echo 'pw not required systemctl'\n");
-      $machine->waitUntilTTYMatches(6, "pw not required systemctl");
-    };
+    login("s-service", 6)
 
-    subtest "service user should be able to run fc-manage without password", sub {
-      $machine->sendChars("sudo -n fc-manage  && echo 'pw not required fc-manage'\n");
-      $machine->waitUntilTTYMatches(6, "pw not required fc-manage");
-    };
+    with subtest("service user should be able to run systemctl without password"):
+        machine.send_chars("sudo -n systemctl --no-pager && echo 'pw not required systemctl'\n")
+        machine.wait_until_tty_matches(6, "pw not required systemctl")
 
-    subtest "service user should be able to run iotop without password", sub {
-      $machine->sendChars("sudo -n iotop -n1 && echo 'pw not required iotop'\n");
-      $machine->waitUntilTTYMatches(6, "pw not required iotop");
-    };
+    with subtest("service user should be able to run fc-manage without password"):
+        machine.send_chars("sudo -n fc-manage  && echo 'pw not required fc-manage'\n")
+        machine.wait_until_tty_matches(6, "pw not required fc-manage")
 
-    subtest "service user should be able to run ipXtables without password", sub {
-      $machine->sendChars("sudo -n iptables && echo 'pw not required iptables'\n");
-      $machine->waitUntilTTYMatches(6, "pw not required iptables");
+    with subtest("service user should be able to run iotop without password"):
+        machine.send_chars("sudo -n iotop -n1 && echo 'pw not required iotop'\n")
+        machine.wait_until_tty_matches(6, "pw not required iotop")
 
-      $machine->sendChars("sudo -n ip6tables && echo 'pw not required ip6tables'\n");
-      $machine->waitUntilTTYMatches(6, "pw not required ip6tables");
-    };
+    with subtest("service user should be able to run ipXtables without password"):
+        machine.send_chars("sudo -n iptables && echo 'pw not required iptables'\n")
+        machine.wait_until_tty_matches(6, "pw not required iptables")
 
+        machine.send_chars("sudo -n ip6tables && echo 'pw not required ip6tables'\n")
+        machine.wait_until_tty_matches(6, "pw not required ip6tables")
   '';
 })
