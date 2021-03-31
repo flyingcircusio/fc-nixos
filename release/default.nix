@@ -169,7 +169,7 @@ let
       build = evaled.config.system.build;
       kernelTarget = evaled.pkgs.stdenv.hostPlatform.platform.kernelTarget;
 
-      customIPXEScript = pkgs.writeText "netboot.ipxe" ''
+      customIPXEScript = pkgs.writeTextDir "netboot.ipxe" ''
         #!ipxe
 
         set console ttyS2,115200
@@ -235,13 +235,13 @@ let
         paths = [
           build.netbootRamdisk
           build.kernel
+          customIPXEScript
         ];
         postBuild = ''
           mkdir -p $out/nix-support
-          ln -s ${customIPXEScript} $out/netboot.ipxe
           echo "file ${kernelTarget} ${build.kernel}/${kernelTarget}" >> $out/nix-support/hydra-build-products
           echo "file initrd ${build.netbootRamdisk}/initrd" >> $out/nix-support/hydra-build-products
-          echo "file ipxe $out/netboot.ipxe " >> $out/nix-support/hydra-build-products
+          echo "file ipxe ${customIPXEScript}/netboot.ipxe" >> $out/nix-support/hydra-build-products
         '';
         preferLocalBuild = true;
       };
