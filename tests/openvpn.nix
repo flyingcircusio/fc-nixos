@@ -1,5 +1,5 @@
-import ./make-test.nix ({ lib, pkgs, testlib, ... }:
-let 
+import ./make-test-python.nix ({ lib, pkgs, testlib, ... }:
+let
   net6Fe = "2001:db8:1::";
   net6Srv = "2001:db8:2::";
 
@@ -109,52 +109,52 @@ in {
   };
 
   testScript = ''
-    startAll;
+    start_all()
     # copy client config from gateway to client and set user/pass
-    my ($rc, $ovpn) = $gw->execute("cat /etc/local/openvpn/*.ovpn");
-    $oclient->execute("echo '$ovpn' > /tmp/gw.ovpn");
-    $oclient->execute("echo 'test\ntest' > /tmp/user-pass; chmod 600 /tmp/user-pass");
+    (rc, ovpn) = gw.execute("cat /etc/local/openvpn/*.ovpn")
+    oclient.execute(f"echo '{ovpn}' > /tmp/gw.ovpn")
+    oclient.execute("echo 'test\ntest' > /tmp/user-pass; chmod 600 /tmp/user-pass")
 
-    $gw->waitForUnit("network-online.target");
-    $internal->waitForUnit("network-online.target");
-    $oclient->waitForUnit("network-online.target");
+    gw.wait_for_unit("network-online.target")
+    internal.wait_for_unit("network-online.target")
+    oclient.wait_for_unit("network-online.target")
 
-    $gw->waitForUnit("openvpn-access.service");
-    $gw->waitUntilSucceeds("ip link show tun0");
+    gw.wait_for_unit("openvpn-access.service")
+    gw.wait_until_succeeds("ip link show tun0")
 
     # openvpn gateway should be reachable from the client
-    $oclient->succeed("ping -c1 ${gwFeFqdn}");
-    $oclient->succeed("ping -6 -c1 ${gwFeFqdn}");
-    
+    oclient.succeed("ping -c1 ${gwFeFqdn}")
+    oclient.succeed("ping -6 -c1 ${gwFeFqdn}")
+
     # start openvpn client and wait for tunnel device
-    $oclient->succeed("openvpn --config /tmp/gw.ovpn --auth-user-pass /tmp/user-pass &");
-    $oclient->waitUntilSucceeds("ip link show tun0");
+    oclient.succeed("openvpn --config /tmp/gw.ovpn --auth-user-pass /tmp/user-pass &")
+    oclient.wait_until_succeeds("ip link show tun0")
 
     # internal machine should be reachable from client via vpn tunnel -> gateway -> internal machine
-    $oclient->succeed("ping -c1 ${internal4Srv}");
-    $oclient->succeed("ping -c1 ${internal6Srv}");
+    oclient.succeed("ping -c1 ${internal4Srv}")
+    oclient.succeed("ping -c1 ${internal6Srv}")
 
-    print("======= addresses =========\n");
-    print("=== gw\n");
-    print($gw->execute("ip a"));
-    print("=== internal:\n");
-    print($internal->execute("ip a"));
-    print("=== client:\n");
-    print($oclient->execute("ip a"));
+    print("======= addresses =========\n")
+    print("=== gw:\n")
+    print(gw.execute("ip a"))
+    print("=== internal:\n")
+    print(internal.execute("ip a"))
+    print("=== client:\n")
+    print(oclient.execute("ip a"))
 
-    print("======= routing =========\n");
-    print("=== gw:\n");
-    print($gw->execute("ip r"));
-    print("=== client:\n");
-    print($oclient->execute("ip r"));
+    print("======= routing =========\n")
+    print("=== gw:\n")
+    print(gw.execute("ip r"))
+    print("=== client:\n")
+    print(oclient.execute("ip r"))
 
     # sensu check for openvpn server should be green
-    $gw->succeed("/etc/local/openvpn/check");
+    gw.succeed("/etc/local/openvpn/check")
 
-    $gw->succeed("systemctl stop openvpn-access");
-    $gw->waitUntilFails("ip link show tun0");
+    gw.succeed("systemctl stop openvpn-access")
+    gw.wait_until_fails("ip link show tun0")
 
     # sensu check should be red when service is stopped
-    $gw->fail("/etc/local/openvpn/check");
+    gw.fail("/etc/local/openvpn/check")
   '';
 })
