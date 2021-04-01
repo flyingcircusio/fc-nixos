@@ -1,4 +1,4 @@
-import ./make-test.nix ({ pkgs, ... }:
+import ./make-test-python.nix ({ pkgs, ... }:
 {
   name = "webproxy";
   nodes = {
@@ -17,31 +17,28 @@ import ./make-test.nix ({ pkgs, ... }:
       };
   };
   testScript = ''
-    $webproxy->waitForUnit("varnish.service");
-    $webproxy->waitForUnit("varnishncsa.service");
+    webproxy.wait_for_unit("varnish.service")
+    webproxy.wait_for_unit("varnishncsa.service")
 
-    $webproxy->execute(<<__SETUP__);
-    echo 'Hello World!' > hello.txt
-    ${pkgs.python3.interpreter} -m http.server 8080 &
-    __SETUP__
+    webproxy.execute("""
+        echo 'Hello World!' > hello.txt
+        ${pkgs.python3.interpreter} -m http.server 8080 &
+        """)
 
-    my $url = 'http://localhost:8008/hello.txt';
-    my $curl = "curl -s $url";
+    url = 'http://localhost:8008/hello.txt'
+    curl = "curl -s " + url
 
-    $webproxy->waitUntilSucceeds($curl);
+    webproxy.wait_until_succeeds(curl)
 
-    subtest "request should return expected output", sub {
-      $webproxy->waitUntilSucceeds("$curl | grep -q 'Hello World!'");
-    };
+    with subtest("request should return expected output"):
+        webproxy.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
 
-    subtest "varnishncsa should log requests", sub {
-      $webproxy->waitUntilSucceeds("$curl && grep -q 'GET $url HTTP/' /var/log/varnish.log");
-    };
+    with subtest("varnishncsa should log requests"):
+        webproxy.wait_until_succeeds(f"{curl} && grep -q 'GET {url} HTTP/' /var/log/varnish.log")
 
-    subtest "changing config and reloading should activate new config", sub {
-      $webproxy->execute('ln -sf /etc/local/varnish/newconfig.vcl /etc/current-config/varnish.vcl');
-      $webproxy->succeed('systemctl reload varnish');
-      $webproxy->succeed('varnishadm vcl.list | grep active | grep -q newconfig');
-    };
+    with subtest("changing config and reloading should activate new config"):
+        webproxy.execute('ln -sf /etc/local/varnish/newconfig.vcl /etc/current-config/varnish.vcl')
+        webproxy.succeed('systemctl reload varnish')
+        webproxy.succeed('varnishadm vcl.list | grep active | grep -q newconfig')
   '';
 })
