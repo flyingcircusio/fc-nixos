@@ -1,4 +1,4 @@
-import ./make-test.nix ({ lib, pkgs, testlib, ... }:
+import ./make-test-python.nix ({ lib, pkgs, testlib, ... }:
 let
   vxlanId = 2;
   mtu = 1430;
@@ -132,59 +132,59 @@ in {
   };
 
   testScript = with lib; ''
-    startAll;
-    $gw->waitForUnit("network-online.target");
-    $remote->waitForUnit("network-online.target");
-    $vclient->waitForUnit("network-online.target");
+    start_all()
+    gw.wait_for_unit("network-online.target")
+    remote.wait_for_unit("network-online.target")
+    vclient.wait_for_unit("network-online.target")
 
     # set up remote side for the VxLAN tunnel
-    $remote->execute("ip link add nx0 type vxlan id ${toString vxlanId} dev ethfe local ${remote6Fe} remote ${gw6Fe} dstport 8472");
-    $remote->execute("ip link set up mtu ${toString mtu} dev nx0");
-    $remote->execute("ip -4 addr add ${remote4Vxlan}/24 dev nx0");
-    $remote->execute("ip -6 addr add ${remote6Vxlan}/64 dev nx0");
-    $remote->execute("ip -4 route add ${net4Srv}/24 via ${gw4Vxlan} dev nx0");
+    remote.execute("ip link add nx0 type vxlan id ${toString vxlanId} dev ethfe local ${remote6Fe} remote ${gw6Fe} dstport 8472")
+    remote.execute("ip link set up mtu ${toString mtu} dev nx0")
+    remote.execute("ip -4 addr add ${remote4Vxlan}/24 dev nx0")
+    remote.execute("ip -6 addr add ${remote6Vxlan}/64 dev nx0")
+    remote.execute("ip -4 route add ${net4Srv}/24 via ${gw4Vxlan} dev nx0")
 
-    $gw->waitForUnit("vxlan-nx0.service");
-    $vclient->waitForUnit("network-external-routing.service");
+    gw.wait_for_unit("vxlan-nx0.service")
+    vclient.wait_for_unit("network-external-routing.service")
 
-    $vclient->waitUntilSucceeds("ping -c1 ${gw6Srv}");
-    $vclient->succeed("ping -c1 ${gw4Srv}");
+    vclient.wait_until_succeeds("ping -c1 ${gw6Srv}")
+    vclient.succeed("ping -c1 ${gw4Srv}")
 
     # ping nx0 interface of gateway
-    $vclient->waitUntilSucceeds("ping -c1 ${gw6Vxlan}");
-    $vclient->succeed("ping -c1 ${gw4Vxlan}");
+    vclient.wait_until_succeeds("ping -c1 ${gw6Vxlan}")
+    vclient.succeed("ping -c1 ${gw4Vxlan}")
 
     # through VxLAN tunnel
-    $vclient->waitUntilSucceeds("ping -c1 ${remote6Vxlan}");
-    $vclient->succeed("ping -c1 ${remote4Vxlan}");
+    vclient.wait_until_succeeds("ping -c1 ${remote6Vxlan}")
+    vclient.succeed("ping -c1 ${remote4Vxlan}")
 
 
-    print("======= addresses =========\n");
-    print("=== gw\n");
-    print($gw->execute("ip a"));
-    print("=== vclient:\n");
-    print($vclient->execute("ip a"));
-    print("=== remote:\n");
-    print($remote->execute("ip a"));
+    print("======= addresses =========\n")
+    print("=== gw\n")
+    print(gw.execute("ip a"))
+    print("=== vclient:\n")
+    print(vclient.execute("ip a"))
+    print("=== remote:\n")
+    print(remote.execute("ip a"))
 
-    print("======= routing =========\n");
-    print("=== gw:\n");
-    print($gw->execute("ip -4 r"));
-    print($gw->execute("ip -6 r"));
-    print("=== vclient:\n");
-    print($vclient->execute("ip -4 r"));
-    print($vclient->execute("ip -6 r"));
-    print("=== remote:\n");
-    print($remote->execute("ip -4 r"));
-    print($vclient->execute("ip -6 r"));
+    print("======= routing =========\n")
+    print("=== gw:\n")
+    print(gw.execute("ip -4 r"))
+    print(gw.execute("ip -6 r"))
+    print("=== vclient:\n")
+    print(vclient.execute("ip -4 r"))
+    print(vclient.execute("ip -6 r"))
+    print("=== remote:\n")
+    print(remote.execute("ip -4 r"))
+    print(vclient.execute("ip -6 r"))
 
-    $gw->succeed("systemctl stop vxlan-nx0.service");
+    gw.succeed("systemctl stop vxlan-nx0.service")
 
     # nx0 device should go away when service is stopped
-    $gw->waitUntilFails("ip link show nx0");
+    gw.wait_until_fails("ip link show nx0")
 
     # client should not reach remote when VxLAN is down
-    $vclient->fail("ping -c1 ${remote6Vxlan}");
-    $vclient->fail("ping -c1 ${remote4Vxlan}");
+    vclient.fail("ping -c1 ${remote6Vxlan}")
+    vclient.fail("ping -c1 ${remote4Vxlan}")
   '';
 })

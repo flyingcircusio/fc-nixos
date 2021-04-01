@@ -1,4 +1,4 @@
-import ./make-test.nix ({ pkgs, lib, ... }:
+import ./make-test-python.nix ({ pkgs, lib, ... }:
 let
 
   netLoc4Srv = "10.0.1";
@@ -93,44 +93,38 @@ in {
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
     coturnCheck = lib.replaceChars ["\n"] [" "] sensuChecks.coturn.command;
   in ''
-    startAll();
-    $turnserver->waitForUnit("coturn.service");
-    $turnserver->waitForOpenPort(3478);
-    $turnserver->waitForOpenPort(3479);
-    $turnserver->waitForOpenPort(5349);
-    $turnserver->waitForOpenPort(5350);
+    start_all()
+    turnserver.wait_for_unit("coturn.service")
+    turnserver.wait_for_open_port(3478)
+    turnserver.wait_for_open_port(3479)
+    turnserver.wait_for_open_port(5349)
+    turnserver.wait_for_open_port(5350)
 
     # -w1 specifies a timeout of one second for the connection.
     # Coturn should respond much faster that that. Also fixes a problem that
     # caused nc to hang forever sometimes.
-    subtest "coturn should be reachable on fe (IPv4)", sub {
-      $client->waitUntilSucceeds('nc -z -w1 ${turnserver4Fe} 5349');
-    };
+    with subtest("coturn should be reachable on fe (IPv4)"):
+        client.wait_until_succeeds('nc -z -w1 ${turnserver4Fe} 5349')
 
-    subtest "coturn should be reachable on fe (IPv6)", sub {
-      $client->waitUntilSucceeds('nc -z -w1 ${turnserver6Fe} 5349');
-    };
+    with subtest("coturn should be reachable on fe (IPv6)"):
+        client.wait_until_succeeds('nc -z -w1 ${turnserver6Fe} 5349')
 
-    subtest "sensu check should be green", sub {
-      $turnserver->succeed("${coturnCheck}");
-    };
+    with subtest("sensu check should be green"):
+        turnserver.succeed("${coturnCheck}")
 
-    subtest "sensu check should be red after shutting down coturn", sub {
-      $turnserver->stopJob("coturn.service");
-      $turnserver->waitUntilFails("nc -z localhost 5349");
-      $turnserver->mustFail("${coturnCheck}");
-    };
+    with subtest("sensu check should be red after shutting down coturn"):
+        turnserver.stop_job("coturn.service")
+        turnserver.wait_until_fails("nc -z localhost 5349")
+        turnserver.fail("${coturnCheck}")
 
-    subtest "service user should be able to write to local config dir", sub {
-      $turnserver->succeed('sudo -u turnserver touch /etc/local/coturn/config.json');
-    };
+    with subtest("service user should be able to write to local config dir"):
+        turnserver.succeed('sudo -u turnserver touch /etc/local/coturn/config.json')
 
     # look for coturn's 4 default ports. Order is:
     # (listening-port, alt-listening-port, tls-listening-port, alt-tls-listening-port)
 
-    subtest "coturn opens no unexpected ports", sub {
-      $turnserver->mustFail("netstat -tlpn | grep turnserver | egrep -qv ':3478 |:3479 |:5349 |:5350 '");
-    };
+    with subtest("coturn opens no unexpected ports"):
+        turnserver.fail("netstat -tlpn | grep turnserver | egrep -qv ':3478 |:3479 |:5349 |:5350 '")
 
   '';
 })

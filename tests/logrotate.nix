@@ -1,4 +1,4 @@
-import ./make-test.nix (
+import ./make-test-python.nix (
   let
     home = "/srv/s-svc";
   in
@@ -23,29 +23,30 @@ import ./make-test.nix (
       };
 
     testScript = ''
-      my $info = $machine->getUnitInfo("user-logrotate-s-svc.service");
-      $info->{TriggeredBy} eq "user-logrotate-s-svc.timer" or
-        die "unexpected unit info: " . $info;
+      info = machine.get_unit_info("user-logrotate-s-svc.service")
+      assert (info["TriggeredBy"] == "user-logrotate-s-svc.timer"), f"unexpected unit info: {info}"
 
-      $machine->succeed(<<_EOT_);
-      set -e
-      echo "hello world" > ${home}/app.log
-      chown s-svc: ${home}/app.log
-      echo -e "${home}/app.log {\nsize 1\n}" > /etc/local/logrotate/s-svc/app.conf
-      _EOT_
+      machine.succeed("""
+          set -e
+          echo "hello world" > ${home}/app.log
+          chown s-svc: ${home}/app.log
+          echo -e "${home}/app.log {\nsize 1\n}" > /etc/local/logrotate/s-svc/app.conf
+          """)
 
-      $machine->systemctl("start user-logrotate-s-svc.service");
+      machine.systemctl("start user-logrotate-s-svc.service")
 
-      print($machine->succeed(<<_EOT_));
-      set -e
-      # user-logrotate.sh must create control files here
-      ls -l /var/spool/logrotate
-      test -s /var/spool/logrotate/s-svc.conf
-      test -s /var/spool/logrotate/s-svc.state
-      # test that the logfile has been rotated
-      ls -l ${home}
-      test -s ${home}/app.log-\$(date +%Y%m%d)
-      _EOT_
+      print(machine.succeed("set -e " +
+          # user-logrotate.sh must create control files here
+          """
+          ls -l /var/spool/logrotate
+          test -s /var/spool/logrotate/s-svc.conf
+          test -s /var/spool/logrotate/s-svc.state
+          """ +
+          # test that the logfile has been rotated
+          """
+          ls -l ${home}
+          test -s ${home}/app.log-$(date +%Y%m%d)
+          """))
     '';
   }
 )

@@ -66,6 +66,7 @@ A mixed form (no OS updates but include changes from the CMDB) is:
   # Short form:
   $ sudo fc-manage -eb
 
+.. _nixos-custom-modules:
 
 Custom NixOS-native configuration
 ---------------------------------
@@ -80,9 +81,11 @@ there.
   Care must be taken to avoid breaking the system.
   Overriding options already set by the platform can be dangerous.
 
+Run ``sudo fc-manage -b`` to activate the changes (**may restart services!**).
+
 For more information about writing NixOS modules, refer to the
 `NixOS manual <https://nixos.org/nixos/manual/index.html#sec-writing-modules>`_
 
-NixOS options can be looked up here (may not be accurate due to version differences):
+Look up NixOS options here (*Channel: 20.09* should be selected):
 
 `<https://nixos.org/nixos/options.html>`_
