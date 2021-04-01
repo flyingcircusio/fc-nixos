@@ -38,6 +38,7 @@ in {
   kibana7 = callTest ./kibana.nix { version = "7"; };
   kubernetes = callTest ./kubernetes {};
   lamp = callTest ./lamp.nix {};
+  locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
   logging = callTest ./logging.nix {};
   logrotate = callTest ./logrotate.nix {};
