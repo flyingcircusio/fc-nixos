@@ -15,16 +15,21 @@ in
 
   config = lib.mkIf cfg.enable {
 
+    flyingcircus.services.sensu-client.checks.servicecheck_sensu_config = {
+      notification = "Servicecheck sensu config file is not up-to-date.";
+      command = ''
+        ${pkgs.fc.check-age}/bin/check_age \
+          -m /etc/local/sensu-client/directory_servicechecks.json -w 30m -c 2h
+      '';
+      interval = 300;
+    };
+
     systemd.services.fc-servicecheck = {
       description = "Flying Circus global Service Checks";
       # Run this *before* fc-manage rebuilds the system. This service loads
       # off the sensu configuration for nixos to pick it up.
-      wantedBy = [ "fc-manage.service" ];
-      before = [ "fc-manage.service" ];
-      wants = [ "network.target" ];
-      after = [ "network.target" ];
-      restartIfChanged = false;
-      unitConfig.X-StopOnRemoval = false;
+      wants = [ "network-online.target" ];
+      after = [ "network-online.target" ];
       serviceConfig = {
         ProtectHome = true;
         ProtectSystem = true;
@@ -37,6 +42,15 @@ in
       '';
     };
 
+    systemd.timers.fc-servicecheck = {
+      description = "Update service checks";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnActiveSec = "1m";
+        OnUnitInactiveSec = "10m";
+        RandomizedDelaySec = "10s";
+      };
+    };
   };
 
 }
