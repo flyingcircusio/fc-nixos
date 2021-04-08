@@ -61,7 +61,6 @@ in {
   prometheus = callTest ./prometheus.nix {};
   rabbitmq36_15 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_15"; };
   rabbitmq36_5 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_5"; };
-  rabbitmq37 = callTest ./rabbitmq.nix { rolename = "rabbitmq37"; };
   rabbitmq38 = callTest ./rabbitmq.nix { rolename = "rabbitmq38"; };
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
