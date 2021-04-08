@@ -206,5 +206,9 @@ __EOF__
     platforms = platforms.unix;
   };
 
-  passthru.version = version;
+  passthru = {
+    inherit version;
+    lib = {};
+  };
+
 }

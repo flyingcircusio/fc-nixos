@@ -38,6 +38,7 @@ in {
   kibana7 = callTest ./kibana.nix { version = "7"; };
   kubernetes = callTest ./kubernetes {};
   lamp = callTest ./lamp.nix {};
+  locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
   logging = callTest ./logging.nix {};
   logrotate = callTest ./logrotate.nix {};
@@ -60,7 +61,6 @@ in {
   prometheus = callTest ./prometheus.nix {};
   rabbitmq36_15 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_15"; };
   rabbitmq36_5 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_5"; };
-  rabbitmq37 = callTest ./rabbitmq.nix { rolename = "rabbitmq37"; };
   rabbitmq38 = callTest ./rabbitmq.nix { rolename = "rabbitmq38"; };
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};

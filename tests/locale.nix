@@ -1,4 +1,4 @@
-import ./make-test.nix ({ ... }:
+import ./make-test-python.nix ({ ... }:
 {
   name = "locale";
   machine =
@@ -8,8 +8,8 @@ import ./make-test.nix ({ ... }:
     };
 
   testScript = ''
-    $machine->succeed("locale -a | grep -q de_DE.utf8");
-    $machine->succeed("locale -a | grep -q en_US.utf8");
-    $machine->succeed('(($(locale -a | wc -l) > 100))');
+    machine.succeed("locale -a | grep -q de_DE.utf8")
+    machine.succeed("locale -a | grep -q en_US.utf8")
+    machine.succeed('(($(locale -a | wc -l) > 100))')
   '';
 })
