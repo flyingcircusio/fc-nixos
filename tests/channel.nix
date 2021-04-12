@@ -22,11 +22,28 @@ in {
       nixpkgs = "${<nixpkgs>}";
     };
 
+    # No-op local.nix and deps needed for a nixos-rebuild.
+    environment.etc."nixos/local.nix".text = "{ ... }: {}";
+    system.extraDependencies = with pkgs; [
+      # Taken from upstream tests/ec2.nix.
+      busybox
+      cloud-utils
+      desktop-file-utils
+      libxslt.bin
+      mkinitcpio-nfs-utils
+      stdenv
+      stdenvNoCC
+      texinfo
+      unionfs-fuse
+      xorg.lndir
+    ];
+
     users.users.alice = {
       isNormalUser = true;
       home = "/home/alice";
     };
 
+    # nix-env -qa needs a lot of RAM. Crashed with 2000.
     virtualisation.memorySize = 3000;
   };
 
@@ -45,6 +62,9 @@ in {
 
     with subtest("Non-root should be able to nix-env install from fc"):
       machine.succeed("su alice -l -c 'nix-env -iA nixos.fc.logcheckhelper'")
+
+    with subtest("nixos-rebuild should work"):
+      machine.succeed("nixos-rebuild build --option substitute false")
 
     with subtest("Non-root should be able to use nix-env -qa to list packages"):
       machine.succeed("su alice -l -c 'nix-env -qa'")

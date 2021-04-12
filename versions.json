@@ -4,5 +4,11 @@
     "repo": "nixpkgs",
     "rev": "753913a8cb8310f4631860b7f77af13bd00eb031",
     "sha256": "1d1d06b29856fnml2m6shr28df13gbw83978q9bkq1svsfjpiycf"
+  },
+  "nixos-mailserver": {
+    "owner": "flyingcircusio",
+    "repo": "nixos-mailserver",
+    "rev": "d4566383b01c081bed866d397909a9e4fbefc7e2",
+    "sha256": "0hl31fjn0jf6j2rhf8g799q9vgmixyyy5j9srfa1njhy1npb04v3"
   }
 }
