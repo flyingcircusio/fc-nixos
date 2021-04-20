@@ -89,8 +89,8 @@ in {
       ];
     };
 
-    system.activationScripts.relaxHomePermissions = lib.stringAfter [] ''
-      chmod 755 /home/*
+    system.activationScripts.relaxHomePermissions = lib.stringAfter [ "users" ] ''
+      chmod 755 /home/* /srv/s-*
     '';
   };
 }
