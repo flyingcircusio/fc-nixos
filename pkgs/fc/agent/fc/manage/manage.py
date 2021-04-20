@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import os.path as p
+from pathlib import Path
 import re
 import requests
 import shutil
@@ -58,6 +59,9 @@ class SwitchFailed(ChannelException):
 class RegisterFailed(ChannelException):
     pass
 
+class DryActivateFailed(ChannelException):
+    pass
+
 
 class Channel:
 
@@ -67,9 +71,10 @@ class Channel:
     session = requests.session()
     is_local = False
 
-    def __init__(self, url, name=None):
+    def __init__(self, url, name="", environment=None):
         self.url = url
         self.name = name
+        self.environment = environment
         self.result_path = None
 
         if url.startswith("file://"):
@@ -86,6 +91,8 @@ class Channel:
         self.resolved_url = res.url
 
     def version(self):
+        if self.is_local:
+            return "local-checkout"
         label_comp = [
             '/root/.nix-defexpr/channels/{}/{}'.format(self.name, c)
             for c in ['.version', '.version-suffix']]
@@ -93,10 +100,9 @@ class Channel:
             return ''.join(open(f).read() for f in label_comp)
 
     def __str__(self):
-        v = self.version()
-        if v:
-            return '<Channel {} {}>'.format(self.name, v)
-        return '<Channel {} {}>'.format(self.name, self.resolved_url)
+        v = self.version() or "unknown"
+        return '<Channel name={}, version={}, from={}>'.format(
+            self.name, v, self.resolved_url)
 
     def __eq__(self, other):
         if isinstance(other, Channel):
@@ -240,30 +246,45 @@ class Channel:
 
     def prepare_maintenance(self):
         _log.debug('Preparing maintenance')
-        self.load('next')
 
         if not p.exists(NEXT_SYSTEM):
             os.mkdir(NEXT_SYSTEM)
 
-        call = subprocess.Popen(
-             ['nixos-rebuild',
-              '-I', 'nixpkgs=' + '/root/.nix-defexpr/channels/next',
-              '--no-build-output',
-              'dry-activate'],
-             cwd=NEXT_SYSTEM,
-             stderr=subprocess.PIPE)
+        cmd = [
+            'nixos-rebuild',
+            '-I', '/root/.nix-defexpr/channels/next',
+            '--no-build-output',
+            'dry-activate'
+        ]
+        _log.debug("Dry-activate (pre-build) command is: %s", " ".join(cmd))
 
-        output = []
-        for line in call.stderr.readlines():
-            line = line.decode('UTF-8').strip()
-            _log.warning(line)
-            output.append(line)
-        changes = self.detect_changes(output)
+        try:
+            call = subprocess.run(
+                cmd,
+                cwd=NEXT_SYSTEM,
+                check=True,
+                text=True,
+                capture_output=True)
+        except subprocess.CalledProcessError as e:
+            _log.error("Dry-activate failed, maintenance not registered")
+            if e.stdout:
+                # Something is wrong with the command itself.
+                _log.error("stdout (command error):\n%s", e.stdout)
+            if e.stderr:
+                # Nix failed (download errors, wrong option values, ...).
+                _log.error("stderr (Nix output with errors):\n%s", e.stderr)
+
+            raise DryActivateFailed()
+
+        _log.debug("Nix output from dry activate:\n%s", call.stderr)
+        out_link = Path(NEXT_SYSTEM) / "result"
+        _log.info("Pre-built system %s", os.readlink(out_link))
+        changes = self.detect_changes(call.stderr)
         self.register_maintenance(changes)
 
     def detect_changes(self, output):
         changes = {}
-        for line in output:
+        for line in output.splitlines():
             m = self.PHRASES.match(line)
             if m is not None:
                 action = m.group(1)
@@ -284,13 +305,19 @@ class Channel:
 
         notifications = list(filter(None, (
             notify(cat) for cat in ['stop', 'restart', 'start', 'reload'])))
-        msg = ['System update to {}'.format(self)] + notifications
+        msg = [
+            f'System update to {self.version()}',
+            f'Environment: {self.environment}',
+            f'Channel URL: {self.resolved_url}'
+        ] + notifications
         if len(msg) > 1:  # add trailing newline if output is multi-line
             msg += ['']
 
         # XXX: We should use an fc-manage call (like --activate), instead of
         # Dumping the script into the maintenance request.
         script = io.StringIO(ACTIVATE.format(url=self.resolved_url))
+        _log.debug("update script:\n%s", script.getvalue())
+        _log.debug("message:\n%s", msg)
         with fc.maintenance.ReqManager() as rm:
             rm.add(fc.maintenance.Request(
                 fc.maintenance.lib.shellscript.ShellScriptActivity(script),
@@ -432,7 +459,10 @@ def build_channel_with_maintenance(build_options, spread, lazy):
         return
 
     # scheduled update available?
-    next_channel = Channel(enc['parameters'].get('environment_url'))
+    next_channel = Channel(
+        enc['parameters']['environment_url'],
+        name="next",
+        environment=enc['parameters']['environment'])
 
     if not next_channel or next_channel.is_local:
         _log.error("switch-in-maintenance incompatible with local checkout")
@@ -440,9 +470,14 @@ def build_channel_with_maintenance(build_options, spread, lazy):
 
     current_channel = Channel.current('nixos')
     if next_channel != current_channel:
+        next_channel.load('next')
         _log.info('Preparing switch from %s to %s.',
                   current_channel, next_channel)
-        next_channel.prepare_maintenance()
+        try:
+            next_channel.prepare_maintenance()
+        except DryActivateFailed:
+            subprocess.run(["nix-channel", "--remove", "next"], capture_output=True)
+            sys.exit(3)
     else:
         _log.info('Current channel is still up-to-date.')
 
@@ -451,7 +486,10 @@ def build_channel(build_options, spread, lazy, update=True):
     if enc and enc.get('parameters'):
         env_name = enc['parameters']['environment']
         _log.info('Environment: %s', env_name)
-        channel = Channel(enc['parameters']['environment_url'], env_name)
+        channel = Channel(
+            enc['parameters']['environment_url'],
+            name="nixos",
+            environment=env_name)
     else:
         channel = Channel.current('nixos')
     if not channel:
