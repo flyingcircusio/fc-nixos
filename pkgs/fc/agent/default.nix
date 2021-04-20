@@ -35,7 +35,7 @@ py.buildPythonPackage rec {
   version = "1.0";
   namePrefix = "";
   src = ./.;
-  buildInputs = [
+  checkInputs = [
     py.freezegun
     py.pytest
     py.pytestcov
