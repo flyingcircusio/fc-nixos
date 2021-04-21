@@ -91,8 +91,8 @@ let
       RestrictSUIDSGID = true;
       SystemCallArchitectures = "native";
       SystemCallFilter = [
-        "@basic-io"
-        "@network-io"
+        "@system-service"
+        "seccomp"
       ];
     };
   };
