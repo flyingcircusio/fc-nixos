@@ -323,16 +323,26 @@ let
       ];
     }).config.system.build.ovaImage;
 
-    # iPXE netboot image
-    netboot = lib.hydraJob (makeNetboot {
-      inherit system;
+    # breaks in Hydra:
+    # in job ‘images.netboot’:
+    # error: --- EvalError --- hydra-eval-jobs
+    # at: (170:22) in file: /nix/store/m9pdjdapv1x50dw3b4hb8zp15yj6fv9c-source/release/default.nix
 
-      modules = [
-        "${nixpkgs_}/nixos/modules/installer/netboot/netboot-minimal.nix"
-        (import version_nix {})
-        (import ./netboot-installer-config.nix {})
-      ];
-    });
+    #   169|       build = evaled.config.system.build;
+    #   170|       kernelTarget = evaled.pkgs.stdenv.hostPlatform.platform.kernelTarget;
+    #       |                      ^
+    #   171|
+    # attribute 'platform' missing
+    # iPXE netboot image
+    #netboot = lib.hydraJob (makeNetboot {
+    #  inherit system;
+
+    #  modules = [
+    #    "${nixpkgs_}/nixos/modules/installer/netboot/netboot-minimal.nix"
+    #    (import version_nix {})
+    #    (import ./netboot-installer-config.nix {})
+    #  ];
+    #});
 
     # VM image for the Flying Circus infrastructure.
     fc = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
