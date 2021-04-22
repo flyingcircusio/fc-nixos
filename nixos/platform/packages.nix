@@ -53,9 +53,9 @@
         openldap
         openssl
         parted
-        php
         pkgconfig
         protobuf
+        w3m-nographics
         psmisc
         pwgen
         python2Full
