@@ -8,6 +8,7 @@ import argparse
 import fc.maintenance
 import fc.maintenance.lib.reboot
 import fc.manage.dmi_memory
+from fc.util.nixos import kernel_version
 import json
 import os
 import os.path as p
@@ -204,30 +205,10 @@ def check_qemu_reboot():
             comment=msg))
 
 
-def kernel_version(kernel):
-    """Guesses kernel version from /run/*-system/kernel.
-
-    Theory of operation: A link like `/run/current-system/kernel` points
-    to a bzImage like `/nix/store/abc...-linux-4.4.27/bzImage`. The
-    directory also contains a `lib/modules` dir which should have the
-    kernel version as sole subdir, e.g.
-    `/nix/store/abc...-linux-4.4.27/lib/modules/4.4.27`. This function
-    returns that version number or bails out if the assumptions laid down here
-    do not hold.
-    """
-    bzImage = os.readlink(kernel)
-    moddir = os.listdir(p.join(p.dirname(bzImage), 'lib', 'modules'))
-    if len(moddir) != 1:
-        raise RuntimeError('modules subdir does not contain exactly '
-                           'one item', moddir)
-    return moddir[0]
-
-
 def check_kernel_reboot():
     """Schedules a reboot if the kernel has changed."""
-    booted, current = map(kernel_version, [
-        '/run/booted-system/kernel',
-        '/run/current-system/kernel'])
+    booted = kernel_version('/run/booted-system/kernel')
+    current = kernel_version('/run/current-system/kernel')
     verbose('check_kernel: booted={}, current={}'.format(booted, current))
     if booted != current:
         print('kernel changed: scheduling reboot')

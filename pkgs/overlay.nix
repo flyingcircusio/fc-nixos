@@ -3,6 +3,8 @@ self: super:
 let
   versions = import ../versions.nix { pkgs = super; };
   elk7Version = "7.10.2";
+
+  nixpkgs_18_03 = import versions.nixpkgs_18_03 {};
   inherit (super) lib;
 
 in {
@@ -78,6 +80,32 @@ in {
   });
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
+
+  # Those are specialised packages for "direct consumption" use in our LAMP roles.
+
+  lamp_php56 = 
+    let 
+      phpIni = super.writeText "php.ini" ''
+      ${builtins.readFile "${nixpkgs_18_03.php56}/etc/php.ini"}
+      extension = ${nixpkgs_18_03.php56Packages.redis}/lib/php/extensions/redis.so
+      extension = ${nixpkgs_18_03.php56Packages.memcached}/lib/php/extensions/memcached.so
+      extension = ${nixpkgs_18_03.php56Packages.imagick}/lib/php/extensions/imagick.so
+      zend_extension = opcache.so
+    '';
+    in (nixpkgs_18_03.php56).overrideAttrs (oldAttrs: rec {
+      version = "5.6.40";
+      name = "php-5.6.40";
+      src = super.fetchurl {
+        url = "http://www.php.net/distributions/php-${version}.tar.bz2";
+        sha256 = "005s7w167dypl41wlrf51niryvwy1hfv53zxyyr3lm938v9jbl7z";
+      };
+      passthru = { phpIni = "${phpIni}"; };
+    });
+
+  lamp_php73 = super.php73.withExtensions ({ enabled, all }:
+              enabled ++ [ all.memcached all.imagick all.redis]);
+  lamp_php74 = super.php74.withExtensions ({ enabled, all }:
+              enabled ++ [ all.memcached all.imagick all.redis]);
 
   mc = super.callPackage ./mc.nix { };
 

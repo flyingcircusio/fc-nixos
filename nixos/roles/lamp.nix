@@ -17,6 +17,19 @@ in {
         default = "";
       };
 
+      php = mkOption {
+        type = types.package;
+        default = pkgs.lamp_php73;
+        description = ''
+          The package to use.
+        '';
+      };
+
+      tideways_api_key = mkOption {
+        type = types.str;
+        default = "";
+      };
+
       vhosts = mkOption {
         type = with types; listOf (submodule {
           options = {
@@ -30,14 +43,9 @@ in {
     };
   };
 
-  config = lib.mkIf role.enable (
-    let
+  config = let
 
       phpOptions = ''
-          extension=${pkgs.php73Extensions.memcached}/lib/php/extensions/memcached.so
-          extension=${pkgs.php73Extensions.imagick}/lib/php/extensions/imagick.so
-          extension=${pkgs.php73Extensions.redis}/lib/php/extensions/redis.so
-
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           ; General settings
 
@@ -47,28 +55,7 @@ in {
           sendmail_path = /run/wrappers/bin/sendmail -t -i
 
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          ; Tideways
-          ;
-          ; This is intended to be production-ready so it doesn't create too
-          ; much overhead. If you need to increase tracing, then you can
-          ; adjust this in your local php.ini
-
-          extension=${pkgs.tideways_module}/lib/php/extensions/tideways-php-7.3-zts.so
-
-          tideways.connection = tcp://127.0.0.1:9135
-
-          tideways.features.phpinfo = 1
-
-          tideways.dynamic_tracepoints.enable_web = 1
-          tideways.dynamic_tracepoints.enable_cli = 1
-
-          ; customers need to add their api key locally
-          ; tideways.api_key = xxxxx
-
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           ; opcache
-
-          zend_extension = opcache.so
           opcache.enable = 1
           opcache.enable_cli = 0
           opcache.interned_strings_buffer = 8
@@ -96,103 +83,148 @@ in {
 
           ; Custom PHP ini
           ${role.php_ini}
+        '' + pkgs.lib.optionalString (role.tideways_api_key != "") ''
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ; Tideways
+          ;
+          ; This is intended to be production-ready so it doesn't create too
+          ; much overhead. If you need to increase tracing, then you can
+          ; adjust this in your local php.ini
+
+          extension=${pkgs.tideways_module}/lib/php/extensions/tideways-php-${phpMajorMinor}-zts.so
+
+          tideways.connection = tcp://127.0.0.1:9135
+
+          tideways.features.phpinfo = 1
+
+          tideways.dynamic_tracepoints.enable_web = 1
+          tideways.dynamic_tracepoints.enable_cli = 1
+
+          ; customers need to add their api key locally
+          tideways.api_key = ${role.tideways_api_key}
         '';
-    in {
+        phpMajorMinor = lib.concatStringsSep "." (lib.take 2 (builtins.splitVersion role.php.version));
 
-      services.httpd.enable = true;
-      services.httpd.adminAddr = "admin@flyingcircus.io";
-      services.httpd.logPerVirtualHost = true;
-      services.httpd.group = "service";
-      services.httpd.user = "nobody";
-      services.httpd.extraConfig = ''
-        <IfModule mpm_prefork_module>
-            StartServers 5
-            MinSpareServers 2
-            MaxSpareServers 5
-            MaxRequestWorkers 25
-            MaxConnectionsPerChild 20
-        </IfModule>
+    in 
 
-        Listen localhost:7999
-        <VirtualHost localhost:7999>
-        <Location "/server-status">
-            SetHandler server-status
-        </Location>
-        </VirtualHost>
-        '' +
-        # * vhost configs
-        (lib.concatMapStrings (vhost:
-          ''
+      lib.mkMerge [ {
+          # We always provide the PHP cli environment but we need to ensure
+          # to choose the right one in case someone uses the LAMP role.
+          # This used to be in packages.nix but that was too simple minded.
 
-          Listen *:${toString vhost.port}
-          <VirtualHost *:${toString vhost.port}>
-              ServerName "${config.networking.hostName}"
-              DocumentRoot "${vhost.docroot}"
-              <Directory "${vhost.docroot}">
-                  AllowOverride all
-                  Require all granted
-                  Options FollowSymlinks
-                  DirectoryIndex index.html index.php
-              </Directory>
-          </VirtualHost>
-          ''
-        ) role.vhosts) +
-        role.apache_conf;
+          environment.systemPackages = [ role.php ];
 
-      services.httpd.phpOptions = phpOptions;
+      }
 
-      services.httpd.extraModules = [ "rewrite" "version" "status" ];
-      services.httpd.enablePHP = true;
-      services.httpd.phpPackage = pkgs.php73;
-      # The upstream module has a default that makes Apache listen on port 80
-      # which conflicts with our webgateway role.
-      services.httpd.virtualHosts = {};
+      (lib.mkIf role.enable {
 
-      flyingcircus.services.sensu-client.checks = {
-        httpd_status = {
-          notification = "Apache status page";
-          command = "check_http -H localhost -p 7999 -u /server-status?auto -v";
-          timeout = 30;
-        };
-      };
-
-      flyingcircus.services.telegraf.inputs = {
-        apache  = [{
-          urls = [ "http://localhost:7999/server-status?auto" ];
-        }];
-      };
-
-      systemd.tmpfiles.rules = [
-        "d /var/log/httpd 0750 root service"
-        "a+ /var/log/httpd - - - - group:sudo-srv:r-x"
-      ];
-
-      # tideways daemon
-      users.groups.tideways.gid = config.ids.gids.tideways;
-
-      users.users.tideways = {
-        description = "tideways daemon user";
-        uid = config.ids.uids.tideways;
-        group = "tideways";
-        extraGroups = [ "service" ];
-      };
-
-      systemd.services.tideways-daemon = rec {
-        description = "tideways daemon";
-        wantedBy = [ "multi-user.target" ];
-        wants = [ "network.target" ];
-        after = wants;
-        serviceConfig = {
-          ExecStart = ''
-            ${pkgs.tideways_daemon}/tideways-daemon --address=127.0.0.1:9135
+          services.httpd.enable = true;
+          services.httpd.adminAddr = "admin@flyingcircus.io";
+          environment.shellInit = ''
+            export PHPRC='${config.systemd.services.httpd.environment.PHPRC}'
           '';
-          Restart = "always";
-          RestartSec = "60s";
-          User = "tideways";
-          Type = "simple";
-        };
-      };
 
-  });
+          services.httpd.logPerVirtualHost = true;
+          services.httpd.group = "service";
+          services.httpd.user = "nobody";
+          services.httpd.extraModules = [ "rewrite" "version" "status" ];
+          services.httpd.mpm = "prefork";
+          services.httpd.extraConfig = ''
+            # Those options are chosen for prefork
+            # StartServers 2 (default)
+            # MinSpareServers 5 (default)
+            # MaxSpareServers 10 (Default)
+
+            # MaxRequestWorkers default: 256, limit to lower number
+            # to avoid starvation/thrashing
+            MaxRequestWorkers 150
+
+            # Determine lifetime of processes
+            # MaxConnectionsPerChild default: 0, set limit to
+            # avoid potential memory leaks
+            MaxConnectionsPerChild     10000  
+
+            Listen localhost:7999
+            <VirtualHost localhost:7999>
+            <Location "/server-status">
+                SetHandler server-status
+            </Location>
+            </VirtualHost>
+            '' +
+            # * vhost configs
+            (lib.concatMapStrings (vhost:
+              ''
+
+              Listen *:${toString vhost.port}
+              <VirtualHost *:${toString vhost.port}>
+                  ServerName "${config.networking.hostName}"
+                  DocumentRoot "${vhost.docroot}"
+                  <Directory "${vhost.docroot}">
+                      AllowOverride all
+                      Require all granted
+                      Options FollowSymlinks
+                      DirectoryIndex index.html index.php
+                  </Directory>
+              </VirtualHost>
+              ''
+            ) role.vhosts) +
+            role.apache_conf;
+
+          services.httpd.enablePHP = true;
+          services.httpd.phpOptions = phpOptions;
+          services.httpd.phpPackage = role.php;
+
+          # The upstream module has a default that makes Apache listen on port 80
+          # which conflicts with our webgateway role.
+          services.httpd.virtualHosts = {};
+
+          flyingcircus.services.sensu-client.checks = {
+            httpd_status = {
+              notification = "Apache status page";
+              command = "check_http -H localhost -p 7999 -u /server-status?auto -v";
+              timeout = 30;
+            };
+          };
+
+          flyingcircus.services.telegraf.inputs = {
+            apache  = [{
+              urls = [ "http://localhost:7999/server-status?auto" ];
+            }];
+          };
+
+          systemd.tmpfiles.rules = [
+            "d /var/log/httpd 0750 root service"
+            "a+ /var/log/httpd - - - - group:sudo-srv:r-x"
+          ];
+
+    })
+
+    (lib.mkIf (role.tideways_api_key != "") {
+          # tideways daemon
+          users.groups.tideways.gid = config.ids.gids.tideways;
+
+          users.users.tideways = {
+            description = "tideways daemon user";
+            uid = config.ids.uids.tideways;
+            group = "tideways";
+            extraGroups = [ "service" ];
+          };
+
+          systemd.services.tideways-daemon = rec {
+            description = "tideways daemon";
+            wantedBy = [ "multi-user.target" ];
+            wants = [ "network.target" ];
+            after = wants;
+            serviceConfig = {
+              ExecStart = ''
+                ${pkgs.tideways_daemon}/tideways-daemon --address=127.0.0.1:9135
+              '';
+              Restart = "always";
+              RestartSec = "60s";
+              User = "tideways";
+              Type = "simple";
+            };
+          };
+    }) ];
 
 }

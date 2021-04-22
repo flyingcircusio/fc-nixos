@@ -4,5 +4,11 @@
     "repo": "nixpkgs",
     "rev": "fcb7dc1b392549533e00f75d3d7409cf743a5cf0",
     "sha256": "1282rshw33sxl8wpda7yycgx9w1b5kwsinisp5hm8d6bwx5ijr3h"
+  },
+  "nixpkgs_18_03": {
+    "owner": "nixos",
+    "repo": "nixpkgs",
+    "rev": "3e1be2206b4c1eb3299fb633b8ce9f5ac1c32898",
+    "sha256": "11d01fdb4d1avi7564h7w332h3jjjadsqwzfzpyh5z56s6rfksxc"
   }
 }
