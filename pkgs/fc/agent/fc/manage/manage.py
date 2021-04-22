@@ -2,6 +2,7 @@
 
 from fc.util.directory import connect
 from fc.util.lock import locked
+from fc.util.nixos import kernel_version
 from .spread import Spread, NullSpread
 from subprocess import PIPE, STDOUT
 import argparse
@@ -310,6 +311,13 @@ class Channel:
             f'Environment: {self.environment}',
             f'Channel URL: {self.resolved_url}'
         ] + notifications
+
+        current_kernel = kernel_version('/run/current-system/kernel')
+        next_kernel = kernel_version('/run/next-system/result/kernel')
+
+        if current_kernel != next_kernel:
+            msg.append("Will schedule a reboot to activate the changed kernel.")
+
         if len(msg) > 1:  # add trailing newline if output is multi-line
             msg += ['']
 
@@ -321,7 +329,7 @@ class Channel:
         with fc.maintenance.ReqManager() as rm:
             rm.add(fc.maintenance.Request(
                 fc.maintenance.lib.shellscript.ShellScriptActivity(script),
-                300, comment='\n'.join(msg)))
+                600, comment='\n'.join(msg)))
 
 
 def load_enc(enc_path):
