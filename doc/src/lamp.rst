@@ -27,7 +27,7 @@ A complete configuration might looks something like this:
 
 .. code-block:: Nix
 
-	{ ... }:
+	{ pkgs, ... }:
 
 	{
 
@@ -38,6 +38,8 @@ A complete configuration might looks something like this:
 	        docroot = "/srv/s-myserviceuser/application.git/docroot";
 	      }
 	    ];
+
+	    php = pkgs.lamp_php74;
 
 	    apache_conf = ''
 	      MaxRequestWorkers 5
@@ -86,6 +88,34 @@ this to adjust global settings like workers:
 Note that if you distribute your configuration over multiple files then you
 can repeat this option and the values will be concatenated to a single big
 Apache config file. They will also always apply to all vhosts.
+
+
+``flyingcircus.roles.lamp.php`` (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A reference to a PHP package that will be used in Apache and in the
+CLI. 
+
+Supported packages:
+
+* ``pkgs.lamp_php56`` (outdated but provided for legacy applications)
+* ``pkgs.lamp_php73``
+* ``pkgs.lamp_php74``
+
+You can also use any custom PHP package from the NixOS universe (if you
+know what you are doing. ;) )
+
+
+``flyingcircus.roles.lamp.tideways_api_key`` (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have an account with tideways.com then you can quickly enable the 
+tideways profiler for your application by setting the API key here:
+
+.. code-block:: Nix
+
+	flyingcircus.roles.lamp.tideways_api_key = "my-api-key";
+
 
 ``flyingcircus.roles.lamp.php_ini`` (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

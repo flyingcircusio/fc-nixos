@@ -37,7 +37,14 @@ in {
   kibana6 = callTest ./kibana.nix { version = "6"; };
   kibana7 = callTest ./kibana.nix { version = "7"; };
   kubernetes = callTest ./kubernetes {};
-  lamp = callTest ./lamp.nix {};
+
+  lamp = callTest ./lamp.nix { };
+  lamp56 = callTest ./lamp.nix { version = "lamp_php56"; };
+  lamp73 = callTest ./lamp.nix { version = "lamp_php73"; };
+  lamp73_tideways = callTest ./lamp.nix { version = "lamp_php73"; tideways = "1234"; };
+  lamp74 = callTest ./lamp.nix { version = "lamp_php74"; };
+  lamp74_tideways = callTest ./lamp.nix { version = "lamp_php74"; tideways = "1234"; };
+
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
   logging = callTest ./logging.nix {};
