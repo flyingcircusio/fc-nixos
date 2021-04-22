@@ -14,6 +14,9 @@ in {
     imports = [ ../nixos ];
 
     environment.systemPackages = with pkgs; [
+      # Pre-install it to make it possible to install the package in the test script
+      # without the need to download stuff (which fails in a test, of course).
+      lamp_php56
     ];
 
     environment.etc."nixpkgs-paths-debug".text = toJSON {
@@ -45,6 +48,10 @@ in {
 
     with subtest("Non-root should be able to nix-env install from fc"):
       machine.succeed("su alice -l -c 'nix-env -iA nixos.fc.logcheckhelper'")
+
+    with subtest("Installing php56 with dependencies on a legacy channel should work"):
+      # This also fixes `nix-env -qa` in the next subtest somehow...
+      machine.succeed("nix-env -iA nixos.lamp_php56")
 
     with subtest("Non-root should be able to use nix-env -qa to list packages"):
       machine.succeed("su alice -l -c 'nix-env -qa'")
