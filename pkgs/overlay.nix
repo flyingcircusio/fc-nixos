@@ -83,8 +83,8 @@ in {
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
-  lamp_php56 = 
-    let 
+  lamp_php56 =
+    let
       phpIni = super.writeText "php.ini" ''
       ${builtins.readFile "${nixpkgs_18_03.php56}/etc/php.ini"}
       extension = ${nixpkgs_18_03.php56Packages.redis}/lib/php/extensions/redis.so
@@ -103,9 +103,19 @@ in {
     });
 
   lamp_php73 = super.php73.withExtensions ({ enabled, all }:
-              enabled ++ [ all.memcached all.imagick all.redis]);
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
   lamp_php74 = super.php74.withExtensions ({ enabled, all }:
-              enabled ++ [ all.memcached all.imagick all.redis]);
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
 
   mc = super.callPackage ./mc.nix { };
 
