@@ -80,7 +80,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
 
       if tideways_api_key:
-        lamp.succeed("egrep 'tideways' result")  
+        lamp.succeed("egrep 'tideways' result")
         lamp.succeed("grep 'Can connect to tideways-daemon?.*Yes' result")
 
       lamp.succeed("egrep 'Path to sendmail.*sendmail -t -i' result")
@@ -94,6 +94,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
       lamp.succeed("egrep 'memory_limit.*1024m' result")
       lamp.succeed("egrep 'max_execution_time => 0 => 0' result")
       lamp.succeed("egrep 'session.auto_start.*Off' result")
+      lamp.succeed("egrep 'BCMath support.*enabled' result")
 
     with subtest("check if PHP support is working as expected in apache"):
       lamp.succeed("w3m -cols 400 -dump http://localhost:8000/test.php > result")
@@ -109,6 +110,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
       lamp.succeed("egrep 'memcached support +enabled' result")
       lamp.succeed("egrep 'short_open_tag.*On' result")
       lamp.succeed("egrep 'output_buffering +1 +1' result")
+      lamp.succeed("egrep 'BCMath support.*enabled' result")
 
       if php_version > 5:
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
