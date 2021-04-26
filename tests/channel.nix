@@ -1,5 +1,7 @@
 # Does our custom combined channel work as expected?
 # Inspired by the installer.nix test from upstream.
+# This also serves as an example on how to run nixos-rebuild
+# inside a NixOS test VM.
 with builtins;
 
 import ./make-test-python.nix ({ pkgs, lib, ... }:
@@ -25,11 +27,54 @@ in {
       nixpkgs = "${<nixpkgs>}";
     };
 
+    environment.etc."nixos/local.nix".text = ''
+      { ... }:
+      {
+        # Only a dummy to make nixos-rebuild inside the test VM work.
+      }
+    '';
+
+    environment.etc."local/nixos/synced_config.nix".text = ''
+      { config, pkgs, lib, ... }:
+      {
+        # !!! If you use this test as a template for another test that wants to
+        # use nixos-rebuild inside the VM:
+        # You may have to change config here (used for rebuilds inside the VM)
+        # when you change settings on the "outside" (used to build the VM on the test host).
+        # Configs need to be in sync or nixos-rebuild will try to build
+        # more stuff which may fail because networking isn't available inside
+        # the test VM.
+
+        users.users.alice = {
+          isNormalUser = true;
+          home = "/home/alice";
+        };
+      }
+    '';
+
+    system.extraDependencies = with pkgs; [
+      # Taken from nixpkgs tests/ec2.nix
+      busybox
+      cloud-utils
+      desktop-file-utils
+      libxslt.bin
+      mkinitcpio-nfs-utils
+      stdenv
+      stdenvNoCC
+      texinfo
+      unionfs-fuse
+      xorg.lndir
+      # Our custom stuff that's needed to rebuild the VM.
+      lamp_php73
+      channel
+    ];
+
     users.users.alice = {
       isNormalUser = true;
       home = "/home/alice";
     };
 
+    # nix-env -qa needs a lot of RAM. Crashed with 2000.
     virtualisation.memorySize = 3000;
   };
 
@@ -39,6 +84,9 @@ in {
 
     with subtest("Root should be able to nix-env install from nixpkgs"):
       machine.succeed("nix-env -iA nixos.procps")
+
+    with subtest("Building the system should work"):
+      machine.succeed("nix-build '<nixpkgs/nixos>' -A system --option substitute false")
 
     with subtest("Root should be able to nix-env install from fc"):
       machine.succeed("nix-env -iA nixos.fc.logcheckhelper")

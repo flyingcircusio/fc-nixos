@@ -10,10 +10,7 @@ with builtins;
 # - domains: list of mail domains for which regular mail accounts exist
 
 let
-  snm = fetchTarball {
-    url = "https://github.com/flyingcircusio/nixos-mailserver/archive/d4566383b01c081bed866d397909a9e4fbefc7e2.tar.gz";
-    sha256 = "0hl31fjn0jf6j2rhf8g799q9vgmixyyy5j9srfa1njhy1npb04v3";
-  };
+  inherit (import ../../../versions.nix { }) nixos-mailserver;
 
   role = config.flyingcircus.roles.mailserver;
   svc = config.flyingcircus.services.mail;
@@ -33,7 +30,7 @@ let
 
 in {
   imports = [
-    snm
+    "${nixos-mailserver}"
     ./roundcube.nix
     ./rspamd.nix
     ./stub.nix
