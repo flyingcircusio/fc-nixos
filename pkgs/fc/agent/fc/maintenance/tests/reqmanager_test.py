@@ -19,7 +19,7 @@ import unittest.mock
 import uuid
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def reqmanager(tmpdir):
     with ReqManager(str(tmpdir)) as rm:
         yield rm
