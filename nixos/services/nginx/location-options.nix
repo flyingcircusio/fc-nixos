@@ -1,4 +1,4 @@
-# Taken from upstream branch nixos-19.03.
+# Taken from upstream branch nixos-unstable.
 
 # This file defines the options that can be used both for the Nginx
 # main server configuration, and for the virtual hosts.  (The latter
@@ -11,6 +11,34 @@ with lib;
 
 {
   options = {
+    basicAuth = mkOption {
+      type = types.attrsOf types.str;
+      default = {};
+      example = literalExample ''
+        {
+          user = "password";
+        };
+      '';
+      description = ''
+        Basic Auth protection for a vhost.
+
+        WARNING: This is implemented to store the password in plain text in the
+        Nix store.
+      '';
+    };
+
+    basicAuthFile = mkOption {
+      type = types.nullOr types.path;
+      default = null;
+      description = ''
+        Basic Auth password file for a vhost.
+        Can be created via: <command>htpasswd -c &lt;filename&gt; &lt;username&gt;</command>.
+
+        WARNING: The generate file contains the users' passwords in a
+        non-cryptographically-securely hashed way.
+      '';
+    };
+
     proxyPass = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -26,7 +54,7 @@ with lib;
       default = false;
       example = true;
       description = ''
-        Whether to supporty proxying websocket connections with HTTP/1.1.
+        Whether to support proxying websocket connections with HTTP/1.1.
       '';
     };
 
@@ -72,6 +100,16 @@ with lib;
       example = "301 http://example.com$request_uri";
       description = ''
         Adds a return directive, for e.g. redirections.
+      '';
+    };
+
+    fastcgiParams = mkOption {
+      type = types.attrsOf types.str;
+      default = {};
+      description = ''
+        FastCGI parameters to override.  Unlike in the Nginx
+        configuration file, overriding only some default parameters
+        won't unset the default values for other parameters.
       '';
     };
 
