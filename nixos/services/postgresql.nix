@@ -109,6 +109,8 @@ in {
         is being included with include_dir.
         '';
 
+    flyingcircus.infrastructure.preferNoneSchedulerOnSsd = true;
+
     flyingcircus.activationScripts = {
       postgresql-srv = lib.stringAfter [ "users" "groups" ] ''
         install -d -o postgres /srv/postgresql

@@ -106,6 +106,8 @@ in {
         home = "/srv/mongodb";
       };
 
+      flyingcircus.infrastructure.preferNoneSchedulerOnSsd = true;
+
       flyingcircus.activationScripts = {
 
         mongodb-dirs = lib.stringAfter [ "users" "groups" ] ''

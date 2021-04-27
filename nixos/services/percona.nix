@@ -219,6 +219,8 @@ in
 
     environment.systemPackages = [ mysql ];
 
+    flyingcircus.infrastructure.preferNoneSchedulerOnSsd = true;
+
     systemd.services.mysql = {
       description = "MySQL Server";
       wantedBy = [ "multi-user.target" ];
