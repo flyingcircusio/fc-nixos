@@ -39,7 +39,6 @@ in {
   kibana7 = callTest ./kibana.nix { version = "7"; };
   # The option `services.kubernetes.apiserver.serviceAccountSigningKeyFile' is used but not defined.
   #kubernetes = callTest ./kubernetes {};
-  kubernetes = callTest ./kubernetes {};
 
   lamp = callTest ./lamp.nix { };
   lamp56 = callTest ./lamp.nix { version = "lamp_php56"; };
