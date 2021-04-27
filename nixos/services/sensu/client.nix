@@ -339,6 +339,7 @@ in {
       description = "sensu client daemon user";
       uid = config.ids.uids.sensuclient;
       group = "sensuclient";
+      isSystemUser = true;
       # Allow sensuclient to interact with services, adm stuff and the journal.
       # This especially helps to check supervisor with a group-writable
       # socket:

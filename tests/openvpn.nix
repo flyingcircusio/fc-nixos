@@ -59,6 +59,7 @@ in {
         # needed for openvpn auth
         users.users.test = {
           initialPassword = "test";
+          isNormalUser = true;
         };
         virtualisation.vlans = [ 1 2 ];
       };
