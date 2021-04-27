@@ -87,8 +87,9 @@ in {
 
     users.extraGroups.sensuserver.gid = config.ids.gids.sensuserver;
 
-    users.extraUsers.sensuserver = {
+    users.users.sensuserver = {
       description = "sensu server daemon user";
+      isSystemUser = true;
       uid = config.ids.uids.sensuserver;
       group = "sensuserver";
     };

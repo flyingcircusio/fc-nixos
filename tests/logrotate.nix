@@ -16,6 +16,7 @@ import ./make-test-python.nix (
           users.users.s-svc = {
             inherit home;
             createHome = true;
+            isNormalUser = true;
             group = "service";
             uid = 2019;
           };

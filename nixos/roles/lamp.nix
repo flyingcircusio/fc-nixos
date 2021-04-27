@@ -105,7 +105,7 @@ in {
         '';
         phpMajorMinor = lib.concatStringsSep "." (lib.take 2 (builtins.splitVersion role.php.version));
 
-    in 
+    in
 
       lib.mkMerge [ {
           # We always provide the PHP cli environment but we need to ensure
@@ -142,7 +142,7 @@ in {
             # Determine lifetime of processes
             # MaxConnectionsPerChild default: 0, set limit to
             # avoid potential memory leaks
-            MaxConnectionsPerChild     10000  
+            MaxConnectionsPerChild     10000
 
             Listen localhost:7999
             <VirtualHost localhost:7999>
@@ -206,6 +206,7 @@ in {
           users.users.tideways = {
             description = "tideways daemon user";
             uid = config.ids.uids.tideways;
+            isSystemUser = true;
             group = "tideways";
             extraGroups = [ "service" ];
           };

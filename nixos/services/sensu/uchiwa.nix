@@ -88,8 +88,9 @@ in {
 
     users.extraGroups.uchiwa.gid = config.ids.gids.uchiwa;
 
-    users.extraUsers.uchiwa = {
+    users.users.uchiwa = {
       description = "uchiwa daemon user";
+      isSystemUser = true;
       uid = config.ids.uids.uchiwa;
       group = "uchiwa";
     };

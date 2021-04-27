@@ -67,8 +67,9 @@ in  {
 
     users.extraGroups.sensuapi.gid = config.ids.gids.sensuapi;
 
-    users.extraUsers.sensuapi = {
+    users.users.sensuapi = {
       description = "sensu api daemon user";
+      isSystemUser = true;
       uid = config.ids.uids.sensuapi;
       group = "sensuapi";
     };
