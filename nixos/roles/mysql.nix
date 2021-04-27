@@ -285,6 +285,8 @@ with builtins;
         '';
     };
 
+    flyingcircus.infrastructure.preferNoneSchedulerOnSsd = true;
+
     services.udev.extraRules = ''
       # increase readahead for mysql
       SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
