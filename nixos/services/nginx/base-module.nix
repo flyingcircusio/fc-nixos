@@ -112,7 +112,7 @@ let
       ''}
 
       ssl_protocols ${cfg.sslProtocols};
-      ssl_ciphers ${cfg.sslCiphers};
+      ${optionalString (cfg.sslCiphers != null) "ssl_ciphers ${cfg.sslCiphers};"}
       ${optionalString (cfg.sslDhparam != null) "ssl_dhparam ${cfg.sslDhparam};"}
 
       ${optionalString (cfg.recommendedTlsSettings) ''
@@ -247,7 +247,15 @@ let
           + optionalString vhost.default "default_server "
           + optionalString (vhost.default && reuseport) "reuseport "
           + optionalString (extraParameters != []) (concatStringsSep " " extraParameters)
-          + ";";
+          + ";"
+          + (if ssl && vhost.http3 then ''
+          # UDP listener for **QUIC+HTTP/3
+          listen ${addr}:${toString port} http3 reuseport;
+          # Advertise that HTTP/3 is available
+          add_header Alt-Svc 'h3=":443"';
+          # Sent when QUIC was used
+          add_header QUIC-Status $quic;
+          '' else "");
 
         redirectListen = filter (x: !x.ssl) defaultListen;
 
@@ -294,10 +302,7 @@ let
             ssl_trusted_certificate ${vhost.sslTrustedCertificate};
           ''}
 
-          ${optionalString (vhost.basicAuthFile != null || vhost.basicAuth != {}) ''
-            auth_basic secured;
-            auth_basic_user_file ${if vhost.basicAuthFile != null then vhost.basicAuthFile else mkHtpasswd vhostName vhost.basicAuth};
-          ''}
+          ${mkBasicAuth vhostName vhost}
 
           ${mkLocations vhost.locations}
 
@@ -319,6 +324,10 @@ let
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
       ''}
+      ${concatStringsSep "\n"
+        (mapAttrsToList (n: v: ''fastcgi_param ${n} "${v}";'')
+          (optionalAttrs (config.fastcgiParams != {})
+            (defaultFastcgiParams // config.fastcgiParams)))}
       ${optionalString (config.index != null) "index ${config.index};"}
       ${optionalString (config.tryFiles != null) "try_files ${config.tryFiles};"}
       ${optionalString (config.root != null) "root ${config.root};"}
@@ -326,9 +335,19 @@ let
       ${optionalString (config.return != null) "return ${config.return};"}
       ${config.extraConfig}
       ${optionalString (config.proxyPass != null && cfg.recommendedProxySettings) "include ${recommendedProxyConfig};"}
+      ${mkBasicAuth "sublocation" config}
     }
   '') (sortProperties (mapAttrsToList (k: v: v // { location = k; }) locations)));
-  mkHtpasswd = vhostName: authDef: pkgs.writeText "${vhostName}.htpasswd" (
+
+  mkBasicAuth = name: zone: optionalString (zone.basicAuthFile != null || zone.basicAuth != {}) (let
+    auth_file = if zone.basicAuthFile != null
+      then zone.basicAuthFile
+      else mkHtpasswd name zone.basicAuth;
+  in ''
+    auth_basic secured;
+    auth_basic_user_file ${auth_file};
+  '');
+  mkHtpasswd = name: authDef: pkgs.writeText "${name}.htpasswd" (
     concatStringsSep "\n" (mapAttrsToList (user: password: ''
       ${user}:{PLAIN}${password}
     '') authDef)
@@ -474,6 +493,9 @@ in
         default = pkgs.nginxStable;
         defaultText = "pkgs.nginxStable";
         type = types.package;
+        apply = p: p.override {
+          modules = p.modules ++ cfg.additionalModules;
+        };
         description = "
           Nginx package to use. This defaults to the stable version. Note
           that the nginx team recommends to use the mainline version which
@@ -481,8 +503,20 @@ in
         ";
       };
 
+      additionalModules = mkOption {
+        default = [];
+        type = types.listOf (types.attrsOf types.anything);
+        example = literalExample "[ pkgs.nginxModules.brotli ]";
+        description = ''
+          Additional <link xlink:href="https://www.nginx.com/resources/wiki/modules/">third-party nginx modules</link>
+          to install. Packaged modules are available in
+          <literal>pkgs.nginxModules</literal>.
+        '';
+      };
+
       logError = mkOption {
         default = "stderr";
+        type = types.str;
         description = "
           Configures logging.
           The first parameter defines a file that will store the log. The
@@ -506,13 +540,24 @@ in
       };
 
       config = mkOption {
+        type = types.str;
         default = "";
-        description = "
-          Verbatim nginx.conf configuration.
-          This is mutually exclusive with the structured configuration
-          via virtualHosts and the recommendedXyzSettings configuration
-          options. See appendConfig for appending to the generated http block.
-        ";
+        description = ''
+          Verbatim <filename>nginx.conf</filename> configuration.
+          This is mutually exclusive to any other config option for
+          <filename>nginx.conf</filename> except for
+          <itemizedlist>
+          <listitem><para><xref linkend="opt-services.nginx.appendConfig" />
+          </para></listitem>
+          <listitem><para><xref linkend="opt-services.nginx.httpConfig" />
+          </para></listitem>
+          <listitem><para><xref linkend="opt-services.nginx.logError" />
+          </para></listitem>
+          </itemizedlist>
+
+          If additional verbatim config in addition to other options is needed,
+          <xref linkend="opt-services.nginx.appendConfig" /> should be used instead.
+        '';
       };
 
       appendConfig = mkOption {
@@ -554,6 +599,21 @@ in
           This is mutually exclusive with the structured configuration
           via virtualHosts and the recommendedXyzSettings configuration
           options. See appendHttpConfig for appending to the generated http block.
+        ";
+      };
+
+      streamConfig = mkOption {
+        type = types.lines;
+        default = "";
+        example = ''
+          server {
+            listen 127.0.0.1:53 udp reuseport;
+            proxy_timeout 20s;
+            proxy_pass 192.168.0.1:53535;
+          }
+        '';
+        description = "
+          Configuration lines to be set inside the stream block.
         ";
       };
 
@@ -719,6 +779,7 @@ in
                 Defines the address and other parameters of the upstream servers.
               '';
               default = {};
+              example = { "127.0.0.1:8000" = {}; };
             };
             extraConfig = mkOption {
               type = types.lines;
@@ -733,6 +794,14 @@ in
           Defines a group of servers to use as proxy target.
         '';
         default = {};
+        example = literalExample ''
+          "backend_server" = {
+            servers = { "127.0.0.1:8000" = {}; };
+            extraConfig = ''''
+              keepalive 16;
+            '''';
+          };
+        '';
       };
 
       virtualHosts = mkOption {
@@ -957,6 +1026,7 @@ in
     users.users = optionalAttrs (cfg.user == "nginx") {
       nginx = {
         group = cfg.group;
+        isSystemUser = true;
         uid = config.ids.uids.nginx;
       };
     };
