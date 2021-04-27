@@ -62,8 +62,8 @@ py.buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "backy";
-    rev = "f70db74126d1408ef2da6be09101efe80af6e388";
-    sha256 = "1scsqr03543rbgkk4ifj067lmfsf3q0fr6d5cwb2b1wqg43kxi2m";
+    rev = "4419a55aa2c1c1bfb88d81549102f5f63b58bd1b";
+    sha256 = "1fqfa7zgyp3ik1gqg05r8bjz2yi3gb9iydx7plckx0xybkpbgyii";
   };
 
   buildInputs = [
@@ -78,6 +78,8 @@ py.buildPythonPackage rec {
     py.pytz
     py.setuptools
     py.prettytable
+    py.humanize
+    py.tzlocal
     consulate
     murmurhash3
     telnetlib3
