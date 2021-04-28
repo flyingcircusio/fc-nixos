@@ -145,6 +145,13 @@ in {
     services.postgresql = {
 
       enable = true;
+      # The config check is too strict for now because it doesn't build
+      # when there's an error and fails even for our default config.
+      # May happen when files are not accessible from the Nix sandbox.
+      # Looks like that locale files cannot be found.
+      # XXX: Switching it to a warning and filtering out locale issues
+      # would be interesting.
+      checkConfig = false;
       dataDir = "/srv/postgresql/${cfg.majorVersion}";
       extraPlugins = extensions;
       initialScript = ./postgresql-init.sql;
