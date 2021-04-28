@@ -1,26 +1,30 @@
-{ stdenv, fetchurl, fetchFromGitHub, cmake, pkgconfig, ncurses, zlib, xz, lzo, lz4, bzip2, snappy
+{ lib, stdenv, fetchurl, fetchFromGitHub, cmake, pkg-config, ncurses, zlib, xz
+, lzo, lz4, bzip2, snappy
 , libiconv, openssl, pcre, boost, judy, bison, libxml2
 , libaio, jemalloc, cracklib, systemd, numactl
-, asio, buildEnv, check, scons, curl, perl, openldap
+, asio, buildEnv, check, scons, curl, perl, openldap, libtirpc, rpcsvc-proto
 }:
 
 stdenv.mkDerivation rec {
   pname = "percona";
-  version = "8.0.21-12";
+  version = "8.0.22-13";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-8.0/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "1lvds94r0244rjd08chhqy2z4ma17wgdj4qqd9y5ifkn8yjhxkrd";
+    sha256 = "16ncjy3hwzm10hi6c3smk275pv775d4j1nrgyamjrs4hfzf4jhk1";
   };
 
-  preConfigure = stdenv.lib.optional stdenv.isDarwin ''
+  preConfigure = lib.optional stdenv.isDarwin ''
     ln -s /bin/ps $TMPDIR/ps
     export PATH=$PATH:$TMPDIR
   '';
 
-  nativeBuildInputs = [ cmake pkgconfig ];
+  nativeBuildInputs = [ bison cmake pkg-config ]
+    ++ lib.optionals (!stdenv.isDarwin) [ rpcsvc-proto ];
+
   buildInputs = [
-    ncurses openssl zlib pcre jemalloc libiconv libaio systemd boost curl perl openldap.dev
+    ncurses openssl zlib pcre jemalloc libiconv libaio systemd boost
+    curl perl openldap.dev libtirpc
   ];
 
   enableParallelBuilding = true;
@@ -58,8 +62,8 @@ stdenv.mkDerivation rec {
     "-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1"
   ];
 
-  NIX_LDFLAGS = stdenv.lib.optionalString stdenv.isLinux "-lgcc_s";
-  CXXFLAGS = stdenv.lib.optionalString stdenv.isi686 "-fpermissive";
+  NIX_LDFLAGS = lib.optionalString stdenv.isLinux "-lgcc_s";
+  CXXFLAGS = lib.optionalString stdenv.isi686 "-fpermissive";
 
   prePatch = ''
     sed -i -e "s|/usr/bin/libtool|libtool|" cmake/libutils.cmake

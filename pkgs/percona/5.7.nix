@@ -1,25 +1,29 @@
-{ stdenv, fetchurl, cmake, curl, boost, bison, ncurses, libaio, pkgconfig, openssl, readline, zlib, perl }:
+{ lib, stdenv, fetchurl, cmake, curl, boost, bison, ncurses, libaio
+, pkg-config, openssl, readline, zlib, perl, libtirpc, rpcsvc-proto }:
 
 # Note: zlib is not required; MySQL can use an internal zlib.
 
 stdenv.mkDerivation rec {
   pname = "percona";
-  version = "5.7.31-34";
+  version = "5.7.33-36";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-5.7/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "003013jkvghp71qqfx1aknsh2fsscff8v3kzrsb7s1s2w53s7bv0";
+    sha256 = "0nzxxmdm9zl57rnaxnfbyf79srcy9z9d50dy4qg44dg2l7s34kln";
 
   };
 
-  preConfigure = stdenv.lib.optional stdenv.isDarwin ''
+  preConfigure = lib.optional stdenv.isDarwin ''
     ln -s /bin/ps $TMPDIR/ps
     export PATH=$PATH:$TMPDIR
   '';
 
+  nativeBuildInputs = [ bison cmake pkg-config ]
+    ++ lib.optionals (!stdenv.isDarwin) [ rpcsvc-proto ];
+
   buildInputs = [
-      cmake curl bison ncurses openssl readline pkgconfig zlib boost libaio
-    ] ++ stdenv.lib.optional stdenv.isDarwin perl;
+      curl ncurses openssl readline zlib boost libaio libtirpc
+    ] ++ lib.optional stdenv.isDarwin perl;
 
   enableParallelBuilding = true;
 
@@ -46,7 +50,7 @@ stdenv.mkDerivation rec {
     "-DINSTALL_SHAREDIR=share/mysql"
   ];
 
-  NIX_LDFLAGS = stdenv.lib.optionalString stdenv.isLinux "-lgcc_s";
+  NIX_LDFLAGS = lib.optionalString stdenv.isLinux "-lgcc_s";
 
   prePatch = ''
     sed -i -e "s|/usr/bin/libtool|libtool|" cmake/libutils.cmake

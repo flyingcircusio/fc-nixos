@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, cmake, boost, bison, ncurses, openssl, readline, zlib, perl }:
+{ lib, stdenv, fetchurl, cmake, boost, bison, ncurses, openssl, readline, zlib, perl }:
 
 # Note: zlib is not required; MySQL can use an internal zlib.
 
@@ -11,14 +11,14 @@ stdenv.mkDerivation rec {
     sha256 = "0byxjzpksqpngm1dd95slic5yddb2x4bb36gchf5dfgb4k8w30j4";
   };
 
-  preConfigure = stdenv.lib.optional stdenv.isDarwin ''
+  preConfigure = lib.optional stdenv.isDarwin ''
     ln -s /bin/ps $TMPDIR/ps
     export PATH=$PATH:$TMPDIR
   '';
 
   buildInputs = [
       cmake bison ncurses openssl readline zlib boost.out boost.dev
-    ] ++ stdenv.lib.optional stdenv.isDarwin perl;
+    ] ++ lib.optional stdenv.isDarwin perl;
 
   enableParallelBuilding = true;
 
@@ -43,7 +43,7 @@ stdenv.mkDerivation rec {
     "-DINSTALL_SHAREDIR=share/mysql"
   ];
 
-  NIX_LDFLAGS = stdenv.lib.optionalString stdenv.isLinux "-lgcc_s";
+  NIX_LDFLAGS = lib.optionalString stdenv.isLinux "-lgcc_s";
 
   prePatch = ''
     sed -i -e "s|/usr/bin/libtool|libtool|" cmake/libutils.cmake
