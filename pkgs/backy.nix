@@ -62,8 +62,8 @@ py.buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "backy";
-    rev = "4419a55aa2c1c1bfb88d81549102f5f63b58bd1b";
-    sha256 = "1fqfa7zgyp3ik1gqg05r8bjz2yi3gb9iydx7plckx0xybkpbgyii";
+    rev = "80222fafe47ad4a9c3032857059c41e1b1185e03";
+    sha256 = "0n0a32v657g9n03dab8zh8q47jqf66qn73f4kmapmph87ycw8j08";
   };
 
   buildInputs = [
