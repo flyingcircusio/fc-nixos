@@ -3,7 +3,7 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
 let
     # Those are configured in base nixos and we want to ensure
     # the do not get lost.
-    additionalExpectedConfig = 
+    additionalExpectedConfig =
         ''
         BLK_DEV_DM m
         BLK_DEV_INTEGRITY y
@@ -24,7 +24,7 @@ let
         CRYPTO_AES_NI_INTEL m
         CRYPTO_CRC32C_INTEL m
         CRYPTO_SHA256 y
-        CRYPTO_SHA512 y
+        CRYPTO_SHA512 m
         DEBUG_FS y
         DEFAULT_SECURITY_APPARMOR y
         DM_CRYPT m
@@ -151,7 +151,7 @@ let
         X86_PCC_CPUFREQ m
         XFS_FS m
         '';
-in 
+in
  rec {
   name = "kernel-config";
   machine =
@@ -162,8 +162,8 @@ in
       ];
     };
 
-  testScript = let 
-    in 
+  testScript = let
+    in
       { nodes, ... }:
     ''
     def parseConfigDef(cfg):
