@@ -76,6 +76,10 @@ in
           CEPH_ARGS = "--id ${enc.name}";
         };
 
+        serviceConfig = {
+          ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
+        };
+
         # Theory of operation: raising write_expire timeouts means that
         # requests are much more unlikely to get into 'expired' state which effectively
         # means FIFO which means thrashing under high load.
