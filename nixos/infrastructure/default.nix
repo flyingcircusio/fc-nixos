@@ -17,6 +17,11 @@
       example = "flyingcircus";
       description = "Load config module for specific infrastructure.";
     };
+    flyingcircus.infrastructure.preferNoneSchedulerOnSsd = mkOption {
+      type = types.bool;
+      default = false;
+      description = "If running on SSD set I/O scheduler to none";
+    };
   };
 
 }

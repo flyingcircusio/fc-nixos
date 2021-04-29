@@ -38,7 +38,7 @@ class BackyConfig(object):
         self.purge()
         if self.changed and restart:
             _log.info('config changed, restarting backy')
-            subprocess.check_call(['systemctl', 'restart', 'backy'])
+            subprocess.check_call(['systemctl', 'reload', 'backy'])
 
     @property
     def deletions(self):
