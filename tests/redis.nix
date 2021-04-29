@@ -17,9 +17,6 @@ import ./make-test-python.nix ({ ... }:
     redis.succeed(f"{cli} set msg 'hello world'")
     redis.succeed(f"{cli} get msg | grep 'hello world'")
 
-    # service user should be able to local config dir
-    redis.succeed('sudo -u redis touch /etc/local/redis/custom.conf')
-
     # service user should be able to write the password file
     redis.succeed('sudo -u redis touch /etc/local/redis/password')
 

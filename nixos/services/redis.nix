@@ -50,10 +50,20 @@ in {
   config =
     lib.mkIf cfg.enable {
 
+      assertions =
+        [
+          {
+            assertion = extraConfig == "";
+            message = ''
+              Config via /etc/local/redis/custom.conf is not supported anymore.
+              Please use a NixOS module with the option services.redis.settings instead
+            '';
+          }
+        ];
+
       services.redis = {
         enable = true;
         bind = concatStringsSep " " listen_addresses;
-        extraConfig = extraConfig;
         package = cfg.package;
         requirePass = password;
         vmOverCommit = true;
@@ -115,8 +125,8 @@ in {
         You can find the password for the redis in the `password`. You can also change
         the redis password by changing the `password` file.
 
-        To change the redis configuration, add a file `custom.conf`, which will be
-        appended to the redis configuration.
+        Changing the config via custom.conf is not supported anymore. Please use a NixOS module
+        with the option `services.redis.settings` instead.
       '';
 
       # We want a fixed uid that is compatible with older releases.

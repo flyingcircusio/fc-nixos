@@ -76,8 +76,7 @@ in {
   rabbitmq36_15 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_15"; };
   rabbitmq36_5 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_5"; };
   rabbitmq38 = callTest ./rabbitmq.nix { rolename = "rabbitmq38"; };
-  # The option definition `services.redis.extraConfig' in `/home/ts/fc-nixos/nixos/services/redis.nix' no longer has any effect; please remove it.
-  # redis = callTest ./redis.nix {};
+  redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
   sensu = callTest ./sensu.nix {};
   servicecheck = callTest ./servicecheck.nix {};
