@@ -4,6 +4,9 @@ with lib;
 
 let
   cfg = config.flyingcircus;
+  ioScheduler =  if (cfg.infrastructure.preferNoneSchedulerOnSsd && (cfg.enc.parameters.rbd_pool == "rbd.ssd"))
+                 then "none"
+                 else "bfq";
 in
 mkIf (cfg.infrastructureModule == "flyingcircus") {
  
@@ -55,8 +58,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     udev.extraRules = ''
       # GRUB boot device should be device-by-alias/root
       SUBSYSTEM=="block", KERNEL=="vda", SYMLINK+="disk/device-by-alias/root"
-      # Use BFQ for better fairness
-      SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{queue/scheduler}="bfq", ATTR{queue/rotational}="0"
+      SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{queue/scheduler}="${ioScheduler}", ATTR{queue/rotational}="0"
     '';
   };
 
