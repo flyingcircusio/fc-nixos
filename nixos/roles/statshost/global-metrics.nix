@@ -23,6 +23,7 @@ let
     "nginx"
     "postfix"
     "postgresql"
+    "powerdns"
     "processes"
     "rabbitmq"
     "redis"
