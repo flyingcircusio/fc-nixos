@@ -292,28 +292,4 @@ in {
     boost = self.boost172;
   };
 
-  # === Python ===
-
-  python27 = super.python27.override {
-    packageOverrides = import ./overlay-python.nix super;
-  };
-  python27Packages = super.recurseIntoAttrs self.python27.pkgs;
-  python2Packages = self.python27Packages;
-
-  python36 = super.python36.override {
-    packageOverrides = import ./overlay-python.nix super;
-  };
-  python36Packages = self.python36.pkgs;
-
-  python37 = super.python37.override {
-    packageOverrides = import ./overlay-python.nix super;
-  };
-  python37Packages = super.recurseIntoAttrs self.python37.pkgs;
-
-  python38 = super.python38.override {
-    packageOverrides = import ./overlay-python.nix super;
-  };
-  python38Packages = super.recurseIntoAttrs self.python38.pkgs;
-  python3Packages = self.python38Packages;
-
 }
