@@ -95,11 +95,16 @@ in {
     in (nixpkgs_18_03.php56).overrideAttrs (oldAttrs: rec {
       version = "5.6.40";
       name = "php-5.6.40";
+      buildInputs = oldAttrs.buildInputs ++ [ super.makeWrapper ];
       src = super.fetchurl {
         url = "http://www.php.net/distributions/php-${version}.tar.bz2";
         sha256 = "005s7w167dypl41wlrf51niryvwy1hfv53zxyyr3lm938v9jbl7z";
       };
       passthru = { phpIni = "${phpIni}"; };
+      postInstall = oldAttrs.postInstall or "" + ''
+        wrapProgram $out/bin/php \
+          --set LOCALE_ARCHIVE ${nixpkgs_18_03.glibcLocales}/lib/locale/locale-archive
+      '';
     });
 
   lamp_php73 = super.php73.withExtensions ({ enabled, all }:
