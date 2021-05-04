@@ -56,6 +56,11 @@ Place the following NixOS module in :file:`/etc/local/nixos/systemd-mytask.nix`:
         Type = "oneshot";
         User = "test";
         ExecStart = "/srv/test/mytask.sh";
+        # Set environment variables for the script.
+        Environment = [
+          "LD_LIBRARY_PATH=${pkgs.file}/lib"
+          "VERBOSE=1"
+        ];
       };
     };
   }
