@@ -18,6 +18,7 @@ fc-userscan.cache
 GeoLite2-City.mmdb
 *.gif
 .git/objects/
+.gnupg/
 graylog/data/
 *.gz
 *.hg/store/
@@ -87,4 +88,6 @@ solr/data/
 *.xlsx
 *.xml
 *.xz
+*.zdsock
 zeoclient_*.zec
+*.zopectlsock
