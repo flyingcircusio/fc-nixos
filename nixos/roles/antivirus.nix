@@ -19,15 +19,15 @@ in
   config = lib.mkIf config.flyingcircus.roles.antivirus.enable {
     services.clamav.daemon = {
       enable = true;
-      extraConfig = ''
-        LogTime yes
-        LogClean yes
-        LogVerbose yes
-        ExtendedDetectionInfo yes
-        ExitOnOOM yes
-        TCPSocket 3310
-      '' + lib.concatMapStringsSep "\n" (ip: "TCPAddr ${ip}") listenAddresses;
-
+      settings = {
+        LogTime = true;
+        LogClean = true;
+        LogVerbose = true;
+        ExtendedDetectionInfo = true;
+        ExitOnOOM = true;
+        TCPSocket = 3310;
+        TCPAddr = listenAddresses;
+      };
     };
 
     systemd.services.clamav-daemon.serviceConfig = {

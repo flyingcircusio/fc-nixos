@@ -20,8 +20,7 @@ let
   in discover (importTest fn args system);
 
 in {
-  # services.clamav.daemon.extraConfig' in `/home/ts/fc-nixos/nixos/roles/antivirus.nix' no longer has any effect
-  #antivirus = callTest ./antivirus.nix {};
+  antivirus = callTest ./antivirus.nix {};
   channel = callTest ./channel.nix {};
   coturn = callTest ./coturn.nix {};
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
@@ -53,8 +52,7 @@ in {
   login = callTest ./login.nix {};
   logging = callTest ./logging.nix {};
   logrotate = callTest ./logrotate.nix {};
-  # The option definition `services.redis.extraConfig' in `/home/ts/fc-nixos/nixos/services/redis.nix' no longer has any effect; please remove it.
-  # mail = callTest ./mail {};
+  mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
   memcached = callTest ./memcached.nix {};
   mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
@@ -67,8 +65,7 @@ in {
   # test fails
   # openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
-  # postgresql10 doesn't build
-  # postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
+  postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
   postgresql11 = callTest ./postgresql.nix { rolename = "postgresql11"; };
   postgresql12 = callTest ./postgresql.nix { rolename = "postgresql12"; };
   postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };
