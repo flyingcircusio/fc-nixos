@@ -318,34 +318,23 @@ in {
         queue_directory = "/var/lib/postfix/queue";
       }];
 
-      # This is a hack. Postfix seems to create subdirs in its queue directories
-      # which always lack group and other access bits. So we set up our access
-      # policies on an ongoing basis.
       systemd.services.postfix-queue-perms =
       let
         dirs = "/var/lib/postfix/queue/{active,hold,incoming,deferred,maildrop}";
       in rec {
+        partOf = [ "postfix.service" ];
         after = [ "postfix.service" ];
-        requires = after;
-        wantedBy = [ "multi-user.target" ];
-        path = with pkgs; [ acl inotify-tools ];
+        path = with pkgs; [ acl ];
         script = ''
-          fix() {
-            setfacl -Rm u:telegraf:rX ${dirs}
-            setfacl -Rdm u:telegraf:rX ${dirs}
-            sleep 1
-          }
-
-          fix
-          while true; do
-            inotifywait -q -r -e create /var/lib/postfix/queue
-            fix
-          done
+          setfacl -Rm u:telegraf:rX ${dirs}
+          setfacl -Rdm u:telegraf:rX ${dirs}
         '';
+
         serviceConfig = {
-          RestartSec = 5;
-          Restart = "always";
+          Type = "oneshot";
+          RemainAfterExit = true;
         };
+
       };
     })
   ];

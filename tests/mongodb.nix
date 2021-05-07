@@ -72,6 +72,7 @@ in {
         machine.succeed("killall -11 mongod")
         import time
         time.sleep(5)
+        machine.wait_for_unit("mongodb.service")
         machine.succeed("systemctl show mongodb | grep ActiveState=active")
         _, out = machine.execute('pgrep mongod')
         new_pid = int(out.strip())

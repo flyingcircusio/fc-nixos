@@ -96,6 +96,9 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
       lamp.succeed("egrep 'session.auto_start.*Off' result")
       lamp.succeed("egrep 'BCMath support.*enabled' result")
 
+      # PL-129824 PHP (5.6) locales
+      lamp.succeed("php -r 'var_dump(setlocale(LC_TIME, \"de_DE.UTF8\"));' | grep de_DE")
+
     with subtest("check if PHP support is working as expected in apache"):
       lamp.succeed("w3m -cols 400 -dump http://localhost:8000/test.php > result")
       print(lamp.succeed('cat result'))
