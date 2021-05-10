@@ -1,8 +1,11 @@
+# Only a version change compared to upstream but overriding doesn't seem to
+# work correctly with Go modules.
+
 { lib, buildGoModule, fetchurl, fetchFromGitHub, nixosTests }:
 
 buildGoModule rec {
   pname = "grafana";
-  version = "7.5.2";
+  version = "7.5.5";
 
   excludedPackages = [ "release_publisher" ];
 
@@ -10,17 +13,24 @@ buildGoModule rec {
     rev = "v${version}";
     owner = "grafana";
     repo = "grafana";
-    sha256 = "sha256-8Qy5YgJZpvaAjeBAi092Jxg4yAD1fYmMteTRm5b0Q+g=";
+    sha256 = "1zqix5r7m8ngpczqd3hfxs46wnylq6nd4x3xk8kicjj1d5qmzrwk";
   };
 
   srcStatic = fetchurl {
     url = "https://dl.grafana.com/oss/release/grafana-${version}.linux-amd64.tar.gz";
-    sha256 = "sha256-yVswMNOLX/AFtv45TXm8WcHEytyYgtjvi7V0dRewDdc=";
+    sha256 = "1drz3kw4vapsrcnx5h6yh64lw4iah13c8mn7544gay8n614rxw7c";
   };
 
-  vendorSha256 = "sha256-oh3GB6Iaqy05IS2MU5LJqTXnlr0vtkACZA6wpmW7W2Q=";
+  vendorSha256 = "01a5v292x59fmayjkqnf4c8k8viasxr2s2khs4yrv6p829lx3hq2";
 
+  # grafana-aws-sdk is specified with two versions which causes a problem later:
+  # go: inconsistent vendoring in /build/source:
+  #  github.com/grafana/grafana-aws-sdk@v0.3.0: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
+  # Remove the older one here to fix this.
   postPatch = ''
+    substituteInPlace go.mod \
+      --replace 'github.com/grafana/grafana-aws-sdk v0.3.0' ""
+
     substituteInPlace pkg/cmd/grafana-server/main.go \
       --replace 'var version = "5.0.0"'  'var version = "${version}"'
   '';
