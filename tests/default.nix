@@ -38,7 +38,7 @@ in {
   kernelconfig = callTest ./kernelconfig.nix {};
   kibana6 = callTest ./kibana.nix { version = "6"; };
   kibana7 = callTest ./kibana.nix { version = "7"; };
-  # The option `services.kubernetes.apiserver.serviceAccountSigningKeyFile' is used but not defined.
+  # Docker is gone, Kubernetes itself seems to work but test needs a fix
   #kubernetes = callTest ./kubernetes {};
 
   lamp = callTest ./lamp.nix { };

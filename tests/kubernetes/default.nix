@@ -88,7 +88,7 @@ in {
           sudo-srv = {};
         };
         users.users = {
-          sensuclient = {};
+          sensuclient = { isSystemUser = true; };
         };
 
         flyingcircus.users.userData = [

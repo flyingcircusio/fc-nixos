@@ -412,6 +412,7 @@ in
     users.users = {
       coredns = {
         uid = config.ids.uids.coredns;
+        isSystemUser = true;
         home = "/var/empty";
       };
     };
