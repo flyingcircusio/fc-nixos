@@ -23,7 +23,7 @@ let
   };
 
   stableMajorVersion = "1.18";
-  mainlineMajorVersion = "1.19";
+  mainlineMajorVersion = "1.20";
 
   rootInitial = pkgs.runCommand "nginx-root-initial" {} ''
     mkdir $out
