@@ -308,24 +308,6 @@ let
       };
     in
     {
-    # A bootable VirtualBox OVA (i.e. packaged OVF image).
-    ova = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
-      inherit system;
-      modules = [
-        (import ./ova-image.nix imgArgs)
-        (import version_nix {})
-        ../nixos
-      ];
-    }).config.system.build.ovaImage;
-
-    vagrant = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
-      inherit system;
-      modules = [
-        (import ./ova-image.nix (imgArgs // {infrastructureModule = "vagrant"; }))
-        (import version_nix {})
-        ../nixos
-      ];
-    }).config.system.build.ovaImage;
 
     # iPXE netboot image
     netboot = lib.hydraJob (makeNetboot {
