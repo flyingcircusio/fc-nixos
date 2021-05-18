@@ -21,7 +21,7 @@ in {
     ./consul.nix
     ./gitlab
     ./graylog
-    ./haproxy.nix
+    ./haproxy
     ./jitsi/jibri.nix
     ./jitsi/jicofo.nix
     ./jitsi/jitsi-meet.nix
