@@ -31,9 +31,7 @@ let
       > $out
   '';
 
-  # flattens list one layer
-  # join :: [[a]] -> [a]
-  join = foldl' (x: y: x ++ y) [];
+
 
 in {
   options = {
@@ -79,7 +77,7 @@ in {
 
     systemd.services.telegraf = {
       serviceConfig = {
-        ExecStart = mkOverride 90 (concatStringsSep " " (join [
+        ExecStart = mkOverride 90 (concatStringsSep " " (fclib.join [
           ["${cfg.package}/bin/telegraf -config \"${configFile}\""]
           (if builtins.pathExists /etc/local/telegraf then ["-config-directory ${/etc/local/telegraf}"] else [])
         ]));

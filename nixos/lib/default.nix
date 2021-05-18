@@ -7,6 +7,7 @@ let
   network = import ./network.nix { inherit config pkgs lib; };
   system = import ./system.nix { inherit config pkgs lib; };
   utils = import ./utils.nix { inherit config pkgs lib; };
+  lists = import ./lists.nix { inherit config pkgs lib; };
 
 in
 {
@@ -21,6 +22,6 @@ in
   config = {
     fclib =
       { inherit attrsets files math network system utils; }
-      // attrsets // files // math // network // system // utils;
+      // attrsets // files // math // network // system // utils // lists;
   };
 }

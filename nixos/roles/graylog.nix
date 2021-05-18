@@ -249,92 +249,81 @@ in
       # HAProxy load balancer.
       # Since haproxy is rather lightweight we just fire up one on each graylog
       # node, talking to all known graylog nodes.
-      flyingcircus.services.haproxy.enable = true;
-
-      services.haproxy.config = lib.mkOverride 90 (let
-        # graylog is only listening for IPv6
-        backendConfig = config: lib.concatStringsSep "\n"
-          (map
-            (node: "    " + (config node.address (head (filter fclib.isIp6 node.ips))))
-            clusterNodes);
-
-        listenConfig = port: lib.concatStringsSep "\n"
-          (map
-            (addr: "    bind ${addr}:${toString port}")
-            (fclib.listenAddresses "ethsrv"));
-      in ''
-        global
-            daemon
-            chroot /var/empty
-            maxconn 4096
-            log localhost local2
-
-        defaults
-            mode http
-            log global
-            option dontlognull
-            option http-keep-alive
-            option redispatch
-
-            timeout connect 5s
-            timeout client 30s    # should be equal to server timeout
-            timeout server 30s    # should be equal to client timeout
-            timeout queue 30s
-
-        frontend gelf-tcp-in
-        ${listenConfig gelfTCPHAPort}
-            mode tcp
-            option tcplog
-            timeout client 10s # should be equal to server timeout
-
-            default_backend gelf_tcp
-
-        frontend beats-tcp-in
-        ${listenConfig beatsTCPHAPort}
-            mode tcp
-            option tcplog
+      flyingcircus.services.haproxy = let
+        shared_beats_graylog_timeout = "121s";
+      in {
+        enable = true;
+        enableStructuredConfig = true;
+        frontend = {
+          gelf-tcp-in = {
+            binds = map (addr: "${addr}:${toString gelfTCPHAPort}") (fclib.listenAddresses "ethsrv");
+            mode = "tcp";
+            options = [ "tcplog" ];
+            timeout.client = "10s";
+            default_backend = "gelf_tcp";
+          };
+          beats-tcp-in = {
+            binds = map (addr: "${addr}:${toString beatsTCPHAPort}") (fclib.listenAddresses "ethsrv");
+            mode = "tcp";
+            options = [ "tcplog" ];
             # Journalbeat uses long-running connections and may send nothing
             # for a while. Use ttl 120s for Journalbeat to make sure it
             # reconnects before it's thrown out by HAproxy.
-            timeout client 121s
-
-            default_backend beats_tcp
-
-        frontend graylog_http
-        ${listenConfig glAPIHAPort}
-            use_backend stats if { path_beg /admin/stats }
-            option httplog
-            timeout client 121s    # should be equal to server timeout
-            default_backend graylog
-
-        backend gelf_tcp
-            mode tcp
-            balance leastconn
-            option httpchk HEAD /api/system/lbstatus
-            timeout server 10s
-            timeout tunnel 61s
-        ${backendConfig (name: ip:
-            "server ${name}  ${ip}:${toString gelfTCPGraylogPort} check port ${toString glAPIPort} inter 10s rise 2 fall 1")}
-
-        backend beats_tcp
-            mode tcp
-            balance leastconn
-            option httpchk HEAD /api/system/lbstatus
-            timeout server 121s
-        ${backendConfig (name: ip:
-            "server ${name}  ${ip}:${toString beatsTCPGraylogPort} check port ${toString glAPIPort} inter 10s rise 2 fall 1")}
-
-        backend graylog
-            balance roundrobin
-            option httpchk GET /
-            timeout server 121s    # should be equal to client timeout
-        ${backendConfig (name: ip:
-            "server ${name}  ${ip}:${toString glAPIPort} check fall 1 rise 2 inter 10s maxconn 20")}
-
-        backend stats
-            stats uri /
-            stats refresh 5s
-      '');
+            timeout.client = shared_beats_graylog_timeout; # should be equal to server timeout
+            default_backend = "beats_tcp";
+          };
+          graylog_http = {
+            binds = map (addr: "${addr}:${toString glAPIHAPort}") (fclib.listenAddresses "ethsrv");
+            options = [ "httplog" ];
+            timeout.client = shared_beats_graylog_timeout; # should be equal to server timeout
+            default_backend = "graylog";
+          };
+        };
+        backend = {
+          gelf_tcp = {
+            mode = "tcp";
+            options = [ "httpchk HEAD /api/system/lbstatus" ];
+            timeout.server = "10s";
+            timeout.tunnel = "61s";
+            servers = map
+              ( node:
+                  "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString gelfTCPGraylogPort}"
+                  + " check port ${toString glAPIPort} inter 10s rise 2 fall 1"
+              )
+              clusterNodes;
+            balance = "leastconn";
+          };
+          beats_tcp = {
+            mode = "tcp";
+            options = [ "httpchk HEAD /api/system/lbstatus" ];
+            timeout.server = shared_beats_graylog_timeout; # should be equal to client timeout
+            servers = map
+              ( node:
+                  "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString beatsTCPGraylogPort}"
+                  + " check port ${toString glAPIPort} inter 10s rise 2 fall 1"
+              )
+              clusterNodes;
+            balance = "leastconn";
+          };
+          graylog = {
+            options = [ "httpchk GET /" ];
+            timeout.server = shared_beats_graylog_timeout; # should be equal to client timeout
+            servers = map
+              ( node:
+                  "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString glAPIPort}"
+                  + " check fall 1 rise 2 inter 10s maxconn 20"
+              )
+              clusterNodes;
+            balance = "roundrobin";
+          };
+          stats = {
+            extraConfig = ''
+              stats uri /
+              stats refresh 5s
+            '';
+          };
+        };
+      };
     })
 
     {

@@ -6,9 +6,58 @@ let
   cfg = config.flyingcircus.services.haproxy;
   fclib = config.fclib;
 
+  proxyGenerator = with lib; with fclib; data: (
+    indentWith "  " (with data; join [
+      (if mode != null then ["mode ${mode}"] else [])
+      (if data ? balance && balance != null then ["balance ${balance}"] else [])
+      (if data ? options then map (option: "option ${option}" ) options else [])
+      (if data ? timeout then join (mapAttrsToList (key: value: if value != null then ["timeout ${key} ${value}"] else []) timeout) else [])
+      (if data ? binds then map (bind: "bind ${bind}" ) binds else [])
+      (if data ? default_backend && default_backend != null then ["default_backend ${default_backend}"] else [])
+      (if data ? servers then map (server: "server ${server}") servers else [])
+      (lines extraConfig)
+    ])
+  );
+
+  generatedConfig = with lib; with fclib; with cfg; (x: trivial.pipe x [ join unlines ]) [
+    (with global; join [
+      ["global"]
+      (indentWith "  " (join [
+        (if global.daemon then ["daemon"] else []) # daemon is already set and won't be shadowed
+        ["chroot ${chroot}"]
+        ["user ${user}"]
+        ["group ${group}"]
+        ["maxconn ${toString maxconn}"]
+        (lines extraConfig)
+      ]))
+    ])
+    ["\n"]
+    (join [
+      ["defaults"]
+      (proxyGenerator defaults)
+    ])
+    ["\n"]
+    (join (mapAttrsToList (name: data: ((join [
+      ["listen ${name}"]
+      (proxyGenerator data)
+      ["\n"]
+    ]))) listen))
+    (join (mapAttrsToList (name: data: ((join [
+      ["frontend ${name}"]
+      (proxyGenerator data)
+      ["\n"]
+    ]))) frontend))
+    (join (mapAttrsToList (name: data: ((join [
+      ["backend ${name}"]
+      (proxyGenerator data)
+      ["\n"]
+    ]))) backend))
+    (lines extraConfig)
+  ];
+
   haproxyCfg = pkgs.writeText "haproxy.conf" config.services.haproxy.config;
 
-  configFiles = filter (p: lib.hasSuffix ".cfg" p) (fclib.files /etc/local/haproxy);
+  configFiles = filter (lib.hasSuffix ".cfg") (fclib.files /etc/local/haproxy);
 
   # This was included in our old example config. Breaks on 20.09 because HAProxy
   # isn't allowed to write to /run/ anymore and is unneeded because a stats socket
@@ -22,13 +71,16 @@ let
       [ ("# XXX: you can remove this after upgrading to 20.09: " + oldStatsLine) ]
       importedCfgContent;
 
-  haproxyCfgContent =
+  haproxyCfgContent = (
     if importedCfgContent != modifiedCfgContent
     then lib.info
       ("HAProxy: you can remove the 'stats socket' line from your config."
       + " It's ignored on NixOS 20.09.")
-      modifiedCfgContent
-    else importedCfgContent;
+    else lib.id
+    ) (
+      (if cfg.enableStructuredConfig then generatedConfig else "") +
+      (if cfg.enableLocalPlainConfig then "\n# The files from /etc/local/haproxy/*.conf are templated into here\n" + modifiedCfgContent else "")
+    );
 
   example = ''
     # haproxy configuration example - copy to haproxy.cfg and adapt.
@@ -64,8 +116,10 @@ let
 
 in
 {
-  options.flyingcircus.services.haproxy = with lib; {
-    enable = mkEnableOption "FC-customized HAproxy";
+  options = with lib; with types; {
+    flyingcircus.services.haproxy = {
+      enable = mkEnableOption "FC-customized HAproxy";
+    } // (import ./config-options.nix { inherit lib; });
   };
 
   config = lib.mkMerge [
@@ -108,8 +162,7 @@ in
       };
 
       services.haproxy.enable = true;
-      services.haproxy.config =
-        if configFiles == [] then example else haproxyCfgContent;
+      services.haproxy.config = haproxyCfgContent;
 
       systemd.services.haproxy = {
         reloadIfChanged = true;
