@@ -11,10 +11,11 @@ flag. If this flag is set, return CRITICAL unconditionally.
 import argparse
 import collections
 import logging
-import nagiosplugin
 import os
 import re
 import subprocess
+
+import nagiosplugin
 
 _log = logging.getLogger('nagiosplugin')
 
@@ -150,6 +151,9 @@ class BatteryReplace(nagiosplugin.Resource):
                 return [nagiosplugin.Metric('battery_replacement', 'no')]
             raise RuntimeError('failed to query BBU status', e.output,
                                e.returncode)
+        if not 'BBU status for Adapter' in stdout:
+            # There is no adapter (with BBU) here at all. Nothing to report
+            return [nagiosplugin.Metric('battery_replacement', 'none')]
         _log.info('battery status: %s', stdout)
         for line in stdout.splitlines():
             try:
