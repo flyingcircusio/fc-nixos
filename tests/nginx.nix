@@ -236,5 +236,9 @@ in {
     with subtest("status check should be red after shutting down nginx"):
       server.systemctl('stop nginx')
       server.fail("${sensuCheck "nginx_status"}")
+
+    with subtest("dhparams file should contain something"):
+      server.wait_for_unit("dhparams-init.service")
+      server.succeed("test -s /var/lib/dhparams/nginx.pem")
   '';
 })
