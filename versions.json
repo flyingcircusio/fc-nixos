@@ -2,8 +2,8 @@
   "nixpkgs": {
     "owner": "NixOS",
     "repo": "nixpkgs",
-    "rev": "7a1fbc38a4b538450ac0d42aec8a3e513b4d723e",
-    "sha256": "0jg8dilsw0gr4jfshkk3wd50gddd11hvd836fxkw43m6m47885p7"
+    "rev": "50af5ebc0ab5370e538e2cad2ac4144d611aecbe",
+    "sha256": "0qws9m5hh350jma6drg249yxyf80ww17iyfs200xy4q2dl74swx7"
   },
   "nixpkgs_18_03": {
     "owner": "nixos",
