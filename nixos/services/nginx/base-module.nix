@@ -900,7 +900,8 @@ in
         unitConfig.ConditionPathExists = optionals (sslServices != []) (map (certName: certs.${certName}.directory + "/fullchain.pem") dependentCertNames);
         serviceConfig = {
           Type = "oneshot";
-          TimeoutSec = 60;
+          TimeoutSec = 120;
+          Restart = "on-abnormal";
           ExecCondition = "/run/current-system/systemd/bin/systemctl -q is-active nginx.service";
           ExecStart = "/run/current-system/systemd/bin/systemctl reload nginx.service";
         };
