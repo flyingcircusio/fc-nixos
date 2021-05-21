@@ -1,4 +1,4 @@
-{ stdenv, buildGoPackage, fetchFromGitHub }:
+{ lib, buildGoPackage, fetchFromGitHub }:
 
 buildGoPackage rec {
   name = "elasticsearch_exporter-${version}";
@@ -17,7 +17,7 @@ buildGoPackage rec {
   # # FIXME: megacli test fails
   # doCheck = false;
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Prometheus exporter for elasticsearch";
     homepage = https://github.com/justwatchcom/elasticsearch_exporter;
     license = licenses.asl20;

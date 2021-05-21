@@ -1,4 +1,4 @@
-{ pkgs, stdenv, rustPlatform }:
+{ pkgs, lib, rustPlatform }:
 
 with rustPlatform;
 
@@ -9,7 +9,7 @@ buildRustPackage rec {
   cargoSha256 = "1m6wnyi8zimy5nznyxqvhb1brmjzcpagmddy0cvcfrfa4xsm98ap";
   doCheck = false;
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = ''
       Derive a correct regular expression for logcheck ignore patterns
     '';

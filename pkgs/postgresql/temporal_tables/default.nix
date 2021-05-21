@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, pkgconfig, postgresql }:
+{ stdenv, lib, fetchFromGitHub, pkgconfig, postgresql }:
 
 stdenv.mkDerivation rec {
   name = "temporal_tables-${version}";
@@ -20,7 +20,7 @@ stdenv.mkDerivation rec {
     install -D ./{temporal_tables-*.sql,temporal_tables.control} -t $out/share/postgresql/extension
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "A PostgreSQL extension for temporal tables";
     longDescription = "This extension for PostgreSQL provides support for temporal tables. System-period data versioning (also known as transaction time or system time) allows you to specify that old rows are archived into another table (that is called the history table).";
     homepage = https://pgxn.org/dist/temporal_tables/;

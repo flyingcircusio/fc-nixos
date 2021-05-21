@@ -1,5 +1,5 @@
-{ stdenv, fetchFromGitHub, qt4, fontconfig, freetype, libpng, zlib, libjpeg
-, openssl, libX11, libXext, libXrender, lib }:
+{ stdenv, lib, fetchFromGitHub, qt4, fontconfig, freetype, libpng, zlib, libjpeg
+, openssl, libX11, libXext, libXrender }:
 
 # wkhtmltopdf is a weird beast.
 #
@@ -134,7 +134,7 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     homepage = https://wkhtmltopdf.org/;
     description = "Tools for rendering web pages to PDF or images";
     longDescription = ''

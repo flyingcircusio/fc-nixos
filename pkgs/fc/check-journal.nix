@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, rustPlatform, ronn, utillinux, systemd }:
+{ lib, fetchFromGitHub, rustPlatform, ronn, utillinux, systemd }:
 
 with rustPlatform;
 
@@ -28,7 +28,7 @@ buildRustPackage rec {
     install -m 0644 -D -t $out/share/doc/check_journal README.md
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Nagios/Icinga compatible plugin to search `journalctl` " +
       "output for matching lines.";
     homepage = "https://github.com/flyingcircusio/check_journal";

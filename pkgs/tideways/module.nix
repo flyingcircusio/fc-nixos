@@ -17,6 +17,6 @@ stdenv.mkDerivation {
   meta = {
     description = "The PHP extension module for the Tideways profiling/debugging service.";
     homepage = "http://tideways.com";
-    # license = stdenv.lib.licenses.unfree;
+    # license = lib.licenses.unfree;
   };
 }

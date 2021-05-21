@@ -1,4 +1,4 @@
-{ stdenv, ensureNewerSourcesHook, cmake, pkgconfig
+{ stdenv, lib, ensureNewerSourcesHook, cmake, pkgconfig
 , which, git
 , boost, python2Packages
 , libxml2, zlib
@@ -34,7 +34,7 @@
 assert cryptopp != null || (nss != null && nspr != null);
 
 with stdenv;
-with stdenv.lib;
+with lib;
 let
 
   shouldUsePkg = pkg_: let pkg = (builtins.tryEval pkg_).value;

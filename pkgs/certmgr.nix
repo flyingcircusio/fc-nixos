@@ -1,4 +1,4 @@
-{ stdenv, buildGoPackage, fetchFromGitHub, fetchpatch }:
+{ lib, buildGoPackage, fetchFromGitHub, fetchpatch }:
 
 buildGoPackage rec {
   version = "3.0.3";
@@ -13,7 +13,7 @@ buildGoPackage rec {
     sha256 = "09wsggr1ydrqk7fbad7dbi6i9pvj4q3ql9zmfmnpvgwv9r9ly0rj";
   };
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     homepage = https://cfssl.org/;
     description = "Cloudflare's certificate manager";
     license = licenses.bsd2;

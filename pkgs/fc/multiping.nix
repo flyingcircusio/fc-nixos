@@ -1,4 +1,4 @@
-{ pkgs, stdenv, fetchFromGitHub, rustPlatform }:
+{ pkgs, lib, fetchFromGitHub, rustPlatform }:
 
 with rustPlatform;
 
@@ -16,7 +16,7 @@ buildRustPackage rec {
   cargoSha256 = "091yr17df0qf2n4dv0xifrv25z774ikmw9ysk4kd8xl2shijkxr9";
   RUSTFLAGS = "--cfg feature=\"oldglibc\"";
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = ''
       Pings multiple targets in parallel to check outgoing connectivity.
     '';

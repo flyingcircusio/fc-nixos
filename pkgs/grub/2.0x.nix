@@ -1,4 +1,4 @@
-{ stdenv, fetchgit, flex, bison, python, autoconf, automake, gnulib, libtool
+{ stdenv, lib, fetchgit, flex, bison, python, autoconf, automake, gnulib, libtool
 , gettext, ncurses, libusb, freetype, qemu, lvm2, unifont, pkgconfig
 , fuse # only needed for grub-mount
 , zfs ? null
@@ -7,7 +7,7 @@
 , xenSupport ? false
 }:
 
-with stdenv.lib;
+with lib;
 let
   version = "2.04";
 in (
@@ -79,7 +79,7 @@ stdenv.mkDerivation rec {
     sed -i $out/lib/grub/*/modinfo.sh -e "/grub_target_cppflags=/ s|'.*'|' '|"
   '';
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "GNU GRUB, the Grand Unified Boot Loader (2.x beta)";
 
     longDescription =

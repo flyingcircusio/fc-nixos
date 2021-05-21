@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, erlang, python, libxml2, libxslt, xmlto
+{ stdenv, lib, fetchurl, erlang, python, libxml2, libxslt, xmlto
 , docbook_xml_dtd_45, docbook_xsl, zip, unzip, rsync, getconf
 }:
 
@@ -32,6 +32,6 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = http://www.rabbitmq.com/;
     description = "An implementation of the AMQP messaging protocol";
-    platforms = stdenv.lib.platforms.unix;
+    platforms = lib.platforms.unix;
   };
 }

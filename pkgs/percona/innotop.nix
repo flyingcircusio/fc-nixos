@@ -1,4 +1,4 @@
-{ stdenv
+{ lib
 , fetchgit
 , buildPerlPackage
 , perlPackages
@@ -28,6 +28,6 @@ buildPerlPackage rec {
 
   meta = {
     description = "innotop is a 'top' clone for MySQL with many features and flexibility.";
-    license = stdenv.lib.licenses.gpl2;
+    license = lib.licenses.gpl2;
   };
 }
