@@ -8,13 +8,21 @@ with lib;
 
 let
   cfg = config.services.telegraf;
+  fclib = config.fclib;
 
   unifiedConfig = lib.recursiveUpdate
     cfg.extraConfig
     { inputs = config.flyingcircus.services.telegraf.inputs; };
 
-  # Copied from nixos/modules/services/monitoring/telegraf.nix.
-  # I don't know a better way to get the -config-directory option into ExecStart.
+  telegrafShowConfig = pkgs.writeScriptBin "telegraf-show-config" ''
+    cat $(systemctl cat telegraf | grep "ExecStart=" | cut -d" " -f3 | tr -d '"')
+    echo ""
+    echo "# Config from config dir begins here"
+    echo ""
+    cat ${if builtins.pathExists /etc/local/telegraf then "${/etc/local/telegraf}/*.conf" else ""}
+  '';
+
+  # Partially copied from nixos/modules/services/monitoring/telegraf.nix.
   configFile = pkgs.runCommand "config.toml" {
     buildInputs = [ pkgs.remarshal ];
   } ''
@@ -22,6 +30,10 @@ let
       < ${pkgs.writeText "config.json" (builtins.toJSON unifiedConfig)} \
       > $out
   '';
+
+  # flattens list one layer
+  # join :: [[a]] -> [a]
+  join = foldl' (x: y: x ++ y) [];
 
 in {
   options = {
@@ -47,10 +59,14 @@ in {
 
   config = mkIf cfg.enable {
 
+    environment.systemPackages = [
+      telegrafShowConfig
+    ];
+
     environment.etc."local/telegraf/README.txt".text = ''
       There is a telegraf daemon running on this machine to gather statistics.
-      To gather additional or custom statistis add a proper configuration file
-      here. `*.conf` will beloaded.
+      To gather additional or custom statistics add a proper configuration file
+      here. `*.conf` will be loaded.
 
       See https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
       for details on how to configure telegraf.
@@ -63,10 +79,10 @@ in {
 
     systemd.services.telegraf = {
       serviceConfig = {
-        ExecStart = mkOverride 90 ''
-          ${cfg.package}/bin/telegraf -config "${configFile}" \
-            -config-directory /etc/local/telegraf
-        '';
+        ExecStart = mkOverride 90 (concatStringsSep " " (join [
+          ["${cfg.package}/bin/telegraf -config \"${configFile}\""]
+          (if builtins.pathExists /etc/local/telegraf then ["-config-directory ${/etc/local/telegraf}"] else [])
+        ]));
         Nice = -10;
       };
     };
