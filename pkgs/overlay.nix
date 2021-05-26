@@ -62,8 +62,6 @@ in {
     };
   });
 
-  grafana = super.callPackage ./grafana.nix { };
-
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
   innotop = super.callPackage ./percona/innotop.nix { };
