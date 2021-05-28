@@ -35,7 +35,7 @@ Create a file like :file:`myproject_env.nix` which specifies the packages to be 
    let
      # Imports. Which package sources should be used?
      # Use a pinned platform version
-     # pkgs = import (fetchTarball https://hydra.flyingcircus.io/build/81551/download/1/nixexprs.tar.xz) {};
+     # pkgs = import (fetchTarball https://hydra.flyingcircus.io/build/90348/download/1/nixexprs.tar.xz) {};
      # ...or just use the current version of the platform
      pkgs = import <nixpkgs> {};
    in
@@ -69,12 +69,16 @@ The URL for the current release can be found in the :ref:`changelog` for the
 If you want to try NixOS unstable with the newest packages, get the URL from the channel::
 
   $ curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null https://nixos.org/channels/nixos-unstable/nixexprs.tar.xz
-  https://releases.nixos.org/nixos/unstable/nixos-21.05pre270709.6b1057b452c/nixexprs.tar.xz
+  https://releases.nixos.org/nixos/unstable/nixos-21.11pre292442.5658fadedb7/nixexprs.tar.xz
 
 Note that the unstable channel may be broken and that upstream NixOS channels
 don't have some additional packages we provide on our platform.
 
 Older NixOS versions than 20.09 usually don't get security updates anymore.
+
+Links to all platform builds for 20.09 can be found here:
+
+https://hydra.flyingcircus.io/job/flyingcircus/fc-20.09-production/release
 
 See https://nixos.org/nixos/packages.html for a list of packages.
 Use the *attribute name* from the list and include it in `paths`.

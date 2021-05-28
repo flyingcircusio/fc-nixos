@@ -7,6 +7,12 @@ This role provides a stack of components that enables you to serve a web
 application via HTTP. In addition, you can do load balancing and configure
 failover support.
 
+Versions
+--------
+
+* HAProxy: 2.2.2
+* Nginx: 1.18.0
+
 Role architecture
 -----------------
 
@@ -56,7 +62,7 @@ HAProxy
 
 For HAProxy, you will already find a configuration file which you can change to
 fit your needs. For reference, please refer to the
-`official documentation <http://cbonte.github.io/haproxy-dconv/1.9/configuration.html>`_.
+`official documentation <http://cbonte.github.io/haproxy-dconv/2.2/configuration.html>`_.
 
 
 .. _nixos-nginx:
@@ -89,7 +95,8 @@ following is sufficient:
       ssl_certificate /etc/local/nginx/mydomain.crt;
       ssl_certificate_key /etc/local/nginx/mydomain.key;
 
-For a more detailed description refer to :file:`/etc/local/nginx/README.txt`.
+For a more detailed description refer to
+`/etc/local/nginx/README.txt <https://github.com/flyingcircusio/fc-nixos/blob/fc-20.09-production/nixos/services/nginx/README.txt>`_.
 
 
 Logging

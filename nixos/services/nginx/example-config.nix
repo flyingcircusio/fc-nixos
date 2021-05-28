@@ -50,6 +50,8 @@ in
       # Enable SSL. SSL parameters like cipher suite have sensible defaults.
       #ssl_certificate /etc/nginx/local/www.example.com.crt;
       #ssl_certificate_key /etc/nginx/local/www.example.com.key;
+      # If you want DHE ciphers, set the path to dhparams
+      # ssl_dhparam /var/lib/dhparams/nginx.pem;
 
       # Enable the following block if you want to serve HTTPS-only.
       #if ($server_port != 443) {

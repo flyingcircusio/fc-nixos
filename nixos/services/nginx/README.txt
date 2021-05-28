@@ -49,7 +49,7 @@ certificate from Let's Encrypt:
 ### Available Options
 
 Options provided by NixOS are documented at
-https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance&channel=19.09
+https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance&channel=20.09
 
 We support the following custom options:
 * `emailACME`: set the contact address for Let's Encrypt, defaults to none.
@@ -84,6 +84,47 @@ They are replaced by the proper certificates after some seconds.
 A systemd timer checks the age of the certificates and renews them automatically if needed.
 To use a custom certificate, set the certificate options and set `"enableACME" = false`.
 
+### SSL ciphers
+
+With default settings, the following ciphers are available:
+
+TLS 1.3:
+
+TLS_AES_128_GCM_SHA256
+TLS_AES_256_GCM_SHA384
+TLS_CHACHA20_POLY1305_SHA256
+
+TLS 1.2:
+
+TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+
+To use older ciphers based on RSA for legacy clients, a RSA key must be
+used for the certificates. Note that this disables the ciphers listed above
+and reduces performance with current clients.
+
+Overriding the key type can be done per certificate:
+
+security.acme.certs."test.fcio.net".keyType = "rsa2048";
+
+Using two certificates to support both kinds of ciphers is possible with Nginx
+but needs manual configuration.
+
+For ciphers using DHE, a RSA certificate must be used and dhparams must be set:
+
+services.nginx.sslDhparam = config.security.dhparams.params.nginx.path;
+
+This enables the following TLS 1.2 ciphers:
+
+TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
+
+
+The services.nginx.sslCiphers option can be used to change the cipher list:
+
+https://search.nixos.org/options?channel=20.09&show=services.nginx.sslCiphers&from=0&size=50&sort=relevance&query=sslCiphers
+
 
 Manual configuration
 --------------------
@@ -110,3 +151,9 @@ without the need to restart Nginx.
 
 You can check if the config is valid with: `nginx-check-config`.
 The script also warns about potential security issues with your config.
+
+For ciphers using DHE, a RSA certificate must be used and dhparams must be set:
+
+ssl_dhparam /var/lib/dhparams/nginx.pem;
+
+The nginx.pem file is generated automatically on all VMs.
