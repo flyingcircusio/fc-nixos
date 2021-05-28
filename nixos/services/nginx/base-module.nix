@@ -59,9 +59,13 @@ let
       # The mime type definitions included with nginx are very incomplete, so
       # we use a list of mime types from the mailcap package, which is also
       # used by most other Linux distributions by default.
+      types {
+        application/wasm          wasm;
+      }
       include ${pkgs.mailcap}/etc/nginx/mime.types;
       include ${cfg.package}/conf/fastcgi.conf;
       include ${cfg.package}/conf/uwsgi_params;
+
   '';
 
   writeNginxConfig = name: text: pkgs.runCommandLocal name {

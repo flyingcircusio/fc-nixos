@@ -187,6 +187,16 @@ in
         Whether to open ports in the firewall for the videobridge.
       '';
     };
+
+    apis = mkOption {
+      type = with types; listOf str;
+      description = ''
+        What is passed as --apis= parameter. If this is empty, "none" is passed.
+        Needed for monitoring jitsi.
+      '';
+      default = [];
+      example = literalExample "[ \"colibri\" \"rest\" ]";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -219,7 +229,7 @@ in
         "export ${toVarName name}=$(cat ${xmppConfig.passwordFile})\n"
       ) cfg.xmppConfigs))
       + ''
-        ${pkgs.jitsi-videobridge}/bin/jitsi-videobridge --apis=rest
+        ${pkgs.jitsi-videobridge}/bin/jitsi-videobridge --apis=${if (cfg.apis == []) then "none" else concatStringsSep "," cfg.apis}
       '';
 
       serviceConfig = {

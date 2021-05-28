@@ -2,9 +2,12 @@
 let
   modulesFromHere = [
     "services/misc/gitlab.nix"
-    "services/monitoring/prometheus/default.nix"
     "services/monitoring/prometheus.nix"
+    "services/monitoring/prometheus/default.nix"
+    "services/networking/jicofo.nix"
     "services/networking/jitsi-videobridge.nix"
+    "services/networking/prosody.nix"
+    "services/web-apps/jitsi-meet.nix"
     "services/web-servers/nginx/default.nix"
   ];
 
@@ -19,7 +22,11 @@ in {
     ./gitlab
     ./graylog
     ./haproxy.nix
+    ./jitsi/jibri.nix
+    ./jitsi/jicofo.nix
+    ./jitsi/jitsi-meet.nix
     ./jitsi/jitsi-videobridge.nix
+    ./jitsi/prosody.nix
     ./logrotate
     ./nginx
     ./nullmailer.nix

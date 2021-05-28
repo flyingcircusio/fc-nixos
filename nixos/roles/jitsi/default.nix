@@ -14,7 +14,7 @@ let
   turnHostName = if cfg.coturn.enable then cfg.coturn.hostName else cfg.turnHostName;
 
   # Does the same on the backend side but UI buttons can be turned on/off seperately.
-  enableJibriIntegration = cfg.enableRecording || cfg.enableLivestreaming;
+  enableJibri = cfg.enableRecording || cfg.enableLivestreaming;
 
 in {
 
@@ -192,7 +192,7 @@ in {
         lib.optionalAttrs cfg.enableRoomAuthentication {
           "org.jitsi.jicofo.auth.URL" = "XMPP:${cfg.hostName}";
         } //
-        lib.optionalAttrs enableJibriIntegration {
+        lib.optionalAttrs enableJibri {
           "org.jitsi.jicofo.jibri.BREWERY" = "jibribrewery@internal.${cfg.hostName}";
           "org.jitsi.jicofo.jibri.PENDING_TIMEOUT"= "90";
         };
@@ -200,6 +200,7 @@ in {
       services.jitsi-meet = {
         enable = true;
         nginx.enable = true;
+        jibri.enable = enableJibri;
         jicofo.enable = true;
         videobridge.enable = true;
         prosody.enable = true;
@@ -239,7 +240,7 @@ in {
         lib.optionalAttrs cfg.enableRoomAuthentication {
           hosts.anonymousdomain = "guest.${cfg.hostName}";
         } //
-        lib.optionalAttrs enableJibriIntegration {
+        lib.optionalAttrs enableJibri {
           hiddenDomain = "recorder.${cfg.hostName}";
         } //
         lib.optionalAttrs cfg.enableXMPPWebsockets {
@@ -257,6 +258,8 @@ in {
         };
 
       };
+
+      services.jitsi-videobridge.apis = [ "rest" ];
 
       services.nginx.virtualHosts = {
         "${cfg.hostName}" = {
@@ -364,7 +367,7 @@ in {
               '';
             };
           } //
-          lib.optionalAttrs enableJibriIntegration {
+          lib.optionalAttrs enableJibri {
             # Jibri gets special rights and needs its own vhost for that.
             # c2s encryption doesn't work for unknown reasons but both are on the
             # same host, so it's ok.
