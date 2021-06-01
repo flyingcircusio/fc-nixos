@@ -22,8 +22,7 @@ let
     ${server4Fe} = [ "server" "other" ];
   };
 
-  stableMajorVersion = "1.18";
-  mainlineMajorVersion = "1.20";
+  expectedNginxMajorVersion = "1.18";
 
   rootInitial = pkgs.runCommand "nginx-root-initial" {} ''
     mkdir $out
@@ -169,7 +168,7 @@ in {
       server.succeed("curl server | grep -q 'initial content'")
 
     with subtest("running nginx should have the expected version"):
-      server.succeed("curl server/404 | grep -q ${stableMajorVersion}")
+      server.succeed("curl server/404 | grep -q ${expectedNginxMajorVersion}")
 
     with subtest("nginx should use changed config after reload"):
       # Replace config symlink with a new config file.
@@ -190,10 +189,10 @@ in {
       server.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
       # Go to mainline (this doesn't overwrite /etc/nginx/running-package).
       server.succeed("nginx-reload-master")
-      server.wait_until_succeeds("curl server/404 | grep -q ${mainlineMajorVersion}")
+      server.wait_until_succeeds("curl server/404 | grep -q ${pkgs.nginxMainline.version}")
       # Back to initial binary from nginx stable (this does overwrite /etc/nginx/running-package with the wanted package).
       server.systemctl("reload nginx")
-      server.wait_until_succeeds("curl server/404 | grep -q ${stableMajorVersion}")
+      server.wait_until_succeeds("curl server/404 | grep -q ${expectedNginxMajorVersion}")
 
     with subtest("log directory should have correct permissions after binary reload"):
       assert_logdir()
