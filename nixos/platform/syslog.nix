@@ -53,6 +53,17 @@ in
       systemd.tmpfiles.rules = [
         "d /var/log 0755 root root 180d"
       ];
+
+      systemd.tmpfiles.packages = [
+        (lib.mkAfter (pkgs.runCommand "systemd-fc-overwrite-log-tmpfiles" {} ''
+          mkdir -p $out/lib/tmpfiles.d
+          cd $out/lib/tmpfiles.d
+
+          cp -a "${pkgs.systemd}/example/tmpfiles.d/var.conf" .
+          # fixes: Duplicate line for path "/var/log", ignoring.
+          sed -r "s|.+/var/log .+||g" -i var.conf
+        ''))
+      ];
     }
 
     (lib.mkIf config.services.rsyslogd.enable {
