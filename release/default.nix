@@ -98,6 +98,8 @@ let
     # Build fails with patch errors.
     "gitlab"
     "gitlab-workhorse"
+    # XXX: builds chromium at the moment, remove this
+    "jibri"
     # The kernel universe is _huge_ and contains a lot of unfree stuff. Kernel
     # packages which are really needed are pulled in as dependencies anyway.
     "linux"
