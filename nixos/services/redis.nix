@@ -43,6 +43,40 @@ in {
         description = "The precise Redis package to use";
         example = "pkgs.redis";
       };
+
+      maxmemory = mkOption {
+        type = types.str;
+        default = "${toString ((fclib.currentMemory 1024) * cfg.memoryPercentage / 100)}mb";
+        description = "Maximum memory redis is allowed to use for a dataset";
+        example = "100mb";
+      };
+
+      maxmemory-policy = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = ''
+          The exact behavior Redis follows when the maxmemory limit is reached is configured using the maxmemory-policy configuration directive.
+
+          The following policies are available:
+
+          - noeviction: return errors when the memory limit was reached and the client is trying to execute commands that could result in more memory to be used (most write commands, but DEL and a few more exceptions).
+          - allkeys-lru: evict keys by trying to remove the less recently used (LRU) keys first, in order to make space for the new data added.
+          - volatile-lru: evict keys by trying to remove the less recently used (LRU) keys first, but only among keys that have an expire set, in order to make space for the new data added.
+          - allkeys-random: evict keys randomly in order to make space for the new data added.
+          - volatile-random: evict keys randomly in order to make space for the new data added, but only evict keys with an expire set.
+          - volatile-ttl: evict keys with an expire set, and try to evict keys with a shorter time to live (TTL) first, in order to make space for the new data added.
+
+          Read more at https://redis.io/topics/lru-cache
+        '';
+        example = "noeviction";
+      };
+
+      memoryPercentage = mkOption {
+        type = types.int;
+        default = 80;
+        description = "Amount of memory in percent to use as maximum for redis";
+        example = "100";
+      };
     };
 
   };
@@ -67,6 +101,14 @@ in {
         package = cfg.package;
         requirePass = password;
         vmOverCommit = true;
+        settings = lib.mkMerge [
+          (lib.mkIf (cfg.maxmemory-policy != null) {
+            inherit (cfg) maxmemory-policy;
+          })
+          ({
+            inherit (cfg) maxmemory;
+          })
+        ];
       };
 
       systemd.services.redis.serviceConfig.Restart = "always";
