@@ -326,6 +326,8 @@ in {
       };
       environment = {
         LANG = "en_US.utf8";
+        # Hide annoying warnings, old Sensu is not developed anymore.
+        RUBYOPT="-W:no-deprecated -W:no-experimental";
       };
     };
 
