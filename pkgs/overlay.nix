@@ -66,10 +66,10 @@ in {
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
-  jibri = super.callPackage ./jibri { };
-  jicofo = super.callPackage ./jicofo { };
+  jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
+  jicofo = super.callPackage ./jicofo { jre_headless = super.jre8_headless; };
   jitsi-meet = super.callPackage ./jitsi-meet { };
-  jitsi-videobridge = super.callPackage ./jitsi-videobridge { };
+  jitsi-videobridge = super.callPackage ./jitsi-videobridge { jre_headless = super.jre8_headless; };
 
   kibana7 = super.kibana7.overrideAttrs(_: rec {
     version = elk7Version;
