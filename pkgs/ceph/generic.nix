@@ -103,6 +103,7 @@ stdenv.mkDerivation {
   patches = [
     ./fc-jewel-snaptrim.patch
     ./fc-jewel-rewatch.patch
+    ./fc-jewel-glibc2-32.patch
 
     ./dont-use-virtualenvs.patch
   ];
@@ -171,7 +172,9 @@ __EOF__
     "--without-librocksdb"
     "--disable-cephfs-java"
     "--disable-coverage"
-    "--with-systemd-unit-dir=/tmp"
+    "--with-systemd-unit-dir=/tmp"];
+
+  cmakeFlags = [
 
     # "-DENABLE_GIT_VERSION=OFF"
     # "-DWITH_SYSTEM_BOOST=ON"
