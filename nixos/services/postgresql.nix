@@ -10,6 +10,7 @@ let
     "10" = pkgs.postgresql_10;
     "11" = pkgs.postgresql_11;
     "12" = pkgs.postgresql_12;
+    "13" = pkgs.postgresql_13;
   };
 
   listenAddresses =
@@ -55,7 +56,7 @@ in {
       majorVersion = mkOption {
           type = types.str;
           description = ''
-            The major version of PostgreSQL to use (9.6, 10, 11, 12).
+            The major version of PostgreSQL to use (9.6, 10, 11, 12, 13).
           '';
         };
     };
