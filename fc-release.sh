@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-nixos_version="20.09"
+nixos_version="21.05"
 releaseid="${1:?no release id given}"
 
 if ! echo "$releaseid" | egrep -q '^[0-9]{4}_[0-9]{3}$'; then
