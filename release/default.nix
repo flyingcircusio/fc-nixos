@@ -114,7 +114,6 @@ let
     "python38Packages"
     # XXX: fails on 21.05, must be fixed
     "backy"
-    "wkhtmltopdf_0_12_4"
   ];
 
   includedPkgNames = [
