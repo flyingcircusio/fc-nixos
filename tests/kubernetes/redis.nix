@@ -6,7 +6,7 @@ rec {
     name = "redis";
     tag = "latest";
     contents = [ pkgs.redis ];
-    config.Entrypoint = "/bin/redis-server";
+    config.Entrypoint = ["/bin/redis-server"];
   };
 
   podJson = toJSON {
