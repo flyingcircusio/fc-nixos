@@ -124,6 +124,13 @@ in {
                 all.memcached
                 all.redis
               ]);
+  lamp_php80 = super.php80.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
 
   mc = super.callPackage ./mc.nix { };
 
