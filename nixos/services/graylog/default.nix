@@ -364,7 +364,7 @@ in {
             enabled = true;
             system_username = fclib.getLdapNodeDN;
             system_password = fclib.getLdapNodePassword;
-            ldap_uri = "ldaps://ldap.rzob.gocept.net:636/";
+            ldap_uri = "ldaps://ldap.fcio.net:636/";
             trust_all_certificates = true;
             use_start_tls = false;
             active_directory = false;
