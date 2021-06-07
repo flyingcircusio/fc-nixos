@@ -287,7 +287,6 @@ in {
   tideways_daemon = super.callPackage ./tideways/daemon.nix {};
   tideways_module = super.callPackage ./tideways/module.nix {};
 
-  wkhtmltopdf_0_12_4 = super.callPackage ./wkhtmltopdf/0_12_4.nix { };
   wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };
   wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
   wkhtmltopdf = self.wkhtmltopdf_0_12_6;
