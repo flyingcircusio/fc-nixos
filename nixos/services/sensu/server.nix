@@ -166,7 +166,11 @@ in {
         Restart = "always";
         RestartSec = "5s";
       };
-      environment = { EMBEDDED_RUBY = "false"; };
+      environment = {
+        EMBEDDED_RUBY = "false";
+        # Hide annoying warnings, old Sensu is not developed anymore.
+        RUBYOPT="-W0";
+      };
 
       # rabbitmq needs some time to start up. The wait for pid
       # in the default service config doesn't really seem to help :(

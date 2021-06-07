@@ -81,6 +81,10 @@ in  {
         "redis.service"
       ];
       after = requires;
+      environment = {
+        # Hide annoying warnings, old Sensu is not developed anymore.
+        RUBYOPT="-W0";
+      };
       path = [ sensu ];
       serviceConfig = {
         User = "sensuapi";

@@ -1,0 +1,100 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    addressable (2.7.0)
+      public_suffix (>= 2.0.2, < 5.0)
+    amq-protocol (2.0.1)
+    amqp (1.6.0)
+      amq-protocol (>= 2.0.1)
+      eventmachine
+    childprocess (0.5.8)
+      ffi (~> 1.0, >= 1.0.11)
+    cookiejar (0.3.3)
+    em-http-request (1.1.5)
+      addressable (>= 2.3.4)
+      cookiejar (!= 0.3.1)
+      em-socksify (>= 0.3)
+      eventmachine (>= 1.0.3)
+      http_parser.rb (>= 0.6.0)
+    em-http-server (0.1.8)
+      eventmachine
+    em-socksify (0.3.2)
+      eventmachine (>= 1.0.0.beta.4)
+    em-worker (0.0.2)
+      eventmachine
+    eventmachine (1.2.7)
+    ffi (1.9.21)
+    http_parser.rb (0.6.0)
+    oj (2.18.1)
+    parse-cron (0.1.4)
+    public_suffix (4.0.6)
+    sensu (1.9.0)
+      em-http-request (= 1.1.5)
+      em-http-server (= 0.1.8)
+      eventmachine (= 1.2.7)
+      parse-cron (= 0.1.4)
+      sensu-extension (= 1.5.2)
+      sensu-extensions (= 1.11.0)
+      sensu-json (= 2.1.1)
+      sensu-logger (= 1.2.2)
+      sensu-redis (= 2.4.0)
+      sensu-settings (= 10.17.0)
+      sensu-spawn (= 2.5.0)
+      sensu-transport (= 8.3.0)
+    sensu-extension (1.5.2)
+      eventmachine
+    sensu-extensions (1.11.0)
+      sensu-extension
+      sensu-extensions-check-dependencies (= 1.1.0)
+      sensu-extensions-debug (= 1.0.0)
+      sensu-extensions-deregistration (= 1.0.0)
+      sensu-extensions-json (= 1.0.0)
+      sensu-extensions-occurrences (= 1.2.0)
+      sensu-extensions-only-check-output (= 1.0.0)
+      sensu-extensions-ruby-hash (= 1.0.0)
+      sensu-json (>= 1.1.0)
+      sensu-logger
+      sensu-settings
+    sensu-extensions-check-dependencies (1.1.0)
+      sensu-extension
+    sensu-extensions-debug (1.0.0)
+      sensu-extension
+    sensu-extensions-deregistration (1.0.0)
+      sensu-extension
+    sensu-extensions-json (1.0.0)
+      sensu-extension
+    sensu-extensions-occurrences (1.2.0)
+      sensu-extension
+    sensu-extensions-only-check-output (1.0.0)
+      sensu-extension
+    sensu-extensions-ruby-hash (1.0.0)
+      sensu-extension
+    sensu-json (2.1.1)
+      oj (= 2.18.1)
+    sensu-logger (1.2.2)
+      eventmachine
+      sensu-json
+    sensu-redis (2.4.0)
+      eventmachine
+    sensu-settings (10.17.0)
+      parse-cron
+      sensu-json (>= 1.1.0)
+    sensu-spawn (2.5.0)
+      childprocess (= 0.5.8)
+      em-worker (= 0.0.2)
+      eventmachine
+      ffi (= 1.9.21)
+    sensu-transport (8.3.0)
+      amq-protocol (= 2.0.1)
+      amqp (= 1.6.0)
+      eventmachine
+      sensu-redis (>= 1.0.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  sensu
+
+BUNDLED WITH
+   2.1.4
