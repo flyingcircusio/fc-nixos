@@ -103,9 +103,10 @@ let
     verbose_logging = true
 
     [[servers]]
-    host = "ldap.rzob.gocept.net"
-    port = 389
-    start_tls = true
+    host = "ldap.fcio.net"
+    port = 636
+    start_tls = false
+    use_ssl = true
     bind_dn = "uid=%s,ou=People,dc=gocept,dc=com"
     search_base_dns = ["ou=People,dc=gocept,dc=com"]
     search_filter = "(&(&(objectClass=inetOrgPerson)(uid=%s))(memberOf=cn=${config.flyingcircus.enc.parameters.resource_group},ou=GroupOfNames,dc=gocept,dc=com))"

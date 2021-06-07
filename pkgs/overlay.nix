@@ -266,11 +266,16 @@ in {
   remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
 
+  sensu = super.callPackage ./sensu { };
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
   sensu-plugins-kubernetes = super.callPackage ./sensuplugins-rb/sensu-plugins-kubernetes { };
   sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
   sensu-plugins-mysql = super.callPackage ./sensuplugins-rb/sensu-plugins-mysql { };
+  sensu-plugins-disk-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-disk-checks { };
   sensu-plugins-entropy-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-entropy-checks { };
+  sensu-plugins-http = super.callPackage ./sensuplugins-rb/sensu-plugins-http { };
+  sensu-plugins-influxdb = super.callPackage ./sensuplugins-rb/sensu-plugins-influxdb { };
+  sensu-plugins-logs = super.callPackage ./sensuplugins-rb/sensu-plugins-logs { };
   sensu-plugins-network-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-network-checks { };
   sensu-plugins-postfix = super.callPackage ./sensuplugins-rb/sensu-plugins-postfix { };
   sensu-plugins-postgres = super.callPackage ./sensuplugins-rb/sensu-plugins-postgres { };
@@ -282,7 +287,6 @@ in {
   tideways_daemon = super.callPackage ./tideways/daemon.nix {};
   tideways_module = super.callPackage ./tideways/module.nix {};
 
-  wkhtmltopdf_0_12_4 = super.callPackage ./wkhtmltopdf/0_12_4.nix { };
   wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };
   wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
   wkhtmltopdf = self.wkhtmltopdf_0_12_6;

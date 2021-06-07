@@ -1,0 +1,30 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    cause (0.1)
+    dentaku (2.0.9)
+    influxdb (0.3.13)
+      cause
+      json
+    json (2.5.1)
+    jsonpath (0.5.8)
+      multi_json
+    mixlib-cli (1.7.0)
+    multi_json (1.15.0)
+    sensu-plugin (4.0.0)
+      json (< 3.0.0)
+      mixlib-cli (~> 1.5)
+    sensu-plugins-influxdb (2.0.0)
+      dentaku (= 2.0.9)
+      influxdb (= 0.3.13)
+      jsonpath (= 0.5.8)
+      sensu-plugin (~> 4.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  sensu-plugins-influxdb
+
+BUNDLED WITH
+   2.1.4
