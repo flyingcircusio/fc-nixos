@@ -295,6 +295,10 @@ in {
       procps
       python3
       sensu
+      sensu-plugins-disk-checks
+      sensu-plugins-http
+      sensu-plugins-influxdb
+      sensu-plugins-logs
       sysstat
     ];
 
@@ -327,7 +331,7 @@ in {
       environment = {
         LANG = "en_US.utf8";
         # Hide annoying warnings, old Sensu is not developed anymore.
-        RUBYOPT="-W:no-deprecated -W:no-experimental";
+        RUBYOPT="-W0";
       };
     };
 
