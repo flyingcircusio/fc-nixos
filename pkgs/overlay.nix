@@ -37,6 +37,18 @@ in {
       boost = super.boost155;
   });
 
+  # Hash is wrong upstream
+  containerd = super.containerd.overrideAttrs(_: rec {
+    version = "1.5.1";
+
+    src = super.fetchFromGitHub {
+      rev = "v${version}";
+      owner = "containerd";
+      repo = "containerd";
+      sha256 = "16q34yiv5q98b9d5vgy1lmmppg8agrmnfd1kzpakkf4czkws0p4d";
+    };
+  });
+
   docsplit = super.callPackage ./docsplit { };
 
   elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
