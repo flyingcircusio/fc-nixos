@@ -46,6 +46,8 @@ in {
   lamp73_tideways = callTest ./lamp.nix { version = "lamp_php73"; tideways = "1234"; };
   lamp74 = callTest ./lamp.nix { version = "lamp_php74"; };
   lamp74_tideways = callTest ./lamp.nix { version = "lamp_php74"; tideways = "1234"; };
+  lamp80 = callTest ./lamp.nix { version = "lamp_php80"; };
+  lamp80_tideways = callTest ./lamp.nix { version = "lamp_php80"; tideways = "1234"; };
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};

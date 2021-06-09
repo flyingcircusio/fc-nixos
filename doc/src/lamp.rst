@@ -94,13 +94,14 @@ Apache config file. They will also always apply to all vhosts.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A reference to a PHP package that will be used in Apache and in the
-CLI. 
+CLI.
 
 Supported packages:
 
 * ``pkgs.lamp_php56`` (outdated but provided for legacy applications)
 * ``pkgs.lamp_php73``
 * ``pkgs.lamp_php74``
+* ``pkgs.lamp_php80``
 
 You can also use any custom PHP package from the NixOS universe (if you
 know what you are doing. ;) )
@@ -109,7 +110,7 @@ know what you are doing. ;) )
 ``flyingcircus.roles.lamp.tideways_api_key`` (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have an account with tideways.com then you can quickly enable the 
+If you have an account with tideways.com then you can quickly enable the
 tideways profiler for your application by setting the API key here:
 
 .. code-block:: Nix
@@ -129,7 +130,7 @@ additional configuration instructions in this option:
 	upload_max_filesize = 200M
 	post_max_size = 200M
 
-Similar to the ``flyingcircus.roles.lamp.apache_conf`` option this will 
+Similar to the ``flyingcircus.roles.lamp.apache_conf`` option this will
 be concatenated with from all Nix configuration files with our global platform
 settings and will be applied to all vhosts.
 
@@ -138,7 +139,7 @@ PHP version and modules
 
 We currently provide a single pre-selected version of PHP (7.3) with a fixed set
 of modules. Please contact our support if you need a different version of PHP
-and/or further modules. 
+and/or further modules.
 
 Interaction
 -----------
@@ -158,7 +159,7 @@ The Apache server listens on the :ref:`srv interface <logical_networks>` only.
 Security
 --------
 
-* Apache runs in a separate user who is a member of the ``service`` group and 
+* Apache runs in a separate user who is a member of the ``service`` group and
   thus can (by default) access files owned by service users.
 
 * Access is read-only for Apache by default, but you can grant write access for
