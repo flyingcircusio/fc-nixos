@@ -16,9 +16,6 @@ let
           (fn: lib.hasSuffix ".nix" fn)
           (lib.attrNames (builtins.readDir "/etc/local/nixos")))
     else [];
-  telegrafShowConfig = pkgs.writeScriptBin "telegraf-show-config" ''
-    cat $(systemctl cat telegraf | grep "ExecStart=" | cut -d" " -f3 | tr -d '"')
-  '';
 
 in {
   imports = [
@@ -177,7 +174,6 @@ in {
 
     environment.systemPackages = with pkgs; [
       fc.userscan
-      telegrafShowConfig
       dmidecode
     ];
 
