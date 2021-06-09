@@ -27,7 +27,7 @@ in
 
   config = lib.mkIf config.flyingcircus.roles.sensuserver.enable {
 
-      flyingcircus.roles.rabbitmq38.enable = true;
+      flyingcircus.roles.rabbitmq.enable = true;
       flyingcircus.services.nginx.enable = true;
       flyingcircus.services.rabbitmq.listenAddress = lib.mkOverride 90 "::";
       flyingcircus.services.sensu-api.enable = true;

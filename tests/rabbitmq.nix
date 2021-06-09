@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ rolename ? "rabbitmq38", lib, pkgs, testlib, ... }:
+import ./make-test-python.nix ({ lib, pkgs, testlib, ... }:
 let
   # Default IP automatically assigned in NixOS tests. Must not be changed here.
   ipv4 = "192.168.1.1";
@@ -9,7 +9,7 @@ in {
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
-      flyingcircus.roles.${rolename}.enable = true;
+      flyingcircus.roles.rabbitmq.enable = true;
 
       flyingcircus.enc.parameters = {
         resource_group = "test";

@@ -11,7 +11,7 @@ with builtins;
     };
   in {
     flyingcircus.roles = {
-      rabbitmq38 = mkRole "3.8";
+      rabbitmq = mkRole "3.8";
     };
   };
 
@@ -28,7 +28,7 @@ with builtins;
     sensuPassword = fclib.derivePasswordForHost "sensu";
 
     rabbitRoles = with config.flyingcircus.roles; {
-      "3.8" = rabbitmq38.enable;
+      "3.8" = rabbitmq.enable;
     };
     enabledRoles = lib.filterAttrs (n: v: v) rabbitRoles;
     enabledRolesCount = length (lib.attrNames enabledRoles);
