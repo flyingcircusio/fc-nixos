@@ -46,6 +46,8 @@ in {
   lamp73_tideways = callTest ./lamp.nix { version = "lamp_php73"; tideways = "1234"; };
   lamp74 = callTest ./lamp.nix { version = "lamp_php74"; };
   lamp74_tideways = callTest ./lamp.nix { version = "lamp_php74"; tideways = "1234"; };
+  lamp80 = callTest ./lamp.nix { version = "lamp_php80"; };
+  lamp80_tideways = callTest ./lamp.nix { version = "lamp_php80"; tideways = "1234"; };
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
@@ -69,9 +71,7 @@ in {
   postgresql12 = callTest ./postgresql.nix { rolename = "postgresql12"; };
   postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };
   prometheus = callTest ./prometheus.nix {};
-  rabbitmq36_15 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_15"; };
-  rabbitmq36_5 = callTest ./rabbitmq.nix { rolename = "rabbitmq36_5"; };
-  rabbitmq38 = callTest ./rabbitmq.nix { rolename = "rabbitmq38"; };
+  rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
   sensu = callTest ./sensu.nix {};

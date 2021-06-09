@@ -33,7 +33,6 @@ in {
     ./percona.nix
     ./postgresql.nix
     ./prometheus.nix
-    ./rabbitmq36.nix
     ./rabbitmq.nix
     ./raid
     ./redis.nix

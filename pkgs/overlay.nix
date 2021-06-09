@@ -124,6 +124,13 @@ in {
                 all.memcached
                 all.redis
               ]);
+  lamp_php80 = super.php80.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
 
   mc = super.callPackage ./mc.nix { };
 
@@ -255,12 +262,6 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
-  rabbitmq-server_3_6_5 = super.callPackage ./rabbitmq-server/3.6.5.nix {
-    erlang = self.erlangR19;
-  };
-  rabbitmq-server_3_6_15 = super.callPackage ./rabbitmq-server/3.6.15.nix {
-    erlang = self.erlangR19;
-  };
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
   remarshal = super.callPackage ./remarshal.nix { };
