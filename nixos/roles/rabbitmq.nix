@@ -11,9 +11,7 @@ with builtins;
     };
   in {
     flyingcircus.roles = {
-      rabbitmq36_5 = mkRole "3.6.5";
-      rabbitmq36_15 = mkRole "3.6.15";
-      rabbitmq38 = mkRole "3.8";
+      rabbitmq = mkRole "3.8";
     };
   };
 
@@ -30,9 +28,7 @@ with builtins;
     sensuPassword = fclib.derivePasswordForHost "sensu";
 
     rabbitRoles = with config.flyingcircus.roles; {
-      "3.6.5" = rabbitmq36_5.enable;
-      "3.6.15" = rabbitmq36_15.enable;
-      "3.8" = rabbitmq38.enable;
+      "3.8" = rabbitmq.enable;
     };
     enabledRoles = lib.filterAttrs (n: v: v) rabbitRoles;
     enabledRolesCount = length (lib.attrNames enabledRoles);
@@ -51,11 +47,8 @@ with builtins;
     };
 
   in lib.mkMerge [
-    (lib.mkIf (enabled && majorMinorVersion == "3.6") {
-      flyingcircus.services.rabbitmq36 = serviceConfig;
-    })
 
-    (lib.mkIf (enabled && majorMinorVersion != "3.6") {
+    (lib.mkIf (enabled) {
       flyingcircus.services.rabbitmq = serviceConfig;
     })
 
