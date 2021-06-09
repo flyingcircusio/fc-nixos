@@ -20,6 +20,7 @@ in {
     ./collectdproxy.nix
     ./consul.nix
     ./gitlab
+    ./gitlab/override.nix
     ./graylog
     ./haproxy.nix
     ./jitsi/jibri.nix

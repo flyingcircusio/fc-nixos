@@ -50,7 +50,7 @@ in
       databaseCreateLocally = false;
       databasePasswordFile = "/srv/gitlab/secrets/db_password";
       initialRootPasswordFile = "/srv/gitlab/secrets/root_password";
-      redisPassword = config.services.redis.requirePass;
+      redisUrl = "redis://:${config.services.redis.requirePass}@localhost:6379/";
       statePath = "/srv/gitlab/state";
       https = true;
       port = 443;
