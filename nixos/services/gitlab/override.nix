@@ -17,6 +17,9 @@ in
 
     services.gitlab.extraEnv.GITLAB_LOG_PATH = "/var/log/gitlab";
 
+    # less memory usage with jemalloc
+    # ref https://brandonhilkert.com/blog/reducing-sidekiq-memory-usage-with-jemalloc/
+    services.gitlab.extraEnv.LD_PRELOAD = "${pkgs.jemalloc}/lib/libjemalloc.so";
 
     # generate secrets on first start
     systemd.services.gitlab-generate-secrets = {
