@@ -211,6 +211,18 @@ the contents of config.json has been changed.
 
 .. _relay_domains: http://www.postfix.org/postconf.5.html#relay_domains
 
+How do I allow authenticated users to send with any email address?
+------------------------------------------------------------------
+
+Add a custom .nix file, e.g. `/etc/local/nixos/mailserver.nix`, to remove
+the render restriction::
+
+  { ... }:
+  {
+    services.postfix.submissionOptions.smtpd_sender_restrictions = "";
+    services.postfix.submissionsOptions.smtpd_sender_restrictions = "";
+  }
+
 
 Reference
 ---------
