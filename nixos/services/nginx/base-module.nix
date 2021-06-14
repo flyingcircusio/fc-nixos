@@ -131,6 +131,19 @@ let
         ssl_stapling_verify on;
       ''}
 
+      ${optionalString (cfg.legacyTlsSettings) ''
+        # Keep in sync with https://ssl-config.mozilla.org/#server=nginx&config=old
+
+        ssl_session_timeout 1d;
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_tickets off;
+        ssl_prefer_server_ciphers on;
+
+        # OCSP stapling
+        ssl_stapling on;
+        ssl_stapling_verify on;
+      ''}
+
       ${optionalString (cfg.recommendedGzipSettings) ''
         gzip on;
         gzip_proxied any;
@@ -461,7 +474,15 @@ in
         default = false;
         type = types.bool;
         description = "
-          Enable recommended TLS settings.
+          Enable recommended TLS settings (Mozilla intermediate).
+        ";
+      };
+
+      legacyTlsSettings = mkOption {
+        default = false;
+        type = types.bool;
+        description = "
+          Enable legacy TLS settings for very old clients (Mozilla old).
         ";
       };
 
@@ -874,6 +895,14 @@ in
         message = ''
           Options services.nginx.service.virtualHosts.<name>.enableACME and
           services.nginx.virtualHosts.<name>.useACMEHost are mutually exclusive.
+        '';
+      }
+
+      {
+        assertion = !(cfg.legacyTlsSettings && cfg.recommendedTlsSettings);
+        message = ''
+          Options services.nginx.service.legacyTlsSettings and
+          services.nginx.virtualHosts.recommendedTlsSettings are mutually exclusive.
         '';
       }
     ];

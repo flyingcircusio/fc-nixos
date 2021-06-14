@@ -100,7 +100,7 @@ TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
 
-To use older ciphers based on RSA for legacy clients, a RSA key must be
+To use ciphers based on RSA for legacy clients, an RSA key must be
 used for the certificates. Note that this disables the ciphers listed above
 and reduces performance with current clients.
 
@@ -111,7 +111,7 @@ security.acme.certs."test.fcio.net".keyType = "rsa2048";
 Using two certificates to support both kinds of ciphers is possible with Nginx
 but needs manual configuration.
 
-For ciphers using DHE, a RSA certificate must be used and dhparams must be set:
+For ciphers using DHE, an RSA certificate must be used and dhparams must be set:
 
 services.nginx.sslDhparam = config.security.dhparams.params.nginx.path;
 
@@ -124,6 +124,12 @@ TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
 The services.nginx.sslCiphers option can be used to change the cipher list:
 
 https://search.nixos.org/options?channel=20.09&show=services.nginx.sslCiphers&from=0&size=50&sort=relevance&query=sslCiphers
+
+If you enable weaker ciphers, you should also set services.nginx.legacyTlsSettings to true
+and services.nginx.recommendedTlsSettings to false.
+
+This sets `ssl_prefer_server_ciphers on` so better ciphers at the beginning of
+the cipher list are used if possible.
 
 
 Manual configuration
@@ -152,7 +158,7 @@ without the need to restart Nginx.
 You can check if the config is valid with: `nginx-check-config`.
 The script also warns about potential security issues with your config.
 
-For ciphers using DHE, a RSA certificate must be used and dhparams must be set:
+For ciphers using DHE, an RSA certificate must be used and dhparams must be set:
 
 ssl_dhparam /var/lib/dhparams/nginx.pem;
 
