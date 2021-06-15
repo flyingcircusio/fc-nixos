@@ -11,9 +11,9 @@ in
   options = with lib; {
 
     flyingcircus.roles.gitlab = {
-      enable = mkEnableOption "Enable the Flying Circus Gitlab role.";
+      enable = mkEnableOption "Enable the Flying Circus GitLab role.";
 
-      enableDockerRegistry = mkEnableOption "Enable docker registry and Gitlab integration";
+      enableDockerRegistry = mkEnableOption "Enable docker registry and GitLab integration";
 
       dockerHostName = mkOption {
         type = with types; nullOr str;
@@ -25,7 +25,7 @@ in
       hostName = mkOption {
         type = types.str;
         description = ''
-          Public host name for the Gitlab frontend.
+          Public host name for the GitLab frontend.
           A Letsencrypt certificate is generated for it.
           Defaults to the FE FQDN.
         '';
