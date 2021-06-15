@@ -7,6 +7,33 @@ let
   nixpkgs_18_03 = import versions.nixpkgs_18_03 {};
   inherit (super) lib;
 
+  # fixes: Cannot load Zend OPcache - it was already loaded
+  phpFix = php: fnc:
+    let
+      drv = php fnc;
+      # we can't just override regularly as other modules override, too
+      # which removes our overrides
+      mkOut = drv: with super; stdenv.mkDerivation {
+        pname = "fc-" + drv.name;
+        version = drv.version;
+        passthru = drv.passthru;
+
+        dontUnpack = true;
+
+        installPhase = ''
+          cp -r ${drv} $out
+          chmod a+w -R $out
+          rm $out/lib/php.ini
+          for f in $out/bin/php*; do
+            sed "s|export PHP_INI_SCAN_DIR=.*||g" -i "$f"
+          done
+          chmod a-w -R $out
+        '';
+      };
+    in
+    (mkOut drv) // {
+      override = a: (mkOut (drv.override a));
+    };
 in {
   #
   # == our own stuff
@@ -122,21 +149,21 @@ in {
       '';
     });
 
-  lamp_php73 = super.php73.withExtensions ({ enabled, all }:
+  lamp_php73 = (phpFix super.php73.withExtensions) ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
                 all.memcached
                 all.redis
               ]);
-  lamp_php74 = super.php74.withExtensions ({ enabled, all }:
+  lamp_php74 = (phpFix super.php74.withExtensions) ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
                 all.memcached
                 all.redis
               ]);
-  lamp_php80 = super.php80.withExtensions ({ enabled, all }:
+  lamp_php80 = (phpFix super.php80.withExtensions) ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
