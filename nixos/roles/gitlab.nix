@@ -56,7 +56,7 @@ in
       port = 443;
       host = cfg.hostName;
 
-      extraGitlabRb = ''
+      /* extraGitLabRb = ''
         if Rails.env.production?
           Rails.application.config.action_mailer.delivery_method = :sendmail
           ActionMailer::Base.delivery_method = :sendmail
@@ -65,7 +65,7 @@ in
             arguments: "-i -t"
           }
         end
-      '';
+      ''; */
 
       secrets = {
         dbFile = "/srv/gitlab/secrets/db";
