@@ -1,4 +1,5 @@
 { lib
+, stdenv
 , dmidecode
 , gitMinimal
 , gptfdisk
@@ -43,10 +44,7 @@ py.buildPythonPackage rec {
     py.responses
   ];
   propagatedBuildInputs = [
-    dmidecode
     gitMinimal
-    gptfdisk
-    multipath_tools
     nix
     py.click
     py.dateutil
@@ -56,6 +54,11 @@ py.buildPythonPackage rec {
     py.shortuuid
     pyyaml
     utillinux
+  ] ++ lib.optionals stdenv.isLinux [
+    dmidecode
+    gptfdisk
+    multipath_tools
+    py.systemd
     xfsprogs
   ];
   dontStrip = true;
