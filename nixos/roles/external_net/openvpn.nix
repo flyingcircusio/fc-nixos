@@ -173,7 +173,7 @@ let
     tls-cipher ${lib.concatStringsSep ":" allowedTlsCiphers}
 
     # data channel ciphers that can be negotiated
-    ncp-ciphers ${lib.concatStringsSep ":" allowedCiphers}
+    data-ciphers ${lib.concatStringsSep ":" allowedCiphers}
 
     keepalive 10 120
     plugin ${openvpn}/lib/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn
