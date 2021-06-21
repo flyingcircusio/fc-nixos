@@ -37,8 +37,7 @@ in {
   kernelconfig = callTest ./kernelconfig.nix {};
   kibana6 = callTest ./kibana.nix { version = "6"; };
   kibana7 = callTest ./kibana.nix { version = "7"; };
-  # Docker is gone, Kubernetes itself seems to work but test needs a fix
-  #kubernetes = callTest ./kubernetes {};
+  kubernetes = callTest ./kubernetes {};
 
   lamp = callTest ./lamp.nix { };
   lamp56 = callTest ./lamp.nix { version = "lamp_php56"; };
@@ -69,6 +68,7 @@ in {
   postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
   postgresql11 = callTest ./postgresql.nix { rolename = "postgresql11"; };
   postgresql12 = callTest ./postgresql.nix { rolename = "postgresql12"; };
+  postgresql13 = callTest ./postgresql.nix { rolename = "postgresql13"; };
   postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };
   prometheus = callTest ./prometheus.nix {};
   rabbitmq = callTest ./rabbitmq.nix {};

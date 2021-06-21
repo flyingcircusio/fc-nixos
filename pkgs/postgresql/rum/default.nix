@@ -2,13 +2,13 @@
 
 stdenv.mkDerivation rec {
   pname = "rum";
-  version = "1.3.7";
+  version = "1.3.8-g1a4d4b8e";
 
   src = fetchFromGitHub {
-    rev = version;
+    rev = "1a4d4b8e2597483b8545f8111cb3c44e4be0aa73";
     owner = "postgrespro";
     repo = "rum";
-    sha256 = "185bmjd236qis5gqdv2vi52k5bg13cghs95ch5z0vqx59xqs17bm";
+    sha256 = "16jiykarnix9iis2gygn0nmfaxh2gxh794jwf69h7pgm0srz6376";
   };
 
   buildInputs = [ postgresql ];
