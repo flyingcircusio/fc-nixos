@@ -62,8 +62,7 @@ in {
   network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
   nginx = callTest ./nginx.nix {};
-  # test fails
-  # openvpn = callTest ./openvpn.nix {};
+  openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
   postgresql11 = callTest ./postgresql.nix { rolename = "postgresql11"; };
