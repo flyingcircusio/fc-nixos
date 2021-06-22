@@ -218,7 +218,7 @@ in {
     };
   };
 
-  config = mkmerge [
+  config = mkMerge [
     (mkIf cfg.enable {
 
       environment.systemPackages = [
