@@ -903,6 +903,8 @@ in
         after = [ "network.target" ];
         wantedBy = [ "multi-user.target" ];
         stopIfChanged = false;
+        startLimitIntervalSec = 1 * 60; # 1 minute
+
 
         serviceConfig = {
           Type = "forking";
@@ -914,7 +916,6 @@ in
           ExecReload = "+${nginxReloadConfig}/bin/nginx-reload";
           Restart = "always";
           RestartSec = "10s";
-          StartLimitInterval = "1min";
           # User and group
           # XXX: We start nginx as root and drop later for compatibility reasons, this should change.
           # User = cfg.user;
