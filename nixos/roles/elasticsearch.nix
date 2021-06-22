@@ -165,11 +165,11 @@ in
     };
 
     systemd.services.elasticsearch = {
+      startLimitIntervalSec = 480;
+      startLimitBurst = 3;
       serviceConfig = {
         LimitMEMLOCK = "infinity";
         Restart = "always";
-        StartLimitInterval=480;
-        StartLimitBurst=3;
       };
       preStart = lib.mkAfter ''
         # Install scripts
