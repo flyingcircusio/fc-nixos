@@ -218,264 +218,272 @@ in {
     };
   };
 
-  config = mkIf cfg.enable {
+  config = mkmerge [
+    (mkIf cfg.enable {
 
-    environment.etc."local/sensu-client/README.txt".text = ''
-      Put local sensu checks here.
+      environment.systemPackages = [
+        sensuCheckEnvCmd
+        (pkgs.writeScriptBin
+          "sensu-client-show-config"
+          "${pkgs.perl}/bin/json_pp < ${sensuClientConfigFile}")
+      ];
 
-      This directory is passed to sensu as additional config directory. You
-      can add .json files for your checks.
-
-      Example:
-
+      flyingcircus.passwordlessSudoRules = [
         {
-         "checks" : {
-            "my-custom-check" : {
-               "notification" : "custom check broken",
-               "command" : "/srv/user/bin/nagios_compatible_check",
-               "interval": 60,
-               "standalone" : true
-            },
-            "my-other-custom-check" : {
-               "notification" : "custom check broken",
-               "command" : "/srv/user/bin/nagios_compatible_other_check",
-               "interval": 600,
-               "standalone" : true
+          commands = with pkgs; [
+            "${fc.multiping}/bin/multiping"
+            "${fc.sensuplugins}/bin/check_disk"
+          ];
+          groups = [ "sensuclient" ];
+        }
+        # Allow sensuclient group to become service user for running custom checks
+        {
+          commands = [ "ALL" ];
+          groups = [ "sensuclient" ];
+          runAs = "%service";
+        }
+      ];
+
+      flyingcircus.activationScripts = {
+        sensu-client = ''
+          ${ifJsonSyntaxError}
+            echo "Errors in /etc/local/sensu-client, aborting"
+            exit 3
+          fi
+          unset sensu_json_present
+        '';
+      };
+
+      flyingcircus.services.sensu-client.checkEnvPackages = with pkgs; [
+        bash
+        coreutils
+        glibc
+        lm_sensors
+        monitoring-plugins
+        nix
+        openssl
+        procps
+        python3
+        sensu
+        sysstat
+      ];
+
+      systemd.services.sensu-client = {
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ];
+        stopIfChanged = false;
+        # Sensu check scripts inherit the PATH of sensu-client by default.
+        # We provide common external dependencies in sensuCheckEnv.  Checks can
+        # define their own PATH in a wrapper to include other dependencies.
+        path = [ sensuCheckEnv "/run/wrappers" ];
+        script = ''
+          ${ifJsonSyntaxError}
+            # graceful degradation -> leave local config out
+            confDir=""
+          else
+            confDir="-d ${localSensuConf}"
+          fi
+          # omit localSensuConf dir if syntax errors have been detected
+          exec sensu-client -L ${cfg.loglevel} \
+            -c ${sensuClientConfigFile} $confDir \
+            ${concatStringsSep " " cfg.extraOpts}
+        '';
+        serviceConfig = {
+          User = "sensuclient";
+          Group = "sensuclient";
+          Restart = "always";
+          RestartSec = "5s";
+        };
+        environment = {
+          LANG = "en_US.utf8";
+        };
+      };
+
+      systemd.tmpfiles.rules = [
+        "d /var/tmp/sensu 0775 sensuclient service"
+      ];
+
+      flyingcircus.services.sensu-client.checks = with pkgs;
+      let
+        uplink = ipvers: {
+          notification = "Internet uplink IPv${ipvers} slow/unavailable";
+          command =
+            "${sudo} ${fc.multiping}/bin/multiping -${ipvers} " +
+            "google.com dns.quad9.net heise.de";
+          interval = 300;
+        };
+      in {
+        load = {
+          notification = "Load is too high";
+          command =
+            "check_load -r -w ${cfg.expectedLoad.warning} " +
+            "-c ${cfg.expectedLoad.critical}";
+          interval = 10;
+        };
+        swap = {
+          notification = "Swap usage is too high";
+          command =
+            "${fc.sensuplugins}/bin/check_swap_abs " +
+            "-w ${toString cfg.expectedSwap.warning} " +
+            "-c ${toString cfg.expectedSwap.critical}";
+          interval = 300;
+        };
+        ssh = {
+          notification = "SSH server is not responding properly";
+          command = "check_ssh localhost";
+          interval = 300;
+        };
+        cpu_steal = {
+          notification = "CPU has high amount of `%steal` ";
+          command =
+            "${fc.sensuplugins}/bin/check_cpu_steal " +
+            "--mpstat ${sysstat}/bin/mpstat";
+          interval = 600;
+        };
+        ntp_time = {
+          notification = "Clock is skewed";
+          command = "check_ntp_time -H ${elemAt ntpServers 0}";
+          interval = 300;
+        };
+        sensu_syntax = {
+          notification = ''
+            Problematic check definitions in /etc/local/sensu-client
+          '';
+          command = sensusyntax;
+          interval = 60;
+        };
+        internet_uplink_ipv4 = uplink "4";
+        internet_uplink_ipv6 = uplink "6";
+        # Signal for 30 minutes that it was not OK for the VM to reboot. We may
+        # need something to counter this on planned reboots. 30 minutes is enough
+        # for status pages to pick this up. After that, we'll leave it in "warning"
+        # for 1 day so that regular support can spot the issue even if it didn't
+        # cause an alarm, but have it visible for context.
+        uptime = {
+          notification = "Host was down";
+          command = "${check-uptime}/bin/check_uptime -c @:30 -w @:1440";
+          interval = 300;
+        };
+        systemd_units = {
+          notification = "systemd has failed units";
+          command = ''
+            ${pkgs.sensu-plugins-systemd}/bin/check-failed-units.rb \
+              -m logrotate.service \
+              -m fc-collect-garbage.service
+          '';
+        };
+        disk = {
+          notification = "Disk usage too high";
+          command = "${sudo} ${fc.sensuplugins}/bin/check_disk -v -w 90 -c 95";
+          interval = 300;
+        };
+        writable = {
+          notification = "Disks are writable";
+          command =
+            "${fc.sensuplugins}/bin/check_writable /tmp/.sensu_writable " +
+            "/var/tmp/sensu/.sensu_writable";
+          interval = 60;
+          ttl = 120;
+          warnIsCritical = true;
+        };
+        entropy = {
+          notification = "Too little entropy available";
+          command = ''
+            ${pkgs.sensu-plugins-entropy-checks}/bin/check-entropy.rb \
+              -w 120 -c 60
+          '';
+        };
+        journal = {
+          notification = "Journal errors in the last 10 minutes";
+          command =
+            "${fc.check-journal}/bin/check_journal " +
+            "-j ${systemd}/bin/journalctl " +
+            "https://gitlab.flyingcircus.io/flyingcircus/fc-logcheck-config/" +
+            "raw/master/nixos-journal.yaml";
+          interval = 600;
+        };
+        journal_file = {
+          notification = "Journal file too small.";
+          command = "${fc.sensuplugins}/bin/check_journal_file";
+        };
+        manage = {
+          notification = "The FC manage job is not enabled.";
+          command = "${check_timer} fc-agent";
+        };
+        netstat_tcp = {
+          notification = "Netstat TCP connections";
+          command = ''
+            ${pkgs.sensu-plugins-network-checks}/bin/check-netstat-tcp.rb \
+              -w ${toString cfg.expectedConnections.warning} \
+              -c ${toString cfg.expectedConnections.critical}
+          '';
+        };
+        obsolete-result-links = {
+          notification = ''
+            Obsolete 'result' symlinks possibly causing Nix store bloat
+          '';
+          # see also activationScript in nixos/platform/agent.nix
+          command = "${fc.check-age}/bin/check_age -m -w 3h /result /root/result";
+          interval = 300;
+        };
+        root_lost_and_found = {
+          notification = ''
+            lost+found indicating filesystem issues on /
+          '';
+          command = "${fc.check-age}/bin/check_age -m /lost+found -w 2h -c 1d";
+          interval = 300;
+        };
+      };
+    })
+
+    {
+
+      # Config that should always be available to allow deployments to 
+      # succeed even if no real sensu environment is available.
+
+      environment.etc."local/sensu-client/README.txt".text = ''
+        Put local sensu checks here.
+
+        This directory is passed to sensu as additional config directory. You
+        can add .json files for your checks.
+
+        Example:
+
+          {
+           "checks" : {
+              "my-custom-check" : {
+                 "notification" : "custom check broken",
+                 "command" : "/srv/user/bin/nagios_compatible_check",
+                 "interval": 60,
+                 "standalone" : true
+              },
+              "my-other-custom-check" : {
+                 "notification" : "custom check broken",
+                 "command" : "/srv/user/bin/nagios_compatible_other_check",
+                 "interval": 600,
+                 "standalone" : true
+              }
             }
           }
-        }
-    '';
-
-    environment.systemPackages = [
-      sensuCheckEnvCmd
-      (pkgs.writeScriptBin
-        "sensu-client-show-config"
-        "${pkgs.perl}/bin/json_pp < ${sensuClientConfigFile}")
-    ];
-
-    flyingcircus.passwordlessSudoRules = [
-      {
-        commands = with pkgs; [
-          "${fc.multiping}/bin/multiping"
-          "${fc.sensuplugins}/bin/check_disk"
-        ];
-        groups = [ "sensuclient" ];
-      }
-      # Allow sensuclient group to become service user for running custom checks
-      {
-        commands = [ "ALL" ];
-        groups = [ "sensuclient" ];
-        runAs = "%service";
-      }
-    ];
-
-    flyingcircus.activationScripts = {
-      sensu-client = ''
-        ${ifJsonSyntaxError}
-          echo "Errors in /etc/local/sensu-client, aborting"
-          exit 3
-        fi
-        unset sensu_json_present
       '';
-    };
 
-    flyingcircus.localConfigDirs.sensu-client = {
-      dir = "/etc/local/sensu-client";
-      user = "sensuclient";
-    };
+      flyingcircus.localConfigDirs.sensu-client = {
+        dir = "/etc/local/sensu-client";
+        user = "sensuclient";
+      };
 
-    flyingcircus.services.sensu-client.checkEnvPackages = with pkgs; [
-      bash
-      coreutils
-      glibc
-      lm_sensors
-      monitoring-plugins
-      nix
-      openssl
-      procps
-      python3
-      sensu
-      sysstat
-    ];
+      users.groups.sensuclient.gid = config.ids.gids.sensuclient;
 
-    systemd.services.sensu-client = {
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
-      stopIfChanged = false;
-      # Sensu check scripts inherit the PATH of sensu-client by default.
-      # We provide common external dependencies in sensuCheckEnv.  Checks can
-      # define their own PATH in a wrapper to include other dependencies.
-      path = [ sensuCheckEnv "/run/wrappers" ];
-      script = ''
-        ${ifJsonSyntaxError}
-          # graceful degradation -> leave local config out
-          confDir=""
-        else
-          confDir="-d ${localSensuConf}"
-        fi
-        # omit localSensuConf dir if syntax errors have been detected
-        exec sensu-client -L ${cfg.loglevel} \
-          -c ${sensuClientConfigFile} $confDir \
-          ${concatStringsSep " " cfg.extraOpts}
-      '';
-      serviceConfig = {
-        User = "sensuclient";
-        Group = "sensuclient";
-        Restart = "always";
-        RestartSec = "5s";
+      users.users.sensuclient = {
+        description = "sensu client daemon user";
+        uid = config.ids.uids.sensuclient;
+        group = "sensuclient";
+        # Allow sensuclient to interact with services, adm stuff and the journal.
+        # This especially helps to check supervisor with a group-writable
+        # socket:
+        extraGroups = [ "service" "adm" "systemd-journal" ];
       };
-      environment = {
-        LANG = "en_US.utf8";
-      };
-    };
 
-    systemd.tmpfiles.rules = [
-      "d /var/tmp/sensu 0775 sensuclient service"
-    ];
-
-    users.groups.sensuclient.gid = config.ids.gids.sensuclient;
-
-    users.users.sensuclient = {
-      description = "sensu client daemon user";
-      uid = config.ids.uids.sensuclient;
-      group = "sensuclient";
-      # Allow sensuclient to interact with services, adm stuff and the journal.
-      # This especially helps to check supervisor with a group-writable
-      # socket:
-      extraGroups = [ "service" "adm" "systemd-journal" ];
-    };
-
-    flyingcircus.services.sensu-client.checks = with pkgs;
-    let
-      uplink = ipvers: {
-        notification = "Internet uplink IPv${ipvers} slow/unavailable";
-        command =
-          "${sudo} ${fc.multiping}/bin/multiping -${ipvers} " +
-          "google.com dns.quad9.net heise.de";
-        interval = 300;
-      };
-    in {
-      load = {
-        notification = "Load is too high";
-        command =
-          "check_load -r -w ${cfg.expectedLoad.warning} " +
-          "-c ${cfg.expectedLoad.critical}";
-        interval = 10;
-      };
-      swap = {
-        notification = "Swap usage is too high";
-        command =
-          "${fc.sensuplugins}/bin/check_swap_abs " +
-          "-w ${toString cfg.expectedSwap.warning} " +
-          "-c ${toString cfg.expectedSwap.critical}";
-        interval = 300;
-      };
-      ssh = {
-        notification = "SSH server is not responding properly";
-        command = "check_ssh localhost";
-        interval = 300;
-      };
-      cpu_steal = {
-        notification = "CPU has high amount of `%steal` ";
-        command =
-          "${fc.sensuplugins}/bin/check_cpu_steal " +
-          "--mpstat ${sysstat}/bin/mpstat";
-        interval = 600;
-      };
-      ntp_time = {
-        notification = "Clock is skewed";
-        command = "check_ntp_time -H ${elemAt ntpServers 0}";
-        interval = 300;
-      };
-      sensu_syntax = {
-        notification = ''
-          Problematic check definitions in /etc/local/sensu-client
-        '';
-        command = sensusyntax;
-        interval = 60;
-      };
-      internet_uplink_ipv4 = uplink "4";
-      internet_uplink_ipv6 = uplink "6";
-      # Signal for 30 minutes that it was not OK for the VM to reboot. We may
-      # need something to counter this on planned reboots. 30 minutes is enough
-      # for status pages to pick this up. After that, we'll leave it in "warning"
-      # for 1 day so that regular support can spot the issue even if it didn't
-      # cause an alarm, but have it visible for context.
-      uptime = {
-        notification = "Host was down";
-        command = "${check-uptime}/bin/check_uptime -c @:30 -w @:1440";
-        interval = 300;
-      };
-      systemd_units = {
-        notification = "systemd has failed units";
-        command = ''
-          ${pkgs.sensu-plugins-systemd}/bin/check-failed-units.rb \
-            -m logrotate.service \
-            -m fc-collect-garbage.service
-        '';
-      };
-      disk = {
-        notification = "Disk usage too high";
-        command = "${sudo} ${fc.sensuplugins}/bin/check_disk -v -w 90 -c 95";
-        interval = 300;
-      };
-      writable = {
-        notification = "Disks are writable";
-        command =
-          "${fc.sensuplugins}/bin/check_writable /tmp/.sensu_writable " +
-          "/var/tmp/sensu/.sensu_writable";
-        interval = 60;
-        ttl = 120;
-        warnIsCritical = true;
-      };
-      entropy = {
-        notification = "Too little entropy available";
-        command = ''
-          ${pkgs.sensu-plugins-entropy-checks}/bin/check-entropy.rb \
-            -w 120 -c 60
-        '';
-      };
-      journal = {
-        notification = "Journal errors in the last 10 minutes";
-        command =
-          "${fc.check-journal}/bin/check_journal " +
-          "-j ${systemd}/bin/journalctl " +
-          "https://gitlab.flyingcircus.io/flyingcircus/fc-logcheck-config/" +
-          "raw/master/nixos-journal.yaml";
-        interval = 600;
-      };
-      journal_file = {
-        notification = "Journal file too small.";
-        command = "${fc.sensuplugins}/bin/check_journal_file";
-      };
-      manage = {
-        notification = "The FC manage job is not enabled.";
-        command = "${check_timer} fc-agent";
-      };
-      netstat_tcp = {
-        notification = "Netstat TCP connections";
-        command = ''
-          ${pkgs.sensu-plugins-network-checks}/bin/check-netstat-tcp.rb \
-            -w ${toString cfg.expectedConnections.warning} \
-            -c ${toString cfg.expectedConnections.critical}
-        '';
-      };
-      obsolete-result-links = {
-        notification = ''
-          Obsolete 'result' symlinks possibly causing Nix store bloat
-        '';
-        # see also activationScript in nixos/platform/agent.nix
-        command = "${fc.check-age}/bin/check_age -m -w 3h /result /root/result";
-        interval = 300;
-      };
-      root_lost_and_found = {
-        notification = ''
-          lost+found indicating filesystem issues on /
-        '';
-        command = "${fc.check-age}/bin/check_age -m /lost+found -w 2h -c 1d";
-        interval = 300;
-      };
-    };
-
-  };
+    }
+  ];
 }
