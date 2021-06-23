@@ -55,7 +55,7 @@ let
   allowedCiphers = [
     "AES-256-GCM"
     # for 2.3.x clients
-    "AES-256-CBC" 
+    "AES-256-CBC"
   ];
 
   #
@@ -300,7 +300,6 @@ in
         nobind
         persist-key
         persist-tun
-        comp-lzo
         verb 3
         remote-cert-tls server
         auth-user-pass
