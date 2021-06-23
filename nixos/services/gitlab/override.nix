@@ -5,7 +5,7 @@ let
   cfg = config.services.gitlab;
 in
 {
-  config = {
+  config = mkIf (cfg.enable) {
     # all logs to /var/log
     systemd.tmpfiles.rules = [
       "d /var/log/gitlab 0750 ${cfg.user} ${cfg.group} -"
