@@ -42,6 +42,7 @@ def get_sensucheck_configuration(servicechecks):
             command.extend(['-u', shlex.quote(path)])
         if url.scheme == 'https':
             command.append('-S')
+            command.append('--sni')
         if url.username:
             auth_pair = ':'.join([url.username, url.password or ''])
             command.extend(['-a', auth_pair])
