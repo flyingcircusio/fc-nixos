@@ -44,6 +44,33 @@ in
       (writeScriptBin "gitlab-show-config" ''jq < /srv/gitlab/state/config/gitlab.yml'')
     ];
 
+    # all logs to /var/log
+    systemd.tmpfiles.rules = [
+      "d /var/log/gitlab 0750 ${cfg.user} ${cfg.group} -"
+      "L+ ${cfg.statePath}/log/grpc.log - - - - /var/log/gitlab/grpc.log"
+      "L+ ${cfg.statePath}/log/production_json.log - - - - /var/log/gitlab/production_json.log"
+      "f /var/log/gitlab/grpc.log 0750 ${cfg.user} ${cfg.group} -"
+      "f /var/log/gitlab/production_json.log 0750 ${cfg.user} ${cfg.group} -"
+    ];
+
+    # generate secrets on first start
+    systemd.services.gitlab-generate-secrets = {
+      wantedBy = [ "gitlab.target" "multi-user.target" ];
+
+      path = with pkgs; [ apg ];
+
+      # not launching this with a condition, just in case we need more secrets in the future
+      script = ''
+        mkdir -p /srv/gitlab/secrets
+        cd /srv/gitlab/secrets
+        for x in db db_password jws otp root_password secret; do
+          if [ ! -e "$x" ]; then
+            apg -n1 -m40 > "$x"
+          fi
+        done
+      '';
+    };
+
     services.gitlab = {
       enable = true;
       databaseHost = "127.0.0.1";
@@ -56,16 +83,16 @@ in
       port = 443;
       host = cfg.hostName;
 
-      /* extraGitLabRb = ''
-        if Rails.env.production?
-          Rails.application.config.action_mailer.delivery_method = :sendmail
-          ActionMailer::Base.delivery_method = :sendmail
-          ActionMailer::Base.sendmail_settings = {
-            location: "/run/wrappers/bin/sendmail",
-            arguments: "-i -t"
-          }
-        end
-      ''; */
+      # less memory usage with jemalloc
+      # ref https://brandonhilkert.com/blog/reducing-sidekiq-memory-usage-with-jemalloc/
+      extraEnv.LD_PRELOAD = "${pkgs.jemalloc}/lib/libjemalloc.so";
+
+      # all logs to /var/log
+      extraShellConfig = {
+        log_file = "/var/log/gitlab/gitlab-shell.log";
+      };
+
+      extraEnv.GITLAB_LOG_PATH = "/var/log/gitlab";
 
       secrets = {
         dbFile = "/srv/gitlab/secrets/db";
