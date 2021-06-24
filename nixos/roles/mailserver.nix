@@ -141,6 +141,13 @@ in
       flyingcircus.services.nginx.enable = true;
       flyingcircus.services.redis.enable = true;
 
+      flyingcircus.passwordlessSudoRules = [
+        {
+          commands = [ "${pkgs.postfix}/bin/postsuper" ];
+          groups = [ "sudo-srv" "service" ];
+        }
+      ];
+
       flyingcircus.roles.mailserver =
         fclib.jsonFromFile "/etc/local/mail/config.json" "{}";
     })
