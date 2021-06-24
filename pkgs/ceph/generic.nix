@@ -81,8 +81,6 @@ let
   };
 
   ceph-python-env = python2Packages.python.withPackages (ps: [
-    ps.sphinx
-    ps.flask
     ps.cython
     ps.setuptools
     ps.pip
