@@ -10,7 +10,7 @@ LOCATION="@location@"
 EASYRSA="@easyrsa@"
 OPENVPN="@openvpn@"
 
-export PATH="@gawk@/bin:$PATH"
+export PATH="@gnused@/bin:@gawk@/bin:$PATH"
 
 ersa="$EASYRSA/bin/easyrsa --batch --days=999999"
 stamp="${DIR}/.stamp-generate-pki"

@@ -10,7 +10,7 @@
 
 { pkgs ? import <nixpkgs> {}
 , lib ? pkgs.lib
-, branch ? "20.09"
+, branch ? "21.05"
 , updated ? "1970-01-01 01:00"
 , platformDoc ? null # directory/URL containing platform objects.inv
 , failOnWarnings ? false

@@ -6,11 +6,12 @@
 , resource_group ? "unknown-rg"
 , location ? "standalone"
 , caDir ? "/var/lib/openvpn-pki"
+, gnused
 }:
 
 {
   generate = runCommand "generate-pki.sh" {
-    inherit easyrsa openvpn gawk resource_group location caDir;
+    inherit easyrsa openvpn gawk resource_group location gnused caDir;
     inherit (stdenv) shell;
     preferLocalBuild = true;
     allowSubstitutes = false;

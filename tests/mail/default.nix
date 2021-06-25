@@ -118,6 +118,13 @@ in
   };
   testScript = ''
     start_all()
+
+    with subtest("postsuper sudo rule should be present for service group"):
+      mail.succeed('grep %service /etc/sudoers | grep -q postsuper')
+
+    with subtest("postsuper sudo rule should be present for sudo-srv group"):
+      mail.succeed('grep %sudo-srv /etc/sudoers | grep -q postsuper')
+
     mail.execute('rm -rf /srv/mail/example.local')
     mail.wait_for_file('/run/rspamd/rspamd-milter.sock')
     mail.wait_for_open_port(25)

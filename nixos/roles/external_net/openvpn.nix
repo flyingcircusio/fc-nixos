@@ -55,7 +55,7 @@ let
   allowedCiphers = [
     "AES-256-GCM"
     # for 2.3.x clients
-    "AES-256-CBC" 
+    "AES-256-CBC"
   ];
 
   #
@@ -173,13 +173,15 @@ let
     tls-cipher ${lib.concatStringsSep ":" allowedTlsCiphers}
 
     # data channel ciphers that can be negotiated
-    ncp-ciphers ${lib.concatStringsSep ":" allowedCiphers}
+    data-ciphers ${lib.concatStringsSep ":" allowedCiphers}
 
     keepalive 10 120
     plugin ${openvpn}/lib/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn
     management localhost ${mgmPort} ${pkgs.writeText "openvpn-mgm-psk" mgmPsk}
 
-    comp-lzo
+    # Since 21.05 cipher must be set. Previously it defaulted to BF-CBC as fallback
+    cipher AES-256-GCM
+
     user nobody
     group nogroup
 
@@ -298,7 +300,6 @@ in
         nobind
         persist-key
         persist-tun
-        comp-lzo
         verb 3
         remote-cert-tls server
         auth-user-pass
