@@ -7,14 +7,14 @@ Kubernetes Cluster
 
     Kubernetes support is – at the moment – still experimental. Feel free
     to use it but we suggest contacting our support before putting anything into
-    production. We only support the Kubernetes roles on our NixOS 20.09 platform.
+    production.
 
 
 Kubernetes Version and Documentation
 ------------------------------------
 
-The current version is Kubernetes 1.19. Refer to the
-`Kubernetes manual <https://v1-19.docs.kubernetes.io/docs/home/>`_.
+The current version is Kubernetes 1.21. Refer to the
+`Kubernetes manual <https://kubernetes.io/docs/home/>`_.
 
 Roles
 -----
@@ -47,7 +47,7 @@ The roles can be combined on a machine.
    Changing the master VM is not supported and requires substantial manual intervention.
 
 Activating the node role on an existing master-only VM works,
-but `taints <https://v1-19.docs.kubernetes.io/docs/concepts/configuration/taint-and-toleration>`_
+but `taints <https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>`_
 must be disabled manually to run pods on it.
 
 
@@ -160,8 +160,7 @@ You can get the Pod IPs belonging to a service with a wildcard DNS query:
     $ dig *.myapp.default.svc.cluster.local
 
 For more information about Kubernetes services, refer to the
-`Service chapter in the Kubernetes manual <https://v1-19.docs.kubernetes.io/docs/concepts/services-networking/>`_.
-
+`Service chapter in the Kubernetes manual <https://kubernetes.io/docs/concepts/services-networking/service/>`_.
 
 External Access to Services and Load Balancing
 ----------------------------------------------
@@ -189,7 +188,7 @@ For more information, see this article about `DNS for Service Discovery in HAPro
 <https://www.haproxy.com/blog/dns-service-discovery-haproxy/>`_.
 
 For details on how to configure HAProxy, please refer to the
-`documentation <http://cbonte.github.io/haproxy-dconv/2.2/configuration.html>`_.
+`documentation <http://cbonte.github.io/haproxy-dconv/2.3/configuration.html>`_.
 
 
 .. _nixos-changing-kubernetes-networks:

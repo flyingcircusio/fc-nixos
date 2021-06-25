@@ -6,8 +6,6 @@ MongoDB
 Managed instance of `MongoDB <https://www.mongodb.com>`_.
 There's a role for each supported major version, currently:
 
-* mongodb32 (not available on NixOS 20.09)
-* mongodb34 (not available on NixOS 20.09)
 * mongodb36
 * mongodb40
 

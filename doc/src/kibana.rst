@@ -6,7 +6,7 @@ Kibana
 `Kibana <https://www.elastic.co/kibana>`_ is a data analysis tool based on Elasticsearch.
 There's a role for each supported major version, currently:
 
-* kibana6: 6.7.2 (NixOS 20.09: 6.8.3)
+* kibana6: 6.8.3
 * kibana7: 7.8.0
 
 We provide :ref:`nixos-elasticsearch` as a separate component.

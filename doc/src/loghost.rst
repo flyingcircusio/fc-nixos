@@ -4,7 +4,7 @@ Loghost
 =======
 
 The Loghost role starts a managed instance of `Graylog
-<http://www.graylog.org>`_ 3.0.x (NixOS 20.09 3.3.x).
+<http://www.graylog.org>`_ 3.3.x
 
 Components
 ----------
