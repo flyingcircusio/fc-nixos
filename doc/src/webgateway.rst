@@ -10,7 +10,7 @@ failover support.
 Versions
 --------
 
-* HAProxy: 2.2.2
+* HAProxy: 2.3.10
 * Nginx: 1.18.0
 
 Role architecture
@@ -62,7 +62,7 @@ HAProxy
 
 For HAProxy, you will already find a configuration file which you can change to
 fit your needs. For reference, please refer to the
-`official documentation <http://cbonte.github.io/haproxy-dconv/2.2/configuration.html>`_.
+`official documentation <http://cbonte.github.io/haproxy-dconv/2.3/configuration.html>`_.
 
 
 .. _nixos-nginx:
@@ -96,7 +96,7 @@ following is sufficient:
       ssl_certificate_key /etc/local/nginx/mydomain.key;
 
 For a more detailed description refer to
-`/etc/local/nginx/README.txt <https://github.com/flyingcircusio/fc-nixos/blob/fc-20.09-production/nixos/services/nginx/README.txt>`_.
+`/etc/local/nginx/README.txt <https://github.com/flyingcircusio/fc-nixos/blob/fc-21.05-production/nixos/services/nginx/README.txt>`_.
 
 
 Logging

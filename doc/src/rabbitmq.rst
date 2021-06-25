@@ -3,11 +3,7 @@
 RabbitMQ
 ========
 
-A managed instance of the `RabbitMQ <http://rabbitmq.com>`_ message broker.
-On NixOS 20.09, RabbitMQ 3.8 should be used.
-
-We still provide RabbitMQ versions 3.6.5 and 3.6.15.
-They are end-of-life and should not be used anymore.
+A managed instance of the `RabbitMQ <http://rabbitmq.com>`_ message broker at version 3.8.
 
 Configuration
 -------------

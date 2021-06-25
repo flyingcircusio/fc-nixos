@@ -6,8 +6,7 @@ Elasticsearch
 Managed instance of `Elasticsearch <https://www.elastic.co/elasticsearch>`_.
 There's a role for each supported major version, currently:
 
-* elasticsearch5: 5.6.16 (not available on NixOS 20.09)
-* elasticsearch6: 6.7.2 (20.09: 6.8.3)
+* elasticsearch6: 6.8.3
 * elasticsearch7: 7.8.0
 
 We also provide :ref:`nixos-kibana` as a separate component.
