@@ -304,6 +304,7 @@ in
         remote-cert-tls server
         auth-user-pass
         auth-nocache
+        keysize 266
 
         # needed for older (2.3.x) clients (please upgrade!), 2.4 can negotiate the best cipher
         #cipher AES-256-CBC
