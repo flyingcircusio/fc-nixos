@@ -22,7 +22,8 @@ setup(
             'check_megaraid_cache=fc.sensuplugins.megaraid_cache:main',
             'check_swap_abs=fc.sensuplugins.swap:main',
             'check_writable=fc.sensuplugins.writable:main',
-            'check_interfaces=fc.sensuplugins.interfaces:main'
+            'check_interfaces=fc.sensuplugins.interfaces:main',
+            'check_psi=fc.sensuplugins.pressure_stall_information:main'
         ],
     },
 )
