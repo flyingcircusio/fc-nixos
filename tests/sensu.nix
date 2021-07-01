@@ -122,7 +122,7 @@ in {
         networking.domain = "gocept.net";
 
         users.groups = {
-          admins = {
+          crew = {
             members = [ "test" ];
           };
         };
