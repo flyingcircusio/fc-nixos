@@ -332,7 +332,7 @@ class Channel:
                 600, comment='\n'.join(msg)))
 
 
-def load_enc(enc_path):
+def load_enc(enc_path='/etc/nixos/enc.json'):
     """Tries to read enc.json"""
     global enc
     try:
@@ -341,7 +341,9 @@ def load_enc(enc_path):
     except (OSError, ValueError):
         # This environment doesn't seem to support an ENC,
         # i.e. Vagrant. Silently ignore for now.
+        enc = {}
         return
+    return enc
 
 
 def conditional_update(filename, data):
