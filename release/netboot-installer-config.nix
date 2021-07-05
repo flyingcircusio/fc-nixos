@@ -2,7 +2,8 @@
 
 { config, lib, pkgs, system, ... }:
 
-let fc_install = pkgs.writeScriptBin "fc-install" ''
+let
+  fc_install = pkgs.writeScriptBin "fc-install" ''
 #!/bin/sh
 
 # Note:
@@ -22,6 +23,12 @@ function yes_or_no {
 }
 
 udevadm settle
+
+echo "Please review the interface / MAC addresses in the directory"
+
+show-interfaces
+
+read -p "Ready to continue?  [ENTER]"
 
 read -p "ENC wormhole URL: " -e enc_wormhole
 
@@ -125,10 +132,26 @@ cat > /mnt/etc/nixos/configuration.nix << __EOF__
 }
 __EOF__
 
+
+root_disk_wwn=""
+for x in /dev/disk/by-id/wwn-*; do
+  if [ "$(realpath $x)" == "''${root_disk}" ]; then
+    root_disk_wwn=$x
+    break
+  fi;
+done
+
+if [ "$root_disk_wwn" == "" ]; then
+  echo "ERROR: Could not find WWN for root disk"
+  exit 1
+fi
+
+echo "Found root disk WWN: $root_disk_wwn"
+
 cat > /mnt/etc/nixos/local.nix << __EOF__
 { config, lib, ... }:
 {
-  boot.loader.grub.device = "''${root_disk}";
+  boot.loader.grub.device = "''${root_disk_wwn}";
   boot.kernelParams = [ "''${console}" ];
 
   users.users.root.hashedPassword = "''${root_password}";
@@ -189,11 +212,81 @@ umount -R /mnt
 
   '';
 
+  show_interfaces = pkgs.writeScriptBin "show-interfaces" ''
+#! ${pkgs.python3Full}/bin/python
+import json
+import subprocess
+
+def run_json(cmd):
+    process = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
+    return json.loads(process.stdout)
+
+
+class Interface(object):
+
+    name = None
+
+    switch = None
+    switch_port = None
+
+    mac = None
+
+    def __init__(self):
+        self.addresses = []
+
+    @classmethod
+    def create(cls, name):
+        if name not in interfaces:
+            i = Interface()
+            i.name = name
+            interfaces[name] = i
+        return interfaces[name]
+
+interfaces = {}
+
+# get all lldp output
+lldp = run_json(['lldpctl', '-f', 'json0'])
+for i in lldp['lldp'][0]['interface']:
+    interface = Interface.create(i['name'])
+    interface.switch = i["chassis"][0]["name"][0]["value"]
+    interface.switch_port = i["port"][0]["descr"][0]["value"]
+
+# get all interfaces
+ip_l = run_json(['ip', '-j', 'l'])
+for l in ip_l:
+    if l['link_type'] != 'ether':
+        continue
+    interface = Interface.create(l['ifname'])
+    interface.mac = l['address']
+
+# get all ips
+ip_a = run_json(['ip', '-4', '-j', 'a'])
+for l in ip_a:
+    addrs = []
+    for a in l['addr_info']:
+        if a['scope'] != 'global':
+            continue
+        addrs.append(a['local'])
+    if not addrs:
+        continue
+    interface = Interface.create(l['ifname'])
+    interface.addresses = addrs
+
+print("INTERFACE           | MAC               | SWITCH               | ADDRESSES")
+print("--------------------+-------------------+----------------------+-----------------------------------")
+for interface in interfaces.values():
+    switch_and_port = f"{interface.switch}/{interface.switch_port}"
+    addresses = ', '.join(interface.addresses)
+    print(f"{interface.name: <20}| {interface.mac: >17} | {switch_and_port: <20} | {addresses}")
+    '';
+
 in 
 {
   config = {
 
     nixpkgs.config.allowUnfree = true;
+
+    services.lldpd.enable = true;
 
     environment.systemPackages = with pkgs; [
       python3Full
@@ -203,6 +296,7 @@ in
       fc_enter
       jq
       fc_install
+      show_interfaces
       ipmitool
     ];
 
