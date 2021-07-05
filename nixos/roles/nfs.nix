@@ -53,7 +53,6 @@ in
           options = [
             "rw"
             "soft"
-            "intr"
             "rsize=8192"
             "wsize=8192"
             "noauto"
