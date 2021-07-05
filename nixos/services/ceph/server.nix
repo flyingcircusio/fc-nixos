@@ -24,6 +24,11 @@ in
 
     flyingcircus.services.ceph.client.enable = true;
 
+    environment.etc."ceph/ceph.client.admin.keyring".text = ''
+      [client.admin]
+      key = ${config.flyingcircus.enc.parameters.secrets."ceph/admin_key"}
+    '';
+
     systemd.tmpfiles.rules = [
         "d /srv/ceph 0755"
         "d /var/log/ceph 0755"
@@ -50,10 +55,10 @@ in
       }      
       '';
 
-    #services.telegraf.extraConfig.inputs.ceph = [
-    #  { ceph_binary =  "${ceph_sudo}/bin/ceph-sudo"; }
-    #];
-
+    services.telegraf.extraConfig.inputs.ceph = [
+      { ceph_binary =  "${ceph_sudo}/bin/ceph-sudo"; }
+    ];
+    
     flyingcircus.passwordlessSudoRules = [
       {
         commands = [ "${pkgs.ceph}/bin/ceph" ];

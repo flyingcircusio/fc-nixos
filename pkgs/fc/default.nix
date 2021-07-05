@@ -5,11 +5,12 @@ rec {
 
   agent = callPackage ./agent {};
   check-age = callPackage ./check-age {};
+  check-ceph = callPackage ./check-ceph {};
   check-haproxy = callPackage ./check-haproxy {};
   check-journal = callPackage ./check-journal.nix {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
-  ceph = callPackage ./ceph { inherit blockdev; };
+  ceph = callPackage ./ceph { inherit blockdev agent; };
   blockdev = callPackage ./blockdev {};
   collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};

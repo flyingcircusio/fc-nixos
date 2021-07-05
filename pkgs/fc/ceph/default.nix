@@ -1,29 +1,38 @@
-{ lib, stdenv, python3Full, blockdev, lvm2 }:
+{ lib, stdenv, python3Full, python3Packages, lz4, blockdev, lvm2, utillinux, ceph, agent }:
 
+let
+  py = python3Packages;
+in 
 
-stdenv.mkDerivation rec {
-  version = "0.1";
-  name = "fc-ceph";
+py.buildPythonApplication rec {
+  name = "fc-ceph-${version}";
+  version = "1.0";
+  src = ./.;
+  dontStrip = true;
+  propagatedBuildInputs = [
+    blockdev
+    ceph
+    lz4
+    lvm2
+    agent
+    utillinux
+    python3Packages.requests
+  ];
 
-  src = ./fc-ceph.py;
-  unpackPhase = ":";
-  dontBuild = true;
-  dontConfigure = true;
-
-  buildInputs = [ python3Full blockdev ];
-  propagatedBuildInputs = [ lvm2 ];
-
-  installPhase = ''
-    mkdir -p $out/bin
-    cp ${src} $out/bin/fc-ceph
-    chmod +x $out/bin/fc-ceph
-    patchShebangs $out/bin
-  '';
+  checkInputs = [ 
+        python3Packages.pytest
+        python3Packages.mock
+        python3Packages.freezegun
+  ];
 
   meta = with lib; {
     description = "fc-ceph";
     maintainers = [ maintainers.theuni ];
     platforms = platforms.unix;
   };
+
+  checkPhase = ''
+    pytest fc/ceph
+  '';
 
 }
