@@ -91,7 +91,7 @@ in {
       IPMI-sensors = {
         notification = "IPMI sensors";
         command = ''
-          sudo ${pkgs.check_ipmi_sensor}/bin/check_ipmi_sensor ${cfg.ipmi.check_additional_options}
+          sudo ${pkgs.check_ipmi_sensor}/bin/check_ipmi_sensor  --noentityabsent ${cfg.ipmi.check_additional_options}
         '';
       };
     };
