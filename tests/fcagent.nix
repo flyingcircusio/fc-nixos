@@ -20,6 +20,18 @@ in
         ];
         flyingcircus.agent.enable = true;
         flyingcircus.enc.parameters.production = true;
+
+
+        flyingcircus.enc.parameters.interfaces.srv = {
+          mac = "52:54:00:12:34:56";
+          bridged = false;
+          networks = {
+            "192.168.101.0/24" = [ "192.168.101.1" ];
+            "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::1" ];
+          };
+          gateways = {};
+        };
+
       };
 
     nonprod =
@@ -30,6 +42,17 @@ in
         ];
         flyingcircus.agent.enable = true;
         flyingcircus.enc.parameters.production = false;
+
+        flyingcircus.enc.parameters.interfaces.srv = {
+          mac = "52:54:00:12:34:56";
+          bridged = false;
+          networks = {
+            "192.168.101.0/24" = [ "192.168.101.1" ];
+            "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::1" ];
+          };
+          gateways = {};
+        };
+
       };
 
   };

@@ -16,6 +16,8 @@ import ./make-test-python.nix ({ pkgs, lib, ... }:
       fc.userscan
     ];
 
+    config.services.telegraf.enable = false;
+
   };
 
   testScript = ''

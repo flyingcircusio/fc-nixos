@@ -29,14 +29,26 @@ in {
         directory_password = "asdf";
         resource_group = "test";
         interfaces.srv = {
-          mac = "52:54:00:12:34:56";
+          mac = "52:54:00:12:02:01";
+          bridged = false;
           networks = {
             "192.168.101.0/24" = [ ipv4 ];
             "2001:db8:f030:1c3::/64" = [ ipv6 ];
           };
           gateways = {};
         };
+        interfaces.fe = {
+          mac = "52:54:00:12:01:01";
+          bridged = false;
+          networks = {
+            "10.0.0.0/24" = [ "10.0.0.3" ];
+            "2001:db8:3::/64" = [ "2001:db8:3::3" ];
+          };
+          gateways = {};
+        };
       };
+
+      virtualisation.vlans = [ 1 2 ];
 
       users.groups.login = {
         members = [];

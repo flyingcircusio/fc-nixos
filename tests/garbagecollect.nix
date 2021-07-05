@@ -17,6 +17,16 @@ import ./make-test-python.nix (
         config = {
           flyingcircus.agent.collect-garbage = true;
 
+          flyingcircus.enc.parameters.interfaces.srv = {
+            mac = "52:54:00:12:34:56";
+            bridged = false;
+            networks = {
+              "192.168.101.0/24" = [ "192.168.101.1" ];
+              "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::1" ];
+            };
+            gateways = {};
+          };
+          
           users.users.u0 = {
             isNormalUser = true;
             inherit home;

@@ -55,12 +55,14 @@ in
 
     networking.extraHosts = additional_hosts;
 
-    systemd.services."network-external-routing-ionos" = rec {
+    systemd.services."network-external-routing-ionos" = let
+          netdev = fclib.network.srv.device;
+      in rec {
       description = "Custom routing rules for external networks";
-      after = [ "network-routing-ethsrv.service" "firewall.service" ];
+      after = [ "network-addresses-${netdev}.service" "firewall.service" ];
       requires = after;
       wantedBy = [ "multi-user.target" ];
-      bindsTo = [ "sys-subsystem-net-devices-ethsrv.device" ];
+      bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.physicalDevice}.device" ];
       path = with pkgs; [ gawk iproute glibc iptables ];
 
       serviceConfig =
@@ -69,13 +71,13 @@ in
           ExecStart = pkgs.writeScript "network-external-routing-start" ''
             #! ${pkgs.stdenv.shell} -e
             ${lib.concatMapStringsSep "\n"
-              (route: "ip -4 route add ${route} via ${gwHost} dev ethsrv")
+              (route: "ip -4 route add ${route} via ${gwHost} dev ${netdev} onlink")
               routes}
           '';
           ExecStop = pkgs.writeScript "network-external-routing-stop" ''
             #! ${pkgs.stdenv.shell}
             ${lib.concatMapStringsSep "\n"
-              (route: "ip -4 route del ${route} via ${gwHost} dev ethsrv")
+              (route: "ip -4 route del ${route} via ${gwHost} dev ${netdev}")
               routes}
           '';
           RemainAfterExit = true;
@@ -125,10 +127,6 @@ in
         (route: "iptables -A nixos-fw -s ${route} -j nixos-fw-accept")
         routes}
     '';
-
-    # Policy routing doesn't work with the routing via VPN. But everything
-    # works without policy routing. So disable it.
-    flyingcircus.network.policyRouting.enable = lib.mkForce false;
 
   };
 }

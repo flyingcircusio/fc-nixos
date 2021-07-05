@@ -69,7 +69,7 @@ let
         (vhost.listenAddress or null)
         (vhost.listenAddress6 or null)
       ]
-      else fclib.listenAddressesQuotedV6 "ethfe";
+      else fclib.network.fe.dualstack.addressesQuoted;
   in
     # listen and enableACME defaults are overridden if the JSON spec has them.
     { listen = lib.flatten (map defaultListen addrs); }

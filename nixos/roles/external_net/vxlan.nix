@@ -74,7 +74,7 @@ let
       then "${resource_group}.fcio.net"
       else "local";
 
-    feAddrs = fclib.listenAddresses "ethfe";
+    feAddrs = fclib.network.fe.dualstack.addresses;
     fqdn = "${config.networking.hostName}.ext.${domain}";
 
     dnsmasqConf = ''

@@ -14,9 +14,9 @@ let
   };
 
   listenAddresses =
-    fclib.listenAddresses "lo" ++
-    fclib.listenAddresses "ethsrv";
-
+    fclib.network.lo.dualstack.addresses ++
+    fclib.network.srv.dualstack.addresses;
+    
   currentMemory = fclib.currentMemory 256;
   sharedMemoryMax = currentMemory / 2 * 1048576;
 

@@ -9,7 +9,6 @@ let
   ipmi_interface = cfg.enc.parameters.interfaces.ipmi;
   ipmi_v4_network_cidr = head (filter fclib.isIp4 (attrNames ipmi_interface.networks));
 
-  # ipv4_cidr = filter (cfg.lib.listenAddresses "ipmi") cfg.lib.isIp4;
   ipmi_addr = head ipmi_interface.networks.${ipmi_v4_network_cidr};
   ipmi_netmask = fclib.netmaskFromCIDR ipmi_v4_network_cidr;
   ipmi_gw = ipmi_interface.gateways.${ipmi_v4_network_cidr};
@@ -92,7 +91,7 @@ in {
       IPMI-sensors = {
         notification = "IPMI sensors";
         command = ''
-          sudo ${pkgs.check_ipmi_sensor}/bin/check_ipmi_sensor ${cfg.ipmi.check_additional_options}
+          sudo ${pkgs.check_ipmi_sensor}/bin/check_ipmi_sensor  --noentityabsent ${cfg.ipmi.check_additional_options}
         '';
       };
     };

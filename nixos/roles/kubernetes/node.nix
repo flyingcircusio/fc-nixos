@@ -63,9 +63,6 @@ in
 
     (lib.mkIf (cfg.enable && !config.flyingcircus.roles.kubernetes-master.enable) {
 
-      # Policy routing interferes with virtual ClusterIPs handled by kube-proxy, disable it.
-      flyingcircus.network.policyRouting.enable = false;
-
       # Needed for node-only machines.
       # The kubernetes-master role also sets the same token but in another directory.
       flyingcircus.activationScripts.kubernetes-apitoken-node = ''

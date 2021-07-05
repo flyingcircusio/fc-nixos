@@ -11,7 +11,7 @@ stdenv.mkDerivation rec {
   dontConfigure = true;
 
   buildInputs = [ python3Full ];
-  propagatedBuildInputs = [ lvm2 ];
+  propagatedBuildInputs = [ lvm2 megacli ];
 
   installPhase = ''
     mkdir -p $out/bin

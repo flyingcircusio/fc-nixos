@@ -9,6 +9,8 @@ import ./make-test-python.nix ({ ... }:
         local2 = "/var/log/test.log";
       };
 
+      services.telegraf.enable = false;
+
       flyingcircus.journalbeat.logTargets = {
         "localhost" = {
           host = "localhost";

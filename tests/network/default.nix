@@ -29,19 +29,21 @@ let
   encInterfaces = id: {
     fe = {  # VLAN 1
       mac = "52:54:00:12:01:0${id}";
+      bridged = false;
       networks = {
         "10.51.1.0/24" = [ "10.51.1.1${id}" "10.51.1.2${id}" ];
         "2001:db8:1::/64" = [ "2001:db8:1::1${id}" "2001:db8:1::2${id}" ];
       };
       gateways = {
         "10.51.1.0/24" = "10.51.1.1";
-        "2001:db8::/64" = "2001:db8:1::1";
+        "2001:db8:1::/64" = "2001:db8:1::1";
       };
     };
     srv = {  # VLAN 2
       mac = "52:54:00:12:02:0${id}";
+      bridged = false;
       networks = {
-        "10.52.2.0/24" = [ "10.51.2.1${id}" "10.51.2.2${id}" ];
+        "10.51.2.0/24" = [ "10.51.2.1${id}" "10.51.2.2${id}" ];
         "2001:db8:2::/64" = [ "2001:db8:2::1${id}" "2001:db8:2::2${id}" ];
       };
       gateways = {
@@ -58,6 +60,7 @@ in {
     loopback = {
       name = "loopback";
       machine.imports = [ ../../nixos ];
+      machine.services.telegraf.enable = false;
       testScript = ''
         machine.wait_for_unit("network.target")
         machine.succeed("ip addr show lo | grep -q 'inet 127.0.0.1/8 '")

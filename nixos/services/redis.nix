@@ -6,9 +6,9 @@ let
   cfg = config.flyingcircus.services.redis;
   fclib = config.fclib;
 
-  listen_addresses =
-    fclib.listenAddresses "lo" ++
-    fclib.listenAddresses "ethsrv";
+  listenAddresses =
+    fclib.network.lo.dualstack.addresses ++
+    fclib.network.srv.dualstack.addresses;
 
   generatedPassword =
     lib.removeSuffix "\n" (readFile
@@ -97,7 +97,7 @@ in {
 
       services.redis = {
         enable = true;
-        bind = concatStringsSep " " listen_addresses;
+        bind = concatStringsSep " " listenAddresses;
         package = cfg.package;
         requirePass = password;
         vmOverCommit = true;

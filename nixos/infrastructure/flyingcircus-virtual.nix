@@ -90,5 +90,13 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       attrValues cfg.static.adminKeys;
   };
 
-
+  flyingcircus.services.sensu-client.checks = {
+    cpu_steal = {
+      notification = "CPU has high amount of `%steal` ";
+      command =
+        "${pkgs.fc.sensuplugins}/bin/check_cpu_steal " +
+        "--mpstat ${pkgs.sysstat}/bin/mpstat";
+      interval = 600;
+    };
+  };
 }

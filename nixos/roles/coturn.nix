@@ -5,9 +5,9 @@ with builtins;
 let
   fclib = config.fclib;
   listenAddresses =
-    fclib.listenAddresses "lo" ++
-    fclib.listenAddresses "ethsrv" ++
-    fclib.listenAddresses "ethfe";
+    fclib.network.lo.dualstack.addresses ++
+    fclib.network.srv.dualstack.addresses ++
+    fclib.network.fe.dualstack.addresses;
 
   serviceCfg = config.services.coturn;
   localDir = config.flyingcircus.localConfigDirs.coturn.dir;
@@ -51,7 +51,7 @@ in
 
       hostName = mkOption {
         type = types.str;
-        default = fclib.feFQDN;
+        default = fclib.fqdn { vlan = "fe"; };
         description = ''
           Public host name for the TURN server.
           A Letsencrypt certificate is generated for it.

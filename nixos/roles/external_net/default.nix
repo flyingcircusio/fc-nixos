@@ -12,7 +12,7 @@ let
   feReverses =
     # fake attrset from listenAddresses: { "addr" = null; ... }
     let feAddrSet =
-      lib.genAttrs (fclib.listenAddresses "ethfe") (x: null);
+      lib.genAttrs (fclib.network.fe.dualstack.addresses) (x: null);
     in
     intersectAttrs feAddrSet (lib.attrByPath [ "reverses" ] {} parameters);
 
@@ -21,7 +21,7 @@ let
   defaultFrontendName =
     if feReverses != {}
     then fclib.normalizeDomain domain (head (attrValues feReverses))
-    else fclib.feFQDN;
+    else fclib.fqdn { vlan = "fe"; };
 
 in
 {
@@ -70,8 +70,6 @@ in
   };
 
   config = lib.mkIf cfg.roles.external_net.enable {
-    # does not interact well with old-style policy routing
-    flyingcircus.network.policyRouting.enable = lib.mkForce false;
 
     flyingcircus.roles.openvpn.enable = true;
 

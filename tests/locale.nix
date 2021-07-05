@@ -5,6 +5,23 @@ import ./make-test-python.nix ({ ... }:
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
+
+      services.telegraf.enable = false;
+
+      virtualisation.vlans = [ 3 ];
+
+      flyingcircus.enc.parameters = {
+        resource_group = "test";
+        interfaces.srv = {
+          mac = "52:54:00:12:03:01";
+          bridged = false;
+          networks = {
+            "192.168.3.0/24" = [ "192.168.3.1" ];
+          };
+          gateways = {};
+        };
+      };
+
     };
 
   testScript = ''

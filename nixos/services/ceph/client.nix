@@ -6,35 +6,15 @@ let
   fclib = config.fclib;
   cfg = config.flyingcircus.services.ceph.client;
   static = config.flyingcircus.static.ceph;
-in
-{
-  options = {
-    flyingcircus.services.ceph.client = {
-      enable = lib.mkEnableOption "Ceph client";
-    };
-  };
-
-  config = lib.mkIf cfg.enable {
-
-    environment.systemPackages = [ pkgs.ceph ];
-
-    boot.kernelModules = [ "rbd" ];
-
-    systemd.tmpfiles.rules = [
-      "d '/run/ceph' - root - - -"
-    ];
-
-    environment.etc."ceph/ceph.conf".text = 
-        let
-            public_network = "172.20.4.0/24";
-            cluster_network = "172.20.8.0/24";
-            location = config.flyingcircus.enc.parameters.location;
-            resource_group = config.flyingcircus.enc.parameters.resource_group;
-            fs_id = static.fsids.${location}.${resource_group};
-            mons = lib.concatMapStringsSep ","
-                (mon: "${head (lib.splitString "." mon.address)}.sto.${location}.ipv4.gocept.net")
-                (fclib.findServices "ceph_mon-mon");
-        in ''
+  public_network = head fclib.network.sto.v4.networks;
+  cluster_network = head fclib.network.stb.v4.networks;
+  location = config.flyingcircus.enc.parameters.location;
+  resource_group = config.flyingcircus.enc.parameters.resource_group;
+  fs_id = static.fsids.${location}.${resource_group};
+  mons = lib.concatMapStringsSep ","
+      (mon: "${head (lib.splitString "." mon.address)}.sto.${location}.ipv4.gocept.net")
+      (fclib.findServices "ceph_mon-mon");
+  ceph_config = ''
       [global]
       fsid = ${fs_id}
 
@@ -167,15 +147,39 @@ in
       debug kinetic = 4/5
       debug fuse = 4/5
       '';
+in
+{
+  options = {
+    flyingcircus.services.ceph.client = {
+      enable = lib.mkEnableOption "Ceph client";
 
-    environment.etc."ceph/ceph.client.${config.networking.hostName}.keyring".source = 
-      pkgs.runCommandLocal "ceph-client-keyring" {} ''
-      key=''$(${pkgs.python3Full}/bin/python3 ${./generate-key.py} ${config.flyingcircus.enc.parameters.secret_salt})
-      cat > $out <<__EOF__
-      [client.${config.networking.hostName}]
-      key = ''${key}
-      __EOF__
-    '';
+      config = lib.mkOption {
+        type = lib.types.lines;
+        default = "";
+        description = ''
+          Contents of the ceph config file.
+        '';
+      };
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+
+    environment.systemPackages = [ pkgs.ceph ];
+
+    flyingcircus.services.ceph.client.config = ceph_config;
+
+    boot.kernelModules = [ "rbd" ];
+
+    systemd.tmpfiles.rules = [
+      "d '/run/ceph' - root - - -"
+    ];
+
+    environment.etc."ceph/ceph.conf".source = pkgs.writeText "ceph.conf" cfg.config;
+
+    system.activationScripts.fc-ceph-client-key = ''
+        ${pkgs.fc.ceph}/bin/fc-ceph keys generate-client-key
+      '';
 
   };
 
