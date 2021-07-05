@@ -85,6 +85,21 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         '';
     };
 
+    systemd.services.lvm-upgrade-metadata = {
+        wantedBy = [ "multi-user.target" ];
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+        script = ''
+          set -e
+          vgs=$(${pkgs.lvm2.bin}/bin/vgs --reportformat=json 2>/dev/null |
+            ${pkgs.jq}/bin/jq --raw-output '.report[0].vg[] | .vg_name')
+          for vg in $vgs; do
+            echo $vg;
+            ${pkgs.lvm2.bin}/bin/vgck --updatemetadata $vg;
+          done
+        '';
+    };
+
     flyingcircus.ipmi.enable = true;
 
     flyingcircus.passwordlessSudoRules = [
