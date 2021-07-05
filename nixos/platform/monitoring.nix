@@ -33,9 +33,11 @@ let
           (split: nameValuePair (elemAt split 0) (elemAt split 1))
             (map (combined: splitString ":" combined) labels)));
 
-  globalTags = encTags // optionalAttrs
-    (params ? resource_group)
-    { resource_group = params.resource_group; };
+  globalTags = encTags // 
+    (optionalAttrs (params ? resource_group) 
+      { resource_group = params.resource_group; }) //
+    (optionalAttrs (params ? profile) 
+      { profile = params.profile; });
 
   # New metrics added here must be also added to globalAllowedMetrics
   # roles/statshost/global-metrics.nix if they should be ingested by the central statshost.
