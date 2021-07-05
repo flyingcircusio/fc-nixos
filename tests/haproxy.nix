@@ -42,6 +42,19 @@ in
       {
         imports = [ ../nixos ];
 
+        flyingcircus.enc.parameters = {
+          resource_group = "test";
+          interfaces.srv = {
+            mac = "52:54:00:12:34:56";
+            bridged = false;
+            networks = {
+              "192.168.101.0/24" = [ "192.168.101.1" ];
+              "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::1" ];
+            };
+            gateways = {};
+          };
+        };
+
         environment.etc."nixpkgs-paths-debug".text = toJSON {
           pkgs = "${pkgs.path}";
           releaseChannelSrc = "${channel}";
@@ -67,6 +80,7 @@ in
             # the test VM.
 
             flyingcircus.services.haproxy.enable = true;
+            services.telegraf.enable = false;
 
           }
         '';

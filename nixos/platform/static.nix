@@ -34,31 +34,31 @@ with lib;
 
       # Note: this list of VLAN classes should be kept in sync with
       # fc.directory/src/fc/directory/vlan.py
-      vlans = {
+      vlanIds = {
         # management (grey): BMC, switches, tftp, remote console
-        "1" = "mgm";
+        "mgm" = 1;
         # frontend (yellow): access from public Internet
-        "2" = "fe";
+        "fe" = 2;
         # servers/backend (red): RG-internal (app, database, ...)
-        "3" = "srv";
+        "srv" = 3;
         # storage (black): VM storage access (Ceph)
-        "4" = "sto";
+        "sto" = 4;
         # transfer (blue): primary router uplink
-        "6" = "tr";
+        "tr" = 6;
         # storage backend (yellow): Ceph replication and migration
-        "8" = "stb";
+        "stb" = 8;
         # transfer 2 (blue): secondary router-router connection
-        "14" = "tr2";
+        "tr2" = 14;
         # gocept office
-        "15" = "gocept";
+        "gocept" = 15;
         # frontend (yellow): additional fe needed on some switches
-        "16" = "fe2";
+        "fe2" = 16;
         # servers/backend (red): additional srv needed on some switches
-        "17" = "srv2";
+        "srv2" = 17;
         # transfer 3 (blue): tertiary router-router connection
-        "18" = "tr3";
+        "tr3" = 18;
         # dynamic hardware pool: local endpoints for Kamp DHP tunnels
-        "19" = "dhp";
+        "dhp" = 19;
       };
 
       mtus = {

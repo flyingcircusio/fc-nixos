@@ -39,6 +39,7 @@ in {
           resource_group = "test";
           interfaces.srv = {
             mac = "52:54:00:12:02:01";
+            bridged = false;
             networks = {
               "${net4Srv}.0/24" = [ gw4Srv ];
               "${net6Srv}/64" = [ gw6Srv ];
@@ -47,6 +48,7 @@ in {
           };
           interfaces.fe = {
             mac = "52:54:00:12:01:01";
+            bridged = false;
             networks = {
               "${net4Fe}.0/24" = [ gw4Fe ];
               "${net6Fe}/64" = [ gw6Fe ];
@@ -73,6 +75,7 @@ in {
           resource_group = "test";
           interfaces.srv = {
             mac = "52:54:00:12:02:02";
+            bridged = false;
             networks = {
               "${net4Srv}.0/24" = [ internal4Srv ];
               "${net6Srv}/64" = [ internal6Srv ];
@@ -90,9 +93,11 @@ in {
         imports = [ ../nixos ../nixos/roles ];
         environment.systemPackages = [ pkgs.openvpn ];
 
+        services.telegraf.enable = false;
         flyingcircus.enc.parameters = {
           resource_group = "test";
           interfaces.fe = {
+            bridged = false;
             mac = "52:54:00:12:01:03";
             networks = {
               "${net4Fe}.0/24" = [ oclient4Fe ];

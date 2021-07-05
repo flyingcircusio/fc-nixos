@@ -21,13 +21,15 @@ in
      in "# statshost-collector\n" + concatStringsSep ""
         (map (ip: (rule ip httpPort) + (rule ip httpsPort)) statshostServiceIPs);
 
-    services.nginx = {
+    services.nginx = let
+        vhost_name = fclib.fqdn { vlan = "fe"; };
+      in {
       enable = true;
       recommendedGzipSettings = true;
       recommendedOptimisation = true;
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
-      virtualHosts."${fclib.feFQDN}" = {
+      virtualHosts.${vhost_name} = {
         serverAliases = [ "${config.networking.hostName}.${config.networking.domain}" ];
         enableACME = true;
         addSSL = true;
@@ -36,7 +38,7 @@ in
             (map
               (a: [{ addr = a; port = httpsPort; ssl = true; }
                    { addr = a; port = httpPort; }])
-              (fclib.listenAddressesQuotedV6 "ethfe"));
+              fclib.network.fe.dualstack.addressesQuoted);
         locations = {
           "/" = {
             extraConfig = ''

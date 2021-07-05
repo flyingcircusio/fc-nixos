@@ -25,7 +25,7 @@ let
   # dashboards and kubectl. Names can be used for both dashboard and API server.
   addresses = [
     "kubernetes.${fclib.currentRG}.fcio.net"
-    fclib.feFQDN
+    (fclib.fqdn { vlan = "fe"; })
     srvFQDN
   ];
 
@@ -283,9 +283,6 @@ in
       sensu-plugins-kubernetes
       stern
     ];
-
-    # Policy routing interferes with virtual ClusterIPs handled by kube-proxy, disable it.
-    flyingcircus.network.policyRouting.enable = false;
 
     flyingcircus.activationScripts.kubernetes-apitoken =
       lib.stringAfter [ "users" ] ''

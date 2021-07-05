@@ -7,6 +7,19 @@ import ./make-test-python.nix ({ ... }:
       {
         imports = [ ../nixos ../nixos/roles ];
         flyingcircus.roles.redis.enable = true;
+
+        flyingcircus.enc.parameters = {
+          resource_group = "test";
+          interfaces.srv = {
+            mac = "52:54:00:12:34:56";
+            bridged = false;
+            networks = {
+              "192.168.1.0/24" = [ "192.168.1.1" ];
+            };
+            gateways = {};
+          };
+        };
+
       };
   };
 

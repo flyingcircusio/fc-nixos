@@ -83,8 +83,9 @@ in {
         global_tags = globalTags;
         outputs = {
           prometheus_client = map
-            (a: { listen = "${a}:${telegrafPort}"; })
-            (fclib.listenAddressesQuotedV6 "ethsrv");
+            (a: { 
+              listen = "${a}:${telegrafPort}"; })
+            (fclib.network.srv.dualstack.addressesQuoted);
         };
         inputs = telegrafInputs;
       };

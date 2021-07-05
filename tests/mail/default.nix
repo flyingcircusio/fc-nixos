@@ -34,6 +34,30 @@ in
               rootAlias = "user2@example.local";
             };
 
+            virtualisation.vlans = [ 1 3 ];
+
+            flyingcircus.enc.parameters = {
+              resource_group = "test";
+              interfaces.srv = {
+                mac = "52:54:00:12:03:03";
+                bridged = false;
+                networks = {
+                  "192.168.3.0/24" = [ "192.168.3.3" ];
+                  "2001:db8:3::/64" = [ "2001:db8:3::3" ];
+                };
+                gateways = {};
+              };
+              interfaces.fe = {
+                mac = "52:54:00:12:01:03";
+                bridged = false;
+                networks = {
+                  "192.168.1.0/24" = [ "192.168.1.3" ];
+                  "2001:db8:1::/64" = [ "2001:db8:1::3" ];
+                };
+                gateways = {};
+              };
+            };
+
             mailserver.certificateScheme = lib.mkOverride 50 2;
             mailserver.loginAccounts = lib.mkForce {
               "user1@example.local" = {
@@ -83,6 +107,29 @@ in
           commonConfig
           {
             flyingcircus.services.nullmailer.enable = true;
+
+            virtualisation.vlans = [ 1 3 ];
+
+            flyingcircus.enc.parameters.interfaces.srv = {
+              mac = "52:54:00:12:03:01";
+              bridged = false;
+              networks = {
+                "192.168.3.0/24" = [ "192.168.3.1" ];
+                "2001:db8:3::/64" = [ "2001:db8:3::1" ];
+              };
+              gateways = {};
+            };
+
+            flyingcircus.enc.parameters.interfaces.fe = {
+              mac = "52:54:00:12:01:01";
+              bridged = false;
+              networks = {
+                "192.168.1.0/24" = [ "192.168.1.1" ];
+                "2001:db8:1::/64" = [ "2001:db8:1::1" ];
+              };
+              gateways = {};
+            };
+
             flyingcircus.encServices = [
               {
                 service = "mailout-mailout";
@@ -118,6 +165,10 @@ in
   };
   testScript = ''
     start_all()
+
+    mail.wait_for_unit('network-online.target')
+    client.wait_for_unit('network-online.target')
+    ext.wait_for_unit('network-online.target')
 
     with subtest("postsuper sudo rule should be present for service group"):
       mail.succeed('grep %service /etc/sudoers | grep -q postsuper')

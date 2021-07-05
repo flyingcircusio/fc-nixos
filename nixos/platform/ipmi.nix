@@ -9,7 +9,6 @@ let
   ipmi_interface = cfg.enc.parameters.interfaces.ipmi;
   ipmi_v4_network_cidr = head (filter fclib.isIp4 (attrNames ipmi_interface.networks));
 
-  # ipv4_cidr = filter (cfg.lib.listenAddresses "ipmi") cfg.lib.isIp4;
   ipmi_addr = head ipmi_interface.networks.${ipmi_v4_network_cidr};
   ipmi_netmask = fclib.netmaskFromCIDR ipmi_v4_network_cidr;
   ipmi_gw = ipmi_interface.gateways.${ipmi_v4_network_cidr};

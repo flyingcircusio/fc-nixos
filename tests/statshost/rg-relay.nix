@@ -13,16 +13,21 @@ import ../make-test-python.nix ({ pkgs, ... }:
           {"targets":["statsSource:9126"]}
         ]
       '';
+
+      services.telegraf.enable = false;
+
     };
 
     statsSource = {
       imports = [ ../../nixos ../../nixos/roles ];
       networking.firewall.allowedTCPPorts = [ 9126 ];
+      services.telegraf.enable = false;
     };
 
     statshost = {
       imports = [ ../../nixos ../../nixos/roles ];
       environment.systemPackages = [ pkgs.curl ];
+      services.telegraf.enable = false;
     };
   };
 

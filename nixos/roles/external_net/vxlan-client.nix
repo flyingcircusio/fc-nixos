@@ -32,47 +32,50 @@ in
       extnet = cfg.roles.external_net;
     in
     {
-      # does not interact well with old-style policy routing
-      flyingcircus.network.policyRouting.enable = lib.mkForce false;
-
-      systemd.services."network-external-routing" = rec {
-        description = "Custom routing rules for external networks";
-        after = [ "network-routing-ethsrv.service" "firewall.service" ];
+      systemd.services."network-external-routing" = 
+        let 
+          netdev = fclib.network.srv.device;
+        in rec {
+        description = "Custom routing rules dsafds for external networks";
+        after = [ "network-addresses-${netdev}.service" "firewall.service" ];
         requires = after;
         wantedBy = [ "network.target" ];
-        bindsTo = [ "sys-subsystem-net-devices-ethsrv.device" ];
+        bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.physicalDevice}.device" ];
         path = [ pkgs.gawk pkgs.iproute pkgs.glibc pkgs.iptables ];
 
         serviceConfig = {
           Type = "oneshot";
           ExecStart = pkgs.writeScript "network-external-routing-start" ''
-            #! ${pkgs.stdenv.shell} -e
+            #! ${pkgs.stdenv.shell} -ex
             echo "Adding routes via external network gateway ${gwHost}"
             echo "IPv4 gateway(s): ${gwIp4}"
             echo "IPv6 gateway(s): ${gwIp6}"
             for gw in ${gwIp4}; do
-              ip -4 route add ${extnet.vxlan4} via $gw dev ethsrv
+              # Onlink is required because the nexthop might be on a (redirected)
+              # IP due to us sometimes having multiple networks on a segment.
+              ip -4 route add ${extnet.vxlan4} via $gw dev ${netdev} onlink
             done
             for gw in ${gwIp6}; do
-              ip -6 route add ${extnet.vxlan6} via $gw dev ethsrv
+              # Note: The onlink hack above is not required for v6.
+              ip -6 route add ${extnet.vxlan6} via $gw dev ${netdev}
             done
-            iptables -I nixos-fw 3 -i ethsrv -s ${extnet.vxlan4} \
+            iptables -I nixos-fw 3 -i ${netdev} -s ${extnet.vxlan4} \
               -j nixos-fw-accept
-            ip6tables -I nixos-fw 3 -i ethsrv -s ${extnet.vxlan6} \
+            ip6tables -I nixos-fw 3 -i ${netdev} -s ${extnet.vxlan6} \
               -j nixos-fw-accept
           '';
           ExecStop = pkgs.writeScript "network-external-routing-stop" ''
             #! ${pkgs.stdenv.shell}
             echo "Removing routes via external network gateway ${gwHost}"
-            iptables -D nixos-fw -i ethsrv -s ${extnet.vxlan4} \
+            iptables -D nixos-fw -i ${netdev} -s ${extnet.vxlan4} \
               -j nixos-fw-accept
-            ip6tables -D nixos-fw -i ethsrv -s ${extnet.vxlan6} \
+            ip6tables -D nixos-fw -i ${netdev} -s ${extnet.vxlan6} \
               -j nixos-fw-accept
             for gw in ${gwIp4}; do
-              ip -4 route del ${extnet.vxlan4} via $gw dev ethsrv
+              ip -4 route del ${extnet.vxlan4} via $gw dev ${netdev}
             done
             for gw in ${gwIp6}; do
-              ip -6 route del ${extnet.vxlan6} via $gw dev ethsrv
+              ip -6 route del ${extnet.vxlan6} via $gw dev ${netdev}
             done
           '';
           RemainAfterExit = true;

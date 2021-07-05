@@ -35,10 +35,20 @@ in {
       flyingcircus.enc.parameters = {
         resource_group = "test";
         interfaces.fe = {
+          bridged = false;
           mac = "52:54:00:12:02:01";
           networks = {
             "${net4Fe}.0/24" = [ client4Fe ];
             "${net6Fe}/64" = [ client6Fe ];
+          };
+          gateways = {};
+        };
+        interfaces.srv = {
+          mac = "52:54:00:12:34:56";
+          bridged = false;
+          networks = {
+            "192.168.101.0/24" = [ "192.168.101.1" ];
+            "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::1" ];
           };
           gateways = {};
         };
@@ -56,6 +66,7 @@ in {
           resource_group = "test";
           interfaces.srv = {
             mac = "52:54:00:12:01:02";
+            bridged = false;
             networks = {
               "${netLoc4Srv}.0/24" = [ turnserver4Srv ];
               "${netLoc6Srv}/64" = [ turnserver6Srv ];
@@ -64,6 +75,7 @@ in {
           };
           interfaces.fe = {
             mac = "52:54:00:12:02:02";
+            bridged = false;
             networks = {
               "${net4Fe}.0/24" = [ turnserver4Fe ];
               "${net6Fe}/64" = [ turnserver6Fe ];
