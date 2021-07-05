@@ -120,6 +120,8 @@ cat > /mnt/etc/nixos/configuration.nix << __EOF__
   # Options for first boot. This file will be replaced after the first 
   # activation/rebuild.
   flyingcircus.agent.with-maintenance = false;
+  systemd.timers.fc-agent.timerConfig.OnBootSec = "1s";
+
 }
 __EOF__
 

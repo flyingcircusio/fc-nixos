@@ -31,6 +31,8 @@ in
     # without waiting for scheduled maintenance.
     flyingcircus.agent.with-maintenance = false;
 
+    systemd.timers.fc-agent.timerConfig.OnBootSec = "1s";
+
     system.build.fcImage = import ./make-disk-image.nix {
       inherit pkgs lib config channelSources configFile contents name;
       rootLabel = "root";
