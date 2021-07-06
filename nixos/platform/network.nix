@@ -7,9 +7,7 @@ let
 
   fclib = config.fclib;
 
-  interfaces = (lib.filterAttrs
-    (n: v: n != "ipmi")
-    (lib.attrByPath [ "parameters" "interfaces" ] {} cfg.enc));
+  interfaces = filter (i: i.vlan != "ipmi" && i.vlan != "lo") (lib.attrValues fclib.network);
 
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
 
@@ -24,38 +22,15 @@ let
     destination = "/etc/udev/rules.d/61-fc-persistent-net.rules";
     text = if (interfaces != {}) then
         lib.concatMapStrings
-          (vlan:
-            let
-              fallback = "02:00:00:${fclib.byteToHex (lib.toInt n)}:??:??";
-              mac = lib.toLower
-                (lib.attrByPath [ vlan "mac" ] fallback interfaces);
-            in ''
-              KERNEL=="eth*", ATTR{address}=="${mac}", NAME="eth${vlan}"
-            '')
-          (attrNames interfaces)
+          (interface: ''
+            KERNEL=="eth*", ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
+            '') interfaces
       else ''
         # static fallback rules for VMs
         KERNEL=="eth*", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
         KERNEL=="eth*", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
       '';
   };
-
-  # Policy routing
-  rt_tables = ''
-    # reserved values
-    #
-    255 local
-    254 main
-    253 default
-    0 unspec
-    #
-    # local
-    #
-    ${lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (n : vlan : "${n} ${vlan}")
-      cfg.static.vlans
-    )}
-    '';
 
   # add srv addresses from my own resource group to /etc/hosts
   hostsFromEncAddresses = encAddresses:
@@ -75,49 +50,8 @@ let
 
 in
 {
-  options = {
-    flyingcircus.network.policyRouting = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = ''
-          Enable policy routing? Automatically deselected for external network
-          gateways.
-        '';
-      };
-
-      extraRoutes = lib.mkOption {
-        description = ''
-          Add the given routes to every routing table. List items should be
-          "ip route" command fragments without a "ip -[46] route {add,del}"
-          prefix and a "table" suffix.
-        '';
-        default = [ ];
-        type = with lib.types; listOf str;
-        example = [
-          "10.107.36.0/24 via 10.107.36.2 dev tun0"
-        ];
-      };
-
-      requires = lib.mkOption {
-        description = ''
-          List of systemd services which are required to run before policy
-          routing is started (e.g., because they define additional network
-          interfaces).
-
-          Note that the policy routing services will go down if one of the
-          required services goes down.
-        '';
-        default = [ ];
-        type = with lib.types; listOf str;
-        example = [ "openvpn.service" ];
-      };
-
-    };
-  };
 
   config = rec {
-    environment.etc."iproute2/rt_tables".text = rt_tables;
     environment.etc."host.conf".text = ''
       order hosts, bind
       multi on
@@ -142,12 +76,38 @@ in
 
       # data structure for all configured interfaces with their IP addresses:
       # { ethfe = { ... }; ethsrv = { }; ... }
-      interfaces =
-        lib.mapAttrs'
-          (vlan: iface:
-            lib.nameValuePair
-              "eth${vlan}"
-              (fclib.interfaceConfig iface.networks vlan)) interfaces;
+      interfaces = listToAttrs (map (interface: 
+        (lib.nameValuePair "${interface.device}" {
+              ipv4.addresses = interface.v4.attrs;
+              ipv4.routes = map (gateway:
+                { address = "0.0.0.0";
+                  prefixLength = 0;
+                  via = gateway;
+                  options = { metric = toString interface.priority; };
+                }) interface.v4.defaultGateways;
+
+              ipv6.addresses = interface.v6.attrs;
+
+              # Using SLAAC/privacy addresses will cause firewalls to block
+              # us internally and also have customers get problems with
+              # outgoing connections.
+              tempAddress = "disabled";
+
+              ipv6.routes = map (gateway:
+                { address = "::";
+                  prefixLength = 0;
+                  via = gateway;
+                  options = { metric = toString interface.priority; };
+                }) interface.v6.defaultGateways;
+
+              mtu = interface.mtu;
+            })) interfaces);
+
+      bridges = listToAttrs (map (interface:
+        (lib.nameValuePair
+            "${interface.device}"
+            { interfaces = interface.attachedDevices; }))
+        (filter (interface: interface.bridged) interfaces));
 
       resolvconf.extraOptions = [ "ndots:1" "timeout:1" "attempts:6" ];
 
@@ -178,60 +138,30 @@ in
     services.udev.packages = [ udevRenameRules ];
 
     systemd.services =
-      let startStopScript = if cfg.network.policyRouting.enable
-        then fclib.policyRouting
-        else fclib.simpleRouting;
+      let startStopScript = fclib.simpleRouting;
       in
       { nscd.restartTriggers = [
           config.environment.etc."host.conf".source
         ];
       } //
       (listToAttrs
-        (map
-          (vlan: lib.nameValuePair
-            "network-routing-eth${vlan}"
+        (map (interface:
+          (lib.nameValuePair
+            "network-link-properties-${interface.physicalDevice}"
             rec {
-              description = "Custom IP routing for eth${vlan}";
-              after = [ "network-addresses-eth${vlan}.service" ];
-              before = [ "network-local-commands.service" ];
-              wantedBy = after;
-              bindsTo = [ "sys-subsystem-net-devices-eth${vlan}.device" ] ++ after;
-              path = [ fclib.relaxedIp ];
-              script = startStopScript {
-                vlan = "${vlan}";
-                encInterface = interfaces.${vlan};
-              };
-              preStop = startStopScript {
-                vlan = "${vlan}";
-                encInterface = interfaces.${vlan};
-                action = "stop";
-              };
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-              };
-            })
-          (attrNames interfaces))) //
-      (listToAttrs
-        (map (vlan:
-          let
-            mac = lib.toLower interfaces.${vlan}.mac;
-          in
-          lib.nameValuePair
-            "network-link-properties-eth${vlan}"
-            rec {
-              description = "Ensure link properties for eth${vlan}";
+              description = "Ensure link properties for ${interface.physicalDevice}";
               # We need to explicitly be wanted by the multi-user target,
               # otherwise we will not get initially added as the individual
               # address units won't get restarted because triggering
               # the multi-user alone does not propagated to the network-target
               # etc. etc.
-              wantedBy = [ "network-addresses-eth${vlan}.service"
+              wantedBy = [ "network-addresses-${interface.device}.service"
                            "multi-user.target" ];
+
               before = wantedBy;
               path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp];
               script = ''
-                IFACE=eth${vlan}
+                IFACE=${interface.physicalDevice}
 
                 IFACE_DRIVER=$(ethtool -i $IFACE | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
                 case $IFACE_DRIVER in
@@ -254,18 +184,36 @@ in
                 ethtool -A $IFACE autoneg off rx off tx off || true
 
                 # Ensure MTU
-                ip l set $IFACE mtu ${toString (fclib.vlanMTU vlan)}
+                ip l set $IFACE mtu ${toString interface.mtu}
 
-                # Disable IPv6 SLAAC (autconf) on 
+                # Disable IPv6 SLAAC (autoconf) on physical interfaces
                 sysctl net.ipv6.conf.$IFACE.accept_ra=0
                 sysctl net.ipv6.conf.$IFACE.autoconf=0
+                sysctl net.ipv6.conf.$IFACE.temp_valid_lft=0
+                sysctl net.ipv6.conf.$IFACE.temp_prefered_lft=0
+                for oldtmp in `ip -6 address show dev $IFACE dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
+                  ip addr del $oldtmp dev $IFACE
+                done
+
+                # XXX this needs to trigger properly when brXXX-netdev gets reloaded
+                # see the bindsTo dance for qemu bridge reattachment
+
+                # Disable IPv6 SLAAC (autoconf) on interfaces w/ addresses
+                sysctl net.ipv6.conf.${interface.device}.accept_ra=0
+                sysctl net.ipv6.conf.${interface.device}.autoconf=0
+                sysctl net.ipv6.conf.${interface.device}.temp_valid_lft=0
+                sysctl net.ipv6.conf.${interface.device}.temp_prefered_lft=0
+                for oldtmp in `ip -6 address show dev ${interface.device} dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
+                  ip addr del $oldtmp dev ${interface.device}
+                done
+
               '';
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            })
-          (attrNames interfaces)));
+            }))
+          interfaces));
 
     boot.kernel.sysctl = {
       "net.ipv4.tcp_congestion_control" = "bbr";

@@ -14,7 +14,7 @@ let
 
   directoryHandler = "${pkgs.fc.agent}/bin/fc-monitor --enc ${config.flyingcircus.encPath} handle-result";
 
-  listenAddress = head (fclib.listenAddresses "ethsrv");
+  listenAddress = head fclib.network.srv.dualstack.addresses;
 
   sensuServerConfigFile =  if (cfg.configFile != null) then cfg.configFile else
     pkgs.writeText "sensu-server.json" ''

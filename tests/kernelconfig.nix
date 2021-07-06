@@ -160,6 +160,8 @@ in
       imports = [
         ../nixos
       ];
+
+      config.services.telegraf.enable = false;
     };
 
   testScript = let

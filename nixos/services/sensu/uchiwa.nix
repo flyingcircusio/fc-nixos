@@ -84,7 +84,7 @@ in {
     flyingcircus.services.uchiwa.users =
       toJSON (
         map (user: { username = user; password = "{crypt}${config.users.users."${user}".hashedPassword}"; })
-        config.users.groups.admins.members);
+        config.users.groups.crew.members);
 
     users.extraGroups.uchiwa.gid = config.ids.gids.uchiwa;
 

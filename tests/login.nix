@@ -9,6 +9,8 @@ import ./make-test-python.nix ({ pkgs, latestKernel ? false, ... }:
         ../nixos
       ];
 
+      services.telegraf.enable = false;
+
       boot.kernelPackages = lib.mkIf latestKernel pkgs.linuxPackages_latest;
     };
 

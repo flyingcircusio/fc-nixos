@@ -409,7 +409,7 @@ in {
         extraProperties =
           lib.optionalAttrs (!cfg.enablePublicUDP) {
             "org.ice4j.ice.harvest.ALLOWED_ADDRESSES" =
-              lib.concatStringsSep ";" (fclib.listenAddresses "ethsrv");
+              lib.concatStringsSep ";" (fclib.network.srv.dualstack.addresses);
           };
       };
 

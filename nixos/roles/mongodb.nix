@@ -8,8 +8,8 @@ let
   fclib = config.fclib;
 
   listenAddresses =
-    fclib.listenAddresses "lo" ++
-    fclib.listenAddresses "ethsrv";
+    fclib.network.lo.dualstack.addresses ++
+    fclib.network.srv.dualstack.addresses;
 
   localConfig = fclib.configFromFile /etc/local/mongodb/mongodb.yaml "";
 

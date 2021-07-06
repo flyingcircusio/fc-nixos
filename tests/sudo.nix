@@ -62,6 +62,9 @@ in
       };
 
       flyingcircus.enc.parameters.resource_group = "test";
+
+      services.telegraf.enable = false;
+
     };
 
   testScript = ''

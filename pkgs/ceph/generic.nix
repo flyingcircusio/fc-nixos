@@ -1,12 +1,13 @@
 { stdenv, lib, ensureNewerSourcesHook, cmake, pkgconfig
 , which, git
-, boost, python2Packages
+, boost, pythonPackages
 , libxml2, zlib
 , openldap, lttng-ust
 , babeltrace, gperf
 , cunit, snappy
 , makeWrapper, perl, leveldb
 , libtool, autoconf, automake
+, hdparm
 
 # Optional Dependencies
 , yasm ? null, fcgi ? null, expat ? null
@@ -80,7 +81,9 @@ let
     none = [ ];
   };
 
-  ceph-python-env = python2Packages.python.withPackages (ps: [
+  ceph-python-env = pythonPackages.python.withPackages (ps: [
+    ps.sphinx
+    ps.flask
     ps.cython
     ps.setuptools
     ps.pip
@@ -102,13 +105,15 @@ stdenv.mkDerivation {
     ./fc-jewel-snaptrim.patch
     ./fc-jewel-rewatch.patch
     ./fc-jewel-glibc2-32.patch
+    ./fc-jewel-hdparm-naive-path.patch
+    ./fc-jewel-py38.patch
 
     ./dont-use-virtualenvs.patch
   ];
 
   nativeBuildInputs = [
     perl libtool autoconf automake
-    pkgconfig which git python2Packages.wrapPython makeWrapper
+    pkgconfig which git pythonPackages.wrapPython makeWrapper
     (ensureNewerSourcesHook { year = "1980"; })
   ];
 
@@ -124,12 +129,14 @@ stdenv.mkDerivation {
     optKinetic-cpp-client
   ];
 
+  propagatedBuildInputs = [ hdparm ];
+
   preConfigure = ''
 # require LD_LIBRARY_PATH for cython to find internal dep
 export LD_LIBRARY_PATH="$PWD/build/lib:$LD_LIBRARY_PATH"
 
 # requires setuptools due to embedded in-cmake setup.py usage
-export PYTHONPATH="${python2Packages.setuptools}/lib/python2.7/site-packages/:$PYTHONPATH"
+export PYTHONPATH="$(echo ${pythonPackages.setuptools}/lib/python*/site-packages/):$PYTHONPATH"
 
 set -x
 sed -e '/include ceph-detect-init/d' -i src/Makefile.am
@@ -196,6 +203,13 @@ __EOF__
   '';
 
   enableParallelBuilding = true;
+
+  postInstall = ''
+    source ${makeWrapper}/nix-support/setup-hook
+    wrapProgram $out/bin/ceph-osd \
+      --prefix PATH : ${lib.makeBinPath
+        [ hdparm ] }
+  '';
 
   # outputs = [ "dev" "lib" "out" "doc" ];
 

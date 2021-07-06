@@ -15,6 +15,20 @@ in {
   machine = {
     imports = [ ../nixos ];
 
+    flyingcircus.enc.parameters = {
+      resource_group = "test";
+      interfaces.srv = {
+        mac = "52:54:00:12:34:56";
+        bridged = false;
+        networks = {
+          "192.168.101.0/24" = [ "192.168.101.1" ];
+          "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::1" ];
+        };
+        gateways = {};
+      };
+    };
+
+    
     environment.systemPackages = with pkgs; [
       # Pre-install it to make it possible to install the package in the test script
       # without the need to download stuff (which fails in a test, of course).
@@ -44,6 +58,8 @@ in {
         # Configs need to be in sync or nixos-rebuild will try to build
         # more stuff which may fail because networking isn't available inside
         # the test VM.
+
+        services.telegraf.enable = false;
 
         users.users.alice = {
           isNormalUser = true;

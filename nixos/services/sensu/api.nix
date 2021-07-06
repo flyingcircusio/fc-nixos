@@ -21,7 +21,7 @@ let
     (x: x.address == "${config.networking.hostName}.gocept.net")
     { password = ""; } { password = ""; } (fclib.findServices "sensuserver-api")).password;
 
-  listenAddress = head (fclib.listenAddresses "ethsrv");
+  listenAddress = head fclib.network.srv.dualstack.addresses;
 
   sensuApiConfigFile = if (cfg.configFile != null) then cfg.configFile else
     pkgs.writeText "sensu-api.json" ''

@@ -96,6 +96,7 @@ in {
         resource_group = "test";
         interfaces.fe = {
           mac = "52:54:00:12:02:01";
+          bridged = false;
           networks = {
             "${net4Fe}.0/24" = [ proxy4Fe ];
             "${net6Fe}/64" = [ proxy6Fe ];
@@ -104,6 +105,7 @@ in {
         };
         interfaces.srv = {
           mac = "52:54:00:12:01:01";
+          bridged = false;
           networks = {
             "${netRemote4Srv}.0/24" = [ proxy4Srv ];
             "${netRemote6Srv}/64" = [ proxy6Srv ];
@@ -127,6 +129,7 @@ in {
           resource_group = "test";
           interfaces.srv = {
             mac = "52:54:00:12:01:02";
+            bridged = false;
             networks = {
               "${netLoc4Srv}.0/24" = [ statshost4Srv ];
               "${netLoc6Srv}/64" = [ statshost6Srv ];
@@ -135,6 +138,7 @@ in {
           };
           interfaces.fe = {
             mac = "52:54:00:12:02:02";
+            bridged = false;
             networks = {
               "${net4Fe}.0/24" = [ statshost4Fe ];
               "${net6Fe}/64" = [ statshost6Fe ];
@@ -179,6 +183,7 @@ in {
         resource_group = "test";
         interfaces.srv = {
           mac = "52:54:00:12:01:03";
+          bridged = false;
           networks = {
             "${netRemote4Srv}.0/24" = [ statsSource4Srv ];
             "${netRemote6Srv}/64" = [ statsSource6Srv ];

@@ -98,8 +98,8 @@ in
         http_address =
           lib.concatMapStringsSep " -a "
             (addr: "${addr}:8008")
-            ((fclib.listenAddressesQuotedV6 "ethsrv") ++
-             (fclib.listenAddressesQuotedV6 "lo"));
+            (fclib.network.srv.dualstack.addressesQuoted ++
+             fclib.network.lo.dualstack.addressesQuoted);
         config = varnishCfg;
       };
 

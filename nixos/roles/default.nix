@@ -14,6 +14,7 @@ in {
     ./coturn.nix
     ./docker.nix
     ./ceph/osd.nix
+    ./ceph/mon.nix
     ./external_net
     ./elasticsearch.nix
     ./gitlab.nix

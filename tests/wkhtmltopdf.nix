@@ -130,6 +130,9 @@ in
       imports = [
         ../nixos
       ];
+
+      services.telegraf.enable = false;
+
     };
       
   testScript = ''

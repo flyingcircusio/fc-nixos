@@ -38,8 +38,8 @@ in
         (service: service.address)
         (fclib.findServices "consul_server-server");
 
-      bind_addr = head (filter fclib.isIp6 (fclib.listenAddresses "ethsrv"));
-      advertise_addr = head (filter fclib.isIp6 (fclib.listenAddresses "ethsrv"));
+      bind_addr = head fclib.network.srv.v6.addresses;
+      advertise_addr = head fclib.network.srv.v6.addresses;
 
       acl.tokens.agent = secrets."consul/agent_token";
       encrypt = secrets."consul/encrypt";
