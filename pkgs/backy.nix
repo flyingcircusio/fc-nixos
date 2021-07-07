@@ -58,7 +58,7 @@ py.buildPythonPackage rec {
   name = "backy-${version}";
   version = "2.5.0dev";
   namePrefix = "";
-  
+
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "backy";
@@ -71,6 +71,7 @@ py.buildPythonPackage rec {
   ];
   propagatedBuildInputs = [
     ceph
+    py.packaging
     py.structlog
     py.shortuuid
     py.python-lzo
