@@ -75,6 +75,8 @@ in {
     };
   });
 
+  gitlab = super.callPackage ./gitlab { };
+
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
   innotop = super.callPackage ./percona/innotop.nix { };
