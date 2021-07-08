@@ -22,7 +22,7 @@ let
     ${server4Fe} = [ "server" "other" ];
   };
 
-  expectedNginxMajorVersion = "1.18";
+  expectedNginxMajorVersion = "1.20";
 
   rootInitial = pkgs.runCommand "nginx-root-initial" {} ''
     mkdir $out
@@ -166,6 +166,12 @@ in {
       assert 'X-Forwarded-Host: other' in proxy_log, f"expected X-Forwarded-Host not found, got: '{proxy_log}'"
       assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got: '{proxy_log}'"
 
+    with subtest("nginx should log only anonymized IPs"):
+      server.succeed("curl -4 server -s -o/dev/null")
+      server.succeed("cat /var/log/nginx/access.log | grep '^10.0.3.0 - -'")
+      server.succeed("curl -6 server -s -o/dev/null")
+      server.succeed("cat /var/log/nginx/access.log | grep '^2001:db8:3:: - -'")
+
     with subtest("nginx should respond with configured content"):
       server.succeed("curl server | grep -q 'initial content'")
 
@@ -186,9 +192,6 @@ in {
       # Prepare change to mainline nginx. We are not interested in testing mainline itself here.
       # We only need it as a different version so we can test binary reloading.
       server.execute("ln -sfT ${pkgs.nginxMainline} /etc/nginx/running-package")
-      # Mainline doesn't know about our custom remote_addr_anon variable, patch our config.
-      server.execute("sed 's#remote_addr_anon#remote_addr#' /etc/nginx/nginx.conf > /etc/nginx/changed_nginx.conf")
-      server.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
       # Go to mainline (this doesn't overwrite /etc/nginx/running-package).
       server.succeed("nginx-reload-master")
       server.wait_until_succeeds("curl server/404 | grep -q ${pkgs.nginxMainline.version}")

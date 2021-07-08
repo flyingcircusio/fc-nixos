@@ -207,51 +207,30 @@ in {
   nginxStable = (super.nginxStable.override {
     modules = with super.nginxModules; [
       dav
-
-     ( {
-        src = super.fetchFromGitHub {
-          owner = "SpiderLabs";
-          repo = "ModSecurity-nginx";
-          rev = "v1.0.1";
-          sha256 = "0cbb3g3g4v6q5zc6an212ia5kjjad62bidnkm8b70i4qv1615pzf";
-        };
-        inputs = [ super.curl super.geoip self.libmodsecurity super.libxml2 super.lmdb super.yajl ];
-        })
-
+      modsecurity-nginx
       moreheaders
       rtmp
     ];
-  }).overrideAttrs(_: rec {
-    src = super.fetchFromGitHub {
-      owner = "flyingcircusio";
-      repo = "nginx";
-      rev = "2ad7b63de0391df4c49c887f2929a72658bce329";
-      sha256 = "02rnpy1w8ia2yxlbcfvx5d4swdrs8a58grffch9pgr1x11kakvl6";
-    };
-
-    configureScript = "./auto/configure";
+  }).overrideAttrs(a: a // {
+    patches = a.patches ++ [
+      ./remote_addr_anon.patch
+    ];
   });
 
   nginx = self.nginxStable;
 
-  nginxMainline = super.nginxMainline.override {
+  nginxMainline = (super.nginxMainline.override {
     modules = with super.nginxModules; [
       dav
-
-      ( {
-        src = super.fetchFromGitHub {
-          owner = "SpiderLabs";
-          repo = "ModSecurity-nginx";
-          rev = "v1.0.1";
-          sha256 = "0cbb3g3g4v6q5zc6an212ia5kjjad62bidnkm8b70i4qv1615pzf";
-        };
-        inputs = [ super.curl super.geoip super.libmodsecurity super.libxml2 super.lmdb super.yajl ];
-        })
-
+      modsecurity-nginx
       moreheaders
       rtmp
     ];
-  };
+  }).overrideAttrs(a: a // {
+    patches = a.patches ++ [
+      ./remote_addr_anon.patch
+    ];
+  });
 
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
