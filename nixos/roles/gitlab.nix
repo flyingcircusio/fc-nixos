@@ -46,11 +46,11 @@ in
 
     # all logs to /var/log
     systemd.tmpfiles.rules = [
-      "d /var/log/gitlab 0750 ${cfg.user} ${cfg.group} -"
-      "L+ ${cfg.statePath}/log/grpc.log - - - - /var/log/gitlab/grpc.log"
-      "L+ ${cfg.statePath}/log/production_json.log - - - - /var/log/gitlab/production_json.log"
-      "f /var/log/gitlab/grpc.log 0750 ${cfg.user} ${cfg.group} -"
-      "f /var/log/gitlab/production_json.log 0750 ${cfg.user} ${cfg.group} -"
+      "d /var/log/gitlab 0750 ${config.services.gitlab.user} ${config.services.gitlab.group} -"
+      "L+ ${config.services.gitlab.statePath}/log/grpc.log - - - - /var/log/gitlab/grpc.log"
+      "L+ ${config.services.gitlab.statePath}/log/production_json.log - - - - /var/log/gitlab/production_json.log"
+      "f /var/log/gitlab/grpc.log 0750 ${config.services.gitlab.user} ${config.services.gitlab.group} -"
+      "f /var/log/gitlab/production_json.log 0750 ${config.services.gitlab.user} ${config.services.gitlab.group} -"
     ];
 
     # generate secrets on first start
