@@ -11,9 +11,9 @@ in
   options = with lib; {
 
     flyingcircus.roles.gitlab = {
-      enable = mkEnableOption "Enable the Flying Circus Gitlab role.";
+      enable = mkEnableOption "Enable the Flying Circus GitLab role.";
 
-      enableDockerRegistry = mkEnableOption "Enable docker registry and Gitlab integration";
+      enableDockerRegistry = mkEnableOption "Enable docker registry and GitLab integration";
 
       dockerHostName = mkOption {
         type = with types; nullOr str;
@@ -25,7 +25,7 @@ in
       hostName = mkOption {
         type = types.str;
         description = ''
-          Public host name for the Gitlab frontend.
+          Public host name for the GitLab frontend.
           A Letsencrypt certificate is generated for it.
           Defaults to the FE FQDN.
         '';
@@ -44,28 +44,55 @@ in
       (writeScriptBin "gitlab-show-config" ''jq < /srv/gitlab/state/config/gitlab.yml'')
     ];
 
+    # all logs to /var/log
+    systemd.tmpfiles.rules = [
+      "d /var/log/gitlab 0750 ${config.services.gitlab.user} ${config.services.gitlab.group} -"
+      "L+ ${config.services.gitlab.statePath}/log/grpc.log - - - - /var/log/gitlab/grpc.log"
+      "L+ ${config.services.gitlab.statePath}/log/production_json.log - - - - /var/log/gitlab/production_json.log"
+      "f /var/log/gitlab/grpc.log 0750 ${config.services.gitlab.user} ${config.services.gitlab.group} -"
+      "f /var/log/gitlab/production_json.log 0750 ${config.services.gitlab.user} ${config.services.gitlab.group} -"
+    ];
+
+    # generate secrets on first start
+    systemd.services.gitlab-generate-secrets = {
+      wantedBy = [ "gitlab.target" "multi-user.target" ];
+
+      path = with pkgs; [ apg ];
+
+      # not launching this with a condition, just in case we need more secrets in the future
+      script = ''
+        mkdir -p /srv/gitlab/secrets
+        cd /srv/gitlab/secrets
+        for x in db db_password jws otp root_password secret; do
+          if [ ! -e "$x" ]; then
+            apg -n1 -m40 > "$x"
+          fi
+        done
+      '';
+    };
+
     services.gitlab = {
       enable = true;
       databaseHost = "127.0.0.1";
       databaseCreateLocally = false;
       databasePasswordFile = "/srv/gitlab/secrets/db_password";
       initialRootPasswordFile = "/srv/gitlab/secrets/root_password";
-      redisPassword = config.services.redis.requirePass;
+      redisUrl = "redis://:${config.services.redis.requirePass}@localhost:6379/";
       statePath = "/srv/gitlab/state";
       https = true;
       port = 443;
       host = cfg.hostName;
 
-      extraGitlabRb = ''
-        if Rails.env.production?
-          Rails.application.config.action_mailer.delivery_method = :sendmail
-          ActionMailer::Base.delivery_method = :sendmail
-          ActionMailer::Base.sendmail_settings = {
-            location: "/run/wrappers/bin/sendmail",
-            arguments: "-i -t"
-          }
-        end
-      '';
+      # less memory usage with jemalloc
+      # ref https://brandonhilkert.com/blog/reducing-sidekiq-memory-usage-with-jemalloc/
+      extraEnv.LD_PRELOAD = "${pkgs.jemalloc}/lib/libjemalloc.so";
+
+      # all logs to /var/log
+      extraShellConfig = {
+        log_file = "/var/log/gitlab/gitlab-shell.log";
+      };
+
+      extraEnv.GITLAB_LOG_PATH = "/var/log/gitlab";
 
       secrets = {
         dbFile = "/srv/gitlab/secrets/db";
