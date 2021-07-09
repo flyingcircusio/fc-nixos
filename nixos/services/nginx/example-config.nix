@@ -9,10 +9,7 @@ let
         (formatted_addr: [
           "listen ${formatted_addr}:80 default_server reuseport;"
           "listen ${formatted_addr}:443 ssl default_server reuseport;"])
-        (map
-          (addr:
-            if fclib.isIp4 addr then addr else "[${addr}]")
-          (fclib.listenAddresses "ethfe")));
+        fclib.network.fe.dualstack.addressesQuoted);
 
 in
 ''

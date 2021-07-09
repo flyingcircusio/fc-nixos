@@ -236,16 +236,16 @@ let
     in
       pkgs.symlinkJoin {
         name = "netboot-${evaled.config.system.nixos.label}-${system}";
-        paths = [
-          build.netbootRamdisk
-          build.kernel
-          customIPXEScript
-        ];
+        paths = [];
         postBuild = ''
           mkdir -p $out/nix-support
-          echo "file ${kernelTarget} ${build.kernel}/${kernelTarget}" >> $out/nix-support/hydra-build-products
-          echo "file initrd ${build.netbootRamdisk}/initrd" >> $out/nix-support/hydra-build-products
-          echo "file ipxe ${customIPXEScript}/netboot.ipxe" >> $out/nix-support/hydra-build-products
+          cp ${build.netbootRamdisk}/initrd  $out/
+          cp ${build.kernel}/${kernelTarget}  $out/
+          cp ${customIPXEScript}/netboot.ipxe $out/
+
+          echo "file ${kernelTarget} $out/${kernelTarget}" >> $out/nix-support/hydra-build-products
+          echo "file initrd $out/initrd" >> $out/nix-support/hydra-build-products
+          echo "file ipxe $out/netboot.ipxe" >> $out/nix-support/hydra-build-products
         '';
         preferLocalBuild = true;
       };

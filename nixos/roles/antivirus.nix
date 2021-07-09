@@ -5,8 +5,8 @@ with builtins;
 let
   fclib = config.fclib;
   listenAddresses =
-    fclib.listenAddresses "lo" ++
-    fclib.listenAddresses "ethsrv";
+    fclib.network.lo.dualstack.addresses ++
+    fclib.network.srv.dualstack.addresses;
 
 in
 {

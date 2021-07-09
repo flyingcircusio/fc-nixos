@@ -57,6 +57,7 @@ in {
           resource_group = "test";
           interfaces.srv = {
             mac = "52:54:00:12:02:01";
+            bridged = false;
             networks = {
               "${net4Srv}.0/24" = [ gw4Srv ];
               "${net6Srv}/64" = [ gw6Srv ];
@@ -65,6 +66,7 @@ in {
           };
           interfaces.fe = {
             mac = "52:54:00:12:01:01";
+            bridged = false;
             networks = {
               "${net6Fe}/64" = [ gw6Fe ];
             };
@@ -85,6 +87,7 @@ in {
           resource_group = "test";
           interfaces.fe = {
             mac = "52:54:00:12:01:02";
+            bridged = false;
             networks = {
               "${net6Fe}/64" = [ remote6Fe ];
             };
@@ -97,6 +100,7 @@ in {
         networking.firewall.enable = false;
         services.nginx.enable = true;
         virtualisation.vlans = [ 1 2 ];
+        services.telegraf.enable = false;
       };
 
     vclient =
@@ -114,6 +118,7 @@ in {
           resource_group = "test";
           interfaces.srv = {
             mac = "52:54:00:12:02:03";
+            bridged = false;
             networks = {
               "${net4Srv}.0/24" = [ vclient4Srv ];
               "${net6Srv}/64" = [ vclient6Srv ];

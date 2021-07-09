@@ -7,10 +7,6 @@ let
   role = config.flyingcircus.roles.ceph_osd;
   enc = config.flyingcircus.enc;
 
-  ceph_sudo = pkgs.writeScriptBin "ceph-sudo" ''
-    #! ${pkgs.stdenv.shell} -e
-    exec /run/wrappers/bin/sudo ${pkgs.ceph}/bin/ceph "$@" 
-  '';
 in
 {
   options = {
@@ -32,12 +28,13 @@ in
 
     flyingcircus.services.ceph.server.enable = true;
 
-    systemd.services.fc-ceph-osds = {
+    systemd.services.fc-ceph-osds = rec {
       description = "Start/stop local Ceph OSDs (via fc-ceph)";
       wantedBy = [ "multi-user.target" ];
-
-      # Wrap fc-ceph properly
-      path = [ pkgs.lvm2 pkgs.ceph pkgs.utillinux ];
+      # Ceph requires the IPs to be properly attached to interfaces so it
+      # knows where to bind to the public and cluster networks.
+      wants = [ "network.target" ];
+      after = wants;
 
       environment = {
         PYTHONUNBUFFERED = "1";
@@ -46,7 +43,7 @@ in
       restartIfChanged = false;
       reloadIfChanged = true;
       restartTriggers = [
-        (pkgs.writeText "ceph.conf" config.environment.etc."ceph/ceph.conf".text)
+        config.environment.etc."ceph/ceph.conf".source
         pkgs.ceph
       ];
 

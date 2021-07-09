@@ -74,7 +74,7 @@ in {
         extraOpts = "--hostname-override=${config.networking.hostName}.fcio.net";
         # I don't really know what this bind address is for (has no visible effect)
         # but limiting it to srv is better than the default 0.0.0.0 default.
-        bindAddress = head (fclib.listenAddresses "ethsrv");
+        bindAddress = head fclib.network.srv.dualstack.addresses;
       };
     })
 

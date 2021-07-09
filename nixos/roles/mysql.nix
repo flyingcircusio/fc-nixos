@@ -56,9 +56,9 @@ with builtins;
     cores = fclib.currentCores 1;
 
     listenAddresses =
-      fclib.listenAddresses "lo" ++
-      fclib.listenAddresses "ethsrv";
-
+      fclib.network.lo.dualstack.addresses ++
+      fclib.network.srv.dualstack.addresses;
+    
     localConfigPath = /etc/local/mysql;
 
     rootPasswordFile = "${toString localConfigPath}/mysql.passwd";

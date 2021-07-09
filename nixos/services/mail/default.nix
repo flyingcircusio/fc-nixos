@@ -167,7 +167,7 @@ in {
         };
         policydSPFExtraConfig = ''
           skip_addresses = 127.0.0.0/8,::ffff:127.0.0.0/104,::/64,${
-            concatStringsSep "," (fclib.listenAddresses "ethfe")}
+            concatStringsSep "," fclib.network.fe.dualstack.addresses}
           HELO_Whitelist = ${fqdn},${role.mailHost}
         '';
         vmailGroupName = "vmail";

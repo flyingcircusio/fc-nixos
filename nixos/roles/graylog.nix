@@ -32,7 +32,8 @@ let
           (s: lib.any (serviceType: s.service == serviceType) cfg.serviceTypes)
           config.flyingcircus.encServices)
     # single-node "cluster"
-    else [ { address = "${config.networking.hostName}.fcio.net"; ips = (fclib.listenAddresses "ethsrv"); } ];
+    else [ { address = "${config.networking.hostName}.fcio.net";
+             ips = fclib.network.srv.dualstack.addresses; } ];
 
   masterHostname =
     (head
@@ -233,7 +234,7 @@ in
       let
         mkListen = addr: { inherit addr; port = 9002; };
       in {
-        listen = map mkListen (fclib.listenAddressesQuotedV6 "ethsrv");
+        listen = map mkListen (fclib.network.srv.dualstack.addressesQuoted);
         locations = {
           "/" = {
             proxyPass = "http://${listenFQDN}:${toString glAPIHAPort}";
@@ -261,7 +262,7 @@ in
         listenConfig = port: lib.concatStringsSep "\n"
           (map
             (addr: "    bind ${addr}:${toString port}")
-            (fclib.listenAddresses "ethsrv"));
+            fclib.network.srv.dualstack.addresses);
       in ''
         global
             daemon

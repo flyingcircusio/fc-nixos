@@ -7,6 +7,7 @@ let
   globalAllowedMetrics = [
     # We don't have apache on 19.03 but we still have 15.09 VMs using it.
     "apache"
+    "ceph"
     "cpu"
     "disk"
     "diskio"

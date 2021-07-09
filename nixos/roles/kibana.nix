@@ -73,7 +73,7 @@ in
 
         # Unlike elasticsearch, kibana cannot listen to both IPv4 and IPv6.
         # We choose to use IPv4 here.
-        listenAddress = head (fclib.listenAddresses "ethsrv");
+        listenAddress = head fclib.network.srv.v4.addresses;
         package = pkgs."kibana${kibanaVersion}";
       } // lib.optionalAttrs (kibanaVersion == "6") {
           elasticsearch.url = elasticSearchUrl;

@@ -252,7 +252,7 @@ in {
       cron.enable = fclib.mkPlatform true;
 
       nscd.enable = true;
-      openssh.enable = mkDefault true;
+      openssh.enable = fclib.mkPlatform true;
       openssh.challengeResponseAuthentication = false;
       openssh.passwordAuthentication = false;
 

@@ -145,7 +145,7 @@ in
     flyingcircus.roles.statshost = {
 
       hostName = mkOption {
-        default = fclib.feFQDN;
+        default = fclib.fqdn { vlan = "fe"; };
         type = types.str;
         description = ''
           Host name for the Grafana frontend.
@@ -189,7 +189,7 @@ in
 
       prometheusListenAddress = mkOption {
         type = types.str;
-        default = "${head (fclib.listenAddressesQuotedV6 "ethsrv")}:9090";
+        default = "${head fclib.network.srv.dualstack.addressesQuoted}:9090";
         description = "Prometheus listen address";
       };
 

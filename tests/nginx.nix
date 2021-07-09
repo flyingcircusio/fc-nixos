@@ -51,6 +51,7 @@ in {
         resource_group = "test";
         interfaces.srv = {
           mac = "52:54:00:12:01:01";
+          bridged = false;
           networks = {
             "${netLoc4Srv}.0/24" = [ server4Srv ];
             "${netLoc6Srv}/64" = [ server6Srv ];
@@ -59,6 +60,7 @@ in {
         };
         interfaces.fe = {
           mac = "52:54:00:12:02:01";
+          bridged = false;
           networks = {
             "${net4Fe}.0/24" = [ server4Fe ];
             "${net6Fe}/64" = [ server6Fe ];

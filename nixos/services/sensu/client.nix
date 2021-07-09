@@ -382,13 +382,6 @@ in {
         command = "check_ssh localhost";
         interval = 300;
       };
-      cpu_steal = {
-        notification = "CPU has high amount of `%steal` ";
-        command =
-          "${fc.sensuplugins}/bin/check_cpu_steal " +
-          "--mpstat ${sysstat}/bin/mpstat";
-        interval = 600;
-      };
       ntp_time = {
         notification = "Clock is skewed";
         command = "check_ntp_time -H ${elemAt ntpServers 0}";

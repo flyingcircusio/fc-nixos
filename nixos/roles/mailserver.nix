@@ -7,12 +7,12 @@ let
   fclib = config.fclib;
   roles = config.flyingcircus.roles;
 
-  listenFe = fclib.listenAddresses "ethfe";
-  listenFe4 = filter fclib.isIp4 listenFe;
-  listenFe6 = filter fclib.isIp6 listenFe;
-  listenSrv = fclib.listenAddresses "ethsrv";
-  listenSrv4 = filter fclib.isIp4 listenSrv;
-  listenSrv6 = filter fclib.isIp6 listenSrv;
+  listenFe = fclib.network.fe.dualstack.addresses;
+  listenFe4 = fclib.network.fe.v4.addresses;
+  listenFe6 = fclib.network.fe.v6.addresses;
+  listenSrv = fclib.network.srv.dualstack.addresses;
+  listenSrv4 = fclib.network.fe.v4.addresses;
+  listenSrv6 = fclib.network.fe.v6.addresses;
   hasFE = (params ? location &&
     lib.hasAttrByPath [ "interfaces" "fe" ] params &&
     listenFe4 != [] && listenFe6 != []);

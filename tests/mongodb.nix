@@ -16,6 +16,7 @@ in {
         resource_group = "test";
         interfaces.srv = {
           mac = "52:54:00:12:34:56";
+          bridged = false;
           networks = {
             "192.168.101.0/24" = [ ipv4 ];
             "2001:db8:f030:1c3::/64" = [ ipv6 ];

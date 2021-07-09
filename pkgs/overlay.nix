@@ -34,6 +34,7 @@ in {
   check_megaraid = super.callPackage ./check_megaraid { };
 
   ceph = (super.callPackage ./ceph {
+      pythonPackages = super.python3Packages;
       boost = super.boost155;
   });
 
@@ -73,6 +74,8 @@ in {
       sha256 = "119sf1fziznrx7y9ml7h4cqfy0hyl34sbxm81rwjg2svwz0qx6x1";
     };
   });
+
+  gitlab = super.callPackage ./gitlab { };
 
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
