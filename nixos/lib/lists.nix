@@ -36,7 +36,7 @@ rec {
   # separates a string into list of lines
   # lines :: String -> [String]
   lines = str: lib.trivial.pipe str [
-    (split "\n") # :: String -> [String | [String]]
+    (builtins.split "\n") # :: String -> [String | [String]]
     (dropLastIfEquals "") # :: [String | [String]] -> [String | [String]]
     (filter (elem: typeOf elem != "list")) # :: [String | [String]] -> [String]
   ];
