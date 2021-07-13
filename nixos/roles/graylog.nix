@@ -250,92 +250,94 @@ in
       # HAProxy load balancer.
       # Since haproxy is rather lightweight we just fire up one on each graylog
       # node, talking to all known graylog nodes.
-      flyingcircus.services.haproxy.enable = true;
+      flyingcircus.services.haproxy = let
+        # Journalbeat uses long-running connections and may send nothing
+        # for a while. Use ttl 120s for Journalbeat to make sure it
+        # reconnects before it's thrown out by HAproxy.
+        beatsTimeout = "121s";
+        graylogTimeout = "121s";
+        gelfTimeout = "10s";
+        mkBinds = port:
+          map
+            (addr: "${addr}:${toString port}")
+            fclib.network.srv.dualstack.addresses;
+      in {
+        enable = true;
+        enableStructuredConfig = true;
 
-      services.haproxy.config = lib.mkOverride 90 (let
-        # graylog is only listening for IPv6
-        backendConfig = config: lib.concatStringsSep "\n"
-          (map
-            (node: "    " + (config node.address (head (filter fclib.isIp6 node.ips))))
-            clusterNodes);
+        frontend = {
+          gelf-tcp-in = {
+            binds = mkBinds gelfTCPHAPort;
+            mode = "tcp";
+            options = [ "tcplog" ];
+            timeout.client = gelfTimeout;
+            default_backend = "gelf_tcp";
+          };
 
-        listenConfig = port: lib.concatStringsSep "\n"
-          (map
-            (addr: "    bind ${addr}:${toString port}")
-            fclib.network.srv.dualstack.addresses);
-      in ''
-        global
-            daemon
-            chroot /var/empty
-            maxconn 4096
-            log localhost local2
+          beats-tcp-in = {
+            binds = mkBinds beatsTCPHAPort;
+            mode = "tcp";
+            options = [ "tcplog" ];
+            timeout.client = beatsTimeout;
+            default_backend = "beats_tcp";
+          };
 
-        defaults
-            mode http
-            log global
-            option dontlognull
-            option http-keep-alive
-            option redispatch
+          graylog_http = {
+            binds = mkBinds glAPIHAPort;
+            options = [ "httplog" ];
+            timeout.client = graylogTimeout;
+            default_backend = "graylog";
+          };
+        };
 
-            timeout connect 5s
-            timeout client 30s    # should be equal to server timeout
-            timeout server 30s    # should be equal to client timeout
-            timeout queue 30s
+        backend = {
+          gelf_tcp = {
+            mode = "tcp";
+            options = [ "httpchk HEAD /api/system/lbstatus" ];
+            timeout.server = gelfTimeout;
+            timeout.tunnel = "61s";
+            servers = map
+              ( node:
+                  "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString gelfTCPGraylogPort}"
+                  + " check port ${toString glAPIPort} inter 10s rise 2 fall 1"
+              )
+              clusterNodes;
+            balance = "leastconn";
+          };
 
-        frontend gelf-tcp-in
-        ${listenConfig gelfTCPHAPort}
-            mode tcp
-            option tcplog
-            timeout client 10s # should be equal to server timeout
+          beats_tcp = {
+            mode = "tcp";
+            options = [ "httpchk HEAD /api/system/lbstatus" ];
+            timeout.server = beatsTimeout;
+            servers = map
+              ( node:
+                  "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString beatsTCPGraylogPort}"
+                  + " check port ${toString glAPIPort} inter 10s rise 2 fall 1"
+              )
+              clusterNodes;
+            balance = "leastconn";
+          };
 
-            default_backend gelf_tcp
+          graylog = {
+            options = [ "httpchk GET /" ];
+            timeout.server = graylogTimeout;
+            servers = map
+              ( node:
+                  "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString glAPIPort}"
+                  + " check fall 1 rise 2 inter 10s maxconn 20"
+              )
+              clusterNodes;
+            balance = "roundrobin";
+          };
 
-        frontend beats-tcp-in
-        ${listenConfig beatsTCPHAPort}
-            mode tcp
-            option tcplog
-            # Journalbeat uses long-running connections and may send nothing
-            # for a while. Use ttl 120s for Journalbeat to make sure it
-            # reconnects before it's thrown out by HAproxy.
-            timeout client 121s
-
-            default_backend beats_tcp
-
-        frontend graylog_http
-        ${listenConfig glAPIHAPort}
-            use_backend stats if { path_beg /admin/stats }
-            option httplog
-            timeout client 121s    # should be equal to server timeout
-            default_backend graylog
-
-        backend gelf_tcp
-            mode tcp
-            balance leastconn
-            option httpchk HEAD /api/system/lbstatus
-            timeout server 10s
-            timeout tunnel 61s
-        ${backendConfig (name: ip:
-            "server ${name}  ${ip}:${toString gelfTCPGraylogPort} check port ${toString glAPIPort} inter 10s rise 2 fall 1")}
-
-        backend beats_tcp
-            mode tcp
-            balance leastconn
-            option httpchk HEAD /api/system/lbstatus
-            timeout server 121s
-        ${backendConfig (name: ip:
-            "server ${name}  ${ip}:${toString beatsTCPGraylogPort} check port ${toString glAPIPort} inter 10s rise 2 fall 1")}
-
-        backend graylog
-            balance roundrobin
-            option httpchk GET /
-            timeout server 121s    # should be equal to client timeout
-        ${backendConfig (name: ip:
-            "server ${name}  ${ip}:${toString glAPIPort} check fall 1 rise 2 inter 10s maxconn 20")}
-
-        backend stats
-            stats uri /
-            stats refresh 5s
-      '');
+          stats = {
+            extraConfig = ''
+              stats uri /
+              stats refresh 5s
+            '';
+          };
+        };
+      };
     })
 
     {
