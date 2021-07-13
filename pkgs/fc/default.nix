@@ -18,6 +18,7 @@ rec {
   logcheckhelper = callPackage ./logcheckhelper { };
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
+  secure-erase = callPackage ./secure-erase {};
   sensuplugins = callPackage ./sensuplugins {};
   sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};

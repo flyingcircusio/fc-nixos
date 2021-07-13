@@ -8,7 +8,9 @@ let
   enc = config.flyingcircus.enc;
   mon_port = "6789";
 
-  first_mon = head (lib.splitString "." (head (sort lessThan (map (service: service.address) (fclib.findServices "ceph_mon-mon")))));
+  mons = (sort lessThan (map (service: service.address) (fclib.findServices "ceph_mon-mon")));
+  # We do not have service data during bootstrapping.
+  first_mon = if mons == [] then "" else head (lib.splitString "." (head mons));
 in
 {
   options = {

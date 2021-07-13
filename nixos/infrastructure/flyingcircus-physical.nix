@@ -31,6 +31,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
 
     environment.systemPackages = with pkgs; [
       smartmontools
+      fc.secure-erase
     ];
 
     fileSystems = {
