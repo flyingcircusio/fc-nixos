@@ -99,6 +99,7 @@ in
           xorg.lndir
           # Our custom stuff that's needed to rebuild the VM.
           lamp_php73
+          lamp_php73.packages.composer
           channel
         ];
 

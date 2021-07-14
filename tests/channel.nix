@@ -81,6 +81,7 @@ in {
       xorg.lndir
       # Our custom stuff that's needed to rebuild the VM.
       lamp_php73
+      lamp_php73.packages.composer
       lamp_php56
       lamp_php56.passthru.extensions.memcached.src
       channel
