@@ -112,7 +112,10 @@ in {
           # to choose the right one in case someone uses the LAMP role.
           # This used to be in packages.nix but that was too simple minded.
 
-          environment.systemPackages = [ role.php ];
+          environment.systemPackages = [
+            role.php
+            role.php.packages.composer
+          ];
 
       }
 
