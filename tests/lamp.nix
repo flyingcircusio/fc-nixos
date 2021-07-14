@@ -72,6 +72,9 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
     lamp.succeed('mkdir -p /srv/docroot')
     lamp.succeed('echo "<? phpinfo(); ?>" > /srv/docroot/test.php')
 
+    with subtest("check if composer CLI is installed"):
+      lamp.succeed("su nobody -s /bin/sh -c 'composer --help'")
+
     with subtest("check if PHP support is working as expected in CLI"):
       lamp.succeed("php /srv/docroot/test.php > result")
       print(lamp.succeed('cat result'))
