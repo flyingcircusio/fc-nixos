@@ -1,0 +1,136 @@
+From 222c9f32c7be62e8789b71e70395fddef8f0fa76 Mon Sep 17 00:00:00 2001
+From: Christian Theune <ct@flyingcircus.io>
+Date: Wed, 16 Sep 2020 17:15:14 +0200
+Subject: [PATCH] Anonymize logs by default, provide remote_addr_anon as a
+ builtin variable.
+
+---
+ src/http/modules/ngx_http_log_module.c |  2 +-
+ src/http/ngx_http_variables.c          | 84 ++++++++++++++++++++++++++
+ 2 files changed, 85 insertions(+), 1 deletion(-)
+
+diff --git a/src/http/modules/ngx_http_log_module.c b/src/http/modules/ngx_http_log_module.c
+index f7c4bd2f..615b2c36 100644
+--- a/src/http/modules/ngx_http_log_module.c
++++ b/src/http/modules/ngx_http_log_module.c
+@@ -225,7 +225,7 @@ static ngx_str_t  ngx_http_access_log = ngx_string(NGX_HTTP_LOG_PATH);
+ 
+ 
+ static ngx_str_t  ngx_http_combined_fmt =
+-    ngx_string("$remote_addr - $remote_user [$time_local] "
++    ngx_string("$remote_addr_anon - $remote_user [$time_local] "
+                "\"$request\" $status $body_bytes_sent "
+                "\"$http_referer\" \"$http_user_agent\"");
+ 
+diff --git a/src/http/ngx_http_variables.c b/src/http/ngx_http_variables.c
+index c25d80cc..94c4a864 100644
+--- a/src/http/ngx_http_variables.c
++++ b/src/http/ngx_http_variables.c
+@@ -57,6 +57,8 @@ static ngx_int_t ngx_http_variable_binary_remote_addr(ngx_http_request_t *r,
+     ngx_http_variable_value_t *v, uintptr_t data);
+ static ngx_int_t ngx_http_variable_remote_addr(ngx_http_request_t *r,
+     ngx_http_variable_value_t *v, uintptr_t data);
++static ngx_int_t ngx_http_variable_remote_addr_anon(ngx_http_request_t *r,
++    ngx_http_variable_value_t *v, uintptr_t data);
+ static ngx_int_t ngx_http_variable_remote_port(ngx_http_request_t *r,
+     ngx_http_variable_value_t *v, uintptr_t data);
+ static ngx_int_t ngx_http_variable_proxy_protocol_addr(ngx_http_request_t *r,
+@@ -198,6 +200,8 @@ static ngx_http_variable_t  ngx_http_core_variables[] = {
+ 
+     { ngx_string("remote_addr"), NULL, ngx_http_variable_remote_addr, 0, 0, 0 },
+ 
++    { ngx_string("remote_addr_anon"), NULL, ngx_http_variable_remote_addr_anon, 0, 0, 0 },
++
+     { ngx_string("remote_port"), NULL, ngx_http_variable_remote_port, 0, 0, 0 },
+ 
+     { ngx_string("proxy_protocol_addr"), NULL,
+@@ -1278,6 +1282,86 @@ ngx_http_variable_remote_addr(ngx_http_request_t *r,
+ }
+ 
+ 
++static ngx_int_t
++ngx_http_variable_remote_addr_anon(ngx_http_request_t *r,
++    ngx_http_variable_value_t *v, uintptr_t data)
++{
++
++    size_t                     len;
++    u_char               *p;
++    ngx_uint_t   i;
++
++    struct sockaddr_in   *sin;
++#if (NGX_HAVE_INET6)
++    struct sockaddr_in6  *sin6;
++#endif
++
++    switch (r->connection->sockaddr->sa_family) {
++
++#if (NGX_HAVE_INET6)
++    case AF_INET6:
++        sin6 = (struct sockaddr_in6 *) r->connection->sockaddr;
++
++        len = NGX_UNIX_ADDRSTRLEN;
++        p = (u_char *) &sin6->sin6_addr;
++
++        v->len = 0;
++        v->valid = 1;
++        v->no_cacheable = 0;
++        v->not_found = 0;
++
++        v->data = ngx_pnalloc(r->pool, len);
++        if (v->data == NULL) {
++            return NGX_ERROR;
++        }
++
++        for (i=6; i<16; i++) {
++          p[i] = 0;
++        }
++
++        v->len = ngx_inet6_ntop(p, v->data, len);
++
++        break;
++#endif
++
++#if (NGX_HAVE_UNIX_DOMAIN)
++    case AF_UNIX:
++
++        v->len = r->connection->addr_text.len;
++        v->valid = 1;
++        v->no_cacheable = 0;
++        v->not_found = 0;
++        v->data = r->connection->addr_text.data;
++
++        break;
++#endif
++
++    default: /* AF_INET */
++        sin = (struct sockaddr_in *) r->connection->sockaddr;
++
++        len = NGX_UNIX_ADDRSTRLEN;
++        p = (u_char *) &sin->sin_addr;
++
++        v->len = 0;
++        v->valid = 1;
++        v->no_cacheable = 0;
++        v->not_found = 0;
++
++        v->data = ngx_pnalloc(r->pool, len);
++        if (v->data == NULL) {
++            return NGX_ERROR;
++        }
++
++        v->len = ngx_sprintf(v->data, "%ud.%ud.%ud.0",
++            p[0], p[1], p[2]) - v->data;
++
++        break;
++    }
++
++    return NGX_OK;
++}
++
++
+ static ngx_int_t
+ ngx_http_variable_remote_port(ngx_http_request_t *r,
+     ngx_http_variable_value_t *v, uintptr_t data)
+-- 
+2.32.0
+

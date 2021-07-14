@@ -5,11 +5,17 @@
     "rev": "21b696caf392ad6fa513caf3327d0aa0430ffb72",
     "sha256": "1056r3383aaf5zhf7rbvka76gqxb8b7rwqxnmar29vxhs9h56m5k"
   },
-  "nixpkgs_18_03": {
-    "owner": "nixos",
+  "nix-phps": {
+    "owner": "mkg20001",
+    "repo": "nix-phps",
+    "rev": "4cb91f96b68d9e41808c4494f4a0097724fe9267",
+    "sha256": "ZDFoFseoTdY5hjL+f+FY3OyJDtExu4bhMCLbHZELz1k="
+  },
+  "nix-phps-unstable": {
+    "owner": "NixOS",
     "repo": "nixpkgs",
-    "rev": "3e1be2206b4c1eb3299fb633b8ce9f5ac1c32898",
-    "sha256": "11d01fdb4d1avi7564h7w332h3jjjadsqwzfzpyh5z56s6rfksxc"
+    "rev": "485d0fc9730a9e1d460e00af1d1becc541e2ad4f",
+    "sha256": "zh8iJxPUTD2Br93HzVMfYoVef8HYlNDa2MaIeaeaKsg="
   },
   "nixos-mailserver": {
     "owner": "flyingcircusio",

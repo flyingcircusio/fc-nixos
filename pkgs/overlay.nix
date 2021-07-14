@@ -4,7 +4,12 @@ let
   versions = import ../versions.nix { pkgs = super; };
   elk7Version = "7.10.2";
 
-  nixpkgs_18_03 = import versions.nixpkgs_18_03 {};
+  # import fossar/nix-phps overlay with nixpkgs-unstable from versions.json
+  # so it can get latest generic.nix but use current release package set to build
+  phps = (import "${versions.nix-phps}/pkgs/phps.nix")
+    ({ outPath = versions.nix-phps-unstable; })
+      {} super;
+
   inherit (super) lib;
 
 in {
@@ -99,31 +104,19 @@ in {
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
 
+  # Import old php versions from nix-phps
+  # NOTE: php7.3 is already removed on unstable
+  inherit (phps) php56;
+
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
-  lamp_php56 =
-    let
-      phpIni = super.writeText "php.ini" ''
-      ${builtins.readFile "${nixpkgs_18_03.php56}/etc/php.ini"}
-      extension = ${nixpkgs_18_03.php56Packages.redis}/lib/php/extensions/redis.so
-      extension = ${nixpkgs_18_03.php56Packages.memcached}/lib/php/extensions/memcached.so
-      extension = ${nixpkgs_18_03.php56Packages.imagick}/lib/php/extensions/imagick.so
-      zend_extension = opcache.so
-    '';
-    in (nixpkgs_18_03.php56).overrideAttrs (oldAttrs: rec {
-      version = "5.6.40";
-      name = "php-5.6.40";
-      buildInputs = oldAttrs.buildInputs ++ [ super.makeWrapper ];
-      src = super.fetchurl {
-        url = "http://www.php.net/distributions/php-${version}.tar.bz2";
-        sha256 = "005s7w167dypl41wlrf51niryvwy1hfv53zxyyr3lm938v9jbl7z";
-      };
-      passthru = { phpIni = "${phpIni}"; };
-      postInstall = oldAttrs.postInstall or "" + ''
-        wrapProgram $out/bin/php \
-          --set LOCALE_ARCHIVE ${nixpkgs_18_03.glibcLocales}/lib/locale/locale-archive
-      '';
-    });
+  lamp_php56 = self.php56.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
 
   lamp_php73 = super.php73.withExtensions ({ enabled, all }:
               enabled ++ [
@@ -132,6 +125,7 @@ in {
                 all.memcached
                 all.redis
               ]);
+
   lamp_php74 = super.php74.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
@@ -139,6 +133,7 @@ in {
                 all.memcached
                 all.redis
               ]);
+
   lamp_php80 = super.php80.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
@@ -207,51 +202,30 @@ in {
   nginxStable = (super.nginxStable.override {
     modules = with super.nginxModules; [
       dav
-
-     ( {
-        src = super.fetchFromGitHub {
-          owner = "SpiderLabs";
-          repo = "ModSecurity-nginx";
-          rev = "v1.0.1";
-          sha256 = "0cbb3g3g4v6q5zc6an212ia5kjjad62bidnkm8b70i4qv1615pzf";
-        };
-        inputs = [ super.curl super.geoip self.libmodsecurity super.libxml2 super.lmdb super.yajl ];
-        })
-
+      modsecurity-nginx
       moreheaders
       rtmp
     ];
-  }).overrideAttrs(_: rec {
-    src = super.fetchFromGitHub {
-      owner = "flyingcircusio";
-      repo = "nginx";
-      rev = "2ad7b63de0391df4c49c887f2929a72658bce329";
-      sha256 = "02rnpy1w8ia2yxlbcfvx5d4swdrs8a58grffch9pgr1x11kakvl6";
-    };
-
-    configureScript = "./auto/configure";
+  }).overrideAttrs(a: a // {
+    patches = a.patches ++ [
+      ./remote_addr_anon.patch
+    ];
   });
 
   nginx = self.nginxStable;
 
-  nginxMainline = super.nginxMainline.override {
+  nginxMainline = (super.nginxMainline.override {
     modules = with super.nginxModules; [
       dav
-
-      ( {
-        src = super.fetchFromGitHub {
-          owner = "SpiderLabs";
-          repo = "ModSecurity-nginx";
-          rev = "v1.0.1";
-          sha256 = "0cbb3g3g4v6q5zc6an212ia5kjjad62bidnkm8b70i4qv1615pzf";
-        };
-        inputs = [ super.curl super.geoip super.libmodsecurity super.libxml2 super.lmdb super.yajl ];
-        })
-
+      modsecurity-nginx
       moreheaders
       rtmp
     ];
-  };
+  }).overrideAttrs(a: a // {
+    patches = a.patches ++ [
+      ./remote_addr_anon.patch
+    ];
+  });
 
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {

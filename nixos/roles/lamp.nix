@@ -112,7 +112,10 @@ in {
           # to choose the right one in case someone uses the LAMP role.
           # This used to be in packages.nix but that was too simple minded.
 
-          environment.systemPackages = [ role.php ];
+          environment.systemPackages = [
+            role.php
+            role.php.packages.composer
+          ];
 
       }
 
@@ -120,10 +123,10 @@ in {
 
           services.httpd.enable = true;
           services.httpd.adminAddr = "admin@flyingcircus.io";
-          environment.shellInit = ''
-            export PHPRC='${config.systemd.services.httpd.environment.PHPRC}'
-          '';
-
+          # Provide a similar PHP config for the PHP CLI as for Apache (httpd).
+          # The file referenced by PHPRC is loaded together with the php.ini
+          # from the global PHP package which only specifies the extensions.
+          environment.variables.PHPRC = "${pkgs.writeText "php.ini" config.services.httpd.phpOptions}";
           services.httpd.logPerVirtualHost = true;
           services.httpd.group = "service";
           services.httpd.user = "nobody";
