@@ -6,10 +6,10 @@
     "sha256": "1056r3383aaf5zhf7rbvka76gqxb8b7rwqxnmar29vxhs9h56m5k"
   },
   "nix-phps": {
-    "owner": "fossar",
+    "owner": "mkg20001",
     "repo": "nix-phps",
-    "rev": "31d86400860816d0f20406b336870a9ed31d5fbf",
-    "sha256": "y4OrMnJAorB6Wo1j6CGkc/XAqMIzBOYFTRlPz9rgB8c="
+    "rev": "4cb91f96b68d9e41808c4494f4a0097724fe9267",
+    "sha256": "ZDFoFseoTdY5hjL+f+FY3OyJDtExu4bhMCLbHZELz1k="
   },
   "nix-phps-unstable": {
     "owner": "NixOS",
