@@ -125,7 +125,7 @@ in {
         networking.domain = "gocept.net";
 
         users.groups = {
-          sudo-srv = {
+          login = {
             members = [ "test" ];
           };
         };
