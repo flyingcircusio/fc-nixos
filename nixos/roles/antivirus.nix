@@ -52,7 +52,7 @@ in
         clamav-updater = {
           notification = "ClamAV virus database up-to-date";
           command = ''
-            check_file_age -w 86400 -c 172800 /var/lib/clamav/daily.cld
+            check_file_age -w 86400 -c 172800 /var/lib/clamav/daily.cvd
           '';
           interval = 300;
           };
