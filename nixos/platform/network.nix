@@ -157,7 +157,7 @@ in
           config.networking.domain
         ];
 
-      useDHCP = (interfaces == {});
+      useDHCP = fclib.mkPlatform (interfaces == {});
 
       # DHCP settings: never do IPv4ll and don't use DHCP if there is explicit
       # network configuration present

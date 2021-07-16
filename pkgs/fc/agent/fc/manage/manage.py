@@ -630,6 +630,8 @@ def main():
     logging.getLogger('iso8601').setLevel(logging.WARNING)
     logging.getLogger('requests').setLevel(logging.WARNING)
 
+    os.environ['NIX_REMOTE'] = 'daemon'
+
     with locked('/run/lock/fc-manage.lock'):
         transaction(args)
 
