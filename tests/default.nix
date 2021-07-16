@@ -64,6 +64,7 @@ in {
   nginx = callTest ./nginx.nix {};
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
+  physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
   postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
   postgresql11 = callTest ./postgresql.nix { rolename = "postgresql11"; };
   postgresql12 = callTest ./postgresql.nix { rolename = "postgresql12"; };

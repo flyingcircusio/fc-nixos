@@ -1,5 +1,3 @@
-{  }:
-
 { config, lib, pkgs, system, ... }:
 
 let
@@ -246,10 +244,11 @@ interfaces = {}
 
 # get all lldp output
 lldp = run_json(['lldpctl', '-f', 'json0'])
-for i in lldp['lldp'][0]['interface']:
-    interface = Interface.create(i['name'])
-    interface.switch = i["chassis"][0]["name"][0]["value"]
-    interface.switch_port = i["port"][0]["descr"][0]["value"]
+if 'interface' in lldp['lldp'][0]:
+  for i in lldp['lldp'][0]['interface']:
+      interface = Interface.create(i['name'])
+      interface.switch = i["chassis"][0]["name"][0]["value"]
+      interface.switch_port = i["port"][0]["descr"][0]["value"]
 
 # get all interfaces
 ip_l = run_json(['ip', '-j', 'l'])
@@ -278,12 +277,29 @@ for interface in interfaces.values():
     switch_and_port = f"{interface.switch}/{interface.switch_port}"
     addresses = ', '.join(interface.addresses)
     print(f"{interface.name: <20}| {interface.mac: >17} | {switch_and_port: <20} | {addresses}")
-    '';
+
+print()
+print("NOTE: If you are missing interface data, wait 30s and run `show-interfaces` again.")
+print()
+'';
+
+  # XXX this is duplicated in fc.secure-erase. I haven't found out how to
+  # pull in our overlay here ... -_-
+  secure_erase = pkgs.writeScriptBin "fc-secure-erase" ''
+#!/bin/sh
+set -ex
+
+target="''${1?need target device to erase}"
+name="''${target//\//}"
+${pkgs.cryptsetup}/bin/cryptsetup open --type plain -d /dev/urandom $target $name
+${pkgs.coreutils}/bin/dd if=/dev/zero of=/dev/mapper/$name bs=4M status=progress || true
+${pkgs.cryptsetup}/bin/cryptsetup close $name
+'';
 
 in 
 {
-  config = {
 
+  config = {
     nixpkgs.config.allowUnfree = true;
 
     services.lldpd.enable = true;
@@ -297,9 +313,8 @@ in
       jq
       fc_install
       show_interfaces
+      secure_erase
       ipmitool
     ];
-
   };
-
 }

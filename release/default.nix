@@ -316,7 +316,7 @@ let
      modules = [
        "${nixpkgs_}/nixos/modules/installer/netboot/netboot-minimal.nix"
        (import version_nix {})
-       (import ./netboot-installer-config.nix {})
+       ./netboot-installer.nix
      ];
     });
 

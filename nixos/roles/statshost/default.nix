@@ -631,7 +631,7 @@ in
           if [[ -d ${grafanaJsonDashboardPath} && -d ${grafanaJsonDashboardPath}/.git ]];
           then
             cd ${grafanaJsonDashboardPath}
-            git pull
+            git pull --ff-only
           else
             rm -rf ${grafanaJsonDashboardPath}
             git clone ${cfgStats.dashboardsRepository} ${grafanaJsonDashboardPath}
