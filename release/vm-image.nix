@@ -18,6 +18,12 @@ in
 {
   config = {
 
+    services.udev.extraRules = ''
+        # static/bootstrap fallback rules for VMs
+        KERNEL=="eth*", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
+        KERNEL=="eth*", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
+    '';
+
     # use /dev/disk/device-by-alias/root later on, but this is not available
     # at this stage
     boot.loader.grub.device = lib.mkForce "/dev/vda";

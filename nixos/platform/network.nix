@@ -17,21 +17,6 @@ let
     then cfg.static.allowDHCP.${location}
     else false;
 
-  udevRenameRules = pkgs.writeTextFile {
-    name = "persistent-net-rules";
-    destination = "/etc/udev/rules.d/61-fc-persistent-net.rules";
-    text = if (interfaces != {}) then
-        lib.concatMapStrings
-          (interface: ''
-            KERNEL=="eth*", ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
-            '') interfaces
-      else ''
-        # static fallback rules for VMs
-        KERNEL=="eth*", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
-        KERNEL=="eth*", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
-      '';
-  };
-
   # add srv addresses from my own resource group to /etc/hosts
   hostsFromEncAddresses = encAddresses:
     let
@@ -132,10 +117,10 @@ in
         (hostsFromEncAddresses cfg.encAddresses);
     };
 
-    boot.initrd.extraUdevRulesCommands = ''
-      cp ${udevRenameRules}/etc/udev/rules.d/* $out/
-    '';
-    services.udev.packages = [ udevRenameRules ];
+    services.udev.extraRules = lib.concatMapStrings
+      (interface: ''
+        KERNEL=="eth*", ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
+        '') interfaces;
 
     systemd.services =
       let startStopScript = fclib.simpleRouting;
