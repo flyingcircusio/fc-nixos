@@ -102,10 +102,8 @@ in
           config.networking.domain
         ];
 
-      useDHCP = (interfaces == {});
-
-      # DHCP settings: never do IPv4ll and don't use DHCP if there is explicit
-      # network configuration present
+      # DHCP settings: never do IPv4ll and don't use DHCP by default.
+      useDHCP = fclib.mkPlatform false;
       dhcpcd.extraConfig = ''
         # IPv4ll gets in the way if we really do not want
         # an IPv4 address on some interfaces.

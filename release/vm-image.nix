@@ -24,6 +24,8 @@ in
         SUBSYSTEM=="net", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
     '';
 
+    networking.useDHCP = true;
+
     # use /dev/disk/device-by-alias/root later on, but this is not available
     # at this stage
     boot.loader.grub.device = lib.mkForce "/dev/vda";
