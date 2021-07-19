@@ -29,7 +29,7 @@ let
         });
     } // args;
 
-  generic = "${nixpkgs}/pkgs/development/interpreters/php/generic.nix";
+  generic = ./development/interpreters/php/generic.nix;
 
   base56 = prev.callPackage generic (_mkArgs {
     version = "5.6.40";
