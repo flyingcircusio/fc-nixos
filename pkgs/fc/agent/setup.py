@@ -14,6 +14,8 @@ test_deps = [
     'freezegun>=0.3',
     'responses',
     'pytest>=3',
+    'pytest-mock',
+    'pytest-structlog',
     'pytest-cov',
 ]
 

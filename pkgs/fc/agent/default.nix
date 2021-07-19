@@ -1,5 +1,6 @@
 { lib
 , stdenv
+, fetchFromGitHub
 , dmidecode
 , gitMinimal
 , gptfdisk
@@ -30,6 +31,20 @@ let
     };
   };
 
+  pytest-structlog = py.buildPythonPackage rec {
+    pname = "pytest-structlog";
+    version = "0.4";
+
+    src = fetchFromGitHub {
+      owner = "wimglenn";
+      repo = "pytest-structlog";
+      rev = "b71518015109b292bc6584b8637264939b44af62";
+      sha256 = "00g2ivgj4y398d0y60lk710zz62pj80r9ya3b4iqijkp4j8nh4gp";
+    };
+
+    buildInputs = [ py.pytest py.structlog ];
+  };
+
 in
 py.buildPythonPackage rec {
   name = "fc-agent-${version}";
@@ -42,16 +57,21 @@ py.buildPythonPackage rec {
     py.pytestcov
     py.pytestrunner
     py.responses
+    py.pytest-mock
+    py.pytest-subprocess
+    pytest-structlog
   ];
   propagatedBuildInputs = [
     gitMinimal
     nix
     py.click
+    py.colorama
     py.dateutil
     py.iso8601
     py.pytz
     py.requests
     py.shortuuid
+    py.structlog
     pyyaml
     utillinux
   ] ++ lib.optionals stdenv.isLinux [
