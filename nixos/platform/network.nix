@@ -119,7 +119,7 @@ in
 
     services.udev.extraRules = lib.concatMapStrings
       (interface: ''
-        KERNEL=="eth*", ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
+        SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
         '') interfaces;
 
     systemd.services =
