@@ -61,7 +61,7 @@ in
 
       # data structure for all configured interfaces with their IP addresses:
       # { ethfe = { ... }; ethsrv = { }; ... }
-      interfaces = listToAttrs (map (interface: 
+      interfaces = listToAttrs (map (interface:
         (lib.nameValuePair "${interface.device}" {
               ipv4.addresses = interface.v4.attrs;
               ipv4.routes = map (gateway:
