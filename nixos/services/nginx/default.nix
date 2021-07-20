@@ -60,9 +60,6 @@ let
   let
     onlySSL = vhost.onlySSL or false || vhost.enableSSL or false;
     hasSSL = onlySSL || vhost.addSSL or false || vhost.forceSSL or false;
-    defaultListen = addr:
-      (lib.optional hasSSL { inherit addr; port = 443; ssl = true; })
-        ++ (lib.optional (!onlySSL) { inherit addr; port = 80;  ssl = false; });
     addrs =
       if (vhost ? "listenAddress" || vhost ? "listenAddress6")
       then filter (x: x != null) [
@@ -72,7 +69,7 @@ let
       else fclib.network.fe.dualstack.addressesQuoted;
   in
     # listen and enableACME defaults are overridden if the JSON spec has them.
-    { listen = lib.flatten (map defaultListen addrs); }
+    { listen = lib.flatten (map fclib.nginxDefaultListen addrs); }
     // (lib.optionalAttrs hasSSL { enableACME = true; })
     // (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
 
