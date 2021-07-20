@@ -17,21 +17,6 @@ let
     then cfg.static.allowDHCP.${location}
     else false;
 
-  udevRenameRules = pkgs.writeTextFile {
-    name = "persistent-net-rules";
-    destination = "/etc/udev/rules.d/61-fc-persistent-net.rules";
-    text = if (interfaces != {}) then
-        lib.concatMapStrings
-          (interface: ''
-            KERNEL=="eth*", ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
-            '') interfaces
-      else ''
-        # static fallback rules for VMs
-        KERNEL=="eth*", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
-        KERNEL=="eth*", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
-      '';
-  };
-
   # add srv addresses from my own resource group to /etc/hosts
   hostsFromEncAddresses = encAddresses:
     let
@@ -76,7 +61,7 @@ in
 
       # data structure for all configured interfaces with their IP addresses:
       # { ethfe = { ... }; ethsrv = { }; ... }
-      interfaces = listToAttrs (map (interface: 
+      interfaces = listToAttrs (map (interface:
         (lib.nameValuePair "${interface.device}" {
               ipv4.addresses = interface.v4.attrs;
               ipv4.routes = map (gateway:
@@ -117,10 +102,8 @@ in
           config.networking.domain
         ];
 
-      useDHCP = (interfaces == {});
-
-      # DHCP settings: never do IPv4ll and don't use DHCP if there is explicit
-      # network configuration present
+      # DHCP settings: never do IPv4ll and don't use DHCP by default.
+      useDHCP = fclib.mkPlatform false;
       dhcpcd.extraConfig = ''
         # IPv4ll gets in the way if we really do not want
         # an IPv4 address on some interfaces.
@@ -132,10 +115,10 @@ in
         (hostsFromEncAddresses cfg.encAddresses);
     };
 
-    boot.initrd.extraUdevRulesCommands = ''
-      cp ${udevRenameRules}/etc/udev/rules.d/* $out/
-    '';
-    services.udev.packages = [ udevRenameRules ];
+    services.udev.extraRules = lib.concatMapStrings
+      (interface: ''
+        SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
+        '') interfaces;
 
     systemd.services =
       let startStopScript = fclib.simpleRouting;

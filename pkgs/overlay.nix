@@ -4,11 +4,10 @@ let
   versions = import ../versions.nix { pkgs = super; };
   elk7Version = "7.10.2";
 
-  # import fossar/nix-phps overlay with nixpkgs-unstable from versions.json
-  # so it can get latest generic.nix but use current release package set to build
-  phps = (import "${versions.nix-phps}/pkgs/phps.nix")
-    ({ outPath = versions.nix-phps-unstable; })
-      {} super;
+  # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
+  # then use release-set as pkgs
+  phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
+    {} super;
 
   inherit (super) lib;
 
