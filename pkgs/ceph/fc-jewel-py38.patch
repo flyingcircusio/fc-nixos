@@ -12,7 +12,7 @@ index 5b179911c7..c978825293 100644
          while True:
              line = f.readline().rstrip('\n')
 diff --git a/src/ceph.in b/src/ceph.in
-index 8ce06a7ae7..64e00ae361 100755
+index 8ce06a7ae7..056f7ad249 100755
 --- a/src/ceph.in
 +++ b/src/ceph.in
 @@ -122,7 +122,7 @@ import string
@@ -37,7 +37,15 @@ index 8ce06a7ae7..64e00ae361 100755
  
  ############################################################################
  
-@@ -282,7 +280,7 @@ def do_extended_help(parser, args):
+@@ -148,6 +146,7 @@ def osdids():
+         ret, outbuf, outs = send_command(cluster_handle, cmd=['osd', 'ls'])
+     if ret:
+         raise RuntimeError('Can\'t contact mon for osd list')
++    outbuf = outbuf.decode('ascii')
+     return [i for i in outbuf.split('\n') if i != '']
+ 
+ def monids():
+@@ -282,7 +281,7 @@ def do_extended_help(parser, args):
          help_for_target(target=('mon', ''), partial=partial)
      return 0
  
@@ -46,7 +54,7 @@ index 8ce06a7ae7..64e00ae361 100755
  
  def wrap(s, width, indent):
      """
-@@ -332,8 +330,6 @@ def wrap(s, width, indent):
+@@ -332,8 +331,6 @@ def wrap(s, width, indent):
  
              yield result
  
@@ -55,7 +63,7 @@ index 8ce06a7ae7..64e00ae361 100755
  def format_help(cmddict, partial=None):
      """
      Formats all the cmdsigs and helptexts from cmddict into a sorted-by-
-@@ -342,7 +338,7 @@ def format_help(cmddict, partial=None):
+@@ -342,7 +339,7 @@ def format_help(cmddict, partial=None):
      """
  
      fullusage = ''
@@ -64,7 +72,7 @@ index 8ce06a7ae7..64e00ae361 100755
  
          if not cmd['help']:
              continue
-@@ -925,7 +921,7 @@ def main():
+@@ -925,17 +922,17 @@ def main():
              if parsed_args.output_format and \
                 parsed_args.output_format.startswith('json') and \
                 not compat:
@@ -72,9 +80,11 @@ index 8ce06a7ae7..64e00ae361 100755
 +                raw_stdout.write(b'\n')
  
              # if we are prettifying things, normalize newlines.  sigh.
-             if suffix != '':
-@@ -933,9 +929,9 @@ def main():
-             if outbuf != '':
+-            if suffix != '':
++            if suffix != b'':
+                 outbuf = outbuf.rstrip()
+-            if outbuf != '':
++            if outbuf != b'':
                  try:
                      # Write directly to binary stdout
 -                    raw_stdout.write(prefix)
@@ -86,7 +96,7 @@ index 8ce06a7ae7..64e00ae361 100755
                      if e.errno != errno.EPIPE:
                          raise e
 diff --git a/src/pybind/ceph_argparse.py b/src/pybind/ceph_argparse.py
-index d8a9f4bd5e..c55ead1c65 100644
+index d8a9f4bd5e..ba4788d878 100644
 --- a/src/pybind/ceph_argparse.py
 +++ b/src/pybind/ceph_argparse.py
 @@ -22,12 +22,6 @@ import threading
@@ -102,7 +112,15 @@ index d8a9f4bd5e..c55ead1c65 100644
  class ArgumentError(Exception):
      """
      Something wrong with arguments
-@@ -540,7 +534,7 @@ class CephPrefix(CephArgtype):
+@@ -355,6 +349,7 @@ class CephPgid(CephArgtype):
+         if s.find('.') == -1:
+             raise ArgumentFormat('pgid has no .')
+         poolid, pgnum = s.split('.', 1)
++        poolid = int(poolid)
+         if poolid < 0:
+             raise ArgumentFormat('pool {0} < 0'.format(poolid))
+         try:
+@@ -540,7 +535,7 @@ class CephPrefix(CephArgtype):
                  # but `s` could be anything passed by user.
                  s = s.decode('ascii')
          except UnicodeEncodeError:
@@ -111,7 +129,7 @@ index d8a9f4bd5e..c55ead1c65 100644
          except UnicodeDecodeError:
              raise ArgumentPrefix("no match for {0}".format(s))
  
-@@ -586,7 +580,7 @@ class argdesc(object):
+@@ -586,7 +581,7 @@ class argdesc(object):
      and will store the validated value in self.instance.val for extraction.
      """
      def __init__(self, t, name=None, n=1, req=True, **kwargs):
@@ -120,7 +138,7 @@ index d8a9f4bd5e..c55ead1c65 100644
              self.t = CephPrefix
              self.typeargs = {'prefix': t}
              self.req = True
-@@ -606,7 +600,7 @@ class argdesc(object):
+@@ -606,7 +601,7 @@ class argdesc(object):
      def __repr__(self):
          r = 'argdesc(' + str(self.t) + ', '
          internals = ['N', 'typeargs', 'instance', 't']
@@ -129,7 +147,7 @@ index d8a9f4bd5e..c55ead1c65 100644
              if k.startswith('__') or k in internals:
                  pass
              else:
-@@ -614,7 +608,7 @@ class argdesc(object):
+@@ -614,7 +609,7 @@ class argdesc(object):
                  if k == 'n' and self.N:
                      v = 'N'
                  r += '{0}={1}, '.format(k, v)
@@ -138,7 +156,7 @@ index d8a9f4bd5e..c55ead1c65 100644
              r += '{0}={1}, '.format(k, v)
          return r[:-2] + ')'
  
-@@ -657,14 +651,6 @@ def concise_sig(sig):
+@@ -657,14 +652,6 @@ def concise_sig(sig):
      return ' '.join([d.helpstr() for d in sig])
  
  
@@ -153,7 +171,7 @@ index d8a9f4bd5e..c55ead1c65 100644
  def parse_funcsig(sig):
      """
      parse a single descriptor (array of strings or dicts) into a
-@@ -674,7 +660,7 @@ def parse_funcsig(sig):
+@@ -674,7 +661,7 @@ def parse_funcsig(sig):
      argnum = 0
      for desc in sig:
          argnum += 1
@@ -162,7 +180,7 @@ index d8a9f4bd5e..c55ead1c65 100644
              t = CephPrefix
              desc = {'type': t, 'name': 'prefix', 'prefix': desc}
          else:
-@@ -695,7 +681,7 @@ def parse_funcsig(sig):
+@@ -695,7 +682,7 @@ def parse_funcsig(sig):
                  raise JsonFormat(s)
  
          kwargs = dict()
@@ -171,7 +189,7 @@ index d8a9f4bd5e..c55ead1c65 100644
              if key not in ['type', 'name', 'n', 'req']:
                  kwargs[key] = val
          newsig.append(argdesc(t,
-@@ -740,10 +726,10 @@ def parse_json_funcsigs(s, consumer):
+@@ -740,10 +727,10 @@ def parse_json_funcsigs(s, consumer):
      try:
          overall = json.loads(s)
      except Exception as e:
@@ -184,7 +202,7 @@ index d8a9f4bd5e..c55ead1c65 100644
          if 'sig' not in cmd:
              s = "JSON descriptor {0} has no 'sig'".format(cmdtag)
              raise JsonFormat(s)
-@@ -929,10 +915,7 @@ def validate(args, signature, partial=False):
+@@ -929,10 +916,7 @@ def validate(args, signature, partial=False):
              # Have an arg; validate it
              try:
                  validate_one(myarg, desc)
@@ -195,7 +213,7 @@ index d8a9f4bd5e..c55ead1c65 100644
                  # argument mismatch
                  if not desc.req:
                      # if not required, just push back; it might match
-@@ -944,7 +927,7 @@ def validate(args, signature, partial=False):
+@@ -944,7 +928,7 @@ def validate(args, signature, partial=False):
                      # hm, it was required, so time to return/raise
                      if partial:
                          return d
@@ -204,7 +222,7 @@ index d8a9f4bd5e..c55ead1c65 100644
  
              # Whew, valid arg acquired.  Store in dict
              matchcnt += 1
-@@ -958,7 +941,7 @@ def validate(args, signature, partial=False):
+@@ -958,7 +942,7 @@ def validate(args, signature, partial=False):
  
      if myargs and not partial:
          if save_exception:
@@ -213,7 +231,7 @@ index d8a9f4bd5e..c55ead1c65 100644
          raise ArgumentError("unused arguments: " + str(myargs))
  
      # Finally, success
-@@ -966,9 +949,9 @@ def validate(args, signature, partial=False):
+@@ -966,9 +950,9 @@ def validate(args, signature, partial=False):
  
  
  def cmdsiglen(sig):
@@ -225,7 +243,7 @@ index d8a9f4bd5e..c55ead1c65 100644
      return len(some_value['sig'])
  
  
-@@ -978,8 +961,7 @@ def validate_command(sigdict, args, verbose=False):
+@@ -978,8 +962,7 @@ def validate_command(sigdict, args, verbose=False):
      validated against sigdict.
      """
      if verbose:
@@ -235,7 +253,7 @@ index d8a9f4bd5e..c55ead1c65 100644
      found = []
      valid_dict = {}
      if args:
-@@ -987,23 +969,21 @@ def validate_command(sigdict, args, verbose=False):
+@@ -987,23 +970,21 @@ def validate_command(sigdict, args, verbose=False):
          # (so we can maybe give a more-useful error message)
          best_match_cnt = 0
          bestcmds = []
@@ -264,7 +282,7 @@ index d8a9f4bd5e..c55ead1c65 100644
                  bestcmds.append({cmdtag: cmd})
  
          # Sort bestcmds by number of args so we can try shortest first
-@@ -1011,12 +991,12 @@ def validate_command(sigdict, args, verbose=False):
+@@ -1011,12 +992,12 @@ def validate_command(sigdict, args, verbose=False):
          bestcmds_sorted = sorted(bestcmds, key=cmdsiglen)
  
          if verbose:
@@ -279,7 +297,7 @@ index d8a9f4bd5e..c55ead1c65 100644
                  sig = cmd['sig']
                  try:
                      valid_dict = validate(args, sig)
-@@ -1032,23 +1012,23 @@ def validate_command(sigdict, args, verbose=False):
+@@ -1032,23 +1013,23 @@ def validate_command(sigdict, args, verbose=False):
                      # cmdsigs we'll fall out unfound; if we're not, maybe
                      # the next one matches completely.  Whine, but pass.
                      if verbose:
@@ -310,7 +328,7 @@ index d8a9f4bd5e..c55ead1c65 100644
              return None
  
          return valid_dict
-@@ -1209,8 +1189,8 @@ def send_command(cluster, target=('mon', ''), cmd=None, inbuf='', timeout=0,
+@@ -1209,8 +1190,8 @@ def send_command(cluster, target=('mon', ''), cmd=None, inbuf='', timeout=0,
              osdid = target[1]
  
              if verbose:
@@ -321,7 +339,7 @@ index d8a9f4bd5e..c55ead1c65 100644
              ret, outbuf, outs = run_in_thread(
                  cluster.osd_command, osdid, cmd, inbuf, timeout)
  
-@@ -1225,15 +1205,15 @@ def send_command(cluster, target=('mon', ''), cmd=None, inbuf='', timeout=0,
+@@ -1225,15 +1206,15 @@ def send_command(cluster, target=('mon', ''), cmd=None, inbuf='', timeout=0,
                  cmddict = dict(pgid=pgid)
              cmd = [json.dumps(cmddict)]
              if verbose:
@@ -341,7 +359,7 @@ index d8a9f4bd5e..c55ead1c65 100644
              if target[1] == '':
                  ret, outbuf, outs = run_in_thread(
                      cluster.mon_command, cmd, inbuf, timeout)
-@@ -1244,8 +1224,8 @@ def send_command(cluster, target=('mon', ''), cmd=None, inbuf='', timeout=0,
+@@ -1244,8 +1225,8 @@ def send_command(cluster, target=('mon', ''), cmd=None, inbuf='', timeout=0,
              mds_spec = target[1]
  
              if verbose:
@@ -352,7 +370,7 @@ index d8a9f4bd5e..c55ead1c65 100644
  
              try:
                  from cephfs import LibCephFS
-@@ -1312,4 +1292,3 @@ def json_command(cluster, target=('mon', ''), prefix=None, argdict=None,
+@@ -1312,4 +1293,3 @@ def json_command(cluster, target=('mon', ''), prefix=None, argdict=None,
              raise
  
      return ret, outbuf, outs
