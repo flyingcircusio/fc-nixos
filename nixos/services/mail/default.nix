@@ -192,14 +192,14 @@ in {
       services.nginx.virtualHosts =
         let
           cfgForDomain = domain:
-          lib.nameValuePair "autoconfig.${domain}" {
+          lib.nameValuePair "autoconfig.${domain}" (fclib.mkNginxListen {
             addSSL = true;
             enableACME = true;
             locations."=/mail/config-v1.1.xml".alias = (import ./autoconfig.nix {
               inherit domain pkgs lib;
               inherit (role) mailHost webmailHost;
             });
-          };
+          } config.fclib.network.fe.dualstack.addressesQuoted);
         in listToAttrs (map cfgForDomain role.domains);
 
       services.postfix = {

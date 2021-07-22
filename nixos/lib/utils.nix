@@ -115,6 +115,13 @@ rec {
         config.flyingcircus.users.userData
       );
 
+  nginxDefaultListen = vhost: addr:
+    (lib.optional ((vhost ? addSSL && vhost.addSSL) || (vhost ? onlySSL && vhost.onlySSL) || (vhost ? forceSSL && vhost.forceSSL)) { inherit addr; port = 443; ssl = true; })
+      ++ (lib.optional (!(vhost ? onlySSL && vhost.onlySSL)) { inherit addr; port = 80; ssl = false; });
+
+  mkNginxListen = vhost: addrs:
+    { listen = lib.flatten (map (nginxDefaultListen vhost) addrs); } // vhost;
+
   writePrettyJSON = name: x:
   let json = pkgs.writeText "write-pretty-json-input" (toJSON x);
   in pkgs.runCommand name { preferLocalBuild = true; } ''
