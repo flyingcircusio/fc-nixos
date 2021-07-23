@@ -5,13 +5,9 @@ import pytest
 
 
 def test_str_to_estimate():
-    for (spec, result) in [
-            ('0.7', .7),
-            ('3s', 3),
-            ('5m', 5 * 60),
-            ('3h', 3 * 60 * 60),
-            ('6h 4s', 6 * 60 * 60 + 4),
-            ('4m 2s', 4 * 60 + 2)]:
+    for (spec, result) in [('0.7', .7), ('3s', 3), ('5m', 5 * 60),
+                           ('3h', 3 * 60 * 60), ('6h 4s', 6 * 60 * 60 + 4),
+                           ('4m 2s', 4 * 60 + 2)]:
         assert float(Estimate(spec)) == result
 
 
@@ -26,9 +22,7 @@ def test_datetime():
 
 
 def test_estimate_to_str():
-    for (duration, result) in [
-            (3302, '55m 2s'),
-            (5860, '1h 37m 40s')]:
+    for (duration, result) in [(3302, '55m 2s'), (5860, '1h 37m 40s')]:
         assert str(Estimate(duration)) == result
 
 

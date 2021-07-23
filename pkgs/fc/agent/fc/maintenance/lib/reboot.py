@@ -60,8 +60,8 @@ class RebootActivity(Activity):
         """
         try:
             for req in self.request.other_requests():
-                if (isinstance(req.activity, RebootActivity) and
-                        req.activity.coldboot):
+                if (isinstance(req.activity, RebootActivity)
+                        and req.activity.coldboot):
                     return req
         except AttributeError:  # self.request has not been set
             pass
@@ -89,12 +89,24 @@ class RebootActivity(Activity):
 
 def main():
     a = argparse.ArgumentParser(description=__doc__)
-    a.add_argument('-c', '--comment', metavar='TEXT', default=None,
-                   help='announce upcoming reboot with this message')
-    a.add_argument('-p', '--poweroff', default=False, action='store_true',
-                   help='power off instead of reboot')
-    a.add_argument('-d', '--spooldir', metavar='DIR', default=DEFAULT_DIR,
-                   help='request spool dir (default: %(default)s)')
+    a.add_argument(
+        '-c',
+        '--comment',
+        metavar='TEXT',
+        default=None,
+        help='announce upcoming reboot with this message')
+    a.add_argument(
+        '-p',
+        '--poweroff',
+        default=False,
+        action='store_true',
+        help='power off instead of reboot')
+    a.add_argument(
+        '-d',
+        '--spooldir',
+        metavar='DIR',
+        default=DEFAULT_DIR,
+        help='request spool dir (default: %(default)s)')
     a.add_argument('-v', '--verbose', action='store_true', default=False)
     args = a.parse_args()
     setup_logging(args.verbose)
@@ -104,6 +116,7 @@ def main():
         'cold boot' if args.poweroff else 'reboot')
     with ReqManager(spooldir=args.spooldir) as rm:
         rm.scan()
-        rm.add(Request(RebootActivity(action),
-                       900 if args.poweroff else 600,
-                       args.comment if args.comment else defaultcomment))
+        rm.add(
+            Request(
+                RebootActivity(action), 900 if args.poweroff else 600,
+                args.comment if args.comment else defaultcomment))

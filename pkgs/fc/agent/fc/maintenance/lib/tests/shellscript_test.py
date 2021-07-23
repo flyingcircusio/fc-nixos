@@ -15,8 +15,9 @@ def test_sh_script(tmpdir):
     assert a.returncode == 5
 
 
-@pytest.mark.skipif(not os.path.exists('/usr/bin/env'),
-                    reason='not expected to run inside a chroot')
+@pytest.mark.skipif(
+    not os.path.exists('/usr/bin/env'),
+    reason='not expected to run inside a chroot')
 def test_python_script(tmpdir):
     os.chdir(str(tmpdir))
     script = io.StringIO("""\

@@ -6,19 +6,24 @@ from unittest import mock
 
 
 def test_calc_mem():
-    modules = [{'Size': '0MB'},
-               {'Size': '512MB'},
-               {'Size': '2048    MB'},
-               {'Size': '    9096 mb'}]
+    modules = [{
+        'Size': '0MB'
+    }, {
+        'Size': '512MB'
+    }, {
+        'Size': '2048    MB'
+    }, {
+        'Size': '    9096 mb'
+    }]
     res = calc_mem(modules)
     assert res == 11656
 
 
 def test_get_device():
-    entry = ['Memory Device',
-             'Total Width: Unknown',
-             'Type: Ram',
-             'Locator: DIMM: 0']
+    entry = [
+        'Memory Device', 'Total Width: Unknown', 'Type: Ram',
+        'Locator: DIMM: 0'
+    ]
     res = get_device(entry)
     assert res == {'Total Width': ' Unknown', 'Type': ' Ram'}
 

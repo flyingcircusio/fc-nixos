@@ -24,7 +24,8 @@ def test_channel_eq():
 
 def test_channel_str_local_checkout():
     channel = Channel('file://1', name='name', environment='env')
-    assert str(channel) == '<Channel name=name, version=local-checkout, from=1>'
+    assert str(
+        channel) == '<Channel name=name, version=local-checkout, from=1>'
 
 
 def test_channel_str(mocked_responses):
@@ -46,8 +47,10 @@ def test_channel_from_url_with_redirect(mocked_responses):
     final_url = 'https://hydra.flyingcircus.io/build/54715/download/1/nixexprs.tar.xz'
 
     mocked_responses.add(
-        responses.HEAD, expr_url(url), status=302, headers={'Location': final_url}
-    )
+        responses.HEAD,
+        expr_url(url),
+        status=302,
+        headers={'Location': final_url})
     mocked_responses.add(responses.HEAD, final_url)
     ch = Channel(url)
     assert ch.resolved_url == final_url

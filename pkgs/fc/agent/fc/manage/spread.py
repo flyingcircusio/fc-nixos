@@ -13,7 +13,7 @@ def _fmt_time(timestamp, sep=' '):
 
 class Spread:
 
-    def __init__(self, stampfile, interval=120*60, jobname='Job'):
+    def __init__(self, stampfile, interval=120 * 60, jobname='Job'):
         self.stampfile = stampfile
         self.interval = interval
         self.jobname = jobname

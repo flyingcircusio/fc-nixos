@@ -19,6 +19,7 @@ def kernel_version(kernel):
     bzImage = os.readlink(kernel)
     moddir = os.listdir(p.join(p.dirname(bzImage), 'lib', 'modules'))
     if len(moddir) != 1:
-        raise RuntimeError('modules subdir does not contain exactly '
-                           'one item', moddir)
+        raise RuntimeError(
+            'modules subdir does not contain exactly '
+            'one item', moddir)
     return moddir[0]
