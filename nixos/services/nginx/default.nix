@@ -59,10 +59,7 @@ let
   mkVhostFromJSON = name: vhost:
   let
     onlySSL = vhost.onlySSL or false || vhost.enableSSL or false;
-    hasSSL = onlySSL || vhost.addSSL or false || vhost.forceSSL or false;
-    defaultListen = addr:
-      (lib.optional hasSSL { inherit addr; port = 443; ssl = true; })
-        ++ (lib.optional (!onlySSL) { inherit addr; port = 80;  ssl = false; });
+    addSSL = onlySSL || vhost.addSSL or false || vhost.forceSSL or false;
     addrs =
       if (vhost ? "listenAddress" || vhost ? "listenAddress6")
       then filter (x: x != null) [
@@ -72,8 +69,8 @@ let
       else fclib.network.fe.dualstack.addressesQuoted;
   in
     # listen and enableACME defaults are overridden if the JSON spec has them.
-    { listen = lib.flatten (map defaultListen addrs); }
-    // (lib.optionalAttrs hasSSL { enableACME = true; })
+    { listen = lib.flatten (map (fclib.nginxDefaultListen { inherit addSSL onlySSL; }) addrs); }
+    // (lib.optionalAttrs addSSL { enableACME = true; })
     // (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
 
   virtualHosts = lib.mapAttrs mkVhostFromJSON vhostsJSON;

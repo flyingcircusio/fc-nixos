@@ -110,10 +110,6 @@ let
     paths = cfg.checkEnvPackages;
   };
 
-  sensuCheckEnvCmd = pkgs.writeScriptBin "sensu-check-env" ''
-    echo ${sensuCheckEnv}/bin/
-  '';
-
 in {
   options = {
 
@@ -220,6 +216,15 @@ in {
 
   config = mkMerge [
     (mkIf cfg.enable {
+
+      environment.systemPackages = [
+        (pkgs.writeScriptBin
+          "sensu-check-env"
+          "echo ${sensuCheckEnv}/bin/")
+        (pkgs.writeScriptBin
+          "sensu-client-show-config"
+          "${pkgs.perl}/bin/json_pp < ${sensuClientConfigFile}")
+      ];
 
       flyingcircus.passwordlessSudoRules = [
         {
@@ -429,7 +434,7 @@ in {
     })
 
     {
-      # Config that should always be available to allow deployments to 
+      # Config that should always be available to allow deployments to
       # succeed even if no real sensu environment is available.
 
       environment.etc."local/sensu-client/README.txt".text = ''
