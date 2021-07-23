@@ -59,18 +59,38 @@ and *test2.fcio.net*::
   {
     "mailHost": "mail.test.fcio.net",
     "webmailHost": "webmail.test.fcio.net",
-    "domains": [
-      "test.fcio.net",
-      "test2.fcio.net"
-    ]
+    "domains": {
+      "test.fcio.net": {
+        "primary": true
+      },
+      "test2.fcio.net": {}
+    }
   }
 
 Run :command:`sudo fc-manage -b` to have everything configured on the system.
+
+NOTE: There must always be exactly one domain with the primary option set
 
 Afterwards, a generated file :file:`/etc/local/mail/dns.zone` contains all
 necessary DNS settings for your mail server. Insert the records found in this
 file into the appropriate DNS zones and don't forget to check reverses.
 
+If you wish to disable certain services for certain mail domains,
+you can do so by specifying additional options per domain
+
+  {
+    "domains": {
+      "test.fcio.net": {
+        "autoconfig": false
+      }
+    }
+  }
+
+Currently available options:
+  - enable (boolean, default true): Enable or disable a domain
+    that has been loaded from another configuration file
+  - autoconfig (boolean, default true): Enable or disable autoconfig service at autoconfig.$domain
+  - primary (boolean, default true): Make this the primary domain for internal services (bounce emails, etc)
 
 How do I create users?
 ----------------------

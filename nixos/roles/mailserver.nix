@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 
 with builtins;
+with lib;
 
 let
   params = lib.attrByPath [ "parameters" ] {} config.flyingcircus.enc;
@@ -17,7 +18,7 @@ let
     lib.hasAttrByPath [ "interfaces" "fe" ] params &&
     listenFe4 != [] && listenFe6 != []);
 
-  stdOptions = with lib; {
+  stdOptions = {
 
     mailHost = mkOption {
       type = types.str;
@@ -91,15 +92,58 @@ in
         Mailout on all nodes in this RG/location.
       '';
 
+      # this allows finegrained control over each domain
+      # for example domain."test.fcio.net".autoconfig = false;
       domains = mkOption {
-        type = types.listOf types.str;
-        example = [ "example.com" ];
-        default = [];
+        type = with types; either (types.attrsOf (types.submodule {
+          options = {
+            enable = mkOption {
+              description = "Enable mail services for this domain";
+              default = true;
+              type = types.bool;
+            };
+
+            primary = mkOption {
+              description = "Make this domain the primary mail domain";
+              default = false;
+              type = types.bool;
+            };
+
+            autoconfig = mkOption {
+              description = "Enable autoconfig host for this domain";
+              default = true;
+              type = types.bool;
+            };
+          };
+        })) (listOf str);
+
         description = ''
-          List of virtual domains that this mail server serves. The first value
-          is the canonical domain used to construct internal addresses in
-          various places.
+          Mail domain configuration
         '';
+
+        example = {
+          "your-company.tld" = {
+            primary = true;
+          };
+
+          "newsletter.your-company.tld" = {
+            autoconfig = false;
+          };
+        };
+
+        apply = v: (if isList v then
+          trace ''
+            WARN: Using outdated domains = [] list. Please upgrade to the new format
+              {
+                "domain.tld" = {
+                  primary = true;
+                };
+              }
+          ''
+          recursiveUpdate
+            (listToAttrs (map (domain: (nameValuePair domain { enable = true; autoconfig = true;})) v))
+            (optionalAttrs (v != []) { "${head v}" = { primary = true; }; })
+          else v);
       };
 
       webmailHost = mkOption {
