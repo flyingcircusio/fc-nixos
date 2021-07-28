@@ -10,6 +10,12 @@ let
       name: repoInfo:
       # Hydra expects fixed length rev ids
       assert stringLength repoInfo.rev == 40;
+
+      if repoInfo ? url then
+        pkgs.fetchgit repoInfo // {
+          name = "${name}-${substring 0 11 repoInfo.rev}";
+        }
+      else
       pkgs.fetchFromGitHub {
         inherit (repoInfo) owner repo rev sha256;
         name = "${name}-${substring 0 11 repoInfo.rev}";
