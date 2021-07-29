@@ -71,7 +71,7 @@ and *test2.fcio.net*::
     }
   }
 
-.. notice::
+.. note::
 
   There must always be exactly one domain with the primary option set.
 
