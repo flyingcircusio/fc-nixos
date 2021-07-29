@@ -131,6 +131,8 @@ in
           };
         };
 
+        default = {};
+
         apply = v: (if isList v then
           trace ''
             WARN: Using outdated domains = [] list. Please upgrade to the new format
