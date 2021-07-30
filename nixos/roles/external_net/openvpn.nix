@@ -179,9 +179,6 @@ let
     plugin ${openvpn}/lib/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn
     management localhost ${mgmPort} ${pkgs.writeText "openvpn-mgm-psk" mgmPsk}
 
-    # Since 21.05 cipher must be set. Previously it defaulted to BF-CBC as fallback
-    cipher AES-256-GCM
-
     user nobody
     group nogroup
 
@@ -304,9 +301,6 @@ in
         remote-cert-tls server
         auth-user-pass
         auth-nocache
-
-        # needed for older (2.3.x) clients (please upgrade!), 2.4 can negotiate the best cipher
-        #cipher AES-256-CBC
 
         ca [inline]
         cert [inline]

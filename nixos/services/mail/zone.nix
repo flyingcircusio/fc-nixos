@@ -1,6 +1,7 @@
 { config, lib }:
 
 with builtins;
+with lib;
 with config.flyingcircus.roles.mailserver;
 
 let
@@ -29,4 +30,4 @@ in
     autoconfig.${d}. CNAME ${mailHost}.
     _dmarc.${d}. TXT "v=DMARC1; p=none"
   '' + replaceStrings ["mail._domainkey"] ["mail._domainkey.${d}."] (readDKIM d)
-)) domains))
+)) (attrNames (filterAttrs (domain: config: config.enable) domains))))

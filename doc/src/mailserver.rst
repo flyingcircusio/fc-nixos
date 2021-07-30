@@ -37,6 +37,8 @@ helps many clients to configure themselves properly.
 .. _autoconfiguration: https://wiki.mozilla.org/Thunderbird:Autoconfiguration
 
 
+.. _nixos-mailserver-basic-setup:
+
 How do I perform a basic setup?
 -------------------------------
 
@@ -59,11 +61,22 @@ and *test2.fcio.net*::
   {
     "mailHost": "mail.test.fcio.net",
     "webmailHost": "webmail.test.fcio.net",
-    "domains": [
-      "test.fcio.net",
-      "test2.fcio.net"
-    ]
+    "domains": {
+      "test.fcio.net": {
+        "primary": true
+      },
+      "test2.fcio.net": {
+        "autoconfig": false
+      }
+    }
   }
+
+.. note::
+
+  There must always be exactly one domain with the primary option set.
+
+This sets up autoconfiguration_ for mail clients that wish to use *test.fcio.net*.
+Autoconfiguration is disabled for *test2.fcio.net* in the example.
 
 Run :command:`sudo fc-manage -b` to have everything configured on the system.
 
@@ -247,12 +260,30 @@ Mail domain
 Role options
 ~~~~~~~~~~~~
 
-All options can be set in :file:`/etc/local/mail/config.json`.
+All options can be set in :file:`/etc/local/mail/config.json`
+or in :ref:`Nix config <nixos-custom-modules>` with the prefix *flyingcircus.roles.mailserver*.
 
 Frequently used options:
 
-domains
-  List of *mail domains* which should be served by this mail server.
+domains (attribute set (object) or list)
+  *mail domains* which should be served by this mail server.
+  Keys of the set are the domains, values are options for a specific domain.
+  You can find these options below. See :ref:`nixos-mailserver-basic-setup`
+  for a working example.
+
+  The option still supports a list of strings instead of a attribute set (object).
+  Using a list is deprecated and should be migrated to the attribute set form.
+
+domains.<domain>.enable (boolean, default true)
+  Enable or disable a domain.
+
+domains.<domain>.autoconfig (boolean, default true)
+  Autoconfiguration_ for mail clients is enabled by default.
+  A DNS entry must exist for *autoconfig.<domain>*.
+  Sets up a SSL certificate automatically using Let's Encrypt.
+
+domains.<domain>.primary (boolean)
+  Make this the primary domain for internal services (bounce emails, etc).
 
 mailHost
   *HELO name*, see above.

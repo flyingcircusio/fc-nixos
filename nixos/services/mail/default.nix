@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 
 with builtins;
+with lib;
 
 # Explanation of various host names:
 # - fqdn: "raw" machine name. Points to the srv address which is usually not
@@ -16,7 +17,12 @@ let
   svc = config.flyingcircus.services.mail;
   fclib = config.fclib;
   primaryDomain =
-    if role.domains != [] then elemAt role.domains 0 else "example.org";
+    let firstPrimary =
+      head (attrNames (filterAttrs (domain: config: config.enable && config.primary) role.domains));
+    in
+    if firstPrimary != null then firstPrimary
+    else "example.org";
+  domains = (attrNames (filterAttrs (domain: config: config.enable) role.domains));
   vmailDir = "/srv/mail";
   fallbackGenericVirtual = ''
     postmaster@${primaryDomain} root@${role.mailHost}
@@ -47,6 +53,18 @@ in {
     dynamicMapFiles = lib.flatten (lib.attrValues role.dynamicMaps);
     dynamicMapHash = p: "${baseNameOf p}-${substring 0 8 (hashString "sha1" p)}";
   in lib.mkMerge [
+    (lib.mkIf (domains != []) {
+      assertions = [
+        {
+          assertion = builtins.length (attrNames (filterAttrs (domain: config: config.enable && config.primary) role.domains)) == 1;
+          message = ''
+            It is required that there is exactly one primary domain.
+            Set flyingcircus.roles.mail.domains."domain".primary = true; for exactly one domain.
+          '';
+        }
+      ];
+    })
+
     (lib.mkIf svc.enable {
       environment.etc."local/mail/README.txt".source = ./README;
     })
@@ -82,7 +100,7 @@ in {
       };
     })
 
-    (lib.mkIf (svc.enable && role.domains != []) (
+    (lib.mkIf (svc.enable && domains != []) (
     let
       fqdn = with config.networking; "${hostName}.${domain}";
     in {
@@ -148,7 +166,7 @@ in {
       # https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/blob/master/default.nix
       mailserver = {
         enable = true;
-        inherit (role) domains;
+        inherit domains;
         fqdn = role.mailHost;
         loginAccounts = fclib.jsonFromFile "/etc/local/mail/users.json" "{}";
         extraVirtualAliases =
@@ -192,7 +210,7 @@ in {
       services.nginx.virtualHosts =
         let
           cfgForDomain = domain:
-          lib.nameValuePair "autoconfig.${domain}" (fclib.mkNginxListen {
+          nameValuePair "autoconfig.${domain}" (fclib.mkNginxListen {
             addSSL = true;
             enableACME = true;
             locations."=/mail/config-v1.1.xml".alias = (import ./autoconfig.nix {
@@ -200,7 +218,7 @@ in {
               inherit (role) mailHost webmailHost;
             });
           } config.fclib.network.fe.dualstack.addressesQuoted);
-        in listToAttrs (map cfgForDomain role.domains);
+        in listToAttrs (map cfgForDomain (attrNames (filterAttrs (domain: config: config.enable && config.autoconfig) role.domains)));
 
       services.postfix = {
         destination = [
@@ -267,9 +285,7 @@ in {
         enable = true;
         domain = primaryDomain;
         excludeDomains =
-          if role.domains != []
-          then tail config.mailserver.domains ++ [ role.mailHost fqdn ]
-          else [];
+          optionals (domains != []) (domains ++ [ role.mailHost fqdn ]);
       };
 
       system.activationScripts.postfix-dynamicMaps-permissions =
@@ -313,7 +329,7 @@ in {
     }))
 
     (lib.mkIf (svc.enable && config.services.telegraf.enable &&
-               role.domains != []) {
+               domains != []) {
       flyingcircus.services.telegraf.inputs.postfix = [{
         queue_directory = "/var/lib/postfix/queue";
       }];
