@@ -382,7 +382,7 @@ let
     echo "Reload triggered, checking config file..."
     # Check if the new config is valid
     ${checkConfigCmd} || rc=$?
-    chown -R root:${cfg.group} /var/log/nginx
+    chown -R ${cfg.masterUser}:${cfg.group} /var/log/nginx
 
     if [[ -n $rc ]]; then
       echo "Error: Not restarting / reloading because of config errors."
@@ -663,6 +663,15 @@ in
         description = "User account under which nginx runs.";
       };
 
+      masterUser = mkOption {
+        type = types.str;
+        default = "nginx";
+        description = ''
+          User account under which nginx master process runs.
+          Must be either the same as `user` or set to root.
+        '';
+      };
+
       group = mkOption {
         type = types.str;
         default = "nginx";
@@ -906,6 +915,14 @@ in
           services.nginx.virtualHosts.recommendedTlsSettings are mutually exclusive.
         '';
       }
+
+      {
+        assertion = (cfg.user == cfg.masterUser) || (cfg.masterUser == "root");
+        message = ''
+          services.nginx.user (is ${cfg.user}) must be the same as services.nginx.masterUser (is ${cfg.masterUser})
+          or services.nginx.masterUser must be root.
+        '';
+      }
     ];
     environment.systemPackages = [ nginxReloadMaster nginxCheckConfig ];
 
@@ -918,7 +935,7 @@ in
         preStartScript = pkgs.writeScript "nginx-pre-start" ''
           #!${pkgs.runtimeShell} -e
           ln -sfT $(readlink -f ${wantedPackagePath}) ${runningPackagePath}
-          chown root:${cfg.group} -R /var/log/nginx
+          chown ${cfg.masterUser}:${cfg.group} -R /var/log/nginx
         '';
         capabilities = [
           "CAP_NET_BIND_SERVICE"
@@ -947,8 +964,7 @@ in
           Restart = "always";
           RestartSec = "10s";
           # User and group
-          # XXX: We start nginx as root and drop later for compatibility reasons, this should change.
-          # User = cfg.user;
+          User = cfg.masterUser;
           Group = cfg.group;
           # Runtime directory and mode
           RuntimeDirectory = "nginx";
