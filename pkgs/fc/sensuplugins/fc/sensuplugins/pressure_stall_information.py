@@ -10,7 +10,7 @@ import argparse
 import sys
 import re
 
-PSI_PATTERN = r'(?<extent>some|full) avg10=(?<avg10>[0-9\.]+) avg60=(?<avg60>[0-9\.]+) avg300=(?<avg300>[0-9\.]+) total=(?:[0-9\.]+)'
+PSI_PATTERN = r'(?P<extent>some|full) avg10=(?P<avg10>[0-9\.]+) avg60=(?P<avg60>[0-9\.]+) avg300=(?P<avg300>[0-9\.]+) total=(?:[0-9\.]+)'
 
 def triple(triple_string):
     triple_list = triple_string.split(',')
