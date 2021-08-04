@@ -49,7 +49,7 @@ certificate from Let's Encrypt:
 ### Available Options
 
 Options provided by NixOS are documented at
-https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance&channel=20.09
+https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance&channel=21.05
 
 We support the following custom options:
 * `emailACME`: set the contact address for Let's Encrypt, defaults to none.
@@ -123,7 +123,7 @@ TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
 
 The services.nginx.sslCiphers option can be used to change the cipher list:
 
-https://search.nixos.org/options?channel=20.09&show=services.nginx.sslCiphers&from=0&size=50&sort=relevance&query=sslCiphers
+https://search.nixos.org/options?channel=21.05&show=services.nginx.sslCiphers&from=0&size=50&sort=relevance&query=sslCiphers
 
 If you enable weaker ciphers, you should also set services.nginx.legacyTlsSettings to true
 and services.nginx.recommendedTlsSettings to false.
