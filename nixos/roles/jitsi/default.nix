@@ -275,7 +275,7 @@ in {
                 proxy_busy_buffers_size  256k;
                 proxy_http_version 1.1;
                 proxy_set_header Connection "upgrade";
-                proxy_set_header Host $http_host;
+                proxy_set_header Host $host;
                 proxy_set_header X-Forwarded-For $remote_addr;
                 tcp_nodelay on;
               '';
