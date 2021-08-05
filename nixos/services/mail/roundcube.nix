@@ -3,6 +3,7 @@
 let
   role = config.flyingcircus.roles.mailserver;
   chpasswd = "/run/wrappers/bin/roundcube-chpasswd";
+  fclib = config.fclib;
 
 in lib.mkMerge [
   (lib.mkIf (role.enable && role.webmailHost != null) {
@@ -14,6 +15,11 @@ in lib.mkMerge [
         owner = "vmail";
       };
     };
+
+    services.nginx.virtualHosts.${role.webmailHost} =
+      fclib.mkNginxListen
+        { forceSSL = true; }
+        fclib.network.fe.dualstack.addressesQuoted;
 
     services.roundcube = {
       enable = true;
