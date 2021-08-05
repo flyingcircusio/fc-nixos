@@ -143,7 +143,10 @@ in
               }
           ''
           recursiveUpdate
-            (listToAttrs (map (domain: (nameValuePair domain { enable = true; autoconfig = true;})) v))
+            (listToAttrs (map (domain: (nameValuePair domain {
+              enable = true;
+              autoconfig = true;
+              primary = false; })) v))
             (optionalAttrs (v != []) { "${head v}" = { primary = true; }; })
           else v);
       };
