@@ -1,5 +1,3 @@
-# Taken from upstream branch nixos-19.03.
-# Modifications:
 # This file defines the options that can be used both for the Nginx
 # main server configuration, and for the virtual hosts.  (The latter
 # has additional options that affect the web server as a whole, like
@@ -33,7 +31,6 @@ with lib;
         addr = mkOption { type = str;  description = "IP address.";  };
         port = mkOption { type = int;  description = "Port number."; default = 80; };
         ssl  = mkOption { type = bool; description = "Enable SSL.";  default = false; };
-        reuseport = mkOption { type = bool; description = "Each worker gets its own socket listener.";  default = true; };
         extraParameters = mkOption { type = listOf str; description = "Extra parameters of this listen directive."; default = []; example = [ "reuseport" "deferred" ]; };
       }; });
       default = [];

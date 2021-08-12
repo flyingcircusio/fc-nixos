@@ -1,5 +1,3 @@
-# Taken from upstream branch nixos-unstable.
-
 # This file defines the options that can be used both for the Nginx
 # main server configuration, and for the virtual hosts.  (The latter
 # has additional options that affect the web server as a whole, like
