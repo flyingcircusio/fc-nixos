@@ -176,7 +176,7 @@
   };
   addressable = {
     dependencies = ["public_suffix"];
-    groups = ["default" "development" "test"];
+    groups = ["danger" "default" "development" "test"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
@@ -1510,7 +1510,7 @@
   };
   faraday = {
     dependencies = ["multipart-post"];
-    groups = ["default" "development"];
+    groups = ["danger" "default" "development" "test"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
@@ -3386,10 +3386,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1zszdg8q1b135z7l7crjj234k4j0m347hywp5kj6zsq7q78pw09y";
+      sha256 = "1zwd6v39yqfdrpg1p3d9jvzs9ljg55ana2p06m0l7qn5w0lgx1a0";
       type = "gem";
     };
-    version = "0.5.4";
+    version = "0.5.6";
   };
   oauth2 = {
     dependencies = ["faraday" "jwt" "multi_json" "multi_xml" "rack"];
