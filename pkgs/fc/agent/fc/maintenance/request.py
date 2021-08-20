@@ -1,7 +1,6 @@
 from .estimate import Estimate
 from .state import State, evaluate_state
 
-
 import contextlib
 import copy
 import datetime
@@ -162,8 +161,8 @@ class Request:
 
     def update_state(self):
         """Updates time-dependent request state."""
-        if (self.state in (State.pending, State.postpone) and
-                self.next_due and utcnow() >= self.next_due):
+        if (self.state in (State.pending, State.postpone) and self.next_due
+                and utcnow() >= self.next_due):
             self.state = State.due
         if len(self.attempts) > self.MAX_RETRIES:
             self.state = State.retrylimit
@@ -171,8 +170,10 @@ class Request:
 
     def other_requests(self):
         """Lists other requests currently active in the ReqManager."""
-        return [r for r in self._reqmanager.requests.values()
-                if r._reqid != self._reqid]
+        return [
+            r for r in self._reqmanager.requests.values()
+            if r._reqid != self._reqid
+        ]
 
 
 def request_representer(dumper, data):
@@ -201,8 +202,9 @@ class Attempt:
     def record(self, activity):
         """Logs activity outcomes so they may be overwritten later."""
         self.finished = utcnow()
-        (self.stdout, self.stderr, self.returncode) = (
-            activity.stdout, activity.stderr, activity.returncode)
+        (self.stdout, self.stderr,
+         self.returncode) = (activity.stdout, activity.stderr,
+                             activity.returncode)
         if activity.duration:
             self.duration = activity.duration
         elif self.started and not self.duration:

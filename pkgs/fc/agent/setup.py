@@ -10,14 +10,14 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-
 test_deps = [
     'freezegun>=0.3',
     'responses',
     'pytest>=3',
+    'pytest-mock',
+    'pytest-structlog',
     'pytest-cov',
 ]
-
 
 setup(
     name='fc.agent',

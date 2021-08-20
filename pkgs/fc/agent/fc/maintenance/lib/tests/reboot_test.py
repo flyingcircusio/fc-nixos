@@ -18,6 +18,7 @@ def reqdir(tmpdir, monkeypatch):
     monkeypatch.chdir(tmpdir)
     return tmpdir
 
+
 @pytest.fixture
 def boottime(monkeypatch):
     """Simulate fixed boottime (i.e., no intermediary reboots)."""
@@ -47,8 +48,8 @@ def comments(spooldir):
         return [req.comment for req in rm.requests.values()]
 
 
-def test_dont_perfom_warm_reboot_if_cold_reboot_pending(reqdir, defused_boom,
-                                                        boottime):
+def test_dont_perfom_warm_reboot_if_cold_reboot_pending(
+        reqdir, defused_boom, boottime):
     for type_ in [[], ['--poweroff']]:
         sys.argv = [
             'reboot',
@@ -60,8 +61,10 @@ def test_dont_perfom_warm_reboot_if_cold_reboot_pending(reqdir, defused_boom,
     with ReqManager(str(reqdir)) as rm:
         rm.scan()
         # run soft reboot first
-        reqs = sorted(rm.requests.values(), key=lambda r: r.activity.action,
-                      reverse=True)
+        reqs = sorted(
+            rm.requests.values(),
+            key=lambda r: r.activity.action,
+            reverse=True)
         reqs[0].execute()
         reqs[0].save()
         assert defused_boom.call_count == 0

@@ -142,6 +142,7 @@ in {
         "d /root 0711"
         "d /var/lib/fc-manage"
         "r /var/lib/fc-manage/stamp-channel-update"
+        "d /var/log/fc-agent - - - 180d"
         "d /var/spool/maintenance/archive - - - 180d"
       ];
 

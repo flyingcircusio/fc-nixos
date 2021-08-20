@@ -18,14 +18,17 @@ DEFAULT_DIR = '/var/spool/maintenance'
 
 def require_lock(func):
     """Decorator that asserts an open lockfile prior execution."""
+
     def assert_locked(self, *args, **kwargs):
         assert self.lockfile, 'method {} required lock'.format(func)
         return func(self, *args, **kwargs)
+
     return assert_locked
 
 
 def require_directory(func):
     """Decorator that ensures a directory connection is present."""
+
     def with_directory_connection(self, *args, **kwargs):
         if self.directory is None:
             enc_data = None
@@ -34,6 +37,7 @@ def require_directory(func):
                     enc_data = json.load(f)
             self.directory = fc.util.directory.connect(enc_data)
         return func(self, *args, **kwargs)
+
     return with_directory_connection
 
 
@@ -134,9 +138,13 @@ class ReqManager:
     def schedule(self):
         """Triggers request scheduling on server."""
         LOG.debug('scheduling maintenance requests')
-        schedule_maintenance = {reqid: {
-            'estimate': int(req.estimate), 'comment': req.comment}
-            for reqid, req in self.requests.items()}
+        schedule_maintenance = {
+            reqid: {
+                'estimate': int(req.estimate),
+                'comment': req.comment
+            }
+            for reqid, req in self.requests.items()
+        }
         if schedule_maintenance:
             LOG.debug('scheduling requests: %s', schedule_maintenance)
         result = self.directory.schedule_maintenance(schedule_maintenance)
@@ -146,8 +154,8 @@ class ReqManager:
                 req = self.requests[key]
                 LOG.debug('(req %s) updating request: %s', key, val)
                 if req.update_due(val['time']):
-                    LOG.info('(req %s) changing start time to %s',
-                             req.id, val['time'])
+                    LOG.info('(req %s) changing start time to %s', req.id,
+                             val['time'])
                     req.save()
             except KeyError:
                 LOG.warning('(req %s) request disappeared, marking as deleted',
@@ -155,7 +163,10 @@ class ReqManager:
                 disappeared.add(key)
         if disappeared:
             self.directory.end_maintenance(
-                {key: {'result': 'deleted'} for key in disappeared})
+                {key: {
+                    'result': 'deleted'
+                }
+                 for key in disappeared})
 
     def runnable(self):
         """Generate due Requests in running order."""
@@ -190,8 +201,7 @@ class ReqManager:
     def leave_maintenance(self):
         try:
             LOG.debug('marking node as "in service"')
-            self.directory.mark_node_service_status(socket.gethostname(),
-                                                    True)
+            self.directory.mark_node_service_status(socket.gethostname(), True)
             self.in_maintenance = False
         except socket.error:
             LOG.error('failed to set "in service" directory flag')
@@ -231,12 +241,17 @@ class ReqManager:
         schedule call.
         """
         LOG.debug('postponing maintenance requests')
-        postponed = [r for r in self.requests.values()
-                     if r.state == State.postpone]
+        postponed = [
+            r for r in self.requests.values() if r.state == State.postpone
+        ]
         if not postponed:
             return
-        postpone_maintenance = {req.id: {'postpone_by': 2 * int(req.estimate)}
-                                for req in postponed}
+        postpone_maintenance = {
+            req.id: {
+                'postpone_by': 2 * int(req.estimate)
+            }
+            for req in postponed
+        }
         LOG.debug('invoking postpone_maintenance(%s)', postpone_maintenance)
         self.directory.postpone_maintenance(postpone_maintenance)
         for req in postponed:
@@ -252,8 +267,12 @@ class ReqManager:
         if not archived:
             return
         end_maintenance = {
-            req.id: {'duration': req.duration, 'result': str(req.state)}
-            for req in archived}
+            req.id: {
+                'duration': req.duration,
+                'result': str(req.state)
+            }
+            for req in archived
+        }
         LOG.debug('invoking end_maintenance(%s)', end_maintenance)
         self.directory.end_maintenance(end_maintenance)
         for req in archived:
@@ -303,8 +322,9 @@ def listreqs(spooldir=DEFAULT_DIR):
 
 
 def setup_logging(verbose=False):
-    logging.basicConfig(format='MAINT:%(levelname)s: %(message)s',
-                        level=logging.DEBUG if verbose else logging.INFO)
+    logging.basicConfig(
+        format='MAINT:%(levelname)s: %(message)s',
+        level=logging.DEBUG if verbose else logging.INFO)
     # this is really annoying
     logging.getLogger('iso8601').setLevel(logging.INFO)
 
@@ -314,20 +334,40 @@ def main(verbose=False):
 Managed local maintenance requests.
 """)
     cmd = a.add_argument_group(
-        'actions', description='Select activities to be performed (default: '
+        'actions',
+        description='Select activities to be performed (default: '
         'schedule, run, archive)')
-    cmd.add_argument('-d', '--delete', metavar='ID', default=None,
-                     help='delete specified request (see `--list` output)')
-    cmd.add_argument('-l', '--list', action='store_true', default=False,
-                     help='list active maintenance requests')
-    cmd.add_argument('-S', '--no-scheduling', default=False,
-                     action='store_true',
-                     help='skip maintenance scheduling, for example to test '
-                     'local modifications in the request YAML')
-    a.add_argument('-E', '--enc-path', metavar='PATH', default=None,
-                   help='full path to enc.json')
-    a.add_argument('-s', '--spooldir', metavar='DIR', default=DEFAULT_DIR,
-                   help='requests spool dir (default: %(default)s)')
+    cmd.add_argument(
+        '-d',
+        '--delete',
+        metavar='ID',
+        default=None,
+        help='delete specified request (see `--list` output)')
+    cmd.add_argument(
+        '-l',
+        '--list',
+        action='store_true',
+        default=False,
+        help='list active maintenance requests')
+    cmd.add_argument(
+        '-S',
+        '--no-scheduling',
+        default=False,
+        action='store_true',
+        help='skip maintenance scheduling, for example to test '
+        'local modifications in the request YAML')
+    a.add_argument(
+        '-E',
+        '--enc-path',
+        metavar='PATH',
+        default=None,
+        help='full path to enc.json')
+    a.add_argument(
+        '-s',
+        '--spooldir',
+        metavar='DIR',
+        default=DEFAULT_DIR,
+        help='requests spool dir (default: %(default)s)')
     a.add_argument('-v', '--verbose', action='store_true', default=verbose)
     args = a.parse_args()
     setup_logging(args.verbose)
@@ -343,12 +383,17 @@ Managed local maintenance requests.
 
 def list_maintenance():
     """List active maintenance requests on this node."""
-    a = argparse.ArgumentParser(description=list_maintenance.__doc__,
-                                epilog="""\
+    a = argparse.ArgumentParser(
+        description=list_maintenance.__doc__,
+        epilog="""\
 States are: pending (-), due (*), running (=), success (s), tempfail (t),
 retrylimit exceeded (r), hard error (e), deleted (d), postponed (p).
 """)
-    a.add_argument('-d', '--spooldir', metavar='DIR', default=DEFAULT_DIR,
-                   help='spool dir for requests (default: %(default)s)')
+    a.add_argument(
+        '-d',
+        '--spooldir',
+        metavar='DIR',
+        default=DEFAULT_DIR,
+        help='spool dir for requests (default: %(default)s)')
     args = a.parse_args()
     listreqs(args.spooldir)

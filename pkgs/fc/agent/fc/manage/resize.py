@@ -40,12 +40,12 @@ class Disk(object):
     FREE_SECTOR_THRESHOLD = (5 * (1024 * 1024 * 1024) / 2) / 512
 
     def __init__(self, dev, mp):
-        self.dev = dev    # block device
-        self.mp = mp      # mountpoint
+        self.dev = dev  # block device
+        self.mp = mp  # mountpoint
 
     def ensure_gpt_consistency(self):
-        sgdisk_out = subprocess.check_output([
-            'sgdisk', '-v', self.dev]).decode()
+        sgdisk_out = subprocess.check_output(['sgdisk', '-v',
+                                              self.dev]).decode()
         if 'Problem: The secondary' in sgdisk_out:
             print('resize: Ensuring GPT consistency')
             print(sgdisk_out)
@@ -54,27 +54,27 @@ class Disk(object):
     r_free = re.compile(r'\s([0-9]+) free sectors')
 
     def free_sectors(self):
-        sgdisk_out = subprocess.check_output([
-            'sgdisk', '-v', self.dev]).decode()
+        sgdisk_out = subprocess.check_output(['sgdisk', '-v',
+                                              self.dev]).decode()
         free = self.r_free.search(sgdisk_out)
         if not free:
             raise RuntimeError('unable to determine number of free sectors',
                                sgdisk_out)
-        return(int(free.group(1)))
+        return (int(free.group(1)))
 
     def grow_partition(self):
         print('resize: Growing partition in the partition table')
         partx = subprocess.check_output(['partx', '-r', self.dev]).decode()
         first_sector = partx.splitlines()[1].split()[1]
         subprocess.check_call([
-            'sgdisk', self.dev, '-d', '1',
-            '-n', '1:{}:0'.format(first_sector), '-c', '1:root',
-            '-t', '1:8300'])
+            'sgdisk', self.dev, '-d', '1', '-n', '1:{}:0'.format(first_sector),
+            '-c', '1:root', '-t', '1:8300'
+        ])
 
     def resize_partition(self):
         print('resize: Growing XFS filesystem')
         partx = subprocess.check_output(['partx', '-r', self.dev]).decode()
-        partition_size = partx.splitlines()[1].split()[3]   # sectors
+        partition_size = partx.splitlines()[1].split()[3]  # sectors
         subprocess.check_call(['resizepart', self.dev, '1', partition_size])
         subprocess.check_call(['xfs_growfs', '/'])
 
@@ -97,8 +97,8 @@ def resize_filesystems(enc):
     """Grows root filesystem if the underlying blockdevice has been resized."""
     verbose("resize_filesystems: checking partition")
     try:
-        partition = subprocess.check_output(
-            ['blkid', '-L', 'root']).decode().strip()
+        partition = subprocess.check_output(['blkid', '-L',
+                                             'root']).decode().strip()
     except subprocess.CalledProcessError as e:
         if e.returncode == 2:
             # Label was not found.
@@ -136,9 +136,11 @@ def memory_change(enc):
         real_memory, enc_memory)
     print('resize:', msg)
     with fc.maintenance.ReqManager() as rm:
-        rm.add(fc.maintenance.Request(
-            fc.maintenance.lib.reboot.RebootActivity('poweroff'), 600,
-            comment=msg))
+        rm.add(
+            fc.maintenance.Request(
+                fc.maintenance.lib.reboot.RebootActivity('poweroff'),
+                600,
+                comment=msg))
 
 
 def cpu_change(enc):
@@ -153,9 +155,11 @@ def cpu_change(enc):
         current_cores, cores)
     print('resize:', msg)
     with fc.maintenance.ReqManager() as rm:
-        rm.add(fc.maintenance.Request(
-            fc.maintenance.lib.reboot.RebootActivity('poweroff'), 600,
-            comment=msg))
+        rm.add(
+            fc.maintenance.Request(
+                fc.maintenance.lib.reboot.RebootActivity('poweroff'),
+                600,
+                comment=msg))
 
 
 def check_qemu_reboot():
@@ -184,8 +188,9 @@ def check_qemu_reboot():
         return
 
     try:
-        with open('/var/lib/qemu/qemu-binary-generation-booted',
-                  encoding='ascii') as f:
+        with open(
+                '/var/lib/qemu/qemu-binary-generation-booted',
+                encoding='ascii') as f:
             booted_generation = int(f.read().strip())
     except Exception:
         # Assume 0 as the generation marker as that is our upgrade path:
@@ -200,9 +205,11 @@ def check_qemu_reboot():
 
     msg = 'Cold restart because the Qemu binary environment has changed'
     with fc.maintenance.ReqManager() as rm:
-        rm.add(fc.maintenance.Request(
-            fc.maintenance.lib.reboot.RebootActivity('poweroff'), 600,
-            comment=msg))
+        rm.add(
+            fc.maintenance.Request(
+                fc.maintenance.lib.reboot.RebootActivity('poweroff'),
+                600,
+                comment=msg))
 
 
 def check_kernel_reboot():
@@ -213,19 +220,27 @@ def check_kernel_reboot():
     if booted != current:
         print('kernel changed: scheduling reboot')
         with fc.maintenance.ReqManager() as rm:
-            rm.add(fc.maintenance.Request(
-                fc.maintenance.lib.reboot.RebootActivity('reboot'), 600,
-                comment='Reboot to activate changed kernel '
-                '({} to {})'.format(booted, current)
-            ))
+            rm.add(
+                fc.maintenance.Request(
+                    fc.maintenance.lib.reboot.RebootActivity('reboot'),
+                    600,
+                    comment='Reboot to activate changed kernel '
+                    '({} to {})'.format(booted, current)))
 
 
 def main():
     a = argparse.ArgumentParser(description=__doc__)
-    a.add_argument('-E', '--enc-path', default='/etc/nixos/enc.json',
-                   help='path to enc.json (default: %(default)s)')
-    a.add_argument('-v', '--verbose', default=0, action='count',
-                   help='increase output verbosity')
+    a.add_argument(
+        '-E',
+        '--enc-path',
+        default='/etc/nixos/enc.json',
+        help='path to enc.json (default: %(default)s)')
+    a.add_argument(
+        '-v',
+        '--verbose',
+        default=0,
+        action='count',
+        help='increase output verbosity')
     args = a.parse_args()
 
     if args.verbose > 0:

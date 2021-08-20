@@ -223,6 +223,8 @@ in {
       }
     '';
 
+    environment.etc."fcio_environment_name".text = config.flyingcircus.enc.parameters.environment or "";
+
     flyingcircus = {
       enc_services = enc_services;
       logrotate.enable = true;
