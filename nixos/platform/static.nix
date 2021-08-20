@@ -98,17 +98,17 @@ with lib;
 
       ntpServers = {
         # Those are the routers and backup servers. This needs to move to the
-        # directory service discovery.
-        dev = [ "selma" "eddie" "sherry" ];
-        whq = [ "barbrady01" "terri" "bob" "lou" ];
-        rzob = [ "kenny06" "kenny07" "barbrady02" ];
-        rzrl1 = [ "kenny02" "kenny03" "barbrady03" ];
+        # directory service discovery or just make them part of the router and
+        # backup server role.
+        dev = [ "eddie" "kenny00" ];
+        whq = [ "lou" "kenny01" ];
+        rzob = [ "kenny06" "kenny07" ];
+        rzrl1 = [ "kenny02" "kenny03" ];
       };
 
       adminKeys = {
         directory = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSejGFORJ7hlFraV3caVir3rWlo/QcsWptWrukk2C7eaGu/8tXMKgPtBHYdk4DYRi7EcPROllnFVzyVTLS/2buzfIy7XDjn7bwHzlHoBHZ4TbC9auqW3j5oxTDA4s2byP6b46Dh93aEP9griFideU/J00jWeHb27yIWv+3VdstkWTiJwxubspNdDlbcPNHBGOE+HNiAnRWzwyj8D0X5y73MISC3pSSYnXJWz+fI8IRh5LSLYX6oybwGX3Wu+tlrQjyN1i0ONPLxo5/YDrS6IQygR21j+TgLXaX8q8msi04QYdvnOqk1ntbY4fU8411iqoSJgCIG18tOgWTTOcBGcZX directory@directory.fcio.net";
         ctheune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA/lhMiMJBednrahZUJvb+dZVhLysbcuGf4p2J4D6MU/ ctheune@fourteen-3.local";
-        ckauhaus = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB6MKl9D9mzhuB6/sQXNCEW5qq4R7mXlpnxi+QZSGi57 root/ckauhaus@fcio.net";
         zagy = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKqKaOCYLUxtjAs9e3amnTRH5NM2j0kjLOE+5ZGy9/W4 zagy@drrr.local";
         flanitz = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAg5mbkbBk0dngSVmlZJEH0hAUqnu3maJzqEV9Su1Cff flanitz";
         cs = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKIlrvXV9TzM1uppd8oAbph1dcab6h28VZSUthsp2eZL christians@colbert";
