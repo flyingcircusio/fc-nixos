@@ -179,8 +179,8 @@ def update_system_channel(channel_url, log=_log):
 
     stdout_lines = []
     proc = subprocess.Popen(['nix-channel', '--update', "nixos"],
-                            check=True,
-                            capture_output=True,
+                            stdout=PIPE,
+                            stderr=PIPE,
                             text=True)
     log.info(
         "system-channel-update-started",
@@ -201,7 +201,8 @@ def update_system_channel(channel_url, log=_log):
             "system-channel-update-failed",
             _replace_msg=
             "System channel update failed, see command output for details.",
-            update_output=stdout)
+            stdout=stdout,
+            stderr=proc.stderr.read())
         raise ChannelUpdateFailed()
 
 
