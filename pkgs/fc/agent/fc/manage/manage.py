@@ -405,7 +405,7 @@ def prepare_switch_in_maintenance(log, build_options, spread, lazy):
         sys.exit(1)
 
     current_channel = Channel.current(log, 'nixos')
-    if next_channel == current_channel:
+    if next_channel != current_channel:
         next_channel.load_next()
         log.info(
             "maintenance-prepare-changed",
