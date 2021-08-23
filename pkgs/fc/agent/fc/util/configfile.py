@@ -37,9 +37,10 @@ class ConfigFile(object):
     def _diff(self):
         """Dump diff between old and new to stdout."""
         self.io.seek(0)
-        self.stdout.writelines(difflib.unified_diff(
-            open(self.filename).readlines(), self.io.readlines(),
-            self.filename + ' (old)', self.filename + ' (new)'))
+        self.stdout.writelines(
+            difflib.unified_diff(
+                open(self.filename).readlines(), self.io.readlines(),
+                self.filename + ' (old)', self.filename + ' (new)'))
 
     def _writeout(self, outfile):
         """Write contents unconditionally to file."""

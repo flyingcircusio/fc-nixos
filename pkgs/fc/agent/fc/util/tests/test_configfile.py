@@ -12,8 +12,8 @@ import unittest
 class TestConfigFile(unittest.TestCase):
 
     def setUp(self):
-        self.tf = tempfile.NamedTemporaryFile(suffix='test_configfile',
-                                              delete=False)
+        self.tf = tempfile.NamedTemporaryFile(
+            suffix='test_configfile', delete=False)
         self.diffout = io.StringIO()
 
     def tearDown(self):
@@ -51,7 +51,8 @@ class TestConfigFile(unittest.TestCase):
         print('hello world 1', file=c)
         print('hello world 2', file=c)
         c.commit()
-        self.assertEqual(self.diffout.getvalue(), """\
+        self.assertEqual(
+            self.diffout.getvalue(), """\
 --- {fn} (old)
 +++ {fn} (new)
 @@ -1,2 +1,2 @@

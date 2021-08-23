@@ -93,8 +93,8 @@ class BackyConfig(object):
         with open(global_conf) as f:
             config = yaml.safe_load(f)
         config['jobs'] = self.job_config()
-        output = fc.util.configfile.ConfigFile(self.prefix + '/etc/backy.conf',
-                                               mode=0o640)
+        output = fc.util.configfile.ConfigFile(
+            self.prefix + '/etc/backy.conf', mode=0o640)
         output.write("# Managed by fc-backy, do not edit\n\n")
         yaml.safe_dump(config, output)
         self.changed = output.commit()
@@ -112,11 +112,12 @@ class BackyConfig(object):
 
 def main():
     a = argparse.ArgumentParser(description=__doc__)
-    a.add_argument('-r',
-                   '--restart',
-                   default=False,
-                   action='store_true',
-                   help='restart backy on config changes')
+    a.add_argument(
+        '-r',
+        '--restart',
+        default=False,
+        action='store_true',
+        help='restart backy on config changes')
     args = a.parse_args()
 
     h = logging.handlers.SysLogHandler(facility=syslog.LOG_LOCAL4)

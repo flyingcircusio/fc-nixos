@@ -110,8 +110,9 @@ def test_dont_add_two_reqs_with_identical_comments(reqmanager):
 def test_do_add_two_reqs_with_identical_comments(reqmanager):
     with reqmanager as rm:
         assert rm.add(Request(Activity(), 1, 'comment 1')) is not None
-        assert rm.add(Request(Activity(), 1, 'comment 1'),
-                      skip_same_comment=False) is not None
+        assert rm.add(
+            Request(Activity(), 1, 'comment 1'),
+            skip_same_comment=False) is not None
         assert len(rm.requests) == 2
 
 
@@ -128,8 +129,11 @@ def test_schedule_requests(connect, reqmanager):
     rpccall = connect().schedule_maintenance
     rpccall.return_value = {req.id: {'time': '2016-04-20T15:12:40.9+00:00'}}
     reqmanager.schedule()
-    rpccall.assert_called_once_with({
-        req.id: {'estimate': 1, 'comment': 'comment'}})
+    rpccall.assert_called_once_with(
+        {req.id: {
+            'estimate': 1,
+            'comment': 'comment'
+        }})
     assert req.next_due == datetime.datetime(
         2016, 4, 20, 15, 12, 40, 900000, tzinfo=pytz.UTC)
 
@@ -139,8 +143,12 @@ def test_delete_disappeared_requests(connect, reqmanager):
     req = reqmanager.add(Request(Activity(), 1, 'comment'))
     sched = connect().schedule_maintenance
     sched.return_value = {
-        req.id: {'time': '2016-04-20T15:12:40.9+00:00'},
-        '123abc': {'time': None},
+        req.id: {
+            'time': '2016-04-20T15:12:40.9+00:00'
+        },
+        '123abc': {
+            'time': None
+        },
     }
     endm = connect().end_maintenance
     reqmanager.schedule()
@@ -154,7 +162,10 @@ def test_explicitly_deleted(connect, reqmanager):
     arch = connect().end_maintenance
     reqmanager.archive()
     arch.assert_called_once_with(
-        {req.id: {'duration': None, 'result': 'deleted'}})
+        {req.id: {
+            'duration': None,
+            'result': 'deleted'
+        }})
 
 
 @unittest.mock.patch('fc.util.directory.connect')
@@ -237,10 +248,22 @@ def test_archive(connect, tmpdir):
             req.save()
         rm.archive()
         endm.assert_called_once_with({
-            'success': {'duration': 5, 'result': 'success'},
-            'error': {'duration': 5, 'result': 'error'},
-            'retrylimit': {'duration': 5, 'result': 'retrylimit'},
-            'deleted': {'duration': 5, 'result': 'deleted'},
+            'success': {
+                'duration': 5,
+                'result': 'success'
+            },
+            'error': {
+                'duration': 5,
+                'result': 'error'
+            },
+            'retrylimit': {
+                'duration': 5,
+                'result': 'retrylimit'
+            },
+            'deleted': {
+                'duration': 5,
+                'result': 'deleted'
+            },
         })
         for r in reqs[0:3]:
             assert 'archive/' in r.dir
@@ -267,9 +290,15 @@ def test_end_to_end(connect, tmpdir):
     endm = connect().end_maintenance
     postp = connect().postpone_maintenance
     sched.return_value = {
-        reqs[0].id: {'time': '2016-04-20T11:58:00.0+00:00'},
-        reqs[1].id: {'time': '2016-04-20T11:59:00.0+00:00'},
-        reqs[2].id: {'time': '2016-04-20T12:01:00.0+00:00'},
+        reqs[0].id: {
+            'time': '2016-04-20T11:58:00.0+00:00'
+        },
+        reqs[1].id: {
+            'time': '2016-04-20T11:59:00.0+00:00'
+        },
+        reqs[2].id: {
+            'time': '2016-04-20T12:01:00.0+00:00'
+        },
         'deleted_req': {},
     }
     sys.argv = ['fc-maintenance', '--spooldir', str(tmpdir)]
@@ -304,7 +333,8 @@ St Id       Scheduled             Estimate  Comment
 e  {id3}  2016-04-20 11:00 UTC  1m 30s    error request (duration: 1m 15s)
 *  {id2}  2016-04-20 12:00 UTC  2h        due request
 -  {id1}  --- TBA ---           14m       pending request\
-""".format(id1=r1.id[:7], id2=r2.id[:7], id3=r3.id[:7])
+""".format(
+        id1=r1.id[:7], id2=r2.id[:7], id3=r3.id[:7])
 
 
 def test_delete_end_to_end(tmpdir):

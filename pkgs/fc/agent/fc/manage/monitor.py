@@ -17,8 +17,9 @@ def get_directory(enc, url):
     parts = urllib.parse.urlsplit(url)
     if not socket.getdefaulttimeout():
         socket.setdefaulttimeout(300)
-    return xmlrpc.client.ServerProxy('%s://%s:%s@%s%s' % (
-        parts.scheme, user, password, parts.netloc, parts.path))
+    return xmlrpc.client.ServerProxy(
+        '%s://%s:%s@%s%s' %
+        (parts.scheme, user, password, parts.netloc, parts.path))
 
 
 def get_sensucheck_configuration(servicechecks):
@@ -27,15 +28,12 @@ def get_sensucheck_configuration(servicechecks):
 
     for servicecheck in servicechecks:
         name = 'directory.servicecheck.{rg}.{id}'.format(
-            rg=servicecheck['resource_group'],
-            id=servicecheck['id'])
+            rg=servicecheck['resource_group'], id=servicecheck['id'])
 
         url = urllib.parse.urlsplit(servicecheck['url'])
         path = '?'.join([p for p in [url.path, url.query] if p])
 
-        command = [
-            'check_http', '-4',
-            '-H', shlex.quote(url.hostname)]
+        command = ['check_http', '-4', '-H', shlex.quote(url.hostname)]
         if url.port:
             command.extend(['-p', str(url.port)])
         if path:
@@ -83,20 +81,25 @@ def handle_result(directory=None, enc=None, **kw):
             result=check['output'],
             state=check['status'],
             last_check=datetime.datetime.fromtimestamp(
-                check['executed']).isoformat())])
+                check['executed']).isoformat())
+    ])
 
 
 def main():
     parser = argparse.ArgumentParser(description='Flying Circus Monitoring')
-    parser.add_argument('-E', '--enc', default='/etc/nixos/enc.json',
-                        help='Path to enc.json (default: %(default)s)')
-    subparsers = parser.add_subparsers(help='sub-command help',
-                                       dest='subparser_name')
+    parser.add_argument(
+        '-E',
+        '--enc',
+        default='/etc/nixos/enc.json',
+        help='Path to enc.json (default: %(default)s)')
+    subparsers = parser.add_subparsers(
+        help='sub-command help', dest='subparser_name')
 
     checks_parser = subparsers.add_parser('configure-checks')
     checks_parser.set_defaults(func=write_checks)
     checks_parser.add_argument(
-        '-c', '--config-file',
+        '-c',
+        '--config-file',
         help='Where to put the check configuration (default: %(default)s)',
         default='/etc/local/sensu-client/directory_servicechecks.json')
 
@@ -110,9 +113,8 @@ def main():
 
     with open(args.enc) as f:
         enc = json.load(f)
-    directory = get_directory(
-        enc,
-        'https://directory.fcio.net/v2/api')  # RING0
+    directory = get_directory(enc,
+                              'https://directory.fcio.net/v2/api')  # RING0
     kw = vars(args)
     kw.pop('enc', None)
 
