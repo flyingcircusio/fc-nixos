@@ -78,7 +78,15 @@ in {
 
       environment.etc = {
         "local/mail/config.json.example".text = (toJSON {
-          domains = [ primaryDomain "subdomain.${primaryDomain}" ];
+          domains = {
+            "${primaryDomain}" = {
+              enable = true;
+              primary = true;
+            };
+            "subdomain.${primaryDomain}" = {
+              enable = true;
+            };
+          };
           mailHost = "mail.${primaryDomain}";
           webmailHost = "webmail.${primaryDomain}";
           dynamicMaps = { transport = [ "/etc/local/mail/transport" ]; };
