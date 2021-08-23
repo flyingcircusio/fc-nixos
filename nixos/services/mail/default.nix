@@ -85,6 +85,7 @@ in {
             };
             "subdomain.${primaryDomain}" = {
               enable = true;
+              autoconfig = false;
             };
           };
           mailHost = "mail.${primaryDomain}";
