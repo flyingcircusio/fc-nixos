@@ -139,7 +139,10 @@ let
 in
 {
 
-  imports = [ ./base-module.nix ];
+  imports = [
+    ./base-module.nix
+    ./safe-reload.nix
+  ];
 
   options.flyingcircus.services.nginx = with lib; {
     enable = mkEnableOption "FC-customized nginx";
@@ -344,6 +347,7 @@ in
 
       services.nginx = {
         enable = true;
+        enableReload = true;
         appendConfig = mainConfig;
         appendHttpConfig = ''
           ${baseHttpConfig}

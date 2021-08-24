@@ -85,10 +85,22 @@ let
       default_type application/octet-stream;
   '';
 
-  configFile = pkgs.writers.writeNginxConfig "nginx.conf" ''
+  writeNginxConfig = name: text: pkgs.runCommandLocal name {
+    inherit text;
+    passAsFile = [ "text" ];
+  } /* sh */ ''
+    # nginx-config-formatter has an error - https://github.com/1connect/nginx-config-formatter/issues/16
+    ${pkgs.gawk}/bin/awk -f ${pkgs.writers.awkFormatNginx} "$textPath" | ${pkgs.gnused}/bin/sed '/^\s*$/d' > $out
+    # XXX: The gixy security check fails even for low-impact issues and the builder
+    # cuts off the output which makes finding the problem annoying.
+    # ${pkgs.gixy}/bin/gixy $out
+  '';
+
+  configFile = writeNginxConfig "nginx.conf" ''
+    user ${cfg.user} ${cfg.group};
+
     pid /run/nginx/nginx.pid;
     error_log ${cfg.logError};
-    daemon off;
 
     ${cfg.config}
 
