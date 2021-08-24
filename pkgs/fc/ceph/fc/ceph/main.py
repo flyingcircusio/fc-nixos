@@ -118,9 +118,9 @@ def main(args=sys.argv[1:]):
     parser_create.set_defaults(action='mon_update_client_keys')
 
     parser_activate = keys_sub.add_parser(
-        'generate-client-key',
-        help='Generate and configure a key for the local client.')
-    parser_activate.set_defaults(action='generate_client_key')
+        'generate-client-keyring',
+        help='Generate and configure a keyring for the local client.')
+    parser_activate.set_defaults(action='generate_client_keyring')
 
     # Maintenance commands
 

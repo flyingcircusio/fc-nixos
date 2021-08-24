@@ -93,9 +93,9 @@ in
     environment.etc."ceph/ceph.conf".text = 
         (cfg.config + "\n"+ cfg.client.config);
 
-    system.activationScripts.fc-ceph-client-key = ''
-        ${pkgs.fc.ceph}/bin/fc-ceph keys generate-client-key
-      '';
+    flyingcircus.activationScripts.ceph-client-keyring = ''
+       ${pkgs.fc.ceph}/bin/fc-ceph keys generate-client-keyring
+     '';
 
   };
 

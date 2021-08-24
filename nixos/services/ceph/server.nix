@@ -24,9 +24,13 @@ in
 
     flyingcircus.services.ceph.client.enable = true;
 
-    environment.etc."ceph/ceph.client.admin.keyring".text = ''
-      [client.admin]
-      key = ${config.flyingcircus.enc.parameters.secrets."ceph/admin_key"}
+    # We used to create the admin key directory from the ENC. However,
+    # this causes the file to become world readable on Ceph servers.
+
+    flyingcircus.activationScripts.ceph-admin-key = ''
+      # Only allow root to read/write this file
+      umask 066
+      echo -e "[client.admin]\nkey = $(${pkgs.jq}/bin/jq -r  '.parameters.secrets."ceph/admin_key"' /etc/nixos/enc.json)" > /etc/ceph/ceph.client.admin.keyring
     '';
 
     systemd.tmpfiles.rules = [
