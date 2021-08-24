@@ -15,6 +15,7 @@ in {
     ./docker.nix
     ./ceph/mon.nix
     ./ceph/osd.nix
+    ./ceph/rgw.nix
     ./external_net
     ./elasticsearch.nix
     ./gitlab.nix
