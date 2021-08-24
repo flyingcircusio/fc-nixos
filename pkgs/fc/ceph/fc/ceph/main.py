@@ -4,6 +4,7 @@ import socket
 import sys
 
 import fc.ceph.keys
+import fc.ceph.logs
 import fc.ceph.maintenance
 import fc.ceph.manage
 
@@ -123,6 +124,38 @@ def main(args=sys.argv[1:]):
         'generate-client-keyring',
         help='Generate and configure a keyring for the local client.')
     parser_activate.set_defaults(action='generate_client_keyring')
+
+    # Log analysis commands
+    logs = subparsers.add_parser('logs', help='Log analysis helpers.')
+    logs.set_defaults(subsystem=fc.ceph.logs.LogTasks)
+    logs_sub = logs.add_subparsers()
+
+    slowreq_histogram = logs_sub.add_parser(
+        'slowreq-histogram',
+        help="""Slow requests histogram tool.
+
+Reads a ceph.log file and filters by lines matching a given RE (default:
+slow request). For all filtered lines that contain an OSD identifier,
+the OSD identifier is counted. Prints a top-N list of OSDs having slow
+requests. Useful for identifying slacky OSDs.""")
+    slowreq_histogram.add_argument(
+        '-i',
+        '--include',
+        default='slow request ',
+        help='include lines (default: "%(default)s")')
+    slowreq_histogram.add_argument(
+        '-e',
+        '--exclude',
+        default='waiting for (degraded object|subops)',
+        help='exclude lines included by -i (default: "%(default)s")')
+    slowreq_histogram.add_argument(
+        '-n', '--first-n', help='output N worst OSDs', default=20)
+    slowreq_histogram.add_argument(
+        'filenames',
+        nargs='+',
+        help='ceph.log (optionally gzipped)',
+        default=['/var/log/ceph/ceph.log'])
+    slowreq_histogram.set_defaults(action='slowreq_histogram')
 
     # Maintenance commands
 
