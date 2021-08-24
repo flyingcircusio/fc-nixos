@@ -1,8 +1,9 @@
 """FC NixOS platform management utilities."""
 
-from setuptools import setup
 from codecs import open
 from os import path
+
+from setuptools import setup
 
 here = path.abspath(path.dirname(__file__))
 
@@ -58,6 +59,7 @@ setup(
     entry_points={
         'console_scripts': [
             'fc-backy=fc.manage.backy:main',
+            'fc-directory=fc.util.directory:directory_cli',
             'fc-graylog=fc.manage.graylog:main',
             'fc-maintenance=fc.maintenance.reqmanager:main',
             'fc-manage=fc.manage.manage:main',
