@@ -1,8 +1,6 @@
 # Taken from upstream branch nixos-19.03.
 # Modifications:
-# * listenAddress and listenAddress6 options
-
-# This file defines the options that can be used both for the Apache
+# This file defines the options that can be used both for the Nginx
 # main server configuration, and for the virtual hosts.  (The latter
 # has additional options that affect the web server as a whole, like
 # the user/group to run under.)
@@ -48,25 +46,24 @@ with lib;
         IPv6 addresses must be enclosed in square brackets.
         Note: this option overrides <literal>addSSL</literal>
         and <literal>onlySSL</literal>.
+
+        If you only want to set the addresses manually and not
+        the ports, take a look at <literal>listenAddresses</literal>
       '';
     };
 
-    listenAddress = mkOption {
-      type = types.str;
-      description = ''
-        IPv4 address to listen to. Defaults to 0.0.0.0.
-        If you need more options, use <option>listen</option>.
-      '';
-      default = "0.0.0.0";
-    };
+    listenAddresses = mkOption {
+      type = with types; listOf str;
 
-    listenAddress6 = mkOption {
-      type = types.str;
       description = ''
-        IPv6 address to listen to. Defaults to [::].
-        If you need more options, use <option>listen</option>.
+        Listen addresses for this virtual host.
+        Compared to <literal>listen</literal> this only sets the addreses
+        and the ports are choosen automatically.
+
+        Note: This option overrides <literal>enableIPv6</literal>
       '';
-      default = "[::]";
+      default = [];
+      example = [ "127.0.0.1" "::1" ];
     };
 
     enableACME = mkOption {
@@ -141,6 +138,18 @@ with lib;
       '';
     };
 
+    rejectSSL = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Whether to listen for and reject all HTTPS connections to this vhost. Useful in
+        <link linkend="opt-services.nginx.virtualHosts._name_.default">default</link>
+        server blocks to avoid serving the certificate for another vhost. Uses the
+        <literal>ssl_reject_handshake</literal> directive available in nginx versions
+        1.19.4 and above.
+      '';
+    };
+
     sslCertificate = mkOption {
       type = types.path;
       example = "/var/host.cert";
@@ -156,7 +165,7 @@ with lib;
     sslTrustedCertificate = mkOption {
       type = types.nullOr types.path;
       default = null;
-      example = "/var/root.cert";
+      example = "\${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
       description = "Path to root SSL certificate for stapling and client certificates.";
     };
 
@@ -180,7 +189,7 @@ with lib;
       description = ''
         Whether to enable HTTP 3.
         This requires using <literal>pkgs.nginxQuic</literal> package
-        which can be achived by setting <literal>services.nginx.package = pkgs.nginxQuic;</literal>.
+        which can be achieved by setting <literal>services.nginx.package = pkgs.nginxQuic;</literal>.
         Note that HTTP 3 support is experimental and
         *not* yet recommended for production.
         Read more at https://quic.nginx.org/
@@ -234,7 +243,7 @@ with lib;
         Basic Auth protection for a vhost.
 
         WARNING: This is implemented to store the password in plain text in the
-        nix store.
+        Nix store.
       '';
     };
 
