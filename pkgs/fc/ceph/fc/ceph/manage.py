@@ -9,6 +9,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from subprocess import PIPE, run
 
@@ -150,14 +151,22 @@ class OSDManager(object):
                         'vg_name')
         return [int(vg['VG'].replace('vgosd-', '', 1)) for vg in vgs]
 
-    def _parse_ids(self, ids):
+    def _parse_ids(self, ids, allow_non_local):
         if ids == 'all':
             return self.local_osd_ids
         ids = [int(x) for x in ids.split(',')]
         non_local = set(ids) - set(self.local_osd_ids)
         if non_local:
-            raise ValueError(
-                f"Refusing to operate on remote OSDs: {non_local}")
+            if allow_non_local:
+                print(f"WARNING: I was asked to operate on "
+                      f"non-local OSDs: {non_local}")
+                confirmation = input(f"To proceed enter `{allow_non_local}`: ")
+                if confirmation != allow_non_local:
+                    print("Confirmation was not given. Aborting.")
+                    sys.exit(1)
+            else:
+                raise ValueError(
+                    f"Refusing to operate on remote OSDs: {non_local}")
         return ids
 
     def create(self, device, journal, journal_size, crush_location):
@@ -185,7 +194,7 @@ class OSDManager(object):
                 print(e)
 
     def destroy(self, ids):
-        ids = self._parse_ids(ids)
+        ids = self._parse_ids(ids, allow_non_local=f'DESTROY {ids}')
 
         for id_ in ids:
             try:
@@ -197,12 +206,18 @@ class OSDManager(object):
     def deactivate(self, ids):
         ids = self._parse_ids(ids)
 
+        threads = []
         for id_ in ids:
             try:
                 osd = OSD(id_)
-                osd.deactivate()
+                thread = threading.Thread(target=osd.deactivate)
+                thread.start()
+                threads.append(thread)
             except Exception as e:
                 print(e)
+
+        for thread in threads:
+            thread.join()
 
     def reactivate(self, ids):
         ids = self._parse_ids(ids)
@@ -227,6 +242,8 @@ class OSDManager(object):
                 print(e)
 
     def prepare_journal(self, device):
+        if not os.path.exists(device):
+            print(f'Device does not exist: ')
         try:
             partition_table = run_json(['sfdisk', '-J',
                                         device])['partitiontable']
@@ -393,7 +410,8 @@ class OSD(object):
             print(f'Creating external journal on {lvm_journal_vg} ...')
             run([
                 'lvcreate', '-W', 'y', f'-L{journal_size}g',
-                f'-n{self.lvm_journal}', lvm_journal_vg])
+                f'-n{self.lvm_journal}', lvm_journal_vg],
+                check=True)
             lvm_journal_path = f'/dev/{lvm_journal_vg}/{self.lvm_journal}'
         elif journal == 'internal':
             print(f'Creating internal journal on {self.lvm_vg} ...')
@@ -414,7 +432,7 @@ class OSD(object):
         run(['mkfs.xfs', '-f', '-L', self.name] + self.MKFS_XFS_OPTS +
             [self.lvm_data_device],
             check=True)
-        run(['sync'])
+        run(['sync'], check=True)
         run([
             'mount', '-t', 'xfs', '-o', self.MOUNT_XFS_OPTS,
             self.lvm_data_device, self.datadir],
