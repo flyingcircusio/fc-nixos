@@ -89,6 +89,8 @@ def main(args=sys.argv[1:]):
 
     parser_create = mon_sub.add_parser(
         'create', help='Create and activate a local MON.')
+    parser_create.add_argument(
+        '--size', default='8g', help='Volume size to create for the MON.')
     parser_create.set_defaults(action='create')
 
     parser_activate = mon_sub.add_parser(

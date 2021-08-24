@@ -586,9 +586,7 @@ class Monitor(object):
                 'mount', '-t', 'xfs', '-o', 'defaults,nodev,nosuid',
                 'LABEL=ceph-mon', self.mon_dir],
                 check=True)
-        run([
-            'ceph-mon', '-i', self.id, '--pid-file', self.pid_file, '-c',
-            '/etc/ceph/ceph.conf'],
+        run(['ceph-mon', '-i', self.id, '--pid-file', self.pid_file],
             check=True)
 
     def deactivate(self):
@@ -602,7 +600,7 @@ class Monitor(object):
             pass
         self.activate()
 
-    def create(self):
+    def create(self, size='8g'):
         print(f'Creating MON {self.id}...')
 
         if os.path.exists(self.mon_dir):
@@ -624,20 +622,36 @@ class Monitor(object):
         lvm_data_device = f'/dev/{lvm_vg}/{lvm_lv}'
 
         print(f'creating new mon volume {lvm_data_device}')
-        run(['lvcreate', '-n', lvm_lv, '-L8g', lvm_vg])
+        run(['lvcreate', '-n', lvm_lv, f'-L{size}', lvm_vg], check=True)
         run([
-            'mkfs.xfs', '-L', lvm_lv, '-m', 'crc=1,finobt=1', lvm_data_device])
+            'mkfs.xfs', '-L', lvm_lv, '-m', 'crc=1,finobt=1', lvm_data_device],
+            check=True)
         run([
             'mount', '-t', 'xfs', '-o', 'defaults,nodev,nosuid',
-            'LABEL=ceph-mon', self.mon_dir])
+            'LABEL=ceph-mon', self.mon_dir],
+            check=True)
 
         tmpdir = tempfile.mkdtemp()
-        run(['ceph', 'auth', 'get', 'mon.', '-o', f'{tmpdir}/keyring'])
-        run(['ceph', 'mon', 'getmap', '-o', f'{tmpdir}/monmap'])
+        mon_mkfs_args = ['ceph-mon', '-i', self.id, '--mkfs']
+        try:
+            run([
+                'ceph', 'auth', 'get', f'mon.{self.id}', '-o',
+                f'{tmpdir}/keyring'],
+                check=True)
+            mon_mkfs_args += ['--keyring', f'{tmpdir}/keyring']
+        except subprocess.CalledProcessError:
+            # Looks like we are initializing a new cluster
+            config = configparser.ConfigParser()
+            with open('/etc/ceph/ceph.conf') as f:
+                config.read_file(f)
+            fsid = config['global']['fsid']
+            mon_mkfs_args += ['--fsid', fsid]
+        else:
+            run(['ceph', 'mon', 'getmap', '-o', f'{tmpdir}/monmap'],
+                check=True)
+            mon_mkfs_args = ['--monmap', f'{tmpdir}/monmap']
 
-        run([
-            'ceph-mon', '-i', self.id, '--mkfs', '--monmap',
-            f'{tmpdir}/monmap', '--keyring', f'{tmpdir}/keyring'])
+        run(mon_mkfs_args, check=True)
 
         shutil.rmtree(tmpdir)
 
