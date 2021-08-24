@@ -1,6 +1,6 @@
-import io
 import difflib
 import fcntl
+import io
 import os
 import sys
 
@@ -14,7 +14,7 @@ class ConfigFile(object):
 
     quiet = False
 
-    def __init__(self, filename, stdout=None, mode=0o666):
+    def __init__(self, filename, mode=0o666, diff=True, stdout=None):
         """Create ConfigFile object.
 
         Parameters:
@@ -26,6 +26,7 @@ class ConfigFile(object):
         self.stdout = stdout
         self.changed = False
         self.mode = mode
+        self.diff = diff
 
         if stdout is not None:
             self.stdout = stdout
@@ -36,6 +37,8 @@ class ConfigFile(object):
 
     def _diff(self):
         """Dump diff between old and new to stdout."""
+        if not self.diff:
+            return
         self.io.seek(0)
         self.stdout.writelines(
             difflib.unified_diff(
@@ -64,6 +67,14 @@ class ConfigFile(object):
                 self._diff()
                 fcntl.flock(f, fcntl.LOCK_EX)
                 self._writeout(f)
+        # Update the mode if needed, filter out non-relevant bits.
+        mode = os.stat(self.filename).st_mode & 0o0077777
+        if mode != self.mode:
+            os.chmod(self.filename, self.mode)
+            print(
+                f'{self.filename}: {oct(mode)} -> {oct(self.mode)}',
+                file=self.stdout)
+            self.changed = True
 
     def _create(self):
         """Write contents to new file.
@@ -71,8 +82,8 @@ class ConfigFile(object):
         I prefer to use os.open because we can make sure that *we* are
         actually creating the file and there is no race condition.
         """
-        fd = os.open(self.filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL,
-                     self.mode)
+        fd = os.open(self.filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+        os.chmod(self.filename, self.mode)
         fcntl.flock(fd, fcntl.LOCK_EX)
         with os.fdopen(fd, 'w') as f:
             self._writeout(f)
