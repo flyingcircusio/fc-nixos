@@ -44,12 +44,14 @@ in
           create 0644 root adm
           prerotate
               for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
-                  ceph --admin-daemon /run/ceph/''${dmn} log flush &>/dev/null || true
+                  echo "Flushing log for $dmn"
+                  ${pkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
               done
           endscript
           postrotate
               for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
-                  ceph --admin-daemon /run/ceph/''${dmn} log reopen &>/dev/null || true
+                  echo "Reopening log for $dmn"
+                  ${pkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
               done
           endscript
       }      
