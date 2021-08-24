@@ -73,6 +73,19 @@ in
         fc.blockdev
     ];
 
+    systemd.services.fc-blockdev = {
+      description = "Tune blockdevice settings.";
+      serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
+      wantedBy = [ "basic.target" ];
+      script = ''
+        ${pkgs.fc.blockdev}/bin/fc-blockdev -a -v
+      '';
+      environment = {
+        PYTHONUNBUFFERED = "1";
+      };
+    };
+
     boot.kernel.sysctl = {
       "fs.aio-max-nr" = "262144";
       "fs.xfs.xfssyncd_centisecs" = "720000";

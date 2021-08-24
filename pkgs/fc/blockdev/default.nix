@@ -1,4 +1,4 @@
-{ lib, stdenv, python3Full, megacli, lvm2 }:
+{ lib, stdenv, python3Full, megacli, lvm2, makeWrapper }:
 
 
 stdenv.mkDerivation rec {
@@ -10,14 +10,16 @@ stdenv.mkDerivation rec {
   dontBuild = true;
   dontConfigure = true;
 
+  nativeBuildInputs = [ makeWrapper ];
   buildInputs = [ python3Full ];
-  propagatedBuildInputs = [ lvm2 megacli ];
 
   installPhase = ''
     mkdir -p $out/bin
     cp ${src} $out/bin/fc-blockdev
     chmod +x $out/bin/fc-blockdev
     patchShebangs $out/bin
+    wrapProgram $out/bin/fc-blockdev \
+      --prefix PATH : "${lib.makeBinPath [ lvm2 megacli ]}"
   '';
 
   meta = with lib; {

@@ -175,7 +175,7 @@ class OSDManager(object):
 
     def activate(self, ids):
         ids = self._parse_ids(ids)
-        run(['fc-blockdev', '-a'])
+        run(['systemctl', 'start', 'fc-blockdev'])
 
         for id_ in ids:
             try:
