@@ -24,9 +24,13 @@ in
 
     flyingcircus.services.ceph.client.enable = true;
 
-    environment.etc."ceph/ceph.client.admin.keyring".text = ''
-      [client.admin]
-      key = ${config.flyingcircus.enc.parameters.secrets."ceph/admin_key"}
+    # We used to create the admin key directory from the ENC. However,
+    # this causes the file to become world readable on Ceph servers.
+
+    flyingcircus.activationScripts.ceph-admin-key = ''
+      # Only allow root to read/write this file
+      umask 066
+      echo -e "[client.admin]\nkey = $(${pkgs.jq}/bin/jq -r  '.parameters.secrets."ceph/admin_key"' /etc/nixos/enc.json)" > /etc/ceph/ceph.client.admin.keyring
     '';
 
     systemd.tmpfiles.rules = [
@@ -44,12 +48,14 @@ in
           create 0644 root adm
           prerotate
               for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
-                  ceph --admin-daemon /run/ceph/''${dmn} log flush &>/dev/null || true
+                  echo "Flushing log for $dmn"
+                  ${pkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
               done
           endscript
           postrotate
               for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
-                  ceph --admin-daemon /run/ceph/''${dmn} log reopen &>/dev/null || true
+                  echo "Reopening log for $dmn"
+                  ${pkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
               done
           endscript
       }      
@@ -70,6 +76,19 @@ in
         fc.ceph
         fc.blockdev
     ];
+
+    systemd.services.fc-blockdev = {
+      description = "Tune blockdevice settings.";
+      serviceConfig.Type = "oneshot";
+      serviceConfig.RemainAfterExit = true;
+      wantedBy = [ "basic.target" ];
+      script = ''
+        ${pkgs.fc.blockdev}/bin/fc-blockdev -a -v
+      '';
+      environment = {
+        PYTHONUNBUFFERED = "1";
+      };
+    };
 
     boot.kernel.sysctl = {
       "fs.aio-max-nr" = "262144";

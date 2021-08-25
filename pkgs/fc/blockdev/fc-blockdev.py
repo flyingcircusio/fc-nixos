@@ -64,17 +64,16 @@ class BlockDev:
 
 
 class MegaCliUpdate:
+
     def __init__(self, megacli):
         self.megacli = megacli
 
     def _ldsetprop(self, dev, prop):
         cmdline = [
-            self.megacli, '-LDSetProp', prop, '-L{}'.format(dev.lsi_ld), '-a0'
-        ]
+            self.megacli, '-LDSetProp', prop, '-L{}'.format(dev.lsi_ld), '-a0']
         _log.debug('exec: %s', ' '.join(cmdline))
-        p = subprocess.Popen(cmdline,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            cmdline, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if p.wait() != 0:
             _log.error('MegaCLI failed with status %i:\n%s\n%s', p.returncode,
                        p.stdout.read(), p.stderr.read())
@@ -115,6 +114,7 @@ def query_controller(megacli):
 
 
 class Tokenizer:
+
     def __init__(self, out):
         self.raw = out.splitlines()
         self.ptr = -1
@@ -141,6 +141,7 @@ class Tokenizer:
 
 
 class ControllerInfo:
+
     def __init__(self, ld, is_ssd, is_multi):
         self.ld = ld
         self.is_ssd = is_ssd
@@ -197,33 +198,24 @@ def auto_tune_lsi(devs, megacli):
 
 
 def auto_tune_kernel(devs):
-    hdds = [d for d in devs if not d.ssd]
-    ssds = [d for d in devs if d.ssd]
-    for dev in hdds:
-        _log.info(dev)
-        dev.set_sysfs('queue/read_ahead_kb', '256')
-        dev.set_sysfs('queue/scheduler', 'bfq')
-        # dev.set_sysfs('queue/iosched/front_merges', '1')
-        if dev.multidisk:
-            dev.set_sysfs('queue/nr_requests', '64')
+    for hdd in [d for d in devs if not d.ssd]:
+        _log.info(hdd)
+        hdd.set_sysfs('queue/read_ahead_kb', '256')
+        hdd.set_sysfs('queue/scheduler', 'bfq')
+        # hdd.set_sysfs('queue/iosched/front_merges', '1')
+        if hdd.multidisk:
+            hdd.set_sysfs('queue/nr_requests', '64')
         else:  # single disk
-            dev.set_sysfs('queue/nr_requests', '4')
-    for dev in ssds:
-        if not dev.kernel.startswith('sd'):
+            hdd.set_sysfs('queue/nr_requests', '4')
+    for ssd in [d for d in devs if d.ssd]:
+        if not ssd.kernel.startswith('sd'):
             continue  # leave NVMe SSDs alone
-        _log.info(dev)
-        dev.set_sysfs('queue/read_ahead_kb', '64')
-        if dev.lsi:
-            dev.set_sysfs('queue/rotational', '0')
-            dev.set_sysfs('queue/nr_requests', '4')
-        if dev.vendor == 'INTEL' or dev.model.startswith('INTEL'):
-            dev.set_sysfs('queue/scheduler', 'none')
-        else:
-            # we don't trust other SSDs' (Micron) internal scheduling to be
-            # starvation free
-            dev.set_sysfs('queue/scheduler', 'bfq')
-            #dev.set_sysfs('queue/iosched/read_expire', '50')
-            #dev.set_sysfs('queue/iosched/write_expire', '500')
+        _log.info(ssd)
+        ssd.set_sysfs('queue/read_ahead_kb', '64')
+        if ssd.lsi:
+            ssd.set_sysfs('queue/rotational', '0')
+            ssd.set_sysfs('queue/nr_requests', '4')
+        ssd.set_sysfs('queue/scheduler', 'none')
 
 
 def filter_dev(patterns, devs):
@@ -233,29 +225,29 @@ def filter_dev(patterns, devs):
 
 def main():
     a = argparse.ArgumentParser(description=__doc__)
-    a.add_argument('-a',
-                   '--auto-tune',
-                   default=False,
-                   action='store_true',
-                   help='apply kernel settings and LSI settings (if '
-                   'appropriate)')
+    a.add_argument(
+        '-a',
+        '--auto-tune',
+        default=False,
+        action='store_true',
+        help='apply kernel settings and LSI settings (if '
+        'appropriate)')
     a.add_argument('-v', '--verbose', default=False, action='store_true')
     a.add_argument('--megacli', default='MegaCli64')
-    a.add_argument('DEV',
-                   default=['^sd', '^nvme'],
-                   nargs='*',
-                   help='tune only block devices matching regex. May be given '
-                   'multiple times (default: %(default)s)')
+    a.add_argument(
+        'DEV',
+        default=['^sd', '^nvme'],
+        nargs='*',
+        help='tune only block devices matching regex. May be given '
+        'multiple times (default: %(default)s)')
     args = a.parse_args()
-    syslog = logging.handlers.SysLogHandler('/dev/log', facility='local0')
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG,
-                            handlers=[syslog],
-                            format='fc-blockdev: %(levelname)s %(message)s')
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='fc-blockdev: %(levelname)s %(message)s')
     else:
-        logging.basicConfig(level=logging.INFO,
-                            handlers=[syslog],
-                            format='fc-blockdev: %(message)s')
+        logging.basicConfig(
+            level=logging.INFO, format='fc-blockdev: %(message)s')
     os.chdir('/var/log')  # let MegaCLI not log to the current dir
     devs = query_sysfs()
     if not devs:
@@ -445,8 +437,7 @@ def test_fix_mediatype():
         BlockDev('sdd', 'LSI'),
         BlockDev('sde', 'LSI'),
         BlockDev('sdb', 'LSI'),
-        BlockDev('nvme0n0', 'Intel', ssd=True),
-    ]
+        BlockDev('nvme0n0', 'Intel', ssd=True), ]
     update_media_type(devs, parse_ldpd(MEGACLI_OUT))
     assert [(d.ssd, d.lsi_ld) for d in devs] == [
         (False, None),  # no LSI dev
@@ -462,8 +453,7 @@ def test_fix_mediatype():
 def test_lsi_count_mismatch():
     devs = [
         BlockDev('sda', 'ATA'),
-        BlockDev('sdb', 'LSI'),
-    ]
+        BlockDev('sdb', 'LSI'), ]
     try:
         update_media_type(devs, parse_ldpd(MEGACLI_OUT))
     except RuntimeError:

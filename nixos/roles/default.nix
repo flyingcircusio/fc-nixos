@@ -13,8 +13,9 @@ in {
     ./backyserver.nix
     ./coturn.nix
     ./docker.nix
-    ./ceph/osd.nix
     ./ceph/mon.nix
+    ./ceph/osd.nix
+    ./ceph/rgw.nix
     ./external_net
     ./elasticsearch.nix
     ./gitlab.nix
