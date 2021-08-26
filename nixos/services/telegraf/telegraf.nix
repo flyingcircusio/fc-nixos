@@ -61,6 +61,9 @@ in {
       telegrafShowConfig
     ];
 
+    environment.etc."local/telegraf/psi.conf".source = "psi.conf";
+    environment.etc."local/telegraf/check_psi.py".source = "check_psi.py";
+
     environment.etc."local/telegraf/README.txt".text = ''
       There is a telegraf daemon running on this machine to gather statistics.
       To gather additional or custom statistics add a proper configuration file
