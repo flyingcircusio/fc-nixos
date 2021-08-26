@@ -149,8 +149,9 @@ in {
 
     with subtest("nginx should forward proxied host and server headers (primary name)"):
       server.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
+      server.sleep(1)
       server.succeed("curl http://server/proxy/")
-      server.sleep(0.5)
+      server.sleep(1)
       _, proxy_log = server.execute("cat /tmp/proxy.log")
       print(proxy_log)
       assert 'X-Forwarded-Host: server' in proxy_log, f"expected X-Forwarded-Host not found, got '{proxy_log}'"
@@ -158,8 +159,9 @@ in {
 
     with subtest("nginx should forward proxied host and server headers (alias)"):
       server.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
+      server.sleep(1)
       server.succeed("curl http://other/proxy/")
-      server.sleep(0.5)
+      server.sleep(1)
       _, proxy_log = server.execute("cat /tmp/proxy.log")
       print(proxy_log)
       assert 'X-Forwarded-Host: other' in proxy_log, f"expected X-Forwarded-Host not found, got: '{proxy_log}'"
