@@ -208,11 +208,11 @@ in
         ExecStart = ''
           ${pkgs.icewm}/bin/icewm-session
         '';
-        User = "jibri";
+        DynamicUser = true;
         Group = "jitsi-meet";
         Restart = "on-failure";
 
-        # Security restrictions, systemd-analyze security score is 3.2
+        # Security restrictions, systemd-analyze security score is 3.1
         CapabilityBoundingSet = "";
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
@@ -231,6 +231,9 @@ in
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
         SystemCallArchitectures = "native";
+        SystemCallFilter = [
+          "~@system-service"
+        ];
       };
     };
 
@@ -255,12 +258,12 @@ in
           :0
       '';
       serviceConfig = {
-        User = "jibri";
+        DynamicUser = true;
         LogsDirectory = "jibri-xorg";
         Group = "jitsi-meet";
         Restart = "on-failure";
 
-        # Security restrictions, systemd-analyze security score is 3.2
+        # Security restrictions, systemd-analyze security score is 2.2
         CapabilityBoundingSet = "";
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
@@ -279,6 +282,14 @@ in
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
         SystemCallArchitectures = "native";
+        SystemCallFilter = [
+          "~@clock"
+          "~@debug"
+          "~@module"
+          "~@mount"
+          "~@reboot"
+          "~@swap"
+        ];
       };
     };
 
@@ -313,10 +324,10 @@ in
           "audio"
         ];
 
-        # Security restrictions, systemd-analyze security score is 1.6
+
+        # Security restrictions, systemd-analyze security score is 3.6
         CapabilityBoundingSet = "";
         LockPersonality = true;
-        MemoryDenyWriteExecute = true;
         NoNewPrivileges = true;
         PrivateTmp = true;
         PrivateUsers = true;
@@ -327,16 +338,23 @@ in
         ProtectKernelModules = true;
         ProtectKernelTunables = true;
         ProtectSystem = "strict";
-        RestrictAddressFamilies = [ "AF_INET" "AF_INET6" ];
-        RestrictNamespaces = true;
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
         SystemCallArchitectures = "native";
         SystemCallFilter = [
-          "@basic-io"
-          "@network-io"
+          "~@mount"
+          "~@clock"
+          "~@debug"
+          "~@module"
+          "~@reboot"
+          "~@swap"
+          "chroot"
         ];
       };
+    };
+
+    users.users.jibri = {
+      isSystemUser = true;
     };
 
   };
