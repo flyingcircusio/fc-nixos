@@ -4,6 +4,7 @@ rec {
   recurseForDerivations = true;
 
   agent = callPackage ./agent {};
+
   check-age = callPackage ./check-age {};
   check-ceph = callPackage ./check-ceph {};
   check-haproxy = callPackage ./check-haproxy {};
@@ -22,4 +23,6 @@ rec {
   sensuplugins = callPackage ./sensuplugins {};
   sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};
+  util-physical = callPackage ./util-physical {};
+
 }

@@ -67,7 +67,7 @@ in
       environment.systemPackages = with pkgs; [
         logrotate
         (pkgs.writeScriptBin "logrotate-config-file" ''
-          grep exec $(systemctl cat logrotate | grep ExecStart= | cut -f 2 -d=) | cut -f 3 -d" "
+          grep exec $(systemctl cat logrotate | grep ExecStart= | cut -f 2 -d=) | cut -f 4 -d" "
         '')
       ];
 
@@ -88,9 +88,20 @@ in
         in listToAttrs (map cfgDir serviceUsers);
 
       systemd.services = {
-        # Upstream puts logrotate in multi-user.target which triggers unwanted
-        # service starts on fc-manage. It should only be activated by the timer.
-        logrotate.wantedBy = lib.mkForce [ ];
+        # XXX logrotate does not allow setting options and I need to rebuild the
+        # command line here so we can get decent debugging output.
+        logrotate = { ... }: {
+          options = {
+            script = lib.mkOption {
+              apply = v: lib.replaceStrings [ "sbin/logrotate /nix" ] [ "sbin/logrotate -v /nix" ] v;
+            };
+          };
+          config = {
+            # Upstream puts logrotate in multi-user.target which triggers unwanted
+            # service starts on fc-manage. It should only be activated by the timer.
+             wantedBy = lib.mkForce [ ];
+          };
+        };
       } // listToAttrs (
         map (u: nameValuePair "user-logrotate-${u.name}" {
           description = "logrotate for ${u.name}";

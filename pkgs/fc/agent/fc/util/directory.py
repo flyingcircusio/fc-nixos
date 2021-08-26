@@ -55,3 +55,10 @@ def directory_connection(enc_path):
         with open(enc_path) as f:
             enc_data = json.load(f)
     yield connect(enc_data)
+
+
+def directory_cli():
+    import sys
+    cmd = sys.argv[1]
+    d = connect(ring='max')
+    exec(cmd)

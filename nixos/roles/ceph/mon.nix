@@ -22,14 +22,10 @@ in
         description = "Primary monitors take over additional maintenance tasks.";
         type = lib.types.bool;
        };
-    };
-  };
 
-  config = lib.mkMerge [
-    (lib.mkIf role.enable {
-      flyingcircus.services.ceph.server.enable = true;
-
-      flyingcircus.services.ceph.client.config = lib.mkAfter (let
+      config = lib.mkOption {
+        type = lib.types.lines;
+        default = let
             mon_addrs = lib.concatMapStringsSep ","
                 (mon: "${head (filter fclib.isIp4 mon.ips)}:${mon_port}")
                 (fclib.findServices "ceph_mon-mon");
@@ -52,7 +48,21 @@ in
         mon addr = ${head fclib.network.sto.v4.addresses}:${mon_port}
         public addr = ${head fclib.network.sto.v4.addresses}:${mon_port}
         cluster addr = ${head fclib.network.stb.v4.addresses}:${mon_port}
-        '');
+        '';
+
+        description = ''
+          Contents of the Ceph config file for MONs.
+        '';
+      };
+
+    };
+  };
+
+  config = lib.mkMerge [
+    (lib.mkIf role.enable {
+      flyingcircus.services.ceph.server.enable = true;
+
+      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
 
       systemd.services.fc-ceph-mon = rec {
         description = "Start/stop local Ceph mon (via fc-ceph)";
@@ -67,12 +77,6 @@ in
         };
 
         restartIfChanged = false;
-
-        reloadIfChanged = true;
-        restartTriggers = [
-          config.environment.etc."ceph/ceph.conf".source
-          pkgs.ceph
-        ];
 
         script = ''
             ${pkgs.fc.ceph}/bin/fc-ceph mon activate
@@ -91,7 +95,6 @@ in
             RemainAfterExit = true;
         };
       };
-
 
       flyingcircus.passwordlessSudoRules = [
         {
@@ -116,24 +119,36 @@ in
         description = "Load new VM base images";
         serviceConfig.Type = "oneshot";
         script = "${pkgs.fc.ceph}/bin/fc-ceph maintenance load-vm-images";
+        environment = {
+          PYTHONUNBUFFERED = "1";
+        };
       };
 
       systemd.services.fc-ceph-purge-old-snapshots = {
         description = "Purge old snapshots";
         serviceConfig.Type = "oneshot";
         script = "${pkgs.fc.ceph}/bin/fc-ceph maintenance purge-old-snapshots";
+        environment = {
+          PYTHONUNBUFFERED = "1";
+        };
       }; 
 
       systemd.services.fc-ceph-clean-deleted-vms = {
         description = "Purge old snapshots";
         serviceConfig.Type = "oneshot";
         script = "${pkgs.fc.ceph}/bin/fc-ceph maintenance clean-deleted-vms";
+        environment = {
+          PYTHONUNBUFFERED = "1";
+        };
       };
 
       systemd.services.fc-ceph-mon-update-client-keys = {
         description = "Update client keys and authorization in the monitor database.";
         serviceConfig.Type = "oneshot";
         script = "${pkgs.fc.ceph}/bin/fc-ceph keys mon-update-client-keys";
+        environment = {
+          PYTHONUNBUFFERED = "1";
+        };
       };
 
     })
