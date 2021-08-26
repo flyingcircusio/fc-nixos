@@ -67,7 +67,7 @@ in
       environment.systemPackages = with pkgs; [
         logrotate
         (pkgs.writeScriptBin "logrotate-config-file" ''
-          grep exec $(systemctl cat logrotate | grep ExecStart= | cut -f 3 -d=) | cut -f 3 -d" "
+          grep exec $(systemctl cat logrotate | grep ExecStart= | cut -f 2 -d=) | cut -f 4 -d" "
         '')
       ];
 
