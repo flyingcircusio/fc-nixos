@@ -1,4 +1,4 @@
-{ lib, stdenv, gawk, bash }:
+{ lib, stdenv, gawk, gnugrep, makeWrapper, bash }:
 
 
 stdenv.mkDerivation rec {
@@ -11,11 +11,14 @@ stdenv.mkDerivation rec {
   dontConfigure = true;
 
   propagatedBuildInputs = [ bash gawk ];
+  nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
     mkdir -p $out/bin
     cp ${src} $out/bin/check_md_raid
     chmod +x $out/bin/check_md_raid
+    wrapProgram $out/bin/check_md_raid \
+      --set PATH "${lib.makeBinPath [ gnugrep bash gawk ]}"
   '';
 
   meta = with lib; {
