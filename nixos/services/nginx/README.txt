@@ -52,7 +52,7 @@ Options provided by NixOS are documented at
 https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance&channel=21.05
 
 We support the following custom options:
-* `emailACME`: set the contact address for Let's Encrypt, defaults to none.
+* `emailACME`: set the contact address for Let's Encrypt (certificate expiry, policy changes), defaults to none.
 * `listenAddress`: Single IPv4 address for vhost.
 * `listenAddress6`: Single IPv6 address for vhost.
 
