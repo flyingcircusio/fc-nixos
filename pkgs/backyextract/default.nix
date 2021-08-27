@@ -2,12 +2,12 @@
 
 
 stdenv.mkDerivation rec {
-  version = "0.3.1";
+  version = "1.0.0";
   name = "backy-extract-${version}";
 
   src = fetchurl {
     url = "https://github.com/flyingcircusio/backy-extract/releases/download/${version}/${name}.tar.gz";
-    sha256 = "09qzymd704qwbshg8vrj0glw5zwwqbp8lqh1mwmdvm7krmfbldan";
+    sha256 = "04bjy1plcw8bbp0mn9m9g7kxg71qlpi385w6zzs5iafxixjh93l5";
   };
 
   nativeBuildInputs = [
