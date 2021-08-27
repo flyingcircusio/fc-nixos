@@ -227,7 +227,7 @@ class KeyManager(object):
             for key_factory in keys_to_install:
                 keyconfig = key_factory(node['name'])
                 keyconfig.key.update_secret(
-                    enc['parameters']['secret_salt'].encode('ascii'))
+                    node['parameters']['secret_salt'].encode('ascii'))
                 try:
                     keystore.ensure(keyconfig)
                 except Exception:

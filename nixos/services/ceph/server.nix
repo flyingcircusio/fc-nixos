@@ -22,6 +22,11 @@ in
 
   config = lib.mkIf cfg.enable {
 
+    flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
+    # mkPlatform is 900 and this is slightly higher prio but a regular 
+    # assignment will override again easily.
+    environment.variables.CEPH_ARGS = lib.mkOverride 899 "";
+
     flyingcircus.services.ceph.client.enable = true;
 
     # We used to create the admin key directory from the ENC. However,

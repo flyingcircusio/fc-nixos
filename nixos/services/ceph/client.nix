@@ -7,7 +7,6 @@ let
   fclib = config.fclib;
   static = config.flyingcircus.static.ceph;
   public_network = head fclib.network.sto.v4.networks;
-  cluster_network = head fclib.network.stb.v4.networks;
   location = config.flyingcircus.enc.parameters.location;
   resource_group = config.flyingcircus.enc.parameters.resource_group;
   fs_id = static.fsids.${location}.${resource_group};
@@ -27,7 +26,7 @@ in
           fsid = ${fs_id}
 
           public network = ${public_network}
-          cluster network = ${cluster_network}
+          ${if cfg.cluster_network != null then "cluster network = " + cfg.cluster_network else "; cluster network not available on pure clients"}
 
           pid file = /run/ceph/$type-$id.pid
 
@@ -54,6 +53,10 @@ in
           Global config of the Ceph config file. Will be used
           for all Ceph daemons and binaries.
         '';
+      };
+      cluster_network = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
       };
     };
 
@@ -92,6 +95,8 @@ in
 
     environment.etc."ceph/ceph.conf".text = 
         (cfg.config + "\n"+ cfg.client.config);
+
+    environment.variables.CEPH_ARGS = fclib.mkPlatform "--id ${config.networking.hostName}";
 
     flyingcircus.activationScripts.ceph-client-keyring = ''
        ${pkgs.fc.ceph}/bin/fc-ceph keys generate-client-keyring
