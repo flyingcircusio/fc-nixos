@@ -634,9 +634,7 @@ class Monitor(object):
         tmpdir = tempfile.mkdtemp()
         mon_mkfs_args = ['ceph-mon', '-i', self.id, '--mkfs']
         try:
-            run([
-                'ceph', 'auth', 'get', f'mon.{self.id}', '-o',
-                f'{tmpdir}/keyring'],
+            run(['ceph', 'auth', 'get', f'mon.', '-o', f'{tmpdir}/keyring'],
                 check=True)
             mon_mkfs_args += ['--keyring', f'{tmpdir}/keyring']
         except subprocess.CalledProcessError:
@@ -649,13 +647,13 @@ class Monitor(object):
         else:
             run(['ceph', 'mon', 'getmap', '-o', f'{tmpdir}/monmap'],
                 check=True)
-            mon_mkfs_args = ['--monmap', f'{tmpdir}/monmap']
+            mon_mkfs_args += ['--monmap', f'{tmpdir}/monmap']
 
         run(mon_mkfs_args, check=True)
 
         shutil.rmtree(tmpdir)
 
-        self.activate()
+        run(['systemctl', 'start', 'fc-ceph-mon'], check=True)
 
     def destroy(self):
         try:
@@ -663,6 +661,7 @@ class Monitor(object):
         except ValueError:
             lvm_data_device = None
 
+        run(['systemctl', 'stop', 'fc-ceph-mon'], check=True)
         try:
             self.deactivate()
         except Exception:
