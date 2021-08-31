@@ -1,4 +1,3 @@
-
 #!/run/current-system/sw/bin/python3
 """Pressure Stall Information check.
 
@@ -161,7 +160,7 @@ def telegraf():
                     'period': period,
                     device: float(value)})
 
-    with open('/tmp/psi2.json', 'w') as f:
+    with open('/tmp/psi.json', 'w') as f:
         f.write(json.dumps(result))
     print(json.dumps(result))
 
