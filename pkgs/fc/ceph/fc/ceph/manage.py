@@ -151,7 +151,7 @@ class OSDManager(object):
                         'vg_name')
         return [int(vg['VG'].replace('vgosd-', '', 1)) for vg in vgs]
 
-    def _parse_ids(self, ids, allow_non_local):
+    def _parse_ids(self, ids, allow_non_local=False):
         if ids == 'all':
             return self.local_osd_ids
         ids = [int(x) for x in ids.split(',')]
