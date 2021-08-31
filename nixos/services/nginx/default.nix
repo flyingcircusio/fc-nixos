@@ -54,7 +54,8 @@ let
   package = config.services.nginx.package;
   localCfgDir = config.flyingcircus.localConfigPath + "/nginx";
 
-  vhostsJSON = fclib.jsonFromDir localCfgDir;
+  # only for JSON for backwards-compatibility reasons we set the default addrs to any, nix config uses frontend
+  vhostsJSON = mapAttrs (key: value: ({ listenAddress = "0.0.0.0"; listenAddress6 = "[::]"; } // value)) (fclib.jsonFromDir localCfgDir);
 
   mkVanillaVhostFromFCVhost = name: vhost:
     (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
@@ -183,23 +184,25 @@ in
           listenAddress = mkOption {
             type = types.str;
             description = ''
-              IPv4 address to listen to. Defaults to 0.0.0.0.
-              If you need more options, use <option>listen</option>.
+              IPv4 address to listen on.
+              If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
+              the service listens on the frontend addresses.
 
+              If you need more options, use <option>listen</option>.
               If you want to configure any number of IPs use <literal>listenAddresses</literal>.
             '';
-            default = "0.0.0.0";
           };
 
           listenAddress6 = mkOption {
             type = types.str;
             description = ''
-              IPv6 address to listen to. Defaults to [::].
-              If you need more options, use <option>listen</option>.
+              IPv6 address to listen on.
+              If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
+              the service listens on the frontend addresses.
 
+              If you need more options, use <option>listen</option>.
               If you want to configure any number of IPs use <literal>listenAddresses</literal>.
             '';
-            default = "[::]";
           };
 
           emailACME = mkOption {

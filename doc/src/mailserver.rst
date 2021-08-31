@@ -48,6 +48,14 @@ which will be advertised as MX name on your mail domain. This host name (called
 **mailHost** from here on) must resolve to the FE addresses with both forward
 and reverse lookups.
 
+Additionally, some mail providers (namely [Telekom/T-Online](https://postmaster.t-online.de/#t4.1))
+may require that your mailserver has an imprint served at its hostname.
+
+For this you can either set imprintUrl to the location of your existing imprint,
+or use imprintText to specify an imprint in HTML format
+
+Note that it is not possible to set both imprintUrl and imprintText and imprint cannot be used if you serve webmail under the mailHost (meaning mailHost and webmailHost cannot be the same)
+
 .. warning::
 
   Incorrect DNS setup is the most frequent source of delivery problems. Let our
@@ -68,7 +76,8 @@ and *test2.fcio.net*::
       "test2.fcio.net": {
         "autoconfig": false
       }
-    }
+    },
+    "imprintUrl": "your-company.tld/imprint"
   }
 
 .. note::

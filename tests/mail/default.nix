@@ -30,7 +30,11 @@ in
             flyingcircus.roles.mailserver = {
               enable = true;
               mailHost = "mail.example.local";
-              domains = [ "example.local" ];
+              domains = {
+                "example.local" = {
+                  primary = true;
+                };
+              };
               rootAlias = "user2@example.local";
             };
 
