@@ -113,6 +113,23 @@ in {
     let
       fqdn = with config.networking; "${hostName}.${domain}";
     in {
+      assertions = [
+        # at least one needs to be null
+        { assertion = role.imprintUrl == null || role.imprintText == null;
+          message = ''
+            The options imprintUrl and imprintText are mutually exclusive
+            Remove one to fix this issue
+          '';
+        }
+        # either not equal or no imprint options used
+        { assertion = role.mailHost != role.webmailHost || (role.imprintUrl == null && role.imprintText == null);
+          message = ''
+            imprintUrl/imprintText cannot be set when webmail is already being served under ${role.mailHost}
+            Change webmailHost or remove imprint
+          '';
+        }
+      ];
+
       environment = {
         etc = {
           "local/mail/dns.zone".text =
@@ -219,15 +236,42 @@ in {
       services.nginx.virtualHosts =
         let
           cfgForDomain = domain:
-          nameValuePair "autoconfig.${domain}" (fclib.mkNginxListen {
+          nameValuePair "autoconfig.${domain}" {
             addSSL = true;
             enableACME = true;
+            listenAddresses = fclib.network.fe.dualstack.addressesQuoted;
             locations."=/mail/config-v1.1.xml".alias = (import ./autoconfig.nix {
               inherit domain pkgs lib;
               inherit (role) mailHost webmailHost;
             });
-          } config.fclib.network.fe.dualstack.addressesQuoted);
-        in listToAttrs (map cfgForDomain (attrNames (filterAttrs (domain: config: config.enable && config.autoconfig) role.domains)));
+          };
+        in listToAttrs ((map cfgForDomain (attrNames (filterAttrs (domain: config: config.enable && config.autoconfig) role.domains))) ++
+          (optional (role.imprintUrl != null || role.imprintText != null ) (lib.nameValuePair role.mailHost
+            (lib.mkMerge [
+              {
+                forceSSL = true;
+                enableACME = true;
+                listenAddresses = fclib.network.fe.dualstack.addressesQuoted;
+              }
+              (lib.mkIf (role.imprintUrl != null) {
+                locations."/".return = "302 https://${role.imprintUrl}";
+              })
+              (lib.mkIf (role.imprintText != null) {
+                root = with pkgs; writeTextDir "index.html" role.imprintText;
+              })
+            ])))
+          ++
+            (optional (role.imprintUrl == null && role.imprintText == null && role.webmailHost != null && role.webmailHost != role.mailHost)
+              (lib.nameValuePair role.mailHost
+                {
+                  forceSSL = true;
+                  enableACME = true;
+                  listenAddresses = fclib.network.fe.dualstack.addressesQuoted;
+                  locations."/".return = "302 https://${role.webmailHost}";
+                }
+              )
+            )
+          );
 
       services.postfix = {
         destination = [
