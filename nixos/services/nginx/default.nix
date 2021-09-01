@@ -54,8 +54,7 @@ let
   package = config.services.nginx.package;
   localCfgDir = config.flyingcircus.localConfigPath + "/nginx";
 
-  # only for JSON for backwards-compatibility reasons we set the default addrs to any, nix config uses frontend
-  vhostsJSON = mapAttrs (key: value: ({ listenAddress = "0.0.0.0"; listenAddress6 = "[::]"; } // value)) (fclib.jsonFromDir localCfgDir);
+  vhostsJSON = fclib.jsonFromDir localCfgDir;
 
   mkVanillaVhostFromFCVhost = name: vhost:
     (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
