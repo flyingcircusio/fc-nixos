@@ -181,7 +181,7 @@ in
       in types.attrsOf (types.submodule ({ config, ... }: {
         options = vhost.options // {
           listenAddress = mkOption {
-            type = types.str;
+            type = types.nullOr types.str;
             description = ''
               IPv4 address to listen on.
               If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
@@ -190,10 +190,11 @@ in
               If you need more options, use <option>listen</option>.
               If you want to configure any number of IPs use <literal>listenAddresses</literal>.
             '';
+            default = null;
           };
 
           listenAddress6 = mkOption {
-            type = types.str;
+            type = types.nullOr types.str;
             description = ''
               IPv6 address to listen on.
               If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
@@ -202,6 +203,7 @@ in
               If you need more options, use <option>listen</option>.
               If you want to configure any number of IPs use <literal>listenAddresses</literal>.
             '';
+            default = null;
           };
 
           emailACME = mkOption {
@@ -218,10 +220,10 @@ in
           };
 
           listenAddresses = vhost.options.listenAddresses // {
-            default = if (config ? "listenAddress" || config ? "listenAddress6")
+            default = if (config.listenAddress != null || config.listenAddress6 != null)
               then filter (x: x != null) [
-                (config.listenAddress or null)
-                (config.listenAddress6 or null)
+                config.listenAddress
+                config.listenAddress6
               ]
               else fclib.network.fe.dualstack.addressesQuoted;
           };
