@@ -1,10 +1,9 @@
 { lib
 , fetchgit
-, buildPerlPackage
 , perlPackages
 }:
 
-buildPerlPackage rec {
+perlPackages.buildPerlPackage rec {
   pname = "innotop";
   version = "1.12.0";
   src = fetchgit {

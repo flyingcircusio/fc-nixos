@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchFromGitHub, pkgconfig, postgresql }:
+{ stdenv, lib, fetchFromGitHub, pkg-config, postgresql }:
 
 stdenv.mkDerivation rec {
   name = "temporal_tables-${version}";
@@ -11,7 +11,7 @@ stdenv.mkDerivation rec {
     sha256 = "0ykv37rm511n5955mbh9dcp7pgg88z1nwgszav7z6pziaj3nba8x";
   };
 
-  nativeBuildInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkg-config ];
   buildInputs = [ postgresql ];
 
   installPhase = ''

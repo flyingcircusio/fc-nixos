@@ -117,7 +117,7 @@ in {
           fc.agent
           gnutar
           gzip
-          utillinux
+          util-linux
           xz
         ];
 
