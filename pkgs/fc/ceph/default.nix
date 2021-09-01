@@ -1,8 +1,8 @@
-{ lib, stdenv, python3Full, python3Packages, lz4, blockdev, lvm2, utillinux, ceph, agent }:
+{ lib, stdenv, python3Full, python3Packages, lz4, blockdev, lvm2, util-linux, ceph, agent }:
 
 let
   py = python3Packages;
-in 
+in
 
 py.buildPythonApplication rec {
   name = "fc-ceph-${version}";
@@ -15,11 +15,11 @@ py.buildPythonApplication rec {
     lz4
     lvm2
     agent
-    utillinux
+    util-linux
     python3Packages.requests
   ];
 
-  checkInputs = [ 
+  checkInputs = [
         python3Packages.pytest
         python3Packages.mock
         python3Packages.freezegun

@@ -105,7 +105,7 @@ let
     set timeout 20
 
     puts "OpenVPN: checking management interface"
-    spawn -noecho ${pkgs.netcat-openbsd}/bin/nc localhost ${mgmPort}
+    spawn -noecho ${pkgs.libressl.nc}/bin/nc localhost ${mgmPort}
 
     exit -onexit {
       puts "OpenVPN CRITICAL"

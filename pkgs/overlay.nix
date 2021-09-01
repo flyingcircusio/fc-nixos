@@ -77,9 +77,6 @@ in {
     };
   });
 
-  gitlab = super.callPackage ./gitlab { };
-  gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
-
   graylog = super.graylog.overrideAttrs(_: rec {
     version = "3.3.16";
 
@@ -89,7 +86,9 @@ in {
     };
   });
 
-  grub2_full = super.callPackage ./grub/2.0x.nix { };
+  #grub2_full = super.callPackage ./grub/2.0x.nix {
+  #  autoconf = super.autoconf264;
+  #};
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
@@ -164,9 +163,8 @@ in {
     ];
   });
 
-  # Import old php versions from nix-phps
-  # NOTE: php7.3 is already removed on unstable
-  inherit (phps) php56;
+  # Import old php versiens from nix-phps
+  inherit (phps) php56 php73;
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
@@ -178,7 +176,7 @@ in {
                 all.redis
               ]);
 
-  lamp_php73 = super.php73.withExtensions ({ enabled, all }:
+  lamp_php73 = self.php73.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
@@ -330,7 +328,7 @@ in {
     boost = self.boost173;
   };
 
-  postgis_2_5 = super.postgis.overrideAttrs(_: rec {
+  postgis_2_5 = super.postgresqlPackages.postgis.overrideAttrs(_: rec {
     version = "2.5.5";
     src = super.fetchurl {
       url = "https://download.osgeo.org/postgis/source/postgis-${version}.tar.gz";
@@ -342,7 +340,6 @@ in {
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
-  remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
 
   sensu = super.callPackage ./sensu { ruby = super.ruby_2_6; };
