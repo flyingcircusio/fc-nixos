@@ -151,6 +151,24 @@ in
           else v);
       };
 
+      imprintUrl = mkOption {
+        type = with types; nullOr str;
+        description = ''
+          Webaddress of your imprint to be in compilance with T-Online Postmaster Rules
+          You can instead provide your imprint in text form using the imprintText option
+        '';
+        default = null;
+      };
+
+      imprintText = mkOption {
+        type = with types; nullOr str;
+        description = ''
+          Imprint as HTML text to be in compilance with T-Online Postmaster Rules
+          You can instead provide the webaddress to your imprint using the imprintUrl option
+        '';
+        default = null;
+      };
+
       webmailHost = mkOption {
         type = with types; nullOr str;
         description = "(Virtual) host name of the webmail service.";

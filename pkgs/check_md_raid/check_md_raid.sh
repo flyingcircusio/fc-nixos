@@ -1,17 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Created by Sebastian Grewe, Jammicron Technology
 #
 
+set -e
+
 # Get count of raid arrays
-RAID_DEVICES=`grep ^md -c /proc/mdstat`
+RAID_DEVICES=`grep ^md -c /proc/mdstat || true`
 
 # Get count of degraded arrays
-RAID_STATUS=`grep "\[.*_.*\]" /proc/mdstat -c`
+RAID_STATUS=`grep "\[.*_.*\]" /proc/mdstat -c || true`
 
 # Is an array currently recovering, get percentage of recovery
-RAID_RECOVER=`grep recovery /proc/mdstat | awk '{print $4}'`
-RAID_RESYNC=`grep resync /proc/mdstat | awk '{print $4}'`
+RAID_RECOVER=`grep recovery /proc/mdstat | awk '{print $4}' || true`
+RAID_RESYNC=`grep resync /proc/mdstat | awk '{print $4}' || true`
 
 # Check raid status
 # RAID recovers --> Warning
