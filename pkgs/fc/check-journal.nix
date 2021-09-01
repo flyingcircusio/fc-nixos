@@ -1,4 +1,4 @@
-{ lib, fetchFromGitHub, rustPlatform, ronn, utillinux, systemd }:
+{ lib, fetchFromGitHub, rustPlatform, ronn, util-linux, systemd }:
 
 with rustPlatform;
 
@@ -18,7 +18,7 @@ buildRustPackage rec {
   # used in src/main.rs to set default path for journalctl
   JOURNALCTL = "${systemd}/bin/journalctl";
 
-  nativeBuildInputs = [ ronn utillinux ];
+  nativeBuildInputs = [ ronn util-linux ];
   postBuild = "make man";
 
   preCheck = "patchShebangs fixtures/journalctl-cursor-file.sh";

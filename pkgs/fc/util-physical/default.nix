@@ -1,4 +1,4 @@
-{ lib, stdenv, bash, ceph,  utillinux, systemd, coreutils, gnugrep, makeWrapper, fc }:
+{ lib, stdenv, bash, ceph, systemd, util-linux, coreutils, gnugrep, makeWrapper, fc }:
 
 
 stdenv.mkDerivation rec {
@@ -11,12 +11,12 @@ stdenv.mkDerivation rec {
   dontConfigure = true;
 
   buildInputs = [ makeWrapper ];
-  propagatedBuildInputs = [ bash ceph systemd fc.agent gnugrep utillinux coreutils ];
+  propagatedBuildInputs = [ bash ceph systemd fc.agent gnugrep util-linux coreutils ];
 
   installPhase = ''
     mkdir $out
     cd $src
-    for x in *.sh; do 
+    for x in *.sh; do
       name="''${x%.sh}"
       install -D -m 755 $x $out/bin/.$x
       makeWrapper $out/bin/.$x $out/bin/$name \

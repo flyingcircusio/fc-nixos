@@ -95,7 +95,7 @@ in {
           Nice = 19;
           TimeoutStartSec = "infinity";
         };
-        path = with pkgs; [ fc.userscan nix glibc utillinux ];
+        path = with pkgs; [ fc.userscan nix glibc util-linux ];
         environment = { LANG = "en_US.utf8"; };
         script = "${pkgs.python3.interpreter} ${garbagecollect}";
       };

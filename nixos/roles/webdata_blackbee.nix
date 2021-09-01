@@ -65,7 +65,7 @@ in
       requires = after;
       wantedBy = [ "multi-user.target" ];
       bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.physicalDevice}.device" ];
-      path = with pkgs; [ gawk iproute glibc iptables ];
+      path = with pkgs; [ gawk iproute2 glibc iptables ];
 
       serviceConfig =
         {
