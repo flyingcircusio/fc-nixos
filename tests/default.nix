@@ -24,6 +24,7 @@ in {
   channel = callTest ./channel.nix {};
   coturn = callTest ./coturn.nix {};
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
+  disktracker = callTest ./disktracker.nix {};
   elasticsearch6 = callTest ./elasticsearch.nix { version = "6"; };
   elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };
   fcagent = callTest ./fcagent.nix {};

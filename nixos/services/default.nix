@@ -19,6 +19,7 @@ in {
     ./ceph/server.nix
     ./collectdproxy.nix
     ./consul.nix
+    ./disktracker.nix
     ./gitlab
     ./graylog
     ./haproxy

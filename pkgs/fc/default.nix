@@ -14,6 +14,7 @@ rec {
   ceph = callPackage ./ceph { inherit blockdev agent; };
   blockdev = callPackage ./blockdev {};
   collectdproxy = callPackage ./collectdproxy {};
+  disktracker = callPackage ./disktracker.nix {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
   fix-so-rpath = callPackage ./fix-so-rpath {};
   logcheckhelper = callPackage ./logcheckhelper { };
