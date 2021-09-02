@@ -67,20 +67,22 @@ if ! rbd info "$VOLUME" &>/dev/null; then
     exit 66
 fi
 
+CEPH_DEV="/dev/rbd/${VOLUME}"
 MOUNTPOINT="${PREFIX}/${VOLUME}"
 
 do_mount() {
     rbd-locktool -l "$BASE_VOLUME" >&2
-    CEPH_DEV=$(rbd map "$VOLUME")
-    # Sleep for race condition to allow device names to settle
-    sleep 1
+    if ! [[ -e "$CEPH_DEV" ]]; then
+        rbd map "$VOLUME" > /dev/null
+    fi
+    udevadm settle
     if ! mountpoint -q "$MOUNTPOINT"; then
         mkdir -p "$MOUNTPOINT"
         local mount_opts=""
         if ((MOUNT_SNAPSHOT)); then
             mount_opts=",ro"
         fi
-        mount -o noatime${mount_opts} "${CEPH_DEV}p1" "$MOUNTPOINT"
+        mount -o noatime${mount_opts} "${CEPH_DEV}-part1" "$MOUNTPOINT"
     fi
     echo "$MOUNTPOINT"
 }

@@ -93,6 +93,11 @@ in
       "d '/run/ceph' - root - - -"
     ];
 
+    services.udev.extraRules = ''
+      KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${pkgs.ceph}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}"
+      KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${pkgs.ceph}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}-part%n"
+    '';
+
     environment.etc."ceph/ceph.conf".text = 
         (cfg.config + "\n"+ cfg.client.config);
 
