@@ -16,10 +16,11 @@ in lib.mkMerge [
       };
     };
 
-    services.nginx.virtualHosts.${role.webmailHost} =
-      fclib.mkNginxListen
-        { forceSSL = true; }
-        fclib.network.fe.dualstack.addressesQuoted;
+    services.nginx.virtualHosts.${role.webmailHost} = {
+      forceSSL = true;
+      enableACME = true;
+      listenAddresses = fclib.network.fe.dualstack.addressesQuoted;
+    };
 
     services.roundcube = {
       enable = true;
@@ -51,10 +52,5 @@ in lib.mkMerge [
         "zipdownload"
       ];
     };
-  })
-
-  (lib.mkIf (role.webmailHost != null && role.webmailHost != role.mailHost) {
-    services.nginx.virtualHosts.${role.mailHost}.globalRedirect =
-      role.webmailHost;
   })
 ]

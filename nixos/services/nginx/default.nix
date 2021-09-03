@@ -4,7 +4,7 @@
 # This may also affect other services that use reloading.
 { lib, config, pkgs, ... }:
 
-with builtins;
+with builtins; with lib;
 
 let
   cfg = config.flyingcircus.services.nginx;
@@ -56,31 +56,17 @@ let
 
   vhostsJSON = fclib.jsonFromDir localCfgDir;
 
-  mkVhostFromJSON = name: vhost:
-  let
-    onlySSL = vhost.onlySSL or false || vhost.enableSSL or false;
-    addSSL = onlySSL || vhost.addSSL or false || vhost.forceSSL or false;
-    addrs =
-      if (vhost ? "listenAddress" || vhost ? "listenAddress6")
-      then filter (x: x != null) [
-        (vhost.listenAddress or null)
-        (vhost.listenAddress6 or null)
-      ]
-      else fclib.network.fe.dualstack.addressesQuoted;
-  in
-    # listen and enableACME defaults are overridden if the JSON spec has them.
-    { listen = lib.flatten (map (fclib.nginxDefaultListen { inherit addSSL onlySSL; }) addrs); }
-    // (lib.optionalAttrs addSSL { enableACME = true; })
-    // (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
+  mkVanillaVhostFromFCVhost = name: vhost:
+    (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
 
-  virtualHosts = lib.mapAttrs mkVhostFromJSON vhostsJSON;
+  virtualHosts = lib.mapAttrs mkVanillaVhostFromFCVhost cfg.virtualHosts;
 
   # only email setting supported at the moment
   acmeSettings =
     lib.mapAttrs (name: val: { email = val.emailACME; })
-    (lib.filterAttrs (_: val: val ? emailACME ) vhostsJSON);
+    (lib.filterAttrs (_: val: val ? emailACME && val.emailACME != null ) cfg.virtualHosts);
 
-  acmeVhosts = (lib.filterAttrs (_: val: val ? enableACME ) vhostsJSON);
+  acmeVhosts = (lib.filterAttrs (_: val: val ? enableACME ) cfg.virtualHosts);
 
   mainConfig = ''
     worker_processes ${toString (fclib.currentCores 1)};
@@ -101,7 +87,6 @@ let
 
   baseHttpConfig = ''
     # === Defaults ===
-    default_type application/octet-stream;
     charset UTF-8;
 
     # === Logging ===
@@ -187,6 +172,77 @@ in
       '';
     };
 
+    # FIXME: use upstream
+    virtualHosts = mkOption {
+      type = let
+        vhost = import ./vhost-options.nix {
+          inherit config lib;
+        };
+      in types.attrsOf (types.submodule ({ config, ... }: {
+        options = vhost.options // {
+          listenAddress = mkOption {
+            type = types.nullOr types.str;
+            description = ''
+              IPv4 address to listen on.
+              If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
+              the service listens on the frontend addresses.
+
+              If you need more options, use <option>listen</option>.
+              If you want to configure any number of IPs use <literal>listenAddresses</literal>.
+            '';
+            default = null;
+          };
+
+          listenAddress6 = mkOption {
+            type = types.nullOr types.str;
+            description = ''
+              IPv6 address to listen on.
+              If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
+              the service listens on the frontend addresses.
+
+              If you need more options, use <option>listen</option>.
+              If you want to configure any number of IPs use <literal>listenAddresses</literal>.
+            '';
+            default = null;
+          };
+
+          emailACME = mkOption {
+            type = types.nullOr types.str;
+            description = ''
+              Set the contact address for Let's Encrypt (certificate expiry, policy changes).
+              Defaults to none.
+            '';
+            default = null;
+          };
+
+          enableACME = vhost.options.enableACME // {
+            default = config.onlySSL or false || config.enableSSL or false || config.addSSL or false || config.forceSSL or false;
+          };
+
+          listenAddresses = vhost.options.listenAddresses // {
+            default = if (config.listenAddress != null || config.listenAddress6 != null)
+              then filter (x: x != null) [
+                config.listenAddress
+                config.listenAddress6
+              ]
+              else fclib.network.fe.dualstack.addressesQuoted;
+          };
+        };
+      }));
+      default = {};
+      example = literalExample ''
+        {
+          "hydra.example.com" = {
+            forceSSL = true;
+            enableACME = true;
+            locations."/" = {
+              proxyPass = "http://localhost:3000";
+            };
+          };
+        };
+      '';
+      description = "Declarative vhost config";
+    };
 
   };
 
@@ -234,6 +290,8 @@ in
         "local/nginx/modsecurity/unicode.mapping".source =
           "${pkgs.libmodsecurity.src}/unicode.mapping";
       };
+
+      flyingcircus.services.nginx.virtualHosts = vhostsJSON;
 
       flyingcircus.services.telegraf.inputs = {
         nginx = [ {

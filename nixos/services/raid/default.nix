@@ -14,6 +14,10 @@
 
     # Software RAID
 
+    # Silence unused but broken-by-default mdmonitor
+    # https://github.com/NixOS/nixpkgs/issues/72394
+    systemd.services.mdmonitor.enable = false;
+
     flyingcircus.services.sensu-client.checks.raid_md = {
       notification = "RAID (md) status";
       command = "${pkgs.check_md_raid}/bin/check_md_raid";
