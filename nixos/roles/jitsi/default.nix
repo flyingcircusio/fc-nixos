@@ -263,8 +263,7 @@ in {
 
       services.nginx.virtualHosts = {
         "${cfg.hostName}" = {
-          listenAddress = cfg.listenAddress;
-          listenAddress6 = fclib.quoteIPv6Address cfg.listenAddress6;
+          listenAddresses = [ cfg.listenAddress (fclib.quoteIPv6Address cfg.listenAddress6) ];
 
           locations = {
             "= /xmpp-websocket" = {
