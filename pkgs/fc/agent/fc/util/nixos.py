@@ -233,6 +233,25 @@ def switch_to_channel(channel_url, lazy=False, log=_log):
     return switch_to_system(built_system, lazy)
 
 
+def find_nix_build_error(stderr):
+    """Returns a one-line error message from Nix build output or
+    a generic message if nothing is found.
+    We assume that the line right after the traceback
+    (and possibly build output before it) is the most interesting one.
+    Start at the last line and find the start of the traceback.
+    """
+    lines = stderr.splitlines()[::-1]
+    for pos, line in enumerate(lines):
+        if line.strip().startswith("while evaluating") and pos > 0:
+            errormsg = lines[pos-1].strip()
+            if errormsg.endswith(" Definition values:"):
+                return errormsg[:-len(" Definition values:")]
+            else:
+                return errormsg
+
+    return "Building the system failed!"
+
+
 def build_system(channel_url, build_options=None, out_link=None, log=_log):
     """
     Build system with this channel. Works like nixos-rebuild build.
@@ -284,9 +303,13 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
             changed=changed,
             build_output=stderr)
     else:
+
+        build_error = find_nix_build_error(stderr)
         log.error(
             "system-build-failed",
-            _replace_msg="Building the system failed!",
+            # we need to escape the curly braces because _replace_msg is
+            # interpreted as format string.
+            _replace_msg=build_error.replace("}", "}}").replace("{", "{{"),
             stdout=proc.stdout.read().strip() or None,
             stderr=stderr)
         raise BuildFailed()
