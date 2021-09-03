@@ -100,14 +100,11 @@ class Channel:
         """Looks up existing channel by name."""
         if not p.exists('/root/.nix-channels'):
             return
-        try:
-            with open('/root/.nix-channels') as f:
-                for line in f.readlines():
-                    url, name = line.strip().split(' ', 1)
-                    if name == channel_name:
-                        return Channel(log, url, name)
-        except OSError as e:
-            raise RuntimeError('Failed to read .nix-channels') from e
+        with open('/root/.nix-channels') as f:
+            for line in f.readlines():
+                url, name = line.strip().split(' ', 1)
+                if name == channel_name:
+                    return Channel(log, url, name)
 
     def load_nixos(self):
         self.log_with_context.debug("channel-load-nixos")
