@@ -33,6 +33,23 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     };
   };
 
+  flyingcircus.journalbeat.fields =
+    let encParams = [
+        "kvm_host"
+        "rbd_pool"
+        "environment"
+        "production"
+      ];
+    in
+    lib.optionalAttrs
+      (cfg.enc ? "parameters")
+      (lib.filterAttrs
+        (n: v: v != null)
+        (lib.listToAttrs
+          (map
+            (name: lib.nameValuePair name (cfg.enc.parameters."${name}" or null))
+            encParams)));
+
   fileSystems = {
     "/" = {
       device = "/dev/disk/by-label/root";
