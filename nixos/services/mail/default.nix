@@ -16,11 +16,10 @@ let
   role = config.flyingcircus.roles.mailserver;
   svc = config.flyingcircus.services.mail;
   fclib = config.fclib;
+  primaryDomainCandidates = attrNames (filterAttrs (domain: config: config.enable && config.primary) role.domains);
   primaryDomain =
-    let firstPrimary =
-      head (attrNames (filterAttrs (domain: config: config.enable && config.primary) role.domains));
-    in
-    if firstPrimary != null then firstPrimary
+    if primaryDomainCandidates != []
+    then head primaryDomainCandidates
     else "example.org";
   domains = (attrNames (filterAttrs (domain: config: config.enable) role.domains));
   vmailDir = "/srv/mail";
@@ -56,7 +55,7 @@ in {
     (lib.mkIf (domains != []) {
       assertions = [
         {
-          assertion = builtins.length (attrNames (filterAttrs (domain: config: config.enable && config.primary) role.domains)) == 1;
+          assertion = builtins.length primaryDomainCandidates == 1;
           message = ''
             It is required that there is exactly one primary domain.
             Set flyingcircus.roles.mail.domains."domain".primary = true; for exactly one domain.
