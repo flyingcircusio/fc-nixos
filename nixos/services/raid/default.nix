@@ -45,7 +45,7 @@
 
     flyingcircus.services.sensu-client.checks.megaraid = {
       notification = "RAID (MegaRAID) status";
-      command = "sudo ${pkgs.check_megaraid}/bin/check_megaraid";
+      command = "sudo ${pkgs.check_megaraid}/bin/check_megaraid --disable-other-error-count";
     };
 
     flyingcircus.services.sensu-client.checks.megaraid_cache = {
