@@ -102,6 +102,10 @@ in {
           KillMode = "none";
           # TimeoutSec won't work because of KillMode. The script uses 'timeout'
           # instead.
+          Nice = 18; # 19 is the lowest
+          IOSchedulingClass = "idle";
+          IOSchedulingPriority = 7; #lowest
+          IOWeight = 10; # 1-10000
         };
 
         path = with pkgs; [
@@ -127,7 +131,7 @@ in {
             verbose = lib.optionalString cfg.agent.verbose "-v";
           in ''
             rc=0
-            timeout 14400 ionice -c3 \
+            timeout 14400 \
               fc-manage -E ${cfg.encPath} -i ${interval} \
               ${lazy} ${verbose} ${cfg.agent.steps} || rc=$?
             timeout 900 fc-resize -E ${cfg.encPath} || rc=$?
