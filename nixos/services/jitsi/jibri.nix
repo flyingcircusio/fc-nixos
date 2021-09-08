@@ -232,7 +232,7 @@ in
         RestrictSUIDSGID = true;
         SystemCallArchitectures = "native";
         SystemCallFilter = [
-          "~@system-service"
+          "@system-service"
         ];
       };
     };
