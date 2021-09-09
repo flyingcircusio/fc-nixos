@@ -99,9 +99,7 @@ class TestConfigFile(unittest.TestCase):
         changed = c.commit()
         assert changed
         stdout = self.diffout.getvalue()
-        assert stdout.startswith('/build/')
-        assert stdout.endswith('test_configfile: 0o600 -> 0o666\n')
-
+        assert stdout == self.tf.name + ': 0o600 -> 0o666\n'
         # Try again, no change now.
         c = ConfigFile(self.tf.name, mode=0o666, stdout=self.diffout)
         print('hello world', file=c)
