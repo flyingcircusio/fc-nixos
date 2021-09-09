@@ -88,7 +88,7 @@ def channel_version(channel_url, log=_log):
             capture_output=True,
             text=True).stdout.strip()
     except subprocess.CalledProcessError as e:
-        log.exception(
+        log.error(
             "channel-version-failed",
             msg="getting version file from channel failed",
             stderr=e.stderr)
@@ -124,17 +124,22 @@ def current_nixos_channel_version():
 
 def current_nixos_channel_url(log=_log):
     if not p.exists('/root/.nix-channels'):
-        log.debug("/root/.nix-channels does not exist, doing nothing")
+        log.warn(
+            "nix-channel-file-missing",
+            _replace_msg="/root/.nix-channels does not exist, doing nothing")
         return
     try:
         with open('/root/.nix-channels') as f:
             for line in f.readlines():
                 url, name = line.strip().split(' ', 1)
                 if name == "nixos":
-                    log.debug("found nixos channel", channel=url)
+                    log.debug("nixos-channel-found", channel=url)
                     return url
     except OSError:
-        log.exception('Failed to read .nix-channels')
+        log.error(
+            "nix-channel-file-error",
+            "Failed to read .nix-channels. See exception for details.",
+            exc_info=True)
 
 
 def resolve_url_redirects(url):

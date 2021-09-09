@@ -179,7 +179,7 @@ class ConsoleFileRenderer:
     """
 
     LEVELS = [
-        'exception', 'critical', 'error', 'warn', 'warning', 'info', 'debug',
+        'alert', 'critical', 'error', 'warn', 'warning', 'info', 'debug',
         'trace'
     ]
 
@@ -198,8 +198,8 @@ class ConsoleFileRenderer:
 
         self._pad_event = pad_event
         self._level_to_color = {
+            "alert": RED,
             "critical": RED,
-            "exception": RED,
             "error": RED,
             "warn": YELLOW,
             "warning": YELLOW,
@@ -351,7 +351,7 @@ def add_pid(logger, method_name, event_dict):
 
 
 JOURNAL_LEVELS = {
-    'exception': syslog.LOG_ALERT,
+    'alert': syslog.LOG_ALERT,
     'critical': syslog.LOG_CRIT,
     'error': syslog.LOG_ERR,
     'warn': syslog.LOG_WARNING,
@@ -485,7 +485,7 @@ def format_exc_info(logger, name, event_dict):
     return event_dict
 
 
-def init_logging(verbose, main_log_file, cmd_log_file):
+def init_logging(verbose, main_log_file=None, cmd_log_file=None):
 
     multi_renderer = MultiRenderer(
         journal=SystemdJournalRenderer("fc-agent", syslog.LOG_LOCAL1),
@@ -505,11 +505,12 @@ def init_logging(verbose, main_log_file, cmd_log_file):
         multi_renderer,
     ]
 
-    loggers = {
-        "cmd_output_file": structlog.PrintLoggerFactory(cmd_log_file),
-        "file": structlog.PrintLoggerFactory(main_log_file),
-    }
+    loggers = {}
 
+    if cmd_log_file:
+        loggers["cmd_output_file"] = structlog.PrintLoggerFactory(cmd_log_file)
+    if main_log_file:
+        loggers["file"] = structlog.PrintLoggerFactory(main_log_file)
     if journal:
         loggers["journal"] = JournalLoggerFactory()
 
