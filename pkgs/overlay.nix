@@ -71,6 +71,14 @@ in {
   jitsi-meet = super.callPackage ./jitsi-meet { };
   jitsi-videobridge = super.callPackage ./jitsi-videobridge { };
 
+  haproxy = super.haproxy.overrideAttrs(orig: rec {
+    version = "2.2.17";
+    src = super.fetchurl {
+      url = "https://www.haproxy.org/download/${lib.versions.majorMinor version}/src/${orig.pname}-${version}.tar.gz";
+      sha256 = "1q2vv0hcqqj8b1cr15w5l7vsq1ifzdbyvl3np4lrz73xh2ilmbv8";
+    };
+  });
+
   kibana7 = super.kibana7.overrideAttrs(_: rec {
     version = elk7Version;
     name = "kibana-${version}";
