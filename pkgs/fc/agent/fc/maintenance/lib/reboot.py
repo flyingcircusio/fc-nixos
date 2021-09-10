@@ -5,8 +5,9 @@ the time between creation and execution.
 """
 
 from ..activity import Activity
-from ..reqmanager import ReqManager, DEFAULT_DIR, setup_logging
+from ..reqmanager import ReqManager, DEFAULT_DIR
 from ..request import Request
+from fc.util.logging import init_logging
 
 import argparse
 import subprocess
@@ -109,7 +110,7 @@ def main():
         help='request spool dir (default: %(default)s)')
     a.add_argument('-v', '--verbose', action='store_true', default=False)
     args = a.parse_args()
-    setup_logging(args.verbose)
+    init_logging(args.verbose)
 
     action = 'poweroff' if args.poweroff else 'reboot'
     defaultcomment = 'Scheduled {}'.format(

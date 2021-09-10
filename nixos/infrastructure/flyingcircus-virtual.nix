@@ -7,9 +7,10 @@ let
   ioScheduler =  if (cfg.infrastructure.preferNoneSchedulerOnSsd && (cfg.enc.parameters.rbd_pool == "rbd.ssd"))
                  then "none"
                  else "bfq";
+  maxIops = attrByPath [ "parameters" "iops" ] 250 cfg.enc;
 in
 mkIf (cfg.infrastructureModule == "flyingcircus") {
- 
+
   boot = {
     initrd.kernelModules = [
       "virtio_blk"
@@ -32,6 +33,27 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       gfxmodeBios = "text";
     };
   };
+
+  flyingcircus.journalbeat.fields =
+    let encParams = [
+        "cores"
+        "disk"
+        "environment"
+        "iops"
+        "kvm_host"
+        "memory"
+        "production"
+        "rbd_pool"
+      ];
+    in
+    lib.optionalAttrs
+      (cfg.enc ? "parameters")
+      (lib.filterAttrs
+        (n: v: v != null)
+        (lib.listToAttrs
+          (map
+            (name: lib.nameValuePair name (cfg.enc.parameters."${name}" or null))
+            encParams)));
 
   fileSystems = {
     "/" = {
@@ -77,10 +99,34 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       };
     };
 
-    services.serial-console-liveness = {
-      description = "Serial console liveness marker";
-      serviceConfig.Type = "oneshot";
-      script = "echo \"$(date) -- SERIAL CONSOLE IS LIVE --\" > /dev/ttyS0";
+    services = {
+      serial-console-liveness = {
+        description = "Serial console liveness marker";
+        serviceConfig.Type = "oneshot";
+        script = "echo \"$(date) -- SERIAL CONSOLE IS LIVE --\" > /dev/ttyS0";
+      };
+
+      fc-agent.serviceConfig =
+        let
+          # Must not consume more than 75% of available IOPS.
+          # The systemd setting is split between read and write but
+          # we only have one IOPS limit for the VM so combined we
+          # could get requests that are over the VM limit.
+          vdaIopsMax = "/dev/vda ${toString (maxIops - maxIops / 4)}";
+        in {
+          IOReadIOPSMax = vdaIopsMax;
+          IOWriteIOPSMax = vdaIopsMax;
+        };
+
+      fc-collect-garbage.serviceConfig =
+        let
+          # Must not consume more than 12.5% of available IOPS.
+          # We don't have a problem with this taking really long.
+          vdaIopsMax = "/dev/vda ${toString (maxIops / 8)}";
+        in {
+          IOReadIOPSMax = vdaIopsMax;
+          IOWriteIOPSMax = vdaIopsMax;
+        };
     };
   };
 

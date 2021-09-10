@@ -101,6 +101,15 @@ in
 {
   options.flyingcircus.journalbeat = with lib; {
 
+    fields = mkOption {
+      type = types.attrs;
+      default = {};
+      description = ''
+        Additional fields that are added to each log message.
+        They appear as field_<name> in the log message.
+      '';
+     };
+
     logTargets = mkOption {
       type = with types; attrsOf (submodule {
         options = {
@@ -140,7 +149,13 @@ in
       (lib.mapAttrs'
         (name: v: lib.nameValuePair
           "journalbeat-${name}"
-          (mkJournalbeatService { inherit name; inherit (v) host port extraSettings; }))
+          (mkJournalbeatService {
+            inherit name;
+            inherit (v) host port;
+            extraSettings =
+              (lib.recursiveUpdate
+                { inherit (cfg) fields; }
+                v.extraSettings); }))
         cfg.logTargets);
   };
 }

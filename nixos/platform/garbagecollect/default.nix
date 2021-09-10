@@ -25,7 +25,7 @@ let
                 continue
             print(f'Scanning {user.pw_dir} as {user.pw_name}')
             p = subprocess.Popen([
-                    "ionice", "-c3", "fc-userscan", "-r", "-c",
+                    "fc-userscan", "-r", "-c",
                     user.pw_dir + "/.cache/fc-userscan.cache", "-L10000000",
                     "--unzip=*.egg", "-E", EXCLUDE, user.pw_dir],
                 stdin=subprocess.DEVNULL,
@@ -42,8 +42,8 @@ let
             sys.exit(1)
         print('Running nix-collect-garbage')
         rc = subprocess.run([
-                "ionice", "-c3", "nix-collect-garbage",
-                "--delete-older-than", "3d", "--max-freed", "100M"],
+                "nix-collect-garbage",
+                "--delete-older-than", "3d"],
             check=True, stdin=subprocess.DEVNULL).returncode
         print('nix-collect-garbage status:', rc)
         open('${log}', 'w').write(str(datetime.datetime.now()) + '\n')
@@ -83,7 +83,18 @@ in {
       systemd.services.fc-collect-garbage = {
         description = "Scan users for Nix store references and collect garbage";
         restartIfChanged = false;
-        serviceConfig.Type = "oneshot";
+        serviceConfig = {
+          Type = "oneshot";
+          # Use the lowest priority settings we can findto make sure that GC
+          # gives way to nearly everything else.
+          CPUSchedulingPolicy= "idle";
+          CPUWeight = 1;
+          IOSchedulingClass = "idle";
+          IOSchedulingPriority = 7;
+          IOWeight = 1;
+          Nice = 19;
+          TimeoutStartSec = "infinity";
+        };
         path = with pkgs; [ fc.userscan nix glibc utillinux ];
         environment = { LANG = "en_US.utf8"; };
         script = "${pkgs.python3.interpreter} ${garbagecollect}";
