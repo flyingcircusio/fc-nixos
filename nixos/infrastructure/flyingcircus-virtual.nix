@@ -36,10 +36,14 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   flyingcircus.journalbeat.fields =
     let encParams = [
-        "kvm_host"
-        "rbd_pool"
+        "cores"
+        "disk"
         "environment"
+        "iops"
+        "kvm_host"
+        "memory"
         "production"
+        "rbd_pool"
       ];
     in
     lib.optionalAttrs
