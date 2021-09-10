@@ -288,7 +288,7 @@ def retrieve(log, directory_lookup, tgt):
     try:
         data = directory_lookup()
     except Exception:
-        log.exception('retrieve-enc-failed', exc_info=True)
+        log.error('retrieve-enc-failed', exc_info=True)
         return
     try:
         conditional_update('/etc/nixos/{}'.format(tgt), data)
@@ -410,7 +410,7 @@ def prepare_switch_in_maintenance(log, build_options, spread, lazy):
             next=str(next_channel))
         try:
             next_channel.prepare_maintenance()
-        except nixos.DryActivateFailed:
+        except nixos.ChannelException:
             subprocess.run(["nix-channel", "--remove", "next"],
                            check=True,
                            capture_output=True,
@@ -661,7 +661,7 @@ def main():
         try:
             keep_cmd_output = transaction(log, args)
         except Exception:
-            log.exception("fc-manage-unhandled-error", exc_info=True)
+            log.error("fc-manage-unhandled-error", exc_info=True)
             sys.exit(1)
 
         if invocation_id and args.build and args.lazy and not keep_cmd_output:

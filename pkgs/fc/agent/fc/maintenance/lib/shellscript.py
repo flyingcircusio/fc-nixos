@@ -6,8 +6,9 @@ file, it is executed with /bin/sh.
 """
 
 from ..activity import Activity
-from ..reqmanager import ReqManager, DEFAULT_DIR, setup_logging
+from ..reqmanager import ReqManager, DEFAULT_DIR
 from ..request import Request
+from fc.util.logging import init_logging
 
 import argparse
 import io
@@ -77,7 +78,7 @@ stdin.
         type=argparse.FileType('r'),
         help='execute FILE as maintenance activity')
     args = a.parse_args()
-    setup_logging(args.verbose)
+    init_logging(args.verbose)
     if args.file:
         act = args.file
     elif args.exec:

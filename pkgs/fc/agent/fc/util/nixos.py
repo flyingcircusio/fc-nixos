@@ -88,7 +88,7 @@ def channel_version(channel_url, log=_log):
             capture_output=True,
             text=True).stdout.strip()
     except subprocess.CalledProcessError as e:
-        log.exception(
+        log.error(
             "channel-version-failed",
             msg="getting version file from channel failed",
             stderr=e.stderr)
@@ -124,17 +124,22 @@ def current_nixos_channel_version():
 
 def current_nixos_channel_url(log=_log):
     if not p.exists('/root/.nix-channels'):
-        log.debug("/root/.nix-channels does not exist, doing nothing")
+        log.warn(
+            "nix-channel-file-missing",
+            _replace_msg="/root/.nix-channels does not exist, doing nothing")
         return
     try:
         with open('/root/.nix-channels') as f:
             for line in f.readlines():
                 url, name = line.strip().split(' ', 1)
                 if name == "nixos":
-                    log.debug("found nixos channel", channel=url)
+                    log.debug("nixos-channel-found", channel=url)
                     return url
     except OSError:
-        log.exception('Failed to read .nix-channels')
+        log.error(
+            "nix-channel-file-error",
+            "Failed to read .nix-channels. See exception for details.",
+            exc_info=True)
 
 
 def resolve_url_redirects(url):
@@ -228,6 +233,25 @@ def switch_to_channel(channel_url, lazy=False, log=_log):
     return switch_to_system(built_system, lazy)
 
 
+def find_nix_build_error(stderr):
+    """Returns a one-line error message from Nix build output or
+    a generic message if nothing is found.
+    We assume that the line right after the traceback
+    (and possibly build output before it) is the most interesting one.
+    Start at the last line and find the start of the traceback.
+    """
+    lines = stderr.splitlines()[::-1]
+    for pos, line in enumerate(lines):
+        if line.strip().startswith("while evaluating") and pos > 0:
+            errormsg = lines[pos-1].strip()
+            if errormsg.endswith(" Definition values:"):
+                return errormsg[:-len(" Definition values:")]
+            else:
+                return errormsg
+
+    return "Building the system failed!"
+
+
 def build_system(channel_url, build_options=None, out_link=None, log=_log):
     """
     Build system with this channel. Works like nixos-rebuild build.
@@ -279,9 +303,13 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
             changed=changed,
             build_output=stderr)
     else:
+
+        build_error = find_nix_build_error(stderr)
         log.error(
             "system-build-failed",
-            _replace_msg="Building the system failed!",
+            # we need to escape the curly braces because _replace_msg is
+            # interpreted as format string.
+            _replace_msg=build_error.replace("}", "}}").replace("{", "{{"),
             stdout=proc.stdout.read().strip() or None,
             stderr=stderr)
         raise BuildFailed()

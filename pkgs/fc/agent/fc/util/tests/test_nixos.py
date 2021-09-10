@@ -177,3 +177,38 @@ def test_update_nixos_channel(monkeypatch):
     current_channel = "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
     monkeypatch.setattr("fc.util.nixos.current_nixos_channel_url",
                         (lambda: current_channel))
+
+
+
+def test_find_nix_build_error_missing_option():
+
+    stderr = textwrap.dedent("""\
+    error: while evaluating the attribute 'config.system.build.toplevel' at /home/test/fc-nixos/channels/nixpkgs/nixos/modules/system/activation/top-level.nix:293:5:
+    while evaluating 'merge' at /home/test/fc-nixos/channels/nixpkgs/lib/types.nix:512:22, called from /home/test/fc-nixos/channels/nixpkgs/lib/modules.nix:559:59:
+    while evaluating 'evalModules' at /home/test/fc-nixos/channels/nixpkgs/lib/modules.nix:62:17, called from /home/test/fc-nixos/channels/nixpkgs/lib/types.nix:513:12:
+    The option `flyingcircus.services.nginx.virtualHosts.test55.forcSSL' does not exist. Definition values:
+    - In `/home/test/fc-nixos/channels/fc/nixos/services/nginx': true
+    """)
+    expected = "The option `flyingcircus.services.nginx.virtualHosts.test55.forcSSL' does not exist."
+    assert nixos.find_nix_build_error(stderr) == expected
+
+
+def test_find_nix_build_error_default_when_no_error_message():
+
+    stderr = textwrap.dedent("""\
+    error: while evaluating the attribute 'config.system.build.toplevel' at /home/test/fc-nixos/channels/nixpkgs/nixos/modules/system/activation/top-level.nix:293:5:
+    while evaluating 'merge' at /home/test/fc-nixos/channels/nixpkgs/lib/types.nix:512:22, called from /home/test/fc-nixos/channels/nixpkgs/lib/modules.nix:559:59:
+    """)
+    assert nixos.find_nix_build_error(stderr) == "Building the system failed!"
+
+
+def test_find_nix_build_error_syntax():
+
+    stderr = textwrap.dedent("""\
+    error: while evaluating the attribute 'config.system.build.toplevel' at /home/ts/fc-nixos/channels/nixpkgs/nixos/lib/eval-config.nix:64:5:
+    while evaluating 'applyIfFunction' at /home/ts/fc-nixos/channels/nixpkgs/lib/modules.nix:288:29, called from /home/ts/fc-nixos/channels/nixpkgs/lib/modules.nix:195:59:
+    while evaluating 'isFunction' at /home/ts/fc-nixos/channels/nixpkgs/lib/trivial.nix:345:16, called from /home/ts/fc-nixos/channels/nixpkgs/lib/modules.nix:288:68:
+    syntax error, unexpected '}', expecting ';', at /etc/local/nixos/dev_vm.nix:190:1
+    """)
+    expected = "syntax error, unexpected '}', expecting ';', at /etc/local/nixos/dev_vm.nix:190:1"
+    assert nixos.find_nix_build_error(stderr) == expected
