@@ -14,6 +14,7 @@ import pytest
 import pytz
 import shortuuid
 import socket
+import structlog
 import sys
 import unittest.mock
 import uuid
@@ -167,6 +168,26 @@ def test_explicitly_deleted(connect, reqmanager):
             'result': 'deleted'
         }})
 
+# XXX: Freezegun breaks if tests that don't use it run after tests that use it.
+# Looks like: https://github.com/spulec/freezegun/issues/324
+# Freezegun tests start here.
+
+@freezegun.freeze_time('2016-04-20 11:00:00')
+def test_delete_end_to_end(tmpdir):
+    with request_population(1, tmpdir) as (rm, reqs):
+        req = reqs[0]
+        rm.delete(req.id[0:7])
+        assert req.state == State.deleted
+
+
+@freezegun.freeze_time('2016-04-20 11:00:00')
+def test_list_end_to_end(tmpdir, capsys):
+    with request_population(1, tmpdir) as (rm, reqs):
+        sys.argv = ['list-maintenance', '--spooldir', str(tmpdir)]
+        fc.maintenance.reqmanager.list_maintenance()
+        out, err = capsys.readouterr()
+        assert reqs[0].id[0:7] in out
+
 
 @unittest.mock.patch('fc.util.directory.connect')
 @freezegun.freeze_time('2016-04-20 12:00:00')
@@ -194,12 +215,13 @@ def test_execute_not_due(connect, tmpdir):
 
 
 @unittest.mock.patch('fc.util.directory.connect')
-def test_execute_logs_exception(connect, reqmanager, caplog):
+def test_execute_logs_exception(connect, reqmanager, log):
     req = reqmanager.add(Request(Activity(), 1))
     req.state = State.due
     os.chmod(req.dir, 0o000)  # simulates I/O error
     reqmanager.execute()
-    assert 'Permission denied' in caplog.text
+    log.has(
+        "execute-request-failed", request=req.id, level="error", exc_info=True)
     os.chmod(req.dir, 0o755)  # py.test cannot clean up 0o000 dirs
 
 
@@ -335,18 +357,3 @@ e  {id3}  2016-04-20 11:00 UTC  1m 30s    error request (duration: 1m 15s)
 -  {id1}  --- TBA ---           14m       pending request\
 """.format(
         id1=r1.id[:7], id2=r2.id[:7], id3=r3.id[:7])
-
-
-def test_delete_end_to_end(tmpdir):
-    with request_population(1, tmpdir) as (rm, reqs):
-        req = reqs[0]
-        rm.delete(req.id[0:7])
-        assert req.state == State.deleted
-
-
-def test_list_end_to_end(tmpdir, capsys):
-    with request_population(1, tmpdir) as (rm, reqs):
-        sys.argv = ['list-maintenance', '--spooldir', str(tmpdir)]
-        fc.maintenance.reqmanager.list_maintenance()
-        out, err = capsys.readouterr()
-        assert reqs[0].id[0:7] in out

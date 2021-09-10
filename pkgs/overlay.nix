@@ -90,6 +90,14 @@ in {
   jitsi-meet = super.callPackage ./jitsi-meet { };
   jitsi-videobridge = super.callPackage ./jitsi-videobridge { jre_headless = super.jre8_headless; };
 
+  haproxy = super.haproxy.overrideAttrs(orig: rec {
+    version = "2.3.14";
+    src = super.fetchurl {
+      url = "https://www.haproxy.org/download/${lib.versions.majorMinor version}/src/${orig.pname}-${version}.tar.gz";
+      sha256 = "0ah6xsxlk1a7jsxdg0pbdhzhssz9ysrfxd3bs5hm1shql1jmqzh4";
+    };
+  });
+
   kibana7 = super.kibana7.overrideAttrs(_: rec {
     version = elk7Version;
     name = "kibana-${version}";
@@ -224,6 +232,17 @@ in {
     patches = a.patches ++ [
       ./remote_addr_anon.patch
     ];
+  });
+
+  openssh_8_7 = super.openssh.overrideAttrs(_: rec {
+    version = "8.7p1";
+    name = "openssh-${version}";
+
+    src = super.fetchurl {
+      url = "mirror://openbsd/OpenSSH/portable/openssh-${version}.tar.gz";
+      sha256 = "090yxpi03pxxzb4ppx8g8hdpw7c4nf8p0avr6c7ybsaana5lp8vw";
+    };
+
   });
 
   percona = self.percona80;

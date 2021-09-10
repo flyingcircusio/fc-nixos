@@ -2,18 +2,20 @@
 
 from .request import Request
 from .state import State, ARCHIVE
+from fc.util.logging import init_logging
 import argparse
 import fc.util.directory
 import fcntl
 import glob
 import json
-import logging
 import os
 import os.path as p
 import socket
+import structlog
 
-LOG = logging.getLogger(__name__)
 DEFAULT_DIR = '/var/spool/maintenance'
+
+_log = structlog.get_logger()
 
 
 def require_lock(func):
@@ -50,7 +52,7 @@ class ReqManager:
     lockfile = None
     in_maintenance = False  # 'maintenance' flag set in directory
 
-    def __init__(self, spooldir=DEFAULT_DIR, enc_path=None):
+    def __init__(self, spooldir=DEFAULT_DIR, enc_path=None, log=_log):
         """Initialize ReqManager and create directories if necessary."""
         self.spooldir = spooldir
         self.requestsdir = p.join(self.spooldir, 'requests')
@@ -59,6 +61,7 @@ class ReqManager:
             if not p.exists(d):
                 os.mkdir(d)
         self.enc_path = enc_path
+        self.log = log
         self.requests = {}
 
     def __enter__(self):
@@ -99,11 +102,14 @@ class ReqManager:
                 req._reqmanager = self
                 self.requests[req.id] = req
             except Exception as exc:
-                LOG.exception('error loading request from %s', d)
                 with open(p.join(d, '_load_request_yaml_error'), 'a') as f:
                     print(exc, file=f)
-                LOG.error('(req %s) archiving defective request',
-                          p.basename(d))
+                self.log.error(
+                    "request-load-error",
+                    _replace_msg=
+                    "Loading {request} failed, archiving request. See exception for details.",
+                    request=p.basename(d),
+                    exc_info=True)
                 os.rename(d, p.join(self.archivedir, p.basename(d)))
 
     def add(self, request, skip_same_comment=True):
@@ -117,14 +123,22 @@ class ReqManager:
         if skip_same_comment and request.comment:
             duplicate = self.find_by_comment(request.comment)
             if duplicate:
-                LOG.info('(req %s) found identical request %s, skipping',
-                         request.id, duplicate.id)
+                self.log.info(
+                    "request-skip-duplicate",
+                    _replace_msg=
+                    "When adding {request}, found identical request {duplicate}. Nothing added.",
+                    request=request.id,
+                    duplicate=duplicate.id)
                 return None
         self.requests[request.id] = request
         request.dir = self.dir(request)
         request._reqmanager = self
         request.save()
-        LOG.info('(req %s) created: %s', request.id, request.comment)
+        self.log.info(
+            "request-added",
+            _replace_msg="Added request: {request}",
+            request=request.id,
+            comment=request.comment)
         return request
 
     def find_by_comment(self, comment):
@@ -137,7 +151,7 @@ class ReqManager:
     @require_directory
     def schedule(self):
         """Triggers request scheduling on server."""
-        LOG.debug('scheduling maintenance requests')
+        self.log.debug('schedule-start')
         schedule_maintenance = {
             reqid: {
                 'estimate': int(req.estimate),
@@ -146,20 +160,28 @@ class ReqManager:
             for reqid, req in self.requests.items()
         }
         if schedule_maintenance:
-            LOG.debug('scheduling requests: %s', schedule_maintenance)
+            self.log.debug(
+                "schedule-maintenances", request_count=len(schedule_maintenance))
+
         result = self.directory.schedule_maintenance(schedule_maintenance)
         disappeared = set()
         for key, val in result.items():
             try:
                 req = self.requests[key]
-                LOG.debug('(req %s) updating request: %s', key, val)
+                self.log.debug("schedule-request", request=key, data=val)
                 if req.update_due(val['time']):
-                    LOG.info('(req %s) changing start time to %s', req.id,
-                             val['time'])
+                    self.log.info(
+                        "schedule-change-start-time",
+                        _replace_msg="Changing start time of {request} to {at}",
+                        request=req.id,
+                        at=val["time"])
                     req.save()
             except KeyError:
-                LOG.warning('(req %s) request disappeared, marking as deleted',
-                            key)
+                self.log.warning(
+                    "schedule-request-disappeared",
+                    _replace_msg=
+                    "Request {request} disappeared, marking as deleted.",
+                    request=key)
                 disappeared.add(key)
         if disappeared:
             self.directory.end_maintenance(
@@ -189,22 +211,31 @@ class ReqManager:
         actions that need to proceed anyway.
         """
         if self.in_maintenance:
+            self.log.debug("enter-maintenance-skip")
             return
         try:
-            LOG.debug('marking node as "out of service"')
+            self.log.debug("enter-maintenance")
             self.directory.mark_node_service_status(socket.gethostname(),
                                                     False)
             self.in_maintenance = True
         except socket.error:
-            LOG.error('failed to set "out of service" directory flag')
+            self.log.error(
+                "enter-maintenance-error",
+                _replace_msg=
+                "Failed to set 'out of service' directory flag. See exception for details.",
+                exc_info=True)
 
     def leave_maintenance(self):
         try:
-            LOG.debug('marking node as "in service"')
+            self.log.debug('leave-maintenance')
             self.directory.mark_node_service_status(socket.gethostname(), True)
             self.in_maintenance = False
         except socket.error:
-            LOG.error('failed to set "in service" directory flag')
+            self.log.error(
+                "leave-maintenance-error",
+                _replace_msg=
+                "Failed to set 'in service' directory flag. See exception for details.",
+                exc_info=True)
 
     @require_directory
     @require_lock
@@ -214,21 +245,69 @@ class ReqManager:
         If there is an already active request, run to termination first.
         After that, select the oldest due request as next active request.
         """
-        LOG.debug('executing maintenance requests')
+        runnable_requests = list(self.runnable())
+        if runnable_requests:
+            runnable_count = len(runnable_requests)
+            if runnable_count == 1:
+                msg = "Executing one runnable maintenance request."
+            else:
+                msg = "Executing {runnable_count} runnable maintenance requests."
+            self.log.info(
+                "execute-requests-runnable",
+                _replace_msg=msg,
+                runnable_count=runnable_count)
+        else:
+            self.log.info(
+                "execute-requests-empty",
+                _replace_msg="No runnable maintenance requests.")
+
         try:
-            for req in self.runnable():
-                LOG.info('(req %s) starting execution', req.id)
+            for req in runnable_requests:
+                self.log.info(
+                    "execute-request-start",
+                    _replace_msg="Starting execution of request: {request}",
+                    request=req.id)
                 self.enter_maintenance()
                 try:
                     req.execute()
                 except Exception:
-                    LOG.exception('(req %s) error during execution', req.id)
+                    self.log.error(
+                        "execute-request-failed",
+                        _replace_msg=
+                        "Executing request {request} failed. See exception for details.",
+                        request=req.id,
+                        exc_info=True)
                     req.state = State.error
+                    execution_finished = False
+                else:
+                    execution_finished = True
                 try:
                     req.save()
                 except Exception:
-                    pass
-                LOG.debug('(req %s) executed, state %s', req.id, req.state)
+                    # This was ignored before.
+                    # At least log what's happening here even if it's not critical.
+                    self.log.debug(
+                        "execute-save-request-failed", exc_info=True)
+
+                if execution_finished:
+                    attempt = req.attempts[-1]
+                    if req.state == State.error:
+                        self.log.info(
+                            "execute-request-finished-error",
+                            _replace_msg="Error executing request {request}.",
+                            request=req.id,
+                            stdout=attempt.stdout,
+                            stderr=attempt.stderr,
+                            duration=attempt.duration,
+                            returncode=attempt.returncode)
+                    else:
+                        self.log.info(
+                            "execute-request-finished",
+                            _replace_msg=
+                            "Executed request {request} (state: {state}).",
+                            request=req.id,
+                            state=req.state,
+                            duration=attempt.duration)
         finally:
             self.leave_maintenance()
 
@@ -240,7 +319,7 @@ class ReqManager:
         Postponed requests get their new scheduled time with the next
         schedule call.
         """
-        LOG.debug('postponing maintenance requests')
+        self.log.debug("postpone-start")
         postponed = [
             r for r in self.requests.values() if r.state == State.postpone
         ]
@@ -252,7 +331,8 @@ class ReqManager:
             }
             for req in postponed
         }
-        LOG.debug('invoking postpone_maintenance(%s)', postpone_maintenance)
+        self.log.debug(
+            'postpone-maintenance-directory', args=postpone_maintenance)
         self.directory.postpone_maintenance(postpone_maintenance)
         for req in postponed:
             req.update_due(None)
@@ -262,7 +342,7 @@ class ReqManager:
     @require_directory
     def archive(self):
         """Move all completed requests to archivedir."""
-        LOG.debug('archiving maintenance requests')
+        self.log.debug('archive-start')
         archived = [r for r in self.requests.values() if r.state in ARCHIVE]
         if not archived:
             return
@@ -273,10 +353,14 @@ class ReqManager:
             }
             for req in archived
         }
-        LOG.debug('invoking end_maintenance(%s)', end_maintenance)
+        self.log.debug(
+            "archive-end-maintenance-directory", args=end_maintenance)
         self.directory.end_maintenance(end_maintenance)
         for req in archived:
-            LOG.info('(req %s) completed, archiving request', req.id)
+            self.log.info(
+                "archive-request",
+                _replace_msg="Request {request} completed, archiving request.",
+                request=req.id)
             dest = p.join(self.archivedir, req.id)
             os.rename(req.dir, dest)
             req.dir = dest
@@ -284,18 +368,24 @@ class ReqManager:
 
     @require_lock
     def delete(self, reqid):
-        LOG.debug('trying to delete request matching %s', reqid)
+        self.log.debug("delete-start", request=reqid)
         req = None
         for i in self.requests:
             if i.startswith(reqid):
                 req = self.requests[i]
                 break
         if not req:
-            LOG.warning('cannot locate request matching %s', reqid)
+            self.log.warning(
+                "delete-skip-missing",
+                _replace_msg="Cannot locate request {request}, skipping",
+                request=reqid)
             return
         req.state = State.deleted
         req.save()
-        LOG.info('(req %s) marking as deleted', req.id)
+        self.log.info(
+            "delete-finished",
+            _replace_msg="Marked request {request} as deleted",
+            request=req.id)
 
 
 def transaction(spooldir=DEFAULT_DIR, enc_path=None, do_scheduling=True):
@@ -319,14 +409,6 @@ def listreqs(spooldir=DEFAULT_DIR):
     out = str(rm)
     if out:
         print(out)
-
-
-def setup_logging(verbose=False):
-    logging.basicConfig(
-        format='MAINT:%(levelname)s: %(message)s',
-        level=logging.DEBUG if verbose else logging.INFO)
-    # this is really annoying
-    logging.getLogger('iso8601').setLevel(logging.INFO)
 
 
 def main(verbose=False):
@@ -370,7 +452,9 @@ Managed local maintenance requests.
         help='requests spool dir (default: %(default)s)')
     a.add_argument('-v', '--verbose', action='store_true', default=verbose)
     args = a.parse_args()
-    setup_logging(args.verbose)
+
+    init_logging(args.verbose)
+
     if args.delete and args.list:
         a.error('multually exclusive actions: list + delete')
     if args.delete:
@@ -378,7 +462,9 @@ Managed local maintenance requests.
     elif args.list:
         listreqs(args.spooldir)
     else:
+        _log.info("fc-maintenance-start")
         transaction(args.spooldir, args.enc_path, not args.no_scheduling)
+        _log.info("fc-maintenance-success")
 
 
 def list_maintenance():
@@ -397,3 +483,7 @@ retrylimit exceeded (r), hard error (e), deleted (d), postponed (p).
         help='spool dir for requests (default: %(default)s)')
     args = a.parse_args()
     listreqs(args.spooldir)
+
+
+if __name__ == '__main__':
+    main()
