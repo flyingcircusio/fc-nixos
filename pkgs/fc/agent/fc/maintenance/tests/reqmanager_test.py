@@ -168,6 +168,9 @@ def test_explicitly_deleted(connect, reqmanager):
             'result': 'deleted'
         }})
 
+# XXX: Freezegun breaks if tests that don't use it run after tests that use it.
+# Looks like: https://github.com/spulec/freezegun/issues/324
+# Freezegun tests start here.
 
 @freezegun.freeze_time('2016-04-20 11:00:00')
 def test_delete_end_to_end(tmpdir):
@@ -184,11 +187,6 @@ def test_list_end_to_end(tmpdir, capsys):
         fc.maintenance.reqmanager.list_maintenance()
         out, err = capsys.readouterr()
         assert reqs[0].id[0:7] in out
-
-
-# XXX: Freezegun breaks if tests that don't use it run after tests that use it.
-# Looks like: https://github.com/spulec/freezegun/issues/324
-# Freezegun tests start here.
 
 
 @unittest.mock.patch('fc.util.directory.connect')
