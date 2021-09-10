@@ -266,7 +266,7 @@ in
         };
 
         "local/nginx/example-configuration".text =
-          import ./example-config.nix { inherit config lib; };
+          import ./example-plain-config.nix { inherit config lib; };
 
         "local/nginx/modsecurity/README.txt".text = ''
           Here are example configuration files for ModSecurity.
@@ -289,6 +289,8 @@ in
 
         "local/nginx/modsecurity/unicode.mapping".source =
           "${pkgs.libmodsecurity.src}/unicode.mapping";
+
+        "local/nixos/nginx.nix.example".source = ./example-nixos-module.nix;
       };
 
       flyingcircus.services.nginx.virtualHosts = vhostsJSON;
