@@ -24,4 +24,8 @@ MySQL works out-of-the box without configuration.
 Interaction
 --------
 
+Service users can use :command:`sudo -u mysql -i` to access the
+MySQL super user account to perform administrative commands
+and access logfiles such as the slowlog.
+
 For backup tasks the `xtrabackup` command is provided, along with sudo access for it

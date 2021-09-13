@@ -102,6 +102,20 @@ with builtins;
         }
       ];
 
+    users.users.mysql = {
+      shell = "/run/current-system/sw/bin/bash";
+      home = lib.mkForce "/srv/mysql";
+    };
+
+    flyingcircus.passwordlessSudoRules = [
+      # Service users may switch to the mysql system user
+      {
+        commands = [ "ALL" ];
+        groups = [ "sudo-srv" "service" ];
+        runAs = "mysql";
+      }
+    ];
+
     services.percona = {
       enable = true;
       inherit package rootPasswordFile;
