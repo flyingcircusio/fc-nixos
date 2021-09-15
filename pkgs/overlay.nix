@@ -80,6 +80,7 @@ in {
   });
 
   gitlab = super.callPackage ./gitlab { };
+  gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
 
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
