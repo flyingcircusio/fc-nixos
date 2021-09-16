@@ -121,6 +121,9 @@ in
         master.succeed("echo tt > /etc/local/mysql/mysql.passwd")
         master.succeed("systemctl restart mysql")
         master.wait_until_succeeds("mysql mysql -u root -ptt -e 'select 1'")
+
+    with subtest("xtrabackup works"): # sensuclient has service group
+        master.succeed("sudo -u sensuclient sudo xtrabackup --backup")
   '';
 
 })
