@@ -112,6 +112,13 @@ in {
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
 
+  htop = super.htop.overrideAttrs(a: a // {
+    patches = [
+      # Hide userland process threads by default
+      ./hide-userland.patch
+    ];
+  });
+
   # Import old php versions from nix-phps
   # NOTE: php7.3 is already removed on unstable
   inherit (phps) php56;

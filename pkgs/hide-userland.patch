@@ -1,0 +1,24 @@
+From 27b970cd23610bfbdacb00873e15caa758052b09 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Maciej=20Kr=C3=BCger?= <mkg20001@gmail.com>
+Date: Thu, 15 Jul 2021 09:41:07 +0200
+Subject: [PATCH] Hide userland threads by default
+
+---
+ Settings.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Settings.c b/Settings.c
+index ca8253e..a8cdfa7 100644
+--- a/Settings.c
++++ b/Settings.c
+@@ -461,6 +461,7 @@ Settings* Settings_new(unsigned int initialCpuCount) {
+    if (!ok) {
+       Settings_defaultMeters(this, initialCpuCount);
+       this->hideKernelThreads = true;
++      this->hideUserlandThreads = true;
+       this->highlightMegabytes = true;
+       this->highlightThreads = true;
+       this->findCommInCmdline = true;
+-- 
+2.32.0
+
