@@ -1,7 +1,7 @@
 import ./make-test-python.nix ({ version ? "7", pkgs, testlib, ... }:
 let
-  ipv4 = "192.168.1.1";
-  ipv6 = "2001:db8:1::1";
+  ipv4 = testlib.fcIP.noquote.srv4 1;
+  ipv6 = testlib.fcIP.noquote.srv6 1;
 in
 {
   name = "elasticsearch";
@@ -9,21 +9,9 @@ in
   machine =
     { pkgs, config, ... }:
     {
-
-      imports = [ ../nixos ../nixos/roles ];
-
-      flyingcircus.enc.parameters = {
-        resource_group = "test";
-        interfaces.srv = {
-          mac = "52:54:00:12:34:56";
-          bridged = false;
-          networks = {
-            "2001:db8:1::/64" = [ ipv6 ];
-            "192.168.1.0/24" = [ ipv4 ];
-          };
-          gateways = {};
-        };
-      };
+      imports = [
+        (testlib.fcConfig { })
+      ];
 
       networking.domain = "test";
       networking.extraHosts = ''
