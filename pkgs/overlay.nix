@@ -137,6 +137,21 @@ in {
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
 
+  auditbeat7 = self.filebeat7.overrideAttrs(a: a // {
+    name = "auditbeat-${a.version}";
+
+    subPackages = [
+      "auditbeat"
+    ];
+  });
+  filebeat7 = super.filebeat7.overrideAttrs(a: a // {
+    patches = [
+      # upstream: Fix nil panic when overwriting metadata (#24741)
+      # released in v8.0.0-alpha1
+      ./filebeat-fix-events.patch
+    ];
+  });
+
   # Import old php versions from nix-phps
   # NOTE: php7.3 is already removed on unstable
   inherit (phps) php56;
