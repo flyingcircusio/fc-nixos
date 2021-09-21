@@ -21,6 +21,7 @@ let
 
 in {
   antivirus = callTest ./antivirus.nix {};
+  audit = callTest ./audit.nix {};
   channel = callTest ./channel.nix {};
   coturn = callTest ./coturn.nix {};
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};

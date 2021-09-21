@@ -5,7 +5,7 @@ with lib;
 let
   fclib = config.fclib;
 
-  mkConfig = { host, port, fields, ... }:
+  mkConfig = { host, port, extraSettings, fields, ... }:
     {
       # Logstash output is compatible to Beats input in Graylog.
       output.logstash = {
@@ -13,8 +13,9 @@ let
         ttl = "120s";
         pipelining = 0;
       };
+      processors = [];
       # Read the system journal.
-      journalbeat.inputs  = [ { paths = []; } ];
+      filebeat.inputs = extraSettings.inputs;
       # "info" would have some helpful information but also logs every single
       # log shipping (up to once per second) which is too much noise.
       logging.level = "warning";
@@ -24,40 +25,38 @@ let
 
   mkService = { name, host, port, extraSettings, fields, package, config }:
   let
-    stateDir = "journalbeat/${name}";
+    stateDir = "filebeat/${name}";
 
   in {
-    description = "Ship system journal to ${host}:${toString port}";
+    # if more than zero inputs have .enabled set to true
+    enable = (filterAttrs (x: x ? enabled && x.enabled) flyingcircus.filebeat.inputs) != {};
+
+    description = "Ship filebeats to ${host}:${toString port}";
     wantedBy = [ "multi-user.target" ];
     preStart = let
       jq = "${pkgs.jq}/bin/jq";
     in ''
       data_dir=$STATE_DIRECTORY/data
       mkdir -p $data_dir
-      if ! grep -sq cursor $data_dir/registry; then
-        echo "Journal cursor not present, initalizing it to the end of the journal."
-        cursor=$(journalctl --output-fields=_ -o json -n1 | ${jq} -r '.__CURSOR')
-        echo "Reading starts at: $cursor"
-        ${jq} -n --arg cursor $cursor \
-          '{journal_entries: [{path: "LOCAL_SYSTEM_JOURNAL", cursor: $cursor}]}' \
-          > $data_dir/registry
-      fi
-
     '';
     serviceConfig = {
       StateDirectory = stateDir;
-      SupplementaryGroups = [ "systemd-journal" ];
-      DynamicUser = true;
+      # DynamicUser = true;
       ExecStart = ''
-        ${package}/bin/journalbeat \
+        ${package}/bin/filebeat \
           -e \
           -c ${config} \
           -path.data ''${STATE_DIRECTORY}/data
       '';
       Restart = "always";
 
+      # ReadWritePaths = "/var/lib/auditbeat";
+
+      /* ReadWritePaths = map (value: value.paths)
+      attrValues (filterAttrs (key: value: value.type == "log") extraSettings.inputs); */
+
       # Security hardening
-      CapabilityBoundingSet = "";
+      /* CapabilityBoundingSet = "";
       DevicePolicy = "closed";
       LockPersonality = true;
       MemoryDenyWriteExecute = true;
@@ -79,17 +78,28 @@ let
       SystemCallFilter = [
         "@system-service"
         "seccomp"
-      ];
+      ]; */
     };
   };
 
 in
-  {
-    imports = [
-      (import ./mkbeat.nix {
-        beatName = "journalbeat";
-        beatData = "logs from the journal";
-        inherit mkConfig mkService;
-      })
-    ];
-  }
+{
+  imports = [
+    (import ./mkbeat.nix {
+      beatName = "filebeat";
+      beatData = "logs from various files";
+      inherit mkConfig mkService;
+      extraSettings = {
+        inputs = attrValues config.flyingcircus.filebeat.inputs;
+      };
+    })
+    ({
+      options.flyingcircus.filebeat.inputs = mkOption {
+        type = with types; attrsOf anything;
+        description = ''
+          Inputs for filebeat
+        '';
+      };
+    })
+  ];
+}

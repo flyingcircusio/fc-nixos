@@ -1,0 +1,34 @@
+From f233ffe8d7522a91032f4ec077281f36f1ed9599 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Maciej=20Kr=C3=BCger?= <mkg20001@gmail.com>
+Date: Fri, 17 Sep 2021 16:18:13 +0200
+Subject: [PATCH] Fix panic with override_keys and empty @metadata fields
+
+---
+ libbeat/common/jsontransform/jsonhelper.go | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/libbeat/common/jsontransform/jsonhelper.go b/libbeat/common/jsontransform/jsonhelper.go
+index bd4b4454d3..3bf30f48ae 100644
+--- a/libbeat/common/jsontransform/jsonhelper.go
++++ b/libbeat/common/jsontransform/jsonhelper.go
+@@ -59,11 +59,17 @@ func WriteJSONKeys(event *beat.Event, keys map[string]interface{}, overwriteKeys
+ 		case "@metadata":
+ 			switch m := v.(type) {
+ 			case map[string]string:
++				if event.Meta == nil && len(m) > 0 {
++					event.Meta = common.MapStr{}
++				}
+ 				for meta, value := range m {
+ 					event.Meta[meta] = value
+ 				}
+ 
+ 			case map[string]interface{}:
++				if event.Meta == nil {
++					event.Meta = common.MapStr{}
++				}
+ 				event.Meta.Update(common.MapStr(m))
+ 
+ 			default:
+-- 
+2.32.0
+

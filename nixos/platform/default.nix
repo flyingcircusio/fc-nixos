@@ -21,6 +21,10 @@ in {
   imports = [
     ./acme.nix
     ./agent.nix
+    ./audit.nix
+    ./auditbeat.nix
+    ./beats.nix
+    ./filebeat.nix
     ./enc.nix
     ./firewall.nix
     ./journalbeat.nix
