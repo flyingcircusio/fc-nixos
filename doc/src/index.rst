@@ -37,6 +37,7 @@ Components/Roles
    mailserver
    memcached
    mongodb
+   mysql
    nfs
    postgresql
    rabbitmq
