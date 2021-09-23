@@ -10,7 +10,7 @@ in
     { pkgs, config, ... }:
     {
       imports = [
-        (testlib.fcConfig { })
+        (testlib.fcConfig { net.fe = false; })
       ];
 
       networking.domain = "test";
