@@ -68,6 +68,45 @@ in {
       '';
     };
 
+    wireguard = {
+      name = "wireguard";
+      machine.imports = [ ../../nixos ];
+      machine.services.telegraf.enable = false;
+      testScript = ''
+        machine.wait_for_unit("network.target")
+        machine.succeed("cat /var/lib/wireguard/privatekey")
+        machine.succeed("cat /var/lib/wireguard/publickey")
+        machine.succeed("wg")
+
+        print(machine.execute("mount")[1])
+
+        pubkey_acl = machine.execute("getfacl /var/lib/wireguard/publickey")[1]
+        assert (pubkey_acl == """\
+        # file: var/lib/wireguard/publickey
+        # owner: root
+        # group: service
+        user::rw-
+        group::r--
+        group:sudo-srv:r--
+        mask::r--
+        other::---
+
+        """), pubkey_acl
+
+        privkey_acl = machine.execute("getfacl /var/lib/wireguard/privatekey")[1]
+        assert (privkey_acl == """\
+        # file: var/lib/wireguard/privatekey
+        # owner: root
+        # group: root
+        user::rw-
+        group::---
+        other::---
+        
+        """), privkey_acl
+      '';
+    };
+
+
     name-resolution = {
       machine =
         { pkgs, ... }:

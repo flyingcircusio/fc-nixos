@@ -165,7 +165,45 @@ in
 
     flyingcircus.users = with lib; {
       userData = mkDefault (fclib.jsonFromFile cfg.userDataPath "[]");
-      permissions = mkDefault (fclib.jsonFromFile cfg.permissionsPath "[]");
+      # The way we handle permissions is not ideal. We allow defining them
+      # dynamically from the ENC but we really need and rely on them all
+      # over the place. Keeping this in sync with the tests is really hard
+      # so I took a snapshot of the current permissions (they change 
+      # very very rarely) and use it as adefault here.
+      permissions = mkDefault (fclib.jsonFromFile cfg.permissionsPath ''
+[
+ {
+  "description": "commit to VCS repository",
+  "id": 2029,
+  "name": "code"
+ },
+ {
+  "description": "perform interactive or web logins (e.g., ssh, monitoring)",
+  "id": 502,
+  "name": "login"
+ },
+ {
+  "description": "access web statistics",
+  "id": 2046,
+  "name": "stats"
+ },
+ {
+  "description": "sudo to service user",
+  "id": 2028,
+  "name": "sudo-srv"
+ },
+ {
+  "description": "sudo to root",
+  "id": 10,
+  "name": "wheel"
+ },
+ {
+  "description": "Manage users of RG",
+  "id": 2272,
+  "name": "manager"
+ }
+]
+'');
       adminsGroup = mkDefault (fclib.jsonFromFile cfg.adminsGroupPath "{}");
     };
 
