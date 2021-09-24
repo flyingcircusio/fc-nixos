@@ -18,11 +18,19 @@
     services.openssh.enable = lib.mkOverride 60 false;
     # build-vms.nix from NixOS automatically generates numbered interface
     # configs with default IPs. We rename the devices to fe and srv early so
-    # the services wait for eth1 and eth2 for 5 minutes and time out.
+    # the services wait for the interfaces for 5 minutes and time out.
     # This is annoying when other services depend on network.target.
     systemd.services = lib.mkIf (config.flyingcircus.enc.parameters ? interfaces) {
+      network-addresses-eth0 = lib.mkForce {};
       network-addresses-eth1 = lib.mkForce {};
       network-addresses-eth2 = lib.mkForce {};
+      network-addresses-eth3 = lib.mkForce {};
+      network-addresses-eth4 = lib.mkForce {};
+      network-addresses-eth5 = lib.mkForce {};
+      network-addresses-eth6 = lib.mkForce {};
+      network-addresses-eth7 = lib.mkForce {};
+      network-addresses-eth8 = lib.mkForce {};
+      network-addresses-eth9 = lib.mkForce {};
     };
   };
 }

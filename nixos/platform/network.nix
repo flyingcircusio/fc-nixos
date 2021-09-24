@@ -113,6 +113,31 @@ in
       extraHosts = lib.optionalString
         (cfg.encAddresses != [])
         (hostsFromEncAddresses cfg.encAddresses);
+
+      wireguard.enable = true;
+
+    };
+
+    flyingcircus.activationScripts = {
+
+      prepare-wireguard-keys = ''
+        install -d -g root /var/lib/wireguard
+        OLDUMASK=$(umask)
+        umask 077
+        cd /var/lib/wireguard
+        if [ ! -e "privatekey" ]; then
+          ${pkgs.wireguard-tools}/bin/wg genkey > privatekey
+        fi
+        chmod u=rw,g-rwx,o-rwx privatekey
+        if [ ! -e "publickey" ]; then
+          ${pkgs.wireguard-tools}/bin/wg pubkey < privatekey > publickey
+        fi
+        chgrp service publickey
+        chmod u=rw,g=r,o-rwx publickey
+        ${pkgs.acl}/bin/setfacl -m g:sudo-srv:r publickey
+        umask $OLDUMASK
+      '';
+
     };
 
     services.udev.extraRules = lib.concatMapStrings

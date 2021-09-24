@@ -49,6 +49,12 @@ with builtins;
       "8.0" = percona80;
     };
 
+    xtrabackupPackages = with pkgs; {
+      "5.6" = percona-xtrabackup_2_4;
+      "5.7" = percona-xtrabackup_2_4;
+      "8.0" = percona-xtrabackup_8_0;
+    };
+
     cfg = config.flyingcircus.roles.mysql;
     fclib = config.fclib;
 
@@ -58,7 +64,7 @@ with builtins;
     listenAddresses =
       fclib.network.lo.dualstack.addresses ++
       fclib.network.srv.dualstack.addresses;
-    
+
     localConfigPath = /etc/local/mysql;
 
     rootPasswordFile = "${toString localConfigPath}/mysql.passwd";
@@ -74,6 +80,7 @@ with builtins;
     enabledRolesCount = length (lib.attrNames enabledRoles);
     version = head (lib.attrNames enabledRoles);
     package = mysqlPackages.${version} or null;
+    xtraPackage = xtrabackupPackages.${version};
 
     telegrafPassword = fclib.derivePasswordForHost "mysql-telegraf";
     sensuPassword = fclib.derivePasswordForHost "mysql-sensu";
@@ -94,6 +101,20 @@ with builtins;
           message = "MySQL / Percona roles are mutually exclusive. Only one may be enabled.";
         }
       ];
+
+    users.users.mysql = {
+      shell = "/run/current-system/sw/bin/bash";
+      home = lib.mkForce "/srv/mysql";
+    };
+
+    flyingcircus.passwordlessSudoRules = [
+      # Service users may switch to the mysql system user
+      {
+        commands = [ "ALL" ];
+        groups = [ "sudo-srv" "service" ];
+        runAs = "mysql";
+      }
+    ];
 
     services.percona = {
       enable = true;
@@ -290,9 +311,13 @@ with builtins;
       SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
     '';
 
+    security.sudo.extraRules = [
+      { groups = ["service"]; commands = [ { command = "${xtraPackage}/bin/xtrabackup"; options = [ "NOPASSWD" ]; } ]; }
+    ];
+
     environment.systemPackages = with pkgs; [
       innotop
-      xtrabackup
+      xtraPackage
     ];
 
     flyingcircus.services = {
