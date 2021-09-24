@@ -146,15 +146,18 @@ security.acme.certs."test.fcio.net".keyType = "rsa2048";
 Using two certificates to support both kinds of ciphers is possible with Nginx
 but needs manual configuration.
 
-For ciphers using DHE, an RSA certificate must be used and dhparams must be set:
+For ciphers using DHE, an RSA certificate must be used. *dhparams* must be generated and set:
 
+security.dhparams.params.nginx = {};
 services.nginx.sslDhparam = config.security.dhparams.params.nginx.path;
 
 This enables the following TLS 1.2 ciphers:
 
-TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
-TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
+* TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+* TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
 
+The DH param file is located at /var/lib/dhparams/nginx.pem.
+This path can be referenced from Nix code by `security.dhparams.params.nginx.path` as shown in the config example above.
 
 The services.nginx.sslCiphers option can be used to change the cipher list:
 
