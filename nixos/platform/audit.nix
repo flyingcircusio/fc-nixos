@@ -2,17 +2,6 @@
 
 with lib;
 
-# audit-related configuration
-
-let
-  auditUserspace = pkgs.fetchFromGitHub {
-    owner = "linux-audit";
-    repo = "audit-userspace";
-    rev = "6b09724c69d91668418ddb3af00da6db6755208c";
-    sha256 = "1muskUu3Z8SrtrhWiFUh5MeMi4da5on3mV3/TkF8Qbw=";
-    fetchSubmodules = false;
-  };
-in
 {
   /* XXX after beta
     imports = [
@@ -27,15 +16,14 @@ in
   config = (mkIf (config.flyingcircus.audit.enable) (
     mkMerge [
       {
-        # Enable audit
+
         security.audit = {
-          enable = true; # audit system
-          # list see https://github.com/linux-audit/audit-userspace/tree/master/rules
-          /* rules = map (rule: replaceStrings [ "'" ] [ "" ] (builtins.readFile "${auditUserspace}/rules/${rule}"))
-            [ "30-pci-dss-v31.rules" ]; */
+          enable = true; 
           rules = [
             "-a exit,always -F arch=b64 -F euid=0 -S execve"
             "-a exit,always -F arch=b32 -F euid=0 -S execve"
+            "-a exit,always -F arch=b64 -F euid=0 -S execveat"
+            "-a exit,always -F arch=b32 -F euid=0 -S execveat"
           ];
         };
       }
