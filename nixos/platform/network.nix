@@ -114,7 +114,6 @@ in
         (cfg.encAddresses != [])
         (hostsFromEncAddresses cfg.encAddresses);
 
-
       wireguard.enable = true;
 
     };
@@ -123,6 +122,7 @@ in
 
       prepare-wireguard-keys = ''
         install -d -g root /var/lib/wireguard
+        OLDUMASK=$(umask)
         umask 077
         cd /var/lib/wireguard
         if [ ! -e "privatekey" ]; then
@@ -135,6 +135,7 @@ in
         chgrp service publickey
         chmod u=rw,g=r,o-rwx publickey
         ${pkgs.acl}/bin/setfacl -m g:sudo-srv:r publickey
+        umask $OLDUMASK
       '';
 
     };
