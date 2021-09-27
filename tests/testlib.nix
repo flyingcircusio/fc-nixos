@@ -97,7 +97,7 @@ rec {
       prefix = "192.168.${toString vid}.";
     })
     (nameValuePair "${name}6" {
-      quote = false;
+      quote = true;
       prefix = "2001:db8:${toString vid}::";
     })
   ]) vlans));
