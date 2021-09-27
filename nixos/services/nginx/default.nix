@@ -248,6 +248,16 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
+      assertions = mapAttrsToList (hostname: host: let
+          laExtra = filter (x: x != null) [ host.listenAddress host.listenAddress6 ];
+        in {
+        assertion = (host.listenAddress == null && host.listenAddress6 == null) || (host.listenAddresses == laExtra);
+        message = ''
+          ${hostname}: listenAddress(6) and the new array-format listenAddresses cannot be mixed
+          Please exclusively use listenAddresses instead:
+            listenAddresses = [ ${escapeShellArgs (host.listenAddresses ++ laExtra)} ];
+        '';
+      }) cfg.virtualHosts;
 
       environment.etc = {
         "local/nginx/README.txt".source = ./README.txt;
