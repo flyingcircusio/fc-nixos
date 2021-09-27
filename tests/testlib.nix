@@ -105,18 +105,18 @@ rec {
   /*
     Get IP from server id
     Examples:
-      fcIP.srv6 1 -> "[2001:db8:3::1]"
-      fcIP.noquote.srv6 -> "2001:db8:3::1"
+      fcIP.srv6 1 -> "2001:db8:3::1"
+      fcIP.quote.srv6 -> "[2001:db8:3::1]"
   */
   fcIP =
     (mapAttrs (type: typeconf: (
-      id:
-        if typeconf.quote then "[${typeconf.prefix}${toString id}]"
-        else "${typeconf.prefix}${toString id}"
+      id: "${typeconf.prefix}${toString id}"
     )) fcIPMap) // {
-      noquote = mapAttrs (type: typeconf: (
-        id: "${typeconf.prefix}${toString id}"
-      )) fcIPMap;
+      quote = mapAttrs (type: typeconf:
+        id:
+          if typeconf.quote then "[${typeconf.prefix}${toString id}]"
+          else "${typeconf.prefix}${toString id}"
+      ) fcIPMap;
     };
 
 }
