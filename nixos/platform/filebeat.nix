@@ -5,7 +5,7 @@ with lib;
 let
   fclib = config.fclib;
 
-  mkConfig = { host, port, extraSettings, fields, ... }:
+  mkConfig = { host, port, extra, ... }:
     {
       # Logstash output is compatible to Beats input in Graylog.
       output.logstash = {
@@ -14,16 +14,12 @@ let
         pipelining = 0;
       };
       processors = [];
-      # Read the system journal.
-      filebeat.inputs = extraSettings.inputs;
       # "info" would have some helpful information but also logs every single
       # log shipping (up to once per second) which is too much noise.
       logging.level = "warning";
+    } // extra;
 
-      inherit fields;
-    };
-
-  mkService = { name, host, port, extraSettings, fields, package, config }:
+  mkService = { name, host, port, extra, fields, package, config }:
   let
     stateDir = "filebeat/${name}";
 
@@ -90,7 +86,7 @@ in
       beatData = "logs from various files";
       inherit mkConfig mkService;
       extraSettings = {
-        inputs = attrValues config.flyingcircus.filebeat.inputs;
+        filebeat.inputs = attrValues config.flyingcircus.filebeat.inputs;
       };
     })
     ({

@@ -15,16 +15,21 @@ with lib; let
   cfg = config.flyingcircus.beats;
 in
 {
-  config = {
-    systemd.services = mapAttrs' (name: value: nameValuePair "${beatName}-${name}" (mkService {
+  config = let
+    _extra = extraSettings // { inherit (config.flyingcircus.${beatName}) fields; };
+  in
+  {
+    systemd.services = mapAttrs' (name: value: nameValuePair "${beatName}-${name}" (let
+      extra = _extra // value.extraSettings;
+    in mkService {
       inherit (value) host port;
       inherit (config.flyingcircus.${beatName}) fields package;
-      inherit name extraSettings;
+      inherit name extra;
 
       config = pkgs.writeText "${beatName}-${name}.json"
         (generators.toJSON {} (mkConfig {
           inherit (value) host port;
-          inherit name extraSettings;
+          inherit name extra;
           inherit (config.flyingcircus.${beatName}) fields package;
         }));
     })) (config.flyingcircus.${beatName}.logTargets);

@@ -5,7 +5,7 @@ with lib;
 let
   fclib = config.fclib;
 
-  mkConfig = { host, port, fields, ... }:
+  mkConfig = { host, port, extra, ... }:
     {
       # Logstash output is compatible to Beats input in Graylog.
       output.logstash = {
@@ -18,11 +18,9 @@ let
       # "info" would have some helpful information but also logs every single
       # log shipping (up to once per second) which is too much noise.
       logging.level = "warning";
+    } // extra;
 
-      inherit fields;
-    };
-
-  mkService = { name, host, port, extraSettings, fields, package, config }:
+  mkService = { name, host, port, extra, package, config, ... }:
   let
     stateDir = "journalbeat/${name}";
 

@@ -25,6 +25,7 @@ in
         options = {
           host = mkOption { type = str; };
           port = mkOption { type = int; };
+          extraSettings = mkOption { type = attrs; default = {}; };
         };
       });
       description = ''
