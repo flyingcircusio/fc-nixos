@@ -71,6 +71,10 @@ with testlib;
           virtualisation.memorySize = 2048;
 
           services.openssh.enable = mkForce true;
+
+          flyingcircus.beats.logTargets.localhost = {
+            host = "127.0.0.1"; port= 9002;
+          };
           flyingcircus.audit.enable = true;
 
           users.users.customer = {
@@ -83,14 +87,17 @@ with testlib;
             extraGroups = [ "login" "wheel" ];
           };
 
-          /* flyingcircus.beats.logTargets.loghost = {
-            host = fcIP.srv4 2;
-            port = 9002;
-          }; */
-
           users.groups.login = {};
 
           security.sudo.wheelNeedsPassword = false;
+
+          systemd.services.netcatgraylog = {
+              wantedBy = [ "multi-user.target" ];
+              script = ''
+              ${pkgs.netcat}/bin/nc -lvt 127.0.0.1 9002
+              '';
+          };
+
         };
       };
   };

@@ -1,4 +1,5 @@
 import json
+import time
 
 start_all()
 client.wait_for_unit('multi-user.target')
@@ -26,7 +27,7 @@ def beatgrep(fnc):
             match = fnc(obj)
             if match:
                 results.append(obj)
-        except Exception as e:
+        except Exception:
             pass
 
     if not results:
@@ -87,3 +88,6 @@ with subtest("Ensure SSH logins and sudo keystrokes are logged"):
     assert rm['auditd']['summary']['actor']['secondary'] == 'root'
     assert rm['process']['working_directory'] == '/root'
     assert rm['process']['args'] == ['rm', '/tmp/asdf']
+
+    graylog = server.execute("journalctl -q -o cat -u netcatgraylog")[1]
+    assert 'Connection received on localhost' in graylog
