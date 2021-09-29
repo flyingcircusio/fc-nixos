@@ -335,11 +335,6 @@ in
 
       security.acme.certs = acmeSettings;
 
-      # DH param file is located at /var/lib/dhparams/nginx.pem.
-      # The path can also be referenced from Nix code by `security.dhparams.params.nginx.path`;
-      security.dhparams.params = {
-        nginx = {};
-      };
 
       flyingcircus.passwordlessSudoRules = [
         {
