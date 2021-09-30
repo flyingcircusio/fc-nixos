@@ -8,6 +8,7 @@ with lib;
   config = mkIf config.flyingcircus.roles.statshost-relay.enable {
 
     services.nginx.enable = true;
+    services.nginx.masterUser = "root";
     services.nginx.appendHttpConfig = ''
       server {
         listen ${config.services.prometheus.listenAddress};
