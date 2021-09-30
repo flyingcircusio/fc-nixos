@@ -3,13 +3,14 @@
 let
   fclib = config.fclib;
 
+  feAddresses = lib.attrByPath [ "fe" "dualstack" "addressesQuoted" ] [] fclib.network;
   listenStatements =
     builtins.concatStringsSep "\n    "
       (lib.concatMap
         (formatted_addr: [
           "listen ${formatted_addr}:80 default_server reuseport;"
           "listen ${formatted_addr}:443 ssl default_server reuseport;"])
-        fclib.network.fe.dualstack.addressesQuoted);
+        feAddresses);
 
 in
 ''
