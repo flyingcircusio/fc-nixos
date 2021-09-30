@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Usage: eval `./dev-setup`
 set -e
+
+# ensure PWD is the directory this script resides in (allows calls like ../dev-setup or $HOME/fc-nixos/dev-setup)
+cd "$(dirname "$(readlink -f "$0")")"
+
 base=$PWD
 # preserve nixos-config
 config=$(nix-instantiate --find-file nixos-config 2>/dev/null) || true

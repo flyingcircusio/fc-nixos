@@ -183,6 +183,22 @@ in {
           default = 6000;
         };
       };
+      expectedDiskCapacity = {
+        warning = mkOption {
+          type = types.int;
+          description = ''
+            Set the warning limit for disk capacity on this host.
+          '';
+          default = 90;
+        };
+        critical = mkOption {
+          type = types.int;
+          description = ''
+            Set the critical limit for disk capacity on this host.
+          '';
+          default = 95;
+        };
+      };
       expectedLoad = {
         warning = mkOption {
           type = types.str;
@@ -371,7 +387,9 @@ in {
         };
         disk = {
           notification = "Disk usage too high";
-          command = "${sudo} ${fc.sensuplugins}/bin/check_disk -v -w 90 -c 95";
+          command = "${sudo} ${fc.sensuplugins}/bin/check_disk -v " +
+                    "-w ${toString cfg.expectedDiskCapacity.warning} " +
+                    "-c ${toString cfg.expectedDiskCapacity.critical}";
           interval = 300;
         };
         writable = {
