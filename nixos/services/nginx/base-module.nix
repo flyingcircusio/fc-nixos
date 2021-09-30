@@ -203,7 +203,9 @@ let
 
       ${optionalString cfg.statusPage ''
         server {
-          listen 127.0.0.1:80;
+          # Conditional v6 handling, see:
+          # https://stackoverflow.com/a/15101745
+          ${optionalString (enableIPv6 == false) "listen 127.0.0.1:80;" }
           ${optionalString enableIPv6 "listen [::1]:80;" }
 
           server_name localhost;
