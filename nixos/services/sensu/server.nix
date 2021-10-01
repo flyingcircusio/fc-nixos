@@ -127,7 +127,7 @@ in {
               ];
             in ''
               # Configure user and permissions for ${node}:
-              rabbitmqctl list_users | grep ${node} || \
+              rabbitmqctl list_users | grep ^${node} || \
                 rabbitmqctl add_user ${node} ${password}
 
               rabbitmqctl change_password ${client.node} ${password}
