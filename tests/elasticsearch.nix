@@ -1,7 +1,7 @@
 import ./make-test-python.nix ({ version ? "7", pkgs, testlib, ... }:
 let
-  ipv4 = testlib.fcIP.noquote.srv4 1;
-  ipv6 = testlib.fcIP.noquote.srv6 1;
+  ipv4 = testlib.fcIP.srv4 1;
+  ipv6 = testlib.fcIP.srv6 1;
 in
 {
   name = "elasticsearch";
