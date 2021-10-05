@@ -203,7 +203,9 @@ let
 
       ${optionalString cfg.statusPage ''
         server {
-          listen 127.0.0.1:80;
+          # Conditional v6 handling, see:
+          # https://stackoverflow.com/a/15101745
+          ${optionalString (enableIPv6 == false) "listen 127.0.0.1:80;" }
           ${optionalString enableIPv6 "listen [::1]:80;" }
 
           server_name localhost;
@@ -382,7 +384,7 @@ let
     echo "Reload triggered, checking config file..."
     # Check if the new config is valid
     ${checkConfigCmd} || rc=$?
-    chown -R root:${cfg.group} /var/log/nginx
+    chown -R ${cfg.masterUser}:${cfg.group} /var/log/nginx
 
     if [[ -n $rc ]]; then
       echo "Error: Not restarting / reloading because of config errors."
@@ -663,6 +665,15 @@ in
         description = "User account under which nginx runs.";
       };
 
+      masterUser = mkOption {
+        type = types.str;
+        default = "nginx";
+        description = ''
+          User account under which nginx master process runs.
+          Must be either the same as `user` or set to root.
+        '';
+      };
+
       group = mkOption {
         type = types.str;
         default = "nginx";
@@ -906,6 +917,14 @@ in
           services.nginx.virtualHosts.recommendedTlsSettings are mutually exclusive.
         '';
       }
+
+      {
+        assertion = (cfg.user == cfg.masterUser) || (cfg.masterUser == "root");
+        message = ''
+          services.nginx.user (is ${cfg.user}) must be the same as services.nginx.masterUser (is ${cfg.masterUser})
+          or services.nginx.masterUser must be root.
+        '';
+      }
     ];
     environment.systemPackages = [ nginxReloadMaster nginxCheckConfig ];
 
@@ -918,23 +937,14 @@ in
         preStartScript = pkgs.writeScript "nginx-pre-start" ''
           #!${pkgs.runtimeShell} -e
           ln -sfT $(readlink -f ${wantedPackagePath}) ${runningPackagePath}
-          chown root:${cfg.group} -R /var/log/nginx
+          chown ${cfg.masterUser}:${cfg.group} -R /var/log/nginx
         '';
-        capabilities = [
-          "CAP_NET_BIND_SERVICE"
-          "CAP_DAC_READ_SEARCH"
-          "CAP_SYS_RESOURCE"
-          "CAP_SETUID"
-          "CAP_SETGID"
-          "CAP_CHOWN"
-        ];
       in {
         description = "Nginx Web Server";
         after = [ "network.target" ];
         wantedBy = [ "multi-user.target" ];
         stopIfChanged = false;
         startLimitIntervalSec = 1 * 60; # 1 minute
-
 
         serviceConfig = {
           Type = "forking";
@@ -947,8 +957,7 @@ in
           Restart = "always";
           RestartSec = "10s";
           # User and group
-          # XXX: We start nginx as root and drop later for compatibility reasons, this should change.
-          # User = cfg.user;
+          User = cfg.masterUser;
           Group = cfg.group;
           # Runtime directory and mode
           RuntimeDirectory = "nginx";
@@ -959,12 +968,29 @@ in
           # Logs directory and mode
           LogsDirectory = "nginx";
           LogsDirectoryMode = "0755";
-          # This limits the capabilities to the given list but does not grant anything by default.
+          # This limits the capabilities to the given list but does not grant
+          # anything by default if root is the master user.
           # Nginx does the right thing: it gives all of these capabilities to the
           # master process but none to the workers. This means that the master
           # can access certificates even if the permissions wouldn't allow it
           # but workers cannot access arbitrary files without proper permissions.
-          CapabilityBoundingSet = capabilities;
+          CapabilityBoundingSet = [
+            "CAP_NET_BIND_SERVICE"
+            "CAP_DAC_READ_SEARCH"
+            "CAP_SYS_RESOURCE"
+            "CAP_SETUID"
+            "CAP_SETGID"
+            "CAP_CHOWN"
+          ];
+          # If the master user is not root, it needs some automatically granted
+          # capabilities to be able to bind to privileged ports, for example.
+          # This is the same list as in the upstream Nginx module.
+          AmbientCapabilities =
+            lib.optionals (cfg.masterUser != "root") [
+            "CAP_NET_BIND_SERVICE"
+            "CAP_SYS_RESOURCE"
+          ];
+
           # Security
           NoNewPrivileges = true;
           # Sandboxing

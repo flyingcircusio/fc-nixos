@@ -88,34 +88,6 @@ in {
 
   jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
 
-  jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
-    pname = "jicofo";
-    version = "1.0-798";
-    src = super.fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "55JagMfiBbBw0nqRxcMmfiwGF7B/1LA+pb5n6ZOZvag=";
-    };
-  });
-
-  jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-meet";
-    version = "1.0.5307";
-    src = super.fetchurl {
-      url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      sha256 = "epdVQnuL5dJ7DmoqyjfiLEfZxr4IQwkFEla/Y034sgg=";
-    };
-
-  });
-
-  jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-videobridge2";
-    version = "2.1-551-g2ad6eb0b";
-    src = super.fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "XwVcjvBtJkZP46kGMnE4R1ax7Re725GMoV+pCnCNpak=";
-    };
-  });
-
   haproxy = super.haproxy.overrideAttrs(orig: rec {
     version = "2.3.14";
     src = super.fetchurl {

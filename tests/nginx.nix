@@ -286,10 +286,6 @@ in {
       server1.systemctl('stop nginx')
       server1.fail("${sensuCheck "nginx_status"}")
 
-    with subtest("dhparams file should contain something"):
-      server1.wait_for_unit("dhparams-init.service")
-      server1.succeed("test -s /var/lib/dhparams/nginx.pem")
-
     with subtest("[2] fc nginx should listen on fc by default"):
       prep(server2)
       assert_reachable(server2, "fe.local")

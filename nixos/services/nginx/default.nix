@@ -8,6 +8,7 @@ with builtins; with lib;
 
 let
   cfg = config.flyingcircus.services.nginx;
+  nginxCfg = config.services.nginx;
   fclib = config.fclib;
 
   nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
@@ -345,11 +346,6 @@ in
 
       security.acme.certs = acmeSettings;
 
-      # DH param file is located at /var/lib/dhparams/nginx.pem.
-      # The path can also be referenced from Nix code by `security.dhparams.params.nginx.path`;
-      security.dhparams.params = {
-        nginx = {};
-      };
 
       flyingcircus.passwordlessSudoRules = [
         {
@@ -375,6 +371,7 @@ in
           worker_connections 4096;
           multi_accept on;
         '';
+        masterUser = fclib.mkPlatform "root";
         recommendedGzipSettings = true;
         recommendedOptimisation = true;
         recommendedProxySettings = true;
@@ -388,11 +385,11 @@ in
         /var/log/nginx/*.log
         {
             rotate ${toString cfg.rotateLogs}
-            create 0644 root nginx
-            su root nginx
+            create 0644 ${nginxCfg.masterUser} nginx
+            su ${nginxCfg.masterUser} nginx
             postrotate
                 systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
-                chown root:nginx /var/log/nginx/*
+                chown ${nginxCfg.masterUser}:nginx /var/log/nginx/*
             endscript
         }
       '';
@@ -401,8 +398,8 @@ in
       systemd.tmpfiles.rules = [
         "d /etc/local/nginx/modsecurity 2775 nginx service"
         # Clean up whatever logrotate may have missed three days later.
-        "d /var/log/nginx 0755 root nginx ${toString (cfg.rotateLogs + 3)}d"
-        "Z /var/log/nginx/* - root nginx"
+        "d /var/log/nginx 0755 ${nginxCfg.masterUser} nginx ${toString (cfg.rotateLogs + 3)}d"
+        "Z /var/log/nginx/* - ${nginxCfg.masterUser} nginx"
       ]
       # d: Create temp subdirs if they don't exist and clean up files after 10 days.
       ++ map (subdir: ''
