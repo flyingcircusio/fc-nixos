@@ -1,20 +1,13 @@
 import ./make-test-python.nix ({ lib, pkgs, testlib, ... }:
 
+with lib;
+with testlib;
+
 let
-  netLoc4Srv = "10.0.1";
-  server4Srv = netLoc4Srv + ".2";
-
-  netLoc6Srv = "2001:db8:1::";
-  server6Srv = netLoc6Srv + "2";
-
-  net4Fe = "10.0.3";
-  client4Fe = net4Fe + ".1";
-  server4Fe = net4Fe + ".2";
-
-  net6Fe = "2001:db8:3::";
-  client6Fe = net6Fe + "1";
-  server6Fe = net6Fe + "2";
-
+  server6Srv = fcIP.srv6 1;
+  server6Fe = fcIP.fe6 1;
+  server4Srv = fcIP.srv4 1;
+  server4Fe = fcIP.fe4 1;
   hosts = {
     "127.0.0.1" = [ "localhost" ];
     "::1" = [ "localhost" ];
@@ -24,50 +17,55 @@ let
 
   expectedNginxMajorVersion = "1.20";
 
-  rootInitial = pkgs.runCommand "nginx-root-initial" {} ''
-    mkdir $out
-    echo initial content > $out/index.html
-  '';
+  rootInitial = pkgs.writeTextFile {
+    name = "nginx-root-initial";
+    text = "initial content\n";
+    destination = "/index.html";
+  };
 
-  rootChanged = pkgs.runCommand "nginx-root-changed" {} ''
-    mkdir $out
-    echo changed content > $out/index.html
-  '';
+  rootChanged = pkgs.writeTextFile {
+    name = "nginx-root-changed";
+    text = "changed content\n";
+    destination = "/index.html";
+  };
 
   owaspCoreRules = pkgs.fetchgit {
     url = "https://github.com/coreruleset/coreruleset.git";
     rev = "v3.3.0";
     sha256 = "0n8q5pa913cjbxhgmdi8jaivqnrc8y4pyqcv0y3si1i5dzn15lgw";
   };
+
+  mkFCServer = {
+    id,
+    conf
+  }:
+  { pkgs, ... }: {
+    imports = [
+      (testlib.fcConfig { inherit id; })
+    ];
+
+    networking.hosts = mkForce {
+      "127.0.0.1" = [ "localhost" ];
+      "::1" = [ "localhost" ];
+      ${fcIP.srv6 id} = [ "srv.local" "both.local" ];
+      ${fcIP.srv4 id} = [ "srv.local" "both.local" ];
+      ${fcIP.fe6 id} = [ "fe.local" "both.local" ];
+      ${fcIP.fe4 id} = [ "fe.local" "both.local" ];
+    };
+
+    flyingcircus.services.nginx.enable = true;
+    flyingcircus.services.nginx.virtualHosts = conf;
+  };
+
 in {
   name = "nginx";
   nodes = {
-    server = { lib, pkgs, ... }: {
-      imports = [ ../nixos ];
+    server1 = { lib, pkgs, ... }: {
+      imports = [
+        (testlib.fcConfig { id = 1; })
+      ];
 
       networking.hosts = lib.mkForce hosts;
-
-      flyingcircus.enc.parameters = {
-        resource_group = "test";
-        interfaces.srv = {
-          mac = "52:54:00:12:01:01";
-          bridged = false;
-          networks = {
-            "${netLoc4Srv}.0/24" = [ server4Srv ];
-            "${netLoc6Srv}/64" = [ server6Srv ];
-          };
-          gateways = {};
-        };
-        interfaces.fe = {
-          mac = "52:54:00:12:02:01";
-          bridged = false;
-          networks = {
-            "${net4Fe}.0/24" = [ server4Fe ];
-            "${net6Fe}/64" = [ server6Fe ];
-          };
-          gateways = {};
-        };
-      };
 
       environment.etc."proxy.http".text = ''
         HTTP/1.1 200 OK
@@ -113,20 +111,56 @@ in {
 
       # Display the nginx version on the 404 page.
       services.nginx.serverTokens = true;
+    };
 
-      virtualisation.vlans = [ 1 2 ];
+    server2 = mkFCServer {
+      id = 2;
+      conf = {
+        "both.local" = {
+          serverAliases = [ "fe.local" "srv.local" ];
+          addSSL = true;
+          locations."/".return = "200 'TESTOK'";
+        };
+      };
+    };
+
+    server3 = mkFCServer {
+      id = 3;
+      conf = {
+        "both.local" = {
+          serverAliases = [ "fe.local" "srv.local" ];
+          addSSL = true;
+          listenAddress = fcIP.quote.fe4 3;
+
+          locations."/".return = "200 'TESTOK'";
+        };
+      };
+    };
+
+    server4 = mkFCServer {
+      id = 4;
+      conf = {
+        "both.local" = {
+          serverAliases = [ "fe.local" "srv.local" ];
+          addSSL = true;
+          listenAddress6 = fcIP.quote.fe6 4;
+
+          locations."/".return = "200 'TESTOK'";
+        };
+      };
     };
   };
 
   testScript = { nodes, ... }:
   let
-    sensuCheck = testlib.sensuCheckCmd nodes.server;
+    sensuCheck = testlib.sensuCheckCmd nodes.server1;
   in ''
-    server.wait_for_unit('nginx.service')
-    server.wait_for_open_port(80)
+    def prep(server):
+      server.wait_for_unit('nginx.service')
+      server.wait_for_open_port(80)
 
     def assert_file_permissions(expected, path):
-      permissions = server.succeed(f"stat {path} -c %a:%U:%G").strip()
+      permissions = server1.succeed(f"stat {path} -c %a:%U:%G").strip()
       assert permissions == expected, f"expected: {expected}, got {permissions}"
 
     def assert_logdir():
@@ -135,6 +169,15 @@ in {
       assert_file_permissions("644:root:nginx", "/var/log/nginx/error.log")
       assert_file_permissions("644:root:nginx", "/var/log/nginx/access.log")
 
+    def assert_reachable(server, intf):
+      server.succeed("curl -k https://" + intf + " | grep TESTOK")
+
+    def assert_unreachable(server, intf):
+      server.fail("curl -k https://" + intf + " | grep TESTOK")
+
+    prep(server1)
+    start_all() # warm-up other servers meanwhile - do after prep so 1 doesn't take forever
+
     with subtest("proxy cache directory should be accessible only for nginx"):
       assert_file_permissions("700:nginx:nginx", "/var/cache/nginx/proxy")
 
@@ -142,50 +185,50 @@ in {
       assert_logdir()
 
     with subtest("dependencies between acme services and nginx-config-reload should be present"):
-      after = server.succeed("systemctl show --property After --value nginx-config-reload.service")
+      after = server1.succeed("systemctl show --property After --value nginx-config-reload.service")
       assert "acme-server.service" in after, f"acme.server.service missing: {after}"
-      before = server.succeed("systemctl show --property Before --value nginx-config-reload.service")
+      before = server1.succeed("systemctl show --property Before --value nginx-config-reload.service")
       assert "acme-finished-server.target" in before, f"acme-finished-server.target missing: {before}"
-      server.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload.service")
+      server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload.service")
 
     with subtest("nginx should forward proxied host and server headers (primary name)"):
-      server.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
-      server.sleep(1)
-      server.succeed("curl http://server/proxy/")
-      server.sleep(1)
-      _, proxy_log = server.execute("cat /tmp/proxy.log")
+      server1.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
+      server1.sleep(1)
+      server1.succeed("curl http://server/proxy/")
+      server1.sleep(1)
+      _, proxy_log = server1.execute("cat /tmp/proxy.log")
       print(proxy_log)
       assert 'X-Forwarded-Host: server' in proxy_log, f"expected X-Forwarded-Host not found, got '{proxy_log}'"
       assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got '{proxy_log}'"
 
     with subtest("nginx should forward proxied host and server headers (alias)"):
-      server.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
-      server.sleep(1)
-      server.succeed("curl http://other/proxy/")
-      server.sleep(1)
-      _, proxy_log = server.execute("cat /tmp/proxy.log")
+      server1.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
+      server1.sleep(1)
+      server1.succeed("curl http://other/proxy/")
+      server1.sleep(1)
+      _, proxy_log = server1.execute("cat /tmp/proxy.log")
       print(proxy_log)
       assert 'X-Forwarded-Host: other' in proxy_log, f"expected X-Forwarded-Host not found, got: '{proxy_log}'"
       assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got: '{proxy_log}'"
 
     with subtest("nginx should log only anonymized IPs"):
-      server.succeed("curl -4 server -s -o/dev/null")
-      server.succeed("cat /var/log/nginx/access.log | grep '^10.0.3.0 - -'")
-      server.succeed("curl -6 server -s -o/dev/null")
-      server.succeed("cat /var/log/nginx/access.log | grep '^2001:db8:3:: - -'")
+      server1.succeed("curl -4 server -s -o/dev/null")
+      server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe4.prefix}0 - -'")
+      server1.succeed("curl -6 server -s -o/dev/null")
+      server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe6.prefix} - -'")
 
     with subtest("nginx should respond with configured content"):
-      server.succeed("curl server | grep -q 'initial content'")
+      server1.succeed("curl server | grep -q 'initial content'")
 
     with subtest("running nginx should have the expected version"):
-      server.succeed("curl server/404 | grep -q ${expectedNginxMajorVersion}")
+      server1.succeed("curl server/404 | grep -q ${expectedNginxMajorVersion}")
 
     with subtest("nginx should use changed config after reload"):
       # Replace config symlink with a new config file.
-      server.execute("sed 's#${rootInitial}#${rootChanged}#' /etc/nginx/nginx.conf > /etc/nginx/changed_nginx.conf")
-      server.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
-      server.systemctl("reload nginx")
-      server.wait_until_succeeds("curl server | grep -q 'changed content'")
+      server1.execute("sed 's#${rootInitial}#${rootChanged}#' /etc/nginx/nginx.conf > /etc/nginx/changed_nginx.conf")
+      server1.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
+      server1.systemctl("reload nginx")
+      server1.wait_until_succeeds("curl server | grep -q 'changed content'")
 
     with subtest("logs should have correct permissions after reload"):
       assert_logdir()
@@ -193,54 +236,75 @@ in {
     with subtest("nginx should use changed binary after reload"):
       # Prepare change to mainline nginx. We are not interested in testing mainline itself here.
       # We only need it as a different version so we can test binary reloading.
-      server.execute("ln -sfT ${pkgs.nginxMainline} /etc/nginx/running-package")
+      server1.execute("ln -sfT ${pkgs.nginxMainline} /etc/nginx/running-package")
       # Go to mainline (this doesn't overwrite /etc/nginx/running-package).
-      server.succeed("nginx-reload-master")
-      server.wait_until_succeeds("curl server/404 | grep -q ${pkgs.nginxMainline.version}")
+      server1.succeed("nginx-reload-master")
+      server1.wait_until_succeeds("curl server/404 | grep -q ${pkgs.nginxMainline.version}")
       # Back to initial binary from nginx stable (this does overwrite /etc/nginx/running-package with the wanted package).
-      server.systemctl("reload nginx")
-      server.wait_until_succeeds("curl server/404 | grep -q ${expectedNginxMajorVersion}")
+      server1.systemctl("reload nginx")
+      server1.wait_until_succeeds("curl server/404 | grep -q ${expectedNginxMajorVersion}")
 
     with subtest("log directory should have correct permissions after binary reload"):
       assert_logdir()
 
     with subtest("logs should have correct permissions after logrotate"):
-      server.succeed("logrotate -f $(logrotate-config-file)")
+      server1.succeed("logrotate -f $(logrotate-config-file)")
       assert_logdir()
 
     with subtest("reload should fix wrong log permissions and recreate missing files"):
-      server.execute("chown nginx:nginx /var/log/nginx/performance.log")
-      server.execute("chown nobody:nobody /var/log/nginx/access.log")
-      server.execute("rm /var/log/nginx/error.log")
-      server.succeed("systemctl reload nginx")
+      server1.execute("chown nginx:nginx /var/log/nginx/performance.log")
+      server1.execute("chown nobody:nobody /var/log/nginx/access.log")
+      server1.execute("rm /var/log/nginx/error.log")
+      server1.succeed("systemctl reload nginx")
       assert_logdir()
 
     with subtest("restart should fix wrong log permissions and recreate missing files"):
-      server.execute("chown nginx:nginx /var/log/nginx/performance.log")
-      server.execute("chown nobody:nobody /var/log/nginx/access.log")
-      server.execute("rm /var/log/nginx/error.log")
-      server.succeed("systemctl restart nginx")
+      server1.execute("chown nginx:nginx /var/log/nginx/performance.log")
+      server1.execute("chown nobody:nobody /var/log/nginx/access.log")
+      server1.execute("rm /var/log/nginx/error.log")
+      server1.succeed("systemctl restart nginx")
       assert_logdir()
 
     with subtest("nginx modsecurity rules apply"):
-      out, err = server.execute("curl -v http://server/?testparam=test")
+      out, err = server1.execute("curl -v http://server/?testparam=test")
       print(out)
       print(err)
 
     with subtest("service user should be able to write to local config dir"):
-      server.succeed('sudo -u nginx touch /etc/local/nginx/vhosts.json')
+      server1.succeed('sudo -u nginx touch /etc/local/nginx/vhosts.json')
 
     with subtest("all sensu checks should be green"):
-      server.succeed("${sensuCheck "nginx_config"}")
-      server.succeed("${sensuCheck "nginx_worker_age"}")
-      server.succeed("${sensuCheck "nginx_status"}")
+      server1.succeed("${sensuCheck "nginx_config"}")
+      server1.succeed("${sensuCheck "nginx_worker_age"}")
+      server1.succeed("${sensuCheck "nginx_status"}")
 
     with subtest("killing the nginx process should trigger an automatic restart"):
-      server.succeed("pkill -9 -F /run/nginx/nginx.pid");
-      server.wait_until_succeeds("${sensuCheck "nginx_status"}")
+      server1.succeed("pkill -9 -F /run/nginx/nginx.pid");
+      server1.wait_until_succeeds("${sensuCheck "nginx_status"}")
 
     with subtest("status check should be red after shutting down nginx"):
-      server.systemctl('stop nginx')
-      server.fail("${sensuCheck "nginx_status"}")
+      server1.systemctl('stop nginx')
+      server1.fail("${sensuCheck "nginx_status"}")
+
+    with subtest("[2] fc nginx should listen on fc by default"):
+      prep(server2)
+      assert_reachable(server2, "fe.local")
+      assert_unreachable(server2, "srv.local")
+
+    with subtest("[3] fc nginx with fe4 specified as listen should only listen on fe4"):
+      prep(server3)
+      assert_reachable(server3, "fe.local")
+      assert_reachable(server3, "fe.local -4")
+      assert_unreachable(server3, "fe.local -6")
+      assert_unreachable(server3, "srv.local")
+
+    with subtest("[4] fc nginx with fe6 specified as listen should only listen on fe6"):
+      _, out = server4.execute("journalctl -xeu nginx")
+      print(out)
+      prep(server4)
+      assert_reachable(server4, "fe.local")
+      assert_reachable(server4, "fe.local -6")
+      assert_unreachable(server4, "fe.local -4")
+      assert_unreachable(server4, "srv.local")
   '';
 })
