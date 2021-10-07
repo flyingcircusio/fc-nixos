@@ -22,6 +22,17 @@ in {
   #
   # imports from other nixpkgs versions or local definitions
   #
+  apacheHttpd = super.apacheHttpd.overrideAttrs(_: rec {
+
+    pname = "apache-httpd";
+    version = "2.4.50";
+
+    src = super.fetchurl {
+      url = "mirror://apache/httpd/httpd-${version}.tar.bz2";
+      sha256 = "6a2817c070c606682eb53ed963511407d3c3d7a379cdf855971467b00fb3890f";
+    };
+  });
+
   backy = super.callPackage ./backy.nix { };
   backyExtract = super.callPackage ./backyextract { };
 
