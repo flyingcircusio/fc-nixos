@@ -25,11 +25,11 @@ in {
   apacheHttpd = super.apacheHttpd.overrideAttrs(_: rec {
 
     pname = "apache-httpd";
-    version = "2.4.50";
+    version = "2.4.51";
 
     src = super.fetchurl {
       url = "mirror://apache/httpd/httpd-${version}.tar.bz2";
-      sha256 = "6a2817c070c606682eb53ed963511407d3c3d7a379cdf855971467b00fb3890f";
+      sha256 = "1x1qp10pfh33x1b56liwsjl0jamjm5lkk7j3lj87c1ygzs0ivq10";
     };
   });
 
