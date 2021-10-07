@@ -24,31 +24,56 @@ with builtins;
     # We used to create the admin key directory from the ENC. However,
     # this causes the file to become world readable on servers.
 
-   flyingcircus.activationScripts.snipeITTOken = ''
+   flyingcircus.activationScripts.snipeITToken = ''
      # Only allow root to read/write this file
      umask 066
      ${pkgs.jq}/bin/jq -r  '.parameters.secrets."snipeit/token"' /etc/nixos/enc.json > /etc/disktracker/token
    '';
 
     systemd = {
-      timers.disktracker = {
-        description = "Disktracker";
-        timerConfig = {
-          OnBootSec = "2m";
-          OnUnitActiveSec = "6h";
+      timers = {
+        disktracker = {
+          description = "Disktracker";
+          timerConfig = {
+            OnBootSec = "2m";
+            OnUnitActiveSec = "6h";
+          };
+        };
+        disktrackerUdevFlag = {
+          description = "Udev flag for Disktracker";
+          timerConfig.OnBootSec = "2s";
         };
       };
-      services.disktracker = {
-        description = "Disktracker";
-        serviceConfig.Type = "oneshot";
-        script = "${pkgs.fc.disktracker}/bin/disktracker";
+      services = {
+        disktracker = {
+          description = "Disktracker";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig.Type = "oneshot";
+          script = "${pkgs.fc.disktracker}/bin/disktracker";
+        };
+        disktrackerUdevFlag = {
+          description = "Udev flag for Disktracker";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig.Type = "oneshot";
+          script = "${pkgs.coreutils}/bin/touch /run/disktracker";
+        };
       };
     };
 
     services.udev = {
-          extraRules = ''
-            ENV{DEVTYPE}=="disk", ACTION=="add|remove", RUN+="${pkgs.systemd}/bin/systemctl start disktracker"
-          '';
+      extraRules =
+         let
+           script = pkgs.writeScript "disktracker-udev-script" ''
+             #!/bin/sh
+             if [ -f "/run/disktracker" ];
+               then
+               ${pkgs.systemd}/bin/systemctl start disktracker;
+             fi
+           '';
+         in
+        ''
+          ENV{DEVTYPE}=="disk", ACTION=="add|remove", RUN+="${script}"
+        '';
     };
   };
 }

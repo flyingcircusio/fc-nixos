@@ -14,7 +14,10 @@ import ./make-test-python.nix ({ ... }:
 
   testScript = ''
     # Waiting long enough to ensure service stops to restart and gain failed status
-    machine.sleep(2)
+    machine.sleep(5)
+
+    with subtest("Ensure /run/disktracker file exists"):
+        machine.succeed("cat /run/disktracker")
 
     with subtest("Disktracker service has to fail"):
         status = machine.execute('systemctl status disktracker | grep -q "status=1/FAILURE"')
