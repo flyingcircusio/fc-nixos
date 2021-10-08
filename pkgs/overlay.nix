@@ -99,34 +99,6 @@ in {
 
   jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
 
-  jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
-    pname = "jicofo";
-    version = "1.0-798";
-    src = super.fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "55JagMfiBbBw0nqRxcMmfiwGF7B/1LA+pb5n6ZOZvag=";
-    };
-  });
-
-  jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-meet";
-    version = "1.0.5307";
-    src = super.fetchurl {
-      url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      sha256 = "epdVQnuL5dJ7DmoqyjfiLEfZxr4IQwkFEla/Y034sgg=";
-    };
-
-  });
-
-  jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-videobridge2";
-    version = "2.1-551-g2ad6eb0b";
-    src = super.fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "XwVcjvBtJkZP46kGMnE4R1ax7Re725GMoV+pCnCNpak=";
-    };
-  });
-
   haproxy = super.haproxy.overrideAttrs(orig: rec {
     version = "2.3.14";
     src = super.fetchurl {
@@ -296,6 +268,12 @@ in {
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost173; };
 
+  # We use 2.4 from upstream for older Percona versions.
+  # Percona 8.0 needs a newer version than upstream provides.
+  percona-xtrabackup_8_0 = super.callPackage ./percona/xtrabackup.nix {
+    boost = self.boost173;
+  };
+
   postgis_2_5 = super.postgis.overrideAttrs(_: rec {
     version = "2.5.5";
     src = super.fetchurl {
@@ -336,9 +314,5 @@ in {
   wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
   wkhtmltopdf = self.wkhtmltopdf_0_12_6;
 
-  xtrabackup = super.callPackage ./percona/xtrabackup.nix {
-    inherit (self) percona;
-    boost = self.boost172;
-  };
-
+  xtrabackup = self.percona-xtrabackup_8_0;
 }

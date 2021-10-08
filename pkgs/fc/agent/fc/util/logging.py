@@ -325,7 +325,7 @@ class MultiRenderer:
             except Exception:
                 # We're being really optimistic: we want the calling program
                 # to continue even if we face huge troubles logging stuff.
-                raise
+                pass
 
         return merged_messages
 

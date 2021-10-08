@@ -123,7 +123,8 @@ in
         master.wait_until_succeeds("mysql mysql -u root -ptt -e 'select 1'")
 
     with subtest("xtrabackup works"): # sensuclient has service group
-        master.succeed("sudo -u sensuclient sudo xtrabackup --backup")
+        master.succeed("sudo -u sensuclient sudo xtrabackup --backup -S /run/mysqld/mysqld.sock")
+        master.succeed("grep uuid /tmp/xtrabackup_backupfiles/xtrabackup_info")
   '';
 
 })

@@ -37,7 +37,7 @@ in {
   kernelconfig = callTest ./kernelconfig.nix {};
   kibana6 = callTest ./kibana.nix { version = "6"; };
   kibana7 = callTest ./kibana.nix { version = "7"; };
-  kubernetes = callTest ./kubernetes {};
+  #kubernetes = callTest ./kubernetes {};
 
   lamp = callTest ./lamp.nix { };
   lamp56 = callTest ./lamp.nix { version = "lamp_php56"; };
