@@ -242,7 +242,7 @@ in {
                 notification = "PostgreSQL listening on ${host}:5432";
                 command = ''
                   ${pkgs.sensu-plugins-postgres}/bin/check-postgres-alive.rb \
-                    -h ${host} -u nagios -d nagios -P 5432
+                    -h ${host} -u nagios -d nagios -P 5432 -T 10
                 '';
                 interval = 120;
               };
