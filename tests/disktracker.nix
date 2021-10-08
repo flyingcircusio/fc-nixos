@@ -10,14 +10,19 @@ import ./make-test-python.nix ({ ... }:
 
       flyingcircus.services.disktracker.enable = true;
       services.telegraf.enable = false;
+      virtualisation.emptyDiskImages = [ 2000 2000 ];
     };
 
   testScript = ''
     # Waiting long enough to ensure service stops to restart and gain failed status
-    machine.sleep(5)
+    start_all()
 
-    with subtest("Ensure /run/disktracker file exists"):
-        machine.succeed("cat /run/disktracker")
+    machine.wait_for_unit("multi-user.target")
+
+    with subtest("Did udev script run withour error"):
+        status = machine.execute('dmesg | grep -E "systemd-udevd.*failed"')
+        if status[0] != 1:
+            raise Exception
 
     with subtest("Disktracker service has to fail"):
         status = machine.execute('systemctl status disktracker | grep -q "status=1/FAILURE"')

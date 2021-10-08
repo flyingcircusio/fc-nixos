@@ -39,10 +39,6 @@ with builtins;
             OnUnitActiveSec = "6h";
           };
         };
-        disktrackerUdevFlag = {
-          description = "Udev flag for Disktracker";
-          timerConfig.OnBootSec = "2s";
-        };
       };
       services = {
         disktracker = {
@@ -51,28 +47,22 @@ with builtins;
           serviceConfig.Type = "oneshot";
           script = "${pkgs.fc.disktracker}/bin/disktracker";
         };
-        disktrackerUdevFlag = {
-          description = "Udev flag for Disktracker";
-          wantedBy = [ "multi-user.target" ];
-          serviceConfig.Type = "oneshot";
-          script = "${pkgs.coreutils}/bin/touch /run/disktracker";
-        };
       };
     };
 
     services.udev = {
       extraRules =
          let
-           script = pkgs.writeScript "disktracker-udev-script" ''
+           disktracker-udev-script = pkgs.writeScript "disktracker-udev-script" ''
              #!/bin/sh
-             if [ -f "/run/disktracker" ];
+             if [ $(systemctl is-active multi-user.target) == "active" ];
                then
-               ${pkgs.systemd}/bin/systemctl start disktracker;
+                 ${pkgs.systemd}/bin/systemctl start disktracker;
              fi
            '';
          in
         ''
-          ENV{DEVTYPE}=="disk", ACTION=="add|remove", RUN+="${script}"
+          ENV{DEVTYPE}=="disk", ACTION=="add|remove", RUN+="${disktracker-udev-script}"
         '';
     };
   };
