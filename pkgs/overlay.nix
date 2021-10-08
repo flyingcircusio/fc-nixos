@@ -268,6 +268,12 @@ in {
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
   percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost173; };
 
+  # We use 2.4 from upstream for older Percona versions.
+  # Percona 8.0 needs a newer version than upstream provides.
+  percona-xtrabackup_8_0 = super.callPackage ./percona/xtrabackup.nix {
+    boost = self.boost173;
+  };
+
   postgis_2_5 = super.postgis.overrideAttrs(_: rec {
     version = "2.5.5";
     src = super.fetchurl {
@@ -308,9 +314,5 @@ in {
   wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
   wkhtmltopdf = self.wkhtmltopdf_0_12_6;
 
-  xtrabackup = super.callPackage ./percona/xtrabackup.nix {
-    inherit (self) percona;
-    boost = self.boost172;
-  };
-
+  xtrabackup = self.percona-xtrabackup_8_0;
 }
