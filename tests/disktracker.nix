@@ -14,9 +14,7 @@ import ./make-test-python.nix ({ ... }:
     };
 
   testScript = ''
-    # Waiting long enough to ensure service stops to restart and gain failed status
     start_all()
-
     machine.wait_for_unit("multi-user.target")
 
     with subtest("Did udev script run withour error"):
