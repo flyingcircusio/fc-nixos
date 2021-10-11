@@ -55,8 +55,7 @@ with builtins;
          let
            disktracker-udev-script = pkgs.writeScript "disktracker-udev-script" ''
              #!/bin/sh
-             if [ $(systemctl is-active multi-user.target) == "active" ];
-               then
+             if systemctl is-active multi-user.target; then
                  ${pkgs.systemd}/bin/systemctl start disktracker;
              fi
            '';
