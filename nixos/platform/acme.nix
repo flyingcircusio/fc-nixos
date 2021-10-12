@@ -19,10 +19,11 @@
       RestartSec = 30;
     };
 
-    # Allow 5 retries/starts per day.
+    # Allow 3 retries/starts per hour to not hit the rate limit
+    # of 5 per hour so we have two left to try manually.
     unitConfig = {
-      StartLimitIntervalSec = "24h";
-      StartLimitBurst = 5;
+      StartLimitIntervalSec = "1h";
+      StartLimitBurst = 3;
     };
   in
     lib.listToAttrs
