@@ -18,12 +18,18 @@ import ./make-test-python.nix ({ ... }:
     machine.wait_for_unit("multi-user.target")
 
     with subtest("Did udev script run withour error"):
-        status = machine.execute('dmesg | grep -E "systemd-udevd.*failed"')
+        status = machine.execute('dmesg | grep -E "systemd-udevd.*disktracker.*failed"')
         if status[0] != 1:
+            print(status[1])
             raise Exception
 
-    with subtest("Disktracker service has to fail"):
-        status = machine.execute('systemctl status disktracker | grep -q "status=1/FAILURE"')
+    with subtest("Disktracker service has to exists"):
+        status = machine.execute('systemctl list-unit-files | grep -q "disktracker.service"')
+        if status[0] != 0:
+            raise Exception
+
+    with subtest("Disktracker timer has to exists and be active"):
+        status = machine.execute('systemctl list-timers | grep -qE "1min.*left.*disktracker.timer"')
         if status[0] != 0:
             raise Exception
 

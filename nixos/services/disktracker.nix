@@ -34,16 +34,16 @@ with builtins;
       timers = {
         disktracker = {
           description = "Disktracker";
+          wantedBy = [ "timers.target" ];
           timerConfig = {
             OnBootSec = "2m";
-            OnUnitActiveSec = "6h";
+            OnUnitActiveSec = if config.flyingcircus.raid.enable then "10m" else "6h";
           };
         };
       };
       services = {
         disktracker = {
           description = "Disktracker";
-          wantedBy = [ "multi-user.target" ];
           serviceConfig.Type = "oneshot";
           script = "${pkgs.fc.disktracker}/bin/disktracker";
         };
