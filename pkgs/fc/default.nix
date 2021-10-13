@@ -20,6 +20,7 @@ rec {
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
   secure-erase = callPackage ./secure-erase {};
+  sensu-bpi = callPackage ./sensu-bpi {};
   sensuplugins = callPackage ./sensuplugins {};
   sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};

@@ -99,6 +99,14 @@ in {
       sensuserver ALL=(root) SENSU_DIRECTORY_HANDLER
     '';
 
+    # # Enable sensu-bpi automaticly, if the machines location is in the list
+    # flyingcircus.services.sensuBpi = lib.mkIf (
+    #   lib.lists.any (x: x == config.flyingcircus.enc.parameters.location)[ "rzob" ] ) {
+    #     enable = true;
+    # };
+
+    flyingcircus.services.sensuBpi.enable = true;
+
     systemd.services.prepare-rabbitmq-for-sensu = {
       description = "Prepare rabbitmq for sensu-server.";
       partOf = [ "rabbitmq.service" ];

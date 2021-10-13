@@ -37,6 +37,7 @@ in {
     ./raid
     ./redis.nix
     ./sensu/api.nix
+    ./sensu/bpi.nix
     ./sensu/client.nix
     ./sensu/server.nix
     ./sensu/uchiwa.nix
