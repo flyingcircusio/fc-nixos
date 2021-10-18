@@ -21,48 +21,41 @@ with builtins;
       '';
     };
 
-    # We used to create the admin key directory from the ENC. However,
-    # this causes the file to become world readable on servers.
-
    flyingcircus.activationScripts.snipeITToken = ''
      # Only allow root to read/write this file
-     umask 066
-     ${pkgs.jq}/bin/jq -r  '.parameters.secrets."snipeit/token"' /etc/nixos/enc.json > /etc/disktracker/token
+     ( umask 066
+       ${pkgs.jq}/bin/jq -r  '.parameters.secrets."snipeit/token"' /etc/nixos/enc.json > /etc/disktracker/token
+     )
    '';
 
     systemd = {
-      timers = {
-        disktracker = {
-          description = "Disktracker";
-          wantedBy = [ "timers.target" ];
-          timerConfig = {
-            OnBootSec = "2m";
-            OnUnitActiveSec = if config.flyingcircus.raid.enable then "10m" else "6h";
-          };
+      timers.disktracker = {
+        description = "Disktracker";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = "2m";
+          # For scrupping reasons 6h whould be better, but currently the raidcontroller obscures
+          # the relevant changes in storage devices
+          OnUnitActiveSec = "10m";
         };
       };
-      services = {
-        disktracker = {
-          description = "Disktracker";
-          serviceConfig.Type = "oneshot";
-          script = "${pkgs.fc.disktracker}/bin/disktracker";
-        };
+      services.disktracker = {
+        description = "Disktracker";
+        serviceConfig.Type = "oneshot";
+        script = "${pkgs.fc.disktracker}/bin/disktracker";
       };
     };
 
-    services.udev = {
-      extraRules =
-         let
-           disktracker-udev-script = pkgs.writeScript "disktracker-udev-script" ''
-             #!/bin/sh
-             if systemctl is-active multi-user.target; then
-                 ${pkgs.systemd}/bin/systemctl start disktracker;
-             fi
-           '';
-         in
-        ''
-          ENV{DEVTYPE}=="disk", ACTION=="add|remove", RUN+="${disktracker-udev-script}"
-        '';
-    };
+    services.udev.extraRules =
+       let
+         disktracker-udev-script = pkgs.writeShellScript "disktracker-udev-script" ''
+           if systemctl is-active multi-user.target; then
+               ${pkgs.systemd}/bin/systemctl start disktracker;
+           fi
+         '';
+       in
+      ''
+        ENV{DEVTYPE}=="disk", ACTION=="add|remove", RUN+="${disktracker-udev-script}"
+      '';
   };
 }
