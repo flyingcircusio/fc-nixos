@@ -63,30 +63,52 @@ in
       # { ethfe = { ... }; ethsrv = { }; ... }
       interfaces = listToAttrs (map (interface:
         (lib.nameValuePair "${interface.device}" {
-              ipv4.addresses = interface.v4.attrs;
-              ipv4.routes = map (gateway:
-                { address = "0.0.0.0";
+          ipv4.addresses = interface.v4.attrs;
+          ipv4.routes =
+            let
+              defaultRoutes = map (gateway:
+                {
+                  address = "0.0.0.0";
                   prefixLength = 0;
                   via = gateway;
                   options = { metric = toString interface.priority; };
                 }) interface.v4.defaultGateways;
 
-              ipv6.addresses = interface.v6.attrs;
+              # To select the correct interface, add routes for other subnets
+              # in which this machine doesn't have its own address.
+              # We did this with policy routing before. After deactivating it,
+              # we had problems with srv traffic going out via fe because its default route
+              # has higher priority.
+              additionalRoutes = map
+                (net: { address = net.network; inherit (net) prefixLength; })
+                (filter (n: n.addresses == []) interface.v4.networkAttrs);
+            in
+              defaultRoutes ++ additionalRoutes;
 
-              # Using SLAAC/privacy addresses will cause firewalls to block
-              # us internally and also have customers get problems with
-              # outgoing connections.
-              tempAddress = "disabled";
+          ipv6.addresses = interface.v6.attrs;
 
-              ipv6.routes = map (gateway:
+          # Using SLAAC/privacy addresses will cause firewalls to block
+          # us internally and also have customers get problems with
+          # outgoing connections.
+          tempAddress = "disabled";
+
+          ipv6.routes =
+            let
+              defaultRoutes = map (gateway:
                 { address = "::";
                   prefixLength = 0;
                   via = gateway;
                   options = { metric = toString interface.priority; };
                 }) interface.v6.defaultGateways;
 
-              mtu = interface.mtu;
-            })) interfaces);
+              additionalRoutes = map
+                (net: { address = net.network; inherit (net) prefixLength; })
+                (filter (n: n.addresses == []) interface.v6.networkAttrs);
+            in
+              defaultRoutes ++ additionalRoutes;
+
+          mtu = interface.mtu;
+        })) interfaces);
 
       bridges = listToAttrs (map (interface:
         (lib.nameValuePair
