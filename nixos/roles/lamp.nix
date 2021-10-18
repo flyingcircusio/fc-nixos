@@ -107,22 +107,26 @@ in {
 
     in
 
-      lib.mkMerge [ {
-          # We always provide the PHP cli environment but we need to ensure
-          # to choose the right one in case someone uses the LAMP role.
-          # This used to be in packages.nix but that was too simple minded.
+      lib.mkMerge [
 
+      (lib.mkIf (!role.enable) {
+          # Install the default upstream PHP when the LAMP role is not activated.
           environment.systemPackages = [
-            role.php
-            role.php.packages.composer
+            pkgs.php
           ];
-
-      }
+      })
 
       (lib.mkIf role.enable {
 
           services.httpd.enable = true;
           services.httpd.adminAddr = "admin@flyingcircus.io";
+          # We always provide the PHP cli environment but we need to ensure
+          # to choose the right one in case someone uses the LAMP role.
+          environment.systemPackages = [
+            role.php
+            role.php.packages.composer
+          ];
+
           # Provide a similar PHP config for the PHP CLI as for Apache (httpd).
           # The file referenced by PHPRC is loaded together with the php.ini
           # from the global PHP package which only specifies the extensions.
