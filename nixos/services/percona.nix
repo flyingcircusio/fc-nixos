@@ -229,7 +229,9 @@ in
       serviceConfig = {
         ExecStart = "${mysql}/bin/mysqld --defaults-extra-file=${myCnf} ${mysqldOptions}";
         Restart = "always";
-        TimeoutSec = 360;
+        # MySQL may have a lot of dirty pages to flush at shutdown or do a
+        # recovery on startup. This value affects both start and stop timeouts.
+        TimeoutSec = "15 min";
       };
 
       preStart = mysqlPreStart;
