@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ ... }:
+import ./make-test-python.nix ({ pkgs, ... }:
 
 let
   user = {
@@ -20,6 +20,17 @@ let
   sdir = "/srv/nfs/shared";
   cdir = "/mnt/nfs/shared";
 
+  php_blocking_script = pkgs.writeTextFile {
+      name = "index.php" ;
+      text = ''
+        <?
+          $handle = fopen("${cdir}/test2", "wb");
+          fwrite($handle, "asdf");
+          fflush($handle);
+          sleep(600000);
+        ?>
+  ''; };
+
 in {
   name = "nfs";
   nodes = {
@@ -29,6 +40,15 @@ in {
         imports = [ ../nixos ../nixos/roles ];
         config = {
           flyingcircus.roles.nfs_rg_client.enable = true;
+          flyingcircus.roles.lamp.enable = true;
+          flyingcircus.roles.webgateway.enable = true;
+
+          flyingcircus.roles.lamp.vhosts = [
+            { port = 8000;
+              docroot = cdir;
+            }
+          ];
+
           # XXX: same as upstream test, let's see how they fix this
           networking.firewall.enable = false;
           flyingcircus.encServices = encServices;
@@ -45,8 +65,6 @@ in {
                 "soft"
                 "rsize=8192"
                 "wsize=8192"
-                "noauto"
-                "x-systemd.automount"
                 "nfsvers=4"
               ];
             noCheck = true;
@@ -85,22 +103,61 @@ in {
     server.succeed("chown test ${sdir}")
 
     # user test on server should be able to write to shared dir
-    server.succeed("sudo -u test echo test_on_server > ${sdir}/test")
+    server.succeed("sudo -u test sh -c 'echo test_on_server > ${sdir}/test'")
 
-    # share should be mounted upon access
+    # share will be mounted after boot
+    client.wait_for_unit("multi-user.target")
+
+    client.succeed("grep test_on_server ${cdir}/test")
+
+    client.succeed("sudo -u test sh -c 'echo test_on_client > ${cdir}/test'")
+    server.succeed("grep test_on_client ${sdir}/test")
+
+    client.fail("echo from_root_user > ${cdir}/test")
+    server.succeed("grep test_on_client ${sdir}/test")
+
+    # Verify proper shutdown while NFS is being used.
+    # See PL-129954
+    client.wait_for_unit("httpd.service")
     client.succeed("cd ${cdir}")
-    client.wait_for_unit("mnt-nfs-shared.mount")
 
-    # The commented code below was originaly writen in perl and was converted to python.
-    # It ist not tested and the comment below may not apply anymore!
-    # XXX: results in permission denied, why?
-    #client.succeed("grep test_on_server ${cdir}/test")
+    server.copy_from_host("${php_blocking_script}", "${sdir}/index.php")
 
-    #client.succeed("sudo -u test echo test_on_client > $cdir/test")
-    #server.succeed("grep test_on_client $sdir/test")
+    client.execute('curl -v http://localhost:8000/index.php&')
+    import time
+    time.sleep(2)
+    print(client.execute('lsof -n ${cdir}/test2')[1])
+    print(client.execute('journalctl -u httpd')[1])
+    content = client.execute('cat ${cdir}/test2')[1]
+    assert content == "asdf", repr(content)
 
-    #client.fail("echo from_root_user > $cdir/test")
-    #server.succeed("grep from_test_user $sdir/test")
+    deadline = time.time() + 10
+    def wait_for_console_text(self, regex: str) -> None:
+        self.log("waiting for {} to appear on console".format(regex))
+        # Buffer the console output, this is needed
+        # to match multiline regexes.
+        console = io.StringIO()
+        while time.time() < deadline:
+            try:
+                console.write(self.last_lines.get(block=False))
+            except queue.Empty:
+                time.sleep(1)
+                continue
+            console.seek(0)
+            matches = re.search(regex, console.read())
+            if matches is not None:
+                return console.getvalue()
+        # print(console.getvalue())
+        assert False, "Did not shut down cleanly (timeout)"
+
+    client.execute("poweroff&")
+
+    console = wait_for_console_text(client, "reboot: Power down")
+
+    assert "Failed unmounting" not in console, "Unmounting NFS cleanly failed, check console output"
+
+    client.wait_for_shutdown()
+
   '';
 
 })
