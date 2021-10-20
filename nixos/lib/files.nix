@@ -20,7 +20,7 @@ rec {
   # Get all regular files and symlinks with their absolute name
   files = path:
     (map
-      (filename: path + ("/" + filename))
+      (filename: (builtins.toString path) + ("/" + filename))
       (filesRel path));
 
   # Reads the config file if it exists, else returns predefined default
