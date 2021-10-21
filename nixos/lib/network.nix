@@ -3,9 +3,9 @@
 { config, pkgs, lib, ... }:
 
 with builtins;
-let 
+let
   fclib = config.fclib;
-in 
+in
 rec {
   stripNetmask = cidr: head (lib.splitString "/" cidr);
 
@@ -114,7 +114,7 @@ rec {
     fi
   '';
 
-  # Taken from 
+  # Taken from
   # https://github.com/LumiGuide/lumi-example/blob/master/nix/lib.nix
   ip4 = rec {
     ip = a : b : c : d : prefixLength : {
@@ -158,7 +158,7 @@ rec {
   };
 
   network = (lib.mapAttrs'
-    (vlan: interface: 
+    (vlan: interface:
       lib.nameValuePair vlan (
       let
         priority = routingPriority vlan;
@@ -194,9 +194,19 @@ rec {
 
           networks = attrNames interface.networks;
 
-          # as attribute sets of address/prefixLength
+          # networks as attribute sets of netmask/prefixLength/addresses
+          networkAttrs =
+            lib.mapAttrsToList
+              (network: addresses: {
+                network = fclib.stripNetmask network;
+                prefixLength = fclib.prefixLength network;
+                inherit addresses;
+              })
+              interface.networks;
+
+          # addresses as attribute sets of address/prefixLength
           attrs = lib.flatten (lib.mapAttrsToList
-            (network: addresses: 
+            (network: addresses:
               let prefix = fclib.prefixLength network;
               in (map (address: { address = address; prefixLength = prefix; }) addresses))
             interface.networks);
@@ -213,6 +223,7 @@ rec {
           cidrs = filter isIp4 dualstack.addresses;
           attrs = filter (attr: isIp4 attr.address) dualstack.attrs;
           networks = filter isIp4 dualstack.networks;
+          networkAttrs = filter (n: isIp4 n.network) dualstack.networkAttrs;
           # Select default gateways for all networks that we have a local IP in
           defaultGateways = filter isIp4 dualstack.defaultGateways;
         };
@@ -223,13 +234,14 @@ rec {
           cidrs = filter isIp6 dualstack.addresses;
           attrs = filter (attr: isIp6 attr.address) dualstack.attrs;
           networks = filter isIp6 dualstack.networks;
+          networkAttrs = filter (n: isIp6 n.network) dualstack.networkAttrs;
           # Select default gateways for all networks that we have a local IP in
           defaultGateways = filter isIp6 dualstack.defaultGateways;
         };
 
       }))
     (lib.attrByPath [ "parameters" "interfaces" ] {} config.flyingcircus.enc) //
-      # Provide homogenous access to loopback data 
+      # Provide homogenous access to loopback data
       { lo = {
         vlan = "lo";
         dualstack = {
