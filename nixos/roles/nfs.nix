@@ -44,9 +44,21 @@ in
   };
 
   config = lib.mkMerge [
+    {
+      # Typical services that should be started after and shut down before
+      # we try to unmount NFS.
+      # See https://yt.flyingcircus.io/issue/PL-129954 for a discussion about
+      # this.
+      # We always enable this because customers might enable NFS 
+      # through other means than our roles.
+      systemd.services.httpd.after = [ "remote-fs.target" ];
+      systemd.services.nginx.after = [ "remote-fs.target" ];
+    }
 
     (lib.mkIf (cfg.roles.nfs_rg_client.enable && service != null) {
       fileSystems = {
+        # WARNING: those settings are duplicated in the tests to
+        # fix a deficiency of the test harness.
         "${mountpoint}/shared" = {
           device = "${service.address}:${export}";
           fsType = "nfs4";
@@ -55,9 +67,7 @@ in
             "soft"
             "rsize=8192"
             "wsize=8192"
-            "noauto"
-            "x-systemd.automount" 
-            "nfsvers=4" 
+            "nfsvers=4"
           ];
           noCheck = true;
         };
