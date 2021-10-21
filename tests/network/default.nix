@@ -101,7 +101,7 @@ in {
         user::rw-
         group::---
         other::---
-        
+
         """), privkey_acl
       '';
     };
@@ -199,6 +199,82 @@ in {
           client.succeed("ping -c1 2001:db8:3::1")
       '';
     };
+
+    routes = {
+      name = "routes";
+      nodes.machine1 =
+        { pkgs, ... }:
+        {
+          imports = [ ../../nixos ];
+          virtualisation.vlans = [ 2 ];
+          flyingcircus.enc.parameters.interfaces = {
+            srv = {  # VLAN 2
+              mac = "52:54:00:12:02:01";
+              bridged = false;
+              networks = {
+                "10.51.2.0/24" = [ "10.51.2.11" ];
+                "10.51.3.0/24" = [ ];
+                "2001:db8:2::/64" = [ "2001:db8:2::11" ];
+                "2001:db8:3::/64" = [ ];
+              };
+              gateways = {
+                "10.51.2.0/24" = "10.51.2.1";
+                "2001:db8:2::/64" = "2001:db8:2::1";
+              };
+            };
+          };
+        };
+      nodes.machine2 =
+        { pkgs, ... }:
+        {
+          imports = [ ../../nixos ];
+          virtualisation.vlans = [ 2 ];
+          flyingcircus.enc.parameters.interfaces = {
+            srv = {  # VLAN 2
+              mac = "52:54:00:12:02:02";
+              bridged = false;
+              networks = {
+                "10.51.2.0/24" = [ ];
+                "10.51.3.0/24" = [ "10.51.3.12" ];
+                "2001:db8:2::/64" = [ ];
+                "2001:db8:3::/64" = [ "2001:db8:3::12" ];
+              };
+              gateways = {
+                "10.51.3.0/24" = "10.51.3.1";
+                "2001:db8:3::/64" = "2001:db8:3::1";
+              };
+            };
+          };
+        };
+      testScript = ''
+        start_all()
+        machine1.wait_for_unit("network-online.target")
+        machine2.wait_for_unit("network-online.target")
+
+        print("\n* Routes machine1\n")
+        print(machine1.succeed("ip r"))
+        print(machine1.succeed("ip -6 r"))
+        print("\n* Routes machine2\n")
+        print(machine2.succeed("ip r"))
+        print(machine2.succeed("ip -6 r"))
+
+        with subtest("machine1 should be able to ping machine2 via srv v4"):
+          machine1.succeed("ping -c1 -w1 10.51.3.12")
+
+        with subtest("machine2 should be able to ping machine1 via srv v4"):
+          machine2.succeed("ping -c1 -w1 10.51.2.11")
+
+        # ipv6 needs more time, wait until self-ping works
+        machine1.wait_until_succeeds("ping -c1 -w1 2001:db8:2::11")
+        machine2.wait_until_succeeds("ping -c1 -w1 2001:db8:3::12")
+
+        with subtest("machine1 should be able to ping machine2 via srv v6"):
+          machine1.succeed("ping -c3 -w3 2001:db8:3::12")
+
+        with subtest("machine2 should be able to ping machine1 via srv v6"):
+          machine2.succeed("ping -c1 -w1 2001:db8:2::11")
+    '';
+  };
 
     firewall =
       let
