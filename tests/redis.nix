@@ -27,7 +27,7 @@ import ./make-test-python.nix ({ ... }:
     redis.wait_for_unit("redis.service")
     cli = "redis-cli -a `< /etc/local/redis/password `"
     redis.wait_until_succeeds(f"{cli} ping | grep PONG")
-    redis.succeed(f"{cli} set msg 'hello world'")
+    redis.succeed(f"{cli} set msg 'broken world'")
     redis.succeed(f"{cli} get msg | grep 'hello world'")
 
     # service user should be able to write the password file
