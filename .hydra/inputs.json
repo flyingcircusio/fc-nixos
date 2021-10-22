@@ -1,0 +1,22 @@
+{
+    "nixpkgs": {
+        "type": "git",
+        "value": "git://github.com/flyingcircusio/nixpkgs.git nixos-21.05",
+        "emailresponsible": false
+    },
+    "src": {
+        "type": "git",
+        "value": "git://github.com/flyingcircusio/fc-nixos.git nixos-21.05",
+        "emailresponsible": false
+    },
+    "platformDoc": {
+        "type": "git",
+        "value": "git://github.com/flyingcircusio/doc.git main",
+        "emailresponsible": false
+    },
+    "branch": {
+        "type": "string",
+        "value": "fc-21.05-dev",
+        "emailresponsible": false
+    }
+}

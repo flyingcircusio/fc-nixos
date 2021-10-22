@@ -1,0 +1,39 @@
+{
+    "enabled": 1,
+    "hidden": false,
+    "description": "GitHub Pull Request Jobset Generator",
+    "nixexprinput": "generator",
+    "nixexprpath": "jobset/generate.nix",
+    "checkinterval": 300,
+    "schedulingshares": 100,
+    "enableemail": false,
+    "emailoverride": "",
+    "keepnr": 3,
+    "inputs": {
+        "src": {
+            "type": "git",
+            "value": "https://github.com/flyingcircusio/fc-nixos.git build-prs",
+            "emailresponsible": false
+        },
+        "inputPath": {
+            "type": "string",
+            "value": "release",
+            "emailresponsible": false
+        },
+        "generator": {
+            "type": "git",
+            "value": "https://github.com/DeterminateSystems/hydra-github-jobsets-generator.git fc",
+            "emailresponsible": false
+        },
+        "nixpkgs": {
+            "type": "git",
+            "value": "git://github.com/NixOS/nixpkgs.git nixos-unstable-small",
+            "emailresponsible": false
+        },
+        "pull_requests": {
+            "type": "githubpulls",
+            "value": "flyingcircusio fc-nixos",
+            "emailresponsible": false
+        }
+    }
+}
