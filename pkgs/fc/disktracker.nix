@@ -4,11 +4,11 @@ with python3Packages;
 buildPythonApplication rec {
 
   pname = "fc.disktracker";
-  version = "ce905ab";
+  version = "5a07742c";
   src = fetchgit {
     url = "https://gitlab.flyingcircus.io/flyingcircus/fc-disktracker.git";
-    rev = version; #Commit: Fix disktracker breaking when commandline arguments are missing
-    sha256 = "0261a7nrm0499ixkdvliwx38l73aj50yln2s33jg6az5b4l9ism9";
+    rev = version; # Commit: Give better information if smartctl failes
+    sha256 = "17bdwipb62g6khzdzwj8w2zr9yawa75z2p6609kglabhqqw3nypp";
   };
 
   dontStrip = true;
