@@ -83,7 +83,8 @@ in {
 
       flyingcircus.passwordlessSudoRules = [
         {
-          commands = [ "${pkgs.fc.agent}/bin/fc-manage" ];
+          # we need NOPASSWD here as service users have no password
+          commands = [ { command = "${pkgs.fc.agent}/bin/fc-manage"; options = [ "NOPASSWD" ]; } ];
           groups = [ "sudo-srv" "service" ];
         }
       ];
