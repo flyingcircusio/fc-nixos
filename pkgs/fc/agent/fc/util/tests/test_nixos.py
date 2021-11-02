@@ -227,3 +227,23 @@ def test_find_nix_build_error_syntax():
     """)
     expected = "syntax error, unexpected '}', expecting ';', at /etc/local/nixos/dev_vm.nix:190:1"
     assert nixos.find_nix_build_error(stderr) == expected
+
+
+def test_find_nix_build_error_builder_failed():
+
+    stderr = textwrap.dedent("""\
+    /nix/store/bf8jb44sc2ad88895g7ki43iyzai9zaj-nixos-system-test-21.05.1534.06a1226.drv
+    building '/nix/store/wxjjd4z2f8z8badd1mzqbh8xxq3zq288-system-path.drv'...
+    building '/nix/store/ckkdla5pg582i83d0v2w99mxny2jqxk3-unit-script-acme--domain_name--start.drv'...
+    builder for '/nix/store/ckkdla5pg582i83d0v2w99mxny2jqxk3-unit-script-acme--domain_name--start.drv' failed with exit code 127; last 1 log lines:
+    /build/.attr-0: line 1: domain_name: command not found
+    cannot build derivation '/nix/store/5wi39jva4fn0fg72rw26813vmdwg69d4-unit-acme--domain_name-.service.drv': 1 dependencies couldn't be built
+    building '/nix/store/nwk2j3xp1rv51n6r98gfn6zdncsf54xb-unit-script-acme-selfsigned--domain_name--start.drv'...
+    cannot build derivation '/nix/store/7krvm44hsqasdrgk14ybyp15riz3h57f-system-units.drv': 1 dependencies couldn't be built
+    cannot build derivation '/nix/store/iak0907qnlnjj3j5xrnw3m431a1ymdvm-etc.drv': 1 dependencies couldn't be built
+    cannot build derivation '/nix/store/bf8jb44sc2ad88895g7ki43iyzai9zaj-nixos-system-test-21.05.1534.06a1226.drv': 1 dependencies couldn't be built
+    error: build of '/nix/store/bf8jb44sc2ad88895g7ki43iyzai9zaj-nixos-system-test-21.05.1534.06a1226.drv' failed
+    """)
+
+    expected = "builder for '/nix/store/ckkdla5pg582i83d0v2w99mxny2jqxk3-unit-script-acme--domain_name--start.drv' failed with exit code 127"
+    assert nixos.find_nix_build_error(stderr) == expected

@@ -262,22 +262,37 @@ def switch_to_channel(channel_url, lazy=False, log=_log):
     return switch_to_system(built_system, lazy)
 
 
-def find_nix_build_error(stderr):
+def find_nix_build_error(stderr, log=_log):
     """Returns a one-line error message from Nix build output or
     a generic message if nothing is found.
-    We assume that the line right after the traceback
-    (and possibly build output before it) is the most interesting one.
-    Start at the last line and find the start of the traceback.
     """
-    lines = stderr.splitlines()[::-1]
-    for pos, line in enumerate(lines):
-        if line.strip().startswith("while evaluating") and pos > 0:
-            errormsg = lines[pos - 1].strip()
-            if errormsg.endswith(" Definition values:"):
-                return errormsg[:-len(" Definition values:")]
-            else:
-                return errormsg
 
+    try:
+        lines = stderr.splitlines()[::-1]
+        # Detect builder failures and return which builder failed.
+        if lines and lines[0].startswith("error: build of "):
+            for line in lines:
+                if line.startswith("builder for "):
+                    if ";" in line:
+                        return line.split(";")[0]
+                    else:
+                        return line
+
+        # Check for evaluation errors.
+        # We assume that the line right after the traceback
+        # (and possibly build output before it) is the most interesting one.
+        # Start at the last line and find the start of the traceback.
+        for pos, line in enumerate(lines):
+            if line.strip().startswith("while evaluating") and pos > 0:
+                errormsg = lines[pos-1].strip()
+                if errormsg.endswith(" Definition values:"):
+                    return errormsg[:-len(" Definition values:")]
+                else:
+                    return errormsg
+    except Exception:
+        log.error("find-nix-build-error-failed", exc_info=True)
+
+    # We haven't found an error message we know, fall back to generic error message
     return "Building the system failed!"
 
 
@@ -333,7 +348,7 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
             build_output=stderr)
     else:
 
-        build_error = find_nix_build_error(stderr)
+        build_error = find_nix_build_error(stderr, log)
         msg = build_error.replace("}", "}}").replace("{", "{{")
         stdout = proc.stdout.read().strip() or None
         log.error(
