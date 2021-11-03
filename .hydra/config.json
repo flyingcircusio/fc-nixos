@@ -1,0 +1,21 @@
+{
+    "input_name": "fc",
+    "input_path": "release",
+    "inputs": {
+        "nixpkgs": {
+            "type": "git",
+            "value": "git://github.com/flyingcircusio/nixpkgs.git nixos-21.05",
+            "emailresponsible": false
+        },
+        "platformDoc": {
+            "type": "git",
+            "value": "git://github.com/flyingcircusio/doc.git master",
+            "emailresponsible": false
+        },
+        "branch": {
+            "type": "string",
+            "value": "fc-21.05-dev",
+            "emailresponsible": false
+        }
+    }
+}
