@@ -4,11 +4,10 @@ with python3Packages;
 buildPythonApplication rec {
 
   pname = "fc.disktracker";
-  version = "5a07742c";
-  src = fetchgit {
-    url = "https://gitlab.flyingcircus.io/flyingcircus/fc-disktracker.git";
-    rev = version; # Commit: Give better information if smartctl failes
-    sha256 = "17bdwipb62g6khzdzwj8w2zr9yawa75z2p6609kglabhqqw3nypp";
+  version = "1.0b1";
+  src = fetchPypi {
+    inherit pname version;
+    sha256 = "0gbjqgv2ds8my9a43cpw5a1ag7m5whakqprp7wrwdmwgpwdynds9";
   };
 
   dontStrip = true;
