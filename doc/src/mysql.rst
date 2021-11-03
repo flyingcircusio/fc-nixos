@@ -28,5 +28,16 @@ Service users can use :command:`sudo -u mysql -i` to access the
 MySQL super user account to perform administrative commands
 and access log files such as the slowlog.
 
-For backup tasks the :command:`xtrabackup` command is provided, also with sudo
-permission for service users.
+Both service users and the `mysql` DB super user may invoke :command:`sudo
+fc-manage --build` to apply configuration changes and restart the MySQL
+server (if necessary).
+
+For backup tasks the :command:`xtrabackup` command is provided, along with sudo
+permission for executing xtrabackup from the serivce user as root.
+
+Monitoring
+----------
+
+The default monitoring setup checks that the MySQL server process is
+running and that it responds to connection attempts to the standard MySQL
+port.
