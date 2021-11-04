@@ -8,8 +8,6 @@ import socket
 import sys
 import time
 
-# XXX update API
-
 emergency_email = 'PLACEHOLDER'
 
 sensu_password = ''
@@ -47,13 +45,11 @@ def log(msg, client, check_name, *formats):
     print('{}/{}: {msg}'.format(client, check_name, msg=msg), flush=True)
 
 
-def have_stash(stashes, client, check_name):
+def have_stash_or_silenced(stashes, client, check_name):
     own_stash_path = 'bpi/{}'.format(client)
-    silence_stash_path = 'silence/{}/{}'.format(client, check_name)
-    silence_stash_path_host = 'silence/{}'.format(client)
-    for stash_path in [
-            own_stash_path, silence_stash_path, silence_stash_path_host
-    ]:
+    silenced_path = 'silenced/{}/{}'.format(client, check_name)
+    silenced_path_host = 'silenced/{}'.format(client)
+    for stash_path in [own_stash_path, silenced_path, silenced_path_host]:
         if stash_path in stashes:
             return True
     return False
@@ -102,9 +98,10 @@ while True:
                     log('CRITICAL, below threshold. History: {}', client,
                         check_name, history)
                     continue
-                if have_stash(stashes, client, check_name):
+                if have_stash_or_silenced(stashes, client, check_name):
                     if client not in logged:
-                        log('Stash found. No alarm.', client, check_name)
+                        log('Stash found or is silenced. No alarm.', client,
+                            check_name)
                         logged.add(client)
                     continue
                 if client not in logged:
