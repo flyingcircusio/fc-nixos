@@ -10,7 +10,7 @@ import time
 
 # XXX update API
 
-emergency_email = sys.argv[1]
+emergency_email = 'PLACEHOLDER'
 
 sensu_password = ''
 services_json = json.load(open('/etc/nixos/services.json', 'r'))

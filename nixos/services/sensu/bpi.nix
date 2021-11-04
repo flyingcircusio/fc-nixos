@@ -6,16 +6,7 @@ let
   conf = config.flyingcircus.services;
 in {
   options = with lib; {
-    flyingcircus.services.sensuBpi = {
-      enable = mkEnableOption "Sensu-bpi service";
-      mail = mkOption {
-        type = types.str;
-        default = "E-MAIL";
-        description = ''
-            Mail address sensu-bpi sends its warning messeges to
-        '';
-      };
-    };
+    flyingcircus.services.sensuBpi.enable = mkEnableOption "Sensu-bpi service";
   };
 
   config = lib.mkIf (conf.sensuBpi.enable) {
@@ -31,7 +22,7 @@ in {
       };
       wantedBy = [ "multi-user.target" ];
       after = [ "sensu-client.service" ];
-      script = "${pkgs.fc.sensu-bpi}/bin/fc.sensu-bpi ${conf.sensuBpi.mail}";
+      script = "${pkgs.fc.sensu-bpi}/bin/fc.sensu-bpi";
     };
   };
 }
