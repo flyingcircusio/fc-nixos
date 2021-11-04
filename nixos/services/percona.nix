@@ -64,6 +64,8 @@ let
     user = root
     __EOT__
     chmod 440 /root/.my.cnf
+    cp -p /root/.my.cnf /srv/mysql/.my.cnf
+    chown mysql:mysql /srv/mysql/.my.cnf
 
     # write init file for mysqld to set the root password
     cat > ${initFile} <<__EOT__

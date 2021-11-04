@@ -125,6 +125,17 @@ in {
     };
   });
 
+  matrix-synapse = super.matrix-synapse.overrideAttrs(orig: rec {
+    pname = "matrix-synapse";
+    version = "1.46.0";
+    name = "${pname}-${version}";
+
+    src = super.python3Packages.fetchPypi {
+      inherit pname version;
+      sha256 = "15az88sj12c9hfm3kcfmrvni4vw7v0m9ybp58cy92bgz4r2pxh25";
+    };
+  });
+
   kibana7 = super.kibana7.overrideAttrs(_: rec {
     version = elk7Version;
     name = "kibana-${version}";

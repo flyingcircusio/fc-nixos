@@ -105,6 +105,8 @@ with builtins;
     users.users.mysql = {
       shell = "/run/current-system/sw/bin/bash";
       home = lib.mkForce "/srv/mysql";
+      # ensure we can properly set things up first time
+      createHome = true;
     };
 
     flyingcircus.passwordlessSudoRules = [
