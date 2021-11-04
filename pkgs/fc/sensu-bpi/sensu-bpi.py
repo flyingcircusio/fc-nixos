@@ -15,15 +15,15 @@ emergency_email = sys.argv[1]
 sensu_password = ''
 services_json = json.load(open('/etc/nixos/services.json', 'r'))
 for entry in services_json:
-    if (
-            entry['address'] == f'{socket.gethostname()}.gocept.net' and
-            entry['service'] == 'sensuserver-api'
-    ):
+    if (entry['address'] == f'{socket.gethostname()}.gocept.net'
+            and entry['service'] == 'sensuserver-api'):
         sensu_password = str(entry['password'])
 
 
-def sendmail(from_addr, to_addr_list,
-             subject, message,
+def sendmail(from_addr,
+             to_addr_list,
+             subject,
+             message,
              smtpserver='mail.gocept.net'):
     header = 'From: %s\n' % from_addr
     header += 'To: %s\n' % ','.join(to_addr_list)
@@ -52,7 +52,8 @@ def have_stash(stashes, client, check_name):
     silence_stash_path = 'silence/{}/{}'.format(client, check_name)
     silence_stash_path_host = 'silence/{}'.format(client)
     for stash_path in [
-            own_stash_path, silence_stash_path, silence_stash_path_host]:
+            own_stash_path, silence_stash_path, silence_stash_path_host
+    ]:
         if stash_path in stashes:
             return True
     return False
@@ -87,21 +88,23 @@ while True:
         client = event['client']['name']
         if client_ignore.match(client):
             continue
-        if (check_name in need_ok or
-                (client, check_name) in host_specific_need_ok):
+        if (check_name in need_ok
+                or (client, check_name) in host_specific_need_ok):
             if event['check']['status'] >= 2:  # CRITICAL
                 # if client == 'nordforsk02': import pdb; pdb.set_trace()
-                print(client, check_name,)
+                print(
+                    client,
+                    check_name,
+                )
                 history = ''.join(event['check']['history'])
                 if not history.endswith('2222222222'):
                     # not yet
-                    log('CRITICAL, below threshold. History: {}',
-                        client, check_name, history)
+                    log('CRITICAL, below threshold. History: {}', client,
+                        check_name, history)
                     continue
                 if have_stash(stashes, client, check_name):
                     if client not in logged:
-                        log('Stash found. No alarm.',
-                            client, check_name)
+                        log('Stash found. No alarm.', client, check_name)
                         logged.add(client)
                     continue
                 if client not in logged:
@@ -114,14 +117,16 @@ while True:
     for host, events in hosts.items():
         # Instead of this we could feed this back into sensu as a new
         # check-event.
-        sendmail('admin+sensu@flyingcircus.io', [emergency_email],
-                 '{} critical: {}'.format(host, ', '.join(
-                    e['name'] for e in events)),
-                 '<pre>\n'+pprint.pformat(events)+'\n</pre>')
+        sendmail(
+            'admin+sensu@flyingcircus.io', [emergency_email],
+            '{} critical: {}'.format(host,
+                                     ', '.join(e['name'] for e in events)),
+            '<pre>\n' + pprint.pformat(events) + '\n</pre>')
 
-        sensu.create_stash(dict(
-            # If it's not solved within 4 hours, issue new ticket.
-            expire=3600*4,
-            path='bpi/{}'.format(host),
-            content=dict(source='BPI')))
+        sensu.create_stash(
+            dict(
+                # If it's not solved within 4 hours, issue new ticket.
+                expire=3600 * 4,
+                path='bpi/{}'.format(host),
+                content=dict(source='BPI')))
     time.sleep(60)
