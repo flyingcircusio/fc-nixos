@@ -42,6 +42,7 @@ with builtins;
       services.disktracker = {
         description = "Disktracker";
         serviceConfig.Type = "oneshot";
+        path = [ "${pkgs.smartmontools}" ];
         script = "${pkgs.fc.disktracker}/bin/disktracker";
       };
     };
