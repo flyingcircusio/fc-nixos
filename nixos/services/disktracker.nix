@@ -34,7 +34,7 @@ with builtins;
         wantedBy = [ "timers.target" ];
         timerConfig = {
           OnBootSec = "2m";
-          # For scrupping reasons 6h whould be better, but currently the raidcontroller obscures
+          # For scrubbing reasons 6h whould be better, but currently the raidcontroller obscures
           # the relevant changes in storage devices
           OnUnitActiveSec = "10m";
         };
@@ -50,7 +50,11 @@ with builtins;
        let
          disktracker-udev-script = pkgs.writeShellScript "disktracker-udev-script" ''
            if systemctl is-active multi-user.target; then
-               ${pkgs.systemd}/bin/systemctl start disktracker;
+               SECONDS=0;
+               sleep 8
+               if [ "$SECONDS" -gt "7" ]; then
+                   ${pkgs.systemd}/bin/systemctl start disktracker;
+               fi
            fi
          '';
        in
