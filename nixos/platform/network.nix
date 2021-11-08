@@ -249,6 +249,11 @@ in
       "net.ipv4.tcp_congestion_control" = "bbr";
       "net.ipv4.ip_nonlocal_bind" = "1";
       "net.ipv6.ip_nonlocal_bind" = "1";
+      # Ensure that we can use IPv6 as early as possible.
+      # This fixes startup race conditions like 
+      # https://yt.flyingcircus.io/issue/PL-130190
+      "net.ipv6.conf.all.optimistic_dad" = 1;
+      "net.ipv6.conf.all.use_optimistic" = 1;
       "net.ipv4.ip_local_port_range" = "32768 60999";
       "net.ipv4.ip_local_reserved_ports" = "61000-61999";
       "net.core.rmem_max" = 8388608;
