@@ -57,8 +57,8 @@ Service users can use :command:`sudo -u postgres -i` to access the
 PostgreSQL super user account to perform administrative commands like
 :command:`createdb` and :command:`createuser`.
 
-Both service users and the `postgres` DB super user may invoke :command:`sudo
-fc-manage --build` to apply configuration changes and restart the PostgreSQL
+Service users may invoke :command:`sudo fc-manage --build`
+to apply configuration changes and restart the PostgreSQL
 server (if necessary).
 
 
