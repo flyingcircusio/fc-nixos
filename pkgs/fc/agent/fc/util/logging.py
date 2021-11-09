@@ -261,6 +261,7 @@ class ConsoleFileRenderer:
             write("[" + BLUE + BRIGHT + logger_name + RESET_ALL + "] ")
 
         cmd_output_line = event_dict.pop("cmd_output_line", None)
+        output = event_dict.pop("_output", None)
         stdout = event_dict.pop("stdout", None)
         stderr = event_dict.pop("stderr", None)
         stack = event_dict.pop("stack", None)
@@ -275,6 +276,9 @@ class ConsoleFileRenderer:
 
         if cmd_output_line is not None:
             write(DIM + "> " + cmd_output_line + RESET_ALL)
+
+        if output is not None:
+            write('\n' + prefix("", "\n" + output + "\n") + RESET_ALL)
 
         if stdout is not None:
             write('\n' + DIM + prefix("out", "\n" + stdout + "\n") + RESET_ALL)

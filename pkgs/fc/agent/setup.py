@@ -40,6 +40,7 @@ setup(
     packages=[
         'fc.maintenance',
         'fc.maintenance.lib',
+        'fc.maintenance.activity',
         'fc.manage',
         'fc.util',
     ],
@@ -68,6 +69,7 @@ setup(
             'list-maintenance=fc.maintenance.reqmanager:list_maintenance',
             'scheduled-reboot=fc.maintenance.lib.reboot:main',
             'scheduled-script=fc.maintenance.lib.shellscript:main',
+            'scheduled-update=fc.maintenance.activity.update:main',
         ],
     },
 )

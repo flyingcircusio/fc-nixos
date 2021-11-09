@@ -10,7 +10,7 @@ from functools import partial
 from pathlib import Path
 import argparse
 import fc.maintenance
-import fc.maintenance.lib.shellscript
+from fc.maintenance.lib.shellscript import ShellScriptActivity
 import filecmp
 import io
 import json
@@ -226,9 +226,7 @@ class Channel:
         with fc.maintenance.ReqManager() as rm:
             rm.add(
                 fc.maintenance.Request(
-                    fc.maintenance.lib.shellscript.ShellScriptActivity(script),
-                    600,
-                    comment=msg))
+                    ShellScriptActivity(script), 600, comment=msg))
         self.log.info("maintenance-register-succeeded")
 
 

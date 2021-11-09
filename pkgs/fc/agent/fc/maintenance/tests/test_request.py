@@ -4,6 +4,7 @@ from fc.maintenance.state import State
 
 import datetime
 import pytest
+import structlog
 import unittest.mock
 
 
@@ -16,6 +17,11 @@ def test_duration():
     a.duration = 5
     r.attempts.append(a)
     assert r.duration == 5  # last attempt counts
+
+
+@pytest.fixture
+def logger():
+    return structlog.get_logger()
 
 
 @unittest.mock.patch('fc.maintenance.request.utcnow')
@@ -100,7 +106,7 @@ class ExternalStateActivity(Activity):
             print('foo', file=f)
 
 
-def test_external_activity_state(tmpdir):
+def test_external_activity_state(tmpdir, logger):
     r = Request(ExternalStateActivity(), 1, dir=str(tmpdir))
     r.save()
     extstate = str(tmpdir / 'external_state')
@@ -108,7 +114,7 @@ def test_external_activity_state(tmpdir):
         assert 'foo\n' == f.read()
     with open(extstate, 'w') as f:
         print('bar', file=f)
-    r2 = Request.load(str(tmpdir))
+    r2 = Request.load(str(tmpdir), logger)
     assert r2.activity.external == 'bar\n'
 
 

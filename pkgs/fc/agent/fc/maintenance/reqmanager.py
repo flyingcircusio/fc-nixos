@@ -1,5 +1,6 @@
 """Manage maintenance requests."""
 
+from fc.maintenance.activity import RebootType
 from .request import Request
 from .state import State, ARCHIVE
 from fc.util.logging import init_logging
@@ -12,6 +13,7 @@ import os
 import os.path as p
 import socket
 import structlog
+import subprocess
 
 DEFAULT_DIR = '/var/spool/maintenance'
 
@@ -98,7 +100,7 @@ class ReqManager:
             if not p.isdir(d):
                 continue
             try:
-                req = Request.load(d)
+                req = Request.load(d, self.log)
                 req._reqmanager = self
                 self.requests[req.id] = req
             except Exception as exc:
@@ -161,7 +163,8 @@ class ReqManager:
         }
         if schedule_maintenance:
             self.log.debug(
-                "schedule-maintenances", request_count=len(schedule_maintenance))
+                "schedule-maintenances",
+                request_count=len(schedule_maintenance))
 
         result = self.directory.schedule_maintenance(schedule_maintenance)
         disappeared = set()
@@ -239,13 +242,21 @@ class ReqManager:
 
     @require_directory
     @require_lock
-    def execute(self):
+    def execute(self, run_all_now=False):
         """Process maintenance requests.
 
         If there is an already active request, run to termination first.
         After that, select the oldest due request as next active request.
         """
-        runnable_requests = list(self.runnable())
+
+        if run_all_now:
+            self.log.warn(
+                "execute-all-requests-now",
+                _replace_msg=
+                "Run all mode requested, treating all requests as runnable.")
+            runnable_requests = list(self.requests.values())
+        else:
+            runnable_requests = list(self.runnable())
         if runnable_requests:
             runnable_count = len(runnable_requests)
             if runnable_count == 1:
@@ -261,6 +272,7 @@ class ReqManager:
                 "execute-requests-empty",
                 _replace_msg="No runnable maintenance requests.")
 
+        requested_reboots = set()
         try:
             for req in runnable_requests:
                 self.log.info(
@@ -301,6 +313,8 @@ class ReqManager:
                             duration=attempt.duration,
                             returncode=attempt.returncode)
                     else:
+                        if req.activity.reboot_needed is not None:
+                            requested_reboots.add(req.activity.reboot_needed)
                         self.log.info(
                             "execute-request-finished",
                             _replace_msg=
@@ -308,8 +322,17 @@ class ReqManager:
                             request=req.id,
                             state=req.state,
                             duration=attempt.duration)
-        finally:
+
+            if requested_reboots:
+                # Rebooting while still in maintenance.
+                self.reboot(requested_reboots)
+            else:
+                self.leave_maintenance()
+                self.log.debug("no-reboot-requested")
+
+        except Exception:
             self.leave_maintenance()
+            self.log.debug("execute-requests-failed", exc_info=True)
 
     @require_lock
     @require_directory
@@ -387,24 +410,43 @@ class ReqManager:
             _replace_msg="Marked request {request} as deleted",
             request=req.id)
 
+    def reboot(self, requested_reboots):
+        if RebootType.COLD in requested_reboots:
+            self.log.info(
+                "maintenance-poweroff",
+                _replace=
+                "Doing a cold boot now to finish maintenance activities.")
+            subprocess.run(
+                "poweroff", check=True, capture_output=True, text=True)
+        elif RebootType.WARM in requested_reboots:
+            self.log.info(
+                "maintenance-reboot",
+                _replace_msg="Rebooting now to finish maintenance activities.")
+            subprocess.run(
+                "reboot", check=True, capture_output=True, text=True)
 
-def transaction(spooldir=DEFAULT_DIR, enc_path=None, do_scheduling=True):
-    with ReqManager(spooldir, enc_path) as rm:
+
+def transaction(spooldir=DEFAULT_DIR,
+                enc_path=None,
+                do_scheduling=True,
+                run_all_now=False,
+                log=_log):
+    with ReqManager(spooldir, enc_path, log=log) as rm:
         if do_scheduling:
             rm.schedule()
-        rm.execute()
+        rm.execute(run_all_now)
         rm.postpone()
         rm.archive()
 
 
-def delete(reqid, spooldir=DEFAULT_DIR, enc_path=None):
-    with ReqManager(spooldir, enc_path) as rm:
+def delete(reqid, spooldir=DEFAULT_DIR, enc_path=None, log=_log):
+    with ReqManager(spooldir, enc_path, log=log) as rm:
         rm.delete(reqid)
         rm.archive()
 
 
-def listreqs(spooldir=DEFAULT_DIR):
-    rm = ReqManager(spooldir)
+def listreqs(spooldir=DEFAULT_DIR, log=_log):
+    rm = ReqManager(spooldir, log=log)
     rm.scan()
     out = str(rm)
     if out:
@@ -438,6 +480,12 @@ Managed local maintenance requests.
         action='store_true',
         help='skip maintenance scheduling, for example to test '
         'local modifications in the request YAML')
+    cmd.add_argument(
+        '--run-all-now',
+        default=False,
+        action='store_true',
+        help='Just run every maintenance request now, even if it is not due')
+
     a.add_argument(
         '-E',
         '--enc-path',
@@ -453,7 +501,10 @@ Managed local maintenance requests.
     a.add_argument('-v', '--verbose', action='store_true', default=verbose)
     args = a.parse_args()
 
-    init_logging(args.verbose)
+    main_log_file = open('/var/log/fc-maintenance.log', 'a')
+    cmd_log_file = open('/var/log/fc-agent/fc-maintenance-command-output.log',
+                        'w')
+    init_logging(args.verbose, main_log_file, cmd_log_file)
 
     if args.delete and args.list:
         a.error('multually exclusive actions: list + delete')
@@ -463,8 +514,9 @@ Managed local maintenance requests.
         listreqs(args.spooldir)
     else:
         _log.info("fc-maintenance-start")
-        transaction(args.spooldir, args.enc_path, not args.no_scheduling)
-        _log.info("fc-maintenance-success")
+        transaction(args.spooldir, args.enc_path, not args.no_scheduling,
+                    args.run_all_now)
+        _log.info("fc-maintenance-finished")
 
 
 def list_maintenance():
