@@ -116,6 +116,20 @@ with builtins;
       }
     ];
 
+    systemd.tmpfiles.rules = [
+      "d /var/log/mysql 0755 mysql service -"
+      "f /var/log/mysql/mysql.slow 0640 mysql service -"
+    ];
+
+    services.logrotate.paths.mysql-slowlog = {
+      path = "/var/log/mysql/mysql.slow";
+      extraConfig = ''
+        rotate 2
+        create 0640 mysql service
+        missingok
+      '';
+    };
+
     services.percona = {
       enable = true;
       inherit package rootPasswordFile;
@@ -142,8 +156,16 @@ with builtins;
         default_storage_engine     = InnoDB
         table_definition_cache     = 512
         open_files_limit           = 65535
-        sysdate-is-now             = 1
+        sysdate-is-now             = ON
         sql_mode                   = NO_ENGINE_SUBSTITUTION
+
+        log_slow_verbosity = 'full'
+        slow_query_log = ON
+        long_query_time = 0.1
+        log_slow_slave_statements = ON
+        slow_query_log_file = '/var/log/mysql/mysql.slow'
+        log_slow_admin_statements = ON
+        log_queries_not_using_indexes = ON
 
         init-connect               = 'SET NAMES ${charset} COLLATE ${collation}'
         character-set-server       = ${charset}
