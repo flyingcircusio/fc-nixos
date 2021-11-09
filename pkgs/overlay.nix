@@ -136,6 +136,10 @@ in {
     meta.license = null;
   });
 
+  inherit (callPackages ./matomo.nix {})
+    matomo
+    matomo-beta;
+
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
 
   # Import old php versions from nix-phps
