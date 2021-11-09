@@ -147,7 +147,7 @@ in {
     meta.license = null;
   });
 
-  inherit (callPackages ./matomo.nix {})
+  inherit (super.callPackages ./matomo {})
     matomo
     matomo-beta;
 
