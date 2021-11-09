@@ -33,10 +33,23 @@
 			WARN_ALL_UNSEEDED_RANDOM y
 			'';
 
-		boot.kernelPatches = lib.mkIf ( config.flyingcircus.kernelOptions != null ) [ {
-			name = "fcio-kernel-options";
-			patch = null;
-			extraConfig = config.flyingcircus.kernelOptions;
-		}];
+		# Allow all sysrq keys to help debugging.
+    boot.kernel.sysctl."kernel.sysrq" = "0x1";
+
+		boot.kernelPatches = lib.mkMerge [ 
+
+			[ (lib.mkIf ( config.flyingcircus.kernelOptions != null ) {
+				name = "fcio-kernel-options";
+				patch = null;
+				extraConfig = config.flyingcircus.kernelOptions;
+			}) ]
+
+			[ {
+				name = "xfs-cil-fix";
+				patch = ./0001-xfs-Fix-CIL-throttle-hang-when-CIL-space-used-going.patch;
+			} ]
+
+		];
+
 	};
 }
