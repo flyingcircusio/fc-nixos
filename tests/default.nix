@@ -20,6 +20,10 @@ let
   in discover (importTest fn args system);
 
 in {
+  # run upstream tests against our overlay
+  inherit (pkgs.nixosTests)
+    matomo;
+
   antivirus = callTest ./antivirus.nix {};
   channel = callTest ./channel.nix {};
   coturn = callTest ./coturn.nix {};
