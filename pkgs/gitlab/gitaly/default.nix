@@ -20,7 +20,7 @@ let
         };
       };
   };
-  version = "14.1.7";
+  version = "14.4.1";
   gitaly_package = "gitlab.com/gitlab-org/gitaly/v${lib.versions.major version}";
 in
 
@@ -32,10 +32,10 @@ buildGoModule {
     owner = "gitlab-org";
     repo = "gitaly";
     rev = "v${version}";
-    sha256 = "sha256-YBeTaXuyzSS8pjjXjvcT6jVtbA6G27Z2FF+7TPNpwVQ=";
+    sha256 = "sha256-bATqaB7q3MlyacEiBXdcEDs+xsJUbULVnYTSpEznxFg=";
   };
 
-  vendorSha256 = "sha256-/SZJGRUg0qV7RYCUSGDE/HL9CmzGVffhL6BmZ316tU0=";
+  vendorSha256 = "sha256-9RhPQosen70E9t1iAoc2SeKs9pYMMpMqgXLekWfKNf8=";
 
   passthru = {
     inherit rubyEnv;
