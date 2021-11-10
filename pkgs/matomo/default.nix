@@ -103,7 +103,7 @@ let
           license = licenses.gpl3Plus;
           homepage = "https://matomo.org/";
           platforms = platforms.all;
-          maintainers = with maintainers; [ florianjacob kiwi sebbel ];
+          maintainers = with maintainers; [ florianjacob kiwi ];
         };
       };
 in
