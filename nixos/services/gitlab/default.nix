@@ -907,6 +907,10 @@ in {
         assertion = cfg.secrets.jwsFile != null;
         message = "services.gitlab.secrets.jwsFile must be set!";
       }
+      {
+        assertion = versionAtLeast postgresqlPackage.version "12.0.0";
+        message = "PostgreSQL >=12 is required to run GitLab 14. Follow the instructions in the manual section for upgrading PostgreSQL here: https://nixos.org/manual/nixos/stable/index.html#module-services-postgres-upgrading";
+      }
     ];
 
     environment.systemPackages = [ pkgs.git gitlab-rake gitlab-rails cfg.packages.gitlab-shell ];
