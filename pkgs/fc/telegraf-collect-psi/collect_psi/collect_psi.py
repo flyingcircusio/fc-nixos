@@ -35,11 +35,10 @@ def probe_device(dev):
 
 
 def probe():
-    devices = {"cpu", "memory", "io"}
-    data = {}
+    devices = {}
     for dev in DEVICES:
-        data[dev] = probe_device(dev)
-    return data
+        devices[dev] = probe_device(dev)
+    return devices
 
 def main():
     # Output to be used by telegraf's exec plugin.
