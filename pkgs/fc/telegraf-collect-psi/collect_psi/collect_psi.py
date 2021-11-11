@@ -4,22 +4,12 @@ This script collects pressure stall information from the /proc/pressure
 directory and outputs it in a format that is suitable for telegraf.
 """
 
-import argparse
 import json
 import re
-import sys
 
 DEVICES = ['cpu', 'memory', 'io']
 
 PSI_PATTERN = r'(?P<extent>some|full) avg10=(?P<avg10>[0-9\.]+) avg60=(?P<avg60>[0-9\.]+) avg300=(?P<avg300>[0-9\.]+) total=(?P<total>[0-9\.]+)'
-
-
-def threshold_exceeded(threshold, value):
-    for t, v in zip(threshold, value):
-        if v > t:
-            return True
-    return False
-
 
 def probe_device(dev):
     data = {}
