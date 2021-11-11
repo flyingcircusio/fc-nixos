@@ -83,6 +83,7 @@ def main():
 
     if exit_code == 0:
         print('OK - No pressure stalling issues')
+        print(f'Values I read: {actual}')
     sys.exit(exit_code)
 
 
