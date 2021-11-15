@@ -391,37 +391,37 @@ in {
           interval = 300;
         };
       in {
-        psi_cpu = {
-          notification = "Pressure stalling on CPU too much";
-          command =
-            "${fc.sensuplugins}/bin/check_psi " +
-            "--some-warning ${cfg.expectedPSI.cpu.some-warning} " +
-            "--some-critical ${cfg.expectedPSI.cpu.some-critical} " +
-            "cpu";
-          interval = 10;
-        };
-        psi_memory = {
-          notification = "Pressure stalling on Memory too much";
-          command =
-            "${fc.sensuplugins}/bin/check_psi " +
-            "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
-            "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
-            "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
-            "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
-            "memory";
-          interval = 10;
-        };
-        psi_io = {
-          notification = "Pressure stalling on IO too much";
-          command =
-            "${fc.sensuplugins}/bin/check_psi " +
-            "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
-            "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
-            "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
-            "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
-            "io";
-          interval = 10;
-        };
+        # psi_cpu = {
+        #   notification = "Pressure stalling on CPU too much";
+        #   command =
+        #     "${fc.sensuplugins}/bin/check_psi " +
+        #     "--some-warning ${cfg.expectedPSI.cpu.some-warning} " +
+        #     "--some-critical ${cfg.expectedPSI.cpu.some-critical} " +
+        #     "cpu";
+        #   interval = 10;
+        # };
+        # psi_memory = {
+        #   notification = "Pressure stalling on Memory too much";
+        #   command =
+        #     "${fc.sensuplugins}/bin/check_psi " +
+        #     "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
+        #     "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
+        #     "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
+        #     "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
+        #     "memory";
+        #   interval = 10;
+        # };
+        # psi_io = {
+        #   notification = "Pressure stalling on IO too much";
+        #   command =
+        #     "${fc.sensuplugins}/bin/check_psi " +
+        #     "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
+        #     "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
+        #     "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
+        #     "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
+        #     "io";
+        #   interval = 10;
+        # };
         load = {
           notification = "Load is too high";
           command =
