@@ -40,7 +40,7 @@ in {
     ./sensu/client.nix
     ./sensu/server.nix
     ./sensu/uchiwa.nix
-    ./telegraf.nix
+    ./telegraf
 
     (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")
   ];

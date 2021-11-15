@@ -34,6 +34,11 @@ let
 
 
 in {
+
+  imports = [
+    ./psi_input.nix
+  ];
+
   options = {
     flyingcircus.services.telegraf = {
 
