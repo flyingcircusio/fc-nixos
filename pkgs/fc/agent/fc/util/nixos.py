@@ -115,13 +115,14 @@ def channel_version(channel_url, log=_log):
     return version + suffix
 
 
-def running_system_version():
-    version_json = subprocess.run(["nixos-version", "--json"],
-                                  check=True,
-                                  capture_output=True,
-                                  text=True).stdout
+def running_system_version(log=_log):
+    nixos_version_path = Path("/run/current-system/nixos-version")
 
-    return json.loads(version_json)["nixosVersion"]
+    if not nixos_version_path.exists():
+        log.warn("nixos-version-missing")
+        return
+
+    return nixos_version_path.read_text()
 
 
 def current_nixos_channel_version():

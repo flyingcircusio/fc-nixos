@@ -94,7 +94,7 @@ class UpdateActivity(Activity):
             step = 1
             nixos.update_system_channel(self.next_channel_url, self.log)
 
-            if nixos.running_system_version() == self.next_version:
+            if nixos.running_system_version(self.log) == self.next_version:
                 self.log.info(
                     "update-run-skip",
                     current_version=self.next_version,
@@ -205,7 +205,7 @@ class UpdateActivity(Activity):
         self.next_kernel = next_kernel
 
     def _detect_current_state(self):
-        self.current_version = nixos.running_system_version()
+        self.current_version = nixos.running_system_version(self.log)
         self.current_channel_url = nixos.current_nixos_channel_url()
         self.current_environment = nixos.current_fc_environment_name()
         self.current_system = nixos.current_system()
