@@ -6,8 +6,9 @@ looking up the device by checking the root partition by label first.
 
 import argparse
 import fc.maintenance
-import fc.maintenance.lib.reboot
-import fc.manage.dmi_memory
+from fc.maintenance.lib.reboot import RebootActivity
+from fc.util.logging import init_logging
+import fc.util.dmi_memory
 from fc.util.nixos import kernel_version
 import json
 import os
@@ -18,7 +19,7 @@ import subprocess
 
 
 def verbose(msg):
-    # may be overriden in main()
+    # may be overridden in main()
     pass
 
 
@@ -129,7 +130,7 @@ def memory_change(enc):
     enc_memory = int(enc['parameters'].get('memory', 0))
     if not enc_memory:
         return
-    real_memory = fc.manage.dmi_memory.main()
+    real_memory = fc.util.dmi_memory.main()
     if real_memory == enc_memory:
         return
     msg = 'Reboot to change memory from {} MiB to {} MiB'.format(
@@ -138,9 +139,7 @@ def memory_change(enc):
     with fc.maintenance.ReqManager() as rm:
         rm.add(
             fc.maintenance.Request(
-                fc.maintenance.lib.reboot.RebootActivity('poweroff'),
-                600,
-                comment=msg))
+                RebootActivity('poweroff'), 600, comment=msg))
 
 
 def cpu_change(enc):
@@ -157,9 +156,7 @@ def cpu_change(enc):
     with fc.maintenance.ReqManager() as rm:
         rm.add(
             fc.maintenance.Request(
-                fc.maintenance.lib.reboot.RebootActivity('poweroff'),
-                600,
-                comment=msg))
+                RebootActivity('poweroff'), 600, comment=msg))
 
 
 def check_qemu_reboot():
@@ -207,9 +204,7 @@ def check_qemu_reboot():
     with fc.maintenance.ReqManager() as rm:
         rm.add(
             fc.maintenance.Request(
-                fc.maintenance.lib.reboot.RebootActivity('poweroff'),
-                600,
-                comment=msg))
+                RebootActivity('poweroff'), 600, comment=msg))
 
 
 def check_kernel_reboot():
@@ -222,7 +217,7 @@ def check_kernel_reboot():
         with fc.maintenance.ReqManager() as rm:
             rm.add(
                 fc.maintenance.Request(
-                    fc.maintenance.lib.reboot.RebootActivity('reboot'),
+                    RebootActivity('reboot'),
                     600,
                     comment='Reboot to activate changed kernel '
                     '({} to {})'.format(booted, current)))
@@ -245,6 +240,9 @@ def main():
 
     if args.verbose > 0:
         globals()['verbose'] = lambda msg: print(msg)
+
+    main_log_file = open('/var/log/fc-resize.log', 'a')
+    init_logging(args.verbose, main_log_file)
 
     with open(args.enc_path) as f:
         enc = json.load(f)

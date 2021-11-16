@@ -25,7 +25,22 @@ class Channel:
 
 
 class ChannelException(Exception):
-    pass
+
+    def __init__(self, msg=None, stdout=None, stderr=None):
+        self.stdout = stdout
+        self.stderr = stderr
+        lines = []
+        if msg:
+            lines.append(msg)
+        if stdout is not None:
+            lines.append("Stdout:")
+            lines.append(stdout)
+
+        if stderr is not None:
+            lines.append("Stderr:")
+            lines.append(stderr)
+
+        self.msg = "\n".join(lines)
 
 
 class ChannelUpdateFailed(ChannelException):
@@ -142,6 +157,14 @@ def current_nixos_channel_url(log=_log):
             exc_info=True)
 
 
+def current_system(log=_log):
+    if not p.exists("/run/current-system"):
+        log.warn("current-system-missing")
+        return
+
+    return os.readlink("/run/current-system")
+
+
 def resolve_url_redirects(url):
     if not url.endswith("nixexprs.tar.xz"):
         url = p.join(url, 'nixexprs.tar.xz')
@@ -177,10 +200,14 @@ def update_system_channel(channel_url, log=_log):
             "System channel URL changed from {current_channel_url} to {new_channel_url}",
             current_channel_url=current_channel_url,
             new_channel_url=channel_url)
-        subprocess.run(['nix-channel', '--add', channel_url, "nixos"],
-                       check=True,
-                       capture_output=True,
-                       text=True)
+
+        try:
+            subprocess.run(['nix-channel', '--add', channel_url, "nixos"],
+                           check=True,
+                           capture_output=True,
+                           text=True)
+        except subprocess.SubprocessError as e:
+            raise ChannelUpdateFailed(stdout=e.stdout, stderr=e.stderr)
 
     stdout_lines = []
     proc = subprocess.Popen(['nix-channel', '--update', "nixos"],
@@ -202,13 +229,14 @@ def update_system_channel(channel_url, log=_log):
     if proc.returncode == 0:
         log.debug("system-channel-update-succeeded")
     else:
+        stderr = proc.stderr.read()
         log.error(
             "system-channel-update-failed",
             _replace_msg=
             "System channel update failed, see command output for details.",
             stdout=stdout,
-            stderr=proc.stderr.read())
-        raise ChannelUpdateFailed()
+            stderr=stderr)
+        raise ChannelUpdateFailed(stdout=stdout, stderr=stderr)
 
 
 def switch_to_channel(channel_url, lazy=False, log=_log):
@@ -243,7 +271,7 @@ def find_nix_build_error(stderr):
     lines = stderr.splitlines()[::-1]
     for pos, line in enumerate(lines):
         if line.strip().startswith("while evaluating") and pos > 0:
-            errormsg = lines[pos-1].strip()
+            errormsg = lines[pos - 1].strip()
             if errormsg.endswith(" Definition values:"):
                 return errormsg[:-len(" Definition values:")]
             else:
@@ -296,7 +324,7 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
         if changed:
             msg = "Successfully built new system."
         else:
-            msg = "Built system, no changes."
+            msg = "No building needed, wanted system was already present."
         log.info(
             "system-build-succeeded",
             _replace_msg=msg,
@@ -305,14 +333,16 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
     else:
 
         build_error = find_nix_build_error(stderr)
+        msg = build_error.replace("}", "}}").replace("{", "{{")
+        stdout = proc.stdout.read().strip() or None
         log.error(
             "system-build-failed",
             # we need to escape the curly braces because _replace_msg is
             # interpreted as format string.
-            _replace_msg=build_error.replace("}", "}}").replace("{", "{{"),
-            stdout=proc.stdout.read().strip() or None,
+            _replace_msg=msg,
+            stdout=stdout,
             stderr=stderr)
-        raise BuildFailed()
+        raise BuildFailed(msg=msg, stdout=stdout, stderr=stderr)
 
     system_path = proc.stdout.read().strip()
     log.debug("system-build-finished", system=system_path)
@@ -364,14 +394,17 @@ def switch_to_system(system_path, lazy, log=_log):
             _replace_msg="Switching to new system failed!",
             stdout=stdout,
             system_path=system_path)
-        raise SwitchFailed()
+        raise SwitchFailed(stdout=stdout)
 
     return True
 
 
 def dry_activate_system(system_path, log=_log):
     cmd = [f"{system_path}/bin/switch-to-configuration", "dry-activate"]
-    log.info("system-dry-activate-start", system=system_path)
+    log.info(
+        "system-dry-activate-start",
+        _replace_msg=f"Dry-activating new system: {system_path}",
+        system=system_path)
     log.debug("system-dry-activate-cmd", cmd=" ".join(cmd))
 
     stdout_lines = []
@@ -388,7 +421,14 @@ def dry_activate_system(system_path, log=_log):
             stdout="\n".join(stdout_lines))
         raise DryActivateFailed()
 
-    return detect_systemd_unit_changes(stdout_lines)
+    unit_changes = detect_systemd_unit_changes(stdout_lines)
+    log.debug(
+        "system-dry-activate-unit-changes",
+        start=unit_changes.get("start"),
+        stop=unit_changes.get("stop"),
+        restart=unit_changes.get("restart"),
+        reload=unit_changes.get("reload"))
+    return unit_changes
 
 
 def register_system_profile(system_path, log=_log):
@@ -406,4 +446,4 @@ def register_system_profile(system_path, log=_log):
             _replace_msg="Registering the new system in the profile failed!",
             stdout=e.stdout,
             stderr=e.stderr)
-        raise RegisterFailed()
+        raise RegisterFailed(stdout=e.stdout, stderr=e.stderr)

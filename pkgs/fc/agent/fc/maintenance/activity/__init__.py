@@ -1,4 +1,10 @@
 """Base class for maintenance activities."""
+from enum import Enum
+
+
+class RebootType(Enum):
+    WARM = 1
+    COLD = 2
 
 
 class Activity:
@@ -20,6 +26,7 @@ class Activity:
     returncode = None
     duration = None
     request = None  # backpointer, will be set in Request
+    reboot_needed = None
 
     def __init__(self):
         """Creates activity object (add args if you like).
@@ -28,6 +35,16 @@ class Activity:
         __dict__ is serialized using PyYAML between runs.
         """
         pass
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # Deserializing loggers breaks, remove them before serializing (to YAML).
+        if "log" in state:
+            del state["log"]
+        return state
+
+    def set_up_logging(self, log):
+        self.log = log
 
     def run(self):
         """Executes maintenance activity.

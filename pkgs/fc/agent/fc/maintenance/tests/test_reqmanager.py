@@ -1,4 +1,5 @@
-from fc.maintenance.activity import Activity
+import subprocess
+from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.reqmanager import ReqManager
 from fc.maintenance.request import Request, Attempt
 from fc.maintenance.state import State, ARCHIVE, EXIT_POSTPONE
@@ -14,7 +15,6 @@ import pytest
 import pytz
 import shortuuid
 import socket
-import structlog
 import sys
 import unittest.mock
 import uuid
@@ -168,9 +168,44 @@ def test_explicitly_deleted(connect, reqmanager):
             'result': 'deleted'
         }})
 
+
+@unittest.mock.patch('subprocess.run')
+@unittest.mock.patch('fc.util.directory.connect')
+def test_execute_activity_no_reboot(connect, run, reqmanager, log):
+    activity = Activity()
+    req = reqmanager.add(Request(activity, 1))
+    req.state = State.due
+    reqmanager.execute(run_all_now=True)
+    run.assert_not_called()
+    assert log.has("enter-maintenance")
+    assert log.has("leave-maintenance")
+
+
+@unittest.mock.patch('subprocess.run')
+@unittest.mock.patch('fc.util.directory.connect')
+def test_execute_activity_with_reboot(connect, run, reqmanager, log):
+    activity = Activity()
+    activity.reboot_needed = RebootType.WARM
+    req = reqmanager.add(Request(activity, 1))
+    req.state = State.due
+    reqmanager.execute(run_all_now=True)
+    run.assert_called_once()
+    assert run.call_args[0][0] == "reboot"
+    assert log.has("enter-maintenance")
+    assert log.has("maintenance-reboot")
+    assert not log.has("leave-maintenance")
+
+
+@unittest.mock.patch('subprocess.run')
+def test_reboot_cold_reboot_has_precedence(run, reqmanager, log):
+    reqmanager.reboot({RebootType.COLD, RebootType.WARM})
+    assert log.has("maintenance-poweroff")
+
+
 # XXX: Freezegun breaks if tests that don't use it run after tests that use it.
 # Looks like: https://github.com/spulec/freezegun/issues/324
 # Freezegun tests start here.
+
 
 @freezegun.freeze_time('2016-04-20 11:00:00')
 def test_delete_end_to_end(tmpdir):
@@ -323,8 +358,7 @@ def test_end_to_end(connect, tmpdir):
         },
         'deleted_req': {},
     }
-    sys.argv = ['fc-maintenance', '--spooldir', str(tmpdir)]
-    fc.maintenance.reqmanager.main()
+    fc.maintenance.reqmanager.transaction(tmpdir)
     assert sched.call_count == 1
     assert endm.call_count == 2  # delete, archive
     assert postp.call_count == 1
