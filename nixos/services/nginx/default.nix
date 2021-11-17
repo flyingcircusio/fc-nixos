@@ -308,7 +308,7 @@ in
 
       flyingcircus.services.telegraf.inputs = {
         nginx = [ {
-          urls = [ "http://localhost/nginx_status" ];
+          urls = [ "http://localhost:81/nginx_status" ];
         } ];
       };
 
@@ -324,7 +324,7 @@ in
           notification = "nginx does not listen on port 80";
           command = ''
             ${pkgs.monitoring-plugins}/bin/check_http \
-              -H localhost -u /nginx_status -s server -c 5 -w 2
+              -H localhost -u /nginx_status -p 81 -s server -c 5 -w 2
           '';
           interval = 60;
         };

@@ -250,6 +250,11 @@ in
       # Ensure that we can do early binds before addresses are configured.
       "net.ipv4.ip_nonlocal_bind" = "1";
       "net.ipv6.ip_nonlocal_bind" = "1";
+
+      # Ensure dual stack support for binding to [::] for services that
+      # only accept a single bind address.
+      "net.ipv6.bindv6only" = "0";
+
       # Ensure that we can use IPv6 as early as possible.
       # This fixes startup race conditions like 
       # https://yt.flyingcircus.io/issue/PL-130190
