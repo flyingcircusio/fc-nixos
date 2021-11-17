@@ -101,9 +101,8 @@ def resize_filesystems(enc):
                                              'root']).decode().strip()
     except subprocess.CalledProcessError as e:
         if e.returncode == 2:
-            # Label was not found.
-            # This happends for instance on Vagrant, where it is no problem and
-            # should not be an error.
+            # Label was not found. This happens for instance in containers,
+            # where it is no problem and should not be an error.
             raise SystemExit(0)
 
     # The partition output is '/dev/vda1'. We assume we have a single-digit

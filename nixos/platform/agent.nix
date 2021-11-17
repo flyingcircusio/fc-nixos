@@ -160,8 +160,8 @@ in {
 
     (mkIf (cfg.agent.install && cfg.agent.enable) {
       # Do not include the service if the agent is not enabled. This allows
-      # deciding, i.e. for Vagrant, that the image should not start the
-      # general fc-manage service upon boot, which might fail.
+      # deciding, i.e. for testing environments, that the image should not start
+      # the general fc-manage service upon boot, which might fail.
       systemd.timers.fc-agent = {
         description = "Timer for fc-agent";
         wantedBy = [ "timers.target" ];
