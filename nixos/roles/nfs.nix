@@ -30,17 +30,22 @@ let
 in
 {
   options = with lib; {
-    flyingcircus.roles.nfs_rg_client.enable = mkEnableOption ''
-      Enable the Flying Circus nfs client role.
+    flyingcircus.roles.nfs_rg_client = {
+      enable = mkEnableOption ''
+        Enable the Flying Circus nfs client role.
 
-      This mounts /srv/nfs/shared from the server to /mnt/nfs/shared.
-    '';
+        This mounts /srv/nfs/shared from the server to /mnt/nfs/shared.
+      '';
+      supportsContainers = fclib.mkEnableContainerSupport;
+    };
+    flyingcircus.roles.nfs_rg_share = {
+      enable = mkEnableOption ''
+        Enable the Flying Circus nfs server role.
 
-    flyingcircus.roles.nfs_rg_share.enable = mkEnableOption ''
-      Enable the Flying Circus nfs server role.
-
-      This exports /srv/nfs/shared.
-    '';
+        This exports /srv/nfs/shared.
+      '';
+      supportsContainers = fclib.mkEnableContainerSupport;
+    };
   };
 
   config = lib.mkMerge [

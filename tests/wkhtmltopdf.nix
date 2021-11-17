@@ -127,9 +127,7 @@ in
   machine =
     { pkgs, lib, config, ... }:
     {
-      imports = [
-        ../nixos
-      ];
+      imports = [ ../nixos ../nixos/roles ];
 
       services.telegraf.enable = false;
 

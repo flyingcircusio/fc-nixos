@@ -59,7 +59,7 @@ in {
 
     loopback = {
       name = "loopback";
-      machine.imports = [ ../../nixos ];
+      imports = [ ../../nixos ../../nixos/roles ];
       machine.services.telegraf.enable = false;
       testScript = ''
         machine.wait_for_unit("network.target")
@@ -70,7 +70,7 @@ in {
 
     wireguard = {
       name = "wireguard";
-      machine.imports = [ ../../nixos ];
+      imports = [ ../../nixos ../../nixos/roles ];
       machine.services.telegraf.enable = false;
       testScript = ''
         machine.wait_for_unit("network.target")
@@ -111,7 +111,7 @@ in {
       machine =
         { pkgs, ... }:
         {
-          imports = [ ../../nixos ];
+          imports = [ ../../nixos ../../nixos/roles ];
           virtualisation.vlans = [ 1 2 ];
           flyingcircus.enc.parameters.interfaces = encInterfaces "1";
           flyingcircus.encAddresses = [
@@ -160,7 +160,7 @@ in {
       nodes.client =
         { pkgs, ... }:
         {
-          imports = [ ../../nixos ];
+          imports = [ ../../nixos ../../nixos/roles ];
           virtualisation.vlans = [ 1 2 ];
           flyingcircus.enc.parameters.interfaces = encInterfaces "1";
         };
@@ -205,7 +205,7 @@ in {
       nodes.machine1 =
         { pkgs, ... }:
         {
-          imports = [ ../../nixos ];
+          imports = [ ../../nixos ../../nixos/roles ];
           virtualisation.vlans = [ 2 ];
           flyingcircus.enc.parameters.interfaces = {
             srv = {  # VLAN 2
@@ -227,7 +227,7 @@ in {
       nodes.machine2 =
         { pkgs, ... }:
         {
-          imports = [ ../../nixos ];
+          imports = [ ../../nixos ../../nixos/roles ];
           virtualisation.vlans = [ 2 ];
           flyingcircus.enc.parameters.interfaces = {
             srv = {  # VLAN 2
@@ -283,7 +283,7 @@ in {
             { config, pkgs, ... }:
             {
               networking.hostName = "srv${hostId}";
-              imports = [ ../../nixos ];
+              imports = [ ../../nixos ../../nixos/roles ];
               virtualisation.vlans = [ 1 2 ];
               flyingcircus.infrastructureModule = "flyingcircus";
               flyingcircus.enc.parameters.interfaces = encInterfaces hostId;

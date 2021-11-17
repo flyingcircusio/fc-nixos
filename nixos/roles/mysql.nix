@@ -3,18 +3,34 @@
 # TODO:
 # consistency check / automatic maintenance?
 
+
 with builtins;
 
+let
+  fclib = config.fclib;
+in
 {
   options = with lib;
   let
-    mkRole = v: lib.mkEnableOption
-      "Enable the Flying Circus MySQL / Percona ${v} server role.";
+    mkRole = v: {
+      enable = lib.mkEnableOption "Enable the Flying Circus MySQL / Percona ${v} server role.";
+      supportsContainers = fclib.mkEnableContainerSupport;
+    };
   in {
 
     flyingcircus.roles = {
 
       mysql = {
+
+        # This is a placeholder role and should not be enabled
+        # by itself and can't directly run on containers either.
+        supportsContainers = fclib.mkDisableContainerSupport;
+
+        listenAddresses = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = fclib.network.lo.dualstack.addresses ++
+                    fclib.network.srv.dualstack.addresses;
+        };
 
         extraConfig = mkOption {
           type = types.lines;
@@ -28,9 +44,9 @@ with builtins;
         };
       };
 
-      mysql56.enable = mkRole "5.6";
-      mysql57.enable = mkRole "5.7";
-      percona80.enable = mkRole "8.0";
+      mysql56 = mkRole "5.6";
+      mysql57 = mkRole "5.7";
+      percona80 = mkRole "8.0";
     };
 
   };
@@ -60,10 +76,6 @@ with builtins;
 
     current_memory = fclib.currentMemory 256;
     cores = fclib.currentCores 1;
-
-    listenAddresses =
-      fclib.network.lo.dualstack.addresses ++
-      fclib.network.srv.dualstack.addresses;
 
     localConfigPath = /etc/local/mysql;
 
@@ -183,7 +195,7 @@ with builtins;
            # so we must bind to 0.0.0.0
           if (lib.versionAtLeast package.version "8.0")
           then
-          "bind-address               = ${lib.concatStringsSep "," listenAddresses}"
+          "bind-address               = ${lib.concatStringsSep "," cfg.listenAddresses}"
           else
           "bind-address               = 0.0.0.0"
         }

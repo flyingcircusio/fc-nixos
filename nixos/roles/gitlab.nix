@@ -12,6 +12,7 @@ in
 
     flyingcircus.roles.gitlab = {
       enable = mkEnableOption "Enable the Flying Circus GitLab role.";
+      supportsContainers = fclib.mkDisableContainerSupport;
 
       enableDockerRegistry = mkEnableOption "Enable docker registry and GitLab integration";
 

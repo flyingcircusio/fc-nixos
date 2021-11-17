@@ -15,12 +15,10 @@ in
     prod =
       { config, lib, ... }:
       {
-        imports = [
-          ../nixos
-        ];
+        imports = [ ../nixos ../nixos/roles ];
+
         flyingcircus.agent.enable = true;
         flyingcircus.enc.parameters.production = true;
-
 
         flyingcircus.enc.parameters.interfaces.srv = {
           mac = "52:54:00:12:34:56";
@@ -37,9 +35,7 @@ in
     nonprod =
       { config, lib, ... }:
       {
-        imports = [
-          ../nixos
-        ];
+        imports = [ ../nixos ../nixos/roles ];
         flyingcircus.agent.enable = true;
         flyingcircus.enc.parameters.production = false;
 

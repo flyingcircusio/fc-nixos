@@ -253,6 +253,7 @@ in
   options = {
     flyingcircus.roles.kubernetes-master = {
       enable = lib.mkEnableOption "Enable Kubernetes Master (only one per RG; experimental)";
+      supportsContainers = fclib.mkDisableContainerSupport;
     };
   };
 

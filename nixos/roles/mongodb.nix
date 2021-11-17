@@ -53,6 +53,7 @@ in {
   let
     mkRole = v: {
       enable = lib.mkEnableOption "Enable the Flying Circus MongoDB ${v} server role.";
+      supportsContainers = fclib.mkEnableContainerSupport;
     };
   in {
     flyingcircus.roles = {
@@ -79,7 +80,7 @@ in {
 
       services.mongodb.enable = true;
       services.mongodb.dbpath = "/srv/mongodb";
-      services.mongodb.bind_ip = lib.concatStringsSep "," listenAddresses;
+      services.mongodb.bind_ip = fclib.mkPlatform (lib.concatStringsSep "," listenAddresses);
       services.mongodb.pidFile = "/run/mongodb.pid";
       services.mongodb.package = pkgs."mongodb-${lib.replaceStrings ["."] ["_"] majorVersion}";
 

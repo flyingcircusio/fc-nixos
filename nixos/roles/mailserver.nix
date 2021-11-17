@@ -8,12 +8,12 @@ let
   fclib = config.fclib;
   roles = config.flyingcircus.roles;
 
-  listenFe = fclib.network.fe.dualstack.addresses;
-  listenFe4 = fclib.network.fe.v4.addresses;
-  listenFe6 = fclib.network.fe.v6.addresses;
-  listenSrv = fclib.network.srv.dualstack.addresses;
-  listenSrv4 = fclib.network.fe.v4.addresses;
-  listenSrv6 = fclib.network.fe.v6.addresses;
+  listenFe = lib.attrByPath [ "fe" "dualstack" "addresses" ] [] fclib.network;
+  listenFe4 = lib.attrByPath [ "fe" "v4" "addresses" ] [] fclib.network;
+  listenFe6 = lib.attrByPath [ "fe" "v6" "addresses" ] [] fclib.network;
+  listenSrv = lib.attrByPath [ "srv" "dualstack" "addresses" ] [] fclib.network;
+  listenSrv4 = lib.attrByPath [ "fe" "v4" "addresses" ] [] fclib.network;
+  listenSrv6 = lib.attrByPath [ "fe" "v6" "addresses" ] [] fclib.network;
   hasFE = (params ? location &&
     lib.hasAttrByPath [ "interfaces" "fe" ] params &&
     listenFe4 != [] && listenFe6 != []);
@@ -91,6 +91,7 @@ in
         Flying Circus mailserver role with web mail.
         Mailout on all nodes in this RG/location.
       '';
+      supportsContainers = fclib.mkEnableContainerSupport;
 
       # this allows finegrained control over each domain
       # for example domain."test.fcio.net".autoconfig = false;
@@ -198,6 +199,7 @@ in
         Flying Circus mail stub role which creates a simple Postfix instance for
         manual configuration.
       '';
+      supportsContainers = fclib.mkEnableContainerSupport;
     };
   };
 

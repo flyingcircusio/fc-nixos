@@ -73,6 +73,9 @@ in
 
     flyingcircus.roles.elasticsearch = {
 
+      # This is a placeholder role, it does not support containers itself.
+      supportsContainers = fclib.mkDisableContainerSupport;
+
       clusterName = mkOption {
         type = types.nullOr types.string;
         default = null;
@@ -118,11 +121,15 @@ in
       };
     };
 
-    flyingcircus.roles.elasticsearch6.enable =
-      mkEnableOption "Enable the Flying Circus elasticsearch6 role.";
+    flyingcircus.roles.elasticsearch6 = {
+      enable = mkEnableOption "Enable the Flying Circus elasticsearch6 role.";
+      supportsContainers = fclib.mkEnableContainerSupport;
+    };
 
-    flyingcircus.roles.elasticsearch7.enable =
-      mkEnableOption "Enable the Flying Circus elasticsearch7 role.";
+    flyingcircus.roles.elasticsearch7 = {
+      enable = mkEnableOption "Enable the Flying Circus elasticsearch7 role.";
+      supportsContainers = fclib.mkEnableContainerSupport;
+    };
   };
 
   config = lib.mkMerge [

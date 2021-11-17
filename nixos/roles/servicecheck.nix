@@ -4,12 +4,14 @@
 
 let
   cfg = config.flyingcircus.roles.servicecheck;
+  fclib = config.fclib;
 in
 {
 
   options = with lib; {
     flyingcircus.roles.servicecheck = {
       enable = mkEnableOption "Enable the Flying Circus Service Check role.";
+      supportsContainers = fclib.mkDisableContainerSupport;
     };
   };
 

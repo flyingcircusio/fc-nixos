@@ -1,12 +1,14 @@
 { config, pkgs, lib, ... }:
 let
   role = config.flyingcircus.roles.redis;
-
+  fclib = config.fclib;
 in {
   options = {
     # redis4 is an alias for redis, see rename.nix
-    flyingcircus.roles.redis.enable =
-      lib.mkEnableOption "Flying Circus Redis";
+    flyingcircus.roles.redis = {
+      enable = lib.mkEnableOption "Flying Circus Redis";
+      supportsContainers = fclib.mkEnableContainerSupport;
+    };
   };
 
   config = lib.mkMerge [

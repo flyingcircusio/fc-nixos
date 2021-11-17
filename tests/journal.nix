@@ -5,9 +5,7 @@ import ./make-test-python.nix ({ lib, ... }:
   machine =
     { pkgs, lib, config, ... }:
     {
-      imports = [
-        ../nixos
-      ];
+      imports = [ ../nixos ../nixos/roles ];
 
       users.groups = {
         admins = {};

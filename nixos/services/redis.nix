@@ -6,10 +6,6 @@ let
   cfg = config.flyingcircus.services.redis;
   fclib = config.fclib;
 
-  listenAddresses =
-    fclib.network.lo.dualstack.addresses ++
-    fclib.network.srv.dualstack.addresses;
-
   generatedPassword =
     lib.removeSuffix "\n" (readFile
       (pkgs.runCommand "redis.password" {}
@@ -28,6 +24,12 @@ in {
 
     flyingcircus.services.redis = {
       enable = mkEnableOption "Preconfigured Redis";
+
+      listenAddresses = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = fclib.network.lo.dualstack.addresses ++
+                  fclib.network.srv.dualstack.addresses;
+      };
 
       password = mkOption {
         type = types.nullOr types.string;
@@ -97,7 +99,7 @@ in {
 
       services.redis = {
         enable = true;
-        bind = concatStringsSep " " listenAddresses;
+        bind = concatStringsSep " " cfg.listenAddresses;
         package = cfg.package;
         requirePass = password;
         vmOverCommit = true;

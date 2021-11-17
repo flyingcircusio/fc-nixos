@@ -13,7 +13,7 @@ in {
   name = "channel";
 
   machine = {
-    imports = [ ../nixos ];
+    imports = [ ../nixos ../nixos/roles ];
 
     flyingcircus.enc.parameters = {
       resource_group = "test";

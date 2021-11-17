@@ -208,7 +208,10 @@ let
 in
 {
   options = {
-    flyingcircus.roles.openvpn.enable = lib.mkEnableOption { };
+    flyingcircus.roles.openvpn = {
+      enable = lib.mkEnableOption { };
+      supportsContainers = fclib.mkDisableContainerSupport;
+    };
   };
 
   config = lib.mkIf cfg.roles.openvpn.enable {

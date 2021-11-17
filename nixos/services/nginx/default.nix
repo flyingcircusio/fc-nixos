@@ -145,6 +145,14 @@ in
   options.flyingcircus.services.nginx = with lib; {
     enable = mkEnableOption "FC-customized nginx";
 
+    defaultListenAddresses = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = fclib.network.fe.dualstack.addressesQuoted;
+      description = ''
+        Addresses to listen on if a vhost does not specify any.
+      '';
+    };
+
     httpConfig = mkOption {
       type = types.lines;
       default = "";
@@ -226,7 +234,7 @@ in
                 config.listenAddress
                 config.listenAddress6
               ]
-              else fclib.network.fe.dualstack.addressesQuoted;
+              else cfg.defaultListenAddresses;
           };
         };
       }));
@@ -308,7 +316,7 @@ in
 
       flyingcircus.services.telegraf.inputs = {
         nginx = [ {
-          urls = [ "http://localhost/nginx_status" ];
+          urls = [ "http://localhost:81/nginx_status" ];
         } ];
       };
 
@@ -324,7 +332,7 @@ in
           notification = "nginx does not listen on port 80";
           command = ''
             ${pkgs.monitoring-plugins}/bin/check_http \
-              -H localhost -u /nginx_status -s server -c 5 -w 2
+              -H localhost -u /nginx_status -p 81 -s server -c 5 -w 2
           '';
           interval = 60;
         };

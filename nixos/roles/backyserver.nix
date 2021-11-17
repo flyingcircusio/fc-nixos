@@ -17,6 +17,9 @@ in
         default = 3;
         type = lib.types.int;
       };
+
+      supportsContainers = fclib.mkDisableContainerSupport;
+
     };
 
   };

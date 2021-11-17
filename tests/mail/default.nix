@@ -106,7 +106,7 @@ in
       };
     client =
       { lib, ... }: {
-        imports = [ ../../nixos ];
+        imports = [ ../../nixos ../../nixos/roles ];
         config = lib.mkMerge [
           commonConfig
           {

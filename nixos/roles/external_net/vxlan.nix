@@ -102,16 +102,20 @@ let
 in
 {
   options = with lib; {
-    flyingcircus.roles.vxlan.gateway = mkEnableOption { };
+    flyingcircus.roles.vxlan =  {
+      gateway = mkEnableOption { };
 
-    flyingcircus.roles.vxlan.config = mkOption {
-      type = types.attrs;
-      default = jsonConfig;
-      description = ''
-        Set containing the parameters needed for setting up the VxLAN tunnel.
-        If nothing is specified here, the config is loaded from /etc/local/vxlan/config.json.
-        See /etc/local/vxlan/config.json.example for required parameters.
-      '';
+      supportsContainers = fclib.mkDisableContainerSupport;
+
+      config = mkOption {
+        type = types.attrs;
+        default = jsonConfig;
+        description = ''
+          Set containing the parameters needed for setting up the VxLAN tunnel.
+          If nothing is specified here, the config is loaded from /etc/local/vxlan/config.json.
+          See /etc/local/vxlan/config.json.example for required parameters.
+        '';
+      };
     };
   };
 
