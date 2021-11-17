@@ -59,8 +59,10 @@ in {
 
     loopback = {
       name = "loopback";
-      imports = [ ../../nixos ../../nixos/roles ];
-      machine.services.telegraf.enable = false;
+      machine = {
+          imports = [ ../../nixos ../../nixos/roles ];
+          services.telegraf.enable = false;
+      };
       testScript = ''
         machine.wait_for_unit("network.target")
         machine.succeed("ip addr show lo | grep -q 'inet 127.0.0.1/8 '")
@@ -70,10 +72,13 @@ in {
 
     wireguard = {
       name = "wireguard";
-      imports = [ ../../nixos ../../nixos/roles ];
-      machine.services.telegraf.enable = false;
+      machine = {
+        imports = [ ../../nixos ../../nixos/roles ];
+        services.telegraf.enable = false;
+      };
       testScript = ''
         machine.wait_for_unit("network.target")
+
         machine.succeed("cat /var/lib/wireguard/privatekey")
         machine.succeed("cat /var/lib/wireguard/publickey")
         machine.succeed("wg")
