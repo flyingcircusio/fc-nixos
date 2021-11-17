@@ -72,7 +72,7 @@ in
 
       - nixos-fw: normal accept/reject rules
       - nixos-nat-pre: prerouting rules, e.g. port redirects (-t nat)
-      - nixos-nat-post: postrouting rules, e.g. masquerding (-t nat)
+      - nixos-nat-post: postrouting rules, e.g. masquerading (-t nat)
 
       See also https://doc.flyingcircus.io/roles/fc-21.05-production/firewall.html
     '';

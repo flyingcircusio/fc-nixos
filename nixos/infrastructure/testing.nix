@@ -1,4 +1,4 @@
-# Absolute minimum infrastructure defition for running tests etc.
+# Absolute minimum infrastructure definition for running tests etc.
 { config, lib, ... }:
 
 {
