@@ -24,5 +24,6 @@ rec {
   sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};
   util-physical = callPackage ./util-physical {};
+  telegraf-collect-psi = callPackage ./telegraf-collect-psi {};
 
 }

@@ -173,11 +173,26 @@ def test_switch_to_system_lazy_unchanged(log, monkeypatch):
     assert log.has("system-switch-skip")
 
 
-def test_update_nixos_channel(monkeypatch):
+def test_update_system_channel(log, monkeypatch):
     current_channel = "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
-    monkeypatch.setattr("fc.util.nixos.current_nixos_channel_url",
-                        (lambda: current_channel))
+    next_channel = "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
 
+    monkeypatch.setattr("fc.util.nixos.current_nixos_channel_url",
+                        (lambda _: current_channel))
+    channel_update_fake = PollingFakePopen(
+        'nix-channel --update nixos', stdout="", poll='stdout', returncode=0)
+
+    popen_mock = mock.Mock(return_value=channel_update_fake)
+    monkeypatch.setattr("subprocess.Popen", popen_mock)
+    run_mock = mock.Mock()
+    monkeypatch.setattr("subprocess.run", run_mock)
+
+    nixos.update_system_channel(next_channel)
+
+    run_mock.assert_called_once()
+    assert run_mock.call_args[0][0] == [
+        'nix-channel', '--add', next_channel, "nixos"
+    ]
 
 
 def test_find_nix_build_error_missing_option():

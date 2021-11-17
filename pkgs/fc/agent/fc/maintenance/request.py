@@ -9,8 +9,11 @@ import os
 import os.path as p
 import pytz
 import shortuuid
+import structlog
 import tempfile
 import yaml
+
+_log = structlog.get_logger()
 
 
 def utcnow():
@@ -39,12 +42,13 @@ class Request:
     state = State.pending
     _reqmanager = None  # backpointer, will be set in ReqManager
 
-    def __init__(self, activity, estimate, comment=None, dir=None):
+    def __init__(self, activity, estimate, comment=None, dir=None, log=_log):
         activity.request = self
         self.activity = activity
         self.estimate = Estimate(estimate)
         self.comment = comment
         self.dir = dir
+        self.log = log
         self.attempts = []
 
     def __str__(self):
@@ -61,6 +65,14 @@ class Request:
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.id == other.id
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # This somehow gets called twice when serializing to YAML so the second
+        # time, log may be mising. Just ignore it.
+        if "log" in state:
+            del state["log"]
+        return state
+
     def __hash__(self):
         return hash(self.id)
 
@@ -73,6 +85,11 @@ class Request:
             return False
         else:
             return self.id < other.id
+
+    def set_up_logging(self, log):
+        log = log.bind(request=self.id)
+        self.log = log
+        self.activity.set_up_logging(log)
 
     @property
     def id(self):
@@ -93,10 +110,11 @@ class Request:
         return p.join(self.dir, 'request.yaml')
 
     @classmethod
-    def load(cls, dir):
+    def load(cls, dir, log):
         # need imports because such objects may be loaded via YAML
         import fc.maintenance.lib.reboot
         import fc.maintenance.lib.shellscript
+        import fc.maintenance.activity.update
         with open(p.join(dir, 'request.yaml')) as f:
             instance = yaml.load(f, Loader=yaml.FullLoader)
             if instance.next_due and not instance.next_due.tzinfo:
@@ -104,6 +122,7 @@ class Request:
         instance.dir = dir
         with cd(dir):
             instance.activity.load()
+        instance.set_up_logging(log)
         return instance
 
     def save(self):

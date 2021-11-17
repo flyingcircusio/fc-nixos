@@ -215,6 +215,64 @@ in {
           description = "Limit of load thresholds before reaching critical.";
         };
       };
+      expectedPSI = {
+        cpu = {
+          some-warning = mkOption {
+            type = types.str;
+            default = "50,50,50";
+            description = "Limit of CPU PSI before warning.";
+          };
+          some-critical = mkOption {
+            type = types.str;
+            default = "75,75,75";
+            description = "Limit of CPU PSI before critical.";
+          };
+        };
+        memory = {
+          some-warning = mkOption {
+            type = types.str;
+            default = "50,50,50";
+            description = "Limit of memory PSI for some tasks before warning.";
+          };
+          some-critical = mkOption {
+            type = types.str;
+            default = "75,75,75";
+            description = "Limit of memory PSI for some tasks before critical.";
+          };
+          full-warning = mkOption {
+            type = types.str;
+            default = "50,50,50";
+            description = "Limit of memory PSI for all tasks before warning.";
+          };
+          full-critical = mkOption {
+            type = types.str;
+            default = "75,75,75";
+            description = "Limit of memory PSI for all tasks before critical.";
+          };
+        };
+        io = {
+          some-warning = mkOption {
+            type = types.str;
+            default = "50,50,50";
+            description = "Limit of IO PSI for some tasks before warning.";
+          };
+          some-critical = mkOption {
+            type = types.str;
+            default = "75,75,75";
+            description = "Limit of IO PSI for some tasks before critical.";
+          };
+          full-warning = mkOption {
+            type = types.str;
+            default = "50,50,50";
+            description = "Limit of IO PSI for all tasks before warning.";
+          };
+          full-critical = mkOption {
+            type = types.str;
+            default = "75,75,75";
+            description = "Limit of IO PSI for all tasks before critical.";
+          };
+        };
+      };
       expectedSwap = {
         warning = mkOption {
           type = types.int;
@@ -333,6 +391,37 @@ in {
           interval = 300;
         };
       in {
+        # psi_cpu = {
+        #   notification = "Pressure stalling on CPU too much";
+        #   command =
+        #     "${fc.sensuplugins}/bin/check_psi " +
+        #     "--some-warning ${cfg.expectedPSI.cpu.some-warning} " +
+        #     "--some-critical ${cfg.expectedPSI.cpu.some-critical} " +
+        #     "cpu";
+        #   interval = 10;
+        # };
+        # psi_memory = {
+        #   notification = "Pressure stalling on Memory too much";
+        #   command =
+        #     "${fc.sensuplugins}/bin/check_psi " +
+        #     "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
+        #     "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
+        #     "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
+        #     "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
+        #     "memory";
+        #   interval = 10;
+        # };
+        # psi_io = {
+        #   notification = "Pressure stalling on IO too much";
+        #   command =
+        #     "${fc.sensuplugins}/bin/check_psi " +
+        #     "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
+        #     "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
+        #     "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
+        #     "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
+        #     "io";
+        #   interval = 10;
+        # };
         load = {
           notification = "Load is too high";
           command =
