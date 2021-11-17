@@ -108,6 +108,9 @@ in {
           IOWeight = 10; # 1-10000
         };
 
+         # WARNING: path and environment are duplicated in
+         # devhost. Unfortunately using references causes conflicts
+         # that can not be easily resolved.
         path = with pkgs; [
           bzip2
           config.system.build.nixos-rebuild

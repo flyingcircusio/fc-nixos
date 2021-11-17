@@ -8,7 +8,7 @@ import ./make-test-python.nix (
     machine =
       { ... }:
       {
-        imports = [ ../nixos ];
+        imports = [ ../nixos ../nixos/roles ];
 
         config = {
           flyingcircus.logrotate.enable = true;

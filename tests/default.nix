@@ -27,6 +27,7 @@ in {
   antivirus = callTest ./antivirus.nix {};
   channel = callTest ./channel.nix {};
   coturn = callTest ./coturn.nix {};
+  devhost = callTest ./devhost.nix {};
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
   elasticsearch6 = callTest ./elasticsearch.nix { version = "6"; };
   elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };

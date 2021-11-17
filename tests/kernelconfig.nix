@@ -157,9 +157,7 @@ in
   machine =
     { config, ... }:
     {
-      imports = [
-        ../nixos
-      ];
+      imports = [ ../nixos ../nixos/roles ];
 
       config.services.telegraf.enable = false;
     };

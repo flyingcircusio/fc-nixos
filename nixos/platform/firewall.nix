@@ -95,6 +95,7 @@ in
     # configuration on the NixOS side. Users may set additional networking.nat.*
     # options in /etc/local/nixos.
     networking.nat.enable = true;
+    networking.nat.externalInterface = fclib.network.fe.device;
 
     networking.firewall =
       # our code generally assumes IPv6

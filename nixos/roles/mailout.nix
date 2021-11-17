@@ -5,11 +5,12 @@ with builtins;
 
 let
   roles = config.flyingcircus.roles;
-
+  fclib = config.fclib;
 in {
   options = {
     flyingcircus.roles.mailout = {
       enable = lib.mkEnableOption "Deprecated: use mailstub instead";
+      supportsContainers = fclib.mkEnableContainerSupport;
     };
   };
 

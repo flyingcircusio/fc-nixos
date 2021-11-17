@@ -97,15 +97,15 @@ with lib;
 
     flyingcircus = {
       enc =
-        mkDefault (fclib.jsonFromFile cfg.encPath "{}");
+        fclib.mkPlatform (fclib.jsonFromFile cfg.encPath "{}");
       encAddresses =
-        mkDefault (fclib.jsonFromFile cfg.encAddressesPath "[]");
+        fclib.mkPlatform (fclib.jsonFromFile cfg.encAddressesPath "[]");
       encServices =
-        mkDefault (fclib.jsonFromFile cfg.encServicesPath "[]");
+        fclib.mkPlatform (fclib.jsonFromFile cfg.encServicesPath "[]");
       encServiceClients =
-        mkDefault (fclib.jsonFromFile cfg.encServiceClientsPath "[]");
+        fclib.mkPlatform (fclib.jsonFromFile cfg.encServiceClientsPath "[]");
       systemState =
-        mkDefault (fclib.jsonFromFile cfg.systemStatePath "{}");
+        fclib.mkPlatform (fclib.jsonFromFile cfg.systemStatePath "{}");
     };
 
   };

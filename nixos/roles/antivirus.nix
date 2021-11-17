@@ -3,20 +3,26 @@
 with builtins;
 
 let
+  cfg = config.flyingcircus.roles.antivirus;
   fclib = config.fclib;
-  listenAddresses =
-    fclib.network.lo.dualstack.addresses ++
-    fclib.network.srv.dualstack.addresses;
-
 in
 {
   options = {
     flyingcircus.roles.antivirus = {
+
       enable = lib.mkEnableOption "ClamAV antivirus scanner";
+
+      supportsContainers = fclib.mkEnableContainerSupport;
+
+      listenAddresses = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = fclib.network.lo.dualstack.addresses ++
+                  fclib.network.srv.dualstack.addresses;
+      };
     };
   };
 
-  config = lib.mkIf config.flyingcircus.roles.antivirus.enable {
+  config = lib.mkIf cfg.enable {
     services.clamav.daemon = {
       enable = true;
       settings = {
@@ -26,7 +32,7 @@ in
         ExtendedDetectionInfo = true;
         ExitOnOOM = true;
         TCPSocket = 3310;
-        TCPAddr = listenAddresses;
+        TCPAddr = cfg.listenAddresses;
       };
     };
 
@@ -61,7 +67,7 @@ in
           notification = "clamd not reachable via TCP";
           command = ''
             ${pkgs.sensu-plugins-network-checks}/bin/check-ports.rb \
-              -h ${lib.concatStringsSep "," listenAddresses} -p 3310
+              -h ${lib.concatStringsSep "," cfg.listenAddresses} -p 3310
           '';
         };
 

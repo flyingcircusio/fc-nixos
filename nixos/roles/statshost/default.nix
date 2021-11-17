@@ -144,6 +144,8 @@ in
     # Options that are used by RG and the global statshost.
     flyingcircus.roles.statshost = {
 
+      supportsContainers = fclib.mkDisableContainerSupport;
+
       hostName = mkOption {
         default = fclib.fqdn { vlan = "fe"; };
         type = types.str;
@@ -211,6 +213,7 @@ in
     flyingcircus.roles.statshost-global = {
 
       enable = mkEnableOption "Grafana/InfluxDB stats host (global)";
+      supportsContainers = fclib.mkDisableContainerSupport;
 
       allowedMetricPrefixes = mkOption {
         type = types.listOf types.str;
@@ -227,16 +230,19 @@ in
     # Relays stats from an entire location to the global stats host.
     flyingcircus.roles.statshost-location-proxy = {
       enable = mkEnableOption "Stats proxy, which relays an entire location";
+      supportsContainers = fclib.mkDisableContainerSupport;
     };
 
     # The following two roles are "customer" roles, customers can use them to
     # have their own statshost.
     flyingcircus.roles.statshost-master = {
       enable = mkEnableOption "Grafana/Prometheus stats host for one RG";
+      supportsContainers = fclib.mkDisableContainerSupport;
     };
 
     flyingcircus.roles.statshost-relay = {
       enable = mkEnableOption "RG-specific Grafana/Prometheus stats relay";
+      supportsContainers = fclib.mkDisableContainerSupport;
     };
 
   };

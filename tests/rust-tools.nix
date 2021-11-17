@@ -4,7 +4,7 @@ import ./make-test-python.nix ({ pkgs, lib, ... }:
   name = "rust-tools";
 
   machine = {
-    imports = [ ../nixos ];
+    imports = [ ../nixos ../nixos/roles ];
 
     environment.systemPackages = with pkgs; [
       fc.check-age

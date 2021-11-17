@@ -27,6 +27,7 @@ Components/Roles
 .. toctree::
    :titlesonly:
 
+   devhost
    docker
    elasticsearch
    external_net

@@ -15,6 +15,7 @@ in
   options = {
     flyingcircus.roles.kubernetes-node = {
       enable = lib.mkEnableOption "Enable Kubernetes Node (experimental)";
+      supportsContainers = fclib.mkDisableContainerSupport;
     };
   };
 

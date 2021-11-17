@@ -145,6 +145,14 @@ in
   options.flyingcircus.services.nginx = with lib; {
     enable = mkEnableOption "FC-customized nginx";
 
+    defaultListenAddresses = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = fclib.network.fe.dualstack.addressesQuoted;
+      description = ''
+        Addresses to listen on if a vhost does not specify any.
+      '';
+    };
+
     httpConfig = mkOption {
       type = types.lines;
       default = "";
@@ -226,7 +234,7 @@ in
                 config.listenAddress
                 config.listenAddress6
               ]
-              else fclib.network.fe.dualstack.addressesQuoted;
+              else cfg.defaultListenAddresses;
           };
         };
       }));

@@ -1,13 +1,16 @@
 { config, lib, pkgs, ... }:
 
 with builtins;
-
+let
+  fclib = config.fclib;
+in
 {
   options =
   let
     mkRole = v: {
       enable = lib.mkEnableOption
         "Enable the Flying Circus RabbitMQ ${v} server role.";
+      supportsContainers = fclib.mkEnableContainerSupport;
     };
   in {
     flyingcircus.roles = {
@@ -40,9 +43,10 @@ with builtins;
     extraConfig = fclib.configFromFile /etc/local/rabbitmq/rabbitmq.config "";
 
     serviceConfig = {
-      inherit listenAddress package;
+      inherit package;
       enable = true;
       plugins = [ "rabbitmq_management" ];
+      listenAddress = fclib.mkPlatform listenAddress;
       config = extraConfig;
     };
 

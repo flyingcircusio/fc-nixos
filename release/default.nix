@@ -333,6 +333,7 @@ let
         (import ./vm-image.nix imgArgs)
         (import version_nix {})
         ../nixos
+        ../nixos/roles
       ];
     }).config.system.build.fcImage;
 

@@ -61,6 +61,18 @@ rec {
 
   mkPlatform = lib.mkOverride 900;
 
+  mkDisableContainerSupport = lib.mkOption {
+    type = lib.types.bool;
+    description = "This role is not compatible with (dev) containers.";
+    default = false;
+  };
+
+  mkEnableContainerSupport = lib.mkOption {
+    type = lib.types.bool;
+    description = "This role is compatible with (dev) containers.";
+    default = true;
+  };
+
   coalesce = list: findFirst (el: el != null) null list;
 
   servicePassword =
@@ -120,4 +132,7 @@ rec {
   in pkgs.runCommand name { preferLocalBuild = true; } ''
       ${pkgs.jq}/bin/jq . < ${json} > $out
     '';
+
+  python3BinFromFile = path: pkgs.writers.writePython3Bin (removeSuffix ".py" (builtins.baseNameOf path)) {} (lib.readFile path);
+
 }

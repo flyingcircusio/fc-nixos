@@ -6,7 +6,7 @@ let
   roleSet = lib.listToAttrs (
     map (role: { name = role; value = { enable = true; }; })
       config.flyingcircus.active-roles);
-
+  fclib = config.fclib;
 in {
   imports = with lib; [
     ./antivirus.nix
@@ -16,6 +16,7 @@ in {
     ./ceph/mon.nix
     ./ceph/osd.nix
     ./ceph/rgw.nix
+    ./devhost
     ./external_net
     ./elasticsearch.nix
     ./gitlab.nix
@@ -52,8 +53,10 @@ in {
   ];
 
   options = {
-    flyingcircus.roles.generic.enable =
-      lib.mkEnableOption "Generic role, which does nothing";
+    flyingcircus.roles.generic = {
+      enable = lib.mkEnableOption "Generic role, which does nothing";
+      supportsContainers = fclib.mkEnableContainerSupport;
+    };
   };
 
   config = {

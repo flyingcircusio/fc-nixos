@@ -44,7 +44,7 @@ in
     { pkgs, lib, config, ... }:
     {
       imports = [
-        ../nixos
+        ../nixos ../nixos/roles
       ];
 
       flyingcircus.users = {
