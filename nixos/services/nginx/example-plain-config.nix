@@ -36,7 +36,7 @@ in
   server {
       ${listenStatements}
 
-      # The first server name listed is the primary name. We remommend against
+      # The first server name listed is the primary name. We recommend against
       # using a wildcard server name (*.example.com) as primary.
       server_name www.example.com example.com;
 

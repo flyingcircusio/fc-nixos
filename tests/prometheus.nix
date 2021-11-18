@@ -4,7 +4,7 @@ import ./make-test-python.nix ({ ... }:
   machine =
     { config, ... }:
     {
-      imports = [ ../nixos ];
+      imports = [ ../nixos ../nixos/roles ];
       config.services.prometheus.enable = true;
 
       config.services.telegraf.enable = false;

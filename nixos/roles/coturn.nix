@@ -23,20 +23,6 @@ let
     "hostname"
     ];
 
-  defaultConfig = {
-    hostname = cfg.hostName;
-    alt-listening-port = 3479;
-    alt-tls-listening-port = 5350;
-    listening-ips = listenAddresses;
-    listening-port = 3478;
-    lt-cred-mech = false;
-    no-cli = true;
-    realm = cfg.hostName;
-    tls-listening-port = 5349;
-    use-auth-secret = true;
-    extraConfig = [];
-  };
-
   jsonConfig = fromJSON
     (fclib.configFromFile /etc/local/coturn/config.json "{}");
 
@@ -49,6 +35,8 @@ in
     flyingcircus.roles.coturn = {
       enable = mkEnableOption "Coturn TURN server";
 
+      supportsContainers = fclib.mkEnableContainerSupport;
+      
       hostName = mkOption {
         type = types.str;
         default = fclib.fqdn { vlan = "fe"; };
@@ -57,6 +45,24 @@ in
           A Letsencrypt certificate is generated for it.
           Defaults to the FE FQDN.
         '';
+      };
+
+      config = mkOption {
+        description = "Platform-configured options";
+        type = types.attrs;
+        default =  {
+          hostname = cfg.hostName;
+          alt-listening-port = 3479;
+          alt-tls-listening-port = 5350;
+          listening-ips = listenAddresses;
+          listening-port = 3478;
+          lt-cred-mech = false;
+          no-cli = true;
+          realm = cfg.hostName;
+          tls-listening-port = 5349;
+          use-auth-secret = true;
+          extraConfig = [];
+        };
       };
 
     };
@@ -68,7 +74,7 @@ in
       cert = "/var/lib/acme/${hostname}/fullchain.pem";
       pkey = "/var/lib/acme/${hostname}/key.pem";
       extraConfig = lib.concatStringsSep "\n" jsonConfig.extraConfig or [];
-    } // (mapAttrs (name: value: lib.mkDefault value) (removeAttrs defaultConfig ourSettings))
+    } // (mapAttrs (name: value: lib.mkDefault value) (removeAttrs cfg.config ourSettings))
       // (removeAttrs jsonConfig ourSettings);
 
     networking.firewall.allowedTCPPorts = [ 80 ];
@@ -145,6 +151,6 @@ in
     '';
 
     environment.etc."local/coturn/config.json.example".source =
-      fclib.writePrettyJSON "config.json.example" defaultConfig;
+      fclib.writePrettyJSON "config.json.example" cfg.config;
   };
 }

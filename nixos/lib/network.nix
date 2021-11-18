@@ -245,16 +245,16 @@ rec {
       { lo = {
         vlan = "lo";
         dualstack = {
-          addresses = [ "127.0.0.1" "::1"];
-          addressesQuoted = [ "127.0.0.1" "[::1]"];
+          addresses = [ "127.0.0.1" "::1" ];
+          addressesQuoted = [ "127.0.0.1" "[::1]" ];
         };
         v4 = {
           addresses = [ "127.0.0.1" ];
-          addressesQuoted = [ "127.0.0.1"];
+          addressesQuoted = [ "127.0.0.1" ];
         };
         v6 = {
-          addresses = [ "::1"];
-          addressesQuoted = [ "[::1]"];
+          addresses = [ "::1" ];
+          addressesQuoted = [ "[::1]" ];
         };
       }; });
 

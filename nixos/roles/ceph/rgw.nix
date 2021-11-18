@@ -18,6 +18,7 @@ in
   options = {
     flyingcircus.roles.ceph_rgw = {
       enable = lib.mkEnableOption "CEPH Rados Gateway";
+      supportsContainers = fclib.mkDisableContainerSupport;
 
       primary = lib.mkOption {
         default = (first_rgw == config.networking.hostName);

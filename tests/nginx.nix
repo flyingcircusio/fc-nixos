@@ -157,7 +157,7 @@ in {
   in ''
     def prep(server):
       server.wait_for_unit('nginx.service')
-      server.wait_for_open_port(80)
+      server.wait_for_open_port(81)
 
     def assert_file_permissions(expected, path):
       permissions = server1.succeed(f"stat {path} -c %a:%U:%G").strip()
@@ -175,8 +175,11 @@ in {
     def assert_unreachable(server, intf):
       server.fail("curl -k https://" + intf + " | grep TESTOK")
 
+    # Prep all servers to avoid hard to read output.
     prep(server1)
-    start_all() # warm-up other servers meanwhile - do after prep so 1 doesn't take forever
+    prep(server2)
+    prep(server3)
+    prep(server4)
 
     with subtest("proxy cache directory should be accessible only for nginx"):
       assert_file_permissions("700:nginx:nginx", "/var/cache/nginx/proxy")

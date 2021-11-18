@@ -237,8 +237,8 @@ def load_enc(log, enc_path):
         with open(enc_path) as f:
             enc = json.load(f)
     except (OSError, ValueError):
-        # This environment doesn't seem to support an ENC,
-        # i.e. Vagrant. Silently ignore for now.
+        # This environment doesn't seem to use an ENC,
+        # i.e. containers. Silently ignore for now.
         log.info(
             "no-enc-data",
             msg="enc data not supported on this infrastructure, ignoring")

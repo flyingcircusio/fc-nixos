@@ -4,6 +4,7 @@ with builtins;
 
 let
   cfg = config.flyingcircus.roles.sensuserver;
+  fclib = config.fclib;
 in
 {
 
@@ -16,6 +17,7 @@ in
               default = false;
               description = "Enable the Flying Circus sensu server role.";
           };
+          supportsContainers = fclib.mkDisableContainerSupport;
 
           hostName = mkOption {
             type = types.str;

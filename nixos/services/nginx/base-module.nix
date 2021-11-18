@@ -205,8 +205,10 @@ let
         server {
           # Conditional v6 handling, see:
           # https://stackoverflow.com/a/15101745
-          ${optionalString (enableIPv6 == false) "listen 127.0.0.1:80;" }
-          ${optionalString enableIPv6 "listen [::1]:80;" }
+          # Also: use a non-80 port as we still want to be able to bind
+          # 0.0.0.0:80 and/or [::1]:80 without causing reload issues.
+          listen 127.0.0.1:81;
+          ${optionalString enableIPv6 "listen [::1]:81;" }
 
           server_name localhost;
 
@@ -244,6 +246,11 @@ let
         defaultListen =
           if vhost.listen != [] then vhost.listen
           else
+            # This combines with our setting of "net.ipv6.bindv6only" to 0
+            # and the choice that nginx 1.13+ automatically enforces
+            # [::0] being ipv6only=on.
+            # We decided for this combination based on the recommendations
+            # in https://serverfault.com/questions/638367/do-you-need-separate-ipv4-and-ipv6-listen-directives-in-nginx
             let addrs = if vhost.listenAddresses != [] then vhost.listenAddresses else (
               [ "0.0.0.0" ] ++ optional enableIPv6 "[::0]"
             );

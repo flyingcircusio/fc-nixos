@@ -1,4 +1,4 @@
-# Absolute minimum infrastructure defition for running tests etc.
+# Absolute minimum infrastructure definition for running tests etc.
 { config, lib, ... }:
 
 {
@@ -9,7 +9,7 @@
     users.users.root.password = "";
 
     flyingcircus.agent.enable = lib.mkOverride 200 false;
-    flyingcircus.enc = {
+    flyingcircus.enc = config.fclib.mkPlatform {
       parameters.resource_group = "testrg";
       parameters.location = "testloc";
       name = "testvm";

@@ -72,7 +72,7 @@ in
 
       - nixos-fw: normal accept/reject rules
       - nixos-nat-pre: prerouting rules, e.g. port redirects (-t nat)
-      - nixos-nat-post: postrouting rules, e.g. masquerding (-t nat)
+      - nixos-nat-post: postrouting rules, e.g. masquerading (-t nat)
 
       See also https://doc.flyingcircus.io/roles/fc-21.05-production/firewall.html
     '';
@@ -95,6 +95,7 @@ in
     # configuration on the NixOS side. Users may set additional networking.nat.*
     # options in /etc/local/nixos.
     networking.nat.enable = true;
+    networking.nat.externalInterface = fclib.network.fe.device;
 
     networking.firewall =
       # our code generally assumes IPv6

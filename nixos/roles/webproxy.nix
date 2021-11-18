@@ -38,11 +38,18 @@ in
 
     flyingcircus.roles.webproxy = {
       enable = mkEnableOption "Flying Circus varnish server role";
+      supportsContainers = fclib.mkEnableContainerSupport;
 
       mallocMemoryPercentage = mkOption {
         type = types.int;
         default = 50;
         description = "Percentage of system memory to allocate to malloc cache";
+      };
+
+      listenAddresses = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = fclib.network.srv.dualstack.addressesQuoted ++
+                  fclib.network.lo.dualstack.addressesQuoted;
       };
 
     };
@@ -95,11 +102,8 @@ in
 
       services.varnish = {
         enable = true;
-        http_address =
-          lib.concatMapStringsSep " -a "
-            (addr: "${addr}:8008")
-            (fclib.network.srv.dualstack.addressesQuoted ++
-             fclib.network.lo.dualstack.addressesQuoted);
+        http_address = lib.concatMapStringsSep " -a "
+          (addr: "${addr}:8008") fccfg.listenAddresses;
         config = varnishCfg;
       };
 

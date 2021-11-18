@@ -6,10 +6,6 @@ let
   cfg = config.flyingcircus.roles.memcached;
   fclib = config.fclib;
 
-  listenAddresses =
-    fclib.network.lo.dualstack.addresses ++
-    fclib.network.srv.dualstack.addresses;
-
   defaultConfig = ''
     {
       "port": 11211,
@@ -32,6 +28,14 @@ in
         type = types.bool;
         default = false;
         description = "Enable the Flying Circus memcached role.";
+      };
+
+      supportsContainers = fclib.mkEnableContainerSupport;
+
+      listenAddresses = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = fclib.network.lo.dualstack.addresses ++
+                  fclib.network.srv.dualstack.addresses;
       };
 
     };
@@ -58,7 +62,7 @@ in
 
     services.memcached = {
       enable = true;
-      listen = concatStringsSep "," listenAddresses;
+      listen = concatStringsSep "," cfg.listenAddresses;
     } // localConfig;
 
     flyingcircus.services = {

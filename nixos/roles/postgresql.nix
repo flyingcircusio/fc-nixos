@@ -1,26 +1,30 @@
 { config, lib, pkgs, ... }:
 
 with builtins;
+let
+  fclib = config.fclib;
+in
 {
   options =
   let
-    mkRole = v: lib.mkEnableOption
-      "Enable the Flying Circus PostgreSQL ${v} server role.";
+    mkRole = v: {
+      enable = lib.mkEnableOption "Enable the Flying Circus PostgreSQL ${v} server role.";
+      supportsContainers = fclib.mkEnableContainerSupport;
+    };
+
   in {
     flyingcircus.roles = {
-      postgresql95.enable = mkRole "9.5";
-      postgresql96.enable = mkRole "9.6";
-      postgresql10.enable = mkRole "10";
-      postgresql11.enable = mkRole "11";
-      postgresql12.enable = mkRole "12";
-      postgresql13.enable = mkRole "13";
+      postgresql96 = mkRole "9.6";
+      postgresql10 = mkRole "10";
+      postgresql11 = mkRole "11";
+      postgresql12 = mkRole "12";
+      postgresql13 = mkRole "13";
     };
   };
 
   config =
   let
     pgroles = with config.flyingcircus.roles; {
-      "9.5" = postgresql95.enable;
       "9.6" = postgresql96.enable;
       "10" = postgresql10.enable;
       "11" = postgresql11.enable;

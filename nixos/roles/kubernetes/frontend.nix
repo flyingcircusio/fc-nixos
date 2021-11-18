@@ -23,7 +23,11 @@ in
 {
   options = with lib; {
     flyingcircus.roles.kubernetes-frontend = {
+
       enable = lib.mkEnableOption "Enable Kubernetes Frontend (experimental)";
+
+      supportsContainers = fclib.mkDisableContainerSupport;
+
       haproxyExtraConfig = mkOption {
         description = "Plain HAProxy config snippets appended to base config.";
         type = types.lines;

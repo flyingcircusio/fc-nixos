@@ -143,21 +143,22 @@ in
     flyingcircus.activationScripts = {
 
       prepare-wireguard-keys = ''
-        install -d -g root /var/lib/wireguard
-        OLDUMASK=$(umask)
-        umask 077
-        cd /var/lib/wireguard
-        if [ ! -e "privatekey" ]; then
-          ${pkgs.wireguard-tools}/bin/wg genkey > privatekey
-        fi
-        chmod u=rw,g-rwx,o-rwx privatekey
-        if [ ! -e "publickey" ]; then
-          ${pkgs.wireguard-tools}/bin/wg pubkey < privatekey > publickey
-        fi
-        chgrp service publickey
-        chmod u=rw,g=r,o-rwx publickey
-        ${pkgs.acl}/bin/setfacl -m g:sudo-srv:r publickey
-        umask $OLDUMASK
+        (
+          set -e
+          install -d -g root /var/lib/wireguard
+          umask 077
+          cd /var/lib/wireguard
+          if [ ! -e "privatekey" ]; then
+            ${pkgs.wireguard-tools}/bin/wg genkey > privatekey
+          fi
+          chmod u=rw,g-rwx,o-rwx privatekey
+          if [ ! -e "publickey" ]; then
+            ${pkgs.wireguard-tools}/bin/wg pubkey < privatekey > publickey
+          fi
+          chgrp service publickey
+          chmod u=rw,g=r,o-rwx publickey
+          ${pkgs.acl}/bin/setfacl -m g:sudo-srv:r publickey
+        )
       '';
 
     };
@@ -247,13 +248,21 @@ in
 
     boot.kernel.sysctl = {
       "net.ipv4.tcp_congestion_control" = "bbr";
+      # Ensure that we can do early binds before addresses are configured.
       "net.ipv4.ip_nonlocal_bind" = "1";
       "net.ipv6.ip_nonlocal_bind" = "1";
+
+      # Ensure dual stack support for binding to [::] for services that
+      # only accept a single bind address.
+      "net.ipv6.bindv6only" = "0";
+
       # Ensure that we can use IPv6 as early as possible.
       # This fixes startup race conditions like 
       # https://yt.flyingcircus.io/issue/PL-130190
       "net.ipv6.conf.all.optimistic_dad" = 1;
       "net.ipv6.conf.all.use_optimistic" = 1;
+
+      # Ensure we reserve ports as promised to our customers.
       "net.ipv4.ip_local_port_range" = "32768 60999";
       "net.ipv4.ip_local_reserved_ports" = "61000-61999";
       "net.core.rmem_max" = 8388608;

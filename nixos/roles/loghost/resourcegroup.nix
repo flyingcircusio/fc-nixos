@@ -19,11 +19,13 @@ in
 
   options = {
 
-    flyingcircus.roles.loghost.enable = lib.mkEnableOption ''
-      Flying Circus Loghost role.
-      This role enables the full graylog stack at once (GL, ES, Mongo).
-    '';
-
+    flyingcircus.roles.loghost = {
+      enable = lib.mkEnableOption ''
+        Flying Circus Loghost role.
+        This role enables the full graylog stack at once (GL, ES, Mongo).
+      '';
+      supportsContainers = fclib.mkDisableContainerSupport;
+    };
   };
 
   config = lib.mkIf (cfg.enable) {

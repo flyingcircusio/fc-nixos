@@ -1,8 +1,13 @@
 { config, lib, pkgs, ... }:
+
+let
+  fclib = config.fclib;
+in
 {
   options = {
     flyingcircus.roles.docker = {
       enable = lib.mkEnableOption "Enable Docker";
+      supportsContainers = fclib.mkEnableContainerSupport;
     };
   };
 

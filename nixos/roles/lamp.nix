@@ -1,11 +1,12 @@
 { config, pkgs, lib, ... }:
 let
   role = config.flyingcircus.roles.lamp;
-
+  fclib = config.fclib;
 in {
   options = with lib; {
     flyingcircus.roles.lamp = {
       enable = mkEnableOption "Flying Circus LAMP stack";
+      supportsContainers = fclib.mkEnableContainerSupport;
 
       apache_conf = mkOption {
         type = types.lines;

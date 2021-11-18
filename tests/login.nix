@@ -5,9 +5,7 @@ import ./make-test-python.nix ({ pkgs, latestKernel ? false, ... }:
   machine =
     { pkgs, lib, config, ... }:
     {
-      imports = [
-        ../nixos
-      ];
+      imports = [ ../nixos ../nixos/roles ];
 
       services.telegraf.enable = false;
 
