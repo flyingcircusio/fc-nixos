@@ -178,10 +178,6 @@ in
               enableACME = true;
               locations."/" = {
                 proxyPass = "https://${container.name}";
-                extraConfig = ''
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                '';
               };
             };
           };
