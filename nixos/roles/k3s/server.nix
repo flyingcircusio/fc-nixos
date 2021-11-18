@@ -40,7 +40,6 @@ let
     "--node-ip=${nodeAddress}"
     "--flannel-backend=host-gw"
     "--flannel-iface=ethsrv"
-    "--no-deploy traefik"
     "--datastore-endpoint=postgres://kubernetes:kubernetes@localhost/k3s?sslmode=disable"
     "--token-file=/var/lib/k3s/secret_token"
     "--data-dir=/var/lib/k3s"
