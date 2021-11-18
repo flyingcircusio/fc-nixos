@@ -84,6 +84,19 @@ Notes about the template:
 COPY provision.nix /etc/local/nixos/provision-container.nix
 ```
 
+If you want or need to sync (editable) source code before starting the deployment, use the `COPY` command:
+
+```
+COPY ../../../fc.directory /srv/s-dev/
+```
+
+If you want to initialize secrets with well-known secrets you can access all component overrides and secrets through environment variables and echo them into specific files in the container:
+
+```
+ECHO $COMPONENT_MANAGEDMYSQL_ADMIN_PASSWORD /etc/local/nixos/mysql-root-password
+```
+
+
 ## Run the deployment
 
 Now you can run the deployment:
