@@ -117,6 +117,7 @@ let
       shared.path = "${cfg.statePath}/shared";
       gitaly.client_path = "${cfg.packages.gitaly}/bin";
       backup = {
+        gitaly_backup_path = "${cfg.packages.gitaly}/bin/gitaly-backup";
         path = cfg.backup.path;
         keep_time = cfg.backup.keepTime;
       } // (optionalAttrs (cfg.backup.uploadOptions != {}) {
@@ -478,7 +479,7 @@ in {
       };
 
       port = mkOption {
-        type = types.int;
+        type = types.port;
         default = 8080;
         description = ''
           GitLab server port for copy-paste URLs, e.g. 80 or 443 if you're
@@ -1350,7 +1351,7 @@ in {
       ];
 
       serviceConfig = {
-        Type = "simple";
+        Type = "notify";
         User = cfg.user;
         Group = cfg.group;
         TimeoutSec = "infinity";
