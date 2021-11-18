@@ -6,6 +6,7 @@ let
   cfg = config.flyingcircus.roles.k3s-agent;
   fclib = config.fclib;
   server = fclib.findOneService "k3s-server-server";
+  serverAddress = lib.replaceStrings ["gocept.net"] ["fcio.net"] server.address;
   location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
   fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
 
@@ -14,7 +15,6 @@ let
   k3sFlags = [
     "--flannel-iface=ethsrv"
     "--node-ip=${nodeAddress}"
-    "--token-file=${tokenFile}"
     "--data-dir=/var/lib/k3s"
   ];
 
@@ -56,14 +56,14 @@ in
       flyingcircus.activationScripts.kubernetes-apitoken-node = ''
         mkdir -p /var/lib/k3s
         umask 077
-        echo ${master.password} | md5sum | head -c64 > /var/lib/k3s/secret_token
+        echo ${server.password} | sha256sum | head -c64 > /var/lib/k3s/secret_token
       '';
 
       services.k3s = {
         enable = true;
         role = "agent";
-        serverAddr = lib.replaceStrings ["gocept.net"] ["fcio.net"] master.address;
-        tokenFile = "";
+        serverAddr = "https://${serverAddress}:6443";
+        inherit tokenFile;
         extraFlags = lib.concatStringsSep " " k3sFlags;
       };
 
