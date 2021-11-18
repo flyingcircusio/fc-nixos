@@ -111,3 +111,10 @@ $ ./batou deploy dev
   deploymnt that are not specific to containers (require_v6, default/default_config_string, attributes without proper Attribute declaration are not mapped 
   any longer)
 
+## TBD
+
+* Syncing working code:
+  
+```
+rsync -avz --delete --exclude=.git --rsh='ssh -F {BATOUDIR}/ssh_config_dev' --rsync-path='sudo -u s-dev rsync' {SOURCE}/ container:/srv/s-dev/{TARGET}
+```
