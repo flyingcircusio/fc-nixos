@@ -6,15 +6,12 @@ let
   cfg = config.flyingcircus.roles.k3s-agent;
   fclib = config.fclib;
   server = fclib.findOneService "k3s-server-server";
-  serverAddress = lib.replaceStrings ["gocept.net"] ["fcio.net"] server.address;
-  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
-  fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
-
-  nodeAddress = head fclib.network.srv.v4.addresses;
+  serverAddress = lib.replaceStrings ["gocept.net"] ["fcio.net"] server.address or "";
+  agentAddress = head fclib.network.srv.v4.addresses;
   tokenFile = "/var/lib/k3s/secret_token";
   k3sFlags = [
     "--flannel-iface=ethsrv"
-    "--node-ip=${nodeAddress}"
+    "--node-ip=${agentAddress}"
     "--data-dir=/var/lib/k3s"
   ];
 
@@ -23,6 +20,8 @@ in
   options = {
     flyingcircus.roles.k3s-agent = {
       enable = lib.mkEnableOption "Enable K3s (Kubernetes) Agent Node (experimental)";
+      supportsContainers = fclib.mkDisableContainerSupport;
+
     };
   };
 
@@ -36,6 +35,8 @@ in
           message = "Invalid Cluster configuration: Kubernetes agent found but no server!";
         }
       ];
+
+      boot.supportedFilesystems = [ "nfs" "nfs4" ];
 
       environment.systemPackages = with pkgs; [
         config.services.k3s.package
@@ -65,6 +66,15 @@ in
         serverAddr = "https://${serverAddress}:6443";
         inherit tokenFile;
         extraFlags = lib.concatStringsSep " " k3sFlags;
+      };
+
+      users.users = {
+        kubernetes = {
+          isSystemUser = true;
+          home = "/var/empty";
+          extraGroups = [ "service" ];
+          uid = config.ids.uids.kubernetes;
+        };
       };
 
       ### Fixes for upstream issues

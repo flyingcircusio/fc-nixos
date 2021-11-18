@@ -18,7 +18,6 @@ let
   location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
   fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
 
-
 in
 {
   options = with lib; {

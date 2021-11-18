@@ -26,30 +26,20 @@ let
 
   fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
 
+  # Use the same location as NixOS k8s.
+  defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
   # Just the defaults here.
-  defaultKubeconfig = "/etc/rancher/k3s/k3s.yaml";
   clusterCidr = "10.42.0.0/16";
   serviceCidr = "10.43.0.0/16";
   dnsClusterIp = "10.43.0.10";
   clusterDns = [ dnsClusterIp ];
-
-  k3sFlags = [
-    "--cluster-cidr=${clusterCidr}"
-    "--service-cidr=${serviceCidr}"
-    "--cluster-dns=${dnsClusterIp}"
-    "--node-ip=${nodeAddress}"
-    "--flannel-backend=host-gw"
-    "--flannel-iface=ethsrv"
-    "--datastore-endpoint=postgres://kubernetes:kubernetes@localhost/k3s?sslmode=disable"
-    "--token-file=/var/lib/k3s/secret_token"
-    "--data-dir=/var/lib/k3s"
-  ];
 
 in
 {
   options = {
     flyingcircus.roles.k3s-server = {
       enable = lib.mkEnableOption "Enable K3s (Kubernetes) (only one per RG; experimental)";
+      supportsContainers = fclib.mkDisableContainerSupport;
     };
   };
 
@@ -64,6 +54,8 @@ in
     environment.systemPackages = with pkgs; [
       kubernetes-helm
       stern
+      bridge-utils
+      nfs-utils
       config.services.k3s.package
     ];
 
@@ -75,6 +67,21 @@ in
         echo ${server.password} | sha256sum | head -c64 > $token
         chmod 400 $token
       '';
+
+    flyingcircus.services.postgresql = {
+      enable = true;
+      majorVersion = "13";
+    };
+
+    services.postgresql = {
+      ensureDatabases = [ "kubernetes" ];
+      ensureUsers = [ {
+        name = "root";
+        ensurePermissions = {
+          "DATABASE kubernetes" = "ALL PRIVILEGES";
+        };
+      } ];
+    };
 
     flyingcircus.services.sensu-client.checks = let
     in
@@ -112,8 +119,25 @@ in
 
     networking.nameservers = lib.mkOverride 90 (lib.take 3 (clusterDns ++ fcNameservers));
 
-    services.k3s = {
+    services.k3s = let
+      k3sFlags = [
+        "--cluster-cidr=${clusterCidr}"
+        "--service-cidr=${serviceCidr}"
+        "--cluster-dns=${dnsClusterIp}"
+        "--node-ip=${nodeAddress}"
+        "--write-kubeconfig=${defaultKubeconfig}"
+        "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
+        "--flannel-backend=host-gw"
+        "--flannel-iface=ethsrv"
+        "--datastore-endpoint=postgres://@:5432/kubernetes?host=/run/postgresql"
+        "--token-file=/var/lib/k3s/secret_token"
+        "--data-dir=/var/lib/k3s"
+        "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
+      ];
+    in {
       enable = true;
+      role = "server";
+      inherit tokenFile;
       extraFlags = lib.concatStringsSep " " k3sFlags;
     };
 
@@ -220,9 +244,6 @@ in
 
     # https://github.com/NixOS/nixpkgs/issues/98766
     boot.kernelModules = [ "ip_conntrack" "ip_vs" "ip_vs_rr" "ip_vs_wrr" "ip_vs_sh" ];
-    networking.firewall.extraCommands = ''
-      iptables -A INPUT -i cni+ -j ACCEPT
-    '';
   };
 
 }
