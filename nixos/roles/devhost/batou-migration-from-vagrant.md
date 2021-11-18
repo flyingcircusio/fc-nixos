@@ -113,8 +113,11 @@ $ ./batou deploy dev
 
 ## TBD
 
-* Syncing working code:
+* Syncing working code (maybe create a wrapper command)
   
 ```
 rsync -avz --delete --exclude=.git --rsh='ssh -F {BATOUDIR}/ssh_config_dev' --rsync-path='sudo -u s-dev rsync' {SOURCE}/ container:/srv/s-dev/{TARGET}
 ```
+
+
+* cookie cutter integration to create (container) environments 
