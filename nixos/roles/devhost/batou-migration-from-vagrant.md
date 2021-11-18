@@ -9,6 +9,7 @@
 ```
 curl https://raw.githubusercontent.com/flyingcircusio/batou/master/appenv.py -o appenv
 rm batou; ln -sf appenv batou
+chmod +x appenv
 ```
 
 Adapt your `requirements.txt`:
