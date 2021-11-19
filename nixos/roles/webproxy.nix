@@ -192,7 +192,7 @@ in
         }
         {
           source_labels = [ "__name__" ];
-          regex = "varnish_(\1\w+)_(.+)__(\\d+)__(.+)";
+          regex = "varnish_(\\w+)_(.+)__(\\d+)__(.+)";
           replacement = "varnish_\${4}";
           target_label = "__name__";
         }
