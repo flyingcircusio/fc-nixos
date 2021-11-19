@@ -13,16 +13,12 @@ class FakeCmdStream:
     def __init__(self, content):
         self.content = content
         self.line_gen = (l for l in content.splitlines(keepends=True))
-        self.finished = False
-
-    def read_next(self):
-        try:
-            self.next_line = next(self.line_gen)
-        except StopIteration:
-            self.finished = True
 
     def readline(self):
-        return self.next_line
+        try:
+            return next(self.line_gen)
+        except StopIteration:
+            return ''
 
     def read(self):
         return self.content
@@ -44,16 +40,8 @@ class PollingFakePopen:
         self.pid = pid
         self._poll = poll
 
-    def poll(self):
-        if self._poll == 'stdout':
-            self.stdout.read_next()
-            if self.stdout.finished:
-                return self.returncode
-
-        if self._poll == 'stderr':
-            self.stderr.read_next()
-            if self.stderr.finished:
-                return self.returncode
+    def wait(self):
+        pass
 
 
 def test_build_system_with_changes(log, monkeypatch):

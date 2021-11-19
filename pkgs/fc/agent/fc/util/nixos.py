@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from subprocess import PIPE, STDOUT
+from fc.util.subprocess_helper import get_popen_stderr_lines, get_popen_stdout_lines
 import json
 import os
 import os.path as p
@@ -210,7 +211,6 @@ def update_system_channel(channel_url, log=_log):
         except subprocess.SubprocessError as e:
             raise ChannelUpdateFailed(stdout=e.stdout, stderr=e.stderr)
 
-    stdout_lines = []
     proc = subprocess.Popen(['nix-channel', '--update', "nixos"],
                             stdout=PIPE,
                             stderr=PIPE,
@@ -219,13 +219,10 @@ def update_system_channel(channel_url, log=_log):
         "system-channel-update-started",
         _replace_msg="Channel update command started with PID: {cmd_pid}",
         cmd_pid=proc.pid)
-    while proc.poll() is None:
-        line = proc.stdout.readline()
-        log.trace(
-            "system-channel-update-out", cmd_output_line=line.strip("\n"))
-        stdout_lines.append(line)
 
+    stdout_lines = get_popen_stdout_lines(proc, log, "system-channel-update-out")
     stdout = "".join(stdout_lines)
+    proc.wait()
 
     if proc.returncode == 0:
         log.debug("system-channel-update-succeeded")
@@ -317,18 +314,15 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
 
     log.debug("system-build-command", cmd=" ".join(cmd))
 
-    stderr_lines = []
     proc = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
     log.info(
         "system-build-started",
         _replace_msg="Nix build command started with PID: {cmd_pid}",
         cmd_pid=proc.pid)
-    while proc.poll() is None:
-        line = proc.stderr.readline()
-        log.trace("system-build-out", cmd_output_line=line.strip("\n"))
-        stderr_lines.append(line)
 
+    stderr_lines = get_popen_stderr_lines(proc, log, "system-build-out")
     stderr = "".join(stderr_lines).strip()
+    proc.wait()
 
     if stderr:
         changed = True
@@ -385,18 +379,15 @@ def switch_to_system(system_path, lazy, log=_log):
 
     log.debug("system-switch-command", cmd=" ".join(cmd))
 
-    stdout_lines = []
     proc = subprocess.Popen(cmd, stdout=PIPE, stderr=STDOUT, text=True)
     log.info(
         "system-switch-started",
         _replace_msg="Switch command started with PID: {cmd_pid}",
         cmd_pid=proc.pid)
-    while proc.poll() is None:
-        line = proc.stdout.readline()
-        log.trace("system-switch-out", cmd_output_line=line.strip("\n"))
-        stdout_lines.append(line)
 
+    stdout_lines = get_popen_stdout_lines(proc, log, "system-switch-out")
     stdout = "".join(stdout_lines)
+    proc.wait()
 
     if proc.returncode == 0:
         log.info(
@@ -423,12 +414,9 @@ def dry_activate_system(system_path, log=_log):
         system=system_path)
     log.debug("system-dry-activate-cmd", cmd=" ".join(cmd))
 
-    stdout_lines = []
     proc = subprocess.Popen(cmd, stdout=PIPE, stderr=STDOUT, text=True)
-    while proc.poll() is None:
-        line = proc.stdout.readline()
-        log.trace("system-dry-activate-out", cmd_output_line=line.strip())
-        stdout_lines.append(line)
+    stdout_lines = get_popen_stdout_lines(proc, log, "system-dry-activate-out")
+    proc.wait()
 
     if proc.returncode != 0:
         log.error(
