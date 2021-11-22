@@ -145,7 +145,7 @@ in
 
       security.sudo.extraRules = lib.mkAfter [
           { commands = [ { command = "${container_script}/bin/fc-build-dev-container"; options = [ "NOPASSWD" ]; } ];
-            groups = [ "users" ]; 
+            groups = [ "service" "users" ];
           } ];
 
       systemd.tmpfiles.rules = [
