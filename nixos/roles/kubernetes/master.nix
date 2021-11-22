@@ -384,7 +384,7 @@ in
         serverAliases = tail addresses;
         extraConfig = ''
           auth_basic "FCIO";
-          auth_basic_user_file /etc/local/nginx/htpasswd_fcio_users;
+          auth_basic_user_file /etc/local/nginx/htpasswd_fcio_users.sudo-srv;
         '';
         forceSSL = true;
         locations = {

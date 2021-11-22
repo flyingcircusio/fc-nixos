@@ -281,7 +281,7 @@ in
 
         # file has moved; link back to the old location for compatibility reasons
         "local/nginx/htpasswd_fcio_users" = {
-          source = "/etc/local/htpasswd_fcio_users";
+          source = "/etc/local/htpasswd_fcio_users.login";
         };
 
         "local/nginx/example-configuration".text =
