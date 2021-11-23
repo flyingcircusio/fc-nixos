@@ -85,6 +85,7 @@ in {
   statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
+  users = callTest ./users.nix {};
   vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
   wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
