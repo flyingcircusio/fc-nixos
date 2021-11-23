@@ -94,8 +94,8 @@ let
         (head listOfSets)
         (mergeSets (tail listOfSets));
 
-  htpasswdUsers = lib.optionalString
-    (config.users.groups ? login)
+  htpasswdUsers = group:
+    lib.optionalString (config.users.groups ? "${group}")
     (concatStringsSep "\n"
       (map
        (user: "${user.name}:${user.hashedPassword}")
@@ -103,7 +103,7 @@ let
         (user: (stringLength user.hashedPassword) > 0)
         (map
          (username: config.users.users.${username})
-         (config.users.groups.login.members)))));
+         (config.users.groups."${group}".members)))));
 
 in
 {
@@ -160,8 +160,20 @@ in
 
   config = {
 
-    # All login users as htpasswd compatible file
-    environment.etc."local/htpasswd_fcio_users".text = htpasswdUsers;
+    # Provide htpasswd files based on the various permissions.
+    environment.etc."local/htpasswd_fcio_users.login".text =
+      htpasswdUsers "login";
+    environment.etc."local/htpasswd_fcio_users.manager".text =
+      htpasswdUsers "manager";
+    environment.etc."local/htpasswd_fcio_users.sudo-srv".text =
+      htpasswdUsers "sudo-srv";
+    environment.etc."local/htpasswd_fcio_users.wheel".text =
+      htpasswdUsers "wheel";
+
+      # file has moved; link back to the old location for compatibility reasons
+    environment.etc."local/htpasswd_fcio_users" = {
+        source = "/etc/local/htpasswd_fcio_users.login";
+      };
 
     flyingcircus.users = with lib; {
       userData = mkDefault (fclib.jsonFromFile cfg.userDataPath "[]");
