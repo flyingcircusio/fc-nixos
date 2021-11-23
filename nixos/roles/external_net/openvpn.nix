@@ -295,7 +295,6 @@ in
 
         # generate client config (depends on results from pki.generate)
         cat > ${clientConfigFile} << EOF
-
         #viscosity name ${extnetRole.frontendName}
 
         client
@@ -333,6 +332,9 @@ in
         $(< ${pki.ta} )
         </tls-auth>
         EOF
+
+        chgrp login ${clientConfigFile}
+        chmod 640 ${clientConfigFile}
       '';
   };
 }
