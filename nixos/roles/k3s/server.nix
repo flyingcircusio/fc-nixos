@@ -1,8 +1,3 @@
-# Cluster IP range is 10.42.0.0/16 by default.
-# The Kubernetes API server assigns virtual IPs for services from that subnet.
-# This must not overlap with "real" subnets.
-# XXX: add option
-# It can be set with services.kubernetes.apiserver.serviceClusterIpRange.
 
 { config, lib, pkgs, ... }:
 
@@ -10,6 +5,7 @@ with builtins;
 
 let
   cfg = config.flyingcircus.roles.k3s-server;
+  netCfg = config.flyingcircus.kubernetes.network;
   fclib = config.fclib;
   server = fclib.findOneService "k3s-server-server";
 
@@ -28,11 +24,6 @@ let
 
   # Use the same location as NixOS k8s.
   defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
-  # Just the defaults here.
-  clusterCidr = "10.42.0.0/16";
-  serviceCidr = "10.43.0.0/16";
-  dnsClusterIp = "10.43.0.10";
-  clusterDns = [ dnsClusterIp ];
 
 in
 {
@@ -90,7 +81,7 @@ in
       cluster-dns = {
         notification = "Cluster DNS (CoreDNS) is not healthy";
         command = ''
-          ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H ${dnsClusterIp} -p 9153 -u /metrics
+          ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H ${netCfg.clusterDns} -p 9153 -u /metrics
         '';
       };
 
@@ -117,13 +108,13 @@ in
 
     };
 
-    networking.nameservers = lib.mkOverride 90 (lib.take 3 (clusterDns ++ fcNameservers));
+    networking.nameservers = lib.mkOverride 90 (lib.take 3 ([netCfg.clusterDns] ++ fcNameservers));
 
     services.k3s = let
       k3sFlags = [
-        "--cluster-cidr=${clusterCidr}"
-        "--service-cidr=${serviceCidr}"
-        "--cluster-dns=${dnsClusterIp}"
+        "--cluster-cidr=${netCfg.podCidr}"
+        "--service-cidr=${netCfg.serviceCidr}"
+        "--cluster-dns=${netCfg.clusterDns}"
         "--node-ip=${nodeAddress}"
         "--write-kubeconfig=${defaultKubeconfig}"
         "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"

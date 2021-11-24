@@ -1,7 +1,6 @@
-# This services allows access to Kubernetes Service IPs (also called ClusterIPs, 10.0.0.0/24)
-# and pod networks (10.1.0.0/16) on all nodes.
+# This services allows access to Kubernetes Service IPs (also called ClusterIPs, 10.43.0.0/16)
+# and pod networks (10.42.0.0/16) on all nodes.
 # HAProxy can be used to load-balance between pods with DNS service discovery.
-#
 
 { config, lib, pkgs, ... }:
 
@@ -10,6 +9,7 @@ with builtins;
 let
   fclib = config.fclib;
   cfg = config.flyingcircus.services.k3s-frontend;
+  netCfg = config.flyingcircus.kubernetes.network;
   frontendCfg = config.flyingcircus.kubernetes.frontend;
   server = fclib.findOneService "k3s-server-server";
   agents = fclib.findServices "k3s-agent-agent";
@@ -24,24 +24,31 @@ let
   serviceListenConfigs = lib.mapAttrs (name: conf:
     let
       serviceName = if (conf.serviceName != null) then conf.serviceName else name;
+      serviceFqdn = "${serviceName}.${conf.namespace}.svc.cluster.local";
+      binds =
+        if (conf.binds != null) then conf.binds
+        else
+          let
+            port = if conf.lbServicePort != null then conf.lbServicePort else conf.podPort;
+          in [ "127.0.0.1:${toString port}" ];
     in
     assert
-      lib.assertMsg (conf.internalPort != null || conf.podPort != null)
-      "flyingcircus.kubernetes.frontend.${name}: podPort or internalPort must be set!";
+      lib.assertMsg (conf.lbServicePort != null || conf.podPort != null)
+      "flyingcircus.kubernetes.frontend.${name}: podPort or lbServicePort must be set!";
     {
-      mode = conf.mode;
-      binds = map (a: "${a}:${toString conf.lbPort}") conf.publicAddresses;
+      inherit binds;
+      inherit (conf) mode;
       servers =
-        lib.optionals (conf.internalPort != null)
+        lib.optionals (conf.lbServicePort != null)
           (map
-            (n: "${lib.replaceStrings [".gocept.net"] [""] n.address} ${head n.ips}:${toString conf.internalPort} check"
+            (n: "${lib.replaceStrings [".gocept.net"] [""] n.address} ${head n.ips}:${toString conf.lbServicePort} check"
                 + (lib.optionalString (conf.podPort != null) " backup"))
             agents);
 
       extraConfig = ''
         balance leastconn
       '' + lib.optionalString (conf.podPort != null) ''
-        server-template pod ${toString conf.maxExpectedPods} *.${serviceName}.${conf.namespace}.svc.cluster.local:${toString conf.podPort} check resolvers cluster init-addr none
+        server-template pod ${toString conf.maxExpectedPods} *.${serviceFqdn}:${toString conf.podPort} check resolvers cluster init-addr none
       '' + lib.optionalString (conf.haproxyExtraConfig != "") ''
         # frontend haproxyExtraConfig
         ${conf.haproxyExtraConfig}
@@ -51,56 +58,112 @@ in
 {
   options = with lib; {
 
-    flyingcircus.services.k3s-frontend.enable = mkEnableOption "Enable Kubernetes Frontend";
+    flyingcircus.services.k3s-frontend.enable = mkEnableOption "Enable k3s (Kubernetes) Frontend";
 
     flyingcircus.kubernetes.frontend = mkOption {
       default = {};
+      description = ''
+        Configure the frontend haproxy to forward traffic to cluster services/pods.
+      '';
       type = with types; attrsOf (submodule {
 
         options = {
 
-          lbPort = mkOption {
-            type = port;
-          };
-
-          internalPort = mkOption {
+          lbServicePort = mkOption {
             type = nullOr port;
             default = null;
+            description = ''
+              The port haproxy uses to talk to SRV addresses of the agents where
+              the internal load balancer is listening, forwarding to the cluster IP of the service.
+              This is called `port` in the Kubernetes service definition. The service
+              must be of type `LoadBalancer`.
+
+              Either `podPort` or `lbServicePort` must be defined.
+              If only `lbServicePort` is specified, haproxy always talks to internal load balancer.
+              If both are specified, talking to pods is preferred and the
+              internal load balancer backends are configured as backups.
+
+              Every agent is expected to run the internal load balancer
+              so the number of backends is the same as the number of agents in the cluster.
+
+              Talking to the internal load balancer works even without cluster
+              DNS because we know the IPs of the agents from static config but
+              is less performant than letting haproxy load balance between pods.
+            '';
           };
 
           haproxyExtraConfig = mkOption {
             type = lines;
             default = "";
+            description = "haproxy config lines added verbatim to the end of the listen block configured for this service.";
           };
 
           maxExpectedPods = mkOption {
             type = ints.positive;
             default = 10;
+            description = "haproxy starts a fixed number of backends that are populated with pods found in the DNS response.
+            If there are more pods than maxExpectedPods, some pods will be ignored by haproxy.";
           };
 
           mode = mkOption {
             type = enum [ "http" "tcp" ];
             default = "http";
+            description = ''
+              Run haproxy in TCP (layer 4) or HTTP mode (layer 7).
+              Use TCP to forward HTTPS traffic if you have ingresses handling HTTPS themselves.
+              It's recommended to terminate SSL on the Nginx in front of haproxy
+              and let haproxy use HTTP mode to talk to the pods.
+            '';
           };
 
           podPort = mkOption {
             type = nullOr port;
             default = null;
+            description = ''
+              The port haproxy uses to talk to the pods, load balancing between them.
+              Haproxy uses DNS service discovery to update addresses of pods
+              This is called `targetPort` in the Kubernetes service definition.
+              which requires working Cluster DNS (it's enabled by default).
+              Either `podPort` or `lbServicePort` must be defined.
+              If only `podPort` is specified, haproxy only talks to the pods directly.
+              If both are specified, talking to pods is preferred and the internal load balancer backends are configured as backups.
+              If you leave `podPort` as null, haproxy talks to the internal load balancer only.
+            '';
           };
 
           serviceName = mkOption {
             type = nullOr string;
             default = null;
+            description = ''
+              Name of the Kubernetes service we want to proxy.
+              By default, the name of the Nix attribute is used as service name, so
+              `flyingcircus.kubernetes.frontend.`.
+              Changing the name here is required if a service publishes more than one port
+              and you have to define two frontend configurations with
+              different attribute names, for example.
+              A typical case would be an ingress service which is handling both HTTP and HTTPS
+              where you would have `frontend.kubernetes.frontend.ingress-http` and
+              `ingress-https`, both pointing at the same serviceName `ingress`.
+            '';
           };
 
           namespace = mkOption {
             type = string;
             default = "default";
+            description = ''
+              Kubernetes namespace the service is defined in.
+              Uses the `default namespace by default.
+            '';
           };
 
-          publicAddresses = mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = fclib.network.fe.dualstack.addressesQuoted;
+          binds = mkOption {
+            type = nullOr (listOf str);
+            default = null;
+            example = map (a: "${a}:8080") fclib.network.fe.dualstack.addressesQuoted;
+            description = ''Addresses with ports haproxy is binding to,
+              listening for incoming connections. Defaults to 127.0.0.1, using either `lbServicePort`
+              or `podPort`, if `lbServicePort` is not set.
+            '';
           };
 
         };
@@ -140,7 +203,7 @@ in
         } // serviceListenConfigs;
         extraConfig = ''
           resolvers cluster
-            nameserver coredns 10.43.0.10:53
+            nameserver coredns ${netCfg.clusterDns}:53
             accepted_payload_size 8192 # allow larger DNS payloads
         '';
       };

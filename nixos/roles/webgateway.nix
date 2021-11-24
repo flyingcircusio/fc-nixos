@@ -4,7 +4,7 @@ with builtins;
 
 let
   cfg = config.flyingcircus.roles.webgateway;
-  kubernetesServer = fclib.findOneService "k3s-server-server";
+  k3sServer = fclib.findOneService "k3s-server-server";
   fclib = config.fclib;
 in
 {
@@ -16,15 +16,10 @@ in
     };
   };
 
-  config = lib.mkMerge [
-
-  (lib.mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     flyingcircus.services.nginx.enable = true;
     flyingcircus.services.haproxy.enable = true;
-  })
+    flyingcircus.services.k3s-frontend.enable = k3sServer != null;
+  };
 
-  (lib.mkIf (cfg.enable && kubernetesServer != null) {
-    flyingcircus.services.k3s-frontend.enable = true;
-  })
-  ];
 }
