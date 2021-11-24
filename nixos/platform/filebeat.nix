@@ -29,8 +29,9 @@ in
           logging.level = "warning";
         } extra));
     in {
-      # if more than zero inputs have .enabled set to true
-      # enable = (filterAttrs (x: x ? enabled && x.enabled) cfg.inputs) != {};
+
+      # Only enable the filebeat unit if there are inputs.
+      enable = (filterAttrs (name: input: input.enabled) cfg.inputs) != {};
 
       description = "Ship filebeats to ${host}:${toString port}";
       wantedBy = [ "multi-user.target" ];
