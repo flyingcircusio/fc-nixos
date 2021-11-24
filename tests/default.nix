@@ -34,6 +34,7 @@ in {
   elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };
   fcagent = callTest ./fcagent.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
+  filebeat = callTest ./filebeat.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
   gitlab = callTest ./gitlab.nix {};
 

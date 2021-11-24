@@ -40,12 +40,32 @@ rec {
     Get a basic configuration for a virtual machine
 
     Parameters:
-      id = Order of server in the list of servers when alphabetically ordered, starting from 1.
-        With the following servers the following ids would be assigned respectively: annetta=1, berta=2, claus=3
-        (You can also look at the suffix of eth1 MAC using server.execute("ip a >&2") to get the ID)
-      net.sto/stb/fe = Boolean flag to enable/disable this particular interface. Default fe/srv=true, rest false
-      resource_group/location = String flag to set resource_group/location
-      secrets = Attrset flag to set extra secrets
+
+      id 
+        Number of the test node in alphabetic ordered, starting from 1.
+
+        Example: IDs for the following servers would be assigned:
+
+        annetta=1, berta=2, claus=3
+
+        You can also look at the suffix of eth1' MAC using
+        server.execute("ip a >&2") to get the ID)
+
+      net.(sto|stb|fe)
+
+        Boolean flag to enable/disable this particular interface. Default fe/srv=true, rest false
+
+      resource_group
+
+        String flag to set resource_group.
+
+      location
+
+        String flag to set location.
+
+      secrets
+
+        Attrset to provide extra secrets.
 
     Example usage:
       {
