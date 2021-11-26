@@ -141,8 +141,7 @@ let
   #
   # server
   #
-  accessNets = (fromJSON
-    (fclib.configFromFile /etc/local/openvpn/networks.json defaultAccessNets));
+  accessNets = cfg.roles.openvpn.accessNets;
 
   serverAddrs = ''
     server ${decomposeCIDR accessNets.ipv4}
@@ -211,6 +210,14 @@ in
     flyingcircus.roles.openvpn = {
       enable = lib.mkEnableOption { };
       supportsContainers = fclib.mkDisableContainerSupport;
+
+      accessNets = lib.mkOption {
+        type = types.attrs;
+        default = fromJSON
+          (fclib.configFromFile /etc/local/openvpn/networks.json defaultAccessNets);
+        example = fromJSON defaultAccessNets;
+        description = "Definition of networks for the OpenVPN access instance.";
+      };
     };
   };
 

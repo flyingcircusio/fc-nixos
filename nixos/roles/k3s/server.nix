@@ -161,7 +161,7 @@ in
         extraConfig = ''
           satisfy any;
 
-          allow 10.70.67.0/24;
+          allow ${config.flyingcircus.roles.openvpn.accessNets.ipv4};
           deny all;
         '' + lib.optionalString config.flyingcircus.kubernetes.publicDashboard ''
           auth_basic "FCIO";
