@@ -37,7 +37,6 @@ in {
 
   imports = [
     ./psi_input.nix
-    ./conntrack_input.nix
   ];
 
   options = {

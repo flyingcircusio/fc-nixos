@@ -33,10 +33,10 @@ let
           (split: nameValuePair (elemAt split 0) (elemAt split 1))
             (map (combined: splitString ":" combined) labels)));
 
-  globalTags = encTags // 
-    (optionalAttrs (params ? resource_group) 
+  globalTags = encTags //
+    (optionalAttrs (params ? resource_group)
       { resource_group = params.resource_group; }) //
-    (optionalAttrs (params ? profile) 
+    (optionalAttrs (params ? profile)
       { profile = params.profile; });
 
   # New metrics added here must be also added to globalAllowedMetrics
@@ -66,6 +66,10 @@ let
       service_address = "unix:///run/telegraf/influx.sock";
       data_format = "influx";
     }];
+    conntrack = [{
+      files = [ "nf_conntrack_count" "nf_conntrack_max" ];
+      dirs = [ "/proc/sys/net/netfilter" ];
+    }];
   };
 
 in {
@@ -85,7 +89,7 @@ in {
         global_tags = globalTags;
         outputs = {
           prometheus_client = map
-            (a: { 
+            (a: {
               listen = "${a}:${telegrafPort}"; })
             (fclib.network.srv.dualstack.addressesQuoted);
         };
