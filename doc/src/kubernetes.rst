@@ -56,7 +56,6 @@ the following roles:
     Minimal resource requirements: 1 CPU, 4 GiB RAM, 30 GiB HDD, public IP addresses as needed
     
     VM that runs the `webgateway` role and accepts traffic from the internet.
-    Can optionally run OpenVPN and limit dashboard access to VPN users.
 
 * **K3s server**
 
@@ -65,6 +64,8 @@ the following roles:
     VM that runs the `k3s-server` role and provides the Kubernetes control plane with a
     PostgreSQL database.
 
+    Can optionally run OpenVPN and limit dashboard access to VPN users.
+    
 * **K3s agents**
 
     Minimal resource requirements: 4 CPU, 8 GiB RAM, 30 GiB HDD
