@@ -1,30 +1,33 @@
 """Update NixOS system configuration from infrastructure or local sources."""
 
-from .spread import Spread, NullSpread
-from datetime import datetime
-from fc.util import nixos
-from fc.util.directory import connect
-from fc.util.lock import locked
-from fc.util.logging import init_logging
-from functools import partial
-from pathlib import Path
 import argparse
-import fc.maintenance
-from fc.maintenance.lib.shellscript import ShellScriptActivity
 import filecmp
+import hashlib
 import io
 import json
 import os
 import os.path as p
 import re
-import requests
 import shutil
 import signal
 import socket
-import structlog
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
+from functools import partial
+from pathlib import Path
+
+import fc.maintenance
+import requests
+import structlog
+from fc.maintenance.lib.shellscript import ShellScriptActivity
+from fc.util import nixos
+from fc.util.directory import connect
+from fc.util.lock import locked
+from fc.util.logging import init_logging
+
+from .spread import NullSpread, Spread
 
 enc = {}
 
@@ -245,6 +248,24 @@ def load_enc(log, enc_path):
         enc = {}
         return
     return enc
+
+
+def update_enc_nixos_config(log, enc_path):
+    """Update nixos config files managed through the enc."""
+    basedir = os.path.join(os.path.dirname(enc_path), 'enc-configs')
+    if not os.path.isdir(basedir):
+        os.makedirs(basedir)
+    previous_files = set(os.listdir(basedir))
+    for filename, config in enc['parameters'].get('nixos_config', {}).items():
+        log.info(
+            "update-enc-nixos-config",
+            filename=filename,
+            content=hashlib.sha256(config).hexdigest())
+        conditional_update(os.path.join(basedir, filename), config)
+        previous_files.remove(filename)
+    for filename in previous_files:
+        log.info("remove-stale-enc-nixos-config", filename=filename)
+        os.unlink(os.path.join(basedir, filename))
 
 
 def conditional_update(filename, data):
@@ -596,15 +617,16 @@ def transaction(log, args):
     if args.fast:
         build_options.append('--fast')
 
+    load_enc(log, args.enc_path)
+
     if args.directory:
-        load_enc(log, args.enc_path)
         update_inventory(log)
+        # reload ENC data in case update_inventory changed something
+        load_enc(log, args.enc_path)
+        update_enc_nixos_config(log, args.enc_path)
 
     if args.system_state:
         system_state(log)
-
-    # reload ENC data in case update_inventory changed something
-    load_enc(log, args.enc_path)
 
     if args.automatic:
         spread = Spread(args.stampfile, args.interval * 60,

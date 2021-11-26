@@ -6,15 +6,14 @@ let
   cfg = config.flyingcircus;
   fclib = config.fclib;
   enc_services = fclib.jsonFromFile cfg.enc_services_path "[]";
-  localModulesDir = "/etc/local/nixos";
-  localModules =
-    if builtins.pathExists localModulesDir
+  additionalModules = path:
+    if builtins.pathExists path
     then
       map
-        (name: "${localModulesDir}/${name}")
+        (name: "${path}/${name}")
         (filter
           (fn: lib.hasSuffix ".nix" fn)
-          (lib.attrNames (builtins.readDir "/etc/local/nixos")))
+          (lib.attrNames (builtins.readDir path)))
     else [];
 
 in {
@@ -40,7 +39,9 @@ in {
     ./systemd.nix
     ./upgrade.nix
     ./users.nix
-  ] ++ localModules;
+  ] ++ 
+    (additionalModules "/etc/nixos/enc-configs") ++
+    (additionalModules "/etc/local/nixos");
 
   options = with lib.types; {
 
