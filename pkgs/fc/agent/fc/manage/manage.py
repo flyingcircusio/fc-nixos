@@ -2,6 +2,7 @@
 
 import argparse
 import filecmp
+import grp
 import hashlib
 import io
 import json
@@ -256,19 +257,22 @@ def update_enc_nixos_config(log, enc_path):
     if not os.path.isdir(basedir):
         os.makedirs(basedir)
     previous_files = set(os.listdir(basedir))
-    for filename, config in enc['parameters'].get('nixos_config', {}).items():
+    sudo_srv = grp.getgrnam('sudo-srv').gr_gid
+    for filename, config in enc['parameters'].get('nixos_configs', {}).items():
         log.info(
             "update-enc-nixos-config",
             filename=filename,
-            content=hashlib.sha256(config).hexdigest())
-        conditional_update(os.path.join(basedir, filename), config)
-        previous_files.remove(filename)
+            content=hashlib.sha256(config.encode('utf-8')).hexdigest())
+        target = os.path.join(basedir, filename)
+        conditional_update(target, config, encode_json=False)
+        os.chown(target, -1, sudo_srv)
+        previous_files -= {filename}
     for filename in previous_files:
         log.info("remove-stale-enc-nixos-config", filename=filename)
         os.unlink(os.path.join(basedir, filename))
 
 
-def conditional_update(filename, data):
+def conditional_update(filename, data, encode_json=True):
     """Updates JSON file on disk only if there is different content."""
     with tempfile.NamedTemporaryFile(
             mode='w',
@@ -276,7 +280,10 @@ def conditional_update(filename, data):
             prefix=p.basename(filename),
             dir=p.dirname(filename),
             delete=False) as tf:
-        json.dump(data, tf, ensure_ascii=False, indent=1, sort_keys=True)
+        if encode_json:
+            json.dump(data, tf, ensure_ascii=False, indent=1, sort_keys=True)
+        else:
+            tf.write(data)
         tf.write('\n')
         os.chmod(tf.fileno(), 0o640)
     if not (p.exists(filename)) or not (filecmp.cmp(filename, tf.name)):
