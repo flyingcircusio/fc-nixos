@@ -1,30 +1,34 @@
 """Update NixOS system configuration from infrastructure or local sources."""
 
-from .spread import Spread, NullSpread
-from datetime import datetime
-from fc.util import nixos
-from fc.util.directory import connect
-from fc.util.lock import locked
-from fc.util.logging import init_logging
-from functools import partial
-from pathlib import Path
 import argparse
-import fc.maintenance
-from fc.maintenance.lib.shellscript import ShellScriptActivity
 import filecmp
+import grp
+import hashlib
 import io
 import json
 import os
 import os.path as p
 import re
-import requests
 import shutil
 import signal
 import socket
-import structlog
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
+from functools import partial
+from pathlib import Path
+
+import fc.maintenance
+import requests
+import structlog
+from fc.maintenance.lib.shellscript import ShellScriptActivity
+from fc.util import nixos
+from fc.util.directory import connect
+from fc.util.lock import locked
+from fc.util.logging import init_logging
+
+from .spread import NullSpread, Spread
 
 enc = {}
 
@@ -247,7 +251,28 @@ def load_enc(log, enc_path):
     return enc
 
 
-def conditional_update(filename, data):
+def update_enc_nixos_config(log, enc_path):
+    """Update nixos config files managed through the enc."""
+    basedir = os.path.join(os.path.dirname(enc_path), 'enc-configs')
+    if not os.path.isdir(basedir):
+        os.makedirs(basedir)
+    previous_files = set(os.listdir(basedir))
+    sudo_srv = grp.getgrnam('sudo-srv').gr_gid
+    for filename, config in enc['parameters'].get('nixos_configs', {}).items():
+        log.info(
+            "update-enc-nixos-config",
+            filename=filename,
+            content=hashlib.sha256(config.encode('utf-8')).hexdigest())
+        target = os.path.join(basedir, filename)
+        conditional_update(target, config, encode_json=False)
+        os.chown(target, -1, sudo_srv)
+        previous_files -= {filename}
+    for filename in previous_files:
+        log.info("remove-stale-enc-nixos-config", filename=filename)
+        os.unlink(os.path.join(basedir, filename))
+
+
+def conditional_update(filename, data, encode_json=True):
     """Updates JSON file on disk only if there is different content."""
     with tempfile.NamedTemporaryFile(
             mode='w',
@@ -255,7 +280,10 @@ def conditional_update(filename, data):
             prefix=p.basename(filename),
             dir=p.dirname(filename),
             delete=False) as tf:
-        json.dump(data, tf, ensure_ascii=False, indent=1, sort_keys=True)
+        if encode_json:
+            json.dump(data, tf, ensure_ascii=False, indent=1, sort_keys=True)
+        else:
+            tf.write(data)
         tf.write('\n')
         os.chmod(tf.fileno(), 0o640)
     if not (p.exists(filename)) or not (filecmp.cmp(filename, tf.name)):
@@ -596,15 +624,16 @@ def transaction(log, args):
     if args.fast:
         build_options.append('--fast')
 
+    load_enc(log, args.enc_path)
+
     if args.directory:
-        load_enc(log, args.enc_path)
         update_inventory(log)
+        # reload ENC data in case update_inventory changed something
+        load_enc(log, args.enc_path)
+        update_enc_nixos_config(log, args.enc_path)
 
     if args.system_state:
         system_state(log)
-
-    # reload ENC data in case update_inventory changed something
-    load_enc(log, args.enc_path)
 
     if args.automatic:
         spread = Spread(args.stampfile, args.interval * 60,
