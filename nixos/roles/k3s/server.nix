@@ -155,11 +155,17 @@ in
 
     services.nginx.virtualHosts = {
       "${head addresses}" = {
+        listenAddresses = fclib.network.fe.v4.addresses;
         enableACME = true;
         serverAliases = tail addresses;
         extraConfig = ''
+          satisfy any;
+
+          allow 10.70.67.0/24;
+          deny all;
+        '' + lib.optionalString config.flyingcircus.kubernetes.publicDashboard ''
           auth_basic "FCIO";
-          auth_basic_user_file /etc/local/nginx/htpasswd_fcio_users;
+          auth_basic_user_file /etc/local/htpasswd_fcio_users.sudo-srv;
         '';
         forceSSL = true;
         locations = {

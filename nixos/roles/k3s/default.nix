@@ -18,6 +18,16 @@
 
     flyingcircus.kubernetes = {
 
+      publicDashboard = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Set to true to also allow protected using HTTP Basic Auth.
+          If this is false, you have to use a VPN connection to the server
+          to access the dashboard.
+        '';
+      };
+
       network = {
 
         clusterDns = mkOption {
