@@ -143,22 +143,20 @@ in
     flyingcircus.activationScripts = {
 
       prepare-wireguard-keys = ''
-        (
-          set -e
-          install -d -g root /var/lib/wireguard
-          umask 077
-          cd /var/lib/wireguard
-          if [ ! -e "privatekey" ]; then
-            ${pkgs.wireguard-tools}/bin/wg genkey > privatekey
-          fi
-          chmod u=rw,g-rwx,o-rwx privatekey
-          if [ ! -e "publickey" ]; then
-            ${pkgs.wireguard-tools}/bin/wg pubkey < privatekey > publickey
-          fi
-          chgrp service publickey
-          chmod u=rw,g=r,o-rwx publickey
-          ${pkgs.acl}/bin/setfacl -m g:sudo-srv:r publickey
-        )
+        set -e
+        install -d -g root /var/lib/wireguard
+        umask 077
+        cd /var/lib/wireguard
+        if [ ! -e "privatekey" ]; then
+          ${pkgs.wireguard-tools}/bin/wg genkey > privatekey
+        fi
+        chmod u=rw,g-rwx,o-rwx privatekey
+        if [ ! -e "publickey" ]; then
+          ${pkgs.wireguard-tools}/bin/wg pubkey < privatekey > publickey
+        fi
+        chgrp service publickey
+        chmod u=rw,g=r,o-rwx publickey
+        ${pkgs.acl}/bin/setfacl -m g:sudo-srv:r publickey
       '';
 
     };
@@ -257,7 +255,7 @@ in
       "net.ipv6.bindv6only" = "0";
 
       # Ensure that we can use IPv6 as early as possible.
-      # This fixes startup race conditions like 
+      # This fixes startup race conditions like
       # https://yt.flyingcircus.io/issue/PL-130190
       "net.ipv6.conf.all.optimistic_dad" = 1;
       "net.ipv6.conf.all.use_optimistic" = 1;

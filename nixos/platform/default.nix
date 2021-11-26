@@ -293,9 +293,16 @@ in {
         fc-local-config = lib.stringAfter ["users" "groups"] cfgScript;
       };
 
-      # prefix our activation scripts with "fc-"
+      wrapInSubshell = with fclib; text: "(\n" + text + "\n)";
+
+      wrapActivationScript = value:
+        if builtins.isAttrs value
+        then value // { text = (wrapInSubshell value.text); }
+        else wrapInSubshell value;
+
+      # prefix our activation scripts with "fc-" and run them in a subshell
       fromActivationScripts = lib.mapAttrs'
-        (name: value: lib.nameValuePair ("fc-" + name) value)
+        (name: value: lib.nameValuePair ("fc-" + name) (wrapActivationScript value))
         cfg.activationScripts;
 
     in fromCfgDirs // fromActivationScripts;
