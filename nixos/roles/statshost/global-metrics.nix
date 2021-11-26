@@ -32,6 +32,7 @@ let
     "swap"
     "system"
     "varnish"
+    "conntrack"
   ];
 
   markAllowedMetrics = map

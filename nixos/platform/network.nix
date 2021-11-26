@@ -269,6 +269,17 @@ in
       # Linux currently has 4096 as default and that includes
       # neighbour discovery. Seen on #denog on 2020-11-19
       "net.ipv6.route.max_size" = 2147483647;
+
+      # See PL-130189
+      # conntrack entries are created (for v4/v6) if any rules
+      # for related/established and/or NATing are used in the
+      # PREROUTING hook
+      # suppressing/disabling conntrack on individual machines will
+      # likely lead to a confusing platform behaviour as we will need
+      # connection tracking more and more on VPN servers, container hosts, etc.
+      # we already dealt with this in Ceph and have established 250k tracked connections
+      # as a reasonable size and I'd suggest generalizing this number to all machines.
+      "net.netfilter.nf_conntrack_max" = 262144;
     };
   };
 }
