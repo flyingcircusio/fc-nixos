@@ -32,6 +32,33 @@ let
   # Use the same location as NixOS k8s.
   defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
 
+  kubernetesMakeKubeconfig = let
+    kc = "${config.services.k3s.package}/bin/k3s kubectl";
+    remarshal = "${pkgs.remarshal}/bin/remarshal";
+  in
+  pkgs.writeScriptBin "kubernetes-make-kubeconfig" ''
+    #!${pkgs.stdenv.shell} -e
+    name=''${1:-$USER}
+    src_config=/etc/kubernetes/cluster-admin.kubeconfig
+
+    ${kc} get serviceaccount $name &> /dev/null \
+      || ${kc} create serviceaccount $name > /dev/null
+
+    ${kc} get clusterrolebinding cluster-admin-$name &> /dev/null \
+      || ${kc} create clusterrolebinding cluster-admin-$name \
+          --clusterrole=cluster-admin --serviceaccount=default:$name \
+          > /dev/null
+
+    token=$(${kc} describe secret $name-token | grep token: | cut -c 13-)
+
+    ${remarshal} $src_config -if yaml -of json | \
+      jq --arg token "$token" '.users[0].user.token = $token' \
+      > /tmp/$name.kubeconfig
+
+    KUBECONFIG=/tmp/$name.kubeconfig ${kc} config view --flatten
+    rm /tmp/$name.kubeconfig
+  '';
+
 in {
   options = {
     flyingcircus.roles.k3s-server = {
@@ -53,6 +80,7 @@ in {
       kubernetes-helm
       stern
       config.services.k3s.package
+      kubernetesMakeKubeconfig
     ];
 
     flyingcircus.activationScripts.k3s-apitoken =
@@ -160,10 +188,6 @@ in {
       "${head fqdns}" = {
         enableACME = true;
         serverAliases = tail fqdns;
-        extraConfig = ''
-          auth_basic "FCIO";
-          auth_basic_user_file /etc/local/nginx/htpasswd_fcio_users;
-        '';
         forceSSL = true;
         locations = {
           "/" = {
@@ -192,6 +216,8 @@ in {
         ${pkgs.kubernetes-dashboard}/dashboard \
           --insecure-port 11000 \
           --kubeconfig ${defaultKubeconfig} \
+          --authentication-mode token \
+          --enable-insecure-login \
           --sidecar-host http://localhost:8000
       '';
 
