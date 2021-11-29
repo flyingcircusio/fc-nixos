@@ -81,6 +81,10 @@ in
     start_all()
     master.wait_for_unit("mysql")
 
+    with subtest("generated tmpfiles rules should cause no warnings"):
+        # Warnings start with the file name, 00-nixos.conf contains generated tmpfiles rules.
+        master.fail("systemd-tmpfiles --clean 2>&1 | grep 00-nixos.conf")
+
     with subtest("mysql works"):
         master.wait_until_succeeds("mysqladmin ping")
 
@@ -98,6 +102,16 @@ in
         }
         # check for unexpected ports
         master.fail("netstat -tlpn | grep mysqld | egrep -v '${expectedAddressesExpr}'")
+
+    with subtest("after logrotate, mysql should write to the new slow log file"):
+        master.execute("logrotate -v -f `logrotate-config-file`")
+        master.succeed("grep select /var/log/mysql/mysql.slow")
+
+    with subtest("slow log should have correct permissions (readable for service users)"):
+        master.succeed("stat /var/log/mysql/mysql.slow -c %a:%U:%G | grep '640:mysql:service'")
+
+    with subtest("old slow log file should be compressed"):
+        master.succeed("stat /var/log/mysql/mysql.slow.1.gz")
 
     with subtest("killing the mysql process should trigger an automatic restart"):
         master.succeed("kill -9 $(systemctl show mysql.service --property MainPID --value)")
