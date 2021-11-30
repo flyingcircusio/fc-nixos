@@ -141,6 +141,7 @@ in {
     matomo-beta;
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
+  kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
 
   auditbeat7 = self.filebeat7.overrideAttrs(a: a // {
     name = "auditbeat-${a.version}";

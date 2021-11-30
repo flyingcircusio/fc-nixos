@@ -27,6 +27,7 @@ in {
     ./jitsi/jitsi-meet.nix
     ./jitsi/jitsi-videobridge.nix
     ./jitsi/prosody.nix
+    ./k3s/frontend.nix
     ./logrotate
     ./nginx
     ./nullmailer.nix
