@@ -109,6 +109,19 @@
 
       users.users.root.password = "";
 
+
+      flyingcircus.encServices = [
+        { service = "nfs_rg_share-server";
+          address = "127.0.0.1";
+        }
+      ];
+
+      flyingcircus.encServiceClients = [
+        { service = "nfs_rg_share-server";
+          node = "127.0.0.1";
+        }
+      ];
+
       flyingcircus.users.userData = [
         { class = "human";
           gid = 100;
