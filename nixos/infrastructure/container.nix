@@ -1,5 +1,8 @@
 { config, lib, ... }:
 
+let
+  fclib = config.fclib;
+in
 {
   config = lib.mkMerge [
     {
@@ -26,7 +29,7 @@
       boot.isContainer = true;
 
       networking = {
-        hostName = config.fclib.mkPlatform config.flyingcircus.enc.name;
+        hostName = fclib.mkPlatform config.flyingcircus.enc.name;
 
         firewall.allowedTCPPorts = [ 80 ];
         firewall.allowPing = true;
@@ -109,6 +112,7 @@
 
       users.users.root.password = "";
 
+      time.timeZone = fclib.mkPlatformOverride "Europe/Berlin";
 
       flyingcircus.encServices = [
         { service = "nfs_rg_share-server";

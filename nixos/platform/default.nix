@@ -317,8 +317,8 @@ in {
     };
 
 
-    time.timeZone =
-      attrByPath [ "parameters" "timezone" ] "UTC" config.flyingcircus.enc;
+    time.timeZone = fclib.mkPlatform
+      (attrByPath [ "parameters" "timezone" ] "UTC" config.flyingcircus.enc);
 
   };
 }

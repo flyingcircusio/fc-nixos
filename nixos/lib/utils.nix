@@ -59,7 +59,11 @@ rec {
   installDirWithPermissions = { user, group, permissions, dir }:
     "install -d -o ${user} -g ${group} -m ${permissions} ${dir}";
 
+  # Allow overrides with default priority (100)
   mkPlatform = lib.mkOverride 900;
+  # Allow overrides with default priority (100) but override mkPlatform
+  # defaults, i.e. for containers.
+  mkPlatformOverride = lib.mkOverride 850;
 
   mkDisableContainerSupport = lib.mkOption {
     type = lib.types.bool;
