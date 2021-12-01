@@ -72,7 +72,7 @@ in
       flyingcircus.roles.mailserver.smtpBind6 = [ "::1" ];
       flyingcircus.roles.mailserver.explicitSmtpBind = false;
 
-      flyingcircus.roles.mysql.listenAddresses = [ "[::]" ];
+      flyingcircus.roles.mysql.listenAddresses = [ "::" ];
 
       flyingcircus.roles.webproxy.listenAddresses = [ "[::]" ];
 
