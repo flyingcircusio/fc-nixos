@@ -23,7 +23,7 @@ in {
     ./graylog.nix
     ./jitsi
     ./kibana.nix
-    ./kubernetes
+    ./k3s
     ./lamp.nix
     ./loghost
     ./mailout.nix

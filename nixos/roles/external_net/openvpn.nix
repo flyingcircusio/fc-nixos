@@ -141,8 +141,7 @@ let
   #
   # server
   #
-  accessNets = (fromJSON
-    (fclib.configFromFile /etc/local/openvpn/networks.json defaultAccessNets));
+  accessNets = cfg.roles.openvpn.accessNets;
 
   serverAddrs = ''
     server ${decomposeCIDR accessNets.ipv4}
@@ -211,6 +210,14 @@ in
     flyingcircus.roles.openvpn = {
       enable = lib.mkEnableOption { };
       supportsContainers = fclib.mkDisableContainerSupport;
+
+      accessNets = lib.mkOption {
+        type = lib.types.attrs;
+        default = fromJSON
+          (fclib.configFromFile /etc/local/openvpn/networks.json defaultAccessNets);
+        example = fromJSON defaultAccessNets;
+        description = "Definition of networks for the OpenVPN access instance.";
+      };
     };
   };
 
@@ -288,7 +295,6 @@ in
 
         # generate client config (depends on results from pki.generate)
         cat > ${clientConfigFile} << EOF
-
         #viscosity name ${extnetRole.frontendName}
 
         client
@@ -326,6 +332,9 @@ in
         $(< ${pki.ta} )
         </tls-auth>
         EOF
+
+        chgrp login ${clientConfigFile}
+        chmod 640 ${clientConfigFile}
       '';
   };
 }

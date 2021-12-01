@@ -33,6 +33,7 @@ let
     "system"
     "varnish"
     "conntrack"
+    "psi"
   ];
 
   markAllowedMetrics = map
