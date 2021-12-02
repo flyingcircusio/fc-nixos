@@ -1,10 +1,8 @@
 # Migrating a batou Vagrant-based environment to the container-based `devhost`
 
-
 ## Update appenv and batou (beta)
 
 > batou 2.3 is currently under development but already usable.
-
 
 ```
 curl https://raw.githubusercontent.com/flyingcircusio/batou/master/appenv.py -o appenv
@@ -15,8 +13,8 @@ chmod +x appenv
 Adapt your `requirements.txt`:
 
 ```
-batou @ https://github.com/flyingcircusio/batou/archive/e04328df988911f8325be1aab1ced79aacce9f47.zip#sha256=5a25999ebce236373851980ea8c7a08ee6e60ba89662a249fd7513c3f01097a6
-batou_ext @ https://github.com/flyingcircusio/batou_ext/archive/4188a855b87b11c11ef425dd85253143f207279d.zip#sha256=1cf585cf5f9bbf078f0e448669d96c285724cba6dc71ba63df739a515abd1a2c
+batou>=2.3b3
+batou_ext @ https://github.com/flyingcircusio/batou_ext/archive/4f7443028993cb01c84f9c3a936a95ddac8297a6.zip#sha256=dd3cdd4663d1f464194a024127842d73f49576712645b48eac6b2925f2e90010
 ```
 
 Update your lockfile:
@@ -110,14 +108,3 @@ $ ./batou deploy dev
 * The update to batou 2.3 implies a number of migration steps for the
   deploymnt that are not specific to containers (require_v6, default/default_config_string, attributes without proper Attribute declaration are not mapped 
   any longer)
-
-## TBD
-
-* Syncing working code (maybe create a wrapper command)
-  
-```
-rsync -avz --delete --exclude=.git --rsh='ssh -F {BATOUDIR}/ssh_config_dev' --rsync-path='sudo -u s-dev rsync' {SOURCE}/ container:/srv/s-dev/{TARGET}
-```
-
-
-* cookie cutter integration to create (container) environments 

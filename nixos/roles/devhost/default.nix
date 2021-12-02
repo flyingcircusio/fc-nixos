@@ -8,6 +8,14 @@ let
   testedRoles = attrNames (lib.filterAttrs (n: v: v.supportsContainers or true) config.flyingcircus.roles);
   excludedRoles = attrNames (lib.filterAttrs (n: v: !(v.supportsContainers or true)) config.flyingcircus.roles);
 
+  enabledContainers = with lib;
+    filter (container: container.enabled or true)
+           (map
+            (filename: fromJSON (readFile "/etc/devserver/${filename}"))
+            (filter
+              (filename: hasSuffix ".json" filename)
+              (attrNames (readDirMaybe "/etc/devserver/"))));
+
   container_script = pkgs.writeShellScriptBin "fc-build-dev-container"
     ''
       #!/bin/sh
@@ -53,7 +61,7 @@ let
               # the aliases if needed.
               jq -n --arg container "$container" \
                 --arg aliases "$aliases" \
-                '{name: $container, aliases: ($aliases | split(" "))}' \
+                '{name: $container, aliases: ($aliases | split(" ")), enabled: true}' \
                 > /etc/devserver/$container.json
               if [ "$manage_alias_proxy" == true ]; then
                 fc-manage -v -b
@@ -165,15 +173,13 @@ in
       services.nginx.virtualHosts = if cfg.enableAliasProxy then (
         let
           suffix = cfg.publicAddress;
-          containers = with lib; filter (container: container.aliases != []) (map
-            (filename: fromJSON (readFile "/etc/devserver/${filename}"))
-            (filter
-              (filename: hasSuffix ".json" filename)
-              (attrNames (readDirMaybe "/etc/devserver/"))));
+          containers = filter (container: container.aliases != []) enabledContainers;
           generateContainerVhost = container:
           { name = "${container.name}.${suffix}";
             value  = {
-              serverAliases = map (alias: "${alias}.${container.name}.${suffix}") container.aliases;
+              serverAliases = map 
+                (alias: "${alias}.${container.name}.${suffix}")
+                container.aliases;
               forceSSL = true;
               enableACME = true;
               locations."/" = {
@@ -187,6 +193,31 @@ in
 
        systemd.services."container@".serviceConfig = { TimeoutStartSec = lib.mkForce "1min"; };
 
+       # Start containers on system startup, ensure they get started before
+       # nginx.
+
+       systemd.services.fc-devhost-start-containers = {
+         description = "Start containers on boot.";
+         wantedBy = [ "multi-user.target" ];
+         wants = [ "network.target" ];
+         after = [ "network.target" ];
+         before = [ "nginx.service" ] ;
+         restartIfChanged = false;
+         stopIfChanged = false;
+
+         path = [ pkgs.nixos-container ];
+         script = ''
+           # Start enabled containers.
+         '' + lib.concatMapStringsSep "\n" 
+           (container: "nixos-container start ${container.name}")
+           enabledContainers;
+
+         serviceConfig = {
+             Type = "oneshot";
+             RemainAfterExit = true;
+         };
+       };
+
        # Automated clean up / shut down 
 
        systemd.services.fc-devhost-clean-containers = {
@@ -194,11 +225,11 @@ in
          environment = {
            PYTHONUNBUFFERED = "1";
          };
-         path = [ clean_script ];
+         path = with pkgs; [ clean_script nixos-container ];
          script = "fc-devhost-clean-containers";
          serviceConfig = {
              Type = "oneshot";
-             RemainAfterExit = true;
+             RemainAfterExit = false;
          };
        };
        

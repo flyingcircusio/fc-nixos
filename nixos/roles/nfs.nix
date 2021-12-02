@@ -16,7 +16,7 @@ let
   serviceClients = fclib.findServiceClients serviceName;
 
   export = "/srv/nfs/shared";
-  mountpoint = "/mnt/nfs";
+  mountpoint = "/mnt/nfs/shared";
   
   # This is a bit different than on Gentoo. We allow export to all nodes in the
   # RG, regardles of the node actually being a client.
@@ -64,7 +64,7 @@ in
       fileSystems = {
         # WARNING: those settings are duplicated in the tests to
         # fix a deficiency of the test harness.
-        "${mountpoint}/shared" = {
+        mountpoint = {
           device = "${service.address}:${export}";
           fsType = "nfs4";
           options = [
