@@ -1,5 +1,8 @@
 { config, lib, ... }:
 
+let
+  fclib = config.fclib;
+in
 {
   config = lib.mkMerge [
     {
@@ -26,7 +29,7 @@
       boot.isContainer = true;
 
       networking = {
-        hostName = config.fclib.mkPlatform config.flyingcircus.enc.name;
+        hostName = fclib.mkPlatform config.flyingcircus.enc.name;
 
         firewall.allowedTCPPorts = [ 80 ];
         firewall.allowPing = true;
@@ -69,7 +72,7 @@
       flyingcircus.roles.mailserver.smtpBind6 = [ "::1" ];
       flyingcircus.roles.mailserver.explicitSmtpBind = false;
 
-      flyingcircus.roles.mysql.listenAddresses = [ "[::]" ];
+      flyingcircus.roles.mysql.listenAddresses = [ "::" ];
 
       flyingcircus.roles.webproxy.listenAddresses = [ "[::]" ];
 
@@ -108,6 +111,20 @@
       # ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGc7V2c2zFPRMl8/gmBv1/MEldEuJau8jHjhx+2qziYs root@ct-dir-dev2
 
       users.users.root.password = "";
+
+      time.timeZone = fclib.mkPlatformOverride "Europe/Berlin";
+
+      flyingcircus.encServices = [
+        { service = "nfs_rg_share-server";
+          address = "127.0.0.1";
+        }
+      ];
+
+      flyingcircus.encServiceClients = [
+        { service = "nfs_rg_share-server";
+          node = "127.0.0.1";
+        }
+      ];
 
       flyingcircus.users.userData = [
         { class = "human";
