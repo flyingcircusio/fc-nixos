@@ -64,7 +64,7 @@ in
       fileSystems = {
         # WARNING: those settings are duplicated in the tests to
         # fix a deficiency of the test harness.
-        mountpoint = {
+        "${mountpoint}" = {
           device = "${service.address}:${export}";
           fsType = "nfs4";
           options = [
