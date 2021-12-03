@@ -117,6 +117,7 @@ let
       shared.path = "${cfg.statePath}/shared";
       gitaly.client_path = "${cfg.packages.gitaly}/bin";
       backup = {
+        gitaly_backup_path = "${cfg.packages.gitaly}/bin/gitaly-backup";
         path = cfg.backup.path;
         keep_time = cfg.backup.keepTime;
       } // (optionalAttrs (cfg.backup.uploadOptions != {}) {
@@ -153,7 +154,7 @@ let
     };
   };
 
-  gitlabEnv = {
+  gitlabEnv = cfg.packages.gitlab.gitlabEnv // {
     HOME = "${cfg.statePath}/home";
     PUMA_PATH = "${cfg.statePath}/";
     GITLAB_PATH = "${cfg.packages.gitlab}/share/gitlab/";
@@ -478,7 +479,7 @@ in {
       };
 
       port = mkOption {
-        type = types.int;
+        type = types.port;
         default = 8080;
         description = ''
           GitLab server port for copy-paste URLs, e.g. 80 or 443 if you're
@@ -907,6 +908,10 @@ in {
         assertion = cfg.secrets.jwsFile != null;
         message = "services.gitlab.secrets.jwsFile must be set!";
       }
+      {
+        assertion = versionAtLeast postgresqlPackage.version "12.0.0";
+        message = "PostgreSQL >=12 is required to run GitLab 14. Follow the instructions in the manual section for upgrading PostgreSQL here: https://nixos.org/manual/nixos/stable/index.html#module-services-postgres-upgrading";
+      }
     ];
 
     environment.systemPackages = [ pkgs.git gitlab-rake gitlab-rails cfg.packages.gitlab-shell ];
@@ -1291,7 +1296,7 @@ in {
         Restart = "on-failure";
         WorkingDirectory = gitlabEnv.HOME;
         ExecStart =
-          "${cfg.packages.gitlab-workhorse}/bin/gitlab-workhorse "
+          "${cfg.packages.gitlab-workhorse}/bin/workhorse "
           + "-listenUmask 0 "
           + "-listenNetwork unix "
           + "-listenAddr /run/gitlab/gitlab-workhorse.socket "
@@ -1346,7 +1351,7 @@ in {
       ];
 
       serviceConfig = {
-        Type = "simple";
+        Type = "notify";
         User = cfg.user;
         Group = cfg.group;
         TimeoutSec = "infinity";
