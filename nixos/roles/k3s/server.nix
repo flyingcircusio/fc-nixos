@@ -33,7 +33,7 @@ let
   defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
 
   kubernetesMakeKubeconfig = let
-    kc = "${config.services.k3s.package}/bin/k3s kubectl";
+    kc = "${pkgs.kubectl}/bin/kubectl";
     remarshal = "${pkgs.remarshal}/bin/remarshal";
   in
   pkgs.writeScriptBin "kubernetes-make-kubeconfig" ''
@@ -72,12 +72,9 @@ in {
 
     environment.variables.KUBECONFIG = defaultKubeconfig;
 
-    environment.shellAliases = {
-      kubectl = "k3s kubectl";
-    };
-
     environment.systemPackages = with pkgs; [
       kubernetes-helm
+      kubectl
       stern
       config.services.k3s.package
       kubernetesMakeKubeconfig

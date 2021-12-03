@@ -131,15 +131,26 @@ in
     ];
 
     systemd.tmpfiles.rules = [
-      "d /var/log/mysql 0755 mysql service -"
+      "d /var/log/mysql 0755 mysql service 90d"
       "f /var/log/mysql/mysql.slow 0640 mysql service -"
     ];
 
+    # Note that this does not use our platform defauls for logrotate.
+    # Configuration via logrotate.paths is added before our defaults so
+    # they don't apply.
+    # postrotate command taken from https://www.percona.com/blog/2013/04/18/rotating-mysql-slow-logs-safely/
     services.logrotate.paths.mysql-slowlog = {
       path = "/var/log/mysql/mysql.slow";
+      keep = 10;
+      frequency = "weekly";
       extraConfig = ''
-        rotate 2
+        maxsize 2G
+        compress
         create 0640 mysql service
+        postrotate
+          ${package}/bin/mysql --defaults-extra-file=/root/.my.cnf \
+            -e 'select @@global.long_query_time into @lqt_save; set global long_query_time=2000; select sleep(2); FLUSH LOGS; select sleep(2); set global long_query_time=@lqt_save;'
+        endscript
         missingok
       '';
     };
@@ -180,6 +191,7 @@ in
         slow_query_log_file = '/var/log/mysql/mysql.slow'
         log_slow_admin_statements = ON
         log_queries_not_using_indexes = ON
+        log_throttle_queries_not_using_indexes = 50
 
         init-connect               = 'SET NAMES ${charset} COLLATE ${collation}'
         character-set-server       = ${charset}
