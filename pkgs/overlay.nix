@@ -24,7 +24,16 @@ in {
   #
 
   backy = super.callPackage ./backy.nix { };
-  backyExtract = super.callPackage ./backyextract { };
+
+  backyExtract = let
+    src = super.fetchFromGitHub {
+      rev = "3c9a7b7a3ebfad2bcb2ee4ffebf71669038ba2c9";
+      owner = "flyingcircusio";
+      repo = "backy-extract";
+      sha256 = "01q212p22jwy8vwfqp8a62anfq587q3g1sc30va6sdfxzni4lvgm";
+    };
+    in
+      super.callPackage src { pkgs = super; };
 
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
