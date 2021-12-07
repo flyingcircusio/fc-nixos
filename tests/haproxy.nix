@@ -136,7 +136,7 @@ in
 
     machine.execute("""
       echo 'Hello World!' > hello.txt
-      ${pkgs.python3.interpreter} -m http.server 7000 &
+      ${pkgs.python3.interpreter} -m http.server 7000 >&2 &
     """)
 
     with subtest("request through haproxy should succeed"):

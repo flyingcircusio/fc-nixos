@@ -133,7 +133,7 @@ in {
     oclient.succeed("ping -6 -c1 ${gwFeFqdn}")
 
     # start openvpn client and wait for tunnel device
-    oclient.succeed("openvpn --config /tmp/gw.ovpn --auth-user-pass /tmp/user-pass &")
+    oclient.succeed("openvpn --config /tmp/gw.ovpn --auth-user-pass /tmp/user-pass >&2 &")
     oclient.wait_until_succeeds("ip link show tun0")
 
     # internal machine should be reachable from client via vpn tunnel -> gateway -> internal machine
