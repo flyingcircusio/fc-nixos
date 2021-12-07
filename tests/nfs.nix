@@ -150,7 +150,7 @@ in {
         # print(console.getvalue())
         assert False, "Did not shut down cleanly (timeout)"
 
-    client.execute("poweroff&")
+    client.execute("poweroff", check_return=False)
 
     console = wait_for_console_text(client, "reboot: Power down")
 

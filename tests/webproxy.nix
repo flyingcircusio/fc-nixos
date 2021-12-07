@@ -33,7 +33,7 @@ import ./make-test-python.nix ({ pkgs, ... }:
 
     webproxy.execute("""
         echo 'Hello World!' > hello.txt
-        ${pkgs.python3.interpreter} -m http.server 8080 &
+        ${pkgs.python3.interpreter} -m http.server 8080 >&2 &
         """)
 
     url = 'http://localhost:8008/hello.txt'

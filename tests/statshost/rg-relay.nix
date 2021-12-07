@@ -35,7 +35,7 @@ import ../make-test-python.nix ({ pkgs, ... }:
     start_all()
     statsSource.execute("""
       echo 'system_uptime' > metrics
-      ${pkgs.python3.interpreter} -m http.server 9126 &
+      ${pkgs.python3.interpreter} -m http.server 9126 >&2 &
     """)
 
     relay.wait_for_unit("nginx.service")
