@@ -93,6 +93,9 @@ in {
   };
 
   testScript = ''
+    import io
+    import re
+    import time
 
     server.start()
     server.wait_for_unit("nfs-server")
@@ -123,8 +126,7 @@ in {
 
     server.copy_from_host("${php_blocking_script}", "${sdir}/index.php")
 
-    client.execute('curl -v http://localhost:8000/index.php&')
-    import time
+    client.execute('curl -v http://localhost:8000/index.php >&2 &')
     time.sleep(2)
     print(client.execute('lsof -n ${cdir}/test2')[1])
     print(client.execute('journalctl -u httpd')[1])
