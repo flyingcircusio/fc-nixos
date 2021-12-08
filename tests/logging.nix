@@ -34,6 +34,6 @@ import ./make-test-python.nix ({ ... }:
 
     with subtest("journalbeat should send something to fake loghost"):
       # nc exits successfully when it receives something from journalbeat
-      machine.succeed("nc -l 12301")
+      machine.succeed("nc -l 12301 > /dev/null")
   '';
 })
