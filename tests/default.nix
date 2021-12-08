@@ -35,7 +35,7 @@ in {
   fcagent = callTest ./fcagent.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
-  #garbagecollect = callTest ./garbagecollect.nix {};
+  garbagecollect = callTest ./garbagecollect.nix {};
   #gitlab = callTest ./gitlab.nix {};
 
   #graylog = callTest ./graylog.nix {};
@@ -68,7 +68,7 @@ in {
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
-  #nginx = callTest ./nginx.nix {};
+  nginx = callTest ./nginx.nix {};
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
@@ -78,7 +78,7 @@ in {
   postgresql13 = callTest ./postgresql.nix { rolename = "postgresql13"; };
   postgresql96 = callTest ./postgresql.nix { rolename = "postgresql96"; };
   prometheus = callTest ./prometheus.nix {};
-  #rabbitmq = callTest ./rabbitmq.nix {};
+  rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
   servicecheck = callTest ./servicecheck.nix {};
