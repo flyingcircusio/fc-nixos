@@ -135,7 +135,6 @@ with lib;
 
     ids.uids = {
       # Our custom services
-      sensuserver = 31001;
       sensuapi = 31002;
       uchiwa = 31003;
       sensuclient = 31004;
@@ -163,7 +162,6 @@ with lib;
       manager = 504;
 
       # Our custom services
-      sensuserver = 31001;
       sensuapi = 31002;
       uchiwa = 31003;
       sensuclient = 31004;
