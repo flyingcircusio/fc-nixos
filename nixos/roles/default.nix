@@ -36,7 +36,6 @@ in {
     ./postgresql.nix
     ./rabbitmq.nix
     ./redis.nix
-    ./sensuserver.nix
     ./servicecheck.nix
     ./statshost
     ./webdata_blackbee.nix
