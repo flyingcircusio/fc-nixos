@@ -329,7 +329,9 @@ in {
     boost = self.boost173;
   };
 
-  postgis_2_5 = super.postgresqlPackages.postgis.overrideAttrs(_: rec {
+  postgis_2_5 = (super.postgresqlPackages.postgis.override {
+      proj = self.proj_7;
+    }).overrideAttrs(_: rec {
     version = "2.5.5";
     src = super.fetchurl {
       url = "https://download.osgeo.org/postgis/source/postgis-${version}.tar.gz";
