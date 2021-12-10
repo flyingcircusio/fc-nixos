@@ -6,6 +6,21 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.backyserver;
   enc = config.flyingcircus.enc;
+
+  backy = pkgs.callPackage ../../pkgs/backy.nix { };
+
+  backyExtract = let
+    src = pkgs.fetchFromGitHub {
+      owner = "flyingcircusio";
+      repo = "backy-extract";
+      rev = "5fd4c02e757918e22b634b16ae86927b82eb9f2a";
+      sha256 = "1msg4p4h6ksj3vrsshhh5msfwgllai42jczyvd4nvrsqpncg12ik";
+    };
+    in
+      pkgs.callPackage src {};
+
+  restoreSingleFiles = pkgs.callPackage ../../pkgs/restore-single-files {};
+
 in
 {
   options = {
@@ -30,8 +45,9 @@ in
     flyingcircus.services.consul.enable = true;
 
     environment.systemPackages = [
-      pkgs.backy
-      pkgs.backyExtract
+      backy
+      backyExtract
+      restoreSingleFiles
     ];
 
     fileSystems = {
@@ -43,7 +59,7 @@ in
 
     boot = {
       kernel.sysctl."vm.vfs_cache_pressure" = 10;
-      kernelModules = [ "mq_deadline" ]; 
+      kernelModules = [ "mq_deadline" ];
     };
 
     environment.etc."backy.global.conf".text = ''
