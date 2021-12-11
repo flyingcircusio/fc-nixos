@@ -107,10 +107,10 @@ in {
 
   jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-videobridge2";
-    version = "2.1-592-g1e2879e0";
+    version = "2.1-595-g3637fda4";
     src = super.fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "0qw29x03rmy8i7xkcajyggbksghv34676zw4l22dlp048p5d3vwh";
+      sha256 = "18x00lazyjcff8n7pn4h43cxlskv0d9vnh0cmf40ihrpqc5zs2dz";
     };
   });
 
