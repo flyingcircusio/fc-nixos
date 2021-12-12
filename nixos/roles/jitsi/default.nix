@@ -83,6 +83,15 @@ in {
         default = false;
       };
 
+      enablePrejoinPage = mkOption {
+        description =  ''
+          Shows a page after opening a conference where users can change
+          settings and enter their name before joining the conference.
+        '';
+        type = types.bool;
+        default = false;
+      };
+
       enableRoomAuthentication = mkOption {
         description =  ''
           Require a username and password to create new rooms.
@@ -227,9 +236,14 @@ in {
           enableAutomaticUrlCopy = true;
           enableLayerSuspension = true;
           openBridgeChannel = "websocket";
+          prejoinPageEnabled = cfg.enablePrejoinPage;
+          useNewBandwidthAllocationStrategy = true;
           desktopSharingFrameRate = {
             min = 5;
-            max = 20;
+            max = 10;
+          };
+          videoQuality = {
+            preferredCodec = "VP9";
           };
           p2p.enabled = false;
           inherit (cfg) resolution;
