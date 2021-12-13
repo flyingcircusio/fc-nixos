@@ -9,7 +9,7 @@ let
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
     {} super;
 
-  inherit (super) lib;
+  inherit (super) fetchurl lib;
 
 in {
   #
@@ -82,6 +82,15 @@ in {
 
   gitlab = super.callPackage ./gitlab { };
   gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
+
+  graylog = super.graylog.overrideAttrs(_: rec {
+    version = "3.3.15";
+
+    src = fetchurl {
+      url = "https://packages.graylog2.org/releases/graylog/graylog-${version}.tgz";
+      sha256 = "0zdgy45hdg90a34iv43dy3j9dqqs5djc1sgqylcvm6710a38fh7w";
+    };
+  });
 
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
