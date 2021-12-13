@@ -3,29 +3,23 @@
 
 stdenv.mkDerivation rec {
   version = "1.0.0";
-  name = "backy-extract-${version}";
+  name = "restore-single-files-${version}";
 
-  src = fetchurl {
-    url = "https://github.com/flyingcircusio/backy-extract/releases/download/${version}/${name}.tar.gz";
-    sha256 = "04bjy1plcw8bbp0mn9m9g7kxg71qlpi385w6zzs5iafxixjh93l5";
-  };
-
+  src = null;
   nativeBuildInputs = [
     autoPatchelfHook
   ];
 
-  buildInputs = [ lzo fuse ];
+  phases = ["installPhase" "fixupPhase"];
 
   installPhase = ''
-    mkdir $out
-    cp -a bin $out/
+    mkdir -p $out/bin
     cp ${./restore-single-files.sh} $out/bin/restore-single-files
     chmod +x $out/bin/restore-single-files
-    cp -a share $out/
   '';
 
   meta = with lib; {
-    description = "Rapid restore tool for backy";
+    description = "";
     license = licenses.bsd3;
     maintainers = [ maintainers.ckauhaus ];
     platforms = platforms.unix;
