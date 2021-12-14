@@ -156,6 +156,7 @@ in
         # Appending the next two lines overrides the former.
         "-Xms${toString esHeap}m"
         "-Xmx${toString esHeap}m"
+        "-Dlog4j2.formatMsgNoLookups=true"
         # Use new ES7 style for the publish address to avoid the annoying warning in ES6/7.
         (lib.optionalString (esVersion == "6") "-Des.http.cname_in_publish_address=true")
         (lib.optionalString (esVersion == "7") "-Des.transport.cname_in_publish_address=true")
