@@ -15,23 +15,77 @@ Configuration
 -------------
 
 Out of the box, Redis is set up with a couple of common default
-parameters and listens on *localhost* and the IP-addresses of the
-*ethsrv*-interface of your VM (See :ref:`networking` for details on this topic).
+parameters and listens on the IP-addresses of the *loopback* (localhost) and
+*ethsrv*-interfaces of your VM on port 6379 (See :ref:`networking`
+for details on this topic).
 
-listens on the *ethsrv* interface on port 6379.
+In previous versions, custom redis configuration could be set
+via :file:`/etc/local/redis/custom.conf` which is not supported anymore.
 
-If you need to change the behaviour of Redis, you can put your
-additional configuration into :file:`/etc/local/redis/custom.conf`.
+If you need to change the behaviour of Redis, you define your redis
+configuration with the NixOS option ``services.redis.settings``. See the
+NixOS manual for further information.
 
-Available configuration options can be found in the
-`official documentation <https://redis.io/topics/config>`_.
+The following NixOS module adds some modules to be loaded by Redis:
+.. code-block:: nix
+
+    # /etc/local/nixos/redis.nix
+    { ... }:
+    {
+        services.redis.settings = {
+            loadmodule = [ "/path/to/my_module.so" "/path/to/other_module.so" ];
+        };
+    }
+
+See :ref:`nixos-custom-modules` for general information about writing custom NixOS
+modules in :file:`/etc/local/nixos`.
+
+There are also some options under ``flyingcircus.services.redis``, namely
+``maxmemory``, ``maxmemory-policy``, ``password`` and ``listenAddresses``.
+
+The following NixOS module sets the listening addresses to ``203.0.113.54`` and
+``203.0.113.57`` as well as overriding the password to ``foobarpass``. The maximum
+memory size is set to ``512mb``. The exact behavior Redis follows when the maxmemory
+limit is reached is configured using the ``maxmemory-policy`` configuration directive
+and is set to ``noeviction`` in this example. Read more at `redis topic lru cache <https://redis.io/topics/lru-cache>`.
+
+.. code-block:: nix
+
+    # /etc/local/nixos/redis.nix
+    { ... }:
+    {
+        flyingcircus.services.redis = {
+            listenAddresses = [ "203.0.113.54", "203.0.113.57 "];
+            password = "foobarpass"; # Makes the password world readable, see paragraphs below for information
+            maxmemory = "512mb";
+            maxmemory-policy = "noeviction";
+        };
+    }
+
+As an alternative to setting the ``maxmemory`` by hand you can set a ``memoryPercentage``
+option. This will set the memory limit to a percentage of the total memory of the
+system.
+
+.. code-block:: nix
+
+    # /etc/local/nixos/redis.nix
+    { ... }:
+    {
+        flyingcircus.services.redis = {
+            memoryPercentage = "50";
+        };
+    }
 
 For further information on how to activate changes on our NixOS-environment,
 please consult :ref:`nixos-local`.
 
 The authentication password is automatically generated upon installation
 and can be read *and changed* by service users. It can be found in
-:file:`/etc/local/redis/password`.
+:file:`/etc/local/redis/password`. It can also be specified in the
+``flyingcircus.services.redis.password`` option where the password
+will have a higher priority than the one in the filesystem. Setting
+the ``password`` option makes the password world-readable to processes
+on the VM since it will be stored in the nix store.
 
 
 Interaction
