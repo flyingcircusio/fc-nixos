@@ -27,6 +27,7 @@ configuration with the NixOS option ``services.redis.settings``. See the
 NixOS manual for further information.
 
 The following NixOS module adds some modules to be loaded by Redis:
+
 .. code-block:: nix
 
     # /etc/local/nixos/redis.nix
