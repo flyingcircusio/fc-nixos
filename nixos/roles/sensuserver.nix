@@ -29,6 +29,17 @@ in
 
   config = lib.mkIf config.flyingcircus.roles.sensuserver.enable {
 
+      # Sensu talks to all VMs in a location permanently, so there are
+      # a lot of entries in the neighbour table. Increase numbers
+      # to avoid unneccessary garbage collecting and table overflows.
+      boot.kernel.sysctl = {
+        "net.ipv4.neigh.default.gc_thresh1" = 1024;
+        "net.ipv4.neigh.default.gc_thresh2" = 4096;
+        "net.ipv4.neigh.default.gc_thresh3" = 8192;
+        "net.ipv6.neigh.default.gc_thresh1" = 1024;
+        "net.ipv6.neigh.default.gc_thresh2" = 4096;
+        "net.ipv6.neigh.default.gc_thresh3" = 8192;
+      };
       flyingcircus.roles.rabbitmq.enable = true;
       flyingcircus.services.nginx.enable = true;
       flyingcircus.services.rabbitmq.listenAddress = lib.mkOverride 90 "::";
