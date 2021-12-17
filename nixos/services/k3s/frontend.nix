@@ -231,7 +231,7 @@ in
         '';
       };
 
-      networking.nameservers = lib.mkOverride 90 (server.ips ++ fcNameservers);
+      networking.nameservers = lib.mkOverride 90 (lib.take 3 ([netCfg.clusterDns] ++ fcNameservers));
 
       services.k3s = let
         nodeAddress = head fclib.network.srv.v4.addresses;
