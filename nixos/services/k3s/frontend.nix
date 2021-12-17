@@ -31,6 +31,15 @@ let
           let
             port = if conf.lbServicePort != null then conf.lbServicePort else conf.podPort;
           in [ "127.0.0.1:${toString port}" ];
+
+      podOptions = lib.concatStringsSep " " [
+        "check resolvers cluster init-addr none"
+        (lib.optionalString conf.sslBackend "ssl verify none")
+        (lib.optionalString (conf.extraPodTemplateOptions != "") conf.extraPodTemplateOptions)
+      ];
+      podDns = "*.${serviceFqdn}:${toString conf.podPort}";
+      podInstances = toString conf.maxExpectedPods;
+      podTemplate = "server-template pod ${podInstances} ${podDns} ${podOptions}";
     in
     assert
       lib.assertMsg (conf.lbServicePort != null || conf.podPort != null)
@@ -42,17 +51,16 @@ let
         lib.optionals (conf.lbServicePort != null)
           (map
             (n: "${lib.replaceStrings [".gocept.net"] [""] n.address} ${head n.ips}:${toString conf.lbServicePort} check"
-                + (lib.optionalString (conf.podPort != null) " backup"))
+                + (lib.optionalString (conf.podPort != null) " backup")
+                + (lib.optionalString conf.sslBackend " ssl verify none"))
             agents);
 
-      extraConfig = ''
-        balance leastconn
-      '' + lib.optionalString (conf.podPort != null) ''
-        server-template pod ${toString conf.maxExpectedPods} *.${serviceFqdn}:${toString conf.podPort} check resolvers cluster init-addr none
-      '' + lib.optionalString (conf.haproxyExtraConfig != "") ''
-        # frontend haproxyExtraConfig
-        ${conf.haproxyExtraConfig}
-      '';
+      extraConfig = lib.concatStringsSep "\n" [
+        "balance leastconn"
+        (lib.optionalString (conf.podPort != null) podTemplate)
+        (lib.optionalString (conf.haproxyExtraConfig != "") "# From haproxyExtraConfig option")
+        (lib.optionalString (conf.haproxyExtraConfig != "") conf.haproxyExtraConfig)
+      ];
   }) frontendCfg;
 in
 {
@@ -96,6 +104,12 @@ in
             type = lines;
             default = "";
             description = "haproxy config lines added verbatim to the end of the listen block configured for this service.";
+          };
+
+          extraPodTemplateOptions = mkOption {
+            type = string;
+            default = "";
+            description = "haproxy options for the server-template directive used for the pod backends, added verbatim to the end of the generated line.";
           };
 
           maxExpectedPods = mkOption {
@@ -144,6 +158,15 @@ in
               A typical case would be an ingress service which is handling both HTTP and HTTPS
               where you would have `frontend.kubernetes.frontend.ingress-http` and
               `ingress-https`, both pointing at the same serviceName `ingress`.
+            '';
+          };
+
+          sslBackend = mkOption {
+            type = bool;
+            default = false;
+            description = ''
+              If the proxy should talk to the backend using SSL.
+              Certificates are not verified to speed up things and make things work with self-signed certificates.
             '';
           };
 
