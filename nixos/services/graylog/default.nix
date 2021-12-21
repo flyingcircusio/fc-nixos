@@ -209,9 +209,15 @@ in {
 
     users.users = lib.mkIf (cfg.user == "graylog") {
       graylog = {
+        isSystemUser = true;
         uid = config.ids.uids.graylog;
         description = "Graylog server daemon user";
+        group = "graylog";
       };
+    };
+
+    users.groups = lib.mkIf (cfg.user == "graylog") {
+      graylog = {};
     };
 
     systemd.tmpfiles.rules = [
