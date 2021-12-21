@@ -40,7 +40,7 @@ in {
   garbagecollect = callTest ./garbagecollect.nix {};
   #gitlab = callTest ./gitlab.nix {};
 
-  #graylog = callTest ./graylog.nix {};
+  graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
   journal = callTest ./journal.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
