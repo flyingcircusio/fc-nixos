@@ -92,6 +92,12 @@ in
         install -d -g service -m 775 ${export}
         ${pkgs.nfs-utils}/bin/exportfs -ra
       '';
+      systemd.services.nfs-mountd.reloadIfChanged = true;
+      systemd.services.nfs-server.reloadIfChanged = true;
+      # reload script for nfs-mountd so that it does not fail when reloading
+      systemd.services.nfs-mountd.reload = ''
+        ${pkgs.nfs-utils}/bin/exportfs -ra
+      '';
     })
 
   ];
