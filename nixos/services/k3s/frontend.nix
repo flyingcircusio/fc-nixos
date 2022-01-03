@@ -47,6 +47,7 @@ let
     {
       inherit binds;
       inherit (conf) mode;
+      options = if conf.mode == "http" then [ "httplog" ] else [ "tcplog" ];
       servers =
         lib.optionals (conf.lbServicePort != null)
           (map
