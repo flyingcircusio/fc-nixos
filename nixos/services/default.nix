@@ -8,6 +8,7 @@ let
     "services/networking/jitsi-videobridge.nix"
     "services/networking/prosody.nix"
     "services/web-apps/jitsi-meet.nix"
+    "services/web-apps/matomo.nix"
     "services/web-servers/nginx/default.nix"
   ];
 
@@ -29,6 +30,7 @@ in {
     ./jitsi/prosody.nix
     ./k3s/frontend.nix
     ./logrotate
+    ./matomo.nix
     ./nginx
     ./nullmailer.nix
     ./percona.nix
