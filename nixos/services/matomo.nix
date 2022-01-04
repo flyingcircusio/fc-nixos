@@ -169,6 +169,7 @@ in {
           echo "Migrating from ${deprecatedDataDir} to ${dataDir}"
           mv -T ${deprecatedDataDir} ${dataDir}
         fi
+        mkdir -p "${dataDir}/misc"
         chown -R ${user}:${user} ${dataDir}
         chmod -R ug+rwX,o-rwx ${dataDir}
 
