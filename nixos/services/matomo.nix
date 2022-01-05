@@ -145,8 +145,11 @@ in {
       # everything needs to set up and up to date before Matomo php files are executed
       requiredBy = [ "${phpExecutionUnit}.service" ];
       before = [ "${phpExecutionUnit}.service" ];
-      # the update part of the script can only work if the database is already up and running
-      requires = [ databaseService ];
+      # The update part of the script can only work if the database is already up and running.
+      # We cannot require that we have a local database because the db location can be configured
+      # via the Matomo UI but we should start it, if it's here. Systemd ignores the wants/after
+      # relationships if there's no local mysql service. Using requires here would fail in that case.
+      wants = [ databaseService ];
       after = [ databaseService ];
       path = [ cfg.package ];
       environment.PIWIK_USER_PATH = dataDir;
@@ -205,8 +208,11 @@ in {
     # 'Browser trigger archiving' can be disabled in Matomo UI > Settings > General Settings.
     systemd.services.matomo-archive-processing = {
       description = "Archive Matomo reports";
-      # the archiving can only work if the database is already up and running
-      requires = [ databaseService ];
+      # The update part of the script can only work if the database is already up and running.
+      # We cannot require that we have a local database because the db location can be configured
+      # via the Matomo UI but we should start it, if it's here. Systemd ignores the wants/after
+      # relationships if there's no local mysql service. Using requires here would fail in that case.
+      wants = [ databaseService ];
       after = [ databaseService ];
 
       # TODO: might get renamed to MATOMO_USER_PATH in future versions
