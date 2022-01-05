@@ -155,13 +155,6 @@ in {
       "auditbeat"
     ];
   });
-  filebeat7 = super.filebeat7.overrideAttrs(a: a // {
-    patches = [
-      # upstream: Fix nil panic when overwriting metadata (#24741)
-      # released in v8.0.0-alpha1
-      ./filebeat-fix-events.patch
-    ];
-  });
 
   # Import old php versiens from nix-phps
   inherit (phps) php73;

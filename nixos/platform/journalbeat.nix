@@ -5,15 +5,16 @@ with lib;
 let
   fclib = config.fclib;
   cfg = config.flyingcircus.journalbeat;
+  journalSetCursor = fclib.python3BinFromFile ./filebeat-journal-set-cursor.py;
 
 in
   {
     config = {
-      systemd.services = mapAttrs' (name: value: nameValuePair "journalbeat-${name}" (let
+      systemd.services = mapAttrs' (name: value: nameValuePair "filebeat-journal-${name}" (let
         extra = value.extraSettings;
-        stateDir = "journalbeat/${name}";
+        stateDir = "filebeat-journal/${name}";
         inherit (value) host port;
-        config = pkgs.writeText "journalbeat-${name}.json"
+        config = pkgs.writeText "filebeat-journal-${name}.json"
           (generators.toJSON {} (recursiveUpdate {
             # Logstash output is compatible to Beats input in Graylog.
             output.logstash = {
@@ -22,7 +23,13 @@ in
               pipelining = 0;
             };
             # Read the system journal.
-            journalbeat.inputs  = [ { paths = []; } ];
+            filebeat.inputs = [{
+              type = "journald";
+              id = "everything";
+              paths = [];
+              seek = "cursor";
+            }];
+
             # "info" would have some helpful information but also logs every single
             # log shipping (up to once per second) which is too much noise.
             logging.level = "warning";
@@ -31,26 +38,19 @@ in
         description = "Ship system journal to ${host}:${toString port}";
         wantedBy = [ "multi-user.target" ];
         preStart = let
-          jq = "${pkgs.jq}/bin/jq";
         in ''
-          data_dir=$STATE_DIRECTORY/data
-          mkdir -p $data_dir
-          if ! grep -sq cursor $data_dir/registry; then
-            echo "Journal cursor not present, initalizing it to the end of the journal."
-            cursor=$(journalctl --output-fields=_ -o json -n1 | ${jq} -r '.__CURSOR')
-            echo "Reading starts at: $cursor"
-            ${jq} -n --arg cursor $cursor \
-              '{journal_entries: [{path: "LOCAL_SYSTEM_JOURNAL", cursor: $cursor}]}' \
-              > $data_dir/registry
-          fi
-
+          registry_dir=$STATE_DIRECTORY/data/registry/filebeat
+          mkdir -p $registry_dir
+          ${journalSetCursor}/bin/filebeat-journal-set-cursor \
+            $registry_dir \
+            $STATE_DIRECTORY/legacy_registry
         '';
         serviceConfig = {
           StateDirectory = stateDir;
           SupplementaryGroups = [ "systemd-journal" ];
           DynamicUser = true;
           ExecStart = ''
-            ${cfg.package}/bin/journalbeat \
+            ${cfg.package}/bin/filebeat \
               -e \
               -c ${config} \
               -path.data ''${STATE_DIRECTORY}/data
@@ -106,7 +106,7 @@ in
           });
           default = config.flyingcircus.beats.logTargets;
           description = ''
-            Where journalbeat should send logs from the journal,
+            Where filebeat should send logs from the journal,
             using the logstash output.
             This can be Graylog instances with Beats input, for example.
             By default, send logs to a resource group loghost if present
@@ -116,11 +116,11 @@ in
 
         package = mkOption {
           type = types.package;
-          default = pkgs."journalbeat7";
-          defaultText = "pkgs.journalbeat7";
-          example = literalExample "pkgs.journalbeat7";
+          default = pkgs.filebeat7;
+          defaultText = "pkgs.filebeat7";
+          example = literalExample "pkgs.filebeat7";
           description = ''
-            The journalbeat package to use.
+            The filebeat package to use.
           '';
         };
 
