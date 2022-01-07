@@ -306,25 +306,37 @@ in {
 
     with subtest("master should be able to use cluster DNS"):
       k3sserver.wait_until_succeeds('k3s kubectl -n kube-system get pods | grep coredns | grep -v ContainerCreating | grep Running')
-    #   k3sserver.wait_until_succeeds('dig redis.default.svc.cluster.local | grep -q 10.43')
+      k3sserver.wait_until_succeeds('dig redis.default.svc.cluster.local | grep -q 10.43')
 
-    # with subtest("adding a second node should work"):
-    #   k3snodeB.wait_for_unit("k3s.service")
-    #   k3snodeB.succeed("k3s ctr images import ${pauseImage}")
-    #   k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodeb | grep -vq NotReady")
+    with subtest("adding a second node should work"):
+      k3snodeB.wait_for_unit("k3s.service")
+      k3snodeB.succeed("k3s ctr images import ${pauseImage}")
+      k3snodeB.succeed("k3s ctr images import ${klipperHelmImage}")
+      k3snodeB.succeed("k3s ctr images import ${metricsServerImage}")
+      k3snodeB.succeed("k3s ctr images import ${corednsImage}")
+      k3snodeB.succeed("k3s ctr images import ${libraryTraefikImage}")
+      k3snodeB.succeed("k3s ctr images import ${klipperLBImage}")
+      k3snodeB.succeed("k3s ctr images import ${localPathProvisionerImage}")
+      k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodeb | grep -vq NotReady")
 
-    # with subtest("scaling the deployment should start 4 pods"):
-    #   k3snodeB.wait_until_succeeds("zcat ${redis.image} | k3s ctr images import -")
-    #   k3sserver.succeed("k3s kubectl scale deployment redis --replicas=4")
-    #   k3sserver.wait_until_succeeds("k3s kubectl get deployment redis | grep -q 4/4")
+    with subtest("scaling the deployment should start 4 pods"):
+      k3snodeB.wait_until_succeeds("zcat ${redis.image} | k3s ctr images import -")
+      k3sserver.succeed("k3s kubectl scale deployment redis --replicas=4")
+      k3sserver.wait_until_succeeds("k3s kubectl get deployment redis | grep -q 4/4")
+
+    with subtest("scaled deployment should be on two nodes"):
+      k3sserver.wait_until_succeeds("k3s kubectl get pods -o wide | grep redis | grep Running | grep -q k3snodea")
+      k3sserver.wait_until_succeeds("k3s kubectl get pods -o wide | grep redis | grep Running | grep -q k3snodeb")
 
     # with subtest("frontend should be able to ping redis pods"):
     #   print(frontend.execute("iptables -L -v --line-numbers")[1]) 
     #   print(k3sserver.execute("k3s kubectl -n kube-system get svc -l k8s-app=kube-dns")[1])
+    #   print(k3sserver.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
+    #   print(k3snodeB.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
     #   # print(frontend.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
 
-    # with subtest("dashboard sensu check should be red after shutting down dashboard"):
-    #   k3sserver.systemctl("stop kube-dashboard")
-    #   k3sserver.fail("${lib.strings.escape ["\""] (masterSensuCheck "kube-dashboard")}")
+    with subtest("dashboard sensu check should be red after shutting down dashboard"):
+      k3sserver.systemctl("stop kube-dashboard")
+      k3sserver.fail("${lib.strings.escape ["\""] (masterSensuCheck "kube-dashboard")}")
   '';
 })
