@@ -7,13 +7,6 @@ import ./make-test-python.nix ({ lib, ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
 
-      users.groups = {
-        login = { members = [ "u1001" ]; };
-        manager = { members = [ "u1002" ]; };
-        sudo-srv = { members = [ "u1003" ]; };
-        wheel = { members = [ "u1004" ]; };
-      };
-
       flyingcircus.enc.parameters.interfaces.srv = {
         mac = "52:54:00:12:34:56";
         bridged = false;
