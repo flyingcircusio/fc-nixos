@@ -73,7 +73,7 @@ in
       flyingcircus.services.sensu-client.checks = {
         varnish_status = {
           notification = "varnishadm status reports errors";
-          command = "${cfg.package}/bin/varnishadm status";
+          command = "${cfg.package}/bin/varnishadm -n ${cfg.stateDir} status";
           timeout = 180;
         };
         varnish_http = {
@@ -119,12 +119,12 @@ in
               config=$(readlink -e /etc/current-config/varnish.vcl)
               # Varnish doesn't like slashes and numbers in config names.
               name=$(tr -dc 'a-z' <<< $config)
-              varnishadm vcl.list | grep -q $name && echo "Config unchanged." && exit
-              varnishadm vcl.load $name $config && varnishadm vcl.use $name
+              varnishadm -n ${cfg.stateDir} vcl.list | grep -q $name && echo "Config unchanged." && exit
+              varnishadm -n ${cfg.stateDir} vcl.load $name $config && varnishadm -n ${cfg.stateDir} vcl.use $name
 
-              for vcl in $(varnishadm vcl.list | grep ^available | awk {'print $5'});
+              for vcl in $(varnishadm -n ${cfg.stateDir} vcl.list | grep ^available | awk {'print $5'});
               do
-                varnishadm vcl.discard $vcl
+                varnishadm -n ${cfg.stateDir} vcl.discard $vcl
               done
             else
               echo "Binary or parameters changed. Restarting."
@@ -151,7 +151,7 @@ in
             PIDFile = "/run/varnish/varnishncsa.pid";
             User = "varnish";
             Group = "varnish";
-            ExecStart = "${cfg.package}/bin/varnishncsa -D -a -w /var/log/varnish.log -P /run/varnish/varnishncsa.pid";
+            ExecStart = "${cfg.package}/bin/varnishncsa -D -a -w /var/log/varnish.log -P /run/varnish/varnishncsa.pid -n ${cfg.stateDir}";
             ExecReload = "${kill} -HUP $MAINPID";
           };
         };
