@@ -89,7 +89,7 @@ let
         daemon
         chroot /var/empty
         maxconn 4096
-        log localhost local2
+        log 127.0.0.1 local2
 
     defaults
         mode http
