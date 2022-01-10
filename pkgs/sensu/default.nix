@@ -5,13 +5,8 @@ bundlerApp {
   pname = "sensu";
   gemdir = ./.;
   exes = [
-    "sensu-api"
     "sensu-client"
-    "sensu-install"
-    "sensu-server"
   ];
-
-  passthru.updateScript = bundlerUpdateScript "sensu";
 
   meta = with lib; {
     description = "A monitoring framework that aims to be simple, malleable, and scalable";
