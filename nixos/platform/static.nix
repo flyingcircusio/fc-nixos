@@ -136,9 +136,6 @@ with lib;
 
     ids.uids = {
       # Our custom services
-      sensuserver = 31001;
-      sensuapi = 31002;
-      uchiwa = 31003;
       sensuclient = 31004;
       powerdns = 31005;
       tideways = 31006;
@@ -164,9 +161,6 @@ with lib;
       manager = 504;
 
       # Our custom services
-      sensuserver = 31001;
-      sensuapi = 31002;
-      uchiwa = 31003;
       sensuclient = 31004;
       powerdns = 31005;
       tideways = 31006;
