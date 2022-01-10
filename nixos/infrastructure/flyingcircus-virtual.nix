@@ -30,7 +30,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     loader.grub = {
       device = "/dev/disk/device-by-alias/root";
       fsIdentifier = "provided";
-      gfxmodeBios = "text";
+      gfxmodeBios = lib.mkForce "text";
     };
   };
 
