@@ -185,18 +185,6 @@ in {
                 all.redis
               ]);
 
-
-  matrix-synapse = super.matrix-synapse.overrideAttrs(orig: rec {
-    pname = "matrix-synapse";
-    version = "1.47.1";
-    name = "${pname}-${version}";
-
-    src = super.python3Packages.fetchPypi {
-      inherit pname version;
-      sha256 = "17l4cq2295lwm35zy6bm6ljqd2f6mlgc14q8g9p9s58s4gikbncm";
-    };
-  });
-
   mc = super.callPackage ./mc.nix { };
 
   mongodb-3_6 = super.mongodb-3_6.overrideAttrs(_: rec {
