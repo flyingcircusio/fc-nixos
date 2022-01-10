@@ -147,6 +147,8 @@ in {
   auditbeat7 = self.filebeat7.overrideAttrs(a: a // {
     name = "auditbeat-${a.version}";
 
+    postFixup = "";
+
     subPackages = [
       "auditbeat"
     ];
