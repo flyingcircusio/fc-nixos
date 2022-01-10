@@ -10,7 +10,7 @@ let
            #comment1 to grep for
            daemon
            chroot /var/empty
-           log localhost local2
+           log 127.0.0.1 local2
 
          defaults
            mode http
@@ -111,7 +111,7 @@ in
           global
             daemon
             chroot /var/empty
-            log localhost local2
+            log 127.0.0.1 local2
 
           defaults
             mode http
@@ -169,15 +169,15 @@ in
       machine.execute("ln -s ${channel} /nix/var/nix/profiles/per-user/root/channels")
       machine.execute("""echo $'${configComplete}' > /etc/local/haproxy/haproxy.cfg""")
       machine.succeed("nixos-rebuild build --option substitute false")
-      machine.succeed("grep -c '#comment1 to grep for' /tmp/result/etc/haproxy.cfg")
+      machine.succeed("grep -c '#comment1 to grep for' result/etc/haproxy.cfg")
 
     with subtest("haproxy1.cfg and haproxy2.cfg should be read after rebuild"):
       machine.execute("rm /etc/local/haproxy/haproxy.cfg")
       machine.execute("""echo $'${configSplit1of2}' > /etc/local/haproxy/haproxy1.cfg""")
       machine.execute("""echo $'${configSplit2of2}' > /etc/local/haproxy/haproxy2.cfg""")
       machine.succeed("nixos-rebuild build --option substitute false")
-      machine.succeed("grep -c '#comment1 to grep for' /tmp/result/etc/haproxy.cfg")
-      machine.succeed("grep -c '#comment2 to grep for' /tmp/result/etc/haproxy.cfg")
+      machine.succeed("grep -c '#comment1 to grep for' result/etc/haproxy.cfg")
+      machine.succeed("grep -c '#comment2 to grep for' result/etc/haproxy.cfg")
 
   '';
 

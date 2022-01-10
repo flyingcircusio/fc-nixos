@@ -61,7 +61,7 @@ global
   daemon
   chroot /var/empty
   maxconn 4096
-  log localhost local2
+  log 127.0.0.1 local2
 defaults
   mode http
   log global
@@ -185,7 +185,7 @@ global
   user haproxy
   group haproxy
   maxconn 4096
-  log localhost local2
+  log 127.0.0.1 local2
   # Increase buffers for large URLs
   tune.bufsize 131072
   tune.maxrewrite 65536
