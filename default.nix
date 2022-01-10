@@ -16,5 +16,8 @@
 
 import nixpkgs {
   overlays = overlays ++ [ (import ./pkgs/overlay.nix) ];
-  config = config // { permittedInsecurePackages = [ "openssl-1.0.2u" ]; };
+  config = config // { permittedInsecurePackages = [
+    "openssl-1.0.2u"
+    "nodejs-10.24.1"
+  ]; };
 } // args
