@@ -147,6 +147,7 @@ with lib;
       # removed by upstream, we want to keep it
       memcached = 177;
       redis = 181;
+      graylog = 243;
     };
 
     ids.gids = {
