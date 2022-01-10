@@ -185,7 +185,7 @@ in
       '';
       postStart = let
         url = "http://${thisNode}:9200/_cat/health";
-        in ''
+        in lib.mkOverride 90 ''
         # Wait until available for use
         for count in {0..120}; do
             ${pkgs.curl}/bin/curl -s ${url} && exit
