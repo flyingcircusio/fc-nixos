@@ -100,7 +100,7 @@ let
       (map
        (user: "${user.name}:${user.hashedPassword}")
        (filter
-        (user: (stringLength user.hashedPassword) > 0)
+        (user: (user.hashedPassword != null) && (stringLength user.hashedPassword) > 0)
         (map
          (username: config.users.users.${username})
          (config.users.groups."${group}".members)))));
