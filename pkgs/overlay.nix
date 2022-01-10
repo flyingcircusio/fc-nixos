@@ -164,17 +164,9 @@ in {
   });
 
   # Import old php versiens from nix-phps
-  inherit (phps) php56 php73;
+  inherit (phps) php73;
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
-
-  lamp_php56 = self.php56.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
 
   lamp_php73 = self.php73.withExtensions ({ enabled, all }:
               enabled ++ [

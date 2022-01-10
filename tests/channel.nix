@@ -31,7 +31,6 @@ in {
     environment.systemPackages = with pkgs; [
       # Pre-install it to make it possible to install the package in the test script
       # without the need to download stuff (which fails in a test, of course).
-      lamp_php56
     ];
 
     environment.etc."nixpkgs-paths-debug".text = toJSON {
@@ -80,9 +79,8 @@ in {
       unionfs-fuse
       xorg.lndir
       # Our custom stuff that's needed to rebuild the VM.
-      php
-      lamp_php56
-      lamp_php56.passthru.extensions.memcached.src
+      lamp_php73
+      lamp_php73.packages.composer
       channel
     ];
 
