@@ -36,7 +36,7 @@ in {
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
-  #gitlab = callTest ./gitlab.nix {};
+  gitlab = callTest ./gitlab.nix {};
 
   graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
