@@ -355,6 +355,7 @@ in
 
     users.users.jibri = {
       isSystemUser = true;
+      group = "jitsi-meet";
     };
 
   };
