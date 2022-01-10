@@ -22,8 +22,8 @@ import ./make-test-python.nix ({ pkgs, lib, ... }:
   testScript = ''
     start_all()
     with subtest("script should try to connect to directory"):
-        machine.execute("nc -l 443 -N > /tmp/out >&2 &")
+        machine.execute("nc -l 443 -N > /tmp/out &")
         machine.systemctl("start fc-servicecheck")
-        machine.succeed("test -s /tmp/out")
+        machine.wait_until_succeeds("test -s /tmp/out")
   '';
 })
