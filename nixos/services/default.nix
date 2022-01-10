@@ -5,6 +5,7 @@ let
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
     "services/networking/jicofo.nix"
+    "services/networking/jibri/default.nix"
     "services/networking/jitsi-videobridge.nix"
     "services/networking/prosody.nix"
     "services/web-apps/jitsi-meet.nix"
