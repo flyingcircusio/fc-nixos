@@ -8,6 +8,8 @@ import json
 import re
 import os
 
+import argparse
+
 DEVICES = ['cpu', 'memory', 'io']
 
 PSI_PATTERN = r'(?P<extent>some|full) avg10=(?P<avg10>[0-9\.]+) avg60=(?P<avg60>[0-9\.]+) avg300=(?P<avg300>[0-9\.]+) total=(?P<total>[0-9\.]+)'
@@ -25,6 +27,13 @@ def probe(cgroup, dev):
     return data
 
 def main():
+    # parse --regex argument
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--regex', '-r', help='Regex to filter cgroups')
+    args = parser.parse_args()
+
+    cgroup_regex = re.compile(args.regex)
+
     # List all cgroups
     # by recursively collecting all directories in /sys/fs/cgroup including the
     # cgroup/ itself.
@@ -39,6 +48,8 @@ def main():
     # collect metrics for each cgroup
     metrics = {}
     for cgroup in cgroups:
+        if not cgroup_regex.match(cgroup):
+            continue
         # replace backslash (\) with "[backslash]" in cgroup when inserting
         # to avoid problems with telegraf's metric name escaping
         cgroup_escaped = cgroup.replace('\\', '[backslash]')
