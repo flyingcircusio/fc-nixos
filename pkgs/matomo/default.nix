@@ -3,16 +3,15 @@
 let
   versions = {
     matomo = {
-      version = "4.5.0";
-      sha256 = "sha256-OyjdzY+ENYxOTVjDLjj2unJbpaGODIH2I5Acmt45HDA=";
+      version = "4.6.2";
+      sha256 = "1f8m6d2462v7h2f7pr14h0jz8rddsvlfgrg7nk24x5a44x5fhdaf";
     };
 
     matomo-beta = {
-      version = "4.6.0";
+      version = "4.6.2";
       # `beta` examples: "b1", "rc1", null
       # when updating: use null if stable version is >= latest beta or release candidate
-      beta = "b2";
-      sha256 = "sha256-7p/ZPtr5a/tBjrM27ILF3rNfxDIWuzWKCXNom3HlyL8=";
+      sha256 = "1f8m6d2462v7h2f7pr14h0jz8rddsvlfgrg7nk24x5a44x5fhdaf";
     };
   };
   common = pname: { version, sha256, beta ? null }:
@@ -39,7 +38,12 @@ let
         #   but password-based SQL authentication works with both.
         # TODO: is upstream interested in this?
         # -> discussion at https://github.com/matomo-org/matomo/issues/12646
-        patches = [ ./make-localhost-default-database-host.patch ];
+        patches = [
+          ./make-localhost-default-database-host.patch
+          # This changes the default config for path.geoip2 so that it doesn't point
+          # to the nix store.
+          ./change-path-geoip2.patch
+        ];
 
         # this bootstrap.php adds support for getting PIWIK_USER_PATH
         # from an environment variable. Point it to a mutable location
@@ -73,6 +77,7 @@ let
           "misc/composer/build-xhprof.sh"
           "misc/composer/clean-xhprof.sh"
           "misc/cron/archive.sh"
+          "plugins/GeoIp2/config/config.php"
           "plugins/Installation/FormDatabaseSetup.php"
           "vendor/pear/archive_tar/sync-php4"
           "vendor/szymach/c-pchart/coverage.sh"

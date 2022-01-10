@@ -81,11 +81,11 @@ in {
   gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
 
   graylog = super.graylog.overrideAttrs(_: rec {
-    version = "3.3.15";
+    version = "3.3.16";
 
     src = fetchurl {
       url = "https://packages.graylog2.org/releases/graylog/graylog-${version}.tgz";
-      sha256 = "0zdgy45hdg90a34iv43dy3j9dqqs5djc1sgqylcvm6710a38fh7w";
+      sha256 = "17nxvj6haf5an6yj6zdjvcaxlliamcl16bca1z1jjcd7h9yjgxrz";
     };
   });
 
