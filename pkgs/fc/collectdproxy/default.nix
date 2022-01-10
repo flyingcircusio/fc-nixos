@@ -1,9 +1,9 @@
 { pkgs
-, python36Packages
+, python3Packages
 }:
 
 let
-  py = python36Packages;
+  py = python3Packages;
 
 in
 py.buildPythonPackage rec {
