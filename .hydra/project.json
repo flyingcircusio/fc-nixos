@@ -22,7 +22,7 @@
         },
         "generator": {
             "type": "git",
-            "value": "https://github.com/DeterminateSystems/hydra-github-jobsets-generator.git main",
+            "value": "https://github.com/DeterminateSystems/hydra-github-jobsets-generator.git legacy-definition-support-private",
             "emailresponsible": false
         },
         "nixpkgs": {
