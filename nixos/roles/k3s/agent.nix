@@ -67,12 +67,15 @@ in
         extraFlags = lib.concatStringsSep " " k3sFlags;
       };
 
+      users.groups.kubernetes = {};
+
       users.users = {
         kubernetes = {
           isSystemUser = true;
           home = "/var/empty";
           extraGroups = [ "service" ];
           uid = config.ids.uids.kubernetes;
+          group = "kubernetes";
         };
       };
 
