@@ -2,7 +2,6 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  elk7Version = "7.10.2";
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
@@ -53,17 +52,6 @@ in {
   });
 
   docsplit = super.callPackage ./docsplit { };
-
-  elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
-    version = elk7Version;
-    name = "elasticsearch-${version}";
-
-    src = super.fetchurl {
-      url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
-      sha256 = "07p16n53fg513l4f04zq10hh5j9q6rjwz8hs8jj8y97jynvf6yiv";
-    };
-    meta.license = null;
-  });
 
   flannel = super.flannel.overrideAttrs(_: rec {
     version = "0.13.1-rc1";
@@ -124,17 +112,6 @@ in {
       url = "https://www.haproxy.org/download/${lib.versions.majorMinor version}/src/${orig.pname}-${version}.tar.gz";
       sha256 = "0ah6xsxlk1a7jsxdg0pbdhzhssz9ysrfxd3bs5hm1shql1jmqzh4";
     };
-  });
-
-  kibana7 = super.kibana7.overrideAttrs(_: rec {
-    version = elk7Version;
-    name = "kibana-${version}";
-
-    src = super.fetchurl {
-      url = "https://artifacts.elastic.co/downloads/kibana/${name}-linux-x86_64.tar.gz";
-      sha256 = "06p0v39ih606mdq2nsdgi5m7y1iynk9ljb9457h5rrx6jakc2cwm";
-    };
-    meta.license = null;
   });
 
   inherit (super.callPackages ./matomo {})
