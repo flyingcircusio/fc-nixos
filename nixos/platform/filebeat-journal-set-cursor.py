@@ -13,6 +13,12 @@ legacy_registry_path = Path(sys.argv[2])
 cursor_path = registry_path / "log.json"
 meta_path = registry_path / "meta.json"
 
+if not registry_path.exists():
+    registry_path.mkdir(parents=True)
+
+if not registry_path.is_dir():
+    raise RuntimeError(f"{registry_path} must be a directory!")
+
 if not meta_path.exists():
     with open(meta_path, "w") as wf:
         json.dump({"version": "1"}, wf)

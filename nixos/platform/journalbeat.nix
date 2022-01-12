@@ -11,9 +11,12 @@ in
   {
     config = {
       systemd.services = mapAttrs' (name: value: nameValuePair "filebeat-journal-${name}" (let
+        inherit (value) host port;
         extra = value.extraSettings;
         stateDir = "filebeat-journal/${name}";
-        inherit (value) host port;
+        statePath = "/var/lib/" + stateDir;
+        oldStateDir = "journalbeat/${name}";
+        oldStatePath = "/var/lib/" + oldStateDir;
         config = pkgs.writeText "filebeat-journal-${name}.json"
           (generators.toJSON {} (recursiveUpdate {
             # Logstash output is compatible to Beats input in Graylog.
@@ -37,23 +40,25 @@ in
       in {
         description = "Ship system journal to ${host}:${toString port}";
         wantedBy = [ "multi-user.target" ];
-        preStart = let
-        in ''
-          registry_dir=$STATE_DIRECTORY/data/registry/filebeat
-          mkdir -p $registry_dir
-          ${journalSetCursor}/bin/filebeat-journal-set-cursor \
-            $registry_dir \
-            $STATE_DIRECTORY/legacy_registry
-        '';
+          preStart = ''
+            set -e
+            ${journalSetCursor}/bin/filebeat-journal-set-cursor \
+              ${statePath}/data/registry/filebeat \
+              ${oldStatePath}/data/registry
+            rm -rf ${oldStatePath}/data || true
+          '';
         serviceConfig = {
-          StateDirectory = stateDir;
+          StateDirectory = [
+            oldStateDir
+            stateDir
+          ];
           SupplementaryGroups = [ "systemd-journal" ];
           DynamicUser = true;
           ExecStart = ''
             ${cfg.package}/bin/filebeat \
               -e \
               -c ${config} \
-              -path.data ''${STATE_DIRECTORY}/data
+              -path.data ${statePath}/data
           '';
           Restart = "always";
 
