@@ -12,10 +12,17 @@ chmod +x appenv
 
 Adapt your `requirements.txt`:
 
+> batou_ext is a package that is currently being developed in a floating style. At the time of this writing 
+> you should check to get the most recent commit id for the batou-2.3.x branch:
+> https://github.com/flyingcircusio/batou_ext/tree/batou-2.3.x
+> replace the commit id in the content of the file below.
+
 ```
 batou>=2.3b3
-batou_ext @ https://github.com/flyingcircusio/batou_ext/archive/4f7443028993cb01c84f9c3a936a95ddac8297a6.zip#sha256=dd3cdd4663d1f464194a024127842d73f49576712645b48eac6b2925f2e90010
+batou_ext @ https://github.com/flyingcircusio/batou_ext/archive/a875a4f7cfe8d53e56930f7c579b9430d8670cff.zip#sha256=48d44fb85315bfa61132e987daf0dcc4f4a118054357df451e9bb0d605a2ef12
 ```
+
+
 
 Update your lockfile:
 
