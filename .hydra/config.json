@@ -4,12 +4,12 @@
     "inputs": {
         "nixpkgs": {
             "type": "git",
-            "value": "git://github.com/flyingcircusio/nixpkgs.git nixos-21.05",
+            "value": "https://github.com/flyingcircusio/nixpkgs.git nixos-21.05",
             "emailresponsible": false
         },
         "platformDoc": {
             "type": "git",
-            "value": "git://github.com/flyingcircusio/doc.git master",
+            "value": "https://github.com/flyingcircusio/doc.git master",
             "emailresponsible": false
         },
         "branch": {

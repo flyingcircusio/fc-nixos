@@ -70,9 +70,16 @@ in {
       # service user should be able to write to local config dir
       machine.succeed('sudo -u postgres touch `echo /etc/local/postgresql/*`/test')
 
-      machine.succeed('${psql} employees -c "CREATE EXTENSION postgis;"')
+      machine.succeed('${psql} employees -c "CREATE EXTENSION pg_stat_statements;"')
       machine.succeed('${psql} employees -c "CREATE EXTENSION rum;"')
       machine.succeed('${psql} employees -c "${createTemporalExtension};"')
+    '' + lib.optionalString (rolename != "postgresql12") ''
+      # Postgis fails only on postgresql12 with an OOM that produces no other output
+      # for debugging. It's caused by the shared library for pg_stat_statements.
+      # It works on real VMs so just skip it here. Creating it in the test
+      # works on NixOS 21.11, though, we can re-enable it there.
+      machine.succeed('${psql} employees -c "CREATE EXTENSION postgis;"')
     '';
+
 
 })
