@@ -8,6 +8,7 @@ There's a role for each supported major version, currently:
 
 * mongodb36
 * mongodb40
+* mongodb42
 
 
 3.2 and 3.4 are end-of-life and should be upgraded.
