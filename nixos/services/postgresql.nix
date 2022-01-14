@@ -16,7 +16,7 @@ let
   listenAddresses =
     fclib.network.lo.dualstack.addresses ++
     fclib.network.srv.dualstack.addresses;
-    
+
   currentMemory = fclib.currentMemory 256;
   sharedMemoryMax = currentMemory / 2 * 1048576;
 
@@ -209,7 +209,7 @@ in {
         log_lock_waits = true;
         log_autovacuum_min_duration = 5000;
         log_temp_files = "1kB";
-        shared_preload_libraries = "auto_explain";
+        shared_preload_libraries = "auto_explain, pg_stat_statements";
         "auto_explain.log_min_duration" = "3s";
 
         #------------------------------------------------------------------------------
