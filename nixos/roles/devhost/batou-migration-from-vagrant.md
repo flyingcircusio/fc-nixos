@@ -98,7 +98,7 @@ COPY ../../../fc.directory /srv/s-dev/
 If you want to initialize secrets with well-known secrets you can access all component overrides and secrets through environment variables and echo them into specific files in the container:
 
 ```
-ECHO $COMPONENT_MANAGEDMYSQL_ADMIN_PASSWORD /etc/local/nixos/mysql-root-password
+ECHO $COMPONENT_MANAGEDMYSQL_ADMIN_PASSWORD /etc/local/mysql/mysql-root-password
 ```
 
 
