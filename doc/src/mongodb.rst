@@ -30,7 +30,7 @@ as perform administrative operations.
 Upgrade
 -------
 
-.. warning:: Upgrade paths must include all major versions: 3.2 -> 3.4 -> 3.6 -> 4.0.
+.. warning:: Upgrade paths must include all major versions: 3.2 -> 3.4 -> 3.6 -> 4.0 -> 4.2.
    Before each upgrade step, the feature compatibility version must be set to the
    current running mongodb version.
 
