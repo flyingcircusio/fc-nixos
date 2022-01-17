@@ -74,13 +74,13 @@ in
         out = machine.succeed("id u1000")
         assert (out == "uid=1000(u1000) gid=100(users) groups=100(users)\n"), out
         out = machine.succeed("id u1001")
-        assert (out == "uid=1001(u1001) gid=100(users) groups=2003(admins),100(users)\n"), out
+        assert (out == "uid=1001(u1001) gid=100(users) groups=100(users),2003(admins)\n"), out
         out = machine.succeed("id u1002")
-        assert (out == "uid=1002(u1002) gid=100(users) groups=503(sudo-srv),100(users)\n"), out
+        assert (out == "uid=1002(u1002) gid=100(users) groups=100(users),503(sudo-srv)\n"), out
         out = machine.succeed("id u1003")
-        assert (out == "uid=1003(u1003) gid=100(users) groups=1(wheel),100(users)\n"), out
+        assert (out == "uid=1003(u1003) gid=100(users) groups=100(users),1(wheel)\n"), out
         out = machine.succeed("id u1004")
-        assert (out == "uid=1004(u1004) gid=100(users) groups=1(wheel),503(sudo-srv),100(users)\n"), out
+        assert (out == "uid=1004(u1004) gid=100(users) groups=100(users),1(wheel),503(sudo-srv)\n"), out
         out = machine.succeed("id s-service")
         assert (out == "uid=1074(s-service) gid=900(service) groups=900(service)\n"), out
 
