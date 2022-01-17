@@ -3,61 +3,7 @@ with builtins;
 
 let
 
-  pauseImage = pkgs.dockerTools.pullImage {
-    imageName = "rancher/pause";
-    imageDigest = "sha256:d22591b61e9c2b52aecbf07106d5db313c4f178e404d660b32517b18fcbf0144";
-    sha256 = "0vrc3flx239qmvigzfcv1swn447722bsc5ah5nn055jqa4m3i82p";
-    finalImageName = "rancher/pause";
-    finalImageTag = "3.1";
-  };
-
-  klipperHelmImage = pkgs.dockerTools.pullImage {
-    imageName = "rancher/klipper-helm";
-    imageDigest = "sha256:b319bce4802b8e42d46e251c7f9911011a16b4395a84fa58f1cf4c788df17139";
-    sha256 = "1px6y7qmxkv702pjnhfkpv0qz7l8257nvcfv7h5mwgxnmh6v6617";
-    finalImageName = "rancher/klipper-helm";
-    finalImageTag = "v0.4.3";
-  };
-
-  metricsServerImage = pkgs.dockerTools.pullImage {
-    imageName = "rancher/metrics-server";
-    imageDigest = "sha256:b85628b103169d7db52a32a48b46d8942accb7bde3709c0a4888a23d035f9f1e";
-    sha256 = "176iglsg0pgd23g3a9hkn43jq781hj7z7625ifh46xki9iv2gfph";
-    finalImageName = "rancher/metrics-server";
-    finalImageTag = "v0.3.6";
-  };
-
-  corednsImage = pkgs.dockerTools.pullImage {
-    imageName = "rancher/coredns-coredns";
-    imageDigest = "sha256:9d4f5d7968c432fbd4123f397a2d6ab666fd63d13d510d9728d717c3e002dc72";
-    sha256 = "1jlr7rnqq48izi8n69h0alzpfz8fb22dpr7ylaphcsj5grnpsgkq";
-    finalImageName = "rancher/coredns-coredns";
-    finalImageTag = "1.8.3";
-  };
-
-  libraryTraefikImage = pkgs.dockerTools.pullImage {
-    imageName = "rancher/library-traefik";
-    imageDigest = "sha256:343de3610780fc88b04eeb2145cbf8189e8f6278c2061de4a1e10de31711c252";
-    sha256 = "06dvzmap51z9dggm9z4xax4vcb14cqz5301c629grkiylz60vdrp";
-    finalImageName = "rancher/library-traefik";
-    finalImageTag = "2.4.8";
-  };
-
-  klipperLBImage = pkgs.dockerTools.pullImage {
-    imageName = "rancher/klipper-lb";
-    imageDigest = "sha256:2fb97818f5d64096d635bc72501a6cb2c8b88d5d16bc031cf71b5b6460925e4a";
-    sha256 = "0f8si6wwqs4d73lxgn91bp6zq5sp3pz2yki92dqviy3gc9n8w05k";
-    finalImageName = "rancher/klipper-lb";
-    finalImageTag = "v0.1.2";
-  };
-
-  localPathProvisionerImage = pkgs.dockerTools.pullImage {
-    imageName = "rancher/local-path-provisioner";
-    imageDigest = "sha256:9666b1635fec95d4e2251661e135c90678b8f45fd0f8324c55db99c80e2a958c";
-    sha256 = "03nhj2j86v818s9pj5jaly33v3y2yza4qnv9n0763qi67wvmlziz";
-    finalImageName = "rancher/local-path-provisioner";
-    finalImageTag = "v0.0.19";
-  };
+  images = map pkgs.dockerTools.pullImage (import ./airgapped-k3s-images.nix);
 
   net4Srv = "10.0.1";
   frontendSrv = net4Srv + ".1";
@@ -164,8 +110,8 @@ in {
           }
         ];
 
-        virtualisation.memorySize = 4000;
-        virtualisation.diskSize = lib.mkForce 2000;
+        virtualisation.memorySize = 2000;
+        virtualisation.diskSize = lib.mkForce 3000;
         virtualisation.vlans = [ 1 2 ];
         };
       };
@@ -195,7 +141,7 @@ in {
         networking.hostName = lib.mkForce "k3snodeA";
         networking.nameservers = [ "127.0.0.1" ];
         virtualisation.memorySize = 2000;
-        virtualisation.diskSize = 2000;
+        virtualisation.diskSize = 3000;
         virtualisation.vlans = [ 1 ];
         };
       };
@@ -226,7 +172,7 @@ in {
         networking.extraHosts = hosts;
         networking.hostName = lib.mkForce "k3snodeB";
         virtualisation.memorySize = 2000;
-        virtualisation.diskSize = 2000;
+        virtualisation.diskSize = 3000;
         virtualisation.vlans = [ 1 ];
         };
       };
@@ -260,7 +206,7 @@ in {
         networking.extraHosts = hosts;
         flyingcircus.encServices = encServices;
         virtualisation.vlans = [ 1 2 ];
-        virtualisation.diskSize = 2000;
+        virtualisation.diskSize = 3000;
         virtualisation.memorySize = 2000;
       };
 
@@ -270,19 +216,16 @@ in {
   testScript = { nodes, ... }: let
     masterSensuCheck = testlib.sensuCheckCmd nodes.master;
   in ''
+    images = [${lib.concatStringsSep "," (map (val: "\"${val}\"") images)}]
+
     with subtest("k3s server should work"):
       k3sserver.wait_for_unit("k3s.service")
       k3sserver.wait_until_succeeds('k3s kubectl cluster-info | grep -q https://127.0.0.1:6443')
 
     with subtest("adding a first node should work"):
       k3snodeA.wait_for_unit("k3s.service")
-      k3snodeA.succeed("k3s ctr images import ${pauseImage}")
-      k3snodeA.succeed("k3s ctr images import ${klipperHelmImage}")
-      k3snodeA.succeed("k3s ctr images import ${metricsServerImage}")
-      k3snodeA.succeed("k3s ctr images import ${corednsImage}")
-      k3snodeA.succeed("k3s ctr images import ${libraryTraefikImage}")
-      k3snodeA.succeed("k3s ctr images import ${klipperLBImage}")
-      k3snodeA.succeed("k3s ctr images import ${localPathProvisionerImage}")
+      for image in images:
+        k3snodeA.succeed(f"k3s ctr images import {image}")
       k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodea | grep -vq NotReady")
 
     with subtest("dashboard sensu check should be green"):
@@ -309,14 +252,8 @@ in {
       k3sserver.wait_until_succeeds('dig redis.default.svc.cluster.local | grep -q 10.43')
 
     with subtest("adding a second node should work"):
-      k3snodeB.wait_for_unit("k3s.service")
-      k3snodeB.succeed("k3s ctr images import ${pauseImage}")
-      k3snodeB.succeed("k3s ctr images import ${klipperHelmImage}")
-      k3snodeB.succeed("k3s ctr images import ${metricsServerImage}")
-      k3snodeB.succeed("k3s ctr images import ${corednsImage}")
-      k3snodeB.succeed("k3s ctr images import ${libraryTraefikImage}")
-      k3snodeB.succeed("k3s ctr images import ${klipperLBImage}")
-      k3snodeB.succeed("k3s ctr images import ${localPathProvisionerImage}")
+      for image in images:
+        k3snodeB.succeed(f"k3s ctr images import {image}")
       k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodeb | grep -vq NotReady")
 
     with subtest("scaling the deployment should start 4 pods"):
