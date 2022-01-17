@@ -9,7 +9,7 @@ AGE_DESTROY = 30 * 24 * 60 * 60
 
 changes = 0
 
-for filename in glob.glob('/etc/devserver/*.json'):
+for filename in glob.glob('/etc/devhost/*.json'):
     current_stat = os.stat(filename)
     age = time.time() - current_stat.st_mtime
     if age < AGE_SHUTDOWN:
