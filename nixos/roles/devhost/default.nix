@@ -207,7 +207,16 @@ in
 
          path = [ pkgs.nixos-container ];
          script = ''
-           # Start enabled containers.
+           # Start all enabled containers.
+
+           # be verbose about what you're doing
+           set -x 
+
+           # Allow individual containers to have problems but start 
+           # all others. We have to set +e here explicitly as the script
+           # will be generated with a #!.../bin/bash -e header
+           set +e
+
          '' + lib.concatMapStringsSep "\n" 
            (container: "nixos-container start ${container.name}")
            enabledContainers;
