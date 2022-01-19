@@ -195,9 +195,10 @@ in {
         "nixos-config=/etc/nixos/configuration.nix"
       ];
 
-      binaryCaches = [
-        https://cache.nixos.org
-        https://hydra.flyingcircus.io
+      binaryCaches = lib.mkOverride 90 [
+        "https://cache.nixos.org"
+        "https://s3.whq.fcio.net/hydra"
+        "https://hydra.flyingcircus.io"
       ];
 
       binaryCachePublicKeys = [
