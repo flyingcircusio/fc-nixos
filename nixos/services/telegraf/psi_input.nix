@@ -8,7 +8,6 @@ in {
     default = [ ];
   };
   config = {
-    flyingcircus.services.telegraf.psiCgroupRegex = [ "^/system.slice$" "^/system.slice.*service$" "^/user.slice$" ];
     flyingcircus.services.telegraf.inputs = {
       exec = [{
         commands = [ "${pkgs.fc.telegraf-collect-psi}/bin/collect_psi" ];

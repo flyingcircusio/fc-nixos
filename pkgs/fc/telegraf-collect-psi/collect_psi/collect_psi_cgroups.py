@@ -32,6 +32,9 @@ def main():
     parser.add_argument('--regex', '-r', help='Regex to filter cgroups')
     args = parser.parse_args()
 
+    if args.regex == "":
+        args.regex = "^$"
+
     cgroup_regex = re.compile(args.regex)
 
     # List all cgroups
