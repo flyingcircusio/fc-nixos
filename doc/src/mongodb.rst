@@ -8,6 +8,7 @@ There's a role for each supported major version, currently:
 
 * mongodb36
 * mongodb40
+* mongodb42
 
 
 3.2 and 3.4 are end-of-life and should be upgraded.
@@ -29,7 +30,7 @@ as perform administrative operations.
 Upgrade
 -------
 
-.. warning:: Upgrade paths must include all major versions: 3.2 -> 3.4 -> 3.6 -> 4.0.
+.. warning:: Upgrade paths must include all major versions: 3.2 -> 3.4 -> 3.6 -> 4.0 -> 4.2.
    Before each upgrade step, the feature compatibility version must be set to the
    current running mongodb version.
 
