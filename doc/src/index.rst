@@ -31,6 +31,7 @@ Components/Roles
    docker
    elasticsearch
    external_net
+   fc_userscan
    kibana
    kubernetes
    lamp

@@ -160,14 +160,14 @@ in
         wantedBy = [ "mongodb.service" ];
         after = [ "mongodb.service" ];
         script = let
-          mongoCmd = "${pkgs.mongodb-4_0}/bin/mongo";
-          js = pkgs.writeText "mongodb_set_feature_compat_version_4_0.js" ''
+          mongoCmd = "${pkgs.mongodb-4_2}/bin/mongo";
+          js = pkgs.writeText "mongodb_set_feature_compat_version_4_2.js" ''
             res = db.adminCommand({"getParameter": 1, "featureCompatibilityVersion": 1});
             compat_version = res["featureCompatibilityVersion"]["version"];
 
-            if (db.version().startsWith("4.0") && compat_version == "3.6") {
-                print("MongoDB: current feature compat version is 3.6, updating to 4.0");
-                db.adminCommand( { setFeatureCompatibilityVersion: "4.0" } );
+            if (db.version().startsWith("4.2") && compat_version == "4.0") {
+                print("MongoDB: current feature compat version is 4.0, updating to 4.2");
+                db.adminCommand( { setFeatureCompatibilityVersion: "4.2" } );
             }
           '';
         in ''

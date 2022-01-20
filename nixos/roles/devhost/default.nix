@@ -9,12 +9,20 @@ let
   excludedRoles = attrNames (lib.filterAttrs (n: v: !(v.supportsContainers or true)) config.flyingcircus.roles);
 
   enabledContainers = with lib;
-    filter (container: container.enabled or true)
+    (filter (container: container.enabled or true)
+           (map
+            (filename: fromJSON (readFile "/etc/devhost/${filename}"))
+            (filter
+              (filename: hasSuffix ".json" filename)
+              (attrNames (readDirMaybe "/etc/devhost/")))))
+    # BBB can be removed after a grace period
+    ++ (filter (container: container.enabled or true)
            (map
             (filename: fromJSON (readFile "/etc/devserver/${filename}"))
             (filter
               (filename: hasSuffix ".json" filename)
-              (attrNames (readDirMaybe "/etc/devserver/"))));
+              (attrNames (readDirMaybe "/etc/devserver/")))));
+
 
   container_script = pkgs.writeShellScriptBin "fc-build-dev-container"
     ''
@@ -31,7 +39,7 @@ let
               nixos-container destroy $container || true
               # We can not leave the nginx config in place because this will
               # make nginx stumble over non-resolveable names.
-              rm -f /etc/devserver/$container.json
+              rm -f /etc/devhost/$container.json
               if [ "$manage_alias_proxy" == true ]; then
                 fc-manage -v -b
               fi
@@ -62,7 +70,7 @@ let
               jq -n --arg container "$container" \
                 --arg aliases "$aliases" \
                 '{name: $container, aliases: ($aliases | split(" ")), enabled: true}' \
-                > /etc/devserver/$container.json
+                > /etc/devhost/$container.json
               if [ "$manage_alias_proxy" == true ]; then
                 fc-manage -v -b
               fi
@@ -157,8 +165,21 @@ in
           } ];
 
       systemd.tmpfiles.rules = [
-          "d /etc/devserver/"
+          "d /etc/devhost/"
       ];
+
+      # BBB can be removed after a grace period
+      flyingcircus.activationScripts.devhost-migrate-old-config-dir = ''
+        if [ -d "/etc/devserver" ]; then
+          # Be defensive about whether tmpfiles has already created
+          # devhost entry and expect that it might already exist
+          # but might not. `mv`ing the directory would break in that
+          # case.
+          mkdir -p /etc/devhost
+          mv /etc/devserver/* /etc/devhost/
+          rmdir /etc/devserver
+        fi
+      '';
 
       boot.kernel.sysctl = {
         "net.ipv4.ip_forward" = 1;
@@ -177,7 +198,7 @@ in
           generateContainerVhost = container:
           { name = "${container.name}.${suffix}";
             value  = {
-              serverAliases = map 
+              serverAliases = map
                 (alias: "${alias}.${container.name}.${suffix}")
                 container.aliases;
               forceSSL = true;
@@ -207,8 +228,17 @@ in
 
          path = [ pkgs.nixos-container ];
          script = ''
-           # Start enabled containers.
-         '' + lib.concatMapStringsSep "\n" 
+           # Start all enabled containers.
+
+           # be verbose about what you're doing
+           set -x
+
+           # Allow individual containers to have problems but start
+           # all others. We have to set +e here explicitly as the script
+           # will be generated with a #!.../bin/bash -e header
+           set +e
+
+         '' + lib.concatMapStringsSep "\n"
            (container: "nixos-container start ${container.name}")
            enabledContainers;
 
@@ -218,7 +248,7 @@ in
          };
        };
 
-       # Automated clean up / shut down 
+       # Automated clean up / shut down
 
        systemd.services.fc-devhost-clean-containers = {
          description = "Clean up old/unused devhost containers.";
@@ -232,7 +262,7 @@ in
              RemainAfterExit = false;
          };
        };
-       
+
       systemd.timers.fc-devhost-clean-containers = {
         wantedBy = [ "timers.target" ];
         timerConfig = {
@@ -240,7 +270,7 @@ in
         };
       };
 
-    }) 
+    })
 
     (lib.mkIf cfg.testing {
 

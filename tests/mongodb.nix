@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ version ? "4.0", lib, pkgs, testlib, ... }:
+import ./make-test-python.nix ({ version ? "4.2", lib, pkgs, testlib, ... }:
 let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";

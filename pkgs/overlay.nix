@@ -234,6 +234,15 @@ in {
       sha256 = "1kbw8vjbwlh94y58am0cxdz92mpb4amf575x0p456h1k3kh87rjg";
     };
   });
+  mongodb-4_2 = super.mongodb-4_2.overrideAttrs(_: rec {
+    meta.license = null;
+    version = "4.2.18";
+    name = "mongodb-${version}";
+    src = super.fetchurl {
+      url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
+      sha256 = "1fl555n8nnp3qpgx2hppz6yjh9w697kryzgkv73qld8zrikrbfsv";
+    };
+  });
 
 
   libmodsecurity = super.libmodsecurity.overrideAttrs(_: rec {
