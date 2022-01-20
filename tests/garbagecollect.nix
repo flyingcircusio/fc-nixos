@@ -53,10 +53,8 @@ import ./make-test-python.nix (
       print(machine.wait_for_file("${home}/.cache/fc-userscan.cache"))
 
       # check that a GC root has been registered
-      print(machine.succeed("""
-        ls -lR /nix/var/nix/gcroots/per-user/u0${home} | grep ${pypkg}
-        test `find /nix/var/nix/gcroots/per-user/u0${home} -type l | wc -l` = 1
-      """))
+      machine.succeed("ls -lR /nix/var/nix/gcroots/per-user/u0${home} | grep ${pypkg}")
+      machine.succeed("test `find /nix/var/nix/gcroots/per-user/u0${home} -type l | wc -l` = 1")
       machine.fail("systemctl is-failed fc-collect-garbage.service")
     '';
   }
