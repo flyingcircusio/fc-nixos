@@ -14,9 +14,9 @@ let
             (filename: fromJSON (readFile "/etc/devhost/${filename}"))
             (filter
               (filename: hasSuffix ".json" filename)
-              (attrNames (readDirMaybe "/etc/devhost/"))))) + 
+              (attrNames (readDirMaybe "/etc/devhost/")))))
     # BBB can be removed after a grace period
-    (filter (container: container.enabled or true)
+    ++ (filter (container: container.enabled or true)
            (map
             (filename: fromJSON (readFile "/etc/devserver/${filename}"))
             (filter
@@ -173,7 +173,7 @@ in
         if [ -d "/etc/devserver" ]; then
           # Be defensive about whether tmpfiles has already created
           # devhost entry and expect that it might already exist
-          # but might not. `mv`ing the directory would break in that 
+          # but might not. `mv`ing the directory would break in that
           # case.
           mkdir -p /etc/devhost
           mv /etc/devserver/* /etc/devhost/
@@ -198,7 +198,7 @@ in
           generateContainerVhost = container:
           { name = "${container.name}.${suffix}";
             value  = {
-              serverAliases = map 
+              serverAliases = map
                 (alias: "${alias}.${container.name}.${suffix}")
                 container.aliases;
               forceSSL = true;
@@ -231,14 +231,14 @@ in
            # Start all enabled containers.
 
            # be verbose about what you're doing
-           set -x 
+           set -x
 
-           # Allow individual containers to have problems but start 
+           # Allow individual containers to have problems but start
            # all others. We have to set +e here explicitly as the script
            # will be generated with a #!.../bin/bash -e header
            set +e
 
-         '' + lib.concatMapStringsSep "\n" 
+         '' + lib.concatMapStringsSep "\n"
            (container: "nixos-container start ${container.name}")
            enabledContainers;
 
@@ -248,7 +248,7 @@ in
          };
        };
 
-       # Automated clean up / shut down 
+       # Automated clean up / shut down
 
        systemd.services.fc-devhost-clean-containers = {
          description = "Clean up old/unused devhost containers.";
@@ -262,7 +262,7 @@ in
              RemainAfterExit = false;
          };
        };
-       
+
       systemd.timers.fc-devhost-clean-containers = {
         wantedBy = [ "timers.target" ];
         timerConfig = {
@@ -270,7 +270,7 @@ in
         };
       };
 
-    }) 
+    })
 
     (lib.mkIf cfg.testing {
 
