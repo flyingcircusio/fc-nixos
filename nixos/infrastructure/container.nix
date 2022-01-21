@@ -116,13 +116,13 @@ in
 
       flyingcircus.encServices = [
         { service = "nfs_rg_share-server";
-          address = "127.0.0.1";
+          address = config.networking.hostName;
         }
       ];
 
       flyingcircus.encServiceClients = [
         { service = "nfs_rg_share-server";
-          node = "127.0.0.1";
+          node = config.networking.hostName;
         }
       ];
 
