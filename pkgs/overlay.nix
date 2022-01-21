@@ -40,18 +40,6 @@ in {
       boost = super.boost155;
   });
 
-  # Hash is wrong upstream
-  containerd = super.containerd.overrideAttrs(_: rec {
-    version = "1.5.1";
-
-    src = super.fetchFromGitHub {
-      rev = "v${version}";
-      owner = "containerd";
-      repo = "containerd";
-      sha256 = "16q34yiv5q98b9d5vgy1lmmppg8agrmnfd1kzpakkf4czkws0p4d";
-    };
-  });
-
   docsplit = super.callPackage ./docsplit { };
 
   flannel = super.flannel.overrideAttrs(_: rec {
@@ -63,15 +51,6 @@ in {
       owner = "coreos";
       repo = "flannel";
       sha256 = "119sf1fziznrx7y9ml7h4cqfy0hyl34sbxm81rwjg2svwz0qx6x1";
-    };
-  });
-
-  graylog = super.graylog.overrideAttrs(_: rec {
-    version = "3.3.16";
-
-    src = fetchurl {
-      url = "https://packages.graylog2.org/releases/graylog/graylog-${version}.tgz";
-      sha256 = "17nxvj6haf5an6yj6zdjvcaxlliamcl16bca1z1jjcd7h9yjgxrz";
     };
   });
 
@@ -108,14 +87,6 @@ in {
     src = super.fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
       sha256 = "18x00lazyjcff8n7pn4h43cxlskv0d9vnh0cmf40ihrpqc5zs2dz";
-    };
-  });
-
-  haproxy = super.haproxy.overrideAttrs(orig: rec {
-    version = "2.3.14";
-    src = super.fetchurl {
-      url = "https://www.haproxy.org/download/${lib.versions.majorMinor version}/src/${orig.pname}-${version}.tar.gz";
-      sha256 = "0ah6xsxlk1a7jsxdg0pbdhzhssz9ysrfxd3bs5hm1shql1jmqzh4";
     };
   });
 
@@ -166,35 +137,6 @@ in {
               ]);
 
   mc = super.callPackage ./mc.nix { };
-
-  mongodb-3_6 = super.mongodb-3_6.overrideAttrs(_: rec {
-    meta.license = null;
-    version = "3.6.19";
-    name = "mongodb-${version}";
-    src = super.fetchurl {
-      url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
-      sha256 = "0y0k5lc2czvg8zirvqfnmpv9z0xz2slp2zfacp0hm0kzcnq82m51";
-    };
-  });
-  mongodb-4_0 = super.mongodb-4_0.overrideAttrs(_: rec {
-    meta.license = null;
-    version = "4.0.19";
-    name = "mongodb-${version}";
-    src = super.fetchurl {
-      url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
-      sha256 = "1kbw8vjbwlh94y58am0cxdz92mpb4amf575x0p456h1k3kh87rjg";
-    };
-  });
-  mongodb-4_2 = super.mongodb-4_2.overrideAttrs(_: rec {
-    meta.license = null;
-    version = "4.2.18";
-    name = "mongodb-${version}";
-    src = super.fetchurl {
-      url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
-      sha256 = "1fl555n8nnp3qpgx2hppz6yjh9w697kryzgkv73qld8zrikrbfsv";
-    };
-  });
-
 
   libmodsecurity = super.libmodsecurity.overrideAttrs(_: rec {
       version = "3.0.4";
@@ -257,17 +199,6 @@ in {
     patches = a.patches ++ [
       ./remote_addr_anon.patch
     ];
-  });
-
-  openssh_8_7 = super.openssh.overrideAttrs(_: rec {
-    version = "8.7p1";
-    name = "openssh-${version}";
-
-    src = super.fetchurl {
-      url = "mirror://openbsd/OpenSSH/portable/openssh-${version}.tar.gz";
-      sha256 = "090yxpi03pxxzb4ppx8g8hdpw7c4nf8p0avr6c7ybsaana5lp8vw";
-    };
-
   });
 
   percona = self.percona80;
