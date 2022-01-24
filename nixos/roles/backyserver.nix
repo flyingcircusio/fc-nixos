@@ -80,6 +80,9 @@ in
           daily: {interval: 1d, keep: 8}
           monthly: {interval: 30d, keep: 2}
           weekly: {interval: 7d, keep: 3}
+        longterm:
+          daily: {interval: 1d, keep: 30}
+          monthly: {interval: 30d, keep: 12}
     '';
 
     flyingcircus.agent.extraCommands = ''
