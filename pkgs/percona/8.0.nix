@@ -2,16 +2,16 @@
 , lzo, lz4, bzip2, snappy
 , libiconv, openssl, pcre, boost, judy, bison, libxml2
 , libaio, jemalloc, cracklib, systemd, numactl
-, asio, buildEnv, check, scons, curl, perl, openldap, libtirpc, rpcsvc-proto
+, asio, buildEnv, check, scons, curl, perl, cyrus_sasl, openldap, libtirpc, rpcsvc-proto
 }:
 
 stdenv.mkDerivation rec {
   pname = "percona";
-  version = "8.0.22-13";
+  version = "8.0.26-17";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-8.0/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "16ncjy3hwzm10hi6c3smk275pv775d4j1nrgyamjrs4hfzf4jhk1";
+    sha256 = "0r1pw4s5hcplgqld6xd30jrc7h76wg1h9z2ms8rs5lryr12blqdq";
   };
 
   preConfigure = lib.optional stdenv.isDarwin ''
@@ -24,7 +24,7 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     ncurses openssl zlib pcre jemalloc libiconv libaio systemd boost
-    curl perl openldap.dev libtirpc
+    curl perl cyrus_sasl openldap.dev libtirpc
   ];
 
   enableParallelBuilding = true;
