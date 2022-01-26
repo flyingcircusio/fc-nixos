@@ -25,8 +25,7 @@ in {
     matomo;
 
   antivirus = callTest ./antivirus.nix {};
-  # seems to run but fails to find the output: "Failed to find matching auditbeat line"
-  # audit = callTest ./audit.nix {};
+  audit = callTest ./audit.nix {};
   backyserver = callTest ./backyserver.nix {};
   channel = callTest ./channel.nix {};
   ceph = callTest ./ceph.nix {};

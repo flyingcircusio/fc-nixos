@@ -69,32 +69,38 @@ with subtest("Ensure SSH logins and sudo keystrokes are logged"):
     time.sleep(2)
     print(server.execute("cat /var/lib/auditbeat/auditbeat")[1])
 
-    keystrokes = beatgrep(
-        lambda obj: obj["auditd"]["summary"]["object"]["type"] == "keystrokes"
-    )
-    keystrokes = [
-        k["auditd"]["summary"]["object"]["primary"] for k in keystrokes
-    ]
-    assert keystrokes == [
-        "rm /tmp/asdf\rexit\r",
-        "ps auxf\rsudo -i\rexit\r",
-    ], f"Keystrokes did not match. Got: {keystrokes!r}"
+    with subtest("Auditbeat log should have keystrokes entries for tty input"):
+        keystrokes = beatgrep(
+            lambda obj: obj["auditd"]["summary"]["object"]["type"]
+            == "keystrokes"
+        )
+        keystrokes = [
+            k["auditd"]["summary"]["object"]["primary"] for k in keystrokes
+        ]
+        assert keystrokes == [
+            "rm /tmp/asdf\rexit\r",
+            "ps auxf\rsudo -i\rexit\r",
+        ], f"Keystrokes did not match. Got: {keystrokes!r}"
 
-    rm = beatgrep(
-        lambda obj: obj["auditd"]["summary"]["object"]["primary"]
-        == "/run/current-system/sw/bin/rm"
-    )
-    assert len(rm) == 1
-    rm = rm[0]
+    with subtest("Auditbeat log should have one entry for the rm command"):
+        rm = beatgrep(
+            lambda obj: obj["auditd"]["summary"]["object"]["primary"]
+            == "/run/current-system/sw/bin/rm"
+        )
+        assert len(rm) == 1
+        rm = rm[0]
+        import pprint
 
-    import pprint
+        pprint.pprint(rm)
 
-    pprint.pprint(rm)
+        assert rm["auditd"]["summary"]["actor"]["primary"] == "customer"
+        assert rm["auditd"]["summary"]["actor"]["secondary"] == "root"
+        assert rm["process"]["working_directory"] == "/root"
+        assert rm["process"]["args"] == ["rm", "/tmp/asdf"]
 
-    assert rm["auditd"]["summary"]["actor"]["primary"] == "customer"
-    assert rm["auditd"]["summary"]["actor"]["secondary"] == "root"
-    assert rm["process"]["working_directory"] == "/root"
-    assert rm["process"]["args"] == ["rm", "/tmp/asdf"]
-
-    graylog = server.execute("journalctl -q -o cat -u netcatgraylog")[1]
-    assert "Connection received on localhost" in graylog
+    with subtest("Graylog should have received a connection from auditbeat"):
+        graylog = server.execute(
+            "journalctl -q -o cat -u netcatgraylog --grep 'Connection received'"
+        )[1]
+        print(graylog)
+        assert "Connection received on localhost" in graylog
