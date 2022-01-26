@@ -5,7 +5,7 @@ let
 
 in
   py.buildPythonApplication rec {
-    name = "fc-telegraf-collet-psi-${version}";
+    name = "fc-telegraf-collect-psi-${version}";
     version = "1.0";
     src = ./.;
     # dontStrip = true;
