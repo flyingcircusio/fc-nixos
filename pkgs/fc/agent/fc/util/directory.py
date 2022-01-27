@@ -36,7 +36,7 @@ def connect(enc_data=None, ring=1):
     Selects ring0/ring1 API according to the `ring` parameter. Giving `max`
     results in selecting the highest ring available according to the ENC.
     """
-    if not xmlrpc.client.ProtocolError is ScreenedProtocolError:
+    if xmlrpc.client.ProtocolError is not ScreenedProtocolError:
         xmlrpc.client.ProtocolError = ScreenedProtocolError
     if not enc_data:
         enc_data = load_default_enc_json()
