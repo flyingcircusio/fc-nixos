@@ -10,6 +10,7 @@ let
     "11" = pkgs.postgresql_11;
     "12" = pkgs.postgresql_12;
     "13" = pkgs.postgresql_13;
+    "14" = pkgs.postgresql_14;
   };
 
   listenAddresses =
