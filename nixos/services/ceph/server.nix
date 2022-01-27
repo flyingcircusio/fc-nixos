@@ -102,7 +102,8 @@ in
       "vm.dirty_background_ratio" = "10";
       "vm.dirty_ratio" = "40";
       "vm.max_map_count" = "524288";
-      "vm.vfs_cache_pressure" = "10";
+      # Extracted to flyingcircus-physical.nix
+      # kernel.sysctl."vm.vfs_cache_pressure" = 10;
 
       # 10G tuning for OSDs
       "vm.min_free_kbytes" = "513690";
