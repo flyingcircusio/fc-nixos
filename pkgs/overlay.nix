@@ -66,7 +66,6 @@ in {
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
-  jibri = super.callPackage ./jibri { };
   jicofo = super.callPackage ./jicofo { };
   jitsi-meet = super.callPackage ./jitsi-meet { };
   jitsi-videobridge = super.callPackage ./jitsi-videobridge { };
