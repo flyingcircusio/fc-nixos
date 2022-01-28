@@ -15,6 +15,7 @@ setup(
     entry_points={
         'console_scripts': [
             'collect_psi=collect_psi.collect_psi:main',
+            'collect_psi_cgroups=collect_psi.collect_psi_cgroups:main',
         ],
     },
 )
