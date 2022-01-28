@@ -1,38 +1,54 @@
-import subprocess
-from fc.maintenance.activity import Activity, RebootType
-from fc.maintenance.reqmanager import ReqManager
-from fc.maintenance.request import Request, Attempt
-from fc.maintenance.state import State, ARCHIVE, EXIT_POSTPONE
-
-import fc.maintenance.reqmanager
-
 import contextlib
 import datetime
-import freezegun
 import os
 import os.path as p
+import socket
+import sys
+import textwrap
+import unittest.mock
+import uuid
+from unittest.mock import call
+
+import fc.maintenance.reqmanager
+import freezegun
 import pytest
 import pytz
 import shortuuid
-import socket
-import sys
-import unittest.mock
-import uuid
+from fc.maintenance.activity import Activity, RebootType
+from fc.maintenance.reqmanager import ReqManager
+from fc.maintenance.request import Attempt, Request
+from fc.maintenance.state import ARCHIVE, EXIT_POSTPONE, State
 
 
 @pytest.fixture
-def reqmanager(tmpdir):
-    with ReqManager(str(tmpdir)) as rm:
+def agent_maintenance_config(tmpdir):
+    config_file = str(tmpdir / 'fc-agent.conf')
+    with open(config_file, 'w') as f:
+        f.write(
+            textwrap.dedent("""\
+            [maintenance-enter]
+            demo = echo "entering demo"
+
+            [maintenance-leave]
+            demo = echo "leaving demo"
+            dummy =
+            """))
+    return config_file
+
+
+@pytest.fixture
+def reqmanager(tmpdir, agent_maintenance_config):
+    with ReqManager(str(tmpdir), config_file=agent_maintenance_config) as rm:
         yield rm
 
 
 @contextlib.contextmanager
-def request_population(n, dir):
+def request_population(n, dir, config_file=None):
     """Creates a ReqManager with a pregenerated population of N requests.
 
     The ReqManager and a list of Requests are passed to the calling code.
     """
-    with ReqManager(str(dir)) as reqmanager:
+    with ReqManager(str(dir), config_file=config_file) as reqmanager:
         requests = []
         for i in range(n):
             req = Request(Activity(), 60, comment=str(i))
@@ -176,7 +192,10 @@ def test_execute_activity_no_reboot(connect, run, reqmanager, log):
     req = reqmanager.add(Request(activity, 1))
     req.state = State.due
     reqmanager.execute(run_all_now=True)
-    run.assert_not_called()
+    run.assert_has_calls([
+        call('echo "entering demo"', shell=True, check=True),
+        call('echo "leaving demo"', shell=True, check=True)
+    ])
     assert log.has("enter-maintenance")
     assert log.has("leave-maintenance")
 
@@ -189,8 +208,10 @@ def test_execute_activity_with_reboot(connect, run, reqmanager, log):
     req = reqmanager.add(Request(activity, 1))
     req.state = State.due
     reqmanager.execute(run_all_now=True)
-    run.assert_called_once()
-    assert run.call_args[0][0] == "reboot"
+    run.assert_has_calls([
+        call('echo "entering demo"', shell=True, check=True),
+        call('reboot', check=True, capture_output=True, text=True)
+    ])
     assert log.has("enter-maintenance")
     assert log.has("maintenance-reboot")
     assert not log.has("leave-maintenance")
@@ -226,8 +247,9 @@ def test_list_end_to_end(tmpdir, capsys):
 
 @unittest.mock.patch('fc.util.directory.connect')
 @freezegun.freeze_time('2016-04-20 12:00:00')
-def test_execute_all_due(connect, tmpdir):
-    with request_population(3, tmpdir) as (rm, reqs):
+def test_execute_all_due(connect, tmpdir, agent_maintenance_config):
+    with request_population(
+            3, tmpdir, config_file=agent_maintenance_config) as (rm, reqs):
         reqs[0].state = State.running
         reqs[1].state = State.tempfail
         reqs[1].next_due = datetime.datetime(2016, 4, 20, 10, tzinfo=pytz.UTC)
@@ -239,8 +261,9 @@ def test_execute_all_due(connect, tmpdir):
 
 @unittest.mock.patch('fc.util.directory.connect')
 @freezegun.freeze_time('2016-04-20 12:00:00')
-def test_execute_not_due(connect, tmpdir):
-    with request_population(3, tmpdir) as (rm, reqs):
+def test_execute_not_due(connect, tmpdir, agent_maintenance_config):
+    with request_population(
+            3, tmpdir, config_file=agent_maintenance_config) as (rm, reqs):
         reqs[0].state = State.error
         reqs[1].state = State.postpone
         reqs[2].next_due = datetime.datetime(2016, 4, 20, 13, tzinfo=pytz.UTC)
@@ -335,13 +358,14 @@ class PostponeActivity(Activity):
 
 @freezegun.freeze_time('2016-04-20 12:00:00')
 @unittest.mock.patch('fc.util.directory.connect')
-def test_end_to_end(connect, tmpdir):
-    with request_population(3, tmpdir) as (rm, reqs):
+def test_end_to_end(connect, tmpdir, agent_maintenance_config):
+    with request_population(
+            3, tmpdir, config_file=agent_maintenance_config) as (rm, reqs):
         # 0: due, exec, archive
         # 1: due, exec, postpone
         reqs[1].activity = PostponeActivity()
         reqs[1].save()
-        # 2: not due
+        # 2, config_file=config_file: not due
         # 3: locally deleted, no req object available
     sched = connect().schedule_maintenance
     endm = connect().end_maintenance
@@ -358,9 +382,19 @@ def test_end_to_end(connect, tmpdir):
         },
         'deleted_req': {},
     }
-    fc.maintenance.reqmanager.transaction(tmpdir)
+    fc.maintenance.reqmanager.transaction(
+        tmpdir, config_file=agent_maintenance_config)
     assert sched.call_count == 1
-    assert endm.call_count == 2  # delete, archive
+    endm.assert_has_calls([
+        call({'deleted_req': {
+            'result': 'deleted'
+        }}),
+        call(
+            {'2222222222222222222222': {
+                'duration': 0.0,
+                'result': 'success'
+            }})
+    ])
     assert postp.call_count == 1
 
 
