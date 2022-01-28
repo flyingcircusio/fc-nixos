@@ -47,7 +47,9 @@ def main(args=sys.argv[1:]):
         choices=['external', 'internal'],
         help='Type of journal (on same disk or external)')
     parser_activate.add_argument(
-        '--journal-size', default=0, type=int, help='Size of journal.')
+        '--journal-size',
+        default=fc.ceph.manage.OSD.DEFAULT_JOURNAL_SIZE,
+        help='Size of journal (LVM size units allowed).')
     parser_activate.add_argument(
         '--crush-location', default=f'host={hostname}')
     parser_activate.set_defaults(action='create')
@@ -77,6 +79,10 @@ def main(args=sys.argv[1:]):
 
     parser_rebuild = osd_sub.add_parser(
         'rebuild', help='Rebuild an OSD by destroying and creating it again.')
+    parser_rebuild.add_argument(
+        '--journal-size',
+        default=fc.ceph.manage.OSD.DEFAULT_JOURNAL_SIZE,
+        help='Size of journal (LVM size units allowed).')
     parser_rebuild.add_argument(
         'ids',
         help='IDs of OSD to migrate. Use `all` to rebuild all local OSDs.')

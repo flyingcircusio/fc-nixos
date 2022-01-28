@@ -238,13 +238,13 @@ class OSDManager(object):
             except Exception as e:
                 print(e)
 
-    def rebuild(self, ids):
+    def rebuild(self, ids, journal_size):
         ids = self._parse_ids(ids)
 
         for id_ in ids:
             try:
                 osd = OSD(id_)
-                osd.rebuild()
+                osd.rebuild(journal_size)
             except Exception as e:
                 print(e)
 
@@ -295,7 +295,7 @@ class OSDManager(object):
 
 class OSD(object):
 
-    DEFAULT_JOURNAL_SIZE = 10
+    DEFAULT_JOURNAL_SIZE = '10g'
 
     MKFS_XFS_OPTS = ['-m', 'crc=1,finobt=1', '-i', 'size=2048', '-K']
     MOUNT_XFS_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
@@ -416,14 +416,14 @@ class OSD(object):
                                        '-vg_free')[0]['VG']
             print(f'Creating external journal on {lvm_journal_vg} ...')
             run([
-                'lvcreate', '-W', 'y', f'-L{journal_size}g',
+                'lvcreate', '-W', 'y', f'-L{journal_size}',
                 f'-n{self.lvm_journal}', lvm_journal_vg],
                 check=True)
             lvm_journal_path = f'/dev/{lvm_journal_vg}/{self.lvm_journal}'
         elif journal == 'internal':
             print(f'Creating internal journal on {self.lvm_vg} ...')
             run([
-                'lvcreate', '-W', 'y', f'-L{journal_size}g',
+                'lvcreate', '-W', 'y', f'-L{journal_size}',
                 f'-n{self.lvm_journal}', self.lvm_vg])
             lvm_journal_path = f'/dev/{self.lvm_vg}/{self.lvm_journal}'
         else:
@@ -469,7 +469,7 @@ class OSD(object):
 
         self.activate()
 
-    def rebuild(self):
+    def rebuild(self, journal_size):
         print(f'Rebuilding OSD {self.id} from scratch')
 
         # What's the physical disk?
@@ -520,7 +520,7 @@ class OSD(object):
 
         # This is an "interesting" turn-around ...
         manager = OSDManager()
-        manager.create(device, journal, 0, crush_location)
+        manager.create(device, journal, journal_size, crush_location)
 
     def destroy(self):
         print(f"Destroying OSD {self.id} ...")
