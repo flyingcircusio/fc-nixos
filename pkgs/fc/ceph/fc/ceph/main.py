@@ -9,6 +9,12 @@ import fc.ceph.maintenance
 import fc.ceph.manage
 
 
+class SplitArgs(argparse.Action):
+    # See https://stackoverflow.com/questions/52132076
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values.split(','))
+
+
 def main(args=sys.argv[1:]):
     hostname = socket.gethostname()
 
@@ -92,6 +98,10 @@ def main(args=sys.argv[1:]):
         'create', help='Create and activate a local MON.')
     parser_create.add_argument(
         '--size', default='8g', help='Volume size to create for the MON.')
+    parser_create.add_argument(
+        '--bootstrap-cluster',
+        action='store_true',
+        help='Create first mon to bootstrap cluster.')
     parser_create.set_defaults(action='create')
 
     parser_activate = mon_sub.add_parser(
@@ -116,14 +126,27 @@ def main(args=sys.argv[1:]):
     keys.set_defaults(subsystem=fc.ceph.keys.KeyManager)
     keys_sub = keys.add_subparsers()
 
-    parser_create = keys_sub.add_parser(
+    parser_update_client_keys = keys_sub.add_parser(
         'mon-update-client-keys', help='Update the monitor key database.')
-    parser_create.set_defaults(action='mon_update_client_keys')
+    parser_update_client_keys.set_defaults(action='mon_update_client_keys')
 
-    parser_activate = keys_sub.add_parser(
+    parser_update_single_client_key = keys_sub.add_parser(
+        'mon-update-single-client',
+        help='Update a single client key in the mon database (OFFLINE).')
+    parser_update_single_client_key.add_argument(
+        'id', help='client id (i.e. the hostname)')
+    parser_update_single_client_key.add_argument(
+        'roles', action=SplitArgs, help='Which roles the client has.')
+    parser_update_single_client_key.add_argument(
+        'secret_salt', help='Secret salt for the client.')
+    parser_update_single_client_key.set_defaults(
+        action='mon_update_single_client_key')
+
+    parser_generate_client_keyring = keys_sub.add_parser(
         'generate-client-keyring',
         help='Generate and configure a keyring for the local client.')
-    parser_activate.set_defaults(action='generate_client_keyring')
+    parser_generate_client_keyring.set_defaults(
+        action='generate_client_keyring')
 
     # Log analysis commands
     logs = subparsers.add_parser('logs', help='Log analysis helpers.')

@@ -29,12 +29,16 @@ in
           ${if cfg.cluster_network != null then "cluster network = " + cfg.cluster_network else "; cluster network not available on pure clients"}
 
           pid file = /run/ceph/$type-$id.pid
+          admin socket = /run/ceph/$cluster-$name.asok
 
           # Needs to correspond with daemon startup ulimit
           max open files = 262144
 
           osd pool default min size = 2
           osd pool default size = 3
+
+          osd pool default pg num = 64
+          osd pool default pgp num = 64
 
           setuser match path = /srv/ceph/$type/ceph-$id
 
@@ -48,6 +52,11 @@ in
           mon host = ${mons}
           mon osd down out interval = 900  # Allow 15 min for reboots to happen without backfilling.
           mon osd nearfull ratio = .9
+
+          mon data = /srv/ceph/mon/$cluster-$id
+          mon osd allow primary affinity = true
+          mon pg warn max per osd = 3000
+
           '';
         description = ''
           Global config of the Ceph config file. Will be used
