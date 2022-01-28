@@ -27,6 +27,10 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         fsIdentifier = "provided";
         gfxmodeBios = "text";
       };
+
+      # Wanted by backy and Ceph servers
+      kernel.sysctl."vm.vfs_cache_pressure" = 10;
+
     };
 
     environment.systemPackages = with pkgs; [

@@ -13,6 +13,7 @@ let
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "backy-extract";
+      # 1.1.0
       rev = "5fd4c02e757918e22b634b16ae86927b82eb9f2a";
       sha256 = "1msg4p4h6ksj3vrsshhh5msfwgllai42jczyvd4nvrsqpncg12ik";
     };
@@ -58,8 +59,9 @@ in
     };
 
     boot = {
-      kernel.sysctl."vm.vfs_cache_pressure" = 10;
-      kernelModules = [ "mq_deadline" ];
+      # Extracted to flyingcircus-physical.nix
+      # kernel.sysctl."vm.vfs_cache_pressure" = 10;
+      kernelModules = [ "mq_deadline" ]; 
     };
 
     environment.etc."backy.global.conf".text = ''
@@ -80,6 +82,9 @@ in
           daily: {interval: 1d, keep: 8}
           monthly: {interval: 30d, keep: 2}
           weekly: {interval: 7d, keep: 3}
+        longterm:
+          daily: {interval: 1d, keep: 30}
+          monthly: {interval: 30d, keep: 12}
     '';
 
     flyingcircus.agent.extraCommands = ''
@@ -89,7 +94,7 @@ in
     systemd.services.backy = {
         description = "Backy backup server";
         wantedBy = [ "multi-user.target" ];
-        path = [ pkgs.backy pkgs.fc.agent ];
+        path = [ backy pkgs.fc.agent ];
 
         environment = {
           CEPH_ARGS = "--id ${enc.name}";
@@ -99,33 +104,16 @@ in
           ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
         };
 
-        # Theory of operation: raising write_expire timeouts means that
-        # requests are much more unlikely to get into 'expired' state which effectively
-        # means FIFO which means thrashing under high load.
         script = ''
             set -e
 
             # Delete old logs from pre-journal days.
             rm -f /var/log/backy.log*
 
-            for device in /sys/block/*; do
-                if ! [[ -d ''${device} ]]; then
-                    continue
-                fi
-
-                case ''${device##*/} in
-                    sd?)
-                        echo "mq-deadline" > "''${device}/queue/scheduler"
-                        sleep 0.1
-                        echo 50000 > "''${device}/queue/iosched/write_expire"  # default: 5000
-                    ;;
-                esac
-            done
-
             if ! [[ -f /etc/backy.conf ]]; then
               fc-backy
             fi
-            exec ${pkgs.backy}/bin/backy scheduler
+            exec ${backy}/bin/backy scheduler
         '';
 
     };
@@ -139,13 +127,13 @@ in
 
       backy_sla = {
         notification = "Backy SLA conformance";
-        command = "sudo ${pkgs.backy}/bin/backy check";
+        command = "sudo ${backy}/bin/backy check";
       };
 
     };
 
     flyingcircus.passwordlessSudoRules = [
-      { commands = [ "${pkgs.backy}/bin/backy check" ];
+      { commands = [ "${backy}/bin/backy check" ];
         groups = [ "sensuclient" ];
       }
     ];

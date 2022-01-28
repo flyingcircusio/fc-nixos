@@ -26,6 +26,7 @@ in {
 
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
+  backyserver = callTest ./backyserver.nix {};
   channel = callTest ./channel.nix {};
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
