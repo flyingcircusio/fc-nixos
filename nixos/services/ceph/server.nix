@@ -131,8 +131,6 @@ in
       "net.ipv4.tcp_tw_recycle" = "1";
       "net.ipv4.tcp_tw_reuse" = "1";
 
-      "net.netfilter.nf_conntrack_max" = "262144";
-
       # Supposedly this doesn't do much good anymore, but in one of my tests
       # (too many, can't prove right now.) this appeared to have been helpful.
       "net.ipv4.tcp_low_latency" = "1";
