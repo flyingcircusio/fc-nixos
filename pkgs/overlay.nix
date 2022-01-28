@@ -22,7 +22,7 @@ in {
   # imports from other nixpkgs versions or local definitions
   #
 
-  bash = super.callPackage ./bash/5.1.nix { };
+  bash_5_1_p12 = super.callPackage ./bash/5.1.nix { };
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
