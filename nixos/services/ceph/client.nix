@@ -63,6 +63,13 @@ in
           for all Ceph daemons and binaries.
         '';
       };
+      extraConfig = lib.mkOption {
+        type = lib.types.lines;
+        default = "";
+        description = ''
+          Extra config in the [global] section.
+        '';
+      };
       cluster_network = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
@@ -108,7 +115,7 @@ in
     '';
 
     environment.etc."ceph/ceph.conf".text = 
-        (cfg.config + "\n"+ cfg.client.config);
+        (cfg.config + "\n" + cfg.extraConfig + "\n" + cfg.client.config);
 
     environment.variables.CEPH_ARGS = fclib.mkPlatform "--id ${config.networking.hostName}";
 

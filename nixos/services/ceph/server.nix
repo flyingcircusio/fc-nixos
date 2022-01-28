@@ -22,10 +22,7 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
-    # mkPlatform is 900 and this is slightly higher prio but a regular 
-    # assignment will override again easily.
-    environment.variables.CEPH_ARGS = lib.mkOverride 899 "";
+    environment.variables.CEPH_ARGS = fclib.mkPlatformOverride "";
 
     flyingcircus.services.ceph.client.enable = true;
 

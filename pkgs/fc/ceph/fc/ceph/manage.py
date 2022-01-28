@@ -6,12 +6,17 @@ import re
 import resource
 import shutil
 import socket
-import subprocess
 import sys
 import tempfile
 import threading
 import time
-from subprocess import PIPE, run
+from subprocess import PIPE
+from subprocess import run as run_orig
+
+
+def run(*args, **kw):
+    print(args, kw, flush=True)
+    return run_orig(*args, **kw)
 
 
 def run_ceph(*args):
@@ -19,19 +24,14 @@ def run_ceph(*args):
 
 
 def run_json(*args, **kw):
-    result = run(
-        *args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True,
-        **kw)
+    result = run(*args, stdout=PIPE, stderr=PIPE, check=True, **kw)
     return json.loads(result.stdout)
 
 
 def query_lvm(*args):
     result = run(
         list(args) + ['--units', 'b', '--nosuffix', '--separator=,'],
-        stdout=subprocess.PIPE,
+        stdout=PIPE,
         check=True)
     output = result.stdout.decode('ascii')
     lines = output.splitlines()
@@ -329,7 +329,7 @@ class OSD(object):
 
     def is_mounted(self):
         result = run(['lsblk', '-o', 'name,mountpoint', '-r'],
-                     stdout=subprocess.PIPE,
+                     stdout=PIPE,
                      check=True)
         output = result.stdout.decode('ascii')
         lines = output.splitlines()
@@ -480,7 +480,7 @@ class OSD(object):
         pv = pvs[0]['PV']
         # Find the parent
         candidates = run(['lsblk', pv, '-o', 'name,pkname', '-r'],
-                         stdout=subprocess.PIPE,
+                         stdout=PIPE,
                          check=True)
         candidates = candidates.stdout.decode('ascii').splitlines()
         candidates.pop(0)
