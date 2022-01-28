@@ -1,11 +1,9 @@
 """Generates /etc/backy.conf from directory data."""
 
 import argparse
-import copy
 import json
 import logging
 import logging.handlers
-import os
 import os.path as p
 import shutil
 import socket
