@@ -9,6 +9,12 @@ import fc.ceph.maintenance
 import fc.ceph.manage
 
 
+class SplitArgs(argparse.Action):
+    # See https://stackoverflow.com/questions/52132076
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values.split(','))
+
+
 def main(args=sys.argv[1:]):
     hostname = socket.gethostname()
 
@@ -41,7 +47,9 @@ def main(args=sys.argv[1:]):
         choices=['external', 'internal'],
         help='Type of journal (on same disk or external)')
     parser_activate.add_argument(
-        '--journal-size', default=0, type=int, help='Size of journal.')
+        '--journal-size',
+        default=fc.ceph.manage.OSD.DEFAULT_JOURNAL_SIZE,
+        help='Size of journal (LVM size units allowed).')
     parser_activate.add_argument(
         '--crush-location', default=f'host={hostname}')
     parser_activate.set_defaults(action='create')
@@ -72,6 +80,10 @@ def main(args=sys.argv[1:]):
     parser_rebuild = osd_sub.add_parser(
         'rebuild', help='Rebuild an OSD by destroying and creating it again.')
     parser_rebuild.add_argument(
+        '--journal-size',
+        default=fc.ceph.manage.OSD.DEFAULT_JOURNAL_SIZE,
+        help='Size of journal (LVM size units allowed).')
+    parser_rebuild.add_argument(
         'ids',
         help='IDs of OSD to migrate. Use `all` to rebuild all local OSDs.')
     parser_rebuild.set_defaults(action='rebuild')
@@ -92,6 +104,10 @@ def main(args=sys.argv[1:]):
         'create', help='Create and activate a local MON.')
     parser_create.add_argument(
         '--size', default='8g', help='Volume size to create for the MON.')
+    parser_create.add_argument(
+        '--bootstrap-cluster',
+        action='store_true',
+        help='Create first mon to bootstrap cluster.')
     parser_create.set_defaults(action='create')
 
     parser_activate = mon_sub.add_parser(
@@ -116,14 +132,27 @@ def main(args=sys.argv[1:]):
     keys.set_defaults(subsystem=fc.ceph.keys.KeyManager)
     keys_sub = keys.add_subparsers()
 
-    parser_create = keys_sub.add_parser(
+    parser_update_client_keys = keys_sub.add_parser(
         'mon-update-client-keys', help='Update the monitor key database.')
-    parser_create.set_defaults(action='mon_update_client_keys')
+    parser_update_client_keys.set_defaults(action='mon_update_client_keys')
 
-    parser_activate = keys_sub.add_parser(
+    parser_update_single_client_key = keys_sub.add_parser(
+        'mon-update-single-client',
+        help='Update a single client key in the mon database (OFFLINE).')
+    parser_update_single_client_key.add_argument(
+        'id', help='client id (i.e. the hostname)')
+    parser_update_single_client_key.add_argument(
+        'roles', action=SplitArgs, help='Which roles the client has.')
+    parser_update_single_client_key.add_argument(
+        'secret_salt', help='Secret salt for the client.')
+    parser_update_single_client_key.set_defaults(
+        action='mon_update_single_client_key')
+
+    parser_generate_client_keyring = keys_sub.add_parser(
         'generate-client-keyring',
         help='Generate and configure a keyring for the local client.')
-    parser_activate.set_defaults(action='generate_client_keyring')
+    parser_generate_client_keyring.set_defaults(
+        action='generate_client_keyring')
 
     # Log analysis commands
     logs = subparsers.add_parser('logs', help='Log analysis helpers.')
@@ -175,6 +204,14 @@ requests. Useful for identifying slacky OSDs.""")
     parser_clean_deleted_vms = maint_sub.add_parser(
         'clean-deleted-vms', help='Remove disks from deleted VMs.')
     parser_clean_deleted_vms.set_defaults(action='clean_deleted_vms')
+
+    parser_enter = maint_sub.add_parser(
+        'enter', help='Enter maintenance mode.')
+    parser_enter.set_defaults(action='enter')
+
+    parser_leave = maint_sub.add_parser(
+        'leave', help='Leave maintenance mode.')
+    parser_leave.set_defaults(action='leave')
 
     args = vars(parser.parse_args(args))
 
