@@ -9,6 +9,7 @@ import string
 import sys
 import syslog
 from datetime import datetime
+from pathlib import Path
 
 import structlog
 
@@ -520,7 +521,82 @@ def format_exc_info(logger, name, event_dict):
     return event_dict
 
 
-def init_logging(verbose, main_log_file=None, cmd_log_file=None):
+def init_command_logging(log, logdir):
+    """
+    Adds a cmd_output_file logger factory to an already configured
+    MultiOptimisticLoggerFactory, used for logging Nix command output to a
+    separate file.
+    Overwrites existing log files. If called from a systemd unit, the file
+    name will be made unique by adding the time and systemd invocation ID.
+
+    Other factory types are ignored.
+    """
+    logger_factory = structlog.get_config()["logger_factory"]
+
+    if not isinstance(logger_factory, MultiOptimisticLoggerFactory):
+        return
+
+    # The invocation ID is normally set by systemd when the script is called
+    # from a systemd unit.
+    invocation_id = os.environ.get("INVOCATION_ID")
+    if invocation_id:
+        formatted_dt = datetime.now().strftime("%Y-%m-%dT%H_%m_%S")
+        cmd_log_file_name = (
+            logdir / f"fc-agent/{formatted_dt}_build-output"
+            f"_{invocation_id}.log"
+        )
+    else:
+        cmd_log_file_name = logdir / "fc-agent/build-output.log"
+
+    cmd_log_file = open(cmd_log_file_name, "w")
+
+    log.info(
+        "logging-cmd-output",
+        _replace_msg="Nix command output goes to: {cmd_log_file}",
+        cmd_log_file=cmd_log_file.name,
+    )
+
+    logger_factory.factories["cmd_output_file"] = structlog.PrintLoggerFactory(
+        cmd_log_file
+    )
+
+
+def drop_cmd_output_logfile(log):
+    """Deletes the log file used by the cmd_output_file logger.
+    Used to throw away the command log file if nothing interesting has
+    happened."""
+    logger_factory = structlog.get_config()["logger_factory"]
+
+    if not isinstance(logger_factory, MultiOptimisticLoggerFactory):
+        return
+
+    try:
+        cmd_output_file_factory = logger_factory.factories["cmd_output_file"]
+    except KeyError:
+        log.error(
+            "logging-cmd-output-file-not-found",
+            _replace_msg=(
+                "cmd_output_file logger factory not found, there's something "
+                "wrong with the logging configuration! Probably "
+                "init_command_logging has never been called."
+            ),
+        )
+        raise
+
+    cmd_log_file = cmd_output_file_factory._file
+
+    log.debug(
+        "logging-cmd-output-drop",
+        _replace_msg="Remove command logfile because nothing changed.",
+    )
+
+    cmd_log_file.close()
+    os.unlink(cmd_log_file.name)
+
+
+def init_logging(verbose: bool, logdir: Path, log_cmd_output: bool = False):
+
+    main_log_file = open(logdir / "fc-agent.log", "a")
 
     multi_renderer = MultiRenderer(
         journal=SystemdJournalRenderer("fc-agent", syslog.LOG_LOCAL1),
@@ -543,8 +619,6 @@ def init_logging(verbose, main_log_file=None, cmd_log_file=None):
 
     loggers = {}
 
-    if cmd_log_file:
-        loggers["cmd_output_file"] = structlog.PrintLoggerFactory(cmd_log_file)
     if main_log_file:
         loggers["file"] = structlog.PrintLoggerFactory(main_log_file)
     if journal:
@@ -560,3 +634,8 @@ def init_logging(verbose, main_log_file=None, cmd_log_file=None):
         wrapper_class=structlog.BoundLogger,
         logger_factory=MultiOptimisticLoggerFactory(**loggers),
     )
+
+    log = structlog.get_logger()
+
+    if log_cmd_output:
+        return init_command_logging(log, logdir)

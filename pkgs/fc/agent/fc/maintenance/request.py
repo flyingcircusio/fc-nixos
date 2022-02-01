@@ -6,28 +6,16 @@ import os.path as p
 import tempfile
 
 import iso8601
-import pytz
 import rich.table
 import shortuuid
 import structlog
 import yaml
-from fc.util.time_date import format_datetime
+from fc.util.time_date import ensure_timezone_present, format_datetime, utcnow
 
 from .estimate import Estimate
 from .state import State, evaluate_state
 
 _log = structlog.get_logger()
-
-
-def utcnow():
-    return pytz.UTC.localize(datetime.datetime.utcnow())
-
-
-def ensure_timezone_present(dt):
-    if dt and not dt.tzinfo:
-        return pytz.UTC.localize(dt)
-
-    return dt
 
 
 @contextlib.contextmanager
@@ -174,8 +162,8 @@ class Request:
             _replace_msg="Starting execution of request: {request}",
             request=self.id,
         )
+        attempt = Attempt()  # sets start time
         try:
-            attempt = Attempt()  # sets start time
             self.state = State.running
             self.save()
             with cd(self.dir):
@@ -190,7 +178,10 @@ class Request:
         except Exception:
             self.log.error(
                 "execute-request-failed",
-                _replace_msg="Executing request {request} failed. See exception for details.",
+                _replace_msg=(
+                    "Executing request {request} failed. See exception for "
+                    "details."
+                ),
                 request=self.id,
                 exc_info=True,
             )
@@ -212,6 +203,8 @@ class Request:
                 _replace_msg="Executed request {request} (state: {state}).",
                 request=self.id,
                 state=self.state,
+                stdout=attempt.stdout,
+                stderr=attempt.stderr,
                 duration=attempt.duration,
             )
 

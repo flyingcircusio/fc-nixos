@@ -1,34 +1,18 @@
 """Update NixOS system configuration from infrastructure or local sources."""
 
-import argparse
 import os
 import os.path as p
 import re
-import signal
 import subprocess
 import sys
 from datetime import datetime
-from functools import partial
 from pathlib import Path
 
 import fc.maintenance
+import fc.util.logging
 import requests
-import structlog
 from fc.maintenance.lib.shellscript import ShellScriptActivity
 from fc.util import nixos
-from fc.util.enc import (
-    load_enc,
-    seed_enc,
-    update_enc_nixos_config,
-    update_inventory,
-    write_system_state,
-)
-from fc.util.lock import locked
-from fc.util.logging import init_logging
-
-from .spread import NullSpread, Spread
-
-enc = {}
 
 # nixos-rebuild doesn't support changing the result link name so we
 # create a dir with a meaningful name (like /run/current-system) and
@@ -47,6 +31,8 @@ nix-channel --remove next
 nixos-rebuild switch || nixos-rebuild switch
 rm -rf {NEXT_SYSTEM}
 """
+
+os.environ["NIX_REMOTE"] = "daemon"
 
 
 class Channel:
@@ -147,24 +133,25 @@ class Channel:
                 "the channel URL towards that directory?",
             )
 
-    def switch(self, build_options, lazy=False):
+    def switch(self, lazy=True):
         """
         Build system with this channel and switch to it.
-        Replicates the behaviour of nixos-rebuild switch and adds an optional
-        lazy mode which only switches to the built system if it actually changed.
+        Replicates the behaviour of nixos-rebuild switch and adds
+        a "lazy mode" which only switches to the built system if it actually
+        changed.
         """
         self.log_with_context.debug("channel-switch-start")
         # Put a temporary result link in /run to avoid a race condition
         # with the garbage collector which may remove the system we just built.
         # If register fails, we still hold a GC root until the next reboot.
         out_link = "/run/fc-agent-built-system"
-        self.build(build_options, out_link)
+        self.build(out_link)
         nixos.register_system_profile(self.system_path, self.log)
         # New system is registered, delete the temporary result link.
         os.unlink(out_link)
         return nixos.switch_to_system(self.system_path, lazy, self.log)
 
-    def build(self, build_options, out_link=None):
+    def build(self, out_link=None):
         """
         Build system with this channel. Works like nixos-rebuild build.
         Does not modify the running system.
@@ -174,9 +161,12 @@ class Channel:
         if self.is_local:
             self.check_local_channel()
         system_path = nixos.build_system(
-            self.resolved_url, build_options, out_link, self.log
+            self.resolved_url, [], out_link, self.log
         )
         self.system_path = system_path
+
+    def dry_activate(self):
+        return nixos.dry_activate_system(self.system_path, self.log)
 
     def prepare_maintenance(self):
         self.log_with_context.debug("channel-prepare-maintenance-start")
@@ -185,10 +175,10 @@ class Channel:
             os.mkdir(NEXT_SYSTEM)
 
         out_link = Path(NEXT_SYSTEM) / "result"
-        system_path = nixos.build_system(
+        self.system_path = nixos.build_system(
             "/root/.nix-defexpr/channels/next", out_link=out_link, log=self.log
         )
-        changes = nixos.dry_activate_system(system_path, self.log)
+        changes = self.dry_activate()
         self.register_maintenance(changes)
 
     def register_maintenance(self, changes):
@@ -248,14 +238,12 @@ class Channel:
         self.log.info("maintenance-register-succeeded")
 
 
-def prepare_switch_in_maintenance(log, build_options, spread, lazy):
+def prepare_switch_in_maintenance(log, enc):
     if not enc or not enc.get("parameters"):
         log.warning(
             "enc-data-missing", msg="No ENC data. Not building channel."
         )
-        return
-    # always rebuild current channel (ENC updates, activation scripts etc.)
-    switch_no_update(log, build_options, spread, lazy)
+        return False
     # scheduled update already present?
     if Channel.current(log, "next"):
         rm = fc.maintenance.ReqManager()
@@ -267,10 +255,7 @@ def prepare_switch_in_maintenance(log, build_options, spread, lazy):
                 scheduled=bool(due),
                 at=datetime.isoformat(due) if due else None,
             )
-            return
-
-    if not spread.is_due():
-        return
+            return False
 
     # scheduled update available?
     next_channel = Channel(
@@ -281,11 +266,11 @@ def prepare_switch_in_maintenance(log, build_options, spread, lazy):
     )
 
     if not next_channel or next_channel.is_local:
-        log.error(
+        log.warn(
             "maintenance-error-local-channel",
             _replace_msg="Switch-in-maintenance incompatible with local checkout, abort.",
         )
-        sys.exit(1)
+        return False
 
     current_channel = Channel.current(log, "nixos")
     if next_channel != current_channel:
@@ -304,285 +289,119 @@ def prepare_switch_in_maintenance(log, build_options, spread, lazy):
                 capture_output=True,
                 text=True,
             )
-            sys.exit(3)
+            raise
+
+        return True
     else:
         log.info("maintenance-prepare-unchanged")
+        return False
 
 
-def switch(log, build_options, spread, lazy, update=True):
-    if enc and enc.get("parameters"):
-        env_name = enc["parameters"]["environment"]
-        log.info(
-            "fc-manage-env",
-            _replace_msg="Building system with environment {env}.",
-            env=env_name,
-        )
-        channel = Channel(
+def dry_activate(log, channel_url):
+    channel = Channel(
+        log,
+        channel_url,
+    )
+    channel.build()
+    return channel.dry_activate()
+
+
+def switch(
+    log,
+    enc,
+    lazy=False,
+):
+    """Rebuild the system and switch to it.
+    For regular operation, the current "nixos" channel is used for building the
+    system. ENC data can specify a different channel URL.
+    If the URL points to a local checkout, it is used for building instead.
+    """
+    channel_url = enc.get("parameters", {}).get("environment_url")
+    environment = enc.get("parameters", {}).get("environment")
+
+    if channel_url:
+        channel_from_url = Channel(
             log,
-            enc["parameters"]["environment_url"],
+            channel_url,
             name="nixos",
-            environment=env_name,
+            environment=environment,
         )
-    else:
-        channel = Channel.current(log, "nixos")
-    if not channel:
-        return
-    if update:
-        if not spread.is_due():
-            due = datetime.fromtimestamp(spread.next_due())
+
+        if channel_from_url.is_local:
             log.info(
-                "channel-update-skip-not-due",
-                _replace_msg="Next channel update is due at {due}.",
-                due=due,
+                "fc-manage-local-checkout",
+                _replace_msg=(
+                    "Using local nixpkgs checkout at {checkout_path}, from "
+                    "environment {environment}."
+                ),
+                checkout_path=channel_from_url.resolved_url,
+                environment=environment,
             )
-        elif channel.is_local:
-            log.info(
-                "channel-update-skip-local",
-                _replace_msg="Skip channel update because it doesn't make sense with local dev checkouts.",
-            )
+            channel_to_build = channel_from_url
         else:
-            channel.load_nixos()
+            channel_to_build = Channel.current(log, "nixos")
+            if channel_to_build != channel_from_url:
+                log.debug(
+                    "fc-manage-update-available",
+                    current_channel_url=channel_to_build.resolved_url,
+                    new_channel_url=channel_from_url.resolved_url,
+                    environment=environment,
+                )
+    else:
+        log.warn(
+            "fc-manage-no-channel-url",
+            _replace_msg=(
+                "Couldn't find a channel URL in ENC data. Continuing with the "
+                "cached system channel."
+            ),
+        )
+        channel_to_build = Channel.current(log, "nixos")
 
-    if not channel.is_local:
-        channel = Channel.current(log, "nixos")
-
-    if channel:
+    if channel_to_build:
         try:
-            return channel.switch(build_options, lazy)
+            return channel_to_build.switch(lazy)
         except nixos.ChannelException:
             sys.exit(2)
 
 
-def switch_no_update(log, build_options, spread, lazy):
-    return switch(log, build_options, spread, lazy, update=False)
+def switch_with_update(log, enc, lazy=False):
+    channel_url = enc.get("parameters", {}).get("environment_url")
+    environment = enc.get("parameters", {}).get("environment")
 
-
-def maintenance(log, config_file):
-    log.info("maintenance-perform")
-    import fc.maintenance.reqmanager
-
-    fc.maintenance.reqmanager.transaction(log=log, config_file=config_file)
-
-
-def exit_timeout(log, signum, frame):
-    log.error(
-        "exit-timeout",
-        msg="Execution timed out. Exiting.",
-        signum=signum,
-        frame=frame,
-    )
-    sys.exit(1)
-
-
-def parse_args():
-    a = argparse.ArgumentParser(description=__doc__)
-    a.add_argument(
-        "-E",
-        "--enc-path",
-        default="/etc/nixos/enc.json",
-        help="path to enc.json (default: %(default)s)",
-    )
-    a.add_argument(
-        "--fast",
-        default=False,
-        action="store_true",
-        help="instruct nixos-rebuild to perform a fast rebuild",
-    )
-    a.add_argument(
-        "-e",
-        "--directory",
-        default=False,
-        action="store_true",
-        help="refresh local ENC copy",
-    )
-    a.add_argument(
-        "-s",
-        "--system-state",
-        default=False,
-        action="store_true",
-        help="dump local system information (like memory size) "
-        "to system_state.json",
-    )
-    a.add_argument(
-        "-m",
-        "--maintenance",
-        default=False,
-        action="store_true",
-        help="run scheduled maintenance",
-    )
-    a.add_argument(
-        "-l",
-        "--lazy",
-        default=False,
-        action="store_true",
-        help="only switch to new system if build result changed",
-    )
-    a.add_argument(
-        "-t",
-        "--timeout",
-        default=3600,
-        type=int,
-        help="abort execution after <TIMEOUT> seconds",
-    )
-    a.add_argument(
-        "-i",
-        "--interval",
-        default=120,
-        type=int,
-        metavar="INT",
-        help="automatic mode: channel update every <INT> minutes",
-    )
-    a.add_argument(
-        "-f",
-        "--stampfile",
-        metavar="PATH",
-        default="/var/lib/fc-manage/fc-manage.stamp",
-        help="automatic mode: save last execution date to <PATH> "
-        "(default: (%(default)s)",
-    )
-    a.add_argument(
-        "-a",
-        "--automatic",
-        default=False,
-        action="store_true",
-        help="channel update every I minutes, local builds "
-        "all other times (see also -i and -f). Must be used in "
-        "conjunction with --channel or --channel-with-maintenance.",
-    )
-    a.add_argument(
-        "--config-file",
-        default="/etc/fc-agent.conf",
-        help="Config file to use.",
-    )
-
-    build = a.add_mutually_exclusive_group()
-    build.add_argument(
-        "-c",
-        "--channel",
-        default=False,
-        dest="build",
-        action="store_const",
-        const="switch",
-        help="switch machine to FCIO channel",
-    )
-    build.add_argument(
-        "-C",
-        "--channel-with-maintenance",
-        default=False,
-        dest="build",
-        action="store_const",
-        const="prepare_switch_in_maintenance",
-        help="switch machine to FCIO channel during scheduled " "maintenance",
-    )
-    build.add_argument(
-        "-b",
-        "--build",
-        default=False,
-        dest="build",
-        action="store_const",
-        const="switch_no_update",
-        help="rebuild channel or local checkout whatever "
-        "is currently active",
-    )
-    a.add_argument("-v", "--verbose", action="store_true", default=False)
-
-    args = a.parse_args()
-    return args
-
-
-def transaction(log, args):
-    global enc
-    seed_enc(args.enc_path)
-
-    keep_cmd_output = False
-
-    build_options = []
-    if args.fast:
-        build_options.append("--fast")
-
-    enc = load_enc(log, args.enc_path)
-
-    if args.directory:
-        update_inventory(log, enc)
-        # reload ENC data in case update_inventory changed something
-        enc = load_enc(log, args.enc_path)
-        update_enc_nixos_config(log, args.enc_path)
-
-    if args.system_state:
-        write_system_state(log)
-
-    if args.automatic:
-        spread = Spread(
-            args.stampfile, args.interval * 60, "Channel update check"
+    if channel_url:
+        channel = Channel(
+            log,
+            channel_url,
+            name="nixos",
+            environment=environment,
         )
-        spread.configure()
-    else:
-        spread = NullSpread()
-
-    if args.build:
-        keep_cmd_output = globals()[args.build](
-            log, build_options, spread, args.lazy
-        )
-
-    if args.maintenance:
-        maintenance(log, args.config_file)
-
-    return keep_cmd_output
-
-
-def main():
-    args = parse_args()
-
-    # The invocation ID is normally set by systemd when the script is called from a systemd unit.
-    invocation_id = os.environ.get("INVOCATION_ID")
-    if invocation_id:
-        formatted_dt = datetime.now().strftime("%Y-%m-%dT%H_%m_%S")
-        cmd_log_file_name = (
-            f"/var/log/fc-agent/{formatted_dt}_build-output_{invocation_id}.log"
-        )
-    else:
-        cmd_log_file_name = "/var/log/fc-agent/build-output.log"
-
-    main_log_file = open("/var/log/fc-agent.log", "a")
-    cmd_log_file = open(cmd_log_file_name, "w")
-
-    init_logging(args.verbose, main_log_file, cmd_log_file)
-
-    log = structlog.get_logger()
-
-    log.info(
-        "fc-manage-start", _replace_msg="fc-manage started with PID: {pid}"
-    )
-
-    if args.build:
-        log.info(
-            "fc-manage-cmd-output",
-            _replace_msg="Nix command output goes to: {cmd_log_file}",
-            cmd_log_file=cmd_log_file_name,
-        )
-
-    signal.signal(signal.SIGALRM, partial(exit_timeout, log))
-    signal.alarm(args.timeout)
-
-    os.environ["NIX_REMOTE"] = "daemon"
-
-    with locked(log, "/run/lock", "fc-manage.lock"):
-        try:
-            keep_cmd_output = transaction(log, args)
-        except Exception:
-            log.error("fc-manage-unhandled-error", exc_info=True)
-            sys.exit(1)
-
-        if invocation_id and args.build and args.lazy and not keep_cmd_output:
+        # Update nixos channel if it's not a local checkout
+        if channel.is_local:
             log.info(
-                "fc-manage-cmd-output-drop",
-                _replace_msg="Remove command logfile because nothing changed.",
+                "channel-update-skip-local",
+                _replace_msg=(
+                    "Skip channel update because it doesn't make sense with "
+                    "local dev checkouts."
+                ),
             )
-            cmd_log_file.close()
-            os.unlink(cmd_log_file_name)
+        else:
+            log.info(
+                "fc-manage-rebuild-with-update",
+                _replace_msg=(
+                    "Updating system, environment {environment}, "
+                    "channel {channel}"
+                ),
+                environment=environment,
+                channel=channel_url,
+            )
+            channel.load_nixos()
+    else:
+        channel = Channel.current(log, "nixos")
 
-    log.info("fc-manage-succeeded")
+    if not channel:
+        return
 
-
-if __name__ == "__main__":
-    main()
+    try:
+        return channel.switch(lazy)
+    except nixos.ChannelException:
+        sys.exit(2)
