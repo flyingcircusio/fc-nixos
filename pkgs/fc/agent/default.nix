@@ -73,6 +73,7 @@ py.buildPythonPackage rec {
     py.rich
     py.shortuuid
     py.structlog
+    py.typer
     pyyaml
     utillinux
   ] ++ lib.optionals stdenv.isLinux [
