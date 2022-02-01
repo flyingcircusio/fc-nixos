@@ -21,6 +21,7 @@ class Context(NamedTuple):
     enc_path: Path
     verbose: bool
     show_trace: bool
+    show_caller_info: bool
 
 
 context: Context
@@ -184,7 +185,17 @@ def fc_manage(
         False, "--directory", "-e", help="(legacy flag) Update inventory data."
     ),
     verbose: bool = Option(
-        False, "--verbose", "-v", help="Show debug messages and code locations."
+        False,
+        "--verbose",
+        "-v",
+        help=(
+            "Show debug logging output. By default, only info and higher "
+            "levels are shown."
+        ),
+    ),
+    show_caller_info: bool = Option(
+        False,
+        help="Show where a logging function was called (file/function/line).",
     ),
     show_trace: bool = Option(
         False,
@@ -240,6 +251,7 @@ def fc_manage(
             enc_path=enc_path,
             verbose=verbose,
             show_trace=show_trace,
+            show_caller_info=show_caller_info,
         )
         return
 
@@ -295,3 +307,7 @@ def main():
     command = typer.main.get_command(app)
     result = command(standalone_mode=False)
     sys.exit(result)
+
+
+if __name__ == "__main__":
+    main()

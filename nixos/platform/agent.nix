@@ -109,6 +109,32 @@ in
         '';
       };
 
+      maintenancePreparationSeconds = mkOption {
+        default = 300;
+        description = ''
+          Expected time in seconds needed to prepare for the execution of
+          maintenance activities. The value should cover typical cases where
+          maintenance-enter commands have to do extra work or wait for some
+          condition to be true. These commands should typically not take
+          longer than 5 minutes in total which is the default here.
+
+          If commands are expected to take longer and it's not feasible to
+          pause them after 5 minutes and continue later (using TEMPFAIL), the
+          preparation time can be increased as needed.
+
+          Currently, the directory doesn't know about "preparation time" as a
+          separate concept, so this value is just added to the estimated run
+          time for each activity. This overestimates the actual preparation
+          time if multiple activities are scheduled continuously because
+          maintenance-enter commands are just run once for all runnable
+          activities.
+
+          We don't enforce it at the moment but will probably add a timeout
+          for maintenance-enter commands later based on this value.
+        '';
+        type = types.ints.positive;
+      };
+
     };
   };
 
@@ -143,6 +169,9 @@ in
       ];
 
       environment.etc."fc-agent.conf".text = ''
+         [maintenance]
+         preparation_seconds = ${toString cfg.agent.maintenancePreparationSeconds}
+
          [maintenance-enter]
          ${concatStringsSep "\n" (
            mapAttrsToList (k: v: "${k} = ${v.enter}") cfg.agent.maintenance)}
@@ -177,7 +206,7 @@ in
 
         script =
           let
-            verbose = lib.optionalString cfg.agent.verbose "--verbose";
+            verbose = lib.optionalString cfg.agent.verbose "--show-caller-info";
             options = "--enc-path=${cfg.encPath} ${verbose}";
             wrappedExtraCommands = lib.optionalString (cfg.agent.extraCommands != "") ''
               (
@@ -222,11 +251,12 @@ in
           IOWeight = 10; # 1-10000
           ExecStart =
             let
-              verbose = lib.optionalString cfg.agent.verbose "--verbose";
+              verbose = lib.optionalString cfg.agent.verbose "--show-caller-info";
               options = "--enc-path=${cfg.encPath} ${verbose}";
-              runNow = lib.optionalString (!cfg.agent.updateInMaintenance) "--run-now";
             in
-            "${pkgs.fc.agent}/bin/fc-maintenance ${options} request update ${runNow}";
+              if cfg.agent.updateInMaintenance
+              then "${pkgs.fc.agent}/bin/fc-maintenance ${options} request update"
+              else "${pkgs.fc.agent}/bin/fc-manage ${options} switch --update-channel --lazy";
         };
 
         path = commonEnvPath;

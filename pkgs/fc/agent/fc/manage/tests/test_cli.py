@@ -28,6 +28,7 @@ def invoke_app(log, tmpdir, agent_maintenance_config):
     enc_file = tmpdir / "enc.json"
     main_args = (
         "--verbose",
+        "--show-caller-info",
         "--logdir",
         tmpdir,
         "--tmpdir",

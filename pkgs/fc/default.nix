@@ -1,9 +1,9 @@
-{ pkgs, callPackage }:
+{ pkgs, pythonPackages, callPackage }:
 
 rec {
   recurseForDerivations = true;
 
-  agent = callPackage ./agent {};
+  agent = pythonPackages.callPackage ./agent {};
 
   check-age = callPackage ./check-age {};
   check-ceph = {

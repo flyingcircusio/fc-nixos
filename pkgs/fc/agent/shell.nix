@@ -1,4 +1,7 @@
 let
   pkgs = import <nixpkgs> {};
-
-in pkgs.callPackage ./. {}
+  fcagent = pkgs.python310Packages.callPackage ./. {};
+in
+fcagent.overridePythonAttrs(_: {
+  doCheck = true;
+})

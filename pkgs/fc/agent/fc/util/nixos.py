@@ -20,15 +20,13 @@ _log = structlog.get_logger()
 requests_session = requests.session()
 
 PHRASES = re.compile(r"would (\w+) the following units: (.*)$")
-FC_ENV_FILE = "/etc/fcio_environment"
+FC_ENV_FILE = "/etc/fcio_environment_name"
 RE_FC_CHANNEL = re.compile(
     r"https://hydra.flyingcircus.io/build/(\d+)/download/1/nixexprs.tar.xz"
 )
 
 
-class Channel:
-    def __init__(self, url) -> None:
-        self.url = url
+UnitChanges = dict[str, list[str]]
 
 
 class ChannelException(Exception):
@@ -100,11 +98,9 @@ def current_fc_environment_name(log=_log):
 
 
 def channel_version(channel_url, log=_log):
-    log.debug("channel_version", channel=channel_url)
-    final_channel_url = resolve_url_redirects(channel_url)
     try:
         nixpkgs_path = subprocess.run(
-            ["nix-instantiate", "-I", final_channel_url, "--find-file", "."],
+            ["nix-instantiate", "-I", channel_url, "--find-file", "."],
             check=True,
             capture_output=True,
             text=True,
@@ -202,7 +198,12 @@ def resolve_url_redirects(url):
 
 
 def detect_systemd_unit_changes(dry_activate_lines):
-    changes = {}
+    changes: UnitChanges = {
+        "start": [],
+        "stop": [],
+        "restart": [],
+        "reload": [],
+    }
     for line in dry_activate_lines:
         m = PHRASES.match(line)
         if m is not None:
@@ -213,25 +214,28 @@ def detect_systemd_unit_changes(dry_activate_lines):
 
 
 def format_unit_change_lines(unit_changes):
-    units_by_category = {}
-    start_units = set(unit_changes.get("start", []))
-    stop_units = set(unit_changes.get("stop", []))
-    reload_units = set(unit_changes.get("reload", []))
+    # Clean up raw unit changes: usually, units are stopped and
+    # started shortly after for updates. They get their own category
+    # "Start/Stop" to separate them from permanent stops and starts.
+    pretty_unit_changes = {}
+    start_units = set(unit_changes["start"])
+    stop_units = set(unit_changes["stop"])
+    reload_units = set(unit_changes["reload"])
     start_stop_units = start_units.intersection(stop_units)
-    units_by_category["Start/Stop"] = start_stop_units
-    units_by_category["Restart"] = unit_changes.get("restart", [])
-    units_by_category["Start"] = start_units - start_stop_units
-    units_by_category["Stop"] = stop_units - start_stop_units
-    units_by_category["Reload"] = reload_units - {"dbus.service"}
+    pretty_unit_changes["Start/Stop"] = start_stop_units
+    pretty_unit_changes["Restart"] = set(unit_changes["restart"])
+    pretty_unit_changes["Start"] = start_units - start_stop_units
+    pretty_unit_changes["Stop"] = stop_units - start_stop_units
+    pretty_unit_changes["Reload"] = reload_units - {"dbus.service"}
 
     unit_change_lines = []
 
-    for cat, units in units_by_category.items():
+    for cat, units in pretty_unit_changes.items():
         if units:
-            unit_change_lines.append(f"{cat}:")
-            unit_change_lines.extend(
-                ["  - " + u.replace(".service", "") for u in sorted(units)]
+            unit_str = ", ".join(
+                u.replace(".service", "") for u in sorted(units)
             )
+            unit_change_lines.append(f"{cat}: {unit_str}")
 
     return unit_change_lines
 
@@ -289,29 +293,6 @@ def update_system_channel(channel_url, log=_log):
             stderr=stderr,
         )
         raise ChannelUpdateFailed(stdout=stdout, stderr=stderr)
-
-
-def switch_to_channel(channel_url, lazy=False, log=_log):
-    final_channel_url = resolve_url_redirects(channel_url)
-    """
-    Build system with this channel and switch to it.
-    Replicates the behaviour of nixos-rebuild switch and adds an optional
-    lazy mode which only switches to the built system if it actually changed.
-    """
-    log.info(
-        "channel-switch",
-        channel=channel_url,
-        resolved_channel=final_channel_url,
-    )
-    # Put a temporary result link in /run to avoid a race condition
-    # with the garbage collector which may remove the system we just built.
-    # If register fails, we still hold a GC root until the next reboot.
-    out_link = "/run/fc-agent-built-system"
-    built_system = build_system(final_channel_url, out_link)
-    register_system_profile(built_system)
-    # New system is registered, delete the temporary result link.
-    os.unlink(out_link)
-    return switch_to_system(built_system, lazy)
 
 
 def find_nix_build_error(stderr, log=_log):
@@ -476,7 +457,7 @@ def switch_to_system(system_path, lazy, log=_log):
     return True
 
 
-def dry_activate_system(system_path, log=_log):
+def dry_activate_system(system_path, log=_log) -> UnitChanges:
     cmd = [f"{system_path}/bin/switch-to-configuration", "dry-activate"]
     log.info(
         "system-dry-activate-start",
@@ -500,10 +481,10 @@ def dry_activate_system(system_path, log=_log):
     unit_changes = detect_systemd_unit_changes(stdout_lines)
     log.debug(
         "system-dry-activate-unit-changes",
-        start=unit_changes.get("start"),
-        stop=unit_changes.get("stop"),
-        restart=unit_changes.get("restart"),
-        reload=unit_changes.get("reload"),
+        start=unit_changes["start"],
+        stop=unit_changes["stop"],
+        restart=unit_changes["restart"],
+        reload=unit_changes["reload"],
     )
     return unit_changes
 

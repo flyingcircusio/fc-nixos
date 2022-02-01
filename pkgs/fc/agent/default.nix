@@ -1,5 +1,6 @@
 { lib
 , stdenv
+, fetchPypi
 , fetchFromGitHub
 , dmidecode
 , gitMinimal
@@ -7,13 +8,17 @@
 , libyaml
 , multipath-tools
 , nix
-, python310
+, buildPythonPackage
+, pythonPackages
+, python
 , util-linux
 , xfsprogs
+, pytest
+, structlog
 }:
 
 let
-  py = python310.pkgs;
+  py = pythonPackages;
 
   pytest-structlog = py.buildPythonPackage rec {
     pname = "pytest-structlog";
@@ -26,11 +31,11 @@ let
       sha256 = "00g2ivgj4y398d0y60lk710zz62pj80r9ya3b4iqijkp4j8nh4gp";
     };
 
-    buildInputs = [ py.pytest py.structlog ];
+    buildInputs = [ pytest structlog ];
   };
 
 in
-py.buildPythonPackage rec {
+buildPythonPackage rec {
   name = "fc-agent-${version}";
   version = "1.0";
   namePrefix = "";
@@ -41,6 +46,7 @@ py.buildPythonPackage rec {
     py.pytest-cov
     py.pytest-runner
     py.responses
+    py.pytest
     py.pytest-mock
     py.pytest-subprocess
     pytest-structlog
@@ -68,6 +74,6 @@ py.buildPythonPackage rec {
     xfsprogs
   ];
   dontStrip = true;
-  passthru.pythonDevEnv = python310.withPackages (_: checkInputs ++ propagatedBuildInputs);
+  passthru.pythonDevEnv = python.withPackages (_: checkInputs ++ propagatedBuildInputs);
 
 }
