@@ -41,3 +41,7 @@ def test_zero_duration():
 
 def test_repr():
     assert repr(Estimate(42)) == "<Estimate(42.0)>"
+
+
+def test_comparison():
+    assert Estimate("10m") < Estimate("1h")

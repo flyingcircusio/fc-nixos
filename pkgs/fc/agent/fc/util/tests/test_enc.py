@@ -5,25 +5,25 @@ from pathlib import Path
 from fc.util.enc import initialize_enc, update_enc
 
 
-def test_initialize_enc_should_do_nothing_when_enc_present(log, logger, tmpdir):
-    tmpdir_path = Path(tmpdir)
-    enc_path = Path(f"{tmpdir}/enc.json")
+def test_initialize_enc_should_do_nothing_when_enc_present(
+    log, logger, tmp_path
+):
+    enc_path = tmp_path / "enc.json"
     enc_path.write_text("")
 
-    initialize_enc(logger, tmpdir_path, enc_path)
+    initialize_enc(logger, tmp_path, enc_path)
 
     assert log.has("initialize-enc-present", enc_path=str(enc_path))
 
 
-def test_initialize_enc_should_populate_enc_initially(log, logger, tmpdir):
-    tmpdir_path = Path(tmpdir)
-    fc_data_path = tmpdir_path / "fc-data"
+def test_initialize_enc_should_populate_enc_initially(log, logger, tmp_path):
+    fc_data_path = tmp_path / "fc-data"
     fc_data_path.mkdir()
     initial_enc_path = fc_data_path / "enc.json"
     initial_enc_path.write_text("")
-    enc_path = Path(f"{tmpdir}/enc.json")
+    enc_path = tmp_path / "enc.json"
 
-    initialize_enc(logger, tmpdir_path, enc_path)
+    initialize_enc(logger, tmp_path, enc_path)
 
     assert log.has(
         "initialize-enc-init",
@@ -34,12 +34,11 @@ def test_initialize_enc_should_populate_enc_initially(log, logger, tmpdir):
 
 
 def test_initialize_enc_should_not_crash_when_initial_data_missing(
-    log, logger, tmpdir
+    log, logger, tmp_path
 ):
-    tmpdir_path = Path(tmpdir)
-    enc_path = Path(f"{tmpdir}/enc.json")
+    enc_path = tmp_path / "enc.json"
 
-    initialize_enc(logger, tmpdir_path, enc_path)
+    initialize_enc(logger, tmp_path, enc_path)
 
     assert log.has("initialize-enc-initial-data-not-found")
 
@@ -55,15 +54,14 @@ def test_update_enc(
     write_system_state,
     log,
     logger,
-    tmpdir,
+    tmp_path,
 ):
     enc_data = {"parameters": {"test": 1}}
-    tmpdir_path = Path(tmpdir)
-    enc_path = Path(f"{tmpdir}/enc.json")
+    enc_path = tmp_path / "enc.json"
     with open(enc_path, "w") as wf:
         json.dump(enc_data, wf)
 
-    update_enc(logger, tmpdir_path, enc_path)
+    update_enc(logger, tmp_path, enc_path)
 
     initialize_state_version.assert_called_once()
     update_inventory.assert_called_with(logger, enc_data)

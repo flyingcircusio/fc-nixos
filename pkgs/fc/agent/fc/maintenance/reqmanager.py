@@ -8,7 +8,9 @@ import os
 import os.path as p
 import socket
 import subprocess
-from datetime import datetime
+import sys
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import fc.util.directory
@@ -19,7 +21,7 @@ from fc.maintenance.activity import RebootType
 from fc.util.time_date import format_datetime, utcnow
 from rich.table import Table
 
-from .request import Request
+from .request import Request, RequestMergeResult
 from .state import ARCHIVE, State
 
 DEFAULT_SPOOLDIR = "/var/spool/maintenance"
@@ -58,12 +60,14 @@ class ReqManager:
 
     directory = None
     lockfile = None
+    requests: dict[str, Request]
+    min_estimate_seconds: int = 900
 
     def __init__(
         self,
-        spooldir=Path(DEFAULT_SPOOLDIR),
-        enc_path=None,
-        config_file=None,
+        spooldir,
+        enc_path,
+        config_file,
         log=_log,
     ):
         """Initialize ReqManager and create directories if necessary."""
@@ -80,8 +84,8 @@ class ReqManager:
         for d in (self.spooldir, self.requestsdir, self.archivedir):
             if not d.exists():
                 os.mkdir(d)
-        self.enc_path = Path(enc_path) if enc_path else None
-        self.config_file = Path(config_file) if config_file else None
+        self.enc_path = Path(enc_path)
+        self.config_file = Path(config_file)
         self.requests = {}
 
     def __enter__(self):
@@ -100,6 +104,9 @@ class ReqManager:
                 self.config.read(self.config_file)
             else:
                 self.log.warn("reqmanager-enter-config-not-found")
+        self.maintenance_preparation_seconds = int(
+            self.config.get("maintenance", "preparation_seconds", fallback=300)
+        )
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
@@ -120,22 +127,34 @@ class ReqManager:
             return "[bold]No maintenance requests at the moment.[/bold]"
 
         table.add_column("State")
-        table.add_column("Request ID")
+        table.add_column("Req ID")
         table.add_column("Execution Time")
         table.add_column("Duration")
         table.add_column("Comment")
         table.add_column("Added")
-        table.add_column("Last Scheduled")
+        table.add_column("Updated")
+        table.add_column("Scheduled")
         for req in sorted(self.requests.values()):
+            if req.next_due:
+                exec_interval = (
+                    format_datetime(req.next_due)
+                    + " -\n"
+                    + format_datetime(req.not_after)
+                )
+
+                if req.overdue:
+                    exec_interval += " (overdue)"
+            else:
+                exec_interval = "--- TBA ---"
+
             table.add_row(
-                str(req.state),
-                req.id,
-                format_datetime(req.next_due)
-                if req.next_due
-                else "--- TBA ---",
+                f"{req.state} ({len(req.attempts)}/{req.MAX_RETRIES})",
+                req.id[:6],
+                exec_interval,
                 str(req.estimate),
                 req.comment,
                 format_datetime(req.added_at) if req.added_at else "-",
+                format_datetime(req.updated_at) if req.updated_at else "-",
                 format_datetime(req.last_scheduled_at)
                 if req.last_scheduled_at
                 else "-",
@@ -170,30 +189,7 @@ class ReqManager:
                 )
                 os.rename(d, p.join(self.archivedir, p.basename(d)))
 
-    def add(self, request, skip_same_comment=True):
-        """Adds a Request object to the local queue.
-
-        If skip_same_comment is True, a request is not added if a
-        requests with the same comment already exists in the queue.
-
-        Returns modified Request object or None if nothing was added.
-        """
-        if request is None:
-            return
-
-        if skip_same_comment and request.comment:
-            duplicate = self.find_by_comment(request.comment)
-            if duplicate:
-                self.log.info(
-                    "request-skip-duplicate",
-                    _replace_msg=(
-                        "When adding {request}, found identical request "
-                        "{duplicate}. Nothing added."
-                    ),
-                    request=request.id,
-                    duplicate=duplicate.id,
-                )
-                return None
+    def _add_request(self, request: Request):
         self.requests[request.id] = request
         request.dir = self.dir(request)
         request._reqmanager = self
@@ -207,11 +203,127 @@ class ReqManager:
         )
         return request
 
-    def find_by_comment(self, comment):
-        """Returns first request with `comment` or None."""
-        for r in self.requests.values():
-            if r.comment == comment:
-                return r
+    def _merge_request(
+        self, existing_request: Request, request: Request
+    ) -> RequestMergeResult:
+        merge_result = existing_request.merge(request)
+        match merge_result:
+            case RequestMergeResult.UPDATE:
+                self.log.info(
+                    "requestmanager-merge-update",
+                    _replace_msg=(
+                        "New request {request} was merged with an "
+                        "existing request {merged}."
+                    ),
+                    request=request.id,
+                    merged=existing_request.id,
+                )
+                existing_request.updated_at = utcnow()
+                existing_request.save()
+                # Run schedule_maintenance to update the comment.
+                # Schedule all requests to keep the order.
+                self.schedule()
+
+            case RequestMergeResult.SIGNIFICANT_UPDATE:
+                self.log.info(
+                    "requestmanager-merge-significant",
+                    _replace_msg=(
+                        "New request {request} was merged with an "
+                        "existing request {merged}. Change is "
+                        "significant so execution will be postponed."
+                    ),
+                    request=request.id,
+                    merged=existing_request.id,
+                )
+                # Run schedule to update the comment and duration estimate.
+                # Schedule all requests to keep the order.
+                self.schedule()
+                # XXX: This triggers sending an email to technical contacts
+                # to inform them about a significant change to an existing activity.
+                # The postpone interval here (8 hours) is a bit arbitrary and the idea
+                # is that there should be enough time to inform users before executing
+                # the updated request. The need for postponing should be determined
+                # by the directory instead.
+                postpone_maintenance = {
+                    existing_request.id: {"postpone_by": 8 * 60 * 60}
+                }
+                self.log.debug(
+                    "postpone-maintenance-directory", args=postpone_maintenance
+                )
+                self.directory.postpone_maintenance(postpone_maintenance)
+                existing_request.updated_at = utcnow()
+                existing_request.save()
+
+            case RequestMergeResult.REMOVE:
+                self.log.info(
+                    "requestmanager-merge-remove",
+                    _replace_msg=(
+                        "New request {request} was merged with an "
+                        "existing request {merged} and produced a "
+                        "no-op request. Removing the request."
+                    ),
+                    request=request.id,
+                    merged=existing_request.id,
+                )
+                self.delete(existing_request.id)
+
+            case RequestMergeResult.NO_MERGE:
+                self.log.debug(
+                    "requestmanager-merge-skip",
+                    existing_request=existing_request.id,
+                    new_request=request.id,
+                )
+
+        return merge_result
+
+    def add(self, request: Request | None, add_always=False) -> Request | None:
+        """Adds a Request object to the local queue.
+        New request is merged with existing requests. If the merge results
+        in a no-op request, the existing request is deleted.
+
+        A request is only added if the activity is effective, unless add_always is given.
+        Setting `add_always` skips request merging and the effectiveness check.
+
+        Returns Request object, new or merged
+        None if not added/no-op.
+        """
+        self.log.debug("request-add-start", request_object=request)
+
+        if request is None:
+            self.log.debug("request-add-no-request")
+            return
+
+        if add_always:
+            self.log.debug("request-add-always", request=request.id)
+            return self._add_request(request)
+
+        for existing_request in reversed(self.requests.values()):
+            # We can stop if request was merged or removed, continue otherwise
+            match self._merge_request(existing_request, request):
+                case RequestMergeResult.SIGNIFICANT_UPDATE | RequestMergeResult.UPDATE:
+                    return existing_request
+                case RequestMergeResult.REMOVE:
+                    return
+                case RequestMergeResult.NO_MERGE:
+                    pass
+
+        if not request.activity.is_effective:
+            self.log.info(
+                "request-skip",
+                _replace_msg=(
+                    "Activity for {request} wouldn't apply any changes. Nothing added."
+                ),
+                request=request.id,
+            )
+            return
+
+        return self._add_request(request)
+
+    def _estimated_request_duration(self, request) -> int:
+        return max(
+            self.min_estimate_seconds,
+            int(request.estimate) + self.maintenance_preparation_seconds,
+        )
 
     @require_lock
     @require_directory
@@ -220,12 +332,17 @@ class ReqManager:
         self.log.debug("schedule-start")
 
         schedule_maintenance = {
-            reqid: {"estimate": int(req.estimate), "comment": req.comment}
+            reqid: {
+                "estimate": self._estimated_request_duration(req),
+                "comment": req.comment,
+            }
             for reqid, req in self.requests.items()
         }
         if schedule_maintenance:
             self.log.debug(
-                "schedule-maintenances", request_count=len(schedule_maintenance)
+                "schedule-maintenances",
+                request_count=len(schedule_maintenance),
+                requests=list(schedule_maintenance),
             )
 
         result = self.directory.schedule_maintenance(schedule_maintenance)
@@ -233,8 +350,14 @@ class ReqManager:
         for key, val in result.items():
             try:
                 req = self.requests[key]
-                self.log.debug("schedule-request", request=key, data=val)
-                if req.update_due(val["time"]):
+                due_changed = req.update_due(val["time"])
+                self.log.debug(
+                    "schedule-request-result",
+                    request=key,
+                    data=val,
+                    due_changed=due_changed,
+                )
+                if due_changed:
                     self.log.info(
                         "schedule-change-start-time",
                         _replace_msg=(
@@ -259,16 +382,43 @@ class ReqManager:
                 {key: {"result": "deleted"} for key in disappeared}
             )
 
-    def runnable(self):
+    def runnable(self, run_all_now: bool):
         """Generate due Requests in running order."""
-        requests = []
-        for request in self.requests.values():
-            new_state = request.update_state()
-            if new_state is State.running:
-                yield request
-            elif new_state in (State.due, State.tempfail):
-                requests.append(request)
-        yield from sorted(requests)
+        if run_all_now:
+            self.log.warn(
+                "execute-all-requests-now",
+                _replace_msg=(
+                    "Run all mode requested, treating all requests as runnable."
+                ),
+            )
+            runnable_requests = sorted(self.requests.values())
+
+        else:
+            runnable_requests = sorted(
+                r for r in self.requests.values() if r.state == State.due
+            )
+
+        if not runnable_requests:
+            self.log.info(
+                "runnable-requests-empty",
+                _replace_msg="No runnable maintenance requests.",
+            )
+            return runnable_requests
+
+        runnable_count = len(runnable_requests)
+
+        if runnable_count == 1:
+            msg = "Executing one runnable maintenance request."
+        else:
+            msg = "Executing {runnable_count} runnable maintenance requests."
+
+        self.log.info(
+            "runnable-requests",
+            _replace_msg=msg,
+            runnable_count=runnable_count,
+        )
+
+        return runnable_requests
 
     def enter_maintenance(self):
         """Set this node in 'temporary maintenance' mode."""
@@ -295,43 +445,48 @@ class ReqManager:
         self.log.debug("mark-node-in-service")
         self.directory.mark_node_service_status(socket.gethostname(), True)
 
+    def update_states(self):
+        """
+        Updates all request states.
+
+        We want to run continuously scheduled requests in one go to reduce overall
+        maintenance time and reboots.
+
+        A Request is considered "due" if its start time is in the past or is
+        scheduled directly after a previous due request.
+
+        In other words: if there's a due request, following requests can be run even if
+        their start time is not reached, yet.
+        """
+        due_dt = utcnow()
+        requests = self.requests.values()
+        self.log.debug("update-states-start", request_count=len(requests))
+        for request in sorted(requests):
+            request.update_state(due_dt)
+            request.save()
+            if request.state == State.due and request.next_due:
+                delta = timedelta(
+                    seconds=self._estimated_request_duration(request) + 60
+                )
+                due_dt = max(utcnow(), request.next_due + delta)
+
     @require_directory
     @require_lock
-    def execute(self, run_all_now=False):
-        """Process maintenance requests.
-
-        If there is an already active request, run to termination first.
-        After that, select the oldest due request as next active request.
+    def execute(self, run_all_now: bool = False):
         """
-        if run_all_now:
-            self.log.warn(
-                "execute-all-requests-now",
-                _replace_msg=(
-                    "Run all mode requested, treating all requests as runnable."
-                ),
-            )
-            runnable_requests = list(self.requests.values())
-        else:
-            runnable_requests = list(self.runnable())
+        Enters maintenance mode, executes requests and reboots if activities request it.
 
+        In normal operation, due requests are run in the order of their scheduled start
+        time.
+
+        When `run_all_now` is given, all requests are run regardless of their scheduled
+        time but still in order.
+        """
+
+        runnable_requests = self.runnable(run_all_now)
         if not runnable_requests:
-            self.log.info(
-                "execute-requests-empty",
-                _replace_msg="No runnable maintenance requests.",
-            )
             self.leave_maintenance()
             return
-
-        runnable_count = len(runnable_requests)
-        if runnable_count == 1:
-            msg = "Executing one runnable maintenance request."
-        else:
-            msg = "Executing {runnable_count} runnable maintenance requests."
-        self.log.info(
-            "execute-requests-runnable",
-            _replace_msg=msg,
-            runnable_count=runnable_count,
-        )
 
         requested_reboots = set()
         self.enter_maintenance()
@@ -341,13 +496,11 @@ class ReqManager:
                 requested_reboots.add(req.activity.reboot_needed)
 
         # Execute any reboots while still in maintenance.
-        # Using the 'if' with the side effect has been a huge problem
-        # WRT to readability for me when trying to find out whether it
-        # is safe to call 'leave_maintenance' in the except: part a few
-        # lines below.
-        if not self.reboot(requested_reboots):
-            self.log.debug("no-reboot-requested")
-            self.leave_maintenance()
+        self.reboot_and_exit(requested_reboots)
+
+        # When we are still here, no reboot happened. We can leave maintenance now.
+        self.log.debug("no-reboot-requested")
+        self.leave_maintenance()
 
     @require_lock
     @require_directory
@@ -369,8 +522,11 @@ class ReqManager:
         self.log.debug(
             "postpone-maintenance-directory", args=postpone_maintenance
         )
+        # This directory call just returns an empty string.
         self.directory.postpone_maintenance(postpone_maintenance)
         for req in postponed:
+            # Resetting the due datetime also sets the state to pending.
+            # Request will be rescheduled on the next run.
             req.update_due(None)
             req.save()
 
@@ -383,15 +539,17 @@ class ReqManager:
         if not archived:
             return
         end_maintenance = {
-            req.id: {"duration": req.duration, "result": str(req.state)}
+            req.id: {
+                "duration": req.duration,
+                "result": str(req.state),
+                "comment": req.comment,
+                "estimate": self._estimated_request_duration(req),
+            }
             for req in archived
         }
         self.log.debug(
             "archive-end-maintenance-directory", args=end_maintenance
         )
-        # XXX: this fails when the request has never been scheduled (pending)
-        # with "application error" from the directory. Maybe skip this or just
-        # ignore the error for pending requests?
         self.directory.end_maintenance(end_maintenance)
         for req in archived:
             self.log.info(
@@ -442,12 +600,12 @@ class ReqManager:
 
         req = requests[-1]
 
-        rich.print(req)
-
         if dump_yaml:
             rich.print("\n[bold]Raw YAML serialization:[/bold]")
             yaml = Path(req.filename).read_text()
             rich.print(rich.syntax.Syntax(yaml, "yaml"))
+        else:
+            rich.print(req)
 
     @require_lock
     def delete(self, reqid):
@@ -472,23 +630,29 @@ class ReqManager:
             request=req.id,
         )
 
-    def reboot(self, requested_reboots):
+    def reboot_and_exit(self, requested_reboots):
         if RebootType.COLD in requested_reboots:
             self.log.info(
                 "maintenance-poweroff",
                 _replace_msg=(
-                    "Doing a cold boot now to finish maintenance activities."
+                    "Doing a cold boot in five seconds to finish maintenance "
+                    "activities."
                 ),
             )
+            time.sleep(5)
             subprocess.run(
                 "poweroff", check=True, capture_output=True, text=True
             )
-            return True
+            sys.exit(0)
+
         elif RebootType.WARM in requested_reboots:
             self.log.info(
                 "maintenance-reboot",
-                _replace_msg="Rebooting now to finish maintenance activities.",
+                _replace_msg=(
+                    "Rebooting in five seconds to finish maintenance "
+                    "activities."
+                ),
             )
+            time.sleep(5)
             subprocess.run("reboot", check=True, capture_output=True, text=True)
-            return True
-        return False
+            sys.exit(0)
