@@ -1,9 +1,7 @@
 """Configure pools on Ceph storage servers according to the directory."""
 
-import argparse
-import logging
-import os
-import pprint
+import json
+import subprocess
 import sys
 
 import fc.ceph.images
@@ -85,9 +83,31 @@ class MaintenanceTasks(object):
 
     def clean_deleted_vms(self):
         ceph = Cluster()
-        enc = fc.util.directory.load_default_enc_json()
         directory = fc.util.directory.connect()
         volumes = VolumeDeletions(directory, ceph)
         volumes.ensure()
         rpe = ResourcegroupPoolEquivalence(directory, ceph)
         rpe.ensure()
+
+    def _ensure_maintenance_volume(self):
+        subprocess.run(
+            "rbd-locktool -q -i rbd/.maintenance || rbd create --size 1 rbd/.maintenance",
+            shell=True)
+
+    def enter(self):
+        self._ensure_maintenance_volume()
+        # Aquire the maintenance lock
+        subprocess.run(
+            "rbd-locktool -l rbd/.maintenance", shell=True, check=True)
+        # Check that the cluster is fully healhty
+        status = subprocess.check_output("ceph -f json health", shell=True)
+        status = json.loads(status)
+        if not status["overall_status"] == "HEALTH_OK":
+            print(f"Can not enter maintenance: "
+                  f"Ceph status is {status['overall_status']}.")
+            sys.exit(1)
+
+    def leave(self):
+        self._ensure_maintenance_volume()
+        subprocess.run(
+            "rbd-locktool -q -u rbd/.maintenance", shell=True, check=True)

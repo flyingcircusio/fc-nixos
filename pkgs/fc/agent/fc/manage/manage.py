@@ -493,10 +493,10 @@ def switch_no_update(log, build_options, spread, lazy):
     return switch(log, build_options, spread, lazy, update=False)
 
 
-def maintenance(log):
+def maintenance(log, config_file):
     log.info('maintenance-perform')
     import fc.maintenance.reqmanager
-    fc.maintenance.reqmanager.transaction()
+    fc.maintenance.reqmanager.transaction(log=log, config_file=config_file)
 
 
 def seed_enc(path):
@@ -581,6 +581,10 @@ def parse_args():
         help='channel update every I minutes, local builds '
         'all other times (see also -i and -f). Must be used in '
         'conjunction with --channel or --channel-with-maintenance.')
+    a.add_argument(
+        '--config-file',
+        default='/etc/fc-agent.conf',
+        help='Config file to use.')
 
     build = a.add_mutually_exclusive_group()
     build.add_argument(
@@ -647,7 +651,7 @@ def transaction(log, args):
                                                 args.lazy)
 
     if args.maintenance:
-        maintenance(log)
+        maintenance(log, args.config_file)
 
     return keep_cmd_output
 

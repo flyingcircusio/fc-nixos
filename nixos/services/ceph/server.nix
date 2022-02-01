@@ -29,6 +29,11 @@ in
 
     flyingcircus.services.ceph.client.enable = true;
 
+    flyingcircus.agent.maintenance.ceph = {
+      enter = "${pkgs.fc.ceph}/bin/fc-ceph maintenance enter";
+      leave = "${pkgs.fc.ceph}/bin/fc-ceph maintenance leave";
+    };
+
     # We used to create the admin key directory from the ENC. However,
     # this causes the file to become world readable on Ceph servers.
 
