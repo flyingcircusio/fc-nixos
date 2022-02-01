@@ -66,7 +66,7 @@ in
       flyingcircus.roles.coturn.hostName = config.networking.hostName;
       flyingcircus.roles.coturn.config.listening-ips =  [ "[::]" ];
 
-      flyingcircus.roles.memcached.listenAddresses = [ "[::]" ];
+      flyingcircus.roles.memcached.listenAddresses = [ "0.0.0.0" "[::]" ];
 
       flyingcircus.roles.mailserver.smtpBind4 = [ "127.0.0.1" ];
       flyingcircus.roles.mailserver.smtpBind6 = [ "::1" ];
