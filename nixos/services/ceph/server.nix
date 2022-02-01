@@ -46,8 +46,8 @@ in
      ];
 
     services.logrotate.extraConfig = ''
-      /var/log/ceph/admin.log
       /var/log/ceph/ceph.log
+      /var/log/ceph/ceph.audit.log
       /var/log/ceph/ceph-mon.*.log
       /var/log/ceph/ceph-osd.*.log
       {

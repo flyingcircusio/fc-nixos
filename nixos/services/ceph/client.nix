@@ -121,7 +121,15 @@ in
 
     flyingcircus.activationScripts.ceph-client-keyring = ''
        ${pkgs.fc.ceph}/bin/fc-ceph keys generate-client-keyring
-     '';
+    '';
+
+    services.logrotate.extraConfig = ''
+      /var/log/ceph/client.log {
+          rotate 30
+          create 0644 root adm
+          copytruncate
+      }
+    '';
 
   };
 

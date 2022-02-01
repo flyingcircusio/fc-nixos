@@ -111,6 +111,15 @@ in
         '';
       }; 
 
+    services.logrotate.extraConfig = ''
+      /var/log/ceph/client.radosgw.log {
+          create 0644 root adm
+          postrotate
+            systemctl kill -s SIGHUP fc-ceph-rgw
+          endscript
+      }
+    '';
+
     })
 
     (lib.mkIf (role.enable && role.primary) {
