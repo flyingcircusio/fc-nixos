@@ -93,6 +93,7 @@ in {
 
     # nix-env -qa needs a lot of RAM. Crashed with 2000.
     virtualisation.memorySize = 3000;
+    virtualisation.qemu.options = [ "-smp 2" ];
   };
 
   testScript = ''

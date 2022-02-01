@@ -167,6 +167,7 @@ in {
         virtualisation.memorySize = 4000;
         virtualisation.diskSize = lib.mkForce 2000;
         virtualisation.vlans = [ 1 2 ];
+        virtualisation.qemu.options = [ "-smp 2" ];
         };
       };
 
@@ -329,7 +330,7 @@ in {
       k3sserver.wait_until_succeeds("k3s kubectl get pods -o wide | grep redis | grep Running | grep -q k3snodeb")
 
     # with subtest("frontend should be able to ping redis pods"):
-    #   print(frontend.execute("iptables -L -v --line-numbers")[1]) 
+    #   print(frontend.execute("iptables -L -v --line-numbers")[1])
     #   print(k3sserver.execute("k3s kubectl -n kube-system get svc -l k8s-app=kube-dns")[1])
     #   print(k3sserver.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
     #   print(k3snodeB.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))

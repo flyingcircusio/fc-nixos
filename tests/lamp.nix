@@ -38,6 +38,8 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
           tideways_api_key = tideways;
 
         };
+
+        virtualisation.qemu.options = [ "-smp 2" ];
       };
   };
 

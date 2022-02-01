@@ -18,6 +18,7 @@ import ./make-test-python.nix ({ pkgs, lib, ...} : with lib; {
       ];
 
       virtualisation.memorySize = 4096;
+      virtualisation.qemu.options = [ "-smp 2" ];
 
       flyingcircus.enc.parameters = {
         resource_group = "test";

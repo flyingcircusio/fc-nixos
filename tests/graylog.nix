@@ -16,6 +16,7 @@ in {
       environment.systemPackages = [ pkgs.tcpdump ];
 
       virtualisation.memorySize = 6000;
+      virtualisation.qemu.options = [ "-smp 2" ];
 
       flyingcircus.roles.loghost.enable = true;
       networking.domain = "fcio.net";
