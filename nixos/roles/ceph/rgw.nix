@@ -41,9 +41,9 @@ in
           admin socket = /run/ceph/radosgw.asok
           rgw data = /srv/ceph/radosgw/ceph-$id
           rgw enable ops log = false
-          debug rgw = 4 5
-          debug civetweb = 4 5
-          debug rados = 4 5
+          debug rgw = 0 5
+          debug civetweb = 1 5
+          debug rados = 1 5
           '';
         description = ''
           Contents of the Ceph config file for RGWs.
@@ -77,6 +77,7 @@ in
         };
 
         restartIfChanged = true;
+        restartTriggers = [ config.environment.etc."ceph/ceph.conf".source ];
 
         serviceConfig = {
             Type = "simple";
