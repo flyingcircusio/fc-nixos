@@ -85,6 +85,19 @@ in
         };
       };
 
+      networking.firewall.extraCommands = let
+        srv = fclib.network.srv;
+      in ''
+        # Accept traffic from S3 gateways from within the SRV network.
+
+      '' + (lib.concatMapStringsSep "\n"
+              (net: "iptables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 7480 -j ACCEPT")
+              srv.v4.networks
+      ) + "\n" +
+      (lib.concatMapStringsSep "\n"
+              (net: "ip6tables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 7480 -j ACCEPT")
+              srv.v6.networks);
+
       systemd.services.fc-ceph-rgw-update-stats = {
         description = "Update RGW stats";
         serviceConfig.Type = "oneshot";
