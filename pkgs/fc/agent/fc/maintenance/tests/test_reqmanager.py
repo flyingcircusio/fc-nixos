@@ -295,12 +295,15 @@ def test_execute_marks_service_status(connect, reqmanager):
 
 
 @unittest.mock.patch('fc.util.directory.connect')
-def test_execute_proceeds_on_connection_error(connect, reqmanager):
+@unittest.mock.patch('fc.maintenance.request.Request.execute')
+def test_execute_not_performed_on_connection_error(execute, connect,
+                                                   reqmanager):
     connect().mark_node_service_status.side_effect = socket.error()
     req = reqmanager.add(Request(Activity(), 1))
     req.state = State.due
-    reqmanager.execute()
-    assert req.state == State.success
+    with pytest.raises(OSError):
+        reqmanager.execute()
+    assert execute.mock_calls == []
 
 
 @unittest.mock.patch('fc.util.directory.connect')

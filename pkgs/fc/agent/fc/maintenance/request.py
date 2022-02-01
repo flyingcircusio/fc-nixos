@@ -152,9 +152,9 @@ class Request:
             _replace_msg="Starting execution of request: {request}",
             request=self.id)
         try:
+            attempt = Attempt()  # sets start time
             self.state = State.running
             self.save()
-            attempt = Attempt()  # sets start time
             with cd(self.dir):
                 try:
                     self.activity.run()

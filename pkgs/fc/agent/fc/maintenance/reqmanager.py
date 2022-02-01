@@ -216,63 +216,27 @@ class ReqManager:
 
     def enter_maintenance(self):
         """Set this node in 'temporary maintenance' mode.
-
-        Tolerates directory failures as there a some maintenance
-        actions that need to proceed anyway.
-
         """
-        try:
-            self.log.debug("enter-maintenance")
-            self.directory.mark_node_service_status(socket.gethostname(),
-                                                    False)
-        except socket.error:
-            self.log.error(
-                "enter-maintenance-error",
-                _replace_msg="Failed to set 'out of service' directory flag. "
-                "See exception for details.",
-                exc_info=True)
+        self.log.debug("enter-maintenance")
+        self.log.debug("mark-node-out-of-service")
+        self.directory.mark_node_service_status(socket.gethostname(), False)
         for name, command in self.config['maintenance-enter'].items():
             if not command.strip():
                 continue
             self.log.info(
                 "enter-maintenance-subsystem", subsystem=name, command=command)
-            try:
-                subprocess.run(command, shell=True, check=True)
-            except Exception:
-                # Stop, if entering a subystem's maintenance mode fails.
-                self.log.error(
-                    "enter-maintenance-subsystem-error",
-                    _replace_msg=
-                    "Entering maintenance for {subsystem} failed. Aborting.",
-                    subsystem=name)
-                return False
-        return True
+            subprocess.run(command, shell=True, check=True)
 
     def leave_maintenance(self):
+        self.log.debug('leave-maintenance')
         for name, command in self.config['maintenance-leave'].items():
             if not command.strip():
                 continue
             self.log.info(
                 "leave-maintenance-subsystem", subsystem=name, command=command)
-            try:
-                # Leaving maintenance modes is opportunistic. Report errors
-                # but continue.
-                subprocess.run(command, shell=True, check=True)
-            except Exception:
-                self.log.error(
-                    "leave-maintenance-subsystem-error",
-                    _replace_msg=
-                    "leaving maintenance for {subsystem} failed. Continuing.",
-                    subsystem=name)
-        try:
-            self.log.debug('leave-maintenance')
-            self.directory.mark_node_service_status(socket.gethostname(), True)
-        except socket.error:
-            self.log.error(
-                "leave-maintenance-error",
-                _replace_msg="Failed to set 'in service' directory flag. "
-                "See exception for details.",
-                exc_info=True)
+            subprocess.run(command, shell=True, check=True)
+        self.log.debug('mark-node-in-service')
+        self.directory.mark_node_service_status(socket.gethostname(), True)
 
     @require_directory
     @require_lock
@@ -282,7 +246,6 @@ class ReqManager:
         If there is an already active request, run to termination first.
         After that, select the oldest due request as next active request.
         """
-
         if run_all_now:
             self.log.warn(
                 "execute-all-requests-now",
@@ -310,27 +273,20 @@ class ReqManager:
             runnable_count=runnable_count)
 
         requested_reboots = set()
-        if not self.enter_maintenance():
-            # Something failed. Errors were already reported. Return silently.
-            # We do not leave maintenance as the failure may be transient
-            # and in some cases (like evacuating virtual machines) it is
-            # more expensive to not make continuous progress and keep retrying.
-            return
+        self.enter_maintenance()
+        for req in runnable_requests:
+            req.execute()
+            if req.state == State.success:
+                requested_reboots.add(req.activity.reboot_needed)
 
-        try:
-            for req in runnable_requests:
-                req.execute()
-                if req.state == State.success:
-                    requested_reboots.add(req.activity.reboot_needed)
-
-            # Execute any reboots while still in maintenance.
-            if not self.reboot(requested_reboots):
-                self.leave_maintenance()
-                self.log.debug("no-reboot-requested")
-
-        except Exception:
+        # Execute any reboots while still in maintenance.
+        # Using the 'if' with the side effect has been a huge problem
+        # WRT to readability for me when trying to find out whether it
+        # is safe to call 'leave_maintenance' in the except: part a few
+        # lines below.
+        if not self.reboot(requested_reboots):
+            self.log.debug("no-reboot-requested")
             self.leave_maintenance()
-            self.log.debug("execute-requests-failed", exc_info=True)
 
     @require_lock
     @require_directory
@@ -427,6 +383,12 @@ class ReqManager:
         return False
 
 
+# XXX IMHO those should be verbso n the ReqManager and remove the huge
+# indirection between the CLI and the ReqManager. Just instantiating the
+# request manager with the parameters like config file centrally makes much
+# more sense.
+
+
 def transaction(spooldir=DEFAULT_DIR,
                 enc_path=None,
                 do_scheduling=True,
@@ -518,6 +480,20 @@ Managed local maintenance requests.
     cmd_log_file = open('/var/log/fc-agent/fc-maintenance-command-output.log',
                         'w')
     init_logging(args.verbose, main_log_file, cmd_log_file)
+
+    # XXX Switch proper sub-command structure:
+    # * schedule
+    # * run (--all)
+    # * delete
+    # * list
+    # (why did we need archive as a separate action before?!?)
+
+    # XXX do proper exception logging here in the main() script,
+    # convert the module-level functions into reqmanager methods
+    # *IF* fc-manage needs to access code through the API, let it instanciate
+    # the _fully configured_ request manager directly preferably let
+    # exceptions bubble out so we see failure in the agent systemd job
+    # properly
 
     if args.delete and args.list:
         a.error('multually exclusive actions: list + delete')
