@@ -95,10 +95,6 @@ let
   modifiedPkgNames = attrNames (import ../pkgs/overlay.nix pkgs pkgs);
 
   excludedPkgNames = [
-    # XXX: ceph doesn't build on 21.11
-    # Packages depending on ceph in fc are commented out in fc/default.nix
-    # because the exclusion mechanism here doesn't work recursively.
-    "ceph"
     # Build fails with patch errors.
     "gitlab"
     "gitlab-workhorse"

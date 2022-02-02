@@ -35,10 +35,11 @@ in {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  ceph = (super.callPackage ./ceph {
-      pythonPackages = super.python3Packages;
-      boost = super.boost155;
-  });
+  # XXX: ceph doesn't build
+  # ceph = (super.callPackage ./ceph {
+  #     pythonPackages = super.python3Packages;
+  #     boost = super.boost155;
+  # });
 
   # Xen is marked as broken and it's a dependency of the collectd xen plugin.
   # Arguments to the collectd function also get passed to all plugins so this
@@ -231,6 +232,9 @@ in {
   percona-xtrabackup_8_0 = super.callPackage ./percona/xtrabackup.nix {
     boost = self.boost173;
   };
+
+  # Has been renamed upstream, backy-extract still wants to use it.
+  pkgconfig = super.pkg-config;
 
   postgis_2_5 = (super.postgresqlPackages.postgis.override {
       proj = self.proj_7;
