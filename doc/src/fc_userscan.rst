@@ -23,4 +23,4 @@ Blocking all packages that are refered to somewhere brings a new problem.
 For example a logfile may refer to an old and unneeded Nix package and as long as this log exists
 the old package would not be deleted and the nix store grows in size. This is why fc-userscan excludes
 some files from being scanned by default. If you need to add more exclusion rules you may add them as one regex per
-line to `~/.userscan-ignore`. The home folder in this case is the home folder of the service user.
+line to `~/.userscan-ignore`. This uses the same pattern format as `gitignore <https://git-scm.com/docs/gitignore>`_. The home folder in this case is the home folder of the service user.
