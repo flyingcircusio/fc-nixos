@@ -28,6 +28,6 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
       # restore-single-files always has an exit code > 0 in this test setup
       # At least it should not be something we don't expect, like 127 for
       # command not found, for example.
-      machine.succeed("restore-single-files; [[ $? == 1 ]]")
+      machine.succeed("restore-single-files || [[ $? == 1 ]]")
   '';
 })
