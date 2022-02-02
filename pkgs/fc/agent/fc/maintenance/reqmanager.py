@@ -1,19 +1,22 @@
 """Manage maintenance requests."""
 
-from fc.maintenance.activity import RebootType
-from .request import Request
-from .state import State, ARCHIVE
-from fc.util.logging import init_logging
 import argparse
-import fc.util.directory
+import configparser
 import fcntl
 import glob
 import json
 import os
 import os.path as p
 import socket
-import structlog
 import subprocess
+
+import fc.util.directory
+import structlog
+from fc.maintenance.activity import RebootType
+from fc.util.logging import init_logging
+
+from .request import Request
+from .state import ARCHIVE, State
 
 DEFAULT_DIR = '/var/spool/maintenance'
 
@@ -52,9 +55,12 @@ class ReqManager:
 
     directory = None
     lockfile = None
-    in_maintenance = False  # 'maintenance' flag set in directory
 
-    def __init__(self, spooldir=DEFAULT_DIR, enc_path=None, log=_log):
+    def __init__(self,
+                 spooldir=DEFAULT_DIR,
+                 enc_path=None,
+                 config_file=None,
+                 log=_log):
         """Initialize ReqManager and create directories if necessary."""
         self.spooldir = spooldir
         self.requestsdir = p.join(self.spooldir, 'requests')
@@ -63,6 +69,7 @@ class ReqManager:
             if not p.exists(d):
                 os.mkdir(d)
         self.enc_path = enc_path
+        self.config_file = config_file
         self.log = log
         self.requests = {}
 
@@ -75,6 +82,9 @@ class ReqManager:
         print(os.getpid(), file=self.lockfile)
         self.lockfile.flush()
         self.scan()
+        self.config = configparser.ConfigParser()
+        if self.config_file:
+            self.config.read(self.config_file)
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
@@ -205,40 +215,28 @@ class ReqManager:
         yield from sorted(requests)
 
     def enter_maintenance(self):
-        """Set myself in 'maintenance' mode.
-
-        This method is idempotent since we need to call it for every
-        request. ReqManager's current design does not allow to query if
-        there are runnable requests at all without causing side effects
-        (humm). Tolerates directory failures as there a some maintenance
-        actions that need to proceed anyway.
+        """Set this node in 'temporary maintenance' mode.
         """
-        if self.in_maintenance:
-            self.log.debug("enter-maintenance-skip")
-            return
-        try:
-            self.log.debug("enter-maintenance")
-            self.directory.mark_node_service_status(socket.gethostname(),
-                                                    False)
-            self.in_maintenance = True
-        except socket.error:
-            self.log.error(
-                "enter-maintenance-error",
-                _replace_msg=
-                "Failed to set 'out of service' directory flag. See exception for details.",
-                exc_info=True)
+        self.log.debug("enter-maintenance")
+        self.log.debug("mark-node-out-of-service")
+        self.directory.mark_node_service_status(socket.gethostname(), False)
+        for name, command in self.config['maintenance-enter'].items():
+            if not command.strip():
+                continue
+            self.log.info(
+                "enter-maintenance-subsystem", subsystem=name, command=command)
+            subprocess.run(command, shell=True, check=True)
 
     def leave_maintenance(self):
-        try:
-            self.log.debug('leave-maintenance')
-            self.directory.mark_node_service_status(socket.gethostname(), True)
-            self.in_maintenance = False
-        except socket.error:
-            self.log.error(
-                "leave-maintenance-error",
-                _replace_msg=
-                "Failed to set 'in service' directory flag. See exception for details.",
-                exc_info=True)
+        self.log.debug('leave-maintenance')
+        for name, command in self.config['maintenance-leave'].items():
+            if not command.strip():
+                continue
+            self.log.info(
+                "leave-maintenance-subsystem", subsystem=name, command=command)
+            subprocess.run(command, shell=True, check=True)
+        self.log.debug('mark-node-in-service')
+        self.directory.mark_node_service_status(socket.gethostname(), True)
 
     @require_directory
     @require_lock
@@ -248,7 +246,6 @@ class ReqManager:
         If there is an already active request, run to termination first.
         After that, select the oldest due request as next active request.
         """
-
         if run_all_now:
             self.log.warn(
                 "execute-all-requests-now",
@@ -257,82 +254,39 @@ class ReqManager:
             runnable_requests = list(self.requests.values())
         else:
             runnable_requests = list(self.runnable())
-        if runnable_requests:
-            runnable_count = len(runnable_requests)
-            if runnable_count == 1:
-                msg = "Executing one runnable maintenance request."
-            else:
-                msg = "Executing {runnable_count} runnable maintenance requests."
-            self.log.info(
-                "execute-requests-runnable",
-                _replace_msg=msg,
-                runnable_count=runnable_count)
-        else:
+
+        if not runnable_requests:
             self.log.info(
                 "execute-requests-empty",
                 _replace_msg="No runnable maintenance requests.")
+            self.leave_maintenance()
+            return
+
+        runnable_count = len(runnable_requests)
+        if runnable_count == 1:
+            msg = "Executing one runnable maintenance request."
+        else:
+            msg = "Executing {runnable_count} runnable maintenance requests."
+        self.log.info(
+            "execute-requests-runnable",
+            _replace_msg=msg,
+            runnable_count=runnable_count)
 
         requested_reboots = set()
-        try:
-            for req in runnable_requests:
-                self.log.info(
-                    "execute-request-start",
-                    _replace_msg="Starting execution of request: {request}",
-                    request=req.id)
-                self.enter_maintenance()
-                try:
-                    req.execute()
-                except Exception:
-                    self.log.error(
-                        "execute-request-failed",
-                        _replace_msg=
-                        "Executing request {request} failed. See exception for details.",
-                        request=req.id,
-                        exc_info=True)
-                    req.state = State.error
-                    execution_finished = False
-                else:
-                    execution_finished = True
-                try:
-                    req.save()
-                except Exception:
-                    # This was ignored before.
-                    # At least log what's happening here even if it's not critical.
-                    self.log.debug(
-                        "execute-save-request-failed", exc_info=True)
+        self.enter_maintenance()
+        for req in runnable_requests:
+            req.execute()
+            if req.state == State.success:
+                requested_reboots.add(req.activity.reboot_needed)
 
-                if execution_finished:
-                    attempt = req.attempts[-1]
-                    if req.state == State.error:
-                        self.log.info(
-                            "execute-request-finished-error",
-                            _replace_msg="Error executing request {request}.",
-                            request=req.id,
-                            stdout=attempt.stdout,
-                            stderr=attempt.stderr,
-                            duration=attempt.duration,
-                            returncode=attempt.returncode)
-                    else:
-                        if req.activity.reboot_needed is not None:
-                            requested_reboots.add(req.activity.reboot_needed)
-                        self.log.info(
-                            "execute-request-finished",
-                            _replace_msg=
-                            "Executed request {request} (state: {state}).",
-                            request=req.id,
-                            state=req.state,
-                            duration=attempt.duration)
-
-            if requested_reboots:
-                # Rebooting while still in maintenance.
-                self.reboot(requested_reboots)
-            else:
-                self.leave_maintenance()
-                self.log.debug("no-reboot-requested")
-
-        except Exception:
+        # Execute any reboots while still in maintenance.
+        # Using the 'if' with the side effect has been a huge problem
+        # WRT to readability for me when trying to find out whether it
+        # is safe to call 'leave_maintenance' in the except: part a few
+        # lines below.
+        if not self.reboot(requested_reboots):
+            self.log.debug("no-reboot-requested")
             self.leave_maintenance()
-            self.log.debug("execute-requests-failed", exc_info=True)
 
     @require_lock
     @require_directory
@@ -418,20 +372,30 @@ class ReqManager:
                 "Doing a cold boot now to finish maintenance activities.")
             subprocess.run(
                 "poweroff", check=True, capture_output=True, text=True)
+            return True
         elif RebootType.WARM in requested_reboots:
             self.log.info(
                 "maintenance-reboot",
                 _replace_msg="Rebooting now to finish maintenance activities.")
             subprocess.run(
                 "reboot", check=True, capture_output=True, text=True)
+            return True
+        return False
+
+
+# XXX IMHO those should be verbso n the ReqManager and remove the huge
+# indirection between the CLI and the ReqManager. Just instantiating the
+# request manager with the parameters like config file centrally makes much
+# more sense.
 
 
 def transaction(spooldir=DEFAULT_DIR,
                 enc_path=None,
                 do_scheduling=True,
                 run_all_now=False,
+                config_file=None,
                 log=_log):
-    with ReqManager(spooldir, enc_path, log=log) as rm:
+    with ReqManager(spooldir, enc_path, config_file, log=log) as rm:
         if do_scheduling:
             rm.schedule()
         rm.execute(run_all_now)
@@ -439,14 +403,19 @@ def transaction(spooldir=DEFAULT_DIR,
         rm.archive()
 
 
-def delete(reqid, spooldir=DEFAULT_DIR, enc_path=None, log=_log):
-    with ReqManager(spooldir, enc_path, log=log) as rm:
+def delete(reqid,
+           spooldir=DEFAULT_DIR,
+           enc_path=None,
+           config_file=None,
+           log=_log):
+    with ReqManager(
+            spooldir, enc_path, config_file=config_file, log=log) as rm:
         rm.delete(reqid)
         rm.archive()
 
 
-def listreqs(spooldir=DEFAULT_DIR, log=_log):
-    rm = ReqManager(spooldir, log=log)
+def listreqs(spooldir=DEFAULT_DIR, config_file=None, log=_log):
+    rm = ReqManager(spooldir, config_file=config_file, log=log)
     rm.scan()
     out = str(rm)
     if out:
@@ -487,6 +456,12 @@ Managed local maintenance requests.
         help='Just run every maintenance request now, even if it is not due')
 
     a.add_argument(
+        '-c',
+        '--config-file',
+        metavar='PATH',
+        default='/etc/fc-agent.conf',
+        help='full path to agent configuration file')
+    a.add_argument(
         '-E',
         '--enc-path',
         metavar='PATH',
@@ -506,16 +481,30 @@ Managed local maintenance requests.
                         'w')
     init_logging(args.verbose, main_log_file, cmd_log_file)
 
+    # XXX Switch proper sub-command structure:
+    # * schedule
+    # * run (--all)
+    # * delete
+    # * list
+    # (why did we need archive as a separate action before?!?)
+
+    # XXX do proper exception logging here in the main() script,
+    # convert the module-level functions into reqmanager methods
+    # *IF* fc-manage needs to access code through the API, let it instanciate
+    # the _fully configured_ request manager directly preferably let
+    # exceptions bubble out so we see failure in the agent systemd job
+    # properly
+
     if args.delete and args.list:
         a.error('multually exclusive actions: list + delete')
     if args.delete:
-        delete(args.delete, args.spooldir, args.enc_path)
+        delete(args.delete, args.spooldir, args.enc_path, args.config_file)
     elif args.list:
-        listreqs(args.spooldir)
+        listreqs(args.spooldir, args.config_file)
     else:
         _log.info("fc-maintenance-start")
         transaction(args.spooldir, args.enc_path, not args.no_scheduling,
-                    args.run_all_now)
+                    args.run_all_now, args.config_file)
         _log.info("fc-maintenance-finished")
 
 
@@ -533,8 +522,14 @@ retrylimit exceeded (r), hard error (e), deleted (d), postponed (p).
         metavar='DIR',
         default=DEFAULT_DIR,
         help='spool dir for requests (default: %(default)s)')
+    a.add_argument(
+        '-c',
+        '--config-file',
+        metavar='PATH',
+        default='/etc/fc-agent.conf',
+        help='full path to agent configuration file')
     args = a.parse_args()
-    listreqs(args.spooldir)
+    listreqs(args.spooldir, args.config_file)
 
 
 if __name__ == '__main__':

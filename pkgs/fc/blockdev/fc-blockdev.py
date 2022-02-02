@@ -2,7 +2,6 @@
 """Apply kernel ioscheduler and LSI settings based on device heuristics."""
 
 import argparse
-import datetime
 import logging
 import logging.handlers
 import os

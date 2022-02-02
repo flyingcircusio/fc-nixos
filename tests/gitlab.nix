@@ -6,41 +6,18 @@ let
   ipv4 = "192.168.1.1";
   ipv6 = "2001:db8:f030:1c3::1";
 in
-import ./make-test-python.nix ({ pkgs, lib, ...} : with lib; {
+import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
   name = "gitlab";
 
   nodes = {
     gitlab = { lib, ... }: {
-
       imports = [
-        ../nixos
-        ../nixos/roles
+        (testlib.fcConfig { })
       ];
 
       virtualisation.memorySize = 4096;
+      virtualisation.qemu.options = [ "-smp 2" ];
 
-      flyingcircus.enc.parameters = {
-        resource_group = "test";
-        interfaces.srv = {
-          mac = "52:54:00:12:34:56";
-          bridged = false;
-          networks = {
-            "192.168.101.0/24" = [ ipv4 ];
-            "2001:db8:f030:1c3::/64" = [ ipv6 ];
-          };
-          
-          gateways = {};
-        };
-        interfaces.fe = {
-          mac = "52:54:00:12:02:02";
-          bridged = false;
-          networks = {
-            "10.0.0.0/24" = [ "10.0.0.3" ];
-            "2001:db8:3::/64" = [ "2001:db8:3::3" ];
-          };
-          gateways = {};
-        };
-      };
       flyingcircus.roles.gitlab = {
         enable = true;
         hostName = "gitlab";

@@ -41,9 +41,9 @@ in
           admin socket = /run/ceph/radosgw.asok
           rgw data = /srv/ceph/radosgw/ceph-$id
           rgw enable ops log = false
-          debug rgw = 4 5
-          debug civetweb = 4 5
-          debug rados = 4 5
+          debug rgw = 0 5
+          debug civetweb = 1 5
+          debug rados = 1 5
           '';
         description = ''
           Contents of the Ceph config file for RGWs.
@@ -77,6 +77,7 @@ in
         };
 
         restartIfChanged = true;
+        restartTriggers = [ config.environment.etc."ceph/ceph.conf".source ];
 
         serviceConfig = {
             Type = "simple";
@@ -84,6 +85,19 @@ in
             ExecStart = "${pkgs.ceph}/bin/radosgw -n ${username} -f -c /etc/ceph/ceph.conf";
         };
       };
+
+      networking.firewall.extraCommands = let
+        srv = fclib.network.srv;
+      in ''
+        # Accept traffic from S3 gateways from within the SRV network.
+
+      '' + (lib.concatMapStringsSep "\n"
+              (net: "iptables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 7480 -j ACCEPT")
+              srv.v4.networks
+      ) + "\n" +
+      (lib.concatMapStringsSep "\n"
+              (net: "ip6tables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 7480 -j ACCEPT")
+              srv.v6.networks);
 
       systemd.services.fc-ceph-rgw-update-stats = {
         description = "Update RGW stats";
@@ -96,6 +110,15 @@ in
           done
         '';
       }; 
+
+    services.logrotate.extraConfig = ''
+      /var/log/ceph/client.radosgw.log {
+          create 0644 root adm
+          postrotate
+            systemctl kill -s SIGHUP fc-ceph-rgw
+          endscript
+      }
+    '';
 
     })
 

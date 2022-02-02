@@ -74,6 +74,22 @@ in {
         description = "Enable additional logging for agent debugging.";
         type = types.bool;
       };
+
+      maintenance = mkOption { 
+        type = with types; attrsOf (submodule {
+          options = { 
+            enter = mkOption { type = str; default = ""; };
+            leave = mkOption { type = str; default = ""; };
+          };
+        });
+        default = {};
+        description = ''
+          Commands that fc.agent will call before entering or leaving
+          a maintenance cycle. Those commands must be
+          idempotent.
+        '';
+      };
+
     };
   };
 
@@ -87,6 +103,16 @@ in {
           groups = [ "sudo-srv" "service" ];
         }
       ];
+
+      environment.etc."fc-agent.conf".text = ''
+         [maintenance-enter]
+         ${concatStringsSep "\n" (
+           mapAttrsToList (k: v: "${k} = ${v.enter}") cfg.agent.maintenance)}
+
+         [maintenance-leave]
+         ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.leave}")
+           cfg.agent.maintenance)}
+      '';
 
       systemd.services.fc-agent = rec {
         description = "Flying Circus Management Task";

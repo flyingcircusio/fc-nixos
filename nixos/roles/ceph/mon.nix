@@ -26,31 +26,15 @@ in
 
       config = lib.mkOption {
         type = lib.types.lines;
-        default = let
-            mon_addrs = lib.concatMapStringsSep ","
-                (mon: "${head (filter fclib.isIp4 mon.ips)}:${mon_port}")
-                (fclib.findServices "ceph_mon-mon");
+        default = (lib.concatMapStringsSep "\n" (mon: 
+          let id = head (lib.splitString "." mon.address);
+              addr = "${head (filter fclib.isIp4 mon.ips)}:${mon_port}";
           in ''
-        [mon]
-        admin socket = /run/ceph/$cluster-$name.asok
-
-        mon addr = ${mon_addrs}
-        mon data = /srv/ceph/mon/$cluster-$id
-        mon osd allow primary affinity = true
-        mon pg warn max per osd = 3000
-
-        osd pool default size = 3
-        osd pool default min size = 2
-        osd pool default pg num = 64
-        osd pool default pgp num = 64
-
-        [mon.${config.networking.hostName}]
-        host = ${config.networking.hostName}
-        mon addr = ${head fclib.network.sto.v4.addresses}:${mon_port}
-        public addr = ${head fclib.network.sto.v4.addresses}:${mon_port}
-        cluster addr = ${head fclib.network.stb.v4.addresses}:${mon_port}
-        '';
-
+          [mon.${id}]
+          host = ${id}
+          mon addr = ${addr}
+          public addr = ${addr}
+        '') (fclib.findServices "ceph_mon-mon"));
         description = ''
           Contents of the Ceph config file for MONs.
         '';

@@ -1,17 +1,18 @@
-from .estimate import Estimate
-from .state import State, evaluate_state
-
 import contextlib
 import copy
 import datetime
-import iso8601
 import os
 import os.path as p
+import tempfile
+
+import iso8601
 import pytz
 import shortuuid
 import structlog
-import tempfile
 import yaml
+
+from .estimate import Estimate
+from .state import State, evaluate_state
 
 _log = structlog.get_logger()
 
@@ -146,18 +147,55 @@ class Request:
         Each attempt records outcomes so that the Activity object may
         overwrite stdout, stderr, and returncode after each attempt.
         """
-        self.state = State.running
-        self.save()
-        attempt = Attempt()  # sets start time
-        with cd(self.dir):
-            try:
-                self.activity.run()
-                attempt.record(self.activity)
-            except Exception as e:
-                attempt.returncode = 70  # EX_SOFTWARE
-                attempt.stderr = str(e)
-        self.attempts.append(attempt)
-        self.state = evaluate_state(self.activity.returncode)
+        self.log.info(
+            "execute-request-start",
+            _replace_msg="Starting execution of request: {request}",
+            request=self.id)
+        try:
+            attempt = Attempt()  # sets start time
+            self.state = State.running
+            self.save()
+            with cd(self.dir):
+                try:
+                    self.activity.run()
+                    attempt.record(self.activity)
+                except Exception as e:
+                    attempt.returncode = 70  # EX_SOFTWARE
+                    attempt.stderr = str(e)
+            self.attempts.append(attempt)
+            self.state = evaluate_state(self.activity.returncode)
+        except Exception:
+            self.log.error(
+                "execute-request-failed",
+                _replace_msg=
+                "Executing request {request} failed. See exception for details.",
+                request=self.id,
+                exc_info=True)
+            self.state = State.error
+
+        if self.state == State.error:
+            self.log.info(
+                "execute-request-finished-error",
+                _replace_msg="Error executing request {request}.",
+                request=self.id,
+                stdout=attempt.stdout,
+                stderr=attempt.stderr,
+                duration=attempt.duration,
+                returncode=attempt.returncode)
+        else:
+            self.log.info(
+                "execute-request-finished",
+                _replace_msg="Executed request {request} (state: {state}).",
+                request=self.id,
+                state=self.state,
+                duration=attempt.duration)
+
+        try:
+            self.save()
+        except Exception:
+            # This was ignored before.
+            # At least log what's happening here even if it's not critical.
+            self.log.debug("execute-save-request-failed", exc_info=True)
 
     def update_due(self, due):
         """Sets next_due to a datetime object or ISO 8601 literal.

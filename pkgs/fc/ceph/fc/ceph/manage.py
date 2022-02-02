@@ -6,12 +6,17 @@ import re
 import resource
 import shutil
 import socket
-import subprocess
 import sys
 import tempfile
 import threading
 import time
-from subprocess import PIPE, run
+from subprocess import PIPE
+from subprocess import run as run_orig
+
+
+def run(*args, **kw):
+    print(args, kw, flush=True)
+    return run_orig(*args, **kw)
 
 
 def run_ceph(*args):
@@ -19,19 +24,14 @@ def run_ceph(*args):
 
 
 def run_json(*args, **kw):
-    result = run(
-        *args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True,
-        **kw)
+    result = run(*args, stdout=PIPE, stderr=PIPE, check=True, **kw)
     return json.loads(result.stdout)
 
 
 def query_lvm(*args):
     result = run(
         list(args) + ['--units', 'b', '--nosuffix', '--separator=,'],
-        stdout=subprocess.PIPE,
+        stdout=PIPE,
         check=True)
     output = result.stdout.decode('ascii')
     lines = output.splitlines()
@@ -52,12 +52,19 @@ def lvs():
     return run_json(['lvs', '--reportformat', 'json'])['report'][0]['lv']
 
 
-def find_journal_vgs():
-    result = []
+def find_vg_for_mon():
+    vgsys = False
     for vg in vgs():
         if vg['vg_name'].startswith('vgjnl'):
-            result.append(vg)
-    return result
+            return vg['vg_name']
+        if vg['vg_name'] == 'vgsys':
+            vgsys = True
+
+    if vgsys:
+        print('WARNING: using volume group `vgsys` because no journal '
+              'volume group was found.')
+        return 'vgsys'
+    raise IndexError("No suitable volume group found.")
 
 
 def find_lv_path(name):
@@ -231,13 +238,13 @@ class OSDManager(object):
             except Exception as e:
                 print(e)
 
-    def rebuild(self, ids):
+    def rebuild(self, ids, journal_size):
         ids = self._parse_ids(ids)
 
         for id_ in ids:
             try:
                 osd = OSD(id_)
-                osd.rebuild()
+                osd.rebuild(journal_size)
             except Exception as e:
                 print(e)
 
@@ -288,7 +295,7 @@ class OSDManager(object):
 
 class OSD(object):
 
-    DEFAULT_JOURNAL_SIZE = 10
+    DEFAULT_JOURNAL_SIZE = '10g'
 
     MKFS_XFS_OPTS = ['-m', 'crc=1,finobt=1', '-i', 'size=2048', '-K']
     MOUNT_XFS_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
@@ -322,7 +329,7 @@ class OSD(object):
 
     def is_mounted(self):
         result = run(['lsblk', '-o', 'name,mountpoint', '-r'],
-                     stdout=subprocess.PIPE,
+                     stdout=PIPE,
                      check=True)
         output = result.stdout.decode('ascii')
         lines = output.splitlines()
@@ -409,14 +416,14 @@ class OSD(object):
                                        '-vg_free')[0]['VG']
             print(f'Creating external journal on {lvm_journal_vg} ...')
             run([
-                'lvcreate', '-W', 'y', f'-L{journal_size}g',
+                'lvcreate', '-W', 'y', f'-L{journal_size}',
                 f'-n{self.lvm_journal}', lvm_journal_vg],
                 check=True)
             lvm_journal_path = f'/dev/{lvm_journal_vg}/{self.lvm_journal}'
         elif journal == 'internal':
             print(f'Creating internal journal on {self.lvm_vg} ...')
             run([
-                'lvcreate', '-W', 'y', f'-L{journal_size}g',
+                'lvcreate', '-W', 'y', f'-L{journal_size}',
                 f'-n{self.lvm_journal}', self.lvm_vg])
             lvm_journal_path = f'/dev/{self.lvm_vg}/{self.lvm_journal}'
         else:
@@ -462,7 +469,7 @@ class OSD(object):
 
         self.activate()
 
-    def rebuild(self):
+    def rebuild(self, journal_size):
         print(f'Rebuilding OSD {self.id} from scratch')
 
         # What's the physical disk?
@@ -473,7 +480,7 @@ class OSD(object):
         pv = pvs[0]['PV']
         # Find the parent
         candidates = run(['lsblk', pv, '-o', 'name,pkname', '-r'],
-                         stdout=subprocess.PIPE,
+                         stdout=PIPE,
                          check=True)
         candidates = candidates.stdout.decode('ascii').splitlines()
         candidates.pop(0)
@@ -513,7 +520,7 @@ class OSD(object):
 
         # This is an "interesting" turn-around ...
         manager = OSDManager()
-        manager.create(device, journal, 0, crush_location)
+        manager.create(device, journal, journal_size, crush_location)
 
     def destroy(self):
         print(f"Destroying OSD {self.id} ...")
@@ -578,9 +585,6 @@ class Monitor(object):
         print(f'Activating MON {self.id}...')
         resource.setrlimit(resource.RLIMIT_NOFILE, (270000, 270000))
 
-        if not os.path.exists(self.mon_dir):
-            os.makedirs(self.mon_dir)
-
         if not is_mounted(self.mon_dir):
             run([
                 'mount', '-t', 'xfs', '-o', 'defaults,nodev,nosuid',
@@ -600,7 +604,7 @@ class Monitor(object):
             pass
         self.activate()
 
-    def create(self, size='8g'):
+    def create(self, size='8g', lvm_vg=None, bootstrap_cluster=False):
         print(f'Creating MON {self.id}...')
 
         if os.path.exists(self.mon_dir):
@@ -611,14 +615,15 @@ class Monitor(object):
         if not os.path.exists(self.mon_dir):
             os.makedirs(self.mon_dir)
 
-        try:
-            lvm_vg = find_journal_vgs()[0]['vg_name']
-        except IndexError:
-            print('Could not find a journal VG. Please prepare a journal '
-                  'VG first using `fc-ceph osd prepare-journal`.')
-            sys.exit(1)
+        if not lvm_vg:
+            try:
+                lvm_vg = find_vg_for_mon()
+            except IndexError:
+                print('Could not find a journal VG. Please prepare a journal '
+                      'VG first using `fc-ceph osd prepare-journal`.')
+                sys.exit(1)
 
-        lvm_lv = f'ceph-mon'
+        lvm_lv = 'ceph-mon'
         lvm_data_device = f'/dev/{lvm_vg}/{lvm_lv}'
 
         print(f'creating new mon volume {lvm_data_device}')
@@ -632,24 +637,43 @@ class Monitor(object):
             check=True)
 
         tmpdir = tempfile.mkdtemp()
-        mon_mkfs_args = ['ceph-mon', '-i', self.id, '--mkfs']
-        try:
-            run(['ceph', 'auth', 'get', f'mon.', '-o', f'{tmpdir}/keyring'],
+
+        config = configparser.ConfigParser()
+        with open('/etc/ceph/ceph.conf') as f:
+            config.read_file(f)
+        if bootstrap_cluster:
+            # Generate initial mon keyring
+            run([
+                'ceph-authtool', '-g', '-n', 'mon.', '--create-keyring',
+                f'{tmpdir}/keyring', '--set-uid=0', '--cap', 'mon', 'allow *'],
                 check=True)
-            mon_mkfs_args += ['--keyring', f'{tmpdir}/keyring']
-        except subprocess.CalledProcessError:
-            # Looks like we are initializing a new cluster
-            config = configparser.ConfigParser()
-            with open('/etc/ceph/ceph.conf') as f:
-                config.read_file(f)
+            # Import admin keyring
+            run([
+                'ceph-authtool', f'{tmpdir}/keyring', '--import-keyring',
+                '/etc/ceph/ceph.client.admin.keyring', '--cap', 'mds',
+                'allow *', '--cap', 'mon', 'allow *', '--cap', 'osd',
+                'allow *'])
+            # Generate initial monmap
             fsid = config['global']['fsid']
-            mon_mkfs_args += ['--fsid', fsid]
+            run(['monmaptool', '--create', '--fsid', fsid, f'{tmpdir}/monmap'])
         else:
+            # Retrieve mon key and monmap
+            run([
+                'ceph', '-n', 'client.admin', 'auth', 'get', 'mon.', '-o',
+                f'{tmpdir}/keyring'],
+                check=True)
             run(['ceph', 'mon', 'getmap', '-o', f'{tmpdir}/monmap'],
                 check=True)
-            mon_mkfs_args += ['--monmap', f'{tmpdir}/monmap']
-
-        run(mon_mkfs_args, check=True)
+        # Add yourself to the monmap
+        run([
+            'monmaptool', '--add', self.id,
+            config[f'mon.{self.id}']['public addr'], f'{tmpdir}/monmap'],
+            check=True)
+        # Create mon on disk structures
+        run([
+            'ceph-mon', '-i', self.id, '--mkfs', '--keyring',
+            f'{tmpdir}/keyring', '--monmap', f'{tmpdir}/monmap'],
+            check=True)
 
         shutil.rmtree(tmpdir)
 

@@ -133,6 +133,8 @@ in
   config = lib.mkIf role.enable {
 
     flyingcircus.services.ceph.server.enable = true;
+    
+    flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
 
     environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
 

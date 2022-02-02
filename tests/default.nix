@@ -28,6 +28,7 @@ in {
   audit = callTest ./audit.nix {};
   backyserver = callTest ./backyserver.nix {};
   channel = callTest ./channel.nix {};
+  ceph = callTest ./ceph.nix {};
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};

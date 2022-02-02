@@ -11,7 +11,7 @@ rec {
   check-journal = callPackage ./check-journal.nix {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
-  ceph = callPackage ./ceph { inherit blockdev agent; };
+  ceph = callPackage ./ceph { inherit blockdev agent util-physical; };
   blockdev = callPackage ./blockdev {};
   collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};

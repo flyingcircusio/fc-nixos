@@ -5,7 +5,6 @@ import datetime
 import hashlib
 import json
 import logging
-import os
 import re
 import struct
 import subprocess
@@ -91,6 +90,7 @@ class InstalledKeys(object):
     """Interface to cephx' live (in-core) key store."""
 
     known_keys = None
+    seen_entities = None
 
     def __init__(self):
         self.known_keys = {}
@@ -100,9 +100,17 @@ class InstalledKeys(object):
         for record in data:
             self.known_keys[record['entity']] = InstalledKey.from_mon_data(
                 record)
+        self.seen_entities = set()
 
     def ensure(self, keyconfig):
         print(f'\n{keyconfig.entity}:')
+
+        self.seen_entities.add(keyconfig.entity)
+
+        if keyconfig.stub:
+            # Stubs are recorded so we do not delete them but are a NOOP.
+            print('\tNOOP (Key is a stub.)')
+            return
 
         if keyconfig.entity in self.known_keys:
             known_key = self.known_keys[keyconfig.entity]
@@ -133,6 +141,29 @@ class InstalledKeys(object):
         else:
             print(textwrap.indent(output, '\t'))
 
+    def purge(self):
+        """Delete keys that are not required any longer.
+
+        Needs to be run after calling `ensure()` for all keys still in used
+        and any other keys (that are not explicitly ignored) will be deleted.
+        """
+        entities_to_delete = set(self.known_keys)
+        entities_to_delete -= self.seen_entities
+        KEEP = re.compile(r'^(mon\.|osd\..+|client.admin)$')
+        entities_to_delete -= set(filter(KEEP.match, entities_to_delete))
+
+        for entity in entities_to_delete:
+            print(f'Deleting key for {entity}')
+            try:
+                output = subprocess.check_output(
+                    ['ceph', 'auth', 'del', entity],
+                    stderr=subprocess.STDOUT).decode('ascii')
+            except Exception as e:
+                print(textwrap.indent(e.output.decode('ascii', '\t')))
+                raise
+            else:
+                print(textwrap.indent(output, '\t'))
+
 
 class KeyConfig(object):
     """High level key representation including capabilities,
@@ -140,6 +171,7 @@ class KeyConfig(object):
     """
 
     filename = None
+    is_stub = False
 
     # Ceph knows two concepts:
     # 1. 'usernames' and 'entities'. The include the type like 'client.admin'
@@ -199,11 +231,12 @@ ROLE_KEYS = {
 
 class KeyManager(object):
 
+    errors = None
+
+    def __init__(self):
+        self.keystore = InstalledKeys()
+
     def mon_update_client_keys(self):
-        errors = None
-
-        keystore = InstalledKeys()
-
         enc = fc.util.directory.load_default_enc_json()
 
         location = enc['parameters']['location']
@@ -211,32 +244,44 @@ class KeyManager(object):
 
         directory = fc.util.directory.connect()
         for node in directory.list_nodes(location):
+            if node['parameters']['machine'] != 'physical':
+                # See PL-130128 clean up secrets handling from enc
+                continue
             if node['parameters']['resource_group'] != rg:
                 continue
-            if node['parameters']['environment_class'] != 'NixOS':
-                continue
 
-            # Check which keys to install:
-            keys_to_install = set()
+            # This is a Gentoo-based machine and this branch can go
+            # away at some point. We need to do stub handling here to
+            # correctly unmanage Gentoo-based keys but not overwrite
+            # them as they have a different generation mechanism.
+            stub = node['parameters']['environment_class'] != 'NixOS'
 
-            for role in node['roles']:
-                keys_to_install.update(ROLE_KEYS.get(role, set()))
+            self.mon_update_single_client_key(
+                node['name'], node['roles'], node['parameters']['secret_salt'],
+                stub)
 
-            if not keys_to_install:
-                continue
-
-            for key_factory in keys_to_install:
-                keyconfig = key_factory(node['name'])
-                keyconfig.key.update_secret(
-                    node['parameters']['secret_salt'].encode('ascii'))
-                try:
-                    keystore.ensure(keyconfig)
-                except Exception:
-                    logging.exception('', exc_info=True)
-                    errors = True
-        if errors:
+        if self.errors:
             print("Encountered errors. See log / output")
             sys.exit(1)
+
+        self.keystore.purge()
+
+    def mon_update_single_client_key(self, id, roles, secret_salt, stub=False):
+        # Check which keys to install:
+        keys_to_install = set()
+
+        for role in roles:
+            keys_to_install.update(ROLE_KEYS.get(role, set()))
+
+        for key_factory in keys_to_install:
+            keyconfig = key_factory(id)
+            keyconfig.key.update_secret(secret_salt.encode('ascii'))
+            keyconfig.stub = stub
+            try:
+                self.keystore.ensure(keyconfig)
+            except Exception:
+                logging.exception('', exc_info=True)
+                self.errors = True
 
     def generate_client_keyring(self):
         enc = fc.util.directory.load_default_enc_json()

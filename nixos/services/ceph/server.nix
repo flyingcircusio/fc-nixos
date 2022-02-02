@@ -22,12 +22,14 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
-    # mkPlatform is 900 and this is slightly higher prio but a regular 
-    # assignment will override again easily.
-    environment.variables.CEPH_ARGS = lib.mkOverride 899 "";
+    environment.variables.CEPH_ARGS = fclib.mkPlatformOverride "";
 
     flyingcircus.services.ceph.client.enable = true;
+
+    flyingcircus.agent.maintenance.ceph = {
+      enter = "${pkgs.fc.ceph}/bin/fc-ceph maintenance enter";
+      leave = "${pkgs.fc.ceph}/bin/fc-ceph maintenance leave";
+    };
 
     # We used to create the admin key directory from the ENC. However,
     # this causes the file to become world readable on Ceph servers.
@@ -44,8 +46,8 @@ in
      ];
 
     services.logrotate.extraConfig = ''
-      /var/log/ceph/admin.log
       /var/log/ceph/ceph.log
+      /var/log/ceph/ceph.audit.log
       /var/log/ceph/ceph-mon.*.log
       /var/log/ceph/ceph-osd.*.log
       {
@@ -130,8 +132,6 @@ in
 
       "net.ipv4.tcp_tw_recycle" = "1";
       "net.ipv4.tcp_tw_reuse" = "1";
-
-      "net.netfilter.nf_conntrack_max" = "262144";
 
       # Supposedly this doesn't do much good anymore, but in one of my tests
       # (too many, can't prove right now.) this appeared to have been helpful.
