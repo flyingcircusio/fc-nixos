@@ -268,6 +268,14 @@ in
       # neighbour discovery. Seen on #denog on 2020-11-19
       "net.ipv6.route.max_size" = 2147483647;
 
+      # Ensure we can work in larger vLANs with hundreds of nodes.
+      "net.ipv4.neigh.default.gc_thresh1" = 1024;
+      "net.ipv4.neigh.default.gc_thresh2" = 4096;
+      "net.ipv4.neigh.default.gc_thresh3" = 8192;
+      "net.ipv6.neigh.default.gc_thresh1" = 1024;
+      "net.ipv6.neigh.default.gc_thresh2" = 4096;
+      "net.ipv6.neigh.default.gc_thresh3" = 8192;
+
       # See PL-130189
       # conntrack entries are created (for v4/v6) if any rules
       # for related/established and/or NATing are used in the
