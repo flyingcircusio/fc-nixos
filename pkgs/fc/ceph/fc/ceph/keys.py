@@ -232,9 +232,13 @@ ROLE_KEYS = {
 class KeyManager(object):
 
     errors = None
+    _keystore = None
 
-    def __init__(self):
-        self.keystore = InstalledKeys()
+    @property
+    def keystore(self):
+        if self._keystore is None:
+            self._keystore = InstalledKeys()
+        return self._keystore
 
     def mon_update_client_keys(self):
         enc = fc.util.directory.load_default_enc_json()
