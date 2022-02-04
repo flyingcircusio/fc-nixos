@@ -325,7 +325,7 @@ in
             servers = map
               ( node:
                   "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString glAPIPort}"
-                  + " check fall 1 rise 2 inter 10s maxconn 20"
+                  + " check fall 1 rise 2 inter 10s maxconn 500"
               )
               clusterNodes;
             balance = "roundrobin";

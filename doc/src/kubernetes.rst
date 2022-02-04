@@ -352,6 +352,14 @@ on your requirements there are a few more options available:
           # generate. The default is 10 and you can adjust this as needed.
           maxExpectedPods = 5;
 
+          # If the proxy should talk to the backend using SSL.
+          # Certificates are not verified to speed up things and make things work with self-signed certificates.
+          sslBackend = false;
+
+          # haproxy options for the server-template directive used for the pod backends,
+          # added verbatim to the end of the generated line.
+          extraPodTemplateOptions = "";
+
         };
 
     }
