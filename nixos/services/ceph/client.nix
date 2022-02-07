@@ -56,6 +56,7 @@ in
           mon data = /srv/ceph/mon/$cluster-$id
           mon osd allow primary affinity = true
           mon pg warn max per osd = 3000
+          mon pg warn max object skew = 20
 
           '';
         description = ''
