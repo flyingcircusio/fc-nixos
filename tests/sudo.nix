@@ -70,19 +70,28 @@ in
   testScript = ''
     machine.wait_for_unit('multi-user.target')
 
+    def assert_id_output(uid, gid, groups, id_output):
+        actual_uid, actual_gid, actual_groups = id_output.strip().split()
+        assert actual_uid == f"uid={uid}", f"uid: expected {uid}, got {actual_uid}"
+        assert actual_gid == f"gid={gid}", f"gid: expected {gid}, got {actual_gid}"
+        # Group order is not fixed!
+        actual_groups = set(actual_groups.removeprefix("groups=").split(","))
+        groups = set(groups.split(","))
+        assert actual_groups == groups, f"groups: expected: {groups}, got {actual_groups}"
+
     with subtest("check uids"):
         out = machine.succeed("id u1000")
-        assert (out == "uid=1000(u1000) gid=100(users) groups=100(users)\n"), out
+        assert_id_output("1000(u1000)", "100(users)", "100(users)", out)
         out = machine.succeed("id u1001")
-        assert (out == "uid=1001(u1001) gid=100(users) groups=100(users),2003(admins)\n"), out
+        assert_id_output("1001(u1001)", "100(users)", "100(users),2003(admins)", out)
         out = machine.succeed("id u1002")
-        assert (out == "uid=1002(u1002) gid=100(users) groups=100(users),503(sudo-srv)\n"), out
+        assert_id_output("1002(u1002)", "100(users)", "100(users),503(sudo-srv)", out)
         out = machine.succeed("id u1003")
-        assert (out == "uid=1003(u1003) gid=100(users) groups=100(users),1(wheel)\n"), out
+        assert_id_output("1003(u1003)", "100(users)", "100(users),1(wheel)", out)
         out = machine.succeed("id u1004")
-        assert (out == "uid=1004(u1004) gid=100(users) groups=100(users),1(wheel),503(sudo-srv)\n"), out
+        assert_id_output("1004(u1004)", "100(users)", "100(users),1(wheel),503(sudo-srv)", out)
         out = machine.succeed("id s-service")
-        assert (out == "uid=1074(s-service) gid=900(service) groups=900(service)\n"), out
+        assert_id_output("1074(s-service)", "900(service)", "900(service)", out)
 
     def login(user, tty):
         machine.send_key(f"alt-f{tty}")
