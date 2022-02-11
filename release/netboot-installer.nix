@@ -248,7 +248,11 @@ if 'interface' in lldp['lldp'][0]:
   for i in lldp['lldp'][0]['interface']:
       interface = Interface.create(i['name'])
       interface.switch = i["chassis"][0]["name"][0]["value"]
-      interface.switch_port = i["port"][0]["descr"][0]["value"]
+      interface.switch_port = "<unknown port>"
+      if 'id' in i['port'][0]:
+          interface.switch_port = i["port"][0]["id"][0]["value"]
+      if 'descr' in i['port'][0]:
+          interface.switch_port = i["port"][0]["descr"][0]["value"]
 
 # get all interfaces
 ip_l = run_json(['ip', '-j', 'l'])
