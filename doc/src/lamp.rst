@@ -99,6 +99,7 @@ CLI.
 Supported packages:
 
 * ``pkgs.lamp_php56`` (outdated but provided for legacy applications)
+* ``pkgs.lamp_php72`` (outdated but provided for legacy applications)
 * ``pkgs.lamp_php73``
 * ``pkgs.lamp_php74``
 * ``pkgs.lamp_php80``

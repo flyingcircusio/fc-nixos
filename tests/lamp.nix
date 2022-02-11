@@ -95,7 +95,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
       lamp.succeed("egrep 'short_open_tag.*On' result")
       lamp.succeed("egrep 'output_buffering => 0 => 0' result")
 
-      if php_version.major > 5:
+      if php_version >= packaging.version.parse("7.3"):
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
 
       if tideways_api_key:
@@ -134,7 +134,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
       lamp.succeed("egrep 'output_buffering +1 +1' result")
       lamp.succeed("egrep 'BCMath support.*enabled' result")
 
-      if php_version.major > 5:
+      if php_version >= packaging.version.parse("7.3"):
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
 
       if tideways_api_key:

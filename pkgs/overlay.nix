@@ -167,10 +167,19 @@ in {
   # Import old php versions from nix-phps
   # NOTE: php7.3 is already removed on unstable
   inherit (phps) php56;
+  inherit (phps) php72;
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
   lamp_php56 = self.php56.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
+
+  lamp_php72 = self.php72.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
