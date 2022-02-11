@@ -1,7 +1,6 @@
 { lib, ... }:
 let
   modulesFromHere = [
-    "services/misc/gitlab.nix"
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
     "services/networking/jicofo.nix"
@@ -21,7 +20,6 @@ in {
     ./ceph/server.nix
     ./collectdproxy.nix
     ./consul.nix
-    ./gitlab
     ./graylog
     ./haproxy
     ./jitsi/jibri.nix
