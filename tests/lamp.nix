@@ -45,6 +45,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
 
   testScript = { nodes, ... }:
     ''
+    from pkg_resources import packaging
     def assert_listen(machine, process_name, expected_sockets):
       result = machine.succeed(f"netstat -tlpn | grep {process_name} | awk '{{ print $4 }}'")
       actual = set(result.splitlines())
@@ -55,8 +56,8 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
 
     php_version = lamp.succeed('php --version').splitlines()[0]
     php_version = php_version.split()[1]
-    php_version = int(php_version.split('.')[0])
-    print("Detected PHP major version: ", php_version)
+    php_version = packaging.version.parse(php_version)
+    print("Detected PHP version:", php_version)
 
     tideways_api_key = "${tideways}"
 
@@ -84,7 +85,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
 
       lamp.succeed("egrep 'Registered save handlers.*files' result")
       lamp.succeed("egrep 'Registered save handlers.*user' result")
-      if php_version > 5:
+      if php_version.major > 5:
         lamp.succeed("egrep 'Registered save handlers.*redis' result")
         lamp.succeed("egrep 'Registered save handlers.*memcached' result")
 
@@ -94,7 +95,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
       lamp.succeed("egrep 'short_open_tag.*On' result")
       lamp.succeed("egrep 'output_buffering => 0 => 0' result")
 
-      if php_version > 5:
+      if php_version.major > 5:
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
 
       if tideways_api_key:
@@ -133,7 +134,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
       lamp.succeed("egrep 'output_buffering +1 +1' result")
       lamp.succeed("egrep 'BCMath support.*enabled' result")
 
-      if php_version > 5:
+      if php_version.major > 5:
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
 
       if tideways_api_key:
