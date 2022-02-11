@@ -5,6 +5,7 @@ with builtins;
 let
   cfg = config.flyingcircus.roles.gitlab;
   fclib = config.fclib;
+  gitlabPackage = config.services.gitlab.packages.gitlab;
 in
 
 {
@@ -185,7 +186,7 @@ in
           };
 
           "/assets/" = {
-            alias = "${pkgs.gitlab}/share/gitlab/public/assets/";
+            alias = "${gitlabPackage}/share/gitlab/public/assets/";
           };
 
         };
