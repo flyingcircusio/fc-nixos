@@ -50,6 +50,7 @@ in {
 
   lamp = callTest ./lamp.nix { };
   lamp56 = callTest ./lamp.nix { version = "lamp_php56"; };
+  lamp72 = callTest ./lamp.nix { version = "lamp_php72"; };
   lamp73 = callTest ./lamp.nix { version = "lamp_php73"; };
   lamp73_tideways = callTest ./lamp.nix { version = "lamp_php73"; tideways = "1234"; };
   lamp74 = callTest ./lamp.nix { version = "lamp_php74"; };
