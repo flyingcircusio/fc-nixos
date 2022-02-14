@@ -190,7 +190,7 @@ echo "=== Done - reboot at your convenience ==="
 #!/bin/sh
 set -eu
 
-vgchange -ay
+vgchange -ay vgsys
 
 umount -R /mnt || true
 
