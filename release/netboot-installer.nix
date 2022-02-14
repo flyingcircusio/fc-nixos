@@ -168,7 +168,7 @@ export NIX_PATH=/nix/var/nix/profiles/per-user/root/channels/nixos:/nix/var/nix/
 
 echo "Installing ..."
 
-nixos-install --cores 0 -j auto --no-root-passwd \
+nixos-install --max-jobs 5 --cores 10 -j 10 --no-root-passwd \
   --option substituters "https://cache.nixos.org https://hydra.flyingcircus.io" \
   --option trusted-public-keys "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= flyingcircus.io-1:Rr9CwiPv8cdVf3EQu633IOTb6iJKnWbVfCC8x8gVz2o= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
 
