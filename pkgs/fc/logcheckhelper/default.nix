@@ -6,7 +6,7 @@ buildRustPackage rec {
   name = "logcheck-helper-${version}";
   version = "1.0.1";
   src = ./logcheck-helper;
-  cargoSha256 = "1m6wnyi8zimy5nznyxqvhb1brmjzcpagmddy0cvcfrfa4xsm98ap";
+  cargoSha256 = "0d3ga25y6xpvn4bgjc7rcz7y38zcflal2ziqn5cf2giyyxq5p2as";
   doCheck = false;
 
   meta = with lib; {

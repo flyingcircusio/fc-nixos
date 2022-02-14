@@ -10,7 +10,7 @@ rustPlatform.buildRustPackage rec {
     filter = n: t: baseNameOf n != "target";
     src = cleanSource ./.;
   };
-  cargoSha256 = "0jnba2a2d7pw3j1fpyiz8x2sqw32hmfrvyh0y2vg6vhi3fj0n448";
+  cargoSha256 = "1dl9lm2xmzbrcqics8fsh8z2lqql086rd43f109gam1jlm0i8ajh";
 
   meta = {
     description = "Checks for outdated files and symlinks";
