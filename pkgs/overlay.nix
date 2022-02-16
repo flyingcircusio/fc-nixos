@@ -86,8 +86,6 @@ in {
     };
   });
 
-  grub2_full = super.callPackage ./grub/2.0x.nix { };
-
   innotop = super.callPackage ./percona/innotop.nix { };
 
   jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
