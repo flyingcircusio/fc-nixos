@@ -28,7 +28,8 @@
         graphviz
         htop
         imagemagick
-        multipath_tools  # kpartx
+        inetutils
+        multipath-tools  # kpartx
         iotop
         jq
         latencytop
@@ -37,7 +38,7 @@
         libtiff
         libxml2
         libxslt
-        links
+        links2
         lsof
         lynx
         magic-wormhole
@@ -53,7 +54,7 @@
         openldap
         openssl
         parted
-        pkgconfig
+        pkg-config
         protobuf
         w3m-nographics
         psmisc
@@ -66,7 +67,6 @@
         strace
         sysstat
         tcpdump
-        telnet
         tmux
         tree
         unzip

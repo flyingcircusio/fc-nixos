@@ -2,7 +2,7 @@
 , fetchurl
 , glib
 , perl
-, pkgconfig
+, pkg-config
 , slang
 }:
 
@@ -16,7 +16,7 @@ stdenv.mkDerivation rec {
   };
 
   propagatedBuildInputs = [ glib ];
-  buildInputs = [ pkgconfig slang perl ];
+  buildInputs = [ pkg-config slang perl ];
 
   enableParallelBuilding = true;
   meta = {

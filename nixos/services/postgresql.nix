@@ -6,7 +6,7 @@ let
   cfg = config.flyingcircus.services.postgresql;
   fclib = config.fclib;
   packages = {
-    "9.6" = pkgs.postgresql96;
+    "9.6" = pkgs.postgresql_9_6;
     "10" = pkgs.postgresql_10;
     "11" = pkgs.postgresql_11;
     "12" = pkgs.postgresql_12;

@@ -5,10 +5,10 @@
 , gitMinimal
 , gptfdisk
 , libyaml
-, multipath_tools
+, multipath-tools
 , nix
 , python3Packages
-, utillinux
+, util-linux
 , xfsprogs
 }:
 
@@ -54,8 +54,8 @@ py.buildPythonPackage rec {
   checkInputs = [
     py.freezegun
     py.pytest
-    py.pytestcov
-    py.pytestrunner
+    py.pytest-cov
+    py.pytest-runner
     py.responses
     py.pytest-mock
     py.pytest-subprocess
@@ -66,18 +66,18 @@ py.buildPythonPackage rec {
     nix
     py.click
     py.colorama
-    py.dateutil
+    py.python-dateutil
     py.iso8601
     py.pytz
     py.requests
     py.shortuuid
     py.structlog
     pyyaml
-    utillinux
+    util-linux
   ] ++ lib.optionals stdenv.isLinux [
     dmidecode
     gptfdisk
-    multipath_tools
+    multipath-tools
     py.systemd
     xfsprogs
   ];
