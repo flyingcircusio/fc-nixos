@@ -379,7 +379,6 @@ in {
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
-  remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
 
   sensu = super.callPackage ./sensu { ruby = super.ruby_2_6; };
