@@ -77,9 +77,6 @@ in {
     };
   });
 
-  gitlab = super.callPackage ./gitlab { };
-  gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
-
   graylog = super.graylog.overrideAttrs(_: rec {
     version = "3.3.16";
 
