@@ -8,21 +8,21 @@ let
   testedRoles = attrNames (lib.filterAttrs (n: v: v.supportsContainers or true) config.flyingcircus.roles);
   excludedRoles = attrNames (lib.filterAttrs (n: v: !(v.supportsContainers or true)) config.flyingcircus.roles);
 
-  enabledContainers = with lib;
-    (filter (container: container.enabled or true)
-           (map
-            (filename: fromJSON (readFile "/etc/devhost/${filename}"))
-            (filter
-              (filename: hasSuffix ".json" filename)
-              (attrNames (readDirMaybe "/etc/devhost/")))))
-    # BBB can be removed after a grace period
-    ++ (filter (container: container.enabled or true)
-           (map
-            (filename: fromJSON (readFile "/etc/devserver/${filename}"))
-            (filter
-              (filename: hasSuffix ".json" filename)
-              (attrNames (readDirMaybe "/etc/devserver/")))));
 
+  containersFromDir = dir:
+    with lib; 
+    (map
+      (filename: fromJSON (readFile "${dir}/${filename}"))
+      (filter
+        (filename: hasSuffix ".json" filename)
+        (attrNames (readDirMaybe dir))));
+
+  allContainers = 
+    (containersFromDir "/etc/devhost") ++
+    (containersFromDir "/etc/devserver");
+
+  enabledContainers = with lib;
+    (filter (container: container.enabled or true) allContainers);
 
   container_script = pkgs.writeShellScriptBin "fc-build-dev-container"
     ''
@@ -64,12 +64,14 @@ let
                   nixos-container start $container
               fi
               mkdir -p /nix/var/nix/profiles/per-container/$container/per-user/root/
-              jq -n --arg channel_url "$channel_url" '{parameters: {environment_url: $channel_url, environment: "container"}}' > /var/lib/containers/$container/etc/nixos/enc.json
+              jq -n --arg channel_url "$channel_url" --arg container_ip '{parameters: {environment_url: $channel_url, environment: "container"}}' > /var/lib/containers/$container/etc/nixos/enc.json
               # This touches the file and also ensures that we get updates on
               # the aliases if needed.
+              container_ip=$(nixos-container show-ip 4ca62e2e3dc)
               jq -n --arg container "$container" \
                 --arg aliases "$aliases" \
-                '{name: $container, aliases: ($aliases | split(" ")), enabled: true}' \
+                --arg ip "$ip" \
+                '{name: $container, ip: $ip, aliases: ($aliases | split(" ")), enabled: true}' \
                 > /etc/devhost/$container.json
               if [ "$manage_alias_proxy" == true ]; then
                 fc-manage -v -b
@@ -138,6 +140,12 @@ in
         default = "example.com";
       };
 
+      cleanupContainers = lib.mkOption {
+        description = "Whether to automatically shut down and destroy unused containers.";
+        type = lib.types.bool;
+        default = true;
+      };
+
       testing = lib.mkEnableOption "Enable testing mode that routinely creates and destroys containers and reports status to sensu.";
 
       testingChannelURL = lib.mkOption {
@@ -181,6 +189,18 @@ in
         fi
       '';
 
+      # BBB can be removed after a grace period
+      flyingcircus.activationScripts.devhost-migrate-ip-config = ''
+        set -x
+        cd /etc/devhost
+        for filename in *.json; do
+          container=''${filename%.json}
+          ${pkgs.jq}/bin/jq \
+            --arg ip $(${pkgs.nixos-container}/bin/nixos-container show-ip $container) \
+            -r '. + {ip:$ip}' "$filename" | ${pkgs.moreutils}/bin/sponge "$filename"
+        done
+      '';
+
       boot.kernel.sysctl = {
         "net.ipv4.ip_forward" = 1;
         # Increase inotify limits to avoid running out of them when
@@ -190,6 +210,16 @@ in
         "fs.inotify.max_user_watches" = 16384;
       };
       networking.nat.internalInterfaces = ["ve-+"];
+
+      networking.extraHosts = ''
+        # static entries for devhost containers to avoid nginx issues
+        # if containers are not running.
+        #
+        # This could be a problem with duplicate entries, but I think
+        # we'll be fine.
+      '' + (lib.concatMapStringsSep "\n"
+           (container: "${container.ip} ${container.name}")
+           (filter (container: container ? ip) allContainers));
 
       services.nginx.virtualHosts = if cfg.enableAliasProxy then (
         let
@@ -263,7 +293,7 @@ in
          };
        };
 
-      systemd.timers.fc-devhost-clean-containers = {
+      systemd.timers.fc-devhost-clean-containers = lib.mkIf cfg.cleanupContainers {
         wantedBy = [ "timers.target" ];
         timerConfig = {
           OnCalendar = "*-*-* 03:00:00";

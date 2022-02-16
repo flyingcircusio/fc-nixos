@@ -293,7 +293,7 @@ by using a tool that responds to changes in your filesystem (like )
 In the future there will be optimized support for this behaviour in batou.
 
 To sync code that is currently being developed on (and assuming you are using
-an editor / IDE on your local mcine)
+an editor / IDE on your local machine)
 
 
 Maintenance
@@ -307,6 +307,16 @@ an automatic cleanup policy:
 
 * Containers are deleted 30 days after their last deployment, thus reducing
   storage requirements.
+
+The automatic cleanup policy can be disabled using the
+``flyingcircus.roles.devhost.cleanupContainers`` option.
+
+To manually delete a container you can use the build script's ``destroy`` action:
+
+.. code-block:: sh
+
+   $ fc-build-dev-container destroy <mycontainer>
+
 
 
 Known issues
