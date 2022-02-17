@@ -160,6 +160,10 @@ in
       systemd.tmpfiles.rules = [
         "d /etc/local/varnish 2775 varnish service"
         "f /var/log/varnish.log 644 varnish varnish"
+        # Link the default dir expected by varnish tools to
+        # the actual location of the state dir. This makes the commands
+        # usable without specifying the -n option every time.
+        "L /var/run/varnishd - - - - ${cfg.stateDir}"
       ];
 
       users.groups.varnish.members = [
