@@ -45,6 +45,11 @@ in
         "d /var/log/ceph 0755"
      ];
 
+    flyingcircus.services.sensu-client.expectedConnections = {
+      warning = 20000;
+      critical = 25000;
+    };
+
     services.logrotate.extraConfig = ''
       /var/log/ceph/ceph.log
       /var/log/ceph/ceph.audit.log
