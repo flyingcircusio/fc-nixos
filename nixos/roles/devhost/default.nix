@@ -64,13 +64,13 @@ let
                   nixos-container start $container
               fi
               mkdir -p /nix/var/nix/profiles/per-container/$container/per-user/root/
-              jq -n --arg channel_url "$channel_url" --arg container_ip '{parameters: {environment_url: $channel_url, environment: "container"}}' > /var/lib/containers/$container/etc/nixos/enc.json
+              jq -n --arg channel_url "$channel_url" '{parameters: {environment_url: $channel_url, environment: "container"}}' > /var/lib/containers/$container/etc/nixos/enc.json
               # This touches the file and also ensures that we get updates on
               # the aliases if needed.
               container_ip=$(nixos-container show-ip $container)
               jq -n --arg container "$container" \
                 --arg aliases "$aliases" \
-                --arg ip "$ip" \
+                --arg ip "$container_ip" \
                 '{name: $container, ip: $ip, aliases: ($aliases | split(" ")), enabled: true}' \
                 > /etc/devhost/$container.json
               if [ "$manage_alias_proxy" == true ]; then
