@@ -226,7 +226,8 @@ ROLE_KEYS = {
     'backyserver': {ClientKey},
     'kvm_host': {ClientKey},
     'ceph_mon': {ClientKey},
-    'ceph_rgw': {RGWKey}}
+    'ceph_osd': {ClientKey},
+    'ceph_rgw': {ClientKey, RGWKey}}
 
 
 class KeyManager(object):
