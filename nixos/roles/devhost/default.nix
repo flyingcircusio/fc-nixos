@@ -67,7 +67,7 @@ let
               jq -n --arg channel_url "$channel_url" --arg container_ip '{parameters: {environment_url: $channel_url, environment: "container"}}' > /var/lib/containers/$container/etc/nixos/enc.json
               # This touches the file and also ensures that we get updates on
               # the aliases if needed.
-              container_ip=$(nixos-container show-ip 4ca62e2e3dc)
+              container_ip=$(nixos-container show-ip $container)
               jq -n --arg container "$container" \
                 --arg aliases "$aliases" \
                 --arg ip "$ip" \
