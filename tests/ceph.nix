@@ -174,7 +174,7 @@ in
       host2.succeed('fc-ceph mon create --size 500m &> /dev/kmsg')
       host2.succeed('fc-ceph osd create --journal-size=500m /dev/vdc')
 
-    with subtest("Initialize thirst MON and OSD"):
+    with subtest("Initialize third MON and OSD"):
       host3.succeed('fc-ceph osd prepare-journal /dev/vdb')
       host3.succeed('fc-ceph mon create --size 500m')
       host3.succeed('fc-ceph osd create --journal-size=500m /dev/vdc')

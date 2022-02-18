@@ -1,4 +1,5 @@
 import configparser
+import errno
 import glob
 import json
 import os
@@ -10,7 +11,7 @@ import sys
 import tempfile
 import threading
 import time
-from subprocess import PIPE
+from subprocess import PIPE, CalledProcessError
 from subprocess import run as run_orig
 
 
@@ -655,7 +656,16 @@ class OSD(object):
         # Remove authentication
         run(["ceph", "auth", "del", self.name])
         # Delete OSD object
-        run(["ceph", "osd", "rm", str(self.id)])
+        while True:
+            try:
+                run(["ceph", "osd", "rm", str(self.id)], check=True)
+            except CalledProcessError as e:
+                # OSD is still shutting down, keep trying.
+                if e.returncode == errno.EBUSY:
+                    time.sleep(1)
+                    continue
+                raise
+            break
 
         if os.path.exists(self.datadir):
             run(["umount", "-f", self.datadir])
