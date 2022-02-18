@@ -104,8 +104,29 @@ Supported packages:
 * ``pkgs.lamp_php74``
 * ``pkgs.lamp_php80``
 
+The ``lamp_php_*`` packages provided by our platform include commonly used
+PHP extensions, currently:
+
+* bcmath
+* imagick
+* redis
+* memcached
+
+There are more pre-packaged extension that can be added via Nix code. For example,
+to add the apcu extension along with the ones provided by lamp_php80, use:
+
+.. code-block:: Nix
+
+  php = pkgs.lamp_php80.withExtensions ({ enabled, all }:
+    enabled ++ [
+      all.apcu
+    ]);
+
 You can also use any custom PHP package from the NixOS universe (if you
 know what you are doing. ;) )
+
+For more information about PHP packaging on Nix, refer to the
+`PHP section of the Nixpkgs manual <https://nixos.org/manual/nixpkgs/stable/#sec-php>`_.
 
 
 ``flyingcircus.roles.lamp.tideways_api_key`` (optional)
