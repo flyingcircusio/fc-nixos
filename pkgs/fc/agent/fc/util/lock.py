@@ -12,8 +12,8 @@ def locked(lockfile):
     case of need.
     """
     # touch into existence
-    open(lockfile, 'a').close()
-    with open(lockfile, 'r+', buffering=1) as f:
+    open(lockfile, "a").close()
+    with open(lockfile, "r+", buffering=1) as f:
         fcntl.flock(f, fcntl.LOCK_EX)
         f.truncate(0)
         f.seek(0)

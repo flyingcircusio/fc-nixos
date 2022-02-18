@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # Simplified version of https://raw.githubusercontent.com/mzupan/nagios-plugin-mongodb/master/check_mongodb.py
 
+import numbers
 import optparse
 import sys
-import numbers
-import traceback
 import time
+import traceback
 
 import pymongo
 
@@ -52,14 +52,18 @@ def check_connect(conn_time):
 
 def check_feature_compat_version(con):
 
-    major_version = ".".join(str(x) for x in con.server_info()["versionArray"][:2])
+    major_version = ".".join(
+        str(x) for x in con.server_info()["versionArray"][:2]
+    )
 
     if major_version == "3.2":
         print("WARNING - MongoDB version 3.2 is outdated")
         return 1
 
     try:
-        res = con.admin.command({"getParameter": 1, "featureCompatibilityVersion": 1})
+        res = con.admin.command(
+            {"getParameter": 1, "featureCompatibilityVersion": 1}
+        )
     except pymongo.errors.PyMongoError as e:
         print("CRITICAL - MongoDB error:", e)
         return 2

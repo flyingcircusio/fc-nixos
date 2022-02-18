@@ -53,14 +53,19 @@ class Request:
         self.attempts = []
 
     def __str__(self):
-        line = '{state}  {shortid}  {sched:20}  {estimate:8}  {comment}'.\
-            format(state=self.state.short, shortid=self.id[:7],
-                   sched=(self.next_due.strftime('%Y-%m-%d %H:%M UTC')
-                          if self.next_due else '--- TBA ---'),
-                   estimate=str(self.estimate),
-                   comment=self.comment)
+        line = "{state}  {shortid}  {sched:20}  {estimate:8}  {comment}".format(
+            state=self.state.short,
+            shortid=self.id[:7],
+            sched=(
+                self.next_due.strftime("%Y-%m-%d %H:%M UTC")
+                if self.next_due
+                else "--- TBA ---"
+            ),
+            estimate=str(self.estimate),
+            comment=self.comment,
+        )
         if self.duration:
-            line += ' (duration: {})'.format(Estimate(self.duration))
+            line += " (duration: {})".format(Estimate(self.duration))
         return line
 
     def __eq__(self, other):
@@ -108,15 +113,16 @@ class Request:
     @property
     def filename(self):
         """Full path to request.yaml."""
-        return p.join(self.dir, 'request.yaml')
+        return p.join(self.dir, "request.yaml")
 
     @classmethod
     def load(cls, dir, log):
         # need imports because such objects may be loaded via YAML
+        import fc.maintenance.activity.update
         import fc.maintenance.lib.reboot
         import fc.maintenance.lib.shellscript
-        import fc.maintenance.activity.update
-        with open(p.join(dir, 'request.yaml')) as f:
+
+        with open(p.join(dir, "request.yaml")) as f:
             instance = yaml.load(f, Loader=yaml.FullLoader)
             if instance.next_due and not instance.next_due.tzinfo:
                 instance.next_due = pytz.UTC.localize(instance.next_due)
@@ -127,11 +133,12 @@ class Request:
         return instance
 
     def save(self):
-        assert self.dir, 'request directory not set'
+        assert self.dir, "request directory not set"
         if not p.isdir(self.dir):
             os.mkdir(self.dir)
         with tempfile.NamedTemporaryFile(
-                mode='w', dir=self.dir, delete=False) as tf:
+            mode="w", dir=self.dir, delete=False
+        ) as tf:
             yaml.dump(self, tf)
             tf.flush()
             os.fsync(tf.fileno())
@@ -150,7 +157,8 @@ class Request:
         self.log.info(
             "execute-request-start",
             _replace_msg="Starting execution of request: {request}",
-            request=self.id)
+            request=self.id,
+        )
         try:
             attempt = Attempt()  # sets start time
             self.state = State.running
@@ -167,10 +175,10 @@ class Request:
         except Exception:
             self.log.error(
                 "execute-request-failed",
-                _replace_msg=
-                "Executing request {request} failed. See exception for details.",
+                _replace_msg="Executing request {request} failed. See exception for details.",
                 request=self.id,
-                exc_info=True)
+                exc_info=True,
+            )
             self.state = State.error
 
         if self.state == State.error:
@@ -181,14 +189,16 @@ class Request:
                 stdout=attempt.stdout,
                 stderr=attempt.stderr,
                 duration=attempt.duration,
-                returncode=attempt.returncode)
+                returncode=attempt.returncode,
+            )
         else:
             self.log.info(
                 "execute-request-finished",
                 _replace_msg="Executed request {request} (state: {state}).",
                 request=self.id,
                 state=self.state,
-                duration=attempt.duration)
+                duration=attempt.duration,
+            )
 
         try:
             self.save()
@@ -212,14 +222,17 @@ class Request:
         else:
             self.next_due = iso8601.parse_date(due)
         if self.next_due and not self.next_due.tzinfo:
-            raise TypeError('next_due lacks time zone', self.next_due, self.id)
+            raise TypeError("next_due lacks time zone", self.next_due, self.id)
         self.update_state()
         return self.next_due != old
 
     def update_state(self):
         """Updates time-dependent request state."""
-        if (self.state in (State.pending, State.postpone) and self.next_due
-                and utcnow() >= self.next_due):
+        if (
+            self.state in (State.pending, State.postpone)
+            and self.next_due
+            and utcnow() >= self.next_due
+        ):
             self.state = State.due
         if len(self.attempts) > self.MAX_RETRIES:
             self.state = State.retrylimit
@@ -228,7 +241,8 @@ class Request:
     def other_requests(self):
         """Lists other requests currently active in the ReqManager."""
         return [
-            r for r in self._reqmanager.requests.values()
+            r
+            for r in self._reqmanager.requests.values()
             if r._reqid != self._reqid
         ]
 
@@ -236,7 +250,7 @@ class Request:
 def request_representer(dumper, data):
     # remove backlink before dumping a Request object
     d = copy.copy(data)
-    if hasattr(d, '_reqmanager'):
+    if hasattr(d, "_reqmanager"):
         d._reqmanager = None
     return dumper.represent_object(d)
 
@@ -259,9 +273,11 @@ class Attempt:
     def record(self, activity):
         """Logs activity outcomes so they may be overwritten later."""
         self.finished = utcnow()
-        (self.stdout, self.stderr,
-         self.returncode) = (activity.stdout, activity.stderr,
-                             activity.returncode)
+        (self.stdout, self.stderr, self.returncode) = (
+            activity.stdout,
+            activity.stderr,
+            activity.returncode,
+        )
         if activity.duration:
             self.duration = activity.duration
         elif self.started and not self.duration:

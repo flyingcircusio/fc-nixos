@@ -1,10 +1,10 @@
 import ./make-test-python.nix ({ ... }:
-let 
+let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
 in {
   name = "memcached";
-  machine = 
+  machine =
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];

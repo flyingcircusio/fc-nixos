@@ -50,7 +50,7 @@ let
       environment.etc."nixos/enc.json".text = builtins.toJSON {
         name =  "host${toString id}";
         roles = [ "ceph_mon" "ceph_osd" "ceph_rgw" ];
-        parameters = { 
+        parameters = {
           location = "test";
           resource_group = "services";
           secret_salt = "salt-for-host-${toString id}-dhkasjy9";
@@ -62,9 +62,9 @@ let
       # lead to massive/weird Ceph instabilities.
       networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" ];
       networking.extraHosts = ''
-        ${getIPForVLAN 4 1} host1.sto.test.ipv4.gocept.net 
-        ${getIPForVLAN 4 2} host2.sto.test.ipv4.gocept.net 
-        ${getIPForVLAN 4 3} host3.sto.test.ipv4.gocept.net 
+        ${getIPForVLAN 4 1} host1.sto.test.ipv4.gocept.net
+        ${getIPForVLAN 4 2} host2.sto.test.ipv4.gocept.net
+        ${getIPForVLAN 4 3} host3.sto.test.ipv4.gocept.net
       '';
 
       flyingcircus.enc.parameters = {
@@ -144,7 +144,7 @@ in
     show(host1, 'ls -lah /etc/ceph/')
     show(host1, 'cat /etc/ceph/ceph.client.osd.keyring')
     show(host1, 'cat /etc/ceph/ceph.conf')
-    
+
     show(host1, 'lsblk')
     show(host1, 'sfdisk -J /dev/vdb')
 

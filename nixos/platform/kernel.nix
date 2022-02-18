@@ -14,7 +14,7 @@
 	# structured when needed.
 
 	config = {
-		flyingcircus.kernelOptions = 
+		flyingcircus.kernelOptions =
 			''
 			ASYNC_TX_DMA y
 			CPU_FREQ_STAT y

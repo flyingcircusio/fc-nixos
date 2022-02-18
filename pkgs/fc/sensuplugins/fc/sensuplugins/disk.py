@@ -9,10 +9,11 @@ analogous to check_mk.
 
 import argparse
 import logging
+
 import nagiosplugin
 import psutil
 
-_log = logging.getLogger('nagiosplugin')
+_log = logging.getLogger("nagiosplugin")
 GB = 1024 * 1024 * 1024
 
 
@@ -26,20 +27,22 @@ class Disk(nagiosplugin.Resource):
 
     def probe(self):
         usage = psutil.disk_usage(self.mountpoint)
-        _log.debug('probe: %r', usage)
+        _log.debug("probe: %r", usage)
         if not self.disksize:
             self.disksize = usage.total / GB
         percent = round(100.0 * float(usage.used) / GB / self.disksize, 1)
         self.params.register_context(self.disksize)
         return nagiosplugin.Metric(
-            self.mountpoint, percent, '%', min=0.0, max=100.0)
+            self.mountpoint, percent, "%", min=0.0, max=100.0
+        )
 
 
 class Parameters(object):
     """Value object which passes check parameters around."""
 
-    def __init__(self, check, mountpoint, ranges, cap, normsize, magic,
-                 disksize=None):
+    def __init__(
+        self, check, mountpoint, ranges, cap, normsize, magic, disksize=None
+    ):
         self.check = check
         self.mountpoint = mountpoint
         self.ranges = ranges  # (warn, crit)
@@ -56,11 +59,11 @@ class Parameters(object):
 
     def magic_range(self, range, cap):
         relsize = self.disksize / self.normsize
-        effective_size = relsize ** self.magic
+        effective_size = relsize**self.magic
         scale = effective_size / relsize
-        new_max = round(100.0-(100.0-range.end)*scale, 1)
-        new = '{}:{}'.format(range.start, max(new_max, cap))
-        _log.debug('magic({}, {}) -> {}'.format(self.disksize, range, new))
+        new_max = round(100.0 - (100.0 - range.end) * scale, 1)
+        new = "{}:{}".format(range.start, max(new_max, cap))
+        _log.debug("magic({}, {}) -> {}".format(self.disksize, range, new))
         return nagiosplugin.Range(new)
 
     def context_factory(self, disksize):
@@ -71,8 +74,10 @@ class Parameters(object):
             self.magic_range(self.ranges[1], self.cap[1]),  # crit
         )
         return nagiosplugin.ScalarContext(
-            self.mountpoint, *magic_ranges,
-            fmt_metric='{name}: {valueunit} of %.1fGiB full' % self.disksize)
+            self.mountpoint,
+            *magic_ranges,
+            fmt_metric="{name}: {valueunit} of %.1fGiB full" % self.disksize,
+        )
 
     def register_context(self, disksize):
         self.check.add(self.context_factory(disksize))
@@ -83,9 +88,11 @@ class Discovery(object):
 
     def __init__(self, check, args):
         self.check = check
-        self.allowed_types = [f.strip() for f in args.fstypes.split(',')]
-        self.ranges = (nagiosplugin.Range(args.warning),
-                       nagiosplugin.Range(args.critical))
+        self.allowed_types = [f.strip() for f in args.fstypes.split(",")]
+        self.ranges = (
+            nagiosplugin.Range(args.warning),
+            nagiosplugin.Range(args.critical),
+        )
         self.cap = (float(args.min_warning), float(args.min_critical))
         self.normsize = float(args.normsize)
         self.magic = float(args.magic)
@@ -95,7 +102,8 @@ class Discovery(object):
         seen = set()
         for params in self.filesystems:
             (mp, warn, crit, disksize, normsize, magic) = (
-                params.split(',') + [None, None, None, None, None])[0:6]
+                params.split(",") + [None, None, None, None, None]
+            )[0:6]
             seen.add(mp)
             if not warn:
                 warn = self.ranges[0]
@@ -105,9 +113,14 @@ class Discovery(object):
             normsize = float(normsize) if normsize else self.normsize
             magic = float(magic) if magic else self.magic
             params = Parameters(
-                self.check, mp,
+                self.check,
+                mp,
                 (nagiosplugin.Range(warn), nagiosplugin.Range(crit)),
-                self.cap, normsize, magic, disksize)
+                self.cap,
+                normsize,
+                magic,
+                disksize,
+            )
             params.register_resource()
         return seen
 
@@ -119,8 +132,14 @@ class Discovery(object):
                 continue
             seen.add(fs.device)
             seen.add(fs.mountpoint)
-            params = Parameters(self.check, fs.mountpoint, self.ranges,
-                                self.cap, self.normsize, self.magic)
+            params = Parameters(
+                self.check,
+                fs.mountpoint,
+                self.ranges,
+                self.cap,
+                self.normsize,
+                self.magic,
+            )
             params.register_resource()
 
     def add_resources(self):
@@ -129,59 +148,108 @@ class Discovery(object):
 
 
 class DiskSummary(nagiosplugin.Summary):
-
     def ok(self, results):
         msg = []
         for r in results:
-            msg.append('{}: {}'.format(r.metric.name, r.metric.valueunit))
-        return ', '.join(msg)
+            msg.append("{}: {}".format(r.metric.name, r.metric.valueunit))
+        return ", ".join(msg)
 
     def problem(self, results):
         msg = []
         for r in results.most_significant:
-            msg.append('{}: {}'.format(r.metric.name, r.metric.valueunit))
-        return ', '.join(msg)
+            msg.append("{}: {}".format(r.metric.name, r.metric.valueunit))
+        return ", ".join(msg)
 
 
 @nagiosplugin.guarded
 def main():
-    a = argparse.ArgumentParser(description=__doc__, epilog="""\
+    a = argparse.ArgumentParser(
+        description=__doc__,
+        epilog="""\
 Arguments for individually configured filesystems:
 MOUNTPOINT[,WARN[,CRIT[,DISKSIZE[,NORMSIZE[,MAGIC]]]]].  WARN,CRIT - alert
 ranges; DISKSIZE - overrides device size; NORMSIZE - individual reference value
 for magic calculation; MAGIC - individual magic factor for dampening
 calculation.
-""")
-    a.add_argument('-T', '--fstypes', default='ext4,xfs,btrfs',
-                   help='include filesystems of the named types automtically '
-                   '(comma-separated, default: %(default)s)')
-    a.add_argument('-w', '--warning', metavar='RANGE', default='0:80',
-                   help='warning range for automatically configured '
-                   'filesystems (default: %(default)s)')
-    a.add_argument('-c', '--critical', metavar='RANGE', default='0:90',
-                   help='critical range for automatically configured '
-                   'filesystems (default: %(default)s)')
-    a.add_argument('-m', '--magic', default=0.7, type=float,
-                   help='magic dampening factor (default: %(default)s)')
-    a.add_argument('-n', '--normsize', metavar='GB', default=30.0, type=float,
-                   help='reference filesystem size for dampening calculation '
-                   '(default: %(default)s)')
-    a.add_argument('-W', '--min-warning', metavar='PERCENT', default='50',
-                   type=int,
-                   help='lowest warning level regardless of magic '
-                   'calculation (default: %(default)s)')
-    a.add_argument('-C', '--min-critical', metavar='PERCENT', default='60',
-                   type=int,
-                   help='lowest critical level regardless of magic '
-                   'calculation (default: %(default)s)')
-    a.add_argument('-f', '--filesystem', action='append', default=[],
-                   metavar='FS_ARGS',
-                   help='configure individual filesystems (see below for '
-                   'FS_ARGS; can be specified several times)')
-    a.add_argument('-v', '--verbose', action='count', default=0,
-                   help='increase verbosity')
-    a.add_argument('-t', '--timeout', metavar='N', default=30, type=int,
-                   help='abort check execution after N seconds')
+""",
+    )
+    a.add_argument(
+        "-T",
+        "--fstypes",
+        default="ext4,xfs,btrfs",
+        help="include filesystems of the named types automtically "
+        "(comma-separated, default: %(default)s)",
+    )
+    a.add_argument(
+        "-w",
+        "--warning",
+        metavar="RANGE",
+        default="0:80",
+        help="warning range for automatically configured "
+        "filesystems (default: %(default)s)",
+    )
+    a.add_argument(
+        "-c",
+        "--critical",
+        metavar="RANGE",
+        default="0:90",
+        help="critical range for automatically configured "
+        "filesystems (default: %(default)s)",
+    )
+    a.add_argument(
+        "-m",
+        "--magic",
+        default=0.7,
+        type=float,
+        help="magic dampening factor (default: %(default)s)",
+    )
+    a.add_argument(
+        "-n",
+        "--normsize",
+        metavar="GB",
+        default=30.0,
+        type=float,
+        help="reference filesystem size for dampening calculation "
+        "(default: %(default)s)",
+    )
+    a.add_argument(
+        "-W",
+        "--min-warning",
+        metavar="PERCENT",
+        default="50",
+        type=int,
+        help="lowest warning level regardless of magic "
+        "calculation (default: %(default)s)",
+    )
+    a.add_argument(
+        "-C",
+        "--min-critical",
+        metavar="PERCENT",
+        default="60",
+        type=int,
+        help="lowest critical level regardless of magic "
+        "calculation (default: %(default)s)",
+    )
+    a.add_argument(
+        "-f",
+        "--filesystem",
+        action="append",
+        default=[],
+        metavar="FS_ARGS",
+        help="configure individual filesystems (see below for "
+        "FS_ARGS; can be specified several times)",
+    )
+    a.add_argument(
+        "-v", "--verbose", action="count", default=0, help="increase verbosity"
+    )
+    a.add_argument(
+        "-t",
+        "--timeout",
+        metavar="N",
+        default=30,
+        type=int,
+        help="abort check execution after N seconds",
+    )
     args = a.parse_args()
     check = nagiosplugin.Check(DiskSummary())
     discovery = Discovery(check, args)
@@ -189,5 +257,5 @@ calculation.
     check.main(args.verbose, args.timeout)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -29,13 +29,13 @@ import ./make-test-python.nix ({ lib, pkgs, ... }:
           gateways = {};
         };
       };
-    
+
     };
   };
 
-  # This is a rather stupid test but it checks that the role works and 
+  # This is a rather stupid test but it checks that the role works and
   # that we get the necessary script installed and nginx running.
-  # Further tests need hydra and other stuff and we run this from 
+  # Further tests need hydra and other stuff and we run this from
   # our releaseXXYYtest machines.
   testScript = ''
 

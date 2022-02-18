@@ -7,13 +7,12 @@ import time
 _log = logging.getLogger(__name__)
 
 
-def _fmt_time(timestamp, sep=' '):
+def _fmt_time(timestamp, sep=" "):
     return datetime.datetime.fromtimestamp(timestamp).isoformat(sep=sep)
 
 
 class Spread:
-
-    def __init__(self, stampfile, interval=120 * 60, jobname='Job'):
+    def __init__(self, stampfile, interval=120 * 60, jobname="Job"):
         self.stampfile = stampfile
         self.interval = interval
         self.jobname = jobname
@@ -22,8 +21,8 @@ class Spread:
     def generate(self):
         """Generates random offset and writes it to the stamp file."""
         self.offset = random.randint(0, self.interval)
-        _log.info('Randomizing offset for %s to %s', self.jobname, self.offset)
-        with open(self.stampfile, 'w') as f:
+        _log.info("Randomizing offset for %s to %s", self.jobname, self.offset)
+        with open(self.stampfile, "w") as f:
             print(self.offset, file=f)
         os.utime(self.stampfile, (0, 0))
 
@@ -55,11 +54,11 @@ class Spread:
         due = self.next_due()
         now = time.time()
         if now >= due:
-            _log.info('%s was due at %s', self.jobname, _fmt_time(due))
+            _log.info("%s was due at %s", self.jobname, _fmt_time(due))
             self.touch(now)
             return True
         else:
-            _log.info('%s is due at %s', self.jobname, _fmt_time(due))
+            _log.info("%s is due at %s", self.jobname, _fmt_time(due))
             return False
 
 
@@ -68,10 +67,10 @@ class NullSpread:
 
     stampfile = None
     interval = 0
-    jobname = ''
+    jobname = ""
     offset = None
 
-    def __init__(self, stampfile=None, interval=0, jobname=''):
+    def __init__(self, stampfile=None, interval=0, jobname=""):
         pass
 
     def generate(self):

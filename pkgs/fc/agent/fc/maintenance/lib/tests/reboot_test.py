@@ -1,15 +1,15 @@
+import sys
+from unittest.mock import Mock
+
+import pytest
 from fc.maintenance.lib.reboot import RebootActivity, main
 from fc.maintenance.reqmanager import ReqManager
-
-from unittest.mock import Mock
-import pytest
-import sys
 
 
 @pytest.fixture
 def defused_boom(monkeypatch):
     mock = Mock(RebootActivity.boom)
-    monkeypatch.setattr(RebootActivity, 'boom', mock)
+    monkeypatch.setattr(RebootActivity, "boom", mock)
     return mock
 
 
@@ -23,7 +23,7 @@ def reqdir(tmpdir, monkeypatch):
 def boottime(monkeypatch):
     """Simulate fixed boottime (i.e., no intermediary reboots)."""
     boottime = Mock(RebootActivity.boottime, side_effect=[1] * 20)
-    monkeypatch.setattr(RebootActivity, 'boottime', boottime)
+    monkeypatch.setattr(RebootActivity, "boottime", boottime)
     return boottime
 
 
@@ -35,7 +35,7 @@ def test_reboot(reqdir, defused_boom, boottime):
 
 def test_skip_reboot_when_already_rebooted(reqdir, defused_boom, monkeypatch):
     boottime = Mock(RebootActivity.boottime, side_effect=[1, 10])
-    monkeypatch.setattr(RebootActivity, 'boottime', boottime)
+    monkeypatch.setattr(RebootActivity, "boottime", boottime)
     r = RebootActivity()
     r.run()
     assert defused_boom.call_count == 0
@@ -49,12 +49,13 @@ def comments(spooldir):
 
 
 def test_dont_perfom_warm_reboot_if_cold_reboot_pending(
-        reqdir, defused_boom, boottime):
-    for type_ in [[], ['--poweroff']]:
+    reqdir, defused_boom, boottime
+):
+    for type_ in [[], ["--poweroff"]]:
         sys.argv = [
-            'reboot',
-            '--spooldir={}'.format(str(reqdir)),
-            '--comment={}'.format(type_),
+            "reboot",
+            "--spooldir={}".format(str(reqdir)),
+            "--comment={}".format(type_),
         ] + type_
         main()
 
@@ -62,9 +63,8 @@ def test_dont_perfom_warm_reboot_if_cold_reboot_pending(
         rm.scan()
         # run soft reboot first
         reqs = sorted(
-            rm.requests.values(),
-            key=lambda r: r.activity.action,
-            reverse=True)
+            rm.requests.values(), key=lambda r: r.activity.action, reverse=True
+        )
         reqs[0].execute()
         reqs[0].save()
         assert defused_boom.call_count == 0

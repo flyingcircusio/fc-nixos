@@ -81,7 +81,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
 
     systemd.services.lldp-intel-bug-126553 = {
         wantedBy = [ "multi-user.target" ];
-        before = [ "lldpd.service" ]; 
+        before = [ "lldpd.service" ];
         serviceConfig.Type = "oneshot";
         serviceConfig.RemainAfterExit = true;
         script = ''

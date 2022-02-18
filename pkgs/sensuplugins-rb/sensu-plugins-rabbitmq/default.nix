@@ -2,7 +2,7 @@
 
 bundlerSensuPlugin {
   pname = "sensu-plugins-rabbitmq";
-  exes = [ 
+  exes = [
     "check-rabbitmq-alive.rb"
     "check-rabbitmq-amqp-alive.rb"
     "check-rabbitmq-node-health.rb"

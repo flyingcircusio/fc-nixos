@@ -2,7 +2,7 @@ import ./make-test-python.nix ({ testlib, ... }:
 {
   name = "psi";
   testCases = {
-    justpsi = { 
+    justpsi = {
       name = "justpsi";
       machine = { lib, ... }:
       {
@@ -23,7 +23,7 @@ import ./make-test-python.nix ({ testlib, ... }:
       {
         imports = [ (testlib.fcConfig { net.fe = false; }) ];
         flyingcircus.services.telegraf.psiCgroupRegex = [ ".*\\.service" ];
-        services.telegraf.enable = true;  # set in infra/fc but not in infra/testing        
+        services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
       };
       testScript = ''
         start_all()

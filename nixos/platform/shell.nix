@@ -78,7 +78,7 @@ in
     (opt (parameters ? service_description)
       ''
         Services:   ${parameters.service_description}${opt isProd "  [production]"}
-      '') + 
+      '') +
       (let
          roles = lib.concatStringsSep ", " (enc.roles or []);
       in

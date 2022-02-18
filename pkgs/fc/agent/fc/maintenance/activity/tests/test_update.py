@@ -1,13 +1,20 @@
-from unittest.mock import Mock, MagicMock, create_autospec
+import textwrap
+from unittest.mock import MagicMock, Mock, create_autospec
+
+import pytest
+import structlog
+import yaml
 from fc.maintenance.activity import RebootType
 from fc.maintenance.activity.update import UpdateActivity
 from fc.manage.manage import Channel
-from fc.util.nixos import BuildFailed, ChannelException, ChannelUpdateFailed, RegisterFailed, SwitchFailed
+from fc.util.nixos import (
+    BuildFailed,
+    ChannelException,
+    ChannelUpdateFailed,
+    RegisterFailed,
+    SwitchFailed,
+)
 from pytest import fixture
-import pytest
-import structlog
-import textwrap
-import yaml
 
 CURRENT_BUILD = 93111
 NEXT_BUILD = 93222
@@ -28,7 +35,8 @@ UNIT_CHANGES = {
     "stop": ["postgresql.service"],
 }
 
-CHANGELOG = textwrap.dedent(f"""\
+CHANGELOG = textwrap.dedent(
+    f"""\
     System update: {CURRENT_VERSION} -> {NEXT_VERSION}
     Build number: {CURRENT_BUILD} -> {NEXT_BUILD}
     Environment: {ENVIRONMENT} (unchanged)
@@ -39,7 +47,8 @@ CHANGELOG = textwrap.dedent(f"""\
     Start: postgresql
     Reload: nginx
 
-    Channel URL: {NEXT_CHANNEL_URL}""")
+    Channel URL: {NEXT_CHANNEL_URL}"""
+)
 
 SERIALIZED_ACTIVITY = f"""\
 !!python/object:fc.maintenance.activity.update.UpdateActivity
@@ -108,7 +117,8 @@ def nixos_mock(monkeypatch):
         ChannelUpdateFailed=ChannelUpdateFailed,
         BuildFailed=BuildFailed,
         SwitchFailed=SwitchFailed,
-        RegisterFailed=RegisterFailed)
+        RegisterFailed=RegisterFailed,
+    )
 
     mocked.channel_version = fake_channel_version
     mocked.kernel_version = fake_changed_kernel_version
@@ -125,8 +135,9 @@ def nixos_mock(monkeypatch):
 
 
 def test_update_activity_from_system_changed(nixos_mock):
-    activity = UpdateActivity.from_system_if_changed(NEXT_CHANNEL_URL,
-                                                     ENVIRONMENT)
+    activity = UpdateActivity.from_system_if_changed(
+        NEXT_CHANNEL_URL, ENVIRONMENT
+    )
 
     assert activity
     assert activity.current_version == CURRENT_VERSION
@@ -150,22 +161,28 @@ def test_update_activity_prepare(log, logger, tmp_path, activity, nixos_mock):
     activity.prepare()
 
     nixos_mock.build_system.assert_called_once_with(
-        NEXT_CHANNEL_URL, out_link="/run/next-system", log=logger)
+        NEXT_CHANNEL_URL, out_link="/run/next-system", log=logger
+    )
 
     nixos_mock.dry_activate_system.assert_called_once_with(
-        NEXT_SYSTEM_PATH, logger)
+        NEXT_SYSTEM_PATH, logger
+    )
 
-    assert activity.reboot_needed == RebootType.WARM, "expected warm reboot request"
+    assert (
+        activity.reboot_needed == RebootType.WARM
+    ), "expected warm reboot request"
     assert activity.changelog == CHANGELOG
 
     assert log.has(
         "update-prepare-start",
         next_channel=NEXT_CHANNEL_URL,
-        next_environment=ENVIRONMENT)
+        next_environment=ENVIRONMENT,
+    )
     assert log.has(
         "update-kernel-changed",
         current_kernel=CURRENT_KERNEL_VERSION,
-        next_kernel=NEXT_KERNEL_VERSION)
+        next_kernel=NEXT_KERNEL_VERSION,
+    )
 
 
 def test_update_activity_run(log, nixos_mock, activity, logger):
@@ -173,11 +190,14 @@ def test_update_activity_run(log, nixos_mock, activity, logger):
 
     assert activity.returncode == 0
     nixos_mock.update_system_channel.assert_called_with(
-        activity.next_channel_url, log=logger)
+        activity.next_channel_url, log=logger
+    )
     nixos_mock.build_system.assert_called_with(
-        activity.next_channel_url, log=logger)
+        activity.next_channel_url, log=logger
+    )
     nixos_mock.switch_to_system.assert_called_with(
-        NEXT_SYSTEM_PATH, lazy=False, log=logger)
+        NEXT_SYSTEM_PATH, lazy=False, log=logger
+    )
     log.has("update-run-succeeded")
 
 
@@ -191,9 +211,11 @@ def test_update_activity_run_unchanged(log, nixos_mock, activity):
 
 
 def test_update_activity_run_update_system_channel_fails(
-        log, nixos_mock, activity):
+    log, nixos_mock, activity
+):
     nixos_mock.update_system_channel.side_effect = ChannelUpdateFailed(
-        stdout="stdout", stderr="stderr")
+        stdout="stdout", stderr="stderr"
+    )
 
     activity.run()
 
@@ -203,7 +225,8 @@ def test_update_activity_run_update_system_channel_fails(
 
 def test_update_activity_build_system_fails(log, nixos_mock, activity):
     nixos_mock.build_system.side_effect = BuildFailed(
-        msg="msg", stdout="stdout", stderr="stderr")
+        msg="msg", stdout="stdout", stderr="stderr"
+    )
 
     activity.run()
 

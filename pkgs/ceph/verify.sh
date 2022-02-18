@@ -8,7 +8,7 @@ ceph -s
 
 ceph health detail
 ceph health detail --format=json | jq
-ceph auth list 
+ceph auth list
 ceph osd df tree
 ceph df
 ceph osd lspools

@@ -21,34 +21,34 @@
 #
 # requests.post(api + '/system/inputs/', auth=(user, pw), json=data).text
 # >>> '{"id":"57fe09c2ec3fa136a780adb9"}'
-import click
-import dateutil.parser
 import json
 import logging
-import requests
 import os.path
 import socket
 import time
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+import click
+import dateutil.parser
+import requests
 
-log = logging.getLogger('fc-graylog')
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
+
+log = logging.getLogger("fc-graylog")
 
 
 @click.group()
-@click.option('-u', '--user', default='admin', show_default=True)
-@click.option('-p', '--password')
+@click.option("-u", "--user", default="admin", show_default=True)
+@click.option("-p", "--password")
 @click.option(
-    '-P',
-    '--password-file',
-    default='/etc/local/graylog/password',
-    show_default=True)
-@click.option('--api', '-a')
+    "-P",
+    "--password-file",
+    default="/etc/local/graylog/password",
+    show_default=True,
+)
+@click.option("--api", "-a")
 @click.option(
-    '-A',
-    '--api-file',
-    default='/etc/local/graylog/api_url',
-    show_default=True)
+    "-A", "--api-file", default="/etc/local/graylog/api_url", show_default=True
+)
 @click.pass_context
 def main(ctx, api, user, password, password_file, api_file):
     graylog = requests.Session()
@@ -62,15 +62,15 @@ def main(ctx, api, user, password, password_file, api_file):
             api = f.read()
 
     graylog.auth = (user, password)
-    graylog.headers = {'X-Requested-By': 'cli', 'Accept': 'application/json'}
+    graylog.headers = {"X-Requested-By": "cli", "Accept": "application/json"}
     graylog.api = api
     ctx.obj = graylog
 
 
 @click.command()
-@click.option('--input')
-@click.option('--raw-path')
-@click.option('--raw-data')
+@click.option("--input")
+@click.option("--raw-path")
+@click.option("--raw-data")
 @click.pass_obj
 def configure(graylog, input, raw_path, raw_data):
     """Configure a Graylog input node."""
@@ -80,27 +80,30 @@ def configure(graylog, input, raw_path, raw_data):
         # check if there is input with this name currently configured,
         # if so return
         data = json.loads(input)
-        log.info('Checking intput: %s', data['title'])
-        response = graylog.get(api + '/system/cluster/node')
+        log.info("Checking intput: %s", data["title"])
+        response = graylog.get(api + "/system/cluster/node")
         response.raise_for_status()
-        data['node'] = response.json()['node_id']
-        response = graylog.get(api + '/system/inputs')
+        data["node"] = response.json()["node_id"]
+        response = graylog.get(api + "/system/inputs")
         response.raise_for_status()
-        for _input in response.json()['inputs']:
-            if _input['title'] == data['title']:
-                log.info('Graylog input already configured. Updating: %s',
-                         data['title'])
+        for _input in response.json()["inputs"]:
+            if _input["title"] == data["title"]:
+                log.info(
+                    "Graylog input already configured. Updating: %s",
+                    data["title"],
+                )
                 response = graylog.put(
-                    api + '/system/inputs/%s' % _input['id'], json=data)
+                    api + "/system/inputs/%s" % _input["id"], json=data
+                )
                 response.raise_for_status()
                 break
         else:
-            response = graylog.post(api + '/system/inputs', json=data)
+            response = graylog.post(api + "/system/inputs", json=data)
             response.raise_for_status()
-            log.info('Graylog input configured: %s', data['title'])
+            log.info("Graylog input configured: %s", data["title"])
 
     if raw_path and raw_data:
-        log.info('Update %s', raw_path)
+        log.info("Update %s", raw_path)
         data = json.loads(raw_data)
         response = graylog.put(api + raw_path, json=data)
         response.raise_for_status()
@@ -110,7 +113,7 @@ main.add_command(configure)
 
 
 @click.command()
-@click.option('--socket-path')
+@click.option("--socket-path")
 @click.pass_obj
 def collect_journal_age_metric(graylog, socket_path):
     """Sends journal age metrics to telegraf periodically."""
@@ -118,14 +121,14 @@ def collect_journal_age_metric(graylog, socket_path):
     s.connect(socket_path)
     while True:
         response = graylog.get(
-            graylog.api +
-            '/system/metrics/org.graylog2.journal.oldest-segment')
+            graylog.api + "/system/metrics/org.graylog2.journal.oldest-segment"
+        )
 
         response.raise_for_status()
-        segment_date = dateutil.parser.parse(response.json()['value'])
-        response_date = dateutil.parser.parse(response.headers['date'])
+        segment_date = dateutil.parser.parse(response.json()["value"])
+        response_date = dateutil.parser.parse(response.headers["date"])
         age = (response_date - segment_date).total_seconds()
-        s.send(('graylog_journal_age value=%f\n' % age).encode('us-ascii'))
+        s.send(("graylog_journal_age value=%f\n" % age).encode("us-ascii"))
         time.sleep(10)
 
 
@@ -134,44 +137,49 @@ main.add_command(collect_journal_age_metric)
 
 def handle_api_response(response, expected_status=[200], log_response=True):
     if response.status_code in expected_status:
-        log.info("%s (%d) %s", response.url, response.status_code,
-                 response.text if log_response else '')
+        log.info(
+            "%s (%d) %s",
+            response.url,
+            response.status_code,
+            response.text if log_response else "",
+        )
         if response.text:
             return response.json()
     elif response.status_code == 400:
         log.error("%s bad request: %s", response.url, response.text)
     else:
-        log.warning("%s unexpected status: %d", response.url,
-                    response.status_code)
+        log.warning(
+            "%s unexpected status: %d", response.url, response.status_code
+        )
 
     response.raise_for_status()
 
 
 @click.command()
-@click.argument('name')
-@click.argument('config')
+@click.argument("name")
+@click.argument("config")
 @click.pass_obj
 def ensure_user(graylog, name, config):
     """Creates or updates a Graylog user."""
-    users_url = f'{graylog.api}/users'
-    user_url = f'{users_url}/{name}'
+    users_url = f"{graylog.api}/users"
+    user_url = f"{users_url}/{name}"
     resp = graylog.get(user_url)
     data = {
-        'username': name,
-        'full_name': name,
-        'email': f'{name}@localhost',
-        'permissions': [],
-        **json.loads(config)
+        "username": name,
+        "full_name": name,
+        "email": f"{name}@localhost",
+        "permissions": [],
+        **json.loads(config),
     }
 
     handle_api_response(resp, [200, 404])
 
     if resp.ok:
-        log.info('user %s exists, updating', name)
+        log.info("user %s exists, updating", name)
         resp = graylog.put(user_url, json=data)
         handle_api_response(resp, [204])
     if resp.status_code == 404:
-        log.info('creating user %s', name)
+        log.info("creating user %s", name)
         resp = graylog.post(users_url, json=data)
         handle_api_response(resp, [201])
 
@@ -180,24 +188,24 @@ main.add_command(ensure_user)
 
 
 @click.command()
-@click.argument('name')
-@click.argument('config')
+@click.argument("name")
+@click.argument("config")
 @click.pass_obj
 def ensure_role(graylog, name, config):
     """Creates or updates a Graylog role"""
-    roles_url = f'{graylog.api}/roles'
-    role_url = f'{roles_url}/{name}'
+    roles_url = f"{graylog.api}/roles"
+    role_url = f"{roles_url}/{name}"
     resp = graylog.get(role_url)
-    data = {'name': name, **json.loads(config)}
+    data = {"name": name, **json.loads(config)}
 
     handle_api_response(resp, [200, 404])
 
     if resp.ok:
-        log.info('role %s exists, updating', name)
+        log.info("role %s exists, updating", name)
         resp = graylog.put(role_url, json=data)
         handle_api_response(resp)
     if resp.status_code == 404:
-        log.info('creating role %s', name)
+        log.info("creating role %s", name)
         resp = graylog.post(roles_url, json=data)
         handle_api_response(resp, [201])
 
@@ -206,11 +214,10 @@ main.add_command(ensure_role)
 
 
 @click.command()
-@click.argument('path')
-@click.argument('raw')
-@click.option('--method', type=click.Choice(['POST', 'PUT']), default='PUT')
-@click.option(
-    '--expected-status', '-s', multiple=True, default=[200], type=int)
+@click.argument("path")
+@click.argument("raw")
+@click.option("--method", type=click.Choice(["POST", "PUT"]), default="PUT")
+@click.option("--expected-status", "-s", multiple=True, default=[200], type=int)
 @click.pass_obj
 def call(graylog, path, raw, method, expected_status):
     """Runs an arbitrary API PUT/POST request."""
@@ -223,9 +230,9 @@ main.add_command(call)
 
 
 @click.command()
-@click.argument('path')
-@click.option('--expected-status', '-s', multiple=True, default=[200])
-@click.option('--log-response/--no-log-response', '-l', default=False)
+@click.argument("path")
+@click.option("--expected-status", "-s", multiple=True, default=[200])
+@click.option("--log-response/--no-log-response", "-l", default=False)
 @click.pass_obj
 def get(graylog, path, expected_status, log_response):
     """Runs an arbitrary API GET request."""
@@ -236,5 +243,5 @@ def get(graylog, path, expected_status, log_response):
 
 main.add_command(get)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

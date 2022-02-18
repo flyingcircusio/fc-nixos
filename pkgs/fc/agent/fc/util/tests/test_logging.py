@@ -1,16 +1,21 @@
 import datetime
-import pytest
 import syslog
+
+import pytest
 
 try:
     from systemd import journal
 except ImportError:
     journal = None
 
-from fc.util.logging import JournalLoggerFactory, JournalLogger, SystemdJournalRenderer
+from fc.util.logging import (
+    JournalLogger,
+    JournalLoggerFactory,
+    SystemdJournalRenderer,
+)
 
 
-@pytest.mark.skipif(journal is None, reason='systemd package not available')
+@pytest.mark.skipif(journal is None, reason="systemd package not available")
 def test_journal_logger():
     factory = JournalLoggerFactory()
     logger = factory()
@@ -39,12 +44,13 @@ def test_journal_renderer(journald_renderer):
         "a_list": ["a", "b"],
         "a_tuple": ("a", "b"),
         "a_dict": dict(a=1, b=2),
-        "multiline": "multi\nline"
+        "multiline": "multi\nline",
     }
 
     message = (
         "test-event: a_dict={'a': 1, 'b': 2} a_list=['a', 'b'] a_tuple=('a', 'b') "
-        + "bool_var=True emptystring='' multiline='multi\\nline' none=None")
+        + "bool_var=True emptystring='' multiline='multi\\nline' none=None"
+    )
 
     expected_journal_msg = {
         "SYSLOG_IDENTIFIER": "test",
@@ -64,7 +70,7 @@ def test_journal_renderer(journald_renderer):
         "A_LIST": '["a", "b"]',
         "NONE": "null",
         "BOOL_VAR": "true",
-        "MULTILINE": "multi\nline"
+        "MULTILINE": "multi\nline",
     }
 
     rendered = journald_renderer(None, None, event_dict)
@@ -76,10 +82,9 @@ def test_journal_renderer_replace_msg(journald_renderer):
     event_dict = {
         "event": "test-event",
         "pid": 123,
-        "_replace_msg": "test msg with pid {pid}"
+        "_replace_msg": "test msg with pid {pid}",
     }
 
     rendered = journald_renderer(None, None, event_dict)
     assert "journal" in rendered
-    assert rendered["journal"][
-        "MESSAGE"] == "test-event: test msg with pid 123"
+    assert rendered["journal"]["MESSAGE"] == "test-event: test msg with pid 123"

@@ -59,7 +59,7 @@ power management:
 
 
 def test_two_cores(tmpdir):
-    cpuinfo = str(tmpdir / 'cpuinfo')
-    with open(cpuinfo, 'w') as f:
+    cpuinfo = str(tmpdir / "cpuinfo")
+    with open(cpuinfo, "w") as f:
         f.write(CPUINFO_2_CORES)
     assert count_cores(cpuinfo) == 2

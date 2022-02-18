@@ -2,7 +2,7 @@
 
 let
   py = python3Packages;
-in 
+in
 
 py.buildPythonApplication rec {
   name = "fc-ceph-${version}";
@@ -20,7 +20,7 @@ py.buildPythonApplication rec {
     python3Packages.requests
   ];
 
-  checkInputs = [ 
+  checkInputs = [
         python3Packages.pytest
         python3Packages.mock
         python3Packages.freezegun

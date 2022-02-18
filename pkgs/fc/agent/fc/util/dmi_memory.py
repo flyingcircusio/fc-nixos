@@ -21,7 +21,7 @@ def get_paragraph(text):
 
 def get_device(entry):
     """Extract device info which is always represented as key-value"""
-    params = [x.strip().split(':') for x in entry]
+    params = [x.strip().split(":") for x in entry]
     # extract lines which consist exactly two elements
     return dict(x for x in params if len(x) == 2)
 
@@ -29,15 +29,15 @@ def get_device(entry):
 def calc_mem(modules):
     total = 0
     for m in modules:
-        total += int(''.join(ch for ch in m['Size'] if ch in string.digits))
+        total += int("".join(ch for ch in m["Size"] if ch in string.digits))
     return total
 
 
 def main():
     modules = []
-    dmidecode = subprocess.check_output(['dmidecode', '-q']).decode()
+    dmidecode = subprocess.check_output(["dmidecode", "-q"]).decode()
     for entry in get_paragraph(dmidecode.splitlines()):
         for line in entry:
-            if 'Memory Device' in line:
+            if "Memory Device" in line:
                 modules.append(get_device(entry))
     return calc_mem(modules)

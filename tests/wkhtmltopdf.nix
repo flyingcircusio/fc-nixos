@@ -118,11 +118,11 @@ let
           <ol>
                     <li value="1">Test</li>
                 </ol>
-        
+
       </body>
       </html>
       '';
-in 
+in
 {
   machine =
     { pkgs, lib, config, ... }:
@@ -132,7 +132,7 @@ in
       services.telegraf.enable = false;
 
     };
-      
+
   testScript = ''
     print("${pkgs.wkhtmltopdf_0_12_6}")
     machine.succeed('${pkgs.wkhtmltopdf_0_12_6}/bin/wkhtmltopdf --orientation Landscape --footer-spacing 0 --header-spacing 5 ${sample} /tmp/sample1.pdf')
@@ -140,7 +140,7 @@ in
     _, output = machine.execute('cat sample1-html.html')
     print(output)
     # This is kind of insane, but the PDF appears to create a *bold* header
-    # (and poppler detecting this) by providing the character twice 
+    # (and poppler detecting this) by providing the character twice
     # with a shift of 1 px.
     assert output.count('Header&#160;3') == 2
   '';

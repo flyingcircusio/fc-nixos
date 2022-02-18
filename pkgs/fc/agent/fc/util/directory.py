@@ -6,23 +6,24 @@ import re
 import xmlrpc.client
 
 DIRECTORY_URL_RING0 = (
-    'https://{enc[name]}:{enc[parameters][directory_password]}@'
-    'directory.fcio.net/v2/api')
+    "https://{enc[name]}:{enc[parameters][directory_password]}@"
+    "directory.fcio.net/v2/api"
+)
 
 DIRECTORY_URL_RING1 = (
-    'https://{enc[name]}:{enc[parameters][directory_password]}@'
-    'directory.fcio.net/v2/api/rg-{enc[parameters][resource_group]}')
+    "https://{enc[name]}:{enc[parameters][directory_password]}@"
+    "directory.fcio.net/v2/api/rg-{enc[parameters][resource_group]}"
+)
 
 
 def load_default_enc_json():
-    with open('/etc/nixos/enc.json') as f:
+    with open("/etc/nixos/enc.json") as f:
         return json.load(f)
 
 
 class ScreenedProtocolError(xmlrpc.client.ProtocolError):
-
     def __init__(self, url, *args, **kw):
-        url = re.sub(r':(\S+)@', ':PASSWORD@', url)
+        url = re.sub(r":(\S+)@", ":PASSWORD@", url)
         super(ScreenedProtocolError, self).__init__(url, *args, **kw)
 
 
@@ -40,11 +41,12 @@ def connect(enc_data=None, ring=1):
         xmlrpc.client.ProtocolError = ScreenedProtocolError
     if not enc_data:
         enc_data = load_default_enc_json()
-    if ring == 'max':
-        ring = enc_data['parameters']['directory_ring']
+    if ring == "max":
+        ring = enc_data["parameters"]["directory_ring"]
     url = {0: DIRECTORY_URL_RING0, 1: DIRECTORY_URL_RING1}[ring]
     return xmlrpc.client.Server(
-        url.format(enc=enc_data), allow_none=True, use_datetime=True)
+        url.format(enc=enc_data), allow_none=True, use_datetime=True
+    )
 
 
 @contextlib.contextmanager
@@ -59,6 +61,7 @@ def directory_connection(enc_path):
 
 def directory_cli():
     import sys
+
     cmd = sys.argv[1]
-    d = connect(ring='max')
+    d = connect(ring="max")
     exec(cmd)

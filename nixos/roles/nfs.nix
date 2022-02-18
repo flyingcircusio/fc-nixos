@@ -17,7 +17,7 @@ let
 
   export = "/srv/nfs/shared";
   mountpoint = "/mnt/nfs/shared";
-  
+
   # This is a bit different than on Gentoo. We allow export to all nodes in the
   # RG, regardles of the node actually being a client.
   exportToClients =
@@ -54,7 +54,7 @@ in
       # we try to unmount NFS.
       # See https://yt.flyingcircus.io/issue/PL-129954 for a discussion about
       # this.
-      # We always enable this because customers might enable NFS 
+      # We always enable this because customers might enable NFS
       # through other means than our roles.
       systemd.services.httpd.after = [ "remote-fs.target" ];
       systemd.services.nginx.after = [ "remote-fs.target" ];
