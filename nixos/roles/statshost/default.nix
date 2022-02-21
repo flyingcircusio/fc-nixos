@@ -1,5 +1,4 @@
-# statshost: an InfluxDB/Grafana server. Accepts incoming graphite traffic,
-# stores it and renders graphs.
+# statshost: an Prometheus/Grafana server.
 # TODO: don't build if more than one location relay is active in the same location.
 # Having more than one breaks prometheus.
 { config, lib, pkgs, ... }:
@@ -207,49 +206,15 @@ in
       prometheusScrapeInterval = mkOption {
         type = types.str;
         default = "15s";
-        description = "Time interval after targets are scraped for metrics.";
+        description = "How often metrics are scraped.";
         example = "1m";
       };
 
+
       prometheusRetention = mkOption {
         type = types.int;
-        default = 70;
+        default = 100;
         description = "How long to keep data in *days*.";
-      };
-
-      enableInfluxDB = mkOption {
-        type = types.bool;
-        description = ''
-          Run a local InfluxDB for long-term metrics storage.
-          InfluxDB is deprecated and will go away starting with platform version 22.11
-        '';
-        default = true;
-      };
-
-      readFromInfluxDB = mkOption {
-        type = types.bool;
-        description = ''
-          Configure Prometheus for reading from the local InfluxDB (remote_read).
-          `enableInfluxDB` must be set to make this work.
-          Enabled by default if InfluxDB is enabled.
-        '';
-        default = cfgStats.enableInfluxDB;
-      };
-
-      writeToInfluxDB = mkOption {
-        type = types.bool;
-        description = ''
-          Configure Prometheus for writing to the local InfluxDB (remote_write).
-          `enableInfluxDB` must be set to make this work.
-          Enabled by default if InfluxDB is enabled.
-        '';
-        default = cfgStats.enableInfluxDB;
-      };
-
-      influxdbRetention = mkOption {
-        type = types.str;
-        default = "inf";
-        description = "How long to keep downsampled data in InfluxDB (influx duration)";
       };
 
     };
@@ -257,7 +222,7 @@ in
     # FC infrastructure global stats host
     flyingcircus.roles.statshost-global = {
 
-      enable = mkEnableOption "Grafana/InfluxDB stats host (global)";
+      enable = mkEnableOption "Grafana/Prometheus stats host (global)";
       supportsContainers = fclib.mkDisableContainerSupport;
 
       allowedMetricPrefixes = mkOption {
@@ -294,9 +259,8 @@ in
 
   config = mkMerge [
 
-    # Special settings for a global stats host.
+    # Global stats host.
     (mkIf cfgStatsGlobal.enable {
-
       boot.kernel.sysctl."net.core.rmem_max" = mkOverride 90 25165824;
 
       # Global prometheus configuration
@@ -391,69 +355,53 @@ in
         LimitNOFILE = 65536;
       };
 
-      services.prometheus =
-        let
-          remote_read = [
-            { url = "http://localhost:8086/api/v1/prom/read?db=downsampled"; }
-          ];
-          remote_write = [
-            {
-              url = "http://localhost:8086/api/v1/prom/write?db=prometheus";
-              queue_config = { capacity = 500000; max_backoff = "5s"; };
-            }
-          ];
-        in
-        {
-          enable = true;
-          extraFlags = promFlags;
-          listenAddress = prometheusListenAddress;
-          scrapeConfigs = [
-            {
-              job_name = "prometheus";
-              scrape_interval = "5s";
-              static_configs = [{
-                targets = [ prometheusListenAddress ];
-                labels = {
-                  host = config.networking.hostName;
-                };
-              }];
-            }
-            rec {
-              job_name = config.flyingcircus.enc.parameters.resource_group;
-              scrape_interval = cfgStats.prometheusScrapeInterval;
-              # We use a file sd here. Static config would restart prometheus
-              # for each change. This way prometheus picks up the change
-              # automatically and without restart.
-              file_sd_configs = [{
-                files = [ "${localDir}/scrape-*.json" ];
-                refresh_interval = "10m";
-              }];
-              metric_relabel_configs =
-                prometheusMetricRelabel ++
-                (relabelConfiguration
-                  "${localDir}/metric-relabel.${job_name}.yaml");
-            }
-            {
-              job_name = "federate";
-              scrape_interval = cfgStats.prometheusScrapeInterval;
-              metrics_path = "/federate";
-              honor_labels = true;
-              params = {
-                "match[]" = [ "{job=~\"static|prometheus\"}" ];
+      services.prometheus = {
+        enable = true;
+        extraFlags = promFlags;
+        listenAddress = prometheusListenAddress;
+        scrapeConfigs = [
+          {
+            job_name = "prometheus";
+            scrape_interval = "5s";
+            static_configs = [{
+              targets = [ prometheusListenAddress ];
+              labels = {
+                host = config.networking.hostName;
               };
-              file_sd_configs = [{
-                files = [ "${localDir}/federate-*.json" ];
-                refresh_interval = "10m";
-              }];
-              metric_relabel_configs = prometheusMetricRelabel;
-            }
+            }];
+          }
+          rec {
+            job_name = config.flyingcircus.enc.parameters.resource_group;
+            scrape_interval = cfgStats.prometheusScrapeInterval;
+            # We use a file sd here. Static config would restart prometheus
+            # for each change. This way prometheus picks up the change
+            # automatically and without restart.
+            file_sd_configs = [{
+              files = [ "${localDir}/scrape-*.json" ];
+              refresh_interval = "10m";
+            }];
+            metric_relabel_configs =
+              prometheusMetricRelabel ++
+              (relabelConfiguration
+                "${localDir}/metric-relabel.${job_name}.yaml");
+          }
+          {
+            job_name = "federate";
+            scrape_interval = cfgStats.prometheusScrapeInterval;
+            metrics_path = "/federate";
+            honor_labels = true;
+            params = {
+              "match[]" = [ "{job=~\"static|prometheus\"}" ];
+            };
+            file_sd_configs = [{
+              files = [ "${localDir}/federate-*.json" ];
+              refresh_interval = "10m";
+            }];
+            metric_relabel_configs = prometheusMetricRelabel;
+          }
 
-          ] ++ relayRGConfig ++ relayLocationConfig;
-        } // (lib.optionalAttrs cfgStats.writeToInfluxDB {
-          inherit remote_write;
-        }) // (lib.optionalAttrs cfgStats.readFromInfluxDB {
-          inherit remote_read;
-        });
+        ] ++ relayRGConfig ++ relayLocationConfig;
+      };
 
 
       flyingcircus.localConfigDirs.statshost = {
@@ -469,125 +417,6 @@ in
         };
       };
 
-    })
-
-    # statshost with InfluxDB
-    (mkIf ((cfgStatsGlobal.enable || cfgStatsRG.enable) && cfgStats.enableInfluxDB) {
-
-      warnings = [''
-        InfluxDB is deprecated for statshost and should be disabled as soon as possible.
-        Please set `flyingcircus.roles.statshost.enableInfluxDB = false` if you don't need the historical data from InfluxDB anymore.
-        InfluxDB data will be deleted when you set the state version of the system to `22.11` after upgrading to 22.11.
-      ''];
-
-      environment.systemPackages = [ pkgs.influxdb ];
-
-      services.influxdb = {
-        enable = true;
-        dataDir = "/srv/influxdb";
-        extraConfig = {
-          data = {
-            index-version = "tsi1";
-          };
-          http = {
-            enabled = true;
-            auth-enabled = false;
-            log-enabled = false;
-          };
-        };
-      };
-
-      systemd.services.influxdb = {
-        serviceConfig = {
-          LimitNOFILE = 65535;
-          TimeoutStartSec = "1h";
-          Restart = "always";
-        };
-        postStart =
-          let influx = "${config.services.influxdb.package}/bin/influx";
-          in ''
-            echo 'SHOW CONTINUOUS QUERIES' | \
-              ${influx} -format csv | \
-              grep -q PROM_5M || \
-              cat <<__EOF__ | ${influx}
-              CREATE DATABASE prometheus;
-
-              CREATE RETENTION POLICY "default"
-                ON prometheus
-                DURATION 1h REPLICATION 1 DEFAULT;
-
-              CREATE DATABASE downsampled;
-              CREATE RETENTION POLICY "5m"
-                ON downsampled
-                DURATION ${cfgStats.influxdbRetention}
-                REPLICATION 1 DEFAULT;
-
-              CREATE CONTINUOUS QUERY PROM_5M
-                ON prometheus BEGIN
-                  SELECT last(value) as value INTO downsampled."5m".:MEASUREMENT
-                  FROM /.*/
-                  GROUP BY TIME(5m),*
-              END;
-            __EOF__
-          '';
-      };
-
-      flyingcircus.services.telegraf.inputs = {
-        influxdb = [{
-          urls = [ "http://localhost:8086/debug/vars" ];
-          timeout = "10s";
-        }];
-      };
-    })
-
-    # Global statshost with InfluxDB
-    (mkIf (cfgStatsGlobal.enable && cfgStats.enableInfluxDB) {
-      services.influxdb.extraConfig = {
-        graphite = [
-          { enabled = true;
-            protocol = "udp";
-            udp-read-buffer = 8388608;
-            templates = [
-              # new hierarchy
-              "fcio.*.*.*.*.*.ceph .location.resourcegroup.machine.profile.host.measurement.instance..field"
-              "fcio.*.*.*.*.*.cpu  .location.resourcegroup.machine.profile.host.measurement.instance..field"
-              "fcio.*.*.*.*.*.load .location.resourcegroup.machine.profile.host.measurement..field"
-              "fcio.*.*.*.*.*.netlink .location.resourcegroup.machine.profile.host.measurement.instance.field*"
-              "fcio.*.*.*.*.*.entropy .location.resourcegroup.machine.profile.host.measurement.field"
-              "fcio.*.*.*.*.*.swap .location.resourcegroup.machine.profile.host.measurement..field"
-              "fcio.*.*.*.*.*.uptime .location.resourcegroup.machine.profile.host.measurement.field"
-              "fcio.*.*.*.*.*.processes .location.resourcegroup.machine.profile.host.measurement.field*"
-              "fcio.*.*.*.*.*.users .location.resourcegroup.machine.profile.host.measurement.field"
-              "fcio.*.*.*.*.*.vmem .location.resourcegroup.machine.profile.host.measurement..field"
-              "fcio.*.*.*.*.*.disk .location.resourcegroup.machine.profile.host.measurement.instance.field*"
-              "fcio.*.*.*.*.*.interface .location.resourcegroup.machine.profile.host.measurement.instance.field*"
-              "fcio.*.*.*.*.*.postgresql .location.resourcegroup.machine.profile.host.measurement.instance.field*"
-              "fcio.*.*.*.*.*.*.memory .location.resourcegroup.machine.profile.host.measurement..field*"
-              "fcio.*.*.*.*.*.curl_json.*.*.* .location.resourcegroup.machine.profile.host..measurement..field*"
-              "fcio.*.*.*.*.*.df.*.df_complex.* .location.resourcegroup.machine.profile.host.measurement.instance..field"
-              "fcio.*.*.*.*.*.conntrack.* .location.resourcegroup.machine.profile.host.measurement.field*"
-              "fcio.*.*.*.*.*.tail.* .location.resourcegroup.machine.profile.host..measurement.field*"
-
-              # Generic collectd plugin: measurement/instance/field (i.e. load/loadl/longtermn)
-              "fcio.* .location.resourcegroup.machine.profile.host.measurement.field*"
-
-              # old hierarchy
-              "fcio.*.*.*.ceph .location.resourcegroup.host.measurement.instance..field"
-              "fcio.*.*.*.cpu  .location.resourcegroup.host.measurement.instance..field"
-              "fcio.*.*.*.load .location.resourcegroup.host.measurement..field"
-              "fcio.*.*.*.netlink .location.resourcegroup.host.measurement.instance.field*"
-              "fcio.*.*.*.entropy .location.resourcegroup.host.measurement.field"
-              "fcio.*.*.*.swap .location.resourcegroup.host.measurement..field"
-              "fcio.*.*.*.uptime .location.resourcegroup.host.measurement.field"
-              "fcio.*.*.*.processes .location.resourcegroup.host.measurement.field*"
-              "fcio.*.*.*.users .location.resourcegroup.host.measurement.field"
-              "fcio.*.*.*.vmem .location.resourcegroup.host.measurement..field"
-              "fcio.*.*.*.disk .location.resourcegroup.host.measurement.instance.field*"
-              "fcio.*.*.*.interface .location.resourcegroup.host.measurement.instance.field*"
-            ];
-          }
-        ];
-      };
     })
 
     # Grafana

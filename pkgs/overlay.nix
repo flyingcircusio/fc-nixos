@@ -314,7 +314,6 @@ in {
   sensu-plugins-disk-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-disk-checks { };
   sensu-plugins-entropy-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-entropy-checks { };
   sensu-plugins-http = super.callPackage ./sensuplugins-rb/sensu-plugins-http { };
-  sensu-plugins-influxdb = super.callPackage ./sensuplugins-rb/sensu-plugins-influxdb { };
   sensu-plugins-logs = super.callPackage ./sensuplugins-rb/sensu-plugins-logs { };
   sensu-plugins-network-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-network-checks { };
   sensu-plugins-postfix = super.callPackage ./sensuplugins-rb/sensu-plugins-postfix { };

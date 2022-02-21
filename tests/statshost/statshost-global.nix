@@ -213,7 +213,6 @@ in {
 
     statshost.execute("systemctl stop acme-statshost.fe.loc.fcio.net.service")
     statshost.wait_for_unit("prometheus.service")
-    statshost.wait_for_unit("influxdb.service")
     statshost.wait_for_unit("grafana.service")
 
     statssource.wait_for_open_port(9126)

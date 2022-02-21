@@ -582,7 +582,6 @@ in {
         sensu
         sensu-plugins-disk-checks
         sensu-plugins-http
-        sensu-plugins-influxdb
         sensu-plugins-logs
         sysstat
       ];
