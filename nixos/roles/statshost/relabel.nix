@@ -26,12 +26,6 @@ let
     replacement = "";
     target_label = label;
   };
-
-  # Drop unwanted labels from InfluxDB metrics.
-  influxdbRelabel = let
-    removeInfluxLabel = removeLabel "influxdb_(tsm1|shard)_";
-    in map removeInfluxLabel [ "path" "walPath" "id" "url" ];
-
 in
 {
   flyingcircus.roles.statshost.prometheusMetricRelabel =
@@ -39,6 +33,5 @@ in
       regex = "netstat_tcp_(.*)";
       targetLabel = "state";
       targetName = "netstat_tcp";
-    } ++
-    influxdbRelabel;
+    };
 }
