@@ -73,7 +73,7 @@ let
 
   buildRelayConfig = relayNodes: nodeConfig: map
     (relayNode: {
-        scrape_interval = "15s";
+        scrape_interval = cfgStats.prometheusScrapeInterval;
         file_sd_configs = [
           {
             files = [ (nodeConfig relayNode)];
@@ -140,7 +140,6 @@ in
 
   options = {
 
-
     # Options that are used by RG and the global statshost.
     flyingcircus.roles.statshost = {
 
@@ -206,16 +205,52 @@ in
         description = "Prometheus listen address";
       };
 
+      prometheusScrapeInterval = mkOption {
+        type = types.str;
+        default = "15s";
+        description = "Time interval after targets are scraped for metrics.";
+        example = "1m";
+      };
+
       prometheusRetention = mkOption {
         type = types.int;
         default = 70;
         description = "How long to keep data in *days*.";
       };
 
+      enableInfluxDB = mkOption {
+        type = types.bool;
+        description = ''
+          Run a local InfluxDB for long-term metrics storage.
+          InfluxDB is deprecated and will go away starting with platform version 22.11
+        '';
+        default = true;
+      };
+
+      readFromInfluxDB = mkOption {
+        type = types.bool;
+        description = ''
+          Configure Prometheus for reading from the local InfluxDB (remote_read).
+          `enableInfluxDB` must be set to make this work.
+          Enabled by default if InfluxDB is enabled.
+        '';
+        default = cfgStats.enableInfluxDB;
+      };
+
+      writeToInfluxDB = mkOption {
+        type = types.bool;
+        description = ''
+          Configure Prometheus for writing to the local InfluxDB (remote_write).
+          `enableInfluxDB` must be set to make this work.
+          Enabled by default if InfluxDB is enabled.
+        '';
+        default = cfgStats.enableInfluxDB;
+      };
+
       influxdbRetention = mkOption {
         type = types.str;
         default = "inf";
-        description = "How long to keep data (influx duration)";
+        description = "How long to keep downsampled data in InfluxDB (influx duration)";
       };
 
     };
@@ -260,55 +295,8 @@ in
 
   config = mkMerge [
 
-    # Global stats host. Currently influxdb *and* prometheus
+    # Special settings for a global stats host.
     (mkIf cfgStatsGlobal.enable {
-
-      services.influxdb.extraConfig = {
-        graphite = [
-          { enabled = true;
-            protocol = "udp";
-            udp-read-buffer = 8388608;
-            templates = [
-              # new hierarchy
-              "fcio.*.*.*.*.*.ceph .location.resourcegroup.machine.profile.host.measurement.instance..field"
-              "fcio.*.*.*.*.*.cpu  .location.resourcegroup.machine.profile.host.measurement.instance..field"
-              "fcio.*.*.*.*.*.load .location.resourcegroup.machine.profile.host.measurement..field"
-              "fcio.*.*.*.*.*.netlink .location.resourcegroup.machine.profile.host.measurement.instance.field*"
-              "fcio.*.*.*.*.*.entropy .location.resourcegroup.machine.profile.host.measurement.field"
-              "fcio.*.*.*.*.*.swap .location.resourcegroup.machine.profile.host.measurement..field"
-              "fcio.*.*.*.*.*.uptime .location.resourcegroup.machine.profile.host.measurement.field"
-              "fcio.*.*.*.*.*.processes .location.resourcegroup.machine.profile.host.measurement.field*"
-              "fcio.*.*.*.*.*.users .location.resourcegroup.machine.profile.host.measurement.field"
-              "fcio.*.*.*.*.*.vmem .location.resourcegroup.machine.profile.host.measurement..field"
-              "fcio.*.*.*.*.*.disk .location.resourcegroup.machine.profile.host.measurement.instance.field*"
-              "fcio.*.*.*.*.*.interface .location.resourcegroup.machine.profile.host.measurement.instance.field*"
-              "fcio.*.*.*.*.*.postgresql .location.resourcegroup.machine.profile.host.measurement.instance.field*"
-              "fcio.*.*.*.*.*.*.memory .location.resourcegroup.machine.profile.host.measurement..field*"
-              "fcio.*.*.*.*.*.curl_json.*.*.* .location.resourcegroup.machine.profile.host..measurement..field*"
-              "fcio.*.*.*.*.*.df.*.df_complex.* .location.resourcegroup.machine.profile.host.measurement.instance..field"
-              "fcio.*.*.*.*.*.conntrack.* .location.resourcegroup.machine.profile.host.measurement.field*"
-              "fcio.*.*.*.*.*.tail.* .location.resourcegroup.machine.profile.host..measurement.field*"
-
-              # Generic collectd plugin: measurement/instance/field (i.e. load/loadl/longtermn)
-              "fcio.* .location.resourcegroup.machine.profile.host.measurement.field*"
-
-              # old hierarchy
-              "fcio.*.*.*.ceph .location.resourcegroup.host.measurement.instance..field"
-              "fcio.*.*.*.cpu  .location.resourcegroup.host.measurement.instance..field"
-              "fcio.*.*.*.load .location.resourcegroup.host.measurement..field"
-              "fcio.*.*.*.netlink .location.resourcegroup.host.measurement.instance.field*"
-              "fcio.*.*.*.entropy .location.resourcegroup.host.measurement.field"
-              "fcio.*.*.*.swap .location.resourcegroup.host.measurement..field"
-              "fcio.*.*.*.uptime .location.resourcegroup.host.measurement.field"
-              "fcio.*.*.*.processes .location.resourcegroup.host.measurement.field*"
-              "fcio.*.*.*.users .location.resourcegroup.host.measurement.field"
-              "fcio.*.*.*.vmem .location.resourcegroup.host.measurement..field"
-              "fcio.*.*.*.disk .location.resourcegroup.host.measurement.instance.field*"
-              "fcio.*.*.*.interface .location.resourcegroup.host.measurement.instance.field*"
-            ];
-          }
-        ];
-      };
 
       boot.kernel.sysctl."net.core.rmem_max" = mkOverride 90 25165824;
 
@@ -438,7 +426,7 @@ in
             }
             rec {
               job_name = config.flyingcircus.enc.parameters.resource_group;
-              scrape_interval = "15s";
+              scrape_interval = cfgStats.prometheusScrapeInterval;
               # We use a file sd here. Static config would restart prometheus
               # for each change. This way prometheus picks up the change
               # automatically and without restart.
@@ -453,7 +441,7 @@ in
             }
             {
               job_name = "federate";
-              scrape_interval = "15s";
+              scrape_interval = cfgStats.prometheusScrapeInterval;
               metrics_path = "/federate";
               honor_labels = true;
               params = {
@@ -467,8 +455,36 @@ in
             }
 
           ] ++ relayRGConfig ++ relayLocationConfig;
-          inherit remote_read remote_write;
+        } // (lib.optionalAttrs cfgStats.writeToInfluxDB {
+          inherit remote_write;
+        }) // (lib.optionalAttrs cfgStats.readFromInfluxDB {
+          inherit remote_read;
+        });
+
+
+      flyingcircus.localConfigDirs.statshost = {
+        dir = localDir;
+      };
+
+      flyingcircus.services.sensu-client.checks = {
+        prometheus = {
+          notification = "Prometheus http port alive";
+          command = ''
+            check_http -H ${config.networking.hostName} -p 9090 -u /metrics
+          '';
         };
+      };
+
+    })
+
+    # statshost with InfluxDB
+    (mkIf ((cfgStatsGlobal.enable || cfgStatsRG.enable) && cfgStats.enableInfluxDB) {
+
+      warnings = [''
+        InfluxDB is deprecated for statshost and should be disabled as soon as possible.
+        Please set `flyingcircus.roles.statshost.enableInfluxDB = false` if you don't need the historical data from InfluxDB anymore.
+        InfluxDB data will be deleted when you set the state version of the system to `22.11` after upgrading to 22.11.
+      ''];
 
       environment.systemPackages = [ pkgs.influxdb ];
 
@@ -528,20 +544,56 @@ in
           timeout = "10s";
         }];
       };
+    })
 
-      flyingcircus.localConfigDirs.statshost = {
-        dir = localDir;
+    # Global statshost with InfluxDB
+    (mkIf (cfgStatsGlobal.enable && cfgStats.enableInfluxDB) {
+      services.influxdb.extraConfig = {
+        graphite = [
+          { enabled = true;
+            protocol = "udp";
+            udp-read-buffer = 8388608;
+            templates = [
+              # new hierarchy
+              "fcio.*.*.*.*.*.ceph .location.resourcegroup.machine.profile.host.measurement.instance..field"
+              "fcio.*.*.*.*.*.cpu  .location.resourcegroup.machine.profile.host.measurement.instance..field"
+              "fcio.*.*.*.*.*.load .location.resourcegroup.machine.profile.host.measurement..field"
+              "fcio.*.*.*.*.*.netlink .location.resourcegroup.machine.profile.host.measurement.instance.field*"
+              "fcio.*.*.*.*.*.entropy .location.resourcegroup.machine.profile.host.measurement.field"
+              "fcio.*.*.*.*.*.swap .location.resourcegroup.machine.profile.host.measurement..field"
+              "fcio.*.*.*.*.*.uptime .location.resourcegroup.machine.profile.host.measurement.field"
+              "fcio.*.*.*.*.*.processes .location.resourcegroup.machine.profile.host.measurement.field*"
+              "fcio.*.*.*.*.*.users .location.resourcegroup.machine.profile.host.measurement.field"
+              "fcio.*.*.*.*.*.vmem .location.resourcegroup.machine.profile.host.measurement..field"
+              "fcio.*.*.*.*.*.disk .location.resourcegroup.machine.profile.host.measurement.instance.field*"
+              "fcio.*.*.*.*.*.interface .location.resourcegroup.machine.profile.host.measurement.instance.field*"
+              "fcio.*.*.*.*.*.postgresql .location.resourcegroup.machine.profile.host.measurement.instance.field*"
+              "fcio.*.*.*.*.*.*.memory .location.resourcegroup.machine.profile.host.measurement..field*"
+              "fcio.*.*.*.*.*.curl_json.*.*.* .location.resourcegroup.machine.profile.host..measurement..field*"
+              "fcio.*.*.*.*.*.df.*.df_complex.* .location.resourcegroup.machine.profile.host.measurement.instance..field"
+              "fcio.*.*.*.*.*.conntrack.* .location.resourcegroup.machine.profile.host.measurement.field*"
+              "fcio.*.*.*.*.*.tail.* .location.resourcegroup.machine.profile.host..measurement.field*"
+
+              # Generic collectd plugin: measurement/instance/field (i.e. load/loadl/longtermn)
+              "fcio.* .location.resourcegroup.machine.profile.host.measurement.field*"
+
+              # old hierarchy
+              "fcio.*.*.*.ceph .location.resourcegroup.host.measurement.instance..field"
+              "fcio.*.*.*.cpu  .location.resourcegroup.host.measurement.instance..field"
+              "fcio.*.*.*.load .location.resourcegroup.host.measurement..field"
+              "fcio.*.*.*.netlink .location.resourcegroup.host.measurement.instance.field*"
+              "fcio.*.*.*.entropy .location.resourcegroup.host.measurement.field"
+              "fcio.*.*.*.swap .location.resourcegroup.host.measurement..field"
+              "fcio.*.*.*.uptime .location.resourcegroup.host.measurement.field"
+              "fcio.*.*.*.processes .location.resourcegroup.host.measurement.field*"
+              "fcio.*.*.*.users .location.resourcegroup.host.measurement.field"
+              "fcio.*.*.*.vmem .location.resourcegroup.host.measurement..field"
+              "fcio.*.*.*.disk .location.resourcegroup.host.measurement.instance.field*"
+              "fcio.*.*.*.interface .location.resourcegroup.host.measurement.instance.field*"
+            ];
+          }
+        ];
       };
-
-      flyingcircus.services.sensu-client.checks = {
-        prometheus = {
-          notification = "Prometheus http port alive";
-          command = ''
-            check_http -H ${config.networking.hostName} -p 9090 -u /metrics
-          '';
-        };
-      };
-
     })
 
     # Grafana
