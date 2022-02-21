@@ -21,7 +21,7 @@ in {
         default = false;
         description = "Manage the IPMI controller.";
         type = types.bool;
-      };      
+      };
       check_additional_options = mkOption {
         default = "";
         description = "Additional options to pass to `check_ipmi_sensor`.";
@@ -35,7 +35,7 @@ in {
     environment.systemPackages = [ pkgs.ipmitool ];
 
     boot.blacklistedKernelModules = [ "wdat_wdt" ];
-    boot.kernelModules = [ "ipmi_watchdog" ]; 
+    boot.kernelModules = [ "ipmi_watchdog" ];
 
     services.udev.extraRules = ''
       KERNEL=="ipmi[0-9]", GROUP="adm", MODE="0660"

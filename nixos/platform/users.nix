@@ -180,7 +180,7 @@ in
       # The way we handle permissions is not ideal. We allow defining them
       # dynamically from the ENC but we really need and rely on them all
       # over the place. Keeping this in sync with the tests is really hard
-      # so I took a snapshot of the current permissions (they change 
+      # so I took a snapshot of the current permissions (they change
       # very very rarely) and use it as adefault here.
       permissions = mkDefault (fclib.jsonFromFile cfg.permissionsPath ''
 [

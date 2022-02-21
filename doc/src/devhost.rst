@@ -47,14 +47,14 @@ What are the benefits of using the ``devhost`` role?
   options for immediate personal environments without maintaining multiple
   environment definitions per developer.
 
-* Allow colleagues to access the same containers to assist debugging. 
+* Allow colleagues to access the same containers to assist debugging.
 
 * Proper pinning of platform releases to ensure repeatability.
 
-* Fewer dependencies on the work stations -- no need to install Virtualbox, 
+* Fewer dependencies on the work stations -- no need to install Virtualbox,
   Vagrant and additional plugins.
 
-* Dynamically and quickly create new temporary environments for customer 
+* Dynamically and quickly create new temporary environments for customer
   validation.
 
 * Allow customers and colleagues to access preview environments with
@@ -69,8 +69,8 @@ Setup
 1. Create a new resource group to grant/limit access for your developers.
    Developers need the ``login`` permission to interact with the devhost.
 
-2. Create a virtual machine with sufficient resources (CPU, RAM, SSD) and 
-   select the ``devhost`` role. 
+2. Create a virtual machine with sufficient resources (CPU, RAM, SSD) and
+   select the ``devhost`` role.
 
 3. The machine needs to be assigned a public IP address (v4 and v6 are
    supported).
@@ -112,7 +112,7 @@ typically look like this:
    [provisioner:default]
    method = fc-nixos-dev-container
    host = dev.example.com
-   # Take this link from our changelog for the appropriate channel you want 
+   # Take this link from our changelog for the appropriate channel you want
    # to use. At the time of this writing, this would be release 2021_038
    # and the channel can be found here:
    # https://doc.flyingcircus.io/platform/changes/2021/r038.html
@@ -210,7 +210,7 @@ can write a provision script for which a number of special functions.
 
 .. code-block:: sh
     :caption: environments/dev/provision.sh
-   
+
     COPY sample.txt /tmp/
     ECHO $COMPONENT_MANAGEDMYSQL_ADMIN_PASSWORD /etc/local/mysql/mysql.passwd
     RUN mkdir /tmp/some/directory
@@ -231,7 +231,7 @@ with the container through the following features:
 
    .. note::
 
-      Using redirections like `>` will not work here. 
+      Using redirections like `>` will not work here.
 
 .. function:: ECHO <expression> <remote path>
 
@@ -242,7 +242,7 @@ with the container through the following features:
 
 Sometimes it may be necessary to seed data from the environment (like secrets)
 early to the provisioner in order to set predictable/repeatable passwords
-for system services. We therefore provide a number of variables to the 
+for system services. We therefore provide a number of variables to the
 provision script:
 
 ``COMPONENT_<COMPONENT_NAME>_<ATTRIBUTE_NAME>``
@@ -251,7 +251,7 @@ provision script:
     The name of the container being provisioned.
 ``PROVISION_HOST``
     The name of the ``devhost`` that the container is being provisioned onto.
-``PROVISION_CHANNEL``   
+``PROVISION_CHANNEL``
     The NixOS channel URL being used.
 ``PROVISION_ALIASES``
     The list of aliases.
@@ -325,4 +325,3 @@ Known issues
 * The NixOS container infrastructure currently does not (properly) support IPv6
   so deployments need to disable IPv6 resolution for internal and public
   services.
-

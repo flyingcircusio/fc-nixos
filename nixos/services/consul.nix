@@ -34,7 +34,7 @@ in
       domain =  domain;
       enable_script_checks = true;
 
-      retry_join = map 
+      retry_join = map
         (service: service.address)
         (fclib.findServices "consul_server-server");
 

@@ -4,7 +4,7 @@ diff -ubr grub-2.00-orig/util/bash-completion.d/grub-completion.bash.in grub-2.0
 @@ -17,6 +17,12 @@
  # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  # bash completion for grub
- 
+
 +have()
 +{
 +    unset -v have
@@ -13,12 +13,12 @@ diff -ubr grub-2.00-orig/util/bash-completion.d/grub-completion.bash.in grub-2.0
 +
  __grub_dir() {
      local i c=1 boot_dir
- 
+
 @@ -479,6 +485,7 @@
  have ${__grub_script_check_program} && \
   complete -F _grub_script_check -o filenames ${__grub_script_check_program}
- 
+
 +unset -f have
- 
+
  # Local variables:
  # mode: shell-script

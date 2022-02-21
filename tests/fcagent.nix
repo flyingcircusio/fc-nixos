@@ -60,4 +60,3 @@ in
     prod.succeed('${agent_updates_channel_with_maintenance}')
   '';
 })
-

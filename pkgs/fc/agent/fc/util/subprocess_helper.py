@@ -1,5 +1,6 @@
 """Helpers for dealing with subprocesses"""
 
+
 def get_popen_stdout_lines(popen, log, log_event):
     """Reads stdout line-by-line from a Popen object until the stream ends
     and returns a list of all received lines.

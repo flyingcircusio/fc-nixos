@@ -120,7 +120,7 @@ in
   };
 
   config = lib.mkMerge [
-  
+
     # vxlan service is only loaded if config is present
     (lib.mkIf (cfg.roles.vxlan.gateway && vxlanRole.config != {}) {
       services.dnsmasq = {
@@ -142,7 +142,7 @@ in
         before = wantedBy;
         bindsTo = [ "sys-subsystem-net-devices-${realdev}.device" ];
 
-        serviceConfig = let 
+        serviceConfig = let
           ip = "${pkgs.iproute}/bin/ip";
           inherit (params) gw4 gw6;
           inherit (vxlanRole.config) vid remote local;

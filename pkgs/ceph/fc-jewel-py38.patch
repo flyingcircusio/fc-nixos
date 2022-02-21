@@ -3,8 +3,8 @@ index 5b179911c7..c978825293 100644
 --- a/man/conf.py
 +++ b/man/conf.py
 @@ -9,7 +9,7 @@ exclude_patterns = ['**/.#*', '**/*~']
- 
- 
+
+
  def _get_description(fname, base):
 -    with file(fname) as f:
 +    with open(fname) as f:
@@ -17,16 +17,16 @@ index 8ce06a7ae7..056f7ad249 100755
 +++ b/src/ceph.in
 @@ -122,7 +122,7 @@ import string
  import subprocess
- 
+
  from ceph_argparse import \
 -    concise_sig, descsort, parse_json_funcsigs, \
 +    concise_sig, parse_json_funcsigs, \
      matchnum, validate_command, find_cmd_target, \
      send_command, json_command, run_in_thread
- 
+
 @@ -134,10 +134,8 @@ verbose = False
  cluster_handle = None
- 
+
  # Always use Unicode (UTF-8) for stdout
 -raw_stdout = sys.__stdout__
 -raw_stderr = sys.__stderr__
@@ -34,30 +34,30 @@ index 8ce06a7ae7..056f7ad249 100755
 -sys.stderr = codecs.getwriter('utf-8')(raw_stderr)
 +raw_stdout = sys.stdout.buffer
 +raw_stderr = sys.stderr.buffer
- 
+
  ############################################################################
- 
+
 @@ -148,6 +146,7 @@ def osdids():
          ret, outbuf, outs = send_command(cluster_handle, cmd=['osd', 'ls'])
      if ret:
          raise RuntimeError('Can\'t contact mon for osd list')
 +    outbuf = outbuf.decode('ascii')
      return [i for i in outbuf.split('\n') if i != '']
- 
+
  def monids():
 @@ -282,7 +281,7 @@ def do_extended_help(parser, args):
          help_for_target(target=('mon', ''), partial=partial)
      return 0
- 
+
 -DONTSPLIT = string.letters + '{[<>]}'
 +DONTSPLIT = string.ascii_letters + '{[<>]}'
- 
+
  def wrap(s, width, indent):
      """
 @@ -332,8 +331,6 @@ def wrap(s, width, indent):
- 
+
              yield result
- 
+
 -    raise StopIteration
 -
  def format_help(cmddict, partial=None):
@@ -65,11 +65,11 @@ index 8ce06a7ae7..056f7ad249 100755
      Formats all the cmdsigs and helptexts from cmddict into a sorted-by-
 @@ -342,7 +339,7 @@ def format_help(cmddict, partial=None):
      """
- 
+
      fullusage = ''
 -    for cmd in sorted(cmddict.itervalues(), cmp=descsort):
 +    for cmd in sorted(cmddict.values(), key=lambda x:concise_sig(x['sig'])):
- 
+
          if not cmd['help']:
              continue
 @@ -925,17 +922,17 @@ def main():
@@ -78,7 +78,7 @@ index 8ce06a7ae7..056f7ad249 100755
                 not compat:
 -                raw_stdout.write('\n')
 +                raw_stdout.write(b'\n')
- 
+
              # if we are prettifying things, normalize newlines.  sigh.
 -            if suffix != '':
 +            if suffix != b'':
@@ -101,8 +101,8 @@ index d8a9f4bd5e..ba4788d878 100644
 +++ b/src/pybind/ceph_argparse.py
 @@ -22,12 +22,6 @@ import threading
  import uuid
- 
- 
+
+
 -try:
 -    basestring
 -except NameError:
@@ -128,7 +128,7 @@ index d8a9f4bd5e..ba4788d878 100644
 +            raise ArgumentPrefix("no match for {0}".format(s))
          except UnicodeDecodeError:
              raise ArgumentPrefix("no match for {0}".format(s))
- 
+
 @@ -586,7 +581,7 @@ class argdesc(object):
      and will store the validated value in self.instance.val for extraction.
      """
@@ -155,11 +155,11 @@ index d8a9f4bd5e..ba4788d878 100644
 +        for (k, v) in list(self.typeargs.items()):
              r += '{0}={1}, '.format(k, v)
          return r[:-2] + ')'
- 
+
 @@ -657,14 +652,6 @@ def concise_sig(sig):
      return ' '.join([d.helpstr() for d in sig])
- 
- 
+
+
 -def descsort(sh1, sh2):
 -    """
 -    sort descriptors by prefixes, defined as the concatenation of all simple
@@ -182,7 +182,7 @@ index d8a9f4bd5e..ba4788d878 100644
          else:
 @@ -695,7 +682,7 @@ def parse_funcsig(sig):
                  raise JsonFormat(s)
- 
+
          kwargs = dict()
 -        for key, val in desc.items():
 +        for key, val in list(desc.items()):
@@ -219,21 +219,21 @@ index d8a9f4bd5e..ba4788d878 100644
                          return d
 -                    raise e
 +                    raise
- 
+
              # Whew, valid arg acquired.  Store in dict
              matchcnt += 1
 @@ -958,7 +942,7 @@ def validate(args, signature, partial=False):
- 
+
      if myargs and not partial:
          if save_exception:
 -            print >> sys.stderr, save_exception[0], 'not valid: ', str(save_exception[1])
 +            print(save_exception[0], 'not valid: ', str(save_exception[1]), file=sys.stderr)
          raise ArgumentError("unused arguments: " + str(myargs))
- 
+
      # Finally, success
 @@ -966,9 +950,9 @@ def validate(args, signature, partial=False):
- 
- 
+
+
  def cmdsiglen(sig):
 -    sigdict = sig.values()
 +    sigdict = list(sig.values())
@@ -241,8 +241,8 @@ index d8a9f4bd5e..ba4788d878 100644
 -    some_value = next(iter(sig.values()))
 +    some_value = next(iter(list(sig.values())))
      return len(some_value['sig'])
- 
- 
+
+
 @@ -978,8 +962,7 @@ def validate_command(sigdict, args, verbose=False):
      validated against sigdict.
      """
@@ -280,16 +280,16 @@ index d8a9f4bd5e..ba4788d878 100644
 -                               concise_sig(sig))
 +                               concise_sig(sig)), file=sys.stderr)
                  bestcmds.append({cmdtag: cmd})
- 
+
          # Sort bestcmds by number of args so we can try shortest first
 @@ -1011,12 +992,12 @@ def validate_command(sigdict, args, verbose=False):
          bestcmds_sorted = sorted(bestcmds, key=cmdsiglen)
- 
+
          if verbose:
 -            print >> sys.stderr, "bestcmds_sorted: "
 +            print("bestcmds_sorted: ", file=sys.stderr)
              pprint.PrettyPrinter(stream=sys.stderr).pprint(bestcmds_sorted)
- 
+
          # for everything in bestcmds, look for a true match
          for cmdsig in bestcmds_sorted:
 -            for cmd in cmdsig.values():
@@ -316,7 +316,7 @@ index d8a9f4bd5e..ba4788d878 100644
                      return {}
              if found:
                  break
- 
+
          if not found:
 -            print >> sys.stderr, 'no valid command found; 10 closest matches:'
 +            print('no valid command found; 10 closest matches:', file=sys.stderr)
@@ -326,11 +326,11 @@ index d8a9f4bd5e..ba4788d878 100644
 +                for (cmdtag, cmd) in cmdsig.items():
 +                    print(concise_sig(cmd['sig']), file=sys.stderr)
              return None
- 
+
          return valid_dict
 @@ -1209,8 +1190,8 @@ def send_command(cluster, target=('mon', ''), cmd=None, inbuf='', timeout=0,
              osdid = target[1]
- 
+
              if verbose:
 -                print >> sys.stderr, 'submit {0} to osd.{1}'.\
 -                    format(cmd, osdid)
@@ -338,7 +338,7 @@ index d8a9f4bd5e..ba4788d878 100644
 +                    format(cmd, osdid), file=sys.stderr)
              ret, outbuf, outs = run_in_thread(
                  cluster.osd_command, osdid, cmd, inbuf, timeout)
- 
+
 @@ -1225,15 +1206,15 @@ def send_command(cluster, target=('mon', ''), cmd=None, inbuf='', timeout=0,
                  cmddict = dict(pgid=pgid)
              cmd = [json.dumps(cmddict)]
@@ -349,7 +349,7 @@ index d8a9f4bd5e..ba4788d878 100644
 +                    format(cmd, pgid), file=sys.stderr)
              ret, outbuf, outs = run_in_thread(
                  cluster.pg_command, pgid, cmd, inbuf, timeout)
- 
+
          elif target[0] == 'mon':
              if verbose:
 -                print >> sys.stderr, '{0} to {1}'.\
@@ -361,18 +361,18 @@ index d8a9f4bd5e..ba4788d878 100644
                      cluster.mon_command, cmd, inbuf, timeout)
 @@ -1244,8 +1225,8 @@ def send_command(cluster, target=('mon', ''), cmd=None, inbuf='', timeout=0,
              mds_spec = target[1]
- 
+
              if verbose:
 -                print >> sys.stderr, 'submit {0} to mds.{1}'.\
 -                    format(cmd, mds_spec)
 +                print('submit {0} to mds.{1}'.\
 +                    format(cmd, mds_spec), file=sys.stderr)
- 
+
              try:
                  from cephfs import LibCephFS
 @@ -1312,4 +1293,3 @@ def json_command(cluster, target=('mon', ''), prefix=None, argdict=None,
              raise
- 
+
      return ret, outbuf, outs
 -
 diff --git a/src/pybind/ceph_daemon.py b/src/pybind/ceph_daemon.py
@@ -391,34 +391,34 @@ index 638ef8978e..40e1ec91e4 100755
              l, = struct.unpack(">I", len_str)
 -            sock_ret = ''
 +            sock_ret = b''
- 
+
              got = 0
              while got < l:
 @@ -55,7 +55,7 @@ def admin_socket(asok_path, cmd, format=''):
- 
+
      try:
          cmd_json = do_sockio(asok_path,
 -                             json.dumps({"prefix": "get_command_descriptions"}))
 +                             json.dumps({"prefix": "get_command_descriptions"}).encode('ascii'))
      except Exception as e:
          raise RuntimeError('exception getting command descriptions: ' + str(e))
- 
+
 @@ -71,7 +71,7 @@ def admin_socket(asok_path, cmd, format=''):
          valid_dict['format'] = format
- 
+
      try:
 -        ret = do_sockio(asok_path, json.dumps(valid_dict))
 +        ret = do_sockio(asok_path, json.dumps(valid_dict).encode('ascii'))
      except Exception as e:
          raise RuntimeError('exception: ' + str(e))
- 
+
 @@ -93,7 +93,7 @@ class DaemonWatcher(object):
          MAGENTA,
          CYAN,
          GRAY
 -    ) = range(8)
 +    ) = list(range(8))
- 
+
      RESET_SEQ = "\033[0m"
      COLOR_SEQ = "\033[1;%dm"
 @@ -174,8 +174,8 @@ class DaemonWatcher(object):
@@ -434,7 +434,7 @@ index 638ef8978e..40e1ec91e4 100755
              header += (pad_prefix * '-')
 @@ -186,8 +186,8 @@ class DaemonWatcher(object):
          ostr.write(self.colorize(header, self.BLUE, True))
- 
+
          sub_header = ""
 -        for section_name, names in self._stats.items():
 -            for stat_name, stat_nick in names.items():
@@ -464,7 +464,7 @@ index 638ef8978e..40e1ec91e4 100755
 +            for name, schema_data in list(section_stats.items()):
                  if schema_data.get('nick'):
                      self._stats[section_name][name] = schema_data['nick']
- 
+
 diff --git a/src/pybind/ceph_rest_api.py b/src/pybind/ceph_rest_api.py
 index 2dfe6b6140..8e1b9cc4c9 100755
 --- a/src/pybind/ceph_rest_api.py
@@ -476,7 +476,7 @@ index 2dfe6b6140..8e1b9cc4c9 100755
 -    concise_sig, descsort, parse_funcsig, parse_json_funcsigs, \
 +    concise_sig, parse_funcsig, parse_json_funcsigs, \
      validate, json_command
- 
+
  #
 @@ -149,7 +149,7 @@ def api_setup(app, conf, cluster, clientname, clientid, args):
          maxkey = sorted(app.ceph_sigdict.keys())[-1]
@@ -503,7 +503,7 @@ index 2dfe6b6140..8e1b9cc4c9 100755
                  methods = METHOD_DICT[k]
          urldict = {'paramsig': params,
 @@ -268,7 +268,7 @@ def show_human_help(prefix):
- 
+
      permmap = {'r': 'GET', 'rw': 'PUT', 'rx': 'GET', 'rwx': 'PUT'}
      line = ''
 -    for cmdsig in sorted(app.ceph_sigdict.itervalues(), cmp=descsort):
@@ -517,11 +517,11 @@ index 2dfe6b6140..8e1b9cc4c9 100755
      app.logger.info(flask.request.url + " from " + flask.request.remote_addr + " " + flask.request.user_agent.string)
 -    app.logger.debug("Accept: %s", flask.request.accept_mimetypes.values())
 +    app.logger.debug("Accept: %s", list(flask.request.accept_mimetypes.values()))
- 
- 
+
+
  @app.route('/')
 @@ -374,9 +374,9 @@ def handler(catchall_path=None, fmt=None, target=None):
- 
+
      # Extensions override Accept: headers override defaults
      if not fmt:
 -        if 'application/json' in flask.request.accept_mimetypes.values():
@@ -530,7 +530,7 @@ index 2dfe6b6140..8e1b9cc4c9 100755
 -        elif 'application/xml' in flask.request.accept_mimetypes.values():
 +        elif 'application/xml' in list(flask.request.accept_mimetypes.values()):
              fmt = 'xml'
- 
+
      prefix = ''
 diff --git a/src/pybind/ceph_volume_client.py b/src/pybind/ceph_volume_client.py
 index e571c1c04a..c38c13931e 100644
@@ -538,8 +538,8 @@ index e571c1c04a..c38c13931e 100644
 +++ b/src/pybind/ceph_volume_client.py
 @@ -23,6 +23,16 @@ import cephfs
  import rados
- 
- 
+
+
 +def to_bytes(param):
 +     '''
 +     Helper method that returns byte representation of the given parameter.
@@ -568,25 +568,25 @@ index e571c1c04a..c38c13931e 100644
          # UUID
 -        self._id = struct.unpack(">Q", uuid.uuid1().get_bytes()[0:8])[0]
 +        self._id = struct.unpack(">Q", uuid.uuid1().bytes[0:8])[0]
- 
+
          # TODO: version the on-disk structures
- 
+
 @@ -598,7 +608,7 @@ class CephFSVolumeClient(object):
              try:
                  self.fs.stat(subpath)
              except cephfs.ObjectNotFound:
 -                self.fs.mkdir(subpath, 0755)
 +                self.fs.mkdir(subpath, 0o755)
- 
+
      def create_volume(self, volume_path, size=None, data_isolated=False):
          """
 @@ -618,7 +628,7 @@ class CephFSVolumeClient(object):
          self._mkdir_p(path)
- 
+
          if size is not None:
 -            self.fs.setxattr(path, 'ceph.quota.max_bytes', size.__str__(), 0)
 +            self.fs.setxattr(path, 'ceph.quota.max_bytes', to_bytes(size), 0)
- 
+
          # data_isolated means create a separate pool for this volume
          if data_isolated:
 @@ -630,17 +640,18 @@ class CephFSVolumeClient(object):
@@ -595,21 +595,21 @@ index e571c1c04a..c38c13931e 100644
                  })
 -            self.fs.setxattr(path, 'ceph.dir.layout.pool', pool_name, 0)
 +            self.fs.setxattr(path, 'ceph.dir.layout.pool', to_bytes(pool_name), 0)
- 
+
          # enforce security isolation, use seperate namespace for this volume
          namespace = "{0}{1}".format(self.pool_ns_prefix, volume_path.volume_id)
          log.info("create_volume: {0}, using rados namespace {1} to isolate data.".format(volume_path, namespace))
 -        self.fs.setxattr(path, 'ceph.dir.layout.pool_namespace', namespace, 0)
 +        self.fs.setxattr(path, 'ceph.dir.layout.pool_namespace',
 +                         to_bytes(namespace), 0)
- 
+
          # Create a volume meta file, if it does not already exist, to store
          # data about auth ids having access to the volume
          fd = self.fs.open(self._volume_metadata_path(volume_path),
 -                          os.O_CREAT, 0755)
 +                          os.O_CREAT, 0o755)
          self.fs.close(fd)
- 
+
          return {
 @@ -743,7 +754,7 @@ class CephFSVolumeClient(object):
          on the requested path, keep checking parents until we find it.
@@ -628,7 +628,7 @@ index e571c1c04a..c38c13931e 100644
 +            return json.loads(read_bytes.decode())
          else:
              return None
- 
+
 @@ -781,7 +792,7 @@ class CephFSVolumeClient(object):
          serialized = json.dumps(data)
          fd = self.fs.open(path, "w")
@@ -645,7 +645,7 @@ index e571c1c04a..c38c13931e 100644
 -                fd = self.fs.open(path, os.O_CREAT, 0755)
 +                fd = self.fs.open(path, os.O_CREAT, 0o755)
                  self.fs.flock(fd, fcntl.LOCK_EX, self._id)
- 
+
                  # The locked file will be cleaned up sometime. It could be
 @@ -1023,7 +1034,7 @@ class CephFSVolumeClient(object):
          # First I need to work out what the data pool is for this share:
@@ -653,7 +653,7 @@ index e571c1c04a..c38c13931e 100644
          pool_name = self._get_ancestor_xattr(path, "ceph.dir.layout.pool")
 -        namespace = self.fs.getxattr(path, "ceph.dir.layout.pool_namespace")
 +        namespace = self.fs.getxattr(path, "ceph.dir.layout.pool_namespace").decode()
- 
+
          # Now construct auth capabilities that give the guest just enough
          # permissions to access the share
 @@ -1185,7 +1196,7 @@ class CephFSVolumeClient(object):
@@ -662,7 +662,7 @@ index e571c1c04a..c38c13931e 100644
          pool_name = self._get_ancestor_xattr(path, "ceph.dir.layout.pool")
 -        namespace = self.fs.getxattr(path, "ceph.dir.layout.pool_namespace")
 +        namespace = self.fs.getxattr(path, "ceph.dir.layout.pool_namespace").decode()
- 
+
          # The auth_id might have read-only or read-write mount access for the
          # volume path.
 @@ -1281,7 +1292,7 @@ class CephFSVolumeClient(object):
@@ -676,26 +676,26 @@ index e571c1c04a..c38c13931e 100644
                  else:
 @@ -1290,12 +1301,11 @@ class CephFSVolumeClient(object):
                  return outbuf
- 
+
      def get_used_bytes(self, volume_path):
 -        return int(self.fs.getxattr(self._get_path(volume_path), "ceph.dir.rbytes"))
 +        return int(self.fs.getxattr(self._get_path(volume_path), "ceph.dir.rbytes").decode())
- 
+
      def set_max_bytes(self, volume_path, max_bytes):
          self.fs.setxattr(self._get_path(volume_path), 'ceph.quota.max_bytes',
 -                         max_bytes.__str__() if max_bytes is not None else "0",
 -                         0)
 +                         to_bytes(max_bytes if max_bytes else 0), 0)
- 
+
      def _snapshot_path(self, dir_path, snapshot_name):
          return os.path.join(
 @@ -1304,7 +1314,7 @@ class CephFSVolumeClient(object):
- 
+
      def _snapshot_create(self, dir_path, snapshot_name):
          # TODO: raise intelligible exception for clusters where snaps are disabled
 -        self.fs.mkdir(self._snapshot_path(dir_path, snapshot_name), 0755)
 +        self.fs.mkdir(self._snapshot_path(dir_path, snapshot_name), 0o755)
- 
+
      def _snapshot_destroy(self, dir_path, snapshot_name):
          """
 diff --git a/src/pybind/cephfs/cephfs.pyx b/src/pybind/cephfs/cephfs.pyx
@@ -705,10 +705,10 @@ index 0ab2c74d1d..1b7f8125fa 100644
 @@ -15,10 +15,9 @@ import errno
  import os
  import sys
- 
+
 -# Are we running Python 2.x
 -_python2 = sys.hexversion < 0x03000000
- 
+
 -if _python2:
 +# Are we running Python 2.x
 +if sys.version_info[0] < 3:
@@ -718,7 +718,7 @@ index 0ab2c74d1d..1b7f8125fa 100644
 @@ -556,11 +555,14 @@ cdef class LibCephFS(object):
          if not dirent:
              return None
- 
+
 +        d_name = (dirent.d_name
 +                  if sys.version[0:2] == '2.'
 +                  else dirent.d_name.decode())
@@ -728,11 +728,11 @@ index 0ab2c74d1d..1b7f8125fa 100644
                          d_type=dirent.d_type,
 -                        d_name=dirent.d_name)
 +                        d_name=d_name)
- 
+
      def closedir(self, DirResult dir_handler):
          self.require_state("mounted")
 @@ -613,7 +615,7 @@ cdef class LibCephFS(object):
- 
+
          if not isinstance(mode, int):
              raise TypeError('mode must be an int')
 -        if isinstance(flags, basestring):
@@ -752,10 +752,10 @@ index 0bbf8ebb54..15a7d5c287 100644
 @@ -26,10 +26,9 @@ from datetime import datetime
  from functools import partial, wraps
  from itertools import chain
- 
+
 -# Are we running Python 2.x
 -_python2 = sys.hexversion < 0x03000000
- 
+
 -if _python2:
 +# Are we running Python 2.x
 +if sys.version_info[0] < 3:
@@ -769,7 +769,7 @@ index 0bbf8ebb54..15a7d5c287 100644
 -            size_t outstrlen
 +            size_t outstrlen = 0
              char *outstr
- 
+
          with nogil:
 @@ -1068,26 +1067,23 @@ Rados object in state %s." % self.state)
          """
@@ -780,7 +780,7 @@ index 0bbf8ebb54..15a7d5c287 100644
 -            PyObject* ret_s = NULL
 +            char *ret_buf = NULL
 +            size_t buf_len = 64
- 
+
 -        ret_s = PyBytes_FromStringAndSize(NULL, buf_len)
          try:
 -            ret_buf = PyBytes_AsString(ret_s)
@@ -809,7 +809,7 @@ index 0bbf8ebb54..15a7d5c287 100644
 -            # itself and set ret_s to NULL, hence XDECREF).
 -            ref.Py_XDECREF(ret_s)
 +            free(ret_buf)
- 
+
      @requires(('ioctx_name', str_type))
      def open_ioctx(self, ioctx_name):
 diff --git a/src/pybind/rbd/rbd.pyx b/src/pybind/rbd/rbd.pyx
@@ -819,11 +819,11 @@ index 6e5a45b506..577d04ab35 100644
 @@ -20,6 +20,7 @@ from libc.stdint cimport *
  from libc.stdlib cimport realloc, free
  from libc.string cimport strdup
- 
+
 +import sys
  from collections import Iterable
  from datetime import datetime
- 
+
 @@ -434,7 +435,9 @@ def cstr(val, name, encoding="utf-8", opt=False):
          return None
      if isinstance(val, bytes):

@@ -1,7 +1,7 @@
 { config, lib, ... }:
 
 with lib;
-let 
+let
   fclib = config.fclib;
 in
 {

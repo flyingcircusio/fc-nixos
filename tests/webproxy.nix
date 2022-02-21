@@ -24,7 +24,7 @@ import ./make-test-python.nix ({ pkgs, ... }:
           };
           gateways = {};
         };
-          
+
       };
   };
   testScript = ''

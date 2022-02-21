@@ -17,13 +17,20 @@ import rbd
 import requests
 
 RELEASES = [
-    'fc-19.03-dev', 'fc-19.03-staging', 'fc-19.03-production', 'fc-20.09-dev',
-    'fc-20.09-staging', 'fc-20.09-production', 'fc-21.05-dev',
-    'fc-21.05-staging', 'fc-21.05-production']
-CEPH_CONF = '/etc/ceph/ceph.conf'
+    "fc-19.03-dev",
+    "fc-19.03-staging",
+    "fc-19.03-production",
+    "fc-20.09-dev",
+    "fc-20.09-staging",
+    "fc-20.09-production",
+    "fc-21.05-dev",
+    "fc-21.05-staging",
+    "fc-21.05-production",
+]
+CEPH_CONF = "/etc/ceph/ceph.conf"
 CEPH_CLIENT = socket.gethostname()
-CEPH_POOL = 'rbd.hdd'
-LOCK_COOKIE = '{}.{}'.format(CEPH_CLIENT, os.getpid())
+CEPH_POOL = "rbd.hdd"
+LOCK_COOKIE = "{}.{}".format(CEPH_CLIENT, os.getpid())
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +40,9 @@ class LockingError(Exception):
 
 
 def build_url(build_id, download=False):
-    url = 'https://hydra.flyingcircus.io/build/{}'.format(build_id)
+    url = "https://hydra.flyingcircus.io/build/{}".format(build_id)
     if download:
-        url += '/download/1'
+        url += "/download/1"
     return url
 
 
@@ -75,13 +82,13 @@ def hydra_build_info(build_id):
     Returns buildproduct dict.
     """
     r = requests.get(
-        build_url(build_id), headers={'Accept': 'application/json'})
+        build_url(build_id), headers={"Accept": "application/json"}
+    )
     r.raise_for_status()
     meta = r.json()
-    buildproduct = meta['buildproducts']['1']
-    if not buildproduct['type'] == 'file':
-        raise RuntimeError('Cannot find build product in server response',
-                           meta)
+    buildproduct = meta["buildproducts"]["1"]
+    if not buildproduct["type"] == "file":
+        raise RuntimeError("Cannot find build product in server response", meta)
     return buildproduct
 
 
@@ -92,27 +99,31 @@ def download_image(build_id):
     """
     buildproduct = hydra_build_info(build_id)
     url = build_url(build_id, download=True)
-    logging.debug('\t\tGetting %s', url)
+    logging.debug("\t\tGetting %s", url)
     r = requests.get(url, stream=True)
     r.raise_for_status()
     chksum = hashlib.sha256()
     size = 0
-    td = tempfile.TemporaryDirectory(prefix='image.')
-    outfile = p.join(td.name, buildproduct['name'])
-    logging.debug('\t\tSaving to %s', outfile)
-    with open(outfile, 'wb') as out:
+    td = tempfile.TemporaryDirectory(prefix="image.")
+    outfile = p.join(td.name, buildproduct["name"])
+    logging.debug("\t\tSaving to %s", outfile)
+    with open(outfile, "wb") as out:
         for chunk in r.iter_content(4 * 2**20):
             out.write(chunk)
             chksum.update(chunk)
             size += len(chunk)
-    expected_size = buildproduct['filesize']
+    expected_size = buildproduct["filesize"]
     if expected_size != size:
-        raise RuntimeError('Image size mismatch: expect={}, got={}',
-                           expected_size, size)
-    expected_hash = buildproduct['sha256hash']
+        raise RuntimeError(
+            "Image size mismatch: expect={}, got={}", expected_size, size
+        )
+    expected_hash = buildproduct["sha256hash"]
     if expected_hash != chksum.hexdigest():
-        raise RuntimeError('Image checksum mismatch: expect={}, got={}',
-                           expected_hash, chksum.hexdigest())
+        raise RuntimeError(
+            "Image checksum mismatch: expect={}, got={}",
+            expected_hash,
+            chksum.hexdigest(),
+        )
     return td, outfile
 
 
@@ -124,12 +135,12 @@ def delta_update(from_, to):
     changed blocks. Additionally, we use a stuttering technique to
     improve fairness.
     """
-    logger.debug('\t\tUpdating...')
+    logger.debug("\t\tUpdating...")
     blocksize = 4 * 2**20
     total = 0
     written = 0
-    with open(from_, 'rb') as source:
-        with open(to, 'r+b') as dest:
+    with open(from_, "rb") as source:
+        with open(to, "r+b") as dest:
             while True:
                 a = source.read(blocksize)
                 if not a:
@@ -141,8 +152,12 @@ def delta_update(from_, to):
                     dest.write(a)
                     written += 1
                     time.sleep(0.01)
-    logger.debug('\t\t%d/%d 4MiB blocks updated (%d%%)', written, total,
-                 100 * written / (max(total, 1)))
+    logger.debug(
+        "\t\t%d/%d 4MiB blocks updated (%d%%)",
+        written,
+        total,
+        100 * written / (max(total, 1)),
+    )
 
 
 class BaseImage:
@@ -161,20 +176,21 @@ class BaseImage:
         Creates image if necessary and locks the image.
         """
         self.cluster = rados.Rados(
-            conffile=CEPH_CONF, name='client.{}'.format(CEPH_CLIENT))
+            conffile=CEPH_CONF, name="client.{}".format(CEPH_CLIENT)
+        )
         self.cluster.connect()
         self.ioctx = self.cluster.open_ioctx(CEPH_POOL)
         self.rbd = rbd.RBD()
 
         if self.release not in self.rbd.list(self.ioctx):
-            logger.info('Creating image for {}'.format(self.release))
+            logger.info("Creating image for {}".format(self.release))
             self.rbd.create(self.ioctx, self.release, 10 * 2**30)
         self.image = rbd.Image(self.ioctx, self.release)
 
         # Ensure we have a lock - stop handling for this image
         # and clean up (exceptions in __enter__ do not automatically
         # cause __exit__ being called).
-        logger.debug('Locking image %s', self.release)
+        logger.debug("Locking image %s", self.release)
         try:
             self.image.lock_exclusive(LOCK_COOKIE)
         except rbd.ImageBusy:
@@ -182,7 +198,7 @@ class BaseImage:
             try:
                 self.image.lock_exclusive(LOCK_COOKIE)
             except Exception:
-                logger.error('Could not lock image %s', self.release)
+                logger.error("Could not lock image %s", self.release)
                 raise LockingError()
         except rbd.ImageExists:
             # _We_ locked the image. Proceed.
@@ -203,46 +219,47 @@ class BaseImage:
         lck = self.image.list_lockers()
         if not lck:
             return
-        logger.debug('Examining lock on image %s (%r)', self.release, lck)
-        client, cookie, _addr = lck['lockers'][0]  # excl -> max one lock
+        logger.debug("Examining lock on image %s (%r)", self.release, lck)
+        client, cookie, _addr = lck["lockers"][0]  # excl -> max one lock
         try:
-            otherhost, otherpid = cookie.split('.', 1)
+            otherhost, otherpid = cookie.split(".", 1)
             otherpid = int(otherpid)
         except (IndexError, ValueError):
-            logger.error('Failed to parse lock cookie %s', cookie)
+            logger.error("Failed to parse lock cookie %s", cookie)
             raise LockingError()
         if otherhost != CEPH_CLIENT:
             return
         try:
             os.kill(otherpid, 0)
-            logger.warn('Lock held by process %d -- still alive', otherpid)
+            logger.warn("Lock held by process %d -- still alive", otherpid)
         except OSError:
             # no such process
-            logger.debug('Breaking lock %s.%s', client, cookie)
+            logger.debug("Breaking lock %s.%s", client, cookie)
             self.image.break_lock(client, cookie)
 
     @property
     def _snapshot_names(self):
-        return [x['name'] for x in self.image.list_snaps()]
+        return [x["name"] for x in self.image.list_snaps()]
 
     @property
     def volume(self):
-        return '{}/{}'.format(CEPH_POOL, self.release)
+        return "{}/{}".format(CEPH_POOL, self.release)
 
     @contextlib.contextmanager
     def mapped(self):
-        dev = subprocess.check_output([
-            'rbd', '--id', CEPH_CLIENT, 'map', self.volume])
+        dev = subprocess.check_output(
+            ["rbd", "--id", CEPH_CLIENT, "map", self.volume]
+        )
         dev = dev.decode().strip()
         assert stat.S_ISBLK(os.stat(dev).st_mode)
         try:
             yield dev
         finally:
-            subprocess.check_call(['rbd', '--id', CEPH_CLIENT, 'unmap', dev])
+            subprocess.check_call(["rbd", "--id", CEPH_CLIENT, "unmap", dev])
 
     def store_in_ceph(self, img):
         """Updates image data from uncompressed image file."""
-        logger.info('\tStoring in volume %s/%s', CEPH_POOL, self.release)
+        logger.info("\tStoring in volume %s/%s", CEPH_POOL, self.release)
         self.image.resize(os.stat(img).st_size)
         with self.mapped() as blockdev:
             delta_update(img, blockdev)
@@ -268,22 +285,24 @@ class BaseImage:
         Note that this list may contain failed builds.
         """
         r = requests.get(
-            'https://hydra.flyingcircus.io/api/latestbuilds',
-            headers={'Accept': 'application/json'},
+            "https://hydra.flyingcircus.io/api/latestbuilds",
+            headers={"Accept": "application/json"},
             params={
-                'nr': 5,
-                'project': 'flyingcircus',
-                'jobset': self.release,
-                'job': 'images.fc'})
+                "nr": 5,
+                "project": "flyingcircus",
+                "jobset": self.release,
+                "job": "images.fc",
+            },
+        )
         r.raise_for_status()
         builds = r.json()
         for b in builds:
-            if b['buildstatus'] != 0:
+            if b["buildstatus"] != 0:
                 continue
-            build_id = int(b['id'])
+            build_id = int(b["id"])
             assert build_id > 0
             return build_id
-        raise RuntimeError('Failed to query API for newest build')
+        raise RuntimeError("Failed to query API for newest build")
 
     def update(self):
         """Downloads newest image from Hydra and stores it."""
@@ -294,33 +313,38 @@ class BaseImage:
             # All good. No need to update.
             return
 
-        logger.info('\tHave builds: \n\t\t{}'.format(
-            '\n\t\t'.join(current_snapshots)))
-        logger.info('\tDownloading build: {}'.format(name))
+        logger.info(
+            "\tHave builds: \n\t\t{}".format("\n\t\t".join(current_snapshots))
+        )
+        logger.info("\tDownloading build: {}".format(name))
         td, filename = download_image(build_id)
-        uncompressed = filename[0:filename.rfind('.lz4')]
-        subprocess.check_call(['unlz4', '-q', filename, uncompressed])
+        uncompressed = filename[0 : filename.rfind(".lz4")]
+        subprocess.check_call(["unlz4", "-q", filename, uncompressed])
         os.unlink(filename)
         self.store_in_ceph(uncompressed)
-        logger.info('\tCreating snapshot %s', name)
+        logger.info("\tCreating snapshot %s", name)
         self.image.create_snap(name)
         self.image.protect_snap(name)
 
     def flatten(self):
         """Decouple VMs created from their base snapshots."""
-        logger.debug('Flattening child images for %s', self.release)
+        logger.debug("Flattening child images for %s", self.release)
         for snap in self.image.list_snaps():
-            snap = rbd.Image(self.ioctx, self.release, snap['name'])
+            snap = rbd.Image(self.ioctx, self.release, snap["name"])
             for child_pool, child_image in snap.list_children():
-                logger.info('\tFlattening {}/{}'.format(
-                    child_pool, child_image))
+                logger.info(
+                    "\tFlattening {}/{}".format(child_pool, child_image)
+                )
                 try:
                     pool = self.cluster.open_ioctx(child_pool)
                     image = rbd.Image(pool, child_image)
                     image.flatten()
                 except Exception:
-                    logger.exception("Error trying to flatten {}/{}".format(
-                        child_pool, child_image))
+                    logger.exception(
+                        "Error trying to flatten {}/{}".format(
+                            child_pool, child_image
+                        )
+                    )
                 finally:
                     image.close()
                     pool.close()
@@ -346,31 +370,34 @@ class BaseImage:
         them ourselves to ensure reliability.
         """
         snaps = list(self.image.list_snaps())
-        snaps.sort(key=lambda x: x['id'])
+        snaps.sort(key=lambda x: x["id"])
         for snap in snaps[:-3]:
-            logger.info('\tPurging snapshot {}/{}@{}'.format(
-                CEPH_POOL, self.release, snap['name']))
+            logger.info(
+                "\tPurging snapshot {}/{}@{}".format(
+                    CEPH_POOL, self.release, snap["name"]
+                )
+            )
             try:
-                self.image.unprotect_snap(snap['name'])
-                self.image.remove_snap(snap['name'])
+                self.image.unprotect_snap(snap["name"])
+                self.image.remove_snap(snap["name"])
             except Exception:
-                logger.exception('Error trying to purge snapshot:')
+                logger.exception("Error trying to purge snapshot:")
 
 
 def load_vm_images():
     level = logging.INFO
     try:
-        if int(os.environ.get('VERBOSE', 0)):
+        if int(os.environ.get("VERBOSE", 0)):
             level = logging.DEBUG
     except Exception:
         pass
-    logging.basicConfig(level=level, format='%(message)s')
+    logging.basicConfig(level=level, format="%(message)s")
     requests_log = logging.getLogger("urllib3")
     requests_log.setLevel(logging.WARNING)
     requests_log.propagate = True
     try:
         for branch in RELEASES:
-            logger.info('Updating branch {}'.format(branch))
+            logger.info("Updating branch {}".format(branch))
             with BaseImage(branch) as image:
                 image.update()
                 image.flatten()
@@ -379,5 +406,6 @@ def load_vm_images():
         sys.exit(69)
     except Exception:
         logger.exception(
-            "An error occured while updating branch `{}`".format(branch))
+            "An error occured while updating branch `{}`".format(branch)
+        )
         sys.exit(1)

@@ -1,16 +1,16 @@
 import ./make-test-python.nix ({ nixpkgs, ... }:
 {
   name = "physical-installer";
-  machine = 
+  machine =
     { pkgs, ... }:
-    { 
+    {
       virtualisation.emptyDiskImages = [ 70000 100 ];
-      imports = [ 
+      imports = [
         "${nixpkgs}/nixos/modules/installer/netboot/netboot-minimal.nix"
         ../release/netboot-installer.nix
       ];
 
-      system.activationScripts.dummy_enc = let 
+      system.activationScripts.dummy_enc = let
         dummy_wormhole = pkgs.writeText "enc.json" ''
           {"parameters": {"environment_url": "http://asdf" } }
         ''; in
@@ -78,7 +78,7 @@ import ./make-test-python.nix ({ nixpkgs, ... }:
     machine.screenshot("07wipedisk")
 
     # This is how far I got creating a test. We now would have to create
-    # a fake server serving the channel and the nix store... 
+    # a fake server serving the channel and the nix store...
     machine.wait_until_tty_matches(1, "error: unable to download")
 
     machine.screenshot("99finish")

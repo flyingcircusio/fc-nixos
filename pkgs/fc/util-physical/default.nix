@@ -16,7 +16,7 @@ stdenv.mkDerivation rec {
   installPhase = ''
     mkdir $out
     cd $src
-    for x in *.sh; do 
+    for x in *.sh; do
       name="''${x%.sh}"
       install -D -m 755 $x $out/bin/.$x
       makeWrapper $out/bin/.$x $out/bin/$name \

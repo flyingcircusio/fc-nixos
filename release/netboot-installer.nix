@@ -6,7 +6,7 @@ let
 
 # Note:
 # the "real" bash for some reason doesn't provide the -e/-i integration
-# but running with the system-default /bin/sh does ... 
+# but running with the system-default /bin/sh does ...
 
 set -eu
 
@@ -14,7 +14,7 @@ function yes_or_no {
     while true; do
         read -p "$* [y/n]: " yn
         case $yn in
-            [Yy]*) return 0  ;;  
+            [Yy]*) return 0  ;;
             [Nn]*) echo "Aborted" ; return  1 ;;
         esac
     done
@@ -55,9 +55,9 @@ read -p "IPMI password: " ipmi_password
 echo "Preparing OS disk ..."
 umount -R /mnt || true
 
-vgchange -an 
+vgchange -an
 vgremove -y vgsys || true
-for unused_pv in $(pvs --select "pv_in_use=0" -o pv_name  --reportformat json | jq -r ".report[].pv[].pv_name"); do 
+for unused_pv in $(pvs --select "pv_in_use=0" -o pv_name  --reportformat json | jq -r ".report[].pv[].pv_name"); do
   pvremove -y $unused_pv;
 done
 
@@ -77,7 +77,7 @@ sgdisk $root_disk -a 2048 \
   -n 1:1M:+1M -c 1:grub   -t 1:ef02 \
   -n 2:2M:+1G -c 2:boot   -t 2:ea00 \
   -n 3:0:+4G -c 3:swap   -t 3:8200 \
-  -n 4:0:0 -c 4:vgsys1 -t 4:8e00 
+  -n 4:0:0 -c 4:vgsys1 -t 4:8e00
 
 udevadm settle
 
@@ -86,7 +86,7 @@ mkswap -L swap ''${root_disk}3
 
 pvcreate -ffy -Z y ''${root_disk}4
 vgcreate -fy --dataalignment 64k vgsys ''${root_disk}4
-vgchange -ay 
+vgchange -ay
 
 udevadm settle
 lvcreate -ay -L 40G -n root vgsys <<<y
@@ -122,7 +122,7 @@ cat > /mnt/etc/nixos/configuration.nix << __EOF__
 
 	flyingcircus.infrastructureModule = "flyingcircus-physical";
 
-  # Options for first boot. This file will be replaced after the first 
+  # Options for first boot. This file will be replaced after the first
   # activation/rebuild.
   flyingcircus.agent.with-maintenance = false;
   systemd.timers.fc-agent.timerConfig.OnBootSec = "1s";
@@ -300,7 +300,7 @@ ${pkgs.coreutils}/bin/dd if=/dev/zero of=/dev/mapper/$name bs=4M status=progress
 ${pkgs.cryptsetup}/bin/cryptsetup close $name
 '';
 
-in 
+in
 {
 
   config = {

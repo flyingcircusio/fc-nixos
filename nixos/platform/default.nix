@@ -39,7 +39,7 @@ in {
     ./systemd.nix
     ./upgrade.nix
     ./users.nix
-  ] ++ 
+  ] ++
     (additionalModules "/etc/nixos/enc-configs") ++
     (additionalModules "/etc/local/nixos");
 

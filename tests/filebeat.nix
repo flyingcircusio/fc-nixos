@@ -65,6 +65,6 @@ with testlib;
     status = configured.execute('systemctl status filebeat-localhost')[1]
     print(status)
     assert "status=0/SUCCESS" in status
-    
+
   '';
 })
