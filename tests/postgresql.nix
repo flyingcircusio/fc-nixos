@@ -49,8 +49,8 @@ in {
 
       createTemporalExtension =
         if (
-          rolename == "postgresql12" || 
-          rolename == "postgresql13" || 
+          rolename == "postgresql12" ||
+          rolename == "postgresql13" ||
           rolename == "postgresql14")
         then "CREATE EXTENSION periods CASCADE"
         else "CREATE EXTENSION temporal_tables";

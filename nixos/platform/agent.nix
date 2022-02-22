@@ -75,9 +75,9 @@ in {
         type = types.bool;
       };
 
-      maintenance = mkOption { 
+      maintenance = mkOption {
         type = with types; attrsOf (submodule {
-          options = { 
+          options = {
             enter = mkOption { type = str; default = ""; };
             leave = mkOption { type = str; default = ""; };
           };
