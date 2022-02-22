@@ -85,6 +85,7 @@ in {
   rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
+  sensuclient = callTest ./sensuclient.nix {};
   servicecheck = callTest ./servicecheck.nix {};
   statshost-global = callTest ./statshost/statshost-global.nix {};
   statshost-master = callTest ./statshost/statshost-master.nix {};
