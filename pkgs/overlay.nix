@@ -62,6 +62,9 @@ in {
     };
   });
 
+  # From nixos-unstable 1f5891a700b11ee9afa07074395e1e30799bf392
+  kubernetes-helm = super.callPackage ./helm { };
+
   innotop = super.callPackage ./percona/innotop.nix { };
 
   jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
