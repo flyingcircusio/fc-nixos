@@ -214,6 +214,9 @@ in {
     };
 
     nixpkgs.config.allowUnfree = true;
+    nixpkgs.config.permittedInsecurePackages = [
+      "nodejs-10.24.1"
+    ];
 
     environment.etc."local/nixos/README.txt".text = ''
       To add custom NixOS config, create *.nix files here.
@@ -236,8 +239,6 @@ in {
       logrotate.enable = true;
       agent.collect-garbage = true;
     };
-
-    programs.ssh.package = pkgs.openssh_8_7;
 
     # implementation for flyingcircus.passwordlessSudoRules
     security.sudo.extraRules = let

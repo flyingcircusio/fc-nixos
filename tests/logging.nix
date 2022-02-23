@@ -30,10 +30,10 @@ import ./make-test-python.nix ({ ... }:
       machine.succeed("logger -p local2.info -h localhost TEST_LOCAL2_INFO")
       machine.wait_until_succeeds("grep TEST_LOCAL2_INFO /var/log/test.log")
 
-    machine.wait_for_unit("journalbeat-localhost.service")
+    machine.wait_for_unit("filebeat-journal-localhost.service")
 
-    with subtest("journalbeat should send something to fake loghost"):
-      # nc exits successfully when it receives something from journalbeat
-      machine.succeed("nc -l 12301")
+    with subtest("filebeat should send something to fake loghost"):
+      # nc exits successfully when it receives something from filebeat
+      machine.succeed("nc -l 12301 > /dev/null")
   '';
 })

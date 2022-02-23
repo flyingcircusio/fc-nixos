@@ -33,7 +33,7 @@ import ./make-test-python.nix ({ pkgs, ... }:
 
     webproxy.execute("""
         echo 'Hello World!' > hello.txt
-        ${pkgs.python3.interpreter} -m http.server 8080 &
+        ${pkgs.python3.interpreter} -m http.server 8080 >&2 &
         """)
 
     url = 'http://localhost:8008/hello.txt'
@@ -50,6 +50,6 @@ import ./make-test-python.nix ({ pkgs, ... }:
     with subtest("changing config and reloading should activate new config"):
         webproxy.execute('ln -sf /etc/local/varnish/newconfig.vcl /etc/current-config/varnish.vcl')
         webproxy.succeed('systemctl reload varnish')
-        webproxy.succeed('varnishadm vcl.list | grep active | grep -q newconfig')
+        webproxy.succeed('varnishadm -n /var/spool/varnish/webproxy vcl.list | grep active | grep -q newconfig')
   '';
 })

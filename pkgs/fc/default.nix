@@ -6,12 +6,14 @@ rec {
   agent = callPackage ./agent {};
 
   check-age = callPackage ./check-age {};
-  check-ceph = callPackage ./check-ceph {};
+  # XXX: ceph is broken on 21.11
+  # check-ceph = callPackage ./check-ceph {};
   check-haproxy = callPackage ./check-haproxy {};
   check-journal = callPackage ./check-journal.nix {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
-  ceph = callPackage ./ceph { inherit blockdev agent util-physical; };
+  # XXX: ceph is broken on 21.11
+  # ceph = callPackage ./ceph { inherit blockdev agent util-physical; };
   blockdev = callPackage ./blockdev {};
   collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
@@ -23,7 +25,8 @@ rec {
   sensuplugins = callPackage ./sensuplugins {};
   sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};
-  util-physical = callPackage ./util-physical {};
+  # XXX: ceph is broken on 21.11
+  # util-physical = callPackage ./util-physical {};
   telegraf-collect-psi = callPackage ./telegraf-collect-psi {};
 
 }

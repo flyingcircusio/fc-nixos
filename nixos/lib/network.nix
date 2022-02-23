@@ -106,7 +106,7 @@ rec {
     #! ${pkgs.stdenv.shell} -e
     echo ip "$@"
     rc=0
-    ${pkgs.iproute}/bin/ip "$@" || rc=$?
+    ${pkgs.iproute2}/bin/ip "$@" || rc=$?
     if ((rc == 2)); then
       exit 0
     else

@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, pkgs, boost, percona, ... }:
+{ stdenv, fetchurl, boost, bison, cmake, curl, libaio, libgcrypt, libgpg-error, libev, ncurses, vim, percona, ... }:
 
 stdenv.mkDerivation rec {
   name = "xtrabackup-${version}";
@@ -9,7 +9,7 @@ stdenv.mkDerivation rec {
     sha256 = "0iiqdy78wq9mlknqz5qxlmm5xqsjl9hy2f71wi4hhq2d0xz6sv42";
   };
 
-  buildInputs = with pkgs; [
+  buildInputs = [
     bison
     boost
     cmake
@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
     libaio
     libev
     libgcrypt
-    libgpgerror
+    libgpg-error
     ncurses
     percona
     vim
@@ -26,7 +26,7 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
   cmakeFlags = [
     "-DBUILD_CONFIG=xtrabackup_release"
-    "-DGCRYPT_LIB_PATH=${pkgs.libgcrypt}/lib:${pkgs.libgpgerror}/lib"
+    "-DGCRYPT_LIB_PATH=${libgcrypt}/lib:${libgpg-error}/lib"
     "-DWITH_MAN_PAGES=OFF"
   ];
 

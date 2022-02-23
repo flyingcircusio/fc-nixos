@@ -136,9 +136,6 @@ with lib;
 
     ids.uids = {
       # Our custom services
-      sensuserver = 31001;
-      sensuapi = 31002;
-      uchiwa = 31003;
       sensuclient = 31004;
       powerdns = 31005;
       tideways = 31006;
@@ -147,6 +144,7 @@ with lib;
       # removed by upstream, we want to keep it
       memcached = 177;
       redis = 181;
+      graylog = 243;
     };
 
     ids.gids = {
@@ -163,9 +161,6 @@ with lib;
       manager = 504;
 
       # Our custom services
-      sensuserver = 31001;
-      sensuapi = 31002;
-      uchiwa = 31003;
       sensuclient = 31004;
       powerdns = 31005;
       tideways = 31006;

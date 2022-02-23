@@ -42,7 +42,7 @@ in
         requires = after;
         wantedBy = [ "network.target" ];
         bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.physicalDevice}.device" ];
-        path = [ pkgs.gawk pkgs.iproute pkgs.glibc pkgs.iptables ];
+        path = [ pkgs.gawk pkgs.iproute2 pkgs.glibc pkgs.iptables ];
 
         serviceConfig = {
           Type = "oneshot";

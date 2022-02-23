@@ -6,11 +6,11 @@ let
   cfg = config.flyingcircus.services.postgresql;
   fclib = config.fclib;
   packages = {
-    "9.6" = pkgs.postgresql96;
     "10" = pkgs.postgresql_10;
     "11" = pkgs.postgresql_11;
     "12" = pkgs.postgresql_12;
     "13" = pkgs.postgresql_13;
+    "14" = pkgs.postgresql_14;
   };
 
   listenAddresses =
@@ -56,7 +56,7 @@ in {
       majorVersion = mkOption {
           type = types.str;
           description = ''
-            The major version of PostgreSQL to use (9.6, 10, 11, 12, 13).
+            The major version of PostgreSQL to use (10, 11, 12, 13, 14).
           '';
         };
     };
@@ -242,7 +242,7 @@ in {
                 notification = "PostgreSQL listening on ${host}:5432";
                 command = ''
                   ${pkgs.sensu-plugins-postgres}/bin/check-postgres-alive.rb \
-                    -h ${host} -u nagios -d nagios -P 5432
+                    -h ${host} -u nagios -d nagios -P 5432 -T 10
                 '';
                 interval = 120;
               };

@@ -2,7 +2,6 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  elk7Version = "7.10.2";
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
@@ -23,6 +22,7 @@ in {
   # imports from other nixpkgs versions or local definitions
   #
 
+  bash_5_1_p12 = super.callPackage ./bash/5.1.nix { };
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
@@ -35,35 +35,20 @@ in {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  ceph = (super.callPackage ./ceph {
-      pythonPackages = super.python3Packages;
-      boost = super.boost155;
-  });
+  # XXX: ceph doesn't build
+  # ceph = (super.callPackage ./ceph {
+  #     pythonPackages = super.python3Packages;
+  #     boost = super.boost155;
+  # });
 
-  # Hash is wrong upstream
-  containerd = super.containerd.overrideAttrs(_: rec {
-    version = "1.5.1";
-
-    src = super.fetchFromGitHub {
-      rev = "v${version}";
-      owner = "containerd";
-      repo = "containerd";
-      sha256 = "16q34yiv5q98b9d5vgy1lmmppg8agrmnfd1kzpakkf4czkws0p4d";
-    };
-  });
+  # Xen is marked as broken and it's a dependency of the collectd xen plugin.
+  # Arguments to the collectd function also get passed to all plugins so this
+  # override is effective.
+  # We don't use collectd but it's a dependency of influxdb which is needed
+  # for statshost.
+  collectd = super.collectd.override { xen = null; };
 
   docsplit = super.callPackage ./docsplit { };
-
-  elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
-    version = elk7Version;
-    name = "elasticsearch-${version}";
-
-    src = super.fetchurl {
-      url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
-      sha256 = "07p16n53fg513l4f04zq10hh5j9q6rjwz8hs8jj8y97jynvf6yiv";
-    };
-    meta.license = null;
-  });
 
   flannel = super.flannel.overrideAttrs(_: rec {
     version = "0.13.1-rc1";
@@ -77,19 +62,8 @@ in {
     };
   });
 
-  gitlab = super.callPackage ./gitlab { };
-  gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
-
-  graylog = super.graylog.overrideAttrs(_: rec {
-    version = "3.3.16";
-
-    src = fetchurl {
-      url = "https://packages.graylog2.org/releases/graylog/graylog-${version}.tgz";
-      sha256 = "17nxvj6haf5an6yj6zdjvcaxlliamcl16bca1z1jjcd7h9yjgxrz";
-    };
-  });
-
-  grub2_full = super.callPackage ./grub/2.0x.nix { };
+  # From nixos-unstable 1f5891a700b11ee9afa07074395e1e30799bf392
+  kubernetes-helm = super.callPackage ./helm { };
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
@@ -123,25 +97,6 @@ in {
     };
   });
 
-  haproxy = super.haproxy.overrideAttrs(orig: rec {
-    version = "2.3.14";
-    src = super.fetchurl {
-      url = "https://www.haproxy.org/download/${lib.versions.majorMinor version}/src/${orig.pname}-${version}.tar.gz";
-      sha256 = "0ah6xsxlk1a7jsxdg0pbdhzhssz9ysrfxd3bs5hm1shql1jmqzh4";
-    };
-  });
-
-  kibana7 = super.kibana7.overrideAttrs(_: rec {
-    version = elk7Version;
-    name = "kibana-${version}";
-
-    src = super.fetchurl {
-      url = "https://artifacts.elastic.co/downloads/kibana/${name}-linux-x86_64.tar.gz";
-      sha256 = "06p0v39ih606mdq2nsdgi5m7y1iynk9ljb9457h5rrx6jakc2cwm";
-    };
-    meta.license = null;
-  });
-
   inherit (super.callPackages ./matomo {})
     matomo
     matomo-beta;
@@ -152,32 +107,17 @@ in {
   auditbeat7 = self.filebeat7.overrideAttrs(a: a // {
     name = "auditbeat-${a.version}";
 
+    postFixup = "";
+
     subPackages = [
       "auditbeat"
     ];
   });
-  filebeat7 = super.filebeat7.overrideAttrs(a: a // {
-    patches = [
-      # upstream: Fix nil panic when overwriting metadata (#24741)
-      # released in v8.0.0-alpha1
-      ./filebeat-fix-events.patch
-    ];
-  });
 
   # Import old php versions from nix-phps
-  # NOTE: php7.3 is already removed on unstable
-  inherit (phps) php56;
-  inherit (phps) php72;
+  inherit (phps) php72 php73;
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
-
-  lamp_php56 = self.php56.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
 
   lamp_php72 = self.php72.withExtensions ({ enabled, all }:
               enabled ++ [
@@ -187,7 +127,7 @@ in {
                 all.redis
               ]);
 
-  lamp_php73 = super.php73.withExtensions ({ enabled, all }:
+  lamp_php73 = self.php73.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
@@ -211,48 +151,7 @@ in {
                 all.redis
               ]);
 
-
-  matrix-synapse = super.matrix-synapse.overrideAttrs(orig: rec {
-    pname = "matrix-synapse";
-    version = "1.47.1";
-    name = "${pname}-${version}";
-
-    src = super.python3Packages.fetchPypi {
-      inherit pname version;
-      sha256 = "17l4cq2295lwm35zy6bm6ljqd2f6mlgc14q8g9p9s58s4gikbncm";
-    };
-  });
-
   mc = super.callPackage ./mc.nix { };
-
-  mongodb-3_6 = super.mongodb-3_6.overrideAttrs(_: rec {
-    meta.license = null;
-    version = "3.6.19";
-    name = "mongodb-${version}";
-    src = super.fetchurl {
-      url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
-      sha256 = "0y0k5lc2czvg8zirvqfnmpv9z0xz2slp2zfacp0hm0kzcnq82m51";
-    };
-  });
-  mongodb-4_0 = super.mongodb-4_0.overrideAttrs(_: rec {
-    meta.license = null;
-    version = "4.0.19";
-    name = "mongodb-${version}";
-    src = super.fetchurl {
-      url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
-      sha256 = "1kbw8vjbwlh94y58am0cxdz92mpb4amf575x0p456h1k3kh87rjg";
-    };
-  });
-  mongodb-4_2 = super.mongodb-4_2.overrideAttrs(_: rec {
-    meta.license = null;
-    version = "4.2.18";
-    name = "mongodb-${version}";
-    src = super.fetchurl {
-      url = "https://fastdl.mongodb.org/src/mongodb-src-r${version}.tar.gz";
-      sha256 = "1fl555n8nnp3qpgx2hppz6yjh9w697kryzgkv73qld8zrikrbfsv";
-    };
-  });
-
 
   libmodsecurity = super.libmodsecurity.overrideAttrs(_: rec {
       version = "3.0.4";
@@ -317,17 +216,6 @@ in {
     ];
   });
 
-  openssh_8_7 = super.openssh.overrideAttrs(_: rec {
-    version = "8.7p1";
-    name = "openssh-${version}";
-
-    src = super.fetchurl {
-      url = "mirror://openbsd/OpenSSH/portable/openssh-${version}.tar.gz";
-      sha256 = "090yxpi03pxxzb4ppx8g8hdpw7c4nf8p0avr6c7ybsaana5lp8vw";
-    };
-
-  });
-
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
@@ -348,32 +236,12 @@ in {
     boost = self.boost173;
   };
 
+  # Has been renamed upstream, backy-extract still wants to use it.
+  pkgconfig = super.pkg-config;
 
-  polkit = super.polkit.overrideAttrs(_: {
-
-    patches = [
-      # Don't use etc/dbus-1/system.d
-      # Upstream MR: https://gitlab.freedesktop.org/polkit/polkit/merge_requests/11
-      (fetchpatch {
-        url = "https://gitlab.freedesktop.org/polkit/polkit/commit/5dd4e22efd05d55833c4634b56e473812b5acbf2.patch";
-        sha256 = "17lv7xj5ksa27iv4zpm4zwd4iy8zbwjj4ximslfq3sasiz9kxhlp";
-      })
-      (fetchpatch {
-        # https://www.openwall.com/lists/oss-security/2021/06/03/1
-        # https://gitlab.freedesktop.org/polkit/polkit/-/merge_requests/79
-        name = "CVE-2021-3560.patch";
-        url = "https://gitlab.freedesktop.org/polkit/polkit/-/commit/a04d13affe0fa53ff618e07aa8f57f4c0e3b9b81.patch";
-        sha256 = "157ddsizgr290jsb8fpafrc37gc1qw5pdvl351vnn3pzhqs7n6f4";
-      })
-      # pkexec: local privilege escalation (CVE-2021-4034)
-      (fetchpatch {
-        url = "https://gitlab.freedesktop.org/polkit/polkit/-/commit/a2bf5c9c83b6ae46cbd5c779d3055bff81ded683.patch";
-        sha256 = "162jkpg2myq0rb0s5k3nfr4pqwv9im13jf6vzj8p5l39nazg5i4s";
-      })
-    ];
-  });
-
-  postgis_2_5 = super.postgis.overrideAttrs(_: rec {
+  postgis_2_5 = (super.postgresqlPackages.postgis.override {
+      proj = self.proj_7;
+    }).overrideAttrs(_: rec {
     version = "2.5.5";
     src = super.fetchurl {
       url = "https://download.osgeo.org/postgis/source/postgis-${version}.tar.gz";
@@ -385,10 +253,9 @@ in {
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
-  remarshal = super.callPackage ./remarshal.nix { };
   rum = super.callPackage ./postgresql/rum { };
 
-  sensu = super.callPackage ./sensu { ruby = super.ruby_2_6; };
+  sensu = super.callPackage ./sensu { ruby = super.ruby; };
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
   sensu-plugins-kubernetes = super.callPackage ./sensuplugins-rb/sensu-plugins-kubernetes { };
   sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };

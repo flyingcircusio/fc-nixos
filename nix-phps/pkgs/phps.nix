@@ -52,8 +52,8 @@ let
   });
 
   base73 = prev.callPackage generic (_mkArgs {
-    version = "7.3.28";
-    sha256 = "0r4r8famg3a8x6ch24y1370nsphkxg4k9zq5x8v88f4l8mj6wqwg";
+    version = "7.3.32";
+    sha256 = "sha256-fBWLMG5TQ08eCohkeqVhgUMIqv+HE+19I37Y8TmcIW8=";
 
     extraPatches = prev.lib.optionals prev.stdenv.isDarwin [
       # Fix build on Darwin

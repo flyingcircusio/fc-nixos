@@ -202,7 +202,7 @@ in {
       echo 'system_test 42' > metrics
       echo 'org_graylog2_test 42' >> metrics
       echo 'not_allowed_globally 42' >> metrics
-      ${pkgs.python3.interpreter} -m http.server 9126 &
+      ${pkgs.python3.interpreter} -m http.server 9126 >&2 &
     """)
 
     proxy.wait_for_unit("nginx.service")

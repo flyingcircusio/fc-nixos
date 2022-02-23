@@ -1,4 +1,4 @@
-{ stdenv, lib, ensureNewerSourcesHook, cmake, pkgconfig
+{ stdenv, lib, ensureNewerSourcesHook, cmake, pkg-config
 , which, git
 , boost, pythonPackages
 , libxml2, zlib
@@ -113,7 +113,7 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [
     perl libtool autoconf automake
-    pkgconfig which git pythonPackages.wrapPython makeWrapper
+    pkg-config which git pythonPackages.wrapPython makeWrapper
     (ensureNewerSourcesHook { year = "1980"; })
   ];
 

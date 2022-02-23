@@ -162,12 +162,15 @@ in
         (lib.optionalString (esVersion == "7") "-Des.transport.cname_in_publish_address=true")
       ];
 
+      # ES7 wants the initial_master_nodes setting if and only if there
+      # is more than one initial node. It refuses to start with it in single-node
+      # mode.
       extraConf = ''
         node.name: ${cfg.nodeName}
         discovery.zen.ping.unicast.hosts: ${toJSON esNodes}
         bootstrap.memory_lock: true
         ${additionalConfig}
-      '' + (lib.optionalString (esVersion == "7") ''
+      '' + (lib.optionalString (esVersion == "7" && lib.length esNodes > 1) ''
         cluster.initial_master_nodes: ${toJSON esNodes}
       '');
     };
@@ -185,7 +188,7 @@ in
       '';
       postStart = let
         url = "http://${thisNode}:9200/_cat/health";
-        in ''
+        in lib.mkOverride 90 ''
         # Wait until available for use
         for count in {0..120}; do
             ${pkgs.curl}/bin/curl -s ${url} && exit

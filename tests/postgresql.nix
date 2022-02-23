@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ rolename ? "postgresql13", lib, pkgs, ... }:
+import ./make-test-python.nix ({ rolename ? "postgresql14", lib, pkgs, ... }:
 let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
@@ -48,7 +48,10 @@ in {
       psql = "sudo -u postgres -- psql";
 
       createTemporalExtension =
-        if (rolename == "postgresql12" || rolename == "postgresql13")
+        if (
+          rolename == "postgresql12" ||
+          rolename == "postgresql13" ||
+          rolename == "postgresql14")
         then "CREATE EXTENSION periods CASCADE"
         else "CREATE EXTENSION temporal_tables";
     in

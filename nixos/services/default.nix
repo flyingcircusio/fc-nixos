@@ -1,10 +1,10 @@
 { lib, ... }:
 let
   modulesFromHere = [
-    "services/misc/gitlab.nix"
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
     "services/networking/jicofo.nix"
+    "services/networking/jibri/default.nix"
     "services/networking/jitsi-videobridge.nix"
     "services/networking/prosody.nix"
     "services/web-apps/jitsi-meet.nix"
@@ -20,7 +20,6 @@ in {
     ./ceph/server.nix
     ./collectdproxy.nix
     ./consul.nix
-    ./gitlab
     ./graylog
     ./haproxy
     ./jitsi/jibri.nix
@@ -39,10 +38,7 @@ in {
     ./rabbitmq.nix
     ./raid
     ./redis.nix
-    ./sensu/api.nix
     ./sensu/client.nix
-    ./sensu/server.nix
-    ./sensu/uchiwa.nix
     ./telegraf
 
     (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")

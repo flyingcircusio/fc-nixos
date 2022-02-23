@@ -95,9 +95,6 @@ let
   modifiedPkgNames = attrNames (import ../pkgs/overlay.nix pkgs pkgs);
 
   excludedPkgNames = [
-    # Build fails with patch errors.
-    "gitlab"
-    "gitlab-workhorse"
     # XXX: builds chromium at the moment, remove this
     "jibri"
     # The kernel universe is _huge_ and contains a lot of unfree stuff. Kernel
@@ -123,7 +120,7 @@ let
   testPkgNames = includedPkgNames ++
     lib.subtractLists excludedPkgNames modifiedPkgNames;
 
-  testPkgs =
+  testPkgs = builtins.trace (builtins.toJSON modifiedPkgNames)
     listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
 
   dummyPlatformDoc = pkgs.stdenv.mkDerivation {

@@ -77,7 +77,7 @@ let format' = format; in let
 
   binPath = with pkgs; makeBinPath (
     [ rsync
-      utillinux
+      util-linux
       parted
       gptfdisk
       xfsprogs
@@ -171,7 +171,7 @@ in
 pkgs.vmTools.runInLinuxVM (
   pkgs.runCommand name
     { preVM = prepareImage;
-      buildInputs = with pkgs; [ utillinux e2fsprogs dosfstools ];
+      buildInputs = with pkgs; [ util-linux e2fsprogs dosfstools ];
       postVM = ''
         ${lib.optionalString (format != "raw") ''
           ${pkgs.qemu}/bin/qemu-img convert -f raw -O ${format} ${compress} $diskImage $out/${filename}
