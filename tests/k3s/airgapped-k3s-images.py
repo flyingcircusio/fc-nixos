@@ -1,15 +1,18 @@
 #!/usr/bin/env nix-shell
 #!nix-shell -i python3 -p "python3.withPackages (ps: [ ps.requests ])" -p nix-prefetch-docker
+# Must be run on Linux x86_64 because images are os/arch-specific and the flags
+# for nix-prefetch-docker don't seem to work.
 
 import os
 import re
 import subprocess
+import sys
 
 import requests
 
-commit = "f7dcc139ffb328a5fe4a6d44c223e6add8e936ed"
+gitRevision = "v1.23.3+k3s1"
 
-url = f"https://raw.githubusercontent.com/k3s-io/k3s/{commit}/scripts/airgap/image-list.txt"
+url = f"https://raw.githubusercontent.com/k3s-io/k3s/{gitRevision}/scripts/airgap/image-list.txt"
 
 # file looks like this:
 # docker.io/rancher/klipper-helm:v0.6.6-build20211022
@@ -24,23 +27,30 @@ url = f"https://raw.githubusercontent.com/k3s-io/k3s/{commit}/scripts/airgap/ima
 image_regex = r"(?P<image>[^:]+):(?P<tag>[^:]+)"
 
 if __name__ == "__main__":
-    r = requests.get(url)
+    resp = requests.get(url)
+    resp.raise_for_status()
     # split lines
-    lines = r.text.splitlines()
+    lines = resp.text.splitlines()
     # parse lines
     images = [re.match(image_regex, line).groupdict() for line in lines]
     # prefetch images
     imageNix = []
     for image in images:
         print(f"prefetching {image['image']}:{image['tag']}")
-        p = subprocess.run(
-            ["nix-prefetch-docker", image["image"], image["tag"]],
-            capture_output=True,
-            check=True,
-            text=True,
-        )
+        try:
+            proc = subprocess.run(
+                ["nix-prefetch-docker", image["image"], image["tag"]],
+                capture_output=True,
+                check=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(e)
+            print(e.stdout)
+            print(e.stderr)
+            sys.exit(1)
         # stdout contains nix code to neccessary to fetch the image
-        imageNix.append(p.stdout)
+        imageNix.append(proc.stdout)
     # chdir to this file's directory
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
     # write to file
