@@ -121,6 +121,11 @@ in {
 
           services.httpd.enable = true;
           services.httpd.adminAddr = "admin@flyingcircus.io";
+
+          # PL-130372 workaround for glibc TLS issue when loading
+          # many modules.
+          systemd.services.httpd.serviceConfig.ExecReload = lib.mkForce "";
+
           # We always provide the PHP cli environment but we need to ensure
           # to choose the right one in case someone uses the LAMP role.
           environment.systemPackages = [
