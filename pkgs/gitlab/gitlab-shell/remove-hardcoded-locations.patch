@@ -4,13 +4,13 @@ index 36f8625..72ede08 100644
 +++ b/internal/config/config.go
 @@ -12,7 +12,7 @@ import (
  )
- 
+
  const (
 -	configFile            = "config.yml"
 +	configFile            = "shell-config.yml"
  	defaultSecretFileName = ".gitlab_shell_secret"
  )
- 
+
 @@ -91,7 +91,7 @@ func (c *Config) GetHttpClient() *client.HttpClient {
  // NewFromDirExternal returns a new config from a given root dir. It also applies defaults appropriate for
  // gitlab-shell running in an external SSH server.
@@ -26,11 +26,11 @@ index c6f2422..fb0426b 100644
 +++ b/internal/keyline/key_line.go
 @@ -37,7 +37,7 @@ func NewPrincipalKeyLine(keyId, principal string, config *config.Config) (*KeyLi
  }
- 
+
  func (k *KeyLine) ToString() string {
 -	command := fmt.Sprintf("%s %s-%s", path.Join(k.Config.RootDir, executable.BinDir, executable.GitlabShell), k.Prefix, k.Id)
 +	command := fmt.Sprintf("%s %s-%s", path.Join("/run/current-system/sw/bin", executable.GitlabShell), k.Prefix, k.Id)
- 
+
  	return fmt.Sprintf(`command="%s",%s %s`, command, SshOptions, k.Value)
  }
 diff --git a/support/gitlab_config.rb b/support/gitlab_config.rb
@@ -39,10 +39,10 @@ index 52ac5ee..d96baa3 100644
 +++ b/support/gitlab_config.rb
 @@ -7,7 +7,7 @@ class GitlabConfig
    attr_reader :config
- 
+
    def initialize
 -    @config = YAML.load_file(File.join(ROOT_PATH, 'config.yml'))
 +    @config = YAML.load_file('/run/gitlab/shell-config.yml')
    end
- 
+
    def auth_file

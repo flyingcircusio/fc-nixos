@@ -21,35 +21,41 @@ class BlockDev:
     lsi_ld = None
     multidisk = False
 
-    def __init__(self, kernel, vendor, model='', ssd=False):
+    def __init__(self, kernel, vendor, model="", ssd=False):
         self.kernel = kernel
         self.vendor = vendor.upper()
         self.model = model.upper()
         self.ssd = ssd
-        self.lsi = vendor in ['LSI', 'AVAGO', 'DELL']
+        self.lsi = vendor in ["LSI", "AVAGO", "DELL"]
 
     def __str__(self):
         return '{} product="{}/{}" LD={} multi={} ssd={}'.format(
-            self.kernel, self.vendor, self.model, self.ld_repr, self.multidisk,
-            self.ssd)
+            self.kernel,
+            self.vendor,
+            self.model,
+            self.ld_repr,
+            self.multidisk,
+            self.ssd,
+        )
 
     @property
     def ld_repr(self):
         """LD number if any, or "*" if unknown yet but controller present"""
         if not self.lsi:
-            return '-'
+            return "-"
         if self.lsi and self.lsi_ld is None:
-            return '*'
+            return "*"
         return str(self.lsi_ld)
 
     def set_sysfs(self, relpath, setting):
-        path = p.join('/sys/block', self.kernel, relpath)
-        _log.debug('%s = %s', path, setting)
+        path = p.join("/sys/block", self.kernel, relpath)
+        _log.debug("%s = %s", path, setting)
         try:
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 f.write(setting)
         except Exception:
             import pdb
+
             pdb.set_trace()
 
     def update_from_ldpd(self, controller_info):
@@ -58,24 +64,33 @@ class BlockDev:
         self.multidisk = controller_info.is_multi
 
     def scheduler_available(self, which):
-        with open(p.join('/sys/block', self.kernel, 'queue/scheduler')) as f:
+        with open(p.join("/sys/block", self.kernel, "queue/scheduler")) as f:
             return which in f.read()
 
 
 class MegaCliUpdate:
-
     def __init__(self, megacli):
         self.megacli = megacli
 
     def _ldsetprop(self, dev, prop):
         cmdline = [
-            self.megacli, '-LDSetProp', prop, '-L{}'.format(dev.lsi_ld), '-a0']
-        _log.debug('exec: %s', ' '.join(cmdline))
+            self.megacli,
+            "-LDSetProp",
+            prop,
+            "-L{}".format(dev.lsi_ld),
+            "-a0",
+        ]
+        _log.debug("exec: %s", " ".join(cmdline))
         p = subprocess.Popen(
-            cmdline, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            cmdline, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         if p.wait() != 0:
-            _log.error('MegaCLI failed with status %i:\n%s\n%s', p.returncode,
-                       p.stdout.read(), p.stderr.read())
+            _log.error(
+                "MegaCLI failed with status %i:\n%s\n%s",
+                p.returncode,
+                p.stdout.read(),
+                p.stderr.read(),
+            )
         return p.returncode
 
     def set_ld_properties(self, devs, props):
@@ -91,16 +106,16 @@ def try_read(fn):
         with open(p.join(fn)) as f:
             return f.read().strip()
     except FileNotFoundError:
-        return ''
+        return ""
 
 
 def query_sysfs():
     devs = []
-    for path in sorted(glob('/sys/block/sd?') + glob('/sys/block/nvme*')):
+    for path in sorted(glob("/sys/block/sd?") + glob("/sys/block/nvme*")):
         sd = p.basename(path)
-        vendor = try_read(p.join(path, 'device/vendor'))
-        model = try_read(p.join(path, 'device/model'))
-        with open(p.join(path, 'queue/rotational')) as f:
+        vendor = try_read(p.join(path, "device/vendor"))
+        model = try_read(p.join(path, "device/model"))
+        with open(p.join(path, "queue/rotational")) as f:
             rotational = int(f.read().strip())
         dev = BlockDev(sd, vendor, model, ssd=(rotational == 0))
         devs.append(dev)
@@ -108,12 +123,11 @@ def query_sysfs():
 
 
 def query_controller(megacli):
-    out = subprocess.check_output([megacli, '-LdPdInfo', '-aALL'])
-    return out.decode('ascii')
+    out = subprocess.check_output([megacli, "-LdPdInfo", "-aALL"])
+    return out.decode("ascii")
 
 
 class Tokenizer:
-
     def __init__(self, out):
         self.raw = out.splitlines()
         self.ptr = -1
@@ -127,12 +141,12 @@ class Tokenizer:
             if self.ptr >= len(self.raw):
                 raise StopIteration
             try:
-                key, val = self.raw[self.ptr].split(':', 1)
+                key, val = self.raw[self.ptr].split(":", 1)
             except ValueError:
                 continue
             key = key.strip()
             val = val.strip()
-            if key == '':
+            if key == "":
                 continue
             return key, val
 
@@ -140,7 +154,6 @@ class Tokenizer:
 
 
 class ControllerInfo:
-
     def __init__(self, ld, is_ssd, is_multi):
         self.ld = ld
         self.is_ssd = is_ssd
@@ -153,18 +166,19 @@ def parse_ldpd(ldpd_info):
     media_type = None
     res = []
     for (key, val) in tok:
-        if key == 'Virtual Drive':
+        if key == "Virtual Drive":
             ld = int(val.split()[0])
             media_type = None
-        if key == 'Media Type':
+        if key == "Media Type":
             if not media_type:
                 media_type = val
                 res.append(
-                    ControllerInfo(ld, val == 'Solid State Device', False))
+                    ControllerInfo(ld, val == "Solid State Device", False)
+                )
             else:
                 # additional PDs in a RAID device
                 if media_type != val:
-                    raise RuntimeError('mixed media types in LD {}'.format(ld))
+                    raise RuntimeError("mixed media types in LD {}".format(ld))
                 res[-1].is_multi = True
     return res
 
@@ -173,8 +187,10 @@ def update_media_type(devs, controller_info):
     lsi_devs = [d for d in devs if d.lsi]
     if len(lsi_devs) != len(controller_info):
         raise RuntimeError(
-            'device count from sysfs does not match megacli output',
-            len(lsi_devs), len(controller_info))
+            "device count from sysfs does not match megacli output",
+            len(lsi_devs),
+            len(controller_info),
+        )
     for i, dev in enumerate(lsi_devs):
         dev.update_from_ldpd(controller_info[i])
 
@@ -183,38 +199,39 @@ def update_media_type(devs, controller_info):
 
 
 def auto_tune_lsi(devs, megacli):
-    with open('MegaSAS.log', 'a') as log:
-        print('\n### fc-blockdev {}'.format(time.ctime()), file=log)
+    with open("MegaSAS.log", "a") as log:
+        print("\n### fc-blockdev {}".format(time.ctime()), file=log)
     rc = [0]
     single = [d for d in devs if d.lsi and not d.multidisk]
     multi = [d for d in devs if d.lsi and d.multidisk]
     updater = MegaCliUpdate(megacli)
-    rc += updater.set_ld_properties(single, ['NORA', 'WT', 'Direct'])
-    rc += updater.set_ld_properties(multi,
-                                    ['ADRA', 'WB', 'Cached', 'NoCachedBadBBU'])
+    rc += updater.set_ld_properties(single, ["NORA", "WT", "Direct"])
+    rc += updater.set_ld_properties(
+        multi, ["ADRA", "WB", "Cached", "NoCachedBadBBU"]
+    )
     if max(rc) > 0:
-        raise RuntimeError('MegaCLI failure')
+        raise RuntimeError("MegaCLI failure")
 
 
 def auto_tune_kernel(devs):
     for hdd in [d for d in devs if not d.ssd]:
         _log.info(hdd)
-        hdd.set_sysfs('queue/read_ahead_kb', '256')
-        hdd.set_sysfs('queue/scheduler', 'bfq')
+        hdd.set_sysfs("queue/read_ahead_kb", "256")
+        hdd.set_sysfs("queue/scheduler", "bfq")
         # hdd.set_sysfs('queue/iosched/front_merges', '1')
         if hdd.multidisk:
-            hdd.set_sysfs('queue/nr_requests', '64')
+            hdd.set_sysfs("queue/nr_requests", "64")
         else:  # single disk
-            hdd.set_sysfs('queue/nr_requests', '4')
+            hdd.set_sysfs("queue/nr_requests", "4")
     for ssd in [d for d in devs if d.ssd]:
-        if not ssd.kernel.startswith('sd'):
+        if not ssd.kernel.startswith("sd"):
             continue  # leave NVMe SSDs alone
         _log.info(ssd)
-        ssd.set_sysfs('queue/read_ahead_kb', '64')
+        ssd.set_sysfs("queue/read_ahead_kb", "64")
         if ssd.lsi:
-            ssd.set_sysfs('queue/rotational', '0')
-            ssd.set_sysfs('queue/nr_requests', '4')
-        ssd.set_sysfs('queue/scheduler', 'none')
+            ssd.set_sysfs("queue/rotational", "0")
+            ssd.set_sysfs("queue/nr_requests", "4")
+        ssd.set_sysfs("queue/scheduler", "none")
 
 
 def filter_dev(patterns, devs):
@@ -225,32 +242,34 @@ def filter_dev(patterns, devs):
 def main():
     a = argparse.ArgumentParser(description=__doc__)
     a.add_argument(
-        '-a',
-        '--auto-tune',
+        "-a",
+        "--auto-tune",
         default=False,
-        action='store_true',
-        help='apply kernel settings and LSI settings (if '
-        'appropriate)')
-    a.add_argument('-v', '--verbose', default=False, action='store_true')
-    a.add_argument('--megacli', default='MegaCli64')
+        action="store_true",
+        help="apply kernel settings and LSI settings (if " "appropriate)",
+    )
+    a.add_argument("-v", "--verbose", default=False, action="store_true")
+    a.add_argument("--megacli", default="MegaCli64")
     a.add_argument(
-        'DEV',
-        default=['^sd', '^nvme'],
-        nargs='*',
-        help='tune only block devices matching regex. May be given '
-        'multiple times (default: %(default)s)')
+        "DEV",
+        default=["^sd", "^nvme"],
+        nargs="*",
+        help="tune only block devices matching regex. May be given "
+        "multiple times (default: %(default)s)",
+    )
     args = a.parse_args()
     if args.verbose:
         logging.basicConfig(
-            level=logging.DEBUG,
-            format='fc-blockdev: %(levelname)s %(message)s')
+            level=logging.DEBUG, format="fc-blockdev: %(levelname)s %(message)s"
+        )
     else:
         logging.basicConfig(
-            level=logging.INFO, format='fc-blockdev: %(message)s')
-    os.chdir('/var/log')  # let MegaCLI not log to the current dir
+            level=logging.INFO, format="fc-blockdev: %(message)s"
+        )
+    os.chdir("/var/log")  # let MegaCLI not log to the current dir
     devs = query_sysfs()
     if not devs:
-        _log.error('found no devices')
+        _log.error("found no devices")
         sys.exit(0)
     if any(d.lsi for d in devs):
         controller_info = parse_ldpd(query_controller(args.megacli))
@@ -258,19 +277,19 @@ def main():
     patterns = args.DEV
     devs = filter_dev(patterns, devs)
     if not devs:
-        _log.error('no matching devices')
+        _log.error("no matching devices")
         sys.exit(1)
-    _log.info('Block device survey')
+    _log.info("Block device survey")
     for d in devs:
-        _log.info('%s', d)
+        _log.info("%s", d)
     if args.auto_tune:
-        _log.info('Tuning sysfs kernel settings')
+        _log.info("Tuning sysfs kernel settings")
         auto_tune_kernel(devs)
-        _log.info('Tuning RAID adapter settings')
+        _log.info("Tuning RAID adapter settings")
         auto_tune_lsi(devs, args.megacli)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 # === Tests ===
@@ -410,11 +429,13 @@ Exit Code: 0x00
 
 def test_tokenize_iter():
     t = Tokenizer(MEGACLI_OUT)
-    assert next(t) == ('Number of Virtual Disks', '5')
-    assert next(t) == ('Virtual Drive', '0 (Target Id: 0)')
-    assert next(t) == ('Name', '')
-    assert next(t) == ('RAID Level',
-                       'Primary-1, Secondary-0, RAID Level Qualifier-0')
+    assert next(t) == ("Number of Virtual Disks", "5")
+    assert next(t) == ("Virtual Drive", "0 (Target Id: 0)")
+    assert next(t) == ("Name", "")
+    assert next(t) == (
+        "RAID Level",
+        "Primary-1, Secondary-0, RAID Level Qualifier-0",
+    )
 
 
 def test_tokenize_stopiteration():
@@ -430,13 +451,14 @@ def test_parse_ldpdinfo():
 
 def test_fix_mediatype():
     devs = [
-        BlockDev('sda', 'ATA'),
-        BlockDev('sdb', 'LSI'),
-        BlockDev('sdc', 'LSI'),
-        BlockDev('sdd', 'LSI'),
-        BlockDev('sde', 'LSI'),
-        BlockDev('sdb', 'LSI'),
-        BlockDev('nvme0n0', 'Intel', ssd=True), ]
+        BlockDev("sda", "ATA"),
+        BlockDev("sdb", "LSI"),
+        BlockDev("sdc", "LSI"),
+        BlockDev("sdd", "LSI"),
+        BlockDev("sde", "LSI"),
+        BlockDev("sdb", "LSI"),
+        BlockDev("nvme0n0", "Intel", ssd=True),
+    ]
     update_media_type(devs, parse_ldpd(MEGACLI_OUT))
     assert [(d.ssd, d.lsi_ld) for d in devs] == [
         (False, None),  # no LSI dev
@@ -451,17 +473,18 @@ def test_fix_mediatype():
 
 def test_lsi_count_mismatch():
     devs = [
-        BlockDev('sda', 'ATA'),
-        BlockDev('sdb', 'LSI'), ]
+        BlockDev("sda", "ATA"),
+        BlockDev("sdb", "LSI"),
+    ]
     try:
         update_media_type(devs, parse_ldpd(MEGACLI_OUT))
     except RuntimeError:
         return
-    assert False, 'RuntimeError expected'
+    assert False, "RuntimeError expected"
 
 
 def test_filter_dev():
-    devs = [BlockDev('sda', ''), BlockDev('nvme0n1', ''), BlockDev('md0', '')]
+    devs = [BlockDev("sda", ""), BlockDev("nvme0n1", ""), BlockDev("md0", "")]
     assert filter_dev([], devs) == []
-    assert filter_dev(['sda'], devs) == devs[0:1]
-    assert filter_dev(['^sd', '^nvme'], devs) == devs[0:2]
+    assert filter_dev(["sda"], devs) == devs[0:1]
+    assert filter_dev(["^sd", "^nvme"], devs) == devs[0:2]

@@ -53,7 +53,7 @@ in
     };
   };
 
-  config = lib.mkMerge [ 
+  config = lib.mkMerge [
     (lib.mkIf role.enable {
 
       flyingcircus.services.ceph.server.enable = true;
@@ -109,7 +109,7 @@ in
             radosgw-admin user stats --uid  $uid --sync-stats
           done
         '';
-      }; 
+      };
 
     services.logrotate.extraConfig = ''
       /var/log/ceph/client.radosgw.log {

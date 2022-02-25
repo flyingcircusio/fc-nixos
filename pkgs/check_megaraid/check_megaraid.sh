@@ -19,7 +19,7 @@
 # 2017-11-21 - Svamberg - Add option to disable check of Other Error Count
 
 # Only runnable for root
-if [[ $EUID -ne 0 ]]; 
+if [[ $EUID -ne 0 ]];
     then
         echo "This script must be run as root" 1>&2
         exit 1
@@ -131,7 +131,7 @@ for ENCLOSURE_ID in `$MEGACLI -PDList -a$ADAPTER -NoLog | grep "Enclosure Device
     else
       ERRORLINES=`echo "$DISKINFO" | grep 'Count: [1-9]\|Firmware state:' | grep -v "Firmware state: Online\|Firmware state: JBOD\|Firmware state: Hotspare$PREDICTIVE_FAILURE_REGEX\|Other Error Count:"`
     fi
-    
+
     if [ -n "$ERRORLINES" ] ; then
       NUMBER_OF_MEDIA_AND_OTHER_ERRORS=0
       NUMBER_OF_ERRORLINES=0

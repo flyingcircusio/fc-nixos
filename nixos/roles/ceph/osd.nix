@@ -15,7 +15,7 @@ in
       supportsContainers = fclib.mkDisableContainerSupport;
 
       # This option can be used to disable automatic reactivation, e.g.
-      # if you're working on a system and don't want to get (slow) reloads 
+      # if you're working on a system and don't want to get (slow) reloads
       # blocking agent runs all the time.
       reactivate = lib.mkOption {
         default = true;
@@ -133,7 +133,7 @@ in
   config = lib.mkIf role.enable {
 
     flyingcircus.services.ceph.server.enable = true;
-    
+
     flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
 
     environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;

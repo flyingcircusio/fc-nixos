@@ -36,7 +36,7 @@ in
       enable = mkEnableOption "Coturn TURN server";
 
       supportsContainers = fclib.mkEnableContainerSupport;
-      
+
       hostName = mkOption {
         type = types.str;
         default = fclib.fqdn { vlan = "fe"; };

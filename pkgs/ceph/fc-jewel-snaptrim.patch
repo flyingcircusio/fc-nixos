@@ -108,4 +108,3 @@ index 8a800ddb804b..e82f33e476c1 100644
 +  int trim_object(const hobject_t &coid, OpContextUPtr* ctxp);
    void snap_trimmer(epoch_t e);
    int do_osd_ops(OpContext *ctx, vector<OSDOp>& ops);
-

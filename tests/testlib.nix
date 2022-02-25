@@ -41,7 +41,7 @@ rec {
 
     Parameters:
 
-      id 
+      id
         Number of the test node in alphabetic ordered, starting from 1.
 
         Example: IDs for the following servers would be assigned:

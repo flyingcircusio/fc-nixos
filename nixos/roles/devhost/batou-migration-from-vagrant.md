@@ -12,7 +12,7 @@ chmod +x appenv
 
 Adapt your `requirements.txt`:
 
-> batou_ext is a package that is currently being developed in a floating style. At the time of this writing 
+> batou_ext is a package that is currently being developed in a floating style. At the time of this writing
 > you should check to get the most recent commit id for the batou-2.3.x branch:
 > https://github.com/flyingcircusio/batou_ext/tree/batou-2.3.x
 > replace the commit id in the content of the file below.
@@ -113,5 +113,5 @@ $ ./batou deploy dev
 ## Edge cases
 
 * The update to batou 2.3 implies a number of migration steps for the
-  deploymnt that are not specific to containers (require_v6, default/default_config_string, attributes without proper Attribute declaration are not mapped 
+  deploymnt that are not specific to containers (require_v6, default/default_config_string, attributes without proper Attribute declaration are not mapped
   any longer)

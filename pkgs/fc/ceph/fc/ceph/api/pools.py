@@ -1,8 +1,8 @@
-
-from .rbdimage import RBDImage
 import json
 import random
 import time
+
+from .rbdimage import RBDImage
 
 
 class Pools(object):
@@ -37,9 +37,9 @@ class Pools(object):
         """Returns all pool names."""
         if self._names:
             return self._names
-        out, _err = self.cluster.ceph_osd(['lspools'], ignore_dry_run=True)
+        out, _err = self.cluster.ceph_osd(["lspools"], ignore_dry_run=True)
         pools = json.loads(out.strip())
-        self._names = set(p['poolname'] for p in pools)
+        self._names = set(p["poolname"] for p in pools)
         return self._names
 
     def all(self):
@@ -57,7 +57,8 @@ class Pools(object):
     def create(self, pool):
         """Adds new pool to the Ceph cluster."""
         self.cluster.ceph_osd(
-            ['pool', 'create', pool, str(self.cluster.default_pg_num())])
+            ["pool", "create", pool, str(self.cluster.default_pg_num())]
+        )
         if self._names:
             self._names.add(pool)
 
@@ -104,29 +105,31 @@ class Pool(object):
 
     def _rbd_query(self):
         stdout, stderr, returncode = self.cluster.rbd(
-            ['--format=json', 'ls', '-l', self.name], accept_failure=True,
-            ignore_dry_run=True)
+            ["--format=json", "ls", "-l", self.name],
+            accept_failure=True,
+            ignore_dry_run=True,
+        )
         if returncode == 0:
             return stdout
-        if returncode == 2 and 'error opening pool' in stderr:
+        if returncode == 2 and "error opening pool" in stderr:
             raise KeyError(self.name, stdout)
         if returncode == 2 and "doesn't contain rbd images" in stderr:
-            return '[]'
-        raise RuntimeError(
-            'rbd execution failed', stdout, stderr, returncode)
+            return "[]"
+        raise RuntimeError("rbd execution failed", stdout, stderr, returncode)
 
     def fix_options(self):
         """Adapt important pool properties to most up-to-date values."""
-        self.cluster.ceph_osd(['pool', 'set', self.name, 'hashpspool', '1'])
+        self.cluster.ceph_osd(["pool", "set", self.name, "hashpspool", "1"])
 
     @property
     def pg_num(self):
         if self._pg_num:
             return self._pg_num
-        out = self.cluster.ceph_osd(['pool', 'get', self.name, 'pg_num'],
-                                    ignore_dry_run=True)
+        out = self.cluster.ceph_osd(
+            ["pool", "get", self.name, "pg_num"], ignore_dry_run=True
+        )
         pginfo = json.loads(out[0])
-        self._pg_num = int(pginfo['pg_num'])
+        self._pg_num = int(pginfo["pg_num"])
         return self._pg_num
 
     @pg_num.setter
@@ -138,7 +141,7 @@ class Pool(object):
         that you can only increase the number of PGs and never decrease
         it again. Note that this method may take a while to complete.
         """
-        self.cluster.ceph_osd(['pool', 'set', self.name, 'pg_num', str(value)])
+        self.cluster.ceph_osd(["pool", "set", self.name, "pg_num", str(value)])
         self._pg_num = int(value)
         self.pgp_num = value
 
@@ -146,10 +149,11 @@ class Pool(object):
     def pgp_num(self):
         if self._pgp_num:
             return self._pgp_num
-        out = self.cluster.ceph_osd(['pool', 'get', self.name, 'pgp_num'],
-                                    ignore_dry_run=True)
+        out = self.cluster.ceph_osd(
+            ["pool", "get", self.name, "pgp_num"], ignore_dry_run=True
+        )
         pginfo = json.loads(out[0])
-        self._pgp_num = int(pginfo['pgp_num'])
+        self._pgp_num = int(pginfo["pgp_num"])
         return self._pgp_num
 
     @pgp_num.setter
@@ -157,33 +161,48 @@ class Pool(object):
         retry = 0
         max_retries = 40
         while retry < max_retries:
-            time.sleep(min([30, 1.2 ** retry]))
-            out, err, returncode = self.cluster.ceph_osd([
-                'pool', 'set', self.name, 'pgp_num', str(value)],
-                accept_failure=True)
+            time.sleep(min([30, 1.2**retry]))
+            out, err, returncode = self.cluster.ceph_osd(
+                ["pool", "set", self.name, "pgp_num", str(value)],
+                accept_failure=True,
+            )
             if returncode == 0:
                 self._pgp_num = int(value)
                 return
             retry += 1
-        raise RuntimeError('max retries exceeded while setting pgp_num')
+        raise RuntimeError("max retries exceeded while setting pgp_num")
 
     @property
     def size_total_gb(self):
         return sum(i.size_gb for i in self.images if not i.snapshot)
 
     def snap_rm(self, rbdimage):
-        self.cluster.rbd(['snap', 'rm', '{}/{}@{}'.format(
-            self.name, rbdimage.image, rbdimage.snapshot)])
+        self.cluster.rbd(
+            [
+                "snap",
+                "rm",
+                "{}/{}@{}".format(self.name, rbdimage.image, rbdimage.snapshot),
+            ]
+        )
         self._images = None
 
     def image_rm(self, rbdimage):
         assert rbdimage.snapshot is None
-        self.cluster.rbd(['rm', '{}/{}'.format(self.name, rbdimage.image)])
+        self.cluster.rbd(["rm", "{}/{}".format(self.name, rbdimage.image)])
         self._images = None
 
     def delete(self):
         if self.images:
-            raise RuntimeError('cannot delete non-empty pool {} -- remove '
-                               'images first'.format(self.name))
-        self.cluster.ceph_osd(['pool', 'delete', self.name, self.name,
-                               '--yes-i-really-really-mean-it'])
+            raise RuntimeError(
+                "cannot delete non-empty pool {} -- remove "
+                "images first".format(self.name)
+            )
+        self.cluster.ceph_osd(
+            [
+                "pool",
+                "delete",
+                self.name,
+                self.name,
+                "--yes-i-really-really-mean-it",
+            ]
+        )

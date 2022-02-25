@@ -33,8 +33,8 @@ in
       extnet = cfg.roles.external_net;
     in
     {
-      systemd.services."network-external-routing" = 
-        let 
+      systemd.services."network-external-routing" =
+        let
           netdev = fclib.network.srv.device;
         in rec {
         description = "Custom routing rules dsafds for external networks";

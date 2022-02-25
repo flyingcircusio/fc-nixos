@@ -1,11 +1,11 @@
-from fc.maintenance.activity import Activity
-from fc.maintenance.request import Request, Attempt
-from fc.maintenance.state import State
-
 import datetime
+import unittest.mock
+
 import pytest
 import structlog
-import unittest.mock
+from fc.maintenance.activity import Activity
+from fc.maintenance.request import Attempt, Request
+from fc.maintenance.state import State
 
 
 def test_duration():
@@ -24,7 +24,7 @@ def logger():
     return structlog.get_logger()
 
 
-@unittest.mock.patch('fc.maintenance.request.utcnow')
+@unittest.mock.patch("fc.maintenance.request.utcnow")
 def test_duration_from_started_finished(utcnow, tmpdir):
     utcnow.side_effect = [
         datetime.datetime(2016, 4, 20, 6, 0),
@@ -36,7 +36,6 @@ def test_duration_from_started_finished(utcnow, tmpdir):
 
 
 class FixedDurationActivity(Activity):
-
     def run(self):
         self.duration = 90
         self.returncode = 0
@@ -49,11 +48,13 @@ def test_duration_from_activity_duration(tmpdir):
 
 
 def test_save_yaml(tmpdir):
-    r = Request(Activity(), 10, 'my comment', dir=str(tmpdir))
+    r = Request(Activity(), 10, "my comment", dir=str(tmpdir))
     assert r.id is not None
     r.save()
-    with open(str(tmpdir / 'request.yaml')) as f:
-        assert f.read() == """\
+    with open(str(tmpdir / "request.yaml")) as f:
+        assert (
+            f.read()
+            == """\
 &id001 !!python/object:fc.maintenance.request.Request
 _reqid: {id}
 _reqmanager: null
@@ -64,7 +65,10 @@ comment: my comment
 dir: {tmpdir}
 estimate: !!python/object:fc.maintenance.estimate.Estimate
   value: 10.0
-""".format(id=r.id, tmpdir=str(tmpdir))
+""".format(
+                id=r.id, tmpdir=str(tmpdir)
+            )
+        )
 
 
 def test_execute_obeys_retrylimit(tmpdir):
@@ -82,40 +86,38 @@ def test_execute_obeys_retrylimit(tmpdir):
 
 
 class FailingActivity(Activity):
-
     def run(self):
-        raise RuntimeError('activity failing')
+        raise RuntimeError("activity failing")
 
 
 def test_execute_catches_errors(tmpdir):
     r = Request(FailingActivity(), 1, dir=str(tmpdir))
     r.execute()
     assert len(r.attempts) == 1
-    assert 'activity failing' in r.attempts[0].stderr
+    assert "activity failing" in r.attempts[0].stderr
     assert r.attempts[0].returncode != 0
 
 
 class ExternalStateActivity(Activity):
-
     def load(self):
-        with open('external_state') as f:
+        with open("external_state") as f:
             self.external = f.read()
 
     def dump(self):
-        with open('external_state', 'w') as f:
-            print('foo', file=f)
+        with open("external_state", "w") as f:
+            print("foo", file=f)
 
 
 def test_external_activity_state(tmpdir, logger):
     r = Request(ExternalStateActivity(), 1, dir=str(tmpdir))
     r.save()
-    extstate = str(tmpdir / 'external_state')
+    extstate = str(tmpdir / "external_state")
     with open(extstate) as f:
-        assert 'foo\n' == f.read()
-    with open(extstate, 'w') as f:
-        print('bar', file=f)
+        assert "foo\n" == f.read()
+    with open(extstate, "w") as f:
+        print("bar", file=f)
     r2 = Request.load(str(tmpdir), logger)
-    assert r2.activity.external == 'bar\n'
+    assert r2.activity.external == "bar\n"
 
 
 def test_update_due_should_not_accept_naive_datetimes():

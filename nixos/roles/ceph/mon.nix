@@ -26,7 +26,7 @@ in
 
       config = lib.mkOption {
         type = lib.types.lines;
-        default = (lib.concatMapStringsSep "\n" (mon: 
+        default = (lib.concatMapStringsSep "\n" (mon:
           let id = head (lib.splitString "." mon.address);
               addr = "${head (filter fclib.isIp4 mon.ips)}:${mon_port}";
           in ''
@@ -116,7 +116,7 @@ in
         environment = {
           PYTHONUNBUFFERED = "1";
         };
-      }; 
+      };
 
       systemd.services.fc-ceph-clean-deleted-vms = {
         description = "Purge old snapshots";

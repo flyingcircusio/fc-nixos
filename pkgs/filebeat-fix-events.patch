@@ -21,14 +21,13 @@ index bd4b4454d3..3bf30f48ae 100644
  				for meta, value := range m {
  					event.Meta[meta] = value
  				}
- 
+
  			case map[string]interface{}:
 +				if event.Meta == nil {
 +					event.Meta = common.MapStr{}
 +				}
  				event.Meta.Update(common.MapStr(m))
- 
- 			default:
--- 
-2.32.0
 
+ 			default:
+--
+2.32.0

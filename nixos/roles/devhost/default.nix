@@ -10,14 +10,14 @@ let
 
 
   containersFromDir = dir:
-    with lib; 
+    with lib;
     (map
       (filename: fromJSON (readFile "${dir}/${filename}"))
       (filter
         (filename: hasSuffix ".json" filename)
         (attrNames (readDirMaybe dir))));
 
-  allContainers = 
+  allContainers =
     (containersFromDir "/etc/devhost") ++
     (containersFromDir "/etc/devserver");
 

@@ -2,14 +2,15 @@
 # 2.0, and the MIT License.  See the LICENSE file in the root of this
 # repository for complete details.
 
-from datetime import datetime
 import io
 import json
 import os
 import string
-import structlog
 import sys
 import syslog
+from datetime import datetime
+
+import structlog
 
 try:
     import colorama
@@ -36,16 +37,16 @@ if sys.stdout.isatty() and colorama:
     YELLOW = colorama.Fore.YELLOW
     GREEN = colorama.Fore.GREEN
 else:
-    RESET_ALL = ''
-    BRIGHT = ''
-    DIM = ''
-    RED = ''
-    BACKRED = ''
-    BLUE = ''
-    CYAN = ''
-    MAGENTA = ''
-    YELLOW = ''
-    GREEN = ''
+    RESET_ALL = ""
+    BRIGHT = ""
+    DIM = ""
+    RED = ""
+    BACKRED = ""
+    BLUE = ""
+    CYAN = ""
+    MAGENTA = ""
+    YELLOW = ""
+    GREEN = ""
 
 
 class PartialFormatter(string.Formatter):
@@ -59,7 +60,7 @@ class PartialFormatter(string.Formatter):
     formatted_str == "1 <missing>"
     """
 
-    def __init__(self, missing='<missing>', bad_format='<bad format>'):
+    def __init__(self, missing="<missing>", bad_format="<bad format>"):
         self.missing = missing
         self.bad_format = bad_format
 
@@ -80,7 +81,6 @@ class PartialFormatter(string.Formatter):
 
 
 class MultiOptimisticLoggerFactory:
-
     def __init__(self, **factories):
         self.factories = factories
 
@@ -102,8 +102,9 @@ class MultiOptimisticLogger:
         self.loggers = loggers
 
     def __repr__(self):
-        return '<MultiOptimisticLogger {}>'.format(
-            [repr(l) for l in self.loggers])
+        return "<MultiOptimisticLogger {}>".format(
+            [repr(l) for l in self.loggers]
+        )
 
     def msg(self, **messages):
         for name, logger in self.loggers.items():
@@ -121,25 +122,22 @@ class MultiOptimisticLogger:
 
 
 class DummyJournalLogger:
-
     def msg(self, message):
         pass
 
 
 class JournalLogger:
-
     def msg(self, message):
         journal.send(**message)
 
 
 class JournalLoggerFactory:
-
     def __init__(self):
 
         if journal is None:
             print(
-                _MISSING.format(
-                    who=self.__class__.__name__, package="systemd"))
+                _MISSING.format(who=self.__class__.__name__, package="systemd")
+            )
 
     def __call__(self, *args):
         if journal is None:
@@ -149,19 +147,17 @@ class JournalLoggerFactory:
 
 
 class CmdOutputFileRenderer:
-
     def __call__(self, logger, method_name, event_dict):
 
-        line = event_dict.pop('cmd_output_line', None)
+        line = event_dict.pop("cmd_output_line", None)
         if line is not None:
-            return {'cmd_output_file': line}
+            return {"cmd_output_file": line}
         else:
             return {}
 
 
 def prefix(prefix, line):
-    return '{}>\t'.format(prefix) + line.replace('\n',
-                                                 '\n{}>\t'.format(prefix))
+    return "{}>\t".format(prefix) + line.replace("\n", "\n{}>\t".format(prefix))
 
 
 def _pad(s, l):
@@ -179,20 +175,25 @@ class ConsoleFileRenderer:
     """
 
     LEVELS = [
-        'alert', 'critical', 'error', 'warn', 'warning', 'info', 'debug',
-        'trace'
+        "alert",
+        "critical",
+        "error",
+        "warn",
+        "warning",
+        "info",
+        "debug",
+        "trace",
     ]
 
-    def __init__(self,
-                 min_level,
-                 show_caller_info=False,
-                 pad_event=_EVENT_WIDTH):
+    def __init__(
+        self, min_level, show_caller_info=False, pad_event=_EVENT_WIDTH
+    ):
         self.min_level = self.LEVELS.index(min_level.lower())
         self.show_caller_info = show_caller_info
         if colorama is None:
             print(
-                _MISSING.format(
-                    who=self.__class__.__name__, package="colorama"))
+                _MISSING.format(who=self.__class__.__name__, package="colorama")
+            )
         if sys.stdout.isatty():
             colorama.init()
 
@@ -211,7 +212,8 @@ class ConsoleFileRenderer:
         for key in self._level_to_color.keys():
             self._level_to_color[key] += BRIGHT
         self._longest_level = len(
-            max(self._level_to_color.keys(), key=lambda e: len(e)))
+            max(self._level_to_color.keys(), key=lambda e: len(e))
+        )
 
     def __call__(self, logger, method_name, event_dict):
         console_io = io.StringIO()
@@ -221,10 +223,18 @@ class ConsoleFileRenderer:
             console_io.write(line)
             if RESET_ALL:
                 for SYMB in [
-                        RESET_ALL, BRIGHT, DIM, RED, BACKRED, BLUE, CYAN,
-                        MAGENTA, YELLOW, GREEN
+                    RESET_ALL,
+                    BRIGHT,
+                    DIM,
+                    RED,
+                    BACKRED,
+                    BLUE,
+                    CYAN,
+                    MAGENTA,
+                    YELLOW,
+                    GREEN,
                 ]:
-                    line = line.replace(SYMB, '')
+                    line = line.replace(SYMB, "")
             log_io.write(line)
 
         replace_msg = event_dict.pop("_replace_msg", None)
@@ -235,23 +245,28 @@ class ConsoleFileRenderer:
             formatted_replace_msg = None
 
         if not self.show_caller_info:
-            event_dict.pop('code_file', None)
-            event_dict.pop('code_func', None)
-            event_dict.pop('code_lineno', None)
-            event_dict.pop('code_module', None)
+            event_dict.pop("code_file", None)
+            event_dict.pop("code_func", None)
+            event_dict.pop("code_lineno", None)
+            event_dict.pop("code_module", None)
 
         ts = event_dict.pop("timestamp", None)
         if ts is not None:
             write(
                 # can be a number if timestamp is UNIXy
-                DIM + str(ts) + RESET_ALL + " ")
+                DIM
+                + str(ts)
+                + RESET_ALL
+                + " "
+            )
 
         event_dict.pop("pid", None)
 
         level = event_dict.pop("level", None)
         if level is not None:
-            write(self._level_to_color[level] + level[0].upper() + RESET_ALL +
-                  ' ')
+            write(
+                self._level_to_color[level] + level[0].upper() + RESET_ALL + " "
+            )
 
         event = event_dict.pop("event")
         write(BRIGHT + _pad(event, self._pad_event) + RESET_ALL + " ")
@@ -270,21 +285,30 @@ class ConsoleFileRenderer:
         if formatted_replace_msg:
             write(formatted_replace_msg)
         else:
-            write(" ".join(CYAN + key + RESET_ALL + "=" + MAGENTA +
-                           repr(event_dict[key]) + RESET_ALL
-                           for key in sorted(event_dict.keys())))
+            write(
+                " ".join(
+                    CYAN
+                    + key
+                    + RESET_ALL
+                    + "="
+                    + MAGENTA
+                    + repr(event_dict[key])
+                    + RESET_ALL
+                    for key in sorted(event_dict.keys())
+                )
+            )
 
         if cmd_output_line is not None:
             write(DIM + "> " + cmd_output_line + RESET_ALL)
 
         if output is not None:
-            write('\n' + prefix("", "\n" + output + "\n") + RESET_ALL)
+            write("\n" + prefix("", "\n" + output + "\n") + RESET_ALL)
 
         if stdout is not None:
-            write('\n' + DIM + prefix("out", "\n" + stdout + "\n") + RESET_ALL)
+            write("\n" + DIM + prefix("out", "\n" + stdout + "\n") + RESET_ALL)
 
         if stderr is not None:
-            write('\n' + prefix("err", "\n" + stderr + "\n") + RESET_ALL)
+            write("\n" + prefix("err", "\n" + stderr + "\n") + RESET_ALL)
 
         if stack is not None:
             write("\n" + prefix("stack", stack))
@@ -300,7 +324,7 @@ class ConsoleFileRenderer:
             console_io.seek(0)
             console_io.truncate()
 
-        message = {'console': console_io.getvalue(), 'file': log_io.getvalue()}
+        message = {"console": console_io.getvalue(), "file": log_io.getvalue()}
         return message
 
 
@@ -318,7 +342,7 @@ class MultiRenderer:
         self.renderers = renderers
 
     def __repr__(self):
-        return '<MultiRenderer {}>'.format([repr(l) for l in self.renderers])
+        return "<MultiRenderer {}>".format([repr(l) for l in self.renderers])
 
     def __call__(self, logger, method_name, event_dict):
         merged_messages = {}
@@ -335,34 +359,35 @@ class MultiRenderer:
 
 
 def add_pid(logger, method_name, event_dict):
-    event_dict['pid'] = os.getpid()
+    event_dict["pid"] = os.getpid()
     return event_dict
 
 
 def add_caller_info(logger, method_name, event_dict):
     frame, module_str = structlog._frames._find_first_app_frame_and_name(
-        additional_ignores=[__name__])
-    event_dict['code_file'] = frame.f_code.co_filename
-    event_dict['code_func'] = frame.f_code.co_name
-    event_dict['code_lineno'] = frame.f_lineno
-    event_dict['code_module'] = module_str
+        additional_ignores=[__name__]
+    )
+    event_dict["code_file"] = frame.f_code.co_filename
+    event_dict["code_func"] = frame.f_code.co_name
+    event_dict["code_lineno"] = frame.f_lineno
+    event_dict["code_module"] = module_str
     return event_dict
 
 
 def add_pid(logger, method_name, event_dict):
-    event_dict['pid'] = os.getpid()
+    event_dict["pid"] = os.getpid()
     return event_dict
 
 
 JOURNAL_LEVELS = {
-    'alert': syslog.LOG_ALERT,
-    'critical': syslog.LOG_CRIT,
-    'error': syslog.LOG_ERR,
-    'warn': syslog.LOG_WARNING,
-    'warning': syslog.LOG_WARNING,
-    'info': syslog.LOG_INFO,
-    'debug': syslog.LOG_DEBUG,
-    'trace': syslog.LOG_DEBUG,
+    "alert": syslog.LOG_ALERT,
+    "critical": syslog.LOG_CRIT,
+    "error": syslog.LOG_ERR,
+    "warn": syslog.LOG_WARNING,
+    "warning": syslog.LOG_WARNING,
+    "info": syslog.LOG_INFO,
+    "debug": syslog.LOG_DEBUG,
+    "trace": syslog.LOG_DEBUG,
 }
 
 KEYS_TO_SKIP_IN_JOURNAL_MESSAGE = [
@@ -383,14 +408,13 @@ KEYS_TO_SKIP_IN_JOURNAL_MESSAGE = [
 
 
 class SystemdJournalRenderer:
-
     def __init__(self, syslog_identifier, syslog_facility=syslog.LOG_LOCAL0):
         self.syslog_identifier = syslog_identifier
         self.syslog_facility = syslog_facility
 
     def __call__(self, logger, method_name, event_dict):
 
-        if method_name == 'trace':
+        if method_name == "trace":
             return {}
 
         kv_renderer = structlog.processors.KeyValueRenderer(sort_keys=True)
@@ -404,11 +428,14 @@ class SystemdJournalRenderer:
         else:
 
             kv = kv_renderer(
-                None, None, {
+                None,
+                None,
+                {
                     k: v
                     for k, v in event_dict.items()
                     if k not in KEYS_TO_SKIP_IN_JOURNAL_MESSAGE
-                })
+                },
+            )
 
             if kv:
                 event_dict["message"] += ": " + kv
@@ -418,15 +445,15 @@ class SystemdJournalRenderer:
         code_lineno = event_dict.pop("code_lineno", None)
 
         event_dict = {
-            k.upper(): self.dump_for_journal(v)
-            for k, v in event_dict.items()
+            k.upper(): self.dump_for_journal(v) for k, v in event_dict.items()
         }
 
-        event_dict['PRIORITY'] = JOURNAL_LEVELS.get(
-            event_dict.get("LEVEL"), syslog.LOG_INFO)
-        event_dict['SYSLOG_FACILITY'] = self.syslog_facility
-        event_dict['SYSLOG_IDENTIFIER'] = self.syslog_identifier
-        event_dict['CODE_LINE'] = code_lineno
+        event_dict["PRIORITY"] = JOURNAL_LEVELS.get(
+            event_dict.get("LEVEL"), syslog.LOG_INFO
+        )
+        event_dict["SYSLOG_FACILITY"] = self.syslog_facility
+        event_dict["SYSLOG_IDENTIFIER"] = self.syslog_identifier
+        event_dict["CODE_LINE"] = code_lineno
 
         return {"journal": event_dict}
 
@@ -461,8 +488,11 @@ def process_exc_info(logger, name, event_dict):
     exc_info = event_dict.get("exc_info", None)
 
     if isinstance(exc_info, BaseException):
-        event_dict["exc_info"] = (exc_info.__class__, exc_info,
-                                  exc_info.__traceback__)
+        event_dict["exc_info"] = (
+            exc_info.__class__,
+            exc_info,
+            exc_info.__traceback__,
+        )
     elif isinstance(exc_info, tuple):
         pass
     elif exc_info:
@@ -483,8 +513,9 @@ def format_exc_info(logger, name, event_dict):
         formatted_traceback = structlog.processors._format_exception(exc_info)
         event_dict["exception_traceback"] = formatted_traceback
         event_dict["exception_msg"] = str(exc_info[1])
-        event_dict[
-            "exception_class"] = exception_class.__module__ + "." + exception_class.__name__
+        event_dict["exception_class"] = (
+            exception_class.__module__ + "." + exception_class.__name__
+        )
 
     return event_dict
 
@@ -495,8 +526,9 @@ def init_logging(verbose, main_log_file=None, cmd_log_file=None):
         journal=SystemdJournalRenderer("fc-agent", syslog.LOG_LOCAL1),
         cmd_output_file=CmdOutputFileRenderer(),
         text=ConsoleFileRenderer(
-            min_level='debug' if verbose else 'info',
-            show_caller_info=verbose))
+            min_level="debug" if verbose else "info", show_caller_info=verbose
+        ),
+    )
 
     processors = [
         add_pid,
@@ -504,7 +536,7 @@ def init_logging(verbose, main_log_file=None, cmd_log_file=None):
         process_exc_info,
         format_exc_info,
         structlog.processors.StackInfoRenderer(),
-        structlog.processors.TimeStamper(fmt='iso', utc=False),
+        structlog.processors.TimeStamper(fmt="iso", utc=False),
         add_caller_info,
         multi_renderer,
     ]
@@ -526,4 +558,5 @@ def init_logging(verbose, main_log_file=None, cmd_log_file=None):
     structlog.configure(
         processors=processors,
         wrapper_class=structlog.BoundLogger,
-        logger_factory=MultiOptimisticLoggerFactory(**loggers))
+        logger_factory=MultiOptimisticLoggerFactory(**loggers),
+    )

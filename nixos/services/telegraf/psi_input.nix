@@ -1,5 +1,5 @@
 { pkgs, lib, config, ... }:
-let 
+let
   inherit (lib) types;
   psiCgroupRegex = lib.concatStringsSep "|" config.flyingcircus.services.telegraf.psiCgroupRegex;
 in {

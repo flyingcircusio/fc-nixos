@@ -67,7 +67,7 @@ import ../make-test-python.nix ({ pkgs, ... }:
          curl -s ${api}/query?query='my_custom_metric' | \
          ${pkgs.jq}/bin/jq -e '.data.result[].value[1] == "42"'
          """)
-        
+
       # Check for presence of the CPU Pressure Stall Information metric.
       machine.wait_until_succeeds("""
           curl -s ${api}/query?query='psi_cpu' | \

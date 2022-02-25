@@ -27,7 +27,7 @@ import ./make-test-python.nix (
             };
             gateways = {};
           };
-          
+
           users.users.u0 = {
             isNormalUser = true;
             inherit home;

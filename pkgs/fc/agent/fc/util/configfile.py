@@ -42,8 +42,12 @@ class ConfigFile(object):
         self.io.seek(0)
         self.stdout.writelines(
             difflib.unified_diff(
-                open(self.filename).readlines(), self.io.readlines(),
-                self.filename + ' (old)', self.filename + ' (new)'))
+                open(self.filename).readlines(),
+                self.io.readlines(),
+                self.filename + " (old)",
+                self.filename + " (new)",
+            )
+        )
 
     def _writeout(self, outfile):
         """Write contents unconditionally to file."""
@@ -51,7 +55,7 @@ class ConfigFile(object):
         outfile.truncate()
         outfile.write(self.io.getvalue())
         outfile.flush()
-        if hasattr(os, 'fdatasync'):
+        if hasattr(os, "fdatasync"):
             os.fdatasync(outfile)
         else:
             # OS X
@@ -60,7 +64,7 @@ class ConfigFile(object):
 
     def _update(self):
         """Update already existing file."""
-        with open(self.filename, 'r+') as f:
+        with open(self.filename, "r+") as f:
             fcntl.flock(f, fcntl.LOCK_SH)
             old = f.read()
             if self.io.getvalue() != old:
@@ -72,8 +76,9 @@ class ConfigFile(object):
         if mode != self.mode:
             os.chmod(self.filename, self.mode)
             print(
-                f'{self.filename}: {oct(mode)} -> {oct(self.mode)}',
-                file=self.stdout)
+                f"{self.filename}: {oct(mode)} -> {oct(self.mode)}",
+                file=self.stdout,
+            )
             self.changed = True
 
     def _create(self):
@@ -85,7 +90,7 @@ class ConfigFile(object):
         fd = os.open(self.filename, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
         os.chmod(self.filename, self.mode)
         fcntl.flock(fd, fcntl.LOCK_EX)
-        with os.fdopen(fd, 'w') as f:
+        with os.fdopen(fd, "w") as f:
             self._writeout(f)
 
     def commit(self):

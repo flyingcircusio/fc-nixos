@@ -115,7 +115,7 @@ in
       KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${pkgs.ceph}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}-part%n"
     '';
 
-    environment.etc."ceph/ceph.conf".text = 
+    environment.etc."ceph/ceph.conf".text =
         (cfg.config + "\n" + cfg.extraConfig + "\n" + cfg.client.config);
 
     environment.variables.CEPH_ARGS = fclib.mkPlatform "--id ${config.networking.hostName}";

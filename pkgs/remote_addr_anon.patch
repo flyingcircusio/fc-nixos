@@ -14,14 +14,14 @@ index f7c4bd2f..615b2c36 100644
 --- a/src/http/modules/ngx_http_log_module.c
 +++ b/src/http/modules/ngx_http_log_module.c
 @@ -225,7 +225,7 @@ static ngx_str_t  ngx_http_access_log = ngx_string(NGX_HTTP_LOG_PATH);
- 
- 
+
+
  static ngx_str_t  ngx_http_combined_fmt =
 -    ngx_string("$remote_addr - $remote_user [$time_local] "
 +    ngx_string("$remote_addr_anon - $remote_user [$time_local] "
                 "\"$request\" $status $body_bytes_sent "
                 "\"$http_referer\" \"$http_user_agent\"");
- 
+
 diff --git a/src/http/ngx_http_variables.c b/src/http/ngx_http_variables.c
 index c25d80cc..94c4a864 100644
 --- a/src/http/ngx_http_variables.c
@@ -36,18 +36,18 @@ index c25d80cc..94c4a864 100644
      ngx_http_variable_value_t *v, uintptr_t data);
  static ngx_int_t ngx_http_variable_proxy_protocol_addr(ngx_http_request_t *r,
 @@ -198,6 +200,8 @@ static ngx_http_variable_t  ngx_http_core_variables[] = {
- 
+
      { ngx_string("remote_addr"), NULL, ngx_http_variable_remote_addr, 0, 0, 0 },
- 
+
 +    { ngx_string("remote_addr_anon"), NULL, ngx_http_variable_remote_addr_anon, 0, 0, 0 },
 +
      { ngx_string("remote_port"), NULL, ngx_http_variable_remote_port, 0, 0, 0 },
- 
+
      { ngx_string("proxy_protocol_addr"), NULL,
 @@ -1278,6 +1282,86 @@ ngx_http_variable_remote_addr(ngx_http_request_t *r,
  }
- 
- 
+
+
 +static ngx_int_t
 +ngx_http_variable_remote_addr_anon(ngx_http_request_t *r,
 +    ngx_http_variable_value_t *v, uintptr_t data)
@@ -131,6 +131,5 @@ index c25d80cc..94c4a864 100644
  static ngx_int_t
  ngx_http_variable_remote_port(ngx_http_request_t *r,
      ngx_http_variable_value_t *v, uintptr_t data)
--- 
+--
 2.32.0
-

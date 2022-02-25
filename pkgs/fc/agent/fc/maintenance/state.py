@@ -2,15 +2,15 @@ import enum
 
 
 class State(enum.Enum):
-    pending = '-'
-    due = '*'
-    running = '='
-    success = 's'
-    tempfail = 't'
-    retrylimit = 'r'
-    error = 'e'
-    deleted = 'd'
-    postpone = 'p'
+    pending = "-"
+    due = "*"
+    running = "="
+    success = "s"
+    tempfail = "t"
+    retrylimit = "r"
+    error = "e"
+    deleted = "d"
+    postpone = "p"
 
     def __str__(self):
         return self.name

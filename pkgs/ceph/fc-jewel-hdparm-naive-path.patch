@@ -5,7 +5,7 @@ index 06180a5385..7be878cbe3 100644
 @@ -182,7 +182,7 @@ void FileJournal::_check_disk_write_cache() const
      goto done;
    }
- 
+
 -  hdparm_cmd << "/sbin/hdparm -W " << fn;
 +  hdparm_cmd << "hdparm -W " << fn;
    fp = popen(hdparm_cmd.str().c_str(), "r");

@@ -1,12 +1,12 @@
 { bundlerEnv, stdenv, ruby }:
 
-let 
+let
   gems = bundlerEnv {
     gemdir = ./.;
     name = "sensu-plugin-systemd-gems";
   };
 
-in 
+in
   stdenv.mkDerivation {
     name = "sensu-plugin-systemd";
     version = "0.1";

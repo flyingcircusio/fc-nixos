@@ -2,7 +2,7 @@
 
 bundlerSensuPlugin {
   pname = "sensu-plugins-network-checks";
-  exes = [ 
+  exes = [
     "check-netstat-tcp.rb"
     "check-ports.rb"
   ];

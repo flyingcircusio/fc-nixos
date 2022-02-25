@@ -15,13 +15,13 @@ import fc.util.directory
 import yaml
 
 _log = logging.getLogger(__name__)
-BASEDIR = '/srv/backy'
+BASEDIR = "/srv/backy"
 
 
 class BackyConfig(object):
     """Represents a complete backy configuration."""
 
-    prefix = ''
+    prefix = ""
     hostname = socket.gethostname()
 
     def __init__(self, location, consul_acl_token):
@@ -35,15 +35,15 @@ class BackyConfig(object):
         self.generate_config()
         self.purge()
         if self.changed and restart:
-            _log.info('config changed, restarting backy')
-            subprocess.check_call(['systemctl', 'reload', 'backy'])
+            _log.info("config changed, restarting backy")
+            subprocess.check_call(["systemctl", "reload", "backy"])
 
     @property
     def deletions(self):
         """Cached copy of nodes marked in directory for deletion."""
         if not self._deletions:
             d = fc.util.directory.connect()
-            self._deletions = d.deletions('vm')
+            self._deletions = d.deletions("vm")
         return self._deletions
 
     def job_config(self):
@@ -56,29 +56,29 @@ class BackyConfig(object):
         Schedules may have variants which are separated by a hyphen,
         e.g. "default-full".
         """
-        d = fc.util.directory.connect(ring='max')
+        d = fc.util.directory.connect(ring="max")
         vms = d.list_virtual_machines(self.location)
         jobs = {}
         for vm in vms:
-            name = vm['name']
-            if vm['parameters'].get('backy_server') != self.hostname:
+            name = vm["name"]
+            if vm["parameters"].get("backy_server") != self.hostname:
                 continue
-            if 'soft' in self.deletions.get(name, {'stages': []})['stages']:
+            if "soft" in self.deletions.get(name, {"stages": []})["stages"]:
                 continue
-            schedule = vm['parameters'].get('backy_schedule', 'default')
+            schedule = vm["parameters"].get("backy_schedule", "default")
             variant = None
-            if '-' in schedule:
-                schedule, variant = schedule.split('-', 1)
+            if "-" in schedule:
+                schedule, variant = schedule.split("-", 1)
             jobs[name] = {
-                'source': {
-                    'type': 'flyingcircus',
-                    'consul_acl_token': self.consul_acl_token,
-                    'image': vm['name'] + '.root',
-                    'pool': vm['parameters']['rbd_pool'],
-                    'vm': name,
-                    'full-always': (variant == 'full'),
+                "source": {
+                    "type": "flyingcircus",
+                    "consul_acl_token": self.consul_acl_token,
+                    "image": vm["name"] + ".root",
+                    "pool": vm["parameters"]["rbd_pool"],
+                    "vm": name,
+                    "full-always": (variant == "full"),
                 },
-                'schedule': schedule,
+                "schedule": schedule,
             }
         return jobs
 
@@ -87,12 +87,13 @@ class BackyConfig(object):
 
         Returns True if file has been changed.
         """
-        global_conf = self.prefix + '/etc/backy.global.conf'
+        global_conf = self.prefix + "/etc/backy.global.conf"
         with open(global_conf) as f:
             config = yaml.safe_load(f)
-        config['jobs'] = self.job_config()
+        config["jobs"] = self.job_config()
         output = fc.util.configfile.ConfigFile(
-            self.prefix + '/etc/backy.conf', mode=0o640)
+            self.prefix + "/etc/backy.conf", mode=0o640
+        )
         output.write("# Managed by fc-backy, do not edit\n\n")
         yaml.safe_dump(config, output)
         self.changed = output.commit()
@@ -100,31 +101,33 @@ class BackyConfig(object):
     def purge(self):
         """Removes job directories for nodes that are marked for deletion."""
         for name, node in self.deletions.items():
-            if 'purge' not in node['stages']:
+            if "purge" not in node["stages"]:
                 continue
             node_dir = self.prefix + p.join(BASEDIR, name)
             if p.exists(node_dir):
-                _log.info('purging backups for deleted node %s', name)
+                _log.info("purging backups for deleted node %s", name)
                 shutil.rmtree(node_dir, ignore_errors=True)
 
 
 def main():
     a = argparse.ArgumentParser(description=__doc__)
     a.add_argument(
-        '-r',
-        '--restart',
+        "-r",
+        "--restart",
         default=False,
-        action='store_true',
-        help='restart backy on config changes')
+        action="store_true",
+        help="restart backy on config changes",
+    )
     args = a.parse_args()
 
     h = logging.handlers.SysLogHandler(facility=syslog.LOG_LOCAL4)
     logging.basicConfig(level=logging.DEBUG, handlers=[h])
-    with open('/etc/consul.json') as f:
+    with open("/etc/consul.json") as f:
         consul_config = json.load(f)
-    with open('/etc/nixos/enc.json') as f:
+    with open("/etc/nixos/enc.json") as f:
         enc = json.load(f)
-    b = BackyConfig(enc['parameters']['location'],
-                    consul_config['acl']['tokens']['agent'])
+    b = BackyConfig(
+        enc["parameters"]["location"], consul_config["acl"]["tokens"]["agent"]
+    )
 
     b.apply(restart=args.restart)

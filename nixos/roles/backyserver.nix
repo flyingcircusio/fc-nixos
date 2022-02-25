@@ -61,7 +61,7 @@ in
     boot = {
       # Extracted to flyingcircus-physical.nix
       # kernel.sysctl."vm.vfs_cache_pressure" = 10;
-      kernelModules = [ "mq_deadline" ]; 
+      kernelModules = [ "mq_deadline" ];
     };
 
     environment.etc."backy.global.conf".text = ''

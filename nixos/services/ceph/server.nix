@@ -8,7 +8,7 @@ let
 
   ceph_sudo = pkgs.writeScriptBin "ceph-sudo" ''
     #! ${pkgs.stdenv.shell} -e
-    exec /run/wrappers/bin/sudo ${pkgs.ceph}/bin/ceph "$@" 
+    exec /run/wrappers/bin/sudo ${pkgs.ceph}/bin/ceph "$@"
   '';
 
   cfg = config.flyingcircus.services.ceph.server;
@@ -70,13 +70,13 @@ in
                   ${pkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
               done
           endscript
-      }      
+      }
       '';
 
     services.telegraf.extraConfig.inputs.ceph = [
       { ceph_binary =  "${ceph_sudo}/bin/ceph-sudo"; }
     ];
-    
+
     flyingcircus.passwordlessSudoRules = [
       {
         commands = [ "${pkgs.ceph}/bin/ceph" ];
