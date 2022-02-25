@@ -75,6 +75,18 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
     lamp.succeed('mkdir -p /srv/docroot')
     lamp.succeed('echo "<? phpinfo(); ?>" > /srv/docroot/test.php')
 
+    with subtest("apache reload works"):
+      # PL-130372 broke repeatedly after 7-11 tries
+      for x in range(300):
+        print("="*80)
+        print(f"Reload try {x}")
+        lamp.execute("systemctl reload httpd")
+        lamp.sleep(0.1)
+        code, output = lamp.execute("grep 'TLS block' /var/log/httpd/error.log")
+        if not code:
+            print(lamp.succeed("tail -n 5000 /var/log/httpd/error.log"))
+            assert False, f"Failure after {x} reloads"
+
     with subtest("check if composer CLI is installed"):
       lamp.succeed("su nobody -s /bin/sh -c 'composer --help'")
 
