@@ -14,6 +14,7 @@ rec {
   check-postfix = callPackage ./check-postfix {};
   # XXX: ceph is broken on 21.11
   # ceph = callPackage ./ceph { inherit blockdev agent util-physical; };
+  check-xfs-broken = callPackage ./check-xfs-broken {};
   blockdev = callPackage ./blockdev {};
   collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
