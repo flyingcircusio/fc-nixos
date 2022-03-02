@@ -45,7 +45,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
 
   testScript = { nodes, ... }:
     ''
-    # 1 trigger test rerun
+    # 2 trigger test rerun
     from pkg_resources import packaging
     def assert_listen(machine, process_name, expected_sockets):
       result = machine.succeed(f"netstat -tlpn | grep {process_name} | awk '{{ print $4 }}'")
