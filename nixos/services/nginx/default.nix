@@ -343,17 +343,11 @@ in
           interval = 60;
         };
 
-      } //
-      (lib.mapAttrs' (name: _: (lib.nameValuePair "nginx_cert_${name}" {
-        notification = "HTTPS cert for ${name} (Let's encrypt)";
-        command = "${pkgs.monitoring-plugins}/bin/check_http -H ${name} -p 443 -S -C 5";
-        interval = 600;
-      })) acmeVhosts);
+      };
 
       networking.firewall.allowedTCPPorts = [ 80 443 ];
 
       security.acme.certs = acmeSettings;
-
 
       flyingcircus.passwordlessSudoRules = [
         {
