@@ -148,7 +148,7 @@ in {
 
       flyingcircus.services.sensu-client.checks =
       let
-        plug = "${pkgs.monitoring-plugins}/libexec";
+        plug = "${pkgs.monitoring-plugins}/bin";
         mailq = "${pkgs.postfix}/bin/mailq";
       in {
         postfix_mailq = {
