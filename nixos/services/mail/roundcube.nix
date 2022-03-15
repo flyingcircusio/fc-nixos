@@ -13,6 +13,7 @@ in lib.mkMerge [
       roundcube-chpasswd = {
         source = "${pkgs.fc.roundcube-chpasswd}/bin/roundcube-chpasswd";
         owner = "vmail";
+        group = "vmail";
       };
     };
 
