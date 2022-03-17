@@ -101,6 +101,8 @@ in {
     matomo
     matomo-beta;
 
+
+  k3s = super.callPackage ./k3s { buildGoModule = super.buildGo117Module; };
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
 
