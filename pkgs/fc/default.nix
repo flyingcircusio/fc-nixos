@@ -12,6 +12,7 @@ rec {
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
   ceph = callPackage ./ceph { inherit blockdev agent util-physical; };
+  check-xfs-broken = callPackage ./check-xfs-broken {};
   blockdev = callPackage ./blockdev {};
   collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};

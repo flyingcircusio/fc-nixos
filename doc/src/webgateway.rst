@@ -243,7 +243,7 @@ The `services.nginx.sslCiphers <https://search.nixos.org/options?channel=21.05&s
 option can be used to change the cipher list.
 
 
-If you enable weaker ciphers, you should also set ``services.nginx.legacyTlsSetting`` to true
+If you enable weaker ciphers, you should also set ``services.nginx.legacyTlsSettings`` to true
 and ``services.nginx.recommendedTlsSettings`` to false.
 
 This sets `ssl_prefer_server_ciphers on` so better ciphers at the beginning of
