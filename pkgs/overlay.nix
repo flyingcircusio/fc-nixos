@@ -67,6 +67,10 @@ in {
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
+
+  libmodsecurity = super.callPackage ./libmodsecurity { };
+
+
   jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
 
   jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
@@ -154,19 +158,6 @@ in {
               ]);
 
   mc = super.callPackage ./mc.nix { };
-
-  libmodsecurity = super.libmodsecurity.overrideAttrs(_: rec {
-      version = "3.0.4";
-
-      src = super.fetchFromGitHub {
-        owner = "SpiderLabs";
-        repo = "ModSecurity";
-        fetchSubmodules = true;
-        rev = "v3.0.4";
-        sha256 = "07vry10cdll94sp652hwapn0ppjv3mb7n2s781yhy7hssap6f2vp";
-      };
-
-    });
 
   mysql = super.mariadb;
 
