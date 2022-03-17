@@ -60,7 +60,7 @@
         psmisc
         pwgen
         python2Full
-        python3
+        (python3.withPackages (ps: with ps; [ setuptools ]))
         python3Packages.virtualenv
         ripgrep
         screen
