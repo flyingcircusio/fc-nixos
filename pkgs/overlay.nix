@@ -67,37 +67,33 @@ in {
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
-
   libmodsecurity = super.callPackage ./libmodsecurity { };
-
-
-  jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
 
   jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
     pname = "jicofo";
-    version = "1.0-830";
+    version = "1.0-846";
     src = super.fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "1q3lx0xaxpw7ycxaaphwr1mxv12yskh84frrxv1r27z1gkcdgd3f";
+      sha256 = "1gsij3mv1rbcx6wvxf5a2cb58py7ak56z2sajdpjv4w3ihxi9h5a";
     };
   });
 
   jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-meet";
-    version = "1.0.5638";
+    version = "1.0.5818";
     src = super.fetchurl {
       url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      sha256 = "1nahja4i8400445zymqmpq7g1gmwxvjrbvinhmpzi42alzvw3kw6";
+      sha256 = "1il9c6q8aa86k9br1g59320kz15qpxcgpd2rrcfxyh8q95h6hmm1";
     };
 
   });
 
   jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-videobridge2";
-    version = "2.1-595-g3637fda4";
+    version = "2.1-617-ga8b39c3f";
     src = super.fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "18x00lazyjcff8n7pn4h43cxlskv0d9vnh0cmf40ihrpqc5zs2dz";
+      sha256 = "0pnzf5nj1i47rkaf8ayvl6jdkizg9i126ljrzvrxasvkjqf7xd0b";
     };
   });
 
