@@ -537,6 +537,13 @@ in {
           command = "${fc.check-age}/bin/check_age -m /lost+found -w 2h -c 1d";
           interval = 300;
         };
+        xfs-broken = {
+          notification = ''
+            XFS filesystem has entered a broken state
+          '';
+          command = "${fc.check-xfs-broken}";
+          interval = 300;
+        };
       };
     })
 
