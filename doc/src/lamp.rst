@@ -3,7 +3,7 @@
 LAMP (Apache/mod_php)
 =====================
 
-The LAMP role starts a managed instance of Apache with ``mod_php`` that can be
+The LAMP role starts a managed instance of Apache with ``php-fpm`` that can be
 used to easily run a production-ready PHP application server.
 
 .. note::
@@ -45,6 +45,8 @@ A complete configuration might looks something like this:
 	      MaxRequestWorkers 5
 	    '';
 
+	    fpmMaxChildren = 100;
+
 	    php_ini = ''
 	      ; max filesize
 	      upload_max_filesize = 200M
@@ -85,9 +87,16 @@ this to adjust global settings like workers:
 
 	MaxRequestWorkers 5
 
-Note that if you distribute your configuration over multiple files then you
+Note, that if you distribute your configuration over multiple files then you
 can repeat this option and the values will be concatenated to a single big
 Apache config file. They will also always apply to all vhosts.
+
+
+``flyingcircus.roles.lamp.fpmMaxChildren`` (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Set the maximum number of worker processes any vhost is allowed to spawn.
 
 
 ``flyingcircus.roles.lamp.php`` (optional)
@@ -98,7 +107,6 @@ CLI.
 
 Supported packages:
 
-* ``pkgs.lamp_php56`` (outdated but provided for legacy applications)
 * ``pkgs.lamp_php72`` (outdated but provided for legacy applications)
 * ``pkgs.lamp_php73``
 * ``pkgs.lamp_php74``

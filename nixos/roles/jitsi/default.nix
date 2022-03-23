@@ -127,6 +127,16 @@ in {
         '';
       };
 
+      maxVideoSenders = mkOption {
+        type = with types; types.int;
+        default = 8;
+        description = ''
+          Determines the numbers of clients that can send video streams at the same time.
+          If more clients want to send, only the last N speakers are sent and others are muted.
+          Jitsi calls the setting 'channelLastN'.
+        '';
+      };
+
       resolution = mkOption {
         type = types.int;
         default = 720;
@@ -216,7 +226,7 @@ in {
         prosody.enable = true;
 
         config = {
-          channelLastN = 8;
+          channelLastN = cfg.maxVideoSenders;
           constraints = {
             video = {
               height = {
