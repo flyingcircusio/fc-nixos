@@ -239,10 +239,15 @@ in {
       })
 
       # mod_php-specific config
-      (lib.mkIf (role.enable && !role.useFPM) {
+      (lib.mkIf (role.enable && !role.useFPM) (
+      {
+        services.httpd.mpm = "prefork";
         services.httpd.enablePHP = true;
         services.httpd.phpOptions = phpOptions;
-        services.httpd.phpPackage = role.php;
+        services.httpd.phpPackage = (
+          assert lib.asserts.assertMsg (lib.strings.versionOlder role.php.version "8.0")
+            "Using mod_php is only supported with PHP before 8.0. You tried using it with PHP ${role.php.version}. Switch to FPM by enabling the `flyingcircus.roles.lamp.useFPM` flag.";
+          role.php);
         services.httpd.extraConfig = ''
           # Those options are chosen for prefork
           # StartServers 2 (default)
@@ -285,7 +290,7 @@ in {
             ''
           ) role.vhosts) +
           role.apache_conf;
-      })
+      }))
 
       (lib.mkIf (role.tideways_api_key != "") {
         # tideways daemon

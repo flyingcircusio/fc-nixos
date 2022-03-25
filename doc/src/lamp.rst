@@ -14,6 +14,11 @@ server.
 	directly to consumers but should be placed behind a :ref:`webgateway
 	<nixos-webgateway>`.
 
+.. note::
+
+	Due to stability issues we only support PHP 8.0 when using FPM instead of
+	mod_php.
+
 Configuration
 -------------
 

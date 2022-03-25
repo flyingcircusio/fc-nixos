@@ -61,8 +61,6 @@ in {
   lamp74_tideways = callTest ./lamp.nix { version = "lamp_php74"; tideways = "1234"; };
   lamp74_fpm = callTest ./lamp.nix { version = "lamp_php74"; fpm = true; };
   lamp74_tideways_fpm = callTest ./lamp.nix { version = "lamp_php74"; tideways = "1234"; fpm = true; };
-  lamp80 = callTest ./lamp.nix { version = "lamp_php80"; };
-  lamp80_tideways = callTest ./lamp.nix { version = "lamp_php80"; tideways = "1234"; };
   lamp80_fpm = callTest ./lamp.nix { version = "lamp_php80"; fpm = true; };
   lamp80_tideways_fpm = callTest ./lamp.nix { version = "lamp_php80"; tideways = "1234"; fpm = true; };
 
