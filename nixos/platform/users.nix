@@ -36,6 +36,7 @@ let
           value = {
             description = user.name;
             group = primaryGroup user;
+            createHome = false;
             extraGroups =
               lib.optionals (user.class == "service") serviceUserExtraGroups;
             hashedPassword = lib.removePrefix "{CRYPT}" user.password;
