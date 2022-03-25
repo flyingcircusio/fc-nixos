@@ -84,6 +84,7 @@ rec {
     id ? 1,
     net ? {},
     resource_group ? "test", location ? "test", secrets ? {},
+    extraEncParameters ? {},
   }: { config, ... }:
   {
     imports = [
@@ -94,7 +95,7 @@ rec {
     config = {
       virtualisation.vlans = map (vlan: vlans.${vlan}) (attrNames config.flyingcircus.enc.parameters.interfaces);
 
-      flyingcircus.enc.parameters = {
+      flyingcircus.enc.parameters = (lib.recursiveUpdate {
         inherit resource_group location secrets;
 
         interfaces = mapAttrs (name: vid: {
@@ -107,7 +108,7 @@ rec {
           gateways = {};
         })
           (filterAttrs (name: vid: (!(net ? ${name}) && (name == "srv" || name == "fe")) || net ? ${name} && net.${name}) vlans);
-      };
+      } extraEncParameters);
     };
   };
 
