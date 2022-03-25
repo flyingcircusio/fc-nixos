@@ -50,13 +50,19 @@ in {
 
   lamp = callTest ./lamp.nix { };
   lamp56 = callTest ./lamp.nix { version = "lamp_php56"; };
+  lamp56_fpm = callTest ./lamp.nix { version = "lamp_php56"; fpm = true; };
   lamp72 = callTest ./lamp.nix { version = "lamp_php72"; };
+  lamp72_fpm = callTest ./lamp.nix { version = "lamp_php72"; fpm = true; };
   lamp73 = callTest ./lamp.nix { version = "lamp_php73"; };
   lamp73_tideways = callTest ./lamp.nix { version = "lamp_php73"; tideways = "1234"; };
+  lamp73_fpm = callTest ./lamp.nix { version = "lamp_php73"; fpm = true; };
+  lamp73_tideways_fpm = callTest ./lamp.nix { version = "lamp_php73"; tideways = "1234"; fpm = true; };
   lamp74 = callTest ./lamp.nix { version = "lamp_php74"; };
   lamp74_tideways = callTest ./lamp.nix { version = "lamp_php74"; tideways = "1234"; };
-  lamp80 = callTest ./lamp.nix { version = "lamp_php80"; };
-  lamp80_tideways = callTest ./lamp.nix { version = "lamp_php80"; tideways = "1234"; };
+  lamp74_fpm = callTest ./lamp.nix { version = "lamp_php74"; fpm = true; };
+  lamp74_tideways_fpm = callTest ./lamp.nix { version = "lamp_php74"; tideways = "1234"; fpm = true; };
+  lamp80_fpm = callTest ./lamp.nix { version = "lamp_php80"; fpm = true; };
+  lamp80_tideways_fpm = callTest ./lamp.nix { version = "lamp_php80"; tideways = "1234"; fpm = true; };
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};

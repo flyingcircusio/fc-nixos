@@ -3,8 +3,9 @@
 LAMP (Apache/mod_php)
 =====================
 
-The LAMP role starts a managed instance of Apache with ``mod_php`` that can be
-used to easily run a production-ready PHP application server.
+The LAMP role starts a managed instance of Apache with ``mod_php``(or optionally
+``php-fpm``) that can be used to easily run a production-ready PHP application
+server.
 
 .. note::
 
@@ -12,6 +13,11 @@ used to easily run a production-ready PHP application server.
 	frontend network automatically. It is not intended to serve applications
 	directly to consumers but should be placed behind a :ref:`webgateway
 	<nixos-webgateway>`.
+
+.. note::
+
+	Due to stability issues we only support PHP 8.0 when using FPM instead of
+	mod_php.
 
 Configuration
 -------------
@@ -32,6 +38,8 @@ A complete configuration might looks something like this:
 	{
 
 	  flyingcircus.roles.lamp = {
+
+	  	useFPM = true;
 
 	    vhosts = [
 	      { port = 8000;
@@ -88,6 +96,15 @@ this to adjust global settings like workers:
 Note that if you distribute your configuration over multiple files then you
 can repeat this option and the values will be concatenated to a single big
 Apache config file. They will also always apply to all vhosts.
+
+``flyingcircus.roles.lamp.useFPM`` (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whether to use ``mod_php`` (default) or use a separate ``php-fpm`` process per
+virtual host that improves reliability and security. This also switches Apache
+to using the ``event`` worker model.
+
+This is off by default but will become the default in our 21.11 platform.
 
 
 ``flyingcircus.roles.lamp.php`` (optional)
