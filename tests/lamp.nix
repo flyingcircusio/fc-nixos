@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
+import ./make-test-python.nix ({ version ? "" , tideways ? "", fpm ? false, lib, ... }:
 {
   name = "lamp";
   nodes = {
@@ -22,6 +22,8 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
 
         flyingcircus.roles.lamp = {
           enable = true;
+
+          useFPM = fpm;
 
           vhosts = [ { port = 8000; docroot = "/srv/docroot"; } ];
 
@@ -68,10 +70,15 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
     with subtest("apache (httpd) opens expected ports"):
       assert_listen(lamp, "httpd", {"127.0.0.1:7999", "::1:7999", ":::8000"})
 
+    '' +
+
+    (lib.optionalString (!fpm) ''
     with subtest("our changes for config files should be there"):
       lamp.succeed("grep 'custom-apache-conf' ${nodes.lamp.config.services.httpd.configFile}")
       lamp.succeed("grep 'custom-php-ini' ${nodes.lamp.config.systemd.services.httpd.environment.PHPRC}")
+    '') +
 
+    ''
     lamp.succeed('mkdir -p /srv/docroot')
     lamp.succeed('echo "<? phpinfo(); ?>" > /srv/docroot/test.php')
 
@@ -80,7 +87,7 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", ... }:
       for x in range(300):
         print("="*80)
         print(f"Reload try {x}")
-        lamp.execute("systemctl reload httpd")
+        lamp.succeed("systemctl reload httpd")
         lamp.sleep(0.1)
         code, output = lamp.execute("grep 'TLS block' /var/log/httpd/error.log")
         if not code:
