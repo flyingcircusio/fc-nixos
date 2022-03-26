@@ -300,7 +300,7 @@ in
       `sudo systemctl restart mysql`
 
       For more information, see our documentation at
-      https://flyingcircus.io/doc/guide/platform_nixos2/mysql.html.
+      https://doc.flyingcircus.io/roles/fc-21.05-production/mysql.html
     '';
 
     systemd.services.fc-mysql-post-init = {
