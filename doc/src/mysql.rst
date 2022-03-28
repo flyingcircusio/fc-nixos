@@ -32,7 +32,7 @@ Add a :file:`local.cnf` (or any other `*.cnf`) file there, and run
 
 .. note::
 
-    Changes to *.cnf files in this directory will restart MySQL
+    Changes to \*.cnf files in this directory will restart MySQL
     to activate the new configuration.
 
 Interaction
