@@ -7,52 +7,10 @@ with lib;
 
 let
   cfg = config.flyingcircus;
+  fclib = config.fclib;
   log = "/var/log/fc-collect-garbage.log";
 
-  garbagecollect = pkgs.writeScript "fc-collect-garbage.py" ''
-    import datetime
-    import os
-    import pwd
-    import subprocess
-    import sys
-
-    EXCLUDE="${./userscan.exclude}"
-
-    def main():
-        rc = []
-        for user in pwd.getpwall():
-            if user.pw_uid < 1000 or user.pw_dir == '/var/empty':
-                continue
-            print(f'Scanning {user.pw_dir} as {user.pw_name}')
-            p = subprocess.Popen([
-                    "fc-userscan", "-r", "-c",
-                    user.pw_dir + "/.cache/fc-userscan.cache", "-L10000000",
-                    "--unzip=*.egg", "-E", EXCLUDE, user.pw_dir],
-                stdin=subprocess.DEVNULL,
-                preexec_fn=lambda: os.setresuid(user.pw_uid, 0, 0))
-            rc.append(p.wait())
-
-        status = max(rc)
-        print('Overall status:', status)
-        if status >= 2:
-            print('Aborting garbagecollect. See above for fc-userscan errors')
-            sys.exit(2)
-        if status >= 1:
-            print('Aborting garbagecollect. See above for fc-userscan warnings')
-            sys.exit(1)
-        print('Running nix-collect-garbage')
-        rc = subprocess.run([
-                "nix-collect-garbage",
-                "--delete-older-than", "3d"],
-            check=True, stdin=subprocess.DEVNULL).returncode
-        print('nix-collect-garbage status:', rc)
-        open('${log}', 'w').write(str(datetime.datetime.now()) + '\n')
-        sys.exit(rc)
-
-
-    if __name__ == '__main__':
-        main()
-  '';
+  garbagecollectBin = fclib.python3BinFromFile ./fc-collect-garbage.py;
 
 in {
   options = {
@@ -93,11 +51,19 @@ in {
           IOSchedulingPriority = 7;
           IOWeight = 1;
           Nice = 19;
+          # We expect our script to produce error codes from 0 to 3.
+          # Ignore them as they are often temporary and the garbage collection
+          # runs every day. There's a Sensu check that warns us when garbage collection
+          # doesn't work for longer time periods.
+          SuccessExitStatus = [ 1 2 3 ];
           TimeoutStartSec = "infinity";
         };
         path = with pkgs; [ fc.userscan nix glibc util-linux ];
-        environment = { LANG = "en_US.utf8"; };
-        script = "${pkgs.python3.interpreter} ${garbagecollect}";
+        environment = {
+          LANG = "en_US.utf8";
+          PYTHONUNBUFFERED = "1";
+        };
+        script = "${garbagecollectBin}/bin/fc-collect-garbage ${./userscan.exclude}";
       };
 
       systemd.timers.fc-collect-garbage = {
