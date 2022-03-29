@@ -7,15 +7,15 @@
 , libyaml
 , multipath-tools
 , nix
-, python3Packages
+, python39
 , util-linux
 , xfsprogs
 }:
 
 let
-  py = python3Packages;
+  py = python39.pkgs;
 
-  # PyYAML >= 5 has not appeared in upstream yet.
+  # XXX: The newer version from nixpkgs fails with our code, keep the old one for now.
   pyyaml = py.buildPythonPackage rec {
     pname = "PyYAML";
     version = "5.1";
@@ -82,4 +82,6 @@ py.buildPythonPackage rec {
     xfsprogs
   ];
   dontStrip = true;
+  passthru.pythonDevEnv = python39.withPackages (_: checkInputs ++ propagatedBuildInputs);
+
 }
