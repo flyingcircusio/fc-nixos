@@ -116,18 +116,13 @@ in {
 
       systemd.services.fc-agent = rec {
         description = "Flying Circus Management Task";
-        enable = cfg.agent.enable;
         wants = [ "network.target" ];
         after = wants;
         restartIfChanged = false;
         stopIfChanged = false;
         serviceConfig = {
           Type = "oneshot";
-          # don't kill a running fc-manage instance when switching to
-          # enable=false
-          KillMode = "none";
-          # TimeoutSec won't work because of KillMode. The script uses 'timeout'
-          # instead.
+          TimeoutSec = "2h";
           Nice = 18; # 19 is the lowest
           IOSchedulingClass = "idle";
           IOSchedulingPriority = 7; #lowest
@@ -188,7 +183,7 @@ in {
     })
 
     (mkIf (cfg.agent.install && cfg.agent.enable) {
-      # Do not include the service if the agent is not enabled. This allows
+      # Do not add the timers if the agent is not enabled. This allows
       # deciding, i.e. for testing environments, that the image should not start
       # the general fc-manage service upon boot, which might fail.
       systemd.timers.fc-agent = {
