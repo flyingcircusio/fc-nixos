@@ -145,6 +145,7 @@ class ReqManager:
         self.requests[request.id] = request
         request.dir = self.dir(request)
         request._reqmanager = self
+        request.added_at = utcnow()
         request.save()
         self.log.info(
             "request-added",
@@ -187,6 +188,7 @@ class ReqManager:
                         request=req.id,
                         at=val["time"],
                     )
+                    req.last_scheduled_at = utcnow()
                     req.save()
             except KeyError:
                 self.log.warning(
