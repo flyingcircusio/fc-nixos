@@ -21,6 +21,13 @@ def utcnow():
     return pytz.UTC.localize(datetime.datetime.utcnow())
 
 
+def ensure_timezone_present(dt):
+    if dt and not dt.tzinfo:
+        return pytz.UTC.localize(dt)
+
+    return dt
+
+
 @contextlib.contextmanager
 def cd(newdir):
     oldcwd = os.getcwd()
@@ -40,6 +47,8 @@ class Request:
     comment = None
     estimate = None
     next_due = None
+    last_scheduled_at = None
+    added_at = None
     state = State.pending
     _reqmanager = None  # backpointer, will be set in ReqManager
 
@@ -124,8 +133,11 @@ class Request:
 
         with open(p.join(dir, "request.yaml")) as f:
             instance = yaml.load(f, Loader=yaml.FullLoader)
-            if instance.next_due and not instance.next_due.tzinfo:
-                instance.next_due = pytz.UTC.localize(instance.next_due)
+            instance.next_due = ensure_timezone_present(instance.next_due)
+            instance.added_at = ensure_timezone_present(instance.added_at)
+            instance.last_scheduled_at = ensure_timezone_present(
+                instance.last_scheduled_at
+            )
         instance.dir = dir
         with cd(dir):
             instance.activity.load()
