@@ -7,6 +7,7 @@ import sys
 import textwrap
 import unittest.mock
 import uuid
+from io import StringIO
 from unittest.mock import call
 
 import fc.maintenance.reqmanager
@@ -18,6 +19,7 @@ from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.reqmanager import ReqManager
 from fc.maintenance.request import Attempt, Request
 from fc.maintenance.state import ARCHIVE, EXIT_POSTPONE, State
+from rich.console import Console
 
 
 @pytest.fixture
@@ -236,15 +238,6 @@ def test_delete_end_to_end(tmpdir):
         assert req.state == State.deleted
 
 
-@freezegun.freeze_time("2016-04-20 11:00:00")
-def test_list_end_to_end(tmpdir, capsys):
-    with request_population(1, tmpdir) as (rm, reqs):
-        sys.argv = ["list-maintenance", "--spooldir", str(tmpdir)]
-        fc.maintenance.reqmanager.list_maintenance()
-        out, err = capsys.readouterr()
-        assert reqs[0].id[0:7] in out
-
-
 @unittest.mock.patch("fc.util.directory.connect")
 @freezegun.freeze_time("2016-04-20 12:00:00")
 def test_execute_all_due(connect, tmpdir, agent_maintenance_config):
@@ -403,7 +396,10 @@ def test_end_to_end(connect, tmpdir, agent_maintenance_config):
 
 
 def test_list_empty(reqmanager):
-    assert "" == str(reqmanager)
+    console = Console(file=StringIO())
+    console.print(reqmanager)
+    str_output = console.file.getvalue()
+    assert "No maintenance requests at the moment.\n" == str_output
 
 
 @freezegun.freeze_time("2016-04-20 11:00:00")
@@ -422,14 +418,12 @@ def test_list(reqmanager):
     att.returncode = 1
     r3.attempts = [att]
     reqmanager.add(r3)
-    assert (
-        str(reqmanager)
-        == """\
-St Id       Scheduled             Estimate  Comment
-e  {id3}  2016-04-20 11:00 UTC  1m 30s    error request (duration: 1m 15s)
-*  {id2}  2016-04-20 12:00 UTC  2h        due request
--  {id1}  --- TBA ---           14m       pending request\
-""".format(
-            id1=r1.id[:7], id2=r2.id[:7], id3=r3.id[:7]
-        )
-    )
+    console = Console(file=StringIO())
+    console.print(reqmanager)
+    str_output = console.file.getvalue()
+    id1 = r1.id[:7]
+    id2 = r2.id[:7]
+    id3 = r3.id[:7]
+    assert id1 in str_output
+    assert id2 in str_output
+    assert id3 in str_output
