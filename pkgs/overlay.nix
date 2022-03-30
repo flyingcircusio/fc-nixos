@@ -2,6 +2,10 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
+  # We want to have the last available OSS version for Kibana and Elasticsearch.
+  # We don't override the global elk7Version because it's ok to use newer versions
+  # for the (free) beats and unfree Elasticsearch/Kibana.
+  elasticKibanaOSS7Version = "7.10.2";
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
@@ -50,6 +54,17 @@ in {
 
   docsplit = super.callPackage ./docsplit { };
 
+  elasticsearch7-oss = super.elasticsearch7.overrideAttrs(_: rec {
+    version = elasticKibanaOSS7Version;
+    name = "elasticsearch-oss-${version}";
+
+    src = super.fetchurl {
+      url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
+      sha256 = "1m6wpxs56qb6n473hawfw2n8nny8gj3dy8glq4x05005aa8dv6kh";
+    };
+    meta.license = lib.licenses.asl20;
+  });
+
   flannel = super.flannel.overrideAttrs(_: rec {
     version = "0.13.1-rc1";
     rev = "v${version}";
@@ -61,6 +76,8 @@ in {
       sha256 = "119sf1fziznrx7y9ml7h4cqfy0hyl34sbxm81rwjg2svwz0qx6x1";
     };
   });
+
+  kibana7-oss = super.callPackage ./kibana/7.x.nix { inherit elasticKibanaOSS7Version; };
 
   # From nixos-unstable 1f5891a700b11ee9afa07074395e1e30799bf392
   kubernetes-helm = super.callPackage ./helm { };
