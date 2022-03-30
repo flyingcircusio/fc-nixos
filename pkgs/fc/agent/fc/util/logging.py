@@ -526,7 +526,7 @@ def init_logging(verbose, main_log_file=None, cmd_log_file=None):
         journal=SystemdJournalRenderer("fc-agent", syslog.LOG_LOCAL1),
         cmd_output_file=CmdOutputFileRenderer(),
         text=ConsoleFileRenderer(
-            min_level="debug" if verbose else "info", show_caller_info=verbose
+            min_level="trace" if verbose else "info", show_caller_info=verbose
         ),
     )
 
