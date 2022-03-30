@@ -59,7 +59,7 @@ class Channel:
     session = requests.session()
     is_local = False
 
-    def __init__(self, log, url, name="", environment=None):
+    def __init__(self, log, url, name="", environment=None, resolve_url=True):
         self.url = url
         self.name = name
         self.environment = environment
@@ -68,8 +68,10 @@ class Channel:
         if url.startswith("file://"):
             self.is_local = True
             self.resolved_url = url.replace("file://", "")
-        else:
+        elif resolve_url:
             self.resolved_url = nixos.resolve_url_redirects(url)
+        else:
+            self.resolved_url = url
 
         self.log = log
 
@@ -110,7 +112,7 @@ class Channel:
             for line in f.readlines():
                 url, name = line.strip().split(" ", 1)
                 if name == channel_name:
-                    return Channel(log, url, name)
+                    return Channel(log, url, name, resolve_url=False)
 
     def load_nixos(self):
         self.log_with_context.debug("channel-load-nixos")
