@@ -750,7 +750,7 @@ def main():
 
     os.environ["NIX_REMOTE"] = "daemon"
 
-    with locked("/run/lock/fc-manage.lock"):
+    with locked(log, "/run/lock", "fc-manage.lock"):
         try:
             keep_cmd_output = transaction(log, args)
         except Exception:
