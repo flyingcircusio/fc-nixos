@@ -9,11 +9,17 @@ import os
 import os.path as p
 import socket
 import subprocess
+from datetime import datetime
+from pathlib import Path
 
 import fc.util.directory
+import rich
+import rich.syntax
 import structlog
 from fc.maintenance.activity import RebootType
 from fc.util.logging import init_logging
+from fc.util.time_date import format_datetime, utcnow
+from rich.table import Table
 
 from .request import Request
 from .state import ARCHIVE, State
@@ -91,14 +97,40 @@ class ReqManager:
             self.lockfile.close()
         self.lockfile = None
 
-    def __str__(self):
-        """Human-readable listing of active maintenance requests."""
-        if not self.requests:
-            return ""
-        return (
-            "St Id       Scheduled             Estimate  Comment\n"
-            + "\n".join((str(r) for r in sorted(self.requests.values())))
+    def __rich__(self):
+        table = Table(
+            show_header=True,
+            title="Maintenance requests",
+            show_lines=True,
+            title_style="bold",
         )
+
+        if not self.requests:
+            return "[bold]No maintenance requests at the moment.[/bold]"
+
+        table.add_column("State")
+        table.add_column("Request ID")
+        table.add_column("Execution Time")
+        table.add_column("Duration")
+        table.add_column("Comment")
+        table.add_column("Added")
+        table.add_column("Last Scheduled")
+        for req in sorted(self.requests.values()):
+            table.add_row(
+                str(req.state),
+                req.id,
+                format_datetime(req.next_due)
+                if req.next_due
+                else "--- TBA ---",
+                str(req.estimate),
+                req.comment,
+                format_datetime(req.added_at) if req.added_at else "-",
+                format_datetime(req.last_scheduled_at)
+                if req.last_scheduled_at
+                else "-",
+            )
+
+        return table
 
     def dir(self, request):
         """Return file system path for request identified by `reqid`."""
@@ -341,6 +373,52 @@ class ReqManager:
             os.rename(req.dir, dest)
             req.dir = dest
             req.save()
+
+    @require_lock
+    def list(self):
+        rich.print(self)
+
+    @require_lock
+    def show(self, request_id=None, dump_yaml=False):
+
+        if not self.requests:
+            rich.print("[bold]No maintenance requests at the moment.[/bold]")
+            return
+
+        if request_id is None:
+            requests = list(self.requests.values())
+            if len(self.requests) == 1:
+                rich.print("[bold]There's only one at the moment:[/bold]\n")
+        else:
+            requests = sorted(
+                [
+                    req
+                    for key, req in self.requests.items()
+                    if key.startswith(request_id)
+                ],
+                key=lambda r: r.added_at or datetime.fromtimestamp(0),
+            )
+            if not requests:
+                rich.print(
+                    f"[bold red]Error:[/bold red] [bold]Cannot locate any "
+                    f"request with prefix '{request_id}'![/bold]"
+                )
+                return
+
+        if len(requests) > 1:
+            rich.print(
+                "[bold blue]Notice:[/bold blue] [bold]Multiple requests "
+                "found, showing the newest:[/bold]\n"
+            )
+
+        req = requests[-1]
+
+        rich.print(req)
+
+        if dump_yaml:
+            rich.print("\n[bold]Raw YAML serialization:[/bold]")
+            yaml = Path(req.filename).read_text()
+            rich.print(rich.syntax.Syntax(yaml, "yaml"))
 
     @require_lock
     def delete(self, reqid):

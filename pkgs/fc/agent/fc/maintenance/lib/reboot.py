@@ -136,3 +136,9 @@ def main():
                 args.comment if args.comment else defaultcomment,
             )
         )
+
+    def __rich__(self):
+        if self.coldboot:
+            return "Cold reboot"
+        else:
+            return "Warm reboot"

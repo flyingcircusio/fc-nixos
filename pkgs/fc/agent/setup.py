@@ -51,6 +51,7 @@ setup(
         "pytz",
         "PyYAML>=5",
         "requests",
+        "rich",
         "shortuuid",
     ],
     zip_safe=False,

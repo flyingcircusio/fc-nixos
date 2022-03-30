@@ -7,9 +7,11 @@ import tempfile
 
 import iso8601
 import pytz
+import rich.table
 import shortuuid
 import structlog
 import yaml
+from fc.util.time_date import format_datetime
 
 from .estimate import Estimate
 from .state import State, evaluate_state
@@ -61,22 +63,6 @@ class Request:
         self.log = log
         self.attempts = []
 
-    def __str__(self):
-        line = "{state}  {shortid}  {sched:20}  {estimate:8}  {comment}".format(
-            state=self.state.short,
-            shortid=self.id[:7],
-            sched=(
-                self.next_due.strftime("%Y-%m-%d %H:%M UTC")
-                if self.next_due
-                else "--- TBA ---"
-            ),
-            estimate=str(self.estimate),
-            comment=self.comment,
-        )
-        if self.duration:
-            line += " (duration: {})".format(Estimate(self.duration))
-        return line
-
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.id == other.id
 
@@ -92,6 +78,31 @@ class Request:
             return False
         else:
             return self.id < other.id
+
+    def __rich__(self):
+        table = rich.table.Table(show_header=False, show_lines=True)
+        table.add_column()
+        table.add_column()
+        for key, val in self.__rich_repr__():
+            table.add_row(key, val)
+        return table
+
+    def __rich_repr__(self):
+        yield "ID", self._reqid
+        yield "state", str(self.state)
+        if self.next_due:
+            yield "next_due", format_datetime(self.next_due)
+        if self.added_at:
+            yield "added_at", format_datetime(self.added_at)
+        if self.last_scheduled_at:
+            yield "last_scheduled_at", format_datetime(self.last_scheduled_at)
+        yield "estimate", str(self.estimate)
+        yield "comment", self.comment
+        yield "activity", self.activity
+        yield "attempts", ", ".join(
+            f"{format_datetime(a.finished)} (exit {a.returncode})"
+            for a in self.attempts
+        )
 
     def set_up_logging(self, log):
         log = log.bind(request=self.id)

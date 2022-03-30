@@ -237,9 +237,9 @@ class Channel:
         msg = "\n".join(msg_parts)
         # XXX: We should use an fc-manage call (like --activate), instead of
         # Dumping the script into the maintenance request.
-        script = io.StringIO(ACTIVATE.format(url=self.resolved_url))
+        script = ACTIVATE.format(url=self.resolved_url)
         self.log_with_context.debug(
-            "maintenance-register-result", script=script.getvalue(), comment=msg
+            "maintenance-register-result", script=script, comment=msg
         )
         with fc.maintenance.ReqManager() as rm:
             rm.add(

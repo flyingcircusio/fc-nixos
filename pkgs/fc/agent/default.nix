@@ -70,6 +70,7 @@ py.buildPythonPackage rec {
     py.iso8601
     py.pytz
     py.requests
+    py.rich
     py.shortuuid
     py.structlog
     pyyaml
