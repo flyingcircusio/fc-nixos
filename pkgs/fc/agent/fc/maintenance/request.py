@@ -80,14 +80,6 @@ class Request:
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.id == other.id
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        # This somehow gets called twice when serializing to YAML so the second
-        # time, log may be mising. Just ignore it.
-        if "log" in state:
-            del state["log"]
-        return state
-
     def __hash__(self):
         return hash(self.id)
 
@@ -264,6 +256,10 @@ def request_representer(dumper, data):
     d = copy.copy(data)
     if hasattr(d, "_reqmanager"):
         d._reqmanager = None
+
+    if hasattr(d, "log"):
+        del d.log
+
     return dumper.represent_object(d)
 
 
