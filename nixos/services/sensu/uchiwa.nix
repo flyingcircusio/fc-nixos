@@ -23,7 +23,7 @@ let
             "ssl": true,
             "insecure": true,
             "path": "/api",
-            "timeout": 20,
+            "timeout": 30,
             "user": "sensuserver-api"  ,
             "pass": "${apiServer.password}"
            }'')
@@ -34,6 +34,7 @@ let
       "uchiwa": {
         "host": "0.0.0.0",
         "port": 3000,
+        "refresh": 30,
         "loglevel": "warn",
         "users": ${config.flyingcircus.services.uchiwa.users}
       }

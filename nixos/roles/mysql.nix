@@ -284,10 +284,6 @@ in
       You can find the password for the MySQL root user in the file `mysql.passwd`.
       Service users can read the password file.
 
-      To connect as root, run:
-
-      $ mysql -h localhost -uroot -p$(< /etc/local/mysql/mysql.passwd)
-
       Config files from this directory (/etc/local/mysql) are included in the
       mysql configuration. To set custom options, add a `local.cnf`
       (or any other *.cnf) file here, and run `sudo fc-manage --build`.
@@ -300,7 +296,7 @@ in
       `sudo systemctl restart mysql`
 
       For more information, see our documentation at
-      https://flyingcircus.io/doc/guide/platform_nixos2/mysql.html.
+      https://doc.flyingcircus.io/roles/fc-21.05-production/mysql.html
     '';
 
     systemd.services.fc-mysql-post-init = {
