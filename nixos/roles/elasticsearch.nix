@@ -19,11 +19,11 @@ let
 
   versionConfiguration = {
     "6" = {
-      package = pkgs.elasticsearch6;
+      package = pkgs.elasticsearch6-oss;
       serviceName = "elasticsearch6-node";
     };
     "7" = {
-      package = pkgs.elasticsearch7;
+      package = pkgs.elasticsearch7-oss;
       serviceName = "elasticsearch7-node";
     };
     null = {
@@ -139,9 +139,6 @@ in
     environment.systemPackages = [
       esShowConfig
     ];
-
-    # The 'elastic' license is considered unfree.
-    nixpkgs.config.allowUnfree = true;
 
     services.elasticsearch = {
       enable = true;
