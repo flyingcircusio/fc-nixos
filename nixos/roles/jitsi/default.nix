@@ -200,7 +200,7 @@ in {
 
       flyingcircus.services.sensu-client.checks = {
         jitsi-videobridge-alive = {
-          notification = "Jitsi videobridge alive";
+          notification = "Jitsi videobridge not healthy";
           command = "check_http -v -j HEAD -H localhost -p 8080 -u /about/health";
         };
       };
