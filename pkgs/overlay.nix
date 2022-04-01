@@ -54,13 +54,13 @@ in {
 
   docsplit = super.callPackage ./docsplit { };
 
-  elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
+  elasticsearch7-oss = super.elasticsearch7-oss.overrideAttrs(_: rec {
     version = elk7Version;
-    name = "elasticsearch-${version}";
+    name = "elasticsearch-oss-${version}";
 
     src = super.fetchurl {
       url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
-      sha256 = "07p16n53fg513l4f04zq10hh5j9q6rjwz8hs8jj8y97jynvf6yiv";
+      sha256 = "1m6wpxs56qb6n473hawfw2n8nny8gj3dy8glq4x05005aa8dv6kh";
     };
     meta.license = null;
   });
@@ -131,13 +131,13 @@ in {
     };
   });
 
-  kibana7 = super.kibana7.overrideAttrs(_: rec {
+  kibana7-oss = super.kibana7-oss.overrideAttrs(_: rec {
     version = elk7Version;
-    name = "kibana-${version}";
+    name = "kibana-oss-${version}";
 
     src = super.fetchurl {
       url = "https://artifacts.elastic.co/downloads/kibana/${name}-linux-x86_64.tar.gz";
-      sha256 = "06p0v39ih606mdq2nsdgi5m7y1iynk9ljb9457h5rrx6jakc2cwm";
+      sha256 = "050rhx82rqpgqssp1rdflz1ska3f179kd2k2xznb39614nk0m6gs";
     };
     meta.license = null;
   });

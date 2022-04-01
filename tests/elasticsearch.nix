@@ -28,6 +28,7 @@ in
     sensuCheck = testlib.sensuCheckCmd nodes.machine;
   in ''
     import json
+    from pprint import pprint
 
     expected_major_version = ${version}
 
@@ -59,6 +60,7 @@ in
 
     with subtest(f"version should be {expected_major_version}.x in the OSS flavor"):
       version_info = api_result["version"]
+      pprint(version_info)
       major_version = int(version_info["number"][0])
       assert major_version == expected_major_version, f"expected major version {expected_major_version}, got {major_version}"
       build_flavor = version_info["build_flavor"]
