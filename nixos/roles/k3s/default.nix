@@ -8,6 +8,7 @@
   imports = with lib; [
     ./nfs.nix
     ./server.nix
+    ./single-node.nix
     ./agent.nix
   ];
 
