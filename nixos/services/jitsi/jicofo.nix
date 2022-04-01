@@ -86,7 +86,6 @@ in
         "-Dnet.java.sip.communicator.SC_HOME_DIR_NAME" = "jicofo";
         "-Djava.util.logging.config.file" = "/etc/jitsi/jicofo/logging.properties";
         "-Dconfig.file" = "/etc/jitsi/jicofo/jicofo.conf";
-        "-Dorg.jitsi.jicofo.health.ENABLE_HEALTH_CHECKS" = "true";
       };
     in
     {
@@ -137,6 +136,9 @@ in
     environment.etc."jitsi/jicofo/jicofo.conf".source =
       pkgs.writeText "jicofo.conf" ''
       jicofo {
+        health {
+          enabled = true
+        }
         xmpp {
           client {
             client-proxy: focus.${cfg.xmppDomain}
