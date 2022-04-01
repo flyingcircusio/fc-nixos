@@ -27,6 +27,10 @@ in
   let
     sensuCheck = testlib.sensuCheckCmd nodes.machine;
   in ''
+    import json
+
+    expected_major_version = ${version}
+
     checks = [
       "${sensuCheck "es_node_status"}",
       "${sensuCheck "es_circuit_breakers"}",
@@ -51,7 +55,14 @@ in
     machine.wait_for_unit("elasticsearch")
 
     with subtest("Elasticsearch API should respond"):
-      machine.wait_until_succeeds("curl ${ipv4}:9200")
+        api_result = json.loads(machine.wait_until_succeeds("curl ${ipv4}:9200"))
+
+    with subtest(f"version should be {expected_major_version}.x in the OSS flavor"):
+      version_info = api_result["version"]
+      major_version = int(version_info["number"][0])
+      assert major_version == expected_major_version, f"expected major version {expected_major_version}, got {major_version}"
+      build_flavor = version_info["build_flavor"]
+      assert build_flavor == "oss", f"expected oss flavor, got {build_flavor}"
 
     with subtest("service user should be able to write to local config dir"):
       machine.succeed('sudo -u elasticsearch touch /etc/local/elasticsearch/clusterName')
@@ -71,6 +82,5 @@ in
     with subtest("status check should be red after shutting down nginx"):
       machine.systemctl('stop elasticsearch')
       machine.wait_until_fails("${sensuCheck "es_node_status"}")
-
   '';
 })

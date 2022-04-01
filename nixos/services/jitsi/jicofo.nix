@@ -136,6 +136,9 @@ in
     environment.etc."jitsi/jicofo/jicofo.conf".source =
       pkgs.writeText "jicofo.conf" ''
       jicofo {
+        health {
+          enabled = true
+        }
         xmpp {
           client {
             client-proxy: focus.${cfg.xmppDomain}
@@ -143,6 +146,13 @@ in
         }
       }
       '';
+
+    flyingcircus.services.sensu-client.checks = {
+      jitsi-jicofo-alive = {
+        notification = "Jitsi jicofo not healthy";
+        command = "check_http -v -H localhost -p 8888 -u /about/health";
+      };
+    };
 
     environment.etc."jitsi/jicofo/sip-communicator.properties".source =
       pkgs.writeText "sip-communicator.properties" (

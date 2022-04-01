@@ -53,7 +53,7 @@
 {
   imageName = "docker.io/rancher/mirrored-pause";
   imageDigest = "sha256:74c4244427b7312c5b901fe0f67cbc53683d06f4f24c6faee65d4182bf0fa893";
-  sha256 = "0qm3q199bzj5z73fs2h6ivkbmqcifgjbb34i145chmx5hrg8zfr1";
+  sha256 = "IbuPXoalV8gKCZGMteRzkeG65o4GCu3G+UX+lVLAo2I=";
   finalImageName = "docker.io/rancher/mirrored-pause";
   finalImageTag = "3.6";
 }
