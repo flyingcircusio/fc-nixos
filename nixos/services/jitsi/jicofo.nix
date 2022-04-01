@@ -150,7 +150,7 @@ in
     flyingcircus.services.sensu-client.checks = {
       jitsi-jicofo-alive = {
         notification = "Jitsi jicofo not healthy";
-        command = "check_http -v -j HEAD -H localhost -p 8888 -u /about/health";
+        command = "check_http -v -H localhost -p 8888 -u /about/health";
       };
     };
 
