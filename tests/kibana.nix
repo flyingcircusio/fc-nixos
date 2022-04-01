@@ -32,6 +32,7 @@ in
     };
 
   testScript = ''
+    expected_major_version = ${version}
     start_all()
 
     machine.wait_for_unit("elasticsearch")
@@ -50,6 +51,9 @@ in
 
     with subtest("cluster healthy?"):
         machine.succeed(status_check)
+
+    with subtest(f"version should be {expected_major_version}.x in the OSS flavor"):
+      machine.succeed(f"systemctl show kibana -P ExecStart --value | grep kibana-oss-{expected_major_version}")
 
     with subtest("killing the kibana process should trigger an automatic restart"):
         machine.succeed(
