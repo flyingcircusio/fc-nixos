@@ -86,6 +86,7 @@ in
         "-Dnet.java.sip.communicator.SC_HOME_DIR_NAME" = "jicofo";
         "-Djava.util.logging.config.file" = "/etc/jitsi/jicofo/logging.properties";
         "-Dconfig.file" = "/etc/jitsi/jicofo/jicofo.conf";
+        "-Dorg.jitsi.jicofo.health.ENABLE_HEALTH_CHECKS" = "true";
       };
     in
     {
@@ -143,6 +144,13 @@ in
         }
       }
       '';
+
+    flyingcircus.services.sensu-client.checks = {
+      jitsi-jicofo-alive = {
+        notification = "Jicofo healthy";
+        command = "check_http -v -j HEAD -H localhost -p 8888 -u /about/health";
+      };
+    };
 
     environment.etc."jitsi/jicofo/sip-communicator.properties".source =
       pkgs.writeText "sip-communicator.properties" (
