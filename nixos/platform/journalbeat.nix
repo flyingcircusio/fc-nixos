@@ -121,8 +121,8 @@ in
 
         package = mkOption {
           type = types.package;
-          default = pkgs.filebeat7;
-          defaultText = "pkgs.filebeat7";
+          default = pkgs.filebeat7-oss;
+          defaultText = "pkgs.filebeat7-oss";
           example = literalExample "pkgs.filebeat7";
           description = ''
             The filebeat package to use.
