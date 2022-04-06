@@ -296,6 +296,9 @@ in {
 
   openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
 
+  opensearch = super.callPackage ./opensearch { };
+  opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
+
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
