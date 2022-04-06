@@ -1,10 +1,11 @@
-{ elasticKibanaOSS7Version
+{ elasticKibana7Version
 , lib, stdenv
 , makeWrapper
 , fetchurl
 , nodejs-10_x
 , coreutils
 , which
+, unfree ? false
 }:
 
 with lib;
@@ -12,12 +13,16 @@ let
   nodejs = nodejs-10_x;
 
 in stdenv.mkDerivation rec {
-  name = "kibana-oss-${version}";
-  version = elasticKibanaOSS7Version;
+  flavour = if unfree then "" else "-oss";
+  name = "kibana${flavour}-${version}";
+  version = elasticKibana7Version;
 
   src = fetchurl {
     url = "https://artifacts.elastic.co/downloads/kibana/${name}-linux-x86_64.tar.gz";
-    sha256 = "050rhx82rqpgqssp1rdflz1ska3f179kd2k2xznb39614nk0m6gs";
+    sha256 =
+      if unfree
+      then "06p0v39ih606mdq2nsdgi5m7y1iynk9ljb9457h5rrx6jakc2cwm"
+      else "050rhx82rqpgqssp1rdflz1ska3f179kd2k2xznb39614nk0m6gs";
   };
 
   patches = [
@@ -39,7 +44,7 @@ in stdenv.mkDerivation rec {
   meta = {
     description = "Visualize logs and time-stamped data";
     homepage = "http://www.elasticsearch.org/overview/kibana";
-    license = licenses.asl20;
+    license = if unfree then licenses.elastic else licenses.asl20;
     platforms = with platforms; linux;
   };
 }
