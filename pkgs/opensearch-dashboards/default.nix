@@ -13,12 +13,11 @@ let
 
 in stdenv.mkDerivation rec {
   pname = "opensearch-dashboards";
-  version = "7.${realVersion}";
-  realVersion = "1.3.0";
+  version = "1.3.1";
 
   src = fetchurl {
-    url = "https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/${realVersion}/${pname}-${realVersion}-linux-x64.tar.gz";
-    sha256 = "13ija5mnm4ydscf306pn362jsw5irac11fc2dalja0anzri7hgmp";
+    url = "https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/${version}/${pname}-${version}-linux-x64.tar.gz";
+    sha256 = "1dxx5hrdjqny3vm4b0209y7s8nr6a0rx9mg9vvyqsmyz9159d1s8";
   };
 
   patches = [
@@ -33,8 +32,6 @@ in stdenv.mkDerivation rec {
     makeWrapper $out/libexec/opensearch-dashboards/bin/opensearch-dashboards $out/bin/opensearch-dashboards \
       --prefix PATH : "${lib.makeBinPath [ nodejs coreutils which ]}"
     sed -i 's@NODE=.*@NODE=${nodejs}/bin/node@' $out/libexec/opensearch-dashboards/bin/opensearch-dashboards
-
-    ln -s $out/bin/opensearch-dashboards $out/bin/kibana
   '';
 
   meta = {
