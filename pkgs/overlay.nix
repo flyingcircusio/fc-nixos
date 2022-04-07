@@ -99,6 +99,10 @@ in {
     };
   });
 
+  graylog = (super.graylog.override {
+    openjdk11_headless = self.jdk8_headless;
+  });
+
   kibana7 = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; unfree = true; };
   kibana7-oss = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; };
 
@@ -136,6 +140,9 @@ in {
       sha256 = "10f4542nn5dkabkmv7zykbq4wj39w9i6z0avpgwb6n527c15myyc";
     };
   });
+
+  jdk8_headless = super.jdk8_headless.override { zlib = self.zlibCrcInputFix; };
+  jdk11_headless = super.jdk11_headless.override { zlib = self.zlibCrcInputFix; };
 
   inherit (super.callPackages ./matomo {})
     matomo
@@ -310,4 +317,8 @@ in {
   wkhtmltopdf = self.wkhtmltopdf_0_12_6;
 
   xtrabackup = self.percona-xtrabackup_8_0;
+
+  zlibCrcInputFix = super.zlib.overrideAttrs(a: {
+    patches = [ ./zlib-1.12.12-incorrect-crc-inputs-fix.patch  ];
+  });
 }
