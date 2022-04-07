@@ -54,7 +54,17 @@ in {
 
   docsplit = super.callPackage ./docsplit { };
 
-  elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
+  elasticsearch6 = (super.elasticsearch6.override {
+    jre_headless = self.jdk11_headless;
+  });
+
+  elasticsearch6-oss = (super.elasticsearch6-oss.override {
+    jre_headless = self.jdk11_headless;
+  });
+
+  elasticsearch7 = (super.elasticsearch7.override {
+    jre_headless = self.jdk11_headless;
+  }).overrideAttrs(_: rec {
     version = elasticKibana7Version;
     name = "elasticsearch-${version}";
 
@@ -64,7 +74,9 @@ in {
     };
   });
 
-  elasticsearch7-oss = super.elasticsearch7.overrideAttrs(_: rec {
+  elasticsearch7-oss = (super.elasticsearch7.override {
+    jre_headless = self.jdk11_headless;
+  }).overrideAttrs(_: rec {
     version = elasticKibana7Version;
     name = "elasticsearch-oss-${version}";
 
