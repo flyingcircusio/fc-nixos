@@ -54,7 +54,9 @@ in {
 
   docsplit = super.callPackage ./docsplit { };
 
-  elasticsearch7 = super.elasticsearch7.overrideAttrs(_: rec {
+  elasticsearch7 = (super.elasticsearch7.override {
+    jre_headless = self.jdk11_headless;
+  }).overrideAttrs(_: rec {
     version = elk7Version;
     name = "elasticsearch-${version}";
 
@@ -64,7 +66,9 @@ in {
     };
   });
 
-  elasticsearch7-oss = super.elasticsearch7-oss.overrideAttrs(_: rec {
+  elasticsearch7-oss = (super.elasticsearch7-oss.override {
+    jre_headless = self.jdk11_headless;
+  }).overrideAttrs(_: rec {
     version = elk7Version;
     name = "elasticsearch-oss-${version}";
 
