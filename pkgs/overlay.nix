@@ -248,6 +248,9 @@ in {
   mc = super.callPackage ./mc.nix { };
 
   mongodb-3_6 = super.mongodb-3_6.overrideAttrs(_: rec {
+    # We have set the license to null to avoid that Hydra complains about unfree
+    # licenses (here: SSPL). We should explicitly allow SSPL in the future and
+    # remove this override here.
     meta.license = null;
     version = "3.6.19";
     name = "mongodb-${version}";
@@ -257,6 +260,9 @@ in {
     };
   });
   mongodb-4_0 = super.mongodb-4_0.overrideAttrs(_: rec {
+    # We have set the license to null to avoid that Hydra complains about unfree
+    # licenses (here: SSPL). We should explicitly allow SSPL in the future and
+    # remove this override here.
     meta.license = null;
     version = "4.0.19";
     name = "mongodb-${version}";
@@ -266,6 +272,9 @@ in {
     };
   });
   mongodb-4_2 = super.mongodb-4_2.overrideAttrs(_: rec {
+    # We have set the license to null to avoid that Hydra complains about unfree
+    # licenses (here: SSPL). We should explicitly allow SSPL in the future and
+    # remove this override here.
     meta.license = null;
     version = "4.2.18";
     name = "mongodb-${version}";
