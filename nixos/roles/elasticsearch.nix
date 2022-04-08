@@ -177,6 +177,9 @@ in
         Restart = "always";
       };
       preStart = lib.mkAfter ''
+        # redirect jvm logs to the data directory
+        mkdir -m 0700 -p ${cfg_service.dataDir}/logs
+        ${pkgs.sd}/bin/sd 'logs/gc.log' '${cfg_service.dataDir}/logs/gc.log' ${cfg_service.dataDir}/config/jvm.options
         # Install scripts
         mkdir -p ${cfg_service.dataDir}/scripts
       '';
