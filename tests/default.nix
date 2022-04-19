@@ -79,6 +79,8 @@ in {
   network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
   nginx = callTest ./nginx.nix {};
+  opensearch = callTest ./opensearch.nix {};
+  opensearch_dashboards = callTest ./opensearch_dashboards.nix {};
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };

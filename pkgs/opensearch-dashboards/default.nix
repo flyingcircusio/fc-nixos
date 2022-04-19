@@ -35,8 +35,8 @@ in stdenv.mkDerivation rec {
   '';
 
   meta = {
-    description = "Visualize logs and time-stamped data";
-    homepage = "http://www.elasticsearch.org/overview/opensearch-dashboards";
+    description = "Visualization and user interface for OpenSearch";
+    homepage = "https://opensearch.org";
     license = licenses.asl20;
     platforms = with platforms; linux;
   };
