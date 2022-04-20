@@ -43,6 +43,7 @@ let
           # This changes the default config for path.geoip2 so that it doesn't point
           # to the nix store.
           ./change-path-geoip2.patch
+          ./tag-manager-writable-container-js-location.patch
         ];
 
         # this bootstrap.php adds support for getting PIWIK_USER_PATH
@@ -78,6 +79,7 @@ let
           "misc/composer/clean-xhprof.sh"
           "misc/cron/archive.sh"
           "plugins/GeoIp2/config/config.php"
+          "plugins/TagManager/config/config.php"
           "plugins/Installation/FormDatabaseSetup.php"
           "vendor/pear/archive_tar/sync-php4"
           "vendor/szymach/c-pchart/coverage.sh"
