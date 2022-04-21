@@ -99,6 +99,10 @@ in {
     };
   });
 
+  graylog = (super.graylog.override {
+    openjdk11_headless = self.jdk8_headless;
+  });
+
   kibana7 = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; unfree = true; };
   kibana7-oss = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; };
 
@@ -111,31 +115,34 @@ in {
 
   jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
     pname = "jicofo";
-    version = "1.0-846";
+    version = "1.0-862";
     src = super.fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "1gsij3mv1rbcx6wvxf5a2cb58py7ak56z2sajdpjv4w3ihxi9h5a";
+      sha256 = "11rq6kqcvmjj5589bpi8v31gx287vkixxjycimbi4fqwfg57f1s1";
     };
   });
 
   jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-meet";
-    version = "1.0.5818";
+    version = "1.0.5913";
     src = super.fetchurl {
       url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      sha256 = "1il9c6q8aa86k9br1g59320kz15qpxcgpd2rrcfxyh8q95h6hmm1";
+      sha256 = "0m58gyj5qvihk2lvg9raqjlq6m4znm3bd48zj2mv77ia069lc31m";
     };
 
   });
 
   jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-videobridge2";
-    version = "2.1-617-ga8b39c3f";
+    version = "2.1-634-gff8609ad";
     src = super.fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "0pnzf5nj1i47rkaf8ayvl6jdkizg9i126ljrzvrxasvkjqf7xd0b";
+      sha256 = "10f4542nn5dkabkmv7zykbq4wj39w9i6z0avpgwb6n527c15myyc";
     };
   });
+
+  jdk8_headless = super.jdk8_headless.override { zlib = self.zlibCrcInputFix; };
+  jdk11_headless = super.jdk11_headless.override { zlib = self.zlibCrcInputFix; };
 
   inherit (super.callPackages ./matomo {})
     matomo
@@ -310,4 +317,8 @@ in {
   wkhtmltopdf = self.wkhtmltopdf_0_12_6;
 
   xtrabackup = self.percona-xtrabackup_8_0;
+
+  zlibCrcInputFix = super.zlib.overrideAttrs(a: {
+    patches = [ ./zlib-1.12.12-incorrect-crc-inputs-fix.patch  ];
+  });
 }

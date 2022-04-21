@@ -135,7 +135,6 @@ in {
 
     users.users.${user} = {
       isSystemUser = true;
-      createHome = true;
       home = dataDir;
       group  = user;
     };
@@ -155,6 +154,7 @@ in {
       environment.PIWIK_USER_PATH = dataDir;
       serviceConfig = {
         Type = "oneshot";
+        RemainAfterExit = true;
         User = user;
         # hide especially config.ini.php from other
         UMask = "0007";
@@ -191,6 +191,10 @@ in {
         '';
       script = ''
             # Use User-Private Group scheme to protect Matomo data, but allow administration / backup via 'matomo' group
+            mkdir -p ${dataDir}/tagmanager
+            ${pkgs.acl}/bin/setfacl -m u:nginx:x ${dataDir}/
+            ${pkgs.acl}/bin/setfacl -Rm u:nginx:rX ${dataDir}/tagmanager/
+            ${pkgs.acl}/bin/setfacl -dm u:nginx:r ${dataDir}/tagmanager/
             # Copy config folder
             chmod g+s "${dataDir}"
             cp -r "${cfg.package}/share/config" "${dataDir}/"
@@ -328,6 +332,7 @@ in {
         locations."= /piwik.js".extraConfig = ''
           expires 1M;
         '';
+        locations."/js/tagmanager/".alias = dataDir + "/tagmanager/";
       }];
     };
   };
