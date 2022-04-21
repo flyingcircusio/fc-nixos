@@ -1,12 +1,15 @@
-{ config, pkgs, lib, ... }:
+{ config, options, pkgs, lib, ... }:
 let
   role = config.flyingcircus.roles.lamp;
   fclib = config.fclib;
 in {
+
   options = with lib; {
     flyingcircus.roles.lamp = {
       enable = mkEnableOption "Flying Circus LAMP stack";
       supportsContainers = fclib.mkEnableContainerSupport;
+
+      useFPM = fclib.mkObsoleteOption "FPM is always used now.";
 
       fpmMaxChildren = mkOption {
         type = types.int;
@@ -114,6 +117,13 @@ in {
     in
 
       lib.mkMerge [
+      {
+        warnings =
+          fclib.obsoleteOptionWarning
+            options
+            [ "flyingcircus" "roles" "lamp" "useFPM" ]
+            "FPM is always used now.";
+      }
 
       (lib.mkIf (!role.enable) {
         # Install the default upstream PHP when the LAMP role is not activated.
