@@ -259,12 +259,12 @@ in {
         ];
 
       in {
-        JAVA_HOME = pkgs.jre8_headless;
+        JAVA_HOME = pkgs.jdk8_headless;
         GRAYLOG_CONF = graylogConfPath;
         JAVA_OPTS = lib.concatStringsSep " " javaOpts;
       };
 
-      path = [ pkgs.jre8_headless pkgs.which pkgs.procps ];
+      path = [ pkgs.jdk8_headless pkgs.which pkgs.procps ];
 
       preStart = ''
         rm -rf /var/lib/graylog/plugins || true
