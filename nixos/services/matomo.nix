@@ -135,7 +135,6 @@ in {
 
     users.users.${user} = {
       isSystemUser = true;
-      createHome = true;
       home = dataDir;
       group  = user;
     };
@@ -333,7 +332,7 @@ in {
         locations."= /piwik.js".extraConfig = ''
           expires 1M;
         '';
-        locations."/js/tagmanager".alias = dataDir + "/tagmanager";
+        locations."/js/tagmanager/".alias = dataDir + "/tagmanager/";
       }];
     };
   };
