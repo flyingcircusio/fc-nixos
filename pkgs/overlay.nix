@@ -163,6 +163,16 @@ in {
     ];
   });
 
+  auditbeat7-oss = self.auditbeat7.overrideAttrs(a: a // {
+    name = "auditbeat-oss-${a.version}";
+    preBuild = "rm -rf x-pack";
+  });
+
+  filebeat7-oss = super.filebeat7.overrideAttrs(a: a // {
+    name = "filebeat-oss-${a.version}";
+    preBuild = "rm -rf x-pack";
+  });
+
   # Import old php versions from nix-phps
   inherit (phps) php72 php73;
 
