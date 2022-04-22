@@ -63,7 +63,7 @@ in {
           LANG = "en_US.utf8";
           PYTHONUNBUFFERED = "1";
         };
-        script = "${garbagecollectBin}/bin/fc-collect-garbage ${./userscan.exclude}";
+        script = "${garbagecollectBin}/bin/fc-collect-garbage ${./userscan.exclude} ${log}";
       };
 
       systemd.timers.fc-collect-garbage = {
