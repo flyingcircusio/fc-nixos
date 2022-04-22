@@ -163,6 +163,16 @@ in {
     ];
   });
 
+  auditbeat7-oss = self.auditbeat7.overrideAttrs(a: a // {
+    name = "auditbeat-oss-${a.version}";
+    preBuild = "rm -rf x-pack";
+  });
+
+  filebeat7-oss = super.filebeat7.overrideAttrs(a: a // {
+    name = "filebeat-oss-${a.version}";
+    preBuild = "rm -rf x-pack";
+  });
+
   # Import old php versions from nix-phps
   inherit (phps) php72 php73;
 
@@ -308,7 +318,10 @@ in {
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
 
+  solr = super.solr.override { jre = self.jdk11_headless; };
+
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
+
   tideways_daemon = super.callPackage ./tideways/daemon.nix {};
   tideways_module = super.callPackage ./tideways/module.nix {};
 
