@@ -3,7 +3,7 @@
 Varnish (Webproxy)
 ==================
 
-This role provides Varnish.
+This role provides Varnish version 7.0.x.
 
 
 How we differ from what you are used to

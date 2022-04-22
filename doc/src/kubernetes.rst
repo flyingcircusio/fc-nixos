@@ -9,7 +9,6 @@ Kubernetes Cluster (k3s)
     Kubernetes support is in beta. Feel free to use it but we suggest contacting
     our support before putting anything into production.
 
-
 `Kubernetes <https://kubernetes.io>`_ is an open-source system for automating
 deployment, scaling, and management of containerized applications. At the
 Flying Circus we provide a hybrid system that integrates well with our existing
@@ -34,6 +33,7 @@ Kubernetes and understand the general terminology.
     run in a process called the `k3s agent`. We will prefer to use the words
     `server` and `agent` through the remainder of this document.
 
+We provide k3s in the version 1.23.x.
 
 Reference architecture and minimal resource requirements
 ========================================================
