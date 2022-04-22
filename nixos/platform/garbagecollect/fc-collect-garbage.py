@@ -7,6 +7,7 @@ import sys
 
 def main():
     exclude_file = sys.argv[1]
+    log_file = sys.argv[2]
     rc = []
     users_to_scan = [
         user
@@ -57,7 +58,7 @@ def main():
         )
         sys.exit(3)
 
-    open("${log}", "w").write(str(datetime.datetime.now()) + "\n")
+    open(log_file, "w").write(str(datetime.datetime.now()) + "\n")
     print("fc-collect-garbage finished without problems.")
 
 
