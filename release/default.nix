@@ -113,6 +113,7 @@ let
 
   includedPkgNames = [
     "calibre"
+    "gitlab-ee"
   ];
 
   testPkgNames = includedPkgNames ++
