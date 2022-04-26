@@ -122,12 +122,11 @@ def main():
 
     h = logging.handlers.SysLogHandler(facility=syslog.LOG_LOCAL4)
     logging.basicConfig(level=logging.DEBUG, handlers=[h])
-    with open("/etc/consul.json") as f:
-        consul_config = json.load(f)
     with open("/etc/nixos/enc.json") as f:
-        enc = json.load(f)
+        parameters = json.load(f)["parameters"]
     b = BackyConfig(
-        enc["parameters"]["location"], consul_config["acl"]["tokens"]["agent"]
+        parameters["location"],
+        parameters["secrets"]["consul/master_token"],
     )
 
     b.apply(restart=args.restart)
