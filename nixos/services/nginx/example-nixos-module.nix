@@ -18,13 +18,13 @@
       locations = {
         "/cms" = {
           # Pass request to HAProxy, for example
-          proxyPass = "http://localhost:8008";
+          proxyPass = "http://localhost:8002";
         };
         "/internal" = {
           # Authenticate as FCIO user (user has to have login permission).
           basicAuth = "FCIO user";
           basicAuthFile = "/etc/local/htpasswd_fcio_users";
-          proxyPass = "http://localhost:8008";
+          proxyPass = "http://localhost:8002";
         };
       };
     };

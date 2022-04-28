@@ -60,6 +60,20 @@ in {
       type = types.attrsOf types.unspecified;
     };
 
+    flyingcircus.allowedUnfreePackageNames = mkOption {
+      type = listOf str;
+      description = ''
+        Names of packages that are allowed to be used regardless of their
+        license. Nix by default denies using packages with licenses considered
+        "unfree" by nixpkgs. Note that unfree packages are not pre-built by
+        cache.nixos.org and have to be pre-built by our hydra.flyingcircus.io
+        (triggered by a NixOS test, defined in pkgs/overlay.nix or listed in
+        release/default.nix includedPkgNames). Otherwise, it will be built
+        directly on the machine using the package.
+      '';
+      default = [];
+    };
+
     flyingcircus.enc_services = mkOption {
       default = [];
       type = listOf attrs;
@@ -213,7 +227,11 @@ in {
       '';
     };
 
-    nixpkgs.config.allowUnfree = true;
+    nixpkgs.config.allowUnfreePredicate = pkg:
+      builtins.elem
+        (lib.getName pkg)
+        config.flyingcircus.allowedUnfreePackageNames;
+
     nixpkgs.config.permittedInsecurePackages = [
       "nodejs-10.24.1"
     ];
@@ -238,6 +256,17 @@ in {
       enc_services = enc_services;
       logrotate.enable = true;
       agent.collect-garbage = true;
+      allowedUnfreePackageNames = [
+        # TODO: megacli is only used on physical machines but pulled in by
+        # fc-sensuplugins and thus needed on all machines. Should be moved to
+        # the raid service after decoupling fc-sensuplugins.
+        "megacli"
+        # We could also allow SSPL as a whole, but adding sspl to
+        # allowlistLicenses is broken in 21.11. Fixed in unstable:
+        # https://github.com/NixOS/nixpkgs/pull/160467
+        # TODO: replace this when on 22.05.
+        "mongodb"
+      ];
     };
 
     # implementation for flyingcircus.passwordlessSudoRules
