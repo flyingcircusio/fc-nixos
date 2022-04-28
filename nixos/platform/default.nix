@@ -60,6 +60,23 @@ in {
       type = types.attrsOf types.unspecified;
     };
 
+    flyingcircus.allowedUnfreePackageNames = mkOption {
+      type = listOf str;
+      description = ''
+        *Has no effect on this platform version but is needed for 21.11*
+        *Add unfree package names here before upgrading to 21.11*
+
+        Names of packages that are allowed to be used regardless of their
+        license. Nix by default denies using packages with licenses considered
+        "unfree" by nixpkgs. Note that unfree packages are not pre-built by
+        cache.nixos.org and have to be pre-built by our hydra.flyingcircus.io
+        (triggered by a NixOS test, defined in pkgs/overlay.nix or listed in
+        release/default.nix includedPkgNames). Otherwise, it will be built
+        directly on the machine using the package.
+      '';
+      default = [];
+    };
+
     flyingcircus.enc_services = mkOption {
       default = [];
       type = listOf attrs;
