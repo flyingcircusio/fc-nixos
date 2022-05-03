@@ -12,6 +12,7 @@ in {
     ./antivirus.nix
     ./backyserver.nix
     ./coturn.nix
+    ./consul
     ./docker.nix
     ./ceph/mon.nix
     ./ceph/osd.nix

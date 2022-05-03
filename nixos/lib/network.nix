@@ -157,6 +157,13 @@ rec {
         fromNumber ((toNumber addr) / shiftAmount * shiftAmount) pfl;
   };
 
+  networks = with fclib; rec {
+    all = config.flyingcircus.encNetworks;
+
+    v4 = filter isIp4 all;
+    v6 = filter isIp6 all;
+  };
+
   network = (lib.mapAttrs'
     (vlan: interface:
       lib.nameValuePair vlan (

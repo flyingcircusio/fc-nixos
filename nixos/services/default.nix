@@ -19,7 +19,7 @@ in {
     ./ceph/client.nix
     ./ceph/server.nix
     ./collectdproxy.nix
-    ./consul.nix
+    ./consul
     ./gitlab
     ./graylog
     ./haproxy
