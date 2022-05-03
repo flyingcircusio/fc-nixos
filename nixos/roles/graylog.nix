@@ -133,8 +133,8 @@ in
       networking.firewall.allowedTCPPorts = [ 9002 ];
 
       networking.firewall.extraCommands = ''
-        ip46tables -A nixos-fw -i ethsrv -p udp --dport ${toString syslogInputPort} -j nixos-fw-accept
-        ip46tables -A nixos-fw -i ethsrv -p tcp --dport ${toString beatsTCPHAPort} -j nixos-fw-accept
+        ip46tables -A nixos-fw -i ${fclib.network.srv.device} -p udp --dport ${toString syslogInputPort} -j nixos-fw-accept
+        ip46tables -A nixos-fw -i ${fclib.network.srv.device} -p tcp --dport ${toString beatsTCPHAPort} -j nixos-fw-accept
       '';
 
       flyingcircus.services.graylog = {
