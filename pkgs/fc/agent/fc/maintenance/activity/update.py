@@ -3,18 +3,12 @@
 This activity does nothing if the machine already uses the new version.
 """
 
-import argparse
 import os.path as p
 import re
-import sys
-from pathlib import Path
 
 import structlog
 from fc.util import nixos
-from fc.util.logging import init_logging
 
-from ..reqmanager import DEFAULT_DIR, ReqManager
-from ..request import Request
 from . import Activity, RebootType
 
 _log = structlog.get_logger()
@@ -102,7 +96,10 @@ class UpdateActivity(Activity):
                 self.log.info(
                     "update-run-skip",
                     current_version=self.next_version,
-                    _replace_msg="Running version is already the wanted version {current_version}, skip update.",
+                    _replace_msg=(
+                        "Running version is already the wanted version "
+                        "{current_version}, skip update."
+                    ),
                 )
                 self.returncode = 0
                 return
@@ -230,80 +227,3 @@ class UpdateActivity(Activity):
 
     def _detect_next_version(self):
         self.next_version = nixos.channel_version(self.next_channel_url)
-
-
-def main():
-    a = argparse.ArgumentParser(description=__doc__)
-    a.add_argument(
-        "channel_url", metavar="URL", help="channel URL to update to"
-    )
-    a.add_argument(
-        "-r",
-        "--run-now",
-        action="store_true",
-        default=False,
-        help="do update now instead of scheduling a request",
-    )
-    a.add_argument(
-        "--dry-run",
-        action="store_true",
-        default=False,
-        help="do nothing, just show activity",
-    )
-    a.add_argument(
-        "-d",
-        "--spooldir",
-        metavar="DIR",
-        default=DEFAULT_DIR,
-        help="request spool dir (default: %(default)s)",
-    )
-    a.add_argument("-v", "--verbose", action="store_true", default=False)
-    args = a.parse_args()
-
-    main_log_file = open("/var/log/fc-maintenance.log", "a")
-    cmd_log_file = open(
-        "/var/log/fc-agent/update-activity-command-output.log", "w"
-    )
-
-    init_logging(args.verbose, main_log_file, cmd_log_file)
-
-    activity = UpdateActivity.from_system_if_changed(args.channel_url)
-
-    if activity is None:
-        _log.warn(
-            "update-skip",
-            _replace_msg="Channel URL unchanged, skipped.",
-            activity=activity,
-        )
-        sys.exit(1)
-
-    activity.prepare(args.dry_run)
-
-    # possible short-cut: built system is the same => we can skip requesting maintenance and set the new channel directly
-
-    if args.run_now:
-        _log.info(
-            "update-run-now",
-            _replace_msg="Run-now mode requested, running the update now.",
-        )
-        activity.run()
-
-    elif args.dry_run:
-        _log.info(
-            "update-dry-run",
-            _replace_msg="Update prediction was successful. This would be applied by the update:",
-            _output=activity.changelog,
-        )
-    else:
-        with ReqManager(spooldir=args.spooldir) as rm:
-            rm.scan()
-            rm.add(Request(activity, 600, activity.changelog))
-        _log.info(
-            "update-prepared",
-            _replace_msg="Update preparation was successful. This will be applied in a maintenance window:",
-            _output=activity.changelog,
-        )
-
-
-if __name__ == "__main__":
-    main()

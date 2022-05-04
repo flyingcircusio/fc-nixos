@@ -6,19 +6,16 @@ import os.path as p
 import tempfile
 
 import iso8601
-import pytz
+import rich.table
 import shortuuid
 import structlog
 import yaml
+from fc.util.time_date import ensure_timezone_present, format_datetime, utcnow
 
 from .estimate import Estimate
 from .state import State, evaluate_state
 
 _log = structlog.get_logger()
-
-
-def utcnow():
-    return pytz.UTC.localize(datetime.datetime.utcnow())
 
 
 @contextlib.contextmanager
@@ -40,6 +37,8 @@ class Request:
     comment = None
     estimate = None
     next_due = None
+    last_scheduled_at = None
+    added_at = None
     state = State.pending
     _reqmanager = None  # backpointer, will be set in ReqManager
 
@@ -52,32 +51,8 @@ class Request:
         self.log = log
         self.attempts = []
 
-    def __str__(self):
-        line = "{state}  {shortid}  {sched:20}  {estimate:8}  {comment}".format(
-            state=self.state.short,
-            shortid=self.id[:7],
-            sched=(
-                self.next_due.strftime("%Y-%m-%d %H:%M UTC")
-                if self.next_due
-                else "--- TBA ---"
-            ),
-            estimate=str(self.estimate),
-            comment=self.comment,
-        )
-        if self.duration:
-            line += " (duration: {})".format(Estimate(self.duration))
-        return line
-
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self.id == other.id
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        # This somehow gets called twice when serializing to YAML so the second
-        # time, log may be mising. Just ignore it.
-        if "log" in state:
-            del state["log"]
-        return state
 
     def __hash__(self):
         return hash(self.id)
@@ -91,6 +66,31 @@ class Request:
             return False
         else:
             return self.id < other.id
+
+    def __rich__(self):
+        table = rich.table.Table(show_header=False, show_lines=True)
+        table.add_column()
+        table.add_column()
+        for key, val in self.__rich_repr__():
+            table.add_row(key, val)
+        return table
+
+    def __rich_repr__(self):
+        yield "ID", self._reqid
+        yield "state", str(self.state)
+        if self.next_due:
+            yield "next_due", format_datetime(self.next_due)
+        if self.added_at:
+            yield "added_at", format_datetime(self.added_at)
+        if self.last_scheduled_at:
+            yield "last_scheduled_at", format_datetime(self.last_scheduled_at)
+        yield "estimate", str(self.estimate)
+        yield "comment", self.comment
+        yield "activity", self.activity
+        yield "attempts", ", ".join(
+            f"{format_datetime(a.finished)} (exit {a.returncode})"
+            for a in self.attempts
+        )
 
     def set_up_logging(self, log):
         log = log.bind(request=self.id)
@@ -124,8 +124,11 @@ class Request:
 
         with open(p.join(dir, "request.yaml")) as f:
             instance = yaml.load(f, Loader=yaml.FullLoader)
-            if instance.next_due and not instance.next_due.tzinfo:
-                instance.next_due = pytz.UTC.localize(instance.next_due)
+            instance.next_due = ensure_timezone_present(instance.next_due)
+            instance.added_at = ensure_timezone_present(instance.added_at)
+            instance.last_scheduled_at = ensure_timezone_present(
+                instance.last_scheduled_at
+            )
         instance.dir = dir
         with cd(dir):
             instance.activity.load()
@@ -159,8 +162,8 @@ class Request:
             _replace_msg="Starting execution of request: {request}",
             request=self.id,
         )
+        attempt = Attempt()  # sets start time
         try:
-            attempt = Attempt()  # sets start time
             self.state = State.running
             self.save()
             with cd(self.dir):
@@ -175,7 +178,10 @@ class Request:
         except Exception:
             self.log.error(
                 "execute-request-failed",
-                _replace_msg="Executing request {request} failed. See exception for details.",
+                _replace_msg=(
+                    "Executing request {request} failed. See exception for "
+                    "details."
+                ),
                 request=self.id,
                 exc_info=True,
             )
@@ -197,6 +203,8 @@ class Request:
                 _replace_msg="Executed request {request} (state: {state}).",
                 request=self.id,
                 state=self.state,
+                stdout=attempt.stdout,
+                stderr=attempt.stderr,
                 duration=attempt.duration,
             )
 
@@ -252,6 +260,10 @@ def request_representer(dumper, data):
     d = copy.copy(data)
     if hasattr(d, "_reqmanager"):
         d._reqmanager = None
+
+    if hasattr(d, "log"):
+        del d.log
+
     return dumper.represent_object(d)
 
 

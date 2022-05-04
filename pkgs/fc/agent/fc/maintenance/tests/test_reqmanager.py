@@ -3,21 +3,22 @@ import datetime
 import os
 import os.path as p
 import socket
-import sys
 import textwrap
 import unittest.mock
 import uuid
+from io import StringIO
 from unittest.mock import call
 
-import fc.maintenance.reqmanager
 import freezegun
 import pytest
 import pytz
+import rich
 import shortuuid
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.reqmanager import ReqManager
 from fc.maintenance.request import Attempt, Request
 from fc.maintenance.state import ARCHIVE, EXIT_POSTPONE, State
+from rich.console import Console
 
 
 @pytest.fixture
@@ -77,8 +78,8 @@ def test_lockfile(tmpdir):
         assert f.read() == ""
 
 
-def test_req_save(tmpdir):
-    with request_population(1, tmpdir) as (rm, requests):
+def test_req_save(tmpdir, request_population):
+    with request_population(1) as (rm, requests):
         req = requests[0]
         assert p.isfile(p.join(req.dir, "request.yaml"))
         print(open(p.join(req.dir, "request.yaml")).read())
@@ -89,8 +90,8 @@ class FunnyActivity(Activity):
         self.mood = mood
 
 
-def test_scan(tmpdir):
-    with request_population(3, tmpdir) as (rm, requests):
+def test_scan(tmpdir, request_population):
+    with request_population(3) as (rm, requests):
         requests[0].comment = "foo"
         requests[0].save()
         requests[1].activity = FunnyActivity("good")
@@ -228,32 +229,65 @@ def test_reboot_cold_reboot_has_precedence(run, reqmanager, log):
 # Freezegun tests start here.
 
 
-@freezegun.freeze_time("2016-04-20 11:00:00")
-def test_delete_end_to_end(tmpdir):
-    with request_population(1, tmpdir) as (rm, reqs):
-        req = reqs[0]
-        rm.delete(req.id[0:7])
-        assert req.state == State.deleted
+class PostponeActivity(Activity):
+    def run(self):
+        self.returncode = EXIT_POSTPONE
 
 
-@freezegun.freeze_time("2016-04-20 11:00:00")
-def test_list_end_to_end(tmpdir, capsys):
-    with request_population(1, tmpdir) as (rm, reqs):
-        sys.argv = ["list-maintenance", "--spooldir", str(tmpdir)]
-        fc.maintenance.reqmanager.list_maintenance()
-        out, err = capsys.readouterr()
-        assert reqs[0].id[0:7] in out
+@freezegun.freeze_time("2016-04-20 12:00:00")
+@unittest.mock.patch("fc.util.directory.connect")
+def test_schedule_run_end_to_end(connect, request_population):
+
+    import yaml
+    from freezegun.api import FakeDatetime
+
+    def yaml_represent_fake_datetime(dumper, data):
+        return dumper.represent_datetime(data)
+
+    yaml.add_representer(FakeDatetime, yaml_represent_fake_datetime)
+
+    with request_population(3) as (rm, reqs):
+        # 0: due, exec, archive
+        # 1: due, exec, postpone
+        reqs[1].activity = PostponeActivity()
+        reqs[1].save()
+        # 2, config_file=config_file: not due
+        # 3: locally deleted, no req object available
+    sched = connect().schedule_maintenance
+    endm = connect().end_maintenance
+    postp = connect().postpone_maintenance
+    sched.return_value = {
+        reqs[0].id: {"time": "2016-04-20T11:58:00.0+00:00"},
+        reqs[1].id: {"time": "2016-04-20T11:59:00.0+00:00"},
+        reqs[2].id: {"time": "2016-04-20T12:01:00.0+00:00"},
+        "deleted_req": {},
+    }
+    with rm:
+        rm.schedule()
+        rm.execute()
+        rm.postpone()
+        rm.archive()
+
+    endm.assert_has_calls(
+        [
+            call({"deleted_req": {"result": "deleted"}}),
+            call(
+                {
+                    "2222222222222222222222": {
+                        "duration": 0.0,
+                        "result": "success",
+                    }
+                }
+            ),
+        ]
+    ), "unexpected end maintenance calls"
+    assert postp.call_count == 1, "unexpected postpone call count"
 
 
 @unittest.mock.patch("fc.util.directory.connect")
 @freezegun.freeze_time("2016-04-20 12:00:00")
-def test_execute_all_due(connect, tmpdir, agent_maintenance_config):
-    with request_population(
-        3, tmpdir, config_file=agent_maintenance_config
-    ) as (
-        rm,
-        reqs,
-    ):
+def test_execute_all_due(connect, request_population):
+    with request_population(3) as (rm, reqs):
         reqs[0].state = State.running
         reqs[1].state = State.tempfail
         reqs[1].next_due = datetime.datetime(2016, 4, 20, 10, tzinfo=pytz.UTC)
@@ -265,13 +299,8 @@ def test_execute_all_due(connect, tmpdir, agent_maintenance_config):
 
 @unittest.mock.patch("fc.util.directory.connect")
 @freezegun.freeze_time("2016-04-20 12:00:00")
-def test_execute_not_due(connect, tmpdir, agent_maintenance_config):
-    with request_population(
-        3, tmpdir, config_file=agent_maintenance_config
-    ) as (
-        rm,
-        reqs,
-    ):
+def test_execute_not_due(connect, request_population):
+    with request_population(3) as (rm, reqs):
         reqs[0].state = State.error
         reqs[1].state = State.postpone
         reqs[2].next_due = datetime.datetime(2016, 4, 20, 13, tzinfo=pytz.UTC)
@@ -328,9 +357,9 @@ def test_postpone(connect, reqmanager):
 
 
 @unittest.mock.patch("fc.util.directory.connect")
-def test_archive(connect, tmpdir):
+def test_archive(connect, request_population):
     endm = connect().end_maintenance
-    with request_population(5, tmpdir) as (rm, reqs):
+    with request_population(5) as (rm, reqs):
         # len(ARCHIVE) == 4, won't touch the last one in reqs
         for req, state in zip(reqs, sorted(ARCHIVE)):
             req.state = state
@@ -353,57 +382,19 @@ def test_archive(connect, tmpdir):
         assert "requests/" in reqs[4].dir
 
 
-class PostponeActivity(Activity):
-    def run(self):
-        self.returncode = EXIT_POSTPONE
-
-
-@freezegun.freeze_time("2016-04-20 12:00:00")
-@unittest.mock.patch("fc.util.directory.connect")
-def test_end_to_end(connect, tmpdir, agent_maintenance_config):
-    with request_population(
-        3, tmpdir, config_file=agent_maintenance_config
-    ) as (
-        rm,
-        reqs,
-    ):
-        # 0: due, exec, archive
-        # 1: due, exec, postpone
-        reqs[1].activity = PostponeActivity()
-        reqs[1].save()
-        # 2, config_file=config_file: not due
-        # 3: locally deleted, no req object available
-    sched = connect().schedule_maintenance
-    endm = connect().end_maintenance
-    postp = connect().postpone_maintenance
-    sched.return_value = {
-        reqs[0].id: {"time": "2016-04-20T11:58:00.0+00:00"},
-        reqs[1].id: {"time": "2016-04-20T11:59:00.0+00:00"},
-        reqs[2].id: {"time": "2016-04-20T12:01:00.0+00:00"},
-        "deleted_req": {},
-    }
-    fc.maintenance.reqmanager.transaction(
-        tmpdir, config_file=agent_maintenance_config
-    )
-    assert sched.call_count == 1
-    endm.assert_has_calls(
-        [
-            call({"deleted_req": {"result": "deleted"}}),
-            call(
-                {
-                    "2222222222222222222222": {
-                        "duration": 0.0,
-                        "result": "success",
-                    }
-                }
-            ),
-        ]
-    )
-    assert postp.call_count == 1
+@freezegun.freeze_time("2016-04-20 11:00:00")
+def test_delete(request_population):
+    with request_population(1) as (rm, reqs):
+        req = reqs[0]
+        rm.delete(req.id)
+        assert req.state == State.deleted
 
 
 def test_list_empty(reqmanager):
-    assert "" == str(reqmanager)
+    console = Console(file=StringIO())
+    console.print(reqmanager)
+    str_output = console.file.getvalue()
+    assert "No maintenance requests at the moment.\n" == str_output
 
 
 @freezegun.freeze_time("2016-04-20 11:00:00")
@@ -422,14 +413,12 @@ def test_list(reqmanager):
     att.returncode = 1
     r3.attempts = [att]
     reqmanager.add(r3)
-    assert (
-        str(reqmanager)
-        == """\
-St Id       Scheduled             Estimate  Comment
-e  {id3}  2016-04-20 11:00 UTC  1m 30s    error request (duration: 1m 15s)
-*  {id2}  2016-04-20 12:00 UTC  2h        due request
--  {id1}  --- TBA ---           14m       pending request\
-""".format(
-            id1=r1.id[:7], id2=r2.id[:7], id3=r3.id[:7]
-        )
-    )
+    console = Console(file=StringIO())
+    console.print(reqmanager)
+    str_output = console.file.getvalue()
+    id1 = r1.id[:7]
+    id2 = r2.id[:7]
+    id3 = r3.id[:7]
+    assert id1 in str_output
+    assert id2 in str_output
+    assert id3 in str_output

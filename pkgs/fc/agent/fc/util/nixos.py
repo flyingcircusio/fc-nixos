@@ -1,6 +1,5 @@
 """Helpers for interaction with the NixOS system"""
 
-import json
 import os
 import os.path as p
 import re
@@ -192,6 +191,30 @@ def detect_systemd_unit_changes(dry_activate_lines):
             units = [unit.strip() for unit in m.group(2).split(",")]
             changes[action] = units
     return changes
+
+
+def format_unit_change_lines(unit_changes):
+    units_by_category = {}
+    start_units = set(unit_changes.get("start", []))
+    stop_units = set(unit_changes.get("stop", []))
+    reload_units = set(unit_changes.get("reload", []))
+    start_stop_units = start_units.intersection(stop_units)
+    units_by_category["Start/Stop"] = start_stop_units
+    units_by_category["Restart"] = unit_changes.get("restart", [])
+    units_by_category["Start"] = start_units - start_stop_units
+    units_by_category["Stop"] = stop_units - start_stop_units
+    units_by_category["Reload"] = reload_units - {"dbus.service"}
+
+    unit_change_lines = []
+
+    for cat, units in units_by_category.items():
+        if units:
+            unit_change_lines.append(f"{cat}:")
+            unit_change_lines.extend(
+                ["  - " + u.replace(".service", "") for u in sorted(units)]
+            )
+
+    return unit_change_lines
 
 
 def update_system_channel(channel_url, log=_log):

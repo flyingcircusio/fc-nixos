@@ -37,7 +37,7 @@ in
 
     # Always update the channel on first run of the agent
     # without waiting for scheduled maintenance.
-    flyingcircus.agent.with-maintenance = false;
+    flyingcircus.agent.updateInMaintenance = false;
 
     systemd.timers.fc-agent.timerConfig.OnBootSec = "1s";
 

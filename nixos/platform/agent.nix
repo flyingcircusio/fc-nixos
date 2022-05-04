@@ -8,12 +8,25 @@ with lib;
 let
   cfg = config.flyingcircus;
 
-  channelAction =
-    if cfg.agent.with-maintenance
-    then "--channel-with-maintenance"
-    else "--channel";
+  # WARNING: path and environment are duplicated in
+  # devhost. Unfortunately using references causes conflicts
+  # that can not be easily resolved.
+  # Path elements needed by both agent units.
+  commonEnvPath = with pkgs; [
+    bzip2
+    gnutar
+    gzip
+    util-linux
+    xz
+  ];
 
-in {
+  environment = config.nix.envVars // {
+    HOME = "/root";
+    LANG = "en_US.utf8";
+    NIX_PATH = concatStringsSep ":" config.nix.nixPath;
+  };
+in
+{
   options = {
     flyingcircus.agent = {
       install = mkOption {
@@ -28,20 +41,10 @@ in {
         type = types.bool;
       };
 
-      with-maintenance = mkOption {
+      updateInMaintenance = mkOption {
         default = attrByPath [ "parameters" "production" ] false cfg.enc;
         description = "Perform channel updates in scheduled maintenance. Default: all production VMs";
         type = types.bool;
-      };
-
-      steps = mkOption {
-        type = types.str;
-        default = "${channelAction} --automatic --directory --system-state \\
-          --maintenance";
-        description = ''
-          Steps to run by the agent (besides channel with/without maintenance
-          action).
-        '';
       };
 
       extraCommands = mkOption {
@@ -52,21 +55,6 @@ in {
           after the main NixOS configuration/build has been
           activated.
         '';
-      };
-
-      interval = mkOption {
-        type = types.int;
-        default = 60;
-        description = "Run channel updates every N minutes.";
-      };
-
-      lazySwitch = mkOption {
-        default = true;
-        description = ''
-          Only switch to the new configuration if the system has actually
-          changed.
-        '';
-        type = types.bool;
       };
 
       verbose = mkOption {
@@ -99,7 +87,12 @@ in {
 
       flyingcircus.passwordlessSudoRules = [
         {
-          commands = [ "${pkgs.fc.agent}/bin/fc-manage" ];
+          commands = [
+            "${pkgs.fc.agent}/bin/fc-manage"
+            "${pkgs.fc.agent}/bin/fc-maintenance list"
+            "${pkgs.fc.agent}/bin/fc-maintenance show"
+            "${pkgs.fc.agent}/bin/fc-maintenance delete"
+          ];
           groups = [ "sudo-srv" "service" ];
         }
       ];
@@ -116,57 +109,83 @@ in {
 
       systemd.services.fc-agent = rec {
         description = "Flying Circus Management Task";
-        enable = cfg.agent.enable;
         wants = [ "network.target" ];
         after = wants;
         restartIfChanged = false;
         stopIfChanged = false;
         serviceConfig = {
           Type = "oneshot";
-          # don't kill a running fc-manage instance when switching to
-          # enable=false
-          KillMode = "none";
-          # TimeoutSec won't work because of KillMode. The script uses 'timeout'
-          # instead.
+          TimeoutSec = "2h";
           Nice = 18; # 19 is the lowest
           IOSchedulingClass = "idle";
           IOSchedulingPriority = 7; #lowest
           IOWeight = 10; # 1-10000
         };
 
-         # WARNING: path and environment are duplicated in
-         # devhost. Unfortunately using references causes conflicts
-         # that can not be easily resolved.
         path = with pkgs; [
-          bzip2
           config.system.build.nixos-rebuild
           fc.agent
-          gnutar
-          gzip
-          util-linux
-          xz
-        ];
+        ] ++ commonEnvPath;
 
-        environment = config.nix.envVars // {
-          HOME = "/root";
-          LANG = "en_US.utf8";
-          NIX_PATH = concatStringsSep ":" config.nix.nixPath;
-        };
+        inherit environment;
 
         script =
           let
-            interval = toString cfg.agent.interval;
-            lazy = lib.optionalString cfg.agent.lazySwitch "-l";
-            verbose = lib.optionalString cfg.agent.verbose "-v";
+            verbose = lib.optionalString cfg.agent.verbose "--verbose";
+            options = "--enc-path=${cfg.encPath} ${verbose}";
+            wrappedExtraCommands = lib.optionalString (cfg.agent.extraCommands != "") ''
+              (
+              # flyingcircus.agent.extraCommands
+              ${cfg.agent.extraCommands}
+              ) || rc=$?
+            '';
           in ''
             rc=0
-            timeout 14400 \
-              fc-manage -E ${cfg.encPath} -i ${interval} \
-              ${lazy} ${verbose} ${cfg.agent.steps} || rc=$?
-            timeout 900 fc-resize -E ${cfg.encPath} || rc=$?
-            ${cfg.agent.extraCommands}
+            fc-resize-disk || rc=$?
+            # Ignore failing attempts at getting ENC data from the directory.
+            # This happens sometimes when the directory is overloaded and
+            # usually works on the next try.
+            fc-manage ${options} update-enc || true
+            fc-manage ${options} switch --lazy || rc=$?
+            fc-maintenance ${options} request system-properties || rc=$?
+            (
+              fc-maintenance ${options} schedule
+              fc-maintenance ${options} run
+            ) || rc=$?
+            ${wrappedExtraCommands}
             exit $rc
           '';
+      };
+
+      # This was a part of the fc-agent service earlier.
+      # They use shared code paths but they won't run at the same
+      # time because there's an exclusive lock file for actions that
+      # might affect the system.
+      systemd.services.fc-update-channel = rec {
+        description = "Update system channel";
+        wants = [ "network.target" ];
+        after = wants;
+        restartIfChanged = false;
+        stopIfChanged = false;
+        serviceConfig = {
+          Type = "oneshot";
+          TimeoutSec = "2h";
+          Nice = 18; # 19 is the lowest
+          IOSchedulingClass = "idle";
+          IOSchedulingPriority = 7; #lowest
+          IOWeight = 10; # 1-10000
+          ExecStart =
+            let
+              verbose = lib.optionalString cfg.agent.verbose "--verbose";
+              options = "--enc-path=${cfg.encPath} ${verbose}";
+              runNow = lib.optionalString (!cfg.agent.updateInMaintenance) "--run-now";
+            in
+            "${pkgs.fc.agent}/bin/fc-maintenance ${options} request update ${runNow}";
+        };
+
+        path = commonEnvPath;
+
+        inherit environment;
       };
 
       systemd.tmpfiles.rules = [
@@ -177,6 +196,8 @@ in {
         "r /var/lib/fc-manage/stamp-channel-update"
         "d /var/log/fc-agent - - - 180d"
         "d /var/spool/maintenance/archive - - - 180d"
+        "r /var/log/fc-agent/fc-maintenance-command-output.log"
+        "r /var/log/fc-agent/update-activity-command-output.log"
       ];
 
       # Remove obsolete `/result` symlink
@@ -188,7 +209,7 @@ in {
     })
 
     (mkIf (cfg.agent.install && cfg.agent.enable) {
-      # Do not include the service if the agent is not enabled. This allows
+      # Do not add the timers if the agent is not enabled. This allows
       # deciding, i.e. for testing environments, that the image should not start
       # the general fc-manage service upon boot, which might fail.
       systemd.timers.fc-agent = {
@@ -198,6 +219,17 @@ in {
           OnActiveSec = "1m";
           OnUnitInactiveSec = "10m";
           RandomizedDelaySec = "10s";
+        };
+      };
+      systemd.timers.fc-update-channel = {
+        description = "Update system channel";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnActiveSec = "1m";
+          OnCalendar = "hourly";
+          RandomizedDelaySec = "60m";
+          FixedRandomDelay = true;
+          Persistent = true;
         };
       };
     })
