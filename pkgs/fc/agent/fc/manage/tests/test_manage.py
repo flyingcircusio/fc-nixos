@@ -2,7 +2,6 @@ import textwrap
 from unittest.mock import MagicMock, Mock
 
 import responses
-import structlog
 from fc.manage.manage import Channel
 from pytest import fixture, raises
 from requests import HTTPError
@@ -12,11 +11,6 @@ from requests import HTTPError
 def mocked_responses():
     with responses.RequestsMock() as rsps:
         yield rsps
-
-
-@fixture
-def logger():
-    return structlog.get_logger()
 
 
 def expr_url(url):

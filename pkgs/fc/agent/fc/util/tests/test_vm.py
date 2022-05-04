@@ -1,4 +1,4 @@
-from fc.manage.resize import count_cores
+from fc.util.vm import count_cores
 
 CPUINFO_2_CORES = """
 processor       : 0

@@ -2,7 +2,8 @@ import sys
 from unittest.mock import Mock
 
 import pytest
-from fc.maintenance.lib.reboot import RebootActivity, main
+from fc.maintenance import Request
+from fc.maintenance.lib.reboot import RebootActivity
 from fc.maintenance.reqmanager import ReqManager
 
 
@@ -48,19 +49,13 @@ def comments(spooldir):
         return [req.comment for req in rm.requests.values()]
 
 
-def test_dont_perfom_warm_reboot_if_cold_reboot_pending(
+def test_dont_perform_warm_reboot_if_cold_reboot_pending(
     reqdir, defused_boom, boottime
 ):
-    for type_ in [[], ["--poweroff"]]:
-        sys.argv = [
-            "reboot",
-            "--spooldir={}".format(str(reqdir)),
-            "--comment={}".format(type_),
-        ] + type_
-        main()
-
     with ReqManager(str(reqdir)) as rm:
         rm.scan()
+        rm.add(Request(RebootActivity("reboot"), 60, "warm"))
+        rm.add(Request(RebootActivity("poweroff"), 60, "cold"))
         # run soft reboot first
         reqs = sorted(
             rm.requests.values(), key=lambda r: r.activity.action, reverse=True

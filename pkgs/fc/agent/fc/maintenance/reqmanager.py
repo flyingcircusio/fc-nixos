@@ -1,6 +1,5 @@
 """Manage maintenance requests."""
 
-import argparse
 import configparser
 import fcntl
 import glob
@@ -9,16 +8,22 @@ import os
 import os.path as p
 import socket
 import subprocess
+from datetime import datetime
+from pathlib import Path
 
 import fc.util.directory
+import rich
+import rich.syntax
 import structlog
 from fc.maintenance.activity import RebootType
-from fc.util.logging import init_logging
+from fc.util.time_date import format_datetime, utcnow
+from rich.table import Table
 
 from .request import Request
 from .state import ARCHIVE, State
 
-DEFAULT_DIR = "/var/spool/maintenance"
+DEFAULT_SPOOLDIR = "/var/spool/maintenance"
+DEFAULT_CONFIG_FILE = "/etc/fc-agent.conf"
 
 _log = structlog.get_logger()
 
@@ -37,6 +42,7 @@ def require_directory(func):
     """Decorator that ensures a directory connection is present."""
 
     def with_directory_connection(self, *args, **kwargs):
+
         if self.directory is None:
             enc_data = None
             if self.enc_path:
@@ -51,24 +57,32 @@ def require_directory(func):
 class ReqManager:
     """Container for Requests."""
 
-    TIMEFMT = "%Y-%m-%d %H:%M:%S %Z"
-
     directory = None
     lockfile = None
 
     def __init__(
-        self, spooldir=DEFAULT_DIR, enc_path=None, config_file=None, log=_log
+        self,
+        spooldir=Path(DEFAULT_SPOOLDIR),
+        enc_path=None,
+        config_file=None,
+        log=_log,
     ):
         """Initialize ReqManager and create directories if necessary."""
-        self.spooldir = spooldir
-        self.requestsdir = p.join(self.spooldir, "requests")
-        self.archivedir = p.join(self.spooldir, "archive")
-        for d in (self.spooldir, self.requestsdir, self.archivedir):
-            if not p.exists(d):
-                os.mkdir(d)
-        self.enc_path = enc_path
-        self.config_file = config_file
         self.log = log
+        self.log.debug(
+            "reqmanager-init",
+            spooldir=str(spooldir),
+            enc_path=str(enc_path),
+            config_file=str(config_file),
+        )
+        self.spooldir = Path(spooldir)
+        self.requestsdir = self.spooldir / "requests"
+        self.archivedir = self.spooldir / "archive"
+        for d in (self.spooldir, self.requestsdir, self.archivedir):
+            if not d.exists():
+                os.mkdir(d)
+        self.enc_path = Path(enc_path) if enc_path else None
+        self.config_file = Path(config_file) if config_file else None
         self.requests = {}
 
     def __enter__(self):
@@ -82,7 +96,11 @@ class ReqManager:
         self.scan()
         self.config = configparser.ConfigParser()
         if self.config_file:
-            self.config.read(self.config_file)
+            if self.config_file.is_file():
+                self.log.debug("reqmanager-enter-read-config")
+                self.config.read(self.config_file)
+            else:
+                self.log.warn("reqmanager-enter-config-not-found")
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
@@ -91,14 +109,40 @@ class ReqManager:
             self.lockfile.close()
         self.lockfile = None
 
-    def __str__(self):
-        """Human-readable listing of active maintenance requests."""
-        if not self.requests:
-            return ""
-        return (
-            "St Id       Scheduled             Estimate  Comment\n"
-            + "\n".join((str(r) for r in sorted(self.requests.values())))
+    def __rich__(self):
+        table = Table(
+            show_header=True,
+            title="Maintenance requests",
+            show_lines=True,
+            title_style="bold",
         )
+
+        if not self.requests:
+            return "[bold]No maintenance requests at the moment.[/bold]"
+
+        table.add_column("State")
+        table.add_column("Request ID")
+        table.add_column("Execution Time")
+        table.add_column("Duration")
+        table.add_column("Comment")
+        table.add_column("Added")
+        table.add_column("Last Scheduled")
+        for req in sorted(self.requests.values()):
+            table.add_row(
+                str(req.state),
+                req.id,
+                format_datetime(req.next_due)
+                if req.next_due
+                else "--- TBA ---",
+                str(req.estimate),
+                req.comment,
+                format_datetime(req.added_at) if req.added_at else "-",
+                format_datetime(req.last_scheduled_at)
+                if req.last_scheduled_at
+                else "-",
+            )
+
+        return table
 
     def dir(self, request):
         """Return file system path for request identified by `reqid`."""
@@ -118,7 +162,10 @@ class ReqManager:
                     print(exc, file=f)
                 self.log.error(
                     "request-load-error",
-                    _replace_msg="Loading {request} failed, archiving request. See exception for details.",
+                    _replace_msg=(
+                        "Loading {request} failed, archiving request. See "
+                        "exception for details."
+                    ),
                     request=p.basename(d),
                     exc_info=True,
                 )
@@ -132,12 +179,18 @@ class ReqManager:
 
         Returns modified Request object or None if nothing was added.
         """
+        if request is None:
+            return
+
         if skip_same_comment and request.comment:
             duplicate = self.find_by_comment(request.comment)
             if duplicate:
                 self.log.info(
                     "request-skip-duplicate",
-                    _replace_msg="When adding {request}, found identical request {duplicate}. Nothing added.",
+                    _replace_msg=(
+                        "When adding {request}, found identical request "
+                        "{duplicate}. Nothing added."
+                    ),
                     request=request.id,
                     duplicate=duplicate.id,
                 )
@@ -145,6 +198,7 @@ class ReqManager:
         self.requests[request.id] = request
         request.dir = self.dir(request)
         request._reqmanager = self
+        request.added_at = utcnow()
         request.save()
         self.log.info(
             "request-added",
@@ -165,6 +219,7 @@ class ReqManager:
     def schedule(self):
         """Triggers request scheduling on server."""
         self.log.debug("schedule-start")
+
         schedule_maintenance = {
             reqid: {"estimate": int(req.estimate), "comment": req.comment}
             for reqid, req in self.requests.items()
@@ -183,15 +238,20 @@ class ReqManager:
                 if req.update_due(val["time"]):
                     self.log.info(
                         "schedule-change-start-time",
-                        _replace_msg="Changing start time of {request} to {at}",
+                        _replace_msg=(
+                            "Changing start time of {request} to {at}."
+                        ),
                         request=req.id,
                         at=val["time"],
                     )
+                    req.last_scheduled_at = utcnow()
                     req.save()
             except KeyError:
                 self.log.warning(
                     "schedule-request-disappeared",
-                    _replace_msg="Request {request} disappeared, marking as deleted.",
+                    _replace_msg=(
+                        "Request {request} disappeared, marking as deleted."
+                    ),
                     request=key,
                 )
                 disappeared.add(key)
@@ -247,7 +307,9 @@ class ReqManager:
         if run_all_now:
             self.log.warn(
                 "execute-all-requests-now",
-                _replace_msg="Run all mode requested, treating all requests as runnable.",
+                _replace_msg=(
+                    "Run all mode requested, treating all requests as runnable."
+                ),
             )
             runnable_requests = list(self.requests.values())
         else:
@@ -328,6 +390,9 @@ class ReqManager:
         self.log.debug(
             "archive-end-maintenance-directory", args=end_maintenance
         )
+        # XXX: this fails when the request has never been scheduled (pending)
+        # with "application error" from the directory. Maybe skip this or just
+        # ignore the error for pending requests?
         self.directory.end_maintenance(end_maintenance)
         for req in archived:
             self.log.info(
@@ -341,6 +406,52 @@ class ReqManager:
             req.save()
 
     @require_lock
+    def list(self):
+        rich.print(self)
+
+    @require_lock
+    def show(self, request_id=None, dump_yaml=False):
+
+        if not self.requests:
+            rich.print("[bold]No maintenance requests at the moment.[/bold]")
+            return
+
+        if request_id is None:
+            requests = list(self.requests.values())
+            if len(self.requests) == 1:
+                rich.print("[bold]There's only one at the moment:[/bold]\n")
+        else:
+            requests = sorted(
+                [
+                    req
+                    for key, req in self.requests.items()
+                    if key.startswith(request_id)
+                ],
+                key=lambda r: r.added_at or datetime.fromtimestamp(0),
+            )
+            if not requests:
+                rich.print(
+                    f"[bold red]Error:[/bold red] [bold]Cannot locate any "
+                    f"request with prefix '{request_id}'![/bold]"
+                )
+                return
+
+        if len(requests) > 1:
+            rich.print(
+                "[bold blue]Notice:[/bold blue] [bold]Multiple requests "
+                "found, showing the newest:[/bold]\n"
+            )
+
+        req = requests[-1]
+
+        rich.print(req)
+
+        if dump_yaml:
+            rich.print("\n[bold]Raw YAML serialization:[/bold]")
+            yaml = Path(req.filename).read_text()
+            rich.print(rich.syntax.Syntax(yaml, "yaml"))
+
+    @require_lock
     def delete(self, reqid):
         self.log.debug("delete-start", request=reqid)
         req = None
@@ -351,7 +462,7 @@ class ReqManager:
         if not req:
             self.log.warning(
                 "delete-skip-missing",
-                _replace_msg="Cannot locate request {request}, skipping",
+                _replace_msg="Cannot locate request {request}, skipping.",
                 request=reqid,
             )
             return
@@ -359,7 +470,7 @@ class ReqManager:
         req.save()
         self.log.info(
             "delete-finished",
-            _replace_msg="Marked request {request} as deleted",
+            _replace_msg="Marked request {request} as deleted.",
             request=req.id,
         )
 
@@ -367,7 +478,9 @@ class ReqManager:
         if RebootType.COLD in requested_reboots:
             self.log.info(
                 "maintenance-poweroff",
-                _replace="Doing a cold boot now to finish maintenance activities.",
+                _replace_msg=(
+                    "Doing a cold boot now to finish maintenance activities."
+                ),
             )
             subprocess.run(
                 "poweroff", check=True, capture_output=True, text=True
@@ -381,174 +494,3 @@ class ReqManager:
             subprocess.run("reboot", check=True, capture_output=True, text=True)
             return True
         return False
-
-
-# XXX IMHO those should be verbso n the ReqManager and remove the huge
-# indirection between the CLI and the ReqManager. Just instantiating the
-# request manager with the parameters like config file centrally makes much
-# more sense.
-
-
-def transaction(
-    spooldir=DEFAULT_DIR,
-    enc_path=None,
-    do_scheduling=True,
-    run_all_now=False,
-    config_file=None,
-    log=_log,
-):
-    with ReqManager(spooldir, enc_path, config_file, log=log) as rm:
-        if do_scheduling:
-            rm.schedule()
-        rm.execute(run_all_now)
-        rm.postpone()
-        rm.archive()
-
-
-def delete(
-    reqid, spooldir=DEFAULT_DIR, enc_path=None, config_file=None, log=_log
-):
-    with ReqManager(spooldir, enc_path, config_file=config_file, log=log) as rm:
-        rm.delete(reqid)
-        rm.archive()
-
-
-def listreqs(spooldir=DEFAULT_DIR, config_file=None, log=_log):
-    rm = ReqManager(spooldir, config_file=config_file, log=log)
-    rm.scan()
-    out = str(rm)
-    if out:
-        print(out)
-
-
-def main(verbose=False):
-    a = argparse.ArgumentParser(
-        description="""\
-Managed local maintenance requests.
-"""
-    )
-    cmd = a.add_argument_group(
-        "actions",
-        description="Select activities to be performed (default: "
-        "schedule, run, archive)",
-    )
-    cmd.add_argument(
-        "-d",
-        "--delete",
-        metavar="ID",
-        default=None,
-        help="delete specified request (see `--list` output)",
-    )
-    cmd.add_argument(
-        "-l",
-        "--list",
-        action="store_true",
-        default=False,
-        help="list active maintenance requests",
-    )
-    cmd.add_argument(
-        "-S",
-        "--no-scheduling",
-        default=False,
-        action="store_true",
-        help="skip maintenance scheduling, for example to test "
-        "local modifications in the request YAML",
-    )
-    cmd.add_argument(
-        "--run-all-now",
-        default=False,
-        action="store_true",
-        help="Just run every maintenance request now, even if it is not due",
-    )
-
-    a.add_argument(
-        "-c",
-        "--config-file",
-        metavar="PATH",
-        default="/etc/fc-agent.conf",
-        help="full path to agent configuration file",
-    )
-    a.add_argument(
-        "-E",
-        "--enc-path",
-        metavar="PATH",
-        default=None,
-        help="full path to enc.json",
-    )
-    a.add_argument(
-        "-s",
-        "--spooldir",
-        metavar="DIR",
-        default=DEFAULT_DIR,
-        help="requests spool dir (default: %(default)s)",
-    )
-    a.add_argument("-v", "--verbose", action="store_true", default=verbose)
-    args = a.parse_args()
-
-    main_log_file = open("/var/log/fc-maintenance.log", "a")
-    cmd_log_file = open(
-        "/var/log/fc-agent/fc-maintenance-command-output.log", "w"
-    )
-    init_logging(args.verbose, main_log_file, cmd_log_file)
-
-    # XXX Switch proper sub-command structure:
-    # * schedule
-    # * run (--all)
-    # * delete
-    # * list
-    # (why did we need archive as a separate action before?!?)
-
-    # XXX do proper exception logging here in the main() script,
-    # convert the module-level functions into reqmanager methods
-    # *IF* fc-manage needs to access code through the API, let it instanciate
-    # the _fully configured_ request manager directly preferably let
-    # exceptions bubble out so we see failure in the agent systemd job
-    # properly
-
-    if args.delete and args.list:
-        a.error("multually exclusive actions: list + delete")
-    if args.delete:
-        delete(args.delete, args.spooldir, args.enc_path, args.config_file)
-    elif args.list:
-        listreqs(args.spooldir, args.config_file)
-    else:
-        _log.info("fc-maintenance-start")
-        transaction(
-            args.spooldir,
-            args.enc_path,
-            not args.no_scheduling,
-            args.run_all_now,
-            args.config_file,
-        )
-        _log.info("fc-maintenance-finished")
-
-
-def list_maintenance():
-    """List active maintenance requests on this node."""
-    a = argparse.ArgumentParser(
-        description=list_maintenance.__doc__,
-        epilog="""\
-States are: pending (-), due (*), running (=), success (s), tempfail (t),
-retrylimit exceeded (r), hard error (e), deleted (d), postponed (p).
-""",
-    )
-    a.add_argument(
-        "-d",
-        "--spooldir",
-        metavar="DIR",
-        default=DEFAULT_DIR,
-        help="spool dir for requests (default: %(default)s)",
-    )
-    a.add_argument(
-        "-c",
-        "--config-file",
-        metavar="PATH",
-        default="/etc/fc-agent.conf",
-        help="full path to agent configuration file",
-    )
-    args = a.parse_args()
-    listreqs(args.spooldir, args.config_file)
-
-
-if __name__ == "__main__":
-    main()
