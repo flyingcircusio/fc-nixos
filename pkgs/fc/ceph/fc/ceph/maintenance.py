@@ -4,9 +4,8 @@ import json
 import subprocess
 import sys
 
-import fc.util.directory
-
 import fc.ceph.images
+import fc.util.directory
 from fc.ceph.api import Cluster, Pools
 
 
@@ -71,6 +70,8 @@ class VolumeDeletions(object):
 
 
 class MaintenanceTasks(object):
+    """Controller that holds a number of maintenance-related methods."""
+
     def load_vm_images(self):
         fc.ceph.images.load_vm_images()
 
@@ -94,7 +95,8 @@ class MaintenanceTasks(object):
 
     def _ensure_maintenance_volume(self):
         subprocess.run(
-            "rbd-locktool -q -i rbd/.maintenance || rbd create --size 1 rbd/.maintenance",
+            "rbd-locktool -q -i rbd/.maintenance || "
+            "rbd create --size 1 rbd/.maintenance",
             shell=True,
         )
 

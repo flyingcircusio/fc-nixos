@@ -107,7 +107,8 @@ in
     boot.kernelModules = [ "rbd" ];
 
     systemd.tmpfiles.rules = [
-      "d '/run/ceph' - root - - -"
+      "d /run/ceph - root - - -"
+      "d /var/log/ceph 0755 root - - -"
     ];
 
     services.udev.extraRules = ''

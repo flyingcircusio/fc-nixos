@@ -36,7 +36,7 @@ in {
   check_megaraid = super.callPackage ./check_megaraid { };
 
   ceph = (super.callPackage ./ceph {
-      pythonPackages = super.python3Packages;
+      pythonPackages = super.python2Packages;
       boost = super.boost155;
   });
 
