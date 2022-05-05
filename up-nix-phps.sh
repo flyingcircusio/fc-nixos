@@ -9,7 +9,8 @@ trap "echo cleaning... && rm -rf '$T'" EXIT
 
 pushd "$T"
 git clone https://github.com/fossar/nix-phps "$T"
-REV=$(cat flake.lock | jq -r .nodes.nixpkgs.locked.rev)
+#REV=$(cat flake.lock | jq -r .nodes.nixpkgs.locked.rev)
+REV="9cdbd72004edee9f6b7ed0181996c2104cafb48a"
 curl -L "https://github.com/nixos/nixpkgs/archive/$REV.tar.gz" | tar xz
 popd
 
