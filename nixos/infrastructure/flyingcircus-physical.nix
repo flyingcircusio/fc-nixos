@@ -63,8 +63,9 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     };
 
     # Not perfect but avoids triggering the 'established' rule which can
-    # lead to massive/weird Ceph instabilities.
-    networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" ];
+    # lead to massive/weird Ceph instabilities. Also, coordination tasks
+    # like Qemu migrations run over ethmgm want to be trusted.
+    networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" "ethmgm" ];
 
     swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
 
@@ -75,7 +76,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         attrValues cfg.static.adminKeys;
     };
 
-    powerManagement.cpuFreqGovernor = "ondemand";
+    powerManagement.cpuFreqGovernor = "performance";
 
     services.lldpd.enable = true;
 

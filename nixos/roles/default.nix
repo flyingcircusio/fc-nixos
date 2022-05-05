@@ -24,6 +24,7 @@ in {
     ./jitsi
     ./kibana.nix
     ./k3s
+    ./kvm.nix
     ./lamp.nix
     ./loghost
     ./mailout.nix

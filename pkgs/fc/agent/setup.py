@@ -60,10 +60,12 @@ setup(
     entry_points={
         "console_scripts": [
             "fc-backy=fc.manage.backy:main",
+            "fc-create-vm=fc.manage.createvm:main",
             "fc-directory=fc.util.directory:directory_cli",
             "fc-graylog=fc.manage.graylog:main",
             "fc-maintenance=fc.maintenance.reqmanager:main",
             "fc-manage=fc.manage.manage:main",
+            "fc-qemu-scrub=fc.manage.qemu:main",
             "fc-monitor=fc.manage.monitor:main",
             "fc-resize=fc.manage.resize:main",
             "list-maintenance=fc.maintenance.reqmanager:list_maintenance",

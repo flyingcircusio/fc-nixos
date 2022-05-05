@@ -20,6 +20,17 @@ rec {
   logcheckhelper = callPackage ./logcheckhelper { };
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
+
+  qemu = callPackage ./qemu {
+      version = "1.2-dev";
+      src = pkgs.fetchFromGitHub {
+        owner = "flyingcircusio";
+        repo = "fc.qemu";
+        rev = "c85f9a15c9b3f6b4c4b4080eb44e41541acf8e2f";
+        sha256 = "sha256-MBEuD5PUKfqOqprfYr13zEwNOBvJNJKAJ3OTBlAuFaE";
+      };
+  };
+
   secure-erase = callPackage ./secure-erase {};
   sensuplugins = callPackage ./sensuplugins {};
   sensusyntax = callPackage ./sensusyntax {};

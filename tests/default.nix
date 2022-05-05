@@ -47,6 +47,7 @@ in {
   kibana6 = callTest ./kibana.nix { version = "6"; };
   kibana7 = callTest ./kibana.nix { version = "7"; };
   k3s = callTest ./k3s {};
+  kvm_host = callTest ./kvm_host.nix {};
 
   lamp = callTest ./lamp.nix { };
   lamp56 = callTest ./lamp.nix { version = "lamp_php56"; };

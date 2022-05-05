@@ -414,6 +414,8 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  qemu_ceph = super.qemu.override { cephSupport = true; };
+
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
   remarshal = super.callPackage ./remarshal.nix { };
