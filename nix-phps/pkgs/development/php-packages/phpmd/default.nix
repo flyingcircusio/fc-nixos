@@ -11,14 +11,17 @@ mkDerivation {
     sha256 = "1i8qgzxniw5d8zjpypalm384y7qfczapfq70xmg129laq6xiqlqb";
   };
 
-  phases = [ "installPhase" ];
+  dontUnpack = true;
+
   nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
+    runHook preInstall
     mkdir -p $out/bin
     install -D $src $out/libexec/phpmd/phpmd.phar
     makeWrapper ${php}/bin/php $out/bin/phpmd \
       --add-flags "$out/libexec/phpmd/phpmd.phar"
+    runHook postInstall
   '';
 
   meta = with lib; {
@@ -26,6 +29,6 @@ mkDerivation {
     license = licenses.bsd3;
     homepage = "https://phpmd.org/";
     maintainers = teams.php.members;
-    broken = versionAtLeast php.version "7.4";
+    broken = versionOlder php.version "7.4";
   };
 }

@@ -12,8 +12,22 @@ let
 in
 
 {
+  buildPecl =
+    {
+      internalDeps ? [],
+      ...
+    }@args:
+
+    prev.buildPecl (args // {
+      # We started bundling hash so we need to remove
+      # references to the external extension which no longer exists.
+      internalDeps = builtins.filter (d: d != null) internalDeps;
+    });
+
   tools = prev.tools // {
     php-cs-fixer-2 = final.callPackage ./php-cs-fixer/2.x.nix { };
+  } // lib.optionalAttrs (lib.versionOlder prev.php.version "7.2.5") {
+    composer = final.callPackage ./composer/2.2.nix { };
   };
 
   extensions = prev.extensions // {
@@ -42,24 +56,37 @@ in
               url = "https://github.com/php/php-src/commit/e29922f054639a934f3077190729007896ae244c.patch";
               sha256 = "zC2QE6snAhhA7ItXgrc80WlDVczTlZEzgZsD7AS+gtw=";
             })
+          ] ++ lib.optionals (lib.versionOlder prev.php.version "7.4") [
+            (pkgs.fetchpatch {
+              url = "https://github.com/php/php-src/commit/4cc261aa6afca2190b1b74de39c3caa462ec6f0b.patch";
+              sha256 = "11qsdiwj1zmpfc2pgh6nr0sn7qa1nyjg4jwf69cgwnd57qfjcy4k";
+              excludes = [
+                "ext/dom/tests/bug43364.phpt"
+                "ext/dom/tests/bug80268.phpt"
+              ];
+            })
           ];
         in
         ourPatches ++ upstreamPatches;
 
-      preCheck =
-        lib.pipe
-          attrs.preCheck
-          [
-            (preCheck:
-              if lib.versionOlder prev.php.version "7.3" then
-                # Test not available on older versions.
-                # Introduced in https://github.com/NixOS/nixpkgs/pull/124193
-                builtins.replaceStrings [ "rm tests/bug80268.phpt" ] [ "" ] preCheck
-              else
-                preCheck
-            )
-          ];
+      postPatch =
+        lib.concatStringsSep "\n" [
+          (attrs.postPatch or "")
+
+          (lib.optionalString (lib.versionOlder prev.php.version "7.4" && lib.versionAtLeast prev.php.version "7.3") ''
+            # 4cc261aa6afca2190b1b74de39c3caa462ec6f0b deletes this file but fetchpatch does not support deletions.
+            rm tests/bug80268.phpt
+          '')
+
+          (lib.optionalString (lib.versionOlder prev.php.version "7.4") ''
+            # 4cc261aa6afca2190b1b74de39c3caa462ec6f0b deletes this file but fetchpatch does not support deletions.
+            rm tests/bug43364.phpt
+          '')
+        ];
     });
+
+    # We now bundle the extension with PHP like PHP ≥ 7.4 does.
+    hash = null;
 
     intl = prev.extensions.intl.overrideAttrs (attrs: {
       doCheck = if lib.versionOlder prev.php.version "7.2" then false else attrs.doCheck or true;
@@ -75,7 +102,8 @@ in
                 url = "https://github.com/php/php-src/commit/8d35a423838eb462cd39ee535c5d003073cc5f22.patch";
                 sha256 = if lib.versionOlder prev.php.version "7.0" then "8v0k6zaE5w4yCopCVa470TMozAXyK4fQelr+KuVnAv4=" else "NO3EY5z1LFWKor9c/9rJo1rpigG5x8W3Uj5+xAOwm+g=";
                 postFetch = ''
-                  patch "$out" < ${if lib.versionOlder prev.php.version "7.0" then ./intl-icu-patch-5.6-compat.patch else ./intl-icu-patch-7.0-compat.patch}
+                  # Resolve conflicts of the upstream patch with the old PHP source tree.
+                  patch "$out" < ${if lib.versionOlder prev.php.version "7.0" then ./patches/intl-icu-patch-5.6-compat.patch else ./patches/intl-icu-patch-7.0-compat.patch}
                 '';
               })
             ];
@@ -93,7 +121,7 @@ in
             lib.optionals (lib.versionOlder prev.php.version "8.0") [
               # Header path defaults to FHS location, preventing the configure script from detecting errno support.
               # TODO: re-add when PHP 7 is removed from Nixpkgs.
-              # ./iconv-header-path.patch
+              # ./patches/iconv-header-path.patch
             ];
         in
         ourPatches ++ upstreamPatches;
@@ -181,23 +209,43 @@ in
           (attrs.patches or []);
     });
 
-    openssl =
-      if lib.versionOlder prev.php.version "7.1" then
-        prev.extensions.openssl.overrideAttrs (attrs: {
-          # PHP ≤ 7.0 requires openssl 1.0.
-          buildInputs =
-            let
-              openssl_1_0_2 = pkgs.openssl_1_0_2.overrideAttrs (attrs: {
-                meta = attrs.meta // {
-                  # It is insecure but that should not matter in an isolated test environment.
-                  knownVulnerabilities = [];
-                };
-              });
-            in
-              map (p: if p == pkgs.openssl then openssl_1_0_2 else p) attrs.buildInputs or [];
-          })
-      else
-        prev.extensions.openssl;
+    openssl = prev.extensions.openssl.overrideAttrs (attrs: {
+      patches =
+        let
+          upstreamPatches =
+            attrs.patches or [];
+
+          ourPatches =
+            lib.optionals (lib.versionOlder prev.php.version "7.0") [
+              # PHP ≤ 5.6 requires openssl 1.0.
+              # https://github.com/php-build/php-build/pull/609
+              # https://github.com/oerdnj/deb.sury.org/issues/566
+              (pkgs.fetchurl {
+                url = "https://github.com/php-build/php-build/raw/43c8e02689bc29d48daa338b73bcd4f2bbd8def1/share/php-build/patches/php-5.6-support-openssl-1.1.0.patch";
+                sha256 = "UHu3SyYSMozfXlm5ZGRaSdD5NnrdAB7NaY4P0NREVCE=";
+              })
+            ];
+        in
+        ourPatches ++ upstreamPatches;
+    });
+
+    pdo = prev.extensions.pdo.overrideAttrs (attrs: {
+      patches =
+        let
+          upstreamPatches =
+            attrs.patches or [];
+
+          ourPatches =
+            lib.optionals (lib.versionOlder prev.php.version "7.2") [
+              # Fix Darwin builds on 7.1
+              (pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/11eed9f3ba7429be467b54d8407cfbd6bd7e6f3a.patch";
+                sha256 = "1mvdsc3kc1fb2l3fh6hva20gyay1214zqj24mavp7x6g0ngii06l";
+              })
+            ];
+        in
+        ourPatches ++ upstreamPatches;
+    });
 
     pdo_mysql =
       if lib.versionOlder prev.php.version "7.0" then
@@ -252,6 +300,57 @@ in
       else
         throw "php.extensions.redis3 requires PHP version < 8.0.";
 
+    tidy = prev.extensions.tidy.overrideAttrs (attrs: {
+      patches =
+        let
+          upstreamPatches =
+            attrs.patches or [];
+
+          ourPatches =
+            lib.optionals (lib.versionOlder prev.php.version "7.1") [
+              # Add support for the new tidy-html5 library.
+              # https://github.com/php/php-src/commit/a552ac5bd589035b66c899b74511b29a3d1a4718
+              (pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/a552ac5bd589035b66c899b74511b29a3d1a4718.patch";
+                sha256 = "bXDgtCYwxZ9sQLNh3RR1W+g8JWn0ottRhK5LNTtDBVA=";
+              })
+            ];
+        in
+        ourPatches ++ upstreamPatches;
+    });
+
+    xdebug =
+      # xdebug versions were determined using https://xdebug.org/docs/compat
+      if lib.versionAtLeast prev.php.version "7.2" then
+        prev.extensions.xdebug
+      else if lib.versionAtLeast prev.php.version "7.1" then
+        prev.extensions.xdebug.overrideAttrs (attrs: {
+          name = "xdebug-2.9.8";
+          version = "2.9.8";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/xdebug-2.9.8.tgz";
+            sha256 = "12igfrdfisqfmfqpc321g93pm2w1y7h24bclmxjrjv6rb36bcmgm";
+          };
+        })
+      else if lib.versionAtLeast prev.php.version "7.0" then
+        prev.extensions.xdebug.overrideAttrs (attrs: {
+            name = "xdebug-2.7.2";
+            version = "2.7.2";
+            src = pkgs.fetchurl {
+              url = "http://pecl.php.net/get/xdebug-2.7.2.tgz";
+              sha256 = "19m40n5h339yk0g458zpbsck1lslhnjsmhrp076kzhl5l4x2iwxh";
+            };
+          })
+      else
+        prev.extensions.xdebug.overrideAttrs (attrs: {
+          name = "xdebug-2.5.5";
+          version = "2.5.5";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/xdebug-2.5.5.tgz";
+            sha256 = "197i1fcspbrdxki6rljvpjdxzhyaxl7nlihhiqcyfkjipkr8n43j";
+          };
+        });
+
     zlib = prev.extensions.zlib.overrideAttrs (attrs: {
       patches =
         builtins.filter
@@ -261,5 +360,18 @@ in
           )
           (attrs.patches or []);
     });
+
+    gd =
+      if lib.versionOlder prev.php.version "7.4" then
+        prev.extensions.gd.overrideAttrs (attrs: {
+          buildInputs = attrs.buildInputs ++ [
+            # Older versions of PHP check for these libraries even when not using bundled gd.
+            pkgs.zlib
+            pkgs.libjpeg
+            pkgs.libpng
+          ];
+        })
+      else
+        prev.extensions.gd;
   };
 }
