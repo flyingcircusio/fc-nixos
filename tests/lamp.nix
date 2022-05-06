@@ -23,7 +23,9 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
         flyingcircus.roles.lamp = {
           enable = true;
 
-          vhosts = [ { port = 8000; docroot = "/srv/docroot"; } ];
+          vhosts = [ { port = 8000; docroot = "/srv/docroot"; }
+                     { port = 8001; docroot = "/srv/docroot2"; }
+                   ];
 
           php = pkgs.lib.mkIf (version != "") pkgs.${version};
 
@@ -66,10 +68,42 @@ import ./make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
       lamp.wait_for_open_port(9135)
 
     with subtest("apache (httpd) opens expected ports"):
-      assert_listen(lamp, "httpd", {"127.0.0.1:7999", "::1:7999", ":::8000"})
+      assert_listen(lamp, "httpd", {"127.0.0.1:7999", "::1:7999", ":::8000", ":::8001"})
+
+    print(lamp.execute("cat /etc/httpd/httpd.conf")[1])
+    print(lamp.execute("cat $PHPRC")[1])
 
     lamp.succeed('mkdir -p /srv/docroot')
     lamp.succeed('echo "<? phpinfo(); ?>" > /srv/docroot/test.php')
+
+    lamp.succeed('mkdir -p /srv/docroot2')
+    lamp.succeed('echo "<? phpinfo(); ?>" > /srv/docroot2/test.php')
+
+    with subtest("check that the FPM pools are not being confused"):
+      print("Warming up Apache")
+      for x in range(20):
+        print("warmup round", x)
+        print("warming up 8001")
+        _, output = lamp.execute("curl -v http://localhost:8001/test.php -o /dev/null 2>&1")
+        print(output)
+        assert "200 OK" in output
+
+        print("warming up 8000")
+        _, output = lamp.execute("curl -v http://localhost:8000/test.php -o /dev/null 2>&1")
+        print(output)
+        assert "200 OK" in output
+
+      print("Stopping 8001")
+      lamp.succeed("systemctl stop phpfpm-lamp-8001.service")
+
+      print("Expecting port 8001 to be down")
+      for x in range(50):
+        _, output = lamp.execute("curl -v http://localhost:8000/test.php -o /dev/null 2>&1")
+        assert "200 OK" in output
+        code, output = lamp.execute("curl -v http://localhost:8001/test.php -o /dev/null 2>&1")
+        if "503 Service Unavailable" not in output:
+          print(output)
+          raise AssertionError("Unexpected non-503 result")
 
     with subtest("apache reload works"):
       # PL-130372 broke repeatedly after 7-11 tries
