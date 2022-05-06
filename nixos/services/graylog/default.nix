@@ -8,7 +8,7 @@ let
 
   listenFQDN = "${config.networking.hostName}.${config.networking.domain}";
   # graylog listens on first srv ipv6 address
-  listenIP = (head config.networking.interfaces.ethsrv.ipv6.addresses).address;
+  listenIP = head fclib.network.srv.v6.addresses;
   # FQDN doesn't work here
   httpBindAddress = "[${listenIP}]:${toString cfg.apiPort}";
   webListenUri = "http://${listenFQDN}:${toString cfg.apiPort}";

@@ -1,6 +1,5 @@
-import pytest
-
 import fc.ceph.main
+import pytest
 
 
 def test_main():

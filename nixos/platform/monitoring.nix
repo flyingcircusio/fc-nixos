@@ -109,7 +109,7 @@ in {
         "# FC telegraf\n" +
         (concatStringsSep ""
           (map (ip: ''
-            ${fclib.iptables ip} -A nixos-fw -i ethsrv -s ${ip} \
+            ${fclib.iptables ip} -A nixos-fw -i ${fclib.network.srv.device} -s ${ip} \
               -p tcp --dport ${telegrafPort} -j nixos-fw-accept
           '')
           (fclib.listServiceIPs "statshostproxy-collector")));

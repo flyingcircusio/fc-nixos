@@ -36,7 +36,7 @@ in {
   check_megaraid = super.callPackage ./check_megaraid { };
 
   ceph = (super.callPackage ./ceph {
-      pythonPackages = super.python3Packages;
+      pythonPackages = super.python2Packages;
       boost = super.boost155;
   });
 
@@ -413,6 +413,8 @@ in {
   });
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
+
+  qemu_ceph = super.qemu.override { cephSupport = true; };
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 

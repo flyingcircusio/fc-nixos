@@ -147,7 +147,7 @@ in {
         "--write-kubeconfig=${defaultKubeconfig}"
         "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
         "--flannel-backend=host-gw"
-        "--flannel-iface=ethsrv"
+        "--flannel-iface=${fclib.network.srv.device}"
         "--datastore-endpoint=postgres://@:5432/kubernetes?host=/run/postgresql"
         "--token-file=/var/lib/k3s/secret_token"
         "--data-dir=/var/lib/k3s"

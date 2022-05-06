@@ -106,7 +106,6 @@ stdenv.mkDerivation {
     ./fc-jewel-rewatch.patch
     ./fc-jewel-glibc2-32.patch
     ./fc-jewel-hdparm-naive-path.patch
-    ./fc-jewel-py38.patch
 
     ./dont-use-virtualenvs.patch
   ];

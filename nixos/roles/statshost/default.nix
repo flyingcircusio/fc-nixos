@@ -664,7 +664,7 @@ in
         listenAddr = "::";
       };
       networking.firewall.extraCommands =
-        "ip6tables -A nixos-fw -i ethsrv -p udp --dport 2003 -j nixos-fw-accept";
+        "ip6tables -A nixos-fw -i ${fclib.network.srv.device} -p udp --dport 2003 -j nixos-fw-accept";
     })
   ];
 }

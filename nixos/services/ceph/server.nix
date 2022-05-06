@@ -42,7 +42,6 @@ in
 
     systemd.tmpfiles.rules = [
         "d /srv/ceph 0755"
-        "d /var/log/ceph 0755"
      ];
 
     flyingcircus.services.sensu-client.expectedConnections = {
