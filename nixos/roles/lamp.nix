@@ -113,7 +113,7 @@ in {
           tideways.api_key = ${role.tideways_api_key}
         '';
         phpMajorMinor = lib.concatStringsSep "." (lib.take 2 (builtins.splitVersion role.php.version));
-
+        phpMajor = builtins.head (builtins.splitVersion role.php.version);
     in
 
       lib.mkMerge [
@@ -176,8 +176,12 @@ in {
           </Location>
           </VirtualHost>
 
-          <Proxy "fcgi://localhost/" enablereuse=on max=10>
+          # reuse _must_ be disable or apache will confuse different
+          # FPM pools and also screw up with keepalives consuming backend
+          # connections.
+          <Proxy "fcgi://localhost/" enablereuse=off>
           </Proxy>
+
           '' +
           # * vhost configs
           (lib.concatMapStrings (vhost:
@@ -249,6 +253,12 @@ in {
       })
 
       (lib.mkIf (role.tideways_api_key != "") {
+
+        assertions = [ {
+            assertion = (lib.toInt phpMajor) < 8;
+            message = "Tideways is currently not supported on PHP 8 due to stability issues. (PL-130612)";
+        }];
+
         # tideways daemon
         users.groups.tideways.gid = config.ids.gids.tideways;
 

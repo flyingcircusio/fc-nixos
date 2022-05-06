@@ -56,7 +56,9 @@ in {
   lamp74 = callTest ./lamp.nix { version = "lamp_php74"; };
   lamp74_tideways = callTest ./lamp.nix { version = "lamp_php74"; tideways = "1234"; };
   lamp80 = callTest ./lamp.nix { version = "lamp_php80"; };
-  lamp80_tideways = callTest ./lamp.nix { version = "lamp_php80"; tideways = "1234"; };
+
+  # currently not supported: PL-130612
+  # lamp80_tideways = callTest ./lamp.nix { version = "lamp_php80"; tideways = "1234"; };
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
