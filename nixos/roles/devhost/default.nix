@@ -8,7 +8,6 @@ let
   testedRoles = attrNames (lib.filterAttrs (n: v: v.supportsContainers or true) config.flyingcircus.roles);
   excludedRoles = attrNames (lib.filterAttrs (n: v: !(v.supportsContainers or true)) config.flyingcircus.roles);
 
-
   containersFromDir = dir:
     with lib;
     (map

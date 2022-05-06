@@ -12,9 +12,8 @@ import sys
 import tempfile
 import time
 
-import rados
-import rbd
 import requests
+from fc.ceph.manage import run, run_json
 
 RELEASES = [
     "fc-19.03-dev",
@@ -134,7 +133,7 @@ def delta_update(from_, to):
     """Update changed blocks between image files.
 
     We assume that one generation of a VM image does not differ
-    fundamentatlly from the generation before. We only update
+    fundamentally from the generation before. We only update
     changed blocks. Additionally, we use a stuttering technique to
     improve fairness.
     """
@@ -163,107 +162,70 @@ def delta_update(from_, to):
     )
 
 
+def run_rbd(*args):
+    return run_json(["rbd", "--format", "json"] + list(args))
+
+
 class BaseImage:
-
-    cluster = None
-    ioctx = None
-    rbd = None
-    image = None
-
     def __init__(self, release):
         self.release = release
+        self.volume = f"{CEPH_POOL}/{self.release}"
 
     def __enter__(self):
         """Context manager to maintain Ceph connection.
 
         Creates image if necessary and locks the image.
         """
-        self.cluster = rados.Rados(
-            conffile=CEPH_CONF, name="client.{}".format(CEPH_CLIENT)
-        )
-        self.cluster.connect()
-        self.ioctx = self.cluster.open_ioctx(CEPH_POOL)
-        self.rbd = rbd.RBD()
+        if self.release not in run_rbd("ls", CEPH_POOL):
+            logger.info(f"Creating image for {self.release}")
+            run_rbd("create", "-s", str(10 * 2**30), self.volume)
 
-        if self.release not in self.rbd.list(self.ioctx):
-            logger.info("Creating image for {}".format(self.release))
-            self.rbd.create(self.ioctx, self.release, 10 * 2**30)
-        self.image = rbd.Image(self.ioctx, self.release)
-
-        # Ensure we have a lock - stop handling for this image
-        # and clean up (exceptions in __enter__ do not automatically
-        # cause __exit__ being called).
-        logger.debug("Locking image %s", self.release)
+        logger.debug(f"Locking image {self.volume}")
         try:
-            self.image.lock_exclusive(LOCK_COOKIE)
-        except rbd.ImageBusy:
-            self.force_unlock_if_dead_client()
-            try:
-                self.image.lock_exclusive(LOCK_COOKIE)
-            except Exception:
-                logger.error("Could not lock image %s", self.release)
-                raise LockingError()
-        except rbd.ImageExists:
-            # _We_ locked the image. Proceed.
-            pass
+            run(["rbd", "lock", "add", self.volume, LOCK_COOKIE])
+            lock = run_rbd("lock", "ls", self.volume)
+            self.locker = lock[LOCK_COOKIE]["locker"]
+        except Exception:
+            logger.error(f"Could not lock image {self.volume}", exc_info=True)
+            raise LockingError()
 
         return self
 
     def __exit__(self, *args, **kw):
+        logger.debug(f"Unlocking image {self.volume}")
         try:
-            self.image.unlock(LOCK_COOKIE)
+            run(
+                [
+                    "rbd",
+                    "lock",
+                    "remove",
+                    f"{CEPH_POOL}/{self.release}",
+                    LOCK_COOKIE,
+                    self.locker,
+                ]
+            )
         except Exception:
             logger.exception()
-        self.image.close()
-        self.ioctx.close()
-        self.cluster.shutdown()
-
-    def force_unlock_if_dead_client(self):
-        lck = self.image.list_lockers()
-        if not lck:
-            return
-        logger.debug("Examining lock on image %s (%r)", self.release, lck)
-        client, cookie, _addr = lck["lockers"][0]  # excl -> max one lock
-        try:
-            otherhost, otherpid = cookie.split(".", 1)
-            otherpid = int(otherpid)
-        except (IndexError, ValueError):
-            logger.error("Failed to parse lock cookie %s", cookie)
-            raise LockingError()
-        if otherhost != CEPH_CLIENT:
-            return
-        try:
-            os.kill(otherpid, 0)
-            logger.warn("Lock held by process %d -- still alive", otherpid)
-        except OSError:
-            # no such process
-            logger.debug("Breaking lock %s.%s", client, cookie)
-            self.image.break_lock(client, cookie)
 
     @property
     def _snapshot_names(self):
-        return [x["name"] for x in self.image.list_snaps()]
-
-    @property
-    def volume(self):
-        return "{}/{}".format(CEPH_POOL, self.release)
+        return [x["name"] for x in run_rbd("snap", "ls", self.volume)]
 
     @contextlib.contextmanager
     def mapped(self):
-        dev = subprocess.check_output(
-            ["rbd", "--id", CEPH_CLIENT, "map", self.volume]
-        )
+        # Has no --format json support
+        dev = subprocess.check_output(["rbd", "map", self.volume])
         dev = dev.decode().strip()
         assert stat.S_ISBLK(os.stat(dev).st_mode)
         try:
             yield dev
         finally:
-            subprocess.check_call(["rbd", "--id", CEPH_CLIENT, "unmap", dev])
+            subprocess.check_call(["rbd", "unmap", dev])
 
     def store_in_ceph(self, img):
         """Updates image data from uncompressed image file."""
-        logger.info("\tStoring in volume %s/%s", CEPH_POOL, self.release)
-        self.image.resize(os.stat(img).st_size)
+        logger.info(f"\tStoring in volume {self.volume}")
+        run(["rbd", "resize", "-s", str(os.stat(img).st_size), self.volume])
         with self.mapped() as blockdev:
             delta_update(img, blockdev)
 
@@ -326,32 +288,28 @@ class BaseImage:
         os.unlink(filename)
         self.store_in_ceph(uncompressed)
         logger.info("\tCreating snapshot %s", name)
-        self.image.create_snap(name)
-        self.image.protect_snap(name)
+        run(["rbd", "snap", "create", self.volume + "@" + name])
+        run(["rbd", "snap", "protect", self.volume + "@" + name])
 
     def flatten(self):
         """Decouple VMs created from their base snapshots."""
         logger.debug("Flattening child images for %s", self.release)
-        for snap in self.image.list_snaps():
-            snap = rbd.Image(self.ioctx, self.release, snap["name"])
-            for child_pool, child_image in snap.list_children():
+        for snap in run_rbd("snap", "ls", self.volume):
+            for child in run_rbd("children", self.volume + "@" + snap["name"]):
                 logger.info(
-                    "\tFlattening {}/{}".format(child_pool, child_image)
+                    "\tFlattening {}/{}".format(child["pool"], child["image"])
                 )
                 try:
-                    pool = self.cluster.open_ioctx(child_pool)
-                    image = rbd.Image(pool, child_image)
-                    image.flatten()
+                    run(
+                        ["rbd", "flatten", child["pool"] + "/" + child["image"]]
+                    )
                 except Exception:
                     logger.exception(
                         "Error trying to flatten {}/{}".format(
-                            child_pool, child_image
+                            child["pool"], child["image"]
                         )
                     )
-                finally:
-                    image.close()
-                    pool.close()
-                time.sleep(5)  # give Ceph room catch up with I/O
+                time.sleep(5)  # give Ceph room to catch up with I/O
 
     def purge(self):
         """Delete old images, but keep the last three.
@@ -372,17 +330,15 @@ class BaseImage:
         guaranteed to increase) but the API isn't documented. Lets order
         them ourselves to ensure reliability.
         """
-        snaps = list(self.image.list_snaps())
+        snaps = run_rbd("snap", "ls", self.volume)
         snaps.sort(key=lambda x: x["id"])
         for snap in snaps[:-3]:
             logger.info(
-                "\tPurging snapshot {}/{}@{}".format(
-                    CEPH_POOL, self.release, snap["name"]
-                )
+                "\tPurging snapshot {}@{}".format(self.volume, snap["name"])
             )
             try:
-                self.image.unprotect_snap(snap["name"])
-                self.image.remove_snap(snap["name"])
+                run(["rbd", "snap", "unprotect", self.volume + snap["name"]])
+                run(["rbd", "snap", "rm", self.volume + snap["name"]])
             except Exception:
                 logger.exception("Error trying to purge snapshot:")
 

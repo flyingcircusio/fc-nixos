@@ -10,7 +10,7 @@ let
   agentAddress = head fclib.network.srv.v4.addresses;
   tokenFile = "/var/lib/k3s/secret_token";
   k3sFlags = [
-    "--flannel-iface=ethsrv"
+    "--flannel-iface=${fclib.network.srv.device}"
     "--node-ip=${agentAddress}"
     "--data-dir=/var/lib/k3s"
   ];

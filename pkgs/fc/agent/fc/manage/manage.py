@@ -415,6 +415,7 @@ def update_inventory(log):
                 "addresses_srv.json",
             ),
             (lambda: directory.list_permissions(), "permissions.json"),
+            (lambda: directory.list_networks(), "networks.json"),
             (lambda: directory.list_service_clients(), "service_clients.json"),
             (lambda: directory.list_services(), "services.json"),
             (lambda: directory.list_users(), "users.json"),

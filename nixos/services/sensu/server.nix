@@ -82,7 +82,7 @@ in {
     ];
 
     networking.firewall.extraCommands = ''
-      ip46tables -A nixos-fw -i ethsrv -p tcp --dport 5672 -j nixos-fw-accept
+      ip46tables -A nixos-fw -i ${fclib.network.srv.device} -p tcp --dport 5672 -j nixos-fw-accept
     '';
 
     users.extraGroups.sensuserver.gid = config.ids.gids.sensuserver;
