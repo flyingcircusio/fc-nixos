@@ -7,5 +7,5 @@
 -      PHP_ICONV_H_PATH="$PHP_ICONV_PREFIX/include/iconv.h"
 +      PHP_ICONV_H_PATH="iconv.h"
  	fi
-
+ 
      AC_MSG_CHECKING([if iconv is glibc's])
