@@ -51,7 +51,7 @@ Automatic test execution for a single test:
 
     nix-build tests/$test.nix
 
-Interactive test execution (gives a Perl REPL capable to run the test script):
+Interactive test execution (gives a Python REPL capable to run the test script):
 
     nix-build test/$test.nix -A driver
     ./result/bin/nixos-test-driver
