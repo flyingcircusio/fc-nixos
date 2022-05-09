@@ -11,14 +11,17 @@ mkDerivation {
     sha256 = "0sdi78hrwd3r5p1b38qmp89m41kfszh2qn4n5zhq2dmhsjdhjziz";
   };
 
-  phases = [ "installPhase" ];
+  dontUnpack = true;
+
   nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
+    runHook preInstall
     mkdir -p $out/bin
     install -D $src $out/libexec/phpcs/phpcs.phar
     makeWrapper ${php}/bin/php $out/bin/phpcs \
       --add-flags "$out/libexec/phpcs/phpcs.phar"
+    runHook postInstall
   '';
 
   meta = with lib; {
