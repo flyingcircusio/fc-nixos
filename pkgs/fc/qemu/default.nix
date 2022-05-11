@@ -1,4 +1,4 @@
-{ version, src, pkgs, python2Packages, lib, ceph, fetchFromGitHub, qemu_ceph, stdenv, gptfdisk, parted, xfsprogs }:
+{ version, src, pkgs, python2Packages, lib, ceph, fetchFromGitHub, qemu_ceph, stdenv, gptfdisk, parted, xfsprogs, procps }:
 
 let
   # Python must be the same as the one used by Ceph
@@ -57,6 +57,7 @@ in
       py.setuptools
       qemu_ceph
       ceph
+      procps
       gptfdisk
       parted
       xfsprogs
