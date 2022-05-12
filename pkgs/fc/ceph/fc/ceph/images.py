@@ -225,7 +225,15 @@ class BaseImage:
     def store_in_ceph(self, img):
         """Updates image data from uncompressed image file."""
         logger.info(f"\tStoring in volume {self.volume}")
-        run(["rbd", "resize", "-s", str(os.stat(img).st_size), self.volume])
+        run(
+            [
+                "rbd",
+                "resize",
+                "-s",
+                str(os.stat(img).st_size) + "B",
+                self.volume,
+            ]
+        )
         with self.mapped() as blockdev:
             delta_update(img, blockdev)
 
