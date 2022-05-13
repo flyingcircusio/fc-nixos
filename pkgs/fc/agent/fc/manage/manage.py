@@ -13,6 +13,7 @@ import fc.util.logging
 import requests
 from fc.maintenance.lib.shellscript import ShellScriptActivity
 from fc.util import nixos
+from fc.util.nixos import RE_FC_CHANNEL
 
 # nixos-rebuild doesn't support changing the result link name so we
 # create a dir with a meaningful name (like /run/current-system) and
@@ -89,14 +90,34 @@ class Channel:
 
     @classmethod
     def current(cls, log, channel_name):
-        """Looks up existing channel by name."""
+        """Looks up existing channel by name.
+        The URL found is usually already resolved (no redirects)
+        so we don't do it again here. It can still be enabled with
+        `resolve_url`, when needed.
+        """
         if not p.exists("/root/.nix-channels"):
+            log.debug("channel-current-no-nix-channels-dir")
             return
         with open("/root/.nix-channels") as f:
             for line in f.readlines():
                 url, name = line.strip().split(" ", 1)
                 if name == channel_name:
-                    return Channel(log, url, name, resolve_url=False)
+                    # We don't have to resolve the URL if it's a direct link
+                    # to a Hydra build product. This is the normal case for
+                    # running VMs because the nixos channel is set to an
+                    # already resolved URL.
+                    # Resolve all other URLs, for example initial URLs used
+                    # during VM bootstrapping.
+                    resolve_url = RE_FC_CHANNEL.match(url) is None
+                    log.debug(
+                        "channel-current",
+                        url=url,
+                        name=name,
+                        resolve_url=resolve_url,
+                    )
+                    return Channel(log, url, name, resolve_url=resolve_url)
+
+        log.debug("channel-current-not-found", name=name)
 
     def load_nixos(self):
         self.log_with_context.debug("channel-load-nixos")
@@ -355,6 +376,7 @@ def switch(
                 "cached system channel."
             ),
         )
+
         channel_to_build = Channel.current(log, "nixos")
 
     if channel_to_build:
