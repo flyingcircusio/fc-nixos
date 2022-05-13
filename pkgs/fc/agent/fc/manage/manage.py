@@ -88,15 +88,19 @@ class Channel:
         return NotImplemented
 
     @classmethod
-    def current(cls, log, channel_name):
-        """Looks up existing channel by name."""
+    def current(cls, log, channel_name, resolve_url=False):
+        """Looks up existing channel by name.
+        The URL found is usually already resolved (no redirects)
+        so we don't do it again here. It can still be enabled with
+        `resolve_url`, when needed.
+        """
         if not p.exists("/root/.nix-channels"):
             return
         with open("/root/.nix-channels") as f:
             for line in f.readlines():
                 url, name = line.strip().split(" ", 1)
                 if name == channel_name:
-                    return Channel(log, url, name, resolve_url=False)
+                    return Channel(log, url, name, resolve_url=resolve_url)
 
     def load_nixos(self):
         self.log_with_context.debug("channel-load-nixos")
@@ -355,7 +359,12 @@ def switch(
                 "cached system channel."
             ),
         )
-        channel_to_build = Channel.current(log, "nixos")
+        # We are in an unusual state, better resolve the URL we get from the
+        # nixos channel. For example, the fallback URL used when ENC data is
+        # missing after bootstrap contains redirects. We have to resolve the
+        # redirects before passing the URL to nix-build which fails if the
+        # URL doesn't point to a tarball directly.
+        channel_to_build = Channel.current(log, "nixos", resolve_url=True)
 
     if channel_to_build:
         try:
