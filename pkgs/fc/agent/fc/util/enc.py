@@ -30,13 +30,43 @@ def load_enc(log, enc_path):
     return enc
 
 
-def seed_enc(tmpdir, enc_path):
-    tmp_enc_path = tmpdir / "fc-data/enc.json"
-    if not enc_path.exists():
+def initialize_enc(log, tmpdir, enc_path):
+    """Initialize ENC data during bootstrapping. Our automation puts an
+    initial ENC file in /tmp which provides the password to allow the agent to
+    talk to the directory and get updated ENC data from there."""
+    if enc_path.exists():
+        log.debug(
+            "initialize-enc-present",
+            _replace_msg=(
+                "ENC file already present at {enc_path}, initialization not "
+                "required."
+            ),
+            enc_path=str(enc_path),
+        )
         return
-    if not tmp_enc_path.exists():
-        return
-    shutil.move(tmp_enc_path, enc_path)
+
+    initial_enc_path = tmpdir / "fc-data/enc.json"
+    if initial_enc_path.exists():
+        log.info(
+            "initialize-enc-init",
+            _replace_msg=(
+                "ENC file not found at {enc_path}, using initial data from "
+                "{initial_enc_path}"
+            ),
+            enc_path=str(enc_path),
+            initial_enc_path=str(initial_enc_path),
+        )
+        shutil.move(initial_enc_path, enc_path)
+    else:
+        log.info(
+            "initialize-enc-initial-data-not-found",
+            _replace_msg=(
+                "ENC file not found at {enc_path} and initial data from "
+                "{initial_enc_path} is also missing. Agent won't work!"
+            ),
+            enc_path=str(enc_path),
+            initial_enc_path=str(initial_enc_path),
+        )
 
 
 def update_enc_nixos_config(log, enc, enc_path):
@@ -201,7 +231,7 @@ def update_enc(log, tmpdir, enc_path):
     Gets ENC files from the directory, updates custom NixOS config from it
     and writes the current system state.
     """
-    seed_enc(tmpdir, enc_path)
+    initialize_enc(log, tmpdir, enc_path)
     enc = load_enc(log, enc_path)
     update_inventory(log, enc)
     update_enc_nixos_config(log, enc, enc_path)
