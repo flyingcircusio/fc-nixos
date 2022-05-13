@@ -20,6 +20,9 @@ requests_session = requests.session()
 
 PHRASES = re.compile(r"would (\w+) the following units: (.*)$")
 FC_ENV_FILE = "/etc/fcio_environment"
+RE_FC_CHANNEL = re.compile(
+    r"https://hydra.flyingcircus.io/build/(\d+)/download/1/nixexprs.tar.xz"
+)
 
 
 class Channel:

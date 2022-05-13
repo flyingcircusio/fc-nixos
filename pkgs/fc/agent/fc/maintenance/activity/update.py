@@ -4,10 +4,10 @@ This activity does nothing if the machine already uses the new version.
 """
 
 import os.path as p
-import re
 
 import structlog
 from fc.util import nixos
+from fc.util.nixos import RE_FC_CHANNEL
 
 from . import Activity, RebootType
 
@@ -17,10 +17,6 @@ _log = structlog.get_logger()
 # will be garbage-collected before the switch in that case but the switch
 # will still work.
 NEXT_SYSTEM = "/run/next-system"
-
-RE_FC_CHANNEL = re.compile(
-    r"https://hydra.flyingcircus.io/build/(\d+)/download/1/nixexprs.tar.xz"
-)
 
 
 class UpdateActivity(Activity):
