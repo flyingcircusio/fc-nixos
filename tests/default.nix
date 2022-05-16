@@ -39,10 +39,9 @@ in {
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
-  gitlab = callTest ./gitlab.nix {};
-
-  graylog = callTest ./graylog.nix {};
-  haproxy = callTest ./haproxy.nix {};
+  #gitlab = callTest ./gitlab.nix {};
+  #graylog = callTest ./graylog.nix {};
+  #haproxy = callTest ./haproxy.nix {};
   java = callTest ./java.nix {};
   journal = callTest ./journal.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
@@ -71,21 +70,21 @@ in {
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
-  logging = callTest ./logging.nix {};
+  #logging = callTest ./logging.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
   memcached = callTest ./memcached.nix {};
   mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
   mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
-  mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
-  mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
-  mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
+  #mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
+  #mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
+  #mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
-  nginx = callTest ./nginx.nix {};
+  #nginx = callTest ./nginx.nix {};
   openvpn = callTest ./openvpn.nix {};
-  percona80 = callTest ./mysql.nix { rolename = "percona80"; };
+  #percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
   postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
   postgresql11 = callTest ./postgresql.nix { rolename = "postgresql11"; };
@@ -98,12 +97,12 @@ in {
   rg-relay = callTest ./statshost/rg-relay.nix {};
   sensuclient = callTest ./sensuclient.nix {};
   servicecheck = callTest ./servicecheck.nix {};
-  statshost-global = callTest ./statshost/statshost-global.nix {};
+  #statshost-global = callTest ./statshost/statshost-global.nix {};
   statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
   users = callTest ./users.nix {};
   vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
-  wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
+  #wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
 }
