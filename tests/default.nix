@@ -56,6 +56,7 @@ in {
   lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
   lampVm74_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php74"; tideways = "1234"; };
   lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
+  lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
 
   # lampPackage = callTest ./lamp/package-test.nix { };
   # lampPackage72 = callTest ./lamp/package-test.nix { version = "lamp_php72"; };
@@ -63,6 +64,7 @@ in {
   # regression test for PL-130643 only starts at lamp_php74
   lampPackage74 = callTest ./lamp/package-test.nix { version = "lamp_php74"; };
   lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
+  lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
 
 
   # currently not supported: PL-130612
