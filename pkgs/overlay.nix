@@ -210,6 +210,15 @@ in {
                 all.redis
               ]);
 
+  lamp_php81 = super.php81.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
+
+
   mc = super.callPackage ./mc.nix { };
 
   mysql = super.mariadb;
