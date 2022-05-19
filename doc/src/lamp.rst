@@ -76,6 +76,68 @@ each running on a separate port. The two options for every vhost thus are:
 ``docroot``
 	The absolute path to the docroot of your application.
 
+``pool``
+	Described below
+
+``flyingcircus.roles.lamp.vhost.*.pool`` (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Allows you to configure the phpfpm pool for this vhost individually.
+
+Options are:
+
+``user``
+	User account under which this pool runs.
+
+``settings``
+	PHP-FPM pool directives. Refer to the "List of pool directives" section of
+	`the PHP Manual <https://www.php.net/manual/en/install.fpm.configuration.php>`_
+	for details. Note that settings names must be enclosed in quotes (e.g.
+	``"pm.max_children"`` instead of ``pm.max_children``). This overrides
+	the default options	set by our role.
+
+	Example:
+
+	.. code-block:: Nix
+	{
+		"pm" = "dynamic";
+		"pm.max_children" = 75;
+		"pm.start_servers" = 10;
+		"pm.min_spare_servers" = 5;
+		"pm.max_spare_servers" = 20;
+		"pm.max_requests" = 500;
+	}
+
+``phpPackage``
+	The PHP package to use for running this PHP-FPM pool. This overrides the option
+	set by the role.
+
+	See previous option for example.
+
+``phpOptions``
+	Options appended to the PHP configuration file ``php.ini`` used for this PHP-FPM pool.
+
+``phpEnv``
+	Environment variables used for this PHP-FPM pool.
+
+	Example:
+
+	.. code-block:: Nix
+	{
+		HOSTNAME = "$HOSTNAME";
+		TMP = "/tmp";
+		TMPDIR = "/tmp";
+		TEMP = "/tmp";
+	}
+
+``group``
+	Group account under which this pool runs.
+
+``extraConfig``
+	Extra lines that go into the pool configuration.
+	See the documentation on php-fpm.conf for details
+	on configuration directives.
+
 ``flyingcircus.roles.lamp.apache_conf`` (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
