@@ -44,6 +44,11 @@ in {
           options = {
             port = mkOption { type = int; };
             docroot = mkOption { type = str; };
+            pool = mkOption {
+              type = lib.types.attrsOf lib.types.anything;
+              description = "Overrides for underlying NixOS Pool options";
+              default = {};
+            };
           };
         });
         default = [];
@@ -211,24 +216,25 @@ in {
         # which conflicts with our webgateway role.
         services.httpd.virtualHosts = {};
 
+        services.phpfpm.phpPackage = role.php;
+
         services.phpfpm.pools = builtins.listToAttrs (map
           (vhost: {
              name = "lamp-${toString vhost.port}";
-             value = {
-               user = config.services.httpd.user;
-               group = config.services.httpd.group;
-               phpPackage = role.php;
-               phpOptions = phpOptions;
-               settings = {
-                 "listen.owner" = config.services.httpd.user;
-                 "listen.group" = config.services.httpd.group;
-                 "pm" = "dynamic";
-                 "pm.max_children" = (toString role.fpmMaxChildren);
-                 "pm.start_servers" = "5";
-                 "pm.min_spare_servers" = "5";
-                 "pm.max_spare_servers" = "10";
-               };
-            };
+             value = lib.attrsets.recursiveUpdate {
+                user = config.services.httpd.user;
+                group = config.services.httpd.group;
+                phpOptions = phpOptions;
+                settings = {
+                  "listen.owner" = config.services.httpd.user;
+                  "listen.group" = config.services.httpd.group;
+                  "pm" = "dynamic";
+                  "pm.max_children" = (toString role.fpmMaxChildren);
+                  "pm.start_servers" = "5";
+                  "pm.min_spare_servers" = "5";
+                  "pm.max_spare_servers" = "10";
+                };
+              } vhost.pool; # only contains override values
           }) role.vhosts);
 
         flyingcircus.services.sensu-client.checks = {
