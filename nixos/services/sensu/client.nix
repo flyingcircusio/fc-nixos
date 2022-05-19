@@ -527,7 +527,7 @@ in {
             Obsolete 'result' symlinks possibly causing Nix store bloat
           '';
           # see also activationScript in nixos/platform/agent.nix
-          command = "${fc.check-age}/bin/check_age -m -w 3h /result /root/result";
+          command = "${fc.check-age}/bin/check_age -m -w 3h /result";
           interval = 300;
         };
         root_lost_and_found = {
