@@ -99,14 +99,15 @@ Options are:
 	Example:
 
 	.. code-block:: Nix
-	{
-		"pm" = "dynamic";
-		"pm.max_children" = 75;
-		"pm.start_servers" = 10;
-		"pm.min_spare_servers" = 5;
-		"pm.max_spare_servers" = 20;
-		"pm.max_requests" = 500;
-	}
+
+		{
+			"pm" = "dynamic";
+			"pm.max_children" = 75;
+			"pm.start_servers" = 10;
+			"pm.min_spare_servers" = 5;
+			"pm.max_spare_servers" = 20;
+			"pm.max_requests" = 500;
+		}
 
 ``phpPackage``
 	The PHP package to use for running this PHP-FPM pool. This overrides the option
@@ -123,12 +124,13 @@ Options are:
 	Example:
 
 	.. code-block:: Nix
-	{
-		HOSTNAME = "$HOSTNAME";
-		TMP = "/tmp";
-		TMPDIR = "/tmp";
-		TEMP = "/tmp";
-	}
+
+		{
+			HOSTNAME = "$HOSTNAME";
+			TMP = "/tmp";
+			TMPDIR = "/tmp";
+			TEMP = "/tmp";
+		}
 
 ``group``
 	Group account under which this pool runs.
