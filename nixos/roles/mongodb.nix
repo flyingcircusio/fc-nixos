@@ -44,6 +44,8 @@ let
     "3.6" = mongodb36.enable;
     "4.0" = mongodb40.enable;
     "4.2" = mongodb42.enable;
+    "4.4" = mongodb44.enable;
+    "5.0" = mongodb50.enable;
   };
   enabledRoles = lib.filterAttrs (n: v: v) mongodbRoles;
   enabledRolesCount = length (lib.attrNames enabledRoles);
@@ -62,6 +64,8 @@ in {
       mongodb36 = mkRole "3.6";
       mongodb40 = mkRole "4.0";
       mongodb42 = mkRole "4.2";
+      mongodb44 = mkRole "4.4";
+      mongodb50 = mkRole "5.0";
     };
   };
 
