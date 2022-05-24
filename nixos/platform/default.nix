@@ -267,6 +267,7 @@ in {
         # TODO: replace this when on 22.05.
         "mongodb"
       ];
+      services.sensu-client.mutedSystemdUnits = [ "logrotate.service" ];
     };
 
     # implementation for flyingcircus.passwordlessSudoRules
