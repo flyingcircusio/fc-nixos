@@ -285,6 +285,12 @@ in {
           description = "Limit of swap usage in MiB before reaching critical.";
         };
       };
+      mutedSystemdUnits = mkOption {
+        type = types.listOf types.str;
+        description = "Units that may fail without triggering the check for failed systemd unit.";
+        example = [ "failing-testunit.service" ];
+
+      };
     };
   };
 
@@ -468,11 +474,9 @@ in {
         };
         systemd_units = {
           notification = "systemd has failed units";
-          command = ''
-            ${pkgs.sensu-plugins-systemd}/bin/check-failed-units.rb \
-              -m logrotate.service \
-              -m fc-collect-garbage.service
-          '';
+          command =
+            "${pkgs.sensu-plugins-systemd}/bin/check-failed-units.rb"
+            + (lib.concatMapStrings (u: " -m ${u}") cfg.mutedSystemdUnits);
         };
         disk = {
           notification = "Disk usage too high";
