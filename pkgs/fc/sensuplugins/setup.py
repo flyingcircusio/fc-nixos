@@ -15,6 +15,7 @@ setup(
     install_requires=["PyYAML", "nagiosplugin", "psutil", "requests"],
     entry_points={
         "console_scripts": [
+            "check_clamav_database=fc.sensuplugins.clamav_database:main",
             "check_disk=fc.sensuplugins.disk:main",
             "check_cpu_steal=fc.sensuplugins.cpu:main",
             "check_journal_file=fc.sensuplugins.journalfile:main",

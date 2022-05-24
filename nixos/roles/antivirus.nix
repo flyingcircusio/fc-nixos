@@ -23,6 +23,9 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+
+    # The update service isn't critical enough to wake up people.
+    # We'll catch errors when the file age check for the database update goes critical.
     services.clamav.daemon = {
       enable = true;
       settings = {
@@ -42,24 +45,39 @@ in
       Restart = "always";
     };
 
-    services.clamav.updater.enable = true;
+    services.clamav.updater = {
+      enable = true;
+      settings = {
+        PrivateMirror = "https://clamavmirror.fcio.net";
+        ScriptedUpdates = false;
+      };
+    };
 
     systemd.services.clamav-freshclam.serviceConfig = {
-      # We monitor systemd process status for alerting, but this really
-      # isn't critical to wake up people. We'll catch errors when the
-      # file age check for the database update goes critical.
-      # The list is taken from the freshclam manpage.
-      SuccessExitStatus = lib.mkForce [ 40 50 51 52 53 54 55 56 57 58 59 60 61 62 ];
+      # Ignore various error cases to avoid breaking fc-manage if the
+      # timer fails during the rebuild.
+      # The list is mostly taken from the freshclam manpage.
+      # We added 11 which is used when rate limiting hits.
+      SuccessExitStatus = lib.mkForce [ 11 40 50 51 52 53 54 55 56 57 58 59 60 61 62 ];
+    };
+
+    systemd.timers.clamav-freshclam.timerConfig = {
+      OnActiveSec = "10";
+      # upstream default is to run the timer hourly but in our case too many VMs
+      # try to run at the same time. Randomize the timer to run somewhere in the
+      # 1 hour window.
+      RandomizedDelaySec = "60m";
+      FixedRandomDelay = true;
+      Persistent = true;
     };
 
     flyingcircus.services = {
+      sensu-client.mutedSystemdUnits = [ "clamav-freshclam.service" ];
       sensu-client.checks = {
 
         clamav-updater = {
-          notification = "ClamAV virus database up-to-date";
-          command = ''
-            check_file_age -w 86400 -c 172800 /var/lib/clamav/daily.cld
-          '';
+          notification = "ClamAV virus database out-of-date";
+          command = "${pkgs.fc.sensuplugins}/bin/check_clamav_database";
           interval = 300;
           };
 
