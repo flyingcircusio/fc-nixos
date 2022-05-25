@@ -23,6 +23,9 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+
+    # The update service isn't critical enough to wake up people.
+    # We'll catch errors when the file age check for the database update goes critical.
     services.clamav.daemon = {
       enable = true;
       settings = {
@@ -36,30 +39,82 @@ in
       };
     };
 
-    systemd.services.clamav-daemon.serviceConfig = {
-      PrivateTmp = lib.mkForce "no";
-      PrivateNetwork = lib.mkForce "no";
-      Restart = "always";
+    systemd.services.clamav-daemon = {
+      serviceConfig = {
+        PrivateTmp = lib.mkForce "no";
+        PrivateNetwork = lib.mkForce "no";
+        Restart = "always";
+      };
+
+      unitConfig = {
+        # Only start clamav when required database files are present.
+        # Taken from the service template from the clamav repo.
+        ConditionPathExistsGlob = [
+          "/var/lib/clamav/main.{c[vl]d,inc}"
+          "/var/lib/clamav/daily.{c[vl]d,inc}"
+        ];
+      };
     };
 
-    services.clamav.updater.enable = true;
+    systemd.services.clamav-init-database = {
+      # Shouldn't have a dependency on clamav-freshclam to avoid unneccessary
+      # starts. For example, using `requires would always trigger freshclam
+      # when the daemon (re)starts, causing unwanted startup delays.
+      wantedBy = [ "clamav-daemon.service" ];
+      before = [ "clamav-daemon.service" ];
+      # This is a blocking call so we can be sure that the database
+      # has been created before starting the daemon.
+      serviceConfig.ExecStart = "systemctl start clamav-freshclam";
+      unitConfig = {
+        # Opposite condition of clamav-daemon: only run this service if
+        # database files are not present.
+        ConditionPathExistsGlob = [
+          "!/var/lib/clamav/main.{c[vl]d,inc}"
+          "!/var/lib/clamav/daily.{c[vl]d,inc}"
+        ];
+      };
+    };
 
-    systemd.services.clamav-freshclam.serviceConfig = {
-      # We monitor systemd process status for alerting, but this really
-      # isn't critical to wake up people. We'll catch errors when the
-      # file age check for the database update goes critical.
-      # The list is taken from the freshclam manpage.
-      SuccessExitStatus = lib.mkForce [ 40 50 51 52 53 54 55 56 57 58 59 60 61 62 ];
+    services.clamav.updater = {
+      enable = true;
+      settings = {
+        PrivateMirror = "https://clamavmirror.fcio.net";
+        ScriptedUpdates = false;
+      };
+    };
+
+    systemd.services.clamav-freshclam = {
+      # By using `wants` here, the daemon is started after the freshclam run
+      # if the daemon unit is not active yet, probably because of missing
+      # database files.
+      # nixpkgs already sets `after` in clamav-daemon so the startup order
+      # is correct.
+      wants = [ "clamav-daemon.service" ];
+      serviceConfig = {
+        # Ignore various error cases to avoid breaking fc-manage if the
+        # timer fails during the rebuild.
+        # The list is mostly taken from the freshclam manpage.
+        # We added 11 which is used when rate limiting hits.
+        SuccessExitStatus = lib.mkForce [ 11 40 50 51 52 53 54 55 56 57 58 59 60 61 62 ];
+      };
+    };
+
+    systemd.timers.clamav-freshclam.timerConfig = {
+      # upstream default is to run the timer hourly but in our case too many VMs
+      # try to run at the same time. Randomize the timer to run somewhere in the
+      # 1 hour window.
+      RandomizedDelaySec = "60m";
+      FixedRandomDelay = true;
+      Persistent = true;
     };
 
     flyingcircus.services = {
+      sensu-client.mutedSystemdUnits = [ "clamav-freshclam.service" ];
       sensu-client.checks = {
 
         clamav-updater = {
-          notification = "ClamAV virus database up-to-date";
-          command = ''
-            check_file_age -w 86400 -c 172800 /var/lib/clamav/daily.cld
-          '';
+          notification = "ClamAV virus database out-of-date";
+          command = "${pkgs.fc.sensuplugins}/bin/check_clamav_database";
           interval = 300;
           };
 

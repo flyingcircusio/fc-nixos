@@ -1,7 +1,7 @@
 # It's hard to test the real functionality because the updater needs internet
 # access and the daemon need large binary files in order to run. We just check
 # the generated config.
-import ./make-test-python.nix ({ lib, ... }:
+import ./make-test-python.nix ({ lib, testlib, pkgs, ... }:
 let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
@@ -26,14 +26,47 @@ in {
       };
     };
 
-  testScript =
+  testScript = { nodes, ... }:
   let
-    check = ipaddr: ''
-      machine.succeed('grep ${ipaddr} /etc/clamav/clamd.conf')
-    '';
+    grepDaemonConfig = searchterm:
+      ''machine.succeed("grep '${searchterm}' /etc/clamav/clamd.conf")'';
+    grepFreshclamConfig = searchterm:
+      ''machine.succeed("grep '${searchterm}' /etc/clamav/freshclam.conf")'';
+
+    dbCheck =
+      "PATH=$PATH:${pkgs.monitoring-plugins}/bin "
+      + (testlib.sensuCheckCmd nodes.machine "clamav-updater");
   in ''
-    machine.succeed('systemctl cat clamav-daemon.service')
-    machine.succeed('systemctl cat clamav-freshclam.service')
-    machine.succeed('systemctl cat clamav-freshclam.timer')
-  '' + lib.concatMapStrings check [ "127.0.0.1" "::1" ipv4 ipv6 ];
+    with subtest("systemd services should be present"):
+      machine.succeed('systemctl cat clamav-daemon.service')
+      machine.succeed('systemctl cat clamav-freshclam.service')
+      machine.succeed('systemctl cat clamav-init-database.service')
+
+    with subtest("freshclam timer should be active"):
+      machine.succeed('systemctl is-active clamav-freshclam.timer')
+
+    with subtest("private mirror should be set up"):
+      ${grepFreshclamConfig "PrivateMirror https://clamavmirror.fcio.net"}
+      ${grepFreshclamConfig "ScriptedUpdates false"}
+
+    with subtest("listen IP addresses should be configured in daemon config"):
+      ${grepDaemonConfig "127.0.0.1"}
+      ${grepDaemonConfig "::1"}
+      ${grepDaemonConfig ipv4}
+      ${grepDaemonConfig ipv6}
+
+
+    with subtest("sensu database check should be red without database"):
+      machine.fail("${dbCheck}")
+
+    with subtest("sensu database check should be green with recent daily file"):
+      machine.succeed("touch /var/lib/clamav/main.cld")
+      machine.succeed("touch /var/lib/clamav/daily.cld")
+      machine.succeed("${dbCheck}")
+
+    with subtest("sensu database check should be red with outdated daily file"):
+      machine.succeed("touch -d '3 days ago' /var/lib/clamav/daily.cld")
+      machine.fail("${dbCheck}")
+  '';
+
 })
