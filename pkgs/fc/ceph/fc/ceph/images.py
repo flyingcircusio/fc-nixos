@@ -341,12 +341,11 @@ class BaseImage:
         snaps = run_rbd("snap", "ls", self.volume)
         snaps.sort(key=lambda x: x["id"])
         for snap in snaps[:-3]:
-            logger.info(
-                "\tPurging snapshot {}@{}".format(self.volume, snap["name"])
-            )
+            snap_spec = self.volume + "@" + snap["name"]
+            logger.info("\tPurging snapshot " + snap_spec)
             try:
-                run(["rbd", "snap", "unprotect", self.volume + snap["name"]])
-                run(["rbd", "snap", "rm", self.volume + snap["name"]])
+                run(["rbd", "snap", "unprotect", snap_spec])
+                run(["rbd", "snap", "rm", snap_spec])
             except Exception:
                 logger.exception("Error trying to purge snapshot:")
 
