@@ -303,6 +303,8 @@ in {
     ];
   });
 
+  openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
+
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
@@ -315,7 +317,7 @@ in {
 
   #percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
-  percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost173; };
+  percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost173; openldap = self.openldap_2_4; };
 
   # We use 2.4 from upstream for older Percona versions.
   # Percona 8.0 needs a newer version than upstream provides.
