@@ -172,6 +172,11 @@ in {
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
 
+  # Overriding the version for Go modules doesn't work properly so we
+  # include our own beats.nix here. The other beats below inherit the version
+  # change.
+  inherit (super.callPackage ./beats.nix {}) filebeat7;
+
   auditbeat7 = self.filebeat7.overrideAttrs(a: a // {
     name = "auditbeat-${a.version}";
 
@@ -187,7 +192,7 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
-  filebeat7-oss = super.filebeat7.overrideAttrs(a: a // {
+  filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
     name = "filebeat-oss-${a.version}";
     preBuild = "rm -rf x-pack";
   });
