@@ -72,7 +72,7 @@ in {
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
-  #logging = callTest ./logging.nix {};
+  logging = callTest ./logging.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
