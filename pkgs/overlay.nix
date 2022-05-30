@@ -192,7 +192,7 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
-  filebeat7-oss = super.filebeat7.overrideAttrs(a: a // {
+  filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
     name = "filebeat-oss-${a.version}";
     preBuild = "rm -rf x-pack";
   });
