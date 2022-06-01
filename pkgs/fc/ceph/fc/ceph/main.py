@@ -28,6 +28,9 @@ def main(args=sys.argv[1:]):
 
     subparsers = parser.add_subparsers()
 
+    # Note: subparser name bindings like `parser_create` are only ephemeral during construction
+    # of individual subcommands and might be re-used for different command sections (mon, osd, ...)
+
     osd = subparsers.add_parser("osd", help="Manage OSDs.")
     osd.set_defaults(subsystem=fc.ceph.manage.OSDManager)
     osd_sub = osd.add_subparsers()
@@ -39,23 +42,21 @@ def main(args=sys.argv[1:]):
     )
     parser_destroy.set_defaults(action="destroy")
 
-    parser_activate = osd_sub.add_parser(
-        "create", help="Create activate an OSD."
-    )
-    parser_activate.add_argument("device", help="Blockdevice to use")
-    parser_activate.add_argument(
+    parser_create = osd_sub.add_parser("create", help="Create activate an OSD.")
+    parser_create.add_argument("device", help="Blockdevice to use")
+    parser_create.add_argument(
         "--journal",
         default="external",
         choices=["external", "internal"],
         help="Type of journal (on same disk or external)",
     )
-    parser_activate.add_argument(
+    parser_create.add_argument(
         "--journal-size",
         default=fc.ceph.manage.OSD.DEFAULT_JOURNAL_SIZE,
         help="Size of journal (LVM size units allowed).",
     )
-    parser_activate.add_argument("--crush-location", default=f"host={hostname}")
-    parser_activate.set_defaults(action="create")
+    parser_create.add_argument("--crush-location", default=f"host={hostname}")
+    parser_create.set_defaults(action="create")
 
     parser_activate = osd_sub.add_parser(
         "activate", help="Activate one or more OSDs."
