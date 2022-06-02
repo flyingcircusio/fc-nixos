@@ -130,6 +130,16 @@ in
       enable = mkEnableOption "Enable the Flying Circus elasticsearch7 role.";
       supportsContainers = fclib.mkEnableContainerSupport;
     };
+
+    # Dummy option that does nothing on 21.05 to make upgrades to 21.11
+    # easier.
+    # Set it to false before upgrading multi-node clusters!
+    # On 21.11, the option is required and has `true` as default which splits
+    # multi-node clusters.
+    # This behaviour breaks indices that have replicas and they cannot be
+    # recovered.
+    services.elasticsearch.single_node = mkOption {};
+
   };
 
   config = lib.mkMerge [
