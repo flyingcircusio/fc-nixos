@@ -109,6 +109,8 @@ let
     "python38Packages"
     # XXX: fails on 21.05, must be fixed
     "backy"
+    # XXX: fails on 22.05
+    "solr"
   ];
 
   includedPkgNames = [
