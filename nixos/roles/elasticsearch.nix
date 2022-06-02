@@ -172,6 +172,14 @@ in
       '');
     };
 
+    flyingcircus.services.sensu-client = {
+      expectedDiskCapacity = {
+        # same as https://www.elastic.co/guide/en/elasticsearch/reference/7.17/modules-cluster.html#disk-based-shard-allocation
+        warning = 85;
+        critical = 90;
+      };
+    };
+
     systemd.services.elasticsearch = {
       startLimitIntervalSec = 480;
       startLimitBurst = 3;
