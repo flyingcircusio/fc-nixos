@@ -91,14 +91,12 @@ in
 
       flyingcircus.users.serviceUsers.extraGroups = [ "varnish" ];
 
-      services.logrotate.extraConfig = ''
-        /var/log/varnish.log {
-          create 0644 varnish varnish
-          postrotate
-            systemctl reload varnishncsa
-          endscript
-        }
-      '';
+      services.logrotate.settings = {
+        "/var/log/varnish.log" = {
+          create = "0644 varnish varnish";
+          postrotate = "systemctl reload varnishncsa";
+        };
+      };
 
       services.varnish = {
         enable = true;

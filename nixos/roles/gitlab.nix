@@ -110,11 +110,11 @@ in
       configFile = "/etc/gitlab-runner/config.toml";
     };
 
-    services.logrotate.extraConfig = ''
-      /var/log/gitlab/*.log {
-        copytruncate
-      }
-    '';
+    services.logrotate.settings = {
+      "/var/log/gitlab/*.log" = {
+        copytruncate = true;
+      };
+    };
 
     services.nginx.commonHttpConfig = ''
       map $http_upgrade $connection_upgrade_gitlab {
