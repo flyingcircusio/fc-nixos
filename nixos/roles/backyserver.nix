@@ -118,10 +118,9 @@ in
 
     };
 
-    services.logrotate.extraConfig = ''
-        /srv/backy/*/backy.log {
-        }
-      '';
+    services.logrotate.settings = {
+      "/srv/backy/*/backy.log" = { };
+    };
 
     flyingcircus.services.sensu-client.checks = {
 
