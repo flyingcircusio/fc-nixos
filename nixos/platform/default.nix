@@ -294,7 +294,7 @@ in {
 
       nscd.enable = true;
       openssh.enable = fclib.mkPlatform true;
-      openssh.challengeResponseAuthentication = false;
+      openssh.kbdInteractiveAuthentication = false;
       openssh.passwordAuthentication = false;
 
       telegraf.enable = mkDefault true;
