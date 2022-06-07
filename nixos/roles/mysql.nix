@@ -135,24 +135,22 @@ in
       "f /var/log/mysql/mysql.slow 0640 mysql service -"
     ];
 
-    # Note that this does not use our platform defauls for logrotate.
-    # Configuration via logrotate.paths is added before our defaults so
-    # they don't apply.
+    # Note that this does not use platform defaults, by using priority 100.
     # postrotate command taken from https://www.percona.com/blog/2013/04/18/rotating-mysql-slow-logs-safely/
-    services.logrotate.paths.mysql-slowlog = {
-      path = "/var/log/mysql/mysql.slow";
-      keep = 10;
-      frequency = "weekly";
-      extraConfig = ''
-        maxsize 2G
-        compress
-        create 0640 mysql service
-        postrotate
-          ${package}/bin/mysql --defaults-extra-file=/root/.my.cnf \
-            -e 'select @@global.long_query_time into @lqt_save; set global long_query_time=2000; select sleep(2); FLUSH LOGS; select sleep(2); set global long_query_time=@lqt_save;'
-        endscript
-        missingok
-      '';
+    services.logrotate.settings = {
+      "/var/log/mysql/mysql.slow" = {
+        priority = 100;
+        rotate = 10;
+        frequency = "weekly";
+        maxsize = "2G";
+        compress = true;
+        create = "0640 mysql service";
+        postrotate = ''
+          ${package}/bin/mysql --defaults-extra-file=/root/.my.cnf -e \
+                'select @@global.long_query_time into @lqt_save; set global long_query_time=2000; select sleep(2); FLUSH LOGS; select sleep(2); set global long_query_time=@lqt_save;'
+        '';
+        missingok = true;
+      };
     };
 
     services.percona = {

@@ -143,14 +143,12 @@ in {
         It will be joined with the basic config.
       '';
 
-      services.logrotate.extraConfig = ''
-        /var/log/mongodb/*.log {
-          nocreate
-          postrotate
-            systemctl reload mongodb
-          endscript
-        }
-      '';
+      services.logrotate.settings = {
+        "/var/log/mongodb/*.log" = {
+          nocreate = true;
+          postrotate = "systemctl reload mongodb";
+        };
+      };
 
       flyingcircus.services = {
 
