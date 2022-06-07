@@ -38,5 +38,5 @@
 
     # fallback ACME settings
     security.acme.acceptTerms = true;
-    security.acme.email = "admin@flyingcircus.io";
+    security.acme.defaults.email = "admin@flyingcircus.io";
 }
