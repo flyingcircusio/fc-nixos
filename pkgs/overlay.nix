@@ -40,6 +40,10 @@ in {
       pythonPackages = super.python2Packages;
       boost = super.boost155;
   });
+  ceph-luminous = (super.callPackage ./ceph/luminous {
+    # TODO: try newer boost versions
+    boost = super.boost166.override { enablePython = true; };
+  });
 
   # Hash is wrong upstream
   containerd = super.containerd.overrideAttrs(_: rec {
