@@ -35,7 +35,8 @@ in {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  ceph = (super.callPackage ./ceph {
+  ceph = self.ceph-jewel;
+  ceph-jewel = (super.callPackage ./ceph/jewel {
       pythonPackages = super.python2Packages;
       boost = super.boost155;
   });
