@@ -42,7 +42,10 @@ in {
   });
   ceph-luminous = (super.callPackage ./ceph/luminous {
     # TODO: try newer boost versions
-    boost = super.boost166.override { enablePython = true; };
+    boost = super.boost16x.override {
+      enablePython = true;
+      python = self.python3;
+    };
   });
 
   # Hash is wrong upstream

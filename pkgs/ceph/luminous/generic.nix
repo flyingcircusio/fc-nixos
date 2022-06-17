@@ -1,6 +1,6 @@
-{ stdenv, ensureNewerSourcesHook, cmake, pkgconfig
+{ stdenv, lib, ensureNewerSourcesHook, cmake, pkgconfig
 , which, git
-, boost, python2Packages
+, boost, python3Packages
 , libxml2, zlib
 , openldap, lttng-ust
 , babeltrace, gperf
@@ -33,7 +33,7 @@
 assert cryptopp != null || (nss != null && nspr != null);
 
 with stdenv;
-with stdenv.lib;
+with lib;
 let
 
   shouldUsePkg = pkg_: let pkg = (builtins.tryEval pkg_).value;
@@ -79,10 +79,9 @@ let
     none = [ ];
   };
 
-  ceph-python-env = python2Packages.python.withPackages (ps: [
+  ceph-python-env = python3Packages.python.withPackages (ps: [
     ps.sphinx
     ps.flask
-    ps.argparse
     ps.cython
     ps.setuptools
     ps.pip
@@ -96,7 +95,8 @@ let
 
 in
 stdenv.mkDerivation {
-  name="ceph-${version}";
+  pname = "ceph";
+  inherit version;
 
   inherit src;
 
@@ -107,9 +107,17 @@ stdenv.mkDerivation {
     ./0002-fix-absolute-include-path.patch
   ];
 
+  # boost-1.67 and later introduce a version suffix to the FindBoost cmake module,
+  # this needs to be patched depending on the python version used here
+  postPatch = let
+    pySuffix = (srcVersion: "${srcVersion.major}${srcVersion.minor}") python3Packages.python.sourceVersion;
+    in ''
+      substituteInPlace CMakeLists.txt --replace "BOOST_COMPONENTS python" "BOOST_COMPONENTS python${pySuffix}"
+      '';
+
   nativeBuildInputs = [
     cmake
-    pkgconfig which git python2Packages.wrapPython makeWrapper
+    pkgconfig which git python3Packages.wrapPython makeWrapper
     (ensureNewerSourcesHook { year = "1980"; })
   ];
 
@@ -135,7 +143,7 @@ stdenv.mkDerivation {
 	export LD_LIBRARY_PATH="$PWD/build/lib:$LD_LIBRARY_PATH"
 
 	# requires setuptools due to embedded in-cmake setup.py usage
-	export PYTHONPATH="${python2Packages.setuptools}/lib/python2.7/site-packages/:$PYTHONPATH"
+	export PYTHONPATH="${python3Packages.setuptools}/lib/python*/site-packages/:$PYTHONPATH"
   '';
 
   cmakeFlags = [
@@ -154,7 +162,7 @@ stdenv.mkDerivation {
 
   postFixup = ''
     wrapPythonPrograms
-    wrapProgram $out/bin/ceph-mgr --set PYTHONPATH $out/${python2Packages.python.sitePackages}
+    wrapProgram $out/bin/ceph-mgr --set PYTHONPATH $out/${python3Packages.python.sitePackages}
   '';
 
   enableParallelBuilding = true;
@@ -165,7 +173,7 @@ stdenv.mkDerivation {
     homepage = https://ceph.com/;
     description = "Distributed storage system";
     license = licenses.lgpl21;
-    maintainers = with maintainers; [ adev ak wkennington ];
+    maintainers = with maintainers; [ theuni ];
     platforms = platforms.unix;
   };
 
