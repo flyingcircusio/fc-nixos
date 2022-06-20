@@ -115,30 +115,47 @@ in {
 
   jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
     pname = "jicofo";
-    version = "1.0-874";
-    src = super.fetchurl {
+    version = "1.0-877";
+    src = fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "16fx3b4jvra4lzjm1b5fshn6hax0j32mvrjq6d01wdxl7bmpa32z";
+      sha256 = "sha256-p2HTKgEkCo5mW+pFSsbAgqeNDTrrYNtwfzgDXqE2PzU=";
     };
   });
 
   jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-meet";
-    version = "1.0.6091";
-    src = super.fetchurl {
+    version = "1.0.6155";
+    src = fetchurl {
       url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      sha256 = "06d5g84j6hwv0fyll4mhwsf7inzsq4jx7hh0fw8ipny3gsn0d14m";
+      sha256 = "sha256-baCRVYe1z2uH3vSb5KbWs0y4KyQYO3JpTyoGFZIZQqo=";
     };
 
   });
 
   jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-videobridge2";
-    version = "2.1-665-g3a90ccdc";
-    src = super.fetchurl {
+    version = "2.1-681-g3544ed05";
+    src = fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      sha256 = "1m5a65yhwsdzzhv8ys3fqk0pazb8f7ls7ryr9dwpsjaf5lamyr6x";
+      sha256 = "sha256-86lzt9SnZ6lpo7z6PQvVMZRdNJ0zeDUP92wrbnR0FbE=";
     };
+    # jvb complained about missing libcrypto.so.3, add openssl 3 here.
+    installPhase = ''
+      runHook preInstall
+      substituteInPlace usr/share/jitsi-videobridge/jvb.sh \
+        --replace "exec java" "exec ${self.jre_headless}/bin/java"
+
+      mkdir -p $out/{bin,share/jitsi-videobridge,etc/jitsi/videobridge}
+      mv etc/jitsi/videobridge/logging.properties $out/etc/jitsi/videobridge/
+      mv usr/share/jitsi-videobridge/* $out/share/jitsi-videobridge/
+      ln -s $out/share/jitsi-videobridge/jvb.sh $out/bin/jitsi-videobridge
+
+      # work around https://github.com/jitsi/jitsi-videobridge/issues/1547
+      wrapProgram $out/bin/jitsi-videobridge \
+        --set VIDEOBRIDGE_GC_TYPE G1GC \
+        --set LD_LIBRARY_PATH ${super.lib.getLib super.openssl_3_0}/lib/
+      runHook postInstall
+    '';
   });
 
   jdk8_headless = super.jdk8_headless.override { zlib = self.zlibCrcInputFix; };
