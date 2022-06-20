@@ -37,6 +37,15 @@ A complete configuration might looks something like this:
 	      { port = 8000;
 	        docroot = "/srv/s-myserviceuser/application.git/docroot";
 	      }
+	      { port = 8001;
+	        docroot = "/srv/s-myserviceuser/application.git/other_php_version_root";
+	        pool = {
+	            phpPackage = pkgs.lamp_php80;
+	            settings = {
+	                "pm.max_requests" = 50;
+	            };
+	        };
+	      }
 	    ];
 
 	    php = pkgs.lamp_php74;
