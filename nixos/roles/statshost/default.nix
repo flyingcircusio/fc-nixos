@@ -109,7 +109,7 @@ let
     use_ssl = true
     bind_dn = "uid=%s,ou=People,dc=gocept,dc=com"
     search_base_dns = ["ou=People,dc=gocept,dc=com"]
-    search_filter = "(&(&(objectClass=inetOrgPerson)(uid=%s))(memberOf=cn=${config.flyingcircus.enc.parameters.resource_group},ou=GroupOfNames,dc=gocept,dc=com))"
+    search_filter = "(&(&(objectClass=inetOrgPerson)(uid=%s))(memberOf=cn=${config.flyingcircus.roles.statshost.ldapMemberOf},ou=GroupOfNames,dc=gocept,dc=com))"
     group_search_base_dns = ["ou=Group,dc=gocept,dc=com"]
     group_search_filter = "(&(objectClass=posixGroup)(memberUid=%s))"
 
@@ -132,7 +132,7 @@ in
 {
 
   imports = [
-    ./global-metrics.nix
+    ./global-statshost.nix
     ./location-proxy.nix
     ./relabel.nix
     ./rg-relay.nix
@@ -156,6 +156,17 @@ in
           Also used by collectdproxy if it's the global FCIO statshost.
         '';
         example = "stats.example.com";
+      };
+
+      ldapMemberOf = mkOption {
+        default = config.flyingcircus.enc.parameters.resource_group;
+        type = types.str;
+        description = ''
+          LDAP group to use for the "memberOf" attribute.
+          Defaults to the resource group.
+          Checks if the user is a member of this group to grant access.
+        '';
+        example = "cn=stats,ou=Group,dc=gocept,dc=com";
       };
 
       useSSL = mkOption {
