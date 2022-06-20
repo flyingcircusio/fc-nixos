@@ -5,7 +5,7 @@
 , openldap, lttng-ust
 , babeltrace, gperf
 , cunit, snappy
-, rocksdb, makeWrapper
+, makeWrapper
 
 # Optional Dependencies
 , yasm ? null, fcgi ? null, expat ? null
@@ -101,8 +101,7 @@ stdenv.mkDerivation {
   inherit src;
 
   patches = [
- #   ./ceph-patch-cmake-path.patch
-    ./0001-kv-RocksDBStore-API-break-additional.patch
+    #./0001-kv-RocksDBStore-API-break-additional.patch
   ] ++ optionals stdenv.isLinux [
     ./0002-fix-absolute-include-path.patch
   ];
@@ -119,12 +118,13 @@ stdenv.mkDerivation {
     cmake
     pkgconfig which git python3Packages.wrapPython makeWrapper
     (ensureNewerSourcesHook { year = "1980"; })
+    breakpointHook
   ];
 
   buildInputs = buildInputs ++ cryptoLibsMap.${cryptoStr} ++ [
     boost ceph-python-env libxml2 optYasm optLibatomic_ops optLibs3
     malloc zlib openldap lttng-ust babeltrace gperf cunit
-    snappy rocksdb
+    snappy
   ] ++ optionals stdenv.isLinux [
     linuxHeaders libuuid udev keyutils optLibaio optLibxfs optZfs
   ] ++ optionals hasRadosgw [
@@ -137,7 +137,6 @@ stdenv.mkDerivation {
   preConfigure =''
     # rip off submodule that interfer with system libs
 	rm -rf src/boost
-	rm -rf src/rocksdb
 
 	# require LD_LIBRARY_PATH for cython to find internal dep
 	export LD_LIBRARY_PATH="$PWD/build/lib:$LD_LIBRARY_PATH"
@@ -149,7 +148,8 @@ stdenv.mkDerivation {
   cmakeFlags = [
     "-DENABLE_GIT_VERSION=OFF"
     "-DWITH_SYSTEM_BOOST=ON"
-    "-DWITH_SYSTEM_ROCKSDB=ON"
+    # using an unpatched system rocksdb might break bluestore, see https://github.com/NixOS/nixpkgs/pull/113137/
+    "-DWITH_SYSTEM_ROCKSDB=OFF"
     "-DWITH_LEVELDB=OFF"
 
     # enforce shared lib
