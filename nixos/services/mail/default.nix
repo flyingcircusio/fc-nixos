@@ -35,7 +35,8 @@ let
 
 in {
   imports = [
-    "${nixos-mailserver}"
+    #"${nixos-mailserver}"
+    /home/ts/nixos-mailserver
     ./roundcube.nix
     ./rspamd.nix
     ./stub.nix
@@ -165,6 +166,7 @@ in {
           command = "${plug}/check_smtp -H ${role.mailHost} -p 587 -S " +
             "-F ${fqdn} -w 5 -c 30";
         };
+      } // (lib.optionalAttrs config.services.dovecot2.enableImap {
         dovecot_imap = {
           notification = "Dovecot listening on IMAP port 143";
           command = "${plug}/check_imap -H ${role.mailHost} -w 5 -c 30";
@@ -173,7 +175,7 @@ in {
           notification = "Dovecot listening on IMAPs port 993";
           command = "${plug}/check_imap -H ${role.mailHost} -p 993 -S -w 5 -c 30";
         };
-      };
+      });
 
       flyingcircus.passwordlessSudoRules = [
         {
@@ -197,7 +199,6 @@ in {
         extraVirtualAliases =
           fclib.jsonFromFile "/etc/local/mail/local_valiases.json" "{}";
         certificateScheme = 3;
-        enableImapSsl = true;
         enableManageSieve = true;
         lmtpSaveToDetailMailbox = "no";
         mailDirectory = vmailDir;
@@ -352,7 +353,7 @@ in {
             chmod g+w "${file}"
           '') dynamicMapFiles));
 
-      systemd.services.dovecot2-expunge = {
+      systemd.services.dovecot2-expunge = lib.mkIf config.mailserver.enableDeliveryToDovecot {
         script = ''
           doveadm expunge -A mailbox Trash savedbefore 7d || true
           doveadm expunge -A mailbox Junk savedbefore 30d || true

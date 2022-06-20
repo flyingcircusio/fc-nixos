@@ -177,6 +177,12 @@ in
         default = null;
       };
 
+      enableWebmail = mkOption {
+        type = types.bool;
+        description = "Enable the Webmail service. Is enabled by default if webmailHost is set.";
+        default = roles.mailserver.webmailHost != null;
+      };
+
       redisDatabase = mkOption {
         type = types.int;
         description = ''
@@ -207,8 +213,9 @@ in
 
     (lib.mkIf roles.mailserver.enable {
       flyingcircus.services.mail.enable = assert !roles.mailstub.enable; true;
-      flyingcircus.services.nginx.enable = true;
-      flyingcircus.services.redis.enable = true;
+      flyingcircus.services.nginx.enable = fclib.mkPlatform true;
+      flyingcircus.services.redis.enable = fclib.mkPlatform true;
+      flyingcircus.services.webmail.enable = roles.mailserver.enableWebmail;
 
       flyingcircus.passwordlessSudoRules = [
         {

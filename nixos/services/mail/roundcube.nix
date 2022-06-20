@@ -4,9 +4,17 @@ let
   role = config.flyingcircus.roles.mailserver;
   chpasswd = "/run/wrappers/bin/roundcube-chpasswd";
   fclib = config.fclib;
+  cfg  = config.flyingcircus.services.webmail;
 
-in lib.mkMerge [
-  (lib.mkIf (role.enable && role.webmailHost != null) {
+in
+{
+  options = with lib; {
+    flyingcircus.services.webmail = {
+      enable = mkEnableOption "Enable Webmail (Roundcube with Nginx integration).";
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
     services.postgresql.enable = true;
 
     security.wrappers = {
@@ -53,5 +61,5 @@ in lib.mkMerge [
         "zipdownload"
       ];
     };
-  })
-]
+  };
+}
