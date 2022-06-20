@@ -6,11 +6,11 @@ pkgs.writeScript "check-xfs-broken.sh" ''
 
   # if it is, then output the lines of dmesg that contain this message, and exit with a exit code of 2
 
-  ${pkgs.util-linux}/bin/dmesg | grep -q '"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.'
+  ${pkgs.util-linux}/bin/dmesg | grep -q 'xfs_log_commit_cil'
   # quiet grep
   if [ $? -eq 0 ]; then
     echo "CRITICAL - xfs is broken, offending lines:"
-    ${pkgs.util-linux}/bin/dmesg | grep '"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.'
+    ${pkgs.util-linux}/bin/dmesg | grep -C 20 'xfs_log_commit_cil'
     exit 2
   fi
   echo "OK - xfs is not broken"
