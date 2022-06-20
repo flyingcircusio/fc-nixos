@@ -118,7 +118,6 @@ stdenv.mkDerivation {
     cmake
     pkgconfig which git python3Packages.wrapPython makeWrapper
     (ensureNewerSourcesHook { year = "1980"; })
-    breakpointHook
   ];
 
   buildInputs = buildInputs ++ cryptoLibsMap.${cryptoStr} ++ [
@@ -158,6 +157,9 @@ stdenv.mkDerivation {
     # disable cephfs, cmake build broken for now
     "-DWITH_CEPHFS=OFF"
     "-DWITH_LIBCEPHFS=OFF"
+
+    # required for glibc>=2.32
+    "-DWITH_REENTRANT_STRSIGNAL=ON"
   ];
 
   postFixup = ''
