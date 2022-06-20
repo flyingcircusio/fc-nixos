@@ -85,3 +85,9 @@ Update nixpkgs version
 1. Update rev id in versions.json and zero out sha256
 2. Run `nix-build versions.nix` to get the correct checkout
 3. Fix checksum and run `eval $(./dev-setup)` to activate.
+
+
+License
+-------
+
+Unless explicitly stated otherwise, content in this repository is licensed under the [MIT License](COPYING).
