@@ -1,6 +1,6 @@
 { stdenv, lib, ensureNewerSourcesHook, cmake, pkgconfig
 , which, git
-, boost, python3Packages
+, boost, python2Packages
 , libxml2, zlib
 , openldap, lttng-ust
 , babeltrace, gperf
@@ -79,19 +79,23 @@ let
     none = [ ];
   };
 
-  ceph-python-env = python3Packages.python.withPackages (ps: [
-    ps.sphinx
-    ps.flask
-    ps.cython
-    ps.setuptools
-    ps.pip
-    # Libraries needed by the python tools
-    ps.Mako
-    ps.pecan
-    ps.prettytable
-    ps.webob
-    ps.cherrypy
-  ]);
+  ceph-python-env = python2Packages.python.buildEnv.override {
+    extraLibs = (ps:[
+      ps.sphinx
+      ps.flask
+      ps.cython
+      ps.setuptools
+      ps.pip
+      # Libraries needed by the python tools
+      ps.Mako
+      ps.pecan
+      ps.prettytable
+      ps.webob
+      ps.cherrypy
+    ]) python2Packages;
+    # backport namespace collisions, see https://github.com/NixOS/nixpkgs/issues/22319#issuecomment-276913527
+    ignoreCollisions = true;
+  };
 
 in
 stdenv.mkDerivation {
@@ -109,14 +113,14 @@ stdenv.mkDerivation {
   # boost-1.67 and later introduce a version suffix to the FindBoost cmake module,
   # this needs to be patched depending on the python version used here
   postPatch = let
-    pySuffix = (srcVersion: "${srcVersion.major}${srcVersion.minor}") python3Packages.python.sourceVersion;
+    pySuffix = (srcVersion: "${srcVersion.major}${srcVersion.minor}") python2Packages.python.sourceVersion;
     in ''
       substituteInPlace CMakeLists.txt --replace "BOOST_COMPONENTS python" "BOOST_COMPONENTS python${pySuffix}"
       '';
 
   nativeBuildInputs = [
     cmake
-    pkgconfig which git python3Packages.wrapPython makeWrapper
+    pkgconfig which git python2Packages.wrapPython makeWrapper
     (ensureNewerSourcesHook { year = "1980"; })
   ];
 
@@ -141,7 +145,7 @@ stdenv.mkDerivation {
 	export LD_LIBRARY_PATH="$PWD/build/lib:$LD_LIBRARY_PATH"
 
 	# requires setuptools due to embedded in-cmake setup.py usage
-	export PYTHONPATH="${python3Packages.setuptools}/lib/python*/site-packages/:$PYTHONPATH"
+	export PYTHONPATH="${python2Packages.setuptools}/lib/python*/site-packages/:$PYTHONPATH"
   '';
 
   cmakeFlags = [
@@ -160,11 +164,18 @@ stdenv.mkDerivation {
 
     # required for glibc>=2.32
     "-DWITH_REENTRANT_STRSIGNAL=ON"
+
+    # explicitly set which python versions to build against
+    # ceph-mgr supports *only* python2, so for now use this as the only python version
+    "-DWITH_PYTHON2=ON"
+    # FIXME: It might be possible to *additionally* build python3 bindings for some ceph components
+    # like rbd, rgw
+    "-DWITH_PYTHON3=OFF"
   ];
 
   postFixup = ''
     wrapPythonPrograms
-    wrapProgram $out/bin/ceph-mgr --set PYTHONPATH $out/${python3Packages.python.sitePackages}
+    wrapProgram $out/bin/ceph-mgr --set PYTHONPATH $out/${python2Packages.python.sitePackages}
   '';
 
   enableParallelBuilding = true;

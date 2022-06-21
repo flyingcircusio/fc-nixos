@@ -44,10 +44,10 @@ in {
     # TODO: try newer boost versions
     boost = super.boost16x.override {
       enablePython = true;
-      python = self.python36;
+      python = self.python27;
     };
     stdenv = self.gcc9Stdenv;
-    python3Packages = self.python36.pkgs;
+    python2Packages = self.python27.pkgs;
   });
 
   # Hash is wrong upstream
@@ -424,12 +424,48 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  # python27 can be overridden here at top-level, because the only change introduced in here is
+  # downgrading wseveral packages to the last version that builds against python-2.7.
+  # Without this override, pulling these packages into a python27 environment just results in an evaluation failure.
+  python27 = super.python27.override {
+    packageOverrides = python-self: python-super: {
+      cheroot = self.python27.pkgs.callPackage ./python/cheroot { };
+      cherrypy = self.python27.pkgs.callPackage ./python/cherrypy { };
+      jaraco_text = self.python27.pkgs.callPackage ./python/jaraco_text { };
+      PasteDeploy = python-super.PasteDeploy.overrideAttrs (oldattrs: {
+        # for pkg_resources
+        propagatedBuildInputs = oldattrs.propagatedBuildInputs ++ [python-self.setuptools];
+      });
+      pecan = self.python27.pkgs.callPackage ./python/pecan { };
+      portend = self.python27.pkgs.callPackage ./python/portend { };
+      pypytools = self.python27.pkgs.callPackage ./python/pypytools { };
+      pyquery = self.python27.pkgs.callPackage ./python/pyquery { };
+      routes = python-super.routes.overrideAttrs (oldattrs: {
+        # work around a weird pythonImportsCheck failure
+        #buildInputs = oldattrs.propagatedBuildInputs;
+        #pythonImportsCheck = [];
+        pythonImportsCheckPhase = ''
+        #  set -x
+        #  export PYTHONPATH=$out/${self.python27.sitePackages}:$PYTHONPATH
+        #  python -v -c "import routes"
+        '';
+      });
+      tempora = self.python27.pkgs.callPackage ./python/tempora { };
+      waitress = self.python27.pkgs.callPackage ./python/waitress { };
+      webtest = self.python27.pkgs.callPackage ./python/webtest {
+        pastedeploy = python-self.PasteDeploy;
+      };
+      WebTest = python-self.webtest;
+      zc_lockfile = self.python27.pkgs.callPackage ./python/zc_lockfile { };
+    };
+  };
+
   # python36 can be overridden here at top-level, because the only change introduced in here is
   # downgrading numpy to the last version that builds against python-3.6.
   # Without this override, pulling numpy into a python36 environment just results in an evaluation failure.
   python36 = super.python36.override {
     packageOverrides = python-self: python-super: {
-      numpy = super.python36.pkgs.callPackage ./python/numpy { };
+      numpy = self.python36.pkgs.callPackage ./python/numpy { };
     };
   };
 
