@@ -46,6 +46,7 @@ in {
       enablePython = true;
       python = self.python3;
     };
+    stdenv = self.gcc9Stdenv;
   });
 
   # Hash is wrong upstream
