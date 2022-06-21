@@ -44,9 +44,10 @@ in {
     # TODO: try newer boost versions
     boost = super.boost16x.override {
       enablePython = true;
-      python = self.python3;
+      python = self.python36;
     };
     stdenv = self.gcc9Stdenv;
+    python3Packages = self.python36.pkgs;
   });
 
   # Hash is wrong upstream
@@ -422,6 +423,15 @@ in {
   });
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
+
+  # python36 can be overridden here at top-level, because the only change introduced in here is
+  # downgrading numpy to the last version that builds against python-3.6.
+  # Without this override, pulling numpy into a python36 environment just results in an evaluation failure.
+  python36 = super.python36.override {
+    packageOverrides = python-self: python-super: {
+      numpy = super.python36.pkgs.callPackage ./python/numpy { };
+    };
+  };
 
   qemu_ceph = super.qemu.override { cephSupport = true; };
 
