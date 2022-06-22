@@ -59,6 +59,4 @@ in mkIf config.flyingcircus.roles.statshost-global.enable
 
   flyingcircus.roles.statshost.prometheusMetricRelabel =
     lib.mkAfter (markAllowedMetrics ++ dropUnmarkedMetrics);
-
-  flyingcircus.roles.statshost.ldapMemberOf = "crew";
 }

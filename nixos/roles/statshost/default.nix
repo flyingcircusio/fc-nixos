@@ -132,7 +132,7 @@ in
 {
 
   imports = [
-    ./global-statshost.nix
+    ./global-metrics.nix
     ./location-proxy.nix
     ./relabel.nix
     ./rg-relay.nix
@@ -330,6 +330,8 @@ in
               }];
           })
         relayLocationProxies);
+
+      flyingcircus.roles.statshost.ldapMemberOf = "crew";
     })
 
     (mkIf (cfgStatsRG.enable || cfgProxyRG.enable) {
