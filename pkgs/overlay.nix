@@ -42,7 +42,7 @@ in {
   });
   ceph-luminous = (super.callPackage ./ceph/luminous {
     # TODO: try newer boost versions
-    boost = super.boost16x.override {
+    boost = super.boost166.override {
       enablePython = true;
       python = self.python27;
     };

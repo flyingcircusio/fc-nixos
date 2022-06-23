@@ -110,14 +110,6 @@ stdenv.mkDerivation {
     ./0002-fix-absolute-include-path.patch
   ];
 
-  # boost-1.67 and later introduce a version suffix to the FindBoost cmake module,
-  # this needs to be patched depending on the python version used here
-  postPatch = let
-    pySuffix = (srcVersion: "${srcVersion.major}${srcVersion.minor}") python2Packages.python.sourceVersion;
-    in ''
-      substituteInPlace CMakeLists.txt --replace "BOOST_COMPONENTS python" "BOOST_COMPONENTS python${pySuffix}"
-      '';
-
   nativeBuildInputs = [
     cmake
     pkgconfig which git python2Packages.wrapPython makeWrapper
