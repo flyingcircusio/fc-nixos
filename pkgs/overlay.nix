@@ -431,6 +431,7 @@ in {
     packageOverrides = python-self: python-super: {
       cheroot = self.python27.pkgs.callPackage ./python/cheroot { };
       cherrypy = self.python27.pkgs.callPackage ./python/cherrypy { };
+      cython = self.python27.pkgs.callPackage ./python/Cython { };
       jaraco_text = self.python27.pkgs.callPackage ./python/jaraco_text { };
       PasteDeploy = python-super.PasteDeploy.overrideAttrs (oldattrs: {
         # for pkg_resources
