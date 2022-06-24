@@ -428,13 +428,13 @@ in {
         #     "io";
         #   interval = 10;
         # };
-        load = {
-          notification = "Load is too high";
-          command =
-            "check_load -r -w ${cfg.expectedLoad.warning} " +
-            "-c ${cfg.expectedLoad.critical}";
-          interval = 10;
-        };
+        # load = {
+        #   notification = "Load is too high";
+        #   command =
+        #     "check_load -r -w ${cfg.expectedLoad.warning} " +
+        #     "-c ${cfg.expectedLoad.critical}";
+        #   interval = 10;
+        # };
         swap = {
           notification = "Swap usage is too high";
           command =
