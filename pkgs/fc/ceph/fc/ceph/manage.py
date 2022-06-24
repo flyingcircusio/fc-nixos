@@ -798,35 +798,37 @@ class Monitor(object):
             # Generate initial mon keyring
             run(
                 [
+                    # fmt: off
                     "ceph-authtool",
                     "-g",
-                    "-n",
-                    "mon.",
-                    "--create-keyring",
-                    f"{tmpdir}/keyring",
+                    "-n", "mon.",
+                    "--create-keyring", f"{tmpdir}/keyring",
                     "--set-uid=0",
-                    "--cap",
-                    "mon",
-                    "allow *",
+                    "--cap", "mon", "allow *",
+                    # fmt: on
                 ],
                 check=True,
             )
             # Import admin keyring
             run(
                 [
+                    # fmt: off
                     "ceph-authtool",
                     f"{tmpdir}/keyring",
-                    "--import-keyring",
-                    "/etc/ceph/ceph.client.admin.keyring",
-                    "--cap",
-                    "mds",
-                    "allow *",
-                    "--cap",
-                    "mon",
-                    "allow *",
-                    "--cap",
-                    "osd",
-                    "allow *",
+                    "--import-keyring", "/etc/ceph/ceph.client.admin.keyring",
+                    # fmt: on
+                ]
+            )
+            # adjust admin capabilities
+            run(
+                [
+                    # fmt: off
+                    "ceph-authtool",
+                    f"{tmpdir}/keyring",
+                    "--cap", "mds", "allow *",
+                    "--cap", "mon", "allow *",
+                    "--cap", "osd", "allow *",
+                    # fmt: on
                 ]
             )
             # Generate initial monmap
