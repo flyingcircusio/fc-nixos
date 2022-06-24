@@ -155,6 +155,7 @@ in
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb')
       host1.execute('fc-ceph mon create --size 500m --bootstrap-cluster &> /dev/kmsg')
+      show(host1, "ls -l /dev/disk/by-label")
       show(host1, 'lsblk')
       show(host1, 'journalctl -u fc-ceph-mon')
       host1.sleep(10)
