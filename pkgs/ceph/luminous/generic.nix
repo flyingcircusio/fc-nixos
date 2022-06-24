@@ -6,6 +6,7 @@
 , babeltrace, gperf
 , cunit, snappy
 , makeWrapper
+, fetchpatch
 
 # Optional Dependencies
 , yasm ? null, fcgi ? null, expat ? null
@@ -105,7 +106,11 @@ stdenv.mkDerivation {
   inherit src;
 
   patches = [
-    #./0001-kv-RocksDBStore-API-break-additional.patch
+    # fix duplicate test names that are confusing GoogleTests macro expansion
+    (fetchpatch {
+      url = "https://github.com/ceph/ceph/pull/43491.patch";
+      sha256 = "sha256-ck6C5mdimrhBC600fMsmL6ToUXiM9FTzl9fSxwnYw9s=";
+    })
   ] ++ optionals stdenv.isLinux [
     ./0002-fix-absolute-include-path.patch
   ];
