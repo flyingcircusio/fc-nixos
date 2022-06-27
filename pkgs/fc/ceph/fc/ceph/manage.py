@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 import time
+import traceback
 from subprocess import CalledProcessError
 
 from .util import run
@@ -93,7 +94,7 @@ def find_mountpoint(path):
 
 def kill(pid_file):
     if not os.path.exists(pid_file):
-        print(f"PID file {pid_file} found. Not killing.")
+        print(f"PID file {pid_file} not found. Not killing.")
         return
 
     with open(pid_file) as f:
@@ -163,8 +164,8 @@ class OSDManager(object):
             try:
                 osd = OSD(id_)
                 osd.activate()
-            except Exception as e:
-                print(e)
+            except Exception:
+                traceback.print_exc()
 
     def destroy(self, ids):
         ids = self._parse_ids(ids, allow_non_local=f"DESTROY {ids}")
@@ -173,8 +174,8 @@ class OSDManager(object):
             try:
                 osd = OSD(id_)
                 osd.destroy()
-            except Exception as e:
-                print(e)
+            except Exception:
+                traceback.print_exc()
 
     def deactivate(self, ids):
         ids = self._parse_ids(ids)
@@ -186,8 +187,8 @@ class OSDManager(object):
                 thread = threading.Thread(target=osd.deactivate)
                 thread.start()
                 threads.append(thread)
-            except Exception as e:
-                print(e)
+            except Exception:
+                traceback.print_exc()
 
         for thread in threads:
             thread.join()
@@ -201,8 +202,8 @@ class OSDManager(object):
                 osd = OSD(id_)
                 osd.deactivate(flush=False)
                 osd.activate()
-            except Exception as e:
-                print(e)
+            except Exception:
+                traceback.print_exc()
 
     def rebuild(self, ids, journal_size):
         ids = self._parse_ids(ids)
@@ -211,12 +212,12 @@ class OSDManager(object):
             try:
                 osd = OSD(id_)
                 osd.rebuild(journal_size)
-            except Exception as e:
-                print(e)
+            except Exception:
+                traceback.print_exc()
 
     def prepare_journal(self, device):
         if not os.path.exists(device):
-            print(f"Device does not exist: ")
+            print(f"Device does not exist: {device}")
         try:
             partition_table = run.json.sfdisk(device)["partitiontable"]
         except Exception as e:
