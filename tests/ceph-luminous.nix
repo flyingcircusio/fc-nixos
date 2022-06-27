@@ -154,14 +154,14 @@ in
 
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb')
-      host1.execute('fc-ceph mon create --size 500m --bootstrap-cluster &> /dev/kmsg')
+      host1.execute('fc-ceph mon create --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
       show(host1, "ls -l /dev/disk/by-label")
       show(host1, 'lsblk')
       show(host1, 'journalctl -u fc-ceph-mon')
       host1.sleep(10)
       show(host1, 'cat /var/log/ceph/*mon*')
 
-      host1.succeed('ceph -s &> /dev/kmsg')
+      host1.succeed('ceph -s > /dev/kmsg 2>&1')
 
       host1.succeed('fc-ceph keys mon-update-single-client host1 ceph_osd,ceph_mon,ceph_rgw salt-for-host-1-dhkasjy9')
       host1.succeed('fc-ceph keys mon-update-single-client host2 ceph_osd,ceph_mon salt-for-host-2-dhkasjy9')
@@ -172,7 +172,7 @@ in
 
     with subtest("Initialize second MON and OSD"):
       host2.succeed('fc-ceph osd prepare-journal /dev/vdb')
-      host2.succeed('fc-ceph mon create --size 500m &> /dev/kmsg')
+      host2.succeed('fc-ceph mon create --size 500m > /dev/kmsg 2>&1')
       host2.succeed('fc-ceph osd create --journal-size=500m /dev/vdc')
 
     with subtest("Initialize third MON and OSD"):
@@ -210,7 +210,7 @@ in
 
       assert_clean_cluster(host2, 2, 3, 512)
 
-      host1.succeed('fc-ceph mon create --size 500m &> /dev/kmsg')
+      host1.succeed('fc-ceph mon create --size 500m > /dev/kmsg 2>&1')
       host1.sleep(5)
       show(host1, 'tail -n 500 /var/log/ceph/*mon*')
 
@@ -221,7 +221,7 @@ in
       assert_clean_cluster(host2, 3, 3, 512)
 
     with subtest("Rebuild all OSDs on host 1"):
-      host1.succeed('fc-ceph osd rebuild --journal-size=500m all &> /dev/kmsg')
+      host1.succeed('fc-ceph osd rebuild --journal-size=500m all > /dev/kmsg 2>&1')
       show(host1, "lsblk")
       show(host1, "vgs")
       assert_clean_cluster(host2, 3, 3, 512)
