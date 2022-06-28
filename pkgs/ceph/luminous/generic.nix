@@ -177,7 +177,7 @@ stdenv.mkDerivation {
 
   enableParallelBuilding = true;
 
-  outputs = [ "dev" "lib" "out" "doc" ];
+  outputs = [ "out" "dev" "lib" "doc" ];
 
   meta = {
     homepage = https://ceph.com/;
