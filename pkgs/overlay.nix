@@ -41,13 +41,21 @@ in {
       boost = super.boost155;
   });
   ceph-luminous = (super.callPackage ./ceph/luminous {
-    # TODO: try newer boost versions
     boost = super.boost166.override {
       enablePython = true;
       python = self.python27-ceph-downgrades;
     };
     stdenv = self.gcc9Stdenv;
     python2Packages = self.python27-ceph-downgrades.pkgs;
+    python3ForDocBuilding = self.python3.override {
+      packageOverrides = python-self: python-super: {
+        # downgrading, because sphinx-ditaa only compatible until sphinx-1.6.7...
+        sphinx = self.python3.pkgs.callPackage ./python/sphinx { };
+        # ...which also requires downgrading breathe
+        breathe = self.python3.pkgs.callPackage ./python/breathe { sphinx = python-self.sphinx; };
+        sphinx-ditaa = self.python3.pkgs.callPackage ./python/sphinx-ditaa { sphinx = python-self.sphinx; };
+      };
+    };
   });
 
   # Hash is wrong upstream

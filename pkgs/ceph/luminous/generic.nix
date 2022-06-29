@@ -25,6 +25,9 @@
 , linuxHeaders, libuuid, udev, keyutils, libaio ? null, libxfs ? null
 , zfs ? null
 
+# building docs requires python3
+, withDocs ? true, python3ForDocBuilding
+
 # Version specific arguments
 , version, src ? [], buildInputs ? []
 , ...
@@ -98,6 +101,16 @@ let
     ignoreCollisions = true;
   };
 
+  # see admin/doc-requirements.txt in sources
+  docs-python-env = python3ForDocBuilding.withPackages (ps: [
+    ps.sphinx
+    ps.sphinx-ditaa
+    ps.breathe
+    ps.pyyaml
+    ps.pip
+    ps.cython
+  ]);
+
 in
 stdenv.mkDerivation {
   pname = "ceph";
@@ -110,6 +123,17 @@ stdenv.mkDerivation {
     (fetchpatch {
       url = "https://github.com/ceph/ceph/pull/43491.patch";
       sha256 = "sha256-ck6C5mdimrhBC600fMsmL6ToUXiM9FTzl9fSxwnYw9s=";
+    })
+
+    # doc state machine graph generator, weirdly this python3 port is in most
+    # Luminous releases but not in this one.
+    (fetchpatch {
+      url = "https://github.com/ceph/ceph/commit/965f20d8ee08b9b917ccfac59e5346eaf8c7f077.patch";
+      sha256 = "sha256-kbdkx3n4ZAjWA9H5JYQEoZhGvxCjHcFYDmA6XKwcQFk=";
+    })
+    (fetchpatch {
+      url = "https://github.com/ceph/ceph/commit/61e7bcded852e90e6249ab0f3c37ec2688537c83.patch";
+      sha256 = "sha256-PxPtE3aOTq6SFTUMIz7/gJrpQCXnB+HcW68CcftUZN4=";
     })
   ] ++ optionals stdenv.isLinux [
     ./0002-fix-absolute-include-path.patch
@@ -169,6 +193,107 @@ stdenv.mkDerivation {
     # like rbd, rgw
     "-DWITH_PYTHON3=OFF"
   ];
+
+  # build documentation:
+  # build script adapted from ceph sources admin/build-doc, but simplified and without virtualenv
+  preBuild = if withDocs then ''
+    # save old vars to be restored after this phase
+    OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+    OLD_PYTHONPATH=$PYTHONPATH
+    OLD_PATH=$PATH
+
+
+
+    TOPDIR="$NIX_BUILD_TOP/$sourceRoot"
+    ls $TOPDIR
+    install -d -m0755 $TOPDIR/build-doc
+    cat $TOPDIR/src/osd/PG.h $TOPDIR/src/osd/PG.cc | ${docs-python-env}/bin/python3 $TOPDIR/doc/scripts/gen_state_diagram.py > $TOPDIR/doc/dev/peering_graph.generated.dot
+
+    pushd $TOPDIR/build-doc
+
+    vdir="$TOPDIR/build-doc/this-is-not-a-virtualenv"
+
+    install -d -m0755 \
+      $TOPDIR/build-doc/output/html \
+      $TOPDIR/build-doc/output/man
+
+    # To avoid having to build librbd to build the Python bindings to build the docs,
+    # create a dummy librbd.so that allows the module to be imported by sphinx.
+    # the module are imported by the "automodule::" directive.
+    mkdir -p $vdir/lib
+    export LD_LIBRARY_PATH="$vdir/lib"
+    export PYTHONPATH=$TOPDIR/src/pybind
+
+    # Tells pip to put packages into $PIP_PREFIX instead of the usual locations.
+    # See https://pip.pypa.io/en/stable/user_guide/#environment-variables.
+    export PIP_PREFIX=$vdir/
+    export PYTHONPATH="$PIP_PREFIX/${docs-python-env.sitePackages}:$PYTHONPATH"
+    export PATH="$PIP_PREFIX/bin:$PATH"
+
+    set -x
+
+    # FIXME(sileht): I dunno how to pass the include-dirs correctly with pip
+    # for build_ext step, it should be:
+    # --global-option=build_ext --global-option="--cython-include-dirs $TOPDIR/src/pybind/rados/"
+    # but that doesn't work, so copying the file in the rbd module directly, that's ok for docs
+    # modification: skip cephfs as it causes problems when building docs and we don't use it
+    for bind in rados rbd rgw; do
+        if [ ''${bind} != rados ]; then
+            cp -f $TOPDIR/src/pybind/rados/rados.pxd $TOPDIR/src/pybind/''${bind}/
+        fi
+        ln -sf lib''${bind}.so.1 $vdir/lib/lib''${bind}.so
+        gcc -shared -o $vdir/lib/lib''${bind}.so.1 -xc /dev/null
+        BUILD_DOC=1 \
+            CFLAGS="-iquote$TOPDIR/src/include" \
+            CPPFLAGS="-iquote$TOPDIR/src/include" \
+            LDFLAGS="-L$vdir/lib -Wl,--no-as-needed" \
+            ${docs-python-env}/bin/pip install $TOPDIR/src/pybind/''${bind}
+        # rgwfile_version(), librgw_create(), rgw_mount()
+        echo "current bind: ''${bind}, vdir: $vdir, pwd: $(pwd)"
+        echo "about to run command: nm $vdir/lib/python*/*-packages/''${bind}.so | grep -E \"U (lib)?''${bind}\" | awk '{ print \"void \"$2\"(void) {}\" }' | gcc -shared -o $vdir/lib/lib''${bind}.so.1 -xc -"
+        nm $vdir/lib/python*/*-packages/''${bind}.*.so | grep -E "U (lib)?''${bind}" | \
+            awk '{ print "void "$2"(void) {}" }' | \
+            gcc -shared -o $vdir/lib/lib''${bind}.so.1 -xc -
+        echo "statuspoint 2"
+        if [ ''${bind} != rados ]; then
+            rm -f $TOPDIR/src/pybind/''${bind}/rados.pxd
+        fi
+        echo "statuspoint 3"
+    done
+
+    echo "statuspoint 4"
+    if [ -z "$@" ]; then
+        sphinx_targets="html man"
+    else
+        sphinx_targets=$@
+    fi
+    echo "statuspoint 5"
+    for target in $sphinx_targets; do
+        builder=$target
+        case $target in
+            html)
+                builder=dirhtml
+                ;;
+            man)
+                extra_opt="-t man"
+                ;;
+        esac
+        ${docs-python-env}/bin/sphinx-build -a -b $builder $extra_opt -d doctrees \
+                              $TOPDIR/doc $TOPDIR/build-doc/output/$target
+    done
+
+    # see result
+    ls -R
+
+    # restore old vars
+    export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+    export PYTHONPATH=$OLD_PYTHONPATH
+    export PATH=$OLD_PATH
+    unset PIP_PREFIX
+
+    popd
+    ''
+    else "";
 
   postFixup = ''
     wrapPythonPrograms
