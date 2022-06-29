@@ -16,28 +16,22 @@
 , Babel
 , snowballstemmer
 , six
+, sqlalchemy
 , whoosh
 , imagesize
 , requests
-, sphinxcontrib-applehelp
-, sphinxcontrib-devhelp
-, sphinxcontrib-htmlhelp
-, sphinxcontrib-jsmath
-, sphinxcontrib-qthelp
-, sphinxcontrib-serializinghtml
-, sphinxcontrib-websupport
 , typing
+, sphinxcontrib-websupport
 , setuptools
-, packaging
 }:
 
 buildPythonPackage rec {
   pname = "sphinx";
-  version = "2.1.2";
+  version = "1.8.5";
   src = fetchPypi {
     pname = "Sphinx";
     inherit version;
-    sha256 = "sha256-+aeedGuHkhyrw7qjdRmcYHbRJwzuU5FdvST9vqqsxCc=";
+    sha256 = "c7658aab75c920288a8cf6f09f244c6cfdae30d82d803ac1634d9f223a80ca08";
   };
   LC_ALL = "en_US.UTF-8";
 
@@ -56,22 +50,23 @@ buildPythonPackage rec {
     setuptools
     snowballstemmer
     six
+    sphinxcontrib-websupport
+    sqlalchemy
     whoosh
     imagesize
     requests
-    sphinxcontrib-applehelp
-    sphinxcontrib-devhelp
-    sphinxcontrib-htmlhelp
-    sphinxcontrib-jsmath
-    sphinxcontrib-qthelp
-    sphinxcontrib-serializinghtml
-    sphinxcontrib-websupport
-    packaging
   ] ++ lib.optional (pythonOlder "3.5") typing;
 
   # Lots of tests. Needs network as well at some point.
   doCheck = false;
 
+  patches = [
+    # Since pygments 2.5, PythonLexer refers to python3. If we want to use
+    # python2, we need to explicitly specify Python2Lexer.
+    # Not upstreamed since there doesn't seem to be any upstream maintenance
+    # branch for 1.8 (and this patch doesn't make any sense for 2.x).
+    ./python2-lexer.patch
+  ];
   # https://github.com/NixOS/nixpkgs/issues/22501
   # Do not run `python sphinx-build arguments` but `sphinx-build arguments`.
   postPatch = ''
