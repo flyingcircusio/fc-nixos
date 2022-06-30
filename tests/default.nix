@@ -56,7 +56,9 @@ in {
   lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
   lampVm74_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php74"; tideways = "1234"; };
   lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
+  lampVm80_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php80"; tideways = "1234"; };
   lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
+  lampVm81_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php81"; tideways = "1234"; };
 
   # lampPackage = callTest ./lamp/package-test.nix { };
   # lampPackage72 = callTest ./lamp/package-test.nix { version = "lamp_php72"; };
@@ -66,9 +68,6 @@ in {
   lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
   lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
 
-
-  # currently not supported: PL-130612
-  # lamp80_tideways = callTest ./lamp/vmTest.nix { version = "lamp_php80"; tideways = "1234"; };
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
