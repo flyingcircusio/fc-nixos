@@ -15,7 +15,7 @@ let
     ${server4Fe} = [ "server" "other" ];
   };
 
-  expectedNginxMajorVersion = "1.20";
+  expectedNginxMajorVersion = "1.22";
 
   rootInitial = pkgs.writeTextFile {
     name = "nginx-root-initial";
@@ -251,7 +251,7 @@ in {
       assert_logdir()
 
     with subtest("logs should have correct permissions after logrotate"):
-      server1.succeed("logrotate -f $(logrotate-config-file)")
+      server1.succeed("fc-logrotate -f")
       assert_logdir()
 
     with subtest("reload should fix wrong log permissions and recreate missing files"):
