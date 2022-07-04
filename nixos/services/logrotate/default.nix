@@ -91,6 +91,9 @@ in
         (pkgs.writeScriptBin "logrotate-show-config" ''
           cat ${config.services.logrotate.configFile}
         '')
+        (pkgs.writeScriptBin "fc-logrotate" ''
+          logrotate "$@" ${config.services.logrotate.configFile}
+        '')
       ];
 
       services.logrotate = {

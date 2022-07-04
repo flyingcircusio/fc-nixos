@@ -74,7 +74,7 @@ in {
   #mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
-  #nginx = callTest ./nginx.nix {};
+  nginx = callTest ./nginx.nix {};
   openvpn = callTest ./openvpn.nix {};
   #percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
