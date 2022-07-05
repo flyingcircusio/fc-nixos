@@ -116,7 +116,7 @@ in {
       kube-apiserver = {
         notification = "Kubernetes API server is not working";
         command = ''
-          ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H localhost -p 10251 -u /metrics
+          ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H localhost -p 6443 --ssl -e HTTP/1.1
         '';
       };
 
