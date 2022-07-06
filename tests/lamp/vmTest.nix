@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
+import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
 {
   name = "lamp";
   nodes = {
