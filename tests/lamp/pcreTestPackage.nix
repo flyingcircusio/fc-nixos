@@ -8,7 +8,7 @@
 }:
 let
   src = builtins.fetchTarball {
-    url = "http://downloads.fcio.net/nixos-support/testPcre.tgz";
+    url = "https://downloads.fcio.net/nixos-support/testPcre.tgz";
     sha256 = "1klibmqvkyx037zmvjazjq7qlg6rwb8cc9zs2zqsnq05zrf4614d";
   };
 in
