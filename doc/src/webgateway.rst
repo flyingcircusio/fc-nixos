@@ -11,7 +11,7 @@ Versions
 --------
 
 * HAProxy: 2.3.14
-* Nginx: 1.20.1
+* Nginx: 1.20.2
 
 Role architecture
 -----------------
