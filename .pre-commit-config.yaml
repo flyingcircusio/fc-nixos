@@ -5,16 +5,26 @@ repos:
     rev: v3.2.0
     hooks:
     -   id: trailing-whitespace
+        exclude: |
+          (?x)^(
+            secrets/|environments/.*/secrets\.cfg|
+            .*\.patch
+          )$
     -   id: end-of-file-fixer
+        exclude: |
+          (?x)^(
+            secrets/|environments/.*/secrets\.cfg|
+            .*\.patch
+          )$
     -   id: check-yaml
     -   id: check-added-large-files
     -   id: check-json
-        exclude: "pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json"
+        exclude: pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty)\.json
     -   id: check-xml
     -   id: check-toml
     -   id: check-yaml
     -   id: detect-private-key
-        exclude: "(nixos/infrastructure/container.nix|tests/testlib.nix)"
+        exclude: (nixos/infrastructure/container\.nix|tests/testlib\.nix)
 
 -   repo: https://github.com/pycqa/isort
     rev: 5.10.1
