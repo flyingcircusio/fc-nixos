@@ -54,12 +54,10 @@ in {
 
       with subtest("mongodb sensu check should be green"):
         machine.succeed("${sensuCheck "mongodb"}")
-    ''
-    + lib.optionalString (version != "3.2") ''
-        with subtest("mongodb feature compat check should be green"):
-            machine.succeed("${sensuCheck "mongodb_feature_compat_version"}")
-    ''
-    + ''
+
+      with subtest("mongodb feature compat check should be green"):
+          machine.succeed("${sensuCheck "mongodb_feature_compat_version"}")
+
       with subtest("mongodb sensu check should be red after shutting down mongodb"):
         machine.systemctl("stop mongodb")
         machine.fail("${sensuCheck "mongodb"}")
