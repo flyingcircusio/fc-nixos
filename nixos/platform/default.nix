@@ -6,6 +6,7 @@ let
   cfg = config.flyingcircus;
   fclib = config.fclib;
   enc_services = fclib.jsonFromFile cfg.enc_services_path "[]";
+  nixpkgsConfig = import ../../nixpkgs-config.nix;
   additionalModules = path:
     if builtins.pathExists path
     then
@@ -232,10 +233,7 @@ in {
         (lib.getName pkg)
         config.flyingcircus.allowedUnfreePackageNames;
 
-    nixpkgs.config.permittedInsecurePackages = [
-      "nodejs-10.24.1"
-      "mongodb-3.6.23"
-    ];
+    nixpkgs.config.permittedInsecurePackages = nixpkgsConfig.permittedInsecurePackages;
 
     environment.etc."local/nixos/README.txt".text = ''
       To add custom NixOS config, create *.nix files here.
@@ -257,17 +255,7 @@ in {
       enc_services = enc_services;
       logrotate.enable = true;
       agent.collect-garbage = true;
-      allowedUnfreePackageNames = [
-        # TODO: megacli is only used on physical machines but pulled in by
-        # fc-sensuplugins and thus needed on all machines. Should be moved to
-        # the raid service after decoupling fc-sensuplugins.
-        "megacli"
-        # We could also allow SSPL as a whole, but adding sspl to
-        # allowlistLicenses is broken in 21.11. Fixed in unstable:
-        # https://github.com/NixOS/nixpkgs/pull/160467
-        # TODO: replace this when on 22.05.
-        "mongodb"
-      ];
+      inherit (nixpkgsConfig) allowedUnfreePackageNames;
       services.sensu-client.mutedSystemdUnits = [ "logrotate.service" ];
     };
 
