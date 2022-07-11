@@ -11,6 +11,9 @@ There's a role for each supported major version, currently:
 * mysql57: Percona 5.7.
 * mysql80: Percona 8.0.
 
+MySQL 5.6 / Percona 5.6 is end-of-life and should be upgraded.
+
+
 We use the `Percona Distribution for MySQL <https://percona.com/software/mysql-database>`_
 which provides useful improvements over the standard Oracle MySQL/MariaDB implementations.
 
