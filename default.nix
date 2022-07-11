@@ -19,5 +19,6 @@ import nixpkgs {
   config = config // { permittedInsecurePackages = [
     "openssl-1.0.2u"
     "nodejs-10.24.1"
+    "mongodb-3.6.23"
   ]; };
 } // args
