@@ -234,6 +234,7 @@ in {
 
     nixpkgs.config.permittedInsecurePackages = [
       "nodejs-10.24.1"
+      "mongodb-3.6.23"
     ];
 
     environment.etc."local/nixos/README.txt".text = ''
