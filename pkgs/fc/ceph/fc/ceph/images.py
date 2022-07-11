@@ -13,7 +13,7 @@ import tempfile
 import time
 
 import requests
-from fc.ceph.manage import run, run_json
+from fc.ceph.util import run
 
 RELEASES = [
     "fc-19.03-dev",
@@ -162,10 +162,6 @@ def delta_update(from_, to):
     )
 
 
-def run_rbd(*args):
-    return run_json(["rbd", "--format", "json"] + list(args))
-
-
 class BaseImage:
     def __init__(self, release):
         self.release = release
@@ -176,14 +172,14 @@ class BaseImage:
 
         Creates image if necessary and locks the image.
         """
-        if self.release not in run_rbd("ls", CEPH_POOL):
+        if self.release not in run.json.rbd("ls", CEPH_POOL):
             logger.info(f"Creating image for {self.release}")
-            run_rbd("create", "-s", str(10 * 2**30), self.volume)
+            run.rbd("create", "-s", str(10 * 2**30), self.volume)
 
         logger.debug(f"Locking image {self.volume}")
         try:
-            run(["rbd", "lock", "add", self.volume, LOCK_COOKIE])
-            lock = run_rbd("lock", "ls", self.volume)
+            run.rbd("lock", "add", self.volume, LOCK_COOKIE)
+            lock = run.json.rbd("lock", "ls", self.volume)
             self.locker = lock[LOCK_COOKIE]["locker"]
         except Exception:
             logger.error(f"Could not lock image {self.volume}", exc_info=True)
@@ -194,46 +190,33 @@ class BaseImage:
     def __exit__(self, *args, **kw):
         logger.debug(f"Unlocking image {self.volume}")
         try:
-            run(
-                [
-                    "rbd",
-                    "lock",
-                    "remove",
-                    f"{CEPH_POOL}/{self.release}",
-                    LOCK_COOKIE,
-                    self.locker,
-                ]
+            run.rbd(
+                # fmt: off
+                "lock", "remove",
+                f"{CEPH_POOL}/{self.release}", LOCK_COOKIE, self.locker,
+                # fmt: on
             )
         except Exception:
             logger.exception()
 
     @property
     def _snapshot_names(self):
-        return [x["name"] for x in run_rbd("snap", "ls", self.volume)]
+        return [x["name"] for x in run.json.rbd("snap", "ls", self.volume)]
 
     @contextlib.contextmanager
     def mapped(self):
         # Has no --format json support
-        dev = subprocess.check_output(["rbd", "map", self.volume])
-        dev = dev.decode().strip()
+        dev = run.rbd("map", self.volume).decode().strip()
         assert stat.S_ISBLK(os.stat(dev).st_mode)
         try:
             yield dev
         finally:
-            subprocess.check_call(["rbd", "unmap", dev])
+            run.rbd("unmap", dev)
 
     def store_in_ceph(self, img):
         """Updates image data from uncompressed image file."""
         logger.info(f"\tStoring in volume {self.volume}")
-        run(
-            [
-                "rbd",
-                "resize",
-                "-s",
-                str(os.stat(img).st_size) + "B",
-                self.volume,
-            ]
-        )
+        run.rbd("resize", "-s", str(os.stat(img).st_size) + "B", self.volume)
         with self.mapped() as blockdev:
             delta_update(img, blockdev)
 
@@ -296,21 +279,21 @@ class BaseImage:
         os.unlink(filename)
         self.store_in_ceph(uncompressed)
         logger.info("\tCreating snapshot %s", name)
-        run(["rbd", "snap", "create", self.volume + "@" + name])
-        run(["rbd", "snap", "protect", self.volume + "@" + name])
+        run.rbd("snap", "create", self.volume + "@" + name)
+        run.rbd("snap", "protect", self.volume + "@" + name)
 
     def flatten(self):
         """Decouple VMs created from their base snapshots."""
         logger.debug("Flattening child images for %s", self.release)
-        for snap in run_rbd("snap", "ls", self.volume):
-            for child in run_rbd("children", self.volume + "@" + snap["name"]):
+        for snap in run.json.rbd("snap", "ls", self.volume):
+            for child in run.json.rbd(
+                "children", self.volume + "@" + snap["name"]
+            ):
                 logger.info(
                     "\tFlattening {}/{}".format(child["pool"], child["image"])
                 )
                 try:
-                    run(
-                        ["rbd", "flatten", child["pool"] + "/" + child["image"]]
-                    )
+                    run.rbd("flatten", child["pool"] + "/" + child["image"])
                 except Exception:
                     logger.exception(
                         "Error trying to flatten {}/{}".format(
@@ -338,14 +321,14 @@ class BaseImage:
         guaranteed to increase) but the API isn't documented. Lets order
         them ourselves to ensure reliability.
         """
-        snaps = run_rbd("snap", "ls", self.volume)
+        snaps = run.json.rbd("snap", "ls", self.volume)
         snaps.sort(key=lambda x: x["id"])
         for snap in snaps[:-3]:
             snap_spec = self.volume + "@" + snap["name"]
             logger.info("\tPurging snapshot " + snap_spec)
             try:
-                run(["rbd", "snap", "unprotect", snap_spec])
-                run(["rbd", "snap", "rm", snap_spec])
+                run.rbd("snap", "unprotect", snap_spec)
+                run.rbd("snap", "rm", snap_spec)
             except Exception:
                 logger.exception("Error trying to purge snapshot:")
 

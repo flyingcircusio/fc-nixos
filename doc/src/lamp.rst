@@ -3,8 +3,8 @@
 LAMP (Apache/mod_php)
 =====================
 
-The LAMP role starts a managed instance of Apache with ``mod_php``(or optionally
-``php-fpm``) that can be used to easily run a production-ready PHP application
+The LAMP role starts a managed instance of Apache with **mod_php** (or optionally
+**php-fpm**) that can be used to easily run a production-ready PHP application
 server.
 
 .. note::
@@ -39,7 +39,7 @@ A complete configuration might looks something like this:
 
 	  flyingcircus.roles.lamp = {
 
-	  	useFPM = true;
+			useFPM = true;
 
 	    vhosts = [
 	      { port = 8000;

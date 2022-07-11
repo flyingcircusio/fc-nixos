@@ -8,7 +8,7 @@ Managed instance of the `PostgreSQL <http://postgresql.org>`_ database server.
 Components
 ----------
 
-* PostgreSQL server (9.5, 9.6, 10, 11, 12, or 13)
+* PostgreSQL server (9.6, 10, 11, 12, or 13)
 
 Configuration
 -------------
@@ -19,7 +19,7 @@ reasonable sized memory parameters (for example, `shared_buffers`, `work_mem`).
 .. warning::
 
     Putting custom configuration in :file:`/etc/local/postgresql/{VERSION}/*.conf`
-    doesn't work properly on 20.09 and should not be used anymore.
+    doesn't work properly anymore on 21.05 and should not be used anymore.
     Some options from there will be ignored silently if they are already defined
     by our platform code. Use NixOS-based custom config as described below instead.
 
