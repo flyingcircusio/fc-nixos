@@ -8,7 +8,7 @@ Managed instance of the `PostgreSQL <http://postgresql.org>`_ database server.
 Components
 ----------
 
-* PostgreSQL server (10, 11, 12, or 13)
+* PostgreSQL server (versions 10, 11, 12, 13, 14)
 
 Configuration
 -------------
