@@ -95,9 +95,19 @@ in
           ];
           groups = [ "sudo-srv" "service" ];
         }
-
-        { commands = [ "${pkgs.fc.agent}/bin/fc-manage check" ];
+        {
+          commands = [ "${pkgs.fc.agent}/bin/fc-manage check" ];
           groups = [ "sensuclient" ];
+        }
+        {
+          commands = [ "${pkgs.fc.agent}/bin/fc-postgresql" ];
+          groups = [ "sudo-srv" "service" ];
+          runAs = "postgres";
+        }
+        {
+          commands = [ "${pkgs.fc.agent}/bin/fc-postgresql check-autoupgrade-unexpected-dbs" ];
+          users = [ "sensuclient" ];
+          runAs = "postgres";
         }
       ];
 

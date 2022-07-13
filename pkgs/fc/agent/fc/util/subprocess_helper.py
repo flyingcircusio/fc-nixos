@@ -1,7 +1,7 @@
 """Helpers for dealing with subprocesses"""
 
 
-def get_popen_stdout_lines(popen, log, log_event):
+def get_popen_stdout_lines(popen, log=None, log_event=None):
     """Reads stdout line-by-line from a Popen object until the stream ends
     and returns a list of all received lines.
     Every line logged at trace level as it appears.
@@ -16,7 +16,10 @@ def get_popen_stdout_lines(popen, log, log_event):
     stdout_lines = []
     line = popen.stdout.readline()
     while line:
-        log.trace(log_event, cmd_output_line=line.strip("\n"))
+        if log is None:
+            print(line, end="")
+        else:
+            log.trace(log_event, cmd_output_line=line.strip("\n"))
         stdout_lines.append(line)
         line = popen.stdout.readline()
 
