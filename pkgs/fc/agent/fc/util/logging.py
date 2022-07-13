@@ -10,6 +10,7 @@ import sys
 import syslog
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import structlog
 
@@ -594,12 +595,15 @@ def drop_cmd_output_logfile(log):
     os.unlink(cmd_log_file.name)
 
 
-def init_logging(verbose: bool, logdir: Path, log_cmd_output: bool = False):
-
-    main_log_file = open(logdir / "fc-agent.log", "a")
+def init_logging(
+    verbose: bool,
+    logdir: Optional[Path] = None,
+    log_cmd_output: bool = False,
+    syslog_identifier="fc-agent",
+):
 
     multi_renderer = MultiRenderer(
-        journal=SystemdJournalRenderer("fc-agent", syslog.LOG_LOCAL1),
+        journal=SystemdJournalRenderer(syslog_identifier, syslog.LOG_LOCAL1),
         cmd_output_file=CmdOutputFileRenderer(),
         text=ConsoleFileRenderer(
             min_level="trace" if verbose else "info", show_caller_info=verbose
@@ -619,7 +623,8 @@ def init_logging(verbose: bool, logdir: Path, log_cmd_output: bool = False):
 
     loggers = {}
 
-    if main_log_file:
+    if logdir is not None:
+        main_log_file = open(logdir / "fc-agent.log", "a")
         loggers["file"] = structlog.PrintLoggerFactory(main_log_file)
     if journal:
         loggers["journal"] = JournalLoggerFactory()
@@ -637,5 +642,5 @@ def init_logging(verbose: bool, logdir: Path, log_cmd_output: bool = False):
 
     log = structlog.get_logger()
 
-    if log_cmd_output:
+    if log_cmd_output and logdir is not None:
         return init_command_logging(log, logdir)
