@@ -5,7 +5,7 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
     lamp =
       { pkgs, config, ... }:
       {
-        imports = [ ../nixos ../nixos/roles ];
+        imports = [ ../../nixos ../../nixos/roles ];
 
         flyingcircus.enc.parameters = {
           resource_group = "test";
