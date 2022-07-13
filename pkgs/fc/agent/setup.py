@@ -69,6 +69,7 @@ setup(
             "fc-manage=fc.manage.cli:main",
             "fc-monitor=fc.manage.monitor:main",
             "fc-resize-disk=fc.manage.resize_disk:app",
+            "fc-postgresql=fc.manage.postgresql:app",
             "fctl=fc.util.fctl:app",
         ],
     },
