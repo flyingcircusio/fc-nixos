@@ -13,7 +13,7 @@ system journal to the project's loghost.
 Configuration
 -------------
 
-Graylog runs without additional config. If you want to make the web UI and REST
+Graylog runs without additional config. If you want to make the Web UI and REST
 API public, you need to add :ref:`custom Nix config <nixos-custom-modules>`:
 
 .. code-block:: Nix
@@ -27,7 +27,14 @@ API public, you need to add :ref:`custom Nix config <nixos-custom-modules>`:
     };
   }
 
-Without that setting, Graylog UI and API can only be accessed via the
+When using a `fcio.net` subdomain like `example.fcio.net` in the example, set
+up **graylog** as a frontend DNS alias via the Network section of the VM
+configuration page at `My Flying Circus <https://my.flyingcircus.io>`_:
+
+.. image:: images/graylog_fe_alias.png
+  :width: 250px
+
+Without the `publicFrontend` setting, Graylog UI and API can only be accessed via the
 :ref:`SRV network interface <logical_networks>`, by other machines in the same
 project or via :ref:`VPN <nixos-external_net>`.
 
@@ -36,7 +43,7 @@ Interaction
 -----------
 
 For projects that have a machine with the loghost role, you'll find an active
-Logs** button on the `My Flying Circus Projects Dashboard
+**Logs** button on the `My Flying Circus Projects Dashboard
 <https://my.flyingcircus.io>`_. From there you will be transferred to Graylog's
 web dashboard which is, for example, at ``https://graylog.example.fcio.net`` for
 the *example* project and default configuration.
