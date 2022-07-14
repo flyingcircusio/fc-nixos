@@ -43,6 +43,7 @@ in {
 
   graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
+  java = callTest ./java.nix {};
   journal = callTest ./journal.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
   kibana6 = callTest ./kibana.nix { version = "6"; };
