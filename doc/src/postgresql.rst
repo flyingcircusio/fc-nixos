@@ -19,7 +19,7 @@ reasonable sized memory parameters (for example, `shared_buffers`, `work_mem`).
 .. warning::
 
     Putting custom configuration in :file:`/etc/local/postgresql/{VERSION}/*.conf`
-    doesn't work properly on 20.09 and should not be used anymore.
+    doesn't work properly starting with NixOS 20.09 and should not be used anymore.
     Some options from there will be ignored silently if they are already defined
     by our platform code. Use NixOS-based custom config as described below instead.
 

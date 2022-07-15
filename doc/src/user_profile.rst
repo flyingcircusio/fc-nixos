@@ -35,7 +35,7 @@ Create a file like :file:`myproject_env.nix` which specifies the packages to be 
    let
      # Imports. Which package sources should be used?
      # Use a pinned platform version
-     # pkgs = import (fetchTarball https://hydra.flyingcircus.io/build/90348/download/1/nixexprs.tar.xz) {};
+     # pkgs = import (fetchTarball https://hydra.flyingcircus.io/build/171209/download/1/nixexprs.tar.xz) {};
      # ...or just use the current version of the platform
      pkgs = import <nixpkgs> {};
    in
@@ -45,14 +45,14 @@ Create a file like :file:`myproject_env.nix` which specifies the packages to be 
        libjpeg
        zlib
        ffmpeg
-       nodejs-10_x
+       nodejs-18_x
        electron
      ];
      extraOutputsToInstall = [ "dev" ];
    }
 
 The code shown above defines an environment with 5 packages installed from a
-specific build of our NixOS 20.09 platform.
+specific build of our NixOS 21.11 platform.
 The pinned version can be newer or older than the installed system version.
 
 Pinning the version of the import prevents unwanted changes in your
@@ -64,21 +64,21 @@ latest security fixes. NixOS re-uses packages if the wanted version is already
 in the Nix store, saving disk space and reducing installation time.
 
 The URL for the current release can be found in the :ref:`changelog` for the
-20.09 platform.
+21.11 platform.
 
 If you want to try NixOS unstable with the newest packages, get the URL from the channel::
 
   $ curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null https://nixos.org/channels/nixos-unstable/nixexprs.tar.xz
-  https://releases.nixos.org/nixos/unstable/nixos-21.11pre292442.5658fadedb7/nixexprs.tar.xz
+  https://releases.nixos.org/nixos/unstable/nixos-22.11pre391680.4a01ca36d6b/nixexprs.tar.xz
 
 Note that the unstable channel may be broken and that upstream NixOS channels
 don't have some additional packages we provide on our platform.
 
-Older NixOS versions than 20.09 usually don't get security updates anymore.
+Older NixOS versions than 21.11 usually don't get security updates anymore.
 
-Links to all platform builds for 20.09 can be found here:
+Links to all platform builds for 21.11 can be found here:
 
-https://hydra.flyingcircus.io/job/flyingcircus/fc-20.09-production/release
+https://hydra.flyingcircus.io/job/flyingcircus/fc-21.11-production/release
 
 See https://nixos.org/nixos/packages.html for a list of packages.
 Use the *attribute name* from the list and include it in `paths`.
@@ -184,18 +184,18 @@ You can import packages from different NixOS versions or other sources::
 
    let
      pkgs = import <nixpkgs> {};
-     pkgs_19_09 = import (fetchTarball https://releases.nixos.org/nixos/19.09/nixos-19.09.2149.58a9acf75a3/nixexprs.tar.xz) {};
+     pkgsUnstable = import (fetchTarball https://releases.nixos.org/nixos/unstable/nixos-22.11pre391680.4a01ca36d6b/nixexprs.tar.xz) {};
    in
    pkgs.buildEnv {
      name = "myproject-env";
      paths = with pkgs; [
-       pkgs_19_09.libjpeg
+       pkgsUnstable.libjpeg
        zlib
      ];
      extraOutputsToInstall = [ "dev" ];
    }
 
-This installs the `zlib` from the platform NixOS version but `libjpeg` from NixOS 19.09.
+This installs the `zlib` from the platform NixOS version but `libjpeg` from NixOS unstable (here 22.11pre).
 
 
 .. XXX list env vars

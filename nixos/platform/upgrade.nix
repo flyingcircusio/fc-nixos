@@ -1,6 +1,6 @@
 # Things to do when upgrading from 19.03.
 # Actions must be idempotent.
-# Can be removed when all our VMs are on 20.09.
+# Can be removed when all our VMs are on 20.09 or newer.
 { pkgs, ... }:
 
 {

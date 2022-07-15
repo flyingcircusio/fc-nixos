@@ -4,7 +4,7 @@
     "inputs": {
         "nixpkgs": {
             "type": "git",
-            "value": "https://github.com/flyingcircusio/nixpkgs.git nixos-21.05",
+            "value": "https://github.com/flyingcircusio/nixpkgs.git nixos-21.11",
             "emailresponsible": false
         },
         "platformDoc": {
@@ -14,7 +14,7 @@
         },
         "branch": {
             "type": "string",
-            "value": "fc-21.05-dev",
+            "value": "fc-21.11-dev",
             "emailresponsible": false
         }
     }
