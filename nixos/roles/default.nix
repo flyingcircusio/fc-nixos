@@ -43,6 +43,7 @@ in {
     ./webproxy.nix
 
     (mkRemovedOptionModule [ "flyingcircus" "roles" "mysql" "rootPassword" ] "Change the root password via MySQL and modify secret files")
+    (mkRenamedOptionModule [ "flyingcircus" "roles" "elasticsearch" "dataDir" ] [ "services" "elasticsearch" "dataDir" ])
     (mkRenamedOptionModule [ "flyingcircus" "roles" "rabbitmq38" ] [ "flyingcircus" "roles" "rabbitmq" ])
     (mkRenamedOptionModule [ "flyingcircus" "roles" "redis4" ] [ "flyingcircus" "roles" "redis" ])
     (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "enable" ] [ "flyingcircus" "roles" "statshost-global" "enable" ])
