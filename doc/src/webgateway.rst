@@ -149,7 +149,7 @@ You can also find this example at :file:`/etc/local/nixos/nginx.nix.example`
 if the webgateway role is enabled.
 
 Our ``flyingcircus.services.nginx.virtualHosts`` option supports all settings of the upstream NixOS option
-`services.nginx.virtualHosts <https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance&channel=21.05>`_
+`services.nginx.virtualHosts <https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance>`_
 with the difference that we bind to all frontend IPs by default instead of all interfaces.
 
 ``flyingcircus.services.nginx.virtualHosts`` has the following custom settings:

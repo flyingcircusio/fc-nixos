@@ -26,7 +26,7 @@ NixOS Configuration
 -------------------
 
 By writing a custom NixOS module, you can define all kinds of SystemD units.
-See the `NixOS options for service units <https://search.nixos.org/options?channel=21.05&from=0&size=30&sort=relevance&query=systemd.services.%3Cname%3E>`_
+See the `NixOS options for service units <https://search.nixos.org/options?from=0&size=30&sort=relevance&query=systemd.services.%3Cname%3E>`_
 for all available settings.
 
 Minimal Service Example
