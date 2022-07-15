@@ -14,6 +14,9 @@ may cause breakage of your applications in the long term.
 Also, those packages are not providing running daemons (like OpenLDAP). If you
 need a managed component, those need to be activated explicitly.
 
+You can look up packages and their descriptions via the `NixOS Package Search <https://search.nixos.org/packages>`_.
+
+
 Packages
 --------
 
@@ -41,13 +44,14 @@ Packages
 * graphviz
 * htop
 * imagemagick
+* inetutils (telnet)
 * iotop
 * jq
 * libjpeg
 * libtiff
 * libxml2
 * libxslt
-* links
+* links2
 * lsof
 * lynx
 * mailx
@@ -56,14 +60,13 @@ Packages
 * nano
 * ncdu
 * netcat
-* netcat
 * ngrep
 * nmap
 * nodejs
 * openldap
 * openssl
 * php
-* pkgconfig
+* pkg-config
 * protobuf
 * psmisc
 * pwgen
@@ -75,11 +78,10 @@ Packages
 * strace
 * sysstat
 * tcpdump
-* telnet
 * tree
 * unzip
 * vim
-* vulnix
+* w3m-nographics
 * wdiff
 * wget
 * xfsprogs
