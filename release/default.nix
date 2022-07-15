@@ -119,8 +119,7 @@ let
   testPkgNames = includedPkgNames ++
     lib.subtractLists excludedPkgNames modifiedPkgNames;
 
-  testPkgs = builtins.trace (builtins.toJSON modifiedPkgNames)
-    listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
+  testPkgs = listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
 
   dummyPlatformDoc = pkgs.stdenv.mkDerivation {
     name = "dummy-platform-doc";
