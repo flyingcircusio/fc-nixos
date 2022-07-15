@@ -3,7 +3,7 @@ Nginx is enabled on this machine.
 The recommended method is structured configuration via Nix code in `/etc/local/nixos`.
 You can also find an example at `/etc/local/nixos/nginx.nix.example`.
 Refer to the webgateway role documentation at
-https://doc.flyingcircus.io/roles/fc-21.05-production/webgateway.html for more info.
+https://doc.flyingcircus.io/roles/fc-21.11-production/webgateway.html for more info.
 
 
 Old configuration methods
@@ -75,7 +75,7 @@ certificate from Let's Encrypt:
 ### Available Options
 
 Options provided by NixOS are documented at
-https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance&channel=21.05
+https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance
 
 We support the following custom options:
 * `emailACME`: set the contact address for Let's Encrypt (certificate expiry, policy changes), defaults to none.
@@ -161,7 +161,7 @@ This path can be referenced from Nix code by `security.dhparams.params.nginx.pat
 
 The services.nginx.sslCiphers option can be used to change the cipher list:
 
-https://search.nixos.org/options?channel=21.05&show=services.nginx.sslCiphers&from=0&size=50&sort=relevance&query=sslCiphers
+https://search.nixos.org/options&show=services.nginx.sslCiphers&from=0&size=50&sort=relevance&query=sslCiphers
 
 If you enable weaker ciphers, you should also set services.nginx.legacyTlsSettings to true
 and services.nginx.recommendedTlsSettings to false.
