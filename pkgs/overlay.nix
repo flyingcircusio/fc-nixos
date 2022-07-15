@@ -158,11 +158,6 @@ in {
     '';
   });
 
-  # This also propagates to the jre* and *_headless variants.
-  openjdk8 = super.openjdk8.override { zlib = self.zlibCrcInputFix; };
-  openjdk11 = super.openjdk11.override { zlib = self.zlibCrcInputFix; };
-  openjdk17 = super.openjdk17.override { zlib = self.zlibCrcInputFix; };
-
   inherit (super.callPackages ./matomo {})
     matomo
     matomo-beta;
@@ -365,8 +360,4 @@ in {
   wkhtmltopdf = self.wkhtmltopdf_0_12_6;
 
   xtrabackup = self.percona-xtrabackup_8_0;
-
-  zlibCrcInputFix = super.zlib.overrideAttrs(a: {
-    patches = a.patches ++ [ ./zlib-1.12.12-incorrect-crc-inputs-fix.patch ];
-  });
 }

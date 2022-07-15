@@ -15,8 +15,6 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
   testScript = ''
     start_all()
 
-    patched_zlib = "${pkgs.zlibCrcInputFix}"
-
     jdk = "${pkgs.jdk}"
     jdk11 = "${pkgs.jdk11}"
     jdk11_headless = "${pkgs.jdk11_headless}"
@@ -35,6 +33,8 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     openjdk17_headless = "${pkgs.openjdk17_headless}"
     openjdk8 = "${pkgs.openjdk8}"
     openjdk8_headless = "${pkgs.openjdk8_headless}"
+
+    print()
 
     with subtest("Package aliases for Java 8 should point to the same package"):
       assert openjdk8 == jdk8
@@ -68,14 +68,9 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
       openjdk17: "17",
     }
 
-    print(f"Patched zlib: {patched_zlib}")
-
     for package, version in package_versions.items():
       with subtest(f"Checking java version in {package}"):
         out = machine.succeed(f"{package}/bin/java -version 2>&1")
         assert f"openjdk version \"{version}." in out
-
-      with subtest(f"{package} should use patched zlib"):
-        machine.succeed(f"grep {patched_zlib} {package}/bin/java")
   '';
 })
