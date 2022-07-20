@@ -124,24 +124,25 @@ let
       '';
 in
 {
-  machine =
-    { pkgs, lib, config, ... }:
-    {
-      imports = [ ../nixos ../nixos/roles ];
-
-      services.telegraf.enable = false;
-
+  name = "wkhtmltopdf";
+  nodes = {
+    machine =
+      { pkgs, lib, config, ... }:
+      {
+        imports = [
+          (testlib.fcConfig { net.fe = false; })
+        ];
+      };
     };
 
-  testScript = ''
+  testScript = let
+    outputPdf = "/tmp/sample1.pdf";
+  in ''
     print("${pkgs.wkhtmltopdf_0_12_6}")
-    machine.succeed('${pkgs.wkhtmltopdf_0_12_6}/bin/wkhtmltopdf --orientation Landscape --footer-spacing 0 --header-spacing 5 ${sample} /tmp/sample1.pdf')
-    machine.succeed('${pkgs.poppler_utils}/bin/pdftohtml -s -fontfullname /tmp/sample1.pdf')
-    _, output = machine.execute('cat sample1-html.html')
-    print(output)
-    # This is kind of insane, but the PDF appears to create a *bold* header
-    # (and poppler detecting this) by providing the character twice
-    # with a shift of 1 px.
-    assert output.count('Header&#160;3') == 2
+    machine.succeed('${pkgs.wkhtmltopdf_0_12_6}/bin/wkhtmltopdf --orientation Landscape --footer-spacing 0 --header-spacing 5 ${sample} ${outputPdf}')
+    # PDF output is constant when removing the CreationDate field in line 7.
+    machine.succeed("sed -ie 7d ${outputPdf}")
+    machine.copy_from_vm("${outputPdf}", "pdf")
+    machine.succeed("diff ${outputPdf} ${./wkhtmltopdf-expected.pdf}")
   '';
 })

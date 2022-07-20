@@ -105,5 +105,5 @@ in {
   users = callTest ./users.nix {};
   vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
-  # wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
+  wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
 }
