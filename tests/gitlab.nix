@@ -24,15 +24,16 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
       };
 
       flyingcircus.roles.webgateway.enable = true;
+      flyingcircus.roles.redis.enable = true;
 
       services.nginx.virtualHosts.gitlab = {
         forceSSL = lib.mkForce false;
         enableACME = lib.mkForce false;
       };
 
-      flyingcircus.roles.postgresql12.enable = true;
+      flyingcircus.roles.postgresql14.enable = true;
 
-      services.redis.requirePass = "test";
+      services.redis.requirePass = lib.mkForce "test";
 
       services.gitlab = lib.mkForce {
         databasePasswordFile = pkgs.writeText "dbPassword" dbPassword;
