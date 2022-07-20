@@ -155,12 +155,9 @@ in {
         services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
 
         flyingcircus.roles.statshost.prometheusLocationProxyExtraSettings = {
+          enable_http2 = false;
           tls_config = { ca_file = "/proxy_cert.pem"; };
         };
-
-        systemd.services.prometheus.serviceConfig.Environment = [
-          "SSL_CERT_FILE=/tmp/shared/proxy_cert.pem"
-        ];
 
         users.users.s-test = {
           isNormalUser = true;
