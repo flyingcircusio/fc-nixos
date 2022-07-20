@@ -10,7 +10,7 @@ import sys
 
 import requests
 
-gitRevision = "v1.23.3+k3s1"
+gitRevision = "v1.23.6+k3s1"
 
 url = f"https://raw.githubusercontent.com/k3s-io/k3s/{gitRevision}/scripts/airgap/image-list.txt"
 
