@@ -27,7 +27,7 @@ in {
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
   backyserver = callTest ./backyserver.nix {};
-  # channel = callTest ./channel.nix {};
+  channel = callTest ./channel.nix {};
   # XXX: ceph build failure
   # ceph = callTest ./ceph.nix {};
   coturn = callTest ./coturn.nix {};
@@ -41,7 +41,7 @@ in {
   garbagecollect = callTest ./garbagecollect.nix {};
   # gitlab = callTest ./gitlab.nix {};
   graylog = callTest ./graylog.nix {};
-  # haproxy = callTest ./haproxy.nix {};
+  haproxy = callTest ./haproxy.nix {};
   java = callTest ./java.nix {};
   journal = callTest ./journal.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};

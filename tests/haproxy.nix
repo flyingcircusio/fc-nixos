@@ -2,38 +2,6 @@ with builtins;
 
 import ./make-test-python.nix ({ pkgs, testlib, ... }:
 
-let
-  release = import ../release {};
-  channel = release.release.src;
-  configSplit1of2 = ''
-         global
-           #comment1 to grep for
-           daemon
-           chroot /var/empty
-           log 127.0.0.1 local2
-
-         defaults
-           mode http
-           log global
-           option httplog
-           timeout connect 5s
-           timeout client 5s
-           timeout server 5s
-
-     '';
-  configSplit2of2 = ''
-         frontend http-in
-           #comment2 to grep for
-           bind *:8888
-           default_backend server
-
-         backend server
-           server python 127.0.0.1:7000
-
-     '';
-  configComplete = configSplit1of2 + configSplit2of2;
-
-in
 {
   name = "haproxy";
   nodes = {
@@ -54,56 +22,6 @@ in
             gateways = {};
           };
         };
-
-        environment.etc."nixpkgs-paths-debug".text = toJSON {
-          pkgs = "${pkgs.path}";
-          releaseChannelSrc = "${channel}";
-          nixpkgs = "${<nixpkgs>}";
-        };
-
-        environment.etc."nixos/local.nix".text = ''
-          { ... }:
-          {
-            # Only a dummy to make nixos-rebuild inside the test VM work.
-          }
-        '';
-
-        environment.etc."local/nixos/synced_config.nix".text = ''
-          { config, pkgs, lib, ... }:
-          {
-            # !!! If you use this test as a template for another test that wants to
-            # use nixos-rebuild inside the VM:
-            # You may have to change config here (used for rebuilds inside the VM)
-            # when you change settings on the "outside" (used to build the VM on the test host).
-            # Configs need to be in sync or nixos-rebuild will try to build
-            # more stuff which may fail because networking isn't available inside
-            # the test VM.
-
-            flyingcircus.services.haproxy.enable = true;
-            services.telegraf.enable = false;
-
-          }
-        '';
-
-        system.extraDependencies = with pkgs; [
-          # Taken from nixpkgs tests/ec2.nix
-          busybox
-          cloud-utils
-          desktop-file-utils
-          libxslt.bin
-          mkinitcpio-nfs-utils
-          stdenv
-          stdenvNoCC
-          texinfo
-          unionfs-fuse
-          xorg.lndir
-          # Our custom stuff that's needed to rebuild the VM.
-          php
-          channel
-        ];
-
-        # nix-env -qa needs a lot of RAM. Crashed with 2000.
-        virtualisation.memorySize = 3000;
 
         flyingcircus.services.haproxy.enable = true;
 
@@ -164,21 +82,6 @@ in
 
     with subtest("haproxy check script should be green"):
       machine.succeed("${pkgs.fc.check-haproxy}/bin/check_haproxy /var/log/haproxy.log")
-
-    with subtest("haproxy.cfg should be read after rebuild"):
-      machine.execute("ln -s ${channel} /nix/var/nix/profiles/per-user/root/channels")
-      machine.execute("""echo $'${configComplete}' > /etc/local/haproxy/haproxy.cfg""")
-      machine.succeed("nixos-rebuild build --option substitute false")
-      machine.succeed("grep -c '#comment1 to grep for' result/etc/haproxy.cfg")
-
-    with subtest("haproxy1.cfg and haproxy2.cfg should be read after rebuild"):
-      machine.execute("rm /etc/local/haproxy/haproxy.cfg")
-      machine.execute("""echo $'${configSplit1of2}' > /etc/local/haproxy/haproxy1.cfg""")
-      machine.execute("""echo $'${configSplit2of2}' > /etc/local/haproxy/haproxy2.cfg""")
-      machine.succeed("nixos-rebuild build --option substitute false")
-      machine.succeed("grep -c '#comment1 to grep for' result/etc/haproxy.cfg")
-      machine.succeed("grep -c '#comment2 to grep for' result/etc/haproxy.cfg")
-
   '';
 
 })
