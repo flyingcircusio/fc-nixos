@@ -12,7 +12,7 @@ let
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
     {} super;
 
-  inherit (super) fetchpatch fetchurl lib;
+  inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
 
 in {
   #
@@ -243,6 +243,24 @@ in {
                 all.memcached
                 all.redis
               ]);
+
+
+  lkl = super.lkl.overrideAttrs(_: rec {
+    version = "2022-05-18";
+    src = fetchFromGitHub {
+      rev = "10c7b5dee8c424cc2ab754e519ecb73350283ff9";
+      owner  = "lkl";
+      repo   = "linux";
+      sha256 = "sha256-D3HQdKzhB172L62a+8884bNhcv7vm/c941wzbYtbf4I=";
+    };
+
+    prePatch = ''
+      patchShebangs arch/lkl/scripts
+      patchShebangs scripts
+      substituteInPlace tools/lkl/cptofs.c \
+        --replace mem=100M mem=500M
+    '';
+  });
 
 
   mc = super.callPackage ./mc.nix { };
