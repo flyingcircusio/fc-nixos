@@ -22,39 +22,9 @@ let
   nixos = import <nixpkgs/nixos> {};
   inherit (nixos) options;
 
-  etc = name:
-  let
-    value = options.environment.etc.value.${name};
-    content =
-      if value.text != null then
-        print value.text
-      else
-        print (readFile value.source);
-  in content;
-
-  format = v:
-  let
-     json = toJSON v;
-     out = pkgs.runCommandLocal "json" {} ''
-      ${pkgs.jq}/bin/jq . <<< '${json}' > $out
-    '';
-  in
-   if (v._type or "" == "option") then
-     format v.value
-   else if (isAttrs v || isList v) then
-     readFile out
-   else
-     v;
-
-  print = v:
-  let
-    formatted = format v;
-  in
-    trace formatted
-      (if isString formatted
-      then "output hash: " + (hashString "sha256" formatted)
-      else 0);
-
+  etc = printEtcFile options;
+  replHelpers = pkgs.callPackage nixos/lib/repl-helpers.nix {};
+  inherit (replHelpers) printEtcFile format print;
 
 in builtins // nixos.config // {
   inherit pkgs etc format print;
