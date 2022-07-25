@@ -18,8 +18,14 @@ in lib.mkMerge [
       '';
     }];
 
-    flyingcircus.services.postgresql.enable = true;
-    flyingcircus.services.postgresql.majorVersion = fclib.mkPlatform "not set";
+    flyingcircus.services.postgresql = {
+      enable = true;
+      majorVersion = fclib.mkPlatform "not set";
+      autoUpgrade = {
+        enable = true;
+        expectedDatabases = [ "roundcube" ];
+      };
+    };
 
     flyingcircus.passwordlessSudoRules = [{
       commands = [ chpasswd ];
