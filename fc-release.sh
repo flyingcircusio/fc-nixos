@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-nixos_version="21.11"
+nixos_version="22.05"
 releaseid="${1:?no release id given}"
 
-if ! echo "$releaseid" | egrep -q '^[0-9]{4}_[0-9]{3}$'; then
+if ! echo "$releaseid" | grep -Eq '^[0-9]{4}_[0-9]{3}$'; then
     echo "$0: release id must be of the form YYYY_NNN" >&2
     exit 64
 fi
@@ -14,7 +14,7 @@ stag="fc-${nixos_version}-staging"
 prod="fc-${nixos_version}-production"
 echo "$0: performing release based on $stag"
 
-if ! git remote -v | egrep -q "^origin\s.*github.com.flyingcircusio/fc-nixos"
+if ! git remote -v | grep -Eq "^origin\s.*github.com.flyingcircusio/fc-nixos"
 then
     echo "$0: please perform release in a clean checkout with proper origin" >&2
     exit 64
@@ -36,10 +36,10 @@ msg="Backmerge branch '$prod' into $dev for release $releaseid"
 git merge -m "$msg" $prod
 
 echo "$0: committed changes:"
-PAGER= git log --graph --decorate --format=short -n3
+PAGER='' git log --graph --decorate --format=short -n3
 
 cmd="git push origin $dev $stag $prod"
 echo "$0: If this looks correct, press Enter to push (or use ^C to abort)."
 echo "$0: This will issue: $cmd"
-read
-eval $cmd
+read -r
+eval "$cmd"
