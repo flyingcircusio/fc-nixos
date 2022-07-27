@@ -286,7 +286,6 @@ in
       The following nodes are eligible to be elected as master nodes:
       `${formatList cfg.esNodes}`
 
-
       ${lib.optionalString (cfg.initialMasterNodes != []) ''
       The node is running in multi-node bootstrap mode, `initialMasterNodes` is set to:
       `${formatList cfg.initialMasterNodes}`
