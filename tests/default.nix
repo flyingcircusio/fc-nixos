@@ -33,8 +33,8 @@ in {
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
-  elasticsearch6 = callTest ./elasticsearch.nix { version = "6"; };
-  elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };
+  elasticsearch6 = callSubTests ./elasticsearch.nix { version = "6"; };
+  elasticsearch7 = callSubTests ./elasticsearch.nix { version = "7"; };
   fcagent = callSubTests ./fcagent.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};

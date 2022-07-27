@@ -1,11 +1,24 @@
-{ config, lib, pkgs, ... }:
+{ options, config, lib, pkgs, ... }:
 
 with builtins;
 
 let
   cfg = config.flyingcircus.roles.elasticsearch;
+  opts = options.flyingcircus.roles.elasticsearch;
   cfg_service = config.services.elasticsearch;
   fclib = config.fclib;
+  localConfigDir = "/etc/local/elasticsearch";
+
+  optionDoc = name: let
+    opt = opts."${name}";
+  in
+    lib.concatStringsSep "\n\n" [
+      "**flyingcircus.roles.elasticsearch.${name}**"
+      (lib.removePrefix "\n" (lib.removeSuffix "\n" opt.description))
+    ];
+
+  formatList = list:
+    "[ ${lib.concatMapStringsSep " " (n: ''"${n}"'') list} ]";
 
   esVersion =
     if config.flyingcircus.roles.elasticsearch6.enable
@@ -17,29 +30,36 @@ let
   package = versionConfiguration.${esVersion}.package;
   enabled = esVersion != null;
 
+  # XXX: We cannot get the config file path in the Nix store from Nix config.
+  # so we have to use the location where the config is copied to when
+  # Elasticsearch is started. There, only the elasticsearch user can read the
+  # config file which is annoying.
+  # This should be changed in the upstream module to make it possible to find
+  # the config file via a NixOS option and override it, if needed.
+  configFile = "/srv/elasticsearch/config/elasticsearch.yml";
+
   versionConfiguration = {
     "6" = {
       package = pkgs.elasticsearch6-oss;
-      serviceName = "elasticsearch6-node";
     };
     "7" = {
       package = pkgs.elasticsearch7-oss;
-      serviceName = "elasticsearch7-node";
     };
     null = {
       package = null;
-      serviceName = null;
     };
   };
 
-  esNodes =
-    if cfg.esNodes == null
-    then map
+  esServices =
+    (fclib.findServices "elasticsearch6-node") ++
+    (fclib.findServices "elasticsearch7-node");
+
+  defaultEsNodes =
+    map
       (service: head (lib.splitString "." service.address))
-      (filter
-        (s: s.service == versionConfiguration.${esVersion}.serviceName)
-        config.flyingcircus.encServices)
-    else cfg.esNodes;
+      esServices;
+
+  masterQuorum = (length cfg.esNodes) / 2 + 1;
 
   thisNode =
     if config.networking.domain != null
@@ -48,13 +68,8 @@ let
 
   defaultClusterName = config.networking.hostName;
 
-  clusterName =
-    if cfg.clusterName == null
-    then (fclib.configFromFile /etc/local/elasticsearch/clusterName defaultClusterName)
-    else cfg.clusterName;
-
-  additionalConfig =
-    fclib.configFromFile /etc/local/elasticsearch/elasticsearch.yml "";
+  configFromLocalConfigDir =
+    fclib.configFromFile "${localConfigDir}/elasticsearch.yml" "";
 
   currentMemory = fclib.currentMemory 1024;
 
@@ -63,7 +78,7 @@ let
       (31 * 1024)];
 
   esShowConfig = pkgs.writeScriptBin "elasticsearch-show-config" ''
-    cat /srv/elasticsearch/config/elasticsearch.yml
+    sudo -u elasticsearch cat ${configFile}
   '';
 
 in
@@ -77,18 +92,15 @@ in
       supportsContainers = fclib.mkDisableContainerSupport;
 
       clusterName = mkOption {
-        type = types.nullOr types.string;
-        default = null;
+        type = types.str;
+        default = fclib.configFromFile "${localConfigDir}/clusterName" defaultClusterName;
+        defaultText = "value from ${localConfigDir}/clusterName or host name";
         description = ''
-          The clusterName elasticsearch will use.
-        '';
-      };
-
-      dataDir = mkOption {
-        type = types.path;
-        default = "/srv/elasticsearch";
-        description = ''
-          Data directory for elasticsearch.
+          The cluster name ES will use. By default, the string from
+          `${localConfigDir}/clusterName is used. If the file doesn't
+          exist, the host name is used as fallback. Because of this, you
+          have to set the cluster name explicitly if you want to set up a
+          multi-node cluster.
         '';
       };
 
@@ -96,19 +108,48 @@ in
         type = types.int;
         default = 50;
         description = ''
-          Tweak amount of memory to use for ES heap
-          (systemMemory * heapPercentage / 100)
+          Percentage of memory to use for ES heap. Defaults to 50 % of
+          available RAM: *systemMemory * heapPercentage / 100*
         '';
       };
 
       esNodes = mkOption {
-        type = types.nullOr (types.listOf types.string);
-        default = null;
+        type = types.listOf types.str;
+        default = defaultEsNodes;
+        defaultText = "all ES nodes in the resource group";
         description = ''
-          Names of the nodes that join this cluster.
-          By default, all ES nodes in a resource group are part of this cluster.
-          ES7: Values must use the same format as nodeName (just the hostname by default)
-          or cluster initialization will fail. All esNodes are possible initial masters.
+          Names of the nodes that join this cluster and are eligible as masters.
+          By default, all ES nodes in a resource group are part of this cluster
+          and master-eligible.
+          Note that all of them have to use the same clusterName which must be
+          set explicitly when you want to set up a multi-node cluster.
+
+          If only one esNode is given here, the node will start in single-node
+          mode which means that it won't try to find other ES nodes before
+          initializing the cluster.
+
+          Having both ES6 and ES7 nodes in a cluster is possible. This allows
+          rolling upgrades. Note that new nodes that are added to a cluster
+          have to use the newest version.
+
+          ES7: Values must use the same format as nodeName (just the hostname
+          by default) or cluster initialization will fail.
+        '';
+      };
+
+      initialMasterNodes = mkOption {
+        type = types.listOf types.str;
+        default = [];
+        description = ''
+          *(ES7 only, has no effect for ES6)*
+
+          Name of the nodes that should take a part in the initial master election.
+          WARNING: This should only be set when initializing a cluster with multiple nodes
+          from scratch and removed after the cluster has formed!
+          By default, this is empty which means that the node will join an existing
+          cluster or run in single-node mode when esNodes has only one entry.
+          You can set this to `config.flyingcircus.roles.elasticsearch.esNodes` to include
+          all automatically discovered nodes.
         '';
       };
 
@@ -117,6 +158,13 @@ in
         default = config.networking.hostName;
         description = ''
           The name for this node. Defaults to the hostname.
+        '';
+      };
+      extraConfig = mkOption {
+        type = types.lines;
+        default = "";
+        description = ''
+          Additional YAML lines which are appended to the main `elasticsearch.yml` config file.
         '';
       };
     };
@@ -140,12 +188,14 @@ in
       esShowConfig
     ];
 
+    flyingcircus.roles.elasticsearch.extraConfig = configFromLocalConfigDir;
+
     services.elasticsearch = {
       enable = true;
       package = package;
       listenAddress = thisNode;
-      dataDir = cfg.dataDir;
-      cluster_name = clusterName;
+      dataDir = "/srv/elasticsearch";
+      cluster_name = cfg.clusterName;
       extraJavaOptions = [
         "-Des.path.scripts=${cfg_service.dataDir}/scripts"
         "-Des.security.manager.enabled=false"
@@ -159,18 +209,33 @@ in
         (lib.optionalString (esVersion == "7") "-Des.transport.cname_in_publish_address=true")
       ];
 
-      # ES7 wants the initial_master_nodes setting if and only if there
-      # is more than one initial node. It refuses to start with it in single-node
-      # mode.
+      single_node = lib.length cfg.esNodes == 1;
+
       extraConf = ''
         node.name: ${cfg.nodeName}
-        discovery.zen.ping.unicast.hosts: ${toJSON esNodes}
         bootstrap.memory_lock: true
-        ${additionalConfig}
-      '' + (lib.optionalString (esVersion == "7" && lib.length esNodes > 1) ''
-        cluster.initial_master_nodes: ${toJSON esNodes}
-      '');
+      '' + (lib.optionalString (lib.versionOlder esVersion "7") ''
+        discovery.zen.minimum_master_nodes: ${toString masterQuorum}
+        discovery.zen.ping.unicast.hosts: ${toJSON cfg.esNodes}
+      '') + (lib.optionalString (lib.versionAtLeast esVersion "7") ''
+        discovery.seed_hosts: ${toJSON cfg.esNodes}
+      '') + (lib.optionalString (lib.versionAtLeast esVersion "7" && cfg.initialMasterNodes != []) ''
+        cluster.initial_master_nodes: ${toJSON cfg.initialMasterNodes}
+      '') + (lib.optionalString (cfg.extraConfig != "") ''
+        # flyingcircus.roles.elasticsearch.extraConfig
+      '' + cfg.extraConfig);
     };
+
+    # Allow sudo-srv and service users to run commands as elasticsearch.
+    # There are various elasticsearch utility tools that have to be run as
+    # elasticsearch user.
+    flyingcircus.passwordlessSudoRules = [
+      {
+        commands = [ "ALL" ];
+        groups = [ "sudo-srv" "service" "elasticsearch" ];
+        runAs = "elasticsearch";
+      }
+    ];
 
     flyingcircus.services.sensu-client = {
       expectedDiskCapacity = {
@@ -191,34 +256,104 @@ in
         # Install scripts
         mkdir -p ${cfg_service.dataDir}/scripts
       '';
-      postStart = let
-        url = "http://${thisNode}:9200/_cat/health";
-        in lib.mkOverride 90 ''
-        # Wait until available for use
-        for count in {0..120}; do
-            ${pkgs.curl}/bin/curl -s ${url} && exit
-            echo "Trying to connect to ${url} for ''${count}s"
-            sleep 1
-        done
-        echo "No connection to ${url} for 120s, giving up"
-        exit 1
-      '';
     };
 
     flyingcircus.activationScripts.elasticsearch = ''
       install -d -o ${toString config.ids.uids.elasticsearch} -g service -m 02775 \
-        /etc/local/elasticsearch/
+        ${localConfigDir}
     '';
 
-    environment.etc."local/elasticsearch/README.txt".text = ''
-      Elasticsearch is running on this VM.
+    environment.etc."local/elasticsearch/elasticsearch.nix.example".text = ''
+      { config, pkgs, lib, ...}:
+      {
+        flyingcircus.roles.elasticsearch = {
+          # clusterName = "mycluster";
+          # heapPercentage = 50;
+          # Only for initialization of new multi-node clusters!
+          # initialMasterNodes = config.flyingcircus.roles.elasticsearch.esNodes;
+          # extraConfig = '''
+          # # some YAML
+          # ''';
+        };
+      }
+    '';
 
-      It is forming the cluster named ${clusterName}
-      To change the cluster name, add a file named "clusterName" here, with the
+    environment.etc."local/elasticsearch/README.md".text = ''
+      Elasticsearch version ${esVersion}.x is running on this VM, with node
+      name `${cfg.nodeName}`. It is forming the cluster named
+      `${cfg.clusterName}` (${if cfg_service.single_node then "single-node" else "multi-node"}).
+
+      The following nodes are eligible to be elected as master nodes:
+      `${formatList cfg.esNodes}`
+
+
+      ${lib.optionalString (cfg.initialMasterNodes != []) ''
+      The node is running in multi-node bootstrap mode, `initialMasterNodes` is set to:
+      `${formatList cfg.initialMasterNodes}`
+
+      WARNING: the `initialMasterNodes` setting should be removed after the cluster has formed!
+      ''}
+
+      ## Interaction
+
+      The Elasticsearch API is listening on the SRV interface. You can access
+      the API of nodes in the same project via HTTP without authentication.
+      Some examples:
+
+      Show active nodes:
+
+      ```
+      curl ${config.networking.hostName}:9200/_cat/nodes
+      ```
+
+      Show cluster health:
+
+      ```
+      curl ${config.networking.hostName}:9200/_cat/health
+      ```
+
+      Show indices:
+
+      ```
+      curl ${config.networking.hostName}:9200/_cat/indices
+      ```
+
+      ## Configuration
+
+      The role works without additional config for single-node setups.
+      By default, the cluster name is the host name of the machine.
+
+      Custom config can be set via NixOS options and is required for multi-node
+      setups. Plain config in `${localConfigDir}` is still supported, too.
+      See `${localConfigDir}/elasticsearch/elasticsearch.nix.example` for an example.
+      Save the content to `/etc/local/nixos/elasticsearch.nix`, for example, to
+      include it in the system config.
+
+      To see the final rendered config for Elasticsearch, use the
+      `elasticsearch-show-config` command as service or sudo-srv user.
+
+      To activate config changes, run `sudo fc-manage --build`.
+
+      ### NixOS Options
+
+      ${optionDoc "clusterName"}
+
+      ${optionDoc "heapPercentage"}
+
+      ${optionDoc "esNodes"}
+
+      ${optionDoc "initialMasterNodes"}
+
+      ${optionDoc "extraConfig"}
+
+      ## Legacy Custom Config
+
+      You can add a file named `${localConfigDir}/clusterName`, with the
       cluster name as its sole contents.
 
-      To add additional configuration options, create a file "elasticsearch.yml"
-      here. Its contents will be appended to the base configuration.
+      To add additional configuration options, create a file
+      `${localConfigDir}/elasticsearch.yml`. Its contents will be appended to
+      the base configuration.
     '';
 
     flyingcircus.services.sensu-client.checks = {

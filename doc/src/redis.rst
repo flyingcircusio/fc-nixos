@@ -26,6 +26,8 @@ If you need to change the behaviour of Redis, you define your redis
 configuration with the NixOS option ``services.redis.settings``. See the
 NixOS manual for further information.
 
+Regarding setting the redis password, see the section on redis `passwords <#password>`_.
+
 The following NixOS module adds some modules to be loaded by Redis:
 
 .. code-block:: nix
@@ -80,13 +82,30 @@ system.
 For further information on how to activate changes on our NixOS-environment,
 please consult :ref:`nixos-local`.
 
+Password
+--------
+
 The authentication password is automatically generated upon installation
 and can be read *and changed* by service users. It can be found in
-:file:`/etc/local/redis/password`. It can also be specified in the
+:file:`/etc/local/redis/password`.
+
+It can also be specified in the
 ``flyingcircus.services.redis.password`` option where the password
 will have a higher priority than the one in the filesystem. Setting
 the ``password`` option makes the password world-readable to processes
 on the VM since it will be stored in the nix store.
+
+Overriding the ``password`` to ``foobarpass`` looks like this:
+
+.. code-block:: nix
+
+    # /etc/local/nixos/redis.nix
+    { ... }:
+    {
+        flyingcircus.services.redis = {
+            password = "foobarpass"; # Makes the password world readable
+        };
+    }
 
 
 Interaction

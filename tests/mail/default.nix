@@ -30,6 +30,7 @@ in
             flyingcircus.roles.mailserver = {
               enable = true;
               mailHost = "mail.example.local";
+              webmailHost = "webmail.example.local";
               domains = {
                 "example.local" = {
                   primary = true;
@@ -167,18 +168,39 @@ in
         ];
     };
   };
-  testScript = ''
-    start_all()
-
-    mail.wait_for_unit('network-online.target')
-    client.wait_for_unit('network-online.target')
-    ext.wait_for_unit('network-online.target')
-
+  testScript = let
+    passwdFile = "/var/lib/dovecot/passwd";
+    chpasswd = "${pkgs.fc.roundcube-chpasswd}/bin/roundcube-chpasswd";
+  in ''
     with subtest("postsuper sudo rule should be present for service group"):
       mail.succeed('grep %service /etc/sudoers | grep -q postsuper')
 
     with subtest("postsuper sudo rule should be present for sudo-srv group"):
       mail.succeed('grep %sudo-srv /etc/sudoers | grep -q postsuper')
+
+    with subtest("roundcube-chpasswd sudo rule should be present for roundcube user"):
+      roundcube_sudo = mail.succeed('grep roundcube-chpasswd /etc/sudoers').strip().split()
+      assert roundcube_sudo == [
+        "roundcube",
+        "ALL=(vmail)",
+        "NOPASSWD:",
+        "${chpasswd}",
+      ], f"Got unexpected sudo line: {roundcube_sudo}"
+
+    with subtest("changing a mail password via roundcube-chpasswd should work"):
+      mail.succeed("echo user1@example.local:placeholder > ${passwdFile}")
+      mail.succeed(
+        "sudo -u roundcube "
+        "sudo -u vmail ${chpasswd} "
+        "${passwdFile} "
+        "<<< 'user1@example.local:pass'"
+      )
+      mail.succeed("grep user1@example.local: ${passwdFile}")
+      mail.succeed("grep -v :placeholder ${passwdFile}")
+
+    mail.wait_for_unit('network-online.target')
+    client.wait_for_unit('network-online.target')
+    ext.wait_for_unit('network-online.target')
 
     mail.execute('rm -rf /srv/mail/example.local')
     mail.wait_for_file('/run/rspamd/rspamd-milter.sock')
