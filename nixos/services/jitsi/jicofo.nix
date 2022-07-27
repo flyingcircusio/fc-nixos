@@ -99,23 +99,66 @@ in
       ];
       environment.JAVA_SYS_PROPS = concatStringsSep " " (mapAttrsToList (k: v: "${k}=${toString v}") jicofoProps);
 
+      stopIfChanged = false;
+
       script = ''
+        watchdog() {
+          for count in {1..300}; do
+            sleep 1
+            ${pkgs.curl}/bin/curl -s http://localhost:8888/about/health && break
+            echo "Watchdog: waiting for Jicofo startup, try: $count"
+          done
+
+          # Wait before notifying systemd because Jicofo may take a bit longer
+          # to be actually ready to talk to a videobridge.
+          sleep 5
+          echo "Watchdog: Jicofo is ready"
+          ${pkgs.systemd}/bin/systemd-notify READY=1
+
+          watchdog_sec=$((WATCHDOG_USEC / 1000000))
+          interval=$((watchdog_sec / 2))
+          echo "Watchdog: checking every $interval seconds, times out after $watchdog_sec seconds"
+          sleep $interval
+
+          while true; do
+            echo "Watchdog: check..."
+            rc=0
+            out=$(${pkgs.curl}/bin/curl --max-time 3 --fail-with-body -s http://localhost:8888/about/health) || rc=$?
+            # No need to restart Jicofo when only the videobridge failed ("No operational bridges...")
+            if [[ $rc != 0 && $out != "No operational bridges"* ]]; then
+              echo "Watchdog: check failed with exit code $rc. Checking again..."
+              echo "Watchdog: check output: $out"
+              sleep 1
+            else
+              echo "Watchdog: ok"
+              ${pkgs.systemd}/bin/systemd-notify WATCHDOG=1
+              sleep $interval
+            fi
+          done
+        }
+
+        watchdog $$ &
+
         ${pkgs.jicofo}/bin/jicofo \
           --host=${cfg.xmppHost} \
           --domain=${if cfg.xmppDomain == null then cfg.xmppHost else cfg.xmppDomain} \
           --user_name=${cfg.userName} \
           --user_domain=${cfg.userDomain} \
-          --user_password=$(cat ${cfg.userPasswordFile})
+          --user_password="$(cat ${cfg.userPasswordFile})"
       '';
 
       serviceConfig = {
-        Type = "exec";
+        Type = "notify";
 
         DynamicUser = true;
         User = "jicofo";
         Group = "jitsi-meet";
+        WatchdogSec = 40;
+        WatchdogSignal = "SIGTERM";
+        Restart = "always";
 
         CapabilityBoundingSet = "";
+        NotifyAccess = "all";
         NoNewPrivileges = true;
         ProtectSystem = "strict";
         ProtectHome = true;

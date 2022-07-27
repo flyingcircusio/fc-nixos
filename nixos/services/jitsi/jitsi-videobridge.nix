@@ -218,29 +218,76 @@ in
     {
       aliases = [ "jitsi-videobridge.service" ];
       description = "Jitsi Videobridge";
-      after = [ "network.target" ];
+      after = [ "jicofo.service" ];
+      wants = [ "jicofo.service" ];
       wantedBy = [ "multi-user.target" ];
 
       environment.JAVA_SYS_PROPS = attrsToArgs jvbProps;
 
       stopIfChanged = false;
 
-      script = (concatStrings (mapAttrsToList (name: xmppConfig:
-        "export ${toVarName name}=$(cat ${xmppConfig.passwordFile})\n"
-      ) cfg.xmppConfigs))
+      script = (concatStrings (mapAttrsToList (name: xmppConfig: ''
+        ${toVarName name}=$(cat ${xmppConfig.passwordFile})
+        export ${toVarName name}
+      '') cfg.xmppConfigs))
       + ''
-        ${pkgs.jitsi-videobridge}/bin/jitsi-videobridge --apis=${if (cfg.apis == []) then "none" else concatStringsSep "," cfg.apis}
+        watchdog() {
+          # Jicofo takes some seconds to see that the videobridge is not
+          # operational. Wait a bit before asking Jicofo about our status.
+          sleep 5
+          for count in {1..300}; do
+            sleep 1
+            out=$(${pkgs.curl}/bin/curl -s http://localhost:8888/about/health)
+            if [[ $out != *"No operational bridges"* ]]; then
+              break
+            fi
+            echo "Watchdog: waiting until Jicofo sees the videobridge, try: $count"
+          done
+
+          echo "Watchdog: videobridge is ready"
+          ${pkgs.systemd}/bin/systemd-notify READY=1
+
+          watchdog_sec=$((WATCHDOG_USEC / 1000000))
+          interval=$((watchdog_sec / 2))
+          echo "Watchdog: checking every $interval seconds, times out after $watchdog_sec seconds"
+          sleep $interval
+
+          while true; do
+            echo "Watchdog: check..."
+            out=$(${pkgs.curl}/bin/curl --max-time 3 -s http://localhost:8888/about/health)
+            if [[ $out == *"No operational bridges"* ]]; then
+              echo "Watchdog: check failed, Jicofo does not see the videobridge. Checking again..."
+              echo "Watchdog: check output: $out"
+              sleep 1
+            else
+              echo "Watchdog: ok"
+              ${pkgs.systemd}/bin/systemd-notify WATCHDOG=1
+              sleep $interval
+            fi
+          done
+        }
+
+        watchdog $$ &
+
+        echo "Starting videobridge"
+
+        ${pkgs.jitsi-videobridge}/bin/jitsi-videobridge \
+          --apis=${if (cfg.apis == []) then "none" else concatStringsSep "," cfg.apis}
       '';
 
       serviceConfig = {
-        Type = "exec";
+        Type = "notify";
 
         DynamicUser = true;
         User = "jitsi-videobridge";
         Group = "jitsi-meet";
+        WatchdogSec = 40;
+        WatchdogSignal = "SIGTERM";
+        Restart = "always";
 
         CapabilityBoundingSet = "";
         NoNewPrivileges = true;
+        NotifyAccess = "all";
         ProtectSystem = "strict";
         ProtectHome = true;
         PrivateTmp = true;
@@ -259,28 +306,6 @@ in
         LimitNPROC = 65000;
         LimitNOFILE = 65000;
       };
-    };
-
-    systemd.services.delay-jitsi-videobridge-start = {
-
-      partOf = [ "jicofo.service" ];
-      after = [ "jicofo.service" ];
-      requiredBy = [ "jitsi-videobridge2.service" ];
-      before = [ "jitsi-videobridge2.service" ];
-
-      restartIfChanged = false;
-
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-      };
-      script = ''
-        echo "Jicofo was just started, waiting 5 seconds..."
-        for x in {1..5}; do
-          sleep 1
-          echo "$x..."
-        done
-      '';
     };
 
     environment.etc."jitsi/videobridge/logging.properties".source =
