@@ -175,7 +175,7 @@ class BaseImage:
         """
         if self.release not in run.json.rbd("ls", CEPH_POOL):
             logger.info(f"Creating image for {self.release}")
-            run.rbd("create", "-s", str(10 * 2**30), self.volume)
+            run.rbd("create", "-s", str(10 * 2**30) + "B", self.volume)
 
         logger.debug(f"Locking image {self.volume}")
         try:
