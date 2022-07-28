@@ -44,13 +44,6 @@ in {
   #     boost = super.boost155;
   # });
 
-  # Xen is marked as broken and it's a dependency of the collectd xen plugin.
-  # Arguments to the collectd function also get passed to all plugins so this
-  # override is effective.
-  # We don't use collectd but it's a dependency of influxdb which is needed
-  # for statshost.
-  collectd = super.collectd.override { xen = null; };
-
   docsplit = super.callPackage ./docsplit { };
 
   elasticsearch6 = (super.elasticsearch6.override {
