@@ -122,7 +122,7 @@ Additional YAML lines which are appended to the main
 :file:`elasticsearch.yml` config file.
 
 Legacy Custom Config
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 You can add a file named :file:`/etc/local/elasticsearch/clusterName`, with
 the cluster name as its sole contents.
@@ -131,6 +131,13 @@ To add additional configuration options, create a file
 :file:`/etc/local/elasticsearch/elasticsearch.yml`. Its contents will be
 appended to the base configuration.
 
+Upgrades
+--------
+
+Rolling upgrades for Elasticsearch 6 multi-node clusters to 7 are supported.
+Nodes should be upgraded one at a time to ensure continous operation of the
+cluster. Upgrading nodes is done by changing the role of the machine to
+*elasticsearch7*.
 
 Monitoring
 ----------
