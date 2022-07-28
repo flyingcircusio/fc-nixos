@@ -329,6 +329,8 @@ in {
 
     in fromCfgDirs // fromActivationScripts;
 
+    system.stateVersion = fclib.mkPlatform "22.05";
+
     systemd = {
       tmpfiles.rules = [
         # d instead of r to a) respect the age rule and b) allow exclusion
