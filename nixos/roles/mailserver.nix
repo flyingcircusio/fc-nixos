@@ -32,6 +32,17 @@ let
       example = "mail.example.com";
     };
 
+    policydSPFExtraSkipAddresses = mkOption {
+      type = with types; listOf str;
+      description = ''
+        Extra addresses policyd should skip in SPF checks.
+        Local addresses are always skipped.
+        This extends the `skip_addresses` setting in policyd-spf.conf.
+      '';
+      default = if hasFE then listenFe else
+                if listenSrv != [] then listenSrv else [];
+    };
+
     rootAlias = mkOption {
       type = types.str;
       description = "Address to receive all mail to root@localhost.";
