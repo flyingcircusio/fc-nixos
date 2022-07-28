@@ -98,19 +98,24 @@ in {
         ];
 
       services.redis = {
-        enable = true;
-        bind = concatStringsSep " " cfg.listenAddresses;
         package = cfg.package;
-        requirePass = password;
         vmOverCommit = true;
-        settings = lib.mkMerge [
-          (lib.mkIf (cfg.maxmemory-policy != null) {
-            inherit (cfg) maxmemory-policy;
-          })
-          ({
-            inherit (cfg) maxmemory;
-          })
-        ];
+
+        servers = {
+          "" = {
+            bind = concatStringsSep " " cfg.listenAddresses;
+            enable = true;
+            requirePass = password;
+            settings = lib.mkMerge [
+              (lib.mkIf (cfg.maxmemory-policy != null) {
+                inherit (cfg) maxmemory-policy;
+              })
+              ({
+                inherit (cfg) maxmemory;
+              })
+            ];
+          };
+        };
       };
 
       systemd.services.redis.serviceConfig.Restart = "always";
@@ -143,7 +148,7 @@ in {
         telegraf.inputs.redis = [
           {
             servers = [
-              "tcp://:${password}@localhost:${toString config.services.redis.port}"
+              "tcp://:${password}@localhost:${toString config.services.redis.servers."".port}"
             ];
             # Drop string fields. They are converted to labels in Prometheus
             # which blows up the number of metrics.
