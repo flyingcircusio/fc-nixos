@@ -105,9 +105,6 @@ in {
   kibana7 = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; unfree = true; };
   kibana7-oss = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; };
 
-  # From nixos-unstable 1f5891a700b11ee9afa07074395e1e30799bf392
-  kubernetes-helm = super.callPackage ./helm { };
-
   innotop = super.callPackage ./percona/innotop.nix { };
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
