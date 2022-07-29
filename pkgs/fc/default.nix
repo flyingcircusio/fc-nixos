@@ -17,6 +17,8 @@ rec {
   collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
   fix-so-rpath = callPackage ./fix-so-rpath {};
+  ledtool = pkgs.writers.writePython3Bin "fc-ledtool"
+    {} (builtins.readFile ./ledtool/led.py);
   logcheckhelper = callPackage ./logcheckhelper { };
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
