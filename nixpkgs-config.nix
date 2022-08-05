@@ -6,10 +6,9 @@
     # fc-sensuplugins and thus needed on all machines. Should be moved to
     # the raid service after decoupling fc-sensuplugins.
     "megacli"
-    # We could also allow SSPL as a whole, but adding sspl to
-    # allowlistLicenses is broken in 21.11. Fixed in unstable:
-    # https://github.com/NixOS/nixpkgs/pull/160467
-    # TODO: replace this when on 22.05.
+    # MongoDB starting with 4.0 uses the SSPL license, which is declared
+    # as unfree. We don't have alternatives to mongodb right now so we have
+    # to enable it.
     "mongodb"
   ];
 
