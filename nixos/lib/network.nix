@@ -6,6 +6,10 @@ with builtins;
 let
   fclib = config.fclib;
 
+  toInterfaceName = name:
+    assert lib.assertMsg ((match "[a-z0-9\\-]{1,12}" name) != null) "External label ${name} uses invalid characters or is longer than 12 characters.";
+    name;
+
   encInterfaces = lib.attrByPath [ "parameters" "interfaces" ] {} config.flyingcircus.enc;
 
   foldConds = value: conds:
@@ -226,13 +230,28 @@ rec {
 
         vlanId = config.flyingcircus.static.vlanIds.${vlan};
 
+
+        # The device layering is as follows:
+
+        # physicalDevice (-> taggedDevice) (-> bridgedDevice)
+        #
+        #
+        # Examples:
+        #
+        # Untagged, unbridged: ethsrv
+        # Untagged, bridged: ethsrv -> brsrv
+        # Tagged, unbridged: ethextleft -> ethsrv
+        # Tagged, bridged: ethextleft -> ethsrv -> brsrv
+
         device = if bridged then bridgedDevice else layer2device;
         attachedDevices = if bridged then [layer2device] else [];
         bridgedDevice = "br${vlan}";
+        taggedDevice = "eth${vlan}";
         layer2device =
           if policy == "underlay" then "underlay"
           else if policy == "vxlan" then "vx${vlan}"
-          else "eth${vlan}";
+          else if policy == "tagged" then "eth${toInterfaceName interface.external_label or "vlan"}"
+          else taggedDevice;
 
         macFallback = "02:00:00:${fclib.byteToHex vlanId}:??:??";
         mac = lib.toLower
