@@ -44,6 +44,13 @@ in {
           options = {
             port = mkOption { type = int; };
             docroot = mkOption { type = str; };
+            apacheExtraConfig = mkOption {
+              type = lines;
+              default = "";
+              description = ''
+                Additional text appended to virtualhost section of apache config.
+              '';
+            };
             pool = mkOption {
               type = lib.types.attrsOf lib.types.anything;
               description = "Overrides for underlying NixOS Pool options";
@@ -207,6 +214,7 @@ in {
                 <FilesMatch "\.php$">
                     SetHandler "proxy:unix:${config.services.phpfpm.pools."lamp-${port}".socket}|fcgi://localhost/"
                 </FilesMatch>
+                ${vhost.apacheExtraConfig}
             </VirtualHost>
             ''
           ) role.vhosts) +
