@@ -294,7 +294,7 @@ in
       `sudo systemctl restart mysql`
 
       For more information, see our documentation at
-      https://doc.flyingcircus.io/roles/fc-21.11-production/mysql.html
+      https://doc.flyingcircus.io/roles/fc-22.05-production/mysql.html
     '';
 
     systemd.services.fc-mysql-post-init = {
