@@ -55,10 +55,14 @@ let
         ((filter (a: fclib.isIp6 a.ip) encAddresses) ++
          (filter (a: fclib.isIp4 a.ip) encAddresses));
 
-  interfaceRules = lib.concatMapStrings
-    (interface: ''
-      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.name}"
-      '') ethernetDevices;
+  interfaceRules = lib.concatStrings (lib.unique
+    # Due to the way we report interface config we may und up with repeated
+    # rules for physical interfaces (e.g. with with two tagged interfaces
+    # on the same underlying device).
+    (map (interface: ''
+      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.layer2device}"
+    '') interfaces));
+
 in
 {
   config = rec {
@@ -83,6 +87,14 @@ in
         if (hasAttr location cfg.static.nameservers)
         then cfg.static.nameservers.${location}
         else [];
+
+
+      vlans = listToAttrs (map (interface:
+        lib.nameValuePair interface.taggedDevice {
+          id = interface.vlanId;
+          interface = interface.layer2device;
+        })
+        (filter (interface: interface.policy == "tagged") interfaces));
 
       # data structure for all configured interfaces with their IP addresses:
       # { ethfe = { ... }; ethsrv = { }; ... }
