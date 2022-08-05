@@ -213,21 +213,29 @@ in {
                 all.redis
               ]);
 
-  lamp_php74 = super.php74.withExtensions ({ enabled, all }:
+  lamp_php74 = (super.php74.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
                 all.memcached
                 all.redis
-              ]);
+              ])).override { pcre2 = self.pcre1035; };
 
-  lamp_php80 = super.php80.withExtensions ({ enabled, all }:
+  lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
                 all.memcached
                 all.redis
-              ]);
+              ])).override { pcre2 = self.pcre1035; };
+
+  pcre1035 = super.pcre2.overrideAttrs (oldAttrs: rec {
+    version = "10.35";
+    src = super.fetchurl {
+      url = "https://github.com/PhilipHazel/pcre2/releases/download/pcre2-${version}/pcre2-${version}.tar.bz2";
+      hash = "sha256:04s6kmk9qdd4rjz477h547j4bx7hfz0yalpvrm381rqc5ghaijww";
+    };
+  });
 
   mc = super.callPackage ./mc.nix { };
 
