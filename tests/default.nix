@@ -49,20 +49,20 @@ in {
   kibana7 = callTest ./kibana.nix { version = "7"; };
   k3s = callTest ./k3s {};
 
-  lampVm = callTest ./lamp/vmTest.nix { };
-  lampVm72 = callTest ./lamp/vmTest.nix { version = "lamp_php72"; };
-  lampVm73 = callTest ./lamp/vmTest.nix { version = "lamp_php73"; };
-  lampVm73_tideways = callTest ./lamp/vmTest.nix { version = "lamp_php73"; tideways = "1234"; };
-  lampVm74 = callTest ./lamp/vmTest.nix { version = "lamp_php74"; };
-  lampVm74_tideways = callTest ./lamp/vmTest.nix { version = "lamp_php74"; tideways = "1234"; };
-  lampVm80 = callTest ./lamp/vmTest.nix { version = "lamp_php80"; };
+  lampVm = callTest ./lamp/vm-test.nix { };
+  lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
+  lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
+  lampVm73_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php73"; tideways = "1234"; };
+  lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
+  lampVm74_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php74"; tideways = "1234"; };
+  lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
 
-  # lampPackage = callTest ./lamp/packageTest.nix { };
-  # lampPackage72 = callTest ./lamp/packageTest.nix { version = "lamp_php72"; };
-  # lampPackage73 = callTest ./lamp/packageTest.nix { version = "lamp_php73"; };
+  # lampPackage = callTest ./lamp/package-test.nix { };
+  # lampPackage72 = callTest ./lamp/package-test.nix { version = "lamp_php72"; };
+  # lampPackage73 = callTest ./lamp/package-test.nix { version = "lamp_php73"; };
   # regression test for PL-130643 only starts at lamp_php74
-  lampPackage74 = callTest ./lamp/packageTest.nix { version = "lamp_php74"; };
-  lampPackage80 = callTest ./lamp/packageTest.nix { version = "lamp_php80"; };
+  lampPackage74 = callTest ./lamp/package-test.nix { version = "lamp_php74"; };
+  lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
 
 
   # currently not supported: PL-130612

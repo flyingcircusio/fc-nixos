@@ -1,7 +1,7 @@
 { version ? "lamp_php74", pkgs ? import ./../.. {}, ... }:
 let
   php = pkgs.${version};
-  pcreTestPackage = import ./pcreTestPackage.nix { pkgs = pkgs; php = php; };
+  pcreTestPackage = import ./pcre-test-package.nix { pkgs = pkgs; php = php; };
 in
 pkgs.runCommand "php-pcre-test-${version}" {} ''
   set -eo pipefail
