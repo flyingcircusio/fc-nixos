@@ -13,7 +13,6 @@ let
     if config.flyingcircus.roles.statshost-master.enable
     then 50
     else 100;
-
 in
 {
 
@@ -30,25 +29,35 @@ in
 
   config = lib.mkIf (cfg.enable) {
 
-    flyingcircus.roles.graylog = fclib.mkPlatform {
+    flyingcircus.roles.graylog = {
       enable = true;
       cluster = false;
       serviceTypes = [ "loghost-server" ];
     };
 
-    flyingcircus.services.graylog = fclib.mkPlatform {
-      heapPercentage = 15 * heapCorrection / 100;
+    flyingcircus.services.graylog = {
+      heapPercentage = fclib.mkPlatform (15 * heapCorrection / 100);
       elasticsearchHosts = [
-        "http://${config.networking.hostName}.${config.networking.domain}:9200"
+        "http://${config.networking.hostName}:9200"
       ];
     };
 
     # Graylog 3.x wants Elasticsearch 6, ES7 does not work (yet).
     flyingcircus.roles.elasticsearch6.enable = true;
-    flyingcircus.roles.elasticsearch = fclib.mkPlatform {
-      dataDir = "/var/lib/elasticsearch";
+    flyingcircus.roles.elasticsearch = {
       clusterName = "graylog";
-      heapPercentage = 35 * heapCorrection / 100;
+      esNodes = [ config.networking.hostName ];
+      heapPercentage = fclib.mkPlatform (35 * heapCorrection / 100);
+      # Disable automatic index creation which can mess up the
+      # index structure expected by Graylog and prevent index rotation.
+      # Graylog writes data to an alias called graylog_deflector which has
+      # to be created before writing to it. We didn't have this setting in the
+      # past and saw that graylog_deflector was sometimes
+      # automatically created as an index by ES.
+      # Recommended by Graylog docs (https://archivedocs.graylog.org/en/3.3/pages/installation/os/centos.html).
+      extraConfig = ''
+        action.auto_create_index: false
+      '';
     };
 
   };
