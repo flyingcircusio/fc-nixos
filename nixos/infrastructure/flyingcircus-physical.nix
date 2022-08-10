@@ -34,6 +34,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     };
 
     environment.systemPackages = with pkgs; [
+      fc.ledtool
       fc.secure-erase
       fc.util-physical
       mstflint

@@ -40,6 +40,11 @@ in
       bridge-utils
     ];
 
+    environment.shellAliases = {
+      # alias for observing both running VMs as well as the migration logs at once
+      fc-vm-migration-watch = "watch '${pkgs.fc.qemu}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
+    };
+
     environment.etc."qemu/fc-qemu.conf".text = let
       hostname = config.networking.hostName;
       migration_address = fclib.fqdn { vlan = "sto"; domain = "gocept.net"; };

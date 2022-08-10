@@ -28,6 +28,7 @@ RELEASES = [
     "fc-21.11-dev",
     "fc-21.11-staging",
     "fc-21.11-production",
+    "pre-fc-22.05",
 ]
 CEPH_CONF = "/etc/ceph/ceph.conf"
 CEPH_CLIENT = socket.gethostname()
@@ -174,7 +175,7 @@ class BaseImage:
         """
         if self.release not in run.json.rbd("ls", CEPH_POOL):
             logger.info(f"Creating image for {self.release}")
-            run.rbd("create", "-s", str(10 * 2**30), self.volume)
+            run.rbd("create", "-s", str(10 * 2**30) + "B", self.volume)
 
         logger.debug(f"Locking image {self.volume}")
         try:
