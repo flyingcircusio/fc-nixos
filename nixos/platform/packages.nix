@@ -50,7 +50,6 @@
         netcat
         ngrep
         nmap
-        nodejs
         openldap
         openssl
         parted
