@@ -137,13 +137,6 @@ in {
             "FPM is always used now.";
       }
 
-      (lib.mkIf (!role.enable) {
-        # Install the default upstream PHP when the LAMP role is not activated.
-        environment.systemPackages = [
-          pkgs.php
-        ];
-      })
-
       # General config if the role is enabled but not specific to the
       # selection of mod_php or FPM
       (lib.mkIf role.enable {
