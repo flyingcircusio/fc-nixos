@@ -89,32 +89,7 @@ in {
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
-  jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
-    pname = "jicofo";
-    version = "1.0-900";
-    src = fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-tAuWhu1DdasOuLIz9/Ox1n1XcFWm5qnTVr6FpdKpwbE=";
-    };
-  });
-
-  jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-meet";
-    version = "1.0.6260";
-    src = fetchurl {
-      url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      hash = "sha256-Y1ELKdFdbnq20yUt4XoXmstJm8uI8EBGIFOvFWf+5Uw=";
-    };
-
-  });
-
   jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-videobridge2";
-    version = "2.2-9-g8cded16e";
-    src = fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-L9h+qYV/W2wPzycfDGC4AXpTl7wlulyt2KryA+Tb/YU=";
-    };
     # jvb complained about missing libcrypto.so.3, add openssl 3 here.
     installPhase = ''
       runHook preInstall
