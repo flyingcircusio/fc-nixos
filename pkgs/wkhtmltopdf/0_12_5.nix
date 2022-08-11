@@ -51,60 +51,57 @@ let
     patches = [ ./qt4-gcc9.patch ] ++ builtins.filter (
       patch: ! lib.any (exclude: builtins.baseNameOf patch == exclude)
                        excludePatches ) oldAttrs.patches;
-    configureFlags =
-      ''
-        -dbus-linked
-        -glib
-        -no-separate-debug-info
-        -openssl-linked
-        -qdbus
-        -v
-      ''
-      + # This is taken from the wkhtml build script that we don't run
-      ''
-        -confirm-license
-        -opensource
-        -fast
-        -release
-        -static
-        -graphicssystem raster
-        -webkit
-        -exceptions
-        -xmlpatterns
-        -system-libjpeg
-        -system-libpng
-        -system-zlib
-        -no-libmng
-        -no-libtiff
-        -no-accessibility
-        -no-stl
-        -no-qt3support
-        -no-phonon
-        -no-phonon-backend
-        -no-opengl
-        -no-declarative
-        -no-scripttools
-        -no-sql-db2
-        -no-sql-ibase
-        -no-sql-mysql
-        -no-sql-oci
-        -no-sql-odbc
-        -no-sql-psql
-        -no-sql-sqlite
-        -no-sql-sqlite2
-        -no-sql-tds
-        -no-mmx
-        -no-3dnow
-        -no-sse
-        -no-sse2
-        -no-multimedia
-        -nomake demos
-        -nomake docs
-        -nomake examples
-        -nomake tests
-        -nomake tools
-        -nomake translations
-      '';
+    configureFlags = [
+      "-dbus-linked"
+      "-glib"
+      "-no-separate-debug-info"
+      "-openssl-linked"
+      "-qdbus"
+      "-v"
+      # The following flags are taken from the wkhtml build script that we don't run
+      "-confirm-license"
+      "-opensource"
+      "-fast"
+      "-release"
+      "-static"
+      "-graphicssystem raster"
+      "-webkit"
+      "-exceptions"
+      "-xmlpatterns"
+      "-system-libjpeg"
+      "-system-libpng"
+      "-system-zlib"
+      "-no-libmng"
+      "-no-libtiff"
+      "-no-accessibility"
+      "-no-stl"
+      "-no-qt3support"
+      "-no-phonon"
+      "-no-phonon-backend"
+      "-no-opengl"
+      "-no-declarative"
+      "-no-scripttools"
+      "-no-sql-db2"
+      "-no-sql-ibase"
+      "-no-sql-mysql"
+      "-no-sql-oci"
+      "-no-sql-odbc"
+      "-no-sql-psql"
+      "-no-sql-sqlite"
+      "-no-sql-sqlite2"
+      "-no-sql-tds"
+      "-no-mmx"
+      "-no-3dnow"
+      "-no-sse"
+      "-no-sse2"
+      "-no-multimedia"
+      "-nomake demos"
+      "-nomake docs"
+      "-nomake examples"
+      "-nomake tests"
+      "-nomake tools"
+      "-nomake translations"
+    ];
   });
 in
 
