@@ -220,6 +220,12 @@ in {
                 all.redis
               ]);
 
+  latencytop_nox = super.latencytop.overrideAttrs(_: {
+    buildInputs = with self; [ ncurses glib ];
+    makeFlags = [ "HAS_GTK_GUI=" ];
+  });
+
+  links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
 
   lkl = super.lkl.overrideAttrs(_: rec {
     version = "2022-05-18";
