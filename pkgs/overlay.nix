@@ -28,6 +28,8 @@ in {
       meta.priority = 10;
     });
 
+  backy = super.callPackage ./backy.nix { };
+
   certmgr = super.callPackage ./certmgr.nix {  };
 
   cgmemtime = super.callPackage ./cgmemtime.nix { };
