@@ -194,8 +194,7 @@ RUN mkdir /tmp/some/directory
 The script will execute on the machine where you started batou and can interact
 with the container through the following features:
 
-```{eval-rst}
-.. function:: COPY <local path> <remote path>
+```{function} COPY <local path> <remote path>
 
    Copy a local file to a destination in the container.
 
@@ -203,8 +202,7 @@ with the container through the following features:
    (where `provision.sh` is placed). The remote path must be absolute.
 ```
 
-```{eval-rst}
-.. function:: RUN cmd arg1 arg2
+```{function} RUN cmd arg1 arg2
 
    Execute a command as root in the container.
 
@@ -213,8 +211,7 @@ with the container through the following features:
       Using redirections like `>` will not work here.
 ```
 
-```{eval-rst}
-.. function:: ECHO <expression> <remote path>
+```{function} ECHO <expression> <remote path>
 
     Execute an expression locally and store its output in a remote path.
 
