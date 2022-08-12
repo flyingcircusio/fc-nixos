@@ -8,16 +8,20 @@
 # right, e.g.:
 # --arg platformDoc '{ outPath = path/to/doc; gitTag = ""; revCount = ""; shortRev = ""; }'
 
-{ pkgs ? import <nixpkgs> {}
-, lib ? pkgs.lib
-, branch ? "22.05"
+{ branch ? "22.05"
 , updated ? "1970-01-01 01:00"
 , platformDoc ? null # directory/URL containing platform objects.inv
 , failOnWarnings ? false
 }:
 
 let
-  buildEnv = pkgs.python3.withPackages (ps: [ ps.sphinx ps.sphinx_rtd_theme ]);
+  unstableChannel = "https://releases.nixos.org/nixos/unstable/nixos-22.11pre399062.3a11db5f408/nixexprs.tar.xz";
+  pkgs = import (fetchTarball unstableChannel) {};
+  buildEnv = pkgs.python3.withPackages (ps: with ps; [
+    myst-docutils
+    sphinx
+    sphinx_rtd_theme
+  ]);
   rg = "${pkgs.ripgrep}/bin/rg";
 
 in pkgs.stdenv.mkDerivation rec {
