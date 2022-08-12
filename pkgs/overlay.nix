@@ -82,9 +82,6 @@ in {
     openjdk11_headless = self.jdk8_headless;
   });
 
-  kibana7 = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; unfree = true; };
-  kibana7-oss = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; };
-
   innotop = super.callPackage ./percona/innotop.nix { };
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
@@ -167,34 +164,7 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
-  # Import old php versions from nix-phps
-  inherit (phps) php72 php73;
-
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
-
-  lamp_php72 = self.php72.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
-
-  lamp_php73 = self.php73.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
-
-  lamp_php74 = (super.php74.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]));
 
   lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
               enabled ++ [
