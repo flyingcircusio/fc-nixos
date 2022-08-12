@@ -28,7 +28,9 @@ RELEASES = [
     "fc-21.11-dev",
     "fc-21.11-staging",
     "fc-21.11-production",
-    "pre-fc-22.05",
+    "fc-22.05-dev",
+    "fc-22.05-staging",
+    "fc-22.05-production",
 ]
 CEPH_CONF = "/etc/ceph/ceph.conf"
 CEPH_CLIENT = socket.gethostname()
