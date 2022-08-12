@@ -98,6 +98,14 @@ intersphinx_mapping = {
     "platform": ("https://doc.flyingcircus.io/platform", platform_doc)
 }
 
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "replacements",
+    "smartquotes",
+    "linkify",
+]
+
 
 def setup(app):
     app.add_css_file("flyingcircus.css")

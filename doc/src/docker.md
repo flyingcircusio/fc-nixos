@@ -1,19 +1,15 @@
-.. _nixos-docker:
+(nixos-docker)=
 
-Docker
-======
+# Docker
 
-Runs a `Docker <http://docker.com>`_ daemon to use containers for application
+Runs a [Docker](http://docker.com) daemon to use containers for application
 deployment.
 
+## Interaction
 
-Interaction
------------
+All service users can interact with Docker using the {command}`docker` command.
 
-All service users can interact with Docker using the :command:`docker` command.
-
-Network
--------
+## Network
 
 The Flying Circus network is designed to allow customer application components
 to talk to each other securely and reliably. We recommend using the `bridged`
@@ -25,12 +21,11 @@ similar to programs run directly on the host. They can access neighbouring
 directly through the frontend network or masqueraded through the
 server-to-server network.
 
-.. note::
+:::{note}
+We used to recommend the `host` networking option as a workaround due to
+incompatibilities with the NixOS firewall management. This option is now no
+longer recommended as it breaks fundamental assumptions about how containers
+work and how they are isolated.
+:::
 
-  We used to recommend the `host` networking option as a workaround due to
-  incompatibilities with the NixOS firewall management. This option is now no
-  longer recommended as it breaks fundamental assumptions about how containers
-  work and how they are isolated.
-
-
-.. vim: set spell spelllang=en:
+% vim: set spell spelllang=en:

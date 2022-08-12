@@ -1,7 +1,6 @@
-.. _nixos-base:
+(nixos-base)=
 
-Base environment
-================
+# Base environment
 
 The base installation includes various tools that generally help with
 application deployment. They are available on every Flying Circus NixOS VM.
@@ -14,91 +13,85 @@ may cause breakage of your applications in the long term.
 Also, those packages are not providing running daemons (like OpenLDAP). If you
 need a managed component, those need to be activated explicitly.
 
-You can look up packages and their descriptions via the `NixOS Package Search <https://search.nixos.org/packages>`_.
+You can look up packages and their descriptions via the [NixOS Package Search](https://search.nixos.org/packages).
 
+## Packages
 
-Packages
---------
+- apacheHttpd
+- atop
+- automake
+- bc
+- bundler
+- cmake
+- cups
+- curl
+- cyrus_sasl
+- db
+- dnsutils
+- dstat
+- file
+- fc.logcheckhelper
+- fio
+- gcc
+- gdb
+- git
+- gnumake
+- gnupg
+- gptfdisk
+- graphviz
+- htop
+- imagemagick
+- inetutils (telnet)
+- iotop
+- jq
+- libjpeg
+- libtiff
+- libxml2
+- libxslt
+- links2
+- lsof
+- lynx
+- mailx
+- mercurial
+- mmv
+- nano
+- ncdu
+- netcat
+- ngrep
+- nmap
+- nodejs
+- openldap
+- openssl
+- php
+- pkg-config
+- protobuf
+- psmisc
+- pwgen
+- python2Full
+- python3
+- pythonPackages.virtualenv
+- ripgrep
+- screen
+- strace
+- sysstat
+- tcpdump
+- tree
+- unzip
+- vim
+- w3m-nographics
+- wdiff
+- wget
+- xfsprogs
 
-* apacheHttpd
-* atop
-* automake
-* bc
-* bundler
-* cmake
-* cups
-* curl
-* cyrus_sasl
-* db
-* dnsutils
-* dstat
-* file
-* fc.logcheckhelper
-* fio
-* gcc
-* gdb
-* git
-* gnumake
-* gnupg
-* gptfdisk
-* graphviz
-* htop
-* imagemagick
-* inetutils (telnet)
-* iotop
-* jq
-* libjpeg
-* libtiff
-* libxml2
-* libxslt
-* links2
-* lsof
-* lynx
-* mailx
-* mercurial
-* mmv
-* nano
-* ncdu
-* netcat
-* ngrep
-* nmap
-* nodejs
-* openldap
-* openssl
-* php
-* pkg-config
-* protobuf
-* psmisc
-* pwgen
-* python2Full
-* python3
-* pythonPackages.virtualenv
-* ripgrep
-* screen
-* strace
-* sysstat
-* tcpdump
-* tree
-* unzip
-* vim
-* w3m-nographics
-* wdiff
-* wget
-* xfsprogs
-
-Configuration
--------------
+## Configuration
 
 All tools can be configured individually with dotfiles in the user's home
 directory.
 
+## Interaction
 
-Interaction
------------
-
-Service users may invoke :command:`sudo systemctl` to restart individual
-services manually. See also :ref:`nixos-local` for information about how to
+Service users may invoke {command}`sudo systemctl` to restart individual
+services manually. See also {ref}`nixos-local` for information about how to
 activate configuration changes.
 
-
-.. vim: set spell spelllang=en:
+% vim: set spell spelllang=en:

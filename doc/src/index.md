@@ -1,50 +1,49 @@
-NixOS |release| edition
-=======================
+# NixOS {{ release }} edition
 
-Platform & roles documentation for Flying Circus `NixOS`_ edition
-|release|.
+Platform & roles documentation for Flying Circus [NixOS] edition
+{{ release }}.
 
-.. _NixOS: https://nixos.org
+```{toctree}
+:titlesonly: true
 
-.. toctree::
-   :titlesonly:
+base
+user_profile
+local
+systemd
+cron
+logging
+logrotate
+firewall
+monitoring
+```
 
-   base
-   user_profile
-   user_profilemd.md
-   local
-   systemd
-   cron
-   logging
-   logrotate
-   firewall
-   monitoring
+(nixos-components)=
 
-.. _nixos-components:
+## Components/Roles
 
-Components/Roles
-----------------
+```{toctree}
+:titlesonly: true
 
-.. toctree::
-   :titlesonly:
+devhost
+docker
+elasticsearch
+external_net
+fc_userscan
+kibana
+kubernetes
+lamp
+loghost
+mailserver
+memcached
+mongodb
+mysql
+nfs
+postgresql
+rabbitmq
+redis
+statshost
+webgateway
+webproxy
+```
 
-   devhost
-   docker
-   elasticsearch
-   external_net
-   fc_userscan
-   kibana
-   kubernetes
-   lamp
-   loghost
-   mailserver
-   memcached
-   mongodb
-   mysql
-   nfs
-   postgresql
-   rabbitmq
-   redis
-   statshost
-   webgateway
-   webproxy
+[nixos]: https://nixos.org
