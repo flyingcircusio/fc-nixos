@@ -18,6 +18,7 @@ let
   unstableChannel = "https://releases.nixos.org/nixos/unstable/nixos-22.11pre399062.3a11db5f408/nixexprs.tar.xz";
   pkgs = import (fetchTarball unstableChannel) {};
   buildEnv = pkgs.python3.withPackages (ps: with ps; [
+    linkify-it-py
     myst-docutils
     sphinx
     sphinx_rtd_theme
