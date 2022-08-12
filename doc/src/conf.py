@@ -9,7 +9,7 @@ extensions = ["myst_parser", "sphinx.ext.intersphinx"]
 import os
 
 # The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
+# {{ version }} and {{ release }}, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
@@ -103,8 +103,11 @@ myst_enable_extensions = [
     "deflist",
     "replacements",
     "smartquotes",
+    "substitution",
     "linkify",
 ]
+
+myst_substitutions = {"release": release, "version": version}
 
 
 def setup(app):
