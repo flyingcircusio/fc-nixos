@@ -44,7 +44,6 @@ in
         };
       };
 
-      mysql56 = mkRole "5.6";
       mysql57 = mkRole "5.7";
       percona80 = mkRole "8.0";
     };
@@ -54,19 +53,16 @@ in
   config =
   let
     mysqlRoles = with config.flyingcircus.roles; {
-      "5.6" = mysql56.enable;
       "5.7" = mysql57.enable;
       "8.0" = percona80.enable;
     };
 
     mysqlPackages = with pkgs; {
-      "5.6" = percona56;
       "5.7" = percona57;
       "8.0" = percona80;
     };
 
     xtrabackupPackages = with pkgs; {
-      "5.6" = percona-xtrabackup_2_4;
       "5.7" = percona-xtrabackup_2_4;
       "8.0" = percona-xtrabackup_8_0;
     };
