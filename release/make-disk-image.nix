@@ -164,7 +164,11 @@ let format' = format; in let
       --substituters ""
 
     echo "copying staging root to image..."
-    cptofs ${optionalString (partitionTableType != "none") "-P 1"} -t xfs -i $diskImage $root/* /
+    cptofs -p ${optionalString (partitionTableType != "none") "-P 1"} \
+           -t xfs \
+           -i $diskImage \
+           $root/* / ||
+      (echo >&2 "ERROR: cptofs failed. diskSize might be too small for closure."; exit 1)
   '';
 
 in

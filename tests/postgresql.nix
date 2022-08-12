@@ -1,14 +1,14 @@
-import ./make-test-python.nix ({ rolename ? "postgresql14", lib, pkgs, ... }:
+import ./make-test-python.nix ({ version ? "14", lib, pkgs, ... }:
 let
   ipv4 = "192.168.101.1";
   ipv6 = "2001:db8:f030:1c3::1";
 in {
-  name = "postgresql";
+  name = "postgresql${version}";
   machine =
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
-      flyingcircus.roles.${rolename}.enable = true;
+      flyingcircus.roles."postgresql${version}".enable = true;
 
       flyingcircus.enc.parameters = {
         resource_group = "test";
@@ -48,10 +48,7 @@ in {
       psql = "sudo -u postgres -- psql";
 
       createTemporalExtension =
-        if (
-          rolename == "postgresql12" ||
-          rolename == "postgresql13" ||
-          rolename == "postgresql14")
+        if lib.versionAtLeast version "12"
         then "CREATE EXTENSION periods CASCADE"
         else "CREATE EXTENSION temporal_tables";
     in
@@ -76,11 +73,6 @@ in {
       machine.succeed('${psql} employees -c "CREATE EXTENSION pg_stat_statements;"')
       machine.succeed('${psql} employees -c "CREATE EXTENSION rum;"')
       machine.succeed('${psql} employees -c "${createTemporalExtension};"')
-    '' + lib.optionalString (rolename != "postgresql12") ''
-      # Postgis fails only on postgresql12 with an OOM that produces no other output
-      # for debugging. It's caused by the shared library for pg_stat_statements.
-      # It works on real VMs so just skip it here. Creating it in the test
-      # works on NixOS 21.11, though, we can re-enable it there.
       machine.succeed('${psql} employees -c "CREATE EXTENSION postgis;"')
     '';
 

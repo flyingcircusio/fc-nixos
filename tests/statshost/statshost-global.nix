@@ -155,12 +155,12 @@ in {
         services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
 
         flyingcircus.roles.statshost.prometheusLocationProxyExtraSettings = {
+          # We are talking to a fake stats source that only speaks HTTP/1.1
+          # using python http.server. Without this, prometheus only tries HTTP/2
+          # and fails.
+          enable_http2 = false;
           tls_config = { ca_file = "/proxy_cert.pem"; };
         };
-
-        systemd.services.prometheus.serviceConfig.Environment = [
-          "SSL_CERT_FILE=/tmp/shared/proxy_cert.pem"
-        ];
 
         users.users.s-test = {
           isNormalUser = true;

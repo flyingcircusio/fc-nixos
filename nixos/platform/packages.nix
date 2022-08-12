@@ -8,11 +8,8 @@
         atop
         automake
         bc
-        bundler
         cmake
-        cups
         curl
-        cyrus_sasl
         db
         dnsutils
         dstat
@@ -25,20 +22,13 @@
         gnumake
         gnupg
         gptfdisk
-        graphviz
         htop
-        imagemagick
         inetutils
         multipath-tools  # kpartx
         iotop
         jq
-        latencytop
-        libjpeg
-        libsmbios
-        libtiff
-        libxml2
-        libxslt
-        links2
+        latencytop_nox
+        links2_nox
         lsof
         lynx
         magic-wormhole
@@ -50,16 +40,12 @@
         netcat
         ngrep
         nmap
-        nodejs
-        openldap
         openssl
         parted
         pkg-config
-        protobuf
         w3m-nographics
         psmisc
         pwgen
-        python2Full
         (python3.withPackages (ps: with ps; [ setuptools ]))
         python3Packages.virtualenv
         ripgrep
@@ -70,7 +56,6 @@
         tmux
         tree
         unzip
-        usbutils
         vim
         wdiff
         wget

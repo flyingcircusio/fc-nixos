@@ -39,6 +39,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       mstflint
       pciutils
       smartmontools
+      usbutils
     ];
 
     fileSystems = {

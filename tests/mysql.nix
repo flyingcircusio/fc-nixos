@@ -104,7 +104,7 @@ in
         master.fail("netstat -tlpn | grep mysqld | egrep -v '${expectedAddressesExpr}'")
 
     with subtest("after logrotate, mysql should write to the new slow log file"):
-        master.execute("logrotate -v -f `logrotate-config-file`")
+        master.execute("logrotate -v -f /etc/current-config/logrotate.conf")
         master.succeed("grep select /var/log/mysql/mysql.slow")
 
     with subtest("slow log should have correct permissions (readable for service users)"):

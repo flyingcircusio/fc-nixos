@@ -35,7 +35,7 @@ Create a file like :file:`myproject_env.nix` which specifies the packages to be 
    let
      # Imports. Which package sources should be used?
      # Use a pinned platform version
-     # pkgs = import (fetchTarball https://hydra.flyingcircus.io/build/171209/download/1/nixexprs.tar.xz) {};
+     # pkgs = import (fetchTarball https://hydra.flyingcircus.io/build/176012/download/1/nixexprs.tar.xz) {};
      # ...or just use the current version of the platform
      pkgs = import <nixpkgs> {};
    in
@@ -52,7 +52,7 @@ Create a file like :file:`myproject_env.nix` which specifies the packages to be 
    }
 
 The code shown above defines an environment with 5 packages installed from a
-specific build of our NixOS 21.11 platform.
+specific build of our NixOS 22.05 platform.
 The pinned version can be newer or older than the installed system version.
 
 Pinning the version of the import prevents unwanted changes in your
@@ -64,7 +64,7 @@ latest security fixes. NixOS re-uses packages if the wanted version is already
 in the Nix store, saving disk space and reducing installation time.
 
 The URL for the current release can be found in the :ref:`changelog` for the
-21.11 platform.
+22.05 platform.
 
 If you want to try NixOS unstable with the newest packages, get the URL from the channel::
 
@@ -74,11 +74,11 @@ If you want to try NixOS unstable with the newest packages, get the URL from the
 Note that the unstable channel may be broken and that upstream NixOS channels
 don't have some additional packages we provide on our platform.
 
-Older NixOS versions than 21.11 usually don't get security updates anymore.
+Older NixOS versions than 22.05 usually don't get security updates anymore.
 
-Links to all platform builds for 21.11 can be found here:
+Links to all platform builds for 22.05 can be found here:
 
-https://hydra.flyingcircus.io/job/flyingcircus/fc-21.11-production/release
+https://hydra.flyingcircus.io/job/flyingcircus/fc-22.05-production/release
 
 See https://nixos.org/nixos/packages.html for a list of packages.
 Use the *attribute name* from the list and include it in `paths`.

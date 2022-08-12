@@ -206,6 +206,10 @@ let
         Optional proxy URL.
       '';
 
+      enable_http2 = mkDefOpt types.bool true ''
+        Use HTTP2 for the connection.
+      '';
+
       ec2_sd_configs = mkOpt (types.listOf promTypes.ec2_sd_config) ''
         List of EC2 service discovery configurations.
       '';

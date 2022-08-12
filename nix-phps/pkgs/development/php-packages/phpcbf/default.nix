@@ -11,14 +11,17 @@ mkDerivation {
     sha256 = "04wb1imm4934mpy2hxcmqh4cn7md1vwmfii39p6mby809325b5z1";
   };
 
-  phases = [ "installPhase" ];
+  dontUnpack = true;
+
   nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
+    runHook preInstall
     mkdir -p $out/bin
     install -D $src $out/libexec/phpcbf/phpcbf.phar
     makeWrapper ${php}/bin/php $out/bin/phpcbf \
       --add-flags "$out/libexec/phpcbf/phpcbf.phar"
+    runHook postInstall
   '';
 
   meta = with lib; {

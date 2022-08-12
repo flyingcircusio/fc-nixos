@@ -2,7 +2,7 @@
 { system ? builtins.currentSystem
 , bootstrap ? <nixpkgs>
 , nixpkgs_ ? (import ../versions.nix { pkgs = import bootstrap {}; }).nixpkgs
-, branch ? null  # e.g. "fc-21.11-dev"
+, branch ? null  # e.g. "fc-22.05-dev"
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
 , fc ? {
@@ -109,6 +109,8 @@ let
     "python38Packages"
     # XXX: fails on 21.05, must be fixed
     "backy"
+    # XXX: fails on 22.05
+    "solr"
   ];
 
   includedPkgNames = [

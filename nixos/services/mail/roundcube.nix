@@ -26,7 +26,7 @@ in lib.mkMerge [
       extraConfig = ''
         $config['archive_type'] = 'year';
         $config['managesieve_vacation'] = 1;
-        $config['mime_types'] = '${pkgs.mime-types}/etc/mime.types';
+        $config['mime_types'] = '${pkgs.mailcap}/etc/mime.types';
         $config['password_chpasswd_cmd'] = '/run/wrappers/bin/sudo -u vmail ${chpasswd} ${role.passwdFile}';
         $config['password_confirm_current'] = true;
         $config['password_driver'] = 'chpasswd';

@@ -7,11 +7,11 @@
 
 stdenv.mkDerivation rec {
   pname = "percona";
-  version = "8.0.26-17";
+  version = "8.0.28-19";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-8.0/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "0r1pw4s5hcplgqld6xd30jrc7h76wg1h9z2ms8rs5lryr12blqdq";
+    sha256 = "sha256-E5S6RwDzxIMHsfrtWATPd086TXHydoDpsJ0I+3DbjjE=";
   };
 
   preConfigure = lib.optional stdenv.isDarwin ''
@@ -60,6 +60,10 @@ stdenv.mkDerivation rec {
     "-DWITH_BLACKHOLE_STORAGE_ENGINE=1"
     "-DWITH_INNOBASE_STORAGE_ENGINE=1"
     "-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1"
+
+    # TokuDB is going to be deprecated from next release on anyways,
+    # but already is causing build problems
+    "-DWITHOUT_TOKUDB=1"
   ];
 
   NIX_LDFLAGS = lib.optionalString stdenv.isLinux "-lgcc_s";

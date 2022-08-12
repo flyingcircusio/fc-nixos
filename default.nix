@@ -14,10 +14,20 @@
 , config ? {}
 } @ args:
 
+
+with builtins;
+
+let
+  nixpkgsConfig = import ./nixpkgs-config.nix;
+  getName = pkg: pkg.pname or (parseDrvName pkgs).name;
+in
 import nixpkgs {
   overlays = overlays ++ [ (import ./pkgs/overlay.nix) ];
-  config = config // { permittedInsecurePackages = [
-    "openssl-1.0.2u"
-    "nodejs-10.24.1"
-  ]; };
+  config = config // {
+
+    inherit (nixpkgsConfig) permittedInsecurePackages;
+
+    allowUnfreePredicate = pkg:
+      elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames;
+  };
 } // args

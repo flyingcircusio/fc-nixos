@@ -12,7 +12,7 @@ let
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
     {} super;
 
-  inherit (super) fetchpatch fetchurl lib;
+  inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
 
 in {
   #
@@ -26,7 +26,6 @@ in {
   # imports from other nixpkgs versions or local definitions
   #
 
-  bash_5_1_p12 = super.callPackage ./bash/5.1.nix { };
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
@@ -34,7 +33,6 @@ in {
 
   certmgr = super.callPackage ./certmgr.nix {  };
 
-  cgmemtime = super.callPackage ./cgmemtime.nix { };
   check_ipmi_sensor = super.callPackage ./check_ipmi_sensor.nix { };
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
@@ -44,13 +42,6 @@ in {
   #     pythonPackages = super.python3Packages;
   #     boost = super.boost155;
   # });
-
-  # Xen is marked as broken and it's a dependency of the collectd xen plugin.
-  # Arguments to the collectd function also get passed to all plugins so this
-  # override is effective.
-  # We don't use collectd but it's a dependency of influxdb which is needed
-  # for statshost.
-  collectd = super.collectd.override { xen = null; };
 
   docsplit = super.callPackage ./docsplit { };
 
@@ -87,18 +78,6 @@ in {
     meta.license = lib.licenses.asl20;
   });
 
-  flannel = super.flannel.overrideAttrs(_: rec {
-    version = "0.13.1-rc1";
-    rev = "v${version}";
-
-    src = super.fetchFromGitHub {
-      inherit rev;
-      owner = "coreos";
-      repo = "flannel";
-      sha256 = "119sf1fziznrx7y9ml7h4cqfy0hyl34sbxm81rwjg2svwz0qx6x1";
-    };
-  });
-
   graylog = (super.graylog.override {
     openjdk11_headless = self.jdk8_headless;
   });
@@ -106,39 +85,11 @@ in {
   kibana7 = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; unfree = true; };
   kibana7-oss = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; };
 
-  # From nixos-unstable 1f5891a700b11ee9afa07074395e1e30799bf392
-  kubernetes-helm = super.callPackage ./helm { };
-
   innotop = super.callPackage ./percona/innotop.nix { };
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
-  jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
-    pname = "jicofo";
-    version = "1.0-900";
-    src = fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-tAuWhu1DdasOuLIz9/Ox1n1XcFWm5qnTVr6FpdKpwbE=";
-    };
-  });
-
-  jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-meet";
-    version = "1.0.6260";
-    src = fetchurl {
-      url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      hash = "sha256-Y1ELKdFdbnq20yUt4XoXmstJm8uI8EBGIFOvFWf+5Uw=";
-    };
-
-  });
-
   jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-videobridge2";
-    version = "2.2-9-g8cded16e";
-    src = fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-L9h+qYV/W2wPzycfDGC4AXpTl7wlulyt2KryA+Tb/YU=";
-    };
     # jvb complained about missing libcrypto.so.3, add openssl 3 here.
     installPhase = ''
       runHook preInstall
@@ -158,19 +109,18 @@ in {
     '';
   });
 
-  # This also propagates to the jre* and *_headless variants.
-  openjdk8 = super.openjdk8.override { zlib = self.zlibCrcInputFix; };
-  openjdk11 = super.openjdk11.override { zlib = self.zlibCrcInputFix; };
-  openjdk17 = super.openjdk17.override { zlib = self.zlibCrcInputFix; };
-
   inherit (super.callPackages ./matomo {})
     matomo
     matomo-beta;
 
 
-  k3s = super.callPackage ./k3s { buildGoModule = super.buildGo117Module; };
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
+
+  # Overriding the version for Go modules doesn't work properly so we
+  # include our own beats.nix here. The other beats below inherit the version
+  # change.
+  inherit (super.callPackage ./beats.nix {}) filebeat7;
 
   auditbeat7 = self.filebeat7.overrideAttrs(a: a // {
     name = "auditbeat-${a.version}";
@@ -187,7 +137,7 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
-  filebeat7-oss = super.filebeat7.overrideAttrs(a: a // {
+  filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
     name = "filebeat-oss-${a.version}";
     preBuild = "rm -rf x-pack";
   });
@@ -219,7 +169,7 @@ in {
                 all.imagick
                 all.memcached
                 all.redis
-              ])).override { pcre2 = self.pcre1035; };
+              ]));
 
   lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
               enabled ++ [
@@ -227,15 +177,40 @@ in {
                 all.imagick
                 all.memcached
                 all.redis
-              ])).override { pcre2 = self.pcre1035; };
+              ]));
 
-  pcre1035 = super.pcre2.overrideAttrs (oldAttrs: rec {
-    version = "10.35";
-    src = super.fetchurl {
-      url = "https://github.com/PhilipHazel/pcre2/releases/download/pcre2-${version}/pcre2-${version}.tar.bz2";
-      hash = "sha256:04s6kmk9qdd4rjz477h547j4bx7hfz0yalpvrm381rqc5ghaijww";
-    };
+  lamp_php81 = super.php81.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
+
+  latencytop_nox = super.latencytop.overrideAttrs(_: {
+    buildInputs = with self; [ ncurses glib ];
+    makeFlags = [ "HAS_GTK_GUI=" ];
   });
+
+  links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
+
+  lkl = super.lkl.overrideAttrs(_: rec {
+    version = "2022-05-18";
+    src = fetchFromGitHub {
+      rev = "10c7b5dee8c424cc2ab754e519ecb73350283ff9";
+      owner  = "lkl";
+      repo   = "linux";
+      sha256 = "sha256-D3HQdKzhB172L62a+8884bNhcv7vm/c941wzbYtbf4I=";
+    };
+
+    prePatch = ''
+      patchShebangs arch/lkl/scripts
+      patchShebangs scripts
+      substituteInPlace tools/lkl/cptofs.c \
+        --replace mem=100M mem=500M
+    '';
+  });
+
 
   mc = super.callPackage ./mc.nix { };
 
@@ -280,14 +255,20 @@ in {
     modules = with super.nginxModules; [
       dav
       modsecurity-nginx
-      moreheaders
       rtmp
     ];
-  }).overrideAttrs(a: a // {
+  }).overrideAttrs(a: rec {
     patches = a.patches ++ [
       ./remote_addr_anon.patch
     ];
+    version = "1.23.0";
+    src = fetchurl {
+      url = "https://nginx.org/download/nginx-${version}.tar.gz";
+      hash = "sha256-ggrKo1uScr6ennL23vpKXykhgkcJ+KpHcseKsx7ZTNE=";
+  };
   });
+
+  openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
 
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
@@ -299,9 +280,9 @@ in {
     '';
   });
 
-  percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
+  #percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
   percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
-  percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost173; };
+  percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost173; openldap = self.openldap_2_4; };
 
   # We use 2.4 from upstream for older Percona versions.
   # Percona 8.0 needs a newer version than upstream provides.
@@ -345,8 +326,6 @@ in {
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
 
-  solr = super.solr.override { jre = self.jdk11_headless; };
-
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
   tideways_daemon = super.callPackage ./tideways/daemon.nix {};
@@ -357,8 +336,4 @@ in {
   wkhtmltopdf = self.wkhtmltopdf_0_12_6;
 
   xtrabackup = self.percona-xtrabackup_8_0;
-
-  zlibCrcInputFix = super.zlib.overrideAttrs(a: {
-    patches = a.patches ++ [ ./zlib-1.12.12-incorrect-crc-inputs-fix.patch ];
-  });
 }

@@ -40,7 +40,6 @@ in {
   filebeat = callTest ./filebeat.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
   gitlab = callTest ./gitlab.nix {};
-
   graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
   java = callTest ./java.nix {};
@@ -57,6 +56,7 @@ in {
   lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
   lampVm74_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php74"; tideways = "1234"; };
   lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
+  lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
 
   # lampPackage = callTest ./lamp/package-test.nix { };
   # lampPackage72 = callTest ./lamp/package-test.nix { version = "lamp_php72"; };
@@ -64,6 +64,7 @@ in {
   # regression test for PL-130643 only starts at lamp_php74
   lampPackage74 = callTest ./lamp/package-test.nix { version = "lamp_php74"; };
   lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
+  lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
 
 
   # currently not supported: PL-130612
@@ -76,7 +77,6 @@ in {
   mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
   memcached = callTest ./memcached.nix {};
-  mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
   mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
   mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
   mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
@@ -87,11 +87,11 @@ in {
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
-  postgresql10 = callTest ./postgresql.nix { rolename = "postgresql10"; };
-  postgresql11 = callTest ./postgresql.nix { rolename = "postgresql11"; };
-  postgresql12 = callTest ./postgresql.nix { rolename = "postgresql12"; };
-  postgresql13 = callTest ./postgresql.nix { rolename = "postgresql13"; };
-  postgresql14 = callTest ./postgresql.nix { rolename = "postgresql14"; };
+  postgresql10 = callTest ./postgresql.nix { version = "10"; };
+  postgresql11 = callTest ./postgresql.nix { version = "11"; };
+  postgresql12 = callTest ./postgresql.nix { version = "12"; };
+  postgresql13 = callTest ./postgresql.nix { version = "13"; };
+  postgresql14 = callTest ./postgresql.nix { version = "14"; };
   prometheus = callTest ./prometheus.nix {};
   rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};

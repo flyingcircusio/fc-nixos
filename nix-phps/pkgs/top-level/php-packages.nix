@@ -19,7 +19,6 @@
 , html-tidy
 , icu64
 , libXpm
-, libedit
 , libffi
 , libiconv
 , libjpeg
@@ -80,16 +79,29 @@ lib.makeScope pkgs.newScope (self: with self; {
       pname = "php-${name}";
       extensionName = name;
 
+      outputs = [ "out" "dev" ];
+
       inherit (php.unwrapped) version src;
-      sourceRoot = "php-${php.version}/ext/${name}";
 
       enableParallelBuilding = true;
-      nativeBuildInputs = [ php.unwrapped autoconf pkg-config re2c ];
-      inherit configureFlags internalDeps buildInputs
-        zendExtension doCheck;
 
-      prePatch = "pushd ../..";
-      postPatch = "popd";
+      nativeBuildInputs = [
+        php.unwrapped
+        autoconf
+        pkg-config
+        re2c
+      ];
+
+      inherit configureFlags internalDeps buildInputs zendExtension doCheck;
+
+      preConfigurePhases = [
+        "cdToExtensionRootPhase"
+      ];
+
+      cdToExtensionRootPhase = ''
+        # Go to extension source root.
+        cd "ext/${name}"
+      '';
 
       preConfigure = ''
         nullglobRestore=$(shopt -p nullglob)
@@ -101,15 +113,28 @@ lib.makeScope pkgs.newScope (self: with self; {
         fi
 
         $nullglobRestore
+
         phpize
         ${postPhpize}
-        ${lib.concatMapStringsSep "\n"
+
+        ${lib.concatMapStringsSep
+          "\n"
           (dep: "mkdir -p ext; ln -s ${dep.dev}/include ext/${dep.extensionName}")
-          internalDeps}
+          internalDeps
+        }
       '';
-      checkPhase = "runHook preCheck; NO_INTERACTON=yes make test; runHook postCheck";
-      outputs = [ "out" "dev" ];
+
+      checkPhase = ''
+        runHook preCheck
+
+        NO_INTERACTON=yes SKIP_PERF_SENSITIVE=yes make test
+
+        runHook postCheck
+      '';
+
       installPhase = ''
+        runHook preInstall
+
         mkdir -p $out/lib/php/extensions
         cp modules/${name}.so $out/lib/php/extensions/${name}.so
         mkdir -p $dev/include
@@ -118,6 +143,8 @@ lib.makeScope pkgs.newScope (self: with self; {
                               --filter="- *" \
                               --prune-empty-dirs \
                               . $dev/include/
+
+        runHook postInstall
       '';
 
       meta = {
@@ -135,6 +162,12 @@ lib.makeScope pkgs.newScope (self: with self; {
     composer = callPackage ../development/php-packages/composer { };
 
     deployer = callPackage ../development/php-packages/deployer { };
+
+    grumphp = callPackage ../development/php-packages/grumphp { };
+
+    phing = callPackage ../development/php-packages/phing { };
+
+    phive = callPackage ../development/php-packages/phive { };
 
     php-cs-fixer = callPackage ../development/php-packages/php-cs-fixer { };
 
@@ -159,6 +192,8 @@ lib.makeScope pkgs.newScope (self: with self; {
   # or php.withExtensions to extend the functionality of the PHP
   # interpreter.
   extensions = {
+    amqp = callPackage ../development/php-packages/amqp { };
+
     apcu = callPackage ../development/php-packages/apcu { };
 
     apcu_bc = callPackage ../development/php-packages/apcu_bc { };
@@ -169,7 +204,13 @@ lib.makeScope pkgs.newScope (self: with self; {
 
     couchbase = callPackage ../development/php-packages/couchbase { };
 
+    datadog_trace = callPackage ../development/php-packages/datadog_trace { };
+
+    ds = callPackage ../development/php-packages/ds { };
+
     event = callPackage ../development/php-packages/event { };
+
+    gnupg = callPackage ../development/php-packages/gnupg { };
 
     igbinary = callPackage ../development/php-packages/igbinary { };
 
@@ -190,6 +231,8 @@ lib.makeScope pkgs.newScope (self: with self; {
       version = "3.0.1";
       sha256 = "108ds92620dih5768z19hi0jxfa7wfg5hdvyyvpapir87c0ap914";
     });
+
+    openswoole = callPackage ../development/php-packages/openswoole { };
 
     pdlib = callPackage ../development/php-packages/pdlib { };
 
@@ -257,20 +300,6 @@ lib.makeScope pkgs.newScope (self: with self; {
         {
           name = "dom";
           buildInputs = [ libxml2 ];
-          patches = [
-            # https://github.com/php/php-src/pull/7030
-            (fetchpatch {
-              url = "https://github.com/php/php-src/commit/4cc261aa6afca2190b1b74de39c3caa462ec6f0b.patch";
-              sha256 = "11qsdiwj1zmpfc2pgh6nr0sn7qa1nyjg4jwf69cgwnd57qfjcy4k";
-              excludes = [ "ext/dom/tests/bug43364.phpt" "ext/dom/tests/bug80268.phpt" ];
-            })
-          ];
-          # For some reason `patch` fails to remove these files correctly.
-          # Since `postPatch` is already used in `mkExtension`, we have to make it here.
-          preCheck = ''
-            rm tests/bug43364.phpt
-            rm tests/bug80268.phpt
-          '';
           configureFlags = [ "--enable-dom" ]
             # Required to build on darwin.
             ++ lib.optionals (lib.versionOlder php.version "7.4") [ "--with-libxml-dir=${libxml2.dev}" ];
@@ -457,7 +486,7 @@ lib.makeScope pkgs.newScope (self: with self; {
             '')
           ];
           zendExtension = true;
-          doCheck = !(lib.versionOlder php.version "7.4");
+          doCheck = lib.versionAtLeast php.version "7.4";
           # Tests launch the builtin webserver.
           __darwinAllowLocalNetworking = true;
         }
@@ -514,14 +543,27 @@ lib.makeScope pkgs.newScope (self: with self; {
         { name = "pspell"; configureFlags = [ "--with-pspell=${aspell}" ]; }
         {
           name = "readline";
-          buildInputs = [ libedit readline ];
-          configureFlags = [ "--with-readline=${readline.dev}" ];
-          postPhpize = lib.optionalString (lib.versionOlder php.version "7.4") ''
-            substituteInPlace configure --replace 'as_fn_error $? "Please reinstall libedit - I cannot find readline.h" "$LINENO" 5' ':'
+          buildInputs = [
+            readline
+          ];
+          configureFlags = [
+            "--with-readline=${readline.dev}"
+          ];
+          postPatch = ''
+            # Fix `--with-readline` option not being available.
+            # `PHP_ALWAYS_SHARED` generated by phpize enables all options
+            # without the possibility to override them. But when `--with-libedit`
+            # is enabled, `--with-readline` is not registered.
+            echo '
+            AC_DEFUN([PHP_ALWAYS_SHARED],[
+              test "[$]$1" != "no" && ext_shared=yes
+            ])dnl
+            ' | cat - ext/readline/config.m4 > ext/readline/config.m4.tmp
+            mv ext/readline/config.m4{.tmp,}
           '';
           doCheck = false;
         }
-        { name = "session"; doCheck = !(lib.versionAtLeast php.version "8.0"); }
+        { name = "session"; doCheck = lib.versionOlder php.version "8.0"; }
         { name = "shmop"; }
         {
           name = "simplexml";
@@ -546,14 +588,21 @@ lib.makeScope pkgs.newScope (self: with self; {
             ++ lib.optionals (lib.versionOlder php.version "7.4") [ "--with-libxml-dir=${libxml2.dev}" ];
           doCheck = false;
         }
-        { name = "sockets"; doCheck = false; }
+        {
+          name = "sockets";
+          doCheck = false;
+        }
         { name = "sodium"; buildInputs = [ libsodium ]; }
         { name = "sqlite3"; buildInputs = [ sqlite ]; }
         { name = "sysvmsg"; }
         { name = "sysvsem"; }
         { name = "sysvshm"; }
         { name = "tidy"; configureFlags = [ "--with-tidy=${html-tidy}" ]; doCheck = false; }
-        { name = "tokenizer"; }
+        {
+          name = "tokenizer";
+          patches = lib.optional (lib.versionAtLeast php.version "8.1")
+            ../development/interpreters/php/fix-tokenizer-php81.patch;
+        }
         {
           name = "wddx";
           buildInputs = [ libxml2 ];
@@ -575,6 +624,7 @@ lib.makeScope pkgs.newScope (self: with self; {
           buildInputs = [ libxml2 ];
           internalDeps = [ php.extensions.dom ];
           NIX_CFLAGS_COMPILE = [ "-I../.." "-DHAVE_DOM" ];
+          doCheck = false;
           configureFlags = [ "--enable-xmlreader" ]
             # Required to build on darwin.
             ++ lib.optionals (lib.versionOlder php.version "7.4") [ "--with-libxml-dir=${libxml2.dev}" ];

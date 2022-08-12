@@ -15,6 +15,32 @@ let
       # For passing pcre2 to generic.nix.
       pcre2 = if (prev.lib.versionAtLeast args.version "7.3") then prev.pcre2 else prev.pcre;
 
+      phpAttrsOverrides = attrs: {
+        patches =
+          let
+            upstreamPatches =
+              attrs.patches or [];
+
+            ourPatches =
+              prev.lib.optionals (prev.lib.versions.majorMinor args.version == "7.2") [
+                # Building the bundled intl extension fails on Mac OS.
+                # See https://bugs.php.net/bug.php?id=76826 for more information.
+                (prev.pkgs.fetchpatch {
+                  url = "https://bugs.php.net/patch-display.php?bug_id=76826&patch=bug76826.poc.0.patch&revision=1538723399&download=1";
+                  sha256 = "aW+MW9Kb8N/yBO7MdqZMZzgMSF7b+IMLulJKgKPWrUA=";
+                })
+              ];
+          in
+          ourPatches ++ upstreamPatches;
+
+        configureFlags =
+          attrs.configureFlags
+          ++ prev.lib.optionalString (prev.lib.versionOlder args.version "7.4") [
+            # phar extension’s build system expects hash or it will degrade.
+            "--enable-hash"
+          ];
+      };
+
       # For passing pcre2 to php-packages.nix.
       callPackage =
         cpFn: cpArgs:
@@ -52,8 +78,8 @@ let
   });
 
   base73 = prev.callPackage generic (_mkArgs {
-    version = "7.3.32";
-    sha256 = "sha256-fBWLMG5TQ08eCohkeqVhgUMIqv+HE+19I37Y8TmcIW8=";
+    version = "7.3.28";
+    sha256 = "0r4r8famg3a8x6ch24y1370nsphkxg4k9zq5x8v88f4l8mj6wqwg";
 
     extraPatches = prev.lib.optionals prev.stdenv.isDarwin [
       # Fix build on Darwin
@@ -67,7 +93,7 @@ let
 in {
   php56 = base56.withExtensions ({ all, ... }: with all; ([
     bcmath calendar curl ctype dom exif fileinfo filter ftp gd
-    gettext gmp hash iconv intl json ldap mbstring mysqli mysqlnd opcache
+    gettext gmp iconv intl json ldap mbstring mysqli mysqlnd opcache
     openssl pcntl pdo pdo_mysql pdo_odbc pdo_pgsql pdo_sqlite pgsql
     posix readline session simplexml sockets soap sqlite3
     tokenizer xmlreader xmlwriter zip zlib
@@ -75,7 +101,7 @@ in {
 
   php70 = base70.withExtensions ({ all, ... }: with all; ([
     bcmath calendar curl ctype dom exif fileinfo filter ftp gd
-    gettext gmp hash iconv intl json ldap mbstring mysqli mysqlnd opcache
+    gettext gmp iconv intl json ldap mbstring mysqli mysqlnd opcache
     openssl pcntl pdo pdo_mysql pdo_odbc pdo_pgsql pdo_sqlite pgsql
     posix readline session simplexml sockets soap sqlite3
     tokenizer xmlreader xmlwriter zip zlib
@@ -83,7 +109,7 @@ in {
 
   php71 = base71.withExtensions ({ all, ... }: with all; ([
     bcmath calendar curl ctype dom exif fileinfo filter ftp gd
-    gettext gmp hash iconv intl json ldap mbstring mysqli mysqlnd opcache
+    gettext gmp iconv intl json ldap mbstring mysqli mysqlnd opcache
     openssl pcntl pdo pdo_mysql pdo_odbc pdo_pgsql pdo_sqlite pgsql
     posix readline session simplexml sockets soap sqlite3
     tokenizer xmlreader xmlwriter zip zlib
@@ -91,7 +117,7 @@ in {
 
   php72 = base72.withExtensions ({ all, ... }: with all; ([
     bcmath calendar curl ctype dom exif fileinfo filter ftp gd
-    gettext gmp hash iconv intl json ldap mbstring mysqli mysqlnd opcache
+    gettext gmp iconv intl json ldap mbstring mysqli mysqlnd opcache
     openssl pcntl pdo pdo_mysql pdo_odbc pdo_pgsql pdo_sqlite pgsql
     posix readline session simplexml sockets soap sodium sqlite3
     tokenizer xmlreader xmlwriter zip zlib
@@ -99,7 +125,7 @@ in {
 
   php73 = base73.withExtensions ({ all, ... }: with all; ([
     bcmath calendar curl ctype dom exif fileinfo filter ftp gd
-    gettext gmp hash iconv intl json ldap mbstring mysqli mysqlnd
+    gettext gmp iconv intl json ldap mbstring mysqli mysqlnd
     opcache openssl pcntl pdo pdo_mysql pdo_odbc pdo_pgsql pdo_sqlite
     pgsql posix readline session simplexml sockets soap sodium sqlite3
     tokenizer xmlreader xmlwriter zip zlib
@@ -110,6 +136,10 @@ in {
   };
 
   php80 = prev.php80.override {
+    inherit packageOverrides;
+  };
+
+  php81 = prev.php81.override {
     inherit packageOverrides;
   };
 }

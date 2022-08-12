@@ -383,18 +383,17 @@ in
         inherit virtualHosts;
       };
 
-      services.logrotate.extraConfig = ''
-        /var/log/nginx/*.log
-        {
-            rotate ${toString cfg.rotateLogs}
-            create 0644 ${nginxCfg.masterUser} nginx
-            su ${nginxCfg.masterUser} nginx
-            postrotate
-                systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
-                chown ${nginxCfg.masterUser}:nginx /var/log/nginx/*
-            endscript
-        }
-      '';
+      services.logrotate.settings = {
+        "/var/log/nginx/*.log" = {
+          rotate = cfg.rotateLogs;
+          create = "0644 ${nginxCfg.masterUser} nginx";
+          su = "${nginxCfg.masterUser} nginx";
+          postrotate = ''
+            systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
+            chown ${nginxCfg.masterUser}:nginx /var/log/nginx/*
+          '';
+        };
+      };
 
       # Z: Recursively change permissions if they already exist.
       systemd.tmpfiles.rules = [

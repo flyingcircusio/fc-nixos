@@ -3,10 +3,14 @@
 with lib;
 
 let
+
   localDir = "/etc/local/logrotate";
 
-  globalOptions = ''
-    # Global default options for the Flying Circus platform.
+  # This header is only used for user-/application-specific logrotate config
+  # from /etc/local/logrotate/*. Platform currently uses the same defaults but
+  # they have to be specified as sets (see below).
+  userConfigHeader = ''
+    # Global default options used for user-defined logrotate config.
     daily
     rotate 14
     create
@@ -19,6 +23,23 @@ let
     missingok
     sharedscripts
   '';
+
+  headerOverrideSettings = {
+    rotate = 14;
+    frequency = "daily";
+  };
+
+  platformSettings = {
+    create = true;
+    dateext = true;
+    delaycompress = true;
+    compress = true;
+    notifempty = true;
+    nomail = true;
+    noolddir = true;
+    missingok = true;
+    sharedscripts = true;
+  };
 
   readme = ''
     logrotate is enabled on this machine.
@@ -33,7 +54,7 @@ let
 
     We will also apply the following basic options by default:
 
-    ${globalOptions}
+    ${userConfigHeader}
   '';
 
   users = attrValues config.users.users;
@@ -61,19 +82,38 @@ in
       environment.etc = {
         "local/logrotate/README.txt".text = readme;
         # needed by user-logrotate.sh
-        "logrotate.options".text = globalOptions;
+        "logrotate.options".text = userConfigHeader;
+        "current-config/logrotate.conf".source = config.services.logrotate.configFile;
       };
 
       environment.systemPackages = with pkgs; [
         logrotate
-        (pkgs.writeScriptBin "logrotate-config-file" ''
-          grep exec $(systemctl cat logrotate | grep ExecStart= | cut -f 2 -d=) | cut -f 4 -d" "
+        (pkgs.writeScriptBin "logrotate-show-config" ''
+          cat ${config.services.logrotate.configFile}
+        '')
+        (pkgs.writeScriptBin "fc-logrotate" ''
+          logrotate "$@" ${config.services.logrotate.configFile}
         '')
       ];
 
       services.logrotate = {
         enable = true;
-        extraConfig = mkOrder 50 globalOptions;
+        settings = {
+          # `header` is already defined by the upstream module.
+          # We amend it here with our overrides.
+          # The upstream modules merges the pieces together with recursiveUpdate:
+          # 1. upstream settings
+          # 2. our overrides
+          # 3. { global = true; priority = 100; }
+          # We have to watch upstream if additional defaults are added in the future.
+          header = headerOverrideSettings;
+          # Default priority is 1000 for sections added via .settings.*.
+          # Our global settings are added before to be effective for those
+          # sections so we use 900 (like mkPlatform) here.
+          # Use a priority of 200 to place sections before our global settings
+          # and 100 to place them even before the header.
+          fcio = platformSettings // { global = true; priority = 900; };
+        };
       };
 
       # We create one directory for each service user. I decided not to remove

@@ -109,16 +109,15 @@ in
           '';
       };
 
-      services.logrotate.extraConfig = ''
-        /var/log/messages /var/log/lastlog /var/log/wtmp ${extraLogFiles}
-        {
-          postrotate
+      services.logrotate.settings = {
+        "${extraLogFiles}" = {
+          postrotate = ''
             if [[ -f /run/rsyslogd.pid ]]; then
               ${pkgs.systemd}/bin/systemctl kill --signal=HUP syslog
             fi
-          endscript
-        }
-      '';
+          '';
+        };
+      };
 
       # keep syslog running during system configurations
       systemd.services.syslog.stopIfChanged = false;
