@@ -101,5 +101,5 @@ with testlib;
         };
       };
   };
-  testScript = replaceStrings ["__SERVERIP__"] [(fcIP.fe4 2)] (readFile <fc/tests/audit.py>);
+  testScript = replaceStrings ["__SERVERIP__"] [(fcIP.fe4 2)] (readFile ./audit.py);
 })
