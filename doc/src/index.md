@@ -11,6 +11,7 @@ Platform & roles documentation for Flying Circus `NixOS`_ edition
 
    base
    user_profile
+   user_profilemd.md
    local
    systemd
    cron
