@@ -8,8 +8,8 @@ failover support.
 
 ## Versions
 
-- HAProxy: 2.3.14
-- Nginx: 1.20.2
+- HAProxy: 2.5.x
+- Nginx: 1.22.x
 
 ## Role architecture
 
