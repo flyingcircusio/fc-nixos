@@ -25,18 +25,25 @@ in
           "service"
           "admins"
         ];
-        acls =
-          lib.concatMapStrings
-            (group: "-m g:${group}:rX -m d:g:${group}:rX ")
-            journalReadGroups;
+          acls =
+            lib.concatMapStrings
+              (group: "-m g:${group}:rX -m d:g:${group}:rX ")
+              journalReadGroups;
 
-      in ''
-        # Note: journald seems to change some permissions and the group if they
-        # differ from its expectations for /var/log/journal.
-        # Changing permissions via ACL like here is supported by journald.
-        install -d -g systemd-journal /var/log/journal
-        ${pkgs.acl}/bin/setfacl -R ${acls} /var/log/journal
-      '';
+        # setfacl requires all users and groups specified to exist already. Especially
+        # after a fresh system installation that might not be always the case, so only
+        # execute after succesful user and group creation.
+        in {
+          deps = [ "users" "etc" ];
+          text = ''
+            # Note: journald seems to change some permissions and the group if they
+            # differ from its expectations for /var/log/journal.
+            # Changing permissions via ACL like here is supported by journald.
+            install -d -g systemd-journal /var/log/journal
+
+            ${pkgs.acl}/bin/setfacl -R ${acls} /var/log/journal
+          '';
+        };
 
     };
 
