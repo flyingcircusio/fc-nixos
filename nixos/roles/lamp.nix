@@ -261,11 +261,6 @@ in {
 
       (lib.mkIf (role.tideways_api_key != "") {
 
-        assertions = [ {
-            assertion = (lib.toInt phpMajor) < 8;
-            message = "Tideways is currently not supported on PHP 8 due to stability issues. (PL-130612)";
-        }];
-
         # tideways daemon
         users.groups.tideways.gid = config.ids.gids.tideways;
 
