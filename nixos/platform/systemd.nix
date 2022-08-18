@@ -5,6 +5,12 @@ with lib;
 
 let
   fclib = config.fclib;
+
+    journalReadGroups = [
+      "sudo-srv"
+      "service"
+      "admins"
+    ];
 in
 {
   config = {
@@ -17,14 +23,11 @@ in
 
     services.journald.forwardToSyslog = lib.mkOverride 90 false;
 
+    # for factl to succeed, all groups referenced have to exist.
+    users.groups = lib.attrsets.genAttrs journalReadGroups (uname: {name = uname;});
     flyingcircus.activationScripts = {
 
       systemd-journal-acl = let
-        journalReadGroups = [
-          "sudo-srv"
-          "service"
-          "admins"
-        ];
           acls =
             lib.concatMapStrings
               (group: "-m g:${group}:rX -m d:g:${group}:rX ")
