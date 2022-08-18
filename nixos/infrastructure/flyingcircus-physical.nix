@@ -134,4 +134,10 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       };
     };
 
+    # PL-130846 Temporary fix until having Nix >= 2.4:
+    # Ensure there are enough build users available to fulfill `maxJobs`, which is
+    # automatically set to the number of cores. Our largest machines currently have
+    # 128 core-threads.
+    nix.nrBuildUsers = 128;
+
 }
