@@ -4,7 +4,7 @@ let
   ipv6 = "2001:db8:f030:1c3::1";
   host = "machine.fcio.net";
 in {
-  name = "graylog";
+  name = "loghost";
   machine =
     { config, ... }:
     {
@@ -79,10 +79,19 @@ in {
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
     graylogCheck = testlib.sensuCheckCmd nodes.machine "graylog_ui";
     graylogApi = "${pkgs.fc.agent}/bin/fc-graylog --api http://${host}:9001/api get -l";
+    esConfigFile = "/srv/elasticsearch/config/elasticsearch.yml";
   in ''
+    machine.wait_for_unit("elasticsearch.service")
+
+    with subtest("elasticsearch config should be set-up for single-node mode"):
+      machine.succeed("grep 'discovery.type: single-node' ${esConfigFile}")
+      machine.succeed("grep 'discovery.zen.minimum_master_nodes: 1' ${esConfigFile}")
+
+    with subtest("elasticsearch auto_create_index should be disabled"):
+      machine.succeed("grep 'action.auto_create_index: false' ${esConfigFile}")
+
     machine.wait_for_unit("haproxy.service")
     machine.wait_for_unit("mongodb.service")
-    machine.wait_for_unit("elasticsearch.service")
     machine.wait_for_unit("graylog.service")
     machine.wait_for_unit("nginx.service")
 

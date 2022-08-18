@@ -26,9 +26,9 @@ in
 
   config = lib.mkIf (cfg.enable) {
 
-    flyingcircus.roles.loghost = fclib.mkPlatform { enable = true; };
+    flyingcircus.roles.loghost = { enable = true; };
     flyingcircus.roles.graylog = {
-      serviceTypes = fclib.mkPlatform [ "loghost-location-graylog" ];
+      serviceTypes = lib.mkOverride 90 [ "loghost-location-graylog" ];
     };
 
   };
