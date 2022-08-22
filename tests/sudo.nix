@@ -89,7 +89,7 @@ in
         out = machine.succeed("id s-service")
         assert_id_output("1074(s-service)", "900(service)", "900(service)", out)
 
-    def login(user, tty):
+    def login(user: str, tty: str):
         machine.send_key(f"alt-f{tty}")
         machine.sleep(1)
         machine.wait_until_tty_matches(tty, "login:")
@@ -105,88 +105,88 @@ in
     # Inspect tty contents in the interactive test driver with:
     # print(machine.get_tty_text(1))
 
-    login("u1000", 1)
+    login("u1000", "1")
 
     with subtest("unprivileged user should not be able to sudo"):
         machine.send_chars("sudo -l -u root id || echo failed1\n")
-        machine.wait_until_tty_matches(1, "failed1")
+        machine.wait_until_tty_matches("1", "failed1")
         machine.send_chars("sudo -l -u s-service id || echo failed2\n")
-        machine.wait_until_tty_matches(1, "failed2")
+        machine.wait_until_tty_matches("1", "failed2")
 
     with subtest("unprivileged user should be able to run ipXtables without password"):
         machine.send_chars("sudo -n iptables && echo 'pw not required iptables'\n")
-        machine.wait_until_tty_matches(1, "pw not required iptables")
+        machine.wait_until_tty_matches("1", "pw not required iptables")
 
         machine.send_chars("sudo -n ip6tables && echo 'pw not required ip6tables'\n")
-        machine.wait_until_tty_matches(1, "pw not required ip6tables")
+        machine.wait_until_tty_matches("1", "pw not required ip6tables")
 
-    login("u1001", 2)
+    login("u1001", "2")
 
     with subtest("admins should be able to sudo"):
         machine.send_chars("sudo -l -u root id || echo failed3\n")
-        machine.wait_until_tty_matches(2, "/run/current-system/sw/bin/id")
+        machine.wait_until_tty_matches("2", "/run/current-system/sw/bin/id")
         machine.send_chars("sudo -l -u s-service id || echo failed4\n")
-        machine.wait_until_tty_matches(2, "/run/current-system/sw/bin/id")
+        machine.wait_until_tty_matches("2", "/run/current-system/sw/bin/id")
 
     with subtest("admins sudo should require a password"):
         machine.send_chars("sudo -n true || echo 'pw required admins'\n")
-        machine.wait_until_tty_matches(2, "pw required admins")
+        machine.wait_until_tty_matches("2", "pw required admins")
 
-    login("u1002", 3)
+    login("u1002", "3")
 
     with subtest("sudo-srv should grant restricted sudo"):
         machine.send_chars("sudo -l -u root id || echo failed5\n")
-        machine.wait_until_tty_matches(3, "failed5")
+        machine.wait_until_tty_matches("3", "failed5")
         machine.send_chars("sudo -l -u s-service id || echo failed6\n")
-        machine.wait_until_tty_matches(3, "/run/current-system/sw/bin/id")
+        machine.wait_until_tty_matches("3", "/run/current-system/sw/bin/id")
 
     with subtest("sudo-srv should be able to become service user without password"):
         machine.send_chars("sudo -niu s-service\n")
-        machine.wait_until_tty_matches(3, 's-service@machine')
+        machine.wait_until_tty_matches("3", 's-service@machine')
 
     with subtest("sudo-srv should be able to run systemctl without password"):
         machine.send_chars("sudo -n systemctl --no-pager && echo 'pw not required systemctl'\n")
-        machine.wait_until_tty_matches(3, "pw not required systemctl")
+        machine.wait_until_tty_matches("3", "pw not required systemctl")
 
     with subtest("sudo-srv should be able to run fc-manage without password"):
         machine.send_chars("sudo -n fc-manage && echo 'pw not required fc-manage'\n")
-        machine.wait_until_tty_matches(3, "pw not required fc-manage")
+        machine.wait_until_tty_matches("3", "pw not required fc-manage")
 
     with subtest("sudo-srv user should be able to run iotop without password"):
         machine.send_chars("sudo -n iotop -n1 && echo 'pw not required iotop'\n")
-        machine.wait_until_tty_matches(3, "pw not required iotop")
+        machine.wait_until_tty_matches("3", "pw not required iotop")
 
-    login("u1003", 4)
+    login("u1003", "4")
 
     with subtest("wheel sudo should require a password"):
         machine.send_chars("sudo -n true || echo 'pw required wheel'\n")
-        machine.wait_until_tty_matches(4, "pw required wheel")
+        machine.wait_until_tty_matches("4", "pw required wheel")
 
-    login("u1004", 5)
+    login("u1004", "5")
 
     with subtest("wheel+sudo-srv should be able to use service user without password"):
         machine.send_chars("sudo -l -u s-service id || echo failed7\n")
-        machine.wait_until_tty_matches(5, "/run/current-system/sw/bin/id")
+        machine.wait_until_tty_matches("5", "/run/current-system/sw/bin/id")
 
-    login("s-service", 6)
+    login("s-service", "6")
 
     with subtest("service user should be able to run systemctl without password"):
         machine.send_chars("sudo -n systemctl --no-pager && echo 'pw not required systemctl'\n")
-        machine.wait_until_tty_matches(6, "pw not required systemctl")
+        machine.wait_until_tty_matches("6", "pw not required systemctl")
 
     with subtest("service user should be able to run fc-manage without password"):
         machine.send_chars("sudo -n fc-manage  && echo 'pw not required fc-manage'\n")
-        machine.wait_until_tty_matches(6, "pw not required fc-manage")
+        machine.wait_until_tty_matches("6", "pw not required fc-manage")
 
     with subtest("service user should be able to run iotop without password"):
         machine.send_chars("sudo -n iotop -n1 && echo 'pw not required iotop'\n")
-        machine.wait_until_tty_matches(6, "pw not required iotop")
+        machine.wait_until_tty_matches("6", "pw not required iotop")
 
     with subtest("service user should be able to run ipXtables without password"):
         machine.send_chars("sudo -n iptables && echo 'pw not required iptables'\n")
-        machine.wait_until_tty_matches(6, "pw not required iptables")
+        machine.wait_until_tty_matches("6", "pw not required iptables")
 
         machine.send_chars("sudo -n ip6tables && echo 'pw not required ip6tables'\n")
-        machine.wait_until_tty_matches(6, "pw not required ip6tables")
+        machine.wait_until_tty_matches("6", "pw not required ip6tables")
   '';
 })

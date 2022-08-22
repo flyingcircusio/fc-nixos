@@ -50,6 +50,7 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
   testScript = { nodes, ... }:
     ''
     from pkg_resources import packaging
+    import time
     def assert_listen(machine, process_name, expected_sockets):
       result = machine.succeed(f"netstat -tlpn | grep {process_name} | awk '{{ print $4 }}'")
       actual = set(result.splitlines())
@@ -58,8 +59,8 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
     lamp.wait_for_unit("httpd.service")
     lamp.wait_for_open_port(8000)
 
-    php_version = lamp.succeed('php --version').splitlines()[0]
-    php_version = php_version.split()[1]
+    php_version_str = lamp.succeed('php --version').splitlines()[0]
+    php_version_str = php_version.split()[1]
     php_version = packaging.version.parse(php_version)
     print("Detected PHP version:", php_version)
 
@@ -116,7 +117,7 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
         print("="*80)
         print(f"Reload try {x}")
         lamp.succeed("systemctl reload httpd")
-        lamp.sleep(0.1)
+        time.sleep(0.1)
         code, output = lamp.execute("grep 'TLS block' /var/log/httpd/error.log")
         if not code:
             print(lamp.succeed("tail -n 5000 /var/log/httpd/error.log"))
