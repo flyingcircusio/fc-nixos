@@ -106,7 +106,7 @@ myst_enable_extensions = [
     "substitution",
     "linkify",
 ]
-
+myst_heading_anchors = 3
 myst_substitutions = {"release": release, "version": version}
 
 
