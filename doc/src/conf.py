@@ -4,12 +4,12 @@
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["sphinx.ext.intersphinx"]
+extensions = ["myst_parser", "sphinx.ext.intersphinx"]
 
 import os
 
 # The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
+# {{ version }} and {{ release }}, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
@@ -97,6 +97,17 @@ elif platform_doc is not None:
 intersphinx_mapping = {
     "platform": ("https://doc.flyingcircus.io/platform", platform_doc)
 }
+
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "replacements",
+    "smartquotes",
+    "substitution",
+    "linkify",
+]
+myst_heading_anchors = 3
+myst_substitutions = {"release": release, "version": version}
 
 
 def setup(app):

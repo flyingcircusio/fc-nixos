@@ -8,8 +8,8 @@
 # right, e.g.:
 # --arg platformDoc '{ outPath = path/to/doc; gitTag = ""; revCount = ""; shortRev = ""; }'
 
-{ pkgs ? import <nixpkgs> {}
-, lib ? pkgs.lib
+{
+  pkgs ? import <nixpkgs> {}
 , branch ? "22.05"
 , updated ? "1970-01-01 01:00"
 , platformDoc ? null # directory/URL containing platform objects.inv
@@ -17,7 +17,14 @@
 }:
 
 let
-  buildEnv = pkgs.python3.withPackages (ps: [ ps.sphinx ps.sphinx_rtd_theme ]);
+  # Remove vendored myst-docutils when on 22.11
+  myst-docutils = pkgs.python3Packages.callPackage ./myst-docutils.nix {};
+  buildEnv = pkgs.python3.withPackages (ps: with ps; [
+    linkify-it-py
+    myst-docutils
+    sphinx
+    sphinx_rtd_theme
+  ]);
   rg = "${pkgs.ripgrep}/bin/rg";
 
 in pkgs.stdenv.mkDerivation rec {

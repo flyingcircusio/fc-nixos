@@ -40,7 +40,6 @@ in {
   filebeat = callTest ./filebeat.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
   gitlab = callTest ./gitlab.nix {};
-  graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
   java = callTest ./java.nix {};
   journal = callTest ./journal.nix {};
@@ -68,8 +67,8 @@ in {
   lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
   lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
 
-
   locale = callTest ./locale.nix {};
+  loghost = callTest ./loghost.nix {};
   login = callTest ./login.nix {};
   logging = callTest ./logging.nix {};
   logrotate = callTest ./logrotate.nix {};
