@@ -8,15 +8,17 @@
 # right, e.g.:
 # --arg platformDoc '{ outPath = path/to/doc; gitTag = ""; revCount = ""; shortRev = ""; }'
 
-{ branch ? "22.05"
+{
+  pkgs ? import <nixpkgs> {}
+, branch ? "22.05"
 , updated ? "1970-01-01 01:00"
 , platformDoc ? null # directory/URL containing platform objects.inv
 , failOnWarnings ? false
 }:
 
 let
-  unstableChannel = "https://releases.nixos.org/nixos/unstable/nixos-22.11pre399062.3a11db5f408/nixexprs.tar.xz";
-  pkgs = import (fetchTarball unstableChannel) {};
+  # Remove vendored myst-docutils when on 22.11
+  myst-docutils = pkgs.python3Packages.callPackage ./myst-docutils.nix {};
   buildEnv = pkgs.python3.withPackages (ps: with ps; [
     linkify-it-py
     myst-docutils
