@@ -111,6 +111,8 @@ in {
 
       # Display the nginx version on the 404 page.
       services.nginx.serverTokens = true;
+
+      security.acme.certs.server.keyType = "rsa4096";
     };
 
     server2 = mkFCServer {
@@ -193,6 +195,13 @@ in {
       before = server1.succeed("systemctl show --property Before --value nginx-config-reload.service")
       assert "acme-finished-server.target" in before, f"acme-finished-server.target missing: {before}"
       server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload.service")
+
+    with subtest("acme script should have lego calls with custom key-type and required default settings"):
+      lego_calls = server1.succeed("grep lego $(systemctl cat acme-server | awk -F '=' '/ExecStart=/ {print $2}')")
+      assert "'--key-type' 'rsa4096'" in lego_calls, "Can't find expected key-type option"
+      # Make sure we don't accidentally override defaults by specifying the custom key type
+      assert "'--http.webroot' '/var/lib/acme/acme-challenge'" in lego_calls, "Can't find expected http.webroot option"
+      assert "'--email' 'admin@flyingcircus.io'" in lego_calls, "Can't find expected email option"
 
     with subtest("nginx should forward proxied host and server headers (primary name)"):
       server1.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")

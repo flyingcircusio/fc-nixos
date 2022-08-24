@@ -1076,9 +1076,16 @@ in
     '';
 
     security.acme.certs = let
-      acmePairs = map (vhostConfig: nameValuePair vhostConfig.serverName {
+      acmePairs = map (vhostConfig: let
+        hasRoot = vhostConfig.acmeRoot != null;
+      in nameValuePair vhostConfig.serverName {
         group = mkDefault cfg.group;
-        webroot = vhostConfig.acmeRoot;
+        # if acmeRoot is null inherit config.security.acme
+        # Since config.security.acme.certs.<cert>.webroot's own default value
+        # should take precedence set priority higher than mkOptionDefault
+        webroot = mkOverride (if hasRoot then 1000 else 2000) vhostConfig.acmeRoot;
+        # Also nudge dnsProvider to null in case it is inherited
+        dnsProvider = mkOverride (if hasRoot then 1000 else 2000) null;
         extraDomainNames = vhostConfig.serverAliases;
       # Filter for enableACME-only vhosts. Don't want to create dud certs
       }) (filter (vhostConfig: vhostConfig.useACMEHost == null) acmeEnabledVhosts);
