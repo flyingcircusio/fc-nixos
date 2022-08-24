@@ -41,6 +41,7 @@ in
       users.users.kubernetes = {
         uid = config.ids.uids.kubernetes;
         home = "/var/empty";
+        group = "kubernetes";
       };
     })
 
