@@ -2,8 +2,8 @@
   "nixpkgs": {
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "56c15c8fcab1c92039fc962e3c5d1613858c9e10",
-    "sha256": "jOROKY0iVGs7abSlB1vFx3E/MGRaZckmI1Clwq+GtCA="
+    "rev": "4831ae4a5287019ec3e0cdc4b65f2c5f83e08460",
+    "sha256": "MN0dktebCH1Fo4RJlyARaf6FUTLxz7cLWnOH3lzA77I="
   },
   "nixos-mailserver": {
     "url": "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/",
