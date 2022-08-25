@@ -126,6 +126,11 @@ def main(args=sys.argv[1:]):
         action="store_true",
         help="Create first mon to bootstrap cluster.",
     )
+    parser_create.add_argument(
+        "--lvm-vg",
+        help="Volume Group where the MON volume is created. "
+        "Defaults to using the journal VGs.",
+    )
     parser_create.set_defaults(action="create")
 
     parser_activate = mon_sub.add_parser(
