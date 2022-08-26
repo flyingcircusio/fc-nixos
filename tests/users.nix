@@ -47,7 +47,7 @@ import ./make-test-python.nix ({ lib, testlib, ... }:
         ];
 
         flyingcircus.users = {
-          userData = userData;
+          inherit userData;
         };
 
       };
@@ -92,5 +92,8 @@ import ./make-test-python.nix ({ lib, testlib, ... }:
     with subtest("Home dirs should exist and have correct permissions"):
       assert_permissions("755:u1000:users", "/home/u1000")
       assert_permissions("755:s-service:service", "/srv/s-service")
+
+    with subtest("Activation scripts should run without errors"):
+      machine.succeed("bash -e /run/current-system/activate 2>&1")
   '';
 })

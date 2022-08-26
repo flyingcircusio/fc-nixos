@@ -1,47 +1,35 @@
-import ./make-test-python.nix ({ lib, ... }:
+import ./make-test-python.nix ({ lib, testlib, ... }:
 
 {
   name = "journal";
-  machine =
-    { pkgs, lib, config, ... }:
-    {
-      imports = [ ../nixos ../nixos/roles ];
+  nodes = {
+    machine =
+      { pkgs, lib, config, ... }:
+      {
+        imports = [
+            (testlib.fcConfig {})
+          ];
 
-      users.groups = {
-        admins = {};
-        sudo-srv = {};
-        service = {};
+        users.users =
+          lib.mapAttrs'
+            (id: groups:
+              lib.nameValuePair
+                "u${id}"
+                {
+                  uid = builtins.fromJSON id;
+                  extraGroups = groups;
+                  isNormalUser = true;
+                }
+            )
+            {
+              "1000" = [ ];
+              "1001" = [ "admins" ];
+              "1002" = [ "sudo-srv" ];
+              "1003" = [ "wheel" ];
+              "1004" = [ "service" ];
+              "1005" = [ "systemd-journal" ];
+            };
       };
-
-      flyingcircus.enc.parameters.interfaces.srv = {
-        mac = "52:54:00:12:34:56";
-        bridged = false;
-        networks = {
-          "192.168.101.0/24" = [ "192.168.101.1" ];
-          "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::1" ];
-        };
-        gateways = {};
-      };
-
-      users.users =
-        lib.mapAttrs'
-          (id: groups:
-            lib.nameValuePair
-              "u${id}"
-              {
-                uid = builtins.fromJSON id;
-                extraGroups = groups;
-                isNormalUser = true;
-              }
-          )
-          {
-            "1000" = [ ];
-            "1001" = [ "admins" ];
-            "1002" = [ "sudo-srv" ];
-            "1003" = [ "wheel" ];
-            "1004" = [ "service" ];
-            "1005" = [ "systemd-journal" ];
-          };
     };
 
   testScript = ''
@@ -61,6 +49,12 @@ import ./make-test-python.nix ({ lib, ... }:
 
     with subtest("service user should see the journal"):
         machine.succeed('sudo -iu \#1004 journalctl')
+
+    with subtest("Activation scripts should run without errors"):
+      output = machine.succeed("bash -e /run/current-system/activate 2>&1")
+      assert "skipping ACL" not in output
+
+    print(output)
 
     print(machine.succeed('getfacl /var/log/journal'))
   '';
