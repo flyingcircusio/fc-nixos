@@ -144,16 +144,11 @@ in
       '';
     };
 
-    adminsGroup = lib.mkOption {
-      type = attrs;
-      description = "Super admins GID and contact addresses.";
-    };
-
-    adminsGroupPath = lib.mkOption {
-      default = /etc/nixos/admins.json;
-      type = path;
+    requiredPlatformGroups = lib.mkOption {
+      internal = true;
+      type = attrsOf ints.positive;
       description = ''
-        Where to find the admins group json file.
+        Name-GID pairs of groups that are required by platform code.
       '';
     };
 
@@ -184,40 +179,42 @@ in
       # so I took a snapshot of the current permissions (they change
       # very very rarely) and use it as adefault here.
       permissions = mkDefault (fclib.jsonFromFile cfg.permissionsPath ''
-[
- {
-  "description": "commit to VCS repository",
-  "id": 2029,
-  "name": "code"
- },
- {
-  "description": "perform interactive or web logins (e.g., ssh, monitoring)",
-  "id": 502,
-  "name": "login"
- },
- {
-  "description": "access web statistics",
-  "id": 2046,
-  "name": "stats"
- },
- {
-  "description": "sudo to service user",
-  "id": 2028,
-  "name": "sudo-srv"
- },
- {
-  "description": "sudo to root",
-  "id": 10,
-  "name": "wheel"
- },
- {
-  "description": "Manage users of RG",
-  "id": 2272,
-  "name": "manager"
- }
-]
-'');
-      adminsGroup = mkDefault (fclib.jsonFromFile cfg.adminsGroupPath "{}");
+        [
+         {
+          "description": "commit to VCS repository",
+          "id": 2029,
+          "name": "code"
+         },
+         {
+          "description": "perform interactive or web logins (e.g., ssh, monitoring)",
+          "id": 502,
+          "name": "login"
+         },
+         {
+          "description": "access web statistics",
+          "id": 2046,
+          "name": "stats"
+         },
+         {
+          "description": "sudo to service user",
+          "id": 2028,
+          "name": "sudo-srv"
+         },
+         {
+          "description": "sudo to root",
+          "id": 10,
+          "name": "wheel"
+         },
+         {
+          "description": "Manage users of RG",
+          "id": 2272,
+          "name": "manager"
+         }
+        ]
+      '');
+      requiredPlatformGroups = {
+        inherit (config.ids.gids) admins service sudo-srv;
+      };
     };
 
     flyingcircus.passwordlessSudoRules = [
@@ -258,16 +255,11 @@ in
       AllowGroups root admins login
     '';
 
-    users =
-      let adminsGroup =
-        lib.optionalAttrs (cfg.adminsGroup != {})
-        { ${cfg.adminsGroup.name}.gid = cfg.adminsGroup.gid; };
-      in {
+    users = {
       mutableUsers = false;
       users = mapUserData cfg.userData cfg.serviceUsers.extraGroups;
       groups = mergeSets [
-          adminsGroup
-          { service.gid = config.ids.gids.service; }
+          (lib.mapAttrs (name: gid: { inherit gid; }) cfg.requiredPlatformGroups)
           (groupMemberships cfg.userData)
           (permissionGroups cfg.permissions)
         ];
