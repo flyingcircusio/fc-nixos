@@ -42,9 +42,9 @@ A complete configuration might looks something like this:
                 "pm.max_requests" = 50;
             };
         };
-                apacheExtraConfig = ''
+        apacheExtraConfig = ''
           FancyIndexing on
-                '';
+        '';
       }
     ];
 
