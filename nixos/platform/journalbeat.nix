@@ -35,7 +35,9 @@ in
 
             # "info" would have some helpful information but also logs every single
             # log shipping (up to once per second) which is too much noise.
-            logging.level = "warning";
+            # "warning" is still annoying because of the error:
+            # "route ip+net: netlinkrib: address family not supported by protocol"
+            logging.level = "error";
           } extra));
       in {
         description = "Ship system journal to ${host}:${toString port}";
