@@ -88,14 +88,12 @@ htmlhelp_basename = "flyingcircus"
 
 # -- Options for extensions ----------------------------------------------------
 
-platform_doc = os.environ.get("platformDoc")
-if platform_doc == "" or platform_doc == "null":
-    platform_doc = None
-elif platform_doc is not None:
-    platform_doc += "/objects.inv"
+doc_objects_inventory = os.environ.get("docObjectsInventory")
+if doc_objects_inventory in ("", "null"):
+    doc_objects_inventory = None
 
 intersphinx_mapping = {
-    "platform": ("https://doc.flyingcircus.io/platform", platform_doc)
+    "platform": ("https://doc.flyingcircus.io/platform", doc_objects_inventory)
 }
 
 
