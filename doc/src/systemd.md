@@ -1,6 +1,6 @@
 (nixos-systemd-units)=
 
-# Custom SystemD units
+# Custom SystemD Units
 
 You can define your own unit files using NixOS configuration modules
 in {file}`/etc/local/nixos` or plain unit files in {file}`/etc/local/systemd`.
@@ -15,9 +15,22 @@ A few notes that you should pay attention to:
   or let SystemD handle it by using [DynamicUser](http://0pointer.net/blog/dynamic-users-with-systemd.html).
 - Your service should not daemonize / detach on its own. SystemD works best
   when you just start and stay attached in the foreground.
+- NixOS automatically restarts units when meaningful changes to the unit are
+  detected. Note that changes to comments or whitespace don't trigger a
+  restart. This behaviour changed compared to versions before 22.05 where every
+  content change triggered a restart. If you have some value that should restart
+  the unit when it changes, add it to the `X-Restart-Triggers` directive in the
+  `[Unit]` section when using plain config or `restartTriggers` when using
+  NixOS config. Since 22.05, it's also possible to use `reloadTriggers`. See the
+  examples below in the corresponding configuration sections.
 
-See the [systemd.service and related manpages](https://www.freedesktop.org/software/systemd/man/systemd.service.html)
-for further information.
+See the
+[systemd.service and related pages](https://www.freedesktop.org/software/systemd/man/systemd.service.html)
+for further information about systemD units, and the
+[NixOS Manual/Unit handling](https://nixos.org/manual/nixos/stable/index.html#sec-unit-handling)
+section for details about the start/stop/restart/reload behaviour when units
+change.
+
 
 ## NixOS Configuration
 
@@ -68,6 +81,15 @@ Place the following NixOS module in {file}`/etc/local/nixos/systemd-service-myap
     path = with pkgs; [
       bash # adds all binaries from the bash package to PATH
       "/run/wrappers" # if you need something from /run/wrappers/bin, sudo, for example
+    ];
+    # Trigger a unit reload when the listed value changes.
+    reloadTriggers = [
+      config.a.computed.value
+    ];
+    # Trigger a unit restart when one of the listed values changes.
+    restartTriggers = [
+      config.some.computed.value
+      config.other.computed.value
     ];
     serviceConfig = {
       Description = "Run application myapp";
@@ -170,7 +192,7 @@ Place the following NixOS module in {file}`/etc/local/nixos/systemd-mytask.nix`:
 }
 ```
 
-## Plain SystemD units
+## Plain SystemD Unit Configuration
 
 We still support plain unit config in in {file}`/etc/local/systemd/<unit-name>.service`
 but it's deprecated. Use Nix config instead, as shown above.
@@ -200,4 +222,21 @@ User=s-myservice
 Group=service
 
 ExecStart=/srv/s-myservice/bin/runme
+```
+
+If you want to trigger a restart when a certain value changes which would
+normally not be a part of the unit config, for example an externally
+computed hash value, add the value using the `X-Restart-Triggers` directive.
+The name of the directive is only a convention, you can use any directive to
+trigger a restart. Using a templated unit, for example in a [batou](https://batou.readthedocs.io/en/stable/)
+deployment could look like this:
+
+```{code-block} ini
+:caption: myrestartservice.service
+
+[Unit]
+Description=My Restarting Application Service
+X-Restart-Triggers={{ component.hash }}
+
+...
 ```
