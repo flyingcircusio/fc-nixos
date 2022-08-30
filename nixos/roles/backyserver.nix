@@ -94,7 +94,7 @@ in
     systemd.services.backy = {
         description = "Backy backup server";
         wantedBy = [ "multi-user.target" ];
-        path = [ backy pkgs.fc.agent ];
+        path = [ backy pkgs.ceph pkgs.fc.agent ];
 
         environment = {
           CEPH_ARGS = "--id ${enc.name}";
