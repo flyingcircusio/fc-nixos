@@ -33,8 +33,8 @@ configuration page at [My Flying Circus](https://my.flyingcircus.io):
 ```
 
 Without the `publicFrontend` setting, Graylog UI and API can only be accessed via the
-{ref}`SRV network interface <logical_networks>`, by other machines in the same
-project or via {ref}`VPN <nixos-external_net>`.
+{external+doc:ref}`SRV network interface <logical-networks>`, by other machines in the same
+project or via {ref}`VPN <nixos-external-net>`.
 
 ## Interaction
 
@@ -122,10 +122,10 @@ Graylog's settings are stored in a MongoDB instance. It isn't used for log data.
 ### Nginx
 
 Nginx provides SSL termination if the public frontend is enabled.
-Nginx listens on port 80 and 443 on the {ref}`FE interface <logical_networks>`
+Nginx listens on port 80 and 443 on the {external+doc:ref}`FE interface <logical-networks>`
 in that case. Certificates are renewed automatically using Let's Encrypt.
 
-Port TCP 9002 on the {ref}`SRV interface <logical_networks>` is always available
+Port TCP 9002 on the {external+doc:ref}`SRV interface <logical-networks>` is always available
 and provided for machines in the same project which need to access the Graylog
 API directly without authentication.
 

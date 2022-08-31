@@ -162,10 +162,10 @@ let
 
       ${optionalString (cfg.recommendedProxySettings) ''
         proxy_redirect          off;
-        proxy_connect_timeout   90;
-        proxy_send_timeout      90;
-        proxy_read_timeout      90;
-        proxy_http_version      1.0;
+        proxy_connect_timeout   ${cfg.proxyTimeout};
+        proxy_send_timeout      ${cfg.proxyTimeout};
+        proxy_read_timeout      ${cfg.proxyTimeout};
+        proxy_http_version      1.1;
         include ${recommendedProxyConfig};
       ''}
 
@@ -517,9 +517,18 @@ in
         ";
       };
 
+      proxyTimeout = mkOption {
+        type = types.str;
+        default = "60s";
+        example = "20s";
+        description = "
+          Change the proxy related timeouts in recommendedProxySettings.
+        ";
+      };
+
       package = mkOption {
         default = pkgs.nginxStable;
-        defaultText = "pkgs.nginxStable";
+        defaultText = literalExpression "pkgs.nginxStable";
         type = types.package;
         apply = p: p.override {
           modules = p.modules ++ cfg.additionalModules;
@@ -534,7 +543,7 @@ in
       additionalModules = mkOption {
         default = [];
         type = types.listOf (types.attrsOf types.anything);
-        example = literalExample "[ pkgs.nginxModules.brotli ]";
+        example = literalExpression "[ pkgs.nginxModules.brotli ]";
         description = ''
           Additional <link xlink:href="https://www.nginx.com/resources/wiki/modules/">third-party nginx modules</link>
           to install. Packaged modules are available in
@@ -767,7 +776,7 @@ in
             addresses = mkOption {
               type = types.listOf types.str;
               default = [];
-              example = literalExample ''[ "[::1]" "127.0.0.1:5353" ]'';
+              example = literalExpression ''[ "[::1]" "127.0.0.1:5353" ]'';
               description = "List of resolvers to use";
             };
             valid = mkOption {
@@ -831,7 +840,7 @@ in
           Defines a group of servers to use as proxy target.
         '';
         default = {};
-        example = literalExample ''
+        example = literalExpression ''
           "backend_server" = {
             servers = { "127.0.0.1:8000" = {}; };
             extraConfig = ''''
@@ -848,7 +857,7 @@ in
         default = {
           localhost = {};
         };
-        example = literalExample ''
+        example = literalExpression ''
           {
             "hydra.example.com" = {
               forceSSL = true;
