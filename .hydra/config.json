@@ -14,7 +14,7 @@
         },
         "docObjectsInventory": {
             "type": "path",
-            "value": "https://hydra.flyingcircus.io/job/flyingcircus/fc-21.11-dev/doc.roles/latest/download-by-type/file/inventory",
+            "value": "https://hydra.flyingcircus.io/job/flyingcircus/doc/platformDoc/latest/download-by-type/file/inventory",
             "emailresponsible": false
         },
         "branch": {
