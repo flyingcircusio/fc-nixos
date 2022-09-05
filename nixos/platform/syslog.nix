@@ -19,7 +19,7 @@ in
         local2 = "/var/log/haproxy.log";
       };
       description = ''
-        Configure syslog rules which direct named log facility directly
+        Configure syslog rules which direct the given log facility directly
         into a separate log file.
       '';
       type = types.attrs;
@@ -109,7 +109,7 @@ in
           '';
       };
 
-      services.logrotate.settings = {
+      services.logrotate.settings = lib.optionalAttrs (extraLogFiles != "") {
         "${extraLogFiles}" = {
           postrotate = ''
             if [[ -f /run/rsyslogd.pid ]]; then
