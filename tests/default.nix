@@ -43,6 +43,7 @@ in {
   haproxy = callTest ./haproxy.nix {};
   java = callTest ./java.nix {};
   journal = callTest ./journal.nix {};
+  journalbeat = callTest ./journalbeat.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
   kibana6 = callTest ./kibana.nix { version = "6"; };
   kibana7 = callTest ./kibana.nix { version = "7"; };
@@ -70,7 +71,6 @@ in {
   locale = callTest ./locale.nix {};
   loghost = callTest ./loghost.nix {};
   login = callTest ./login.nix {};
-  logging = callTest ./logging.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
@@ -99,6 +99,7 @@ in {
   statshost-global = callTest ./statshost/statshost-global.nix {};
   statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
+  syslog = callSubTests ./syslog.nix {};
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
   users = callTest ./users.nix {};
   vxlan = callTest ./vxlan.nix {};
