@@ -1,13 +1,13 @@
 { stdenv, lib, ensureNewerSourcesHook, cmake, pkgconfig
 , which, git
-, boost, pythonPackages
+, boost, python2Packages
 , libxml2, zlib
 , openldap, lttng-ust
 , babeltrace, gperf
 , cunit, snappy
-, makeWrapper, perl, leveldb
-, libtool, autoconf, automake
-, hdparm
+, leveldb
+, makeWrapper
+, fetchpatch
 
 # Optional Dependencies
 , yasm ? null, fcgi ? null, expat ? null
@@ -39,8 +39,7 @@ with lib;
 let
 
   shouldUsePkg = pkg_: let pkg = (builtins.tryEval pkg_).value;
-    in if lib.any (lib.meta.platformMatch stdenv.hostPlatform) pkg.meta.platforms
-      then pkg else null;
+    in if pkg.meta.available or false then pkg else null;
 
   optYasm = shouldUsePkg yasm;
   optFcgi = shouldUsePkg fcgi;
@@ -65,6 +64,7 @@ let
 
   hasRadosgw = optFcgi != null && optExpat != null && optCurl != null && optLibedit != null;
 
+
   # TODO: Reenable when kinetic support is fixed
   #hasKinetic = versionAtLeast version "9.0.0" && optKinetic-cpp-client != null;
   hasKinetic = false;
@@ -81,38 +81,44 @@ let
     none = [ ];
   };
 
-  ceph-python-env = pythonPackages.python.withPackages (ps: [
-    ps.sphinx
-    ps.flask
-    ps.cython
-    ps.setuptools
-    ps.pip
-    # Libraries needed by the python tools
-    # ps.Mako
-    # ps.pecan
-    ps.prettytable
-    # ps.webob
-    # ps.cherrypy
-  ]);
+  ceph-python-env = python2Packages.python.buildEnv.override {
+    extraLibs = (ps:[
+      ps.sphinx
+      ps.flask
+      ps.cython
+      ps.setuptools
+      ps.pip
+      # Libraries needed by the python tools
+      ps.Mako
+      ps.pecan
+      ps.prettytable
+      ps.webob
+      ps.cherrypy
+    ]) python2Packages;
+    # backport namespace collisions, see https://github.com/NixOS/nixpkgs/issues/22319#issuecomment-276913527
+    ignoreCollisions = true;
+  };
 
 in
 stdenv.mkDerivation {
-  name="ceph-${version}";
+  pname = "ceph";
+  inherit version;
 
   inherit src;
 
   patches = [
-    ./fc-jewel-snaptrim.patch
-    ./fc-jewel-rewatch.patch
-    ./fc-jewel-glibc2-32.patch
-    ./fc-jewel-hdparm-naive-path.patch
-
-    ./dont-use-virtualenvs.patch
+    # fix duplicate test names that are confusing GoogleTests macro expansion
+    (fetchpatch {
+      url = "https://github.com/ceph/ceph/pull/43491.patch";
+      sha256 = "sha256-ck6C5mdimrhBC600fMsmL6ToUXiM9FTzl9fSxwnYw9s=";
+    })
+  ] ++ optionals stdenv.isLinux [
+    ./0002-fix-absolute-include-path.patch
   ];
 
   nativeBuildInputs = [
-    perl libtool autoconf automake
-    pkgconfig which git pythonPackages.wrapPython makeWrapper
+    cmake
+    pkgconfig which git python2Packages.wrapPython makeWrapper
     (ensureNewerSourcesHook { year = "1980"; })
   ];
 
@@ -128,101 +134,60 @@ stdenv.mkDerivation {
     optKinetic-cpp-client
   ];
 
-  propagatedBuildInputs = [ hdparm ];
 
-  preConfigure = ''
-# require LD_LIBRARY_PATH for cython to find internal dep
-export LD_LIBRARY_PATH="$PWD/build/lib:$LD_LIBRARY_PATH"
+  preConfigure =''
+    # rip off submodule that interfer with system libs
+	rm -rf src/boost
 
-# requires setuptools due to embedded in-cmake setup.py usage
-export PYTHONPATH="$(echo ${pythonPackages.setuptools}/lib/python*/site-packages/):$PYTHONPATH"
+	# require LD_LIBRARY_PATH for cython to find internal dep
+	export LD_LIBRARY_PATH="$PWD/build/lib:$LD_LIBRARY_PATH"
 
-set -x
-sed -e '/include ceph-detect-init/d' -i src/Makefile.am
-sed -e '/include ceph-disk/d' -i src/Makefile.am
-
-./autogen.sh
-
-cat > src/ceph_ver.h << __EOF__
-#ifndef CEPH_VERSION_H
-#define CEPH_VERSION_H
-
-#define CEPH_GIT_VER no_version
-#define CEPH_GIT_NICE_VER "Development"
-
-#endif
-__EOF__
+	# requires setuptools due to embedded in-cmake setup.py usage
+	export PYTHONPATH="${python2Packages.setuptools}/lib/python*/site-packages/:$PYTHONPATH"
   '';
 
-  configureFlags = [
-    "--enable-gitversion=no"
-    "--with-cython"
-    "--with-eventfd"
-    "--with-jemalloc"
-    "--with-libaio"
-    "--with-libatomic"
-    "--with-mon"
-    "--with-osd"
-    "--with-nss"
-    "--with-radosgw"
-    "--with-rbd"
-    "--with-rados"
-    "--without-mds"
-    "--with-xfs"
-    "--without-cephfs"
-    "--without-gtk"
-    "--without-hadoop"
-    "--without-kinetic"
-    "--without-librocksdb"
-    "--disable-cephfs-java"
-    "--disable-coverage"
-    "--with-systemd-unit-dir=/tmp"];
-
   cmakeFlags = [
+    "-DENABLE_GIT_VERSION=OFF"
+    "-DWITH_SYSTEM_BOOST=ON"
+    # using an unpatched system rocksdb might break bluestore, see https://github.com/NixOS/nixpkgs/pull/113137/
+    "-DWITH_SYSTEM_ROCKSDB=OFF"
+    "-DWITH_LEVELDB=ON"
 
-    # "-DENABLE_GIT_VERSION=OFF"
-    # "-DWITH_SYSTEM_BOOST=ON"
+    # enforce shared lib
+    "-DBUILD_SHARED_LIBS=ON"
 
-    # # enforce shared lib
-    # "-DBUILD_SHARED_LIBS=ON"
+    # disable cephfs, cmake build broken for now
+    "-DWITH_CEPHFS=OFF"
+    "-DWITH_LIBCEPHFS=OFF"
 
-    # # disable cephfs, cmake build broken for now
-    # "-DWITH_CEPHFS=OFF"
-    # # "-DWITH_LIBCEPHFS=OFF"
+    # required for glibc>=2.32
+    "-DWITH_REENTRANT_STRSIGNAL=ON"
 
-    # "-DWITH_OPENLDAP=OFF"
-
-    # "-DKEYUTILS_INCLUDE_DIR=${keyutils}"
-    # "-DUUID_INCLUDE_DIR=${libuuid}"
-    # "-DCURL_INCLUDE_DIR=${curl}"
+    # explicitly set which python versions to build against
+    # ceph-mgr supports *only* python2, so for now use this as the only python version
+    "-DWITH_PYTHON2=ON"
+    "-DWITH_PYTHON3=OFF"
   ];
 
   postFixup = ''
     wrapPythonPrograms
+    wrapProgram $out/bin/ceph-mgr --set PYTHONPATH $out/${python2Packages.python.sitePackages}
   '';
 
   enableParallelBuilding = true;
 
-  postInstall = ''
-    source ${makeWrapper}/nix-support/setup-hook
-    wrapProgram $out/bin/ceph-osd \
-      --prefix PATH : ${lib.makeBinPath
-        [ hdparm ] }
-  '';
-
-  # outputs = [ "dev" "lib" "out" "doc" ];
+  outputs = [ "out" "dev" "lib" "doc" ];
 
   meta = {
     homepage = https://ceph.com/;
     description = "Distributed storage system";
     license = licenses.lgpl21;
-    maintainers = with maintainers; [ adev ak ];
+    maintainers = with maintainers; [ theuni ];
     platforms = platforms.unix;
   };
 
   passthru = {
-    inherit version;
-    lib = {};
+    version = version;
+    codename = "luminous";
   };
-
 }
