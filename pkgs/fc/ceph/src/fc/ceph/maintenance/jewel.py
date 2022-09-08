@@ -7,6 +7,7 @@ import sys
 import fc.ceph.images
 import fc.util.directory
 from fc.ceph.api import Cluster, Pools
+from fc.ceph.util import kill, mount_status, run
 
 
 class ResourcegroupPoolEquivalence(object):
@@ -94,21 +95,17 @@ class MaintenanceTasks(object):
         rpe.ensure()
 
     def _ensure_maintenance_volume(self):
-        subprocess.run(
-            "rbd-locktool -q -i rbd/.maintenance || "
-            "rbd create --size 1 rbd/.maintenance",
-            shell=True,
-        )
+        try:
+            run.rbd_locktool("-q", "-i", "rbd/.maintenance")
+        except subprocess.CalledProcessError as e:
+            run.rbd("create", "--size", "1", "rbd/.maintenance")
 
     def enter(self):
         self._ensure_maintenance_volume()
         # Aquire the maintenance lock
-        subprocess.run(
-            "rbd-locktool -l rbd/.maintenance", shell=True, check=True
-        )
+        run.rbd_locktool("-l", "rbd/.maintenance")
         # Check that the cluster is fully healhty
-        status = subprocess.check_output("ceph -f json health", shell=True)
-        status = json.loads(status)
+        status = run.json.ceph("health")
         if not status["overall_status"] == "HEALTH_OK":
             print(
                 f"Can not enter maintenance: "
@@ -118,6 +115,4 @@ class MaintenanceTasks(object):
 
     def leave(self):
         self._ensure_maintenance_volume()
-        subprocess.run(
-            "rbd-locktool -q -u rbd/.maintenance", shell=True, check=True
-        )
+        run.rbd_locktool("-q", "-u", "rbd/.maintenance")

@@ -1,6 +1,11 @@
+# also copied to pkgs/fc/agent/fc/util/runners.py
 import json
+import os
 import subprocess
+import time
 from subprocess import PIPE
+
+## runner utils
 
 LVM_QUERY_OPTIONS = ("--reportformat", "json", "--units", "b", "--nosuffix")
 
@@ -108,8 +113,76 @@ class Runner(object):
 run = Runner(
     aliases={
         "ceph_osd": "ceph-osd",
+        "ceph_mgr": "ceph-mgr",
         "ceph_mon": "ceph-mon",
         "ceph_authtool": "ceph-authtool",
         "mkfs_xfs": "mkfs.xfs",
+        "rbd_locktool": "rbd-locktool",
     }
 )
+
+
+## common management utils
+
+
+def find_vg_for_mon():
+    vgsys = False
+    for vg in run.json.vgs():
+        if vg["vg_name"].startswith("vgjnl"):
+            return vg["vg_name"]
+        if vg["vg_name"] == "vgsys":
+            vgsys = True
+
+    if vgsys:
+        print(
+            "WARNING: using volume group `vgsys` because no journal "
+            "volume group was found."
+        )
+        return "vgsys"
+    raise IndexError("No suitable volume group found.")
+
+
+def find_lv_path(name):
+    result = []
+    for lv in run.json.lvs():
+        if lv["lv_name"] == name:
+            result.append(lv)
+    if len(result) != 1:
+        raise ValueError(f"Invalid number of LVs found: {len(result)}")
+    lv = result[0]
+    return f"/dev/{lv['vg_name']}/{lv['lv_name']}"
+
+
+def mount_status(mountpoint):
+    """Return the absolute path to the kernel device used for a given
+    mountpoint.
+
+    Returns a false value if the given path is not currently a mountpoint.
+
+    """
+    for device in run.json.lsblk_linear():
+        if device["mountpoint"] == mountpoint:
+            return device["name"]
+    return False
+
+
+def kill(pid_file):
+    if not os.path.exists(pid_file):
+        print(f"PID file {pid_file} not found. Not killing.")
+        return
+
+    with open(pid_file) as f:
+        pid = f.read().strip()
+    run.kill(pid)
+    counter = 0
+    while os.path.exists(f"/proc/{pid}"):
+        counter += 1
+        time.sleep(1)
+        print(".", end="", flush=True)
+        if not counter % 30:
+            # We already sent a kill signal earlier so even when
+            # the proc file existed the process might have
+            # exited and we're fine with kill not finding the pid
+            # any longer.
+            run.kill(pid, check=False)
+    print()

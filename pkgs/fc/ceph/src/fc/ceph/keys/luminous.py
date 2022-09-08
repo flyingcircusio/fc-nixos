@@ -144,7 +144,7 @@ class InstalledKeys(object):
                 stderr=subprocess.STDOUT,
             ).decode("ascii")
         except Exception as e:
-            print(textwrap.indent(e.output.decode("ascii", "\t")))
+            print(textwrap.indent(e.output.decode("ascii"), "\t"))
             raise
         else:
             print(textwrap.indent(output, "\t"))
@@ -167,7 +167,7 @@ class InstalledKeys(object):
                     ["ceph", "auth", "del", entity], stderr=subprocess.STDOUT
                 ).decode("ascii")
             except Exception as e:
-                print(textwrap.indent(e.output.decode("ascii", "\t")))
+                print(textwrap.indent(e.output.decode("ascii"), "\t"))
                 raise
             else:
                 print(textwrap.indent(output, "\t"))
@@ -220,7 +220,8 @@ class ClientKey(KeyConfig):
 
     filename = "/etc/ceph/ceph.client.{id}.keyring"
     entity = "client.{id}"
-    capabilities = {"mon": "allow r", "osd": "allow rwx"}
+    # assumption: all clients are allowed to use RBD
+    capabilities = {"mon": "allow r, allow profile rbd", "osd": "allow rwx"}
 
 
 class RGWKey(KeyConfig):
@@ -231,10 +232,18 @@ class RGWKey(KeyConfig):
     additional_salt = b"rgw"
 
 
+class ManagerKey(KeyConfig):
+
+    filename = "/etc/ceph/ceph.mgr.{id}.keyring"
+    entity = "mgr.{id}"
+    capabilities = {"mon": "allow profile mgr", "osd": "allow *"}
+    additional_salt = b"mgr"
+
+
 ROLE_KEYS = {
     "backyserver": {ClientKey},
     "kvm_host": {ClientKey},
-    "ceph_mon": {ClientKey},
+    "ceph_mon": {ClientKey, ManagerKey},
     "ceph_osd": {ClientKey},
     "ceph_rgw": {ClientKey, RGWKey},
 }

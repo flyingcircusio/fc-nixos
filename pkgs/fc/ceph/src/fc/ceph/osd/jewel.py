@@ -13,48 +13,7 @@ import time
 import traceback
 from subprocess import CalledProcessError
 
-from .util import run
-
-
-def find_vg_for_mon():
-    vgsys = False
-    for vg in run.json.vgs():
-        if vg["vg_name"].startswith("vgjnl"):
-            return vg["vg_name"]
-        if vg["vg_name"] == "vgsys":
-            vgsys = True
-
-    if vgsys:
-        print(
-            "WARNING: using volume group `vgsys` because no journal "
-            "volume group was found."
-        )
-        return "vgsys"
-    raise IndexError("No suitable volume group found.")
-
-
-def find_lv_path(name):
-    result = []
-    for lv in run.json.lvs():
-        if lv["lv_name"] == name:
-            result.append(lv)
-    if len(result) != 1:
-        raise ValueError(f"Invalid number of LVs found: {len(result)}")
-    lv = result[0]
-    return f"/dev/{lv['vg_name']}/{lv['lv_name']}"
-
-
-def mount_status(mountpoint):
-    """Return the absolute path to the kernel device used for a given
-    mountpoint.
-
-    Returns a false value if the given path is not currently a mountpoint.
-
-    """
-    for device in run.json.lsblk_linear():
-        if device["mountpoint"] == mountpoint:
-            return device["name"]
-    return False
+from fc.ceph.util import find_lv_path, find_vg_for_mon, kill, mount_status, run
 
 
 def wait_for_clean_cluster():
@@ -77,41 +36,6 @@ def wait_for_clean_cluster():
 
         # Don't be too fast here.
         time.sleep(5)
-
-
-def find_mountpoint(path):
-    for line in open("/etc/fstab", encoding="ascii").readlines():
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith("#"):
-            continue
-        fs, mountpoint, *_ = line.split()
-        if mountpoint == path:
-            return fs
-    raise KeyError(path)
-
-
-def kill(pid_file):
-    if not os.path.exists(pid_file):
-        print(f"PID file {pid_file} not found. Not killing.")
-        return
-
-    with open(pid_file) as f:
-        pid = f.read().strip()
-    run.kill(pid)
-    counter = 0
-    while os.path.exists(f"/proc/{pid}"):
-        counter += 1
-        time.sleep(1)
-        print(".", end="", flush=True)
-        if not counter % 30:
-            # We already sent a kill signal earlier so even when
-            # the proc file existed the process might have
-            # exited and we're fine with kill not finding the pid
-            # any longer.
-            run.kill(pid, check=False)
-    print()
 
 
 class OSDManager(object):
@@ -143,7 +67,7 @@ class OSDManager(object):
                 )
         return ids
 
-    def create(self, device, journal, journal_size, crush_location):
+    def create_filestore(self, device, journal, journal_size, crush_location):
         assert "=" in crush_location
         assert journal in ["internal", "external"]
         assert os.path.exists(device)
@@ -167,7 +91,9 @@ class OSDManager(object):
             except Exception:
                 traceback.print_exc()
 
-    def destroy(self, ids):
+    def destroy(self, ids, force_objectstore_type):
+        # force_objectstore_type is ignored and only there for argument compatibility
+        # to luminous
         ids = self._parse_ids(ids, allow_non_local=f"DESTROY {ids}")
 
         for id_ in ids:
@@ -205,7 +131,8 @@ class OSDManager(object):
             except Exception:
                 traceback.print_exc()
 
-    def rebuild(self, ids, journal_size):
+    # target_objectstore_type is ignored but required for call compatibility
+    def rebuild(self, ids, journal_size, target_objectstore_type):
         ids = self._parse_ids(ids)
 
         for id_ in ids:
@@ -260,8 +187,6 @@ class OSDManager(object):
 
 
 class OSD(object):
-
-    DEFAULT_JOURNAL_SIZE = "10g"
 
     MKFS_XFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]
     MOUNT_XFS_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
@@ -354,8 +279,6 @@ class OSD(object):
             )
 
     def create(self, device, journal, journal_size, crush_location):
-        if not journal_size:
-            journal_size = self.DEFAULT_JOURNAL_SIZE
 
         if not os.path.exists(self.datadir):
             os.makedirs(self.datadir)
@@ -494,7 +417,7 @@ class OSD(object):
 
         # This is an "interesting" turn-around ...
         manager = OSDManager()
-        manager.create(device, journal, journal_size, crush_location)
+        manager.create_filestore(device, journal, journal_size, crush_location)
 
     def destroy(self):
         print(f"Destroying OSD {self.id} ...")
@@ -556,155 +479,3 @@ class OSD(object):
                 os.rmdir(x)
             else:
                 os.unlink(x)
-
-
-class Monitor(object):
-    def __init__(self):
-        self.id = socket.gethostname()
-        self.mon_dir = f"/srv/ceph/mon/ceph-{self.id}"
-        self.pid_file = f"/run/ceph/mon.{self.id}.pid"
-
-    def activate(self):
-        print(f"Activating MON {self.id}...")
-        resource.setrlimit(resource.RLIMIT_NOFILE, (270000, 270000))
-
-        if not mount_status(self.mon_dir):
-            run.mount(
-                # fmt: off
-                "-t", "xfs", "-o", "defaults,nodev,nosuid",
-                "LABEL=ceph-mon", self.mon_dir,
-                # fmt: on
-            )
-        run.ceph_mon("-i", self.id, "--pid-file", self.pid_file)
-
-    def deactivate(self):
-        print(f"Stopping MON {self.id} ...")
-        kill(self.pid_file)
-
-    def reactivate(self):
-        try:
-            self.deactivate()
-        except Exception:
-            pass
-        self.activate()
-
-    def create(self, size="8g", lvm_vg=None, bootstrap_cluster=False):
-        print(f"Creating MON {self.id}...")
-
-        if os.path.exists(self.mon_dir):
-            print(
-                "There already exists a mon dir. "
-                "Please destroy existing mon data first."
-            )
-            sys.exit(1)
-
-        if not os.path.exists(self.mon_dir):
-            os.makedirs(self.mon_dir)
-
-        if not lvm_vg:
-            try:
-                lvm_vg = find_vg_for_mon()
-            except IndexError:
-                print(
-                    "Could not find a journal VG. Please prepare a journal "
-                    "VG first using `fc-ceph osd prepare-journal`."
-                )
-                sys.exit(1)
-
-        lvm_lv = "ceph-mon"
-        lvm_data_device = f"/dev/{lvm_vg}/{lvm_lv}"
-
-        print(f"creating new mon volume {lvm_data_device}")
-        run.lvcreate("-n", lvm_lv, f"-L{size}", lvm_vg)
-        run.mkfs_xfs("-L", lvm_lv, "-m", "crc=1,finobt=1", lvm_data_device)
-        run.mount(
-            # fmt: off
-            "-t", "xfs",
-            "-o", "defaults,nodev,nosuid",
-            "LABEL=ceph-mon", self.mon_dir,
-            # fmt: on
-        )
-
-        tmpdir = tempfile.mkdtemp()
-
-        config = configparser.ConfigParser()
-        with open("/etc/ceph/ceph.conf") as f:
-            config.read_file(f)
-        if bootstrap_cluster:
-            # Generate initial mon keyring
-            run.ceph_authtool(
-                # fmt: off
-                "-g", "-n", "mon.",
-                "--create-keyring", f"{tmpdir}/keyring",
-                "--set-uid=0",
-                "--cap", "mon", "allow *",
-            )
-            # Import admin keyring
-            run.ceph_authtool(
-                # fmt: off
-                f"{tmpdir}/keyring",
-                "--import-keyring", "/etc/ceph/ceph.client.admin.keyring",
-                # fmt: on
-            )
-            run.ceph_authtool(
-                # fmt: off
-                f"{tmpdir}/keyring",
-                "--cap", "mds", "allow *",
-                "--cap", "mon", "allow *",
-                "--cap", "osd", "allow *",
-                # fmt: on
-            )
-            # Generate initial monmap
-            fsid = config["global"]["fsid"]
-            run.monmaptool("--create", "--fsid", fsid, f"{tmpdir}/monmap")
-        else:
-            # Retrieve mon key and monmap
-            run.ceph(
-                # fmt: off
-                "-n", "client.admin",
-                "auth", "get", "mon.",
-                "-o", f"{tmpdir}/keyring",
-                # fmt: on
-            )
-            run.ceph("mon", "getmap", "-o", f"{tmpdir}/monmap")
-        # Add yourself to the monmap
-        run.monmaptool(
-            "--add",
-            self.id,
-            config[f"mon.{self.id}"]["public addr"],
-            f"{tmpdir}/monmap",
-        )
-        # Create mon on disk structures
-        run.ceph_mon(
-            # fmt: off
-            "-i", self.id,
-            "--mkfs",
-            "--keyring", f"{tmpdir}/keyring",
-            "--monmap", f"{tmpdir}/monmap",
-            # fmt: on
-        )
-
-        shutil.rmtree(tmpdir)
-
-        run.systemctl("start", "fc-ceph-mon")
-
-    def destroy(self):
-        try:
-            lvm_data_device = find_lv_path("ceph-mon")
-        except ValueError:
-            lvm_data_device = None
-
-        run.systemctl("stop", "fc-ceph-mon")
-        try:
-            self.deactivate()
-        except Exception:
-            pass
-
-        run.ceph("mon", "remove", self.id)
-        run.umount(self.mon_dir)
-
-        if lvm_data_device:
-            run.wipefs("-q", "-a", lvm_data_device, check=False)
-            run.lvremove("-f", lvm_data_device, check=False)
-
-        os.rmdir(self.mon_dir)

@@ -1,12 +1,17 @@
 import argparse
-import os
 import socket
 import sys
+from pathlib import Path
 
 import fc.ceph.keys
 import fc.ceph.logs
 import fc.ceph.maintenance
-import fc.ceph.manage
+import fc.ceph.mgr
+import fc.ceph.mon
+import fc.ceph.osd
+from fc.ceph import Environment
+
+CONFIG_FILE_PATH = Path("/etc/ceph/fc-ceph.conf")
 
 
 class SplitArgs(argparse.Action):
@@ -18,11 +23,6 @@ class SplitArgs(argparse.Action):
 def main(args=sys.argv[1:]):
     hostname = socket.gethostname()
 
-    # Fix l18n so that we can count on output from external utilities.
-    if "LC_ALL" in os.environ:
-        del os.environ["LC_ALL"]
-    os.environ["LANGUAGE"] = os.environ["LANG"] = "en_US.utf8"
-
     parser = argparse.ArgumentParser()
     parser.set_defaults(subsystem=None, action=None)
 
@@ -32,7 +32,7 @@ def main(args=sys.argv[1:]):
     # of individual subcommands and might be re-used for different command sections (mon, osd, ...)
 
     osd = subparsers.add_parser("osd", help="Manage OSDs.")
-    osd.set_defaults(subsystem=fc.ceph.manage.OSDManager)
+    osd.set_defaults(subsystem=fc.ceph.osd.OSDManager, action=osd.print_usage)
     osd_sub = osd.add_subparsers()
 
     parser_destroy = osd_sub.add_parser("destroy", help="Destroy an OSD.")
@@ -40,23 +40,49 @@ def main(args=sys.argv[1:]):
         "ids",
         help="IDs of OSD to destroy. Use `all` to destroy all local OSDs.",
     )
+    parser_destroy.add_argument(
+        "--force-objectstore-type",
+        "-f",
+        choices=fc.ceph.osd.OBJECTSTORE_TYPES,
+        help="Use the destruction process for the specified objectstore type, "
+        "instead of autodetecting it.",
+    )
     parser_destroy.set_defaults(action="destroy")
 
-    parser_create = osd_sub.add_parser("create", help="Create activate an OSD.")
-    parser_create.add_argument("device", help="Blockdevice to use")
-    parser_create.add_argument(
+    parser_create_fs = osd_sub.add_parser(
+        "create-filestore", help="Create and activate a filestore OSD."
+    )
+    parser_create_fs.add_argument("device", help="Blockdevice to use")
+    parser_create_fs.add_argument(
         "--journal",
         default="external",
         choices=["external", "internal"],
         help="Type of journal (on same disk or external)",
     )
-    parser_create.add_argument(
+    parser_create_fs.add_argument(
         "--journal-size",
-        default=fc.ceph.manage.OSD.DEFAULT_JOURNAL_SIZE,
+        default=fc.ceph.osd.DEFAULT_JOURNAL_SIZE,
         help="Size of journal (LVM size units allowed).",
     )
-    parser_create.add_argument("--crush-location", default=f"host={hostname}")
-    parser_create.set_defaults(action="create")
+    parser_create_fs.add_argument(
+        "--crush-location", default=f"host={hostname}"
+    )
+    parser_create_fs.set_defaults(action="create_filestore")
+
+    parser_create_bs = osd_sub.add_parser(
+        "create-bluestore", help="Create and activate a bluestore OSD."
+    )
+    parser_create_bs.add_argument("device", help="Blockdevice to use")
+    parser_create_bs.add_argument(
+        "--wal",
+        default="external",
+        choices=["external", "internal"],
+        help="Type of WAL (on same disk or external)",
+    )
+    parser_create_bs.add_argument(
+        "--crush-location", default=f"host={hostname}"
+    )
+    parser_create_bs.set_defaults(action="create_bluestore")
 
     parser_activate = osd_sub.add_parser(
         "activate", help="Activate one or more OSDs."
@@ -92,8 +118,16 @@ def main(args=sys.argv[1:]):
     )
     parser_rebuild.add_argument(
         "--journal-size",
-        default=fc.ceph.manage.OSD.DEFAULT_JOURNAL_SIZE,
-        help="Size of journal (LVM size units allowed).",
+        default=fc.ceph.osd.DEFAULT_JOURNAL_SIZE,
+        help="Size of journal (LVM size units allowed). "
+        "Only used if rebuild target is a filestore OSD.",
+    )
+    parser_rebuild.add_argument(
+        "--target-objectstore-type",
+        "-T",
+        choices=fc.ceph.osd.OBJECTSTORE_TYPES,
+        help="Type of the OSD after rebuilding, defaults to keeping the current "
+        "objectstore type.\nThe current type is detected automatically.",
     )
     parser_rebuild.add_argument(
         "ids",
@@ -112,7 +146,7 @@ def main(args=sys.argv[1:]):
     # Monitor commands
 
     mon = subparsers.add_parser("mon", help="Manage MONs.")
-    mon.set_defaults(subsystem=fc.ceph.manage.Monitor)
+    mon.set_defaults(subsystem=fc.ceph.mon.Monitor, action=mon.print_usage)
     mon_sub = mon.add_subparsers()
 
     parser_create = mon_sub.add_parser(
@@ -153,10 +187,51 @@ def main(args=sys.argv[1:]):
     )
     parser_destroy.set_defaults(action="destroy")
 
+    # MGR commands
+
+    mgr = subparsers.add_parser("mgr", help="Manage MGRs.")
+    mgr.set_defaults(subsystem=fc.ceph.mgr.Manager, action=mgr.print_usage)
+    mgr_sub = mgr.add_subparsers()
+
+    parser_create = mgr_sub.add_parser(
+        "create", help="Create and activate a local MGR."
+    )
+    parser_create.add_argument(
+        "--size", default="8g", help="Volume size to create for the MGR."
+    )
+    parser_create.add_argument(
+        "--lvm-vg",
+        help="Volume Group where the MGR volume is created. "
+        "Defaults to using the journal VGs.",
+    )
+    parser_create.set_defaults(action="create")
+
+    parser_activate = mgr_sub.add_parser(
+        "activate", help="Activate the local MGR."
+    )
+    parser_activate.set_defaults(action="activate")
+
+    parser_deactivate = mgr_sub.add_parser(
+        "deactivate", help="Deactivate the local MGR."
+    )
+    parser_deactivate.set_defaults(action="deactivate")
+
+    parser_reactivate = mgr_sub.add_parser(
+        "reactivate", help="Reactivate the local MGR."
+    )
+    parser_reactivate.set_defaults(action="reactivate")
+
+    parser_destroy = mgr_sub.add_parser(
+        "destroy", help="Destroy the local MGR."
+    )
+    parser_destroy.set_defaults(action="destroy")
+
     # Key commands
 
     keys = subparsers.add_parser("keys", help="Manage keys.")
-    keys.set_defaults(subsystem=fc.ceph.keys.KeyManager)
+    keys.set_defaults(
+        subsystem=fc.ceph.keys.KeyManager, action=keys.print_usage
+    )
     keys_sub = keys.add_subparsers()
 
     parser_update_client_keys = keys_sub.add_parser(
@@ -191,7 +266,7 @@ def main(args=sys.argv[1:]):
 
     # Log analysis commands
     logs = subparsers.add_parser("logs", help="Log analysis helpers.")
-    logs.set_defaults(subsystem=fc.ceph.logs.LogTasks)
+    logs.set_defaults(subsystem=fc.ceph.logs.LogTasks, action=logs.print_usage)
     logs_sub = logs.add_subparsers()
 
     slowreq_histogram = logs_sub.add_parser(
@@ -231,7 +306,9 @@ requests. Useful for identifying slacky OSDs.""",
     maint = subparsers.add_parser(
         "maintenance", help="Perform maintenance tasks."
     )
-    maint.set_defaults(subsystem=fc.ceph.maintenance.MaintenanceTasks)
+    maint.set_defaults(
+        subsystem=fc.ceph.maintenance.MaintenanceTasks, action=maint.print_usage
+    )
     maint_sub = maint.add_subparsers()
 
     parser_load_vm_images = maint_sub.add_parser(
@@ -255,14 +332,22 @@ requests. Useful for identifying slacky OSDs.""",
     parser_leave = maint_sub.add_parser("leave", help="Leave maintenance mode.")
     parser_leave.set_defaults(action="leave")
 
+    # extract parsed arguments from object into a dict
     args = vars(parser.parse_args(args))
 
-    subsystem = args.pop("subsystem")
+    subsystem_factory = args.pop("subsystem")
     action = args.pop("action")
 
-    if not (subsystem and action):
+    # print general help when no valid subcommand has been supplied
+    if not (subsystem_factory and action):
         parser.print_help()
         sys.exit(1)
+    # print subcommand-specific usage info
+    elif callable(action) and action.__name__ == "print_usage":
+        action()
+        sys.exit(1)
 
-    manager = subsystem()
-    getattr(manager, action)(**args)
+    environment = Environment(CONFIG_FILE_PATH)
+    subsystem = environment.prepare(subsystem_factory)
+    action = getattr(subsystem, action)
+    action(**args)
