@@ -269,6 +269,7 @@ in
               f"Command `cmd` failed with exit code {code}")
         return output.strip()
 
+    # TODO: once ceph-jewel is the default, this needs to be adopted to the function used in the ceph-jewel test
     def assert_clean_cluster(host, mons, osds, pgs):
       global time_waiting
       print("Waiting for clean cluster ...")
@@ -363,7 +364,7 @@ in
       host1.succeed('fc-ceph keys mon-update-single-client host2 kvm_host salt-for-host-2-dhkasjy9')
 
     with subtest("Initialize OSD"):
-      host1.execute('fc-ceph osd create --journal-size=500m /dev/vdc')
+      host1.execute('fc-ceph osd create-filestore --journal-size=500m /dev/vdc')
       host1.succeed('ceph osd crush move host1 root=default')
 
     with subtest("Create pools and images"):
