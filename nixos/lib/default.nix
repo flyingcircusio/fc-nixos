@@ -8,6 +8,7 @@ let
   system = import ./system.nix { inherit config pkgs lib; };
   utils = import ./utils.nix { inherit config pkgs lib; };
   lists = import ./lists.nix { inherit config pkgs lib; };
+  ceph = import ./ceph-common.nix { inherit lib pkgs; };
 
 in
 {
@@ -21,7 +22,7 @@ in
 
   config = {
     fclib =
-      { inherit attrsets files math network system utils; }
+      { inherit attrsets ceph files math network system utils; }
       // attrsets // files // math // network // system // utils // lists;
   };
 }

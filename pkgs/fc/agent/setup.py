@@ -25,7 +25,7 @@ setup(
     version="1.0",
     description=__doc__,
     long_description=long_description,
-    url="https://github.com/flyingcircus/nixpkgs",
+    url="https://github.com/flyingcircus/fc-nixos",
     author="Christian Kauhaus, Christian Theune",
     author_email="mail@flyingcircus.io",
     license="ZPL",

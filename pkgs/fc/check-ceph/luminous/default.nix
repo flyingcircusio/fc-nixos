@@ -5,7 +5,7 @@ let
 
 in
   py.buildPythonApplication rec {
-    name = "fc-check-ceph-${version}";
+    name = "fc-check-ceph-luminous-${version}";
     version = "1.0";
     src = ./.;
     dontStrip = true;

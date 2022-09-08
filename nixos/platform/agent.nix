@@ -54,6 +54,12 @@ in {
         '';
       };
 
+      extraSettings = lib.mkOption {
+        type = with lib.types; attrsOf (attrsOf (oneOf [ bool int str package ]));
+        default = { };
+        description = "Additional configuration for fc-agent utilities, will be turned into the contents of /etc/fc-agent.conf";
+      };
+
       interval = mkOption {
         type = types.int;
         default = 60;
@@ -112,7 +118,8 @@ in {
          [maintenance-leave]
          ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.leave}")
            cfg.agent.maintenance)}
-      '';
+      ''
+      + lib.generators.toINI { } cfg.agent.extraSettings;
 
       systemd.services.fc-agent = rec {
         description = "Flying Circus Management Task";
