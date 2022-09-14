@@ -55,10 +55,6 @@ in
             name = "sudo-srv";
           }
         ];
-        adminsGroup = {
-          gid = 2003;
-          name = "admins";
-        };
       };
 
       flyingcircus.enc.parameters.resource_group = "test";
