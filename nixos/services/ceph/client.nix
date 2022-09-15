@@ -20,6 +20,7 @@ in
 
     flyingcircus.services.ceph = {
       config = lib.mkOption {
+        # TODO for next ceph release upgrade: move to structured config with INI generator
         type = lib.types.lines;
         default = ''
           [global]
@@ -55,7 +56,6 @@ in
 
           mon data = /srv/ceph/mon/$cluster-$id
           mon osd allow primary affinity = true
-          mon pg warn max object skew = 20
 
           mgr data = /srv/ceph/mgr/$cluster-$id
         '';
