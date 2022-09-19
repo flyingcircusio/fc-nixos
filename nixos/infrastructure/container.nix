@@ -171,9 +171,6 @@ in
           id = 2272;
           name = "manager"; } ];
 
-      flyingcircus.users.adminsGroup = {
-         gid = 2003; name = "admins"; technical_contacts = []; };
-
       users.users.developer = {
         # Make the human user a service user, too so that we can place stuff in
         # /etc/local/nixos for provisioning.

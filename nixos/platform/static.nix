@@ -160,6 +160,9 @@ with lib;
       sudo-srv = 503;
       manager = 504;
 
+      # Global permissions granted by user membership in a special resource group.
+      admins = 2003;
+
       # Our custom services
       sensuclient = 31004;
       powerdns = 31005;
