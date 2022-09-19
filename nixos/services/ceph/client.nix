@@ -11,8 +11,8 @@ let
   resource_group = config.flyingcircus.enc.parameters.resource_group;
   fs_id = static.fsids.${location}.${resource_group};
   mons = lib.concatMapStringsSep ","
-      (mon: "${head (lib.splitString "." mon.address)}.sto.${location}.ipv4.gocept.net")
-      (fclib.findServices "ceph_mon-mon");
+    (mon: "${head (lib.splitString "." mon.address)}.sto.${location}.ipv4.gocept.net")
+    (fclib.findServices "ceph_mon-mon");
 
 in
 {
@@ -20,6 +20,7 @@ in
 
     flyingcircus.services.ceph = {
       config = lib.mkOption {
+        # TODO for next ceph release upgrade: move to structured config with INI generator
         type = lib.types.lines;
         default = ''
           [global]
@@ -55,10 +56,9 @@ in
 
           mon data = /srv/ceph/mon/$cluster-$id
           mon osd allow primary affinity = true
-          mon pg warn max per osd = 3000
-          mon pg warn max object skew = 20
 
-          '';
+          mgr data = /srv/ceph/mgr/$cluster-$id
+        '';
         description = ''
           Global config of the Ceph config file. Will be used
           for all Ceph daemons and binaries.
@@ -75,34 +75,72 @@ in
         type = lib.types.nullOr lib.types.str;
         default = null;
       };
-    };
 
-    flyingcircus.services.ceph.client = {
-      enable = lib.mkEnableOption "Ceph client";
+      fc-ceph = {
+        settings = lib.mkOption {
+          type = with lib.types; attrsOf (attrsOf (oneOf [ bool int str package ]));
+          default = { };
+          description = "Configuration for the fc-ceph utility, will be turned into the contents of /etc/ceph/fc-ceph.conf";
+        };
+      };
 
-      config = lib.mkOption {
-        type = lib.types.lines;
-        default = ''
-          [client]
-          log file = /var/log/ceph/client.log
-          rbd cache = true
-          rbd default format = 2
-          # The default default is 61, which enables all the new fancy features of jewel
-          # which we are a) scared of due to performance concerns and because b)
-          # we are not prepared to handle locking in this weird way ...
-          rbd default features = 1
-          admin socket = /run/ceph/rbd-$pid-$cctid.asok
+      client = {
+        enable = lib.mkEnableOption "Ceph client";
+
+        cephRelease = lib.mkOption {
+          type = fclib.ceph.highestCephReleaseType;
+          description = "Ceph release series that the main package belongs to. "
+            + "This option behaves special in a way that, if defined multiple times, the latest release name will be chosen.";
+          default = fclib.ceph.defaultRelease;
+        };
+
+        package = lib.mkOption {
+          type = lib.types.package;
+          description = "Main ceph package to be used on the system and to be put into PATH. "
+            + "The package set must belong to the release series defined in the `cephRelease` option. "
+            + "Only modify if really necessary, otherwise the default ceph package from the defined series is used.";
+          default =  fclib.ceph.releasePkgs.${cfg.client.cephRelease};
+        };
+
+        config = lib.mkOption {
+          type = lib.types.lines;
+          default = ''
+            [client]
+            log file = /var/log/ceph/client.log
+            rbd cache = true
+            rbd default format = 2
+            # The default default is 61, which enables all the new fancy features of jewel
+            # which we are a) scared of due to performance concerns and because b)
+            # we are not prepared to handle locking in this weird way ...
+            rbd default features = 1
+            admin socket = /run/ceph/rbd-$pid-$cctid.asok
           '';
-        description = ''
-          Contents of the Ceph config file for clients.
-        '';
+          description = ''
+            Contents of the Ceph config file for clients.
+          '';
+        };
       };
     };
   };
 
   config = lib.mkIf cfg.client.enable {
 
-    environment.systemPackages = [ pkgs.ceph ];
+    assertions = [
+      {
+        assertion = (cfg.client.package.codename == cfg.client.cephRelease);
+        message = "The ceph package set for this ceph client service must be of the same release series as defined in `cephRelease`";
+      }
+    ];
+
+    # config file to be read by fc-ceph
+    environment.etc."ceph/fc-ceph.conf".text = lib.generators.toINI { } cfg.fc-ceph.settings;
+
+    # build a default binary path for fc-ceph
+    flyingcircus.services.ceph.fc-ceph.settings.default = {
+      release = cfg.client.cephRelease;
+      path = fclib.ceph.fc-ceph-path cfg.client.package;
+    };
+    environment.systemPackages = [ cfg.client.package ];
 
     boot.kernelModules = [ "rbd" ];
 
@@ -112,17 +150,17 @@ in
     ];
 
     services.udev.extraRules = ''
-      KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${pkgs.ceph}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}"
-      KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${pkgs.ceph}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}-part%n"
+      KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}"
+      KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}-part%n"
     '';
 
     environment.etc."ceph/ceph.conf".text =
-        (cfg.config + "\n" + cfg.extraConfig + "\n" + cfg.client.config);
+      (cfg.config + "\n" + cfg.extraConfig + "\n" + cfg.client.config);
 
     environment.variables.CEPH_ARGS = fclib.mkPlatform "--id ${config.networking.hostName}";
 
     flyingcircus.activationScripts.ceph-client-keyring = ''
-       ${pkgs.fc.ceph}/bin/fc-ceph keys generate-client-keyring
+      ${pkgs.fc.ceph}/bin/fc-ceph keys generate-client-keyring
     '';
 
     services.logrotate.extraConfig = ''

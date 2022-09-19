@@ -19,3 +19,4 @@ tmp/
 .envrc
 pkgs/fc/agent/.envrc
 pyenv
+.vscode/settings.json

@@ -7,6 +7,14 @@ let
   role = config.flyingcircus.roles.kvm_host;
   enc = config.flyingcircus.enc;
 
+  qemu_ceph_versioned = cephReleaseName: (pkgs.qemu_ceph.override {
+     ceph = fclib.ceph.releasePkgs.${cephReleaseName};
+     });
+  fc-qemu_versioned = cephReleaseName: (pkgs.fc.qemu.override {
+     ceph = fclib.ceph.releasePkgs.${cephReleaseName};
+     qemu_ceph = qemu_ceph_versioned cephReleaseName;
+  });
+
 in
 {
   options = {
@@ -20,15 +28,28 @@ in
 
           Can be replaced for development and testing purposes.
         '';
-        default = pkgs.fc.qemu;
-        defaultText = literalExpression "pkgs.fc.qemu";
+        default = fc-qemu_versioned role.cephRelease;
+        defaultText = literalExpression "pkgs.fc.qemu [parameterised with cephRelease]";
+      };
+      cephRelease = fclib.ceph.releaseOption // {
+        description = "Codename of the Ceph release series used by qemu.";
       };
     };
   };
 
   config = lib.mkIf role.enable {
 
-    flyingcircus.services.ceph.client.enable = true;
+    flyingcircus.services.ceph.client = {
+      enable = true;
+      cephRelease = role.cephRelease;
+    };
+
+    # toolpath for agent (fc-create-vm)
+    flyingcircus.agent.extraSettings.Node.path = lib.makeBinPath [
+      fclib.ceph.releasePkgs.${role.cephRelease}
+      pkgs.util-linux
+      pkgs.e2fsprogs
+    ];
 
     boot = {
       kernelModules = [ "kvm" "kvm_intel" "kvm_amd" ];
@@ -36,13 +57,13 @@ in
 
     environment.systemPackages = with pkgs; [
       role.package
-      qemu_ceph
+      (qemu_ceph_versioned role.cephRelease)
       bridge-utils
     ];
 
     environment.shellAliases = {
       # alias for observing both running VMs as well as the migration logs at once
-      fc-vm-migration-watch = "watch '${pkgs.fc.qemu}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
+      fc-vm-migration-watch = "watch '${role.package}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
     };
 
     environment.etc."qemu/fc-qemu.conf".text = let
@@ -221,7 +242,7 @@ in
     systemd.services.fc-qemu-scrub = {
       description = "Scrub Qemu/KVM VM inventory.";
       wantedBy = [ "multi-user.target" ];
-      path = [ pkgs.fc.agent pkgs.fc.qemu ];
+      path = [ pkgs.fc.agent role.package ];
       serviceConfig = {
         Type = "oneshot";
       };

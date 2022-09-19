@@ -35,9 +35,18 @@ in {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  ceph = (super.callPackage ./ceph {
+  ceph = self.ceph-jewel;
+  ceph-jewel = (super.callPackage ./ceph/jewel {
       pythonPackages = super.python2Packages;
       boost = super.boost155;
+  });
+  ceph-luminous = (super.callPackage ./ceph/luminous {
+    boost = super.boost166.override {
+      enablePython = true;
+      python = self.python27-ceph-downgrades;
+    };
+    stdenv = self.gcc9Stdenv;
+    python2Packages = self.python27-ceph-downgrades.pkgs;
   });
 
   # Hash is wrong upstream
@@ -413,6 +422,37 @@ in {
   });
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
+
+  # python27 with several downgrades to make required modules work under python27 again
+  python27-ceph-downgrades = let thisPy = self.python27-ceph-downgrades;
+  in
+  super.python27.override {
+    packageOverrides = python-self: python-super: {
+      cheroot = thisPy.pkgs.callPackage ./python/cheroot { };
+      cherrypy = thisPy.pkgs.callPackage ./python/cherrypy { };
+      cython = thisPy.pkgs.callPackage ./python/Cython { };
+      jaraco_text = thisPy.pkgs.callPackage ./python/jaraco_text { };
+      PasteDeploy = python-super.PasteDeploy.overrideAttrs (oldattrs: {
+        # for pkg_resources
+        propagatedBuildInputs = oldattrs.propagatedBuildInputs ++ [python-self.setuptools];
+      });
+      pecan = thisPy.pkgs.callPackage ./python/pecan { };
+      portend = thisPy.pkgs.callPackage ./python/portend { };
+      pypytools = thisPy.pkgs.callPackage ./python/pypytools { };
+      pyquery = thisPy.pkgs.callPackage ./python/pyquery { };
+      routes = python-super.routes.overrideAttrs (oldattrs: {
+        # work around a weird pythonImportsCheck failure, but cannot be empty
+        pythonImportsCheckPhase = "true";
+      });
+      tempora = thisPy.pkgs.callPackage ./python/tempora { };
+      waitress = thisPy.pkgs.callPackage ./python/waitress { };
+      webtest = thisPy.pkgs.callPackage ./python/webtest {
+        pastedeploy = python-self.PasteDeploy;
+      };
+      WebTest = python-self.webtest;
+      zc_lockfile = thisPy.pkgs.callPackage ./python/zc_lockfile { };
+    };
+  };
 
   qemu_ceph = super.qemu.override { cephSupport = true; };
 

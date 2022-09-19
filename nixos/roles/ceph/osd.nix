@@ -21,7 +21,7 @@ in
         default = true;
         description = "Reload OSDs during agent run.";
         type = lib.types.bool;
-       };
+      };
 
       config = lib.mkOption {
         type = lib.types.lines;
@@ -45,6 +45,10 @@ in
           osd op queue cut off = high
           filestore queue max ops = 500
 
+          # Disable new (luminous) automatic crush map organisation according to
+          # (auto detected) device classes for now.
+          osd crush update on start = false
+
           # Various
 
           ms dispatch throttle bytes = 1048576000
@@ -65,6 +69,10 @@ in
 
           osd op history size = 1000
           osd op history duration = 43200
+
+          # we currently have (too) many PGs in our pools, make sure the cluster still
+          # functions even when some osds are missing
+          osd max pg per osd hard ratio = 5
 
           debug none = 1/5
           debug lockdep = 1/5
@@ -120,19 +128,41 @@ in
           debug leveldb = 1/5
           debug kinetic = 1/5
           debug fuse = 1/5
-          '';
+        '';
         description = ''
           Contents of the Ceph config file for OSDs.
         '';
       };
 
+      cephRelease = fclib.ceph.releaseOption // {
+        description = "Codename of the Ceph release series used for the the osd package.";
+      };
     };
 
   };
 
   config = lib.mkIf role.enable {
 
-    flyingcircus.services.ceph.server.enable = true;
+    flyingcircus.services.ceph = {
+      server = {
+        enable = true;
+        cephRelease = role.cephRelease;
+      };
+
+      fc-ceph.settings = let
+        osdSettings =  {
+          release = role.cephRelease;
+          path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease};
+        };
+      in {
+        # fc-ceph OSD
+        OSDManager = osdSettings;
+        # The MaintenanceTasks module uses the `rbd` binary. While it'd be safer to handle it's
+        # ceph version separately, for now just pragmatically follow the OSD version as
+        # by then both OSDs and MONs are already updated.
+        MaintenanceTasks = osdSettings;
+        };
+    };
 
     flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
 
@@ -153,20 +183,20 @@ in
       restartIfChanged = false;
 
       script = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph osd activate all
+        ${pkgs.fc.ceph}/bin/fc-ceph osd activate all
       '';
 
       reload = lib.optionalString role.reactivate ''
-          ${pkgs.fc.ceph}/bin/fc-ceph osd reactivate all
+        ${pkgs.fc.ceph}/bin/fc-ceph osd reactivate all
       '';
 
       preStop = ''
-         ${pkgs.fc.ceph}/bin/fc-ceph osd deactivate all
+        ${pkgs.fc.ceph}/bin/fc-ceph osd deactivate all
       '';
 
       serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
+        Type = "oneshot";
+        RemainAfterExit = true;
       };
     };
 
