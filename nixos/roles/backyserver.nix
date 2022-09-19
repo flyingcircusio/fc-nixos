@@ -64,7 +64,7 @@ in
     ];
 
     # globally set the RBD to be used by backy, in case it is invoked manually by an operator
-    environment.variables = backy_rbd_versioned role.cephRelease;
+    environment.variables = backyRbdVersioned role.cephRelease;
 
     fileSystems = {
       "/srv/backy" = {
@@ -113,7 +113,7 @@ in
 
         environment = {
           CEPH_ARGS = "--id ${enc.name}";
-        } // backy_rbd_versioned role.cephRelease;
+        } // backyRbdVersioned role.cephRelease;
 
         serviceConfig = {
           ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
