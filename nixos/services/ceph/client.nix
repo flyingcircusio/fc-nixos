@@ -56,6 +56,7 @@ in
 
           mon data = /srv/ceph/mon/$cluster-$id
           mon osd allow primary affinity = true
+          ${lib.optionalString (cfg.client.cephRelease == "jewel") "mon pg warn max object skew = 20"}
 
           mgr data = /srv/ceph/mgr/$cluster-$id
         '';
