@@ -34,7 +34,10 @@ let
       ];
 
       flyingcircus.services.ceph.extraConfig = ''
-            mon clock drift allowed = 1
+        mon clock drift allowed = 1
+        # In real-world clusters, better make sure to choose the correct number of
+        # PGs per pool instead of overriding this setting.
+        mon pg warn max per osd = 800
       '';
 
       # We need this in the enc files as well so that timer jobs can update
@@ -142,8 +145,9 @@ in
     show(host1, 'ip l')
     show(host1, 'iptables -L -n -v')
     show(host1, 'ls -lah /etc/ceph/')
-    show(host1, 'cat /etc/ceph/ceph.client.osd.keyring')
+    show(host1, 'cat /etc/ceph/ceph.client.admin.keyring')
     show(host1, 'cat /etc/ceph/ceph.conf')
+    show(host1, 'cat /etc/ceph/fc-ceph.conf')
 
     show(host1, 'lsblk')
     show(host1, 'sfdisk -J /dev/vdb')
@@ -167,17 +171,17 @@ in
       host1.succeed('fc-ceph keys mon-update-single-client host3 ceph_osd,ceph_mon salt-for-host-3-dhkasjy9')
 
     with subtest("Initialize first OSD"):
-      host1.execute('fc-ceph osd create --journal-size=500m /dev/vdc')
+      host1.execute('fc-ceph osd create-filestore --journal-size=500m /dev/vdc')
 
     with subtest("Initialize second MON and OSD"):
       host2.succeed('fc-ceph osd prepare-journal /dev/vdb')
       host2.succeed('fc-ceph mon create --size 500m  >/dev/kmsg 2>&1')
-      host2.succeed('fc-ceph osd create --journal-size=500m /dev/vdc')
+      host2.succeed('fc-ceph osd create-filestore --journal-size=500m /dev/vdc')
 
     with subtest("Initialize third MON and OSD"):
       host3.succeed('fc-ceph osd prepare-journal /dev/vdb')
       host3.succeed('fc-ceph mon create --size 500m')
-      host3.succeed('fc-ceph osd create --journal-size=500m /dev/vdc')
+      host3.succeed('fc-ceph osd create-filestore --journal-size=500m /dev/vdc')
 
     with subtest("Move OSDs to correct crush location"):
       host1.succeed('ceph osd crush move host1 root=default')
@@ -233,7 +237,7 @@ in
 
     with subtest("Destroy and create OSD on host1"):
       host1.succeed('fc-ceph osd destroy 0')
-      host1.succeed('fc-ceph osd create --journal-size=500m /dev/vdc')
+      host1.succeed('fc-ceph osd create-filestore --journal-size=500m /dev/vdc')
       assert_clean_cluster(host2, 3, 3, 512)
 
     print("Time spent waiting", time_waiting)

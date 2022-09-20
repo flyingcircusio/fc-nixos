@@ -11,7 +11,7 @@ let
 
   # We do not have service data during bootstrapping.
   rgws = (sort lessThan (map (service: service.address) (fclib.findServices "ceph_rgw-server")));
-  first_rgw = if rgws == [] then "" else head (lib.splitString "." (head rgws));
+  first_rgw = if rgws == [ ] then "" else head (lib.splitString "." (head rgws));
 
 in
 {
@@ -24,45 +24,54 @@ in
         default = (first_rgw == config.networking.hostName);
         description = "Primary monitors take over additional maintenance tasks.";
         type = lib.types.bool;
-       };
+      };
 
       config = lib.mkOption {
         type = lib.types.lines;
-        default = let
-              mon_addrs = lib.concatMapStringsSep ","
-                  (mon: "${head (filter fclib.isIp4 mon.ips)}:${mon_port}")
-                  (fclib.findServices "ceph_mon-mon");
-            in ''
-          [${username}]
-          host = ${config.networking.hostName}
-          keyring = /etc/ceph/ceph.${username}.keyring
-          log file = /var/log/ceph/client.radosgw.log
-          pid file = /run/ceph/radosgw.pid
-          admin socket = /run/ceph/radosgw.asok
-          rgw data = /srv/ceph/radosgw/ceph-$id
-          rgw enable ops log = false
-          rgw frontends = "civetweb port=80"
-          debug rgw = 0 5
-          debug civetweb = 1 5
-          debug rados = 1 5
+        default =
+          let
+            mon_addrs = lib.concatMapStringsSep ","
+              (mon: "${head (filter fclib.isIp4 mon.ips)}:${mon_port}")
+              (fclib.findServices "ceph_mon-mon");
+          in
+          ''
+            [${username}]
+            host = ${config.networking.hostName}
+            keyring = /etc/ceph/ceph.${username}.keyring
+            log file = /var/log/ceph/client.radosgw.log
+            pid file = /run/ceph/radosgw.pid
+            admin socket = /run/ceph/radosgw.asok
+            rgw data = /srv/ceph/radosgw/ceph-$id
+            rgw enable ops log = false
+            rgw frontends = "civetweb port=80"
+            debug rgw = 0 5
+            debug civetweb = 1 5
+            debug rados = 1 5
           '';
         description = ''
           Contents of the Ceph config file for RGWs.
         '';
       };
 
+      cephRelease = fclib.ceph.releaseOption // {
+        description = "Codename of the Ceph release series used for the the rgw package.";
+      };
     };
   };
 
   config = lib.mkMerge [
     (lib.mkIf role.enable {
 
-      flyingcircus.services.ceph.server.enable = true;
+      flyingcircus.services.ceph.server = {
+        enable = true;
+        cephRelease = role.cephRelease;
+        # no fc-ceph settings necessary so far
+      };
 
       environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
 
       systemd.tmpfiles.rules = [
-          "d /srv/ceph/radosgw 2775 root service"
+        "d /srv/ceph/radosgw 2775 root service"
       ];
 
       systemd.services.fc-ceph-rgw = rec {
@@ -81,9 +90,9 @@ in
         restartTriggers = [ config.environment.etc."ceph/ceph.conf".source ];
 
         serviceConfig = {
-            Type = "simple";
-            Restart = "always";
-            ExecStart = "${pkgs.ceph}/bin/radosgw -n ${username} -f -c /etc/ceph/ceph.conf";
+          Type = "simple";
+          Restart = "always";
+          ExecStart = "${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/radosgw -n ${username} -f -c /etc/ceph/ceph.conf";
         };
       };
 
@@ -93,36 +102,38 @@ in
         ip46tables -w -t nat -X fc-nat-pre 2>/dev/null || true
       '';
 
-      networking.firewall.extraCommands = let
-        srv = fclib.network.srv;
-      in ''
-        set -x
-        # Accept traffic from S3 gateways from within the SRV network.
-        ip46tables -w -t nat -N fc-nat-pre
+      networking.firewall.extraCommands =
+        let
+          srv = fclib.network.srv;
+        in
+        ''
+          set -x
+          # Accept traffic from S3 gateways from within the SRV network.
+          ip46tables -w -t nat -N fc-nat-pre
 
-      '' + (lib.concatMapStringsSep "\n"
-              (net: ''
-                iptables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 80 -j ACCEPT
-                # PL-130368 Fix S3 presigned URLs
-                iptables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
-              '')
-              srv.v4.networks
-      ) + "\n" +
-      (lib.concatMapStringsSep "\n"
-              (net: ''
-                ip6tables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 80 -j ACCEPT
-                # PL-130368 Fix S3 presigned URLs
-                ip6tables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
-              '')
-              srv.v6.networks) +
-      ''
+        '' + (lib.concatMapStringsSep "\n"
+          (net: ''
+            iptables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 80 -j ACCEPT
+            # PL-130368 Fix S3 presigned URLs
+            iptables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
+          '')
+          srv.v4.networks
+        ) + "\n" +
+        (lib.concatMapStringsSep "\n"
+          (net: ''
+            ip6tables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 80 -j ACCEPT
+            # PL-130368 Fix S3 presigned URLs
+            ip6tables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
+          '')
+          srv.v6.networks) +
+        ''
           ip46tables -t nat -A PREROUTING -j fc-nat-pre
-      '';
+        '';
 
       systemd.services.fc-ceph-rgw-update-stats = {
         description = "Update RGW stats";
         serviceConfig.Type = "oneshot";
-        path = [ pkgs.ceph pkgs.jq ];
+        path = [ fclib.ceph.releasePkgs.${role.cephRelease} pkgs.jq ];
         script = ''
           for uid in $(radosgw-admin metadata list user | jq -r '.[]'); do
             echo $uid
@@ -131,14 +142,14 @@ in
         '';
       };
 
-    services.logrotate.extraConfig = ''
-      /var/log/ceph/client.radosgw.log {
-          create 0644 root adm
-          postrotate
-            systemctl kill -s SIGHUP fc-ceph-rgw
-          endscript
-      }
-    '';
+      services.logrotate.extraConfig = ''
+        /var/log/ceph/client.radosgw.log {
+            create 0644 root adm
+            postrotate
+              systemctl kill -s SIGHUP fc-ceph-rgw
+            endscript
+        }
+      '';
 
     })
 

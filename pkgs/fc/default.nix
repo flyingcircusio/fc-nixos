@@ -6,7 +6,10 @@ rec {
   agent = callPackage ./agent {};
 
   check-age = callPackage ./check-age {};
-  check-ceph = callPackage ./check-ceph {};
+  check-ceph = {
+    jewel = callPackage ./check-ceph/jewel {ceph = pkgs.ceph-jewel;};
+    luminous = callPackage ./check-ceph/luminous {ceph = pkgs.ceph-luminous;};
+  };
   check-haproxy = callPackage ./check-haproxy {};
   check-journal = callPackage ./check-journal.nix {};
   check-mongodb = callPackage ./check-mongodb {};
@@ -28,8 +31,8 @@ rec {
       src = pkgs.fetchFromGitHub {
         owner = "flyingcircusio";
         repo = "fc.qemu";
-        rev = "c85f9a15c9b3f6b4c4b4080eb44e41541acf8e2f";
-        sha256 = "sha256-MBEuD5PUKfqOqprfYr13zEwNOBvJNJKAJ3OTBlAuFaE";
+        rev = "8e50d7c7c19d345d5e4ec20bd36a473e52be0762";
+        sha256 = "sha256-9hGnpmtXpWUXNYDklJVHRWVwATiDjej6rAvrhq1t9mI";
       };
   };
 

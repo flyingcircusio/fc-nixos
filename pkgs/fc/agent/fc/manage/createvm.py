@@ -3,12 +3,18 @@ import os
 import socket
 import subprocess
 import time
+from pathlib import Path
 
 import yaml
+from fc.util.runners import run
+
+from . import Environment
 
 IMAGE_POOL = "rbd.hdd"
+CONFIG_FILE_PATH = Path("/etc/fc-agent.conf")
 
 
+# This can be replaced later by the new JSON-based runner tooling
 def cmd(cmd, filter_empty=True, ignore_error=lambda x: False):
     print(cmd)
     try:
@@ -53,29 +59,33 @@ class Node(object):
         """Decide which setup mode to use and run it."""
         p = self.enc["parameters"]
         image = p["environment"]
-        snapshots = cmd(
-            'rbd --id "{ceph_id}" snap ls {image_pool}/{image}'.format(
-                image=image, image_pool=IMAGE_POOL, ceph_id=self.disk.ceph_id
-            )
+
+        # use json command output as its output is more stable between Ceph releases
+        snapshots = run.json.rbd(
+            # fmt: off
+            "--id", self.disk.ceph_id,
+            "snap", "ls", f"{IMAGE_POOL}/{image}"
+            # fmt: on
         )
-        snapshot = snapshots[-1].split()
+        print("Snapshots:")
+        print("snapid", "name", "size", sep="\t")
+        for snap in snapshots:
+            print(snap["id"], snap["name"], snap["size"], sep="\t")
+
+        # clone last existing base image snapshot for VM root image
         try:
-            int(snapshot[0])
-        except ValueError:
+            last_snap_name = snapshots[-1]["name"]
+        except IndexError:
             raise RuntimeError(
                 "Could not find a valid snapshot for image {}.".format(image)
             )
-        snapshot = snapshot[1]
-        cmd(
-            'rbd --id "{ceph_id}" clone {image_pool}/{image}@{snapshot} '
-            "{pool}/{name}.root".format(
-                image_pool=IMAGE_POOL,
-                image=image,
-                snapshot=snapshot,
-                pool=self.enc["parameters"]["rbd_pool"],
-                name=self.name,
-                ceph_id=self.disk.ceph_id,
-            )
+        run.rbd(
+            # fmt: off
+            "--id", self.disk.ceph_id,
+            "clone",
+            f"{IMAGE_POOL}/{image}@{last_snap_name}",
+            f"{self.enc['parameters']['rbd_pool']}/{self.name}.root"
+            # fmt: on
         )
 
 
@@ -120,8 +130,6 @@ class Disk(object):
 
 
 def main():
-    os.environ["LC_ALL"] = os.environ["LANG"] = "en_US.utf-8"
-
     p = argparse.ArgumentParser(description="Create a new VM.")
     p.add_argument(
         "-I",
@@ -135,7 +143,10 @@ def main():
     args = p.parse_args()
 
     title("Establishing system identity")
-    node = Node(args.name, Disk)
+    # statefully modify execution environment, e.g. PATH and LANG
+    environment = Environment(CONFIG_FILE_PATH)
+    node = environment.prepare(Node, args.name, Disk)
+
     node.identify()
     node.setup()
     title("Finished")

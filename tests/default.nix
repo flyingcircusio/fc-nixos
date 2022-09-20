@@ -26,9 +26,11 @@ in {
 
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
-  backyserver = callTest ./backyserver.nix {};
+  backyserver = callTest ./backyserver.nix { clientCephRelease = "jewel"; };
+  backyserver_ceph-luminous = callTest ./backyserver.nix { clientCephRelease = "luminous"; };
   channel = callTest ./channel.nix {};
-  ceph = callTest ./ceph.nix {};
+  ceph-jewel = callTest ./ceph.nix {};
+  ceph-luminous = callTest ./ceph-luminous.nix {};
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
   docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
@@ -47,7 +49,11 @@ in {
   kibana6 = callTest ./kibana.nix { version = "6"; };
   kibana7 = callTest ./kibana.nix { version = "7"; };
   k3s = callTest ./k3s {};
-  kvm_host = callTest ./kvm_host.nix {};
+  kvm_host_ceph-jewel-jewel = callTest ./kvm_host_ceph-jewel.nix {};
+  # future new default test, once ceph-luminous is default
+  kvm_host_ceph-luminous-luminous = callTest ./kvm_host_ceph-luminous.nix {clientCephRelease = "luminous";};
+  # test with already upgraded ceph server, but client tooling remaining at jewel
+  kvm_host_ceph-luminous-jewel = callTest ./kvm_host_ceph-luminous.nix {clientCephRelease = "jewel";};
 
   lamp = callTest ./lamp.nix { };
   lamp56 = callTest ./lamp.nix { version = "lamp_php56"; };
