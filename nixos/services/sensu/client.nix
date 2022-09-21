@@ -332,23 +332,6 @@ in {
         '';
       };
 
-      flyingcircus.services.sensu-client.checkEnvPackages = with pkgs; [
-        bash
-        coreutils
-        glibc
-        lm_sensors
-        monitoring-plugins
-        nix
-        openssl
-        procps
-        python3
-        sensu
-        sensu-plugins-disk-checks
-        sensu-plugins-http
-        sensu-plugins-influxdb
-        sensu-plugins-logs
-        sysstat
-      ];
 
       systemd.services.sensu-client = {
         wantedBy = [ "multi-user.target" ];
@@ -585,6 +568,24 @@ in {
         dir = "/etc/local/sensu-client";
         user = "sensuclient";
       };
+
+      flyingcircus.services.sensu-client.checkEnvPackages = with pkgs; [
+        bash
+        coreutils
+        glibc
+        lm_sensors
+        monitoring-plugins
+        nix
+        openssl
+        procps
+        python3
+        sensu
+        sensu-plugins-disk-checks
+        sensu-plugins-http
+        sensu-plugins-influxdb
+        sensu-plugins-logs
+        sysstat
+      ];
 
       users.groups.sensuclient.gid = config.ids.gids.sensuclient;
 

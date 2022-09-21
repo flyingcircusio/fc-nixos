@@ -41,6 +41,8 @@ in
 
     systemd.timers.fc-agent.timerConfig.OnBootSec = "1s";
 
+    system.extraDependencies = config.flyingcircus.services.sensu-client.checkEnvPackages;
+
     system.build.fcImage = import ./make-disk-image.nix {
       inherit pkgs lib config channelSources configFile contents name;
       rootLabel = "root";
