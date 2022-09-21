@@ -74,8 +74,13 @@ let
       preferLocalBuild = true;
     };
 
+  initialEnv =
+    if stableBranch
+    then branch
+    else "fc-22.05-dev";
+
   initialNixChannels = pkgs.writeText "nix-channels" ''
-    https://hydra.flyingcircus.io/channel/custom/flyingcircus/fc-${version}-dev/release nixos
+    https://hydra.flyingcircus.io/channel/custom/flyingcircus/${initialEnv}/release nixos
   '';
 
   initialVMContents = [
