@@ -6,11 +6,14 @@ import os
 import shutil
 import socket
 import tempfile
+from pathlib import Path
 
 import structlog
 from fc.util.directory import connect
 
 structlog = structlog.get_logger()
+
+STATE_VERSION_FILE = Path("/etc/local/nixos/state_version")
 
 
 def load_enc(log, enc_path):
@@ -67,6 +70,34 @@ def initialize_enc(log, tmpdir, enc_path):
             enc_path=str(enc_path),
             initial_enc_path=str(initial_enc_path),
         )
+
+
+def initialize_state_version(
+    log, os_release_file: Path, state_version_file: Path
+):
+
+    if not state_version_file.exists():
+
+        with open(os_release_file) as f:
+            for line in f.readlines():
+                if line.startswith("VERSION_ID="):
+                    _, state_version_quoted = line.strip().split("=")
+                    break
+
+        state_version = state_version_quoted.strip('"')
+
+        log.info(
+            "initialize-state-version",
+            _replace_msg=(
+                f"No state version found, setting {state_version} from running "
+                "system."
+            ),
+            state_version=state_version,
+        )
+
+        state_version_file.write_text(state_version)
+        state_version_file.chmod(0o664)
+        shutil.chown(state_version_file, "root", "service")
 
 
 def update_enc_nixos_config(log, enc, enc_path):
@@ -233,6 +264,11 @@ def update_enc(log, tmpdir, enc_path):
     and writes the current system state.
     """
     initialize_enc(log, tmpdir, enc_path)
+    initialize_state_version(
+        log,
+        os_release_file=Path("/etc/os-release"),
+        state_version_file=STATE_VERSION_FILE,
+    )
     enc = load_enc(log, enc_path)
     update_inventory(log, enc)
     update_enc_nixos_config(log, enc, enc_path)
