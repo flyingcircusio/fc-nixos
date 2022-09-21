@@ -101,6 +101,10 @@ in
           ];
           groups = [ "sudo-srv" "service" ];
         }
+
+        { commands = [ "${pkgs.fc.agent}/bin/fc-manage check" ];
+          groups = [ "sensuclient" ];
+        }
       ];
 
       environment.etc."fc-agent.conf".text = ''
@@ -254,5 +258,17 @@ in
         };
       };
     })
+
+    {
+      flyingcircus.services.sensu-client = {
+        checks = {
+          fc-agent = {
+            notification = "fc-manage check failed. System may not build and update correctly.";
+            command = "sudo ${pkgs.fc.agent}/bin/fc-manage check";
+            interval = 300;
+          };
+        };
+      };
+    }
   ];
 }

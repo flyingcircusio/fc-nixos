@@ -6,6 +6,7 @@ import re
 import subprocess
 from pathlib import Path
 from subprocess import PIPE, STDOUT
+from typing import Optional
 
 import requests
 import structlog
@@ -122,6 +123,21 @@ def channel_version(channel_url, log=_log):
     return version + suffix
 
 
+def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
+    channel_match = RE_FC_CHANNEL.match(channel_url)
+    if channel_match:
+        return channel_match.group(1)
+    else:
+        log.warn(
+            "no-fc-channel-url",
+            _replace_msg=(
+                "Cannot get build number. This does not look like a resolved "
+                f"FC channel URL: {channel_url}"
+            ),
+            channel_url=channel_url,
+        )
+
+
 def running_system_version(log=_log):
     nixos_version_path = Path("/run/current-system/nixos-version")
 
@@ -145,7 +161,7 @@ def current_nixos_channel_version():
     return "".join(open(f).read() for f in label_comp)
 
 
-def current_nixos_channel_url(log=_log):
+def current_nixos_channel_url(log=_log) -> Optional[str]:
     if not p.exists("/root/.nix-channels"):
         log.warn(
             "nix-channel-file-missing",

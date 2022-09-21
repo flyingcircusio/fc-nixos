@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 from pathlib import Path
 from typing import NamedTuple
 
@@ -25,6 +26,25 @@ context: Context
 
 
 app = Typer()
+
+
+@app.command()
+def check():
+    fc.util.logging.init_logging(
+        context.verbose, context.logdir, log_to_console=context.verbose
+    )
+    log = structlog.get_logger()
+    try:
+        enc = fc.util.enc.load_enc(log, context.enc_path)
+        result = fc.manage.manage.check(log, enc)
+    except Exception:
+        print("UNKNOWN: Exception occurred while running checks")
+        traceback.print_exc()
+        raise Exit(3)
+
+    print(result.format_output())
+    if result.exit_code:
+        raise Exit(result.exit_code)
 
 
 @app.command()
