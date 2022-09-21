@@ -229,6 +229,15 @@ in
       systemd.timers.fc-update-channel = {
         description = "Update system channel";
         wantedBy = [ "timers.target" ];
+
+        unitConfig = {
+          # This prevents the timer from activating before the first
+          # successful agent run finishes. The initial run takes care of
+          # updating the channel initially, without scheduling maintenance.
+          # The condition has no effect if the timer is already active.
+          ConditionPathExists = "!/etc/nixos/fc_agent_initial_run";
+        };
+
         timerConfig = {
           OnActiveSec = "1m";
           OnCalendar = "hourly";

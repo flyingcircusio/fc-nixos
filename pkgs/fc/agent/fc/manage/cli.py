@@ -5,12 +5,12 @@ from typing import NamedTuple
 
 import fc.manage.manage
 import fc.util.enc
+import fc.util.logging
 import structlog
 import typer
+from fc.util import nixos
 from fc.util.lock import locked
-from fc.util.logging import drop_cmd_output_logfile, init_logging
-from fc.util.nixos import format_unit_change_lines
-from typer import Argument, Option, Typer
+from typer import Argument, Exit, Option, Typer
 
 
 class Context(NamedTuple):
@@ -34,12 +34,14 @@ def dry_activate(
     """Builds system, showing which services would be affected.
     Does not affect the running system.
     """
-    init_logging(context.verbose, context.logdir, log_cmd_output=True)
+    fc.util.logging.init_logging(
+        context.verbose, context.logdir, log_cmd_output=True
+    )
     log = structlog.get_logger()
     unit_changes = fc.manage.manage.dry_activate(
         log=log, channel_url=channel_url
     )
-    unit_change_lines = format_unit_change_lines(unit_changes)
+    unit_change_lines = nixos.format_unit_change_lines(unit_changes)
     if unit_change_lines:
         log.info(
             "fc-manage-dry-run-changes",
@@ -76,7 +78,9 @@ def switch_cmd(
     ),
 ):
     """Builds the system configuration and switches to it."""
-    init_logging(context.verbose, context.logdir, log_cmd_output=True)
+    fc.util.logging.init_logging(
+        context.verbose, context.logdir, log_cmd_output=True
+    )
     log = structlog.get_logger()
     log.info(
         "fc-manage-start", _replace_msg="fc-manage started with PID: {pid}"
@@ -89,21 +93,26 @@ def switch_cmd(
 
         enc = fc.util.enc.load_enc(log, context.enc_path)
 
-        if update_channel:
-            keep_cmd_output = fc.manage.manage.switch_with_update(
-                log=log,
-                enc=enc,
-                lazy=lazy,
-            )
-        else:
-            keep_cmd_output = fc.manage.manage.switch(
-                log=log,
-                enc=enc,
-                lazy=lazy,
-            )
+        keep_cmd_output = fc.manage.manage.initial_switch_if_needed(log, enc)
+
+        try:
+            if update_channel:
+                keep_cmd_output |= fc.manage.manage.switch_with_update(
+                    log=log,
+                    enc=enc,
+                    lazy=lazy,
+                )
+            else:
+                keep_cmd_output |= fc.manage.manage.switch(
+                    log=log,
+                    enc=enc,
+                    lazy=lazy,
+                )
+        except nixos.ChannelException:
+            Exit(2)
 
         if not keep_cmd_output:
-            drop_cmd_output_logfile(log)
+            fc.util.logging.drop_cmd_output_logfile(log)
 
     log.info("fc-manage-succeeded")
 
@@ -114,7 +123,7 @@ def update_enc_cmd():
     Fetches inventory data from directory.
     """
 
-    init_logging(context.verbose, context.logdir)
+    fc.util.logging.init_logging(context.verbose, context.logdir)
     log = structlog.get_logger()
 
     log.info(
@@ -197,11 +206,15 @@ def fc_manage(
         return
 
     # legacy call
-    init_logging(verbose, logdir, log_cmd_output=switch or switch_with_update)
+    fc.util.logging.init_logging(
+        verbose, logdir, log_cmd_output=switch or switch_with_update
+    )
     log = structlog.get_logger()
 
     log.info(
-        "fc-manage-start", _replace_msg="fc-manage started with PID: {pid}"
+        "fc-manage-start",
+        _replace_msg="fc-manage started with PID: {pid}",
+        legacy_call=True,
     )
 
     with locked(log, lock_dir):
@@ -209,21 +222,33 @@ def fc_manage(
             fc.util.enc.update_enc(log, tmpdir, enc_path)
 
         enc = fc.util.enc.load_enc(log, enc_path)
+        keep_cmd_output = False
 
-        if switch_with_update:
-            fc.manage.manage.switch_with_update(
-                log=log,
-                enc=enc,
-                lazy=False,
-            )
-        elif switch:
-            fc.manage.manage.switch(
-                log=log,
-                enc=enc,
-                lazy=False,
+        if switch or switch_with_update:
+            keep_cmd_output = fc.manage.manage.initial_switch_if_needed(
+                log, enc
             )
 
-    log.info("fc-manage-succeeded")
+        try:
+            if switch_with_update:
+                keep_cmd_output |= fc.manage.manage.switch_with_update(
+                    log=log,
+                    enc=enc,
+                    lazy=False,
+                )
+            elif switch:
+                keep_cmd_output |= fc.manage.manage.switch(
+                    log=log,
+                    enc=enc,
+                    lazy=False,
+                )
+        except nixos.ChannelException:
+            Exit(2)
+
+        if not keep_cmd_output:
+            fc.util.logging.drop_cmd_output_logfile(log)
+
+    log.info("fc-manage-succeeded", legacy_call=True)
 
 
 def main():

@@ -8,6 +8,10 @@ from fc.util import nixos
 
 structlog.configure(wrapper_class=structlog.BoundLogger)
 
+FC_CHANNEL = (
+    "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
+)
+
 
 class FakeCmdStream:
     def __init__(self, content):
@@ -55,7 +59,7 @@ def test_build_system_with_changes(log, monkeypatch):
     )
 
     cmd = shlex.split(
-        f"nix-build --no-build-output --show-trace -I {channel} <nixpkgs/nixos> -A system --out-link /run/fc-agent-test -v"
+        f"nix-build --no-build-output --show-trace <nixpkgs/nixos> -A system -I {channel} --out-link /run/fc-agent-test -v"
     )
 
     nix_build_fake = PollingFakePopen(
@@ -86,7 +90,7 @@ def test_build_system_unchanged(log, monkeypatch):
     build_output = "\n"
 
     cmd = shlex.split(
-        f"nix-build --no-build-output --show-trace -I {channel} <nixpkgs/nixos> -A system --no-out-link"
+        f"nix-build --no-build-output --show-trace <nixpkgs/nixos> -A system -I {channel} --no-out-link"
     )
 
     nix_build_fake = PollingFakePopen(
@@ -175,9 +179,7 @@ def test_switch_to_system_lazy_unchanged(log, monkeypatch):
 
 
 def test_update_system_channel(log, monkeypatch):
-    current_channel = (
-        "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
-    )
+    current_channel = FC_CHANNEL
     next_channel = (
         "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
     )

@@ -36,6 +36,11 @@ rm -rf {NEXT_SYSTEM}
 os.environ["NIX_REMOTE"] = "daemon"
 
 
+# Other platform code can also check the presence of this marker file to
+# change behaviour before/during the first agent run.
+INITIAL_RUN_MARKER = Path("/etc/nixos/fc_agent_initial_run")
+
+
 class Channel:
 
     PHRASES = re.compile(r"would (\w+) the following units: (.*)$")
@@ -327,6 +332,66 @@ def dry_activate(log, channel_url):
     return channel.dry_activate()
 
 
+def initial_switch_if_needed(log, enc):
+    if not INITIAL_RUN_MARKER.exists():
+        return False
+
+    log = log.bind(init_stage=1)
+
+    log.info(
+        "fc-manage-initial-build",
+        _replace_msg=(
+            "Building minimal system without roles using the initial "
+            "channel (stage 1), SSH access should work after this finishes."
+        ),
+    )
+    try:
+        out_link = "/run/fc-agent-built-system"
+        system_path = nixos.build_system(out_link=out_link, log=log)
+        nixos.register_system_profile(system_path, log)
+        # New system is registered, delete the temporary result link.
+        os.unlink(out_link)
+        nixos.switch_to_system(system_path, lazy=False, log=log)
+    except Exception:
+        log.warn(
+            "fc-manage-initial-build-failed",
+            _replace_msg=(
+                "Initial build failed (stage 1), but we can still continue and "
+                "try with the requested channel URL."
+            ),
+            exc_info=True,
+        )
+    else:
+        log.info(
+            "fc-manage-initial-build-succeeded",
+            _replace_msg="Initial build finished (stage 1).",
+        )
+
+    log = log.bind(init_stage=2)
+
+    log.info(
+        "fc-manage-initial-channel-update",
+        _replace_msg=(
+            "Updating to requested channel URL, but still without roles "
+            "(stage 2)."
+        ),
+    )
+
+    switch_with_update(log, enc, lazy=True)
+
+    INITIAL_RUN_MARKER.unlink()
+    log.info(
+        "fc-manage-initial-channel-update-succeeded",
+        _replace_msg=(
+            "Initial channel update and switch succeeded, removed initial "
+            "agent run marker at {initial_agent_run_marker}."
+        ),
+        initial_agent_run_marker=INITIAL_RUN_MARKER,
+    )
+
+    return True
+
+
 def switch(
     log,
     enc,
@@ -380,10 +445,7 @@ def switch(
         channel_to_build = Channel.current(log, "nixos")
 
     if channel_to_build:
-        try:
-            return channel_to_build.switch(lazy)
-        except nixos.ChannelException:
-            sys.exit(2)
+        return channel_to_build.switch(lazy)
 
 
 def switch_with_update(log, enc, lazy=False):
@@ -423,7 +485,4 @@ def switch_with_update(log, enc, lazy=False):
     if not channel:
         return
 
-    try:
-        return channel.switch(lazy)
-    except nixos.ChannelException:
-        sys.exit(2)
+    return channel.switch(lazy)
