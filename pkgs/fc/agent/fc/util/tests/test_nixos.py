@@ -43,6 +43,18 @@ class PollingFakePopen:
         pass
 
 
+def test_get_fc_channel_build(log):
+    build = nixos.get_fc_channel_build(FC_CHANNEL)
+    assert build == "93111"
+
+
+def test_get_fc_channel_build_should_warn_for_non_fc_channel(log):
+    invalid_channel = "http://invalid"
+    build = nixos.get_fc_channel_build(invalid_channel)
+    assert build is None
+    log.has("no-fc-channel-url", channel_url=invalid_channel)
+
+
 def test_build_system_with_changes(log, monkeypatch):
     channel = (
         "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"

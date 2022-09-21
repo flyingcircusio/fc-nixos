@@ -4,7 +4,7 @@ import os
 import os.path as p
 import re
 import subprocess
-import sys
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -13,6 +13,7 @@ import fc.util.logging
 import requests
 from fc.maintenance.lib.shellscript import ShellScriptActivity
 from fc.util import nixos
+from fc.util.enc import STATE_VERSION_FILE
 from fc.util.nixos import RE_FC_CHANNEL
 
 # nixos-rebuild doesn't support changing the result link name so we
@@ -39,6 +40,26 @@ os.environ["NIX_REMOTE"] = "daemon"
 # Other platform code can also check the presence of this marker file to
 # change behaviour before/during the first agent run.
 INITIAL_RUN_MARKER = Path("/etc/nixos/fc_agent_initial_run")
+
+MESSAGE_NO_FC_CHANNEL = """\
+nixos channel URL does not point to a resolved FC channel build:
+{channel}
+This should not happen in normal operation and requires manual intervention by \
+switching to a resolved channel URL, in the form:
+https://hydra.flyingcircus.io/build/123456/download/1/nixexprs.tar.xz
+Running `fc-manage switch -ce` should fix the issue.
+"""
+
+MESSAGE_NO_FC_CHANNEL_DEV = """\
+nixos channel URL does not point to a resolved FC channel build:
+{channel}
+This is not critical as the system uses an environment pointing to a local dev
+checkout for building the system but other Nix commands may fail.
+The nixos channel should be set to a resolved channel URL, in the form:
+https://hydra.flyingcircus.io/build/123456/download/1/nixexprs.tar.xz
+Choosing a regular environment and running `fc-manage switch -ce` should fix
+the issue.
+"""
 
 
 class Channel:
@@ -262,6 +283,108 @@ class Channel:
                 )
             )
         self.log.info("maintenance-register-succeeded")
+
+
+class SwitchFailed(Exception):
+    pass
+
+
+@dataclass
+class CheckResult:
+    errors: list[str]
+    warnings: list[str]
+
+    def format_output(self) -> str:
+        if self.errors:
+            return "CRITICAL: " + " ".join(self.errors + self.warnings)
+
+        if self.warnings:
+            return "WARNING: " + " ".join(self.warnings)
+
+        return "OK: no problems found."
+
+    @property
+    def exit_code(self) -> int:
+        if self.errors:
+            return 2
+
+        if self.warnings:
+            return 1
+
+        return 0
+
+
+def check(log, enc) -> CheckResult:
+    errors = []
+    warnings = []
+    if INITIAL_RUN_MARKER.exists():
+        warnings.append(
+            f"{INITIAL_RUN_MARKER} exists. Looks like the agent has not "
+            f"run successfully, yet."
+        )
+
+    if STATE_VERSION_FILE.exists():
+        state_version = STATE_VERSION_FILE.read_text().strip()
+        log.debug("check-state-version", state_version=state_version)
+        if not re.match(r"\d\d\.\d\d", state_version):
+            warnings.append(
+                f"State version invalid: {state_version}, should look like 22.05"
+            )
+    else:
+        warnings.append(f"State version file {STATE_VERSION_FILE} missing.")
+
+    # ENC data checks
+    enc_params = enc["parameters"]
+
+    environment_url = enc_params.get("environment_url")
+    production_flag = enc_params.get("production")
+
+    log.debug(
+        "check-enc",
+        environment_url=environment_url,
+        production_flag=production_flag,
+    )
+
+    if production_flag is None:
+        errors.append("ENC: production flag is missing.")
+
+    if environment_url is None:
+        errors.append("ENC: environment URL is missing.")
+
+    uses_local_checkout = (
+        environment_url.startswith("file://") if environment_url else None
+    )
+
+    if production_flag and uses_local_checkout:
+        warnings.append("production VM uses local dev checkout.")
+
+    # nixos channel checks (missing/malformed)
+    nixos_channel = nixos.current_nixos_channel_url(log)
+    if nixos_channel:
+        build = nixos.get_fc_channel_build(nixos_channel, log)
+        log.debug(
+            "check-nixos-channel", nixos_channel=nixos_channel, build=build
+        )
+        if build is None:
+            # There's something wrong with the nixos channel URL, we could not
+            # get a build number from it.
+            if INITIAL_RUN_MARKER.exists():
+                # This is expected on the first agent run, no need to warn.
+                pass
+            elif uses_local_checkout:
+                # Problematic, but not critical if a local dev checkout is used.
+                warnings.append(
+                    MESSAGE_NO_FC_CHANNEL_DEV.format(channel=nixos_channel)
+                )
+            else:
+                # Intervention required or system may not build properly.
+                errors.append(
+                    MESSAGE_NO_FC_CHANNEL.format(channel=nixos_channel)
+                )
+    else:
+        errors.append("`nixos` channel not set.")
+
+    return CheckResult(errors, warnings)
 
 
 def prepare_switch_in_maintenance(log, enc):
