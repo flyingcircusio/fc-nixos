@@ -47,7 +47,9 @@ def test_initialize_enc_should_not_crash_when_initial_data_missing(
 @unittest.mock.patch("fc.util.enc.write_system_state")
 @unittest.mock.patch("fc.util.enc.update_enc_nixos_config")
 @unittest.mock.patch("fc.util.enc.update_inventory")
+@unittest.mock.patch("fc.util.enc.initialize_state_version")
 def test_update_enc(
+    initialize_state_version,
     update_inventory,
     update_enc_nixos_config,
     write_system_state,
@@ -63,6 +65,7 @@ def test_update_enc(
 
     update_enc(logger, tmpdir_path, enc_path)
 
+    initialize_state_version.assert_called_once()
     update_inventory.assert_called_with(logger, enc_data)
     update_enc_nixos_config.assert_called_with(logger, enc_data, enc_path)
     write_system_state.assert_called_with(logger)
