@@ -321,6 +321,8 @@ in
       show_interfaces
       secure_erase
       ipmitool
+      ethtool
+      tcpdump
     ];
   };
 }
