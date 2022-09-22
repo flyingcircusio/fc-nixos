@@ -419,7 +419,6 @@ def update_inventory(log):
             (lambda: directory.list_service_clients(), "service_clients.json"),
             (lambda: directory.list_services(), "services.json"),
             (lambda: directory.list_users(), "users.json"),
-            (lambda: directory.lookup_resourcegroup("admins"), "admins.json"),
         ],
     )
 
