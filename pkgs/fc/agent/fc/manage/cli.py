@@ -109,7 +109,7 @@ def switch_cmd(
                     lazy=lazy,
                 )
         except nixos.ChannelException:
-            Exit(2)
+            raise Exit(2)
 
         if not keep_cmd_output:
             fc.util.logging.drop_cmd_output_logfile(log)
@@ -243,7 +243,7 @@ def fc_manage(
                     lazy=False,
                 )
         except nixos.ChannelException:
-            Exit(2)
+            raise Exit(2)
 
         if not keep_cmd_output:
             fc.util.logging.drop_cmd_output_logfile(log)
