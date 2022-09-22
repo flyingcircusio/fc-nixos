@@ -6,6 +6,7 @@ import re
 import subprocess
 from pathlib import Path
 from subprocess import PIPE, STDOUT
+from typing import Optional
 
 import requests
 import structlog
@@ -122,6 +123,21 @@ def channel_version(channel_url, log=_log):
     return version + suffix
 
 
+def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
+    channel_match = RE_FC_CHANNEL.match(channel_url)
+    if channel_match:
+        return channel_match.group(1)
+    else:
+        log.warn(
+            "no-fc-channel-url",
+            _replace_msg=(
+                "Cannot get build number. This does not look like a resolved "
+                f"FC channel URL: {channel_url}"
+            ),
+            channel_url=channel_url,
+        )
+
+
 def running_system_version(log=_log):
     nixos_version_path = Path("/run/current-system/nixos-version")
 
@@ -145,7 +161,7 @@ def current_nixos_channel_version():
     return "".join(open(f).read() for f in label_comp)
 
 
-def current_nixos_channel_url(log=_log):
+def current_nixos_channel_url(log=_log) -> Optional[str]:
     if not p.exists("/root/.nix-channels"):
         log.warn(
             "nix-channel-file-missing",
@@ -332,7 +348,7 @@ def find_nix_build_error(stderr, log=_log):
     return "Building the system failed!"
 
 
-def build_system(channel_url, build_options=None, out_link=None, log=_log):
+def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
     """
     Build system with this channel. Works like nixos-rebuild build.
     Does not modify the running system.
@@ -342,12 +358,13 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
         "nix-build",
         "--no-build-output",
         "--show-trace",
-        "-I",
-        channel_url,
         "<nixpkgs/nixos>",
         "-A",
         "system",
     ]
+
+    if channel_url:
+        cmd.extend(["-I", channel_url])
 
     if out_link:
         cmd.extend(["--out-link", str(out_link)])

@@ -166,6 +166,11 @@ in {
 
       default = [];
     };
+
+    flyingcircus.stateVersionFile = mkOption {
+      type = types.path;
+      default = "/etc/local/nixos/state_version";
+    };
   };
 
   config = {
@@ -335,7 +340,10 @@ in {
 
     in fromCfgDirs // fromActivationScripts;
 
-    system.stateVersion = fclib.mkPlatform "22.05";
+    system.stateVersion =
+      if pathExists cfg.stateVersionFile
+      then fileContents cfg.stateVersionFile
+      else "22.05";
 
     systemd = {
       tmpfiles.rules = [
