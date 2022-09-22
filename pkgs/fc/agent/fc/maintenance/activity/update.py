@@ -7,7 +7,6 @@ import os.path as p
 
 import structlog
 from fc.util import nixos
-from fc.util.nixos import RE_FC_CHANNEL
 
 from . import Activity, RebootType
 
@@ -159,12 +158,14 @@ class UpdateActivity(Activity):
 
         msg = [f"System update: {self.current_version} -> {self.next_version}"]
 
-        current_channel_match = RE_FC_CHANNEL.match(self.current_channel_url)
-        if current_channel_match:
-            next_channel_match = RE_FC_CHANNEL.match(self.next_channel_url)
-            if next_channel_match:
-                current_build = current_channel_match.group(1)
-                next_build = next_channel_match.group(1)
+        current_build = nixos.get_fc_channel_build(
+            self.current_channel_url, self.log
+        )
+        if current_build:
+            next_build = nixos.get_fc_channel_build(
+                self.next_channel_url, self.log
+            )
+            if next_build:
                 msg.append(f"Build number: {current_build} -> {next_build}")
 
         if self.current_environment != self.next_environment:

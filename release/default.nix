@@ -74,13 +74,25 @@ let
       preferLocalBuild = true;
     };
 
+  initialEnv =
+    if stableBranch
+    then branch
+    else "fc-22.05-dev";
+
   initialNixChannels = pkgs.writeText "nix-channels" ''
-    https://hydra.flyingcircus.io/channel/custom/flyingcircus/fc-${version}-dev/release nixos
+    https://hydra.flyingcircus.io/channel/custom/flyingcircus/${initialEnv}/release nixos
   '';
 
   initialVMContents = [
     { source = initialNixChannels;
       target = "/root/.nix-channels";
+    }
+    {
+      source = (pkgs.writeText "fc-agent-initial-run" ''
+        VM ignores roles and just builds a minimal system while this marker file
+        is present. This will be deleted during first agent run.
+      '');
+      target = "/etc/nixos/fc_agent_initial_run";
     }
     { source = ../nixos/etc_nixos_local.nix;
       target = "/etc/nixos/local.nix";

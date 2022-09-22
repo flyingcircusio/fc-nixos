@@ -49,15 +49,17 @@ in
   };
 
   config = lib.mkMerge [
+    # Typical services that should be started after and shut down before
+    # we try to unmount NFS.
+    # See https://yt.flyingcircus.io/issue/PL-129954 for a discussion about
+    # this.
+    # We always enable this because customers might enable NFS
+    # through other means than our roles.
     {
-      # Typical services that should be started after and shut down before
-      # we try to unmount NFS.
-      # See https://yt.flyingcircus.io/issue/PL-129954 for a discussion about
-      # this.
-      # We always enable this because customers might enable NFS
-      # through other means than our roles.
-      systemd.services.httpd.after = [ "remote-fs.target" ];
-      systemd.services.nginx.after = [ "remote-fs.target" ];
+      systemd.targets.remote-fs.before = [
+        "httpd.service"
+        "nginx.service"
+      ];
     }
 
     (lib.mkIf (cfg.roles.nfs_rg_client.enable && service != null) {

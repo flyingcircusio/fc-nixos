@@ -99,6 +99,12 @@ def activity(logger, nixos_mock):
 def nixos_mock(monkeypatch):
     import fc.util.nixos
 
+    def fake_get_fc_channel_build(channel_url, _):
+        if channel_url == CURRENT_CHANNEL_URL:
+            return CURRENT_BUILD
+        elif channel_url == NEXT_CHANNEL_URL:
+            return NEXT_BUILD
+
     def fake_channel_version(channel_url):
         if channel_url == CURRENT_CHANNEL_URL:
             return CURRENT_VERSION
@@ -120,6 +126,7 @@ def nixos_mock(monkeypatch):
         RegisterFailed=RegisterFailed,
     )
 
+    mocked.get_fc_channel_build = fake_get_fc_channel_build
     mocked.channel_version = fake_channel_version
     mocked.kernel_version = fake_changed_kernel_version
     mocked.resolve_url_redirects = lambda url: url
