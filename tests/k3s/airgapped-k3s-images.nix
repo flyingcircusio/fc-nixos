@@ -3,10 +3,10 @@
 [
 {
   imageName = "docker.io/rancher/klipper-helm";
-  imageDigest = "sha256:6eb12b5362bd19bb8c523dda3e5d5ed0137b134e334c8257a30f6a849a42e990";
-  sha256 = "1an301qb1qs8jzdb0ll1wjqrw0vrj7g4qx3jm1xwwr891k86nfy0";
+  imageDigest = "sha256:6a8e819402e3fdd5ff9ec576174b6c0013870b9c0627a05fa0ab17374b5cf189";
+  sha256 = "19n019jkkn4dvpl82iw9nxm48v6ci2wzkyc6537pqfgq75nmifpx";
   finalImageName = "docker.io/rancher/klipper-helm";
-  finalImageTag = "v0.7.1-build20220407";
+  finalImageTag = "v0.7.3-build20220613";
 }
 {
   imageName = "docker.io/rancher/klipper-lb";
@@ -31,8 +31,8 @@
 }
 {
   imageName = "docker.io/rancher/mirrored-library-busybox";
-  imageDigest = "sha256:7b84a954b0ec5e7cf8405f1cea259416a20f6ddcf5e9bcfb356078d077d8e4fe";
-  sha256 = "13mpprzfk92b1wvjf8r5q70cxdqdfgv89v0r9wg6cfq3fq049hqg";
+  imageDigest = "sha256:aded825f3a3aece1d9efd13284b2c96eed13db78b77565356c580d062c7dd14b";
+  sha256 = "0pdcxk7iizmr7syqy71h42zm3dj476nly3ff7rkqi6fvk3vjhsm9";
   finalImageName = "docker.io/rancher/mirrored-library-busybox";
   finalImageTag = "1.34.1";
 }
