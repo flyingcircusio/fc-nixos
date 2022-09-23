@@ -2,6 +2,9 @@
 #!nix-shell -i python3 -p "python3.withPackages (ps: [ ps.requests ])" -p nix-prefetch-docker
 # Must be run on Linux x86_64 because images are os/arch-specific and the flags
 # for nix-prefetch-docker don't seem to work.
+# If no k3s version (like 1.23.6+k3s1) is given on the command line, the script
+# will try to get the version from <nixpkgs>. Make sure that nixpkgs points to
+# the right version, for example by using nix-shell in the fc-nixos repo.
 
 import os
 import re
@@ -10,9 +13,32 @@ import sys
 
 import requests
 
-gitRevision = "v1.23.6+k3s1"
+if len(sys.argv) == 1:
+    k3s_version = (
+        subprocess.run(
+            ["nix-instantiate", "--eval", "<nixpkgs>", "-A", "k3s.version"],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+        .stdout.strip()
+        .strip('"')
+    )
+    print(
+        f"Found k3s version {k3s_version}, is that correct? You can also "
+        f"pass the version on the command line as an argument."
+    )
+elif len(sys.argv) == 2:
+    k3s_version = sys.argv[1]
+else:
+    raise RuntimeError("Too many arguments, zero or one expected.")
 
-url = f"https://raw.githubusercontent.com/k3s-io/k3s/{gitRevision}/scripts/airgap/image-list.txt"
+url = (
+    f"https://raw.githubusercontent.com/k3s-io/k3s/"
+    f"v{k3s_version}/scripts/airgap/image-list.txt"
+)
+
+print(f"Getting airgapped image list from {url}")
 
 # file looks like this:
 # docker.io/rancher/klipper-helm:v0.6.6-build20211022
