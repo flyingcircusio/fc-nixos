@@ -29,36 +29,51 @@ let
         if (conf.binds != null) then conf.binds
         else
           let
-            port = if conf.lbServicePort != null then conf.lbServicePort else conf.podPort;
+            port =
+              if conf.lbServicePort != null then conf.lbServicePort
+              else if conf.servicePort != null then conf.servicePort
+              else conf.podPort;
           in [ "127.0.0.1:${toString port}" ];
+
+      mkLoadBalanceServer = n:
+        "${lib.replaceStrings [".gocept.net"] [""] n.address} ${head n.ips}:${toString conf.lbServicePort} check"
+        + (lib.optionalString conf.sslBackend " ssl verify none");
+
+      svcServer =
+        "service ${serviceFqdn}:${toString conf.servicePort} check"
+        + (lib.optionalString conf.sslBackend " ssl verify none");
 
       podOptions = lib.concatStringsSep " " [
         "check resolvers cluster init-addr none"
         (lib.optionalString conf.sslBackend "ssl verify none")
         (lib.optionalString (conf.extraPodTemplateOptions != "") conf.extraPodTemplateOptions)
       ];
-      podDns = "*.${serviceFqdn}:${toString conf.podPort}";
       podInstances = toString conf.maxExpectedPods;
-      podTemplate = "server-template pod ${podInstances} ${podDns} ${podOptions}";
-    in
+      podServerTemplate = "server-template pod ${podInstances} ${serviceFqdn}:${toString conf.podPort} ${podOptions}";
+  in
     assert
-      lib.assertMsg (conf.lbServicePort != null || conf.podPort != null)
-      "flyingcircus.kubernetes.frontend.${name}: podPort or lbServicePort must be set!";
+      lib.assertMsg (conf.lbServicePort != null || conf.servicePort != null || conf.podPort != null)
+      "flyingcircus.kubernetes.frontend.${name}: lbServicePort, servicePort or podPort must be set!";
+    assert
+      lib.assertMsg (conf.podPort == null || conf.lbServicePort == null)
+      "flyingcircus.kubernetes.frontend.${name}: podPort and lbServicePort are both set, choose one!";
+    assert
+      lib.assertMsg (conf.lbServicePort == null || conf.servicePort == null)
+      "flyingcircus.kubernetes.frontend.${name}: lbServicePort and servicePort are both set, choose one!";
+    assert
+      lib.assertMsg (conf.servicePort == null || conf.podPort == null)
+      "flyingcircus.kubernetes.frontend.${name}: servicePort and podPort are both set, choose one!";
     {
       inherit binds;
       inherit (conf) mode;
       options = if conf.mode == "http" then [ "httplog" ] else [ "tcplog" ];
       servers =
-        lib.optionals (conf.lbServicePort != null)
-          (map
-            (n: "${lib.replaceStrings [".gocept.net"] [""] n.address} ${head n.ips}:${toString conf.lbServicePort} check"
-                + (lib.optionalString (conf.podPort != null) " backup")
-                + (lib.optionalString conf.sslBackend " ssl verify none"))
-            agents);
+        (lib.optionals (conf.lbServicePort != null) (map mkLoadBalanceServer agents))
+        ++ (lib.optional (conf.servicePort != null) svcServer);
 
       extraConfig = lib.concatStringsSep "\n" [
         "balance leastconn"
-        (lib.optionalString (conf.podPort != null) podTemplate)
+        (lib.optionalString (conf.podPort != null) podServerTemplate)
         (lib.optionalString (conf.haproxyExtraConfig != "") "# From haproxyExtraConfig option")
         (lib.optionalString (conf.haproxyExtraConfig != "") conf.haproxyExtraConfig)
       ];
@@ -82,22 +97,70 @@ in
             type = nullOr port;
             default = null;
             description = ''
-              The port haproxy uses to talk to SRV addresses of the agents where
-              the internal load balancer is listening, forwarding to the cluster IP of the service.
-              This is called `port` in the Kubernetes service definition. The service
-              must be of type `LoadBalancer`.
+              The port haproxy uses to talk to SRV addresses of the agents
+              where the internal load balancer is listening, forwarding to
+              the cluster IP of the service.
 
-              Either `podPort` or `lbServicePort` must be defined.
-              If only `lbServicePort` is specified, haproxy always talks to internal load balancer.
-              If both are specified, talking to pods is preferred and the
-              internal load balancer backends are configured as backups.
+              The value here has to match a `port` in the Kubernetes service
+              definition under `spec.ports`. That service must be of type
+              `LoadBalancer`.
 
-              Every agent is expected to run the internal load balancer
-              so the number of backends is the same as the number of agents in the cluster.
+              Every agent is expected to run the internal load balancer so the
+              number of backends is the same as the number of agents in the
+              cluster.
 
               Talking to the internal load balancer works even without cluster
               DNS because we know the IPs of the agents from static config but
               is less performant than letting haproxy load balance between pods.
+
+              Either `podPort`, `servicePort` or `lbServicePort` must be
+              defined and they are mutually exclusive.
+            '';
+          };
+
+          servicePort = mkOption {
+            type = nullOr port;
+            default = null;
+            description = ''
+              Tell HAProxy to forward traffic to the cluster IP of a service.
+
+              The value here has to match a `port` in the Kubernetes service
+              definition under `spec.ports`. That service must be of type
+              `ClusterIP`.
+
+              The service's cluster IP will be discovered using the
+              `serviceName` in `namespace`, for example
+              `appservice.mynamespace.svc.cluster.local`.
+
+              This requires working Cluster DNS (it's enabled by default).
+
+              Either `podPort`, `servicePort` or `lbServicePort` must be
+              defined and they are mutually exclusive.
+            '';
+          };
+
+          podPort = mkOption {
+            type = nullOr port;
+            default = null;
+            description = ''
+              Tell HAProxy to talk directly to the pods, load balancing
+              between them.
+
+              The value here has to match a `targetPort` in the Kubernetes
+              service definition under `spec.ports`.
+
+              That service must be "headless" for this to work, meaning that
+              its clusterIP has to be set to `None`.
+
+              Haproxy uses DNS service discovery to update addresses of pods
+              belonging to the service, using the `serviceName` in
+              `namespace`, for example
+              `appservice.mynamespace.svc.cluster.local`.
+
+              This requires working Cluster DNS (it's enabled by default).
+
+              Either `podPort`, `servicePort` or `lbServicePort` must be
+              defined and they are mutually exclusive.
             '';
           };
 
@@ -128,21 +191,6 @@ in
               Use TCP to forward HTTPS traffic if you have ingresses handling HTTPS themselves.
               It's recommended to terminate SSL on the Nginx in front of haproxy
               and let haproxy use HTTP mode to talk to the pods.
-            '';
-          };
-
-          podPort = mkOption {
-            type = nullOr port;
-            default = null;
-            description = ''
-              The port haproxy uses to talk to the pods, load balancing between them.
-              Haproxy uses DNS service discovery to update addresses of pods
-              This is called `targetPort` in the Kubernetes service definition.
-              which requires working Cluster DNS (it's enabled by default).
-              Either `podPort` or `lbServicePort` must be defined.
-              If only `podPort` is specified, haproxy only talks to the pods directly.
-              If both are specified, talking to pods is preferred and the internal load balancer backends are configured as backups.
-              If you leave `podPort` as null, haproxy talks to the internal load balancer only.
             '';
           };
 
