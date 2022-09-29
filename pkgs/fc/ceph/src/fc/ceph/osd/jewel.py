@@ -91,9 +91,9 @@ class OSDManager(object):
             except Exception:
                 traceback.print_exc()
 
-    def destroy(self, ids, force_objectstore_type):
-        # force_objectstore_type is ignored and only there for argument compatibility
-        # to luminous
+    def destroy(self, ids, force_objectstore_type, unsafe_destroy):
+        # force_objectstore_type and unsafe_destroy are ignored and only there for
+        # argument compatibility to luminous
         ids = self._parse_ids(ids, allow_non_local=f"DESTROY {ids}")
 
         for id_ in ids:
@@ -131,8 +131,11 @@ class OSDManager(object):
             except Exception:
                 traceback.print_exc()
 
-    # target_objectstore_type is ignored but required for call compatibility
-    def rebuild(self, ids, journal_size, target_objectstore_type):
+    # target_objectstore_type and unsafde_destroy are ignored but required for
+    # call compatibility
+    def rebuild(
+        self, ids, journal_size, target_objectstore_type, unsafe_destroy
+    ):
         ids = self._parse_ids(ids)
 
         for id_ in ids:

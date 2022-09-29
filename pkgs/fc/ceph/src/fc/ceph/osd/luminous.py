@@ -100,13 +100,13 @@ class OSDManager(object):
             except Exception:
                 traceback.print_exc()
 
-    def destroy(self, ids, force_objectstore_type=None):
+    def destroy(self, ids, unsafe_destroy, force_objectstore_type=None):
         ids = self._parse_ids(ids, allow_non_local=f"DESTROY {ids}")
 
         for id_ in ids:
             try:
                 osd = OSD(id_, type=force_objectstore_type)
-                osd.purge()
+                osd.purge(unsafe_destroy)
             except Exception:
                 traceback.print_exc()
 
@@ -138,13 +138,17 @@ class OSDManager(object):
             except Exception:
                 traceback.print_exc()
 
-    def rebuild(self, ids, journal_size, target_objectstore_type=None):
+    def rebuild(
+        self, ids, journal_size, unsafe_destroy, target_objectstore_type=None
+    ):
         ids = self._parse_ids(ids)
 
         for id_ in ids:
             try:
                 osd = OSD(id_)
-                osd.rebuild(journal_size, target_objectstore_type)
+                osd.rebuild(
+                    journal_size, unsafe_destroy, target_objectstore_type
+                )
             except Exception:
                 traceback.print_exc()
 
@@ -381,8 +385,26 @@ class GenericOSD(object):
 
         run.ceph("osd", "crush", "add", self.name, str(weight), crush_location)
 
-    def purge(self, flush=True):
+    def purge(self, unsafe_destroy):
         """Deletes an osd, including removal of auth keys and crush map entry"""
+
+        # Safety net
+        if unsafe_destroy:
+            print("WARNING: Skipping destroy safety check.")
+        else:
+            try:
+                run.ceph("osd", "safe-to-destroy", str(self.id))
+            except CalledProcessError as e:
+                print(
+                    # fmt: off
+                    "OSD not safe to destroy:", e.stderr,
+                    "\nTo override this check, specify `--unsafe-destroy`. This can "
+                    "cause data loss or cluster failure!!"
+                    # fmt: on
+                )
+                # do we have some generic or specific error return codes?
+                sys.exit(10)
+
         print(f"Destroying OSD {self.id} ...")
 
         try:
@@ -475,6 +497,7 @@ class GenericOSD(object):
         target_osd_type: str,
         journal: str,
         journal_size: str,
+        unsafe_destroy: bool,
         device: str,
         crush_location: str,
     ):
@@ -485,7 +508,7 @@ class GenericOSD(object):
         # `purge` also removes crush location and auth. A `destroy` would keep them, but
         # as we re-use the creation commands which always handle crush and auth as well,
         # for simplicity's sake this optimisation is not used.
-        self.purge()
+        self.purge(unsafe_destroy)
 
         # This is an "interesting" turn-around ...
         manager = OSDManager()
@@ -622,8 +645,8 @@ class FileStoreOSD(GenericOSD):
             # fmt: on
         )
 
-    def purge(self):
-        super().purge()
+    def purge(self, unsafe_destroy):
+        super().purge(unsafe_destroy)
 
         # Try deleting an external journal. The internal journal was already
         # deleted during the generic destroy of the VG.
@@ -632,7 +655,7 @@ class FileStoreOSD(GenericOSD):
         except ValueError:
             pass
 
-    def rebuild(self, journal_size, target_objectstore_type):
+    def rebuild(self, journal_size, unsafe_destroy, target_objectstore_type):
         """Fully destroy and create the FileStoreOSD again with the same properties,
         optionally converting it to another OSD type.
         """
@@ -666,7 +689,11 @@ class FileStoreOSD(GenericOSD):
         print(f"--journal={journal}")
 
         self._destroy_and_rebuild_to(
-            target_osd_type, journal, journal_size, **oldosd_properties
+            target_osd_type,
+            journal,
+            journal_size,
+            unsafe_destroy,
+            **oldosd_properties,
         )
 
 
@@ -801,8 +828,8 @@ class BlueStoreOSD(GenericOSD):
             # fmt: on
         )
 
-    def purge(self):
-        super().purge()
+    def purge(self, unsafe_destroy):
+        super().purge(unsafe_destroy)
 
         try:
             run.lvremove("-f", self._locate_wal_lv(), check=False)
@@ -811,7 +838,7 @@ class BlueStoreOSD(GenericOSD):
         except ValueError:
             pass
 
-    def rebuild(self, journal_size, target_objectstore_type):
+    def rebuild(self, journal_size, unsafe_destroy, target_objectstore_type):
         """Fully destroy and create the FileStoreOSD again with the same properties,
         optionally converting it to another OSD type.
         """
@@ -838,5 +865,9 @@ class BlueStoreOSD(GenericOSD):
         print(f"--journal={journal}")
 
         self._destroy_and_rebuild_to(
-            target_osd_type, journal, journal_size, **oldosd_properties
+            target_osd_type,
+            journal,
+            journal_size,
+            unsafe_destroy,
+            **oldosd_properties,
         )
