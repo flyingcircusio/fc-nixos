@@ -12,6 +12,7 @@ let
       server=/net/
       server=/org/
       server=/com/
+      address=/webmail.example.local/192.168.1.3
     '';
     services.haveged.enable = true;
   };
@@ -38,6 +39,8 @@ in
               };
               rootAlias = "user2@example.local";
             };
+
+            flyingcircus.roles.postgresql14.enable = true;
 
             virtualisation.vlans = [ 1 3 ];
 
@@ -199,6 +202,12 @@ in
       mail.succeed("grep -v :placeholder ${passwdFile}")
 
     mail.wait_for_unit('network-online.target')
+
+    with subtest("roundcube webmailer should work"):
+      mail.wait_for_unit("phpfpm-roundcube.service")
+      mail.succeed("sudo -u roundcube psql -c 'select from users;'")
+      mail.succeed("curl webmail.example.local")
+
     client.wait_for_unit('network-online.target')
     ext.wait_for_unit('network-online.target')
 
