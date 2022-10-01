@@ -1,28 +1,18 @@
-import ./make-test-python.nix ({ version ? "14", lib, pkgs, ... }:
+import ../make-test-python.nix ({ version ? "14", lib, testlib, pkgs, ... }:
 let
-  ipv4 = "192.168.101.1";
-  ipv6 = "2001:db8:f030:1c3::1";
+  ipv4 = testlib.fcIP.srv4 1;
+  ipv6 = testlib.fcIP.srv6 1;
 in {
   name = "postgresql${version}";
-  machine =
-    { ... }:
-    {
-      imports = [ ../nixos ../nixos/roles ];
-      flyingcircus.roles."postgresql${version}".enable = true;
+  nodes = {
+    machine = { ... }: {
+      imports = [
+        (testlib.fcConfig { net.fe = false; })
+      ];
 
-      flyingcircus.enc.parameters = {
-        resource_group = "test";
-        interfaces.srv = {
-          mac = "52:54:00:12:34:56";
-          bridged = false;
-          networks = {
-            "192.168.101.0/24" = [ ipv4 ];
-            "2001:db8:f030:1c3::/64" = [ ipv6 ];
-          };
-          gateways = {};
-        };
-      };
+      flyingcircus.roles."postgresql${version}".enable = true;
     };
+  };
 
   testScript =
     let

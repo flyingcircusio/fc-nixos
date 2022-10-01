@@ -85,11 +85,12 @@ in {
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
-  postgresql10 = callTest ./postgresql.nix { version = "10"; };
-  postgresql11 = callTest ./postgresql.nix { version = "11"; };
-  postgresql12 = callTest ./postgresql.nix { version = "12"; };
-  postgresql13 = callTest ./postgresql.nix { version = "13"; };
-  postgresql14 = callTest ./postgresql.nix { version = "14"; };
+  postgresql10 = callTest ./postgresql { version = "10"; };
+  postgresql11 = callTest ./postgresql { version = "11"; };
+  postgresql12 = callTest ./postgresql { version = "12"; };
+  postgresql13 = callTest ./postgresql { version = "13"; };
+  postgresql14 = callTest ./postgresql { version = "14"; };
+  postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix {};
   prometheus = callTest ./prometheus.nix {};
   rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};

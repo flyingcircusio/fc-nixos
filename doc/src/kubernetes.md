@@ -30,7 +30,7 @@ run in a process called the `k3s agent`. We will prefer to use the words
 `server` and `agent` through the remainder of this document.
 :::
 
-We provide k3s in the version 1.23.x.
+We provide version 1.23.x of k3s.
 
 ## Reference architecture and minimal resource requirements
 
@@ -49,37 +49,37 @@ the following roles:
 
 - **Frontend**
 
-  > Minimal resource requirements: 1 CPU, 4 GiB RAM, 30 GiB HDD, public IP addresses as needed
-  >
-  > VM that runs the `webgateway` role and accepts traffic from the internet.
+  Minimal resource requirements: 1 CPU, 4 GiB RAM, 30 GiB HDD, public IP addresses as needed
+
+  VM that runs the `webgateway` role and accepts traffic from the internet.
 
 - **K3s server**
 
-  > Minimal resource requirements: 2 CPU, 8 GiB RAM, 30 GiB SSD, public IP for dashboard
-  >
-  > VM that runs the `k3s-server` role and provides the Kubernetes control plane with a
-  > PostgreSQL database.
-  >
-  > Can optionally run OpenVPN and limit dashboard access to VPN users.
+  Minimal resource requirements: 2 CPU, 8 GiB RAM, 30 GiB SSD, public IP for dashboard
+
+  VM that runs the `k3s-server` role and provides the Kubernetes control plane with a
+  PostgreSQL database.
+
+  Can optionally run OpenVPN and limit dashboard access to VPN users.
 
 - **K3s agents**
 
-  > Minimal resource requirements: 4 CPU, 8 GiB RAM, 30 GiB HDD
-  >
-  > VMs that run the `k3s-agent` role and will be used to run your workloads.
-  > One node will be sufficient to get started but you will likely run two or
-  > many more for serious projects.
-  >
-  > Nodes never receive public IP addresses. All traffic from outside the
-  > resource group must pass through the webgateway.
+  Minimal resource requirements: 4 CPU, 8 GiB RAM, 30 GiB HDD
+
+  VMs that run the `k3s-agent` role and will be used to run your workloads.
+  One node will be sufficient to get started but you will likely run two or
+  many more for serious projects.
+
+  Nodes never receive public IP addresses. All traffic from outside the
+  resource group must pass through the webgateway.
 
 - **Persistent volume storage (NFS subdir, optional)**
 
-  > Minimal resource requirements: 1 CPU, 8 GiB RAM, 50 GiB SSD
-  >
-  > VMs that run the `k3s-nfs` role and are used to satisfy persistent volume
-  > claims so that pods can be moved between nodes without loosing access to
-  > their volumes.
+  Minimal resource requirements: 1 CPU, 8 GiB RAM, 50 GiB SSD
+
+  VMs that run the `k3s-nfs` role and are used to satisfy persistent volume
+  claims so that pods can be moved between nodes without loosing access to
+  their volumes.
 
 :::{note}
 Our experiments have shown that scaling the cluster down further or using
@@ -161,10 +161,11 @@ $ kubectl get nodes
 
 ## Networking
 
-Our Kubernetes cluster uses `flannel` with the `host-gw` backend. Nodes interact
-with each other on the `srv` network and create an overlay network
-automatically. VMs with specialized roles (`k3s-server`, `k3s-agent` and the
-`webgateway`) have full access to the overlay network.
+Our Kubernetes cluster uses `flannel` with the `host-gw` backend. Nodes
+interact with each other on the {external+doc:ref}`SRV network
+<logical-networks>` and create an overlay network automatically. VMs with
+specialized roles (`k3s-server`, `k3s-agent` and the `webgateway`) have full
+access to the overlay network.
 
 ### Interaction with non-Kubernetes services
 
@@ -173,119 +174,183 @@ VMs and all services managed by our platform can be accessed as usual by
 addressing the VM names (like vm01).
 
 Conversely non-Kubernetes VMs can not access the cluster network directly but
-can either access services using haproxy (or nginx) through the frontend or can
+can either access services using HAProxy (or nginx) through the frontend or can
 access load balanced services directly by accessing any Kubernetes VM via its
 name and using the associated load balancer port.
 
 ### Exposing services
 
-To expose a kubernetes service (ports on a pod) to the outside world there are
-multiple moving parts that can be composed depending on your scenario and
-preferences:
+To expose an application running on Kubernetes (ports on a pod) to the outside
+world there are multiple moving parts that can be composed depending on your
+scenario and preferences:
 
-- our platform-managed `webgateway` providing one or more public IP addresses
-  and a managed nginx (to associate virtual hosts and run SSL termination)
-  and haproxy (to pass traffic in either HTTP or TCP mode to the cluster)
+- Our platform-managed `webgateway` role:
+  - uses one or more public IP addresses.
+  - provides nginx to associate virtual hosts and terminate SSL.
+  - provides HAProxy to load balance and pass traffic in either HTTP or TCP
+    mode to the cluster in various ways.
+  - automatically manages SSL certificates using Let's Encrypt.
 - `service` resources that expose your application's ports on a cluster IP/port
-  : for each pod
+  and forward the traffic to the application pods.
+- `headless service` resources that are used to discover pod IPs directly.
 - `load balancer` service resources that provide a port on every agent and
-  forward the traffic to the pods.
-- `ingress` controllers that may (or may not) terminate SSL and do virtual host
-  association and deliver traffic to your application's pods
+  forward the traffic to the application pods.
+- `ingress` controllers that may (or may not) terminate SSL, do virtual host
+  association and deliver traffic to your application's pods.
 
 Lets look at two typical scenarios on how to compose those:
 
-#### Scenario 1: HTTP/s using the platform-managed nginx
+#### Scenario 1: HTTPS using the platform-managed nginx
 
 In this scenario you run an HTTP application in Kubernetes and want to expose
-it to the outside world having SSL an virtual host termination managed by
-the Flying Circus platform without adding an ingress controller.
+it to the outside world, having SSL termination, certificates and virtual
+host association managed by the Flying Circus platform without adding an
+ingress controller.
+
+The setup in Kubernetes looks like this:
+
+- Add headless service providing pod IP addresses and port of your application
+  (8888 in our example).
+
+On the platform side, we have:
+
+- Nginx listening on the public {external+doc:ref}`FE interface <logical-networks>`,
+  terminating SSL connections and doing the virtual host association.
+- HAProxy listening on *localhost*, running in HTTP mode, discovering pod IPs
+  for the headless service via DNS and load balancing between pods.
 
 Here's a diagram of the setup focusing on your application's traffic flow:
 
 ```{image} images/http_platform.png
 ```
 
-The setup in Kubernetes looks like this:
+The headless `myapp` service could be defined as
 
-- expose your application's port using a service (8888 in our example)
-- bind your application's port to a load balancer (7654 in our example)
+```yaml
+# myapp-service-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp
+  labels:
+    run: myapp
+spec:
+  clusterIP: None
+  ports:
+  - port: 8888
+    protocol: TCP
+    name: http
+  selector:
+    app: myapp
+```
 
-In our platform the load balancer is integrated by providing custom NixOS
-configuration on the webgateway VM:
+Note that we define the clusterIP as None which makes the service a headless
+one.
+
+Our our platform, custom NixOS configuration on the webgateway VM sets up the
+integration between the `myapp` service and HAProxy:
 
 ```nix
 # /etc/local/nixos/myappfrontend.nix
 { ... }:
 {
 
-  flyingcircus.kubernetes.frontend.myapp = {
-    # where haproxy should be listening
-    bind = [ "127.0.0.1:8080" ];
-
-    # port the load balancer service is listening on
-    lbServicePort = 7654;
-    # port the application is exposed on the clusterIP of the pod.
-    podPort = 8888;
-  }
-
   flyingcircus.services.nginx.virtualHosts."myapp.example.com"  = {
     forceSSL = true;
-    locations."/".proxyPass = "http://localhost:8080";
+    locations."/".proxyPass = "http://127.0.0.1:8000";
   };
+
+  flyingcircus.kubernetes.frontend.myapp = {
+    binds = [ "127.0.0.1:8000" ];
+
+    # port the application is exposed on the pod.
+    podPort = 8888;
+  }
 
 }
 ```
 
-This will configure haproxy to listen locally on port 8080 and will generate
-backend servers that are dynamically populated with the pods' cluster IPs
-automatically when you add/remove pods. In the case that something happens to
-the cluster network we also configure the load balancer entries as backup
-servers so haproxy will try to reach the pods through a less optimal but
-potentially still working network path.
+This will configure nginx for requests accessing `myapp.example.com`,
+listening on all public IP addresses (default). Using `forceSSL`enables SSL
+and redirects HTTP traffic automatically to HTTPS. Finally, traffic is passed
+to HAProxy via the local socket.
 
-It also configures nginx to listen on all public IP addresses for requests
-accessing "myapp.example.com", ensure that SSL (using Let's Encrypt) is used
-and pass traffic to haproxy.
+We also configure HAProxy to listen with its frontend locally on port 8000 and
+to generate backends that are dynamically populated with the pod IPs
+automatically when you add/remove pods. By default, up to 10 pods are used by
+HAProxy. You can change the `maxExpectedPods` setting described below.
+
+See {ref}`webgateway` for more details about general HAProxy and nginx
+configuration.
+
 
 #### Scenario 2: TCP passed to an internal ingress controller
 
 A second typical scenario is if you want to handle non-HTTP protocols or want
-to terminate SSL and virtual host configuration within Kubernetes.
+to terminate SSL and virtual host configuration within Kubernetes using an
+ingress controller like *traefik*, which is installed by default.
+
+The setup in Kubernetes looks like this:
+
+- Deploy an ingress controller or use traefik ingress installed by default
+  (used in the example below).
+- Bind the ingress controller to a load balancer (port 8888 in our example).
+- Add a service of type ClusterIP for your application.
+- Deploy an ingress resource to to pass traffic to your application.
+
+On the platform side, we have:
+
+- HAProxy in *tcp* mode, listening on the public
+  {external+doc:ref}`FE interface <logical-networks>`, forwarding requests
+  from the Internet to Kubernetes ingress.
+
 
 Here's a diagram of the setup focusing on your application's traffic flow:
 
 ```{image} images/tcp_ingress.png
 ```
 
-The setup in Kubernetes looks like this:
-
-- expose your application's port using a service
-- (bind your application's port to a load balancer)
-- deploy an ingress controller and configure it to pass traffic to your
-  application (port 8443 in our example)
-- bind the ingress controller to a load balancer (port 8888 in our example)
-
-In our platform you connect the ingress load balancer with our webgateway:
+To connect the ingress controller service with our webgateway, both for HTTP
+and HTTPS:
 
 ```nix
 # /etc/local/nixos/myappfrontend.nix
 { ... }:
 {
-
-  flyingcircus.kubernetes.frontend.myapp = {
-    # haproxy now listens on a public IP address
-    bind = [ "192.0.124.96:443" ];
+  flyingcircus.kubernetes.frontend.traefik-ingress-https = {
+    # HAProxy listens on a public IP address on the FE interface using the
+    # standard HTTPS port 443
+    binds = [ "192.0.2.11:443" ];
     mode = "tcp"
 
-    # port the ingress load balancer service is listening on
-    lbServicePort = 8888;
-    # port the ingress controller is exposed on the clusterIP of the pod.
-    podPort = 8443;
+    # port the ingress controller's load balancer service is listening on
+    # for HTTPS traffic.
+    lbServicePort = 443;
+    serviceName = "traefik";
+    namespace = "kube-system";
   }
 
+  flyingcircus.kubernetes.frontend.traefik-ingress-http = {
+    binds = [ "192.0.2.11:80" ];
+    mode = "tcp"
+
+    # port the ingress controller's load balancer service is listening on
+    # for HTTP traffic
+    lbServicePort = 80;
+    serviceName = "traefik";
+    namespace = "kube-system";
+  }
 }
 ```
+
+Note that in this scenario, load balancing is done inside of Kubernetes.
+HAProxy just forwards the TCP stream to ingress. The ingress controller is
+responsible for terminating SSL, managing certificates and redirecting from
+HTTP to HTTPS if applicable. This is different from scenario 1 where HAProxy
+can do the load balancing in front of the Kubernetes cluster and nginx on the
+frontend VM has the responsibilities that the ingress controller has in this
+scenario.
+
 
 #### Configuration reference
 
@@ -298,29 +363,49 @@ on your requirements there are a few more options available:
 {
 
     flyingcircus.kubernetes.frontend.myapp = {
-      # Where this haproxy frontend should listen to.
-      binds = [ "127.0.0.1:8080" ];
+      # HAProxy listening on localhost, typically behind nginx (see scenario 1).
+      # binds = [ "127.0.0.1:8000" ];
+
+      # ...or
+
+      # HAProxy listening on the public FE interface (see scenario 2).
+      # binds = [ "192.0.2.11:443" ];
 
       # If the real service name is not `myapp`.
       serviceName = "traefik";
       # If you want to use a non-default namespace
       namespace = "kube-system";
 
-      # Choose between tcp and http mode.
+      # Choose between http (see scenario 1) and http (see scenario 2) mode,
+      # depending on the role HAProxy plays in the network setup.
       mode = "tcp";
 
-      # Additional parameters to the generated haproxy server entries
+      # Additional parameters to the generated HAProxy server entries
       haproxyExtraConfig = "maxconn 5";
 
-      # The port where the Kubernetes load balancer is listening on.
-      lbServicePort = 80;
+      # Use exactly one of the three port options below.
+      # They are mutually exclusive and depend on the service type
+      # configured in Kubernetes:
 
-      # To optimize network traffic you can configure the pod ports here.
-      # If no pod ports are given then traffic will always go through the
-      # kubernetes load balancer to reach the pods.
-      podPort = 8443;
+      # 1. Headless service (see scenario 1).
+      # Specify a pod port here. HAProxy will discover pod IPs
+      # and load-balance between the pods, forwarding traffic directly to them.
+      # podPort = 8443;
 
-      # haproxy needs to know a limit of server entries that it will
+      # ...or
+
+      # 2. Service with type LoadBalancer (see scenario 2).
+      # Specify on which load balancer port your service is listening on.
+      # lbServicePort = 80;
+
+      # ...or
+
+      # 3. Service with type ClusterIP.
+      # Forward traffic to the service and let kube-proxy distribute the traffic
+      # between pods.
+      # servicePort = 8443;
+
+      # HAProxy needs to know a limit of server entries that it will
       # generate. The default is 10 and you can adjust this as needed.
       maxExpectedPods = 5;
 
@@ -328,7 +413,7 @@ on your requirements there are a few more options available:
       # Certificates are not verified to speed up things and make things work with self-signed certificates.
       sslBackend = false;
 
-      # haproxy options for the server-template directive used for the pod backends,
+      # HAProxy options for the server-template directive used for the pod backends,
       # added verbatim to the end of the generated line.
       extraPodTemplateOptions = "";
 
