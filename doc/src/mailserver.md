@@ -2,7 +2,7 @@
 
 # Mail server
 
-This role installs a complete mail server for incoming and outgoing mail.
+The role `mailserver` installs a complete mail server for incoming and outgoing mail.
 Incoming mail is either delivered to IMAP mailboxes via dovecot, or forwarded to
 an application via alias/transport configs. Outgoing mail is accepted on the
 submission port or via a *sendmail* executable.
@@ -19,15 +19,25 @@ mechanism for user management besides text files.
 ## Which components are included?
 
 The main ingredients of this role are [Postfix] for mail delivery, [Dovecot] as
-IMAP access server, and [Roundcube] as web frontend. We rely mainly on [rspamd]
-for spam protection. To get outgoing mails delivered, they are signed with
-[OpenDKIM] and a basic [SPF] and [SRS] setup is included. Additionally, a
-Thunderbird-compatible client [autoconfiguration] XML file is provided which
-helps many clients to configure themselves properly.
+IMAP access server, and [Roundcube] as web frontend.
+{ref}`nixos-postgresql-server` is used as database for Roundcube settings.
+
+We rely mainly on [rspamd] for spam protection. To get outgoing mails
+delivered, they are signed with[OpenDKIM] and a basic [SPF] and [SRS] setup
+is included.
+
+Additionally, a Thunderbird-compatible client[autoconfiguration] XML file is
+provided which helps many clients to configure themselves properly.
 
 (nixos-mailserver-basic-setup)=
 
 ## How do I perform a basic setup?
+
+:::{warning}
+We strongly recommend putting the `mailserver` role on a separate
+VM without other roles (`postgresql` being the only exception). The role
+has many moving parts which could interfere with roles and applications.
+:::
 
 First, you need public IPv4 and IPv6 addresses for your mail server's frontend
 interface. Contact {ref}`support` if you don't have. Then, pick a mail host name
@@ -35,18 +45,26 @@ which will be advertised as MX name on your mail domain. This host name (called
 **mailHost** from here on) must resolve to the FE addresses with both forward
 and reverse lookups.
 
-Additionally, some mail providers (namely \[Telekom/T-Online\](<https://postmaster.t-online.de/#t4.1>))
-may require that your mailserver has an imprint served at its hostname.
+Additionally, some mail providers (namely \[Telekom/T-Online\]
+(<https://postmaster.t-online.de/#t4.1>)) may require that your mailserver
+has an imprint served at its hostname.
 
-For this you can either set imprintUrl to the location of your existing imprint,
-or use imprintText to specify an imprint in HTML format
+For this you can either set `imprintUrl` to the location of your existing
+imprint, or use `imprintText` to specify an imprint in HTML format
 
-Note that it is not possible to set both imprintUrl and imprintText and imprint cannot be used if you serve webmail under the mailHost (meaning mailHost and webmailHost cannot be the same)
+Note that it is not possible to set both `imprintUrl` and `imprintText` at the
+same time and imprint cannot be used if you serve webmail under the
+`mailHost` (meaning `mailHost` and `webmailHost` cannot be the same).
 
 :::{warning}
 Incorrect DNS setup is the most frequent source of delivery problems. Let our
 {ref}`support` check your setup if in doubt.
 :::
+
+If you choose to use the Roundcube webmail UI by adding the `webmailHost`
+setting, like in the example, make sure to enable a `postgresql` role on the
+machine because Roundcube needs it to store settings. Just use the newest
+version that is available at the moment.
 
 Create a configuration file {file}`/etc/local/mail/config.json` which contains
 all the basic pieces. In the following example, the server's mailHost is
@@ -293,7 +311,8 @@ webmailHost
 
 : Virtual server name for the Roundcube web mail service. Appropriate DNS
   entries are expected to point to the VM's frontend address. If this option is
-  set, the Roundcube service will be enabled.
+  set, the Roundcube service will be enabled. Make sure that a `postgresql`
+  role is enabled when adding this option.
 
 rootAlias
 
