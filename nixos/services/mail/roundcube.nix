@@ -7,7 +7,25 @@ let
 
 in lib.mkMerge [
   (lib.mkIf (role.enable && role.webmailHost != null) {
-    services.postgresql.enable = true;
+
+    assertions = [ {
+      assertion = config.flyingcircus.services.postgresql.majorVersion != "not set";
+      message = ''
+        PostgreSQL version must be set explicitly!
+        Must be defined either by using a postgresql role or by setting it via custom config like:
+
+        flyingcircus.services.postgresql.majorVersion = "13";
+      '';
+    }];
+
+    flyingcircus.services.postgresql = {
+      enable = true;
+      majorVersion = fclib.mkPlatform "not set";
+      autoUpgrade = {
+        enable = true;
+        expectedDatabases = [ "roundcube" ];
+      };
+    };
 
     flyingcircus.passwordlessSudoRules = [{
       commands = [ chpasswd ];
