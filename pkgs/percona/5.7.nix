@@ -5,11 +5,11 @@
 
 stdenv.mkDerivation rec {
   pname = "percona";
-  version = "5.7.33-36";
+  version = "5.7.39-42";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-5.7/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "0nzxxmdm9zl57rnaxnfbyf79srcy9z9d50dy4qg44dg2l7s34kln";
+    sha256 = "sha256-vahT+5Ue74vhwvJDkXmM8fM3fHdqN29MVbGS5Cro0bI=";
 
   };
 
