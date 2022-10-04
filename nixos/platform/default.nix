@@ -222,23 +222,25 @@ in {
         "nixos-config=/etc/nixos/configuration.nix"
       ];
 
-      binaryCaches = lib.mkOverride 90 [
-        "https://cache.nixos.org"
-        "https://s3.whq.fcio.net/hydra"
-        "https://hydra.flyingcircus.io"
-      ];
-
-      binaryCachePublicKeys = [
-        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-        "flyingcircus.io-1:Rr9CwiPv8cdVf3EQu633IOTb6iJKnWbVfCC8x8gVz2o="
-      ];
-
       extraOptions = ''
         keep-outputs = true
         fallback = true
         http-connections = 2
         extra-experimental-features = nix-command flakes
       '';
+
+      settings = {
+        substituters = lib.mkOverride 90 [
+          "https://cache.nixos.org"
+          "https://s3.whq.fcio.net/hydra"
+          "https://hydra.flyingcircus.io"
+        ];
+
+        trusted-public-keys = [
+          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+          "flyingcircus.io-1:Rr9CwiPv8cdVf3EQu633IOTb6iJKnWbVfCC8x8gVz2o="
+        ];
+      };
     };
 
     nixpkgs.config.allowUnfreePredicate = pkg:
