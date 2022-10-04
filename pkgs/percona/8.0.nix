@@ -7,11 +7,11 @@
 
 stdenv.mkDerivation rec {
   pname = "percona";
-  version = "8.0.28-19";
+  version = "8.0.29-21";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-8.0/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "sha256-E5S6RwDzxIMHsfrtWATPd086TXHydoDpsJ0I+3DbjjE=";
+    sha256 = "sha256-pUxFsjcZ1Pa6HkCbspFsWdwMmqrpjiQpn/JvFQrU9zU=";
   };
 
   preConfigure = lib.optional stdenv.isDarwin ''
