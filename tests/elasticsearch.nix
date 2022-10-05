@@ -79,7 +79,7 @@ import ./make-test-python.nix ({ version ? "7", pkgs, testlib, lib, ... }:
 
         with subtest("killing the elasticsearch process should trigger an automatic restart"):
           machine.succeed("systemctl kill -s KILL elasticsearch")
-          machine.sleep(0.5)
+          machine.sleep(1)
           machine.wait_until_succeeds("${sensuCheck "es_node_status"}")
 
         with subtest("status check should be red after shutting down nginx"):
