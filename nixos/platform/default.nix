@@ -208,6 +208,10 @@ in {
       dmidecode
     ];
 
+    i18n.supportedLocales = [
+      "all"
+    ];
+
     # make the image smaller
     sound.enable = mkDefault false;
     documentation.dev.enable = mkDefault false;
