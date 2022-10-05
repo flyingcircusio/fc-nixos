@@ -279,13 +279,22 @@ in {
   });
 
   #percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
-  percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
-  percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost173; openldap = self.openldap_2_4; };
+  percona57 = super.callPackage ./percona/5.7.nix {
+    boost = self.boost159;
+    openssl = self.openssl_1_1;
+  };
+
+  percona80 = super.callPackage ./percona/8.0.nix {
+    boost = self.boost177;
+    openldap = self.openldap_2_4;
+    openssl = self.openssl_1_1;
+  };
 
   # We use 2.4 from upstream for older Percona versions.
   # Percona 8.0 needs a newer version than upstream provides.
   percona-xtrabackup_8_0 = super.callPackage ./percona/xtrabackup.nix {
-    boost = self.boost173;
+    boost = self.boost177;
+    openssl = self.openssl_1_1;
   };
 
   # Has been renamed upstream, backy-extract still wants to use it.
