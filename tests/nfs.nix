@@ -94,6 +94,7 @@ in {
 
   testScript = ''
     import io
+    import queue
     import re
     import time
 
@@ -134,7 +135,7 @@ in {
     assert content == "asdf", repr(content)
 
     deadline = time.time() + 10
-    def wait_for_console_text(self, regex: str) -> None:
+    def wait_for_console_text(self, regex: str) -> str:
         self.log("waiting for {} to appear on console".format(regex))
         # Buffer the console output, this is needed
         # to match multiline regexes.
@@ -149,7 +150,7 @@ in {
             matches = re.search(regex, console.read())
             if matches is not None:
                 return console.getvalue()
-        # print(console.getvalue())
+
         assert False, "Did not shut down cleanly (timeout)"
 
     client.execute("poweroff", check_return=False)

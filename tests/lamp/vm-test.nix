@@ -1,6 +1,8 @@
 import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
 {
   name = "lamp";
+  #extraPythonPackages = p: with p; [ types-setuptools ];
+  skipTypeCheck = true;
   nodes = {
     lamp =
       { pkgs, config, ... }:
@@ -60,8 +62,8 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
     lamp.wait_for_open_port(8000)
 
     php_version_str = lamp.succeed('php --version').splitlines()[0]
-    php_version_str = php_version.split()[1]
-    php_version = packaging.version.parse(php_version)
+    php_version_str = php_version_str.split()[1]
+    php_version = packaging.version.parse(php_version_str)
     print("Detected PHP version:", php_version)
 
     tideways_api_key = "${tideways}"
