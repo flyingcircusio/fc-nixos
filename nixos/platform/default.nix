@@ -182,12 +182,6 @@ in {
         "bfq"
       ];
 
-      # The default of 5.15 showed problems with hanging fsfreezes
-      # when mysql/mariadb/percona is running on a machine and the
-      # filesystem is being frozen for Ceph snapshots. 5.10 doesn't
-      # seem to have this issue.
-      kernelPackages = pkgs.linuxKernel.packages.linux_5_10;
-
       kernelParams = [
         # Crash management
         "panic=1"
