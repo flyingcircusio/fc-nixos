@@ -33,7 +33,10 @@ context: Context
 def stop_pg(log, old_data_dir: Path, stop: bool):
     postgres_running = fc.util.postgresql.is_service_running()
     if postgres_running and stop is None:
-        stop = confirm("Postgresql is running, should I stop it?")
+        stop = confirm(
+            "Postgresql must be stopped for the data migration but it is still "
+            "running. Can I stop it now?"
+        )
     if postgres_running and not stop:
         log.error(
             "upgrade-postgresql-running",
@@ -160,20 +163,56 @@ def upgrade(
         )
         new_data_dir = context.pg_data_root / new_version.value
 
-    old_data_dir = fc.util.postgresql.find_old_data_dir(
-        log, context.pg_data_root, new_version
-    )
+    try:
+        old_data_dir = fc.util.postgresql.find_old_data_dir(
+            log, context.pg_data_root, new_version
+        )
+    except fc.util.postgresql.MultipleOldDirsFound as e:
+        log.error(
+            "upgrade-multiple-old-dirs-found",
+            old_data_dirs={str(d) for d in e.found_dirs},
+            _replace_msg=(
+                "Found multiple old data dirs which could be upgraded: "
+                "{old_data_dirs}. Remove old data dirs which are not "
+                "needed anymore and try again."
+            ),
+        )
+        raise Exit(2)
 
     exit_on_no_old_data_dir(log, old_data_dir, nothing_to_do_is_ok)
 
-    fc.util.postgresql.prepare_upgrade(
-        log,
-        old_data_dir,
-        new_version,
-        new_bin_dir,
-        new_data_dir,
-        expected_databases=expected if existing_db_check else None,
-    )
+    try:
+        fc.util.postgresql.prepare_upgrade(
+            log,
+            old_data_dir,
+            new_version,
+            new_bin_dir,
+            new_data_dir,
+            expected_databases=expected if existing_db_check else None,
+        )
+    except fc.util.postgresql.NewDataDirUnusable as e:
+        log.error(
+            "upgrade-new-data-dir-unusable",
+            _replace_msg=(
+                "New data dir already exists at {new_data_dir} and it "
+                "doesn't have the fcio_upgrade_prepare marker file. "
+                "Refusing to use this directory."
+            ),
+            new_data_dir=e.data_dir,
+        )
+        raise Exit(2)
+    except fc.util.postgresql.UnexpectedDatabasesFound as e:
+        cmdline_hint = " ".join("--expected " + db for db in e.unexpected_dbs)
+        log.error(
+            "prepare-autoupgrade-unexpected-dbs",
+            _replace_msg=(
+                "Found unexpected databases {unexpected_dbs}, "
+                "Refusing to run the upgrade. Add to the the command line: "
+                + cmdline_hint
+            ),
+            unexpected_dbs=e.unexpected_dbs,
+        )
+        raise Exit(2)
 
     if upgrade_now:
 
@@ -347,11 +386,12 @@ def prepare_autoupgrade(
         )
     except fc.util.postgresql.MultipleOldDirsFound as e:
         log.error(
-            "upgrade-multiple-old-dirs-found",
-            old_data_dirs=[str(d) for d in e.found_dirs],
+            "prepare-autoupgrade-multiple-old-dirs-found",
+            old_data_dirs={str(d) for d in e.found_dirs},
             _replace_msg=(
                 "Found multiple old data dirs which could be upgraded: "
-                "{eligible_old_data_dirs}"
+                "{old_data_dirs}. Delete old data dirs which are not "
+                "needed anymore and try again."
             ),
         )
         raise Exit(2)
@@ -372,7 +412,7 @@ def prepare_autoupgrade(
             "prepare-autoupgrade-new-data-dir-unusable",
             _replace_msg=(
                 "New data dir already exists at {new_data_dir} and it "
-                "doesn't have the fcio_upgrade_prepare marker file. "
+                "doesn't have the 'fcio_upgrade_prepare' marker file. "
                 "Refusing to use this directory."
             ),
             new_data_dir=e.data_dir,
@@ -382,8 +422,9 @@ def prepare_autoupgrade(
         log.error(
             "prepare-autoupgrade-unexpected-dbs",
             _replace_msg=(
-                "Found unexpected databases {unexpected_dbs}, "
-                "autoupgrade will refuse to run the upgrade."
+                "Found unexpected databases {unexpected_dbs}, autoupgrade will "
+                "refuse to run the upgrade. Add databases to the NixOS option "
+                "'flyingcircus.postgresql.autoUpgrade.expectedDatabases'."
             ),
             unexpected_dbs=e.unexpected_dbs,
         )
@@ -429,18 +470,19 @@ been migrated must not be used anymore.
 
 Source data dir where data has been migrated from.
 
-*Package Known?*
+*Package Link Present?*
 
-`Yes` if package link in data dir is valid. The link points to the PostgreSQL
-version that is or has been used for this data dir. The link is needed to
-upgrade to a newer version as pg_upgrade needs the old binaries to work.
-fc-postgresql upgrade and auto-upgrades will fail if this is missing.
+`Yes` if the `package` link in data dir is valid. The link points to the
+PostgreSQL version that is or has been used for this data dir. The link is
+needed to upgrade to a newer version as pg_upgrade needs the old binaries to
+work. fc-postgresql upgrade and auto-upgrades will fail if this is missing.
 
-*Prepared For Upgrade?*
+*Prepared As Upgrade Target?*
 
 `Yes` if data dir is prepared to be used as target for an upgrade migration.
 This means that `fc-postgresql prepare-autoupgrade` or `fc-postgresql
-upgrade` without `--upgrade-now` has created this data dir.
+upgrade` without `--upgrade-now` has created this data dir with an empty
+cluster.
 
 """
 
@@ -463,8 +505,8 @@ def list_versions():
     table.add_column("Service Running?")
     table.add_column("Migrated To")
     table.add_column("Migrated From")
-    table.add_column("Package Known?")
-    table.add_column("Prepared For Upgrade?")
+    table.add_column("Package Link Present?")
+    table.add_column("Prepared As Upgrade Target?")
     for version in [v.value for v in PGVersion]:
         data_dir = context.pg_data_root / version
 
