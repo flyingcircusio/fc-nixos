@@ -105,7 +105,7 @@ def build_new_bin_dir(log, pg_data_root: Path, new_version: PGVersion):
 
 
 class MultipleOldDirsFound(Exception):
-    def __int__(self, found_dirs):
+    def __init__(self, found_dirs):
         self.found_dirs = found_dirs
 
 
