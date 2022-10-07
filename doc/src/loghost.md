@@ -87,9 +87,13 @@ the API, refer to the official [Graylog API documentation](https://archivedocs.g
 
 The following inputs are active by default:
 
-- Beats TCP on port 12302
-- GELF TCP on port 12202
+- Beats TCP on SRV port 12301 via HAProxy (12302 internally)
+- GELF TCP on SRV port 12201 via HAProxy (12202 internally)
 - Syslog UDP on port 5140
+
+HAProxy listens on the {external+doc:ref}`SRV interface <logical-networks>`
+and forwards to the Graylog inputs. This setup provides the possibility to
+have multiple Graylog instances with non-standard configuration.
 
 ## Implementation Details
 
