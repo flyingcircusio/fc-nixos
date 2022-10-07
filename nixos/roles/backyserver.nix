@@ -73,6 +73,10 @@ in
       };
     };
 
+    services.telegraf.extraConfig.inputs.disk = [
+      { mount_points = [ "/srv/backy" ]; }
+    ];
+
     boot = {
       # Extracted to flyingcircus-physical.nix
       # kernel.sysctl."vm.vfs_cache_pressure" = 10;
