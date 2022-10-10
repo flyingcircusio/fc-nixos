@@ -68,8 +68,8 @@ in
 
       flyingcircus.roles.memcached.listenAddresses = [ "0.0.0.0" "[::]" ];
 
-      flyingcircus.roles.mailserver.smtpBind4 = [ "127.0.0.1" ];
-      flyingcircus.roles.mailserver.smtpBind6 = [ "::1" ];
+      flyingcircus.roles.mailserver.smtpBind4 = "127.0.0.1";
+      flyingcircus.roles.mailserver.smtpBind6 = "::1";
       flyingcircus.roles.mailserver.explicitSmtpBind = false;
 
       flyingcircus.roles.mysql.listenAddresses = [ "::" ];
@@ -139,6 +139,9 @@ in
           ssh_pubkey = [
            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGc7V2c2zFPRMl8/gmBv1/MEldEuJau8jHjhx+2qziYs root@ct-dir-dev2"
           ];
+          email_addresses = [
+            "developer@example.com"
+          ];
           uid = "developer";}
         { class = "service";
           gid = 100;
@@ -148,6 +151,9 @@ in
           password = "*";
           name = "s-dev";
           ssh_pubkey = [] ;
+          email_addresses = [
+            "technicalcontact@example.com"
+          ];
           permissions = { container = []; };
           uid = "s-dev"; } ];
 

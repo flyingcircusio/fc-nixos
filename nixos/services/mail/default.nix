@@ -28,9 +28,9 @@ let
     abuse@${primaryDomain} root@${role.mailHost}
   '';
   userAliases =
-    concatStringsSep "\n" (
-      (map (e: "${e.uid}: ${concatStringsSep ", " e.email_addresses}"))
-      config.flyingcircus.users.userData);
+    concatMapStringsSep "\n"
+      (e: "${e.uid}: ${concatStringsSep ", " e.email_addresses}")
+      config.flyingcircus.users.userData;
   checkMailq = "${pkgs.fc.check-postfix}/bin/check_mailq";
 
 in {
@@ -208,9 +208,14 @@ in {
           "Sent" = { auto = "subscribe"; specialUse = "Sent"; };
           "Archives" = { auto = "subscribe"; specialUse = "Archive"; };
         };
-        policydSPFExtraConfig = ''
-          skip_addresses = 127.0.0.0/8,::ffff:127.0.0.0/104,::/64,${
-            concatStringsSep "," fclib.network.fe.dualstack.addresses}
+        policydSPFExtraConfig = let
+          skipped = [
+            "127.0.0.0/8"
+            "::ffff:127.0.0.0/104"
+            "::/64"
+          ] ++ role.policydSPFExtraSkipAddresses;
+        in ''
+          skip_addresses = ${concatStringsSep "," skipped}
           HELO_Whitelist = ${fqdn},${role.mailHost}
         '';
         vmailGroupName = "vmail";
@@ -232,13 +237,12 @@ in {
         }
       '';
 
-      services.nginx.virtualHosts =
+      flyingcircus.services.nginx.virtualHosts =
         let
           cfgForDomain = domain:
           nameValuePair "autoconfig.${domain}" {
             addSSL = true;
             enableACME = true;
-            listenAddresses = fclib.network.fe.dualstack.addressesQuoted;
             locations."=/mail/config-v1.1.xml".alias = (import ./autoconfig.nix {
               inherit domain pkgs lib;
               inherit (role) mailHost webmailHost;
@@ -248,9 +252,9 @@ in {
           (optional (role.imprintUrl != null || role.imprintText != null ) (lib.nameValuePair role.mailHost
             (lib.mkMerge [
               {
+                serverName = role.mailHost;
                 forceSSL = true;
                 enableACME = true;
-                listenAddresses = fclib.network.fe.dualstack.addressesQuoted;
               }
               (lib.mkIf (role.imprintUrl != null) {
                 locations."/".return = "302 https://${role.imprintUrl}";
@@ -265,7 +269,6 @@ in {
                 {
                   forceSSL = true;
                   enableACME = true;
-                  listenAddresses = fclib.network.fe.dualstack.addressesQuoted;
                   locations."/".return = "302 https://${role.webmailHost}";
                 }
               )
