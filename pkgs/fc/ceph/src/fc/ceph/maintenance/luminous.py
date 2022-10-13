@@ -3,10 +3,12 @@
 import json
 import subprocess
 import sys
+import traceback
 
 import fc.ceph.images
 import fc.util.directory
 from fc.ceph.api import Cluster, Pools
+from fc.ceph.api.cluster import CephCmdError
 from fc.ceph.util import kill, mount_status, run
 
 
@@ -22,12 +24,24 @@ class ResourcegroupPoolEquivalence(object):
     def actual(self):
         return set(p for p in self.pools.names())
 
-    def ensure(self):
+    def ensure(self) -> int:
+        status_code = 0
         exp = set(self.REQUIRED_POOLS)
         act = self.actual()
         for pool in exp - act:
             print("creating pool {}".format(pool))
-            self.pools.create(pool)
+            try:
+                self.pools.create(pool)
+            except CephCmdError:
+                print(
+                    "The following error occured at pool creation:",
+                    file=sys.stderr,
+                )
+                traceback.print_exc()
+                print("Continuing...", file=sys.stderr)
+                status_code = 12
+
+        return status_code
 
 
 class VolumeDeletions(object):
@@ -35,7 +49,8 @@ class VolumeDeletions(object):
         self.directory = directory
         self.pools = Pools(cluster)
 
-    def ensure(self):
+    def ensure(self) -> int:
+        status_code = 0
         deletions = self.directory.deletions("vm")
         for name, node in list(deletions.items()):
             print(name, node)
@@ -63,11 +78,32 @@ class VolumeDeletions(object):
                                 pool.name, image, rbd_image.snapshot
                             )
                         )
-                        pool.snap_rm(rbd_image)
+                        try:
+                            pool.snap_rm(rbd_image)
+                        except CephCmdError:
+                            print(
+                                "The following error occured at snapshot deletion:",
+                                file=sys.stderr,
+                            )
+                            traceback.print_exc()
+                            status_code = 10
+                            print("Continuing...", file=sys.stderr)
+
                     if base_image is None:
                         continue
                     print("Purging volume {}/{}".format(pool.name, image))
-                    pool.image_rm(base_image)
+                    try:
+                        pool.image_rm(base_image)
+                    except CephCmdError:
+                        print(
+                            "The following error occured at volume deletion:",
+                            file=sys.stderr,
+                        )
+                        traceback.print_exc()
+                        status_code = 11
+                        print("Continuing...", file=sys.stderr)
+
+        return status_code
 
 
 class MaintenanceTasks(object):
@@ -90,7 +126,7 @@ class MaintenanceTasks(object):
         ceph = Cluster()
         directory = fc.util.directory.connect()
         volumes = VolumeDeletions(directory, ceph)
-        volumes.ensure()
+        volume_statuscode = volumes.ensure()
         rpe = ResourcegroupPoolEquivalence(directory, ceph)
         rpe.ensure()
 
