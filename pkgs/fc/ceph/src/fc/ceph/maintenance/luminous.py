@@ -86,7 +86,7 @@ class VolumeDeletions(object):
                                 file=sys.stderr,
                             )
                             traceback.print_exc()
-                            status_code = 10
+                            status_code = max(status_code, 10)
                             print("Continuing...", file=sys.stderr)
 
                     if base_image is None:
@@ -100,7 +100,7 @@ class VolumeDeletions(object):
                             file=sys.stderr,
                         )
                         traceback.print_exc()
-                        status_code = 11
+                        status_code = max(status_code, 11)
                         print("Continuing...", file=sys.stderr)
 
         return status_code
@@ -112,7 +112,8 @@ class MaintenanceTasks(object):
     def load_vm_images(self):
         fc.ceph.images.load_vm_images()
 
-    def purge_old_snapshots(self):
+    def purge_old_snapshots(self) -> int:
+        status_code = 0
         pools = Pools(Cluster())
         for pool in pools:
             for image in pool.images:
@@ -120,15 +121,27 @@ class MaintenanceTasks(object):
                     print(
                         "removing snapshot {}/{}".format(pool.name, image.name)
                     )
-                    pool.snap_rm(image)
+                    try:
+                        pool.snap_rm(image)
+                    except CephCmdError:
+                        print(
+                            "The following error occured at snapshot deletion:",
+                            file=sys.stderr,
+                        )
+                        traceback.print_exc()
+                        status_code = 13
+                        print("Continuing...", file=sys.stderr)
 
-    def clean_deleted_vms(self):
+        return status_code
+
+    def clean_deleted_vms(self) -> int:
         ceph = Cluster()
         directory = fc.util.directory.connect()
         volumes = VolumeDeletions(directory, ceph)
         volume_statuscode = volumes.ensure()
         rpe = ResourcegroupPoolEquivalence(directory, ceph)
-        rpe.ensure()
+        rpe_statuscode = rpe.ensure()
+        return max(volume_statuscode, rpe_statuscode)
 
     def _ensure_maintenance_volume(self):
         try:
