@@ -31,6 +31,14 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       # Wanted by backy and Ceph servers
       kernel.sysctl."vm.vfs_cache_pressure" = 10;
 
+      kernel.sysctl."vm.swappiness" = config.fclib.mkPlatform 0;
+
+    };
+
+    flyingcircus.activationScripts = {
+      disableSwap = ''
+        swapoff -a
+      '';
     };
 
     environment.systemPackages = with pkgs; [
@@ -68,8 +76,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     # lead to massive/weird Ceph instabilities. Also, coordination tasks
     # like Qemu migrations run over ethmgm want to be trusted.
     networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" "ethmgm" ];
-
-    swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
 
     users.users.root = {
       # Overriden in local.nix
