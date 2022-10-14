@@ -21,6 +21,12 @@ in
     flyingcircus.roles.kvm_host = {
       enable = lib.mkEnableOption "Qemu/KVM server";
       supportsContainers = fclib.mkDisableContainerSupport;
+      mkfsXfsFlags = lib.mkOption {
+        type = with lib.types; nullOr str;
+        # XXX: reflink=0 can be removed when 15.09 is out. See #PL-130977
+        # XXX: set reflink=0 to make file systems compatible with NixOS 15.09
+        default = "-q -f -K -m crc=1,finobt=1,reflink=0 -d su=4m,sw=1";
+      };
       package = lib.mkOption {
         type = lib.types.package;
         description = ''
@@ -101,6 +107,8 @@ in
         cluster = ceph
         lock_host = ${hostname}
         create-vm = ${pkgs.fc.agent}/bin/fc-create-vm -I {name}
+     '' + lib.optionalString (role.mkfsXfsFlags != null) ''
+        mkfs-xfs = ${role.mkfsXfsFlags}
      '';
 
     # This needs to stay as is because the path is kept alive during live
