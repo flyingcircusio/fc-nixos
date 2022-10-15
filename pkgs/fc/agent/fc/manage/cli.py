@@ -20,6 +20,7 @@ class Context(NamedTuple):
     lock_dir: Path
     enc_path: Path
     verbose: bool
+    show_trace: bool
 
 
 context: Context
@@ -50,6 +51,10 @@ def check():
 @app.command()
 def dry_activate(
     channel_url: str = Argument(..., help="Channel URL to build."),
+    show_trace: bool = Option(
+        False,
+        help="Nix errors: show detailed location information",
+    ),
 ):
     """Builds system, showing which services would be affected.
     Does not affect the running system.
@@ -59,7 +64,9 @@ def dry_activate(
     )
     log = structlog.get_logger()
     unit_changes = fc.manage.manage.dry_activate(
-        log=log, channel_url=channel_url
+        log=log,
+        channel_url=channel_url,
+        show_trace=context.show_trace or show_trace,
     )
     unit_change_lines = nixos.format_unit_change_lines(unit_changes)
     if unit_change_lines:
@@ -96,6 +103,10 @@ def switch_cmd(
         False,
         help="Skip the system activation script if system is unchanged.",
     ),
+    show_trace: bool = Option(
+        False,
+        help="Nix errors: show detailed location information",
+    ),
 ):
     """Builds the system configuration and switches to it."""
     fc.util.logging.init_logging(
@@ -121,12 +132,14 @@ def switch_cmd(
                     log=log,
                     enc=enc,
                     lazy=lazy,
+                    show_trace=context.show_trace or show_trace,
                 )
             else:
                 keep_cmd_output |= fc.manage.manage.switch(
                     log=log,
                     enc=enc,
                     lazy=lazy,
+                    show_trace=context.show_trace or show_trace,
                 )
         except nixos.ChannelException:
             raise Exit(2)
@@ -172,6 +185,10 @@ def fc_manage(
     ),
     verbose: bool = Option(
         False, "--verbose", "-v", help="Show debug messages and code locations."
+    ),
+    show_trace: bool = Option(
+        False,
+        help="Nix errors: show detailed location information",
     ),
     logdir: Path = Option(
         exists=True,
@@ -222,6 +239,7 @@ def fc_manage(
             lock_dir=lock_dir,
             enc_path=enc_path,
             verbose=verbose,
+            show_trace=show_trace,
         )
         return
 
@@ -255,12 +273,14 @@ def fc_manage(
                     log=log,
                     enc=enc,
                     lazy=False,
+                    show_trace=show_trace,
                 )
             elif switch:
                 keep_cmd_output |= fc.manage.manage.switch(
                     log=log,
                     enc=enc,
                     lazy=False,
+                    show_trace=show_trace,
                 )
         except nixos.ChannelException:
             raise Exit(2)
