@@ -47,6 +47,12 @@ def main(args=sys.argv[1:]):
         help="Use the destruction process for the specified objectstore type, "
         "instead of autodetecting it.",
     )
+    parser_destroy.add_argument(
+        "--unsafe-destroy",
+        action="store_true",
+        help="Skip the check (Luminous only) whether an OSD is safe to destroy without "
+        "affecting data redundancy. This can result in data loss or cluster failure!!",
+    )
     parser_destroy.set_defaults(action="destroy")
 
     parser_create_fs = osd_sub.add_parser(
@@ -128,6 +134,12 @@ def main(args=sys.argv[1:]):
         choices=fc.ceph.osd.OBJECTSTORE_TYPES,
         help="Type of the OSD after rebuilding, defaults to keeping the current "
         "objectstore type.\nThe current type is detected automatically.",
+    )
+    parser_rebuild.add_argument(
+        "--unsafe-destroy",
+        action="store_true",
+        help="Skip the check (Luminous only) whether an OSD is safe to destroy without "
+        "affecting data redundancy. This can result in data loss or cluster failure!!",
     )
     parser_rebuild.add_argument(
         "ids",
