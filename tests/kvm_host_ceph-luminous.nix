@@ -22,6 +22,10 @@ let
       virtualisation.emptyDiskImages = [ 4000 4000 ];
       imports = [ <fc/nixos> <fc/nixos/roles> ];
 
+      # Use the default flags defined by fc-qemu regardless of
+      # what the platform sets or the fc-qemu unit tests will fail.
+      flyingcircus.roles.kvm_host.mkfsXfsFlags = null;
+
       flyingcircus.static.mtus.sto = 1500;
       flyingcircus.static.mtus.stb = 1500;
 
