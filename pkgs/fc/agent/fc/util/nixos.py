@@ -357,7 +357,6 @@ def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
     cmd = [
         "nix-build",
         "--no-build-output",
-        "--show-trace",
         "<nixpkgs/nixos>",
         "-A",
         "system",

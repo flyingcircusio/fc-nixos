@@ -75,6 +75,7 @@ def test_invoke_switch(
         "log": switch.call_args.kwargs["log"],
         "enc": ENC,
         "lazy": False,
+        "show_trace": False,
     }
     assert switch.call_args.kwargs == expected
 
@@ -114,6 +115,7 @@ def test_invoke_switch_with_channel_update(
         "log": switch_with_update.call_args.kwargs["log"],
         "enc": ENC,
         "lazy": False,
+        "show_trace": False,
     }
     assert switch_with_update.call_args.kwargs == expected
 
@@ -194,5 +196,6 @@ def test_invoke_dry_activate(manage_func, log, logger, invoke_app):
     expected = {
         "log": manage_func.call_args.kwargs["log"],
         "channel_url": channel_url,
+        "show_trace": False,
     }
     assert manage_func.call_args.kwargs == expected
