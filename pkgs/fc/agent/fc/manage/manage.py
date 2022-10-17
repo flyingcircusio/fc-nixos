@@ -180,7 +180,7 @@ class Channel:
                 "the channel URL towards that directory?",
             )
 
-    def switch(self, lazy=True):
+    def switch(self, lazy=True, show_trace=False):
         """
         Build system with this channel and switch to it.
         Replicates the behaviour of nixos-rebuild switch and adds
@@ -192,23 +192,28 @@ class Channel:
         # with the garbage collector which may remove the system we just built.
         # If register fails, we still hold a GC root until the next reboot.
         out_link = "/run/fc-agent-built-system"
-        self.build(out_link)
+        self.build(out_link, show_trace)
         nixos.register_system_profile(self.system_path, self.log)
         # New system is registered, delete the temporary result link.
         os.unlink(out_link)
         return nixos.switch_to_system(self.system_path, lazy, self.log)
 
-    def build(self, out_link=None):
+    def build(self, out_link=None, show_trace=False):
         """
         Build system with this channel. Works like nixos-rebuild build.
         Does not modify the running system.
         """
         self.log_with_context.debug("channel-build-start")
 
+        if show_trace:
+            build_options = ["--show-trace"]
+        else:
+            build_options = []
+
         if self.is_local:
             self.check_local_channel()
         system_path = nixos.build_system(
-            self.resolved_url, [], out_link, self.log
+            self.resolved_url, build_options, out_link, self.log
         )
         self.system_path = system_path
 
@@ -446,12 +451,12 @@ def prepare_switch_in_maintenance(log, enc):
         return False
 
 
-def dry_activate(log, channel_url):
+def dry_activate(log, channel_url, show_trace=False):
     channel = Channel(
         log,
         channel_url,
     )
-    channel.build()
+    channel.build(show_trace=show_trace)
     return channel.dry_activate()
 
 
@@ -519,6 +524,7 @@ def switch(
     log,
     enc,
     lazy=False,
+    show_trace=False,
 ):
     """Rebuild the system and switch to it.
     For regular operation, the current "nixos" channel is used for building the
@@ -568,10 +574,15 @@ def switch(
         channel_to_build = Channel.current(log, "nixos")
 
     if channel_to_build:
-        return channel_to_build.switch(lazy)
+        return channel_to_build.switch(lazy, show_trace)
 
 
-def switch_with_update(log, enc, lazy=False):
+def switch_with_update(
+    log,
+    enc,
+    lazy=False,
+    show_trace=False,
+):
     channel_url = enc.get("parameters", {}).get("environment_url")
     environment = enc.get("parameters", {}).get("environment")
 
@@ -608,4 +619,4 @@ def switch_with_update(log, enc, lazy=False):
     if not channel:
         return
 
-    return channel.switch(lazy)
+    return channel.switch(lazy, show_trace)

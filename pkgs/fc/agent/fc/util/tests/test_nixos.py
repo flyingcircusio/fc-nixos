@@ -71,7 +71,7 @@ def test_build_system_with_changes(log, monkeypatch):
     )
 
     cmd = shlex.split(
-        f"nix-build --no-build-output --show-trace <nixpkgs/nixos> -A system -I {channel} --out-link /run/fc-agent-test -v"
+        f"nix-build --no-build-output <nixpkgs/nixos> -A system -I {channel} --out-link /run/fc-agent-test -v"
     )
 
     nix_build_fake = PollingFakePopen(
@@ -102,7 +102,7 @@ def test_build_system_unchanged(log, monkeypatch):
     build_output = "\n"
 
     cmd = shlex.split(
-        f"nix-build --no-build-output --show-trace <nixpkgs/nixos> -A system -I {channel} --no-out-link"
+        f"nix-build --no-build-output <nixpkgs/nixos> -A system -I {channel} --no-out-link"
     )
 
     nix_build_fake = PollingFakePopen(
