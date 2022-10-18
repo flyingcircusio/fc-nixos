@@ -262,6 +262,7 @@ in {
           error_log = 'stderr'
           log_errors = on
         '';
+        phpPackage = pkgs.php81;
         settings = mapAttrs (name: mkDefault) {
           "listen.owner" = socketOwner;
           "listen.group" = "root";
