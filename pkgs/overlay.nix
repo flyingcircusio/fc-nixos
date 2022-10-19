@@ -37,6 +37,14 @@ in {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
+  clamav = super.clamav.overrideAttrs(oldAttrs: rec {
+    pname = "clamav";
+    version = "0.105.1";
+    src = fetchurl {
+      url = "https://www.clamav.net/downloads/production/${pname}-${version}.tar.gz";
+      hash = "sha256-0rwWN024iablpqxA+MbnACVKA5rKpTaIWgnu6kuFKfY=";
+    };
+  });
   # XXX: ceph doesn't build
   # ceph = (super.callPackage ./ceph {
   #     pythonPackages = super.python3Packages;
@@ -329,6 +337,14 @@ in {
   });
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
+
+  qemu = super.qemu.overrideAttrs (o: {
+    patches = o.patches ++ [ (super.fetchpatch {
+      name = "qemu-9p-performance-fix.patch";
+      url = "https://gitlab.com/lheckemann/qemu/-/commit/ca8c4a95a320dba9854c3fd4159ff4f52613311f.patch";
+      sha256 = "sha256-9jYpGmD28yJGZU4zlae9BL4uU3iukWdPWpSkgHHvOxI=";
+    }) ];
+  });
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
