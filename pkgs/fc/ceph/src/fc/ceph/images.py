@@ -16,9 +16,6 @@ import requests
 from fc.ceph.util import run
 
 RELEASES = [
-    "fc-19.03-dev",
-    "fc-19.03-staging",
-    "fc-19.03-production",
     "fc-20.09-dev",
     "fc-20.09-staging",
     "fc-20.09-production",
