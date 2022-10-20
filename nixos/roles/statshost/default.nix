@@ -152,7 +152,6 @@ in
           Host name for the Grafana frontend.
           A Letsencrypt certificate is generated for it.
           Defaults to the FE FQDN.
-          Also used by collectdproxy if it's the global FCIO statshost.
         '';
         example = "stats.example.com";
       };
@@ -299,11 +298,6 @@ in
     (mkIf cfgStatsGlobal.enable {
 
       boot.kernel.sysctl."net.core.rmem_max" = mkOverride 90 25165824;
-
-      flyingcircus.services.collectdproxy.statshost = {
-        enable = true;
-        sendTo = "${cfgStats.hostName}:2003";
-      };
 
       # Global prometheus configuration
       environment.etc = listToAttrs
@@ -721,16 +715,6 @@ in
 
     })
 
-    # outgoing collectd proxy for this location
-    (mkIf (cfgProxyLocation.enable && statshostService != null) {
-      flyingcircus.services.collectdproxy.location = {
-        enable = true;
-        statshost = cfgStats.hostName;
-        listenAddr = "::";
-      };
-      networking.firewall.extraCommands =
-        "ip6tables -A nixos-fw -i ethsrv -p udp --dport 2003 -j nixos-fw-accept";
-    })
   ];
 }
 
