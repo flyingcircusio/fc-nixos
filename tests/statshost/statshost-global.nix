@@ -215,7 +215,6 @@ in {
     statshost.wait_for_unit("prometheus.service")
     statshost.wait_for_unit("influxdb.service")
     statshost.wait_for_unit("grafana.service")
-    statshost.wait_for_unit("collectdproxy-statshost.service")
 
     statssource.wait_for_open_port(9126)
 
@@ -248,19 +247,5 @@ in {
     with subtest("nginx only opens expected ports"):
       # look for ports that are not 80 (nginx default for status info) 9090 (metrics HTTP), 9443 (metrics HTTPS)
       proxy.fail("netstat -tlpn | grep nginx | egrep -v ':80 |:9090 |:9443 '")
-
-    proxy.wait_for_unit("collectdproxy-location.service")
-
-    # Generate a lot of metric lines to fill up the buffer of collectdproxy.
-    # Collectdproxy only sends metrics when the buffer is full.
-    statssource.execute('seq -f "statssource 1 %03g" 800 > collectd_metrics')
-
-    proxy.wait_until_succeeds("netstat -nl | grep 2003")
-    statshost.wait_until_succeeds("netstat -nl | grep 2003")
-    statshost.wait_until_succeeds("netstat -nl | grep 2004")
-
-    with subtest("metrics sent from statssource should appear in influx"):
-      statssource.succeed('nc -u -w5 ${proxy6Srv} 2003 < collectd_metrics')
-      statshost.wait_until_succeeds('influx -database graphite -execute "show measurements" | grep -q statssource')
   '';
 })
