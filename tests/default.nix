@@ -93,8 +93,7 @@ in {
   rg-relay = callTest ./statshost/rg-relay.nix {};
   sensuclient = callTest ./sensuclient.nix {};
   servicecheck = callTest ./servicecheck.nix {};
-  # test fails
-  # statshost-global = callTest ./statshost/statshost-global.nix {};
+  statshost-global = callTest ./statshost/statshost-global.nix {};
   statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
   syslog = callSubTests ./syslog.nix {};
