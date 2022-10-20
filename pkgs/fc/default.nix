@@ -16,7 +16,6 @@ rec {
   # ceph = callPackage ./ceph { inherit blockdev agent util-physical; };
   check-xfs-broken = callPackage ./check-xfs-broken {};
   blockdev = callPackage ./blockdev {};
-  collectdproxy = callPackage ./collectdproxy {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
   fix-so-rpath = callPackage ./fix-so-rpath {};
   logcheckhelper = callPackage ./logcheckhelper { };
