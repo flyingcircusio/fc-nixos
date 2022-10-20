@@ -31,8 +31,8 @@
 }
 {
   imageName = "docker.io/rancher/mirrored-library-busybox";
-  imageDigest = "sha256:aded825f3a3aece1d9efd13284b2c96eed13db78b77565356c580d062c7dd14b";
-  sha256 = "0pdcxk7iizmr7syqy71h42zm3dj476nly3ff7rkqi6fvk3vjhsm9";
+  imageDigest = "sha256:09908276a2b796f5fb2d29766f826859425e290163024b30fa8d41b8d7ed9e87";
+  sha256 = "19y492w2p9w61wa25k44byni44nq0h7xyj212zhc46v3754g8jwj";
   finalImageName = "docker.io/rancher/mirrored-library-busybox";
   finalImageTag = "1.34.1";
 }
