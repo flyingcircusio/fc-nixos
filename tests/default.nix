@@ -77,8 +77,7 @@ in {
   network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
   nginx = callTest ./nginx.nix {};
-  # test hangs forever
-  # openvpn = callTest ./openvpn.nix {};
+  openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
   postgresql10 = callTest ./postgresql { version = "10"; };
