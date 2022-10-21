@@ -734,6 +734,9 @@ class BlueStoreOSD(GenericOSD):
         return self.lvm_block_lv
 
     def activate(self, restore=True):
+
+        super().activate(restore)
+
         # Relocating OSDs: Create WAL LV if the symlink is broken
         # and fix the symlink (in case the VG name changed).
         # For OSDs with external WAL, restore it from the backup copy.
@@ -853,7 +856,6 @@ class BlueStoreOSD(GenericOSD):
 
         # this is filestore/ bluestore specific: Bluestore always creates one more
         # additional LV `ceph-osd-X-block`
-        # FIXME: test both internal as well as external journal osd creation
         # Is the journal internal or external?
 
         # heuristic: Having a backup WAL volume indicates an external journal, otherwise
