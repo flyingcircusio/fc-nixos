@@ -134,7 +134,7 @@ class OSDManager(object):
             try:
                 osd = OSD(id_)
                 osd.deactivate(flush=False)
-                osd.activate(restore=False)
+                osd.activate()
             except Exception:
                 traceback.print_exc()
 
@@ -251,7 +251,7 @@ class GenericOSD(object):
             )
         return mountpoint
 
-    def activate(self, __restore_is_ignored):
+    def activate(self):
         print(f"Activating OSD {self.id}...")
 
         self.ensure_osd_data_dir_is_mounted(self.id)
@@ -336,7 +336,7 @@ class GenericOSD(object):
         self._create_crush_and_auth(self.data_lv, crush_location)
 
         # 6. activate OSD
-        self.activate(restore=False)
+        self.activate()
 
     def _create_journal(journal_location, journal_size):
         """Hook function for creating journal/ WAL/ other similar devices.
@@ -569,8 +569,8 @@ class FileStoreOSD(GenericOSD):
     def data_lv(self):
         return self.lvm_lv
 
-    def activate(self, restore=True):
-        super().activate(restore)
+    def activate(self):
+        super().activate()
 
         # Check VG for journal
         lvm_journal = self._locate_journal_lv()
@@ -729,14 +729,46 @@ class BlueStoreOSD(GenericOSD):
     def _has_wal_backup(self):
         return os.path.exists(self.lvm_wal_backup_device)
 
+    # FIXME: unused so far, will be part of a dedicated inmigrate/ restore operation
+    # when moving disks between hosts PL-130677
+    def _restore_wal_backup(self):
+        if self._has_wal_backup:
+            print("Restoring external WAL from backup…")
+            active_wal = self._locate_wal_lv()
+            assert self.lvm_wal_backup_device != active_wal
+            run.dd(
+                f"if={self.lvm_wal_backup_device}",
+                f"of={active_wal}",
+                # ensure write barrier after WAL restore to ensure daemon start only
+                # after successful persistence of data to disk
+                f"oflag=fsync,nocache",
+            )
+
+    # FIXME: unused so far, will be part of a dedicated inmigrate/ restore operation
+    # when moving disks between hosts PL-130677
+    def _create_wal_backup(self):
+        if self._has_wal_backup:
+            print("Flushing external WAL to backup…")
+            active_wal = self._locate_wal_lv()
+            assert self.lvm_wal_backup_device != active_wal
+            run.dd(
+                f"if={active_wal}",
+                f"of={self.lvm_wal_backup_device}",
+                # ensure write barrier after WAL restore to ensure daemon start only
+                # after successful persistence of data to disk
+                f"oflag=fsync,nocache",
+            )
+
     @property
     def data_lv(self):
         return self.lvm_block_lv
 
-    def activate(self, restore=True):
+    def activate(self):
+
+        super().activate()
+
         # Relocating OSDs: Create WAL LV if the symlink is broken
         # and fix the symlink (in case the VG name changed).
-        # For OSDs with external WAL, restore it from the backup copy.
         run.ceph_osd(
             # fmt: off
             "-i", str(self.id),
@@ -745,28 +777,13 @@ class BlueStoreOSD(GenericOSD):
             # fmt: on
         )
 
-        if restore and self._has_wal_backup:
-            print("Restoring external WAL from backup…")
-            active_wal = self._locate_wal_lv()
-            assert self.lvm_wal_backup_device != active_wal
-            run.dd(
-                f"if={self.lvm_wal_backup_device}",
-                f"of={active_wal}",
-            )
-
-    def deactivate(self, flush=True):
-        # deactivate (shutdown osd, remove things but don't delete it, make
-        # the osd able to be relocated somewhere else)
-        super().deactivate()
-
-        if flush and self._has_wal_backup:
-            print("Flushing external WAL to backup…")
-            active_wal = self._locate_wal_lv()
-            assert self.lvm_wal_backup_device != active_wal
-            run.dd(
-                f"if={active_wal}",
-                f"of={self.lvm_wal_backup_device}",
-            )
+    def deactivate(
+        self, flush=False  # ignored, just for call compatibility with FileStore
+    ):
+        # deactivate (shutdown osd, remove things but don't delete it
+        # FIXME: this is not sufficient for migrating the OSD to another host if it has
+        # an external WAL, that requires a manual outmigration command PL-130677
+        super().deactivate(flush=False)
 
     def _create_journal(self, wal, __size_is_ignored):
         # External WAL
@@ -853,7 +870,6 @@ class BlueStoreOSD(GenericOSD):
 
         # this is filestore/ bluestore specific: Bluestore always creates one more
         # additional LV `ceph-osd-X-block`
-        # FIXME: test both internal as well as external journal osd creation
         # Is the journal internal or external?
 
         # heuristic: Having a backup WAL volume indicates an external journal, otherwise
