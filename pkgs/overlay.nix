@@ -2,10 +2,10 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  # We want to have the last available OSS version for Kibana and Elasticsearch.
+  # We want to have the last available OSS version for Elasticsearch.
   # We don't override the global elk7Version because it's ok to use newer versions
-  # for the (free) beats and unfree Elasticsearch/Kibana.
-  elasticKibana7Version = "7.10.2";
+  # for the (free) beats and unfree Elasticsearch
+  elastic7Version = "7.10.2";
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
@@ -56,7 +56,7 @@ in {
   elasticsearch7 = (super.elasticsearch7.override {
     jre_headless = self.jdk11_headless;
   }).overrideAttrs(_: rec {
-    version = elasticKibana7Version;
+    version = elastic7Version;
     name = "elasticsearch-${version}";
 
     src = super.fetchurl {
@@ -68,7 +68,7 @@ in {
   elasticsearch7-oss = (super.elasticsearch7.override {
     jre_headless = self.jdk11_headless;
   }).overrideAttrs(_: rec {
-    version = elasticKibana7Version;
+    version = elastic7Version;
     name = "elasticsearch-oss-${version}";
 
     src = super.fetchurl {
