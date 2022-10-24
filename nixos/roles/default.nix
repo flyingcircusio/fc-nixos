@@ -19,7 +19,6 @@ in {
     ./gitlab.nix
     ./graylog.nix
     ./jitsi
-    ./kibana.nix
     ./k3s
     ./lamp.nix
     ./loghost
@@ -44,7 +43,6 @@ in {
     (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "enable" ] [ "flyingcircus" "roles" "statshost-global" "enable" ])
     (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "globalAllowedMetrics" ] [ "flyingcircus" "roles" "statshost-global" "allowedMetricPrefixes" ])
     (mkRenamedOptionModule [ "flyingcircus" "roles" "statshostproxy" ] [ "flyingcircus" "roles" "statshost-location-proxy" ])
-    (mkRenamedOptionModule [ "flyingcircus" "roles" "kibana" "enable" ] [ "flyingcircus" "roles" "kibana6" "enable" ])
   ];
 
   options = {
