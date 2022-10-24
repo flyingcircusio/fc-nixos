@@ -52,7 +52,6 @@ in {
   journalbeat = callTest ./journalbeat.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
   k3s = callTest ./k3s {};
-  kibana = callTest ./kibana.nix {};
 
   lampVm = callTest ./lamp/vm-test.nix { };
   lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
