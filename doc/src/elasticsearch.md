@@ -8,8 +8,6 @@ There's a role for each supported major version, currently:
 - elasticsearch6: 6.8.21
 - elasticsearch7: 7.10.2
 
-We also provide {ref}`nixos-kibana` for both versions as a separate component.
-
 We use the free versions of Elasticsearch, which are published under the Apache
 2.0 license. Client libraries may not work or need additional configuration if
 they expect the unfree versions of Elasticsearch. Note that *x-pack* features
