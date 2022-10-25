@@ -1,4 +1,4 @@
-import ../make-test-python.nix ({ version ? "14", lib, testlib, pkgs, ... }:
+import ../make-test-python.nix ({ version ? "15", lib, testlib, pkgs, ... }:
 let
   ipv4 = testlib.fcIP.srv4 1;
   ipv6 = testlib.fcIP.srv6 1;
