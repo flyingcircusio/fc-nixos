@@ -612,8 +612,8 @@ in
             login_cookie_name = "grafana9_session";
           };
 
-          ldap = {
-            enabled = "true";
+          "auth.ldap" = {
+            enabled = true;
             config_file = toString grafanaLdapConfig;
           };
 
