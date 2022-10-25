@@ -9,7 +9,7 @@ import typer.testing
 
 @pytest.fixture
 def old_data_dir(tmp_path, monkeypatch):
-    old_data_dir = tmp_path / "postgresql/10/package"
+    old_data_dir = tmp_path / "postgresql/14/package"
     old_data_dir.mkdir(parents=True)
 
     monkeypatch.setattr(
@@ -30,7 +30,7 @@ def invoke_app(log, tmp_path, old_data_dir):
         tmp_path / "postgresql",
     )
 
-    (tmp_path / "postgresql/11").mkdir()
+    (tmp_path / "postgresql/15").mkdir()
     (tmp_path / "log").mkdir()
 
     def _invoke_app(*args):
@@ -54,7 +54,7 @@ def test_invoke_main_help(invoke_app):
 def test_invoke_list_versions(invoke_app, monkeypatch, tmp_path):
     monkeypatch.setattr(
         "fc.util.postgresql.get_current_pgdata_from_service",
-        (lambda: tmp_path / "postgresql/10"),
+        (lambda: tmp_path / "postgresql/14"),
     )
     monkeypatch.setattr("fc.util.postgresql.is_service_running", (lambda: True))
     result = invoke_app("list-versions")
@@ -72,7 +72,7 @@ def test_invoke_upgrade(
     run_pg_upgrade: Mock,
     invoke_app,
 ):
-    invoke_app("upgrade", "--new-version", "12")
+    invoke_app("upgrade", "--new-version", "15")
     build_new_bin_dir.assert_called()
     prepare_upgrade.assert_called()
     run_pg_upgrade_check.assert_called()
@@ -93,7 +93,7 @@ def test_invoke_upgrade_now(
     get_current_pg_data_from_service,
     invoke_app,
 ):
-    invoke_app("upgrade", "--new-version", "12", "--upgrade-now")
+    invoke_app("upgrade", "--new-version", "15", "--upgrade-now")
     build_new_bin_dir.assert_called()
     prepare_upgrade.assert_called()
     run_pg_upgrade.assert_called()
@@ -120,7 +120,7 @@ def test_invoke_prepare_autoupgrade(
     conf = {"expected_databases": ["test"]}
     config.write_text(json.dumps(conf), encoding="utf8")
     monkeypatch.setattr("fc.util.postgresql.is_service_running", (lambda: True))
-    invoke_app("prepare-autoupgrade", "--config", config, "--new-version", "11")
+    invoke_app("prepare-autoupgrade", "--config", config, "--new-version", "15")
     build_new_bin_dir.assert_called()
     prepare_upgrade.assert_called()
     run_pg_upgrade_check.assert_called()

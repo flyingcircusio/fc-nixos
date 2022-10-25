@@ -7,11 +7,11 @@ let
   upstreamCfg = config.services.postgresql;
   fclib = config.fclib;
   packages = {
-    "10" = pkgs.postgresql_10;
     "11" = pkgs.postgresql_11;
     "12" = pkgs.postgresql_12;
     "13" = pkgs.postgresql_13;
     "14" = pkgs.postgresql_14;
+    "15" = pkgs.postgresql_15;
   };
 
   oldestMajorVersion = head (lib.attrNames packages);
