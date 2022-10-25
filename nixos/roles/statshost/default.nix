@@ -607,14 +607,20 @@ in
         port = 3001;
         addr = "127.0.0.1";
         rootUrl = "http://${cfgStats.hostName}/grafana";
-        extraOptions = {
-          AUTH_LDAP_ENABLED = "true";
-          AUTH_LDAP_CONFIG_FILE = toString grafanaLdapConfig;
-          # Grafana 7 changed the cookie path, so login fails if old session cookies are present.
-          # Changing the cookie name helps.
-          AUTH_LOGIN_COOKIE_NAME = "grafana7_session";
-          LOG_LEVEL = "info";
-          PATHS_PROVISIONING = grafanaProvisioningPath;
+        settings = {
+          auth = {
+            login_cookie_name = "grafana9_session";
+          };
+
+          ldap = {
+            enabled = "true";
+            config_file = toString grafanaLdapConfig;
+          };
+
+          paths = {
+            provisioning = grafanaProvisioningPath;
+          };
+
         };
       };
 
