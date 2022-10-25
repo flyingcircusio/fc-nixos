@@ -105,11 +105,11 @@ in {
       extensions = lib.optionals (lib.versionOlder cfg.majorVersion "12") [
         (pkgs.postgis_2_5.override { postgresql = postgresqlPkg; })
         (pkgs.temporal_tables.override { postgresql = postgresqlPkg; })
-        (pkgs.rum.override { postgresql = postgresqlPkg; })
+        postgresqlPkg.pkgs.rum
       ] ++ lib.optionals (lib.versionAtLeast cfg.majorVersion "12") [
         postgresqlPkg.pkgs.periods
         postgresqlPkg.pkgs.postgis
-        (pkgs.rum.override { postgresql = postgresqlPkg; })
+        postgresqlPkg.pkgs.rum
       ];
 
     in {

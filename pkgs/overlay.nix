@@ -311,8 +311,6 @@ in {
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
-  rum = super.callPackage ./postgresql/rum { };
-
   sensu = super.callPackage ./sensu { ruby = super.ruby; };
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
   sensu-plugins-kubernetes = super.callPackage ./sensuplugins-rb/sensu-plugins-kubernetes { };
