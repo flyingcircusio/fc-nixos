@@ -1,4 +1,5 @@
 { lib, stdenv, fetchurl, openssl, db, groff, libtool, libsodium
+, libxcrypt
 , withCyrusSasl ? true
 , cyrus_sasl
 }:
@@ -19,7 +20,7 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ groff ];
 
-  buildInputs = [ openssl cyrus_sasl db libsodium libtool ];
+  buildInputs = [ openssl cyrus_sasl db libsodium libtool libxcrypt ];
 
   # Disable install stripping as it breaks cross-compiling.
   # We strip binaries anyway in fixupPhase.
