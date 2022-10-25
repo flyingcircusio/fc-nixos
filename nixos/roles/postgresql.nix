@@ -14,22 +14,22 @@ in
 
   in {
     flyingcircus.roles = {
-      postgresql10 = mkRole "10";
       postgresql11 = mkRole "11";
       postgresql12 = mkRole "12";
       postgresql13 = mkRole "13";
       postgresql14 = mkRole "14";
+      postgresql15 = mkRole "15";
     };
   };
 
   config =
   let
     pgroles = with config.flyingcircus.roles; {
-      "10" = postgresql10.enable;
       "11" = postgresql11.enable;
       "12" = postgresql12.enable;
       "13" = postgresql13.enable;
       "14" = postgresql14.enable;
+      "15" = postgresql15.enable;
     };
     enabledRoles = lib.filterAttrs (n: v: v) pgroles;
     enabledRolesCount = length (lib.attrNames enabledRoles);
