@@ -141,7 +141,6 @@ with lib;
       powerdns = 31005;
       tideways = 31006;
       coredns = 31007;
-      opensearch = 31008;
 
       # removed by upstream, we want to keep it
       memcached = 177;
@@ -168,7 +167,6 @@ with lib;
       sensuclient = 31004;
       powerdns = 31005;
       tideways = 31006;
-      opensearch = 31008;
     };
 
   };

@@ -6,7 +6,7 @@ in
 {
   name = "opensearch";
 
-  machine =
+  nodes.machine =
     { pkgs, config, ... }:
     {
       imports = [
@@ -55,9 +55,6 @@ in
         api_result = json.loads(machine.wait_until_succeeds("curl ${ipv4}:9200"))
         cluster_name = api_result["cluster_name"]
         assert cluster_name == "machine", f"expected cluster name 'machine', got '{cluster_name}'"
-
-    with subtest("service user should be able to write to local config dir"):
-      machine.succeed('sudo -u opensearch touch /etc/local/opensearch/clusterName')
 
     with subtest("opensearch (java) opens expected ports"):
       assert_listen(machine, "java", expected_sockets)

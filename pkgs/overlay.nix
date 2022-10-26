@@ -296,7 +296,6 @@ in {
 
   openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
 
-  opensearch = super.callPackage ./opensearch { };
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
   percona = self.percona80;
