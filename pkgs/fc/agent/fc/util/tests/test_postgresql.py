@@ -67,6 +67,9 @@ def test_prepare_upgrade(logger, pg10_data_dir, monkeypatch, tmp_path):
 
 def test_run_pg_upgrade(logger, tmp_path, pg10_data_dir, monkeypatch):
     monkeypatch.setattr("fc.util.postgresql.run_as_postgres", Mock())
+    monkeypatch.setattr(
+        "fc.util.postgresql.pg_upgrade_clone_available", Mock(return_value=True)
+    )
     new_data_dir = tmp_path / "postgresql/11"
     new_data_dir.mkdir()
     new_bin_dir = new_data_dir

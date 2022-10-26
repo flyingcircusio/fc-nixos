@@ -52,6 +52,10 @@ def stop_pg(log, old_data_dir: Path, stop: bool):
             text=True,
             check=True,
         )
+        log.info(
+            "upgrade-postgresql-stopped",
+            _replace_msg="Postgresql is stopped now.",
+        )
         postgres_running = False
     old_dir_stopper = old_data_dir / "fcio_stopper"
     old_dir_stopper.write_text(STOPPER_TEMPLATE.format(pid=os.getpid()))
