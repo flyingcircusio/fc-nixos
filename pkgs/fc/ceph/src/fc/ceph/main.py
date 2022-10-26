@@ -362,4 +362,8 @@ requests. Useful for identifying slacky OSDs.""",
     environment = Environment(CONFIG_FILE_PATH)
     subsystem = environment.prepare(subsystem_factory)
     action = getattr(subsystem, action)
-    action(**args)
+    action_statuscode = action(**args)
+
+    # optionally allow actions to return a statuscode
+    if isinstance(action_statuscode, int):
+        sys.exit(action_statuscode)
