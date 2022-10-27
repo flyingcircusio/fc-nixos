@@ -373,7 +373,6 @@ in
           worker_connections 4096;
           multi_accept on;
         '';
-        masterUser = fclib.mkPlatform "root";
         recommendedGzipSettings = true;
         recommendedOptimisation = true;
         recommendedProxySettings = true;
