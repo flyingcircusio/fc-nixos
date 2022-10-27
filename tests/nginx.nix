@@ -166,10 +166,10 @@ in {
       assert permissions == expected, f"expected: {expected}, got {permissions}"
 
     def assert_logdir():
-      assert_file_permissions("755:root:nginx", "/var/log/nginx")
-      assert_file_permissions("644:root:nginx", "/var/log/nginx/performance.log")
-      assert_file_permissions("644:root:nginx", "/var/log/nginx/error.log")
-      assert_file_permissions("644:root:nginx", "/var/log/nginx/access.log")
+      assert_file_permissions("755:nginx:nginx", "/var/log/nginx")
+      assert_file_permissions("644:nginx:nginx", "/var/log/nginx/performance.log")
+      assert_file_permissions("644:nginx:nginx", "/var/log/nginx/error.log")
+      assert_file_permissions("644:nginx:nginx", "/var/log/nginx/access.log")
 
     def assert_reachable(server, intf):
       server.succeed("curl -k https://" + intf + " | grep TESTOK")
