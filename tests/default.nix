@@ -34,10 +34,12 @@ in {
   audit = callTest ./audit.nix {};
   backyserver_ceph-jewel = callTest ./backyserver.nix { clientCephRelease = "jewel"; };
   backyserver_ceph-luminous = callTest ./backyserver.nix { clientCephRelease = "luminous"; };
+  backyserver_ceph-nautilus = callTest ./backyserver.nix { clientCephRelease = "nautilus"; };
   channel = callTest ./channel.nix {};
   # legacy ceph
   ceph-jewel = callTest ./ceph-jewel.nix {};
   ceph-luminous = callTest ./ceph-luminous.nix {};
+  ceph-nautilus = callTest ./ceph-nautilus.nix {};
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};

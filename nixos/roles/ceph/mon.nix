@@ -6,7 +6,6 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_mon;
   enc = config.flyingcircus.enc;
-  mon_port = "6789";
 
   mons = (sort lessThan (map (service: service.address) (fclib.findServices "ceph_mon-mon")));
   # We do not have service data during bootstrapping.
@@ -51,12 +50,16 @@ in
           (mon:
             let
               id = head (lib.splitString "." mon.address);
-              addr = "${head (filter fclib.isIp4 mon.ips)}:${mon_port}";
+              # we have always been using the default mon ports, so there is no need
+              # to explicitly specify a port
+              addr = toString (head (filter fclib.isIp4 mon.ips));
             in
             ''
               [mon.${id}]
               host = ${id}
-              mon addr = ${addr}
+              # FIXME: mon addr is explicitly deprecated from Nautilus on, let's see whether a public
+              # addr and mon host are sufficient even for earlier releases
+              #mon addr = ${addr}
               public addr = ${addr}
             '')
           (fclib.findServices "ceph_mon-mon"))

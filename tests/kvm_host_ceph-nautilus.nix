@@ -142,9 +142,9 @@ let
         cephRelease = "nautilus";
       };
       flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
-      flyingcircus.services.ceph.extraConfig = ''
-            mon clock drift allowed = 1
-      '';
+      flyingcircus.services.ceph.extraSettings = {
+            monClockDriftAllowed = 1;
+      };
 
       # KVM
       flyingcircus.roles.kvm_host = {

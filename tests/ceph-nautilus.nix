@@ -174,7 +174,6 @@ in
           else:
              raise
 
-
     show(host1, 'ip l')
     show(host1, 'iptables -L -n -v')
     show(host1, 'ls -lah /etc/ceph/')
