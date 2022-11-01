@@ -193,7 +193,9 @@ in
           ${pkgs.fc.ceph}/bin/fc-ceph mgr reactivate
         '';
 
-        preStart = ''
+        # FIXME: dashboard only enabled for luminous, as the Nautilus release fails to build in the sandbox so far.
+        # If we ever manage to get it enabled, `ceph config set` needs to be used instead of `ceph config-key`
+        preStart = lib.optionalString (role.cephRelease == "luminous") ''
           echo "ensure mgr dashboard binds to localhost only"
           # make _all_ hosts bind the dashboard to localhost (v4) only (default port: 7000)
           ${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph config-key set mgr/dashboard/server_addr 127.0.0.1
