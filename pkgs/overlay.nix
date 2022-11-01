@@ -48,6 +48,16 @@ in {
     stdenv = self.gcc9Stdenv;
     python2Packages = self.python27-ceph-downgrades.pkgs;
   });
+  # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
+  ceph-nautilus = rec {
+    inherit (super.callPackages ./ceph/nautilus {
+        boost = super.boost16x.override { enablePython = true; python = self.python3; };
+      })
+      ceph
+      ceph-client;
+    libceph = ceph.lib;
+  };
+
 
   # Hash is wrong upstream
   containerd = super.containerd.overrideAttrs(_: rec {
@@ -462,8 +472,7 @@ in {
       sha256 = "sha256-9jYpGmD28yJGZU4zlae9BL4uU3iukWdPWpSkgHHvOxI=";
     }) ];
   });
-
-  qemu_ceph = super.qemu.override { cephSupport = true; };
+  qemu_ceph = self.qemu.override { cephSupport = true; };
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
