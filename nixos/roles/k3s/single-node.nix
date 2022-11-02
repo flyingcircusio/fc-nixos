@@ -115,7 +115,7 @@ in {
         "--flannel-iface=ethsrv"
         "--data-dir=/var/lib/k3s"
         "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
-        "--no-deploy traefik"
+        "--disable traefik"
       ];
     in {
       enable = true;
