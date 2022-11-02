@@ -478,6 +478,12 @@ in {
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
 
+  # fix CVE-2022-35737
+  sqlite = lib.lowPrio (super.sqlite.overrideAttrs (oldAttrs: {
+    patches = (if (oldAttrs ? "patches") then oldAttrs.patches else []) ++ [ ./sqlite/CVE-2022-35737.patch];
+  }));
+
+
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
   tideways_daemon = super.callPackage ./tideways/daemon.nix {};
   tideways_module = super.callPackage ./tideways/module.nix {};

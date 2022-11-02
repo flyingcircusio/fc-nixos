@@ -62,6 +62,6 @@ import ./make-test-python.nix ({ pkgs, latestKernel ? false, ... }:
       # Check whether ctrl-alt-delete works.
       with subtest("ctrl-alt-delete"):
           machine.send_key("ctrl-alt-delete")
-          machine.wait_for_shutdown
+          machine.wait_for_shutdown()
     '';
 })
