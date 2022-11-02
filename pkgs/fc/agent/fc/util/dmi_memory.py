@@ -27,15 +27,20 @@ def get_device(entry):
 
 
 def calc_mem(modules):
+    """Returns total memory size in MiB"""
     total = 0
     for m in modules:
         total += int("".join(ch for ch in m["Size"] if ch in string.digits))
-    return total
+    # dmidecode reports GiB now. Earlier versions used MiB which the rest of
+    # the agent code expects.
+    return total * 1024
 
 
 def main():
     modules = []
-    dmidecode = subprocess.check_output(["dmidecode", "-q"]).decode()
+    dmidecode = subprocess.check_output(
+        ["dmidecode", "-q", "-t", "memory"]
+    ).decode()
     for entry in get_paragraph(dmidecode.splitlines()):
         for line in entry:
             if "Memory Device" in line:
