@@ -8,13 +8,13 @@ from fc.util.dmi_memory import calc_mem, get_device, main
 
 def test_calc_mem():
     modules = [
-        {"Size": "0MB"},
-        {"Size": "512MB"},
-        {"Size": "2048    MB"},
-        {"Size": "    9096 mb"},
+        {"Size": "0GB"},
+        {"Size": "1GB"},
+        {"Size": "1    GB"},
+        {"Size": "    9 gb"},
     ]
     res = calc_mem(modules)
-    assert res == 11656
+    assert res == 11264
 
 
 def test_get_device():
@@ -33,7 +33,7 @@ def test_multibank_should_be_calculated_correctly(check_output):
     check_output().decode.return_value = pkg_resources.resource_string(
         __name__, "dmidecode_multibank.out"
     ).decode("us-ascii")
-    assert 24576 == main()
+    assert 262144 == main()
 
 
 @mock.patch("subprocess.check_output")
@@ -41,4 +41,4 @@ def test_singlebank_should_be_calculated_correctly(check_output):
     check_output().decode.return_value = pkg_resources.resource_string(
         __name__, "dmidecode.out"
     ).decode("us-ascii")
-    assert 2048 == main()
+    assert 8192 == main()
