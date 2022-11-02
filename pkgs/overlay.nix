@@ -262,10 +262,6 @@ in {
 
   # This is our default version.
   nginxStable = (super.nginxStable.override {
-    # XXX: can be removed when openssl 3.0.7 is released.
-    # We downgrade to 1.1 avoid the critical issue that
-    # will be released on 2022-11-01.
-    openssl = super.openssl_1_1;
     modules = with super.nginxModules; [
       dav
       modsecurity-nginx
@@ -281,10 +277,6 @@ in {
   nginx = self.nginxStable;
 
   nginxMainline = (super.nginxMainline.override {
-    # XXX: can be removed when openssl 3.0.7 is released.
-    # We downgrade to 1.1 avoid the critical issue that
-    # will be released on 2022-11-01.
-    openssl = super.openssl_1_1;
     modules = with super.nginxModules; [
       dav
       modsecurity-nginx
