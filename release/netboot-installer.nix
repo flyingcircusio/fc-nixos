@@ -324,5 +324,6 @@ in
       ethtool
       tcpdump
     ];
+    programs.mtr.enable = true;
   };
 }

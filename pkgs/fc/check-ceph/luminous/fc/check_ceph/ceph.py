@@ -133,7 +133,7 @@ class Ceph(nagiosplugin.Resource):
         yield nagiosplugin.Metric(
             "net data", self.stat.data_bytes, "B", min=0, context="default"
         )
-        m = re.search(r"(\d+) near full osd", self.summary)
+        m = re.search(r"(\d+) nearfull osd", self.summary)
         nearfull = int(m.group(1)) if m else 0
         yield nagiosplugin.Metric(
             "nearfull", nearfull, min=0, context="nearfull"
