@@ -37,14 +37,6 @@ in {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  clamav = super.clamav.overrideAttrs(oldAttrs: rec {
-    pname = "clamav";
-    version = "0.105.1";
-    src = fetchurl {
-      url = "https://www.clamav.net/downloads/production/${pname}-${version}.tar.gz";
-      hash = "sha256-0rwWN024iablpqxA+MbnACVKA5rKpTaIWgnu6kuFKfY=";
-    };
-  });
   # XXX: ceph doesn't build
   # ceph = (super.callPackage ./ceph {
   #     pythonPackages = super.python3Packages;
@@ -270,10 +262,6 @@ in {
 
   # This is our default version.
   nginxStable = (super.nginxStable.override {
-    # XXX: can be removed when openssl 3.0.7 is released.
-    # We downgrade to 1.1 avoid the critical issue that
-    # will be released on 2022-11-01.
-    openssl = super.openssl_1_1;
     modules = with super.nginxModules; [
       dav
       modsecurity-nginx
@@ -289,10 +277,6 @@ in {
   nginx = self.nginxStable;
 
   nginxMainline = (super.nginxMainline.override {
-    # XXX: can be removed when openssl 3.0.7 is released.
-    # We downgrade to 1.1 avoid the critical issue that
-    # will be released on 2022-11-01.
-    openssl = super.openssl_1_1;
     modules = with super.nginxModules; [
       dav
       modsecurity-nginx
