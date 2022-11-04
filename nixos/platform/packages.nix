@@ -13,6 +13,7 @@
         db
         dnsutils
         dstat
+        ethtool
         file
         fc.logcheckhelper
         fio
@@ -62,6 +63,8 @@
         xfsprogs
         zip
     ];
+
+    programs.mtr.enable = config.fclib.mkPlatform true;
 
     flyingcircus.passwordlessSudoRules = [
       {
