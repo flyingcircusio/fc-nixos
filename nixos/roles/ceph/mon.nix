@@ -86,7 +86,7 @@ in
         after = wants;
 
         restartTriggers = [
-          config.environment.etc."ceph/ceph.conf".text
+          config.environment.etc."ceph/ceph.conf".source
           fclib.ceph.releasePkgs.${role.cephRelease}
         ];
 
@@ -178,7 +178,7 @@ in
         after = wants;
 
         restartTriggers = [
-          config.environment.etc."ceph/ceph.conf".text
+          config.environment.etc."ceph/ceph.conf".source
         ];
 
         environment = {

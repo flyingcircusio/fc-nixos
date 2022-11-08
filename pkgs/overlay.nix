@@ -483,6 +483,14 @@ in {
     patches = (if (oldAttrs ? "patches") then oldAttrs.patches else []) ++ [ ./sqlite/CVE-2022-35737.patch];
   }));
 
+  sudo = super.sudo.overrideAttrs (oldAttrs: {
+    patches = (if (oldAttrs ? "patches") then oldAttrs.patches else []) ++ [
+    (fetchpatch {
+      name = "CVE-2022-43995.patch";
+      url = "https://github.com/sudo-project/sudo/commit/bd209b9f16fcd1270c13db27ae3329c677d48050.patch";
+      sha256 = "sha256-JUdoStoSyv6KBPsyzxuMIxqwZMZsjUPj8zUqOSvmZ1A=";
+    })];
+  });
 
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
   tideways_daemon = super.callPackage ./tideways/daemon.nix {};
