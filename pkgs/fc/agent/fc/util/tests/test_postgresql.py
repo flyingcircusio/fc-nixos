@@ -1,18 +1,14 @@
 import json
-import traceback
-import unittest.mock
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import fc.manage.postgresql
 import fc.util.postgresql
 import pytest
-import typer.testing
 from fc.util.postgresql import (
     PGVersion,
     build_new_bin_dir,
-    prepare_upgrade,
+    get_existing_dbs,
     run_pg_upgrade,
-    run_pg_upgrade_check,
 )
 
 
@@ -63,6 +59,167 @@ def test_prepare_upgrade(logger, pg10_data_dir, monkeypatch, tmp_path):
         new_data_dir=new_data_dir,
         expected_databases=[],
     )
+
+
+EXPECTED_EXISTING_DBS = {
+    "postgres": {
+        "datname": "postgres",
+        "datcollate": "en_US.UTF-8",
+        "datctype": "en_US.UTF-8",
+    },
+    "root": {
+        "datname": "root",
+        "datcollate": "en_US.UTF-8",
+        "datctype": "en_US.UTF-8",
+    },
+    "template1": {
+        "datname": "template1",
+        "datcollate": "en_US.UTF-8",
+        "datctype": "en_US.UTF-8",
+    },
+    "template0": {
+        "datname": "template0",
+        "datcollate": "en_US.UTF-8",
+        "datctype": "en_US.UTF-8",
+    },
+    "nagios": {
+        "datname": "nagios",
+        "datcollate": "en_US.UTF-8",
+        "datctype": "en_US.UTF-8",
+    },
+    "mydb": {
+        "datname": "mydb",
+        "datcollate": "en_US.UTF-8",
+        "datctype": "en_US.UTF-8",
+    },
+    "otherdb": {
+        "datname": "otherdb",
+        "datcollate": "en_US.UTF-8",
+        "datctype": "en_US.UTF-8",
+    },
+}
+
+EXISTING_DBS_STOPPED_POSTGRES = """\
+ 1: datname     (typeid = 19, len = 64, typmod = -1, byval = f)
+ 2: datcollate  (typeid = 19, len = 64, typmod = -1, byval = f)
+ 3: datctype    (typeid = 19, len = 64, typmod = -1, byval = f)
+----
+ 1: datname = "postgres"        (typeid = 19, len = 64, typmod = -1, byval = f)
+ 2: datcollate = "en_US.UTF-8"  (typeid = 19, len = 64, typmod = -1, byval = f)
+ 3: datctype = "en_US.UTF-8"    (typeid = 19, len = 64, typmod = -1, byval = f)
+----
+ 1: datname = "root"    (typeid = 19, len = 64, typmod = -1, byval = f)
+ 2: datcollate = "en_US.UTF-8"  (typeid = 19, len = 64, typmod = -1, byval = f)
+ 3: datctype = "en_US.UTF-8"    (typeid = 19, len = 64, typmod = -1, byval = f)
+----
+ 1: datname = "template1"       (typeid = 19, len = 64, typmod = -1, byval = f)
+ 2: datcollate = "en_US.UTF-8"  (typeid = 19, len = 64, typmod = -1, byval = f)
+ 3: datctype = "en_US.UTF-8"    (typeid = 19, len = 64, typmod = -1, byval = f)
+----
+ 1: datname = "template0"       (typeid = 19, len = 64, typmod = -1, byval = f)
+ 2: datcollate = "en_US.UTF-8"  (typeid = 19, len = 64, typmod = -1, byval = f)
+ 3: datctype = "en_US.UTF-8"    (typeid = 19, len = 64, typmod = -1, byval = f)
+----
+ 1: datname = "nagios"  (typeid = 19, len = 64, typmod = -1, byval = f)
+ 2: datcollate = "en_US.UTF-8"  (typeid = 19, len = 64, typmod = -1, byval = f)
+ 3: datctype = "en_US.UTF-8"    (typeid = 19, len = 64, typmod = -1, byval = f)
+----
+ 1: datname = "mydb"    (typeid = 19, len = 64, typmod = -1, byval = f)
+ 2: datcollate = "en_US.UTF-8"  (typeid = 19, len = 64, typmod = -1, byval = f)
+ 3: datctype = "en_US.UTF-8"    (typeid = 19, len = 64, typmod = -1, byval = f)
+----
+ 1: datname = "otherdb" (typeid = 19, len = 64, typmod = -1, byval = f)
+ 2: datcollate = "en_US.UTF-8"  (typeid = 19, len = 64, typmod = -1, byval = f)
+ 3: datctype = "en_US.UTF-8"    (typeid = 19, len = 64, typmod = -1, byval = f)
+----
+"""
+
+EXISTING_DBS_RUNNING_POSTGRES = """\
+postgres|en_US.UTF-8|en_US.UTF-8
+root|en_US.UTF-8|en_US.UTF-8
+template1|en_US.UTF-8|en_US.UTF-8
+template0|en_US.UTF-8|en_US.UTF-8
+nagios|en_US.UTF-8|en_US.UTF-8
+mydb|en_US.UTF-8|en_US.UTF-8
+otherdb|en_US.UTF-8|en_US.UTF-8
+"""
+
+
+@pytest.fixture
+def psql_existing_dbs_stopped(monkeypatch):
+    def fake_psql_call(*_a, **_k):
+        class FakeProc:
+            stdout = EXISTING_DBS_STOPPED_POSTGRES
+
+        return FakeProc
+
+    monkeypatch.setattr("fc.util.postgresql.run_as_postgres", fake_psql_call)
+
+
+def test_get_existing_dbs_stopped_postgres(
+    logger, pg10_data_dir, psql_existing_dbs_stopped
+):
+
+    assert (
+        get_existing_dbs(
+            logger,
+            pg10_data_dir,
+            postgres_running=False,
+            expected_dbs=["mydb", "otherdb"],
+        )
+        == EXPECTED_EXISTING_DBS
+    )
+
+
+@pytest.fixture
+def psql_existing_dbs_running(monkeypatch):
+    def fake_psql_call(*_a, **_k):
+        class FakeProc:
+            stdout = EXISTING_DBS_RUNNING_POSTGRES
+
+        return FakeProc
+
+    monkeypatch.setattr("fc.util.postgresql.run_as_postgres", fake_psql_call)
+
+
+def test_get_existing_dbs_running_postgres(
+    logger, pg10_data_dir, psql_existing_dbs_running
+):
+
+    assert (
+        get_existing_dbs(
+            logger,
+            pg10_data_dir,
+            postgres_running=True,
+            expected_dbs=["mydb", "otherdb"],
+        )
+        == EXPECTED_EXISTING_DBS
+    )
+
+
+def test_get_existing_dbs_running_postgres_ignore_expected(
+    logger, pg10_data_dir, psql_existing_dbs_running
+):
+
+    assert (
+        get_existing_dbs(
+            logger, pg10_data_dir, postgres_running=True, expected_dbs=None
+        )
+        == EXPECTED_EXISTING_DBS
+    )
+
+
+def test_get_existing_dbs_running_postgres_should_raise_for_unknown(
+    logger, pg10_data_dir, psql_existing_dbs_running
+):
+
+    with pytest.raises(fc.util.postgresql.UnexpectedDatabasesFound):
+        get_existing_dbs(
+            logger,
+            pg10_data_dir,
+            postgres_running=True,
+            expected_dbs=["mydb"],
+        )
 
 
 def test_run_pg_upgrade(logger, tmp_path, pg10_data_dir, monkeypatch):

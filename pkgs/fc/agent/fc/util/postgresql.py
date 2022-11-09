@@ -1,8 +1,8 @@
 import getpass
 import os
-import tempfile
 import re
 import shutil
+import tempfile
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -264,17 +264,17 @@ def get_existing_dbs(log, data_dir, postgres_running, expected_dbs=None):
                     existing_dbs[current_db["datname"]] = current_db
                 current_db = {}
 
-    expected_existing_dbs = {
-        "nagios",
-        "postgres",
-        "root",
-        "template0",
-        "template1",
-        *expected_dbs,
-    }
     if expected_dbs is None:
         log.debug("get-existing-dbs", existing_dbs=existing_dbs)
     else:
+        expected_existing_dbs = {
+            "nagios",
+            "postgres",
+            "root",
+            "template0",
+            "template1",
+            *expected_dbs,
+        }
         unexpected_dbs = set(existing_dbs) - expected_existing_dbs
         log.debug(
             "get-existing-dbs-unexpected-db-check",

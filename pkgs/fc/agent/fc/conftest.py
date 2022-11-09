@@ -62,4 +62,6 @@ def request_population(tmpdir, agent_maintenance_config):
 
 @fixture
 def logger():
-    return structlog.get_logger()
+    _logger = structlog.get_logger()
+    _logger.trace = lambda *a, **k: None
+    return _logger
