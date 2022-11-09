@@ -20,7 +20,13 @@ let
   in discover (importTest fn args system);
 
 in {
-  # run upstream tests against our overlay
+  # Run selected upstream tests against our overlay.
+  # !!! Be careful when inheriting tests from upstream as tests
+  # may not use our package overlay properly!
+  # We know from the docker test that the `pkgs` argument that is passed to
+  # the machine config doesn't have the overlay and the test is always running
+  # the upstream version of docker, including dependencies.
+  # When in doubt, it's better to write our own test or copy&paste from nixpkgs.
   inherit (pkgs.nixosTests)
     matomo;
 
@@ -32,7 +38,7 @@ in {
   # ceph = callTest ./ceph.nix {};
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
-  docker = callTest (nixpkgs + /nixos/tests/docker.nix) {};
+  docker = callTest ./docker.nix {};
   elasticsearch6 = callSubTests ./elasticsearch.nix { version = "6"; };
   elasticsearch7 = callSubTests ./elasticsearch.nix { version = "7"; };
   fcagent = callSubTests ./fcagent.nix {};
