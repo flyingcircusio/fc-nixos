@@ -643,6 +643,9 @@ class FileStoreOSD(GenericOSD):
             "--osd-objectstore", "filestore",
             "--osd-data", self.datadir,
             "--osd-journal", lvm_journal_path,
+            # we experience auth issues at first mon contact *before* actually creating
+            # the OSD and its own key, so only use locally available config here
+            "--no-mon-config",
             # fmt: on
         )
 
@@ -843,6 +846,9 @@ class BlueStoreOSD(GenericOSD):
             "--osd-objectstore", "bluestore",
             "--osd-data", self.datadir,
             "--bluestore-block-wal-path", lvm_wal_path,
+            # we experience auth issues at first mon contact *before* actually creating
+            # the OSD and its own key, so only use locally available config here
+            "--no-mon-config",
             # fmt: on
         )
 
