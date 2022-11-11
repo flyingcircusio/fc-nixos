@@ -13,21 +13,33 @@ from fc.ceph.util import kill, mount_status, run
 
 
 def wait_for_clean_cluster():
-    while True:
-        status = run.json.ceph("health", "detail")
-        peering = down = blocked = False
-        for item in status["summary"]:
-            if "pgs peering" in item["summary"]:
-                peering = True
-                print(item["summary"])
-            if "in osds are down" in item["summary"]:
-                down = True
-                print(item["summary"])
-            if "requests are blocked" in item["summary"]:
-                blocked = True
-                print(item["summary"])
+    def _eval_health_check(status, checkname):
+        """Helper function that returns True if the health check `checkname` is *not*
+        okay in the status information passed as `status`.
+        """
+        try:
+            check_unclean = (
+                status["health"]["checks"][checkname]["severity"] != "HEALTH_OK"
+            )
+        except KeyError:
+            # clean checks generally do not appear in output
+            check_unclean = False
+        return check_unclean
 
-        if not peering and not down and not blocked:
+    while True:
+        status = run.json.ceph("status")
+
+        stopper_check_names = ["PG_AVAILABILITY", "PG_DEGRADED", "SLOW_OPS"]
+
+        # FIXME: The previous code explicitly checked for the 3 conditions
+        # peering, down, and blocked.
+        # Are all of these cases covered again?
+        if not any(
+            map(
+                lambda checkn: _eval_health_check(status, checkn),
+                stopper_check_names,
+            )
+        ):
             break
 
         # Don't be too fast here.
