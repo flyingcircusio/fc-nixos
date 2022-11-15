@@ -2,6 +2,7 @@ import getpass
 import os
 import re
 import shutil
+import tempfile
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -263,17 +264,17 @@ def get_existing_dbs(log, data_dir, postgres_running, expected_dbs=None):
                     existing_dbs[current_db["datname"]] = current_db
                 current_db = {}
 
-    expected_existing_dbs = {
-        "nagios",
-        "postgres",
-        "root",
-        "template0",
-        "template1",
-        *expected_dbs,
-    }
     if expected_dbs is None:
         log.debug("get-existing-dbs", existing_dbs=existing_dbs)
     else:
+        expected_existing_dbs = {
+            "nagios",
+            "postgres",
+            "root",
+            "template0",
+            "template1",
+            *expected_dbs,
+        }
         unexpected_dbs = set(existing_dbs) - expected_existing_dbs
         log.debug(
             "get-existing-dbs-unexpected-db-check",
@@ -374,12 +375,73 @@ def prepare_upgrade(
         )
 
 
+def pg_upgrade_clone_available(
+    log, new_bin_dir: Path, old_data_dir: Path, new_data_dir: Path
+):
+    """
+    Check if pg_upgrade supports --clone (copy-on-write, reflink) which speeds
+    up migration considerably.
+    """
+    pg_upgrade_help_out = run_as_postgres(
+        [new_bin_dir / "pg_upgrade", "--help"],
+        capture_output=True,
+    ).stdout
+
+    pg_upgrade_has_clone = "--clone" in pg_upgrade_help_out
+
+    src = old_data_dir / "fcio-clone-test"
+    src.touch()
+    dest = new_data_dir / "fcio-clone-test"
+    clone_test = run(
+        ["cp", "--reflink=always", src, dest], capture_output=True, text=True
+    )
+
+    log.debug(
+        "upgrade-clone-check",
+        pg_upgrade_has_clone=pg_upgrade_has_clone,
+        copy_returncode=clone_test.returncode,
+        copy_stderr=clone_test.stderr,
+    )
+
+    clone_available = pg_upgrade_has_clone and not clone_test.returncode
+
+    src.unlink(missing_ok=True)
+    dest.unlink(missing_ok=True)
+
+    if clone_available:
+        log.info(
+            "upgrade-clone-supported",
+            _replace_msg=(
+                "Copying the old database should be very "
+                "fast as the pg_upgrade command can use the --clone option."
+            ),
+        )
+    else:
+        log.warn(
+            "upgrade-clone-not-supported",
+            _replace_msg=(
+                "Copying the old database may take some time as the pg_upgrade "
+                "command does not support the --clone option."
+            ),
+        )
+
+    return clone_available
+
+
 def run_pg_upgrade_check(
     log,
     new_bin_dir,
     new_data_dir,
     old_data_dir,
 ):
+    # Tell the user if fast --clone is available.
+    pg_upgrade_clone_available(
+        log,
+        new_bin_dir=new_bin_dir,
+        old_data_dir=old_data_dir,
+        new_data_dir=new_data_dir,
+    )
+
     upgrade_cmd = [
         new_bin_dir / "pg_upgrade",
         "--old-datadir",
@@ -427,6 +489,15 @@ def run_pg_upgrade(
         "--new-bindir",
         new_bin_dir,
     ]
+
+    if pg_upgrade_clone_available(
+        log,
+        new_bin_dir=new_bin_dir,
+        old_data_dir=old_data_dir,
+        new_data_dir=new_data_dir,
+    ):
+        upgrade_cmd.append("--clone")
+
     log.debug("upgrade-pg_upgrade-cmd", cmd=upgrade_cmd)
     # pg_upgrade wants to write log files to the current work dir.
     os.chdir(new_data_dir)
