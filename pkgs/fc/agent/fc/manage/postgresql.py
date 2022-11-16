@@ -26,7 +26,7 @@ class Context(NamedTuple):
     pg_data_root: Path
 
 
-app = Typer()
+app = Typer(pretty_exceptions_show_locals=False)
 context: Context
 
 
