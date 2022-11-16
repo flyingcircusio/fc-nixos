@@ -26,7 +26,7 @@ class Context(NamedTuple):
 context: Context
 
 
-app = Typer()
+app = Typer(pretty_exceptions_show_locals=False)
 
 
 @app.command()

@@ -29,7 +29,7 @@ from fc.util.logging import (
 )
 from typer import Argument, Option, Typer
 
-app = Typer()
+app = Typer(pretty_exceptions_show_locals=False)
 log = structlog.get_logger()
 
 
@@ -179,7 +179,7 @@ def schedule():
 
 # Request subcommands
 
-request_app = typer.Typer()
+request_app = typer.Typer(pretty_exceptions_show_locals=False)
 app.add_typer(request_app, name="request")
 
 
