@@ -1,7 +1,7 @@
 # statshost: an Prometheus/Grafana server.
 # TODO: don't build if more than one location relay is active in the same location.
 # Having more than one breaks prometheus.
-{ config, lib, pkgs, ... }:
+{ config, options, lib, pkgs, ... }:
 
 with lib;
 with builtins;
@@ -210,13 +210,16 @@ in
         example = "1m";
       };
 
-
       prometheusRetention = mkOption {
         type = types.int;
         default = 100;
         description = "How long to keep data in *days*.";
       };
 
+      enableInfluxDB = fclib.mkObsoleteOption "InfluxDB is not supported anymore for statshost.";
+      readFromInfluxDB = fclib.mkObsoleteOption "InfluxDB is not supported anymore for statshost.";
+      writeToInfluxDB = fclib.mkObsoleteOption "InfluxDB is not supported anymore for statshost.";
+      influxdbRetention = fclib.mkObsoleteOption "InfluxDB is not supported anymore for statshost.";
     };
 
     # FC infrastructure global stats host
@@ -258,6 +261,18 @@ in
   };
 
   config = mkMerge [
+
+    {
+      warnings =
+        let
+          obsoleteOptions = [ "enableInfluxDB" "readFromInfluxDB" "writeToInfluxDB" "influxdbRetention" ];
+          mkObsoleteWarning = opt:
+            (fclib.obsoleteOptionWarning
+              options
+              [ "flyingcircus" "roles" "statshost" opt ]
+              "InfluxDB is not supported anymore for statshost.");
+        in lib.mkMerge (lib.flatten (map mkObsoleteWarning obsoleteOptions));
+    }
 
     # Global stats host.
     (mkIf cfgStatsGlobal.enable {
