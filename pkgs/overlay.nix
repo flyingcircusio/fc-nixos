@@ -312,6 +312,9 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
+  pypolicyd-spf = self.spf-engine;
+
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
   sensu = super.callPackage ./sensu { ruby = super.ruby; };
