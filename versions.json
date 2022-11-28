@@ -2,7 +2,7 @@
   "nixpkgs": {
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "70d417619a04cae13b83cb967b9ac05f9750b34f",
+    "rev": "69edfdee7ec1560c6d1c74800f0151cf4921ee82",
     "sha256": "1GLGd6Rc15lIeR3km/zy8w6jH3RuOmj7AFHQ5k3mz+Y="
   },
   "nixos-mailserver": {
