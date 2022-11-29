@@ -8,7 +8,7 @@ let
     "luminous" = pkgs.ceph-luminous;
   };
   cephReleaseType = types.enum (builtins.attrNames releasePkgs);
-  defaultRelease = "jewel";
+  defaultRelease = "luminous";
 in
 {
   # constants

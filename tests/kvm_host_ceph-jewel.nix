@@ -123,8 +123,15 @@ let
       environment.etc."nixos/services.json".text = builtins.toJSON config.flyingcircus.encServices;
 
       # Ceph
-      flyingcircus.roles.ceph_osd.enable = true;
-      flyingcircus.roles.ceph_mon.enable = true;
+      flyingcircus.roles.ceph_osd = {
+        enable = true;
+        cephRelease = "jewel";
+      };
+      flyingcircus.roles.ceph_mon = {
+        enable = true;
+        cephRelease = "jewel";
+      };
+
       flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
       flyingcircus.services.ceph.extraConfig = ''
             mon clock drift allowed = 1
@@ -134,6 +141,7 @@ let
       flyingcircus.roles.kvm_host = {
         enable = true;
         package = testPackage;
+        cephRelease = "jewel";
       };
 
       environment.sessionVariables = {
