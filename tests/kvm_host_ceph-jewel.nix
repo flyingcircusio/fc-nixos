@@ -7,13 +7,21 @@ let
   makeHostConfig = { id }:
     { config, pkgs, lib, ... }:
     let
+      qemu_ceph_jewel = pkgs.qemu_ceph.override {
+        ceph = config.fclib.ceph.releasePkgs.jewel;
+      };
       testPackage = if useCheckout then
         pkgs.callPackage <fc/pkgs/fc/qemu> {
           version = "dev";
           # builtins.toPath (testPath + "/.")
           src = ../../fc.qemu/.;
+          ceph = config.fclib.ceph.releasePkgs.jewel;
+          qemu_ceph = qemu_ceph_jewel;
         }
-        else pkgs.fc.qemu;
+        else pkgs.fc.qemu.override {
+          ceph = config.fclib.ceph.releasePkgs.jewel;
+          qemu_ceph = qemu_ceph_jewel;
+        };
     in
     {
 

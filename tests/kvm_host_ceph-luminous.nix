@@ -7,13 +7,21 @@ let
   makeHostConfig = { id }:
     { config, pkgs, lib, ... }:
     let
+      qemu_ceph_versioned = pkgs.qemu_ceph.override {
+        ceph = config.fclib.ceph.releasePkgs.${clientCephRelease};
+      };
       testPackage = if useCheckout then
         pkgs.callPackage <fc/pkgs/fc/qemu> {
           version = "dev";
           # builtins.toPath (testPath + "/.")
           src = ../../fc.qemu/.;
+          ceph = config.fclib.ceph.releasePkgs.${clientCephRelease};
+          qemu_ceph = qemu_ceph_versioned;
         }
-        else pkgs.fc.qemu;
+        else pkgs.fc.qemu.override {
+          ceph = config.fclib.ceph.releasePkgs.${clientCephRelease};
+          qemu_ceph = qemu_ceph_versioned;
+        };
     in
     {
 
@@ -122,7 +130,6 @@ let
       # the keys etc.
       environment.etc."nixos/services.json".text = builtins.toJSON config.flyingcircus.encServices;
 
-      # Ceph: use jewel
       flyingcircus.roles.ceph_osd = {
         enable = true;
         cephRelease = "luminous";
