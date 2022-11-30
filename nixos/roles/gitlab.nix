@@ -52,7 +52,15 @@ in
   (lib.mkIf cfg.enable {
 
     environment.systemPackages = with pkgs; [
-      (writeScriptBin "gitlab-show-config" ''jq < /srv/gitlab/state/config/gitlab.yml'')
+      (writeScriptBin "gitlab-show-config" ''sudo -u gitlab jq '.' /srv/gitlab/state/config/gitlab.yml'')
+    ];
+
+    flyingcircus.passwordlessSudoRules = [
+      {
+        commands = [ "ALL" ];
+        groups = [ "sudo-srv" ];
+        runAs = "gitlab";
+      }
     ];
 
     # all logs to /var/log
