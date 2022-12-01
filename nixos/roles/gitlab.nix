@@ -15,6 +15,7 @@ in
       enable = mkEnableOption "Enable the Flying Circus GitLab role.";
       supportsContainers = fclib.mkDisableContainerSupport;
 
+
       enableDockerRegistry = mkEnableOption "Enable docker registry and GitLab integration";
 
       dockerHostName = mkOption {
@@ -35,6 +36,14 @@ in
         example = "gitlab.test.fcio.net";
       };
 
+      manageSecrets = mkOption {
+        type = types.bool;
+        description = ''
+          Should secrets be generated automatically in their default locations?
+          Set this to false if you want to manage secrets by yourself (via a deployment)
+        '';
+        default = true;
+      };
     };
   };
 
@@ -55,23 +64,6 @@ in
       "f /var/log/gitlab/production_json.log 0750 ${config.services.gitlab.user} ${config.services.gitlab.group} -"
     ];
 
-    # generate secrets on first start
-    systemd.services.gitlab-generate-secrets = {
-      wantedBy = [ "gitlab.target" "multi-user.target" ];
-
-      path = with pkgs; [ apg ];
-
-      # not launching this with a condition, just in case we need more secrets in the future
-      script = ''
-        mkdir -p /srv/gitlab/secrets
-        cd /srv/gitlab/secrets
-        for x in db db_password jws otp root_password secret; do
-          if [ ! -e "$x" ]; then
-            apg -n1 -m40 > "$x"
-          fi
-        done
-      '';
-    };
 
     services.gitlab = {
       enable = true;
@@ -95,14 +87,6 @@ in
       };
 
       extraEnv.GITLAB_LOG_PATH = "/var/log/gitlab";
-
-      secrets = {
-        dbFile = "/srv/gitlab/secrets/db";
-        secretFile = "/srv/gitlab/secrets/secret";
-        otpFile = "/srv/gitlab/secrets/otp";
-        jwsFile = "/srv/gitlab/secrets/jws";
-      };
-
     };
 
     services.gitlab-runner = {
@@ -224,6 +208,34 @@ in
       };
     };
 
+  })
+
+  (lib.mkIf cfg.manageSecrets {
+
+    services.gitlab.secrets = {
+      dbFile = "/srv/gitlab/secrets/db";
+      secretFile = "/srv/gitlab/secrets/secret";
+      otpFile = "/srv/gitlab/secrets/otp";
+      jwsFile = "/srv/gitlab/secrets/jws";
+    };
+
+    # generate secrets on first start
+    systemd.services.fc-gitlab-generate-secrets = {
+      wantedBy = [ "gitlab.target" "multi-user.target" ];
+
+      path = with pkgs; [ apg ];
+
+      # not launching this with a condition, just in case we need more secrets in the future
+      script = ''
+        mkdir -p /srv/gitlab/secrets
+        cd /srv/gitlab/secrets
+        for x in db db_password jws otp root_password secret; do
+          if [ ! -e "$x" ]; then
+            apg -n1 -m40 > "$x"
+          fi
+        done
+      '';
+    };
   })
 
   ];
