@@ -7,13 +7,21 @@ let
   makeHostConfig = { id }:
     { config, pkgs, lib, ... }:
     let
+      qemu_ceph_jewel = pkgs.qemu_ceph.override {
+        ceph = config.fclib.ceph.releasePkgs.jewel;
+      };
       testPackage = if useCheckout then
         pkgs.callPackage <fc/pkgs/fc/qemu> {
           version = "dev";
           # builtins.toPath (testPath + "/.")
           src = ../../fc.qemu/.;
+          ceph = config.fclib.ceph.releasePkgs.jewel;
+          qemu_ceph = qemu_ceph_jewel;
         }
-        else pkgs.fc.qemu;
+        else pkgs.fc.qemu.override {
+          ceph = config.fclib.ceph.releasePkgs.jewel;
+          qemu_ceph = qemu_ceph_jewel;
+        };
     in
     {
 
@@ -123,8 +131,15 @@ let
       environment.etc."nixos/services.json".text = builtins.toJSON config.flyingcircus.encServices;
 
       # Ceph
-      flyingcircus.roles.ceph_osd.enable = true;
-      flyingcircus.roles.ceph_mon.enable = true;
+      flyingcircus.roles.ceph_osd = {
+        enable = true;
+        cephRelease = "jewel";
+      };
+      flyingcircus.roles.ceph_mon = {
+        enable = true;
+        cephRelease = "jewel";
+      };
+
       flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
       flyingcircus.services.ceph.extraConfig = ''
             mon clock drift allowed = 1
@@ -134,6 +149,7 @@ let
       flyingcircus.roles.kvm_host = {
         enable = true;
         package = testPackage;
+        cephRelease = "jewel";
       };
 
       environment.sessionVariables = {

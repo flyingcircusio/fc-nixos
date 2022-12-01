@@ -32,10 +32,10 @@ in {
 
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
-  backyserver = callTest ./backyserver.nix { clientCephRelease = "jewel"; };
+  backyserver_ceph-jewel = callTest ./backyserver.nix { clientCephRelease = "jewel"; };
   backyserver_ceph-luminous = callTest ./backyserver.nix { clientCephRelease = "luminous"; };
   channel = callTest ./channel.nix {};
-  ceph-jewel = callTest ./ceph.nix {};
+  ceph-jewel = callTest ./ceph-jewel.nix {};
   ceph-luminous = callTest ./ceph-luminous.nix {};
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
