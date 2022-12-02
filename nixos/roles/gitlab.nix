@@ -76,7 +76,7 @@ in
     services.gitlab = {
       enable = true;
       databaseHost = "127.0.0.1";
-      databaseCreateLocally = false;
+      databaseCreateLocally = fclib.mkPlatform true;
       databasePasswordFile = "/srv/gitlab/secrets/db_password";
       initialRootPasswordFile = "/srv/gitlab/secrets/root_password";
       redisUrl = "redis://:${config.services.redis.requirePass}@localhost:6379/";
