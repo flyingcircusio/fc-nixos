@@ -106,10 +106,19 @@ let
     "backy"
   ];
 
+  # we need to ensure all nodejs packages are built, as they might differ from nixpkgs upstream
+  nodejsPkgNames = let
+    nodeReleases = [ 10 14 16 17 18 ];
+    in
+    # in case we ever want to also ensure the nodejs-small packages, this needs to be a fold instead
+    builtins.map (releaseNum: "nodejs-${toString releaseNum}_x") nodeReleases
+    # ensure the default nodejs version is being built
+    ++ [ "nodejs" ];
+
   includedPkgNames = [
     "calibre"
     "gitlab-ee"
-  ];
+  ] ++ nodejsPkgNames;
 
   testPkgNames = includedPkgNames ++
     lib.subtractLists excludedPkgNames modifiedPkgNames;
