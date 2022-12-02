@@ -1,12 +1,19 @@
-import ./make-test-python.nix ({ nixpkgs, ... }:
+import ./make-test-python.nix ({ pkgs, ... }:
+let outerPkgs = pkgs;
+in
 {
   name = "physical-installer";
-  machine =
+  nodes.machine =
     { pkgs, ... }:
     {
+      # Don't build documentation that includes options to avoid test failures
+      # caused by invalid descriptions or missing defaultText.
+      documentation.doc.enable = false;
+      documentation.man.enable = false;
+
       virtualisation.emptyDiskImages = [ 70000 100 ];
       imports = [
-        "${nixpkgs}/nixos/modules/installer/netboot/netboot-minimal.nix"
+        "${outerPkgs.path}/nixos/modules/installer/netboot/netboot-minimal.nix"
         ../release/netboot-installer.nix
       ];
 
