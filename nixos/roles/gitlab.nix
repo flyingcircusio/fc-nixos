@@ -44,6 +44,15 @@ in
         example = ''[ "incoming_mail_password" ]'';
       };
 
+      isDefaultVhost = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Configure Nginx vhost used by Gitlab to be the default one.
+          We assume that Gitlab is the main application on a VM and set this to true by default.
+        '';
+      };
+
       generateSecrets = mkOption {
         type = types.bool;
         description = ''
@@ -176,6 +185,7 @@ in
     flyingcircus.services.nginx.virtualHosts = {
 
       "${cfg.hostName}" = {
+        default = cfg.isDefaultVhost;
         extraConfig = "access_log /var/log/nginx/gitlab_access.log gitlab_access;";
         forceSSL = true;
         locations = {
