@@ -101,7 +101,6 @@ in
 
     services.gitlab = {
       enable = true;
-      databaseHost = "127.0.0.1";
       databaseCreateLocally = fclib.mkPlatform true;
       databasePasswordFile = "${cfg.secretsDir}/db_password";
       initialRootPasswordFile = "${cfg.secretsDir}/root_password";
