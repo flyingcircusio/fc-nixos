@@ -36,7 +36,15 @@ in
         example = "gitlab.test.fcio.net";
       };
 
-      manageSecrets = mkOption {
+      extraSecrets = mkOption {
+        type = types.listOf types.str;
+        description = ''
+        '';
+        default = [];
+        example = ''[ "incoming_mail_password" ]'';
+      };
+
+      generateSecrets = mkOption {
         type = types.bool;
         description = ''
           Should secrets be generated automatically in their default locations?
@@ -44,6 +52,15 @@ in
         '';
         default = true;
       };
+
+      secretsDir = mkOption {
+        type = types.str;
+        description = ''
+        '';
+        default = "/srv/gitlab/secrets";
+        example = "/srv/s-gitlab/deployment/work/gitlab";
+      };
+
     };
   };
 
@@ -77,13 +94,20 @@ in
       enable = true;
       databaseHost = "127.0.0.1";
       databaseCreateLocally = fclib.mkPlatform true;
-      databasePasswordFile = "/srv/gitlab/secrets/db_password";
-      initialRootPasswordFile = "/srv/gitlab/secrets/root_password";
+      databasePasswordFile = "${cfg.secretsDir}/db_password";
+      initialRootPasswordFile = "${cfg.secretsDir}/root_password";
       redisUrl = "redis://:${config.services.redis.requirePass}@localhost:6379/";
       statePath = "/srv/gitlab/state";
       https = true;
       port = 443;
       host = cfg.hostName;
+
+      secrets = fclib.mkPlatform {
+        dbFile = "${cfg.secretsDir}/db";
+        secretFile = "${cfg.secretsDir}/secret";
+        otpFile = "${cfg.secretsDir}/otp";
+        jwsFile = "${cfg.secretsDir}/jws";
+      };
 
       # less memory usage with jemalloc
       # ref https://brandonhilkert.com/blog/reducing-sidekiq-memory-usage-with-jemalloc/
@@ -149,10 +173,9 @@ in
       }
     '';
 
-    services.nginx.virtualHosts = {
+    flyingcircus.services.nginx.virtualHosts = {
 
       "${cfg.hostName}" = {
-        enableACME = true;
         extraConfig = "access_log /var/log/nginx/gitlab_access.log gitlab_access;";
         forceSSL = true;
         locations = {
@@ -186,25 +209,61 @@ in
 
     };
 
+
     # Needed for Git via SSH.
     users.users.gitlab.extraGroups = [ "login" ];
 
+  })
+
+  (lib.mkIf (cfg.extraSecrets != []) {
+    systemd.services.fc-gitlab-secrets = let
+      inherit (config.services.gitlab) statePath;
+      serviceCfg = config.services.gitlab;
+      mkSecret = secret: ''
+        echo "Inserting secret for @${secret}@ in \
+        ${statePath}/config/gitlab.yml"
+
+        replace-secret \
+          '@${secret}@' \
+          '${cfg.secretsDir}/${secret}' \
+          '${statePath}/config/gitlab.yml'
+      '';
+
+    in
+    {
+      wantedBy = [ "gitlab.target" ];
+      after = [ "gitlab-config.service" ];
+      requires = [ "gitlab-config.service" ];
+      before = [ "gitlab-mailroom.service" "gitlab.service" ];
+      requiredBy = [ "gitlab-mailroom.service" "gitlab.service" ];
+
+      path = with pkgs; [
+        replace-secret
+      ];
+
+      script = lib.concatMapStringsSep "\n" mkSecret cfg.extraSecrets;
+      serviceConfig = {
+        Type = "oneshot";
+        User = serviceCfg.user;
+        Group = serviceCfg.group;
+        Restart = "on-failure";
+      };
+    };
   })
 
   (lib.mkIf (cfg.enable && cfg.enableDockerRegistry) {
 
     services.gitlab.registry = {
       enable = true;
-      certFile = "/srv/gitlab/secrets/registry-auth.crt";
-      keyFile = "/srv/gitlab/secrets/registry-auth.key";
+      certFile = "/var/lib/docker-registry/registry-auth.crt";
+      keyFile = "/var/lib/docker-registry/registry-auth.key";
       externalAddress = cfg.dockerHostName;
       externalPort = 443;
     };
 
-    services.nginx.virtualHosts = {
+    flyingcircus.services.nginx.virtualHosts = {
 
       "${cfg.dockerHostName}" = {
-        enableACME = true;
         forceSSL = true;
         locations."/" = {
           proxyPass = "http://127.0.0.1:5000";
@@ -218,14 +277,7 @@ in
 
   })
 
-  (lib.mkIf cfg.manageSecrets {
-
-    services.gitlab.secrets = {
-      dbFile = "/srv/gitlab/secrets/db";
-      secretFile = "/srv/gitlab/secrets/secret";
-      otpFile = "/srv/gitlab/secrets/otp";
-      jwsFile = "/srv/gitlab/secrets/jws";
-    };
+  (lib.mkIf cfg.generateSecrets {
 
     # generate secrets on first start
     systemd.services.fc-gitlab-generate-secrets = {
@@ -235,8 +287,8 @@ in
 
       # not launching this with a condition, just in case we need more secrets in the future
       script = ''
-        mkdir -p /srv/gitlab/secrets
-        cd /srv/gitlab/secrets
+        mkdir -p ${cfg.secretsDir}
+        cd ${cfg.secretsDir}
         for x in db db_password jws otp root_password secret; do
           if [ ! -e "$x" ]; then
             apg -n1 -m40 > "$x"
