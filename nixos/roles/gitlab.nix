@@ -129,11 +129,6 @@ in
       extraEnv.GITLAB_LOG_PATH = "/var/log/gitlab";
     };
 
-    services.gitlab-runner = {
-      enable = true;
-      configFile = "/etc/gitlab-runner/config.toml";
-    };
-
     services.logrotate.settings = {
       "/var/log/gitlab/*.log" = {
         copytruncate = true;
