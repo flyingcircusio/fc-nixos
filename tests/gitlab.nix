@@ -51,27 +51,6 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
       systemd.services.gitlab-workhorse.serviceConfig.Restart = mkForce "no";
       systemd.services.gitaly.serviceConfig.Restart = mkForce "no";
       systemd.services.gitlab-sidekiq.serviceConfig.Restart = mkForce "no";
-
-      systemd.services.gitlab-prepare-database = rec {
-        after = [ "postgresql.service" ];
-        requiredBy = [ "gitlab.service" ];
-        before = requiredBy;
-        path = [ pkgs.postgresql_12 ];
-        script = ''
-          set -ex
-          psql -c "CREATE USER gitlab WITH PASSWORD '${dbPassword}'"
-          psql -c "CREATE DATABASE gitlab OWNER gitlab"
-          psql gitlab -c "CREATE EXTENSION pg_trgm"
-          psql gitlab -c "CREATE EXTENSION btree_gist"
-        '';
-
-        serviceConfig = {
-          User = "postgres";
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-      };
-
     };
   };
 
@@ -96,7 +75,7 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
     });
   in
   ''
-    gitlab.wait_for_unit("gitlab-prepare-database.service")
+    gitlab.wait_for_unit("gitlab-postgresql.service")
     gitlab.wait_for_unit("gitaly.service")
     gitlab.wait_for_unit("gitlab-workhorse.service")
     gitlab.wait_for_unit("gitlab.service")
