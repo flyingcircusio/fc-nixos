@@ -47,6 +47,19 @@ in
           else selectFirst (builtins.tail precedenceList) vals);
     in _: definitionAttrs: selectFirst releaseOrder (builtins.catAttrs "value" definitionAttrs);
   };
+  # returns true if the provided current release is the target release or newer
+  # FIXME: could this be done as a fold?
+  releaseAtLeast = targetRelease: currentRelease:
+    let
+    _releaseRecurser = rList: acc:
+      if rList == [] then false
+      # order matters here, do not consume the list head but only set to true and re-call
+      else if (builtins.head rList == targetRelease && !acc) then _releaseRecurser rList true
+      # this advances the list consumption but then also catches the case currentRelease == targetRelease
+      else if builtins.head rList == currentRelease then acc
+      else _releaseRecurser (builtins.tail rList) acc;
+    in _releaseRecurser (lib.reverseList releaseOrder) false;
+
 
   # return a suitable binary path for fc-ceph, parameterised with the desired ceph package
   fc-ceph-path = cephPkg: lib.makeBinPath [

@@ -13,6 +13,25 @@ let
   first_mon = if mons == [ ] then "" else head (lib.splitString "." (head mons));
 
   fc-check-ceph-withVersion = pkgs.fc.check-ceph.${role.cephRelease};
+  # FIXME: expose this as a config option (overridable)
+  # modules to be explicitly activated via this config
+  mgrEnabledModules = {
+    luminous = [ "balancer" "dashboard" "status" ];
+    # always_on_modules are not listed here
+    nautilus = [
+      "telemetry"
+      "iostat"
+    ];
+  };
+  # modules that are ensured to be disabled at each mgr start. All other modules might
+  # be imperatively enabled in the cluster and stay enabled.
+  # Note that `always_on` modules cannot be disabled so far, see
+  mgrDisabledModules = {
+    luminous = [];
+    nautilus = [
+      "restful"
+    ];
+  };
 in
 {
   options = {
@@ -40,7 +59,14 @@ in
               mon addr = ${addr}
               public addr = ${addr}
             '')
-          (fclib.findServices "ceph_mon-mon"));
+          (fclib.findServices "ceph_mon-mon"))
+          # initial modules only respected at bootstrapping time, ignored afterwards
+          # FIXME: convert to settings generator
+          + lib.optionalString (fclib.ceph.releaseAtLeast "luminous" role.cephRelease) ''
+
+            [mon]
+            mgr initial modules = ${lib.concatStringsSep " " mgrEnabledModules.${role.cephRelease}}
+          '';
         description = ''
           Contents of the Ceph config file for MONs.
         '';
@@ -168,7 +194,7 @@ in
       };
 
     })
-    (lib.mkIf (role.enable && role.cephRelease != "jewel") {
+    (lib.mkIf (role.enable && fclib.ceph.releaseAtLeast "luminous" role.cephRelease ) {
       systemd.services.fc-ceph-mgr = rec {
         description = "Local Ceph MGR (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
@@ -194,15 +220,23 @@ in
           ${pkgs.fc.ceph}/bin/fc-ceph mgr reactivate
         '';
 
-        # FIXME: dashboard only enabled for luminous, as the Nautilus release fails to build in the sandbox so far.
-        # If we ever manage to get it enabled, `ceph config set` needs to be used instead of `ceph config-key`
-        preStart = lib.optionalString (role.cephRelease == "luminous") ''
-          echo "ensure mgr dashboard binds to localhost only"
-          # make _all_ hosts bind the dashboard to localhost (v4) only (default port: 7000)
-          ${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph config-key set mgr/dashboard/server_addr 127.0.0.1
-          echo "ensure mgr dashboard is enabled"
-          # --force is required for bootstrapping, as otherwise ceph complains that not all mgrs support that module in the state of "no mgrs exist"
-          ${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph mgr module enable dashboard --force'';
+        preStart =
+          # FIXME: dashboard only enabled for luminous, as the Nautilus release fails to build in the sandbox so far.
+          # If we ever manage to get it enabled, `ceph config set` needs to be used instead of `ceph config-key`
+          lib.optionalString (role.cephRelease == "luminous") ''
+            echo "ensure mgr dashboard binds to localhost only"
+            # make _all_ hosts bind the dashboard to localhost (v4) only (default port: 7000)
+            ${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph config-key set mgr/dashboard/server_addr 127.0.0.1
+          ''
+          # imperatively ensure mgr modules
+          + lib.concatStringsSep "\n" (
+              lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph mgr module enable ${mod} --force")
+            )
+          + "\n"
+          + lib.concatStringsSep "\n" (
+              lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph mgr module disable ${mod}")
+            )
+          ;
 
         preStop = ''
           ${pkgs.fc.ceph}/bin/fc-ceph mgr deactivate
