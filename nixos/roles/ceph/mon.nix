@@ -179,6 +179,7 @@ in
 
         restartTriggers = [
           config.environment.etc."ceph/ceph.conf".source
+          fclib.ceph.releasePkgs.${role.cephRelease}
         ];
 
         environment = {
