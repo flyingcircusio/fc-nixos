@@ -224,6 +224,7 @@ in {
         keep-outputs = true
         fallback = true
         http-connections = 2
+        log-lines = 25
         extra-experimental-features = nix-command flakes
       '';
 
