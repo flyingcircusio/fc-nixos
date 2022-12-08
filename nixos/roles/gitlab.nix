@@ -259,8 +259,8 @@ in
 
     services.gitlab.registry = {
       enable = true;
-      certFile = "/var/lib/docker-registry/registry-auth.crt";
-      keyFile = "/var/lib/docker-registry/registry-auth.key";
+      certFile = fclib.mkPlatform "/srv/gitlab/registry_auth/cert";
+      keyFile = fclib.mkPlatform "/srv/gitlab/registry_auth/key";
       externalAddress = cfg.dockerHostName;
       externalPort = 443;
     };
