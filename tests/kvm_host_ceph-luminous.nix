@@ -7,21 +7,17 @@ let
   makeHostConfig = { id }:
     { config, pkgs, lib, ... }:
     let
-      qemu_ceph_versioned = pkgs.qemu_ceph.override {
-        ceph = config.fclib.ceph.releasePkgs.${clientCephRelease};
-      };
       testPackage = if useCheckout then
-        pkgs.callPackage <fc/pkgs/fc/qemu> {
+        pkgs.callPackage <fc/pkgs/fc/qemu/py2.nix> {
           version = "dev";
           # builtins.toPath (testPath + "/.")
           src = ../../fc.qemu/.;
           ceph = config.fclib.ceph.releasePkgs.${clientCephRelease};
-          qemu_ceph = qemu_ceph_versioned;
+          qemu_ceph = pkgs.qemu_ceph.override {
+            ceph = config.fclib.ceph.releasePkgs.${clientCephRelease};
+          };
         }
-        else pkgs.fc.qemu.override {
-          ceph = config.fclib.ceph.releasePkgs.${clientCephRelease};
-          qemu_ceph = qemu_ceph_versioned;
-        };
+        else config.fclib.ceph.fcQemuPkgs.${clientCephRelease};
     in
     {
 
@@ -110,7 +106,7 @@ let
 
             # This should be included through the propagatedBuildInputs
             # from fc.qemu already but apparently it isn't.
-            (pyPkgs.toPythonModule pkgs.ceph)
+            (pyPkgs.toPythonModule config.fclib.ceph.libcephPkgs.${clientCephRelease})
 
             # Additional packages to run the tests
             pyPkgs.pytest

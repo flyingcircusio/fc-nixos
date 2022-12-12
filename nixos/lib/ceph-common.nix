@@ -14,17 +14,40 @@ let
   };
   # temporary map until all actively used ceph releases are packaged in form of the new
   # schema with subpackages
-  clientPackages = {
+  clientPkgs = {
     "jewel" = pkgs.ceph-jewel;
     "luminous" = pkgs.ceph-luminous;
     "nautilus" = pkgs.ceph-nautilus.ceph-client;
+  };
+  qemu_ceph_versioned = cephReleaseName: (pkgs.qemu_ceph.override {
+     ceph = releasePkgs.${cephReleaseName};
+     });
+  # both the C liab and the python modules
+  libcephPkgs = {
+    "jewel" = pkgs.ceph-jewel;
+    "luminous" = pkgs.ceph-luminous;
+    "nautilus" = pkgs.ceph-nautilus.libceph;
+  };
+  fcQemuPkgs = {
+    jewel = pkgs.fc.qemu-py2.override {
+      ceph = libcephPkgs.jewel;
+      qemu_ceph = qemu_ceph_versioned "jewel";
+    };
+    luminous = pkgs.fc.qemu-py2.override {
+      ceph = libcephPkgs.luminous;
+      qemu_ceph = qemu_ceph_versioned "luminous";
+    };
+    nautilus = pkgs.fc.qemu-py3.override {
+      libceph = libcephPkgs.nautilus;
+      qemu_ceph = qemu_ceph_versioned "nautilus";
+    };
   };
   cephReleaseType = types.enum (builtins.attrNames releasePkgs);
   defaultRelease = "luminous";
 in
 {
   # constants
-  inherit releasePkgs clientPkgs defaultRelease;
+  inherit releasePkgs clientPkgs fcQemuPkgs libcephPkgs defaultRelease qemu_ceph_versioned;
   releaseOption = lib.mkOption {
     type = cephReleaseType;
     # centrally manage the default release for all roles here

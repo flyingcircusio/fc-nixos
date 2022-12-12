@@ -28,7 +28,7 @@ rec {
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
 
-  qemu = callPackage ./qemu {
+  qemu-py2 = callPackage ./qemu/py2.nix {
       version = "1.2-dev";
       src = pkgs.fetchFromGitHub {
         owner = "flyingcircusio";
@@ -36,6 +36,16 @@ rec {
         rev = "bcf373c57a39bb373f45022cae4015221e9aa94f";
         hash = "sha256-4rIwMzsYYvKGGybkFFu3z0D/RD8LXIJP5GG0oB9lxpc";
       };
+  };
+  qemu-py3 = callPackage ./qemu/py3.nix {
+    version = "1.3-dev";
+    src = pkgs.fetchFromGitHub {
+      owner = "flyingcircusio";
+      repo = "fc.qemu";
+      rev = "4385a8f5e275162fb68eeda5464c9b7ac979e175";
+      hash = "sha256-MS2JuHqSv4TIj7Z9Y2YMYxXysN3TiPJfksEKAC7hTa4=";
+    };
+    libceph = pkgs.ceph-nautilus.libceph;
   };
 
   secure-erase = callPackage ./secure-erase {};
