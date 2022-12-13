@@ -185,10 +185,13 @@ let
         item --gap --           Console: console=''${console},''${speed}
         item --gap --          --- Settings ---
         item console_tty0      console=tty0
+        item console_ttys0     console=ttyS0
         item console_ttys1     console=ttyS1
         item console_ttys2     console=ttyS2
+        item console_enter     [Enter manual value for `console`]
         item speed_115200      speed=115200
         item speed_57600       speed=57600
+        item speed_enter       [Enter manual value for `speed`]
         item --gap --          --- Install ---
         item boot_installer    Boot installer
         item --gap --          --- Other ---
@@ -201,12 +204,20 @@ let
         goto ''${selected}
         goto error
 
+        :console_enter
+        echo -n console= && read console
+        goto start
+
         :console_tty0
         set console tty0
         goto start
 
         :console_ttys1
         set console ttyS1
+        goto start
+
+        :console_ttys0
+        set console ttyS0
         goto start
 
         :console_ttys2
@@ -219,6 +230,10 @@ let
 
         :speed_57600
         set speed 57600
+        goto start
+
+        :speed_enter
+        echo -n speed= && read console
         goto start
 
         :local
