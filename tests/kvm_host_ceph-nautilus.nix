@@ -324,7 +324,7 @@ in
           assert status["mgrmap"]["available"] and \
               len(status["mgrmap"]["standbys"]) == mgrs-1
           break
-        except AssertionError:
+        except AssertionError as e:
           if time.time() - start < 60:
             time_waiting += tries*2
             time.sleep(tries*2)
