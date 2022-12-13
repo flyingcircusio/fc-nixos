@@ -97,6 +97,7 @@ let
   sitePackages = ceph-python-env.python.sitePackages;
 
   version = "14.2.22";
+  codename = "nautilus";
 in rec {
   ceph = stdenv.mkDerivation {
     pname = "ceph";
@@ -189,8 +190,7 @@ in rec {
     };
 
     passthru = {
-      version = version;
-      codename = "nautilus";
+      inherit codename version;
     };
   };
 
