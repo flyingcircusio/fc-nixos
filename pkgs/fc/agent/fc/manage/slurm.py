@@ -1,18 +1,13 @@
-import json
 import os
-import shutil
-import traceback
-from pathlib import Path
-from typing import List, NamedTuple, Optional
-
-import fc.util.postgresql
 import rich
+import socket
 import structlog
+from pathlib import Path
+from typer import Option, Typer
+from typing import NamedTuple, Optional
+
+import fc.util.slurm
 from fc.util.logging import init_logging
-from fc.util.postgresql import PGVersion
-from rich.table import Table
-from typer import Exit, Option, Typer, confirm, echo
-import pyslurm
 
 
 class Context(NamedTuple):
@@ -20,7 +15,9 @@ class Context(NamedTuple):
     verbose: bool
 
 
-app = Typer(pretty_exceptions_show_locals=False)
+app = Typer(
+    pretty_exceptions_show_locals=bool(os.getenv("FC_AGENT_SHOW_LOCALS", False))
+)
 context: Context
 
 
@@ -44,29 +41,68 @@ def fc_slurm(
         verbose=verbose,
     )
 
-    init_logging(verbose, syslog_identifier="fc-slurm")
+    init_logging(verbose, logdir, syslog_identifier="fc-slurm")
 
 
 @app.command(
     help="Drain this node and wait for completion",
 )
-def drain_and_wait(
+def drain(
     timeout: int = Option(
         default=300, help="Wait for seconds for every job to finish."
+    ),
+    reason: str = Option(
+        default="fc-slurm", help="reason for draining the node"
     ),
     nothing_to_do_is_ok: Optional[bool] = False,
 ):
     log = structlog.get_logger()
+    hostname = socket.gethostname()
+    fc.util.slurm.drain(log, hostname, timeout, reason, nothing_to_do_is_ok)
 
-    log.debug("drain-start")
-    log.debug("drain-finished")
+
+@app.command(
+    help="Drain, wait for completion and down this node",
+)
+def drain_and_down(
+    timeout: int = Option(
+        default=300, help="Wait for seconds for every job to finish."
+    ),
+    reason: str = Option(
+        default="fc-slurm", help="reason for draining the node"
+    ),
+    nothing_to_do_is_ok: Optional[bool] = False,
+):
+    log = structlog.get_logger()
+    hostname = socket.gethostname()
+    fc.util.slurm.drain(log, hostname, timeout, reason, nothing_to_do_is_ok)
+    fc.util.slurm.down(log, hostname, nothing_to_do_is_ok, reason)
 
 
 @app.command()
-def ready():
+def down(
+    nothing_to_do_is_ok: Optional[bool] = False,
+    reason: str = Option(
+        default="fc-slurm", help="reason for downing the node"
+    ),
+):
     log = structlog.get_logger()
+    hostname = socket.gethostname()
+    fc.util.slurm.down(log, hostname, nothing_to_do_is_ok, reason)
+
+
+@app.command()
+def ready(
+    nothing_to_do_is_ok: Optional[bool] = False,
+):
+    log = structlog.get_logger()
+    hostname = socket.gethostname()
+    fc.util.slurm.ready(log, hostname, nothing_to_do_is_ok)
 
 
 @app.command(help="")
 def check():
     log = structlog.get_logger()
+    hostname = socket.gethostname()
+    node_info = fc.util.slurm.get_node_info(hostname)
+    rich.print(node_info)

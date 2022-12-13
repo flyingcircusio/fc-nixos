@@ -94,7 +94,7 @@ in
   config = lib.mkMerge [
 
     (lib.mkIf anyRoleEnabled {
-      environment.etc.slurmd.source = slurmCfg.etcSlurm;
+      environment.etc.slurm.source = slurmCfg.etcSlurm;
 
       environment.etc."local/slurm/README.md".text =
         let
@@ -200,8 +200,8 @@ in
     (lib.mkIf config.flyingcircus.roles.slurm-node.enable {
 
       flyingcircus.agent.maintenance.slurm-node = {
-        enter = "${wrappedSlurm}/bin/scontrol update nodename=${thisNode} state=drain reason='activating maintenance mode'";
-        leave = "${wrappedSlurm}/bin/scontrol update nodename=${thisNode} state=resume";
+        enter = "fc-slurm -v drain-and-down --nothing-to-do-is-ok";
+        leave = "fc-slurm -v ready --nothing-to-do-is-ok";
       };
 
       services.slurm = {
@@ -213,6 +213,10 @@ in
         serviceConfig = {
           Restart = "always";
         };
+      };
+
+      systemd.services.fc-agent.environment = {
+        SLURM_CONF = "${slurmCfg.etcSlurm}/slurm.conf";
       };
 
 
