@@ -11,7 +11,7 @@ Managed instance of the [PostgreSQL](http://postgresql.org) database server.
 ## Configuration
 
 Managed PostgreSQL instances already have a production-grade configuration with
-reasonable sized memory parameters (for example, `shared_buffers`, `work_mem`).
+reasonable sized memory parameters, for example, `shared_buffers` and `work_mem`.
 
 :::{warning}
 Putting custom configuration in {file}`/etc/local/postgresql/{VERSION}/*.conf`
@@ -107,9 +107,11 @@ If you have two databases, `mydb` and `otherdb`, for example, specify both on
 the command line.
 
 To prepare an upgrade, when you use the `postgresql13` role at the moment and
-you want to change to `postgresql14`, run::
+you want to change to `postgresql14`, run:
 
-    sudo -u postgres fc-postgresql upgrade --new-version 14 --expected mydb --expected otherdb
+```sh
+sudo -u postgres fc-postgresql upgrade --new-version 14 --expected mydb --expected otherdb
+```
 
 Note that this is done while the old role is still active. It's safe to run
 the command while PostgreSQL is running as it does not have an impact on the
@@ -127,9 +129,11 @@ Depending on the machine and the amount of data, the next step may take
 some time. PostgreSQL will not be available during the upgrade!
 :::
 
-To actually run the upgrade, use::
+To actually run the upgrade, use:
 
-    sudo -u postgres fc-postgresql upgrade --new-version 14 --expected mydb --expected otherdb --upgrade-now
+```sh
+sudo -u postgres fc-postgresql upgrade --new-version 14 --expected mydb --expected otherdb --upgrade-now
+```
 
 This will stop the postgresql service, prevent it from starting during the
 upgrade, migrate data and mark the old data directory as migrated. This data
