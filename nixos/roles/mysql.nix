@@ -26,6 +26,15 @@ in
         # by itself and can't directly run on containers either.
         supportsContainers = fclib.mkDisableContainerSupport;
 
+        binlogExpireDays = mkOption {
+          type = types.ints.positive;
+          default = 3;
+          description = ''
+            Expire binlog after 3 days by default.
+            The MySQL/Percona default of 30 days is way too long for typical use cases.
+          '';
+        };
+
         listenAddresses = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = fclib.network.lo.dualstack.addresses ++
@@ -177,6 +186,14 @@ in
         open_files_limit           = 65535
         sysdate-is-now             = ON
         sql_mode                   = NO_ENGINE_SUBSTITUTION
+
+        ${
+          if (lib.versionAtLeast package.version "8.0")
+          then
+          "binlog_expire_logs_seconds = ${toString (cfg.binlogExpireDays * 24 * 60 * 60)}"
+          else
+          "expire_logs_days = ${toString cfg.binlogExpireDays}"
+        }
 
         log_slow_verbosity = 'full'
         slow_query_log = ON
