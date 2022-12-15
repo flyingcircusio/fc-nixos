@@ -291,7 +291,7 @@ def exit_on_no_old_data_dir(log, old_data_dir, nothing_to_do_is_ok):
             raise Exit(2)
 
 
-@app.command()
+@app.command(help="Check for unexpected databases that will block autoupgrade")
 def check_autoupgrade_unexpected_dbs(
     config: Path = Option(
         exists=True,
@@ -529,6 +529,28 @@ def list_versions():
         )
 
     rich.print(table)
+
+
+@app.command(help="Show postgresql.conf for currently running service")
+def show_config():
+    log = structlog.get_logger()
+
+    current_pgdata = fc.util.postgresql.get_current_pgdata_from_service()
+    config_path = Path(current_pgdata / "postgresql.conf")
+    log.debug("show-config-path", path=config_path)
+    try:
+        config = config_path.read_text()
+    except FileNotFoundError:
+        log.error(
+            "show-config-config-not-found",
+            _replace_msg=(
+                "No config file found for the currently active PostgreSQL."
+                "Maybe it has never been started yet?"
+            ),
+        )
+        raise Exit(2)
+
+    rich.print(f"# PostgresSQL configuration from {config_path}\n" + config)
 
 
 if __name__ == "__main__":
