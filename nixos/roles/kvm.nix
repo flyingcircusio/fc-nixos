@@ -27,6 +27,10 @@ in
         # XXX: set reflink=0 to make file systems compatible with NixOS 15.09
         default = "-q -f -K -m crc=1,finobt=1,reflink=0 -d su=4m,sw=1";
       };
+      migrationBandwidth = lib.mkOption {
+        type = lib.types.int;
+        default = 1000000000; # 80% of 10GB/s
+      };
       package = lib.mkOption {
         type = lib.types.package;
         description = ''
@@ -88,6 +92,7 @@ in
         timeout-graceful = 120
         migration-address = tcp:${migration_address}:{id}
         migration-ctl-address = ${migration_ctl_address}:0
+        migration-bandwidth = ${toString role.migrationBandwidth}
         max-downtime = 4.0
         ; generation 2 = #23965 upgrade to 2.7 due to security issues
         binary-generation = 2
