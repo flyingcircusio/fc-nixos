@@ -7,7 +7,7 @@ with lib;
 {
   config = mkIf config.flyingcircus.roles.statshost-relay.enable {
 
-    services.nginx.enable = true;
+    flyingcircus.services.nginx.enable = true;
     services.nginx.masterUser = "root";
     services.nginx.appendHttpConfig = ''
       server {
