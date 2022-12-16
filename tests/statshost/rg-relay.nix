@@ -51,7 +51,13 @@ import ../make-test-python.nix ({ pkgs, ... }:
       relay.succeed('grep "metrics" /var/log/nginx/statshost-relay_access.log')
 
     with subtest("nginx only opens expected ports"):
-      # look for ports that are not 80 (nginx default for status info) or 9090
-      relay.fail("netstat -tlpn | grep nginx | egrep -v ':80 |:9090 '")
+      # Look for ports that are not 81 (nginx status page port) or 9090.
+      relay.fail("netstat -tlpn | grep nginx | egrep -v ':81 |:9090 '")
+
+    with subtest("logrotate should work"):
+      relay.execute("echo test > /var/log/nginx/statshost-relay_error.log")
+      relay.succeed("fc-logrotate -f")
+      relay.succeed("stat /var/log/nginx/statshost-relay_access.log-*")
+      relay.succeed("stat /var/log/nginx/statshost-relay_error.log-*")
   '';
 })
