@@ -276,5 +276,37 @@ in
       "kernel.pid_max" = lib.mkForce "999999";  # mkForce to avoid conflict with ceph role
     };
 
+    # Run a proxy to give VMs running on this host fast access to radosgw.
+
+    flyingcircus.services.haproxy = {
+      enable = true;
+      enableStructuredConfig = true;
+
+      frontend = {
+        http-in = {
+          binds = [ "${head fclib.network.srv.v4.addresses}:7480" ];
+          default_backend = "s3";
+        };
+      };
+
+      backend = {
+        s3 = {
+          servers = map
+            (service: let
+                name = head (lib.splitString "." service.address);
+                address = head (filter fclib.isIp4 service.ips);
+             in
+                "s3-${name} ${address}:7480 check inter 10s rise 2 fall 1 maxconn 40")
+            (fclib.findServices "ceph_rgw-internal-server");
+        };
+      };
+    };
+
+    networking.firewall.extraCommands = let
+      srvDevice = config.fclib.network.srv.device;
+    in ''
+      # Accept traffic to the radosgw service
+      ${fclib.iptables "127.0.0.1"} -A nixos-fw -p tcp --dport 7480 -i ${srvDevice} -j nixos-fw-accept
+    '';
   };
 }
