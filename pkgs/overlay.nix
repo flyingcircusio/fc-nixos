@@ -252,6 +252,17 @@ in {
                 all.redis
               ]);
 
+  # newer linux kernel
+  linuxPackages = super.linuxPackagesFor (super.linux_5_10.override {
+    argsOverride = rec {
+      src = self.fetchurl {
+        url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
+        sha256 = "sha256-G6m/V7a/NtdkR9UES4C3Rstf1h2YHIEWA9x2O3eJzqc=";
+      };
+      version = "5.10.159";
+      modDirVersion = version;
+    };
+  });
 
   matrix-synapse = super.matrix-synapse.overrideAttrs(orig: rec {
     pname = "matrix-synapse";
