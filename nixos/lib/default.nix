@@ -1,7 +1,8 @@
-{ config, pkgs, lib, ... }:
+{ config, options, pkgs, lib, ... }:
 
 let
   attrsets = import ./attrsets.nix { inherit config lib; };
+  doc = import ./doc.nix { inherit config options pkgs lib; };
   files = import ./files.nix { inherit config pkgs lib; };
   math = import ./math.nix { inherit pkgs lib; };
   modules = import ./modules.nix { inherit pkgs lib; };
@@ -23,6 +24,6 @@ in
   config = {
     fclib =
       { inherit attrsets files math modules network system utils; }
-      // attrsets // files // math // modules // network // system // utils // lists;
+      // attrsets // doc // files // math // modules // network // system // utils // lists;
   };
 }
