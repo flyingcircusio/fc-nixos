@@ -33,6 +33,7 @@ in {
     ./rabbitmq.nix
     ./redis.nix
     ./servicecheck.nix
+    ./slurm
     ./statshost
     ./webdata_blackbee.nix
     ./webgateway.nix

@@ -625,7 +625,7 @@ def init_logging(
     loggers = {}
 
     if logdir is not None:
-        main_log_file = open(logdir / "fc-agent.log", "a")
+        main_log_file = open(logdir / f"{syslog_identifier}.log", "a")
         loggers["file"] = structlog.PrintLoggerFactory(main_log_file)
     if journal:
         loggers["journal"] = JournalLoggerFactory()

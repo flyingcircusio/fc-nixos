@@ -80,6 +80,7 @@ py.buildPythonPackage rec {
     dmidecode
     gptfdisk
     multipath-tools
+    py.pyslurm
     py.systemd
     xfsprogs
   ];

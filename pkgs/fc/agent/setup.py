@@ -71,6 +71,7 @@ setup(
             "fc-monitor=fc.manage.monitor:main",
             "fc-resize-disk=fc.manage.resize_disk:app",
             "fc-postgresql=fc.manage.postgresql:app",
+            "fc-slurm=fc.manage.slurm:app",
             "fctl=fc.util.fctl:app",
         ],
     },
