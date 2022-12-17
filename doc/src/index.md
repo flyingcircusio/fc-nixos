@@ -39,6 +39,7 @@ nfs
 postgresql
 rabbitmq
 redis
+slurm
 statshost
 webgateway
 webproxy

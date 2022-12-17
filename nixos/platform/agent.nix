@@ -37,6 +37,15 @@ let
     }
 
     compdef _fc_maintenance_completion fc-maintenance
+
+
+    #compdef fc-slurm
+
+    _fc_slurm_completion() {
+      eval $(env _TYPER_COMPLETE_ARGS="''${words[1,$CURRENT]}" _FC_SLURM_COMPLETE=complete_zsh fc-slurm)
+    }
+
+    compdef _fc_slurm_completion fc-slurm
   '';
 
   agentZshCompletionsPkg = pkgs.runCommand "agent-zshcomplete" {} ''
