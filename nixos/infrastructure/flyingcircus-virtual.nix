@@ -3,11 +3,24 @@
 with lib;
 
 let
+  inherit (config) fclib;
   cfg = config.flyingcircus;
   ioScheduler =  if (cfg.infrastructure.preferNoneSchedulerOnSsd && (cfg.enc.parameters.rbd_pool == "rbd.ssd"))
                  then "none"
                  else "bfq";
   maxIops = attrByPath [ "parameters" "iops" ] 250 cfg.enc;
+
+  # We allow VMs to talk to their KVM host's radosgw proxy to provide them
+  # with fast storage access.
+  hostRgwServices = fclib.findServices "kvm_host-local-rgw";
+  hostmap =
+    lib.listToAttrs
+      (map (s: lib.nameValuePair (head (lib.splitString "." s.address)) (head s.ips))
+      hostRgwServices);
+
+  kvmHost = config.flyingcircus.enc.parameters.kvm_host or "none";
+  hostRgwAddress = hostmap."${kvmHost}" or "127.0.0.1";
+
 in
 mkIf (cfg.infrastructureModule == "flyingcircus") {
 
@@ -69,6 +82,10 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   networking = {
     domain = "fcio.net";
+    extraHosts = ''
+      # Optimisation for fast radosgw (S3-compatible) access.
+      ${hostRgwAddress} rgw.local
+    '';
     hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
   };
 
