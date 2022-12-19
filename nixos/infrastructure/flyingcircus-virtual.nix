@@ -18,7 +18,8 @@ let
       (map (s: lib.nameValuePair (head (lib.splitString "." s.address)) (head s.ips))
       hostRgwServices);
 
-  hostRgwAddress = hostmap."${config.flyingcircus.enc.parameters.kvm_host}" or "127.0.0.1";
+  kvmHost = config.flyingcircus.enc.parameters.kvm_host or "none";
+  hostRgwAddress = hostmap."${kvmHost}" or "127.0.0.1";
 
 in
 mkIf (cfg.infrastructureModule == "flyingcircus") {
