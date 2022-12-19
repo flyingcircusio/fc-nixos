@@ -86,9 +86,6 @@ in
         # no fc-ceph settings necessary so far
       };
 
-      # tools like radosgw-admin are only included in the full ceph package, but are necessary admin tools
-      environment.systemPackages = [ (fclib.ceph.releasePkgs.${role.cephRelease}) ];
-
       systemd.tmpfiles.rules = [
         "d /srv/ceph/radosgw 2775 root service"
       ];

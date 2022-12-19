@@ -187,6 +187,7 @@ in rec {
       license = with licenses; [ lgpl21 gpl2 bsd3 mit publicDomain ];
       maintainers = with maintainers; [];
       platforms = [ "x86_64-linux" ];
+      priority = 5;
     };
 
     passthru = {
@@ -201,6 +202,7 @@ in rec {
         license = with licenses; [ lgpl21 gpl2 bsd3 mit publicDomain ];
         maintainers = with maintainers; [ adev ak johanot krav ];
         platforms = [ "x86_64-linux" ];
+        priority = 10;
       };
      passthru = {
        inherit codename version;

@@ -111,6 +111,9 @@ in
     environment.systemPackages = with pkgs; [
       fc.ceph
       fc.blockdev
+
+      # tools like radosgw-admin and crushtool are only included in the full ceph package, but are necessary admin tools
+      cfg.package
     ];
 
     systemd.services.fc-blockdev = {
