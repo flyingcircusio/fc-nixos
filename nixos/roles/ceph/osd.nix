@@ -6,7 +6,99 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_osd;
   enc = config.flyingcircus.enc;
+  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
+  defaultOsdSettings = {
+    # Assist speedy but balanced recovery
+    osdMaxBackfills = 2;
+    osdOpQueue = "wpq";
+    osdOpQueueCutOff = "high";
+    filestoreQueueMaxOps = 500;
+
+    # Disable new (luminous) automatic crush map organisation according to
+    # (auto detected) device classes for now.
+    osdCrushUpdateOnStart = false;
+
+    # Various
+
+    msDispatchThrottleBytes = 1048576000;
+
+    osdPgEpochPersistedMaxStale = 150;
+    osdClientMessageCap = 10000;
+    osdSnapTrimSleep = 0.25;
+
+    osdMapCacheSize = 200;
+    osdMapMaxAdvance = 150;
+    osdMapShareMaxEpochs = 100;
+
+    # increased to survive router reboots
+    osdOpThreadSuicideTimeout = 300;
+
+    # Logging/Debugging - silent enough for practical day-to-day operations
+    # but verbose enough to be able to respond/analyze issues when they arise
+
+    osdOpHistorySize = 1000;
+    osdOpHistoryDuration = 43200;
+
+    # we currently have (too) many PGs in our pools, make sure the cluster still
+    # functions even when some osds are missing
+    osdMaxPgPerOsdHardRatio = 5;
+
+    debugNone = "1/5";
+    debugLockdep = "1/5";
+    debugContext = "1/5";
+    debugCrush = "1/5";
+    debugMds = "1/5";
+    debugMdsBalancer = "1/5";
+    debugMdsLocker = "1/5";
+    debugMdsLog = "1/5";
+    debugMdsLogExpire = "1/5";
+    debugMdsMigrator = "1/5";
+    debugBuffer = "1/5";
+    debugTimer = "1/5";
+    debugFiler = "1/5";
+    debugStriper = "1/5";
+    debugObjecter = "1/5";
+    debugRados = "1/5";
+    debugRbd = "1/5";
+    debugRbdMirror = "1/5";
+    debugRbdReplay = "1/5";
+    debugJournaler = "1/5";
+    debugObjectcacher = "1/5";
+    debugClient = "1/5";
+    debugOsd = "1/5";
+    debugOptracker = "1/5";
+    debugObjclass = "1/5";
+    debugFilestore = "1/5";
+    debugJournal = "1/5";
+    debugMs = "0/5";
+    debugMon = "1/5";
+    debugMonc = "1/5";
+    debugPaxos = "1/5";
+    debugTp = "1/5";
+    debugAuth = "1/5";
+    debugCrypto = "1/5";
+    debugFinisher = "1/5";
+    debugHeartbeatmap = "1/5";
+    debugPerfcounter = "1/5";
+    debugRgw = "1/5";
+    debugCivetweb = "1/5";
+    debugJavaclient = "1/5";
+    debugAsok = "1/5";
+    debugThrottle = "1/5";
+    debugRefs = "0/5";
+    debugXio = "1/5";
+    debugCompressor = "1/5";
+    debugNewstore = "1/5";
+    debugBluestore = "1/5";
+    debugBluefs = "1/5";
+    debugBdev = "1/5";
+    debugKstore = "1/5";
+    debugRocksdb = "1/5";
+    debugLeveldb = "1/5";
+    debugKinetic = "1/5";
+    debugFuse = "1/5";
+  };
 in
 {
   options = {
@@ -25,112 +117,19 @@ in
 
       config = lib.mkOption {
         type = lib.types.lines;
-        default = ''
-          [osd]
-          osd deep scrub interval = 1209600
-          osd max scrubs = 1
-          osd scrub chunk max = 1
-          osd scrub chunk min = 1
-          osd scrub interval randomize ratio = 1.0
-          osd scrub load threshold = 2
-          osd scrub max interval = 4838400
-          osd scrub min interval = 2419200
-          osd scrub sleep = 0.1
-          osd scrub priority = 1
-          osd requested scrub priority = 1
-
-          # Assist speedy but balanced recovery
-          osd max backfills = 2
-          osd op queue = wpq
-          osd op queue cut off = high
-          filestore queue max ops = 500
-
-          # Disable new (luminous) automatic crush map organisation according to
-          # (auto detected) device classes for now.
-          osd crush update on start = false
-
-          # Various
-
-          ms dispatch throttle bytes = 1048576000
-
-          osd pg epoch persisted max stale = 150
-          osd client message cap = 10000
-          osd snap trim sleep = 0.25
-
-          osd map cache size = 200
-          osd map max advance = 150
-          osd map share max epochs = 100
-
-          # increased to survive router reboots
-          osd op thread suicide timeout = 300
-
-          # Logging/Debugging - silent enough for practical day-to-day operations
-          # but verbose enough to be able to respond/analyze issues when they arise
-
-          osd op history size = 1000
-          osd op history duration = 43200
-
-          # we currently have (too) many PGs in our pools, make sure the cluster still
-          # functions even when some osds are missing
-          osd max pg per osd hard ratio = 5
-
-          debug none = 1/5
-          debug lockdep = 1/5
-          debug context = 1/5
-          debug crush = 1/5
-          debug mds = 1/5
-          debug mds balancer = 1/5
-          debug mds locker = 1/5
-          debug mds log = 1/5
-          debug mds log expire = 1/5
-          debug mds migrator = 1/5
-          debug buffer = 1/5
-          debug timer = 1/5
-          debug filer = 1/5
-          debug striper = 1/5
-          debug objecter = 1/5
-          debug rados = 1/5
-          debug rbd = 1/5
-          debug rbd mirror = 1/5
-          debug rbd replay = 1/5
-          debug journaler = 1/5
-          debug objectcacher = 1/5
-          debug client = 1/5
-          debug osd = 1/5
-          debug optracker = 1/5
-          debug objclass = 1/5
-          debug filestore = 1/5
-          debug journal = 1/5
-          debug ms = 0/5
-          debug mon = 1/5
-          debug monc = 1/5
-          debug paxos = 1/5
-          debug tp = 1/5
-          debug auth = 1/5
-          debug crypto = 1/5
-          debug finisher = 1/5
-          debug heartbeatmap = 1/5
-          debug perfcounter = 1/5
-          debug rgw = 1/5
-          debug civetweb = 1/5
-          debug javaclient = 1/5
-          debug asok = 1/5
-          debug throttle = 1/5
-          debug refs = 0/5
-          debug xio = 1/5
-          debug compressor = 1/5
-          debug newstore = 1/5
-          debug bluestore = 1/5
-          debug bluefs = 1/5
-          debug bdev = 1/5
-          debug kstore = 1/5
-          debug rocksdb = 1/5
-          debug leveldb = 1/5
-          debug kinetic = 1/5
-          debug fuse = 1/5
-        '';
+        default = "";
         description = ''
           Contents of the Ceph config file for OSDs.
+        '';
+      };
+
+      extraSettings = lib.mkOption {
+        type = with lib.types; attrsOf (oneOf [ str int float bool ]);
+        default = {};   # defaults are provided in the config section with a lower priority
+        description = ''
+          osd config section of the Ceph config file.
+          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+          + '' can alternatively be written in camelCase as `monOsdFullRatio`.
         '';
       };
 
@@ -141,64 +140,81 @@ in
 
   };
 
-  config = lib.mkIf role.enable {
+  config = lib.mkMerge [
+      (lib.mkIf role.enable {
 
-    flyingcircus.services.ceph = {
-      server = {
-        enable = true;
-        cephRelease = role.cephRelease;
-      };
-
-      fc-ceph.settings = let
-        osdSettings =  {
-          release = role.cephRelease;
-          path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease};
+      assertions = [
+        {
+          assertion = (
+            ( role.extraSettings != {}
+            || config.flyingcircus.services.ceph.extraSettings != {}
+            || config.flyingcircus.services.ceph.client.extraSettings != {}
+            ) -> role.config == "");
+          message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
+        }
+      ];
+      flyingcircus.services.ceph = {
+        server = {
+          enable = true;
+          cephRelease = role.cephRelease;
         };
-      in {
-        # fc-ceph OSD
-        OSDManager = osdSettings;
-        # The MaintenanceTasks module uses the `rbd` binary. While it'd be safer to handle it's
-        # ceph version separately, for now just pragmatically follow the OSD version as
-        # by then both OSDs and MONs are already updated.
-        MaintenanceTasks = osdSettings;
+
+        fc-ceph.settings = let
+          osdSettings =  {
+            release = role.cephRelease;
+            path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease};
+          };
+        in {
+          # fc-ceph OSD
+          OSDManager = osdSettings;
+          # The MaintenanceTasks module uses the `rbd` binary. While it'd be safer to handle it's
+          # ceph version separately, for now just pragmatically follow the OSD version as
+          # by then both OSDs and MONs are already updated.
+          MaintenanceTasks = osdSettings;
+          };
+      };
+
+      flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
+
+      systemd.services.fc-ceph-osds = rec {
+        description = "Start/stop local Ceph OSDs (via fc-ceph)";
+        wantedBy = [ "multi-user.target" ];
+        # Ceph requires the IPs to be properly attached to interfaces so it
+        # knows where to bind to the public and cluster networks.
+        wants = [ "network.target" ];
+        after = wants;
+
+        environment = {
+          PYTHONUNBUFFERED = "1";
         };
-    };
 
-    flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
+        restartIfChanged = false;
 
-    environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
+        script = ''
+          ${pkgs.fc.ceph}/bin/fc-ceph osd activate all
+        '';
 
-    systemd.services.fc-ceph-osds = rec {
-      description = "Start/stop local Ceph OSDs (via fc-ceph)";
-      wantedBy = [ "multi-user.target" ];
-      # Ceph requires the IPs to be properly attached to interfaces so it
-      # knows where to bind to the public and cluster networks.
-      wants = [ "network.target" ];
-      after = wants;
+        reload = lib.optionalString role.reactivate ''
+          ${pkgs.fc.ceph}/bin/fc-ceph osd reactivate all
+        '';
 
-      environment = {
-        PYTHONUNBUFFERED = "1";
+        preStop = ''
+          ${pkgs.fc.ceph}/bin/fc-ceph osd deactivate all
+        '';
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
       };
 
-      restartIfChanged = false;
-
-      script = ''
-        ${pkgs.fc.ceph}/bin/fc-ceph osd activate all
-      '';
-
-      reload = lib.optionalString role.reactivate ''
-        ${pkgs.fc.ceph}/bin/fc-ceph osd reactivate all
-      '';
-
-      preStop = ''
-        ${pkgs.fc.ceph}/bin/fc-ceph osd deactivate all
-      '';
-
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-      };
-    };
-
-  };
+    })
+    (lib.mkIf (role.enable && role.config == "") {
+      flyingcircus.services.ceph.extraSettingsSections.osd = lib.recursiveUpdate
+        (expandCamelCaseAttrs defaultOsdSettings) (expandCamelCaseAttrs role.extraSettings);
+    })
+    (lib.mkIf (role.enable && role.config != "") {
+      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
+    })
+    ];
 }

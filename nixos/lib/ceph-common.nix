@@ -45,7 +45,7 @@ let
   cephReleaseType = types.enum (builtins.attrNames releasePkgs);
   defaultRelease = "luminous";
 in
-{
+rec {
   # constants
   inherit releasePkgs clientPkgs fcQemuPkgs libcephPkgs defaultRelease qemu_ceph_versioned;
   releaseOption = lib.mkOption {
@@ -96,4 +96,10 @@ in
     (pkgs.fc.util-physical.override {ceph = cephPkg;}) # required for rbd-locktool
     pkgs.lz4  # required by image loading task
     ];
+
+
+  # function that translates "camelCaseOptions" to "camel case options", credits to tilpner in #nixos@freenode
+  expandCamelCase = lib.replaceStrings lib.upperChars (map (s: " ${s}") lib.lowerChars);
+  expandCamelCaseAttrs = lib.mapAttrs' (name: value: lib.nameValuePair (expandCamelCase name) value);
+  expandCamelCaseSection = lib.mapAttrs' (sectName: sectSettings: lib.nameValuePair sectName (expandCamelCaseAttrs sectSettings));
 }

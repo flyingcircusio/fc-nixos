@@ -33,17 +33,17 @@ let
         }
       ];
 
-      flyingcircus.services.ceph.extraConfig = ''
-        mon clock drift allowed = 1
+      flyingcircus.services.ceph.extraSettings = {
+        "mon clock drift allowed" = 1;
         # Since luminous, pool creation fails if it causes the number of PGs to
         # exceed "mon max pg per osd". For the NixOS test that limit needs to be
         # raised, but for dev and prod the default should still be fine.
         # In real-world clusters, better make sure to choose the correct number of
         # PGs per pool instead of overriding this setting.
-        mon max pg per osd = 500
+        "mon max pg per osd" = 500;
 
-        debug monc = 4
-      '';
+        "debug monc" = 4;
+      };
 
       # We need this in the enc files as well so that timer jobs can update
       # the keys etc.

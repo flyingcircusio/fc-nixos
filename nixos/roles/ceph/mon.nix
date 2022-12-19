@@ -6,6 +6,7 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_mon;
   enc = config.flyingcircus.enc;
+  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
   mons = (sort lessThan (map (service: service.address) (fclib.findServices "ceph_mon-mon")));
   # We do not have service data during bootstrapping.
@@ -31,6 +32,20 @@ let
       "restful"
     ];
   };
+  defaultMonSettings = mon:
+  let
+    id = head (lib.splitString "." mon.address);
+    # we have always been using the default mon ports, so there is no need
+    # to explicitly specify a port
+    addr = toString (head (filter fclib.isIp4 mon.ips));
+  in
+  { "mon.${id}" = {
+    host = id;
+    publicAddr = addr;
+  };};
+  defaultMgrSettings = {
+    mgrInitialModules = lib.concatStringsSep " " mgrEnabledModules.${role.cephRelease};
+  };
 in
 {
   options = {
@@ -46,32 +61,18 @@ in
 
       config = lib.mkOption {
         type = lib.types.lines;
-        default = (lib.concatMapStringsSep "\n"
-          (mon:
-            let
-              id = head (lib.splitString "." mon.address);
-              # we have always been using the default mon ports, so there is no need
-              # to explicitly specify a port
-              addr = toString (head (filter fclib.isIp4 mon.ips));
-            in
-            ''
-              [mon.${id}]
-              host = ${id}
-              # FIXME: mon addr is explicitly deprecated from Nautilus on, let's see whether a public
-              # addr and mon host are sufficient even for earlier releases
-              #mon addr = ${addr}
-              public addr = ${addr}
-            '')
-          (fclib.findServices "ceph_mon-mon"))
-          # initial modules only respected at bootstrapping time, ignored afterwards
-          # FIXME: convert to settings generator
-          + lib.optionalString (fclib.ceph.releaseAtLeast "luminous" role.cephRelease) ''
-
-            [mon]
-            mgr initial modules = ${lib.concatStringsSep " " mgrEnabledModules.${role.cephRelease}}
-          '';
+        default = "";
         description = ''
           Contents of the Ceph config file for MONs.
+        '';
+      };
+      extraSettings = lib.mkOption {
+        type = with lib.types; attrsOf (oneOf [ str int float bool ]);
+        default = {};   # defaults are provided in the config section with a lower priority
+        description = ''
+          mon config of the Ceph config file.
+          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+          + '' can alternatively be written in camelCase as `monOsdFullRatio`.
         '';
       };
 
@@ -83,6 +84,16 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf role.enable {
+      assertions = [
+        {
+          assertion = (
+            ( role.extraSettings != {}
+            || config.flyingcircus.services.ceph.extraSettings != {}
+            || config.flyingcircus.services.ceph.client.extraSettings != {}
+            ) -> role.config == "");
+          message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
+        }
+      ];
       flyingcircus.services.ceph = {
         fc-ceph.settings = let
           monSettings =  {
@@ -103,8 +114,6 @@ in
           cephRelease = role.cephRelease;
         };
       };
-
-      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
 
       systemd.services.fc-ceph-mon = rec {
         description = "Local Ceph Mon (via fc-ceph)";
@@ -196,6 +205,21 @@ in
         };
       };
 
+    })
+    (lib.mkIf (role.enable && role.config == "") {
+      flyingcircus.services.ceph.extraSettingsSections = lib.recursiveUpdate
+        (expandCamelCaseSection (lib.foldr (attr: acc: acc // attr) { } (map defaultMonSettings (fclib.findServices "ceph_mon-mon"))))
+        (lib.recursiveUpdate
+          { mon = expandCamelCaseAttrs role.extraSettings; }
+          (lib.optionalAttrs (fclib.ceph.releaseAtLeast "luminous" role.cephRelease) {
+            mon = expandCamelCaseAttrs defaultMgrSettings;
+          })
+        )
+      ;
+    })
+
+    (lib.mkIf (role.enable && role.config != "") {
+      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
     })
     (lib.mkIf (role.enable && fclib.ceph.releaseAtLeast "luminous" role.cephRelease ) {
       systemd.services.fc-ceph-mgr = rec {
