@@ -87,6 +87,19 @@ in {
       description = "Where to find the ENC services json file.";
     };
 
+    flyingcircus.hostRgwAddress = mkOption {
+      default = null;
+      type = with types; nullOr str;
+      description = ''
+        IP address for the radosgw object storage proxy running on the
+        virtualization host on port 7480. It allows VMs to access the
+        S3(-compatible) storage via the fast storage network.
+
+        This is the same as the `rgw.local` entry in `/etc/hosts`. Set if the
+        machine is a virtual machine, null otherwise.
+      '';
+    };
+
     flyingcircus.localConfigDirs = mkOption {
       description = ''
         Create a directory where local config files for a service can be placed.
