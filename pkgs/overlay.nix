@@ -288,6 +288,8 @@ in {
     boost = self.boost177;
     openldap = self.openldap_2_4;
     openssl = self.openssl_1_1;
+    inherit (super.darwin.apple_sdk.frameworks) CoreServices;
+    inherit (super.darwin) cctools developer_cmds DarwinTools;
   };
 
   # We use 2.4 from upstream for older Percona versions.
