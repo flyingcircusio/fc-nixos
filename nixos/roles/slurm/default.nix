@@ -157,6 +157,7 @@ in
         path = [ pkgs.jq ];
         script = ''
           umask 0266
+          mkdir -p $(dirname ${cfg.mungeKeyFile})
           jq -r \
             '.[] | select(.service =="slurm-controller-controller") | .password' \
             /etc/nixos/services.json | sha256sum | head -c64 \
@@ -182,6 +183,7 @@ in
       };
 
       services.munge.password = cfg.mungeKeyFile;
+
     })
 
     (lib.mkIf controllerEnabled {
