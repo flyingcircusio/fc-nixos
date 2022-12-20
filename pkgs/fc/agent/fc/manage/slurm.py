@@ -33,8 +33,8 @@ def fc_slurm(
         exists=True,
         file_okay=False,
         writable=True,
-        default="/var/log/fc-agent/slurm",
-        help="Directory for log files.",
+        default="/var/log",
+        help="Directory for log files, expects a fc-agent subdirectory there.",
     ),
     enc_path: Path = Option(
         dir_okay=False,
