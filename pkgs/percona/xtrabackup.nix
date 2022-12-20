@@ -1,22 +1,23 @@
 { lib, stdenv, fetchurl, bison, boost, cmake, curl, cyrus_sasl, libaio, libgcrypt
 , libgpg-error, makeWrapper, pkg-config
 , perlPackages
-, libedit, libev, libevent, lz4, ncurses, vim, openssl, percona, protobuf, xxd, zlib }:
+, libedit, libev, libevent, lz4, ncurses, vim, openssl, percona, procps
+, protobuf, xxd, zlib }:
 
 stdenv.mkDerivation rec {
   name = "xtrabackup-${version}";
-  version = "8.0.29-22";
+  version = "8.0.30-23";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-XtraBackup-8.0/Percona-XtraBackup-${version}/source/tarball/percona-xtrabackup-${version}.tar.gz";
-    sha256 = "sha256-fDvfrwsC7EwJs820Gyp/GPedzpxdOWraNvvCVXVi/1U=";
+    sha256 = "sha256-mxv7HM4oYGJ66+1T1i6GtV5leGnJG3FfYmwgdZtzQes=";
   };
 
   nativeBuildInputs = [ bison boost cmake makeWrapper pkg-config ];
 
   buildInputs = [
     (curl.override { inherit openssl; }) cyrus_sasl libaio libedit libev libevent libgcrypt libgpg-error lz4
-    ncurses openssl protobuf xxd zlib
+    ncurses openssl procps protobuf xxd zlib
   ] ++ (with perlPackages; [ perl DBI DBDmysql ]);
 
   cmakeFlags = [
