@@ -33,6 +33,9 @@ let
       # Use the default flags defined by fc-qemu regardless of
       # what the platform sets or the fc-qemu unit tests will fail.
       flyingcircus.roles.kvm_host.mkfsXfsFlags = null;
+      # We want migrations to be slowish so we can test enough code
+      # that monitors the migration. Try to push it past 60 seconds.
+      flyingcircus.roles.kvm_host.migrationBandwidth = 22500;
 
       flyingcircus.static.mtus.sto = 1500;
       flyingcircus.static.mtus.stb = 1500;

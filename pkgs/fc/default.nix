@@ -31,8 +31,8 @@ rec {
       src = pkgs.fetchFromGitHub {
         owner = "flyingcircusio";
         repo = "fc.qemu";
-        rev = "efbd2df73e236fa8a799c3ab5cdfbe7ecb561c8e";
-        hash = "sha256-gcfZ113kI3aeyH55gzVlROiVcZI1ZlGHYboCN2eIte4";
+        rev = "bcf373c57a39bb373f45022cae4015221e9aa94f";
+        hash = "sha256-4rIwMzsYYvKGGybkFFu3z0D/RD8LXIJP5GG0oB9lxpc";
       };
   };
 
