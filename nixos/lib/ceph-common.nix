@@ -7,6 +7,12 @@ let
   # TODO: Once all ceph packages have a similar structure, releasePkgs can be
   # generated from this ist
   releaseOrder = [ "nautilus" "luminous" "jewel"];
+  cephReleaseType = types.enum (builtins.attrNames releasePkgs);
+  defaultRelease = "luminous";
+
+  # ====== mapping of packages per ceph release =======
+  # FIXME: possible change structure from <package>.<cephRelease> to <ceph
+
   releasePkgs = {
     "jewel" = pkgs.ceph-jewel;
     "luminous" = pkgs.ceph-luminous;
@@ -42,12 +48,15 @@ let
       qemu_ceph = qemu_ceph_versioned "nautilus";
     };
   };
-  cephReleaseType = types.enum (builtins.attrNames releasePkgs);
-  defaultRelease = "luminous";
+  utilPhysicalPkgs = {
+    "jewel" = pkgs.fc.util-physical.jewel.override {ceph = clientPkgs.jewel;};
+    "luminous" = pkgs.fc.util-physical.luminous.override {ceph = clientPkgs.luminous;};
+    "nautilus" = pkgs.fc.util-physical.nautilus.override {ceph = clientPkgs.nautilus;};
+  };
 in
 rec {
   # constants
-  inherit releasePkgs clientPkgs fcQemuPkgs libcephPkgs defaultRelease qemu_ceph_versioned;
+  inherit releasePkgs clientPkgs fcQemuPkgs libcephPkgs utilPhysicalPkgs defaultRelease qemu_ceph_versioned;
   releaseOption = lib.mkOption {
     type = cephReleaseType;
     # centrally manage the default release for all roles here
@@ -93,7 +102,7 @@ rec {
     pkgs.systemd
     pkgs.gptfdisk
     pkgs.coreutils
-    (pkgs.fc.util-physical.override {ceph = cephPkg;}) # required for rbd-locktool
+    utilPhysicalPkgs.${cephPkg.codename} # required for rbd-locktool
     pkgs.lz4  # required by image loading task
     ];
 

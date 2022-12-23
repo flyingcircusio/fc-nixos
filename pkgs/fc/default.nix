@@ -52,7 +52,12 @@ rec {
   sensuplugins = callPackage ./sensuplugins {};
   sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};
-  util-physical = callPackage ./util-physical {};
+  util-physical = {
+    # luminous code is compatible to jewel
+    jewel = callPackage ./util-physical/ceph-luminous {ceph = pkgs.ceph-jewel;};
+    luminous = callPackage ./util-physical/ceph-luminous {ceph = pkgs.ceph-luminous;};
+    nautilus = callPackage ./util-physical/ceph-nautilus {ceph = pkgs.ceph-nautilus.ceph-client;};
+  };
   telegraf-collect-psi = callPackage ./telegraf-collect-psi {};
 
 }
