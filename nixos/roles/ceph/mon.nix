@@ -25,14 +25,20 @@ let
   };
   # modules that are ensured to be disabled at each mgr start. All other modules might
   # be imperatively enabled in the cluster and stay enabled.
-  # Note that `always_on` modules cannot be disabled so far, see
+  # Note that `always_on` modules cannot be disabled so far
   mgrDisabledModules = {
     luminous = [];
     nautilus = [
       "restful"
     ];
   };
-  defaultMonSettings = mon:
+  defaultMonSettings = {
+    # A value < 1 would generate health warnings despite the scrub deadlines still being
+    # below their max limit
+    monWarnPgNotScrubbedRatio = 1;
+    monWarnPgNotDeepScrubbedRatio = 1;
+  };
+  perMonSettings = mon:
   let
     id = head (lib.splitString "." mon.address);
     # we have always been using the default mon ports, so there is no need
@@ -208,14 +214,16 @@ in
     })
     (lib.mkIf (role.enable && role.config == "") {
       flyingcircus.services.ceph.extraSettingsSections = lib.recursiveUpdate
-        (expandCamelCaseSection (lib.foldr (attr: acc: acc // attr) { } (map defaultMonSettings (fclib.findServices "ceph_mon-mon"))))
+      { mon = expandCamelCaseAttrs defaultMonSettings; }
+      (lib.recursiveUpdate
+        (expandCamelCaseSection (lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))))
         (lib.recursiveUpdate
           { mon = expandCamelCaseAttrs role.extraSettings; }
           (lib.optionalAttrs (fclib.ceph.releaseAtLeast "luminous" role.cephRelease) {
             mon = expandCamelCaseAttrs defaultMgrSettings;
           })
         )
-      ;
+      );
     })
 
     (lib.mkIf (role.enable && role.config != "") {
