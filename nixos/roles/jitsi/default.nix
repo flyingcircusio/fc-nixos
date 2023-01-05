@@ -284,8 +284,6 @@ in {
 
       };
 
-      services.jitsi-videobridge.apis = [ "rest" ];
-
       services.nginx.virtualHosts = {
         "${cfg.hostName}" = {
           listenAddresses = [ cfg.listenAddress (fclib.quoteIPv6Address cfg.listenAddress6) ];
