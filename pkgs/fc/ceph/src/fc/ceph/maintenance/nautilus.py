@@ -5,10 +5,12 @@ import subprocess
 import sys
 import traceback
 
-import fc.ceph.images
 import fc.util.directory
 from fc.ceph.api import Cluster, Pools
 from fc.ceph.api.cluster import CephCmdError
+from fc.ceph.maintenance.images_nautilus import (
+    load_vm_images as load_vm_images_task,
+)
 from fc.ceph.util import kill, mount_status, run
 
 
@@ -115,8 +117,10 @@ class MaintenanceTasks(object):
         "PG_NOT_SCRUBBED",
     ]
 
-    def check_cluster_status(self) -> bool:
-        status = run.json.ceph("health")
+    def check_cluster_maintenance(self, status: dict) -> bool:
+        """Takes the ceph cluster status information as a dict,
+        returns True if the cluster is clean enough for doing maintenance operations.
+        """
         overall_status = status["status"]
         if overall_status == "HEALTH_OK":
             # cluster healthy, everything is fine
@@ -135,7 +139,7 @@ class MaintenanceTasks(object):
             return False
 
     def load_vm_images(self):
-        fc.ceph.images.load_vm_images()
+        load_vm_images_task()
 
     def purge_old_snapshots(self) -> int:
         status_code = 0
@@ -179,12 +183,14 @@ class MaintenanceTasks(object):
         # Aquire the maintenance lock
         run.rbd_locktool("-l", "rbd/.maintenance")
         # Check that the cluster is fully healhty
-        if not self.check_cluster_status():
+        cluster_status = run.json.ceph("health")
+        if not self.check_cluster_maintenance(cluster_status):
             print(
                 f"Can not enter maintenance: "
-                f"Ceph status is {status['status']}."
+                f"Ceph status is {cluster_status['status']}."
             )
-            sys.exit(75)  # 75 signals a temporary failure to fc-agent
+            # 69 signals to postpone the maintenance, triggering a leave in fc-agent
+            sys.exit(69)
 
     def leave(self):
         self._ensure_maintenance_volume()
