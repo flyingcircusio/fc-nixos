@@ -1,8 +1,8 @@
 { lib, buildPythonPackage, fetchPypi
 , cheroot, contextlib2, portend, routes, six
-, setuptools_scm, zc_lockfile
+, setuptools-scm, zc_lockfile
 , backports_unittest-mock, objgraph, pathpy, pytest, pytestcov
-, backports_functools_lru_cache, requests_toolbelt
+, backports_functools_lru_cache, requests-toolbelt
 }:
 
 buildPythonPackage rec {
@@ -16,9 +16,9 @@ buildPythonPackage rec {
 
   propagatedBuildInputs = [ cheroot contextlib2 portend routes six zc_lockfile ];
 
-  buildInputs = [ setuptools_scm ];
+  buildInputs = [ setuptools-scm ];
 
-  checkInputs = [ backports_unittest-mock objgraph pathpy pytest pytestcov backports_functools_lru_cache requests_toolbelt ];
+  checkInputs = [ backports_unittest-mock objgraph pathpy pytest pytestcov backports_functools_lru_cache requests-toolbelt ];
   # import problems of zc.lockfile
   doCheck = false;
 

@@ -322,24 +322,31 @@ in {
   in
   super.python27.override {
     packageOverrides = python-self: python-super: {
+      babel = thisPy.pkgs.callPackage ./python/babel { };
       cheroot = thisPy.pkgs.callPackage ./python/cheroot { };
       cherrypy = thisPy.pkgs.callPackage ./python/cherrypy { };
       cython = thisPy.pkgs.callPackage ./python/Cython { };
       jaraco_text = thisPy.pkgs.callPackage ./python/jaraco_text { };
+      Mako = thisPy.pkgs.callPackage ./python/Mako { };
       PasteDeploy = python-super.PasteDeploy.overrideAttrs (oldattrs: {
         # for pkg_resources
         propagatedBuildInputs = oldattrs.propagatedBuildInputs ++ [python-self.setuptools];
       });
+      pathpy = thisPy.pkgs.callPackage ./python/path.py { };
       pecan = thisPy.pkgs.callPackage ./python/pecan { };
       portend = thisPy.pkgs.callPackage ./python/portend { };
       pypytools = thisPy.pkgs.callPackage ./python/pypytools { };
       pyquery = thisPy.pkgs.callPackage ./python/pyquery { };
+      pytestcov = thisPy.pkgs.callPackage ./python/pytest-cov { };
       routes = python-super.routes.overrideAttrs (oldattrs: {
         # work around a weird pythonImportsCheck failure, but cannot be empty
         pythonImportsCheckPhase = "true";
       });
+      singledispatch = thisPy.pkgs.callPackage ./python/singledispatch { };
+      SQLAlchemy = thisPy.pkgs.callPackage ./python/sqlalchemy { };
       tempora = thisPy.pkgs.callPackage ./python/tempora { };
       waitress = thisPy.pkgs.callPackage ./python/waitress { };
+      webob = thisPy.pkgs.callPackage ./python/webob { };
       webtest = thisPy.pkgs.callPackage ./python/webtest {
         pastedeploy = python-self.PasteDeploy;
       };
