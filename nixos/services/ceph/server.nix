@@ -8,23 +8,48 @@ let
 
   ceph_sudo = pkgs.writeScriptBin "ceph-sudo" ''
     #! ${pkgs.stdenv.shell} -e
-    exec /run/wrappers/bin/sudo ${pkgs.ceph}/bin/ceph "$@"
+    exec /run/wrappers/bin/sudo ${cfg.package}/bin/ceph "$@"
   '';
 
   cfg = config.flyingcircus.services.ceph.server;
+
 in
 {
   options = {
     flyingcircus.services.ceph.server = {
       enable = lib.mkEnableOption "Generic CEPH server configuration";
+      cephRelease = lib.mkOption {
+        type = fclib.ceph.highestCephReleaseType;
+        description = "Ceph release series that the main package belongs to. "
+          + "This option behaves special in a way that, if defined multiple times, the latest release name will be chosen."
+          + "Explicitly has no default but needs to be defined by roles or manual config.";
+      };
+      package = lib.mkOption {
+        type = lib.types.package;
+        description = "Main ceph package to be used on the system and to be put into PATH. "
+          + "The package set must belong to the release series defined in the `cephRelease` option. "
+          + "Only modify if really necessary, otherwise the default ceph package from the defined series is used.";
+        default = fclib.ceph.releasePkgs.${cfg.cephRelease};
+      };
     };
   };
 
   config = lib.mkIf cfg.enable {
 
+    assertions = [
+      {
+        assertion = cfg.package.codename == cfg.cephRelease;
+        message = "The ceph package set for this ceph server service must be of the same release series as defined in `cephRelease`";
+      }
+    ];
+
     environment.variables.CEPH_ARGS = fclib.mkPlatformOverride "";
 
-    flyingcircus.services.ceph.client.enable = true;
+    flyingcircus.services.ceph.client = {
+      enable = true;
+      # set same ceph package to avoid conflicts
+      cephRelease = cfg.cephRelease;
+    };
 
     flyingcircus.agent.maintenance.ceph = {
       enter = "${pkgs.fc.ceph}/bin/fc-ceph maintenance enter";
@@ -41,9 +66,8 @@ in
     '';
 
     systemd.tmpfiles.rules = [
-        "d /srv/ceph 0755"
-        "d /var/log/ceph 0755"
-     ];
+      "d /srv/ceph 0755"
+    ];
 
     flyingcircus.services.sensu-client.expectedConnections = {
       warning = 20000;
@@ -61,32 +85,32 @@ in
           prerotate
               for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
                   echo "Flushing log for $dmn"
-                  ${pkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
+                  ${cfg.package}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
               done
           endscript
           postrotate
               for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
                   echo "Reopening log for $dmn"
-                  ${pkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
+                  ${cfg.package}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
               done
           endscript
       }
-      '';
+    '';
 
     services.telegraf.extraConfig.inputs.ceph = [
-      { ceph_binary =  "${ceph_sudo}/bin/ceph-sudo"; }
+      { ceph_binary = "${ceph_sudo}/bin/ceph-sudo"; }
     ];
 
     flyingcircus.passwordlessSudoRules = [
       {
-        commands = [ "${pkgs.ceph}/bin/ceph" ];
+        commands = [ "${cfg.package}/bin/ceph" ];
         users = [ "telegraf" ];
       }
     ];
 
     environment.systemPackages = with pkgs; [
-        fc.ceph
-        fc.blockdev
+      fc.ceph
+      fc.blockdev
     ];
 
     systemd.services.fc-blockdev = {
@@ -142,7 +166,6 @@ in
       # (too many, can't prove right now.) this appeared to have been helpful.
       "net.ipv4.tcp_low_latency" = "1";
     };
-
   };
 
 }

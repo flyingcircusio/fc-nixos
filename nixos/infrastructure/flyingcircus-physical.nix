@@ -31,15 +31,25 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       # Wanted by backy and Ceph servers
       kernel.sysctl."vm.vfs_cache_pressure" = 10;
 
+      kernel.sysctl."vm.swappiness" = config.fclib.mkPlatform 0;
+
+    };
+
+    flyingcircus.activationScripts = {
+      disableSwap = ''
+        swapoff -a
+      '';
     };
 
     environment.systemPackages = with pkgs; [
+      fc.ledtool
       fc.secure-erase
-      fc.util-physical
       mstflint
       pciutils
       smartmontools
       usbutils
+      # ensure that `rbd-locktool` uses the correct ceph tooling version
+      (fc.util-physical.override {ceph = cfg.services.ceph.client.package;})
     ];
 
     fileSystems = {
@@ -64,10 +74,9 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     };
 
     # Not perfect but avoids triggering the 'established' rule which can
-    # lead to massive/weird Ceph instabilities.
-    networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" ];
-
-    swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
+    # lead to massive/weird Ceph instabilities. Also, coordination tasks
+    # like Qemu migrations run over ethmgm want to be trusted.
+    networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" "ethmgm" ];
 
     users.users.root = {
       # Overriden in local.nix
@@ -76,7 +85,8 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         attrValues cfg.static.adminKeys;
     };
 
-    powerManagement.cpuFreqGovernor = "ondemand";
+    # FIXME: was "performance" on 21.05, do we need to change this for hardware?
+    powerManagement.cpuFreqGovernor = "performance";
 
     services.lldpd.enable = true;
 

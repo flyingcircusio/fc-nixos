@@ -18,7 +18,7 @@ in {
   imports = with lib; [
     ./ceph/client.nix
     ./ceph/server.nix
-    ./consul.nix
+    ./consul
     ./graylog
     ./haproxy
     ./jitsi/jibri.nix

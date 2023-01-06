@@ -29,11 +29,13 @@ let
     '';
 
   rgAddrs = map (e: e.ip) cfg.encAddresses;
-  rgRules = lib.optionalString
-    (lib.hasAttr "ethsrv" config.networking.interfaces)
+  rgRules = let
+    srv_device = fclib.network.srv.device or "";
+    in lib.optionalString
+    (lib.hasAttr srv_device config.networking.interfaces)
     (lib.concatMapStringsSep "\n"
       (a:
-        "${fclib.iptables a} -A nixos-fw -i ethsrv " +
+        "${fclib.iptables a} -A nixos-fw -i ${srv_device} " +
         "-s ${fclib.stripNetmask a} -j nixos-fw-accept")
       rgAddrs);
 

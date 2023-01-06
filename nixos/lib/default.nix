@@ -10,6 +10,7 @@ let
   system = import ./system.nix { inherit config pkgs lib; };
   utils = import ./utils.nix { inherit config pkgs lib; };
   lists = import ./lists.nix { inherit config pkgs lib; };
+  ceph = import ./ceph-common.nix { inherit lib pkgs; };
 
 in
 {
@@ -23,7 +24,8 @@ in
 
   config = {
     fclib =
-      { inherit attrsets files math modules network system utils; }
+      # FIXME: why is modules inherited _and_ merged into the attrset?
+      { inherit attrsets ceph files math modules network system utils; }
       // attrsets // doc // files // math // modules // network // system // utils // lists;
   };
 }

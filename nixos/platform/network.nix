@@ -61,6 +61,8 @@ in
 
       # data structure for all configured interfaces with their IP addresses:
       # { ethfe = { ... }; ethsrv = { }; ... }
+      # or
+      # { brfe = { ... }; brsrv = { }; ethsto = { }; ... }
       interfaces = listToAttrs (map (interface:
         (lib.nameValuePair "${interface.device}" {
           ipv4.addresses = interface.v4.attrs;
@@ -176,7 +178,7 @@ in
       (listToAttrs
         (map (interface:
           (lib.nameValuePair
-            "network-link-properties-${interface.physicalDevice}"
+            "network-link-properties-${interface.physicalDevice}-phy"
             rec {
               description = "Ensure link properties for ${interface.physicalDevice}";
               # We need to explicitly be wanted by the multi-user target,
@@ -184,7 +186,7 @@ in
               # address units won't get restarted because triggering
               # the multi-user alone does not propagated to the network-target
               # etc. etc.
-              wantedBy = [ "network-addresses-${interface.device}.service"
+              wantedBy = [ "network-addresses-${interface.physicalDevice}.service"
                            "multi-user.target" ];
 
               before = wantedBy;
@@ -223,10 +225,31 @@ in
                 for oldtmp in `ip -6 address show dev $IFACE dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
                   ip addr del $oldtmp dev $IFACE
                 done
+              '';
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }))
+          interfaces)) //
+      (listToAttrs
+        (map (interface:
+          (lib.nameValuePair
+            "network-link-properties-${interface.device}-virt"
+            rec {
+              description = "Ensure link properties for ${interface.device} (virtual)";
+              # We need to explicitly be wanted by the multi-user target,
+              # otherwise we will not get initially added as the individual
+              # address units won't get restarted because triggering
+              # the multi-user alone does not propagated to the network-target
+              # etc. etc.
+              wantedBy = [ "network-addresses-${interface.device}.service"
+                           "multi-user.target" ];
+              bindsTo = [ "${interface.device}-netdev.service" ];
+              after = [ "${interface.device}-netdev.service" ];
 
-                # XXX this needs to trigger properly when brXXX-netdev gets reloaded
-                # see the bindsTo dance for qemu bridge reattachment
-
+              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp];
+              script = ''
                 # Disable IPv6 SLAAC (autoconf) on interfaces w/ addresses
                 sysctl net.ipv6.conf.${interface.device}.accept_ra=0
                 sysctl net.ipv6.conf.${interface.device}.autoconf=0
@@ -235,7 +258,6 @@ in
                 for oldtmp in `ip -6 address show dev ${interface.device} dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
                   ip addr del $oldtmp dev ${interface.device}
                 done
-
               '';
               serviceConfig = {
                 Type = "oneshot";

@@ -9,6 +9,7 @@ in {
     ./antivirus.nix
     ./backyserver.nix
     ./coturn.nix
+    ./consul
     ./docker.nix
     ./ceph/mon.nix
     ./ceph/osd.nix
@@ -20,6 +21,7 @@ in {
     ./graylog.nix
     ./jitsi
     ./k3s
+    ./kvm.nix
     ./lamp.nix
     ./loghost
     ./mailout.nix

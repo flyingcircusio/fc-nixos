@@ -20,8 +20,8 @@ in
 
   config =
   let
-    # XXX: We choose the first IP of ethsrv here, as the 3.6 service is not capable
-    # of handling more than one IP.
+    # XXX: We choose the first IP of the srv interface here, as the 3.6
+    # service is not capable of handling more than one IP.
     listenAddress = head fclib.network.srv.dualstack.addresses;
 
     roles = config.flyingcircus.roles;

@@ -165,16 +165,19 @@ let
       customIPXEScript = pkgs.writeTextDir "netboot.ipxe" ''
         #!ipxe
 
-        set console ttyS2,115200
+        set console ttyS1
+        set speed 115200
 
         :start
         menu Flying Circus Installer boot menu
         item --gap --          --- Info ---
-        item --gap --           Console: ''${console}
+        item --gap --           Console: console=''${console},''${speed}
         item --gap --          --- Settings ---
         item console_tty0      console=tty0
-        item console_ttys1     console=ttyS1,115200
-        item console_ttys2     console=ttyS2,115200
+        item console_ttys1     console=ttyS1
+        item console_ttys2     console=ttyS2
+        item speed_115200      speed=115200
+        item speed_57600       speed=57600
         item --gap --          --- Install ---
         item boot_installer    Boot installer
         item --gap --          --- Other ---
@@ -192,11 +195,19 @@ let
         goto start
 
         :console_ttys1
-        set console ttyS1,115200
+        set console ttyS1
         goto start
 
         :console_ttys2
-        set console ttyS2,115200
+        set console ttyS2
+        goto start
+
+        :speed_115200
+        set speed 115200
+        goto start
+
+        :speed_57600
+        set speed 57600
         goto start
 
         :local
@@ -213,7 +224,7 @@ let
         goto start
 
         :boot_installer
-        kernel ${kernelTarget} init=${build.toplevel}/init console=''${console} initrd=initrd loglevel=4
+        kernel ${kernelTarget} init=${build.toplevel}/init console=''${console},''${speed} initrd=initrd loglevel=4
         initrd initrd
         boot || goto error
 

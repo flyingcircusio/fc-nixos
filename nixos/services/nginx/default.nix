@@ -70,7 +70,7 @@ let
   acmeVhosts = (lib.filterAttrs (_: val: val ? enableACME ) cfg.virtualHosts);
 
   mainConfig = ''
-    worker_processes ${toString (fclib.currentCores 1)};
+    worker_processes ${toString cfg.workerProcesses};
     worker_rlimit_nofile 8192;
     worker_shutdown_timeout ${toString cfg.workerShutdownTimeout};
   '';
@@ -170,6 +170,15 @@ in
         open to facilitate shutdown.
         By default, nginx will try to close connections 4 minutes after a reload.
       '';
+    };
+
+    workerProcesses = mkOption {
+      type = types.int;
+      description = ''
+        Configures the number of worker processes.
+      '';
+      default = fclib.min [(fclib.currentCores 1) 12];
+      defaultText = literalExpression "fclib.min [(fclib.currentCores 1) 12]";
     };
 
     rotateLogs = mkOption {

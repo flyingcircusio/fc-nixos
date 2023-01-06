@@ -22,6 +22,10 @@ let
 
   restoreSingleFiles = pkgs.callPackage ../../pkgs/restore-single-files {};
 
+  backyRbdVersioned = cephReleaseName: {
+    BACKY_RBD = "${fclib.ceph.releasePkgs.${cephReleaseName}}/bin/rbd";
+  };
+
 in
 {
   options = {
@@ -36,13 +40,21 @@ in
 
       supportsContainers = fclib.mkDisableContainerSupport;
 
+
+      cephRelease = fclib.ceph.releaseOption // {
+        description = "Codename of the Ceph release series used as external backy tooling.";
+      };
     };
 
   };
 
   config = lib.mkIf role.enable {
 
-    flyingcircus.services.ceph.client.enable = true;
+    flyingcircus.services.ceph.client = {
+      enable = true;
+      cephRelease = role.cephRelease;
+    };
+
     flyingcircus.services.consul.enable = true;
 
     environment.systemPackages = [
@@ -51,12 +63,19 @@ in
       restoreSingleFiles
     ];
 
+    # globally set the RBD to be used by backy, in case it is invoked manually by an operator
+    environment.variables = backyRbdVersioned role.cephRelease;
+
     fileSystems = {
       "/srv/backy" = {
         device = "/dev/disk/by-label/backy";
         fsType = "xfs";
       };
     };
+
+    services.telegraf.extraConfig.inputs.disk = [
+      { mount_points = [ "/srv/backy" ]; }
+    ];
 
     boot = {
       # Extracted to flyingcircus-physical.nix
@@ -98,7 +117,7 @@ in
 
         environment = {
           CEPH_ARGS = "--id ${enc.name}";
-        };
+        } // backyRbdVersioned role.cephRelease;
 
         serviceConfig = {
           ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";

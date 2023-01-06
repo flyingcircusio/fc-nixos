@@ -1,4 +1,4 @@
-{ lib, stdenv, python3Full, python3Packages, lz4, blockdev, lvm2, util-linux, ceph, agent, util-physical }:
+{ lib, stdenv, python3Full, python3Packages, lz4, blockdev, lvm2, utillinux, ceph, agent, util-physical }:
 
 let
   py = python3Packages;
@@ -6,16 +6,13 @@ in
 
 py.buildPythonApplication rec {
   name = "fc-ceph-${version}";
-  version = "1.0";
+  version = "2.0";
   src = ./.;
   dontStrip = true;
   propagatedBuildInputs = [
     blockdev
-    ceph
     lz4
-    lvm2
     agent
-    util-linux
     util-physical
     python3Packages.requests
   ];
@@ -33,7 +30,7 @@ py.buildPythonApplication rec {
   };
 
   checkPhase = ''
-    pytest fc/ceph
+    pytest src/fc/ceph
   '';
 
 }

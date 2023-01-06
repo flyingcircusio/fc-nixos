@@ -565,6 +565,8 @@ in
 
     })
 
+# FIXME: the collectdproxy has been removed here, do we still need it for Gentoo?
+
   ];
 }
 

@@ -20,3 +20,8 @@ result-*
 share/
 target/
 tmp/
+/*.sublime-*
+.envrc
+pkgs/fc/agent/.envrc
+pyenv
+.vscode/settings.json

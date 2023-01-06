@@ -37,11 +37,20 @@ in {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  # XXX: ceph doesn't build
-  # ceph = (super.callPackage ./ceph {
-  #     pythonPackages = super.python3Packages;
-  #     boost = super.boost155;
-  # });
+  ceph = self.ceph-luminous;
+  ceph-jewel = (super.callPackage ./ceph/jewel {
+      pythonPackages = super.python2Packages;
+      boost = super.boost155;
+  });
+  ceph-luminous = (super.callPackage ./ceph/luminous {
+    boost = super.boost166.override {
+      enablePython = true;
+      python = self.python27-ceph-downgrades;
+    };
+    stdenv = self.gcc9Stdenv;
+    python2Packages = self.python27-ceph-downgrades.pkgs;
+  });
+
 
   docsplit = super.callPackage ./docsplit { };
 
@@ -53,6 +62,7 @@ in {
     jre_headless = self.jdk11_headless;
   }).overrideAttrs(_: rec {
     version = elastic7Version;
+
     name = "elasticsearch-${version}";
 
     src = super.fetchurl {
@@ -307,8 +317,50 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  # python27 with several downgrades to make required modules work under python27 again
+  python27-ceph-downgrades = let thisPy = self.python27-ceph-downgrades;
+  in
+  super.python27.override {
+    packageOverrides = python-self: python-super: {
+      cheroot = thisPy.pkgs.callPackage ./python/cheroot { };
+      cherrypy = thisPy.pkgs.callPackage ./python/cherrypy { };
+      cython = thisPy.pkgs.callPackage ./python/Cython { };
+      jaraco_text = thisPy.pkgs.callPackage ./python/jaraco_text { };
+      PasteDeploy = python-super.PasteDeploy.overrideAttrs (oldattrs: {
+        # for pkg_resources
+        propagatedBuildInputs = oldattrs.propagatedBuildInputs ++ [python-self.setuptools];
+      });
+      pecan = thisPy.pkgs.callPackage ./python/pecan { };
+      portend = thisPy.pkgs.callPackage ./python/portend { };
+      pypytools = thisPy.pkgs.callPackage ./python/pypytools { };
+      pyquery = thisPy.pkgs.callPackage ./python/pyquery { };
+      routes = python-super.routes.overrideAttrs (oldattrs: {
+        # work around a weird pythonImportsCheck failure, but cannot be empty
+        pythonImportsCheckPhase = "true";
+      });
+      tempora = thisPy.pkgs.callPackage ./python/tempora { };
+      waitress = thisPy.pkgs.callPackage ./python/waitress { };
+      webtest = thisPy.pkgs.callPackage ./python/webtest {
+        pastedeploy = python-self.PasteDeploy;
+      };
+      WebTest = python-self.webtest;
+      zc_lockfile = thisPy.pkgs.callPackage ./python/zc_lockfile { };
+    };
+  };
+
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
+
+  # Speed up NixOS tests by making the 9p file system more efficient.
+  qemu = super.qemu.overrideAttrs (o: {
+    patches = o.patches ++ [ (super.fetchpatch {
+      name = "qemu-9p-performance-fix.patch";
+      url = "https://gitlab.com/lheckemann/qemu/-/commit/ca8c4a95a320dba9854c3fd4159ff4f52613311f.patch";
+      sha256 = "sha256-9jYpGmD28yJGZU4zlae9BL4uU3iukWdPWpSkgHHvOxI=";
+    }) ];
+  });
+
+  qemu_ceph = super.qemu.override { cephSupport = true; };
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
