@@ -75,6 +75,10 @@ let
           runHook postInstall
         '';
 
+        postInstall = ''
+          #cp ${./Manager.php} $out/share/core/Plugin/Manager.php
+        '';
+
         filesToFix = [
           "misc/composer/build-xhprof.sh"
           "misc/composer/clean-xhprof.sh"

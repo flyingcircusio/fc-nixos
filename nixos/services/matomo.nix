@@ -17,6 +17,20 @@ let
       join = hostName: domain: hostName + optionalString (domain != null) ".${domain}";
      in join config.networking.hostName config.networking.domain;
 
+  pluginDirs = [
+    "${dataDir}/plugins/;../../../var/lib/matomo/plugins"
+    "${cfg.package}/share/plugins/;plugins"
+  ];
+
+  environment = {
+    # TODO: might get renamed to MATOMO_USER_PATH in future versions
+    PIWIK_USER_PATH = dataDir;
+    MATOMO_PLUGIN_DIRS = lib.concatStringsSep ":" pluginDirs;
+    MATOMO_PLUGIN_COPY_DIR = "${dataDir}/plugins/";
+  };
+
+  phpEnv = mapAttrs (n: v: "'${v}'") environment;
+
 in {
   imports = [
     (mkRenamedOptionModule [ "services" "piwik" "enable" ] [ "services" "matomo" "enable" ])
@@ -151,7 +165,7 @@ in {
       wants = [ databaseService ];
       after = [ databaseService ];
       path = [ cfg.package ];
-      environment.PIWIK_USER_PATH = dataDir;
+      inherit environment;
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -219,8 +233,8 @@ in {
       wants = [ databaseService ];
       after = [ databaseService ];
 
-      # TODO: might get renamed to MATOMO_USER_PATH in future versions
-      environment.PIWIK_USER_PATH = dataDir;
+      inherit environment;
+
       serviceConfig = {
         Type = "oneshot";
         User = user;
@@ -275,7 +289,7 @@ in {
           "pm.max_requests" = 500;
           "catch_workers_output" = true;
         };
-        phpEnv.PIWIK_USER_PATH = dataDir;
+        inherit phpEnv;
       };
     };
 
