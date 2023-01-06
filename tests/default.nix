@@ -27,8 +27,7 @@ in {
   # the machine config doesn't have the overlay and the test is always running
   # the upstream version of docker, including dependencies.
   # When in doubt, it's better to write our own test or copy&paste from nixpkgs.
-  inherit (pkgs.nixosTests)
-    matomo;
+  # inherit (pkgs.nixosTests)
 
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
@@ -71,6 +70,7 @@ in {
   logrotate = callTest ./logrotate.nix {};
   mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
+  matomo = callTest ./matomo.nix {};
   memcached = callTest ./memcached.nix {};
   mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
   mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
