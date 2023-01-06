@@ -1,15 +1,15 @@
 import json
 import os
-import rich
 import socket
-import structlog
 from pathlib import Path
-from typer import Option, Typer
 from typing import NamedTuple, Optional
 
-from fc.util.directory import directory_connection
 import fc.util.slurm
+import rich
+import structlog
+from fc.util.directory import directory_connection
 from fc.util.logging import init_logging
+from typer import Option, Typer
 
 
 class Context(NamedTuple):

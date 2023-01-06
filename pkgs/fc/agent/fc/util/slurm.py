@@ -1,6 +1,5 @@
-from typing import NamedTuple
-
 import time
+from typing import NamedTuple
 
 import pyslurm
 
