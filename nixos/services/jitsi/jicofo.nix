@@ -139,12 +139,8 @@ in
 
         watchdog $$ &
 
-        ${pkgs.jicofo}/bin/jicofo \
-          --host=${cfg.xmppHost} \
-          --domain=${if cfg.xmppDomain == null then cfg.xmppHost else cfg.xmppDomain} \
-          --user_name=${cfg.userName} \
-          --user_domain=${cfg.userDomain} \
-          --user_password="$(cat ${cfg.userPasswordFile})"
+        export JICOFO_AUTH_PASSWORD=$(cat ${cfg.userPasswordFile})
+        ${pkgs.jicofo}/bin/jicofo
       '';
 
       serviceConfig = {
@@ -185,6 +181,11 @@ in
         xmpp {
           client {
             client-proxy: focus.${cfg.xmppDomain}
+            domain: ${cfg.userDomain}
+            xmpp-domain: ${if cfg.xmppDomain == null then cfg.xmppHost else cfg.xmppDomain}
+            username: ${cfg.userName}
+            # The password is set via an environment var in the start script.
+            password: ''${JICOFO_AUTH_PASSWORD}
           }
         }
       }

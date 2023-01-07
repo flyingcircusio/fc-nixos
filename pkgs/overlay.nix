@@ -91,29 +91,29 @@ in {
 
   jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
     pname = "jicofo";
-    version = "1.0-940";
+    version = "1.0-968";
     src = fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-vx7aUHfKxG+tZ0sM8eWr1tTKf//bMxdKVhE5I4P4mLo=";
+      hash = "sha256-TaIS+FpzjdAO2bqYN9beMNwJTOcGmQMy49pglKzz6fQ=";
     };
   });
 
   jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-meet";
-    version = "1.0.6644";
+    version = "1.0.6854";
     src = fetchurl {
       url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      hash = "sha256-y1oI3nxIu7breYNPhdX7PU5GfnCyxdEbAYlyZmif2Uo=";
+      hash = "sha256-BOGghB1drxe241+Zk1p/DHjEAuTNyiMEx8c3lDERwP4=";
     };
 
   });
 
   jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-videobridge2";
-    version = "2.2-45-ge8b20f06";
+    version = "2.2-63-g252d14bc";
     src = fetchurl {
       url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-fbSpjLdx9xbLdp7vzHTW9B/cDf3DahpwuI4IcqEqpas=";
+      hash = "sha256-8MEy7km65pMXhbC7QhS8O+IcqCRLuleKwOuKJo/I7Yk=";
     };
     # jvb complained about missing libcrypto.so.3, add openssl 3 here.
     installPhase = ''
