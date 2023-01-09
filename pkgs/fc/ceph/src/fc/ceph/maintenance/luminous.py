@@ -5,10 +5,12 @@ import subprocess
 import sys
 import traceback
 
-import fc.ceph.images
 import fc.util.directory
 from fc.ceph.api import Cluster, Pools
 from fc.ceph.api.cluster import CephCmdError
+from fc.ceph.maintenance.images_luminous import (
+    load_vm_images as load_vm_images_task,
+)
 from fc.ceph.util import kill, mount_status, run
 
 
@@ -135,7 +137,7 @@ class MaintenanceTasks(object):
             return False
 
     def load_vm_images(self):
-        fc.ceph.images.load_vm_images()
+        load_vm_images_task()
 
     def purge_old_snapshots(self) -> int:
         status_code = 0
