@@ -194,10 +194,18 @@ in
       "d /var/log/ceph 0755 root - - -"
     ];
 
-    services.udev.extraRules = ''
-      KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}"
-      KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}-part%n"
-    '';
+    services.udev.extraRules =
+      if fclib.ceph.releaseAtLeast "nautilus" cfg.client.cephRelease
+      then
+      ''
+        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c"
+        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c-part%n"
+      ''
+      else
+      ''
+        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}"
+        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}-part%n"
+      '';
 
     environment.etc."ceph/ceph.conf".text = let
       throwDeprecationWarning = lib.warnIf (fclib.ceph.releaseAtLeast "nautilus" cfg.client.cephRelease)
