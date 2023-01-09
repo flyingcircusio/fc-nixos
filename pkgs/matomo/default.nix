@@ -77,6 +77,9 @@ let
 
         postInstall = ''
           #cp ${./Manager.php} $out/share/core/Plugin/Manager.php
+          # XXX: make writable, the ugly way...
+          mv $out/share/matomo.js $out/share/matomo_upstream.js
+          ln -s /var/lib/matomo/matomo.js $out/share/matomo.js
         '';
 
         filesToFix = [

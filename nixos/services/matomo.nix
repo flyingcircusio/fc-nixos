@@ -209,7 +209,12 @@ in {
             ${pkgs.acl}/bin/setfacl -m u:nginx:x ${dataDir}/
             ${pkgs.acl}/bin/setfacl -Rm u:nginx:rX ${dataDir}/tagmanager/
             ${pkgs.acl}/bin/setfacl -dm u:nginx:r ${dataDir}/tagmanager/
-            # Copy config folder
+            if [[ ! -f ${dataDir}/matomo.js ]]; then
+              echo "Setting up matomo.js"
+              cp -r ${cfg.package}/share/matomo_upstream.js ${dataDir}/matomo.js
+            fi
+            ${pkgs.acl}/bin/setfacl -m u:nginx:rx ${dataDir}/matomo.js
+            # Copy config folder (XXX: really, we are overwriting changes here!)
             chmod g+s "${dataDir}"
             cp -r "${cfg.package}/share/config" "${dataDir}/"
             chmod -R u+rwX,g+rwX,o-rwx "${dataDir}"
