@@ -58,7 +58,7 @@ in {
       machine.fail('psql --no-password -h localhost -l')
 
       # service user should be able to write to local config dir
-      machine.succeed('sudo -u postgres touch `echo /etc/local/postgresql/*`/test')
+      machine.succeed('sudo -u postgres touch /etc/local/postgresql/${version}/test')
 
       machine.succeed('${psql} employees -c "CREATE EXTENSION pg_stat_statements;"')
       machine.succeed('${psql} employees -c "CREATE EXTENSION rum;"')
