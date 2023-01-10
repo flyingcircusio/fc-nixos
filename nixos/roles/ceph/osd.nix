@@ -8,6 +8,8 @@ let
   enc = config.flyingcircus.enc;
   inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
+  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease};
+
   defaultOsdSettings = {
     # Assist speedy but balanced recovery
     osdMaxBackfills = 2;
@@ -191,15 +193,15 @@ in
         restartIfChanged = false;
 
         script = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph osd activate all
+          ${fc-ceph}/bin/fc-ceph osd activate all
         '';
 
         reload = lib.optionalString role.reactivate ''
-          ${pkgs.fc.ceph}/bin/fc-ceph osd reactivate all
+          ${fc-ceph}/bin/fc-ceph osd reactivate all
         '';
 
         preStop = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph osd deactivate all
+          ${fc-ceph}/bin/fc-ceph osd deactivate all
         '';
 
         serviceConfig = {

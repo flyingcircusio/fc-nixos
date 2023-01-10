@@ -13,6 +13,8 @@ let
   first_mon = if mons == [ ] then "" else head (lib.splitString "." (head mons));
 
   fc-check-ceph-withVersion = pkgs.fc.check-ceph.${role.cephRelease};
+  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease};
+
   # FIXME: expose this as a config option (overridable)
   # modules to be explicitly activated via this config
   mgrEnabledModules = {
@@ -139,15 +141,15 @@ in
         };
 
         script = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mon activate
+          ${fc-ceph}/bin/fc-ceph mon activate
         '';
 
         reload = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mon reactivate
+          ${fc-ceph}/bin/fc-ceph mon reactivate
         '';
 
         preStop = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mon deactivate
+          ${fc-ceph}/bin/fc-ceph mon deactivate
         '';
 
         serviceConfig = {
@@ -178,7 +180,7 @@ in
       systemd.services.fc-ceph-load-vm-images = {
         description = "Load new VM base images";
         serviceConfig.Type = "oneshot";
-        script = "${pkgs.fc.ceph}/bin/fc-ceph maintenance load-vm-images";
+        script = "${fc-ceph}/bin/fc-ceph maintenance load-vm-images";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -187,7 +189,7 @@ in
       systemd.services.fc-ceph-purge-old-snapshots = {
         description = "Purge old snapshots";
         serviceConfig.Type = "oneshot";
-        script = "${pkgs.fc.ceph}/bin/fc-ceph maintenance purge-old-snapshots";
+        script = "${fc-ceph}/bin/fc-ceph maintenance purge-old-snapshots";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -196,7 +198,7 @@ in
       systemd.services.fc-ceph-clean-deleted-vms = {
         description = "Purge old snapshots";
         serviceConfig.Type = "oneshot";
-        script = "${pkgs.fc.ceph}/bin/fc-ceph maintenance clean-deleted-vms";
+        script = "${fc-ceph}/bin/fc-ceph maintenance clean-deleted-vms";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -205,7 +207,7 @@ in
       systemd.services.fc-ceph-mon-update-client-keys = {
         description = "Update client keys and authorization in the monitor database.";
         serviceConfig.Type = "oneshot";
-        script = "${pkgs.fc.ceph}/bin/fc-ceph keys mon-update-client-keys";
+        script = "${fc-ceph}/bin/fc-ceph keys mon-update-client-keys";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -248,11 +250,11 @@ in
         };
 
         script = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mgr activate
+          ${fc-ceph}/bin/fc-ceph mgr activate
         '';
 
         reload = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mgr reactivate
+          ${fc-ceph}/bin/fc-ceph mgr reactivate
         '';
 
         preStart =
@@ -274,7 +276,7 @@ in
           ;
 
         preStop = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mgr deactivate
+          ${fc-ceph}/bin/fc-ceph mgr deactivate
         '';
 
         serviceConfig = {

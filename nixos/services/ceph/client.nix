@@ -238,7 +238,7 @@ in
     environment.variables.CEPH_ARGS = fclib.mkPlatform "--id ${config.networking.hostName}";
 
     flyingcircus.activationScripts.ceph-client-keyring = ''
-      ${pkgs.fc.ceph}/bin/fc-ceph keys generate-client-keyring
+      ${pkgs.fc.cephWith cfg.client.package}/bin/fc-ceph keys generate-client-keyring
     '';
 
     services.logrotate.extraConfig = ''

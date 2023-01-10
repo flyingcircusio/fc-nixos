@@ -1,4 +1,4 @@
-{ lib, stdenv, python3Full, python3Packages, lz4, blockdev, lvm2, utillinux, ceph, agent, util-physical }:
+{ lib, stdenv, python3Full, python3Packages, lz4, blockdev, lvm2, utillinux, agent, util-physical }:
 
 let
   py = python3Packages;
@@ -16,8 +16,6 @@ py.buildPythonApplication rec {
     util-physical
     python3Packages.requests
   ];
-
-  doCheck = false;
 
   checkInputs = [
         python3Packages.pytest

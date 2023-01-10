@@ -16,7 +16,22 @@ rec {
   check-journal = callPackage ./check-journal.nix {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
-  ceph = callPackage ./ceph { inherit blockdev agent util-physical; };
+
+  # fc-ceph still has a transitive dependency on the `ceph` package due to util-physical,
+  # so it needs to be parameterised depending on the release
+  cephWith = cephPkg:
+    callPackage ./ceph {
+      inherit blockdev agent;
+      util-physical = util-physical.${cephPkg.codename}.override {ceph = cephPkg;};
+    };
+  # normally, fc-ceph is installed via a role, but here are some direct installable
+  # packages in case they're needed:
+  ceph = {
+    jewel = cephWith pkgs.ceph-jewel;
+    luminous = cephWith pkgs.ceph-luminous;
+    cephWithNautilus = cephWith pkgs.ceph-nautilus.ceph-client;
+  };
+
   check-xfs-broken = callPackage ./check-xfs-broken {};
   blockdev = callPackage ./blockdev {};
   collectdproxy = callPackage ./collectdproxy {};

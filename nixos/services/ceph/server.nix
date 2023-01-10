@@ -13,6 +13,8 @@ let
 
   cfg = config.flyingcircus.services.ceph.server;
 
+  fc-ceph = pkgs.fc.cephWith cfg.package;
+
 in
 {
   options = {
@@ -52,8 +54,8 @@ in
     };
 
     flyingcircus.agent.maintenance.ceph = {
-      enter = "${pkgs.fc.ceph}/bin/fc-ceph maintenance enter";
-      leave = "${pkgs.fc.ceph}/bin/fc-ceph maintenance leave";
+      enter = "${fc-ceph}/bin/fc-ceph maintenance enter";
+      leave = "${fc-ceph}/bin/fc-ceph maintenance leave";
     };
 
     # We used to create the admin key directory from the ENC. However,
@@ -109,7 +111,7 @@ in
     ];
 
     environment.systemPackages = with pkgs; [
-      fc.ceph
+      fc-ceph
       fc.blockdev
 
       # tools like radosgw-admin and crushtool are only included in the full ceph package, but are necessary admin tools
