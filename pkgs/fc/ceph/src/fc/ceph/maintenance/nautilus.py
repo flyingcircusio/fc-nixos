@@ -115,6 +115,7 @@ class MaintenanceTasks(object):
     IGNORED_WARNINGS = [
         "PG_NOT_DEEP_SCRUBBED",
         "PG_NOT_SCRUBBED",
+        "LARGE_OMAP_OBJECTS",
     ]
 
     def check_cluster_maintenance(self, status: dict) -> bool:
