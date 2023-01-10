@@ -29,6 +29,20 @@ rec {
   getLdapNodeDN =
     "cn=${config.networking.hostName},ou=Nodes,dc=gocept,dc=com";
 
+  # Service discovery functions
+
+  # Services look like this:
+  # {
+  #   "address": "example00.gocept.net",
+  #   "ips": [
+  #     "212.126.46.33",
+  #     "2a02:238:f000:102::1008"
+  #   ],
+  #   "location": "whq",
+  #   "password": "lsoXXY6BbyXXqFNlWWNJXRNr8XXBB0fXTNAXXe3XX0RbXX9Z",
+  #   "service": "statshostproxy-location"
+  # }
+
   # Returns service from /etc/nixos/services.json
   # that matches the given name or null, if nothing matches.
   # If there are multiple matches, an error is thrown.

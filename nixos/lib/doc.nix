@@ -16,7 +16,6 @@ rec {
         then opt.description.text
         else opt.description;
     in
-    trace (toJSON { inherit opt optPath; inherit description; })
     lib.concatStringsSep "\n\n" [
       "**${name}**"
       (lib.removePrefix "\n" (lib.removeSuffix "\n" description))
