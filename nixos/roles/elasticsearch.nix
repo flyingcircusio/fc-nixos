@@ -291,19 +291,19 @@ in
       Show active nodes:
 
       ```
-      curl ${config.networking.hostName}:9200/_cat/nodes
+      curl http://${config.networking.hostName}:9200/_cat/nodes
       ```
 
       Show cluster health:
 
       ```
-      curl ${config.networking.hostName}:9200/_cat/health
+      curl http://${config.networking.hostName}:9200/_cat/health
       ```
 
       Show indices:
 
       ```
-      curl ${config.networking.hostName}:9200/_cat/indices
+      curl http://${config.networking.hostName}:9200/_cat/indices
       ```
 
       ## Configuration
