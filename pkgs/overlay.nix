@@ -252,11 +252,6 @@ in {
     patches = a.patches ++ [
       ./remote_addr_anon.patch
     ];
-    version = "1.23.0";
-    src = fetchurl {
-      url = "https://nginx.org/download/nginx-${version}.tar.gz";
-      hash = "sha256-ggrKo1uScr6ennL23vpKXykhgkcJ+KpHcseKsx7ZTNE=";
-  };
   });
 
   openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
