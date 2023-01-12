@@ -307,3 +307,4 @@ $ fc-build-dev-container destroy <mycontainer>
 - The NixOS container infrastructure currently does not (properly) support IPv6
   so deployments need to disable IPv6 resolution for internal and public
   services.
+- You cannot use it with a docker container inside your deployment.
