@@ -229,7 +229,8 @@ in
 
     })
 
-    (lib.mkIf controllerEnabled {
+    # We need at least one compute node or the controller will crash on startup.
+    (lib.mkIf (controllerEnabled && cfg.nodes != []) {
 
       flyingcircus.agent.maintenance.slurm-controller = {
         enter = "fc-slurm -v all-nodes drain-and-down --nothing-to-do-is-ok";
