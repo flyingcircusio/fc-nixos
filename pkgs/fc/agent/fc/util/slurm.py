@@ -54,7 +54,7 @@ def run_drain_pre_checks(log, node_name, nothing_to_do_is_ok):
                 "drain-already-down",
                 _replace_msg="Node {node} is already down",
             )
-            return
+            return DrainPreCheckResult(needs_draining=False)
         else:
             log.error("drain-state-error", state=node_state)
             raise NodeStateError(node_state)
