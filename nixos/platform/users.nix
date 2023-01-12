@@ -227,7 +227,7 @@ in
       # Allow applying config and restarting services to service users
       {
         commands = [ "${pkgs.systemd}/bin/systemctl" ];
-        groups = [ "sudo-srv" "service" ];
+        groups = [ "admins" "sudo-srv" "service" ];
       }
     ];
 
