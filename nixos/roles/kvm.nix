@@ -21,7 +21,9 @@ in
       };
       migrationBandwidth = lib.mkOption {
         type = lib.types.int;
-        default = 1000000000; # 80% of 10GB/s
+        # 0.8 * 10 Gbit/s in bytes/s
+        # int(0.8 * 10 * 10**9 / 8)
+        default = 1000000000;
       };
       package = lib.mkOption {
         type = lib.types.package;
