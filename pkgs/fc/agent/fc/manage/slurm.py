@@ -32,13 +32,14 @@ def fc_slurm(
     logdir: Path = Option(
         exists=True,
         file_okay=False,
-        writable=True,
         default="/var/log",
         help="Directory for log files, expects a fc-agent subdirectory there.",
     ),
     enc_path: Path = Option(
         dir_okay=False,
-        readable=True,
+        # We don't need enc_path for every command.
+        # XXX: should we move commands that don't need sudo somewhere else?
+        readable=False,
         default="/etc/nixos/enc.json",
         help="Path to enc.json",
     ),
@@ -51,7 +52,9 @@ def fc_slurm(
         enc_path=enc_path,
     )
 
-    init_logging(verbose, logdir, syslog_identifier="fc-slurm")
+    # Use logdir if it's writable for the current user.
+    logdir_to_use = logdir if os.access(logdir, os.W_OK) else None
+    init_logging(verbose, logdir_to_use, syslog_identifier="fc-slurm")
 
 
 @app.command(
@@ -187,3 +190,14 @@ def ready_all(
 
     for node_name in node_names_to_mark_ready:
         fc.util.slurm.ready(log, node_name, nothing_to_do_is_ok)
+
+
+@all_nodes_app.command()
+def state(as_json: bool = True):
+    node_names = fc.util.slurm.get_all_node_names()
+    node_info = [fc.util.slurm.get_node_info(name) for name in node_names]
+    if as_json:
+        output = json.dumps(node_info, indent=2)
+    else:
+        output = node_info
+    rich.print(output)
