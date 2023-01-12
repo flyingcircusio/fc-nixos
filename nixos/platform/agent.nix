@@ -142,6 +142,13 @@ in
           users = [ "sensuclient" ];
           runAs = "postgres";
         }
+        {
+          commands = [
+            "${pkgs.fc.agent}/bin/fc-maintenance run"
+            "${pkgs.fc.agent}/bin/fc-maintenance run --run-all-now"
+          ];
+          groups = [ "admins" ];
+        }
       ];
 
       environment.etc."fc-agent.conf".text = ''
