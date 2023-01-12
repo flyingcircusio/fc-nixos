@@ -111,12 +111,47 @@ in
         This VM is acting as ${roleStr}.
         Generated config is at `${slurmCfg.etcSlurm}`.
 
-        The role works without additional config.
+        Our slurm roles work without additional config.
+        They automatically set up and use a slurm partition named `${cfg.partitionName}`.
 
-        There's an automatically generated partition named `${cfg.partitionName}`.
-
-        The following nodes are members of the `${cfg.partitionName}` partition:
+        ${if cfg.nodes != [] then ''
+        Following nodes are members of the `${cfg.partitionName}` partition:
         `${fclib.docList cfg.nodes}`
+        '' else ''
+        **Warning**: No nodes are configured! If default config is used, this
+        means that no machine with the *slurm-node* role was found in the
+        resource group.
+        *slurmctld* is disabled on this machine until nodes are added.
+        ''}
+
+        ## fc-slurm Global/Controller Commands
+
+        You can use fc-slurm to manage the state of slurm compute nodes
+        managed by this controller.
+
+        Commands should be run with sudo.
+        `fc-slurm all-nodes state` works as normal user.
+
+        *sudo-srv* users may use `fc-slurm` without password.
+
+        Dump node state info as JSON:
+
+        `fc-slurm all-nodes state`
+
+        Drain all nodes (no new jobs allowed) and set them to DOWN afterwards:
+
+        `sudo fc-slurm all-nodes drain-and-down`
+
+        Mark all nodes as READY:
+
+        `sudo fc-slurm all-nodes ready`
+
+        The `drain` and `ready` commands check if nodes are in an expected
+        start state and throw an error if this is not the case, for example
+        if they already are in the wanted state.
+
+        Add `--nothing-to-do-is-ok` to ignore the state check.
+
 
         ## NixOS Options
 
@@ -127,6 +162,10 @@ in
 
       environment.systemPackages = [
         (pkgs.writeShellScriptBin "slurm-config-dir" "echo ${slurmCfg.etcSlurm}")
+        (pkgs.writeShellScriptBin
+          "slurm-readme"
+          "${pkgs.rich-cli}/bin/rich /etc/local/slurm/README.md"
+        )
         (pkgs.writeShellScriptBin "slurm-show-config" ''
           for x in ${slurmCfg.etcSlurm}/*; do
             echo "''${x}:"
