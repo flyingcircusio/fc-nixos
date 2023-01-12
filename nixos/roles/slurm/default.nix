@@ -180,6 +180,10 @@ in
           groups = [ "sudo-srv" ];
           runAs = "slurm";
         }
+        {
+          commands = [ "${pkgs.fc.agent}/bin/fc-slurm" ];
+          groups = [ "sudo-srv" ];
+        }
       ];
 
       services.slurm = {
