@@ -6,7 +6,7 @@ in
 
 py.buildPythonApplication rec {
   name = "fc-ceph-${version}";
-  version = "2.0";
+  version = "2.1";
   src = ./.;
   dontStrip = true;
   propagatedBuildInputs = [
