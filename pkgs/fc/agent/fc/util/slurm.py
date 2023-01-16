@@ -202,7 +202,7 @@ def down(log, node_name, nothing_to_do_is_ok: bool, reason: str):
     log.debug("node-update-result", result=result)
     log.info(
         "down-finished",
-        _replace_msg="Node {node} is now marked as down",
+        _replace_msg="Node {node} is now marked as DOWN now.",
     )
 
 
@@ -221,7 +221,7 @@ def ready(
         if nothing_to_do_is_ok:
             log.info(
                 "ready-already-reached",
-                _replace_msg="Node {node} is already in a ready state",
+                _replace_msg="Node {node} is already in a ready state.",
             )
             return
         else:

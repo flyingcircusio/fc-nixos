@@ -133,9 +133,12 @@ in
         # Slurm Workload Manager
 
         This VM is acting as ${roleStr}.
-        Generated config is at `${slurmCfg.etcSlurm}`.
+        Generated config is at `${slurmCfg.etcSlurm}` which is also linked to `/etc/slurm`.
+        You can use `slurm-show-config` to view the current config contents.
 
-        Our slurm roles work without additional config.
+        Cluster name is `${cfg.clusterName}`
+
+        Our slurm roles work without additional configuration.
         They automatically set up and use a slurm partition named `${cfg.partitionName}`.
 
         ${if cfg.nodes != [] then ''
@@ -147,6 +150,13 @@ in
         resource group.
         *slurmctld* is disabled on this machine until nodes are added.
         ''}
+
+        ## Slurm commands
+
+        The standard slurm commands like `srun`, `scontrol` and `sinfo` are
+        installed globally. Some require elevated privileges and must be run
+        with `sudo -u slurm`. `sudo-srv` users can run all commads as `slurm`
+        user.
 
         ${lib.optionalString nodeEnabled ''
         Usable real memory for this node is set to ${toString cfg.realMemory} MiB
