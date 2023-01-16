@@ -57,6 +57,14 @@ in
   options = with lib; {
     flyingcircus.slurm = {
 
+      clusterName = mkOption {
+        type = types.str;
+        default = params.resource_group or "default";
+        description = lib.mdDoc ''
+          Name of the cluster partition which defaults to "default".
+        '';
+      };
+
       partitionName = mkOption {
         type = types.str;
         default = "all";
@@ -208,6 +216,7 @@ in
       ];
 
       services.slurm = {
+        inherit (cfg) clusterName;
         inherit controlMachine;
         nodeName = [ "${nodeStr} State=UNKNOWN CPUs=${toString cfg.cpus} RealMemory=${toString cfg.realMemory}" ];
         partitionName = [ "${cfg.partitionName} Nodes=${nodeStr} Default=YES MaxTime=INFINITE State=UP" ];
