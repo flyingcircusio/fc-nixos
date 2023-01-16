@@ -61,8 +61,13 @@ in
       clusterName = mkOption {
         type = types.str;
         default = params.resource_group or "default";
+        defaultText = lib.mdDoc "*resource group name*";
         description = lib.mdDoc ''
-          Name of the cluster partition which defaults to "default".
+          Name of the cluster. Defaults to the name of the resource group.
+
+          The cluster name is used in various places like state files or accounting
+          table names and should normally stay unchanged. Changing this requires
+          manual intervention in the state dir or slurmctld will not start anymore!
         '';
       };
 
@@ -78,14 +83,19 @@ in
       cpus = mkOption {
         type = types.ints.positive;
         default = params.cores or 1;
+        defaultText = lib.mdDoc "*number of VM cores*";
+        description = lib.mdDoc ''Number of CPU cores used by a slurm compute node.'';
       };
 
       realMemory = mkOption {
         type = types.ints.positive;
         default = floor ((params.memory or 1024) * 0.98) - 500;
+        defaultText = lib.mdDoc "*98% of physical RAM minus 500 MiB*";
+        description = lib.mdDoc ''Memory in MiB used by a slurm compute node.'';
       };
 
       mungeKeyFile = mkOption {
+        internal = true;
         type = types.str;
         default = "/var/lib/munge/munge.key";
       };
@@ -93,7 +103,7 @@ in
       nodes = mkOption {
         type = types.listOf types.str;
         default = defaultSlurmNodes;
-        defaultText = lib.mdDoc "all Slurm nodes in the resource group";
+        defaultText = lib.mdDoc "*all Slurm nodes in the resource group*";
         description = lib.mdDoc ''
           Names of the nodes that are added to the automatically generated partition.
           By default, all Slurm nodes in a resource group are part of the partition
@@ -139,9 +149,9 @@ in
         This VM is acting as: slurm ${roleStr}.
 
         Generated config is at `${slurmCfg.etcSlurm}` which is also linked to `/etc/slurm`.
-        You can use `slurm-show-config` to view the current config contents.
+        You can use `slurm-show-config` to view contents of all config files.
 
-        Cluster name is `${cfg.clusterName}`
+        Cluster name is `${cfg.clusterName}`.
 
         Our slurm roles work without additional configuration.
         They automatically set up and use a slurm partition named `${cfg.partitionName}`.
@@ -158,7 +168,7 @@ in
 
         ## Slurm commands
 
-        The standard slurm commands like `srun`, `scontrol` and `sinfo` are
+        The standard slurm commands like `srun`, `sacct`, `scontrol` and `sinfo` are
         installed globally. Some require elevated privileges and must be run
         with `sudo -u slurm`. `sudo-srv` users can run all commads as `slurm`
         user.
@@ -201,14 +211,20 @@ in
 
         ${fclib.docOption "flyingcircus.slurm.nodes"}
 
+        ${fclib.docOption "flyingcircus.slurm.clusterName"}
+
         ${fclib.docOption "flyingcircus.slurm.partitionName"}
+
+        ${fclib.docOption "flyingcircus.slurm.realMemory"}
+
+        ${fclib.docOption "flyingcircus.slurm.cpus"}
       '';
 
       environment.systemPackages = [
         (pkgs.writeShellScriptBin "slurm-config-dir" "echo ${slurmCfg.etcSlurm}")
         (pkgs.writeShellScriptBin
           "slurm-readme"
-          "${pkgs.rich-cli}/bin/rich /etc/local/slurm/README.md"
+          "${pkgs.rich-cli}/bin/rich --pager /etc/local/slurm/README.md"
         )
         (pkgs.writeShellScriptBin "slurm-show-config" ''
           for x in ${slurmCfg.etcSlurm}/*; do
