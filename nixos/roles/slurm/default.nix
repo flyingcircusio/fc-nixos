@@ -1,5 +1,7 @@
 { config, pkgs, lib, ... }:
 
+with builtins;
+
 let
   cfg = config.flyingcircus.slurm;
   slurmCfg = config.services.slurm;
@@ -12,6 +14,10 @@ let
 
   controlMachine = serviceHostName (fclib.findOneService "slurm-controller-controller");
   defaultSlurmNodes = map serviceHostName (fclib.findServices "slurm-node-node");
+
+  inherit (config.flyingcircus) enc;
+  params = if enc ? parameters then enc.parameters else {};
+
 
   nodeStr = lib.concatStringsSep "," cfg.nodes;
 
@@ -58,6 +64,16 @@ in
           Name of the default partition which includes the machines defined via the `nodes` option.
           Don't use `default` as partition name, it will fail!
         '';
+      };
+
+      cpus = mkOption {
+        type = types.ints.positive;
+        default = params.cores or 1;
+      };
+
+      realMemory = mkOption {
+        type = types.ints.positive;
+        default = floor ((params.memory or 1024) * 0.98) - 500;
       };
 
       mungeKeyFile = mkOption {
@@ -124,6 +140,11 @@ in
         *slurmctld* is disabled on this machine until nodes are added.
         ''}
 
+        ${lib.optionalString nodeEnabled ''
+        Usable real memory for this node is set to ${toString cfg.realMemory} MiB
+        and CPU count is ${toString cfg.cpus}.
+        ''}
+
         ## fc-slurm Global/Controller Commands
 
         You can use fc-slurm to manage the state of slurm compute nodes
@@ -188,7 +209,7 @@ in
 
       services.slurm = {
         inherit controlMachine;
-        nodeName = [ "${nodeStr} State=UNKNOWN" ];
+        nodeName = [ "${nodeStr} State=UNKNOWN CPUs=${toString cfg.cpus} RealMemory=${toString cfg.realMemory}" ];
         partitionName = [ "${cfg.partitionName} Nodes=${nodeStr} Default=YES MaxTime=INFINITE State=UP" ];
         extraConfig = ''
           SelectType = select/cons_res
