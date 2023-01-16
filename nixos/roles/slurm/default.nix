@@ -8,7 +8,8 @@ let
   inherit (config) fclib;
   controllerEnabled = config.flyingcircus.roles.slurm-controller.enable;
   nodeEnabled = config.flyingcircus.roles.slurm-node.enable;
-  anyRoleEnabled = controllerEnabled || nodeEnabled;
+  dbdserverEnabled = config.flyingcircus.roles.slurm-dbdserver.enable;
+  anyRoleEnabled = controllerEnabled || nodeEnabled || dbdserverEnabled;
 
   serviceHostName = service: lib.head ( lib.splitString "." service.address );
 
@@ -112,6 +113,11 @@ in
         enable = mkEnableOption "";
         supportsContainers = fclib.mkDisableContainerSupport;
       };
+
+      slurm-dbdserver = {
+        enable = mkEnableOption "";
+        supportsContainers = fclib.mkDisableContainerSupport;
+      };
     };
   };
 
@@ -122,17 +128,16 @@ in
 
       environment.etc."local/slurm/README.md".text =
         let
-          roleStr =
-            if nodeEnabled && controllerEnabled
-            then "slurm controller and node"
-            else if controllerEnabled
-            then "slurm controller"
-            else "slurm node";
+          roleStr = lib.concatStringsSep ", "
+            (lib.optional controllerEnabled "*controller*" ++
+             lib.optional dbdserverEnabled "*dbdserver*" ++
+             lib.optional nodeEnabled "*compute node*");
         in
         ''
         # Slurm Workload Manager
 
-        This VM is acting as ${roleStr}.
+        This VM is acting as: slurm ${roleStr}.
+
         Generated config is at `${slurmCfg.etcSlurm}` which is also linked to `/etc/slurm`.
         You can use `slurm-show-config` to view the current config contents.
 
@@ -233,6 +238,7 @@ in
         extraConfig = ''
           SelectType = select/cons_res
           SelectTypeParameters = CR_CPU_Memory
+          AccountingStorageType=accounting_storage/slurmdbd
         '';
       };
 
@@ -267,6 +273,7 @@ in
 
       services.munge.password = cfg.mungeKeyFile;
 
+      users.users.slurm.extraGroups = [ "service" ];
     })
 
     # We need at least one compute node or the controller will crash on startup.
@@ -313,6 +320,52 @@ in
       };
 
 
+    })
+
+    (lib.mkIf dbdserverEnabled {
+
+      flyingcircus.roles.percona80 = {
+        enable = true;
+      };
+
+      flyingcircus.roles.mysql.extraConfig = ''
+        [mysqld]
+        # slurmdbd may refuse to start if we don't increase this setting.
+        innodb_lock_wait_timeout = 900
+      '';
+
+      systemd.services.fc-slurmdbd-mysql-setup = {
+        description = "Ensure slurm accounting user and database exist.";
+        documentation = [
+          "https://slurm.schedmd.com/accounting.html"
+        ];
+        partOf = [ "mysql.service" ];
+        requiredBy = [ "slurmdbd.service" ];
+        after = [ "mysql.service" "fc-mysql-post-init.service" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+
+        script = let
+          ensureUserAndDatabase = ''
+            CREATE USER IF NOT EXISTS slurm@localhost;
+            CREATE DATABASE IF NOT EXISTS slurm_acct_db;
+            GRANT ALL ON slurm_acct_db.* TO slurm@localhost;
+          '';
+          mysqlCmd = sql:
+            "${config.services.percona.package}/bin/mysql" +
+            " --defaults-extra-file=/root/.my.cnf" +
+            " -v" +
+            " -e '${sql}'";
+        in
+        "${mysqlCmd ensureUserAndDatabase}";
+      };
+
+      services.slurm.dbdserver = {
+        enable = true;
+      };
     })
   ];
 }
