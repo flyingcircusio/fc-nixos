@@ -4,9 +4,11 @@ import json
 import subprocess
 import sys
 
-import fc.ceph.images
 import fc.util.directory
 from fc.ceph.api import Cluster, Pools
+from fc.ceph.maintenance.images_luminous import (
+    load_vm_images as load_vm_images_task,
+)
 from fc.ceph.util import kill, mount_status, run
 
 
@@ -74,7 +76,7 @@ class MaintenanceTasks(object):
     """Controller that holds a number of maintenance-related methods."""
 
     def load_vm_images(self):
-        fc.ceph.images.load_vm_images()
+        load_vm_images_task()
 
     def purge_old_snapshots(self):
         pools = Pools(Cluster())

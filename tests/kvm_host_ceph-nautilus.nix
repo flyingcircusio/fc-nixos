@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ testlib, useCheckout ? false, testOpts ? "", ... }:
+import ./make-test-python.nix ({ testlib, useCheckout ? false, testOpts ? "", clientCephRelease ? "nautilus", ... }:
 with testlib;
 let
   getIPForVLAN = vlan: id: "192.168.${toString vlan}.${toString (5 + id)}";
@@ -7,17 +7,22 @@ let
   makeHostConfig = { id }:
     { config, pkgs, lib, ... }:
     let
+      py3 = config.fclib.ceph.releaseAtLeast "nautilus" clientCephRelease;
       testPackage = if useCheckout then
-        pkgs.callPackage <fc/pkgs/fc/qemu/py2.nix> {
-          version = "dev";
-          # builtins.toPath (testPath + "/.")
-          src = ../../fc.qemu/.;
-          ceph = config.fclib.ceph.releasePkgs.jewel;
-          qemu_ceph = pkgs.qemu_ceph.override {
-            ceph = config.fclib.ceph.releasePkgs.jewel;
-          };
-        }
-        else config.fclib.ceph.fcQemuPkgs.jewel;
+        pkgs.callPackage (
+          if py3
+          then <fc/pkgs/fc/qemu/py3.nix>
+          else <fc/pkgs/fc/qemu/py2.nix>) {
+            version = "dev";
+            # builtins.toPath (testPath + "/.")
+            src = ../../fc.qemu/.;
+            "${lib.optionalString py3 "lib"}ceph" = config.fclib.ceph.libcephPkgs.${clientCephRelease};
+            qemu_ceph = pkgs.qemu_ceph.override {
+              ceph = config.fclib.ceph.releasePkgs.${clientCephRelease};
+            };
+          }
+        else config.fclib.ceph.fcQemuPkgs.${clientCephRelease};
+
     in
     {
 
@@ -32,7 +37,6 @@ let
       # We want migrations to be slowish so we can test enough code
       # that monitors the migration. Try to push it past 60 seconds.
       flyingcircus.roles.kvm_host.migrationBandwidth = 22500;
-
       flyingcircus.static.mtus.sto = 1500;
       flyingcircus.static.mtus.stb = 1500;
 
@@ -98,15 +102,17 @@ let
       };
 
       system.activationScripts.fcqemusrc = let
-        py = pkgs.python2;
-        pyPkgs = pkgs.python2Packages;
+        py = if config.fclib.ceph.releaseAtLeast "nautilus" clientCephRelease
+          then pkgs.python3
+          else pkgs.python2;
+        pyPkgs = py.pkgs;
         qemu_test_env = py.buildEnv.override {
           extraLibs = [
             testPackage
 
             # This should be included through the propagatedBuildInputs
             # from fc.qemu already but apparently it isn't.
-            (pyPkgs.toPythonModule config.fclib.ceph.libcephPkgs.jewel)
+            (pyPkgs.toPythonModule config.fclib.ceph.libcephPkgs.${clientCephRelease})
 
             # Additional packages to run the tests
             pyPkgs.pytest
@@ -129,26 +135,24 @@ let
       # the keys etc.
       environment.etc."nixos/services.json".text = builtins.toJSON config.flyingcircus.encServices;
 
-      # Ceph
       flyingcircus.roles.ceph_osd = {
         enable = true;
-        cephRelease = "jewel";
+        cephRelease = "nautilus";
       };
       flyingcircus.roles.ceph_mon = {
         enable = true;
-        cephRelease = "jewel";
+        cephRelease = "nautilus";
       };
-
       flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
-      flyingcircus.services.ceph.extraConfig = ''
-            mon clock drift allowed = 1
-      '';
+      flyingcircus.services.ceph.extraSettings = {
+            monClockDriftAllowed = 1;
+      };
 
       # KVM
       flyingcircus.roles.kvm_host = {
         enable = true;
         package = testPackage;
-        cephRelease = "jewel";
+        cephRelease = clientCephRelease;
       };
 
       environment.sessionVariables = {
@@ -275,6 +279,7 @@ in
   testScript = ''
     import textwrap
     import time
+    import json
 
     time_waiting = 0
     start_all()
@@ -288,8 +293,16 @@ in
               f"Command `cmd` failed with exit code {code}")
         return output.strip()
 
-    # TODO: once ceph-jewel is the default, this needs to be adopted to the function used in the ceph-jewel test
-    def assert_clean_cluster(host, mons, osds, pgs):
+    def assert_clean_cluster(host, mons, osds, mgrs, pgs):
+      # `osds` can be either of the form `(num_up_osds, num_in_osds)` or a single
+      # integer specifying both up and in osds
+
+      try:
+        (num_up_osds, num_in_osds) = osds
+      except TypeError:
+        num_up_osds = osds
+        num_in_osds = osds
+
       global time_waiting
       print("Waiting for clean cluster ...")
       start = time.time()
@@ -297,21 +310,29 @@ in
       # currently
       tries = 1
       while True:
-        status = show(host1, 'ceph -s')
+        status = json.loads(host.execute('ceph -f json-pretty -s')[1])
+        # json status is too verbose, but still show the human-readable status
+        show(host, 'ceph -s')
         show(host, 'ceph health detail | tail')
 
         try:
-          assert 'HEALTH_OK' in status or 'HEALTH_WARN' in status
-          assert f'{mons} mons at' in status
-          assert f'{osds} osds: {osds} up, {osds} in' in status
-          assert f'{pgs} active+clean' in status
+          assert status["health"]["status"] in ['HEALTH_OK', 'HEALTH_WARN']
+          assert int(status["monmap"]["num_mons"]) == mons
+          osdmap_stat = status["osdmap"]["osdmap"]
+          assert osdmap_stat["num_up_osds"] == num_up_osds and \
+              osdmap_stat["num_in_osds"] == num_in_osds
+          pgstate0 = status["pgmap"]["pgs_by_state"][0]
+          assert pgstate0["count"] == pgs and pgstate0["state_name"] == "active+clean"
+          assert status["mgrmap"]["available"] and \
+              len(status["mgrmap"]["standbys"]) == mgrs-1
           break
-        except AssertionError:
+        except AssertionError as e:
           if time.time() - start < 60:
             time_waiting += tries*2
             time.sleep(tries*2)
           else:
              raise
+
 
     def wait(fun, *args, **kw):
       global time_waiting
@@ -349,12 +370,18 @@ in
         set -o pipefail
         export PATH=/root/fc.qemu-env/bin:$PATH
         export PY_IGNORE_IMPORTMISMATCH=1
-        pytest -vv ${testOpts} -m 'not live' | tee /dev/kmsg
+        pytest -vv ${testOpts} -m 'not live' | tee /dev/kmsg${
+          # providing testOpts might cause no test to be selected (exit code 5), catch that.
+          if testOpts != "" then ''
+          ; PYTESTRET=$?
+          if [ $PYTESTRET -eq 0 ] || [ $PYTESTRET -eq 5 ]; then true; else exit $PYTESTRET; fi''
+          else ""
+        }
         """).strip().replace("\n", "; "))
 
     with subtest("Exercise standalone fc-qemu features"):
       result = show(host1, "fc-qemu --help")
-      assert result.startswith("usage: fc-qemu [-h] [--verbose] [--daemonize]")
+      assert result.startswith("usage: fc-qemu"), "Unexpected help output"
 
       result = show(host1, "fc-qemu ls")
       assert result == "", repr(result)
@@ -382,8 +409,11 @@ in
       host1.succeed('fc-ceph keys mon-update-single-client host1 ceph_osd,ceph_mon,kvm_host salt-for-host-1-dhkasjy9')
       host1.succeed('fc-ceph keys mon-update-single-client host2 kvm_host salt-for-host-2-dhkasjy9')
 
+      # mgr keys rely on 'fc-ceph keys' to be executes first
+      host1.execute('fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
+
     with subtest("Initialize OSD"):
-      host1.execute('fc-ceph osd create-filestore --journal-size=500m /dev/vdc')
+      host1.execute('fc-ceph osd create-bluestore /dev/vdc')
       host1.succeed('ceph osd crush move host1 root=default')
 
     with subtest("Create pools and images"):
@@ -393,6 +423,11 @@ in
       host1.succeed("ceph osd pool create rbd.hdd 32")
       host1.succeed("ceph osd pool set rbd.hdd size 1")
       host1.succeed("ceph osd pool set rbd.hdd min_size 1")
+      show(host1, "ceph osd lspools")
+
+      # new in jewel: RBD pools are supposed to be initialised
+      host1.succeed("rbd pool init rbd.ssd")
+      host1.succeed("rbd pool init rbd.hdd")
 
       host1.succeed("rbd create --size 100 rbd.hdd/fc-21.05-dev")
       host1.succeed("rbd snap create rbd.hdd/fc-21.05-dev@v1")
@@ -401,7 +436,7 @@ in
     # Let things settle for a bit, otherwise things are in weird
     # intermediate states like pgs not created, time not in sync,
     # mons not accessible, ...
-    assert_clean_cluster(host1, 1, 1, 64)
+    assert_clean_cluster(host1, 1, 1, 1, 64)
 
     print("Time spent waiting", time_waiting)
 
@@ -411,7 +446,13 @@ in
         set -o pipefail
         export PATH=/root/fc.qemu-env/bin:$PATH
         export PY_IGNORE_IMPORTMISMATCH=1
-        pytest -vv ${testOpts} -m 'live' | tee /dev/kmsg
+        pytest -vv ${testOpts} -m 'live' | tee /dev/kmsg${
+          # providing testOpts might cause no test to be selected (exit code 5), catch that.
+          if testOpts != "" then ''
+          ; PYTESTRET=$?
+          if [ $PYTESTRET -eq 0 ] || [ $PYTESTRET -eq 5 ]; then true; else exit $PYTESTRET; fi''
+          else ""
+        }
         """).strip().replace("\n", "; "))
 
   '';

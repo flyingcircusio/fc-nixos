@@ -7,3 +7,4 @@ class KeyManager(fc.ceph.VersionedSubsystem):
 
     jewel = jewel.KeyManager
     luminous = luminous.KeyManager
+    nautilus = luminous

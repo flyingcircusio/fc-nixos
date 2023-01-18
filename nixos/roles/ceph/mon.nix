@@ -6,13 +6,54 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_mon;
   enc = config.flyingcircus.enc;
-  mon_port = "6789";
+  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
   mons = (sort lessThan (map (service: service.address) (fclib.findServices "ceph_mon-mon")));
   # We do not have service data during bootstrapping.
   first_mon = if mons == [ ] then "" else head (lib.splitString "." (head mons));
 
   fc-check-ceph-withVersion = pkgs.fc.check-ceph.${role.cephRelease};
+  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease};
+
+  # FIXME: expose this as a config option (overridable)
+  # modules to be explicitly activated via this config
+  mgrEnabledModules = {
+    luminous = [ "balancer" "dashboard" "status" ];
+    # always_on_modules are not listed here
+    nautilus = [
+      "telemetry"
+      "iostat"
+    ];
+  };
+  # modules that are ensured to be disabled at each mgr start. All other modules might
+  # be imperatively enabled in the cluster and stay enabled.
+  # Note that `always_on` modules cannot be disabled so far
+  mgrDisabledModules = {
+    luminous = [];
+    nautilus = [
+      "restful"
+    ];
+  };
+  defaultMonSettings = {
+    # A value < 1 would generate health warnings despite the scrub deadlines still being
+    # below their max limit
+    monWarnPgNotScrubbedRatio = 1;
+    monWarnPgNotDeepScrubbedRatio = 1;
+  };
+  perMonSettings = mon:
+  let
+    id = head (lib.splitString "." mon.address);
+    # we have always been using the default mon ports, so there is no need
+    # to explicitly specify a port
+    addr = toString (head (filter fclib.isIp4 mon.ips));
+  in
+  { "mon.${id}" = {
+    host = id;
+    publicAddr = addr;
+  };};
+  defaultMgrSettings = {
+    mgrInitialModules = lib.concatStringsSep " " mgrEnabledModules.${role.cephRelease};
+  };
 in
 {
   options = {
@@ -28,21 +69,18 @@ in
 
       config = lib.mkOption {
         type = lib.types.lines;
-        default = (lib.concatMapStringsSep "\n"
-          (mon:
-            let
-              id = head (lib.splitString "." mon.address);
-              addr = "${head (filter fclib.isIp4 mon.ips)}:${mon_port}";
-            in
-            ''
-              [mon.${id}]
-              host = ${id}
-              mon addr = ${addr}
-              public addr = ${addr}
-            '')
-          (fclib.findServices "ceph_mon-mon"));
+        default = "";
         description = ''
           Contents of the Ceph config file for MONs.
+        '';
+      };
+      extraSettings = lib.mkOption {
+        type = with lib.types; attrsOf (oneOf [ str int float bool ]);
+        default = {};   # defaults are provided in the config section with a lower priority
+        description = ''
+          mon config of the Ceph config file.
+          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+          + '' can alternatively be written in camelCase as `monOsdFullRatio`.
         '';
       };
 
@@ -54,6 +92,16 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf role.enable {
+      assertions = [
+        {
+          assertion = (
+            ( role.extraSettings != {}
+            || config.flyingcircus.services.ceph.extraSettings != {}
+            || config.flyingcircus.services.ceph.client.extraSettings != {}
+            ) -> role.config == "");
+          message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
+        }
+      ];
       flyingcircus.services.ceph = {
         fc-ceph.settings = let
           monSettings =  {
@@ -75,8 +123,6 @@ in
         };
       };
 
-      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
-
       systemd.services.fc-ceph-mon = rec {
         description = "Local Ceph Mon (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
@@ -95,15 +141,15 @@ in
         };
 
         script = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mon activate
+          ${fc-ceph}/bin/fc-ceph mon activate
         '';
 
         reload = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mon reactivate
+          ${fc-ceph}/bin/fc-ceph mon reactivate
         '';
 
         preStop = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mon deactivate
+          ${fc-ceph}/bin/fc-ceph mon deactivate
         '';
 
         serviceConfig = {
@@ -134,7 +180,7 @@ in
       systemd.services.fc-ceph-load-vm-images = {
         description = "Load new VM base images";
         serviceConfig.Type = "oneshot";
-        script = "${pkgs.fc.ceph}/bin/fc-ceph maintenance load-vm-images";
+        script = "${fc-ceph}/bin/fc-ceph maintenance load-vm-images";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -143,7 +189,7 @@ in
       systemd.services.fc-ceph-purge-old-snapshots = {
         description = "Purge old snapshots";
         serviceConfig.Type = "oneshot";
-        script = "${pkgs.fc.ceph}/bin/fc-ceph maintenance purge-old-snapshots";
+        script = "${fc-ceph}/bin/fc-ceph maintenance purge-old-snapshots";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -152,7 +198,7 @@ in
       systemd.services.fc-ceph-clean-deleted-vms = {
         description = "Purge old snapshots";
         serviceConfig.Type = "oneshot";
-        script = "${pkgs.fc.ceph}/bin/fc-ceph maintenance clean-deleted-vms";
+        script = "${fc-ceph}/bin/fc-ceph maintenance clean-deleted-vms";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -161,14 +207,31 @@ in
       systemd.services.fc-ceph-mon-update-client-keys = {
         description = "Update client keys and authorization in the monitor database.";
         serviceConfig.Type = "oneshot";
-        script = "${pkgs.fc.ceph}/bin/fc-ceph keys mon-update-client-keys";
+        script = "${fc-ceph}/bin/fc-ceph keys mon-update-client-keys";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
       };
 
     })
-    (lib.mkIf (role.enable && role.cephRelease != "jewel") {
+    (lib.mkIf (role.enable && role.config == "") {
+      flyingcircus.services.ceph.extraSettingsSections = lib.recursiveUpdate
+      { mon = expandCamelCaseAttrs defaultMonSettings; }
+      (lib.recursiveUpdate
+        (expandCamelCaseSection (lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))))
+        (lib.recursiveUpdate
+          { mon = expandCamelCaseAttrs role.extraSettings; }
+          (lib.optionalAttrs (fclib.ceph.releaseAtLeast "luminous" role.cephRelease) {
+            mon = expandCamelCaseAttrs defaultMgrSettings;
+          })
+        )
+      );
+    })
+
+    (lib.mkIf (role.enable && role.config != "") {
+      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
+    })
+    (lib.mkIf (role.enable && fclib.ceph.releaseAtLeast "luminous" role.cephRelease ) {
       systemd.services.fc-ceph-mgr = rec {
         description = "Local Ceph MGR (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
@@ -179,6 +242,7 @@ in
 
         restartTriggers = [
           config.environment.etc."ceph/ceph.conf".source
+          fclib.ceph.releasePkgs.${role.cephRelease}
         ];
 
         environment = {
@@ -186,23 +250,33 @@ in
         };
 
         script = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mgr activate
+          ${fc-ceph}/bin/fc-ceph mgr activate
         '';
 
         reload = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mgr reactivate
+          ${fc-ceph}/bin/fc-ceph mgr reactivate
         '';
 
-        preStart = ''
-          echo "ensure mgr dashboard binds to localhost only"
-          # make _all_ hosts bind the dashboard to localhost (v4) only (default port: 7000)
-          ${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph config-key set mgr/dashboard/server_addr 127.0.0.1
-          echo "ensure mgr dashboard is enabled"
-          # --force is required for bootstrapping, as otherwise ceph complains that not all mgrs support that module in the state of "no mgrs exist"
-          ${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph mgr module enable dashboard --force'';
+        preStart =
+          # FIXME: dashboard only enabled for luminous, as the Nautilus release fails to build in the sandbox so far.
+          # If we ever manage to get it enabled, `ceph config set` needs to be used instead of `ceph config-key`
+          lib.optionalString (role.cephRelease == "luminous") ''
+            echo "ensure mgr dashboard binds to localhost only"
+            # make _all_ hosts bind the dashboard to localhost (v4) only (default port: 7000)
+            ${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph config-key set mgr/dashboard/server_addr 127.0.0.1
+          ''
+          # imperatively ensure mgr modules
+          + lib.concatStringsSep "\n" (
+              lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph mgr module enable ${mod} --force")
+            )
+          + "\n"
+          + lib.concatStringsSep "\n" (
+              lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph mgr module disable ${mod}")
+            )
+          ;
 
         preStop = ''
-          ${pkgs.fc.ceph}/bin/fc-ceph mgr deactivate
+          ${fc-ceph}/bin/fc-ceph mgr deactivate
         '';
 
         serviceConfig = {

@@ -14,6 +14,7 @@ let src = fetchFromGitHub {
 in poetry2nix.mkPoetryApplication {
     projectDir = src;
     src = src;
+    doCheck = true;
     overrides = poetry2nix.overrides.withDefaults (self: super: {
       python-lzo = super.python-lzo.overrideAttrs (old: {
         buildInputs = [ lzo ];
