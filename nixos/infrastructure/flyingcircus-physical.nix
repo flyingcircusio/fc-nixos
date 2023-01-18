@@ -48,7 +48,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       pciutils
       smartmontools
       # ensure that `rbd-locktool` uses the correct ceph tooling version
-      (fc.util-physical.override {ceph = cfg.services.ceph.client.package;})
+      config.fclib.ceph.utilPhysicalPkgs.${cfg.services.ceph.client.cephRelease}
     ];
 
     fileSystems = {

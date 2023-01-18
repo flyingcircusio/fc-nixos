@@ -9,12 +9,29 @@ rec {
   check-ceph = {
     jewel = callPackage ./check-ceph/jewel {ceph = pkgs.ceph-jewel;};
     luminous = callPackage ./check-ceph/luminous {ceph = pkgs.ceph-luminous;};
+    # nautilus needs no changes from the luminous version
+    nautilus = callPackage ./check-ceph/luminous {ceph = pkgs.ceph-nautilus.ceph-client;};
   };
   check-haproxy = callPackage ./check-haproxy {};
   check-journal = callPackage ./check-journal.nix {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
-  ceph = callPackage ./ceph { inherit blockdev agent util-physical; };
+
+  # fc-ceph still has a transitive dependency on the `ceph` package due to util-physical,
+  # so it needs to be parameterised depending on the release
+  cephWith = cephPkg:
+    callPackage ./ceph {
+      inherit blockdev agent;
+      util-physical = util-physical.${cephPkg.codename}.override {ceph = cephPkg;};
+    };
+  # normally, fc-ceph is installed via a role, but here are some direct installable
+  # packages in case they're needed:
+  ceph = {
+    jewel = cephWith pkgs.ceph-jewel;
+    luminous = cephWith pkgs.ceph-luminous;
+    cephWithNautilus = cephWith pkgs.ceph-nautilus.ceph-client;
+  };
+
   check-xfs-broken = callPackage ./check-xfs-broken {};
   blockdev = callPackage ./blockdev {};
   collectdproxy = callPackage ./collectdproxy {};
@@ -26,7 +43,7 @@ rec {
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
 
-  qemu = callPackage ./qemu {
+  qemu-py2 = callPackage ./qemu/py2.nix {
       version = "1.2-dev";
       src = pkgs.fetchFromGitHub {
         owner = "flyingcircusio";
@@ -35,12 +52,28 @@ rec {
         hash = "sha256-4rIwMzsYYvKGGybkFFu3z0D/RD8LXIJP5GG0oB9lxpc";
       };
   };
+  qemu-py3 = callPackage ./qemu/py3.nix rec {
+    version = "1.3.0";
+    # src = /path/to/fc.qemu/checkout ; # development
+    src = pkgs.fetchFromGitHub {
+      owner = "flyingcircusio";
+      repo = "fc.qemu";
+      rev = version;
+      hash = "sha256-vvM6V0r+9JWGKXNCs1ZFHpC4JrIK6zNXtETXJ4+URSQ=";
+    };
+    libceph = pkgs.ceph-nautilus.libceph;
+  };
 
   secure-erase = callPackage ./secure-erase {};
   sensuplugins = callPackage ./sensuplugins {};
   sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};
-  util-physical = callPackage ./util-physical {};
+  util-physical = {
+    # luminous code is compatible to jewel
+    jewel = callPackage ./util-physical/ceph-luminous {ceph = pkgs.ceph-jewel;};
+    luminous = callPackage ./util-physical/ceph-luminous {ceph = pkgs.ceph-luminous;};
+    nautilus = callPackage ./util-physical/ceph-nautilus {ceph = pkgs.ceph-nautilus.ceph-client;};
+  };
   telegraf-collect-psi = callPackage ./telegraf-collect-psi {};
 
 }

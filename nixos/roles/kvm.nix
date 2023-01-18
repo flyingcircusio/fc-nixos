@@ -7,14 +7,6 @@ let
   role = config.flyingcircus.roles.kvm_host;
   enc = config.flyingcircus.enc;
 
-  qemu_ceph_versioned = cephReleaseName: (pkgs.qemu_ceph.override {
-     ceph = fclib.ceph.releasePkgs.${cephReleaseName};
-     });
-  fc-qemu_versioned = cephReleaseName: (pkgs.fc.qemu.override {
-     ceph = fclib.ceph.releasePkgs.${cephReleaseName};
-     qemu_ceph = qemu_ceph_versioned cephReleaseName;
-  });
-
 in
 {
   options = {
@@ -29,7 +21,9 @@ in
       };
       migrationBandwidth = lib.mkOption {
         type = lib.types.int;
-        default = 1000000000; # 80% of 10GB/s
+        # 0.8 * 10 Gbit/s in bytes/s
+        # int(0.8 * 10 * 10**9 / 8)
+        default = 1000000000;
       };
       package = lib.mkOption {
         type = lib.types.package;
@@ -38,7 +32,7 @@ in
 
           Can be replaced for development and testing purposes.
         '';
-        default = fc-qemu_versioned role.cephRelease;
+        default = fclib.ceph.fcQemuPkgs.${role.cephRelease};
         defaultText = literalExpression "pkgs.fc.qemu [parameterised with cephRelease]";
       };
       cephRelease = fclib.ceph.releaseOption // {
@@ -67,7 +61,7 @@ in
 
     environment.systemPackages = with pkgs; [
       role.package
-      (qemu_ceph_versioned role.cephRelease)
+      (fclib.ceph.qemu_ceph_versioned role.cephRelease)
       bridge-utils
     ];
 

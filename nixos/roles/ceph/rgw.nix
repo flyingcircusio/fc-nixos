@@ -6,6 +6,7 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_rgw;
   enc = config.flyingcircus.enc;
+  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
   username = "client.radosgw.${config.networking.hostName}";
 
@@ -13,10 +14,25 @@ let
   rgws = (sort lessThan (map (service: service.address) (fclib.findServices "ceph_rgw-server")));
   first_rgw = if rgws == [ ] then "" else head (lib.splitString "." (head rgws));
 
+  defaultRgwSettings = {
+    host = config.networking.hostName;
+    keyring = "/etc/ceph/ceph.${username}.keyring";
+    logFile = "/var/log/ceph/client.radosgw.log";
+    pidFile = "/run/ceph/radosgw.pid";
+    adminSocket = "/run/ceph/radosgw.asok";
+    rgwData = "/srv/ceph/radosgw/ceph-$id";
+    rgwEnableOpsLog = false;
+    # FIXME: use different frontend in Nautilus
+    rgwFrontends = "civetweb port=80";
+    debugRgw = "0 5";
+    debugCivetweb = "1 5";
+    debugRados = "1 5";
+  };
 in
 {
   options = {
     flyingcircus.roles.ceph_rgw = {
+
       enable = lib.mkEnableOption "CEPH Rados Gateway";
       supportsContainers = fclib.mkDisableContainerSupport;
 
@@ -28,28 +44,19 @@ in
 
       config = lib.mkOption {
         type = lib.types.lines;
-        default =
-          let
-            mon_addrs = lib.concatMapStringsSep ","
-              (mon: "${head (filter fclib.isIp4 mon.ips)}:${mon_port}")
-              (fclib.findServices "ceph_mon-mon");
-          in
-          ''
-            [${username}]
-            host = ${config.networking.hostName}
-            keyring = /etc/ceph/ceph.${username}.keyring
-            log file = /var/log/ceph/client.radosgw.log
-            pid file = /run/ceph/radosgw.pid
-            admin socket = /run/ceph/radosgw.asok
-            rgw data = /srv/ceph/radosgw/ceph-$id
-            rgw enable ops log = false
-            rgw frontends = "civetweb port=80"
-            debug rgw = 0 5
-            debug civetweb = 1 5
-            debug rados = 1 5
-          '';
+        default = "";
         description = ''
           Contents of the Ceph config file for RGWs.
+        '';
+      };
+
+      extraSettings = lib.mkOption {
+        type = with lib.types; attrsOf (oneOf [ str int float bool ]);
+        default = {};   # defaults are provided in the config section with a lower priority
+        description = ''
+          config section of the Ceph config file of the radosgw client user.
+          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+          + '' can alternatively be written in camelCase as `monOsdFullRatio`.
         '';
       };
 
@@ -62,13 +69,22 @@ in
   config = lib.mkMerge [
     (lib.mkIf role.enable {
 
+      assertions = [
+        {
+          assertion = (
+            ( role.extraSettings != {}
+            || config.flyingcircus.services.ceph.extraSettings != {}
+            || config.flyingcircus.services.ceph.client.extraSettings != {}
+            ) -> role.config == "");
+          message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
+        }
+      ];
+
       flyingcircus.services.ceph.server = {
         enable = true;
         cephRelease = role.cephRelease;
         # no fc-ceph settings necessary so far
       };
-
-      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
 
       systemd.tmpfiles.rules = [
         "d /srv/ceph/radosgw 2775 root service"
@@ -151,6 +167,15 @@ in
         }
       '';
 
+    })
+
+    (lib.mkIf (role.enable && role.config == "") {
+        flyingcircus.services.ceph.extraSettingsSections.${username} = lib.recursiveUpdate
+        (expandCamelCaseAttrs defaultRgwSettings) (expandCamelCaseAttrs role.extraSettings);
+    })
+
+    (lib.mkIf (role.enable && role.config != "") {
+      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
     })
 
     (lib.mkIf (role.enable && role.primary) {
