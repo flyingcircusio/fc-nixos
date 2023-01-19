@@ -234,6 +234,7 @@ in {
       ];
 
       extraOptions = ''
+        keep-outputs = true
         fallback = true
         http-connections = 2
         extra-experimental-features = nix-command flakes
