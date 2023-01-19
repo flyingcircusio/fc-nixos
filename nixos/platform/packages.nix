@@ -19,7 +19,7 @@
         fio
         gcc
         gdb
-        git
+        gitPatched
         gnumake
         gnupg
         gptfdisk
