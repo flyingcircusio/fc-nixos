@@ -44,7 +44,7 @@ in {
   fcagent = callSubTests ./fcagent.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
-  garbagecollect = callTest ./garbagecollect.nix {};
+  collect-garbage = callTest ./collect-garbage.nix {};
   gitlab = callTest ./gitlab.nix {};
   haproxy = callTest ./haproxy.nix {};
   java = callTest ./java.nix {};

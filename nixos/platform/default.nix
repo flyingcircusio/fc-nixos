@@ -28,7 +28,7 @@ in {
     ./enc.nix
     ./firewall.nix
     ./journalbeat.nix
-    ./garbagecollect
+    ./collect-garbage.nix
     ./ipmi.nix
     ./kernel.nix
     ./monitoring.nix

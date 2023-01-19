@@ -63,6 +63,7 @@ setup(
     entry_points={
         "console_scripts": [
             "fc-backy=fc.manage.backy:main",
+            "fc-collect-garbage=fc.manage.collect_garbage:app",
             "fc-directory=fc.util.directory:directory_cli",
             "fc-graylog=fc.manage.graylog:main",
             "fc-maintenance=fc.maintenance.cli:app",

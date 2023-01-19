@@ -3,17 +3,15 @@
 # Our management agent keeping the system up to date, configuring it based on
 # changes to our nixpkgs clone and data from our directory
 
-with lib;
+with builtins;
 
 let
   cfg = config.flyingcircus;
   fclib = config.fclib;
   log = "/var/log/fc-collect-garbage.log";
 
-  garbagecollectBin = fclib.python3BinFromFile ./fc-collect-garbage.py;
-
 in {
-  options = {
+  options = with lib; {
     flyingcircus.agent = {
       collect-garbage =
         mkEnableOption
@@ -21,14 +19,15 @@ in {
     };
   };
 
-  config = mkMerge [
+  config = lib.mkMerge [
     {
+      environment.etc."userscan/exclude".source = ./collect-garbage-userscan.exclude;
       systemd.tmpfiles.rules = [
         "f ${log}"
       ];
     }
 
-    (mkIf cfg.agent.collect-garbage {
+    (lib.mkIf cfg.agent.collect-garbage {
 
       flyingcircus.services.sensu-client = {
         mutedSystemdUnits = [ "fc-collect-garbage.service" ];
@@ -65,7 +64,7 @@ in {
           LANG = "en_US.utf8";
           PYTHONUNBUFFERED = "1";
         };
-        script = "${garbagecollectBin}/bin/fc-collect-garbage ${./userscan.exclude} ${log}";
+        script = "${pkgs.fc.agent}/bin/fc-collect-garbage";
       };
 
       systemd.timers.fc-collect-garbage = {
