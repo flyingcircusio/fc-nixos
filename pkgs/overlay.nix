@@ -74,6 +74,15 @@ in {
     meta.license = lib.licenses.asl20;
   });
 
+  gitPatched = super.git.overrideAttrs(oldAttrs: rec {
+    pname = "git";
+    version = "2.38.3";
+    src = fetchurl {
+      url = "https://www.kernel.org/pub/software/scm/git/git-${version}.tar.xz";
+      hash = "sha256-JMU5R5Vx27lmeDJEL//XKf4hkugcygczfZXv34RYLGs=";
+    };
+  });
+
   graylog = (super.graylog.override {
     openjdk11_headless = self.jdk8_headless;
   });
