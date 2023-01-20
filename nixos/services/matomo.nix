@@ -206,9 +206,15 @@ in {
       script = ''
             # Use User-Private Group scheme to protect Matomo data, but allow administration / backup via 'matomo' group
             mkdir -p ${dataDir}/tagmanager
+            mkdir -p ${dataDir}/plugins
             ${pkgs.acl}/bin/setfacl -m u:nginx:x ${dataDir}/
             ${pkgs.acl}/bin/setfacl -Rm u:nginx:rX ${dataDir}/tagmanager/
             ${pkgs.acl}/bin/setfacl -dm u:nginx:r ${dataDir}/tagmanager/
+            ${pkgs.acl}/bin/setfacl -Rm u:nginx:rX ${dataDir}/plugins/
+            ${pkgs.acl}/bin/setfacl -dm u:nginx:r ${dataDir}/plugins/
+            ${pkgs.acl}/bin/setfacl -m g:service:x ${dataDir}/
+            ${pkgs.acl}/bin/setfacl -Rm g:service:rwX ${dataDir}/plugins/
+            ${pkgs.acl}/bin/setfacl -dm g:service:rwX ${dataDir}/plugins/
             if [[ ! -f ${dataDir}/matomo.js ]]; then
               echo "Setting up matomo.js"
               cp -r ${cfg.package}/share/matomo_upstream.js ${dataDir}/matomo.js
