@@ -19,7 +19,7 @@ let
       hostRgwServices);
 
   kvmHost = config.flyingcircus.enc.parameters.kvm_host or "none";
-  hostRgwAddress = hostmap."${kvmHost}" or "127.0.0.1";
+  hostRgwAddress = hostmap."${kvmHost}" or null;
 
 in
 mkIf (cfg.infrastructureModule == "flyingcircus") {
@@ -46,6 +46,8 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       gfxmodeBios = lib.mkForce "text";
     };
   };
+
+  flyingcircus.hostRgwAddress = hostRgwAddress;
 
   flyingcircus.journalbeat.fields =
     let encParams = [
@@ -82,8 +84,8 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   networking = {
     domain = "fcio.net";
-    extraHosts = ''
-      # Optimisation for fast radosgw (S3-compatible) access.
+    extraHosts = lib.optionalString (hostRgwAddress != null) ''
+      # Use this for fast radosgw (S3-compatible) object storage access (port 7480).
       ${hostRgwAddress} rgw.local
     '';
     hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);

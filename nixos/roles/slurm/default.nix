@@ -14,6 +14,7 @@ let
   serviceHostName = service: lib.head ( lib.splitString "." service.address );
 
   controlMachine = serviceHostName (fclib.findOneService "slurm-controller-controller");
+  dbdserverService = fclib.findOneService "slurm-dbdserver-dbdserver";
   defaultSlurmNodes = map serviceHostName (fclib.findServices "slurm-node-node");
 
   inherit (config.flyingcircus) enc;
@@ -68,6 +69,25 @@ in
           The cluster name is used in various places like state files or accounting
           table names and should normally stay unchanged. Changing this requires
           manual intervention in the state dir or slurmctld will not start anymore!
+        '';
+      };
+
+      accountingStorageEnforce = mkOption {
+        type = with types; nullOr str;
+        default = null;
+        example = "associations";
+        description = lib.mdDoc ''
+          This controls what level of association-based enforcement to impose on
+          job submissions. Valid options are any combination of associations,
+          limits, nojobs, nosteps, qos, safe, and wckeys, or all for all
+          things (except nojobs and nosteps, which must be requested as well).
+          If limits, qos, or wckeys are set, associations will automatically be
+          set.
+
+          By setting associations, no new job is allowed to run unless a
+          corresponding association exists in the system. If limits are
+          enforced, users can be limited by association to whatever job
+          size or run time limits are defined.
         '';
       };
 
@@ -208,6 +228,7 @@ in
 
 
         ## NixOS Options
+        ${fclib.docOption "flyingcircus.slurm.accountingStorageEnforce"}
 
         ${fclib.docOption "flyingcircus.slurm.nodes"}
 
@@ -218,6 +239,10 @@ in
         ${fclib.docOption "flyingcircus.slurm.realMemory"}
 
         ${fclib.docOption "flyingcircus.slurm.cpus"}
+
+        ${fclib.docOption "services.slurm.extraConfig"}
+
+        ${fclib.docOption "services.slurm.dbdserver.extraConfig"}
       '';
 
       environment.systemPackages = [
@@ -252,10 +277,42 @@ in
         nodeName = [ "${nodeStr} State=UNKNOWN CPUs=${toString cfg.cpus} RealMemory=${toString cfg.realMemory}" ];
         partitionName = [ "${cfg.partitionName} Nodes=${nodeStr} Default=YES MaxTime=INFINITE State=UP" ];
         extraConfig = ''
+          # FCIO extra config
+          # XXX: Some settings probably be separate options later.
+
+          # JOB PRIORITY
+          PriorityType = priority/multifactor
+          PriorityWeightQOS = 2000
+
+          # SCHEDULING
+          # Allocate individual processors and memory
           SelectType = select/cons_res
           SelectTypeParameters = CR_CPU_Memory
-          AccountingStorageType=accounting_storage/slurmdbd
-        '';
+
+          # Upon registration with a valid configuration only if it was set
+          # DOWN due to being non-responsive.
+
+          ReturnToService = 1
+
+          SlurmctldDebug = info
+          SlurmdDebug = info
+
+          # Enables resource containment using sched_setaffinity(). This
+          # enables the --cpu-bind and/or --mem-bind srun options.
+          TaskPlugin = task/affinity
+
+        '' + (lib.optionalString (dbdserverService != null) ''
+          AccountingStorageType = accounting_storage/slurmdbd
+
+          ${lib.optionalString (cfg.accountingStorageEnforce != null)
+          "AccountingStorageEnforce = ${cfg.accountingStorageEnforce}"
+          }
+
+          # Include the job's comment field in the job complete message sent
+          # to the Accounting Storage database.
+          AccountingStoreFlags = job_comment
+          JobAcctGatherType = jobacct_gather/linux
+        '');
       };
 
       systemd.services.fc-set-munge-key = {
