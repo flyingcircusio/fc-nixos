@@ -9,6 +9,8 @@ let
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
     {} super;
 
+  nixpkgs-22_11 = import versions.nixpkgs-22_11 {};
+
   inherit (super) fetchpatch fetchurl lib;
 
 in {
@@ -57,7 +59,6 @@ in {
       ceph-client;
     libceph = ceph.lib;
   };
-
 
   # Hash is wrong upstream
   containerd = super.containerd.overrideAttrs(_: rec {
@@ -122,6 +123,8 @@ in {
   });
 
   grub2_full = super.callPackage ./grub/2.0x.nix { };
+
+  hatch-vcs = nixpkgs-22_11.hatch-vcs;
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
@@ -409,7 +412,6 @@ in {
     boost = self.boost173;
   };
 
-
   polkit = super.polkit.overrideAttrs(_: {
 
     patches = [
@@ -433,6 +435,12 @@ in {
       })
     ];
   });
+
+  poetry = nixpkgs-22_11.poetry;
+  poetry2nix = nixpkgs-22_11.poetry2nix;
+
+  python310 = nixpkgs-22_11.python310;
+  python310Packages = nixpkgs-22_11.python310Packages;
 
   postgis_2_5 = super.postgis.overrideAttrs(_: rec {
     version = "2.5.5";
@@ -506,11 +514,6 @@ in {
   sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
   sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
-
-  # fix CVE-2022-35737
-  sqlite = lib.lowPrio (super.sqlite.overrideAttrs (oldAttrs: {
-    patches = (if (oldAttrs ? "patches") then oldAttrs.patches else []) ++ [ ./sqlite/CVE-2022-35737.patch];
-  }));
 
   sudo = super.sudo.overrideAttrs (oldAttrs: {
     patches = (if (oldAttrs ? "patches") then oldAttrs.patches else []) ++ [
