@@ -112,6 +112,7 @@ let
     "python3Packages"
     "python37Packages"
     "python38Packages"
+    "python310Packages"
     # XXX: fails on 21.05, must be fixed
     "backy"
   ];
