@@ -65,7 +65,7 @@ nixos-fw-log-refuse
 : Deny traffic by replying with a ICMP unreachable message and log denied
   packets to the journal. Log rate limits apply.
 
-nixos-fw-drop
+nixos-drop
 
 : Throw away traffic without notifying the sender. Not recommended since this
   is hard to debug.
