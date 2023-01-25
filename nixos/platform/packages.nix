@@ -40,7 +40,10 @@
         ncdu
         netcat
         ngrep
+        nix-top
+        nixfmt
         nmap
+        nvd
         openssl
         parted
         pkg-config
@@ -51,6 +54,7 @@
         python3Packages.virtualenv
         ripgrep
         screen
+        statix
         strace
         sysstat
         tcpdump
