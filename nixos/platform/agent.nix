@@ -88,6 +88,7 @@ in
       flyingcircus.passwordlessSudoRules = [
         {
           commands = [
+            "${pkgs.fc.agent}/bin/fc-collect-garbage"
             "${pkgs.fc.agent}/bin/fc-manage"
             "${pkgs.fc.agent}/bin/fc-maintenance list"
             "${pkgs.fc.agent}/bin/fc-maintenance show"

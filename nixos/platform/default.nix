@@ -28,7 +28,7 @@ in {
     ./enc.nix
     ./firewall.nix
     ./journalbeat.nix
-    ./garbagecollect
+    ./collect-garbage.nix
     ./ipmi.nix
     ./kernel.nix
     ./monitoring.nix
@@ -234,6 +234,7 @@ in {
       ];
 
       extraOptions = ''
+        keep-outputs = true
         fallback = true
         http-connections = 2
         extra-experimental-features = nix-command flakes
