@@ -9,13 +9,22 @@ let
   controllerEnabled = config.flyingcircus.roles.slurm-controller.enable;
   nodeEnabled = config.flyingcircus.roles.slurm-node.enable;
   dbdserverEnabled = config.flyingcircus.roles.slurm-dbdserver.enable;
-  anyRoleEnabled = controllerEnabled || nodeEnabled || dbdserverEnabled;
+  extDependencyEnabled = config.flyingcircus.roles.slurm-external-dependency.enable;
+  anyRoleEnabled = controllerEnabled || nodeEnabled || dbdserverEnabled || extDependencyEnabled;
 
   serviceHostName = service: lib.head ( lib.splitString "." service.address );
 
+  # XXX: We expect controlMachine and dbdserverService to be the same at the moment.
+  # Exactly one control machine should exist at the moment
   controlMachine = serviceHostName (fclib.findOneService "slurm-controller-controller");
+  # Having a dbdserver (accounting) is optional.
   dbdserverService = fclib.findOneService "slurm-dbdserver-dbdserver";
+  # All eligible compute nodes in the RG.
   defaultSlurmNodes = map serviceHostName (fclib.findServices "slurm-node-node");
+  # Other machines in the RG that are needed to run jobs, for example databases.
+  # Compute Nodes will not be set to ready if these machines are not
+  # in service (doing maintenance).
+  externalDependencyMachines = map serviceHostName (fclib.findServices "slurm-external-dependency-dep");
 
   inherit (config.flyingcircus) enc;
   params = if enc ? parameters then enc.parameters else {};
@@ -91,6 +100,16 @@ in
         '';
       };
 
+      extraRequiredMachines = mkOption {
+        type = with types; listOf str;
+        default = [];
+        description = ''
+          XXX: this should probably be a separate role
+          A list of additional machine names that are required for running
+          jobs in the cluster, for example databases.
+        '';
+      };
+
       partitionName = mkOption {
         type = types.str;
         default = "all";
@@ -131,6 +150,16 @@ in
         '';
       };
 
+      requiresGlobalMaintenance = mkOption {
+        type = types.bool;
+        default = controllerEnabled || dbdserverEnabled || extDependencyEnabled;
+        description = ''
+          Before running maintenance tasks on this machine, ensure that all nodes
+          in the cluster are drained and set to a DOWN state. This is enabled by
+          default for controller, dbdserver and external slurm dependency machines.
+        '';
+      };
+
     };
 
     flyingcircus.roles = {
@@ -148,6 +177,11 @@ in
         enable = mkEnableOption "";
         supportsContainers = fclib.mkDisableContainerSupport;
       };
+
+      slurm-external-dependency = {
+        enable = mkEnableOption "";
+        supportsContainers = fclib.mkDisableContainerSupport;
+      };
     };
   };
 
@@ -161,12 +195,21 @@ in
           roleStr = lib.concatStringsSep ", "
             (lib.optional controllerEnabled "*controller*" ++
              lib.optional dbdserverEnabled "*dbdserver*" ++
+             lib.optional extDependencyEnabled "*external dependency*" ++
              lib.optional nodeEnabled "*compute node*");
         in
         ''
         # Slurm Workload Manager
 
-        This VM is acting as: slurm ${roleStr}.
+        ${lib.optionalString (roleStr != "")
+        "This VM is acting as: slurm ${roleStr}."
+        }
+
+        ${lib.optionalString cfg.requiresGlobalMaintenance
+        "This VM has the global maintenance flag set which means that all
+         compute nodes will be drained and set to DOWN before maintenance
+         tasks are executed."
+        }
 
         Generated config is at `${slurmCfg.etcSlurm}` which is also linked to `/etc/slurm`.
         You can use `slurm-show-config` to view contents of all config files.
@@ -346,15 +389,29 @@ in
 
       services.munge.password = cfg.mungeKeyFile;
 
+      services.slurm.enableStools = true;
+
       users.users.slurm.extraGroups = [ "service" ];
+    })
+
+    (lib.mkIf cfg.requiresGlobalMaintenance {
+      flyingcircus.agent.maintenance.slurm-global-maintenance = {
+        enter = "fc-slurm -v all-nodes drain-and-down --nothing-to-do-is-ok";
+      };
     })
 
     # We need at least one compute node or the controller will crash on startup.
     (lib.mkIf (controllerEnabled && cfg.nodes != []) {
 
+      # The controller must be out of maintenance for running jobs.
+      # Nodes are set to ready after controller maintenance is done
+      # (or not needed, the leave command is called on every agent run).
       flyingcircus.agent.maintenance.slurm-controller = {
-        enter = "fc-slurm -v all-nodes drain-and-down --nothing-to-do-is-ok";
-        leave = "fc-slurm -v all-nodes ready --nothing-to-do-is-ok";
+        leave =
+          "fc-slurm -v all-nodes ready --nothing-to-do-is-ok" +
+            (lib.concatMapStrings
+              (m: " --required-in-service ${m}")
+              externalDependencyMachines);
       };
 
       services.slurm = {

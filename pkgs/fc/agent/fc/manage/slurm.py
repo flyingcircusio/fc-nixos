@@ -159,31 +159,67 @@ def is_node_in_service(directory, node) -> bool:
 
 @all_nodes_app.command(
     name="ready",
-    help="Mark all nodes as ready",
+    help="Mark nodes as ready",
 )
 def ready_all(
+    required_in_service: list[str] = Option(
+        default=[],
+        help=(
+            "Machine that should also be checked for its maintenance state."
+            "If any of the given machines are still in maintenance, no node "
+            "will be set to ready."
+        ),
+    ),
     nothing_to_do_is_ok: Optional[bool] = False,
-    skip_nodes_in_maintenance: Optional[bool] = True,
+    skip_nodes_in_maintenance: Optional[bool] = Option(
+        default=True,
+        help=(
+            "Check maintenance state of nodes and skip when not in service."
+            "They will set themselves to ready when they leave maintenance."
+        ),
+    ),
 ):
     log = structlog.get_logger()
     hostname = socket.gethostname()
     node_names = fc.util.slurm.get_all_node_names()
 
-    if skip_nodes_in_maintenance:
-        node_names_to_mark_ready = []
-
+    if skip_nodes_in_maintenance or required_in_service:
+        # We have to check maintenance (or in-service) state against the
+        # directory for some machines before we can start action.
         with directory_connection(context.enc_path) as directory:
-            for node in node_names:
-                if node == hostname or is_node_in_service(directory, node):
-                    node_names_to_mark_ready.append(node)
-                else:
-                    log.info(
-                        "ready-all-node-not-in-service",
-                        node=node,
-                        _replace_msg=(
-                            "Node {node} is still in maintenance, skipping."
-                        ),
-                    )
+
+            # Stop action when any required machine is not in-service
+            required_machines_not_in_service = []
+            for machine in required_in_service:
+                log.debug("ready-all-check-required-machine", machine=machine)
+                if not is_node_in_service(directory, machine):
+                    required_machines_not_in_service.append(machine)
+
+            if required_machines_not_in_service:
+                log.info(
+                    "ready-all-required-machines-not-in-service",
+                    _replace_msg=(
+                        "Cannot set nodes to ready. "
+                        "Required machines not in service: "
+                        "{not_in_service}"
+                    ),
+                    not_in_service=required_machines_not_in_service,
+                )
+                return
+
+            if skip_nodes_in_maintenance:
+                node_names_to_mark_ready = []
+                for node in node_names:
+                    if node == hostname or is_node_in_service(directory, node):
+                        node_names_to_mark_ready.append(node)
+                    else:
+                        log.info(
+                            "ready-all-node-not-in-service",
+                            node=node,
+                            _replace_msg=(
+                                "Node {node} is still in maintenance, skipping."
+                            ),
+                        )
 
     else:
         node_names_to_mark_ready = node_names
