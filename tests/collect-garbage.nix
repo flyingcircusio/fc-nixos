@@ -9,7 +9,7 @@ import ./make-test-python.nix (
 
   in
   {
-    name = "garbagecollect";
+    name = "collect-garbage";
     machine =
       { ... }:
       {
