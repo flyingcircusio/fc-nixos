@@ -73,7 +73,7 @@
     flyingcircus.passwordlessSudoRules = [
       {
         commands = [ "${pkgs.iotop}/bin/iotop" ];
-        groups = [ "sudo-srv" "service" ];
+        groups = [ "admins" "sudo-srv" "service" ];
       }
     ];
 

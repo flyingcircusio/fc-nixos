@@ -131,7 +131,7 @@ in
             "${pkgs.fc.agent}/bin/fc-maintenance show"
             "${pkgs.fc.agent}/bin/fc-maintenance delete"
           ];
-          groups = [ "sudo-srv" "service" ];
+          groups = [ "admins" "sudo-srv" "service" ];
         }
         {
           commands = [ "${pkgs.fc.agent}/bin/fc-manage check" ];
