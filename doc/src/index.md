@@ -15,6 +15,7 @@ logging
 logrotate
 firewall
 monitoring
+fc_collect_garbage_userscan
 ```
 
 (nixos-components)=
@@ -28,7 +29,6 @@ devhost
 docker
 elasticsearch
 external_net
-fc_userscan
 kibana
 kubernetes
 lamp
