@@ -442,6 +442,29 @@ in {
   python310 = nixpkgs-22_11.python310;
   python310Packages = nixpkgs-22_11.python310Packages;
 
+  # unreleased version
+  py_consulate = py3Packages: py3Packages.buildPythonPackage rec {
+    pname = "consulate";
+    version = "1.1.0"; # unreleased version
+    src = super.fetchFromGitHub {
+      owner = "osnyx";
+      repo = "consulate";
+      rev = "f05c5b177e03c7e14e5f92c0026d5802c1348810";
+      sha256 = "sha256-W/jN8fKYn6/UUKO4/U45TU1UwMrYFGadZZlCv5TRteU";
+    };
+    doCheck = false;  # tests require a running Consul via Docker
+    buildInputs = [ py3Packages.setuptools ];
+    propagatedBuildInputs = [
+      py3Packages.requests
+    ];
+    meta = with lib; {
+      description = "Consulate is a Python client library and set of application for the Consul service discovery and configuration system.
+";
+      homepage = https://pypi.org/project/consulate/;
+      license = licenses.publicDomain;
+    };
+  };
+
   postgis_2_5 = super.postgis.overrideAttrs(_: rec {
     version = "2.5.5";
     src = super.fetchurl {

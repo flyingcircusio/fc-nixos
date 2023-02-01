@@ -14,8 +14,8 @@ let
     # TODO: this points to a branch head that only differs by the Nautilus-specific commits
     # from what we use for Luminous, but not the latest `main` head as that currently
     # fails to build in NixOS.
-    rev = "7914012a4e74dfeca597f9dcde237de5ee2f41b0";
-    sha256 = "sha256-EOWqQa//6UhvIIy3LGsFapmK2LMIBIQ90Om4XGOxS2g=";
+    rev = "94c5168c9a2f4e5a915ce8d1dedbedb1ef44061d";
+    sha256 = "sha256-eDScuuD+04P7snR8H8tZm6E9e2XpTC16oBfDj7tIKCs=";
   };
 
 in poetry2nix.mkPoetryApplication {
@@ -34,8 +34,6 @@ in poetry2nix.mkPoetryApplication {
       pytest-flake8 = super.pytest-flake8.overrideAttrs (old: {
         buildInputs = [ super.setuptools ];
       });
-      consulate = super.consulate.overrideAttrs (old: {
-        buildInputs = [ super.setuptools ];
-      });
+      consulate = pkgs.py_consulate python310.pkgs;
     });
 }
