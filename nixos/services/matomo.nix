@@ -362,9 +362,4 @@ in {
       }];
     };
   };
-
-  meta = {
-    doc = ./matomo-doc.xml;
-    maintainers = with lib.maintainers; [ florianjacob ];
-  };
 }
