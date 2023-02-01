@@ -62,6 +62,7 @@ rec {
       hash = "sha256-vvM6V0r+9JWGKXNCs1ZFHpC4JrIK6zNXtETXJ4+URSQ=";
     };
     libceph = pkgs.ceph-nautilus.libceph;
+    py_consulate = pkgs.py_consulate pkgs.python3Packages;
   };
 
   secure-erase = callPackage ./secure-erase {};

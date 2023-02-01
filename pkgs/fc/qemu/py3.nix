@@ -1,4 +1,4 @@
-{ version, src, pkgs, python3Packages, lib, libceph, ceph-client, fetchFromGitHub, qemu_ceph, stdenv, gptfdisk, parted, xfsprogs, procps }:
+{ version, src, pkgs, python3Packages, lib, libceph, ceph-client, fetchFromGitHub, qemu_ceph, stdenv, gptfdisk, parted, xfsprogs, procps, py_consulate }:
 
 let
   # Python must be the same as the one used by Ceph
@@ -15,29 +15,6 @@ let
     propagatedBuildInputs = [ py.six ];
     doCheck = false;
   };
-
-  # unreleased version
-  py_consulate = py.buildPythonPackage rec {
-    pname = "consulate";
-    version = "1.1.0"; # unreleased version
-    src = fetchFromGitHub {
-      owner = "gmr";
-      repo = "consulate";
-      rev = "c431de9e629614b49c61c334d5f491fea3a9c5a3";
-      sha256 = "1jm8l3xl274xjamsf39zgn6zz00xq5wshhvqkncnyvhqw0597cqv";
-    };
-    doCheck = false;  # tests require a running Consul via Docker
-    propagatedBuildInputs = [
-      py.requests
-    ];
-    meta = with lib; {
-      description = "Consulate is a Python client library and set of application for the Consul service discovery and configuration system.
-";
-      homepage = https://pypi.org/project/consulate/;
-      license = licenses.publicDomain;
-    };
-  };
-
 in
   # We use buildPythonPackage instead of buildPythonApplication
   # to assist using this in a mixed buildEnv for external unit testing.
