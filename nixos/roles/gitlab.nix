@@ -101,7 +101,6 @@ in
 
     services.gitlab = {
       enable = true;
-      packages.git = pkgs.gitPatched;
       databaseCreateLocally = fclib.mkPlatform true;
       databasePasswordFile = "${cfg.secretsDir}/db_password";
       initialRootPasswordFile = "${cfg.secretsDir}/root_password";
