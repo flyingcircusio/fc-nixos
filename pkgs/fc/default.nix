@@ -53,13 +53,13 @@ rec {
       };
   };
   qemu-py3 = callPackage ./qemu/py3.nix rec {
-    version = "1.3.0";
+    version = "1.3.1";
     # src = /path/to/fc.qemu/checkout ; # development
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "fc.qemu";
       rev = version;
-      hash = "sha256-vvM6V0r+9JWGKXNCs1ZFHpC4JrIK6zNXtETXJ4+URSQ=";
+      hash = "sha256-eTJxhdSelMJ8UFE8mtgntFVgY/+Ne2K4niH5X9JP9Tc=";
     };
     libceph = pkgs.ceph-nautilus.libceph;
   };

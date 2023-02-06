@@ -1,29 +1,28 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
+exclude: ^secrets/|^appenv$|pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(nixos/infrastructure/container.nix|tests/testlib.nix)
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
-    hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-added-large-files
-    -   id: check-json
-        exclude: "pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json"
-    -   id: check-xml
-    -   id: check-toml
-    -   id: check-yaml
-    -   id: detect-private-key
-        exclude: "(nixos/infrastructure/container.nix|tests/testlib.nix)"
-
--   repo: https://github.com/pycqa/isort
-    rev: 5.10.1
-    hooks:
-      - id: isort
-        name: isort (python)
-        args: ["--profile", "black", "--filter-files"]
-
--   repo: https://github.com/psf/black
-    rev: 22.3.0
-    hooks:
-    -   id: black
+- hooks:
+  - exclude: "(?x)^(\n  secrets/|environments/.*/secret.*|\n  .*\\.patch\n)$\n"
+    id: trailing-whitespace
+  - exclude: "(?x)^(\n  environments/.*/secret.*|\n  .*\\.patch\n)$\n"
+    id: end-of-file-fixer
+  - id: check-yaml
+  - id: check-added-large-files
+  - id: check-json
+  - id: check-xml
+  - id: check-toml
+  - id: detect-private-key
+  repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.2.0
+- hooks:
+  - args:
+    - --profile
+    - black
+    - --filter-files
+    id: isort
+    name: isort (python)
+  repo: https://github.com/pycqa/isort
+  rev: 5.12.0
+- hooks:
+  - id: black
+  repo: https://github.com/psf/black
+  rev: 22.3.0
