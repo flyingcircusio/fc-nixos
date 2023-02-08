@@ -85,6 +85,19 @@ in {
 
     (mkIf config.services.telegraf.enable {
 
+      environment.systemPackages = [
+        (pkgs.writeShellApplication {
+          name = "fc-telegraf";
+          text = ''
+            # No argument given => show help. Running telegraf without arguments just fails.
+            telegraf_args=''${*:-'--help'}
+            # The ExecStart line includes the NixOS-generated config
+            ${config.systemd.services.telegraf.serviceConfig.ExecStart} "$telegraf_args"
+          '';
+        })
+      ];
+
+
       services.telegraf.extraConfig = {
         global_tags = globalTags;
         outputs = {
