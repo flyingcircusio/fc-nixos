@@ -400,6 +400,28 @@ in
       };
     })
 
+    (lib.mkIf controllerEnabled {
+      flyingcircus.services.sensu-client.checks = {
+        slurm = {
+          notification = "Slurm is unable to process jobs.";
+          interval = 10;
+          command = ''
+            sudo -u slurm ${pkgs.fc.agent}/bin/fc-slurm check
+          '';
+        };
+      };
+
+      flyingcircus.services.telegraf.inputs = {
+        exec = [{
+          commands = [ "${pkgs.fc.agent}/bin/fc-slurm metrics" ];
+          timeout = "10s";
+          data_format = "json";
+          json_name_key = "name";
+          tag_keys = [ "account" ];
+        }];
+      };
+    })
+
     # We need at least one compute node or the controller will crash on startup.
     (lib.mkIf (controllerEnabled && cfg.nodes != []) {
 

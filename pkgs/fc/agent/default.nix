@@ -7,13 +7,13 @@
 , libyaml
 , multipath-tools
 , nix
-, python39
+, python310
 , util-linux
 , xfsprogs
 }:
 
 let
-  py = python39.pkgs;
+  py = python310.pkgs;
 
   # XXX: The newer version from nixpkgs fails with our code, keep the old one for now.
   pyyaml = py.buildPythonPackage rec {
@@ -85,6 +85,6 @@ py.buildPythonPackage rec {
     xfsprogs
   ];
   dontStrip = true;
-  passthru.pythonDevEnv = python39.withPackages (_: checkInputs ++ propagatedBuildInputs);
+  passthru.pythonDevEnv = py.withPackages (_: checkInputs ++ propagatedBuildInputs);
 
 }

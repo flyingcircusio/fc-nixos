@@ -13,6 +13,7 @@ import fc.util.logging
 import requests
 from fc.maintenance.lib.shellscript import ShellScriptActivity
 from fc.util import nixos
+from fc.util.checks import CheckResult
 from fc.util.enc import STATE_VERSION_FILE
 from fc.util.nixos import RE_FC_CHANNEL
 
@@ -292,31 +293,6 @@ class Channel:
 
 class SwitchFailed(Exception):
     pass
-
-
-@dataclass
-class CheckResult:
-    errors: list[str]
-    warnings: list[str]
-
-    def format_output(self) -> str:
-        if self.errors:
-            return "CRITICAL: " + " ".join(self.errors + self.warnings)
-
-        if self.warnings:
-            return "WARNING: " + " ".join(self.warnings)
-
-        return "OK: no problems found."
-
-    @property
-    def exit_code(self) -> int:
-        if self.errors:
-            return 2
-
-        if self.warnings:
-            return 1
-
-        return 0
 
 
 def check(log, enc) -> CheckResult:

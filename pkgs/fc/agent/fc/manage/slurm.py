@@ -4,7 +4,9 @@ import rich
 import socket
 import structlog
 from pathlib import Path
-from typer import Option, Typer
+import rich.syntax
+from typer import Option, Typer, Exit
+import traceback
 from typing import NamedTuple, Optional
 
 from fc.util.directory import directory_connection
@@ -113,12 +115,27 @@ def ready(
     fc.util.slurm.ready(log, hostname, nothing_to_do_is_ok)
 
 
-@app.command(help="Just displays current node state at the moment.")
+@app.command(help="Checks state of this machine")
 def check():
     log = structlog.get_logger()
     hostname = socket.gethostname()
-    node_info = fc.util.slurm.get_node_info(hostname)
-    rich.print(node_info)
+    try:
+        result = fc.util.slurm.check(log, hostname)
+    except Exception:
+        print("UNKNOWN: Exception occurred while running checks")
+        traceback.print_exc()
+        raise Exit(3)
+
+    print(result.format_output())
+    if result.exit_code:
+        raise Exit(result.exit_code)
+
+
+@app.command(help="Produces metrics for telegraf's JSON input")
+def metrics():
+    log = structlog.get_logger()
+    jso = json.dumps(fc.util.slurm.get_metrics(log))
+    print(jso)
 
 
 all_nodes_app = Typer(
@@ -151,10 +168,6 @@ def drain_and_down_all(
     # Setting the state is fast, we can do it sequentially.
     for node_name in fc.util.slurm.get_all_node_names():
         fc.util.slurm.down(log, node_name, nothing_to_do_is_ok, reason)
-
-
-def is_node_in_service(directory, node) -> bool:
-    return directory.lookup_node(node)["parameters"]["servicing"]
 
 
 @all_nodes_app.command(
@@ -192,7 +205,7 @@ def ready_all(
             required_machines_not_in_service = []
             for machine in required_in_service:
                 log.debug("ready-all-check-required-machine", machine=machine)
-                if not is_node_in_service(directory, machine):
+                if not fc.util.directory.is_node_in_service(directory, machine):
                     required_machines_not_in_service.append(machine)
 
             if required_machines_not_in_service:
@@ -210,7 +223,10 @@ def ready_all(
             if skip_nodes_in_maintenance:
                 node_names_to_mark_ready = []
                 for node in node_names:
-                    if node == hostname or is_node_in_service(directory, node):
+                    if (
+                        node == hostname
+                        or fc.util.directory.is_node_in_service(directory, node)
+                    ):
                         node_names_to_mark_ready.append(node)
                     else:
                         log.info(
