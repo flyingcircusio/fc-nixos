@@ -38,7 +38,9 @@ def calc_mem(modules):
 
 def main():
     modules = []
-    dmidecode = subprocess.check_output(["dmidecode", "-q", "-t", "memory"]).decode()
+    dmidecode = subprocess.check_output(
+        ["dmidecode", "-q", "-t", "memory"]
+    ).decode()
     for entry in get_paragraph(dmidecode.splitlines()):
         for line in entry:
             if "Memory Device" in line:

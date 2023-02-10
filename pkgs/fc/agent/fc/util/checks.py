@@ -1,6 +1,6 @@
 # Common code for Nagios-style checks.
-from typing import Optional
 from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass

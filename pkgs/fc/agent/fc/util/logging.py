@@ -135,7 +135,6 @@ class JournalLogger:
 
 class JournalLoggerFactory:
     def __init__(self):
-
         if journal is None:
             print(
                 _MISSING.format(who=self.__class__.__name__, package="systemd")
@@ -150,7 +149,6 @@ class JournalLoggerFactory:
 
 class CmdOutputFileRenderer:
     def __call__(self, logger, method_name, event_dict):
-
         line = event_dict.pop("cmd_output_line", None)
         if line is not None:
             return {"cmd_output_file": line}
@@ -415,7 +413,6 @@ class SystemdJournalRenderer:
         self.syslog_facility = syslog_facility
 
     def __call__(self, logger, method_name, event_dict):
-
         if method_name == "trace":
             return {}
 
@@ -428,7 +425,6 @@ class SystemdJournalRenderer:
             formatted_replace_msg = formatter.format(replace_msg, **event_dict)
             event_dict["message"] += ": " + formatted_replace_msg
         else:
-
             kv = kv_renderer(
                 None,
                 None,
@@ -602,7 +598,6 @@ def init_logging(
     log_to_console: bool = True,
     syslog_identifier="fc-agent",
 ):
-
     multi_renderer = MultiRenderer(
         journal=SystemdJournalRenderer(syslog_identifier, syslog.LOG_LOCAL1),
         cmd_output_file=CmdOutputFileRenderer(),

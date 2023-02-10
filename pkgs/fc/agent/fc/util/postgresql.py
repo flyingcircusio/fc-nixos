@@ -307,7 +307,6 @@ def check_new_data_dir(log, new_data_dir):
         if new_data_dir_mode != 0o040700:
             log.error("upgrade-existing-data-dir-wrong-mode")
     else:
-
         raise NewDataDirUnusable(new_data_dir)
 
 

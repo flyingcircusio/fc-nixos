@@ -54,7 +54,6 @@ def collect_garbage(
         help="Where the lock file for exclusive operations should be placed.",
     ),
 ):
-
     init_logging(verbose, syslog_identifier="fc-collect-garbage")
     log = structlog.get_logger()
 

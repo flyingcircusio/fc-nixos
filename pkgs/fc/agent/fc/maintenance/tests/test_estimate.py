@@ -5,7 +5,7 @@ from fc.maintenance.estimate import Estimate
 
 
 def test_str_to_estimate():
-    for (spec, result) in [
+    for spec, result in [
         ("0.7", 0.7),
         ("3s", 3),
         ("5m", 5 * 60),
@@ -27,7 +27,7 @@ def test_datetime():
 
 
 def test_estimate_to_str():
-    for (duration, result) in [(3302, "55m 2s"), (5860, "1h 37m 40s")]:
+    for duration, result in [(3302, "55m 2s"), (5860, "1h 37m 40s")]:
         assert str(Estimate(duration)) == result
 
 

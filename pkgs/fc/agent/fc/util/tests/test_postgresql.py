@@ -159,7 +159,6 @@ def psql_existing_dbs_stopped(monkeypatch):
 def test_get_existing_dbs_stopped_postgres(
     logger, old_data_dir, psql_existing_dbs_stopped
 ):
-
     assert (
         get_existing_dbs(
             logger,
@@ -185,7 +184,6 @@ def psql_existing_dbs_running(monkeypatch):
 def test_get_existing_dbs_running_postgres(
     logger, old_data_dir, psql_existing_dbs_running
 ):
-
     assert (
         get_existing_dbs(
             logger,
@@ -200,7 +198,6 @@ def test_get_existing_dbs_running_postgres(
 def test_get_existing_dbs_running_postgres_ignore_expected(
     logger, old_data_dir, psql_existing_dbs_running
 ):
-
     assert (
         get_existing_dbs(
             logger, old_data_dir, postgres_running=True, expected_dbs=None
@@ -212,7 +209,6 @@ def test_get_existing_dbs_running_postgres_ignore_expected(
 def test_get_existing_dbs_running_postgres_should_raise_for_unknown(
     logger, old_data_dir, psql_existing_dbs_running
 ):
-
     with pytest.raises(fc.util.postgresql.UnexpectedDatabasesFound):
         get_existing_dbs(
             logger,

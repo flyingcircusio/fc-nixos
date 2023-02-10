@@ -1,8 +1,7 @@
+import time
 from collections import Counter
 from functools import reduce
 from typing import NamedTuple
-
-import time
 
 import pyslurm
 from fc.util.checks import CheckResult
@@ -185,7 +184,6 @@ def drain_many(
     log.debug("node-update-result", result=result)
 
     for ii in range(timeout):
-
         for node_name in set(waiting_nodes):
             node_state = get_node_info(node_name)["state"]
             if node_state == "IDLE+DRAIN":
@@ -496,7 +494,6 @@ def get_scheduler_metrics(stats) -> dict:
 
 
 def get_metrics(log) -> list[dict]:
-
     stats = pyslurm.statistics().get()
     nodes = pyslurm.node().get().values()
     jobs = pyslurm.job().get().values()

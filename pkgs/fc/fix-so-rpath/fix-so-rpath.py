@@ -25,7 +25,7 @@ def run(args):
         rpath = RPATH
 
     for d in args.DIR:
-        for (path, dirs, files) in os.walk(d):
+        for path, dirs, files in os.walk(d):
             for f in files:
                 if not f.endswith(".so"):
                     continue

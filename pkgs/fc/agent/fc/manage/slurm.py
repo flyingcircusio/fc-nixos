@@ -1,17 +1,17 @@
 import json
 import os
-import rich
 import socket
-import structlog
-from pathlib import Path
-import rich.syntax
-from typer import Option, Typer, Exit
 import traceback
+from pathlib import Path
 from typing import NamedTuple, Optional
 
-from fc.util.directory import directory_connection
 import fc.util.slurm
+import rich
+import rich.syntax
+import structlog
+from fc.util.directory import directory_connection
 from fc.util.logging import init_logging
+from typer import Exit, Option, Typer
 
 
 class Context(NamedTuple):
@@ -200,7 +200,6 @@ def ready_all(
         # We have to check maintenance (or in-service) state against the
         # directory for some machines before we can start action.
         with directory_connection(context.enc_path) as directory:
-
             # Stop action when any required machine is not in-service
             required_machines_not_in_service = []
             for machine in required_in_service:
