@@ -130,8 +130,6 @@ in
 
     (lib.mkIf cfg.enable {
 
-      networking.firewall.allowedTCPPorts = [ 9002 ];
-
       networking.firewall.extraCommands = ''
         ip46tables -A nixos-fw -i ethsrv -p udp --dport ${toString syslogInputPort} -j nixos-fw-accept
         ip46tables -A nixos-fw -i ethsrv -p tcp --dport ${toString beatsTCPHAPort} -j nixos-fw-accept
@@ -231,23 +229,6 @@ in
         }
       '';
 
-      services.nginx.virtualHosts."${cfg.publicFrontend.hostName}:9002" =
-      let
-        mkListen = addr: { inherit addr; port = 9002; };
-      in {
-        listen = map mkListen (fclib.network.srv.dualstack.addressesQuoted);
-        locations = {
-          "/" = {
-            proxyPass = "http://${listenFQDN}:${toString glAPIHAPort}";
-            extraConfig = ''
-              # Direct access w/o prior authentication. This is useful for API access.
-              # Strip Remote-User as there is nothing in between the user and us.
-              proxy_set_header Remote-User "";
-              proxy_set_header X-Graylog-Server-URL http://${listenFQDN}:9002/;
-            '';
-          };
-        };
-      };
       # HAProxy load balancer.
       # Since haproxy is rather lightweight we just fire up one on each graylog
       # node, talking to all known graylog nodes.
