@@ -29,7 +29,6 @@ def cd(newdir):
 
 
 class Request:
-
     MAX_RETRIES = 48
 
     _reqid = None

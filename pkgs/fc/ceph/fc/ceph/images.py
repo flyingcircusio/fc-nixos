@@ -164,7 +164,6 @@ def delta_update(from_, to):
 
 
 class BaseImage:
-
     cluster = None
     ioctx = None
     rbd = None

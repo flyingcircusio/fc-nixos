@@ -13,7 +13,7 @@ def verify(user, password, exp_subjects):
         msgs = msgs.split()
         print(msgs)
         assert len(msgs) == len(exp_subjects)
-        for (i, subject) in enumerate(exp_subjects):
+        for i, subject in enumerate(exp_subjects):
             msg = m.fetch(msgs[i], "BODY[HEADER]")[1][0][1].decode()
             print(msg)
             assert f"Subject: {subject}" in msg
