@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-nixos_version="22.05"
+nixos_version="22.11"
 releaseid="${1:?no release id given}"
 
 if ! echo "$releaseid" | grep -Eq '^[0-9]{4}_[0-9]{3}$'; then
