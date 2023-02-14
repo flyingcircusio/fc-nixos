@@ -304,6 +304,11 @@ in
 {
 
   config = {
+    # Don't build documentation that includes options to avoid test failures
+    # caused by invalid descriptions or missing defaultText.
+    documentation.doc.enable = false;
+    documentation.man.enable = false;
+
     nixpkgs.config.allowUnfree = true;
 
     services.lldpd.enable = true;
