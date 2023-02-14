@@ -10,7 +10,7 @@ to compile your own software against them.
 However, those are intended for short-term convenience. Linking against them
 may cause breakage of your applications in the long term.
 
-Also, those packages are not providing running daemons (like OpenLDAP). If you
+Also, those packages are not providing running daemons (like apacheHttpd). If you
 need a managed component, those need to be activated explicitly.
 
 You can look up packages and their descriptions via the [NixOS Package Search](https://search.nixos.org/packages).
@@ -22,11 +22,11 @@ You can look up packages and their descriptions via the [NixOS Package Search](h
 - automake
 - bc
 - cmake
-- cups
 - curl
 - db
 - dnsutils
 - dstat
+- ethtool
 - file
 - fc.logcheckhelper
 - fio
@@ -40,25 +40,31 @@ You can look up packages and their descriptions via the [NixOS Package Search](h
 - inetutils (telnet)
 - iotop
 - jq
+- latencytop
+- links2
 - lsof
 - lynx
 - mailx
 - mercurial
 - mmv
+- mtr
 - nano
 - ncdu
 - netcat
 - ngrep
+- nix-top
+- nixfmt
 - nmap
+- nvd
 - openssl
 - pkg-config
-- protobuf
 - psmisc
 - pwgen
 - python3
 - pythonPackages.virtualenv
 - ripgrep
 - screen
+- statix
 - strace
 - sysstat
 - tcpdump
