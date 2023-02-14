@@ -42,7 +42,6 @@ def require_directory(func):
     """Decorator that ensures a directory connection is present."""
 
     def with_directory_connection(self, *args, **kwargs):
-
         if self.directory is None:
             enc_data = None
             if self.enc_path:
@@ -411,7 +410,6 @@ class ReqManager:
 
     @require_lock
     def show(self, request_id=None, dump_yaml=False):
-
         if not self.requests:
             rich.print("[bold]No maintenance requests at the moment.[/bold]")
             return

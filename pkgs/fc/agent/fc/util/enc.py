@@ -75,9 +75,7 @@ def initialize_enc(log, tmpdir, enc_path):
 def initialize_state_version(
     log, os_release_file: Path, state_version_file: Path
 ):
-
     if not state_version_file.exists():
-
         with open(os_release_file) as f:
             for line in f.readlines():
                 if line.startswith("VERSION_ID="):
