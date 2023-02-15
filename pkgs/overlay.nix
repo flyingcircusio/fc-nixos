@@ -80,10 +80,10 @@ in {
 
   gitPatched = super.git.overrideAttrs(oldAttrs: rec {
     pname = "git";
-    version = "2.38.3";
+    version = "2.38.4";
     src = fetchurl {
       url = "https://www.kernel.org/pub/software/scm/git/git-${version}.tar.xz";
-      hash = "sha256-JMU5R5Vx27lmeDJEL//XKf4hkugcygczfZXv34RYLGs=";
+      hash = "sha256-cKUKDxzVYT1sil7nqPprLey7bwXZPXzkh6Zwx/gOBIs=";
     };
   });
 
