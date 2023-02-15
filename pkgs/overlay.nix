@@ -173,7 +173,38 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
+  # Import old php versions from nix-phps.
+  inherit (phps) php72 php73 php74;
+
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
+
+  # PHP versions from vendored nix-phps
+
+  lamp_php72 = self.php72.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
+
+  lamp_php73 = self.php73.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
+
+  lamp_php74 = (self.php74.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]));
+
+  # PHP versions from nixpkgs
 
   lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
               enabled ++ [
