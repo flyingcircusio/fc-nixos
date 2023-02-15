@@ -124,8 +124,6 @@ in {
 
   grub2_full = super.callPackage ./grub/2.0x.nix { };
 
-  hatch-vcs = nixpkgs-22_11.hatch-vcs;
-
   innotop = super.callPackage ./percona/innotop.nix { };
 
   jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
