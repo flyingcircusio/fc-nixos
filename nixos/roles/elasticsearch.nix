@@ -66,10 +66,6 @@ let
     [ (currentMemory * cfg.heapPercentage / 100)
       (31 * 1024)];
 
-  esShowConfig = pkgs.writeScriptBin "elasticsearch-show-config" ''
-    sudo -u elasticsearch cat ${configFile}
-  '';
-
 in
 {
 
@@ -174,7 +170,13 @@ in
     (lib.mkIf enabled {
 
     environment.systemPackages = [
-      esShowConfig
+      (pkgs.writeShellScriptBin
+        "elasticsearch-readme"
+        "${pkgs.rich-cli}/bin/rich --pager /etc/local/elasticsearch/README.md")
+
+      (pkgs.writeShellScriptBin
+        "elasticsearch-show-config"
+        "sudo -u elasticsearch cat ${configFile}")
     ];
 
     flyingcircus.roles.elasticsearch.extraConfig = configFromLocalConfigDir;
