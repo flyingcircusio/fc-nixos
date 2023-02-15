@@ -94,7 +94,7 @@ We pin the used nixpkgs version in `versions.json` to a commit id from our
 [nixpkgs fork](https://github.com/flyingcircusio/nixpkgs). The typical workflow
 for a nixpkgs update looks like this:
 
-1. Prefetch hash for new version: `nix-prefetch-github flyingcircusio nixpkgs --rev nixos-22.05`
+1. Prefetch hash for new version: `nix-prefetch-github flyingcircusio nixpkgs --rev nixos-22.11`
 2. Change rev and sha256 in `versions.json` according to the prefetch output.
 3. Create a draft PR with the changed `versions.json` and wait until Hydra finishes building.
 4. When Hydra is green, try it out on a test VM. Don't forget to run `./dev-setup`  to update the `channels` directory!

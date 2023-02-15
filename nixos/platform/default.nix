@@ -359,7 +359,7 @@ in {
     system.stateVersion =
       if pathExists cfg.stateVersionFile
       then fileContents cfg.stateVersionFile
-      else "22.05";
+      else "22.11";
 
     systemd = {
       tmpfiles.rules = [
