@@ -1,9 +1,9 @@
-{ callPackage, lib, stdenv, ... }@_args:
+{ callPackage, lib, stdenv, fetchurl, ... }@_args:
 
 let
   base = callPackage ./generic.nix (_args // {
-    version = "7.4.29";
-    sha256 = "sha256-fd5YoCsiXCUTDG4q4su6clS7A0D3/hcpFHgXbYZvlII=";
+    version = "8.2.2";
+    hash = "sha256-9SI6UnTtqLQMGeR94N5GeMZdZEAcz3EOJGSWLrgTaAQ=";
   });
 
 in
@@ -21,8 +21,8 @@ base.withExtensions ({ all, ... }: with all; ([
   gettext
   gmp
   iconv
+  imap
   intl
-  json
   ldap
   mbstring
   mysqli
@@ -43,10 +43,11 @@ base.withExtensions ({ all, ... }: with all; ([
   sockets
   soap
   sodium
+  sysvsem
   sqlite3
   tokenizer
   xmlreader
   xmlwriter
   zip
   zlib
-] ++ lib.optionals (!stdenv.isDarwin) [ imap ]))
+]))
