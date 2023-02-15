@@ -25,6 +25,8 @@ let
     LANG = "en_US.utf8";
     NIX_PATH = concatStringsSep ":" config.nix.nixPath;
   };
+
+  logDaysKeep = 180;
 in
 {
   options = {
@@ -202,8 +204,8 @@ in
         "r! /reboot"
         "f /etc/nixos/local.nix 644"
         "d /root 0711"
-        "d /var/log/fc-agent - - - 180d"
-        "d /var/spool/maintenance/archive - - - 180d"
+        "d /var/log/fc-agent - - - ${toString logDaysKeep}d"
+        "d /var/spool/maintenance/archive - - - ${toString logDaysKeep}d"
         # Remove various obsolete files and directories
         # /var/lib/fc-manage was only used on 15.09.
         # The next three entries can be removed when all 15.09 VMs are gone.
@@ -221,6 +223,14 @@ in
           rm /result
       '';
 
+      # Expiring the content of /var/log/fc-agent/ is taken care of by a systemd-tmpfiles
+      # rule, no logrotate rule needed
+      services.logrotate.settings = {
+        "/var/log/fc-agent.log" = {
+          rotate = builtins.ceil (logDaysKeep / 30);
+          frequency = "monthly";
+        };
+      };
     })
 
     (mkIf (cfg.agent.install && cfg.agent.enable) {
