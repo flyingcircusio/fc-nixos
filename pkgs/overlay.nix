@@ -219,6 +219,9 @@ in {
 
   links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
 
+  # fixes CVE-2022-36227, disables flaky atime tests
+  libarchive = self.callPackage ./libarchive {};
+
   lkl = super.lkl.overrideAttrs(_: rec {
     version = "2022-05-18";
     src = fetchFromGitHub {
