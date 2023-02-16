@@ -217,6 +217,10 @@ in {
     makeFlags = [ "HAS_GTK_GUI=" ];
   });
 
+  libarchive = super.libarchive.overrideAttrs (_: {
+    X-FORCE-REBUILD = 1;
+  });
+
   links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
 
   lkl = super.lkl.overrideAttrs(_: rec {
