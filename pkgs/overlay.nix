@@ -290,6 +290,11 @@ in {
 
   openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
 
+  # fixes several CVEs https://www.openssl.org/news/secadv/20230207.txt
+  inherit (super.callPackages ./openssl { })
+      openssl_1_1
+      openssl_3;
+
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
