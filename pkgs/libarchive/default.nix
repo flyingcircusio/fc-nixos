@@ -24,6 +24,9 @@
 , nix
 , samba
 , buildPackages
+
+# to workaround weird test failures on our hydras
+, noCpioTests ? true
 }:
 
 let
@@ -63,6 +66,12 @@ assert xarSupport -> libxml2 != null;
     substituteInPlace Makefile.am --replace '/bin/pwd' "$(type -P pwd)"
 
     ${lib.concatStringsSep "\n" (map removeTest skipTestPaths)}
+  '' + lib.optionalString noCpioTests ''
+    # separately disable cpio tests
+    # the cpio tests fail *only on our hydra hosts*, for unknown reasons but related to
+    # build/bsdcpio still being a libtool wrapper that prefixes the program name with lt-
+    substituteInPlace Makefile.am --replace "cpio/test/list.h" ""
+    rm -r "cpio/test"
   '';
 
   nativeBuildInputs = [
