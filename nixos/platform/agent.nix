@@ -227,7 +227,12 @@ in
       # rule, no logrotate rule needed
       services.logrotate.settings = {
         "/var/log/fc-agent.log" = {
-          rotate = builtins.ceil (logDaysKeep / 30);
+          # `builtins.ceil` is only available in Nix 2.4+ <=> NixOS 22.05+, blocking
+          # updates from 21.11. The alternative, integer division, implicitly applies a
+          # `floor`. With the current logDaysKeep = 180, this does not make any difference anyways.
+          rotate = if (builtins ? ceil)
+            then builtins.ceil (logDaysKeep / (30 + 0.0))  # enforce floating point division
+            else (logDaysKeep / 30);
           frequency = "monthly";
         };
       };
