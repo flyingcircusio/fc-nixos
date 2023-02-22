@@ -59,11 +59,9 @@ in {
   lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
   lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
   lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
-  # XXX: fails at the tideways check since 9d6bb722c1527a154726a4458ad7d5a865d7eea7
-  # lampVm80_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php80"; tideways = "1234"; };
+  lampVm80_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php80"; tideways = "1234"; };
   lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
-  # XXX: fails at the tideways check since 9d6bb722c1527a154726a4458ad7d5a865d7eea7
-  # lampVm81_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php81"; tideways = "1234"; };
+  lampVm81_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php81"; tideways = "1234"; };
 
   lampPackage74 = callTest ./lamp/package-test.nix { version = "lamp_php74"; };
   lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
