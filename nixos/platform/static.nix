@@ -59,6 +59,8 @@ with lib;
         "tr3" = 18;
         # dynamic hardware pool: local endpoints for Kamp DHP tunnels
         "dhp" = 19;
+        # video surveillance
+        "video" = 23;
       };
 
       mtus = {
