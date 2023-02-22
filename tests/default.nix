@@ -31,8 +31,7 @@ in {
     matomo;
 
   antivirus = callTest ./antivirus.nix {};
-  # XXX: wrong result
-  #audit = callTest ./audit.nix {};
+  audit = callTest ./audit.nix {};
   backyserver = callTest ./backyserver.nix {};
   channel = callTest ./channel.nix {};
   # XXX: ceph build failure
