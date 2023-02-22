@@ -95,7 +95,7 @@ in {
         virtualization host on port 7480. It allows VMs to access the
         S3(-compatible) storage via the fast storage network.
 
-        This is the same as the `rgw.local` entry in `/etc/hosts`. Set if the
+        This is the same as the `rgw.local` entry in `/etc/hosts`. Value is set if the
         machine is a virtual machine, null otherwise.
       '';
     };
