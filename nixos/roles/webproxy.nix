@@ -161,7 +161,7 @@ in
         # Link the default dir expected by varnish tools to
         # the actual location of the state dir. This makes the commands
         # usable without specifying the -n option every time.
-        "L /var/run/varnishd - - - - ${cfg.stateDir}"
+        "L /run/varnishd - - - - ${cfg.stateDir}"
       ];
 
       users.groups.varnish.members = [
