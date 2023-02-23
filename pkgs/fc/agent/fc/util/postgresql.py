@@ -84,7 +84,7 @@ def is_service_running():
 def build_new_bin_dir(log, pg_data_root: Path, new_version: PGVersion):
     nix_build_new_pg_cmd = [
         "nix-build",
-        "<nixpkgs>",
+        "<fc>",
         "-A",
         "postgresql_" + new_version.value,
         "--out-link",
