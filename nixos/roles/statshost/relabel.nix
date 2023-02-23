@@ -28,10 +28,18 @@ let
   };
 in
 {
-  flyingcircus.roles.statshost.prometheusMetricRelabel =
-    renameMerge {
-      regex = "netstat_tcp_(.*)";
-      targetLabel = "state";
-      targetName = "netstat_tcp";
-    };
+  flyingcircus.roles.statshost.prometheusMetricRelabel = [
+    # This set is from the Graylog role has been removed with 22.11 but we
+    # will have running instances for some time.
+    {
+      source_labels = [ "__name__" ];
+      regex = "(org_graylog2)_(.*)$";
+      replacement = "graylog_\${2}";
+      target_label = "__name__";
+    }
+  ] ++ (renameMerge {
+    regex = "netstat_tcp_(.*)";
+    targetLabel = "state";
+    targetName = "netstat_tcp";
+  });
 }

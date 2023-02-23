@@ -67,7 +67,6 @@ in {
   lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
 
   locale = callTest ./locale.nix {};
-  loghost = callTest ./loghost.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
   mail = callTest ./mail {};

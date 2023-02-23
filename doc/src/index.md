@@ -31,7 +31,6 @@ elasticsearch
 external_net
 kubernetes
 lamp
-loghost
 mailserver
 memcached
 mongodb

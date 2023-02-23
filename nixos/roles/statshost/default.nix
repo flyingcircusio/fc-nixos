@@ -23,14 +23,6 @@ let
   ];
   prometheusListenAddress = cfgStats.prometheusListenAddress;
 
-  # It's common to have stathost and loghost on the same node. Each should
-  # use half of the memory then. A general approach for this kind of
-  # multi-service would be nice.
-  heapCorrection =
-    if config.flyingcircus.roles.loghost.enable
-    then 50
-    else 100;
-
   customRelabelPath = "${localDir}/metric-relabel.yaml";
   customRelabelConfig = relabelConfiguration customRelabelPath;
   customRelabelJSON = filename:

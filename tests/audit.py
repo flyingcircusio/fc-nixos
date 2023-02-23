@@ -98,9 +98,11 @@ with subtest("Ensure SSH logins and sudo keystrokes are logged"):
         assert rm["process"]["working_directory"] == "/root"
         assert rm["process"]["args"] == ["rm", "/tmp/asdf"]
 
-    with subtest("Graylog should have received a connection from auditbeat"):
-        graylog = server.execute(
+    with subtest(
+        "Graylog (faked by netcat) should have received a connection from auditbeat"
+    ):
+        netcatgraylog = server.execute(
             "journalctl -q -o cat -u netcatgraylog --grep 'Connection received'"
         )[1]
-        print(graylog)
-        assert "Connection received on localhost" in graylog
+        print(netcatgraylog)
+        assert "Connection received on localhost" in netcatgraylog

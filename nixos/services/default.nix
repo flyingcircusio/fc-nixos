@@ -19,7 +19,6 @@ in {
     ./ceph/client.nix
     ./ceph/server.nix
     ./consul.nix
-    ./graylog
     ./haproxy
     ./jitsi/jibri.nix
     ./jitsi/jicofo.nix

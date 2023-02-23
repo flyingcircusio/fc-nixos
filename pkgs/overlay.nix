@@ -87,10 +87,6 @@ in {
     };
   });
 
-  graylog = (super.graylog.override {
-    openjdk11_headless = self.jdk8_headless;
-  });
-
   innotop = super.callPackage ./percona/innotop.nix { };
 
   libmodsecurity = super.callPackage ./libmodsecurity { };

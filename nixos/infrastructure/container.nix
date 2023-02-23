@@ -11,8 +11,14 @@ in
         lib.mapAttrsToList (n: v:
           { assertion = v ? supportsContainers;
             message = "role ${n} does not define container support attribute";
-          }) config.flyingcircus.roles;
-
+          })
+          # Only check "visible" roles, skipping roles that are marked as removed by
+          # `mkRemovedOptionModule` or manually set to `visible = false`.
+          # The `tryEval` is needed because visiting the role option throws an error if
+          # the option is declared by `mkRemovedOptionModule`.
+          (lib.filterAttrs
+            (n: v: (builtins.tryEval v.enable.visible or true).value)
+            config.flyingcircus.roles);
     }
 
     (lib.mkIf (config.flyingcircus.infrastructureModule == "container") {
