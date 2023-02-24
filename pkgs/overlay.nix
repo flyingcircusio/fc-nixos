@@ -225,9 +225,6 @@ in {
 
   links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
 
-  # fixes CVE-2022-36227, disables flaky cpio tests
-  libarchive = self.callPackage ./libarchive {};
-
   lkl = super.lkl.overrideAttrs(_: rec {
     version = "2022-05-18";
     src = fetchFromGitHub {
@@ -298,11 +295,6 @@ in {
   });
 
   openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
-
-  # fixes several CVEs https://www.openssl.org/news/secadv/20230207.txt
-  inherit (super.callPackages ./openssl { })
-      openssl_1_1
-      openssl_3;
 
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
