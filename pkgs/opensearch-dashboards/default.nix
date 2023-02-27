@@ -13,14 +13,16 @@ let
 
 in stdenv.mkDerivation rec {
   pname = "opensearch-dashboards";
-  version = "1.3.8";
+  version = "2.5.0";
 
   src = fetchurl {
     url = "https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/${version}/${pname}-${version}-linux-x64.tar.gz";
-    sha256 = "sha256-5oWSThzo/SKatRAPAEOisVAwOGX3WU3kGGU0/xZ3rUM=";
+    sha256 = "sha256-bKrdWFHvBZvQfvIUvJVwkRsXigDld8/XxSWpK2W18Gg=";
   };
 
   patches = [
+    # OpenSearch Dashboard specifies that it wants nodejs 14.20.1 but nodejs in nixpkgs is at 14.21.1.
+    ./disable-nodejs-version-check.patch
   ];
 
   nativeBuildInputs = [ makeWrapper ];
