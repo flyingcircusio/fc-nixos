@@ -29,10 +29,8 @@ devhost
 docker
 elasticsearch
 external_net
-kibana
 kubernetes
 lamp
-loghost
 mailserver
 memcached
 mongodb

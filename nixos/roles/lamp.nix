@@ -28,7 +28,7 @@ in {
 
       php = mkOption {
         type = types.package;
-        default = pkgs.lamp_php73;
+        default = pkgs.lamp_php80;
         description = ''
           The package to use.
         '';
@@ -112,7 +112,7 @@ in {
           ; much overhead. If you need to increase tracing, then you can
           ; adjust this in your local php.ini
 
-          extension=${pkgs.tideways_module}/lib/php/extensions/tideways-php-${phpMajorMinor}-zts.so
+          extension=${pkgs.tideways_module}/lib/php/extensions/tideways-php-${phpMajorMinor}.so
 
           tideways.connection = tcp://127.0.0.1:9135
 

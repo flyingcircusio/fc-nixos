@@ -19,7 +19,7 @@
         fio
         gcc
         gdb
-        git
+        gitPatched
         gnumake
         gnupg
         gptfdisk
@@ -40,7 +40,10 @@
         ncdu
         netcat
         ngrep
+        nix-top
+        nixfmt
         nmap
+        nvd
         openssl
         parted
         pkg-config
@@ -51,6 +54,7 @@
         python3Packages.virtualenv
         ripgrep
         screen
+        statix
         strace
         sysstat
         tcpdump
@@ -69,7 +73,7 @@
     flyingcircus.passwordlessSudoRules = [
       {
         commands = [ "${pkgs.iotop}/bin/iotop" ];
-        groups = [ "sudo-srv" "service" ];
+        groups = [ "admins" "sudo-srv" "service" ];
       }
     ];
 

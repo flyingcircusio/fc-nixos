@@ -12,7 +12,7 @@ OPENVPN="@openvpn@"
 
 export PATH="@gnused@/bin:@gawk@/bin:$PATH"
 
-ersa="$EASYRSA/bin/easyrsa --batch --days=999999"
+ersa="$EASYRSA/bin/easyrsa --batch"
 stamp="${DIR}/.stamp-generate-pki"
 
 if [[ -e "$stamp" ]]; then
@@ -25,15 +25,15 @@ mkdir "$DIR"
 cd "$DIR"
 $EASYRSA/bin/easyrsa-init
 
-$ersa init-pki
-$ersa --req-cn="OpenVPN CA/FCIO/$RG/$LOCATION" build-ca nopass
+$ersa --days=3650 init-pki
+$ersa --days=3650 --req-cn="OpenVPN CA/FCIO/$RG/$LOCATION" build-ca nopass
 
 gen_pair() {
     local cn="$1"
     local role="$2"
     crt="pki/issued/${cn}.crt"
     key="pki/private/${cn}.key"
-    $ersa build-${role}-full "$cn" nopass
+    $ersa --days=3650 build-${role}-full "$cn" nopass
     ln -fs "$crt" ${role}.crt
     ln -fs "$key" ${role}.key
 }
@@ -43,6 +43,6 @@ gen_pair "client-${LOCATION}.${RG}.fcio.net" client
 
 $ersa gen-dh
 
-$OPENVPN/bin/openvpn --genkey --secret ta.key
+$OPENVPN/bin/openvpn --genkey secret ta.key
 
 touch "$stamp"

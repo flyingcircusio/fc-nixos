@@ -166,10 +166,10 @@ in {
       assert permissions == expected, f"expected: {expected}, got {permissions}"
 
     def assert_logdir():
-      assert_file_permissions("755:root:nginx", "/var/log/nginx")
-      assert_file_permissions("644:root:nginx", "/var/log/nginx/performance.log")
-      assert_file_permissions("644:root:nginx", "/var/log/nginx/error.log")
-      assert_file_permissions("644:root:nginx", "/var/log/nginx/access.log")
+      assert_file_permissions("755:nginx:nginx", "/var/log/nginx")
+      assert_file_permissions("644:nginx:nginx", "/var/log/nginx/performance.log")
+      assert_file_permissions("644:nginx:nginx", "/var/log/nginx/error.log")
+      assert_file_permissions("644:nginx:nginx", "/var/log/nginx/access.log")
 
     def assert_reachable(server, intf):
       server.succeed("curl -k https://" + intf + " | grep TESTOK")
@@ -278,9 +278,8 @@ in {
       assert_logdir()
 
     with subtest("nginx modsecurity rules apply"):
-      out, err = server1.execute("curl -v http://server/?testparam=test")
+      out = server1.succeed("curl -v http://server/?testparam=test")
       print(out)
-      print(err)
 
     with subtest("service user should be able to write to local config dir"):
       server1.succeed('sudo -u nginx touch /etc/local/nginx/vhosts.json')
@@ -311,7 +310,7 @@ in {
       assert_unreachable(server3, "srv.local")
 
     with subtest("[4] fc nginx with fe6 specified as listen should only listen on fe6"):
-      _, out = server4.execute("journalctl -xeu nginx")
+      out = server4.succeed("journalctl -xeu nginx")
       print(out)
       prep(server4)
       assert_reachable(server4, "fe.local")

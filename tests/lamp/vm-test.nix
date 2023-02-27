@@ -1,6 +1,7 @@
 import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
 {
   name = "lamp";
+  extraPythonPackages = p: with p; [ packaging ];
   nodes = {
     lamp =
       { pkgs, config, ... }:
@@ -49,7 +50,8 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
 
   testScript = { nodes, ... }:
     ''
-    from pkg_resources import packaging
+    from packaging.version import Version
+    import time
     def assert_listen(machine, process_name, expected_sockets):
       result = machine.succeed(f"netstat -tlpn | grep {process_name} | awk '{{ print $4 }}'")
       actual = set(result.splitlines())
@@ -58,9 +60,9 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
     lamp.wait_for_unit("httpd.service")
     lamp.wait_for_open_port(8000)
 
-    php_version = lamp.succeed('php --version').splitlines()[0]
-    php_version = php_version.split()[1]
-    php_version = packaging.version.parse(php_version)
+    php_version_str = lamp.succeed('php --version').splitlines()[0]
+    php_version_str = php_version_str.split()[1]
+    php_version = Version(php_version_str)
     print("Detected PHP version:", php_version)
 
     tideways_api_key = "${tideways}"
@@ -116,7 +118,7 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
         print("="*80)
         print(f"Reload try {x}")
         lamp.succeed("systemctl reload httpd")
-        lamp.sleep(0.1)
+        time.sleep(0.1)
         code, output = lamp.execute("grep 'TLS block' /var/log/httpd/error.log")
         if not code:
             print(lamp.succeed("tail -n 5000 /var/log/httpd/error.log"))
@@ -142,7 +144,7 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
       lamp.succeed("egrep 'short_open_tag.*On' result")
       lamp.succeed("egrep 'output_buffering => 0 => 0' result")
 
-      if php_version >= packaging.version.parse("7.3"):
+      if php_version >= Version("7.3"):
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
 
       if tideways_api_key:
@@ -181,7 +183,7 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
       lamp.succeed("egrep 'output_buffering +1 +1' result")
       lamp.succeed("egrep 'BCMath support.*enabled' result")
 
-      if php_version >= packaging.version.parse("7.3"):
+      if php_version >= Version("7.3"):
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
 
       if tideways_api_key:

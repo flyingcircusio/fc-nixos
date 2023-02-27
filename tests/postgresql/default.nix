@@ -1,4 +1,4 @@
-import ../make-test-python.nix ({ version ? "14", lib, testlib, pkgs, ... }:
+import ../make-test-python.nix ({ version ? "15", lib, testlib, pkgs, ... }:
 let
   ipv4 = testlib.fcIP.srv4 1;
   ipv6 = testlib.fcIP.srv6 1;
@@ -58,7 +58,7 @@ in {
       machine.fail('psql --no-password -h localhost -l')
 
       # service user should be able to write to local config dir
-      machine.succeed('sudo -u postgres touch `echo /etc/local/postgresql/*`/test')
+      machine.succeed('sudo -u postgres touch /etc/local/postgresql/${version}/test')
 
       machine.succeed('${psql} employees -c "CREATE EXTENSION pg_stat_statements;"')
       machine.succeed('${psql} employees -c "CREATE EXTENSION rum;"')

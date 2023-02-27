@@ -2,10 +2,10 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  # We want to have the last available OSS version for Kibana and Elasticsearch.
+  # We want to have the last available OSS version for Elasticsearch.
   # We don't override the global elk7Version because it's ok to use newer versions
-  # for the (free) beats and unfree Elasticsearch/Kibana.
-  elasticKibana7Version = "7.10.2";
+  # for the (free) beats and unfree Elasticsearch
+  elastic7Version = "7.10.2";
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
@@ -56,7 +56,7 @@ in {
   elasticsearch7 = (super.elasticsearch7.override {
     jre_headless = self.jdk11_headless;
   }).overrideAttrs(_: rec {
-    version = elasticKibana7Version;
+    version = elastic7Version;
     name = "elasticsearch-${version}";
 
     src = super.fetchurl {
@@ -68,7 +68,7 @@ in {
   elasticsearch7-oss = (super.elasticsearch7.override {
     jre_headless = self.jdk11_headless;
   }).overrideAttrs(_: rec {
-    version = elasticKibana7Version;
+    version = elastic7Version;
     name = "elasticsearch-oss-${version}";
 
     src = super.fetchurl {
@@ -78,12 +78,14 @@ in {
     meta.license = lib.licenses.asl20;
   });
 
-  graylog = (super.graylog.override {
-    openjdk11_headless = self.jdk8_headless;
+  gitPatched = super.git.overrideAttrs(oldAttrs: rec {
+    pname = "git";
+    version = "2.38.4";
+    src = fetchurl {
+      url = "https://www.kernel.org/pub/software/scm/git/git-${version}.tar.xz";
+      hash = "sha256-cKUKDxzVYT1sil7nqPprLey7bwXZPXzkh6Zwx/gOBIs=";
+    };
   });
-
-  kibana7 = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; unfree = true; };
-  kibana7-oss = super.callPackage ./kibana/7.x.nix { inherit elasticKibana7Version; };
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
@@ -167,10 +169,12 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
-  # Import old php versions from nix-phps
-  inherit (phps) php72 php73;
+  # Import old php versions from nix-phps.
+  inherit (phps) php72 php73 php74;
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
+
+  # PHP versions from vendored nix-phps
 
   lamp_php72 = self.php72.withExtensions ({ enabled, all }:
               enabled ++ [
@@ -188,13 +192,15 @@ in {
                 all.redis
               ]);
 
-  lamp_php74 = (super.php74.withExtensions ({ enabled, all }:
+  lamp_php74 = (self.php74.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
                 all.memcached
                 all.redis
               ]));
+
+  # PHP versions from nixpkgs
 
   lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
               enabled ++ [
@@ -218,9 +224,6 @@ in {
   });
 
   links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
-
-  # fixes CVE-2022-36227, disables flaky cpio tests
-  libarchive = self.callPackage ./libarchive {};
 
   lkl = super.lkl.overrideAttrs(_: rec {
     version = "2022-05-18";
@@ -293,11 +296,6 @@ in {
 
   openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
 
-  # fixes several CVEs https://www.openssl.org/news/secadv/20230207.txt
-  inherit (super.callPackages ./openssl { })
-      openssl_1_1
-      openssl_3;
-
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
@@ -309,13 +307,24 @@ in {
   });
 
   #percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
-  percona57 = super.callPackage ./percona/5.7.nix { boost = self.boost159; };
-  percona80 = super.callPackage ./percona/8.0.nix { boost = self.boost173; openldap = self.openldap_2_4; };
+  percona57 = super.callPackage ./percona/5.7.nix {
+    boost = self.boost159;
+    openssl = self.openssl_1_1;
+  };
+
+  percona80 = super.callPackage ./percona/8.0.nix {
+    boost = self.boost177;
+    openldap = self.openldap_2_4;
+    openssl = self.openssl_1_1;
+    inherit (super.darwin.apple_sdk.frameworks) CoreServices;
+    inherit (super.darwin) cctools developer_cmds DarwinTools;
+  };
 
   # We use 2.4 from upstream for older Percona versions.
   # Percona 8.0 needs a newer version than upstream provides.
   percona-xtrabackup_8_0 = super.callPackage ./percona/xtrabackup.nix {
-    boost = self.boost173;
+    boost = self.boost177;
+    openssl = self.openssl_1_1;
   };
 
   # Has been renamed upstream, backy-extract still wants to use it.
@@ -333,17 +342,10 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
-  qemu = super.qemu.overrideAttrs (o: {
-    patches = o.patches ++ [ (super.fetchpatch {
-      name = "qemu-9p-performance-fix.patch";
-      url = "https://gitlab.com/lheckemann/qemu/-/commit/ca8c4a95a320dba9854c3fd4159ff4f52613311f.patch";
-      sha256 = "sha256-9jYpGmD28yJGZU4zlae9BL4uU3iukWdPWpSkgHHvOxI=";
-    }) ];
-  });
+  # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
+  pypolicyd-spf = self.spf-engine;
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
-
-  rum = super.callPackage ./postgresql/rum { };
 
   sensu = super.callPackage ./sensu { ruby = super.ruby; };
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
@@ -353,7 +355,6 @@ in {
   sensu-plugins-disk-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-disk-checks { };
   sensu-plugins-entropy-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-entropy-checks { };
   sensu-plugins-http = super.callPackage ./sensuplugins-rb/sensu-plugins-http { };
-  sensu-plugins-influxdb = super.callPackage ./sensuplugins-rb/sensu-plugins-influxdb { };
   sensu-plugins-logs = super.callPackage ./sensuplugins-rb/sensu-plugins-logs { };
   sensu-plugins-network-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-network-checks { };
   sensu-plugins-postfix = super.callPackage ./sensuplugins-rb/sensu-plugins-postfix { };

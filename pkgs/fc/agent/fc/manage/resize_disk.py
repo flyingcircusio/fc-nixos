@@ -13,7 +13,7 @@ from fc.util.logging import init_logging
 from typer import Option
 
 log = structlog.get_logger()
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_show_locals=False)
 
 
 @app.command()

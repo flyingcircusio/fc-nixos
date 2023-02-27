@@ -6,19 +6,8 @@ let
   cfg = config.flyingcircus.roles.elasticsearch;
   opts = options.flyingcircus.roles.elasticsearch;
   cfg_service = config.services.elasticsearch;
-  fclib = config.fclib;
+  inherit (config) fclib;
   localConfigDir = "/etc/local/elasticsearch";
-
-  optionDoc = name: let
-    opt = opts."${name}";
-  in
-    lib.concatStringsSep "\n\n" [
-      "**flyingcircus.roles.elasticsearch.${name}**"
-      (lib.removePrefix "\n" (lib.removeSuffix "\n" opt.description))
-    ];
-
-  formatList = list:
-    "[ ${lib.concatMapStringsSep " " (n: ''"${n}"'') list} ]";
 
   esVersion =
     if config.flyingcircus.roles.elasticsearch6.enable
@@ -76,10 +65,6 @@ let
   esHeap = fclib.min
     [ (currentMemory * cfg.heapPercentage / 100)
       (31 * 1024)];
-
-  esShowConfig = pkgs.writeScriptBin "elasticsearch-show-config" ''
-    sudo -u elasticsearch cat ${configFile}
-  '';
 
 in
 {
@@ -185,7 +170,13 @@ in
     (lib.mkIf enabled {
 
     environment.systemPackages = [
-      esShowConfig
+      (pkgs.writeShellScriptBin
+        "elasticsearch-readme"
+        "${pkgs.rich-cli}/bin/rich --pager /etc/local/elasticsearch/README.md")
+
+      (pkgs.writeShellScriptBin
+        "elasticsearch-show-config"
+        "sudo -u elasticsearch cat ${configFile}")
     ];
 
     flyingcircus.roles.elasticsearch.extraConfig = configFromLocalConfigDir;
@@ -284,11 +275,11 @@ in
       `${cfg.clusterName}` (${if cfg_service.single_node then "single-node" else "multi-node"}).
 
       The following nodes are eligible to be elected as master nodes:
-      `${formatList cfg.esNodes}`
+      `${fclib.docList cfg.esNodes}`
 
       ${lib.optionalString (cfg.initialMasterNodes != []) ''
       The node is running in multi-node bootstrap mode, `initialMasterNodes` is set to:
-      `${formatList cfg.initialMasterNodes}`
+      `${fclib.docList cfg.initialMasterNodes}`
 
       WARNING: the `initialMasterNodes` setting should be removed after the cluster has formed!
       ''}
@@ -302,19 +293,19 @@ in
       Show active nodes:
 
       ```
-      curl ${config.networking.hostName}:9200/_cat/nodes
+      curl http://${config.networking.hostName}:9200/_cat/nodes
       ```
 
       Show cluster health:
 
       ```
-      curl ${config.networking.hostName}:9200/_cat/health
+      curl http://${config.networking.hostName}:9200/_cat/health
       ```
 
       Show indices:
 
       ```
-      curl ${config.networking.hostName}:9200/_cat/indices
+      curl http://${config.networking.hostName}:9200/_cat/indices
       ```
 
       ## Configuration
@@ -335,15 +326,15 @@ in
 
       ### NixOS Options
 
-      ${optionDoc "clusterName"}
+      ${fclib.docOption "flyingcircus.roles.elasticsearch.clusterName"}
 
-      ${optionDoc "heapPercentage"}
+      ${fclib.docOption "flyingcircus.roles.elasticsearch.heapPercentage"}
 
-      ${optionDoc "esNodes"}
+      ${fclib.docOption "flyingcircus.roles.elasticsearch.esNodes"}
 
-      ${optionDoc "initialMasterNodes"}
+      ${fclib.docOption "flyingcircus.roles.elasticsearch.initialMasterNodes"}
 
-      ${optionDoc "extraConfig"}
+      ${fclib.docOption "flyingcircus.roles.elasticsearch.extraConfig"}
 
       ## Legacy Custom Config
 

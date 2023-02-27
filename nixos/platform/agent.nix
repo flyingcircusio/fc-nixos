@@ -20,6 +20,31 @@ let
     xz
   ];
 
+  agentZshCompletions = pkgs.writeText "agent-zsh-completions" ''
+    #compdef fc-manage
+
+    _fc_manage_completion() {
+      eval $(env _TYPER_COMPLETE_ARGS="''${words[1,$CURRENT]}" _FC_MANAGE_COMPLETE=complete_zsh fc-manage)
+    }
+
+    compdef _fc_manage_completion fc-manage
+
+
+    #compdef fc-maintenance
+
+    _fc_maintenance_completion() {
+      eval $(env _TYPER_COMPLETE_ARGS="''${words[1,$CURRENT]}" _FC_MAINTENANCE_COMPLETE=complete_zsh fc-maintenance)
+    }
+
+    compdef _fc_maintenance_completion fc-maintenance
+  '';
+
+  agentZshCompletionsPkg = pkgs.runCommand "agent-zshcomplete" {} ''
+    mkdir -p $out/share/zsh/site-functions
+    cp ${agentZshCompletions} $out/share/zsh/site-functions/_fc_agent
+  '';
+
+
   environment = config.nix.envVars // {
     HOME = "/root";
     LANG = "en_US.utf8";
@@ -85,7 +110,10 @@ in
 
   config = mkMerge [
     (mkIf cfg.agent.install {
-      environment.systemPackages = [ pkgs.fc.agent ];
+      environment.systemPackages = [
+        pkgs.fc.agent
+        agentZshCompletionsPkg
+      ];
 
       flyingcircus.passwordlessSudoRules = [
         {
@@ -96,7 +124,7 @@ in
             "${pkgs.fc.agent}/bin/fc-maintenance show"
             "${pkgs.fc.agent}/bin/fc-maintenance delete"
           ];
-          groups = [ "sudo-srv" "service" ];
+          groups = [ "admins" "sudo-srv" "service" ];
         }
         {
           commands = [ "${pkgs.fc.agent}/bin/fc-manage check" ];
@@ -106,6 +134,13 @@ in
           commands = [ "${pkgs.fc.agent}/bin/fc-postgresql check-autoupgrade-unexpected-dbs" ];
           users = [ "sensuclient" ];
           runAs = "postgres";
+        }
+        {
+          commands = [
+            "${pkgs.fc.agent}/bin/fc-maintenance run"
+            "${pkgs.fc.agent}/bin/fc-maintenance run --run-all-now"
+          ];
+          groups = [ "admins" ];
         }
       ];
 

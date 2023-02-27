@@ -87,6 +87,19 @@ in {
       description = "Where to find the ENC services json file.";
     };
 
+    flyingcircus.hostRgwAddress = mkOption {
+      default = null;
+      type = with types; nullOr str;
+      description = ''
+        IP address for the radosgw object storage proxy running on the
+        virtualization host on port 7480. It allows VMs to access the
+        S3(-compatible) storage via the fast storage network.
+
+        This is the same as the `rgw.local` entry in `/etc/hosts`. Value is set if the
+        machine is a virtual machine, null otherwise.
+      '';
+    };
+
     flyingcircus.localConfigDirs = mkOption {
       description = ''
         Create a directory where local config files for a service can be placed.
@@ -182,12 +195,6 @@ in {
         "bfq"
       ];
 
-      # The default of 5.15 showed problems with hanging fsfreezes
-      # when mysql/mariadb/percona is running on a machine and the
-      # filesystem is being frozen for Ceph snapshots. 5.10 doesn't
-      # seem to have this issue.
-      kernelPackages = pkgs.linuxKernel.packages.linux_5_10;
-
       kernelParams = [
         # Crash management
         "panic=1"
@@ -208,6 +215,10 @@ in {
       dmidecode
     ];
 
+    i18n.supportedLocales = [
+      "all"
+    ];
+
     # make the image smaller
     sound.enable = mkDefault false;
     documentation.dev.enable = mkDefault false;
@@ -222,23 +233,26 @@ in {
         "nixos-config=/etc/nixos/configuration.nix"
       ];
 
-      binaryCaches = lib.mkOverride 90 [
-        "https://cache.nixos.org"
-        "https://s3.whq.fcio.net/hydra"
-        "https://hydra.flyingcircus.io"
-      ];
-
-      binaryCachePublicKeys = [
-        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-        "flyingcircus.io-1:Rr9CwiPv8cdVf3EQu633IOTb6iJKnWbVfCC8x8gVz2o="
-      ];
-
       extraOptions = ''
         keep-outputs = true
         fallback = true
         http-connections = 2
+        log-lines = 25
         extra-experimental-features = nix-command flakes
       '';
+
+      settings = {
+        substituters = lib.mkOverride 90 [
+          "https://cache.nixos.org"
+          "https://s3.whq.fcio.net/hydra"
+          "https://hydra.flyingcircus.io"
+        ];
+
+        trusted-public-keys = [
+          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+          "flyingcircus.io-1:Rr9CwiPv8cdVf3EQu633IOTb6iJKnWbVfCC8x8gVz2o="
+        ];
+      };
     };
 
     nixpkgs.config.allowUnfreePredicate = pkg:
@@ -345,7 +359,7 @@ in {
     system.stateVersion =
       if pathExists cfg.stateVersionFile
       then fileContents cfg.stateVersionFile
-      else "22.05";
+      else "22.11";
 
     systemd = {
       tmpfiles.rules = [

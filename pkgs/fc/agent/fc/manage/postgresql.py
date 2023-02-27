@@ -26,7 +26,7 @@ class Context(NamedTuple):
     pg_data_root: Path
 
 
-app = Typer()
+app = Typer(pretty_exceptions_show_locals=False)
 context: Context
 
 
@@ -219,7 +219,6 @@ def upgrade(
         raise Exit(2)
 
     if upgrade_now:
-
         stop_pg(log, old_data_dir, stop)
 
         fc.util.postgresql.run_pg_upgrade(
@@ -493,7 +492,6 @@ cluster.
 
 @app.command(help=LIST_VERSION_HELP)
 def list_versions():
-
     current_pgdata = fc.util.postgresql.get_current_pgdata_from_service()
     service_running = fc.util.postgresql.is_service_running()
 

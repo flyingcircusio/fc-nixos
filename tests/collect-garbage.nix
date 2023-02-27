@@ -50,7 +50,7 @@ import ./make-test-python.nix (
          grep -r /nix/store/ ${home}
       """))
       machine.start_job("fc-collect-garbage")
-      print(machine.wait_for_file("${home}/.cache/fc-userscan.cache"))
+      machine.wait_for_file("${home}/.cache/fc-userscan.cache")
 
       # check that a GC root has been registered
       machine.succeed("ls -lR /nix/var/nix/gcroots/per-user/u0${home} | grep ${pypkg}")

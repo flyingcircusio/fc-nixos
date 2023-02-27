@@ -63,7 +63,6 @@ the issue.
 
 
 class Channel:
-
     PHRASES = re.compile(r"would (\w+) the following units: (.*)$")
 
     # global, to avoid re-connecting (with ssl handshake and all)
@@ -333,7 +332,7 @@ def check(log, enc) -> CheckResult:
         log.debug("check-state-version", state_version=state_version)
         if not re.match(r"\d\d\.\d\d", state_version):
             warnings.append(
-                f"State version invalid: {state_version}, should look like 22.05"
+                f"State version invalid: {state_version}, should look like 22.11"
             )
     else:
         warnings.append(f"State version file {STATE_VERSION_FILE} missing.")

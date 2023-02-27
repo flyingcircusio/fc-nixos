@@ -7,11 +7,11 @@ let
   upstreamCfg = config.services.postgresql;
   fclib = config.fclib;
   packages = {
-    "10" = pkgs.postgresql_10;
     "11" = pkgs.postgresql_11;
     "12" = pkgs.postgresql_12;
     "13" = pkgs.postgresql_13;
     "14" = pkgs.postgresql_14;
+    "15" = pkgs.postgresql_15;
   };
 
   oldestMajorVersion = head (lib.attrNames packages);
@@ -46,8 +46,18 @@ let
   # Nix store
   localConfigPath = /etc/local/postgresql + "/${cfg.majorVersion}";
 
-  localConfig =
+  legacyConfigFiles =
     if pathExists localConfigPath
+    then filter (lib.hasSuffix ".conf") (fclib.files localConfigPath)
+    else [];
+
+  legacyConfigWarning =
+    ''Plain PostgreSQL configuration found in ${toString localConfigPath}.
+    This does not work properly anymore and must be migrated to NixOS configuration.
+    See https://doc.flyingcircus.io/roles/fc-22.05-production/postgresql.html for details.'';
+
+  localConfig =
+    if legacyConfigFiles != []
     then { include_dir = "${localConfigPath}"; }
     else {};
 
@@ -105,20 +115,18 @@ in {
       extensions = lib.optionals (lib.versionOlder cfg.majorVersion "12") [
         (pkgs.postgis_2_5.override { postgresql = postgresqlPkg; })
         (pkgs.temporal_tables.override { postgresql = postgresqlPkg; })
-        (pkgs.rum.override { postgresql = postgresqlPkg; })
+        postgresqlPkg.pkgs.rum
       ] ++ lib.optionals (lib.versionAtLeast cfg.majorVersion "12") [
         postgresqlPkg.pkgs.periods
         postgresqlPkg.pkgs.postgis
-        (pkgs.rum.override { postgresql = postgresqlPkg; })
+        postgresqlPkg.pkgs.rum
       ];
 
     in {
 
       warnings =
-        if localConfig != {}
-        then [''Plain PostgreSQL configuration found in ${toString localConfigPath}.
-                This does not work properly anymore and must be migrated to NixOS configuration.
-                See https://doc.flyingcircus.io/roles/fc-22.05-production/postgresql.html for details.'']
+        if legacyConfigFiles != []
+        then [ legacyConfigWarning ]
         else [];
 
       systemd.services.postgresql.unitConfig = {
@@ -178,30 +186,35 @@ in {
       };
 
       environment.etc."local/postgresql/${cfg.majorVersion}/README.md".text = ''
-          __WARNING__: Putting plain configuration here doesn’t work properly
-          and must not be used anymore. Some options set here will be
-          ignored silently if they are already defined by our platform
-          code.
+        __WARNING__: Putting plain configuration here doesn’t work properly
+        and must not be used anymore. Some options set here will be
+        ignored silently if they are already defined by our platform
+        code.
+      '';
 
-          You can override platform and PostgreSQL defaults by using the
-          `services.postgresql.settings` option in a custom NixOS module. Place
-          it in `/etc/local/nixos/postgresql.nix`, for example:
+      environment.etc."local/postgresql/README.md".text = ''
+        ${if legacyConfigFiles != [] then "**WARNING: " + legacyConfigWarning + "**\n" else ""}
+        PostgreSQL ${cfg.majorVersion} is running on this system.
 
-          ```nix
-          { config, lib, ... }:
-          {
-            services.postgresql.settings = {
-                log_connections = true;
-                huge_pages = "try";
-                max_connections = lib.mkForce 1000;
-            }
+        You can override platform and PostgreSQL defaults by using the
+        `services.postgresql.settings` option in a custom NixOS module. Place
+        it in `/etc/local/nixos/postgresql.nix`, for example:
+
+        ```nix
+        { config, lib, ... }:
+        {
+          services.postgresql.settings = {
+              log_connections = true;
+              huge_pages = "try";
+              max_connections = lib.mkForce 1000;
           }
-          ```
+        }
+        ```
 
-          See the platform documentation for more details:
+        See the platform documentation for more details:
 
-          https://doc.flyingcircus.io/roles/fc-22.05-production/postgresql.html
-          '';
+        https://doc.flyingcircus.io/roles/fc-22.05-production/postgresql.html
+      '';
 
       flyingcircus.infrastructure.preferNoneSchedulerOnSsd = true;
 

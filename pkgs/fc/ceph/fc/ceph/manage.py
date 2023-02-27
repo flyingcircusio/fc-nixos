@@ -309,7 +309,6 @@ class OSDManager(object):
 
 
 class OSD(object):
-
     DEFAULT_JOURNAL_SIZE = "10g"
 
     MKFS_XFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]

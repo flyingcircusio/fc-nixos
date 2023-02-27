@@ -13,7 +13,7 @@ import os
 # built documents.
 #
 # The short X.Y version.
-version = os.environ.get("version")
+version = os.environ.get("version", "2023.dev")
 release = os.environ.get("branch")
 
 # General information about the project.

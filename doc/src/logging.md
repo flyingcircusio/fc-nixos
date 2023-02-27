@@ -14,7 +14,3 @@ On the most basic level, our {ref}`managed components <nixos-components>`
 log to the systemd journal or provide regular log files.
 Log files are rotated by {ref}`nixos-logrotate` which can also be configured for
 custom log files.
-
-For more advanced use cases, you can choose to use the managed {ref}`loghost
-<nixos-loghost>` component which uses [Graylog](http://www.graylog.org)
-for centralized log collection.

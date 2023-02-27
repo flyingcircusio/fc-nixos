@@ -41,11 +41,11 @@ with subtest("Create user and log in"):
     client.wait_until_succeeds("pgrep -f 'agetty.*tty1'")
     client.succeed("useradd -m alice")
     client.succeed("(echo foobar; echo foobar) | passwd alice")
-    client.wait_until_tty_matches(1, "login: ")
+    client.wait_until_tty_matches("1", "login: ")
     client.send_chars("alice\n")
-    client.wait_until_tty_matches(1, "login: alice")
+    client.wait_until_tty_matches("1", "login: alice")
     client.wait_until_succeeds("pgrep login")
-    client.wait_until_tty_matches(1, "Password: ")
+    client.wait_until_tty_matches("1", "Password: ")
     client.send_chars("foobar\n")
     client.wait_until_succeeds("pgrep -u alice bash")
     client.screenshot("prompt00")
@@ -54,7 +54,7 @@ with subtest("Ensure SSH logins and sudo keystrokes are logged"):
     client.send_chars(
         "ssh -oStrictHostKeyChecking=no customer@__SERVERIP__ -i/etc/ssh_key\n"
     )
-    client.wait_until_tty_matches(1, "customer@server")
+    client.wait_until_tty_matches("1", "customer@server")
     client.screenshot("prompt01")
     client.send_chars("ps auxf\n")
     client.screenshot("prompt02")
@@ -62,7 +62,7 @@ with subtest("Ensure SSH logins and sudo keystrokes are logged"):
     client.send_chars("rm /tmp/asdf\n")
     client.send_chars("exit\n")
     client.send_chars("exit\n")
-    client.wait_until_tty_matches(1, "Connection to 192.168.2.2 closed.")
+    client.wait_until_tty_matches("1", "Connection to 192.168.2.2 closed.")
     client.screenshot("prompt03")
 
     # Wait for the auditbeat flush interval
@@ -98,9 +98,11 @@ with subtest("Ensure SSH logins and sudo keystrokes are logged"):
         assert rm["process"]["working_directory"] == "/root"
         assert rm["process"]["args"] == ["rm", "/tmp/asdf"]
 
-    with subtest("Graylog should have received a connection from auditbeat"):
-        graylog = server.execute(
+    with subtest(
+        "Graylog (faked by netcat) should have received a connection from auditbeat"
+    ):
+        netcatgraylog = server.execute(
             "journalctl -q -o cat -u netcatgraylog --grep 'Connection received'"
         )[1]
-        print(graylog)
-        assert "Connection received on localhost" in graylog
+        print(netcatgraylog)
+        assert "Connection received on localhost" in netcatgraylog

@@ -40,6 +40,7 @@ let
 in
 {
   name = "sudo";
+  enableOCR = true;
   machine =
     { pkgs, lib, config, ... }:
     {
@@ -66,13 +67,13 @@ in
   testScript = ''
     machine.wait_for_unit('multi-user.target')
 
-    def assert_id_output(uid, gid, groups, id_output):
-        actual_uid, actual_gid, actual_groups = id_output.strip().split()
+    def assert_id_output(uid: str, gid: str, groups_str: str, id_output: str):
+        actual_uid, actual_gid, actual_groups_str = id_output.strip().split()
         assert actual_uid == f"uid={uid}", f"uid: expected {uid}, got {actual_uid}"
         assert actual_gid == f"gid={gid}", f"gid: expected {gid}, got {actual_gid}"
         # Group order is not fixed!
-        actual_groups = set(actual_groups.removeprefix("groups=").split(","))
-        groups = set(groups.split(","))
+        actual_groups = set(actual_groups_str.removeprefix("groups=").split(","))
+        groups = set(groups_str.split(","))
         assert actual_groups == groups, f"groups: expected: {groups}, got {actual_groups}"
 
     with subtest("check uids"):
@@ -89,7 +90,80 @@ in
         out = machine.succeed("id s-service")
         assert_id_output("1074(s-service)", "900(service)", "900(service)", out)
 
-    def login(user, tty):
+
+    def assert_can_sudo(user: str, command: str, *, run_as="root"):
+      machine.succeed(f"sudo -u {user} sudo -u {run_as} -l {command}")
+
+    def assert_cannot_sudo(user: str, command: str, *, run_as="root"):
+      machine.fail(f"sudo -u {user} sudo -u {run_as} -l {command}")
+
+    def assert_no_password_required(user: str, command: str, *, run_as="root"):
+      machine.succeed(f"sudo -u {user} sudo -n -u {run_as} {command}")
+
+    def assert_password_required(user: str, command: str, *, run_as="root"):
+      machine.fail(f"sudo -u {user} sudo -n -u {run_as} {command}")
+
+
+
+    with subtest("unprivileged user should not be able to sudo"):
+        assert_cannot_sudo("u1000", "id")
+        assert_cannot_sudo("u1000", "id", run_as="s-service")
+
+    with subtest("unprivileged user should not be able to run ipXtables"):
+        assert_cannot_sudo("u1000", "iptables")
+        assert_cannot_sudo("u1000", "ip6tables")
+
+
+    with subtest("admins should be able to sudo"):
+        assert_can_sudo("u1001", "id")
+        assert_can_sudo("u1001", "id", run_as="s-service")
+
+    with subtest("admins sudo should require a password"):
+        assert_password_required("u1001", "true")
+
+
+    with subtest("sudo-srv should grant restricted sudo"):
+        assert_cannot_sudo("u1002", "id")
+        assert_can_sudo("u1002", "id", run_as="s-service")
+
+
+
+    with subtest("sudo-srv should be able to run systemctl without password"):
+        assert_no_password_required("u1002", "systemctl --no-pager")
+
+    with subtest("sudo-srv should be able to run fc-manage without password"):
+        assert_no_password_required("u1002", "fc-manage")
+
+    with subtest("sudo-srv user should be able to run iotop without password"):
+        assert_no_password_required("u1002", "iotop -n1")
+
+
+    with subtest("wheel sudo should require a password"):
+        assert_password_required("u1003", "true")
+
+
+    with subtest("wheel+sudo-srv should be able to use service user without password"):
+        assert_no_password_required("u1004", "id", run_as="s-service")
+
+
+    with subtest("service user should be able to run systemctl without password"):
+        assert_no_password_required("s-service", "systemctl --no-pager")
+
+    with subtest("service user should be able to run fc-manage without password"):
+        assert_no_password_required("s-service", "fc-manage")
+
+    with subtest("service user should be able to run iotop without password"):
+        assert_no_password_required("s-service", "iotop -n1")
+
+    with subtest("service user should be able to run ipXtables without password"):
+        assert_no_password_required("s-service", "iptables -L")
+        assert_no_password_required("s-service", "ip6tables -L")
+
+
+    # Inspect tty contents in the interactive test driver with:
+    # print(machine.get_tty_text(1)
+
+    def login(user: str, tty: str):
         machine.send_key(f"alt-f{tty}")
         machine.sleep(1)
         machine.wait_until_tty_matches(tty, "login:")
@@ -100,93 +174,10 @@ in
         machine.sleep(1)
         machine.wait_until_tty_matches(tty, "$")
 
-    # Each user gets its own tty.
-    # Avoids strange logout problems and keeps the output for interactive inspection.
-    # Inspect tty contents in the interactive test driver with:
-    # print(machine.get_tty_text(1))
-
-    login("u1000", 1)
-
-    with subtest("unprivileged user should not be able to sudo"):
-        machine.send_chars("sudo -l -u root id || echo failed1\n")
-        machine.wait_until_tty_matches(1, "failed1")
-        machine.send_chars("sudo -l -u s-service id || echo failed2\n")
-        machine.wait_until_tty_matches(1, "failed2")
-
-    with subtest("unprivileged user should be able to run ipXtables without password"):
-        machine.send_chars("sudo -n iptables && echo 'pw not required iptables'\n")
-        machine.wait_until_tty_matches(1, "pw not required iptables")
-
-        machine.send_chars("sudo -n ip6tables && echo 'pw not required ip6tables'\n")
-        machine.wait_until_tty_matches(1, "pw not required ip6tables")
-
-    login("u1001", 2)
-
-    with subtest("admins should be able to sudo"):
-        machine.send_chars("sudo -l -u root id || echo failed3\n")
-        machine.wait_until_tty_matches(2, "/run/current-system/sw/bin/id")
-        machine.send_chars("sudo -l -u s-service id || echo failed4\n")
-        machine.wait_until_tty_matches(2, "/run/current-system/sw/bin/id")
-
-    with subtest("admins sudo should require a password"):
-        machine.send_chars("sudo -n true || echo 'pw required admins'\n")
-        machine.wait_until_tty_matches(2, "pw required admins")
-
-    login("u1002", 3)
-
-    with subtest("sudo-srv should grant restricted sudo"):
-        machine.send_chars("sudo -l -u root id || echo failed5\n")
-        machine.wait_until_tty_matches(3, "failed5")
-        machine.send_chars("sudo -l -u s-service id || echo failed6\n")
-        machine.wait_until_tty_matches(3, "/run/current-system/sw/bin/id")
+    login("u1002", "1")
 
     with subtest("sudo-srv should be able to become service user without password"):
         machine.send_chars("sudo -niu s-service\n")
-        machine.wait_until_tty_matches(3, 's-service@machine')
-
-    with subtest("sudo-srv should be able to run systemctl without password"):
-        machine.send_chars("sudo -n systemctl --no-pager && echo 'pw not required systemctl'\n")
-        machine.wait_until_tty_matches(3, "pw not required systemctl")
-
-    with subtest("sudo-srv should be able to run fc-manage without password"):
-        machine.send_chars("sudo -n fc-manage && echo 'pw not required fc-manage'\n")
-        machine.wait_until_tty_matches(3, "pw not required fc-manage")
-
-    with subtest("sudo-srv user should be able to run iotop without password"):
-        machine.send_chars("sudo -n iotop -n1 && echo 'pw not required iotop'\n")
-        machine.wait_until_tty_matches(3, "pw not required iotop")
-
-    login("u1003", 4)
-
-    with subtest("wheel sudo should require a password"):
-        machine.send_chars("sudo -n true || echo 'pw required wheel'\n")
-        machine.wait_until_tty_matches(4, "pw required wheel")
-
-    login("u1004", 5)
-
-    with subtest("wheel+sudo-srv should be able to use service user without password"):
-        machine.send_chars("sudo -l -u s-service id || echo failed7\n")
-        machine.wait_until_tty_matches(5, "/run/current-system/sw/bin/id")
-
-    login("s-service", 6)
-
-    with subtest("service user should be able to run systemctl without password"):
-        machine.send_chars("sudo -n systemctl --no-pager && echo 'pw not required systemctl'\n")
-        machine.wait_until_tty_matches(6, "pw not required systemctl")
-
-    with subtest("service user should be able to run fc-manage without password"):
-        machine.send_chars("sudo -n fc-manage  && echo 'pw not required fc-manage'\n")
-        machine.wait_until_tty_matches(6, "pw not required fc-manage")
-
-    with subtest("service user should be able to run iotop without password"):
-        machine.send_chars("sudo -n iotop -n1 && echo 'pw not required iotop'\n")
-        machine.wait_until_tty_matches(6, "pw not required iotop")
-
-    with subtest("service user should be able to run ipXtables without password"):
-        machine.send_chars("sudo -n iptables && echo 'pw not required iptables'\n")
-        machine.wait_until_tty_matches(6, "pw not required iptables")
-
-        machine.send_chars("sudo -n ip6tables && echo 'pw not required ip6tables'\n")
-        machine.wait_until_tty_matches(6, "pw not required ip6tables")
+        machine.wait_until_tty_matches("1", 's-service@machine')
   '';
 })

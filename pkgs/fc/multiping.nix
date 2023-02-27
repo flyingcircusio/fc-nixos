@@ -4,16 +4,16 @@ with rustPlatform;
 
 buildRustPackage rec {
   name = "multiping-${version}";
-  version = "1.1.1";
+  version = "1.1.2-gb49b357";
 
   src = fetchFromGitHub {
-    owner = "ckauhaus";
+    owner = "flyingcircusio";
     repo = "multiping";
-    rev = version;
-    sha256 = "19whh7xzk2sqnrgkyw6gmmq5kn9pmbma5nnl6zc4iz4wa9slysl4";
+    rev = "b49b3575c3e3c298851d22a8b219dbaf470afe07";
+    sha256 = "DPjrnzEo//z41422GyCwL2T/quMdlKKk09Mpazpg30E=";
   };
 
-  cargoSha256 = "1qbdnfaa190hmsq10q7q2hal8l7xlkd5g3kk9y6c2ikbnswc2rb2";
+  cargoHash = "sha256-xi00EMfiZBl5TTIQC2GdiaEP72arFqt77EqCBy/l5O4=";
   RUSTFLAGS = "--cfg feature=\"oldglibc\"";
 
   meta = with lib; {

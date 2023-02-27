@@ -61,28 +61,28 @@ in {
             (testlib.fcConfig { net.fe = false; })
           ];
 
-          flyingcircus.roles.postgresql10.enable = lib.mkDefault true;
+          flyingcircus.roles.postgresql11.enable = lib.mkDefault true;
 
           specialisation = {
-            pg12.configuration = {
-              flyingcircus.roles.postgresql10.enable = false;
-              flyingcircus.roles.postgresql12.enable = true;
-            };
             pg13.configuration = {
-              flyingcircus.roles.postgresql10.enable = false;
+              flyingcircus.roles.postgresql11.enable = false;
               flyingcircus.roles.postgresql13.enable = true;
             };
             pg14.configuration = {
-              flyingcircus.roles.postgresql10.enable = false;
+              flyingcircus.roles.postgresql11.enable = false;
               flyingcircus.roles.postgresql14.enable = true;
+            };
+            pg15.configuration = {
+              flyingcircus.roles.postgresql11.enable = false;
+              flyingcircus.roles.postgresql15.enable = true;
             };
           };
 
           system.extraDependencies = with pkgs; [
-            postgresql_11
             postgresql_12
             postgresql_13
             postgresql_14
+            postgresql_15
           ];
         };
       };
@@ -90,47 +90,39 @@ in {
       testScript = ''
         ${testSetup}
         with subtest("prepare-autoupgrade should fail when the option is not enabled"):
-          machine.fail("${fc-postgresql} prepare-autoupgrade --new-version 11")
+          machine.fail("${fc-postgresql} prepare-autoupgrade --new-version 12")
 
         with subtest("prepare should fail with unexpected database employees"):
-          machine.fail('${fc-postgresql} upgrade --new-version 11')
+          machine.fail('${fc-postgresql} upgrade --new-version 12')
 
         print(machine.succeed("${fc-postgresql} list-versions"))
 
-        with subtest("prepare upgrade 10 -> 11"):
-          machine.succeed('${fc-postgresql} upgrade --new-version 11 --expected employees')
-          machine.succeed("stat /srv/postgresql/11/fcio_upgrade_prepared")
+        with subtest("prepare upgrade 11 -> 12"):
+          machine.succeed('${fc-postgresql} upgrade --new-version 12 --expected employees')
+          machine.succeed("stat /srv/postgresql/12/fcio_upgrade_prepared")
           # postgresql should still run
           machine.succeed("systemctl status postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
 
-        with subtest("upgrade 10 -> 11"):
-          machine.succeed('${fc-postgresql} upgrade --expected employees --new-version 11 --stop --upgrade-now')
-          machine.succeed("stat /srv/postgresql/10/fcio_migrated_to")
-          machine.succeed("stat /srv/postgresql/11/fcio_migrated_from")
-          # postgresql should be stopped
-          machine.fail("systemctl status postgresql")
-          print(machine.succeed("${fc-postgresql} list-versions"))
-
-        machine.execute("rm -rf /srv/postgresql/11")
-        machine.execute("rm -rf /srv/postgresql/10/fcio_migrated_to")
-        machine.systemctl("start postgresql")
-
-        with subtest("upgrade 10 -> 12 in one step"):
+        with subtest("upgrade 11 -> 12"):
           machine.succeed('${fc-postgresql} upgrade --expected employees --new-version 12 --stop --upgrade-now')
-          machine.succeed("stat /srv/postgresql/10/fcio_migrated_to")
+          machine.succeed("stat /srv/postgresql/11/fcio_migrated_to")
           machine.succeed("stat /srv/postgresql/12/fcio_migrated_from")
           # postgresql should be stopped
           machine.fail("systemctl status postgresql")
-          # move to pg12 role and wait for postgresql to start
-          switch_to(machine, "pg12")
-          machine.wait_for_unit("postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
 
-        with subtest("upgrade 12 -> 13 in one step"):
+        machine.execute("rm -rf /srv/postgresql/12")
+        machine.execute("rm -rf /srv/postgresql/11/fcio_migrated_to")
+        machine.systemctl("start postgresql")
+
+        with subtest("upgrade 11 -> 13 in one step"):
           machine.succeed('${fc-postgresql} upgrade --expected employees --new-version 13 --stop --upgrade-now')
-          machine.succeed("stat /srv/postgresql/12/fcio_migrated_to")
+          machine.succeed("stat /srv/postgresql/11/fcio_migrated_to")
           machine.succeed("stat /srv/postgresql/13/fcio_migrated_from")
+          # postgresql should be stopped
+          machine.fail("systemctl status postgresql")
+          # move to pg13 role and wait for postgresql to start
           switch_to(machine, "pg13")
           machine.wait_for_unit("postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
@@ -140,6 +132,14 @@ in {
           machine.succeed("stat /srv/postgresql/13/fcio_migrated_to")
           machine.succeed("stat /srv/postgresql/14/fcio_migrated_from")
           switch_to(machine, "pg14")
+          machine.wait_for_unit("postgresql")
+          print(machine.succeed("${fc-postgresql} list-versions"))
+
+        with subtest("upgrade 14 -> 15 in one step"):
+          machine.succeed('${fc-postgresql} upgrade --expected employees --new-version 15 --stop --upgrade-now')
+          machine.succeed("stat /srv/postgresql/14/fcio_migrated_to")
+          machine.succeed("stat /srv/postgresql/15/fcio_migrated_from")
+          switch_to(machine, "pg15")
           machine.wait_for_unit("postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
       '';
@@ -152,33 +152,33 @@ in {
             (testlib.fcConfig { net.fe = false; })
           ];
 
-          flyingcircus.roles.postgresql10.enable = lib.mkDefault true;
+          flyingcircus.roles.postgresql11.enable = lib.mkDefault true;
           flyingcircus.services.postgresql.autoUpgrade = {
             enable = true;
             expectedDatabases = [ "employees" ];
           };
 
           specialisation = {
-            pg11UnexpectedDb.configuration = {
+            pg12UnexpectedDb.configuration = {
               flyingcircus.services.postgresql.autoUpgrade.expectedDatabases = lib.mkForce [];
-              flyingcircus.roles.postgresql10.enable = false;
-              flyingcircus.roles.postgresql11.enable = true;
-            };
-            pg11.configuration = {
-              flyingcircus.roles.postgresql10.enable = false;
-              flyingcircus.roles.postgresql11.enable = true;
+              flyingcircus.roles.postgresql11.enable = false;
+              flyingcircus.roles.postgresql12.enable = true;
             };
             pg12.configuration = {
-              flyingcircus.roles.postgresql10.enable = false;
+              flyingcircus.roles.postgresql11.enable = false;
               flyingcircus.roles.postgresql12.enable = true;
             };
             pg13.configuration = {
-              flyingcircus.roles.postgresql10.enable = false;
+              flyingcircus.roles.postgresql11.enable = false;
               flyingcircus.roles.postgresql13.enable = true;
             };
             pg14.configuration = {
-              flyingcircus.roles.postgresql10.enable = false;
+              flyingcircus.roles.postgresql11.enable = false;
               flyingcircus.roles.postgresql14.enable = true;
+            };
+            pg15.configuration = {
+              flyingcircus.roles.postgresql11.enable = false;
+              flyingcircus.roles.postgresql15.enable = true;
             };
           };
 
@@ -196,39 +196,31 @@ in {
         print(machine.succeed("${fc-postgresql} list-versions"))
 
         with subtest("autoupgrade should refuse when unexpected DB is present"):
-          switch_to(machine, "pg11UnexpectedDb", expect="fail")
+          switch_to(machine, "pg12UnexpectedDb", expect="fail")
           machine.fail("systemctl status postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
 
         with subtest("prepare autoupgrade should fail when unexpected DB is present"):
-          machine.fail('${fc-postgresql} prepare-autoupgrade --new-version 12')
-          print(machine.succeed("${fc-postgresql} list-versions"))
-
-        with subtest("autoupgrade 10 -> 11"):
-          # add the expectedDatabases setting and wait for postgresql to start
-          switch_to(machine, "pg11")
-          machine.wait_for_unit("postgresql")
-          machine.succeed("stat /srv/postgresql/10/fcio_migrated_to")
-          machine.succeed("stat /srv/postgresql/11/fcio_migrated_from")
-          print(machine.succeed("${fc-postgresql} list-versions"))
-
-        with subtest("prepare autoupgrade 11 -> 12"):
-          machine.succeed('${fc-postgresql} prepare-autoupgrade --new-version 12')
-          machine.succeed("stat /srv/postgresql/12/fcio_upgrade_prepared")
-          # postgresql should still run
-          machine.succeed("systemctl status postgresql")
+          machine.fail('${fc-postgresql} prepare-autoupgrade --new-version 13')
           print(machine.succeed("${fc-postgresql} list-versions"))
 
         with subtest("autoupgrade 11 -> 12"):
-          # move to pg12 role and wait for postgresql to start
+          # add the expectedDatabases setting and wait for postgresql to start
           switch_to(machine, "pg12")
           machine.wait_for_unit("postgresql")
           machine.succeed("stat /srv/postgresql/11/fcio_migrated_to")
           machine.succeed("stat /srv/postgresql/12/fcio_migrated_from")
           print(machine.succeed("${fc-postgresql} list-versions"))
 
+        with subtest("prepare autoupgrade 12 -> 13"):
+          machine.succeed('${fc-postgresql} prepare-autoupgrade --new-version 13')
+          machine.succeed("stat /srv/postgresql/13/fcio_upgrade_prepared")
+          # postgresql should still run
+          machine.succeed("systemctl status postgresql")
+          print(machine.succeed("${fc-postgresql} list-versions"))
+
         with subtest("autoupgrade 12 -> 13"):
-          # move to pg13 role and wait for postgresql to start
+          # move to new role and wait for postgresql to start
           switch_to(machine, "pg13")
           machine.wait_for_unit("postgresql")
           machine.succeed("stat /srv/postgresql/12/fcio_migrated_to")
@@ -236,11 +228,19 @@ in {
           print(machine.succeed("${fc-postgresql} list-versions"))
 
         with subtest("autoupgrade 13 -> 14"):
-          # move to pg14 role and wait for postgresql to start
+          # move to new role and wait for postgresql to start
           switch_to(machine, "pg14")
           machine.wait_for_unit("postgresql")
           machine.succeed("stat /srv/postgresql/13/fcio_migrated_to")
           machine.succeed("stat /srv/postgresql/14/fcio_migrated_from")
+          print(machine.succeed("${fc-postgresql} list-versions"))
+
+        with subtest("autoupgrade 14 -> 15"):
+          # move to new role and wait for postgresql to start
+          switch_to(machine, "pg15")
+          machine.wait_for_unit("postgresql")
+          machine.succeed("stat /srv/postgresql/14/fcio_migrated_to")
+          machine.succeed("stat /srv/postgresql/15/fcio_migrated_from")
           print(machine.succeed("${fc-postgresql} list-versions"))
       '';
     };

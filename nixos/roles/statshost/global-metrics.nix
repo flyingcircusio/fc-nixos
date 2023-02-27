@@ -54,8 +54,7 @@ let
 in mkIf config.flyingcircus.roles.statshost-global.enable
 {
   # Telegraf host metrics are added in platform/monitoring.nix.
-  flyingcircus.roles.statshost-global.allowedMetricPrefixes =
-    [ "influxdb" ] ++ globalAllowedMetrics;
+  flyingcircus.roles.statshost-global.allowedMetricPrefixes = globalAllowedMetrics;
 
   flyingcircus.roles.statshost.prometheusMetricRelabel =
     lib.mkAfter (markAllowedMetrics ++ dropUnmarkedMetrics);

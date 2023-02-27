@@ -31,36 +31,6 @@ with testlib;
         };
       };
 
-    /* loghost =
-      { ... }: {
-        imports = [
-          (fcConfig { id = 2; })
-        ];
-
-        config = {
-          virtualisation.memorySize = 4096;
-
-          flyingcircus.roles.loghost.enable = true;
-          flyingcircus.roles.graylog.publicFrontend = {
-            enable = true;
-            hostName="loghost.fcio.net";
-          };
-
-          networking.hosts."::1" = [ "loghost.fcio.net" ];
-
-          flyingcircus.roles.elasticsearch.heapPercentage = 30;
-          flyingcircus.services.graylog.heapPercentage = 35;
-
-          networking.domain = "fcio.net";
-
-          systemd.services = {
-            "acme-loghost.fcio.net" = {
-              script = mkForce "true";
-            };
-          };
-        };
-      }; */
-
     server =
       { ... }: {
         imports = [
@@ -101,5 +71,5 @@ with testlib;
         };
       };
   };
-  testScript = replaceStrings ["__SERVERIP__"] [(fcIP.fe4 2)] (readFile <fc/tests/audit.py>);
+  testScript = replaceStrings ["__SERVERIP__"] [(fcIP.fe4 2)] (readFile ./audit.py);
 })
