@@ -15,5 +15,6 @@
   permittedInsecurePackages = [
     "nodejs-10.24.1"
     "mongodb-3.6.23"
+    "python-2.7.18.6"
   ];
 }
