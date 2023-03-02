@@ -5,11 +5,11 @@
 
 stdenv.mkDerivation rec {
   pname = "percona";
-  version = "5.7.39-42";
+  version = "5.7.42-45";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-5.7/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "sha256-vahT+5Ue74vhwvJDkXmM8fM3fHdqN29MVbGS5Cro0bI=";
+    sha256 = "sha256-4wrLuPadMud/GfLhjCdpQji4lcVbMBn6MkJ78p640gk=";
 
   };
 
@@ -48,6 +48,8 @@ stdenv.mkDerivation rec {
     "-DINSTALL_MYSQLSHAREDIR=share/mysql"
     "-DINSTALL_DOCDIR=share/mysql/docs"
     "-DINSTALL_SHAREDIR=share/mysql"
+    # Fails the SSE 4.2 check and forcing it doesn't work, too.
+    "-DWITHOUT_ROCKSDB=1"
   ];
 
   NIX_LDFLAGS = lib.optionalString stdenv.isLinux "-lgcc_s";

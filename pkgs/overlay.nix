@@ -26,6 +26,8 @@ in {
   # imports from other nixpkgs versions or local definitions
   #
 
+  inherit (super.callPackage ./boost { }) boost159;
+
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
@@ -309,7 +311,6 @@ in {
     '';
   });
 
-  #percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
   percona57 = super.callPackage ./percona/5.7.nix {
     boost = self.boost159;
     openssl = self.openssl_1_1;
@@ -323,9 +324,12 @@ in {
     inherit (super.darwin) cctools developer_cmds DarwinTools;
   };
 
-  # We use 2.4 from upstream for older Percona versions.
-  # Percona 8.0 needs a newer version than upstream provides.
-  percona-xtrabackup_8_0 = super.callPackage ./percona/xtrabackup.nix {
+  percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
+    boost = self.boost159;
+    openssl = self.openssl_1_1;
+  };
+
+  percona-xtrabackup_8_0 = super.callPackage ./percona-xtrabackup/8_0.nix {
     boost = self.boost177;
     openssl = self.openssl_1_1;
   };
