@@ -501,6 +501,16 @@ in
         ";
       };
 
+      recommendedBrotliSettings = mkOption {
+        default = false;
+        type = types.bool;
+        description = lib.mdDoc ''
+          Enable recommended brotli settings. Learn more about compression in Brotli format [here](https://github.com/google/ngx_brotli/blob/master/README.md).
+
+          This adds `pkgs.nginxModules.brotli` to `services.nginx.additionalModules`.
+        '';
+      };
+
       recommendedGzipSettings = mkOption {
         default = false;
         type = types.bool;
@@ -531,7 +541,7 @@ in
         defaultText = literalExpression "pkgs.nginxStable";
         type = types.package;
         apply = p: p.override {
-          modules = p.modules ++ cfg.additionalModules;
+          modules = lib.unique (p.modules ++ cfg.additionalModules);
         };
         description = "
           Nginx package to use. This defaults to the stable version. Note
@@ -942,6 +952,8 @@ in
     environment.systemPackages = [ nginxReloadMaster nginxCheckConfig ];
 
     environment.etc."nginx/nginx.conf".source = configFile;
+
+    services.nginx.additionalModules = optional cfg.recommendedBrotliSettings pkgs.nginxModules.brotli;
 
     systemd.services = {
 
