@@ -86,7 +86,7 @@
   "mysql80",
   "nfs-utils",
   "nginx",
-  "nginxModules.modsecurity-nginx",
+  "nginxModules.modsecurity",
   "nginxMainline",
   "nginxStable",
   "nix",

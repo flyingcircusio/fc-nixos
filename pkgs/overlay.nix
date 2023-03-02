@@ -270,7 +270,7 @@ in {
   nginxStable = (super.nginxStable.override {
     modules = with super.nginxModules; [
       dav
-      modsecurity-nginx
+      modsecurity
       moreheaders
       rtmp
     ];
@@ -285,7 +285,7 @@ in {
   nginxMainline = (super.nginxMainline.override {
     modules = with super.nginxModules; [
       dav
-      modsecurity-nginx
+      modsecurity
       rtmp
     ];
   }).overrideAttrs(a: rec {
