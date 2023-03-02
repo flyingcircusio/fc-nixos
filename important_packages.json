@@ -81,8 +81,6 @@
   "matrix-synapse",
   "mcpp",
   "memcached",
-  "mongodb-3_6",
-  "mongodb-4_0",
   "mongodb-4_2",
   "mysql",
   "mysql80",
