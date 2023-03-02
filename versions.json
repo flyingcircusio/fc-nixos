@@ -2,9 +2,19 @@
   "nixpkgs": {
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "960dab25f0225cf9fd8f48922087d805ae649782",
-    "sha256": "uYN/VDlw8dsZxEKHfdwlfKaHcP14b+Euc8saf7xxA6M="
+<<<<<<< HEAD
+    "rev": "68d3f0e2ec7d290b8686be9df2455c5e25995324",
+    "sha256": "RfRXjA8FTuX2V1jqKjgcVAU/vZuLcOWIRDfKjloTgWk="
+   },
+||||||| parent of ebce5fd7 (Try out 23.05 which is nixos-unstable currently)
+    "rev": "63572e7d205027d8ae4bed36f1d5b166ae620d14",
+    "sha256": "pJ9W+jBwHog5dB3nzozejUQB2ElEGPYfecja3ejVSz8="
   },
+=======
+    "rev": "6976c2a2f480da7e564cdf78c0f4c62701b201e5",
+    "sha256": "wxJzMyVTGrwyii4WjoVv/I95193VfJlDQ4SF7+GyrYw="
+  },
+>>>>>>> ebce5fd7 (Try out 23.05 which is nixos-unstable currently)
   "nixos-mailserver": {
     "url": "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/",
     "rev": "02186744a7d8309d92f5b17689ee5184d87b4f2e",
