@@ -1,6 +1,30 @@
-(nixos-systemd-units)=
+(nixos-systemd)=
 
-# Custom SystemD Units
+# systemd
+
+Services on NixOS systems are managed by _systemd_. In addition to the unit
+files provided by systemd itself, NixOS and our platform code generate unit
+files based on the configuration of a system. When activating a new system
+configuration, NixOS automatically restarts or reloads changed units.
+
+## Interaction
+
+Service users may invoke {command}`sudo systemctl` to restart individual
+units, typically services.
+
+Note that stopped services referenced by `multi-user.target` will be started
+by our management task which runs every 10 minutes or when activating system
+configuration changes manually.
+
+See also {ref}`nixos-local` for information about how to activate system
+configuration changes.
+
+See the chapter [Service Management]
+(https://nixos.org/manual/nixos/stable/#sec-systemctl) in the NixOS manual
+for more information.
+
+
+## Custom Units
 
 You can define your own unit files using NixOS configuration modules
 in {file}`/etc/local/nixos` or plain unit files in {file}`/etc/local/systemd`.
@@ -12,8 +36,8 @@ A few notes that you should pay attention to:
 - We do not enforce the user. You can start your services as root, but that
   may easily cause permission issues and poses severe security risks. Please
   confine your services to an appropriate user, typically your service user
-  or let SystemD handle it by using [DynamicUser](http://0pointer.net/blog/dynamic-users-with-systemd.html).
-- Your service should not daemonize / detach on its own. SystemD works best
+  or let systemd handle it by using [DynamicUser](http://0pointer.net/blog/dynamic-users-with-systemd.html).
+- Your service should not daemonize / detach on its own. systemd works best
   when you just start and stay attached in the foreground.
 - NixOS automatically restarts units when meaningful changes to the unit are
   detected. Note that changes to comments or whitespace don't trigger a
@@ -32,13 +56,13 @@ section for details about the start/stop/restart/reload behaviour when units
 change.
 
 
-## NixOS Configuration
+### NixOS Unit Configuration
 
-By writing a custom NixOS module, you can define all kinds of SystemD units.
+By writing a custom NixOS module, you can define all kinds of systemd units.
 See the [NixOS options for service units](https://search.nixos.org/options?from=0&size=30&sort=relevance&query=systemd.services.%3Cname%3E)
 for all available settings.
 
-### Minimal Service Example
+#### Minimal Service Example
 
 Place the following NixOS module in {file}`/etc/local/nixos/systemd-service-minimal-example.nix` (file name doesn't matter, just needs the .nix extension):
 
@@ -59,7 +83,7 @@ Place the following NixOS module in {file}`/etc/local/nixos/systemd-service-mini
 This starts the service after boot and when {command}`fc-manage` is run.
 It runs as user *s-myservice* and doesn't restart if the executable fails.
 
-### Application Service Example
+#### Application Service Example
 
 Place the following NixOS module in {file}`/etc/local/nixos/systemd-service-myapp.nix`:
 
@@ -149,7 +173,7 @@ Place the following NixOS module in {file}`/etc/local/nixos/systemd-service-myap
 }
 ```
 
-SystemD supports many options to harden services to limit the attack surface.
+systemd supports many options to harden services to limit the attack surface.
 The example includes quite restrictive settings that may not work for your service.
 Internet connectivity is still possible but many potentially dangerous ways to
 interact with the system are prohibited.
@@ -157,7 +181,7 @@ interact with the system are prohibited.
 You can check the security settings with `systemd-analyze security myapp` which yields
 a score of 1.3 for the given config (1 is the best, 10 the worst).
 
-### Timer Example
+#### Timer Example
 
 Place the following NixOS module in {file}`/etc/local/nixos/systemd-mytask.nix`:
 
@@ -192,7 +216,7 @@ Place the following NixOS module in {file}`/etc/local/nixos/systemd-mytask.nix`:
 }
 ```
 
-## Plain SystemD Unit Configuration
+### Plain Unit Configuration
 
 We still support plain unit config in in {file}`/etc/local/systemd/<unit-name>.service`
 but it's deprecated. Use Nix config instead, as shown above.

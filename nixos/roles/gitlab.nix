@@ -220,7 +220,7 @@ in
 
   })
 
-  (lib.mkIf (cfg.extraSecrets != []) {
+  (lib.mkIf (cfg.enable && cfg.extraSecrets != []) {
     systemd.services.fc-gitlab-secrets = let
       inherit (config.services.gitlab) statePath;
       serviceCfg = config.services.gitlab;
@@ -282,7 +282,7 @@ in
 
   })
 
-  (lib.mkIf cfg.generateSecrets {
+  (lib.mkIf (cfg.enable && cfg.generateSecrets) {
 
     # generate secrets on first start
     systemd.services.fc-gitlab-generate-secrets = {
