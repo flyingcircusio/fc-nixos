@@ -2,20 +2,23 @@
 
 # Base environment
 
-The base installation includes various tools that generally help with
-application deployment. They are available on every Flying Circus NixOS VM.
-The package's installation includes availability to run them manually and
-to compile your own software against them.
+The base installation includes various packages that generally help with
+application deployment and provide various system tools. Most of them add
+executable files to the global PATH and some can be used as a library.
 
-However, those are intended for short-term convenience. Linking against them
-may cause breakage of your applications in the long term.
+Depending on globally-installed packages should generally be avoided as this
+may cause breakage of your applications, especially on NixOS upgrades. It's
+better to use custom user environments to install application dependencies,
+as described in {ref}`nixos-user-package-management` or other methods to
+isolate application dependencies from the system.
 
-Also, those packages are not providing running daemons (like apacheHttpd). If you
-need a managed component, those need to be activated explicitly.
+Also note that these packages don't provide running services/daemons, like
+`apacheHttpd`. Services are typically activated by adding _roles_
+(also called _components_) to a machine, for example `lamp`.
 
 You can look up packages and their descriptions via the [NixOS Package Search](https://search.nixos.org/packages).
 
-## Packages
+## Packages added by our platform
 
 - apacheHttpd
 - atop
@@ -78,13 +81,8 @@ You can look up packages and their descriptions via the [NixOS Package Search](h
 
 ## Configuration
 
-All tools can be configured individually with dotfiles in the user's home
-directory.
+We provide global basic config for some tools, like bash. Further
+configuration can be done with _dotfiles_ in a user's home directory.
 
-## Interaction
-
-Service users may invoke {command}`sudo systemctl` to restart individual
-services manually. See also {ref}`nixos-local` for information about how to
-activate configuration changes.
 
 % vim: set spell spelllang=en:
