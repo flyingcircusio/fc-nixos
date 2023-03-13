@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 import traceback
+from time import sleep
 
 import fc.util.directory
 from fc.ceph.api import Cluster, Pools
@@ -118,6 +119,9 @@ class MaintenanceTasks(object):
         "LARGE_OMAP_OBJECTS",
     ]
 
+    LOCKTOOL_TIMEOUT_SECS = 30
+    UNLOCK_MAX_RETRIES = 5
+
     def check_cluster_maintenance(self, status: dict) -> bool:
         """Takes the ceph cluster status information as a dict,
         returns True if the cluster is clean enough for doing maintenance operations.
@@ -175,14 +179,31 @@ class MaintenanceTasks(object):
 
     def _ensure_maintenance_volume(self):
         try:
-            run.rbd_locktool("-q", "-i", "rbd/.maintenance")
+            # fmt: off
+            run.rbd_locktool("-q", "-i", "rbd/.maintenance",
+                timeout=self.LOCKTOOL_TIMEOUT_SECS,
+            )
+            # fmt: on
         except subprocess.CalledProcessError as e:
             run.rbd("create", "--size", "1", "rbd/.maintenance")
 
     def enter(self):
-        self._ensure_maintenance_volume()
-        # Aquire the maintenance lock
-        run.rbd_locktool("-l", "rbd/.maintenance")
+        try:
+            self._ensure_maintenance_volume()
+            # Aquire the maintenance lock
+            run.rbd_locktool(
+                "-l", "rbd/.maintenance", timeout=self.LOCKTOOL_TIMEOUT_SECS
+            )
+        # locking can block on a busy cluster, causing the whole agent (and all other
+        # agent operations waiting for the global agent lock) to be stuck
+        except subprocess.TimeoutExpired:
+            # We cannot know whether the lock has succeeded despite the timeout, so
+            # attempt an unlock again.
+            self.leave()
+            sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
+        # already locked by someone else
+        except subprocess.CalledProcessError as e:
+            sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
         # Check that the cluster is fully healhty
         cluster_status = run.json.ceph("health")
         if not self.check_cluster_maintenance(cluster_status):
@@ -190,9 +211,39 @@ class MaintenanceTasks(object):
                 f"Can not enter maintenance: "
                 f"Ceph status is {cluster_status['status']}."
             )
+            # when postponing the maintenance, do not leave a stale lock around in case
+            # e.g. the machine failing before the next maintenance attempt
+            self.leave()
             # 69 signals to postpone the maintenance, triggering a leave in fc-agent
             sys.exit(69)
 
     def leave(self):
-        self._ensure_maintenance_volume()
-        run.rbd_locktool("-q", "-u", "rbd/.maintenance")
+        last_exc = None
+        for _ in range(self.UNLOCK_MAX_RETRIES):
+            try:
+                self._ensure_maintenance_volume()
+                # fmt: off
+                run.rbd_locktool("-q", "-u", "rbd/.maintenance",
+                    timeout=self.LOCKTOOL_TIMEOUT_SECS,
+                )
+                # fmt: on
+            except subprocess.TimeoutExpired as e:
+                print(f"WARNING: Maintenance leave timed out at {e.cmd}.")
+                last_exc = e
+                sleep(
+                    self.LOCKTOOL_TIMEOUT_SECS / 5
+                )  # cooldown time for cluster
+                continue
+            break
+        else:
+            print(
+                "WARNING: All maintenance leave attempts have timed out, "
+                "the cluster might not be properly unlocked."
+            )
+            # deliberately re-raise the exception, as this situation shall be checked by
+            # an operator
+            raise (
+                last_exc
+                if last_exc
+                else RuntimeError("Ceph cluster maintenance unlock failed")
+            )
