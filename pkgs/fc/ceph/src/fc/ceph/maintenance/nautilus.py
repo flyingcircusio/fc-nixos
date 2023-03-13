@@ -3,8 +3,8 @@
 import json
 import subprocess
 import sys
+import time
 import traceback
-from time import sleep
 
 import fc.util.directory
 from fc.ceph.api import Cluster, Pools
@@ -230,7 +230,7 @@ class MaintenanceTasks(object):
             except subprocess.TimeoutExpired as e:
                 print(f"WARNING: Maintenance leave timed out at {e.cmd}.")
                 last_exc = e
-                sleep(
+                time.sleep(
                     self.LOCKTOOL_TIMEOUT_SECS / 5
                 )  # cooldown time for cluster
                 continue
