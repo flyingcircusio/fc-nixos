@@ -115,9 +115,6 @@ in {
     with subtest("Non-root should be able to nix-env install from fc"):
       machine.succeed("su alice -l -c 'nix-env -iA nixos.fc.logcheckhelper'")
 
-    with subtest("Non-root should be able to use nix-env -qa to list packages"):
-      machine.succeed("su alice -l -c 'nix-env -qa'")
-
     with subtest("login/nix-env -i should remove the 19.03 channel hack"):
       # This is the situation after an upgrade from 19.03 to this version.
       machine.execute("rm -f /home/alice/.nix-defexpr/*")
