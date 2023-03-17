@@ -32,7 +32,7 @@ in
 
           Can be replaced for development and testing purposes.
         '';
-        default = fclib.ceph.fcQemuPkgs.${role.cephRelease};
+        default = fclib.ceph.releasePkgs.${role.cephRelease}.fcQemu;
         defaultText = literalExpression "pkgs.fc.qemu [parameterised with cephRelease]";
       };
       cephRelease = fclib.ceph.releaseOption // {
@@ -50,7 +50,7 @@ in
 
     # toolpath for agent (fc-create-vm)
     flyingcircus.agent.extraSettings.Node.path = lib.makeBinPath [
-      fclib.ceph.releasePkgs.${role.cephRelease}
+      fclib.ceph.releasePkgs.${role.cephRelease}.ceph-client
       pkgs.util-linux
       pkgs.e2fsprogs
     ];

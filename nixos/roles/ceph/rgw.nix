@@ -108,7 +108,7 @@ in
         serviceConfig = {
           Type = "simple";
           Restart = "always";
-          ExecStart = "${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/radosgw -n ${username} -f -c /etc/ceph/ceph.conf";
+          ExecStart = "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/radosgw -n ${username} -f -c /etc/ceph/ceph.conf";
         };
       };
 
@@ -149,7 +149,7 @@ in
       systemd.services.fc-ceph-rgw-update-stats = {
         description = "Update RGW stats";
         serviceConfig.Type = "oneshot";
-        path = [ fclib.ceph.releasePkgs.${role.cephRelease} pkgs.jq ];
+        path = [ fclib.ceph.releasePkgs.${role.cephRelease}.ceph pkgs.jq ];
         script = ''
           for uid in $(radosgw-admin metadata list user | jq -r '.[]'); do
             echo $uid

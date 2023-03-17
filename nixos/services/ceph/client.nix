@@ -135,7 +135,7 @@ in
           description = "Main ceph package to be used on the system and to be put into PATH. "
             + "The package set must belong to the release series defined in the `cephRelease` option. "
             + "Only modify if really necessary, otherwise the default ceph package from the defined series is used.";
-          default =  fclib.ceph.clientPkgs.${cfg.client.cephRelease};
+          default =  fclib.ceph.releasePkgs.${cfg.client.cephRelease}.ceph-client;
         };
 
         # legacy config for pre-Nautilus hosts (and migration to it), default value will

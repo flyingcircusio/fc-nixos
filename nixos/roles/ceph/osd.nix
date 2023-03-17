@@ -8,7 +8,7 @@ let
   enc = config.flyingcircus.enc;
   inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
-  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease};
+  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
 
   defaultOsdSettings = {
     # Assist speedy but balanced recovery
@@ -164,7 +164,7 @@ in
         fc-ceph.settings = let
           osdSettings =  {
             release = role.cephRelease;
-            path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease};
+            path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
           };
         in {
           # fc-ceph OSD

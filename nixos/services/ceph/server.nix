@@ -31,7 +31,7 @@ in
         description = "Main ceph package to be used on the system and to be put into PATH. "
           + "The package set must belong to the release series defined in the `cephRelease` option. "
           + "Only modify if really necessary, otherwise the default ceph package from the defined series is used.";
-        default = fclib.ceph.releasePkgs.${cfg.cephRelease};
+        default = fclib.ceph.releasePkgs.${cfg.cephRelease}.ceph;
       };
     };
   };
