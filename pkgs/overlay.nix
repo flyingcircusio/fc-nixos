@@ -258,9 +258,9 @@ in {
     argsOverride = rec {
       src = self.fetchurl {
         url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
-        sha256 = "sha256-G6m/V7a/NtdkR9UES4C3Rstf1h2YHIEWA9x2O3eJzqc=";
+        sha256 = "sha256-4ndWLijyNONmZa4St1hflVeoOoa8So3ohAowWvYwe84=";
       };
-      version = "5.10.159";
+      version = "5.10.175";
       modDirVersion = version;
     };
   });
