@@ -23,8 +23,8 @@ app = Typer()
 
 
 class NixOSVersion(str, Enum):
-    NIXOS_2205 = "nixos-22.05"
     NIXOS_2211 = "nixos-22.11"
+    NIXOS_2211_GITLAB = "nixos-22.11-gitlab"
     UNSTABLE = "nixos-unstable"
 
 
@@ -129,7 +129,7 @@ def get_interesting_commit_msgs(nixpkgs_repo, old_rev, new_rev):
     search_words = set()
     for k, v in package_versions.items():
         search_words.add(k)
-        search_words.add(v["pname"])
+        search_words.add(v.get("pname"))
 
     return sorted({m for m in msgs if set(m.split(": ")) & search_words})
 
@@ -140,6 +140,7 @@ def filter_and_merge_commit_msgs(msgs):
     ignored_msgs = [
         "matomo: 4.10.1 -> 4.12.3",
         "github-runner: pass overridden version to build scripts",
+        "gitlab: make Git package configurable",
         "libmodsecurity: 3.0.6 -> 3.0.7",
         "mongodb: fix build and sanitize package",
         "solr: 8.6.3 -> 8.11.1",
@@ -147,11 +148,7 @@ def filter_and_merge_commit_msgs(msgs):
     ]
 
     for msg in sorted(msgs):
-        if (
-            msg.startswith("linux")
-            and ("5.10" not in msg)
-            and ("5.15" not in msg)
-        ):
+        if msg.startswith("linux") and "5.15" not in msg:
             continue
 
         if msg in ignored_msgs:
@@ -274,7 +271,7 @@ context: Context
 
 @app.callback(no_args_is_help=True)
 def update_nixpkgs(
-    nixos_version: NixOSVersion = Option("nixos-22.05"),
+    nixos_version: NixOSVersion = Option("nixos-22.11"),
     fc_nixos_path: Path = Option(
         ".", dir_okay=True, file_okay=False, writable=True
     ),
@@ -294,7 +291,7 @@ def nixpkgs():
 
 @app.command()
 def prefetch(
-    nixos_version: str = Option("nixos-22.05"),
+    nixos_version: str = Option("nixos-22.11"),
 ):
     print(prefetch_nixpkgs(nixos_version))
 
