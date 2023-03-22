@@ -597,12 +597,14 @@ def init_logging(
     log_cmd_output: bool = False,
     log_to_console: bool = True,
     syslog_identifier="fc-agent",
+    show_caller_info: bool = False,
 ):
     multi_renderer = MultiRenderer(
         journal=SystemdJournalRenderer(syslog_identifier, syslog.LOG_LOCAL1),
         cmd_output_file=CmdOutputFileRenderer(),
         text=ConsoleFileRenderer(
-            min_level="trace" if verbose else "info", show_caller_info=verbose
+            min_level="trace" if verbose else "info",
+            show_caller_info=show_caller_info,
         ),
     )
 
@@ -620,7 +622,7 @@ def init_logging(
     loggers = {}
 
     if logdir is not None:
-        main_log_file = open(logdir / "fc-agent.log", "a")
+        main_log_file = open(logdir / f"{syslog_identifier}.log", "a")
         loggers["file"] = structlog.PrintLoggerFactory(main_log_file)
     if journal:
         loggers["journal"] = JournalLoggerFactory()

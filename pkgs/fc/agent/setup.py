@@ -33,8 +33,7 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "License :: OSI Approved :: Zope Public License",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.10",
         "Topic :: System :: Systems Administration",
     ],
     packages=[
@@ -70,6 +69,7 @@ setup(
             "fc-monitor=fc.manage.monitor:main",
             "fc-resize-disk=fc.manage.resize_disk:app",
             "fc-postgresql=fc.manage.postgresql:app",
+            "fc-slurm=fc.manage.slurm:app",
             "fctl=fc.util.fctl:app",
         ],
     },
