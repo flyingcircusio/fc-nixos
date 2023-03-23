@@ -385,7 +385,7 @@ def run_ready_pre_checks(
     state, *flags = node_info["state"].split("+")
     log.debug("ready-pre-node-state", state=state, flags=flags)
 
-    if state in ("ALLOCATED", "IDLE", "MIXED"):
+    if state in ("ALLOCATED", "IDLE", "MIXED") and "DRAIN" not in flags:
         if strict_state_check:
             log.error("ready-state-error", state=state, flags=flags)
             raise NodeStateError(state, flags)
@@ -399,7 +399,7 @@ def run_ready_pre_checks(
             )
             return ReadyPreCheckResult(state, flags, action=False)
 
-    if state in ("ALLOCATED*", "IDLE*", "MIXED*"):
+    if state in ("ALLOCATED*", "IDLE*", "MIXED*") and "DRAIN" not in flags:
         if strict_state_check:
             log.error("ready-state-error", state=state, flags=flags)
             raise NodeStateError(state, flags)

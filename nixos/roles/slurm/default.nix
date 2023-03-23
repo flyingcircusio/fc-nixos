@@ -414,16 +414,6 @@ in
           '';
         };
       };
-
-      flyingcircus.services.telegraf.inputs = {
-        exec = [{
-          commands = [ "${pkgs.fc.agent}/bin/fc-slurm metrics" ];
-          timeout = "10s";
-          data_format = "json";
-          json_name_key = "name";
-          tag_keys = [ "account" ];
-        }];
-      };
     })
 
     # We need at least one compute node or the controller will crash on startup.
@@ -438,6 +428,16 @@ in
             (lib.concatMapStrings
               (m: " --required-in-service ${m}")
               externalDependencyMachines);
+      };
+
+      flyingcircus.services.telegraf.inputs = {
+        exec = [{
+          commands = [ "${pkgs.fc.agent}/bin/fc-slurm metrics" ];
+          timeout = "10s";
+          data_format = "json";
+          json_name_key = "name";
+          tag_keys = [ "account" ];
+        }];
       };
 
       services.slurm = {

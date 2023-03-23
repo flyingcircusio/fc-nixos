@@ -123,6 +123,7 @@ let
   includedPkgNames = [
     "calibre"
     "gitlab-ee"
+    "element-web"
   ];
 
   testPkgNames = includedPkgNames ++
