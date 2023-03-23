@@ -35,7 +35,7 @@ Place it in :file:`/etc/local/nixos/postgresql.nix`, for example:
         log_connections = true;
         huge_pages = "try";
         max_connections = lib.mkForce 1000;
-    }
+    };
   }
 
 To override platform defaults, use :code:`lib.mkForce` before the wanted value
