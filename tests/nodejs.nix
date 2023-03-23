@@ -21,8 +21,8 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
       "${nodejs-slim-14_x}": "14",
       "${nodejs-slim-16_x}": "16",
       "${nodejs-slim-18_x}": "18",
-      "${nodejs-slim}": "16",
-      "${nodejs}": "16",
+      "${nodejs-slim}": "18",
+      "${nodejs}": "18",
     }
 
     for package, version in package_versions.items():
