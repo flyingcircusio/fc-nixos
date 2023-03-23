@@ -7,7 +7,7 @@ let
   role = config.flyingcircus.roles.backyserver;
   enc = config.flyingcircus.enc;
 
-  backy = fclib.ceph.backyPkgs.${role.cephRelease};
+  backy = pkgs.callPackage ../../pkgs/backy/default.nix { };
 
   backyExtract = let
     src = pkgs.fetchFromGitHub {

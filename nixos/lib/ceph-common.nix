@@ -53,15 +53,10 @@ let
     "luminous" = pkgs.fc.util-physical.luminous.override {ceph = clientPkgs.luminous;};
     "nautilus" = pkgs.fc.util-physical.nautilus.override {ceph = clientPkgs.nautilus;};
   };
-  backyPkgs = rec {
-    jewel = pkgs.callPackage ../../pkgs/backy/luminous.nix { };
-    luminous = pkgs.callPackage ../../pkgs/backy/luminous.nix { };
-    nautilus = pkgs.callPackage ../../pkgs/backy/nautilus.nix { };
-  };
 in
 rec {
   # constants
-  inherit releasePkgs clientPkgs backyPkgs fcQemuPkgs libcephPkgs utilPhysicalPkgs defaultRelease qemu_ceph_versioned;
+  inherit releasePkgs clientPkgs fcQemuPkgs libcephPkgs utilPhysicalPkgs defaultRelease qemu_ceph_versioned;
   releaseOption = lib.mkOption {
     type = cephReleaseType;
     # centrally manage the default release for all roles here
