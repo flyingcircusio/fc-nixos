@@ -31,7 +31,7 @@ Place it in {file}`/etc/local/nixos/postgresql.nix`, for example:
       log_connections = true;
       huge_pages = "try";
       max_connections = lib.mkForce 1000;
-  }
+  };
 }
 ```
 
@@ -50,7 +50,7 @@ modules.
 ## Interaction
 
 Service users can use {command}`sudo -u postgres -i` to access the
-PostgreSQL super user account to perform administrative commands like
+PostgreSQL superuser account to perform administrative commands like
 {command}`createdb` and {command}`createuser`.
 
 Service users may invoke {command}`sudo fc-manage --build`
@@ -59,15 +59,24 @@ server (if necessary).
 
 ## Monitoring
 
-The default monitoring setup checks that the PostgreSQL server process is
-running and that it responds to connection attempts to the standard PostgreSQL
-port.
+We use the following Sensu checks to monitor the availability of PostgreSQL:
+
+- `postgresql-alive`: uses the UNIX socket in {file}`/run/postgresql` to
+  connect and logs in as `fcio_monitoring` database user.
+- `postgresql-listen-*`: connects to all configured listen addresses
+  and checks if a TCP connection can be established.
+
+Telegraf is used to export metrics for PostgreSQL. Telegraf connects as
+`fcio_monitoring` database user. Metrics can be viewed when a {ref}`nixos-statshost`
+is present, using the `FCIO/PostgreSQL` dashboard.
 
 ## Platform-created Databases
 
-We create the `nagios` database for monitoring purposes and `root` for the
-root user. In a fresh installation, the following databases are present:
-`nagios`, `postgres`, `root`, `template0`, `template1`
+We create the `fcio_monitoring` database for monitoring purposes and `root`
+for the root user. In a fresh installation, the following databases are
+present: `fcio_monitoring`, `postgres`, `root`, `template0`, `template1`.
+Older installations still have a `nagios` database for monitoring which is
+not used anymore.
 
 ## Major Version Upgrades
 
@@ -88,6 +97,13 @@ to the `postgres` user. This is allowed for `service` and `sudo-srv`
 users.
 :::
 
+:::{warning}
+When the PostGIS extension is used, upgrading from a version before 12
+to 12 or higher isn't possible using the `fc-postgresql` command.
+You have to create a full dump of the old cluster using `pg_dumpall`,
+switch to the new role, rebuild the system and use `pg_restore`.
+:::
+
 To show which data directories exists, their migration status and which
 service version is running, use {command}`sudo -u postgres fc-postgresql list-versions`.
 Add `--help` to see details about the meaning of the columns.
@@ -106,7 +122,7 @@ are always accepted and don't have to be specified.
 If you have two databases, `mydb` and `otherdb`, for example, specify both on
 the command line.
 
-To prepare an upgrade, when you use the `postgresql13` role at the moment and
+To prepare an upgrade, when you use the `postgresql13` role at the moment, and
 you want to change to `postgresql14`, run:
 
 ```sh
@@ -142,7 +158,7 @@ directory cannot be used by the postgresql service anymore after this point.
 Run {command}`sudo -u postgres fc-postgresql list-versions` to see how the
 status of the old and new data dir has changed.
 
-After the migration, postgresql is still stopped and you have to change your
+After the migration, postgresql is still stopped, and you have to change your
 configuration to the new major version, for example by disabling the
 `postgresql13` role and activating the `postgresql14` role, in one step.
 
