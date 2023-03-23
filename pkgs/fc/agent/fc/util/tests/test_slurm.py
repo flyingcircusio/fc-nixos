@@ -3,6 +3,7 @@ import unittest.mock
 from itertools import chain, repeat
 from unittest.mock import MagicMock
 
+import pytest
 from fc.util.logging import init_logging
 from pytest import fixture, raises
 
@@ -28,10 +29,14 @@ import fc.util.slurm
 from fc.util.slurm import NodeStateError, NodeStateTimeout, drain
 
 
+@pytest.mark.parametrize(
+    "state",
+    ["IDLE+DRAIN", "ALLOCATED+DRAIN", "MIXED+DRAIN", "DOWN+DRAIN", "DOWN"],
+)
 @unittest.mock.patch("fc.util.slurm.get_node_info")
 @unittest.mock.patch("fc.util.slurm.update_nodes")
-def test_ready(update_nodes: MagicMock, get_node_info, logger):
-    get_node_info.return_value = {"name": "test20", "state": "DOWN+DRAIN"}
+def test_ready(update_nodes: MagicMock, get_node_info, state, logger):
+    get_node_info.return_value = {"name": "test20", "state": state}
     fc.util.slurm.ready(logger, "test20")
     update_nodes.assert_called_once_with(
         {
