@@ -268,6 +268,7 @@ def get_existing_dbs(log, data_dir, postgres_running, expected_dbs=None):
         log.debug("get-existing-dbs", existing_dbs=existing_dbs)
     else:
         expected_existing_dbs = {
+            "fcio_monitoring",
             "nagios",
             "postgres",
             "root",

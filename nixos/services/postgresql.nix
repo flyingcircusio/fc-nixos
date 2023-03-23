@@ -155,22 +155,15 @@ in {
       let
         psql = "${postgresqlPkg}/bin/psql --port=${toString upstreamCfg.port}";
       in ''
-        if ! ${psql} -c '\du' template1 | grep -q '^ *nagios *|'; then
-          ${psql} -c 'CREATE ROLE nagios NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT LOGIN' template1
-        fi
-        if ! ${psql} -l | grep -q '^ *nagios *|'; then
-          ${postgresqlPkg}/bin/createdb --port ${toString upstreamCfg.port} nagios
-        fi
-        ${psql} -q -d nagios -c 'REVOKE ALL ON SCHEMA public FROM PUBLIC CASCADE;'
-
         ln -sfT ${postgresqlPkg} ${upstreamCfg.dataDir}/package
         ln -sfT ${upstreamCfg.dataDir}/package /nix/var/nix/gcroots/per-user/postgres/package_${cfg.majorVersion}
       '';
 
-      systemd.services.postgresql.serviceConfig =
-        lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "12") {
-          RuntimeDirectory = "postgresql";
-        };
+      systemd.services.postgresql.serviceConfig = {
+        Restart = "always";
+      } // lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "12") {
+        RuntimeDirectory = "postgresql";
+      };
 
       users.users.postgres = {
         shell = "/run/current-system/sw/bin/bash";
@@ -260,11 +253,22 @@ in {
         logLinePrefix = "user=%u,db=%d ";
         package = postgresqlPkg;
 
+        ensureDatabases = [ "fcio_monitoring" ];
+        ensureUsers = [ {
+          name = "fcio_monitoring";
+        } ];
+
+        identMap = ''
+          # Map the sensuclient and telegraf system users to the fcio_monitoring database user.
+          monitoring sensuclient fcio_monitoring
+          monitoring telegraf fcio_monitoring
+        '';
+
         authentication = ''
-          local postgres root       trust
-          # trusted access for Nagios
-          host    nagios          nagios          0.0.0.0/0               trust
-          host    nagios          nagios          ::/0                    trust
+          # Passwordless UNIX socket access for monitoring.
+          # Used by telegraf and sensu.
+          local fcio_monitoring fcio_monitoring peer map=monitoring
+
           # authenticated access for others
           host all  all  0.0.0.0/0  md5
           host all  all  ::/0       md5
@@ -338,36 +342,41 @@ in {
           postgresqlPkg
         ];
 
-        sensu-client.checks =
-          lib.optionalAttrs (cfg.autoUpgrade.enable && cfg.autoUpgrade.checkExpectedDatabases) {
+        sensu-client.checks = {
+          postgresql-alive = {
+            notification = "PostgreSQL not reachable via UNIX socket in /run/postgresql";
+            command = ''
+              ${pkgs.sensu-plugins-postgres}/bin/check-postgres-alive.rb \
+                -u fcio_monitoring -d fcio_monitoring -h /run/postgresql -T 10
+              '';
+            interval = 30;
+          };
+        } // lib.optionalAttrs (cfg.autoUpgrade.enable && cfg.autoUpgrade.checkExpectedDatabases) {
             postgresql-autoupgrade-possible = {
               notification = "Unexpected PostgreSQL databases present, autoupgrade will fail!";
               command = "sudo -u postgres ${pkgs.fc.agent}/bin/fc-postgresql check-autoupgrade-unexpected-dbs";
               interval = 600;
             };
-          } // (lib.listToAttrs (
-          map (host:
-              let saneHost = replaceStrings [":"] ["_"] host;
-              in
-              { name = "postgresql-listen-${saneHost}-5432";
-                value = {
-                  notification = "PostgreSQL listening on ${host}:5432";
-                  command = ''
-                    ${pkgs.sensu-plugins-postgres}/bin/check-postgres-alive.rb \
-                      -h ${host} -u nagios -d nagios -P 5432 -T 10
-                  '';
-                  interval = 120;
-                };
-              })
-            listenAddresses));
+        } // (lib.listToAttrs (map (host:
+            let
+              saneHost = replaceStrings [":"] ["_"] host;
+            in
+            { name = "postgresql-listen-${saneHost}-5432";
+              value = {
+                notification = "PostgreSQL not reachable on ${host}:5432";
+                command = "${pkgs.monitoring-plugins}/bin/check_tcp -H ${host} -p 5432";
+                interval = 60;
+              };
+            })
+          listenAddresses));
 
         telegraf.inputs = {
           postgresql = [
             (if (lib.versionOlder cfg.majorVersion "12") then {
-              address = "host=/tmp user=root sslmode=disable dbname=postgres";
+              address = "host=/tmp user=fcio_monitoring sslmode=disable dbname=fcio_monitoring";
             }
             else {
-              address = "host=/run/postgresql user=root sslmode=disable dbname=postgres";
+              address = "host=/run/postgresql user=fcio_monitoring sslmode=disable dbname=fcio_monitoring";
               # Workaround for a telegraf bug: https://github.com/influxdata/telegraf/issues/6712
               ignored_databases = [ "postgres" "template0" "template1" ];
             })
