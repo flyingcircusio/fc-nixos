@@ -418,8 +418,8 @@ def run_ready_pre_checks(
         log.info(
             "ready-pre-reason-not-matched",
             _replace_msg=(
-                "{node} cannot be ready because the reason '{reason}'"
-                "does not contain the expected string {expected}"
+                "{node} cannot be set to ready because the reason '{reason}' "
+                "does not contain the expected string '{expected}'"
             ),
             expected=reason_must_match,
             reason=node_info["reason"],
