@@ -421,10 +421,11 @@ in
 
       # The controller must be out of maintenance for running jobs.
       # Nodes are set to ready after controller maintenance is done
-      # (or not needed, the leave command is called on every agent run).
+      # (the leave command is called on every agent run, even when there was
+      # nothing to do).
       flyingcircus.agent.maintenance.slurm-controller = {
         leave =
-          "fc-slurm -v all-nodes ready" +
+          "fc-slurm -v all-nodes ready --reason-must-match fc-agent:" +
             (lib.concatMapStrings
               (m: " --required-in-service ${m}")
               externalDependencyMachines);
