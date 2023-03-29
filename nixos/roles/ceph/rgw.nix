@@ -22,6 +22,7 @@ let
     adminSocket = "/run/ceph/radosgw.asok";
     rgwData = "/srv/ceph/radosgw/ceph-$id";
     rgwEnableOpsLog = false;
+    rgwMimeTypesFile = "${pkgs.mime-types}/etc/mime.types";
     # FIXME: use different frontend in Nautilus
     rgwFrontends = "civetweb port=80";
     debugRgw = "0 5";
