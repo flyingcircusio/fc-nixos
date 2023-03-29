@@ -8,6 +8,7 @@ import threading
 import time
 import traceback
 from subprocess import CalledProcessError
+from uuid import uuid4
 
 from fc.ceph.util import kill, mount_status, run
 
@@ -82,7 +83,8 @@ class OSDManager(object):
 
         print("Creating OSD ...")
 
-        id_ = int(run.json.ceph("osd", "create")["osdid"])
+        uuid_ = str(uuid4())
+        id_ = int(run.json.ceph("osd", "new", uuid_)["osdid"])
         print(f"OSDID={id_}")
 
         osd = FileStoreOSD(id_)
@@ -95,7 +97,10 @@ class OSDManager(object):
 
         print("Creating bluestore OSD ...")
 
-        id_ = int(run.json.ceph("osd", "create")["osdid"])
+        # create a random uuid, as (despite the manpage stating otherwise) `ceph osd new`
+        # does not do this by itself anymore, as `ceph osd create` used to
+        uuid_ = str(uuid4())
+        id_ = int(run.json.ceph("osd", "new", uuid_)["osdid"])
         print(f"OSDID={id_}")
 
         osd = BlueStoreOSD(id_)

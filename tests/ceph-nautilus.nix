@@ -243,6 +243,9 @@ in
       # cover explicit specification of internal and external journals
       host3.succeed('fc-ceph osd create-bluestore --wal=external /dev/vdc > /dev/kmsg 2>&1')
 
+      host3.sleep(10)
+      show(host3, "cat /var/log/ceph/ceph-osd.*.log")
+
     with subtest("Move OSDs to correct crush location"):
       host1.succeed('ceph osd crush move host1 root=default')
       host1.succeed('ceph osd crush move host2 root=default')
