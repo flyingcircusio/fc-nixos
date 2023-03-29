@@ -7,13 +7,14 @@ let
   ipv6 = "2001:db8:f030:1c3::1";
 in {
   name = "antivirus";
-  machine =
+  nodes.machine =
     { lib, pkgs, ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
       flyingcircus.roles.antivirus.enable = true;
       flyingcircus.enc.parameters = {
         resource_group = "test";
+        memory = 3072;    #lower limit for allowing the enabling of antivirus
         interfaces.srv = {
           mac = "52:54:00:12:34:56";
           bridged = false;
