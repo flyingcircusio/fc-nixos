@@ -272,7 +272,6 @@ in
       result = host1.succeed("radosgw-admin metadata list user")
       assert '"user"' in result
       # New pools = more PGs
-      # FIXME: radosgw creates fewer additional pools than it did in jewel. Is this normal?
       show(host2, 'ceph osd lspools')
       assert_clean_cluster(host2, 3, 3, 3, 320)
 

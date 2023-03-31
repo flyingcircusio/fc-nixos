@@ -88,9 +88,8 @@ in
           Extra config in the [global] section.
         '';
       };
-      # FIXME: ensure override priority, documentation
       extraSettings = lib.mkOption {
-        # FIXME: explicitly factoring out certain config options, like done in the
+        # TODO: explicitly factoring out certain config options, like done in the
         # nixpkgs upstream ceph module, might allow for better type checking
         type = with lib.types; attrsOf (oneOf [ str int float bool ]);
         default = {};   # defaults are provided in the config section with a lower priority
@@ -149,8 +148,6 @@ in
           '';
         };
         extraSettings = lib.mkOption {
-          # FIXME: explicitly factoring out certain config options, like done in the
-          # nixpkgs upstream ceph module, might allow for better type checking
           type = with lib.types; attrsOf (oneOf [ str int float bool ]);
           default = {};   # defaults are provided in the config section with a lower priority
           description = ''

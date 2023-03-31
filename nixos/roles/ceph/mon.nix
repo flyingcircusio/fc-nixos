@@ -15,8 +15,7 @@ let
   fc-check-ceph-withVersion = pkgs.fc.check-ceph.${role.cephRelease};
   fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
 
-  # FIXME: expose this as a config option (overridable)
-  # modules to be explicitly activated via this config
+  # default definitions for the mgr.* options:
   mgrEnabledModules = {
     luminous = [ "balancer" "dashboard" "status" ];
     # always_on_modules are not listed here
@@ -25,9 +24,6 @@ let
       "iostat"
     ];
   };
-  # modules that are ensured to be disabled at each mgr start. All other modules might
-  # be imperatively enabled in the cluster and stay enabled.
-  # Note that `always_on` modules cannot be disabled so far
   mgrDisabledModules = {
     luminous = [];
     nautilus = [
@@ -86,6 +82,24 @@ in
 
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used for the the mon package.";
+      };
+
+      mgr = {
+        enabledModules = lib.mkOption {
+          type = with lib.types; listOf str;
+          default = mgrEnabledModules."${role.cephRelease}";
+          description = "Modules to be explicitly activated via this config,"
+            + " always_on modules do not need to be listed here.";
+        };
+        disabledModules = lib.mkOption {
+          type = with lib.types; listOf str;
+          default = mgrDisabledModules."${role.cephRelease}";
+          description = ''
+            Modules that are ensured to be disabled at each mgr start. All other
+            modules might be imperatively enabled in the cluster and stay enabled.
+            Note that `always_on` modules cannot be disabled so far
+          '';
+        };
       };
     };
   };
@@ -258,7 +272,7 @@ in
         '';
 
         preStart =
-          # FIXME: dashboard only enabled for luminous, as the Nautilus release fails to build in the sandbox so far.
+          # dashboard only enabled for luminous, as the Nautilus release fails to build in the sandbox so far.
           # If we ever manage to get it enabled, `ceph config set` needs to be used instead of `ceph config-key`
           lib.optionalString (role.cephRelease == "luminous") ''
             echo "ensure mgr dashboard binds to localhost only"
