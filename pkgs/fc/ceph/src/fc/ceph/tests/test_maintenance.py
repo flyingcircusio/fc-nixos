@@ -32,9 +32,10 @@ def ceph_json_calls(monkeypatch):
     return ceph_json_calls
 
 
-# FIXME: so far only testing nautilus behaviour
-def test_successful_maintenance_cycle(ceph_json_calls, locktoolcalls):
-    maintenance_task = fc.ceph.maintenance.nautilus.MaintenanceTasks()
+def test_successful_maintenance_cycle(
+    ceph_json_calls, locktoolcalls, maintenance_manager
+):
+    maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = [
         # enter
@@ -59,8 +60,10 @@ def test_successful_maintenance_cycle(ceph_json_calls, locktoolcalls):
     assert locktoolcalls.call_count == 4
 
 
-def test_maintenance_enter_lock_timeout_causes_leave(rbdcalls, locktoolcalls):
-    maintenance_task = fc.ceph.maintenance.nautilus.MaintenanceTasks()
+def test_maintenance_enter_lock_timeout_causes_leave(
+    rbdcalls, locktoolcalls, maintenance_manager
+):
+    maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = [
         # enter
@@ -88,8 +91,10 @@ def test_maintenance_enter_lock_timeout_causes_leave(rbdcalls, locktoolcalls):
     )
 
 
-def test_lockimage_created(locktoolcalls, rbdcalls, ceph_json_calls):
-    maintenance_task = fc.ceph.maintenance.nautilus.MaintenanceTasks()
+def test_lockimage_created(
+    locktoolcalls, rbdcalls, ceph_json_calls, maintenance_manager
+):
+    maintenance_task = maintenance_manager.MaintenanceTasks()
 
     for opname in ["enter", "leave"]:
         locktoolcalls.side_effect = [
@@ -111,8 +116,8 @@ def test_lockimage_created(locktoolcalls, rbdcalls, ceph_json_calls):
         )
 
 
-def test_tempfail_when_another_lockholder(locktoolcalls):
-    maintenance_task = fc.ceph.maintenance.nautilus.MaintenanceTasks()
+def test_tempfail_when_another_lockholder(locktoolcalls, maintenance_manager):
+    maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = [
         # enter
@@ -139,8 +144,10 @@ def test_tempfail_when_another_lockholder(locktoolcalls):
     )
 
 
-def test_postpone_and_leave_when_unclean(locktoolcalls, ceph_json_calls):
-    maintenance_task = fc.ceph.maintenance.nautilus.MaintenanceTasks()
+def test_postpone_and_leave_when_unclean(
+    locktoolcalls, ceph_json_calls, maintenance_manager
+):
+    maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = [
         # enter
@@ -172,8 +179,10 @@ def test_postpone_and_leave_when_unclean(locktoolcalls, ceph_json_calls):
     )
 
 
-def test_leave_unlock_timeout_retries(locktoolcalls, nosleep):
-    maintenance_task = fc.ceph.maintenance.nautilus.MaintenanceTasks()
+def test_leave_unlock_timeout_retries(
+    locktoolcalls, nosleep, maintenance_manager
+):
+    maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = 4 * [
         # "-q", "-i", "rbd/.maintenance"
@@ -200,8 +209,10 @@ def test_leave_unlock_timeout_retries(locktoolcalls, nosleep):
     assert locktoolcalls.call_count == 10
 
 
-def test_leave_unlock_timeout_retries_exceeded(locktoolcalls, nosleep):
-    maintenance_task = fc.ceph.maintenance.nautilus.MaintenanceTasks()
+def test_leave_unlock_timeout_retries_exceeded(
+    locktoolcalls, nosleep, maintenance_manager
+):
+    maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = 5 * [
         # "-q", "-i", "rbd/.maintenance"
@@ -223,8 +234,8 @@ def test_leave_unlock_timeout_retries_exceeded(locktoolcalls, nosleep):
     assert locktoolcalls.call_count == 10
 
 
-def test_lockimage_check_timeout(locktoolcalls):
-    maintenance_task = fc.ceph.maintenance.nautilus.MaintenanceTasks()
+def test_lockimage_check_timeout(locktoolcalls, maintenance_manager):
+    maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = [
         # enter
@@ -252,8 +263,9 @@ def test_lockimage_check_timeout(locktoolcalls):
     assert locktoolcalls.call_count == 3
 
 
-def test_check_cluster_maintenance():
-    maintenance_task = fc.ceph.maintenance.nautilus.MaintenanceTasks()
+def test_check_cluster_maintenance(maintenance_manager):
+
+    maintenance_task = maintenance_manager.MaintenanceTasks()
 
     assert maintenance_task.check_cluster_maintenance(
         {
