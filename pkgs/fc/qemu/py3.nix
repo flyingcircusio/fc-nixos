@@ -4,18 +4,6 @@ let
   # Python must be the same as the one used by Ceph
   py = python3Packages;
 
-  # FIXME: try upgrading to 21.1.0 shipped with nixpkgs-21.05
-  py_structlog = py.buildPythonPackage rec {
-    pname = "structlog";
-    version = "16.1.0";
-    src = py.fetchPypi {
-      inherit pname version;
-      sha256 = "00dywyg3bqlkrmbrfrql21hpjjjkc4zjd6xxjyxyd15brfnzlkdl";
-    };
-    propagatedBuildInputs = [ py.six ];
-    doCheck = false;
-  };
-
   # unreleased version
   py_consulate = py.buildPythonPackage rec {
     pname = "consulate";
@@ -54,7 +42,7 @@ in
       py.requests
       py.future
       py.colorama
-      py_structlog
+      py.structlog
       py_consulate
       py.psutil
       py.pyyaml
