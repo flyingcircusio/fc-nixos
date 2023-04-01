@@ -162,11 +162,7 @@ in {
       hostname = mkOption {
         type = types.str;
         default = "${user}.${fqdn}";
-        defaultText = literalExpression ''
-          if config.${options.networking.domain} != null
-          then "${user}.''${config.${options.networking.fqdn}}"
-          else "${user}.''${config.${options.networking.hostName}}"
-        '';
+        defaultText = literalExpression "${user}.\${fqdn}";
         example = "matomo.yourdomain.org";
         description = lib.mdDoc ''
           URL of the host, without https prefix. You may want to change it if you

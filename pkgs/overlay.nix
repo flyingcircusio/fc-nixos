@@ -1,44 +1,44 @@
-self: super:
+final: prev:
 let
-  versions = import ../versions.nix { pkgs = super; };
+  versions = import ../versions.nix { pkgs = prev; };
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
-    {} super;
+    {} prev;
 
-  inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
+  inherit (prev) fetchpatch fetchFromGitHub fetchurl lib;
 
 in {
   #
   # == our own stuff
   #
   fc = (import ./default.nix {
-    pkgs = self;
+    pkgs = final;
     # Only used by the agent for now but we should probably use this
     # for all our Python packages and update Python in sync then.
-    pythonPackages = self.python310Packages;
+    pythonPackages = final.python310Packages;
   });
 
   #
   # imports from other nixpkgs versions or local definitions
   #
 
-  apacheHttpdLegacyCrypt = self.apacheHttpd.override {
-    aprutil = self.aprutil.override { libxcrypt = self.libxcrypt-legacy; };
+  apacheHttpdLegacyCrypt = final.apacheHttpd.override {
+    aprutil = final.aprutil.override { libxcrypt = final.libxcrypt-legacy; };
   };
 
-  inherit (super.callPackage ./boost { }) boost159;
+  inherit (prev.callPackage ./boost { }) boost159;
 
-  bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
-  busybox = super.busybox.overrideAttrs (oldAttrs: {
+  bundlerSensuPlugin = prev.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
+  busybox = prev.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
     });
 
-  certmgr = super.callPackage ./certmgr.nix {  };
+  certmgr = prev.callPackage ./certmgr.nix {  };
 
-  check_ipmi_sensor = super.callPackage ./check_ipmi_sensor.nix { };
-  check_md_raid = super.callPackage ./check_md_raid { };
-  check_megaraid = super.callPackage ./check_megaraid { };
+  check_ipmi_sensor = prev.callPackage ./check_ipmi_sensor.nix { };
+  check_md_raid = prev.callPackage ./check_md_raid { };
+  check_megaraid = prev.callPackage ./check_megaraid { };
 
   # XXX: ceph doesn't build
   # ceph = (super.callPackage ./ceph {
@@ -46,9 +46,9 @@ in {
   #     boost = super.boost155;
   # });
 
-  docsplit = super.callPackage ./docsplit { };
+  docsplit = prev.callPackage ./docsplit { };
 
-  innotop = super.callPackage ./percona/innotop.nix { };
+  innotop = prev.callPackage ./percona/innotop.nix { };
 
   # XXX: pinned to the latest 16.1.0 version using Go 1.20.5 (from release 2023_017)
   # until the gitlab-runner problem with Go 1.20.6 is fixed:
@@ -56,9 +56,9 @@ in {
   # https://github.com/NixOS/nixpkgs/issues/245365
   gitlab-runner = builtins.storePath /nix/store/hfk8w6yf0zfvs6ng1swpiyrqrk5pghn5-gitlab-runner-16.1.0;
 
-  libmodsecurity = super.callPackage ./libmodsecurity { };
+  libmodsecurity = prev.callPackage ./libmodsecurity { };
 
-  jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
+  jicofo = prev.jicofo.overrideAttrs(oldAttrs: rec {
     pname = "jicofo";
     version = "1.0-1027";
     src = fetchurl {
@@ -67,7 +67,7 @@ in {
     };
   });
 
-  jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
+  jitsi-meet = prev.jitsi-meet.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-meet";
     version = "1.0.7235";
     src = fetchurl {
@@ -77,7 +77,7 @@ in {
 
   });
 
-  jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
+  jitsi-videobridge = prev.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
     pname = "jitsi-videobridge2";
     version = "2.3-19-gb286dc0c";
     src = fetchurl {
@@ -88,7 +88,7 @@ in {
     installPhase = ''
       runHook preInstall
       substituteInPlace usr/share/jitsi-videobridge/jvb.sh \
-        --replace "exec java" "exec ${self.jre_headless}/bin/java"
+        --replace "exec java" "exec ${final.jre_headless}/bin/java"
 
       mkdir -p $out/{bin,share/jitsi-videobridge,etc/jitsi/videobridge}
       mv etc/jitsi/videobridge/logging.properties $out/etc/jitsi/videobridge/
@@ -98,25 +98,25 @@ in {
       # work around https://github.com/jitsi/jitsi-videobridge/issues/1547
       wrapProgram $out/bin/jitsi-videobridge \
         --set VIDEOBRIDGE_GC_TYPE G1GC \
-        --set LD_LIBRARY_PATH ${super.lib.getLib super.openssl_3_0}/lib/
+        --set LD_LIBRARY_PATH ${prev.lib.getLib prev.openssl_3_0}/lib/
       runHook postInstall
     '';
   });
 
-  inherit (super.callPackages ./matomo {})
+  inherit (prev.callPackages ./matomo {})
     matomo
     matomo-beta;
 
 
-  kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
-  kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
+  kubernetes-dashboard = prev.callPackage ./kubernetes-dashboard.nix { };
+  kubernetes-dashboard-metrics-scraper = prev.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
 
   # Overriding the version for Go modules doesn't work properly so we
   # include our own beats.nix here. The other beats below inherit the version
   # change.
-  inherit (super.callPackage ./beats.nix {}) filebeat7;
+  inherit (prev.callPackage ./beats.nix {}) filebeat7;
 
-  auditbeat7 = self.filebeat7.overrideAttrs(a: a // {
+  auditbeat7 = final.filebeat7.overrideAttrs(a: a // {
     name = "auditbeat-${a.version}";
 
     postFixup = "";
@@ -126,23 +126,23 @@ in {
     ];
   });
 
-  auditbeat7-oss = self.auditbeat7.overrideAttrs(a: a // {
+  auditbeat7-oss = final.auditbeat7.overrideAttrs(a: a // {
     name = "auditbeat-oss-${a.version}";
     preBuild = "rm -rf x-pack";
   });
 
-  cyrus_sasl-legacyCrypt = super.cyrus_sasl.override {
-    libxcrypt = self.libxcrypt-legacy;
+  cyrus_sasl-legacyCrypt = prev.cyrus_sasl.override {
+    libxcrypt = final.libxcrypt-legacy;
   };
 
-  dovecot = (super.dovecot.override {
-    cyrus_sasl = self.cyrus_sasl-legacyCrypt;
+  dovecot = (prev.dovecot.override {
+    cyrus_sasl = final.cyrus_sasl-legacyCrypt;
   }).overrideAttrs(old: {
     strictDeps = true;
-    buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
+    buildInputs = [ final.libxcrypt-legacy ] ++ old.buildInputs;
   });
 
-  filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
+  filebeat7-oss = final.filebeat7.overrideAttrs(a: a // {
     name = "filebeat-oss-${a.version}";
     preBuild = "rm -rf x-pack";
   });
@@ -154,7 +154,7 @@ in {
 
   # PHP versions from vendored nix-phps
 
-  lamp_php72 = self.php72.withExtensions ({ enabled, all }:
+  lamp_php72 = final.php72.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
@@ -162,7 +162,7 @@ in {
                 all.redis
               ]);
 
-  lamp_php73 = self.php73.withExtensions ({ enabled, all }:
+  lamp_php73 = final.php73.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
@@ -170,7 +170,7 @@ in {
                 all.redis
               ]);
 
-  lamp_php74 = (self.php74.withExtensions ({ enabled, all }:
+  lamp_php74 = (final.php74.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
@@ -180,7 +180,7 @@ in {
 
   # PHP versions from nixpkgs
 
-  lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
+  lamp_php80 = (prev.php80.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
@@ -188,7 +188,7 @@ in {
                 all.redis
               ]));
 
-  lamp_php81 = super.php81.withExtensions ({ enabled, all }:
+  lamp_php81 = prev.php81.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
@@ -196,7 +196,7 @@ in {
                 all.redis
               ]);
 
-  lamp_php82 = super.php82.withExtensions ({ enabled, all }:
+  lamp_php82 = prev.php82.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
@@ -204,18 +204,18 @@ in {
                 all.redis
               ]);
 
-  latencytop_nox = super.latencytop.overrideAttrs(_: {
-    buildInputs = with self; [ ncurses glib ];
+  latencytop_nox = prev.latencytop.overrideAttrs(_: {
+    buildInputs = with final; [ ncurses glib ];
     makeFlags = [ "HAS_GTK_GUI=" ];
   });
 
-  libxcrypt-with-sha256 = super.libxcrypt.override {
+  libxcrypt-with-sha256 = prev.libxcrypt.override {
     enableHashes = "strong,sha256crypt";
   };
 
-  links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
+  links2_nox = prev.links2.override { enableX11 = false; enableFB = false; };
 
-  lkl = super.lkl.overrideAttrs(_: rec {
+  lkl = prev.lkl.overrideAttrs(_: rec {
     version = "2022-05-18";
     src = fetchFromGitHub {
       rev = "10c7b5dee8c424cc2ab754e519ecb73350283ff9";
@@ -233,14 +233,14 @@ in {
   });
 
 
-  mc = super.callPackage ./mc.nix { };
+  mc = prev.callPackage ./mc.nix { };
 
-  mysql = super.mariadb;
+  mysql = prev.mariadb;
 
-  monitoring-plugins = super.monitoring-plugins.overrideAttrs(_: rec {
+  monitoring-plugins = prev.monitoring-plugins.overrideAttrs(_: rec {
     name = "monitoring-plugins-2.3.0";
 
-      src = super.fetchFromGitHub {
+      src = prev.fetchFromGitHub {
         owner  = "monitoring-plugins";
         repo   = "monitoring-plugins";
         rev    = "v2.3";
@@ -249,7 +249,7 @@ in {
 
       patches = [];
 
-      postInstall = super.monitoring-plugins.postInstall + ''
+      postInstall = prev.monitoring-plugins.postInstall + ''
         cp plugins-root/check_dhcp $out/bin
         cp plugins-root/check_icmp $out/bin
       '';
@@ -257,8 +257,8 @@ in {
     });
 
   # This is our default version.
-  nginxStable = (super.nginxStable.override {
-    modules = with super.nginxModules; [
+  nginxStable = (prev.nginxStable.override {
+    modules = with prev.nginxModules; [
       dav
       modsecurity
       moreheaders
@@ -270,10 +270,10 @@ in {
     ];
   });
 
-  nginx = self.nginxStable;
+  nginx = final.nginxStable;
 
-  nginxMainline = (super.nginxMainline.override {
-    modules = with super.nginxModules; [
+  nginxMainline = (prev.nginxMainline.override {
+    modules = with prev.nginxModules; [
       dav
       modsecurity
       rtmp
@@ -284,20 +284,20 @@ in {
     ];
   });
 
-  nginxLegacyCrypt = self.nginx.overrideAttrs(old: {
+  nginxLegacyCrypt = final.nginx.overrideAttrs(old: {
     strictDeps = true;
-    buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
+    buildInputs = [ final.libxcrypt-legacy ] ++ old.buildInputs;
   });
 
-  openldap_2_4 = super.callPackage ./openldap_2_4.nix {
-    libxcrypt = self.libxcrypt-legacy;
+  openldap_2_4 = prev.callPackage ./openldap_2_4.nix {
+    libxcrypt = final.libxcrypt-legacy;
   };
 
-  opensearch = super.callPackage ./opensearch { };
-  opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
+  opensearch = prev.callPackage ./opensearch { };
+  opensearch-dashboards = prev.callPackage ./opensearch-dashboards { };
 
-  percona = self.percona80;
-  percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
+  percona = final.percona80;
+  percona-toolkit = prev.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
     # This doesn't work. Looks like a bug in Nixpkgs.
     # Replacing the interpreter path before the Perl builder touches it fixes this.
@@ -306,62 +306,62 @@ in {
     '';
   });
 
-  percona57 = super.callPackage ./percona/5.7.nix {
-    boost = self.boost159;
-    openssl = self.openssl_1_1;
+  percona57 = prev.callPackage ./percona/5.7.nix {
+    boost = final.boost159;
+    openssl = final.openssl_1_1;
   };
 
-  percona80 = super.callPackage ./percona/8.0.nix {
-    boost = self.boost177;
-    openldap = self.openldap_2_4;
-    openssl = self.openssl_1_1;
-    inherit (super.darwin.apple_sdk.frameworks) CoreServices;
-    inherit (super.darwin) cctools developer_cmds DarwinTools;
+  percona80 = prev.callPackage ./percona/8.0.nix {
+    boost = final.boost177;
+    openldap = final.openldap_2_4;
+    openssl = final.openssl_1_1;
+    inherit (prev.darwin.apple_sdk.frameworks) CoreServices;
+    inherit (prev.darwin) cctools developer_cmds DarwinTools;
   };
 
-  percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
-    boost = self.boost159;
-    openssl = self.openssl_1_1;
+  percona-xtrabackup_2_4 = prev.callPackage ./percona-xtrabackup/2_4.nix {
+    boost = final.boost159;
+    openssl = final.openssl_1_1;
   };
 
-  percona-xtrabackup_8_0 = super.callPackage ./percona-xtrabackup/8_0.nix {
-    boost = self.boost177;
-    openssl = self.openssl_1_1;
+  percona-xtrabackup_8_0 = prev.callPackage ./percona-xtrabackup/8_0.nix {
+    boost = final.boost177;
+    openssl = final.openssl_1_1;
   };
 
   # Has been renamed upstream, backy-extract still wants to use it.
-  pkgconfig = super.pkg-config;
+  pkgconfig = prev.pkg-config;
 
-  postfix = super.postfix.override {
-    cyrus_sasl = self.cyrus_sasl-legacyCrypt;
+  postfix = prev.postfix.override {
+    cyrus_sasl = final.cyrus_sasl-legacyCrypt;
   };
 
-  postgis_2_5 = (super.postgresqlPackages.postgis.override {
-      proj = self.proj_7;
+  postgis_2_5 = (prev.postgresqlPackages.postgis.override {
+      proj = final.proj_7;
     }).overrideAttrs(_: rec {
     version = "2.5.5";
-    src = super.fetchurl {
+    src = prev.fetchurl {
       url = "https://download.osgeo.org/postgis/source/postgis-${version}.tar.gz";
       sha256 = "0547xjk6jcwx44s6dsfp4f4j93qrbf2d2j8qhd23w55a58hs05qj";
     };
   });
 
-  prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
+  prometheus-elasticsearch-exporter = prev.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
-  python27 = super.python27.overrideAttrs (prev: {
-    buildInputs = prev.buildInputs ++ [ super.libxcrypt-legacy ];
+  python27 = prev.python27.overrideAttrs (prev: {
+    buildInputs = prev.buildInputs ++ [ final.libxcrypt-legacy ];
     NIX_LDFLAGS = "-lcrypt";
     configureFlags = [
-      "CFLAGS=-I${super.libxcrypt-legacy}/include"
-      "LIBS=-L${super.libxcrypt-legacy}/lib"
+      "CFLAGS=-I${final.libxcrypt-legacy}/include"
+      "LIBS=-L${final.libxcrypt-legacy}/lib"
     ];
   });
 
-  pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
+  pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
     (python-final: python-prev: {
       pyslurm = python-prev.pyslurm.overridePythonAttrs(_: {
         version = "unstable-2023-05-12";
-        src = super.fetchFromGitHub {
+        src = prev.fetchFromGitHub {
           owner = "pyslurm";
           repo = "pyslurm";
           rev = "42471d8575e89caa64fea55677d1af130328b4a7";
@@ -372,35 +372,35 @@ in {
   ];
 
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
-  pypolicyd-spf = self.spf-engine;
+  pypolicyd-spf = final.spf-engine;
 
-  rabbitmq-server_3_8 = super.rabbitmq-server;
+  rabbitmq-server_3_8 = prev.rabbitmq-server;
 
-  sensu = super.callPackage ./sensu { };
-  sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
-  sensu-plugins-kubernetes = super.callPackage ./sensuplugins-rb/sensu-plugins-kubernetes { };
-  sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
-  sensu-plugins-mysql = super.callPackage ./sensuplugins-rb/sensu-plugins-mysql { };
-  sensu-plugins-disk-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-disk-checks { };
-  sensu-plugins-entropy-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-entropy-checks { };
-  sensu-plugins-http = super.callPackage ./sensuplugins-rb/sensu-plugins-http { };
-  sensu-plugins-logs = super.callPackage ./sensuplugins-rb/sensu-plugins-logs { };
-  sensu-plugins-network-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-network-checks { };
-  sensu-plugins-postfix = super.callPackage ./sensuplugins-rb/sensu-plugins-postfix { };
-  sensu-plugins-postgres = super.callPackage ./sensuplugins-rb/sensu-plugins-postgres { };
-  sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
-  sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
+  sensu = prev.callPackage ./sensu { };
+  sensu-plugins-elasticsearch = prev.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
+  sensu-plugins-kubernetes = prev.callPackage ./sensuplugins-rb/sensu-plugins-kubernetes { };
+  sensu-plugins-memcached = prev.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
+  sensu-plugins-mysql = prev.callPackage ./sensuplugins-rb/sensu-plugins-mysql { };
+  sensu-plugins-disk-checks = prev.callPackage ./sensuplugins-rb/sensu-plugins-disk-checks { };
+  sensu-plugins-entropy-checks = prev.callPackage ./sensuplugins-rb/sensu-plugins-entropy-checks { };
+  sensu-plugins-http = prev.callPackage ./sensuplugins-rb/sensu-plugins-http { };
+  sensu-plugins-logs = prev.callPackage ./sensuplugins-rb/sensu-plugins-logs { };
+  sensu-plugins-network-checks = prev.callPackage ./sensuplugins-rb/sensu-plugins-network-checks { };
+  sensu-plugins-postfix = prev.callPackage ./sensuplugins-rb/sensu-plugins-postfix { };
+  sensu-plugins-postgres = prev.callPackage ./sensuplugins-rb/sensu-plugins-postgres { };
+  sensu-plugins-rabbitmq = prev.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
+  sensu-plugins-redis = prev.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
 
-  solr = super.callPackage ./solr { };
+  solr = prev.callPackage ./solr { };
 
-  temporal_tables = super.callPackage ./postgresql/temporal_tables { };
+  temporal_tables = prev.callPackage ./postgresql/temporal_tables { };
 
-  tideways_daemon = super.callPackage ./tideways/daemon.nix {};
-  tideways_module = super.callPackage ./tideways/module.nix {};
+  tideways_daemon = prev.callPackage ./tideways/daemon.nix {};
+  tideways_module = prev.callPackage ./tideways/module.nix {};
 
-  wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };
-  wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
-  wkhtmltopdf = self.wkhtmltopdf_0_12_6;
+  wkhtmltopdf_0_12_5 = prev.callPackage ./wkhtmltopdf/0_12_5.nix { };
+  wkhtmltopdf_0_12_6 = prev.callPackage ./wkhtmltopdf/0_12_6.nix { };
+  wkhtmltopdf = final.wkhtmltopdf_0_12_6;
 
-  xtrabackup = self.percona-xtrabackup_8_0;
+  xtrabackup = final.percona-xtrabackup_8_0;
 }

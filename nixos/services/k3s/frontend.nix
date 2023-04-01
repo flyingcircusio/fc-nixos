@@ -78,9 +78,10 @@ let
         (lib.optionalString (conf.haproxyExtraConfig != "") conf.haproxyExtraConfig)
       ];
   }) frontendCfg;
+
 in
 {
-  options = with lib; {
+  options = {
 
     flyingcircus.services.k3s-frontend.enable = mkEnableOption "Enable k3s (Kubernetes) Frontend";
 
@@ -171,7 +172,7 @@ in
           };
 
           extraPodTemplateOptions = mkOption {
-            type = string;
+            type = lines;
             default = "";
             description = "haproxy options for the server-template directive used for the pod backends, added verbatim to the end of the generated line.";
           };
@@ -195,7 +196,7 @@ in
           };
 
           serviceName = mkOption {
-            type = nullOr string;
+            type = nullOr str;
             default = null;
             description = ''
               Name of the Kubernetes service we want to proxy.
@@ -220,7 +221,7 @@ in
           };
 
           namespace = mkOption {
-            type = string;
+            type = str;
             default = "default";
             description = ''
               Kubernetes namespace the service is defined in.
@@ -231,7 +232,7 @@ in
           binds = mkOption {
             type = nullOr (listOf str);
             default = null;
-            example = map (a: "${a}:8080") fclib.network.fe.dualstack.addressesQuoted;
+            example = [ "0.0.0.0:8008" ];
             description = ''Addresses with ports haproxy is binding to,
               listening for incoming connections. Defaults to 127.0.0.1, using either `lbServicePort`
               or `podPort`, if `lbServicePort` is not set.

@@ -21,6 +21,37 @@ in
     flyingcircus.services.ceph = {
       config = lib.mkOption {
         type = lib.types.lines;
+        defaultText = ''
+          [global]
+          pid file = /run/ceph/$type-$id.pid
+          admin socket = /run/ceph/$cluster-$name.asok
+
+          # Needs to correspond with daemon startup ulimit
+          max open files = 262144
+
+          osd pool default min size = 2
+          osd pool default size = 3
+
+          osd pool default pg num = 64
+          osd pool default pgp num = 64
+
+          setuser match path = /srv/ceph/$type/ceph-$id
+
+          debug filestore = 4
+          debug mon = 4
+          debug osd = 4
+          debug journal = 4
+          debug throttle = 4
+
+          mon compact on start = true     # Keep leveldb small
+          mon osd down out interval = 900  # Allow 15 min for reboots to happen without backfilling.
+          mon osd nearfull ratio = .9
+
+          mon data = /srv/ceph/mon/$cluster-$id
+          mon osd allow primary affinity = true
+          mon pg warn max per osd = 3000
+          mon pg warn max object skew = 20
+        '';
         default = ''
           [global]
           fsid = ${fs_id}

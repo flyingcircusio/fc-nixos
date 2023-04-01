@@ -26,7 +26,7 @@ let
         then "${hostName}.fe.${params.location}.${domain}"
         else if domain != null then "${hostName}.${domain}" else hostName;
       description = ''
-        FQDN of the mail server's frontend address. IP adresses and
+        FQDN of the mail server's frontend address. IP addresses and
         forward/reverse DNS must match exactly.
       '';
       example = "mail.example.com";

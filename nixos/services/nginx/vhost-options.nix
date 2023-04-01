@@ -234,7 +234,7 @@ with lib;
     basicAuth = mkOption {
       type = types.attrsOf types.str;
       default = {};
-      example = literalExample ''
+      example = literalExpression ''
         {
           user = "password";
         };
@@ -264,7 +264,7 @@ with lib;
         inherit lib;
       }));
       default = {};
-      example = literalExample ''
+      example = literalExpression ''
         {
           "/" = {
             proxyPass = "http://localhost:3000";

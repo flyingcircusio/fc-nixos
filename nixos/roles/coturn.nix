@@ -50,7 +50,20 @@ in
       config = mkOption {
         description = "Platform-configured options";
         type = types.attrs;
-        default =  {
+        defaultText = {
+          hostname = "\${cfg.hostName}";
+          alt-listening-port = 3479;
+          alt-tls-listening-port = 5350;
+          listening-ips = "the addresses of networks `lo`, `srv` and `fe`";
+          listening-port = 3478;
+          lt-cred-mech = false;
+          no-cli = true;
+          realm = "\${cfg.hostName}";
+          tls-listening-port = 5349;
+          use-auth-secret = true;
+          extraConfig = [];
+        };
+        default = {
           hostname = cfg.hostName;
           alt-listening-port = 3479;
           alt-tls-listening-port = 5350;

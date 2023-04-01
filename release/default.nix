@@ -308,6 +308,9 @@ let
     # VM image for the Flying Circus infrastructure.
     fc = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
       inherit system;
+      specialArgs = {
+        inherit (import ../versions.nix { inherit pkgs; }) nixos-mailserver;
+      };
       modules = [
         (import ./vm-image.nix imgArgs)
         (import version_nix {})

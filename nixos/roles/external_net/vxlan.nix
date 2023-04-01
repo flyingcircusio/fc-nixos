@@ -106,7 +106,7 @@ in
 {
   options = with lib; {
     flyingcircus.roles.vxlan =  {
-      gateway = mkEnableOption { };
+      gateway = mkEnableOption "fcio vxlan gateway";
 
       supportsContainers = fclib.mkDisableContainerSupport;
 
