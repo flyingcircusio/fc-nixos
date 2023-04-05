@@ -24,6 +24,11 @@ in
 
   config = lib.mkIf cfg.enable {
 
+    assertions = [{
+      assertion = config.flyingcircus.enc.parameters.memory >= 3072;
+      message = "antivirus role: ClamAV needs at least 3GiB to run stable";
+    }];
+
     # The update service isn't critical enough to wake up people.
     # We'll catch errors when the file age check for the database update goes critical.
     services.clamav.daemon = {
