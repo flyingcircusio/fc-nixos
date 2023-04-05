@@ -242,7 +242,7 @@ in
           builtins.listToAttrs (map generateContainerVhost containers))
         else {};
 
-       systemd.services."container@".serviceConfig = { TimeoutStartSec = lib.mkForce "1min"; };
+       systemd.services."container@".serviceConfig = { TimeoutStartSec = lib.mkForce "10min"; };
 
        # Start containers on system startup, ensure they get started before
        # nginx.
