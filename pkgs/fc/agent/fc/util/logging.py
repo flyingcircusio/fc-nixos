@@ -601,13 +601,15 @@ def init_logging(
     log_cmd_output: bool = False,
     log_to_console: bool = True,
     syslog_identifier="fc-agent",
+    show_caller_info: bool = False,
 ):
 
     multi_renderer = MultiRenderer(
         journal=SystemdJournalRenderer(syslog_identifier, syslog.LOG_LOCAL1),
         cmd_output_file=CmdOutputFileRenderer(),
         text=ConsoleFileRenderer(
-            min_level="trace" if verbose else "info", show_caller_info=verbose
+            min_level="trace" if verbose else "info",
+            show_caller_info=show_caller_info,
         ),
     )
 
