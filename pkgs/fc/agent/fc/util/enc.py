@@ -267,5 +267,7 @@ def update_enc(log, tmpdir, enc_path):
     )
     enc = load_enc(log, enc_path)
     update_inventory(log, enc)
+    # Reload to pick up possibly updated enc.json.
+    enc = load_enc(log, enc_path)
     update_enc_nixos_config(log, enc, enc_path)
     write_system_state(log)
