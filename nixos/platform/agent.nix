@@ -84,6 +84,14 @@ in
   };
 
   config = mkMerge [
+    {
+      # Write NixOS warnings to a file, separated by two newlines.
+      # We use that for `fc-manage check` to display (deprecation) warnings.
+      environment.etc."fcio_nixos_warnings".text =
+        lib.optionalString (config.warnings != [])
+          ((lib.concatStringsSep "\n\n" config.warnings) + "\n");
+    }
+
     (mkIf cfg.agent.install {
       environment.systemPackages = [ pkgs.fc.agent ];
 
