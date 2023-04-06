@@ -11,13 +11,13 @@ class CheckResult:
 
     def format_output(self) -> str:
         if self.errors:
-            return "CRITICAL: " + " ".join(self.errors + self.warnings)
+            return "CRITICAL: " + "\n".join(self.errors + self.warnings)
 
         if self.warnings:
-            return "WARNING: " + " ".join(self.warnings)
+            return "WARNING: " + "\n".join(self.warnings)
 
         if self.ok_info:
-            return "OK: " + " ".join(self.ok_info)
+            return "OK: " + "\n".join(self.ok_info)
 
         return "OK"
 
