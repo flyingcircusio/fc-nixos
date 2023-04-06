@@ -301,10 +301,10 @@ class CheckResult:
 
     def format_output(self) -> str:
         if self.errors:
-            return "CRITICAL: " + " ".join(self.errors + self.warnings)
+            return "CRITICAL: " + "\n".join(self.errors + self.warnings)
 
         if self.warnings:
-            return "WARNING: " + " ".join(self.warnings)
+            return "WARNING: " + "\n".join(self.warnings)
 
         return "OK: no problems found."
 
@@ -388,6 +388,19 @@ def check(log, enc) -> CheckResult:
                 )
     else:
         errors.append("`nixos` channel not set.")
+
+    nixos_warnings_file = Path("/etc/fcio_nixos_warnings")
+
+    if nixos_warnings_file.exists():
+        nixos_warnings_content = nixos_warnings_file.read_text()
+        if nixos_warnings_content:
+            nixos_warnings = [
+                warning
+                for w in nixos_warnings_content.split("\n\n")
+                if (warning := w.strip())
+            ]
+            warnings.append(f"NixOS warnings found ({len(nixos_warnings)})")
+            warnings.extend(nixos_warnings)
 
     return CheckResult(errors, warnings)
 
