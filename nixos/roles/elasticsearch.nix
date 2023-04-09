@@ -9,12 +9,7 @@ let
   inherit (config) fclib;
   localConfigDir = "/etc/local/elasticsearch";
 
-  esVersion =
-    if config.flyingcircus.roles.elasticsearch6.enable
-    then "6"
-    else if config.flyingcircus.roles.elasticsearch7.enable
-    then "7"
-    else null;
+  esVersion = 7;
 
   package = versionConfiguration.${esVersion}.package;
   enabled = esVersion != null;
@@ -28,9 +23,6 @@ let
   configFile = "/srv/elasticsearch/config/elasticsearch.yml";
 
   versionConfiguration = {
-    "6" = {
-      package = pkgs.elasticsearch6-oss;
-    };
     "7" = {
       package = pkgs.elasticsearch7-oss;
     };
@@ -113,11 +105,11 @@ in
           mode which means that it won't try to find other ES nodes before
           initializing the cluster.
 
-          Having both ES6 and ES7 nodes in a cluster is possible. This allows
-          rolling upgrades. Note that new nodes that are added to a cluster
-          have to use the newest version.
+          Having both ES6 and ES7 nodes in a cluster is possible. Note that
+          new nodes that are added to a cluster have to use the newest
+          version.
 
-          ES7: Values must use the same format as nodeName (just the hostname
+          Values must use the same format as nodeName (just the hostname
           by default) or cluster initialization will fail.
         '';
       };
@@ -126,8 +118,6 @@ in
         type = types.listOf types.str;
         default = [];
         description = ''
-          *(ES7 only, has no effect for ES6)*
-
           Name of the nodes that should take a part in the initial master election.
           WARNING: This should only be set when initializing a cluster with multiple nodes
           from scratch and removed after the cluster has formed!
@@ -152,11 +142,6 @@ in
           Additional YAML lines which are appended to the main `elasticsearch.yml` config file.
         '';
       };
-    };
-
-    flyingcircus.roles.elasticsearch6 = {
-      enable = mkEnableOption "Enable the Flying Circus elasticsearch6 role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
     };
 
     flyingcircus.roles.elasticsearch7 = {
@@ -195,9 +180,8 @@ in
         "-Xms${toString esHeap}m"
         "-Xmx${toString esHeap}m"
         "-Dlog4j2.formatMsgNoLookups=true"
-        # Use new ES7 style for the publish address to avoid the annoying warning in ES6/7.
-        (lib.optionalString (esVersion == "6") "-Des.http.cname_in_publish_address=true")
-        (lib.optionalString (esVersion == "7") "-Des.transport.cname_in_publish_address=true")
+        # Use new ES7 style for the publish address to avoid the annoying warning.
+        "-Des.transport.cname_in_publish_address=true"
       ];
 
       single_node = lib.length cfg.esNodes == 1;
@@ -205,12 +189,8 @@ in
       extraConf = ''
         node.name: ${cfg.nodeName}
         bootstrap.memory_lock: true
-      '' + (lib.optionalString (lib.versionOlder esVersion "7") ''
-        discovery.zen.minimum_master_nodes: ${toString masterQuorum}
-        discovery.zen.ping.unicast.hosts: ${toJSON cfg.esNodes}
-      '') + (lib.optionalString (lib.versionAtLeast esVersion "7") ''
         discovery.seed_hosts: ${toJSON cfg.esNodes}
-      '') + (lib.optionalString (lib.versionAtLeast esVersion "7" && cfg.initialMasterNodes != []) ''
+      '' + (lib.optionalString (cfg.initialMasterNodes != []) ''
         cluster.initial_master_nodes: ${toJSON cfg.initialMasterNodes}
       '') + (lib.optionalString (cfg.extraConfig != "") ''
         # flyingcircus.roles.elasticsearch.extraConfig
