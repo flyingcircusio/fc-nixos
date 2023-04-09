@@ -15,7 +15,6 @@ in {
     ./ceph/rgw.nix
     ./devhost
     ./external_net
-    ./elasticsearch.nix
     ./gitlab.nix
     ./jitsi
     ./k3s
@@ -42,6 +41,8 @@ in {
 
     # Removed
     (mkRemovedOptionModule [ "flyingcircus" "roles" "graylog" "enable" ] "Last platform version that supported graylog/loghost was 22.05.")
+    (mkRemovedOptionModule [ "flyingcircus" "roles" "elasticsearch6" "enable" ] "Last platform version that supported elasticsearch6 was 22.11.")
+    (mkRemovedOptionModule [ "flyingcircus" "roles" "elasticsearch7" "enable" ] "Last platform version that supported elasticsearch7 was 22.11.")
     (mkRemovedOptionModule [ "flyingcircus" "roles" "loghost" "enable" ] "Last platform version that supported graylog/loghost was 22.05.")
     (mkRemovedOptionModule [ "flyingcircus" "roles" "loghost-location" "enable" ] "Last platform version that supported graylog/loghost was 22.05.")
     (mkRemovedOptionModule [ "flyingcircus" "roles" "mysql" "rootPassword" ] "Change the root password via MySQL and modify secret files.")
@@ -49,7 +50,6 @@ in {
 
     # Renamed
     (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "enable" ] [ "flyingcircus" "roles" "statshost-global" "enable" ])
-    (mkRenamedOptionModule [ "flyingcircus" "roles" "elasticsearch" "dataDir" ] [ "services" "elasticsearch" "dataDir" ])
     (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "globalAllowedMetrics" ] [ "flyingcircus" "roles" "statshost-global" "allowedMetricPrefixes" ])
   ];
 

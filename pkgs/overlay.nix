@@ -2,11 +2,6 @@ self: super:
 
 let
   versions = import ../versions.nix { pkgs = super; };
-  # We want to have the last available OSS version for Elasticsearch.
-  # We don't override the global elk7Version because it's ok to use newer versions
-  # for the (free) beats and unfree Elasticsearch
-  elastic7Version = "7.10.2";
-
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
@@ -46,31 +41,6 @@ in {
   # });
 
   docsplit = super.callPackage ./docsplit { };
-
-  elasticsearch7 = (super.elasticsearch7.override {
-    jre_headless = self.jdk11_headless;
-  }).overrideAttrs(_: rec {
-    version = elastic7Version;
-    name = "elasticsearch-${version}";
-
-    src = super.fetchurl {
-      url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
-      sha256 = "07p16n53fg513l4f04zq10hh5j9q6rjwz8hs8jj8y97jynvf6yiv";
-    };
-  });
-
-  elasticsearch7-oss = (super.elasticsearch7.override {
-    jre_headless = self.jdk11_headless;
-  }).overrideAttrs(_: rec {
-    version = elastic7Version;
-    name = "elasticsearch-oss-${version}";
-
-    src = super.fetchurl {
-      url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
-      sha256 = "1m6wpxs56qb6n473hawfw2n8nny8gj3dy8glq4x05005aa8dv6kh";
-    };
-    meta.license = lib.licenses.asl20;
-  });
 
   gitPatched = super.git.overrideAttrs(oldAttrs: rec {
     pname = "git";
