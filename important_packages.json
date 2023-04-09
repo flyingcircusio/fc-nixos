@@ -23,7 +23,6 @@
   "docker",
   "docker-compose",
   "dovecot",
-  "elasticsearch6-oss",
   "elasticsearch7-oss",
   "element-web",
   "erlang",

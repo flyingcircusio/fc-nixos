@@ -5,7 +5,6 @@
 Managed instance of [Elasticsearch](https://www.elastic.co/elasticsearch).
 There's a role for each supported major version, currently:
 
-- elasticsearch6: 6.8.21
 - elasticsearch7: 7.10.2
 
 We use the free versions of Elasticsearch, which are published under the Apache
@@ -84,16 +83,10 @@ If only one esNode is given here, the node will start in single-node
 mode which means that it won’t try to find other ES nodes before
 initializing the cluster.
 
-Having both ES6 and ES7 nodes in a cluster is possible. This allows
-rolling upgrades. Note that new nodes that are added to a cluster have
-to use the newest version.
-
-ES7: Values must use the same format as nodeName (just the hostname by
+Values must use the same format as nodeName (just the hostname by
 default) or cluster initialization will fail.
 
 **flyingcircus.roles.elasticsearch.initialMasterNodes**
-
-*(ES7 only, has no effect for ES6)*
 
 Name of the nodes that should take a part in the initial master
 election.
@@ -123,13 +116,6 @@ the cluster name as its sole contents.
 To add additional configuration options, create a file
 {file}`/etc/local/elasticsearch/elasticsearch.yml`. Its contents will be
 appended to the base configuration.
-
-## Upgrades
-
-Rolling upgrades for Elasticsearch 6 multi-node clusters to 7 are supported.
-Nodes should be upgraded one at a time to ensure continous operation of the
-cluster. Upgrading nodes is done by changing the role of the machine to
-*elasticsearch7*.
 
 ## Monitoring
 

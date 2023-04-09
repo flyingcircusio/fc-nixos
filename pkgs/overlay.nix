@@ -47,14 +47,6 @@ in {
 
   docsplit = super.callPackage ./docsplit { };
 
-  elasticsearch6 = (super.elasticsearch6.override {
-    jre_headless = self.jdk11_headless;
-  });
-
-  elasticsearch6-oss = (super.elasticsearch6-oss.override {
-    jre_headless = self.jdk11_headless;
-  });
-
   elasticsearch7 = (super.elasticsearch7.override {
     jre_headless = self.jdk11_headless;
   }).overrideAttrs(_: rec {
