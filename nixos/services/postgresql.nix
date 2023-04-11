@@ -57,7 +57,7 @@ let
     See https://doc.flyingcircus.io/roles/fc-22.05-production/postgresql.html for details.'';
 
   localConfig =
-    if legacyConfigFiles != []
+    if pathExists localConfigPath
     then { include_dir = "${localConfigPath}"; }
     else {};
 
