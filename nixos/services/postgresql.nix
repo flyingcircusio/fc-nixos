@@ -57,7 +57,7 @@ let
     See https://doc.flyingcircus.io/roles/fc-22.05-production/postgresql.html for details.'';
 
   localConfig =
-    if legacyConfigFiles != []
+    if pathExists localConfigPath
     then { include_dir = "${localConfigPath}"; }
     else {};
 
@@ -177,6 +177,13 @@ in {
         shell = "/run/current-system/sw/bin/bash";
         home = lib.mkForce "/srv/postgresql";
       };
+
+      environment.etc."local/postgresql/${cfg.majorVersion}/README.md".text = ''
+        __WARNING__: Putting plain configuration here doesn’t work properly
+        and must not be used anymore. Some options set here will be
+        ignored silently if they are already defined by our platform
+        code.
+      '';
 
       environment.etc."local/postgresql/README.md".text = ''
         ${if legacyConfigFiles != [] then "**WARNING: " + legacyConfigWarning + "**\n" else ""}
