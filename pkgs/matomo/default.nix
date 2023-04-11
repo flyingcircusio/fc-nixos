@@ -3,16 +3,16 @@
 let
   versions = {
     matomo = {
-      version = "4.13.3";
-      sha256 = "sha256-17y0xFy6aa/ZyEm9VUvIi4/GlxdpwfWv+ZdiO6wF4Kw=";
+      version = "4.14.2";
+      sha256 = "sha256-jPs/4bgt7VqeSoeLnwHr+FI426hAhwiP8RciQDNwCpo=";
     };
 
     matomo-beta = {
-      version = "4.13.3";
+      version = "4.14.2";
       # `beta` examples: "b1", "rc1", null
       # when updating: use null if stable version is >= latest beta or release candidate
       beta = null;
-      sha256 = "sha256-17y0xFy6aa/ZyEm9VUvIi4/GlxdpwfWv+ZdiO6wF4Kw=";
+      sha256 = "sha256-jPs/4bgt7VqeSoeLnwHr+FI426hAhwiP8RciQDNwCpo=";
     };
   };
   common = pname: { version, sha256, beta ? null }:
@@ -68,9 +68,6 @@ let
           rmdir $out/share/tmp
           # config/ needs to be accessed by PIWIK_USER_PATH anyway
           ln -s $out/share/config $out/
-
-          makeWrapper ${php}/bin/php $out/bin/matomo-console \
-            --add-flags "$out/share/console"
 
           runHook postInstall
         '';
