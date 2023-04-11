@@ -33,7 +33,8 @@
         lsof
         lynx
         magic-wormhole
-        mailutils
+        # Broken at the moment: https://github.com/NixOS/nixpkgs/pull/224196
+        #mailutils
         mercurial
         mmv
         nano
