@@ -41,7 +41,7 @@ let
       # both the C lib and the python modules
       libceph = pkgs.ceph-nautilus.libceph;
       fcQemu = pkgs.fc.qemu-py3.override {
-        inherit libceph;
+        inherit libceph ceph;
         qemu_ceph = qemu_ceph_versioned "nautilus";
       };
       utilPhysical = pkgs.fc.util-physical.nautilus.override {ceph = ceph-client;};

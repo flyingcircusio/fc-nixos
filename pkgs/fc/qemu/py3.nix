@@ -1,4 +1,21 @@
-{ version, src, pkgs, python3Packages, lib, libceph, ceph-client, fetchFromGitHub, qemu_ceph, stdenv, gptfdisk, parted, xfsprogs, procps }:
+{
+  version,
+  src,
+  pkgs,
+  python3Packages,
+  lib,
+  libceph,
+  # as long as `qemu_ceph` pulls in the full `ceph` due to requiring ceph.dev, use that
+  # package here as well instead of ceph-client
+  ceph,
+  fetchFromGitHub,
+  qemu_ceph,
+  stdenv,
+  gptfdisk,
+  parted,
+  xfsprogs,
+  procps
+}:
 
 let
   # Python must be the same as the one used by Ceph
@@ -55,6 +72,6 @@ in
       xfsprogs
       # XXX is in PATH anyways due to services.ceph.client, but specified here for
       # completeness sake. If necessary, fc.qemu needs to be parameterised via /etc/ceph/fc-ceph.conf
-      ceph-client
+      ceph
     ];
   }
