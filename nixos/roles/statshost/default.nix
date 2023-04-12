@@ -318,6 +318,12 @@ in
           import ./README.nix config.networking.hostName;
       };
 
+      nix.settings = {
+        extra-sandbox-paths = [
+          customRelabelPath
+        ];
+      };
+
       # Update relayed nodes.
       systemd.services.fc-prometheus-update-relayed-nodes =
         (mkIf (relayRGNodes != []) {
