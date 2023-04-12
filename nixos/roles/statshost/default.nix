@@ -440,9 +440,7 @@ in
 
       services.grafana = {
         enable = true;
-        port = 3001;
-        addr = "127.0.0.1";
-        rootUrl = "http://${cfgStats.hostName}/grafana";
+
         settings = {
           auth = {
             login_cookie_name = "grafana9_session";
@@ -455,6 +453,12 @@ in
 
           paths = {
             provisioning = grafanaProvisioningPath;
+          };
+
+          server = {
+            http_port = 3001;
+            http_addr = "127.0.0.1";
+            root_url = "http://${cfgStats.hostName}/grafana";
           };
 
         };
