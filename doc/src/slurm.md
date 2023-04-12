@@ -44,10 +44,16 @@ to existing clusters.
 
 ### slurm-controller
 
-:::{notice}
+:::{note}
 For new clusters, it's recommended to first set up a controller and add nodes
 after that. The controller service will only start if there's at least one
 node.
+:::
+
+:::{note}
+For autoconfiguration, all slurm machines must have the same
+amount of memory and CPU cores. If that's not the case, memory and CPU cores must
+be set manually. See the {ref}`nixos-slurm-config-reference` on how to do that.
 :::
 
 This role runs {command}`slurmctld`. We add basic Cluster readiness monitoring
@@ -57,7 +63,7 @@ via Sensu and telemetry via Telegraf which can be ingested by a
 At the moment, we only support exactly one controller per cluster.
 
 Maintenance of a machine with this role means that all worker nodes are
-drained and set to DOWN first. Maintenance activities only start when no jobs
+drained and set to `down` first. Maintenance activities only start when no jobs
 are running anymore in the whole cluster.
 
 After finishing a platform management task run (which happens every 10 minutes),
@@ -68,7 +74,7 @@ in maintenance.
 
 ### slurm-dbdserver
 
-:::{notice}
+:::{note}
 At the moment, this role must run on the same machine as `slurm-controller`.
 :::
 
@@ -85,10 +91,21 @@ multiple nodes in your cluster for production use but applying this role to a
 machine which is also running the controller services is also supported for
 testing purposes.
 
+Nodes must be `ready` to accept jobs. The corresponding Slurm states are *IDLE*
+when the node isn't processing jobs at the moment or *MIXED*/*ALLOCATED* if some
+or all of its cores are in use at the moment, respectively.
+
 Before running maintenance activities, the node is drained and stops accepting new
 jobs. Nodes don't set themselves to `ready` after maintenance. Instead, the
 controller activates nodes which are not in maintenance anymore after its own
 platform management task run (every 10 minutes).
+
+:::{warning}
+Nodes that had an unexpected reboot or have been drained/downed manually
+are not set to `ready` automatically by the platform management task. You
+have to do that manually using one of the `ready` subcommands described in
+{ref}`nixos-fc-slurm`.
+:::
 
 ### slurm-external-dependency
 
@@ -99,9 +116,9 @@ controller maintenance. After the external dependency machine has finished
 maintenance, the next run of the platform management task on the controller will set
 the nodes to `ready`.
 
-## General Interaction
+## Cluster interaction using Slurm commands
 
-The usual slurm commands are installed globally on every Slurm machine.
+The usual Slurm commands are installed globally on every Slurm machine.
 
 In general, all users can run slurm commands on all machines with a `slurm-*`
 role. Some commands require the use of `sudo -u slurm` to run as slurm user.
@@ -112,71 +129,179 @@ Use `slurm-readme` to show dynamically-generated documentation specific for
 this machine.
 
 
-## fc-slurm command
 
+(nixos-fc-slurm)=
+## Managing clusters with the fc-slurm command
 
-You can use :command:`fc-slurm` to manage the state of slurm compute nodes.
+Use {command}`fc-slurm` to manage the state of slurm compute nodes and display
+status information about the cluster.
+
 This command is also used by our platform management task before and after
-maintenance, to fetch telemetry data from Slurm and running monitoring
+maintenance, as well as to fetch telemetry data from Slurm and running monitoring
 checks.
+
+Some subcommands that modify state require `sudo`. This is allowed for
+(human) user accounts with the `sudo-srv` permission without password.
+
+The output and availability of subcommands depends on the role of the machine.
+
+
+### Global Node Management
+
+The `fc-slurm all-nodes` subcommand can be run on every machine with a *slurm*
+role and operates on all nodes in the cluster.
+
+Mark all nodes as `ready`:
+
+```shell
+sudo fc-slurm all-nodes ready
+```
+
+This is needed when nodes are out because they had an unexpected reboot or
+have been drained/downed manually.
+
+
+:::{note}
+`all-nodes ready` skips nodes that are still in maintenance.
+:::
+
+You can specify a `reason` to restrict the affected nodes. Their reason
+for being in a `down` state must contain the given string:
+
+```shell
+sudo fc-slurm all-nodes ready --reason-must-match "my node maintenance"
+```
+
+
+Drain all nodes (no new jobs allowed) and set them to `down` afterwards:
+
+```shell
+sudo fc-slurm all-nodes drain-and-down --reason "my global maintenance"
+```
 
 Dump node state info as JSON:
 
-`fc-slurm all-nodes state`
-
-Drain all nodes (no new jobs allowed) and set them to DOWN afterwards:
-
-`sudo fc-slurm all-nodes drain-and-down`
-
-:::{note}
-Nodes that have been drained/downed manually are not set to `ready`
-automatically by the platform management task. You have to do that
-manually with the following command.
-:::
-
-Mark all nodes as READY:
-
-`sudo fc-slurm all-nodes ready`
+```shell
+fc-slurm all-nodes state
+```
 
 
-### Cheat sheet
+### Single Node Management
+
+Manage the state of nodes individually, by running `fc-slurm` directly on the node:
+
+```shell
+sudo fc-slurm drain-and-down --reason "my node maintenance"
+sudo fc-slurm ready
+```
+
+Check the state of the node, also used by the `slurm` Sensu check:
+
+```shell
+fc-slurm check
+```
+
+### Controller Management
+
+Controllers don't have management commands that affect their state at the
+moment but you can run `fc-slurm all-nodes` on controller machines or look
+at check output.
+
+Check the state of the controller and all nodes, also used by the `slurm` Sensu check:
+
+```shell
+fc-slurm check
+```
+
+
+## Command Cheat sheet
+
+
+Set all nodes to ready:
+
+```shell
+sudo fc-slurm all-nodes ready
+```
 
 View the dynamically-generated documentation for a machine:
 
-```console
-$ slurm-readme
+```shell
+slurm-readme
 ```
 Show the current configuration:
 
-```console
-$ slurm-show-configuration
+```shell
+slurm-show-configuration
 ```
 
 Show running/pending jobs
 
-```console
-$ squeue
+```shell
+squeue
 ```
 
 Show partition state:
 
-```console
-$ sinfo
+```shell
+sinfo
 ```
 
 Show node info:
 
-```console
-$ sinfo -N
+```shell
+sinfo -N
 ```
 
 Show job accounting info:
 
-```console
-$ sacct
+```shell
+sacct
 ```
 
+## Known limitations
+
+- For autoconfiguration, all nodes and the controller must have the same
+  amount of memory and CPU cores. If that's not the case, memory and CPU must
+  be set manually via Nix config to the same value on all Slurm machines
+  because Slurm expects the config file to be the same everywhere.
+- `slurm-dbdserver` and `slurm-controller` roles must be on the same machine.
+- we support only one `slurm-controller` per cluster at the moment.
+
+
+
+(nixos-slurm-config-reference)=
+
 ## Configuration reference
+
+:::{warning}
+Memory and CPU cores must be set to the same value on all Slurm machines
+because Slurm expects the config file to be the same everywhere.
+
+This also applies to machines that don't have the `slurm-node` role
+even if the memory and CPU settings have no effect there.
+:::
+
+**flyingcircus.slurm.realMemory**
+
+Memory in MiB used by a slurm compute node.
+
+**flyingcircus.slurm.cpus**
+
+Number of CPU cores used by a slurm compute node.
+
+**flyingcircus.slurm.clusterName**
+
+Name of the cluster. Defaults to the name of the resource group.
+
+The cluster name is used in various places like state files or accounting
+table names and should normally stay unchanged. Changing this requires
+manual intervention in the state dir or slurmctld will not start anymore!
+
+**flyingcircus.slurm.partitionName**
+
+Name of the default partition which includes the machines defined via the `nodes` option.
+Don't use `default` as partition name, it will fail!
+
 
 **flyingcircus.slurm.accountingStorageEnforce**
 
@@ -197,27 +322,6 @@ size or run time limits are defined.
 Names of the nodes that are added to the automatically generated partition.
 By default, all Slurm nodes in a resource group are part of the partition
 called `partitionName`.
-
-**flyingcircus.slurm.clusterName**
-
-Name of the cluster. Defaults to the name of the resource group.
-
-The cluster name is used in various places like state files or accounting
-table names and should normally stay unchanged. Changing this requires
-manual intervention in the state dir or slurmctld will not start anymore!
-
-**flyingcircus.slurm.partitionName**
-
-Name of the default partition which includes the machines defined via the `nodes` option.
-Don't use `default` as partition name, it will fail!
-
-**flyingcircus.slurm.realMemory**
-
-Memory in MiB used by a slurm compute node.
-
-**flyingcircus.slurm.cpus**
-
-Number of CPU cores used by a slurm compute node.
 
 **services.slurm.extraConfig**
 
@@ -248,12 +352,3 @@ Extra configuration for `slurmdbd.conf` See also:
   '';
 }
 ```
-
-## Known limitations
-
-- `slurm-dbdserver` and `slurm-controller` roles must be on the same machine.
-- we support only one `slurm-controller` per cluster at the moment.
-- For autoconfiguration, all nodes and the controller must have the same
-  amount of memory and CPU cores. If that's not the case, memory and CPU must
-  be set manually via Nix config to the same value on all slurm machines
-  because slurm expects the config file to be the same everywhere.
