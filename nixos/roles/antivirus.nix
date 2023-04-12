@@ -26,7 +26,7 @@ in
 
     assertions = [{
       assertion = config.flyingcircus.enc.parameters.memory >= 3072;
-      message = "antivirus role: ClamAV needs at least 3GiB to run stable";
+      message = "antivirus role: ClamAV needs at least 3GiB of memory to run stable";
     }];
 
     # The update service isn't critical enough to wake up people.
