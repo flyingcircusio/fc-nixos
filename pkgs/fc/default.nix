@@ -8,9 +8,9 @@ rec {
   check-age = callPackage ./check-age {};
   check-ceph = {
     jewel = callPackage ./check-ceph/jewel {ceph = pkgs.ceph-jewel;};
-    luminous = callPackage ./check-ceph/luminous {ceph = pkgs.ceph-luminous;};
+    luminous = callPackage ./check-ceph/luminous {ceph-client = pkgs.ceph-luminous;};
     # nautilus needs no changes from the luminous version
-    nautilus = callPackage ./check-ceph/luminous {ceph = pkgs.ceph-nautilus.ceph-client;};
+    nautilus = callPackage ./check-ceph/luminous {inherit (pkgs.ceph-nautilus) ceph-client;};
   };
   check-haproxy = callPackage ./check-haproxy {};
   check-journal = callPackage ./check-journal.nix {};

@@ -174,14 +174,14 @@ in
 
       flyingcircus.passwordlessSudoRules = [
         {
-          commands = with pkgs; [
+          commands = [
             "${fc-check-ceph-withVersion}/bin/check_ceph"
           ];
           groups = [ "sensuclient" ];
         }
       ];
 
-      flyingcircus.services.sensu-client.checks = with pkgs; {
+      flyingcircus.services.sensu-client.checks = {
         ceph = {
           notification = "Ceph cluster is healthy";
           command = "sudo ${fc-check-ceph-withVersion}/bin/check_ceph -v -R 200 -A 300";
@@ -298,6 +298,39 @@ in
           RemainAfterExit = true;
         };
       };
+    })
+    (lib.mkIf (role.enable && fclib.ceph.releaseAtLeast "nautilus" role.cephRelease ) {
+      flyingcircus.passwordlessSudoRules = [
+        {
+          commands = [
+            "${fc-check-ceph-withVersion}/bin/check_snapshot_restore_fill"
+          ];
+          groups = [ "sensuclient" ];
+        }
+      ];
+
+      flyingcircus.services.sensu-client.checks = let
+          # check config generated directly from our platform settings
+          configtoml = (pkgs.formats.toml {}).generate "config.toml" {
+            thresholds = {
+              # use canonical, non-camelCase form of ceph settings
+              nearfull = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd nearfull ratio";
+              full = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd full ratio";
+            };
+            # FIXME: is hardcoding this okay?
+            ceph_roots = {
+              default = [ "rbd.hdd" ];
+              ssd = [ "rbd.ssd" ];
+            };
+          };
+        in {
+          ceph_snapshot_restore_fill = {
+            notification = "There is enough space to be able to restore the largest " +
+              "RBD snapshot. (does not consider sparse allocation)";
+            command = "sudo ${fc-check-ceph-withVersion}/bin/check_snapshot_restore_fill ${configtoml}";
+            interval = 600;
+          };
+        };
     })
     (lib.mkIf (role.enable && role.primary) {
 
