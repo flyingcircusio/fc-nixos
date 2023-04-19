@@ -20,6 +20,7 @@ from fc.maintenance.system_properties import (
     request_reboot_for_qemu,
 )
 from fc.manage.manage import prepare_switch_in_maintenance, switch_with_update
+from fc.util import nixos
 from fc.util.enc import load_enc
 from fc.util.lock import locked
 from fc.util.logging import (
@@ -27,7 +28,7 @@ from fc.util.logging import (
     init_command_logging,
     init_logging,
 )
-from typer import Argument, Option, Typer
+from typer import Argument, Exit, Option, Typer
 
 app = Typer(pretty_exceptions_show_locals=False)
 log = structlog.get_logger()
@@ -262,10 +263,13 @@ def update(
     enc = load_enc(log, context.enc_path)
 
     with locked(log, context.lock_dir):
-        if run_now:
-            keep_cmd_output = switch_with_update(log, enc, lazy=True)
-        else:
-            keep_cmd_output = prepare_switch_in_maintenance(log, enc)
+        try:
+            if run_now:
+                keep_cmd_output = switch_with_update(log, enc, lazy=True)
+            else:
+                keep_cmd_output = prepare_switch_in_maintenance(log, enc)
+        except nixos.ChannelException:
+            raise Exit(2)
 
     if not keep_cmd_output:
         drop_cmd_output_logfile(log)

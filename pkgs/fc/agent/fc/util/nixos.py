@@ -314,33 +314,41 @@ def switch_to_channel(channel_url, lazy=False, log=_log):
     return switch_to_system(built_system, lazy)
 
 
-def find_nix_build_error(stderr, log=_log):
-    """Returns a one-line error message from Nix build output or
-    a generic message if nothing is found.
+def find_nix_build_error(stderr: str, log=_log):
+    """Returns the (hopefully) interesting part of the error message from Nix
+    build output or a generic message if nothing is found.
     """
 
     try:
-        lines = stderr.splitlines()[::-1]
-        # Detect builder failures and return which builder failed.
-        if lines and lines[0].startswith("error: build of "):
-            for line in lines:
-                if line.startswith("builder for "):
-                    if ";" in line:
-                        return line.split(";")[0]
-                    else:
-                        return line
+        lines = stderr.splitlines()
+        error_lines = []
 
-        # Check for evaluation errors.
-        # We assume that the line right after the traceback
-        # (and possibly build output before it) is the most interesting one.
-        # Start at the last line and find the start of the traceback.
         for pos, line in enumerate(lines):
-            if line.strip().startswith("while evaluating") and pos > 0:
-                errormsg = lines[pos - 1].strip()
-                if errormsg.endswith(" Definition values:"):
-                    return errormsg[: -len(" Definition values:")]
+            if line.startswith("error:"):
+                error = line.removeprefix("error:").strip()
+
+                if error.startswith("builder for "):
+                    if ";" in line:
+                        error_lines.append(error.split(";")[0])
+                    else:
+                        error_lines.append(error)
+                elif lines[pos + 1].strip() == "Failed assertions:":
+                    error_lines.append("Failed assertions:")
+                    error_lines.extend(l.strip() for l in lines[pos + 2 : -1])
+                    break
                 else:
-                    return errormsg
+                    error_lines.append(error)
+
+            elif error_lines:
+                line = line.strip()
+                if line.startswith(("- In", "at ")):
+                    error_lines.append(line)
+                else:
+                    break
+
+        if error_lines:
+            return "\n".join(error_lines)
+
     except Exception:
         log.error("find-nix-build-error-failed", exc_info=True)
 
