@@ -221,59 +221,125 @@ def test_update_system_channel(log, monkeypatch):
 
 def test_find_nix_build_error_missing_option():
     stderr = textwrap.dedent(
-        """\
-    error: while evaluating the attribute 'config.system.build.toplevel' at /home/test/fc-nixos/channels/nixpkgs/nixos/modules/system/activation/top-level.nix:293:5:
-    while evaluating 'merge' at /home/test/fc-nixos/channels/nixpkgs/lib/types.nix:512:22, called from /home/test/fc-nixos/channels/nixpkgs/lib/modules.nix:559:59:
-    while evaluating 'evalModules' at /home/test/fc-nixos/channels/nixpkgs/lib/modules.nix:62:17, called from /home/test/fc-nixos/channels/nixpkgs/lib/types.nix:513:12:
-    The option `flyingcircus.services.nginx.virtualHosts.test55.forcSSL' does not exist. Definition values:
-    - In `/home/test/fc-nixos/channels/fc/nixos/services/nginx': true
-    """
+        """
+        trace: [ "environment" ]
+        error: The option `flyingcircus.services.nginx.virtualHosts."test66.fe.rzob.fcio.net".forcSSL' does not exist. Definition values:
+               - In `/etc/local/nixos/dev_vm.nix': true
+        (use '--show-trace' to show detailed location information)
+        """
     )
-    expected = "The option `flyingcircus.services.nginx.virtualHosts.test55.forcSSL' does not exist."
+    expected = textwrap.dedent(
+        """
+        The option `flyingcircus.services.nginx.virtualHosts."test66.fe.rzob.fcio.net".forcSSL' does not exist. Definition values:
+        - In `/etc/local/nixos/dev_vm.nix': true
+        """
+    ).strip()
     assert nixos.find_nix_build_error(stderr) == expected
 
 
 def test_find_nix_build_error_default_when_no_error_message():
-    stderr = textwrap.dedent(
-        """\
-    error: while evaluating the attribute 'config.system.build.toplevel' at /home/test/fc-nixos/channels/nixpkgs/nixos/modules/system/activation/top-level.nix:293:5:
-    while evaluating 'merge' at /home/test/fc-nixos/channels/nixpkgs/lib/types.nix:512:22, called from /home/test/fc-nixos/channels/nixpkgs/lib/modules.nix:559:59:
-    """
-    )
+    stderr = "weird error nobody expects"
     assert nixos.find_nix_build_error(stderr) == "Building the system failed!"
 
 
 def test_find_nix_build_error_syntax():
     stderr = textwrap.dedent(
-        """\
-    error: while evaluating the attribute 'config.system.build.toplevel' at /home/ts/fc-nixos/channels/nixpkgs/nixos/lib/eval-config.nix:64:5:
-    while evaluating 'applyIfFunction' at /home/ts/fc-nixos/channels/nixpkgs/lib/modules.nix:288:29, called from /home/ts/fc-nixos/channels/nixpkgs/lib/modules.nix:195:59:
-    while evaluating 'isFunction' at /home/ts/fc-nixos/channels/nixpkgs/lib/trivial.nix:345:16, called from /home/ts/fc-nixos/channels/nixpkgs/lib/modules.nix:288:68:
-    syntax error, unexpected '}', expecting ';', at /etc/local/nixos/dev_vm.nix:190:1
-    """
+        """
+        error: syntax error, unexpected ';'
+               at /etc/local/nixos/dev_vm.nix:190:1:
+                  189| #flyingcircus.roles.k3s-server.enable = lib.mkForce true
+                  190| ;
+                     | ^
+                  191|
+        (use '--show-trace' to show detailed location information)
+        """
     )
-    expected = "syntax error, unexpected '}', expecting ';', at /etc/local/nixos/dev_vm.nix:190:1"
+    expected = textwrap.dedent(
+        """
+        syntax error, unexpected ';'
+        at /etc/local/nixos/dev_vm.nix:190:1:
+        """
+    ).strip()
     assert nixos.find_nix_build_error(stderr) == expected
 
 
 def test_find_nix_build_error_builder_failed():
     stderr = textwrap.dedent(
-        """\
-    /nix/store/bf8jb44sc2ad88895g7ki43iyzai9zaj-nixos-system-test-21.05.1534.06a1226.drv
-    building '/nix/store/wxjjd4z2f8z8badd1mzqbh8xxq3zq288-system-path.drv'...
-    building '/nix/store/ckkdla5pg582i83d0v2w99mxny2jqxk3-unit-script-acme--domain_name--start.drv'...
-    builder for '/nix/store/ckkdla5pg582i83d0v2w99mxny2jqxk3-unit-script-acme--domain_name--start.drv' failed with exit code 127; last 1 log lines:
-    /build/.attr-0: line 1: domain_name: command not found
-    cannot build derivation '/nix/store/5wi39jva4fn0fg72rw26813vmdwg69d4-unit-acme--domain_name-.service.drv': 1 dependencies couldn't be built
-    building '/nix/store/nwk2j3xp1rv51n6r98gfn6zdncsf54xb-unit-script-acme-selfsigned--domain_name--start.drv'...
-    cannot build derivation '/nix/store/7krvm44hsqasdrgk14ybyp15riz3h57f-system-units.drv': 1 dependencies couldn't be built
-    cannot build derivation '/nix/store/iak0907qnlnjj3j5xrnw3m431a1ymdvm-etc.drv': 1 dependencies couldn't be built
-    cannot build derivation '/nix/store/bf8jb44sc2ad88895g7ki43iyzai9zaj-nixos-system-test-21.05.1534.06a1226.drv': 1 dependencies couldn't be built
-    error: build of '/nix/store/bf8jb44sc2ad88895g7ki43iyzai9zaj-nixos-system-test-21.05.1534.06a1226.drv' failed
-    """
+        """
+        building '/nix/store/hv6cll5bd85bz6jid7zjvrajwn72sm3b-python3.10-fc-agent-1.0.drv'...
+        error: builder for '/nix/store/4jii0wdji3s5qp6pknkg9ljnngrrcxk8-fail.drv' failed with exit code 127;
+               last 1 log lines:
+               > /build/.attr-0l2nkwhif96f51f4amnlf414lhl4rv9vh8iffyp431v6s28gsr90: line 1: fail: command not found
+               For full logs, run 'nix log /nix/store/4jii0wdji3s5qp6pknkg9ljnngrrcxk8-fail.drv'.
+        error: 1 dependencies of derivation '/nix/store/wjdn47b0930pi0pidmyp8y04fqcj1zp9-system-path.drv' failed to build
+        error: 1 dependencies of derivation '/nix/store/v8yhhp9psq9hpi7sp9v2j8si7nl1bc0k-nixos-system-test66-22.11pre-git.drv' failed to build
+        """
     )
 
-    expected = "builder for '/nix/store/ckkdla5pg582i83d0v2w99mxny2jqxk3-unit-script-acme--domain_name--start.drv' failed with exit code 127"
+    expected = "builder for '/nix/store/4jii0wdji3s5qp6pknkg9ljnngrrcxk8-fail.drv' failed with exit code 127"
+    assert nixos.find_nix_build_error(stderr) == expected
+
+
+def test_find_nix_build_error_type_error():
+    stderr = textwrap.dedent(
+        """
+        error: value is a string while a set was expected
+            at /nix/store/3fjl7jm2f0i2y3q0869svy801wpcracv-nixpkgs-09ba0ca4298/pkgs/build-support/trivial-builders.nix:89:8:
+                88|        })
+                89|     // builtins.removeAttrs derivationArgs [ "passAsFile" ]);
+                  |        ^
+                90|
+        """
+    )
+
+    expected = textwrap.dedent(
+        """
+        value is a string while a set was expected
+        at /nix/store/3fjl7jm2f0i2y3q0869svy801wpcracv-nixpkgs-09ba0ca4298/pkgs/build-support/trivial-builders.nix:89:8:
+        """
+    ).strip()
+    assert nixos.find_nix_build_error(stderr) == expected
+
+
+def test_find_nix_build_error_conflicting_values():
+    stderr = textwrap.dedent(
+        """
+        trace: [ "environment" ]
+        error: The option `security.dhparams.enable' has conflicting definition values:
+               - In `/etc/local/nixos/dev_vm.nix': false
+               - In `/nix/store/csn87ili28ks7yjimihw3n4q9rqrk0cb-source/fc/nixos/platform': true
+        (use '--show-trace' to show detailed location information)
+        """
+    )
+    expected = textwrap.dedent(
+        """
+        The option `security.dhparams.enable' has conflicting definition values:
+        - In `/etc/local/nixos/dev_vm.nix': false
+        - In `/nix/store/csn87ili28ks7yjimihw3n4q9rqrk0cb-source/fc/nixos/platform': true
+        """
+    ).strip()
+
+    assert nixos.find_nix_build_error(stderr) == expected
+
+
+def test_find_nix_build_error_failed_assertion():
+    stderr = textwrap.dedent(
+        """
+        error:
+               Failed assertions:
+               - The option definition `flyingcircus.roles.loghost.enable' in `/etc/local/nixos/dev_vm.nix' no longer has any effect; please remove it.
+               Last platform version that supported graylog/loghost was 22.05.
+        (use '--show-trace' to show detailed location information)
+        """
+    )
+    expected = textwrap.dedent(
+        """
+        Failed assertions:
+        - The option definition `flyingcircus.roles.loghost.enable' in `/etc/local/nixos/dev_vm.nix' no longer has any effect; please remove it.
+        Last platform version that supported graylog/loghost was 22.05.
+        """
+    ).strip()
+
     assert nixos.find_nix_build_error(stderr) == expected
 
 
