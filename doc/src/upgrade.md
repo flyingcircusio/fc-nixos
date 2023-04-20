@@ -1,6 +1,6 @@
 (nixos-upgrade)=
 
-# Upgrade From Previous Versions
+# What's New & Upgrading
 
 Here you find information about changes compared to the previous platform
 version, what to consider and where to take action before upgrading.
