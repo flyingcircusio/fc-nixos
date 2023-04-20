@@ -78,6 +78,8 @@ present: `fcio_monitoring`, `postgres`, `root`, `template0`, `template1`.
 Older installations still have a `nagios` database for monitoring which is
 not used anymore.
 
+(nixos-postgresql-major-upgrade)=
+
 ## Major Version Upgrades
 
 Upgrading to a new major version, for example from 13.x to 14.x, requires a

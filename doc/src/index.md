@@ -6,6 +6,7 @@ Platform & roles documentation for Flying Circus [NixOS] edition
 ```{toctree}
 :titlesonly: true
 
+upgrade
 base
 user_profile
 local
