@@ -1,6 +1,6 @@
 (nixos-upgrade)=
 
-# What's New & Upgrading
+# Platform Upgrades & What's New
 
 Here you find information about changes compared to the previous platform
 version, what to consider and where to take action before upgrading.
@@ -13,8 +13,9 @@ Contact our {ref}`support` for upgrade assistance.
 
 (nixos-upgrade-overview)=
 
-## Overview for this version
+## Overview
 
+- Status: stable
 - First production release: [2023_005 (2023-03-13)](https://doc.flyingcircus.io/platform/changes/2023/r005.html)
 - Added roles: postgresql15
 - Removed roles: {ref}`graylog, loghost, loghost-location <nixos-upgrade-loghost>`, {ref}`kibana, kibana6, kibana7 <nixos-upgrade-kibana>`, {ref}`postgresql10 <nixos-upgrade-postgresql>`
@@ -40,8 +41,9 @@ and only critical bug fixes are back-ported to older versions.
 ## How to upgrade?
 
 At the moment, upgrading for customers is only possible by setting the
-platform version using the API or asking our {ref}`support` to schedule an
-upgrade in a maintenance window or upgrade immediately.
+platform version using the API. Ask our {ref}`support` to schedule an
+upgrade in a maintenance window or upgrade immediately if you don't use the
+API.
 
 We are working on a feature to request upgrades from the customer self-service
 portal.
@@ -52,7 +54,7 @@ portal.
 
 Our goal is to make upgrades as smooth as possible without manual intervention
 but sometimes incompatible configuration has to be fixed before starting an
-upgrade or behaviour changes of.
+upgrade.
 
 Here are some remarks to make sure that an upgrade will run successfully:
 
@@ -96,7 +98,7 @@ days.
 
 Upgrading may take some time, depending on the number of activated roles and
 disk speed. For production machines, upgrades are usually done in a
-maintenance window to not affect regular operations too much. VM may have
+maintenance window to reduce impact on regular operations. VM may have
 degraded performance for some minutes when packages are being downloaded and
 built.
 
@@ -114,27 +116,28 @@ following common breaking changes and role-specific notes below.
 ### Common breaking changes
 
 - Deprecated settings `logrotate.paths` and `logrotate.extraConfig` have been
-  removed. Please convert any uses to `services.logrotate.settings` instead
+  removed. Please convert any uses to `services.logrotate.settings`
   before upgrading.
 
 (nixos-upgrade-webgateway)=
 
 ### webgateway
 
-**Nginx** now uses the *nginx* user to run the main process.
+**Nginx** now uses the *nginx* user to run the main process. Before, only
+worker processes ran as *nginx* and the main process as *root* to allow
+reading SSL certificates from arbitrary directories, like deployments in
+`/srv/s-user`, for example.
 
-This may cause problems when certificates are read from arbitrary directories,
-for example deployments in `/srv/s-user`.
-
-Normally, the built-in support for Letsencrypt should be used instead to avoid
+Normally, the built-in support for Letsencrypt should be used to avoid
 permission problems and make sure that certificates are rotated
 automatically.
 
-If using external certificates cannot be avoided, make sure
+If using other SSL certificates cannot be avoided, make sure
 that permissions allow read access for the *nginx* user, for example by
 applying `setfacl -Rm u:nginx:rX` to the certificate directory.
 
-It's also possible to keep the old behavior for some time by adding
+It's also possible to keep the old behavior for some time by adding as
+{ref}`nixos-custom-modules` before the upgrade:
 
 ```nix
 # /etc/local/nixos/nginx-master-user-root.nix
@@ -143,8 +146,8 @@ It's also possible to keep the old behavior for some time by adding
 }
 ```
 
-as {ref}`nixos-custom-modules` before the upgrade. This setting will trigger a
-deprecation warning on 23.05 and be removed in a later version.
+This setting will trigger a deprecation warning on 23.05 and be removed in a
+later version.
 
 (nixos-upgrade-statshost-master)=
 
@@ -177,8 +180,9 @@ The `postgresql15` role is now available.
 ### kibana
 
 All `kibana*` roles have been removed. Machines that use kibana should stay on
-22.05 for now and move to OpenSearch/OpenSearch Dashboards later which we are
-working on for 22.11.
+22.05 for now. We are working on
+[OpenSearch](https://opensearch.org/)/[OpenSearch Dashboards](https://opensearch.org/docs/latest/dashboards/quickstart-dashboards/)
+roles for 22.11 which will replace Elasticsearch/Kibana in the future.
 
 (nixos-upgrade-loghost)=
 
