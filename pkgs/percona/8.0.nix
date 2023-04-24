@@ -33,7 +33,7 @@ stdenv.mkDerivation rec {
   '';
 
   buildInputs = [
-    boost (curl.override { inherit openssl; }) icu libedit libevent lz4 ncurses openssl protobuf re2 readline zlib
+    boost (curl.override { inherit openssl; }) icu libedit libaio libevent lz4 ncurses openssl protobuf re2 readline zlib
     zstd libfido2
   ] ++ lib.optionals stdenv.isLinux [
     numactl libtirpc openldap cyrus_sasl jemalloc systemd
