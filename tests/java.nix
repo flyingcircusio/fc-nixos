@@ -19,7 +19,9 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     jdk11 = "${pkgs.jdk11}"
     jdk11_headless = "${pkgs.jdk11_headless}"
     jdk17 = "${pkgs.jdk17}"
+    jdk19 = "${pkgs.jdk19}"
     jdk17_headless = "${pkgs.jdk17_headless}"
+    jdk19_headless = "${pkgs.jdk19_headless}"
     jdk8 = "${pkgs.jdk8}"
     jdk8_headless = "${pkgs.jdk8_headless}"
     jre = "${pkgs.jre}"
@@ -31,6 +33,8 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     openjdk11_headless = "${pkgs.openjdk11_headless}"
     openjdk17 = "${pkgs.openjdk17}"
     openjdk17_headless = "${pkgs.openjdk17_headless}"
+    openjdk19 = "${pkgs.openjdk19}"
+    openjdk19_headless = "${pkgs.openjdk19_headless}"
     openjdk8 = "${pkgs.openjdk8}"
     openjdk8_headless = "${pkgs.openjdk8_headless}"
 
@@ -49,14 +53,25 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
       assert openjdk11_headless == jdk11_headless
 
     with subtest("Package aliases for Java 17 should point to the same package"):
-      assert jre == jdk
-      assert jdk == openjdk
-      assert openjdk == jdk17
-      assert jdk17 == openjdk17
+      assert openjdk17 == jdk17
 
     with subtest("Package aliases for Java 17 headless should point to the same package"):
-      assert jre_headless == jdk17_headless
-      assert jdk17_headless == openjdk17_headless
+      assert openjdk17_headless == jdk17_headless
+
+    with subtest("Package aliases for Java 19 should point to the same package"):
+      assert openjdk19 == jdk19
+
+    with subtest("Package aliases for Java 19 headless should point to the same package"):
+      assert openjdk19_headless == jdk19_headless
+
+
+    with subtest("Java 19 is the default package"):
+      assert openjdk == jdk19
+      assert jre == jdk
+      assert jdk == openjdk
+
+    with subtest("Java 19 is the default headless package"):
+      assert jre_headless == jdk19_headless
 
     package_versions = {
       jdk8: "1.8",
@@ -66,6 +81,7 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
       jdk11: "11",
       jdk11_headless: "11",
       openjdk17: "17",
+      openjdk19: "19",
     }
 
     for package, version in package_versions.items():
