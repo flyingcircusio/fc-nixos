@@ -1,0 +1,10 @@
+diff --git a/src/setup_node_env/no_transpilation.js b/src/setup_node_env/no_transpilation.js
+index dae489e0..0d2dc056 100644
+--- a/src/setup_node_env/no_transpilation.js
++++ b/src/setup_node_env/no_transpilation.js
+@@ -41,4 +41,3 @@ require('source-map-support/register');
+
+ require('./root');
+
+-require('./node_version_validator');
+\ No newline at end of file

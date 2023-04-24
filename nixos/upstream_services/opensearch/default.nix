@@ -154,6 +154,16 @@ in
       '';
       default = true;
     };
+
+    configFile = lib.mkOption {
+      type = types.path;
+      default = opensearchYml;
+      description = ''
+        opensearch config path.
+      '';
+    };
+
+
   };
 
   config = mkIf cfg.enable {
@@ -200,7 +210,7 @@ in
               # access denied ("java.io.FilePermission" "/var/lib/opensearch/config/opensearch.yml" "read")
 
               rm -f ${configDir}/opensearch.yml
-              cp ${opensearchYml} ${configDir}/opensearch.yml
+              cp ${cfg.configFile} ${configDir}/opensearch.yml
 
               # Make sure the logging configuration for old OpenSearch versions is removed:
               rm -f "${configDir}/logging.yml"

@@ -30,6 +30,8 @@ in {
     ./matomo.nix
     ./nginx
     ./nullmailer.nix
+    ./opensearch.nix
+    ./opensearch_dashboards.nix
     ./percona.nix
     ./postgresql.nix
     ./prometheus.nix
