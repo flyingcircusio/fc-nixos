@@ -37,8 +37,8 @@ in {
       home = "/home/alice";
     };
 
-    # nix-env -qa needs a lot of RAM. Crashed with 2000.
-    virtualisation.memorySize = 3000;
+    # Crashed with 3000.
+    virtualisation.memorySize = 4000;
     virtualisation.qemu.options = [ "-smp 2" ];
   };
 
