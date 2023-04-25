@@ -271,8 +271,6 @@ in {
     '';
   });
 
-  #percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
-  # boost159 not available
   # percona57 = super.callPackage ./percona/5.7.nix {
   #   boost = self.boost159;
   #   openssl = self.openssl_1_1;
