@@ -15,6 +15,10 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ bison boost cmake makeWrapper pkg-config ];
 
+  patches = [
+    ./xtrabackup-abi-check.patch
+  ];
+
   buildInputs = [
     (curl.override { inherit openssl; }) cyrus_sasl libaio libedit libev libevent libgcrypt libgpg-error lz4
     ncurses openssl procps protobuf xxd zlib
