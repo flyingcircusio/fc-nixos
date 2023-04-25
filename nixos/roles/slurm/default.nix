@@ -446,6 +446,7 @@ in
       };
 
       systemd.services.slurmctld = {
+        after = [ "slurmdbd.service" ];
         serviceConfig = {
           Restart = "always";
         };
