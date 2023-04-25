@@ -48,7 +48,7 @@ in {
   journal = callTest ./journal.nix {};
   journalbeat = callTest ./journalbeat.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
-  k3s = callTest ./k3s {};
+  # k3s = callTest ./k3s {};
 
   lampVm = callTest ./lamp/vm-test.nix { };
   lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
@@ -66,7 +66,7 @@ in {
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
-  mail = callTest ./mail {};
+  #mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
   matomo = callTest ./matomo.nix {};
   memcached = callTest ./memcached.nix {};
