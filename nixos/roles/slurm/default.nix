@@ -469,7 +469,7 @@ in
       };
 
       systemd.services.slurmd = {
-        after = [ "munged.service" ];
+        after = [ "munged.service" "slurmctld.service" ];
         serviceConfig = {
           Restart = "always";
         };
