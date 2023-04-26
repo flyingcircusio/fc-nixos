@@ -12,10 +12,12 @@ let
   # We do not have service data during bootstrapping.
   first_mon = if mons == [ ] then "" else head (lib.splitString "." (head mons));
 
+  # TODO: once all ceph releases use the ceph-client attr name, ensure that the desired
+  # build is used here by explicitly overriding/ passing it here.
   fc-check-ceph-withVersion = pkgs.fc.check-ceph.${role.cephRelease};
   fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease};
 
-  # FIXME: expose this as a config option (overridable)
+  # TODO: expose this as a config option (overridable)
   # modules to be explicitly activated via this config
   mgrEnabledModules = {
     luminous = [ "balancer" "dashboard" "status" ];
@@ -39,6 +41,8 @@ let
     # below their max limit
     monWarnPgNotScrubbedRatio = 1;
     monWarnPgNotDeepScrubbedRatio = 1;
+    monOsdNearfullRatio = 0.85;
+    monOsdFullRatio = 0.95;
   };
   perMonSettings = mon:
   let
@@ -169,7 +173,7 @@ in
 
       flyingcircus.services.sensu-client.checks = {
         ceph = {
-          notification = "Ceph cluster is healthy";
+          notification = "Ceph cluster is unhealthy";
           command = "sudo ${fc-check-ceph-withVersion}/bin/check_ceph -v -R 200 -A 300";
           interval = 60;
         };
@@ -303,16 +307,12 @@ in
               nearfull = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd nearfull ratio";
               full = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd full ratio";
             };
-            # FIXME: is hardcoding this okay?
-            ceph_roots = {
-              default = [ "rbd.hdd" ];
-              ssd = [ "rbd.ssd" ];
-            };
+            ceph_roots = config.flyingcircus.services.ceph.server.crushroot_to_rbdpool_mapping;
           };
         in {
           ceph_snapshot_restore_fill = {
-            notification = "There is enough space to be able to restore the largest " +
-              "RBD snapshot. (does not consider sparse allocation)";
+            notification = "The Ceph cluster might not have enough space for restoring "
+              + "the largest RBD snapshot. (does not consider sparse allocation)";
             command = "sudo ${fc-check-ceph-withVersion}/bin/check_snapshot_restore_fill ${configtoml}";
             interval = 600;
           };
