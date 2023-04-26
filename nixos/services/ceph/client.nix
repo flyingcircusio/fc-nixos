@@ -81,6 +81,7 @@ in
           Starting from Ceph Nautilus on, this is deprecated.
         '';
       };
+      # TODO: cleanup and simplify once Luminous is gone
       extraConfig = lib.mkOption {
         type = lib.types.lines;
         default = "";
@@ -102,9 +103,16 @@ in
       };
       extraSettingsSections = lib.mkOption {
         # serves as interface for other Ceph roles and services, these can then add additional INI sections to ceph.conf
+        # TODO: refactor type towards pkgs.formats.ini in conformance wit RFC 0042
         type = with lib.types; attrsOf (attrsOf (oneOf [ bool int str float ]));
         default = { };
         description = "Additional config sections of ceph.conf, for use by components and roles.";
+      };
+      allMergedSettings = lib.mkOption {
+        readOnly = true;
+        type = with lib.types; attrsOf (attrsOf (oneOf [ bool int str float ]));
+        description = ''Contains all properly merged settings used for generating the ceph.ini config file.
+          Supposed to be used to query certain options from NixOS config, read-only.'';
       };
       cluster_network = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
@@ -200,11 +208,7 @@ in
         KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}-part%n"
       '';
 
-    environment.etc."ceph/ceph.conf".text = let
-      throwDeprecationWarning = lib.warnIf (fclib.ceph.releaseAtLeast "nautilus" cfg.client.cephRelease)
-        ("Configuring ceph via plaintext `config` and `extraConfig` is deprecated since "
-        + "the Nautilus role, please switch to `extraSettings`.");
-      mergedSettings = (
+    flyingcircus.services.ceph.allMergedSettings = (
         lib.recursiveUpdate
           (expandCamelCaseSection cfg.extraSettingsSections)
           # make these global settings take precedence over those provided by extraSettingsSections.
@@ -214,6 +218,12 @@ in
             // { client = lib.recursiveUpdate (expandCamelCaseAttrs defaultClientSettings) (expandCamelCaseAttrs cfg.client.extraSettings); }
           )
       );
+    environment.etc."ceph/ceph.conf".text = let
+      mergedSettings = config.flyingcircus.services.ceph.allMergedSettings;
+      throwDeprecationWarning = lib.warnIf (fclib.ceph.releaseAtLeast "nautilus" cfg.client.cephRelease)
+        ("Configuring ceph via plaintext `config` and `extraConfig` is deprecated since "
+        + "the Nautilus role, please switch to `extraSettings`.");
+
       globalConfig = (if (cfg.config != "")
         # prefer old plaintext config if it has been customised, but possibly throw warning
         then throwDeprecationWarning (cfg.config + "\n" + cfg.extraConfig)

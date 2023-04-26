@@ -33,6 +33,15 @@ in
           + "Only modify if really necessary, otherwise the default ceph package from the defined series is used.";
         default = fclib.ceph.releasePkgs.${cfg.cephRelease}.ceph;
       };
+      crushroot_to_rbdpool_mapping = lib.mkOption {
+        default = config.flyingcircus.static.ceph.crushroot_to_rbdpool_mapping;
+        type = let t = lib.types; in t.attrsOf (t.listOf t.str);
+        description = ''
+          Mapping of which rbd pools are operated under which crush root.
+          Currently only used by the check_snapshot_restore_fill check.
+          Backgound: We operate our rbd.hdd and rbd.ssd pools under different Ceph crush
+          roots to map them to disjoint sets of certain disks.'';
+      };
     };
   };
 
