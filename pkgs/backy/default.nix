@@ -9,8 +9,8 @@ let
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "backy";
-    rev = "93b18b09b3db1cba4a10c6613bfec0ad0d82895a";
-    hash = "sha256-HRndYUW08c8ncxwGdSOZWyXszzJ0JDKBAlFSS+UiQRU=";
+    rev = "5fa55f0c512e557bea3802f0be10e997e6f33f03";
+    hash = "sha256-n3q8xr7o/REiftxHc2LYRvKnhu7Ab2MuQ+OfhSniOhk=";
   };
 
 in poetry2nix.mkPoetryApplication {
