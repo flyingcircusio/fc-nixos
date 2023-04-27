@@ -45,6 +45,11 @@ let
         "debug monc" = 4;
       };
 
+      # adjust pool mapping for check_snapshot_restore_fill check
+      flyingcircus.services.ceph.server.crushroot_to_rbdpool_mapping = {
+        default = [ "rbd" ];
+      };
+
       # We need this in the enc files as well so that timer jobs can update
       # the keys etc.
       environment.etc."nixos/services.json".text = builtins.toJSON config.flyingcircus.encServices;
@@ -122,12 +127,13 @@ in
     host3 = makeCephHostConfig { id = 3; };
   };
 
-  testScript = ''
-    time_waiting = 0
-    start_all()
-
+  testScript = { nodes, ...}:
+    ''
     import time
     import json
+
+    time_waiting = 0
+    start_all()
 
     def show(host, cmd):
         result = host.execute(cmd)[1]
@@ -357,6 +363,26 @@ in
       host1.succeed('fc-ceph osd destroy --unsafe-destroy 0')
       host1.succeed('fc-ceph osd create-bluestore /dev/vdc > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 3, 3, 320)
+
+    # commented out because this test sometimes succeeds, but often just hangs
+    #with subtest("Integration test for check_snapshot_restore_fill"):
+    #  check_command = "${nodes.host1.config.flyingcircus.services.sensu-client.checks.ceph_snapshot_restore_fill.command}"
+    #  print("Executing check command", check_command)
+    #  snapfillcheck = host1.succeed('sudo -u sensuclient ' + check_command + ' > /dev/kmsg 2>&1')
+    #  print(snapfillcheck)
+
+    #  # calculation of image size: The empty image itself accounts for almost nothing,
+    #  # but after generating a snapshot it's accounted size is the provisioned size of
+    #  # the image.
+    #  # Thus, we need to create an image of the size that can exceed the threshold alone.
+    #  host1.succeed("rbd create rbd/snapfilltest -s 5324M > /dev/kmsg 2>&1")
+    #  host1.succeed("rbd snap create rbd/snapfilltest@firstsnap > /dev/kmsg 2>&1")
+
+    #  host1.sleep(1)
+    #  print("Executing check command", check_command)
+    #  snapfillcheck = host1.execute('sudo -u sensuclient ' + check_command + ' >&2', timeout=60)
+    #  print(snapfillcheck[1])
+    #  assert snapfillcheck[0] == 2
 
     print("Time spent waiting", time_waiting)
   '';

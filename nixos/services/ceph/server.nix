@@ -42,7 +42,7 @@ in
         description = ''
           Mapping of which rbd pools are operated under which crush root.
           Currently only used by the check_snapshot_restore_fill check.
-          Backgound: We operate our rbd.hdd and rbd.ssd pools under different Ceph crush
+          Background: We operate our rbd.hdd and rbd.ssd pools under different Ceph crush
           roots to map them to disjoint sets of certain disks.'';
       };
     };
