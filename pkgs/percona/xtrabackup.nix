@@ -6,11 +6,11 @@
 
 stdenv.mkDerivation rec {
   name = "xtrabackup-${version}";
-  version = "8.0.30-23";
+  version = "8.0.32-26";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-XtraBackup-8.0/Percona-XtraBackup-${version}/source/tarball/percona-xtrabackup-${version}.tar.gz";
-    sha256 = "sha256-mxv7HM4oYGJ66+1T1i6GtV5leGnJG3FfYmwgdZtzQes=";
+    sha256 = "sha256-KhwjSX/9WQXW3CC9tagB0bi66zJF7BHtEV3uDXi3peI=";
   };
 
   nativeBuildInputs = [ bison boost cmake makeWrapper pkg-config ];
