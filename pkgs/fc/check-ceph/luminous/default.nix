@@ -1,4 +1,4 @@
-{ pkgs, libyaml, python3Packages, ceph-client, libceph }:
+{ pkgs, libyaml, python3Packages, ceph }:
 
 let
   py = python3Packages;
@@ -11,15 +11,6 @@ in
     dontStrip = true;
     propagatedBuildInputs = [
       py.nagiosplugin
-      (py.toPythonModule ceph-client)
-      py.toml
+      ceph
     ];
-    checkInputs = [
-      py.pytest
-      #py.mock
-    ];
-
-    checkPhase = ''
-      pytest .
-    '';
   }

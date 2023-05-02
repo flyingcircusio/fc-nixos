@@ -18,6 +18,7 @@ setup(
     entry_points={
         "console_scripts": [
             "check_ceph=fc.check_ceph.ceph:main",
+            "check_snapshot_restore_fill=fc.check_ceph.check_snapshot_restore:main",
         ],
     },
 )
