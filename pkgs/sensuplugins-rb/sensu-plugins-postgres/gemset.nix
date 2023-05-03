@@ -4,20 +4,20 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "18ga010bbhsgc876vf6z6swfnk2mgj30y96rcd4yafvmwnj5djgz";
+      sha256 = "1976bjf4ag2wx6bv8r56zzd4bnkimy2a5c2iya9x39sk58v17d10";
       type = "gem";
     };
-    version = "2.0.4";
+    version = "3.3.4";
   };
   json = {
     groups = ["default"];
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0qmj7fypgb9vag723w1a49qihxrcf5shzars106ynw2zk352gbv5";
+      sha256 = "0nalhin1gda4v8ybk6lq8f407cgfrj6qzn234yra4ipkmlbfmal6";
       type = "gem";
     };
-    version = "1.8.6";
+    version = "2.6.3";
   };
   mixlib-cli = {
     source = {
@@ -32,10 +32,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "00g33hdixgync6gp4mn0g0kjz5qygshi47xw58kdpd9n5lzdpg8c";
+      sha256 = "13mfrysrdrh8cka1d96zm0lnfs59i5x2g6ps49r2kz5p3q81xrzj";
       type = "gem";
     };
-    version = "0.18.3";
+    version = "1.2.3";
   };
   sensu-plugin = {
     dependencies = ["json" "mixlib-cli"];
@@ -43,10 +43,10 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "1x4zka4zia2wk3gp0sr4m4lzsf0m7s4a3gcgs936n2mgzsbcaa86";
+      sha256 = "1hibm8q4dl5bp949h21zjc3d2ss26mg4sl5svy7gl7bz59k9dg06";
       type = "gem";
     };
-    version = "1.4.7";
+    version = "4.0.0";
   };
   sensu-plugins-postgres = {
     dependencies = ["dentaku" "pg" "sensu-plugin"];
@@ -54,9 +54,9 @@
     platforms = [];
     source = {
       remotes = ["https://rubygems.org"];
-      sha256 = "0sk1sqqs6c3wdc7cl3pqrb5pfbaqn88fjyik0bvhli8c8wds0h1v";
+      sha256 = "0b9jac86fj56qbi0y0r3a8wfpkskalzijbfpndj3w4r4ds9gxjpf";
       type = "gem";
     };
-    version = "2.3.2";
+    version = "4.2.0";
   };
 }
