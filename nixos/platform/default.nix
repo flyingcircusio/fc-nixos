@@ -171,6 +171,21 @@ in {
       example = ./test_cfg;
     };
 
+    flyingcircus.platform = {
+      version = mkOption {
+        readOnly = true;
+        default = "22.11";
+      };
+
+      editions = mkOption {
+        readOnly = true;
+        description = ''
+          Documented branches of this platform version.
+        '';
+        default = [ "fc-22.11-production" "fc-22.11-staging" "fc-22.11-dev" ];
+      };
+    };
+
     flyingcircus.passwordlessSudoRules = mkOption {
       description = ''
         Works like security.sudo.extraRules, but sets passwordless mode and
