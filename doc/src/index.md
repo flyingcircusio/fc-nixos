@@ -37,6 +37,7 @@ memcached
 mongodb
 mysql
 nfs
+opensearch
 postgresql
 rabbitmq
 redis

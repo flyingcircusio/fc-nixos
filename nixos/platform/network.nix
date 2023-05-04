@@ -220,6 +220,14 @@ in
                 sysctl net.ipv6.conf.$IFACE.autoconf=0
                 sysctl net.ipv6.conf.$IFACE.temp_valid_lft=0
                 sysctl net.ipv6.conf.$IFACE.temp_prefered_lft=0
+
+                # If an interface has previously been managed by dhcpcd this sysctl might be
+                # set to a non-zero value, which disables automatic generation of link-local
+                # addresses. This can leave the interface without a link-local address when
+                # dhcpcd deletes addresses from the interface when it exits. Resetting this
+                # to 0 restores the default kernel behaviour.
+                sysctl net.ipv6.conf.$IFACE.addr_gen_mode=0
+
                 for oldtmp in `ip -6 address show dev $IFACE dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
                   ip addr del $oldtmp dev $IFACE
                 done
@@ -232,6 +240,10 @@ in
                 sysctl net.ipv6.conf.${interface.device}.autoconf=0
                 sysctl net.ipv6.conf.${interface.device}.temp_valid_lft=0
                 sysctl net.ipv6.conf.${interface.device}.temp_prefered_lft=0
+
+                # See above.
+                sysctl net.ipv6.conf.${interface.device}.addr_gen_mode=0
+
                 for oldtmp in `ip -6 address show dev ${interface.device} dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
                   ip addr del $oldtmp dev ${interface.device}
                 done

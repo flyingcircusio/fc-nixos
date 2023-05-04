@@ -22,11 +22,14 @@ in {
     ./lamp.nix
     ./mailout.nix
     ./mailserver.nix
+    ./matomo.nix
     ./memcached.nix
     ./mongodb.nix
     ./mysql.nix
     ./nfs.nix
     ./nginx.nix
+    ./opensearch.nix
+    ./opensearch_dashboards.nix
     ./postgresql.nix
     ./rabbitmq.nix
     ./redis.nix

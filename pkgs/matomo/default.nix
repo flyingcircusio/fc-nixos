@@ -3,16 +3,16 @@
 let
   versions = {
     matomo = {
-      version = "4.13.3";
-      sha256 = "sha256-17y0xFy6aa/ZyEm9VUvIi4/GlxdpwfWv+ZdiO6wF4Kw=";
+      version = "4.14.2";
+      sha256 = "sha256-jPs/4bgt7VqeSoeLnwHr+FI426hAhwiP8RciQDNwCpo=";
     };
 
     matomo-beta = {
-      version = "4.13.3";
+      version = "4.14.2";
       # `beta` examples: "b1", "rc1", null
       # when updating: use null if stable version is >= latest beta or release candidate
       beta = null;
-      sha256 = "sha256-17y0xFy6aa/ZyEm9VUvIi4/GlxdpwfWv+ZdiO6wF4Kw=";
+      sha256 = "sha256-jPs/4bgt7VqeSoeLnwHr+FI426hAhwiP8RciQDNwCpo=";
     };
   };
   common = pname: { version, sha256, beta ? null }:
@@ -41,18 +41,7 @@ let
         # -> discussion at https://github.com/matomo-org/matomo/issues/12646
         patches = [
           ./make-localhost-default-database-host.patch
-          # This changes the default config for path.geoip2 so that it doesn't point
-          # to the nix store.
-          ./change-path-geoip2.patch
-          ./tag-manager-writable-container-js-location.patch
         ];
-
-        # this bootstrap.php adds support for getting PIWIK_USER_PATH
-        # from an environment variable. Point it to a mutable location
-        # to be able to use matomo read-only from the nix store
-        postPatch = ''
-          cp ${./bootstrap.php} bootstrap.php
-        '';
 
         # TODO: future versions might rename the PIWIK_… variables to MATOMO_…
         # TODO: Move more unnecessary files from share/, especially using PIWIK_INCLUDE_PATH.
@@ -64,13 +53,7 @@ let
           # copy everything to share/, used as webroot folder, and then remove what's known to be not needed
           mkdir -p $out/share
           cp -ra * $out/share/
-          # tmp/ is created by matomo in PIWIK_USER_PATH
           rmdir $out/share/tmp
-          # config/ needs to be accessed by PIWIK_USER_PATH anyway
-          ln -s $out/share/config $out/
-
-          makeWrapper ${php}/bin/php $out/bin/matomo-console \
-            --add-flags "$out/share/console"
 
           runHook postInstall
         '';
@@ -111,7 +94,6 @@ let
           license = licenses.gpl3Plus;
           homepage = "https://matomo.org/";
           platforms = platforms.all;
-          maintainers = with maintainers; [ florianjacob kiwi ];
         };
       };
 in

@@ -145,6 +145,9 @@ with lib;
       # removed by upstream, we want to keep it
       memcached = 177;
       redis = 181;
+
+      # Same as elasticsearch
+      opensearch = 92;
     };
 
     ids.gids = {
@@ -167,6 +170,9 @@ with lib;
       sensuclient = 31004;
       powerdns = 31005;
       tideways = 31006;
+
+      # Same as elasticsearch
+      opensearch = 92;
     };
 
   };

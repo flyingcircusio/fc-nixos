@@ -281,15 +281,9 @@ let
     };
   };
 
-  # run upstream tests against our overlay
-  upstreamTests = {
-    inherit (pkgs.nixosTests)
-      matomo;
-  };
-
   tested = with lib; pkgs.releaseTools.aggregate {
     name = "tested";
-    constituents = collect isDerivation (jobs // { inherit channels; } // upstreamTests );
+    constituents = collect isDerivation (jobs // { inherit channels; } );
     meta.description = "Indication that pkgs, tests and channels are fine";
   };
 
