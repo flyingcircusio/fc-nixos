@@ -93,6 +93,12 @@ rec {
     ];
 
     config = {
+
+      users.users.s-test = {
+        isNormalUser = true;
+        extraGroups = [ "service" ];
+      };
+
       virtualisation.vlans = map (vlan: vlans.${vlan}) (attrNames config.flyingcircus.enc.parameters.interfaces);
 
       flyingcircus.enc.parameters = (lib.recursiveUpdate {

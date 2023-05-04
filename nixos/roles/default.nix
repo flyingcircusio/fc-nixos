@@ -22,6 +22,7 @@ in {
     ./lamp.nix
     ./mailout.nix
     ./mailserver.nix
+    ./matomo.nix
     ./memcached.nix
     ./mongodb.nix
     ./mysql.nix

@@ -5,14 +5,98 @@ let
   fpm = config.services.phpfpm.pools.${pool};
 
   user = "matomo";
-  dataDir = "/var/lib/${user}";
-  deprecatedDataDir = "/var/lib/piwik";
 
   pool = user;
   phpExecutionUnit = "phpfpm-${pool}";
   databaseService = "mysql.service";
 
+  phpPackage = pkgs.php82;
+
   fqdn = if config.networking.domain != null then config.networking.fqdn else config.networking.hostName;
+
+  dataDir = "/var/lib/${user}";
+  # Additional Plugins installed locally by a service user (deployment).
+  # This is intentionally not in the webroot dir because it doesn't have to be
+  # accessed by Nginx and Matomo can handle relative paths to plugin dirs outside
+  # of the webroot.
+  extraPluginsDir = "${dataDir}/plugins";
+  webrootDir = "${dataDir}/share";
+
+  configDir = "${webrootDir}/config";
+  configIniPhpFile = "${configDir}/config.ini.php";
+  # Plugins distributed with Matomo.
+  corePluginsDir = "${webrootDir}/plugins";
+  jsDir = "${webrootDir}/js";
+  matomoTrackerFile = "${webrootDir}/matomo.js";
+  miscDir = "${webrootDir}/misc";
+  piwikTrackerFile = "${webrootDir}/piwik.js";
+  tmpDir = "${webrootDir}/tmp";
+
+  # In general, we give Matomo read access only to the data directory.
+  # Matomo wants to write to some paths, either from the main application or
+  # matomo-console.
+  # https://matomo.org/faq/on-premise/how-to-configure-matomo-for-security/
+  matomoReadWritePaths = [
+    # JS tracker files need to be modified when activating some plugins.
+    # The command matomo-console custom-matomo-js:update also writes these files.
+    matomoTrackerFile
+    piwikTrackerFile
+    # The config.ini.php is created by the interactive installer (Web UI) in this directory.
+    configDir
+    "${miscDir}/user"
+    # Not mentioned by the Matomo FAQ but needed for tagmanager.
+    # tagmanager uses this directory to create container_*.js files.
+    jsDir
+    # Temporary files created by Matomo.
+    tmpDir
+    # Not mentioned by the Matomo FAQ but it's needed for updating the GeoIP database from the UI
+    # or automatically.
+    miscDir
+  ];
+
+  nginxReadPaths = [
+    corePluginsDir
+    jsDir
+  ];
+
+  serviceGroupReadWritePaths = [
+    extraPluginsDir
+  ];
+
+  pluginDirs = [
+    "${extraPluginsDir}/;../plugins"
+    "${corePluginsDir}/;plugins"
+  ];
+
+  matomoPathExtra = [ pkgs.gawk pkgs.procps ];
+
+  environment = {
+    MATOMO_PLUGIN_DIRS = lib.concatStringsSep ":" pluginDirs;
+    # We disable installing plugins via the UI by default by if someone
+    # activates it, we should put plugins in a separated and writable directory.
+    MATOMO_PLUGIN_COPY_DIR = "${extraPluginsDir}/";
+  };
+
+  phpEnv = mapAttrs (n: v: "'${v}'") (environment // {
+    PATH = lib.makeBinPath matomoPathExtra;
+  });
+
+  matomoCheckPermissions = pkgs.writeShellApplication {
+    runtimeInputs = [ pkgs.acl ];
+    name = "matomo-check-permissions";
+    text = ''
+      set -x
+      getfacl /var/lib/matomo/plugins
+      getfacl /var/lib/matomo
+      getfacl /var/lib/matomo/share
+      getfacl /var/lib/matomo/share/js
+      getfacl /var/lib/matomo/share/plugins
+      sudo -u nginx stat /var/lib/matomo/share/matomo.js
+      sudo -u nginx stat /var/lib/matomo/share/piwik.js
+      sudo -u nginx stat /var/lib/matomo/share/js/piwik.js
+      sudo -u nginx stat /var/lib/matomo/share/plugins/CoreHome/images/favicon.ico
+    '';
+  };
 
 in {
   imports = [
@@ -90,6 +174,14 @@ in {
         '';
       };
 
+      memoryLimit = mkOption {
+        type = types.ints.positive;
+        description = ''
+          Memory limit for the PHP processes in MiB.
+        '';
+        default = 1024;
+      };
+
       nginx = mkOption {
         type = types.nullOr (types.submodule (
           recursiveUpdate
@@ -122,6 +214,23 @@ in {
             If this is set to null (the default), no nginx virtualHost will be configured.
         '';
       };
+
+      tools = {
+        matomoConsole = mkOption {
+          type = types.package;
+          internal = true;
+          default = pkgs.writeShellScriptBin "matomo-console" ''
+            ${phpPackage}/bin/php ${webrootDir}/console "$@"
+          '';
+        };
+        matomoCheckPermissions = mkOption {
+          type = types.package;
+          internal = true;
+          default = matomoCheckPermissions;
+        };
+      };
+
+
     };
   };
 
@@ -135,17 +244,26 @@ in {
         message = "Either services.matomo.nginx or services.matomo.nginx.webServerUser is mandatory";
     }];
 
+    environment.systemPackages = [
+      cfg.tools.matomoConsole
+      cfg.tools.matomoCheckPermissions
+    ];
+
     users.users.${user} = {
       isSystemUser = true;
       createHome = true;
-      home = dataDir;
+      home = "${dataDir}/home";
       group  = user;
     };
     users.groups.${user} = {};
 
+    services.percona.extraOptions = ''
+      local-infile = 1
+    '';
+
     systemd.services.matomo-setup-update = {
       # everything needs to set up and up to date before Matomo php files are executed
-      requiredBy = [ "${phpExecutionUnit}.service" ];
+      partOf = [ "${phpExecutionUnit}.service" ];
       before = [ "${phpExecutionUnit}.service" ];
       # The update part of the script can only work if the database is already up and running.
       # We cannot require that we have a local database because the db location can be configured
@@ -153,60 +271,156 @@ in {
       # relationships if there's no local mysql service. Using requires here would fail in that case.
       wants = [ databaseService ];
       after = [ databaseService ];
-      path = [ cfg.package ];
-      environment.PIWIK_USER_PATH = dataDir;
+      path = [ cfg.package pkgs.acl cfg.tools.matomoConsole ];
+      inherit environment;
+
       serviceConfig = {
         Type = "oneshot";
+        RemainAfterExit = true;
+        restartIfChanged = true;
         User = user;
         # hide especially config.ini.php from other
         UMask = "0007";
-        # TODO: might get renamed to MATOMO_USER_PATH in future versions
-        # chown + chmod in preStart needs root
-        PermissionsStartOnly = true;
+        ExecStartPre = let
+          preStartScript = pkgs.writeShellScript "matomo-setup-update-pre" ''
+            # Note that ${configIniPhpFile} might contain the MySQL password.
+            # Use User-Private Group scheme to protect Matomo data, but allow administration / backup via 'matomo' group
+
+            echo "Setting up Matomo data dir ${dataDir}."
+            echo "Web root is at ${webrootDir}".
+
+            mkdir -p ${webrootDir}
+
+            echo "Checking if data migration from older matomo installations is needed..."
+
+            if [ -d ${dataDir}/config ]; then
+              echo "Migrating config from old location ${dataDir}/config"
+              mkdir -p ${configDir}
+              mv ${dataDir}/config/* ${configDir}/
+              rm ${dataDir}/config/.htaccess
+              rmdir ${dataDir}/config
+            fi
+
+            if [ -d ${dataDir}/misc ]; then
+              echo "Migrating misc data from old location ${dataDir}/misc"
+              mkdir -p ${miscDir}
+              mv ${dataDir}/misc/* ${miscDir}/
+              rmdir ${dataDir}/misc
+            fi
+
+            if [ -d ${dataDir}/tagmanager ]; then
+              echo "Migrating tagmanager data from old location ${dataDir}/tagmanager"
+              mkdir -p ${jsDir}
+              mv ${dataDir}/tagmanager/* ${jsDir}/
+              rmdir ${dataDir}/tagmanager
+            fi
+
+            if [ -f ${dataDir}/matomo.js ]; then
+              echo "Cleaning up old matomo.js"
+              rm ${dataDir}/matomo.js
+            fi
+
+            if [ -d ${dataDir}/tmp ]; then
+              echo "Cleaning up old tmpdir"
+              rm -rf ${dataDir}/tmp
+            fi
+
+            mkdir -p ${extraPluginsDir}
+            chown ${user}:${user} ${extraPluginsDir}
+
+            CURRENT_PACKAGE=$(readlink ${dataDir}/current-package || true)
+            NEW_PACKAGE=${cfg.package}
+
+            echo "Currently used package: $CURRENT_PACKAGE"
+            echo "Possibly new package:   $NEW_PACKAGE"
+
+            if [ "$CURRENT_PACKAGE" == "$NEW_PACKAGE" ]; then
+              echo "Package is unchanged."
+            else
+              echo "Package updated, installing new files to ${dataDir}..."
+
+              cp -r ${cfg.package}/share/* ${webrootDir}/
+              echo "Copied files, updating package link in ${dataDir}/current-package."
+              ln -sfT ${cfg.package} ${dataDir}/current-package
+
+              if [[ -f ${configIniPhpFile} ]]; then
+                echo "Clearing caches..."
+                matomo-console cache:clear
+              fi
+            fi
+
+            mkdir -p ${tmpDir}
+
+            # Reset ACLs to avoid surprises, especially when upgrading from
+            # pre-role Matomo.
+            setfacl -Rb ${dataDir}
+
+            # matomo user owns the data directory.
+            chown -R ${user}:${user} ${dataDir}
+
+            # matomo user is allowed to read everything in the data dir.
+            chmod -R u=rX,g=rX,o= ${dataDir}
+
+            echo "Giving matomo read+write access to ${lib.concatStringsSep ", " matomoReadWritePaths}"
+            chmod -R u+wX,g+wX \
+              ${lib.concatStringsSep " \\\n  " matomoReadWritePaths}
+
+            # Set masks for directories where we want to use ACLs that extend
+            # permissions to other users.
+            setfacl -Rm m:x ${dataDir}
+            setfacl -Rm m:rx ${jsDir} ${corePluginsDir}
+            setfacl -Rm m:rwx ${extraPluginsDir}
+
+            # Nginx must be able to read files from some locations in the Matomo data dir.
+
+            echo "Giving nginx x dir access to the web root at ${webrootDir}."
+            setfacl -m u:nginx:x ${dataDir} ${webrootDir}
+
+            echo "Giving nginx read access to ${lib.concatStringsSep ", " nginxReadPaths}"
+            setfacl -Rm u:nginx:rX ${lib.concatStringsSep " " nginxReadPaths}
+            setfacl -Rm d:u:nginx:rX ${lib.concatStringsSep " " nginxReadPaths}
+
+            # Service users must be able to add plugin bundles.
+            setfacl -m g:service:x ${dataDir}
+
+            echo "Giving service users write access to ${lib.concatStringsSep ", " serviceGroupReadWritePaths}"
+            setfacl -Rm g:service:rwX ${lib.concatStringsSep " " serviceGroupReadWritePaths}
+            setfacl -Rm d:g:service:rwX ${lib.concatStringsSep " " serviceGroupReadWritePaths}
+            chmod g+s ${lib.concatStringsSep " " serviceGroupReadWritePaths}
+          '';
+        in [ "+${preStartScript}" ];
       };
 
-      # correct ownership and permissions in case they're not correct anymore,
-      # e.g. after restoring from backup or moving from another system.
-      # Note that ${dataDir}/config/config.ini.php might contain the MySQL password.
-      preStart = ''
-        # migrate data from piwik to Matomo folder
-        if [ -d ${deprecatedDataDir} ]; then
-          echo "Migrating from ${deprecatedDataDir} to ${dataDir}"
-          mv -T ${deprecatedDataDir} ${dataDir}
-        fi
-        mkdir -p "${dataDir}/misc"
-        chown -R ${user}:${user} ${dataDir}
-        chmod -R ug+rwX,o-rwx ${dataDir}
-
-        if [ -e ${dataDir}/current-package ]; then
-          CURRENT_PACKAGE=$(readlink ${dataDir}/current-package)
-          NEW_PACKAGE=${cfg.package}
-          if [ "$CURRENT_PACKAGE" != "$NEW_PACKAGE" ]; then
-            # keeping tmp arround between upgrades seems to bork stuff, so delete it
-            rm -rf ${dataDir}/tmp
-          fi
-        elif [ -e ${dataDir}/tmp ]; then
-          # upgrade from 4.4.1
-          rm -rf ${dataDir}/tmp
-        fi
-        ln -sfT ${cfg.package} ${dataDir}/current-package
-        '';
       script = ''
-            # Use User-Private Group scheme to protect Matomo data, but allow administration / backup via 'matomo' group
-            mkdir -p ${dataDir}/tagmanager
-            ${pkgs.acl}/bin/setfacl -m u:nginx:x ${dataDir}/
-            ${pkgs.acl}/bin/setfacl -Rm u:nginx:rX ${dataDir}/tagmanager/
-            ${pkgs.acl}/bin/setfacl -dm u:nginx:r ${dataDir}/tagmanager/
-            # Copy config folder
-            chmod g+s "${dataDir}"
-            cp -r "${cfg.package}/share/config" "${dataDir}/"
-            chmod -R u+rwX,g+rwX,o-rwx "${dataDir}"
+        # Check whether user setup has already been done.
+        echo "Checking main config file ${configIniPhpFile}..."
+        if [[ -f ${configIniPhpFile} ]]; then
+          echo "${configIniPhpFile} already exists, looks like Matomo is already installed."
+          echo "Executing possibly pending database updates..."
+          matomo-console core:update --yes
+          echo "Updating ${matomoTrackerFile}..."
+          matomo-console custom-matomo-js:update
+          echo "Updating ${piwikTrackerFile}..."
+          matomo-console custom-piwik-js:update
 
-            # check whether user setup has already been done
-            if test -f "${dataDir}/config/config.ini.php"; then
-              # then execute possibly pending database upgrade
-              matomo-console core:update --yes
-            fi
+          echo "Checking settings in ${configIniPhpFile}..."
+
+          if ! grep "force_ssl" ${configIniPhpFile}; then
+            echo "Adding force_ssl = 1 to the config file."
+            sed -i '/\[General\]/a force_ssl = 1' ${configIniPhpFile}
+          fi
+
+          if ! grep "enable_auto_update" ${configIniPhpFile}; then
+            echo "Adding enable_auto_update = 0 to the config file (disables updates and plugin installations via UI)."
+            sed -i '/\[General\]/a enable_auto_update = 0' ${configIniPhpFile}
+          fi
+        else
+          echo "No ${configIniPhpFile} found, looks like the first run of Matomo."
+          echo "Matomo must be set up using the Web installer: https://${cfg.hostname}"
+        fi
+
+        setfacl -m u:nginx:r ${matomoTrackerFile}
+        setfacl -m u:nginx:r ${piwikTrackerFile}
       '';
     };
 
@@ -220,16 +434,20 @@ in {
       # relationships if there's no local mysql service. Using requires here would fail in that case.
       wants = [ databaseService ];
       after = [ databaseService ];
+      path = matomoPathExtra;
+      inherit environment;
 
-      # TODO: might get renamed to MATOMO_USER_PATH in future versions
-      environment.PIWIK_USER_PATH = dataDir;
       serviceConfig = {
         Type = "oneshot";
         User = user;
         UMask = "0007";
         CPUSchedulingPolicy = "idle";
         IOSchedulingClass = "idle";
-        ExecStart = "${cfg.package}/bin/matomo-console core:archive --url=https://${cfg.hostname}";
+        ExecStart = "${cfg.tools.matomoConsole}/bin/matomo-console core:archive --url=https://${cfg.hostname}";
+      };
+
+      unitConfig = {
+        ConditionPathExists = configIniPhpFile;
       };
     };
 
@@ -245,9 +463,12 @@ in {
     };
 
     systemd.services.${phpExecutionUnit} = {
+      requires = [ "matomo-setup-update.service" ];
       # stop phpfpm on package upgrade, do database upgrade via matomo-setup-update, and then restart
       restartTriggers = [ cfg.package ];
-      # stop config.ini.php from getting written with read permission for others
+      restartIfChanged = true;
+      # Make sure that secret files like config.ini.php which are written by Matomo
+      # don't get read permission for other users.
       serviceConfig.UMask = "0007";
     };
 
@@ -263,8 +484,17 @@ in {
         phpOptions = ''
           error_log = 'stderr'
           log_errors = on
+          memory_limit = ${toString cfg.memoryLimit}M
+          # Settings to make the SecurityInfo plugin happy.
+          open_basedir = "${dataDir}"
+          upload_tmp_dir = "${tmpDir}"
+          expose_php = off
+          # This path doesn't exist and is not needed for Matomo but SecurityInfo
+          # wants this setting.
+          session.save_path = "${dataDir}/sessions/"
         '';
-        phpPackage = pkgs.php81;
+
+        inherit phpPackage;
         settings = mapAttrs (name: mkDefault) {
           "listen.owner" = socketOwner;
           "listen.group" = "root";
@@ -277,10 +507,9 @@ in {
           "pm.max_requests" = 500;
           "catch_workers_output" = true;
         };
-        phpEnv.PIWIK_USER_PATH = dataDir;
+        inherit phpEnv;
       };
     };
-
 
     services.nginx.virtualHosts = mkIf (cfg.nginx != null) {
       # References:
@@ -289,7 +518,7 @@ in {
       "${cfg.hostname}" = mkMerge [ cfg.nginx {
         # don't allow to override the root easily, as it will almost certainly break Matomo.
         # disadvantage: not shown as default in docs.
-        root = mkForce "${cfg.package}/share";
+        root = mkForce webrootDir;
 
         # define locations here instead of as the submodule option's default
         # so that they can easily be extended with additional locations if required
@@ -315,8 +544,7 @@ in {
           return 403;
         '';
         # Disallow access to unneeded directories
-        # config and tmp are already removed
-        locations."~ ^/(?:core|lang|misc)/".extraConfig = ''
+        locations."~ ^/(?:config|core|lang|misc|tmp)/".extraConfig = ''
           return 403;
         '';
         # Disallow access to several helper files
@@ -335,13 +563,7 @@ in {
         locations."= /piwik.js".extraConfig = ''
           expires 1M;
         '';
-        locations."/js/tagmanager/".alias = dataDir + "/tagmanager/";
       }];
     };
-  };
-
-  meta = {
-    doc = ./matomo-doc.xml;
-    maintainers = with lib.maintainers; [ florianjacob ];
   };
 }
