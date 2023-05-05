@@ -1,4 +1,4 @@
-{ lib, bundlerApp, callPackage, defaultGemConfig, ruby }:
+{ lib, bundlerApp, callPackage, defaultGemConfig, ruby_2_7 }:
 
 with builtins;
 
@@ -13,7 +13,8 @@ with builtins;
 }@args:
 
 bundlerApp {
-  inherit pname exes ruby;
+  inherit pname exes;
+  ruby = ruby_2_7;
 
   gemConfig = defaultGemConfig // extraGemConfig;
   gemdir = ./. + "/${pname}";

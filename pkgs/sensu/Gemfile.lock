@@ -1,8 +1,8 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.7.0)
-      public_suffix (>= 2.0.2, < 5.0)
+    addressable (2.8.4)
+      public_suffix (>= 2.0.2, < 6.0)
     amq-protocol (2.0.1)
     amqp (1.6.0)
       amq-protocol (>= 2.0.1)
@@ -24,10 +24,10 @@ GEM
       eventmachine
     eventmachine (1.2.7)
     ffi (1.9.21)
-    http_parser.rb (0.6.0)
+    http_parser.rb (0.8.0)
     oj (2.18.1)
     parse-cron (0.1.4)
-    public_suffix (4.0.6)
+    public_suffix (5.0.1)
     sensu (1.9.0)
       em-http-request (= 1.1.5)
       em-http-server (= 0.1.8)
@@ -91,10 +91,10 @@ GEM
       sensu-redis (>= 1.0.0)
 
 PLATFORMS
-  ruby
+  x86_64-linux
 
 DEPENDENCIES
   sensu
 
 BUNDLED WITH
-   2.1.4
+   2.4.12

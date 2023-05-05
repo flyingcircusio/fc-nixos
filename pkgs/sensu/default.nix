@@ -1,7 +1,7 @@
-{ lib, ruby, bundlerApp, bundlerUpdateScript }:
+{ lib, ruby_2_7, bundlerApp, bundlerUpdateScript }:
 
 bundlerApp {
-  inherit ruby;
+  ruby = ruby_2_7;
   pname = "sensu";
   gemdir = ./.;
   exes = [
