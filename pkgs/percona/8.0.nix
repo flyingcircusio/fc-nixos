@@ -9,11 +9,11 @@
 
 stdenv.mkDerivation rec {
   pname = "percona";
-  version = "8.0.30-22";
+  version = "8.0.32-24";
 
   src = fetchurl {
     url = "https://www.percona.com/downloads/Percona-Server-8.0/Percona-Server-${version}/source/tarball/percona-server-${version}.tar.gz";
-    sha256 = "sha256-5TbX95esTYauPON9VfimoO5zmLQxzWfDgzJWbV+nQRQ=";
+    sha256 = "sha256-KGdwbpFFl8s6UWF1FXPFRjyvg0NoTtfur8rR648tCB4=";
   };
 
   preConfigure = lib.optional stdenv.isDarwin ''
@@ -77,6 +77,8 @@ stdenv.mkDerivation rec {
     "-DWITH_BLACKHOLE_STORAGE_ENGINE=1"
     "-DWITH_INNOBASE_STORAGE_ENGINE=1"
     "-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1"
+    # Fails the SSE 4.2 check and forcing it doesn't work, too.
+    "-DWITHOUT_ROCKSDB=1"
   ] ++ lib.optionals stdenv.isLinux [
     "-DWITH_JEMALLOC=1"
     "-DWITH_SYSTEMD=1"
