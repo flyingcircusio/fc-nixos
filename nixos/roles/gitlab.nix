@@ -218,6 +218,12 @@ in
     # Needed for Git via SSH.
     users.users.gitlab.extraGroups = [ "login" ];
 
+    # ensure that gitlab is restarted again, when stopped due to a dependency
+    # (e.g. postgresql) being stopped and started again
+    systemd.services.gitlab = {
+      wantedBy = lib.mkForce [];
+      requiredBy = [ "gitlab.target" ];
+    };
   })
 
   (lib.mkIf (cfg.enable && cfg.extraSecrets != []) {
