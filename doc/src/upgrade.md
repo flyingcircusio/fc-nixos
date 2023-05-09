@@ -205,7 +205,7 @@ which will be based on [Grafana Loki](https://grafana.com/oss/loki/).
 - PHP now defaults to PHP 8.1, updated from 8.0.
 - OpenSSL now defaults to OpenSSL 3, updated from 1.1.1.
 - The `nodePackages` package set now defaults to the LTS release in the `nodejs`
-  package again, instead of being pinned to `nodejs-14_x`. `nodejs-10_x` has
+  package again, instead of being pinned to `nodejs_14`. `nodejs_10` has
   been removed.
 - For more details, see the
   [release notes of NixOS 22.11](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-22.11-notable-changes).
