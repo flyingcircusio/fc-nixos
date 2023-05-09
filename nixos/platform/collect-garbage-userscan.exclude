@@ -10,6 +10,7 @@
 **/journal/
 **/lucene/
 **/solr/data/
+**/nixpkgs-*/
 # Files in sub-directories to ignore (anywhere in the home directory)
 **/.local/share/fish/fish_history
 **/diagnostic.data/metrics.*
