@@ -563,6 +563,12 @@ in {
         locations."= /piwik.js".extraConfig = ''
           expires 1M;
         '';
+        # Alias for the previous Tag Manager container location which
+        # may still be in use by tracked applications because the old
+        # path is embedded in the tracking code.
+        locations."/js/tagmanager/" = {
+            alias = "${jsDir}/";
+        };
       }];
     };
   };
