@@ -45,7 +45,7 @@ pkgs.buildEnv {
     libjpeg
     zlib
     ffmpeg
-    nodejs-18_x
+    nodejs_18
     electron
   ];
   extraOutputsToInstall = [ "dev" ];
