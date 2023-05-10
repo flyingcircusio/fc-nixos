@@ -70,12 +70,12 @@ in
             mailserver.loginAccounts = lib.mkForce {
               "user1@example.local" = {
                 # User1User1
-                hashedPassword = "$5$ld7g3N1MtrZl$PisX9yQsemPEwVNUqQVToe07MaP9qDesXMh5mAwWTR6";
+                hashedPassword = "$6$bJ15li3x3hoWc6av$HREqV9DGuHOgO26M6GQrjoA8.p5kAqzY2hTy.yipNZ6s32EHnHLaw0kop6mMmfxN.LvePsm/1sShrSXJLWotm.";
                 aliases = [ "alias1@example.local" ];
               };
               "user2@example.local" = {
                 # User2USer2
-                hashedPassword = "$5$YF.qhP4xh$N.hX/1SMxmjqjYZqmrtTClzzSLOR/scz.TTmz4KAFX2";
+                hashedPassword = "$6$ubISDRB4Pr3IV0CO$n5tZuntp4EG9l6euyyzuR3GQHKcjpzN5f4HRIQrhykuI3H8/6A7H8mS7AFtOR5KZyWeJNX1BGkbetLCZM6A02/";
               };
             };
 
