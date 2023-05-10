@@ -357,6 +357,8 @@ in
       host1.succeed('fc-ceph osd create-bluestore /dev/vdc > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
+    # TODO: include test for rbd map rbdnamer udev rule functionality, after having rebased onto PL-130691
+
     print("Time spent waiting", time_waiting)
   '';
 })

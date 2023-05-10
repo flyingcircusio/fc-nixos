@@ -193,11 +193,7 @@ in
 
     services.udev.extraRules =
       if fclib.ceph.releaseAtLeast "nautilus" cfg.client.cephRelease
-      then
-      ''
-        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c"
-        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c-part%n"
-      ''
+      then builtins.readFile "${cfg.client.package}/etc/udev/50-rbd.rules"
       else
       ''
         KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}"

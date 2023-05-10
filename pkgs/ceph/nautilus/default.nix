@@ -1,4 +1,4 @@
-{ stdenv, runCommand, fetchurl
+{ stdenv, runCommand, fetchzip
 , lib, ensureNewerSourcesHook
 , cmake, pkgconfig
 , which, git
@@ -98,15 +98,15 @@ let
 
   version = "14.2.22";
   codename = "nautilus";
+
+  src = fetchzip {
+    url = "http://download.ceph.com/tarballs/ceph-${version}.tar.gz";
+    sha256 = "sha256-L/SnaAZHURiynJILBW+c9FMyV3IMG36CmZ9x6Psd3hQ";
+  };
 in rec {
   ceph = stdenv.mkDerivation {
     pname = "ceph";
-    inherit version;
-
-    src = fetchurl {
-      url = "http://download.ceph.com/tarballs/ceph-${version}.tar.gz";
-      sha256 = "sha256-KfBpdLSFIe4f7UbsHfOs6eAxjahOB44xORdNGh2JTQ4";
-    };
+    inherit version src;
 
     patches = [
       ./0000-fix-SPDK-build-env.patch
@@ -219,7 +219,10 @@ in rec {
       substituteInPlace $out/bin/ceph          --replace ${ceph} $out
       substituteInPlace $out/bin/.ceph-wrapped --replace ${ceph} $out
 
-      mkdir -p $man/
-      cp -r ${ceph.man}/share $man/
+      mkdir -p "$man/"
+      cp -r "${ceph.man}/share" "$man/"
+
+      cp -r "${src}/udev" "$out/etc/"
+      substituteInPlace $out/etc/udev/* --replace "/usr/bin/" "$out/bin/"
    '';
 }
