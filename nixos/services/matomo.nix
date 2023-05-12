@@ -539,6 +539,13 @@ in {
         locations."= /piwik.php".extraConfig = ''
           fastcgi_pass unix:${fpm.socket};
         '';
+        # Alternative path for the tracking API (matomo.php) AND matomo.js.
+        # See https://github.com/matomo-org/matomo/blob/4.x-dev/js/README.md
+        # index.php can also be left out in the call, just using `/js?action_name=...` will
+        # also use index.php.
+        locations."= /js/index.php".extraConfig = ''
+          fastcgi_pass unix:${fpm.socket};
+        '';
         # Any other attempt to access any php files is forbidden
         locations."~* ^.+\\.php$".extraConfig = ''
           return 403;
