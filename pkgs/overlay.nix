@@ -1,5 +1,4 @@
 self: super:
-
 let
   versions = import ../versions.nix { pkgs = super; };
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
@@ -128,6 +127,17 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
+  cyrus_sasl-with-sha256 = super.cyrus_sasl.override {
+    libxcrypt = self.libxcrypt-with-sha256;
+  };
+
+  dovecot = (super.dovecot.override {
+    cyrus_sasl = self.cyrus_sasl-with-sha256;
+  }).overrideAttrs(old: {
+    strictDeps = true;
+    buildInputs = [ self.libxcrypt-with-sha256 ] ++ old.buildInputs;
+  });
+
   filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
     name = "filebeat-oss-${a.version}";
     preBuild = "rm -rf x-pack";
@@ -186,6 +196,10 @@ in {
     buildInputs = with self; [ ncurses glib ];
     makeFlags = [ "HAS_GTK_GUI=" ];
   });
+
+  libxcrypt-with-sha256 = super.libxcrypt.override {
+    enableHashes = "strong,sha256crypt";
+  };
 
   links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
 
@@ -258,7 +272,9 @@ in {
     ];
   });
 
-  openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
+  openldap_2_4 = super.callPackage ./openldap_2_4.nix {
+    libxcrypt = self.libxcrypt-with-sha256;
+  };
 
   opensearch = super.callPackage ./opensearch { };
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
@@ -298,6 +314,10 @@ in {
 
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
+
+  postfix = super.postfix.override {
+    cyrus_sasl = self.cyrus_sasl-with-sha256;
+  };
 
   postgis_2_5 = (super.postgresqlPackages.postgis.override {
       proj = self.proj_7;
