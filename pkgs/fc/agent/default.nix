@@ -15,22 +15,6 @@
 let
   py = python310.pkgs;
 
-  # XXX: The newer version from nixpkgs fails with our code, keep the old one for now.
-  pyyaml = py.buildPythonPackage rec {
-    pname = "PyYAML";
-    version = "5.1";
-    src = py.fetchPypi {
-      inherit pname version;
-      sha256 = "15czj11s2bcgchn2jx81k0jmswf2hjxry5cq820h7hgpxiscfss3";
-    };
-    propagatedBuildInputs = [ libyaml ];
-    meta = with lib; {
-      description = "The next generation YAML parser and emitter for Python";
-      homepage = https://github.com/yaml/pyyaml;
-      license = licenses.mit;
-    };
-  };
-
   pytest-structlog = py.buildPythonPackage rec {
     pname = "pytest-structlog";
     version = "0.4";
@@ -74,7 +58,7 @@ py.buildPythonPackage rec {
     py.shortuuid
     py.structlog
     py.typer
-    pyyaml
+    py.pyyaml
     util-linux
   ] ++ lib.optionals stdenv.isLinux [
     dmidecode
