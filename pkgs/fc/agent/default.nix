@@ -5,31 +5,15 @@
 , gitMinimal
 , gptfdisk
 , libyaml
-, multipath_tools
+, multipath-tools
 , nix
-, python3Packages
-, utillinux
+, python310
+, util-linux
 , xfsprogs
 }:
 
 let
-  py = python3Packages;
-
-  # PyYAML >= 5 has not appeared in upstream yet.
-  pyyaml = py.buildPythonPackage rec {
-    pname = "PyYAML";
-    version = "5.1";
-    src = py.fetchPypi {
-      inherit pname version;
-      sha256 = "15czj11s2bcgchn2jx81k0jmswf2hjxry5cq820h7hgpxiscfss3";
-    };
-    propagatedBuildInputs = [ libyaml ];
-    meta = with lib; {
-      description = "The next generation YAML parser and emitter for Python";
-      homepage = https://github.com/yaml/pyyaml;
-      license = licenses.mit;
-    };
-  };
+  py = python310.pkgs;
 
   pytest-structlog = py.buildPythonPackage rec {
     pname = "pytest-structlog";
@@ -54,8 +38,8 @@ py.buildPythonPackage rec {
   checkInputs = [
     py.freezegun
     py.pytest
-    py.pytestcov
-    py.pytestrunner
+    py.pytest-cov
+    py.pytest-runner
     py.responses
     py.pytest-mock
     py.pytest-subprocess
@@ -66,7 +50,7 @@ py.buildPythonPackage rec {
     nix
     py.click
     py.colorama
-    py.dateutil
+    py.python-dateutil
     py.iso8601
     py.pytz
     py.requests
@@ -74,14 +58,16 @@ py.buildPythonPackage rec {
     py.shortuuid
     py.structlog
     py.typer
-    pyyaml
-    utillinux
+    py.pyyaml
+    util-linux
   ] ++ lib.optionals stdenv.isLinux [
     dmidecode
     gptfdisk
-    multipath_tools
+    multipath-tools
     py.systemd
     xfsprogs
   ];
   dontStrip = true;
+  passthru.pythonDevEnv = py.withPackages (_: checkInputs ++ propagatedBuildInputs);
+
 }

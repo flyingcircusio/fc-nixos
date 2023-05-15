@@ -123,7 +123,7 @@ class Request:
         import fc.maintenance.lib.shellscript
 
         with open(p.join(dir, "request.yaml")) as f:
-            instance = yaml.load(f, Loader=yaml.FullLoader)
+            instance = yaml.load(f, Loader=yaml.UnsafeLoader)
             instance.next_due = ensure_timezone_present(instance.next_due)
             instance.added_at = ensure_timezone_present(instance.added_at)
             instance.last_scheduled_at = ensure_timezone_present(

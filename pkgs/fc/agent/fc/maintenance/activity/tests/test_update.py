@@ -159,7 +159,7 @@ def test_update_activity_serialize(activity):
 
 
 def test_update_activity_deserialize(activity, logger):
-    deserialized = yaml.load(SERIALIZED_ACTIVITY, Loader=yaml.FullLoader)
+    deserialized = yaml.load(SERIALIZED_ACTIVITY, Loader=yaml.UnsafeLoader)
     deserialized.set_up_logging(logger)
     assert deserialized.__getstate__() == activity.__getstate__()
 
