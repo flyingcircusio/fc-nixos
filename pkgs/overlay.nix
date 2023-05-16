@@ -331,6 +331,20 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
+    (python-final: python-prev: {
+      pyslurm = python-prev.pyslurm.overridePythonAttrs(_: {
+        version = "unstable-2023-05-12";
+        src = super.fetchFromGitHub {
+          owner = "pyslurm";
+          repo = "pyslurm";
+          rev = "42471d8575e89caa64fea55677d1af130328b4a7";
+          sha256 = "K9RqWe0EPvf/0Hs2XBpII/OEqoo0Kr+dFZKioQafbXI=";
+        };
+      });
+    })
+  ];
+
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
 
