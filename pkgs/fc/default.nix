@@ -19,7 +19,8 @@ rec {
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
   fix-so-rpath = callPackage ./fix-so-rpath {};
   logcheckhelper = callPackage ./logcheckhelper { };
-  megacli = callPackage ./megacli { };
+  # XXX: needs Python 2.7, untested on newer platform versions.
+  # megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
   secure-erase = callPackage ./secure-erase {};
   sensuplugins = callPackage ./sensuplugins {};
