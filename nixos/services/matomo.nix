@@ -271,13 +271,13 @@ in {
       # relationships if there's no local mysql service. Using requires here would fail in that case.
       wants = [ databaseService ];
       after = [ databaseService ];
+
       path = [ cfg.package pkgs.acl cfg.tools.matomoConsole ];
       inherit environment;
 
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        restartIfChanged = true;
         User = user;
         # hide especially config.ini.php from other
         UMask = "0007";
