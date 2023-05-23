@@ -393,8 +393,9 @@ in {
       let
         dirs = "/var/lib/postfix/queue/{active,hold,incoming,deferred,maildrop}";
       in rec {
-        partOf = [ "postfix.service" ];
-        after = [ "postfix.service" ];
+        after = [ "postfix-setup.service" ];    # Ordering
+        wantedBy = [ "postfix-setup.service" ]; # Startup, without failure propagation
+        partOf = [ "postfix-setup.service" ];   # Restart, without failure propagation
         path = with pkgs; [ acl ];
         script = ''
           setfacl -Rm u:telegraf:rX ${dirs}
