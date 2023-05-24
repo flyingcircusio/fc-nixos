@@ -24,7 +24,7 @@ app = Typer()
 
 class NixOSVersion(str, Enum):
     NIXOS_2211 = "nixos-22.11"
-    NIXOS_2211_GITLAB = "nixos-22.11-gitlab"
+    NIXOS_2305 = "nixos-23.05"
     UNSTABLE = "nixos-unstable"
 
 
