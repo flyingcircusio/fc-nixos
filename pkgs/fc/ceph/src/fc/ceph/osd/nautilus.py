@@ -77,6 +77,17 @@ class OSDManager(object):
         assert journal in ["internal", "external"]
         assert os.path.exists(device)
 
+        # FIXME: I also thought of requiring a `--legacy` confirmation flag for
+        # operations involving filestore. But I guess a warn message is sufficient, as
+        # this is a task only done manually where operators (hopefully) read logs.
+        print(
+            "WARN: From Ceph Luminous on, we are deprecating the platform support "
+            "for running FileStore OSDs.\n"
+            "We may enable features not playing well with FileStore, among them:\n"
+            "  - osd_scrub_auto_repair, this might spread data corruption in FileStore",
+            end="\n\n",
+        )
+
         print("Creating OSD ...")
 
         id_ = int(run.json.ceph("osd", "create")["osdid"])

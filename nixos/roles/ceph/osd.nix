@@ -21,6 +21,12 @@ let
     # (auto detected) device classes for now.
     osdCrushUpdateOnStart = false;
 
+    # automatically repairing PGs at scrub mismatches is reliable due to Bluestore
+    # internal checksumming
+    osdScrubAutoRepair = true;
+    # we use the default value of max. number of automatically corrected errors
+    # "osd_scrub_auto_repair_num_errors": "5",
+
     # Various
 
     msDispatchThrottleBytes = 1048576000;
