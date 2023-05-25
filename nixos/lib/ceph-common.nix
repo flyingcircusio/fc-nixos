@@ -8,7 +8,7 @@ let
   # generated from this ist
   releaseOrder = [ "nautilus" "luminous" "jewel"];
   cephReleaseType = types.enum (builtins.attrNames releasePkgs);
-  defaultRelease = "luminous";
+  defaultRelease = "nautilus";
 
   # ====== mapping of packages per ceph release =======
 

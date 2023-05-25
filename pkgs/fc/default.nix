@@ -61,9 +61,6 @@ rec {
       rev = version;
       hash = "sha256-eTJxhdSelMJ8UFE8mtgntFVgY/+Ne2K4niH5X9JP9Tc=";
     };
-    # TODO: once `ceph` in our overlay points to a release with Python3 support
-    # (>= Nautilus), use that alias instead
-    inherit (pkgs.ceph-nautilus) ceph libceph;
   };
 
   secure-erase = callPackage ./secure-erase {};

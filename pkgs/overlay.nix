@@ -37,7 +37,8 @@ in {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  ceph = self.ceph-luminous;
+  # default ceph packages
+  inherit (self.ceph-nautilus) ceph ceph-client libceph;
   ceph-jewel = (super.callPackage ./ceph/jewel {
       pythonPackages = super.python2Packages;
       boost = super.boost155;
