@@ -7,6 +7,7 @@ import contextlib
 import json
 import sys
 from collections import namedtuple
+from dataclasses import dataclass
 from time import sleep
 
 import rados
@@ -32,12 +33,53 @@ EXIT_PRIORITIES = [
 Thresholds = namedtuple("thresholds", ["nearfull", "full"])
 
 
+@dataclass
+class Root:
+
+    size: int
+    used: int
+
+
+@dataclass
+class Pool:
+
+    name: str
+    root: Root
+
+
+@dataclass
+class Snapshot:
+
+    pool: Pool
+    image: str
+    snapname: str
+    size: int
+
+    @property
+    def restore_impact(self):
+        root = self.pool.root
+        expected_utilization = (root.used + self.size) / root.size
+        if expected_utilization > 0.85:
+            return STATE_CRITICAL
+        elif expected_utilization > 0.80:
+            return STATE_WARN
+        return STATE_OK
+
+
 def main():
     # can cause the program to exit with non-working config
     (thresholds, pool_roots) = parse_config(sys.argv)
     with cluster_connection() as cluster:
         fill_stats = get_cluster_fillstats(cluster, pool_roots)
         largest_snaps = get_largest_snaps(cluster, pool_roots)
+
+    results = {}
+
+    # evaluation
+    for snapshot in snapshots:
+        results.setdefault(snapshot.restore_impact, []).append(snapshot)
+
+    # reporting
 
     sys.exit(eval_fill_warnings(fill_stats, largest_snaps, thresholds))
 
@@ -172,10 +214,7 @@ def get_largest_snaps(connection: rados.Rados, pool_roots: dict) -> dict:
                 pool_largest_snap = largest_snap_per_pool(poolio, pool)
                 if not pool_largest_snap:
                     print(f"INFO: Pool {pool} has no (largest) snapshots.")
-                elif (
-                    pool_largest_snap["size_bytes"]
-                    > root_largest_snap[1]["size_bytes"]
-                ):
+                elif pls["size_bytes"] > rls[1]["size_bytes"]:
                     root_largest_snap = (pool, pool_largest_snap)
 
         if root_largest_snap is not root_dummy:

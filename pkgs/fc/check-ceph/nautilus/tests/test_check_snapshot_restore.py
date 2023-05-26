@@ -12,6 +12,36 @@ import pytest
 # fixtures and mocks are in conftest.py
 
 
+@pytest.fixture
+def snapshot():
+    hdd_root = Root(0, 0)
+    rbd_hdd = Pool("rbd.hdd", hdd_root)
+    snapshot = Snapshot(rbd_hdd, "testvm00", "backy-1234", 0)
+    return snapshot
+
+
+def test_snapshot_fits_easily(snapshot):
+    snapshot.pool.root.size = 10000
+    snapshot.pool.root.used = 5000
+    snapshot.size = 2000
+    assert snapshot.restore_impact() == STATE_OK
+
+
+def test_snapshot_too_big(snapshot):
+    snapshot.pool.root.size = 10000
+    snapshot.pool.root.used = 5000
+    snapshot.size = 6000
+    assert snapshot.restore_impact() == STATE_CRITICAL
+
+
+def test_snapshot_too_big():
+    hdd_root = Root(10000, 5000)
+    rbd_hdd = Pool("rbd.hdd", hdd_root)
+    snapshot = Snapshot(rbd_hdd, "testvm00", "backy-1234", 6000)
+
+    assert snapshot.restore_impact() == STATE_CRITICAL
+
+
 def test_fill_warnings(cluster_stats, snap_data, default_pool_roots):
     thresholds = snapcheck.Thresholds(nearfull=0.85, full=0.95)
     # retrieve and create mock data
