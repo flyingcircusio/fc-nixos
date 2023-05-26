@@ -68,6 +68,6 @@ py.buildPythonPackage rec {
     xfsprogs
   ];
   dontStrip = true;
-  passthru.pythonDevEnv = py.withPackages (_: checkInputs ++ propagatedBuildInputs);
+  passthru.pythonDevEnv = python310.withPackages (_: checkInputs ++ propagatedBuildInputs);
 
 }
