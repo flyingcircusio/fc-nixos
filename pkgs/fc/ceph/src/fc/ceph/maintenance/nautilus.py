@@ -117,6 +117,7 @@ class MaintenanceTasks(object):
         "PG_NOT_DEEP_SCRUBBED",
         "PG_NOT_SCRUBBED",
         "LARGE_OMAP_OBJECTS",
+        "MANY_OBJECTS_PER_PG",
     ]
 
     LOCKTOOL_TIMEOUT_SECS = 30

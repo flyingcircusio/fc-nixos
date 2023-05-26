@@ -60,9 +60,8 @@ def pools(cluster, monkeypatch):
     return fc.ceph.api.pools.Pools(cluster)
 
 
-def test_node_deletion(fake_directory, cluster, pools):
-    # FIXME: test all release-dependent submodules, e.g. with pytest.parametrize
-    v = fc.ceph.maintenance.nautilus.VolumeDeletions(fake_directory, cluster)
+def test_node_deletion(fake_directory, cluster, pools, maintenance_manager):
+    v = maintenance_manager.VolumeDeletions(fake_directory, cluster)
     v.ensure()
 
     assert cluster.rbd.call_args_list == [

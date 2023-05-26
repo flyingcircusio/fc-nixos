@@ -23,7 +23,7 @@ let
   restoreSingleFiles = pkgs.callPackage ../../pkgs/restore-single-files {};
 
   backyRbdVersioned = cephReleaseName: {
-    BACKY_RBD = "${fclib.ceph.releasePkgs.${cephReleaseName}}/bin/rbd";
+    BACKY_RBD = "${fclib.ceph.releasePkgs.${cephReleaseName}.ceph-client}/bin/rbd";
   };
 
 in

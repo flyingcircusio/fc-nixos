@@ -13,10 +13,9 @@ let
   first_mon = if mons == [ ] then "" else head (lib.splitString "." (head mons));
 
   fc-check-ceph-withVersion = pkgs.fc.check-ceph.${role.cephRelease};
-  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease};
+  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
 
-  # FIXME: expose this as a config option (overridable)
-  # modules to be explicitly activated via this config
+  # default definitions for the mgr.* options:
   mgrEnabledModules = {
     luminous = [ "balancer" "dashboard" "status" ];
     # always_on_modules are not listed here
@@ -25,9 +24,6 @@ let
       "iostat"
     ];
   };
-  # modules that are ensured to be disabled at each mgr start. All other modules might
-  # be imperatively enabled in the cluster and stay enabled.
-  # Note that `always_on` modules cannot be disabled so far
   mgrDisabledModules = {
     luminous = [];
     nautilus = [
@@ -87,6 +83,24 @@ in
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used for the the mon package.";
       };
+
+      mgr = {
+        enabledModules = lib.mkOption {
+          type = with lib.types; listOf str;
+          default = mgrEnabledModules."${role.cephRelease}";
+          description = "Modules to be explicitly activated via this config,"
+            + " always_on modules do not need to be listed here.";
+        };
+        disabledModules = lib.mkOption {
+          type = with lib.types; listOf str;
+          default = mgrDisabledModules."${role.cephRelease}";
+          description = ''
+            Modules that are ensured to be disabled at each mgr start. All other
+            modules might be imperatively enabled in the cluster and stay enabled.
+            Note that `always_on` modules cannot be disabled so far
+          '';
+        };
+      };
     };
   };
 
@@ -106,7 +120,7 @@ in
         fc-ceph.settings = let
           monSettings =  {
             release = role.cephRelease;
-            path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease};
+            path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
           };
         in {
           # fc-ceph monitor components
@@ -133,7 +147,7 @@ in
 
         restartTriggers = [
           config.environment.etc."ceph/ceph.conf".source
-          fclib.ceph.releasePkgs.${role.cephRelease}
+          fclib.ceph.releasePkgs.${role.cephRelease}.ceph
         ];
 
         environment = {
@@ -242,7 +256,7 @@ in
 
         restartTriggers = [
           config.environment.etc."ceph/ceph.conf".source
-          fclib.ceph.releasePkgs.${role.cephRelease}
+          fclib.ceph.releasePkgs.${role.cephRelease}.ceph
         ];
 
         environment = {
@@ -258,20 +272,20 @@ in
         '';
 
         preStart =
-          # FIXME: dashboard only enabled for luminous, as the Nautilus release fails to build in the sandbox so far.
+          # dashboard only enabled for luminous, as the Nautilus release fails to build in the sandbox so far.
           # If we ever manage to get it enabled, `ceph config set` needs to be used instead of `ceph config-key`
           lib.optionalString (role.cephRelease == "luminous") ''
             echo "ensure mgr dashboard binds to localhost only"
             # make _all_ hosts bind the dashboard to localhost (v4) only (default port: 7000)
-            ${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph config-key set mgr/dashboard/server_addr 127.0.0.1
+            ${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph config-key set mgr/dashboard/server_addr 127.0.0.1
           ''
           # imperatively ensure mgr modules
           + lib.concatStringsSep "\n" (
-              lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph mgr module enable ${mod} --force")
+              lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph mgr module enable ${mod} --force")
             )
           + "\n"
           + lib.concatStringsSep "\n" (
-              lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/ceph mgr module disable ${mod}")
+              lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph mgr module disable ${mod}")
             )
           ;
 

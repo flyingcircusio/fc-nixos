@@ -12,12 +12,10 @@ let
           version = "dev";
           # builtins.toPath (testPath + "/.")
           src = ../../fc.qemu/.;
-          ceph = config.fclib.ceph.releasePkgs.jewel;
-          qemu_ceph = pkgs.qemu_ceph.override {
-            ceph = config.fclib.ceph.releasePkgs.jewel;
-          };
+          ceph = config.fclib.ceph.releasePkgs.jewel.libceph;
+          qemu_ceph = config.fclib.ceph.qemu_ceph_versioned "jewel";
         }
-        else config.fclib.ceph.fcQemuPkgs.jewel;
+        else config.fclib.ceph.releasePkgs.jewel.fcQemu;
     in
     {
 
@@ -106,7 +104,7 @@ let
 
             # This should be included through the propagatedBuildInputs
             # from fc.qemu already but apparently it isn't.
-            (pyPkgs.toPythonModule config.fclib.ceph.libcephPkgs.jewel)
+            (pyPkgs.toPythonModule config.fclib.ceph.releasePkgs.jewel.libceph)
 
             # Additional packages to run the tests
             pyPkgs.pytest
