@@ -281,6 +281,7 @@ def test_check_cluster_maintenance(maintenance_manager):
                 "PG_NOT_DEEP_SCRUBBED": "foo",
                 "PG_NOT_SCRUBBED": "bar",
                 "LARGE_OMAP_OBJECTS": "baz",
+                "MANY_OBJECTS_PER_PG": "baozi",
             },
         }
     )
