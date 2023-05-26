@@ -271,7 +271,7 @@ context: Context
 
 @app.callback(no_args_is_help=True)
 def update_nixpkgs(
-    nixos_version: NixOSVersion = Option("nixos-22.11"),
+    nixos_version: NixOSVersion = Option("nixos-23.05"),
     fc_nixos_path: Path = Option(
         ".", dir_okay=True, file_okay=False, writable=True
     ),
@@ -291,7 +291,7 @@ def nixpkgs():
 
 @app.command()
 def prefetch(
-    nixos_version: str = Option("nixos-22.11"),
+    nixos_version: str = Option("nixos-23.05"),
 ):
     print(prefetch_nixpkgs(nixos_version))
 
