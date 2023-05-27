@@ -36,10 +36,9 @@ py.buildPythonPackage rec {
   namePrefix = "";
   src = ./.;
   checkInputs = [
+    py.pytestCheckHook
     py.freezegun
-    py.pytest
     py.pytest-cov
-    py.pytest-runner
     py.responses
     py.pytest-mock
     py.pytest-subprocess
@@ -52,9 +51,11 @@ py.buildPythonPackage rec {
     py.colorama
     py.python-dateutil
     py.iso8601
+    py.pendulum
     py.pytz
     py.requests
     py.rich
+    py.setuptools
     py.shortuuid
     py.structlog
     py.typer
@@ -65,6 +66,7 @@ py.buildPythonPackage rec {
     gptfdisk
     multipath-tools
     py.pyslurm
+    py.pystemd
     py.systemd
     xfsprogs
   ];

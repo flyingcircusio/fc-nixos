@@ -298,7 +298,6 @@ in {
       logrotate.enable = true;
       agent.collect-garbage = true;
       inherit (nixpkgsConfig) allowedUnfreePackageNames;
-      services.sensu-client.mutedSystemdUnits = [ "logrotate.service" ];
     };
 
     # implementation for flyingcircus.passwordlessSudoRules

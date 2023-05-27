@@ -1,5 +1,0 @@
-source 'https://rubygems.org'
-
-gem 'sensu-plugin'
-gem 'systemd-bindings'
-gem 'warning'

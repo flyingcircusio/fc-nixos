@@ -364,7 +364,6 @@ in {
   sensu-plugins-postgres = super.callPackage ./sensuplugins-rb/sensu-plugins-postgres { };
   sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
-  sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
 
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
