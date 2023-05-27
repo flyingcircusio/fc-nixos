@@ -324,8 +324,10 @@ in {
 
       nscd.enable = true;
       openssh.enable = fclib.mkPlatform true;
-      openssh.kbdInteractiveAuthentication = false;
-      openssh.passwordAuthentication = false;
+      openssh.settings = {
+        KbdInteractiveAuthentication = false;
+        PasswordAuthentication = false;
+      };
 
       telegraf.enable = mkDefault true;
 
