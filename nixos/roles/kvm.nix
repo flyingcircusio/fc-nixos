@@ -235,10 +235,18 @@ in
         }
       '';
 
-    flyingcircus.services.sensu-client.checks = {
-      qemu = {
-        notification = "Qemu health check";
-        command = "sudo ${role.package}/bin/fc-qemu check";
+    flyingcircus.services.sensu-client = {
+      checks = {
+        qemu = {
+          notification = "Qemu health check";
+          command = "sudo ${role.package}/bin/fc-qemu check";
+        };
+      };
+      # each qemu process connects directly to multiple OSD's in the
+      # ceph cluster.
+      expectedConnections = {
+        warning = 18000;
+        critical = 25000;
       };
     };
 
