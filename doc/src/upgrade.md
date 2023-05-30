@@ -15,11 +15,8 @@ Contact our {ref}`support` for upgrade assistance.
 
 ## Overview
 
-- Status: stable
-- First production release: [2023_005 (2023-03-13)](https://doc.flyingcircus.io/platform/changes/2023/r005.html)
-- Added roles: postgresql15
-- Removed roles: {ref}`graylog, loghost, loghost-location <nixos-upgrade-loghost>`, {ref}`kibana, kibana6, kibana7 <nixos-upgrade-kibana>`, {ref}`postgresql10 <nixos-upgrade-postgresql>`
-- Roles with significant breaking changes: {ref}`nginx, webgateway <nixos-upgrade-webgateway>`, {ref}`nixos-upgrade-statshost-master`
+- Status: staging/non-production
+- Removed roles: {ref}`elasticsearch6, elasticsearch7 <nixos-upgrade-elasticsearch>`
 
 
 ## Why upgrade? Security
@@ -32,7 +29,7 @@ We do back-ports for critical security issues but this may take longer in some
 cases and less important security fixes will not be back-ported most of the time.
 
 NixOS provides regular security updates for about one month after the release.
-Upstream support for 22.11 ends on **2023-06-30**.
+Upstream support for 23.05 ends on **2023-12-31**.
 
 New platform features are always developed for the current stable platform version
 and only critical bug fixes are back-ported to older versions.
@@ -115,119 +112,85 @@ following common breaking changes and role-specific notes below.
 
 ### Common breaking changes
 
-- Deprecated settings `logrotate.paths` and `logrotate.extraConfig` have been
-  removed. Please convert any uses to `services.logrotate.settings`
-  before upgrading.
+- `libxcrypt`, the library providing the `crypt(3)` password hashing function,
+  is now built without support for algorithms not flagged[`strong`]
+  (https://github.com/besser82/libxcrypt/blob/v4.4.33/lib/hashes.conf#L48)
+  in NixOS 23.05. We added a variant package called `libxcrypt-with-sha256`
+  which also enables the `sha256` algorithm. OpenLDAP, Dovecot, Postfix,
+  cyrus_sasl use that version by default. New password hashes should use
+  strong algorithms like `yescrypt`.
+- `podman` now uses the `netavark` network stack. Users will need to delete
+  all of their local containers, images, volumes, etc, by running `podman
+  system reset --force` once before upgrading their systems.
 
-(nixos-upgrade-webgateway)=
 
-### webgateway
+(nixos-upgrade-elasticsearch)=
 
-**Nginx** now uses the *nginx* user to run the main process. Before, only
-worker processes ran as *nginx* and the main process as *root* to allow
-reading SSL certificates from arbitrary directories, like deployments in
-`/srv/s-user`, for example.
+### Elasticsearch
 
-Normally, the built-in support for Letsencrypt should be used to avoid
-permission problems and make sure that certificates are rotated
-automatically.
-
-If using other SSL certificates cannot be avoided, make sure
-that permissions allow read access for the *nginx* user, for example by
-applying `setfacl -Rm u:nginx:rX` to the certificate directory.
-
-It's also possible to keep the old behavior for some time by adding as
-{ref}`nixos-custom-modules` before the upgrade:
-
-```nix
-# /etc/local/nixos/nginx-master-user-root.nix
-{
-  services.nginx.masterUser = "root";
-}
-```
-
-This setting will trigger a deprecation warning on 23.05 and be removed in a
-later version.
-
-(nixos-upgrade-statshost-master)=
-
-### statshost-master
-
-The options to add custom Grafana config have changed.
-
-`services.grafana.extraOptions` has been removed and free-form config
-settings moved to `services.grafana.settings`. For example,
-`services.grafana.smtp.port` is now at `services.grafana.settings.smtp.port`.
-
-For a detailed migration guide, please look at the
-[NixOS 22.11 release notes](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-22.11-notable-changes).
-
-### nginx
-
-See {ref}`nixos-upgrade-webgateway`.
-
-(nixos-upgrade-postgresql)=
-
-### postgresql
-
-The `postgresql10` role has been removed. {ref}`Upgrade the database <nixos-postgresql-major-upgrade>`
-to a newer role version before the platform upgrade.
-
-The `postgresql15` role is now available.
-
-(nixos-upgrade-kibana)=
-
-### kibana
-
-All `kibana*` roles have been removed. Machines that use kibana should stay on
-22.05 for now. We are working on
-[OpenSearch](https://opensearch.org/)/[OpenSearch Dashboards](https://opensearch.org/docs/latest/dashboards/quickstart-dashboards/)
-roles for 22.11 which will replace Elasticsearch/Kibana in the future.
-
-(nixos-upgrade-loghost)=
-
-### loghost
-
-`graylog` and `loghost*` roles have been removed. Machines that use these
-roles should stay on 22.05. We are working on a new logging stack for 22.11
-which will be based on [Grafana Loki](https://grafana.com/oss/loki/).
-
+`elasticsearch6` and `elasticsearch7` roles have been removed. Machines that use these
+roles should stay on 22.11 and migrate to Opensearch before upgrading.
 
 ## Other notable changes
 
-- PHP is now built in NTS (Non-Thread Safe) mode by default. For Apache and
-  mod_php usage, we enable ZTS (Zend Thread Safe) mode. This has been a
-  common practice for a long time in other distributions.
-- openssh was updated to version 9.1, disabling the generation of DSA keys
-  when using `ssh-keygen -A` as they are insecure. Also, `SetEnv` directives
-  in `ssh_config` and `sshd_config` are now first-match-wins.
-- Python now defaults to 3.10, updated from 3.9. Python 3.11 is now stable.
-- PHP now defaults to PHP 8.1, updated from 8.0.
-- OpenSSL now defaults to OpenSSL 3, updated from 1.1.1.
-- The `nodePackages` package set now defaults to the LTS release in the `nodejs`
-  package again, instead of being pinned to `nodejs-14_x`. `nodejs-10_x` has
-  been removed.
+- NixOS now defaults to using nsncd (a non-caching reimplementation in Rust)
+  as NSS lookup dispatcher, instead of the buggy and deprecated
+  glibc-provided nscd.
+- The `NodeJS` packages have been renamed to a more usual naming scheme,
+  for example `nodejs-19_x` is now `nodejs_19`.
+- The `dnsmasq` service now takes configuration via the
+  `services.dnsmasq.settings` attribute set. The option
+  `services.dnsmasq.extraConfig` still works but should be migrated to
+  `settings` soon. `extraConfig` is deprecated in this release
+  and issues warnings at system build time.
+- PostgreSQL has opt-in support for [JIT compilation]
+  (https://www.postgresql.org/docs/current/jit-reason.html). It can be
+  enabled like this:
+  ```nix
+  {
+    services.postgresql = {
+      enableJIT = true;
+    };
+  }
+  ```
+- `openjdk` from version 11 and above is not build with `openjfx`
+  (i.e.: JavaFX) support by default anymore. You can re-enable it by
+  overriding, e.g.: `openjdk11.override { enableJavaFX = true; };`.
+- A new option `recommendedBrotliSettings` has been added to `services.nginx`.
+  Learn more about compression in Brotli format [here](https://github.com/google/ngx_brotli/blob/master/README.md).
+- `vim_configurable` has been renamed to `vim-full` to avoid confusion:
+  `vim-full`'s build-time features are configurable, but both `vim` and
+  `vim-full` are _customizable_ (in the sense of user configuration, like
+  vimrc).
 - For more details, see the
-  [release notes of NixOS 22.11](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-22.11-notable-changes).
+  [release notes of NixOS 23.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-23.05-notable-changes).
 
 
 ## Significant package updates
 
-- docker-compose: 1.29 -> 2.12
-- git: 2.36 -> 2.38
-- gitlab: 15.4.6 -> 15.8.4
-- glibc: 2.34 -> 2.35
-- haproxy: 2.5 -> 2.6
-- k3s: 1.23 -> 1.25
-- keycloak: 18 -> 20
-- nix: 2.8 -> 2.11
-- openssh: 9.0 -> 9.1
-- postfix: 3.6.6 -> 3.7.3
-- powerdns: 4.6 -> 4.7
-- rabbitmq: 3.9 -> 3.10
-- roundcube: 1.5 -> 1.6
-- systemd: 250 -> 251
-- telegraf: 1.22 -> 1.24
-- varnish: 7.1 -> 7.2
-- zlib: 1.2.12 -> 1.2.13
-- zsh: 5.8 -> 5.9
+- asterisk: 19.8.0 -> asterisk-20.2.1
+- bash: 5.1 -> 5.2
+- binutils: 2.39 -> 2.40
+- bundler: 2.3 -> 2.4
+- curl: 7.86.0 -> 8.0
+- dnsmasq: 2.87 -> 2.89
+- docker-compose: 2.12 -> 2.17
+- ffmpeg: 4.4.2 -> 5.1
+- gcc: 11 -> 12
+- git: 2.38 -> 2.40
+- glibc: 2.35 -> 2.37
+- grafana: 9.4 -> 9.5
+- haproxy: 2.6 -> 2.7
+- k3s: 1.25 -> 1.26
+- kubernetes-helm: 3.10 -> 3.11
+- linux: 5.15 -> 6.1
+- nginx: 1.22 -> 1.24
+- nss-cacert: 3.86 -> 3.89
+- openjdk: 17 -> 19 (same for other Java default packages like `jre`)
+- openssh: 9.1 -> 9.3
+- podman: 4.3 -> 4.5
+- rabbitmq-server: 3.10 -> 3.11
+- ruby: 2.7 -> 3.1
+- systemd: 251 -> 253
+- telegraf: 1.24 -> 1.26
+- xfsprogs: 5.19 -> 6.2

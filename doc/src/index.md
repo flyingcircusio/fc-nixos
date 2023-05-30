@@ -28,7 +28,6 @@ fc_collect_garbage_userscan
 
 devhost
 docker
-elasticsearch
 external_net
 kubernetes
 lamp

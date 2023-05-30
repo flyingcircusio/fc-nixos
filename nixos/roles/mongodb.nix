@@ -40,8 +40,6 @@ let
   checkMongoCmd = "${pkgs.fc.check-mongodb}/bin/check_mongodb";
 
   mongodbRoles = with config.flyingcircus.roles; {
-    "3.6" = mongodb36.enable;
-    "4.0" = mongodb40.enable;
     "4.2" = mongodb42.enable;
   };
   enabledRoles = lib.filterAttrs (n: v: v) mongodbRoles;
@@ -57,8 +55,6 @@ in {
     };
   in {
     flyingcircus.roles = {
-      mongodb36 = mkRole "3.6";
-      mongodb40 = mkRole "4.0";
       mongodb42 = mkRole "4.2";
     };
   };

@@ -23,8 +23,18 @@ stdenv.mkDerivation rec {
     rm -rf plugin/auth_ldap
   '';
 
-  nativeBuildInputs = [ bison cmake pkg-config ]
+  nativeBuildInputs = [ bison cmake perl pkg-config ]
     ++ lib.optionals (!stdenv.isDarwin) [ rpcsvc-proto ];
+
+  prePatch = ''
+    patchShebangs scripts
+    # Disable ABI check. See case #108154
+    sed -i "s/SET(RUN_ABI_CHECK 1)/SET(RUN_ABI_CHECK 0)/" cmake/abi_check.cmake
+  '';
+
+  patches = [
+    ./no-force-outline-atomics.patch # Do not force compilers to turn on -moutline-atomics switch
+  ];
 
   ## NOTE: MySQL upstream frequently twiddles the invocations of libtool. When updating, you might proactively grep for libtool references.
   postPatch = ''
@@ -33,7 +43,7 @@ stdenv.mkDerivation rec {
   '';
 
   buildInputs = [
-    boost (curl.override { inherit openssl; }) icu libedit libevent lz4 ncurses openssl protobuf re2 readline zlib
+    boost (curl.override { inherit openssl; }) icu libedit libaio libevent lz4 ncurses openssl protobuf re2 readline zlib
     zstd libfido2
   ] ++ lib.optionals stdenv.isLinux [
     numactl libtirpc openldap cyrus_sasl jemalloc systemd
@@ -41,7 +51,7 @@ stdenv.mkDerivation rec {
     cctools CoreServices developer_cmds DarwinTools
   ];
 
-  enableParallelBuilding = true;
+  outputs = [ "out" "static" ];
 
   cmakeFlags = [
 
@@ -68,6 +78,7 @@ stdenv.mkDerivation rec {
     "-DINSTALL_DOCREADMEDIR=share/mysql"
     "-DINSTALL_SUPPORTFILESDIR=share/mysql"
     "-DINSTALL_MYSQLSHAREDIR=share/mysql"
+    "-DINSTALL_MYSQLTESTDIR="
     "-DINSTALL_DOCDIR=share/mysql/docs"
     "-DINSTALL_SHAREDIR=share/mysql"
 
@@ -84,27 +95,10 @@ stdenv.mkDerivation rec {
     "-DWITH_SYSTEMD=1"
   ];
 
-  NIX_LDFLAGS = lib.optionalString stdenv.isLinux "-lgcc_s";
-  CXXFLAGS = lib.optionalString stdenv.isi686 "-fpermissive";
-
-  prePatch = ''
-    sed -i -e "s|/usr/bin/libtool|libtool|" cmake/libutils.cmake
-    patchShebangs .
-    sed -i "s|COMMAND env -i |COMMAND env -i PATH=$PATH |" \
-      storage/rocksdb/CMakeLists.txt
-
-    # Disable ABI check. See case #108154
-    sed -i "s/SET(RUN_ABI_CHECK 1)/SET(RUN_ABI_CHECK 0)/" cmake/abi_check.cmake
-
-  '';
-
-  preBuild = ''
-    export LD_LIBRARY_PATH=$(pwd)/library_output_directory
-  '';
-
   postInstall = ''
-    rm -r $out/mysql-test
-    chmod g-w $out
+    moveToOutput "lib/*.a" $static
+    so=${stdenv.hostPlatform.extensions.sharedLibrary}
+    ln -s libmysqlclient$so $out/lib/libmysqlclient_r$so
   '';
 
   passthru.mysqlVersion = "8.0";

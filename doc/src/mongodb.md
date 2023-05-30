@@ -5,11 +5,7 @@
 Managed instance of [MongoDB](https://www.mongodb.com).
 There's a role for each supported major version, currently:
 
-- mongodb36
-- mongodb40
 - mongodb42
-
-Versions before 4.2 are end-of-life and should be upgraded.
 
 ## Configuration
 
@@ -33,7 +29,7 @@ current running mongodb version.
 Set the compatibility version in the {command}`mongo` Shell, for example:
 
 ```
-db.adminCommand( { setFeatureCompatibilityVersion: "3.6" } )
+db.adminCommand( { setFeatureCompatibilityVersion: "4.2" } )
 ```
 
 To upgrade, disable the current role and enable the role for the next major version.

@@ -15,22 +15,6 @@
 let
   py = python310.pkgs;
 
-  # XXX: The newer version from nixpkgs fails with our code, keep the old one for now.
-  pyyaml = py.buildPythonPackage rec {
-    pname = "PyYAML";
-    version = "5.1";
-    src = py.fetchPypi {
-      inherit pname version;
-      sha256 = "15czj11s2bcgchn2jx81k0jmswf2hjxry5cq820h7hgpxiscfss3";
-    };
-    propagatedBuildInputs = [ libyaml ];
-    meta = with lib; {
-      description = "The next generation YAML parser and emitter for Python";
-      homepage = https://github.com/yaml/pyyaml;
-      license = licenses.mit;
-    };
-  };
-
   pytest-structlog = py.buildPythonPackage rec {
     pname = "pytest-structlog";
     version = "0.4";
@@ -52,10 +36,9 @@ py.buildPythonPackage rec {
   namePrefix = "";
   src = ./.;
   checkInputs = [
+    py.pytestCheckHook
     py.freezegun
-    py.pytest
     py.pytest-cov
-    py.pytest-runner
     py.responses
     py.pytest-mock
     py.pytest-subprocess
@@ -68,23 +51,26 @@ py.buildPythonPackage rec {
     py.colorama
     py.python-dateutil
     py.iso8601
+    py.pendulum
     py.pytz
     py.requests
     py.rich
+    py.setuptools
     py.shortuuid
     py.structlog
     py.typer
-    pyyaml
+    py.pyyaml
     util-linux
   ] ++ lib.optionals stdenv.isLinux [
     dmidecode
     gptfdisk
     multipath-tools
     py.pyslurm
+    py.pystemd
     py.systemd
     xfsprogs
   ];
   dontStrip = true;
-  passthru.pythonDevEnv = py.withPackages (_: checkInputs ++ propagatedBuildInputs);
+  passthru.pythonDevEnv = python310.withPackages (_: checkInputs ++ propagatedBuildInputs);
 
 }

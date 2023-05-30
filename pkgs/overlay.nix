@@ -1,12 +1,6 @@
 self: super:
-
 let
   versions = import ../versions.nix { pkgs = super; };
-  # We want to have the last available OSS version for Elasticsearch.
-  # We don't override the global elk7Version because it's ok to use newer versions
-  # for the (free) beats and unfree Elasticsearch
-  elastic7Version = "7.10.2";
-
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
@@ -26,6 +20,8 @@ in {
   # imports from other nixpkgs versions or local definitions
   #
 
+  inherit (super.callPackage ./boost { }) boost159;
+
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
@@ -44,39 +40,6 @@ in {
   # });
 
   docsplit = super.callPackage ./docsplit { };
-
-  elasticsearch6 = (super.elasticsearch6.override {
-    jre_headless = self.jdk11_headless;
-  });
-
-  elasticsearch6-oss = (super.elasticsearch6-oss.override {
-    jre_headless = self.jdk11_headless;
-  });
-
-  elasticsearch7 = (super.elasticsearch7.override {
-    jre_headless = self.jdk11_headless;
-  }).overrideAttrs(_: rec {
-    version = elastic7Version;
-    name = "elasticsearch-${version}";
-
-    src = super.fetchurl {
-      url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
-      sha256 = "07p16n53fg513l4f04zq10hh5j9q6rjwz8hs8jj8y97jynvf6yiv";
-    };
-  });
-
-  elasticsearch7-oss = (super.elasticsearch7.override {
-    jre_headless = self.jdk11_headless;
-  }).overrideAttrs(_: rec {
-    version = elastic7Version;
-    name = "elasticsearch-oss-${version}";
-
-    src = super.fetchurl {
-      url = "https://artifacts.elastic.co/downloads/elasticsearch/${name}-linux-x86_64.tar.gz";
-      sha256 = "1m6wpxs56qb6n473hawfw2n8nny8gj3dy8glq4x05005aa8dv6kh";
-    };
-    meta.license = lib.licenses.asl20;
-  });
 
   gitPatched = super.git.overrideAttrs(oldAttrs: rec {
     pname = "git";
@@ -164,6 +127,17 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
+  cyrus_sasl-with-sha256 = super.cyrus_sasl.override {
+    libxcrypt = self.libxcrypt-with-sha256;
+  };
+
+  dovecot = (super.dovecot.override {
+    cyrus_sasl = self.cyrus_sasl-with-sha256;
+  }).overrideAttrs(old: {
+    strictDeps = true;
+    buildInputs = [ self.libxcrypt-with-sha256 ] ++ old.buildInputs;
+  });
+
   filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
     name = "filebeat-oss-${a.version}";
     preBuild = "rm -rf x-pack";
@@ -223,6 +197,10 @@ in {
     makeFlags = [ "HAS_GTK_GUI=" ];
   });
 
+  libxcrypt-with-sha256 = super.libxcrypt.override {
+    enableHashes = "strong,sha256crypt";
+  };
+
   links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
 
   lkl = super.lkl.overrideAttrs(_: rec {
@@ -270,7 +248,7 @@ in {
   nginxStable = (super.nginxStable.override {
     modules = with super.nginxModules; [
       dav
-      modsecurity-nginx
+      modsecurity
       moreheaders
       rtmp
     ];
@@ -285,7 +263,7 @@ in {
   nginxMainline = (super.nginxMainline.override {
     modules = with super.nginxModules; [
       dav
-      modsecurity-nginx
+      modsecurity
       rtmp
     ];
   }).overrideAttrs(a: rec {
@@ -294,7 +272,9 @@ in {
     ];
   });
 
-  openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
+  openldap_2_4 = super.callPackage ./openldap_2_4.nix {
+    libxcrypt = self.libxcrypt-with-sha256;
+  };
 
   opensearch = super.callPackage ./opensearch { };
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
@@ -309,7 +289,6 @@ in {
     '';
   });
 
-  #percona56 = super.callPackage ./percona/5.6.nix { boost = self.boost159; };
   percona57 = super.callPackage ./percona/5.7.nix {
     boost = self.boost159;
     openssl = self.openssl_1_1;
@@ -323,15 +302,22 @@ in {
     inherit (super.darwin) cctools developer_cmds DarwinTools;
   };
 
-  # We use 2.4 from upstream for older Percona versions.
-  # Percona 8.0 needs a newer version than upstream provides.
-  percona-xtrabackup_8_0 = super.callPackage ./percona/xtrabackup.nix {
+  percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
+    boost = self.boost159;
+    openssl = self.openssl_1_1;
+  };
+
+  percona-xtrabackup_8_0 = super.callPackage ./percona-xtrabackup/8_0.nix {
     boost = self.boost177;
     openssl = self.openssl_1_1;
   };
 
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
+
+  postfix = super.postfix.override {
+    cyrus_sasl = self.cyrus_sasl-with-sha256;
+  };
 
   postgis_2_5 = (super.postgresqlPackages.postgis.override {
       proj = self.proj_7;
@@ -345,12 +331,26 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
+    (python-final: python-prev: {
+      pyslurm = python-prev.pyslurm.overridePythonAttrs(_: {
+        version = "unstable-2023-05-12";
+        src = super.fetchFromGitHub {
+          owner = "pyslurm";
+          repo = "pyslurm";
+          rev = "42471d8575e89caa64fea55677d1af130328b4a7";
+          sha256 = "K9RqWe0EPvf/0Hs2XBpII/OEqoo0Kr+dFZKioQafbXI=";
+        };
+      });
+    })
+  ];
+
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
-  sensu = super.callPackage ./sensu { ruby = super.ruby; };
+  sensu = super.callPackage ./sensu { };
   sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
   sensu-plugins-kubernetes = super.callPackage ./sensuplugins-rb/sensu-plugins-kubernetes { };
   sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
@@ -364,7 +364,8 @@ in {
   sensu-plugins-postgres = super.callPackage ./sensuplugins-rb/sensu-plugins-postgres { };
   sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
-  sensu-plugins-systemd = super.callPackage ./sensuplugins-rb/sensu-plugins-systemd { };
+
+  solr = super.callPackage ./solr { };
 
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 

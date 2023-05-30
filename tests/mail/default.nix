@@ -75,7 +75,7 @@ in
               };
               "user2@example.local" = {
                 # User2USer2
-                hashedPassword = "$5$YF.qhP4xh$N.hX/1SMxmjqjYZqmrtTClzzSLOR/scz.TTmz4KAFX2";
+                hashedPassword = "$6$ubISDRB4Pr3IV0CO$n5tZuntp4EG9l6euyyzuR3GQHKcjpzN5f4HRIQrhykuI3H8/6A7H8mS7AFtOR5KZyWeJNX1BGkbetLCZM6A02/";
               };
             };
 

@@ -114,7 +114,6 @@ in
     };
 
     flyingcircus.services = {
-      sensu-client.mutedSystemdUnits = [ "clamav-freshclam.service" ];
       sensu-client.checks = {
 
         clamav-updater = {

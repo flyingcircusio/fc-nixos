@@ -39,6 +39,7 @@ in {
     ./raid
     ./redis.nix
     ./sensu/client.nix
+    ./solr.nix
     ./telegraf
 
     (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")

@@ -38,8 +38,6 @@ in {
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
-  elasticsearch6 = callSubTests ./elasticsearch.nix { version = "6"; };
-  elasticsearch7 = callSubTests ./elasticsearch.nix { version = "7"; };
   fcagent = callSubTests ./fcagent.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
@@ -72,8 +70,6 @@ in {
   mailstub = callTest ./mail/stub.nix {};
   matomo = callTest ./matomo.nix {};
   memcached = callTest ./memcached.nix {};
-  mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
-  mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
   mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network {};

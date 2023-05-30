@@ -19,7 +19,7 @@ with builtins;
 
 let
   nixpkgsConfig = import ./nixpkgs-config.nix;
-  getName = pkg: pkg.pname or (parseDrvName pkgs).name;
+  getName = pkg: pkg.pname or (parseDrvName pkg.name);
 in
 import nixpkgs {
   overlays = overlays ++ [ (import ./pkgs/overlay.nix) ];

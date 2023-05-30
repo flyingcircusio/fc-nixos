@@ -2,14 +2,14 @@
 , stdenv
 , makeWrapper
 , fetchurl
-, nodejs-14_x
+, nodejs_14
 , coreutils
 , which
 }:
 
 with lib;
 let
-  nodejs = nodejs-14_x;
+  nodejs = nodejs_14;
 
 in stdenv.mkDerivation rec {
   pname = "opensearch-dashboards";

@@ -105,6 +105,15 @@ let
     };
   };
 
+  systemdUnitCheckOptions = {
+    options = {
+      enable = mkOption {
+        type  = types.bool;
+        default = true;
+      };
+    };
+  };
+
   sensuCheckEnv = pkgs.buildEnv {
     name = "sensu-check-env";
     paths = cfg.checkEnvPackages;
@@ -285,11 +294,22 @@ in {
           description = "Limit of swap usage in MiB before reaching critical.";
         };
       };
+
       mutedSystemdUnits = mkOption {
         type = types.listOf types.str;
-        description = "Units that may fail without triggering the check for failed systemd unit.";
+        default = [];
+        description = "Units that may fail without triggering the check for non-critical failed systemd units";
         example = [ "failing-testunit.service" ];
+      };
 
+      systemdUnitChecks = mkOption {
+        type = with types; attrsOf (submodule systemdUnitCheckOptions);
+        description = ''
+          Units that will get a separate check which becomes critical when the
+          unit is in an unwanted state.
+        '';
+        default = {};
+        example = { "important.service" = {}; };
       };
     };
   };
@@ -455,11 +475,11 @@ in {
           command = "${check-uptime}/bin/check_uptime -c @:30 -w @:1440";
           interval = 300;
         };
-        systemd_units = {
-          notification = "systemd has failed units";
+        systemd_units_non_critical = {
+          notification = "Some non-critical systemd units failed.";
           command =
-            "${pkgs.sensu-plugins-systemd}/bin/check-failed-units.rb"
-            + (lib.concatMapStrings (u: " -m ${u}") cfg.mutedSystemdUnits);
+            "${pkgs.fc.agent}/bin/fc-systemd check-units --no-critical"
+            + (lib.concatMapStrings (u: " --exclude ${u}") cfg.mutedSystemdUnits);
         };
         disk = {
           notification = "Disk usage too high";
@@ -531,7 +551,13 @@ in {
           command = "${fc.check-xfs-broken}";
           interval = 300;
         };
-      };
+      } //
+        lib.mapAttrs'
+          (name: val: lib.nameValuePair "systemd_unit-${name}" {
+            notification = "${name} is in an unwanted state.";
+            command = "${pkgs.fc.agent}/bin/fc-systemd check-unit ${name}";
+          })
+          cfg.systemdUnitChecks;
     })
 
     {

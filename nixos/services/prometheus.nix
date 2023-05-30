@@ -19,7 +19,7 @@ let
   promtoolCheck = what: name: file:
     pkgs.runCommand
       "${name}-${replaceStrings [" "] [""] what}-checked"
-      { buildInputs = [ cfg.package ]; } ''
+      { buildInputs = [ cfg.package.cli ]; } ''
     ln -s ${file} $out
     promtool ${what} $out
   '';

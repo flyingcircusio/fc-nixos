@@ -30,7 +30,6 @@ in {
     (lib.mkIf cfg.agent.collect-garbage {
 
       flyingcircus.services.sensu-client = {
-        mutedSystemdUnits = [ "fc-collect-garbage.service" ];
         checks.fc-collect-garbage = {
           notification = "nix-collect-garbage stamp recent";
           command =

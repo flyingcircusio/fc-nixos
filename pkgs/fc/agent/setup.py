@@ -26,7 +26,7 @@ setup(
     description=__doc__,
     long_description=long_description,
     url="https://github.com/flyingcircus/nixpkgs",
-    author="Christian Kauhaus, Christian Theune",
+    author="Tobias Stenzel, Christian Kauhaus, Christian Theune",
     author_email="mail@flyingcircus.io",
     license="ZPL",
     classifiers=[
@@ -44,11 +44,12 @@ setup(
         "fc.util",
     ],
     install_requires=[
-        "PyYAML>=5",
+        "PyYAML>=6",
         "click",
         "iso8601",
         "python-dateutil",
         "pytz",
+        "pendulum",
         "requests",
         "rich",
         "shortuuid",
@@ -56,9 +57,12 @@ setup(
         "typer",
     ],
     zip_safe=False,
-    setup_requires=["pytest-runner"],
     tests_require=test_deps,
-    extras_require={"test": test_deps},
+    extras_require={
+        "test": test_deps,
+        "linux": ["pystemd", "systemd"],
+        "slurm": ["pyslurm"],
+    },
     entry_points={
         "console_scripts": [
             "fc-backy=fc.manage.backy:main",
@@ -70,6 +74,7 @@ setup(
             "fc-resize-disk=fc.manage.resize_disk:app",
             "fc-postgresql=fc.manage.postgresql:app",
             "fc-slurm=fc.manage.slurm:app",
+            "fc-systemd=fc.manage.systemd:app",
             "fctl=fc.util.fctl:app",
         ],
     },
