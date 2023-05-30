@@ -33,7 +33,7 @@ let
     (lib.hasAttr "ethsrv" config.networking.interfaces)
     (lib.concatMapStringsSep "\n"
       (a:
-        "${fclib.iptables a} -A nixos-fw -i ethsrv " +
+        "${fclib.iptables a} -A fc-resource-group " +
         "-s ${fclib.stripNetmask a} -j nixos-fw-accept")
       rgAddrs);
 
@@ -106,16 +106,33 @@ in
         rejectPackets = true;
 
         extraCommands =
-          let
-            rg = lib.optionalString
-              (rgRules != "")
-              "# Accept traffic within the same resource group.\n${rgRules}\n\n";
-            local = ''
-              # Local firewall rules.
-              set -v
-              ${readFile filteredRules}
-            '';
-          in lib.mkAfter (rg + local);
+        lib.mkMerge [
+          (lib.mkOrder 1100 ''
+            # FC firewall rules (1100)
+            # Accept traffic within the same resource group.
+            ip46tables -N fc-resource-group
+            ${rgRules}
+            ip46tables -A nixos-fw -i ethsrv -j fc-resource-group
+            # End FC firewall rules (1100)
+          '')
+
+          (lib.mkAfter ''
+            # Local firewall rules (after).
+            # This option instructs bash to print shell input lines as they are read.
+            set -v
+            ${readFile filteredRules}
+            # End local firewall rules (after)
+          '')
+        ];
+
+        extraStopCommands = lib.mkOrder 1200 ''
+          # FC firewall rules (1200)
+          ip46tables -D nixos-fw -i ethsrv -j fc-resource-group 2>/dev/null || true
+          ip46tables -F fc-resource-group 2>/dev/null || true
+          ip46tables -X fc-resource-group 2>/dev/null || true
+          # End FC firewall rules (1200)
+        '';
+
       };
 
     flyingcircus.passwordlessSudoRules =
