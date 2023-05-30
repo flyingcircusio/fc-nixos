@@ -174,7 +174,7 @@ in {
     flyingcircus.platform = {
       version = mkOption {
         readOnly = true;
-        default = "22.11";
+        default = "23.05";
       };
 
       editions = mkOption {
@@ -182,7 +182,7 @@ in {
         description = ''
           Documented branches of this platform version.
         '';
-        default = [ "fc-22.11-production" "fc-22.11-staging" "fc-22.11-dev" ];
+        default = [ "fc-23.05-production" "fc-23.05-staging" "fc-23.05-dev" ];
       };
     };
 
@@ -375,7 +375,7 @@ in {
     system.stateVersion =
       if pathExists cfg.stateVersionFile
       then fileContents cfg.stateVersionFile
-      else "22.11";
+      else cfg.platform.version;
 
     systemd = {
       tmpfiles.rules = [

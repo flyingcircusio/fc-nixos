@@ -308,7 +308,7 @@ def check(log, enc) -> CheckResult:
         log.debug("check-state-version", state_version=state_version)
         if not re.match(r"\d\d\.\d\d", state_version):
             warnings.append(
-                f"State version invalid: {state_version}, should look like 22.11"
+                f"State version invalid: {state_version}, should look like 23.05"
             )
     else:
         warnings.append(f"State version file {STATE_VERSION_FILE} missing.")
