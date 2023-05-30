@@ -365,6 +365,8 @@ in {
   sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
   sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
 
+  solr = super.callPackage ./solr { };
+
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
   tideways_daemon = super.callPackage ./tideways/daemon.nix {};

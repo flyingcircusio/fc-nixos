@@ -145,6 +145,7 @@ with lib;
       # removed by upstream, we want to keep it
       memcached = 177;
       redis = 181;
+      solr = 309;
 
       # Same as elasticsearch
       opensearch = 92;
@@ -170,6 +171,9 @@ with lib;
       sensuclient = 31004;
       powerdns = 31005;
       tideways = 31006;
+
+      # removed by upstream, we want to keep it
+      solr = 309;
 
       # Same as elasticsearch
       opensearch = 92;
