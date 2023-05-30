@@ -16,7 +16,7 @@ Contact our {ref}`support` for upgrade assistance.
 ## Overview
 
 - Status: staging/non-production
-- Removed roles: {ref}`elasticsearch6, elasticsearch7 <nixos-upgrade-elasticsearch>`
+- Removed roles: {ref}`elasticsearch6, elasticsearch7 <nixos-upgrade-elasticsearch>`, `mongodb36`, `mongodb40`
 
 
 ## Why upgrade? Security
