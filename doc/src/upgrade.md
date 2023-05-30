@@ -140,8 +140,9 @@ roles should stay on 22.11 and migrate to Opensearch before upgrading.
   for example `nodejs-19_x` is now `nodejs_19`.
 - The `dnsmasq` service now takes configuration via the
   `services.dnsmasq.settings` attribute set. The option
-  `services.dnsmasq.extraConfig` will be deprecated when NixOS 22.11 reaches
-  end of life.
+  `services.dnsmasq.extraConfig` still works but should be migrated to
+  `settings` soon. `extraConfig` is deprecated in this release
+  and issues warnings at system build time.
 - PostgreSQL has opt-in support for [JIT compilation]
   (https://www.postgresql.org/docs/current/jit-reason.html). It can be
   enabled like this:
