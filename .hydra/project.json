@@ -12,7 +12,7 @@
     "inputs": {
         "generator_config": {
             "type": "git",
-            "value": "https://github.com/flyingcircusio/fc-nixos.git fc-22.11-dev",
+            "value": "https://github.com/flyingcircusio/fc-nixos.git fc-23.05-dev",
             "emailresponsible": false
         },
         "inputPath": {
