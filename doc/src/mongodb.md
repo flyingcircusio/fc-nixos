@@ -18,6 +18,8 @@ It will be joined with the basic config.
 You can use the {command}`mongo` Shell to query and update data as well
 as perform administrative operations.
 
+(nixos-mongodb-upgrade)=
+
 ## Upgrade
 
 :::{warning}

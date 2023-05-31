@@ -16,7 +16,8 @@ Contact our {ref}`support` for upgrade assistance.
 ## Overview
 
 - Status: staging/non-production
-- Removed roles: {ref}`elasticsearch6, elasticsearch7 <nixos-upgrade-elasticsearch>`, `mongodb36`, `mongodb40`
+- Removed roles: {ref}`elasticsearch6 & elasticsearch7 <nixos-upgrade-elasticsearch>`,
+  {ref}`mongodb36 & mongodb40 <nixos-upgrade-mongodb>`
 
 
 ## Why upgrade? Security
@@ -113,12 +114,12 @@ following common breaking changes and role-specific notes below.
 ### Common breaking changes
 
 - `libxcrypt`, the library providing the `crypt(3)` password hashing function,
-  is now built without support for algorithms not flagged[`strong`]
-  (https://github.com/besser82/libxcrypt/blob/v4.4.33/lib/hashes.conf#L48)
+  is now built without support for algorithms not flagged
+  [`strong`](https://github.com/besser82/libxcrypt/blob/v4.4.33/lib/hashes.conf#L48)
   in NixOS 23.05. We added a variant package called `libxcrypt-with-sha256`
-  which also enables the `sha256` algorithm. OpenLDAP, Dovecot, Postfix,
-  cyrus_sasl use that version by default. New password hashes should use
-  strong algorithms like `yescrypt`.
+  which enables the `sha256` algorithm in addition to the `strong` algorithms.
+  OpenLDAP, Dovecot, Postfix, cyrus_sasl use that version by default.
+  New password hashes should use strong algorithms like `yescrypt`.
 - `podman` now uses the `netavark` network stack. Users will need to delete
   all of their local containers, images, volumes, etc, by running `podman
   system reset --force` once before upgrading their systems.
@@ -130,6 +131,14 @@ following common breaking changes and role-specific notes below.
 
 `elasticsearch6` and `elasticsearch7` roles have been removed. Machines that use these
 roles should stay on 22.11 and migrate to Opensearch before upgrading.
+
+(nixos-upgrade-mongodb)=
+
+### MongoDB
+
+`mongodb36` and `mongodb40` roles and packages have been removed. Switch to to `mongodb42`
+before upgrading to 23.05. See our {ref}`MongoDB upgrade docs <nixos-mongodb-upgrade>`
+for details.
 
 ## Other notable changes
 
