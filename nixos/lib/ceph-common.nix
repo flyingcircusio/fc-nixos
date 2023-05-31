@@ -8,55 +8,54 @@ let
   # generated from this ist
   releaseOrder = [ "nautilus" "luminous" "jewel"];
   cephReleaseType = types.enum (builtins.attrNames releasePkgs);
-  defaultRelease = "luminous";
+  defaultRelease = "nautilus";
 
   # ====== mapping of packages per ceph release =======
-  # FIXME: possible change structure from <package>.<cephRelease> to <ceph
 
   releasePkgs = {
-    "jewel" = pkgs.ceph-jewel;
-    "luminous" = pkgs.ceph-luminous;
-    "nautilus" = pkgs.ceph-nautilus.ceph;
-  };
-  # temporary map until all actively used ceph releases are packaged in form of the new
-  # schema with subpackages
-  clientPkgs = {
-    "jewel" = pkgs.ceph-jewel;
-    "luminous" = pkgs.ceph-luminous;
-    "nautilus" = pkgs.ceph-nautilus.ceph-client;
+    "jewel" = rec {
+      ceph = pkgs.ceph-jewel;
+      # temporary mapping until all actively used ceph releases are packaged in form of
+      # the new schema with subpackages
+      ceph-client = pkgs.ceph-jewel;
+      libceph = pkgs.ceph-jewel;
+      fcQemu = pkgs.fc.qemu-py2.override {
+        ceph = libceph;
+        qemu_ceph = qemu_ceph_versioned "jewel";
+      };
+      utilPhysical = pkgs.fc.util-physical.jewel.override {ceph = ceph-client;};
+    };
+    "luminous" = rec {
+      ceph = pkgs.ceph-luminous;
+      ceph-client = pkgs.ceph-luminous;
+      libceph = pkgs.ceph-luminous;
+      fcQemu = pkgs.fc.qemu-py2.override {
+        ceph = libceph;
+        qemu_ceph = qemu_ceph_versioned "luminous";
+      };
+      utilPhysical = pkgs.fc.util-physical.luminous.override {ceph = ceph-client;};
+    };
+    "nautilus" = rec {
+      ceph = pkgs.ceph-nautilus.ceph;
+      ceph-client = pkgs.ceph-nautilus.ceph-client;
+      # both the C lib and the python modules
+      libceph = pkgs.ceph-nautilus.libceph;
+      fcQemu = pkgs.fc.qemu-py3.override {
+        inherit libceph ceph;
+        qemu_ceph = qemu_ceph_versioned "nautilus";
+      };
+      utilPhysical = pkgs.fc.util-physical.nautilus.override {ceph = ceph-client;};
+    };
   };
   qemu_ceph_versioned = cephReleaseName: (pkgs.qemu_ceph.override {
-     ceph = releasePkgs.${cephReleaseName};
+     # Needs full ceph package, because
+     #`libceph` is missing the dev output headers
+     ceph = releasePkgs.${cephReleaseName}.ceph;
      });
-  # both the C liab and the python modules
-  libcephPkgs = {
-    "jewel" = pkgs.ceph-jewel;
-    "luminous" = pkgs.ceph-luminous;
-    "nautilus" = pkgs.ceph-nautilus.libceph;
-  };
-  fcQemuPkgs = {
-    jewel = pkgs.fc.qemu-py2.override {
-      ceph = libcephPkgs.jewel;
-      qemu_ceph = qemu_ceph_versioned "jewel";
-    };
-    luminous = pkgs.fc.qemu-py2.override {
-      ceph = libcephPkgs.luminous;
-      qemu_ceph = qemu_ceph_versioned "luminous";
-    };
-    nautilus = pkgs.fc.qemu-py3.override {
-      libceph = libcephPkgs.nautilus;
-      qemu_ceph = qemu_ceph_versioned "nautilus";
-    };
-  };
-  utilPhysicalPkgs = {
-    "jewel" = pkgs.fc.util-physical.jewel.override {ceph = clientPkgs.jewel;};
-    "luminous" = pkgs.fc.util-physical.luminous.override {ceph = clientPkgs.luminous;};
-    "nautilus" = pkgs.fc.util-physical.nautilus.override {ceph = clientPkgs.nautilus;};
-  };
 in
 rec {
   # constants
-  inherit releasePkgs clientPkgs fcQemuPkgs libcephPkgs utilPhysicalPkgs defaultRelease qemu_ceph_versioned;
+  inherit releasePkgs defaultRelease qemu_ceph_versioned;
   releaseOption = lib.mkOption {
     type = cephReleaseType;
     # centrally manage the default release for all roles here
@@ -80,15 +79,14 @@ rec {
     in _: definitionAttrs: selectFirst releaseOrder (builtins.catAttrs "value" definitionAttrs);
   };
   # returns true if the provided current release is the target release or newer
-  # FIXME: could this be done as a fold?
   releaseAtLeast = targetRelease: currentRelease:
     let
     _releaseRecurser = rList: acc:
-      if rList == [] then false
+      if rList == [] then false   # exit condition 1
       # order matters here, do not consume the list head but only set to true and re-call
       else if (builtins.head rList == targetRelease && !acc) then _releaseRecurser rList true
       # this advances the list consumption but then also catches the case currentRelease == targetRelease
-      else if builtins.head rList == currentRelease then acc
+      else if builtins.head rList == currentRelease then acc  # exit condition 2
       else _releaseRecurser (builtins.tail rList) acc;
     in _releaseRecurser (lib.reverseList releaseOrder) false;
 
@@ -102,7 +100,7 @@ rec {
     pkgs.systemd
     pkgs.gptfdisk
     pkgs.coreutils
-    utilPhysicalPkgs.${cephPkg.codename} # required for rbd-locktool
+    releasePkgs.${cephPkg.codename}.utilPhysical # required for rbd-locktool
     pkgs.lz4  # required by image loading task
     ];
 

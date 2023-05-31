@@ -61,7 +61,6 @@ rec {
       rev = version;
       hash = "sha256-eTJxhdSelMJ8UFE8mtgntFVgY/+Ne2K4niH5X9JP9Tc=";
     };
-    libceph = pkgs.ceph-nautilus.libceph;
   };
 
   secure-erase = callPackage ./secure-erase {};

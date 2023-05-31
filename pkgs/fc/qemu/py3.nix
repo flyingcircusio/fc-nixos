@@ -1,20 +1,25 @@
-{ version, src, pkgs, python3Packages, lib, libceph, ceph-client, fetchFromGitHub, qemu_ceph, stdenv, gptfdisk, parted, xfsprogs, procps }:
+{
+  version,
+  src,
+  pkgs,
+  python3Packages,
+  lib,
+  libceph,
+  # as long as `qemu_ceph` pulls in the full `ceph` due to requiring ceph.dev, use that
+  # package here as well instead of ceph-client
+  ceph,
+  fetchFromGitHub,
+  qemu_ceph,
+  stdenv,
+  gptfdisk,
+  parted,
+  xfsprogs,
+  procps
+}:
 
 let
   # Python must be the same as the one used by Ceph
   py = python3Packages;
-
-  # FIXME: try upgrading to 21.1.0 shipped with nixpkgs-21.05
-  py_structlog = py.buildPythonPackage rec {
-    pname = "structlog";
-    version = "16.1.0";
-    src = py.fetchPypi {
-      inherit pname version;
-      sha256 = "00dywyg3bqlkrmbrfrql21hpjjjkc4zjd6xxjyxyd15brfnzlkdl";
-    };
-    propagatedBuildInputs = [ py.six ];
-    doCheck = false;
-  };
 
   # unreleased version
   py_consulate = py.buildPythonPackage rec {
@@ -54,7 +59,7 @@ in
       py.requests
       py.future
       py.colorama
-      py_structlog
+      py.structlog
       py_consulate
       py.psutil
       py.pyyaml
@@ -67,6 +72,6 @@ in
       xfsprogs
       # XXX is in PATH anyways due to services.ceph.client, but specified here for
       # completeness sake. If necessary, fc.qemu needs to be parameterised via /etc/ceph/fc-ceph.conf
-      ceph-client
+      ceph
     ];
   }

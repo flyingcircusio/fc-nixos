@@ -16,12 +16,10 @@ let
             version = "dev";
             # builtins.toPath (testPath + "/.")
             src = ../../fc.qemu/.;
-            "${lib.optionalString py3 "lib"}ceph" = config.fclib.ceph.libcephPkgs.${clientCephRelease};
-            qemu_ceph = pkgs.qemu_ceph.override {
-              ceph = config.fclib.ceph.releasePkgs.${clientCephRelease};
-            };
+            "${lib.optionalString py3 "lib"}ceph" = config.fclib.ceph.releasePkgs.${clientCephRelease}.libceph;
+            qemu_ceph = config.fclib.ceph.qemu_ceph_versioned clientCephRelease;
           }
-        else config.fclib.ceph.fcQemuPkgs.${clientCephRelease};
+        else config.fclib.ceph.releasePkgs.${clientCephRelease}.fcQemu;
 
     in
     {
@@ -112,7 +110,7 @@ let
 
             # This should be included through the propagatedBuildInputs
             # from fc.qemu already but apparently it isn't.
-            (pyPkgs.toPythonModule config.fclib.ceph.libcephPkgs.${clientCephRelease})
+            (pyPkgs.toPythonModule config.fclib.ceph.releasePkgs.${clientCephRelease}.libceph)
 
             # Additional packages to run the tests
             pyPkgs.pytest

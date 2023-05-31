@@ -6,7 +6,7 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_rgw;
   enc = config.flyingcircus.enc;
-  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
+  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection releaseAtLeast;
 
   username = "client.radosgw.${config.networking.hostName}";
 
@@ -22,12 +22,17 @@ let
     adminSocket = "/run/ceph/radosgw.asok";
     rgwData = "/srv/ceph/radosgw/ceph-$id";
     rgwEnableOpsLog = false;
-    # FIXME: use different frontend in Nautilus
-    rgwFrontends = "civetweb port=80";
+    rgwMimeTypesFile = "${pkgs.mime-types}/etc/mime.types";
     debugRgw = "0 5";
-    debugCivetweb = "1 5";
     debugRados = "1 5";
-  };
+  } // (if releaseAtLeast "nautilus" role.cephRelease
+    then {
+      rgwFrontends = "beast port=80";
+      debugBeast = "1 5";
+    } else {
+      rgwFrontends = "civetweb port=80";
+      debugCivetweb = "1 5";
+    });
 in
 {
   options = {
@@ -108,7 +113,7 @@ in
         serviceConfig = {
           Type = "simple";
           Restart = "always";
-          ExecStart = "${fclib.ceph.releasePkgs.${role.cephRelease}}/bin/radosgw -n ${username} -f -c /etc/ceph/ceph.conf";
+          ExecStart = "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/radosgw -n ${username} -f -c /etc/ceph/ceph.conf";
         };
       };
 
@@ -149,7 +154,7 @@ in
       systemd.services.fc-ceph-rgw-update-stats = {
         description = "Update RGW stats";
         serviceConfig.Type = "oneshot";
-        path = [ fclib.ceph.releasePkgs.${role.cephRelease} pkgs.jq ];
+        path = [ fclib.ceph.releasePkgs.${role.cephRelease}.ceph pkgs.jq ];
         script = ''
           for uid in $(radosgw-admin metadata list user | jq -r '.[]'); do
             echo $uid

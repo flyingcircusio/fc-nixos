@@ -8,7 +8,7 @@ let
   enc = config.flyingcircus.enc;
   inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
-  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease};
+  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
 
   defaultOsdSettings = {
     # Assist speedy but balanced recovery
@@ -20,6 +20,12 @@ let
     # Disable new (luminous) automatic crush map organisation according to
     # (auto detected) device classes for now.
     osdCrushUpdateOnStart = false;
+
+    # automatically repairing PGs at scrub mismatches is reliable due to Bluestore
+    # internal checksumming
+    osdScrubAutoRepair = true;
+    # we use the default value of max. number of automatically corrected errors
+    # "osd_scrub_auto_repair_num_errors": "5",
 
     # Various
 
@@ -164,7 +170,7 @@ in
         fc-ceph.settings = let
           osdSettings =  {
             release = role.cephRelease;
-            path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease};
+            path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
           };
         in {
           # fc-ceph OSD

@@ -47,7 +47,7 @@ let
 
     monData = "/srv/ceph/mon/$cluster-$id";
     monOsdAllowPrimaryAffinity = true;
-    monPgWarnMaxObjectSkew = 20;
+    monPgWarnMaxObjectSkew = 30;
 
     mgrData = "/srv/ceph/mgr/$cluster-$id";
   } // lib.optionalAttrs (cfg.cluster_network != null) { clusterNetwork = cfg.cluster_network;}
@@ -88,9 +88,8 @@ in
           Extra config in the [global] section.
         '';
       };
-      # FIXME: ensure override priority, documentation
       extraSettings = lib.mkOption {
-        # FIXME: explicitly factoring out certain config options, like done in the
+        # TODO: explicitly factoring out certain config options, like done in the
         # nixpkgs upstream ceph module, might allow for better type checking
         type = with lib.types; attrsOf (oneOf [ str int float bool ]);
         default = {};   # defaults are provided in the config section with a lower priority
@@ -135,7 +134,7 @@ in
           description = "Main ceph package to be used on the system and to be put into PATH. "
             + "The package set must belong to the release series defined in the `cephRelease` option. "
             + "Only modify if really necessary, otherwise the default ceph package from the defined series is used.";
-          default =  fclib.ceph.clientPkgs.${cfg.client.cephRelease};
+          default =  fclib.ceph.releasePkgs.${cfg.client.cephRelease}.ceph-client;
         };
 
         # legacy config for pre-Nautilus hosts (and migration to it), default value will
@@ -149,8 +148,6 @@ in
           '';
         };
         extraSettings = lib.mkOption {
-          # FIXME: explicitly factoring out certain config options, like done in the
-          # nixpkgs upstream ceph module, might allow for better type checking
           type = with lib.types; attrsOf (oneOf [ str int float bool ]);
           default = {};   # defaults are provided in the config section with a lower priority
           description = ''
@@ -196,11 +193,7 @@ in
 
     services.udev.extraRules =
       if fclib.ceph.releaseAtLeast "nautilus" cfg.client.cephRelease
-      then
-      ''
-        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c"
-        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c-part%n"
-      ''
+      then builtins.readFile "${cfg.client.package}/etc/udev/50-rbd.rules"
       else
       ''
         KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}"

@@ -31,9 +31,6 @@ def wait_for_clean_cluster():
 
         stopper_check_names = ["PG_AVAILABILITY", "PG_DEGRADED", "SLOW_OPS"]
 
-        # FIXME: The previous code explicitly checked for the 3 conditions
-        # peering, down, and blocked.
-        # Are all of these cases covered again?
         if not any(
             map(
                 lambda checkn: _eval_health_check(status, checkn),
@@ -79,6 +76,17 @@ class OSDManager(object):
         assert "=" in crush_location
         assert journal in ["internal", "external"]
         assert os.path.exists(device)
+
+        # FIXME: I also thought of requiring a `--legacy` confirmation flag for
+        # operations involving filestore. But I guess a warn message is sufficient, as
+        # this is a task only done manually where operators (hopefully) read logs.
+        print(
+            "WARN: From Ceph Luminous on, we are deprecating the platform support "
+            "for running FileStore OSDs.\n"
+            "We may enable features not playing well with FileStore, among them:\n"
+            "  - osd_scrub_auto_repair, this might spread data corruption in FileStore",
+            end="\n\n",
+        )
 
         print("Creating OSD ...")
 
@@ -295,10 +303,6 @@ class GenericOSD(object):
             - crush_location: string describing the crush location as taken by
               `ceph osd crush`
             - journal_size: string of numeric size and a unit suffix"""
-        # FIXME: Other generic operations are implemented in a bottom-up approach, this
-        # is the only operation so far using a top-down approach with hooks.
-        # Sticking to a bottom-up approach would've made the whole call flow too fractal
-        # and split up.
 
         # 1. prepare physical volumes and mountpoints
         if not os.path.exists(self.datadir):
@@ -684,14 +688,13 @@ class FileStoreOSD(GenericOSD):
 
         oldosd_properties = self._collect_rebuild_information()
 
-        # FIXME: If the existing filestore OSD was created with a non-default journal
+        # NOTE: If the existing filestore OSD was created with a non-default journal
         # size, this is not discovered and re-used. For now, non-default journal sizes
         # always need to be specified explicitly.
         # As the jewel code did not read existing journal size,
         # I'll keep it as is for now.
 
         # this is filestore/ bluestore specific
-        # FIXME: test both internal as well as external journal osd creation
         # Is the journal internal or external?
         lvs = run.json.lvs("-S", f"vg_name={self.lvm_vg}")
         if len(lvs) == 1:

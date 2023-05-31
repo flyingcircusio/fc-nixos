@@ -272,7 +272,6 @@ in
       result = host1.succeed("radosgw-admin metadata list user")
       assert '"user"' in result
       # New pools = more PGs
-      # FIXME: radosgw creates fewer additional pools than it did in jewel. Is this normal?
       show(host2, 'ceph osd lspools')
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
@@ -357,6 +356,8 @@ in
       host1.succeed('fc-ceph osd destroy --unsafe-destroy 0')
       host1.succeed('fc-ceph osd create-bluestore /dev/vdc > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 3, 3, 320)
+
+    # TODO: include test for rbd map rbdnamer udev rule functionality, after having rebased onto PL-130691
 
     print("Time spent waiting", time_waiting)
   '';
