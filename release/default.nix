@@ -364,7 +364,18 @@ let
       ];
     }).config.system.build.fcImage;
 
-    };
+    # VM image for devhost VMs
+    dev-vm = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
+      inherit system;
+      modules = [
+        (import ./dev-vm-image.nix imgArgs)
+        (import version_nix {})
+        ../nixos
+        ../nixos/roles
+      ];
+    }).config.system.build.devVMImage;
+
+  };
 
 in
 
