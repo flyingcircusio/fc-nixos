@@ -58,10 +58,13 @@ in {
   lampVm80_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php80"; tideways = "1234"; };
   lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
   lampVm81_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php81"; tideways = "1234"; };
+  lampVm82 = callTest ./lamp/vm-test.nix { version = "lamp_php82"; };
+  lampVm82_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php82"; tideways = "1234"; };
 
   lampPackage74 = callTest ./lamp/package-test.nix { version = "lamp_php74"; };
   lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
   lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
+  lampPackage82 = callTest ./lamp/package-test.nix { version = "lamp_php82"; };
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};

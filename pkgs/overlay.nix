@@ -192,6 +192,14 @@ in {
                 all.redis
               ]);
 
+  lamp_php82 = super.php82.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
+
   latencytop_nox = super.latencytop.overrideAttrs(_: {
     buildInputs = with self; [ ncurses glib ];
     makeFlags = [ "HAS_GTK_GUI=" ];
