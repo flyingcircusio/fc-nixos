@@ -23,15 +23,15 @@ let
     rgwData = "/srv/ceph/radosgw/ceph-$id";
     rgwEnableOpsLog = false;
     rgwMimeTypesFile = "${pkgs.mime-types}/etc/mime.types";
-    debugRgw = "0 5";
     debugRados = "1 5";
   } // (if releaseAtLeast "nautilus" role.cephRelease
     then {
       rgwFrontends = "beast port=80";
-      debugBeast = "1 5";
+      debugRgw = "1 5";
     } else {
       rgwFrontends = "civetweb port=80";
       debugCivetweb = "1 5";
+      debugRgw = "0 5";
     });
 in
 {
