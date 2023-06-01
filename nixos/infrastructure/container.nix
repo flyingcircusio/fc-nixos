@@ -2,6 +2,14 @@
 
 let
   fclib = config.fclib;
+
+  # Only check "visible" roles, skipping roles that are marked as removed by
+  # `mkRemovedOptionModule` or manually set to `visible = false`.
+  # The `tryEval` is needed because visiting the role option throws an error if
+  # the option is declared by `mkRemovedOptionModule`.
+  visibleFCRoles = (lib.filterAttrs
+    (n: v: (builtins.tryEval v.enable.visible or true).value)
+    config.flyingcircus.roles);
 in
 {
   config = lib.mkMerge [
@@ -18,7 +26,7 @@ in
           # the option is declared by `mkRemovedOptionModule`.
           (lib.filterAttrs
             (n: v: (builtins.tryEval v.enable.visible or true).value)
-            config.flyingcircus.roles);
+            visibleFCRoles);
     }
 
     (lib.mkIf (config.flyingcircus.infrastructureModule == "container") {
@@ -30,7 +38,7 @@ in
           { assertion = if (v.enable or false) then
               (v.supportsContainers or true) else true;
             message = "role ${n} does not support containers";
-          }) config.flyingcircus.roles;
+          }) visibleFCRoles;
 
       boot.isContainer = true;
 
