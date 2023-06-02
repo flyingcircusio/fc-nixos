@@ -18,7 +18,6 @@
         fc.logcheckhelper
         fio
         gcc
-        gdb
         gitPatched
         gnumake
         gnupg
