@@ -1,8 +1,12 @@
-{ lib, stdenv, bash, ceph,  utillinux, systemd, coreutils, gnugrep, makeWrapper, fc }:
+{
+  lib, stdenv, makeWrapper
+, bash, ceph, utillinux, systemd, coreutils, gnugrep, xfsprogs
+, fc
+}:
 
 
 stdenv.mkDerivation rec {
-  version = "0.2";
+  version = "0.3";
   name = "fc-util";
 
   src = ./.;
@@ -11,7 +15,7 @@ stdenv.mkDerivation rec {
   dontConfigure = true;
 
   buildInputs = [ makeWrapper ];
-  propagatedBuildInputs = [ bash ceph systemd fc.agent gnugrep utillinux coreutils ];
+  propagatedBuildInputs = [ bash ceph systemd fc.agent gnugrep utillinux coreutils xfsprogs ];
 
   installPhase = ''
     mkdir $out
