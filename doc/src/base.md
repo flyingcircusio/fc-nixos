@@ -34,7 +34,6 @@ You can look up packages and their descriptions via the [NixOS Package Search](h
 - fc.logcheckhelper
 - fio
 - gcc
-- gdb
 - git
 - gnumake
 - gnupg
