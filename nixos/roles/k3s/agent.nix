@@ -53,6 +53,28 @@ in
         }];
       };
 
+      flyingcircus.services.sensu-client = {
+        checks = {
+          kubelet = {
+            notification = "Kubernetes kubelet is not working";
+            command = ''
+              ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10248 -u /healthz
+            '';
+          };
+
+          kube-proxy = {
+            notification = "Kubernetes kube-proxy is not working";
+            command = ''
+              ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10256 -u /healthz
+            '';
+          };
+        };
+
+        systemdUnitChecks = {
+          "k3s.service" = {};
+        };
+      };
+
       flyingcircus.activationScripts.kubernetes-apitoken-node = ''
         mkdir -p /var/lib/k3s
         umask 077

@@ -288,35 +288,63 @@ in {
       } ];
     };
 
-    flyingcircus.services.sensu-client.checks = {
+    flyingcircus.services.sensu-client = {
+      checks = {
+        cluster-dns = {
+          notification = "Cluster DNS (CoreDNS) is not healthy";
+          command = ''
+            ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H ${netCfg.clusterDns} -p 9153 -u /metrics
+          '';
+        };
 
-      cluster-dns = {
-        notification = "Cluster DNS (CoreDNS) is not healthy";
-        command = ''
-          ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H ${netCfg.clusterDns} -p 9153 -u /metrics
-        '';
+        kube-apiserver = {
+          notification = "Kubernetes API server is not working";
+          command = ''
+            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 6443 -S -u /healthz
+          '';
+        };
+
+        kube-scheduler = {
+          notification = "Kubernetes scheduler is not working";
+          command = ''
+            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10259 -S -u /healthz
+          '';
+        };
+
+        kube-controller-manager = {
+          notification = "Kubernetes controller manager is not working";
+          command = ''
+            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10257 -S -u /healthz
+          '';
+        };
+
+        kube-dashboard-metrics-scraper = {
+          notification = "Kubernetes dashboard metrics scraper sidecar is not working";
+          command = ''
+            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 8000 -u /healthz
+          '';
+        };
+
+        kube-dashboard = {
+          notification = "Kubernetes dashboard backend is not working";
+          # No access without kubeconfig, so 401 is expected here.
+          command = ''
+            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 11000 -u /api/v1/namespace -e "HTTP/1.1 401"
+          '';
+        };
+
+        kube-nodes-ready = {
+          notification = "Kubernetes nodes are not in Ready state";
+          command = ''
+            ${pkgs.sensu-plugins-kubernetes}/bin/check-kube-nodes-ready.rb --token-file /var/lib/k3s/tokens/sensuclient -s https://localhost:6443
+          '';
+        };
       };
 
-      kube-apiserver = {
-        notification = "Kubernetes API server is not working";
-        command = ''
-          ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H localhost -p 6443 --ssl -e HTTP/1.1
-        '';
-      };
-
-      kube-dashboard-metrics-scraper = {
-        notification = "Kubernetes dashboard metrics scraper sidecar is not working";
-        command = ''
-          ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 8000 -u /healthz
-        '';
-      };
-
-      kube-dashboard = {
-        notification = "Kubernetes dashboard backend is not working";
-        # No access without kubeconfig, so 401 is expected here.
-        command = ''
-          ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 11000 -u /api/v1/namespace -e "HTTP/1.1 401"
-        '';
+      systemdUnitChecks = {
+        "k3s.service" = {};
+        "kube-dashboard.service" = {};
+        "kube-dashboard-metrics-scraper.service" = {};
       };
     };
 
@@ -336,6 +364,8 @@ in {
         "--token-file=/var/lib/k3s/secret_token"
         "--data-dir=/var/lib/k3s"
         "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
+        # required for anonymous access to apiserver health port
+        "--kube-apiserver-arg anonymous-auth=true"
       ];
     in {
       enable = true;
