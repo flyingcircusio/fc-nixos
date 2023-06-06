@@ -348,6 +348,21 @@ in {
       };
     };
 
+    flyingcircus.services.telegraf.inputs = {
+      kube_inventory = [{
+        url = "https://localhost:6443";
+        bearer_token = "/var/lib/k3s/tokens/telegraf";
+        insecure_skip_verify = true;
+        namespace = "";
+        resource_exclude = [
+          "persistentvolumes"
+          "persistentvolumeclaims"
+          "endpoints"
+          "ingress"
+        ];
+      }];
+    };
+
     networking.nameservers = lib.mkOverride 90 (lib.take 3 ([netCfg.clusterDns] ++ fcNameservers));
 
     services.k3s = let

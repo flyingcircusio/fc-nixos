@@ -13,6 +13,9 @@ let
     "--flannel-iface=ethsrv"
     "--node-ip=${agentAddress}"
     "--data-dir=/var/lib/k3s"
+    # k3s disables this port by default, we re-enable it to conform to
+    # standard k8s behaviour.
+    "--kubelet-arg read-only-port=10255"
   ];
 
 in
