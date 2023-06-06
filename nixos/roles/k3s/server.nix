@@ -49,6 +49,17 @@ let
           --clusterrole=cluster-admin --serviceaccount=default:$name \
           > /dev/null
 
+    ${kc} get secret $name-token &> /dev/null \
+      || ${kc} apply -f - <<EOF > /dev/null
+    apiVersion: v1
+    kind: Secret
+    type: kubernetes.io/service-account-token
+    metadata:
+      name: $name-token
+      annotations:
+        kubernetes.io/service-account.name: $name
+    EOF
+
     token=$(${kc} describe secret $name-token | grep token: | cut -c 13-)
 
     ${remarshal} $src_config -if yaml -of json | \
