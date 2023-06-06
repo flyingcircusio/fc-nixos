@@ -54,7 +54,8 @@ let
     token=$(${kc} describe secret $name-token | grep token: | cut -c 13-)
 
     ${remarshal} $src_config -if yaml -of json | \
-      jq --arg token "$token" '.users[0].user.token = $token' \
+      jq --arg token "$token" \
+      '.users[0].user |= (del(."client-key-data", ."client-certificate-data") | .token = $token)' \
       > /tmp/$name.kubeconfig
 
     KUBECONFIG=/tmp/$name.kubeconfig ${kc} config view --flatten
