@@ -56,7 +56,7 @@ To see the final rendered config for Elasticsearch, use the
 {command}`elasticsearch-show-config` command as service or sudo-srv user.
 
 To activate config changes, run {command}`sudo fc-manage --build`
-(see {ref}`nixos-local` for details).
+  (see {ref}`nixos-local` for details).
 
 ### NixOS Options
 
@@ -130,6 +130,12 @@ Rolling upgrades for Elasticsearch 6 multi-node clusters to 7 are supported.
 Nodes should be upgraded one at a time to ensure continous operation of the
 cluster. Upgrading nodes is done by changing the role of the machine to
 *elasticsearch7*.
+
+### Upgrade/Migration to OpenSearch
+
+Upgrading to OpenSearch is possible when starting from ES7. All indices must
+have been (re-)indexed with ES7 before doing so. See
+{ref}`nixos-opensearch` for the upgrade process.
 
 ## Monitoring
 

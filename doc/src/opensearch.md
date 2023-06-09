@@ -135,9 +135,38 @@ Note that the key must be quoted to stop Nix from interpreting the name
 of the setting as a path to a nested attribute.
 
 
-## Upgrades
+## Migrate/Upgrade from Elasticsearch
 
-We will offer an upgrade path from Elasticsearch 6/7 in the future.
+
+Upgrading to OpenSearch is possible when starting from ES7.
+
+:::{warning}
+All indices must have been indexed with ES7 before migrating or
+starting OpenSearch will fail! See the
+[Elasticsearch documentation](https://www.elastic.co/guide/en/elasticsearch/reference/7.10/reindex-upgrade-inplace.html)
+for instructions.
+:::
+
+Start the migration by activating the `opensearch` role and deactivating the
+`elasticsearch7` role at the same time, followed by a system rebuild with
+{command}`fc-manage switch -be` or just waiting for the next run of the fc-agent service.
+
+On OpenSearch startup, existing data from ES will be copied to the new data
+directory at {file}`/var/lib/opensearch`. This will only happen when the
+destination is empty to avoid overwriting existing OpenSearch data.
+
+The process is usually very fast regardless of the amount of data as the
+*reflink* feature of the XFS file system is used when copying the files. This
+also saves disk space as files are only copied when they have to be
+modified (*copy-on-write*).
+
+The contents of the old data directory at {file}`/srv/elasticsearch` can
+safely be removed after verifying that OpenSearch works as expected:
+
+```shell
+sudo -u opensearch rm -rf /srv/elasticsearch/*
+```
+
 
 ## Monitoring
 

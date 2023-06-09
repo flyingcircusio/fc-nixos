@@ -160,17 +160,16 @@ in
             migrateDataDir = ''
               set -e
               echo "Running as $(id opensearch)."
-              if ls -A /srv/opensearch/*; then
-                echo "Old data dir /srv/opensearch is not empty."
+              if ls -A /srv/elasticsearch/*; then
+                echo "Old elasticsearch data dir /srv/elasticsearch is not empty."
                 if ls -A /var/lib/opensearch/*; then
-                  echo "Not moving old data, new data dir /var/lib/opensearch already has content!"
+                  echo "Not migrating, new data dir /var/lib/opensearch already has content!"
                 else
-                  echo "Migrating existing data to /var/lib/opensearch..."
-                  mv /srv/opensearch/* /var/lib/opensearch/
-                  rm -rf /srv/opensearch
-                  ln -s /var/lib/opensearch /srv/opensearch
+                  echo "Copying existing Elasticsearch data to /var/lib/opensearch (using lightweight reflinks)..."
+                  cp -r --reflink=always /srv/elasticsearch/* /var/lib/opensearch/
+                  echo "Done. Old data dir /srv/elasticsearch can be deleted when OpenSearch starts up properly and you don't want to go back."
                 fi
-              else echo "Nothing found in old data dir.".
+              else echo "Nothing found in Elasticsearch data dir.".
               fi
 
               chown -R opensearch:opensearch ${cfgUpstream.dataDir}/
