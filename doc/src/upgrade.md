@@ -140,6 +140,12 @@ roles should stay on 22.11 and migrate to Opensearch before upgrading.
 before upgrading to 23.05. See our {ref}`MongoDB upgrade docs <nixos-mongodb-upgrade>`
 for details.
 
+### Webgateway/Nginx
+
+See {ref}`nixos-webgateway-nginx-legacy-crypt` if you still need algorithms
+like MD5 or SHA256 for HTTP basic auth which aren't supported anymore by the
+default `libxcrypt` used by Nginx.
+
 ## Other notable changes
 
 - NixOS now defaults to using nsncd (a non-caching reimplementation in Rust)

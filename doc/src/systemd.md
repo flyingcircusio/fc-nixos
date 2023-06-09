@@ -19,9 +19,19 @@ configuration changes manually.
 See also {ref}`nixos-local` for information about how to activate system
 configuration changes.
 
-See the chapter [Service Management]
-(https://nixos.org/manual/nixos/stable/#sec-systemctl) in the NixOS manual
-for more information.
+See the chapter [Service Management](https://nixos.org/manual/nixos/stable/#sec-systemctl)
+in the NixOS manual for more information.
+
+## Monitoring
+
+By default, we define a Sensu check called `systemd_units_non_critical` which
+emits a warning when there is at least one systemd unit in state `failed`.
+The check output also lists all affected units.
+
+You can define separate checks for important systemd services. These checks
+become `critical` when the service unit is not in state `active`, by using
+the option `flyingcircus.services.sensu-client.systemUnitChecks`. See
+{ref}`nixos-systemd-app-service-example` below.
 
 
 ## Custom Units
@@ -83,6 +93,8 @@ Place the following NixOS module in {file}`/etc/local/nixos/systemd-service-mini
 This starts the service after boot and when {command}`fc-manage` is run.
 It runs as user *s-myservice* and doesn't restart if the executable fails.
 
+(nixos-systemd-app-service-example)=
+
 #### Application Service Example
 
 Place the following NixOS module in {file}`/etc/local/nixos/systemd-service-myapp.nix`:
@@ -90,6 +102,10 @@ Place the following NixOS module in {file}`/etc/local/nixos/systemd-service-myap
 ```nix
 { config, pkgs, ... }:
 {
+  # Defines a Sensu check called `systemd_unit-myapp` which becomes critical when
+  # the service stops running.
+  flyingcircus.services.sensu-client.systemUnitChecks = { "myapp.service" = {}; };
+
   systemd.services.myapp = {
     after = [ "network.target" "postgresql.service" ];
     wantedBy = [ "multi-user.target" ];
