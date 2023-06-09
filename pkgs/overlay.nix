@@ -280,6 +280,11 @@ in {
     ];
   });
 
+  nginxLegacyCrypt = self.nginx.overrideAttrs(old: {
+    strictDeps = true;
+    buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
+  });
+
   openldap_2_4 = super.callPackage ./openldap_2_4.nix {
     libxcrypt = self.libxcrypt-with-sha256;
   };
