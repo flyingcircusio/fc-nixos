@@ -30,7 +30,7 @@ The check output also lists all affected units.
 
 You can define separate checks for important systemd services. These checks
 become `critical` when the service unit is not in state `active`, by using
-the option `flyingcircus.services.sensu-client.systemUnitChecks`. See
+the option `flyingcircus.services.sensu-client.systemdUnitChecks`. See
 {ref}`nixos-systemd-app-service-example` below.
 
 
@@ -104,7 +104,7 @@ Place the following NixOS module in {file}`/etc/local/nixos/systemd-service-myap
 {
   # Defines a Sensu check called `systemd_unit-myapp` which becomes critical when
   # the service stops running.
-  flyingcircus.services.sensu-client.systemUnitChecks = { "myapp.service" = {}; };
+  flyingcircus.services.sensu-client.systemdUnitChecks = { "myapp.service" = {}; };
 
   systemd.services.myapp = {
     after = [ "network.target" "postgresql.service" ];
