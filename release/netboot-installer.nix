@@ -63,7 +63,8 @@ done
 
 # Partitioning
 if yes_or_no "Wipe whole disk?"; then
-  sgdisk $root_disk -o;
+  sgdisk $root_disk -Z || true ;
+  sgdisk $root_disk -o || true ;
 else
   sgdisk $root_disk -d 1 -d 2 -d 3 -d 4;
 fi
