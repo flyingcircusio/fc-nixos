@@ -1,0 +1,2 @@
+The files in this directory are based on [MIT-licensed](https://github.com/NixOS/nixpkgs/blob/308d41aff1c142675ae1dd101bbcc0df1a1badec/COPYING) work done by other Nixpkgs/NixOS contributors, taken from revision 308d41aff1c142675ae1dd101bbcc0df1a1badec in the [nixpkgs](https://github.com/NixOS/nixpkgs/) repository under the path [
+nixos/modules/security/acme](https://github.com/NixOS/nixpkgs/blob/308d41aff1c142675ae1dd101bbcc0df1a1badec/nixos/modules/security/acme).

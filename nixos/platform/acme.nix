@@ -39,4 +39,8 @@
     # fallback ACME settings
     security.acme.acceptTerms = true;
     security.acme.defaults.email = "admin@flyingcircus.io";
+
+    # WIP: completely fork the upstream acme module for work on PL-131212
+    disabledModules = [ <nixpkgs/nixos/modules/security/acme> ];
+    imports = [ ./acme-fork/default.nix ];
 }
