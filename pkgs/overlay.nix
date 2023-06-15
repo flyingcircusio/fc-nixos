@@ -257,7 +257,7 @@ in {
   # newer linux kernel
   linuxPackages = super.linuxPackagesFor (super.linux_5_10.override {
     argsOverride = rec {
-      src = self.fetchurl {
+      src = super.fetchurl {
         url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
         sha256 = "sha256-4ndWLijyNONmZa4St1hflVeoOoa8So3ohAowWvYwe84=";
       };
@@ -390,6 +390,10 @@ in {
     };
 
   });
+
+  inherit (super.callPackages ./openssl { })
+    openssl_1_1;
+
 
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
