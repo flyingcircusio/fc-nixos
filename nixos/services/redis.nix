@@ -92,7 +92,7 @@ in {
             assertion = extraConfig == "";
             message = ''
               Config via /etc/local/redis/custom.conf is not supported anymore.
-              Please use a NixOS module with the option services.redis.settings instead
+              Please use a NixOS module with the option services.redis.servers."".settings instead
             '';
           }
         ];
@@ -175,7 +175,7 @@ in {
         the redis password by changing the `password` file.
 
         Changing the config via custom.conf is not supported anymore. Please use a NixOS module
-        with the option `services.redis.settings` instead.
+        with the option `services.redis.servers."".settings` instead.
       '';
 
       # We want a fixed uid that is compatible with older releases.

@@ -103,7 +103,7 @@ in
         innodb_log_files_in_group       = 2
       '';
 
-      services.redis.bind = lib.mkForce "0.0.0.0 ::";
+      services.redis.servers."".bind = lib.mkForce "0.0.0.0 ::";
 
       # This is the insecure key pair to allow bootstrapping containers.
       # -----BEGIN OPENSSH PRIVATE KEY-----

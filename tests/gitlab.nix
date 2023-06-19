@@ -33,7 +33,7 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
 
       flyingcircus.roles.postgresql14.enable = true;
 
-      services.redis.requirePass = lib.mkForce "test";
+      services.redis.servers."".requirePass = lib.mkForce "test";
 
       services.gitlab = lib.mkForce {
         databasePasswordFile = pkgs.writeText "dbPassword" dbPassword;
