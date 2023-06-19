@@ -77,27 +77,30 @@ let
     feAddrs = fclib.network.fe.dualstack.addresses;
     fqdn = "${config.networking.hostName}.ext.${domain}";
 
-    dnsmasqConf = ''
+    dnsmasqConf = {
       # VXLan specific configuration
-      dhcp-authoritative
-      dhcp-fqdn
-      dhcp-option=option6:dns-server,[::]
-      dhcp-option=option6:ntp-server,[::]
-      dhcp-option=option:dns-server,0.0.0.0
-      dhcp-option=option:mtu,${toString mtu}
-      dhcp-option=option:ntp-server,0.0.0.0
-      dhcp-range=::,constructor:${dev},ra-names
-      dhcp-range=${lib.concatStringsSep "," params.dhcp},24h
-      domain=ext.${domain}
-      domain-needed
-      interface=lo,${dev}
-      except-interface=ethfe
-      except-interface=ethsrv
-      local-ttl=60
-      auth-server=${extnet.frontendName},ethfe
-      auth-zone=ext.${domain}
-      host-record=${fqdn},${params.a},${params.aaaa}
-    '';
+      dhcp-authoritative = true;
+      dhcp-fqdn = true;
+      dhcp-option = [
+        "option6:dns-server,[::]"
+        "option6:ntp-server,[::]"
+        "option:dns-server,0.0.0.0"
+        "option:mtu,${toString mtu}"
+        "option:ntp-server,0.0.0.0"
+      ];
+      dhcp-range = [
+        "::,constructor:${dev},ra-names"
+        "${lib.concatStringsSep "," params.dhcp},24h"
+      ];
+      domain = "ext.${domain}";
+      domain-needed = true;
+      interface = "lo,${dev}";
+      except-interface = [ "ethfe" "ethsrv" ];
+      local-ttl = 60;
+      auth-server= "${extnet.frontendName},ethfe";
+      auth-zone = "ext.${domain}";
+      host-record = "${fqdn},${params.a},${params.aaaa}";
+    };
 
 in
 {
@@ -125,7 +128,7 @@ in
     (lib.mkIf (cfg.roles.vxlan.gateway && vxlanRole.config != {}) {
       services.dnsmasq = {
         enable = true;
-        extraConfig = dnsmasqConf;
+        settings = dnsmasqConf;
       };
 
       services.chrony.extraConfig = ''

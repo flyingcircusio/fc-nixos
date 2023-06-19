@@ -277,13 +277,12 @@ in
 
     services.dnsmasq = {
       enable = true;
-      extraConfig = ''
+      settings = {
         # OpenVPN specific configuration
-        bind-dynamic
-        interface=lo
-        listen-address=${addrs.ip4}
-        listen-address=${addrs.ip6}
-      '';
+        bind-dynamic = true;
+        interface = "lo";
+        listen-address = [ addrs.ip4 addrs.ip6 ];
+      };
     };
 
     services.openvpn.servers.access.config = serverConfig;
