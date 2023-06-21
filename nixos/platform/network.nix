@@ -161,7 +161,7 @@ in
 
     };
 
-    services.udev.extraRules = lib.concatMapStrings
+    boot.initrd.services.udev.rules = lib.concatMapStrings
       (interface: ''
         SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
         '') interfaces;
