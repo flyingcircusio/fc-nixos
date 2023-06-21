@@ -33,6 +33,10 @@ let
         ((filter (a: fclib.isIp6 a.ip) encAddresses) ++
          (filter (a: fclib.isIp4 a.ip) encAddresses));
 
+  interfaceRules = lib.concatMapStrings
+    (interface: ''
+      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
+      '') interfaces;
 in
 {
 
@@ -163,10 +167,8 @@ in
 
     };
 
-    services.udev.extraRules = lib.concatMapStrings
-      (interface: ''
-        SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
-        '') interfaces;
+    services.udev.initrdRules = interfaceRules;
+    services.udev.extraRules = interfaceRules;
 
     systemd.services =
       let startStopScript = fclib.simpleRouting;

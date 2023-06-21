@@ -13,6 +13,19 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     flyingcircus.raid.enable = true;
 
     boot = {
+      initrd.availableKernelModules = [
+        # assorted network drivers, for hardware discovery during
+        # stage 1.
+        "e1000e"
+        "i40e"
+        "mlxfw"
+        "tg3"
+        "mlx5_core"
+        "bnxt_en"
+        "igb"
+        "ixgbe"
+        "bnx2"
+      ];
 
       kernelParams = [
         # Drivers

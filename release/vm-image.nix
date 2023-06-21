@@ -18,7 +18,7 @@ in
 {
   config = {
 
-    services.udev.extraRules = ''
+    services.udev.initrdRules = ''
         # static/bootstrap fallback rules for VMs
         SUBSYSTEM=="net", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
         SUBSYSTEM=="net", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
