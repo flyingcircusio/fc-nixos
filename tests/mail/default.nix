@@ -4,16 +4,20 @@ let
     networking.domain = "example.local";
     networking.nameservers = [ "127.0.0.1" ];
     services.dnsmasq.enable = true;
-    services.dnsmasq.extraConfig = ''
-      mx-host=example.local,mail.example.local
-      mx-host=external.local,ext.example.local
-      no-resolv
-      server=/local/127.0.0.1
-      server=/net/
-      server=/org/
-      server=/com/
-      address=/webmail.example.local/192.168.1.3
-    '';
+    services.dnsmasq.settings = {
+      mx-host = [
+        "example.local,mail.example.local"
+        "external.local,ext.example.local"
+      ];
+      no-resolv = true;
+      server= [
+        "/local/127.0.0.1"
+        "/net/"
+        "/org/"
+        "/com/"
+      ];
+      address = "/webmail.example.local/192.168.1.3";
+    };
     services.haveged.enable = true;
   };
 in
