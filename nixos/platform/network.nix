@@ -59,6 +59,11 @@ in
         then cfg.static.nameservers.${location}
         else [];
 
+      # Using SLAAC/privacy addresses will cause firewalls to block us
+      # internally and also have customers get problems with outgoing
+      # connections.
+      tempAddresses = "disabled";
+
       # data structure for all configured interfaces with their IP addresses:
       # { ethfe = { ... }; ethsrv = { }; ... }
       interfaces = listToAttrs (map (interface:
@@ -86,11 +91,6 @@ in
               defaultRoutes ++ additionalRoutes;
 
           ipv6.addresses = interface.v6.attrs;
-
-          # Using SLAAC/privacy addresses will cause firewalls to block
-          # us internally and also have customers get problems with
-          # outgoing connections.
-          tempAddress = "disabled";
 
           ipv6.routes =
             let
