@@ -21,8 +21,10 @@ via {file}`/etc/local/redis/custom.conf` which is not supported anymore.
 
 If you need to change the behaviour of Redis, you define your redis
 configuration with the NixOS option
-`services.redis.servers."".settings`. See the NixOS manual for further
-information.
+`services.redis.servers."".settings`. NixOS supports multiple
+instances of Redis on a single host, so this option sets configuration
+for the default instance with an empty instance name. See the NixOS
+manual for further information.
 
 Regarding setting the redis password, see the section on redis [passwords](#password).
 
