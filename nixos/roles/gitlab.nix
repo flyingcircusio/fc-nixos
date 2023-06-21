@@ -105,7 +105,7 @@ in
       databaseCreateLocally = fclib.mkPlatform true;
       databasePasswordFile = "${cfg.secretsDir}/db_password";
       initialRootPasswordFile = "${cfg.secretsDir}/root_password";
-      redisUrl = "redis://:${config.services.redis.requirePass}@localhost:6379/";
+      redisUrl = "redis://:${config.services.redis.servers."".requirePass}@localhost:6379/";
       statePath = "/srv/gitlab/state";
       https = true;
       port = 443;
