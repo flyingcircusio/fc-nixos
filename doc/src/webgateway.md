@@ -291,3 +291,5 @@ If you still need them on 23.05, use the Nginx package which still supports all 
   services.nginx.package = pkgs.nginxLegacyCrypt;
 }
 ~~~
+
+A package alias under the name `nginxLegacyCrypt` is already available in our NixOS 22.11 release, enabling seamless platform upgrades with the same configuration.
