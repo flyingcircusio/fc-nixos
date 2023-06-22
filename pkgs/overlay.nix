@@ -282,6 +282,9 @@ in {
 
   nginx = self.nginxStable;
 
+  # for allowing upgrades to 23.05
+  nginxLegacyCrypt = self.nginx;
+
   nginxMainline = (super.nginxMainline.override {
     modules = with super.nginxModules; [
       dav
