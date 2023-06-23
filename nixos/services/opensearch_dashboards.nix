@@ -153,7 +153,11 @@ in {
       after = [ "network.target" "elasticsearch.service" "opensearch.service" ];
       environment = { BABEL_CACHE_PATH = "${cfg.dataDir}/.babelcache.json"; };
       preStart = ''
+        set -x
         pkg_dir=$STATE_DIRECTORY/package
+        if [ -e $pkg_dir ]; then
+            chmod -R u+w $pkg_dir
+        fi
         rm -rf $pkg_dir
         cp -r ${cfg.package} $pkg_dir
         chmod -R u+w $pkg_dir
