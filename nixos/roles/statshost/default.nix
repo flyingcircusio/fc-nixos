@@ -32,9 +32,12 @@ let
     } "remarshal -if yaml -of json < ${filename} > $out";
 
   relabelConfiguration = filename:
-    if pathExists filename
-    then fromJSON (readFile (customRelabelJSON filename))
-    else [];
+    let
+      # allow filtering out non-existing paths, and avoid
+      # non-lazy if/then/else
+      existing_files = builtins.filter (f: pathExists f) [ filename ];
+    in
+      map (f: fromJSON (readFile (customRelabelJSON f))) existing_files;
 
   prometheusMetricRelabel =
     cfgStats.prometheusMetricRelabel ++ customRelabelConfig;
