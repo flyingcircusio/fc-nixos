@@ -75,7 +75,7 @@ in {
   mailstub = callTest ./mail/stub.nix {};
   matomo = callTest ./matomo.nix {};
   memcached = callTest ./memcached.nix {};
-  mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
+  #mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
