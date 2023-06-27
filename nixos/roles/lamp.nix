@@ -28,7 +28,7 @@ in {
 
       php = mkOption {
         type = types.package;
-        default = pkgs.lamp_php80;
+        default = pkgs.lamp_php82;
         description = ''
           The package to use.
         '';

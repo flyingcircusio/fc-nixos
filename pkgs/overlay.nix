@@ -174,13 +174,13 @@ in {
 
   # PHP versions from nixpkgs
 
-  lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]));
+  #lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
+  #            enabled ++ [
+  #              all.bcmath
+  #              all.imagick
+  #              all.memcached
+  #              all.redis
+  #            ]));
 
   lamp_php81 = super.php81.withExtensions ({ enabled, all }:
               enabled ++ [
