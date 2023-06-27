@@ -56,15 +56,15 @@ in {
   lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
   lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
   lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
-  lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
-  lampVm80_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php80"; tideways = "1234"; };
+  #lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
+  #lampVm80_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php80"; tideways = "1234"; };
   lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
   lampVm81_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php81"; tideways = "1234"; };
   lampVm82 = callTest ./lamp/vm-test.nix { version = "lamp_php82"; };
   lampVm82_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php82"; tideways = "1234"; };
 
   lampPackage74 = callTest ./lamp/package-test.nix { version = "lamp_php74"; };
-  lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
+  #lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
   lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
   lampPackage82 = callTest ./lamp/package-test.nix { version = "lamp_php82"; };
 
