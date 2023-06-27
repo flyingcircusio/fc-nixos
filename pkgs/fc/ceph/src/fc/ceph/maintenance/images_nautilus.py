@@ -5,6 +5,7 @@ import hashlib
 import logging
 import os
 import os.path as p
+import signal
 import socket
 import stat
 import subprocess
@@ -182,6 +183,9 @@ class BaseImage:
             run.rbd("create", "-s", str(10 * 2**30) + "B", self.volume)
 
         logger.debug(f"Locking image {self.volume}")
+        # ensure that the context manager unlocks the image in __exit__ before being
+        # terminated
+        signal.signal(signal.SIGTERM, self._handle_interrupt)
         try:
             run.rbd("lock", "add", self.volume, LOCK_COOKIE)
             locks = run.json.rbd("lock", "ls", self.volume)
@@ -210,6 +214,18 @@ class BaseImage:
             )
         except Exception:
             logger.exception()
+
+    def _handle_interrupt(self, _signum, _stack_frame):
+        """Workaround for ensuring image unlocking when the process is terminated
+        regularly during the execution of the context's body, inspired by
+        https://stackoverflow.com/questions/62642768/how-to-make-a-python-context-manager-catch-a-sigint-or-sigterm-signal
+        By raising a SystemExit exception, the context manager's __exit__ is invoked.
+
+        There might still be a potential unlocking gap in the __exit__ function itself,
+        see the postponed PEP-419 for details. But that gap is much shorter and thus
+        less relevant.
+        """
+        sys.exit()
 
     @property
     def _snapshot_names(self):
