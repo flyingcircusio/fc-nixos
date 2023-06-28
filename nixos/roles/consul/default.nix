@@ -53,8 +53,9 @@ in
     services.nginx = {
       virtualHosts."${public_fqdn}" = {
         listen = [ { addr = public_address; port = 8500; ssl = true;}
-                   # allow acme to work
-                   { addr = public_address; port = 80; ssl = false;} ];
+                   # allow acme and the certificate checks to work
+                   { addr = public_address; port = 80; ssl = false;}
+                   { addr = public_address; port = 443; ssl = true;} ];
         enableACME = true;
         addSSL = true;
         locations."/" = {
