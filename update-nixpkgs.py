@@ -148,7 +148,7 @@ def filter_and_merge_commit_msgs(msgs):
     ]
 
     for msg in sorted(msgs):
-        if msg.startswith("linux") and "5.15" not in msg:
+        if msg.startswith("linux") and "6.1" not in msg:
             continue
 
         if msg in ignored_msgs:
