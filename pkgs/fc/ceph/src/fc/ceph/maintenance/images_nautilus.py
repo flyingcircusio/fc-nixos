@@ -172,6 +172,7 @@ class BaseImage:
     def __init__(self, release):
         self.release = release
         self.volume = f"{CEPH_POOL}/{self.release}"
+        self.locker = None
 
     def __enter__(self):
         """Context manager to maintain Ceph connection.
@@ -182,26 +183,29 @@ class BaseImage:
             logger.info(f"Creating image for {self.release}")
             run.rbd("create", "-s", str(10 * 2**30) + "B", self.volume)
 
-        logger.debug(f"Locking image {self.volume}")
         # ensure that the context manager unlocks the image in __exit__ before being
         # terminated
         signal.signal(signal.SIGTERM, self._handle_interrupt)
+        logger.debug(f"Locking image {self.volume}")
         try:
             run.rbd("lock", "add", self.volume, LOCK_COOKIE)
-            locks = run.json.rbd("lock", "ls", self.volume)
-            # since Nautilus, `rbd lock ls` returns a list of locker objects
-            for lock in locks:
-                if lock["id"] == LOCK_COOKIE:
-                    self.locker = lock["locker"]
-                    break
-            else:
-                # all entries tried -> semantically equivalent to a key lookup error
-                raise KeyError()
+            self._determine_image_locker()
         except Exception:
             logger.error(f"Could not lock image {self.volume}", exc_info=True)
             raise LockingError()
 
         return self
+
+    def _determine_image_locker(self):
+        locks = run.json.rbd("lock", "ls", self.volume)
+        # since Nautilus, `rbd lock ls` returns a list of locker objects
+        for lock in locks:
+            if lock["id"] == LOCK_COOKIE:
+                self.locker = lock["locker"]
+                break
+        else:
+            # all entries tried -> semantically equivalent to a key lookup error
+            raise KeyError()
 
     def __exit__(self, *args, **kw):
         logger.debug(f"Unlocking image {self.volume}")
@@ -225,6 +229,16 @@ class BaseImage:
         see the postponed PEP-419 for details. But that gap is much shorter and thus
         less relevant.
         """
+        logger.debug("handling SIGTERM interrupt")
+        # explicitly calling own __exit__ is necessary if interrupted during
+        # own __enter__ function
+        if not self.locker:
+            # possibly interrupted in __enter__ before getting own locker information.
+            # This is safe because we also still have the LOCK_COOKIE as an
+            # identifier to identify whether some other process or host has the lock.
+            self._determine_image_locker()
+        self.__exit__()
+        # SystemExit signals all other potential parent contextes to invoke __exit__
         sys.exit()
 
     @property
