@@ -8,6 +8,27 @@ Managed instance of the [PostgreSQL](http://postgresql.org) database server.
 
 - PostgreSQL server (versions 11, 12, 13, 14, 15)
 
+:::{warning}
+
+PostgreSQL 15 changed schema permission handling for new databases. Before,
+users that had `ALL` privileges for a database also were able to create tables and
+other objects in the `public` schema. Now, the `CREATE` privilege has to be
+granted explicitly for the schema.
+
+This also means that setting up permissions by using the NixOS option
+`services.postgresql.ensureUsers.*.ensurePermissions` is not enough if the user
+needs to create tables. NixOS doesn't support setting permissions on a schema, yet.
+
+To grant `CREATE` privilege to user `test` using SQL, execute:
+
+~~~sql
+GRANT CREATE ON SCHEMA public TO test;
+~~~
+
+See [Schemas and Privileges](https://www.postgresql.org/docs/15/ddl-schemas.html#DDL-SCHEMAS-PRIV)
+in the PostgreSQL documentation for more information.
+:::
+
 ## Configuration
 
 Managed PostgreSQL instances already have a production-grade configuration with
