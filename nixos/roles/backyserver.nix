@@ -104,6 +104,10 @@ in
         longterm:
           daily: {interval: 1d, keep: 30}
           monthly: {interval: 30d, keep: 12}
+        frequent_longterm:
+          hourly: {interval: 1h, keep: 25}
+          daily: {interval: 1d, keep: 30}
+          monthly: {interval: 30d, keep: 12}
     '';
 
     flyingcircus.agent.extraCommands = ''
