@@ -1,4 +1,5 @@
-#!/usr/bin/env sh
+#! /usr/bin/env nix-shell
+#! nix-shell -i bash --pure -p git gh coreutils
 
 nixos_version=$(< nixos-version)
 dev="fc-${nixos_version}-dev"
