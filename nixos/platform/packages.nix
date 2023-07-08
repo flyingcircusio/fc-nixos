@@ -18,7 +18,7 @@
         fc.logcheckhelper
         fio
         gcc
-        gitPatched
+        git
         gnumake
         gnupg
         gptfdisk

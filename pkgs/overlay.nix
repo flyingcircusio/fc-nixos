@@ -41,15 +41,6 @@ in {
 
   docsplit = super.callPackage ./docsplit { };
 
-  gitPatched = super.git.overrideAttrs(oldAttrs: rec {
-    pname = "git";
-    version = "2.38.4";
-    src = fetchurl {
-      url = "https://www.kernel.org/pub/software/scm/git/git-${version}.tar.xz";
-      hash = "sha256-cKUKDxzVYT1sil7nqPprLey7bwXZPXzkh6Zwx/gOBIs=";
-    };
-  });
-
   innotop = super.callPackage ./percona/innotop.nix { };
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
