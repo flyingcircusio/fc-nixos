@@ -358,6 +358,7 @@ in
 
       services.nginx = {
         enable = true;
+        package = fclib.mkPlatform pkgs.nginxLegacyCrypt;
         appendConfig = mainConfig;
         appendHttpConfig = ''
           ${baseHttpConfig}
