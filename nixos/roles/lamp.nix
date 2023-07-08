@@ -143,6 +143,7 @@ in {
         services.httpd.enable = true;
         services.httpd.adminAddr = "admin@flyingcircus.io";
         services.httpd.mpm = "event";
+        services.httpd.package = fclib.mkPlatform pkgs.apacheHttpdLegacyCrypt;
 
         # We always provide the PHP cli environment but we need to ensure
         # to choose the right one in case someone uses the LAMP role.

@@ -116,10 +116,24 @@ following common breaking changes and role-specific notes below.
 - `libxcrypt`, the library providing the `crypt(3)` password hashing function,
   is now built without support for algorithms not flagged
   [`strong`](https://github.com/besser82/libxcrypt/blob/v4.4.33/lib/hashes.conf#L48)
-  in NixOS 23.05. We added a variant package called `libxcrypt-with-sha256`
-  which enables the `sha256` algorithm in addition to the `strong` algorithms.
-  OpenLDAP, Dovecot, Postfix, cyrus_sasl use that version by default.
-  New password hashes should use strong algorithms like `yescrypt`.
+  in NixOS 23.05.
+    - Check your applications if they still use algorithms for passwords that
+      are not `strong`.
+    - New password hashes should use strong algorithms like `yescrypt`.
+    - We added a variant package called `libxcrypt-with-sha256` which enables
+      the `sha256` algorithm in addition to the `strong` algorithms.
+    - There is also an upstream package with all old algorithms called
+      `libxcrypt-legacy`. OpenLDAP, Dovecot, Postfix and cyrus_sasl use that
+      version which might change with 23.11.
+    - The `nginx` service (also `webgateway` and `nginx` roles) and the `lamp`
+      role use `nginxLegacyCrypt` and `apacheHttpdLegacyCrypt` by default,
+      respectively. You may choose to switch to the strong algorithm variants
+      now by setting `services.nginx.package = pkgs.nginx` or
+      `services.httpd.package = pkgs.apacheHttpd`. These packages will become
+      the default on 23.11. If you want to keep the legacy variants for a
+      longer time, you can also use these options to set the legacy crypt
+      packages explicitly. 23.11 will emit a warning if they are still in
+      use.
 - `podman` now uses the `netavark` network stack. Users will need to delete
   all of their local containers, images, volumes, etc, by running `podman
   system reset --force` once before upgrading their systems.

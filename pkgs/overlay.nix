@@ -20,6 +20,10 @@ in {
   # imports from other nixpkgs versions or local definitions
   #
 
+  apacheHttpdLegacyCrypt = self.apacheHttpd.override {
+    aprutil = self.aprutil.override { libxcrypt = self.libxcrypt-legacy; };
+  };
+
   inherit (super.callPackage ./boost { }) boost159;
 
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
@@ -118,15 +122,15 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
-  cyrus_sasl-with-sha256 = super.cyrus_sasl.override {
-    libxcrypt = self.libxcrypt-with-sha256;
+  cyrus_sasl-legacyCrypt = super.cyrus_sasl.override {
+    libxcrypt = self.libxcrypt-legacy;
   };
 
   dovecot = (super.dovecot.override {
-    cyrus_sasl = self.cyrus_sasl-with-sha256;
+    cyrus_sasl = self.cyrus_sasl-legacyCrypt;
   }).overrideAttrs(old: {
     strictDeps = true;
-    buildInputs = [ self.libxcrypt-with-sha256 ] ++ old.buildInputs;
+    buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
   });
 
   filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
@@ -277,7 +281,7 @@ in {
   });
 
   openldap_2_4 = super.callPackage ./openldap_2_4.nix {
-    libxcrypt = self.libxcrypt-with-sha256;
+    libxcrypt = self.libxcrypt-legacy;
   };
 
   opensearch = super.callPackage ./opensearch { };
@@ -320,7 +324,7 @@ in {
   pkgconfig = super.pkg-config;
 
   postfix = super.postfix.override {
-    cyrus_sasl = self.cyrus_sasl-with-sha256;
+    cyrus_sasl = self.cyrus_sasl-legacyCrypt;
   };
 
   postgis_2_5 = (super.postgresqlPackages.postgis.override {
