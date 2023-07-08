@@ -90,18 +90,22 @@ in
       schedules:
         default:
           daily: {interval: 1d, keep: 10}
-          monthly: {interval: 30d, keep: 4}
           weekly: {interval: 7d, keep: 4}
+          monthly: {interval: 30d, keep: 4}
         frequent:
-          daily: {interval: 1d, keep: 10}
           hourly: {interval: 1h, keep: 25}
-          monthly: {interval: 30d, keep: 4}
+          daily: {interval: 1d, keep: 10}
           weekly: {interval: 7d, keep: 4}
+          monthly: {interval: 30d, keep: 4}
         reduced:
           daily: {interval: 1d, keep: 8}
-          monthly: {interval: 30d, keep: 2}
           weekly: {interval: 7d, keep: 3}
+          monthly: {interval: 30d, keep: 2}
         longterm:
+          daily: {interval: 1d, keep: 30}
+          monthly: {interval: 30d, keep: 12}
+        frequent+longterm:
+          hourly: {interval: 1h, keep: 25}
           daily: {interval: 1d, keep: 30}
           monthly: {interval: 30d, keep: 12}
     '';

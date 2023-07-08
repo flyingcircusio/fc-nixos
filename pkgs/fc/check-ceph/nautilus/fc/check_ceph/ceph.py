@@ -203,7 +203,7 @@ class CephLog(nagiosplugin.Resource):
         _log.info("scanning %s for slow request logs", self.logfile)
         with nagiosplugin.LogTail(self.logfile, self.cookie) as newlines:
             for line in newlines:
-                m = self.r_slow_req.search(line.decode())
+                m = self.r_slow_req.search(line.decode(errors="replace"))
                 if not m:
                     continue
                 _log.debug("slow requests: %s", line.strip())
