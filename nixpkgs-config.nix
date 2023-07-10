@@ -14,7 +14,7 @@
 
   permittedInsecurePackages = [
     "nodejs-14.21.3" # Needed for opensearch-dashboards.
-    "nodejs-16.20.0" # Needed for discourse 3.1.0.beta4, will go away with next version.
+    "nodejs-16.20.1" # EOL 2023-09-11, needed for discourse and some customers.
     "openssl-1.1.1u" # EOL 2023-09-11, needed for Percona and older PHP versions.
     "python-2.7.18.6" # Needed for some legacy customer applications.
     "ruby-2.7.8" # EOL 2023-03-31, needed for Sensu checks
