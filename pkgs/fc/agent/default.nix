@@ -22,13 +22,13 @@ let
 
   pytest-structlog = py.buildPythonPackage rec {
     pname = "pytest-structlog";
-    version = "0.4";
+    version = "0.6";
 
     src = fetchFromGitHub {
       owner = "wimglenn";
       repo = "pytest-structlog";
-      rev = "b71518015109b292bc6584b8637264939b44af62";
-      sha256 = "00g2ivgj4y398d0y60lk710zz62pj80r9ya3b4iqijkp4j8nh4gp";
+      rev = "cb82f00cfc47696a36797a6eeb9f65ad6e727f19";
+      hash = "sha256-ktLsdEtxfiWhCTTaKowBoAAijOF9640m5XV/rdahpl0=";
     };
 
     buildInputs = [ pytest structlog ];
@@ -46,10 +46,12 @@ buildPythonPackage rec {
     py.pytest-cov
     py.pytest-runner
     py.responses
-    py.pytest
     py.pytest-mock
     py.pytest-subprocess
     pytest-structlog
+  ];
+  nativeCheckInputs = [
+    py.pytestCheckHook
   ];
   propagatedBuildInputs = [
     gitMinimal
@@ -74,6 +76,7 @@ buildPythonPackage rec {
     xfsprogs
   ];
   dontStrip = true;
+  doCheck = true;
   passthru.pythonDevEnv = python.withPackages (_: checkInputs ++ propagatedBuildInputs);
 
 }
