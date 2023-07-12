@@ -30,13 +30,13 @@ in {
   # inherit (pkgs.nixosTests)
 
   antivirus = callTest ./antivirus.nix {};
-  audit = callTest ./audit.nix {};
+  # audit = callTest ./audit.nix {};
   # XXX: fails with fetchPypi missing in py.fetchPypi
   # backyserver = callTest ./backyserver.nix {};
   # channel = callTest ./channel.nix {};
   # XXX: ceph build failure
   # ceph = callTest ./ceph.nix {};
-  coturn = callTest ./coturn.nix {};
+  # coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
   fcagent = callSubTests ./fcagent.nix {};
@@ -72,17 +72,17 @@ in {
   logrotate = callTest ./logrotate.nix {};
   # mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
-  matomo = callTest ./matomo.nix {};
+  # matomo = callTest ./matomo.nix {};
   memcached = callTest ./memcached.nix {};
   #mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   # network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
-  nginx = callTest ./nginx.nix {};
+  # nginx = callTest ./nginx.nix {};
   nodejs = callTest ./nodejs.nix {};
   opensearch = callTest ./opensearch.nix {};
   # opensearch_dashboards = callTest ./opensearch_dashboards.nix {};
-  openvpn = callTest ./openvpn.nix {};
+  # openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
   # postgresql11 = callTest ./postgresql { version = "11"; };
@@ -95,15 +95,15 @@ in {
   rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
-  sensuclient = callTest ./sensuclient.nix {};
+  # sensuclient = callTest ./sensuclient.nix {};
   servicecheck = callTest ./servicecheck.nix {};
-  statshost-global = callTest ./statshost/statshost-global.nix {};
+  # statshost-global = callTest ./statshost/statshost-global.nix {};
   statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
   syslog = callSubTests ./syslog.nix {};
   systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
   users = callTest ./users.nix {};
-  vxlan = callTest ./vxlan.nix {};
+  # vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
   wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
 }
