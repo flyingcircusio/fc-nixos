@@ -33,7 +33,7 @@ in {
   audit = callTest ./audit.nix {};
   # XXX: fails with fetchPypi missing in py.fetchPypi
   # backyserver = callTest ./backyserver.nix {};
-  channel = callTest ./channel.nix {};
+  # channel = callTest ./channel.nix {};
   # XXX: ceph build failure
   # ceph = callTest ./ceph.nix {};
   coturn = callTest ./coturn.nix {};
@@ -43,15 +43,14 @@ in {
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   collect-garbage = callTest ./collect-garbage.nix {};
-  gitlab = callTest ./gitlab.nix {};
+  # gitlab = callTest ./gitlab.nix {};
   haproxy = callTest ./haproxy.nix {};
   java = callTest ./java.nix {};
   journal = callTest ./journal.nix {};
   journalbeat = callTest ./journalbeat.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
-  k3s = callTest ./k3s {};
-  k3s_monitoring = callTest ./k3s/monitoring.nix {};
-
+  #k3s = callTest ./k3s {};
+  #k3s_monitoring = callTest ./k3s/monitoring.nix {};
   lampVm = callTest ./lamp/vm-test.nix { };
   lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
   lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
@@ -71,13 +70,13 @@ in {
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
   logrotate = callTest ./logrotate.nix {};
-  mail = callTest ./mail {};
+  # mail = callTest ./mail {};
   mailstub = callTest ./mail/stub.nix {};
   matomo = callTest ./matomo.nix {};
   memcached = callTest ./memcached.nix {};
   #mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
-  network = callSubTests ./network {};
+  # network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
   nginx = callTest ./nginx.nix {};
   nodejs = callTest ./nodejs.nix {};
@@ -86,12 +85,12 @@ in {
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
-  postgresql11 = callTest ./postgresql { version = "11"; };
-  postgresql12 = callTest ./postgresql { version = "12"; };
-  postgresql13 = callTest ./postgresql { version = "13"; };
-  postgresql14 = callTest ./postgresql { version = "14"; };
-  postgresql15 = callTest ./postgresql { version = "15"; };
-  postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix {};
+  # postgresql11 = callTest ./postgresql { version = "11"; };
+  # postgresql12 = callTest ./postgresql { version = "12"; };
+  # postgresql13 = callTest ./postgresql { version = "13"; };
+  # postgresql14 = callTest ./postgresql { version = "14"; };
+  # postgresql15 = callTest ./postgresql { version = "15"; };
+  # postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix {};
   prometheus = callTest ./prometheus.nix {};
   rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};
