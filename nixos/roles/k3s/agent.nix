@@ -13,6 +13,9 @@ let
     "--flannel-iface=ethsrv"
     "--node-ip=${agentAddress}"
     "--data-dir=/var/lib/k3s"
+    # k3s disables this port by default, we re-enable it to conform to
+    # standard k8s behaviour.
+    "--kubelet-arg read-only-port=10255"
   ];
 
 in
@@ -51,6 +54,28 @@ in
           # for the bearer token which we don't use.
           bearer_token_string = "doesntmatter";
         }];
+      };
+
+      flyingcircus.services.sensu-client = {
+        checks = {
+          kubelet = {
+            notification = "Kubernetes kubelet is not working";
+            command = ''
+              ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10248 -u /healthz
+            '';
+          };
+
+          kube-proxy = {
+            notification = "Kubernetes kube-proxy is not working";
+            command = ''
+              ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10256 -u /healthz
+            '';
+          };
+        };
+
+        systemdUnitChecks = {
+          "k3s.service" = {};
+        };
       };
 
       flyingcircus.activationScripts.kubernetes-apitoken-node = ''

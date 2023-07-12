@@ -15,6 +15,11 @@ bundlerSensuPlugin {
   extraGemConfig = {
     sensu-plugins-kubernetes = attrs: {
       buildInputs = [  ];
+      dontBuild = false;
+      patches = [
+        # patch kept here as upstream seems to be inactive.
+        ./0001-Don-t-assume-that-private-keys-are-RSA.patch
+      ];
     };
   };
 }
