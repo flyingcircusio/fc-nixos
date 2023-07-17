@@ -42,12 +42,12 @@ def invoke_app(tmpdir, agent_maintenance_config):
     tmpdir.mkdir("fc-agent")
     enc_file.write_text(json.dumps(ENC), encoding="utf8")
 
-    def _invoke_app(*args):
+    def _invoke_app(*args, exit_code=0):
         with unittest.mock.patch("fc.maintenance.cli.ReqManager"):
             result = runner.invoke(fc.maintenance.cli.app, main_args + args)
             assert (
-                result.exit_code == 0
-            ), f"unexpected exit code, output: {result.output}"
+                result.exit_code == exit_code
+            ), f"unexpected exit code {result.exit_code}, output: {result.output}"
 
     return _invoke_app
 
@@ -153,3 +153,22 @@ def test_invoke_request_update(load_enc, request_update, invoke_app):
     load_enc.assert_called_once()
     request_update.assert_called_once()
     fc.maintenance.cli.rm.add.assert_called_once()
+
+
+@unittest.mock.patch("fc.util.directory.is_node_in_service")
+def test_invoke_constraints(is_node_in_service, monkeypatch, invoke_app, log):
+    monkeypatch.setattr("fc.util.directory.connect", MagicMock())
+    invoke_app("constraints", "--in-service", "test01")
+    is_node_in_service.assert_called_with(unittest.mock.ANY, "test01")
+    assert log.debug("constraints-check-in-service", machine="test01")
+    assert log.debug("constraints-success")
+
+
+@unittest.mock.patch("fc.util.directory.is_node_in_service")
+def test_invoke_constraints_not_met(
+    is_node_in_service, monkeypatch, invoke_app, log
+):
+    monkeypatch.setattr("fc.util.directory.connect", MagicMock())
+    is_node_in_service.return_value = False
+    invoke_app("constraints", "--in-service", "test01", exit_code=69)
+    assert log.info("constraints-failure")

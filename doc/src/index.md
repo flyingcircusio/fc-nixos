@@ -7,6 +7,7 @@ Platform & roles documentation for Flying Circus [NixOS] edition
 :titlesonly: true
 
 upgrade
+maintenance
 base
 user_profile
 local
