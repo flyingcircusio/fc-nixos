@@ -1,5 +1,7 @@
 import argparse
 import fcntl
+import ipaddress
+import json
 import os.path
 import shutil
 import subprocess
@@ -9,6 +11,8 @@ from pathlib import Path
 
 import requests
 
+MAX_VM_ID = 1024
+NETWORK = ipaddress.ip_network("10.12.0.0/16")
 CONFIG_DIR = Path("/etc/devhost/vm-configs")
 VM_DATA_DIR = Path("/var/lib/devhost/vms")
 
@@ -18,15 +22,25 @@ def run(*args, **kwargs):
     return subprocess.run(args, **kwargs)
 
 
+def list_all_vm_configs():
+    for vm in CONFIG_DIR.glob("*.json"):
+        yield json.read(open(vm))
+
+
 class Manager:
     vm: str  # Name of the managed VM
 
     def __init__(self, vm):
         self.vm = vm
+        self.cfg = {}
+
+    @property
+    def nix_file(self):
+        return CONFIG_DIR / f"{self.name}.nix"
 
     @property
     def config_file(self):
-        return CONFIG_DIR / f"{self.name}.nix"
+        return CONFIG_DIR / f"{self.name}.json"
 
     @property
     def data_dir(self):
@@ -58,21 +72,56 @@ class Manager:
 
         # Be opportunistic here
         os.makedirs(self.config_file.parent)
-        with open(self.config_file) as f:
+
+        if self.config_file.exists:
+            self.cfg = cfg = json.load(open(self.config_file))
+
+        cfg["cpu"] = cpu
+        cfg["name"] = name
+        cfg["memory"] = memory
+        cfg["hydra_eval"] = hydra_eval
+        cfg["aliases"] = aliases
+
+        if "id" not in cfg:
+            known_ids = set(vm["id"] for vm in list_all_vm_configs())
+            for candidate in range(1024):
+                if candidate not in known_ids:
+                    cfg["id"] = candidate
+                    break
+            else:
+                raise RuntimeError("Could not find free VM ID.")
+
+        if "srv-ip" not in self.cfg:
+            known_ips = set(
+                ipaddress.ip_address(vm["srv-ip"])
+                for vm in list_all_vm_configs()
+            )
+            known_ips.add(NETWORK.broadcast_address)
+            known_ips.add(NETWORK.network_address)
+            for candidate in NETWORK:
+                if candidate not in known_ids:
+                    cfg["srv-ip"] = candidate
+                    break
+            else:
+                raise RuntimeError("Could not find free SRV IP address.")
+
+        with open(self.nix_file) as f:
             f.write(
                 textwrap.dedent(
-                    """
+                    f"""\
             # DO NOT TOUCH!
             # Managed by fc-manage-dev-vms
             { ... }: {
               flyingcircus.roles.devhost.virtualMachines = {
-                "{self.name}" = {
-                  memory = "$memory";
-                  cores = $cores;
+                "{cfg['name']}" = {
+                  memory = "{cfg['memory']}";
+                  cores = "{cfg['cores']};
+                  srv_ip = "{cfg['srv-ip']};
+                  id = "{cfg['id']};
                 };
               };
             }
-          """
+            """
                 )
             )
 
