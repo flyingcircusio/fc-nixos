@@ -16,7 +16,6 @@ _log = logging.getLogger()
 
 
 class BlockDev:
-
     # set by update_from_ldpd
     lsi_ld = None
     multidisk = False
@@ -165,7 +164,7 @@ def parse_ldpd(ldpd_info):
     ld = None
     media_type = None
     res = []
-    for (key, val) in tok:
+    for key, val in tok:
         if key == "Virtual Drive":
             ld = int(val.split()[0])
             media_type = None

@@ -78,7 +78,6 @@ def test_statuscodes_ok():
 
 
 def test_snapshot_fits(snap_ok):
-
     assert snap_ok.restore_impact[0] == snapcheck.SensuStatus.OK
 
 
@@ -87,7 +86,6 @@ def test_snapshot_warn(snap_warn):
 
 
 def test_snapshot_critical(snap_critical):
-
     assert snap_critical.restore_impact[0] == snapcheck.SensuStatus.CRITICAL
 
     snap_critical.size = 10000000  # larger than total pool
@@ -118,7 +116,6 @@ def test_parse_config():
 
 
 def test_parse_config_no_file():
-
     with pytest.raises(SystemExit) as ex:
         snapcheck.parse_config(["progname"])
     assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value

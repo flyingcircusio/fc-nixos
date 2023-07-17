@@ -51,7 +51,6 @@ def check_connect(conn_time):
 
 
 def check_feature_compat_version(con):
-
     major_version = ".".join(
         str(x) for x in con.server_info()["versionArray"][:2]
     )

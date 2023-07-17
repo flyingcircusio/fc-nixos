@@ -227,7 +227,6 @@ def OSD(id_, type=None):
 
 
 class GenericOSD(object):
-
     MKFS_XFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]
     MOUNT_XFS_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
 
@@ -533,7 +532,6 @@ class GenericOSD(object):
         print("Replicate with manual command:")
 
         if target_osd_type == "bluestore":
-
             print(
                 f"fc-ceph osd create-bluestore {device} "
                 f"--wal={journal} "
@@ -558,7 +556,6 @@ class GenericOSD(object):
 
 
 class FileStoreOSD(GenericOSD):
-
     OBJECTSTORE_TYPE = "filestore"
     DATA_VOLUME_SIZE = "-l100%vg"
 
@@ -717,7 +714,6 @@ class FileStoreOSD(GenericOSD):
 
 
 class BlueStoreOSD(GenericOSD):
-
     OBJECTSTORE_TYPE = "bluestore"
     DATA_VOLUME_SIZE = "-L1g"
 
@@ -734,7 +730,10 @@ class BlueStoreOSD(GenericOSD):
 
     def _locate_wal_lv(self):
         try:
-            lvm_wal_vg = run.json.lvs("-S", f"lv_name=~^{self.lvm_wal_esc}$",)[
+            lvm_wal_vg = run.json.lvs(
+                "-S",
+                f"lv_name=~^{self.lvm_wal_esc}$",
+            )[
                 0
             ]["vg_name"]
             return f"/dev/{lvm_wal_vg}/{self.lvm_wal_lv}"
@@ -783,7 +782,6 @@ class BlueStoreOSD(GenericOSD):
         return self.lvm_block_lv
 
     def activate(self):
-
         super().activate()
 
         # Relocating OSDs: Create WAL LV if the symlink is broken
