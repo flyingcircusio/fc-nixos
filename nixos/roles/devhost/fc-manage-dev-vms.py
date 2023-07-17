@@ -1,12 +1,18 @@
+#! /usr/bin/env nix-shell
+#! nix-shell -i python3 -p python3 python3Packages.requests xfsprogs qemu
+
 import argparse
 import fcntl
 import ipaddress
 import json
-import os.path
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import textwrap
+import time
+import uuid
 from pathlib import Path
 
 import requests
@@ -27,11 +33,41 @@ def list_all_vm_configs():
         yield json.read(open(vm))
 
 
-class Manager:
-    vm: str  # Name of the managed VM
+def check_if_nbd_device_is_used(number):
+    with open(f"/sys/class/block/nbd{number}/size", "r") as f:
+        return f.read() != "0"
 
-    def __init__(self, vm):
-        self.vm = vm
+
+def generate_enc_json(cfg):
+    return json.dumps(
+        {
+            "name": cfg["name"],
+            "parameters": {
+                "environment_url": cfg["channel_url"],  # todo
+                "environment": "dev-vm",
+                "interfaces": {
+                    "srv": {
+                        "bridged": False,
+                        "gateways": {
+                            "10.12.0.0/20": "10.12.0.1",
+                        },
+                        # TODO: Set correct MAC
+                        "mac": "todo",
+                        "networks": {
+                            "10.12.0.0/20": [cfg["srv_ip"]],
+                        },
+                    }
+                },
+            },
+        }
+    )
+
+
+class Manager:
+    name: str  # Name of the managed VM
+
+    def __init__(self, name):
+        self.name = name
         self.cfg = {}
 
     @property
@@ -108,7 +144,8 @@ class Manager:
         with open(self.nix_file) as f:
             f.write(
                 textwrap.dedent(
-                    f"""\
+                    # TODO: f
+                    """\
             # DO NOT TOUCH!
             # Managed by fc-manage-dev-vms
             { ... }: {
@@ -147,8 +184,37 @@ class Manager:
             # doesn't allow us to :(
             shutil.copyfile(vm_base_image_store_path, self.image_file_tmp)
 
-            # XXX Leona customizes the VM directly without booting it
-            # anonymously
+            image_mount_directory = tempfile.TemporaryDirectory()
+            # the 10 is the number of max. nbd devices provided by the kernel
+            nbd_number = None
+            for i in range(10):
+                if check_if_nbd_device_is_used(i):
+                    nbd_number = i
+                    break
+            if nbd_number is None:
+                raise RuntimeError("There is no unused nbd device.")
+
+            run(
+                "qemu-nbd",
+                f"--connect=/dev/nbd{nbd_number}",
+                self.image_file_tmp,
+            )
+            while True:
+                if check_if_nbd_device_is_used(nbd_number):
+                    time.sleep(0.5)
+                    break
+
+            new_fs_uuid = str(uuid.uuid4())
+            run("xfs_admin", "-U", new_fs_uuid, f"/dev/nbd{nbd_number}p1")
+
+            run("mount", f"/dev/nbd{nbd_number}p1", iamge_mount_directory.name)
+
+            with open(image_mount_directory / "etc/nixos/enc.json", "w") as f:
+                f.write(generate_enc_json(cfg))
+
+            run("umount", image_mount_directory.name)
+            run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
+            os.rename(self.image_file_tmp, self.image_file)
         else:
             # XXX we still need to ssh here, but we can leverage the enc
             # generation code from above
@@ -198,11 +264,11 @@ def main():
     if not os.path.exists(CONFIG_DIR):
         os.makedirs(CONFIG_DIR)
 
-    vm = getattr(args, "name", None)
+    name = getattr(args, "name", None)
     kwargs = dict(args._get_kwargs())
     del kwargs["func"]
     if "name" in kwargs:
         del kwargs["name"]
 
-    manager = Manager(vm)
+    manager = Manager(name)
     getattr(manager, func)(**kwargs)
