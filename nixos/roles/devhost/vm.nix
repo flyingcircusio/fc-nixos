@@ -70,6 +70,9 @@ let
     #!/bin/bash
     set -ex
 
+    exec {LOCK}> /run/fc-manage-dev-vms.lock
+    ${pkgs.utillinux}/bin/flock -x ''${LOCK}
+
     # Named optional arguments m (memory) and c (cores)
     memory="512M"
     cores=2
