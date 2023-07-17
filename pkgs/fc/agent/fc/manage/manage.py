@@ -52,7 +52,6 @@ rm -rf {NEXT_SYSTEM}
 
 
 class Channel:
-
     PHRASES = re.compile(r"would (\w+) the following units: (.*)$")
 
     # global, to avoid re-connecting (with ssl handshake and all)

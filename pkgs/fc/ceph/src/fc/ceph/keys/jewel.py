@@ -66,7 +66,6 @@ class Key(object):
 
 
 class InstalledKey(object):
-
     entity = None
     key = None
     caps = None
@@ -217,14 +216,12 @@ key = {self.key.to_string()}
 
 
 class ClientKey(KeyConfig):
-
     filename = "/etc/ceph/ceph.client.{id}.keyring"
     entity = "client.{id}"
     capabilities = {"mon": "allow r", "osd": "allow rwx"}
 
 
 class RGWKey(KeyConfig):
-
     filename = "/etc/ceph/ceph.client.radosgw.{id}.keyring"
     entity = "client.radosgw.{id}"
     capabilities = {"mon": "allow rwx", "osd": "allow rwx"}
@@ -241,7 +238,6 @@ ROLE_KEYS = {
 
 
 class KeyManager(object):
-
     errors = None
     _keystore = None
 
