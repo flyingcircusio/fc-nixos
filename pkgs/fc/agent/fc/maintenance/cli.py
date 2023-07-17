@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import NamedTuple, Optional
 
+import fc.util.directory
 import structlog
 import typer
 from fc.maintenance.activity.reboot import RebootActivity
@@ -18,7 +19,9 @@ from fc.maintenance.reqmanager import (
     ReqManager,
 )
 from fc.maintenance.request import Request
+from fc.maintenance.state import EXIT_POSTPONE, EXIT_TEMPFAIL
 from fc.util import nixos
+from fc.util.directory import directory_connection
 from fc.util.enc import load_enc
 from fc.util.lock import locked
 from fc.util.logging import (
@@ -291,6 +294,53 @@ def update():
         drop_cmd_output_logfile(log)
 
     log.info("fc-maintenance-update-finished")
+
+
+# Helper commands (not using reqmanager)
+
+
+@app.command(
+    help="Check constraints on the state of machines in the same resource group."
+)
+def constraints(
+    in_service: list[str] = Option(
+        default=[],
+        help="Machines required to be in service for this command to succeed.",
+    ),
+    failure_exit_code: int = Option(
+        default=EXIT_POSTPONE,
+        help=(
+            "Exit code which is used when conditions are not met. "
+            "Defaults to EXIT_POSTPONE."
+        ),
+    ),
+):
+    log.info("fc-maintenance-constraints")
+
+    with directory_connection(context.enc_path) as directory:
+        # Stop action when any required machine is not in-service
+        machines_not_in_service = []
+        for machine in in_service:
+            log.debug("constraints-check-in-service", machine=machine)
+            if not fc.util.directory.is_node_in_service(directory, machine):
+                machines_not_in_service.append(machine)
+
+        if machines_not_in_service:
+            log.info(
+                "constraints-not-in-service",
+                _replace_msg=(
+                    "Required machines not in service: {not_in_service}"
+                ),
+                not_in_service=machines_not_in_service,
+            )
+            log.info(
+                "constraints-failure",
+                _replace_msg="Conditions not met, exiting with code {exit_code}.",
+                exit_code=failure_exit_code,
+            )
+            raise Exit(failure_exit_code)
+
+    log.debug("constraints-success")
 
 
 if __name__ == "__main__":

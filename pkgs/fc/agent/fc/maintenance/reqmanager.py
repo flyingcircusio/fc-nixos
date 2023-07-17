@@ -597,7 +597,7 @@ class ReqManager:
                 "execute-requests-force",
                 _replace_msg=(
                     "Due requests will be executed regardless of the temporary failure "
-                    "which occurred when running maintenance enter commands."
+                    "of a maintenance enter command."
                 ),
             )
             return HandleEnterExceptionResult()
@@ -608,7 +608,7 @@ class ReqManager:
                 _replace_msg=(
                     "Run all mode requested and force mode activated: "
                     "All requests will be executed now regardless of the temporary "
-                    "failure which occurred when running maintenance enter commands."
+                    "failure of a maintenance enter command."
                 ),
             )
             return HandleEnterExceptionResult()

@@ -66,6 +66,21 @@ in
         type = types.bool;
       };
 
+      maintenanceConstraints = {
+        machinesInService = mkOption {
+          default = [];
+          type = with types; listOf str;
+          description = ''
+            Machines that must not be in maintenance mode at the same time.
+            After entering maintenance mode, the agent will check if a listed
+            machine is also in maintenance and leave maintenance if it finds
+            one. Due maintenance activities will be postponed in that case.
+            The name of the current machine is ignored here so you can use the same
+            value for this option on all affected machines.
+          '';
+        };
+      };
+
       updateInMaintenance = mkOption {
         default = attrByPath [ "parameters" "production" ] false cfg.enc;
         description = "Perform channel updates in scheduled maintenance. Default: all production VMs";
@@ -144,6 +159,19 @@ in
         pkgs.fc.agent
         agentZshCompletionsPkg
       ];
+
+      flyingcircus.agent.maintenance =
+      let
+        machines =
+          filter
+            (m: m != config.networking.hostName)
+            cfg.agent.maintenanceConstraints.machinesInService;
+      in
+        lib.optionalAttrs (machines != []) {
+          other-machines-not-in-maintenance.enter =
+              "${pkgs.fc.agent}/bin/fc-maintenance constraints"
+              + (lib.concatMapStrings (u: " --in-service ${u}") machines);
+        };
 
       flyingcircus.passwordlessSudoRules = [
         {

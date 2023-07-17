@@ -22,7 +22,7 @@ let
 
   pytest-structlog = py.buildPythonPackage rec {
     pname = "pytest-structlog";
-    version = "0.6";
+    version = "0.6-cb82f00";
 
     src = fetchFromGitHub {
       owner = "wimglenn";
