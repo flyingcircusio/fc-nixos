@@ -1,0 +1,25 @@
+From 6e468db8be31a2772c46a6f3a1333a7f8d2e7001 Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Mon, 12 Jun 2023 17:19:48 +0200
+Subject: [PATCH] Don't assume that private keys are RSA.
+
+---
+ lib/sensu-plugins-kubernetes/client.rb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/sensu-plugins-kubernetes/client.rb b/lib/sensu-plugins-kubernetes/client.rb
+index f4d0844..9eced38 100644
+--- a/lib/sensu-plugins-kubernetes/client.rb
++++ b/lib/sensu-plugins-kubernetes/client.rb
+@@ -91,7 +91,7 @@ module Sensu
+ 
+           if options[:client_key_file]
+             begin
+-              ssl_options[:client_key] = OpenSSL::PKey::RSA.new(File.read(options[:client_key_file]))
++              ssl_options[:client_key] = OpenSSL::PKey.read(File.read(options[:client_key_file]))
+             rescue StandardError => e
+               raise e, "Unable to read client key: #{e}", e.backtrace
+             end
+-- 
+2.39.2 (Apple Git-143)
+
