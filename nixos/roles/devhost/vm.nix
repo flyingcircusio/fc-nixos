@@ -7,12 +7,16 @@ let
 
   vmOptions = {
     options = {
+      id = mkOption {
+        description = "Internal ID of the VM";
+        type = types.int;
+      };
       memory = mkOption {
         description = "Memory assigned to the VM";
         type = types.str;
         example = "1024M";
       };
-      cores = mkOption {
+      cpu = mkOption {
         description = "CPU cores assigned to the VM";
         type = types.int;
         example = 2;
@@ -22,11 +26,16 @@ let
         type = types.listOf types.str;
         default = [];
       };
+      srvIp = mkOption {
+        description = "IP of the VM on the SRV interface";
+        type = types.str;
+      };
+      srvMac = mkOption {
+        description = "MAC Address of the VM on the SRV interface";
+        type = types.str;
+      };
     };
   };
-
-  addColons = text: lib.concatStringsSep ":" (lib.genList (x: lib.substring (x * 2) 2 text) ((lib.stringLength text) / 2));
-  convertNameToMAC = name: vlanId: "02:${vlanId}:" + (addColons (lib.substring 0 8 (builtins.hashString "md5" name)));
 
   ifaceUpScript = pkgs.writeShellScript "fc-devhost-vm-iface-up" ''
     ${pkgs.iproute2}/bin/ip tuntap add name $1 mode tap
@@ -53,22 +62,49 @@ let
         "${pkgs.qemu_kvm}/bin/qemu-system-x86_64"
         "-name" name
         "-enable-kvm"
-        "-smp" vmCfg.cores
+        "-smp" vmCfg.cpu
         "-m" vmCfg.memory
         "-nodefaults"
         "-no-user-config"
-        "-no-reboot"
         "-nographic"
         "-drive" "id=root,format=qcow2,file=/var/lib/devhost/vms/${name}/rootfs.qcow2,if=virtio,aio=threads"
         "-netdev" "tap,id=ethsrv-${name},ifname=vm-srv-${name},script=${ifaceUpScript},downscript=${ifaceDownScript}"
-        "-device" "virtio-net,netdev=ethsrv-${name},mac=${convertNameToMAC name "03"}"
+        "-device" "virtio-net,netdev=ethsrv-${name},mac=${vmCfg.srvMac}"
         "-serial" "file:/var/lib/devhost/vms/${name}/log"
       ]);
   });
 
-  manage_script = pkgs.writeShellScriptBin "fc-manage-dev-vms" ''
-    # XXX this needs to become/invoke the fc-manage-dev-vms script
-  '';
+  # We unfortunately cannot use writePython3Bin as that only supports
+  # python libs in path, and not other applications.
+  # XXX: Switch to the following code with 23.05
+  # manage_script = pkgs.writeShellApplication {
+  #   name = "fc-manage-dev-vms";
+  #   runtimeInputs = with pkgs; [
+  #     xfsprogs
+  #     qemu
+  #     python3.withPackages (ps: with ps; [ requests ])
+  #   ];
+  #   text = "python ${./fc-manage-dev-vms.py}";
+  # };
+  manage_script = let 
+    runtimeInputs = with pkgs; [
+      (python3.withPackages(ps: with ps; [ requests ]))
+      xfsprogs
+      qemu
+    ];
+  in pkgs.writeTextFile rec {
+    name = "fc-manage-dev-vms";
+    executable = true;
+    destination = "/bin/${name}";
+    text = ''
+      #!${pkgs.runtimeShell}
+      set -o errexit
+      set -o nounset
+      set -o pipefail
+      export PATH="${makeBinPath runtimeInputs}:$PATH"
+      python ${./fc-manage-dev-vms.py} "$@"
+    '';
+  };
 in {
   options = {
     flyingcircus.roles.devhost = {
@@ -82,9 +118,14 @@ in {
       };
     };
   };
-  config = lib.mkIf (cfg.enable && cfg.virtualisationType == "vm") {
+  config = mkIf (cfg.enable && cfg.virtualisationType == "vm") {
+    boot.kernelModules = [ "nbd" ];
+    boot.extraModprobeConfig = ''
+      options nbd max_part=4 nbds_max=8
+    '';
+
     environment.systemPackages = [ manage_script ];
-    security.sudo.extraRules = lib.mkAfter [{
+    security.sudo.extraRules = mkAfter [{
       commands = [{
         command = "${manage_script}/bin/fc-manage-dev-vms";
         options = [ "NOPASSWD" ];
@@ -99,7 +140,7 @@ in {
       interfaces = {
         "br-vm-srv" = {
           ipv4.addresses = [
-            { address = "10.12.0.1"; prefixLength = 20; }
+            { address = "10.12.0.1"; prefixLength = 16; }
           ];
         };
       };
@@ -115,7 +156,7 @@ in {
       extraConfig = ''
         interface=br-vm-srv
 
-        dhcp-range=10.12.0.10,10.12.12.254,255.255.240.0,24h
+        dhcp-range=10.12.12.10,10.12.12.254,255.255.240.0,24h
         dhcp-option=option:router,10.12.0.1
         dhcp-option=6,8.8.8.8
       '';
@@ -142,5 +183,9 @@ in {
       in (mapAttrs' generateVhost vms))
     else
       { };
+    networking.extraHosts = ''
+      # static entries for devhost vms to avoid nginx issues
+      # if containers are not running and to use the existing batou ssh configs.
+    '' + (concatStringsSep "\n" (mapAttrsToList (vmName: vmCfg: "${vmCfg.srvIp} ${vmName}") cfg.virtualMachines));
   };
 }
