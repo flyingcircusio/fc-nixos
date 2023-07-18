@@ -38,6 +38,7 @@ def title(str):
 
 
 class Node(object):
+
     enc = None
     disk = None
     mountpoint = None

@@ -362,6 +362,7 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
             build_output=stderr,
         )
     else:
+
         build_error = find_nix_build_error(stderr, log)
         msg = build_error.replace("}", "}}").replace("{", "{{")
         stdout = proc.stdout.read().strip() or None

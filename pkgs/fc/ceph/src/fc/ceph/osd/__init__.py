@@ -7,6 +7,7 @@ OBJECTSTORE_TYPES = ["filestore", "bluestore"]
 
 
 class OSDManager(fc.ceph.VersionedSubsystem):
+
     jewel = jewel.OSDManager
     luminous = luminous.OSDManager
     nautilus = nautilus.OSDManager

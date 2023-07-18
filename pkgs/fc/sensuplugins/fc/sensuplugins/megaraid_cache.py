@@ -21,6 +21,7 @@ _log = logging.getLogger("nagiosplugin")
 
 
 class LdInfo(object):
+
     r_virtual_disk = re.compile(r"^Virtual Disk: (\d+)")
 
     @staticmethod

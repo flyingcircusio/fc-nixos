@@ -9,6 +9,7 @@ import numpy
 
 
 class HAProxyLog(nagiosplugin.Resource):
+
     r_logline = re.compile(
         r'haproxy.*: .* \d+/\d+/\d+/\d+/(\d+) (\d\d\d) .* "\w+ (/\S+) HTTP'
     )

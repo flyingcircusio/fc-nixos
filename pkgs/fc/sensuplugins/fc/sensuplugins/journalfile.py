@@ -53,10 +53,12 @@ class SimpleContext(Context):
         fmt_metric="{name} is {valueunit}",
         result_cls=Result,
     ):
+
         super(SimpleContext, self).__init__(name, fmt_metric, result_cls)
         self.critical = Range(critical)
 
     def evaluate(self, metric, resource):
+
         if not self.critical.match(metric.value):
             return self.result_cls(Critical, self.critical.violation, metric)
         else:

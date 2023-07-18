@@ -206,6 +206,7 @@ def test_update_system_channel(log, monkeypatch):
 
 
 def test_find_nix_build_error_missing_option():
+
     stderr = textwrap.dedent(
         """\
     error: while evaluating the attribute 'config.system.build.toplevel' at /home/test/fc-nixos/channels/nixpkgs/nixos/modules/system/activation/top-level.nix:293:5:
@@ -220,6 +221,7 @@ def test_find_nix_build_error_missing_option():
 
 
 def test_find_nix_build_error_default_when_no_error_message():
+
     stderr = textwrap.dedent(
         """\
     error: while evaluating the attribute 'config.system.build.toplevel' at /home/test/fc-nixos/channels/nixpkgs/nixos/modules/system/activation/top-level.nix:293:5:
@@ -230,6 +232,7 @@ def test_find_nix_build_error_default_when_no_error_message():
 
 
 def test_find_nix_build_error_syntax():
+
     stderr = textwrap.dedent(
         """\
     error: while evaluating the attribute 'config.system.build.toplevel' at /home/ts/fc-nixos/channels/nixpkgs/nixos/lib/eval-config.nix:64:5:
@@ -243,6 +246,7 @@ def test_find_nix_build_error_syntax():
 
 
 def test_find_nix_build_error_builder_failed():
+
     stderr = textwrap.dedent(
         """\
     /nix/store/bf8jb44sc2ad88895g7ki43iyzai9zaj-nixos-system-test-21.05.1534.06a1226.drv
