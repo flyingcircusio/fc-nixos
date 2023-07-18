@@ -30,7 +30,7 @@ def run(*args, **kwargs):
 
 def list_all_vm_configs():
     for vm in CONFIG_DIR.glob("*.json"):
-        yield json.read(open(vm))
+        yield json.loads(open(vm))
 
 
 def check_if_nbd_device_is_used(number):
@@ -38,23 +38,22 @@ def check_if_nbd_device_is_used(number):
         return f.read() != "0"
 
 
-def generate_enc_json(cfg):
+def generate_enc_json(cfg, channel_url):
     return json.dumps(
         {
             "name": cfg["name"],
             "parameters": {
-                "environment_url": cfg["channel_url"],  # todo
+                "environment_url": channel_url,
                 "environment": "dev-vm",
                 "interfaces": {
                     "srv": {
                         "bridged": False,
                         "gateways": {
-                            "10.12.0.0/20": "10.12.0.1",
+                            NETWORK.exploded: NETWORK[1].exploded,
                         },
-                        # TODO: Set correct MAC
-                        "mac": "todo",
+                        "mac": cfg["srv-mac"],
                         "networks": {
-                            "10.12.0.0/20": [cfg["srv_ip"]],
+                            NETWORK.exploded: [cfg["srv-ip"]],
                         },
                     }
                 },
@@ -92,40 +91,43 @@ class Manager:
 
     def destroy(self):
         self.config_file.unlink()
-        shutil.rmtree(self.data_dir)
+        self.nix_file.unlink()
+        shutil.rmtree(self.data_dir) / MA
         run("fc-manage", "-v", "-b")
 
     def ensure(self, cpu, memory, hydra_eval, aliases):
         # Nixify the alias list
-        aliases = " ".join(f'"{a}"' for a in aliases)
         response = requests.get(
-            "https://hydra.flyingcircus.io/eval/{hydra_eval}/job/release",
-            headers={"Accept", "application/json"},
+            f"https://hydra.flyingcircus.io/eval/{hydra_eval}/job/release",
+            headers={"Accept": "application/json"},
         )
         response.raise_for_status()
         build_id = response.json()["id"]
         channel_url = f"https://hydra.flyingcircus.io/build/{build_id}/download/1/nixexprs.tar.xz"
 
-        # Be opportunistic here
-        os.makedirs(self.config_file.parent)
+        if os.path.isfile(self.config_file):
+            self.cfg = json.load(open(self.config_file))
 
-        if self.config_file.exists:
-            self.cfg = cfg = json.load(open(self.config_file))
+        self.cfg["cpu"] = cpu
+        self.cfg["name"] = self.name
+        self.cfg["memory"] = memory
+        self.cfg["hydra_eval"] = hydra_eval
+        self.cfg["aliases"] = aliases
 
-        cfg["cpu"] = cpu
-        cfg["name"] = name
-        cfg["memory"] = memory
-        cfg["hydra_eval"] = hydra_eval
-        cfg["aliases"] = aliases
-
-        if "id" not in cfg:
+        if "id" not in self.cfg:
             known_ids = set(vm["id"] for vm in list_all_vm_configs())
-            for candidate in range(1024):
+            for candidate in range(MAX_VM_ID):
                 if candidate not in known_ids:
-                    cfg["id"] = candidate
+                    self.cfg["id"] = candidate
                     break
             else:
                 raise RuntimeError("Could not find free VM ID.")
+
+        # The MAC address is calculated every time deterministically
+        srv_mac = f"0203{self.cfg['id']:08x}"
+        self.cfg["srv-mac"] = ":".join(
+            srv_mac[i : i + 2] for i in range(0, 12, 2)
+        )
 
         if "srv-ip" not in self.cfg:
             known_ips = set(
@@ -134,47 +136,52 @@ class Manager:
             )
             known_ips.add(NETWORK.broadcast_address)
             known_ips.add(NETWORK.network_address)
+            known_ips.add(NETWORK[1])  # gateway
             for candidate in NETWORK:
-                if candidate not in known_ids:
-                    cfg["srv-ip"] = candidate
+                if candidate not in known_ips:
+                    self.cfg["srv-ip"] = candidate.exploded
                     break
             else:
                 raise RuntimeError("Could not find free SRV IP address.")
 
-        with open(self.nix_file) as f:
+        with open(self.config_file, mode="w") as f:
+            f.write(json.dumps(self.cfg))
+
+        with open(self.nix_file, mode="w") as f:
             f.write(
                 textwrap.dedent(
-                    # TODO: f
-                    """\
+                    f"""\
             # DO NOT TOUCH!
             # Managed by fc-manage-dev-vms
-            { ... }: {
-              flyingcircus.roles.devhost.virtualMachines = {
-                "{cfg['name']}" = {
-                  memory = "{cfg['memory']}";
-                  cores = "{cfg['cores']};
-                  srv_ip = "{cfg['srv-ip']};
-                  id = "{cfg['id']};
-                };
-              };
-            }
+            {{ ... }}: {{
+              flyingcircus.roles.devhost.virtualMachines = {{
+                "{self.cfg['name']}" = {{
+                  id = {self.cfg['id']};
+                  memory = "{self.cfg['memory']}";
+                  cpu = {self.cfg['cpu']};
+                  srvIp = "{self.cfg['srv-ip']}";
+                  srvMac = "{self.cfg['srv-mac']}";
+                  aliases = [ {' '.join(self.cfg['aliases'])} ];
+                }};
+              }};
+            }}
             """
                 )
             )
 
-        os.makedirs(self.data_dir)
+        os.makedirs(self.data_dir, exist_ok=True)
 
-        if not self.image_file.exists:
+        if not os.path.isfile(self.image_file):
             response = requests.get(
                 f"https://hydra.flyingcircus.io/eval/{hydra_eval}/job/images.dev-vm",
                 headers={"Accept": "application/json"},
             )
             response.raise_for_status()
 
-            vm_base_image_storage_path: str
-            for product in response.json()["buildproducts"]:
+            vm_base_image_store_path: str
+            for product in response.json()["buildproducts"].values():
                 if product["subtype"] == "img":
-                    vm_base_image_storage_path = product["path"]
+                    vm_base_image_store_path = product["path"]
                     break
             else:
                 raise RuntimeError("Could not find store path for base image")
@@ -184,36 +191,38 @@ class Manager:
             # doesn't allow us to :(
             shutil.copyfile(vm_base_image_store_path, self.image_file_tmp)
 
-            image_mount_directory = tempfile.TemporaryDirectory()
-            # the 10 is the number of max. nbd devices provided by the kernel
-            nbd_number = None
-            for i in range(10):
-                if check_if_nbd_device_is_used(i):
-                    nbd_number = i
-                    break
-            if nbd_number is None:
-                raise RuntimeError("There is no unused nbd device.")
+            with tempfile.TemporaryDirectory() as image_mount_directory:
+                # the 10 is the number of max. nbd devices provided by the kernel
+                nbd_number = None
+                for i in range(8):
+                    if check_if_nbd_device_is_used(i):
+                        nbd_number = i
+                        break
+                if nbd_number is None:
+                    raise RuntimeError("There is no unused nbd device.")
 
-            run(
-                "qemu-nbd",
-                f"--connect=/dev/nbd{nbd_number}",
-                self.image_file_tmp,
-            )
-            while True:
-                if check_if_nbd_device_is_used(nbd_number):
-                    time.sleep(0.5)
-                    break
+                run(
+                    "qemu-nbd",
+                    f"--connect=/dev/nbd{nbd_number}",
+                    self.image_file_tmp,
+                )
+                while True:
+                    if check_if_nbd_device_is_used(nbd_number):
+                        time.sleep(0.5)
+                        break
 
-            new_fs_uuid = str(uuid.uuid4())
-            run("xfs_admin", "-U", new_fs_uuid, f"/dev/nbd{nbd_number}p1")
+                new_fs_uuid = str(uuid.uuid4())
+                run("xfs_admin", "-U", new_fs_uuid, f"/dev/nbd{nbd_number}p1")
 
-            run("mount", f"/dev/nbd{nbd_number}p1", iamge_mount_directory.name)
+                run("mount", f"/dev/nbd{nbd_number}p1", image_mount_directory)
 
-            with open(image_mount_directory / "etc/nixos/enc.json", "w") as f:
-                f.write(generate_enc_json(cfg))
+                with open(
+                    Path(image_mount_directory) / "etc/nixos/enc.json", mode="w"
+                ) as f:
+                    f.write(generate_enc_json(self.cfg, channel_url))
 
-            run("umount", image_mount_directory.name)
-            run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
+                run("umount", image_mount_directory)
+                run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
             os.rename(self.image_file_tmp, self.image_file)
         else:
             # XXX we still need to ssh here, but we can leverage the enc
@@ -249,6 +258,7 @@ def main():
     p.add_argument("name", help="name of the VM")
 
     p = sub.add_parser("destroy", help="Destroy a given VM.")
+    p.set_defaults(func="destroy")
     p.add_argument("name", help="name of the VM")
 
     args = a.parse_args()
@@ -261,8 +271,7 @@ def main():
     lockfile = open("/run/fc-manage-dev-vms", "a+")
     fcntl.flock(lockfile, fcntl.LOCK_EX)
 
-    if not os.path.exists(CONFIG_DIR):
-        os.makedirs(CONFIG_DIR)
+    os.makedirs(CONFIG_DIR, exist_ok=True)
 
     name = getattr(args, "name", None)
     kwargs = dict(args._get_kwargs())
@@ -272,3 +281,7 @@ def main():
 
     manager = Manager(name)
     getattr(manager, func)(**kwargs)
+
+
+if __name__ == "__main__":
+    main()

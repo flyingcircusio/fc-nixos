@@ -59,10 +59,7 @@ in
         firewall.allowPing = true;
       };
 
-      flyingcircus.agent.enable = false;
-      # FIXME: How do we want to handle garbage collection?
-      # Should probably be aggressive at least against old system generations to not blow up storage
-      flyingcircus.agent.collect-garbage = lib.mkForce false;
+      flyingcircus.agent.enable = true;
 
       services.timesyncd.servers = [ "pool.ntp.org" ];
       services.telegraf.enable = false;
