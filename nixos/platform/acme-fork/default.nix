@@ -1,6 +1,8 @@
 { config, lib, pkgs, options, ... }:
 with lib;
 let
+
+
   cfg = config.security.acme;
   opt = options.security.acme;
   user = if cfg.useRoot then "root" else "acme";
@@ -13,6 +15,24 @@ let
   mkHash = with builtins; val: substring 0 20 (hashString "sha256" val);
   mkAccountHash = acmeServer: data: mkHash "${toString acmeServer} ${data.keyType} ${data.email}";
   accountDirRoot = "/var/lib/acme/.lego/accounts/";
+
+  concurrencyLockfiles = map (n: "${toString n}.lock") (lib.range 1 cfg.maxConcurrentRenewals);
+  # Assign elements of `baseList` to each element of `needAssignmentList`, until the latter is exhausted.
+  # returns: [{fst = "element of baseList"; snd = "element of needAssignmentList"}]
+  roundRobinAssign = baseList: needAssignmentList:
+    if baseList == [] then []
+    else _rrCycler baseList baseList needAssignmentList;
+  _rrCycler = with builtins; origBaseList: workingBaseList: needAssignmentList:
+    if (workingBaseList == [] || needAssignmentList == [])
+    then []
+    else
+      [{ fst = head workingBaseList; snd = head needAssignmentList;}] ++
+      _rrCycler origBaseList (if (tail workingBaseList == []) then origBaseList else tail workingBaseList) (tail needAssignmentList);
+  attrsToList = mapAttrsToList (attrname: attrval: {name = attrname; value = attrval;});
+  # for an AttrSet `funcsAttrs` having functions as values, apply single arguments from
+  # `argsList` to them in a round-robin manner.
+  # Returns an attribute set with the applied functions as values.
+  roundRobinApplyAttrs = funcsAttrs: argsList: lib.listToAttrs (map (x: {name = x.snd.name; value = x.snd.value x.fst;}) (roundRobinAssign argsList (attrsToList funcsAttrs)));
 
   # There are many services required to make cert renewals work.
   # They all follow a common structure:
@@ -110,7 +130,22 @@ let
           chown -R ${user}:${data.group} "$fixpath"
         fi
       done
-    '') certConfigs));
+    '') certConfigs))
+    # FIXME: consider moving to another service script, as this is not really related
+    # towards *changing* user permissions (just setting them), or alternatively rename
+    # the service to "acme-prepare"
+
+    # ensure all required lock files exist, but none more
+    + ''
+    mkdir -p locks
+    cd locks
+    GLOBIGNORE="${concatStringsSep ":" concurrencyLockfiles}"
+    rm -f *
+    unset GLOBIGNORE
+
+    xargs touch <<< "${toString concurrencyLockfiles}"
+    chown -R ${user} ./
+    '';
   in {
     description = "Fix owner and group of all ACME certificates";
 
@@ -229,7 +264,7 @@ let
       };
     };
 
-    selfsignService = {
+    selfsignService = lockfileName: {
       description = "Generate self-signed certificate for ${cert}";
       after = [ "acme-selfsigned-ca.service" "acme-fixperms.service" ];
       requires = [ "acme-selfsigned-ca.service" "acme-fixperms.service" ];
@@ -257,6 +292,12 @@ let
       # minica will output to a folder sharing the name of the first domain
       # in the list, which will be ${data.domain}
       script = ''
+        ${optionalString (!isNull(lockfileName)) ''
+          # wrap whole script in a subshell, lock releases after subshell exit
+          (
+          ${pkgs.flock}/bin/flock 3 || exit 1
+          echo "Acquired lock ${lockfileName}"
+        ''}
         minica \
           --ca-key ca/key.pem \
           --ca-cert ca/cert.pem \
@@ -274,10 +315,15 @@ let
         # Default permissions make the files unreadable by group + anon
         # Need to be readable by group
         chmod 640 *
+        ${optionalString (!isNull(lockfileName)) ''
+          # wrap up subshell, assign lock file to descriptor 3
+          ) 3> /var/lib/acme/locks/${lockfileName}
+          echo "Released lock ${lockfileName}"
+        ''}
       '';
     };
 
-    renewService = {
+    renewService = lockfileName: {
       description = "Renew ACME certificate for ${cert}";
       after = [ "network.target" "network-online.target" "acme-fixperms.service" "nss-lookup.target" ] ++ selfsignedDeps;
       wants = [ "network-online.target" "acme-fixperms.service" ] ++ selfsignedDeps;
@@ -330,6 +376,12 @@ let
 
       # Working directory will be /tmp
       script = ''
+        ${optionalString (!isNull(lockfileName)) ''
+          # wrap whole script in a subshell, lock releases after subshell exit
+          (
+          ${pkgs.flock}/bin/flock 3 || exit 1
+          echo "Acquired lock ${lockfileName}"
+        ''}
         ${optionalString data.enableDebugLogs "set -x"}
         set -euo pipefail
 
@@ -422,6 +474,11 @@ let
         # By default group will have no access to the cert files.
         # This chmod will fix that.
         chmod 640 out/*
+        ${optionalString (!isNull(lockfileName)) ''
+          # wrap up subshell, assign lock file to descriptor 3
+          ) 3> /var/lib/acme/locks/${lockfileName}
+          echo "Released lock ${lockfileName}"
+        ''}
       '';
     };
   };
@@ -755,6 +812,17 @@ in {
           }
         '';
       };
+      maxConcurrentRenewals = mkOption {
+        default = 5;
+        type = types.int;
+        description = lib.mdDoc ''
+          Maximum number of concurrent certificate generation or renewal jobs. All other
+          jobs will queue and wait running jobs to finish. Reduces the system load of
+          certificate generation.
+
+          Set to `0` to allow unlimited number of concurrent job runs."
+          '';
+      };
     };
   };
 
@@ -875,12 +943,21 @@ in {
 
       users.groups.acme = {};
 
-      systemd.services = {
-        "acme-fixperms" = userMigrationService;
-      } // (mapAttrs' (cert: conf: nameValuePair "acme-${cert}" conf.renewService) certConfigs)
+      systemd.services = let
+        renewServiceFunctions = (mapAttrs' (cert: conf: nameValuePair "acme-${cert}" conf.renewService) certConfigs);
+        renewServices =  if cfg.maxConcurrentRenewals > 0
+          then roundRobinApplyAttrs renewServiceFunctions concurrencyLockfiles
+          else mapAttrs (_: f: f null) renewServiceFunctions;
+        selfsignServiceFunctions = (mapAttrs' (cert: conf: nameValuePair "acme-selfsigned-${cert}" conf.selfsignService) certConfigs);
+        selfsignServices = if cfg.maxConcurrentRenewals > 0
+          then roundRobinApplyAttrs selfsignServiceFunctions concurrencyLockfiles
+          else mapAttrs (_: f: f null) selfsignServiceFunctions;
+        in
+        { "acme-fixperms" = userMigrationService; }
+        // renewServices
         // (optionalAttrs (cfg.preliminarySelfsigned) ({
         "acme-selfsigned-ca" = selfsignCAService;
-      } // (mapAttrs' (cert: conf: nameValuePair "acme-selfsigned-${cert}" conf.selfsignService) certConfigs)));
+      } // selfsignServices));
 
       systemd.timers = mapAttrs' (cert: conf: nameValuePair "acme-${cert}" conf.renewTimer) certConfigs;
 
