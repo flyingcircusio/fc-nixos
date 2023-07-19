@@ -220,7 +220,7 @@ class Manager:
                 run("mount", f"/dev/nbd{nbd_number}p1", image_mount_directory)
 
                 enc_file_path = (
-                    Path(image_mount_directory) / "etc/nixos/enc.json",
+                    Path(image_mount_directory) / "etc/nixos/enc.json"
                 )
                 with open(enc_file_path, mode="w") as f:
                     f.write(generate_enc_json(self.cfg, channel_url))
@@ -228,14 +228,6 @@ class Manager:
                 run("umount", image_mount_directory)
                 run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
             os.rename(self.image_file_tmp, self.image_file)
-
-            # We need to wait for the VM to get online
-            while True:
-                response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
-                if response == 0:
-                    break
-                else:
-                    time.sleep(0.5)
         else:
             with tempfile.NamedTemporaryFile(mode="w") as f:
                 f.write(generate_enc_json(self.cfg, channel_url))
@@ -250,6 +242,14 @@ class Manager:
                 )
 
         run("fc-manage", "-v", "-b")
+
+        # We need to wait for the VM to get online
+        while True:
+            response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
+            if response == 0:
+                break
+            else:
+                time.sleep(0.5)
 
 
 def main():
