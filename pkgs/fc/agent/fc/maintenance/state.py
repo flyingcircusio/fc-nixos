@@ -6,8 +6,6 @@ class State(enum.Enum):
     due = "*"
     running = "="
     success = "s"
-    tempfail = "t"
-    retrylimit = "r"
     error = "e"
     deleted = "d"
     postpone = "p"
@@ -19,13 +17,20 @@ class State(enum.Enum):
         """Arbitrary sort order. It sufficient to have a sort order at all."""
         return self.name < other.name
 
+    def valid_state(str):
+        try:
+            State(str)
+        except ValueError:
+            return False
+        return True
+
     @property
     def short(self):
         """Single-letter representation."""
         return self.value
 
 
-ARCHIVE = {State.success, State.error, State.retrylimit, State.deleted}
+ARCHIVE = {State.success, State.error, State.deleted}
 
 EXIT_SUCCESS = 0
 EXIT_POSTPONE = 69
@@ -36,7 +41,7 @@ def evaluate_state(returncode):
     if returncode == EXIT_SUCCESS:
         return State.success
     if returncode == EXIT_TEMPFAIL:
-        return State.tempfail
+        return State.due
     if returncode == EXIT_POSTPONE:
         return State.postpone
     return State.error

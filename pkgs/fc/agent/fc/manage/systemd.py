@@ -77,3 +77,7 @@ def check_units(
     print(result.format_output())
     if result.exit_code:
         raise Exit(result.exit_code)
+
+
+if __name__ == "__main__":
+    app()

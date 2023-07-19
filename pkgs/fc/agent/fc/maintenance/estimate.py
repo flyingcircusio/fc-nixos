@@ -27,7 +27,7 @@ class Estimate:
     def __str__(self):
         if self.value == 0:
             return "0s"
-        elif self.value > 0 and self.value < 1:
+        elif 0 < self.value < 1:
             return "1s"
         out = []
         remainder = self.value
@@ -51,3 +51,9 @@ class Estimate:
 
     def __float__(self):
         return float(self.value)
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+    def __lt__(self, other):
+        return self.value < other.value

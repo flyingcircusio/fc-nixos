@@ -13,7 +13,7 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
         };
       testScript = ''
         machine.wait_for_unit('multi-user.target')
-        machine.succeed("systemctl show fc-update-channel.service --property ExecStart | grep -v 'run-now'")
+        machine.succeed("systemctl show fc-update-channel.service --property ExecStart | grep 'request update'")
       '';
     };
     nonprod = {
@@ -27,7 +27,7 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
         };
       testScript = ''
         machine.wait_for_unit('multi-user.target')
-        machine.succeed("systemctl show fc-update-channel.service --property ExecStart | grep 'run-now'")
+        machine.succeed("systemctl show fc-update-channel.service --property ExecStart | grep 'switch --update-channel'")
       '';
     };
   };
