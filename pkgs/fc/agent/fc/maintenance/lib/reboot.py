@@ -12,6 +12,7 @@ from ..activity import Activity
 
 class RebootActivity(Activity):
     def __init__(self, action="reboot"):
+        super().__init__()
         assert action in ["reboot", "poweroff"]
         self.action = action
         self.coldboot = action == "poweroff"

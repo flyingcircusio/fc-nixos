@@ -14,6 +14,9 @@ in {
   #
   fc = (import ./default.nix {
     pkgs = self;
+    # Only used by the agent for now but we should probably use this
+    # for all our Python packages and update Python in sync then.
+    pythonPackages = self.python310Packages;
   });
 
   #

@@ -1,4 +1,3 @@
-import datetime
 import syslog
 
 import pytest

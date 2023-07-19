@@ -1,25 +1,23 @@
-import sys
 from pathlib import Path
 from typing import NamedTuple, Optional
 
 import structlog
 import typer
-from fc.maintenance.activity.update import UpdateActivity
-from fc.maintenance.lib.reboot import RebootActivity
+from fc.maintenance.activity.reboot import RebootActivity
 from fc.maintenance.lib.shellscript import ShellScriptActivity
+from fc.maintenance.maintenance import (
+    request_reboot_for_cpu,
+    request_reboot_for_kernel,
+    request_reboot_for_memory,
+    request_reboot_for_qemu,
+    request_update,
+)
 from fc.maintenance.reqmanager import (
     DEFAULT_CONFIG_FILE,
     DEFAULT_SPOOLDIR,
     ReqManager,
 )
 from fc.maintenance.request import Request
-from fc.maintenance.system_properties import (
-    request_reboot_for_cpu,
-    request_reboot_for_kernel,
-    request_reboot_for_memory,
-    request_reboot_for_qemu,
-)
-from fc.manage.manage import prepare_switch_in_maintenance, switch_with_update
 from fc.util import nixos
 from fc.util.enc import load_enc
 from fc.util.lock import locked
@@ -41,6 +39,7 @@ class Context(NamedTuple):
     lock_dir: Path
     spooldir: Path
     verbose: bool
+    show_caller_info: bool
 
 
 context: Context
@@ -49,7 +48,20 @@ rm: ReqManager
 
 @app.callback(no_args_is_help=True)
 def main(
-    verbose: bool = False,
+    verbose: bool = Option(
+        False,
+        "--verbose",
+        "-v",
+        help=(
+            "Show debug and trace (Nix command) output. By default, only log "
+            "levels info and higher are shown."
+        ),
+    ),
+    show_caller_info: bool = Option(
+        False,
+        "--show-caller-info",
+        help="Show where a logging function was called (file/function/line).",
+    ),
     spooldir: Path = Option(
         file_okay=False,
         writable=True,
@@ -97,9 +109,12 @@ def main(
         lock_dir=lock_dir,
         spooldir=spooldir,
         verbose=verbose,
+        show_caller_info=show_caller_info,
     )
 
-    init_logging(context.verbose, context.logdir)
+    init_logging(
+        context.verbose, context.logdir, show_caller_info=show_caller_info
+    )
 
     rm = ReqManager(
         spooldir=spooldir,
@@ -112,14 +127,12 @@ def main(
 @app.command()
 def run(run_all_now: bool = False):
     """
-    Run all requests that are due.
+    Run all maintenance activity requests that are due.
 
-    Note that this does not schedule pending requests like
-    running the script without arguments in the past did.
-    Run the schedule subcommand if you want to ensure
-    that we know execution times for all existing requests and have recent
-    information from the directory about requests that have been moved to
-    another start date.
+    Note that this does not schedule pending requests like running the script without
+    arguments in the past did. Run the schedule subcommand if you want to ensure that we
+    know execution times for all existing requests and have recent information from the
+    directory about requests that have been moved to another start date.
 
     If you want to immediately execute all pending requests regardless if they
     are due now, specify --run-all-now.
@@ -128,12 +141,10 @@ def run(run_all_now: bool = False):
     are postponed (they get a new execution time) and finished requests
     (successful or failed permanently) moved from the current request to the
     archive directory.
-
-    Executing, postponing and archiving can be disabled using their respective
-    flags for testing and debugging purposes, for example.
     """
     log.info("fc-maintenance-run-start")
     with rm:
+        rm.update_states()
         rm.execute(run_all_now)
         rm.postpone()
         rm.archive()
@@ -192,9 +203,9 @@ def request_main():
 
 
 @request_app.command(name="script")
-def run_script(comment: str, script: str, estimate: str = "10m"):
+def run_script(comment: str, script: str, estimate: Optional[str] = None):
     """Request to run a script."""
-    request = Request(ShellScriptActivity(script), estimate, comment=comment)
+    request = Request(ShellScriptActivity(script), estimate, comment)
     with rm:
         rm.scan()
         rm.add(request)
@@ -204,14 +215,7 @@ def run_script(comment: str, script: str, estimate: str = "10m"):
 def reboot(comment: Optional[str] = None, cold_reboot: bool = False):
     """Request a reboot."""
     action = "poweroff" if cold_reboot else "reboot"
-    default_comment = "Scheduled {}".format(
-        "cold boot" if cold_reboot else "reboot"
-    )
-    request = Request(
-        RebootActivity(action),
-        900 if cold_reboot else 600,
-        comment if comment else default_comment,
-    )
+    request = Request(RebootActivity(action), comment=comment)
     with rm:
         rm.scan()
         rm.add(request)
@@ -219,7 +223,7 @@ def reboot(comment: Optional[str] = None, cold_reboot: bool = False):
 
 @request_app.command()
 def system_properties():
-    """Request reboot for changed sys properties.
+    """Request reboot for changed system properties.
     Runs applicable checks for the machine type (virtual/physical).
 
     * Physical: kernel
@@ -234,101 +238,47 @@ def system_properties():
         rm.scan()
 
         if enc["parameters"]["machine"] == "virtual":
-            rm.add(request_reboot_for_memory(enc))
-            rm.add(request_reboot_for_cpu(enc))
-            rm.add(request_reboot_for_qemu())
+            rm.add(request_reboot_for_memory(log, enc))
+            rm.add(request_reboot_for_cpu(log, enc))
+            rm.add(request_reboot_for_qemu(log))
 
-        rm.add(request_reboot_for_kernel())
+        rm.add(request_reboot_for_kernel(log))
         log.info("fc-maintenance-system-properties-finished")
 
 
 @request_app.command()
-def update(
-    run_now: bool = Option(
-        default=False, help="do update now instead of scheduling a request"
-    )
-):
+def update():
     """Request a system update.
 
     Builds the system and prepares the update to be run in a maintenance
-    window by default. To activate the update immediately, pass the
-    --run-now option.
+    window by default.
 
     Acquires an exclusive lock because this shouldn't be run concurrently
     with more invocations of the update command or other commands (from
-    fc-manage) that
-    potentially modify the system."""
-    init_command_logging(log, context.logdir)
+    fc-manage) that potentially modify the system.
+    """
     log.info("fc-maintenance-update-start")
     enc = load_enc(log, context.enc_path)
+    init_command_logging(log, context.logdir)
+
+    with rm:
+        rm.scan()
+        current_requests = rm.requests.values()
 
     with locked(log, context.lock_dir):
         try:
-            if run_now:
-                keep_cmd_output = switch_with_update(log, enc, lazy=True)
-            else:
-                keep_cmd_output = prepare_switch_in_maintenance(log, enc)
+            request = request_update(log, enc, current_requests)
         except nixos.ChannelException:
             raise Exit(2)
 
-    if not keep_cmd_output:
+    with rm:
+        request = rm.add(request)
+
+    if request is None:
         drop_cmd_output_logfile(log)
 
     log.info("fc-maintenance-update-finished")
 
 
-@request_app.command()
-def update_with_update_activity(
-    channel_url: str = Argument(..., help="channel URL to update to"),
-    run_now: bool = Option(
-        default=False, help="do update now instead of scheduling a request"
-    ),
-    dry_run: bool = Option(
-        default=False, help="do nothing, just show activity"
-    ),
-):
-    """(Experimental) Prepare an UpdateActivity or execute it now."""
-
-    activity = UpdateActivity.from_system_if_changed(channel_url)
-
-    if activity is None:
-        log.warn(
-            "update-skip",
-            _replace_msg="Channel URL unchanged, skipped.",
-            activity=activity,
-        )
-        sys.exit(1)
-
-    activity.prepare(dry_run)
-
-    # possible short-cut: built system is the same
-    # => we can skip requesting maintenance and set the new channel directly
-
-    if run_now:
-        log.info(
-            "update-run-now",
-            _replace_msg="Run-now mode requested, running the update now.",
-        )
-        activity.run()
-
-    elif dry_run:
-        log.info(
-            "update-dry-run",
-            _replace_msg=(
-                "Update prediction was successful. This would be applied by "
-                "the update:"
-            ),
-            _output=activity.changelog,
-        )
-    else:
-        with rm:
-            rm.scan()
-            rm.add(Request(activity, 600, activity.changelog))
-        log.info(
-            "update-prepared",
-            _replace_msg=(
-                "Update preparation was successful. This will be applied in a "
-                "maintenance window:"
-            ),
-            _output=activity.changelog,
-        )
+if __name__ == "__main__":
+    app()

@@ -8,8 +8,6 @@ from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError, run
 
-from typer import confirm
-
 MIGRATED_TO_TEMPLATE = """\
 WARNING: This data directory should not be used anymore!
 

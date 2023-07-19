@@ -1,5 +1,6 @@
 import json
 import unittest.mock
+from unittest.mock import MagicMock
 
 import fc.maintenance.cli
 import pytest
@@ -25,6 +26,7 @@ def invoke_app(tmpdir, agent_maintenance_config):
     enc_file = tmpdir / "enc.json"
     main_args = (
         "--verbose",
+        "--show-caller-info",
         "--spooldir",
         tmpdir,
         "--logdir",
@@ -139,13 +141,10 @@ def test_invoke_request_system_properties_virtual(
     kernel.assert_called_once()
 
 
-@unittest.mock.patch("fc.maintenance.cli.prepare_switch_in_maintenance")
-def test_invoke_request_update(prepare_switch, invoke_app):
+@unittest.mock.patch("fc.maintenance.cli.request_update")
+@unittest.mock.patch("fc.maintenance.cli.load_enc")
+def test_invoke_request_update(load_enc, request_update, invoke_app):
     invoke_app("request", "update")
-    prepare_switch.assert_called_once()
-
-
-@unittest.mock.patch("fc.maintenance.cli.switch_with_update")
-def test_invoke_request_update_run_now(switch, invoke_app):
-    invoke_app("request", "update", "--run-now")
-    switch.assert_called_once()
+    load_enc.assert_called_once()
+    request_update.assert_called_once()
+    fc.maintenance.cli.rm.add.assert_called_once()
