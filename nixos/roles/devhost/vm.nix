@@ -4,6 +4,7 @@ with lib;
 
 let
   cfg = config.flyingcircus.roles.devhost;
+  location = lib.attrByPath [ "parameters" "location" ] "" config.flyingcircus.enc;
 
   vmOptions = {
     options = {
@@ -62,6 +63,7 @@ let
         "${pkgs.qemu_kvm}/bin/qemu-system-x86_64"
         "-name" name
         "-enable-kvm"
+        "-cpu" "host"
         "-smp" vmCfg.cpu
         "-m" vmCfg.memory
         "-nodefaults"
@@ -101,8 +103,22 @@ let
       set -o errexit
       set -o nounset
       set -o pipefail
+
+      if [[ ! -f "/var/lib/devhost/ssh_bootstrap_key" ]]; then
+         cat > /var/lib/devhost/ssh_bootstrap_key <<EOF
+  -----BEGIN OPENSSH PRIVATE KEY-----
+  b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+  QyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLAAAAJjYNRR+2DUU
+  fgAAAAtzc2gtZWQyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLA
+  AAAEDKN3GvoFkLLQdFN+Blk3y/+HQ5rvt7/GALRAWofc/LFGc7V2c2zFPRMl8/gmBv1/ME
+  ldEuJau8jHjhx+2qziYsAAAAEHJvb3RAY3QtZGlyLWRldjIBAgMEBQ==
+  -----END OPENSSH PRIVATE KEY-----
+  EOF
+        chmod 600 /var/lib/devhost/ssh_bootstrap_key
+      fi
+
       export PATH="${makeBinPath runtimeInputs}:$PATH"
-      python ${./fc-manage-dev-vms.py} "$@"
+      python ${./fc-manage-dev-vms.py} "$@" --location ${location}
     '';
   };
 in {

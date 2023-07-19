@@ -30,7 +30,7 @@ def run(*args, **kwargs):
 
 def list_all_vm_configs():
     for vm in CONFIG_DIR.glob("*.json"):
-        yield json.loads(open(vm))
+        yield json.load(open(vm))
 
 
 def check_if_nbd_device_is_used(number):
@@ -57,6 +57,7 @@ def generate_enc_json(cfg, channel_url):
                         },
                     }
                 },
+                "location": cfg["location"],
             },
         }
     )
@@ -89,13 +90,13 @@ class Manager:
     def image_file_tmp(self):
         return VM_DATA_DIR / self.name / "rootfs.qcow2.tmp"
 
-    def destroy(self):
+    def destroy(self, location):
         self.config_file.unlink()
         self.nix_file.unlink()
-        shutil.rmtree(self.data_dir) / MA
+        shutil.rmtree(self.data_dir)
         run("fc-manage", "-v", "-b")
 
-    def ensure(self, cpu, memory, hydra_eval, aliases):
+    def ensure(self, cpu, memory, hydra_eval, aliases, location):
         # Nixify the alias list
         response = requests.get(
             f"https://hydra.flyingcircus.io/eval/{hydra_eval}/job/release",
@@ -113,6 +114,7 @@ class Manager:
         self.cfg["memory"] = memory
         self.cfg["hydra_eval"] = hydra_eval
         self.cfg["aliases"] = aliases
+        self.cfg["location"] = location
 
         if "id" not in self.cfg:
             known_ids = set(vm["id"] for vm in list_all_vm_configs())
@@ -147,6 +149,7 @@ class Manager:
         with open(self.config_file, mode="w") as f:
             f.write(json.dumps(self.cfg))
 
+        nix_aliases = " ".join(map(lambda x: f'"{x}"', self.cfg["aliases"]))
         with open(self.nix_file, mode="w") as f:
             f.write(
                 textwrap.dedent(
@@ -161,7 +164,7 @@ class Manager:
                   cpu = {self.cfg['cpu']};
                   srvIp = "{self.cfg['srv-ip']}";
                   srvMac = "{self.cfg['srv-mac']}";
-                  aliases = [ {' '.join(self.cfg['aliases'])} ];
+                  aliases = [ {nix_aliases} ];
                 }};
               }};
             }}
@@ -216,20 +219,35 @@ class Manager:
 
                 run("mount", f"/dev/nbd{nbd_number}p1", image_mount_directory)
 
-                with open(
-                    Path(image_mount_directory) / "etc/nixos/enc.json", mode="w"
-                ) as f:
+                enc_file_path = (
+                    Path(image_mount_directory) / "etc/nixos/enc.json",
+                )
+                with open(enc_file_path, mode="w") as f:
                     f.write(generate_enc_json(self.cfg, channel_url))
 
                 run("umount", image_mount_directory)
                 run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
             os.rename(self.image_file_tmp, self.image_file)
+
+            # We need to wait for the VM to get online
+            while True:
+                response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
+                if response == 0:
+                    break
+                else:
+                    time.sleep(0.5)
         else:
-            # XXX we still need to ssh here, but we can leverage the enc
-            # generation code from above
-            # jq -n --arg channel_url "$channel_url" '{parameters: {environment_url: $channel_url, environment: "dev-vm"}}' > /tmp/devhost-vm-enc.json
-            # rsync -e "ssh -o StrictHostKeyChecking=no -i /var/lib/devhost/ssh_bootstrap_key" --rsync-path="sudo rsync" /tmp/devhost-vm-enc.json developer@$vm:/etc/nixos/enc.json
-            pass
+            with tempfile.NamedTemporaryFile(mode="w") as f:
+                f.write(generate_enc_json(self.cfg, channel_url))
+                f.flush()
+                run(
+                    "rsync",
+                    "-e",
+                    "ssh -o StrictHostKeyChecking=no -i /var/lib/devhost/ssh_bootstrap_key",
+                    "--rsync-path=sudo rsync",
+                    f.name,
+                    f"developer@{self.name}:/etc/nixos/enc.json",
+                )
 
         run("fc-manage", "-v", "-b")
 
@@ -253,13 +271,15 @@ def main():
         "--aliases",
         type=space_separated_list,
         default="",
-        help="hydra eval to use for base image",
+        help="aliases for the nginx",
     )
     p.add_argument("name", help="name of the VM")
+    p.add_argument("--location", help="location the VMs live in")
 
     p = sub.add_parser("destroy", help="Destroy a given VM.")
     p.set_defaults(func="destroy")
     p.add_argument("name", help="name of the VM")
+    p.add_argument("--location", help="location the VMs live in")
 
     args = a.parse_args()
     func = args.func
