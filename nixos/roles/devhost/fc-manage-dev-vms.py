@@ -258,6 +258,8 @@ def main():
     sub = a.add_subparsers(title="subcommands")
 
     def space_separated_list(str):
+        if str == "":
+            return []
         return str.split(" ")
 
     p = sub.add_parser("ensure", help="Create or update a given VM.")
@@ -270,7 +272,7 @@ def main():
     p.add_argument(
         "--aliases",
         type=space_separated_list,
-        default="",
+        default=[],
         help="aliases for the nginx",
     )
     p.add_argument("name", help="name of the VM")
