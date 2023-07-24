@@ -173,7 +173,7 @@ in {
       extraConfig = ''
         interface=br-vm-srv
 
-        dhcp-range=10.12.250.10,10.12.254.254,255.255.240.0,24h
+        dhcp-range=10.12.250.10,10.12.254.254,255.255.0.0,24h
         dhcp-option=option:router,10.12.0.1
         dhcp-option=6,8.8.8.8
       '';
