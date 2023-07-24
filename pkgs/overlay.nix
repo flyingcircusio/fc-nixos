@@ -342,6 +342,15 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  python27 = super.python27.overrideAttrs (prev: {
+    buildInputs = prev.buildInputs ++ [ super.libxcrypt-legacy ];
+    NIX_LDFLAGS = "-lcrypt";
+    configureFlags = [
+      "CFLAGS=-I${super.libxcrypt-legacy}/include"
+      "LIBS=-L${super.libxcrypt-legacy}/lib"
+    ];
+  });
+
   pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
     (python-final: python-prev: {
       pyslurm = python-prev.pyslurm.overridePythonAttrs(_: {
