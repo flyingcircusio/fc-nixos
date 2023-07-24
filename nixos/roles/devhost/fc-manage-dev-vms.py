@@ -90,10 +90,14 @@ class Manager:
     def image_file_tmp(self):
         return VM_DATA_DIR / self.name / "rootfs.qcow2.tmp"
 
-    def destroy(self, location):
-        self.config_file.unlink()
-        self.nix_file.unlink()
-        shutil.rmtree(self.data_dir)
+    def destroy(self, location=None):
+        # We want do destroy everything existing for a VM.
+        # If something in the provisioning failed, there might not be all files.
+        if os.path.isfile(self.config_file):
+            self.config_file.unlink()
+        if os.path.isfile(self.nix_file):
+            self.nix_file.unlink()
+        shutil.rmtree(self.data_dir, ignore_errors=True)
         run("fc-manage", "-v", "-b")
 
     def ensure(self, cpu, memory, hydra_eval, aliases, location):
@@ -146,110 +150,132 @@ class Manager:
             else:
                 raise RuntimeError("Could not find free SRV IP address.")
 
-        with open(self.config_file, mode="w") as f:
-            f.write(json.dumps(self.cfg))
+        vm_nix_file_existed = os.path.isfile(self.nix_file)
+        try:
+            with open(self.config_file, mode="w") as f:
+                f.write(json.dumps(self.cfg))
 
-        nix_aliases = " ".join(map(lambda x: f'"{x}"', self.cfg["aliases"]))
-        with open(self.nix_file, mode="w") as f:
-            f.write(
-                textwrap.dedent(
-                    f"""\
-            # DO NOT TOUCH!
-            # Managed by fc-manage-dev-vms
-            {{ ... }}: {{
-              flyingcircus.roles.devhost.virtualMachines = {{
-                "{self.cfg['name']}" = {{
-                  id = {self.cfg['id']};
-                  memory = "{self.cfg['memory']}";
-                  cpu = {self.cfg['cpu']};
-                  srvIp = "{self.cfg['srv-ip']}";
-                  srvMac = "{self.cfg['srv-mac']}";
-                  aliases = [ {nix_aliases} ];
-                }};
-              }};
-            }}
-            """
+            nix_aliases = " ".join(map(lambda x: f'"{x}"', self.cfg["aliases"]))
+            with open(self.nix_file, mode="w") as f:
+                f.write(
+                    textwrap.dedent(
+                        f"""\
+                # DO NOT TOUCH!
+                # Managed by fc-manage-dev-vms
+                {{ ... }}: {{
+                  flyingcircus.roles.devhost.virtualMachines = {{
+                    "{self.cfg['name']}" = {{
+                      id = {self.cfg['id']};
+                      memory = "{self.cfg['memory']}";
+                      cpu = {self.cfg['cpu']};
+                      srvIp = "{self.cfg['srv-ip']}";
+                      srvMac = "{self.cfg['srv-mac']}";
+                      aliases = [ {nix_aliases} ];
+                    }};
+                  }};
+                }}
+                """
+                    )
                 )
-            )
 
-        os.makedirs(self.data_dir, exist_ok=True)
+            os.makedirs(self.data_dir, exist_ok=True)
 
-        if not os.path.isfile(self.image_file):
-            response = requests.get(
-                f"https://hydra.flyingcircus.io/eval/{hydra_eval}/job/images.dev-vm",
-                headers={"Accept": "application/json"},
-            )
-            response.raise_for_status()
+            if not os.path.isfile(self.image_file):
+                response = requests.get(
+                    f"https://hydra.flyingcircus.io/eval/{hydra_eval}/job/images.dev-vm",
+                    headers={"Accept": "application/json"},
+                )
+                response.raise_for_status()
 
-            vm_base_image_store_path: str
-            for product in response.json()["buildproducts"].values():
-                if product["subtype"] == "img":
-                    vm_base_image_store_path = product["path"]
-                    break
+                vm_base_image_store_path: str
+                for product in response.json()["buildproducts"].values():
+                    if product["subtype"] == "img":
+                        vm_base_image_store_path = product["path"]
+                        break
+                else:
+                    raise RuntimeError(
+                        "Could not find store path for base image"
+                    )
+                run("nix-store", "-r", vm_base_image_store_path)
+                # Reflinks would be nice here: to reduce startup time and to
+                # reduce amount of space needed. However, the store mount
+                # doesn't allow us to :(
+                shutil.copyfile(vm_base_image_store_path, self.image_file_tmp)
+
+                with tempfile.TemporaryDirectory() as image_mount_directory:
+                    # the 10 is the number of max. nbd devices provided by the kernel
+                    nbd_number = None
+                    for i in range(8):
+                        if check_if_nbd_device_is_used(i):
+                            nbd_number = i
+                            break
+                    if nbd_number is None:
+                        raise RuntimeError("There is no unused nbd device.")
+                    try:
+                        run(
+                            "qemu-nbd",
+                            f"--connect=/dev/nbd{nbd_number}",
+                            self.image_file_tmp,
+                        )
+                        while True:
+                            if check_if_nbd_device_is_used(nbd_number):
+                                time.sleep(0.5)
+                                break
+
+                        new_fs_uuid = str(uuid.uuid4())
+                        run(
+                            "xfs_admin",
+                            "-U",
+                            new_fs_uuid,
+                            f"/dev/nbd{nbd_number}p1",
+                        )
+
+                        run(
+                            "mount",
+                            f"/dev/nbd{nbd_number}p1",
+                            image_mount_directory,
+                        )
+
+                        enc_file_path = (
+                            Path(image_mount_directory) / "etc/nixos/enc.json"
+                        )
+                        with open(enc_file_path, mode="w") as f:
+                            f.write(generate_enc_json(self.cfg, channel_url))
+                    finally:
+                        run("umount", image_mount_directory)
+                        run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
+                os.rename(self.image_file_tmp, self.image_file)
             else:
-                raise RuntimeError("Could not find store path for base image")
-            run("nix-store", "-r", vm_base_image_store_path)
-            # Reflinks would be nice here: to reduce startup time and to
-            # reduce amount of space needed. However, the store mount
-            # doesn't allow us to :(
-            shutil.copyfile(vm_base_image_store_path, self.image_file_tmp)
-
-            with tempfile.TemporaryDirectory() as image_mount_directory:
-                # the 10 is the number of max. nbd devices provided by the kernel
-                nbd_number = None
-                for i in range(8):
-                    if check_if_nbd_device_is_used(i):
-                        nbd_number = i
-                        break
-                if nbd_number is None:
-                    raise RuntimeError("There is no unused nbd device.")
-
-                run(
-                    "qemu-nbd",
-                    f"--connect=/dev/nbd{nbd_number}",
-                    self.image_file_tmp,
-                )
-                while True:
-                    if check_if_nbd_device_is_used(nbd_number):
-                        time.sleep(0.5)
-                        break
-
-                new_fs_uuid = str(uuid.uuid4())
-                run("xfs_admin", "-U", new_fs_uuid, f"/dev/nbd{nbd_number}p1")
-
-                run("mount", f"/dev/nbd{nbd_number}p1", image_mount_directory)
-
-                enc_file_path = (
-                    Path(image_mount_directory) / "etc/nixos/enc.json"
-                )
-                with open(enc_file_path, mode="w") as f:
+                with tempfile.NamedTemporaryFile(mode="w") as f:
                     f.write(generate_enc_json(self.cfg, channel_url))
+                    f.flush()
+                    run(
+                        "rsync",
+                        "-e",
+                        "ssh -o StrictHostKeyChecking=no -i /var/lib/devhost/ssh_bootstrap_key",
+                        "--rsync-path=sudo rsync",
+                        f.name,
+                        f"developer@{self.name}:/etc/nixos/enc.json",
+                    )
 
-                run("umount", image_mount_directory)
-                run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
-            os.rename(self.image_file_tmp, self.image_file)
-        else:
-            with tempfile.NamedTemporaryFile(mode="w") as f:
-                f.write(generate_enc_json(self.cfg, channel_url))
-                f.flush()
-                run(
-                    "rsync",
-                    "-e",
-                    "ssh -o StrictHostKeyChecking=no -i /var/lib/devhost/ssh_bootstrap_key",
-                    "--rsync-path=sudo rsync",
-                    f.name,
-                    f"developer@{self.name}:/etc/nixos/enc.json",
-                )
+            run("fc-manage", "-v", "-b")
 
-        run("fc-manage", "-v", "-b")
+            # We need to wait for the VM to get online
+            while True:
+                response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
+                if response == 0:
+                    break
+                else:
+                    time.sleep(0.5)
 
-        # We need to wait for the VM to get online
-        while True:
-            response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
-            if response == 0:
-                break
-            else:
-                time.sleep(0.5)
+        except Exception as e:
+            # We want the script to end in a state, where other VMs can be started without a problem.
+            # So mainly, if the VM is started for the first time, we just destroy it.
+            # If a VM is new, is determined by the existence of their nix file, as it controls the
+            # associated systemd unit.
+            if not vm_nix_file_existed:
+                self.destroy()
+            raise e
 
 
 def main():
