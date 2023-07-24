@@ -25,7 +25,14 @@ app = Typer()
 class NixOSVersion(str, Enum):
     NIXOS_2211 = "nixos-22.11"
     NIXOS_2305 = "nixos-23.05"
-    UNSTABLE = "nixos-unstable"
+    NIXOS_UNSTABLE = "nixos-23.11"
+
+    @property
+    def upstream_branch(self):
+        if self == NixOSVersion.NIXOS_UNSTABLE:
+            return "nixos-unstable"
+
+        return str(self)
 
 
 def run_on_hydra(*args):
@@ -82,7 +89,7 @@ def rebase_nixpkgs(nixpkgs_repo: Repo, nixos_version: NixOSVersion):
     print("Fetching upstream remote...")
     nixpkgs_repo.git.fetch("upstream")
     old_rev = str(nixpkgs_repo.head.ref.commit)
-    upstream_ref = f"upstream/{nixos_version}"
+    upstream_ref = f"upstream/{nixos_version.upstream_branch}"
     print(f"Using upstream ref {upstream_ref}")
     nixpkgs_repo.git.rebase(upstream_ref)
     new_rev = str(nixpkgs_repo.head.ref.commit)
@@ -271,7 +278,7 @@ context: Context
 
 @app.callback(no_args_is_help=True)
 def update_nixpkgs(
-    nixos_version: NixOSVersion = Option("nixos-23.05"),
+    nixos_version: NixOSVersion = Option(default=None),
     fc_nixos_path: Path = Option(
         ".", dir_okay=True, file_okay=False, writable=True
     ),
@@ -280,6 +287,9 @@ def update_nixpkgs(
     ),
 ):
     global context
+    if not nixos_version:
+        version_str = (fc_nixos_path / "nixos-version").read_text().strip()
+        nixos_version = NixOSVersion("nixos-" + version_str)
     context = Context(nixos_version, fc_nixos_path, nixpkgs_path)
 
 
@@ -291,7 +301,7 @@ def nixpkgs():
 
 @app.command()
 def prefetch(
-    nixos_version: str = Option("nixos-23.05"),
+    nixos_version: str = Option(default=None),
 ):
     print(prefetch_nixpkgs(nixos_version))
 
