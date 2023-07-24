@@ -1,7 +1,5 @@
-#! /usr/bin/env nix-shell
-#! nix-shell -i python3 -p python3 python3Packages.requests xfsprogs qemu
-
 import argparse
+import datetime
 import fcntl
 import ipaddress
 import json
@@ -119,6 +117,11 @@ class Manager:
         self.cfg["hydra_eval"] = hydra_eval
         self.cfg["aliases"] = aliases
         self.cfg["location"] = location
+
+        if "user" not in self.cfg:
+            self.cfg["user"] = os.getlogin()
+        if "creation-date" not in self.cfg:
+            self.cfg["creation-date"] = datetime.datetime.utcnow().isoformat()
 
         if "id" not in self.cfg:
             known_ids = set(vm["id"] for vm in list_all_vm_configs())
