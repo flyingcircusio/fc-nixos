@@ -348,6 +348,15 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  python27 = super.python27.overrideAttrs (prev: {
+    buildInputs = prev.buildInputs ++ [ super.libxcrypt ];
+    NIX_LDFLAGS = "-lcrypt";
+    configureFlags = [
+      "CFLAGS=-I${super.libxcrypt}/include"
+      "LIBS=-L${super.libxcrypt}/lib"
+    ];
+  });
+
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
 
