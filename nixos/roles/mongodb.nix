@@ -37,14 +37,31 @@ let
     ${localConfig}
   '';
 
-  checkMongoCmd = "${pkgs.fc.check-mongodb}/bin/check_mongodb";
+  checkMongoPkg =
+    if lib.versionAtLeast majorVersion "3.6"
+    then pkgs.fc.check-mongodb
+    else storePath /nix/store/jm4gpmpn39nl281nfv0xg2vjvwf5qj0b-fc-check-mongodb-1.0;
+
+  checkMongoCmd = "${checkMongoPkg}/bin/check_mongodb";
 
   mongodbRoles = with config.flyingcircus.roles; {
+    "3.2" = mongodb32.enable;
+    "3.4" = mongodb34.enable;
+    "3.6" = mongodb36.enable;
+    "4.0" = mongodb40.enable;
     "4.2" = mongodb42.enable;
   };
   enabledRoles = lib.filterAttrs (n: v: v) mongodbRoles;
   enabledRolesCount = length (lib.attrNames enabledRoles);
   majorVersion = head (lib.attrNames enabledRoles);
+
+  packages = {
+    "3.2" = storePath /nix/store/vjnfmrs99qn0q69d1jlyh1df9jprhsld-mongodb-3.2.22;
+    "3.4" = storePath /nix/store/xapgarcxp7nz1bbmjp4rkwmw3civbx8i-mongodb-3.4.24;
+    "3.6" = storePath /nix/store/ysdnssy0frm69s5gksasxn2jv4g2vsgr-mongodb-3.6.23;
+    "4.0" = storePath /nix/store/6vay1aav3zb81fjd7846hqf5w6qk758f-mongodb-4.0.27;
+    "4.2" = pkgs.mongodb-4_2;
+  };
 
 in {
   options =
@@ -55,6 +72,10 @@ in {
     };
   in {
     flyingcircus.roles = {
+      mongodb32 = mkRole "3.2";
+      mongodb34 = mkRole "3.4";
+      mongodb36 = mkRole "3.6";
+      mongodb40 = mkRole "4.0";
       mongodb42 = mkRole "4.2";
     };
   };
@@ -78,7 +99,7 @@ in {
       services.mongodb.dbpath = "/srv/mongodb";
       services.mongodb.bind_ip = fclib.mkPlatform (lib.concatStringsSep "," listenAddresses);
       services.mongodb.pidFile = "/run/mongodb.pid";
-      services.mongodb.package = pkgs."mongodb-${lib.replaceStrings ["."] ["_"] majorVersion}";
+      services.mongodb.package = packages.${majorVersion};
 
       systemd.services.mongodb = {
         preStart = "echo never > /sys/kernel/mm/transparent_hugepage/defrag";
