@@ -54,14 +54,19 @@ def invoke_app(tmpdir, agent_maintenance_config):
 
 def test_invoke_run(invoke_app):
     invoke_app("run")
-    fc.maintenance.cli.rm.execute.assert_called_once_with(False)
+    fc.maintenance.cli.rm.execute.assert_called_once_with(False, False)
     fc.maintenance.cli.rm.postpone.assert_called_once()
     fc.maintenance.cli.rm.archive.assert_called_once()
 
 
 def test_invoke_run_all_now(invoke_app):
     invoke_app("run", "--run-all-now")
-    fc.maintenance.cli.rm.execute.assert_called_once_with(True)
+    fc.maintenance.cli.rm.execute.assert_called_once_with(True, False)
+
+
+def test_invoke_run_all_now_force_run(invoke_app):
+    invoke_app("run", "--run-all-now", "--force-run")
+    fc.maintenance.cli.rm.execute.assert_called_once_with(True, True)
 
 
 def test_invoke_list(invoke_app):

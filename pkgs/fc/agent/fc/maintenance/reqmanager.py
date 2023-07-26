@@ -12,6 +12,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import NamedTuple
 
 import fc.util.directory
 import rich
@@ -22,7 +23,7 @@ from fc.util.time_date import format_datetime, utcnow
 from rich.table import Table
 
 from .request import Request, RequestMergeResult
-from .state import ARCHIVE, State
+from .state import ARCHIVE, EXIT_POSTPONE, EXIT_TEMPFAIL, State
 
 DEFAULT_SPOOLDIR = "/var/spool/maintenance"
 DEFAULT_CONFIG_FILE = "/etc/fc-agent.conf"
@@ -53,6 +54,19 @@ def require_directory(func):
         return func(self, *args, **kwargs)
 
     return with_directory_connection
+
+
+class PostponeMaintenance(Exception):
+    pass
+
+
+class TempfailMaintenance(Exception):
+    pass
+
+
+class HandleEnterExceptionResult(NamedTuple):
+    exit: bool = False
+    postpone: bool = False
 
 
 class ReqManager:
@@ -420,20 +434,61 @@ class ReqManager:
 
         return runnable_requests
 
+    @require_lock
+    @require_directory
     def enter_maintenance(self):
-        """Set this node in 'temporary maintenance' mode."""
+        """Enters maintenance mode which tells the directory to mark the machine
+        as 'not in service'. The main reason is to avoid false alarms during expected
+        service interruptions as the machine reboots or services are restarted.
+        """
         self.log.debug("enter-maintenance")
         self.log.debug("mark-node-out-of-service")
         self.directory.mark_node_service_status(socket.gethostname(), False)
+        postpone_seen = False
+        tempfail_seen = False
         for name, command in self.config["maintenance-enter"].items():
             if not command.strip():
                 continue
             self.log.info(
                 "enter-maintenance-subsystem", subsystem=name, command=command
             )
-            subprocess.run(command, shell=True, check=True)
+            try:
+                subprocess.run(command, shell=True, check=True)
+            except subprocess.CalledProcessError as e:
+                if e.returncode == EXIT_POSTPONE:
+                    self.log.info(
+                        "enter-maintenance-postpone",
+                        command=command,
+                        _replace_msg=(
+                            "Command `{command}` requested to postpone all requests."
+                        ),
+                    )
+                    postpone_seen = True
+                elif e.returncode == EXIT_TEMPFAIL:
+                    self.log.info(
+                        "enter-maintenance-tempfail",
+                        command=command,
+                        _replace_msg=(
+                            "Command `{command}` failed temporarily."
+                            "Requests should be tried again next time."
+                        ),
+                    )
+                    tempfail_seen = True
+                else:
+                    raise
 
+        if postpone_seen:
+            raise PostponeMaintenance()
+
+        if tempfail_seen:
+            raise TempfailMaintenance()
+
+    @require_lock
+    @require_directory
     def leave_maintenance(self):
+        """
+        Tells the directory to mark the machine 'in service'.
+        """
         self.log.debug("leave-maintenance")
         for name, command in self.config["maintenance-leave"].items():
             if not command.strip():
@@ -470,17 +525,115 @@ class ReqManager:
                 )
                 due_dt = max(utcnow(), request.next_due + delta)
 
+    def _handle_enter_postpone(
+        self, run_all_now: bool, force_run: bool
+    ) -> HandleEnterExceptionResult:
+        """
+        We have to handle 4 possible flag combinations of --run-all-now
+        and --force-run, which are used interactively. In normal
+        operation, both are false and we mark runnable requests for
+        postponing, leave maintenance and stop execution.
+        """
+        if not run_all_now and not force_run:
+            # Normal operation.
+            return HandleEnterExceptionResult(postpone=True, exit=True)
+
+        if run_all_now and not force_run:
+            self.log.info(
+                "run-all-now-postponed",
+                _replace_msg=(
+                    "Run all mode requested but a maintenance enter "
+                    "command requested to postpone the activities. Doing "
+                    "nothing unless --force-run is given, too."
+                ),
+            )
+            return HandleEnterExceptionResult(exit=True)
+
+        if not run_all_now and force_run:
+            self.log.warn(
+                "execute-requests-force",
+                _replace_msg=(
+                    "Force mode activated: Activities will be executed "
+                    "regardless of the postpone request."
+                ),
+            )
+            return HandleEnterExceptionResult()
+
+        if run_all_now and force_run:
+            self.log.warn(
+                "run-all-now-force",
+                _replace_msg=(
+                    "Run all mode requested and force mode activated: "
+                    "Activities will be executed regardless of the "
+                    "postpone request."
+                ),
+            )
+            return HandleEnterExceptionResult()
+
+    def _handle_enter_tempfail(
+        self, run_all_now: bool, force_run: bool
+    ) -> HandleEnterExceptionResult:
+        if not run_all_now and not force_run:
+            # Normal operation.
+            self.log.debug(
+                "execute-requests-tempfail",
+            )
+            # We stay in maintenance and try again on the next run.
+            return HandleEnterExceptionResult(exit=True)
+
+        if run_all_now and not force_run:
+            self.log.info(
+                "run-all-now-tempfail",
+                _replace_msg=(
+                    "Run all mode requested but a maintenance enter "
+                    "command had a temporary failure."
+                    "Doing nothing unless --force-run is given, too."
+                ),
+            )
+            return HandleEnterExceptionResult(exit=True)
+
+        if not run_all_now and force_run:
+            self.log.warn(
+                "execute-requests-force",
+                _replace_msg=(
+                    "Due requests will be executed regardless of the temporary failure "
+                    "which occurred when running maintenance enter commands."
+                ),
+            )
+            return HandleEnterExceptionResult()
+
+        if run_all_now and force_run:
+            self.log.warn(
+                "run-all-now-force",
+                _replace_msg=(
+                    "Run all mode requested and force mode activated: "
+                    "All requests will be executed now regardless of the temporary "
+                    "failure which occurred when running maintenance enter commands."
+                ),
+            )
+            return HandleEnterExceptionResult()
+
     @require_directory
     @require_lock
-    def execute(self, run_all_now: bool = False):
+    def execute(self, run_all_now: bool = False, force_run: bool = False):
         """
         Enters maintenance mode, executes requests and reboots if activities request it.
 
         In normal operation, due requests are run in the order of their scheduled start
         time.
 
+        After entering maintenance mode, but before executing requests,
+        maintenance enter commands defined in the agent config file are executed.
+        These commands can request to leave maintenance mode and find a new scheduled
+        time (EXIT_POSTPONE) or stay in maintenance mode and try again on the next
+        maintenance run (EXIT_TEMPFAIL).
+
         When `run_all_now` is given, all requests are run regardless of their scheduled
-        time but still in order.
+        time but still in order. Postpone and tempfail from maintenance enter commands
+        are still respected so requests may actually not run.
+
+        When `force_run` is given, postpone and tempfail from maintenance enter command
+        are ignored and requests are run regardless. WARNING: this can be dangerous!
         """
 
         runnable_requests = self.runnable(run_all_now)
@@ -488,14 +641,32 @@ class ReqManager:
             self.leave_maintenance()
             return
 
+        try:
+            self.enter_maintenance()
+        except PostponeMaintenance:
+            res = self._handle_enter_postpone(run_all_now, force_run)
+            if res.postpone:
+                for req in runnable_requests:
+                    self.log.debug("execute-requests-postpone", request=req.id)
+                    req.state = State.postpone
+            if res.exit:
+                self.leave_maintenance()
+                return
+
+        except TempfailMaintenance:
+            res = self._handle_enter_tempfail(run_all_now, force_run)
+            if res.exit:
+                # Stay in maintenance mode.
+                return
+
+        # We are now in maintenance mode, start the action.
         requested_reboots = set()
-        self.enter_maintenance()
         for req in runnable_requests:
             req.execute()
             if req.state == State.success:
                 requested_reboots.add(req.activity.reboot_needed)
 
-        # Execute any reboots while still in maintenance.
+        # Execute any reboots while still in maintenance mode.
         self.reboot_and_exit(requested_reboots)
 
         # When we are still here, no reboot happened. We can leave maintenance now.
