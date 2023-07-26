@@ -154,6 +154,24 @@ roles should stay on 22.11 and migrate to Opensearch before upgrading.
 before upgrading to 23.05. See our {ref}`MongoDB upgrade docs <nixos-mongodb-upgrade>`
 for details.
 
+### RabbitMQ
+
+`rabbitmq` is upgraded to 3.11. Before upgrading, make sure that all
+[Feature Flags](https://www.rabbitmq.com/feature-flags.html) are enabled.
+3.11 requires all flags from 3.8 to be enabled or it won't start.
+
+If all nodes in a cluster are the same version (3.10 on NixOS 22.11),
+just enable all feature flags:
+
+```shell
+sudo -u rabbitmq rabbitmqctl enable_feature_flag all
+```
+
+See
+[Required feature flags in RabbitMQ 3.11.0](https://blog.rabbitmq.com/posts/2022/07/required-feature-flags-in-rabbitmq-3.11/)
+for more details.
+
+
 ### Webgateway/Nginx
 
 See {ref}`nixos-webgateway-nginx-legacy-crypt` if you still need algorithms

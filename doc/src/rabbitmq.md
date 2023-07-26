@@ -22,4 +22,16 @@ to perform administrative tasks with {command}`rabbitmqctl`.
 
 The default monitoring setup checks that the RabbitMQ server is healthy and responding to AMQP connections.
 
+## Feature Flags and Upgrading
+
+RabbitMQ 3.8 introduced [Feature Flags](https://www.rabbitmq.com/feature-flags.html)
+to allow rolling upgrades of clusters. Newer versions can require certain
+feature flags to be enabled before upgrading or they will refuse to start.
+
+After upgrading a cluster, enable all feature flags:
+
+```shell
+sudo -u rabbitmq rabbitmqctl enable_feature_flag all
+```
+
 % vim: set spell spelllang=en:

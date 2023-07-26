@@ -125,7 +125,7 @@ def main(
 
 
 @app.command()
-def run(run_all_now: bool = False):
+def run(run_all_now: bool = False, force_run: bool = False):
     """
     Run all maintenance activity requests that are due.
 
@@ -137,6 +137,19 @@ def run(run_all_now: bool = False):
     If you want to immediately execute all pending requests regardless if they
     are due now, specify --run-all-now.
 
+    Before requests are executed, the system is put into maintenance mode. Then,
+    maintenance enter commands are executed which are defined in the agent config file.
+
+    If a command returns exit code 75 (EXIT_TEMPFAIL), no requests will be run and the
+    machine will stay in maintenance mode. The next call will retry the activities if
+    they are still runnable.
+
+    If a command returns exit code 69 (EXIT_POSTPONE), all runnable requests are
+    put into the `postpone` state and the machine leaves maintenance mode.
+
+    If you still want to execute requests even if a maintenance enter command returned
+    with EXIT_TEMPFAIL or EXIT_POSTPONE, add the --force-run flag.
+
     After executing all runnable requests, requests that want to be postponed
     are postponed (they get a new execution time) and finished requests
     (successful or failed permanently) moved from the current request to the
@@ -145,7 +158,7 @@ def run(run_all_now: bool = False):
     log.info("fc-maintenance-run-start")
     with rm:
         rm.update_states()
-        rm.execute(run_all_now)
+        rm.execute(run_all_now, force_run)
         rm.postpone()
         rm.archive()
     log.info("fc-maintenance-run-finished")

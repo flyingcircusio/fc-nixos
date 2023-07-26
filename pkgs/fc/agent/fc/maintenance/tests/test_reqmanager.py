@@ -7,7 +7,7 @@ import textwrap
 import unittest.mock
 import uuid
 from io import StringIO
-from unittest.mock import Mock, call
+from unittest.mock import MagicMock, Mock, call
 
 import freezegun
 import pytest
@@ -15,6 +15,7 @@ import pytz
 import shortuuid
 from fc.maintenance.activity import Activity, ActivityMergeResult, RebootType
 from fc.maintenance.estimate import Estimate
+from fc.maintenance.reqmanager import PostponeMaintenance, TempfailMaintenance
 from fc.maintenance.request import Attempt, Request
 from fc.maintenance.state import ARCHIVE, EXIT_POSTPONE, State
 from rich.console import Console
@@ -240,13 +241,82 @@ def test_explicitly_deleted(connect, reqmanager):
     )
 
 
+def test_enter_maintenance(log, reqmanager, monkeypatch):
+    monkeypatch.setattr(
+        "fc.util.directory.connect", connect_mock := MagicMock()
+    )
+    monkeypatch.setattr("socket.gethostname", lambda: "host")
+
+    reqmanager.enter_maintenance()
+
+    assert log.has("enter-maintenance")
+    connect_mock().mark_node_service_status.assert_called_with("host", False)
+
+
+def test_enter_maintenance_postpone(log, reqmanager, monkeypatch):
+    monkeypatch.setattr(
+        "fc.util.directory.connect", connect_mock := MagicMock()
+    )
+    # monkeypatch.setattr("subprocess.run", run_mock := MagicMock())
+    reqmanager.config["maintenance-enter"]["postpone"] = "exit 69"
+
+    with pytest.raises(PostponeMaintenance):
+        reqmanager.enter_maintenance()
+
+
+def test_enter_maintenance_tempfail(log, reqmanager, monkeypatch):
+    monkeypatch.setattr(
+        "fc.util.directory.connect", connect_mock := MagicMock()
+    )
+    # monkeypatch.setattr("subprocess.run", run_mock := MagicMock())
+    reqmanager.config["maintenance-enter"]["tempfail"] = "exit 75"
+
+    with pytest.raises(TempfailMaintenance):
+        reqmanager.enter_maintenance()
+
+
+def test_execute_postpone(log, reqmanager, monkeypatch):
+    req = reqmanager.add(Request(Activity(), 1))
+    req.state = State.due
+    req.execute = Mock()
+
+    def enter_maintenance_postpone():
+        raise PostponeMaintenance()
+
+    reqmanager.runnable = lambda r: [req]
+    reqmanager.enter_maintenance = enter_maintenance_postpone
+    reqmanager.leave_maintenance = Mock()
+    reqmanager.execute()
+
+    assert req.state == State.postpone
+    assert not req.execute.called
+    reqmanager.leave_maintenance.assert_called()
+
+
+def test_execute_tempfail(log, reqmanager, monkeypatch):
+    req = reqmanager.add(Request(Activity(), 1))
+    req.state = State.due
+    req.execute = Mock()
+
+    def enter_maintenance_tempfail():
+        raise TempfailMaintenance()
+
+    reqmanager.runnable = lambda r: [req]
+    reqmanager.enter_maintenance = enter_maintenance_tempfail
+    reqmanager.leave_maintenance = MagicMock()
+    reqmanager.execute()
+
+    assert req.state == State.due
+    assert not req.execute.called
+    reqmanager.leave_maintenance.assert_not_called()
+
+
 @unittest.mock.patch("subprocess.run")
 @unittest.mock.patch("fc.util.directory.connect")
 def test_execute_activity_no_reboot(connect, run, reqmanager, log):
-    activity = Activity()
-    req = reqmanager.add(Request(activity, 1))
-    req.state = State.due
-    reqmanager.execute(run_all_now=True)
+    req = reqmanager.add(Request(Activity(), 1))
+    reqmanager.runnable = lambda r: [req]
+    reqmanager.execute()
     run.assert_has_calls(
         [
             call('echo "entering demo"', shell=True, check=True),
