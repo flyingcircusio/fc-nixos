@@ -10,6 +10,7 @@ let
     {} super;
 
   nixpkgs-22_11 = import versions.nixpkgs-22_11 {};
+  nixpkgs-23_05 = import versions.nixpkgs-23_05 {};
 
   inherit (super) fetchpatch fetchurl lib;
 
@@ -290,6 +291,12 @@ in {
   });
 
   mc = super.callPackage ./mc.nix { };
+
+  # Use linux-firmware from 23.05 to get microcode which includes
+  # fixes for Zenbleed.
+  microcodeAmd = super.microcodeAmd.override {
+    firmwareLinuxNonfree = nixpkgs-23_05.linux-firmware;
+  };
 
   mongodb-3_6 = super.mongodb-3_6.overrideAttrs(_: rec {
     # We have set the license to null to avoid that Hydra complains about unfree
