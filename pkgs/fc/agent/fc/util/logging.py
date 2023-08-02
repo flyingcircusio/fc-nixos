@@ -630,7 +630,7 @@ def init_logging(
     # If the journal module is available and stdout is connected to journal, we
     # shouldn't log to console because output would be duplicated in the journal.
     if log_to_console and not (journal and os.environ.get("JOURNAL_STREAM")):
-        loggers["console"] = structlog.PrintLoggerFactory()
+        loggers["console"] = structlog.PrintLoggerFactory(sys.stderr)
 
     structlog.configure(
         processors=processors,

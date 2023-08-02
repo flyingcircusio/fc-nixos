@@ -194,12 +194,19 @@ in
             "${pkgs.fc.agent}/bin/fc-maintenance list"
             "${pkgs.fc.agent}/bin/fc-maintenance show"
             "${pkgs.fc.agent}/bin/fc-maintenance delete"
+            "${pkgs.fc.agent}/bin/fc-maintenance metrics"
           ];
           groups = [ "admins" "sudo-srv" "service" ];
         }
         {
           commands = [ "${pkgs.fc.agent}/bin/fc-manage check" ];
           groups = [ "sensuclient" ];
+        }
+        {
+          commands = [
+            "${pkgs.fc.agent}/bin/fc-maintenance metrics"
+          ];
+          groups = [ "telegraf" ];
         }
         {
           commands = [ "${pkgs.fc.agent}/bin/fc-postgresql check-autoupgrade-unexpected-dbs" ];
@@ -384,6 +391,7 @@ in
     })
 
     {
+
       flyingcircus.services.sensu-client = {
         checks = {
           fc-agent = {
@@ -393,6 +401,16 @@ in
           };
         };
       };
+      flyingcircus.services.telegraf.inputs = {
+        exec = [{
+          commands = [ "/run/wrappers/bin/sudo ${pkgs.fc.agent}/bin/fc-maintenance metrics" ];
+          timeout = "10s";
+          data_format = "json";
+          json_name_key = "name";
+        }];
+      };
+
+
     }
   ];
 }

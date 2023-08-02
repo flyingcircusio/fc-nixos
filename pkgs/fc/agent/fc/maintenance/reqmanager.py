@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import NamedTuple
 
+import fc.maintenance.state
 import fc.util.directory
 import rich
 import rich.syntax
@@ -95,6 +96,7 @@ class ReqManager:
         self.spooldir = Path(spooldir)
         self.requestsdir = self.spooldir / "requests"
         self.archivedir = self.spooldir / "archive"
+        self.last_run_stats_path = self.spooldir / "last_run.json"
         for d in (self.spooldir, self.requestsdir, self.archivedir):
             if not d.exists():
                 os.mkdir(d)
@@ -396,7 +398,7 @@ class ReqManager:
                 {key: {"result": "deleted"} for key in disappeared}
             )
 
-    def runnable(self, run_all_now: bool):
+    def runnable(self, run_all_now=False):
         """Generate due Requests in running order."""
         if run_all_now:
             self.log.warn(
@@ -613,6 +615,35 @@ class ReqManager:
             )
             return HandleEnterExceptionResult()
 
+    def _write_stats_for_execute(
+        self,
+        prepare_dt: datetime | None = None,
+        exec_dt: datetime | None = None,
+        runnable_requests: list[Request] | None = None,
+        reboot_requested=False,
+    ):
+        now = utcnow()
+        if runnable_requests is None:
+            runnable_requests = []
+
+        stats = {
+            "prepare_duration": 0,
+            "exec_duration": 0,
+            "finished_at": now.isoformat(),
+            "reboot": reboot_requested,
+            "executed_requests": len(runnable_requests),
+            "request_states": {r.id: str(r.state) for r in runnable_requests},
+        }
+
+        if exec_dt and prepare_dt:
+            stats["prepare_duration"] = (exec_dt - prepare_dt).seconds
+            stats["exec_duration"] = (now - exec_dt).seconds
+
+        self.log.debug("execute-stats", **stats)
+
+        with open(self.last_run_stats_path, "w") as wf:
+            json.dump(stats, wf, indent=4)
+
     @require_directory
     @require_lock
     def execute(self, run_all_now: bool = False, force_run: bool = False):
@@ -641,6 +672,7 @@ class ReqManager:
             self.leave_maintenance()
             return
 
+        prepare_dt = utcnow()
         try:
             self.enter_maintenance()
         except PostponeMaintenance:
@@ -651,20 +683,27 @@ class ReqManager:
                     req.state = State.postpone
             if res.exit:
                 self.leave_maintenance()
+                self._write_stats_for_execute()
                 return
 
         except TempfailMaintenance:
             res = self._handle_enter_tempfail(run_all_now, force_run)
             if res.exit:
                 # Stay in maintenance mode.
+                self._write_stats_for_execute()
                 return
 
         # We are now in maintenance mode, start the action.
         requested_reboots = set()
+        exec_dt = utcnow()
         for req in runnable_requests:
             req.execute()
             if req.state == State.success:
                 requested_reboots.add(req.activity.reboot_needed)
+
+        self._write_stats_for_execute(
+            prepare_dt, exec_dt, runnable_requests, bool(requested_reboots)
+        )
 
         # Execute any reboots while still in maintenance mode.
         self.reboot_and_exit(requested_reboots)
@@ -827,3 +866,73 @@ class ReqManager:
             time.sleep(5)
             subprocess.run("reboot", check=True, capture_output=True, text=True)
             sys.exit(0)
+
+    def get_metrics(self) -> dict:
+        requests = sorted(self.requests.values())
+        runnable = self.runnable()
+
+        metrics = {
+            "name": "fc_maintenance",
+            "requests_total": len(requests),
+            "requests_runnable": len(runnable),
+            # Initialize request stats. They will be overwritten if requests exist.
+            "requests_tempfail": 0,
+            "requests_postpone": 0,
+            "requests_success": 0,
+            "requests_error": 0,
+            "request_longest_in_queue_seconds": 0,
+            "request_highest_retry_count": 0,
+        }
+
+        now = utcnow()
+
+        if requests:
+            requests_tempfail = []
+            requests_error = []
+            requests_postponed = []
+            requests_success = []
+
+            most_retries = 0
+            oldest_added_at = requests[0].added_at
+
+            for req in requests:
+                most_retries = max(len(req.attempts), most_retries)
+                oldest_added_at = min(oldest_added_at, req.added_at)
+
+                if req.attempts:
+                    match req.attempts[-1].returncode:
+                        case fc.maintenance.state.EXIT_TEMPFAIL:
+                            requests_tempfail.append(req)
+                        case fc.maintenance.state.EXIT_POSTPONE:
+                            requests_postponed.append(req)
+                        case 0:
+                            requests_success.append(req)
+                        case error:
+                            requests_error.append(req)
+
+            metrics["requests_tempfail"] = len(requests_tempfail)
+            metrics["requests_postpone"] = len(requests_postponed)
+            metrics["requests_success"] = len(requests_success)
+            metrics["requests_error"] = len(requests_error)
+
+            metrics["request_longest_in_queue_duration"] = (
+                now.timestamp() - oldest_added_at.timestamp()
+            )
+
+            metrics["request_highest_retry_count"] = most_retries
+
+        # We expect the last run stats file to be present at all times except on
+        # new machines that haven't run execute() yet.
+        if self.last_run_stats_path.exists():
+            with self.last_run_stats_path.open() as f:
+                last_run_stats = json.load(f)
+
+            metrics["last_run_prepare_duration"] = last_run_stats[
+                "prepare_duration"
+            ]
+            metrics["last_run_exec_duration"] = last_run_stats["exec_duration"]
+            metrics["last_run_finished_seconds_ago"] = (
+                now - datetime.fromisoformat(last_run_stats["finished_at"])
+            ).seconds
+
+        return metrics
