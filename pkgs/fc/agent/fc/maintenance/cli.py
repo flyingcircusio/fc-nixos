@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import NamedTuple, Optional
 
@@ -341,6 +342,15 @@ def constraints(
             raise Exit(failure_exit_code)
 
     log.debug("constraints-success")
+
+
+@app.command(help="Prints metrics in the telegraf JSON input format.")
+def metrics():
+    with rm:
+        rm.scan()
+        jso = json.dumps(rm.get_metrics())
+
+    print(jso)
 
 
 if __name__ == "__main__":
