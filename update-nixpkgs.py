@@ -79,20 +79,35 @@ class PkgUpdate:
 
 
 def rebase_nixpkgs(nixpkgs_repo: Repo, nixos_version: NixOSVersion):
+    print("Fetching origin remote...")
+    nixpkgs_repo.git.fetch("origin")
+    origin_ref_id = f"origin/{nixos_version}"
+    origin_ref = nixpkgs_repo.refs[origin_ref_id]
+
+    if nixpkgs_repo.head.commit != origin_ref.commit:
+        do_reset = confirm(
+            f"local HEAD differs from {origin_ref_id}, hard-reset to origin?",
+            default=True,
+        )
+        if do_reset:
+            nixpkgs_repo.git.reset(hard=True)
+
     print("Fetching upstream remote...")
     nixpkgs_repo.git.fetch("upstream")
+    upstream_ref_id = f"upstream/{nixos_version}"
+
+    print(f"Using upstream ref {upstream_ref_id}")
     old_rev = str(nixpkgs_repo.head.ref.commit)
-    upstream_ref = f"upstream/{nixos_version}"
-    print(f"Using upstream ref {upstream_ref}")
-    nixpkgs_repo.git.rebase(upstream_ref)
+    nixpkgs_repo.git.rebase(upstream_ref_id)
     new_rev = str(nixpkgs_repo.head.ref.commit)
+
     version_range = f"{old_rev}..{new_rev}"
     do_push = confirm(
         f"nixpkgs rebased: {version_range}. Push now?",
         default=True,
     )
     if do_push:
-        nixpkgs_repo.git.push(force=True)
+        nixpkgs_repo.git.push(force_with_lease=True)
 
 
 def prefetch_nixpkgs(nixos_version: str) -> dict[str, str]:
@@ -111,8 +126,35 @@ def prefetch_nixpkgs(nixos_version: str) -> dict[str, str]:
     return prefetch_result
 
 
-def get_package_list():
-    run_on_hydra("")
+def update_package_list(local_path: Path):
+    basedir = "$XDG_RUNTIME_DIR"
+    subprocess.run(
+        ["rsync", "-a", local_path, f"hydra01:{basedir}"], check=True
+    )
+    dest = f"{basedir}/{local_path.name}/"
+    proc = run_on_hydra(
+        f"(cd {dest}; eval $(./dev-setup); set pipefail; nix-build ./get-package-versions.nix | xargs cat)"
+    )
+    versions_path = Path("package-versions.json")
+    old_versions = json.loads(versions_path.read_text())
+    new_versions = json.loads(proc.stdout)
+    print("Versions diffs:")
+    for pkg_name in old_versions:
+        old = old_versions[pkg_name].get("version")
+        new = new_versions[pkg_name].get("version")
+
+        if not old:
+            print(f"(old version missing for {pkg_name})")
+            continue
+
+        if not new:
+            print(f"(new version missing for {pkg_name})")
+            continue
+
+        if old != new:
+            print(f"{pkg_name}: {old} -> {new}")
+
+    versions_path.write_text(json.dumps(new_versions, indent=2) + "\n")
 
 
 def get_interesting_commit_msgs(nixpkgs_repo, old_rev, new_rev):
@@ -215,7 +257,8 @@ def update_fc_nixos(
     ticket_number: str,
     prefetch_json: dict[str, str],
 ):
-    versions_json_path = Path(fc_nixos_repo.working_dir) / "versions.json"
+    workdir_path = Path(fc_nixos_repo.working_dir)
+    versions_json_path = workdir_path / "versions.json"
 
     with open(versions_json_path) as f:
         versions_json = json.load(f)
@@ -224,6 +267,9 @@ def update_fc_nixos(
     new_rev = str(nixpkgs_repo.head.commit)
 
     update_versions_json(fc_nixos_repo, new_rev, prefetch_json["sha256"])
+    print()
+    print("-" * 80)
+    update_package_list(workdir_path)
 
     interesting_msgs = get_interesting_commit_msgs(
         nixpkgs_repo, old_rev, new_rev
@@ -236,6 +282,7 @@ def update_fc_nixos(
     final_msgs = filter_and_merge_commit_msgs(interesting_msgs)
     commit_msg = format_fcio_commit_msg(final_msgs, ticket_number)
     print()
+    print("-" * 80)
     print("Commit message:")
     print()
     print(commit_msg)
@@ -287,6 +334,11 @@ def update_nixpkgs(
 def nixpkgs():
     nixpkgs_repo = Repo(context.nixpkgs_path)
     rebase_nixpkgs(nixpkgs_repo, context.nixos_version)
+
+
+@app.command()
+def package_versions():
+    update_package_list(context.fc_nixos_path)
 
 
 @app.command()
