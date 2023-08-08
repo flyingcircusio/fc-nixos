@@ -219,11 +219,20 @@
     "pname": "go",
     "version": "1.20.6"
   },
-  "go_1_17": {},
   "go_1_18": {
     "name": "go-1.18.10",
     "pname": "go",
     "version": "1.18.10"
+  },
+  "go_1_19": {
+    "name": "go-1.19.10",
+    "pname": "go",
+    "version": "1.19.10"
+  },
+  "go_1_20": {
+    "name": "go-1.20.6",
+    "pname": "go",
+    "version": "1.20.6"
   },
   "grafana": {
     "name": "grafana-9.5.6",
@@ -305,7 +314,6 @@
     "pname": "keycloak",
     "version": "21.1.2"
   },
-  "kibana6-oss": {},
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.11.3",
     "pname": "kubernetes-helm",
@@ -431,6 +439,11 @@
     "pname": "nix",
     "version": "2.13.3"
   },
+  "nodejs": {
+    "name": "nodejs-18.16.1",
+    "pname": "nodejs",
+    "version": "18.16.1"
+  },
   "nodejs_14": {
     "name": "nodejs-14.21.3",
     "pname": "nodejs",
@@ -446,7 +459,11 @@
     "pname": "nodejs",
     "version": "18.16.1"
   },
-  "nodejs_19": {},
+  "nodejs_20": {
+    "name": "nodejs-20.3.1",
+    "pname": "nodejs",
+    "version": "20.3.1"
+  },
   "nspr": {
     "name": "nspr-4.35",
     "pname": "nspr",
@@ -478,6 +495,11 @@
     "version": "9.3p2"
   },
   "openssl": {
+    "name": "openssl-3.0.9",
+    "pname": "openssl",
+    "version": "3.0.9"
+  },
+  "openssl_3": {
     "name": "openssl-3.0.9",
     "pname": "openssl",
     "version": "3.0.9"
@@ -762,7 +784,6 @@
     "pname": "tmux",
     "version": "3.3a"
   },
-  "tomcat": {},
   "tomcat10": {
     "name": "apache-tomcat-10.0.27",
     "pname": "apache-tomcat",
