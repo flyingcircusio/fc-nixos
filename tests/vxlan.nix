@@ -75,7 +75,10 @@ in {
         };
         networking.domain = "testdomain";
         networking.firewall.allowPing = true;
-        virtualisation.vlans = [ 1 2 ];
+        virtualisation.interfaces = {
+          ethsrv = { vlan = 2; };
+          ethfe = { vlan = 1; };
+        };
       };
 
     remote =
@@ -99,7 +102,7 @@ in {
         networking.firewall.logRefusedPackets = true;
         networking.firewall.enable = false;
         services.nginx.enable = true;
-        virtualisation.vlans = [ 1 2 ];
+        virtualisation.interfaces.ethfe.vlan = 1;
         services.telegraf.enable = false;
       };
 
@@ -131,7 +134,7 @@ in {
           ${gw6Srv} gw
         '';
         networking.firewall.allowPing = true;
-        virtualisation.vlans = [ 2 ];
+        virtualisation.interfaces.ethsrv.vlan = 2;
       };
 
   };

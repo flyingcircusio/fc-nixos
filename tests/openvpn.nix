@@ -63,7 +63,10 @@ in {
           initialPassword = "test";
           isNormalUser = true;
         };
-        virtualisation.vlans = [ 1 2 ];
+        virtualisation.interfaces = {
+          ethsrv = { vlan = 2; };
+          ethfe = { vlan = 1; };
+        };
       };
 
     internal =
@@ -84,7 +87,7 @@ in {
           };
         };
         networking.firewall.allowPing = true;
-        virtualisation.vlans = [ 2 ];
+        virtualisation.interfaces.ethsrv.vlan = 2;
       };
 
     oclient =
@@ -110,7 +113,7 @@ in {
           ${gw4Fe} ${gwFeFqdn}
           ${gw6Fe} ${gwFeFqdn}
         '';
-        virtualisation.vlans = [ 1 ];
+        virtualisation.interfaces.ethfe.vlan = 1;
       };
   };
 
