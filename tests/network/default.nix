@@ -117,7 +117,10 @@ in {
         { pkgs, ... }:
         {
           imports = [ ../../nixos ../../nixos/roles ];
-          virtualisation.vlans = [ 1 2 ];
+          virtualisation.interfaces = {
+            ethfe = { vlan = 1; };
+            ethsrv = { vlan = 2; };
+          };
           flyingcircus.enc.parameters.interfaces = encInterfaces "1";
           flyingcircus.encAddresses = [
             {
@@ -166,7 +169,10 @@ in {
         { pkgs, ... }:
         {
           imports = [ ../../nixos ../../nixos/roles ];
-          virtualisation.vlans = [ 1 2 ];
+          virtualisation.interfaces = {
+            ethfe = { vlan = 1; };
+            ethsrv = { vlan = 2; };
+          };
           flyingcircus.enc.parameters.interfaces = encInterfaces "1";
         };
       nodes.router = router;
@@ -211,7 +217,7 @@ in {
         { pkgs, ... }:
         {
           imports = [ ../../nixos ../../nixos/roles ];
-          virtualisation.vlans = [ 2 ];
+          virtualisation.interfaces.ethsrv.vlan = 2;
           flyingcircus.enc.parameters.interfaces = {
             srv = {  # VLAN 2
               mac = "52:54:00:12:02:01";
@@ -233,7 +239,7 @@ in {
         { pkgs, ... }:
         {
           imports = [ ../../nixos ../../nixos/roles ];
-          virtualisation.vlans = [ 2 ];
+          virtualisation.interfaces.ethsrv.vlan = 2;
           flyingcircus.enc.parameters.interfaces = {
             srv = {  # VLAN 2
               mac = "52:54:00:12:02:02";
@@ -289,7 +295,10 @@ in {
             {
               networking.hostName = "srv${hostId}";
               imports = [ ../../nixos ../../nixos/roles ];
-              virtualisation.vlans = [ 1 2 ];
+              virtualisation.interfaces = {
+                ethfe = { vlan = 1; };
+                ethsrv = { vlan = 2; };
+              };
               flyingcircus.infrastructureModule = "flyingcircus";
               flyingcircus.enc.parameters.interfaces = encInterfaces hostId;
               flyingcircus.localConfigPath = localConfigPath;

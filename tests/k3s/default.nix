@@ -112,7 +112,12 @@ in {
 
         virtualisation.memorySize = 2000;
         virtualisation.diskSize = lib.mkForce 3000;
-        virtualisation.vlans = [ 1 2 ];
+        # do not automatically assign addresses based on vlan and
+        # guest id.
+        virtualisation.interfaces = {
+          ethfe = { vlan = 2; };
+          ethsrv = { vlan = 1; };
+        };
         virtualisation.qemu.options = [ "-smp 2" ];
         };
       };
@@ -143,7 +148,7 @@ in {
         networking.nameservers = [ "127.0.0.1" ];
         virtualisation.memorySize = 2000;
         virtualisation.diskSize = 3000;
-        virtualisation.vlans = [ 1 ];
+        virtualisation.interfaces.ethsrv.vlan = 1;
         };
       };
 
@@ -174,7 +179,7 @@ in {
         networking.hostName = lib.mkForce "k3snodeB";
         virtualisation.memorySize = 2000;
         virtualisation.diskSize = 3000;
-        virtualisation.vlans = [ 1 ];
+        virtualisation.interfaces.ethsrv.vlan = 1;
         };
       };
 
@@ -206,9 +211,12 @@ in {
         networking.domain = "fcio.net";
         networking.extraHosts = hosts;
         flyingcircus.encServices = encServices;
-        virtualisation.vlans = [ 1 2 ];
         virtualisation.diskSize = 3000;
         virtualisation.memorySize = 2000;
+        virtualisation.interfaces = {
+          ethfe = { vlan = 2; };
+          ethsrv = { vlan = 1; };
+        };
       };
 
 

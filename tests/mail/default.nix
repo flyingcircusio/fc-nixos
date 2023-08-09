@@ -1,4 +1,4 @@
-import ../make-test-python.nix ({pkgs, lib, ...}:
+import ../make-test-python.nix ({pkgs, lib, testlib, ...}:
 let
   commonConfig = {
     networking.domain = "example.local";
@@ -46,7 +46,10 @@ in
 
             flyingcircus.roles.postgresql14.enable = true;
 
-            virtualisation.vlans = [ 1 3 ];
+            virtualisation.interfaces = testlib.fcVlanIfaces {
+              fe = 1;
+              srv = 3;
+            };
 
             flyingcircus.enc.parameters = {
               resource_group = "test";
@@ -120,7 +123,10 @@ in
           {
             flyingcircus.services.nullmailer.enable = true;
 
-            virtualisation.vlans = [ 1 3 ];
+            virtualisation.interfaces = testlib.fcVlanIfaces {
+              fe = 1;
+              srv = 3;
+            };
 
             flyingcircus.enc.parameters.interfaces.srv = {
               mac = "52:54:00:12:03:01";

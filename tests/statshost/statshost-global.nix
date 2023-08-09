@@ -113,7 +113,11 @@ in {
           gateways = {};
         };
       };
-      virtualisation.vlans = [ 1 2 ];
+      # don't use the automatically generated ip addresses
+      virtualisation.interfaces = {
+        ethsrv = { vlan = 1; };
+        ethfe = { vlan = 2; };
+      };
     };
 
     statshost =
@@ -167,7 +171,10 @@ in {
           extraGroups = [ "service" ];
         };
 
-        virtualisation.vlans = [ 1 2 ];
+        virtualisation.interfaces = {
+          ethsrv = { vlan = 1; };
+          ethfe = { vlan = 2; };
+        };
         virtualisation.memorySize = 3000;
         virtualisation.diskSize = 1000;
 
@@ -191,6 +198,7 @@ in {
           gateways = {};
         };
       };
+      virtualisation.interfaces.ethsrv.vlan = 1;
     };
 
   };
