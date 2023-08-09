@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ pkgs, lib, ... }:
+import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
 let
 
   netLoc4Srv = "10.0.1";
@@ -44,7 +44,7 @@ in {
           gateways = {};
         };
         interfaces.srv = {
-          mac = "52:54:00:12:34:56";
+          mac = "52:54:00:12:01:01";
           bridged = false;
           networks = {
             "192.168.101.0/24" = [ "192.168.101.1" ];
@@ -53,7 +53,10 @@ in {
           gateways = {};
         };
       };
-      virtualisation.vlans = [ 1 2 ];
+      virtualisation.interfaces = testlib.fcVlanIfaces {
+        fe = 1;
+        srv = 2;
+      };
     };
 
     turnserver =
@@ -87,7 +90,10 @@ in {
         environment.etc.hosts.text = lib.mkForce hosts;
         networking.domain = "fcio.net";
         networking.firewall.allowedTCPPorts = [ 5349 ];
-        virtualisation.vlans = [ 1 2 ];
+        virtualisation.interfaces = testlib.fcVlanIfaces {
+          fe = 1;
+          srv = 2;
+        };
 
         # ACME does not work in tests so coturn always uses the preliminary
         # self-signed certs. They don't have the right permissions so we fix it
