@@ -50,6 +50,12 @@ in {
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
+  # XXX: pinned to the latest 16.1.0 version using Go 1.20.5 (from release 2023_017)
+  # until the gitlab-runner problem with Go 1.20.6 is fixed:
+  # https://gitlab.com/gitlab-org/gitlab-runner/-/issues/36051 and
+  # https://github.com/NixOS/nixpkgs/issues/245365
+  gitlab-runner = builtins.storePath /nix/store/hfk8w6yf0zfvs6ng1swpiyrqrk5pghn5-gitlab-runner-16.1.0;
+
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
   jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {

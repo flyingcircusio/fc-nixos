@@ -110,6 +110,9 @@ let
     "linuxPackages_5_4"
     # XXX: fails on 21.05, must be fixed
     "backy"
+    # This is a store path in the overlay which doesn't work in Hydra restricted mode.
+    # We don't need to test it.
+    "gitlab-runner"
   ];
 
   includedPkgNames = [

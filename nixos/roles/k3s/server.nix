@@ -204,7 +204,8 @@ let
     rc=0
     for i in 1 2 3 4 5; do
       "$kubectl" get -n kube-system -o jsonpath='{.data.token}' \
-        secret "$secret" > "$tokendir/$user.b64"
+        secret "$secret" > "$tokendir/$user.b64" && \
+        test -s "$tokendir/$user.b64"
       rc="$?"
 
       if [ "$rc" = 0 ]; then
@@ -233,13 +234,11 @@ let
     requires = [ "k3s.service" "fc-k3s-load-manifests.service" ];
     after = [ "k3s.service" "fc-k3s-load-manifests.service" ];
     path = [ pkgs.coreutils ];
-    unitConfig = {
-      ConditionPathExists = "!/var/lib/k3s/tokens/${user}";
-    };
     serviceConfig = {
       RemainAfterExit = true;
       Type = "oneshot";
-      ExecStart="${authTokenScript}/bin/kubernetes-write-auth-token ${user} ${secret}";
+      ExecStart = "${authTokenScript}/bin/kubernetes-write-auth-token ${user} ${secret}";
+      ExecCondition = "${pkgs.coreutils}/bin/test ! -s /var/lib/k3s/tokens/${user}";
     };
   };
 
