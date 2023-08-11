@@ -363,10 +363,16 @@ class Request:
         self.activity = activity_merge_result.merged
 
         # XXX: get rid of request estimate?
-        if self._estimate is not None and other._estimate is not None:
-            self._estimate = max(self._estimate, other._estimate)
-        if other._comment is not None and self._comment != other._comment:
-            self._comment += " " + other._comment
+        if other._estimate:
+            if not self._estimate:
+                self._estimate = other._estimate
+            else:
+                self._estimate = max(self._estimate, other._estimate)
+        if other._comment:
+            if not self._comment:
+                self._comment = other._comment
+            elif self._comment != other._comment:
+                self._comment += "\n\n" + other._comment
 
         if not activity_merge_result.is_effective:
             return RequestMergeResult.REMOVE

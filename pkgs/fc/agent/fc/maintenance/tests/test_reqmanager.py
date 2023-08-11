@@ -18,34 +18,8 @@ from fc.maintenance.estimate import Estimate
 from fc.maintenance.reqmanager import PostponeMaintenance, TempfailMaintenance
 from fc.maintenance.request import Attempt, Request
 from fc.maintenance.state import ARCHIVE, EXIT_POSTPONE, State
+from fc.maintenance.tests import MergeableActivity
 from rich.console import Console
-
-
-class MergeableActivity(Activity):
-    estimate = Estimate("10")
-
-    def __init__(self, value, significant=True):
-        super().__init__()
-        self.value = value
-        self.significant = significant
-
-    @property
-    def comment(self):
-        return self.value
-
-    def merge(self, other):
-        if not isinstance(other, MergeableActivity):
-            return ActivityMergeResult()
-
-        # Simulate merging an activity that reverts this activity, resulting
-        # in a no-op situation.
-        if other.value == "inverse":
-            return ActivityMergeResult(self, is_effective=False)
-
-        self.value = other.value
-        return ActivityMergeResult(
-            self, is_effective=True, is_significant=self.significant
-        )
 
 
 @pytest.fixture
