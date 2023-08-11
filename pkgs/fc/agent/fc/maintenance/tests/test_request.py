@@ -1,14 +1,17 @@
 import datetime
 import unittest.mock
 from io import StringIO
+from unittest.mock import MagicMock
 
 import freezegun
 import pytest
 import pytz
 import structlog
 from fc.maintenance.activity import Activity, RebootType
-from fc.maintenance.request import Attempt, Request
+from fc.maintenance.estimate import Estimate
+from fc.maintenance.request import Attempt, Request, RequestMergeResult
 from fc.maintenance.state import ARCHIVE, EXIT_TEMPFAIL, State
+from fc.maintenance.tests import MergeableActivity
 from rich.console import Console
 
 
@@ -235,3 +238,32 @@ def test_show():
     console.print(r)
     out = console.file.getvalue()
     assert "fc.maintenance.activity.Activity (warm reboot needed)" in out
+
+
+def test_merge(monkeypatch):
+    monkeypatch.setattr(Request, "save", MagicMock())
+    r = Request(MergeableActivity(), Estimate("20m"), "First request.")
+    other = Request(MergeableActivity(), Estimate("10m"), "Other request")
+
+    res = r.merge(other)
+    assert res == RequestMergeResult.SIGNIFICANT_UPDATE
+    assert r._comment == "First request.\n\nOther request"
+    assert r._estimate == Estimate("20m")
+
+
+def test_incompatible_activities_should_not_merge(monkeypatch):
+    r = Request(MergeableActivity(), Estimate("20m"), "First request.")
+    other = Request(Activity(), Estimate("10m"), "Other request")
+
+    res = r.merge(other)
+    assert res == RequestMergeResult.NO_MERGE
+
+
+def test_merge_missing_comment_and_estimate_on_original_request(monkeypatch):
+    monkeypatch.setattr(Request, "save", MagicMock())
+    r = Request(MergeableActivity())
+    other = Request(MergeableActivity(), Estimate("20m"), "Other request")
+
+    r.merge(other)
+    assert r._comment == "Other request"
+    assert r._estimate == other.estimate
