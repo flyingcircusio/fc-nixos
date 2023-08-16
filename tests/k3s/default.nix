@@ -90,6 +90,11 @@ in {
 
         networking.firewall.allowedTCPPorts = [ 8888 6443 ];
         networking.firewall.allowedUDPPorts = [ 53 ];
+
+        services.nginx.virtualHosts."acme.kubernetes.test.fcio.net" = {
+          enableACME = false;
+        };
+
         users.groups = {
           sudo-srv = {};
         };
@@ -217,21 +222,30 @@ in {
   testScript = { nodes, ... }: let
     masterSensuCheck = testlib.sensuCheckCmd nodes.master;
   in ''
+    import time
     images = [${lib.concatStringsSep "," (map (val: "\"${val}\"") images)}]
 
     with subtest("k3s server should work"):
       k3sserver.wait_for_unit("k3s.service")
       k3sserver.wait_until_succeeds('k3s kubectl cluster-info | grep -q https://127.0.0.1:6443')
 
+    k3snodeA.start()
+
     with subtest("adding a first node should work"):
       k3snodeA.wait_for_unit("k3s.service")
+
+      # Give k3s more time to settle without getting into IO stress when loading images.
+      time.sleep(10)
+
       for image in images:
-        k3snodeA.succeed(f"k3s ctr images import {image}")
+        k3snodeA.wait_until_succeeds(f"k3s ctr images import {image}")
       k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodea | grep -vq NotReady")
 
     with subtest("dashboard sensu check should be green"):
       k3sserver.wait_for_unit("kube-dashboard")
       k3sserver.wait_until_succeeds("${lib.strings.escape ["\""] (masterSensuCheck "kube-dashboard")}")
+
+    frontend.start()
 
     with subtest("frontend vm should reach the dashboard"):
       frontend.wait_until_succeeds('curl -k https://k3sserver.fcio.net')
@@ -252,9 +266,12 @@ in {
       k3sserver.wait_until_succeeds('k3s kubectl -n kube-system get pods | grep coredns | grep -v ContainerCreating | grep Running')
       k3sserver.wait_until_succeeds('dig redis.default.svc.cluster.local | grep -q 10.43')
 
+    k3snodeB.start()
+    time.sleep(5)
+
     with subtest("adding a second node should work"):
       for image in images:
-        k3snodeB.succeed(f"k3s ctr images import {image}")
+        k3snodeB.wait_until_succeeds(f"k3s ctr images import {image}")
       k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodeb | grep -vq NotReady")
 
     with subtest("scaling the deployment should start 4 pods"):
@@ -275,13 +292,13 @@ in {
 
     with subtest("sensu should be able to access the API server endpoint"):
       k3sserver.wait_for_unit("fc-k3s-token-sensuclient.service")
-      k3sserver.succeed("${masterSensuCheck "kube-apiserver"}")
-      k3sserver.succeed("${masterSensuCheck "kube-nodes-ready"}")
+      k3sserver.wait_until_succeeds("${masterSensuCheck "kube-apiserver"}")
+      k3sserver.wait_until_succeeds("${masterSensuCheck "kube-nodes-ready"}")
 
     with subtest("telegraf should be running on server"):
       # telegraf will fail to start unless the token file exists
       k3sserver.wait_for_unit("telegraf.service")
-      k3sserver.succeed("curl -s -o /dev/null http://${masterSrv}:9126")
+      k3sserver.wait_until_succeeds("curl -s -o /dev/null http://${masterSrv}:9126")
 
     with subtest("dashboard sensu check should be red after shutting down dashboard"):
       k3sserver.systemctl("stop kube-dashboard")
