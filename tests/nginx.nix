@@ -203,25 +203,27 @@ in {
       assert "'--http.webroot' '/var/lib/acme/acme-challenge'" in lego_calls, "Can't find expected http.webroot option"
       assert "'--email' 'admin@flyingcircus.io'" in lego_calls, "Can't find expected email option"
 
+    # This "web server" is used for the next 2 subtests, keeps running forever.
+    # proxy.log should be reset at the end of each subtest.
+    server1.execute("(while true; do cat /etc/proxy.http | nc -l 8008 -N >> /tmp/proxy.log; done) >&2 &")
+
     with subtest("nginx should forward proxied host and server headers (primary name)"):
-      server1.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
-      server1.sleep(3)
-      server1.succeed("curl http://server/proxy/")
-      server1.sleep(2)
+      server1.wait_until_succeeds("curl -sSf http://server/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
       _, proxy_log = server1.execute("cat /tmp/proxy.log")
       print(proxy_log)
       assert 'X-Forwarded-Host: server' in proxy_log, f"expected X-Forwarded-Host not found, got '{proxy_log}'"
       assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got '{proxy_log}'"
+      # Reset proxy log
+      server1.execute("truncate -s 0 /tmp/proxy.log")
 
     with subtest("nginx should forward proxied host and server headers (alias)"):
-      server1.execute("cat /etc/proxy.http | nc -l 8008 -N > /tmp/proxy.log &")
-      server1.sleep(3)
-      server1.succeed("curl http://other/proxy/")
-      server1.sleep(2)
+      server1.wait_until_succeeds("curl -sSf http://other/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
       _, proxy_log = server1.execute("cat /tmp/proxy.log")
       print(proxy_log)
       assert 'X-Forwarded-Host: other' in proxy_log, f"expected X-Forwarded-Host not found, got: '{proxy_log}'"
       assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got: '{proxy_log}'"
+      # Reset proxy log
+      server1.execute("truncate -s 0 /tmp/proxy.log")
 
     with subtest("nginx should log only anonymized IPs"):
       server1.succeed("curl -4 server -s -o/dev/null")
