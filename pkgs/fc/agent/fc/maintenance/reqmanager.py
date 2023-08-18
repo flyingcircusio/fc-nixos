@@ -670,6 +670,7 @@ class ReqManager:
         runnable_requests = self.runnable(run_all_now)
         if not runnable_requests:
             self.leave_maintenance()
+            self._write_stats_for_execute()
             return
 
         prepare_dt = utcnow()
