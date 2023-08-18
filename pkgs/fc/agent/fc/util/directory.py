@@ -71,3 +71,7 @@ def directory_cli():
     cmd = sys.argv[1]
     d = connect(ring="max")
     exec(cmd)
+
+
+def is_node_in_service(directory, node) -> bool:
+    return directory.lookup_node(node)["parameters"]["servicing"]
