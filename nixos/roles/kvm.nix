@@ -250,8 +250,12 @@ in
       };
     };
 
-    flyingcircus.agent.maintenance.kvm = {
-      enter = "${role.package}/bin/fc-qemu maintenance enter";
+    flyingcircus.agent = {
+      maintenancePreparationSeconds = 1800;
+
+      maintenance.kvm = {
+        enter = "${role.package}/bin/fc-qemu maintenance enter";
+      };
     };
 
     systemd.services.fc-qemu-scrub = {
