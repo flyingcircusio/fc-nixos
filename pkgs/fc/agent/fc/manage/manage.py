@@ -294,31 +294,6 @@ class SwitchFailed(Exception):
     pass
 
 
-@dataclass
-class CheckResult:
-    errors: list[str]
-    warnings: list[str]
-
-    def format_output(self) -> str:
-        if self.errors:
-            return "CRITICAL: " + " ".join(self.errors + self.warnings)
-
-        if self.warnings:
-            return "WARNING: " + " ".join(self.warnings)
-
-        return "OK: no problems found."
-
-    @property
-    def exit_code(self) -> int:
-        if self.errors:
-            return 2
-
-        if self.warnings:
-            return 1
-
-        return 0
-
-
 def check(log, enc) -> CheckResult:
     errors = []
     warnings = []
