@@ -42,6 +42,7 @@ import ../make-test-python.nix ({ pkgs, ... }:
     relay.wait_for_open_port(9090)
 
     with subtest("scrapeconfig.json from relay should return config"):
+      statshost.wait_until_succeeds('curl -sSf relay:9090/scrapeconfig.json')
       statshost.succeed('curl relay:9090/scrapeconfig.json | grep -q statsSource:9126')
 
     with subtest("proxied request through relay should return metrics from statsSource"):
