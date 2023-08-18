@@ -37,4 +37,4 @@ def test_main_subcommand_usage(capsys):
     with pytest.raises(SystemExit):
         fc.ceph.main.main(["monInvalidSubc"])
     std = capsys.readouterr()
-    assert f"{progname}: error: invalid choice" in std.err
+    assert "invalid choice: 'monInvalidSubc'" in std.err

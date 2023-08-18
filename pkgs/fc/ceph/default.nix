@@ -18,9 +18,12 @@ py.buildPythonApplication rec {
   ];
 
   checkInputs = [
-        python3Packages.pytest
-        python3Packages.mock
-        python3Packages.freezegun
+    python3Packages.mock
+    python3Packages.freezegun
+  ];
+
+  nativeCheckInputs = [
+    python3Packages.pytest
   ];
 
   meta = with lib; {

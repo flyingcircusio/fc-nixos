@@ -19,7 +19,7 @@ rec {
   # fc-ceph still has a transitive dependency on the `ceph` package due to util-physical,
   # so it needs to be parameterised depending on the release
   cephWith = cephPkg:
-    callPackage ./ceph {
+    pythonPackages.callPackage ./ceph {
       inherit blockdev agent;
       util-physical = util-physical.${cephPkg.codename}.override {ceph = cephPkg;};
     };
