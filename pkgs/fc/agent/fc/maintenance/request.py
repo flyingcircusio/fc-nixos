@@ -38,12 +38,39 @@ class RequestMergeResult(Enum):
     SIGNIFICANT_UPDATE = 3
 
 
+class Attempt:
+    """Data object to track finished activities."""
+
+    stdout = None
+    stderr = None
+    returncode = None
+    finished = None
+    duration = None
+
+    def __init__(self):
+        self.started = utcnow()
+
+    def record(self, activity):
+        """Logs activity outcomes so they may be overwritten later."""
+        self.finished = utcnow()
+        (self.stdout, self.stderr, self.returncode) = (
+            activity.stdout,
+            activity.stderr,
+            activity.returncode,
+        )
+        if activity.duration:
+            self.duration = activity.duration
+        elif self.started and not self.duration:
+            self.duration = (self.finished - self.started).total_seconds()
+
+
 class Request:
     MAX_RETRIES = 48
 
     _comment: str | None
     _estimate: Estimate | None
     _reqid: str | None
+    attempts: list[Attempt]
     activity: Activity
     added_at: datetime.datetime | None
     last_scheduled_at: datetime.datetime | None
@@ -413,29 +440,3 @@ def request_representer(dumper, data):
 
 
 yaml.add_representer(Request, request_representer)
-
-
-class Attempt:
-    """Data object to track finished activities."""
-
-    stdout = None
-    stderr = None
-    returncode = None
-    finished = None
-    duration = None
-
-    def __init__(self):
-        self.started = utcnow()
-
-    def record(self, activity):
-        """Logs activity outcomes so they may be overwritten later."""
-        self.finished = utcnow()
-        (self.stdout, self.stderr, self.returncode) = (
-            activity.stdout,
-            activity.stderr,
-            activity.returncode,
-        )
-        if activity.duration:
-            self.duration = activity.duration
-        elif self.started and not self.duration:
-            self.duration = (self.finished - self.started).total_seconds()

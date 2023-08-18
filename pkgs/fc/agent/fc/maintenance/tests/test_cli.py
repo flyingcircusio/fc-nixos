@@ -21,30 +21,34 @@ ENC = {
 
 
 @pytest.fixture
-def invoke_app(tmpdir, agent_maintenance_config):
-    runner = typer.testing.CliRunner()
-    enc_file = tmpdir / "enc.json"
-    main_args = (
+def app_main_args(tmp_path, agent_maintenance_config):
+    enc_file = tmp_path / "enc.json"
+    (tmp_path / "fc-agent").mkdir()
+    enc_file.write_text(json.dumps(ENC), encoding="utf8")
+
+    return (
         "--verbose",
         "--show-caller-info",
         "--spooldir",
-        tmpdir,
+        tmp_path,
         "--logdir",
-        tmpdir,
+        tmp_path,
         "--lock-dir",
-        tmpdir,
+        tmp_path,
         "--config-file",
         agent_maintenance_config,
         "--enc-path",
         enc_file,
     )
 
-    tmpdir.mkdir("fc-agent")
-    enc_file.write_text(json.dumps(ENC), encoding="utf8")
+
+@pytest.fixture
+def invoke_app(app_main_args):
+    runner = typer.testing.CliRunner()
 
     def _invoke_app(*args, exit_code=0):
         with unittest.mock.patch("fc.maintenance.cli.ReqManager"):
-            result = runner.invoke(fc.maintenance.cli.app, main_args + args)
+            result = runner.invoke(fc.maintenance.cli.app, app_main_args + args)
             assert (
                 result.exit_code == exit_code
             ), f"unexpected exit code {result.exit_code}, output: {result.output}"
@@ -172,3 +176,15 @@ def test_invoke_constraints_not_met(
     is_node_in_service.return_value = False
     invoke_app("constraints", "--in-service", "test01", exit_code=69)
     assert log.info("constraints-failure")
+
+
+def test_invoke_metrics(app_main_args):
+    runner = typer.testing.CliRunner()
+    with unittest.mock.patch("fc.maintenance.cli.ReqManager") as rm:
+        rm.return_value.get_metrics.return_value = {}
+        result = runner.invoke(
+            fc.maintenance.cli.app, app_main_args + ("metrics",)
+        )
+        assert (
+            not result.exit_code
+        ), f"unexpected exit code {result.exit_code}, output: {result.output}"
