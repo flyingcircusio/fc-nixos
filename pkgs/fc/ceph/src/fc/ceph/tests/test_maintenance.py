@@ -264,7 +264,6 @@ def test_lockimage_check_timeout(locktoolcalls, maintenance_manager):
 
 
 def test_check_cluster_maintenance(maintenance_manager):
-
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
     assert maintenance_task.check_cluster_maintenance(

@@ -309,7 +309,6 @@ class PostponeActivity(Activity):
 @freezegun.freeze_time("2016-04-20 12:00:00")
 @unittest.mock.patch("fc.util.directory.connect")
 def test_schedule_run_end_to_end(connect, request_population):
-
     import yaml
     from freezegun.api import FakeDatetime
 

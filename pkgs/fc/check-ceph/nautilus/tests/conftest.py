@@ -53,7 +53,6 @@ def snap_critical(snapshot):
 
 # real-world mock data
 class NautilusFillstatsConn:
-
     mon_command = mock.Mock(
         return_value=(
             0,

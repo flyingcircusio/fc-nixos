@@ -190,7 +190,6 @@ class OSDManager(object):
 
 
 class OSD(object):
-
     MKFS_XFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]
     MOUNT_XFS_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
 
@@ -282,7 +281,6 @@ class OSD(object):
             )
 
     def create(self, device, journal, journal_size, crush_location):
-
         if not os.path.exists(self.datadir):
             os.makedirs(self.datadir)
 

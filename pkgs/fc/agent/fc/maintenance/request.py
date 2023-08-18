@@ -39,7 +39,6 @@ class RequestMergeResult(Enum):
 
 
 class Request:
-
     MAX_RETRIES = 48
 
     _comment: str | None

@@ -119,7 +119,6 @@ def switch_cmd(
     )
 
     with locked(log, context.lock_dir):
-
         if update_enc_data:
             fc.util.enc.update_enc(log, context.tmpdir, context.enc_path)
 
