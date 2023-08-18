@@ -291,6 +291,7 @@ in {
     #   # print(frontend.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
 
     with subtest("sensu should be able to access the API server endpoint"):
+      k3sserver.wait_until_succeeds("stat /var/lib/k3s/tokens/sensuclient")
       # The fc-k3s-token-sensuclient unit often fails to start, try again.
       k3sserver.systemctl("reset-failed")
       k3sserver.systemctl("start fc-k3s-token-sensuclient.service")
