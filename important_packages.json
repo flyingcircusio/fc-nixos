@@ -97,7 +97,6 @@
   "matrix-synapse",
   "mcpp",
   "memcached",
-  "mongodb-4_2",
   "mysql",
   "mysql80",
   "nfs-utils",

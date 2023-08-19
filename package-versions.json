@@ -484,11 +484,6 @@
     "pname": "memcached",
     "version": "1.6.19"
   },
-  "mongodb-4_2": {
-    "name": "mongodb-4.2.24",
-    "pname": "mongodb",
-    "version": "4.2.24"
-  },
   "mysql": {
     "name": "mariadb-server-10.6.15",
     "pname": "mariadb-server",
