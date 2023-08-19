@@ -18,6 +18,8 @@ let
   '';
 
   inherit (pkgs) lib;
+
+  inherit (import ./lib.nix { inherit lib; }) removeLines;
 in
 
 {
@@ -54,10 +56,48 @@ in
       else
         prev.extensions.apcu;
 
+    ast =
+      if lib.versionOlder prev.php.version "7.2" then
+        prev.extensions.ast.overrideAttrs (attrs: {
+          name = "ast-1.0.16";
+          version = "1.0.16";
+          src = pkgs.fetchFromGitHub {
+            owner = "nikic";
+            repo = "php-ast";
+            rev = "v1.0.16";
+            hash = "sha256-PQLwKsVkNpa41jg+dZC/SO7tQ7bkywA9/LRsD5t6FlY=";
+          };
+        })
+      else
+        prev.extensions.ast;
+
+    blackfire =
+      if lib.versionAtLeast prev.php.version "8.3" then
+        throw "php.extensions.blackfire requires PHP version >= 5.6 and < 8.3"
+      else if lib.versionAtLeast prev.php.version "8.1" then
+        prev.extensions.blackfire
+      else if lib.versionAtLeast prev.php.version "7.0" then
+        final.callPackage ./extensions/blackfire/1.88.1.nix { inherit prev; }
+      else
+        final.callPackage ./extensions/blackfire/1.50.0.nix { inherit prev; };
+
     couchbase = prev.extensions.couchbase.overrideAttrs (attrs: {
       preConfigure =
-        attrs.preConfigure or "" + linkInternalDeps [ final.extensions.json ];
+        let
+          deps = lib.optionals (lib.versionOlder prev.php.version "8.0") [
+            final.extensions.json
+          ];
+        in
+        attrs.preConfigure or "" + linkInternalDeps deps;
     });
+
+    datadog_trace =
+      if lib.versionAtLeast prev.php.version "8.3" then
+        throw "php.extensions.datadog_trace requires PHP version >= 5.6 and < 8.3"
+      else if lib.versionOlder prev.php.version "7" then
+        final.callPackage ./extensions/datadog_trace/0.75.0.nix { }
+      else
+        prev.extensions.datadog_trace;
 
     dom = prev.extensions.dom.overrideAttrs (attrs: {
       patches =
@@ -104,19 +144,49 @@ in
             # 4cc261aa6afca2190b1b74de39c3caa462ec6f0b deletes this file but fetchpatch does not support deletions.
             rm ext/dom/tests/bug43364.phpt
           '')
+
+          (lib.optionalString (lib.versionOlder prev.php.version "8.1" && lib.versionAtLeast prev.php.version "7.1") ''
+            # Removing tests failing with libxml2 (2.11.4) > 2.10.4
+            rm ext/dom/tests/DOMDocument_loadXML_error2.phpt
+            rm ext/dom/tests/DOMDocument_load_error2.phpt
+          '')
         ];
     });
 
-    ds = prev.extensions.ds.overrideAttrs (attrs: {
-      preConfigure =
-        attrs.preConfigure or "" linkInternalDeps [ final.extensions.json ];
+    ds =
+      if lib.versionOlder prev.php.version "7.0" then
+        throw "php.extensions.ds requires PHP version >= 7.0"
+      else
+        prev.extensions.ds.overrideAttrs (attrs: {
+          preConfigure =
+            let
+              deps = lib.optionals (lib.versionOlder prev.php.version "8.0") [
+                final.extensions.json
+              ];
+            in
+            attrs.preConfigure or "" + linkInternalDeps deps;
+        });
+
+    enchant = let
+      enchant1 = pkgs.callPackage ./enchant/1.x.nix { };
+    in
+    prev.extensions.enchant.overrideAttrs (attrs: {
+      buildInputs = attrs.buildInputs or [] ++
+        lib.optionals (lib.versionOlder prev.php.version "8.0") [
+          enchant1
+        ];
+
+      configureFlags = attrs.configureFlags or [] ++
+        lib.optionals (lib.versionOlder prev.php.version "8.0") [
+          "--with-enchant=${lib.getDev enchant1}"
+        ];
     });
 
     ffi =
       if lib.versionAtLeast prev.php.version "7.4" then
         prev.extensions.ffi
       else
-        null;
+        throw "php.extensions.ffi requires PHP version >= 7.4.";
 
     gd =
       if lib.versionOlder prev.php.version "7.4" then
@@ -160,6 +230,38 @@ in
           })
         ];
     });
+
+    grpc =
+      if lib.versionOlder prev.php.version "7.0" then
+        throw "php.extensions.grpc requires PHP version >= 7.0"
+      else
+        prev.extensions.grpc;
+
+    igbinary =
+      if lib.versionOlder prev.php.version "7.0" then
+        prev.extensions.igbinary.overrideAttrs (attrs: {
+          name = "igbinary-2.0.8";
+          version = "2.0.8";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/igbinary-2.0.8.tgz";
+            hash = "sha256-usurEXLgc7GFfcB6SGv9rKbWD77WeM4PSzfNAY71toA=";
+          };
+        })
+      else
+        prev.extensions.igbinary;
+
+    inotify =
+      if lib.versionOlder prev.php.version "7.0" then
+        prev.extensions.inotify.overrideAttrs (attrs: {
+          name = "inotify-0.1.6";
+          version = "0.1.6";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/inotify-0.1.6.tgz";
+            hash = "sha256-l5+Aol1OsN4oJhf/wN9G8HNGqDg/MQublD5ImS5bSU4=";
+          };
+        })
+      else
+        prev.extensions.inotify;
 
     intl = prev.extensions.intl.overrideAttrs (attrs: {
       doCheck = if lib.versionOlder prev.php.version "7.2" then false else attrs.doCheck or true;
@@ -208,12 +310,40 @@ in
     });
 
     json =
-      if lib.versionOlder prev.php.version "8.0" then
+      if lib.versionAtLeast prev.php.version "8.0" then
+        throw "php.extensions.json is enabled by default in PHP >= 8.0."
+      else
         prev.mkExtension {
           name = "json";
-        }
+        };
+
+    mailparse =
+      if lib.versionOlder prev.php.version "7.0" then
+        prev.extensions.mailparse.overrideAttrs (attrs: {
+          name = "mailparse-2.1.6";
+          version = "2.1.6";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/mailparse-2.1.6.tgz";
+            hash = "sha256-c3BRl9Ky7ngu+lR36yohQy9ZLCywWnLDoDe7454Ctcw=";
+          };
+        })
+      else if lib.versionOlder prev.php.version "7.3" then
+        prev.extensions.mailparse.overrideAttrs (attrs: {
+          name = "mailparse-3.1.3";
+          version = "3.1.3";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/mailparse-3.1.3.tgz";
+            hash = "sha256-hlnKYtyaTX0V8H+XoOIULLWCUcjncs02Zp7HQNIpJHE=";
+          };
+        })
       else
-        null;
+        prev.extensions.mailparse;
+
+    maxminddb =
+      if lib.versionOlder prev.php.version "7.2" then
+        throw "php.extensions.maxminddb requires PHP >= 7.2."
+      else
+        prev.extensions.maxminddb;
 
     memcached =
       if lib.versionOlder prev.php.version "7.0" then
@@ -228,6 +358,43 @@ in
       else
         prev.extensions.memcached;
 
+    mongodb =
+      if lib.versionOlder prev.php.version "7.0" then
+        prev.extensions.mongodb.overrideAttrs (attrs: {
+          name = "mongodb-1.7.5";
+          version = "1.7.5";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/mongodb-1.7.5.tgz";
+            hash = "sha256-5IoHYYwK6L5igpmZG19IGGHIkaIlRKI2WmM2HMGBw3k=";
+          };
+        })
+      else if lib.versionOlder prev.php.version "7.1" then
+        prev.extensions.mongodb.overrideAttrs (attrs: {
+          name = "mongodb-1.9.2";
+          version = "1.9.2";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/mongodb-1.9.2.tgz";
+            hash = "sha256-legyxdSK5ulHvcefNan48LvVGPSqAPHO9snq+64CGH0=";
+          };
+        })
+      else if lib.versionOlder prev.php.version "7.2" then
+        prev.extensions.mongodb.overrideAttrs (attrs: {
+          name = "mongodb-1.11.1";
+          version = "1.11.1";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/mongodb-1.11.1.tgz";
+            hash = "sha256-g4pQUN5Q1R+VkCa9jOxzSdivNwWMD+BylaC8lgqC1+8=";
+          };
+        })
+      else
+        prev.extensions.mongodb;
+
+    msgpack =
+      if lib.versionOlder prev.php.version "7.0" then
+        throw "php.extensions.msgpack requires PHP version >= 7.0"
+      else
+        prev.extensions.msgpack;
+
     mssql =
       if lib.versionOlder prev.php.version "7.0" then
         prev.mkExtension {
@@ -235,9 +402,13 @@ in
           configureFlags = [
             "--with-mssql=${pkgs.freetds}"
           ];
+          patches = [
+            # Make sure it looks also for the proper extension files
+            ./patches/0001-mssql-extension-fix-builds-on-darwin.patch
+          ];
         }
       else
-        null;
+        throw "php.extensions.mssql requires PHP version < 7.0.";
 
     mysql =
       if lib.versionOlder prev.php.version "7.0" then
@@ -254,7 +425,7 @@ in
           '';
         }
       else
-        null;
+        throw "php.extensions.mysql requires PHP version < 7.0.";
 
     mysqli =
       if lib.versionOlder prev.php.version "7.0" then
@@ -318,6 +489,13 @@ in
         ];
 
       doCheck = lib.versionAtLeast prev.php.version "7.4";
+
+      postPatch =
+        removeLines
+          (lib.optionals (lib.versionOlder prev.php.version "7.2.20" && pkgs.stdenv.isDarwin) [
+            "rm ext/opcache/tests/bug78106.phpt"
+          ])
+          attrs.postPatch;
     });
 
     openssl = prev.extensions.openssl.overrideAttrs (attrs: {
@@ -338,7 +516,44 @@ in
             ];
         in
         ourPatches ++ upstreamPatches;
+
+      buildInputs =
+        let
+          replaceOpenssl = pkg:
+            if pkg.pname == "openssl" && lib.versionOlder prev.php.version "8.1" then
+              pkgs.openssl_1_1.overrideAttrs (old: {
+                meta = builtins.removeAttrs old.meta [ "knownVulnerabilities" ];
+              })
+            else
+              pkg;
+        in
+        builtins.map replaceOpenssl attrs.buildInputs;
     });
+
+    openswoole =
+      if lib.versionOlder prev.php.version "7.2" then
+        throw "php.extensions.openswoole requires PHP version >= 7.2."
+      else if lib.versionOlder prev.php.version "7.4" then
+        prev.extensions.openswoole.overrideAttrs (attrs: {
+          name = "openswoole-4.10.0";
+          version = "4.10.0";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/openswoole-4.10.0.tgz";
+            hash = "sha256-FSJUcL3gJaaq4ruUK6AbKeUYVvkBj4gJPZkvTrG6Dm8=";
+          };
+        })
+      else
+        prev.extensions.openswoole;
+
+    pcov = if lib.versionAtLeast prev.php.version "7.1" then
+        prev.extensions.pcov
+      else
+        throw "php.extensions.pcov requires PHP version >= 7.1.";
+
+    pdlib = if lib.versionOlder prev.php.version "7.0" then
+        throw "php.extensions.pdlib requires PHP version >= 7.0."
+      else
+        prev.extensions.pdlib;
 
     pdo = prev.extensions.pdo.overrideAttrs (attrs: {
       patches =
@@ -398,7 +613,12 @@ in
       else if lib.versionOlder prev.php.version "8.0" then
         prev.extensions.redis.overrideAttrs (attrs: {
           preConfigure =
-            attrs.preConfigure or "" + linkInternalDeps [ final.extensions.json ];
+            let
+              deps = lib.optionals (lib.versionOlder prev.php.version "8.0") [
+                final.extensions.json
+              ];
+            in
+            attrs.preConfigure or "" + linkInternalDeps deps;
         })
       else
         prev.extensions.redis;
@@ -410,11 +630,20 @@ in
           version = "3.1.6";
           src = pkgs.fetchurl {
             url = "http://pecl.php.net/get/redis-3.1.6.tgz";
-            sha256 = "siknTNwUwi78Qf76ANtNxbsyqZfWgRJ4ZioEOnaqJgA=";
+            hash = "sha256-siknTNwUwi78Qf76ANtNxbsyqZfWgRJ4ZioEOnaqJgA=";
+          };
+          meta = attrs.meta // {
+            platforms = lib.platforms.linux;
           };
         })
       else
-        throw "php.extensions.redis3 requires PHP version < 8.0.";
+        throw "php.extensions.redis requires PHP version < 8.0.";
+
+    relay =
+      if lib.versionAtLeast prev.php.version "8.0" then
+        prev.extensions.relay
+      else
+        throw "php.extensions.relay requires PHP version >= 8.0.";
 
     simplexml = prev.extensions.simplexml.overrideAttrs (attrs: {
       configureFlags =
@@ -424,6 +653,21 @@ in
           "--with-libxml-dir=${pkgs.libxml2.dev}"
         ];
       });
+
+    swoole =
+      if lib.versionAtLeast prev.php.version "8.0" then
+        prev.extensions.swoole
+      else if lib.versionAtLeast prev.php.version "7.2" then
+        prev.extensions.swoole.overrideAttrs (attrs: {
+          name = "swoole-4.8.13";
+          version = "4.8.13";
+          src = pkgs.fetchurl {
+            url = "http://pecl.php.net/get/swoole-4.8.13.tgz";
+            hash = "sha256-9Le4VsESsQWJheCx/KMg7BIRKZYHs2MHPemnCWKK0yo=";
+          };
+        })
+      else
+        throw "php.extensions.swoole requires PHP version >= 7.2.";
 
     soap = prev.extensions.soap.overrideAttrs (attrs: {
       configureFlags =
@@ -453,6 +697,15 @@ in
         ourPatches ++ upstreamPatches;
     });
 
+    tokenizer = prev.extensions.tokenizer.overrideAttrs (attrs: {
+      patches = builtins.filter
+        (patch:
+          # The patch do not apply to PHP < 8.1
+          patchName patch == "fix-tokenizer-php81.patch" -> lib.versionAtLeast prev.php.version "8.1"
+        )
+        (attrs.patches or []);
+    });
+
     wddx =
       if lib.versionOlder prev.php.version "7.4" then
         prev.mkExtension {
@@ -472,7 +725,7 @@ in
           ];
         }
       else
-        null;
+        throw "php.extensions.wddx requires PHP version < 7.4.";
 
     xdebug =
       # xdebug versions were determined using https://xdebug.org/docs/compat
@@ -549,7 +802,7 @@ in
           ];
         }
       else
-        null;
+        throw "php.extensions.xmlrpc is no longer available in PHP version >= 8.0.";
 
     xmlwriter = prev.extensions.xmlwriter.overrideAttrs (attrs: {
       configureFlags =
