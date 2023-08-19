@@ -112,7 +112,6 @@ class ReqManager:
         self.lockfile.seek(0)
         print(os.getpid(), file=self.lockfile)
         self.lockfile.flush()
-        self.scan()
         self.config = configparser.ConfigParser()
         if self.config_file:
             if self.config_file.is_file():
@@ -123,6 +122,12 @@ class ReqManager:
         self.maintenance_preparation_seconds = int(
             self.config.get("maintenance", "preparation_seconds", fallback=300)
         )
+        self.request_runnable_for_seconds = int(
+            self.config.get(
+                "maintenance", "request_runnable_for_seconds", fallback=1800
+            )
+        )
+        self.scan()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
@@ -188,7 +193,9 @@ class ReqManager:
             if not p.isdir(d):
                 continue
             try:
-                req = Request.load(d, self.log)
+                req = Request.load(
+                    d, self.log, self.request_runnable_for_seconds
+                )
                 req._reqmanager = self
                 self.requests[req.id] = req
             except Exception as exc:
@@ -210,6 +217,7 @@ class ReqManager:
         request.dir = self.dir(request)
         request._reqmanager = self
         request.added_at = utcnow()
+        request.runnable_for_seconds = self.request_runnable_for_seconds
         request.save()
         self.log.info(
             "request-added",

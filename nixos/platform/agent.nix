@@ -126,8 +126,29 @@ in
         '';
       };
 
+      maintenanceRequestRunnableFor = mkOption {
+        default = 1800;
+        # XXX: Ideally, this option would use the max value when set from multiple
+        # places but there's no type for that right now. We could implement
+        # one if we use this option more often to avoid conflicts.
+        type = types.ints.positive;
+        description = ''
+          Maintenance request are scheduled for a certain time by the directory
+          but the local agent may delay execution a bit.
+          Requests will be postponed if they had to wait for too long and
+          they are "overdue", which is: planned execution time plus the
+          value of this option, in seconds.
+          By default, there's a window of 30 minutes in which the request
+          may be executed.
+        '';
+      };
+
       maintenancePreparationSeconds = mkOption {
         default = 300;
+        # XXX: Ideally, this option would use the max value when set from multiple
+        # places but there's no type for that right now. We could implement
+        # one if we use this option more often to avoid conflicts.
+        type = types.ints.positive;
         description = ''
           Expected time in seconds needed to prepare for the execution of
           maintenance activities. The value should cover typical cases where
@@ -149,7 +170,6 @@ in
           We don't enforce it at the moment but will probably add a timeout
           for maintenance-enter commands later based on this value.
         '';
-        type = types.ints.positive;
       };
 
     };
@@ -208,6 +228,7 @@ in
       environment.etc."fc-agent.conf".text = ''
          [maintenance]
          preparation_seconds = ${toString cfg.agent.maintenancePreparationSeconds}
+         request_runnable_for_seconds = ${toString cfg.agent.maintenanceRequestRunnableFor}
 
          [maintenance-enter]
          ${concatStringsSep "\n" (

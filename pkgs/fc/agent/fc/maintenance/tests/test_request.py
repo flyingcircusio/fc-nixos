@@ -107,6 +107,7 @@ attempts: []
 dir: {tmp_path}
 last_scheduled_at: null
 next_due: null
+runnable_for_seconds: 1800
 state: !!python/object/apply:fc.maintenance.state.State
 - '-'
 updated_at: null
@@ -166,7 +167,7 @@ def test_external_activity_state(tmpdir, logger):
         assert "foo\n" == f.read()
     with open(extstate, "w") as f:
         print("bar", file=f)
-    r2 = Request.load(str(tmpdir), logger)
+    r2 = Request.load(str(tmpdir), logger, 1800)
     assert r2.activity.external == "bar\n"
 
 

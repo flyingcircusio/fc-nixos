@@ -75,6 +75,7 @@ class Request:
     added_at: datetime.datetime | None
     last_scheduled_at: datetime.datetime | None
     next_due: datetime.datetime | None
+    runnable_for_seconds: int
     state: State
     updated_at: datetime.datetime | None
 
@@ -96,6 +97,7 @@ class Request:
         self.next_due = None
         self.state = State.pending
         self.updated_at = None
+        self.runnable_for_seconds = 1800  # will be set by ReqManager
 
     @property
     def comment(self):
@@ -183,7 +185,9 @@ class Request:
     def not_after(self) -> Optional[datetime.datetime]:
         if not self.next_due:
             return
-        return self.next_due + datetime.timedelta(seconds=1800)
+        return self.next_due + datetime.timedelta(
+            seconds=self.runnable_for_seconds
+        )
 
     @property
     def overdue(self) -> bool:
@@ -192,7 +196,7 @@ class Request:
         return utcnow() > self.not_after
 
     @classmethod
-    def load(cls, dir, log):
+    def load(cls, dir, log, runnable_for_seconds: int):
         # need imports because such objects may be loaded via YAML
         import fc.maintenance.activity.reboot
         import fc.maintenance.activity.update
@@ -234,6 +238,7 @@ class Request:
 
         instance.dir = dir
         instance.set_up_logging(log)
+        instance.runnable_for_seconds = runnable_for_seconds
 
         with cd(dir):
             instance.activity.load()
