@@ -142,7 +142,7 @@ in {
   });
 
   # Import old php versions from nix-phps.
-  inherit (phps) php72 php73 php74;
+  inherit (phps) php72 php73 php74 php80;
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
@@ -172,15 +172,15 @@ in {
                 all.redis
               ]));
 
-  # PHP versions from nixpkgs
+  lamp_php80 = (self.php80.withExtensions ({ enabled, all }:
+              enabled ++ [
+               all.bcmath
+               all.imagick
+               all.memcached
+               all.redis
+             ]));
 
-  #lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
-  #            enabled ++ [
-  #              all.bcmath
-  #              all.imagick
-  #              all.memcached
-  #              all.redis
-  #            ]));
+  #PHP versions from nixpkgs
 
   lamp_php81 = super.php81.withExtensions ({ enabled, all }:
               enabled ++ [
