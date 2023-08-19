@@ -134,7 +134,8 @@ def prefetch_nixpkgs(nixos_version: str) -> dict[str, str]:
 def update_package_list(local_path: Path):
     basedir = "$XDG_RUNTIME_DIR"
     subprocess.run(
-        ["rsync", "-a", local_path, f"hydra01:{basedir}"], check=True
+        ["rsync", "-a", "--exclude", ".git", local_path, f"hydra01:{basedir}"],
+        check=True,
     )
     dest = f"{basedir}/{local_path.name}/"
     proc = run_on_hydra(
