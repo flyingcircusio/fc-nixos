@@ -214,7 +214,7 @@ in
           commands = [
             "${pkgs.fc.agent}/bin/fc-maintenance metrics"
           ];
-          groups = [ "telegraf" ];
+          users = [ "telegraf" ];
         }
         {
           commands = [
