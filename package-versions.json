@@ -385,9 +385,9 @@
     "version": "4.14.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.89.0",
+    "name": "matrix-synapse-1.90.0",
     "pname": "matrix-synapse",
-    "version": "1.89.0"
+    "version": "1.90.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -565,9 +565,9 @@
     "version": "8.1.20"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.7",
+    "name": "php-with-extensions-8.2.9",
     "pname": "php-with-extensions",
-    "version": "8.2.7"
+    "version": "8.2.9"
   },
   "phpPackages.composer": {
     "name": "php-composer-2.5.5",
@@ -600,29 +600,29 @@
     "version": "3.8.0"
   },
   "postgresql_11": {
-    "name": "postgresql-11.20",
+    "name": "postgresql-11.21",
     "pname": "postgresql",
-    "version": "11.20"
+    "version": "11.21"
   },
   "postgresql_12": {
-    "name": "postgresql-12.15",
+    "name": "postgresql-12.16",
     "pname": "postgresql",
-    "version": "12.15"
+    "version": "12.16"
   },
   "postgresql_13": {
-    "name": "postgresql-13.11",
+    "name": "postgresql-13.12",
     "pname": "postgresql",
-    "version": "13.11"
+    "version": "13.12"
   },
   "postgresql_14": {
-    "name": "postgresql-14.8",
+    "name": "postgresql-14.9",
     "pname": "postgresql",
-    "version": "14.8"
+    "version": "14.9"
   },
   "postgresql_15": {
-    "name": "postgresql-15.3",
+    "name": "postgresql-15.4",
     "pname": "postgresql",
-    "version": "15.3"
+    "version": "15.4"
   },
   "powerdns": {
     "name": "pdns-4.7.4",
