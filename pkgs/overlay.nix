@@ -267,14 +267,15 @@ in {
                 all.redis
               ]);
 
-  # newer linux kernel
+  # Newer linux kernel. Includes mitigations for the Inception and Downfall
+  # CPU vulnerabilities.
   linuxPackages = super.linuxPackagesFor (super.linux_5_10.override {
     argsOverride = rec {
       src = self.fetchurl {
         url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
-        sha256 = "sha256-4ndWLijyNONmZa4St1hflVeoOoa8So3ohAowWvYwe84=";
+        hash = "sha256-KXI98B1A/wf/bSVOqvkMez7Dxw9OvgibgPeF9G769Zc=";
       };
-      version = "5.10.175";
+      version = "5.10.190";
       modDirVersion = version;
     };
   });
@@ -293,10 +294,12 @@ in {
   mc = super.callPackage ./mc.nix { };
 
   # Use linux-firmware from 23.05 to get microcode which includes
-  # fixes for Zenbleed.
+  # fixes for Zenbleed and Inception.
   microcodeAmd = super.microcodeAmd.override {
     firmwareLinuxNonfree = nixpkgs-23_05.linux-firmware;
   };
+  # Use microcodeIntel from 23.05 to get fixes for Downfall.
+  inherit (nixpkgs-23_05) microcodeIntel;
 
   mongodb-3_6 = super.mongodb-3_6.overrideAttrs(_: rec {
     # We have set the license to null to avoid that Hydra complains about unfree
