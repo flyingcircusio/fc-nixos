@@ -150,7 +150,7 @@ let
           ];
       })
       (clusterRoleBinding {
-        metadata.name = "flyingcircus.telegraf:viewer";
+        metadata.name = "flyingcircus:telegraf:viewer";
         roleRef = {
           apiGroup = "rbac.authorization.k8s.io";
           kind = "ClusterRole";
@@ -160,6 +160,27 @@ let
           kind = "ServiceAccount";
           name = "io.flyingcircus.service.telegraf";
           namespace = "kube-system";
+        }];
+      })
+      (clusterRole {
+        metadata.name = "flyingcircus:daemonset:viewer";
+        rules = [{
+          apiGroups = ["apps"];
+          resources = ["daemonsets"];
+          verbs = ["get"];
+        }];
+      })
+      (clusterRoleBinding {
+        metadata.name = "flyingcircus:nodes";
+        roleRef = {
+          apiGroup = "rbac.authorization.k8s.io";
+          kind = "ClusterRole";
+          name = "flyingcircus:daemonset:viewer";
+        };
+        subjects = [{
+          apiGroup = "rbac.authorization.k8s.io";
+          kind = "Group";
+          name = "system:nodes";
         }];
       })
     ];
