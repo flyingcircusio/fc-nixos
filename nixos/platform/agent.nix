@@ -378,6 +378,7 @@ in
           timeout = "10s";
           data_format = "json";
           json_name_key = "name";
+          interval = "60s";
         }];
       };
 
