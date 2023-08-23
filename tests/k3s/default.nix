@@ -299,7 +299,10 @@ in {
       k3sserver.wait_until_succeeds("${masterSensuCheck "kube-nodes-ready"}")
 
     with subtest("telegraf should be running on server"):
-      # telegraf will fail to start unless the token file exists
+      # telegraf will fail to start unless the token file exists.
+      # The fc-k3s-token-sensuclient unit often fails to start, try again.
+      k3sserver.systemctl("reset-failed")
+      k3sserver.systemctl("start telegraf.service")
       k3sserver.wait_for_unit("telegraf.service")
       k3sserver.wait_until_succeeds("curl -s -o /dev/null http://${masterSrv}:9126")
 
