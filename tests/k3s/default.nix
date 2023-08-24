@@ -291,16 +291,18 @@ in {
     #   # print(frontend.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
 
     with subtest("sensu should be able to access the API server endpoint"):
-      k3sserver.wait_until_succeeds("stat /var/lib/k3s/tokens/sensuclient")
       # The fc-k3s-token-sensuclient unit often fails to start, try again.
       k3sserver.systemctl("reset-failed")
       k3sserver.systemctl("start fc-k3s-token-sensuclient.service")
-      k3sserver.wait_for_unit("fc-k3s-token-sensuclient.service")
+      k3sserver.wait_until_succeeds("stat /var/lib/k3s/tokens/sensuclient")
       k3sserver.wait_until_succeeds("${masterSensuCheck "kube-apiserver"}")
       k3sserver.wait_until_succeeds("${masterSensuCheck "kube-nodes-ready"}")
 
     with subtest("telegraf should be running on server"):
-      # telegraf will fail to start unless the token file exists
+      # telegraf will fail to start unless the token file exists.
+      # The fc-k3s-token-sensuclient unit often fails to start, try again.
+      k3sserver.systemctl("reset-failed")
+      k3sserver.systemctl("start telegraf.service")
       k3sserver.wait_for_unit("telegraf.service")
       k3sserver.wait_until_succeeds("curl -s -o /dev/null http://${masterSrv}:9126")
 

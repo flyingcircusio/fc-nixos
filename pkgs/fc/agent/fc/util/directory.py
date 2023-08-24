@@ -3,17 +3,8 @@
 import contextlib
 import json
 import re
+import urllib.parse
 import xmlrpc.client
-
-DIRECTORY_URL_RING0 = (
-    "https://{enc[name]}:{enc[parameters][directory_password]}@"
-    "directory.fcio.net/v2/api"
-)
-
-DIRECTORY_URL_RING1 = (
-    "https://{enc[name]}:{enc[parameters][directory_password]}@"
-    "directory.fcio.net/v2/api/rg-{enc[parameters][resource_group]}"
-)
 
 
 def load_default_enc_json():
@@ -27,7 +18,7 @@ class ScreenedProtocolError(xmlrpc.client.ProtocolError):
         super(ScreenedProtocolError, self).__init__(url, *args, **kw)
 
 
-def connect(enc_data=None, ring=1):
+def connect(enc=None, ring=1):
     """Returns XML-RPC directory connection.
 
     The directory secret is read from `/etc/nixos/enc.json`.
@@ -39,24 +30,39 @@ def connect(enc_data=None, ring=1):
     """
     if xmlrpc.client.ProtocolError is not ScreenedProtocolError:
         xmlrpc.client.ProtocolError = ScreenedProtocolError
-    if not enc_data:
-        enc_data = load_default_enc_json()
+    if not enc:
+        enc = load_default_enc_json()
     if ring == "max":
-        ring = enc_data["parameters"]["directory_ring"]
-    url = {0: DIRECTORY_URL_RING0, 1: DIRECTORY_URL_RING1}[ring]
-    return xmlrpc.client.Server(
-        url.format(enc=enc_data), allow_none=True, use_datetime=True
+        ring = enc["parameters"]["directory_ring"]
+
+    base_url = enc["parameters"].get(
+        "directory_url", "https://directory.fcio.net/v2/api"
     )
+    url_parts = urllib.parse.urlsplit(base_url)
+
+    url = "".join(
+        [
+            url_parts.scheme + "://",
+            enc["name"] + ":" + enc["parameters"]["directory_password"] + "@",
+            url_parts.netloc,
+            url_parts.path,
+        ]
+    )
+
+    if ring == 1:
+        url += "/rg-" + enc["parameters"]["resource_group"]
+
+    return xmlrpc.client.Server(url, allow_none=True, use_datetime=True)
 
 
 @contextlib.contextmanager
 def directory_connection(enc_path):
     """Execute the associated block with a directory connection."""
-    enc_data = None
+    enc = None
     if enc_path:
         with open(enc_path) as f:
-            enc_data = json.load(f)
-    yield connect(enc_data)
+            enc = json.load(f)
+    yield connect(enc)
 
 
 def directory_cli():

@@ -881,7 +881,7 @@ class ReqManager:
             "requests_postpone": 0,
             "requests_success": 0,
             "requests_error": 0,
-            "request_longest_in_queue_seconds": 0,
+            "request_longest_in_queue_duration": 0,
             "request_highest_retry_count": 0,
         }
 
