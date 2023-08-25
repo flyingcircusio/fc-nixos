@@ -47,6 +47,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       mstflint
       pciutils
       smartmontools
+      nvme-cli
       # ensure that `rbd-locktool` uses the correct ceph tooling version
       config.fclib.ceph.releasePkgs.${cfg.services.ceph.client.cephRelease}.utilPhysical
     ];
