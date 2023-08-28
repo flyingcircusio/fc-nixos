@@ -240,14 +240,14 @@
     "version": "1.20.7"
   },
   "grafana": {
-    "name": "grafana-9.5.7",
+    "name": "grafana-9.5.8",
     "pname": "grafana",
-    "version": "9.5.7"
+    "version": "9.5.8"
   },
   "haproxy": {
-    "name": "haproxy-2.7.8",
+    "name": "haproxy-2.7.10",
     "pname": "haproxy",
-    "version": "2.7.8"
+    "version": "2.7.10"
   },
   "imagemagick": {
     "name": "imagemagick-7.1.1-15",
@@ -350,9 +350,9 @@
     "version": "2.10.4"
   },
   "linux": {
-    "name": "linux-6.1.45",
+    "name": "linux-6.1.47",
     "pname": "linux",
-    "version": "6.1.45"
+    "version": "6.1.47"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -685,9 +685,9 @@
     "version": "4.2.5"
   },
   "qemu": {
-    "name": "qemu-8.0.3",
+    "name": "qemu-8.0.4",
     "pname": "qemu",
-    "version": "8.0.3"
+    "version": "8.0.4"
   },
   "rabbitmq-server": {
     "name": "rabbitmq-server-3.11.10",
