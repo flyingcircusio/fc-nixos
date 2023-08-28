@@ -136,7 +136,7 @@ in
       };
 
     flyingcircus.passwordlessSudoRules =
-      let ipt = x: "${pkgs.iptables}/bin/ip${x}tables";
+      let ipt = x: "/run/current-system/sw/bin/ip${x}tables";
       in [
         {
           commands = [ "${ipt ""} -L*"

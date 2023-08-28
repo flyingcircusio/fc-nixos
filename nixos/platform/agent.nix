@@ -197,10 +197,10 @@ in
       flyingcircus.passwordlessSudoRules = [
         {
           commands = [
-            "${pkgs.fc.agent}/bin/fc-collect-garbage"
-            "${pkgs.fc.agent}/bin/fc-manage"
-            "${pkgs.fc.agent}/bin/fc-maintenance delete"
-            "${pkgs.fc.agent}/bin/fc-maintenance -v delete"
+            "/run/current-system/sw/bin/fc-collect-garbage"
+            "/run/current-system/sw/bin/fc-manage"
+            "/run/current-system/sw/bin/fc-maintenance delete"
+            "/run/current-system/sw/bin/fc-maintenance -v delete"
           ];
           groups = [ "admins" "sudo-srv" "service" ];
         }
@@ -215,12 +215,12 @@ in
         }
         {
           commands = [
-            "${pkgs.fc.agent}/bin/fc-maintenance run"
-            "${pkgs.fc.agent}/bin/fc-maintenance run --run-all-now"
-            "${pkgs.fc.agent}/bin/fc-maintenance schedule"
-            "${pkgs.fc.agent}/bin/fc-maintenance -v run"
-            "${pkgs.fc.agent}/bin/fc-maintenance -v run --run-all-now"
-            "${pkgs.fc.agent}/bin/fc-maintenance -v schedule"
+            "/run/current-system/sw/bin/fc-maintenance run"
+            "/run/current-system/sw/bin/fc-maintenance run --run-all-now"
+            "/run/current-system/sw/bin/fc-maintenance schedule"
+            "/run/current-system/sw/bin/fc-maintenance -v run"
+            "/run/current-system/sw/bin/fc-maintenance -v run --run-all-now"
+            "/run/current-system/sw/bin/fc-maintenance -v schedule"
           ];
           groups = [ "admins" ];
         }
