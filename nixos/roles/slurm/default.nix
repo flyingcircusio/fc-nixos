@@ -311,7 +311,10 @@ in
           runAs = "slurm";
         }
         {
-          commands = [ "${pkgs.fc.agent}/bin/fc-slurm" ];
+          commands = [
+            "${pkgs.fc.agent}/bin/fc-slurm"
+            "/run/current-system/sw/bin/fc-slurm"
+          ];
           groups = [ "sudo-srv" ];
         }
       ];
