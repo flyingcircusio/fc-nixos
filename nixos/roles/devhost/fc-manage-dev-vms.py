@@ -19,6 +19,7 @@ from tabulate import tabulate
 MAX_VM_ID = 1024
 NETWORK = ipaddress.ip_network("10.12.0.0/16")
 CONFIG_DIR = Path("/etc/devhost/vm-configs")
+VM_BASE_IMAGE_DIR = Path("/var/lib/devhost/base-images")
 VM_DATA_DIR = Path("/var/lib/devhost/vms")
 
 
@@ -183,6 +184,7 @@ class Manager:
                 )
 
             os.makedirs(self.data_dir, exist_ok=True)
+            os.makedirs(VM_BASE_IMAGE_DIR, exist_ok=True)
 
             if not os.path.isfile(self.image_file):
                 response = requests.get(
@@ -191,20 +193,32 @@ class Manager:
                 )
                 response.raise_for_status()
 
-                vm_base_image_store_path: str
-                for product in response.json()["buildproducts"].values():
-                    if product["subtype"] == "img":
-                        vm_base_image_store_path = product["path"]
-                        break
-                else:
-                    raise RuntimeError(
-                        "Could not find store path for base image"
+                vm_base_image_path = VM_BASE_IMAGE_DIR / f"{hydra_eval}.qcow2"
+                if not os.path.isfile(vm_base_image_path):
+                    vm_base_image_path_tmp = (
+                        VM_BASE_IMAGE_DIR / f"{hydra_eval}.qcow2.tmp"
                     )
-                run("nix-store", "-r", vm_base_image_store_path)
-                # Reflinks would be nice here: to reduce startup time and to
-                # reduce amount of space needed. However, the store mount
-                # doesn't allow us to :(
-                shutil.copyfile(vm_base_image_store_path, self.image_file_tmp)
+                    vm_base_image_url: str
+                    for id, product in response.json()["buildproducts"].items():
+                        if product["subtype"] == "img":
+                            vm_base_image_url = f"https://hydra.flyingcircus.io/build/{response.json()['id']}/download/{id}"
+                            break
+                    else:
+                        raise RuntimeError(
+                            "Could not find store path for base image"
+                        )
+                    # Download the base image. We rename the file afterwards
+                    # to ensure that the image is fully there.
+                    r = requests.get(vm_base_image_url)
+                    with open(vm_base_image_path_tmp, "wb") as f:
+                        f.write(r.content)
+                    os.rename(vm_base_image_path_tmp, vm_base_image_path)
+                run(
+                    "cp",
+                    "--reflink=auto",
+                    vm_base_image_path,
+                    self.image_file_tmp,
+                )
 
                 with tempfile.TemporaryDirectory() as image_mount_directory:
                     # the 10 is the number of max. nbd devices provided by the kernel
@@ -301,6 +315,18 @@ class Manager:
             for vm in vms:
                 print(vm["name"])
 
+    def cleanup(self, location=None):
+        vms = list_all_vm_configs()
+        # Clean up old base images
+        os.makedirs(VM_BASE_IMAGE_DIR, exist_ok=True)
+        stored_images = filter(
+            lambda x: x.endswith(".qcow2"), os.listdir(VM_BASE_IMAGE_DIR)
+        )
+        in_use_images = [f"{vm['hydra_eval']}.qcow2" for vm in vms]
+        to_delete_images = set(stored_images) - set(in_use_images)
+        for image in to_delete_images:
+            (VM_BASE_IMAGE_DIR / image).unlink()
+
 
 def main():
     a = argparse.ArgumentParser(description="Manage DevHost VMs.")
@@ -344,6 +370,13 @@ def main():
         action="store_true",
         help="show more details of the vms",
     )
+    p.add_argument("--location", help="location the VMs live in")
+
+    p = sub.add_parser(
+        "cleanup",
+        help="Cleanup. This is an automated task. In this process old base images will be deleted.",
+    )
+    p.set_defaults(func="cleanup")
     p.add_argument("--location", help="location the VMs live in")
 
     args = a.parse_args()
