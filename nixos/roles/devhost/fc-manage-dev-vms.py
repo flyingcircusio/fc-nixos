@@ -14,6 +14,7 @@ import uuid
 from pathlib import Path
 
 import requests
+from tabulate import tabulate
 
 MAX_VM_ID = 1024
 NETWORK = ipaddress.ip_network("10.12.0.0/16")
@@ -280,6 +281,26 @@ class Manager:
                 self.destroy()
             raise e
 
+    def list_vms(self, long_format, user=None, location=None):
+        vms = list_all_vm_configs()
+        if user is not None:
+            vms = filter(lambda x: x.get("user") == user, vms)
+        if long_format:
+            vms_output = [
+                [
+                    vm.get("user", "---"),
+                    vm.get("creation-date", "---"),
+                    vm["name"],
+                ]
+                for vm in vms
+            ]
+            print(
+                tabulate(vms_output, headers=["user", "creation date", "name"])
+            )
+        else:
+            for vm in vms:
+                print(vm["name"])
+
 
 def main():
     a = argparse.ArgumentParser(description="Manage DevHost VMs.")
@@ -310,6 +331,19 @@ def main():
     p = sub.add_parser("destroy", help="Destroy a given VM.")
     p.set_defaults(func="destroy")
     p.add_argument("name", help="name of the VM")
+    p.add_argument("--location", help="location the VMs live in")
+
+    p = sub.add_parser(
+        "list", help="List VMs. By default all, can be limited by parameters."
+    )
+    p.set_defaults(func="list_vms")
+    p.add_argument("--user", type=str, help="user name creating the vm")
+    p.add_argument(
+        "-l",
+        "--long-format",
+        action="store_true",
+        help="show more details of the vms",
+    )
     p.add_argument("--location", help="location the VMs live in")
 
     args = a.parse_args()
