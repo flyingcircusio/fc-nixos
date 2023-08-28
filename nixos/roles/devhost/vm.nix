@@ -90,7 +90,7 @@ let
   # };
   manage_script = let 
     runtimeInputs = with pkgs; [
-      (python3.withPackages(ps: with ps; [ requests ]))
+      (python3.withPackages(ps: with ps; [ requests tabulate ]))
       xfsprogs
       qemu
     ];
