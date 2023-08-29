@@ -234,6 +234,8 @@ in {
         }
         {
           commands = [
+            "/run/current-system/sw/bin/systemctl start postgresql"
+            "/run/current-system/sw/bin/systemctl stop postgresql"
             "${pkgs.systemd}/bin/systemctl start postgresql"
             "${pkgs.systemd}/bin/systemctl stop postgresql"
           ];

@@ -22,6 +22,7 @@ let
 
   testSetup = ''
     # Make nix-build work inside the VM
+    machine.execute("mkdir -p /nix/var/nix/profiles/per-user/root/")
     machine.execute("ln -s ${channel} /nix/var/nix/profiles/per-user/root/channels")
 
     # Taken from upstream acme.nix
