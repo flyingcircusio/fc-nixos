@@ -305,13 +305,7 @@ in {
     openssl = self.openssl_1_1;
   };
 
-  percona80 = super.callPackage ./percona/8.0.nix {
-    boost = self.boost177;
-    openldap = self.openldap_2_4;
-    openssl = self.openssl_1_1;
-    inherit (super.darwin.apple_sdk.frameworks) CoreServices;
-    inherit (super.darwin) cctools developer_cmds DarwinTools;
-  };
+  percona80 = super.percona-server_8_0;
 
   percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
     boost = self.boost159;
