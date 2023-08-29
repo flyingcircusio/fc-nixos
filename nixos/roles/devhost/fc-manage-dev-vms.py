@@ -21,6 +21,7 @@ NETWORK = ipaddress.ip_network("10.12.0.0/16")
 CONFIG_DIR = Path("/etc/devhost/vm-configs")
 VM_BASE_IMAGE_DIR = Path("/var/lib/devhost/base-images")
 VM_DATA_DIR = Path("/var/lib/devhost/vms")
+LOCKFILE_PATH = "/run/fc-devhost-vm"
 
 
 def run(*args, **kwargs):
@@ -90,7 +91,12 @@ class Manager:
     def image_file_tmp(self):
         return VM_DATA_DIR / self.name / "rootfs.qcow2.tmp"
 
+    @property
+    def lockfile(self):
+        return open(LOCKFILE_PATH, "a+")
+
     def destroy(self, location=None):
+        fcntl.flock(self.lockfile, fcntl.LOCK_EX)
         # We want do destroy everything existing for a VM.
         # If something in the provisioning failed, there might not be all files.
         if os.path.isfile(self.config_file):
@@ -101,6 +107,7 @@ class Manager:
         run("fc-manage", "-v", "-b")
 
     def ensure(self, cpu, memory, hydra_eval, aliases, location):
+        fcntl.flock(self.lockfile, fcntl.LOCK_EX)
         # Nixify the alias list
         response = requests.get(
             f"https://hydra.flyingcircus.io/eval/{hydra_eval}/job/release",
@@ -278,6 +285,7 @@ class Manager:
 
             run("fc-manage", "-v", "-b")
 
+            fcntl.flock(self.lockfile, fcntl.LOCK_UN)
             # We need to wait for the VM to get online
             while True:
                 response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
@@ -316,6 +324,7 @@ class Manager:
                 print(vm["name"])
 
     def cleanup(self, location=None):
+        fcntl.flock(self.lockfile, fcntl.LOCK_EX)
         vms = list_all_vm_configs()
         # Clean up old base images
         os.makedirs(VM_BASE_IMAGE_DIR, exist_ok=True)
@@ -385,9 +394,6 @@ def main():
     if func == "print_usage":
         a.print_usage()
         sys.exit(1)
-
-    lockfile = open("/run/fc-manage-dev-vms", "a+")
-    fcntl.flock(lockfile, fcntl.LOCK_EX)
 
     os.makedirs(CONFIG_DIR, exist_ok=True)
 
