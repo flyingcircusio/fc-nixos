@@ -525,9 +525,14 @@
     "version": "10.42"
   },
   "percona": {
-    "name": "percona-8.0.32-24",
-    "pname": "percona",
-    "version": "8.0.32-24"
+    "name": "percona-server-8.0.33-25",
+    "pname": "percona-server",
+    "version": "8.0.33-25"
+  },
+  "percona-xtrabackup_8_0": {
+    "name": "percona-xtrabackup-8.0.34-29",
+    "pname": "percona-xtrabackup",
+    "version": "8.0.34-29"
   },
   "percona57": {
     "name": "percona-5.7.42-45",
@@ -535,9 +540,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-8.0.32-24",
-    "pname": "percona",
-    "version": "8.0.32-24"
+    "name": "percona-server-8.0.33-25",
+    "pname": "percona-server",
+    "version": "8.0.33-25"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
