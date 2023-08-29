@@ -30,7 +30,7 @@ in {
   # inherit (pkgs.nixosTests)
 
   antivirus = callTest ./antivirus.nix {};
-  # audit = callTest ./audit.nix {};
+  audit = callTest ./audit.nix {};
   # XXX: fails with fetchPypi missing in py.fetchPypi
   # backyserver = callTest ./backyserver.nix {};
   # channel = callTest ./channel.nix {};
@@ -74,6 +74,7 @@ in {
   mailstub = callTest ./mail/stub.nix {};
   matomo = callTest ./matomo.nix {};
   memcached = callTest ./memcached.nix {};
+  # XXX: Not available on 23.11, should we add newer mongodb versions?
   #mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network {};
