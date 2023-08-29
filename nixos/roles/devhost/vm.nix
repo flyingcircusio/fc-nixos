@@ -99,26 +99,26 @@ let
     executable = true;
     destination = "/bin/${name}";
     text = ''
-      #!${pkgs.runtimeShell}
-      set -o errexit
-      set -o nounset
-      set -o pipefail
+    #!${pkgs.runtimeShell}
+    set -o errexit
+    set -o nounset
+    set -o pipefail
 
-      if [[ ! -f "/var/lib/devhost/ssh_bootstrap_key" ]]; then
-         cat > /var/lib/devhost/ssh_bootstrap_key <<EOF
-  -----BEGIN OPENSSH PRIVATE KEY-----
-  b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-  QyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLAAAAJjYNRR+2DUU
-  fgAAAAtzc2gtZWQyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLA
-  AAAEDKN3GvoFkLLQdFN+Blk3y/+HQ5rvt7/GALRAWofc/LFGc7V2c2zFPRMl8/gmBv1/ME
-  ldEuJau8jHjhx+2qziYsAAAAEHJvb3RAY3QtZGlyLWRldjIBAgMEBQ==
-  -----END OPENSSH PRIVATE KEY-----
-  EOF
-        chmod 600 /var/lib/devhost/ssh_bootstrap_key
-      fi
+    if [[ ! -f "/var/lib/devhost/ssh_bootstrap_key" ]]; then
+       cat > /var/lib/devhost/ssh_bootstrap_key <<EOF
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+    QyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLAAAAJjYNRR+2DUU
+    fgAAAAtzc2gtZWQyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLA
+    AAAEDKN3GvoFkLLQdFN+Blk3y/+HQ5rvt7/GALRAWofc/LFGc7V2c2zFPRMl8/gmBv1/ME
+    ldEuJau8jHjhx+2qziYsAAAAEHJvb3RAY3QtZGlyLWRldjIBAgMEBQ==
+    -----END OPENSSH PRIVATE KEY-----
+    EOF
+      chmod 600 /var/lib/devhost/ssh_bootstrap_key
+    fi
 
-      export PATH="${makeBinPath runtimeInputs}:$PATH"
-      python ${./fc-manage-dev-vms.py} "$@" --location ${location}
+    export PATH="${makeBinPath runtimeInputs}:$PATH"
+    python ${./fc-manage-dev-vms.py} "$@" --location ${location}
     '';
   };
 in {
@@ -148,7 +148,6 @@ in {
       }];
       groups = [ "service" "users" ];
     }];
-    # FIXME: Align network interface names with production
     networking = {
       bridges."br-vm-srv" = {
         interfaces = [];
@@ -166,23 +165,39 @@ in {
         internalInterfaces = [ "br-vm-srv" ];
       };
     };
+    # Maybe switch to kea long-term, but it's not available in 21.05
     services.dnsmasq = {
       enable = true;
       resolveLocalQueries = false;
-      # FIXME: Either use the hosts dnsmasq or the correct rz nameservers
       extraConfig = ''
         interface=br-vm-srv
 
         dhcp-range=10.12.250.10,10.12.254.254,255.255.0.0,24h
         dhcp-option=option:router,10.12.0.1
-        dhcp-option=6,8.8.8.8
+        dhcp-option=option:dns-server,${concatStringsSep "," config.networking.nameservers}
       '';
     };
     networking.firewall.interfaces."br-vm-srv".allowedUDPPorts = [ 67 ];
     networking.firewall.interfaces."vm-srv+".allowedUDPPorts = [ 67 ];
     systemd.services = {
       "fc-devhost-vm@" = defaultService;
-    } // mapAttrs' mkService cfg.virtualMachines;
+    } // mapAttrs' mkService cfg.virtualMachines // {
+      "fc-devhost-vm-cleanup" = {
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${manage_script}/bin/fc-manage-dev-vms cleanup";
+        };
+      };
+    };
+    systemd.timers = {
+      "fc-devhost-vm-cleanup" = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "weekly";
+          Persistent = true;
+        };
+      };
+    };
 
     services.nginx.virtualHosts = if cfg.enableAliasProxy then
       (let
