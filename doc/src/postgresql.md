@@ -105,7 +105,7 @@ not used anymore.
 
 Upgrading to a new major version, for example from 13.x to 14.x, requires a
 migration of the old database cluster living in {file}`/srv/postgresql/13` to
-the new data directory at {file}`/srv/postgresql/14`. A common way to do this
+a new data directory at {file}`/srv/postgresql/14`. A common way to do this
 is to use {command}`pg_upgrade` bundled with PostgreSQL. This works on our
 platform but doing it properly is not trivial.
 
@@ -156,12 +156,12 @@ Note that this is done while the old role is still active. It's safe to run
 the command while PostgreSQL is running as it does not have an impact on the
 current cluster and downtime is not required.
 
-The command should automatically find the old data directory for 13, set up
-the new data directory and succeed if no problems with the old cluster were
-found. Problems may occur if the old cluster has been created with
-non-standard settings which are not compatible with the new cluster, the old
-directory has an invalid structure or multiple old data directories which
-need migration are found.
+The command should automatically find the old data directory for 13, create
+the new data directory for 14, set it up, and succeed if no problems with the
+old cluster were found. Problems may occur if the old cluster has been
+created with non-standard settings which are not compatible with the new
+cluster, the old directory has an invalid structure or multiple old data
+directories which need migration are found.
 
 :::{warning}
 Depending on the machine and the amount of data, the next step may take
@@ -181,9 +181,11 @@ directory cannot be used by the postgresql service anymore after this point.
 Run {command}`sudo -u postgres fc-postgresql list-versions` to see how the
 status of the old and new data dir has changed.
 
-After the migration, postgresql is still stopped, and you have to change your
-configuration to the new major version, for example by disabling the
-`postgresql13` role and activating the `postgresql14` role, in one step.
+After the migration, postgresql is still stopped. You have to change your
+configuration to the new major version to start postgresql again, for example
+by disabling the `postgresql13` role and enabling the `postgresql14` role, in
+one step. Run `sudo fc-manage switch -e` to activate the role change on the
+VM. The postgresql service starts automatically after the switch.
 
 If you really need to go back to the old version, delete the new data directory
 as `postgres` user, remove the {file}`fcio_migrated_to*` files in the old data
