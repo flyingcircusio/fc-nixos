@@ -252,7 +252,7 @@ in
 
     flyingcircus.agent = {
       maintenancePreparationSeconds = 1800;
-
+      maintenanceRequestRunnableFor = 3600;
       maintenance.kvm = {
         enter = "${role.package}/bin/fc-qemu maintenance enter";
       };
