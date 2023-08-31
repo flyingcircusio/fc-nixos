@@ -18,7 +18,6 @@ with lib;
         "yard" = { id = 1; site = "Halle"; };
         "rzob" = { id = 2; site = "Oberhausen"; };
         "dev" = { id = 3; site = "Halle"; };
-        "rzrl1" = { id = 4; site = "Norderstedt"; };
       };
 
       ceph.fsids = {
@@ -29,7 +28,6 @@ with lib;
         whq.services = "be45fd6c-ea68-11e2-ad96-0200000311c0";
         rzob.services = "d4b91002-eaf4-11e2-bc7c-0200000311c1";
         rzob.risclog = "1f417812-eafa-11e2-aa4f-0200000311c1";
-        rzrl1.risclog = "ad1d2380-81da-11e3-9c5f-0200000311bf";
       };
 
       # Note: this list of VLAN classes should be kept in sync with
@@ -77,7 +75,6 @@ with lib;
         dev = [ "172.20.2.1" "172.20.3.7" "172.20.3.57" ];
         whq = [ "212.122.41.129" "212.122.41.173" "212.122.41.169" ];
         rzob = [ "195.62.125.1" "195.62.126.130" "195.62.126.131" ];
-        rzrl1 = [ "84.46.82.1" "172.24.48.2" "172.24.48.10" ];
         standalone = [ "9.9.9.9" "8.8.8.8" ];
       };
 
@@ -119,7 +116,6 @@ with lib;
         dev = [ "kenny00" ];
         whq = [ "lou" "kenny01" ];
         rzob = [ "kenny06" "kenny07" ];
-        rzrl1 = [ "kenny02" "kenny03" ];
       };
 
       adminKeys = {
