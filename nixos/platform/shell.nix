@@ -63,12 +63,16 @@ in
       )
     );
 
-    users.motd = ''
+    users.motd = let
+      has_release_name = enc.parameters ? release_name;
+    in
+    ''
       Welcome to the Flying Circus!
 
       Status:     https://status.flyingcircus.io/
-      Docs:       https://flyingcircus.io/doc/
-      Release:    ${config.system.nixos.label}
+      Docs:       https://doc.flyingcircus.io/
+      ${ opt (enc.parameters ? release_changelog ) ("ChangeLog:  " + enc.parameters.release_changelog)}
+      Release:    ${ opt has_release_name "${enc.parameters.release_name} (" + config.system.nixos.label + opt has_release_name ")"}
 
     '' +
     (opt (enc ? name && parameters ? location && parameters ? environment)
