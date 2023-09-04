@@ -20,6 +20,9 @@ from rich.console import Console
 CURRENT_BUILD = 93111
 NEXT_BUILD = 93222
 NEXT_NEXT_BUILD = 93333
+CURRENT_RELEASE = "2021_002"
+NEXT_RELEASE = "2021_003"
+CHANGELOG_URL = "https://doc.flyingcircus.io/platform/changes/2021/r003.html"
 CURRENT_CHANNEL_URL = f"https://hydra.flyingcircus.io/build/{CURRENT_BUILD}/download/1/nixexprs.tar.xz"
 NEXT_CHANNEL_URL = f"https://hydra.flyingcircus.io/build/{NEXT_BUILD}/download/1/nixexprs.tar.xz"
 ENVIRONMENT = "fc-21.05-production"
@@ -37,7 +40,7 @@ UNIT_CHANGES = {
     "stop": ["postgresql.service"],
 }
 
-CHANGELOG = textwrap.dedent(
+SUMMARY = textwrap.dedent(
     f"""\
     System update: {CURRENT_VERSION} -> {NEXT_VERSION}
 
@@ -47,6 +50,8 @@ CHANGELOG = textwrap.dedent(
     Restart: telegraf
     Reload: nginx
 
+    Release: {CURRENT_RELEASE} -> {NEXT_RELEASE}
+    ChangeLog: {CHANGELOG_URL}
     Environment: {ENVIRONMENT} (unchanged)
     Build number: {CURRENT_BUILD} -> {NEXT_BUILD}
     Channel URL: {NEXT_CHANNEL_URL}"""
@@ -54,14 +59,17 @@ CHANGELOG = textwrap.dedent(
 
 SERIALIZED_ACTIVITY = f"""\
 !!python/object:fc.maintenance.activity.update.UpdateActivity
+changelog_url: {CHANGELOG_URL}
 current_channel_url: https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz
 current_environment: fc-21.05-production
 current_kernel: 5.10.45
+current_release: '{CURRENT_RELEASE}'
 current_system: {CURRENT_SYSTEM_PATH}
 current_version: 21.05.1233.a9cc58d
 next_channel_url: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz
 next_environment: fc-21.05-production
 next_kernel: 5.10.50
+next_release: '{NEXT_RELEASE}'
 next_system: {NEXT_SYSTEM_PATH}
 next_version: 21.05.1235.bacc11d
 reboot_needed: !!python/object/apply:fc.maintenance.activity.RebootType
@@ -82,12 +90,15 @@ unit_changes:
 def activity(logger, nixos_mock):
     activity = UpdateActivity(next_channel_url=NEXT_CHANNEL_URL, log=logger)
     activity.current_channel_url = CURRENT_CHANNEL_URL
+    activity.changelog_url = CHANGELOG_URL
     activity.current_environment = ENVIRONMENT
+    activity.current_release = CURRENT_RELEASE
     activity.current_version = CURRENT_VERSION
     activity.current_kernel = CURRENT_KERNEL_VERSION
     activity.next_channel_url = NEXT_CHANNEL_URL
     activity.next_environment = ENVIRONMENT
     activity.next_kernel = NEXT_KERNEL_VERSION
+    activity.next_release = NEXT_RELEASE
     activity.next_system = NEXT_SYSTEM_PATH
     activity.next_version = NEXT_VERSION
     activity.reboot_needed = RebootType.WARM
@@ -245,7 +256,7 @@ def test_update_activity_prepare(log, logger, tmp_path, activity, nixos_mock):
     assert (
         activity.reboot_needed == RebootType.WARM
     ), "expected warm reboot request"
-    assert activity.changelog == CHANGELOG
+    assert activity.summary == SUMMARY
 
     assert log.has(
         "update-prepare-start",

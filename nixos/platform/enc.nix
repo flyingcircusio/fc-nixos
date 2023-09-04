@@ -64,6 +64,12 @@ with lib;
       description = "Where to find the ENC service clients json file.";
     };
 
+    releasesPath = mkOption {
+      default = /etc/nixos/releases.json;
+      defaultText = "/etc/nixos/releases.json";
+      type = path;
+      description = "Where to find the releases json file.";
+    };
     systemStatePath = mkOption {
       default = /etc/nixos/system_state.json;
       type = path;
@@ -84,6 +90,20 @@ with lib;
       '';
     };
 
+    platform = {
+      release = mkOption {
+        readOnly = true;
+        default = (config.flyingcircus.platform.knownReleases.${config.system.nixos.label} or {});
+        defaultText = "Platform release metadata loaded from the file at `releasesPath`";
+      };
+
+      knownReleases = mkOption {
+        internal = true;
+        readOnly = true;
+        default = fclib.jsonFromFile cfg.releasesPath "{}";
+        defaultText = "Metadata for all known releases from the file at `releasesPath`";
+      };
+    };
   };
 
   config = {

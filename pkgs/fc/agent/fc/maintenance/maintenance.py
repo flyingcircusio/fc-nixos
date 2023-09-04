@@ -187,7 +187,7 @@ def request_update(log, enc, current_requests) -> Optional[Request]:
                 "Update preparation was successful. This update will apply "
                 "changes to the system."
             ),
-            _output=activity.changelog,
+            _output=activity.summary,
             current_channel=activity.current_channel_url,
             next_channel=activity.next_channel_url,
         )
