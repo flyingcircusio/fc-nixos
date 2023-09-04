@@ -120,9 +120,9 @@
     "version": "2.3.20"
   },
   "element-web": {
-    "name": "element-web-1.11.38",
+    "name": "element-web-1.11.40",
     "pname": "element-web",
-    "version": "1.11.38"
+    "version": "1.11.40"
   },
   "erlang": {
     "name": "erlang-25.3.2",
@@ -240,14 +240,14 @@
     "version": "1.20.7"
   },
   "grafana": {
-    "name": "grafana-9.5.7",
+    "name": "grafana-9.5.8",
     "pname": "grafana",
-    "version": "9.5.7"
+    "version": "9.5.8"
   },
   "haproxy": {
-    "name": "haproxy-2.7.8",
+    "name": "haproxy-2.7.10",
     "pname": "haproxy",
-    "version": "2.7.8"
+    "version": "2.7.10"
   },
   "imagemagick": {
     "name": "imagemagick-7.1.1-15",
@@ -350,9 +350,9 @@
     "version": "2.10.4"
   },
   "linux": {
-    "name": "linux-6.1.45",
+    "name": "linux-6.1.51",
     "pname": "linux",
-    "version": "6.1.45"
+    "version": "6.1.51"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -385,9 +385,9 @@
     "version": "4.14.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.90.0",
+    "name": "matrix-synapse-1.91.0",
     "pname": "matrix-synapse",
-    "version": "1.90.0"
+    "version": "1.91.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -595,9 +595,9 @@
     "version": "122"
   },
   "postfix": {
-    "name": "postfix-3.8.0",
+    "name": "postfix-3.8.2",
     "pname": "postfix",
-    "version": "3.8.0"
+    "version": "3.8.2"
   },
   "postgresql_11": {
     "name": "postgresql-11.21",
@@ -685,9 +685,9 @@
     "version": "4.2.5"
   },
   "qemu": {
-    "name": "qemu-8.0.3",
+    "name": "qemu-8.0.4",
     "pname": "qemu",
-    "version": "8.0.3"
+    "version": "8.0.4"
   },
   "rabbitmq-server": {
     "name": "rabbitmq-server-3.11.10",
