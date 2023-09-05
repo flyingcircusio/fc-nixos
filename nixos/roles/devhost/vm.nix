@@ -199,22 +199,40 @@ in {
       };
     };
 
-    services.nginx.virtualHosts = if cfg.enableAliasProxy then
-      (let
-        suffix = cfg.publicAddress;
-        vms =
-          filterAttrs (name: vmCfg: vmCfg.aliases != [ ]) cfg.virtualMachines;
-        generateVhost = vmName: vmCfg: nameValuePair "${vmName}.${suffix}" {
-          serverAliases = map (alias: "${alias}.${vmName}.${suffix}") vmCfg.aliases;
-          forceSSL = true;
-          enableACME = true;
-          locations."/" = {
-            proxyPass = "https://${vmName}";
-          };
-        };
-      in (mapAttrs' generateVhost vms))
-    else
-      { };
+    services.nginx = let
+      suffix = cfg.publicAddress;
+      vms =
+        filterAttrs (name: vmCfg: vmCfg.aliases != [ ]) cfg.virtualMachines;
+      httpUpstreams = (concatStringsSep "\n" (mapAttrsToList (vmName: vmCfg:
+        ".${vmName}.${suffix} http://${vmCfg.srvIp};"
+      ) vms));
+      httpsUpstreams = (concatStringsSep "\n" (mapAttrsToList (vmName: vmCfg:
+        ".${vmName}.${suffix} ${vmCfg.srvIp}:443;" 
+      ) vms));
+    in {
+      appendHttpConfig = ''
+        map $http_host $dev_vms_http_upstream {
+          hostnames;
+          ${httpUpstreams}
+        }
+      '';
+      virtualHosts."dev-vms-http" = {
+        locations."/".proxyPass = "$dev_vms_http_upstream";
+        serverName = "_";
+      };
+      streamConfig = ''
+        map $ssl_preread_server_name $dev_vms_https_upstream {
+          hostnames;
+          ${httpsUpstreams}
+        }
+        server {
+          listen 0.0.0.0:443;
+          listen [::]:443;
+          ssl_preread on;
+          proxy_pass $dev_vms_https_upstream;
+        }
+      '';
+    };
     networking.extraHosts = ''
       # static entries for devhost vms to avoid nginx issues
       # if containers are not running and to use the existing batou ssh configs.
