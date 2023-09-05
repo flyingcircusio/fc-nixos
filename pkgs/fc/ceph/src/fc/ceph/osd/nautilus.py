@@ -8,6 +8,7 @@ import threading
 import time
 import traceback
 from subprocess import CalledProcessError
+from typing import Optional
 
 from fc.ceph.util import kill, mount_status, run
 
@@ -51,7 +52,7 @@ class OSDManager(object):
         vgs = run.json.vgs("-S", r"vg_name=~^vgosd\-[0-9]+$")
         return [int(vg["vg_name"].replace("vgosd-", "", 1)) for vg in vgs]
 
-    def _parse_ids(self, ids, allow_non_local=False):
+    def _parse_ids(self, ids: str, allow_non_local=False):
         if ids == "all":
             return self.local_osd_ids
         ids = [int(x) for x in ids.split(",")]
@@ -72,7 +73,9 @@ class OSDManager(object):
                 )
         return ids
 
-    def create_filestore(self, device, journal, journal_size, crush_location):
+    def create_filestore(
+        self, device: str, journal: str, journal_size: str, crush_location: str
+    ):
         assert "=" in crush_location
         assert journal in ["internal", "external"]
         assert os.path.exists(device)
@@ -109,18 +112,55 @@ class OSDManager(object):
         osd = BlueStoreOSD(id_)
         osd.create(device, wal, crush_location)
 
-    def activate(self, ids):
+    def activate(self, ids: str, as_systemd_unit: bool = False):
+        # special case optimisation
+        nonblocking_start = ids == "all"
         ids = self._parse_ids(ids)
-        run.systemctl("start", "fc-blockdev")
 
-        for id_ in ids:
+        if as_systemd_unit:
+            if len(ids) > 1:
+                raise RuntimeError("Only single OSDs may be called as a unit.")
+            id_ = ids[0]
+            osd = OSD(id_)
             try:
-                osd = OSD(id_)
-                osd.activate()
+                self._activate_single(osd, as_systemd_unit)
             except Exception:
                 traceback.print_exc()
+        else:
+            for id_ in ids:
+                osd = OSD(id_)
+                self._activate_single(
+                    osd, as_systemd_unit=False, nonblocking=nonblocking_start
+                )
 
-    def destroy(self, ids, unsafe_destroy, force_objectstore_type=None):
+    def _activate_single(
+        self,
+        osd: "GenericOSD",
+        as_systemd_unit: bool = False,
+        nonblocking: bool = False,
+    ):
+        """
+        entry point for low-level OSD operations that need to activate themselfs again,
+        without having to know about systemd units"""
+        # this is then also allowed to bubble up errors
+
+        if as_systemd_unit:
+            run.systemctl(
+                "start", "fc-blockdev"
+            )  # FIXME shouldn't this better be handled via systemd requirements?
+            osd.activate()
+        else:
+            if nonblocking:
+                run.systemctl("start", "--no-block", f"fc-ceph-osd@{osd.id}")
+            else:
+                run.systemctl("start", f"fc-ceph-osd@{osd.id}")
+
+    def destroy(
+        self,
+        ids: str,
+        unsafe_destroy: bool,
+        force_objectstore_type: Optional[str] = None,
+    ):
         ids = self._parse_ids(ids, allow_non_local=f"DESTROY {ids}")
 
         for id_ in ids:
@@ -130,36 +170,69 @@ class OSDManager(object):
             except Exception:
                 traceback.print_exc()
 
-    def deactivate(self, ids):
+    def deactivate(
+        self, ids: str, as_systemd_unit: bool = False, flush: bool = False
+    ):
         ids = self._parse_ids(ids)
 
-        threads = []
-        for id_ in ids:
-            try:
-                osd = OSD(id_)
-                thread = threading.Thread(target=osd.deactivate)
-                thread.start()
-                threads.append(thread)
-            except Exception:
-                traceback.print_exc()
+        if as_systemd_unit:
+            if len(ids) > 1:
+                raise RuntimeError("Only single OSDs may be called as a unit.")
+            id_ = ids[0]
+            osd = OSD(id_)
+            self._deactivate_single(osd, as_systemd_unit, flush)
+        else:
+            threads = []
+            for id_ in ids:
+                try:
+                    osd = OSD(id_)
+                    thread = threading.Thread(
+                        target=lambda: self._deactivate_single(
+                            osd, as_systemd_unit, flush
+                        )
+                    )
+                    thread.start()
+                    threads.append(thread)
+                except Exception:
+                    traceback.print_exc()
 
-        for thread in threads:
-            thread.join()
+            for thread in threads:
+                thread.join()
 
-    def reactivate(self, ids):
+    def _deactivate_single(
+        self,
+        osd: "GenericOSD",
+        as_systemd_unit: bool = False,
+        flush: bool = False,
+    ):
+        """
+        entry point for low-level OSD operations that need to activate themselfs again,
+        without having to know about systemd units"""
+        if as_systemd_unit:
+            osd.deactivate()
+        else:
+            run.systemctl("stop", f"fc-ceph-osd@{osd.id}")
+        if flush:
+            osd.flush()
+
+    def reactivate(self, ids: str):
         ids = self._parse_ids(ids)
 
         for id_ in ids:
+            osd = OSD(id_)
             wait_for_clean_cluster()
             try:
-                osd = OSD(id_)
-                osd.deactivate(flush=False)
-                osd.activate()
+                self._deactivate_single(osd, as_systemd_unit=False, flush=False)
+                self._activate_single(osd, as_systemd_unit=False)
             except Exception:
                 traceback.print_exc()
 
     def rebuild(
-        self, ids, journal_size, unsafe_destroy, target_objectstore_type=None
+        self,
+        ids: str,
+        journal_size: str,
+        unsafe_destroy: bool,
+        target_objectstore_type: Optional[str] = None,
     ):
         ids = self._parse_ids(ids)
 
@@ -172,7 +245,7 @@ class OSDManager(object):
             except Exception:
                 traceback.print_exc()
 
-    def prepare_journal(self, device):
+    def prepare_journal(self, device: str):
         if not os.path.exists(device):
             print(f"Device does not exist: {device}")
         try:
@@ -277,7 +350,7 @@ class GenericOSD(object):
 
         resource.setrlimit(resource.RLIMIT_NOFILE, (270000, 270000))
 
-    def deactivate(self, flush=True):
+    def deactivate(self):
         print(f"Stopping OSD {self.id} ...")
         kill(self.pid_file)
 
@@ -351,7 +424,9 @@ class GenericOSD(object):
         self._create_crush_and_auth(self.data_lv, crush_location)
 
         # 6. activate OSD
-        self.activate()
+        osdmanager = OSDManager()
+        # rebuilds are never triggered from inside a systemd unit
+        osdmanager._activate_single(self, as_systemd_unit=False)
 
     def _create_journal(journal_location, journal_size):
         """Hook function for creating journal/ WAL/ other similar devices.
@@ -421,9 +496,14 @@ class GenericOSD(object):
                 sys.exit(10)
 
         print(f"Destroying OSD {self.id} ...")
+        osdmanager = OSDManager()
 
         try:
-            self.deactivate(flush=False)
+            # purging is never done from inside a single systemd unit, thus osd
+            # deactivation is being left to the OSD manager
+            osdmanager._deactivate_single(
+                self, as_systemd_unit=False, flush=False
+            )
         except Exception as e:
             print(e)
 
@@ -597,21 +677,21 @@ class FileStoreOSD(GenericOSD):
             # fmt: on
         )
 
-    def deactivate(self, flush=True):
+    def deactivate(self):
         # deactivate (shutdown osd, remove things but don't delete it, make
         # the osd able to be relocated somewhere else)
         super().deactivate()
 
-        if flush:
-            print(f"Flushing journal for OSD {self.id} ...")
-            run.ceph_osd(
-                # fmt: off
-                "-i", str(self.id),
-                "--flush-journal",
-                "--osd-data", self.datadir,
-                "--osd-journal", self._locate_journal_lv(),
-                # fmt: on
-            )
+    def flush(self):
+        print(f"Flushing journal for OSD {self.id} ...")
+        run.ceph_osd(
+            # fmt: off
+            "-i", str(self.id),
+            "--flush-journal",
+            "--osd-data", self.datadir,
+            "--osd-journal", self._locate_journal_lv(),
+            # fmt: on
+        )
 
     def _create_journal(self, journal, journal_size):
         # External journal
@@ -672,7 +752,12 @@ class FileStoreOSD(GenericOSD):
         except ValueError:
             pass
 
-    def rebuild(self, journal_size, unsafe_destroy, target_objectstore_type):
+    def rebuild(
+        self,
+        journal_size: str,
+        unsafe_destroy: bool,
+        target_objectstore_type: Optional[str],
+    ):
         """Fully destroy and create the FileStoreOSD again with the same properties,
         optionally converting it to another OSD type.
         """
@@ -791,13 +876,16 @@ class BlueStoreOSD(GenericOSD):
             # fmt: on
         )
 
-    def deactivate(
-        self, flush=False  # ignored, just for call compatibility with FileStore
-    ):
+    def deactivate(self):
         # deactivate (shutdown osd, remove things but don't delete it
         # FIXME: this is not sufficient for migrating the OSD to another host if it has
         # an external WAL, that requires a manual outmigration command PL-130677
-        super().deactivate(flush=False)
+        super().deactivate()
+
+    def flush(self):
+        # trivial journal flushing is not implemented for Bluestore OSDs,
+        # WAL management is a bit more complex
+        pass
 
     def _create_journal(self, wal, __size_is_ignored):
         # External WAL
@@ -872,7 +960,12 @@ class BlueStoreOSD(GenericOSD):
         except ValueError:
             pass
 
-    def rebuild(self, journal_size, unsafe_destroy, target_objectstore_type):
+    def rebuild(
+        self,
+        journal_size: str,
+        unsafe_destroy: bool,
+        target_objectstore_type: Optional[str],
+    ):
         """Fully destroy and create the FileStoreOSD again with the same properties,
         optionally converting it to another OSD type.
         """
