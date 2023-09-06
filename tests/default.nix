@@ -49,6 +49,7 @@ in {
   journalbeat = callTest ./journalbeat.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
   k3s = callTest ./k3s {};
+  k3s_monitoring = callTest ./k3s/monitoring.nix {};
 
   lampVm = callTest ./lamp/vm-test.nix { };
   lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
