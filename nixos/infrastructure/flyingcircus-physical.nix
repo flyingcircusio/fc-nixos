@@ -38,6 +38,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     flyingcircus.activationScripts = {
       disableSwap = ''
         swapoff -a
+        wipefs -af /dev/disk/by-label/swap || true
       '';
     };
 
