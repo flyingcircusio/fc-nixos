@@ -83,6 +83,15 @@ in
         };
       };
 
+      resizeDisk = mkOption {
+        default = (attrByPath [ "parameters" "machine" ] "virtual" cfg.enc) == "virtual";
+        description = ''
+          Automatically resize root disk when the underlying device changes.
+          Enabled for all virtual machines by default.
+        '';
+        type = types.bool;
+      };
+
       updateInMaintenance = mkOption {
         default = attrByPath [ "parameters" "production" ] false cfg.enc;
         description = "Perform channel updates in scheduled maintenance. Default: all production VMs";
@@ -274,7 +283,7 @@ in
             '';
           in ''
             rc=0
-            fc-resize-disk || rc=$?
+            ${lib.optionalString cfg.agent.resizeDisk "fc-resize-disk || rc=$?"}
             # Ignore failing attempts at getting ENC data from the directory.
             # This happens sometimes when the directory is overloaded and
             # usually works on the next try.
