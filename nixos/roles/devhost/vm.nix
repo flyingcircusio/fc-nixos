@@ -80,13 +80,14 @@ let
   # python libs in path, and not other applications.
   # XXX: Switch to the following code with 23.05
   # manage_script = pkgs.writeShellApplication {
-  #   name = "fc-manage-dev-vms";
+  #   name = "fc-devhost";
   #   runtimeInputs = with pkgs; [
-  #     xfsprogs
-  #     qemu
-  #     python3.withPackages (ps: with ps; [ requests ])
+  #     ...
   #   ];
-  #   text = "python ${./fc-manage-dev-vms.py}";
+  #   text = ''
+  #     --- include ssh snippet + PATH ---
+  #     python ${./fc-devhost.py}
+  #   '';
   # };
   manage_script = let 
     runtimeInputs = with pkgs; [
@@ -95,7 +96,7 @@ let
       qemu
     ];
   in pkgs.writeTextFile rec {
-    name = "fc-manage-dev-vms";
+    name = "fc-devhost";
     executable = true;
     destination = "/bin/${name}";
     text = ''
@@ -118,7 +119,7 @@ let
     fi
 
     export PATH="${makeBinPath runtimeInputs}:$PATH"
-    python ${./fc-manage-dev-vms.py} "$@" --location ${location}
+    python ${./fc-devhost.py} "$@" --location ${location}
     '';
   };
 in {
@@ -143,7 +144,7 @@ in {
     environment.systemPackages = [ manage_script ];
     security.sudo.extraRules = mkAfter [{
       commands = [{
-        command = "${manage_script}/bin/fc-manage-dev-vms";
+        command = "${manage_script}/bin/fc-devhost";
         options = [ "NOPASSWD" ];
       }];
       groups = [ "service" "users" ];
@@ -185,7 +186,7 @@ in {
       "fc-devhost-vm-cleanup" = {
         serviceConfig = {
           Type = "oneshot";
-          ExecStart = "${manage_script}/bin/fc-manage-dev-vms cleanup";
+          ExecStart = "${manage_script}/bin/fc-devhost cleanup";
         };
       };
     };

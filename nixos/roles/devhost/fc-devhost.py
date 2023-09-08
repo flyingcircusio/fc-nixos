@@ -173,7 +173,7 @@ class Manager:
                     textwrap.dedent(
                         f"""\
                 # DO NOT TOUCH!
-                # Managed by fc-manage-dev-vms
+                # Managed by fc-devhost
                 {{ ... }}: {{
                   flyingcircus.roles.devhost.virtualMachines = {{
                     "{self.cfg['name']}" = {{
