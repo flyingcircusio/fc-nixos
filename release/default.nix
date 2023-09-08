@@ -333,17 +333,30 @@ jobs // {
 
     patchPhase = "touch .update-on-nixos-rebuild";
 
-    XZ_OPT = "-1";
     tarOpts = ''
-      --owner=0 --group=0 --mtime="1970-01-01 00:00:00 UTC" \
+      --owner=0 --group=0 \
+      --mtime="1970-01-01 00:00:00 UTC" \
       --exclude-vcs-ignores \
-      --transform='s!^\.!${name}!' \
     '';
 
     installPhase = ''
       mkdir -p $out/{tarballs,nix-support}
-      cd nixos
-      tar cJhf $out/tarballs/nixexprs.tar.xz ${tarOpts} .
+      tarball=$out/tarballs/nixexprs.tar
+
+      # Add all files in nixos/ including hidden ones.
+      # (-maxdepth 1: don't recurse into subdirs)
+      find nixos/ -maxdepth 1 -type f -exec \
+        tar uf "$tarball" --transform "s|^nixos|${name}|" ${tarOpts} {} \;
+
+      # Add files from linked subdirectories. We want to keep the name of the
+      # link in the archive, not the target. Example:
+      # "nixos/fc/default.nix" becomes "release-23.05.2222.12abcdef/fc/default.nix"
+      for d in nixos/*/; do
+          tar uf "$tarball" --transform "s|^$d\\.|${name}/$(basename "$d")|" ${tarOpts} "$d."
+      done
+
+      # Compress using multiple cores and with "extreme settings" to reduce compressed size.
+      xz -T0 -e "$tarball"
 
       echo "channel - $out/tarballs/nixexprs.tar.xz" > "$out/nix-support/hydra-build-products"
       echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
