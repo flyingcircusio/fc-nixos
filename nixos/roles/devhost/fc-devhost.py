@@ -336,6 +336,21 @@ class Manager:
         for image in to_delete_images:
             (VM_BASE_IMAGE_DIR / image).unlink()
 
+    def login(self, location=None):
+        os.execvp(
+            "ssh",
+            [
+                "ssh",
+                "-i",
+                "/var/lib/devhost/ssh_bootstrap_key",
+                "-o",
+                "StrictHostKeyChecking=no",
+                "-l",
+                "developer",
+                self.name,
+            ],
+        )
+
 
 def main():
     a = argparse.ArgumentParser(description="Manage DevHost VMs.")
@@ -369,7 +384,9 @@ def main():
     p.add_argument("--location", help="location the VMs live in")
 
     p = sub.add_parser(
-        "list", help="List VMs. By default all, can be limited by parameters."
+        "list",
+        aliases=["ls"],
+        help="List VMs. By default all, can be limited by parameters.",
     )
     p.set_defaults(func="list_vms")
     p.add_argument("--user", type=str, help="user name creating the vm")
@@ -386,6 +403,14 @@ def main():
         help="Cleanup. This is an automated task. In this process old base images will be deleted.",
     )
     p.set_defaults(func="cleanup")
+    p.add_argument("--location", help="location the VMs live in")
+
+    p = sub.add_parser(
+        "login",
+        help="Login into the specified VM.",
+    )
+    p.set_defaults(func="login")
+    p.add_argument("name", help="name of the VM")
     p.add_argument("--location", help="location the VMs live in")
 
     args = a.parse_args()
