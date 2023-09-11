@@ -2,8 +2,31 @@
 let
   role = config.flyingcircus.roles.lamp;
   fclib = config.fclib;
-in {
 
+  mkVersion = lib.versions.majorMinor;
+
+  wrapPHP = p: pkgs.stdenv.mkDerivation {
+    name = "wrapped-php";
+    inherit (p) version;
+    phases = [ "installPhase" ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    installPhase = ''
+      mkdir -p $out
+      makeWrapper ${p}/bin/php $out/bin/php-${mkVersion p.version}
+    '';
+  };
+
+  wrapComposer = p: pkgs.stdenv.mkDerivation {
+    name = "wrapped-composer";
+    inherit (p) version;
+    phases = [ "installPhase" ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    installPhase = ''
+      mkdir -p $out
+      makeWrapper ${p.packages.composer}/bin/composer $out/bin/composer-${mkVersion p.version}
+    '';
+  };
+in {
   options = with lib; {
     flyingcircus.roles.lamp = {
       enable = mkEnableOption "Flying Circus LAMP stack";
@@ -147,10 +170,9 @@ in {
 
         # We always provide the PHP cli environment but we need to ensure
         # to choose the right one in case someone uses the LAMP role.
-        environment.systemPackages = [
-          role.php
-          role.php.packages.composer
-        ];
+        environment.systemPackages = builtins.concatMap
+          (p: [(wrapPHP p) (wrapComposer p)])
+          (lib.catAttrs "phpPackage" (lib.attrValues config.services.phpfpm.pools));
 
         # Provide a similar PHP config for the PHP CLI as for Apache (httpd).
         # The file referenced by PHPRC is loaded together with the php.ini
