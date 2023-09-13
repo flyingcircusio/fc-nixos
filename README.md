@@ -14,18 +14,19 @@ Development on a Test VM
 ------------------------
 
 For development on a FCIO test VM, sync the fc-nixos source tree to the target
-machine and set up the `channels` directory:
+machine and set up the `channels` directory with:
 
     ./dev-setup
 
-This can be done as regular user.
+This can be done as regular user. Run the command again when nixpkgs changes
+in order to update the `channels` directory.
 
 The VM has to use a matching environment that points to the `channels` dir.
-`fc-manage -b` (as root) then uses the local code to rebuild the system.
+`fc-manage switch` (as root) then uses the local code to rebuild the system.
 
 
-Build packages
---------------
+Build Single Packages
+---------------------
 
 Run in development mode:
 
@@ -36,13 +37,14 @@ Or build package by directly calling a Nix expression:
     nix-build -E 'with import <nixpkgs> {}; callPackage path/to/file.nix {}'
 
 
-(Dry) system build
+(Dry-)Build System
 ------------------
 
 Run in development mode:
 
     nix-build '<nixpkgs/nixos>' -A system
 
+Must be executed as *root* on FCIO test VMs.
 
 Execute test
 ------------
