@@ -2,7 +2,7 @@ import fc.ceph.maintenance as maintSub
 import pytest
 
 
-@pytest.fixture(params=[maintSub.jewel, maintSub.luminous, maintSub.nautilus])
+@pytest.fixture(params=[maintSub.nautilus])
 def maintenance_manager_legacy(request):
     """returns a maintenance manager for all Ceph releases supported by fc-ceph"""
     return request.param

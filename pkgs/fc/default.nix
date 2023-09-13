@@ -7,8 +7,6 @@ rec {
 
   check-age = callPackage ./check-age {};
   check-ceph = {
-    jewel = callPackage ./check-ceph/jewel {ceph = pkgs.ceph-jewel;};
-    luminous = callPackage ./check-ceph/luminous {ceph = pkgs.ceph-luminous;};
     nautilus = callPackage ./check-ceph/nautilus {inherit (pkgs.ceph-nautilus) ceph-client;};
   };
   check-haproxy = callPackage ./check-haproxy {};
@@ -26,8 +24,6 @@ rec {
   # normally, fc-ceph is installed via a role, but here are some direct installable
   # packages in case they're needed:
   ceph = {
-    jewel = cephWith pkgs.ceph-jewel;
-    luminous = cephWith pkgs.ceph-luminous;
     cephWithNautilus = cephWith pkgs.ceph-nautilus.ceph-client;
   };
 
@@ -67,9 +63,6 @@ rec {
   sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};
   util-physical = {
-    # luminous code is compatible to jewel
-    jewel = callPackage ./util-physical/ceph-luminous {ceph = pkgs.ceph-jewel;};
-    luminous = callPackage ./util-physical/ceph-luminous {ceph = pkgs.ceph-luminous;};
     nautilus = callPackage ./util-physical/ceph-nautilus {ceph = pkgs.ceph-nautilus.ceph-client;};
   };
   telegraf-collect-psi = callPackage ./telegraf-collect-psi {};

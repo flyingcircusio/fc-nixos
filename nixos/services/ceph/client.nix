@@ -199,14 +199,7 @@ in
       "d /var/log/ceph 0755 root - - -"
     ];
 
-    services.udev.extraRules =
-      if fclib.ceph.releaseAtLeast "nautilus" cfg.client.cephRelease
-      then builtins.readFile "${cfg.client.package}/etc/udev/50-rbd.rules"
-      else
-      ''
-        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}"
-        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}-part%n"
-      '';
+    services.udev.extraRules = builtins.readFile "${cfg.client.package}/etc/udev/50-rbd.rules";
 
     flyingcircus.services.ceph.allMergedSettings = (
         lib.recursiveUpdate

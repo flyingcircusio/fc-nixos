@@ -1,8 +1,8 @@
 import fc.ceph
 
-from . import luminous, nautilus
+from . import nautilus
 
 
 class Manager(fc.ceph.VersionedSubsystem):
-    luminous = luminous.Manager
+
     nautilus = nautilus.Manager

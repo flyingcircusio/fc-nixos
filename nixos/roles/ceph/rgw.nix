@@ -24,15 +24,9 @@ let
     rgwEnableOpsLog = false;
     rgwMimeTypesFile = "${pkgs.mime-types}/etc/mime.types";
     debugRados = "1 5";
-  } // (if releaseAtLeast "nautilus" role.cephRelease
-    then {
-      rgwFrontends = "beast port=80";
-      debugRgw = "1 5";
-    } else {
-      rgwFrontends = "civetweb port=80";
-      debugCivetweb = "1 5";
-      debugRgw = "0 5";
-    });
+    rgwFrontends = "beast port=80";
+    debugRgw = "1 5";
+    };
 in
 {
   options = {
