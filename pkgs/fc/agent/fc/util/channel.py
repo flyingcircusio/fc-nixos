@@ -68,7 +68,7 @@ class Channel:
                 if name == channel_name:
                     # We don't have to resolve the URL if it's a direct link
                     # to a Hydra build product. This is the normal case for
-                    # running VMs because the nixos channel is set to an
+                    # running machines because the nixos channel is set to an
                     # already resolved URL.
                     # Resolve all other URLs, for example initial URLs used
                     # during VM bootstrapping.

@@ -80,7 +80,7 @@ def check(log, enc) -> CheckResult:
     )
 
     if production_flag and uses_local_checkout:
-        warnings.append("production VM uses local dev checkout.")
+        warnings.append("production machine uses local dev checkout.")
 
     # nixos channel checks (missing/malformed)
     nixos_channel = nixos.current_nixos_channel_url(log)
