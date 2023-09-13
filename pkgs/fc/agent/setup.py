@@ -25,16 +25,15 @@ setup(
     version="1.0",
     description=__doc__,
     long_description=long_description,
-    url="https://github.com/flyingcircus/fc-nixos",
-    author="Christian Kauhaus, Christian Theune",
+    url="https://github.com/flyingcircusio/fc-nixos",
+    author="Tobias Stenzel, Christian Kauhaus, Christian Theune",
     author_email="mail@flyingcircus.io",
     license="ZPL",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "License :: OSI Approved :: Zope Public License",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.10",
         "Topic :: System :: Systems Administration",
     ],
     packages=[
@@ -45,7 +44,7 @@ setup(
         "fc.util",
     ],
     install_requires=[
-        "PyYAML>=5",
+        "PyYAML>=6",
         "click",
         "iso8601",
         "python-dateutil",
