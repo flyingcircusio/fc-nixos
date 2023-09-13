@@ -38,16 +38,7 @@ rec {
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
 
-  qemu-py2 = callPackage ./qemu/py2.nix {
-      version = "1.2-dev";
-      src = pkgs.fetchFromGitHub {
-        owner = "flyingcircusio";
-        repo = "fc.qemu";
-        rev = "bcf373c57a39bb373f45022cae4015221e9aa94f";
-        hash = "sha256-4rIwMzsYYvKGGybkFFu3z0D/RD8LXIJP5GG0oB9lxpc";
-      };
-  };
-  qemu-py3 = callPackage ./qemu/py3.nix rec {
+  qemu = callPackage ./qemu rec {
     version = "1.3.1";
     # src = /path/to/fc.qemu/checkout ; # development
     src = pkgs.fetchFromGitHub {
