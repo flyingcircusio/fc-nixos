@@ -45,7 +45,7 @@ in {
   docker = callTest ./docker.nix {};
   elasticsearch6 = callTest ./elasticsearch.nix { version = "6"; };
   elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };
-  fcagent = callTest ./fcagent.nix {};
+  fcagent = callSubTests ./fcagent.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};

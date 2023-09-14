@@ -23,6 +23,7 @@ KiB = 1024
 MiB = 1024 * KiB
 GiB = 1024 * MiB
 
+
 # TODO: this can be moved to common sensu check util code
 class SensuStatus(IntEnum):
     # sorted from highest to lowest priority

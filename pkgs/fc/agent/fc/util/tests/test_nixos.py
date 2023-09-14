@@ -8,6 +8,10 @@ from fc.util import nixos
 
 structlog.configure(wrapper_class=structlog.BoundLogger)
 
+FC_CHANNEL = (
+    "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
+)
+
 
 class FakeCmdStream:
     def __init__(self, content):
@@ -39,6 +43,18 @@ class PollingFakePopen:
         pass
 
 
+def test_get_fc_channel_build(log):
+    build = nixos.get_fc_channel_build(FC_CHANNEL)
+    assert build == "93111"
+
+
+def test_get_fc_channel_build_should_warn_for_non_fc_channel(log):
+    invalid_channel = "http://invalid"
+    build = nixos.get_fc_channel_build(invalid_channel)
+    assert build is None
+    log.has("no-fc-channel-url", channel_url=invalid_channel)
+
+
 def test_build_system_with_changes(log, monkeypatch):
     channel = (
         "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
@@ -55,7 +71,7 @@ def test_build_system_with_changes(log, monkeypatch):
     )
 
     cmd = shlex.split(
-        f"nix-build --no-build-output --show-trace -I {channel} <nixpkgs/nixos> -A system --out-link /run/fc-agent-test -v"
+        f"nix-build --no-build-output <nixpkgs/nixos> -A system -I {channel} --out-link /run/fc-agent-test -v"
     )
 
     nix_build_fake = PollingFakePopen(
@@ -86,7 +102,7 @@ def test_build_system_unchanged(log, monkeypatch):
     build_output = "\n"
 
     cmd = shlex.split(
-        f"nix-build --no-build-output --show-trace -I {channel} <nixpkgs/nixos> -A system --no-out-link"
+        f"nix-build --no-build-output <nixpkgs/nixos> -A system -I {channel} --no-out-link"
     )
 
     nix_build_fake = PollingFakePopen(
@@ -175,9 +191,7 @@ def test_switch_to_system_lazy_unchanged(log, monkeypatch):
 
 
 def test_update_system_channel(log, monkeypatch):
-    current_channel = (
-        "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
-    )
+    current_channel = FC_CHANNEL
     next_channel = (
         "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
     )
@@ -206,7 +220,6 @@ def test_update_system_channel(log, monkeypatch):
 
 
 def test_find_nix_build_error_missing_option():
-
     stderr = textwrap.dedent(
         """\
     error: while evaluating the attribute 'config.system.build.toplevel' at /home/test/fc-nixos/channels/nixpkgs/nixos/modules/system/activation/top-level.nix:293:5:
@@ -221,7 +234,6 @@ def test_find_nix_build_error_missing_option():
 
 
 def test_find_nix_build_error_default_when_no_error_message():
-
     stderr = textwrap.dedent(
         """\
     error: while evaluating the attribute 'config.system.build.toplevel' at /home/test/fc-nixos/channels/nixpkgs/nixos/modules/system/activation/top-level.nix:293:5:
@@ -232,7 +244,6 @@ def test_find_nix_build_error_default_when_no_error_message():
 
 
 def test_find_nix_build_error_syntax():
-
     stderr = textwrap.dedent(
         """\
     error: while evaluating the attribute 'config.system.build.toplevel' at /home/ts/fc-nixos/channels/nixpkgs/nixos/lib/eval-config.nix:64:5:
@@ -246,7 +257,6 @@ def test_find_nix_build_error_syntax():
 
 
 def test_find_nix_build_error_builder_failed():
-
     stderr = textwrap.dedent(
         """\
     /nix/store/bf8jb44sc2ad88895g7ki43iyzai9zaj-nixos-system-test-21.05.1534.06a1226.drv
@@ -265,3 +275,33 @@ def test_find_nix_build_error_builder_failed():
 
     expected = "builder for '/nix/store/ckkdla5pg582i83d0v2w99mxny2jqxk3-unit-script-acme--domain_name--start.drv' failed with exit code 127"
     assert nixos.find_nix_build_error(stderr) == expected
+
+
+@pytest.fixture
+def dirsetup(tmpdir):
+    drv = tmpdir.mkdir("abcdef-linux-4.4.27")
+    current = tmpdir.mkdir("current")
+    bzImage = drv.ensure("bzImage")
+    (current / "kernel").mksymlinkto(bzImage)
+    mod = drv.mkdir("lib").mkdir("modules")
+    return current / "kernel", mod
+
+
+def test_kernel_versions_equal(dirsetup, tmpdir):
+    kernel, mod = dirsetup
+    mod.mkdir("4.4.27")
+    assert "4.4.27" == nixos.kernel_version(str(kernel))
+
+
+def test_kernel_version_empty(dirsetup, tmpdir):
+    kernel, mod = dirsetup
+    with pytest.raises(RuntimeError):
+        nixos.kernel_version(str(kernel))
+
+
+def test_multiple_kernel_versions(dirsetup, tmpdir):
+    kernel, mod = dirsetup
+    mod.mkdir("4.4.27")
+    mod.mkdir("4.4.28")
+    with pytest.raises(RuntimeError):
+        nixos.kernel_version(str(kernel))

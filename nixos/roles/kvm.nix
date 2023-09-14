@@ -250,9 +250,29 @@ in
       };
     };
 
-    flyingcircus.agent.maintenance.kvm = {
-      enter = "${role.package}/bin/fc-qemu maintenance enter";
-    };
+    flyingcircus.agent = {
+      maintenancePreparationSeconds = 1800;
+      maintenanceRequestRunnableFor = 3600;
+      maintenance.kvm = {
+        enter =
+          let
+            hosts =
+              filter
+                (m: m != config.networking.hostName)
+                (map
+                  (service: head (lib.splitString "." service.address))
+                    (fclib.findServices "kvm_host-host"));
+            hostArgs = lib.concatMapStrings (u: " --in-service ${u}") hosts;
+            script = pkgs.writeScript "kvm-enter-maintenance" ''
+              set -e
+              # Check if all other KVM hosts are in service, signal "tempfail" otherwise.
+              ${pkgs.fc.agent}/bin/fc-maintenance constraints --failure-exit-code 75 ${hostArgs}
+              # Evacuate VMs.
+              ${role.package}/bin/fc-qemu maintenance enter
+            '';
+          in "${script}";
+        };
+      };
 
     systemd.services.fc-qemu-scrub = {
       description = "Scrub Qemu/KVM VM inventory.";

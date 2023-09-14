@@ -1,12 +1,12 @@
 import textwrap
-from unittest.mock import MagicMock, Mock, create_autospec
+from io import StringIO
+from unittest.mock import create_autospec
 
-import pytest
-import structlog
+import responses
 import yaml
-from fc.maintenance.activity import RebootType
+from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.activity.update import UpdateActivity
-from fc.manage.manage import Channel
+from fc.util.channel import Channel
 from fc.util.nixos import (
     BuildFailed,
     ChannelException,
@@ -15,9 +15,11 @@ from fc.util.nixos import (
     SwitchFailed,
 )
 from pytest import fixture
+from rich.console import Console
 
 CURRENT_BUILD = 93111
 NEXT_BUILD = 93222
+NEXT_NEXT_BUILD = 93333
 CURRENT_CHANNEL_URL = f"https://hydra.flyingcircus.io/build/{CURRENT_BUILD}/download/1/nixexprs.tar.xz"
 NEXT_CHANNEL_URL = f"https://hydra.flyingcircus.io/build/{NEXT_BUILD}/download/1/nixexprs.tar.xz"
 ENVIRONMENT = "fc-21.05-production"
@@ -38,15 +40,15 @@ UNIT_CHANGES = {
 CHANGELOG = textwrap.dedent(
     f"""\
     System update: {CURRENT_VERSION} -> {NEXT_VERSION}
-    Build number: {CURRENT_BUILD} -> {NEXT_BUILD}
-    Environment: {ENVIRONMENT} (unchanged)
 
     Will reboot after the update.
-    Stop: postgresql
+
+    Start/Stop: postgresql
     Restart: telegraf
-    Start: postgresql
     Reload: nginx
 
+    Environment: {ENVIRONMENT} (unchanged)
+    Build number: {CURRENT_BUILD} -> {NEXT_BUILD}
     Channel URL: {NEXT_CHANNEL_URL}"""
 )
 
@@ -62,6 +64,8 @@ next_environment: fc-21.05-production
 next_kernel: 5.10.50
 next_system: {NEXT_SYSTEM_PATH}
 next_version: 21.05.1235.bacc11d
+reboot_needed: !!python/object/apply:fc.maintenance.activity.RebootType
+- reboot
 unit_changes:
   reload:
   - nginx.service
@@ -72,11 +76,6 @@ unit_changes:
   stop:
   - postgresql.service
 """
-
-
-@fixture
-def logger():
-    return structlog.get_logger()
 
 
 @fixture
@@ -91,13 +90,88 @@ def activity(logger, nixos_mock):
     activity.next_kernel = NEXT_KERNEL_VERSION
     activity.next_system = NEXT_SYSTEM_PATH
     activity.next_version = NEXT_VERSION
+    activity.reboot_needed = RebootType.WARM
     activity.unit_changes = UNIT_CHANGES
     return activity
+
+
+def test_update_dont_merge_incompatible(activity):
+    other = Activity()
+    result = activity.merge(other)
+    assert result.is_effective is False
+    assert result.is_significant is False
+    assert result.merged is None
+    assert not result.changes
+
+
+def test_update_merge_same(activity):
+    # Given another activity which is exactly the same
+    other = UpdateActivity(NEXT_CHANNEL_URL)
+    other.__dict__.update(activity.__getstate__())
+    result = activity.merge(other)
+    # Then the merge result should be the original activity
+    assert result.merged is activity
+    assert result.is_effective is True
+    assert result.is_significant is False
+    assert not result.changes
+
+
+def test_update_merge_additional_reload_is_an_insignificant_update(activity):
+    # Given another activity which has a different channel URl and reloads an
+    # additional service.
+    channel_url = (
+        "https://hydra.flyingcircus.io/build/100000/download/1/nixexprs.tar.xz"
+    )
+
+    other = UpdateActivity(channel_url)
+    other.unit_changes = {
+        **UNIT_CHANGES,
+        "reload": {"nginx.service", "dbus.service"},
+    }
+    result = activity.merge(other)
+    # Then the merge result should be a new activity and the change is
+    # insignificant.
+    assert result.merged is not activity
+    assert result.merged is not other
+    assert result.is_effective is True
+    assert result.is_significant is False
+    assert result.changes == {
+        "added_unit_changes": {"reload": {"dbus.service"}},
+        "removed_unit_changes": {},
+    }
+
+
+def test_update_merge_more_unit_changes_is_a_significant_update(activity):
+    # Given another activity which has a different channel url and restarts
+    # different units.
+    channel_url = (
+        "https://hydra.flyingcircus.io/build/100000/download/1/nixexprs.tar.xz"
+    )
+
+    other = UpdateActivity(channel_url)
+    other.unit_changes = {**UNIT_CHANGES, "restart": {"mysql.service"}}
+    result = activity.merge(other)
+    # Then the merge result should be a new activity and the change is
+    # significant.
+    assert result.merged is not activity
+    assert result.merged is not other
+    assert result.is_effective is True
+    assert result.is_significant is True
+    assert result.changes == {
+        "added_unit_changes": {"restart": {"mysql.service"}},
+        "removed_unit_changes": {"restart": {"telegraf.service"}},
+    }
 
 
 @fixture
 def nixos_mock(monkeypatch):
     import fc.util.nixos
+
+    def fake_get_fc_channel_build(channel_url, _):
+        if channel_url == CURRENT_CHANNEL_URL:
+            return CURRENT_BUILD
+        elif channel_url == NEXT_CHANNEL_URL:
+            return NEXT_BUILD
 
     def fake_channel_version(channel_url):
         if channel_url == CURRENT_CHANNEL_URL:
@@ -120,6 +194,8 @@ def nixos_mock(monkeypatch):
         RegisterFailed=RegisterFailed,
     )
 
+    mocked.format_unit_change_lines = fc.util.nixos.format_unit_change_lines
+    mocked.get_fc_channel_build = fake_get_fc_channel_build
     mocked.channel_version = fake_channel_version
     mocked.kernel_version = fake_changed_kernel_version
     mocked.resolve_url_redirects = lambda url: url
@@ -134,10 +210,8 @@ def nixos_mock(monkeypatch):
     return mocked
 
 
-def test_update_activity_from_system_changed(nixos_mock):
-    activity = UpdateActivity.from_system_if_changed(
-        NEXT_CHANNEL_URL, ENVIRONMENT
-    )
+def test_update_activity(nixos_mock):
+    activity = UpdateActivity(NEXT_CHANNEL_URL, ENVIRONMENT)
 
     assert activity
     assert activity.current_version == CURRENT_VERSION
@@ -152,7 +226,7 @@ def test_update_activity_serialize(activity):
 
 
 def test_update_activity_deserialize(activity, logger):
-    deserialized = yaml.load(SERIALIZED_ACTIVITY, Loader=yaml.FullLoader)
+    deserialized = yaml.load(SERIALIZED_ACTIVITY, Loader=yaml.UnsafeLoader)
     deserialized.set_up_logging(logger)
     assert deserialized.__getstate__() == activity.__getstate__()
 
@@ -161,11 +235,11 @@ def test_update_activity_prepare(log, logger, tmp_path, activity, nixos_mock):
     activity.prepare()
 
     nixos_mock.build_system.assert_called_once_with(
-        NEXT_CHANNEL_URL, out_link="/run/next-system", log=logger
+        NEXT_CHANNEL_URL, out_link="/run/next-system", log=activity.log
     )
 
     nixos_mock.dry_activate_system.assert_called_once_with(
-        NEXT_SYSTEM_PATH, logger
+        NEXT_SYSTEM_PATH, activity.log
     )
 
     assert (
@@ -190,24 +264,31 @@ def test_update_activity_run(log, nixos_mock, activity, logger):
 
     assert activity.returncode == 0
     nixos_mock.update_system_channel.assert_called_with(
-        activity.next_channel_url, log=logger
+        activity.next_channel_url, log=activity.log
     )
     nixos_mock.build_system.assert_called_with(
-        activity.next_channel_url, log=logger
+        activity.next_channel_url, log=activity.log
+    )
+    nixos_mock.register_system_profile.assert_called_with(
+        NEXT_SYSTEM_PATH, log=activity.log
     )
     nixos_mock.switch_to_system.assert_called_with(
-        NEXT_SYSTEM_PATH, lazy=False, log=logger
+        NEXT_SYSTEM_PATH, lazy=False, log=activity.log
     )
-    log.has("update-run-succeeded")
+    assert log.has("update-run-succeeded")
 
 
 def test_update_activity_run_unchanged(log, nixos_mock, activity):
-    nixos_mock.running_system_version.return_value = activity.next_version
+    activity.current_system = activity.next_system
 
     activity.run()
 
+    nixos_mock.update_system_channel.assert_called_with(
+        activity.next_channel_url, log=activity.log
+    )
+    nixos_mock.build_system.assert_not_called()
+
     assert activity.returncode == 0
-    log.has("update-run-skip")
 
 
 def test_update_activity_run_update_system_channel_fails(
@@ -220,7 +301,7 @@ def test_update_activity_run_update_system_channel_fails(
     activity.run()
 
     assert activity.returncode == 1
-    log.has("update-run-failed", returncode=1)
+    assert log.has("update-run-failed", returncode=1)
 
 
 def test_update_activity_build_system_fails(log, nixos_mock, activity):
@@ -231,7 +312,20 @@ def test_update_activity_build_system_fails(log, nixos_mock, activity):
     activity.run()
 
     assert activity.returncode == 2
-    log.has("update-run-failed", returncode=2)
+    assert log.has("update-run-failed", returncode=2)
+
+
+def test_update_activity_register_system_profile_fails(
+    log, nixos_mock, activity
+):
+    nixos_mock.register_system_profile.side_effect = RegisterFailed(
+        msg="msg", stdout="stdout", stderr="stderr"
+    )
+
+    activity.run()
+
+    assert activity.returncode == 3
+    assert log.has("update-run-failed", returncode=3)
 
 
 def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
@@ -239,5 +333,71 @@ def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
 
     activity.run()
 
-    assert activity.returncode == 3
-    log.has("update-run-failed", returncode=3)
+    assert activity.returncode == 4
+    assert log.has("update-run-failed", returncode=4)
+
+
+def test_update_activity_from_enc(
+    log, mocked_responses, nixos_mock, logger, monkeypatch
+):
+    environment = "fc-21.05-dev"
+    current_channel_url = (
+        "https://hydra.flyingcircus.io/build/93000/download/1/nixexprs.tar.xz"
+    )
+    next_channel_url = (
+        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+    )
+    current_version = "21.05.1233.a9cc58d"
+    next_version = "21.05.1235.bacc11d"
+
+    enc = {
+        "parameters": {
+            "environment_url": next_channel_url,
+            "environment": environment,
+        }
+    }
+
+    mocked_responses.add(responses.HEAD, current_channel_url)
+    mocked_responses.add(responses.HEAD, next_channel_url)
+    monkeypatch.setattr(
+        "fc.util.nixos.channel_version", (lambda c: next_version)
+    )
+
+    current_channel = Channel(logger, current_channel_url)
+    current_channel.version = lambda *a: current_version
+    monkeypatch.setattr(
+        "fc.manage.manage.Channel.current", lambda *a: current_channel
+    )
+    activity = UpdateActivity.from_enc(logger, enc)
+    assert activity
+
+
+def test_update_from_enc_no_enc(log, logger):
+    activity = UpdateActivity.from_enc(logger, {})
+    assert activity is None
+    assert log.has("enc-data-missing")
+
+
+def test_update_from_enc_incompatible_with_local_channel(log, logger):
+    """Given an unchanged channel url, should not prepare an update activity"""
+    enc = {
+        "parameters": {
+            "environment_url": "file://test",
+            "environment": "dev-checkout-23.05",
+        }
+    }
+
+    activity = UpdateActivity.from_enc(logger, enc)
+    assert activity is None
+    assert log.has("update-from-enc-local-channel")
+
+
+def test_rich_print(activity):
+    activity.reboot_needed = RebootType.WARM
+    console = Console(file=StringIO())
+    console.print(activity)
+    str_output = console.file.getvalue()
+    assert (
+        "fc.maintenance.activity.update.UpdateActivity (warm reboot needed)\n"
+        == str_output
+    )

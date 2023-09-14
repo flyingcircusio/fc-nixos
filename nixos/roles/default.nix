@@ -1,11 +1,8 @@
 { config, lib, ... }:
+
+with builtins;
+
 let
-  # Map list of roles to a list of attribute sets enabling each role.
-  # Turn the list of role names (["a", "b"]) into an attribute set
-  # ala { <role> = { enable = true;}; }
-  roleSet = lib.listToAttrs (
-    map (role: { name = role; value = { enable = true; }; })
-      config.flyingcircus.active-roles);
   fclib = config.fclib;
 in {
   imports = with lib; [
@@ -62,7 +59,17 @@ in {
   };
 
   config = {
-    flyingcircus.roles = roleSet;
+    # Map list of roles to a list of attribute sets enabling each role.
+    # Turn the list of role names (["a", "b"]) into an attribute set
+    # ala { <role> = { enable = true;}; }
+    # Roles are ignored if the initial run marker of fc-agent is still present
+    # to get the new system ready for SSH connections more quickly and reliably.
+    flyingcircus.roles =
+      (lib.optionalAttrs
+        (!pathExists "/etc/nixos/fc_agent_initial_run")
+        (lib.listToAttrs (
+          map (role: { name = role; value = { enable = true; }; })
+            config.flyingcircus.active-roles)));
   };
 
 }
