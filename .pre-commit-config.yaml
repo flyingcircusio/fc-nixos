@@ -1,4 +1,4 @@
-exclude: ^secrets/|^appenv$|pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(nixos/infrastructure/container.nix|tests/testlib.nix)
+exclude: ^secrets/|^appenv$|pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(nixos/infrastructure/container.nix|tests/testlib.nix|nixos/roles/devhost/vm.nix)
 repos:
 - hooks:
   - exclude: "(?x)^(\n  secrets/|environments/.*/secret.*|\n  .*\\.patch\n)$\n"

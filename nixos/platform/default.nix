@@ -41,7 +41,9 @@ in {
     ./users.nix
   ] ++
     (additionalModules "/etc/nixos/enc-configs") ++
-    (additionalModules "/etc/local/nixos");
+    (additionalModules "/etc/local/nixos") ++
+    ### XXX: Think about the directory name, also imported even when devhost not activated
+    (additionalModules "/etc/devhost/vm-configs");
 
   options = with lib.types; {
 

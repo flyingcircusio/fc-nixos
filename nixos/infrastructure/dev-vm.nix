@@ -13,37 +13,53 @@ let
 in
 {
   config = lib.mkMerge [
-    {
+    (lib.mkIf (config.flyingcircus.infrastructureModule == "dev-vm") {
+      boot = {
+        initrd.kernelModules = [
+          "virtio_blk"
+          "virtio_console"
+          "virtio_net"
+          "virtio_pci"
+          "virtio_rng"
+          "virtio_scsi"
+          "i6300esb"
+        ];
 
-      assertions =
-        lib.mapAttrsToList (n: v:
-          { assertion = v ? supportsContainers;
-            message = "role ${n} does not define container support attribute";
-          }) visibleFCRoles;
-    }
+        kernelParams = [
+          "console=ttyS0"
+          "nosetmode"
+        ];
 
-    (lib.mkIf (config.flyingcircus.infrastructureModule == "container") {
+        loader.grub = {
+          device = "/dev/disk/device-by-alias/root";
+          fsIdentifier = "provided";
+          gfxmodeBios = "text";
+        };
+      };
 
-      assertions =
-        lib.mapAttrsToList (n: v:
-          # The "or true" clause seems weird but is intended to avoid reporting
-          # issue of a missing attribute twice (see the assertions above).
-          { assertion = if (v.enable or false) then
-              (v.supportsContainers or true) else true;
-            message = "role ${n} does not support containers";
-          }) visibleFCRoles;
+      fileSystems."/" = {
+        device = "/dev/disk/by-label/root";
+        fsType = "xfs";
+      };
 
-      boot.isContainer = true;
+      services.udev.extraRules = ''
+        # GRUB boot device should be device-by-alias/root
+        SUBSYSTEM=="block", KERNEL=="vda", SYMLINK+="disk/device-by-alias/root"
+
+        # static/bootstrap fallback rules for VMs
+        SUBSYSTEM=="net", ATTR{address}=="02:02:??:??:??:??", NAME="ethfe"
+        SUBSYSTEM=="net", ATTR{address}=="02:03:??:??:??:??", NAME="ethsrv"
+      '';
 
       networking = {
         hostName = fclib.mkPlatform config.flyingcircus.enc.name;
+        useDHCP = true;
 
         firewall.allowedTCPPorts = [ 80 ];
         firewall.allowPing = true;
       };
 
-      flyingcircus.agent.enable = false;
-      flyingcircus.agent.collect-garbage = lib.mkForce false;
+      flyingcircus.agent.enable = true;
 
       services.timesyncd.servers = [ "pool.ntp.org" ];
       services.telegraf.enable = false;
@@ -63,6 +79,7 @@ in
 
       services.mongodb.bind_ip = "[::]";
 
+      systemd.services.postgresql.bindsTo = lib.mkForce [ ];
       services.postgresql.settings.listen_addresses = lib.mkOverride 20 "0.0.0.0,::";
       services.postgresql.settings.fsync = "off";
       services.postgresql.settings.full_page_writes = "off";
@@ -87,7 +104,7 @@ in
       flyingcircus.services.redis.listenAddresses = [ "[::]" ];
       flyingcircus.services.rabbitmq.listenAddress = "::";
 
-      services.mysql.settings.mysqld = {        
+      services.mysql.settings.mysqld = {
         # We don't really care about the data and this speeds up things.
         innodb_flush_method = "nosync";
 
@@ -105,32 +122,9 @@ in
 
       services.redis.bind = lib.mkForce "0.0.0.0 ::";
 
-      # This is the insecure key pair to allow bootstrapping containers.
-      # -----BEGIN OPENSSH PRIVATE KEY-----
-      # b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-      # QyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLAAAAJjYNRR+2DUU
-      # fgAAAAtzc2gtZWQyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLA
-      # AAAEDKN3GvoFkLLQdFN+Blk3y/+HQ5rvt7/GALRAWofc/LFGc7V2c2zFPRMl8/gmBv1/ME
-      # ldEuJau8jHjhx+2qziYsAAAAEHJvb3RAY3QtZGlyLWRldjIBAgMEBQ==
-      # -----END OPENSSH PRIVATE KEY-----
-
-      # ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGc7V2c2zFPRMl8/gmBv1/MEldEuJau8jHjhx+2qziYs root@ct-dir-dev2
-
       users.users.root.password = "";
 
       time.timeZone = fclib.mkPlatformOverride "Europe/Berlin";
-
-      flyingcircus.encServices = [
-        { service = "nfs_rg_share-server";
-          address = config.networking.hostName;
-        }
-      ];
-
-      flyingcircus.encServiceClients = [
-        { service = "nfs_rg_share-server";
-          node = config.networking.hostName;
-        }
-      ];
 
       flyingcircus.users.userData = [
         { class = "human";
