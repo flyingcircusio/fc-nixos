@@ -361,31 +361,35 @@ in
       };
 
       systemd.services.fc-set-munge-key = {
-        path = [ pkgs.jq ];
-        script = ''
-          umask 0266
-          mkdir -p $(dirname ${cfg.mungeKeyFile})
-          jq -r \
-            '.[] | select(.service =="slurm-controller-controller") | .password' \
-            /etc/nixos/services.json | sha256sum | head -c64 \
-            > ${cfg.mungeKeyFile}
-
-          chown munge:munge ${cfg.mungeKeyFile}
-          echo "fc-set-munge-key finished"
-        '';
+        wantedBy = [ "multi-user.target" ];
+        environment = {
+          PYTHONUNBUFFERED = "1";
+          inherit (cfg) mungeKeyFile;
+          inherit (config.flyingcircus) encServicesPath;
+        };
 
         serviceConfig = {
           Type = "oneshot";
+          ExecStart =
+            let
+              pkg = (pkgs.writers.writePython3Bin
+                "fc-set-munge-key"
+                { libraries = with pkgs.python3Packages; [ rich pystemd ]; }
+                (lib.readFile ./fc-set-munge-key.py));
+
+          in "${pkg}/bin/fc-set-munge-key";
         };
       };
 
       systemd.services.munged = {
         after = [ "fc-set-munge-key.service" ];
-        requires = [ "fc-set-munge-key.service" ];
+        wants = [ "fc-set-munge-key.service" ];
         serviceConfig = {
           ExecStartPre = lib.mkForce [
             "${pkgs.coreutils}/bin/stat ${cfg.mungeKeyFile}"
           ];
+          Restart = "always";
+          RestartSec = "5s";
         };
       };
 
@@ -449,6 +453,7 @@ in
         after = [ "slurmdbd.service" ];
         serviceConfig = {
           Restart = "always";
+          RestartSec = "5s";
         };
       };
 

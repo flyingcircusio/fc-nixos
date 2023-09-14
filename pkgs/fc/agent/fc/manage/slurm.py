@@ -1,6 +1,7 @@
 import json
 import os
 import socket
+import time
 import traceback
 from pathlib import Path
 from typing import NamedTuple, Optional
@@ -233,6 +234,18 @@ def ready_all(
                 skip_nodes_in_maintenance,
                 directory,
             )
+
+    # XXX: Give slurmctld a bit more time to settle.
+    # The change to "ready" should be almost instantaneous. However, we experienced an
+    # alert when the Sensu check ran some milliseconds after this command finished and
+    # still saw all nodes as "down" even after slurmctld said that nodes are responding.
+    # This will be replaced by a proper wait loop like drain_many.
+    # See PL-131739 "Slurm maintenance causes alert".
+    log.info(
+        "ready-all-finished",
+        _replace_msg="Finished, waiting 2 seconds for slurmctld to settle.",
+    )
+    time.sleep(2)
 
 
 @all_nodes_app.command()
