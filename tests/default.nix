@@ -49,7 +49,8 @@ in {
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
-  gitlab = callTest ./gitlab.nix {};
+  # Not supported on 21.05 anymore.
+  # gitlab = callTest ./gitlab.nix {};
 
   graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
@@ -57,7 +58,8 @@ in {
   kernelconfig = callTest ./kernelconfig.nix {};
   kibana6 = callTest ./kibana.nix { version = "6"; };
   kibana7 = callTest ./kibana.nix { version = "7"; };
-  k3s = callTest ./k3s {};
+  # Not supported on 21.05 anymore.
+  # k3s = callTest ./k3s {};
   # legacy ceph
   kvm_host_ceph-jewel-jewel = callTest ./kvm_host_ceph-jewel.nix {};
   # default test
