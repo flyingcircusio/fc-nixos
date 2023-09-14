@@ -62,6 +62,7 @@ setup(
     entry_points={
         "console_scripts": [
             "fc-backy=fc.manage.backy:main",
+            "fc-backy-publish=fc.manage.backy:publish",
             "fc-create-vm=fc.manage.createvm:main",
             "fc-directory=fc.util.directory:directory_cli",
             "fc-graylog=fc.manage.graylog:main",
