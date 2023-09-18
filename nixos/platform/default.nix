@@ -292,6 +292,7 @@ in {
     '';
 
     environment.etc."fcio_environment_name".text = config.flyingcircus.enc.parameters.environment or "";
+    environment.etc."fcio_release".text = config.flyingcircus.platform.release.release_name or "pre";
 
     flyingcircus = {
       enc_services = enc_services;
