@@ -77,6 +77,8 @@ buildPythonPackage rec {
   ];
   dontStrip = true;
   doCheck = true;
-  passthru.pythonDevEnv = python.withPackages (_: checkInputs ++ propagatedBuildInputs);
+  passthru.pythonDevEnv = python.withPackages (_:
+    checkInputs ++ [ py.pytest ] ++ propagatedBuildInputs
+  );
 
 }
