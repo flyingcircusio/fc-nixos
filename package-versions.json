@@ -859,11 +859,6 @@
     "pname": "wireguard-tools",
     "version": "1.0.20210914"
   },
-  "wkhtmltopdf": {
-    "name": "wkhtmltopdf-0.12.6",
-    "pname": "wkhtmltopdf",
-    "version": "0.12.6"
-  },
   "xfsprogs": {
     "name": "xfsprogs-6.4.0",
     "pname": "xfsprogs",

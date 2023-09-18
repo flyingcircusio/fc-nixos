@@ -106,5 +106,6 @@ in {
   users = callTest ./users.nix {};
   vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
-  wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
+  # package broken because qt4 was removed
+  # wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
 }
