@@ -101,18 +101,8 @@ class ReqManager:
             if not d.exists():
                 os.mkdir(d)
         self.enc_path = Path(enc_path)
-        self.config_file = Path(config_file)
         self.requests = {}
-
-    def __enter__(self):
-        if self.lockfile:
-            return self
-        self.lockfile = open(p.join(self.spooldir, ".lock"), "a+")
-        fcntl.flock(self.lockfile.fileno(), fcntl.LOCK_EX)
-        self.lockfile.seek(0)
-        print(os.getpid(), file=self.lockfile)
-        self.lockfile.flush()
-        self.scan()
+        self.config_file = Path(config_file)
         self.config = configparser.ConfigParser()
         if self.config_file:
             if self.config_file.is_file():
@@ -123,6 +113,20 @@ class ReqManager:
         self.maintenance_preparation_seconds = int(
             self.config.get("maintenance", "preparation_seconds", fallback=300)
         )
+
+    def __enter__(self):
+        """
+        Sets up global request manager lock and loads active requests.
+        Used for invasive tasks that may change requests.
+        """
+        if self.lockfile:
+            return self
+        self.lockfile = open(p.join(self.spooldir, ".lock"), "a+")
+        fcntl.flock(self.lockfile.fileno(), fcntl.LOCK_EX)
+        self.lockfile.seek(0)
+        print(os.getpid(), file=self.lockfile)
+        self.lockfile.flush()
+        self.scan()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):

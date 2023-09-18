@@ -347,9 +347,8 @@ def constraints(
 
 @app.command(help="Prints metrics in the telegraf JSON input format.")
 def metrics():
-    with rm:
-        rm.scan()
-        jso = json.dumps(rm.get_metrics())
+    rm.scan()
+    jso = json.dumps(rm.get_metrics())
 
     print(jso)
 
