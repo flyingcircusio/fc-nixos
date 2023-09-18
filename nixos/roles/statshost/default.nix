@@ -191,6 +191,7 @@ in
 
       prometheusListenAddress = mkOption {
         type = types.str;
+        defaultText = "\${head fclib.network.srv.dualstack.addressQuoted}:9090";
         default = "${head fclib.network.srv.dualstack.addressesQuoted}:9090";
         description = "Prometheus listen address";
       };

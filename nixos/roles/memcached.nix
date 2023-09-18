@@ -34,6 +34,7 @@ in
 
       listenAddresses = lib.mkOption {
         type = lib.types.listOf lib.types.str;
+        defaultText = "the addresses of the networks `lo` and `srv`";
         default = fclib.network.lo.dualstack.addresses ++
                   fclib.network.srv.dualstack.addresses;
       };

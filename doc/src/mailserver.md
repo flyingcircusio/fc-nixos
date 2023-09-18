@@ -257,7 +257,7 @@ HELO name
 
 Frontend IP addresses
 
-: Public IPv4 and/or IPv6 adresses. **A** and **AAAA** queries of the HELO name
+: Public IPv4 and/or IPv6 addresses. **A** and **AAAA** queries of the HELO name
   must resolve to the frontend IP addresses. Each address must have a **PTR**
   record which must resolve exactly to the HELO name.
 

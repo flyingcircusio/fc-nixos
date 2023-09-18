@@ -13,7 +13,7 @@ in
       type = types.package;
       default = pkgs.auditbeat7-oss;
       defaultText = "pkgs.auditbeat7-oss";
-      example = literalExample "pkgs.auditbeat7";
+      example = literalExpression "pkgs.auditbeat7";
       description = ''
         The auditbeat package to use.
       '';

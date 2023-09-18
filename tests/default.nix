@@ -11,7 +11,7 @@ let
     inherit system;
   } // args);
 
-  callTest = fn: args: hydraJob (importTest fn args system).test;
+  callTest = fn: args: hydraJob (importTest fn args system);
 
   callSubTests = fn: args: let
     discover = attrs: let
