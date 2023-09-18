@@ -36,9 +36,12 @@ class UpdateActivity(Activity):
         super().__init__()
         self.next_environment = next_environment
         self.next_channel_url = next_channel_url
+        self.changelog_url = None
         self.current_system = None
         self.next_system = None
         self.current_channel_url = None
+        self.current_release = None
+        self.next_release = None
         self.current_version = None
         self.next_version = None
         self.current_environment = None
@@ -249,7 +252,7 @@ class UpdateActivity(Activity):
         self.returncode = 0
 
     @property
-    def changelog(self):
+    def summary(self):
         """
         A human-readable summary of what will be changed by this update.
         Includes possible reboots, significant unit state changes (start, stop,
@@ -270,6 +273,13 @@ class UpdateActivity(Activity):
         if unit_change_lines:
             msg.extend(unit_change_lines)
             msg.append("")
+
+        if self.next_release:
+            msg.append(
+                f"Release: {self.current_release} -> {self.next_release}"
+            )
+        if self.changelog_url:
+            msg.append(f"ChangeLog: {self.changelog_url}")
 
         if self.current_environment != self.next_environment:
             msg.append(
@@ -293,7 +303,7 @@ class UpdateActivity(Activity):
 
     @property
     def comment(self):
-        return self.changelog
+        return self.summary
 
     def merge(self, other: Activity) -> ActivityMergeResult:
         if not isinstance(other, UpdateActivity):

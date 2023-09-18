@@ -12,6 +12,9 @@ let
 in
 {
   config = {
+
+    environment.etc.motd.text = config.users.motd;
+
     environment.interactiveShellInit = ''
       export TMOUT=43200
     '';
@@ -64,15 +67,16 @@ in
     );
 
     users.motd = let
-      has_release_name = parameters ? release_name;
+      inherit (config.flyingcircus.platform) release;
+      isStableRelease = release != {};
     in
     ''
       Welcome to the Flying Circus!
 
       Status:     https://status.flyingcircus.io/
       Docs:       https://doc.flyingcircus.io/
-      ${ opt (parameters ? release_changelog ) ("ChangeLog:  " + parameters.release_changelog)}
-      Release:    ${ opt has_release_name "${parameters.release_name} (" + config.system.nixos.label + opt has_release_name ")"}
+      Release:    ${opt isStableRelease "${release.release_name} (" + config.system.nixos.label + opt isStableRelease ")"}
+      ${opt isStableRelease ("ChangeLog:  " + release.release_changelog)}
 
     '' +
     (opt (enc ? name && parameters ? location && parameters ? environment)

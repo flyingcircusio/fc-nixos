@@ -9,7 +9,9 @@ import tempfile
 from pathlib import Path
 
 import structlog
+from fc.util import nixos
 from fc.util.directory import connect
+from fc.util.time_date import utcnow
 
 structlog = structlog.get_logger()
 
@@ -112,7 +114,7 @@ def update_enc_nixos_config(log, enc, enc_path):
             content=hashlib.sha256(config.encode("utf-8")).hexdigest(),
         )
         target = os.path.join(basedir, filename)
-        conditional_update(target, config, encode_json=False)
+        conditional_update(target, config, mode=0o640, encode_json=False)
         os.chown(target, -1, sudo_srv)
         previous_files -= {filename}
     for filename in previous_files:
@@ -120,7 +122,7 @@ def update_enc_nixos_config(log, enc, enc_path):
         os.unlink(os.path.join(basedir, filename))
 
 
-def conditional_update(filename, data, encode_json=True):
+def conditional_update(filename, data, mode=0o640, encode_json=True):
     """Updates JSON file on disk only if there is different content."""
     with tempfile.NamedTemporaryFile(
         mode="w",
@@ -134,7 +136,7 @@ def conditional_update(filename, data, encode_json=True):
         else:
             tf.write(data)
         tf.write("\n")
-        os.chmod(tf.fileno(), 0o640)
+        os.chmod(tf.fileno(), mode)
     if not (os.path.exists(filename)) or not (filecmp.cmp(filename, tf.name)):
         with open(tf.name, "a") as f:
             os.fsync(f.fileno())
@@ -158,15 +160,15 @@ def inplace_update(filename, data):
         os.fsync(f.fileno())
 
 
-def retrieve(log, directory_lookup, tgt):
+def retrieve(log, func, tgt, mode=0o640):
     log.info("retrieve-enc", _replace_msg="Getting: {tgt}", tgt=tgt)
     try:
-        data = directory_lookup()
+        data = func()
     except Exception:
         log.error("retrieve-enc-failed", exc_info=True)
         return
     try:
-        conditional_update("/etc/nixos/{}".format(tgt), data)
+        conditional_update("/etc/nixos/{}".format(tgt), data, mode)
     except (IOError, OSError):
         inplace_update("/etc/nixos/{}".format(tgt), data)
 
@@ -206,6 +208,32 @@ def write_system_state(log):
             (lambda: load_system_state(), "system_state.json"),
         ],
     )
+
+
+def get_release_info(log, enc):
+    release_info_path = Path("releases.json")
+    if release_info_path.exists():
+        with release_info_path.open() as f:
+            releases = json.load(f)
+    else:
+        releases = {}
+
+    params = enc["parameters"]
+    release_name = params.get("release_name")
+    known_releases = [r["release_name"] for r in releases.values()]
+
+    if release_name and release_name not in known_releases:
+        environment_url = params["environment_url"]
+        version = nixos.channel_version(environment_url)
+        releases[version] = {
+            "environment": params["environment"],
+            "environment_url": environment_url,
+            "first_seen_at": utcnow().isoformat(),
+            "release_name": release_name,
+            "release_changelog": params.get("release_changelog", ""),
+        }
+
+    return releases
 
 
 def update_inventory(log, enc):
@@ -250,6 +278,7 @@ def update_inventory(log, enc):
             (lambda: directory.list_service_clients(), "service_clients.json"),
             (lambda: directory.list_services(), "services.json"),
             (lambda: directory.list_users(), "users.json"),
+            (lambda: get_release_info(log, enc), "releases.json", 0o644),
         ],
     )
 
