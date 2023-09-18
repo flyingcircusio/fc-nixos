@@ -60,9 +60,9 @@
     "version": "7.0"
   },
   "clamav": {
-    "name": "clamav-1.1.0",
+    "name": "clamav-1.2.0",
     "pname": "clamav",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "cmake": {
     "name": "cmake-3.26.4",
@@ -95,9 +95,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-3.1.0.beta4",
+    "name": "discourse-3.1.0",
     "pname": "discourse",
-    "version": "3.1.0.beta4"
+    "version": "3.1.0"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.89",
@@ -120,14 +120,14 @@
     "version": "2.3.20"
   },
   "element-web": {
-    "name": "element-web-1.11.40",
+    "name": "element-web-1.11.42",
     "pname": "element-web",
-    "version": "1.11.40"
+    "version": "1.11.42"
   },
   "erlang": {
-    "name": "erlang-25.3.2.5",
+    "name": "erlang-25.3.2.6",
     "pname": "erlang",
-    "version": "25.3.2.5"
+    "version": "25.3.2.6"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -175,9 +175,9 @@
     "version": "10.01.2"
   },
   "git": {
-    "name": "git-2.41.0",
+    "name": "git-2.42.0",
     "pname": "git",
-    "version": "2.41.0"
+    "version": "2.42.0"
   },
   "github-runner": {
     "name": "github-runner-2.308.0",
@@ -185,14 +185,14 @@
     "version": "2.308.0"
   },
   "gitlab": {
-    "name": "gitlab-16.3.1",
+    "name": "gitlab-16.3.3",
     "pname": "gitlab",
-    "version": "16.3.1"
+    "version": "16.3.3"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.82.0",
+    "name": "gitlab-container-registry-3.83.0",
     "pname": "gitlab-container-registry",
-    "version": "3.82.0"
+    "version": "3.83.0"
   },
   "glibc": {
     "name": "glibc-2.37-8",
@@ -210,9 +210,9 @@
     "version": "2.4.1"
   },
   "go": {
-    "name": "go-1.20.7",
+    "name": "go-1.20.8",
     "pname": "go",
-    "version": "1.20.7"
+    "version": "1.20.8"
   },
   "go_1_18": {
     "name": "go-1.18.10",
@@ -225,9 +225,9 @@
     "version": "1.19.13"
   },
   "go_1_20": {
-    "name": "go-1.20.7",
+    "name": "go-1.20.8",
     "pname": "go",
-    "version": "1.20.7"
+    "version": "1.20.8"
   },
   "grafana": {
     "name": "grafana-10.1.1",
@@ -305,14 +305,14 @@
     "version": "19.0.2+7"
   },
   "k3s": {
-    "name": "k3s-1.27.4+k3s1",
+    "name": "k3s-1.27.5+k3s1",
     "pname": "k3s",
-    "version": "1.27.4+k3s1"
+    "version": "1.27.5+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-22.0.1",
+    "name": "keycloak-22.0.3",
     "pname": "keycloak",
-    "version": "22.0.1"
+    "version": "22.0.3"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.12.2",
@@ -340,14 +340,14 @@
     "version": "4.5.1"
   },
   "libxml2": {
-    "name": "libxml2-2.11.4",
+    "name": "libxml2-2.11.5",
     "pname": "libxml2",
-    "version": "2.11.4"
+    "version": "2.11.5"
   },
   "linux": {
-    "name": "linux-6.1.51",
+    "name": "linux-6.1.52",
     "pname": "linux",
-    "version": "6.1.51"
+    "version": "6.1.52"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -380,9 +380,9 @@
     "version": "4.14.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.91.1",
+    "name": "matrix-synapse-wrapped-1.92.1",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.91.1"
+    "version": "1.92.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -450,9 +450,9 @@
     "version": "18.17.1"
   },
   "nodejs_20": {
-    "name": "nodejs-20.6.0",
+    "name": "nodejs-20.6.1",
     "pname": "nodejs",
-    "version": "20.6.0"
+    "version": "20.6.1"
   },
   "nspr": {
     "name": "nspr-4.35",
@@ -570,9 +570,9 @@
     "version": "8.2.10"
   },
   "phpPackages.composer": {
-    "name": "php-composer-2.5.8",
-    "pname": "php-composer",
-    "version": "2.5.8"
+    "name": "composer-2.6.2",
+    "pname": "composer",
+    "version": "2.6.2"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -625,9 +625,9 @@
     "version": "15.4"
   },
   "powerdns": {
-    "name": "pdns-4.8.1",
+    "name": "pdns-4.8.2",
     "pname": "pdns",
-    "version": "4.8.1"
+    "version": "4.8.2"
   },
   "prometheus": {
     "name": "prometheus-2.46.0",
@@ -655,14 +655,14 @@
     "version": "3.11.4"
   },
   "python38": {
-    "name": "python3-3.8.17",
+    "name": "python3-3.8.18",
     "pname": "python3",
-    "version": "3.8.17"
+    "version": "3.8.18"
   },
   "python39": {
-    "name": "python3-3.9.17",
+    "name": "python3-3.9.18",
     "pname": "python3",
-    "version": "3.9.17"
+    "version": "3.9.18"
   },
   "python3Packages.lxml": {
     "name": "python3.10-lxml-4.9.3-3",
@@ -695,14 +695,14 @@
     "version": "8.1.0"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-3.12.3",
+    "name": "rabbitmq-server-3.12.4",
     "pname": "rabbitmq-server",
-    "version": "3.12.3"
+    "version": "3.12.4"
   },
   "rabbitmq-server_3_8": {
-    "name": "rabbitmq-server-3.12.3",
+    "name": "rabbitmq-server-3.12.4",
     "pname": "rabbitmq-server",
-    "version": "3.12.3"
+    "version": "3.12.4"
   },
   "re2c": {
     "name": "re2c-3.1",
@@ -710,9 +710,9 @@
     "version": "3.1"
   },
   "redis": {
-    "name": "redis-7.2.0",
+    "name": "redis-7.2.1",
     "pname": "redis",
-    "version": "7.2.0"
+    "version": "7.2.1"
   },
   "roundcube": {
     "name": "roundcube-1.6.2",
@@ -820,9 +820,9 @@
     "version": "6.0"
   },
   "util-linux": {
-    "name": "util-linux-2.39.1",
+    "name": "util-linux-2.39.2",
     "pname": "util-linux",
-    "version": "2.39.1"
+    "version": "2.39.2"
   },
   "varnish": {
     "name": "varnish-7.2.1",
@@ -865,9 +865,9 @@
     "version": "3.0"
   },
   "zlib": {
-    "name": "zlib-1.2.13",
+    "name": "zlib-1.3",
     "pname": "zlib",
-    "version": "1.2.13"
+    "version": "1.3"
   },
   "zsh": {
     "name": "zsh-5.9",
