@@ -42,11 +42,11 @@ class RequestMergeResult(Enum):
 class Attempt:
     """Data object to track finished activities."""
 
-    stdout = None
-    stderr = None
-    returncode = None
-    finished = None
-    duration = None
+    stdout: str | None = None
+    stderr: str | None = None
+    returncode: int | None = None
+    finished: datetime.datetime | None = None
+    duration: float | None = None
 
     def __init__(self):
         self.started = utcnow()
@@ -283,6 +283,7 @@ class Request:
         attempt = Attempt()  # sets start time
         try:
             self.state = State.running
+            self.attempts.append(attempt)
             self.save()
             with cd(self.dir):
                 try:
@@ -291,7 +292,6 @@ class Request:
                 except Exception as e:
                     attempt.returncode = 70  # EX_SOFTWARE
                     attempt.stderr = str(e)
-            self.attempts.append(attempt)
             self.state = evaluate_state(self.activity.returncode)
         except Exception:
             self.log.error(

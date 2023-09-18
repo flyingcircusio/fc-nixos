@@ -1,24 +1,26 @@
-import contextlib
 import datetime
 import os
 import os.path as p
 import socket
 import textwrap
 import unittest.mock
-import uuid
 from io import StringIO
 from unittest.mock import MagicMock, Mock, call
 
 import freezegun
 import pytest
 import pytz
-import shortuuid
-from fc.maintenance.activity import Activity, ActivityMergeResult, RebootType
+from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.estimate import Estimate
-from fc.maintenance.reqmanager import PostponeMaintenance, TempfailMaintenance
+from fc.maintenance.reqmanager import (
+    PostponeMaintenance,
+    ReqManager,
+    TempfailMaintenance,
+)
 from fc.maintenance.request import Attempt, Request
 from fc.maintenance.state import ARCHIVE, EXIT_POSTPONE, State
 from fc.maintenance.tests import MergeableActivity
+from fc.util.time_date import utcnow
 from rich.console import Console
 
 
@@ -215,6 +217,7 @@ def test_explicitly_deleted(connect, reqmanager):
     )
 
 
+@freezegun.freeze_time("2016-04-20 11:00:00")
 def test_enter_maintenance(log, reqmanager, monkeypatch):
     monkeypatch.setattr(
         "fc.util.directory.connect", connect_mock := MagicMock()
@@ -225,6 +228,8 @@ def test_enter_maintenance(log, reqmanager, monkeypatch):
 
     assert log.has("enter-maintenance")
     connect_mock().mark_node_service_status.assert_called_with("host", False)
+    maintenance_entered_at = reqmanager.maintenance_marker_path.read_text()
+    assert maintenance_entered_at == "2016-04-20T11:00:00+00:00"
 
 
 def test_enter_maintenance_postpone(log, reqmanager, monkeypatch):
@@ -237,6 +242,8 @@ def test_enter_maintenance_postpone(log, reqmanager, monkeypatch):
     with pytest.raises(PostponeMaintenance):
         reqmanager.enter_maintenance()
 
+    assert reqmanager.maintenance_marker_path.exists()
+
 
 def test_enter_maintenance_tempfail(log, reqmanager, monkeypatch):
     monkeypatch.setattr(
@@ -247,6 +254,8 @@ def test_enter_maintenance_tempfail(log, reqmanager, monkeypatch):
 
     with pytest.raises(TempfailMaintenance):
         reqmanager.enter_maintenance()
+
+    assert reqmanager.maintenance_marker_path.exists()
 
 
 def test_execute_postpone(log, reqmanager, monkeypatch):
@@ -610,3 +619,108 @@ def test_overdue(request_population):
 
     assert reqs[0].state == State.due
     assert reqs[1].state == State.postpone
+
+
+def test_check_no_maintenance_should_be_ok(reqmanager):
+    res = reqmanager.check()
+    print(res)
+    assert not res.warnings
+    assert not res.errors
+    assert res.ok_info
+    assert "Machine is in service" in res.ok_info[0]
+
+
+def test_check_scheduled_requests_should_show_count_and_time(
+    request_population,
+):
+    with request_population(2) as (rm, reqs):
+        reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].state = State.due
+        reqs[1].next_due = datetime.datetime(
+            2016, 4, 20, 11, 10, tzinfo=pytz.UTC
+        )
+        reqs[1].state = State.due
+    res = rm.check()
+    assert "2 scheduled" in res.ok_info[1]
+    assert "2016-04-20 11:00" in res.ok_info[1]
+
+
+def test_check_waiting_to_be_scheduled_requests_should_show_count(
+    request_population,
+):
+    with request_population(2) as (rm, reqs):
+        reqs[0].state = State.pending
+        reqs[1].state = State.pending
+    res = rm.check()
+    assert res.ok_info
+    assert "2 maintenance requests are waiting to be sched" in res.ok_info[1]
+
+
+def test_check_waiting_and_scheduled_requests(
+    request_population,
+):
+    with request_population(2) as (rm, reqs):
+        reqs[0].state = State.pending
+        reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[1].state = State.pending
+    res = rm.check()
+    assert res.ok_info
+    assert "A maintenance request is due at 2016-04-20 11:00" in res.ok_info[1]
+    assert "A maintenance request is waiting to be sched" in res.ok_info[2]
+
+
+@freezegun.freeze_time("2016-04-20 11:01:00")
+def test_check_recent_maintenance_running_should_be_ok(request_population):
+    with request_population(1) as (rm, reqs):
+        rm: ReqManager
+        rm.maintenance_marker_path.write_text(
+            (utcnow() - datetime.timedelta(minutes=10)).isoformat()
+        )
+        reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].state = State.running
+        att = Attempt()
+        att.started -= datetime.timedelta(minutes=1)
+        reqs[0].attempts = [att]
+        reqs[0].save()
+
+        res = rm.check()
+        print(res)
+        assert not res.warnings
+        assert not res.errors
+        assert res.ok_info
+        assert "activated 600 seconds ago" in res.ok_info[0]
+        assert "request started 60 seconds ago" in res.ok_info[1]
+
+
+@freezegun.freeze_time("2016-04-20 12:00:01")
+def test_check_long_maintenance_should_be_critical(request_population):
+    with request_population(1) as (rm, reqs):
+        rm: ReqManager
+        rm.maintenance_marker_path.write_text(
+            (utcnow() - datetime.timedelta(minutes=60, seconds=1)).isoformat()
+        )
+        reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].state = State.running
+        att = Attempt()
+        att.started -= datetime.timedelta(minutes=50)
+        reqs[0].attempts = [att]
+        reqs[0].save()
+
+        res = rm.check()
+        print(res)
+        assert res.errors
+        assert "activated 3601 seconds ago" in res.errors[0]
+        assert "request started 3000 seconds ago" in res.errors[1]
+
+
+@freezegun.freeze_time("2016-04-27 11:00:01")
+def test_check_request_stuck_in_queue_should_warn(request_population):
+    with request_population(1) as (rm, reqs):
+        reqs[0].added_at = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].state = State.pending
+        reqs[0].save()
+
+        res = rm.check()
+        print(res)
+        assert res.warnings
+        assert "in the queue for 168 hours" in res.warnings[0]
