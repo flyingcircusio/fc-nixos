@@ -16,10 +16,12 @@ from typing import NamedTuple
 
 import fc.maintenance.state
 import fc.util.directory
+import pytz
 import rich
 import rich.syntax
 import structlog
 from fc.maintenance.activity import RebootType
+from fc.util.checks import CheckResult
 from fc.util.time_date import format_datetime, utcnow
 from rich.table import Table
 
@@ -97,6 +99,7 @@ class ReqManager:
         self.requestsdir = self.spooldir / "requests"
         self.archivedir = self.spooldir / "archive"
         self.last_run_stats_path = self.spooldir / "last_run.json"
+        self.maintenance_marker_path = self.spooldir / "in_maintenance"
         for d in (self.spooldir, self.requestsdir, self.archivedir):
             if not d.exists():
                 os.mkdir(d)
@@ -450,6 +453,22 @@ class ReqManager:
         self.log.debug("enter-maintenance")
         self.log.debug("mark-node-out-of-service")
         self.directory.mark_node_service_status(socket.gethostname(), False)
+
+        if self.maintenance_marker_path.exists():
+            previous_maintenance_entered_at = (
+                self.maintenance_marker_path.read_text()
+            )
+            self.log.info(
+                "enter-maintenance-marker-present",
+                _replace_msg=(
+                    "Maintenance marker is already present, likely from an "
+                    "unfinished maintenance run. Keeping the old one from "
+                    "{previous_maintenance_entered_at} and continuing."
+                ),
+                previous_maintenance_entered_at=previous_maintenance_entered_at,
+            )
+        else:
+            self.maintenance_marker_path.write_text(utcnow().isoformat())
         postpone_seen = False
         tempfail_seen = False
         for name, command in self.config["maintenance-enter"].items():
@@ -494,6 +513,7 @@ class ReqManager:
     def leave_maintenance(self):
         """
         Tells the directory to mark the machine 'in service'.
+        It's ok to call this method even when the machine is already in service.
         """
         self.log.debug("leave-maintenance")
         for name, command in self.config["maintenance-leave"].items():
@@ -505,6 +525,19 @@ class ReqManager:
             subprocess.run(command, shell=True, check=True)
         self.log.debug("mark-node-in-service")
         self.directory.mark_node_service_status(socket.gethostname(), True)
+        if self.maintenance_marker_path.exists():
+            maintenance_entered_at = self.maintenance_marker_path.read_text()
+            self.log.debug(
+                "remove-maintenance-marker",
+                maintenance_entered_at=maintenance_entered_at,
+            )
+            self.maintenance_marker_path.unlink()
+        else:
+            # Expected when `enter_maintenance` has not been called before.
+            self.log.debug(
+                "no-maintenance-marker",
+                maintenance_marker_path=self.maintenance_marker_path,
+            )
 
     def update_states(self):
         """
@@ -874,6 +907,107 @@ class ReqManager:
             )
             sys.exit(0)
 
+    def check(self) -> CheckResult:
+        errors = []
+        warnings = []
+        ok_info = []
+
+        metrics = self.get_metrics()
+
+        # Are we in maintenance mode? Check maintenance duration and add info
+        # about the currently running request, if any.
+        if maint_duration := metrics["in_maintenance_duration"]:
+            # 15 minutes as estimate for total request run time is used here.
+            # We could calculate it from the actual request estimates but it
+            # wouldn't change much in reality and having a fixed value is
+            # better for alerting, I think.
+            # 20 minutes when maintenance_preparation_seconds is the default.
+            maint_expected = self.maintenance_preparation_seconds + 15 * 60
+            # 30 min, by default.
+            maint_warning = maint_expected * 1.5
+            # 60 min, by default.
+            maint_critical = maint_warning * 2
+
+            if maint_duration > maint_critical:
+                target = errors
+            elif maint_duration > maint_warning:
+                target = warnings
+            else:
+                target = ok_info
+
+            target.append(
+                f"Maintenance mode activated {maint_duration} seconds ago."
+            )
+
+            if running_for_sec := metrics["request_running_for_seconds"]:
+                target.append(
+                    f"A maintenance request started {running_for_sec} "
+                    "seconds ago."
+                )
+        else:
+            ok_info.append("Machine is in service.")
+
+        longest_in_queue_hours = (
+            metrics["request_longest_in_queue_duration"] / 3600
+        )
+        # XXX: We probably want to get the lead time from the directory for a
+        # better threshold.
+        longest_in_queue_hours_warning = 7 * 24
+
+        if longest_in_queue_hours > longest_in_queue_hours_warning:
+            warnings.append(
+                f"A maintenance request is in the queue for "
+                f"{longest_in_queue_hours:.0f} hours."
+            )
+
+        if num_running := metrics["requests_running"]:
+            # Test for some situations that look like a req manager bug.
+            if num_running > 1:
+                warnings.append(
+                    f"{num_running} maintenance requests are running at the "
+                    "moment. This should not happen in normal operation."
+                )
+            if not maint_duration:
+                errors.append(
+                    "A maintenance request is running but the system is not "
+                    "in maintenance mode which is probably a ReqManager bug."
+                )
+            # Skip info about scheduled requests and those waiting to be scheduled
+            # when we are currently running requests to avoid information
+            # overload.
+            return CheckResult(errors, warnings, ok_info)
+
+        # ReqManager is not executing requests at the moment, add more info
+        # about pending requests.
+        if num_scheduled := metrics["requests_scheduled"]:
+            next_due = format_datetime(
+                datetime.fromtimestamp(
+                    metrics["request_next_due_at"], tz=pytz.utc
+                )
+            )
+            if num_scheduled == 1:
+                ok_info.append(f"A maintenance request is due at {next_due}")
+            else:
+                ok_info.append(
+                    f"{num_scheduled} scheduled maintenance requests. "
+                    f"Next scheduled request is due at {next_due}."
+                )
+
+        if num_waiting_for_schedule := metrics[
+            "requests_waiting_for_schedule"
+        ]:
+            if num_waiting_for_schedule == 1:
+                ok_info.append(
+                    f"A maintenance request is waiting to be scheduled."
+                )
+            else:
+                ok_info.append(
+                    f"{num_waiting_for_schedule} maintenance requests are "
+                    "waiting to be scheduled."
+                )
+
+        return CheckResult(errors, warnings, ok_info)
+
     def get_metrics(self) -> dict:
         requests = sorted(self.requests.values())
         runnable = self.runnable()
@@ -883,12 +1017,19 @@ class ReqManager:
             "requests_total": len(requests),
             "requests_runnable": len(runnable),
             # Initialize request stats. They will be overwritten if requests exist.
+            "in_maintenance_duration": 0,
             "requests_tempfail": 0,
             "requests_postpone": 0,
             "requests_success": 0,
             "requests_error": 0,
+            "requests_pending": 0,
+            "requests_scheduled": 0,
+            "requests_running": 0,
+            "requests_waiting_for_schedule": 0,
             "request_longest_in_queue_duration": 0,
+            "request_running_for_seconds": 0,
             "request_highest_retry_count": 0,
+            "request_next_due_at": 0,
         }
 
         now = utcnow()
@@ -898,35 +1039,77 @@ class ReqManager:
             requests_error = []
             requests_postponed = []
             requests_success = []
+            num_requests_pending = 0
+            num_requests_running = 0
+            num_requests_waiting_for_schedule = 0
+            num_requests_scheduled = 0
 
             most_retries = 0
             oldest_added_at = requests[0].added_at
+            oldest_next_due = None
+            longest_running_seconds = 0
 
             for req in requests:
                 most_retries = max(len(req.attempts), most_retries)
                 oldest_added_at = min(oldest_added_at, req.added_at)
 
+                match req.state:
+                    case State.pending:
+                        num_requests_pending += 1
+                    case State.running:
+                        # There should only be one but it's technically
+                        # possible to have more than one in state 'running'.
+                        num_requests_running += 1
+                        if req.attempts:
+                            longest_running_seconds = max(
+                                longest_running_seconds,
+                                (now - req.attempts[-1].started).seconds,
+                            )
+
+                if req.next_due:
+                    num_requests_scheduled += 1
+                    # Date can be in the past for requests that have already been tried,
+                    # but that's ok.
+                    oldest_next_due = (
+                        min(req.next_due, oldest_next_due)
+                        if oldest_next_due
+                        else req.next_due
+                    )
+                else:
+                    num_requests_waiting_for_schedule += 1
+
                 if req.attempts:
                     match req.attempts[-1].returncode:
+                        case None:
+                            pass
                         case fc.maintenance.state.EXIT_TEMPFAIL:
                             requests_tempfail.append(req)
                         case fc.maintenance.state.EXIT_POSTPONE:
                             requests_postponed.append(req)
                         case 0:
                             requests_success.append(req)
-                        case error:
+                        case _error:
                             requests_error.append(req)
 
             metrics["requests_tempfail"] = len(requests_tempfail)
             metrics["requests_postpone"] = len(requests_postponed)
             metrics["requests_success"] = len(requests_success)
             metrics["requests_error"] = len(requests_error)
+            metrics["requests_pending"] = num_requests_pending
+            metrics["requests_running"] = num_requests_running
+            metrics["requests_scheduled"] = num_requests_scheduled
+            metrics[
+                "requests_waiting_for_schedule"
+            ] = num_requests_waiting_for_schedule
 
             metrics["request_longest_in_queue_duration"] = (
                 now.timestamp() - oldest_added_at.timestamp()
             )
-
             metrics["request_highest_retry_count"] = most_retries
+            metrics["request_running_for_seconds"] = longest_running_seconds
+
+            if oldest_next_due:
+                metrics["request_next_due_at"] = oldest_next_due.timestamp()
 
         # We expect the last run stats file to be present at all times except on
         # new machines that haven't run execute() yet.
@@ -940,6 +1123,15 @@ class ReqManager:
             metrics["last_run_exec_duration"] = last_run_stats["exec_duration"]
             metrics["last_run_finished_seconds_ago"] = (
                 now - datetime.fromisoformat(last_run_stats["finished_at"])
+            ).seconds
+
+        if self.maintenance_marker_path.exists():
+            maintenance_entered_at = datetime.fromisoformat(
+                self.maintenance_marker_path.read_text()
+            )
+
+            metrics["in_maintenance_duration"] = (
+                now - maintenance_entered_at
             ).seconds
 
         return metrics
