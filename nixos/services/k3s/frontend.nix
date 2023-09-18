@@ -81,7 +81,7 @@ let
 
 in
 {
-  options = {
+  options = with lib; {
 
     flyingcircus.services.k3s-frontend.enable = mkEnableOption "Enable k3s (Kubernetes) Frontend";
 
