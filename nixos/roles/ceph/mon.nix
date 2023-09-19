@@ -19,7 +19,6 @@ let
 
   # default definitions for the mgr.* options:
   mgrEnabledModules = {
-    luminous = [ "balancer" "dashboard" "status" ];
     # always_on_modules are not listed here
     nautilus = [
       "telemetry"
@@ -27,7 +26,6 @@ let
     ];
   };
   mgrDisabledModules = {
-    luminous = [];
     nautilus = [
       "restful"
     ];
@@ -180,18 +178,11 @@ in
         {
           commands = [
             "${fc-check-ceph-withVersion}/bin/check_ceph"
+            "${fc-check-ceph-withVersion}/bin/check_snapshot_restore_fill"
           ];
           groups = [ "sensuclient" ];
         }
       ];
-
-      flyingcircus.services.sensu-client.checks = {
-        ceph = {
-          notification = "Ceph cluster is unhealthy";
-          command = "sudo ${fc-check-ceph-withVersion}/bin/check_ceph -v -R 200 -A 300";
-          interval = 60;
-        };
-      };
 
       environment.systemPackages = [ fc-check-ceph-withVersion ];
 
@@ -231,25 +222,6 @@ in
         };
       };
 
-    })
-    (lib.mkIf (role.enable && role.config == "") {
-      flyingcircus.services.ceph.extraSettingsSections = lib.recursiveUpdate
-      { mon = expandCamelCaseAttrs defaultMonSettings; }
-      (lib.recursiveUpdate
-        (expandCamelCaseSection (lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))))
-        (lib.recursiveUpdate
-          { mon = expandCamelCaseAttrs role.extraSettings; }
-          (lib.optionalAttrs (fclib.ceph.releaseAtLeast "luminous" role.cephRelease) {
-            mon = expandCamelCaseAttrs defaultMgrSettings;
-          })
-        )
-      );
-    })
-
-    (lib.mkIf (role.enable && role.config != "") {
-      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
-    })
-    (lib.mkIf (role.enable && fclib.ceph.releaseAtLeast "luminous" role.cephRelease ) {
       systemd.services.fc-ceph-mgr = rec {
         description = "Local Ceph MGR (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
@@ -275,23 +247,12 @@ in
           ${fc-ceph}/bin/fc-ceph mgr reactivate
         '';
 
-        preStart =
-          # dashboard only enabled for luminous, as the Nautilus release fails to build in the sandbox so far.
-          # If we ever manage to get it enabled, `ceph config set` needs to be used instead of `ceph config-key`
-          lib.optionalString (role.cephRelease == "luminous") ''
-            echo "ensure mgr dashboard binds to localhost only"
-            # make _all_ hosts bind the dashboard to localhost (v4) only (default port: 7000)
-            ${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph config-key set mgr/dashboard/server_addr 127.0.0.1
-          ''
-          # imperatively ensure mgr modules
-          + lib.concatStringsSep "\n" (
-              lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph mgr module enable ${mod} --force")
-            )
-          + "\n"
-          + lib.concatStringsSep "\n" (
-              lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph mgr module disable ${mod}")
-            )
-          ;
+        # imperatively ensure mgr modules
+        preStart = lib.concatStringsSep "\n" (
+          lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph mgr module enable ${mod} --force")
+          ++
+          lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph mgr module disable ${mod}")
+        );
 
         preStop = ''
           ${fc-ceph}/bin/fc-ceph mgr deactivate
@@ -302,16 +263,6 @@ in
           RemainAfterExit = true;
         };
       };
-    })
-    (lib.mkIf (role.enable && fclib.ceph.releaseAtLeast "nautilus" role.cephRelease ) {
-      flyingcircus.passwordlessSudoRules = [
-        {
-          commands = [
-            "${fc-check-ceph-withVersion}/bin/check_snapshot_restore_fill"
-          ];
-          groups = [ "sensuclient" ];
-        }
-      ];
 
       flyingcircus.services.sensu-client.checks = let
           # check config generated directly from our platform settings
@@ -330,7 +281,28 @@ in
             command = "sudo ${fc-check-ceph-withVersion}/bin/check_snapshot_restore_fill ${configtoml}";
             interval = 600;
           };
+          ceph = {
+            notification = "Ceph cluster is unhealthy";
+            command = "sudo ${fc-check-ceph-withVersion}/bin/check_ceph -v -R 200 -A 300";
+            interval = 60;
+          };
         };
+
+    })
+    (lib.mkIf (role.enable && role.config == "") {
+      flyingcircus.services.ceph.extraSettingsSections = lib.recursiveUpdate
+      { mon = expandCamelCaseAttrs defaultMonSettings; }
+      (lib.recursiveUpdate
+        (expandCamelCaseSection (lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))))
+        (lib.recursiveUpdate
+          { mon = expandCamelCaseAttrs role.extraSettings; }
+          { mon = expandCamelCaseAttrs defaultMgrSettings; }
+        )
+      );
+    })
+
+    (lib.mkIf (role.enable && role.config != "") {
+      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
     })
     (lib.mkIf (role.enable && role.primary) {
 

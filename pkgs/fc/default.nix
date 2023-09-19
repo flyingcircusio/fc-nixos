@@ -7,8 +7,6 @@ rec {
 
   check-age = callPackage ./check-age {};
   check-ceph = {
-    jewel = callPackage ./check-ceph/jewel {ceph = pkgs.ceph-jewel;};
-    luminous = callPackage ./check-ceph/luminous {ceph = pkgs.ceph-luminous;};
     nautilus = callPackage ./check-ceph/nautilus {inherit (pkgs.ceph-nautilus) ceph-client;};
   };
   check-haproxy = callPackage ./check-haproxy {};
@@ -26,8 +24,6 @@ rec {
   # normally, fc-ceph is installed via a role, but here are some direct installable
   # packages in case they're needed:
   ceph = {
-    jewel = cephWith pkgs.ceph-jewel;
-    luminous = cephWith pkgs.ceph-luminous;
     cephWithNautilus = cephWith pkgs.ceph-nautilus.ceph-client;
   };
 
@@ -42,16 +38,7 @@ rec {
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
 
-  qemu-py2 = callPackage ./qemu/py2.nix {
-      version = "1.2-dev";
-      src = pkgs.fetchFromGitHub {
-        owner = "flyingcircusio";
-        repo = "fc.qemu";
-        rev = "bcf373c57a39bb373f45022cae4015221e9aa94f";
-        hash = "sha256-4rIwMzsYYvKGGybkFFu3z0D/RD8LXIJP5GG0oB9lxpc";
-      };
-  };
-  qemu-py3 = callPackage ./qemu/py3.nix rec {
+  qemu = callPackage ./qemu rec {
     version = "1.3.1";
     # src = /path/to/fc.qemu/checkout ; # development
     src = pkgs.fetchFromGitHub {
@@ -67,9 +54,6 @@ rec {
   sensusyntax = callPackage ./sensusyntax {};
   userscan = callPackage ./userscan.nix {};
   util-physical = {
-    # luminous code is compatible to jewel
-    jewel = callPackage ./util-physical/ceph-luminous {ceph = pkgs.ceph-jewel;};
-    luminous = callPackage ./util-physical/ceph-luminous {ceph = pkgs.ceph-luminous;};
     nautilus = callPackage ./util-physical/ceph-nautilus {ceph = pkgs.ceph-nautilus.ceph-client;};
   };
   telegraf-collect-psi = callPackage ./telegraf-collect-psi {};

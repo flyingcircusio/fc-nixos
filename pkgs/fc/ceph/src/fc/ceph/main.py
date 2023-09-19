@@ -50,7 +50,7 @@ def main(args=sys.argv[1:]):
     parser_destroy.add_argument(
         "--unsafe-destroy",
         action="store_true",
-        help="Skip the check (Luminous only) whether an OSD is safe to destroy without "
+        help="Skip the check whether an OSD is safe to destroy without "
         "affecting data redundancy. This can result in data loss or cluster failure!!",
     )
     parser_destroy.set_defaults(action="destroy")
@@ -138,7 +138,7 @@ def main(args=sys.argv[1:]):
     parser_rebuild.add_argument(
         "--unsafe-destroy",
         action="store_true",
-        help="Skip the check (Luminous only) whether an OSD is safe to destroy without "
+        help="Skip the check whether an OSD is safe to destroy without "
         "affecting data redundancy. This can result in data loss or cluster failure!!",
     )
     parser_rebuild.add_argument(

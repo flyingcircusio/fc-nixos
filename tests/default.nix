@@ -32,13 +32,8 @@ in {
 
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
-  backyserver_ceph-jewel = callTest ./backyserver.nix { clientCephRelease = "jewel"; };
-  backyserver_ceph-luminous = callTest ./backyserver.nix { clientCephRelease = "luminous"; };
   backyserver_ceph-nautilus = callTest ./backyserver.nix { clientCephRelease = "nautilus"; };
   channel = callTest ./channel.nix {};
-  # legacy ceph
-  ceph-jewel = callTest ./ceph-jewel.nix {};
-  ceph-luminous = callTest ./ceph-luminous.nix {};
   ceph-nautilus = callTest ./ceph-nautilus.nix {};
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
@@ -60,16 +55,10 @@ in {
   kibana7 = callTest ./kibana.nix { version = "7"; };
   # Not supported on 21.05 anymore.
   # k3s = callTest ./k3s {};
-  # legacy ceph
-  kvm_host_ceph-jewel-jewel = callTest ./kvm_host_ceph-jewel.nix {};
   # default test
-  kvm_host_ceph-luminous-luminous = callTest ./kvm_host_ceph-luminous.nix {clientCephRelease = "luminous";};
-  # test with already upgraded ceph server, but client tooling remaining at jewel
-  kvm_host_ceph-luminous-jewel = callTest ./kvm_host_ceph-luminous.nix {clientCephRelease = "jewel";};
-  # new default test, once ceph-nautilus is default
   kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {clientCephRelease = "nautilus";};
-  # test with already upgraded ceph server, but client tooling remaining at jewel
-  kvm_host_ceph-nautilus-luminous = callTest ./kvm_host_ceph-nautilus.nix {clientCephRelease = "luminous";};
+  # test with already upgraded ceph server, but client tooling remaining at luminous
+  #kvm_host_ceph-nautilus-luminous = callTest ./kvm_host_ceph-nautilus.nix {clientCephRelease = "luminous";};
 
   lamp = callTest ./lamp.nix { };
   lamp56 = callTest ./lamp.nix { version = "lamp_php56"; };

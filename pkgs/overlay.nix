@@ -44,18 +44,6 @@ in {
 
   # default ceph packages
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
-  ceph-jewel = (super.callPackage ./ceph/jewel {
-      pythonPackages = super.python2Packages;
-      boost = super.boost155;
-  });
-  ceph-luminous = (super.callPackage ./ceph/luminous {
-    boost = super.boost166.override {
-      enablePython = true;
-      python = self.python27-ceph-downgrades;
-    };
-    stdenv = self.gcc9Stdenv;
-    python2Packages = self.python27-ceph-downgrades.pkgs;
-  });
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = rec {
     inherit (super.callPackages ./ceph/nautilus {
