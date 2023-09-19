@@ -4,7 +4,7 @@ import ./make-test-python.nix ({ nixpkgs, ... }:
   machine =
     { pkgs, ... }:
     {
-      virtualisation.emptyDiskImages = [ 120000 100 ];
+      virtualisation.emptyDiskImages = [ 70000 100 ];
       imports = [
         "${nixpkgs}/nixos/modules/installer/netboot/netboot-minimal.nix"
         ../release/netboot-installer.nix

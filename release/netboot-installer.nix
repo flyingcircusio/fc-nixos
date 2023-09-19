@@ -90,7 +90,7 @@ vgcreate -fy --dataalignment 64k vgsys ''${root_disk}4
 vgchange -ay
 
 udevadm settle
-lvcreate -ay -L 80G -n root vgsys <<<y
+lvcreate -ay -L 40G -n root vgsys <<<y
 lvcreate -L 16G -n tmp vgsys <<<y
 
 udevadm settle

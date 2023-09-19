@@ -195,30 +195,6 @@ in
 
     };
 
-
-    systemd.services.fc-qemu-clean-logs = let
-      fcQemuCleanLogScript = (
-        pkgs.writers.writePython3Bin "fc-qemu-clean-logs"
-        {} (builtins.readFile ../../pkgs/fc/qemu/clean-logs.py));
-    in {
-      description = "Clean orphaned fc.qemu logs.";
-
-      path = [ pkgs.python3 pkgs.lsof ];
-
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "${fcQemuCleanLogScript}/bin/fc-qemu-clean-logs";
-       };
-    };
-
-    systemd.timers.fc-qemu-clean-logs = {
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnCalendar = "daily";
-        Persistent = true;
-      };
-    };
-
     systemd.services.fc-qemu-report-cpus = {
       description = "Report supported Qemu CPU models to the directory.";
 
