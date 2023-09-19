@@ -80,9 +80,6 @@ class OSDManager(object):
         assert journal in ["internal", "external"]
         assert os.path.exists(device)
 
-        # FIXME: I also thought of requiring a `--legacy` confirmation flag for
-        # operations involving filestore. But I guess a warn message is sufficient, as
-        # this is a task only done manually where operators (hopefully) read logs.
         print(
             "WARN: From Ceph Luminous on, we are deprecating the platform support "
             "for running FileStore OSDs.\n"
@@ -826,7 +823,7 @@ class BlueStoreOSD(GenericOSD):
     def _has_wal_backup(self):
         return os.path.exists(self.lvm_wal_backup_device)
 
-    # FIXME: unused so far, will be part of a dedicated inmigrate/ restore operation
+    # TODO: unused so far, will be part of a dedicated inmigrate/ restore operation
     # when moving disks between hosts PL-130677
     def _restore_wal_backup(self):
         if self._has_wal_backup:
@@ -841,7 +838,7 @@ class BlueStoreOSD(GenericOSD):
                 f"oflag=fsync,nocache",
             )
 
-    # FIXME: unused so far, will be part of a dedicated inmigrate/ restore operation
+    # TODO: unused so far, will be part of a dedicated inmigrate/ restore operation
     # when moving disks between hosts PL-130677
     def _create_wal_backup(self):
         if self._has_wal_backup:
@@ -875,7 +872,7 @@ class BlueStoreOSD(GenericOSD):
 
     def deactivate(self):
         # deactivate (shutdown osd, remove things but don't delete it
-        # FIXME: this is not sufficient for migrating the OSD to another host if it has
+        # TODO: this is not sufficient for migrating the OSD to another host if it has
         # an external WAL, that requires a manual outmigration command PL-130677
         super().deactivate()
 
