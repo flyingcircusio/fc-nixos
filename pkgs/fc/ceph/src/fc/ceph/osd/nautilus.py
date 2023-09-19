@@ -145,9 +145,6 @@ class OSDManager(object):
         # this is then also allowed to bubble up errors
 
         if as_systemd_unit:
-            run.systemctl(
-                "start", "fc-blockdev"
-            )  # FIXME shouldn't this better be handled via systemd requirements?
             osd.activate()
         else:
             if nonblocking:
