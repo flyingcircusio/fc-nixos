@@ -82,7 +82,6 @@ in {
     };
 
     flyingcircus.enc_services_path = mkOption {
-      defaultText = "/etc/nixos/services.json";
       default = /etc/nixos/services.json;
       type = path;
       description = "Where to find the ENC services json file.";
@@ -169,7 +168,7 @@ in {
       '';
       type = types.path;
       default = "/etc/local";
-      example = "./test_cfg";
+      example = ./test_cfg;
     };
 
     flyingcircus.platform = {

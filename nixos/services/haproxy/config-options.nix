@@ -298,7 +298,7 @@ in {
   };
   listen = mkOption {
     default = {};
-    example = literalExpression ''{
+    example = literalExample ''{
       http-in = {
         binds = [
           "127.0.0.1:8002"
@@ -325,7 +325,7 @@ in {
   };
   backend = mkOption {
     default = {};
-    example = literalExpression ''{
+    example = literalExample ''{
       be = {
         servers = [
           "localhost localhost:8080"

@@ -21,7 +21,6 @@ with lib;
       };
 
       ceph.fsids = {
-        "testloc"."testrg" = "7d3bdc42-1d8e-4fcd-952d-e968d4f0cde4";
         # These are needed once per cluster.
         # Generate a new one via: `uuidgen -t` and record
         # it here with the ${location}.${resourcegroup} key

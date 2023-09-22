@@ -35,7 +35,6 @@ with lib;
     };
 
     encAddressesPath = mkOption {
-      defaultText = "/etc/nixos/addresses_srv.json";
       default = /etc/nixos/addresses_srv.json;
       type = path;
       description = "Where to find the address list json file.";
@@ -47,7 +46,6 @@ with lib;
     };
 
     encServicesPath = mkOption {
-      defaultText = "/etc/nixos/services.json";
       default = /etc/nixos/services.json;
       type = path;
       description = "Where to find the ENC services json file.";
@@ -61,7 +59,6 @@ with lib;
     };
 
     encServiceClientsPath = mkOption {
-      defaultText = "/etc/nixos/service_clients.json";
       default = /etc/nixos/service_clients.json;
       type = path;
       description = "Where to find the ENC service clients json file.";
@@ -74,7 +71,6 @@ with lib;
       description = "Where to find the releases json file.";
     };
     systemStatePath = mkOption {
-      defaultText = "/etc/nixos/system_state.json";
       default = /etc/nixos/system_state.json;
       type = path;
       description = "Where to find the system state json file.";

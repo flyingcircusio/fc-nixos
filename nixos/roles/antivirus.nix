@@ -16,7 +16,6 @@ in
 
       listenAddresses = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        defaultText = "addresses of the interfaces `lo` and `srv`";
         default = fclib.network.lo.dualstack.addresses ++
                   fclib.network.srv.dualstack.addresses;
       };

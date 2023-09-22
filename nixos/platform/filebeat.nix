@@ -118,7 +118,7 @@ in
         type = types.package;
         default = pkgs.filebeat7-oss;
         defaultText = "pkgs.filebeat7-oss";
-        example = literalExpression "pkgs.filebeat7";
+        example = literalExample "pkgs.filebeat7";
         description = ''
           The filebeat package to use.
         '';

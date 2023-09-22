@@ -501,7 +501,7 @@ in
         description = "Prosody package to use";
         default = pkgs.prosody;
         defaultText = "pkgs.prosody";
-        example = literalExpression ''
+        example = literalExample ''
           pkgs.prosody.override {
             withExtraLibs = [ pkgs.luaPackages.lpty ];
             withCommunityModules = [ "auth_external" ];

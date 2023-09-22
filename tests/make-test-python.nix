@@ -43,18 +43,12 @@ f: {
   , ...
 } @ args:
 
+with import "${nixpkgs}/nixos/lib/testing-python.nix" {
+  inherit system pkgs;
+};
+
 let
-  inherit (pkgs) lib;
-  pytest = import "${nixpkgs}/nixos/lib/testing-python.nix" {
-    inherit system pkgs;
-  };
-
-  defaultTest = {
-    node.specialArgs = {
-      inherit (import ../versions.nix { inherit pkgs; }) nixos-mailserver;
-    };
-  };
-
+  lib = pkgs.lib;
   test =
     if lib.isFunction f
     then f (args // {
@@ -63,11 +57,11 @@ let
     })
     else f;
 
-  makeTestSkipLint = args: pytest.runTest ({ skipLint = true; } // args);
+  makeTestSkipLint = args: makeTest ({ skipLint = true; } // args);
 
 in if test ? testCases
 then lib.mapAttrs
   (testCaseName: testCase: makeTestSkipLint (
     testCase // { name = "${test.name}-${testCaseName}"; }))
   test.testCases
-  else makeTestSkipLint (lib.recursiveUpdate defaultTest test)
+else makeTestSkipLint test
