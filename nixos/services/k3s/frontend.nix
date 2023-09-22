@@ -78,7 +78,6 @@ let
         (lib.optionalString (conf.haproxyExtraConfig != "") conf.haproxyExtraConfig)
       ];
   }) frontendCfg;
-
 in
 {
   options = with lib; {
@@ -172,7 +171,7 @@ in
           };
 
           extraPodTemplateOptions = mkOption {
-            type = lines;
+            type = string;
             default = "";
             description = "haproxy options for the server-template directive used for the pod backends, added verbatim to the end of the generated line.";
           };
@@ -196,7 +195,7 @@ in
           };
 
           serviceName = mkOption {
-            type = nullOr str;
+            type = nullOr string;
             default = null;
             description = ''
               Name of the Kubernetes service we want to proxy.
@@ -221,7 +220,7 @@ in
           };
 
           namespace = mkOption {
-            type = str;
+            type = string;
             default = "default";
             description = ''
               Kubernetes namespace the service is defined in.
@@ -232,7 +231,7 @@ in
           binds = mkOption {
             type = nullOr (listOf str);
             default = null;
-            example = [ "0.0.0.0:8008" ];
+            example = map (a: "${a}:8080") fclib.network.fe.dualstack.addressesQuoted;
             description = ''Addresses with ports haproxy is binding to,
               listening for incoming connections. Defaults to 127.0.0.1, using either `lbServicePort`
               or `podPort`, if `lbServicePort` is not set.

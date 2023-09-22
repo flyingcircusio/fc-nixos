@@ -62,7 +62,7 @@ in
     config = mkOption {
       type = attrsOf str;
       default = { };
-      example = literalExpression ''
+      example = literalExample ''
         {
           "org.jitsi.jicofo.auth.URL" = "XMPP:jitsi-meet.example.com";
         }

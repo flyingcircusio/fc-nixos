@@ -73,7 +73,8 @@ let
     else x;
 
   mkDefOpt = type : defaultStr : description : mkOpt type (description + ''
-    Defaults to <literal>${builtins.toString defaultStr}</literal> in prometheus
+
+    Defaults to <literal>${defaultStr}</literal> in prometheus
     when set to <literal>null</literal>.
   '');
 

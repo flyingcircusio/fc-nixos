@@ -162,7 +162,6 @@ in
 
     configFile = mkOption {
       type = types.path;
-      defaultText = "jibri.conf";
       default = "${pkgs.writeText "jibri.conf" (toHOCON cfg.settings)}";
       description = ''
         Jibri main config file path.
@@ -172,7 +171,6 @@ in
 
     settings = mkOption {
       type = types.attrs;
-      defaultText = {};
       default = settings;
       description = "Settings used to generate the default config file";
     };

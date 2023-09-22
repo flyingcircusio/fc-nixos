@@ -147,7 +147,6 @@ in
 
     defaultListenAddresses = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      defaultText = "addresses of the `fe` network";
       default = fclib.network.fe.dualstack.addressesQuoted;
       description = ''
         Addresses to listen on if a vhost does not specify any.
@@ -240,7 +239,7 @@ in
         };
       }));
       default = {};
-      example = literalExpression ''
+      example = literalExample ''
         {
           "hydra.example.com" = {
             forceSSL = true;

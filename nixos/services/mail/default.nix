@@ -1,8 +1,4 @@
-{ config
-, lib
-, pkgs
-, nixos-mailserver ? (import ../../../versions.nix {}).nixos-mailserver
-, ... }:
+{ config, lib, pkgs, ... }:
 
 with builtins;
 with lib;
@@ -15,6 +11,8 @@ with lib;
 # - domains: list of mail domains for which regular mail accounts exist
 
 let
+  inherit (import ../../../versions.nix { }) nixos-mailserver;
+
   role = config.flyingcircus.roles.mailserver;
   svc = config.flyingcircus.services.mail;
   fclib = config.fclib;
