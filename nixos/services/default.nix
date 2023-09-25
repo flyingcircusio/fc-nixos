@@ -33,7 +33,7 @@ in {
     ./opensearch.nix
     ./opensearch_dashboards.nix
     ./percona.nix
-    ./postgresql.nix
+    ./postgresql
     ./prometheus.nix
     ./rabbitmq.nix
     ./raid
