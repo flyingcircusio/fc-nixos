@@ -94,6 +94,11 @@ def main(args=sys.argv[1:]):
         "activate", help="Activate one or more OSDs."
     )
     parser_activate.add_argument(
+        "--as-systemd-unit",
+        action="store_true",
+        help="Flag if we are being called from the systemd unit startup.",
+    )
+    parser_activate.add_argument(
         "ids",
         help="IDs of OSD to activate. Use `all` to activate all local OSDs.",
     )
@@ -101,6 +106,11 @@ def main(args=sys.argv[1:]):
 
     parser_deactivate = osd_sub.add_parser(
         "deactivate", help="Deactivate an OSD."
+    )
+    parser_deactivate.add_argument(
+        "--as-systemd-unit",
+        action="store_true",
+        help="Flag if we are being called from the systemd unit startup.",
     )
     parser_deactivate.add_argument(
         "ids",

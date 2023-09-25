@@ -184,8 +184,8 @@ in
 
       flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
 
-      systemd.services.fc-ceph-osds = rec {
-        description = "Start/stop local Ceph OSDs (via fc-ceph)";
+      systemd.services.fc-ceph-osds-all = rec {
+        description = "All locally known Ceph OSDs (via fc-ceph managed units)";
         wantedBy = [ "multi-user.target" ];
         # Ceph requires the IPs to be properly attached to interfaces so it
         # knows where to bind to the public and cluster networks.
@@ -215,6 +215,35 @@ in
           RemainAfterExit = true;
         };
       };
+
+      systemd.services."fc-ceph-osd@" = rec {
+        description = "Ceph OSD %i";
+        # Ceph requires the IPs to be properly attached to interfaces so it
+        # knows where to bind to the public and cluster networks.
+        wants = [ "network.target" ];
+        requires = [ "fc-blockdev.service" ];
+        after = wants ++ requires;
+
+        environment = {
+          PYTHONUNBUFFERED = "1";
+        };
+
+        restartIfChanged = false;
+
+        serviceConfig = {
+          Type = "forking";
+          Restart = "always";
+          PIDFile = "/run/ceph/osd.%i.pid";
+          ExecStart = ''
+            ${fc-ceph}/bin/fc-ceph osd activate --as-systemd-unit  %i
+          '';
+          ExecStop = ''
+            ${fc-ceph}/bin/fc-ceph osd deactivate --as-systemd-unit %i
+          '';
+        };
+
+      };
+
 
     })
     (lib.mkIf (role.enable && role.config == "") {
