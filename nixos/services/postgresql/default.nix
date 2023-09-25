@@ -368,7 +368,7 @@ in {
           };
         } // lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "15") {
             postgresql-collation-warnings = {
-              notification = "PostgreSQL is reporting collation warnings with affected objects. Check /run/postgresql-collation-warnings and PL-131544.";
+              notification = "PostgreSQL is reporting collation warnings with affectec objects. Check /run/postgresql-collation-warnings and PL-131544.";
               command = "check_file_age -i -c 10 -w 5 ${upstreamCfg.dataDir}/postgresql-collation-warnings";
               interval = 600;
             };
