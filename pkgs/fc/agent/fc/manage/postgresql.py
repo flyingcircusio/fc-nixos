@@ -66,7 +66,10 @@ def stop_pg(log, old_data_dir: Path, stop: bool):
 @app.callback(no_args_is_help=True)
 def fc_postgresql(
     verbose: bool = Option(
-        False, "--verbose", "-v", help="Show debug messages and code locations."
+        False,
+        "--verbose",
+        "-v",
+        help="Show debug messages and code locations.",
     ),
     logdir: Path = Option(
         exists=True,

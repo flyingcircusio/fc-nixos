@@ -48,7 +48,9 @@ def invoke_app(app_main_args):
 
     def _invoke_app(*args, exit_code=0):
         with unittest.mock.patch("fc.maintenance.cli.ReqManager"):
-            result = runner.invoke(fc.maintenance.cli.app, app_main_args + args)
+            result = runner.invoke(
+                fc.maintenance.cli.app, app_main_args + args
+            )
             assert (
                 result.exit_code == exit_code
             ), f"unexpected exit code {result.exit_code}, output: {result.output}"

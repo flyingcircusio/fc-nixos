@@ -78,7 +78,9 @@ def test_down(update_nodes: MagicMock, get_node_info, logger, monkeypatch):
 
 @unittest.mock.patch("fc.util.slurm.get_node_info")
 @unittest.mock.patch("fc.util.slurm.update_nodes")
-def test_down_noop(update_nodes: MagicMock, get_node_info, logger, monkeypatch):
+def test_down_noop(
+    update_nodes: MagicMock, get_node_info, logger, monkeypatch
+):
     get_node_info.return_value = {"name": "test20", "state": "DOWN+DRAIN"}
     fc.util.slurm.down(logger, "test20", "test down noop")
     update_nodes.assert_not_called()
@@ -148,7 +150,9 @@ def test_drain_many_noop(logger, monkeypatch):
 
     monkeypatch.setattr(fc.util.slurm, "get_node_info", fake_get_node_info)
 
-    fc.util.slurm.drain_many(logger, ["test20", "test21"], 3, "test drain noop")
+    fc.util.slurm.drain_many(
+        logger, ["test20", "test21"], 3, "test drain noop"
+    )
 
 
 def test_check_controller(logger):

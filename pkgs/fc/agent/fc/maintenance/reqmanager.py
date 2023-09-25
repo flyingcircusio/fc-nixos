@@ -865,7 +865,9 @@ class ReqManager:
                 ),
             )
             time.sleep(5)
-            subprocess.run("reboot", check=True, capture_output=True, text=True)
+            subprocess.run(
+                "reboot", check=True, capture_output=True, text=True
+            )
             sys.exit(0)
 
     def get_metrics(self) -> dict:

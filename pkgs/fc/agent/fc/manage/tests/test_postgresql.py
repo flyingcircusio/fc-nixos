@@ -56,7 +56,9 @@ def test_invoke_list_versions(invoke_app, monkeypatch, tmp_path):
         "fc.util.postgresql.get_current_pgdata_from_service",
         (lambda: tmp_path / "postgresql/14"),
     )
-    monkeypatch.setattr("fc.util.postgresql.is_service_running", (lambda: True))
+    monkeypatch.setattr(
+        "fc.util.postgresql.is_service_running", (lambda: True)
+    )
     result = invoke_app("list-versions")
     print(result.output)
 
@@ -119,8 +121,12 @@ def test_invoke_prepare_autoupgrade(
     config = tmp_path / "autoupgrade.json"
     conf = {"expected_databases": ["test"]}
     config.write_text(json.dumps(conf), encoding="utf8")
-    monkeypatch.setattr("fc.util.postgresql.is_service_running", (lambda: True))
-    invoke_app("prepare-autoupgrade", "--config", config, "--new-version", "15")
+    monkeypatch.setattr(
+        "fc.util.postgresql.is_service_running", (lambda: True)
+    )
+    invoke_app(
+        "prepare-autoupgrade", "--config", config, "--new-version", "15"
+    )
     build_new_bin_dir.assert_called()
     prepare_upgrade.assert_called()
     run_pg_upgrade_check.assert_called()

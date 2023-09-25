@@ -68,7 +68,8 @@ def main():
         "-t",
         "--timeout",
         default=30,
-        help="abort execution after TIMEOUT seconds " "(default: %(default)ss)",
+        help="abort execution after TIMEOUT seconds "
+        "(default: %(default)ss)",
     )
     args = a.parse_args()
     check = nagiosplugin.Check(

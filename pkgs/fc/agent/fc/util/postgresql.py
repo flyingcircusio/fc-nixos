@@ -198,7 +198,9 @@ def create_new_data_dir(
             initdb_cmd=initdb_cmd_str, old_data_dir=old_data_dir
         )
     )
-    shutil.chown(new_data_dir / "fcio_upgrade_prepared", "postgres", "postgres")
+    shutil.chown(
+        new_data_dir / "fcio_upgrade_prepared", "postgres", "postgres"
+    )
 
 
 class UnexpectedDatabasesFound(Exception):

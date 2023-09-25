@@ -337,7 +337,9 @@ def find_nix_build_error(stderr: str, log=_log):
     return "Building the system failed!"
 
 
-def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
+def build_system(
+    channel_url=None, build_options=None, out_link=None, log=_log
+):
     """
     Build system with this channel. Works like nixos-rebuild build.
     Does not modify the running system.

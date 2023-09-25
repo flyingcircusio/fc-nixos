@@ -22,7 +22,9 @@ class Context(NamedTuple):
 
 
 app = Typer(
-    pretty_exceptions_show_locals=bool(os.getenv("FC_AGENT_SHOW_LOCALS", False))
+    pretty_exceptions_show_locals=bool(
+        os.getenv("FC_AGENT_SHOW_LOCALS", False)
+    )
 )
 context: Context
 
@@ -30,7 +32,10 @@ context: Context
 @app.callback(no_args_is_help=True)
 def fc_slurm(
     verbose: bool = Option(
-        False, "--verbose", "-v", help="Show debug messages and code locations."
+        False,
+        "--verbose",
+        "-v",
+        help="Show debug messages and code locations.",
     ),
     logdir: Path = Option(
         exists=True,
@@ -209,7 +214,9 @@ def ready_all(
             required_machines_not_in_service = []
             for machine in required_in_service:
                 log.debug("ready-all-check-required-machine", machine=machine)
-                if not fc.util.directory.is_node_in_service(directory, machine):
+                if not fc.util.directory.is_node_in_service(
+                    directory, machine
+                ):
                     required_machines_not_in_service.append(machine)
 
             if required_machines_not_in_service:

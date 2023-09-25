@@ -91,7 +91,9 @@ def hydra_build_info(build_id):
     meta = r.json()
     buildproduct = meta["buildproducts"]["1"]
     if not buildproduct["type"] == "file":
-        raise RuntimeError("Cannot find build product in server response", meta)
+        raise RuntimeError(
+            "Cannot find build product in server response", meta
+        )
     return buildproduct
 
 

@@ -72,7 +72,9 @@ def request_reboot_for_qemu(log) -> Optional[Request]:
         return
 
     try:
-        with open("/run/qemu-binary-generation-current", encoding="ascii") as f:
+        with open(
+            "/run/qemu-binary-generation-current", encoding="ascii"
+        ) as f:
             current_generation = int(f.read().strip())
     except Exception:
         # Do not perform maintenance if no current marker is there.
@@ -159,7 +161,10 @@ def request_update(log, enc, current_requests) -> Optional[Request]:
         )
         return
 
-    if not other_planned_requests and activity.identical_to_current_channel_url:
+    if (
+        not other_planned_requests
+        and activity.identical_to_current_channel_url
+    ):
         # Shortcut to save time preparing an activity which will have no effect.
         return
 
