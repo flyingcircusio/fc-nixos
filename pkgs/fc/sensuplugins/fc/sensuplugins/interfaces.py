@@ -91,7 +91,9 @@ class Interfaces(nagiosplugin.Resource):
                 context="{}_spd".format(context),
             )
             yield nagiosplugin.Metric(
-                "{}_dup".format(iface), duplex, context="{}_dup".format(context)
+                "{}_dup".format(iface),
+                duplex,
+                context="{}_dup".format(context),
             )
 
 

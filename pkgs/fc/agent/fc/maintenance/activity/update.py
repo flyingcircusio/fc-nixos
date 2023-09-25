@@ -73,7 +73,8 @@ class UpdateActivity(Activity):
         """
         if not enc or not enc.get("parameters"):
             log.warning(
-                "enc-data-missing", msg="No ENC data, cannot update the system."
+                "enc-data-missing",
+                msg="No ENC data, cannot update the system.",
             )
             return
 

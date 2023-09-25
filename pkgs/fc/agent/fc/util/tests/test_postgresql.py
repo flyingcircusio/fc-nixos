@@ -46,7 +46,9 @@ def test_prepare_upgrade(logger, old_data_dir, monkeypatch, tmp_path):
             }
         ),
     )
-    monkeypatch.setattr("fc.util.postgresql.is_service_running", (lambda: True))
+    monkeypatch.setattr(
+        "fc.util.postgresql.is_service_running", (lambda: True)
+    )
     new_data_dir = tmp_path / "postgresql/15"
     new_data_dir.mkdir()
     (new_data_dir / "fcio_upgrade_prepared").touch()
@@ -221,7 +223,8 @@ def test_get_existing_dbs_running_postgres_should_raise_for_unknown(
 def test_run_pg_upgrade(logger, tmp_path, old_data_dir, monkeypatch):
     monkeypatch.setattr("fc.util.postgresql.run_as_postgres", Mock())
     monkeypatch.setattr(
-        "fc.util.postgresql.pg_upgrade_clone_available", Mock(return_value=True)
+        "fc.util.postgresql.pg_upgrade_clone_available",
+        Mock(return_value=True),
     )
     new_data_dir = tmp_path / "postgresql/15"
     new_data_dir.mkdir()
