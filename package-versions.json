@@ -30,9 +30,9 @@
     "version": "5.2"
   },
   "bind": {
-    "name": "bind-9.18.18",
+    "name": "bind-9.18.19",
     "pname": "bind",
-    "version": "9.18.18"
+    "version": "9.18.19"
   },
   "binutils": {
     "name": "binutils-wrapper-2.40",
@@ -115,14 +115,14 @@
     "version": "2.21.0"
   },
   "dovecot": {
-    "name": "dovecot-2.3.20",
+    "name": "dovecot-2.3.21",
     "pname": "dovecot",
-    "version": "2.3.20"
+    "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.42",
+    "name": "element-web-1.11.43",
     "pname": "element-web",
-    "version": "1.11.42"
+    "version": "1.11.43"
   },
   "erlang": {
     "name": "erlang-25.3.2.6",
@@ -180,14 +180,14 @@
     "version": "2.42.0"
   },
   "github-runner": {
-    "name": "github-runner-2.308.0",
+    "name": "github-runner-2.309.0",
     "pname": "github-runner",
-    "version": "2.308.0"
+    "version": "2.309.0"
   },
   "gitlab": {
-    "name": "gitlab-16.3.3",
+    "name": "gitlab-16.3.4",
     "pname": "gitlab",
-    "version": "16.3.3"
+    "version": "16.3.4"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-3.83.0",
@@ -305,9 +305,9 @@
     "version": "19.0.2+7"
   },
   "k3s": {
-    "name": "k3s-1.27.5+k3s1",
+    "name": "k3s-1.27.6+k3s1",
     "pname": "k3s",
-    "version": "1.27.5+k3s1"
+    "version": "1.27.6+k3s1"
   },
   "keycloak": {
     "name": "keycloak-22.0.3",
@@ -345,9 +345,9 @@
     "version": "2.11.5"
   },
   "linux": {
-    "name": "linux-6.1.52",
+    "name": "linux-6.1.55",
     "pname": "linux",
-    "version": "6.1.52"
+    "version": "6.1.55"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -370,9 +370,9 @@
     "version": "10.11.5"
   },
   "mastodon": {
-    "name": "mastodon-4.1.7",
+    "name": "mastodon-4.1.9",
     "pname": "mastodon",
-    "version": "4.1.7"
+    "version": "4.1.9"
   },
   "matomo": {
     "name": "matomo-4.14.2",
@@ -570,9 +570,9 @@
     "version": "8.2.10"
   },
   "phpPackages.composer": {
-    "name": "composer-2.6.2",
+    "name": "composer-2.6.3",
     "pname": "composer",
-    "version": "2.6.2"
+    "version": "2.6.3"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -690,9 +690,9 @@
     "version": "4.2.5"
   },
   "qemu": {
-    "name": "qemu-8.1.0",
+    "name": "qemu-8.1.1",
     "pname": "qemu",
-    "version": "8.1.0"
+    "version": "8.1.1"
   },
   "rabbitmq-server": {
     "name": "rabbitmq-server-3.12.4",
@@ -715,9 +715,9 @@
     "version": "7.2.1"
   },
   "roundcube": {
-    "name": "roundcube-1.6.2",
+    "name": "roundcube-1.6.3",
     "pname": "roundcube",
-    "version": "1.6.2"
+    "version": "1.6.3"
   },
   "rsync": {
     "name": "rsync-3.2.7",
@@ -795,9 +795,9 @@
     "version": "4.99.4"
   },
   "telegraf": {
-    "name": "telegraf-1.27.4",
+    "name": "telegraf-1.28.1",
     "pname": "telegraf",
-    "version": "1.27.4"
+    "version": "1.28.1"
   },
   "tmux": {
     "name": "tmux-3.3a",
