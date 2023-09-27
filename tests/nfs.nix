@@ -88,11 +88,12 @@ in {
           services.telegraf.enable = false;
           users.users.u = user;
 
+          specialisation.withCustomFlags.configuration.flyingcircus.roles.nfs_rg_share.clientFlags = [ "rw" "sync" "no_root_squash" "no_subtree_check" ];
         };
       };
   };
 
-  testScript = ''
+  testScript = { nodes, ... }: ''
     import io
     import queue
     import re
@@ -160,6 +161,15 @@ in {
     assert "Failed unmounting" not in console, "Unmounting NFS cleanly failed, check console output"
 
     client.wait_for_shutdown()
+
+    config = server.execute('cat /etc/exports')[1]
+    assert "rw,sync,root_squash,no_subtree_check" in config, "default flags not found"
+
+    server.succeed('${nodes.server.system.build.toplevel}/specialisation/withCustomFlags/bin/switch-to-configuration test')
+
+    config = server.execute('cat /etc/exports')[1]
+    assert "rw,sync,root_squash,no_subtree_check" not in config, "default flags found but not expected"
+    assert "rw,sync,no_root_squash,no_subtree_check" in config, "custom flags not found"
 
   '';
 

@@ -16,10 +16,18 @@ The NFS configuration is fully managed and located in
 {file}`/etc/exports` for the NFS server and {file}`/etc/fstab` for the NFS
 clients.
 
-The NFS server is set up to run in sync mode, so any system call that writes
-data to files on the NFS share causes that data to be flushed to the server
-before the system call returns control to user space. This provides greater data
-cache coherence among clients, but at a significant performance cost.
+The NFS server is by default set up to run in sync mode, so any system call that
+writes data to files on the NFS share causes that data to be flushed to the
+server before the system call returns control to user space. This provides
+greater data cache coherence among clients, but at a significant performance
+cost.
+
+**flyingcircus.roles.nfs_rg_share.clientFlags**
+
+List of strings that are applied as options for every client.
+
+Default: `["rw" "sync" "root_squash" "no_subtree_check"]`
+
 
 ## Interaction
 
