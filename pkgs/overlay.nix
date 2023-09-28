@@ -327,6 +327,7 @@ in {
       url = "https://download.osgeo.org/postgis/source/postgis-${version}.tar.gz";
       sha256 = "0547xjk6jcwx44s6dsfp4f4j93qrbf2d2j8qhd23w55a58hs05qj";
     };
+    meta.broken = false;
   });
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
