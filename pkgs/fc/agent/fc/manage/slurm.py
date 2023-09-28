@@ -194,6 +194,9 @@ def ready_all(
             "will be set to ready."
         ),
     ),
+    timeout: int = Option(
+        default=30, help="Wait for seconds for nodes to become ready."
+    ),
     strict_state_check: Optional[bool] = False,
     reason_must_match: Optional[str] = Option(
         default=None,
@@ -232,27 +235,17 @@ def ready_all(
                 return
 
     with directory_connection(context.enc_path) as directory:
-        for node_name in node_names:
-            fc.util.slurm.ready(
-                log,
-                node_name,
-                strict_state_check,
-                reason_must_match,
-                skip_nodes_in_maintenance,
-                directory,
-            )
+        fc.util.slurm.ready_many(
+            log,
+            node_names,
+            timeout,
+            strict_state_check,
+            reason_must_match,
+            skip_nodes_in_maintenance,
+            directory,
+        )
 
-    # XXX: Give slurmctld a bit more time to settle.
-    # The change to "ready" should be almost instantaneous. However, we experienced an
-    # alert when the Sensu check ran some milliseconds after this command finished and
-    # still saw all nodes as "down" even after slurmctld said that nodes are responding.
-    # This will be replaced by a proper wait loop like drain_many.
-    # See PL-131739 "Slurm maintenance causes alert".
-    log.info(
-        "ready-all-finished",
-        _replace_msg="Finished, waiting 2 seconds for slurmctld to settle.",
-    )
-    time.sleep(2)
+    log.info("ready-all-finished")
 
 
 @all_nodes_app.command()

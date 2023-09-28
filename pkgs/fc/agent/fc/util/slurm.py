@@ -91,6 +91,11 @@ def is_node_drained(log, node_info):
     return drained
 
 
+def is_node_ready(node_info):
+    state, *flags = node_info["state"].split("+")
+    return "DRAIN" not in flags and state not in ("DOWN", "DOWN*")
+
+
 def get_all_node_names():
     return pyslurm.node().get().keys()
 
@@ -488,6 +493,112 @@ def ready(
         "ready-finished",
         _replace_msg="{node} set to ready.",
     )
+
+
+def ready_many(
+    log,
+    node_names: list[str],
+    timeout: int,
+    strict_state_check: bool = False,
+    reason_must_match: Optional[str] = None,
+    skip_in_maintenance=False,
+    directory=None,
+):
+    log.debug("ready-many-start", nodes=node_names)
+
+    nodes_to_wait_for = set()
+
+    for node_name in node_names:
+        check_result = run_ready_pre_checks(
+            log,
+            node_name,
+            strict_state_check,
+            reason_must_match,
+            skip_in_maintenance,
+            directory,
+        )
+        if check_result.action:
+            nodes_to_wait_for.add(node_name)
+
+    if not nodes_to_wait_for:
+        log.info(
+            "ready-many-nothing-to-do",
+            _replace_msg="OK: All wanted nodes are already ready.",
+        )
+        return
+
+    state_change_ready = {
+        "node_names": ",".join(nodes_to_wait_for),
+        "node_state": pyslurm.NODE_RESUME,
+    }
+    result = update_nodes(state_change_ready)
+    log.debug("node-update-result", result=result)
+
+    log.info(
+        "ready-many-waiting",
+        num_waiting_nodes=len(nodes_to_wait_for),
+        _replace_msg="Waiting for {num_waiting_nodes} nodes to become ready.",
+    )
+
+    start_time = time.time()
+    elapsed = 0.0
+    ii = 0
+
+    while elapsed < timeout:
+        ready_nodes = set()
+        for node_name in nodes_to_wait_for:
+            node_info = get_node_info(node_name)
+
+            if is_node_ready(node_info):
+                log.info(
+                    "node-ready",
+                    _replace_msg="{node} is now ready.",
+                    node=node_name,
+                )
+
+                ready_nodes.add(node_name)
+
+        for node_name in ready_nodes:
+            nodes_to_wait_for.remove(node_name)
+
+        if not nodes_to_wait_for:
+            log.info(
+                "ready-many-finished",
+                _replace_msg="All nodes are ready after {elapsed} seconds.",
+                elapsed=int(elapsed),
+            )
+            return
+
+        log.debug(
+            "ready-all-wait",
+            elapsed=int(elapsed),
+            timeout=timeout,
+            num_waiting_nodes=len(nodes_to_wait_for),
+        )
+
+        pause = min([15, 2**ii])
+        log.debug("ready-wait", sleep=pause)
+        time.sleep(pause)
+        ii += 1
+        elapsed = time.time() - start_time
+
+    # Loop finished => time limit reached
+
+    remaining_node_states = {
+        o: get_node_info(o)["state"] for o in nodes_to_wait_for
+    }
+
+    log.error(
+        "ready-many-timeout",
+        timeout=timeout,
+        remaining_node_states=remaining_node_states,
+        num_remaining=len(nodes_to_wait_for),
+        _replace_msg=(
+            "{num_remaining} node(s) did not become ready in time, waited "
+            "{timeout} seconds for: {remaining_node_states}"
+        ),
+    )
+    raise NodeStateTimeout(remaining_node_states)
 
 
 def check_controller(log, hostname):
