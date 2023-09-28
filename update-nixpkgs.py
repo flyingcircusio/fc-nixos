@@ -355,10 +355,8 @@ def package_versions():
 
 
 @app.command()
-def prefetch(
-    nixos_version: str = Option(default=None),
-):
-    print(prefetch_nixpkgs(nixos_version))
+def prefetch():
+    print(prefetch_nixpkgs(context.nixos_version))
 
 
 @app.command()
