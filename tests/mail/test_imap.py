@@ -20,8 +20,12 @@ def verify(user, password, exp_subjects):
 
 
 verify(
-    "user1@example.local", "User1User1", ["testmail1", "testmail3", "testmail6"]
+    "user1@example.local",
+    "User1User1",
+    ["testmail1", "testmail3", "testmail6"],
 )
 verify(
-    "user2@example.local", "User2User2", ["testmail2", "testmail4", "testmail5"]
+    "user2@example.local",
+    "User2User2",
+    ["testmail2", "testmail4", "testmail5"],
 )

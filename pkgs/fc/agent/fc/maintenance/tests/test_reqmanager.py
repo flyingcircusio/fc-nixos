@@ -117,7 +117,9 @@ def test_add_dont_add_none(log, reqmanager):
 
 @pytest.mark.parametrize("significant", [False, True])
 @unittest.mock.patch("fc.util.directory.connect")
-def test_add_do_merge_compatible_request(connect, significant, log, reqmanager):
+def test_add_do_merge_compatible_request(
+    connect, significant, log, reqmanager
+):
     with reqmanager as rm:
         first_activity = MergeableActivity("first")
         second_activity = MergeableActivity("second", significant)

@@ -54,7 +54,9 @@ def main(args=sys.argv[1:]):
         default=fc.ceph.manage.OSD.DEFAULT_JOURNAL_SIZE,
         help="Size of journal (LVM size units allowed).",
     )
-    parser_activate.add_argument("--crush-location", default=f"host={hostname}")
+    parser_activate.add_argument(
+        "--crush-location", default=f"host={hostname}"
+    )
     parser_activate.set_defaults(action="create")
 
     parser_activate = osd_sub.add_parser(
@@ -243,10 +245,14 @@ requests. Useful for identifying slacky OSDs.""",
     )
     parser_clean_deleted_vms.set_defaults(action="clean_deleted_vms")
 
-    parser_enter = maint_sub.add_parser("enter", help="Enter maintenance mode.")
+    parser_enter = maint_sub.add_parser(
+        "enter", help="Enter maintenance mode."
+    )
     parser_enter.set_defaults(action="enter")
 
-    parser_leave = maint_sub.add_parser("leave", help="Leave maintenance mode.")
+    parser_leave = maint_sub.add_parser(
+        "leave", help="Leave maintenance mode."
+    )
     parser_leave.set_defaults(action="leave")
 
     args = vars(parser.parse_args(args))

@@ -86,4 +86,6 @@ def test_journal_renderer_replace_msg(journald_renderer):
 
     rendered = journald_renderer(None, None, event_dict)
     assert "journal" in rendered
-    assert rendered["journal"]["MESSAGE"] == "test-event: test msg with pid 123"
+    assert (
+        rendered["journal"]["MESSAGE"] == "test-event: test msg with pid 123"
+    )

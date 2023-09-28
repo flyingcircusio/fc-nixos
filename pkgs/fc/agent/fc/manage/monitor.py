@@ -123,7 +123,9 @@ def main():
 
     with open(args.enc) as f:
         enc = json.load(f)
-    directory = get_directory(enc, "https://directory.fcio.net/v2/api")  # RING0
+    directory = get_directory(
+        enc, "https://directory.fcio.net/v2/api"
+    )  # RING0
     kw = vars(args)
     kw.pop("enc", None)
 

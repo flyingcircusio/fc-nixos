@@ -13,7 +13,10 @@ def test_check_result_ok():
 
 def test_check_result_ok_multi():
     check_result = CheckResult(
-        ok_info=["Everything is as expected.", "Also additional info: 5, 3, 7."]
+        ok_info=[
+            "Everything is as expected.",
+            "Also additional info: 5, 3, 7.",
+        ]
     )
     out = check_result.format_output()
     expected = textwrap.dedent(

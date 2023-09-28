@@ -61,6 +61,9 @@ let
     then { include_dir = "${localConfigPath}"; }
     else {};
 
+  collationVerifierScript = pkgs.writers.writePython3Bin "verify-collations"
+      {} (builtins.readFile ./verify-collations.py);
+
 in {
   options = with lib; {
 
@@ -159,13 +162,12 @@ in {
         fi
       '';
 
-      systemd.services.postgresql.postStart =
-      let
-        psql = "${postgresqlPkg}/bin/psql --port=${toString upstreamCfg.port}";
-      in ''
+      systemd.services.postgresql.postStart = ''
         ln -sfT ${postgresqlPkg} ${upstreamCfg.dataDir}/package
         ln -sfT ${upstreamCfg.dataDir}/package /nix/var/nix/gcroots/per-user/postgres/package_${cfg.majorVersion}
-      '';
+      '' + (lib.optionalString (lib.versionAtLeast cfg.majorVersion "15") ''
+        ${collationVerifierScript}/bin/verify-collations ${upstreamCfg.dataDir}
+      '');
 
       systemd.services.postgresql.serviceConfig = {
         Restart = "always";
@@ -364,6 +366,12 @@ in {
               '';
             interval = 30;
           };
+        } // lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "15") {
+            postgresql-collation-warnings = {
+              notification = "PostgreSQL is reporting collation warnings with affected objects. Check /run/postgresql-collation-warnings and PL-131544.";
+              command = "sudo -u postgres check_file_age -i -c 10 -w 5 ${upstreamCfg.dataDir}/postgresql-collation-warnings";
+              interval = 600;
+            };
         } // lib.optionalAttrs (cfg.autoUpgrade.enable && cfg.autoUpgrade.checkExpectedDatabases) {
             postgresql-autoupgrade-possible = {
               notification = "Unexpected PostgreSQL databases present, autoupgrade will fail!";

@@ -40,7 +40,7 @@ in {
       };
 
       vhosts = mkOption {
-        type = with types; listOf (submodule {
+        type = with types; listOf (submodule ({ config, ... }: {
           options = {
             port = mkOption { type = int; };
             docroot = mkOption { type = str; };
@@ -56,8 +56,12 @@ in {
               description = "Overrides for underlying NixOS Pool options";
               default = {};
             };
+            name = mkOption {
+              type = str;
+              default = "lamp-${toString config.port}";
+            };
           };
-        });
+        }));
         default = [];
       };
 
@@ -206,7 +210,7 @@ in {
                     DirectoryIndex index.html index.php
                 </Directory>
                 <FilesMatch "\.php$">
-                    SetHandler "proxy:unix:${config.services.phpfpm.pools."lamp-${port}".socket}|fcgi://localhost/"
+                    SetHandler "proxy:unix:${config.services.phpfpm.pools."${vhost.name}".socket}|fcgi://localhost/"
                 </FilesMatch>
                 ${vhost.apacheExtraConfig}
             </VirtualHost>
@@ -222,7 +226,7 @@ in {
 
         services.phpfpm.pools = builtins.listToAttrs (map
           (vhost: {
-             name = "lamp-${toString vhost.port}";
+             inherit (vhost) name;
              value = lib.attrsets.recursiveUpdate {
                 user = config.services.httpd.user;
                 group = config.services.httpd.group;

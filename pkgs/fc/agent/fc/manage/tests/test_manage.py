@@ -20,18 +20,24 @@ def test_channel_eq(logger):
 
 def test_channel_str_local_checkout(logger):
     channel = Channel(logger, "file://1", name="name", environment="env")
-    assert str(channel) == "<Channel name=name, version=local-checkout, from=1>"
+    assert (
+        str(channel) == "<Channel name=name, version=local-checkout, from=1>"
+    )
 
 
 def test_channel_str(logger, mocked_responses):
-    url = "https://hydra.flyingcircus.io/build/54522/download/1/nixexprs.tar.xz"
+    url = (
+        "https://hydra.flyingcircus.io/build/54522/download/1/nixexprs.tar.xz"
+    )
     mocked_responses.add(responses.HEAD, url)
     channel = Channel(logger, url, name="name", environment="env")
     assert str(channel) == f"<Channel name=name, version=unknown, from={url}>"
 
 
 def test_channel_from_expr_url(logger, mocked_responses):
-    url = "https://hydra.flyingcircus.io/build/54522/download/1/nixexprs.tar.xz"
+    url = (
+        "https://hydra.flyingcircus.io/build/54522/download/1/nixexprs.tar.xz"
+    )
     mocked_responses.add(responses.HEAD, url)
     ch = Channel(logger, url)
     assert ch.resolved_url == url

@@ -78,7 +78,9 @@ def test_down(update_nodes: MagicMock, get_node_info, logger, monkeypatch):
 
 @unittest.mock.patch("fc.util.slurm.get_node_info")
 @unittest.mock.patch("fc.util.slurm.update_nodes")
-def test_down_noop(update_nodes: MagicMock, get_node_info, logger, monkeypatch):
+def test_down_noop(
+    update_nodes: MagicMock, get_node_info, logger, monkeypatch
+):
     get_node_info.return_value = {"name": "test20", "state": "DOWN+DRAIN"}
     fc.util.slurm.down(logger, "test20", "test down noop")
     update_nodes.assert_not_called()
@@ -148,7 +150,9 @@ def test_drain_many_noop(logger, monkeypatch):
 
     monkeypatch.setattr(fc.util.slurm, "get_node_info", fake_get_node_info)
 
-    fc.util.slurm.drain_many(logger, ["test20", "test21"], 3, "test drain noop")
+    fc.util.slurm.drain_many(
+        logger, ["test20", "test21"], 3, "test drain noop"
+    )
 
 
 def test_check_controller(logger):
@@ -307,6 +311,102 @@ def test_drain_many_timeout(logger, log, monkeypatch):
 
     assert log.has(
         "drain-many-timeout",
+        timeout=3,
+        remaining_node_states=remaining_node_states,
+    )
+
+
+def test_ready_many(logger, monkeypatch):
+    iter_states = {
+        "test20": iter(
+            [
+                "IDLE+DRAIN",
+                "IDLE",
+            ]
+        ),
+        "test21": iter(
+            [
+                "DOWN+DRAIN",
+                "MIXED",
+            ]
+        ),
+        "test22": iter(
+            [
+                "DOWN",
+                "IDLE",
+            ]
+        ),
+        "test23": iter(
+            [
+                "IDLE",
+            ]
+        ),
+        "test24": iter(
+            [
+                "IDLE*",
+                "IDLE",
+            ]
+        ),
+        # Node is DOWN forever.
+        "test25": repeat("DOWN"),
+    }
+
+    # test25 should be ignored by ready_many. It would cause a timeout if the function
+    # fails to ignore it because the node will never be in a ready state.
+
+    def fake_get_node_info(node_name):
+        return {
+            "name": node_name,
+            "state": next(iter_states[node_name]),
+            "reason": "other" if node_name == "test25" else "test ready many",
+        }
+
+    monkeypatch.setattr(fc.util.slurm, "get_node_info", fake_get_node_info)
+    fc.util.slurm.ready_many(
+        logger, list(iter_states.keys()), 3, reason_must_match="test ready many"
+    )
+
+
+def test_ready_many_timeout(logger, log, monkeypatch):
+    iter_states = {
+        "test20": iter(
+            [
+                "IDLE+DRAIN",
+                "IDLE",
+            ]
+        ),
+        "test21": iter(
+            [
+                "IDLE",
+            ]
+        ),
+        # Node is DOWN forever.
+        "test22": repeat("DOWN"),
+    }
+
+    def fake_get_node_info(node_name):
+        return {
+            "name": node_name,
+            "state": next(iter_states[node_name]),
+            "reason": "test ready many timeout",
+        }
+
+    monkeypatch.setattr(fc.util.slurm, "get_node_info", fake_get_node_info)
+
+    with raises(NodeStateTimeout) as e:
+        fc.util.slurm.ready_many(
+            logger,
+            list(iter_states.keys()),
+            3,
+            reason_must_match="test ready many timeout",
+        )
+
+    remaining_node_states = {"test22": "DOWN"}
+
+    assert e.value.remaining_node_states == remaining_node_states
+
+    assert log.has(
+        "ready-many-timeout",
         timeout=3,
         remaining_node_states=remaining_node_states,
     )

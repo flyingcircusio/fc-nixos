@@ -259,7 +259,8 @@ def main():
     args = a.parse_args()
     if args.verbose:
         logging.basicConfig(
-            level=logging.DEBUG, format="fc-blockdev: %(levelname)s %(message)s"
+            level=logging.DEBUG,
+            format="fc-blockdev: %(levelname)s %(message)s",
         )
     else:
         logging.basicConfig(

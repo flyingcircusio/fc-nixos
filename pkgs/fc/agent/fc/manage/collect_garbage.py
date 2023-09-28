@@ -29,7 +29,10 @@ Nix store paths that may be still referenced from home dirs.
 @app.command(help=HELP)
 def collect_garbage(
     verbose: bool = Option(
-        False, "--verbose", "-v", help="Show debug messages and code locations."
+        False,
+        "--verbose",
+        "-v",
+        help="Show debug messages and code locations.",
     ),
     exclude_file: Path = Option(
         exists=True,

@@ -22,7 +22,7 @@ let
   # RG, regardles of the node actually being a client.
   exportToClients =
     let
-      flags = "rw,sync,root_squash,no_subtree_check";
+      flags = lib.concatStringsSep "," cfg.roles.nfs_rg_share.clientFlags;
       clientWithFlags = c: "${c.node}(${flags})";
     in
       lib.concatMapStringsSep " " clientWithFlags serviceClients;
@@ -38,6 +38,7 @@ in
       '';
       supportsContainers = fclib.mkEnableContainerSupport;
     };
+
     flyingcircus.roles.nfs_rg_share = {
       enable = mkEnableOption ''
         Enable the Flying Circus nfs server role.
@@ -45,6 +46,14 @@ in
         This exports /srv/nfs/shared.
       '';
       supportsContainers = fclib.mkEnableContainerSupport;
+      clientFlags = lib.mkOption {
+          default = ["rw" "sync" "root_squash" "no_subtree_check"];
+          type = with types; listOf str;
+          description = ''
+            Flags for each client's export rule.
+          '';
+        };
+
     };
   };
 

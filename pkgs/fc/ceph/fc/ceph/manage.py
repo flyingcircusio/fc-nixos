@@ -265,7 +265,10 @@ class OSDManager(object):
                 "partitiontable"
             ]
         except Exception as e:
-            if b"does not contain a recognized partition table" not in e.stderr:
+            if (
+                b"does not contain a recognized partition table"
+                not in e.stderr
+            ):
                 # Not an empty disk, propagate the error
                 raise
         else:
@@ -729,7 +732,8 @@ class Monitor(object):
                 check=True,
             )
         run(
-            ["ceph-mon", "-i", self.id, "--pid-file", self.pid_file], check=True
+            ["ceph-mon", "-i", self.id, "--pid-file", self.pid_file],
+            check=True,
         )
 
     def deactivate(self):
@@ -772,7 +776,14 @@ class Monitor(object):
         print(f"creating new mon volume {lvm_data_device}")
         run(["lvcreate", "-n", lvm_lv, f"-L{size}", lvm_vg], check=True)
         run(
-            ["mkfs.xfs", "-L", lvm_lv, "-m", "crc=1,finobt=1", lvm_data_device],
+            [
+                "mkfs.xfs",
+                "-L",
+                lvm_lv,
+                "-m",
+                "crc=1,finobt=1",
+                lvm_data_device,
+            ],
             check=True,
         )
         run(
@@ -846,7 +857,9 @@ class Monitor(object):
                 ],
                 check=True,
             )
-            run(["ceph", "mon", "getmap", "-o", f"{tmpdir}/monmap"], check=True)
+            run(
+                ["ceph", "mon", "getmap", "-o", f"{tmpdir}/monmap"], check=True
+            )
         # Add yourself to the monmap
         run(
             [
