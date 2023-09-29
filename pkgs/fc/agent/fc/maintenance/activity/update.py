@@ -7,6 +7,7 @@ import os.path as p
 from typing import Optional
 
 import structlog
+from fc.maintenance import state
 from fc.maintenance.estimate import Estimate
 from fc.util import nixos
 from fc.util.nixos import UnitChanges
@@ -198,41 +199,80 @@ class UpdateActivity(Activity):
 
         return False
 
+    def _handle_channel_exception(
+        self,
+        exc: nixos.ChannelException,
+    ):
+        match exc:
+            case nixos.ChannelUpdateFailed():
+                returncode = 1
+                event = "update-run-error"
+                msg = (
+                    "Update error: setting {next_channel} ({next_version}) "
+                    "as system channel failed."
+                )
+            case nixos.BuildFailed():
+                returncode = 2
+                event = "update-run-error"
+                msg = (
+                    "Update error: building {next_channel} ({next_version}) "
+                    "failed."
+                )
+            case nixos.RegisterFailed():
+                returncode = 3
+                event = "update-run-error"
+                msg = (
+                    "Update error: registering system {next_system} for "
+                    "version {next_version} failed."
+                )
+            case nixos.SwitchFailed():
+                returncode = state.EXIT_TEMPFAIL
+                event = "update-run-tempfail"
+                msg = (
+                    "Temporary failure when switching to the new system, "
+                    "trying again."
+                )
+            case _:
+                return
+
+        self.stdout = exc.stdout
+        self.stderr = exc.stderr
+        self.returncode = returncode
+        self.log.error(
+            event,
+            _replace_msg=msg,
+            returncode=self.returncode,
+            current_version=self.current_version,
+            current_channel_url=self.current_channel_url,
+            current_system=self.current_system,
+            current_environment=self.current_environment,
+            next_channel=self.next_channel_url,
+            next_system=self.next_system,
+            next_version=self.next_version,
+            next_environment=self.next_environment,
+        )
+
     def run(self):
         """Do the update"""
-        step = 1
         try:
             self.update_system_channel()
 
             if self.identical_to_current_system:
+                # Nothing to do here, always a success.
                 self.returncode = 0
                 return
 
-            step = 2
             system_path = nixos.build_system(
                 self.next_channel_url, log=self.log
             )
-            step = 3
+            # System path may have changed since preparing the system because of
+            # configuration changes, so update it here.
+            self.next_system = system_path
             nixos.register_system_profile(system_path, log=self.log)
-            step = 4
             nixos.switch_to_system(system_path, lazy=False, log=self.log)
-        except nixos.ChannelException as e:
-            self.stdout = e.stdout
-            self.stderr = e.stderr
-            self.returncode = step
-            self.log.error(
-                "update-run-failed",
-                _replace_msg="Update to {next_version} failed!",
-                returncode=step,
-                current_version=self.current_version,
-                current_channel_url=self.current_channel_url,
-                current_environment=self.current_environment,
-                next_channel=self.next_channel_url,
-                next_version=self.next_version,
-                next_environment=self.next_environment,
-                exc_info=True,
-            )
 
+        except nixos.ChannelException as e:
+            self._handle_channel_exception(e)
             return
 
         self.log.info(
