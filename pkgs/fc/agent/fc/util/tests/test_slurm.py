@@ -363,7 +363,10 @@ def test_ready_many(logger, monkeypatch):
 
     monkeypatch.setattr(fc.util.slurm, "get_node_info", fake_get_node_info)
     fc.util.slurm.ready_many(
-        logger, list(iter_states.keys()), 3, reason_must_match="test ready many"
+        logger,
+        list(iter_states.keys()),
+        3,
+        reason_must_match="test ready many",
     )
 
 
