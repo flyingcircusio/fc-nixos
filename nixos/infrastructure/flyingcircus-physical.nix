@@ -41,6 +41,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         wipefs -af /dev/disk/by-label/swap || true
       '';
     };
+    systemd.targets.swap.enable = false;  # implicitly mask the unit to prevent pulling in existing `*.swap` units
 
     environment.systemPackages = with pkgs; [
       fc.ledtool
