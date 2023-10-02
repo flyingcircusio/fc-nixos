@@ -12,6 +12,7 @@ import rich.table
 import shortuuid
 import structlog
 import yaml
+from fc.maintenance import state
 from fc.util.time_date import ensure_timezone_present, format_datetime, utcnow
 
 from .activity import Activity, ActivityMergeResult
@@ -190,6 +191,10 @@ class Request:
         if not self.not_after:
             return False
         return utcnow() > self.not_after
+
+    @property
+    def tempfail(self):
+        return self.state not in state.ARCHIVE and self.attempts
 
     @classmethod
     def load(cls, dir, log):

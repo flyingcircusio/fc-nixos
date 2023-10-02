@@ -253,13 +253,14 @@ def system_properties():
 
     with rm:
         rm.scan()
+        current_requests = rm.requests.values()
 
         if enc["parameters"]["machine"] == "virtual":
             rm.add(request_reboot_for_memory(log, enc))
             rm.add(request_reboot_for_cpu(log, enc))
             rm.add(request_reboot_for_qemu(log))
 
-        rm.add(request_reboot_for_kernel(log))
+        rm.add(request_reboot_for_kernel(log, current_requests))
         log.info("fc-maintenance-system-properties-finished")
 
 

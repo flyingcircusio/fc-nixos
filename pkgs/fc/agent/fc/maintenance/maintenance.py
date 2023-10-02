@@ -7,16 +7,19 @@ TODO: better logging for created activites.
 """
 import os.path
 import shutil
-from typing import Optional
+import typing
+from typing import Iterable, Optional
 
 import fc.util
 import fc.util.dmi_memory
 import fc.util.nixos
 import fc.util.vm
 from fc.maintenance import Request
+from fc.maintenance.activity import RebootType
 from fc.maintenance.activity.reboot import RebootActivity
 from fc.maintenance.activity.update import UpdateActivity
 from fc.maintenance.activity.vm_change import VMChangeActivity
+from fc.maintenance.state import State
 
 
 def request_reboot_for_memory(log, enc) -> Optional[Request]:
@@ -100,8 +103,31 @@ def request_reboot_for_qemu(log) -> Optional[Request]:
     return Request(RebootActivity("poweroff"), comment=msg)
 
 
-def request_reboot_for_kernel(log) -> Optional[Request]:
+def request_reboot_for_kernel(
+    log, current_requests: Iterable[Request]
+) -> Optional[Request]:
     """Schedules a reboot if the kernel has changed."""
+
+    tempfail_update_requests_with_reboot = [
+        req
+        for req in current_requests
+        if isinstance(req.activity, UpdateActivity)
+        and req.tempfail
+        and req.activity.reboot_needed == RebootType.WARM
+    ]
+
+    if tempfail_update_requests_with_reboot:
+        log.info(
+            "kernel-skip-update-tempfail",
+            _replace_msg=(
+                "Skipping the kernel version check as there is an update"
+                "activity that wants a reboot but had a temporary failure."
+                "The activity will be retried on the next agent run and "
+                "trigger a reboot when it succeeds."
+            ),
+        )
+        return
+
     booted = fc.util.nixos.kernel_version("/run/booted-system/kernel")
     current = fc.util.nixos.kernel_version("/run/current-system/kernel")
     log.debug("check-kernel-reboot", booted=booted, current=current)
@@ -120,7 +146,9 @@ def request_reboot_for_kernel(log) -> Optional[Request]:
         )
 
 
-def request_update(log, enc, current_requests) -> Optional[Request]:
+def request_update(
+    log, enc, current_requests: Iterable[Request]
+) -> Optional[Request]:
     """Schedule a system update if the channel has changed and the
     resulting system is different from the running system.
 

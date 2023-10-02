@@ -4,7 +4,7 @@ from unittest.mock import create_autospec
 
 import responses
 import yaml
-from fc.maintenance import Request
+from fc.maintenance import Request, state
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.activity.update import UpdateActivity
 from fc.util.channel import Channel
@@ -364,7 +364,7 @@ def test_update_activity_run_update_system_channel_fails(
     activity.run()
 
     assert activity.returncode == 1
-    assert log.has("update-run-failed", returncode=1)
+    assert log.has("update-run-error", returncode=1)
 
 
 def test_update_activity_build_system_fails(log, nixos_mock, activity):
@@ -375,7 +375,7 @@ def test_update_activity_build_system_fails(log, nixos_mock, activity):
     activity.run()
 
     assert activity.returncode == 2
-    assert log.has("update-run-failed", returncode=2)
+    assert log.has("update-run-error", returncode=2)
 
 
 def test_update_activity_register_system_profile_fails(
@@ -388,7 +388,7 @@ def test_update_activity_register_system_profile_fails(
     activity.run()
 
     assert activity.returncode == 3
-    assert log.has("update-run-failed", returncode=3)
+    assert log.has("update-run-error", returncode=3)
 
 
 def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
@@ -396,8 +396,8 @@ def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
 
     activity.run()
 
-    assert activity.returncode == 4
-    assert log.has("update-run-failed", returncode=4)
+    assert activity.returncode == state.EXIT_TEMPFAIL
+    assert log.has("update-run-tempfail", returncode=state.EXIT_TEMPFAIL)
 
 
 def test_update_activity_from_enc(
