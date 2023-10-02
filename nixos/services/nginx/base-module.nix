@@ -37,6 +37,23 @@ let
   ) cfg.virtualHosts;
   enableIPv6 = config.networking.enableIPv6;
 
+  nginxReloadCommon = {
+    wants = [ "nginx.service" ];
+    wantedBy = sslServices ++ [ "multi-user.target" ];
+    restartTriggers = [ configFile ];
+    # Block reloading if not all certs exist yet.
+    # Happens when config changes add new vhosts/certs.
+    unitConfig.ConditionPathExists = optionals (sslServices != []) (map (certName: certs.${certName}.directory + "/fullchain.pem") dependentCertNames);
+    serviceConfig = {
+      Type = "oneshot";
+      TimeoutSec = 120;
+      Restart = "on-abnormal";
+      ExecCondition = "/run/current-system/systemd/bin/systemctl -q is-active nginx.service";
+      ExecStart = "/run/current-system/systemd/bin/systemctl reload nginx.service";
+    };
+  };
+
+
   recommendedProxyConfig = pkgs.writeText "nginx-recommended-proxy-headers.conf" ''
     proxy_set_header        Host $host;
     proxy_set_header        X-Real-IP $remote_addr;
@@ -1037,30 +1054,22 @@ in
           SystemCallArchitectures = "native";
         };
       };
+      # reload config before acme renewals, to ensure new vhosts are actually activated from the config file
+      nginx-config-reload-pre-renew = {
+        before = sslServices;
+        after = sslSelfSignedServices;
+      } // nginxReloadCommon;
       # postRun hooks on cert renew can't be used to restart Nginx since renewal
       # runs as the unprivileged acme user. sslTargets are added to wantedBy + before
       # which allows the acme-finished-$cert.target to signify the successful updating
       # of certs end-to-end.
-      nginx-config-reload = {
-        wants = [ "nginx.service" ];
-        wantedBy = sslServices ++ [ "multi-user.target" ];
+      nginx-config-reload-post-renew = {
         # Before the finished targets, after the renew services.
         # This service might be needed for HTTP-01 challenges, but we only want to confirm
         # certs are updated _after_ config has been reloaded.
         before = sslTargets;
         after = sslServices;
-        restartTriggers = [ configFile ];
-        # Block reloading if not all certs exist yet.
-        # Happens when config changes add new vhosts/certs.
-        unitConfig.ConditionPathExists = optionals (sslServices != []) (map (certName: certs.${certName}.directory + "/fullchain.pem") dependentCertNames);
-        serviceConfig = {
-          Type = "oneshot";
-          TimeoutSec = 120;
-          Restart = "on-abnormal";
-          ExecCondition = "/run/current-system/systemd/bin/systemctl -q is-active nginx.service";
-          ExecStart = "/run/current-system/systemd/bin/systemctl reload nginx.service";
-        };
-      };
+      } // nginxReloadCommon;
     } //
       # Nginx needs to be started in order to be able to request certificates
       # (it's hosting the acme challenge after all)
