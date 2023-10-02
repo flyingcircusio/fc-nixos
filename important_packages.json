@@ -102,6 +102,7 @@
   "openldap_2_4",
   "openssh",
   "openssl",
+  "openssl_1_1",
   "openssl_3",
   "openvpn",
   "pcre",

@@ -134,7 +134,9 @@ def test_request_reboot_for_kernel_change(logger):
     with unittest.mock.patch(
         "fc.util.nixos.kernel_version", fake_changed_kernel_version
     ):
-        request = fc.maintenance.maintenance.request_reboot_for_kernel(logger)
+        request = fc.maintenance.maintenance.request_reboot_for_kernel(
+            logger, []
+        )
 
     assert "kernel (5.10.45 to 5.10.50)" in request.comment
     activity = request.activity
@@ -152,7 +154,9 @@ def test_do_not_request_reboot_for_unchanged_kernel(logger):
     with unittest.mock.patch(
         "fc.util.nixos.kernel_version", fake_changed_kernel_version
     ):
-        request = fc.maintenance.maintenance.request_reboot_for_kernel(logger)
+        request = fc.maintenance.maintenance.request_reboot_for_kernel(
+            logger, []
+        )
 
     assert request is None
 
@@ -260,3 +264,20 @@ def test_request_update_equivalent_existing_request_skip_request(
         request=existing_request.id,
         channel_url="https://fake",
     )
+
+
+def test_do_not_request_reboot_when_tempfail_update_present(
+    logger, log, monkeypatch
+):
+    with unittest.mock.patch("fc.util.nixos.kernel_version") as mock:
+        activity = FakeUpdateActivity("https://fake")
+        activity.reboot_needed = RebootType.WARM
+        request = Request(activity)
+        monkeypatch.setattr(Request, "tempfail", True)
+        request = fc.maintenance.maintenance.request_reboot_for_kernel(
+            logger, [request]
+        )
+        assert log.has("kernel-skip-update-tempfail")
+        assert not mock.called
+
+    assert request is None

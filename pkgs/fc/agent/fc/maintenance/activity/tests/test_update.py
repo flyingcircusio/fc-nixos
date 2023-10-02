@@ -4,6 +4,7 @@ from unittest.mock import create_autospec
 
 import responses
 import yaml
+from fc.maintenance import Request, state
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.activity.update import UpdateActivity
 from fc.util.channel import Channel
@@ -56,6 +57,43 @@ SUMMARY = textwrap.dedent(
     Build number: {CURRENT_BUILD} -> {NEXT_BUILD}
     Channel URL: {NEXT_CHANNEL_URL}"""
 )
+
+OUTDATED_SERIALIZED_REQUEST = f"""\
+!!python/object:fc.maintenance.request.Request
+_comment: null
+_estimate: null
+_reqid: ZXutH76zLeQ9XmpDvW3axh
+_reqmanager: null
+activity: !!python/object:fc.maintenance.activity.update.UpdateActivity
+  current_channel_url: https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz
+  current_environment: fc-21.05-production
+  current_kernel: 5.10.45
+  current_system: {CURRENT_SYSTEM_PATH}
+  current_version: 21.05.1233.a9cc58d
+  next_channel_url: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz
+  next_environment: fc-21.05-production
+  next_kernel: 5.10.50
+  next_system: {NEXT_SYSTEM_PATH}
+  next_version: 21.05.1235.bacc11d
+  reboot_needed: !!python/object/apply:fc.maintenance.activity.RebootType
+  - reboot
+  unit_changes:
+    reload:
+    - nginx.service
+    restart:
+    - telegraf.service
+    start:
+    - postgresql.service
+    stop:
+    - postgresql.services
+added_at: 2023-07-11 18:38:59.850059+00:00
+dir: /var/spool/maintenance/requests/testid
+last_scheduled_at: null
+next_due: null
+state: !!python/object/apply:fc.maintenance.state.State
+- d
+updated_at: null
+"""
 
 SERIALIZED_ACTIVITY = f"""\
 !!python/object:fc.maintenance.activity.update.UpdateActivity
@@ -242,6 +280,20 @@ def test_update_activity_deserialize(activity, logger):
     assert deserialized.__getstate__() == activity.__getstate__()
 
 
+def test_update_activity_loading_outdated_serialization_should_work(
+    logger, tmp_path
+):
+    request_path = tmp_path / "request.yaml"
+    request_path.write_text(OUTDATED_SERIALIZED_REQUEST)
+    request = Request.load(tmp_path, logger)
+    activity = request.activity
+    assert activity.changelog_url is None
+    assert activity.current_release is None
+    assert activity.next_release is None
+    assert activity.summary
+    assert activity.__rich__()
+
+
 def test_update_activity_prepare(log, logger, tmp_path, activity, nixos_mock):
     activity.prepare()
 
@@ -312,7 +364,7 @@ def test_update_activity_run_update_system_channel_fails(
     activity.run()
 
     assert activity.returncode == 1
-    assert log.has("update-run-failed", returncode=1)
+    assert log.has("update-run-error", returncode=1)
 
 
 def test_update_activity_build_system_fails(log, nixos_mock, activity):
@@ -323,7 +375,7 @@ def test_update_activity_build_system_fails(log, nixos_mock, activity):
     activity.run()
 
     assert activity.returncode == 2
-    assert log.has("update-run-failed", returncode=2)
+    assert log.has("update-run-error", returncode=2)
 
 
 def test_update_activity_register_system_profile_fails(
@@ -336,7 +388,7 @@ def test_update_activity_register_system_profile_fails(
     activity.run()
 
     assert activity.returncode == 3
-    assert log.has("update-run-failed", returncode=3)
+    assert log.has("update-run-error", returncode=3)
 
 
 def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
@@ -344,8 +396,8 @@ def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
 
     activity.run()
 
-    assert activity.returncode == 4
-    assert log.has("update-run-failed", returncode=4)
+    assert activity.returncode == state.EXIT_TEMPFAIL
+    assert log.has("update-run-tempfail", returncode=state.EXIT_TEMPFAIL)
 
 
 def test_update_activity_from_enc(
