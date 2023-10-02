@@ -30,9 +30,9 @@
     "version": "5.2"
   },
   "bind": {
-    "name": "bind-9.18.16",
+    "name": "bind-9.18.19",
     "pname": "bind",
-    "version": "9.18.16"
+    "version": "9.18.19"
   },
   "binutils": {
     "name": "binutils-wrapper-2.40",
@@ -115,14 +115,14 @@
     "version": "2.18.1"
   },
   "dovecot": {
-    "name": "dovecot-2.3.20",
+    "name": "dovecot-2.3.21",
     "pname": "dovecot",
-    "version": "2.3.20"
+    "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.40",
+    "name": "element-web-1.11.43",
     "pname": "element-web",
-    "version": "1.11.40"
+    "version": "1.11.43"
   },
   "erlang": {
     "name": "erlang-25.3.2",
@@ -190,19 +190,19 @@
     "version": "2.40.1"
   },
   "github-runner": {
-    "name": "github-runner-2.307.1",
+    "name": "github-runner-2.309.0",
     "pname": "github-runner",
-    "version": "2.307.1"
+    "version": "2.309.0"
   },
   "gitlab": {
-    "name": "gitlab-16.1.3",
+    "name": "gitlab-16.3.4",
     "pname": "gitlab",
-    "version": "16.1.3"
+    "version": "16.3.4"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.79.0",
+    "name": "gitlab-container-registry-3.82.0",
     "pname": "gitlab-container-registry",
-    "version": "3.79.0"
+    "version": "3.82.0"
   },
   "glibc": {
     "name": "glibc-2.37-8",
@@ -220,9 +220,9 @@
     "version": "2.4.0"
   },
   "go": {
-    "name": "go-1.20.7",
+    "name": "go-1.20.8",
     "pname": "go",
-    "version": "1.20.7"
+    "version": "1.20.8"
   },
   "go_1_18": {
     "name": "go-1.18.10",
@@ -235,9 +235,9 @@
     "version": "1.19.12"
   },
   "go_1_20": {
-    "name": "go-1.20.7",
+    "name": "go-1.20.8",
     "pname": "go",
-    "version": "1.20.7"
+    "version": "1.20.8"
   },
   "grafana": {
     "name": "grafana-9.5.8",
@@ -250,9 +250,9 @@
     "version": "2.7.10"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-15",
+    "name": "imagemagick-7.1.1-18",
     "pname": "imagemagick",
-    "version": "7.1.1-15"
+    "version": "7.1.1-18"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.12-68",
@@ -260,9 +260,9 @@
     "version": "6.9.12-68"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-15",
+    "name": "imagemagick-7.1.1-18",
     "pname": "imagemagick",
-    "version": "7.1.1-15"
+    "version": "7.1.1-18"
   },
   "inetutils": {
     "name": "inetutils-2.4",
@@ -310,9 +310,9 @@
     "version": "19.0.2+7"
   },
   "k3s": {
-    "name": "k3s-1.26.4+k3s1",
+    "name": "k3s-1.26.6+k3s1",
     "pname": "k3s",
-    "version": "1.26.4+k3s1"
+    "version": "1.26.6+k3s1"
   },
   "keycloak": {
     "name": "keycloak-21.1.2",
@@ -350,9 +350,9 @@
     "version": "2.10.4"
   },
   "linux": {
-    "name": "linux-6.1.51",
+    "name": "linux-6.1.55",
     "pname": "linux",
-    "version": "6.1.51"
+    "version": "6.1.55"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -370,14 +370,14 @@
     "version": "3.15"
   },
   "mariadb": {
-    "name": "mariadb-server-10.6.14",
+    "name": "mariadb-server-10.6.15",
     "pname": "mariadb-server",
-    "version": "10.6.14"
+    "version": "10.6.15"
   },
   "mastodon": {
-    "name": "mastodon-4.1.6",
+    "name": "mastodon-4.1.9",
     "pname": "mastodon",
-    "version": "4.1.6"
+    "version": "4.1.9"
   },
   "matomo": {
     "name": "matomo-4.14.2",
@@ -385,9 +385,9 @@
     "version": "4.14.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.91.0",
+    "name": "matrix-synapse-1.92.1",
     "pname": "matrix-synapse",
-    "version": "1.91.0"
+    "version": "1.92.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -405,9 +405,9 @@
     "version": "4.2.24"
   },
   "mysql": {
-    "name": "mariadb-server-10.6.14",
+    "name": "mariadb-server-10.6.15",
     "pname": "mariadb-server",
-    "version": "10.6.14"
+    "version": "10.6.15"
   },
   "mysql80": {
     "name": "mysql-8.0.34",
@@ -475,9 +475,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.92",
+    "name": "nss-3.93",
     "pname": "nss",
-    "version": "3.92"
+    "version": "3.93"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -560,14 +560,14 @@
     "version": "8.0.29"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.20",
+    "name": "php-with-extensions-8.1.23",
     "pname": "php-with-extensions",
-    "version": "8.1.20"
+    "version": "8.1.23"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.9",
+    "name": "php-with-extensions-8.2.10",
     "pname": "php-with-extensions",
-    "version": "8.2.9"
+    "version": "8.2.10"
   },
   "phpPackages.composer": {
     "name": "php-composer-2.5.5",
@@ -655,14 +655,14 @@
     "version": "3.11.4"
   },
   "python38": {
-    "name": "python3-3.8.17",
+    "name": "python3-3.8.18",
     "pname": "python3",
-    "version": "3.8.17"
+    "version": "3.8.18"
   },
   "python39": {
-    "name": "python3-3.9.17",
+    "name": "python3-3.9.18",
     "pname": "python3",
-    "version": "3.9.17"
+    "version": "3.9.18"
   },
   "python3Packages.lxml": {
     "name": "python3.10-lxml-4.9.2",
@@ -685,9 +685,9 @@
     "version": "4.2.5"
   },
   "qemu": {
-    "name": "qemu-8.0.4",
+    "name": "qemu-8.0.5",
     "pname": "qemu",
-    "version": "8.0.4"
+    "version": "8.0.5"
   },
   "rabbitmq-server": {
     "name": "rabbitmq-server-3.11.10",
@@ -710,9 +710,9 @@
     "version": "7.0.12"
   },
   "roundcube": {
-    "name": "roundcube-1.6.2",
+    "name": "roundcube-1.6.3",
     "pname": "roundcube",
-    "version": "1.6.2"
+    "version": "1.6.3"
   },
   "rsync": {
     "name": "rsync-3.2.7",
@@ -750,9 +750,9 @@
     "version": "8.11.2"
   },
   "strace": {
-    "name": "strace-6.4",
+    "name": "strace-6.5",
     "pname": "strace",
-    "version": "6.4"
+    "version": "6.5"
   },
   "strongswan": {
     "name": "strongswan-5.9.10",
