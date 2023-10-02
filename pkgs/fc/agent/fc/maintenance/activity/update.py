@@ -120,6 +120,16 @@ class UpdateActivity(Activity):
             return False
         return True
 
+    def load(self):
+        # Add attributes after deserialization if needed to stay compatible
+        # with older persisted instances of UpdateActivity.
+        if not hasattr(self, "current_release"):
+            self.current_release = None
+        if not hasattr(self, "next_release"):
+            self.next_release = None
+        if not hasattr(self, "changelog_url"):
+            self.changelog_url = None
+
     def prepare(self, dry_run=False):
         self.log.debug(
             "update-prepare-start",
