@@ -120,9 +120,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.43",
+    "name": "element-web-1.11.45",
     "pname": "element-web",
-    "version": "1.11.43"
+    "version": "1.11.45"
   },
   "erlang": {
     "name": "erlang-25.3.2",
@@ -195,14 +195,14 @@
     "version": "2.309.0"
   },
   "gitlab": {
-    "name": "gitlab-16.3.4",
+    "name": "gitlab-16.4.1",
     "pname": "gitlab",
-    "version": "16.3.4"
+    "version": "16.4.1"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.82.0",
+    "name": "gitlab-container-registry-3.84.0",
     "pname": "gitlab-container-registry",
-    "version": "3.82.0"
+    "version": "3.84.0"
   },
   "glibc": {
     "name": "glibc-2.37-8",
@@ -385,9 +385,9 @@
     "version": "4.14.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.92.1",
+    "name": "matrix-synapse-1.93.0",
     "pname": "matrix-synapse",
-    "version": "1.92.1"
+    "version": "1.93.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -504,6 +504,11 @@
     "pname": "openssl",
     "version": "3.0.10"
   },
+  "openssl_1_1": {
+    "name": "openssl-1.1.1w",
+    "pname": "openssl",
+    "version": "1.1.1w"
+  },
   "openssl_3": {
     "name": "openssl-3.0.10",
     "pname": "openssl",
@@ -560,14 +565,14 @@
     "version": "8.0.29"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.23",
+    "name": "php-with-extensions-8.1.24",
     "pname": "php-with-extensions",
-    "version": "8.1.23"
+    "version": "8.1.24"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.10",
+    "name": "php-with-extensions-8.2.11",
     "pname": "php-with-extensions",
-    "version": "8.2.10"
+    "version": "8.2.11"
   },
   "phpPackages.composer": {
     "name": "php-composer-2.5.5",
