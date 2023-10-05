@@ -78,6 +78,12 @@ in {
     meta.license = lib.licenses.asl20;
   });
 
+  glibc = super.glibc.overrideAttrs (old: rec {
+    patches = old.patches ++ [
+      ./cve-2023-4911-first.patch
+    ];
+  });
+
   graylog = (super.graylog.override {
     openjdk11_headless = self.jdk8_headless;
   });
