@@ -8,7 +8,7 @@ let
   enc = config.flyingcircus.enc;
   inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
-  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
+  cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
 
   defaultOsdSettings = {
     # Assist speedy but balanced recovery
@@ -173,7 +173,7 @@ in
         fc-ceph.settings = let
           osdSettings =  {
             release = role.cephRelease;
-            path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
+            path = cephPkgs.fc-ceph-path;
           };
         in {
           # fc-ceph OSD
@@ -202,15 +202,15 @@ in
         restartIfChanged = false;
 
         script = ''
-          ${fc-ceph}/bin/fc-ceph osd activate all
+          ${cephPkgs.fc-ceph}/bin/fc-ceph osd activate all
         '';
 
         reload = lib.optionalString role.reactivate ''
-          ${fc-ceph}/bin/fc-ceph osd reactivate all
+          ${cephPkgs.fc-ceph}/bin/fc-ceph osd reactivate all
         '';
 
         preStop = ''
-          ${fc-ceph}/bin/fc-ceph osd deactivate all
+          ${cephPkgs.fc-ceph}/bin/fc-ceph osd deactivate all
         '';
 
         serviceConfig = {
@@ -238,10 +238,10 @@ in
           Restart = "always";
           PIDFile = "/run/ceph/osd.%i.pid";
           ExecStart = ''
-            ${fc-ceph}/bin/fc-ceph osd activate --as-systemd-unit  %i
+            ${cephPkgs.fc-ceph}/bin/fc-ceph osd activate --as-systemd-unit  %i
           '';
           ExecStop = ''
-            ${fc-ceph}/bin/fc-ceph osd deactivate --as-systemd-unit %i
+            ${cephPkgs.fc-ceph}/bin/fc-ceph osd deactivate --as-systemd-unit %i
           '';
         };
 

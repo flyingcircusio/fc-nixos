@@ -14,6 +14,8 @@ let
   rgws = (sort lessThan (map (service: service.address) (fclib.findServices "ceph_rgw-server")));
   first_rgw = if rgws == [ ] then "" else head (lib.splitString "." (head rgws));
 
+  cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
+
   defaultRgwSettings = {
     host = config.networking.hostName;
     keyring = "/etc/ceph/ceph.${username}.keyring";
@@ -107,7 +109,7 @@ in
         serviceConfig = {
           Type = "simple";
           Restart = "always";
-          ExecStart = "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/radosgw -n ${username} -f -c /etc/ceph/ceph.conf";
+          ExecStart = "${cephPkgs.ceph}/bin/radosgw -n ${username} -f -c /etc/ceph/ceph.conf";
         };
       };
 
@@ -148,7 +150,7 @@ in
       systemd.services.fc-ceph-rgw-update-stats = {
         description = "Update RGW stats";
         serviceConfig.Type = "oneshot";
-        path = [ fclib.ceph.releasePkgs.${role.cephRelease}.ceph pkgs.jq ];
+        path = [ cephPkgs.ceph pkgs.jq ];
         script = ''
           for uid in $(radosgw-admin metadata list user | jq -r '.[]'); do
             echo $uid

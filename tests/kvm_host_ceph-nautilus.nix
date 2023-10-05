@@ -1,4 +1,5 @@
 import ./make-test-python.nix ({ testlib, useCheckout ? false, testOpts ? "", clientCephRelease ? "nautilus", ... }:
+# import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "=k mytest", clientCephRelease ? "nautilus", ... }:
 with testlib;
 let
   getIPForVLAN = vlan: id: "192.168.${toString vlan}.${toString (5 + id)}";
@@ -7,20 +8,7 @@ let
   makeHostConfig = { id }:
     { config, pkgs, lib, ... }:
     let
-      py3 = config.fclib.ceph.releaseAtLeast "nautilus" clientCephRelease;
-      testPackage = if useCheckout then
-        pkgs.callPackage (
-          if py3
-          then <fc/pkgs/fc/qemu/py3.nix>
-          else <fc/pkgs/fc/qemu/py2.nix>) {
-            version = "dev";
-            # builtins.toPath (testPath + "/.")
-            src = ../../fc.qemu/.;
-            "${lib.optionalString py3 "lib"}ceph" = config.fclib.ceph.releasePkgs.${clientCephRelease}.libceph;
-            qemu_ceph = config.fclib.ceph.qemu_ceph_versioned clientCephRelease;
-          }
-        else config.fclib.ceph.releasePkgs.${clientCephRelease}.fcQemu;
-
+      testPackage = if useCheckout then pkgs.fc.qemu-dev-nautilus else pkgs.fc.qemu-nautilus;
     in
     {
 
@@ -99,18 +87,17 @@ let
         ];
       };
 
-      system.activationScripts.fcqemusrc = let
-        py = if config.fclib.ceph.releaseAtLeast "nautilus" clientCephRelease
-          then pkgs.python3
-          else pkgs.python2;
+      system.activationScripts.fcQemuSrc = let
+        cephPkgs = config.fclib.ceph.mkPkgs "nautilus";
+        py = pkgs.python3;
         pyPkgs = py.pkgs;
-        qemu_test_env = py.buildEnv.override {
+        qemuTestEnv = py.buildEnv.override {
           extraLibs = [
             testPackage
 
             # This should be included through the propagatedBuildInputs
             # from fc.qemu already but apparently it isn't.
-            (pyPkgs.toPythonModule config.fclib.ceph.releasePkgs.${clientCephRelease}.libceph)
+            (pyPkgs.toPythonModule cephPkgs.libceph)
 
             # Additional packages to run the tests
             pyPkgs.pytest
@@ -126,7 +113,7 @@ let
         # Provide a writable copy so the coverage etc. can be recorded.
         cp -a ${testPackage.src} /root/fc.qemu
         chmod u+w /root/fc.qemu -R
-        ln -s ${qemu_test_env} /root/fc.qemu-env
+        ln -s ${qemuTestEnv} /root/fc.qemu-env
       '';
 
       # We need this in the enc files as well so that timer jobs can update
@@ -362,6 +349,11 @@ in
     host2.wait_for_unit("nginx")
     host3.wait_for_unit("nginx")
 
+    ########################################################################
+    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
+    # interaction with Ceph will hang mysteriously!
+    ########################################################################
+
     with subtest("Run unit tests"):
       show(host1, textwrap.dedent("""
         cd /root/fc.qemu
@@ -377,6 +369,11 @@ in
         }
         """).strip().replace("\n", "; "))
 
+    ########################################################################
+    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
+    # interaction with Ceph will hang mysteriously!
+    ########################################################################
+
     with subtest("Exercise standalone fc-qemu features"):
       result = show(host1, "fc-qemu --help")
       assert result.startswith("usage: fc-qemu"), "Unexpected help output"
@@ -386,12 +383,6 @@ in
 
       result = show(host1, "fc-qemu check")
       assert result == "OK - 0 VMs - 0 MiB used - 0 MiB expected"
-
-      result = show(host1, "fc-qemu maintenance enter")
-      assert "I request-evacuation" in result
-      assert "I evacuation-pending" in result
-      assert "I evacuation-running" in result
-      assert "I evacuation-success" in result
 
       result = show(host1, "fc-qemu report-supported-cpu-models")
       assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result
@@ -415,6 +406,10 @@ in
       host1.succeed('ceph osd crush move host1 root=default')
 
     with subtest("Create pools and images"):
+      # The blank RBD pool is required for maintenance operations
+      host1.succeed("ceph osd pool create rbd 32")
+      host1.succeed("ceph osd pool set rbd size 1")
+      host1.succeed("ceph osd pool set rbd min_size 1")
       host1.succeed("ceph osd pool create rbd.ssd 32")
       host1.succeed("ceph osd pool set rbd.ssd size 1")
       host1.succeed("ceph osd pool set rbd.ssd min_size 1")
@@ -434,7 +429,7 @@ in
     # Let things settle for a bit, otherwise things are in weird
     # intermediate states like pgs not created, time not in sync,
     # mons not accessible, ...
-    assert_clean_cluster(host1, 1, 1, 1, 64)
+    assert_clean_cluster(host1, 1, 1, 1, 96)
 
     print("Time spent waiting", time_waiting)
 
@@ -452,6 +447,29 @@ in
           else ""
         }
         """).strip().replace("\n", "; "))
+
+    with subtest("Check maintenance enter/exit works"):
+      result = show(host1, "fc-qemu --verbose maintenance enter")
+      assert "D enter-maintenance" in result
+      assert "D ensure-maintenance-volume" in result
+      assert "D creating maintenance volume" in result
+      assert "D acquire-maintenance-lock" in result
+      assert "I request-evacuation" in result
+      assert "I evacuation-pending" in result
+      assert "I evacuation-running" in result
+      assert "I evacuation-success" in result
+
+      result = show(host1, "fc-qemu --verbose maintenance leave")
+
+      result = show(host1, "fc-qemu --verbose maintenance enter")
+      assert "D enter-maintenance" in result
+      assert "D ensure-maintenance-volume" in result
+      assert "D creating maintenance volume" not in result
+      assert "D acquire-maintenance-lock" in result
+      assert "I request-evacuation" in result
+      assert "I evacuation-pending" in result
+      assert "I evacuation-running" in result
+      assert "I evacuation-success" in result
 
   '';
 })

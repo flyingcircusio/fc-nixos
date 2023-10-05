@@ -1,4 +1,4 @@
-{ lib, stdenv, python3Full, python3Packages, lz4, blockdev, lvm2, utillinux, agent, util-physical }:
+{ lib, stdenv, python3Full, python3Packages, lz4, blockdev, lvm2, agent }:
 
 let
   py = python3Packages;
@@ -13,7 +13,6 @@ py.buildPythonApplication rec {
     blockdev
     lz4
     agent
-    util-physical
     python3Packages.requests
   ];
 

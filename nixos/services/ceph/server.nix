@@ -8,12 +8,12 @@ let
 
   ceph_sudo = pkgs.writeScriptBin "ceph-sudo" ''
     #! ${pkgs.stdenv.shell} -e
-    exec /run/wrappers/bin/sudo ${cfg.package}/bin/ceph "$@"
+    exec /run/wrappers/bin/sudo ${cephPkgs.ceph}/bin/ceph "$@"
   '';
 
   cfg = config.flyingcircus.services.ceph.server;
 
-  fc-ceph = pkgs.fc.cephWith cfg.package;
+  cephPkgs = fclib.ceph.mkPkgs cfg.cephRelease;
 
 in
 {
@@ -25,13 +25,6 @@ in
         description = "Ceph release series that the main package belongs to. "
           + "This option behaves special in a way that, if defined multiple times, the latest release name will be chosen."
           + "Explicitly has no default but needs to be defined by roles or manual config.";
-      };
-      package = lib.mkOption {
-        type = lib.types.package;
-        description = "Main ceph package to be used on the system and to be put into PATH. "
-          + "The package set must belong to the release series defined in the `cephRelease` option. "
-          + "Only modify if really necessary, otherwise the default ceph package from the defined series is used.";
-        default = fclib.ceph.releasePkgs.${cfg.cephRelease}.ceph;
       };
       crushroot_to_rbdpool_mapping = lib.mkOption {
         default = config.flyingcircus.static.ceph.crushroot_to_rbdpool_mapping;
@@ -47,13 +40,6 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    assertions = [
-      {
-        assertion = cfg.package.codename == cfg.cephRelease;
-        message = "The ceph package set for this ceph server service must be of the same release series as defined in `cephRelease`";
-      }
-    ];
-
     environment.variables.CEPH_ARGS = fclib.mkPlatformOverride "";
 
     flyingcircus.services.ceph.client = {
@@ -63,8 +49,8 @@ in
     };
 
     flyingcircus.agent.maintenance.ceph = {
-      enter = "${fc-ceph}/bin/fc-ceph maintenance enter";
-      leave = "${fc-ceph}/bin/fc-ceph maintenance leave";
+      enter = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance enter";
+      leave = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance leave";
     };
 
     # We used to create the admin key directory from the ENC. However,
@@ -96,13 +82,13 @@ in
           prerotate
               for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
                   echo "Flushing log for $dmn"
-                  ${cfg.package}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
+                  ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
               done
           endscript
           postrotate
               for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
                   echo "Reopening log for $dmn"
-                  ${cfg.package}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
+                  ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
               done
           endscript
       }
@@ -114,17 +100,17 @@ in
 
     flyingcircus.passwordlessSudoRules = [
       {
-        commands = [ "${cfg.package}/bin/ceph" ];
+        commands = [ "${cephPkgs.ceph}/bin/ceph" ];
         users = [ "telegraf" ];
       }
     ];
 
     environment.systemPackages = with pkgs; [
-      fc-ceph
+      cephPkgs.fc-ceph
       fc.blockdev
 
       # tools like radosgw-admin and crushtool are only included in the full ceph package, but are necessary admin tools
-      cfg.package
+      cephPkgs.ceph
     ];
 
     systemd.services.fc-blockdev = {

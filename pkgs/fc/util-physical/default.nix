@@ -14,7 +14,7 @@ stdenv.mkDerivation rec {
   dontBuild = true;
   dontConfigure = true;
 
-  buildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ makeWrapper ];
   propagatedBuildInputs = [ bash ceph systemd fc.agent gnugrep utillinux coreutils xfsprogs ];
 
   installPhase = ''
