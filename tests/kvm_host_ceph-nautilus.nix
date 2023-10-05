@@ -7,20 +7,7 @@ let
   makeHostConfig = { id }:
     { config, pkgs, lib, ... }:
     let
-      py3 = config.fclib.ceph.releaseAtLeast "nautilus" clientCephRelease;
-      testPackage = if useCheckout then
-        pkgs.callPackage (
-          if py3
-          then <fc/pkgs/fc/qemu/py3.nix>
-          else <fc/pkgs/fc/qemu/py2.nix>) {
-            version = "dev";
-            # builtins.toPath (testPath + "/.")
-            src = ../../fc.qemu/.;
-            "${lib.optionalString py3 "lib"}ceph" = config.fclib.ceph.releasePkgs.${clientCephRelease}.libceph;
-            qemu_ceph = config.fclib.ceph.qemu_ceph_versioned clientCephRelease;
-          }
-        else config.fclib.ceph.releasePkgs.${clientCephRelease}.fcQemu;
-
+      testPackage = if useCheckout then pkgs.fc.qemu-dev-nautilus else pkgs.fc.qemu-nautilus;
     in
     {
 
@@ -99,18 +86,17 @@ let
         ];
       };
 
-      system.activationScripts.fcqemusrc = let
-        py = if config.fclib.ceph.releaseAtLeast "nautilus" clientCephRelease
-          then pkgs.python3
-          else pkgs.python2;
+      system.activationScripts.fcQemuSrc = let
+        cephPkgs = config.fclib.ceph.mkPkgs "nautilus";
+        py = pkgs.python3;
         pyPkgs = py.pkgs;
-        qemu_test_env = py.buildEnv.override {
+        qemuTestEnv = py.buildEnv.override {
           extraLibs = [
             testPackage
 
             # This should be included through the propagatedBuildInputs
             # from fc.qemu already but apparently it isn't.
-            (pyPkgs.toPythonModule config.fclib.ceph.releasePkgs.${clientCephRelease}.libceph)
+            (pyPkgs.toPythonModule cephPkgs.libceph)
 
             # Additional packages to run the tests
             pyPkgs.pytest
@@ -126,7 +112,7 @@ let
         # Provide a writable copy so the coverage etc. can be recorded.
         cp -a ${testPackage.src} /root/fc.qemu
         chmod u+w /root/fc.qemu -R
-        ln -s ${qemu_test_env} /root/fc.qemu-env
+        ln -s ${qemuTestEnv} /root/fc.qemu-env
       '';
 
       # We need this in the enc files as well so that timer jobs can update

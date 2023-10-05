@@ -504,7 +504,10 @@ in {
       sha256 = "sha256-9jYpGmD28yJGZU4zlae9BL4uU3iukWdPWpSkgHHvOxI=";
     }) ];
   });
-  qemu_ceph = self.qemu.override { cephSupport = true; };
+  qemu-ceph-nautilus = self.qemu.override {
+    cephSupport = true;
+    ceph = self.ceph-nautilus.ceph;
+  };
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 

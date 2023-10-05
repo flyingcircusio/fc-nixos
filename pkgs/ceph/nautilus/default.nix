@@ -30,6 +30,8 @@
 , linuxHeaders, utillinux, libuuid, udev, keyutils, rdma-core, rabbitmq-c
 , libaio ? null, libxfs ? null, zfs ? null
 , bucket-patch ? false
+# tool dependencies
+, bash, coreutils, xfsprogs
 , ...
 }:
 
@@ -213,8 +215,14 @@ in rec {
      passthru = {
        inherit codename version;
      };
+     nativeBuildInputs = [ makeWrapper ];
+     # TODO cleanup, this was
+
      outputs = [ "out" "man" ];
-    } ''
+    } (
+    let scriptDependencies = [ bash utillinux coreutils xfsprogs python3Packages.python ];
+    in
+      ''
       mkdir -p $out/{bin,etc,${sitePackages}}
       cp -r ${ceph}/bin/{ceph,.ceph-wrapped,rados,rbd,rbdmap} $out/bin
       cp -r ${ceph}/bin/ceph-{authtool,conf,dencoder,rbdnamer,syn} $out/bin
@@ -230,5 +238,13 @@ in rec {
 
       cp -r "${src}/udev" "$out/etc/"
       substituteInPlace $out/etc/udev/* --replace "/usr/bin/" "$out/bin/"
-   '';
+
+      install -D -m 755 ${./rbd-locktool.py} $out/bin/.rbd-locktool.py
+      makeWrapper $out/bin/.rbd-locktool.py $out/bin/rbd-locktool \
+        --set PATH "${lib.makeBinPath scriptDependencies}:$out/bin"
+
+      install -D -m 755 ${./rbd-mount.sh} $out/bin/.rbd-mount.sh
+      makeWrapper $out/bin/.rbd-mount.sh $out/bin/rbd-mount \
+        --set PATH "${lib.makeBinPath scriptDependencies}:$out/bin"
+   '');
 }

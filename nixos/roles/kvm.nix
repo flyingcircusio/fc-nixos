@@ -7,6 +7,8 @@ let
   role = config.flyingcircus.roles.kvm_host;
   enc = config.flyingcircus.enc;
 
+  cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
+
 in
 {
   options = {
@@ -32,7 +34,7 @@ in
 
           Can be replaced for development and testing purposes.
         '';
-        default = fclib.ceph.releasePkgs.${role.cephRelease}.fcQemu;
+        default = cephPkgs.fc-qemu;
         defaultText = literalExpression "pkgs.fc.qemu [parameterised with cephRelease]";
       };
       cephRelease = fclib.ceph.releaseOption // {
@@ -50,7 +52,7 @@ in
 
     # toolpath for agent (fc-create-vm)
     flyingcircus.agent.extraSettings.Node.path = lib.makeBinPath [
-      fclib.ceph.releasePkgs.${role.cephRelease}.ceph-client
+      cephPkgs.ceph-client
       pkgs.util-linux
       pkgs.e2fsprogs
     ];
@@ -61,7 +63,7 @@ in
 
     environment.systemPackages = with pkgs; [
       role.package
-      (fclib.ceph.qemu_ceph_versioned role.cephRelease)
+      cephPkgs.qemu
       bridge-utils
     ];
 

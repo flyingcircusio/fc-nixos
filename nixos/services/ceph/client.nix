@@ -15,6 +15,8 @@ let
     (fclib.findServices "ceph_mon-mon");
   inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
+  cephPkgs = fclib.ceph.mkPkgs cfg.client.cephRelease;
+
   defaultGlobalSettings = {
     fsid = fs_id;
 
@@ -135,7 +137,7 @@ in
           description = "Main ceph package to be used on the system and to be put into PATH. "
             + "The package set must belong to the release series defined in the `cephRelease` option. "
             + "Only modify if really necessary, otherwise the default ceph package from the defined series is used.";
-          default =  fclib.ceph.releasePkgs.${cfg.client.cephRelease}.ceph-client;
+          default =  cephPkgs.ceph-client;
         };
 
         extraSettings = lib.mkOption {
@@ -166,7 +168,7 @@ in
     # build a default binary path for fc-ceph
     flyingcircus.services.ceph.fc-ceph.settings.default = {
       release = cfg.client.cephRelease;
-      path = fclib.ceph.fc-ceph-path cfg.client.package;
+      path = cephPkgs.fc-ceph-path;
     };
     environment.systemPackages = [ cfg.client.package ];
 
@@ -194,7 +196,7 @@ in
     environment.variables.CEPH_ARGS = fclib.mkPlatform "--id ${config.networking.hostName}";
 
     flyingcircus.activationScripts.ceph-client-keyring = ''
-      ${pkgs.fc.cephWith cfg.client.package}/bin/fc-ceph keys generate-client-keyring
+      ${cephPkgs.fc-ceph}/bin/fc-ceph keys generate-client-keyring
     '';
 
     services.logrotate.extraConfig = ''
