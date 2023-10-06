@@ -122,8 +122,9 @@ let
 
   includedPkgNames = [
     "calibre"
-    "gitlab-ee"
     "element-web"
+    # Unsupported on this platform version.
+    # "gitlab-ee"
   ];
 
   testPkgNames = includedPkgNames ++

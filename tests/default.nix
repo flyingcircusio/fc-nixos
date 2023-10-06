@@ -44,7 +44,8 @@ in {
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   collect-garbage = callTest ./collect-garbage.nix {};
-  gitlab = callTest ./gitlab.nix {};
+  # Unsupported on this platform version.
+  # gitlab = callTest ./gitlab.nix {};
   haproxy = callTest ./haproxy.nix {};
   java = callTest ./java.nix {};
   journal = callTest ./journal.nix {};
