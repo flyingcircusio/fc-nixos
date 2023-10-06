@@ -31,7 +31,8 @@ in {
 
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
-  backyserver = callTest ./backyserver.nix {};
+  # Not supported on this platform version.
+  # backyserver = callTest ./backyserver.nix {};
   channel = callTest ./channel.nix {};
   # XXX: ceph build failure
   # ceph = callTest ./ceph.nix {};
