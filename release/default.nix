@@ -124,6 +124,7 @@ let
     "calibre"
     # Unsupported on this platform version.
     # "gitlab-ee"
+    "grafana"
   ];
 
   testPkgNames = includedPkgNames ++
