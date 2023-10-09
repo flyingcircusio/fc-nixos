@@ -87,6 +87,12 @@ in {
     };
   });
 
+  glibc = super.glibc.overrideAttrs (old: rec {
+    patches = old.patches ++ [
+      ./cve-2023-4911-first.patch
+    ];
+  });
+
   innotop = super.callPackage ./percona/innotop.nix { };
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
