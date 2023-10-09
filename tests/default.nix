@@ -31,7 +31,8 @@ in {
 
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
-  backyserver = callTest ./backyserver.nix {};
+  # Not supported on this platform version.
+  # backyserver = callTest ./backyserver.nix {};
   channel = callTest ./channel.nix {};
   # XXX: ceph build failure
   # ceph = callTest ./ceph.nix {};
@@ -44,7 +45,8 @@ in {
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   collect-garbage = callTest ./collect-garbage.nix {};
-  gitlab = callTest ./gitlab.nix {};
+  # Unsupported on this platform version.
+  # gitlab = callTest ./gitlab.nix {};
   haproxy = callTest ./haproxy.nix {};
   java = callTest ./java.nix {};
   journal = callTest ./journal.nix {};
