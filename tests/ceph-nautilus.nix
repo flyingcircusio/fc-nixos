@@ -303,21 +303,21 @@ in
       host1.succeed('fc-ceph osd reactivate all')
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
-    with subtest("Test safety check of destroy and rebuild"):
-      host1.fail("fc-ceph osd destroy all > /dev/kmsg 2>&1")
-      host1.fail('fc-ceph osd rebuild --journal-size=500m all > /dev/kmsg 2>&1')
+    with subtest("Test strict safety check of destroy and rebuild"):
+      host1.fail("fc-ceph osd destroy --strict-safety-check all > /dev/kmsg 2>&1")
+      host1.fail('fc-ceph osd rebuild --journal-size=500m --strict-safety-check all> /dev/kmsg 2>&1')
 
     with subtest("Initialize extra OSD to enable safe rebuilding (bluestore)"):
       host1.execute('fc-ceph osd create-bluestore /dev/vdd > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 4, 3, 320)
 
-    with subtest("Safely rebuild the 2nd OSD on host 1 from bluestore to bluestore"):
+    with subtest("Rebuild the 2nd OSD on host 1 from bluestore to bluestore without redundancy loss"):
       # set OSDs out and wait for cluster to rebalance
       host1.execute('ceph osd out 3')
       host1.sleep(5)
       assert_clean_cluster(host2, 3, (4, 3), 3, 320)
       # then rebuild
-      host1.succeed('fc-ceph osd rebuild --journal-size=500m 3 > /dev/kmsg 2>&1')
+      host1.succeed('fc-ceph osd rebuild --journal-size=500m --strict-safety-check 3 > /dev/kmsg 2>&1')
       # and set the osds in again
       host1.execute('ceph osd in $(ceph osd ls-tree host1)')
       show(host1, "lsblk")
@@ -325,31 +325,31 @@ in
       host1.sleep(5)
       assert_clean_cluster(host2, 3, 4, 3, 320)
 
-    with subtest("Safely destroy the 2nd OSD on host 1"):
+    with subtest("Destroy the 2nd OSD on host 1 without redundancy loss"):
       # set OSDs out and wait for cluster to rebalance
       host1.execute('ceph osd out 3')
       host1.sleep(5)
       assert_clean_cluster(host2, 3, (4, 3), 3, 320)
       # then destroy
-      host1.succeed('fc-ceph osd destroy 3 > /dev/kmsg 2>&1')
+      host1.succeed('fc-ceph osd destroy --strict-safety-check 3 > /dev/kmsg 2>&1')
       show(host1, "lsblk")
       show(host1, "vgs")
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
-    # from now on always use unsafe destroy to save time
+    # from now on always default to allowing some reduced redundancy to save time
 
     with subtest("Rebuild all OSDs on host 2 from filestore to filestore"):
-      host2.succeed('fc-ceph osd rebuild --unsafe-destroy --journal-size=500m all > /dev/kmsg 2>&1')
+      host2.succeed('fc-ceph osd rebuild --journal-size=500m all > /dev/kmsg 2>&1')
       show(host1, "lsblk")
       show(host1, "vgs")
       assert_clean_cluster(host3, 3, 3, 3, 320)
 
     with subtest("Rebuild OSDs from one type to another"):
-      host3.succeed('fc-ceph osd rebuild --unsafe-destroy --journal-size=500m --target-objectstore-type=filestore all > /dev/kmsg 2>&1')
+      host3.succeed('fc-ceph osd rebuild --journal-size=500m --target-objectstore-type=filestore all > /dev/kmsg 2>&1')
       show(host1, "lsblk")
       show(host1, "vgs")
       assert_clean_cluster(host1, 3, 3, 3, 320)
-      host2.succeed('fc-ceph osd rebuild --unsafe-destroy --journal-size=500m -T bluestore all > /dev/kmsg 2>&1')
+      host2.succeed('fc-ceph osd rebuild --journal-size=500m -T bluestore all > /dev/kmsg 2>&1')
       show(host1, "lsblk")
       show(host1, "vgs")
       assert_clean_cluster(host3, 3, 3, 3, 320)
@@ -361,7 +361,7 @@ in
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
     with subtest("Destroy and create OSD on host1"):
-      host1.succeed('fc-ceph osd destroy --unsafe-destroy 0')
+      host1.succeed('fc-ceph osd destroy 0')
       host1.succeed('fc-ceph osd create-bluestore /dev/vdc > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
