@@ -122,7 +122,9 @@ let
 
   includedPkgNames = [
     "calibre"
-    "gitlab-ee"
+    # Unsupported on this platform version.
+    # "gitlab-ee"
+    "grafana"
   ];
 
   testPkgNames = includedPkgNames ++
