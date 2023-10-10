@@ -184,7 +184,8 @@ class OSDManager(object):
                     thread = threading.Thread(
                         target=lambda: self._deactivate_single(
                             osd, as_systemd_unit, flush
-                        )
+                        ),
+                        name=id_,
                     )
                     thread.start()
                     threads.append(thread)
@@ -193,6 +194,9 @@ class OSDManager(object):
 
             for thread in threads:
                 thread.join()
+
+            deactivated_osds = ", ".join([str(t.name) for t in threads])
+            print("Successfully deactivated OSDs", deactivated_osds)
 
     def _deactivate_single(
         self,
@@ -492,7 +496,7 @@ class GenericOSD(object):
                 print(
                     # fmt: off
                     "OSD not safe to destroy:", e.stderr,
-                    "\nTo override this check, remove th `--strict-safety-check` flag. "
+                    "\nTo override this check, remove the `--strict-safety-check` flag. "
                     "This can lead to reduced data redundancy, still within safety margins."
                     # fmt: on
                 )
