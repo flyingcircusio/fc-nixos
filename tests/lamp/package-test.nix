@@ -1,4 +1,7 @@
-{ version ? "lamp_php74", pkgs ? import ./../.. {}, ... }:
+{ version ? "lamp_php82"
+, nixpkgs ? (import ../../versions.nix {}).nixpkgs
+, pkgs ? import ../../. { inherit nixpkgs; }
+, ... }:
 let
   php = pkgs.${version};
   pcreTestPackage = import ./pcre-test-package.nix { pkgs = pkgs; php = php; };
