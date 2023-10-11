@@ -189,12 +189,19 @@ in {
     with subtest("log directory should have correct permissions"):
       assert_logdir()
 
-    with subtest("dependencies between acme services and nginx-config-reload should be present"):
-      after = server1.succeed("systemctl show --property After --value nginx-config-reload.service")
-      assert "acme-server.service" in after, f"acme.server.service missing: {after}"
-      before = server1.succeed("systemctl show --property Before --value nginx-config-reload.service")
+    with subtest("dependencies between acme services and nginx-config-reload-(pre|post)-renew should be present"):
+      # pre-renew reloading
+      after = server1.succeed("systemctl show --property After --value nginx-config-reload-pre-renew.service")
+      assert "acme-selfsigned-server.service" in after, f"acme-selfsigned-server.service missing: {after}"
+      before = server1.succeed("systemctl show --property Before --value nginx-config-reload-pre-renew.service")
+      assert "acme-server.service" in before, f"acme-server.service missing: {before}"
+      server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload-pre-renew.service")
+      # post-renew reloading
+      after = server1.succeed("systemctl show --property After --value nginx-config-reload-post-renew.service")
+      assert "acme-server.service" in after, f"acme-server.service missing: {after}"
+      before = server1.succeed("systemctl show --property Before --value nginx-config-reload-post-renew.service")
       assert "acme-finished-server.target" in before, f"acme-finished-server.target missing: {before}"
-      server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload.service")
+      server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload-post-renew.service")
 
     with subtest("acme script should have lego calls with custom key-type and required default settings"):
       lego_calls = server1.succeed("grep lego $(systemctl cat acme-server | awk -F '=' '/ExecStart=/ {print $2}')")
