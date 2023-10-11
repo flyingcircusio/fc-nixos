@@ -152,7 +152,7 @@ class OSDManager(object):
     def destroy(
         self,
         ids: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
         strict_safety_check: bool,
         force_objectstore_type: Optional[str] = None,
     ):
@@ -161,7 +161,7 @@ class OSDManager(object):
         for id_ in ids:
             try:
                 osd = OSD(id_, type=force_objectstore_type)
-                osd.purge(unsafe_destroy, strict_safety_check)
+                osd.purge(no_safety_check, strict_safety_check)
             except Exception:
                 traceback.print_exc()
 
@@ -230,7 +230,7 @@ class OSDManager(object):
         self,
         ids: str,
         journal_size: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
         strict_safety_check: bool,
         target_objectstore_type: Optional[str] = None,
     ):
@@ -241,7 +241,7 @@ class OSDManager(object):
                 osd = OSD(id_)
                 osd.rebuild(
                     journal_size=journal_size,
-                    unsafe_destroy=unsafe_destroy,
+                    no_safety_check=unsafe_destroy,
                     target_objectstore_type=target_objectstore_type,
                     strict_safety_check=strict_safety_check,
                 )
@@ -478,16 +478,16 @@ class GenericOSD(object):
 
         run.ceph("osd", "crush", "add", self.name, str(weight), crush_location)
 
-    def purge(self, unsafe_destroy: bool, strict_safety_check: bool):
+    def purge(self, no_safety_check: bool, strict_safety_check: bool):
         """Deletes an osd, including removal of auth keys and crush map entry"""
 
         # Safety net
-        if strict_safety_check and unsafe_destroy:
+        if strict_safety_check and no_safety_check:
             print(
-                "--unsafe-destroy and --strict-safety-check are incompatible flags."
+                "--no-safety-check and --strict-safety-check are incompatible flags."
             )
             sys.exit(10)
-        if unsafe_destroy:
+        if no_safety_check:
             print("WARNING: Skipping destroy safety check.")
         elif strict_safety_check:
             try:
@@ -509,7 +509,7 @@ class GenericOSD(object):
                 print(
                     # fmt: off
                     "OSD not okay to stop:", e.stderr,
-                    "\nTo override this check, specify `--unsafe-destroy`. This can "
+                    "\nTo override this check, specify `--no-safety-check`. This can "
                     "cause data loss or cluster failure!!"
                     # fmt: on
                 )
@@ -613,7 +613,7 @@ class GenericOSD(object):
         target_osd_type: str,
         journal: str,
         journal_size: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
         strict_safety_check: bool,
         device: str,
         crush_location: str,
@@ -625,7 +625,7 @@ class GenericOSD(object):
         # `purge` also removes crush location and auth. A `destroy` would keep them, but
         # as we re-use the creation commands which always handle crush and auth as well,
         # for simplicity's sake this optimisation is not used.
-        self.purge(unsafe_destroy, strict_safety_check)
+        self.purge(no_safety_check, strict_safety_check)
 
         # This is an "interesting" turn-around ...
         manager = OSDManager()
@@ -764,8 +764,8 @@ class FileStoreOSD(GenericOSD):
             # fmt: on
         )
 
-    def purge(self, unsafe_destroy, strict_safety_check):
-        super().purge(unsafe_destroy, strict_safety_check)
+    def purge(self, no_safety_check, strict_safety_check):
+        super().purge(no_safety_check, strict_safety_check)
 
         # Try deleting an external journal. The internal journal was already
         # deleted during the generic destroy of the VG.
@@ -777,7 +777,7 @@ class FileStoreOSD(GenericOSD):
     def rebuild(
         self,
         journal_size: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
         strict_safety_check: bool,
         target_objectstore_type: Optional[str],
     ):
@@ -816,7 +816,7 @@ class FileStoreOSD(GenericOSD):
             target_osd_type=target_osd_type,
             journal=journal,
             journal_size=journal_size,
-            unsafe_destroy=unsafe_destroy,
+            no_safety_check=unsafe_destroy,
             strict_safety_check=strict_safety_check,
             **oldosd_properties,
         )
@@ -974,8 +974,8 @@ class BlueStoreOSD(GenericOSD):
             # fmt: on
         )
 
-    def purge(self, unsafe_destroy, strict_safety_check):
-        super().purge(unsafe_destroy, strict_safety_check)
+    def purge(self, no_safety_check, strict_safety_check):
+        super().purge(no_safety_check, strict_safety_check)
 
         try:
             run.lvremove("-f", self._locate_wal_lv(), check=False)
@@ -987,7 +987,7 @@ class BlueStoreOSD(GenericOSD):
     def rebuild(
         self,
         journal_size: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
         strict_safety_check: bool,
         target_objectstore_type: Optional[str],
     ):
@@ -1019,7 +1019,7 @@ class BlueStoreOSD(GenericOSD):
             target_osd_type=target_osd_type,
             journal=journal,
             journal_size=journal_size,
-            unsafe_destroy=unsafe_destroy,
+            no_safety_check=unsafe_destroy,
             strict_safety_check=strict_safety_check,
             **oldosd_properties,
         )

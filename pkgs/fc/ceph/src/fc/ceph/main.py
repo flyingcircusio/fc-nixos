@@ -48,7 +48,7 @@ def main(args=sys.argv[1:]):
         "instead of autodetecting it.",
     )
     parser_destroy.add_argument(
-        "--unsafe-destroy",
+        "--no-safety-check",
         action="store_true",
         help="Skip the check whether an OSD is safe to destroy without "
         "reducing data redundancy below the point of cluster availability. "
@@ -154,7 +154,7 @@ def main(args=sys.argv[1:]):
         "objectstore type.\nThe current type is detected automatically.",
     )
     parser_rebuild.add_argument(
-        "--unsafe-destroy",
+        "--no-safety-check",
         action="store_true",
         help="Skip the check whether an OSD is safe to destroy without "
         "reducing data redundancy below the point of cluster availability. "
