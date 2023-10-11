@@ -376,6 +376,7 @@ in
       assert_clean_cluster(host3, 3, 3, 3, 320)
 
     with subtest("Deactivate and activate single OSD on host 1"):
+      host1.fail('fc-ceph osd deactivate --strict-safety-check 0')
       host1.succeed('fc-ceph osd deactivate 0')
       host1.succeed('fc-ceph osd activate 0')
       status = show(host2, 'ceph -s')
@@ -385,7 +386,7 @@ in
       host2.succeed('fc-ceph osd destroy all > /dev/kmsg 2>&1')
       wait_for_cluster_status(host3, "PG_DEGRADED")
       host3.fail('fc-ceph osd destroy all > /dev/kmsg 2>&1')
-      host3.succeed('fc-ceph osd destroy --unsafe-destroy all > /dev/kmsg 2>&1')
+      host3.succeed('fc-ceph osd destroy --no-safety-check all > /dev/kmsg 2>&1')
       # now the cluster should block I/O due to being on only 1/3 redundancy
       wait_for_cluster_status(host3, "PG_AVAILABILITY")
       host3.succeed('ceph health | grep "Reduced data availability" > /dev/kmsg 2>&1')

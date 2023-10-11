@@ -8,7 +8,7 @@ import threading
 import time
 import traceback
 from subprocess import CalledProcessError
-from typing import Optional
+from typing import List, Optional
 
 from fc.ceph.util import kill, mount_status, run
 
@@ -166,7 +166,12 @@ class OSDManager(object):
                 traceback.print_exc()
 
     def deactivate(
-        self, ids: str, as_systemd_unit: bool = False, flush: bool = False
+        self,
+        ids: str,
+        as_systemd_unit: bool = False,
+        flush: bool = False,
+        no_safety_check: bool = False,
+        strict_safety_check: bool = False,
     ):
         ids = self._parse_ids(ids)
 
@@ -177,6 +182,10 @@ class OSDManager(object):
             osd = OSD(id_)
             self._deactivate_single(osd, as_systemd_unit, flush)
         else:
+            if no_safety_check:
+                print("WARNING: Skipping stop safety check.")
+            else:
+                GenericOSD.run_safety_check(ids, strict_safety_check)
             threads = []
             for id_ in ids:
                 try:
@@ -241,7 +250,7 @@ class OSDManager(object):
                 osd = OSD(id_)
                 osd.rebuild(
                     journal_size=journal_size,
-                    no_safety_check=unsafe_destroy,
+                    no_safety_check=no_safety_check,
                     target_objectstore_type=target_objectstore_type,
                     strict_safety_check=strict_safety_check,
                 )
@@ -478,6 +487,47 @@ class GenericOSD(object):
 
         run.ceph("osd", "crush", "add", self.name, str(weight), crush_location)
 
+    @staticmethod
+    def run_safety_check(ids: List[int], strict_safety_check: bool):
+        """
+        Run a safety check on what would happen if the OSDs specified in `ids`
+        became unavailable.
+
+        By default, the `ceph osd ok-to-stop` is run and checks for remaining
+        data availability.
+        With `stric_safety_check`, the more strict `ceph osd safe-to-destroy`
+        checks whether edundancy is affected in any ways.
+
+        Raises a SystemExit if the check fails.
+        """
+        id_str = " ".join(map(str, ids))
+        if strict_safety_check:
+            try:
+                run.ceph("osd", "safe-to-destroy", id_str)
+            except CalledProcessError as e:
+                print(
+                    # fmt: off
+                    "OSD not safe to destroy:", e.stderr,
+                    "\nTo override this check, remove the `--strict-safety-check` flag. "
+                    "This can lead to reduced data redundancy, still within safety margins."
+                    # fmt: on
+                )
+                # ceph already returns ERRNO-style returncodes, so just pass them through
+                sys.exit(e.returncode)
+        else:
+            try:
+                run.ceph("osd", "ok-to-stop", id_str)
+            except CalledProcessError as e:
+                print(
+                    # fmt: off
+                    "OSD not okay to stop:", e.stderr,
+                    "\nTo override this check, specify `--no-safety-check`. This can "
+                    "cause data loss or cluster failure!!"
+                    # fmt: on
+                )
+                # ceph already returns ERRNO-style returncodes, so just pass them through
+                sys.exit(e.returncode)
+
     def purge(self, no_safety_check: bool, strict_safety_check: bool):
         """Deletes an osd, including removal of auth keys and crush map entry"""
 
@@ -489,32 +539,8 @@ class GenericOSD(object):
             sys.exit(10)
         if no_safety_check:
             print("WARNING: Skipping destroy safety check.")
-        elif strict_safety_check:
-            try:
-                run.ceph("osd", "safe-to-destroy", str(self.id))
-            except CalledProcessError as e:
-                print(
-                    # fmt: off
-                    "OSD not safe to destroy:", e.stderr,
-                    "\nTo override this check, remove the `--strict-safety-check` flag. "
-                    "This can lead to reduced data redundancy, still within safety margins."
-                    # fmt: on
-                )
-                # do we have some generic or specific error return codes?
-                sys.exit(10)
         else:
-            try:
-                run.ceph("osd", "ok-to-stop", str(self.id))
-            except CalledProcessError as e:
-                print(
-                    # fmt: off
-                    "OSD not okay to stop:", e.stderr,
-                    "\nTo override this check, specify `--no-safety-check`. This can "
-                    "cause data loss or cluster failure!!"
-                    # fmt: on
-                )
-                # do we have some generic or specific error return codes?
-                sys.exit(10)
+            self.run_safety_check([self.id], strict_safety_check)
 
         print(f"Destroying OSD {self.id} ...")
         osdmanager = OSDManager()
@@ -816,7 +842,7 @@ class FileStoreOSD(GenericOSD):
             target_osd_type=target_osd_type,
             journal=journal,
             journal_size=journal_size,
-            no_safety_check=unsafe_destroy,
+            no_safety_check=no_safety_check,
             strict_safety_check=strict_safety_check,
             **oldosd_properties,
         )
@@ -1019,7 +1045,7 @@ class BlueStoreOSD(GenericOSD):
             target_osd_type=target_osd_type,
             journal=journal,
             journal_size=journal_size,
-            no_safety_check=unsafe_destroy,
+            no_safety_check=no_safety_check,
             strict_safety_check=strict_safety_check,
             **oldosd_properties,
         )

@@ -125,6 +125,20 @@ def main(args=sys.argv[1:]):
         help="IDs of OSD to deactivate. "
         "Use `all` to deactivate all local OSDs.",
     )
+    parser_deactivate.add_argument(
+        "--no-safety-check",
+        action="store_true",
+        help="Skip the check whether an OSD is safe to stop without "
+        "reducing data redundancy below the point of cluster availability. "
+        "WARNING: This can result in data loss or cluster failure!!",
+    )
+    parser_deactivate.add_argument(
+        "--strict-safety-check",
+        action="store_true",
+        help="Stricter check whether stopping of the OSD reduces "
+        "the data availability at all, even when it is not below the point of "
+        "cluster availability.",
+    )
     parser_deactivate.set_defaults(action="deactivate")
 
     parser_reactivate = osd_sub.add_parser(
