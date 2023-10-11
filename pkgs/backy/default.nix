@@ -11,8 +11,8 @@ let
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "backy";
-    rev = "e37a7f6570b6b9194cb3a27d8db2951eb5c992ce";
-    hash = "sha256-s7FazUx/o68VY0gaSfzSMQI4XX8o1qqKf6IEoynM4nQ=";
+    rev = "2.5.1";
+    hash = "sha256-w83Q7d3vJmh5dLiL7iI7K8YbMvWKQtr9pTsL9u7jAEg=";
   };
 
   lib = import "${src}/lib.nix" inputs;
