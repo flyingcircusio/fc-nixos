@@ -16,15 +16,23 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
       ];
 
       virtualisation.memorySize = 4096;
-      virtualisation.qemu.options = [ "-smp 2" ];
+      virtualisation.cores = 4;
+      virtualisation.writableStore = false;
 
       flyingcircus.roles.gitlab = {
         enable = true;
         hostName = "gitlab";
+        enableDockerRegistry = true;
+        dockerHostName = "docker.gitlab";
       };
 
       flyingcircus.roles.webgateway.enable = true;
       flyingcircus.roles.redis.enable = true;
+
+      networking.extraHosts = ''
+        ${testlib.fcIP.fe4 1} docker.gitlab
+        ${testlib.fcIP.fe6 1} docker.gitlab
+      '';
 
       services.nginx.virtualHosts.gitlab = {
         forceSSL = lib.mkForce false;
@@ -38,6 +46,7 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
       services.gitlab = lib.mkForce {
         databasePasswordFile = pkgs.writeText "dbPassword" dbPassword;
         initialRootPasswordFile = pkgs.writeText "rootPassword" initialRootPassword;
+        registry.package = pkgs.gitlab-container-registry;
         smtp.enable = true;
         secrets = {
           secretFile = pkgs.writeText "secret" "r8X9keSKynU7p4aKlh4GO1Bo77g5a7vj";
@@ -82,6 +91,9 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
     gitlab.wait_for_unit("gitlab-sidekiq.service")
     gitlab.wait_for_file("/run/gitlab/gitlab-workhorse.socket")
     gitlab.wait_for_file("/srv/gitlab/state/tmp/sockets/gitlab.socket")
+
+    gitlab.systemctl("restart docker-registry.service")
+    gitlab.wait_for_unit("docker-registry.service")
 
     gitlab.wait_until_succeeds("curl -sSf http://gitlab/users/sign_in")
     gitlab.succeed(
