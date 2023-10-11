@@ -116,9 +116,12 @@ let
   ];
 
   includedPkgNames = [
+    "awscli"
     "calibre"
-    "gitlab-ee"
     "element-web"
+    "firefox"
+    "gitlab-ee"
+    "matomo"
   ];
 
   testPkgNames = includedPkgNames ++
