@@ -18,9 +18,11 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
       "${nodejs_14}": "14",
       "${nodejs_16}": "16",
       "${nodejs_18}": "18",
+      "${nodejs_20}": "20",
       "${nodejs-slim_18}": "18",
       "${nodejs-slim}": "18",
       "${nodejs}": "18",
+      "${nodejs-slim_20}": "20",
     }
 
     for package, version in package_versions.items():

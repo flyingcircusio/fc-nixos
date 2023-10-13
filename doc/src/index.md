@@ -33,6 +33,7 @@ external_net
 kubernetes
 lamp
 mailserver
+matomo
 memcached
 mongodb
 mysql

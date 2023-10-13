@@ -34,13 +34,15 @@ in
 
   config = lib.mkIf cfg.enable {
 
+    flyingcircus.services.nginx.enable = true;
+
     flyingcircus.passwordlessSudoRules = [
       {
         commands = [
           "${serviceCfg.tools.matomoConsole}/bin/matomo-console"
         ];
         users = [ "sensuclient" ];
-        groups = ["service" ];
+        groups = [ "service" "sudo-srv" ];
         runAs = "matomo";
       }
       {
