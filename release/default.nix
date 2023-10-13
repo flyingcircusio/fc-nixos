@@ -116,9 +116,26 @@ let
   ];
 
   includedPkgNames = [
+    "binutils"
     "calibre"
-    "gitlab-ee"
+    "chromedriver"
+    "chromium"
+    "cyrus_sasl"
     "element-web"
+    "gitlab-ee"
+    "glibc"
+    "libffi"
+    "libjpeg"
+    "libmysqlclient"
+    "libxml2"
+    "libxslt"
+    "libyaml"
+    "openldap"
+    "openssl"
+    "postgresql"
+    "python38"
+    "zlib"
+    "zstd"
   ];
 
   testPkgNames = includedPkgNames ++
