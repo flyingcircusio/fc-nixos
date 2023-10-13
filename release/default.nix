@@ -115,6 +115,7 @@ let
     "gitlab-runner"
   ];
 
+  # XXX overcome force push hydra blockade.
   includedPkgNames = [
     "binutils"
     "calibre"
