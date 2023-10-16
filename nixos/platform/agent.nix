@@ -195,6 +195,7 @@ in
             "${pkgs.fc.agent}/bin/fc-maintenance show"
             "${pkgs.fc.agent}/bin/fc-maintenance delete"
             "${pkgs.fc.agent}/bin/fc-maintenance metrics"
+            "${pkgs.fc.agent}/bin/fc-maintenance check"
           ];
           groups = [ "admins" "sudo-srv" "service" ];
         }
@@ -398,6 +399,11 @@ in
             notification = "fc-manage check failed. System may not build and update correctly.";
             command = "sudo ${pkgs.fc.agent}/bin/fc-manage check";
             interval = 300;
+          };
+          fc-maintenance = {
+            notification = "fc-maintenance check failed.";
+            command = "sudo ${pkgs.fc.agent}/bin/fc-maintenance check";
+            interval = 180;
           };
         };
       };

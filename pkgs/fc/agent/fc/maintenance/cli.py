@@ -1,4 +1,5 @@
 import json
+import traceback
 from pathlib import Path
 from typing import NamedTuple, Optional
 
@@ -345,11 +346,28 @@ def constraints(
     log.debug("constraints-success")
 
 
+@app.command()
+def check():
+    fc.util.logging.init_logging(
+        context.verbose, context.logdir, log_to_console=context.verbose
+    )
+    try:
+        rm.scan()
+        result = rm.check()
+    except Exception:
+        print("UNKNOWN: Exception occurred while running checks")
+        traceback.print_exc()
+        raise Exit(3)
+
+    print(result.format_output())
+    if result.exit_code:
+        raise Exit(result.exit_code)
+
+
 @app.command(help="Prints metrics in the telegraf JSON input format.")
 def metrics():
-    with rm:
-        rm.scan()
-        jso = json.dumps(rm.get_metrics())
+    rm.scan()
+    jso = json.dumps(rm.get_metrics())
 
     print(jso)
 
