@@ -43,6 +43,7 @@
   "github-runner",
   "gitlab",
   "gitlab-container-registry",
+  "gitlab-runner",
   "glibc",
   "gnumake",
   "gnupg",

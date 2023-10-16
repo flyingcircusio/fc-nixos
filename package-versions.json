@@ -204,6 +204,11 @@
     "pname": "gitlab-container-registry",
     "version": "3.84.0"
   },
+  "gitlab-runner": {
+    "name": "gitlab-runner-16.4.0",
+    "pname": "gitlab-runner",
+    "version": "16.4.0"
+  },
   "glibc": {
     "name": "glibc-2.37-45",
     "pname": "glibc",
