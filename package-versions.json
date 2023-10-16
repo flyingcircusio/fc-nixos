@@ -24,6 +24,11 @@
     "pname": "automake",
     "version": "1.16.5"
   },
+  "awscli": {
+    "name": "awscli-1.27.79",
+    "pname": "awscli",
+    "version": "1.27.79"
+  },
   "bash": {
     "name": "bash-5.2-p15",
     "pname": "bash",
@@ -60,9 +65,9 @@
     "version": "7.0"
   },
   "clamav": {
-    "name": "clamav-1.0.1",
+    "name": "clamav-1.0.3",
     "pname": "clamav",
-    "version": "1.0.1"
+    "version": "1.0.3"
   },
   "cmake": {
     "name": "cmake-3.25.3",
@@ -164,6 +169,11 @@
     "pname": "filebeat",
     "version": "7.17.4"
   },
+  "firefox": {
+    "name": "firefox-118.0.1",
+    "pname": "firefox",
+    "version": "118.0.1"
+  },
   "gcc": {
     "name": "gcc-wrapper-12.2.0",
     "pname": "gcc-wrapper",
@@ -180,9 +190,9 @@
     "version": "2.3.3"
   },
   "ghostscript": {
-    "name": "ghostscript-with-X-10.01.2",
+    "name": "ghostscript-with-X-10.02.0",
     "pname": "ghostscript-with-X",
-    "version": "10.01.2"
+    "version": "10.02.0"
   },
   "git": {
     "name": "git-2.40.1",
@@ -190,9 +200,9 @@
     "version": "2.40.1"
   },
   "github-runner": {
-    "name": "github-runner-2.309.0",
+    "name": "github-runner-2.310.2",
     "pname": "github-runner",
-    "version": "2.309.0"
+    "version": "2.310.2"
   },
   "gitlab": {
     "name": "gitlab-16.4.1",
@@ -235,9 +245,9 @@
     "version": "1.18.10"
   },
   "go_1_19": {
-    "name": "go-1.19.12",
+    "name": "go-1.19.13",
     "pname": "go",
-    "version": "1.19.12"
+    "version": "1.19.13"
   },
   "go_1_20": {
     "name": "go-1.20.8",
@@ -255,9 +265,9 @@
     "version": "2.7.10"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-18",
+    "name": "imagemagick-7.1.1-19",
     "pname": "imagemagick",
-    "version": "7.1.1-18"
+    "version": "7.1.1-19"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.12-68",
@@ -265,9 +275,9 @@
     "version": "6.9.12-68"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-18",
+    "name": "imagemagick-7.1.1-19",
     "pname": "imagemagick",
-    "version": "7.1.1-18"
+    "version": "7.1.1-19"
   },
   "inetutils": {
     "name": "inetutils-2.4",
@@ -355,9 +365,9 @@
     "version": "2.10.4"
   },
   "linux": {
-    "name": "linux-6.1.55",
+    "name": "linux-6.1.57",
     "pname": "linux",
-    "version": "6.1.55"
+    "version": "6.1.57"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -385,14 +395,14 @@
     "version": "4.1.9"
   },
   "matomo": {
-    "name": "matomo-4.14.2",
+    "name": "matomo-4.15.1",
     "pname": "matomo",
-    "version": "4.14.2"
+    "version": "4.15.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.93.0",
+    "name": "matrix-synapse-1.94.0",
     "pname": "matrix-synapse",
-    "version": "1.93.0"
+    "version": "1.94.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -480,9 +490,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.93",
+    "name": "nss-3.94",
     "pname": "nss",
-    "version": "3.93"
+    "version": "3.94"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -505,9 +515,9 @@
     "version": "9.3p2"
   },
   "openssl": {
-    "name": "openssl-3.0.10",
+    "name": "openssl-3.0.11",
     "pname": "openssl",
-    "version": "3.0.10"
+    "version": "3.0.11"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -515,9 +525,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.10",
+    "name": "openssl-3.0.11",
     "pname": "openssl",
-    "version": "3.0.10"
+    "version": "3.0.11"
   },
   "openvpn": {
     "name": "openvpn-2.5.8",
@@ -650,19 +660,19 @@
     "version": "0.12.3"
   },
   "python3": {
-    "name": "python3-3.10.12",
+    "name": "python3-3.10.13",
     "pname": "python3",
-    "version": "3.10.12"
+    "version": "3.10.13"
   },
   "python310": {
-    "name": "python3-3.10.12",
+    "name": "python3-3.10.13",
     "pname": "python3",
-    "version": "3.10.12"
+    "version": "3.10.13"
   },
   "python311": {
-    "name": "python3-3.11.4",
+    "name": "python3-3.11.5",
     "pname": "python3",
-    "version": "3.11.4"
+    "version": "3.11.5"
   },
   "python38": {
     "name": "python3-3.8.18",
@@ -673,6 +683,11 @@
     "name": "python3-3.9.18",
     "pname": "python3",
     "version": "3.9.18"
+  },
+  "python3Packages.boto3": {
+    "name": "python3.10-boto3-1.26.79",
+    "pname": "boto3",
+    "version": "1.26.79"
   },
   "python3Packages.lxml": {
     "name": "python3.10-lxml-4.9.2",
@@ -715,9 +730,9 @@
     "version": "3.0"
   },
   "redis": {
-    "name": "redis-7.0.12",
+    "name": "redis-7.0.13",
     "pname": "redis",
-    "version": "7.0.12"
+    "version": "7.0.13"
   },
   "roundcube": {
     "name": "roundcube-1.6.3",
@@ -855,9 +870,9 @@
     "version": "6.2.0"
   },
   "xorg.libX11": {
-    "name": "libX11-1.8.6",
+    "name": "libX11-1.8.7",
     "pname": "libX11",
-    "version": "1.8.6"
+    "version": "1.8.7"
   },
   "zip": {
     "name": "zip-3.0",
