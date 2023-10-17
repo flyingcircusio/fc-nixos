@@ -35,6 +35,20 @@ let
     buildInputs = [ pytest structlog ];
   };
 
+  stamina = py.buildPythonPackage rec {
+    pname = "stamina";
+    version = "23.1.0";
+    format = "pyproject";
+
+    src = fetchPypi {
+      inherit pname version;
+      hash = "sha256-sWzj1S1liqdduBP8amZht3Cr/qkV9yzaSOMl8qeFR4Y=";
+    };
+
+    nativeBuildInputs = with py; [ hatchling hatch-vcs hatch-fancy-pypi-readme ];
+    propagatedBuildInputs = with py; [ structlog tenacity typing-extensions ];
+  };
+
 in
 buildPythonPackage rec {
   name = "fc-agent-${version}";
@@ -68,6 +82,7 @@ buildPythonPackage rec {
     py.structlog
     py.typer
     py.pyyaml
+    stamina
     util-linux
   ] ++ lib.optionals stdenv.isLinux [
     dmidecode
