@@ -1,3 +1,4 @@
+import fc.maintenance.state
 import pytest
 import yaml
 from fc.maintenance.activity import Activity, RebootType
@@ -97,7 +98,12 @@ def test_reboot_activity_serialize(warm):
     assert serialized == SERIALIZED_ACTIVITY
 
 
-def test_update_activity_deserialize(warm, logger):
+def test_reboot_activity_deserialize(warm, logger):
     deserialized = yaml.load(SERIALIZED_ACTIVITY, Loader=yaml.UnsafeLoader)
     deserialized.set_up_logging(logger)
     assert deserialized.__getstate__() == warm.__getstate__()
+
+
+def test_reboot_should_be_not_resumable(warm):
+    warm.resume()
+    assert warm.returncode == fc.maintenance.state.EXIT_INTERRUPTED

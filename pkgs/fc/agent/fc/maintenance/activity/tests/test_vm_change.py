@@ -1,4 +1,5 @@
 from io import StringIO
+from unittest.mock import Mock
 
 import yaml
 from fc.maintenance.activity import Activity, RebootType
@@ -108,3 +109,10 @@ def test_rich_print(activity):
         "fc.maintenance.activity.vm_change.VMChangeActivity (cold reboot needed)\n"
         == str_output
     )
+
+
+def test_vm_change_should_run_on_resume(activity, monkeypatch):
+    run_mock = Mock()
+    monkeypatch.setattr(activity, "run", run_mock)
+    activity.resume()
+    assert run_mock.called

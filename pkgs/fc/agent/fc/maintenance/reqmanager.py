@@ -426,12 +426,14 @@ class ReqManager:
             runnable_requests = sorted(
                 r
                 for r in self.requests.values()
-                if r.state in (State.pending, State.due)
+                if r.state in (State.pending, State.due, State.running)
             )
         else:
             # Normal operation
             runnable_requests = sorted(
-                r for r in self.requests.values() if r.state == State.due
+                r
+                for r in self.requests.values()
+                if r.state in (State.due, State.running)
             )
 
         if not runnable_requests:
