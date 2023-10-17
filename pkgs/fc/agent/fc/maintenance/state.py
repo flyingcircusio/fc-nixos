@@ -35,6 +35,7 @@ ARCHIVE = {State.success, State.error, State.deleted}
 EXIT_SUCCESS = 0
 EXIT_POSTPONE = 69
 EXIT_TEMPFAIL = 75
+EXIT_INTERRUPTED = 80
 
 
 def evaluate_state(returncode):

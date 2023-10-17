@@ -282,12 +282,16 @@ class Request:
         )
         attempt = Attempt()  # sets start time
         try:
+            resuming = self.state == State.running
             self.state = State.running
             self.attempts.append(attempt)
             self.save()
             with cd(self.dir):
                 try:
-                    self.activity.run()
+                    if resuming:
+                        self.activity.resume()
+                    else:
+                        self.activity.run()
                     attempt.record(self.activity)
                 except Exception as e:
                     attempt.returncode = 70  # EX_SOFTWARE

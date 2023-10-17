@@ -1,3 +1,4 @@
+import fc.maintenance.lib.reboot
 from fc.maintenance import Request
 from fc.maintenance.activity import RebootType
 
@@ -34,3 +35,10 @@ def test_legacy_reboot_activity_loading_serialization_should_work(
     activity = request.activity
     assert activity.reboot_needed == RebootType.COLD
     assert activity.__rich__()
+
+
+def test_legacy_reboot_should_be_noop_success_when_already_running():
+    activity = fc.maintenance.lib.reboot.RebootActivity()
+    activity.resume()
+    assert activity.reboot_needed is None
+    assert activity.returncode == 0
