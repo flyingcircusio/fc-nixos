@@ -351,7 +351,7 @@ class ReqManager:
     @require_lock
     @require_directory
     def schedule(self):
-        """Triggers request scheduling on server."""
+        """Gets (updated) start times for pending requests from the directory."""
         self.log.debug("schedule-start")
 
         schedule_maintenance = {
@@ -360,6 +360,7 @@ class ReqManager:
                 "comment": req.comment,
             }
             for reqid, req in self.requests.items()
+            if req.state == State.pending
         }
         if schedule_maintenance:
             self.log.debug(
