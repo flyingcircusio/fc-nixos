@@ -83,7 +83,8 @@ class PartialFormatter(string.Formatter):
 
 
 class MultiOptimisticLoggerFactory:
-    def __init__(self, **factories):
+    def __init__(self, context, factories):
+        self.context = context
         self.factories = factories
 
     def __call__(self, *args):
@@ -518,7 +519,7 @@ def format_exc_info(logger, name, event_dict):
     return event_dict
 
 
-def init_command_logging(log, logdir):
+def init_command_logging(log, logdir=None):
     """
     Adds a cmd_output_file logger factory to an already configured
     MultiOptimisticLoggerFactory, used for logging Nix command output to a
@@ -531,6 +532,19 @@ def init_command_logging(log, logdir):
     logger_factory = structlog.get_config()["logger_factory"]
 
     if not isinstance(logger_factory, MultiOptimisticLoggerFactory):
+        return
+
+    if logdir is None:
+        logdir = logger_factory.context.get("logdir")
+
+    if logdir is None:
+        log.warn(
+            "logging-cmd-output-no-logdir",
+            _replace_msg=(
+                "Cannot set up command logging: "
+                "No logdir given and factory context has no logdir either."
+            ),
+        )
         return
 
     # The invocation ID is normally set by systemd when the script is called
@@ -619,11 +633,17 @@ def init_logging(
         multi_renderer,
     ]
 
+    context = {}
     loggers = {}
 
     if logdir is not None:
-        main_log_file = open(logdir / "fc-agent.log", "a")
-        loggers["file"] = structlog.PrintLoggerFactory(main_log_file)
+        try:
+            main_log_file = open(logdir / f"{syslog_identifier}.log", "a")
+        except PermissionError:
+            pass
+        else:
+            loggers["file"] = structlog.PrintLoggerFactory(main_log_file)
+            context["logdir"] = logdir
     if journal:
         loggers["journal"] = JournalLoggerFactory()
 
@@ -635,7 +655,7 @@ def init_logging(
     structlog.configure(
         processors=processors,
         wrapper_class=structlog.BoundLogger,
-        logger_factory=MultiOptimisticLoggerFactory(**loggers),
+        logger_factory=MultiOptimisticLoggerFactory(context, loggers),
     )
 
     log = structlog.get_logger()
@@ -644,4 +664,4 @@ def init_logging(
         if not logdir:
             raise ValueError("A logdir is required for command logging.")
 
-        return init_command_logging(log, logdir)
+        init_command_logging(log, logdir)
