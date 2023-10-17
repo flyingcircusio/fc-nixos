@@ -1,6 +1,8 @@
 import os
+from functools import wraps
 
 import fc.util.logging
+import rich
 import structlog
 import typer
 
@@ -42,3 +44,32 @@ class FCTyperApp(typer.Typer):
             # care of it and pretty-print the exception for interactive use.
             if not os.environ.get("INVOCATION_ID"):
                 raise e
+
+
+def requires_sudo(func):
+    @wraps(func)
+    def root_maybe_sudo(*args, **kwargs):
+        if os.getuid() != 0:
+            rich.print(
+                "[bold red]Error:[/bold red] This command needs root "
+                "permissions. You might be able to run it with `sudo`."
+            )
+            raise typer.Exit(77)
+
+        return func(*args, **kwargs)
+
+    return root_maybe_sudo
+
+
+def requires_root(func):
+    @wraps(func)
+    def root_only(*args, **kwargs):
+        if os.getuid() != 0:
+            rich.print(
+                "[bold red]Error:[/bold red] Only root can use this command."
+            )
+            raise typer.Exit(77)
+
+        return func(*args, **kwargs)
+
+    return root_only

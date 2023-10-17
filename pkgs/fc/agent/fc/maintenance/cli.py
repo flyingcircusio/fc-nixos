@@ -31,7 +31,7 @@ from fc.util.logging import (
     init_command_logging,
     init_logging,
 )
-from fc.util.typer_utils import FCTyperApp
+from fc.util.typer_utils import FCTyperApp, requires_root, requires_sudo
 from typer import Argument, Exit, Option
 
 app = FCTyperApp("fc-maintenance")
@@ -70,40 +70,38 @@ def fc_maintenance(
     ),
     spooldir: Path = Option(
         file_okay=False,
-        writable=True,
         default=DEFAULT_SPOOLDIR,
         help="Directory to store maintenance request files.",
     ),
     logdir: Path = Option(
-        exists=True,
         file_okay=False,
-        writable=True,
         default="/var/log",
         help="Directory for log files. Must have a fc-agent subdirectory.",
     ),
     lock_dir: Path = Option(
-        exists=True,
         file_okay=False,
-        writable=True,
         default="/run/lock",
         help="Directory where the lock file for exclusive operations should be "
         "placed.",
     ),
     config_file: Path = Option(
         dir_okay=False,
-        readable=True,
         default=DEFAULT_CONFIG_FILE,
         help="Path to the agent config file.",
     ),
+    # Normal users cannot read the default file but that's ok for many commands.
     enc_path: Path = Option(
         dir_okay=False,
-        readable=True,
+        readable=False,
         default="/etc/nixos/enc.json",
         help="Path to enc.json",
     ),
 ):
     """
     Manage maintenance requests for this machine.
+
+    Some sub commands must be run with sudo or as root because they may change
+    request state. They are marked with `[sudo]` or `[root]`.
     """
     global context
     global rm
@@ -131,9 +129,19 @@ def fc_maintenance(
 
 
 @app.command()
+@requires_sudo
+def schedule():
+    """[sudo] Schedule all requests."""
+    log.info("fc-maintenance-schedule-start")
+    with rm:
+        rm.schedule()
+    log.info("fc-maintenance-schedule-finished")
+
+
+@app.command()
+@requires_sudo
 def run(run_all_now: bool = False, force_run: bool = False):
-    """
-    Run all maintenance activity requests that are due.
+    """[sudo] Run all maintenance activity requests that are due.
 
     Note that this does not schedule pending requests like running the script without
     arguments in the past did. Run the schedule subcommand if you want to ensure that we
@@ -175,26 +183,10 @@ def run(run_all_now: bool = False, force_run: bool = False):
     log.info("fc-maintenance-run-finished")
 
 
-@app.command(name="list")
-def list_cmd():
-    """
-    List active maintenance requests.
-    """
-    with rm:
-        rm.list()
-
-
 @app.command()
-def show(request_id: Optional[str] = Argument(None), dump_yaml: bool = False):
-    """Show details for a request."""
-    with rm:
-        rm.show(request_id, dump_yaml)
-
-
-@app.command()
+@requires_sudo
 def delete(request_id: str, archive: bool = True):
-    """
-    Delete a request by request ID.
+    """[sudo] Delete a request by request ID.
 
     See the output of the `list` subcommand for available request IDs.
     """
@@ -204,13 +196,58 @@ def delete(request_id: str, archive: bool = True):
             rm.archive()
 
 
+# Commands that work for unprivileged users (non-invasive).
+
+
+@app.command(name="list")
+def list_cmd():
+    """List active maintenance requests."""
+    rm.list_requests()
+
+
 @app.command()
-def schedule():
-    """Schedule all requests."""
-    log.info("fc-maintenance-schedule-start")
-    with rm:
-        rm.schedule()
-    log.info("fc-maintenance-schedule-finished")
+def show(
+    request_id: Optional[str] = Argument(
+        None, help="Full request ID or a prefix to search for."
+    ),
+    dump_yaml: bool = False,
+):
+    """Show details for a request.
+
+    Works for active and archived requests.
+
+    if `request_id` is given, active requests are searched first for an exact or
+    partial (prefix) request ID match. If nothing is found, archived requests
+    are tried.
+
+    If no `request_id` is given, the most recently added active request is shown.
+    """
+    rm.show_request(request_id, dump_yaml)
+
+
+@app.command()
+def check():
+    """Detect maintenance and request execution problems."""
+    fc.util.logging.init_logging(
+        context.verbose, context.logdir, log_to_console=context.verbose
+    )
+    try:
+        result = rm.check()
+    except Exception:
+        print("UNKNOWN: Exception occurred while running checks")
+        traceback.print_exc()
+        raise Exit(3)
+
+    print(result.format_output())
+    if result.exit_code:
+        raise Exit(result.exit_code)
+
+
+@app.command()
+def metrics():
+    """Print metrics in telegraf JSON input format."""
+    jso = json.dumps(rm.get_metrics())
+    print(jso)
 
 
 # Request subcommands
@@ -222,32 +259,33 @@ app.add_typer(request_app, name="request")
 @request_app.callback(no_args_is_help=True)
 def request_main():
     """
-    Create a new request (see sub commands).
+    [root] Create a new request (see sub commands).
     """
 
 
 @request_app.command(name="script")
+@requires_root
 def run_script(comment: str, script: str, estimate: Optional[str] = None):
-    """Request to run a script."""
+    """[root] Request to run a script."""
     request = Request(ShellScriptActivity(script), estimate, comment)
     with rm:
-        rm.scan()
         rm.add(request)
 
 
 @request_app.command()
+@requires_root
 def reboot(comment: Optional[str] = None, cold_reboot: bool = False):
-    """Request a reboot."""
+    """[root] Request a reboot."""
     action = "poweroff" if cold_reboot else "reboot"
     request = Request(RebootActivity(action), comment=comment)
     with rm:
-        rm.scan()
         rm.add(request)
 
 
 @request_app.command()
+@requires_root
 def system_properties():
-    """Request reboot for changed system properties.
+    """[root] Request reboot for changed system properties.
     Runs applicable checks for the machine type (virtual/physical).
 
     * Physical: kernel
@@ -259,7 +297,6 @@ def system_properties():
     enc = load_enc(log, context.enc_path)
 
     with rm:
-        rm.scan()
         current_requests = rm.requests.values()
 
         if enc["parameters"]["machine"] == "virtual":
@@ -272,8 +309,9 @@ def system_properties():
 
 
 @request_app.command()
+@requires_root
 def update():
-    """Request a system update.
+    """[root] Request a system update.
 
     Builds the system and prepares the update to be run in a maintenance
     window by default.
@@ -287,7 +325,6 @@ def update():
     init_command_logging(log, context.logdir)
 
     with rm:
-        rm.scan()
         current_requests = rm.requests.values()
 
     with locked(log, context.lock_dir):
@@ -308,9 +345,8 @@ def update():
 # Helper commands (not using reqmanager)
 
 
-@app.command(
-    help="Check constraints on the state of machines in the same resource group."
-)
+@app.command()
+@requires_root
 def constraints(
     in_service: list[str] = Option(
         default=[],
@@ -324,6 +360,9 @@ def constraints(
         ),
     ),
 ):
+    """[root] Check constraints on the state of machines in the same resource
+    group.
+    """
     log.info("fc-maintenance-constraints")
 
     with directory_connection(context.enc_path) as directory:
@@ -350,32 +389,6 @@ def constraints(
             raise Exit(failure_exit_code)
 
     log.debug("constraints-success")
-
-
-@app.command()
-def check():
-    fc.util.logging.init_logging(
-        context.verbose, context.logdir, log_to_console=context.verbose
-    )
-    try:
-        rm.scan()
-        result = rm.check()
-    except Exception:
-        print("UNKNOWN: Exception occurred while running checks")
-        traceback.print_exc()
-        raise Exit(3)
-
-    print(result.format_output())
-    if result.exit_code:
-        raise Exit(result.exit_code)
-
-
-@app.command(help="Prints metrics in the telegraf JSON input format.")
-def metrics():
-    rm.scan()
-    jso = json.dumps(rm.get_metrics())
-
-    print(jso)
 
 
 if __name__ == "__main__":

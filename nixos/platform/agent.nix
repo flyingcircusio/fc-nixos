@@ -208,11 +208,8 @@ in
         {
           commands = [
             "${pkgs.fc.agent}/bin/fc-manage"
-            "${pkgs.fc.agent}/bin/fc-maintenance list"
-            "${pkgs.fc.agent}/bin/fc-maintenance show"
             "${pkgs.fc.agent}/bin/fc-maintenance delete"
-            "${pkgs.fc.agent}/bin/fc-maintenance metrics"
-            "${pkgs.fc.agent}/bin/fc-maintenance check"
+            "${pkgs.fc.agent}/bin/fc-maintenance -v delete"
           ];
           groups = [ "admins" "sudo-srv" "service" ];
         }
@@ -230,6 +227,10 @@ in
           commands = [
             "${pkgs.fc.agent}/bin/fc-maintenance run"
             "${pkgs.fc.agent}/bin/fc-maintenance run --run-all-now"
+            "${pkgs.fc.agent}/bin/fc-maintenance schedule"
+            "${pkgs.fc.agent}/bin/fc-maintenance -v run"
+            "${pkgs.fc.agent}/bin/fc-maintenance -v run --run-all-now"
+            "${pkgs.fc.agent}/bin/fc-maintenance -v schedule"
           ];
           groups = [ "admins" ];
         }
@@ -403,14 +404,14 @@ in
           };
           fc-maintenance = {
             notification = "fc-maintenance check failed.";
-            command = "sudo ${pkgs.fc.agent}/bin/fc-maintenance check";
+            command = "${pkgs.fc.agent}/bin/fc-maintenance check";
             interval = 180;
           };
         };
       };
       flyingcircus.services.telegraf.inputs = {
         exec = [{
-          commands = [ "/run/wrappers/bin/sudo ${pkgs.fc.agent}/bin/fc-maintenance metrics" ];
+          commands = [ "${pkgs.fc.agent}/bin/fc-maintenance metrics" ];
           timeout = "10s";
           data_format = "json";
           json_name_key = "name";
