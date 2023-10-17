@@ -59,6 +59,14 @@ def require_directory(func):
     return with_directory_connection
 
 
+class RequestsNotLoaded(Exception):
+    def __init__(self):
+        super().__init__(
+            "Accessing requests is not possible because ReqManager has not been "
+            "initialized."
+        )
+
+
 class PostponeMaintenance(Exception):
     pass
 
@@ -73,11 +81,52 @@ class HandleEnterExceptionResult(NamedTuple):
 
 
 class ReqManager:
-    """Container for Requests."""
+    """
+    Manage maintenance requests.
+    The basic phases in the life of a request are:
+    add, schedule, execute, archive.
+
+    Requests may be merged when they are compatible with existing requests
+    or postponed when they cannot be executed at the moment and should run at
+    a later time.
+
+    *Invasive* methods use `self.requests` and are allowed to make changes to
+    requests. To use them, requests must be loaded and the global request
+    manager lock must be held.
+
+    These methods are typically used like this to handle locking and request
+    loading:
+    ```
+    rm = ReqManager()
+    with rm:
+        rm.invasive_method()
+    ```
+
+    Invasive methods are:
+
+    * scan
+    * add
+    * delete
+    * schedule
+    * update_states
+    * execute
+    * postpone
+    * archive
+
+    For non-invasive tasks, ReqManager methods can be used immediately. These
+    include:
+
+    * list_requests
+    * show_request
+    * check
+    * get_metrics
+
+    They also work with non-privileged users.
+    """
 
     directory = None
     lockfile = None
-    requests: dict[str, Request]
+    _requests: dict[str, Request] | None
     min_estimate_seconds: int = 900
 
     def __init__(
@@ -93,35 +142,48 @@ class ReqManager:
             "reqmanager-init",
             spooldir=str(spooldir),
             enc_path=str(enc_path),
-            config_file=str(config_file),
         )
         self.spooldir = Path(spooldir)
         self.requestsdir = self.spooldir / "requests"
         self.archivedir = self.spooldir / "archive"
         self.last_run_stats_path = self.spooldir / "last_run.json"
         self.maintenance_marker_path = self.spooldir / "in_maintenance"
-        for d in (self.spooldir, self.requestsdir, self.archivedir):
-            if not d.exists():
-                os.mkdir(d)
         self.enc_path = Path(enc_path)
-        self.requests = {}
         self.config_file = Path(config_file)
         self.config = configparser.ConfigParser()
         if self.config_file:
             if self.config_file.is_file():
-                self.log.debug("reqmanager-enter-read-config")
+                self.log.debug(
+                    "reqmanager-enter-read-config",
+                    config_file=str(config_file),
+                )
                 self.config.read(self.config_file)
             else:
-                self.log.warn("reqmanager-enter-config-not-found")
+                self.log.warn(
+                    "reqmanager-enter-config-not-found",
+                    config_file=str(config_file),
+                )
         self.maintenance_preparation_seconds = int(
             self.config.get("maintenance", "preparation_seconds", fallback=300)
         )
 
     def __enter__(self):
         """
-        Sets up global request manager lock and loads active requests.
-        Used for invasive tasks that may change requests.
+        Acquires global request manager lock and loads active requests.
+        Must be called before using invasive methods that use
+        `self.requests` and make changes to requests.
+
+        Typically used like this:
+        ```
+        rm = ReqManager()
+        with rm:
+            rm.invasive_method()
+        ```
         """
+        for d in (self.spooldir, self.requestsdir, self.archivedir):
+            if not d.exists():
+                os.mkdir(d)
+
         if self.lockfile:
             return self
         self.lockfile = open(p.join(self.spooldir, ".lock"), "a+")
@@ -139,6 +201,7 @@ class ReqManager:
         self.lockfile = None
 
     def __rich__(self):
+        requests = self._active_requests()
         table = Table(
             show_header=True,
             title="Maintenance requests",
@@ -146,7 +209,7 @@ class ReqManager:
             title_style="bold",
         )
 
-        if not self.requests:
+        if not requests:
             return "[bold]No maintenance requests at the moment.[/bold]"
 
         table.add_column("State")
@@ -157,7 +220,7 @@ class ReqManager:
         table.add_column("Added")
         table.add_column("Updated")
         table.add_column("Scheduled")
-        for req in sorted(self.requests.values()):
+        for req in sorted(requests):
             if req.next_due:
                 exec_interval = (
                     format_datetime(req.next_due)
@@ -185,12 +248,20 @@ class ReqManager:
 
         return table
 
-    def dir(self, request):
-        """Return file system path for request identified by `reqid`."""
+    def _request_directory(self, request):
+        """Return file system path for an active request."""
         return p.realpath(p.join(self.requestsdir, request.id))
 
+    @property
+    def requests(self):
+        if self._requests is None:
+            raise RequestsNotLoaded()
+
+        return self._requests
+
+    @require_lock
     def scan(self):
-        self.requests = {}
+        self._requests = {}
         for d in glob.glob(p.join(self.requestsdir, "*")):
             if not p.isdir(d):
                 continue
@@ -214,7 +285,7 @@ class ReqManager:
 
     def _add_request(self, request: Request):
         self.requests[request.id] = request
-        request.dir = self.dir(request)
+        request.dir = self._request_directory(request)
         request._reqmanager = self
         request.added_at = utcnow()
         request.save()
@@ -299,6 +370,7 @@ class ReqManager:
 
         return merge_result
 
+    @require_lock
     def add(self, request: Request | None, add_always=False) -> Request | None:
         """Adds a Request object to the local queue.
         New request is merged with existing requests. If the merge results
@@ -346,6 +418,33 @@ class ReqManager:
         return max(
             self.min_estimate_seconds,
             int(request.estimate) + self.maintenance_preparation_seconds,
+        )
+
+    @require_lock
+    def delete(self, reqid):
+        """
+        Deletes an active request from the queue.
+        `reqid` can be a full request ID or a prefix.
+        """
+        self.log.debug("delete-start", request=reqid)
+        req = None
+        for i in self.requests:
+            if i.startswith(reqid):
+                req = self.requests[i]
+                break
+        if not req:
+            self.log.warning(
+                "delete-skip-missing",
+                _replace_msg="Cannot locate request {request}, skipping.",
+                request=reqid,
+            )
+            return
+        req.state = State.deleted
+        req.save()
+        self.log.info(
+            "delete-finished",
+            _replace_msg="Marked request {request} as deleted.",
+            request=req.id,
         )
 
     @require_lock
@@ -406,7 +505,128 @@ class ReqManager:
                 {key: {"result": "deleted"} for key in disappeared}
             )
 
-    def runnable(self, run_all_now=False, force_run=False):
+    @require_lock
+    def update_states(self):
+        """
+        Updates all request states.
+
+        We want to run continuously scheduled requests in one go to reduce overall
+        maintenance time and reboots.
+
+        A Request is considered "due" if its start time is in the past or is
+        scheduled directly after a previous due request.
+
+        In other words: if there's a due request, following requests can be run even if
+        their start time is not reached, yet.
+        """
+        due_dt = utcnow()
+        requests = self.requests.values()
+        self.log.debug("update-states-start", request_count=len(requests))
+        for request in sorted(requests):
+            request.update_state(due_dt)
+            request.save()
+            if request.state == State.due and request.next_due:
+                delta = timedelta(
+                    seconds=self._estimated_request_duration(request) + 60
+                )
+                due_dt = max(utcnow(), request.next_due + delta)
+
+    @require_directory
+    def _enter_maintenance(self):
+        """Enters maintenance mode which tells the directory to mark the machine
+        as 'not in service'. The main reason is to avoid false alarms during expected
+        service interruptions as the machine reboots or services are restarted.
+        """
+        self.log.debug("enter-maintenance")
+        self.log.debug("mark-node-out-of-service")
+        self.directory.mark_node_service_status(socket.gethostname(), False)
+
+        if self.maintenance_marker_path.exists():
+            previous_maintenance_entered_at = (
+                self.maintenance_marker_path.read_text()
+            )
+            self.log.info(
+                "enter-maintenance-marker-present",
+                _replace_msg=(
+                    "Maintenance marker is already present, likely from an "
+                    "unfinished maintenance run. Keeping the old one from "
+                    "{previous_maintenance_entered_at} and continuing."
+                ),
+                previous_maintenance_entered_at=previous_maintenance_entered_at,
+            )
+        else:
+            self.maintenance_marker_path.write_text(utcnow().isoformat())
+        postpone_seen = False
+        tempfail_seen = False
+        for name, command in self.config["maintenance-enter"].items():
+            if not command.strip():
+                continue
+            self.log.info(
+                "enter-maintenance-subsystem", subsystem=name, command=command
+            )
+            try:
+                # XXX: capture output
+                subprocess.run(command, shell=True, check=True)
+            except subprocess.CalledProcessError as e:
+                if e.returncode == EXIT_POSTPONE:
+                    self.log.info(
+                        "enter-maintenance-postpone",
+                        command=command,
+                        _replace_msg=(
+                            "Command `{command}` requested to postpone all requests."
+                        ),
+                    )
+                    postpone_seen = True
+                elif e.returncode == EXIT_TEMPFAIL:
+                    self.log.info(
+                        "enter-maintenance-tempfail",
+                        command=command,
+                        _replace_msg=(
+                            "Command `{command}` failed temporarily. "
+                            "Requests should be tried again next time."
+                        ),
+                    )
+                    tempfail_seen = True
+                else:
+                    raise
+
+        if postpone_seen:
+            raise PostponeMaintenance()
+
+        if tempfail_seen:
+            raise TempfailMaintenance()
+
+    @require_directory
+    def _leave_maintenance(self):
+        """
+        Tells the directory to mark the machine 'in service'.
+        It's ok to call this method even when the machine is already in service.
+        """
+        self.log.debug("leave-maintenance")
+        for name, command in self.config["maintenance-leave"].items():
+            if not command.strip():
+                continue
+            self.log.info(
+                "leave-maintenance-subsystem", subsystem=name, command=command
+            )
+            subprocess.run(command, shell=True, check=True)
+        self.log.debug("mark-node-in-service")
+        self.directory.mark_node_service_status(socket.gethostname(), True)
+        if self.maintenance_marker_path.exists():
+            maintenance_entered_at = self.maintenance_marker_path.read_text()
+            self.log.debug(
+                "remove-maintenance-marker",
+                maintenance_entered_at=maintenance_entered_at,
+            )
+            self.maintenance_marker_path.unlink()
+        else:
+            # Expected when `enter_maintenance` has not been called before.
+            self.log.debug(
+                "no-maintenance-marker",
+                maintenance_marker_path=self.maintenance_marker_path,
+            )
+
+    def _runnable(self, run_all_now=False, force_run=False):
         """Generate due Requests in running order."""
         if run_all_now and force_run:
             self.log.warn(
@@ -458,127 +678,6 @@ class ReqManager:
         )
 
         return runnable_requests
-
-    @require_lock
-    @require_directory
-    def enter_maintenance(self):
-        """Enters maintenance mode which tells the directory to mark the machine
-        as 'not in service'. The main reason is to avoid false alarms during expected
-        service interruptions as the machine reboots or services are restarted.
-        """
-        self.log.debug("enter-maintenance")
-        self.log.debug("mark-node-out-of-service")
-        self.directory.mark_node_service_status(socket.gethostname(), False)
-
-        if self.maintenance_marker_path.exists():
-            previous_maintenance_entered_at = (
-                self.maintenance_marker_path.read_text()
-            )
-            self.log.info(
-                "enter-maintenance-marker-present",
-                _replace_msg=(
-                    "Maintenance marker is already present, likely from an "
-                    "unfinished maintenance run. Keeping the old one from "
-                    "{previous_maintenance_entered_at} and continuing."
-                ),
-                previous_maintenance_entered_at=previous_maintenance_entered_at,
-            )
-        else:
-            self.maintenance_marker_path.write_text(utcnow().isoformat())
-        postpone_seen = False
-        tempfail_seen = False
-        for name, command in self.config["maintenance-enter"].items():
-            if not command.strip():
-                continue
-            self.log.info(
-                "enter-maintenance-subsystem", subsystem=name, command=command
-            )
-            try:
-                subprocess.run(command, shell=True, check=True)
-            except subprocess.CalledProcessError as e:
-                if e.returncode == EXIT_POSTPONE:
-                    self.log.info(
-                        "enter-maintenance-postpone",
-                        command=command,
-                        _replace_msg=(
-                            "Command `{command}` requested to postpone all requests."
-                        ),
-                    )
-                    postpone_seen = True
-                elif e.returncode == EXIT_TEMPFAIL:
-                    self.log.info(
-                        "enter-maintenance-tempfail",
-                        command=command,
-                        _replace_msg=(
-                            "Command `{command}` failed temporarily."
-                            "Requests should be tried again next time."
-                        ),
-                    )
-                    tempfail_seen = True
-                else:
-                    raise
-
-        if postpone_seen:
-            raise PostponeMaintenance()
-
-        if tempfail_seen:
-            raise TempfailMaintenance()
-
-    @require_lock
-    @require_directory
-    def leave_maintenance(self):
-        """
-        Tells the directory to mark the machine 'in service'.
-        It's ok to call this method even when the machine is already in service.
-        """
-        self.log.debug("leave-maintenance")
-        for name, command in self.config["maintenance-leave"].items():
-            if not command.strip():
-                continue
-            self.log.info(
-                "leave-maintenance-subsystem", subsystem=name, command=command
-            )
-            subprocess.run(command, shell=True, check=True)
-        self.log.debug("mark-node-in-service")
-        self.directory.mark_node_service_status(socket.gethostname(), True)
-        if self.maintenance_marker_path.exists():
-            maintenance_entered_at = self.maintenance_marker_path.read_text()
-            self.log.debug(
-                "remove-maintenance-marker",
-                maintenance_entered_at=maintenance_entered_at,
-            )
-            self.maintenance_marker_path.unlink()
-        else:
-            # Expected when `enter_maintenance` has not been called before.
-            self.log.debug(
-                "no-maintenance-marker",
-                maintenance_marker_path=self.maintenance_marker_path,
-            )
-
-    def update_states(self):
-        """
-        Updates all request states.
-
-        We want to run continuously scheduled requests in one go to reduce overall
-        maintenance time and reboots.
-
-        A Request is considered "due" if its start time is in the past or is
-        scheduled directly after a previous due request.
-
-        In other words: if there's a due request, following requests can be run even if
-        their start time is not reached, yet.
-        """
-        due_dt = utcnow()
-        requests = self.requests.values()
-        self.log.debug("update-states-start", request_count=len(requests))
-        for request in sorted(requests):
-            request.update_state(due_dt)
-            request.save()
-            if request.state == State.due and request.next_due:
-                delta = timedelta(
-                    seconds=self._estimated_request_duration(request) + 60
-                )
-                due_dt = max(utcnow(), request.next_due + delta)
 
     def _handle_enter_postpone(
         self, run_all_now: bool, force_run: bool
@@ -641,7 +740,7 @@ class ReqManager:
                 "run-all-now-tempfail",
                 _replace_msg=(
                     "Run all mode requested but a maintenance enter "
-                    "command had a temporary failure."
+                    "command had a (temporary) failure. "
                     "Doing nothing unless --force-run is given, too."
                 ),
             )
@@ -697,6 +796,35 @@ class ReqManager:
         with open(self.last_run_stats_path, "w") as wf:
             json.dump(stats, wf, indent=4)
 
+    def _reboot_and_exit(self, requested_reboots):
+        if RebootType.COLD in requested_reboots:
+            self.log.info(
+                "maintenance-poweroff",
+                _replace_msg=(
+                    "Doing a cold boot in five seconds to finish maintenance "
+                    "activities."
+                ),
+            )
+            time.sleep(5)
+            subprocess.run(
+                "poweroff", check=True, capture_output=True, text=True
+            )
+            sys.exit(0)
+
+        elif RebootType.WARM in requested_reboots:
+            self.log.info(
+                "maintenance-reboot",
+                _replace_msg=(
+                    "Rebooting in five seconds to finish maintenance "
+                    "activities."
+                ),
+            )
+            time.sleep(5)
+            subprocess.run(
+                "reboot", check=True, capture_output=True, text=True
+            )
+            sys.exit(0)
+
     @require_directory
     @require_lock
     def execute(self, run_all_now: bool = False, force_run: bool = False):
@@ -721,15 +849,15 @@ class ReqManager:
         'success' again when they are still in the queue after a recent system reboot.
         """
 
-        runnable_requests = self.runnable(run_all_now, force_run)
+        runnable_requests = self._runnable(run_all_now, force_run)
         if not runnable_requests:
-            self.leave_maintenance()
+            self._leave_maintenance()
             self._write_stats_for_execute()
             return
 
         prepare_dt = utcnow()
         try:
-            self.enter_maintenance()
+            self._enter_maintenance()
         except PostponeMaintenance:
             res = self._handle_enter_postpone(run_all_now, force_run)
             if res.postpone:
@@ -737,7 +865,7 @@ class ReqManager:
                     self.log.debug("execute-requests-postpone", request=req.id)
                     req.state = State.postpone
             if res.exit:
-                self.leave_maintenance()
+                self._leave_maintenance()
                 self._write_stats_for_execute()
                 return
 
@@ -761,11 +889,11 @@ class ReqManager:
         )
 
         # Execute any reboots while still in maintenance mode.
-        self.reboot_and_exit(requested_reboots)
+        self._reboot_and_exit(requested_reboots)
 
         # When we are still here, no reboot happened. We can leave maintenance now.
         self.log.debug("no-reboot-requested")
-        self.leave_maintenance()
+        self._leave_maintenance()
 
     @require_lock
     @require_directory
@@ -827,41 +955,93 @@ class ReqManager:
             req.dir = dest
             req.save()
 
-    @require_lock
-    def list(self):
-        rich.print(self)
-
-    @require_lock
-    def show(self, request_id=None, dump_yaml=False):
-        if not self.requests:
-            rich.print("[bold]No maintenance requests at the moment.[/bold]")
-            return
-
-        if request_id is None:
-            requests = list(self.requests.values())
-            if len(self.requests) == 1:
-                rich.print("[bold]There's only one at the moment:[/bold]\n")
-        else:
-            requests = sorted(
-                [
-                    req
-                    for key, req in self.requests.items()
-                    if key.startswith(request_id)
-                ],
+    def _active_requests(self, req_id_prefix: str = "") -> list[Request]:
+        """
+        Loads active requests. Optionally, a request ID prefix can be passed
+        for filtering.
+        """
+        name_matches = self.requestsdir.glob(req_id_prefix + "*")
+        if name_matches:
+            return sorted(
+                [Request.load(name, self.log) for name in name_matches],
                 key=lambda r: r.added_at or datetime.fromtimestamp(0),
             )
+        return []
+
+    def _archived_requests(self, req_id_prefix: str = "") -> list[Request]:
+        """
+        Loads archived requests by an request ID prefix. Optionally, a request
+        ID prefix can be passed for filtering.
+        """
+        name_matches = self.archivedir.glob(req_id_prefix + "*")
+        if name_matches:
+            return sorted(
+                [Request.load(name, self.log) for name in name_matches],
+                key=lambda r: r.added_at or datetime.fromtimestamp(0),
+            )
+        return []
+
+    def list_requests(self):
+        rich.print(self)
+
+    def show_request(self, request_id=None, dump_yaml=False):
+        request_id_prefix = "" if request_id is None else request_id
+        active_requests = self._active_requests(request_id_prefix)
+
+        print()
+
+        if request_id is None:
+            # We only check active requests when no request ID was given.
+            if not active_requests:
+                rich.print(
+                    "[bold]No active maintenance requests at the moment.[/bold]"
+                )
+                return
+
+            if len(active_requests) == 1:
+                rich.print(
+                    "[bold]There's only one active request at the moment:[/bold]\n"
+                )
+            else:
+                rich.print(
+                    "[bold blue]Notice:[/bold blue] [bold]There are multiple "
+                    "active requests, showing the newest one:[/bold]\n"
+                )
+            requests = active_requests
+        else:
+            # Request ID (prefix) was given. First, check active requests for
+            # matches and use them, if present.
+            if active_requests:
+                if len(active_requests) > 1:
+                    rich.print(
+                        "[bold blue]Notice:[/bold blue] [bold]Found multiple "
+                        f"active requests for prefix '{request_id}', showing "
+                        "the newest:[/bold]\n"
+                    )
+                requests = active_requests
+            else:
+                # Nothing found in active requests, check archived requests.
+                archived_requests = self._archived_requests(request_id_prefix)
+                if len(archived_requests) == 1:
+                    rich.print(
+                        "[bold blue]Notice:[/bold blue] [bold]Found one "
+                        f"archived request for prefix '{request_id}'\n"
+                    )
+                elif archived_requests:
+                    rich.print(
+                        "[bold blue]Notice:[/bold blue] [bold]Found multiple "
+                        f"archived requests for prefix '{request_id}', showing "
+                        "the newest:[/bold]\n"
+                    )
+
+                requests = archived_requests
+
             if not requests:
                 rich.print(
                     f"[bold red]Error:[/bold red] [bold]Cannot locate any "
                     f"request with prefix '{request_id}'![/bold]"
                 )
                 return
-
-        if len(requests) > 1:
-            rich.print(
-                "[bold blue]Notice:[/bold blue] [bold]Multiple requests "
-                "found, showing the newest:[/bold]\n"
-            )
 
         req = requests[-1]
 
@@ -872,57 +1052,17 @@ class ReqManager:
         else:
             rich.print(req)
 
-    @require_lock
-    def delete(self, reqid):
-        self.log.debug("delete-start", request=reqid)
-        req = None
-        for i in self.requests:
-            if i.startswith(reqid):
-                req = self.requests[i]
-                break
-        if not req:
-            self.log.warning(
-                "delete-skip-missing",
-                _replace_msg="Cannot locate request {request}, skipping.",
-                request=reqid,
-            )
-            return
-        req.state = State.deleted
-        req.save()
-        self.log.info(
-            "delete-finished",
-            _replace_msg="Marked request {request} as deleted.",
-            request=req.id,
-        )
-
-    def reboot_and_exit(self, requested_reboots):
-        if RebootType.COLD in requested_reboots:
-            self.log.info(
-                "maintenance-poweroff",
-                _replace_msg=(
-                    "Doing a cold boot in five seconds to finish maintenance "
-                    "activities."
-                ),
-            )
-            time.sleep(5)
-            subprocess.run(
-                "poweroff", check=True, capture_output=True, text=True
-            )
-            sys.exit(0)
-
-        elif RebootType.WARM in requested_reboots:
-            self.log.info(
-                "maintenance-reboot",
-                _replace_msg=(
-                    "Rebooting in five seconds to finish maintenance "
-                    "activities."
-                ),
-            )
-            time.sleep(5)
-            subprocess.run(
-                "reboot", check=True, capture_output=True, text=True
-            )
-            sys.exit(0)
+        if len(requests) > 1:
+            other = ", ".join(req.id for req in requests[:-1])
+            if request_id:
+                rich.print(
+                    "\n[bold blue]Notice:[/bold blue] Other matches with prefix "
+                    f"'{request_id}': {other}"
+                )
+            else:
+                rich.print(
+                    f"\n[bold blue]Notice:[/bold blue] Other requests: {other}"
+                )
 
     def check(self) -> CheckResult:
         errors = []
@@ -1026,8 +1166,10 @@ class ReqManager:
         return CheckResult(errors, warnings, ok_info)
 
     def get_metrics(self) -> dict:
-        requests = sorted(self.requests.values())
-        runnable = self.runnable()
+        requests = self._active_requests()
+        runnable = [
+            r for r in requests if r.state in (State.due, State.running)
+        ]
 
         metrics = {
             "name": "fc_maintenance",
