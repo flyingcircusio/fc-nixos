@@ -173,13 +173,17 @@ def test_list_other_requests(reqmanager):
 
 @unittest.mock.patch("fc.util.directory.connect")
 def test_schedule_requests(connect, reqmanager):
-    req = reqmanager.add(Request(Activity(), 320, "comment"))
+    req = reqmanager.add(Request(Activity(), 320, "schedule"))
+    req_success = reqmanager.add(
+        Request(Activity(), 320, "done, do not schedule this")
+    )
+    req_success.state = State.success
     rpccall = connect().schedule_maintenance
     rpccall.return_value = {req.id: {"time": "2016-04-20T15:12:40.9+00:00"}}
     reqmanager.schedule()
-    #
+    # The estimate is expected to be 900 (15 min) which is the minimum.
     rpccall.assert_called_once_with(
-        {req.id: {"estimate": 900, "comment": "comment"}}
+        {req.id: {"estimate": 900, "comment": "schedule"}}
     )
     assert req.next_due == datetime.datetime(
         2016, 4, 20, 15, 12, 40, 900000, tzinfo=pytz.UTC
