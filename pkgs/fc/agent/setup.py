@@ -52,6 +52,7 @@ setup(
         "requests",
         "rich",
         "shortuuid",
+        "stamina",
         "structlog",
         "typer",
     ],

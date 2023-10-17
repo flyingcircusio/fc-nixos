@@ -1,10 +1,12 @@
 """Unified client access to fc.directory."""
-
 import contextlib
+import functools
 import json
 import re
 import urllib.parse
 import xmlrpc.client
+
+import stamina
 
 
 def load_default_enc_json():
@@ -16,6 +18,51 @@ class ScreenedProtocolError(xmlrpc.client.ProtocolError):
     def __init__(self, url, *args, **kw):
         url = re.sub(r":(\S+)@", ":PASSWORD@", url)
         super(ScreenedProtocolError, self).__init__(url, *args, **kw)
+
+
+RETRY_EXCEPTIONS = (
+    ScreenedProtocolError,
+    xmlrpc.client.Fault,
+    # OSError also covers exceptions from the socket module, ssl.SSLError
+    # and ConnectionError.
+    OSError,
+)
+
+
+class DirectoryAPI(xmlrpc.client.ServerProxy):
+    def __init__(self, url, retry=False):
+        """
+        url: directory API URL to connect to
+        retry: retry failed API requests automatically using exponential backoff.
+        """
+        self.retry = retry
+        super().__init__(url, allow_none=True, use_datetime=True)
+
+    def __getattr__(self, name):
+        """Magic method dispatcher from ServerProxy with added retry logic."""
+        method = super().__getattr__(name)
+
+        if not self.retry:
+            return method
+
+        # This function wrapper is needed to make the Stamina decorator work.
+        def wrapper(*args):
+            return method(*args)
+
+        # Stamina uses __qualname__ for retry logging, so let's set it to a
+        # recognizable value.
+        wrapper.__qualname__ = "DirectoryAPI." + name
+
+        retry = stamina.retry(
+            on=RETRY_EXCEPTIONS, wait_exp_base=10, attempts=2
+        )
+        return retry(wrapper)
+
+    def __repr__(self):
+        """ServerProxy.__repr__ leaks the directory password, override it."""
+        host = self._ServerProxy__host.split("@")[1]
+        handler = self._ServerProxy__handler
+        return f"Directory API ({host}{handler})"
 
 
 def connect(enc=None, ring=1):
@@ -52,7 +99,7 @@ def connect(enc=None, ring=1):
     if ring == 1:
         url += "/rg-" + enc["parameters"]["resource_group"]
 
-    return xmlrpc.client.Server(url, allow_none=True, use_datetime=True)
+    return DirectoryAPI(url, retry=True)
 
 
 @contextlib.contextmanager
