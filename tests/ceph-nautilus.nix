@@ -233,7 +233,9 @@ in
 
 
     with subtest("Initialize first OSD (bluestore)"):
+      host1.execute('systemctl status fc-ceph-osd@0.service > /dev/kmsg 2>&1')
       host1.execute('fc-ceph osd create-bluestore /dev/vdc > /dev/kmsg 2>&1')
+      host1.execute('systemctl status fc-ceph-osd@0.service > /dev/kmsg 2>&1')
 
     with subtest("Initialize second MON and OSD (filestore)"):
       host2.succeed('fc-ceph osd prepare-journal /dev/vdb')

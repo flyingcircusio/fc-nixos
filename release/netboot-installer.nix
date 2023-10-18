@@ -83,14 +83,20 @@ sgdisk $root_disk -a 2048 \
 udevadm settle
 
 mkfs -t ext4 -q -E stride=16 -m 1 -F -L boot ''${root_disk}2
-mkswap -L swap ''${root_disk}3
+# We disabled swap in hardware, because it's basically detrimental to
+# continuous operation.
+# We keep the partition (see above) to be able to respond if we want it again,
+# but creating a swap signature here will cause systemd to automatically
+# activate it. I'm keeping this commented out here for future assistance of
+# whoever may need to tackle this again.
+# mkswap -L swap ''${root_disk}3
 
 pvcreate -ffy -Z y ''${root_disk}4
 vgcreate -fy --dataalignment 64k vgsys ''${root_disk}4
 vgchange -ay
 
 udevadm settle
-lvcreate -ay -L 40G -n root vgsys <<<y
+lvcreate -ay -L 80G -n root vgsys <<<y
 lvcreate -L 16G -n tmp vgsys <<<y
 
 udevadm settle
@@ -125,7 +131,7 @@ cat > /mnt/etc/nixos/configuration.nix << __EOF__
 
   # Options for first boot. This file will be replaced after the first
   # activation/rebuild.
-  flyingcircus.agent.with-maintenance = false;
+  flyingcircus.agent.updateInMaintenance = false;
   systemd.timers.fc-agent.timerConfig.OnBootSec = "1s";
 
 }

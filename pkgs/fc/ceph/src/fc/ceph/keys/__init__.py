@@ -1,10 +1,8 @@
 import fc.ceph
 
-from . import jewel, luminous
+from . import nautilus
 
 
 class KeyManager(fc.ceph.VersionedSubsystem):
 
-    jewel = jewel.KeyManager
-    luminous = luminous.KeyManager
-    nautilus = luminous
+    nautilus = nautilus.KeyManager

@@ -87,6 +87,13 @@ let
     { source = initialNixChannels;
       target = "/root/.nix-channels";
     }
+    {
+      source = (pkgs.writeText "fc-agent-initial-run" ''
+        VM ignores roles and just builds a minimal system while this marker file
+        is present. This will be deleted during first agent run.
+      '');
+      target = "/etc/nixos/fc_agent_initial_run";
+    }
     { source = ../nixos/etc_nixos_local.nix;
       target = "/etc/nixos/local.nix";
     }
@@ -364,7 +371,18 @@ let
       ];
     }).config.system.build.fcImage;
 
-    };
+    # VM image for devhost VMs
+    dev-vm = lib.hydraJob (import "${nixpkgs_}/nixos/lib/eval-config.nix" {
+      inherit system;
+      modules = [
+        (import ./dev-vm-image.nix imgArgs)
+        (import version_nix {})
+        ../nixos
+        ../nixos/roles
+      ];
+    }).config.system.build.devVMImage;
+
+  };
 
 in
 

@@ -18,7 +18,7 @@ in
 {
   config = {
 
-    services.udev.extraRules = ''
+    services.udev.initrdRules = ''
         # static/bootstrap fallback rules for VMs
         SUBSYSTEM=="net", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
         SUBSYSTEM=="net", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
@@ -34,10 +34,6 @@ in
     services.telegraf.enable = mkForce false;
 
     flyingcircus.infrastructureModule = "flyingcircus";
-
-    # Always update the channel on first run of the agent
-    # without waiting for scheduled maintenance.
-    flyingcircus.agent.with-maintenance = false;
 
     systemd.timers.fc-agent.timerConfig.OnBootSec = "1s";
 

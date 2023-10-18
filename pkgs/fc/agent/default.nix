@@ -1,52 +1,41 @@
 { lib
 , stdenv
+, fetchPypi
 , fetchFromGitHub
 , dmidecode
 , gitMinimal
 , gptfdisk
 , libyaml
-, multipath_tools
+, multipath-tools
 , nix
-, python3Packages
-, utillinux
+, buildPythonPackage
+, pythonPackages
+, python
+, util-linux
 , xfsprogs
+, pytest
+, structlog
 }:
 
 let
-  py = python3Packages;
-
-  # PyYAML >= 5 has not appeared in upstream yet.
-  pyyaml = py.buildPythonPackage rec {
-    pname = "PyYAML";
-    version = "5.1";
-    src = py.fetchPypi {
-      inherit pname version;
-      sha256 = "15czj11s2bcgchn2jx81k0jmswf2hjxry5cq820h7hgpxiscfss3";
-    };
-    propagatedBuildInputs = [ libyaml ];
-    meta = with lib; {
-      description = "The next generation YAML parser and emitter for Python";
-      homepage = https://github.com/yaml/pyyaml;
-      license = licenses.mit;
-    };
-  };
+  py = pythonPackages;
 
   pytest-structlog = py.buildPythonPackage rec {
     pname = "pytest-structlog";
-    version = "0.4";
+    version = "0.6-cb82f00";
 
     src = fetchFromGitHub {
       owner = "wimglenn";
       repo = "pytest-structlog";
-      rev = "b71518015109b292bc6584b8637264939b44af62";
-      sha256 = "00g2ivgj4y398d0y60lk710zz62pj80r9ya3b4iqijkp4j8nh4gp";
+      rev = "cb82f00cfc47696a36797a6eeb9f65ad6e727f19";
+      hash = "sha256-ktLsdEtxfiWhCTTaKowBoAAijOF9640m5XV/rdahpl0=";
     };
 
-    buildInputs = [ py.pytest py.structlog ];
+    buildInputs = [ pytest structlog ];
   };
 
 in
-py.buildPythonPackage rec {
+buildPythonPackage rec {
   name = "fc-agent-${version}";
   version = "1.0";
   namePrefix = "";
@@ -54,32 +43,40 @@ py.buildPythonPackage rec {
   checkInputs = [
     py.freezegun
     py.pytest
-    py.pytestcov
-    py.pytestrunner
+    py.pytest-cov
+    py.pytest-runner
     py.responses
     py.pytest-mock
     py.pytest-subprocess
     pytest-structlog
+  ];
+  nativeCheckInputs = [
+    py.pytestCheckHook
   ];
   propagatedBuildInputs = [
     gitMinimal
     nix
     py.click
     py.colorama
-    py.dateutil
+    py.python-dateutil
     py.iso8601
     py.pytz
     py.requests
+    py.rich
     py.shortuuid
     py.structlog
-    pyyaml
-    utillinux
+    py.typer
+    py.pyyaml
+    util-linux
   ] ++ lib.optionals stdenv.isLinux [
     dmidecode
     gptfdisk
-    multipath_tools
+    multipath-tools
     py.systemd
     xfsprogs
   ];
   dontStrip = true;
+  doCheck = true;
+  passthru.pythonDevEnv = python.withPackages (_: checkInputs ++ propagatedBuildInputs);
+
 }

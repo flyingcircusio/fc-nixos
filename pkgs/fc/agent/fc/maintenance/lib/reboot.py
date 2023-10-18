@@ -4,19 +4,15 @@ This activity does nothing if the machine has been booted for another reason in
 the time between creation and execution.
 """
 
-import argparse
 import subprocess
 import time
 
-from fc.util.logging import init_logging
-
 from ..activity import Activity
-from ..reqmanager import DEFAULT_DIR, ReqManager
-from ..request import Request
 
 
 class RebootActivity(Activity):
     def __init__(self, action="reboot"):
+        super().__init__()
         assert action in ["reboot", "poweroff"]
         self.action = action
         self.coldboot = action == "poweroff"
@@ -95,44 +91,8 @@ class RebootActivity(Activity):
             "booted at {} UTC".format(time.asctime(time.gmtime(boottime)))
         )
 
-
-def main():
-    a = argparse.ArgumentParser(description=__doc__)
-    a.add_argument(
-        "-c",
-        "--comment",
-        metavar="TEXT",
-        default=None,
-        help="announce upcoming reboot with this message",
-    )
-    a.add_argument(
-        "-p",
-        "--poweroff",
-        default=False,
-        action="store_true",
-        help="power off instead of reboot",
-    )
-    a.add_argument(
-        "-d",
-        "--spooldir",
-        metavar="DIR",
-        default=DEFAULT_DIR,
-        help="request spool dir (default: %(default)s)",
-    )
-    a.add_argument("-v", "--verbose", action="store_true", default=False)
-    args = a.parse_args()
-    init_logging(args.verbose)
-
-    action = "poweroff" if args.poweroff else "reboot"
-    defaultcomment = "Scheduled {}".format(
-        "cold boot" if args.poweroff else "reboot"
-    )
-    with ReqManager(spooldir=args.spooldir) as rm:
-        rm.scan()
-        rm.add(
-            Request(
-                RebootActivity(action),
-                900 if args.poweroff else 600,
-                args.comment if args.comment else defaultcomment,
-            )
-        )
+    def __rich__(self):
+        if self.coldboot:
+            return "Cold reboot"
+        else:
+            return "Warm reboot"

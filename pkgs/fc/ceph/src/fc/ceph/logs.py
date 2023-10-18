@@ -45,7 +45,7 @@ class LogTasks(object):
         hist = [(i, o) for o, i in incidents.items()]
         max_incidents = max([x[0] for x in hist], default=0)
         n = 1
-        for (i, osd) in sorted(hist, reverse=True):
+        for i, osd in sorted(hist, reverse=True):
             hist_bar = "*" * int(35 * i / max_incidents)
             print(f"{osd:>15} - {i:>7} - {hist_bar}")
             if n >= first_n:

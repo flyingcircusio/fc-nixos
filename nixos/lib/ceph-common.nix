@@ -5,42 +5,20 @@ with lib;
 let
   # supported ceph release codenames, from newest to oldest
   # TODO: Once all ceph packages have a similar structure, releasePkgs can be
-  # generated from this ist
-  releaseOrder = [ "nautilus" "luminous" "jewel"];
+  # generated from this list (let's wait for pacific to see if the structure holds)
+  releaseOrder = [ "nautilus" ];
   cephReleaseType = types.enum (builtins.attrNames releasePkgs);
   defaultRelease = "nautilus";
 
   # ====== mapping of packages per ceph release =======
 
   releasePkgs = {
-    "jewel" = rec {
-      ceph = pkgs.ceph-jewel;
-      # temporary mapping until all actively used ceph releases are packaged in form of
-      # the new schema with subpackages
-      ceph-client = pkgs.ceph-jewel;
-      libceph = pkgs.ceph-jewel;
-      fcQemu = pkgs.fc.qemu-py2.override {
-        ceph = libceph;
-        qemu_ceph = qemu_ceph_versioned "jewel";
-      };
-      utilPhysical = pkgs.fc.util-physical.jewel.override {ceph = ceph-client;};
-    };
-    "luminous" = rec {
-      ceph = pkgs.ceph-luminous;
-      ceph-client = pkgs.ceph-luminous;
-      libceph = pkgs.ceph-luminous;
-      fcQemu = pkgs.fc.qemu-py2.override {
-        ceph = libceph;
-        qemu_ceph = qemu_ceph_versioned "luminous";
-      };
-      utilPhysical = pkgs.fc.util-physical.luminous.override {ceph = ceph-client;};
-    };
     "nautilus" = rec {
       ceph = pkgs.ceph-nautilus.ceph;
       ceph-client = pkgs.ceph-nautilus.ceph-client;
       # both the C lib and the python modules
       libceph = pkgs.ceph-nautilus.libceph;
-      fcQemu = pkgs.fc.qemu-py3.override {
+      fcQemu = pkgs.fc.qemu.override {
         inherit libceph ceph;
         qemu_ceph = qemu_ceph_versioned "nautilus";
       };

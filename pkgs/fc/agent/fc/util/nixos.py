@@ -1,12 +1,12 @@
 """Helpers for interaction with the NixOS system"""
 
-import json
 import os
 import os.path as p
 import re
 import subprocess
 from pathlib import Path
 from subprocess import PIPE, STDOUT
+from typing import Optional
 
 import requests
 import structlog
@@ -20,12 +20,13 @@ _log = structlog.get_logger()
 requests_session = requests.session()
 
 PHRASES = re.compile(r"would (\w+) the following units: (.*)$")
-FC_ENV_FILE = "/etc/fcio_environment"
+FC_ENV_FILE = "/etc/fcio_environment_name"
+RE_FC_CHANNEL = re.compile(
+    r"https://hydra.flyingcircus.io/build/(\d+)/download/1/nixexprs.tar.xz"
+)
 
 
-class Channel:
-    def __init__(self, url) -> None:
-        self.url = url
+UnitChanges = dict[str, list[str]]
 
 
 class ChannelException(Exception):
@@ -97,11 +98,9 @@ def current_fc_environment_name(log=_log):
 
 
 def channel_version(channel_url, log=_log):
-    log.debug("channel_version", channel=channel_url)
-    final_channel_url = resolve_url_redirects(channel_url)
     try:
         nixpkgs_path = subprocess.run(
-            ["nix-instantiate", "-I", final_channel_url, "--find-file", "."],
+            ["nix-instantiate", "-I", channel_url, "--find-file", "."],
             check=True,
             capture_output=True,
             text=True,
@@ -118,6 +117,21 @@ def channel_version(channel_url, log=_log):
     suffix = Path(nixpkgs_path, ".version-suffix").read_text()
 
     return version + suffix
+
+
+def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
+    channel_match = RE_FC_CHANNEL.match(channel_url)
+    if channel_match:
+        return channel_match.group(1)
+    else:
+        log.warn(
+            "no-fc-channel-url",
+            _replace_msg=(
+                "Cannot get build number. This does not look like a resolved "
+                f"FC channel URL: {channel_url}"
+            ),
+            channel_url=channel_url,
+        )
 
 
 def running_system_version(log=_log):
@@ -143,7 +157,7 @@ def current_nixos_channel_version():
     return "".join(open(f).read() for f in label_comp)
 
 
-def current_nixos_channel_url(log=_log):
+def current_nixos_channel_url(log=_log) -> Optional[str]:
     if not p.exists("/root/.nix-channels"):
         log.warn(
             "nix-channel-file-missing",
@@ -184,7 +198,12 @@ def resolve_url_redirects(url):
 
 
 def detect_systemd_unit_changes(dry_activate_lines):
-    changes = {}
+    changes: UnitChanges = {
+        "start": [],
+        "stop": [],
+        "restart": [],
+        "reload": [],
+    }
     for line in dry_activate_lines:
         m = PHRASES.match(line)
         if m is not None:
@@ -192,6 +211,33 @@ def detect_systemd_unit_changes(dry_activate_lines):
             units = [unit.strip() for unit in m.group(2).split(",")]
             changes[action] = units
     return changes
+
+
+def format_unit_change_lines(unit_changes):
+    # Clean up raw unit changes: usually, units are stopped and
+    # started shortly after for updates. They get their own category
+    # "Start/Stop" to separate them from permanent stops and starts.
+    pretty_unit_changes = {}
+    start_units = set(unit_changes["start"])
+    stop_units = set(unit_changes["stop"])
+    reload_units = set(unit_changes["reload"])
+    start_stop_units = start_units.intersection(stop_units)
+    pretty_unit_changes["Start/Stop"] = start_stop_units
+    pretty_unit_changes["Restart"] = set(unit_changes["restart"])
+    pretty_unit_changes["Start"] = start_units - start_stop_units
+    pretty_unit_changes["Stop"] = stop_units - start_stop_units
+    pretty_unit_changes["Reload"] = reload_units - {"dbus.service"}
+
+    unit_change_lines = []
+
+    for cat, units in pretty_unit_changes.items():
+        if units:
+            unit_str = ", ".join(
+                u.replace(".service", "") for u in sorted(units)
+            )
+            unit_change_lines.append(f"{cat}: {unit_str}")
+
+    return unit_change_lines
 
 
 def update_system_channel(channel_url, log=_log):
@@ -249,29 +295,6 @@ def update_system_channel(channel_url, log=_log):
         raise ChannelUpdateFailed(stdout=stdout, stderr=stderr)
 
 
-def switch_to_channel(channel_url, lazy=False, log=_log):
-    final_channel_url = resolve_url_redirects(channel_url)
-    """
-    Build system with this channel and switch to it.
-    Replicates the behaviour of nixos-rebuild switch and adds an optional
-    lazy mode which only switches to the built system if it actually changed.
-    """
-    log.info(
-        "channel-switch",
-        channel=channel_url,
-        resolved_channel=final_channel_url,
-    )
-    # Put a temporary result link in /run to avoid a race condition
-    # with the garbage collector which may remove the system we just built.
-    # If register fails, we still hold a GC root until the next reboot.
-    out_link = "/run/fc-agent-built-system"
-    built_system = build_system(final_channel_url, out_link)
-    register_system_profile(built_system)
-    # New system is registered, delete the temporary result link.
-    os.unlink(out_link)
-    return switch_to_system(built_system, lazy)
-
-
 def find_nix_build_error(stderr, log=_log):
     """Returns a one-line error message from Nix build output or
     a generic message if nothing is found.
@@ -306,7 +329,7 @@ def find_nix_build_error(stderr, log=_log):
     return "Building the system failed!"
 
 
-def build_system(channel_url, build_options=None, out_link=None, log=_log):
+def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
     """
     Build system with this channel. Works like nixos-rebuild build.
     Does not modify the running system.
@@ -315,13 +338,13 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
     cmd = [
         "nix-build",
         "--no-build-output",
-        "--show-trace",
-        "-I",
-        channel_url,
         "<nixpkgs/nixos>",
         "-A",
         "system",
     ]
+
+    if channel_url:
+        cmd.extend(["-I", channel_url])
 
     if out_link:
         cmd.extend(["--out-link", str(out_link)])
@@ -362,7 +385,6 @@ def build_system(channel_url, build_options=None, out_link=None, log=_log):
             build_output=stderr,
         )
     else:
-
         build_error = find_nix_build_error(stderr, log)
         msg = build_error.replace("}", "}}").replace("{", "{{")
         stdout = proc.stdout.read().strip() or None
@@ -434,7 +456,7 @@ def switch_to_system(system_path, lazy, log=_log):
     return True
 
 
-def dry_activate_system(system_path, log=_log):
+def dry_activate_system(system_path, log=_log) -> UnitChanges:
     cmd = [f"{system_path}/bin/switch-to-configuration", "dry-activate"]
     log.info(
         "system-dry-activate-start",
@@ -458,10 +480,10 @@ def dry_activate_system(system_path, log=_log):
     unit_changes = detect_systemd_unit_changes(stdout_lines)
     log.debug(
         "system-dry-activate-unit-changes",
-        start=unit_changes.get("start"),
-        stop=unit_changes.get("stop"),
-        restart=unit_changes.get("restart"),
-        reload=unit_changes.get("reload"),
+        start=unit_changes["start"],
+        stop=unit_changes["stop"],
+        restart=unit_changes["restart"],
+        reload=unit_changes["reload"],
     )
     return unit_changes
 

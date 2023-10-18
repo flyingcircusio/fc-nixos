@@ -20,6 +20,10 @@ in {
   #
   fc = (import ./default.nix {
     pkgs = self;
+    # Only used by the agent for now but we should probably use this
+    # for all our Python packages and update Python in sync then.
+    # We use 23.05 here after back-porting agent code from 23.05.
+    pythonPackages = nixpkgs-23_05.python310Packages;
   });
 
   #
@@ -40,18 +44,6 @@ in {
 
   # default ceph packages
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
-  ceph-jewel = (super.callPackage ./ceph/jewel {
-      pythonPackages = super.python2Packages;
-      boost = super.boost155;
-  });
-  ceph-luminous = (super.callPackage ./ceph/luminous {
-    boost = super.boost166.override {
-      enablePython = true;
-      python = self.python27-ceph-downgrades;
-    };
-    stdenv = self.gcc9Stdenv;
-    python2Packages = self.python27-ceph-downgrades.pkgs;
-  });
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = rec {
     inherit (super.callPackages ./ceph/nautilus {

@@ -40,7 +40,7 @@ let
     debugJournal = 4;
     debugThrottle = 4;
 
-    monCompactOnStart = true;     # Keep leveldb small
+    monCompactOnStart = true;     # Keep mondb small
     monHost = mons;
     monOsdDownOutInterval = 900;  # Allow 15 min for reboots to happen without backfilling.
     monOsdNearfullRatio = .9;
@@ -81,14 +81,6 @@ in
           Starting from Ceph Nautilus on, this is deprecated.
         '';
       };
-      # TODO: cleanup and simplify once Luminous is gone
-      extraConfig = lib.mkOption {
-        type = lib.types.lines;
-        default = "";
-        description = ''
-          Extra config in the [global] section.
-        '';
-      };
       extraSettings = lib.mkOption {
         # TODO: explicitly factoring out certain config options, like done in the
         # nixpkgs upstream ceph module, might allow for better type checking
@@ -104,6 +96,7 @@ in
       extraSettingsSections = lib.mkOption {
         # serves as interface for other Ceph roles and services, these can then add additional INI sections to ceph.conf
         # TODO: refactor type towards pkgs.formats.ini in conformance wit RFC 0042
+        # TODO: probably better make this a submodule type as well
         type = with lib.types; attrsOf (attrsOf (oneOf [ bool int str float ]));
         default = { };
         description = "Additional config sections of ceph.conf, for use by components and roles.";
@@ -145,16 +138,6 @@ in
           default =  fclib.ceph.releasePkgs.${cfg.client.cephRelease}.ceph-client;
         };
 
-        # legacy config for pre-Nautilus hosts (and migration to it), default value will
-        # already be served by structured settings instead
-        config = lib.mkOption {
-          type = lib.types.lines;
-          default = "";
-          description = ''
-            Contents of the Ceph config file for clients.
-            Starting from Ceph Nautilus on, this is deprecated.
-          '';
-        };
         extraSettings = lib.mkOption {
           type = with lib.types; attrsOf (oneOf [ str int float bool ]);
           default = {};   # defaults are provided in the config section with a lower priority
@@ -175,11 +158,6 @@ in
         assertion = (cfg.client.package.codename == cfg.client.cephRelease);
         message = "The ceph package set for this ceph client service must be of the same release series as defined in `cephRelease`";
       }
-      {
-        assertion = (cfg.extraSettings != {} || cfg.client.extraSettings != {}
-          -> cfg.config == "" && cfg.extraConfig == "" && cfg.client.config == "");
-          message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
-      }
     ];
 
     # config file to be read by fc-ceph
@@ -199,14 +177,7 @@ in
       "d /var/log/ceph 0755 root - - -"
     ];
 
-    services.udev.extraRules =
-      if fclib.ceph.releaseAtLeast "nautilus" cfg.client.cephRelease
-      then builtins.readFile "${cfg.client.package}/etc/udev/50-rbd.rules"
-      else
-      ''
-        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="disk", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}"
-        KERNEL=="rbd[0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="${cfg.client.package}/bin/ceph-rbdnamer %k", SYMLINK+="rbd/%c{1}/%c{2}-part%n"
-      '';
+    services.udev.extraRules = builtins.readFile "${cfg.client.package}/etc/udev/50-rbd.rules";
 
     flyingcircus.services.ceph.allMergedSettings = (
         lib.recursiveUpdate
@@ -218,25 +189,7 @@ in
             // { client = lib.recursiveUpdate (expandCamelCaseAttrs defaultClientSettings) (expandCamelCaseAttrs cfg.client.extraSettings); }
           )
       );
-    environment.etc."ceph/ceph.conf".text = let
-      mergedSettings = config.flyingcircus.services.ceph.allMergedSettings;
-      throwDeprecationWarning = lib.warnIf (fclib.ceph.releaseAtLeast "nautilus" cfg.client.cephRelease)
-        ("Configuring ceph via plaintext `config` and `extraConfig` is deprecated since "
-        + "the Nautilus role, please switch to `extraSettings`.");
-
-      globalConfig = (if (cfg.config != "")
-        # prefer old plaintext config if it has been customised, but possibly throw warning
-        then throwDeprecationWarning (cfg.config + "\n" + cfg.extraConfig)
-        else lib.generators.toINI { } { global = mergedSettings.global; })
-        + (if (cfg.extraConfig != "") then throwDeprecationWarning ("\n" + cfg.extraConfig) else "");
-      clientConfig = if (cfg.client.config != "")
-        then throwDeprecationWarning cfg.client.config
-        else lib.generators.toINI { } {client = mergedSettings.client;};
-      otherConfig = lib.generators.toINI { } (
-        lib.filterAttrs (k: _: ! builtins.elem k [ "global" "client"] ) mergedSettings
-        );
-    in
-      (globalConfig + "\n" + clientConfig + "\n" + otherConfig);
+    environment.etc."ceph/ceph.conf".text = lib.generators.toINI {} config.flyingcircus.services.ceph.allMergedSettings;
 
     environment.variables.CEPH_ARGS = fclib.mkPlatform "--id ${config.networking.hostName}";
 

@@ -41,7 +41,9 @@ in {
     ./users.nix
   ] ++
     (additionalModules "/etc/nixos/enc-configs") ++
-    (additionalModules "/etc/local/nixos");
+    (additionalModules "/etc/local/nixos") ++
+    ### XXX: Think about the directory name, also imported even when devhost not activated
+    (additionalModules "/etc/devhost/vm-configs");
 
   options = with lib.types; {
 
@@ -167,6 +169,11 @@ in {
       '';
 
       default = [];
+    };
+
+    flyingcircus.stateVersionFile = mkOption {
+      type = types.path;
+      default = "/etc/local/nixos/state_version";
     };
   };
 
@@ -325,6 +332,11 @@ in {
         cfg.activationScripts;
 
     in fromCfgDirs // fromActivationScripts;
+
+    system.stateVersion =
+      if pathExists cfg.stateVersionFile
+      then fileContents cfg.stateVersionFile
+      else "21.05";
 
     systemd = {
       tmpfiles.rules = [

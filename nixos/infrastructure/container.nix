@@ -2,6 +2,14 @@
 
 let
   fclib = config.fclib;
+
+  # Only check "visible" roles, skipping roles that are marked as removed by
+  # `mkRemovedOptionModule` or manually set to `visible = false`.
+  # The `tryEval` is needed because visiting the role option throws an error if
+  # the option is declared by `mkRemovedOptionModule`.
+  visibleFCRoles = (lib.filterAttrs
+    (n: v: (builtins.tryEval v.enable.visible or true).value)
+    config.flyingcircus.roles);
 in
 {
   config = lib.mkMerge [
@@ -11,8 +19,7 @@ in
         lib.mapAttrsToList (n: v:
           { assertion = v ? supportsContainers;
             message = "role ${n} does not define container support attribute";
-          }) config.flyingcircus.roles;
-
+          }) visibleFCRoles;
     }
 
     (lib.mkIf (config.flyingcircus.infrastructureModule == "container") {
@@ -24,7 +31,7 @@ in
           { assertion = if (v.enable or false) then
               (v.supportsContainers or true) else true;
             message = "role ${n} does not support containers";
-          }) config.flyingcircus.roles;
+          }) visibleFCRoles;
 
       boot.isContainer = true;
 
@@ -80,22 +87,21 @@ in
       flyingcircus.services.redis.listenAddresses = [ "[::]" ];
       flyingcircus.services.rabbitmq.listenAddress = "::";
 
-      services.mysql.extraOptions= ''
-        [mysqld]
+      services.mysql.settings.mysqld = {        
         # We don't really care about the data and this speeds up things.
-        innodb_flush_method = nosync
+        innodb_flush_method = "nosync";
 
-        innodb_buffer_pool_size         = 200M
-        innodb_log_buffer_size          = 64M
-        innodb_file_per_table           = 1
-        innodb_read_io_threads          = 1
-        innodb_write_io_threads         = 1
+        innodb_buffer_pool_size = "200M";
+        innodb_log_buffer_size = "64M";
+        innodb_file_per_table = 1;
+        innodb_read_io_threads = 1;
+        innodb_write_io_threads = 1;
         # Percentage. Probably needs local tuning depending on the workload.
-        innodb_change_buffer_max_size   = 50
-        innodb_doublewrite              = 1
-        innodb_log_file_size            = 64M
-        innodb_log_files_in_group       = 2
-      '';
+        innodb_change_buffer_max_size = 50;
+        innodb_doublewrite = 1;
+        innodb_log_file_size = "64M";
+        innodb_log_files_in_group = 2;
+      };
 
       services.redis.bind = lib.mkForce "0.0.0.0 ::";
 
