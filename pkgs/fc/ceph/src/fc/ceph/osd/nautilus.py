@@ -8,7 +8,7 @@ import threading
 import time
 import traceback
 from subprocess import CalledProcessError
-from typing import Optional
+from typing import List, Optional
 
 from fc.ceph.util import kill, mount_status, run
 
@@ -152,7 +152,8 @@ class OSDManager(object):
     def destroy(
         self,
         ids: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
+        strict_safety_check: bool,
         force_objectstore_type: Optional[str] = None,
     ):
         ids = self._parse_ids(ids, allow_non_local=f"DESTROY {ids}")
@@ -160,12 +161,17 @@ class OSDManager(object):
         for id_ in ids:
             try:
                 osd = OSD(id_, type=force_objectstore_type)
-                osd.purge(unsafe_destroy)
+                osd.purge(no_safety_check, strict_safety_check)
             except Exception:
                 traceback.print_exc()
 
     def deactivate(
-        self, ids: str, as_systemd_unit: bool = False, flush: bool = False
+        self,
+        ids: str,
+        as_systemd_unit: bool = False,
+        flush: bool = False,
+        no_safety_check: bool = False,
+        strict_safety_check: bool = False,
     ):
         ids = self._parse_ids(ids)
 
@@ -176,6 +182,10 @@ class OSDManager(object):
             osd = OSD(id_)
             self._deactivate_single(osd, as_systemd_unit, flush)
         else:
+            if no_safety_check:
+                print("WARNING: Skipping stop safety check.")
+            else:
+                GenericOSD.run_safety_check(ids, strict_safety_check)
             threads = []
             for id_ in ids:
                 try:
@@ -183,7 +193,8 @@ class OSDManager(object):
                     thread = threading.Thread(
                         target=lambda: self._deactivate_single(
                             osd, as_systemd_unit, flush
-                        )
+                        ),
+                        name=id_,
                     )
                     thread.start()
                     threads.append(thread)
@@ -192,6 +203,9 @@ class OSDManager(object):
 
             for thread in threads:
                 thread.join()
+
+            deactivated_osds = ", ".join([str(t.name) for t in threads])
+            print("Successfully deactivated OSDs", deactivated_osds)
 
     def _deactivate_single(
         self,
@@ -225,7 +239,8 @@ class OSDManager(object):
         self,
         ids: str,
         journal_size: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
+        strict_safety_check: bool,
         target_objectstore_type: Optional[str] = None,
     ):
         ids = self._parse_ids(ids)
@@ -234,7 +249,10 @@ class OSDManager(object):
             try:
                 osd = OSD(id_)
                 osd.rebuild(
-                    journal_size, unsafe_destroy, target_objectstore_type
+                    journal_size=journal_size,
+                    no_safety_check=no_safety_check,
+                    target_objectstore_type=target_objectstore_type,
+                    strict_safety_check=strict_safety_check,
                 )
             except Exception:
                 traceback.print_exc()
@@ -469,25 +487,60 @@ class GenericOSD(object):
 
         run.ceph("osd", "crush", "add", self.name, str(weight), crush_location)
 
-    def purge(self, unsafe_destroy):
-        """Deletes an osd, including removal of auth keys and crush map entry"""
+    @staticmethod
+    def run_safety_check(ids: List[int], strict_safety_check: bool):
+        """
+        Run a safety check on what would happen if the OSDs specified in `ids`
+        became unavailable.
 
-        # Safety net
-        if unsafe_destroy:
-            print("WARNING: Skipping destroy safety check.")
-        else:
+        By default, the `ceph osd ok-to-stop` is run and checks for remaining
+        data availability.
+        With `stric_safety_check`, the more strict `ceph osd safe-to-destroy`
+        checks whether edundancy is affected in any ways.
+
+        Raises a SystemExit if the check fails.
+        """
+        id_str = " ".join(map(str, ids))
+        if strict_safety_check:
             try:
-                run.ceph("osd", "safe-to-destroy", str(self.id))
+                run.ceph("osd", "safe-to-destroy", id_str)
             except CalledProcessError as e:
                 print(
                     # fmt: off
                     "OSD not safe to destroy:", e.stderr,
-                    "\nTo override this check, specify `--unsafe-destroy`. This can "
+                    "\nTo override this check, remove the `--strict-safety-check` flag. "
+                    "This can lead to reduced data redundancy, still within safety margins."
+                    # fmt: on
+                )
+                # ceph already returns ERRNO-style returncodes, so just pass them through
+                sys.exit(e.returncode)
+        else:
+            try:
+                run.ceph("osd", "ok-to-stop", id_str)
+            except CalledProcessError as e:
+                print(
+                    # fmt: off
+                    "OSD not okay to stop:", e.stderr,
+                    "\nTo override this check, specify `--no-safety-check`. This can "
                     "cause data loss or cluster failure!!"
                     # fmt: on
                 )
-                # do we have some generic or specific error return codes?
-                sys.exit(10)
+                # ceph already returns ERRNO-style returncodes, so just pass them through
+                sys.exit(e.returncode)
+
+    def purge(self, no_safety_check: bool, strict_safety_check: bool):
+        """Deletes an osd, including removal of auth keys and crush map entry"""
+
+        # Safety net
+        if strict_safety_check and no_safety_check:
+            print(
+                "--no-safety-check and --strict-safety-check are incompatible flags."
+            )
+            sys.exit(10)
+        if no_safety_check:
+            print("WARNING: Skipping destroy safety check.")
+        else:
+            self.run_safety_check([self.id], strict_safety_check)
 
         print(f"Destroying OSD {self.id} ...")
         osdmanager = OSDManager()
@@ -586,7 +639,8 @@ class GenericOSD(object):
         target_osd_type: str,
         journal: str,
         journal_size: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
+        strict_safety_check: bool,
         device: str,
         crush_location: str,
     ):
@@ -597,7 +651,7 @@ class GenericOSD(object):
         # `purge` also removes crush location and auth. A `destroy` would keep them, but
         # as we re-use the creation commands which always handle crush and auth as well,
         # for simplicity's sake this optimisation is not used.
-        self.purge(unsafe_destroy)
+        self.purge(no_safety_check, strict_safety_check)
 
         # This is an "interesting" turn-around ...
         manager = OSDManager()
@@ -736,8 +790,8 @@ class FileStoreOSD(GenericOSD):
             # fmt: on
         )
 
-    def purge(self, unsafe_destroy):
-        super().purge(unsafe_destroy)
+    def purge(self, no_safety_check, strict_safety_check):
+        super().purge(no_safety_check, strict_safety_check)
 
         # Try deleting an external journal. The internal journal was already
         # deleted during the generic destroy of the VG.
@@ -749,7 +803,8 @@ class FileStoreOSD(GenericOSD):
     def rebuild(
         self,
         journal_size: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
+        strict_safety_check: bool,
         target_objectstore_type: Optional[str],
     ):
         """Fully destroy and create the FileStoreOSD again with the same properties,
@@ -784,10 +839,11 @@ class FileStoreOSD(GenericOSD):
         print(f"--journal={journal}")
 
         self._destroy_and_rebuild_to(
-            target_osd_type,
-            journal,
-            journal_size,
-            unsafe_destroy,
+            target_osd_type=target_osd_type,
+            journal=journal,
+            journal_size=journal_size,
+            no_safety_check=no_safety_check,
+            strict_safety_check=strict_safety_check,
             **oldosd_properties,
         )
 
@@ -944,8 +1000,8 @@ class BlueStoreOSD(GenericOSD):
             # fmt: on
         )
 
-    def purge(self, unsafe_destroy):
-        super().purge(unsafe_destroy)
+    def purge(self, no_safety_check, strict_safety_check):
+        super().purge(no_safety_check, strict_safety_check)
 
         try:
             run.lvremove("-f", self._locate_wal_lv(), check=False)
@@ -957,7 +1013,8 @@ class BlueStoreOSD(GenericOSD):
     def rebuild(
         self,
         journal_size: str,
-        unsafe_destroy: bool,
+        no_safety_check: bool,
+        strict_safety_check: bool,
         target_objectstore_type: Optional[str],
     ):
         """Fully destroy and create the FileStoreOSD again with the same properties,
@@ -985,9 +1042,10 @@ class BlueStoreOSD(GenericOSD):
         print(f"--journal={journal}")
 
         self._destroy_and_rebuild_to(
-            target_osd_type,
-            journal,
-            journal_size,
-            unsafe_destroy,
+            target_osd_type=target_osd_type,
+            journal=journal,
+            journal_size=journal_size,
+            no_safety_check=no_safety_check,
+            strict_safety_check=strict_safety_check,
             **oldosd_properties,
         )
