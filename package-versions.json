@@ -504,11 +504,6 @@
     "pname": "nginx",
     "version": "1.24.0"
   },
-  "nginxModules.modsecurity": {
-    "name": "modsecurity",
-    "pname": "modsecurity",
-    "version": ""
-  },
   "nginxStable": {
     "name": "nginx-1.24.0",
     "pname": "nginx",

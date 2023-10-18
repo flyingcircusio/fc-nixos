@@ -115,18 +115,21 @@ let
     "gitlab-runner"
   ];
 
-  includedPkgNames = [
-    "awscli"
-    "calibre"
-    "element-web"
-    "firefox"
-    "gitlab-ee"
-  ];
+  importantPkgNames = fromJSON (readFile ../important_packages.json);
+  testPkgNames = lib.subtractLists excludedPkgNames modifiedPkgNames;
+  testPkgs =
+    listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
 
-  testPkgNames = includedPkgNames ++
-    lib.subtractLists excludedPkgNames modifiedPkgNames;
 
-  testPkgs = listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
+  # Results looks like: [ { python3Packages.requests.x86_64-linux = <job>; } ]
+  pkgNameToHydraJobs = dottedName:
+    let
+      path = lib.splitString "." dottedName;
+      job = lib.hydraJob (lib.attrByPath path null pkgs);
+    in
+      map
+        (system: lib.setAttrByPath (path ++ [ system ]) job)
+        supportedSystems;
 
   platformRoleDoc =
   let
@@ -151,6 +154,9 @@ let
 
   jobs = {
     pkgs = mapTestOn (packagePlatforms testPkgs);
+    # Merge the single-attribute sets from pkgNameToHydraJobs into one big attrset.
+    importantPackages =
+      (lib.foldl' lib.recursiveUpdate {} (lib.flatten (map pkgNameToHydraJobs importantPkgNames)));
     tests = import ../tests { inherit system pkgs; nixpkgs = nixpkgs_; };
   };
 
@@ -324,6 +330,7 @@ in
 
 jobs // {
   inherit channels tested images doc;
+  #inherit mapTestOn packagePlatforms testPkgs jobs importantPkgJobs;
 
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";
