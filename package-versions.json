@@ -24,6 +24,11 @@
     "pname": "automake",
     "version": "1.16.5"
   },
+  "awscli": {
+    "name": "awscli-1.29.9",
+    "pname": "awscli",
+    "version": "1.29.9"
+  },
   "bash": {
     "name": "bash-5.2-p15",
     "pname": "bash",
@@ -75,9 +80,9 @@
     "version": "1.16.1"
   },
   "containerd": {
-    "name": "containerd-1.7.5",
+    "name": "containerd-1.7.7",
     "pname": "containerd",
-    "version": "1.7.5"
+    "version": "1.7.7"
   },
   "coturn": {
     "name": "coturn-4.6.2",
@@ -105,9 +110,9 @@
     "version": "2.89"
   },
   "docker": {
-    "name": "docker-20.10.25",
+    "name": "docker-20.10.26",
     "pname": "docker",
-    "version": "20.10.25"
+    "version": "20.10.26"
   },
   "docker-compose": {
     "name": "docker-compose-2.21.0",
@@ -125,9 +130,9 @@
     "version": "1.11.45"
   },
   "erlang": {
-    "name": "erlang-25.3.2.6",
+    "name": "erlang-25.3.2.7",
     "pname": "erlang",
-    "version": "25.3.2.6"
+    "version": "25.3.2.7"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -153,6 +158,11 @@
     "name": "filebeat-oss-7.17.4",
     "pname": "filebeat",
     "version": "7.17.4"
+  },
+  "firefox": {
+    "name": "firefox-118.0.1",
+    "pname": "firefox",
+    "version": "118.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -180,9 +190,9 @@
     "version": "2.42.0"
   },
   "github-runner": {
-    "name": "github-runner-2.309.0",
+    "name": "github-runner-2.310.2",
     "pname": "github-runner",
-    "version": "2.309.0"
+    "version": "2.310.2"
   },
   "gitlab": {
     "name": "gitlab-16.4.1",
@@ -214,11 +224,7 @@
     "pname": "go",
     "version": "1.20.8"
   },
-  "go_1_18": {
-    "name": "go-1.18.10",
-    "pname": "go",
-    "version": "1.18.10"
-  },
+  "go_1_18": {},
   "go_1_19": {
     "name": "go-1.19.13",
     "pname": "go",
@@ -230,9 +236,9 @@
     "version": "1.20.8"
   },
   "grafana": {
-    "name": "grafana-10.1.1",
+    "name": "grafana-10.1.5",
     "pname": "grafana",
-    "version": "10.1.1"
+    "version": "10.1.5"
   },
   "haproxy": {
     "name": "haproxy-2.8.2",
@@ -275,9 +281,9 @@
     "version": "17.0.7-b829.16"
   },
   "jetty": {
-    "name": "jetty-11.0.16",
+    "name": "jetty-12.0.1",
     "pname": "jetty",
-    "version": "11.0.16"
+    "version": "12.0.1"
   },
   "jicofo": {
     "name": "jicofo-1.0-1027",
@@ -315,9 +321,9 @@
     "version": "22.0.4"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.13.0",
+    "name": "kubernetes-helm-3.13.1",
     "pname": "kubernetes-helm",
-    "version": "3.13.0"
+    "version": "3.13.1"
   },
   "libgcrypt": {
     "name": "libgcrypt-1.10.2",
@@ -345,9 +351,9 @@
     "version": "2.11.5"
   },
   "linux": {
-    "name": "linux-6.1.55",
+    "name": "linux-6.1.57",
     "pname": "linux",
-    "version": "6.1.55"
+    "version": "6.1.57"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -375,14 +381,14 @@
     "version": "4.1.9"
   },
   "matomo": {
-    "name": "matomo-4.14.2",
+    "name": "matomo-4.15.1",
     "pname": "matomo",
-    "version": "4.14.2"
+    "version": "4.15.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.93.0",
+    "name": "matrix-synapse-wrapped-1.94.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.93.0"
+    "version": "1.94.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -490,9 +496,9 @@
     "version": "2.6.0"
   },
   "openssh": {
-    "name": "openssh-9.4p1",
+    "name": "openssh-9.5p1",
     "pname": "openssh",
-    "version": "9.4p1"
+    "version": "9.5p1"
   },
   "openssl": {
     "name": "openssl-3.0.10",
@@ -575,9 +581,9 @@
     "version": "8.2.11"
   },
   "phpPackages.composer": {
-    "name": "composer-2.6.4",
+    "name": "composer-2.6.5",
     "pname": "composer",
-    "version": "2.6.4"
+    "version": "2.6.5"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -630,14 +636,14 @@
     "version": "15.4"
   },
   "powerdns": {
-    "name": "pdns-4.8.2",
+    "name": "pdns-4.8.3",
     "pname": "pdns",
-    "version": "4.8.2"
+    "version": "4.8.3"
   },
   "prometheus": {
-    "name": "prometheus-2.47.0",
+    "name": "prometheus-2.47.1",
     "pname": "prometheus",
-    "version": "2.47.0"
+    "version": "2.47.1"
   },
   "prosody": {
     "name": "prosody-0.12.4",
@@ -668,6 +674,11 @@
     "name": "python3-3.9.18",
     "pname": "python3",
     "version": "3.9.18"
+  },
+  "python3Packages.boto3": {
+    "name": "python3.10-boto3-1.28.9",
+    "pname": "boto3",
+    "version": "1.28.9"
   },
   "python3Packages.lxml": {
     "name": "python3.10-lxml-4.9.3-3",
@@ -700,14 +711,14 @@
     "version": "8.1.1"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-3.12.4",
+    "name": "rabbitmq-server-3.12.6",
     "pname": "rabbitmq-server",
-    "version": "3.12.4"
+    "version": "3.12.6"
   },
   "rabbitmq-server_3_8": {
-    "name": "rabbitmq-server-3.12.4",
+    "name": "rabbitmq-server-3.12.6",
     "pname": "rabbitmq-server",
-    "version": "3.12.4"
+    "version": "3.12.6"
   },
   "re2c": {
     "name": "re2c-3.1",
@@ -830,9 +841,9 @@
     "version": "2.39.2"
   },
   "varnish": {
-    "name": "varnish-7.2.1",
+    "name": "varnish-7.4.1",
     "pname": "varnish",
-    "version": "7.2.1"
+    "version": "7.4.1"
   },
   "vim": {
     "name": "vim-9.0.1897",
