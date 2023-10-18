@@ -111,6 +111,7 @@
   "pcre",
   "pcre2",
   "percona",
+  "percona-xtrabackup_8_0",
   "percona57",
   "percona80",
   "php72",

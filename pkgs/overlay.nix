@@ -318,11 +318,6 @@ in {
     openssl = self.openssl_1_1;
   };
 
-  percona-xtrabackup_8_0 = super.callPackage ./percona-xtrabackup/8_0.nix {
-    boost = self.boost177;
-    openssl = self.openssl_1_1;
-  };
-
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
 
