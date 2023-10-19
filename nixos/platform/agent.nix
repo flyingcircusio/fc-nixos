@@ -46,6 +46,14 @@ let
     }
 
     compdef _fc_slurm_completion fc-slurm
+
+    #compdef fc-kubernetes
+
+    _fc_kubernetes_completion() {
+      eval $(env _TYPER_COMPLETE_ARGS="''${words[1,$CURRENT]}" _FC_KUBERNETES_COMPLETE=complete_zsh fc-kubernetes)
+    }
+
+    compdef _fc_kubernetes_completion fc-kubernetes
   '';
 
   agentZshCompletionsPkg = pkgs.runCommand "agent-zshcomplete" {} ''

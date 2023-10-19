@@ -39,27 +39,39 @@
     };
   };
 
-  config = {
+  config =
+    let
+      server = config.flyingcircus.roles.k3s-server.enable;
+      agent = config.flyingcircus.roles.k3s-agent.enable;
+      frontend = config.flyingcircus.roles.webgateway.enable;
+    in
+    lib.mkMerge [
+    {
+      assertions =
+        [
+          {
+            assertion = !(server && agent);
+            message = "The k3s-agent role must not be enabled together with the k3s-server role.";
+          }
+          {
+            assertion = !(server && frontend);
+            message = "The k3s-server role must not be enabled together with the webgateway (activates kubernetes frontend) role.";
+          }
+          {
+            assertion = !(agent && frontend);
+            message = "The k3s-agent role must not be enabled together with the webgateway (activates kubernetes frontend) role.";
+          }
+        ];
 
-    assertions =
-      let server = config.flyingcircus.roles.k3s-server.enable;
-          agent = config.flyingcircus.roles.k3s-agent.enable;
-          frontend = config.flyingcircus.roles.webgateway.enable;
-      in
-      [
+    }
+
+    (lib.mkIf (server || agent) {
+      flyingcircus.passwordlessSudoRules = [
         {
-          assertion = !(server && agent);
-          message = "The k3s-agent role must not be enabled together with the k3s-server role.";
-        }
-        {
-          assertion = !(server && frontend);
-          message = "The k3s-server role must not be enabled together with the webgateway (activates kubernetes frontend) role.";
-        }
-        {
-          assertion = !(agent && frontend);
-          message = "The k3s-agent role must not be enabled together with the webgateway (activates kubernetes frontend) role.";
+          commands = [ "${pkgs.fc.agent}/bin/fc-kubernetes" ];
+          groups = [ "admins" "sudo-srv" ];
         }
       ];
-  };
-
+    })
+  ];
 }

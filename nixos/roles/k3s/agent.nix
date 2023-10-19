@@ -6,6 +6,9 @@ let
   cfg = config.flyingcircus.roles.k3s-agent;
   fclib = config.fclib;
   server = fclib.findOneService "k3s-server-server";
+  agents = fclib.findServices "k3s-agent-agent";
+  agentNames = map (service: head (lib.splitString "." service.address)) agents;
+  otherAgentNames = filter (m: m != config.networking.hostName) agentNames;
   serverAddress = lib.replaceStrings ["gocept.net"] ["fcio.net"] server.address or "";
   agentAddress = head fclib.network.srv.v4.addresses;
   tokenFile = "/var/lib/k3s/secret_token";
@@ -45,6 +48,27 @@ in
         bridge-utils
         nfs-utils
       ];
+
+      flyingcircus.agent = {
+        maintenance.k3s-agent = {
+          # Move pods to other nodes before starting maintenance activities.
+          enter =
+            let
+              nodeArgs = lib.concatMapStrings (u: " --in-service ${u}") otherAgentNames;
+              script = pkgs.writeScript "k3s-agent-enter-maintenance" ''
+                set -e
+                # Check if all other agents are in service, signal "tempfail" otherwise.
+                fc-maintenance -v constraints --failure-exit-code 75 ${nodeArgs}
+                fc-kubernetes -v drain --reason fc-agent-maintenance
+              '';
+            in "${script}";
+
+          # Uncordon node at the end of maintenance request execution.
+          leave = ''
+            fc-kubernetes -v ready --label-must-match fc-agent-maintenance
+          '';
+        };
+      };
 
       flyingcircus.services.telegraf.inputs = {
         kubernetes  = [{

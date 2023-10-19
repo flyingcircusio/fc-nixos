@@ -1,7 +1,7 @@
 let
-  pkgs = import <nixpkgs> {};
+  pkgs = import <fc> {};
   fcagent = pkgs.python310Packages.callPackage ./. {};
 in
-fcagent.overridePythonAttrs(_: {
+(fcagent.override { enableSlurm = true; }).overridePythonAttrs(_: {
   doCheck = true;
 })
