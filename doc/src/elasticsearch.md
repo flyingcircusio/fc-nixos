@@ -14,8 +14,13 @@ they expect the unfree versions of Elasticsearch. Note that *x-pack* features
 are not available in the free version.
 
 Elastic doesn't provide updates to the 7.x line anymore so 7.10.2
-will be the last available version. We are planning to move to OpenSearch
-instead which is a fork of Elasticsearch 7.10.2.
+will be the last available version.
+
+:::{warning}
+This is the last platform version that supports Elasticsearch.
+Migrate to {ref}`nixos-opensearch` which is a fork of Elasticsearch
+7.10.2.
+:::
 
 ## Interaction
 
