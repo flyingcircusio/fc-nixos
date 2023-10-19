@@ -267,6 +267,10 @@ class UpdateActivity(Activity):
             next_release=self.next_release,
         )
 
+    def resume(self):
+        """It's safe to resume an interrupted update, just run it again."""
+        self.run()
+
     def run(self):
         """Do the update"""
         try:

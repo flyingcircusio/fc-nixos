@@ -155,6 +155,11 @@ def run(run_all_now: bool = False, force_run: bool = False):
     If you still want to execute requests even if a maintenance enter command returned
     with EXIT_TEMPFAIL or EXIT_POSTPONE, add the --force-run flag.
 
+    WARNING: ignoring the result of enter commands can be dangerous!
+
+    The --force-run flag also runs requests in state 'success' again when they are still
+    in the queue after a recent system reboot.
+
     After executing all runnable requests, requests that want to be postponed
     are postponed (they get a new execution time) and finished requests
     (successful or failed permanently) moved from the current request to the
