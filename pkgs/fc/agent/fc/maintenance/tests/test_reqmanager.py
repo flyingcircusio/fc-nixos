@@ -266,7 +266,7 @@ def test_execute_postpone(log, reqmanager, monkeypatch):
     def enter_maintenance_postpone():
         raise PostponeMaintenance()
 
-    reqmanager.runnable = lambda r: [req]
+    reqmanager.runnable = lambda run_all_now, force_run: [req]
     reqmanager.enter_maintenance = enter_maintenance_postpone
     reqmanager.leave_maintenance = Mock()
     reqmanager.execute()
@@ -284,7 +284,7 @@ def test_execute_tempfail(log, reqmanager, monkeypatch):
     def enter_maintenance_tempfail():
         raise TempfailMaintenance()
 
-    reqmanager.runnable = lambda r: [req]
+    reqmanager.runnable = lambda run_all_now, force_run: [req]
     reqmanager.enter_maintenance = enter_maintenance_tempfail
     reqmanager.leave_maintenance = MagicMock()
     reqmanager.execute()
@@ -298,7 +298,7 @@ def test_execute_tempfail(log, reqmanager, monkeypatch):
 @unittest.mock.patch("fc.util.directory.connect")
 def test_execute_activity_no_reboot(connect, run, reqmanager, log):
     req = reqmanager.add(Request(Activity(), 1))
-    reqmanager.runnable = lambda r: [req]
+    reqmanager.runnable = lambda run_all_now, force_run: [req]
     reqmanager.execute()
     run.assert_has_calls(
         [
