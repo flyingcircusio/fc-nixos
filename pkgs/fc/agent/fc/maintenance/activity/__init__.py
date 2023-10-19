@@ -2,6 +2,7 @@
 from enum import Enum
 from typing import NamedTuple, Optional
 
+import fc.maintenance.state
 import structlog
 from fc.maintenance.estimate import Estimate
 
@@ -63,6 +64,23 @@ class Activity:
 
     def set_up_logging(self, log):
         self.log = log.bind(activity_type=self.__class__.__name__)
+
+    def resume(self):
+        """Resumes activity for requests that are already in State.running.
+        This means that the activity may already have been executed (partially)
+        before being aborted uncleanly, for example when the agent got killed in
+        an OOM situation or the system rebooted/crashed.
+
+        Idempotent activities should just call the run() method to try again.
+
+        By default, the activity is put into an error state to avoid dangerous
+        retries.
+        """
+        self.returncode = fc.maintenance.state.EXIT_INTERRUPTED
+        self.stderr = (
+            "Execution of this activity has been interrupted on the last "
+            "attempt. Not retrying as it might be unsafe to run it again."
+        )
 
     def run(self):
         """Executes maintenance activity.

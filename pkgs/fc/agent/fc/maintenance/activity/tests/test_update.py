@@ -1,6 +1,6 @@
 import textwrap
 from io import StringIO
-from unittest.mock import create_autospec
+from unittest.mock import Mock, create_autospec
 
 import responses
 import yaml
@@ -464,3 +464,10 @@ def test_rich_print(activity):
         "fc.maintenance.activity.update.UpdateActivity (warm reboot needed)\n"
         == str_output
     )
+
+
+def test_update_should_run_on_resume(activity, monkeypatch):
+    run_mock = Mock()
+    monkeypatch.setattr(activity, "run", run_mock)
+    activity.resume()
+    assert run_mock.called

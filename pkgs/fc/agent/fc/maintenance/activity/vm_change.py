@@ -114,6 +114,9 @@ class VMChangeActivity(Activity):
         return False
 
     def _need_poweroff_for_memory(self):
+        if self.wanted_memory is None:
+            return False
+
         actual_memory = fc.util.dmi_memory.main()
         if self.current_memory != actual_memory:
             self.log.debug(
@@ -134,10 +137,15 @@ class VMChangeActivity(Activity):
             self.log.debug(
                 "poweroff-mem-needed",
                 msg="Power-off needed to activate new memory size.",
+                actual_memory=actual_memory,
+                wanted_memory=self.wanted_memory,
             )
             return True
 
     def _need_poweroff_for_cores(self):
+        if self.wanted_cores is None:
+            return False
+
         actual_cores = fc.util.vm.count_cores()
         if self.current_cores != actual_cores:
             self.log.debug(
@@ -158,6 +166,8 @@ class VMChangeActivity(Activity):
             self.log.debug(
                 "poweroff-cores-needed",
                 msg="Power-off needed to activate new cores count.",
+                actual_cores=actual_cores,
+                wanted_cores=self.wanted_cores,
             )
             return True
 
@@ -172,3 +182,7 @@ class VMChangeActivity(Activity):
 
     # Running an VMChangeActivity is not needed, so no run method.
     # The request manager handles the reboot required by this activity.
+
+    def resume(self):
+        # There's nothing to do so we can safely "retry" this activity.
+        self.run()

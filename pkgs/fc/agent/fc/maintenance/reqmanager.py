@@ -405,20 +405,35 @@ class ReqManager:
                 {key: {"result": "deleted"} for key in disappeared}
             )
 
-    def runnable(self, run_all_now=False):
+    def runnable(self, run_all_now=False, force_run=False):
         """Generate due Requests in running order."""
-        if run_all_now:
+        if run_all_now and force_run:
             self.log.warn(
-                "execute-all-requests-now",
+                "execute-all-requests-now-force",
                 _replace_msg=(
-                    "Run all mode requested, treating all requests as runnable."
+                    "Run-all mode with force requested. "
+                    "Treating all requests as runnable."
                 ),
             )
             runnable_requests = sorted(self.requests.values())
-
-        else:
+        elif run_all_now:
+            self.log.warn(
+                "execute-all-requests-now",
+                _replace_msg=(
+                    "Run all mode requested, treating pending requests as runnable."
+                ),
+            )
             runnable_requests = sorted(
-                r for r in self.requests.values() if r.state == State.due
+                r
+                for r in self.requests.values()
+                if r.state in (State.pending, State.due, State.running)
+            )
+        else:
+            # Normal operation
+            runnable_requests = sorted(
+                r
+                for r in self.requests.values()
+                if r.state in (State.due, State.running)
             )
 
         if not runnable_requests:
@@ -701,10 +716,11 @@ class ReqManager:
         are still respected so requests may actually not run.
 
         When `force_run` is given, postpone and tempfail from maintenance enter command
-        are ignored and requests are run regardless. WARNING: this can be dangerous!
+        are ignored and requests are run regardless. This also runs requests in state
+        'success' again when they are still in the queue after a recent system reboot.
         """
 
-        runnable_requests = self.runnable(run_all_now)
+        runnable_requests = self.runnable(run_all_now, force_run)
         if not runnable_requests:
             self.leave_maintenance()
             self._write_stats_for_execute()
