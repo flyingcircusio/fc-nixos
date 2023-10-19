@@ -14,8 +14,13 @@ they expect the unfree versions of Elasticsearch. Note that *x-pack* features
 are not available in the free version.
 
 Elastic doesn't provide updates to the 7.x line anymore so 7.10.2
-will be the last available version. We are planning to move to OpenSearch
-instead which is a fork of Elasticsearch 7.10.2.
+will be the last available version.
+
+:::{warning}
+This is the last platform version that supports Elasticsearch.
+Migrate to {ref}`nixos-opensearch` which is a fork of Elasticsearch
+7.10.2.
+:::
 
 ## Interaction
 
@@ -56,7 +61,7 @@ To see the final rendered config for Elasticsearch, use the
 {command}`elasticsearch-show-config` command as service or sudo-srv user.
 
 To activate config changes, run {command}`sudo fc-manage --build`
-(see {ref}`nixos-local` for details).
+  (see {ref}`nixos-local` for details).
 
 ### NixOS Options
 
@@ -130,6 +135,12 @@ Rolling upgrades for Elasticsearch 6 multi-node clusters to 7 are supported.
 Nodes should be upgraded one at a time to ensure continous operation of the
 cluster. Upgrading nodes is done by changing the role of the machine to
 *elasticsearch7*.
+
+### Upgrade/Migration to OpenSearch
+
+Upgrading to OpenSearch is possible when starting from ES7. All indices must
+have been (re-)indexed with ES7 before doing so. See
+{ref}`nixos-opensearch` for the upgrade process.
 
 ## Monitoring
 
