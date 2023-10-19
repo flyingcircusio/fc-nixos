@@ -76,7 +76,7 @@ in
       Status:     https://status.flyingcircus.io/
       Docs:       https://doc.flyingcircus.io/
       Release:    ${opt isStableRelease "${release.release_name} (" + config.system.nixos.label + opt isStableRelease ")"}
-      ${opt isStableRelease ("ChangeLog:  " + release.release_changelog)}
+      ${opt isStableRelease ("ChangeLog:  " + release.release_changelog or "https://doc.flyingcircus.io/platform/changes/index.html")}
 
     '' +
     (opt (enc ? name && parameters ? location && parameters ? environment)

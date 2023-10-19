@@ -222,25 +222,38 @@ def get_release_info(log, enc):
     release_name = params.get("release_name")
     known_releases = [r["release_name"] for r in releases.values()]
 
+    # We treat named releases as immutable, which means that we won't update
+    # release metadata objects once they are written to `release_info_path`.
+    # It's possible to change metadata for a build version by adding a new
+    # named release with different changelog URL (the only metadata field for
+    # now which is user-provided in the directory) which will overwrite the
+    # existing value.
     if release_name and release_name not in known_releases:
         environment_url = params["environment_url"]
+        # version example: 23.05.2820.18d29027
         version = nixos.channel_version(environment_url)
-        releases[version] = {
+        release_metadata = {
             "environment": params["environment"],
             "environment_url": environment_url,
             "first_seen_at": utcnow().isoformat(),
             "release_name": release_name,
-            "release_changelog": params.get("release_changelog", ""),
+            "release_changelog": params.get("release_changelog") or "",
         }
+        log.debug("release-info-add", **release_metadata)
+        releases[version] = release_metadata
 
     return releases
 
 
-def update_inventory(log, enc):
+def write_release_info(log, enc):
+    retrieve(log, lambda: get_release_info(log, enc), "releases.json", 0o644)
+
+
+def update_inventory(log, pre_enc):
     if (
-        not enc
-        or not enc.get("parameters")
-        or not enc["parameters"].get("directory_password")
+        not pre_enc
+        or not pre_enc.get("parameters")
+        or not pre_enc["parameters"].get("directory_password")
     ):
         log.warning(
             "update-inventory-no-pass",
@@ -251,7 +264,7 @@ def update_inventory(log, enc):
         # For fc-manage all nodes need to talk about *their* environment which
         # is resource-group specific and requires us to always talk to the
         # ring 1 API.
-        directory = connect(enc, 1)
+        directory = connect(pre_enc, 1)
     except socket.error:
         log.warning(
             "update-inventory-no-connection",
@@ -267,10 +280,10 @@ def update_inventory(log, enc):
     write_json(
         log,
         [
-            (lambda: directory.lookup_node(enc["name"]), "enc.json"),
+            (lambda: directory.lookup_node(pre_enc["name"]), "enc.json"),
             (
                 lambda: directory.list_nodes_addresses(
-                    enc["parameters"]["location"], "srv"
+                    pre_enc["parameters"]["location"], "srv"
                 ),
                 "addresses_srv.json",
             ),
@@ -278,7 +291,6 @@ def update_inventory(log, enc):
             (lambda: directory.list_service_clients(), "service_clients.json"),
             (lambda: directory.list_services(), "services.json"),
             (lambda: directory.list_users(), "users.json"),
-            (lambda: get_release_info(log, enc), "releases.json", 0o644),
         ],
     )
 
@@ -294,9 +306,14 @@ def update_enc(log, tmpdir, enc_path):
         os_release_file=Path("/etc/os-release"),
         state_version_file=STATE_VERSION_FILE,
     )
-    enc = load_enc(log, enc_path)
-    update_inventory(log, enc)
+    # We need directory connection info from enc.json first to retrieve the
+    # new enc.json and other inventory files.
+    pre_enc = load_enc(log, enc_path)
+    update_inventory(log, pre_enc)
     # Reload to pick up possibly updated enc.json.
     enc = load_enc(log, enc_path)
     update_enc_nixos_config(log, enc, enc_path)
     write_system_state(log)
+    # Placed at the end because failures here are the least problematic ones.
+    # We can continue with missing release info data.
+    write_release_info(log, enc)

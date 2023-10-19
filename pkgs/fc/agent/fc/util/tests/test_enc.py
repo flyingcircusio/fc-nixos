@@ -43,6 +43,7 @@ def test_initialize_enc_should_not_crash_when_initial_data_missing(
     assert log.has("initialize-enc-initial-data-not-found")
 
 
+@unittest.mock.patch("fc.util.enc.write_release_info")
 @unittest.mock.patch("fc.util.enc.write_system_state")
 @unittest.mock.patch("fc.util.enc.update_enc_nixos_config")
 @unittest.mock.patch("fc.util.enc.update_inventory")
@@ -52,6 +53,7 @@ def test_update_enc(
     update_inventory,
     update_enc_nixos_config,
     write_system_state,
+    write_release_info,
     log,
     logger,
     tmp_path,
@@ -67,3 +69,4 @@ def test_update_enc(
     update_inventory.assert_called_with(logger, enc_data)
     update_enc_nixos_config.assert_called_with(logger, enc_data, enc_path)
     write_system_state.assert_called_with(logger)
+    write_release_info.assert_called_with(logger, enc_data)
