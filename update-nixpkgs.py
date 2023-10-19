@@ -183,6 +183,7 @@ def filter_and_merge_commit_msgs(msgs):
         "matomo: 4.10.1 -> 4.12.3",
         "github-runner: pass overridden version to build scripts",
         "gitlab: make Git package configurable",
+        "gitlab: remove DB migration warning",
         "libmodsecurity: 3.0.6 -> 3.0.7",
         "mongodb: fix build and sanitize package",
         "solr: 8.6.3 -> 8.11.1",
