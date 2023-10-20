@@ -17,6 +17,7 @@
         dnsutils
         dstat
         ethtool
+        fd
         file
         fc.logcheckhelper
         fio
@@ -40,6 +41,7 @@
         libxslt
         links
         lsof
+        lnav
         lynx
         magic-wormhole
         mailutils
