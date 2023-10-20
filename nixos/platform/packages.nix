@@ -14,6 +14,7 @@
         dnsutils
         dstat
         ethtool
+        fd
         file
         fc.logcheckhelper
         fio
@@ -30,6 +31,7 @@
         latencytop_nox
         links2_nox
         lsof
+        lnav
         lynx
         magic-wormhole
         mailutils
