@@ -48,10 +48,18 @@ def main(args=sys.argv[1:]):
         "instead of autodetecting it.",
     )
     parser_destroy.add_argument(
-        "--unsafe-destroy",
+        "--no-safety-check",
         action="store_true",
         help="Skip the check whether an OSD is safe to destroy without "
-        "affecting data redundancy. This can result in data loss or cluster failure!!",
+        "reducing data redundancy below the point of cluster availability. "
+        "WARNING: This can result in data loss or cluster failure!!",
+    )
+    parser_destroy.add_argument(
+        "--strict-safety-check",
+        action="store_true",
+        help="Stricter check whether destruction/stopping of the OSD reduces "
+        "the data availability at all, even when it is not below the point of "
+        "cluster availability.",
     )
     parser_destroy.set_defaults(action="destroy")
 
@@ -117,6 +125,20 @@ def main(args=sys.argv[1:]):
         help="IDs of OSD to deactivate. "
         "Use `all` to deactivate all local OSDs.",
     )
+    parser_deactivate.add_argument(
+        "--no-safety-check",
+        action="store_true",
+        help="Skip the check whether an OSD is safe to stop without "
+        "reducing data redundancy below the point of cluster availability. "
+        "WARNING: This can result in data loss or cluster failure!!",
+    )
+    parser_deactivate.add_argument(
+        "--strict-safety-check",
+        action="store_true",
+        help="Stricter check whether stopping of the OSD reduces "
+        "the data availability at all, even when it is not below the point of "
+        "cluster availability.",
+    )
     parser_deactivate.set_defaults(action="deactivate")
 
     parser_reactivate = osd_sub.add_parser(
@@ -146,10 +168,18 @@ def main(args=sys.argv[1:]):
         "objectstore type.\nThe current type is detected automatically.",
     )
     parser_rebuild.add_argument(
-        "--unsafe-destroy",
+        "--no-safety-check",
         action="store_true",
         help="Skip the check whether an OSD is safe to destroy without "
-        "affecting data redundancy. This can result in data loss or cluster failure!!",
+        "reducing data redundancy below the point of cluster availability. "
+        "WARNING: This can result in data loss or cluster failure!!",
+    )
+    parser_rebuild.add_argument(
+        "--strict-safety-check",
+        action="store_true",
+        help="Stricter check whether destruction/stopping of the OSD reduces "
+        "the data availability at all, even when it is not below the point of "
+        "cluster availability.",
     )
     parser_rebuild.add_argument(
         "ids",

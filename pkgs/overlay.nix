@@ -9,7 +9,6 @@ let
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
     {} super;
 
-  nixpkgs-22_11 = import versions.nixpkgs-22_11 {};
   nixpkgs-23_05 = import versions.nixpkgs-23_05 {};
 
   inherit (super) fetchpatch fetchurl lib;
@@ -25,6 +24,8 @@ in {
     # We use 23.05 here after back-porting agent code from 23.05.
     pythonPackages = nixpkgs-23_05.python310Packages;
   });
+
+  backy = super.callPackage ./backy { inherit (nixpkgs-23_05) poetry2nix python310 mkShellNoCC;};
 
   #
   # imports from other nixpkgs versions or local definitions
@@ -448,12 +449,6 @@ in {
       })
     ];
   });
-
-  poetry = nixpkgs-22_11.poetry;
-  poetry2nix = nixpkgs-22_11.poetry2nix;
-
-  python310 = nixpkgs-22_11.python310;
-  python310Packages = nixpkgs-22_11.python310Packages;
 
   postgis_2_5 = super.postgis.overrideAttrs(_: rec {
     version = "2.5.5";

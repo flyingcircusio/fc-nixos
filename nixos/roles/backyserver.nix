@@ -7,7 +7,7 @@ let
   role = config.flyingcircus.roles.backyserver;
   enc = config.flyingcircus.enc;
 
-  backy = pkgs.callPackage ../../pkgs/backy/default.nix { };
+  backy = pkgs.backy;
 
   backyExtract = let
     src = pkgs.fetchFromGitHub {
