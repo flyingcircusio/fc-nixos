@@ -13,8 +13,6 @@ import ./make-test-python.nix (
         config = {
           flyingcircus.logrotate.enable = true;
 
-          services.telegraf.enable = false;
-
           users.users.s-svc = {
             inherit home;
             createHome = true;

@@ -7,8 +7,6 @@ import ./make-test-python.nix ({ ... }:
       imports = [ ../nixos ../nixos/roles ];
       config.services.prometheus.enable = true;
 
-      config.services.telegraf.enable = false;
-
     };
   testScript = ''
     machine.wait_for_unit("prometheus.service")

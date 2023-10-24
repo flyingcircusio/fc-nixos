@@ -103,7 +103,6 @@ in {
         networking.firewall.enable = false;
         services.nginx.enable = true;
         virtualisation.interfaces.ethfe.vlan = 1;
-        services.telegraf.enable = false;
       };
 
     vclient =

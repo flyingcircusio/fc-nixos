@@ -156,7 +156,7 @@ in {
         environment.etc.hosts.source = lib.mkForce (pkgs.writeText "hosts" hosts);
         networking.domain = "fcio.net";
 
-        services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
+        services.telegraf.enable = true;
 
         flyingcircus.roles.statshost.prometheusLocationProxyExtraSettings = {
           # We are talking to a fake stats source that only speaks HTTP/1.1

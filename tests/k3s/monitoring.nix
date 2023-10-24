@@ -38,6 +38,8 @@ in {
           enableACME = false;
         };
 
+        services.telegraf.enable = true;
+
         users.users = {
           sensuclient = { isSystemUser = true; };
         };

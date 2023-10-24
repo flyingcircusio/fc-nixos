@@ -11,6 +11,7 @@ in {
       ];
 
       flyingcircus.roles."postgresql${version}".enable = true;
+      services.telegraf.enable = true;
     };
   };
 

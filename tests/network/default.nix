@@ -61,7 +61,6 @@ in {
       name = "loopback";
       machine = {
           imports = [ ../../nixos ../../nixos/roles ];
-          services.telegraf.enable = false;
       };
       testScript = ''
         machine.wait_for_unit("network.target")
@@ -74,7 +73,6 @@ in {
       name = "wireguard";
       machine = {
         imports = [ ../../nixos ../../nixos/roles ];
-        services.telegraf.enable = false;
       };
       testScript = ''
         machine.wait_for_unit("network.target")
