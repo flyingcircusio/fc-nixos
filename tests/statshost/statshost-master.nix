@@ -32,7 +32,7 @@ import ../make-test-python.nix ({ pkgs, ... }:
         192.168.101.1 myself.fcio.net myself
       '';
 
-      services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
+      services.telegraf.enable = true;
 
       users.users.s-test = {
         isNormalUser = true;

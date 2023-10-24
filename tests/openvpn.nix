@@ -96,7 +96,6 @@ in {
         imports = [ ../nixos ../nixos/roles ];
         environment.systemPackages = [ pkgs.openvpn ];
 
-        services.telegraf.enable = false;
         flyingcircus.enc.parameters = {
           resource_group = "test";
           interfaces.fe = {

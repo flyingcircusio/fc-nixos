@@ -16,6 +16,8 @@
     };
     services.haveged.enable = true;  # use pseudo-entropy to speed up tests
     services.openssh.enable = lib.mkOverride 60 false;
+    services.telegraf.enable = lib.mkOverride 150 false;
+
     # build-vms.nix from NixOS automatically generates numbered interface
     # configs with default IPs. We rename the devices to fe and srv early so
     # the services wait for the interfaces for 5 minutes and time out.

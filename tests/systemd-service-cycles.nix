@@ -7,9 +7,6 @@ import ./make-test-python.nix ({ ... }:
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
-
-      services.telegraf.enable = false;
-
     };
 
   testScript = ''

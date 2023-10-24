@@ -52,7 +52,6 @@ in {
           # XXX: same as upstream test, let's see how they fix this
           networking.firewall.enable = false;
           flyingcircus.encServices = encServices;
-          services.telegraf.enable = false;
 
           # The test framework overrides the fileSystems setting from the role,
           # we must add it here with a higher priority
@@ -85,7 +84,6 @@ in {
           flyingcircus.encServiceClients = encServiceClients;
           # XXX: same as upstream test, let's see how they fix this
           networking.firewall.enable = false;
-          services.telegraf.enable = false;
           users.users.u = user;
 
           specialisation.withCustomFlags.configuration.flyingcircus.roles.nfs_rg_share.clientFlags = [ "rw" "sync" "no_root_squash" "no_subtree_check" ];

@@ -11,8 +11,6 @@ import ./make-test-python.nix ({ pkgs, lib, ... }:
       {"parameters": {"directory_password": "test"}}
     '';
 
-    services.telegraf.enable = false;
-
     networking.extraHosts = ''
       127.0.0.1 directory.fcio.net
     '';
