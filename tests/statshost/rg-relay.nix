@@ -1,33 +1,47 @@
-import ../make-test-python.nix ({ pkgs, ... }:
+import ../make-test-python.nix ({ pkgs, testlib, ... }:
+let
+  inherit (testlib) fcConfig fcIP;
+in
 {
   name = "rg-relay";
   nodes = {
     relay = {
-      imports = [ ../../nixos ../../nixos/roles ];
+      imports = [ (fcConfig { id = 1; }) ];
+
       flyingcircus.roles.statshost-relay.enable = true;
-      networking.nameservers = [ "127.0.0.53" ];
-      services.resolved.enable = true;
-      networking.firewall.allowedTCPPorts = [ 9090 ];
       environment.etc."local/statshost/scrape-rg.json".text = ''
         [
           {"targets":["statsSource:9126"]}
         ]
       '';
+      # IPv4 is included by default but Nginx also wants to
+      # resolve IPv6. Without it, Nginx just returns 502 on proxy requests.
+      networking.extraHosts = ''
+        ${fcIP.srv6 2} statsSource
+      '';
 
-      services.telegraf.enable = false;
+      networking.firewall.allowedTCPPorts = [ 9090 ];
+      # Nginx wants to talk to DNS, so we set up a dnsmasq that serves /etc/hosts.
+      services.dnsmasq = {
+        enable = true;
+        settings = {
+          log-queries = true;
+          resolv-file = "/etc/hosts";
+        };
+      };
 
     };
 
     statsSource = {
-      imports = [ ../../nixos ../../nixos/roles ];
+      imports = [ (fcConfig { id = 2; }) ];
+
       networking.firewall.allowedTCPPorts = [ 9126 ];
-      services.telegraf.enable = false;
     };
 
     statshost = {
-      imports = [ ../../nixos ../../nixos/roles ];
+      imports = [ (fcConfig { id = 3; }) ];
+
       environment.systemPackages = [ pkgs.curl ];
-      services.telegraf.enable = false;
     };
   };
 
@@ -35,8 +49,9 @@ import ../make-test-python.nix ({ pkgs, ... }:
     start_all()
     statsSource.execute("""
       echo 'system_uptime' > metrics
-      ${pkgs.python3.interpreter} -m http.server 9126 >&2 &
+      python -m http.server 9126 >&2 &
     """)
+    statsSource.wait_for_open_port(9126)
 
     relay.wait_for_unit("nginx.service")
     relay.wait_for_open_port(9090)
