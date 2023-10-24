@@ -132,6 +132,7 @@ with lib;
         nm = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDFBloz5mf4SxX0/GwvOmTD2itWTRjyrmxh13Nzc2oSP nm";
         os = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJemLKFmr09o6zBscLJSD3KcAs/dnIYBjgxYzJ59VvHx os@Olivers-MBP-3";
         molly = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAmJVyCt6/vSslsEp3dATDD/kk56kaxLggm+3ppwZWbj molly@aqueduct.local";
+        phil = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILRVZrVfZrUggrw4wNNcX7r9o7NQ0VjLHTkovVnZBmYH phil";
       };
 
     };
