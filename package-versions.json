@@ -769,6 +769,11 @@
     "pname": "pip",
     "version": "23.0.1"
   },
+  "python3Packages.pyslurm": {
+    "name": "python3.10-pyslurm-unstable-2023-05-12",
+    "pname": "pyslurm",
+    "version": "unstable-2023-05-12"
+  },
   "python3Packages.supervisor": {
     "name": "python3.10-supervisor-4.2.5",
     "pname": "supervisor",
@@ -833,6 +838,11 @@
     "name": "screen-4.9.0",
     "pname": "screen",
     "version": "4.9.0"
+  },
+  "slurm": {
+    "name": "slurm-23.02.3.1",
+    "pname": "slurm",
+    "version": "23.02.3.1"
   },
   "solr": {
     "name": "solr-8.11.2",
