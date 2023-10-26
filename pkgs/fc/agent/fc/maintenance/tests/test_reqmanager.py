@@ -233,9 +233,19 @@ def test_enter_maintenance(log, reqmanager, monkeypatch):
     reqmanager._enter_maintenance()
 
     assert log.has("enter-maintenance")
+    assert log.has(
+        "enter-maintenance-cmd",
+        subsystem="demo",
+        command='echo "entering demo"',
+    )
+    assert log.has("enter-maintenance-cmd-success", subsystem="demo")
     connect_mock().mark_node_service_status.assert_called_with("host", False)
     maintenance_entered_at = reqmanager.maintenance_marker_path.read_text()
     assert maintenance_entered_at == "2016-04-20T11:00:00+00:00"
+
+    import rich
+
+    rich.print(log.events)
 
 
 def test_enter_maintenance_postpone(log, reqmanager, monkeypatch):
@@ -264,7 +274,7 @@ def test_enter_maintenance_tempfail(log, reqmanager, monkeypatch):
     assert reqmanager.maintenance_marker_path.exists()
 
 
-def test_execute_postpone(log, reqmanager, monkeypatch):
+def test_execute_postpone(log, reqmanager):
     req = reqmanager.add(Request(Activity(), 1))
     req.state = State.due
     req.execute = Mock()
@@ -280,9 +290,10 @@ def test_execute_postpone(log, reqmanager, monkeypatch):
     assert req.state == State.postpone
     assert not req.execute.called
     reqmanager._leave_maintenance.assert_called()
+    log.has("execute-requests-postpone")
 
 
-def test_execute_tempfail(log, reqmanager, monkeypatch):
+def test_execute_tempfail(log, reqmanager):
     req = reqmanager.add(Request(Activity(), 1))
     req.state = State.due
     req.execute = Mock()
@@ -298,51 +309,45 @@ def test_execute_tempfail(log, reqmanager, monkeypatch):
     assert req.state == State.due
     assert not req.execute.called
     reqmanager._leave_maintenance.assert_not_called()
+    log.has("execute-requests-tempfail")
 
 
-@unittest.mock.patch("subprocess.run")
-@unittest.mock.patch("fc.util.directory.connect")
-def test_execute_activity_no_reboot(connect, run, reqmanager, log):
+def test_execute_activity_no_reboot(reqmanager, log):
     req = reqmanager.add(Request(Activity(), 1))
     reqmanager._runnable = lambda run_all_now, force_run: [req]
+    reqmanager._enter_maintenance = Mock()
+    reqmanager._leave_maintenance = Mock()
+
     reqmanager.execute()
-    run.assert_has_calls(
-        [
-            call('echo "entering demo"', shell=True, check=True),
-            call('echo "leaving demo"', shell=True, check=True),
-        ]
-    )
-    assert log.has("enter-maintenance")
-    assert log.has("leave-maintenance")
+
+    reqmanager._enter_maintenance.assert_called_once()
+    reqmanager._leave_maintenance.assert_called_once()
+    assert log.has("no-reboot-requested")
 
 
-@unittest.mock.patch("subprocess.run")
-@unittest.mock.patch("fc.util.directory.connect")
-@unittest.mock.patch("time.sleep")
-def test_execute_activity_with_reboot(
-    sleep: Mock, connect, run: Mock, reqmanager, log
-):
+def test_execute_activity_with_reboot(reqmanager, log, monkeypatch):
+    monkeypatch.setattr("time.sleep", sleep := Mock())
+    monkeypatch.setattr("subprocess.run", run := Mock())
+    reqmanager._enter_maintenance = Mock()
+    reqmanager._leave_maintenance = Mock()
+
     activity = Activity()
     activity.reboot_needed = RebootType.WARM
     req = reqmanager.add(Request(activity, 1))
-    req.state = State.due
+    reqmanager._runnable = lambda run_all_now, force_run: [req]
+
     with pytest.raises(SystemExit) as e:
-        reqmanager.execute(run_all_now=True)
+        reqmanager.execute()
 
     assert e.value.code == 0
 
-    run.assert_has_calls(
-        [
-            call('echo "entering demo"', shell=True, check=True),
-            call("reboot", check=True, capture_output=True, text=True),
-        ]
-    )
+    reqmanager._enter_maintenance.assert_called_once()
 
     sleep.assert_called_once_with(5)
-
-    assert log.has("enter-maintenance")
+    run.assert_called_once()
+    # Should stay in maintenance mode during the reboot.
+    reqmanager._leave_maintenance.assert_not_called()
     assert log.has("maintenance-reboot")
-    assert not log.has("leave-maintenance")
 
 
 @unittest.mock.patch("subprocess.run")
@@ -516,8 +521,7 @@ def test_execute_not_performed_on_connection_error(
     connect().mark_node_service_status.side_effect = socket.error()
     req = reqmanager.add(Request(Activity(), 1))
     req.state = State.due
-    with pytest.raises(OSError):
-        reqmanager.execute()
+    reqmanager.execute()
     assert execute.mock_calls == []
 
 

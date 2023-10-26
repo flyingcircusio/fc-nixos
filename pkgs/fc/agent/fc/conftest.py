@@ -34,7 +34,7 @@ def agent_maintenance_config(tmp_path):
 
 
 @fixture
-def reqmanager(tmp_path, agent_maintenance_config):
+def reqmanager(tmp_path, logger, agent_maintenance_config):
     spooldir = tmp_path / "maintenance"
     spooldir.mkdir()
     enc_path = tmp_path / "enc.json"
@@ -44,6 +44,7 @@ def reqmanager(tmp_path, agent_maintenance_config):
             spooldir=spooldir,
             enc_path=enc_path,
             config_file=agent_maintenance_config,
+            log=logger,
         ) as rm:
             yield rm
 
@@ -70,9 +71,12 @@ def request_population(tmp_path, agent_maintenance_config, reqmanager):
 
 @fixture
 def logger():
-    _logger = structlog.get_logger()
-    _logger.trace = lambda *a, **k: None
-    return _logger
+    # pytest-structlog patches away structlog.config, but we can still use
+    # structlog._config.configure...
+    # We need to do that to support our custom `trace` logging method.
+    # It fails with BoundLoggingFilteringAtNotset which is the default wrapper.
+    structlog._config.configure(wrapper_class=structlog.BoundLogger)
+    return structlog.get_logger()
 
 
 @fixture
