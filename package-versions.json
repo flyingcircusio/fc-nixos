@@ -309,6 +309,11 @@
     "pname": "openjdk",
     "version": "19.0.2+7"
   },
+  "jetbrains.jdk": {
+    "name": "jetbrains-jdk-jcef-17.0.7-b829.16",
+    "pname": "jetbrains-jdk-jcef",
+    "version": "17.0.7-b829.16"
+  },
   "jetty": {
     "name": "jetty-11.0.14",
     "pname": "jetty",
@@ -923,6 +928,11 @@
     "name": "vim-9.0.1441",
     "pname": "vim",
     "version": "9.0.1441"
+  },
+  "webkitgtk": {
+    "name": "webkitgtk-2.42.1+abi=4.0",
+    "pname": "webkitgtk",
+    "version": "2.42.1"
   },
   "wget": {
     "name": "wget-1.21.4",
