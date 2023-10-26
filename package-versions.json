@@ -762,9 +762,9 @@
     "version": "23.2.1"
   },
   "python3Packages.pyslurm": {
-    "name": "python3.11-pyslurm-unstable-2023-10-13",
+    "name": "python3.11-pyslurm-23.2.2",
     "pname": "pyslurm",
-    "version": "unstable-2023-10-13"
+    "version": "23.2.2"
   },
   "python3Packages.supervisor": {
     "name": "python3.11-supervisor-4.2.5",

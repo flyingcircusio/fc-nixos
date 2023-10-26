@@ -342,20 +342,6 @@ in {
     ];
   });
 
-  pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
-    (python-final: python-prev: {
-      pyslurm = python-prev.pyslurm.overridePythonAttrs(_: {
-        version = "unstable-2023-10-13";
-        src = super.fetchFromGitHub {
-          owner = "pyslurm";
-          repo = "pyslurm";
-          rev = "f7a7d8beb8ceb4e4c1b248bab2ebb995dcae77e2";
-          sha256 = "dDHjMkBZHngriwyoZx6VtAIVWJXJPGI7qpv/GBcEWC4=";
-        };
-      });
-    })
-  ];
-
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
 
