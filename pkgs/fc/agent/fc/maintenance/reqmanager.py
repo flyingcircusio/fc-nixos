@@ -21,9 +21,11 @@ import rich.syntax
 import structlog
 from fc.maintenance.activity import RebootType
 from fc.util.checks import CheckResult
+from fc.util.subprocess_helper import get_popen_stdout_lines
 from fc.util.time_date import format_datetime, utcnow
 from rich.table import Table
 
+from . import state
 from .request import Request, RequestMergeResult
 from .state import ARCHIVE, EXIT_POSTPONE, EXIT_TEMPFAIL, State
 
@@ -568,24 +570,50 @@ class ReqManager:
         for name, command in self.config["maintenance-enter"].items():
             if not command.strip():
                 continue
-            self.log.info(
-                "enter-maintenance-subsystem", subsystem=name, command=command
+
+            log = self.log.bind(
+                subsystem=name,
             )
-            try:
-                # XXX: capture output
-                subprocess.run(command, shell=True, check=True)
-            except subprocess.CalledProcessError as e:
-                if e.returncode == EXIT_POSTPONE:
-                    self.log.info(
+
+            proc = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                text=True,
+            )
+            log.info(
+                "enter-maintenance-cmd",
+                _replace_msg=(
+                    "{subsystem}: Maintenance enter command started with PID "
+                    "{cmd_pid}: `{command}`"
+                ),
+                command=command,
+                cmd_pid=proc.pid,
+            )
+
+            stdout_lines = get_popen_stdout_lines(
+                proc, log, "enter-maintenance-out"
+            )
+            stdout = "".join(stdout_lines)
+            proc.wait()
+
+            match proc.returncode:
+                case 0:
+                    log.debug("enter-maintenance-cmd-success")
+                case state.EXIT_POSTPONE:
+                    log.info(
                         "enter-maintenance-postpone",
                         command=command,
                         _replace_msg=(
-                            "Command `{command}` requested to postpone all requests."
+                            "Command `{command}` requested to postpone all "
+                            "requests."
                         ),
                     )
+                    log.debug("enter-maintenance-postpone-out", stdout=stdout)
                     postpone_seen = True
-                elif e.returncode == EXIT_TEMPFAIL:
-                    self.log.info(
+                case state.EXIT_TEMPFAIL:
+                    log.info(
                         "enter-maintenance-tempfail",
                         command=command,
                         _replace_msg=(
@@ -593,9 +621,15 @@ class ReqManager:
                             "Requests should be tried again next time."
                         ),
                     )
+                    log.debug("enter-maintenance-tempfail-out", stdout=stdout)
                     tempfail_seen = True
-                else:
-                    raise
+                case error:
+                    log.error(
+                        "enter-maintenance-fail",
+                        command=command,
+                        exit_code=error,
+                    )
+                    raise subprocess.CalledProcessError(error, command, stdout)
 
         if postpone_seen:
             raise PostponeMaintenance()
@@ -757,8 +791,8 @@ class ReqManager:
             self.log.warn(
                 "execute-requests-force",
                 _replace_msg=(
-                    "Due requests will be executed regardless of the temporary failure "
-                    "of a maintenance enter command."
+                    "Due requests will be executed regardless of the "
+                    "(temporary) failure of a maintenance enter command."
                 ),
             )
             return HandleEnterExceptionResult()
@@ -768,8 +802,8 @@ class ReqManager:
                 "run-all-now-force",
                 _replace_msg=(
                     "Run all mode requested and force mode activated: "
-                    "All requests will be executed now regardless of the temporary "
-                    "failure of a maintenance enter command."
+                    "All requests will be executed now regardless of the "
+                    "(temporary) failure of a maintenance enter command."
                 ),
             )
             return HandleEnterExceptionResult()
@@ -853,6 +887,9 @@ class ReqManager:
         are ignored and requests are run regardless. This also runs requests in state
         'success' again when they are still in the queue after a recent system reboot.
         """
+        self.log.debug(
+            "execute-start", run_all_now=run_all_now, force_run=force_run
+        )
 
         runnable_requests = self._runnable(run_all_now, force_run)
         if not runnable_requests:
@@ -877,7 +914,21 @@ class ReqManager:
         except TempfailMaintenance:
             res = self._handle_enter_tempfail(run_all_now, force_run)
             if res.exit:
-                # Stay in maintenance mode.
+                # Stay in maintenance mode as we expect the temporary failure
+                # to go away on the next agent run.
+                self._write_stats_for_execute()
+                return
+
+        except Exception:
+            # Other exceptions are similar to tempfail, just with additional
+            # logging. Could an error from a enter command, from the directory
+            # or an internal one.
+            self.log.error("execute-enter-maintenance-failed", exc_info=True)
+            res = self._handle_enter_tempfail(run_all_now, force_run)
+            if res.exit:
+                # Might already be in maintenance or not, depending on where
+                # _enter_maintenance failed. That's ok, the next agent
+                # run can continue in either case.
                 self._write_stats_for_execute()
                 return
 
