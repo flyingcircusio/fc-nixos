@@ -810,9 +810,9 @@
     "version": "7.0.13"
   },
   "roundcube": {
-    "name": "roundcube-1.6.3",
+    "name": "roundcube-1.6.4",
     "pname": "roundcube",
-    "version": "1.6.3"
+    "version": "1.6.4"
   },
   "rsync": {
     "name": "rsync-3.2.7",
