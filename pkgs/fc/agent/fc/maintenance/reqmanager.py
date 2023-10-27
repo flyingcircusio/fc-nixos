@@ -10,13 +10,12 @@ import socket
 import subprocess
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import NamedTuple
 
 import fc.maintenance.state
 import fc.util.directory
-import pytz
 import rich
 import rich.syntax
 import structlog
@@ -964,7 +963,8 @@ class ReqManager:
         if name_matches:
             return sorted(
                 [Request.load(name, self.log) for name in name_matches],
-                key=lambda r: r.added_at or datetime.fromtimestamp(0),
+                key=lambda r: r.added_at
+                or datetime.fromtimestamp(0, tz=timezone.utc),
             )
         return []
 
@@ -977,7 +977,8 @@ class ReqManager:
         if name_matches:
             return sorted(
                 [Request.load(name, self.log) for name in name_matches],
-                key=lambda r: r.added_at or datetime.fromtimestamp(0),
+                key=lambda r: r.added_at
+                or datetime.fromtimestamp(0, tz=timezone.utc),
             )
         return []
 
@@ -1139,7 +1140,7 @@ class ReqManager:
         if num_scheduled := metrics["requests_scheduled"]:
             next_due = format_datetime(
                 datetime.fromtimestamp(
-                    metrics["request_next_due_at"], tz=pytz.utc
+                    metrics["request_next_due_at"], tz=timezone.utc
                 )
             )
             if num_scheduled == 1:
