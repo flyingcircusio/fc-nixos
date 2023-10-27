@@ -1,4 +1,5 @@
 import json
+import traceback
 from pathlib import Path
 from typing import NamedTuple, Optional
 
@@ -154,6 +155,11 @@ def run(run_all_now: bool = False, force_run: bool = False):
     If you still want to execute requests even if a maintenance enter command returned
     with EXIT_TEMPFAIL or EXIT_POSTPONE, add the --force-run flag.
 
+    WARNING: ignoring the result of enter commands can be dangerous!
+
+    The --force-run flag also runs requests in state 'success' again when they are still
+    in the queue after a recent system reboot.
+
     After executing all runnable requests, requests that want to be postponed
     are postponed (they get a new execution time) and finished requests
     (successful or failed permanently) moved from the current request to the
@@ -253,13 +259,14 @@ def system_properties():
 
     with rm:
         rm.scan()
+        current_requests = rm.requests.values()
 
         if enc["parameters"]["machine"] == "virtual":
             rm.add(request_reboot_for_memory(log, enc))
             rm.add(request_reboot_for_cpu(log, enc))
             rm.add(request_reboot_for_qemu(log))
 
-        rm.add(request_reboot_for_kernel(log))
+        rm.add(request_reboot_for_kernel(log, current_requests))
         log.info("fc-maintenance-system-properties-finished")
 
 
@@ -344,11 +351,28 @@ def constraints(
     log.debug("constraints-success")
 
 
+@app.command()
+def check():
+    fc.util.logging.init_logging(
+        context.verbose, context.logdir, log_to_console=context.verbose
+    )
+    try:
+        rm.scan()
+        result = rm.check()
+    except Exception:
+        print("UNKNOWN: Exception occurred while running checks")
+        traceback.print_exc()
+        raise Exit(3)
+
+    print(result.format_output())
+    if result.exit_code:
+        raise Exit(result.exit_code)
+
+
 @app.command(help="Prints metrics in the telegraf JSON input format.")
 def metrics():
-    with rm:
-        rm.scan()
-        jso = json.dumps(rm.get_metrics())
+    rm.scan()
+    jso = json.dumps(rm.get_metrics())
 
     print(jso)
 

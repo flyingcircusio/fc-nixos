@@ -12,6 +12,7 @@ import rich.table
 import shortuuid
 import structlog
 import yaml
+from fc.maintenance import state
 from fc.util.time_date import ensure_timezone_present, format_datetime, utcnow
 
 from .activity import Activity, ActivityMergeResult
@@ -41,11 +42,11 @@ class RequestMergeResult(Enum):
 class Attempt:
     """Data object to track finished activities."""
 
-    stdout = None
-    stderr = None
-    returncode = None
-    finished = None
-    duration = None
+    stdout: str | None = None
+    stderr: str | None = None
+    returncode: int | None = None
+    finished: datetime.datetime | None = None
+    duration: float | None = None
 
     def __init__(self):
         self.started = utcnow()
@@ -195,6 +196,10 @@ class Request:
             return False
         return utcnow() > self.not_after
 
+    @property
+    def tempfail(self):
+        return self.state not in state.ARCHIVE and self.attempts
+
     @classmethod
     def load(cls, dir, log, runnable_for_seconds: int):
         # need imports because such objects may be loaded via YAML
@@ -277,16 +282,20 @@ class Request:
         )
         attempt = Attempt()  # sets start time
         try:
+            resuming = self.state == State.running
             self.state = State.running
+            self.attempts.append(attempt)
             self.save()
             with cd(self.dir):
                 try:
-                    self.activity.run()
+                    if resuming:
+                        self.activity.resume()
+                    else:
+                        self.activity.run()
                     attempt.record(self.activity)
                 except Exception as e:
                     attempt.returncode = 70  # EX_SOFTWARE
                     attempt.stderr = str(e)
-            self.attempts.append(attempt)
             self.state = evaluate_state(self.activity.returncode)
         except Exception:
             self.log.error(

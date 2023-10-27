@@ -172,3 +172,7 @@ class VMChangeActivity(Activity):
 
     # Running an VMChangeActivity is not needed, so no run method.
     # The request manager handles the reboot required by this activity.
+
+    def resume(self):
+        # There's nothing to do so we can safely "retry" this activity.
+        self.run()

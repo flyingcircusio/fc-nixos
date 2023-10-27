@@ -1,5 +1,6 @@
 import os
 
+import fc.maintenance.state
 import pytest
 from fc.maintenance.lib.shellscript import ShellScriptActivity
 
@@ -32,3 +33,9 @@ sys.exit(5)
     assert a.stdout == "hello\n"
     assert a.stderr == "world\n"
     assert a.returncode == 5
+
+
+def test_shellscript_should_be_not_resumable():
+    activity = ShellScriptActivity("true")
+    activity.resume()
+    assert activity.returncode == fc.maintenance.state.EXIT_INTERRUPTED
