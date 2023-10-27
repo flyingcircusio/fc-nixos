@@ -15,7 +15,7 @@
 , xfsprogs
 , pytest
 , structlog
-, enableSlurm ? stdenv.isLinux
+, enableSlurm ? false
 }:
 
 let
