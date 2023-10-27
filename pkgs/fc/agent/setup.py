@@ -66,7 +66,7 @@ setup(
             "fc-directory=fc.util.directory:directory_cli",
             "fc-graylog=fc.manage.graylog:main",
             "fc-maintenance=fc.maintenance.cli:app",
-            "fc-manage=fc.manage.cli:main",
+            "fc-manage=fc.manage.cli:app",
             "fc-qemu-scrub=fc.manage.qemu:main",
             "fc-monitor=fc.manage.monitor:main",
             "fc-resize-disk=fc.manage.resize_disk:app",

@@ -31,9 +31,10 @@ from fc.util.logging import (
     init_command_logging,
     init_logging,
 )
-from typer import Argument, Exit, Option, Typer
+from fc.util.typer_utils import FCTyperApp
+from typer import Argument, Exit, Option
 
-app = Typer(pretty_exceptions_show_locals=False)
+app = FCTyperApp("fc-maintenance")
 log = structlog.get_logger()
 
 
@@ -52,7 +53,7 @@ rm: ReqManager
 
 
 @app.callback(no_args_is_help=True)
-def main(
+def fc_maintenance(
     verbose: bool = Option(
         False,
         "--verbose",

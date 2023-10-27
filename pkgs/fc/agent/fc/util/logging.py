@@ -217,6 +217,10 @@ class ConsoleFileRenderer:
         )
 
     def __call__(self, logger, method_name, event_dict):
+        log_settings = event_dict.pop("_log_settings", {})
+        if log_settings.get("console_ignore", False):
+            return
+
         console_io = io.StringIO()
         log_io = io.StringIO()
 
@@ -416,6 +420,9 @@ class SystemdJournalRenderer:
     def __call__(self, logger, method_name, event_dict):
         if method_name == "trace":
             return {}
+
+        # Unused
+        event_dict.pop("_log_settings", None)
 
         kv_renderer = structlog.processors.KeyValueRenderer(sort_keys=True)
         event_dict["message"] = event_dict["event"]
@@ -665,3 +672,8 @@ def init_logging(
             raise ValueError("A logdir is required for command logging.")
 
         init_command_logging(log, logdir)
+
+
+def logging_initialized():
+    logger_factory = structlog.get_config()["logger_factory"]
+    return isinstance(logger_factory, MultiOptimisticLoggerFactory)
