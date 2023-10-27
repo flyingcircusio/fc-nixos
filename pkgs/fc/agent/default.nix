@@ -15,6 +15,7 @@
 , xfsprogs
 , pytest
 , structlog
+, enableSlurm ? stdenv.isLinux
 }:
 
 let
@@ -72,10 +73,11 @@ buildPythonPackage rec {
     dmidecode
     gptfdisk
     multipath-tools
-    py.pyslurm
     py.pystemd
     py.systemd
     xfsprogs
+  ] ++ lib.optionals enableSlurm [
+    py.pyslurm
   ];
   dontStrip = true;
   doCheck = true;
