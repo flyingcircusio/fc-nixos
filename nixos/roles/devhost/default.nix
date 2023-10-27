@@ -357,7 +357,7 @@ in
           path = with pkgs; [
             bzip2
             config.system.build.nixos-rebuild
-            fc.agent
+            config.flyingcircus.agent.package
             gnutar
             gzip
             utillinux

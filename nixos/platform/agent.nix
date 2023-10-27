@@ -85,6 +85,16 @@ in
         type = types.bool;
       };
 
+      package = mkOption {
+        type = types.package;
+        example = literalExpression "pkgs.fc.agentWithSlurm";
+        default = pkgs.fc.agent;
+        defaultText = "pkgs.fc.agent";
+        description = lib.mdDoc ''
+          agent package to use.
+        '';
+      };
+
       maintenanceConstraints = {
         machinesInService = mkOption {
           default = [];
@@ -177,7 +187,7 @@ in
 
     (mkIf cfg.agent.install {
       environment.systemPackages = [
-        pkgs.fc.agent
+        cfg.agent.package
         agentZshCompletionsPkg
       ];
 
@@ -190,7 +200,7 @@ in
       in
         lib.optionalAttrs (machines != []) {
           other-machines-not-in-maintenance.enter =
-              "${pkgs.fc.agent}/bin/fc-maintenance constraints"
+              "${cfg.agent.package}/bin/fc-maintenance constraints"
               + (lib.concatMapStrings (u: " --in-service ${u}") machines);
         };
 
@@ -205,11 +215,11 @@ in
           groups = [ "admins" "sudo-srv" "service" ];
         }
         {
-          commands = [ "${pkgs.fc.agent}/bin/fc-manage check" ];
+          commands = [ "${cfg.agent.package}/bin/fc-manage check" ];
           users = [ "sensuclient" ];
         }
         {
-          commands = [ "${pkgs.fc.agent}/bin/fc-postgresql check-autoupgrade-unexpected-dbs" ];
+          commands = [ "${cfg.agent.package}/bin/fc-postgresql check-autoupgrade-unexpected-dbs" ];
           users = [ "sensuclient" ];
           runAs = "postgres";
         }
@@ -256,7 +266,7 @@ in
 
         path = with pkgs; [
           config.system.build.nixos-rebuild
-          fc.agent
+          cfg.agent.package
         ] ++ commonEnvPath;
 
         inherit environment;
@@ -312,8 +322,8 @@ in
               options = "--enc-path=${cfg.encPath} ${verbose}";
             in
               if cfg.agent.updateInMaintenance
-              then "${pkgs.fc.agent}/bin/fc-maintenance ${options} request update"
-              else "${pkgs.fc.agent}/bin/fc-manage ${options} switch --update-channel --lazy";
+              then "${cfg.agent.package}/bin/fc-maintenance ${options} request update"
+              else "${cfg.agent.package}/bin/fc-manage ${options} switch --update-channel --lazy";
         };
 
         path = commonEnvPath;
@@ -400,19 +410,19 @@ in
         checks = {
           fc-agent = {
             notification = "fc-manage check failed. System may not build and update correctly.";
-            command = "sudo ${pkgs.fc.agent}/bin/fc-manage check";
+            command = "sudo ${cfg.agent.package}/bin/fc-manage check";
             interval = 300;
           };
           fc-maintenance = {
             notification = "fc-maintenance check failed.";
-            command = "${pkgs.fc.agent}/bin/fc-maintenance check";
+            command = "${cfg.agent.package}/bin/fc-maintenance check";
             interval = 180;
           };
         };
       };
       flyingcircus.services.telegraf.inputs = {
         exec = [{
-          commands = [ "${pkgs.fc.agent}/bin/fc-maintenance metrics" ];
+          commands = [ "${cfg.agent.package}/bin/fc-maintenance metrics" ];
           timeout = "10s";
           data_format = "json";
           json_name_key = "name";

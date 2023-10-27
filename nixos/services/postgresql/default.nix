@@ -377,7 +377,7 @@ in {
         } // lib.optionalAttrs (cfg.autoUpgrade.enable && cfg.autoUpgrade.checkExpectedDatabases) {
             postgresql-autoupgrade-possible = {
               notification = "Unexpected PostgreSQL databases present, autoupgrade will fail!";
-              command = "sudo -u postgres ${pkgs.fc.agent}/bin/fc-postgresql check-autoupgrade-unexpected-dbs";
+              command = "sudo -u postgres ${config.flyingcircus.agent.package}/bin/fc-postgresql check-autoupgrade-unexpected-dbs";
               interval = 600;
             };
         } // (lib.listToAttrs (map (host:
@@ -420,7 +420,7 @@ in {
         script = let
           expectedDatabaseStr = lib.concatMapStringsSep " " (d: "--expected ${d}") cfg.autoUpgrade.expectedDatabases;
           upgradeCmd = [
-            "${pkgs.fc.agent}/bin/fc-postgresql upgrade"
+            "${config.flyingcircus.agent.package}/bin/fc-postgresql upgrade"
             "--new-version ${cfg.majorVersion}"
             "--new-data-dir ${upstreamCfg.dataDir}"
             "--new-bin-dir ${upstreamCfg.package}/bin"

@@ -40,7 +40,7 @@ in
       };
 
       script = ''
-        ${pkgs.fc.agent}/bin/fc-monitor --enc ${config.flyingcircus.encPath} configure-checks
+        ${config.flyingcircus.agent.package}/bin/fc-monitor --enc ${config.flyingcircus.encPath} configure-checks
       '';
     };
 

@@ -69,7 +69,7 @@
       flyingcircus.passwordlessSudoRules = [
         {
           commands = [
-            "${pkgs.fc.agent}/bin/fc-kubernetes"
+            "${config.flyingcircus.agent.package}/bin/fc-kubernetes"
             "/run/current-system/sw/bin/fc-kubernetes"
           ];
           groups = [ "admins" "sudo-srv" ];

@@ -304,6 +304,8 @@ in
         '')
       ];
 
+      flyingcircus.agent.package = pkgs.fc.agentWithSlurm;
+
       flyingcircus.passwordlessSudoRules = [
         {
           commands = [ "ALL" ];
@@ -312,7 +314,7 @@ in
         }
         {
           commands = [
-            "${pkgs.fc.agent}/bin/fc-slurm"
+            "${config.flyingcircus.agent.package}/bin/fc-slurm"
             "/run/current-system/sw/bin/fc-slurm"
           ];
           groups = [ "sudo-srv" ];
@@ -417,7 +419,7 @@ in
           notification = "Slurm is unable to process jobs.";
           interval = 10;
           command = ''
-            sudo -u slurm ${pkgs.fc.agent}/bin/fc-slurm check
+            sudo -u slurm ${pkgs.fc.agentWithSlurm}/bin/fc-slurm check
           '';
         };
       };
@@ -440,7 +442,7 @@ in
 
       flyingcircus.services.telegraf.inputs = {
         exec = [{
-          commands = [ "${pkgs.fc.agent}/bin/fc-slurm metrics" ];
+          commands = [ "${config.flyingcircus.agent.package}/bin/fc-slurm metrics" ];
           timeout = "10s";
           data_format = "json";
           json_name_key = "name";
