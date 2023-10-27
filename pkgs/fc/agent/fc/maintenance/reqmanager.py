@@ -1015,9 +1015,7 @@ class ReqManager:
                     f"Next scheduled request is due at {next_due}."
                 )
 
-        if num_waiting_for_schedule := metrics[
-            "requests_waiting_for_schedule"
-        ]:
+        if num_waiting_for_schedule := metrics["requests_waiting_for_schedule"]:
             if num_waiting_for_schedule == 1:
                 ok_info.append(
                     f"A maintenance request is waiting to be scheduled."
