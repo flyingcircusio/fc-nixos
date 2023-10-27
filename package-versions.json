@@ -309,6 +309,11 @@
     "pname": "openjdk",
     "version": "19.0.2+7"
   },
+  "jetbrains.jdk": {
+    "name": "jetbrains-jdk-jcef-17.0.7-b829.16",
+    "pname": "jetbrains-jdk-jcef",
+    "version": "17.0.7-b829.16"
+  },
   "jetty": {
     "name": "jetty-11.0.14",
     "pname": "jetty",
@@ -769,6 +774,11 @@
     "pname": "pip",
     "version": "23.0.1"
   },
+  "python3Packages.pyslurm": {
+    "name": "python3.10-pyslurm-unstable-2023-05-12",
+    "pname": "pyslurm",
+    "version": "unstable-2023-05-12"
+  },
   "python3Packages.supervisor": {
     "name": "python3.10-supervisor-4.2.5",
     "pname": "supervisor",
@@ -800,9 +810,9 @@
     "version": "7.0.13"
   },
   "roundcube": {
-    "name": "roundcube-1.6.3",
+    "name": "roundcube-1.6.4",
     "pname": "roundcube",
-    "version": "1.6.3"
+    "version": "1.6.4"
   },
   "rsync": {
     "name": "rsync-3.2.7",
@@ -833,6 +843,11 @@
     "name": "screen-4.9.0",
     "pname": "screen",
     "version": "4.9.0"
+  },
+  "slurm": {
+    "name": "slurm-23.02.3.1",
+    "pname": "slurm",
+    "version": "23.02.3.1"
   },
   "solr": {
     "name": "solr-8.11.2",
@@ -913,6 +928,11 @@
     "name": "vim-9.0.1441",
     "pname": "vim",
     "version": "9.0.1441"
+  },
+  "webkitgtk": {
+    "name": "webkitgtk-2.42.1+abi=4.0",
+    "pname": "webkitgtk",
+    "version": "2.42.1"
   },
   "wget": {
     "name": "wget-1.21.4",
