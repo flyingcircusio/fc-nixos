@@ -29,6 +29,11 @@
     "pname": "awscli",
     "version": "1.27.79"
   },
+  "awscli2": {
+    "name": "awscli2-2.11.20",
+    "pname": "awscli2",
+    "version": "2.11.20"
+  },
   "bash": {
     "name": "bash-5.2-p15",
     "pname": "bash",
