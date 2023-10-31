@@ -65,9 +65,9 @@
     "version": "118.0.5993.70"
   },
   "chromium": {
-    "name": "chromium-118.0.5993.88",
+    "name": "chromium-118.0.5993.117",
     "pname": "chromium",
-    "version": "118.0.5993.88"
+    "version": "118.0.5993.117"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -205,9 +205,9 @@
     "version": "2.42.0"
   },
   "github-runner": {
-    "name": "github-runner-2.310.2",
+    "name": "github-runner-2.311.0",
     "pname": "github-runner",
-    "version": "2.310.2"
+    "version": "2.311.0"
   },
   "gitlab": {
     "name": "gitlab-16.4.1",
@@ -256,9 +256,9 @@
     "version": "1.20.10"
   },
   "grafana": {
-    "name": "grafana-10.1.5",
+    "name": "grafana-10.2.0",
     "pname": "grafana",
-    "version": "10.1.5"
+    "version": "10.2.0"
   },
   "haproxy": {
     "name": "haproxy-2.8.3",
@@ -266,9 +266,9 @@
     "version": "2.8.3"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-19",
+    "name": "imagemagick-7.1.1-21",
     "pname": "imagemagick",
-    "version": "7.1.1-19"
+    "version": "7.1.1-21"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.12-68",
@@ -276,9 +276,9 @@
     "version": "6.9.12-68"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-19",
+    "name": "imagemagick-7.1.1-21",
     "pname": "imagemagick",
-    "version": "7.1.1-19"
+    "version": "7.1.1-21"
   },
   "inetutils": {
     "name": "inetutils-2.4",
@@ -301,9 +301,9 @@
     "version": "17.0.7-b829.16"
   },
   "jetty": {
-    "name": "jetty-12.0.1",
+    "name": "jetty-12.0.2",
     "pname": "jetty",
-    "version": "12.0.1"
+    "version": "12.0.2"
   },
   "jicofo": {
     "name": "jicofo-1.0-1027",
@@ -336,9 +336,9 @@
     "version": "1.27.6+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-22.0.4",
+    "name": "keycloak-22.0.5",
     "pname": "keycloak",
-    "version": "22.0.4"
+    "version": "22.0.5"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.13.1",
@@ -401,9 +401,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.1.59",
+    "name": "linux-6.1.60",
     "pname": "linux",
-    "version": "6.1.59"
+    "version": "6.1.60"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -441,9 +441,9 @@
     "version": "4.15.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.94.0",
+    "name": "matrix-synapse-wrapped-1.95.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.94.0"
+    "version": "1.95.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -451,9 +451,9 @@
     "version": "2.7.2.1"
   },
   "memcached": {
-    "name": "memcached-1.6.21",
+    "name": "memcached-1.6.22",
     "pname": "memcached",
-    "version": "1.6.21"
+    "version": "1.6.22"
   },
   "mysql": {
     "name": "mariadb-server-10.11.5",
@@ -476,9 +476,9 @@
     "version": "1.24.0"
   },
   "nginxMainline": {
-    "name": "nginx-1.25.2",
+    "name": "nginx-1.25.3",
     "pname": "nginx",
-    "version": "1.25.2"
+    "version": "1.25.3"
   },
   "nginxStable": {
     "name": "nginx-1.24.0",
@@ -511,9 +511,9 @@
     "version": "18.18.2"
   },
   "nodejs_20": {
-    "name": "nodejs-20.8.1",
+    "name": "nodejs-20.9.0",
     "pname": "nodejs",
-    "version": "20.8.1"
+    "version": "20.9.0"
   },
   "nspr": {
     "name": "nspr-4.35",
@@ -631,14 +631,14 @@
     "version": "8.0.30"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.24",
+    "name": "php-with-extensions-8.1.25",
     "pname": "php-with-extensions",
-    "version": "8.1.24"
+    "version": "8.1.25"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.11",
+    "name": "php-with-extensions-8.2.12",
     "pname": "php-with-extensions",
-    "version": "8.2.11"
+    "version": "8.2.12"
   },
   "phpPackages.composer": {
     "name": "composer-2.6.5",
@@ -776,14 +776,14 @@
     "version": "8.1.2"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-3.12.6",
+    "name": "rabbitmq-server-3.12.7",
     "pname": "rabbitmq-server",
-    "version": "3.12.6"
+    "version": "3.12.7"
   },
   "rabbitmq-server_3_8": {
-    "name": "rabbitmq-server-3.12.6",
+    "name": "rabbitmq-server-3.12.7",
     "pname": "rabbitmq-server",
-    "version": "3.12.6"
+    "version": "3.12.7"
   },
   "re2c": {
     "name": "re2c-3.1",
