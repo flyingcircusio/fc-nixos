@@ -5,9 +5,9 @@
     "version": "1.6.0"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.57",
+    "name": "apache-httpd-2.4.58",
     "pname": "apache-httpd",
-    "version": "2.4.57"
+    "version": "2.4.58"
   },
   "asterisk": {
     "name": "asterisk-20.2.1",
@@ -65,14 +65,14 @@
     "version": "17.2.5"
   },
   "chromedriver": {
-    "name": "chromedriver-117.0.5938.149",
+    "name": "chromedriver-118.0.5993.70",
     "pname": "chromedriver",
-    "version": "117.0.5938.149"
+    "version": "118.0.5993.70"
   },
   "chromium": {
-    "name": "chromium-117.0.5938.149",
+    "name": "chromium-118.0.5993.117",
     "pname": "chromium",
-    "version": "117.0.5938.149"
+    "version": "118.0.5993.117"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -145,9 +145,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.45",
+    "name": "element-web-1.11.46",
     "pname": "element-web",
-    "version": "1.11.45"
+    "version": "1.11.46"
   },
   "erlang": {
     "name": "erlang-25.3.2",
@@ -190,9 +190,9 @@
     "version": "7.17.4"
   },
   "firefox": {
-    "name": "firefox-118.0.1",
+    "name": "firefox-119.0",
     "pname": "firefox",
-    "version": "118.0.1"
+    "version": "119.0"
   },
   "gcc": {
     "name": "gcc-wrapper-12.2.0",
@@ -220,9 +220,9 @@
     "version": "2.40.1"
   },
   "github-runner": {
-    "name": "github-runner-2.310.2",
+    "name": "github-runner-2.311.0",
     "pname": "github-runner",
-    "version": "2.310.2"
+    "version": "2.311.0"
   },
   "gitlab": {
     "name": "gitlab-16.4.1",
@@ -235,9 +235,9 @@
     "version": "3.84.0"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-16.4.0",
+    "name": "gitlab-runner-16.5.0",
     "pname": "gitlab-runner",
-    "version": "16.4.0"
+    "version": "16.5.0"
   },
   "glibc": {
     "name": "glibc-2.37-45",
@@ -275,9 +275,9 @@
     "version": "1.20.8"
   },
   "grafana": {
-    "name": "grafana-9.5.8",
+    "name": "grafana-9.5.13",
     "pname": "grafana",
-    "version": "9.5.8"
+    "version": "9.5.13"
   },
   "haproxy": {
     "name": "haproxy-2.7.10",
@@ -285,9 +285,9 @@
     "version": "2.7.10"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-19",
+    "name": "imagemagick-7.1.1-21",
     "pname": "imagemagick",
-    "version": "7.1.1-19"
+    "version": "7.1.1-21"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.12-68",
@@ -295,9 +295,9 @@
     "version": "6.9.12-68"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-19",
+    "name": "imagemagick-7.1.1-21",
     "pname": "imagemagick",
-    "version": "7.1.1-19"
+    "version": "7.1.1-21"
   },
   "inetutils": {
     "name": "inetutils-2.4",
@@ -320,9 +320,9 @@
     "version": "17.0.7-b829.16"
   },
   "jetty": {
-    "name": "jetty-11.0.14",
+    "name": "jetty-11.0.17",
     "pname": "jetty",
-    "version": "11.0.14"
+    "version": "11.0.17"
   },
   "jicofo": {
     "name": "jicofo-1.0-1027",
@@ -420,9 +420,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.1.57",
+    "name": "linux-6.1.61",
     "pname": "linux",
-    "version": "6.1.57"
+    "version": "6.1.61"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -460,9 +460,9 @@
     "version": "4.15.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.94.0",
+    "name": "matrix-synapse-1.95.1",
     "pname": "matrix-synapse",
-    "version": "1.94.0"
+    "version": "1.95.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -515,9 +515,9 @@
     "version": "1.24.0"
   },
   "nix": {
-    "name": "nix-2.13.5",
+    "name": "nix-2.13.6",
     "pname": "nix",
-    "version": "2.13.5"
+    "version": "2.13.6"
   },
   "nodejs": {
     "name": "nodejs-18.17.1",
@@ -650,14 +650,14 @@
     "version": "8.0.29"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.24",
+    "name": "php-with-extensions-8.1.25",
     "pname": "php-with-extensions",
-    "version": "8.1.24"
+    "version": "8.1.25"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.11",
+    "name": "php-with-extensions-8.2.12",
     "pname": "php-with-extensions",
-    "version": "8.2.11"
+    "version": "8.2.12"
   },
   "phpPackages.composer": {
     "name": "php-composer-2.5.5",
@@ -780,9 +780,9 @@
     "version": "23.0.1"
   },
   "python3Packages.pyslurm": {
-    "name": "python3.10-pyslurm-unstable-2023-05-12",
+    "name": "python3.10-pyslurm-unstable-2023-10-13",
     "pname": "pyslurm",
-    "version": "unstable-2023-05-12"
+    "version": "unstable-2023-10-13"
   },
   "python3Packages.supervisor": {
     "name": "python3.10-supervisor-4.2.5",
@@ -810,9 +810,9 @@
     "version": "3.0"
   },
   "redis": {
-    "name": "redis-7.0.13",
+    "name": "redis-7.0.14",
     "pname": "redis",
-    "version": "7.0.13"
+    "version": "7.0.14"
   },
   "roundcube": {
     "name": "roundcube-1.6.4",
@@ -850,9 +850,9 @@
     "version": "4.9.0"
   },
   "slurm": {
-    "name": "slurm-23.02.3.1",
+    "name": "slurm-23.02.6.1",
     "pname": "slurm",
-    "version": "23.02.3.1"
+    "version": "23.02.6.1"
   },
   "solr": {
     "name": "solr-8.11.2",
