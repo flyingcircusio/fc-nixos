@@ -194,7 +194,6 @@ in
           else
           "expire_logs_days = ${toString cfg.binlogExpireDays}"
         }
-
         log_slow_verbosity = 'full'
         slow_query_log = ON
         long_query_time = 0.1
@@ -234,14 +233,16 @@ in
           # too many non 8.0 client libs out there, which cannot
           # connect otherwise.
           lib.optionalString
-          (lib.versionAtLeast package.version "8.0")
-          "default_authentication_plugin = mysql_native_password"}
+          (lib.versionAtLeast package.version "8.0") ''
+            default_authentication_plugin = mysql_native_password
+            log_error_suppression_list = MY-013360
+          ''}
 
         ${# Query cache is gone in 8.0
           # https://mysqlserverteam.com/mysql-8-0-retiring-support-for-the-query-cache/
           lib.optionalString
-          (lib.versionOlder package.version "8.0")
-          ''query_cache_type           = 1
+          (lib.versionOlder package.version "8.0") ''
+            query_cache_type           = 1
             query_cache_min_res_unit   = 2k
             query_cache_size           = 80M
           ''}
