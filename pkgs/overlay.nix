@@ -283,6 +283,8 @@ in {
     buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
   });
 
+  nodejs_14 = super.nodejs_14.override { python3 = self.python310; };
+
   openldap_2_4 = super.callPackage ./openldap_2_4.nix {
     libxcrypt = self.libxcrypt-legacy;
   };
