@@ -29,6 +29,11 @@
     "pname": "awscli",
     "version": "1.29.9"
   },
+  "awscli2": {
+    "name": "awscli2-2.13.28",
+    "pname": "awscli2",
+    "version": "2.13.28"
+  },
   "bash": {
     "name": "bash-5.2-p15",
     "pname": "bash",
@@ -75,9 +80,9 @@
     "version": "7.0"
   },
   "clamav": {
-    "name": "clamav-1.2.0",
+    "name": "clamav-1.2.1",
     "pname": "clamav",
-    "version": "1.2.0"
+    "version": "1.2.1"
   },
   "cmake": {
     "name": "cmake-3.26.4",
@@ -130,9 +135,9 @@
     "version": "20.10.26"
   },
   "docker-compose": {
-    "name": "docker-compose-2.21.0",
+    "name": "docker-compose-2.23.0",
     "pname": "docker-compose",
-    "version": "2.21.0"
+    "version": "2.23.0"
   },
   "dovecot": {
     "name": "dovecot-2.3.21",
@@ -140,9 +145,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.46",
+    "name": "element-web-1.11.47",
     "pname": "element-web",
-    "version": "1.11.46"
+    "version": "1.11.47"
   },
   "erlang": {
     "name": "erlang-25.3.2.7",
@@ -210,14 +215,14 @@
     "version": "2.311.0"
   },
   "gitlab": {
-    "name": "gitlab-16.4.1",
+    "name": "gitlab-16.5.1",
     "pname": "gitlab",
-    "version": "16.4.1"
+    "version": "16.5.1"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.84.0",
+    "name": "gitlab-container-registry-3.85.0",
     "pname": "gitlab-container-registry",
-    "version": "3.84.0"
+    "version": "3.85.0"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.5.0",
@@ -401,9 +406,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.1.60",
+    "name": "linux-6.1.61",
     "pname": "linux",
-    "version": "6.1.60"
+    "version": "6.1.61"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -441,9 +446,9 @@
     "version": "4.15.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.95.0",
+    "name": "matrix-synapse-wrapped-1.95.1",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.95.0"
+    "version": "1.95.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -651,9 +656,9 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-4.7.0",
+    "name": "podman-4.7.2",
     "pname": "podman",
-    "version": "4.7.0"
+    "version": "4.7.2"
   },
   "poetry": {
     "name": "poetry-1.6.1",
@@ -666,20 +671,16 @@
     "version": "123"
   },
   "postfix": {
-    "name": "postfix-3.8.2",
+    "name": "postfix-3.8.3",
     "pname": "postfix",
-    "version": "3.8.2"
+    "version": "3.8.3"
   },
   "postgresql": {
     "name": "postgresql-15.4",
     "pname": "postgresql",
     "version": "15.4"
   },
-  "postgresql_11": {
-    "name": "postgresql-11.21",
-    "pname": "postgresql",
-    "version": "11.21"
-  },
+  "postgresql_11": {},
   "postgresql_12": {
     "name": "postgresql-12.16",
     "pname": "postgresql",
@@ -761,9 +762,9 @@
     "version": "23.2.1"
   },
   "python3Packages.pyslurm": {
-    "name": "python3.10-pyslurm-unstable-2023-05-12",
+    "name": "python3.11-pyslurm-unstable-2023-10-13",
     "pname": "pyslurm",
-    "version": "unstable-2023-05-12"
+    "version": "unstable-2023-10-13"
   },
   "python3Packages.supervisor": {
     "name": "python3.11-supervisor-4.2.5",
@@ -791,9 +792,9 @@
     "version": "3.1"
   },
   "redis": {
-    "name": "redis-7.2.2",
+    "name": "redis-7.2.3",
     "pname": "redis",
-    "version": "7.2.2"
+    "version": "7.2.3"
   },
   "roundcube": {
     "name": "roundcube-1.6.4",
@@ -821,9 +822,9 @@
     "version": "3.0.6"
   },
   "runc": {
-    "name": "runc-1.1.9",
+    "name": "runc-1.1.10",
     "pname": "runc",
-    "version": "1.1.9"
+    "version": "1.1.10"
   },
   "screen": {
     "name": "screen-4.9.1",
@@ -831,9 +832,9 @@
     "version": "4.9.1"
   },
   "slurm": {
-    "name": "slurm-23.02.3.1",
+    "name": "slurm-23.02.6.1",
     "pname": "slurm",
-    "version": "23.02.3.1"
+    "version": "23.02.6.1"
   },
   "solr": {
     "name": "solr-8.11.2",
@@ -841,9 +842,9 @@
     "version": "8.11.2"
   },
   "strace": {
-    "name": "strace-6.5",
+    "name": "strace-6.6",
     "pname": "strace",
-    "version": "6.5"
+    "version": "6.6"
   },
   "strongswan": {
     "name": "strongswan-5.9.11",
@@ -876,9 +877,9 @@
     "version": "4.99.4"
   },
   "telegraf": {
-    "name": "telegraf-1.28.2",
+    "name": "telegraf-1.28.3",
     "pname": "telegraf",
-    "version": "1.28.2"
+    "version": "1.28.3"
   },
   "tmux": {
     "name": "tmux-3.3a",
