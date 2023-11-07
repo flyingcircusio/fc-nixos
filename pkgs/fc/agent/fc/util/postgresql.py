@@ -33,7 +33,6 @@ Prepared as new data directory for a migration from {old_data_dir} by
 
 
 class PGVersion(str, Enum):
-    PG11 = "11"
     PG12 = "12"
     PG13 = "13"
     PG14 = "14"
