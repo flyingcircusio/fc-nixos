@@ -41,6 +41,7 @@ in {
     ./sensu/client.nix
     ./solr.nix
     ./telegraf
+    ./varnish
 
     (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")
   ];

@@ -1,19 +1,25 @@
-import ./make-test-python.nix ({ pkgs, ... }:
-{
+import ./make-test-python.nix ({ pkgs, ... }: let
+  varnishport = 8008;
+  serverport = 8080;
+in {
   name = "webproxy";
   nodes = {
     webproxy =
       { lib, ... }:
       {
         imports = [ ../nixos ../nixos/roles ];
-        environment.etc."local/varnish/newconfig.vcl".text = ''
-          vcl 4.0;
-          backend test {
-            .host = "127.0.0.1";
-            .port = "8081";
-          }
-        '';
         flyingcircus.roles.webproxy.enable = true;
+
+        flyingcircus.services.varnish.virtualHosts.test = {
+          condition = "true";
+          config = ''
+            vcl 4.0;
+            backend test {
+              .host = "127.0.0.1";
+              .port = "${builtins.toString serverport}";
+            }
+          '';
+        };
 
         flyingcircus.enc.parameters.interfaces.srv = {
           mac = "52:54:00:12:34:56";
@@ -25,18 +31,21 @@ import ./make-test-python.nix ({ pkgs, ... }:
           gateways = {};
         };
 
+        systemd.services.helloserver = {
+          wantedBy = [ "multi-user.target" ];
+          script = ''
+            echo 'Hello World!' > hello.txt
+            ${pkgs.python3.interpreter} -m http.server ${builtins.toString serverport} >&2
+          '';
+        };
       };
   };
   testScript = ''
     webproxy.wait_for_unit("varnish.service")
     webproxy.wait_for_unit("varnishncsa.service")
+    webproxy.wait_for_unit("helloserver.service")
 
-    webproxy.execute("""
-        echo 'Hello World!' > hello.txt
-        ${pkgs.python3.interpreter} -m http.server 8080 >&2 &
-        """)
-
-    url = 'http://localhost:8008/hello.txt'
+    url = 'http://localhost:${builtins.toString varnishport}/hello.txt'
     curl = "curl -s " + url
 
     webproxy.wait_until_succeeds(curl)
@@ -46,10 +55,5 @@ import ./make-test-python.nix ({ pkgs, ... }:
 
     with subtest("varnishncsa should log requests"):
         webproxy.wait_until_succeeds(f"{curl} && grep -q 'GET {url} HTTP/' /var/log/varnish.log")
-
-    with subtest("changing config and reloading should activate new config"):
-        webproxy.execute('ln -sf /etc/local/varnish/newconfig.vcl /etc/current-config/varnish.vcl')
-        webproxy.succeed('systemctl reload varnish')
-        webproxy.succeed('varnishadm -n /var/spool/varnish/webproxy vcl.list | grep active | grep -q newconfig')
   '';
 })
