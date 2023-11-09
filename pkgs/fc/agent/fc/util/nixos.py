@@ -300,8 +300,13 @@ def find_nix_build_error(stderr: str, log=_log):
     build output or a generic message if nothing is found.
     """
 
+    # Define variables to make sure they are available for parse error handling.
+    lines = None
+    num_lines = None
+
     try:
         lines = stderr.splitlines()
+        num_lines = len(lines)
         error_lines = []
 
         for pos, line in enumerate(lines):
@@ -313,7 +318,10 @@ def find_nix_build_error(stderr: str, log=_log):
                         error_lines.append(error.split(";")[0])
                     else:
                         error_lines.append(error)
-                elif lines[pos + 1].strip() == "Failed assertions:":
+                elif (
+                    pos + 1 < num_lines
+                    and lines[pos + 1].strip() == "Failed assertions:"
+                ):
                     error_lines.append("Failed assertions:")
                     error_lines.extend(l.strip() for l in lines[pos + 2 : -1])
                     break
@@ -331,7 +339,12 @@ def find_nix_build_error(stderr: str, log=_log):
             return "\n".join(error_lines)
 
     except Exception:
-        log.error("find-nix-build-error-failed", exc_info=True)
+        log.error(
+            "find-nix-build-error-failed",
+            tail_lines=lines[-25:] if lines else None,
+            num_lines=num_lines,
+            exc_info=True,
+        )
 
     # We haven't found an error message we know, fall back to generic error message
     return "Building the system failed!"

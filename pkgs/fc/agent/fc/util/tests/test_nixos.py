@@ -343,6 +343,23 @@ def test_find_nix_build_error_failed_assertion():
     assert nixos.find_nix_build_error(stderr) == expected
 
 
+def test_find_nix_build_error_oneline():
+    stderr = textwrap.dedent(
+        """
+        copying path '/nix/store/24lrf2pp03i902sfpx2wfsxvv7xclcxc-bind-9.18.19-man' from 'https://s3.whq.fcio.net/hydra'...
+        copying path '/nix/store/hx1mzy0d8kx3a8fzncz42m8ij06pm0s1-bc-1.07.1' from 'https://s3.whq.fcio.net/hydra'...
+        error: opening directory '/nix/store/v04xnxah48g4m9lp4151xw70yr2dlcc9-unit-script-acme-selfsigned-test-start': Too many open files
+        """
+    )
+    expected = textwrap.dedent(
+        """
+        opening directory '/nix/store/v04xnxah48g4m9lp4151xw70yr2dlcc9-unit-script-acme-selfsigned-test-start': Too many open files
+        """
+    ).strip()
+
+    assert nixos.find_nix_build_error(stderr) == expected
+
+
 @pytest.fixture
 def dirsetup(tmpdir):
     drv = tmpdir.mkdir("abcdef-linux-4.4.27")

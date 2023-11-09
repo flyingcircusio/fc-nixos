@@ -10,6 +10,7 @@ import structlog
 from fc.maintenance import state
 from fc.maintenance.estimate import Estimate
 from fc.util import nixos
+from fc.util.logging import init_command_logging
 from fc.util.nixos import UnitChanges
 
 from ...util.channel import Channel
@@ -281,6 +282,8 @@ class UpdateActivity(Activity):
                 self.returncode = 0
                 return
 
+            init_command_logging(self.log)
+
             system_path = nixos.build_system(
                 self.next_channel_url, log=self.log
             )
@@ -304,6 +307,9 @@ class UpdateActivity(Activity):
             next_version=self.next_version,
             next_environment=self.next_environment,
         )
+
+        # No clean up of the command log file needed as we initialized
+        # logging only after checking that the activity changes the system.
 
         self.returncode = 0
 
