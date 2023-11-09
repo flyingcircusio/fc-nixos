@@ -54,8 +54,8 @@ let
 
   interfaceRules = lib.concatMapStrings
     (interface: ''
-      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.layer2device}"
-      '') interfaces;
+      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.name}"
+      '') ethernetDevices;
 in
 {
 
