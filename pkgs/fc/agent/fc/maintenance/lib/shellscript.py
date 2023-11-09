@@ -8,6 +8,7 @@ file, it is executed with /bin/sh.
 import os
 import subprocess
 
+import rich.console
 import rich.syntax
 import rich.text
 
@@ -38,5 +39,8 @@ class ShellScriptActivity(Activity):
         self.returncode = p.returncode
 
     def __rich__(self):
-        syntax = rich.syntax.Syntax(self.script, "shell", line_numbers=True)
-        return syntax
+        lines = self.script.splitlines()
+        syntax = rich.syntax.Syntax(
+            self.script, "shell", line_numbers=len(lines) > 2
+        )
+        return rich.console.Group("Execute script:\n", syntax)
