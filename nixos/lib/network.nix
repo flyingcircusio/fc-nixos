@@ -225,7 +225,10 @@ rec {
         device = if bridged then bridgedDevice else layer2device;
         attachedDevices = if bridged then [layer2device] else [];
         bridgedDevice = "br${vlan}";
-        layer2device = "eth${vlan}";
+        layer2device =
+          if policy == "underlay" then "underlay"
+          else if policy == "vxlan" then "vx${vlan}"
+          else "eth${vlan}";
 
         macFallback = "02:00:00:${fclib.byteToHex vlanId}:??:??";
         mac = lib.toLower
