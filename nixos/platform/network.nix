@@ -9,6 +9,24 @@ let
 
   interfaces = filter (i: i.vlan != "ipmi" && i.vlan != "lo") (lib.attrValues fclib.network);
   managedInterfaces = filter (i: i.policy != "unmanaged") interfaces;
+  physicalInterfaces = filter (i: i.policy != "vxlan" && i.policy != "underlay") managedInterfaces;
+  ethernetDevices =
+    (lib.forEach physicalInterfaces
+      (iface: {
+        name = if iface.bridged then iface.layer2device else iface.device;
+        mtu = iface.mtu;
+        mac = iface.mac;
+      })
+    ) ++
+    (if isNull fclib.underlay then []
+     else lib.mapAttrsToList
+       (name: value: {
+         name = name;
+         mtu = fclib.underlay.mtu;
+         mac = value;
+       })
+       fclib.underlay.interfaces
+    );
 
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
 
