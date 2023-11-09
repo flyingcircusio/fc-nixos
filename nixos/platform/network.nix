@@ -8,6 +8,7 @@ let
   fclib = config.fclib;
 
   interfaces = filter (i: i.vlan != "ipmi" && i.vlan != "lo") (lib.attrValues fclib.network);
+  managedInterfaces = filter (i: i.policy != "unmanaged") interfaces;
 
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
 
@@ -114,7 +115,7 @@ in
               defaultRoutes ++ additionalRoutes;
 
           mtu = interface.mtu;
-        })) interfaces);
+        })) managedInterfaces);
 
       bridges = listToAttrs (map (interface:
         (lib.nameValuePair
@@ -233,7 +234,7 @@ in
                 RemainAfterExit = true;
               };
             }))
-          interfaces)) //
+          managedInterfaces)) //
       (listToAttrs
         (map (interface:
           (lib.nameValuePair
@@ -266,7 +267,7 @@ in
                 RemainAfterExit = true;
               };
             }))
-          interfaces));
+          managedInterfaces));
 
     boot.kernel.sysctl = {
       "net.ipv4.tcp_congestion_control" = "bbr";
