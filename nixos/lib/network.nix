@@ -46,6 +46,10 @@ let
             cond = hasAttr "ul" encInterfaces && encInterfaces.ul.policy == "vxlan";
             fail = "The 'ul' network may not have policy 'vxlan'";
           }
+          {
+            cond = vxlanCount > 0 && (!hasAttr "ul" encInterfaces || encInterfaces.ul.policy != "underlay");
+            fail = "VXLAN devices cannot be configured without an underlay interface";
+          }
         ];
 in
 rec {
