@@ -35,7 +35,7 @@ let
 
   interfaceRules = lib.concatMapStrings
     (interface: ''
-      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
+      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.layer2device}"
       '') interfaces;
 in
 {
@@ -180,21 +180,21 @@ in
       (listToAttrs
         (map (interface:
           (lib.nameValuePair
-            "network-link-properties-${interface.physicalDevice}-phy"
+            "network-link-properties-${interface.layer2device}-phy"
             rec {
-              description = "Ensure link properties for ${interface.physicalDevice}";
+              description = "Ensure link properties for ${interface.layer2device}";
               # We need to explicitly be wanted by the multi-user target,
               # otherwise we will not get initially added as the individual
               # address units won't get restarted because triggering
               # the multi-user alone does not propagated to the network-target
               # etc. etc.
-              wantedBy = [ "network-addresses-${interface.physicalDevice}.service"
+              wantedBy = [ "network-addresses-${interface.layer2device}.service"
                            "multi-user.target" ];
 
               before = wantedBy;
               path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp];
               script = ''
-                IFACE=${interface.physicalDevice}
+                IFACE=${interface.layer2device}
 
                 IFACE_DRIVER=$(ethtool -i $IFACE | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
                 case $IFACE_DRIVER in

@@ -180,10 +180,10 @@ rec {
 
         vlanId = config.flyingcircus.static.vlanIds.${vlan};
 
-        device = if bridged then bridgedDevice else physicalDevice;
-        attachedDevices = if bridged then [physicalDevice] else [];
+        device = if bridged then bridgedDevice else layer2device;
+        attachedDevices = if bridged then [layer2device] else [];
         bridgedDevice = "br${vlan}";
-        physicalDevice = "eth${vlan}";
+        layer2device = "eth${vlan}";
 
         macFallback = "02:00:00:${fclib.byteToHex vlanId}:??:??";
         mac = lib.toLower

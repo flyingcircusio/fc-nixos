@@ -41,7 +41,7 @@ in
         after = [ "network-addresses-${netdev}.service" "firewall.service" ];
         requires = after;
         wantedBy = [ "network.target" ];
-        bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.physicalDevice}.device" ];
+        bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.layer2device}.device" ];
         path = [ pkgs.gawk pkgs.iproute pkgs.glibc pkgs.iptables ];
 
         serviceConfig = {
