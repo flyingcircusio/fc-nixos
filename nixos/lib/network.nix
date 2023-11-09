@@ -5,6 +5,48 @@
 with builtins;
 let
   fclib = config.fclib;
+
+  encInterfaces = lib.attrByPath [ "parameters" "interfaces" ] {} config.flyingcircus.enc;
+
+  foldConds = value: conds:
+    let
+      f = base: elem: if elem.cond then throw elem.fail else base;
+    in lib.foldl f value conds;
+
+  interfaceData =
+    let
+      underlayInterfaces = lib.filterAttrs (name: value: name != "ul" && value.policy == "underlay") encInterfaces;
+      underlayCount = length (attrNames underlayInterfaces);
+      vxlanInterfaces = lib.filterAttrs (name: value: value.policy == "vxlan") encInterfaces;
+      vxlanCount = length (attrNames vxlanInterfaces);
+    in
+      if config.flyingcircus.infrastructureModule != "flyingcircus-physical"
+      then foldConds encInterfaces
+        [
+          {
+            cond = underlayCount > 0;
+            fail = "Only physical hosts may have interfaces with policy 'underlay'";
+          }
+          {
+            cond = hasAttr "ul" encInterfaces;
+            fail = "Only physical hosts may be connected to the 'ul' network";
+          }
+          {
+            cond = vxlanCount > 0;
+            fail = "Only physical hosts may have interfaces with policy 'vxlan'";
+          }
+        ]
+      else foldConds encInterfaces
+        [
+          {
+            cond = underlayCount > 0;
+            fail = "Only the 'ul' network may have policy 'underlay'";
+          }
+          {
+            cond = hasAttr "ul" encInterfaces && encInterfaces.ul.policy == "vxlan";
+            fail = "The 'ul' network may not have policy 'vxlan'";
+          }
+        ];
 in
 rec {
   stripNetmask = cidr: head (lib.splitString "/" cidr);
@@ -247,7 +289,7 @@ rec {
         };
 
       }))
-    (lib.attrByPath [ "parameters" "interfaces" ] {} config.flyingcircus.enc) //
+    interfaceData //
       # Provide homogenous access to loopback data
       { lo = {
         vlan = "lo";
