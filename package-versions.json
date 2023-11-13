@@ -59,6 +59,11 @@
     "pname": "nss-cacert",
     "version": "3.92"
   },
+  "calibre": {
+    "name": "calibre-6.17.0",
+    "pname": "calibre",
+    "version": "6.17.0"
+  },
   "ceph": {
     "name": "ceph-17.2.5",
     "pname": "ceph",
@@ -233,6 +238,11 @@
     "name": "gitlab-container-registry-3.84.0",
     "pname": "gitlab-container-registry",
     "version": "3.84.0"
+  },
+  "gitlab-ee": {
+    "name": "gitlab-ee-16.4.1",
+    "pname": "gitlab-ee",
+    "version": "16.4.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.5.0",
@@ -605,9 +615,9 @@
     "version": "10.42"
   },
   "percona": {
-    "name": "percona-8.0.32-24",
+    "name": "percona-8.0.34-26",
     "pname": "percona",
-    "version": "8.0.32-24"
+    "version": "8.0.34-26"
   },
   "percona-xtrabackup_8_0": {
     "name": "percona-xtrabackup-8.0.34-29",
@@ -620,9 +630,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-8.0.32-24",
+    "name": "percona-8.0.34-26",
     "pname": "percona",
-    "version": "8.0.32-24"
+    "version": "8.0.34-26"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
