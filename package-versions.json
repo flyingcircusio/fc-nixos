@@ -65,14 +65,14 @@
     "version": "17.2.5"
   },
   "chromedriver": {
-    "name": "chromedriver-118.0.5993.70",
+    "name": "chromedriver-119.0.6045.105",
     "pname": "chromedriver",
-    "version": "118.0.5993.70"
+    "version": "119.0.6045.105"
   },
   "chromium": {
-    "name": "chromium-118.0.5993.117",
+    "name": "chromium-119.0.6045.105",
     "pname": "chromium",
-    "version": "118.0.5993.117"
+    "version": "119.0.6045.105"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -145,9 +145,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.46",
+    "name": "element-web-1.11.47",
     "pname": "element-web",
-    "version": "1.11.46"
+    "version": "1.11.47"
   },
   "erlang": {
     "name": "erlang-25.3.2",
@@ -190,9 +190,9 @@
     "version": "7.17.4"
   },
   "firefox": {
-    "name": "firefox-119.0",
+    "name": "firefox-119.0.1",
     "pname": "firefox",
-    "version": "119.0"
+    "version": "119.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-12.2.0",
@@ -225,14 +225,14 @@
     "version": "2.311.0"
   },
   "gitlab": {
-    "name": "gitlab-16.4.1",
+    "name": "gitlab-16.5.1",
     "pname": "gitlab",
-    "version": "16.4.1"
+    "version": "16.5.1"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.84.0",
+    "name": "gitlab-container-registry-3.85.0",
     "pname": "gitlab-container-registry",
-    "version": "3.84.0"
+    "version": "3.85.0"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.5.0",
@@ -285,9 +285,9 @@
     "version": "2.7.10"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-21",
+    "name": "imagemagick-7.1.1-19",
     "pname": "imagemagick",
-    "version": "7.1.1-21"
+    "version": "7.1.1-19"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.12-68",
@@ -295,9 +295,9 @@
     "version": "6.9.12-68"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-21",
+    "name": "imagemagick-7.1.1-19",
     "pname": "imagemagick",
-    "version": "7.1.1-21"
+    "version": "7.1.1-19"
   },
   "inetutils": {
     "name": "inetutils-2.4",
@@ -420,9 +420,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.1.61",
+    "name": "linux-6.1.62",
     "pname": "linux",
-    "version": "6.1.61"
+    "version": "6.1.62"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -580,9 +580,9 @@
     "version": "9.3p2"
   },
   "openssl": {
-    "name": "openssl-3.0.11",
+    "name": "openssl-3.0.12",
     "pname": "openssl",
-    "version": "3.0.11"
+    "version": "3.0.12"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -590,9 +590,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.11",
+    "name": "openssl-3.0.12",
     "pname": "openssl",
-    "version": "3.0.11"
+    "version": "3.0.12"
   },
   "openvpn": {
     "name": "openvpn-2.5.8",
@@ -825,9 +825,9 @@
     "version": "235"
   },
   "python3Packages.urllib3": {
-    "name": "python3.10-urllib3-1.26.14",
+    "name": "python3.10-urllib3-1.26.18",
     "pname": "urllib3",
-    "version": "1.26.14"
+    "version": "1.26.18"
   },
   "qemu": {
     "name": "qemu-8.0.5",
@@ -900,9 +900,9 @@
     "version": "8.11.2"
   },
   "strace": {
-    "name": "strace-6.5",
+    "name": "strace-6.6",
     "pname": "strace",
-    "version": "6.5"
+    "version": "6.6"
   },
   "strongswan": {
     "name": "strongswan-5.9.10",
