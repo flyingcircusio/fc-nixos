@@ -59,6 +59,11 @@
     "pname": "nss-cacert",
     "version": "3.92"
   },
+  "calibre": {
+    "name": "calibre-6.17.0",
+    "pname": "calibre",
+    "version": "6.17.0"
+  },
   "ceph": {
     "name": "ceph-17.2.5",
     "pname": "ceph",
@@ -233,6 +238,11 @@
     "name": "gitlab-container-registry-3.85.0",
     "pname": "gitlab-container-registry",
     "version": "3.85.0"
+  },
+  "gitlab-ee": {
+    "name": "gitlab-ee-16.4.1",
+    "pname": "gitlab-ee",
+    "version": "16.4.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.5.0",
@@ -503,11 +513,6 @@
     "name": "nginx-1.24.0",
     "pname": "nginx",
     "version": "1.24.0"
-  },
-  "nginxModules.modsecurity": {
-    "name": "modsecurity",
-    "pname": "modsecurity",
-    "version": ""
   },
   "nginxStable": {
     "name": "nginx-1.24.0",
