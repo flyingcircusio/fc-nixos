@@ -99,34 +99,59 @@ let
     }
   ];
 
-  modifiedPkgNames = attrNames (import ../pkgs/overlay.nix pkgs pkgs);
+  # Recursively searches for derivations and returns a list
+  # of attribute paths as "dotted names", like "dns" or "fc.agent".
+  # Traverses nested sets which have `recurseForDerivation = true;`.
+  getDottedPackageNames =
+    # Attrset with derivations, can have nested attrsets.
+    attrs:
+    # Path to a nested attrset as list of attr names, like [ "fc" ].
+    # Empty list when we are processing top-level attrs.
+    visitedAttrPath:
+      filter
+        (p: p != null)
+        (lib.flatten
+          ((lib.mapAttrsToList
+            (n: v:
+              let
+                attrPath = visitedAttrPath ++ [n];
+                dottedName = (lib.concatStringsSep "." attrPath);
+                shouldRecurse = (isAttrs v && v.recurseForDerivations or false);
+              in
+                if lib.isDerivation v then dottedName
+                else if shouldRecurse then getDottedPackageNames v attrPath
+                else null)
+            attrs)));
 
+  # Exclude packages from being built by Hydra.
+  # The exclusion list is applied to overlay packages and important packages.
+  # Supports excluding packages from nested sets using "dotted names" like "fc.blockdev".
   excludedPkgNames = [
-    # The kernel universe is _huge_ and contains a lot of unfree stuff. Kernel
-    # packages which are really needed are pulled in as dependencies anyway.
-    "linux"
-    "linux_5_4"
-    "linuxPackages"
-    "linuxPackages_5_4"
-    # XXX: fails on 21.05, must be fixed
-    "backy"
-    # This is a store path in the overlay which doesn't work in Hydra restricted mode.
-    # We don't need to test it.
-    "gitlab-runner"
   ];
 
-  includedPkgNames = [
-    "awscli"
-    "calibre"
-    "element-web"
-    "firefox"
-    "gitlab-ee"
-  ];
+  overlay = import ../pkgs/overlay.nix pkgs pkgs;
+  overlayPkgNames = getDottedPackageNames overlay [];
+  overlayPkgNamesToTest = lib.subtractLists excludedPkgNames overlayPkgNames;
 
-  testPkgNames = includedPkgNames ++
-    lib.subtractLists excludedPkgNames modifiedPkgNames;
+  importantPkgNames = fromJSON (readFile ../important_packages.json);
+  importantPkgNamesToTest = lib.subtractLists excludedPkgNames importantPkgNames;
 
-  testPkgs = listToAttrs (map (n: { name = n; value = pkgs.${n}; }) testPkgNames);
+  # Results looks like: [ { python3Packages.requests.x86_64-linux = <job>; } ]
+  pkgNameToHydraJobs = dottedName:
+    let
+      path = lib.splitString "." dottedName;
+      job = lib.hydraJob (lib.attrByPath path null pkgs);
+    in
+      map
+        (system: lib.setAttrByPath (path ++ [ system ]) job)
+        supportedSystems;
+
+  pkgNameListToHydraJobs = pkgNameList:
+    # Merge the single-attribute sets from pkgNameToHydraJobs into one big attrset.
+    lib.foldl'
+      lib.recursiveUpdate
+      {}
+      (lib.flatten (map pkgNameToHydraJobs pkgNameList));
 
   platformRoleDoc =
   let
@@ -150,7 +175,8 @@ let
   doc = { roles = platformRoleDoc; };
 
   jobs = {
-    pkgs = mapTestOn (packagePlatforms testPkgs);
+    pkgs = pkgNameListToHydraJobs overlayPkgNames;
+    importantPackages = pkgNameListToHydraJobs importantPkgNames;
     tests = import ../tests { inherit system pkgs; nixpkgs = nixpkgs_; };
   };
 
@@ -324,6 +350,8 @@ in
 
 jobs // {
   inherit channels tested images doc;
+  # Helpful for debugging with nix repl -f release/default.nix but should not included as Hydra jobs.
+  # inherit excludedPkgNames overlayPkgNames importantPkgNames overlayPkgNamesToTest importantPkgNamesToTest;
 
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";
