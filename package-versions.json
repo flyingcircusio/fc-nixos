@@ -59,6 +59,11 @@
     "pname": "nss-cacert",
     "version": "3.92"
   },
+  "calibre": {
+    "name": "calibre-6.29.0",
+    "pname": "calibre",
+    "version": "6.29.0"
+  },
   "ceph": {
     "name": "ceph-18.2.0",
     "pname": "ceph",
@@ -223,6 +228,11 @@
     "name": "gitlab-container-registry-3.85.0",
     "pname": "gitlab-container-registry",
     "version": "3.85.0"
+  },
+  "gitlab-ee": {
+    "name": "gitlab-ee-16.5.1",
+    "pname": "gitlab-ee",
+    "version": "16.5.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.5.0",
@@ -746,6 +756,11 @@
     "pname": "boto3",
     "version": "1.28.9"
   },
+  "python3Packages.click": {
+    "name": "python3.11-click-8.1.7",
+    "pname": "click",
+    "version": "8.1.7"
+  },
   "python3Packages.lxml": {
     "name": "python3.11-lxml-4.9.3-3",
     "pname": "lxml",
@@ -766,10 +781,45 @@
     "pname": "pyslurm",
     "version": "23.2.2"
   },
+  "python3Packages.pystemd": {
+    "name": "python3.11-pystemd-0.13.2",
+    "pname": "pystemd",
+    "version": "0.13.2"
+  },
+  "python3Packages.pyyaml": {
+    "name": "python3.11-pyyaml-6.0.1",
+    "pname": "pyyaml",
+    "version": "6.0.1"
+  },
+  "python3Packages.requests": {
+    "name": "python3.11-requests-2.31.0",
+    "pname": "requests",
+    "version": "2.31.0"
+  },
+  "python3Packages.rich": {
+    "name": "python3.11-rich-13.5.2",
+    "pname": "rich",
+    "version": "13.5.2"
+  },
+  "python3Packages.structlog": {
+    "name": "python3.11-structlog-23.2.0",
+    "pname": "structlog",
+    "version": "23.2.0"
+  },
   "python3Packages.supervisor": {
     "name": "python3.11-supervisor-4.2.5",
     "pname": "supervisor",
     "version": "4.2.5"
+  },
+  "python3Packages.systemd": {
+    "name": "python3.11-systemd-235",
+    "pname": "systemd",
+    "version": "235"
+  },
+  "python3Packages.urllib3": {
+    "name": "python3.11-urllib3-2.0.5",
+    "pname": "urllib3",
+    "version": "2.0.5"
   },
   "qemu": {
     "name": "qemu-8.1.2",
