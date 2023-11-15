@@ -10,6 +10,9 @@ let
   interfaces = filter (i: i.vlan != "ipmi" && i.vlan != "lo") (lib.attrValues fclib.network);
   managedInterfaces = filter (i: i.policy != "unmanaged") interfaces;
   physicalInterfaces = filter (i: i.policy != "vxlan" && i.policy != "underlay") managedInterfaces;
+
+  bridgedInterfaces = filter (i: i.bridged) managedInterfaces;
+  vxlanInterfaces = filter (i: i.policy == "vxlan") managedInterfaces;
   ethernetDevices =
     (lib.forEach physicalInterfaces
       (iface: {
@@ -137,9 +140,9 @@ in
 
       bridges = listToAttrs (map (interface:
         (lib.nameValuePair
-            "${interface.device}"
-            { interfaces = interface.attachedDevices; }))
-        (filter (interface: interface.bridged) interfaces));
+          "${interface.device}"
+          { interfaces = interface.attachedDevices; }))
+        bridgedInterfaces);
 
       resolvconf.extraOptions = [ "ndots:1" "timeout:1" "attempts:6" ];
 
@@ -190,30 +193,39 @@ in
     services.udev.extraRules = interfaceRules;
 
     systemd.services =
-      let startStopScript = fclib.simpleRouting;
+      let
+        sysctlSnippet = ''
+          # Disable IPv6 SLAAC (autoconf) on physical interfaces
+          sysctl net.ipv6.conf.$IFACE.accept_ra=0
+          sysctl net.ipv6.conf.$IFACE.autoconf=0
+          sysctl net.ipv6.conf.$IFACE.temp_valid_lft=0
+          sysctl net.ipv6.conf.$IFACE.temp_prefered_lft=0
+          for oldtmp in `ip -6 address show dev $IFACE dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
+            ip addr del $oldtmp dev $IFACE
+          done
+        '';
       in
       { nscd.restartTriggers = [
           config.environment.etc."host.conf".source
         ];
       } //
+      # These units performing network interface setup must be
+      # explicitly wanted by the multi-user target, otherwise they
+      # will not get initially added as the individual address units
+      # won't get restarted because triggering multi-user.target alone
+      # does not propagate to the network target, etc etc.
       (listToAttrs
-        (map (interface:
+        ((map (iface:
           (lib.nameValuePair
-            "network-link-properties-${interface.layer2device}-phy"
+            "network-link-properties-${iface.name}-phy"
             rec {
-              description = "Ensure link properties for ${interface.layer2device}";
-              # We need to explicitly be wanted by the multi-user target,
-              # otherwise we will not get initially added as the individual
-              # address units won't get restarted because triggering
-              # the multi-user alone does not propagated to the network-target
-              # etc. etc.
-              wantedBy = [ "network-addresses-${interface.layer2device}.service"
+              description = "Ensure link properties for physical interface ${iface.name}";
+              wantedBy = [ "network-addresses-${iface.name}.service"
                            "multi-user.target" ];
-
               before = wantedBy;
-              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp];
+              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp ];
               script = ''
-                IFACE=${interface.layer2device}
+                IFACE=${iface.name}
 
                 IFACE_DRIVER=$(ethtool -i $IFACE | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
                 case $IFACE_DRIVER in
@@ -236,56 +248,100 @@ in
                 ethtool -A $IFACE autoneg off rx off tx off || true
 
                 # Ensure MTU
-                ip l set $IFACE mtu ${toString interface.mtu}
+                ip l set $IFACE mtu ${toString iface.mtu}
 
-                # Disable IPv6 SLAAC (autoconf) on physical interfaces
-                sysctl net.ipv6.conf.$IFACE.accept_ra=0
-                sysctl net.ipv6.conf.$IFACE.autoconf=0
-                sysctl net.ipv6.conf.$IFACE.temp_valid_lft=0
-                sysctl net.ipv6.conf.$IFACE.temp_prefered_lft=0
-                for oldtmp in `ip -6 address show dev $IFACE dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
-                  ip addr del $oldtmp dev $IFACE
-                done
+                ${sysctlSnippet}
               '';
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            }))
-          managedInterfaces)) //
-      (listToAttrs
-        (map (interface:
+            })) ethernetDevices) ++
+        (map (iface:
           (lib.nameValuePair
-            "network-link-properties-${interface.device}-virt"
-            rec {
-              description = "Ensure link properties for ${interface.device} (virtual)";
-              # We need to explicitly be wanted by the multi-user target,
-              # otherwise we will not get initially added as the individual
-              # address units won't get restarted because triggering
-              # the multi-user alone does not propagated to the network-target
-              # etc. etc.
-              wantedBy = [ "network-addresses-${interface.device}.service"
+            "network-link-properties-${iface.device}-virt"
+            {
+              description = "Ensure link properties for virtual interface ${iface.device}";
+              wantedBy = [ "network-addresses-${iface.device}.service"
                            "multi-user.target" ];
-              bindsTo = [ "${interface.device}-netdev.service" ];
-              after = [ "${interface.device}-netdev.service" ];
-
-              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp];
+              bindsTo = [ "${iface.device}-netdev.service" ];
+              after = [ "${iface.device}-netdev.service" ];
+              path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
-                # Disable IPv6 SLAAC (autoconf) on interfaces w/ addresses
-                sysctl net.ipv6.conf.${interface.device}.accept_ra=0
-                sysctl net.ipv6.conf.${interface.device}.autoconf=0
-                sysctl net.ipv6.conf.${interface.device}.temp_valid_lft=0
-                sysctl net.ipv6.conf.${interface.device}.temp_prefered_lft=0
-                for oldtmp in `ip -6 address show dev ${interface.device} dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
-                  ip addr del $oldtmp dev ${interface.device}
-                done
+                IFACE=${iface.device}
+                ${sysctlSnippet}
               '';
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            }))
-          managedInterfaces));
+            }
+          )) bridgedInterfaces) ++
+        (if isNull fclib.underlay then [] else
+          [(lib.nameValuePair
+            "network-link-properties-underlay-virt"
+            rec {
+              description = "Ensure network link properties for virtual interface underlay";
+              wantedBy = [ "network-addresses-underlay.service"
+                           "multi-user.target" ];
+              before = wantedBy;
+              path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
+              script = ''
+                IFACE=underlay
+
+                # Create virtual interface underlay
+                ip link add $IFACE type dummy
+
+                ip link set $IFACE mtu ${toString fclib.underlay.mtu}
+
+                ${sysctlSnippet}
+              '';
+              preStop = ''
+                IFACE=underlay
+                ip link delete $IFACE
+              '';
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }
+          )]) ++
+        (if isNull fclib.underlay then [] else (map (iface:
+          lib.nameValuePair
+            "network-link-properties-${iface.layer2device}-virt"
+            rec {
+              description = "Ensure link properties for virtual interface ${iface.layer2device}";
+              wantedBy = [ "network-addresses-${iface.layer2device}.service"
+                           "multi-user.target" ];
+              before = wantedBy;
+              path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
+              script = ''
+                IFACE=${iface.layer2device}
+
+                # Create virtual inteface ${iface.layer2device}
+                ip link add $IFACE type vxlan \
+                  id ${toString iface.vlanId} \
+                  local ${fclib.underlay.loopback} \
+                  dstport 4789 \
+                  nolearning
+
+                # Set MTU and layer 2 address
+                ip link set $IFACE address ${iface.mac}
+                ip link set $IFACE mtu ${toString iface.mtu}
+
+                ${sysctlSnippet}
+              '';
+              preStop = ''
+                IFACE=${iface.layer2device}
+                ip link delete $IFACE
+              '';
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }
+        ) vxlanInterfaces))
+      ));
 
     boot.kernel.sysctl = {
       "net.ipv4.tcp_congestion_control" = "bbr";
