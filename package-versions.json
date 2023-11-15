@@ -30,9 +30,9 @@
     "version": "1.29.9"
   },
   "awscli2": {
-    "name": "awscli2-2.13.28",
+    "name": "awscli2-2.13.33",
     "pname": "awscli2",
-    "version": "2.13.28"
+    "version": "2.13.33"
   },
   "bash": {
     "name": "bash-5.2-p15",
@@ -70,14 +70,14 @@
     "version": "18.2.0"
   },
   "chromedriver": {
-    "name": "chromedriver-118.0.5993.70",
+    "name": "chromedriver-119.0.6045.105",
     "pname": "chromedriver",
-    "version": "118.0.5993.70"
+    "version": "119.0.6045.105"
   },
   "chromium": {
-    "name": "chromium-118.0.5993.117",
+    "name": "chromium-119.0.6045.123",
     "pname": "chromium",
-    "version": "118.0.5993.117"
+    "version": "119.0.6045.123"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -100,9 +100,9 @@
     "version": "1.16.1"
   },
   "containerd": {
-    "name": "containerd-1.7.7",
+    "name": "containerd-1.7.8",
     "pname": "containerd",
-    "version": "1.7.7"
+    "version": "1.7.8"
   },
   "coturn": {
     "name": "coturn-4.6.2",
@@ -185,9 +185,9 @@
     "version": "7.17.4"
   },
   "firefox": {
-    "name": "firefox-119.0",
+    "name": "firefox-119.0.1",
     "pname": "firefox",
-    "version": "119.0"
+    "version": "119.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -266,9 +266,9 @@
     "version": "1.19.13"
   },
   "go_1_20": {
-    "name": "go-1.20.10",
+    "name": "go-1.20.11",
     "pname": "go",
-    "version": "1.20.10"
+    "version": "1.20.11"
   },
   "grafana": {
     "name": "grafana-10.2.0",
@@ -356,9 +356,9 @@
     "version": "22.0.5"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.13.1",
+    "name": "kubernetes-helm-3.13.2",
     "pname": "kubernetes-helm",
-    "version": "3.13.1"
+    "version": "3.13.2"
   },
   "libffi": {
     "name": "libffi-3.4.4",
@@ -416,9 +416,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.1.61",
+    "name": "linux-6.1.62",
     "pname": "linux",
-    "version": "6.1.61"
+    "version": "6.1.62"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -476,9 +476,9 @@
     "version": "10.11.5"
   },
   "mysql80": {
-    "name": "mysql-8.0.34",
+    "name": "mysql-8.0.35",
     "pname": "mysql",
-    "version": "8.0.34"
+    "version": "8.0.35"
   },
   "nfs-utils": {
     "name": "nfs-utils-2.6.2",
@@ -501,9 +501,9 @@
     "version": "1.24.0"
   },
   "nix": {
-    "name": "nix-2.17.1",
+    "name": "nix-2.18.1",
     "pname": "nix",
-    "version": "2.17.1"
+    "version": "2.18.1"
   },
   "nodejs": {
     "name": "nodejs-18.18.2",
@@ -907,9 +907,9 @@
     "version": "1.14.2"
   },
   "sudo": {
-    "name": "sudo-1.9.14p3",
+    "name": "sudo-1.9.15p2",
     "pname": "sudo",
-    "version": "1.9.14p3"
+    "version": "1.9.15p2"
   },
   "sysstat": {
     "name": "sysstat-12.7.4",
