@@ -109,13 +109,73 @@ def _main():
         default="admin",
         help="Specify the database to check",
     )
+    p.add_option(
+        "-h",
+        "--hostname",
+        action="store",
+        dest="hostname",
+        default="localhost",
+        help="Hostname to connect to",
+    )
+    p.add_option(
+        "-p",
+        "--port",
+        action="store",
+        type=int,
+        dest="port",
+        default=27017,
+        help="Port to connect to",
+    )
+    p.add_option(
+        "-t",
+        "--tls",
+        action="store_true",
+        dest="tls",
+        help="Use TLS when connecting to database",
+    )
+    p.add_option(
+        "-V",
+        "--tls-insecure",
+        action="store_true",
+        dest="tls_insecure",
+        help="Disable TLS certificate validation when connection to database",
+    )
+    p.add_option(
+        "-U",
+        "--username",
+        action="store",
+        dest="username",
+        help="Username to use when connecting",
+    )
+    p.add_option(
+        "-P",
+        "--password-file",
+        action="store",
+        dest="password_file",
+        help="Path to file containing password to use when connecting",
+    )
 
     options, _ = p.parse_args()
     action = options.action
 
     start = time.time()
 
-    con = pymongo.MongoClient()
+    params = {}
+
+    if options.tls:
+        params["tls"] = True
+        if options.tls_insecure:
+            params["tlsInsecure"] = True
+
+    if options.username is not None:
+        params["username"] = options.username
+
+        if options.password_file is not None:
+            with open(options.password_file, "r") as pf:
+                password = pf.read().strip()
+                params["password"] = password
+
+    con = pymongo.MongoClient(options.hostname, options.port, **params)
 
     try:
         # Ping to check that the server is responding.
