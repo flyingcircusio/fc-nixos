@@ -38,6 +38,8 @@ in
         "d /srv/nfs/kubernetes 0750 kubernetes service"
       ];
 
+      users.groups.kubernetes.gid = config.ids.gids.kubernetes;
+
       users.users.kubernetes = {
         uid = config.ids.uids.kubernetes;
         home = "/var/empty";

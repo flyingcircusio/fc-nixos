@@ -531,7 +531,7 @@ in {
       };
     };
 
-    users.groups.kubernetes = {};
+    users.groups.kubernetes.gid = config.ids.gids.kubernetes;
 
     users.users = {
       kubernetes = {
