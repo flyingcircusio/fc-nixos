@@ -215,7 +215,7 @@ rec {
       lib.nameValuePair vlan (
       let
         priority = routingPriority vlan;
-        bridged = interface.bridged;
+        bridged = interface.bridged || interface.policy == "vxlan";
 
         mtu = if hasAttr vlan config.flyingcircus.static.mtus
               then config.flyingcircus.static.mtus.${vlan}
