@@ -62,6 +62,11 @@ let
       '') ethernetDevices;
 in
 {
+  # The NixOS module for FRR is only available in later versions of
+  # NixOS
+  imports = [
+    <nixpkgs-23.05/nixos/modules/services/networking/frr.nix>
+  ];
 
   config = rec {
     environment.etc."host.conf".text = ''
@@ -208,6 +213,66 @@ in
 
     services.udev.initrdRules = interfaceRules;
     services.udev.extraRules = interfaceRules;
+
+    services.frr = lib.mkIf (!isNull fclib.underlay) {
+      zebra = {
+        enable = true;
+        config = ''
+          frr version 8.5.1
+          frr defaults datacenter
+          !
+          route-map set-source-address permit 1
+           set src ${fclib.underlay.loopback}
+          exit
+          !
+          ip protocol bgp route-map set-source-address
+        '';
+      };
+      bgp = {
+        enable = true;
+        config = ''
+          frr version 8.5.1
+          frr defaults datacenter
+          !
+          router bgp ${toString fclib.underlay.asNumber}
+           bgp router-id ${fclib.underlay.loopback}
+           no bgp ebgp-requires-policy
+           neighbor switches peer-group
+           neighbor switches remote-as external
+           neighbor switches capability extended-nexthop
+           ${lib.concatMapStringsSep "\n "
+             (name: "neighbor ${name} interface peer-group switches")
+             (attrNames fclib.underlay.interfaces)
+           }
+           !
+           address-family ipv4 unicast
+            redistribute connected
+            neighbor switches prefix-list underlay-import in
+            neighbor switches prefix-list underlay-export out
+           exit-address-family
+           !
+           address-family l2vpn evpn
+            neighbor switches activate
+            advertise-all-vni
+            advertise-svi-ip
+           exit-address-family
+          !
+          exit
+          !
+          ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
+          !
+          ${lib.concatImapStringsSep "\n"
+            (idx: net:
+              "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
+            )
+            fclib.underlay.subnets
+           }
+          !
+          route-map accept-routes permit 1
+          exit
+        '';
+      };
+    };
 
     systemd.services =
       let
