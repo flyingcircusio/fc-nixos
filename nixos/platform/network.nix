@@ -188,6 +188,10 @@ in
 
       wireguard.enable = true;
 
+      firewall.trustedInterfaces =
+        if isNull fclib.underlay || config.flyingcircus.infrastructureModule != "flyingcircus-physical"
+        then []
+        else [ "brsto" "brstb" ] ++ (attrNames fclib.underlay.interfaces);
     };
 
     flyingcircus.activationScripts = {
