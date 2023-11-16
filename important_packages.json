@@ -116,6 +116,8 @@
   "openjpeg",
   "openldap",
   "openldap_2_4",
+  "opensearch",
+  "opensearch-dashboards",
   "openssh",
   "openssl",
   "openssl_1_1",

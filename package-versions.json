@@ -240,9 +240,9 @@
     "version": "3.85.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.4.1",
+    "name": "gitlab-ee-16.5.1",
     "pname": "gitlab-ee",
-    "version": "16.4.1"
+    "version": "16.5.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.5.0",
@@ -578,6 +578,16 @@
     "name": "openldap-2.4.58",
     "pname": "openldap",
     "version": "2.4.58"
+  },
+  "opensearch": {
+    "name": "opensearch-2.6.0",
+    "pname": "opensearch",
+    "version": "2.6.0"
+  },
+  "opensearch-dashboards": {
+    "name": "opensearch-dashboards-2.6.0",
+    "pname": "opensearch-dashboards",
+    "version": "2.6.0"
   },
   "openssh": {
     "name": "openssh-9.3p2",
