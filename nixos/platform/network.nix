@@ -147,7 +147,13 @@ in
           tempAddress = "disabled";
           mtu = fclib.underlay.mtu;
         }
-      )]));
+      )]) ++
+      (if isNull fclib.underlay then [] else
+        (map (iface: lib.nameValuePair iface {
+          tempAddress = "disabled";
+          mtu = fclib.underlay.mtu;
+        })
+          (attrNames fclib.underlay.interfaces))));
 
       bridges = listToAttrs (map (interface:
         (lib.nameValuePair
