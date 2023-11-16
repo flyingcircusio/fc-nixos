@@ -11,6 +11,7 @@ let
   managedInterfaces = filter (i: i.policy != "unmanaged") interfaces;
   physicalInterfaces = filter (i: i.policy != "vxlan" && i.policy != "underlay") managedInterfaces;
 
+  nonUnderlayInterfaces = filter (i: i.policy != "underlay") managedInterfaces;
   bridgedInterfaces = filter (i: i.bridged) managedInterfaces;
   vxlanInterfaces = filter (i: i.policy == "vxlan") managedInterfaces;
   ethernetDevices =
@@ -89,7 +90,7 @@ in
       # { ethfe = { ... }; ethsrv = { }; ... }
       # or
       # { brfe = { ... }; brsrv = { }; ethsto = { }; ... }
-      interfaces = listToAttrs (map (interface:
+      interfaces = listToAttrs ((map (interface:
         (lib.nameValuePair "${interface.device}" {
           ipv4.addresses = interface.v4.attrs;
           ipv4.routes =
@@ -136,7 +137,17 @@ in
               defaultRoutes ++ additionalRoutes;
 
           mtu = interface.mtu;
-        })) managedInterfaces);
+        })) nonUnderlayInterfaces) ++
+      (if isNull fclib.underlay then [] else [(
+        lib.nameValuePair "underlay" {
+          ipv4.addresses = [{
+            address = fclib.underlay.loopback;
+            prefixLength = 32;
+          }];
+          tempAddress = "disabled";
+          mtu = fclib.underlay.mtu;
+        }
+      )]));
 
       bridges = listToAttrs (map (interface:
         (lib.nameValuePair
