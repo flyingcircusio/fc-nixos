@@ -80,9 +80,13 @@ let
           })
           permissions));
 
+  # Set ownership by user name (uid is a bit confusing here).
+  # The UID can differ between ENC and passwd. The value from passwd is
+  # the one we want here. This activation script runs after the NixOS
+  # `users` script so using the name is safe here.
   homeDirPermissions = userdata:
     map (user: ''
-      install -d -o ${toString user.id} -g ${primaryGroup user} -m 0755 ${user.home_directory}
+      install -d -o ${user.uid} -g ${primaryGroup user} -m 0755 ${user.home_directory}
     '')
     userdata;
 
