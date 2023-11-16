@@ -15,7 +15,6 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
 
   testScript = with pkgs; ''
     package_versions = {
-      "${nodejs_14}": "14",
       "${nodejs_16}": "16",
       "${nodejs_18}": "18",
       "${nodejs_20}": "20",
