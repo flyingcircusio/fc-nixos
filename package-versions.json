@@ -510,11 +510,6 @@
     "pname": "nodejs",
     "version": "18.18.2"
   },
-  "nodejs_14": {
-    "name": "nodejs-14.21.3",
-    "pname": "nodejs",
-    "version": "14.21.3"
-  },
   "nodejs_16": {
     "name": "nodejs-16.20.2",
     "pname": "nodejs",
@@ -561,14 +556,14 @@
     "version": "2.4.58"
   },
   "opensearch": {
-    "name": "opensearch-2.6.0",
+    "name": "opensearch-2.11.0",
     "pname": "opensearch",
-    "version": "2.6.0"
+    "version": "2.11.0"
   },
   "opensearch-dashboards": {
-    "name": "opensearch-dashboards-2.6.0",
+    "name": "opensearch-dashboards-2.11.0",
     "pname": "opensearch-dashboards",
-    "version": "2.6.0"
+    "version": "2.11.0"
   },
   "openssh": {
     "name": "openssh-9.5p1",
