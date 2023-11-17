@@ -431,7 +431,7 @@ class Request:
         if other._comment:
             if not self._comment:
                 self._comment = other._comment
-            elif self._comment != other._comment:
+            elif other._comment not in self._comment:
                 self._comment += "\n\n" + other._comment
 
         if not activity_merge_result.is_effective:
