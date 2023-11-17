@@ -1020,7 +1020,9 @@ class ReqManager:
         if name_matches:
             return sorted(
                 [
-                    Request.load(name, self.log, self.request_runnable_for_seconds)
+                    Request.load(
+                        name, self.log, self.request_runnable_for_seconds
+                    )
                     for name in name_matches
                 ],
                 key=lambda r: r.added_at
@@ -1037,7 +1039,9 @@ class ReqManager:
         if name_matches:
             return sorted(
                 [
-                    Request.load(name, self.log, self.request_runnable_for_seconds)
+                    Request.load(
+                        name, self.log, self.request_runnable_for_seconds
+                    )
                     for name in name_matches
                 ],
                 key=lambda r: r.added_at

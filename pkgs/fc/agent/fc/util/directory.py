@@ -53,9 +53,7 @@ class DirectoryAPI(xmlrpc.client.ServerProxy):
         # recognizable value.
         wrapper.__qualname__ = "DirectoryAPI." + name
 
-        retry = stamina.retry(
-            on=RETRY_EXCEPTIONS, wait_exp_base=10, attempts=2
-        )
+        retry = stamina.retry(on=RETRY_EXCEPTIONS, wait_exp_base=10, attempts=2)
         return retry(wrapper)
 
     def __repr__(self):
