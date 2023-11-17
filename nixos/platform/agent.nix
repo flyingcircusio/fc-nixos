@@ -214,6 +214,12 @@ in
           groups = [ "admins" "sudo-srv" "service" ];
         }
         {
+          commands = [
+            "${pkgs.fc.agent}/bin/fc-maintenance request reboot"
+          ];
+          groups = [ "admins" ];
+        }
+        {
           commands = [ "${pkgs.fc.agent}/bin/fc-manage check" ];
           groups = [ "sensuclient" ];
         }
