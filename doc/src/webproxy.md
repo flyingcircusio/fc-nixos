@@ -26,16 +26,16 @@ and how you are used to configure, start, stop and maintain these packages.
 
 ### Role configuration
 
-The role currently supports two different ways to configure varnish.
+The role currently supports two different ways to configure Varnish.
 Please note that all configuration has to be performed as a service user.
 
 The recommended way is to use Nix. For an overview of the available configuration
 options, see the Varnish module in our [infrastructure repository](https://github.com/flyingcircusio/fc-nixos).
-As with all nixos modules, put your configuration into an appropriately named file
+As with all NixOS modules, put your configuration into an appropriately named file
 in the {file}`/etc/local/nixos` directory, e.g. {file}`/etc/local/nixos/varnish.nix`.
 
-You can also put your verbatim varnish configuration into {file}`/etc/local/varnish/default.vcl`.
-Please note that this way of configuring varnish is deprecated and will likely
+You can also put your verbatim Varnish configuration into {file}`/etc/local/varnish/default.vcl`.
+Please note that this way of configuring Varnish is deprecated and will likely
 be removed in the future.
 
 ### Monitoring

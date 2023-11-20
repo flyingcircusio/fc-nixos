@@ -55,8 +55,10 @@
   virtualHostSelection = lib.concatStringsSep "else" (map (x: x.config) vhosts);
 
   vhostActivationCommands = lib.concatStringsSep "\n" (map (x: x.command) vhosts);
-  mainActivationCommands = ''
-    vcl.load ${name} ${mkVclName mainConfig}
+  mainActivationCommands = let
+    name = mkVclName mainConfig;
+  in ''
+    vcl.load ${name} ${mainConfig}
     vcl.use ${name}
   '';
 
@@ -66,12 +68,12 @@
     '';
 
   # Only activate the NixOS module config if there is no legacy config.
-  commandsFileArg = lib.optionalString (cfg.config == null) "-I ${commandsfile})";
+  commandsFileArg = lib.optionalString (cfg.config == null) "-I ${commandsfile}";
 in {
   options.flyingcircus.services.varnish = {
     enable = mkEnableOption "varnish";
     config = mkOption {
-      type = types.nullOr types.str;
+      type = types.nullOr (types.either types.str types.path);
     };
     extraCommandLine = mkOption {
       type = types.str;
@@ -107,7 +109,7 @@ in {
     services.varnish = {
       enable = true;
       enableConfigCheck = false;
-      extraCommandLine = lib.concatStringsSep [ cfg.extraCommandLine commandsFileArg ];
+      extraCommandLine = lib.concatStringsSep " " [ cfg.extraCommandLine commandsFileArg ];
       inherit (cfg) http_address;
       config = if cfg.config == null then ''
         vcl 4.0;

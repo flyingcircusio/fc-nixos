@@ -9,13 +9,13 @@ let
 
   kill = "${pkgs.coreutils}/bin/kill";
 
-  # if there is a default.vcl file, use that instead of the nixos varnish configuration
+  # if there is a default.vcl file, use that instead of the NixOS Varnish configuration
   varnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl null;
 in
 {
   options = with lib; {
     flyingcircus.roles.webproxy = {
-      enable = mkEnableOption "Flying Circus varnish server role";
+      enable = mkEnableOption "Flying Circus Varnish server role";
       supportsContainers = fclib.mkEnableContainerSupport;
 
       mallocMemoryPercentage = mkOption {
@@ -57,7 +57,7 @@ in
       flyingcircus.services.sensu-client.checks = {
         varnish_status = {
           notification = "varnishadm status reports errors";
-          command = "${cfg.package}/bin/varnishadm";
+          command = "${cfg.package}/bin/varnishadm status";
           timeout = 180;
         };
         varnish_http = {

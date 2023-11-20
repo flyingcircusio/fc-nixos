@@ -8,6 +8,31 @@ in {
       { lib, ... }:
       {
         imports = [ ../nixos ../nixos/roles ];
+
+        specialisation.varnish-switch-test.configuration = let
+          switchport = serverport + 1;
+        in {
+          system.nixos.tags = [ "varnish-switch-test" ];
+          flyingcircus.services.varnish.virtualHosts.test = {
+            condition = "true";
+            config = ''
+              vcl 4.0;
+              backend test {
+                .host = "127.0.0.1";
+                .port = "${builtins.toString switchport}";
+              }
+            '';
+          };
+
+          systemd.services.helloserver = {
+            wantedBy = [ "multi-user.target" ];
+            script = ''
+              echo 'Hello World!' > hello.txt
+              ${pkgs.python3.interpreter} -m http.server ${builtins.toString switchport} >&2
+            '';
+          };
+        };
+
         flyingcircus.roles.webproxy.enable = true;
 
         flyingcircus.services.varnish.virtualHosts.test = {
@@ -55,5 +80,11 @@ in {
 
     with subtest("varnishncsa should log requests"):
         webproxy.wait_until_succeeds(f"{curl} && grep -q 'GET {url} HTTP/' /var/log/varnish.log")
+
+    with subtest("varnish pid should be the same across small configuration changes"):
+      old_pid = webproxy.succeed("systemctl show varnish.service --property MainPID --value")
+      webproxy.wait_until_succeeds("/run/current-system/specialisation/varnish-switch-test/bin/switch-to-configuration switch")
+      new_pid = webproxy.succeed("systemctl show varnish.service --property MainPID --value")
+      assert old_pid == new_pid
   '';
 })
