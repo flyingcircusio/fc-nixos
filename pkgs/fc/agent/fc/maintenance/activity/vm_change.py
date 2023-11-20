@@ -167,12 +167,11 @@ class VMChangeActivity(Activity):
         else:
             self.reboot_needed = None
 
-    def load(self):
+    def run(self):
         self._update_reboot_needed()
-
-    # Running an VMChangeActivity is not needed, so no run method.
-    # The request manager handles the reboot required by this activity.
+        self.returncode = 0
 
     def resume(self):
-        # There's nothing to do so we can safely "retry" this activity.
+        # run() just checks if the reboot is needed at the moment so we can safely
+        # retry this activity.
         self.run()
