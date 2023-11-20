@@ -30,22 +30,26 @@ rec {
   multiping = callPackage ./multiping.nix {};
 
   qemu-nautilus = callPackage ./qemu rec {
-    version = "1.3.1";
-    # src = /path/to/fc.qemu/checkout ; # development
+    version = "1.4.1";
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "fc.qemu";
       rev = version;
-      hash = "sha256-eTJxhdSelMJ8UFE8mtgntFVgY/+Ne2K4niH5X9JP9Tc=";
+      hash = "sha256-Lf4i2pwZMpVGuWVohTzM5/x9X6GmFy2kLmgz25uSgFM=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
   };
-  qemu-dev-nautilus = callPackage ./qemu {
-    version = "dev";
-    # builtins.toPath (testPath + "/.")
-    src = ../../../../../fc.qemu/.;
-    qemu_ceph = pkgs.qemu-ceph-nautilus;
-  };
+
+  # Enable this temporarily during development, but DO NOT commit this as
+  # it will break hydra and we can't cleanly filter it out of the automatic
+  # test discovery at the moment.
+  #
+  # qemu-dev-nautilus = callPackage ./qemu {
+  #   version = "dev";
+  #   # builtins.toPath (testPath + "/.")
+  #   src = ../../../../../fc.qemu/.;
+  #   qemu_ceph = pkgs.qemu-ceph-nautilus;
+  # };
 
   secure-erase = callPackage ./secure-erase {};
   sensuplugins = callPackage ./sensuplugins {};

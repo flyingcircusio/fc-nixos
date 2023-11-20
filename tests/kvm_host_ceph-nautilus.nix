@@ -1,5 +1,7 @@
 import ./make-test-python.nix ({ testlib, useCheckout ? false, testOpts ? "", clientCephRelease ? "nautilus", ... }:
-# import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "=k mytest", clientCephRelease ? "nautilus", ... }:
+#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "-k test_vm_migration_pattern", clientCephRelease ? "nautilus", ... }:
+#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "", clientCephRelease ? "nautilus", ... }:
+#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "--flake-finder --flake-runs=500 -x --no-cov", clientCephRelease ? "nautilus", ... }:
 with testlib;
 let
   getIPForVLAN = vlan: id: "192.168.${toString vlan}.${toString (5 + id)}";
@@ -12,7 +14,10 @@ let
     in
     {
 
-      virtualisation.memorySize = 3000;
+      # We need a lot of RAM specifically if we use the flake finder as due to
+      # the amount of operations both Ceph and pytest will pile up memory they
+      # can't release between test runs, so this needs to scale.
+      virtualisation.memorySize = 8000;
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ mgm fe srv sto stb ];
       virtualisation.emptyDiskImages = [ 4000 4000 ];
       imports = [ <fc/nixos> <fc/nixos/roles> ];
@@ -105,6 +110,23 @@ let
             pyPkgs.pytest-cov
             pyPkgs.mock
             pyPkgs.pytest-timeout
+
+            (pyPkgs.buildPythonPackage rec {
+              pname = "pytest-flakefinder";
+              version = "1.1.0";
+
+              src = pyPkgs.fetchPypi {
+                inherit pname version;
+                hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
+              };
+
+              propagatedBuildInputs = [ pyPkgs.pytest ];
+
+              meta = with lib; {
+                description = "Runs tests multiple times to expose flakiness.";
+                homepage = "https://github.com/dropbox/pytest-flakefinder";
+              };
+            })
           ];
           # There are some namespace packages that collide on `backports`.
           ignoreCollisions = true;
@@ -270,13 +292,13 @@ in
     start_all()
 
     def show(host, cmd):
-        print(cmd)
-        code, output = host.execute(cmd)
-        print(output)
-        if code:
-            raise RuntimeError(
-              f"Command `cmd` failed with exit code {code}")
-        return output.strip()
+      print(cmd)
+      code, output = host.execute(cmd)
+      print(output)
+      if code:
+        raise RuntimeError(
+          f"Command `cmd` failed with exit code {code}")
+      return output.strip()
 
     def assert_clean_cluster(host, mons, osds, mgrs, pgs):
       # `osds` can be either of the form `(num_up_osds, num_in_osds)` or a single
@@ -447,6 +469,10 @@ in
           else ""
         }
         """).strip().replace("\n", "; "))
+
+    show(host1, "df -h")
+    show(host1, "rbd ls rbd.hdd")
+    show(host1, "rbd ls rbd.ssd")
 
     with subtest("Check maintenance enter/exit works"):
       result = show(host1, "fc-qemu --verbose maintenance enter")
