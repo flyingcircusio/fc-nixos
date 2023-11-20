@@ -13,12 +13,14 @@ let
         BLK_DEV_RBD m
         BNX2 m
         BONDING m
+        BOOTPARAM_HARDLOCKUP_PANIC y
+        BOOTPARAM_SOFTLOCKUP_PANIC y
         BRIDGE m
         BRIDGE_IGMP_SNOOPING y
         COMPACTION y
         CONFIGFS_FS m
-        CPU_FREQ_GOV_ONDEMAND m
         CPU_FREQ_GOV_CONSERVATIVE m
+        CPU_FREQ_GOV_ONDEMAND m
         CPU_FREQ_GOV_PERFORMANCE y
         CPU_FREQ_GOV_POWERSAVE m
         CRYPTO_AES_NI_INTEL m
@@ -47,6 +49,7 @@ let
         FUSION_CTL m
         FUSION_SAS m
         HANGCHECK_TIMER m
+        HARDLOCKUP_DETECTOR y
         HW_RANDOM_INTEL m
         HW_RANDOM_TIMERIOMEM m
         I40E m
@@ -126,7 +129,8 @@ let
         SCSI_SAS_ATTRS m
         SCSI_SAS_LIBSAS m
         SECURITY_APPARMOR y
-        SOFT_WATCHDOG m
+        ITCO_WDT n
+        SOFTLOCKUP_DETECTOR y
         TCP_CONG_BBR m
         TCP_CONG_BIC m
         TCP_CONG_HTCP m
@@ -146,10 +150,17 @@ let
         VHOST_NET m
         VLAN_8021Q m
         VXLAN m
-        WATCHDOG y
         X86_ACPI_CPUFREQ m
+
         X86_PCC_CPUFREQ m
         XFS_FS m
+
+        ## watchdog config
+        WATCHDOG y
+        IPMI_WATCHDOG m
+        I6300ESB_WDT y
+        ITCO_WDT n
+        SP5100_TCO n
         '';
 in
  rec {
@@ -170,6 +181,9 @@ in
         cfg = cfg.split('\n')
         opts = {}
         for line in cfg:
+            line = line.strip()
+            if line.startswith('##'):
+                continue
             if line.startswith('#'):
                 line = line[1:]
             line = line.strip()
@@ -206,6 +220,10 @@ in
     expectedSeen = set()
     for line in expectedConfig:
         option = line.split()[0]
+        if option.startswith("##"):
+            continue
+        if not option.strip():
+            continue
         if option in expectedSeen:
             print('Duplicate option:', line)
             duplicateOptions.append(option)
@@ -228,5 +246,12 @@ in
             missingOptions.append(key)
     if missingOptions:
         raise ValueError('{} wrong config options'.format(len(missingOptions)))
+
+
+    with subtest("nmi watchdog is enabled"):
+        _, output = machine.execute("cat /proc/sys/kernel/nmi_watchdog")
+        output = output.strip()
+        print(output)
+        assert output == "0", output
   '';
 })
