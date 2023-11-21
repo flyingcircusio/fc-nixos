@@ -15,18 +15,22 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
 
   testScript = with pkgs; ''
     package_versions = {
-      "${nodejs_16}": "16",
       "${nodejs_18}": "18",
       "${nodejs_20}": "20",
+      "${nodejs_21}": "21",
       "${nodejs-slim_18}": "18",
       "${nodejs-slim}": "18",
       "${nodejs}": "18",
       "${nodejs-slim_20}": "20",
+      "${nodejs-slim_21}": "21",
     }
 
     for package, version in package_versions.items():
       with subtest(f"Checking package {package}"):
         out = machine.succeed(f"{package}/bin/node -v").strip()
-        assert out.startswith(f"v{version}."), "unexpected version: " + out
+        expected = f"v{version}."
+        assert out.startswith(expected), (
+          "version must start with {expected}, got: " + out
+        )
   '';
 })

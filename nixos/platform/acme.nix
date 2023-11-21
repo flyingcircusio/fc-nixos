@@ -1,4 +1,7 @@
 { config, pkgs, lib, ... }:
+let
+  inherit (config) fclib;
+in
 {
   # Generate a sensu check for each acme cert to check its validity and warn
   # when it expires.
@@ -16,7 +19,7 @@
     # Retry certificate renewal 30s after a failure.
     serviceConfig = {
       Restart = "on-failure";
-      RestartSec = 30;
+      RestartSec = fclib.mkPlatformOverride 30;
     };
 
     # Allow 3 retries/starts per hour to not hit the rate limit
