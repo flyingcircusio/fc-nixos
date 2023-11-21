@@ -52,51 +52,6 @@ in {
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
-  jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
-    pname = "jicofo";
-    version = "1.0-1027";
-    src = fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-MX1TpxYPvtRfRG/VQxYANsBrbGHf49SDTfn6R8aNC8I=";
-    };
-  });
-
-  jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-meet";
-    version = "1.0.7235";
-    src = fetchurl {
-      url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      hash = "sha256-OlAInpGl6I5rKgIsO3nXUQfksU326lsSDdiZdCYM3NU=";
-    };
-
-  });
-
-  jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-videobridge2";
-    version = "2.3-19-gb286dc0c";
-    src = fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-EPpjGS3aFAQToP9IPrcOPxF43nBHuCZPC2b47Jplg/k=";
-    };
-    # jvb complained about missing libcrypto.so.3, add openssl 3 here.
-    installPhase = ''
-      runHook preInstall
-      substituteInPlace usr/share/jitsi-videobridge/jvb.sh \
-        --replace "exec java" "exec ${self.jre_headless}/bin/java"
-
-      mkdir -p $out/{bin,share/jitsi-videobridge,etc/jitsi/videobridge}
-      mv etc/jitsi/videobridge/logging.properties $out/etc/jitsi/videobridge/
-      mv usr/share/jitsi-videobridge/* $out/share/jitsi-videobridge/
-      ln -s $out/share/jitsi-videobridge/jvb.sh $out/bin/jitsi-videobridge
-
-      # work around https://github.com/jitsi/jitsi-videobridge/issues/1547
-      wrapProgram $out/bin/jitsi-videobridge \
-        --set VIDEOBRIDGE_GC_TYPE G1GC \
-        --set LD_LIBRARY_PATH ${super.lib.getLib super.openssl_3_0}/lib/
-      runHook postInstall
-    '';
-  });
-
   inherit (super.callPackages ./matomo {})
     matomo
     matomo-beta;
