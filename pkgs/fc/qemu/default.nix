@@ -43,6 +43,26 @@ let
     };
   };
 
+  py_pytest_patterns = py.buildPythonPackage rec {
+    pname = "pytest_patterns";
+    version = "0.1.0";
+
+    src = py.fetchPypi {
+      inherit pname version;
+      hash = "sha256-guKexrkDP4Ovqc87M7s8qFtW1FuVcf2PiDwh+QHcp6A=";
+      format = "wheel";
+      python = "py3";
+    };
+
+    format = "wheel";
+    propagatedBuildInputs = [ py.pytest ];
+
+    meta = with lib; {
+      description = "pytest plugin to make testing complicated long string output easy to write and easy to debug";
+      homepage = "https://pypi.org/project/pytest-patterns/";
+    };
+  };
+
 in
   # We use buildPythonPackage instead of buildPythonApplication
   # to assist using this in a mixed buildEnv for external unit testing.
@@ -61,6 +81,7 @@ in
       py.colorama
       py.structlog
       py_consulate
+      py_pytest_patterns
       py.psutil
       py.pyyaml
       py.setuptools

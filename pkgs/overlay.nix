@@ -262,13 +262,13 @@ in {
 
   # Newer linux kernel. Includes mitigations for the Inception and Downfall
   # CPU vulnerabilities.
-  linuxPackages = super.linuxPackagesFor (super.linux_5_10.override {
+  linuxPackages = super.linuxPackagesFor (nixpkgs-23_05.linux_5_15.override {
     argsOverride = rec {
       src = self.fetchurl {
         url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
-        hash = "sha256-KXI98B1A/wf/bSVOqvkMez7Dxw9OvgibgPeF9G769Zc=";
+        hash = "sha256-r4TlQWThwB9ZdkulKESO02s3fSKq+9gbSwz0d5LvSqo=";
       };
-      version = "5.10.190";
+      version = "5.15.138";
       modDirVersion = version;
     };
   });
@@ -499,7 +499,10 @@ in {
       sha256 = "sha256-9jYpGmD28yJGZU4zlae9BL4uU3iukWdPWpSkgHHvOxI=";
     }) ];
   });
-  qemu_ceph = self.qemu.override { cephSupport = true; };
+  qemu-ceph-nautilus = self.qemu.override {
+    cephSupport = true;
+    ceph = self.ceph-nautilus.ceph;
+  };
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 

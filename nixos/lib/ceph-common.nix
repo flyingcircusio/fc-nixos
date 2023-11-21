@@ -4,40 +4,43 @@
 with lib;
 let
   # supported ceph release codenames, from newest to oldest
-  # TODO: Once all ceph packages have a similar structure, releasePkgs can be
+  # TODO: Once all ceph packages have a similar structure, those can be
   # generated from this list (let's wait for pacific to see if the structure holds)
   releaseOrder = [ "nautilus" ];
-  cephReleaseType = types.enum (builtins.attrNames releasePkgs);
+  cephReleaseType = types.enum releaseOrder;
   defaultRelease = "nautilus";
-
-  # ====== mapping of packages per ceph release =======
-
-  releasePkgs = {
-    "nautilus" = rec {
-      ceph = pkgs.ceph-nautilus.ceph;
-      ceph-client = pkgs.ceph-nautilus.ceph-client;
-      # both the C lib and the python modules
-      libceph = pkgs.ceph-nautilus.libceph;
-      fcQemu = pkgs.fc.qemu.override {
-        inherit libceph ceph;
-        qemu_ceph = qemu_ceph_versioned "nautilus";
-      };
-      utilPhysical = pkgs.fc.util-physical.nautilus.override {ceph = ceph-client;};
-    };
-  };
-  qemu_ceph_versioned = cephReleaseName: (pkgs.qemu_ceph.override {
-     # Needs full ceph package, because
-     #`libceph` is missing the dev output headers
-     ceph = releasePkgs.${cephReleaseName}.ceph;
-     });
 in
 rec {
   # constants
-  inherit releasePkgs defaultRelease qemu_ceph_versioned;
+  inherit defaultRelease;
   releaseOption = lib.mkOption {
     type = cephReleaseType;
     # centrally manage the default release for all roles here
     default = defaultRelease;
+  };
+
+  mkPkgs = release: rec {
+    ceph = pkgs."ceph-${release}".ceph;
+    ceph-client = pkgs."ceph-${release}".ceph-client;
+    libceph = pkgs."ceph-${release}".libceph;
+
+    fc-ceph = pkgs.fc.ceph;
+    fc-ceph-path = lib.makeBinPath [
+      ceph
+      ceph-client
+      pkgs.xfsprogs
+      pkgs.lvm2
+      pkgs.util-linux
+      pkgs.systemd
+      pkgs.gptfdisk
+      pkgs.coreutils
+      pkgs.lz4  # required by image loading task
+    ];
+
+    fc-check-ceph = pkgs.fc."check-ceph-${release}";
+
+    fc-qemu = pkgs.fc."qemu-${release}";
+    qemu = pkgs."qemu-ceph-${release}";
   };
 
   # helper functions
@@ -67,21 +70,6 @@ rec {
       else if builtins.head rList == currentRelease then acc  # exit condition 2
       else _releaseRecurser (builtins.tail rList) acc;
     in _releaseRecurser (lib.reverseList releaseOrder) false;
-
-
-  # return a suitable binary path for fc-ceph, parameterised with the desired ceph package
-  fc-ceph-path = cephPkg: lib.makeBinPath [
-    cephPkg
-    pkgs.xfsprogs
-    pkgs.lvm2
-    pkgs.util-linux
-    pkgs.systemd
-    pkgs.gptfdisk
-    pkgs.coreutils
-    releasePkgs.${cephPkg.codename}.utilPhysical # required for rbd-locktool
-    pkgs.lz4  # required by image loading task
-    ];
-
 
   # function that translates "camelCaseOptions" to "camel case options", credits to tilpner in #nixos@freenode
   expandCamelCase = lib.replaceStrings lib.upperChars (map (s: " ${s}") lib.lowerChars);
