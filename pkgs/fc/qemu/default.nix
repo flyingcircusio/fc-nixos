@@ -5,16 +5,15 @@
   python3Packages,
   lib,
   libceph,
-  # as long as `qemu_ceph` pulls in the full `ceph` due to requiring ceph.dev, use that
-  # package here as well instead of ceph-client
-  ceph,
+  ceph_client,
   fetchFromGitHub,
   qemu_ceph,
   stdenv,
   gptfdisk,
   parted,
   xfsprogs,
-  procps
+  procps,
+  systemd
 }:
 
 let
@@ -85,14 +84,14 @@ in
       py.psutil
       py.pyyaml
       py.setuptools
-      qemu_ceph
       (py.toPythonModule libceph)
-      procps
-      gptfdisk
-      parted
-      xfsprogs
-      # XXX is in PATH anyways due to services.ceph.client, but specified here for
-      # completeness sake. If necessary, fc.qemu needs to be parameterised via /etc/ceph/fc-ceph.conf
-      ceph
     ];
+
+    # These are runtime dependencies on the binaries but not intended to become
+    # part of the Python package dependencies and thus must not be placed
+    # in the propagatedBuildInputs.
+    makeWrapperArgs = [
+      "--prefix PATH : ${lib.makeBinPath [procps systemd gptfdisk parted xfsprogs ceph_client qemu_ceph]}"
+    ];
+
   }
