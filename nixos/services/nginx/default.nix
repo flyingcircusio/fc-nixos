@@ -57,8 +57,14 @@ let
 
   vhostsJSON = fclib.jsonFromDir localCfgDir;
 
-  mkVanillaVhostFromFCVhost = name: vhost:
-    (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
+  mkVanillaVhostFromFCVhost = name: vhost: let
+    servername = if vhost.serverName != null then vhost.serverName else name;
+  in (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]) // {
+    extraConfig = vhost.extraConfig + (lib.optionalString cfg.logPerVirtualHost ''
+      access_log /var/log/nginx/access-${servername}.log;
+      error_log /var/log/nginx/error-${servername}.log;
+    '');
+  };
 
   virtualHosts = lib.mapAttrs mkVanillaVhostFromFCVhost cfg.virtualHosts;
 
@@ -178,6 +184,14 @@ in
       description = ''
        Configures how often log files are rotated before being removed.
        If count is 0, old versions are removed rather than rotated.
+      '';
+    };
+
+    logPerVirtualHost = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Configures a separate access and error log in the `/var/log/nginx` directory for each virtualHost.
       '';
     };
 
