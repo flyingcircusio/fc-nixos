@@ -64,6 +64,27 @@ class Attempt:
         elif self.started and not self.duration:
             self.duration = (self.finished - self.started).total_seconds()
 
+    def __rich__(self):
+        table = rich.table.Table(show_header=False, show_edge=False)
+        table.add_column()
+        table.add_column()
+        table.add_row("Started", format_datetime(self.started) or "-")
+        table.add_row("Finished", format_datetime(self.finished) or "-")
+        table.add_row(
+            "Duration",
+            f"{self.duration:.4}s" if self.duration is not None else "-",
+        )
+
+        table.add_row(
+            "Exit code",
+            str(self.returncode) if self.returncode is not None else "-",
+        )
+        if self.stdout:
+            table.add_row("Stdout", self.stdout)
+        if self.stderr:
+            table.add_row("Stderr", self.stderr)
+        return table
+
 
 class Request:
     MAX_RETRIES = 48
@@ -142,22 +163,20 @@ class Request:
 
     def __rich_repr__(self):
         yield "ID", self._reqid
-        yield "state", str(self.state)
+        yield "State", str(self.state)
         if self.next_due:
-            yield "next_due", format_datetime(self.next_due)
+            yield "Due at", format_datetime(self.next_due)
         if self.added_at:
-            yield "added_at", format_datetime(self.added_at)
+            yield "Added at", format_datetime(self.added_at)
         if self.updated_at:
-            yield "updated_at", format_datetime(self.updated_at)
+            yield "Updated at", format_datetime(self.updated_at)
         if self.last_scheduled_at:
-            yield "last_scheduled_at", format_datetime(self.last_scheduled_at)
-        yield "estimate", str(self.estimate)
-        yield "comment", self.comment
-        yield "activity", self.activity
-        yield "attempts", ", ".join(
-            f"{format_datetime(a.finished)} (exit {a.returncode})"
-            for a in self.attempts
-        )
+            yield "Scheduled at", format_datetime(self.last_scheduled_at)
+        yield "Estimate", str(self.estimate)
+        yield "Comment", self.comment
+        yield "Activity", self.activity
+        for pos, attempt in enumerate(self.attempts):
+            yield (f"Attempt {pos}", attempt)
 
     def set_up_logging(self, log):
         log = log.bind(request=self.id)
@@ -412,7 +431,7 @@ class Request:
         if other._comment:
             if not self._comment:
                 self._comment = other._comment
-            elif self._comment != other._comment:
+            elif other._comment not in self._comment:
                 self._comment += "\n\n" + other._comment
 
         if not activity_merge_result.is_effective:

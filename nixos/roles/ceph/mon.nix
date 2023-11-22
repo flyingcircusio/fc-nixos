@@ -12,10 +12,7 @@ let
   # We do not have service data during bootstrapping.
   first_mon = if mons == [ ] then "" else head (lib.splitString "." (head mons));
 
-  # TODO: once all ceph releases use the ceph-client attr name, ensure that the desired
-  # build is used here by explicitly overriding/ passing it here.
-  fc-check-ceph-withVersion = pkgs.fc.check-ceph.${role.cephRelease};
-  fc-ceph = pkgs.fc.cephWith fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
+  cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
 
   # default definitions for the mgr.* options:
   mgrEnabledModules = {
@@ -122,7 +119,7 @@ in
         fc-ceph.settings = let
           monSettings =  {
             release = role.cephRelease;
-            path = fclib.ceph.fc-ceph-path fclib.ceph.releasePkgs.${role.cephRelease}.ceph;
+            path = cephPkgs.fc-ceph-path;
           };
         in {
           # fc-ceph monitor components
@@ -149,7 +146,7 @@ in
 
         restartTriggers = [
           config.environment.etc."ceph/ceph.conf".source
-          fclib.ceph.releasePkgs.${role.cephRelease}.ceph
+          cephPkgs.ceph
         ];
 
         environment = {
@@ -157,15 +154,15 @@ in
         };
 
         script = ''
-          ${fc-ceph}/bin/fc-ceph mon activate
+          ${cephPkgs.fc-ceph}/bin/fc-ceph mon activate
         '';
 
         reload = ''
-          ${fc-ceph}/bin/fc-ceph mon reactivate
+          ${cephPkgs.fc-ceph}/bin/fc-ceph mon reactivate
         '';
 
         preStop = ''
-          ${fc-ceph}/bin/fc-ceph mon deactivate
+          ${cephPkgs.fc-ceph}/bin/fc-ceph mon deactivate
         '';
 
         serviceConfig = {
@@ -177,19 +174,19 @@ in
       flyingcircus.passwordlessSudoRules = [
         {
           commands = [
-            "${fc-check-ceph-withVersion}/bin/check_ceph"
-            "${fc-check-ceph-withVersion}/bin/check_snapshot_restore_fill"
+            "${cephPkgs.fc-check-ceph}/bin/check_ceph"
+            "${cephPkgs.fc-check-ceph}/bin/check_snapshot_restore_fill"
           ];
           groups = [ "sensuclient" ];
         }
       ];
 
-      environment.systemPackages = [ fc-check-ceph-withVersion ];
+      environment.systemPackages = [ cephPkgs.fc-check-ceph ];
 
       systemd.services.fc-ceph-load-vm-images = {
         description = "Load new VM base images";
         serviceConfig.Type = "oneshot";
-        script = "${fc-ceph}/bin/fc-ceph maintenance load-vm-images";
+        script = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance load-vm-images";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -198,7 +195,7 @@ in
       systemd.services.fc-ceph-purge-old-snapshots = {
         description = "Purge old snapshots";
         serviceConfig.Type = "oneshot";
-        script = "${fc-ceph}/bin/fc-ceph maintenance purge-old-snapshots";
+        script = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance purge-old-snapshots";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -207,7 +204,7 @@ in
       systemd.services.fc-ceph-clean-deleted-vms = {
         description = "Purge old snapshots";
         serviceConfig.Type = "oneshot";
-        script = "${fc-ceph}/bin/fc-ceph maintenance clean-deleted-vms";
+        script = "${cephPkgs.fc-ceph}/bin/fc-ceph maintenance clean-deleted-vms";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -216,7 +213,7 @@ in
       systemd.services.fc-ceph-mon-update-client-keys = {
         description = "Update client keys and authorization in the monitor database.";
         serviceConfig.Type = "oneshot";
-        script = "${fc-ceph}/bin/fc-ceph keys mon-update-client-keys";
+        script = "${cephPkgs.fc-ceph}/bin/fc-ceph keys mon-update-client-keys";
         environment = {
           PYTHONUNBUFFERED = "1";
         };
@@ -232,7 +229,7 @@ in
 
         restartTriggers = [
           config.environment.etc."ceph/ceph.conf".source
-          fclib.ceph.releasePkgs.${role.cephRelease}.ceph
+          cephPkgs.ceph
         ];
 
         environment = {
@@ -240,22 +237,22 @@ in
         };
 
         script = ''
-          ${fc-ceph}/bin/fc-ceph mgr activate
+          ${cephPkgs.fc-ceph}/bin/fc-ceph mgr activate
         '';
 
         reload = ''
-          ${fc-ceph}/bin/fc-ceph mgr reactivate
+          ${cephPkgs.fc-ceph}/bin/fc-ceph mgr reactivate
         '';
 
         # imperatively ensure mgr modules
         preStart = lib.concatStringsSep "\n" (
-          lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph mgr module enable ${mod} --force")
+          lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${cephPkgs.ceph}/bin/ceph mgr module enable ${mod} --force")
           ++
-          lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${fclib.ceph.releasePkgs.${role.cephRelease}.ceph}/bin/ceph mgr module disable ${mod}")
+          lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${cephPkgs.ceph}/bin/ceph mgr module disable ${mod}")
         );
 
         preStop = ''
-          ${fc-ceph}/bin/fc-ceph mgr deactivate
+          ${cephPkgs.fc-ceph}/bin/fc-ceph mgr deactivate
         '';
 
         serviceConfig = {
@@ -278,12 +275,12 @@ in
           ceph_snapshot_restore_fill = {
             notification = "The Ceph cluster might not have enough space for restoring "
               + "the largest RBD snapshot. (does not consider sparse allocation)";
-            command = "sudo ${fc-check-ceph-withVersion}/bin/check_snapshot_restore_fill ${configtoml}";
+            command = "sudo ${cephPkgs.fc-check-ceph}/bin/check_snapshot_restore_fill ${configtoml}";
             interval = 600;
           };
           ceph = {
             notification = "Ceph cluster is unhealthy";
-            command = "sudo ${fc-check-ceph-withVersion}/bin/check_ceph -v -R 200 -A 300";
+            command = "sudo ${cephPkgs.fc-check-ceph}/bin/check_ceph -v -R 200 -A 300";
             interval = 60;
           };
         };

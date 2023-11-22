@@ -1,4 +1,7 @@
 import ./make-test-python.nix ({ testlib, useCheckout ? false, testOpts ? "", clientCephRelease ? "nautilus", ... }:
+#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "-k test_vm_migration_pattern", clientCephRelease ? "nautilus", ... }:
+#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "", clientCephRelease ? "nautilus", ... }:
+#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "--flake-finder --flake-runs=500 -x --no-cov", clientCephRelease ? "nautilus", ... }:
 with testlib;
 let
   getIPForVLAN = vlan: id: "192.168.${toString vlan}.${toString (5 + id)}";
@@ -7,24 +10,14 @@ let
   makeHostConfig = { id }:
     { config, pkgs, lib, ... }:
     let
-      py3 = config.fclib.ceph.releaseAtLeast "nautilus" clientCephRelease;
-      testPackage = if useCheckout then
-        pkgs.callPackage (
-          if py3
-          then <fc/pkgs/fc/qemu/py3.nix>
-          else <fc/pkgs/fc/qemu/py2.nix>) {
-            version = "dev";
-            # builtins.toPath (testPath + "/.")
-            src = ../../fc.qemu/.;
-            "${lib.optionalString py3 "lib"}ceph" = config.fclib.ceph.releasePkgs.${clientCephRelease}.libceph;
-            qemu_ceph = config.fclib.ceph.qemu_ceph_versioned clientCephRelease;
-          }
-        else config.fclib.ceph.releasePkgs.${clientCephRelease}.fcQemu;
-
+      testPackage = if useCheckout then pkgs.fc.qemu-dev-nautilus else pkgs.fc.qemu-nautilus;
     in
     {
 
-      virtualisation.memorySize = 3000;
+      # We need a lot of RAM specifically if we use the flake finder as due to
+      # the amount of operations both Ceph and pytest will pile up memory they
+      # can't release between test runs, so this needs to scale.
+      virtualisation.memorySize = 8000;
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ mgm fe srv sto stb ];
       virtualisation.emptyDiskImages = [ 4000 4000 ];
       imports = [ <fc/nixos> <fc/nixos/roles> ];
@@ -99,18 +92,17 @@ let
         ];
       };
 
-      system.activationScripts.fcqemusrc = let
-        py = if config.fclib.ceph.releaseAtLeast "nautilus" clientCephRelease
-          then pkgs.python3
-          else pkgs.python2;
+      system.activationScripts.fcQemuSrc = let
+        cephPkgs = config.fclib.ceph.mkPkgs "nautilus";
+        py = pkgs.python3;
         pyPkgs = py.pkgs;
-        qemu_test_env = py.buildEnv.override {
+        qemuTestEnv = py.buildEnv.override {
           extraLibs = [
             testPackage
 
             # This should be included through the propagatedBuildInputs
             # from fc.qemu already but apparently it isn't.
-            (pyPkgs.toPythonModule config.fclib.ceph.releasePkgs.${clientCephRelease}.libceph)
+            (pyPkgs.toPythonModule cephPkgs.libceph)
 
             # Additional packages to run the tests
             pyPkgs.pytest
@@ -118,6 +110,23 @@ let
             pyPkgs.pytest-cov
             pyPkgs.mock
             pyPkgs.pytest-timeout
+
+            (pyPkgs.buildPythonPackage rec {
+              pname = "pytest-flakefinder";
+              version = "1.1.0";
+
+              src = pyPkgs.fetchPypi {
+                inherit pname version;
+                hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
+              };
+
+              propagatedBuildInputs = [ pyPkgs.pytest ];
+
+              meta = with lib; {
+                description = "Runs tests multiple times to expose flakiness.";
+                homepage = "https://github.com/dropbox/pytest-flakefinder";
+              };
+            })
           ];
           # There are some namespace packages that collide on `backports`.
           ignoreCollisions = true;
@@ -126,7 +135,7 @@ let
         # Provide a writable copy so the coverage etc. can be recorded.
         cp -a ${testPackage.src} /root/fc.qemu
         chmod u+w /root/fc.qemu -R
-        ln -s ${qemu_test_env} /root/fc.qemu-env
+        ln -s ${qemuTestEnv} /root/fc.qemu-env
       '';
 
       # We need this in the enc files as well so that timer jobs can update
@@ -283,13 +292,13 @@ in
     start_all()
 
     def show(host, cmd):
-        print(cmd)
-        code, output = host.execute(cmd)
-        print(output)
-        if code:
-            raise RuntimeError(
-              f"Command `cmd` failed with exit code {code}")
-        return output.strip()
+      print(cmd)
+      code, output = host.execute(cmd)
+      print(output)
+      if code:
+        raise RuntimeError(
+          f"Command `cmd` failed with exit code {code}")
+      return output.strip()
 
     def assert_clean_cluster(host, mons, osds, mgrs, pgs):
       # `osds` can be either of the form `(num_up_osds, num_in_osds)` or a single
@@ -362,6 +371,11 @@ in
     host2.wait_for_unit("nginx")
     host3.wait_for_unit("nginx")
 
+    ########################################################################
+    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
+    # interaction with Ceph will hang mysteriously!
+    ########################################################################
+
     with subtest("Run unit tests"):
       show(host1, textwrap.dedent("""
         cd /root/fc.qemu
@@ -377,6 +391,11 @@ in
         }
         """).strip().replace("\n", "; "))
 
+    ########################################################################
+    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
+    # interaction with Ceph will hang mysteriously!
+    ########################################################################
+
     with subtest("Exercise standalone fc-qemu features"):
       result = show(host1, "fc-qemu --help")
       assert result.startswith("usage: fc-qemu"), "Unexpected help output"
@@ -386,12 +405,6 @@ in
 
       result = show(host1, "fc-qemu check")
       assert result == "OK - 0 VMs - 0 MiB used - 0 MiB expected"
-
-      result = show(host1, "fc-qemu maintenance enter")
-      assert "I request-evacuation" in result
-      assert "I evacuation-pending" in result
-      assert "I evacuation-running" in result
-      assert "I evacuation-success" in result
 
       result = show(host1, "fc-qemu report-supported-cpu-models")
       assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result
@@ -415,6 +428,10 @@ in
       host1.succeed('ceph osd crush move host1 root=default')
 
     with subtest("Create pools and images"):
+      # The blank RBD pool is required for maintenance operations
+      host1.succeed("ceph osd pool create rbd 32")
+      host1.succeed("ceph osd pool set rbd size 1")
+      host1.succeed("ceph osd pool set rbd min_size 1")
       host1.succeed("ceph osd pool create rbd.ssd 32")
       host1.succeed("ceph osd pool set rbd.ssd size 1")
       host1.succeed("ceph osd pool set rbd.ssd min_size 1")
@@ -434,7 +451,7 @@ in
     # Let things settle for a bit, otherwise things are in weird
     # intermediate states like pgs not created, time not in sync,
     # mons not accessible, ...
-    assert_clean_cluster(host1, 1, 1, 1, 64)
+    assert_clean_cluster(host1, 1, 1, 1, 96)
 
     print("Time spent waiting", time_waiting)
 
@@ -452,6 +469,36 @@ in
           else ""
         }
         """).strip().replace("\n", "; "))
+
+    show(host1, "df -h")
+    show(host1, "rbd ls rbd.hdd")
+    show(host1, "rbd ls rbd.ssd")
+
+    with subtest("Check maintenance enter/exit works"):
+      # The dance with unsetting the path here is to ensure
+      # that we do not rely on global PATH settings. This bit us once
+      # when fc-qemu was called from the agent in a "clean" systemd unit.
+      result = show(host1, "PATH= /run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
+      assert "D enter-maintenance" in result
+      assert "D ensure-maintenance-volume" in result
+      assert "D creating maintenance volume" in result
+      assert "D acquire-maintenance-lock" in result
+      assert "I request-evacuation" in result
+      assert "I evacuation-pending" in result
+      assert "I evacuation-running" in result
+      assert "I evacuation-success" in result
+
+      result = show(host1, "PATH= /run/current-system/sw/bin/fc-qemu --verbose maintenance leave")
+
+      result = show(host1, "PATH= /run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
+      assert "D enter-maintenance" in result
+      assert "D ensure-maintenance-volume" in result
+      assert "D creating maintenance volume" not in result
+      assert "D acquire-maintenance-lock" in result
+      assert "I request-evacuation" in result
+      assert "I evacuation-pending" in result
+      assert "I evacuation-running" in result
+      assert "I evacuation-success" in result
 
   '';
 })

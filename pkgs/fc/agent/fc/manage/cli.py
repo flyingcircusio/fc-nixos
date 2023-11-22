@@ -1,5 +1,4 @@
 import os
-import sys
 import traceback
 from pathlib import Path
 from typing import NamedTuple
@@ -8,10 +7,10 @@ import fc.manage.manage
 import fc.util.enc
 import fc.util.logging
 import structlog
-import typer
 from fc.util import nixos
 from fc.util.lock import locked
-from typer import Argument, Exit, Option, Typer
+from fc.util.typer_utils import FCTyperApp
+from typer import Argument, Exit, Option
 
 
 class Context(NamedTuple):
@@ -27,7 +26,7 @@ class Context(NamedTuple):
 context: Context
 
 
-app = Typer(pretty_exceptions_show_locals=False)
+app = FCTyperApp("fc-manage")
 
 
 @app.command()
@@ -302,11 +301,5 @@ def fc_manage(
     log.info("fc-manage-succeeded", legacy_call=True)
 
 
-def main():
-    command = typer.main.get_command(app)
-    result = command(standalone_mode=False)
-    sys.exit(result)
-
-
 if __name__ == "__main__":
-    main()
+    app()

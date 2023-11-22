@@ -22,8 +22,10 @@ let
 
   restoreSingleFiles = pkgs.callPackage ../../pkgs/restore-single-files {};
 
-  backyRbdVersioned = cephReleaseName: {
-    BACKY_RBD = "${fclib.ceph.releasePkgs.${cephReleaseName}.ceph-client}/bin/rbd";
+  cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
+
+  backyRbdVersioned = {
+    BACKY_RBD = "${cephPkgs.ceph-client}/bin/rbd";
   };
 
 in
@@ -64,7 +66,7 @@ in
     ];
 
     # globally set the RBD to be used by backy, in case it is invoked manually by an operator
-    environment.variables = backyRbdVersioned role.cephRelease;
+    environment.variables = backyRbdVersioned;
 
     fileSystems = {
       "/srv/backy" = {
@@ -121,7 +123,7 @@ in
 
         environment = {
           CEPH_ARGS = "--id ${enc.name}";
-        } // backyRbdVersioned role.cephRelease;
+        } // backyRbdVersioned;
 
         serviceConfig = {
           ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";

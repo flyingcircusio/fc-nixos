@@ -59,12 +59,11 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     environment.systemPackages = with pkgs; [
       fc.ledtool
       fc.secure-erase
+      fc.util-physical
       mstflint
+      nvme-cli
       pciutils
       smartmontools
-      nvme-cli
-      # ensure that `rbd-locktool` uses the correct ceph tooling version
-      config.fclib.ceph.releasePkgs.${cfg.services.ceph.client.cephRelease}.utilPhysical
     ];
 
     fileSystems = {

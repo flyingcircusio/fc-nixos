@@ -38,8 +38,9 @@ in {
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
-  elasticsearch6 = callTest ./elasticsearch.nix { version = "6"; };
-  elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };
+  # Not supported on 21.05 anymore.
+  # elasticsearch6 = callTest ./elasticsearch.nix { version = "6"; };
+  # elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };
   fcagent = callSubTests ./fcagent.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
@@ -47,7 +48,8 @@ in {
   # Not supported on 21.05 anymore.
   # gitlab = callTest ./gitlab.nix {};
 
-  graylog = callTest ./graylog.nix {};
+  # Not supported on 21.05 anymore.
+  # graylog = callTest ./graylog.nix {};
   haproxy = callTest ./haproxy.nix {};
   journal = callTest ./journal.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};

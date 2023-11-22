@@ -173,13 +173,17 @@ def test_list_other_requests(reqmanager):
 
 @unittest.mock.patch("fc.util.directory.connect")
 def test_schedule_requests(connect, reqmanager):
-    req = reqmanager.add(Request(Activity(), 320, "comment"))
+    req = reqmanager.add(Request(Activity(), 320, "schedule"))
+    req_success = reqmanager.add(
+        Request(Activity(), 320, "done, do not schedule this")
+    )
+    req_success.state = State.success
     rpccall = connect().schedule_maintenance
     rpccall.return_value = {req.id: {"time": "2016-04-20T15:12:40.9+00:00"}}
     reqmanager.schedule()
-    #
+    # The estimate is expected to be 900 (15 min) which is the minimum.
     rpccall.assert_called_once_with(
-        {req.id: {"estimate": 900, "comment": "comment"}}
+        {req.id: {"estimate": 900, "comment": "schedule"}}
     )
     assert req.next_due == datetime.datetime(
         2016, 4, 20, 15, 12, 40, 900000, tzinfo=pytz.UTC
@@ -224,12 +228,22 @@ def test_enter_maintenance(log, reqmanager, monkeypatch):
     )
     monkeypatch.setattr("socket.gethostname", lambda: "host")
 
-    reqmanager.enter_maintenance()
+    reqmanager._enter_maintenance()
 
     assert log.has("enter-maintenance")
+    assert log.has(
+        "enter-maintenance-cmd",
+        subsystem="demo",
+        command='echo "entering demo"',
+    )
+    assert log.has("enter-maintenance-cmd-success", subsystem="demo")
     connect_mock().mark_node_service_status.assert_called_with("host", False)
     maintenance_entered_at = reqmanager.maintenance_marker_path.read_text()
     assert maintenance_entered_at == "2016-04-20T11:00:00+00:00"
+
+    import rich
+
+    rich.print(log.events)
 
 
 def test_enter_maintenance_postpone(log, reqmanager, monkeypatch):
@@ -240,7 +254,7 @@ def test_enter_maintenance_postpone(log, reqmanager, monkeypatch):
     reqmanager.config["maintenance-enter"]["postpone"] = "exit 69"
 
     with pytest.raises(PostponeMaintenance):
-        reqmanager.enter_maintenance()
+        reqmanager._enter_maintenance()
 
     assert reqmanager.maintenance_marker_path.exists()
 
@@ -253,12 +267,12 @@ def test_enter_maintenance_tempfail(log, reqmanager, monkeypatch):
     reqmanager.config["maintenance-enter"]["tempfail"] = "exit 75"
 
     with pytest.raises(TempfailMaintenance):
-        reqmanager.enter_maintenance()
+        reqmanager._enter_maintenance()
 
     assert reqmanager.maintenance_marker_path.exists()
 
 
-def test_execute_postpone(log, reqmanager, monkeypatch):
+def test_execute_postpone(log, reqmanager):
     req = reqmanager.add(Request(Activity(), 1))
     req.state = State.due
     req.execute = Mock()
@@ -266,17 +280,18 @@ def test_execute_postpone(log, reqmanager, monkeypatch):
     def enter_maintenance_postpone():
         raise PostponeMaintenance()
 
-    reqmanager.runnable = lambda run_all_now, force_run: [req]
-    reqmanager.enter_maintenance = enter_maintenance_postpone
-    reqmanager.leave_maintenance = Mock()
+    reqmanager._runnable = lambda run_all_now, force_run: [req]
+    reqmanager._enter_maintenance = enter_maintenance_postpone
+    reqmanager._leave_maintenance = Mock()
     reqmanager.execute()
 
     assert req.state == State.postpone
     assert not req.execute.called
-    reqmanager.leave_maintenance.assert_called()
+    reqmanager._leave_maintenance.assert_called()
+    log.has("execute-requests-postpone")
 
 
-def test_execute_tempfail(log, reqmanager, monkeypatch):
+def test_execute_tempfail(log, reqmanager):
     req = reqmanager.add(Request(Activity(), 1))
     req.state = State.due
     req.execute = Mock()
@@ -284,66 +299,60 @@ def test_execute_tempfail(log, reqmanager, monkeypatch):
     def enter_maintenance_tempfail():
         raise TempfailMaintenance()
 
-    reqmanager.runnable = lambda run_all_now, force_run: [req]
-    reqmanager.enter_maintenance = enter_maintenance_tempfail
-    reqmanager.leave_maintenance = MagicMock()
+    reqmanager._runnable = lambda run_all_now, force_run: [req]
+    reqmanager._enter_maintenance = enter_maintenance_tempfail
+    reqmanager._leave_maintenance = MagicMock()
     reqmanager.execute()
 
     assert req.state == State.due
     assert not req.execute.called
-    reqmanager.leave_maintenance.assert_not_called()
+    reqmanager._leave_maintenance.assert_not_called()
+    log.has("execute-requests-tempfail")
 
 
-@unittest.mock.patch("subprocess.run")
-@unittest.mock.patch("fc.util.directory.connect")
-def test_execute_activity_no_reboot(connect, run, reqmanager, log):
+def test_execute_activity_no_reboot(reqmanager, log):
     req = reqmanager.add(Request(Activity(), 1))
-    reqmanager.runnable = lambda run_all_now, force_run: [req]
+    reqmanager._runnable = lambda run_all_now, force_run: [req]
+    reqmanager._enter_maintenance = Mock()
+    reqmanager._leave_maintenance = Mock()
+
     reqmanager.execute()
-    run.assert_has_calls(
-        [
-            call('echo "entering demo"', shell=True, check=True),
-            call('echo "leaving demo"', shell=True, check=True),
-        ]
-    )
-    assert log.has("enter-maintenance")
-    assert log.has("leave-maintenance")
+
+    reqmanager._enter_maintenance.assert_called_once()
+    reqmanager._leave_maintenance.assert_called_once()
+    assert log.has("no-reboot-requested")
 
 
-@unittest.mock.patch("subprocess.run")
-@unittest.mock.patch("fc.util.directory.connect")
-@unittest.mock.patch("time.sleep")
-def test_execute_activity_with_reboot(
-    sleep: Mock, connect, run: Mock, reqmanager, log
-):
+def test_execute_activity_with_reboot(reqmanager, log, monkeypatch):
+    monkeypatch.setattr("time.sleep", sleep := Mock())
+    monkeypatch.setattr("subprocess.run", run := Mock())
+    reqmanager._enter_maintenance = Mock()
+    reqmanager._leave_maintenance = Mock()
+
     activity = Activity()
     activity.reboot_needed = RebootType.WARM
     req = reqmanager.add(Request(activity, 1))
-    req.state = State.due
+    reqmanager._runnable = lambda run_all_now, force_run: [req]
+
     with pytest.raises(SystemExit) as e:
-        reqmanager.execute(run_all_now=True)
+        reqmanager.execute()
 
     assert e.value.code == 0
 
-    run.assert_has_calls(
-        [
-            call('echo "entering demo"', shell=True, check=True),
-            call("reboot", check=True, capture_output=True, text=True),
-        ]
-    )
+    reqmanager._enter_maintenance.assert_called_once()
 
     sleep.assert_called_once_with(5)
-
-    assert log.has("enter-maintenance")
+    run.assert_called_once()
+    # Should stay in maintenance mode during the reboot.
+    reqmanager._leave_maintenance.assert_not_called()
     assert log.has("maintenance-reboot")
-    assert not log.has("leave-maintenance")
 
 
 @unittest.mock.patch("subprocess.run")
 @unittest.mock.patch("time.sleep")
 def test_reboot_cold_reboot_has_precedence(sleep, run, reqmanager, log):
     with pytest.raises(SystemExit):
-        reqmanager.reboot_and_exit({RebootType.COLD, RebootType.WARM})
+        reqmanager._reboot_and_exit({RebootType.COLD, RebootType.WARM})
 
     sleep.assert_called_once_with(5)
     assert log.has("maintenance-poweroff")
@@ -510,8 +519,7 @@ def test_execute_not_performed_on_connection_error(
     connect().mark_node_service_status.side_effect = socket.error()
     req = reqmanager.add(Request(Activity(), 1))
     req.state = State.due
-    with pytest.raises(OSError):
-        reqmanager.execute()
+    reqmanager.execute()
     assert execute.mock_calls == []
 
 
@@ -576,7 +584,7 @@ def test_delete(request_population):
 
 def test_list_empty(reqmanager):
     console = Console(file=StringIO())
-    console.print(reqmanager)
+    console.print(reqmanager.__rich__())
     str_output = console.file.getvalue()
     assert "No maintenance requests at the moment.\n" == str_output
 
@@ -598,7 +606,7 @@ def test_list(reqmanager):
     r3.attempts = [att]
     reqmanager.add(r3)
     console = Console(file=StringIO())
-    console.print(reqmanager)
+    console.print(reqmanager.__rich__())
     str_output = console.file.getvalue()
     id1 = r1.id[:7]
     id2 = r2.id[:7]
@@ -636,10 +644,12 @@ def test_check_scheduled_requests_should_show_count_and_time(
     with request_population(2) as (rm, reqs):
         reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
         reqs[0].state = State.due
+        reqs[0].save()
         reqs[1].next_due = datetime.datetime(
             2016, 4, 20, 11, 10, tzinfo=pytz.UTC
         )
         reqs[1].state = State.due
+        reqs[1].save()
     res = rm.check()
     assert "2 scheduled" in res.ok_info[1]
     assert "2016-04-20 11:00" in res.ok_info[1]
@@ -662,7 +672,9 @@ def test_check_waiting_and_scheduled_requests(
     with request_population(2) as (rm, reqs):
         reqs[0].state = State.pending
         reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].save()
         reqs[1].state = State.pending
+        reqs[1].save()
     res = rm.check()
     assert res.ok_info
     assert "A maintenance request is due at 2016-04-20 11:00" in res.ok_info[1]

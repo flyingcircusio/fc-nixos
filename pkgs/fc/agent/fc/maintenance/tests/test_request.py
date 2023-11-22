@@ -252,6 +252,15 @@ def test_merge(monkeypatch):
     assert r._estimate == Estimate("20m")
 
 
+def test_merge_should_not_repeat_comment(monkeypatch):
+    monkeypatch.setattr(Request, "save", MagicMock())
+    r = Request(MergeableActivity(), Estimate("20m"), "First\n\nSecond")
+    other = Request(MergeableActivity(), Estimate("10m"), "Second")
+
+    res = r.merge(other)
+    assert r._comment == "First\n\nSecond"
+
+
 def test_incompatible_activities_should_not_merge(monkeypatch):
     r = Request(MergeableActivity(), Estimate("20m"), "First request.")
     other = Request(Activity(), Estimate("10m"), "Other request")
