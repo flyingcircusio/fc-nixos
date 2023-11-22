@@ -38,6 +38,7 @@ rec {
       hash = "sha256-Lf4i2pwZMpVGuWVohTzM5/x9X6GmFy2kLmgz25uSgFM=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
+    ceph_client = pkgs.ceph-nautilus.ceph-client;
   };
 
   # Enable this temporarily during development, but DO NOT commit this as

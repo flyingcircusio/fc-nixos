@@ -475,7 +475,10 @@ in
     show(host1, "rbd ls rbd.ssd")
 
     with subtest("Check maintenance enter/exit works"):
-      result = show(host1, "fc-qemu --verbose maintenance enter")
+      # The dance with unsetting the path here is to ensure
+      # that we do not rely on global PATH settings. This bit us once
+      # when fc-qemu was called from the agent in a "clean" systemd unit.
+      result = show(host1, "PATH= /run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
       assert "D enter-maintenance" in result
       assert "D ensure-maintenance-volume" in result
       assert "D creating maintenance volume" in result
@@ -485,9 +488,9 @@ in
       assert "I evacuation-running" in result
       assert "I evacuation-success" in result
 
-      result = show(host1, "fc-qemu --verbose maintenance leave")
+      result = show(host1, "PATH= /run/current-system/sw/bin/fc-qemu --verbose maintenance leave")
 
-      result = show(host1, "fc-qemu --verbose maintenance enter")
+      result = show(host1, "PATH= /run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
       assert "D enter-maintenance" in result
       assert "D ensure-maintenance-volume" in result
       assert "D creating maintenance volume" not in result
