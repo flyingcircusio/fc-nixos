@@ -128,6 +128,9 @@ in
         };
       };
 
+      # The agent needs k3s to run `fc-kubernetes` in enter and exit commands.
+      systemd.services.fc-agent.path = [ config.services.k3s.package ];
+
       ### Fixes for upstream issues
 
       # https://github.com/NixOS/nixpkgs/issues/103158
