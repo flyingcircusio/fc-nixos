@@ -13,7 +13,7 @@ in {
           switchport = serverport + 1;
         in {
           system.nixos.tags = [ "varnish-switch-test" ];
-          flyingcircus.services.varnish.virtualHosts.test = {
+          flyingcircus.services.varnish.virtualHosts.test = lib.mkForce {
             condition = "true";
             config = ''
               vcl 4.0;
@@ -83,8 +83,12 @@ in {
 
     with subtest("varnish pid should be the same across small configuration changes"):
       old_pid = webproxy.succeed("systemctl show varnish.service --property MainPID --value")
+      old_port = webproxy.succeed("varnishadm vcl.show label-test | grep \"\\.port\" | cut -d \"\\\"\" -f 2")
       webproxy.wait_until_succeeds("/run/current-system/specialisation/varnish-switch-test/bin/switch-to-configuration switch")
       new_pid = webproxy.succeed("systemctl show varnish.service --property MainPID --value")
-      assert old_pid == new_pid
+      new_port = webproxy.succeed("varnishadm vcl.show label-test | grep \"\\.port\" | cut -d \"\\\"\" -f 2")
+
+      assert old_pid == new_pid, f"pid is different: {old_pid} != {new_pid}"
+      assert old_port != new_port, f"port is identical: {old_port} == {new_port}"
   '';
 })
