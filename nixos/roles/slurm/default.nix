@@ -313,7 +313,7 @@ in
           runAs = "slurm";
         }
         {
-          commands = [ "${pkgs.fc.agentWithSlurm}/bin/fc-slurm" ];
+          commands = [ "${config.flyingcircus.agent.package}/bin/fc-slurm" ];
           groups = [ "sudo-srv" ];
         }
       ];
@@ -439,7 +439,7 @@ in
 
       flyingcircus.services.telegraf.inputs = {
         exec = [{
-          commands = [ "${pkgs.fc.agentWithSlurm}/bin/fc-slurm metrics" ];
+          commands = [ "${config.flyingcircus.agent.package}/bin/fc-slurm metrics" ];
           timeout = "10s";
           data_format = "json";
           json_name_key = "name";

@@ -266,7 +266,7 @@ in
 
         path = with pkgs; [
           config.system.build.nixos-rebuild
-          fc.agent
+          cfg.agent.package
         ] ++ commonEnvPath;
 
         inherit environment;
