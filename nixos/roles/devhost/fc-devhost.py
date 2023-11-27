@@ -283,7 +283,7 @@ class Manager:
                     run(
                         "rsync",
                         "-e",
-                        "ssh -o StrictHostKeyChecking=no -i /var/lib/devhost/ssh_bootstrap_key",
+                        "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /var/lib/devhost/ssh_bootstrap_key",
                         "--rsync-path=sudo rsync",
                         f.name,
                         f"developer@{self.name}:/etc/nixos/enc.json",
@@ -351,6 +351,8 @@ class Manager:
                 "/var/lib/devhost/ssh_bootstrap_key",
                 "-o",
                 "StrictHostKeyChecking=no",
+                "-o",
+                "UserKnownHostsFile=/dev/null",
                 "-l",
                 "developer",
                 self.name,
