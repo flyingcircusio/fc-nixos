@@ -167,6 +167,13 @@ in
         clean_script
       ];
 
+      # larger than default proxy buffer size some applications
+      services.nginx.appendConfig = ''
+        proxy_buffer_size 128k;
+        proxy_buffers 4 256k;
+        proxy_busy_buffers_size 256k;
+      '';
+
       security.sudo.extraRules = lib.mkAfter [
           { commands = [ { command = "${container_script}/bin/fc-build-dev-container"; options = [ "NOPASSWD" ]; } ];
             groups = [ "service" "users" ];
