@@ -167,7 +167,9 @@ class Manager:
             with open(self.config_file, mode="w") as f:
                 f.write(json.dumps(self.cfg))
 
-            nix_aliases = " ".join(map(lambda x: f'"{x}"', self.cfg["aliases"]))
+            nix_aliases = " ".join(
+                map(lambda x: f'"{x}"', self.cfg["aliases"])
+            )
             with open(self.nix_file, mode="w") as f:
                 f.write(
                     textwrap.dedent(
@@ -206,7 +208,9 @@ class Manager:
                         VM_BASE_IMAGE_DIR / f"{hydra_eval}.qcow2.tmp"
                     )
                     vm_base_image_url: str
-                    for id, product in response.json()["buildproducts"].items():
+                    for id, product in response.json()[
+                        "buildproducts"
+                    ].items():
                         if product["subtype"] == "img":
                             vm_base_image_url = f"https://hydra.flyingcircus.io/build/{response.json()['id']}/download/{id}"
                             break
@@ -268,7 +272,9 @@ class Manager:
                             f.write(generate_enc_json(self.cfg, channel_url))
                     finally:
                         run("umount", image_mount_directory)
-                        run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
+                        run(
+                            "qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}"
+                        )
                 os.rename(self.image_file_tmp, self.image_file)
             else:
                 with tempfile.NamedTemporaryFile(mode="w") as f:
