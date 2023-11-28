@@ -25,14 +25,15 @@ app = Typer()
 class NixOSVersion(str, Enum):
     NIXOS_2211 = "nixos-22.11"
     NIXOS_2305 = "nixos-23.05"
-    NIXOS_UNSTABLE = "nixos-23.11"
+    NIXOS_2311 = "nixos-23.11"
+    NIXOS_UNSTABLE = "nixos-24.05"
 
     @property
-    def upstream_branch(self):
+    def upstream_branch(self) -> str:
         if self == NixOSVersion.NIXOS_UNSTABLE:
             return "nixos-unstable"
 
-        return str(self)
+        return self.value
 
 
 def run_on_hydra(*args):
@@ -326,7 +327,7 @@ context: Context
 
 @app.callback(no_args_is_help=True)
 def update_nixpkgs(
-    nixos_version: NixOSVersion = Option(default=None),
+    nixos_version: NixOSVersion = Option(default="nixos-23.11"),
     fc_nixos_path: Path = Option(
         ".", dir_okay=True, file_okay=False, writable=True
     ),
