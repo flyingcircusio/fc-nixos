@@ -60,9 +60,9 @@
     "version": "3.92"
   },
   "calibre": {
-    "name": "calibre-6.29.0",
+    "name": "calibre-7.0.0",
     "pname": "calibre",
-    "version": "6.29.0"
+    "version": "7.0.0"
   },
   "ceph": {
     "name": "ceph-18.2.0",
@@ -185,9 +185,9 @@
     "version": "7.17.4"
   },
   "firefox": {
-    "name": "firefox-119.0.1",
+    "name": "firefox-120.0",
     "pname": "firefox",
-    "version": "119.0.1"
+    "version": "120.0"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -411,9 +411,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.1.62",
+    "name": "linux-6.1.63",
     "pname": "linux",
-    "version": "6.1.62"
+    "version": "6.1.63"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -431,9 +431,9 @@
     "version": "3.16"
   },
   "mariadb": {
-    "name": "mariadb-server-10.11.5",
+    "name": "mariadb-server-10.11.6",
     "pname": "mariadb-server",
-    "version": "10.11.5"
+    "version": "10.11.6"
   },
   "mariadb-connector-c": {
     "name": "mariadb-connector-c-3.3.5",
@@ -466,9 +466,9 @@
     "version": "1.6.22"
   },
   "mysql": {
-    "name": "mariadb-server-10.11.5",
+    "name": "mariadb-server-10.11.6",
     "pname": "mariadb-server",
-    "version": "10.11.5"
+    "version": "10.11.6"
   },
   "mysql80": {
     "name": "mysql-8.0.35",
@@ -636,14 +636,14 @@
     "version": "8.0.30"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.25",
+    "name": "php-with-extensions-8.1.26",
     "pname": "php-with-extensions",
-    "version": "8.1.25"
+    "version": "8.1.26"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.12",
+    "name": "php-with-extensions-8.2.13",
     "pname": "php-with-extensions",
-    "version": "8.2.12"
+    "version": "8.2.13"
   },
   "phpPackages.composer": {
     "name": "composer-2.6.5",
@@ -661,9 +661,9 @@
     "version": "4.7.2"
   },
   "poetry": {
-    "name": "poetry-1.6.1",
+    "name": "poetry-1.7.0",
     "pname": "poetry",
-    "version": "1.6.1"
+    "version": "1.7.0"
   },
   "polkit": {
     "name": "polkit-123",
@@ -837,9 +837,9 @@
     "version": "7.2.3"
   },
   "roundcube": {
-    "name": "roundcube-1.6.4",
+    "name": "roundcube-1.6.5",
     "pname": "roundcube",
-    "version": "1.6.4"
+    "version": "1.6.5"
   },
   "rsync": {
     "name": "rsync-3.2.7",
@@ -927,14 +927,14 @@
     "version": "3.3a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.0.27",
+    "name": "apache-tomcat-10.1.15",
     "pname": "apache-tomcat",
-    "version": "10.0.27"
+    "version": "10.1.15"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.75",
+    "name": "apache-tomcat-9.0.82",
     "pname": "apache-tomcat",
-    "version": "9.0.75"
+    "version": "9.0.82"
   },
   "unzip": {
     "name": "unzip-6.0",
