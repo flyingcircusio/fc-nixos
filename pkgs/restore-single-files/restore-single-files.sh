@@ -27,8 +27,8 @@ warn()
 	printf "${BAD}* $*${NORMAL}\n"
 }
 
-VM="$1"
-REV="${2:-last}"
+VM="${1?need VM name}"
+REV="${2?need revision identifier}"
 
 if [[ -z "$VM" ]]; then
 	warn "VM or revision not specified"
