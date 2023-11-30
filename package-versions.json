@@ -429,10 +429,10 @@
     "pname": "libyaml",
     "version": "0.2.5"
   },
-  "linux": {
-    "name": "linux-6.1.63",
+  "linux_5_15": {
+    "name": "linux-5.15.139",
     "pname": "linux",
-    "version": "6.1.63"
+    "version": "5.15.139"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
