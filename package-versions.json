@@ -75,9 +75,9 @@
     "version": "119.0.6045.105"
   },
   "chromium": {
-    "name": "chromium-119.0.6045.105",
+    "name": "chromium-119.0.6045.159",
     "pname": "chromium",
-    "version": "119.0.6045.105"
+    "version": "119.0.6045.159"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -195,9 +195,9 @@
     "version": "7.17.4"
   },
   "firefox": {
-    "name": "firefox-119.0.1",
+    "name": "firefox-120.0",
     "pname": "firefox",
-    "version": "119.0.1"
+    "version": "120.0"
   },
   "gcc": {
     "name": "gcc-wrapper-12.2.0",
@@ -245,9 +245,9 @@
     "version": "16.5.1"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-16.5.0",
+    "name": "gitlab-runner-16.6.0",
     "pname": "gitlab-runner",
-    "version": "16.5.0"
+    "version": "16.6.0"
   },
   "glibc": {
     "name": "glibc-2.37-45",
@@ -430,9 +430,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.1.62",
+    "name": "linux-6.1.63",
     "pname": "linux",
-    "version": "6.1.62"
+    "version": "6.1.63"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -460,9 +460,9 @@
     "version": "3.2.5"
   },
   "mastodon": {
-    "name": "mastodon-4.1.9",
+    "name": "mastodon-4.1.10",
     "pname": "mastodon",
-    "version": "4.1.9"
+    "version": "4.1.10"
   },
   "matomo": {
     "name": "matomo-4.15.1",
@@ -660,19 +660,19 @@
     "version": "7.4.33"
   },
   "php80": {
-    "name": "php-with-extensions-8.0.29",
+    "name": "php-with-extensions-8.0.30",
     "pname": "php-with-extensions",
-    "version": "8.0.29"
+    "version": "8.0.30"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.25",
+    "name": "php-with-extensions-8.1.26",
     "pname": "php-with-extensions",
-    "version": "8.1.25"
+    "version": "8.1.26"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.12",
+    "name": "php-with-extensions-8.2.13",
     "pname": "php-with-extensions",
-    "version": "8.2.12"
+    "version": "8.2.13"
   },
   "phpPackages.composer": {
     "name": "php-composer-2.5.5",
@@ -870,9 +870,9 @@
     "version": "7.0.14"
   },
   "roundcube": {
-    "name": "roundcube-1.6.4",
+    "name": "roundcube-1.6.5",
     "pname": "roundcube",
-    "version": "1.6.4"
+    "version": "1.6.5"
   },
   "rsync": {
     "name": "rsync-3.2.7",
@@ -990,9 +990,9 @@
     "version": "9.0.1441"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.42.1+abi=4.0",
+    "name": "webkitgtk-2.42.2+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.42.1"
+    "version": "2.42.2"
   },
   "wget": {
     "name": "wget-1.21.4",
