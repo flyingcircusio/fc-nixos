@@ -1,7 +1,4 @@
-#!/usr/bin/env nix-shell
-#! nix-shell -i bash -p git curl jq
-
-set -euo pipefail
+#!/usr/bin/env bash
 
 T=$(mktemp -d)
 

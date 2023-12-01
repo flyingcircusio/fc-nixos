@@ -1,16 +1,14 @@
-#! /usr/bin/env nix-shell
-#! nix-shell -i bash --pure -p git gh coreutils
-
-nixos_version=$(< nixos-version)
+#!/usr/bin/env bash
+nixos_version=$(< release/nixos-version)
 dev="fc-${nixos_version}-dev"
 stag="fc-${nixos_version}-staging"
 prod="fc-${nixos_version}-production"
 
 export PAGER=
 
-dev_commit=$(git rev-parse $dev)
-stag_commit=$(git rev-parse $stag)
-prod_commit=$(git rev-parse $prod)
+dev_commit=$(git rev-parse "$dev")
+stag_commit=$(git rev-parse "$stag")
+prod_commit=$(git rev-parse "$prod")
 
 num_dev_prod_commits=$(git cherry "$prod" "$dev" | wc -l)
 

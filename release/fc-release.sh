@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-set -e
-
 releaseid="${1:?no release id given}"
 
 if ! echo "$releaseid" | grep -Eq '^[0-9]{4}_[0-9]{3}$'; then
@@ -8,33 +6,33 @@ if ! echo "$releaseid" | grep -Eq '^[0-9]{4}_[0-9]{3}$'; then
     exit 64
 fi
 
-nixos_version=$(< nixos-version)
+nixos_version=$(< release/nixos-version)
 dev="fc-${nixos_version}-dev"
 stag="fc-${nixos_version}-staging"
 prod="fc-${nixos_version}-production"
 
 echo "$0: performing release based on $stag"
 
-if ! git remote -v | grep -Eq "^origin\s.*github.com.flyingcircusio/fc-nixos"
-then
+if ! git remote -v | grep -Eq "^origin\s.*github.com.flyingcircusio/fc-nixos"; then
     echo "$0: please perform release in a clean checkout with proper origin" >&2
     exit 64
 fi
+
 git fetch origin --tags --prune
-git checkout $dev
+git checkout "$dev"
 git merge --ff-only  # expected to fail on unclean/unpushed workdirs
 
-git checkout $stag
+git checkout "$stag"
 git merge --ff-only
 
-git checkout $prod
+git checkout "$prod"
 git merge --ff-only
 msg="Merge branch '$stag' into $prod for release $releaseid"
-git merge -m "$msg" $stag
+git merge -m "$msg" "$stag"
 
-git checkout $dev
+git checkout "$dev"
 msg="Backmerge branch '$prod' into $dev for release $releaseid"
-git merge -m "$msg" $prod
+git merge -m "$msg" "$prod"
 
 echo "$0: committed changes:"
 PAGER='' git log --graph --decorate --format=short -n3
