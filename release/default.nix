@@ -77,7 +77,7 @@ let
   initialEnv =
     if stableBranch
     then branch
-    else "fc-23.05-dev";
+    else "fc-23.11-dev";
 
   initialNixChannels = pkgs.writeText "nix-channels" ''
     https://hydra.flyingcircus.io/channel/custom/flyingcircus/${initialEnv}/release nixos
