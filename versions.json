@@ -7,8 +7,8 @@
   },
   "nixos-mailserver": {
     "url": "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/",
-    "rev": "524e141124e29e1292cd97329aa3b2885a58cef8",
-    "sha256": "b6e3154f6b9c9bbaceba9ada6cbb326c4692bff6db9c5b78097ebd66f0ed7eb2",
+    "rev": "b3d6e950b71f7f9a29268beb9de03003705765e8",
+    "sha256": "2ai0rYD6o8fQgweO3zKqPbbQBy/SQC8Hs+ZTf+GeXuU=",
     "fetchSubmodules": false,
     "deepClone": false,
     "leaveDotGit": false
