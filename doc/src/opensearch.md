@@ -2,8 +2,7 @@
 
 # OpenSearch
 
-Managed instance of [OpenSearch](https://opensearch.org) which was originally
-forked from Elasticsearch 7.10.2.
+Managed instance of [OpenSearch](https://opensearch.org) in version 2.11.x.
 
 
 ## Interaction

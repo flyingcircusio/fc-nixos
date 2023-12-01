@@ -2,7 +2,7 @@
 
 # Matomo
 
-Managed instance of [Matomo](https://matomo.org), a real-time Web analytics application.
+Managed instance of [Matomo](https://matomo.org), a real-time Web analytics application in the latest version provided by NixOS which is 4.x.x.
 
 ## Setup
 

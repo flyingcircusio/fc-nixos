@@ -6,7 +6,7 @@ Managed instance of the [PostgreSQL](http://postgresql.org) database server.
 
 ## Components
 
-- PostgreSQL server (versions 11, 12, 13, 14, 15)
+- PostgreSQL server (versions 12, 13, 14, 15)
 
 :::{warning}
 
@@ -15,9 +15,12 @@ users that had `ALL` privileges for a database also were able to create tables a
 other objects in the `public` schema. Now, the `CREATE` privilege has to be
 granted explicitly for the schema.
 
-This also means that setting up permissions by using the NixOS option
+This also means that setting up permissions using the NixOS option
 `services.postgresql.ensureUsers.*.ensurePermissions` is not enough if the user
-needs to create tables. NixOS doesn't support setting permissions on a schema, yet.
+needs to create tables. We recommend to set database permissions using a configuration
+management/deployment tool or manually.
+If you want to set permissions using NixOS configuration, use the `services.postgresql.ensureUsers.*.ensureDBOwnership`
+instead.
 
 To grant `CREATE` privilege to user `test` using SQL, execute:
 
@@ -118,13 +121,6 @@ current state of data directories for the available major versions.
 commands with `sudo -u postgres` or use `sudo -iu postgres` to change
 to the `postgres` user. This is allowed for `service` and `sudo-srv`
 users.
-:::
-
-:::{warning}
-When the PostGIS extension is used, upgrading from a version before 12
-to 12 or higher isn't possible using the `fc-postgresql` command.
-You have to create a full dump of the old cluster using `pg_dumpall`,
-switch to the new role, rebuild the system and use `pg_restore`.
 :::
 
 To show which data directories exists, their migration status and which

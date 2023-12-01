@@ -54,7 +54,7 @@ let
   legacyConfigWarning =
     ''Plain PostgreSQL configuration found in ${toString localConfigPath}.
     This does not work properly anymore and must be migrated to NixOS configuration.
-    See https://doc.flyingcircus.io/roles/fc-23.05-production/postgresql.html for details.'';
+    See https://doc.flyingcircus.io/roles/fc-23.11-production/postgresql.html for details.'';
 
   localConfig =
     if legacyConfigFiles != []
@@ -208,7 +208,7 @@ in {
 
         See the platform documentation for more details:
 
-        https://doc.flyingcircus.io/roles/fc-23.05-production/postgresql.html
+        https://doc.flyingcircus.io/roles/fc-23.11-production/postgresql.html
       '';
 
       flyingcircus.infrastructure.preferNoneSchedulerOnSsd = true;

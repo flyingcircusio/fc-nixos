@@ -2,7 +2,7 @@
 { system ? builtins.currentSystem
 , bootstrap ? <nixpkgs>
 , nixpkgs_ ? (import ../versions.nix { pkgs = import bootstrap {}; }).nixpkgs
-, branch ? null  # e.g. "fc-23.05-dev"
+, branch ? null  # e.g. "fc-23.11-dev"
 , stableBranch ? false
 , supportedSystems ? [ "x86_64-linux" ]
 , fc ? {
@@ -380,7 +380,7 @@ jobs // {
 
       # Add files from linked subdirectories. We want to keep the name of the
       # link in the archive, not the target. Example:
-      # "nixos/fc/default.nix" becomes "release-23.05.2222.12abcdef/fc/default.nix"
+      # "nixos/fc/default.nix" becomes "release-23.11.2222.12abcdef/fc/default.nix"
       for d in nixos/*/; do
           tar uf "$tarball" --transform "s|^$d\\.|${name}/$(basename "$d")|" ${tarOpts} "$d."
       done

@@ -48,7 +48,7 @@ A complete configuration might looks something like this:
       }
     ];
 
-    php = pkgs.lamp_php74;
+    php = pkgs.lamp_php81;
 
     apache_conf = ''
       MaxRequestWorkers 5
@@ -200,7 +200,7 @@ Supported packages:
 - `pkgs.lamp_php74`
 - `pkgs.lamp_php80`
 - `pkgs.lamp_php81`
-- `pkgs.lamp_php82`
+- `pkgs.lamp_php82` (default)
 
 The `lamp_php_*` packages provided by our platform include commonly used
 PHP extensions, currently:
@@ -211,10 +211,10 @@ PHP extensions, currently:
 - memcached
 
 There are more pre-packaged extension that can be added via Nix code. For example,
-to add the apcu extension along with the ones provided by lamp_php80, use:
+to add the apcu extension along with the ones provided by lamp_php82, use:
 
 ```Nix
-php = pkgs.lamp_php80.withExtensions ({ enabled, all }:
+php = pkgs.lamp_php82.withExtensions ({ enabled, all }:
   enabled ++ [
     all.apcu
   ]);

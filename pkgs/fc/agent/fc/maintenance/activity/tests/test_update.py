@@ -446,7 +446,7 @@ def test_update_from_enc_incompatible_with_local_channel(log, logger):
     enc = {
         "parameters": {
             "environment_url": "file://test",
-            "environment": "dev-checkout-23.05",
+            "environment": "dev-checkout-23.11",
         }
     }
 

@@ -3,7 +3,7 @@ Nginx is enabled on this machine.
 The recommended method is structured configuration via Nix code in `/etc/local/nixos`.
 You can also find an example at `/etc/local/nixos/nginx.nix.example`.
 Refer to the webgateway role documentation at
-https://doc.flyingcircus.io/roles/fc-23.05-production/webgateway.html for more info.
+https://doc.flyingcircus.io/roles/fc-23.11-production/webgateway.html for more info.
 
 
 Old configuration methods

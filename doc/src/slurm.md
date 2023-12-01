@@ -15,7 +15,7 @@ documented below.
 The remainder of this documentation assumes that you are aware of the basics of
 Slurm and understand the general terminology.
 
-We provide version 23.2.0 of Slurm.
+We provide version 23.02.x.x of Slurm.
 
 ## Basic architecture and roles
 
