@@ -278,6 +278,10 @@ in
       };
     };
 
+    # Don't automatically create a dummy0 interface when the kernel
+    # module is loaded.
+    boot.extraModprobeConfig = "options dummy numdummies=0";
+
     systemd.services =
       let
         sysctlSnippet = ''
