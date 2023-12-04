@@ -40,11 +40,12 @@ let
   checkMongoCmd = "${pkgs.fc.check-mongodb}/bin/check_mongodb";
 
   mongodbRoles = with config.flyingcircus.roles; {
-    "4.2" = mongodb42.enable;
+    "4.2" = mongodb42;
   };
-  enabledRoles = lib.filterAttrs (n: v: v) mongodbRoles;
+  enabledRoles = lib.filterAttrs (n: v: v.enable) mongodbRoles;
   enabledRolesCount = length (lib.attrNames enabledRoles);
   majorVersion = head (lib.attrNames enabledRoles);
+  extraCheckArgs = head (lib.mapAttrsToList (n: v: v.extraCheckArgs) enabledRoles);
 
 in {
   options =
@@ -52,6 +53,12 @@ in {
     mkRole = v: {
       enable = lib.mkEnableOption "Enable the Flying Circus MongoDB ${v} server role.";
       supportsContainers = fclib.mkEnableContainerSupport;
+      extraCheckArgs = with lib; mkOption {
+        type = types.str;
+        default = "-h localhost -p 27017";
+        example = "-h example00.fe.rzob.fcio.net -p 27017 -t -U admin -P /etc/local/mongodb/password.txt";
+        description = "Extra arguments to be passed to the check_mongodb script";
+      };
     };
   in {
     flyingcircus.roles = {
@@ -150,14 +157,14 @@ in {
           mongodb = {
             notification = "MongoDB alive";
             command = ''
-              /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb
+              /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb ${extraCheckArgs}
             '';
           };
 
           mongodb_feature_compat_version = {
             notification = "MongoDB is running on an outdated feature compatibility version";
             command = ''
-              /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb -A feature_compat_version
+              /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb -A feature_compat_version ${extraCheckArgs}
             '';
             interval = 600;
           };
