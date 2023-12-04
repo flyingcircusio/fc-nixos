@@ -55,9 +55,9 @@
     "version": "2.4.22"
   },
   "cacert": {
-    "name": "nss-cacert-3.92",
+    "name": "nss-cacert-3.95",
     "pname": "nss-cacert",
-    "version": "3.92"
+    "version": "3.95"
   },
   "calibre": {
     "name": "calibre-7.0.0",
@@ -75,9 +75,9 @@
     "version": "119.0.6045.105"
   },
   "chromium": {
-    "name": "chromium-119.0.6045.159",
+    "name": "chromium-119.0.6045.199",
     "pname": "chromium",
-    "version": "119.0.6045.159"
+    "version": "119.0.6045.199"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -95,9 +95,9 @@
     "version": "3.27.7"
   },
   "consul": {
-    "name": "consul-1.16.1",
+    "name": "consul-1.16.3",
     "pname": "consul",
-    "version": "1.16.1"
+    "version": "1.16.3"
   },
   "containerd": {
     "name": "containerd-1.7.9",
@@ -150,9 +150,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.47",
+    "name": "element-web-1.11.50",
     "pname": "element-web",
-    "version": "1.11.47"
+    "version": "1.11.50"
   },
   "erlang": {
     "name": "erlang-25.3.2.7",
@@ -185,9 +185,9 @@
     "version": "7.17.4"
   },
   "firefox": {
-    "name": "firefox-120.0",
+    "name": "firefox-120.0.1",
     "pname": "firefox",
-    "version": "120.0"
+    "version": "120.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -205,9 +205,9 @@
     "version": "2.3.3"
   },
   "ghostscript": {
-    "name": "ghostscript-with-X-10.02.0",
+    "name": "ghostscript-with-X-10.02.1",
     "pname": "ghostscript-with-X",
-    "version": "10.02.0"
+    "version": "10.02.1"
   },
   "git": {
     "name": "git-2.42.0",
@@ -410,10 +410,10 @@
     "pname": "libyaml",
     "version": "0.2.5"
   },
-  "linux": {
-    "name": "linux-6.1.63",
+  "linux_5_15": {
+    "name": "linux-5.15.140",
     "pname": "linux",
-    "version": "6.1.63"
+    "version": "5.15.140"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -451,9 +451,9 @@
     "version": "4.15.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.95.1",
+    "name": "matrix-synapse-wrapped-1.97.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.95.1"
+    "version": "1.97.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -526,9 +526,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.94",
+    "name": "nss-3.95",
     "pname": "nss",
-    "version": "3.94"
+    "version": "3.95"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -661,9 +661,9 @@
     "version": "4.7.2"
   },
   "poetry": {
-    "name": "poetry-1.7.0",
+    "name": "poetry-1.7.1",
     "pname": "poetry",
-    "version": "1.7.0"
+    "version": "1.7.1"
   },
   "polkit": {
     "name": "polkit-123",
@@ -707,9 +707,9 @@
     "version": "4.8.3"
   },
   "prometheus": {
-    "name": "prometheus-2.47.2",
+    "name": "prometheus-2.48.0",
     "pname": "prometheus",
-    "version": "2.47.2"
+    "version": "2.48.0"
   },
   "prosody": {
     "name": "prosody-0.12.4",
@@ -907,9 +907,9 @@
     "version": "12.7.4"
   },
   "systemd": {
-    "name": "systemd-254.3",
+    "name": "systemd-254.6",
     "pname": "systemd",
-    "version": "254.3"
+    "version": "254.6"
   },
   "tcpdump": {
     "name": "tcpdump-4.99.4",
