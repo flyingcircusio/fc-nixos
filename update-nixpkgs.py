@@ -132,6 +132,26 @@ def prefetch_nixpkgs(nixos_version: str) -> dict[str, str]:
     return prefetch_result
 
 
+def version_diff_lines(old_versions, new_versions):
+    lines = []
+    for pkg_name in old_versions:
+        old = old_versions.get(pkg_name, {}).get("version")
+        new = new_versions.get(pkg_name, {}).get("version")
+
+        if not old:
+            print(f"(old version missing for {pkg_name})")
+            continue
+
+        if not new:
+            print(f"(new version missing for {pkg_name})")
+            continue
+
+        if old != new:
+            lines.append(f"{pkg_name}: {old} -> {new}")
+
+    return lines
+
+
 def update_package_versions_json(package_versions_path: Path):
     basedir = "$XDG_RUNTIME_DIR"
     local_path = package_versions_path.parent
@@ -146,20 +166,8 @@ def update_package_versions_json(package_versions_path: Path):
     old_versions = json.loads(package_versions_path.read_text())
     new_versions = json.loads(proc.stdout)
     print("Versions diffs:")
-    for pkg_name in old_versions:
-        old = old_versions[pkg_name].get("version")
-        new = new_versions[pkg_name].get("version")
-
-        if not old:
-            print(f"(old version missing for {pkg_name})")
-            continue
-
-        if not new:
-            print(f"(new version missing for {pkg_name})")
-            continue
-
-        if old != new:
-            print(f"{pkg_name}: {old} -> {new}")
+    for line in version_diff_lines(old_versions, new_versions):
+        print(line)
 
     package_versions_path.write_text(json.dumps(new_versions, indent=2) + "\n")
 
@@ -187,10 +195,10 @@ def filter_and_merge_commit_msgs(msgs):
     out_msgs = []
     last_pkg_update = None
     ignored_msgs = [
-        "matomo: 4.10.1 -> 4.12.3",
         "github-runner: pass overridden version to build scripts",
         "gitlab: make Git package configurable",
         "gitlab: remove DB migration warning",
+        "jitsi-videobridge: 2.3-44-g8983b11f -> 2.3-59-g5c48e421",
         "libmodsecurity: 3.0.6 -> 3.0.7",
         "mongodb: fix build and sanitize package",
         "solr: 8.6.3 -> 8.11.1",
@@ -332,7 +340,7 @@ def update_nixpkgs(
         ".", dir_okay=True, file_okay=False, writable=True
     ),
     nixpkgs_path: Path = Option(
-        ..., dir_okay=True, file_okay=False, writable=True
+        None, dir_okay=True, file_okay=False, writable=True
     ),
 ):
     global context
@@ -358,6 +366,23 @@ def package_versions():
 @app.command()
 def prefetch():
     print(prefetch_nixpkgs(context.nixos_version))
+
+
+@app.command()
+def version_diff(
+    old_fc_nixos_path: Path = Argument(..., dir_okay=True, file_okay=False)
+):
+    """
+    Shows package changes between the current (new) fc-nixos work tree and another (old)
+    one based on package-versions.json.
+    """
+    package_versions_path = context.fc_nixos_path / "package-versions.json"
+    old_package_versions_path = old_fc_nixos_path / "package-versions.json"
+    old_versions = json.loads(old_package_versions_path.read_text())
+    new_versions = json.loads(package_versions_path.read_text())
+
+    for line in version_diff_lines(old_versions, new_versions):
+        print(line)
 
 
 @app.command()
