@@ -404,6 +404,7 @@ in
               wantedBy = [ "network-addresses-${iface.layer2device}.service"
                            "multi-user.target" ];
               before = wantedBy;
+              partOf = [ "network-addresses-underlay.service" ];
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
                 IFACE=${iface.layer2device}
