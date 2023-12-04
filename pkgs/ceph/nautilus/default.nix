@@ -29,7 +29,7 @@
 # Linux Only Dependencies
 , linuxHeaders, utillinux, libuuid, udev, keyutils, rdma-core, rabbitmq-c
 , libaio ? null, libxfs ? null, zfs ? null
-, bucket-patch ? false
+, tmp-patches ? false
 # tool dependencies
 , bash, coreutils, xfsprogs
 , ...
@@ -116,8 +116,10 @@ in rec {
       ./0001-fix-iterator.patch
       ./rgw-reduce-log-verbosity.patch
     ] ++
-    (if bucket-patch then
-      [  ./0002-rgwadmin-put-bucket-remove-explicit-placement.patch ]
+    (if tmp-patches then
+      [  ./0002-rgwadmin-put-bucket-remove-explicit-placement.patch
+         ./0002-rgwadmin-jsonlines-index.patch
+      ]
       else []
     );
 
