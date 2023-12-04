@@ -8,7 +8,7 @@ let
   fclib = config.fclib;
 
   interfaces = filter (i: i.vlan != "ipmi" && i.vlan != "lo") (lib.attrValues fclib.network);
-  managedInterfaces = filter (i: i.policy != "unmanaged") interfaces;
+  managedInterfaces = filter (i: i.policy != "unmanaged" && i.policy != "null") interfaces;
   physicalInterfaces = filter (i: i.policy != "vxlan" && i.policy != "underlay") managedInterfaces;
 
   nonUnderlayInterfaces = filter (i: i.policy != "underlay") managedInterfaces;
