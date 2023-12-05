@@ -133,6 +133,13 @@ in
         groups = [ "sudo-srv" "service" ];
         runAs = "mysql";
       }
+      {
+        commands = [
+          "${xtraPackage}/bin/xtrabackup"
+          "/run/current-system/sw/bin/xtrabackup"
+        ];
+        groups = ["service"];
+      }
     ];
 
     systemd.tmpfiles.rules = [
@@ -308,7 +315,7 @@ in
       `sudo systemctl restart mysql`
 
       For more information, see our documentation at
-      https://doc.flyingcircus.io/roles/fc-23.05-production/mysql.html
+      https://doc.flyingcircus.io/roles/fc-23.11-production/mysql.html
     '';
 
     systemd.services.fc-mysql-post-init = {
@@ -366,10 +373,6 @@ in
       # increase readahead for mysql
       SUBSYSTEM=="block", ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{bdi/read_ahead_kb}="1024", ATTR{queue/read_ahead_kb}="1024"
     '';
-
-    security.sudo.extraRules = [
-      { groups = ["service"]; commands = [ { command = "${xtraPackage}/bin/xtrabackup"; options = [ "NOPASSWD" ]; } ]; }
-    ];
 
     environment.systemPackages = with pkgs; [
       innotop

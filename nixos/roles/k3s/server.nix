@@ -397,7 +397,7 @@ in {
         "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
         "--flannel-backend=host-gw"
         "--flannel-iface=ethsrv"
-        "--datastore-endpoint=postgres://root@:5432/kubernetes?host=/run/postgresql"
+        "--datastore-endpoint=postgres:///kubernetes?host=/run/postgresql"
         "--token-file=/var/lib/k3s/secret_token"
         "--data-dir=/var/lib/k3s"
         "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
@@ -531,7 +531,7 @@ in {
       };
     };
 
-    users.groups.kubernetes = {};
+    users.groups.kubernetes.gid = config.ids.gids.kubernetes;
 
     users.users = {
       kubernetes = {

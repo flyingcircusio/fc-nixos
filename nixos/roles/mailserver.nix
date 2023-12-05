@@ -223,7 +223,10 @@ in
 
       flyingcircus.passwordlessSudoRules = [
         {
-          commands = [ "${pkgs.postfix}/bin/postsuper" ];
+          commands = [
+            "${pkgs.postfix}/bin/postsuper"
+            "/run/current-system/sw/bin/postsuper"
+          ];
           groups = [ "sudo-srv" "service" ];
         }
       ];

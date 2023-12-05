@@ -25,14 +25,14 @@
     "version": "1.16.5"
   },
   "awscli": {
-    "name": "awscli-1.27.79",
+    "name": "awscli-1.30.2",
     "pname": "awscli",
-    "version": "1.27.79"
+    "version": "1.30.2"
   },
   "awscli2": {
-    "name": "awscli2-2.11.20",
+    "name": "awscli2-2.13.33",
     "pname": "awscli2",
-    "version": "2.11.20"
+    "version": "2.13.33"
   },
   "bash": {
     "name": "bash-5.2-p15",
@@ -50,24 +50,24 @@
     "version": "2.40"
   },
   "bundler": {
-    "name": "bundler-2.4.13",
+    "name": "bundler-2.4.22",
     "pname": "bundler",
-    "version": "2.4.13"
+    "version": "2.4.22"
   },
   "cacert": {
-    "name": "nss-cacert-3.92",
+    "name": "nss-cacert-3.95",
     "pname": "nss-cacert",
-    "version": "3.92"
+    "version": "3.95"
   },
   "calibre": {
-    "name": "calibre-6.17.0",
+    "name": "calibre-7.0.0",
     "pname": "calibre",
-    "version": "6.17.0"
+    "version": "7.0.0"
   },
   "ceph": {
-    "name": "ceph-17.2.5",
+    "name": "ceph-18.2.0",
     "pname": "ceph",
-    "version": "17.2.5"
+    "version": "18.2.0"
   },
   "chromedriver": {
     "name": "chromedriver-119.0.6045.105",
@@ -75,9 +75,9 @@
     "version": "119.0.6045.105"
   },
   "chromium": {
-    "name": "chromium-119.0.6045.159",
+    "name": "chromium-119.0.6045.199",
     "pname": "chromium",
-    "version": "119.0.6045.159"
+    "version": "119.0.6045.199"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -85,34 +85,34 @@
     "version": "7.0"
   },
   "clamav": {
-    "name": "clamav-1.0.3",
+    "name": "clamav-1.2.1",
     "pname": "clamav",
-    "version": "1.0.3"
+    "version": "1.2.1"
   },
   "cmake": {
-    "name": "cmake-3.25.3",
+    "name": "cmake-3.27.7",
     "pname": "cmake",
-    "version": "3.25.3"
+    "version": "3.27.7"
   },
   "consul": {
-    "name": "consul-1.15.3",
+    "name": "consul-1.16.3",
     "pname": "consul",
-    "version": "1.15.3"
+    "version": "1.16.3"
   },
   "containerd": {
-    "name": "containerd-1.7.1",
+    "name": "containerd-1.7.9",
     "pname": "containerd",
-    "version": "1.7.1"
+    "version": "1.7.9"
   },
   "coturn": {
-    "name": "coturn-4.6.1",
+    "name": "coturn-4.6.2",
     "pname": "coturn",
-    "version": "4.6.1"
+    "version": "4.6.2"
   },
   "curl": {
-    "name": "curl-8.1.1",
+    "name": "curl-8.4.0",
     "pname": "curl",
-    "version": "8.1.1"
+    "version": "8.4.0"
   },
   "cyrus_sasl": {
     "name": "cyrus-sasl-2.1.28",
@@ -125,9 +125,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-3.1.0.beta4",
+    "name": "discourse-3.2.0.beta1",
     "pname": "discourse",
-    "version": "3.1.0.beta4"
+    "version": "3.2.0.beta1"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.89",
@@ -135,14 +135,14 @@
     "version": "2.89"
   },
   "docker": {
-    "name": "docker-20.10.25",
+    "name": "docker-24.0.5",
     "pname": "docker",
-    "version": "20.10.25"
+    "version": "24.0.5"
   },
   "docker-compose": {
-    "name": "docker-compose-2.18.1",
+    "name": "docker-compose-2.23.1",
     "pname": "docker-compose",
-    "version": "2.18.1"
+    "version": "2.23.1"
   },
   "dovecot": {
     "name": "dovecot-2.3.21",
@@ -150,24 +150,14 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.47",
+    "name": "element-web-1.11.50",
     "pname": "element-web",
-    "version": "1.11.47"
+    "version": "1.11.50"
   },
   "erlang": {
-    "name": "erlang-25.3.2",
+    "name": "erlang-25.3.2.7",
     "pname": "erlang",
-    "version": "25.3.2"
-  },
-  "erlangR23": {
-    "name": "erlang-23.3.4.18",
-    "pname": "erlang",
-    "version": "23.3.4.18"
-  },
-  "erlangR24": {
-    "name": "erlang-24.3.4.11",
-    "pname": "erlang",
-    "version": "24.3.4.11"
+    "version": "25.3.2.7"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -180,14 +170,14 @@
     "version": "6.4.37"
   },
   "ffmpeg": {
-    "name": "ffmpeg-5.1.3",
+    "name": "ffmpeg-6.0",
     "pname": "ffmpeg",
-    "version": "5.1.3"
+    "version": "6.0"
   },
   "file": {
-    "name": "file-5.44",
+    "name": "file-5.45",
     "pname": "file",
-    "version": "5.44"
+    "version": "5.45"
   },
   "filebeat7-oss": {
     "name": "filebeat-oss-7.17.4",
@@ -195,19 +185,19 @@
     "version": "7.17.4"
   },
   "firefox": {
-    "name": "firefox-120.0",
+    "name": "firefox-120.0.1",
     "pname": "firefox",
-    "version": "120.0"
+    "version": "120.0.1"
   },
   "gcc": {
-    "name": "gcc-wrapper-12.2.0",
+    "name": "gcc-wrapper-12.3.0",
     "pname": "gcc-wrapper",
-    "version": "12.2.0"
+    "version": "12.3.0"
   },
   "gcc12": {
-    "name": "gcc-wrapper-12.2.0",
+    "name": "gcc-wrapper-12.3.0",
     "pname": "gcc-wrapper",
-    "version": "12.2.0"
+    "version": "12.3.0"
   },
   "gd": {
     "name": "gd-2.3.3",
@@ -215,14 +205,14 @@
     "version": "2.3.3"
   },
   "ghostscript": {
-    "name": "ghostscript-with-X-10.02.0",
+    "name": "ghostscript-with-X-10.02.1",
     "pname": "ghostscript-with-X",
-    "version": "10.02.0"
+    "version": "10.02.1"
   },
   "git": {
-    "name": "git-2.40.1",
+    "name": "git-2.42.0",
     "pname": "git",
-    "version": "2.40.1"
+    "version": "2.42.0"
   },
   "github-runner": {
     "name": "github-runner-2.311.0",
@@ -250,9 +240,9 @@
     "version": "16.6.0"
   },
   "glibc": {
-    "name": "glibc-2.37-45",
+    "name": "glibc-2.38-27",
     "pname": "glibc",
-    "version": "2.37"
+    "version": "2.38"
   },
   "gnumake": {
     "name": "gnumake-4.4.1",
@@ -260,44 +250,40 @@
     "version": "4.4.1"
   },
   "gnupg": {
-    "name": "gnupg-2.4.0",
+    "name": "gnupg-2.4.1",
     "pname": "gnupg",
-    "version": "2.4.0"
+    "version": "2.4.1"
   },
   "go": {
-    "name": "go-1.20.8",
+    "name": "go-1.21.4",
     "pname": "go",
-    "version": "1.20.8"
+    "version": "1.21.4"
   },
-  "go_1_18": {
-    "name": "go-1.18.10",
-    "pname": "go",
-    "version": "1.18.10"
-  },
+  "go_1_18": {},
   "go_1_19": {
     "name": "go-1.19.13",
     "pname": "go",
     "version": "1.19.13"
   },
   "go_1_20": {
-    "name": "go-1.20.8",
+    "name": "go-1.20.11",
     "pname": "go",
-    "version": "1.20.8"
+    "version": "1.20.11"
   },
   "grafana": {
-    "name": "grafana-9.5.13",
+    "name": "grafana-10.2.0",
     "pname": "grafana",
-    "version": "9.5.13"
+    "version": "10.2.0"
   },
   "haproxy": {
-    "name": "haproxy-2.7.10",
+    "name": "haproxy-2.8.4",
     "pname": "haproxy",
-    "version": "2.7.10"
+    "version": "2.8.4"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-19",
+    "name": "imagemagick-7.1.1-21",
     "pname": "imagemagick",
-    "version": "7.1.1-19"
+    "version": "7.1.1-21"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.12-68",
@@ -305,19 +291,14 @@
     "version": "6.9.12-68"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-19",
+    "name": "imagemagick-7.1.1-21",
     "pname": "imagemagick",
-    "version": "7.1.1-19"
+    "version": "7.1.1-21"
   },
   "inetutils": {
     "name": "inetutils-2.4",
     "pname": "inetutils",
     "version": "2.4"
-  },
-  "influxdb": {
-    "name": "influxdb-1.10.0",
-    "pname": "influxdb",
-    "version": "1.10.0"
   },
   "jdk": {
     "name": "openjdk-19.0.2+7",
@@ -330,29 +311,29 @@
     "version": "17.0.7-b829.16"
   },
   "jetty": {
-    "name": "jetty-11.0.17",
+    "name": "jetty-12.0.3",
     "pname": "jetty",
-    "version": "11.0.17"
+    "version": "12.0.3"
   },
   "jicofo": {
-    "name": "jicofo-1.0-1027",
+    "name": "jicofo-1.0-1050",
     "pname": "jicofo",
-    "version": "1.0-1027"
+    "version": "1.0-1050"
   },
   "jitsi-meet": {
-    "name": "jitsi-meet-1.0.7235",
+    "name": "jitsi-meet-1.0.7531",
     "pname": "jitsi-meet",
-    "version": "1.0.7235"
+    "version": "1.0.7531"
   },
   "jitsi-videobridge": {
-    "name": "jitsi-videobridge2-2.3-19-gb286dc0c",
+    "name": "jitsi-videobridge2-2.3-59-g5c48e421",
     "pname": "jitsi-videobridge2",
-    "version": "2.3-19-gb286dc0c"
+    "version": "2.3-59-g5c48e421"
   },
   "jq": {
-    "name": "jq-1.6",
+    "name": "jq-1.7",
     "pname": "jq",
-    "version": "1.6"
+    "version": "1.7"
   },
   "jre": {
     "name": "openjdk-19.0.2+7",
@@ -360,19 +341,19 @@
     "version": "19.0.2+7"
   },
   "k3s": {
-    "name": "k3s-1.26.6+k3s1",
+    "name": "k3s-1.27.6+k3s1",
     "pname": "k3s",
-    "version": "1.26.6+k3s1"
+    "version": "1.27.6+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-21.1.2",
+    "name": "keycloak-22.0.5",
     "pname": "keycloak",
-    "version": "21.1.2"
+    "version": "22.0.5"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.11.3",
+    "name": "kubernetes-helm-3.13.2",
     "pname": "kubernetes-helm",
-    "version": "3.11.3"
+    "version": "3.13.2"
   },
   "libffi": {
     "name": "libffi-3.4.4",
@@ -395,19 +376,19 @@
     "version": "3.0.8"
   },
   "libmysqlclient": {
-    "name": "mariadb-connector-c-3.2.5",
+    "name": "mariadb-connector-c-3.3.5",
     "pname": "mariadb-connector-c",
-    "version": "3.2.5"
+    "version": "3.3.5"
   },
   "libressl": {
-    "name": "libressl-3.7.3",
+    "name": "libressl-3.8.2",
     "pname": "libressl",
-    "version": "3.7.3"
+    "version": "3.8.2"
   },
   "libtiff": {
-    "name": "libtiff-4.5.1",
+    "name": "libtiff-4.6.0",
     "pname": "libtiff",
-    "version": "4.5.1"
+    "version": "4.6.0"
   },
   "libwebp": {
     "name": "libwebp-1.3.2",
@@ -415,14 +396,14 @@
     "version": "1.3.2"
   },
   "libxml2": {
-    "name": "libxml2-2.10.4",
+    "name": "libxml2-2.11.5",
     "pname": "libxml2",
-    "version": "2.10.4"
+    "version": "2.11.5"
   },
   "libxslt": {
-    "name": "libxslt-1.1.37",
+    "name": "libxslt-1.1.38",
     "pname": "libxslt",
-    "version": "1.1.37"
+    "version": "1.1.38"
   },
   "libyaml": {
     "name": "libyaml-0.2.5",
@@ -430,9 +411,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.139",
+    "name": "linux-5.15.140",
     "pname": "linux",
-    "version": "5.15.139"
+    "version": "5.15.140"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -445,24 +426,24 @@
     "version": "1.9.4"
   },
   "mailutils": {
-    "name": "mailutils-3.15",
+    "name": "mailutils-3.16",
     "pname": "mailutils",
-    "version": "3.15"
+    "version": "3.16"
   },
   "mariadb": {
-    "name": "mariadb-server-10.6.15",
+    "name": "mariadb-server-10.11.6",
     "pname": "mariadb-server",
-    "version": "10.6.15"
+    "version": "10.11.6"
   },
   "mariadb-connector-c": {
-    "name": "mariadb-connector-c-3.2.5",
+    "name": "mariadb-connector-c-3.3.5",
     "pname": "mariadb-connector-c",
-    "version": "3.2.5"
+    "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.1.10",
+    "name": "mastodon-4.2.1",
     "pname": "mastodon",
-    "version": "4.1.10"
+    "version": "4.2.1"
   },
   "matomo": {
     "name": "matomo-4.15.1",
@@ -470,9 +451,9 @@
     "version": "4.15.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-1.95.1",
-    "pname": "matrix-synapse",
-    "version": "1.95.1"
+    "name": "matrix-synapse-wrapped-1.97.0",
+    "pname": "matrix-synapse-wrapped",
+    "version": "1.97.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -480,24 +461,19 @@
     "version": "2.7.2.1"
   },
   "memcached": {
-    "name": "memcached-1.6.19",
+    "name": "memcached-1.6.22",
     "pname": "memcached",
-    "version": "1.6.19"
-  },
-  "mongodb-4_2": {
-    "name": "mongodb-4.2.24",
-    "pname": "mongodb",
-    "version": "4.2.24"
+    "version": "1.6.22"
   },
   "mysql": {
-    "name": "mariadb-server-10.6.15",
+    "name": "mariadb-server-10.11.6",
     "pname": "mariadb-server",
-    "version": "10.6.15"
+    "version": "10.11.6"
   },
   "mysql80": {
-    "name": "mysql-8.0.34",
+    "name": "mysql-8.0.35",
     "pname": "mysql",
-    "version": "8.0.34"
+    "version": "8.0.35"
   },
   "nfs-utils": {
     "name": "nfs-utils-2.6.2",
@@ -510,9 +486,9 @@
     "version": "1.24.0"
   },
   "nginxMainline": {
-    "name": "nginx-1.24.0",
+    "name": "nginx-1.25.3",
     "pname": "nginx",
-    "version": "1.24.0"
+    "version": "1.25.3"
   },
   "nginxStable": {
     "name": "nginx-1.24.0",
@@ -520,34 +496,29 @@
     "version": "1.24.0"
   },
   "nix": {
-    "name": "nix-2.13.6",
+    "name": "nix-2.18.1",
     "pname": "nix",
-    "version": "2.13.6"
+    "version": "2.18.1"
   },
   "nodejs": {
-    "name": "nodejs-18.17.1",
+    "name": "nodejs-18.18.2",
     "pname": "nodejs",
-    "version": "18.17.1"
-  },
-  "nodejs_14": {
-    "name": "nodejs-14.21.3",
-    "pname": "nodejs",
-    "version": "14.21.3"
-  },
-  "nodejs_16": {
-    "name": "nodejs-16.20.2",
-    "pname": "nodejs",
-    "version": "16.20.2"
+    "version": "18.18.2"
   },
   "nodejs_18": {
-    "name": "nodejs-18.17.1",
+    "name": "nodejs-18.18.2",
     "pname": "nodejs",
-    "version": "18.17.1"
+    "version": "18.18.2"
   },
   "nodejs_20": {
-    "name": "nodejs-20.5.1",
+    "name": "nodejs-20.9.0",
     "pname": "nodejs",
-    "version": "20.5.1"
+    "version": "20.9.0"
+  },
+  "nodejs_21": {
+    "name": "nodejs-21.2.0",
+    "pname": "nodejs",
+    "version": "21.2.0"
   },
   "nspr": {
     "name": "nspr-4.35",
@@ -555,9 +526,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.94",
+    "name": "nss-3.95",
     "pname": "nss",
-    "version": "3.94"
+    "version": "3.95"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -570,9 +541,9 @@
     "version": "2.5.0"
   },
   "openldap": {
-    "name": "openldap-2.6.4",
+    "name": "openldap-2.6.6",
     "pname": "openldap",
-    "version": "2.6.4"
+    "version": "2.6.6"
   },
   "openldap_2_4": {
     "name": "openldap-2.4.58",
@@ -580,19 +551,19 @@
     "version": "2.4.58"
   },
   "opensearch": {
-    "name": "opensearch-2.6.0",
+    "name": "opensearch-2.11.0",
     "pname": "opensearch",
-    "version": "2.6.0"
+    "version": "2.11.0"
   },
   "opensearch-dashboards": {
-    "name": "opensearch-dashboards-2.6.0",
+    "name": "opensearch-dashboards-2.11.0",
     "pname": "opensearch-dashboards",
-    "version": "2.6.0"
+    "version": "2.11.0"
   },
   "openssh": {
-    "name": "openssh-9.3p2",
+    "name": "openssh-9.5p1",
     "pname": "openssh",
-    "version": "9.3p2"
+    "version": "9.5p1"
   },
   "openssl": {
     "name": "openssl-3.0.12",
@@ -625,8 +596,8 @@
     "version": "10.42"
   },
   "percona": {
-    "name": "percona-8.0.34-26",
-    "pname": "percona",
+    "name": "percona-server-8.0.34-26",
+    "pname": "percona-server",
     "version": "8.0.34-26"
   },
   "percona-xtrabackup_8_0": {
@@ -640,8 +611,8 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-8.0.34-26",
-    "pname": "percona",
+    "name": "percona-server-8.0.34-26",
+    "pname": "percona-server",
     "version": "8.0.34-26"
   },
   "php72": {
@@ -650,9 +621,9 @@
     "version": "7.2.34"
   },
   "php73": {
-    "name": "php-with-extensions-7.3.28",
+    "name": "php-with-extensions-7.3.33",
     "pname": "php-with-extensions",
-    "version": "7.3.28"
+    "version": "7.3.33"
   },
   "php74": {
     "name": "php-with-extensions-7.4.33",
@@ -675,9 +646,9 @@
     "version": "8.2.13"
   },
   "phpPackages.composer": {
-    "name": "php-composer-2.5.5",
-    "pname": "php-composer",
-    "version": "2.5.5"
+    "name": "composer-2.6.5",
+    "pname": "composer",
+    "version": "2.6.5"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -685,74 +656,70 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-4.5.0",
+    "name": "podman-4.7.2",
     "pname": "podman",
-    "version": "4.5.0"
+    "version": "4.7.2"
   },
   "poetry": {
-    "name": "poetry-1.4.2",
+    "name": "poetry-1.7.1",
     "pname": "poetry",
-    "version": "1.4.2"
+    "version": "1.7.1"
   },
   "polkit": {
-    "name": "polkit-122",
+    "name": "polkit-123",
     "pname": "polkit",
-    "version": "122"
+    "version": "123"
   },
   "postfix": {
-    "name": "postfix-3.8.2",
+    "name": "postfix-3.8.3",
     "pname": "postfix",
-    "version": "3.8.2"
+    "version": "3.8.3"
   },
   "postgresql": {
-    "name": "postgresql-14.9",
+    "name": "postgresql-15.5",
     "pname": "postgresql",
-    "version": "14.9"
+    "version": "15.5"
   },
-  "postgresql_11": {
-    "name": "postgresql-11.21",
-    "pname": "postgresql",
-    "version": "11.21"
-  },
+  "postgresql_11": {},
   "postgresql_12": {
-    "name": "postgresql-12.16",
+    "name": "postgresql-12.17",
     "pname": "postgresql",
-    "version": "12.16"
+    "version": "12.17"
   },
   "postgresql_13": {
-    "name": "postgresql-13.12",
+    "name": "postgresql-13.13",
     "pname": "postgresql",
-    "version": "13.12"
+    "version": "13.13"
   },
   "postgresql_14": {
-    "name": "postgresql-14.9",
+    "name": "postgresql-14.10",
     "pname": "postgresql",
-    "version": "14.9"
+    "version": "14.10"
   },
   "postgresql_15": {
-    "name": "postgresql-15.4",
+    "name": "postgresql-15.5",
     "pname": "postgresql",
-    "version": "15.4"
+    "version": "15.5"
   },
   "powerdns": {
-    "name": "pdns-4.7.4",
+    "name": "pdns-4.8.3",
     "pname": "pdns",
-    "version": "4.7.4"
+    "version": "4.8.3"
   },
   "prometheus": {
-    "name": "prometheus-2.44.0",
+    "name": "prometheus-2.48.0",
     "pname": "prometheus",
-    "version": "2.44.0"
+    "version": "2.48.0"
   },
   "prosody": {
-    "name": "prosody-0.12.3",
+    "name": "prosody-0.12.4",
     "pname": "prosody",
-    "version": "0.12.3"
+    "version": "0.12.4"
   },
   "python3": {
-    "name": "python3-3.10.13",
+    "name": "python3-3.11.6",
     "pname": "python3",
-    "version": "3.10.13"
+    "version": "3.11.6"
   },
   "python310": {
     "name": "python3-3.10.13",
@@ -760,9 +727,9 @@
     "version": "3.10.13"
   },
   "python311": {
-    "name": "python3-3.11.5",
+    "name": "python3-3.11.6",
     "pname": "python3",
-    "version": "3.11.5"
+    "version": "3.11.6"
   },
   "python38": {
     "name": "python3-3.8.18",
@@ -775,99 +742,99 @@
     "version": "3.9.18"
   },
   "python3Packages.boto3": {
-    "name": "python3.10-boto3-1.26.79",
+    "name": "python3.11-boto3-1.28.57",
     "pname": "boto3",
-    "version": "1.26.79"
+    "version": "1.28.57"
   },
   "python3Packages.click": {
-    "name": "python3.10-click-8.1.3",
+    "name": "python3.11-click-8.1.7",
     "pname": "click",
-    "version": "8.1.3"
+    "version": "8.1.7"
   },
   "python3Packages.lxml": {
-    "name": "python3.10-lxml-4.9.2",
+    "name": "python3.11-lxml-4.9.3-3",
     "pname": "lxml",
-    "version": "4.9.2"
+    "version": "4.9.3-3"
   },
   "python3Packages.pillow": {
-    "name": "python3.10-pillow-9.4.0",
+    "name": "python3.11-pillow-10.1.0",
     "pname": "pillow",
-    "version": "9.4.0"
+    "version": "10.1.0"
   },
   "python3Packages.pip": {
-    "name": "python3.10-pip-23.0.1",
+    "name": "python3.11-pip-23.2.1",
     "pname": "pip",
-    "version": "23.0.1"
+    "version": "23.2.1"
   },
   "python3Packages.pyslurm": {
-    "name": "python3.10-pyslurm-unstable-2023-10-13",
+    "name": "python3.11-pyslurm-23.2.2",
     "pname": "pyslurm",
-    "version": "unstable-2023-10-13"
+    "version": "23.2.2"
   },
   "python3Packages.pystemd": {
-    "name": "python3.10-pystemd-0.10.0",
+    "name": "python3.11-pystemd-0.13.2",
     "pname": "pystemd",
-    "version": "0.10.0"
+    "version": "0.13.2"
   },
   "python3Packages.pyyaml": {
-    "name": "python3.10-pyyaml-6.0",
+    "name": "python3.11-pyyaml-6.0.1",
     "pname": "pyyaml",
-    "version": "6.0"
+    "version": "6.0.1"
   },
   "python3Packages.requests": {
-    "name": "python3.10-requests-2.29.0",
+    "name": "python3.11-requests-2.31.0",
     "pname": "requests",
-    "version": "2.29.0"
+    "version": "2.31.0"
   },
   "python3Packages.rich": {
-    "name": "python3.10-rich-13.3.5",
+    "name": "python3.11-rich-13.5.2",
     "pname": "rich",
-    "version": "13.3.5"
+    "version": "13.5.2"
   },
   "python3Packages.structlog": {
-    "name": "python3.10-structlog-22.3.0",
+    "name": "python3.11-structlog-23.2.0",
     "pname": "structlog",
-    "version": "22.3.0"
+    "version": "23.2.0"
   },
   "python3Packages.supervisor": {
-    "name": "python3.10-supervisor-4.2.5",
+    "name": "python3.11-supervisor-4.2.5",
     "pname": "supervisor",
     "version": "4.2.5"
   },
   "python3Packages.systemd": {
-    "name": "python3.10-systemd-235",
+    "name": "python3.11-systemd-235",
     "pname": "systemd",
     "version": "235"
   },
   "python3Packages.urllib3": {
-    "name": "python3.10-urllib3-1.26.18",
+    "name": "python3.11-urllib3-2.0.7",
     "pname": "urllib3",
-    "version": "1.26.18"
+    "version": "2.0.7"
   },
   "qemu": {
-    "name": "qemu-8.0.5",
+    "name": "qemu-8.1.2",
     "pname": "qemu",
-    "version": "8.0.5"
+    "version": "8.1.2"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-3.11.10",
+    "name": "rabbitmq-server-3.12.7",
     "pname": "rabbitmq-server",
-    "version": "3.11.10"
+    "version": "3.12.7"
   },
   "rabbitmq-server_3_8": {
-    "name": "rabbitmq-server-3.11.10",
+    "name": "rabbitmq-server-3.12.7",
     "pname": "rabbitmq-server",
-    "version": "3.11.10"
+    "version": "3.12.7"
   },
   "re2c": {
-    "name": "re2c-3.0",
+    "name": "re2c-3.1",
     "pname": "re2c",
-    "version": "3.0"
+    "version": "3.1"
   },
   "redis": {
-    "name": "redis-7.0.14",
+    "name": "redis-7.2.3",
     "pname": "redis",
-    "version": "7.0.14"
+    "version": "7.2.3"
   },
   "roundcube": {
     "name": "roundcube-1.6.5",
@@ -889,20 +856,20 @@
     "pname": "ruby",
     "version": "2.7.8"
   },
-  "ruby_3_0": {
-    "name": "ruby-3.0.6",
+  "ruby_3_2": {
+    "name": "ruby-3.2.2",
     "pname": "ruby",
-    "version": "3.0.6"
+    "version": "3.2.2"
   },
   "runc": {
-    "name": "runc-1.1.7",
+    "name": "runc-1.1.10",
     "pname": "runc",
-    "version": "1.1.7"
+    "version": "1.1.10"
   },
   "screen": {
-    "name": "screen-4.9.0",
+    "name": "screen-4.9.1",
     "pname": "screen",
-    "version": "4.9.0"
+    "version": "4.9.1"
   },
   "slurm": {
     "name": "slurm-23.02.6.1",
@@ -920,9 +887,9 @@
     "version": "6.6"
   },
   "strongswan": {
-    "name": "strongswan-5.9.10",
+    "name": "strongswan-5.9.11",
     "pname": "strongswan",
-    "version": "5.9.10"
+    "version": "5.9.11"
   },
   "subversion": {
     "name": "subversion-1.14.2",
@@ -930,19 +897,19 @@
     "version": "1.14.2"
   },
   "sudo": {
-    "name": "sudo-1.9.13p3",
+    "name": "sudo-1.9.15p2",
     "pname": "sudo",
-    "version": "1.9.13p3"
+    "version": "1.9.15p2"
   },
   "sysstat": {
-    "name": "sysstat-12.6.2",
+    "name": "sysstat-12.7.4",
     "pname": "sysstat",
-    "version": "12.6.2"
+    "version": "12.7.4"
   },
   "systemd": {
-    "name": "systemd-253.6",
+    "name": "systemd-254.6",
     "pname": "systemd",
-    "version": "253.6"
+    "version": "254.6"
   },
   "tcpdump": {
     "name": "tcpdump-4.99.4",
@@ -950,9 +917,9 @@
     "version": "4.99.4"
   },
   "telegraf": {
-    "name": "telegraf-1.26.2",
+    "name": "telegraf-1.28.5",
     "pname": "telegraf",
-    "version": "1.26.2"
+    "version": "1.28.5"
   },
   "tmux": {
     "name": "tmux-3.3a",
@@ -960,14 +927,14 @@
     "version": "3.3a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.0.27",
+    "name": "apache-tomcat-10.1.15",
     "pname": "apache-tomcat",
-    "version": "10.0.27"
+    "version": "10.1.15"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.75",
+    "name": "apache-tomcat-9.0.82",
     "pname": "apache-tomcat",
-    "version": "9.0.75"
+    "version": "9.0.82"
   },
   "unzip": {
     "name": "unzip-6.0",
@@ -975,19 +942,19 @@
     "version": "6.0"
   },
   "util-linux": {
-    "name": "util-linux-2.38.1",
+    "name": "util-linux-2.39.2",
     "pname": "util-linux",
-    "version": "2.38.1"
+    "version": "2.39.2"
   },
   "varnish": {
-    "name": "varnish-7.2.1",
+    "name": "varnish-7.4.1",
     "pname": "varnish",
-    "version": "7.2.1"
+    "version": "7.4.1"
   },
   "vim": {
-    "name": "vim-9.0.1441",
+    "name": "vim-9.0.2048",
     "pname": "vim",
-    "version": "9.0.1441"
+    "version": "9.0.2048"
   },
   "webkitgtk": {
     "name": "webkitgtk-2.42.2+abi=4.0",
@@ -1004,15 +971,10 @@
     "pname": "wireguard-tools",
     "version": "1.0.20210914"
   },
-  "wkhtmltopdf": {
-    "name": "wkhtmltopdf-0.12.6",
-    "pname": "wkhtmltopdf",
-    "version": "0.12.6"
-  },
   "xfsprogs": {
-    "name": "xfsprogs-6.2.0",
+    "name": "xfsprogs-6.4.0",
     "pname": "xfsprogs",
-    "version": "6.2.0"
+    "version": "6.4.0"
   },
   "xorg.libX11": {
     "name": "libX11-1.8.7",
@@ -1025,9 +987,9 @@
     "version": "3.0"
   },
   "zlib": {
-    "name": "zlib-1.2.13",
+    "name": "zlib-1.3",
     "pname": "zlib",
-    "version": "1.2.13"
+    "version": "1.3"
   },
   "zsh": {
     "name": "zsh-5.9",

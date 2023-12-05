@@ -7,7 +7,6 @@ import ./make-test-python.nix ({ pkgs, ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
 
-      services.telegraf.enable = false;
       sound.enable = true; # needed for the factl test, /dev/snd/* exists without them but udev doesn't care then
 
     };

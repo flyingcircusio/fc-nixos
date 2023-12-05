@@ -54,7 +54,7 @@ let
   legacyConfigWarning =
     ''Plain PostgreSQL configuration found in ${toString localConfigPath}.
     This does not work properly anymore and must be migrated to NixOS configuration.
-    See https://doc.flyingcircus.io/roles/fc-23.05-production/postgresql.html for details.'';
+    See https://doc.flyingcircus.io/roles/fc-23.11-production/postgresql.html for details.'';
 
   localConfig =
     if legacyConfigFiles != []
@@ -208,7 +208,7 @@ in {
 
         See the platform documentation for more details:
 
-        https://doc.flyingcircus.io/roles/fc-23.05-production/postgresql.html
+        https://doc.flyingcircus.io/roles/fc-23.11-production/postgresql.html
       '';
 
       flyingcircus.infrastructure.preferNoneSchedulerOnSsd = true;
@@ -234,6 +234,8 @@ in {
         }
         {
           commands = [
+            "/run/current-system/sw/bin/systemctl start postgresql"
+            "/run/current-system/sw/bin/systemctl stop postgresql"
             "${pkgs.systemd}/bin/systemctl start postgresql"
             "${pkgs.systemd}/bin/systemctl stop postgresql"
           ];
@@ -375,7 +377,7 @@ in {
         } // lib.optionalAttrs (cfg.autoUpgrade.enable && cfg.autoUpgrade.checkExpectedDatabases) {
             postgresql-autoupgrade-possible = {
               notification = "Unexpected PostgreSQL databases present, autoupgrade will fail!";
-              command = "sudo -u postgres ${pkgs.fc.agent}/bin/fc-postgresql check-autoupgrade-unexpected-dbs";
+              command = "sudo -u postgres ${config.flyingcircus.agent.package}/bin/fc-postgresql check-autoupgrade-unexpected-dbs";
               interval = 600;
             };
         } // (lib.listToAttrs (map (host:
@@ -418,7 +420,7 @@ in {
         script = let
           expectedDatabaseStr = lib.concatMapStringsSep " " (d: "--expected ${d}") cfg.autoUpgrade.expectedDatabases;
           upgradeCmd = [
-            "${pkgs.fc.agent}/bin/fc-postgresql upgrade"
+            "${config.flyingcircus.agent.package}/bin/fc-postgresql upgrade"
             "--new-version ${cfg.majorVersion}"
             "--new-data-dir ${upstreamCfg.dataDir}"
             "--new-bin-dir ${upstreamCfg.package}/bin"

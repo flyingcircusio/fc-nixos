@@ -74,7 +74,7 @@ in
       - nixos-nat-pre: prerouting rules, e.g. port redirects (-t nat)
       - nixos-nat-post: postrouting rules, e.g. masquerading (-t nat)
 
-      See also https://doc.flyingcircus.io/roles/fc-23.05-production/firewall.html
+      See also https://doc.flyingcircus.io/roles/fc-23.11-production/firewall.html
     '';
 
     flyingcircus.services.sensu-client.checks = {
@@ -136,7 +136,7 @@ in
       };
 
     flyingcircus.passwordlessSudoRules =
-      let ipt = x: "${pkgs.iptables}/bin/ip${x}tables";
+      let ipt = x: "/run/current-system/sw/bin/ip${x}tables";
       in [
         {
           commands = [ "${ipt ""} -L*"

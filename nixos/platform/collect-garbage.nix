@@ -63,7 +63,7 @@ in {
           LANG = "en_US.utf8";
           PYTHONUNBUFFERED = "1";
         };
-        script = "${pkgs.fc.agent}/bin/fc-collect-garbage";
+        script = "${config.flyingcircus.agent.package}/bin/fc-collect-garbage";
       };
 
       systemd.timers.fc-collect-garbage = {

@@ -15,9 +15,12 @@ Contact our {ref}`support` for upgrade assistance.
 
 ## Overview
 
-- Status: production
-- Removed roles: {ref}`elasticsearch6 & elasticsearch7 <nixos-upgrade-elasticsearch>`,
-  {ref}`mongodb36 & mongodb40 <nixos-upgrade-mongodb>`
+- Status: non-production
+- Removed roles: `{ref}postgresql11 <nixos-upgrade-postgresql>`, {ref}`mongodb42 <nixos-upgrade-mongodb>`
+- No major breaking changes
+- Roles affected by significant changes:
+  {ref}`postgresql15 <nixos-upgrade-postgresql>`,
+  {ref}`rabbitmq <nixos-upgrade-rabbitmq>`
 
 
 ## Why upgrade? Security
@@ -30,7 +33,7 @@ We do back-ports for critical security issues but this may take longer in some
 cases and less important security fixes will not be back-ported most of the time.
 
 NixOS provides regular security updates for about one month after the release.
-Upstream support for 23.05 ends on **2023-12-31**.
+Upstream support for 23.11 ends on **2024-06-30**.
 
 New platform features are always developed for the current stable platform version
 and only critical bug fixes are back-ported to older versions.
@@ -74,7 +77,7 @@ also subscribe to updates.
 ### Upgrade to the next platform version
 
 We recommend upgrading platform versions one at a time without skipping
-versions. Here we assume that you are upgrading from the 22.05 platform.
+versions. Here we assume that you are upgrading from the 23.05 platform.
 
 Direct upgrades from older versions are possible in principle, but we cannot
 reliably test all combinations for all roles and custom configuration also
@@ -113,131 +116,102 @@ following common breaking changes and role-specific notes below.
 
 ### Common breaking changes
 
-- `libxcrypt`, the library providing the `crypt(3)` password hashing function,
-  is now built without support for algorithms not flagged
-  [`strong`](https://github.com/besser82/libxcrypt/blob/v4.4.33/lib/hashes.conf#L48)
-  in NixOS 23.05.
-    - Check your applications if they still use algorithms for passwords that
-      are not `strong`.
-    - New password hashes should use strong algorithms like `yescrypt`.
-    - We added a variant package called `libxcrypt-with-sha256` which enables
-      the `sha256` algorithm in addition to the `strong` algorithms.
-    - There is also an upstream package with all old algorithms called
-      `libxcrypt-legacy`. OpenLDAP, Dovecot, Postfix and cyrus_sasl use that
-      version which might change with 23.11.
-    - The `nginx` service (also `webgateway` and `nginx` roles) and the `lamp`
-      role use `nginxLegacyCrypt` and `apacheHttpdLegacyCrypt` by default,
-      respectively. You may choose to switch to the strong algorithm variants
-      now by setting `services.nginx.package = pkgs.nginx` or
-      `services.httpd.package = pkgs.apacheHttpd`. These packages will become
-      the default on 23.11. If you want to keep the legacy variants for a
-      longer time, you can also use these options to set the legacy crypt
-      packages explicitly. 23.11 will emit a warning if they are still in
-      use.
-- `podman` now uses the `netavark` network stack. Users will need to delete
-  all of their local containers, images, volumes, etc, by running `podman
-  system reset --force` once before upgrading their systems.
+- None for this version.
 
 
-(nixos-upgrade-elasticsearch)=
+(nixos-upgrade-postgresql)=
 
-### Elasticsearch
+### PostgreSQL
 
-`elasticsearch6` and `elasticsearch7` roles have been removed. Machines that use these
-roles should stay on 22.11 and migrate to Opensearch before upgrading.
+- PostgreSQL 11 is not supported anymore as it reached its end of life.
+  Upgrade to at least version 12 or preferably 15 as described in
+  {ref}`nixos-postgresql-major-upgrade`.
+- `services.postgresql.ensurePermissions` has been deprecated in favor of
+  `services.postgresql.ensureUsers.*.ensureDBOwnership` which simplifies the
+  setup of database owned by a certain system user in local database
+  contexts (which make use of peer authentication via UNIX sockets),
+  migration guidelines were provided in the NixOS manual, please refer to
+  them if you are affected by a PostgreSQL 15 changing the way `GRANT ALL
+  PRIVILEGES` is working. `services.postgresql.ensurePermissions` will be
+  removed in 24.05.
 
 (nixos-upgrade-mongodb)=
 
 ### MongoDB
 
-`mongodb36` and `mongodb40` roles and packages have been removed. Switch to to `mongodb42`
-before upgrading to 23.05. See our {ref}`MongoDB upgrade docs <nixos-mongodb-upgrade>`
-for details.
+`mongodb42` role and package have been removed. Machines that use MongoDB
+should stay on 23.05 for now. We will bring back older MongoDB versions(up to
+and including 4.2) for upgrading purposes only. As a long-term solution we
+are evaluating [FerretDB](https://www.ferretdb.com/) which builds on
+PostgreSQL and is compatible to MongoDB for many use cases.
+
+(nixos-upgrade-rabbitmq)=
 
 ### RabbitMQ
 
-`rabbitmq` is upgraded to 3.11. Before upgrading, make sure that all
+`rabbitmq` is upgraded to 3.12. Before upgrading to NixOS 23.11, make sure that all
 [Feature Flags](https://www.rabbitmq.com/feature-flags.html) are enabled.
-3.11 requires all flags from 3.8 to be enabled or it won't start.
+3.12 requires **all** flags to be enabled or it won't start.
 
-If all nodes in a cluster are the same version (3.10 on NixOS 22.11),
+If all nodes in a cluster are the same version (3.11 on NixOS 23.05),
 just enable all feature flags:
 
 ```shell
 sudo -u rabbitmq rabbitmqctl enable_feature_flag all
 ```
 
-See
-[Required feature flags in RabbitMQ 3.11.0](https://blog.rabbitmq.com/posts/2022/07/required-feature-flags-in-rabbitmq-3.11/)
-for more details.
-
-
-### Webgateway/Nginx
-
-See {ref}`nixos-webgateway-nginx-legacy-crypt` if you still need algorithms
-like MD5 or SHA256 for HTTP basic auth which aren't supported anymore by the
-default `libxcrypt` used by Nginx.
-
 ## Other notable changes
 
-- NixOS now defaults to using nsncd (a non-caching reimplementation in Rust)
-  as NSS lookup dispatcher, instead of the buggy and deprecated
-  glibc-provided nscd.
-- The `NodeJS` packages have been renamed to a more usual naming scheme,
-  for example `nodejs-19_x` is now `nodejs_19`.
-- The `dnsmasq` service now takes configuration via the
-  `services.dnsmasq.settings` attribute set. The option
-  `services.dnsmasq.extraConfig` still works but should be migrated to
-  `settings` soon. `extraConfig` is deprecated in this release
-  and issues warnings at system build time.
-- PostgreSQL has opt-in support for [JIT compilation]
-  (https://www.postgresql.org/docs/current/jit-reason.html). It can be
-  enabled like this:
-  ```nix
-  {
-    services.postgresql = {
-      enableJIT = true;
-    };
-  }
-  ```
-- `openjdk` from version 11 and above is not build with `openjfx`
-  (i.e.: JavaFX) support by default anymore. You can re-enable it by
-  overriding, e.g.: `openjdk11.override { enableJavaFX = true; };`.
-- A new option `recommendedBrotliSettings` has been added to `services.nginx`.
-  Learn more about compression in Brotli format [here](https://github.com/google/ngx_brotli/blob/master/README.md).
-- `vim_configurable` has been renamed to `vim-full` to avoid confusion:
-  `vim-full`'s build-time features are configurable, but both `vim` and
-  `vim-full` are _customizable_ (in the sense of user configuration, like
-  vimrc).
+- `python3` now defaults to Python 3.11.
+- PHP now defaults to PHP 8.2, updated from 8.1. When using the `lamp` role,
+  the default package changed from `lamp_php80` to `lamp_php82`.
+- Upstream NixOS dropped support for PHP 8.0 as it is end-of-life. It is still
+  useable on our platform but users should upgrade as soon as possible.
+- `nodejs_14` and `nodejs_16` packages have been removed.
+- Docker now defaults to version 24.
+- `wkhtmltopdf` packages have been removed. They require a Qt version which
+  has been unsupported for many years and wkhtmltopdf didn't get updates in a
+  long time.
+- Certificate generation via `security.acme` (used by the webgateway role) now
+  limits the concurrent number of running certificate renewals and generation
+  jobs, to avoid spiking resource usage when processing many certificates at
+  once. The limit defaults to *5* and can be adjusted via
+  `maxConcurrentRenewals`. Setting it to *0* disables the limits altogether.
+- `services.github-runner` / `services.github-runners.<name>` gained the
+  option `nodeRuntimes`. The option defaults to `[ "node20" ]`, i.e., the
+  service supports Node.js 20 GitHub Actions only. The list of Node.js
+  versions accepted by `nodeRuntimes` tracks the versions the upstream GitHub
+  Actions runner supports.
 - For more details, see the
-  [release notes of NixOS 23.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-23.05-notable-changes).
+  [release notes of NixOS 23.11](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-23.11-notable-changes).
 
 
 ## Significant package updates
 
-- asterisk: 19.8.0 -> asterisk-20.2.1
-- bash: 5.1 -> 5.2
-- binutils: 2.39 -> 2.40
-- bundler: 2.3 -> 2.4
-- curl: 7.86.0 -> 8.0
-- dnsmasq: 2.87 -> 2.89
-- docker-compose: 2.12 -> 2.17
-- ffmpeg: 4.4.2 -> 5.1
-- gcc: 11 -> 12
-- git: 2.38 -> 2.40
-- glibc: 2.35 -> 2.37
-- grafana: 9.4 -> 9.5
-- haproxy: 2.6 -> 2.7
-- k3s: 1.25 -> 1.26
-- kubernetes-helm: 3.10 -> 3.11
-- linux: 5.15 -> 6.1
-- nginx: 1.22 -> 1.24
-- nss-cacert: 3.86 -> 3.89
-- openjdk: 17 -> 19 (same for other Java default packages like `jre`)
-- openssh: 9.1 -> 9.3
-- podman: 4.3 -> 4.5
-- rabbitmq-server: 3.10 -> 3.11
-- ruby: 2.7 -> 3.1
-- systemd: 251 -> 253
-- telegraf: 1.24 -> 1.26
-- xfsprogs: 5.19 -> 6.2
+- curl: 8.1 -> 8.4
+- docker: 20.10 -> 24.0
+- docker-compose: 2.18 -> 2.23
+- git: 2.40 -> 2.42
+- glibc: 2.37 -> 2.38
+- grafana: 9.5 -> 10.2
+- haproxy: 2.7 -> 2.8
+- k3s: 1.26 -> 1.27
+- keycloak: 21.1 -> 22.0
+- kubernetes-helm: 3.11 -> 3.13
+- mastodon: 4.1 -> 4.2
+- nginxMainline: 1.24 -> 1.25
+- nix: 2.13 -> 2.18
+- opensearch: 2.6 -> 2.11
+- opensearch-dashboards: 2.6 -> 2.11
+- openssh: 9.3 -> 9.5
+- phpPackages.composer: 2.5 -> 2.6
+- podman: 4.5 -> 4.7
+- poetry: 1.4 -> 1.7
+- powerdns: 4.7 -> 4.8
+- prometheus: 2.44 -> 2.48
+- redis: 7.0 -> 7.2
+- sudo: 1.9.13p3 -> 1.9.15p2
+- systemd: 253 -> 254
+- util-linux: 2.38 -> 2.39
+- varnish: 7.2 -> 7.4
+- zlib: 1.2.13 -> 1.3

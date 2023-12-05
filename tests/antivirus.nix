@@ -44,7 +44,7 @@ in {
       machine.succeed('systemctl cat clamav-init-database.service')
 
     with subtest("freshclam timer should be active"):
-      machine.succeed('systemctl is-active clamav-freshclam.timer')
+      machine.wait_for_unit('clamav-freshclam.timer')
 
     with subtest("private mirror should be set up"):
       ${grepFreshclamConfig "PrivateMirror https://clamavmirror.fcio.net"}

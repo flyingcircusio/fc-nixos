@@ -14,10 +14,8 @@
 
   permittedInsecurePackages = [
     "imagemagick-6.9.12-68" # Legacy, but gets updates. Customer still needs it.
-    "nodejs-14.21.3" # Needed for opensearch-dashboards.
-    "nodejs-16.20.2" # EOL 2023-09-11, needed for discourse and some customers.
     "openssl-1.1.1w" # EOL 2023-09-11, needed for Percona and older PHP versions.
-    "python-2.7.18.6" # Needed for some legacy customer applications.
+    "python-2.7.18.7" # Needed for some legacy customer applications.
     "ruby-2.7.8" # EOL 2023-03-31, needed for Sensu checks
   ];
 }

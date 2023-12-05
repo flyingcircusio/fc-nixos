@@ -16,7 +16,7 @@ in {
     pkgs = self;
     # Only used by the agent for now but we should probably use this
     # for all our Python packages and update Python in sync then.
-    pythonPackages = self.python310Packages;
+    pythonPackages = self.python311Packages;
   });
 
   #
@@ -51,51 +51,6 @@ in {
   innotop = super.callPackage ./percona/innotop.nix { };
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
-
-  jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
-    pname = "jicofo";
-    version = "1.0-1027";
-    src = fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-MX1TpxYPvtRfRG/VQxYANsBrbGHf49SDTfn6R8aNC8I=";
-    };
-  });
-
-  jitsi-meet = super.jitsi-meet.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-meet";
-    version = "1.0.7235";
-    src = fetchurl {
-      url = "https://download.jitsi.org/jitsi-meet/src/jitsi-meet-${version}.tar.bz2";
-      hash = "sha256-OlAInpGl6I5rKgIsO3nXUQfksU326lsSDdiZdCYM3NU=";
-    };
-
-  });
-
-  jitsi-videobridge = super.jitsi-videobridge.overrideAttrs(oldAttrs: rec {
-    pname = "jitsi-videobridge2";
-    version = "2.3-19-gb286dc0c";
-    src = fetchurl {
-      url = "https://download.jitsi.org/stable/${pname}_${version}-1_all.deb";
-      hash = "sha256-EPpjGS3aFAQToP9IPrcOPxF43nBHuCZPC2b47Jplg/k=";
-    };
-    # jvb complained about missing libcrypto.so.3, add openssl 3 here.
-    installPhase = ''
-      runHook preInstall
-      substituteInPlace usr/share/jitsi-videobridge/jvb.sh \
-        --replace "exec java" "exec ${self.jre_headless}/bin/java"
-
-      mkdir -p $out/{bin,share/jitsi-videobridge,etc/jitsi/videobridge}
-      mv etc/jitsi/videobridge/logging.properties $out/etc/jitsi/videobridge/
-      mv usr/share/jitsi-videobridge/* $out/share/jitsi-videobridge/
-      ln -s $out/share/jitsi-videobridge/jvb.sh $out/bin/jitsi-videobridge
-
-      # work around https://github.com/jitsi/jitsi-videobridge/issues/1547
-      wrapProgram $out/bin/jitsi-videobridge \
-        --set VIDEOBRIDGE_GC_TYPE G1GC \
-        --set LD_LIBRARY_PATH ${super.lib.getLib super.openssl_3_0}/lib/
-      runHook postInstall
-    '';
-  });
 
   inherit (super.callPackages ./matomo {})
     matomo
@@ -142,7 +97,7 @@ in {
   });
 
   # Import old php versions from nix-phps.
-  inherit (phps) php72 php73 php74;
+  inherit (phps) php72 php73 php74 php80;
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
@@ -172,15 +127,15 @@ in {
                 all.redis
               ]));
 
-  # PHP versions from nixpkgs
-
-  lamp_php80 = (super.php80.withExtensions ({ enabled, all }:
+  lamp_php80 = (self.php80.withExtensions ({ enabled, all }:
               enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]));
+               all.bcmath
+               all.imagick
+               all.memcached
+               all.redis
+             ]));
+
+  #PHP versions from nixpkgs
 
   lamp_php81 = super.php81.withExtensions ({ enabled, all }:
               enabled ++ [
@@ -287,7 +242,6 @@ in {
     libxcrypt = self.libxcrypt-legacy;
   };
 
-  opensearch = super.callPackage ./opensearch { };
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
   percona = self.percona80;
@@ -305,13 +259,7 @@ in {
     openssl = self.openssl_1_1;
   };
 
-  percona80 = super.callPackage ./percona/8.0.nix {
-    boost = self.boost177;
-    openldap = self.openldap_2_4;
-    openssl = self.openssl_1_1;
-    inherit (super.darwin.apple_sdk.frameworks) CoreServices;
-    inherit (super.darwin) cctools developer_cmds DarwinTools;
-  };
+  percona80 = super.percona-server_8_0;
 
   percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
     boost = self.boost159;
@@ -346,20 +294,6 @@ in {
     ];
   });
 
-  pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
-    (python-final: python-prev: {
-      pyslurm = python-prev.pyslurm.overridePythonAttrs(_: {
-        version = "unstable-2023-10-13";
-        src = super.fetchFromGitHub {
-          owner = "pyslurm";
-          repo = "pyslurm";
-          rev = "f7a7d8beb8ceb4e4c1b248bab2ebb995dcae77e2";
-          sha256 = "dDHjMkBZHngriwyoZx6VtAIVWJXJPGI7qpv/GBcEWC4=";
-        };
-      });
-    })
-  ];
-
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
 
@@ -387,9 +321,10 @@ in {
   tideways_daemon = super.callPackage ./tideways/daemon.nix {};
   tideways_module = super.callPackage ./tideways/module.nix {};
 
-  wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };
-  wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
-  wkhtmltopdf = self.wkhtmltopdf_0_12_6;
+  # XXX: qt4 was removed upstream, we have to bring it back somehow. Or just tell people to use old channels for this?
+  #wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };
+  #wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
+  #wkhtmltopdf = self.wkhtmltopdf_0_12_6;
 
   xtrabackup = self.percona-xtrabackup_8_0;
 }

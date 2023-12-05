@@ -63,7 +63,10 @@ in {
           initialPassword = "test";
           isNormalUser = true;
         };
-        virtualisation.vlans = [ 1 2 ];
+        virtualisation.interfaces = {
+          ethsrv = { vlan = 2; };
+          ethfe = { vlan = 1; };
+        };
       };
 
     internal =
@@ -84,7 +87,7 @@ in {
           };
         };
         networking.firewall.allowPing = true;
-        virtualisation.vlans = [ 2 ];
+        virtualisation.interfaces.ethsrv.vlan = 2;
       };
 
     oclient =
@@ -93,7 +96,6 @@ in {
         imports = [ ../nixos ../nixos/roles ];
         environment.systemPackages = [ pkgs.openvpn ];
 
-        services.telegraf.enable = false;
         flyingcircus.enc.parameters = {
           resource_group = "test";
           interfaces.fe = {
@@ -110,7 +112,7 @@ in {
           ${gw4Fe} ${gwFeFqdn}
           ${gw6Fe} ${gwFeFqdn}
         '';
-        virtualisation.vlans = [ 1 ];
+        virtualisation.interfaces.ethfe.vlan = 1;
       };
   };
 

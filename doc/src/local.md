@@ -83,6 +83,6 @@ Run `sudo fc-manage -b` to activate the changes (**may restart services!**).
 For more information about writing NixOS modules, refer to the
 [NixOS manual](https://nixos.org/nixos/manual/index.html#sec-writing-modules)
 
-Look up NixOS options here, with channel *23.05* selected:
+Look up NixOS options here, with channel *23.11* selected:
 
 [https://nixos.org/nixos/options.html](https://nixos.org/nixos/options.html)

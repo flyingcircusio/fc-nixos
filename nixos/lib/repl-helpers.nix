@@ -3,9 +3,9 @@
 with builtins;
 
 let
-  printEtcFile = options: name:
+  printEtcFile = config: name:
   let
-    value = options.environment.etc.value.${name};
+    value = config.environment.etc.${name};
     content =
       if value.text != null then
         print value.text

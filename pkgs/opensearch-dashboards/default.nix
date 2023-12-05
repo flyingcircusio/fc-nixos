@@ -2,22 +2,20 @@
 , stdenv
 , makeWrapper
 , fetchurl
-, nodejs_14
+, nodejs
 , coreutils
 , which
 }:
 
 with lib;
-let
-  nodejs = nodejs_14;
 
-in stdenv.mkDerivation rec {
+stdenv.mkDerivation rec {
   pname = "opensearch-dashboards";
-  version = "2.6.0";
+  version = "2.11.0";
 
   src = fetchurl {
     url = "https://artifacts.opensearch.org/releases/bundle/opensearch-dashboards/${version}/${pname}-${version}-linux-x64.tar.gz";
-    sha256 = "sha256-1U9BExZh/hoJKkPC08oEs3U6KWZv6xvHBm8HEYsr2Ls=";
+    hash = "sha256-e6a0qE/idNf0NedfWugbh7qdBFNzDlnSnw/Gh/DEeGM=";
   };
 
   patches = [

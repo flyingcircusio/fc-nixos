@@ -40,6 +40,7 @@ in
       {
         commands = [
           "${serviceCfg.tools.matomoConsole}/bin/matomo-console"
+          "/run/current-system/sw/bin/matomo-console"
         ];
         users = [ "sensuclient" ];
         groups = [ "service" "sudo-srv" ];
@@ -47,6 +48,8 @@ in
       }
       {
         commands = [
+          "/run/current-system/sw/bin/matomo-check-permissions"
+          "/run/current-system/sw/bin/stat /var/lib/matomo/share/config/config.ini.php"
           "${serviceCfg.tools.matomoCheckPermissions}/bin/matomo-check-permissions"
           "${pkgs.coreutils}/bin/stat /var/lib/matomo/share/config/config.ini.php"
         ];

@@ -6,8 +6,8 @@ This component sets up a managed instance of the MySQL database server.
 
 There's a role for each supported major version, currently:
 
-- mysql57: Percona 5.7.
-- percona80: Percona 8.0.
+- mysql57: Percona 5.7.x (End-of-life)
+- percona80: Percona 8.0.x
 
 We use the [Percona Distribution for MySQL](https://percona.com/software/mysql-database)
 which provides useful improvements over the standard Oracle MySQL/MariaDB implementations.

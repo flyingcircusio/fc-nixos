@@ -39,7 +39,7 @@ let
 
     This role shares some configuration options which the 'mailserver' role:
     mailHost, rootAlias, smtpBind[46], explicitSmtpBind. Refer to
-    https://doc.flyingcircus.io/roles/fc-23.05-production/mailserver.html for
+    https://doc.flyingcircus.io/roles/fc-23.11-production/mailserver.html for
     explanation.
   '';
 

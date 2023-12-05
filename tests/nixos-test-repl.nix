@@ -1,8 +1,11 @@
 # A simple helper to make it easier to interactively explore systems built by
 # NixOS tests. Based on nixos-repl.nix, also see the top comment in that script.
-# Run it together with the test file that you want to explore:
+# First, run it:
 #
-# nix repl nixos-test-repl.nix nginx.nix
+# nix repl -f nixos-test-repl.nix
+#
+# In the shell, load the test file that you want to explore:
+# :l nginx.nix
 #
 # Test changes, nixpkgs changes and the REPL script itself can be reloaded from
 # inside the REPL with the `:r` command.
@@ -21,7 +24,7 @@ with builtins;
 let
   pkgs = import <nixpkgs> {};
 
-  etc = node: printEtcFile node.options;
+  etc = node: printEtcFile node;
   replHelpers = pkgs.callPackage ../nixos/lib/repl-helpers.nix {};
   inherit (replHelpers) printEtcFile format print;
 

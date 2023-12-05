@@ -113,7 +113,11 @@ in {
           gateways = {};
         };
       };
-      virtualisation.vlans = [ 1 2 ];
+      # don't use the automatically generated ip addresses
+      virtualisation.interfaces = {
+        ethsrv = { vlan = 1; };
+        ethfe = { vlan = 2; };
+      };
     };
 
     statshost =
@@ -152,7 +156,7 @@ in {
         environment.etc.hosts.source = lib.mkForce (pkgs.writeText "hosts" hosts);
         networking.domain = "fcio.net";
 
-        services.telegraf.enable = true;  # set in infra/fc but not in infra/testing
+        services.telegraf.enable = true;
 
         flyingcircus.roles.statshost.prometheusLocationProxyExtraSettings = {
           # We are talking to a fake stats source that only speaks HTTP/1.1
@@ -167,7 +171,10 @@ in {
           extraGroups = [ "service" ];
         };
 
-        virtualisation.vlans = [ 1 2 ];
+        virtualisation.interfaces = {
+          ethsrv = { vlan = 1; };
+          ethfe = { vlan = 2; };
+        };
         virtualisation.memorySize = 3000;
         virtualisation.diskSize = 1000;
 
@@ -191,6 +198,7 @@ in {
           gateways = {};
         };
       };
+      virtualisation.interfaces.ethsrv.vlan = 1;
     };
 
   };

@@ -99,7 +99,9 @@ rec {
         extraGroups = [ "service" ];
       };
 
-      virtualisation.vlans = map (vlan: vlans.${vlan}) (attrNames config.flyingcircus.enc.parameters.interfaces);
+      virtualisation.interfaces =
+        fcVlanIfaces (listToAttrs (map (vlan: nameValuePair vlan vlans.${vlan})
+          (attrNames config.flyingcircus.enc.parameters.interfaces)));
 
       flyingcircus.enc.parameters = (lib.recursiveUpdate {
         inherit resource_group location secrets;
@@ -117,6 +119,11 @@ rec {
       } extraEncParameters);
     };
   };
+
+  fcVlanIfaces = mapAttrs' (vlan: vid: {
+    name = "eth${vlan}";
+    value = { vlan = vid; assignIP = true; };
+  });
 
   fcIPMap = listToAttrs (concatLists (mapAttrsToList (name: vid: [
     (nameValuePair "${name}4" {

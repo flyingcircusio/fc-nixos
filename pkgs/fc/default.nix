@@ -4,6 +4,7 @@ rec {
   recurseForDerivations = true;
 
   agent = pythonPackages.callPackage ./agent {};
+  agentWithSlurm = pythonPackages.callPackage ./agent { enableSlurm = true; };
 
   check-age = callPackage ./check-age {};
   # XXX: ceph is broken, needs integration of changes from 21.05

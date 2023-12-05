@@ -1,16 +1,9 @@
-import ./make-test-python.nix ({ rolename ? "percona80", lib, pkgs, ... }:
+import ./make-test-python.nix ({ rolename ? "percona80", lib, pkgs, testlib, ... }:
 let
-  net6Fe = "2001:db8:1::";
-  net6Srv = "2001:db8:2::";
-
-  master6Fe = net6Fe + "1";
-  master6Srv = net6Srv + "1";
-
-  net4Fe = "10.0.1";
-  net4Srv = "10.0.2";
-
-  master4Fe = net4Fe + ".1";
-  master4Srv = net4Srv + ".1";
+  master6Fe = testlib.fcIP.fe6 1;
+  master6Srv = testlib.fcIP.srv6 1;
+  master4Fe = testlib.fcIP.fe4 1;
+  master4Srv = testlib.fcIP.srv4 1;
 
 in
 {
@@ -19,7 +12,9 @@ in
     master =
     { pkgs, config, ... }:
     {
-      imports = [ ../nixos ../nixos/roles ];
+      imports = [
+        (testlib.fcConfig { })
+      ];
       virtualisation.memorySize = 2048;
 
       flyingcircus.roles.${rolename}.enable = true;
@@ -31,28 +26,6 @@ in
         innodb-buffer-pool-size         = 10M
         innodb_log_file_size            = 10M
       '';
-
-      flyingcircus.enc.parameters = {
-        resource_group = "test";
-        interfaces.srv = {
-          mac = "52:54:00:12:02:01";
-          bridged = false;
-          networks = {
-            "${net4Srv}.0/24" = [ master4Srv ];
-            "${net6Srv}/64" = [ master6Srv ];
-          };
-          gateways = {};
-        };
-        interfaces.fe = {
-          mac = "52:54:00:12:01:01";
-          bridged = false;
-          networks = {
-            "${net4Fe}.0/24" = [ master4Fe ];
-            "${net6Fe}/64" = [ master6Fe ];
-          };
-          gateways = {};
-        };
-      };
     };
   };
 

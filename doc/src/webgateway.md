@@ -8,7 +8,7 @@ failover support.
 
 ## Versions
 
-- HAProxy: 2.7.x
+- HAProxy: 2.8.x
 - Nginx: 1.24.x
 
 ## Role architecture
@@ -229,7 +229,7 @@ This enables the following TLS 1.2 ciphers:
 The DH param file is located at /var/lib/dhparams/nginx.pem.
 This path can be referenced from Nix code by `security.dhparams.params.nginx.path` as shown in the config example above.
 
-The [services.nginx.sslCiphers](https://search.nixos.org/options?channel=21.05&show=services.nginx.sslCiphers&from=0&size=50&sort=relevance&query=sslCiphers)
+The [services.nginx.sslCiphers](https://search.nixos.org/options?channel=23.11&show=services.nginx.sslCiphers&from=0&size=50&sort=relevance&query=sslCiphers)
 option can be used to change the cipher list.
 
 If you enable weaker ciphers, you should also set `services.nginx.legacyTlsSettings` to true
@@ -282,7 +282,7 @@ $ journalctl --since -1h -u nginx
 
 Starting with NixOS 23.05, nginx uses a version of `libxcrypt` which only supports algorithms marked as [`strong`](https://github.com/besser82/libxcrypt/blob/v4.4.33/lib/hashes.conf#L48). You will encounter errors when password files for HTTP basic auth use algorithms like MD5 (hash prefix`$1$`) and SHA256 (`$5$`). Password hashes using these algorithms should be replaced as soon as possible.
 
-If you still need them on 23.05, use the Nginx package which still supports all algorithms:
+If you still need them on 23.05/23.11, use the Nginx package which still supports all algorithms:
 
 ~~~
 # /etc/local/nixos/nginx-legacy-crypt.nix

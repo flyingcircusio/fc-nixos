@@ -478,7 +478,7 @@ in {
         systemd_units_non_critical = {
           notification = "Some non-critical systemd units failed.";
           command =
-            "${pkgs.fc.agent}/bin/fc-systemd check-units --no-critical"
+            "${config.flyingcircus.agent.package}/bin/fc-systemd check-units --no-critical"
             + (lib.concatMapStrings (u: " --exclude ${u}") cfg.mutedSystemdUnits);
         };
         disk = {
@@ -555,7 +555,7 @@ in {
         lib.mapAttrs'
           (name: val: lib.nameValuePair "systemd_unit-${name}" {
             notification = "${name} is in an unwanted state.";
-            command = "${pkgs.fc.agent}/bin/fc-systemd check-unit ${name}";
+            command = "${config.flyingcircus.agent.package}/bin/fc-systemd check-unit ${name}";
           })
           cfg.systemdUnitChecks;
     })
