@@ -208,7 +208,7 @@ in
         slow_query_log_file = '/var/log/mysql/mysql.slow'
         log_slow_admin_statements = ON
         log_queries_not_using_indexes = ON
-        log_throttle_queries_not_using_indexes = 50
+        log_throttle_queries_not_using_indexes = 5
 
         init-connect               = 'SET NAMES ${charset} COLLATE ${collation}'
         character-set-server       = ${charset}
