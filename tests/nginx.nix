@@ -55,6 +55,7 @@ let
 
     flyingcircus.services.nginx.enable = true;
     flyingcircus.services.nginx.virtualHosts = conf;
+    flyingcircus.services.nginx.logPerVirtualHost = false;
   };
 
 in {
@@ -91,6 +92,7 @@ in {
 
       flyingcircus.logrotate.enable = true;
       flyingcircus.services.nginx.enable = true;
+      flyingcircus.services.nginx.logPerVirtualHost = false;
 
       # Vhost for localhost is predefined by the nginx module and serves the
       # nginx status page which is expected by the sensu check.
@@ -151,6 +153,21 @@ in {
         };
       };
     };
+
+    server5 = { lib, pkgs, ... }: {
+      imports = [
+        (testlib.fcConfig { id = 5; })
+      ];
+
+      flyingcircus.services.nginx = {
+        enable = true;
+        logPerVirtualHost = true;
+        virtualHosts.server = {
+          listenAddresses = [ "127.0.0.1" ];
+          locations."/".return = "204";
+        };
+      };
+    };
   };
 
   testScript = { nodes, ... }:
@@ -182,6 +199,7 @@ in {
     prep(server2)
     prep(server3)
     prep(server4)
+    prep(server5)
 
     with subtest("proxy cache directory should be accessible only for nginx"):
       assert_file_permissions("700:nginx:nginx", "/var/cache/nginx/proxy")
@@ -237,6 +255,10 @@ in {
       server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe4.prefix}0 - -'")
       server1.succeed("curl -6 server -s -o/dev/null")
       server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe6.prefix} - -'")
+
+    with subtest("nginx should have separate log files per vhost"):
+      server5.succeed("curl -4 127.0.0.1 -s -o/dev/null")
+      server5.succeed("cat /var/log/nginx/access-server.log | grep '^127.0.0.[0-9]\\+ - -'")
 
     with subtest("nginx should respond with configured content"):
       server1.succeed("curl server | grep -q 'initial content'")
