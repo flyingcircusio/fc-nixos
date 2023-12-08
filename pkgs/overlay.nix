@@ -54,18 +54,15 @@ in {
       ceph-client;
     libceph = ceph.lib;
   };
-
-  # PL-131066 - allow editing explicit placement for buckets, but don't install system wide
-  ceph-nautilus-bucket-patch = rec {
+  ceph-nautilus-tmp-patches = rec {
     inherit (super.callPackages ./ceph/nautilus {
-        bucket-patch = true;
+        tmp-patches = true;
         boost = super.boost16x.override { enablePython = true; python = self.python3; };
       })
       ceph
       ceph-client;
     libceph = ceph.lib;
   };
-
 
   # Hash is wrong upstream
   containerd = super.containerd.overrideAttrs(_: rec {
