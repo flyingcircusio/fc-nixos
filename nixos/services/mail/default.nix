@@ -307,6 +307,10 @@ in {
             "permit_sasl_authenticated"
             "reject_unknown_helo_hostname"
           ];
+          smtpd_tls_mandatory_protocols = lib.mkForce ">=TLSv1.2";
+          smtpd_tls_protocols = lib.mkForce ">=TLSv1.2";
+          smtp_tls_mandatory_protocols = lib.mkForce ">=TLSv1.2";
+          smtp_tls_protocols = lib.mkForce ">=TLSv1.2";
         } //
         (lib.optionalAttrs role.explicitSmtpBind {
           smtp_bind_address = role.smtpBind4;
