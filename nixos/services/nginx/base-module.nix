@@ -245,6 +245,12 @@ let
       ${cfg.httpConfig}
     }''}
 
+    ${optionalString (cfg.streamConfig != "") ''
+    stream {
+      ${cfg.streamConfig}
+    }
+    ''}
+
     ${cfg.appendConfig}
   '';
 

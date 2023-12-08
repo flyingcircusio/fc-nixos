@@ -1,1 +1,1 @@
-exclude: "pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(nixos/infrastructure/container.nix|tests/testlib.nix)"
+exclude: "pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(nixos/infrastructure/container.nix|tests/testlib.nix|nixos/roles/devhost/vm.nix)"
