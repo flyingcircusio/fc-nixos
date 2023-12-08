@@ -36,6 +36,8 @@
 
 , name ? "nixos-disk-image"
 
+, filename-prefix ? "nixos"
+
 , # Disk image format, one of qcow2, qcow2-compressed, vpc, raw.
   format ? "raw"
 
@@ -53,7 +55,7 @@ let format' = format; in let
 
   compress = optionalString (format' == "qcow2-compressed") "-c";
 
-  filename = "nixos." + {
+  filename = "${filename-prefix}." + {
     qcow2 = "qcow2";
     vpc   = "vhd";
     raw   = "img";
