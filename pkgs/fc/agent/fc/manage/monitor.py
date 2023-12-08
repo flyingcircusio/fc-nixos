@@ -46,6 +46,10 @@ def get_sensucheck_configuration(servicechecks):
         if url.username:
             auth_pair = ":".join([url.username, url.password or ""])
             command.extend(["-a", auth_pair])
+        if servicecheck["redirect"]:
+            command.extend(["-f", "follow"])
+        if len(servicecheck["acceptable"]) > 0:
+            command.extend(["-e", ",".join(servicecheck["acceptable"])])
         checks[name] = dict(
             command=" ".join(command),
             interval=120,
