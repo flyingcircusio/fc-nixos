@@ -108,7 +108,7 @@ Edit {file}`/etc/local/mail/users.json` to add user accounts. Example:
 {
   "user1@test.fcio.net": {
     "aliases": ["first.last@test.fcio.net"],
-    "hashedPassword": "$5$NTTg86onSoM1MK$Xir/pTc9G/TLM1LResKlyAip1oO9XcsmUKXaf7ALIS2",
+    "hashedPassword": "$y$j9T$whHoksmVCZ1rjW2htMznw/$4WzPhNQAe8VcVllG7jC7kFGZMIy/TiIGSULMp3vzAL7",
     "quota": "4G",
     "sieveScript": null
   }
@@ -120,7 +120,7 @@ and the value is a attribute set of configuration options. Domain
 parts of all e-mail addresses must be listed in the `domains` option in
 {file}`/etc/local/mail/config.json`.
 
-The password must be hashed with {command}`mkpasswd -m sha-256 {PASSWORD}`.
+The password must be hashed with {command}`mkpasswd -m yescrypt {PASSWORD}`.
 
 ## How do mail users log into the mail server?
 
@@ -148,10 +148,10 @@ the initial password in {file}`/var/lib/dovecot/passwd` instead. This file
 consists of a e-mail address/password pair per user. Example:
 
 ```
-user1@test.fcio.net:$5$NwBmrzj2vPlIdoa0$Go0zrVY5ZQncFXlCAxA.Gqj.e4Ym6Ic242O6Mj3BK1
+user1@test.fcio.net:$y$j9T$whHoksmVCZ1rjW2htMznw/$4WzPhNQAe8VcVllG7jC7kFGZMIy/TiIGSULMp3vzAL7
 ```
 
-The initial password hash can be created with {command}`mkpasswd -m sha-256
+The initial password hash can be created with {command}`mkpasswd -m yescrypt
 {PASSWORD}` as shown above. Afterwards, user can log into the Roundcube web mail
 frontend and change their password in the settings menu.
 

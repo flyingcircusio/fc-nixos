@@ -47,9 +47,9 @@ initial password in `/var/lib/dovecot/passwd` instead.
 
 Entries in the passwd file look like this:
 
-user1@test.fcio.net:$5$NwBmrzj2vPlIdoa0$Go0zrVY5ZQncFXlCAxA.Gqj.e4Ym6Ic242O6Mj3BK1
+user1@test.fcio.net:$y$j9T$whHoksmVCZ1rjW2htMznw/$4WzPhNQAe8VcVllG7jC7kFGZMIy/TiIGSULMp3vzAL7
 
-The password string can be created with `mkpasswd -m SHA-256`.
+The password string can be created with `mkpasswd -m yescrypt`.
 
 
 Further Configuration Files
