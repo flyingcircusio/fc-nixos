@@ -70,14 +70,14 @@
     "version": "18.2.0"
   },
   "chromedriver": {
-    "name": "chromedriver-119.0.6045.105",
+    "name": "chromedriver-120.0.6099.71",
     "pname": "chromedriver",
-    "version": "119.0.6045.105"
+    "version": "120.0.6099.71"
   },
   "chromium": {
-    "name": "chromium-119.0.6045.199",
+    "name": "chromium-120.0.6099.71",
     "pname": "chromium",
-    "version": "119.0.6045.199"
+    "version": "120.0.6099.71"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -150,9 +150,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.50",
+    "name": "element-web-1.11.51",
     "pname": "element-web",
-    "version": "1.11.50"
+    "version": "1.11.51"
   },
   "erlang": {
     "name": "erlang-25.3.2.7",
@@ -220,19 +220,19 @@
     "version": "2.311.0"
   },
   "gitlab": {
-    "name": "gitlab-16.5.1",
+    "name": "gitlab-16.5.3",
     "pname": "gitlab",
-    "version": "16.5.1"
+    "version": "16.5.3"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.85.0",
+    "name": "gitlab-container-registry-3.86.2",
     "pname": "gitlab-container-registry",
-    "version": "3.85.0"
+    "version": "3.86.2"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.5.1",
+    "name": "gitlab-ee-16.5.3",
     "pname": "gitlab-ee",
-    "version": "16.5.1"
+    "version": "16.5.3"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.6.0",
@@ -346,9 +346,9 @@
     "version": "1.27.6+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-22.0.5",
+    "name": "keycloak-23.0.0",
     "pname": "keycloak",
-    "version": "22.0.5"
+    "version": "23.0.0"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.13.2",
@@ -411,9 +411,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.140",
+    "name": "linux-5.15.142",
     "pname": "linux",
-    "version": "5.15.140"
+    "version": "5.15.142"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -441,9 +441,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.2.1",
+    "name": "mastodon-4.2.3",
     "pname": "mastodon",
-    "version": "4.2.1"
+    "version": "4.2.3"
   },
   "matomo": {
     "name": "matomo-4.15.1",
@@ -551,9 +551,9 @@
     "version": "2.4.58"
   },
   "opensearch": {
-    "name": "opensearch-2.11.0",
+    "name": "opensearch-2.11.1",
     "pname": "opensearch",
-    "version": "2.11.0"
+    "version": "2.11.1"
   },
   "opensearch-dashboards": {
     "name": "opensearch-dashboards-2.11.0",
@@ -732,9 +732,9 @@
     "version": "3.11.6"
   },
   "python312": {
-    "name": "python3-3.12.0",
+    "name": "python3-3.12.1",
     "pname": "python3",
-    "version": "3.12.0"
+    "version": "3.12.1"
   },
   "python38": {
     "name": "python3-3.8.18",
@@ -817,9 +817,9 @@
     "version": "2.0.7"
   },
   "qemu": {
-    "name": "qemu-8.1.2",
+    "name": "qemu-8.1.3",
     "pname": "qemu",
-    "version": "8.1.2"
+    "version": "8.1.3"
   },
   "rabbitmq-server": {
     "name": "rabbitmq-server-3.12.7",
@@ -932,14 +932,14 @@
     "version": "3.3a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.15",
+    "name": "apache-tomcat-10.1.16",
     "pname": "apache-tomcat",
-    "version": "10.1.15"
+    "version": "10.1.16"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.82",
+    "name": "apache-tomcat-9.0.83",
     "pname": "apache-tomcat",
-    "version": "9.0.82"
+    "version": "9.0.83"
   },
   "unzip": {
     "name": "unzip-6.0",
@@ -962,9 +962,9 @@
     "version": "9.0.2048"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.42.2+abi=4.0",
+    "name": "webkitgtk-2.42.3+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.42.2"
+    "version": "2.42.3"
   },
   "wget": {
     "name": "wget-1.21.4",
