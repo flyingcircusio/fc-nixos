@@ -731,6 +731,11 @@
     "pname": "python3",
     "version": "3.11.6"
   },
+  "python312": {
+    "name": "python3-3.12.0",
+    "pname": "python3",
+    "version": "3.12.0"
+  },
   "python38": {
     "name": "python3-3.8.18",
     "pname": "python3",
