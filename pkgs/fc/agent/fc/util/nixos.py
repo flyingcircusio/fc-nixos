@@ -1,5 +1,5 @@
 """Helpers for interaction with the NixOS system"""
-
+import itertools
 import os
 import os.path as p
 import re
@@ -309,8 +309,20 @@ def find_nix_build_error(stderr: str, log=_log):
         num_lines = len(lines)
         error_lines = []
 
+        lines = list(
+            itertools.dropwhile(lambda l: not l.startswith("error:"), lines)
+        )
+
         for pos, line in enumerate(lines):
-            if line.startswith("error:"):
+            line = line.strip()
+            if error_lines:
+                if not line:
+                    continue
+                elif line.startswith(("- In", "at ")):
+                    error_lines.append(line)
+                else:
+                    break
+            elif line.startswith("error:"):
                 error = line.removeprefix("error:").strip()
 
                 if error.startswith("builder for "):
@@ -319,21 +331,16 @@ def find_nix_build_error(stderr: str, log=_log):
                     else:
                         error_lines.append(error)
                 elif (
-                    pos + 1 < num_lines
+                    pos + 1 < len(lines)
                     and lines[pos + 1].strip() == "Failed assertions:"
                 ):
                     error_lines.append("Failed assertions:")
-                    error_lines.extend(l.strip() for l in lines[pos + 2 : -1])
+                    error_lines.extend(l.strip() for l in lines[pos + 2 :])
                     break
+                elif not error:
+                    continue
                 else:
                     error_lines.append(error)
-
-            elif error_lines:
-                line = line.strip()
-                if line.startswith(("- In", "at ")):
-                    error_lines.append(line)
-                else:
-                    break
 
         if error_lines:
             return "\n".join(error_lines)
