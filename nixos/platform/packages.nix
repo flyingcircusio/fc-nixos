@@ -71,9 +71,11 @@
 
     programs.mtr.enable = config.fclib.mkPlatform true;
 
-    flyingcircus.passwordlessSudoRules = [
+    flyingcircus.passwordlessSudoPackages = [
       {
-        commands = [ "/run/current-system/sw/bin/iotop" ];
+
+        executablePaths = [ "bin/iotop" ];
+        package = pkgs.iotop;
         groups = [ "admins" "sudo-srv" "service" ];
       }
     ];

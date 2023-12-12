@@ -188,6 +188,13 @@ in {
       };
     };
 
+    flyingcircus.passwordlessSudoPackages = mkOption {
+      description = ''
+      '';
+
+      default = [];
+    };
+
     flyingcircus.passwordlessSudoRules = mkOption {
       description = ''
         Works like security.sudo.extraRules, but sets passwordless mode and
@@ -319,6 +326,17 @@ in {
         (map
           (rule: rule // { commands = (map addPasswordOption rule.commands); })
           config.flyingcircus.passwordlessSudoRules);
+
+    # implementation for flyingcircus.passwordlessSudoPackages
+    flyingcircus.passwordlessSudoRules =
+      map
+        (e: {
+          commands = lib.flatten (map (path: [
+            "/run/current-system/sw/${path}"
+            "${e.package}/${path}"
+          ]) e.executablePaths);
+        } // (filterAttrs (n: v: n != "executablePaths" && n != "package") e))
+        cfg.passwordlessSudoPackages;
 
     security.dhparams.enable = true;
 
