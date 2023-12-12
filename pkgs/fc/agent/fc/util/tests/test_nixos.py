@@ -1,5 +1,6 @@
 import shlex
 import textwrap
+import unittest.mock
 from unittest import mock
 
 import pytest
@@ -56,7 +57,13 @@ def test_build_system_with_changes(log, monkeypatch):
         channel, build_options=["-v"], out_link="/run/fc-agent-test"
     )
 
-    popen_mock.assert_called_once_with(cmd, stdout=-1, stderr=-1, text=True)
+    popen_mock.assert_called_once_with(
+        cmd,
+        stdout=-1,
+        stderr=-1,
+        preexec_fn=nixos._increase_soft_fd_limit,
+        text=True,
+    )
     assert built_system_path == system_path
     assert log.has(
         "system-build-succeeded",
@@ -86,7 +93,13 @@ def test_build_system_unchanged(log, monkeypatch):
     built_system_path = nixos.build_system(channel)
 
     assert built_system_path == system_path
-    popen_mock.assert_called_once_with(cmd, stdout=-1, stderr=-1, text=True)
+    popen_mock.assert_called_once_with(
+        cmd,
+        stdout=-1,
+        stderr=-1,
+        preexec_fn=nixos._increase_soft_fd_limit,
+        text=True,
+    )
     assert log.has("system-build-succeeded", changed=False)
 
 

@@ -3,6 +3,7 @@
 import os
 import os.path as p
 import re
+import resource
 import subprocess
 from pathlib import Path
 from subprocess import PIPE, STDOUT
@@ -350,6 +351,26 @@ def find_nix_build_error(stderr: str, log=_log):
     return "Building the system failed!"
 
 
+def _increase_soft_fd_limit():
+    """Increases the "soft" file descriptor limit (which is the actual limit)
+    if it's currently at the default value.
+    If the function finds a non-default value, it's kept as-is.
+    The limit can be increased from the outside by setting LimitNOFile in the
+    systemd unit, for example.
+
+    To be used with the `preexec_fn` argument of `Popen`. This way,
+    the change is scoped to the new process and doesn't affect the calling process.
+    """
+    rlimit_nofile = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if rlimit_nofile[0] != 1024:
+        # Non-default setting for the soft fd limit, keep it as-is.
+        return
+
+    soft_limit = min(2000, rlimit_nofile[1])
+    hard_limit = rlimit_nofile[1]
+    resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
+
+
 def build_system(
     channel_url=None, build_options=None, out_link=None, log=_log
 ):
@@ -357,7 +378,15 @@ def build_system(
     Build system with this channel. Works like nixos-rebuild build.
     Does not modify the running system.
     """
-    log.debug("system-build-start", channel=channel_url)
+    rlimit_nofile = resource.getrlimit(resource.RLIMIT_NOFILE)
+
+    log.debug(
+        "system-build-start",
+        channel=channel_url,
+        soft_file_descriptor_limit=rlimit_nofile[0],
+        hard_file_descriptor_limit=rlimit_nofile[1],
+    )
+
     cmd = [
         "nix-build",
         "--no-build-output",
@@ -379,7 +408,13 @@ def build_system(
 
     log.debug("system-build-command", cmd=" ".join(cmd))
 
-    proc = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
+    proc = subprocess.Popen(
+        cmd,
+        stdout=PIPE,
+        stderr=PIPE,
+        text=True,
+        preexec_fn=_increase_soft_fd_limit,
+    )
     log.info(
         "system-build-started",
         _replace_msg="Nix build command started with PID: {cmd_pid}",
