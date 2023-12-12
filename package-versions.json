@@ -15,9 +15,9 @@
     "version": "20.2.1"
   },
   "auditbeat7-oss": {
-    "name": "auditbeat-oss-7.17.4",
+    "name": "auditbeat-oss-7.17.16",
     "pname": "filebeat",
-    "version": "7.17.4"
+    "version": "7.17.16"
   },
   "automake": {
     "name": "automake-1.16.5",
@@ -180,9 +180,9 @@
     "version": "5.45"
   },
   "filebeat7-oss": {
-    "name": "filebeat-oss-7.17.4",
+    "name": "filebeat-oss-7.17.16",
     "pname": "filebeat",
-    "version": "7.17.4"
+    "version": "7.17.16"
   },
   "firefox": {
     "name": "firefox-120.0.1",
