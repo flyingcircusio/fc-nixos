@@ -70,14 +70,14 @@
     "version": "17.2.5"
   },
   "chromedriver": {
-    "name": "chromedriver-119.0.6045.105",
+    "name": "chromedriver-120.0.6099.71",
     "pname": "chromedriver",
-    "version": "119.0.6045.105"
+    "version": "120.0.6099.71"
   },
   "chromium": {
-    "name": "chromium-119.0.6045.159",
+    "name": "chromium-120.0.6099.71",
     "pname": "chromium",
-    "version": "119.0.6045.159"
+    "version": "120.0.6099.71"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -150,9 +150,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.47",
+    "name": "element-web-1.11.51",
     "pname": "element-web",
-    "version": "1.11.47"
+    "version": "1.11.51"
   },
   "erlang": {
     "name": "erlang-25.3.2",
@@ -195,9 +195,9 @@
     "version": "7.17.4"
   },
   "firefox": {
-    "name": "firefox-120.0",
+    "name": "firefox-120.0.1",
     "pname": "firefox",
-    "version": "120.0"
+    "version": "120.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-12.2.0",
@@ -230,19 +230,19 @@
     "version": "2.311.0"
   },
   "gitlab": {
-    "name": "gitlab-16.5.1",
+    "name": "gitlab-16.5.3",
     "pname": "gitlab",
-    "version": "16.5.1"
+    "version": "16.5.3"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.85.0",
+    "name": "gitlab-container-registry-3.86.2",
     "pname": "gitlab-container-registry",
-    "version": "3.85.0"
+    "version": "3.86.2"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.5.1",
+    "name": "gitlab-ee-16.5.3",
     "pname": "gitlab-ee",
-    "version": "16.5.1"
+    "version": "16.5.3"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.6.0",
@@ -430,9 +430,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.139",
+    "name": "linux-5.15.142",
     "pname": "linux",
-    "version": "5.15.139"
+    "version": "5.15.142"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -460,9 +460,9 @@
     "version": "3.2.5"
   },
   "mastodon": {
-    "name": "mastodon-4.1.10",
+    "name": "mastodon-4.1.11",
     "pname": "mastodon",
-    "version": "4.1.10"
+    "version": "4.1.11"
   },
   "matomo": {
     "name": "matomo-4.15.1",
@@ -555,9 +555,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.94",
+    "name": "nss-3.95",
     "pname": "nss",
-    "version": "3.94"
+    "version": "3.95"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -990,9 +990,9 @@
     "version": "9.0.1441"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.42.2+abi=4.0",
+    "name": "webkitgtk-2.42.3+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.42.2"
+    "version": "2.42.3"
   },
   "wget": {
     "name": "wget-1.21.4",
