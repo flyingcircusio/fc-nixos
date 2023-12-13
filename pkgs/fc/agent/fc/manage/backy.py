@@ -8,6 +8,7 @@ import os.path as p
 import shutil
 import socket
 import subprocess
+import sys
 import syslog
 
 import fc.util.configfile
@@ -107,6 +108,27 @@ class BackyConfig(object):
             if p.exists(node_dir):
                 _log.info("purging backups for deleted node %s", name)
                 shutil.rmtree(node_dir, ignore_errors=True)
+
+
+def publish():
+    a = argparse.ArgumentParser(
+        description="Helper to publish backy status to directory. Expects the actual data on stdin"
+    )
+    a.add_argument(
+        "name", metavar="<name>", help="service to publish status for"
+    )
+    args = a.parse_args()
+
+    h = logging.handlers.SysLogHandler(facility=syslog.LOG_LOCAL4)
+    logging.basicConfig(level=logging.DEBUG, handlers=[h])
+
+    try:
+        status = yaml.safe_load(sys.stdin)
+        d = fc.util.directory.connect()
+        d.publish_backup_status(args.name, status)
+    except Exception:
+        logging.exception("error publishing backy status")
+        raise
 
 
 def main():

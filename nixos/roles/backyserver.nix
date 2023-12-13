@@ -89,6 +89,7 @@ in
       global:
         base-dir: /srv/backy
         worker-limit: ${toString role.worker-limit}
+        backup-completed-callback: fc-backy-publish
       schedules:
         default:
           daily: {interval: 1d, keep: 10}
