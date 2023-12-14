@@ -63,7 +63,7 @@ in
       matomo-config = {
         notification = "Config file cannot be read.";
         command = ''
-          if ! sudo -u matomo stat /var/lib/matomo/share/config/config.ini.php; then
+          if ! sudo -u matomo ${pkgs.coreutils}/bin/stat /var/lib/matomo/share/config/config.ini.php; then
             echo "config.ini.php not found, is Matomo installed?"
             exit 1
           fi
