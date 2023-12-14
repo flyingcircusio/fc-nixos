@@ -271,9 +271,7 @@ let
             # [::0] being ipv6only=on.
             # We decided for this combination based on the recommendations
             # in https://serverfault.com/questions/638367/do-you-need-separate-ipv4-and-ipv6-listen-directives-in-nginx
-            let addrs = if vhost.listenAddresses != [] then vhost.listenAddresses else (
-              [ "0.0.0.0" ] ++ optional enableIPv6 "[::0]"
-            );
+            let addrs = if vhost.listenAddresses != [] then vhost.listenAddresses else cfg.defaultListenAddresses;
             in
           optionals (hasSSL || vhost.rejectSSL) (map (addr: { inherit addr; port = 443; ssl = true; }) addrs)
           ++ optionals (!onlySSL) (map (addr: { inherit addr; port = 80; ssl = false; }) addrs);
@@ -557,6 +555,16 @@ in
         description = "
           Change the proxy related timeouts in recommendedProxySettings.
         ";
+      };
+
+      defaultListenAddresses = mkOption {
+        type = types.listOf types.str;
+        default = [ "0.0.0.0" ] ++ optional enableIPv6 "[::0]";
+        defaultText = literalExpression ''[ "0.0.0.0" ] ++ lib.optional config.networking.enableIPv6 "[::0]"'';
+        example = literalExpression ''[ "10.0.0.12" "[2002:a00:1::]" ]'';
+        description = lib.mdDoc ''
+          If vhosts do not specify listenAddresses, use these addresses by default.
+        '';
       };
 
       package = mkOption {
