@@ -42,6 +42,13 @@ in
         mkdir -p $data_dir
       '';
       serviceConfig = {
+        # Workaround to stop beats from spamming the log with errors about not
+        # being able to open a directory at a path which makes no sense.
+        # Looks like the metrics code in beats is confused by the file permissions
+        # of /sys/fs/cgroup/system.slice/filebeat-journal-*.service/memory.pressure
+        # set by system 254 when MemoryPressureWatch is enabled. "skip" restores the
+        # old behaviour.
+        MemoryPressureWatch = "skip";
         StateDirectory = stateDir;
         # DynamicUser = true;
         ExecStart = ''

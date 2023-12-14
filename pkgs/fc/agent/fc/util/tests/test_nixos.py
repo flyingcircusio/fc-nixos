@@ -207,14 +207,35 @@ def test_find_nix_build_error_missing_option():
     stderr = textwrap.dedent(
         """
         trace: [ "environment" ]
-        error: The option `flyingcircus.services.nginx.virtualHosts."test66.fe.rzob.fcio.net".forcSSL' does not exist. Definition values:
+        trace: Obsolete option `flyingcircus.roles.statshost.enable' is used. It was renamed to `flyingcircus.roles.statshost-global.enable'.
+        error:
+               … while calling the 'head' builtin
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/attrsets.nix:850:11:
+
+                  849|         || pred here (elemAt values 1) (head values) then
+                  850|           head values
+                     |           ^
+                  851|         else
+
+               … while evaluating the attribute 'value'
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/modules.nix:807:9:
+
+                  806|     in warnDeprecation opt //
+                  807|       { value = builtins.addErrorContext "while evaluating the option `${showOption loc}':" value;
+                     |         ^
+                  808|         inherit (res.defsFinal') highestPrio;
+
+               (stack trace truncated; use '--show-trace' to show the full trace)
+
+               error: The option `services.nginx.virtualHosts."test66.fe.rzob.fcio.net".forcSSL' does not exist. Definition values:
                - In `/etc/local/nixos/dev_vm.nix': true
-        (use '--show-trace' to show detailed location information)
         """
     )
     expected = textwrap.dedent(
         """
-        The option `flyingcircus.services.nginx.virtualHosts."test66.fe.rzob.fcio.net".forcSSL' does not exist. Definition values:
+        The option `services.nginx.virtualHosts."test66.fe.rzob.fcio.net".forcSSL' does not exist. Definition values:
         - In `/etc/local/nixos/dev_vm.nix': true
         """
     ).strip()
@@ -229,13 +250,35 @@ def test_find_nix_build_error_default_when_no_error_message():
 def test_find_nix_build_error_syntax():
     stderr = textwrap.dedent(
         """
-        error: syntax error, unexpected ';'
+        error:
+               … while evaluating the attribute 'config.system.build.toplevel'
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/modules.nix:320:9:
+
+                  319|         options = checked options;
+                  320|         config = checked (removeAttrs config [ "_module" ]);
+                     |         ^
+                  321|         _module = checked (config._module);
+
+               … while calling the 'seq' builtin
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/modules.nix:320:18:
+
+                  319|         options = checked options;
+                  320|         config = checked (removeAttrs config [ "_module" ]);
+                     |                  ^
+                  321|         _module = checked (config._module);
+
+               (stack trace truncated; use '--show-trace' to show the full trace)
+
+               error: syntax error, unexpected ';'
+
                at /etc/local/nixos/dev_vm.nix:190:1:
+
                   189| #flyingcircus.roles.k3s-server.enable = lib.mkForce true
                   190| ;
                      | ^
                   191|
-        (use '--show-trace' to show detailed location information)
         """
     )
     expected = textwrap.dedent(
@@ -267,19 +310,35 @@ def test_find_nix_build_error_builder_failed():
 def test_find_nix_build_error_type_error():
     stderr = textwrap.dedent(
         """
-        error: value is a string while a set was expected
-            at /nix/store/3fjl7jm2f0i2y3q0869svy801wpcracv-nixpkgs-09ba0ca4298/pkgs/build-support/trivial-builders.nix:89:8:
-                88|        })
-                89|     // builtins.removeAttrs derivationArgs [ "passAsFile" ]);
-                  |        ^
-                90|
+        building '/nix/store/my39ycs0z8xcx3ih78xb3j39r2mz5x88-firewall-local-rules.drv'...
+        error:
+               … while calling the 'head' builtin
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/attrsets.nix:850:11:
+
+                  849|         || pred here (elemAt values 1) (head values) then
+                  850|           head values
+                     |           ^
+                  851|         else
+
+               … while evaluating the attribute 'value'
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/modules.nix:807:9:
+
+                  806|     in warnDeprecation opt //
+                  807|       { value = builtins.addErrorContext "while evaluating the option `${showOption loc}':" value;
+                     |         ^
+                  808|         inherit (res.defsFinal') highestPrio;
+
+               (stack trace truncated; use '--show-trace' to show the full trace)
+
+               error: value is a string while a set was expected
         """
     )
 
     expected = textwrap.dedent(
         """
         value is a string while a set was expected
-        at /nix/store/3fjl7jm2f0i2y3q0869svy801wpcracv-nixpkgs-09ba0ca4298/pkgs/build-support/trivial-builders.nix:89:8:
         """
     ).strip()
     assert nixos.find_nix_build_error(stderr) == expected
@@ -289,17 +348,40 @@ def test_find_nix_build_error_conflicting_values():
     stderr = textwrap.dedent(
         """
         trace: [ "environment" ]
-        error: The option `security.dhparams.enable' has conflicting definition values:
+        trace: Obsolete option `flyingcircus.roles.statshost.enable' is used. It was renamed to `flyingcircus.roles.statshost-global.enable'.
+        trace: warning: The type `types.string` is deprecated. See https://github.com/NixOS/nixpkgs/pull/66346 for better alternative types.
+        error:
+               … while calling the 'head' builtin
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/attrsets.nix:850:11:
+
+                  849|         || pred here (elemAt values 1) (head values) then
+                  850|           head values
+                     |           ^
+                  851|         else
+
+               … while evaluating the attribute 'value'
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/modules.nix:807:9:
+
+                  806|     in warnDeprecation opt //
+                  807|       { value = builtins.addErrorContext "while evaluating the option `${showOption loc}':" value;
+                     |         ^
+                  808|         inherit (res.defsFinal') highestPrio;
+
+               (stack trace truncated; use '--show-trace' to show the full trace)
+
+               error: The option `security.dhparams.enable' has conflicting definition values:
                - In `/etc/local/nixos/dev_vm.nix': false
-               - In `/nix/store/csn87ili28ks7yjimihw3n4q9rqrk0cb-source/fc/nixos/platform': true
-        (use '--show-trace' to show detailed location information)
+               - In `/nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/fc/nixos/platform': true
+               Use `lib.mkForce value` or `lib.mkDefault value` to change the priority on any of these definitions.
         """
     )
     expected = textwrap.dedent(
         """
         The option `security.dhparams.enable' has conflicting definition values:
         - In `/etc/local/nixos/dev_vm.nix': false
-        - In `/nix/store/csn87ili28ks7yjimihw3n4q9rqrk0cb-source/fc/nixos/platform': true
+        - In `/nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/fc/nixos/platform': true
         """
     ).strip()
 
@@ -309,11 +391,34 @@ def test_find_nix_build_error_conflicting_values():
 def test_find_nix_build_error_failed_assertion():
     stderr = textwrap.dedent(
         """
+        trace: [ "environment" ]
+        trace: Obsolete option `flyingcircus.roles.statshost.enable' is used. It was renamed to `flyingcircus.roles.statshost-global.enable'.
+        trace: warning: The type `types.string` is deprecated. See https://github.com/NixOS/nixpkgs/pull/66346 for better alternative types.
         error:
+               … while calling the 'head' builtin
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/attrsets.nix:850:11:
+
+                  849|         || pred here (elemAt values 1) (head values) then
+                  850|           head values
+                     |           ^
+                  851|         else
+
+               … while evaluating the attribute 'value'
+
+                 at /nix/store/1hfsxsfgx9pzxx5mijz3n5rmvpfq7adj-source/nixpkgs/lib/modules.nix:807:9:
+
+                  806|     in warnDeprecation opt //
+                  807|       { value = builtins.addErrorContext "while evaluating the option `${showOption loc}':" value;
+                     |         ^
+                  808|         inherit (res.defsFinal') highestPrio;
+
+               (stack trace truncated; use '--show-trace' to show the full trace)
+
+               error:
                Failed assertions:
                - The option definition `flyingcircus.roles.loghost.enable' in `/etc/local/nixos/dev_vm.nix' no longer has any effect; please remove it.
                Last platform version that supported graylog/loghost was 22.05.
-        (use '--show-trace' to show detailed location information)
         """
     )
     expected = textwrap.dedent(

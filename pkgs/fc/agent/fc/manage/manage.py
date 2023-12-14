@@ -2,6 +2,7 @@
 
 import os
 import re
+import subprocess
 from pathlib import Path
 
 from fc.util import nixos
@@ -139,6 +140,17 @@ def initial_switch_if_needed(log, enc):
 
     log = log.bind(init_stage=1)
 
+    try:
+        name = enc["name"]
+        log.debug("fc-manage-init-set-hostname", hostname=name)
+        subprocess.check_call(["hostnamectl", "--transient", "hostname", name])
+    except Exception:
+        log.warn(
+            "fc-manage-init-hostname-failed",
+            _replace_msg="Couldn't set hostname during initial build.",
+            exc_info=True,
+        )
+
     log.info(
         "fc-manage-initial-build",
         _replace_msg=(
@@ -178,6 +190,8 @@ def initial_switch_if_needed(log, enc):
         ),
     )
 
+    # The NixOS configuration also checks INITIAL_RUN_MARKER. As it's still
+    # present, the system will build without roles.
     switch_with_update(log, enc, lazy=True)
 
     INITIAL_RUN_MARKER.unlink()
