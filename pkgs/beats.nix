@@ -2,16 +2,16 @@
 
 let beat = package: extraArgs: buildGoModule (rec {
   pname = package;
-  version = "7.17.4";
+  version = "7.17.16";
 
   src = fetchFromGitHub {
     owner = "elastic";
     repo = "beats";
     rev = "v${version}";
-    sha256 = "sha256-DE7XpzVBu9qL7fMXXYRYLdVXrr0WB0IL0KAG0Zc3TVo=";
+    hash = "sha256-0qwWHRIDLlnaPOCRmiiFGg+/jdanWuQtggM2QSaMR1o=";
   };
 
-  vendorSha256 = "sha256-TQrXUcLv7rFo3PP3bVx0wEC1WbtkJDsCm+/izHAxqBc=";
+  vendorHash = "sha256-rwCCpptppkpvwQWUtqTjBUumP8GSpPHBTCaj0nYVQv8=";
 
   subPackages = [ package ];
 

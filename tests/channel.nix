@@ -37,8 +37,8 @@ in {
       home = "/home/alice";
     };
 
-    # Crashed with 3000.
-    virtualisation.memorySize = 4000;
+    # Crashed with 4000.
+    virtualisation.memorySize = 5000;
     virtualisation.qemu.options = [ "-smp 2" ];
   };
 

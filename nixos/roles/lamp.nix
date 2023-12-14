@@ -239,6 +239,10 @@ in {
                   "pm.start_servers" = "5";
                   "pm.min_spare_servers" = "5";
                   "pm.max_spare_servers" = "10";
+                  "slowlog" = "/var/log/httpd/${vhost.name}-slow.log";
+                  "request_slowlog_timeout" = "6s";
+                  "request_slowlog_trace_depth" = "100";
+                  "catch_workers_output" = "true";
                 };
               } vhost.pool; # only contains override values
           }) role.vhosts);

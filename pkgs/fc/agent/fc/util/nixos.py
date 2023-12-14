@@ -1,8 +1,9 @@
 """Helpers for interaction with the NixOS system"""
-
+import itertools
 import os
 import os.path as p
 import re
+import resource
 import subprocess
 from pathlib import Path
 from subprocess import PIPE, STDOUT
@@ -309,8 +310,20 @@ def find_nix_build_error(stderr: str, log=_log):
         num_lines = len(lines)
         error_lines = []
 
+        lines = list(
+            itertools.dropwhile(lambda l: not l.startswith("error:"), lines)
+        )
+
         for pos, line in enumerate(lines):
-            if line.startswith("error:"):
+            line = line.strip()
+            if error_lines:
+                if not line:
+                    continue
+                elif line.startswith(("- In", "at ")):
+                    error_lines.append(line)
+                else:
+                    break
+            elif line.startswith("error:"):
                 error = line.removeprefix("error:").strip()
 
                 if error.startswith("builder for "):
@@ -319,21 +332,16 @@ def find_nix_build_error(stderr: str, log=_log):
                     else:
                         error_lines.append(error)
                 elif (
-                    pos + 1 < num_lines
+                    pos + 1 < len(lines)
                     and lines[pos + 1].strip() == "Failed assertions:"
                 ):
                     error_lines.append("Failed assertions:")
-                    error_lines.extend(l.strip() for l in lines[pos + 2 : -1])
+                    error_lines.extend(l.strip() for l in lines[pos + 2 :])
                     break
+                elif not error:
+                    continue
                 else:
                     error_lines.append(error)
-
-            elif error_lines:
-                line = line.strip()
-                if line.startswith(("- In", "at ")):
-                    error_lines.append(line)
-                else:
-                    break
 
         if error_lines:
             return "\n".join(error_lines)
@@ -350,6 +358,26 @@ def find_nix_build_error(stderr: str, log=_log):
     return "Building the system failed!"
 
 
+def _increase_soft_fd_limit():
+    """Increases the "soft" file descriptor limit (which is the actual limit)
+    if it's currently at the default value.
+    If the function finds a non-default value, it's kept as-is.
+    The limit can be increased from the outside by setting LimitNOFile in the
+    systemd unit, for example.
+
+    To be used with the `preexec_fn` argument of `Popen`. This way,
+    the change is scoped to the new process and doesn't affect the calling process.
+    """
+    rlimit_nofile = resource.getrlimit(resource.RLIMIT_NOFILE)
+    if rlimit_nofile[0] != 1024:
+        # Non-default setting for the soft fd limit, keep it as-is.
+        return
+
+    soft_limit = min(2000, rlimit_nofile[1])
+    hard_limit = rlimit_nofile[1]
+    resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
+
+
 def build_system(
     channel_url=None, build_options=None, out_link=None, log=_log
 ):
@@ -357,7 +385,15 @@ def build_system(
     Build system with this channel. Works like nixos-rebuild build.
     Does not modify the running system.
     """
-    log.debug("system-build-start", channel=channel_url)
+    rlimit_nofile = resource.getrlimit(resource.RLIMIT_NOFILE)
+
+    log.debug(
+        "system-build-start",
+        channel=channel_url,
+        soft_file_descriptor_limit=rlimit_nofile[0],
+        hard_file_descriptor_limit=rlimit_nofile[1],
+    )
+
     cmd = [
         "nix-build",
         "--no-build-output",
@@ -379,7 +415,13 @@ def build_system(
 
     log.debug("system-build-command", cmd=" ".join(cmd))
 
-    proc = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE, text=True)
+    proc = subprocess.Popen(
+        cmd,
+        stdout=PIPE,
+        stderr=PIPE,
+        text=True,
+        preexec_fn=_increase_soft_fd_limit,
+    )
     log.info(
         "system-build-started",
         _replace_msg="Nix build command started with PID: {cmd_pid}",

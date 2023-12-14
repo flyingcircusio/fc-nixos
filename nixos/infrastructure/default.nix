@@ -4,6 +4,7 @@
 
   imports = [
     ./container.nix
+    ./dev-vm.nix
     ./testing.nix
     ./flyingcircus-physical.nix
     ./flyingcircus-virtual.nix
@@ -12,7 +13,7 @@
 
   options = with lib; {
     flyingcircus.infrastructureModule = mkOption {
-      type = types.enum [ "testing" "flyingcircus" "flyingcircus-physical" "virtualbox" "container" ];
+      type = types.enum [ "testing" "flyingcircus" "flyingcircus-physical" "virtualbox" "container" "dev-vm" ];
       default = "testing";
       example = "flyingcircus";
       description = "Load config module for specific infrastructure.";

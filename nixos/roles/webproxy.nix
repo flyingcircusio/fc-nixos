@@ -5,39 +5,17 @@ let
   fccfg = config.flyingcircus.roles.webproxy;
   fclib = config.fclib;
 
-  vclExample = ''
-    vcl 4.0;
-    backend test {
-      .host = "127.0.0.1";
-      .port = "8080";
-    }
-  '';
-
-  varnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl vclExample;
-  configFile = pkgs.writeText "default.vcl" varnishCfg;
-
   cacheMemory = (fclib.currentMemory 256) / 100 * fccfg.mallocMemoryPercentage;
 
-  varnishCmd =
-    "${cfg.package}/sbin/varnishd -a ${cfg.http_address}" +
-    " -f /etc/current-config/varnish.vcl -n ${cfg.stateDir}" +
-    " -s malloc,${toString cacheMemory}M" +
-    lib.optionalString
-      (cfg.extraCommandLine != "")
-      " ${cfg.extraCommandLine}" +
-    lib.optionalString
-      (cfg.extraModules != [])
-      " -p vmod_path='${lib.makeSearchPathOutput "lib" "lib/varnish/vmods" ([cfg.package] ++ cfg.extraModules)}' -r vmod_path" +
-    " -F";
-
   kill = "${pkgs.coreutils}/bin/kill";
+
+  # if there is a default.vcl file, use that instead of the NixOS Varnish configuration
+  varnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl null;
 in
 {
-
   options = with lib; {
-
     flyingcircus.roles.webproxy = {
-      enable = mkEnableOption "Flying Circus varnish server role";
+      enable = mkEnableOption "Flying Circus Varnish server role";
       supportsContainers = fclib.mkEnableContainerSupport;
 
       mallocMemoryPercentage = mkOption {
@@ -57,6 +35,14 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf fccfg.enable {
+      warnings = lib.optional (varnishCfg != null) "Configuring varnish via /etc/local/varnish/default.vcl is deprecated, please migrate your Configuration to Nix";
+
+      assertions = [{
+        assertion = !((config.flyingcircus.services.varnish.virtualHosts != {}) && (varnishCfg != null));
+        message  = ''
+          Please remove the file `/etc/local/varnish/default.vcl` if you want to specify your Varnish configuration in Nix code.
+        '';
+      }];
 
       environment.etc = {
         "local/varnish/README.txt".text = ''
@@ -64,16 +50,14 @@ in
 
           Varnish is listening on: ${cfg.http_address}
 
-          Put your configuration into `default.vcl`.
+          Configure varnish via Nix or put your configuration into `default.vcl` (deprecated, please transition to a Nix config).
         '';
-        "local/varnish/default.vcl.example".text = vclExample;
-        "current-config/varnish.vcl".source = configFile;
       };
 
       flyingcircus.services.sensu-client.checks = {
         varnish_status = {
           notification = "varnishadm status reports errors";
-          command = "${cfg.package}/bin/varnishadm -n ${cfg.stateDir} status";
+          command = "${cfg.package}/bin/varnishadm status";
           timeout = 180;
         };
         varnish_http = {
@@ -98,44 +82,15 @@ in
         };
       };
 
-      services.varnish = {
+      flyingcircus.services.varnish = {
         enable = true;
+        extraCommandLine = "-s malloc,${toString cacheMemory}M";
         http_address = lib.concatMapStringsSep " -a "
           (addr: "${addr}:8008") fccfg.listenAddresses;
         config = varnishCfg;
       };
 
       systemd.services = {
-        varnish = {
-          stopIfChanged = false;
-          path = with pkgs; [ varnish procps gawk ];
-          reloadIfChanged = true;
-          restartTriggers = [ configFile ];
-          reload = ''
-            if pgrep -a varnish | grep  -Fq '${varnishCmd}'
-            then
-              config=$(readlink -e /etc/current-config/varnish.vcl)
-              # Varnish doesn't like slashes and numbers in config names.
-              name=$(tr -dc 'a-z' <<< $config)
-              varnishadm -n ${cfg.stateDir} vcl.list | grep -q $name && echo "Config unchanged." && exit
-              varnishadm -n ${cfg.stateDir} vcl.load $name $config && varnishadm -n ${cfg.stateDir} vcl.use $name
-
-              for vcl in $(varnishadm -n ${cfg.stateDir} vcl.list | grep ^available | awk {'print $5'});
-              do
-                varnishadm -n ${cfg.stateDir} vcl.discard $vcl
-              done
-            else
-              echo "Binary or parameters changed. Restarting."
-              systemctl restart varnish
-            fi
-          '';
-
-          serviceConfig = {
-            ExecStart = lib.mkOverride 90 varnishCmd;
-            RestartSec = lib.mkOverride 90 "10s";
-          };
-
-        };
         varnishncsa = rec {
           after = [ "varnish.service" ];
           requires = after;
@@ -149,7 +104,7 @@ in
             PIDFile = "/run/varnish/varnishncsa.pid";
             User = "varnish";
             Group = "varnish";
-            ExecStart = "${cfg.package}/bin/varnishncsa -D -a -w /var/log/varnish.log -P /run/varnish/varnishncsa.pid -n ${cfg.stateDir}";
+            ExecStart = "${cfg.package}/bin/varnishncsa -D -a -w /var/log/varnish.log -P /run/varnish/varnishncsa.pid";
             ExecReload = "${kill} -HUP $MAINPID";
           };
         };
@@ -200,6 +155,5 @@ in
         }
       ];
     }
-
   ];
 }

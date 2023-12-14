@@ -57,8 +57,14 @@ let
 
   vhostsJSON = fclib.jsonFromDir localCfgDir;
 
-  mkVanillaVhostFromFCVhost = name: vhost:
-    (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]);
+  mkVanillaVhostFromFCVhost = name: vhost: let
+    servername = if vhost.serverName != null then vhost.serverName else name;
+  in (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]) // {
+    extraConfig = vhost.extraConfig + (lib.optionalString cfg.logPerVirtualHost ''
+      access_log /var/log/nginx/access-${servername}.log;
+      error_log /var/log/nginx/error-${servername}.log;
+    '');
+  };
 
   virtualHosts = lib.mapAttrs mkVanillaVhostFromFCVhost cfg.virtualHosts;
 
@@ -137,6 +143,15 @@ let
   plainConfigFiles = filter (p: lib.hasSuffix ".conf" p) (fclib.files localCfgDir);
   localHttpConfig = concatStringsSep "\n" (map readFile plainConfigFiles);
 
+  hostsWithLegacyListenOptions =
+    filter
+      (x: x.laExtra != [])
+      (mapAttrsToList
+        (hostname: host: let
+          laExtra = filter (x: x != null) [ host.listenAddress host.listenAddress6 ];
+        in { inherit hostname host laExtra; })
+        cfg.virtualHosts);
+
 in
 {
 
@@ -178,6 +193,14 @@ in
       description = ''
        Configures how often log files are rotated before being removed.
        If count is 0, old versions are removed rather than rotated.
+      '';
+    };
+
+    logPerVirtualHost = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Configures a separate access and error log in the `/var/log/nginx` directory for each virtualHost.
       '';
     };
 
@@ -257,16 +280,38 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      assertions = mapAttrsToList (hostname: host: let
-          laExtra = filter (x: x != null) [ host.listenAddress host.listenAddress6 ];
-        in {
-        assertion = (host.listenAddress == null && host.listenAddress6 == null) || (host.listenAddresses == laExtra);
-        message = ''
-          ${hostname}: listenAddress(6) and the new array-format listenAddresses cannot be mixed
-          Please exclusively use listenAddresses instead:
-            listenAddresses = [ ${escapeShellArgs (host.listenAddresses ++ laExtra)} ];
-        '';
-      }) cfg.virtualHosts;
+      assertions =
+        map
+          ({ hostname, host, laExtra }: {
+            assertion = host.listenAddresses == laExtra;
+            message = ''
+              ${hostname}: listenAddress(6) and the new array-format listenAddresses cannot be mixed
+              Please exclusively use listenAddresses instead:
+                listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
+            '';
+          })
+          hostsWithLegacyListenOptions;
+
+      warnings =
+        (lib.optionals (nginxCfg.masterUser == "root") [''
+          The main process of Nginx is still running as `root` user, which is deprecated.
+          The non-privileged `nginx` (the default) should be used instead.
+          Make sure that certificates are readable by the `nginx` user and remove the `masterUser` setting.
+        '']) ++
+        (lib.optionals (vhostsJSON != {}) [''
+          JSON config in /etc/local/nginx/*.json is deprecated and should be
+          replaced by the standard `services.nginx.virtualHosts.* NixOS options and
+          setting the default listen addresses to all frontend IPs to recreate the behaviour of JSON config:
+          `services.nginx.defaultListenAddresses = config.fclib.network.fe.dualstack.addressesQuoted;`
+          See ${fclib.roleDocUrl "webgateway"} for more details.
+        '']) ++
+        (map
+          ({ hostname, host, laExtra }: ''
+            ${hostname}: listenAddress and listenAddress6 are deprecated and will be removed in 24.05.
+            Please exclusively use listenAddresses instead:
+              listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
+          '')
+          hostsWithLegacyListenOptions);
 
       environment.etc = {
         "local/nginx/README.txt".source = ./README.txt;
