@@ -300,9 +300,7 @@ in
         '']) ++
         (lib.optionals (vhostsJSON != {}) [''
           JSON config in /etc/local/nginx/*.json is deprecated and should be
-          replaced by the standard `services.nginx.virtualHosts.* NixOS options and
-          setting the default listen addresses to all frontend IPs to recreate the behaviour of JSON config:
-          `services.nginx.defaultListenAddresses = config.fclib.network.fe.dualstack.addressesQuoted;`
+          replaced by the `flyingcircus.services.nginx.virtualHosts.* NixOS options.
           See ${fclib.roleDocUrl "webgateway"} for more details.
         '']) ++
         (map
