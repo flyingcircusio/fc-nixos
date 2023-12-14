@@ -82,7 +82,7 @@ with subtest("Ensure SSH logins and sudo keystrokes are logged"):
             k["auditd"]["summary"]["object"]["primary"] for k in keystrokes
         ]
         assert keystrokes == [
-            # XXX: why do we get this twice on 23.11?
+            # Keystrokes run as root are logged for sudo and bash, so it appears twice in the log.
             "rm /tmp/asdf\rexit\r",
             "rm /tmp/asdf\rexit\r",
             "ps auxf\rsudo -i\rexit\r",
