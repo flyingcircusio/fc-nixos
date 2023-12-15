@@ -3,12 +3,12 @@
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
     "rev": "2370ae203043de61d67ddeee10753d3a557cf68c",
-    "sha256": "xIkRdxCGSBTXllV/spzGEwySj/GFS/2IHdnH7Srdnnk="
+    "hash": "sha256-xIkRdxCGSBTXllV/spzGEwySj/GFS/2IHdnH7Srdnnk="
   },
   "nixos-mailserver": {
     "url": "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/",
     "rev": "b3d6e950b71f7f9a29268beb9de03003705765e8",
-    "sha256": "2ai0rYD6o8fQgweO3zKqPbbQBy/SQC8Hs+ZTf+GeXuU=",
+    "hash": "sha256-2ai0rYD6o8fQgweO3zKqPbbQBy/SQC8Hs+ZTf+GeXuU=",
     "fetchSubmodules": false,
     "deepClone": false,
     "leaveDotGit": false
