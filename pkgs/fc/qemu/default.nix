@@ -7,6 +7,8 @@
   libceph,
   ceph_client,
   fetchFromGitHub,
+  utillinux,
+  coreutils,
   qemu_ceph,
   stdenv,
   gptfdisk,
@@ -70,28 +72,59 @@ in
 
     name = "fc.qemu-${version}";
 
-    # tests are run separately in a VM test
-    dontCheck = true;
     dontStrip = true;
 
     propagatedBuildInputs = [
+      coreutils
+      gptfdisk
+      parted
+      procps
+      qemu_ceph
+      systemd
+      utillinux
+      xfsprogs
       py.requests
       py.future
       py.colorama
       py.structlog
       py_consulate
-      py_pytest_patterns
       py.psutil
       py.pyyaml
       py.setuptools
-      (py.toPythonModule libceph)
+      (py.toPythonModule ceph_client)
+      py_pytest_patterns
     ];
 
-    # These are runtime dependencies on the binaries but not intended to become
-    # part of the Python package dependencies and thus must not be placed
-    # in the propagatedBuildInputs.
-    makeWrapperArgs = [
-      "--prefix PATH : ${lib.makeBinPath [procps systemd gptfdisk parted xfsprogs ceph_client qemu_ceph]}"
+    checkInputs = [
+      py.pytest
+      py.pytest-cov
+      py.pytest-timeout
+      py.mock
+
+      # Allow passing through to pytest in the NixOS test.
+      (py.buildPythonPackage rec {
+        pname = "pytest-flakefinder";
+        version = "1.1.0";
+
+        src = py.fetchPypi {
+          inherit pname version;
+          hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
+        };
+
+        propagatedBuildInputs = [ py.pytest ];
+
+        meta = with lib; {
+          description = "Runs tests multiple times to expose flakiness.";
+          homepage = "https://github.com/dropbox/pytest-flakefinder";
+        };
+      })
     ];
 
-  }
+    doCheck = true;
+    checkPhase = ''
+      runHook preCheck
+      PATH="${lib.makeBinPath propagatedBuildInputs}:$PATH" pytest -vv -m "unit"
+      runHook postCheck
+    '';
+
+}
