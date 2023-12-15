@@ -75,6 +75,33 @@ let
         };
       };
 
+      environment.systemPackages = [
+          # Beware: never get the idea to name this script anything that matches
+          # "qemu". The tests include a fixture that kills everything with the
+          # substring "qemu" in it and naming this script incorrectly can cause
+          # the test to kill the test runner itself which in turn causes
+          # confusion that may take about 1 hour to figure out what the hell
+          # is going on.
+          (pkgs.writeShellScriptBin "run-tests" ''
+            cd /root/fc.qemu
+            export PY_IGNORE_IMPORTMISMATCH=1
+            /root/fc.qemu-env/bin/pytest -vv "$@" 2>&1
+            ${if testOpts != "" then ''
+            # If we run with custom test options we might be filtering
+            # for tests and due to the live/not live split either phase
+            # might not have any tests. However, we do not want to
+            # accidentally accept the `no tests found` failure in Hydra.
+            PYTESTRET=$?
+            if [ $PYTESTRET -eq 0 ] || [ $PYTESTRET -eq 5 ]; then
+              # 5 means no tests found, which might happen if we have options
+              true;
+            else
+              exit $PYTESTRET;
+            fi
+            '' else ""}
+          '')
+      ];
+
       services.openssh.enable = lib.mkForce true;
       environment.etc = {
         "ssh_key" = {
@@ -99,10 +126,6 @@ let
         qemuTestEnv = py.buildEnv.override {
           extraLibs = [
             testPackage
-
-            # This should be included through the propagatedBuildInputs
-            # from fc.qemu already but apparently it isn't.
-            (pyPkgs.toPythonModule cephPkgs.libceph)
 
             # Additional packages to run the tests
             pyPkgs.pytest
@@ -340,7 +363,6 @@ in
           else:
              raise
 
-
     def wait(fun, *args, **kw):
       global time_waiting
       print(f"Waiting for `{fun.__name__}(*{args}, **{kw})` ...")
@@ -377,19 +399,7 @@ in
     ########################################################################
 
     with subtest("Run unit tests"):
-      show(host1, textwrap.dedent("""
-        cd /root/fc.qemu
-        set -o pipefail
-        export PATH=/root/fc.qemu-env/bin:$PATH
-        export PY_IGNORE_IMPORTMISMATCH=1
-        pytest -vv ${testOpts} -m 'not live' | tee /dev/kmsg${
-          # providing testOpts might cause no test to be selected (exit code 5), catch that.
-          if testOpts != "" then ''
-          ; PYTESTRET=$?
-          if [ $PYTESTRET -eq 0 ] || [ $PYTESTRET -eq 5 ]; then true; else exit $PYTESTRET; fi''
-          else ""
-        }
-        """).strip().replace("\n", "; "))
+      show(host1, "run-tests ${testOpts} -m 'not live'")
 
     ########################################################################
     # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
@@ -414,9 +424,9 @@ in
 
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb')
-      host1.execute('fc-ceph mon create --size 500m --bootstrap-cluster &> /dev/kmsg')
+      host1.execute('fc-ceph mon create --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
       host1.sleep(5)
-      host1.succeed('ceph -s &> /dev/kmsg')
+      host1.succeed('ceph -s > /dev/kmsg 2>&1')
       host1.succeed('fc-ceph keys mon-update-single-client host1 ceph_osd,ceph_mon,kvm_host salt-for-host-1-dhkasjy9')
       host1.succeed('fc-ceph keys mon-update-single-client host2 kvm_host salt-for-host-2-dhkasjy9')
 
@@ -456,29 +466,15 @@ in
     print("Time spent waiting", time_waiting)
 
     with subtest("Run integration tests"):
-      show(host1, textwrap.dedent("""
-        cd /root/fc.qemu
-        set -o pipefail
-        export PATH=/root/fc.qemu-env/bin:$PATH
-        export PY_IGNORE_IMPORTMISMATCH=1
-        pytest -vv ${testOpts} -m 'live' | tee /dev/kmsg${
-          # providing testOpts might cause no test to be selected (exit code 5), catch that.
-          if testOpts != "" then ''
-          ; PYTESTRET=$?
-          if [ $PYTESTRET -eq 0 ] || [ $PYTESTRET -eq 5 ]; then true; else exit $PYTESTRET; fi''
-          else ""
-        }
-        """).strip().replace("\n", "; "))
+      show(host1, "run-tests ${testOpts} -m 'live'")
 
     show(host1, "df -h")
     show(host1, "rbd ls rbd.hdd")
     show(host1, "rbd ls rbd.ssd")
+    show(host1, "rbd rm rbd/.fc-qemu.maintenance")
 
     with subtest("Check maintenance enter/exit works"):
-      # The dance with unsetting the path here is to ensure
-      # that we do not rely on global PATH settings. This bit us once
-      # when fc-qemu was called from the agent in a "clean" systemd unit.
-      result = show(host1, "PATH= /run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
+      result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
       assert "D enter-maintenance" in result
       assert "D ensure-maintenance-volume" in result
       assert "D creating maintenance volume" in result
@@ -488,9 +484,9 @@ in
       assert "I evacuation-running" in result
       assert "I evacuation-success" in result
 
-      result = show(host1, "PATH= /run/current-system/sw/bin/fc-qemu --verbose maintenance leave")
+      result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance leave")
 
-      result = show(host1, "PATH= /run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
+      result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
       assert "D enter-maintenance" in result
       assert "D ensure-maintenance-volume" in result
       assert "D creating maintenance volume" not in result

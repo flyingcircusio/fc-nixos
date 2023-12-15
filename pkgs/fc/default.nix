@@ -30,12 +30,12 @@ rec {
   multiping = callPackage ./multiping.nix {};
 
   qemu-nautilus = callPackage ./qemu rec {
-    version = "1.4.1";
+    version = "1.4.2";
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "fc.qemu";
       rev = version;
-      hash = "sha256-Lf4i2pwZMpVGuWVohTzM5/x9X6GmFy2kLmgz25uSgFM=";
+      hash = "sha256-5ZDF/sLmlhtltJW4d6vkio27O8ZvkjLAOYohEB08/os=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;
@@ -48,8 +48,9 @@ rec {
   # qemu-dev-nautilus = callPackage ./qemu {
   #   version = "dev";
   #   # builtins.toPath (testPath + "/.")
-  #   src = ../../../../../fc.qemu/.;
+  #   src = ../../../fc.qemu/.;
   #   qemu_ceph = pkgs.qemu-ceph-nautilus;
+  #   ceph_client = pkgs.ceph-nautilus.ceph-client;
   # };
 
   secure-erase = callPackage ./secure-erase {};
