@@ -18,6 +18,7 @@ rec {
   check-xfs-broken = callPackage ./check-xfs-broken {};
   blockdev = callPackage ./blockdev {};
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
+  roundcube-chpasswd-py = callPackage ./roundcube-chpasswd-py {};
   fix-so-rpath = callPackage ./fix-so-rpath {};
   logcheckhelper = callPackage ./logcheckhelper { };
   # XXX: needs Python 2.7, untested on newer platform versions.

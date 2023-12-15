@@ -94,11 +94,11 @@ in {
 
         # refer to the source for a comprehensive list of options:
         # https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/blob/master/default.nix
-        # generate password with `mkpasswd -m sha-256 PASSWD` and put it either
+        # generate password with `mkpasswd -m yescrypt PASSWD` and put it either
         # here (read-only) or into passwdFile (user-changeable)
         "local/mail/users.json.example".text = (toJSON {
           "user@${primaryDomain}" = {
-            hashedPassword = "(use 'mkpasswd -m sha-256 PASSWORD')";
+            hashedPassword = "(use 'mkpasswd -m yescrypt PASSWORD')";
             aliases = [ "user1@${primaryDomain}" ];
             quota = "4G";
             sieveScript = null;
