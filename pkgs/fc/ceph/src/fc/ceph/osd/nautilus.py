@@ -500,10 +500,10 @@ class GenericOSD(object):
 
         Raises a SystemExit if the check fails.
         """
-        id_str = " ".join(map(str, ids))
+        ids = map(str, ids)
         if strict_safety_check:
             try:
-                run.ceph("osd", "safe-to-destroy", id_str)
+                run.ceph("osd", "safe-to-destroy", *ids)
             except CalledProcessError as e:
                 print(
                     # fmt: off
@@ -516,7 +516,7 @@ class GenericOSD(object):
                 sys.exit(e.returncode)
         else:
             try:
-                run.ceph("osd", "ok-to-stop", id_str)
+                run.ceph("osd", "ok-to-stop", *ids)
             except CalledProcessError as e:
                 print(
                     # fmt: off
