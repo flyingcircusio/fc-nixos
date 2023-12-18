@@ -1,13 +1,39 @@
-import ./make-test-python.nix ({ pkgs, ... }: let
+import ./make-test-python.nix ({ pkgs, testlib, ... }: let
   varnishport = 8008;
   serverport = 8080;
 in {
   name = "webproxy";
   nodes = {
+    webproxy_old_varnish =
+      {lib, ... }: let
+        serverport = 8080;
+      in {
+        imports = [ (testlib.fcConfig { id = 1; }) ];
+
+        flyingcircus.roles.webproxy.enable = true;
+
+        environment.etc."local/varnish/default.vcl".text = ''
+          vcl 4.0;
+
+          backend test {
+            .host = "127.0.0.1";
+            .port = "${builtins.toString serverport}";
+          }
+        '';
+
+        systemd.services.helloserver = {
+          wantedBy = [ "multi-user.target" ];
+          script = ''
+            echo 'Hello World!' > hello.txt
+            ${pkgs.python3.interpreter} -m http.server ${builtins.toString serverport} >&2
+          '';
+        };
+      };
+
     webproxy =
       { lib, ... }:
       {
-        imports = [ ../nixos ../nixos/roles ];
+        imports = [ (testlib.fcConfig { id = 2; }) ];
 
         specialisation.varnish-switch-test.configuration = let
           switchport = serverport + 1;
@@ -46,16 +72,6 @@ in {
           '';
         };
 
-        flyingcircus.enc.parameters.interfaces.srv = {
-          mac = "52:54:00:12:34:56";
-          bridged = false;
-          networks = {
-            "192.168.101.0/24" = [ "192.168.101.1" ];
-            "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::3" ];
-          };
-          gateways = {};
-        };
-
         systemd.services.helloserver = {
           wantedBy = [ "multi-user.target" ];
           script = ''
@@ -65,6 +81,7 @@ in {
         };
       };
   };
+
   testScript = ''
     webproxy.wait_for_unit("varnish.service")
     webproxy.wait_for_unit("varnishncsa.service")
@@ -90,5 +107,12 @@ in {
 
       assert old_pid == new_pid, f"pid is different: {old_pid} != {new_pid}"
       assert old_port != new_port, f"port is identical: {old_port} == {new_port}"
+
+    with subtest("old varnish config should work before and after reload"):
+      webproxy_old_varnish.wait_for_unit("varnish.service")
+      webproxy_old_varnish.wait_for_unit("helloserver.service")
+      webproxy_old_varnish.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
+      webproxy_old_varnish.systemctl("reload varnish")
+      webproxy_old_varnish.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
   '';
 })

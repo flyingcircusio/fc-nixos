@@ -65,16 +65,10 @@
   commandsfile = pkgs.writeText "varnishd-commands" ''
     ${vhostActivationCommands}
     ${mainActivationCommands}
-    '';
-
-  # Only activate the NixOS module config if there is no legacy config.
-  commandsFileArg = lib.optionalString (cfg.config == null) "-I ${commandsfile}";
+  '';
 in {
   options.flyingcircus.services.varnish = {
     enable = mkEnableOption "varnish";
-    config = mkOption {
-      type = types.nullOr (types.either types.str types.path);
-    };
     extraCommandLine = mkOption {
       type = types.str;
       default = "";
@@ -109,9 +103,9 @@ in {
     services.varnish = {
       enable = true;
       enableConfigCheck = false;
-      extraCommandLine = lib.concatStringsSep " " [ cfg.extraCommandLine commandsFileArg ];
+      extraCommandLine = lib.concatStringsSep " " [ cfg.extraCommandLine "-I ${commandsfile}" ];
       inherit (cfg) http_address;
-      config = if cfg.config == null then ''
+      config = ''
         vcl 4.0;
         import std;
 
@@ -123,14 +117,14 @@ in {
         sub vcl_recv {
           return (synth(503, "Varnish is starting up"));
         }
-      '' else cfg.config;
+      '';
     };
 
     systemd.services.varnish = let
       vcfg = config.services.varnish;
     in {
       reloadIfChanged = true;
-      restartTriggers = [ cfg.extraCommandLine vcfg.package cfg.http_address cfg.config ];
+      restartTriggers = [ cfg.extraCommandLine vcfg.package cfg.http_address ];
       reload = ''
         vadm="${vcfg.package}/bin/varnishadm -n ${vcfg.stateDir}"
         cat ${commandsfile} | $vadm
