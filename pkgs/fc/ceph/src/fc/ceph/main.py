@@ -5,10 +5,12 @@ from pathlib import Path
 
 import fc.ceph.keys
 import fc.ceph.logs
+import fc.ceph.luks
 import fc.ceph.maintenance
 import fc.ceph.mgr
 import fc.ceph.mon
 import fc.ceph.osd
+import fc.ceph.util
 from fc.ceph import Environment
 
 CONFIG_FILE_PATH = Path("/etc/ceph/fc-ceph.conf")
@@ -20,7 +22,7 @@ class SplitArgs(argparse.Action):
         setattr(namespace, self.dest, values.split(","))
 
 
-def main(args=sys.argv[1:]):
+def ceph(args=sys.argv[1:]):
     hostname = socket.gethostname()
 
     parser = argparse.ArgumentParser()
@@ -63,26 +65,6 @@ def main(args=sys.argv[1:]):
     )
     parser_destroy.set_defaults(action="destroy")
 
-    parser_create_fs = osd_sub.add_parser(
-        "create-filestore", help="Create and activate a filestore OSD."
-    )
-    parser_create_fs.add_argument("device", help="Blockdevice to use")
-    parser_create_fs.add_argument(
-        "--journal",
-        default="external",
-        choices=["external", "internal"],
-        help="Type of journal (on same disk or external)",
-    )
-    parser_create_fs.add_argument(
-        "--journal-size",
-        default=fc.ceph.osd.DEFAULT_JOURNAL_SIZE,
-        help="Size of journal (LVM size units allowed).",
-    )
-    parser_create_fs.add_argument(
-        "--crush-location", default=f"host={hostname}"
-    )
-    parser_create_fs.set_defaults(action="create_filestore")
-
     parser_create_bs = osd_sub.add_parser(
         "create-bluestore", help="Create and activate a bluestore OSD."
     )
@@ -95,6 +77,12 @@ def main(args=sys.argv[1:]):
     )
     parser_create_bs.add_argument(
         "--crush-location", default=f"host={hostname}"
+    )
+    parser_create_bs.add_argument(
+        "--encrypt",
+        action=argparse.BooleanOptionalAction,
+        default=False,  # FIXME: at some point, decide to switch defaults
+        help="(Experimental) Set up OSD disk volumes with encryption",
     )
     parser_create_bs.set_defaults(action="create_bluestore")
 
@@ -154,19 +142,6 @@ def main(args=sys.argv[1:]):
         "rebuild", help="Rebuild an OSD by destroying and creating it again."
     )
     parser_rebuild.add_argument(
-        "--journal-size",
-        default=fc.ceph.osd.DEFAULT_JOURNAL_SIZE,
-        help="Size of journal (LVM size units allowed). "
-        "Only used if rebuild target is a filestore OSD.",
-    )
-    parser_rebuild.add_argument(
-        "--target-objectstore-type",
-        "-T",
-        choices=fc.ceph.osd.OBJECTSTORE_TYPES,
-        help="Type of the OSD after rebuilding, defaults to keeping the current "
-        "objectstore type.\nThe current type is detected automatically.",
-    )
-    parser_rebuild.add_argument(
         "--no-safety-check",
         action="store_true",
         help="Skip the check whether an OSD is safe to destroy without "
@@ -179,6 +154,13 @@ def main(args=sys.argv[1:]):
         help="Stricter check whether destruction/stopping of the OSD reduces "
         "the data availability at all, even when it is not below the point of "
         "cluster availability.",
+    )
+    parser_rebuild.add_argument(
+        "--encrypt",
+        action=argparse.BooleanOptionalAction,
+        default=None,  # unspecified, use setting of existing OSD
+        help="Explicitly specify whether the rebuilt OSD shall be encrypted. "
+        "By default, use encryption setting of previous OSD.",
     )
     parser_rebuild.add_argument(
         "ids",
@@ -215,6 +197,12 @@ def main(args=sys.argv[1:]):
         "--lvm-vg",
         help="Volume Group where the MON volume is created. "
         "Defaults to using the journal VGs.",
+    )
+    parser_create.add_argument(
+        "--encrypt",
+        action=argparse.BooleanOptionalAction,
+        default=False,  # FIXME: at some point, decide to switch defaults
+        help="(Experimental) Set up manager volumes with encryption",
     )
     parser_create.set_defaults(action="create")
 
@@ -254,6 +242,12 @@ def main(args=sys.argv[1:]):
         "--lvm-vg",
         help="Volume Group where the MGR volume is created. "
         "Defaults to using the journal VGs.",
+    )
+    parser_create.add_argument(
+        "--encrypt",
+        action=argparse.BooleanOptionalAction,
+        default=False,  # FIXME: at some point, decide to switch defaults
+        help="(Experimental) Set up manager volumes with encryption",
     )
     parser_create.set_defaults(action="create")
 
@@ -397,8 +391,81 @@ requests. Useful for identifying slacky OSDs.""",
         action()
         sys.exit(1)
 
+    if args.get("encrypt"):
+        fc.ceph.luks.KEYSTORE.admin_key_for_input()
+
     environment = Environment(CONFIG_FILE_PATH)
     subsystem = environment.prepare(subsystem_factory)
+    action = getattr(subsystem, action)
+    action_statuscode = action(**args)
+
+    # optionally allow actions to return a statuscode
+    if isinstance(action_statuscode, int):
+        sys.exit(action_statuscode)
+
+
+def luks(args=sys.argv[1:]):
+    parser = argparse.ArgumentParser()
+    parser.set_defaults(subsystem=None, action=None)
+
+    subparsers = parser.add_subparsers()
+
+    # Note: subparser name bindings like `parser_create` are only ephemeral
+    # during construction of individual subcommands and might be re-used for
+    # different command sections (mon, osd, ...)
+
+    keystore = subparsers.add_parser("keystore", help="Manage the keystore.")
+    keystore.set_defaults(
+        subsystem=fc.ceph.luks.LUKSKeyStoreManager, action=keystore.print_usage
+    )
+    keystore_sub = keystore.add_subparsers()
+
+    parser_destroy = keystore_sub.add_parser(
+        "destroy", help="Destroy the keystore."
+    )
+    parser_destroy.add_argument(
+        "--overwrite",
+        action=argparse.BooleanOptionalAction,
+        default=True,  # FIXME: at some point, decide to switch defaults
+        help="Fully overwrite the underlying physical disk with random data.",
+    )
+    parser_destroy.set_defaults(action="destroy")
+
+    parser_create = keystore_sub.add_parser(
+        "create", help="Create and initialize the keystore."
+    )
+    parser_create.add_argument("device", help="Blockdevice to use")
+    parser_create.set_defaults(action="create")
+
+    parser_rekey = keystore_sub.add_parser("rekey", help="Rekey volumes.")
+    parser_rekey.add_argument(
+        "--lvs",
+        help="Names of encrypted LVs to update (globbing allowed), e.g. 'osd-1*'.",
+        default="*",
+    )
+    parser_rekey.add_argument(
+        "--slot",
+        help="Which slot to update.",
+        choices=["local", "admin"],
+        default="local",
+    )
+    parser_rekey.set_defaults(action="rekey")
+
+    # extract parsed arguments from object into a dict
+    args = vars(parser.parse_args(args))
+    subsystem_factory = args.pop("subsystem")
+    action = args.pop("action")
+
+    # print general help when no valid subcommand has been supplied
+    if not (subsystem_factory and action):
+        parser.print_help()
+        sys.exit(1)
+    # print subcommand-specific usage info
+    elif callable(action) and action.__name__ == "print_usage":
+        action()
+        sys.exit(1)
+
+    subsystem = subsystem_factory()
     action = getattr(subsystem, action)
     action_statuscode = action(**args)
 

@@ -1,0 +1,21 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools"]
+
+[project]
+name = "fc.ceph"
+version = "2.1"
+description = "Collection of FC-specific Ceph utilities."
+license = { text = "ZPL"}
+classifiers=["Programming Language :: Python :: 3"]
+authors = [
+  { name = "Flying Circus Internet Operations GmbH", email = "mail@flyingcircus.io" },
+]
+dependencies = [
+    "requests",
+    "rich",
+]
+
+[project.entry-points.console_scripts]
+fc-ceph="fc.ceph.main:ceph"
+fc-luks="fc.ceph.main:luks"
