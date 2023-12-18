@@ -122,8 +122,7 @@ def main(args=sys.argv[1:]):
     )
     parser_deactivate.add_argument(
         "ids",
-        help="IDs of OSD to deactivate. "
-        "Use `all` to deactivate all local OSDs.",
+        help="IDs of OSD to deactivate. Use `all` to deactivate all local OSDs.",
     )
     parser_deactivate.add_argument(
         "--no-safety-check",
@@ -386,7 +385,6 @@ requests. Useful for identifying slacky OSDs.""",
 
     # extract parsed arguments from object into a dict
     args = vars(parser.parse_args(args))
-
     subsystem_factory = args.pop("subsystem")
     action = args.pop("action")
 

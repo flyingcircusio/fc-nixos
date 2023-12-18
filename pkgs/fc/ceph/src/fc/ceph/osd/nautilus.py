@@ -137,8 +137,9 @@ class OSDManager(object):
         nonblocking: bool = False,
     ):
         """
-        entry point for low-level OSD operations that need to activate themselfs again,
-        without having to know about systemd units"""
+        entry point for low-level OSD operations that need to activate
+        themselfs again, without having to know about systemd units
+        """
         # this is then also allowed to bubble up errors
 
         if as_systemd_unit:
@@ -156,9 +157,9 @@ class OSDManager(object):
         strict_safety_check: bool,
         force_objectstore_type: Optional[str] = None,
     ):
-        ids = self._parse_ids(ids, allow_non_local=f"DESTROY {ids}")
+        ids_ = self._parse_ids(ids, allow_non_local=f"DESTROY {ids}")
 
-        for id_ in ids:
+        for id_ in ids_:
             try:
                 osd = OSD(id_, type=force_objectstore_type)
                 osd.purge(no_safety_check, strict_safety_check)
@@ -173,28 +174,28 @@ class OSDManager(object):
         no_safety_check: bool = False,
         strict_safety_check: bool = False,
     ):
-        ids = self._parse_ids(ids)
+        ids_ = self._parse_ids(ids)
 
         if as_systemd_unit:
-            if len(ids) > 1:
+            if len(ids_) > 1:
                 raise RuntimeError("Only single OSDs may be called as a unit.")
-            id_ = ids[0]
+            id_ = ids_[0]
             osd = OSD(id_)
             self._deactivate_single(osd, as_systemd_unit, flush)
         else:
             if no_safety_check:
                 print("WARNING: Skipping stop safety check.")
             else:
-                GenericOSD.run_safety_check(ids, strict_safety_check)
+                GenericOSD.run_safety_check(ids_, strict_safety_check)
             threads = []
-            for id_ in ids:
+            for id_ in ids_:
                 try:
                     osd = OSD(id_)
                     thread = threading.Thread(
                         target=lambda: self._deactivate_single(
                             osd, as_systemd_unit, flush
                         ),
-                        name=id_,
+                        name=str(id_),
                     )
                     thread.start()
                     threads.append(thread)
@@ -224,9 +225,9 @@ class OSDManager(object):
             osd.flush()
 
     def reactivate(self, ids: str):
-        ids = self._parse_ids(ids)
+        ids_ = self._parse_ids(ids)
 
-        for id_ in ids:
+        for id_ in ids_:
             osd = OSD(id_)
             wait_for_clean_cluster()
             try:
@@ -262,15 +263,14 @@ class OSDManager(object):
             print(f"Device does not exist: {device}")
         try:
             partition_table = run.json.sfdisk(device)["partitiontable"]
-        except Exception as e:
+        except CalledProcessError as e:
             if b"does not contain a recognized partition table" not in e.stderr:
                 # Not an empty disk, propagate the error
                 raise
         else:
             if partition_table["partitions"]:
                 print(
-                    "Device already has a partition. "
-                    "Refusing to prepare journal VG."
+                    "Device already has a partition. Refusing to prepare journal VG."
                 )
                 sys.exit(1)
 

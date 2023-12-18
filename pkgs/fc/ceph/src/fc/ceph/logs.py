@@ -6,7 +6,6 @@ the OSD identifier is counted. Prints a top-N list of OSDs having slow
 requests. Useful for identifying slacky OSDs.
 """
 
-import argparse
 import collections
 import gzip
 import re
