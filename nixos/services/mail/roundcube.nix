@@ -2,7 +2,7 @@
 
 let
   role = config.flyingcircus.roles.mailserver;
-  chpasswd = "${pkgs.fc.roundcube-chpasswd}/bin/roundcube-chpasswd";
+  chpasswd = "${pkgs.fc.roundcube-chpasswd-py}/bin/roundcube-chpasswd";
   fclib = config.fclib;
 
 in lib.mkMerge [
@@ -45,7 +45,7 @@ in lib.mkMerge [
         $config['archive_type'] = 'year';
         $config['managesieve_vacation'] = 1;
         $config['mime_types'] = '${pkgs.mailcap}/etc/mime.types';
-        $config['password_chpasswd_cmd'] = '/run/wrappers/bin/sudo -u vmail ${chpasswd} ${role.passwdFile}';
+        $config['password_chpasswd_cmd'] = '/run/wrappers/bin/sudo -u vmail ${chpasswd} --passwd-file ${role.passwdFile}';
         $config['password_confirm_current'] = true;
         $config['password_driver'] = 'chpasswd';
         $config['password_minimum_length'] = 10;

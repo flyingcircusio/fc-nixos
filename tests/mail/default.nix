@@ -183,7 +183,7 @@ in
   };
   testScript = let
     passwdFile = "/var/lib/dovecot/passwd";
-    chpasswd = "${pkgs.fc.roundcube-chpasswd}/bin/roundcube-chpasswd";
+    chpasswd = "${pkgs.fc.roundcube-chpasswd-py}/bin/roundcube-chpasswd";
   in ''
     with subtest("postsuper sudo rule should be present for service group"):
       mail.succeed('grep %service /etc/sudoers | grep -q postsuper')
@@ -205,7 +205,7 @@ in
       mail.succeed(
         "sudo -u roundcube "
         "sudo -u vmail ${chpasswd} "
-        "${passwdFile} "
+        "--passwd-file ${passwdFile} "
         "<<< 'user1@example.local:pass'"
       )
       mail.succeed("grep user1@example.local: ${passwdFile}")

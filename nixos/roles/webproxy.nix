@@ -10,7 +10,9 @@ let
   kill = "${pkgs.coreutils}/bin/kill";
 
   # if there is a default.vcl file, use that instead of the NixOS Varnish configuration
-  varnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl null;
+  rawVarnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl null;
+  # this is required for testing since the default.vcl file does not exist at build time
+  varnishCfg = if rawVarnishCfg == null && config.environment.etc ? "local/varnish/default.vcl" then config.environment.etc."local/varnish/default.vcl".text else null;
 in
 {
   options = with lib; {
@@ -38,7 +40,7 @@ in
       warnings = lib.optional (varnishCfg != null) "Configuring varnish via /etc/local/varnish/default.vcl is deprecated, please migrate your Configuration to Nix";
 
       assertions = [{
-        assertion = !((config.flyingcircus.services.varnish.virtualHosts != {}) && (varnishCfg != null));
+        assertion = builtins.length (builtins.attrNames config.flyingcircus.services.varnish.virtualHosts) <= 1 || builtins.isNull varnishCfg;
         message  = ''
           Please remove the file `/etc/local/varnish/default.vcl` if you want to specify your Varnish configuration in Nix code.
         '';
@@ -87,7 +89,12 @@ in
         extraCommandLine = "-s malloc,${toString cacheMemory}M";
         http_address = lib.concatMapStringsSep " -a "
           (addr: "${addr}:8008") fccfg.listenAddresses;
-        config = varnishCfg;
+        virtualHosts = lib.optionalAttrs (varnishCfg != null) {
+          "default-vcl" = {
+            condition = "true";
+            config = varnishCfg;
+          };
+        };
       };
 
       systemd.services = {
