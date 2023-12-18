@@ -12,7 +12,7 @@ let
   # if there is a default.vcl file, use that instead of the NixOS Varnish configuration
   rawVarnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl null;
   # this is required for testing since the default.vcl file does not exist at build time
-  varnishCfg = if rawVarnishCfg == null && config.environment.etc ? "local/varnish/default.vcl" then config.environment.etc."local/varnish/default.vcl".text else null;
+  varnishCfg = if rawVarnishCfg == null && config.environment.etc ? "local/varnish/default.vcl" then config.environment.etc."local/varnish/default.vcl".text else rawVarnishCfg;
 in
 {
   options = with lib; {
