@@ -127,6 +127,7 @@ let
   # The exclusion list is applied to overlay packages and important packages.
   # Supports excluding packages from nested sets using "dotted names" like "fc.blockdev".
   excludedPkgNames = [
+    "discourse"
   ];
 
   overlay = import ../pkgs/overlay.nix pkgs pkgs;
