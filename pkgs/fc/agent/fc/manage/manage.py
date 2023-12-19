@@ -2,6 +2,7 @@
 
 import os
 import re
+import socket
 import subprocess
 from pathlib import Path
 
@@ -142,8 +143,13 @@ def initial_switch_if_needed(log, enc):
 
     try:
         name = enc["name"]
-        log.debug("fc-manage-init-set-hostname", hostname=name)
-        subprocess.check_call(["hostnamectl", "--transient", "hostname", name])
+        reported_hostname = socket.gethostname()
+        log.debug(
+            "fc-manage-init-set-hostname",
+            enc_hostname=name,
+            reported_hostname=reported_hostname,
+        )
+        subprocess.check_call(["/run/current-system/sw/bin/hostname", name])
     except Exception:
         log.warn(
             "fc-manage-init-hostname-failed",
