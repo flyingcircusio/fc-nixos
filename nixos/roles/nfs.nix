@@ -80,6 +80,7 @@ in
           fsType = "nfs4";
           options = [
             "rw"
+            "noauto"
             "soft"
             "rsize=8192"
             "wsize=8192"
@@ -87,6 +88,31 @@ in
           ];
           noCheck = true;
         };
+      };
+
+      # SystemD strictly doesn't want to implement any kind of retry-logic
+      # around mount units. So lets not use them.
+      systemd.services.mount-nfs-shared = {
+          path = [ pkgs.util-linux ];
+          wantedBy = [ "remote-fs.target" ];
+          before = [ "remote-fs.target" ];
+          reloadIfChanged=true;
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          reload = ''
+            set -x
+            while ! mount -o remount ${mountpoint}; do
+              sleep 5;
+            done
+          '';
+          script = ''
+            set -x
+            while ! mountpoint ${mountpoint}; do
+              mount ${mountpoint} || sleep 5
+            done
+          '';
       };
 
       systemd.tmpfiles.rules = [
@@ -109,6 +135,17 @@ in
       systemd.services.nfs-mountd.reload = ''
         ${pkgs.nfs-utils}/bin/exportfs -ra
       '';
+      systemd.services.nfs-server.serviceConfig.ExecStartPre = let
+        exportScript = pkgs.writeShellScript "ensure-exports" ''
+          echo "Retrying failed exports .."
+          while exportfs -r 2>&1 | grep Fail; do
+            sleep 5
+          done
+          echo "All exports successful."
+          '';
+      in
+        lib.mkForce exportScript;
+
     })
 
   ];
