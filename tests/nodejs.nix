@@ -19,8 +19,8 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
       "${nodejs_20}": "20",
       "${nodejs_21}": "21",
       "${nodejs-slim_18}": "18",
-      "${nodejs-slim}": "18",
-      "${nodejs}": "18",
+      "${nodejs-slim}": "20",
+      "${nodejs}": "20",
       "${nodejs-slim_20}": "20",
       "${nodejs-slim_21}": "21",
     }
