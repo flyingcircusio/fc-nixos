@@ -261,7 +261,7 @@ in {
       agent.collect-garbage = true;
     };
 
-    programs.ssh.package = pkgs.openssh_8_7;
+    programs.ssh.package = pkgs.openssh_9_6;
 
     # implementation for flyingcircus.passwordlessSudoRules
     security.sudo.extraRules = let
