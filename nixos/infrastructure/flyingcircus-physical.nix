@@ -30,7 +30,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       kernelParams = [
         # Drivers
         "dolvm"
-        "ipmi_watchdog.timeout=60"
         "igb.InterruptThrottleRate=1"
         "ixgbe.InterruptThrottleRate=1"
       ];

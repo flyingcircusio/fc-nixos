@@ -349,9 +349,6 @@ in {
       ];
 
       ctrlAltDelUnit = "poweroff.target";
-      extraConfig = ''
-        RuntimeWatchdogSec=60
-      '';
     };
 
 
