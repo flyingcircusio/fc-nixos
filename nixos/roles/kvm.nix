@@ -45,6 +45,10 @@ in
 
   config = lib.mkIf role.enable {
 
+    # Do not enable the watchdog for KVM hosts globally as we dealt with
+    # way too many times.
+    flyingcircus.ipmi.watchdogTimeout = fclib.mkPlatform 0;
+
     flyingcircus.services.ceph.client = {
       enable = true;
       cephRelease = role.cephRelease;
