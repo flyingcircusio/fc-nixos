@@ -30,7 +30,9 @@ class GenericLogicalVolume:
         return False
 
     @classmethod
-    def create(cls, name, vg_name, disk, encrypt, size) -> "GenericLogicalVolume":
+    def create(
+        cls, name, vg_name, disk, encrypt, size
+    ) -> "GenericLogicalVolume":
         if cls.exists(name):
             raise RuntimeError("Volume already exists.")
         lv_factory = EncryptedLogicalVolume if encrypt else LogicalVolume
@@ -96,7 +98,9 @@ class LogicalVolume(GenericLogicalVolume):
         """
         pvs = run.json.pvs("-S", f"lv_name={self.name}", "--all")
         if not len(pvs) == 1:
-            raise ValueError(f"Unexpected number of PVs in OSD's RG: {len(pvs)}")
+            raise ValueError(
+                f"Unexpected number of PVs in OSD's RG: {len(pvs)}"
+            )
         pv = pvs[0]["pv_name"]
         # Find the parent
         for candidate in run.json.lsblk_linear(pv, "-o", "name,pkname"):
@@ -129,7 +133,9 @@ class LogicalVolume(GenericLogicalVolume):
 
     def activate(self):
         # find LVM vg
-        lv = run.json.lvs("-S", f"lv_name=~^{self.escaped_name}$", "-o", "vg_name")
+        lv = run.json.lvs(
+            "-S", f"lv_name=~^{self.escaped_name}$", "-o", "vg_name"
+        )
         if (discovered_lvs := len(lv)) > 1:
             raise RuntimeError(
                 f"Expected only one LV named {self.name}, but "
@@ -137,7 +143,8 @@ class LogicalVolume(GenericLogicalVolume):
             )
         elif discovered_lvs == 0:
             raise LookupError(
-                f"No LV found named {self.name}, it might have " "been already deleted."
+                f"No LV found named {self.name}, it might have "
+                "been already deleted."
             )
         self._vg_name = lv[0]["vg_name"]
 

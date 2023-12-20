@@ -2,8 +2,9 @@ import os
 from pathlib import Path
 from sys import argv
 
-import fc.ceph.main
 import pytest
+
+import fc.ceph.main
 
 
 def test_main(capsys):
@@ -52,7 +53,9 @@ def test_main_locks_memory(capsys):
             print(line)
             if "-" in line:
                 if file not in ["[vdso]", None]:
-                    assert size == locked, f"{file}, locked={locked}, size={size}"
+                    assert (
+                        size == locked
+                    ), f"{file}, locked={locked}, size={size}"
                     print(file, size, locked)
                 file = line.split()[-1]
                 size = locked = 0

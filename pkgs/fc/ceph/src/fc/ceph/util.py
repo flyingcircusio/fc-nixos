@@ -98,7 +98,9 @@ class Runner(object):
 
             options.update(kw)
 
-            console.print("$", name, " ".join([str(a) for a in args]), style="grey50")
+            console.print(
+                "$", name, " ".join([str(a) for a in args]), style="grey50"
+            )
 
             check = options["check"]
             options["check"] = True
@@ -152,7 +154,9 @@ def mount_status(mountpoint):
 
 def kill(pid_file):
     if not os.path.exists(pid_file):
-        console.print(f"PID file {pid_file} not found. Not killing.", style="red")
+        console.print(
+            f"PID file {pid_file} not found. Not killing.", style="red"
+        )
         return
 
     with open(pid_file) as f:
