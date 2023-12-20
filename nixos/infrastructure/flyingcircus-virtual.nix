@@ -86,9 +86,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   systemd = {
     ctrlAltDelUnit = "poweroff.target";
-    extraConfig = ''
-      RuntimeWatchdogSec=60
-    '';
 
     timers.serial-console-liveness = {
       description = "Timer for Serial console liveness marker";
