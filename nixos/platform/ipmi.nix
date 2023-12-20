@@ -22,6 +22,11 @@ in {
         description = "Manage the IPMI controller.";
         type = types.bool;
       };
+      watchdogTimeout = mkOption {
+         default = 300;
+         description = "Watchdog timeout (0 = off)";
+         type = types.int;
+      };
       check_additional_options = mkOption {
         default = "";
         description = "Additional options to pass to `check_ipmi_sensor`.";
@@ -36,6 +41,10 @@ in {
 
     boot.blacklistedKernelModules = [ "wdat_wdt" ];
     boot.kernelModules = [ "ipmi_watchdog" ];
+
+    systemd.extraConfig = ''
+      RuntimeWatchdogSec=${toString cfg.ipmi.watchdogTimeout}
+    '';
 
     services.udev.extraRules = ''
       KERNEL=="ipmi[0-9]", GROUP="adm", MODE="0660"
