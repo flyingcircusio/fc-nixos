@@ -590,9 +590,9 @@
     "version": "2.6.0"
   },
   "openssh": {
-    "name": "openssh-9.3p2",
+    "name": "openssh-9.6p1",
     "pname": "openssh",
-    "version": "9.3p2"
+    "version": "9.6p1"
   },
   "openssl": {
     "name": "openssl-3.0.12",
