@@ -8,29 +8,6 @@ let
   fclib = config.fclib;
 
   interfaces = filter (i: i.vlan != "ipmi" && i.vlan != "lo") (lib.attrValues fclib.network);
-  managedInterfaces = filter (i: i.policy != "unmanaged" && i.policy != "null") interfaces;
-  physicalInterfaces = filter (i: i.policy != "vxlan" && i.policy != "underlay") managedInterfaces;
-
-  nonUnderlayInterfaces = filter (i: i.policy != "underlay") managedInterfaces;
-  bridgedInterfaces = filter (i: i.bridged) managedInterfaces;
-  vxlanInterfaces = filter (i: i.policy == "vxlan") managedInterfaces;
-  ethernetDevices =
-    (lib.forEach physicalInterfaces
-      (iface: {
-        name = if iface.bridged then iface.layer2device else iface.device;
-        mtu = iface.mtu;
-        mac = iface.mac;
-      })
-    ) ++
-    (if isNull fclib.underlay then []
-     else lib.mapAttrsToList
-       (name: value: {
-         name = name;
-         mtu = fclib.underlay.mtu;
-         mac = value;
-       })
-       fclib.underlay.interfaces
-    );
 
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
 
@@ -58,15 +35,10 @@ let
 
   interfaceRules = lib.concatMapStrings
     (interface: ''
-      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.name}"
-      '') ethernetDevices;
+      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.physicalDevice}"
+      '') interfaces;
 in
 {
-  # The NixOS module for FRR is only available in later versions of
-  # NixOS
-  imports = [
-    <nixpkgs-23.05/nixos/modules/services/networking/frr.nix>
-  ];
 
   config = rec {
     environment.etc."host.conf".text = ''
@@ -95,7 +67,7 @@ in
       # { ethfe = { ... }; ethsrv = { }; ... }
       # or
       # { brfe = { ... }; brsrv = { }; ethsto = { }; ... }
-      interfaces = listToAttrs ((map (interface:
+      interfaces = listToAttrs (map (interface:
         (lib.nameValuePair "${interface.device}" {
           ipv4.addresses = interface.v4.attrs;
           ipv4.routes =
@@ -142,29 +114,13 @@ in
               defaultRoutes ++ additionalRoutes;
 
           mtu = interface.mtu;
-        })) nonUnderlayInterfaces) ++
-      (if isNull fclib.underlay then [] else [(
-        lib.nameValuePair "underlay" {
-          ipv4.addresses = [{
-            address = fclib.underlay.loopback;
-            prefixLength = 32;
-          }];
-          tempAddress = "disabled";
-          mtu = fclib.underlay.mtu;
-        }
-      )]) ++
-      (if isNull fclib.underlay then [] else
-        (map (iface: lib.nameValuePair iface {
-          tempAddress = "disabled";
-          mtu = fclib.underlay.mtu;
-        })
-          (attrNames fclib.underlay.interfaces))));
+        })) interfaces);
 
       bridges = listToAttrs (map (interface:
         (lib.nameValuePair
-          "${interface.device}"
-          { interfaces = interface.attachedDevices; }))
-        bridgedInterfaces);
+            "${interface.device}"
+            { interfaces = interface.attachedDevices; }))
+        (filter (interface: interface.bridged) interfaces));
 
       resolvconf.extraOptions = [ "ndots:1" "timeout:1" "attempts:6" ];
 
@@ -188,10 +144,6 @@ in
 
       wireguard.enable = true;
 
-      firewall.trustedInterfaces =
-        if isNull fclib.underlay || config.flyingcircus.infrastructureModule != "flyingcircus-physical"
-        then []
-        else [ "brsto" "brstb" ] ++ (attrNames fclib.underlay.interfaces);
     };
 
     flyingcircus.activationScripts = {
@@ -218,104 +170,31 @@ in
     services.udev.initrdRules = interfaceRules;
     services.udev.extraRules = interfaceRules;
 
-    services.frr = lib.mkIf (!isNull fclib.underlay) {
-      zebra = {
-        enable = true;
-        config = ''
-          frr version 8.5.1
-          frr defaults datacenter
-          !
-          route-map set-source-address permit 1
-           set src ${fclib.underlay.loopback}
-          exit
-          !
-          ip protocol bgp route-map set-source-address
-        '';
-      };
-      bgp = {
-        enable = true;
-        config = ''
-          frr version 8.5.1
-          frr defaults datacenter
-          !
-          router bgp ${toString fclib.underlay.asNumber}
-           bgp router-id ${fclib.underlay.loopback}
-           no bgp ebgp-requires-policy
-           neighbor switches peer-group
-           neighbor switches remote-as external
-           neighbor switches capability extended-nexthop
-           ${lib.concatMapStringsSep "\n "
-             (name: "neighbor ${name} interface peer-group switches")
-             (attrNames fclib.underlay.interfaces)
-           }
-           !
-           address-family ipv4 unicast
-            redistribute connected
-            neighbor switches prefix-list underlay-import in
-            neighbor switches prefix-list underlay-export out
-           exit-address-family
-           !
-           address-family l2vpn evpn
-            neighbor switches activate
-            advertise-all-vni
-            advertise-svi-ip
-           exit-address-family
-          !
-          exit
-          !
-          ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
-          !
-          ${lib.concatImapStringsSep "\n"
-            (idx: net:
-              "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
-            )
-            fclib.underlay.subnets
-           }
-          !
-          route-map accept-routes permit 1
-          exit
-        '';
-      };
-    };
-
-    # Don't automatically create a dummy0 interface when the kernel
-    # module is loaded.
-    boot.extraModprobeConfig = "options dummy numdummies=0";
-
     systemd.services =
-      let
-        sysctlSnippet = ''
-          # Disable IPv6 SLAAC (autoconf) on physical interfaces
-          sysctl net.ipv6.conf.$IFACE.accept_ra=0
-          sysctl net.ipv6.conf.$IFACE.autoconf=0
-          sysctl net.ipv6.conf.$IFACE.temp_valid_lft=0
-          sysctl net.ipv6.conf.$IFACE.temp_prefered_lft=0
-          for oldtmp in `ip -6 address show dev $IFACE dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
-            ip addr del $oldtmp dev $IFACE
-          done
-        '';
+      let startStopScript = fclib.simpleRouting;
       in
       { nscd.restartTriggers = [
           config.environment.etc."host.conf".source
         ];
       } //
-      # These units performing network interface setup must be
-      # explicitly wanted by the multi-user target, otherwise they
-      # will not get initially added as the individual address units
-      # won't get restarted because triggering multi-user.target alone
-      # does not propagate to the network target, etc etc.
       (listToAttrs
-        ((map (iface:
+        (map (interface:
           (lib.nameValuePair
-            "network-link-properties-${iface.name}-phy"
+            "network-link-properties-${interface.physicalDevice}-phy"
             rec {
-              description = "Ensure link properties for physical interface ${iface.name}";
-              wantedBy = [ "network-addresses-${iface.name}.service"
+              description = "Ensure link properties for ${interface.physicalDevice}";
+              # We need to explicitly be wanted by the multi-user target,
+              # otherwise we will not get initially added as the individual
+              # address units won't get restarted because triggering
+              # the multi-user alone does not propagated to the network-target
+              # etc. etc.
+              wantedBy = [ "network-addresses-${interface.physicalDevice}.service"
                            "multi-user.target" ];
+
               before = wantedBy;
-              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp ];
+              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp];
               script = ''
-                IFACE=${iface.name}
+                IFACE=${interface.physicalDevice}
 
                 IFACE_DRIVER=$(ethtool -i $IFACE | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
                 case $IFACE_DRIVER in
@@ -338,101 +217,56 @@ in
                 ethtool -A $IFACE autoneg off rx off tx off || true
 
                 # Ensure MTU
-                ip l set $IFACE mtu ${toString iface.mtu}
+                ip l set $IFACE mtu ${toString interface.mtu}
 
-                ${sysctlSnippet}
+                # Disable IPv6 SLAAC (autoconf) on physical interfaces
+                sysctl net.ipv6.conf.$IFACE.accept_ra=0
+                sysctl net.ipv6.conf.$IFACE.autoconf=0
+                sysctl net.ipv6.conf.$IFACE.temp_valid_lft=0
+                sysctl net.ipv6.conf.$IFACE.temp_prefered_lft=0
+                for oldtmp in `ip -6 address show dev $IFACE dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
+                  ip addr del $oldtmp dev $IFACE
+                done
               '';
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            })) ethernetDevices) ++
-        (map (iface:
+            }))
+          interfaces)) //
+      (listToAttrs
+        (map (interface:
           (lib.nameValuePair
-            "network-link-properties-${iface.device}-virt"
-            {
-              description = "Ensure link properties for virtual interface ${iface.device}";
-              wantedBy = [ "network-addresses-${iface.device}.service"
-                           "multi-user.target" ];
-              bindsTo = [ "${iface.device}-netdev.service" ];
-              after = [ "${iface.device}-netdev.service" ];
-              path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
-              script = ''
-                IFACE=${iface.device}
-                ${sysctlSnippet}
-              '';
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-              };
-            }
-          )) bridgedInterfaces) ++
-        (if isNull fclib.underlay then [] else
-          [(lib.nameValuePair
-            "network-link-properties-underlay-virt"
+            "network-link-properties-${interface.device}-virt"
             rec {
-              description = "Ensure network link properties for virtual interface underlay";
-              wantedBy = [ "network-addresses-underlay.service"
+              description = "Ensure link properties for ${interface.device} (virtual)";
+              # We need to explicitly be wanted by the multi-user target,
+              # otherwise we will not get initially added as the individual
+              # address units won't get restarted because triggering
+              # the multi-user alone does not propagated to the network-target
+              # etc. etc.
+              wantedBy = [ "network-addresses-${interface.device}.service"
                            "multi-user.target" ];
-              before = wantedBy;
-              path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
+              bindsTo = [ "${interface.device}-netdev.service" ];
+              after = [ "${interface.device}-netdev.service" ];
+
+              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp];
               script = ''
-                IFACE=underlay
-
-                # Create virtual interface underlay
-                ip link add $IFACE type dummy
-
-                ip link set $IFACE mtu ${toString fclib.underlay.mtu}
-
-                ${sysctlSnippet}
-              '';
-              preStop = ''
-                IFACE=underlay
-                ip link delete $IFACE
+                # Disable IPv6 SLAAC (autoconf) on interfaces w/ addresses
+                sysctl net.ipv6.conf.${interface.device}.accept_ra=0
+                sysctl net.ipv6.conf.${interface.device}.autoconf=0
+                sysctl net.ipv6.conf.${interface.device}.temp_valid_lft=0
+                sysctl net.ipv6.conf.${interface.device}.temp_prefered_lft=0
+                for oldtmp in `ip -6 address show dev ${interface.device} dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
+                  ip addr del $oldtmp dev ${interface.device}
+                done
               '';
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            }
-          )]) ++
-        (if isNull fclib.underlay then [] else (map (iface:
-          lib.nameValuePair
-            "network-link-properties-${iface.layer2device}-virt"
-            rec {
-              description = "Ensure link properties for virtual interface ${iface.layer2device}";
-              wantedBy = [ "network-addresses-${iface.layer2device}.service"
-                           "multi-user.target" ];
-              before = wantedBy;
-              partOf = [ "network-addresses-underlay.service" ];
-              path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
-              script = ''
-                IFACE=${iface.layer2device}
-
-                # Create virtual inteface ${iface.layer2device}
-                ip link add $IFACE type vxlan \
-                  id ${toString iface.vlanId} \
-                  local ${fclib.underlay.loopback} \
-                  dstport 4789 \
-                  nolearning
-
-                # Set MTU and layer 2 address
-                ip link set $IFACE address ${iface.mac}
-                ip link set $IFACE mtu ${toString iface.mtu}
-
-                ${sysctlSnippet}
-              '';
-              preStop = ''
-                IFACE=${iface.layer2device}
-                ip link delete $IFACE
-              '';
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-              };
-            }
-        ) vxlanInterfaces))
-      ));
+            }))
+          interfaces));
 
     boot.kernel.sysctl = {
       "net.ipv4.tcp_congestion_control" = "bbr";

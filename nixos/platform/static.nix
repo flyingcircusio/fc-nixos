@@ -65,8 +65,6 @@ with lib;
         "tr3" = 18;
         # dynamic hardware pool: local endpoints for Kamp DHP tunnels
         "dhp" = 19;
-        # underlay: EVPN-VXLAN network virtualisation underlay
-        "ul" = 20;
         # video surveillance
         "video" = 23;
       };
@@ -74,7 +72,6 @@ with lib;
       mtus = {
         "sto" = 9000;
         "stb" = 9000;
-        "ul" = 9216;
       };
 
       nameservers = {

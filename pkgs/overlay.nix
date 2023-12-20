@@ -114,8 +114,6 @@ in {
     };
   });
 
-  inherit (nixpkgs-23_05) frr;
-
   gitlab = super.callPackage ./gitlab { };
   gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
 

@@ -64,7 +64,7 @@ in
       after = [ "network-addresses-${netdev}.service" "firewall.service" ];
       requires = after;
       wantedBy = [ "multi-user.target" ];
-      bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.layer2device}.device" ];
+      bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.physicalDevice}.device" ];
       path = with pkgs; [ gawk iproute glibc iptables ];
 
       serviceConfig =
