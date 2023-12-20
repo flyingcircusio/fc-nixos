@@ -392,14 +392,19 @@ in {
     ];
   });
 
-  openssh_8_7 = super.openssh.overrideAttrs(_: rec {
-    version = "8.7p1";
+  openssh_9_6 = super.openssh.overrideAttrs(old_ssh: rec {
+    version = "9.6p1";
     name = "openssh-${version}";
 
     src = super.fetchurl {
       url = "mirror://openbsd/OpenSSH/portable/openssh-${version}.tar.gz";
-      sha256 = "090yxpi03pxxzb4ppx8g8hdpw7c4nf8p0avr6c7ybsaana5lp8vw";
+      hash = "sha256-kQIRwHJVqMWtZUORtA7lmABxDdgRndU2LeCThap6d3w=";
     };
+
+    patches = with builtins;
+      filter (p: ! (elem (builtins.baseNameOf p)
+                 ["CVE-2021-41617-1.patch" "CVE-2021-41617-2.patch"]))
+      old_ssh.patches;
 
   });
 
