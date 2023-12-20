@@ -14,6 +14,12 @@ in
       enable = mkEnableOption "FC web gateway role (nginx/haproxy)";
       supportsContainers = fclib.mkEnableContainerSupport;
     };
+
+    # This is a no-op to allow upgrading to 23.11 smoothly.
+    flyingcircus.services.nginx.logPerVirtualHost = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+    };
   };
 
   config = lib.mkIf cfg.enable {
