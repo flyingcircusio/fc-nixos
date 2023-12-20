@@ -131,6 +131,7 @@ in
 
     userDataPath = lib.mkOption {
       default = /etc/nixos/users.json;
+      defaultText = "/etc/nixos/users.json";
       type = path;
       description = "Where to find the user json file.";
     };
@@ -142,6 +143,7 @@ in
 
     permissionsPath = lib.mkOption {
       default = /etc/nixos/permissions.json;
+      defaultText = "/etc/nixos/permissions.json";
       type = path;
       description = ''
         Where to find the permissions json file.

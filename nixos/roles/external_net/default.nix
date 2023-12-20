@@ -34,7 +34,7 @@ in
   options = {
     flyingcircus.roles.external_net = {
 
-      enable = lib.mkEnableOption { };
+      enable = lib.mkEnableOption "fcio external_net role";
       supportsContainers = fclib.mkDisableContainerSupport;
 
       vxlan4 = lib.mkOption {
@@ -60,6 +60,7 @@ in
       frontendName = lib.mkOption {
         type = lib.types.str;
         default = defaultFrontendName;
+        defaultText = "reverse name of the frontend's address";
         description = ''
           DNS host name for the external network gateway. This is also the name
           of the OpenVPN client configuration. The default is derived from the

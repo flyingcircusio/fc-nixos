@@ -102,7 +102,7 @@ in
 
       package = mkOption {
         type = types.package;
-        example = literalExample "pkgs.percona";
+        example = literalExpression "pkgs.percona";
         description = "
           Which MySQL derivation to use.
         ";
@@ -155,8 +155,8 @@ in
           to create databases on the first startup of MySQL
         '';
         example = [
-          { name = "foodatabase"; schema = literalExample "./foodatabase.sql"; }
-          { name = "bardatabase"; schema = literalExample "./bardatabase.sql"; }
+          { name = "foodatabase"; schema = literalExpression "./foodatabase.sql"; }
+          { name = "bardatabase"; schema = literalExpression "./bardatabase.sql"; }
         ];
       };
 
