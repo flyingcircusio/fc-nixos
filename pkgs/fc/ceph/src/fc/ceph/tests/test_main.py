@@ -2,9 +2,8 @@ import os
 from pathlib import Path
 from sys import argv
 
-import pytest
-
 import fc.ceph.main
+import pytest
 
 
 def test_main(capsys):
