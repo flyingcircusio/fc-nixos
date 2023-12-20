@@ -35,6 +35,7 @@ rec {
       pkgs.gptfdisk
       pkgs.coreutils
       pkgs.lz4  # required by image loading task
+      pkgs.cryptsetup  # full-disk encryption
     ];
 
     fc-check-ceph = pkgs.fc."check-ceph-${release}";

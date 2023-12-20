@@ -52,6 +52,11 @@ let
   };
 
   logDaysKeep = 180;
+
+  # ulimits in nix-build context are a bit hairy: root needs those both in
+  # interactive environments and units that interact with nix, whereas
+  # regular users will rely on the the ulimits set for the nix-daemon.
+  nixBuildMEMLOCK = "1073741824";
 in
 {
   options = {
@@ -242,6 +247,14 @@ in
         }
       ];
 
+      security.pam.loginLimits = [
+        { domain = "root";
+          item = "memlock";
+          type = "-";
+          value = nixBuildMEMLOCK;
+        }
+      ];
+
       environment.etc."fc-agent.conf".text = ''
          [maintenance]
          preparation_seconds = ${toString cfg.agent.maintenancePreparationSeconds}
@@ -270,6 +283,7 @@ in
           IOSchedulingClass = "idle";
           IOSchedulingPriority = 7; #lowest
           IOWeight = 10; # 1-10000
+          LimitMEMLOCK = nixBuildMEMLOCK;
         };
 
         path = with pkgs; [
@@ -338,6 +352,8 @@ in
 
         inherit environment;
       };
+
+      systemd.services.nix-daemon.serviceConfig.LimitMEMLOCK = nixBuildMEMLOCK;
 
       systemd.tmpfiles.rules = [
         "r! /reboot"

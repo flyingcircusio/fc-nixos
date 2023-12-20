@@ -1,14 +1,14 @@
-import ./make-test-python.nix ({ ... }:
+import ./make-test-python.nix ({ pkgs, testlib, ... }:
 let
   getIPForVLAN = vlan: id: "192.168.${toString vlan}.${toString (5 + id)}";
 
-  makeCephHostConfig = { id, numDisks ? 2 }:
+  makeCephHostConfig = { id, diskSizes ? [4000 4000], encrypted ? false, }:
     { config, ... }:
     {
 
       virtualisation.memorySize = 3000;
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ srv sto stb ];
-      virtualisation.emptyDiskImages = builtins.genList (_: 4000) numDisks;
+      virtualisation.emptyDiskImages = diskSizes;
       imports = [ ../nixos ../nixos/roles ];
 
       flyingcircus.static.mtus.sto = 1500;
@@ -69,6 +69,10 @@ let
 
       flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
 
+      # :( Work-around the split between qemu-built systems and regular systems.
+      virtualisation.fileSystems."/mnt/keys" = config.flyingcircus.infrastructure.fullDiskEncryption.fsOptions;
+
+
       environment.etc."nixos/enc.json".text = builtins.toJSON {
         name =  "host${toString id}";
         roles = [ "ceph_mon" "ceph_osd" "ceph_rgw" ];
@@ -122,13 +126,15 @@ in
 {
   name = "ceph";
   nodes = {
-    host1 = makeCephHostConfig { id = 1; numDisks=3; };
+    host1 = makeCephHostConfig { id = 1; diskSizes = [ 4000 4000 4000 1100 ]; encrypted = true;};
     host2 = makeCephHostConfig { id = 2; };
     host3 = makeCephHostConfig { id = 3; };
   };
 
   testScript = { nodes, ...}:
-    ''
+  let
+    check_key_file_cmd = testlib.sensuCheckCmd nodes.host1 "keystickMounted";
+  in  ''
     import time
     import json
 
@@ -151,7 +157,7 @@ in
         num_in_osds = osds
 
       global time_waiting
-      print("Waiting for clean cluster ...")
+      print(f"Waiting for clean cluster: mons={mons} osds={osds} mgsr={mgrs} pgs={pgs}")
       start = time.time()
       # Allow HEALTH_WARN as we do not correctly cover clock skew
       # currently
@@ -202,6 +208,7 @@ in
           raise
 
     show(host1, 'ip l')
+    show(host1, 'cat /etc/fstab')
     show(host1, 'iptables -L -n -v')
     show(host1, 'ls -lah /etc/ceph/')
     show(host1, 'cat /etc/ceph/ceph.client.admin.keyring')
@@ -219,9 +226,30 @@ in
     host2.execute("systemctl stop fc-ceph-rgw")
     host3.execute("systemctl stop fc-ceph-rgw")
 
+    with subtest("Initialize keystore on host 1"):
+      # check succeeds as "not needed" as long as /mnt/keys does not exist
+      host1.succeed("${check_key_file_cmd} > /dev/kmsg 2>&1")
+      host1.succeed("fc-luks keystore create /dev/vde > /dev/kmsg 2>&1")
+      show(host1, "lsblk")
+      host1.succeed("${check_key_file_cmd} > /dev/kmsg 2>&1")
+
+    with subtest("Verify keystore automount on boot"):
+      host1.execute("systemctl poweroff --force")
+      host1.wait_for_shutdown()
+      host1.start()
+      host1.wait_for_unit("local-fs.target")
+      show(host1, "mount")
+      host1.execute("sleep 5")
+      show(host1, "mount")
+      show(host1, "systemctl status multi-user.target")
+      host1.execute("systemctl stop fc-ceph-rgw")
+      show(host1, "lsblk")
+      show(host1, "cat /etc/fstab")
+      host1.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/kmsg 2>&1")
+
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb > /dev/kmsg 2>&1')
-      host1.execute('fc-ceph mon create --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph mon create --encrypt --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
       show(host1, "ls -l /dev/disk/by-label")
       show(host1, 'lsblk')
       show(host1, 'journalctl -u fc-ceph-mon')
@@ -243,8 +271,8 @@ in
 
       show(host1, 'ceph mon dump')
 
-      # mgr keys rely on 'fc-ceph keys' to be executes first
-      host1.execute('fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
+      # mgr keys rely on 'fc-ceph keys' to be executed first
+      host1.execute('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph mgr create --encrypt --size 500m > /dev/kmsg 2>&1')
       show(host1, 'journalctl -u fc-ceph-mgr')
       show(host1, 'ceph mgr module ls')
 
@@ -252,20 +280,19 @@ in
       host1.succeed('ceph osd pool create rbd 64')
       show(host1, 'ceph osd lspools')
 
-
     with subtest("Initialize first OSD (bluestore)"):
       host1.execute('systemctl status fc-ceph-osd@0.service > /dev/kmsg 2>&1')
-      host1.execute('fc-ceph osd create-bluestore /dev/vdc > /dev/kmsg 2>&1')
+      host1.execute('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph osd create-bluestore --encrypt /dev/vdc > /dev/kmsg 2>&1')
       host1.execute('systemctl status fc-ceph-osd@0.service > /dev/kmsg 2>&1')
 
-    with subtest("Initialize second MON and OSD (filestore)"):
+    with subtest("Initialize second MON and OSD (bluestore, internal WAL)"):
       host2.succeed('fc-ceph osd prepare-journal /dev/vdb')
       host2.succeed('fc-ceph mon create --size 500m > /dev/kmsg 2>&1')
       host2.execute('fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
       # cover explicit specification of internal and external journals
-      host2.succeed('fc-ceph osd create-filestore --journal=internal --journal-size=500m /dev/vdc > /dev/kmsg 2>&1')
+      host2.succeed('fc-ceph osd create-bluestore --wal=internal /dev/vdc > /dev/kmsg 2>&1')
 
-    with subtest("Initialize third MON and OSD (bluestore)"):
+    with subtest("Initialize third MON and OSD (bluestore, external WAL)"):
       host3.succeed('fc-ceph osd prepare-journal /dev/vdb')
       host3.succeed('fc-ceph mon create --size 500m')
       host3.execute('fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
@@ -326,24 +353,28 @@ in
 
     with subtest("Test strict safety check of destroy and rebuild"):
       host1.fail("fc-ceph osd destroy --strict-safety-check all > /dev/kmsg 2>&1")
-      host1.fail('fc-ceph osd rebuild --journal-size=500m --strict-safety-check all> /dev/kmsg 2>&1')
+      host1.fail('fc-ceph osd rebuild --strict-safety-check all> /dev/kmsg 2>&1')
 
     with subtest("Initialize extra OSD to enable safe rebuilding (bluestore)"):
       host1.execute('fc-ceph osd create-bluestore /dev/vdd > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 4, 3, 320)
 
-    with subtest("Rebuild the 2nd OSD on host 1 from bluestore to bluestore without redundancy loss"):
+    with subtest("Rebuild the 2nd OSD on host 1 from bluestore to bluestore and enable encryption without redundancy loss"):
       # set OSDs out and wait for cluster to rebalance
       host1.execute('ceph osd out 3')
       host1.sleep(5)
       assert_clean_cluster(host2, 3, (4, 3), 3, 320)
       # then rebuild
-      host1.succeed('fc-ceph osd rebuild --journal-size=500m --strict-safety-check 3 > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph osd rebuild --encrypt --strict-safety-check 3 > /dev/kmsg 2>&1')
       # and set the osds in again
       host1.execute('ceph osd in $(ceph osd ls-tree host1)')
       show(host1, "lsblk")
       show(host1, "vgs")
       host1.sleep(5)
+      assert_clean_cluster(host2, 3, 4, 3, 320)
+
+    with subtest("Rebuild all OSDs on host 1 and ensure encryption is enabled"):
+      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph osd rebuild --encrypt --no-safety-check all > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 4, 3, 320)
 
     with subtest("Destroy the 2nd OSD on host 1 without redundancy loss"):
@@ -357,20 +388,18 @@ in
       show(host1, "vgs")
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
+    with subtest("Destroy and re-create the keystore, rekey the OSD"):
+      host1.succeed("fc-luks keystore destroy --no-overwrite > /dev/kmsg 2>&1")
+      host1.succeed("fc-luks keystore create /dev/vde > /dev/kmsg 2>&1")
+      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-luks keystore rekey > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "newphrase\nnewphrase" | setsid -w fc-luks keystore rekey --slot=admin > /dev/kmsg 2>&1')
+      host1.succeed("fc-ceph osd reactivate all")
+      assert_clean_cluster(host2, 3, 3, 3, 320)
+
     # from now on always default to allowing some reduced redundancy to save time
 
-    with subtest("Rebuild all OSDs on host 2 from filestore to filestore"):
-      host2.succeed('fc-ceph osd rebuild --journal-size=500m all > /dev/kmsg 2>&1')
-      show(host1, "lsblk")
-      show(host1, "vgs")
-      assert_clean_cluster(host3, 3, 3, 3, 320)
-
-    with subtest("Rebuild OSDs from one type to another"):
-      host3.succeed('fc-ceph osd rebuild --journal-size=500m --target-objectstore-type=filestore all > /dev/kmsg 2>&1')
-      show(host1, "lsblk")
-      show(host1, "vgs")
-      assert_clean_cluster(host1, 3, 3, 3, 320)
-      host2.succeed('fc-ceph osd rebuild --journal-size=500m -T bluestore all > /dev/kmsg 2>&1')
+    with subtest("Rebuild all OSDs on host 2"):
+      host2.succeed('fc-ceph osd rebuild all > /dev/kmsg 2>&1')
       show(host1, "lsblk")
       show(host1, "vgs")
       assert_clean_cluster(host3, 3, 3, 3, 320)
@@ -394,6 +423,12 @@ in
       host2.succeed('fc-ceph osd create-bluestore --wal=internal /dev/vdc > /dev/kmsg 2>&1')
       host3.succeed('fc-ceph osd create-bluestore --wal=external /dev/vdc > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 3, 3, 320)
+
+    with subtest("The check discovers non-conforming host key conditions"):
+      host1.execute('chmod o+rw /mnt/keys/*')
+      host1.fail("${check_key_file_cmd} > /dev/kmsg 2>&1")
+      host1.execute('rm /mnt/keys/*')
+      host1.fail("${check_key_file_cmd} > /dev/kmsg 2>&1")
 
     # TODO: include test for rbd map rbdnamer udev rule functionality, after having rebased onto PL-130691
 
