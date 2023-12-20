@@ -52,10 +52,27 @@ in {
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
-  inherit (super.callPackages ./matomo {})
-    matomo
-    matomo-beta;
+  # We don't try to run matomo from the Nix store like upstream does,
+  # so we need an installPhase that is a bit different.
+  matomo = super.matomo.overrideAttrs (oldAttrs: {
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out/share
+      cp -ra * $out/share/
+      rmdir $out/share/tmp
+      runHook postInstall
+    '';
+  });
 
+  matomo-beta = super.matomo-beta.overrideAttrs (oldAttrs: {
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out/share
+      cp -ra * $out/share/
+      rmdir $out/share/tmp
+      runHook postInstall
+    '';
+  });
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
