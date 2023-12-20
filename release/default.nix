@@ -127,6 +127,11 @@ let
   # The exclusion list is applied to overlay packages and important packages.
   # Supports excluding packages from nested sets using "dotted names" like "fc.blockdev".
   excludedPkgNames = [
+    "mongodb_3_2"
+    "mongodb-3_4"
+    "mongodb-3_6"
+    "mongodb-4_0"
+    "mongodb-4_2"
   ];
 
   overlay = import ../pkgs/overlay.nix pkgs pkgs;

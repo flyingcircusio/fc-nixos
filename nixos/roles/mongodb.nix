@@ -37,14 +37,31 @@ let
     ${localConfig}
   '';
 
-  checkMongoCmd = "${pkgs.fc.check-mongodb}/bin/check_mongodb";
+  mongodbPkgs = {
+    mongodb-3_2 = builtins.storePath /nix/store/hjv1grfh9s5jhmk0fd0pdcxphg0j76k8-mongodb-3.2.12;
+    mongodb-3_4 = builtins.storePath /nix/store/shzvfx7bpn804n53igfz053m0y6836ly-mongodb-3.4.24;
+    mongodb-3_6 = builtins.storePath /nix/store/wkia38wf48z5x1fy6j06ivldc7qj3h7v-mongodb-3.6.23;
+    mongodb-4_0 = builtins.storePath /nix/store/sj720iky3ipashm81bm3g8mqlkajabrq-mongodb-4.0.27;
+    mongodb-4_2 = builtins.storePath /nix/store/f7ck95ln8sdic21g7j4zmsv4rh0ky12v-mongodb-4.2.24;
+  };
 
   mongodbRoles = with config.flyingcircus.roles; {
+    "3.2" = mongodb32;
+    "3.4" = mongodb34;
+    "3.6" = mongodb36;
+    "4.0" = mongodb40;
     "4.2" = mongodb42;
   };
   enabledRoles = lib.filterAttrs (n: v: v.enable) mongodbRoles;
   enabledRolesCount = length (lib.attrNames enabledRoles);
   majorVersion = head (lib.attrNames enabledRoles);
+  checkPkg =
+    if (lib.versionOlder majorVersion "3.6") then
+      builtins.storePath /nix/store/c7i75mvqqg1mjk3w6zz1j9cysvch6328-fc-check-mongodb-1.0
+    else
+      pkgs.fc.check-mongodb;
+
+  checkMongoCmd = "${checkPkg}/bin/check_mongodb";
   extraCheckArgs = head (lib.mapAttrsToList (n: v: v.extraCheckArgs) enabledRoles);
 
 in {
@@ -55,13 +72,17 @@ in {
       supportsContainers = fclib.mkEnableContainerSupport;
       extraCheckArgs = with lib; mkOption {
         type = types.str;
-        default = "-h localhost -p 27017";
+        default = if (lib.versionOlder majorVersion "3.6") then "" else "-h localhost -p 27017";
         example = "-h example00.fe.rzob.fcio.net -p 27017 -t -U admin -P /etc/local/mongodb/password.txt";
         description = "Extra arguments to be passed to the check_mongodb script";
       };
     };
   in {
     flyingcircus.roles = {
+      mongodb32 = mkRole "3.2";
+      mongodb34 = mkRole "3.4";
+      mongodb36 = mkRole "3.6";
+      mongodb40 = mkRole "4.0";
       mongodb42 = mkRole "4.2";
     };
   };
@@ -85,7 +106,7 @@ in {
       services.mongodb.dbpath = "/srv/mongodb";
       services.mongodb.bind_ip = fclib.mkPlatform (lib.concatStringsSep "," listenAddresses);
       services.mongodb.pidFile = "/run/mongodb.pid";
-      services.mongodb.package = pkgs."mongodb-${lib.replaceStrings ["."] ["_"] majorVersion}";
+      services.mongodb.package = mongodbPkgs."mongodb-${lib.replaceStrings ["."] ["_"] majorVersion}";
 
       systemd.services.mongodb = {
         preStart = "echo never > /sys/kernel/mm/transparent_hugepage/defrag";
@@ -160,7 +181,8 @@ in {
               /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb ${extraCheckArgs}
             '';
           };
-
+        } // lib.optionalAttrs (majorVersion != "3.2") {
+          # There's no feature compatibility version in 3.2 so we can't check it.
           mongodb_feature_compat_version = {
             notification = "MongoDB is running on an outdated feature compatibility version";
             command = ''
