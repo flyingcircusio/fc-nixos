@@ -10,6 +10,7 @@ import socket
 import subprocess
 import sys
 import syslog
+import xmlrpc.client
 
 import fc.util.configfile
 import fc.util.directory
@@ -121,6 +122,10 @@ def publish():
 
     h = logging.handlers.SysLogHandler(facility=syslog.LOG_LOCAL4)
     logging.basicConfig(level=logging.DEBUG, handlers=[h])
+
+    xmlrpc.client.Marshaller.dispatch[int] = lambda _, v, w: w(
+        "<value><i8>%d</i8></value>" % v
+    )
 
     try:
         status = yaml.safe_load(sys.stdin)
