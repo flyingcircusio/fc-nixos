@@ -40,6 +40,7 @@ in {
   devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
   fcagent = callSubTests ./fcagent.nix {};
+  ferretdb = callTest ./ferretdb.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   collect-garbage = callTest ./collect-garbage.nix {};

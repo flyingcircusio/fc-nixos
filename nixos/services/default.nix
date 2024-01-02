@@ -19,6 +19,7 @@ in {
     ./ceph/client.nix
     ./ceph/server.nix
     ./consul.nix
+    ./ferretdb.nix
     ./haproxy
     ./jitsi/jibri.nix
     ./jitsi/jicofo.nix
