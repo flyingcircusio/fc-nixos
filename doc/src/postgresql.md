@@ -6,7 +6,7 @@ Managed instance of the [PostgreSQL](http://postgresql.org) database server.
 
 ## Components
 
-- PostgreSQL server (versions 12, 13, 14, 15)
+- PostgreSQL server (versions 12, 13, 14, 15, 16)
 
 :::{warning}
 
@@ -28,7 +28,7 @@ To grant `CREATE` privilege to user `test` using SQL, execute:
 GRANT CREATE ON SCHEMA public TO test;
 ~~~
 
-See [Schemas and Privileges](https://www.postgresql.org/docs/15/ddl-schemas.html#DDL-SCHEMAS-PRIV)
+See [Schemas and Privileges](https://www.postgresql.org/docs/16/ddl-schemas.html#DDL-SCHEMAS-PRIV)
 in the PostgreSQL documentation for more information.
 :::
 
