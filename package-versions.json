@@ -10,9 +10,9 @@
     "version": "2.4.58"
   },
   "asterisk": {
-    "name": "asterisk-20.2.1",
+    "name": "asterisk-20.5.1",
     "pname": "asterisk",
-    "version": "20.2.1"
+    "version": "20.5.1"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.16",
@@ -70,14 +70,14 @@
     "version": "18.2.0"
   },
   "chromedriver": {
-    "name": "chromedriver-120.0.6099.71",
+    "name": "chromedriver-120.0.6099.109",
     "pname": "chromedriver",
-    "version": "120.0.6099.71"
+    "version": "120.0.6099.109"
   },
   "chromium": {
-    "name": "chromium-120.0.6099.71",
+    "name": "chromium-120.0.6099.129",
     "pname": "chromium",
-    "version": "120.0.6099.71"
+    "version": "120.0.6099.129"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -95,14 +95,14 @@
     "version": "3.27.7"
   },
   "consul": {
-    "name": "consul-1.16.3",
+    "name": "consul-1.16.4",
     "pname": "consul",
-    "version": "1.16.3"
+    "version": "1.16.4"
   },
   "containerd": {
-    "name": "containerd-1.7.9",
+    "name": "containerd-1.7.11",
     "pname": "containerd",
-    "version": "1.7.9"
+    "version": "1.7.11"
   },
   "coturn": {
     "name": "coturn-4.6.2",
@@ -150,9 +150,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.51",
+    "name": "element-web-1.11.52",
     "pname": "element-web",
-    "version": "1.11.51"
+    "version": "1.11.52"
   },
   "erlang": {
     "name": "erlang-25.3.2.7",
@@ -185,9 +185,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-120.0.1",
+    "name": "firefox-121.0",
     "pname": "firefox",
-    "version": "120.0.1"
+    "version": "121.0"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -220,19 +220,19 @@
     "version": "2.311.0"
   },
   "gitlab": {
-    "name": "gitlab-16.5.3",
+    "name": "gitlab-16.5.4",
     "pname": "gitlab",
-    "version": "16.5.3"
+    "version": "16.5.4"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.86.2",
+    "name": "gitlab-container-registry-3.88.0",
     "pname": "gitlab-container-registry",
-    "version": "3.86.2"
+    "version": "3.88.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.5.3",
+    "name": "gitlab-ee-16.5.4",
     "pname": "gitlab-ee",
-    "version": "16.5.3"
+    "version": "16.5.4"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.6.0",
@@ -270,9 +270,9 @@
     "version": "1.20.11"
   },
   "grafana": {
-    "name": "grafana-10.2.0",
+    "name": "grafana-10.2.2",
     "pname": "grafana",
-    "version": "10.2.0"
+    "version": "10.2.2"
   },
   "grub2": {
     "name": "grub-2.12-rc1",
@@ -320,19 +320,19 @@
     "version": "12.0.3"
   },
   "jicofo": {
-    "name": "jicofo-1.0-1050",
+    "name": "jicofo-1.0-1057",
     "pname": "jicofo",
-    "version": "1.0-1050"
+    "version": "1.0-1057"
   },
   "jitsi-meet": {
-    "name": "jitsi-meet-1.0.7531",
+    "name": "jitsi-meet-1.0.7629",
     "pname": "jitsi-meet",
-    "version": "1.0.7531"
+    "version": "1.0.7629"
   },
   "jitsi-videobridge": {
-    "name": "jitsi-videobridge2-2.3-59-g5c48e421",
+    "name": "jitsi-videobridge2-2.3-61-g814bffd6",
     "pname": "jitsi-videobridge2",
-    "version": "2.3-59-g5c48e421"
+    "version": "2.3-61-g814bffd6"
   },
   "jq": {
     "name": "jq-1.7",
@@ -350,9 +350,9 @@
     "version": "1.27.6+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-23.0.0",
+    "name": "keycloak-23.0.3",
     "pname": "keycloak",
-    "version": "23.0.0"
+    "version": "23.0.3"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.13.2",
@@ -415,9 +415,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.142",
+    "name": "linux-5.15.145",
     "pname": "linux",
-    "version": "5.15.142"
+    "version": "5.15.145"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -455,9 +455,9 @@
     "version": "4.15.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.97.0",
+    "name": "matrix-synapse-wrapped-1.98.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.97.0"
+    "version": "1.98.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -530,9 +530,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.95",
+    "name": "nss-3.96.1",
     "pname": "nss",
-    "version": "3.95"
+    "version": "3.96.1"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -640,14 +640,14 @@
     "version": "8.0.30"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.26",
+    "name": "php-with-extensions-8.1.27",
     "pname": "php-with-extensions",
-    "version": "8.1.26"
+    "version": "8.1.27"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.13",
+    "name": "php-with-extensions-8.2.14",
     "pname": "php-with-extensions",
-    "version": "8.2.13"
+    "version": "8.2.14"
   },
   "phpPackages.composer": {
     "name": "composer-2.6.5",
@@ -675,9 +675,9 @@
     "version": "123"
   },
   "postfix": {
-    "name": "postfix-3.8.3",
+    "name": "postfix-3.8.4",
     "pname": "postfix",
-    "version": "3.8.3"
+    "version": "3.8.4"
   },
   "postgresql": {
     "name": "postgresql-15.5",
@@ -705,9 +705,9 @@
     "version": "15.5"
   },
   "powerdns": {
-    "name": "pdns-4.8.3",
+    "name": "pdns-4.8.4",
     "pname": "pdns",
-    "version": "4.8.3"
+    "version": "4.8.4"
   },
   "prometheus": {
     "name": "prometheus-2.48.0",
@@ -880,9 +880,9 @@
     "version": "4.9.1"
   },
   "slurm": {
-    "name": "slurm-23.02.6.1",
+    "name": "slurm-23.02.7.1",
     "pname": "slurm",
-    "version": "23.02.6.1"
+    "version": "23.02.7.1"
   },
   "solr": {
     "name": "solr-8.11.2",
@@ -965,9 +965,9 @@
     "version": "9.0.2048"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.42.3+abi=4.0",
+    "name": "webkitgtk-2.42.4+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.42.3"
+    "version": "2.42.4"
   },
   "wget": {
     "name": "wget-1.21.4",
