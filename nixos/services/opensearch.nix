@@ -81,7 +81,7 @@ in
 
 
       nodeName = mkOption {
-        type = types.nullOr types.string;
+        type = types.nullOr types.str;
         default = config.networking.hostName;
         description = ''
           The name for this node. Defaults to the hostname.
