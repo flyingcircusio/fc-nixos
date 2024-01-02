@@ -259,7 +259,6 @@
     "pname": "go",
     "version": "1.21.4"
   },
-  "go_1_18": {},
   "go_1_19": {
     "name": "go-1.19.13",
     "pname": "go",
@@ -274,6 +273,11 @@
     "name": "grafana-10.2.0",
     "pname": "grafana",
     "version": "10.2.0"
+  },
+  "grub2": {
+    "name": "grub-2.12-rc1",
+    "pname": "grub",
+    "version": "2.12-rc1"
   },
   "haproxy": {
     "name": "haproxy-2.8.4",
@@ -680,7 +684,6 @@
     "pname": "postgresql",
     "version": "15.5"
   },
-  "postgresql_11": {},
   "postgresql_12": {
     "name": "postgresql-12.17",
     "pname": "postgresql",
