@@ -37,13 +37,15 @@ let
     ${localConfig}
   '';
 
-  mongodbPkgs = {
-    mongodb-3_2 = builtins.storePath /nix/store/hjv1grfh9s5jhmk0fd0pdcxphg0j76k8-mongodb-3.2.12;
-    mongodb-3_4 = builtins.storePath /nix/store/shzvfx7bpn804n53igfz053m0y6836ly-mongodb-3.4.24;
-    mongodb-3_6 = builtins.storePath /nix/store/wkia38wf48z5x1fy6j06ivldc7qj3h7v-mongodb-3.6.23;
-    mongodb-4_0 = builtins.storePath /nix/store/sj720iky3ipashm81bm3g8mqlkajabrq-mongodb-4.0.27;
-    mongodb-4_2 = builtins.storePath /nix/store/f7ck95ln8sdic21g7j4zmsv4rh0ky12v-mongodb-4.2.24;
-  };
+  mongodbPkgs = mapAttrs
+    (n: v: builtins.fetchClosure { fromStore = "https://s3.whq.fcio.net/hydra"; fromPath = v; inputAddressed = true; })
+    {
+      mongodb-3_2 = "/nix/store/hjv1grfh9s5jhmk0fd0pdcxphg0j76k8-mongodb-3.2.12";
+      mongodb-3_4 = "/nix/store/shzvfx7bpn804n53igfz053m0y6836ly-mongodb-3.4.24";
+      mongodb-3_6 = "/nix/store/wkia38wf48z5x1fy6j06ivldc7qj3h7v-mongodb-3.6.23";
+      mongodb-4_0 = "/nix/store/sj720iky3ipashm81bm3g8mqlkajabrq-mongodb-4.0.27";
+      mongodb-4_2 = "/nix/store/f7ck95ln8sdic21g7j4zmsv4rh0ky12v-mongodb-4.2.24";
+    };
 
   mongodbRoles = with config.flyingcircus.roles; {
     "3.2" = mongodb32;
