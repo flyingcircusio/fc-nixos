@@ -3,13 +3,13 @@
 # MongoDB
 
 :::{warning}
-Platform support for MongoDB will be discontinued.
-The supported MongoDB versions are outdated
-and are only provided for the purpose of upgrading older machines to 23.11.
+Platform support for MongoDB will be discontinued. The supported MongoDB
+versions are outdated and are only provided for the purpose of upgrading
+older machines to 23.11.
+
 New projects should not use MongoDB.
-As a replacement, we are working on [FerretDB]
-(https://www.ferretdb.com/) support which builds on PostgreSQL and is
-compatible to MongoDB for many use cases.
+As a replacement, we are working on [FerretDB](https://www.ferretdb.com/)
+support which builds on PostgreSQL and is compatible to MongoDB for many use cases.
 :::
 
 Managed instance of [MongoDB](https://www.mongodb.com).
