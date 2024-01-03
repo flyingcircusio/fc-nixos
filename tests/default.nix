@@ -97,9 +97,7 @@ in {
   rg-relay = callTest ./statshost/rg-relay.nix {};
   sensuclient = callTest ./sensuclient.nix {};
   servicecheck = callTest ./servicecheck.nix {};
-  # Network interfaces are not configured anymore. Test can be fixed
-  # similar to rg-relay.
-  # statshost-global = callTest ./statshost/statshost-global.nix {};
+  statshost-global = callTest ./statshost/statshost-global.nix {};
   statshost-master = callTest ./statshost/statshost-master.nix {};
   sudo = callTest ./sudo.nix {};
   syslog = callSubTests ./syslog.nix {};
@@ -107,6 +105,4 @@ in {
   users = callTest ./users.nix {};
   vxlan = callTest ./vxlan.nix {};
   webproxy = callTest ./webproxy.nix {};
-  # package broken because qt4 was removed
-  # wkhtmltopdf = callTest ./wkhtmltopdf.nix {};
 }

@@ -87,7 +87,15 @@ in {
       flyingcircus.encServices = encServices;
       networking.nameservers = [ "127.0.0.53" ];
       networking.domain = "fcio.net";
-      services.resolved.enable = true;
+      # Nginx wants to talk to DNS, so we set up a dnsmasq that serves /etc/hosts.
+      services.dnsmasq = {
+        enable = true;
+        settings = {
+          log-queries = true;
+          resolv-file = "/etc/hosts";
+        };
+      };
+
       # Overwrite auto-generated entries for the 192.168.* net.
       environment.etc.hosts.source = lib.mkForce (pkgs.writeText "hosts" hosts);
 
