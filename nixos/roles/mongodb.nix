@@ -40,11 +40,11 @@ let
   mongodbPkgs = mapAttrs
     (n: v: builtins.fetchClosure { fromStore = "https://s3.whq.fcio.net/hydra"; fromPath = v; inputAddressed = true; })
     {
-      mongodb-3_2 = "/nix/store/hjv1grfh9s5jhmk0fd0pdcxphg0j76k8-mongodb-3.2.12";
-      mongodb-3_4 = "/nix/store/shzvfx7bpn804n53igfz053m0y6836ly-mongodb-3.4.24";
-      mongodb-3_6 = "/nix/store/wkia38wf48z5x1fy6j06ivldc7qj3h7v-mongodb-3.6.23";
-      mongodb-4_0 = "/nix/store/sj720iky3ipashm81bm3g8mqlkajabrq-mongodb-4.0.27";
-      mongodb-4_2 = "/nix/store/f7ck95ln8sdic21g7j4zmsv4rh0ky12v-mongodb-4.2.24";
+      mongodb-3_2 = /nix/store/hjv1grfh9s5jhmk0fd0pdcxphg0j76k8-mongodb-3.2.12;
+      mongodb-3_4 = /nix/store/shzvfx7bpn804n53igfz053m0y6836ly-mongodb-3.4.24;
+      mongodb-3_6 = /nix/store/wkia38wf48z5x1fy6j06ivldc7qj3h7v-mongodb-3.6.23;
+      mongodb-4_0 = /nix/store/sj720iky3ipashm81bm3g8mqlkajabrq-mongodb-4.0.27;
+      mongodb-4_2 = /nix/store/f7ck95ln8sdic21g7j4zmsv4rh0ky12v-mongodb-4.2.24;
     };
 
   mongodbRoles = with config.flyingcircus.roles; {
@@ -59,7 +59,11 @@ let
   majorVersion = head (lib.attrNames enabledRoles);
   checkPkg =
     if (lib.versionOlder majorVersion "3.6") then
-      builtins.storePath /nix/store/c7i75mvqqg1mjk3w6zz1j9cysvch6328-fc-check-mongodb-1.0
+      builtins.fetchClosure {
+        fromStore = "https://s3.whq.fcio.net/hydra";
+        fromPath = /nix/store/c7i75mvqqg1mjk3w6zz1j9cysvch6328-fc-check-mongodb-1.0;
+        inputAddressed = true;
+      }
     else
       pkgs.fc.check-mongodb;
 
