@@ -118,7 +118,7 @@ def rebase_nixpkgs(nixpkgs_repo: Repo, nixos_version: NixOSVersion):
 
 def prefetch_nixpkgs(nixos_version: str) -> dict[str, str]:
     prefetch_cmd = [
-        "nix-prefetch-github",
+        "/run/current-system/sw/bin/nix-prefetch-github",
         "flyingcircusio",
         "nixpkgs",
         "--rev",
@@ -154,12 +154,18 @@ def version_diff_lines(old_versions, new_versions):
 
 def update_package_versions_json(package_versions_path: Path):
     basedir = "$XDG_RUNTIME_DIR"
-    local_path = package_versions_path.parent
-    subprocess.run(
-        ["rsync", "-a", "--exclude", ".git", local_path, f"hydra01:{basedir}"],
-        check=True,
-    )
+    local_path = package_versions_path.parent.absolute()
     dest = f"{basedir}/{local_path.name}/"
+    rsync_cmd = [
+        "rsync",
+        "-a",
+        "--exclude",
+        ".git",
+        str(local_path) + "/",
+        f"hydra01:{dest}",
+    ]
+    print("rsync: ", " ".join(rsync_cmd))
+    subprocess.run(rsync_cmd, check=True)
     proc = run_on_hydra(
         f"(cd {dest}; eval $(./dev-setup); set pipefail; nix-build ./get-package-versions.nix | xargs cat)"
     )
@@ -233,12 +239,12 @@ def filter_and_merge_commit_msgs(msgs):
     return out_msgs
 
 
-def update_versions_json(versions_json_path: Path, rev, sha256):
+def update_versions_json(versions_json_path: Path, rev, hash):
     with open(versions_json_path) as f:
         versions_json = json.load(f)
 
     versions_json["nixpkgs"]["rev"] = rev
-    versions_json["nixpkgs"]["sha256"] = sha256
+    versions_json["nixpkgs"]["hash"] = hash
 
     with open(versions_json_path, "w") as wf:
         json.dump(versions_json, wf, indent=2)
@@ -279,7 +285,7 @@ def update_fc_nixos(
     old_rev = versions_json["nixpkgs"]["rev"]
     new_rev = str(nixpkgs_repo.head.commit)
 
-    update_versions_json(versions_json_path, new_rev, prefetch_json["sha256"])
+    update_versions_json(versions_json_path, new_rev, prefetch_json["hash"])
     print()
     print("-" * 80)
     update_package_versions_json(package_versions_path)
