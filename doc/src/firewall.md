@@ -75,19 +75,19 @@ nixos-drop
 Accept TCP traffic on ethfe to port 32542:
 
 ```bash
-ip46tables -A nixos-fw -p tcp -i ethfe --dport 32542 -j nixos-fw-accept
+ip46tables -I nixos-fw 1 -p tcp -i ethfe --dport 32542 -j nixos-fw-accept
 ```
 
 Refuse UDP traffic on ethsrv to port 2222:
 
 ```bash
-ip46tables -A nixos-fw -p udp -i ethsrv --dport 2222 -j nixos-fw-refuse
+ip46tables -I nixos-fw 1 -p udp -i ethsrv --dport 2222 -j nixos-fw-refuse
 ```
 
 Refuse traffic from specific subnet (with logging):
 
 ```bash
-ip6tables -A nixos-fw -s 2001:db8:33::/48 -j nixos-fw-log-refuse
+ip6tables -I nixos-fw 1 -s 2001:db8:33::/48 -j nixos-fw-log-refuse
 ```
 
 Masquerade outgoing traffic on ethsrv:
