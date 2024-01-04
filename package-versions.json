@@ -10,9 +10,9 @@
     "version": "2.4.58"
   },
   "asterisk": {
-    "name": "asterisk-20.2.1",
+    "name": "asterisk-20.5.1",
     "pname": "asterisk",
-    "version": "20.2.1"
+    "version": "20.5.1"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.4",
@@ -55,9 +55,9 @@
     "version": "2.4.13"
   },
   "cacert": {
-    "name": "nss-cacert-3.92",
+    "name": "nss-cacert-3.95",
     "pname": "nss-cacert",
-    "version": "3.92"
+    "version": "3.95"
   },
   "calibre": {
     "name": "calibre-6.17.0",
@@ -70,14 +70,14 @@
     "version": "17.2.5"
   },
   "chromedriver": {
-    "name": "chromedriver-120.0.6099.71",
+    "name": "chromedriver-120.0.6099.109",
     "pname": "chromedriver",
-    "version": "120.0.6099.71"
+    "version": "120.0.6099.109"
   },
   "chromium": {
-    "name": "chromium-120.0.6099.71",
+    "name": "chromium-120.0.6099.129",
     "pname": "chromium",
-    "version": "120.0.6099.71"
+    "version": "120.0.6099.129"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -150,9 +150,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.51",
+    "name": "element-web-1.11.52",
     "pname": "element-web",
-    "version": "1.11.51"
+    "version": "1.11.52"
   },
   "erlang": {
     "name": "erlang-25.3.2",
@@ -195,9 +195,9 @@
     "version": "7.17.4"
   },
   "firefox": {
-    "name": "firefox-120.0.1",
+    "name": "firefox-121.0",
     "pname": "firefox",
-    "version": "120.0.1"
+    "version": "121.0"
   },
   "gcc": {
     "name": "gcc-wrapper-12.2.0",
@@ -215,9 +215,9 @@
     "version": "2.3.3"
   },
   "ghostscript": {
-    "name": "ghostscript-with-X-10.02.0",
+    "name": "ghostscript-with-X-10.02.1",
     "pname": "ghostscript-with-X",
-    "version": "10.02.0"
+    "version": "10.02.1"
   },
   "git": {
     "name": "git-2.40.1",
@@ -285,9 +285,9 @@
     "version": "1.20.8"
   },
   "grafana": {
-    "name": "grafana-9.5.13",
+    "name": "grafana-9.5.15",
     "pname": "grafana",
-    "version": "9.5.13"
+    "version": "9.5.15"
   },
   "haproxy": {
     "name": "haproxy-2.7.10",
@@ -430,9 +430,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.142",
+    "name": "linux-5.15.145",
     "pname": "linux",
-    "version": "5.15.142"
+    "version": "5.15.145"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -555,9 +555,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.95",
+    "name": "nss-3.96",
     "pname": "nss",
-    "version": "3.95"
+    "version": "3.96"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -700,9 +700,9 @@
     "version": "122"
   },
   "postfix": {
-    "name": "postfix-3.8.2",
+    "name": "postfix-3.8.4",
     "pname": "postfix",
-    "version": "3.8.2"
+    "version": "3.8.4"
   },
   "postgresql": {
     "name": "postgresql-14.9",
@@ -905,9 +905,9 @@
     "version": "4.9.0"
   },
   "slurm": {
-    "name": "slurm-23.02.6.1",
+    "name": "slurm-23.02.7.1",
     "pname": "slurm",
-    "version": "23.02.6.1"
+    "version": "23.02.7.1"
   },
   "solr": {
     "name": "solr-8.11.2",
@@ -990,9 +990,9 @@
     "version": "9.0.1441"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.42.3+abi=4.0",
+    "name": "webkitgtk-2.42.4+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.42.3"
+    "version": "2.42.4"
   },
   "wget": {
     "name": "wget-1.21.4",
