@@ -17,7 +17,7 @@ let
         }
       else
       pkgs.fetchFromGitHub {
-        inherit (repoInfo) owner repo rev sha256;
+        inherit (repoInfo) owner repo rev hash;
         name = "${name}-${substring 0 11 repoInfo.rev}";
       })
       versions;
