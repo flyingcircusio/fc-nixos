@@ -175,8 +175,8 @@ let
   doc = { roles = platformRoleDoc; };
 
   jobs = {
-    pkgs = pkgNameListToHydraJobs overlayPkgNames;
-    importantPackages = pkgNameListToHydraJobs importantPkgNames;
+    pkgs = pkgNameListToHydraJobs overlayPkgNamesToTest;
+    importantPackages = pkgNameListToHydraJobs importantPkgNamesToTest;
     tests = import ../tests { inherit system pkgs; nixpkgs = nixpkgs_; };
   };
 
