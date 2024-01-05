@@ -312,11 +312,12 @@ in
           groups = [ "sudo-srv" ];
           runAs = "slurm";
         }
+      ];
+
+      flyingcircus.passwordlessSudoPackages = [
         {
-          commands = [
-            "${config.flyingcircus.agent.package}/bin/fc-slurm"
-            "/run/current-system/sw/bin/fc-slurm"
-          ];
+          commands = [ "bin/fc-slurm" ];
+          package = config.flyingcircus.agent.package;
           groups = [ "sudo-srv" ];
         }
       ];

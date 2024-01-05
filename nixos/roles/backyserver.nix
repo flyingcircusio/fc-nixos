@@ -131,8 +131,9 @@ in
 
     };
 
-    flyingcircus.passwordlessSudoRules = [
-      { commands = [ "${backy}/bin/backy check" ];
+    flyingcircus.passwordlessSudoPackages = [
+      { commands = [ "bin/backy check" ];
+        package = backy;
         groups = [ "sensuclient" ];
       }
     ];

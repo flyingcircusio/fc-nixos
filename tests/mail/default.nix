@@ -183,7 +183,8 @@ in
   };
   testScript = let
     passwdFile = "/var/lib/dovecot/passwd";
-    chpasswd = "${pkgs.fc.roundcube-chpasswd-py}/bin/roundcube-chpasswd";
+    chpasswdNixPath = "${pkgs.fc.roundcube-chpasswd-py}/bin/roundcube-chpasswd";
+    globalChpasswd = "/run/current-system/sw/bin/roundcube-chpasswd";
   in ''
     with subtest("postsuper sudo rule should be present for service group"):
       mail.succeed('grep %service /etc/sudoers | grep -q postsuper')
@@ -193,18 +194,21 @@ in
 
     with subtest("roundcube-chpasswd sudo rule should be present for roundcube user"):
       roundcube_sudo = mail.succeed('grep roundcube-chpasswd /etc/sudoers').strip().split()
-      assert roundcube_sudo == [
+      expected_sudo = [
         "roundcube",
         "ALL=(vmail)",
         "NOPASSWD:",
-        "${chpasswd}",
-      ], f"Got unexpected sudo line: {roundcube_sudo}"
+        "${globalChpasswd},", # mind the comma, it's part of the sudoers syntax!
+        "NOPASSWD:",
+        "${chpasswdNixPath}",
+      ]
+      assert roundcube_sudo == expected_sudo, f"Got unexpected sudo line,\nexpected: {expected_sudo}\n  actual: {roundcube_sudo}"
 
     with subtest("changing a mail password via roundcube-chpasswd should work"):
       mail.succeed("echo user1@example.local:placeholder > ${passwdFile}")
       mail.succeed(
         "sudo -u roundcube "
-        "sudo -u vmail ${chpasswd} "
+        "sudo -u vmail ${chpasswdNixPath} "
         "--passwd-file ${passwdFile} "
         "<<< 'user1@example.local:pass'"
       )

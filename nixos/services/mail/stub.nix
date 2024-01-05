@@ -80,6 +80,7 @@ in {
       postfix_mailq =
         let
           mailq = "${pkgs.postfix}/bin/mailq";
+          checkMailq = "${pkgs.fc.check-postfix}/bin/check_mailq";
         in {
           command = "sudo ${checkMailq} -w 50 -c 500 --mailq ${mailq}";
           notification = "Too many undelivered mails in Postfix mail queue";
@@ -97,9 +98,10 @@ in {
       };
     };
 
-    flyingcircus.passwordlessSudoRules = [
+    flyingcircus.passwordlessSudoPackages = [
       {
-        commands = [ checkMailq ];
+        commands = [ "bin/check_mailq" ];
+        package = pkgs.fc.check-postfix;
         groups = [ "sensuclient" ];
       }
     ];

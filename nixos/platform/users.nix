@@ -228,9 +228,13 @@ in
         groups = [ "sudo-srv" ];
         runAs = "%service";
       }
+    ];
+
+    flyingcircus.passwordlessSudoPackages = [
       # Allow applying config and restarting services to service users
       {
-        commands = [ "/run/current-system/sw/bin/systemctl" ];
+        commands = [ "bin/systemctl" ];
+        package = pkgs.systemd;
         groups = [ "admins" "sudo-srv" "service" ];
       }
     ];

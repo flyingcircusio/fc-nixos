@@ -204,34 +204,38 @@ in
               + (lib.concatMapStrings (u: " --in-service ${u}") machines);
         };
 
-      flyingcircus.passwordlessSudoRules = [
+      flyingcircus.passwordlessSudoPackages = [
         {
           commands = [
-            "/run/current-system/sw/bin/fc-collect-garbage"
-            "/run/current-system/sw/bin/fc-manage"
-            "/run/current-system/sw/bin/fc-maintenance delete"
-            "/run/current-system/sw/bin/fc-maintenance -v delete"
+            "bin/fc-collect-garbage"
+            "bin/fc-manage"
+            "bin/fc-maintenance delete"
+            "bin/fc-maintenance -v delete"
           ];
+          package = cfg.agent.package;
           groups = [ "admins" "sudo-srv" "service" ];
         }
         {
-          commands = [ "${cfg.agent.package}/bin/fc-manage check" ];
+          commands = [ "bin/fc-manage check" ];
+          package = cfg.agent.package;
           users = [ "sensuclient" ];
         }
         {
-          commands = [ "${cfg.agent.package}/bin/fc-postgresql check-autoupgrade-unexpected-dbs" ];
+          commands = [ "bin/fc-postgresql check-autoupgrade-unexpected-dbs" ];
+          package = cfg.agent.package;
           users = [ "sensuclient" ];
           runAs = "postgres";
         }
         {
           commands = [
-            "/run/current-system/sw/bin/fc-maintenance run"
-            "/run/current-system/sw/bin/fc-maintenance run --run-all-now"
-            "/run/current-system/sw/bin/fc-maintenance schedule"
-            "/run/current-system/sw/bin/fc-maintenance -v run"
-            "/run/current-system/sw/bin/fc-maintenance -v run --run-all-now"
-            "/run/current-system/sw/bin/fc-maintenance -v schedule"
+            "bin/fc-maintenance run"
+            "bin/fc-maintenance run --run-all-now"
+            "bin/fc-maintenance schedule"
+            "bin/fc-maintenance -v run"
+            "bin/fc-maintenance -v run --run-all-now"
+            "bin/fc-maintenance -v schedule"
           ];
+          package = cfg.agent.package;
           groups = [ "admins" ];
         }
       ];

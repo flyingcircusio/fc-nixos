@@ -77,9 +77,10 @@ in
       { ceph_binary =  "${ceph_sudo}/bin/ceph-sudo"; }
     ];
 
-    flyingcircus.passwordlessSudoRules = [
+    flyingcircus.passwordlessSudoPackages = [
       {
-        commands = [ "${pkgs.ceph}/bin/ceph" ];
+        commands = [ "bin/ceph" ];
+        package = pkgs.ceph;
         users = [ "telegraf" ];
       }
     ];

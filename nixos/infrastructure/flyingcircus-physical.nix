@@ -111,12 +111,13 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
 
     flyingcircus.ipmi.enable = true;
 
-    flyingcircus.passwordlessSudoRules = [
+    flyingcircus.passwordlessSudoPackages = [
       {
-        commands = with pkgs; [
-          "${fc.sensuplugins}/bin/check_interfaces"
-          "${fc.sensuplugins}/bin/check_lvm_integrity"
+        commands = [
+          "bin/check_interfaces"
+          "bin/check_lvm_integrity"
         ];
+        package = pkgs.fc.sensuplugins;
         groups = [ "sensuclient" ];
       }
     ];
