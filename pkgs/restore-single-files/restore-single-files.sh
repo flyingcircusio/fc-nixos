@@ -51,9 +51,13 @@ echo $LOOPDEV
 
 TERMINATE="umount $LOOPMNT; losetup -d $LOOPDEV; sleep 1; fusermount -u $FUSEMNT"
 trap "$TERMINATE" ERR 1 2 3 5 15
+LOOPPART="${LOOPDEV}p1"
+while [ ! -e $LOOPPART ]; do
+	sleep 0.2
+done
 
 info "Mounting image"
-mount -oloop ${LOOPDEV}p1 $LOOPMNT
+mount -oloop ${LOOPPART} $LOOPMNT
 
 info "Image data ready in ${HILITE}$LOOPMNT${NORMAL}"
 while true; do
