@@ -231,7 +231,7 @@ in {
                 user = config.services.httpd.user;
                 group = config.services.httpd.group;
                 phpOptions = phpOptions;
-                settings = {
+                settings = (builtins.mapAttrs (_: fclib.mkPlatform) {
                   "listen.owner" = config.services.httpd.user;
                   "listen.group" = config.services.httpd.group;
                   "pm" = "dynamic";
@@ -243,7 +243,7 @@ in {
                   "request_slowlog_timeout" = "6s";
                   "request_slowlog_trace_depth" = "100";
                   "catch_workers_output" = "true";
-                };
+                });
               } vhost.pool; # only contains override values
           }) role.vhosts);
 
