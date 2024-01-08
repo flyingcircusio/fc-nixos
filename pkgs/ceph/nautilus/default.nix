@@ -222,7 +222,7 @@ in rec {
 
      outputs = [ "out" "man" ];
     } (
-    let scriptDependencies = [ bash utillinux coreutils xfsprogs python3Packages.python ];
+    let scriptDependencies = [ bash utillinux udev coreutils xfsprogs python3Packages.python ];
     in
       ''
       mkdir -p $out/{bin,etc,${sitePackages}}
