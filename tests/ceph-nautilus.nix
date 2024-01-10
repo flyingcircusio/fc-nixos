@@ -7,6 +7,7 @@ let
     {
 
       virtualisation.memorySize = 3000;
+      virtualisation.cores = 2;
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ srv sto stb ];
       virtualisation.emptyDiskImages = diskSizes;
       imports = [ ../nixos ../nixos/roles ];
@@ -180,7 +181,7 @@ in
               len(status["mgrmap"]["standbys"]) == mgrs-1
           break
         except AssertionError as e:
-          if time.time() - start < 60:
+          if time.time() - start < 120:
             time_waiting += tries*2
             time.sleep(tries*2)
           else:
@@ -202,13 +203,14 @@ in
             return
 
         if time.time() - start < 60:
-          time_waiting += tries*2
-          time.sleep(tries*2)
+          time_waiting += 5
+          time.sleep(5)
         else:
           raise
 
     show(host1, 'ip l')
     show(host1, 'cat /etc/fstab')
+    show(host1, 'cat /proc/cpuinfo')
     show(host1, 'iptables -L -n -v')
     show(host1, 'ls -lah /etc/ceph/')
     show(host1, 'cat /etc/ceph/ceph.client.admin.keyring')

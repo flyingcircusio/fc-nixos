@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck shell=bash
 set -e
 
 usage() {
@@ -63,7 +64,7 @@ else
 fi
 
 if ! rbd info "$VOLUME" &>/dev/null; then
-    echo "$0: volume ${VOLUME} not found" &>2
+    echo "$0: volume ${VOLUME} not found" >&2
     exit 66
 fi
 
