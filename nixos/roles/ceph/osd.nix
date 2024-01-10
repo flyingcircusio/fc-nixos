@@ -243,6 +243,10 @@ in
           ExecStop = ''
             ${cephPkgs.fc-ceph}/bin/fc-ceph osd deactivate --as-systemd-unit %i
           '';
+
+          # OSDs may sometimes take a bit longer and the default timeout can
+          # quickly produce a volatile state.
+          TimeoutSec = "15m";
         };
 
       };
