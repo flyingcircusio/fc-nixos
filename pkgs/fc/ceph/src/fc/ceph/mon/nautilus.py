@@ -1,38 +1,41 @@
 import configparser
-import errno
-import glob
-import os
-import re
 import resource
 import shutil
 import socket
-import sys
 import tempfile
-import threading
-import time
-import traceback
-from subprocess import CalledProcessError
 
-from fc.ceph.util import find_lv_path, find_vg_for_mon, kill, mount_status, run
+from fc.ceph.lvm import XFSCephVolume
+from fc.ceph.util import kill, run
+
+
+def find_vg_for_mon():
+    vgsys = False
+    for vg in run.json.vgs():
+        if vg["vg_name"].startswith("vgjnl"):
+            return vg["vg_name"]
+        if vg["vg_name"] == "vgsys":
+            vgsys = True
+
+    if vgsys:
+        print(
+            "WARNING: using volume group `vgsys` because no journal "
+            "volume group was found."
+        )
+        return "vgsys"
+    raise IndexError("No suitable volume group found.")
 
 
 class Monitor(object):
     def __init__(self):
         self.id = socket.gethostname()
-        self.mon_dir = f"/srv/ceph/mon/ceph-{self.id}"
+        self.volume = XFSCephVolume("ceph-mon", f"/srv/ceph/mon/ceph-{self.id}")
         self.pid_file = f"/run/ceph/mon.{self.id}.pid"
 
     def activate(self):
         print(f"Activating MON {self.id}...")
         resource.setrlimit(resource.RLIMIT_NOFILE, (270000, 270000))
 
-        if not mount_status(self.mon_dir):
-            run.mount(
-                # fmt: off
-                "-t", "xfs", "-o", "defaults,nodev,nosuid",
-                "LABEL=ceph-mon", self.mon_dir,
-                # fmt: on
-            )
+        self.volume.activate()
         run.ceph_mon("-i", self.id, "--pid-file", self.pid_file)
 
     def deactivate(self):
@@ -46,42 +49,18 @@ class Monitor(object):
             pass
         self.activate()
 
-    def create(self, size="8g", lvm_vg=None, bootstrap_cluster=False):
+    def create(
+        self,
+        size="8g",
+        lvm_vg=None,
+        bootstrap_cluster=False,
+        encrypt: bool = False,
+    ):
         print(f"Creating MON {self.id}...")
 
-        if os.path.exists(self.mon_dir):
-            print(
-                "There already exists a mon dir. "
-                "Please destroy existing mon data first."
-            )
-            sys.exit(1)
-
-        if not os.path.exists(self.mon_dir):
-            os.makedirs(self.mon_dir)
-
         if not lvm_vg:
-            try:
-                lvm_vg = find_vg_for_mon()
-            except IndexError:
-                print(
-                    "Could not find a journal VG. Please prepare a journal "
-                    "VG first using `fc-ceph osd prepare-journal`."
-                )
-                sys.exit(1)
-
-        lvm_lv = "ceph-mon"
-        lvm_data_device = f"/dev/{lvm_vg}/{lvm_lv}"
-
-        print(f"creating new mon volume {lvm_data_device}")
-        run.lvcreate("-n", lvm_lv, f"-L{size}", lvm_vg)
-        run.mkfs_xfs("-L", lvm_lv, "-m", "crc=1,finobt=1", lvm_data_device)
-        run.mount(
-            # fmt: off
-            "-t", "xfs",
-            "-o", "defaults,nodev,nosuid",
-            "LABEL=ceph-mon", self.mon_dir,
-            # fmt: on
-        )
+            lvm_vg = find_vg_for_mon()
+        self.volume.create(lvm_vg, size, encrypt=encrypt)
 
         tmpdir = tempfile.mkdtemp()
 
@@ -151,11 +130,6 @@ class Monitor(object):
         run.systemctl("start", "fc-ceph-mon")
 
     def destroy(self):
-        try:
-            lvm_data_device = find_lv_path("ceph-mon")
-        except ValueError:
-            lvm_data_device = None
-
         run.systemctl("stop", "fc-ceph-mon")
         try:
             self.deactivate()
@@ -163,10 +137,5 @@ class Monitor(object):
             pass
 
         run.ceph("mon", "remove", self.id)
-        run.umount(self.mon_dir)
 
-        if lvm_data_device:
-            run.wipefs("-q", "-a", lvm_data_device, check=False)
-            run.lvremove("-f", lvm_data_device, check=False)
-
-        os.rmdir(self.mon_dir)
+        self.volume.purge(lv_only=True)

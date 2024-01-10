@@ -26,6 +26,7 @@ in {
     ./filebeat.nix
     ./enc.nix
     ./firewall.nix
+    ./full-disk-encryption.nix
     ./journalbeat.nix
     ./garbagecollect
     ./ipmi.nix

@@ -1,9 +1,15 @@
 # also copied to pkgs/fc/agent/fc/util/runners.py
+import ctypes
 import json
 import os
 import subprocess
 import time
 from subprocess import PIPE
+
+from rich.console import Console
+
+console = Console(markup=False, highlight=False)
+
 
 ## runner utils
 
@@ -87,11 +93,14 @@ class Runner(object):
     def __getattr__(self, name):
         name = self.__aliases.get(name, name)
 
-        def callable(*args, **kw):
+        def callable(*args: str, **kw):
             options = self.default_options.copy()
+
             options.update(kw)
 
-            print("$", name, " ".join(args), flush=True)
+            console.print(
+                "$", name, " ".join([str(a) for a in args]), style="grey50"
+            )
 
             check = options["check"]
             options["check"] = True
@@ -99,11 +108,16 @@ class Runner(object):
             try:
                 return subprocess.run((name,) + args, **options).stdout
             except subprocess.CalledProcessError as e:
-                print("> return code:", e.returncode)
-                print("> stdout:")
-                print(e.stdout.decode("ascii", errors="replace"))
-                print("> stderr:")
-                print(e.stderr.decode("ascii", errors="replace"))
+                stdout = e.stdout
+                stderr = e.stderr
+                if "encoding" not in options:
+                    stdout = stdout.decode("ascii", errors="replace")
+                    stderr = stderr.decode("ascii", errors="replace")
+                console.print(f"> return code: {e.returncode}", style="red")
+                console.print("> stdout:", style="red")
+                console.print(stdout, style="red")
+                console.print("> stderr:", style="red")
+                console.print(stderr, style="red")
                 if check:
                     raise
 
@@ -122,37 +136,6 @@ run = Runner(
 )
 
 
-## common management utils
-
-
-def find_vg_for_mon():
-    vgsys = False
-    for vg in run.json.vgs():
-        if vg["vg_name"].startswith("vgjnl"):
-            return vg["vg_name"]
-        if vg["vg_name"] == "vgsys":
-            vgsys = True
-
-    if vgsys:
-        print(
-            "WARNING: using volume group `vgsys` because no journal "
-            "volume group was found."
-        )
-        return "vgsys"
-    raise IndexError("No suitable volume group found.")
-
-
-def find_lv_path(name):
-    result = []
-    for lv in run.json.lvs():
-        if lv["lv_name"] == name:
-            result.append(lv)
-    if len(result) != 1:
-        raise ValueError(f"Invalid number of LVs found: {len(result)}")
-    lv = result[0]
-    return f"/dev/{lv['vg_name']}/{lv['lv_name']}"
-
-
 def mount_status(mountpoint):
     """Return the absolute path to the kernel device used for a given
     mountpoint.
@@ -161,14 +144,19 @@ def mount_status(mountpoint):
 
     """
     for device in run.json.lsblk_linear():
-        if device["mountpoint"] == mountpoint:
+        if device.get("mountpoint", None) == mountpoint:
             return device["name"]
+        for candidate in device.get("mountpoints", []):
+            if candidate == mountpoint:
+                return device["name"]
     return False
 
 
 def kill(pid_file):
     if not os.path.exists(pid_file):
-        print(f"PID file {pid_file} not found. Not killing.")
+        console.print(
+            f"PID file {pid_file} not found. Not killing.", style="red"
+        )
         return
 
     with open(pid_file) as f:
@@ -186,3 +174,20 @@ def kill(pid_file):
             # any longer.
             run.kill(pid, check=False)
     print()
+
+
+# Implement mlock to avoid swapping as we store sensitive data (like encryption)
+# keys.
+# Constants defined by kernel, not dynamically accessible here:
+# https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/include/uapi/asm-generic/mman.h#n18
+
+MCL_CURRENT = 1
+MCL_FUTURE = 2
+
+libc = ctypes.CDLL("libc.so.6", use_errno=True)
+
+
+def mlockall():
+    result = libc.mlockall(MCL_CURRENT | MCL_FUTURE)
+    if result != 0:
+        raise Exception("cannot lock memory, errno=%s" % ctypes.get_errno())
