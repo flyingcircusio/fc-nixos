@@ -31,7 +31,6 @@ let
     concatMapStringsSep "\n"
       (e: "${e.uid}: ${concatStringsSep ", " e.email_addresses}")
       config.flyingcircus.users.userData;
-  checkMailq = "${pkgs.fc.check-postfix}/bin/check_mailq";
 
 in {
   imports = [
@@ -150,6 +149,7 @@ in {
       let
         plug = "${pkgs.monitoring-plugins}/bin";
         mailq = "${pkgs.postfix}/bin/mailq";
+        checkMailq = "${pkgs.fc.check-postfix}/bin/check_mailq";
       in {
         postfix_mailq = {
           command = "sudo ${checkMailq} -w 200 -c 2000 --mailq ${mailq}";
@@ -175,11 +175,15 @@ in {
         };
       };
 
-      flyingcircus.passwordlessSudoRules = [
+      flyingcircus.passwordlessSudoPackages = [
         {
-          commands = [ checkMailq ];
+          commands = [ "bin/check_mailq" ];
+          package = pkgs.fc.check-postfix;
           groups = [ "sensuclient" ];
         }
+      ];
+
+      flyingcircus.passwordlessSudoRules = [
         {
           commands = [ "ALL" ];
           groups = [ "sudo-srv" ];

@@ -188,10 +188,50 @@ in {
       };
     };
 
+    flyingcircus.passwordlessSudoPackages = mkOption {
+      description = ''
+        Works similar to security.sudo.extraRules, but `commands` are
+        interpreted as paths relative to a given `package` so the binary can be
+        run from the full Nix store path with `sudo`.
+
+        This option also creates a corresponding rule for
+        `/run/current-system/sw/` to be able to run the globally installed
+        binary from $PATH with `sudo`.
+
+        You still need to add the package to `environment.systemPackages`
+        yourself to make it globally available.
+
+        Like `flyingcircus.passwordlessSudoRules`, this automatically sets
+        passwordless mode and places rules after rules with default order
+        number(uses `mkOrder 1100`)
+      '';
+
+      example = literalExpression ''
+        [
+          {
+            commands = [ "bin/a" "bin/b --option" ];
+            package = pkgs.example;
+            groups = [ "admins" ];
+          }
+        ]
+      '';
+
+      default = [];
+    };
+
     flyingcircus.passwordlessSudoRules = mkOption {
       description = ''
         Works like security.sudo.extraRules, but sets passwordless mode and
         places rules after rules with default order number (uses mkOrder 1100).
+      '';
+
+      example = literalExpression ''
+        [
+          {
+            commands = [ "''${exampleStorePath}" ];
+            groups = [ "admins" ];
+          }
+        ];
       '';
 
       default = [];
@@ -319,6 +359,17 @@ in {
         (map
           (rule: rule // { commands = (map addPasswordOption rule.commands); })
           config.flyingcircus.passwordlessSudoRules);
+
+    # implementation for flyingcircus.passwordlessSudoPackages
+    flyingcircus.passwordlessSudoRules =
+      map
+        (e: {
+          commands = lib.flatten (map (path: [
+            "/run/current-system/sw/${path}"
+            "${e.package}/${path}"
+          ]) e.commands);
+        } // (filterAttrs (n: v: n != "commands" && n != "package") e))
+        cfg.passwordlessSudoPackages;
 
     security.dhparams.enable = true;
 

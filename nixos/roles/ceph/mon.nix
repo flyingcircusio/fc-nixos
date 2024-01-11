@@ -81,11 +81,10 @@ in
         };
       };
 
-      flyingcircus.passwordlessSudoRules = [
+      flyingcircus.passwordlessSudoPackages = [
         {
-          commands = with pkgs; [
-            "${pkgs.fc.check-ceph}/bin/check_ceph"
-          ];
+          commands = [ "bin/check_ceph" ];
+          package = pkgs.fc.check-ceph;
           groups = [ "sensuclient" ];
         }
       ];

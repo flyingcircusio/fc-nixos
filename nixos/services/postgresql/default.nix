@@ -228,13 +228,15 @@ in {
           groups = [ "sudo-srv" "service" ];
           runAs = "postgres";
         }
+      ];
+
+      flyingcircus.passwordlessSudoPackages = [
         {
           commands = [
-            "/run/current-system/sw/bin/systemctl start postgresql"
-            "/run/current-system/sw/bin/systemctl stop postgresql"
-            "${pkgs.systemd}/bin/systemctl start postgresql"
-            "${pkgs.systemd}/bin/systemctl stop postgresql"
+            "bin/systemctl start postgresql"
+            "bin/systemctl stop postgresql"
           ];
+          package = pkgs.systemd;
           users = [ "postgres" ];
         }
       ];

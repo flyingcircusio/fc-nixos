@@ -326,14 +326,20 @@ in {
           "${pkgs.perl}/bin/json_pp < ${sensuClientConfigFile}")
       ];
 
-      flyingcircus.passwordlessSudoRules = [
+      flyingcircus.passwordlessSudoPackages = [
         {
-          commands = with pkgs; [
-            "${fc.multiping}/bin/multiping"
-            "${fc.sensuplugins}/bin/check_disk"
-          ];
+          commands = [ "bin/multiping" ];
+          package = pkgs.fc.multiping;
           groups = [ "sensuclient" ];
         }
+        {
+          commands = [ "bin/check_disk" ];
+          package = pkgs.fc.sensuplugins;
+          groups = [ "sensuclient" ];
+        }
+      ];
+
+      flyingcircus.passwordlessSudoRules = [
         # Allow sensuclient group to become service user for running custom checks
         {
           commands = [ "ALL" ];

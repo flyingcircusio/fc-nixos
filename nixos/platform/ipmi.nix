@@ -78,11 +78,10 @@ in {
       '';
     };
 
-    flyingcircus.passwordlessSudoRules = [
+    flyingcircus.passwordlessSudoPackages = [
       {
-        commands = with pkgs; [
-          "${pkgs.check_ipmi_sensor}/bin/check_ipmi_sensor"
-        ];
+        commands = [ "bin/check_ipmi_sensor" ];
+        package = pkgs.check_ipmi_sensor;
         groups = [ "sensuclient" ];
       }
     ];

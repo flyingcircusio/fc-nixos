@@ -36,23 +36,25 @@ in
 
     flyingcircus.services.nginx.enable = true;
 
-    flyingcircus.passwordlessSudoRules = [
+    flyingcircus.passwordlessSudoPackages = [
       {
-        commands = [
-          "${serviceCfg.tools.matomoConsole}/bin/matomo-console"
-          "/run/current-system/sw/bin/matomo-console"
-        ];
+        commands = [ "bin/matomo-console" ];
+        package = serviceCfg.tools.matomoConsole;
         users = [ "sensuclient" ];
         groups = [ "service" "sudo-srv" ];
         runAs = "matomo";
       }
       {
+        commands = [ "bin/matomo-check-permissions" ];
+        package = serviceCfg.tools.matomoCheckPermissions;
+        users = [ "sensuclient" ];
+        groups = ["service" ];
+      }
+      {
         commands = [
-          "/run/current-system/sw/bin/matomo-check-permissions"
-          "/run/current-system/sw/bin/stat /var/lib/matomo/share/config/config.ini.php"
-          "${serviceCfg.tools.matomoCheckPermissions}/bin/matomo-check-permissions"
-          "${pkgs.coreutils}/bin/stat /var/lib/matomo/share/config/config.ini.php"
+          "bin/stat /var/lib/matomo/share/config/config.ini.php"
         ];
+        package = pkgs.coreutils;
         users = [ "sensuclient" ];
         groups = ["service" ];
       }
