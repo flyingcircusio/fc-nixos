@@ -191,7 +191,7 @@ in {
     flyingcircus.passwordlessSudoPackages = mkOption {
       description = ''
         Works similar to security.sudo.extraRules, but `commands` are
-        interpreted as paths relative to a given `package` so binary can be
+        interpreted as paths relative to a given `package` so the binary can be
         run from the full Nix store path with `sudo`.
 
         This option also creates a corresponding rule for
