@@ -13,7 +13,7 @@ in
 
       journalReadGroups = mkOption {
         description = "Groups that are allowed to read the system journal.";
-        type = types.listOf types.string;
+        type = types.listOf types.str;
       };
 
     };

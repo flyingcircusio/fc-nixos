@@ -133,12 +133,13 @@ in
         groups = [ "sudo-srv" "service" ];
         runAs = "mysql";
       }
+    ];
+
+    flyingcircus.passwordlessSudoPackages = [
       {
-        commands = [
-          "${xtraPackage}/bin/xtrabackup"
-          "/run/current-system/sw/bin/xtrabackup"
-        ];
-        groups = ["service"];
+        commands = [ "bin/xtrabackup" ];
+        package = xtraPackage;
+        groups = [ "service" ];
       }
     ];
 

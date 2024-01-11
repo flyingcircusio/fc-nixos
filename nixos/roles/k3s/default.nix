@@ -66,12 +66,10 @@
     }
 
     (lib.mkIf (server || agent) {
-      flyingcircus.passwordlessSudoRules = [
+      flyingcircus.passwordlessSudoPackages = [
         {
-          commands = [
-            "${config.flyingcircus.agent.package}/bin/fc-kubernetes"
-            "/run/current-system/sw/bin/fc-kubernetes"
-          ];
+          commands = [ "bin/fc-kubernetes" ];
+          package = config.flyingcircus.agent.package;
           groups = [ "admins" "sudo-srv" ];
         }
       ];

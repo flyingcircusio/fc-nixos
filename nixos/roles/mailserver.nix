@@ -221,12 +221,10 @@ in
       flyingcircus.services.nginx.enable = true;
       flyingcircus.services.redis.enable = true;
 
-      flyingcircus.passwordlessSudoRules = [
+      flyingcircus.passwordlessSudoPackages = [
         {
-          commands = [
-            "${pkgs.postfix}/bin/postsuper"
-            "/run/current-system/sw/bin/postsuper"
-          ];
+          commands = [ "bin/postsuper" ];
+          package = pkgs.postfix;
           groups = [ "sudo-srv" "service" ];
         }
       ];

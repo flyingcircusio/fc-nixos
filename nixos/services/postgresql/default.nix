@@ -7,11 +7,11 @@ let
   upstreamCfg = config.services.postgresql;
   fclib = config.fclib;
   packages = {
-    "11" = pkgs.postgresql_11;
     "12" = pkgs.postgresql_12;
     "13" = pkgs.postgresql_13;
     "14" = pkgs.postgresql_14;
     "15" = pkgs.postgresql_15;
+    "16" = pkgs.postgresql_16;
   };
 
   oldestMajorVersion = head (lib.attrNames packages);
@@ -115,11 +115,7 @@ in {
     let
       postgresqlPkg = getAttr cfg.majorVersion packages;
 
-      extensions = lib.optionals (lib.versionOlder cfg.majorVersion "12") [
-        (pkgs.postgis_2_5.override { postgresql = postgresqlPkg; })
-        (pkgs.temporal_tables.override { postgresql = postgresqlPkg; })
-        postgresqlPkg.pkgs.rum
-      ] ++ lib.optionals (lib.versionAtLeast cfg.majorVersion "12") [
+      extensions = [
         postgresqlPkg.pkgs.periods
         postgresqlPkg.pkgs.postgis
         postgresqlPkg.pkgs.rum
@@ -232,13 +228,15 @@ in {
           groups = [ "sudo-srv" "service" ];
           runAs = "postgres";
         }
+      ];
+
+      flyingcircus.passwordlessSudoPackages = [
         {
           commands = [
-            "/run/current-system/sw/bin/systemctl start postgresql"
-            "/run/current-system/sw/bin/systemctl stop postgresql"
-            "${pkgs.systemd}/bin/systemctl start postgresql"
-            "${pkgs.systemd}/bin/systemctl stop postgresql"
+            "bin/systemctl start postgresql"
+            "bin/systemctl stop postgresql"
           ];
+          package = pkgs.systemd;
           users = [ "postgres" ];
         }
       ];

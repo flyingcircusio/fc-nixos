@@ -30,6 +30,7 @@ fc_collect_garbage_userscan
 devhost
 docker
 external_net
+ferretdb
 kubernetes
 lamp
 mailserver

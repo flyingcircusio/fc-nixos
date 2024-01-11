@@ -40,6 +40,7 @@ in {
   devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
   fcagent = callSubTests ./fcagent.nix {};
+  ferretdb = callTest ./ferretdb.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   collect-garbage = callTest ./collect-garbage.nix {};
@@ -90,6 +91,7 @@ in {
   postgresql13 = callTest ./postgresql { version = "13"; };
   postgresql14 = callTest ./postgresql { version = "14"; };
   postgresql15 = callTest ./postgresql { version = "15"; };
+  postgresql16 = callTest ./postgresql { version = "16"; };
   postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix {};
   prometheus = callTest ./prometheus.nix {};
   rabbitmq = callTest ./rabbitmq.nix {};

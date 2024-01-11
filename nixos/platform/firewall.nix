@@ -135,19 +135,23 @@ in
 
       };
 
-    flyingcircus.passwordlessSudoRules =
-      let ipt = x: "/run/current-system/sw/bin/ip${x}tables";
+    flyingcircus.passwordlessSudoPackages =
+      let ipt = x: "bin/ip${x}tables";
       in [
         {
           commands = [ "${ipt ""} -L*"
                        "${ipt "6"} -L*" ];
+          package = pkgs.iptables;
           groups = [ "users" "service" ];
         }
-        {
-          commands = [ "${checkIPTables}" ];
-          groups = [ "sensuclient" ];
-        }
       ];
+
+    flyingcircus.passwordlessSudoRules = [
+      {
+        commands = [ "${checkIPTables}" ];
+        groups = [ "sensuclient" ];
+      }
+    ];
 
     flyingcircus.localConfigDirs.firewall = {
       dir = toString localCfgDir;
