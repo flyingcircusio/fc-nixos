@@ -34,7 +34,7 @@ rec {
       lib.replaceStrings
         ["\\" "\n"]
         ["" " "]
-        machine.config.flyingcircus.services.sensu-client.checks.${checkName}.command;
+        machine.flyingcircus.services.sensu-client.checks.${checkName}.command;
 
   /*
     Get a basic configuration for a virtual machine

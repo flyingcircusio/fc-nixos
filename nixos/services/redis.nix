@@ -32,7 +32,7 @@ in {
       };
 
       password = mkOption {
-        type = types.nullOr types.string;
+        type = types.nullOr types.str;
         default = null;
         description = ''
           The password for redis. If null, a random password will be generated.

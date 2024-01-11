@@ -15,6 +15,7 @@ in {
     ./ceph/rgw.nix
     ./devhost
     ./external_net
+    ./ferretdb.nix
     ./gitlab.nix
     ./jitsi
     ./k3s
