@@ -62,12 +62,6 @@ let
       '') ethernetDevices;
 in
 {
-  # The NixOS module for FRR is only available in later versions of
-  # NixOS
-  imports = [
-    <nixpkgs-23.05/nixos/modules/services/networking/frr.nix>
-  ];
-
   config = rec {
     environment.etc."host.conf".text = ''
       order hosts, bind
