@@ -10,9 +10,9 @@
     "version": "2.4.58"
   },
   "asterisk": {
-    "name": "asterisk-20.5.1",
+    "name": "asterisk-20.5.2",
     "pname": "asterisk",
-    "version": "20.5.1"
+    "version": "20.5.2"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.16",
@@ -75,9 +75,9 @@
     "version": "120.0.6099.109"
   },
   "chromium": {
-    "name": "chromium-120.0.6099.129",
+    "name": "chromium-120.0.6099.216",
     "pname": "chromium",
-    "version": "120.0.6099.129"
+    "version": "120.0.6099.216"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -150,9 +150,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.52",
+    "name": "element-web-1.11.53",
     "pname": "element-web",
-    "version": "1.11.52"
+    "version": "1.11.53"
   },
   "erlang": {
     "name": "erlang-25.3.2.7",
@@ -185,9 +185,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-121.0",
+    "name": "firefox-121.0.1",
     "pname": "firefox",
-    "version": "121.0"
+    "version": "121.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -215,9 +215,9 @@
     "version": "2.42.0"
   },
   "gitaly": {
-    "name": "gitaly-16.5.6",
+    "name": "gitaly-16.7.2",
     "pname": "gitaly",
-    "version": "16.5.6"
+    "version": "16.7.2"
   },
   "github-runner": {
     "name": "github-runner-2.311.0",
@@ -225,9 +225,9 @@
     "version": "2.311.0"
   },
   "gitlab": {
-    "name": "gitlab-16.5.6",
+    "name": "gitlab-16.7.2",
     "pname": "gitlab",
-    "version": "16.5.6"
+    "version": "16.7.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-3.88.0",
@@ -235,14 +235,14 @@
     "version": "3.88.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.5.6",
+    "name": "gitlab-ee-16.7.2",
     "pname": "gitlab-ee",
-    "version": "16.5.6"
+    "version": "16.7.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-16.5.6",
+    "name": "gitlab-pages-16.7.2",
     "pname": "gitlab-pages",
-    "version": "16.5.6"
+    "version": "16.7.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.6.0",
@@ -250,9 +250,9 @@
     "version": "16.6.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-16.5.6",
+    "name": "gitlab-workhorse-16.7.2",
     "pname": "gitlab-workhorse",
-    "version": "16.5.6"
+    "version": "16.7.2"
   },
   "glibc": {
     "name": "glibc-2.38-27",
@@ -300,9 +300,9 @@
     "version": "2.8.4"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-21",
+    "name": "imagemagick-7.1.1-25",
     "pname": "imagemagick",
-    "version": "7.1.1-21"
+    "version": "7.1.1-25"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.12-68",
@@ -310,9 +310,9 @@
     "version": "6.9.12-68"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-21",
+    "name": "imagemagick-7.1.1-25",
     "pname": "imagemagick",
-    "version": "7.1.1-21"
+    "version": "7.1.1-25"
   },
   "inetutils": {
     "name": "inetutils-2.4",
@@ -335,19 +335,19 @@
     "version": "12.0.3"
   },
   "jicofo": {
-    "name": "jicofo-1.0-1057",
+    "name": "jicofo-1.0-1059",
     "pname": "jicofo",
-    "version": "1.0-1057"
+    "version": "1.0-1059"
   },
   "jitsi-meet": {
-    "name": "jitsi-meet-1.0.7629",
+    "name": "jitsi-meet-1.0.7712",
     "pname": "jitsi-meet",
-    "version": "1.0.7629"
+    "version": "1.0.7712"
   },
   "jitsi-videobridge": {
-    "name": "jitsi-videobridge2-2.3-61-g814bffd6",
+    "name": "jitsi-videobridge2-2.3-64-g719465d1",
     "pname": "jitsi-videobridge2",
-    "version": "2.3-61-g814bffd6"
+    "version": "2.3-64-g719465d1"
   },
   "jq": {
     "name": "jq-1.7",
@@ -365,9 +365,9 @@
     "version": "1.27.6+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-23.0.3",
+    "name": "keycloak-23.0.4",
     "pname": "keycloak",
-    "version": "23.0.3"
+    "version": "23.0.4"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.13.2",
@@ -430,9 +430,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.145",
+    "name": "linux-5.15.146",
     "pname": "linux",
-    "version": "5.15.145"
+    "version": "5.15.146"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -950,14 +950,14 @@
     "version": "3.3a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.16",
+    "name": "apache-tomcat-10.1.18",
     "pname": "apache-tomcat",
-    "version": "10.1.16"
+    "version": "10.1.18"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.83",
+    "name": "apache-tomcat-9.0.85",
     "pname": "apache-tomcat",
-    "version": "9.0.83"
+    "version": "9.0.85"
   },
   "unzip": {
     "name": "unzip-6.0",
