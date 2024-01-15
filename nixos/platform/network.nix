@@ -234,6 +234,7 @@ in
           !
           router bgp ${toString fclib.underlay.asNumber}
            bgp router-id ${fclib.underlay.loopback}
+           bgp bestpath as-path multipath-relax
            no bgp ebgp-requires-policy
            neighbor switches peer-group
            neighbor switches remote-as external
