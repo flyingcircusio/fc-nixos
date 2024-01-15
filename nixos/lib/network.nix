@@ -238,7 +238,7 @@ rec {
         mac = lib.toLower
                 (lib.attrByPath [ "mac" ] macFallback interface);
 
-        policy = interface.policy;
+        policy = interface.policy or "puppet";
 
         dualstack = rec {
           # Without netmask
