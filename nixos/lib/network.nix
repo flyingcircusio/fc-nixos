@@ -15,9 +15,9 @@ let
 
   interfaceData =
     let
-      underlayInterfaces = lib.filterAttrs (name: value: name != "ul" && value.policy == "underlay") encInterfaces;
+      underlayInterfaces = lib.filterAttrs (name: value: name != "ul" && value.policy or null == "underlay") encInterfaces;
       underlayCount = length (attrNames underlayInterfaces);
-      vxlanInterfaces = lib.filterAttrs (name: value: value.policy == "vxlan") encInterfaces;
+      vxlanInterfaces = lib.filterAttrs (name: value: value.policy or null == "vxlan") encInterfaces;
       vxlanCount = length (attrNames vxlanInterfaces);
     in
       if config.flyingcircus.infrastructureModule != "flyingcircus-physical"
@@ -215,7 +215,7 @@ rec {
       lib.nameValuePair vlan (
       let
         priority = routingPriority vlan;
-        bridged = interface.bridged || interface.policy == "vxlan";
+        bridged = interface.bridged || interface.policy or null == "vxlan";
 
         mtu = if hasAttr vlan config.flyingcircus.static.mtus
               then config.flyingcircus.static.mtus.${vlan}
