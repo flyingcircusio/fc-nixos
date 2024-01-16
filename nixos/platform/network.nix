@@ -315,17 +315,16 @@ in
                 IFACE_DRIVER=$(ethtool -i $IFACE | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
                 case $IFACE_DRIVER in
                     e1000|e1000e|igb|ixgbe|i40e)
-                        # Disable interrupt moderation. We want traffic to leave the buffers
-                        # as fast as possible. Specifically on 10G links this can otherwise
-                        # quickly saturate the buffers and cause discards or pauses.
-                        echo "Disabling interrupt moderation ..."
-                        ethtool -C "$IFACE" rx-usecs 0 || true
+                        # Set adaptive interrupt moderation. This does increase
+                        #
+                        echo "Enabling adaptive interrupt moderation ..."
+                        ethtool -C "$IFACE" rx-usecs 1 || true
                         # Larger buffers.
                         echo "Setting ring buffer ..."
                         ethtool -G "$IFACE" rx 4096 tx 4096 || true
                         # Large receive offload to reduce small packet CPU/interrupt impact.
-                        echo "Disabling large receive offload ..."
-                        ethtool -K "$IFACE" lro off || true
+                        echo "Enabling large receive offload ..."
+                        ethtool -K "$IFACE" lro on || true
                         ;;
                 esac
 
