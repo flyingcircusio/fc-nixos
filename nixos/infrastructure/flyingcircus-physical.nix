@@ -31,7 +31,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         # Drivers
         "dolvm"
         "igb.InterruptThrottleRate=1"
-        "ixgbe.InterruptThrottleRate=1"
       ];
 
       loader.grub = {
@@ -85,6 +84,41 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       domain = "fcio.net";
       hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
     };
+
+    boot.kernel.sysctl = {
+
+      "vm.min_free_kbytes" = "513690";
+
+      "net.core.netdev_max_backlog" = "300000";
+      "net.core.optmem" = "40960";
+      "net.core.wmem_default" = "16777216";
+      "net.core.wmem_max" = "16777216";
+      "net.core.rmem_default" = "8388608";
+      "net.core.rmem_max" = "16777216";
+      "net.core.somaxconn" = "1024";
+
+      "net.ipv4.tcp_fin_timeout" = "10";
+      "net.ipv4.tcp_max_syn_backlog" = "30000";
+      "net.ipv4.tcp_slow_start_after_idle" = "0";
+      "net.ipv4.tcp_syncookies" = "0";
+      "net.ipv4.tcp_timestamps" = "0";
+                                  # 1MiB   8MiB    # 16 MiB
+      "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
+      "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
+      "net.ipv4.tcp_mem" = "1048576 8388608 16777216";
+
+      "net.ipv4.tcp_tw_recycle" = "1";
+      "net.ipv4.tcp_tw_reuse" = "1";
+
+      # Supposedly this doesn't do much good anymore, but in one of my tests
+      # (too many, can't prove right now.) this appeared to have been helpful.
+      "net.ipv4.tcp_low_latency" = "1";
+
+      # Optimize multi-path for VXLAN (layer3 in layer3)
+      "net.ipv4.fib_multipath_hash_policy" = "2";
+    };
+
+    services.irqbalance.enable = true;
 
     # Not perfect but avoids triggering the 'established' rule which can
     # lead to massive/weird Ceph instabilities. Also, coordination tasks
