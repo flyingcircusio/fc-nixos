@@ -4,8 +4,12 @@ with lib;
 
 let
   cfg = config.flyingcircus.services.rabbitmq;
+  inherit (config) fclib;
 
   inherit (builtins) concatStringsSep;
+
+  telegrafPassword = fclib.derivePasswordForHost "telegraf";
+  sensuPassword = fclib.derivePasswordForHost "sensu";
 
   config_file_content = lib.generators.toKeyValue {} cfg.configItems;
   config_file = pkgs.writeText "rabbitmq.conf" config_file_content;
@@ -16,21 +20,18 @@ in {
   ###### interface
   options = {
     flyingcircus.services.rabbitmq = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Whether to enable the RabbitMQ server, an Advanced Message
-          Queuing Protocol (AMQP) broker.
-        '';
-      };
+      enable = mkEnableOption ''
+        Whether to enable the RabbitMQ server, an Advanced Message
+        Queuing Protocol (AMQP) broker.
+      '';
 
       package = mkOption {
-        default = pkgs.rabbitmq_server_3_8;
+        default = pkgs.rabbitmq-server;
         type = types.package;
-        defaultText = "pkgs.rabbitmq_server_3_8";
+        defaultText = "pkgs.rabbitmq-server";
         description = ''
-          Which rabbitmq package (3.7.x or 3.8.x) to use.
+          Which rabbitmq package to use. This service is intended to be used
+          with the current stable RabbitMQ version provided by NixOS.
         '';
       };
 
@@ -47,7 +48,7 @@ in {
 
           Together with 'port' setting it's mostly an alias for
           configItems."listeners.tcp.1" and it's left for backwards
-          compatibility with previous version of this module.
+          compatibility with previous versions of this module.
         '';
         type = types.str;
       };
@@ -142,6 +143,24 @@ in {
 
     # This is needed so we will have 'rabbitmqctl' in our PATH
     environment.systemPackages = [ cfg.package ];
+    environment.etc."local/rabbitmq/README.txt".text = ''
+      RabbitMQ (${cfg.package.version}) is running on this machine.
+
+      If you need to set non-default configuration options, you can put a
+      file called `rabbitmq.config` into this directory. The content of this
+      file will be added the configuration of the RabbitMQ service.
+
+      To access rabbitmqctl and other management tools, change into rabbitmq's
+      user and run your command(s). Example:
+
+        $ sudo -iu rabbitmq
+        % rabbitmqctl status
+      '';
+
+    flyingcircus.localConfigDirs.rabbitmq = {
+      dir = "/etc/local/rabbitmq";
+      user = "rabbitmq";
+    };
 
     services.epmd.enable = true;
 
@@ -157,6 +176,13 @@ in {
 
     flyingcircus.services.rabbitmq.configItems = {
       "listeners.tcp.1" = mkDefault "${cfg.listenAddress}:${toString cfg.port}";
+    };
+
+    flyingcircus.services.rabbitmq = {
+      plugins = [ "rabbitmq_management" ];
+      # XXX: can we have more than one IP?
+      listenAddress = fclib.mkPlatform (head fclib.network.srv.dualstack.addresses);
+      config = fclib.configFromFile /etc/local/rabbitmq/rabbitmq.config "";
     };
 
     systemd.services.rabbitmq = {
@@ -206,6 +232,89 @@ in {
       '';
     };
 
+    systemd.services.fc-rabbitmq-settings = {
+      description = "Check/update FCIO rabbitmq settings (for monitoring)";
+      requires = [ "rabbitmq.service" ];
+      after = [ "rabbitmq.service" ];
+      wantedBy = [ "multi-user.target" ];
+      path = [ cfg.package ];
+      serviceConfig = {
+        Type = "oneshot";
+        User = "rabbitmq";
+        Group = "rabbitmq";
+      };
+
+      script = ''
+        # Delete user guest, if it's there with default password, and
+        # administrator privileges.
+        rabbitmqctl list_users | grep guest && \
+          rabbitmqctl delete_user guest
+
+        # Create user for telegraf, if it does not exist and make sure that the password is set
+        rabbitmqctl list_users | grep fc-telegraf || \
+          rabbitmqctl add_user fc-telegraf ${telegrafPassword}
+
+        rabbitmqctl change_password fc-telegraf ${telegrafPassword}
+
+        # Create user for sensu, if it does not exist and make sure that the password is set
+        rabbitmqctl list_users | grep fc-sensu || \
+          rabbitmqctl add_user fc-sensu ${sensuPassword}
+
+        rabbitmqctl change_password fc-sensu ${sensuPassword}
+
+        rabbitmqctl set_user_tags fc-telegraf monitoring || true
+        rabbitmqctl set_user_tags fc-sensu monitoring || true
+
+        for vhost in $(rabbitmqctl list_vhosts -s); do
+          rabbitmqctl set_permissions fc-telegraf -p "$vhost" "" "" ".*"
+        done
+
+        rabbitmqctl set_permissions fc-sensu "^aliveness-test$" "^amq\.default$" "^(amq\.default|aliveness-test)$"
+      '';
+    };
+
+    systemd.timers.fc-rabbitmq-settings = {
+      description = "Runs the FC RabbitMQ preparation script regularly.";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnUnitActiveSec = "1h";
+        AccuracySec = "10m";
+      };
+    };
+
+    flyingcircus.services = {
+
+      sensu-client.checks.rabbitmq-alive = {
+        notification = "rabbitmq amqp alive";
+        command = ''
+          ${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-amqp-alive.rb \
+            -u fc-sensu -w ${cfg.listenAddress} -p ${sensuPassword}
+        '';
+      };
+
+      sensu-client.checks.rabbitmq-node-health = {
+        notification = "rabbitmq node healthy";
+        command = ''
+          ${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-node-health.rb \
+            -u fc-sensu -w ${cfg.listenAddress} -p ${sensuPassword}
+        '';
+      };
+
+      telegraf.inputs.rabbitmq = [
+        {
+          client_timeout = "10s";
+          header_timeout = "10s";
+          url = "http://${config.networking.hostName}:15672";
+          username = "fc-telegraf";
+          password = telegrafPassword;
+          nodes = [ "rabbit@${config.networking.hostName}" ];
+          # Drop string fields. They are converted to labels in Prometheus
+          # which blows up the number of metrics.
+          fielddrop = [ "idle_since" ];
+        }
+      ];
+
+    };
   };
 
 }

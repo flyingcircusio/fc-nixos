@@ -36,7 +36,8 @@ in {
     ./percona.nix
     ./postgresql
     ./prometheus.nix
-    ./rabbitmq.nix
+    ./rabbitmq
+    ./rabbitmq/365frozen.nix
     ./raid
     ./redis.nix
     ./sensu/client.nix
