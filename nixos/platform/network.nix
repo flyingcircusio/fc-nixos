@@ -428,7 +428,7 @@ in
         ) vxlanInterfaces))
       ));
 
-    boot.kernel.sysctl = {
+    boot.kernel.sysctl = fclib.mkPlatform {
       "net.ipv4.tcp_congestion_control" = "bbr";
       # Ensure that we can do early binds before addresses are configured.
       "net.ipv4.ip_nonlocal_bind" = "1";

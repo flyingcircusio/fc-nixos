@@ -136,8 +136,6 @@ in
 
       "kernel.pid_max" = "999999";
       "kernel.threads-max" = "999999";
-
-      "net.core.somaxconn" = "1024";
     };
   };
 }

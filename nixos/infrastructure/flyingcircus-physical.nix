@@ -103,9 +103,9 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       "net.ipv4.tcp_syncookies" = "0";
       "net.ipv4.tcp_timestamps" = "0";
                                   # 1MiB   8MiB    # 16 MiB
-      "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
-      "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
       "net.ipv4.tcp_mem" = "1048576 8388608 16777216";
+      "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
+      "net.ipv4.tcp_rmem" = "1048576 8388608 16777216";
 
       "net.ipv4.tcp_tw_recycle" = "1";
       "net.ipv4.tcp_tw_reuse" = "1";
