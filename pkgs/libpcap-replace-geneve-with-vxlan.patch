@@ -1,0 +1,463 @@
+From 02cb0856a6f08b70710ebe7fa85ac5f1a588e3e4 Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Wed, 17 Jan 2024 14:31:51 +0100
+Subject: [PATCH] Replace Geneve filter support with support for VXLAN.
+
+---
+ gencode.c              | 180 +++++++++++++----------------------------
+ gencode.h              |   2 +-
+ grammar.y.in           |   6 +-
+ pcap-filter.manmisc.in |  16 ++--
+ scanner.l              |   2 +-
+ 5 files changed, 66 insertions(+), 140 deletions(-)
+
+diff --git a/gencode.c b/gencode.c
+index 29788598..4928d6fc 100644
+--- a/gencode.c
++++ b/gencode.c
+@@ -155,7 +155,7 @@ struct addrinfo {
+ #define IPPROTO_SCTP 132
+ #endif
+ 
+-#define GENEVE_PORT 6081
++#define VXLAN_PORT 4789
+ 
+ #ifdef HAVE_OS_PROTO_H
+ #include "os-proto.h"
+@@ -176,7 +176,7 @@ struct addrinfo {
+ 	(cs)->off_linkhdr.is_variable = (new_is_variable); \
+ 	(cs)->off_linkhdr.constant_part = (new_constant_part); \
+ 	(cs)->off_linkhdr.reg = (new_reg); \
+-	(cs)->is_geneve = 0; \
++	(cs)->is_vxlan = 0; \
+ }
+ 
+ /*
+@@ -343,11 +343,11 @@ struct _compiler_state {
+ 	int is_atm;
+ 
+ 	/*
+-	 * TRUE if "geneve" appeared in the filter; it causes us to
+-	 * generate code that checks for a Geneve header and assume
++	 * TRUE if "vxlan" appeared in the filter; it causes us to
++	 * generate code that checks for a VXLAN header and assume
+ 	 * that later filters apply to the encapsulated payload.
+ 	 */
+-	int is_geneve;
++	int is_vxlan;
+ 
+ 	/*
+ 	 * TRUE if we need variable length part of VLAN offset
+@@ -574,7 +574,7 @@ static struct slist *xfer_to_a(compiler_state_t *, struct arth *);
+ static struct block *gen_mac_multicast(compiler_state_t *, int);
+ static struct block *gen_len(compiler_state_t *, int, int);
+ static struct block *gen_check_802_11_data_frame(compiler_state_t *);
+-static struct block *gen_geneve_ll_check(compiler_state_t *cstate);
++static struct block *gen_vxlan_ll_check(compiler_state_t *cstate);
+ 
+ static struct block *gen_ppi_dlt_check(compiler_state_t *);
+ static struct block *gen_atmfield_code_internal(compiler_state_t *, int,
+@@ -1175,9 +1175,9 @@ init_linktype(compiler_state_t *cstate, pcap_t *p)
+ 	cstate->off_payload = OFFSET_NOT_SET;
+ 
+ 	/*
+-	 * And not Geneve.
++	 * And not VXLAN.
+ 	 */
+-	cstate->is_geneve = 0;
++	cstate->is_vxlan = 0;
+ 
+ 	/*
+ 	 * No variable length VLAN offset by default
+@@ -3089,8 +3089,8 @@ gen_prevlinkhdr_check(compiler_state_t *cstate)
+ {
+ 	struct block *b0;
+ 
+-	if (cstate->is_geneve)
+-		return gen_geneve_ll_check(cstate);
++	if (cstate->is_vxlan)
++		return gen_vxlan_ll_check(cstate);
+ 
+ 	switch (cstate->prevlinktype) {
+ 
+@@ -3145,9 +3145,9 @@ gen_linktype(compiler_state_t *cstate, bpf_u_int32 ll_proto)
+ 	case DLT_EN10MB:
+ 	case DLT_NETANALYZER:
+ 	case DLT_NETANALYZER_TRANSPARENT:
+-		/* Geneve has an EtherType regardless of whether there is an
++		/* VXLAN has an EtherType regardless of whether there is an
+ 		 * L2 header. */
+-		if (!cstate->is_geneve)
++		if (!cstate->is_vxlan)
+ 			b0 = gen_prevlinkhdr_check(cstate);
+ 		else
+ 			b0 = NULL;
+@@ -9207,27 +9207,26 @@ gen_pppoes(compiler_state_t *cstate, bpf_u_int32 sess_num, int has_sess_num)
+ 	return b0;
+ }
+ 
+-/* Check that this is Geneve and the VNI is correct if
++/* Check that this is VXLAN and the VNI is correct if
+  * specified. Parameterized to handle both IPv4 and IPv6. */
+ static struct block *
+-gen_geneve_check(compiler_state_t *cstate,
++gen_vxlan_check(compiler_state_t *cstate,
+     struct block *(*gen_portfn)(compiler_state_t *, u_int, int, int),
+     enum e_offrel offrel, bpf_u_int32 vni, int has_vni)
+ {
+ 	struct block *b0, *b1;
+ 
+-	b0 = gen_portfn(cstate, GENEVE_PORT, IPPROTO_UDP, Q_DST);
++	b0 = gen_portfn(cstate, VXLAN_PORT, IPPROTO_UDP, Q_DST);
+ 
+-	/* Check that we are operating on version 0. Otherwise, we
+-	 * can't decode the rest of the fields. The version is 2 bits
+-	 * in the first byte of the Geneve header. */
+-	b1 = gen_mcmp(cstate, offrel, 8, BPF_B, 0, 0xc0);
++	/* Check that the VXLAN header has the flag bits set
++	 * correctly. */
++	b1 = gen_cmp(cstate, offrel, 8, BPF_B, 0x08);
+ 	gen_and(b0, b1);
+ 	b0 = b1;
+ 
+ 	if (has_vni) {
+ 		if (vni > 0xffffff) {
+-			bpf_error(cstate, "Geneve VNI %u greater than maximum %u",
++			bpf_error(cstate, "VXLAN VNI %u greater than maximum %u",
+ 			    vni, 0xffffff);
+ 		}
+ 		vni <<= 8; /* VNI is in the upper 3 bytes */
+@@ -9239,18 +9238,18 @@ gen_geneve_check(compiler_state_t *cstate,
+ 	return b0;
+ }
+ 
+-/* The IPv4 and IPv6 Geneve checks need to do two things:
+- * - Verify that this actually is Geneve with the right VNI.
++/* The IPv4 and IPv6 VXLAN checks need to do two things:
++ * - Verify that this actually is VXLAN with the right VNI.
+  * - Place the IP header length (plus variable link prefix if
+  *   needed) into register A to be used later to compute
+  *   the inner packet offsets. */
+ static struct block *
+-gen_geneve4(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
++gen_vxlan4(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
+ {
+ 	struct block *b0, *b1;
+ 	struct slist *s, *s1;
+ 
+-	b0 = gen_geneve_check(cstate, gen_port, OR_TRAN_IPV4, vni, has_vni);
++	b0 = gen_vxlan_check(cstate, gen_port, OR_TRAN_IPV4, vni, has_vni);
+ 
+ 	/* Load the IP header length into A. */
+ 	s = gen_loadx_iphdrlen(cstate);
+@@ -9271,12 +9270,12 @@ gen_geneve4(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
+ }
+ 
+ static struct block *
+-gen_geneve6(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
++gen_vxlan6(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
+ {
+ 	struct block *b0, *b1;
+ 	struct slist *s, *s1;
+ 
+-	b0 = gen_geneve_check(cstate, gen_port6, OR_TRAN_IPV6, vni, has_vni);
++	b0 = gen_vxlan_check(cstate, gen_port6, OR_TRAN_IPV6, vni, has_vni);
+ 
+ 	/* Load the IP header length. We need to account for a
+ 	 * variable length link prefix if there is one. */
+@@ -9309,121 +9308,51 @@ gen_geneve6(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
+ 	return b1;
+ }
+ 
+-/* We need to store three values based on the Geneve header::
++/* We need to store three values based on the VXLAN header:
+  * - The offset of the linktype.
+- * - The offset of the end of the Geneve header.
++ * - The offset of the end of the VXLAN header.
+  * - The offset of the end of the encapsulated MAC header. */
+ static struct slist *
+-gen_geneve_offsets(compiler_state_t *cstate)
++gen_vxlan_offsets(compiler_state_t *cstate)
+ {
+-	struct slist *s, *s1, *s_proto;
++	struct slist *s, *s1;
+ 
+-	/* First we need to calculate the offset of the Geneve header
+-	 * itself. This is composed of the IP header previously calculated
+-	 * (include any variable link prefix) and stored in A plus the
+-	 * fixed sized headers (fixed link prefix, MAC length, and UDP
+-	 * header). */
++	/* Calculate the offset of the VXLAN header itself. This
++	 * includes the IP header computed previously (including any
++	 * variable link prefix) and stored in A plus the fixed size
++	 * headers (fixed link prefix, MAC length, UDP header). */
+ 	s = new_stmt(cstate, BPF_ALU|BPF_ADD|BPF_K);
+ 	s->s.k = cstate->off_linkpl.constant_part + cstate->off_nl + 8;
+ 
+-	/* Stash this in X since we'll need it later. */
+-	s1 = new_stmt(cstate, BPF_MISC|BPF_TAX);
+-	sappend(s, s1);
+-
+-	/* The EtherType in Geneve is 2 bytes in. Calculate this and
+-	 * store it. */
+-	s1 = new_stmt(cstate, BPF_ALU|BPF_ADD|BPF_K);
+-	s1->s.k = 2;
+-	sappend(s, s1);
+-
+-	cstate->off_linktype.reg = alloc_reg(cstate);
+-	cstate->off_linktype.is_variable = 1;
+-	cstate->off_linktype.constant_part = 0;
+-
+-	s1 = new_stmt(cstate, BPF_ST);
+-	s1->s.k = cstate->off_linktype.reg;
+-	sappend(s, s1);
+-
+-	/* Load the Geneve option length and mask and shift to get the
+-	 * number of bytes. It is stored in the first byte of the Geneve
+-	 * header. */
+-	s1 = new_stmt(cstate, BPF_LD|BPF_IND|BPF_B);
+-	s1->s.k = 0;
+-	sappend(s, s1);
+-
+-	s1 = new_stmt(cstate, BPF_ALU|BPF_AND|BPF_K);
+-	s1->s.k = 0x3f;
+-	sappend(s, s1);
+-
+-	s1 = new_stmt(cstate, BPF_ALU|BPF_MUL|BPF_K);
+-	s1->s.k = 4;
+-	sappend(s, s1);
+-
+-	/* Add in the rest of the Geneve base header. */
++	/* Add the VXLAN header length to its offset and store */
+ 	s1 = new_stmt(cstate, BPF_ALU|BPF_ADD|BPF_K);
+ 	s1->s.k = 8;
+ 	sappend(s, s1);
+ 
+-	/* Add the Geneve header length to its offset and store. */
+-	s1 = new_stmt(cstate, BPF_ALU|BPF_ADD|BPF_X);
+-	s1->s.k = 0;
+-	sappend(s, s1);
+-
+-	/* Set the encapsulated type as Ethernet. Even though we may
+-	 * not actually have Ethernet inside there are two reasons this
+-	 * is useful:
+-	 * - The linktype field is always in EtherType format regardless
+-	 *   of whether it is in Geneve or an inner Ethernet frame.
+-	 * - The only link layer that we have specific support for is
+-	 *   Ethernet. We will confirm that the packet actually is
+-	 *   Ethernet at runtime before executing these checks. */
++	/* Push the link header. VXLAN packets always contain Ethernet
++	 * frames. */
+ 	PUSH_LINKHDR(cstate, DLT_EN10MB, 1, 0, alloc_reg(cstate));
+ 
+ 	s1 = new_stmt(cstate, BPF_ST);
+ 	s1->s.k = cstate->off_linkhdr.reg;
+ 	sappend(s, s1);
+ 
+-	/* Calculate whether we have an Ethernet header or just raw IP/
+-	 * MPLS/etc. If we have Ethernet, advance the end of the MAC offset
+-	 * and linktype by 14 bytes so that the network header can be found
+-	 * seamlessly. Otherwise, keep what we've calculated already. */
+-
+-	/* We have a bare jmp so we can't use the optimizer. */
+-	cstate->no_optimize = 1;
+-
+-	/* Load the EtherType in the Geneve header, 2 bytes in. */
+-	s1 = new_stmt(cstate, BPF_LD|BPF_IND|BPF_H);
+-	s1->s.k = 2;
+-	sappend(s, s1);
+-
+-	/* Load X with the end of the Geneve header. */
+-	s1 = new_stmt(cstate, BPF_LDX|BPF_MEM);
+-	s1->s.k = cstate->off_linkhdr.reg;
+-	sappend(s, s1);
+-
+-	/* Check if the EtherType is Transparent Ethernet Bridging. At the
+-	 * end of this check, we should have the total length in X. In
+-	 * the non-Ethernet case, it's already there. */
+-	s_proto = new_stmt(cstate, JMP(BPF_JEQ));
+-	s_proto->s.k = ETHERTYPE_TEB;
+-	sappend(s, s_proto);
+-
+-	s1 = new_stmt(cstate, BPF_MISC|BPF_TXA);
+-	sappend(s, s1);
+-	s_proto->s.jt = s1;
+-
+-	/* Since this is Ethernet, use the EtherType of the payload
+-	 * directly as the linktype. Overwrite what we already have. */
++	/* As the payload is an Ethernet packet, we can use the
++	 * EtherType of the payload directly as the linktype. */
+ 	s1 = new_stmt(cstate, BPF_ALU|BPF_ADD|BPF_K);
+ 	s1->s.k = 12;
+ 	sappend(s, s1);
+ 
++	cstate->off_linktype.reg = alloc_reg(cstate);
++	cstate->off_linktype.is_variable = 1;
++	cstate->off_linktype.constant_part = 0;
++
+ 	s1 = new_stmt(cstate, BPF_ST);
+ 	s1->s.k = cstate->off_linktype.reg;
+ 	sappend(s, s1);
+ 
+-	/* Advance two bytes further to get the end of the Ethernet
+-	 * header. */
++	/* Two bytes further is the end of the Ethernet header and the
++	 * start of the payload. */
+ 	s1 = new_stmt(cstate, BPF_ALU|BPF_ADD|BPF_K);
+ 	s1->s.k = 2;
+ 	sappend(s, s1);
+@@ -9440,16 +9369,15 @@ gen_geneve_offsets(compiler_state_t *cstate)
+ 	s1 = new_stmt(cstate, BPF_STX);
+ 	s1->s.k = cstate->off_linkpl.reg;
+ 	sappend(s, s1);
+-	s_proto->s.jf = s1;
+ 
+ 	cstate->off_nl = 0;
+ 
+ 	return s;
+ }
+ 
+-/* Check to see if this is a Geneve packet. */
++/* Check to see if this is a VXLAN packet. */
+ struct block *
+-gen_geneve(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
++gen_vxlan(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
+ {
+ 	struct block *b0, *b1;
+ 	struct slist *s;
+@@ -9461,16 +9389,16 @@ gen_geneve(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
+ 	if (setjmp(cstate->top_ctx))
+ 		return (NULL);
+ 
+-	b0 = gen_geneve4(cstate, vni, has_vni);
+-	b1 = gen_geneve6(cstate, vni, has_vni);
++	b0 = gen_vxlan4(cstate, vni, has_vni);
++	b1 = gen_vxlan6(cstate, vni, has_vni);
+ 
+ 	gen_or(b0, b1);
+ 	b0 = b1;
+ 
+-	/* Later filters should act on the payload of the Geneve frame,
++	/* Later filters should act on the payload of the VXLAN frame,
+ 	 * update all of the header pointers. Attach this code so that
+-	 * it gets executed in the event that the Geneve filter matches. */
+-	s = gen_geneve_offsets(cstate);
++	 * it gets executed in the event that the VXLAN filter matches. */
++	s = gen_vxlan_offsets(cstate);
+ 
+ 	b1 = gen_true(cstate);
+ 	sappend(s, b1->stmts);
+@@ -9478,7 +9406,7 @@ gen_geneve(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
+ 
+ 	gen_and(b0, b1);
+ 
+-	cstate->is_geneve = 1;
++	cstate->is_vxlan = 1;
+ 
+ 	return b1;
+ }
+@@ -9486,7 +9414,7 @@ gen_geneve(compiler_state_t *cstate, bpf_u_int32 vni, int has_vni)
+ /* Check that the encapsulated frame has a link layer header
+  * for Ethernet filters. */
+ static struct block *
+-gen_geneve_ll_check(compiler_state_t *cstate)
++gen_vxlan_ll_check(compiler_state_t *cstate)
+ {
+ 	struct block *b0;
+ 	struct slist *s, *s1;
+@@ -9495,7 +9423,7 @@ gen_geneve_ll_check(compiler_state_t *cstate)
+ 	 * is to check if the link layer header and payload are not
+ 	 * the same. */
+ 
+-	/* Geneve always generates pure variable offsets so we can
++	/* VXLAN always generates pure variable offsets so we can
+ 	 * compare only the registers. */
+ 	s = new_stmt(cstate, BPF_LD|BPF_MEM);
+ 	s->s.k = cstate->off_linkhdr.reg;
+diff --git a/gencode.h b/gencode.h
+index 053e85f9..1d533caa 100644
+--- a/gencode.h
++++ b/gencode.h
+@@ -344,7 +344,7 @@ struct block *gen_mpls(compiler_state_t *, bpf_u_int32, int);
+ struct block *gen_pppoed(compiler_state_t *);
+ struct block *gen_pppoes(compiler_state_t *, bpf_u_int32, int);
+ 
+-struct block *gen_geneve(compiler_state_t *, bpf_u_int32, int);
++struct block *gen_vxlan(compiler_state_t *, bpf_u_int32, int);
+ 
+ struct block *gen_atmfield_code(compiler_state_t *, int, bpf_u_int32,
+     int, int);
+diff --git a/grammar.y.in b/grammar.y.in
+index fe565155..d65e8f3d 100644
+--- a/grammar.y.in
++++ b/grammar.y.in
+@@ -365,7 +365,7 @@ DIAG_OFF_BISON_BYACC
+ %token  LEN
+ %token  IPV6 ICMPV6 AH ESP
+ %token	VLAN MPLS
+-%token	PPPOED PPPOES GENEVE
++%token	PPPOED PPPOES VXLAN
+ %token  ISO ESIS CLNP ISIS L1 L2 IIH LSP SNP CSNP PSNP
+ %token  STP
+ %token  IPX
+@@ -590,8 +590,8 @@ other:	  pqual TK_BROADCAST	{ CHECK_PTR_VAL(($$ = gen_broadcast(cstate, $1))); }
+ 	| PPPOED		{ CHECK_PTR_VAL(($$ = gen_pppoed(cstate))); }
+ 	| PPPOES pnum		{ CHECK_PTR_VAL(($$ = gen_pppoes(cstate, $2, 1))); }
+ 	| PPPOES		{ CHECK_PTR_VAL(($$ = gen_pppoes(cstate, 0, 0))); }
+-	| GENEVE pnum		{ CHECK_PTR_VAL(($$ = gen_geneve(cstate, $2, 1))); }
+-	| GENEVE		{ CHECK_PTR_VAL(($$ = gen_geneve(cstate, 0, 0))); }
++	| VXLAN pnum		{ CHECK_PTR_VAL(($$ = gen_vxlan(cstate, $2, 1))); }
++	| VXLAN			{ CHECK_PTR_VAL(($$ = gen_vxlan(cstate, 0, 0))); }
+ 	| pfvar			{ $$ = $1; }
+ 	| pqual p80211		{ $$ = $2; }
+ 	| pllc			{ $$ = $1; }
+diff --git a/pcap-filter.manmisc.in b/pcap-filter.manmisc.in
+index e0f883d5..997d77b7 100644
+--- a/pcap-filter.manmisc.in
++++ b/pcap-filter.manmisc.in
+@@ -736,22 +736,20 @@ For example:
+ .fi
+ .in -.5i
+ filters IPv4 protocol encapsulated in PPPoE session id 0x27.
+-.IP "\fBgeneve \fI[vni]\fR"
+-True if the packet is a Geneve packet (UDP port 6081). If the optional \fIvni\fR
++.IP "\fBvlxan \fI[vni]\fR"
++True if the packet is a VXLAN packet (UDP port 4789). If the optional \fIvni\fR
+ is specified, only true if the packet has the specified \fIvni\fR.
+-Note that when the \fBgeneve\fR keyword is encountered in
+-an expression, it changes the decoding offsets for the remainder of
+-the expression on the assumption that the packet is a Geneve packet.
++Note that when the \fBvxlan\fR keyword is encountered in
++an expression, it changes the deocding offsets for the remainder of
++the expression on the assumption that the packet is a VXLAN packet.
+ .IP
+ For example:
+ .in +.5i
+ .nf
+-\fBgeneve\fP 0xb \fB&& ip\fR
++\fBvxlan\fP 0xb \fB&& ip\fR
+ .fi
+ .in -.5i
+-filters IPv4 protocol encapsulated in Geneve with VNI 0xb. This will
+-match both IPv4 directly encapsulated in Geneve as well as IPv4 contained
+-inside an Ethernet frame.
++filters IPv4 protocol encapsulated in VXLAN with VNI 0xb.
+ .IP "\fBiso proto \fIprotocol\fR"
+ True if the packet is an OSI packet of protocol type \fIprotocol\fP.
+ \fIProtocol\fP can be a number or one of the names
+diff --git a/scanner.l b/scanner.l
+index 06b9acc1..a354c195 100644
+--- a/scanner.l
++++ b/scanner.l
+@@ -343,7 +343,7 @@ vlan		return VLAN;
+ mpls		return MPLS;
+ pppoed		return PPPOED;
+ pppoes		return PPPOES;
+-geneve		return GENEVE;
++vxlan		return VXLAN;
+ 
+ lane		return LANE;
+ llc		return LLC;
+-- 
+2.39.3 (Apple Git-145)
+

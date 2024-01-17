@@ -410,6 +410,13 @@ in {
 
   });
 
+  libpcap-vxlan = super.libpcap.overrideAttrs (old: {
+    pname = "libpcap-vxlan";
+    patches = old.patches or [] ++ [
+      ./libpcap-replace-geneve-with-vxlan.patch
+    ];
+  });
+
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
@@ -537,6 +544,16 @@ in {
       url = "https://github.com/sudo-project/sudo/commit/bd209b9f16fcd1270c13db27ae3329c677d48050.patch";
       sha256 = "sha256-JUdoStoSyv6KBPsyzxuMIxqwZMZsjUPj8zUqOSvmZ1A=";
     })];
+  });
+
+  tcpdump-vxlan = (super.tcpdump.override {
+    libpcap = self.libpcap-vxlan;
+  }).overrideAttrs(old: {
+    pname = "tcpdump-vxlan";
+    fixupPhase = ''
+      mv $out/bin/tcpdump $out/bin/tcpdump-vxlan
+      rm $out/bin/tcpdump.${super.tcpdump.version}
+    '';
   });
 
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
