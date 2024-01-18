@@ -58,6 +58,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       fc.ledtool
       fc.secure-erase
       fc.util-physical
+      iperf3
       mstflint
       nvme-cli
       pciutils
