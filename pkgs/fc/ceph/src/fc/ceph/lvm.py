@@ -275,22 +275,23 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
             # fmt: off
             "-q",
             *self._tunables_sectorsize,
+            *self._tunables_luks_header,
+            *self._tunables_cipher,
             "luksFormat",
             "--key-slot", str(fc.ceph.luks.KEYSTORE.slots["local"]),
             "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
             self.underlay.device,
-            "--pbkdf=argon2id",
             # fmt: on
         )
 
         self.cryptsetup(
             # fmt: off
             "-q",
+            *self._tunables_luks_header,
             "luksAddKey",
             "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
             self.underlay.device,
             "--key-slot", str(fc.ceph.luks.KEYSTORE.slots["admin"]),
-            "--pbkdf=argon2id",
             "-",
             input=fc.ceph.luks.KEYSTORE.admin_key_for_input()
             # fmt: on
@@ -339,6 +340,21 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
     ]
     # reduce CPU load for larger writes, can be removed after cryptsetup >=2.40
     _tunables_sectorsize = ("--sector-size", "4096")
+
+    # tunables that apply when (re)creating a LUKS volume and its data or reencrypting it
+    _tunables_cipher = (
+        # fmt: off
+        "--cipher", "aes-xts-plain64",
+        "--key-size", "512",
+        # fmt: on
+    )
+    # tunables that apply when (re)creating a LUKS volume header
+    _tunables_luks_header = (
+        # fmt: off
+        "--pbkdf", "argon2id",
+        "--type", "luks2",
+        # fmt: on
+    )
 
     @classmethod
     def cryptsetup(cls, *args: str, **kwargs):
