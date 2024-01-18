@@ -30,12 +30,12 @@ rec {
   multiping = callPackage ./multiping.nix {};
 
   qemu-nautilus = callPackage ./qemu rec {
-    version = "1.4.2";
+    version = "1.4.3";
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "fc.qemu";
       rev = version;
-      hash = "sha256-5ZDF/sLmlhtltJW4d6vkio27O8ZvkjLAOYohEB08/os=";
+      hash = "sha256-1kMdHXjsxxIW0bEV6PfDeagdLVxZP87kPKm0Z4ZtXJA=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;
