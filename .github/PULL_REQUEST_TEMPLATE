@@ -6,6 +6,15 @@ Impact:
 
 Changelog:
 
+### PR release workflow (internal)
+
+- [ ] PR has internal ticket
+- [ ] internal issue ID (PL-…) part of branch name
+- [ ] internal issue ID mentioned in PR description text
+- [ ] ticket is on Platform agile board
+- [ ] ticket state set to *Pull request ready*
+- [ ] if ticket is more urgent than within the next few days, directly contact a member of the Platform team
+
 ## Security implications
 
 - [ ] [Security requirements](https://wiki.flyingcircus.io/System_Development_Guideline#Security_requirement_principles_and_testing) defined? (WHERE)

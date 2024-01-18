@@ -1,29 +1,18 @@
 import ./make-test-python.nix ({ version ? "4.2", lib, pkgs, testlib, ... }:
 let
-  ipv4 = "192.168.101.1";
-  ipv6 = "2001:db8:f030:1c3::1";
+  ipv4 = testlib.fcIP.srv4 1;
+  ipv6 = testlib.fcIP.srv6 1;
   rolename = "mongodb${lib.replaceStrings ["."] [""] version}";
 
 in {
   name = "mongodb";
-  machine =
+  nodes.machine =
     { ... }:
     {
-      imports = [ ../nixos ../nixos/roles ];
+      imports = [
+        (testlib.fcConfig { net.fe = false; })
+      ];
       flyingcircus.roles.${rolename}.enable = true;
-
-      flyingcircus.enc.parameters = {
-        resource_group = "test";
-        interfaces.srv = {
-          mac = "52:54:00:12:34:56";
-          bridged = false;
-          networks = {
-            "192.168.101.0/24" = [ ipv4 ];
-            "2001:db8:f030:1c3::/64" = [ ipv6 ];
-          };
-          gateways = {};
-        };
-      };
     };
 
 
@@ -55,9 +44,11 @@ in {
       with subtest("mongodb sensu check should be green"):
         machine.succeed("${sensuCheck "mongodb"}")
 
-      with subtest("mongodb feature compat check should be green"):
+    '' + lib.optionalString (lib.versionAtLeast version "3.4") ''
+      with subtest("(3.4+) mongodb feature compat check should be green"):
           machine.succeed("${sensuCheck "mongodb_feature_compat_version"}")
-
+    ''
+    + ''
       with subtest("killing the opensearch process should trigger an automatic restart"):
         _, out = machine.systemctl("show mongodb --property MainPID --value")
         previous_pid = int(out.strip())

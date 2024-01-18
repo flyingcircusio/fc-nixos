@@ -31,7 +31,7 @@ in
       flyingcircus.encServices = encServices;
       networking.domain = "gocept.net";
       flyingcircus.services.sensu-client.enable = true;
-      flyingcircus.roles.rabbitmq.enable = true;
+      flyingcircus.services.rabbitmq.enable = true;
       flyingcircus.services.rabbitmq.listenAddress = lib.mkOverride 90 "::";
       systemd.services.prepare-rabbitmq-for-sensu = {
         description = "Prepare rabbitmq for sensu-server.";
