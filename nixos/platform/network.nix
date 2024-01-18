@@ -390,8 +390,8 @@ in
               };
             }
           )]) ++
-        (if isNull fclib.underlay then [] else (map (iface:
-          lib.nameValuePair
+        (if isNull fclib.underlay then [] else (lib.flatten (map (iface:
+          [(lib.nameValuePair
             "network-link-properties-${iface.layer2device}-virt"
             rec {
               description = "Ensure link properties for virtual interface ${iface.layer2device}";
@@ -414,6 +414,9 @@ in
                 ip link set $IFACE address ${iface.mac}
                 ip link set $IFACE mtu ${toString iface.mtu}
 
+                # Do not automatically generate IPv6 link-local address
+                ip link set $IFACE addrgenmode none
+
                 ${sysctlSnippet}
               '';
               preStop = ''
@@ -424,8 +427,34 @@ in
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            }
-        ) vxlanInterfaces))
+            })
+           (lib.nameValuePair
+             "network-link-properties-${iface.layer2device}-bridged"
+             rec {
+               description = "Ensure link properties for bridge port ${iface.layer2device}";
+               wantedBy = [ "network-addresses-${iface.layer2device}.service"
+                            "multi-user.target" ];
+               before = wantedBy;
+               partOf = [ "${iface.device}-netdev.service" ];
+               after = [ "${iface.device}-netdev.service" ];
+
+               path = [ fclib.relaxedIp ];
+               script = ''
+                 ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
+               '';
+               reload = ''
+                 ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
+               '';
+               unitConfig = {
+                 ReloadPropagatedFrom = [ "${iface.device}-netdev.service" ];
+               };
+               serviceConfig = {
+                 Type = "oneshot";
+                 RemainAfterExit = true;
+               };
+             }
+           )]
+        ) vxlanInterfaces)))
       ));
 
     boot.kernel.sysctl = fclib.mkPlatform {
