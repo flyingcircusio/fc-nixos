@@ -45,6 +45,9 @@ in {
     ./sensu/uchiwa.nix
     ./telegraf
 
+    # Imported from NixOS 23.05
+    ./frr.nix
+
     (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")
   ];
 }

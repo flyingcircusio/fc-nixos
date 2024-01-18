@@ -433,9 +433,7 @@ class WALVolume:
             self.lv.purge(lv_only=True)
             self.backup_lv.purge()
         else:
-            self.lv.purge(lv_only=True)
-        # except ValueError:  # if there's no external WAL, lv is None
-        #    pass
+            self.lv.purge()
 
 
 class BlockVolume(GenericCephVolume):
