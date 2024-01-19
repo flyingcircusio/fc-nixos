@@ -128,6 +128,7 @@ in
 
         serviceConfig = {
           ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
+          Restart = "always";
         };
 
         script = ''
