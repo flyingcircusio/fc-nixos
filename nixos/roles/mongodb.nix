@@ -7,6 +7,21 @@ let
   mcfg = config.services.mongodb;
   fclib = config.fclib;
 
+  # Fall back to builtins.storePath if `fetchClosure` is not available.
+  # Needed when we are upgrading from systems that don't have fetch-closure enabled
+  # as experimental feature (or even don't support it at all).
+  # Result is the same on a normal system but `fetchClosure` also works in restricted-mode
+  # which we use in CI.
+  getPkg = path:
+    if hasAttr "fetchClosure" builtins then
+      fetchClosure {
+        fromStore = "https://s3.whq.fcio.net/hydra";
+        fromPath = path;
+        inputAddressed = true;
+      }
+    else
+      storePath path;
+
   listenAddresses =
     fclib.network.lo.dualstack.addresses ++
     fclib.network.srv.dualstack.addresses;
@@ -38,7 +53,7 @@ let
   '';
 
   mongodbPkgs = mapAttrs
-    (n: v: builtins.fetchClosure { fromStore = "https://s3.whq.fcio.net/hydra"; fromPath = v; inputAddressed = true; })
+    (n: v: getPkg v)
     {
       mongodb-3_2 = /nix/store/vjnfmrs99qn0q69d1jlyh1df9jprhsld-mongodb-3.2.22; # 2022_006/19.03
       mongodb-3_4 = /nix/store/shzvfx7bpn804n53igfz053m0y6836ly-mongodb-3.4.24; # 2023_006/21.11
@@ -59,11 +74,7 @@ let
   majorVersion = head (lib.attrNames enabledRoles);
   checkPkg =
     if (lib.versionOlder majorVersion "3.6") then
-      builtins.fetchClosure {
-        fromStore = "https://s3.whq.fcio.net/hydra";
-        fromPath = /nix/store/c7i75mvqqg1mjk3w6zz1j9cysvch6328-fc-check-mongodb-1.0;
-        inputAddressed = true;
-      }
+      getPkg /nix/store/c7i75mvqqg1mjk3w6zz1j9cysvch6328-fc-check-mongodb-1.0
     else
       pkgs.fc.check-mongodb;
 
