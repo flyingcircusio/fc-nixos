@@ -125,6 +125,12 @@ in {
       services.mongodb.pidFile = "/run/mongodb.pid";
       services.mongodb.package = mongodbPkgs."mongodb-${lib.replaceStrings ["."] ["_"] majorVersion}";
 
+      # Current telegraf only supports MongoDB 3.6+ so we need to use the package from
+      # 22.11 which still supports 3.4 and 3.2.
+      services.telegraf = lib.optionalAttrs (lib.versionOlder majorVersion "3.6") {
+        package = getPkg /nix/store/bxbhjphivdyp1fdqcz9d3jvnnsrjz8yr-telegraf-1.24.2;
+      };
+
       systemd.services.mongodb = {
         preStart = "echo never > /sys/kernel/mm/transparent_hugepage/defrag";
         postStop = "echo always > /sys/kernel/mm/transparent_hugepage/defrag";
