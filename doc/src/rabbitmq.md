@@ -42,7 +42,7 @@ upgrade. This conserves the specific rabbitmq config for the machine and
 cannot be used on new 23.11 machines.
 
 The upgrade process starts with generating Nix config on the running machine.
-Put the generated config in :file:`/etc/local/nixos/rabbitmq365-frozen.nix`.
+Put the generated config in {file}`/etc/local/nixos/rabbitmq365-frozen.nix`.
 
 ```shell
 #!/usr/bin/env sh
