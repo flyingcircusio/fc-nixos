@@ -306,6 +306,7 @@ in {
             "reject_rbl_client ix.dnsbl.manitu.net"
             "reject_unknown_client_hostname"
           ];
+          smtpd_forbid_bare_newline = "yes";
           smtpd_data_restrictions = "reject_unauth_pipelining";
           smtpd_helo_restrictions = [
             "permit_sasl_authenticated"
