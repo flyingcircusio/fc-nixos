@@ -49,7 +49,6 @@ let
 
     monData = "/srv/ceph/mon/$cluster-$id";
     monOsdAllowPrimaryAffinity = true;
-    monPgWarnMaxObjectSkew = 30;
 
     mgrData = "/srv/ceph/mgr/$cluster-$id";
   } // lib.optionalAttrs (cfg.cluster_network != null) { clusterNetwork = cfg.cluster_network;}
