@@ -226,6 +226,9 @@ in
           ip protocol bgp route-map set-source-address
         '';
       };
+      bfd = {
+        enable = true;
+      };
       bgp = {
         enable = true;
         config = ''
@@ -239,6 +242,7 @@ in
            neighbor switches peer-group
            neighbor switches remote-as external
            neighbor switches capability extended-nexthop
+           neighbor switches bfd
            ${lib.concatMapStringsSep "\n "
              (name: "neighbor ${name} interface peer-group switches")
              (attrNames fclib.underlay.interfaces)
