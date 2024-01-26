@@ -211,6 +211,17 @@ let
 
       server_tokens ${if cfg.serverTokens then "on" else "off"};
 
+      # CVE-2023-44487 handling with relatively high limits to
+      # not impact customer applications too much. Can be limited further
+      # if necessary.
+      limit_conn_zone $binary_remote_addr zone=addr:10m;
+      limit_conn addr 100;
+      limit_conn_status 429;
+
+      limit_req_zone $binary_remote_addr zone=perclient:10m rate=10r/s;
+      limit_req zone=perclient burst=50;
+      limit_req_status 429;
+
       ${cfg.commonHttpConfig}
 
       ${vhosts}
