@@ -6,13 +6,18 @@
   mkShellNoCC,
   poetry,
   runCommand,
+  lib,
+  stdenv,
+  darwin,
+  rustPlatform,
+  libiconv,
 }@inputs:
 let
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "backy";
-    rev = "2.5.1";
-    hash = "sha256-w83Q7d3vJmh5dLiL7iI7K8YbMvWKQtr9pTsL9u7jAEg=";
+    rev = "integrate-backy-extract";
+    hash = "sha256-I8qcBzmKHHrowkcoLj92ocTAFMnJzqPHDl4TGbel9V4=";
   };
 
   lib = import "${src}/lib.nix" inputs;
