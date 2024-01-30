@@ -403,9 +403,25 @@ in
                 RemainAfterExit = true;
               };
             }
-          )]) ++
-        (if isNull fclib.underlay then [] else (lib.flatten (map (iface:
-          [(lib.nameValuePair
+          )] ++
+          (map (iface: (lib.nameValuePair
+            "network-link-properties-${iface}-underlay"
+            {
+              description = "Ensure link properties for physical underlay interface ${iface}";
+              wantedBy = [ "network-addresses-${iface}.service"
+                           "multi-user.target" ];
+              after = [ "network-link-proprties-${iface}-phy.service" ];
+              path = [ pkgs.procps ];
+              script = ''
+                sysctl net.ipv4.conf.${iface}.rp_filter=0
+              '';
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }
+          )) (attrNames fclib.underlay.interfaces)) ++
+          (map (iface: (lib.nameValuePair
             "network-link-properties-${iface.layer2device}-virt"
             rec {
               description = "Ensure link properties for virtual interface ${iface.layer2device}";
@@ -441,10 +457,10 @@ in
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            })
-           (lib.nameValuePair
+            })) vxlanInterfaces) ++
+          (map (iface: (lib.nameValuePair
              "network-link-properties-${iface.layer2device}-bridged"
-             rec {
+             {
                description = "Ensure link properties for bridge port ${iface.layer2device}";
                wantedBy = [ "multi-user.target" ];
                partOf = [ "${iface.device}-netdev.service" ];
@@ -465,8 +481,8 @@ in
                  RemainAfterExit = true;
                };
              }
-           )]
-        ) vxlanInterfaces)))
+           )
+          ) vxlanInterfaces))
       ));
 
     boot.kernel.sysctl = fclib.mkPlatform {
