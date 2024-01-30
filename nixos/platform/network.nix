@@ -403,6 +403,32 @@ in
                 RemainAfterExit = true;
               };
             }
+          ) (lib.nameValuePair
+            "network-underlay-routing-fallback"
+            rec {
+              description = "Ensure fallback unreachable route for underlay prefixes";
+              wantedBy = [ "network-addresses-underlay.service"
+                           "multi-user.target" ];
+              before = wantedBy;
+              after = [ "network-link-properties-underlay-virt.service" ];
+              path = [ fclib.relaxedIp ];
+              script = ''
+                ${lib.concatMapStringsSep "\n"
+                  (net: "ip route add unreachable " + net)
+                  fclib.underlay.subnets
+                 }
+              '';
+              preStop = ''
+                ${lib.concatMapStringsSep "\n"
+                  (net: "ip route del unreachable " + net)
+                  fclib.underlay.subnets
+                 }
+              '';
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }
           )] ++
           (map (iface: (lib.nameValuePair
             "network-link-properties-${iface}-underlay"
