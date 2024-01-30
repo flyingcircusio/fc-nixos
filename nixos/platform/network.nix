@@ -446,9 +446,7 @@ in
              "network-link-properties-${iface.layer2device}-bridged"
              rec {
                description = "Ensure link properties for bridge port ${iface.layer2device}";
-               wantedBy = [ "network-addresses-${iface.layer2device}.service"
-                            "multi-user.target" ];
-               before = wantedBy;
+               wantedBy = [ "multi-user.target" ];
                partOf = [ "${iface.device}-netdev.service" ];
                after = [ "${iface.device}-netdev.service" ];
 
