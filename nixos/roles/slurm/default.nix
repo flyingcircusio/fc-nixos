@@ -350,7 +350,7 @@ in
 
           # Enables resource containment using sched_setaffinity(). This
           # enables the --cpu-bind and/or --mem-bind srun options.
-          TaskPlugin = task/affinity
+          TaskPlugin = task/cgroup,task/affinity
 
         '' + (lib.optionalString (dbdserverService != null) ''
           AccountingStorageType = accounting_storage/slurmdbd
