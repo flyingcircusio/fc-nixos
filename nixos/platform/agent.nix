@@ -113,6 +113,16 @@ in
         '';
       };
 
+      extraPreCommands = mkOption {
+        type = types.lines;
+        default = "";
+        description = ''
+          Additional commands to execute within an agent run
+          before doing anything else.
+        '';
+      };
+
+
       extraSettings = lib.mkOption {
         type = with lib.types; attrsOf (attrsOf (oneOf [ bool int str package ]));
         default = { };
@@ -297,6 +307,12 @@ in
           let
             verbose = lib.optionalString cfg.agent.verbose "--show-caller-info";
             options = "--enc-path=${cfg.encPath} ${verbose}";
+            wrappedExtraPreCommands = lib.optionalString (cfg.agent.extraPreCommands != "") ''
+              (
+              # flyingcircus.agent.extraPreCommands
+              ${cfg.agent.extraPreCommands}
+              ) || rc=$?
+            '';
             wrappedExtraCommands = lib.optionalString (cfg.agent.extraCommands != "") ''
               (
               # flyingcircus.agent.extraCommands
@@ -305,6 +321,7 @@ in
             '';
           in ''
             rc=0
+            ${wrappedExtraPreCommands}
             ${lib.optionalString cfg.agent.resizeDisk "fc-resize-disk || rc=$?"}
             # Ignore failing attempts at getting ENC data from the directory.
             # This happens sometimes when the directory is overloaded and

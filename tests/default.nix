@@ -106,6 +106,7 @@ in {
   rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
+  router = callSubTests ./router {};
   sensu = callTest ./sensu.nix {};
   servicecheck = callTest ./servicecheck.nix {};
   statshost-global = callTest ./statshost/statshost-global.nix {};
