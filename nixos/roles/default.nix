@@ -35,6 +35,7 @@ in {
     ./postgresql.nix
     ./rabbitmq.nix
     ./redis.nix
+    ./router
     ./sensuserver.nix
     ./servicecheck.nix
     ./statshost

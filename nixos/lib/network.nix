@@ -243,7 +243,10 @@ rec {
         # Tagged, unbridged: ethextleft -> ethsrv
         # Tagged, bridged: ethextleft -> ethsrv -> brsrv
 
-        device = if bridged then bridgedDevice else layer2device;
+        device =
+          if bridged then bridgedDevice
+          else if policy == "tagged" then taggedDevice
+          else layer2device;
         attachedDevices = if bridged then [layer2device] else [];
         bridgedDevice = "br${vlan}";
         taggedDevice = "eth${vlan}";
