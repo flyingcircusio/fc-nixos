@@ -250,7 +250,7 @@
     "version": "16.6.0"
   },
   "glibc": {
-    "name": "glibc-2.37-45",
+    "name": "glibc-2.37-64",
     "pname": "glibc",
     "version": "2.37"
   },
