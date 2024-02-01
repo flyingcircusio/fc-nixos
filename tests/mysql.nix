@@ -33,7 +33,7 @@ in
   let
     config = nodes.master.config;
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
-    mysqlCheck = sensuChecks.mysql.command;
+    mysqlCheck = "sudo -u sensuclient " + sensuChecks.mysql.command;
     version = config.services.percona.package.version;
     expectedAddresses = if lib.versionAtLeast version "8.0" then [
       # 8.0 binds to lo and srv with port 3306
