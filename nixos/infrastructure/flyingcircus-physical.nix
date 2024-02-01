@@ -31,7 +31,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         # Drivers
         "dolvm"
         "igb.InterruptThrottleRate=1"
-        "ixgbe.InterruptThrottleRate=1"
       ];
 
       loader.grub = {
@@ -59,10 +58,12 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       fc.ledtool
       fc.secure-erase
       fc.util-physical
+      iperf3
       mstflint
       nvme-cli
       pciutils
       smartmontools
+      tcpdump-vxlan
     ];
 
     fileSystems = {
@@ -85,6 +86,8 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       domain = "fcio.net";
       hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
     };
+
+    services.irqbalance.enable = true;
 
     # Not perfect but avoids triggering the 'established' rule which can
     # lead to massive/weird Ceph instabilities. Also, coordination tasks

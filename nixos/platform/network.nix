@@ -226,6 +226,9 @@ in
           ip protocol bgp route-map set-source-address
         '';
       };
+      bfd = {
+        enable = true;
+      };
       bgp = {
         enable = true;
         config = ''
@@ -239,6 +242,7 @@ in
            neighbor switches peer-group
            neighbor switches remote-as external
            neighbor switches capability extended-nexthop
+           neighbor switches bfd
            ${lib.concatMapStringsSep "\n "
              (name: "neighbor ${name} interface peer-group switches")
              (attrNames fclib.underlay.interfaces)
@@ -254,6 +258,16 @@ in
             neighbor switches activate
             advertise-all-vni
             advertise-svi-ip
+            ${ # Workaround for FRR not advertising SVI IP when
+               # globally configured
+              lib.concatMapStringsSep "\n  "
+                (iface: concatStringsSep "\n  " [
+                  ("vni " + (toString iface.vlanId))
+                  " advertise-svi-ip"
+                  "exit-vni"
+                ])
+                vxlanInterfaces
+            }
            exit-address-family
           !
           exit
@@ -315,17 +329,16 @@ in
                 IFACE_DRIVER=$(ethtool -i $IFACE | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
                 case $IFACE_DRIVER in
                     e1000|e1000e|igb|ixgbe|i40e)
-                        # Disable interrupt moderation. We want traffic to leave the buffers
-                        # as fast as possible. Specifically on 10G links this can otherwise
-                        # quickly saturate the buffers and cause discards or pauses.
-                        echo "Disabling interrupt moderation ..."
-                        ethtool -C "$IFACE" rx-usecs 0 || true
+                        # Set adaptive interrupt moderation. This does increase
+                        #
+                        echo "Enabling adaptive interrupt moderation ..."
+                        ethtool -C "$IFACE" rx-usecs 1 || true
                         # Larger buffers.
                         echo "Setting ring buffer ..."
                         ethtool -G "$IFACE" rx 4096 tx 4096 || true
                         # Large receive offload to reduce small packet CPU/interrupt impact.
-                        echo "Disabling large receive offload ..."
-                        ethtool -K "$IFACE" lro off || true
+                        echo "Enabling large receive offload ..."
+                        ethtool -K "$IFACE" lro on || true
                         ;;
                 esac
 
@@ -390,9 +403,51 @@ in
                 RemainAfterExit = true;
               };
             }
-          )]) ++
-        (if isNull fclib.underlay then [] else (map (iface:
-          lib.nameValuePair
+          ) (lib.nameValuePair
+            "network-underlay-routing-fallback"
+            rec {
+              description = "Ensure fallback unreachable route for underlay prefixes";
+              wantedBy = [ "network-addresses-underlay.service"
+                           "multi-user.target" ];
+              before = wantedBy;
+              after = [ "network-link-properties-underlay-virt.service" ];
+              path = [ fclib.relaxedIp ];
+              script = ''
+                ${lib.concatMapStringsSep "\n"
+                  (net: "ip route add unreachable " + net)
+                  fclib.underlay.subnets
+                 }
+              '';
+              preStop = ''
+                ${lib.concatMapStringsSep "\n"
+                  (net: "ip route del unreachable " + net)
+                  fclib.underlay.subnets
+                 }
+              '';
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }
+          )] ++
+          (map (iface: (lib.nameValuePair
+            "network-link-properties-${iface}-underlay"
+            {
+              description = "Ensure link properties for physical underlay interface ${iface}";
+              wantedBy = [ "network-addresses-${iface}.service"
+                           "multi-user.target" ];
+              after = [ "network-link-proprties-${iface}-phy.service" ];
+              path = [ pkgs.procps ];
+              script = ''
+                sysctl net.ipv4.conf.${iface}.rp_filter=0
+              '';
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }
+          )) (attrNames fclib.underlay.interfaces)) ++
+          (map (iface: (lib.nameValuePair
             "network-link-properties-${iface.layer2device}-virt"
             rec {
               description = "Ensure link properties for virtual interface ${iface.layer2device}";
@@ -415,6 +470,9 @@ in
                 ip link set $IFACE address ${iface.mac}
                 ip link set $IFACE mtu ${toString iface.mtu}
 
+                # Do not automatically generate IPv6 link-local address
+                ip link set $IFACE addrgenmode none
+
                 ${sysctlSnippet}
               '';
               preStop = ''
@@ -425,11 +483,35 @@ in
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            }
-        ) vxlanInterfaces))
+            })) vxlanInterfaces) ++
+          (map (iface: (lib.nameValuePair
+             "network-link-properties-${iface.layer2device}-bridged"
+             {
+               description = "Ensure link properties for bridge port ${iface.layer2device}";
+               wantedBy = [ "multi-user.target" ];
+               partOf = [ "${iface.device}-netdev.service" ];
+               after = [ "${iface.device}-netdev.service" ];
+
+               path = [ fclib.relaxedIp ];
+               script = ''
+                 ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
+               '';
+               reload = ''
+                 ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
+               '';
+               unitConfig = {
+                 ReloadPropagatedFrom = [ "${iface.device}-netdev.service" ];
+               };
+               serviceConfig = {
+                 Type = "oneshot";
+                 RemainAfterExit = true;
+               };
+             }
+           )
+          ) vxlanInterfaces))
       ));
 
-    boot.kernel.sysctl = {
+    boot.kernel.sysctl = lib.mkMerge [{
       "net.ipv4.tcp_congestion_control" = "bbr";
       # Ensure that we can do early binds before addresses are configured.
       "net.ipv4.ip_nonlocal_bind" = "1";
@@ -448,7 +530,6 @@ in
       # Ensure we reserve ports as promised to our customers.
       "net.ipv4.ip_local_port_range" = "32768 60999";
       "net.ipv4.ip_local_reserved_ports" = "61000-61999";
-      "net.core.rmem_max" = 8388608;
       # Linux currently has 4096 as default and that includes
       # neighbour discovery. Seen on #denog on 2020-11-19
       "net.ipv6.route.max_size" = 2147483647;
@@ -471,6 +552,40 @@ in
       # we already dealt with this in Ceph and have established 250k tracked connections
       # as a reasonable size and I'd suggest generalizing this number to all machines.
       "net.netfilter.nf_conntrack_max" = 262144;
-    };
+    }
+    (lib.mkIf (cfg.infrastructureModule != "flyingcircus-physical") {
+      "net.core.rmem_max" = 8388608;
+    })
+    (lib.mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
+      "vm.min_free_kbytes" = "513690";
+
+      "net.core.netdev_max_backlog" = "300000";
+      "net.core.optmem" = "40960";
+      "net.core.wmem_default" = "16777216";
+      "net.core.wmem_max" = "16777216";
+      "net.core.rmem_default" = "8388608";
+      "net.core.rmem_max" = "16777216";
+      "net.core.somaxconn" = "1024";
+
+      "net.ipv4.tcp_fin_timeout" = "10";
+      "net.ipv4.tcp_max_syn_backlog" = "30000";
+      "net.ipv4.tcp_slow_start_after_idle" = "0";
+      "net.ipv4.tcp_syncookies" = "0";
+      "net.ipv4.tcp_timestamps" = "0";
+                                  # 1MiB   8MiB    # 16 MiB
+      "net.ipv4.tcp_mem" = "1048576 8388608 16777216";
+      "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
+      "net.ipv4.tcp_rmem" = "1048576 8388608 16777216";
+
+      "net.ipv4.tcp_tw_recycle" = "1";
+      "net.ipv4.tcp_tw_reuse" = "1";
+
+      # Supposedly this doesn't do much good anymore, but in one of my tests
+      # (too many, can't prove right now.) this appeared to have been helpful.
+      "net.ipv4.tcp_low_latency" = "1";
+
+      # Optimize multi-path for VXLAN (layer3 in layer3)
+      "net.ipv4.fib_multipath_hash_policy" = "2";
+    })];
   };
 }

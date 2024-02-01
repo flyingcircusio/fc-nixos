@@ -133,38 +133,9 @@ in
       "vm.dirty_background_ratio" = "10";
       "vm.dirty_ratio" = "40";
       "vm.max_map_count" = "524288";
-      # Extracted to flyingcircus-physical.nix
-      # kernel.sysctl."vm.vfs_cache_pressure" = 10;
-
-      # 10G tuning for OSDs
-      "vm.min_free_kbytes" = "513690";
 
       "kernel.pid_max" = "999999";
       "kernel.threads-max" = "999999";
-
-      "net.core.netdev_max_backlog" = "300000";
-      "net.core.optmem" = "40960";
-      "net.core.rmem_default" = "56623104";
-      "net.core.rmem_max" = lib.mkForce "56623104";
-      "net.core.somaxconn" = "1024";
-      "net.core.wmem_default" = "56623104";
-      "net.core.wmem_max" = "56623104";
-
-      "net.ipv4.tcp_fin_timeout" = "10";
-      "net.ipv4.tcp_max_syn_backlog" = "30000";
-      "net.ipv4.tcp_mem" = "4096 87380 56623104";
-      "net.ipv4.tcp_rmem" = "4096 87380 56623104";
-      "net.ipv4.tcp_slow_start_after_idle" = "0";
-      "net.ipv4.tcp_syncookies" = "0";
-      "net.ipv4.tcp_timestamps" = "0";
-      "net.ipv4.tcp_wmem" = "4096 87380 56623104";
-
-      "net.ipv4.tcp_tw_recycle" = "1";
-      "net.ipv4.tcp_tw_reuse" = "1";
-
-      # Supposedly this doesn't do much good anymore, but in one of my tests
-      # (too many, can't prove right now.) this appeared to have been helpful.
-      "net.ipv4.tcp_low_latency" = "1";
     };
   };
 }
