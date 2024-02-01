@@ -98,15 +98,10 @@ in
     version = head (lib.attrNames enabledRoles);
     package = mysqlPackages.${version} or null;
     xtraPackage = xtrabackupPackages.${version};
-
-    telegrafPassword = fclib.derivePasswordForHost "mysql-telegraf";
-    sensuPassword = fclib.derivePasswordForHost "mysql-sensu";
-
-    mysqlCheck = ''
-      ${pkgs.sensu-plugins-mysql}/bin/check-mysql-alive.rb \
-        -s /run/mysqld/mysqld.sock -d fc_sensu \
-        --user fc_sensu --pass ${sensuPassword}
-    '';
+    mysqlCheck =
+      "${package}/bin/mysql -u fc_sensu fc_sensu" +
+      " --connect-timeout=10 --silent --batch -e" +
+      '' "select version()" || exit 2'';
 
   in lib.mkMerge [
 
@@ -181,6 +176,7 @@ in
         in ''
         [mysqld]
         default-storage-engine  = innodb
+        plugin-load-add         = auth_socket.so
         skip-external-locking
         skip-name-resolve
         max_allowed_packet         = 512M
@@ -332,16 +328,16 @@ in
 
       script =
       let
-        ensureUserAndDatabase = username: password:
+        ensureUserAndDatabase = dbUser: systemUser:
           if (lib.versionAtLeast version "8.0") then ''
-            CREATE USER IF NOT EXISTS ${username}@localhost IDENTIFIED BY '${password}';
-            ALTER USER ${username}@localhost IDENTIFIED BY '${password}';
-            CREATE DATABASE IF NOT EXISTS ${username};
-            GRANT SELECT ON ${username}.* TO ${username}@localhost;
+            CREATE USER IF NOT EXISTS ${dbUser}@localhost IDENTIFIED WITH auth_socket AS '${systemUser}';
+            ALTER USER ${dbUser}@localhost IDENTIFIED WITH auth_socket AS '${systemUser}';
+            CREATE DATABASE IF NOT EXISTS ${dbUser};
+            GRANT SELECT ON ${dbUser}.* TO ${dbUser}@localhost;
           ''
           else ''
-            CREATE DATABASE IF NOT EXISTS ${username};
-            GRANT SELECT ON ${username}.* TO ${username}@localhost IDENTIFIED BY '${password}';
+            CREATE DATABASE IF NOT EXISTS ${dbUser};
+            GRANT SELECT ON ${dbUser}.* TO ${dbUser}@localhost IDENTIFIED WITH auth_socket AS '${systemUser}';
           '';
         mysqlCmd = sql: ''mysql --defaults-extra-file=/root/.my.cnf -e "${sql}"'';
       in ''
@@ -362,11 +358,9 @@ in
               sleep 3
           done
 
-          # Create user and database for sensu, if they do not exist and make sure that the password is set
-          ${mysqlCmd (ensureUserAndDatabase "fc_sensu" sensuPassword)}
-
-          # Create user and database for telegraf, if they do not exist and make sure that the password is set
-          ${mysqlCmd (ensureUserAndDatabase "fc_telegraf" telegrafPassword)}
+          # Create user and database for monitoring, if they do not exist and set up socket auth.
+          ${mysqlCmd (ensureUserAndDatabase "fc_sensu" "sensuclient")}
+          ${mysqlCmd (ensureUserAndDatabase "fc_telegraf" "telegraf")}
         '';
     };
 
@@ -390,7 +384,7 @@ in
 
       telegraf.inputs = {
         mysql = [{
-          servers = ["fc_telegraf:${telegrafPassword}@unix(/run/mysqld/mysqld.sock)/?tls=false"];
+          servers = ["fc_telegraf@unix(/run/mysqld/mysqld.sock)/?tls=false"];
         }];
       };
     };
