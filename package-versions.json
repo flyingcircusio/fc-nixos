@@ -484,6 +484,11 @@
     "pname": "memcached",
     "version": "1.6.22"
   },
+  "monitoring-plugins": {
+    "name": "monitoring-plugins-2.3.0",
+    "pname": "monitoring-plugins",
+    "version": "2.3.0"
+  },
   "mysql": {
     "name": "mariadb-server-10.11.6",
     "pname": "mariadb-server",
