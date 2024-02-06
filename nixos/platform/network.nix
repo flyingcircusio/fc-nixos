@@ -436,7 +436,7 @@ in
               description = "Ensure link properties for physical underlay interface ${iface}";
               wantedBy = [ "network-addresses-${iface}.service"
                            "multi-user.target" ];
-              after = [ "network-link-proprties-${iface}-phy.service" ];
+              after = [ "network-link-properties-${iface}-phy.service" ];
               path = [ pkgs.procps ];
               script = ''
                 sysctl net.ipv4.conf.${iface}.rp_filter=0
@@ -459,7 +459,7 @@ in
               script = ''
                 IFACE=${iface.layer2device}
 
-                # Create virtual inteface ${iface.layer2device}
+                # Create virtual interface ${iface.layer2device}
                 ip link add $IFACE type vxlan \
                   id ${toString iface.vlanId} \
                   local ${fclib.underlay.loopback} \
