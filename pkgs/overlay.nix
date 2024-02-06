@@ -546,14 +546,10 @@ in {
     })];
   });
 
-  tcpdump-vxlan = (super.tcpdump.override {
+  tcpdump = (super.tcpdump.override {
     libpcap = self.libpcap-vxlan;
   }).overrideAttrs(old: {
     pname = "tcpdump-vxlan";
-    fixupPhase = ''
-      mv $out/bin/tcpdump $out/bin/tcpdump-vxlan
-      rm $out/bin/tcpdump.${super.tcpdump.version}
-    '';
   });
 
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
