@@ -114,7 +114,17 @@ in {
     };
   });
 
-  inherit (nixpkgs-23_05) frr;
+  frr = nixpkgs-23_05.frr.overrideAttrs (old: rec {
+    version = "8.5.4";
+    src = super.fetchFromGitHub {
+      owner = "FRRouting";
+      repo = old.pname;
+      rev = "${old.pname}-${version}";
+      sha256 = "1hyb5ji6fdzlhl28syvlqf1h4d6bv56rw5m547rbk3b1nknlmrbh";
+    };
+
+    patches = [];
+  });
 
   gitlab = super.callPackage ./gitlab { };
   gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
