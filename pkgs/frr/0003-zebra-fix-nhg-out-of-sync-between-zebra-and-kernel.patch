@@ -1,0 +1,91 @@
+From 18042874ba5de1873e4dc312ef628c1f54255716 Mon Sep 17 00:00:00 2001
+From: anlan_cs <vic.lan@pica8.com>
+Date: Mon, 24 Jul 2023 14:40:22 +0800
+Subject: [PATCH 3/3] zebra: fix nhg out of sync between zebra and kernel
+
+PR#13413 introduces reinstall mechanism, but there is problem with the route
+leak scenario.
+
+With route leak configuration: ( `x1` and `x2` are binded to `vrf1` )
+```
+vrf vrf2
+ ip route 75.75.75.75/32 77.75.1.75 nexthop-vrf vrf1
+ ip route 75.75.75.75/32 77.75.2.75 nexthop-vrf vrf1
+exit-vrf
+```
+
+Firstly, all are ok.  But after `x1` is set down and up ( The interval
+between the down and up operations should be less than 180 seconds. ) ,
+`x1` is lost from the nexthop group:
+```
+anlan# ip nexthop
+id 121 group 122/123 proto zebra
+id 122 via 77.75.1.75 dev x1 scope link proto zebra
+id 123 via 77.75.2.75 dev x2 scope link proto zebra
+anlan# ip route show table 2
+75.75.75.75 nhid 121 proto 196 metric 20
+        nexthop via 77.75.1.75 dev x1 weight 1
+        nexthop via 77.75.2.75 dev x2 weight 1
+anlan# ip link set dev x1 down
+anlan# ip link set dev x1 up
+anlan# ip route show table 2 <- Wrong, one nexthop lost from group
+75.75.75.75 nhid 121 via 77.75.2.75 dev x2 proto 196 metric 20
+anlan# ip nexthop
+id 121 group 123 proto zebra
+id 122 via 77.75.1.75 dev x1 scope link proto zebra
+id 123 via 77.75.2.75 dev x2 scope link proto zebra
+anlan# show ip route vrf vrf2 <- Still ok
+VRF vrf2:
+S>* 75.75.75.75/32 [1/0] via 77.75.1.75, x1 (vrf vrf1), weight 1, 00:00:05
+  *                      via 77.75.2.75, x2 (vrf vrf1), weight 1, 00:00:05
+```
+
+From the impact on kernel:
+The `nh->type` of `id 122` is *always* `NEXTHOP_TYPE_IPV4` in the route leak
+case.  Then, `nexthop_is_ifindex_type()` introduced by commit `5bb877` always
+returns `false`, so its dependents can't be reinstalled.  After `x1` is down,
+there is only `id 123` in the group of `id 121`.  So, Finally `id 121` remains
+unchanged after `x1` is up, i.e., `id 122` is not added to the group even it is
+reinstalled itself.
+
+From the impact on zebra:
+The `show ip route vrf vrf2` is still ok because the `id`s are reused/reinstalled
+successfully within 180 seconds after `x1` is down and up.  The group of `id 121`
+is with old `NEXTHOP_GROUP_INSTALLED` flag, and it is still the group of `id 122`
+and `id 123` as before.
+
+In this way, kernel and zebra have become out of sync.
+
+The `nh->type` of `id 122` should be adjusted to `NEXTHOP_TYPE_IPV4_IFINDEX`
+after nexthop resolved.  This commit is for doing this to make that reinstall
+mechanism work.
+
+Signed-off-by: anlan_cs <anlan_cs@tom.com>
+---
+ zebra/zebra_nhg.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/zebra/zebra_nhg.c b/zebra/zebra_nhg.c
+index b17167540..5a5daecf5 100644
+--- a/zebra/zebra_nhg.c
++++ b/zebra/zebra_nhg.c
+@@ -2375,10 +2375,13 @@ static int nexthop_active(struct nexthop *nexthop, struct nhg_hash_entry *nhe,
+ 							    nexthop->ifindex);
+ 
+ 			newhop = match->nhe->nhg.nexthop;
+-			if (nexthop->type == NEXTHOP_TYPE_IPV4 ||
+-			    nexthop->type == NEXTHOP_TYPE_IPV6)
++			if (nexthop->type == NEXTHOP_TYPE_IPV4) {
+ 				nexthop->ifindex = newhop->ifindex;
+-			else if (nexthop->ifindex != newhop->ifindex) {
++				nexthop->type = NEXTHOP_TYPE_IPV4_IFINDEX;
++			} else if (nexthop->type == NEXTHOP_TYPE_IPV6) {
++				nexthop->ifindex = newhop->ifindex;
++				nexthop->type = NEXTHOP_TYPE_IPV6_IFINDEX;
++			} else if (nexthop->ifindex != newhop->ifindex) {
+ 				if (IS_ZEBRA_DEBUG_RIB_DETAILED)
+ 					zlog_debug(
+ 						"%s: %pNHv given ifindex does not match nexthops ifindex found: %pNHv",
+-- 
+2.39.3 (Apple Git-145)
+

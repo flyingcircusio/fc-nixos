@@ -1,0 +1,153 @@
+From 2af4eb5a55225975d721dafdd1015dd50d2b820b Mon Sep 17 00:00:00 2001
+From: Ashwini Reddy <ashred@nvidia.com>
+Date: Wed, 19 Apr 2023 11:35:25 -0700
+Subject: [PATCH 1/3] zebra: re-install nhg on interface up
+
+Intermittently zebra and kernel are out of sync
+when interface flaps and the add's/dels are in
+same processing queue and zebra assumes no change in nexthop.
+Hence we need to bring in a reinstall to kernel
+of the nexthops and routes to sync their states.
+
+Upon interface flap kernel would have deleted NHGs
+associated to a interface (the one flapped),
+zebra retains NHGs for 3 mins even though upper
+layer protocol removes the nexthops (associated NHG).
+As part of interface address add ,
+re-add singleton NHGs associated to interface.
+
+Ticket: #3173663
+Issue: 3173663
+
+Signed-off-by: Ashwini Reddy <ashred@nvidia.com>
+Signed-off-by: Chirag Shah <chirag@nvidia.com>
+---
+ lib/nexthop.c        |  9 +++++++++
+ lib/nexthop.h        |  3 +++
+ zebra/redistribute.c |  4 ++++
+ zebra/zebra_nhg.c    | 46 ++++++++++++++++++++++++++++++++++++++++++++
+ zebra/zebra_nhg.h    |  1 +
+ 5 files changed, 63 insertions(+)
+
+diff --git a/lib/nexthop.c b/lib/nexthop.c
+index 1eeed4adf..b888b9a0a 100644
+--- a/lib/nexthop.c
++++ b/lib/nexthop.c
+@@ -1092,3 +1092,12 @@ static ssize_t printfrr_nh(struct fbuf *buf, struct printfrr_eargs *ea,
+ 	}
+ 	return -1;
+ }
++
++bool nexthop_is_ifindex_type(const struct nexthop *nh)
++{
++	if (nh->type == NEXTHOP_TYPE_IFINDEX ||
++	    nh->type == NEXTHOP_TYPE_IPV4_IFINDEX ||
++	    nh->type == NEXTHOP_TYPE_IPV6_IFINDEX)
++		return true;
++	return false;
++}
+diff --git a/lib/nexthop.h b/lib/nexthop.h
+index f35cc5e4e..8eb4d210c 100644
+--- a/lib/nexthop.h
++++ b/lib/nexthop.h
+@@ -255,6 +255,9 @@ extern struct nexthop *nexthop_dup(const struct nexthop *nexthop,
+ extern struct nexthop *nexthop_dup_no_recurse(const struct nexthop *nexthop,
+ 					      struct nexthop *rparent);
+ 
++/* Check nexthop of IFINDEX type */
++extern bool nexthop_is_ifindex_type(const struct nexthop *nh);
++
+ /*
+  * Parse one or more backup index values, as comma-separated numbers,
+  * into caller's array of uint8_ts. The array must be NEXTHOP_MAX_BACKUPS
+diff --git a/zebra/redistribute.c b/zebra/redistribute.c
+index 4a8fe938e..fccbee7d8 100644
+--- a/zebra/redistribute.c
++++ b/zebra/redistribute.c
+@@ -561,6 +561,10 @@ void zebra_interface_address_add_update(struct interface *ifp,
+ 						client, ifp, ifc);
+ 		}
+ 	}
++	/* interface associated NHGs may have been deleted,
++	 * re-sync zebra -> dplane NHGs
++	 */
++	zebra_interface_nhg_reinstall(ifp);
+ }
+ 
+ /* Interface address deletion. */
+diff --git a/zebra/zebra_nhg.c b/zebra/zebra_nhg.c
+index b3336abc3..78fa22de7 100644
+--- a/zebra/zebra_nhg.c
++++ b/zebra/zebra_nhg.c
+@@ -3003,6 +3003,12 @@ void zebra_nhg_install_kernel(struct nhg_hash_entry *nhe)
+ 	/* Resolve it first */
+ 	nhe = zebra_nhg_resolve(nhe);
+ 
++	if (zebra_nhg_set_valid_if_active(nhe)) {
++		if (IS_ZEBRA_DEBUG_NHG_DETAIL)
++			zlog_debug("%s: valid flag set for nh %pNG", __func__,
++				   nhe);
++	}
++
+ 	/* Make sure all depends are installed/queued */
+ 	frr_each(nhg_connected_tree, &nhe->nhg_depends, rb_node_dep) {
+ 		zebra_nhg_install_kernel(rb_node_dep->nhe);
+@@ -3585,3 +3591,43 @@ static ssize_t printfrr_nhghe(struct fbuf *buf, struct printfrr_eargs *ea,
+ 	ret += bputs(buf, "]");
+ 	return ret;
+ }
++
++/*
++ * On interface add the nexthop that resolves to this intf needs
++ * a re-install. There are following scenarios when the nexthop group update
++ * gets skipped:
++ * 1. When upper level protocol sends removal of NHG, there is
++ * timer running to keep NHG for 180 seconds, during this interval, same route
++ * with same set of nexthops installation is given , the same NHG is used
++ * but since NHG is not reinstalled on interface address add, it is not aware
++ * in Dplan/Kernel.
++ * 2. Due to a quick port flap due to interface add and delete
++ * to be processed in same queue one after another. Zebra believes that
++ * there is no change in nhg in this case. Hence this re-install will
++ * make sure the nexthop group gets updated to Dplan/Kernel.
++ */
++void zebra_interface_nhg_reinstall(struct interface *ifp)
++{
++	struct nhg_connected *rb_node_dep = NULL;
++	struct zebra_if *zif = ifp->info;
++	struct nexthop *nh;
++
++	if (IS_ZEBRA_DEBUG_NHG_DETAIL)
++		zlog_debug(
++			"%s: Installing interface %s associated NHGs into kernel",
++			__func__, ifp->name);
++
++	frr_each (nhg_connected_tree, &zif->nhg_dependents, rb_node_dep) {
++		nh = rb_node_dep->nhe->nhg.nexthop;
++		if (zebra_nhg_set_valid_if_active(rb_node_dep->nhe)) {
++			if (IS_ZEBRA_DEBUG_NHG_DETAIL)
++				zlog_debug(
++					"%s: Setting the valid flag for nhe %pNG, interface: %s",
++					__func__, rb_node_dep->nhe, ifp->name);
++		}
++		/* Check for singleton NHG associated to interface */
++		if (nexthop_is_ifindex_type(nh) &&
++		    zebra_nhg_depends_is_empty(rb_node_dep->nhe))
++			zebra_nhg_install_kernel(rb_node_dep->nhe);
++	}
++}
+diff --git a/zebra/zebra_nhg.h b/zebra/zebra_nhg.h
+index 9b925bf10..18914b785 100644
+--- a/zebra/zebra_nhg.h
++++ b/zebra/zebra_nhg.h
+@@ -374,6 +374,7 @@ extern uint8_t zebra_nhg_nhe2grp(struct nh_grp *grp, struct nhg_hash_entry *nhe,
+ /* Dataplane install/uninstall */
+ extern void zebra_nhg_install_kernel(struct nhg_hash_entry *nhe);
+ extern void zebra_nhg_uninstall_kernel(struct nhg_hash_entry *nhe);
++extern void zebra_interface_nhg_reinstall(struct interface *ifp);
+ 
+ /* Forward ref of dplane update context type */
+ struct zebra_dplane_ctx;
+-- 
+2.39.3 (Apple Git-145)
+

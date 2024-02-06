@@ -127,7 +127,11 @@ in {
       sha256 = "1hyb5ji6fdzlhl28syvlqf1h4d6bv56rw5m547rbk3b1nknlmrbh";
     };
 
-    patches = [];
+    patches = [
+      ./frr/0001-zebra-re-install-nhg-on-interface-up.patch
+      ./frr/0002-zebra-re-install-dependent-nhgs-on-interface-up.patch
+      ./frr/0003-zebra-fix-nhg-out-of-sync-between-zebra-and-kernel.patch
+    ];
   });
 
   gitlab = super.callPackage ./gitlab { };

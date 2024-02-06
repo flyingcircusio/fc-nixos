@@ -1,0 +1,105 @@
+From f6feefc2d6829ab81c3e81ab913a3c39ececba2c Mon Sep 17 00:00:00 2001
+From: Chirag Shah <chirag@nvidia.com>
+Date: Fri, 28 Apr 2023 19:09:55 -0700
+Subject: [PATCH 2/3] zebra:re-install dependent nhgs on interface up
+
+Upon interface up associated singleton NHG's
+dependent NHGs needs to be reinstalled as
+kernel would have deleted if there is no route
+referencing it.
+
+Ticket:#3416477
+Issue:3416477
+Testing Done:
+flap interfaces which are part of route NHG,
+upon interfaces up event, NHGs are resynced
+into dplane.
+
+Signed-off-by: Chirag Shah <chirag@nvidia.com>
+---
+ zebra/zebra_nhg.c | 43 ++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 38 insertions(+), 5 deletions(-)
+
+diff --git a/zebra/zebra_nhg.c b/zebra/zebra_nhg.c
+index 78fa22de7..b17167540 100644
+--- a/zebra/zebra_nhg.c
++++ b/zebra/zebra_nhg.c
+@@ -1140,13 +1140,23 @@ static void zebra_nhg_handle_uninstall(struct nhg_hash_entry *nhe)
+ 	zebra_nhg_free(nhe);
+ }
+ 
+-static void zebra_nhg_handle_install(struct nhg_hash_entry *nhe)
++static void zebra_nhg_handle_install(struct nhg_hash_entry *nhe, bool install)
+ {
+ 	/* Update validity of groups depending on it */
+ 	struct nhg_connected *rb_node_dep;
+ 
+-	frr_each_safe(nhg_connected_tree, &nhe->nhg_dependents, rb_node_dep)
++	frr_each_safe (nhg_connected_tree, &nhe->nhg_dependents, rb_node_dep) {
+ 		zebra_nhg_set_valid(rb_node_dep->nhe);
++		/* install dependent NHG into kernel */
++		if (install) {
++			if (IS_ZEBRA_DEBUG_NHG_DETAIL)
++				zlog_debug(
++					"%s nh id %u (flags 0x%x) associated dependent NHG %pNG install",
++					__func__, nhe->id, nhe->flags,
++					rb_node_dep->nhe);
++			zebra_nhg_install_kernel(rb_node_dep->nhe);
++		}
++	}
+ }
+ 
+ /*
+@@ -3035,7 +3045,7 @@ void zebra_nhg_install_kernel(struct nhg_hash_entry *nhe)
+ 			break;
+ 		case ZEBRA_DPLANE_REQUEST_SUCCESS:
+ 			SET_FLAG(nhe->flags, NEXTHOP_GROUP_INSTALLED);
+-			zebra_nhg_handle_install(nhe);
++			zebra_nhg_handle_install(nhe, false);
+ 			break;
+ 		}
+ 	}
+@@ -3109,7 +3119,7 @@ void zebra_nhg_dplane_result(struct zebra_dplane_ctx *ctx)
+ 		if (status == ZEBRA_DPLANE_REQUEST_SUCCESS) {
+ 			SET_FLAG(nhe->flags, NEXTHOP_GROUP_VALID);
+ 			SET_FLAG(nhe->flags, NEXTHOP_GROUP_INSTALLED);
+-			zebra_nhg_handle_install(nhe);
++			zebra_nhg_handle_install(nhe, true);
+ 
+ 			/* If daemon nhg, send it an update */
+ 			if (PROTO_OWNED(nhe))
+@@ -3627,7 +3637,30 @@ void zebra_interface_nhg_reinstall(struct interface *ifp)
+ 		}
+ 		/* Check for singleton NHG associated to interface */
+ 		if (nexthop_is_ifindex_type(nh) &&
+-		    zebra_nhg_depends_is_empty(rb_node_dep->nhe))
++		    zebra_nhg_depends_is_empty(rb_node_dep->nhe)) {
++			struct nhg_connected *rb_node_dependent;
++
++			if (IS_ZEBRA_DEBUG_NHG)
++				zlog_debug(
++					"%s install nhe %pNG nh type %u flags 0x%x",
++					__func__, rb_node_dep->nhe, nh->type,
++					rb_node_dep->nhe->flags);
+ 			zebra_nhg_install_kernel(rb_node_dep->nhe);
++
++			/* mark depedent uninstall, when interface associated
++			 * singleton is installed, install depedent
++			 */
++			frr_each_safe (nhg_connected_tree,
++				       &rb_node_dep->nhe->nhg_dependents,
++				       rb_node_dependent) {
++				if (IS_ZEBRA_DEBUG_NHG)
++					zlog_debug(
++						"%s dependent nhe %pNG unset installed flag",
++						__func__,
++						rb_node_dependent->nhe);
++				UNSET_FLAG(rb_node_dependent->nhe->flags,
++					   NEXTHOP_GROUP_INSTALLED);
++			}
++		}
+ 	}
+ }
+-- 
+2.39.3 (Apple Git-145)
+
