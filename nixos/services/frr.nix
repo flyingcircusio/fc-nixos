@@ -207,7 +207,7 @@ in
                   + optionalString (scfg.vtyListenPort != null) " -P ${toString scfg.vtyListenPort}"
                   + " " + (concatStringsSep " " scfg.extraOptions);
                 ExecReload = "${pkgs.python3.interpreter} ${pkgs.frr}/libexec/frr/frr-reload.py --reload --daemon ${daemonName service} --bindir ${pkgs.frr}/bin --rundir /run/frr /etc/frr/${service}.conf";
-                Restart = "on-abnormal";
+                Restart = "always";
               };
             });
        in
