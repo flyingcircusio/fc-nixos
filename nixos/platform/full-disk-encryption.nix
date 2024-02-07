@@ -1,6 +1,7 @@
 { lib, pkgs, config, options, ... }:
 
 let
+  fclib = config.fclib;
   keysMountDir = "/mnt/keys";
   check_key_file = pkgs.writeShellScript "check_key_file" ''
 
@@ -28,6 +29,8 @@ let
 
       exit 0
     '';
+
+  cephPkgs = fclib.ceph.mkPkgs "nautilus";  # FIXME: just a workaround
 in
 {
 
@@ -51,6 +54,8 @@ in
   {
       environment.systemPackages = with pkgs; [
         cryptsetup
+        # FIXME: isolate fc-luks tooling into separate package
+        cephPkgs.fc-ceph
       ];
 
       flyingcircus.services.sensu-client.checks.keystickMounted = {
