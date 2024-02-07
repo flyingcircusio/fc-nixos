@@ -78,6 +78,10 @@ in {
 
   docsplit = super.callPackage ./docsplit { };
 
+  dstat = super.dstat.overrideAttrs(old: rec {
+    patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
+  });
+
   elasticsearch7 = (super.elasticsearch7.override {
     jre_headless = self.jdk11_headless;
   }).overrideAttrs(_: rec {
