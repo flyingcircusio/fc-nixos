@@ -15,7 +15,6 @@ Contact our {ref}`support` for upgrade assistance.
 
 ## Overview
 
-- Status: non-production
 - Removed roles: {ref}`postgresql11 <nixos-upgrade-postgresql>`, {ref}`mongodb42 <nixos-upgrade-mongodb>`
 - Removed packages: `nodejs_14`, `nodejs_16`, `wkhtmltopdf`, `wkhtmltopdf_0_12_5`, `wkhtmltopdf_0_12_6`
 - No major breaking changes
