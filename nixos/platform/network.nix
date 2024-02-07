@@ -138,7 +138,7 @@ in
           mtu = interface.mtu;
         })) nonUnderlayInterfaces) ++
       (if isNull fclib.underlay then [] else [(
-        lib.nameValuePair "underlay" {
+        lib.nameValuePair "ul-loopback" {
           ipv4.addresses = [{
             address = fclib.underlay.loopback;
             prefixLength = 32;
@@ -377,15 +377,15 @@ in
           )) bridgedInterfaces) ++
         (if isNull fclib.underlay then [] else
           [(lib.nameValuePair
-            "network-link-properties-underlay-virt"
+            "network-link-properties-ul-loopback-virt"
             rec {
-              description = "Ensure network link properties for virtual interface underlay";
-              wantedBy = [ "network-addresses-underlay.service"
+              description = "Ensure network link properties for virtual interface ul-loopback";
+              wantedBy = [ "network-addresses-ul-loopback.service"
                            "multi-user.target" ];
               before = wantedBy;
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
-                IFACE=underlay
+                IFACE=ul-loopback
 
                 # Create virtual interface underlay
                 ip link add $IFACE type dummy
@@ -395,7 +395,7 @@ in
                 ${sysctlSnippet}
               '';
               preStop = ''
-                IFACE=underlay
+                IFACE=ul-loopback
                 ip link delete $IFACE
               '';
               serviceConfig = {
@@ -407,10 +407,10 @@ in
             "network-underlay-routing-fallback"
             rec {
               description = "Ensure fallback unreachable route for underlay prefixes";
-              wantedBy = [ "network-addresses-underlay.service"
+              wantedBy = [ "network-addresses-ul-loopback.service"
                            "multi-user.target" ];
               before = wantedBy;
-              after = [ "network-link-properties-underlay-virt.service" ];
+              after = [ "network-link-properties-ul-loopback-virt.service" ];
               path = [ fclib.relaxedIp ];
               script = ''
                 ${lib.concatMapStringsSep "\n"
@@ -454,7 +454,7 @@ in
               wantedBy = [ "network-addresses-${iface.layer2device}.service"
                            "multi-user.target" ];
               before = wantedBy;
-              partOf = [ "network-addresses-underlay.service" ];
+              partOf = [ "network-addresses-ul-loopback.service" ];
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
                 IFACE=${iface.layer2device}

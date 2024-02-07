@@ -314,6 +314,34 @@ rec {
         };
       }; });
 
+  underlayIfaceName = label: let
+    parts = lib.splitString "/" label;
+    partslen = length parts;
+    dashes = partslen - 1;
+    namebytes =
+      # Canonical interface names must be at most 16 bytes in length,
+      # *including* the trailing null byte(!). The fixed prefix "ul-"
+      # is three bytes long, and name fragments are separated by
+      # dashes.
+      assert (partslen + dashes + 3) < 16;
+      15 - dashes - 3;
+
+    stringListLength = lib.foldl (a: b: a + (stringLength b)) 0;
+
+    go = item: state: let
+      capacity = namebytes - (stringListLength state);
+      remaining = partslen - (length state);
+      prefixBaseLen = capacity / remaining;
+      moduloOffset =
+        if (lib.mod capacity remaining) >= (length state)
+        then 1 else 0;
+
+      prefixLength = prefixBaseLen + moduloOffset;
+    in [(lib.substring 0 prefixLength item)] ++ state;
+
+    builder = lib.foldr go [] parts;
+  in "ul-" + (lib.concatStringsSep "-" builder);
+
   underlay =
     if !hasAttr "ul" interfaceData ||
        (lib.attrByPath [ "ul" "policy" ] "puppet" interfaceData) != "underlay" ||
@@ -323,17 +351,18 @@ rec {
       hostId = lib.attrByPath [ "parameters" "id" ] 0 config.flyingcircus.enc;
       nics = interfaceData.ul.nics;
 
-      abbrName = name:
-        lib.concatMapStrings (s: substring 0 2 s) (lib.splitString "/" name);
-      abbrMac = mac:
-        lib.concatStrings (lib.drop 3 (lib.splitString ":" mac));
-      emptyLabels = any (n: n.external_label == "") nics;
-      uniqueAbbrs =
-        length nics == length (lib.unique (map (n: abbrName n.external_label) nics));
+      underlayMacFallback = mac: let
+        digits = lib.drop 3 (lib.splitString ":" mac);
+      in "ul-mac-" + (lib.concatStrings digits);
 
-      makeName = if emptyLabels || !uniqueAbbrs
-                 then (n: "ethM${abbrMac n.mac}")
-                 else (n: "ethL${abbrName n.external_label}");
+      emptyLabels = any (n: n.external_label == "") nics;
+      uniqueNames =
+        length nics ==
+          length (lib.unique (map (n: underlayIfaceName n.external_label) nics));
+
+      makeName = if emptyLabels || !uniqueNames
+                 then (n: underlayMacFallback n.mac)
+                 else (n: underlayIfaceName n.external_label);
     in {
       asNumber = 4200000000 + hostId;
       loopback =
