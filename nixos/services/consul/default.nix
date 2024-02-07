@@ -38,7 +38,7 @@ in
       acl.default_policy = "deny";
       acl.down_policy = "extend-cache";
 
-      client_addr = "{{ GetInterfaceIPs \"lo\" }}";
+      client_addr = "{{ GetInterfaceIPs \"^lo$\" }}";
       datacenter = dc;
       dns_config = { node_ttl = "3s"; service_ttl = {"*" = "3s";};};
       enable_script_checks = true;
