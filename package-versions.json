@@ -230,19 +230,19 @@
     "version": "2.311.0"
   },
   "gitlab": {
-    "name": "gitlab-16.5.3",
+    "name": "gitlab-16.5.6",
     "pname": "gitlab",
-    "version": "16.5.3"
+    "version": "16.5.6"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.86.2",
+    "name": "gitlab-container-registry-3.88.0",
     "pname": "gitlab-container-registry",
-    "version": "3.86.2"
+    "version": "3.88.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.5.3",
+    "name": "gitlab-ee-16.5.6",
     "pname": "gitlab-ee",
-    "version": "16.5.3"
+    "version": "16.5.6"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.6.0",
@@ -250,7 +250,7 @@
     "version": "16.6.0"
   },
   "glibc": {
-    "name": "glibc-2.37-45",
+    "name": "glibc-2.37-64",
     "pname": "glibc",
     "version": "2.37"
   },
