@@ -74,27 +74,28 @@ in
       };
     };
 
-  testScript =
-    let
-    in ''
-      import json
-      machine.wait_for_unit("rabbitmq.service")
-      machine.wait_for_unit("prepare-rabbitmq-for-sensu.service")
-      machine.wait_for_unit("sensu-client.service")
-      machine.wait_for_open_port(3031)
+  testScript = ''
+    import json
+    machine.wait_for_unit("rabbitmq.service")
+    machine.wait_for_unit("prepare-rabbitmq-for-sensu.service")
+    machine.wait_for_unit("sensu-client.service")
+    machine.wait_for_open_port(3031)
 
-      with subtest("sensu client should respond to HTTP"):
-        out = machine.succeed("curl localhost:3031/brew")
-        assert {"response":"I'm a teapot!"} == json.loads(out)
+    with subtest("sensu client should respond to HTTP"):
+      out = machine.succeed("curl localhost:3031/brew")
+      assert {"response":"I'm a teapot!"} == json.loads(out)
 
-      with subtest("sensu client config should have basic checks configured"):
-        out = machine.succeed("sensu-client-show-config")
-        config = json.loads(out)
-        assert "disk" in config["checks"]
-        assert "firewall-active" in config["checks"]
-        assert "uptime" in config["checks"]
+    with subtest("sensu client config should have basic checks configured"):
+      out = machine.succeed("sensu-client-show-config")
+      config = json.loads(out)
+      assert "disk" in config["checks"]
+      assert "firewall-active" in config["checks"]
+      assert "uptime" in config["checks"]
 
-      with subtest("sensu client should subscribe as consumer to rabbitmq"):
-        machine.wait_until_succeeds("sudo -u rabbitmq rabbitmqctl list_consumers -p /sensu | grep rabbit@machine")
-    '';
+    with subtest("sensu client should subscribe as consumer to rabbitmq"):
+      machine.wait_until_succeeds("sudo -u rabbitmq rabbitmqctl list_consumers -p /sensu | grep rabbit@machine")
+
+    with subtest("check_ping should be able to ping the VM"):
+      machine.succeed("${pkgs.monitoring-plugins}/bin/check_ping localhost -w 200,10% -c 500,30%")
+  '';
 })
