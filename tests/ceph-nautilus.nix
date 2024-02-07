@@ -393,8 +393,9 @@ in
     with subtest("Destroy and re-create the keystore, rekey the OSD"):
       host1.succeed("fc-luks keystore destroy --no-overwrite > /dev/kmsg 2>&1")
       host1.succeed("fc-luks keystore create /dev/vde > /dev/kmsg 2>&1")
-      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-luks keystore rekey > /dev/kmsg 2>&1')
-      host1.succeed('echo -e "newphrase\nnewphrase" | setsid -w fc-luks keystore rekey --slot=admin > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-luks keystore rekey --lvs "*" > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "newphrase\nnewphrase" | setsid -w fc-luks keystore rekey --slot=admin --lvs "*" > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "newphrase\nnewphrase" | setsid -w fc-luks keystore rekey --device /dev/vgosd-0/ceph-osd-0-crypted > /dev/kmsg 2>&1')
       host1.succeed("fc-ceph osd reactivate all")
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
