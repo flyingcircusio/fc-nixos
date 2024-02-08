@@ -97,6 +97,7 @@
   "matrix-synapse",
   "mcpp",
   "memcached",
+  "monitoring-plugins",
   "mysql",
   "mysql80",
   "nfs-utils",
