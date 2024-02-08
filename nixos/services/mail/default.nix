@@ -261,7 +261,7 @@ in {
                 enableACME = true;
               }
               (lib.mkIf (role.imprintUrl != null) {
-                locations."/".return = "302 https://${role.imprintUrl}";
+                locations."/".return = "302 ${role.imprintUrl}";
               })
               (lib.mkIf (role.imprintText != null) {
                 root = with pkgs; writeTextDir "index.html" role.imprintText;
