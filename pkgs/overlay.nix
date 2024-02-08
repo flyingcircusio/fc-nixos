@@ -203,10 +203,44 @@ in {
 
   mysql = super.mariadb;
 
-  monitoring-plugins = super.monitoring-plugins.overrideAttrs(_: rec {
-    postInstall = ''
-    cp plugins-root/check_dhcp $out/bin
-    cp plugins-root/check_icmp $out/bin
+  monitoring-plugins = let
+    binPath = lib.makeBinPath (with self; [
+      (placeholder "out")
+      "/run/wrappers"
+      coreutils
+      gnugrep
+      gnused
+      lm_sensors
+      net-snmp
+      procps
+      unixtools.ping
+    ]);
+    ping = "${self.unixtools.ping}/bin/ping";
+  in
+  super.monitoring-plugins.overrideAttrs(_: rec {
+    # Taken from upstream postPatch, but with an absolute path for ping instead
+    # of relying on PATH. Looks like PATH doesn't apply to check_ping (it's a C
+    # program and not a script like other checks), so check_ping needs to
+    # be compiled with the full path.
+    postPatch = ''
+      substituteInPlace po/Makefile.in.in \
+        --replace /bin/sh ${self.runtimeShell}
+
+      sed -i configure.ac \
+        -e 's|^DEFAULT_PATH=.*|DEFAULT_PATH=\"${binPath}\"|'
+
+      configureFlagsArray+=(
+        --with-ping-command='${ping} -4 -n -U -w %d -c %d %s'
+        --with-ping6-command='${ping} -6 -n -U -w %d -c %d %s'
+      )
+    '';
+
+    # These checks are not included by default.
+    # Our platform doesn't use them, maybe some customer?
+    # XXX: Remove in 24.05 if nobody needs it.
+    postInstall = (super.monitoring-plugins.postInstall or "") + ''
+      cp plugins-root/check_dhcp $out/bin
+      cp plugins-root/check_icmp $out/bin
     '';
   });
 
