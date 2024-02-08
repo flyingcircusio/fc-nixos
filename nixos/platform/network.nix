@@ -297,6 +297,9 @@ in
       { nscd.restartTriggers = [
           config.environment.etc."host.conf".source
         ];
+        systemd-sysctl.restartTriggers = lib.mkIf (!isNull fclib.underlay) [
+          config.environment.etc."sysctl.d/70-fcio-underlay.conf".source
+        ];
       } //
       # These units performing network interface setup must be
       # explicitly wanted by the multi-user target, otherwise they
@@ -577,5 +580,15 @@ in
       # Optimize multi-path for VXLAN (layer3 in layer3)
       "net.ipv4.fib_multipath_hash_policy" = "2";
     })];
+
+    # Prevent underlay interfaces from matching the rp_filter sysctl
+    # glob in the default configuration shipped with systemd.
+    environment.etc."sysctl.d/70-fcio-underlay.conf" =
+      lib.mkIf (!isNull fclib.underlay) {
+        text = lib.concatMapStringsSep "\n"
+          (iface: "-net.ipv4.conf.${iface}.rp_filter")
+          (attrNames fclib.underlay.interfaces);
+      };
+
   };
 }
