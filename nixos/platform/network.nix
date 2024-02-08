@@ -22,14 +22,13 @@ let
         mac = iface.mac;
       })
     ) ++
-    (if isNull fclib.underlay then []
-     else lib.mapAttrsToList
-       (name: value: {
-         name = name;
-         mtu = fclib.underlay.mtu;
-         mac = value;
-       })
-       fclib.underlay.interfaces
+    (lib.optionals (!isNull fclib.underlay) (lib.mapAttrsToList
+      (name: value: {
+        name = name;
+        mtu = fclib.underlay.mtu;
+        mac = value;
+      })
+      fclib.underlay.interfaces)
     );
 
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
@@ -137,7 +136,7 @@ in
 
           mtu = interface.mtu;
         })) nonUnderlayInterfaces) ++
-      (if isNull fclib.underlay then [] else [(
+      (lib.optionals (!isNull fclib.underlay) [(
         lib.nameValuePair "ul-loopback" {
           ipv4.addresses = [{
             address = fclib.underlay.loopback;
@@ -147,7 +146,7 @@ in
           mtu = fclib.underlay.mtu;
         }
       )]) ++
-      (if isNull fclib.underlay then [] else
+      (lib.optionals (!isNull fclib.underlay)
         (map (iface: lib.nameValuePair iface {
           tempAddress = "disabled";
           mtu = fclib.underlay.mtu;
@@ -183,9 +182,8 @@ in
       wireguard.enable = true;
 
       firewall.trustedInterfaces =
-        if isNull fclib.underlay || config.flyingcircus.infrastructureModule != "flyingcircus-physical"
-        then []
-        else [ "brsto" "brstb" ] ++ (attrNames fclib.underlay.interfaces);
+        lib.optionals (!isNull fclib.underlay && config.flyingcircus.infrastructureModule == "flyingcircus-physical")
+          ([ "brsto" "brstb" ] ++ (attrNames fclib.underlay.interfaces));
     };
 
     flyingcircus.activationScripts = {
@@ -368,8 +366,8 @@ in
               };
             }
           )) bridgedInterfaces) ++
-        (if isNull fclib.underlay then [] else
-          [(lib.nameValuePair
+        (lib.optionals (!isNull fclib.underlay)
+          ([(lib.nameValuePair
             "network-link-properties-ul-loopback-virt"
             rec {
               description = "Ensure network link properties for virtual interface ul-loopback";
@@ -501,7 +499,7 @@ in
                };
              }
            )
-          ) vxlanInterfaces))
+          ) vxlanInterfaces)))
       ));
 
     boot.kernel.sysctl = lib.mkMerge [{
