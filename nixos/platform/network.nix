@@ -258,16 +258,6 @@ in
             neighbor switches activate
             advertise-all-vni
             advertise-svi-ip
-            ${ # Workaround for FRR not advertising SVI IP when
-               # globally configured
-              lib.concatMapStringsSep "\n  "
-                (iface: concatStringsSep "\n  " [
-                  ("vni " + (toString iface.vlanId))
-                  " advertise-svi-ip"
-                  "exit-vni"
-                ])
-                vxlanInterfaces
-            }
            exit-address-family
           !
           exit
