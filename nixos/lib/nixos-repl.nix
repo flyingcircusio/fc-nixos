@@ -23,7 +23,7 @@ let
   inherit (nixos) options;
 
   etc = printEtcFile options;
-  replHelpers = pkgs.callPackage nixos/lib/repl-helpers.nix {};
+  replHelpers = pkgs.callPackage ./repl-helpers.nix {};
   inherit (replHelpers) printEtcFile format print;
 
 in builtins // nixos.config // {

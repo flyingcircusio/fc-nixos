@@ -4,9 +4,8 @@ import json
 import subprocess
 import sys
 
-import fc.util.directory
-
 import fc.ceph.images
+import fc.util.directory
 from fc.ceph.api import Cluster, Pools
 
 

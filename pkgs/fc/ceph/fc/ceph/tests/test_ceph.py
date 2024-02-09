@@ -1,12 +1,11 @@
 import collections
 
+import fc.ceph.api.cluster
+import fc.ceph.maintenance
 import fc.util.configfile
 import fc.util.directory
 import mock
 import pytest
-
-import fc.ceph.api.cluster
-import fc.ceph.maintenance
 from fc.ceph.api.rbdimage import RBDImage
 
 

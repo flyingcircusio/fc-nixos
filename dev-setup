@@ -1,52 +1,6 @@
 #!/usr/bin/env bash
-# Usage: eval `./dev-setup`
-set -e
-
+echo "This will set up the channels dir and show the export command to set the NIX_PATH accordingly." >&2
+echo "You can also use 'nix develop --impure' to open the dev shell and run build_channels_dir from there." >&2
 # ensure PWD is the directory this script resides in (allows calls like ../dev-setup or $HOME/fc-nixos/dev-setup)
 cd "$(dirname "$(readlink -f "$0")")"
-
-base=$PWD
-# preserve nixos-config
-config=$(nix-instantiate --find-file nixos-config 2>/dev/null) || true
-
-# bootstrapping with what we find on the system
-for candidate in \
-        $HOME/.nix-defexpr/channels/nixos \
-        $HOME/.nix-defexpr/channels_root/nixos \
-        $HOME/.nix-defexpr/channels \
-        $HOME/.nix-defexpr/channels_root; do
-    if [[ -e ${candidate} ]]; then
-        NIX_PATH="${NIX_PATH}${NIX_PATH:+:}${candidate}"
-    fi
-done
-export NIX_PATH
-channels=`nix-build -Q --quiet versions.nix -A allUpstreams --no-out-link`
-if [[ -z $channels ]]; then
-    echo "$0: failed to build nixpkgs+overlay" >&2
-    exit 1
-fi
-mkdir -p channels
-find $channels -maxdepth 1 -type l | while read channel; do
-    target="channels/${channel##*/}"
-    # don't toucn anything which is not a link into the nix store
-    if [[ ! -L $target && -d $target ]]; then
-        echo "$0: warning: $target appears to be a local dev checkout" >&2
-        continue
-    elif [[ -L $target && $(readlink $target) != /nix/store/* ]]; then
-        echo "$0: warning: $target appears to be a local dev checkout" >&2
-        continue
-    fi
-    ln -fs $channel channels
-done
-if ! [[ -e channels/fc ]]; then
-    ln -s .. channels/fc
-fi
-
-NIX_PATH="$base/channels"
-if [[ -n "$config" ]]; then
-    NIX_PATH="${NIX_PATH}:nixos-config=$config"
-else
-    NIX_PATH="${NIX_PATH}:nixos-config=${base}/nixos"
-fi
-
-echo "export NIX_PATH=$NIX_PATH"
+nix develop --impure "$@" --command dev_setup
