@@ -26,11 +26,11 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1707817777,
-        "narHash": "sha256-vHyIs1OULQ3/91wD6xOiuayfI71JXALGA5KLnDKAcy0=",
+        "lastModified": 1707004164,
+        "narHash": "sha256-9Hr8onWtvLk5A8vCEkaE9kxA0D7PR62povFokM1oL5Q=",
         "owner": "cachix",
         "repo": "devenv",
-        "rev": "5a30b9e5ac7c6167e61b1f4193d5130bb9f8defa",
+        "rev": "0e68853bb27981a4ffd7a7225b59ed84f7180fc7",
         "type": "github"
       },
       "original": {
@@ -202,16 +202,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1707995553,
-        "narHash": "sha256-/GTFOYJ628DM4AbK9bBHEINnrtY1NOOM0n5yjME8g1k=",
+        "lastModified": 1707511041,
+        "narHash": "sha256-v0FGRmMuAr09zm5ZTEsL41FJbzHClKtw2o9pQ3P5lek=",
         "owner": "flyingcircusio",
         "repo": "nixpkgs",
-        "rev": "6b5bfd4e08375ccb7aadb9e64b9391a89bb856e6",
+        "rev": "76ae221695c2c0e8db1eec010786ed4ba985f019",
         "type": "github"
       },
       "original": {
         "owner": "flyingcircusio",
-        "ref": "nixos-23.11",
+        "ref": "nixos-24.05",
         "repo": "nixpkgs",
         "type": "github"
       }
