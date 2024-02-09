@@ -327,7 +327,9 @@ context: Context | None = None
 
 @app.callback(no_args_is_help=True)
 def update_nixpkgs(
-    nixos_version: NixOSVersion = Option(default="nixos-23.11"),
+    nixos_version: NixOSVersion = Option(
+        default=None, help="Read from `release/nixos-version` if None"
+    ),
     fc_nixos_path: Path = Option(
         ".", dir_okay=True, file_okay=False, writable=True
     ),
