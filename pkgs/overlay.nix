@@ -213,12 +213,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
 
   lkl = super.lkl.overrideAttrs(_: rec {
-    version = "2022-05-18";
+    version = "2023-11-07";
     src = fetchFromGitHub {
-      rev = "10c7b5dee8c424cc2ab754e519ecb73350283ff9";
+      rev = "970883c348b61954a11c8c1ab9a2ab3ff0d89f08";
       owner  = "lkl";
       repo   = "linux";
-      sha256 = "sha256-D3HQdKzhB172L62a+8884bNhcv7vm/c941wzbYtbf4I=";
+      hash = "sha256-MpvhYLH3toC5DaxeiQxKlYWjrPoFw+1eWkkX3XIiVQ0=";
     };
 
     prePatch = ''
