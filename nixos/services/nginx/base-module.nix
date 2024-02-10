@@ -63,6 +63,17 @@ let
     proxy_set_header        X-Forwarded-Server $server_name;
   '';
 
+  proxyCachePathConfig = concatStringsSep "\n" (mapAttrsToList (name: proxyCachePath: ''
+    proxy_cache_path ${concatStringsSep " " [
+      "/var/cache/nginx/${name}"
+      "keys_zone=${proxyCachePath.keysZoneName}:${proxyCachePath.keysZoneSize}"
+      "levels=${proxyCachePath.levels}"
+      "use_temp_path=${if proxyCachePath.useTempPath then "on" else "off"}"
+      "inactive=${proxyCachePath.inactive}"
+      "max_size=${proxyCachePath.maxSize}"
+    ]};
+  '') (filterAttrs (name: conf: conf.enable) cfg.proxyCachePath));
+
   upstreamConfig = toString (flip mapAttrsToList cfg.upstreams (name: upstream: ''
     upstream ${name} {
       ${toString (flip mapAttrsToList upstream.servers (name: server: ''
@@ -212,6 +223,8 @@ let
       server_tokens ${if cfg.serverTokens then "on" else "off"};
 
       ${cfg.commonHttpConfig}
+
+      ${proxyCachePathConfig}
 
       ${vhosts}
 
@@ -811,6 +824,75 @@ in
           '';
       };
 
+      proxyCachePath = mkOption {
+        type = types.attrsOf (types.submodule ({ ... }: {
+          options = {
+            enable = mkEnableOption (lib.mdDoc "this proxy cache path entry");
+
+            keysZoneName = mkOption {
+              type = types.str;
+              default = "cache";
+              example = "my_cache";
+              description = lib.mdDoc "Set name to shared memory zone.";
+            };
+
+            keysZoneSize = mkOption {
+              type = types.str;
+              default = "10m";
+              example = "32m";
+              description = lib.mdDoc "Set size to shared memory zone.";
+            };
+
+            levels = mkOption {
+              type = types.str;
+              default = "1:2";
+              example = "1:2:2";
+              description = lib.mdDoc ''
+                The levels parameter defines structure of subdirectories in cache: from
+                1 to 3, each level accepts values 1 or 2. Сan be used any combination of
+                1 and 2 in these formats: x, x:x and x:x:x.
+              '';
+            };
+
+            useTempPath = mkOption {
+              type = types.bool;
+              default = false;
+              example = true;
+              description = lib.mdDoc ''
+                Nginx first writes files that are destined for the cache to a temporary
+                storage area, and the use_temp_path=off directive instructs Nginx to
+                write them to the same directories where they will be cached. Recommended
+                that you set this parameter to off to avoid unnecessary copying of data
+                between file systems.
+              '';
+            };
+
+            inactive = mkOption {
+              type = types.str;
+              default = "10m";
+              example = "1d";
+              description = lib.mdDoc ''
+                Cached data that has not been accessed for the time specified by
+                the inactive parameter is removed from the cache, regardless of
+                its freshness.
+              '';
+            };
+
+            maxSize = mkOption {
+              type = types.str;
+              default = "1g";
+              example = "2048m";
+              description = lib.mdDoc "Set maximum cache size";
+            };
+          };
+        }));
+        default = {};
+        description = lib.mdDoc ''
+          Configure a proxy cache path entry.
+          See <https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_path> for documentation.
+        '';
+      };
+
       resolver = mkOption {
         type = types.submodule {
           options = {
@@ -919,6 +1001,12 @@ in
       The Nginx log directory has been moved to /var/log/nginx, the cache directory
       to /var/cache/nginx. The option services.nginx.stateDir has been removed.
     '')
+    (mkRenamedOptionModule [ "services" "nginx" "proxyCache" "inactive" ] [ "services" "nginx" "proxyCachePath" "" "inactive" ])
+    (mkRenamedOptionModule [ "services" "nginx" "proxyCache" "useTempPath" ] [ "services" "nginx" "proxyCachePath" "" "useTempPath" ])
+    (mkRenamedOptionModule [ "services" "nginx" "proxyCache" "levels" ] [ "services" "nginx" "proxyCachePath" "" "levels" ])
+    (mkRenamedOptionModule [ "services" "nginx" "proxyCache" "keysZoneSize" ] [ "services" "nginx" "proxyCachePath" "" "keysZoneSize" ])
+    (mkRenamedOptionModule [ "services" "nginx" "proxyCache" "keysZoneName" ] [ "services" "nginx" "proxyCachePath" "" "keysZoneName" ])
+    (mkRenamedOptionModule [ "services" "nginx" "proxyCache" "enable" ] [ "services" "nginx" "proxyCachePath" "" "enable" ])
   ];
 
   config = mkIf cfg.enable {
