@@ -7,6 +7,18 @@ let
     {} super;
 
   inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
+  inherit (builtins) hasAttr storePath;
+
+  getClosureFromStore = path:
+    if hasAttr "fetchClosure" builtins then
+      builtins.fetchClosure {
+        fromStore = "https://s3.whq.fcio.net/hydra";
+        fromPath = path;
+        inputAddressed = true;
+      }
+    else
+      storePath path;
+
   phpLogPermissionPatch = fetchpatch {
     url = "https://github.com/flyingcircusio/php-src/commit/f3a22e2ed6e461d8c3fac84c2fd2c9e441c9e4d4.patch";
     hash = "sha256-ttHjEOGJomjs10PRtM2C6OLX9LCvboxyDSKdZZHanFQ=";
@@ -54,7 +66,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   inherit (super.callPackage ./boost { }) boost159;
 
-  bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
     });
@@ -382,20 +393,24 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
-  sensu = super.callPackage ./sensu { };
-  sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
-  sensu-plugins-kubernetes = super.callPackage ./sensuplugins-rb/sensu-plugins-kubernetes { };
-  sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
-  sensu-plugins-mysql = super.callPackage ./sensuplugins-rb/sensu-plugins-mysql { };
-  sensu-plugins-disk-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-disk-checks { };
-  sensu-plugins-entropy-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-entropy-checks { };
-  sensu-plugins-http = super.callPackage ./sensuplugins-rb/sensu-plugins-http { };
-  sensu-plugins-logs = super.callPackage ./sensuplugins-rb/sensu-plugins-logs { };
-  sensu-plugins-network-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-network-checks { };
-  sensu-plugins-postfix = super.callPackage ./sensuplugins-rb/sensu-plugins-postfix { };
-  sensu-plugins-postgres = super.callPackage ./sensuplugins-rb/sensu-plugins-postgres { };
-  sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
-  sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
+  # Ruby 2.7 is EOL but we still need it for Sensu until Aramaki takes over ;)
+  #ruby_2_7 = getClosureFromStore /nix/store/qqc6v89xn0g2w123wx85blkpc4pz2ags-ruby-2.7.8;
+
+  sensu = getClosureFromStore /nix/store/3ya2sq1nl4i616mc40kpmag9ndhzj5fy-sensu-1.9.0;
+
+  sensu-plugins-elasticsearch = getClosureFromStore /nix/store/dawyv3kzr69qj2lq8cfm0j941i2hjnfb-sensu-plugins-elasticsearch-4.2.2;
+  sensu-plugins-kubernetes = getClosureFromStore /nix/store/cndsgrdmqlgdwc6hnvvrji17jlr7z15k-sensu-plugins-kubernetes-4.0.0;
+  sensu-plugins-memcached = getClosureFromStore /nix/store/9hw039bi9zkr33i5vm66403wkf5cqpnc-sensu-plugins-memcached-0.1.3;
+  sensu-plugins-mysql = getClosureFromStore /nix/store/ng5blik2ajm6hb5i4ay57yyzbiy5ana0-sensu-plugins-mysql-3.1.1;
+  sensu-plugins-disk-checks = getClosureFromStore /nix/store/kmrapdk57468z9zcl57wk1vhz550naqm-sensu-plugins-disk-checks-5.1.4;
+  sensu-plugins-entropy-checks = getClosureFromStore /nix/store/fa43q081m3hgvb2lkrqrmjki9349llrv-sensu-plugins-entropy-checks-1.0.0;
+  sensu-plugins-http = getClosureFromStore /nix/store/b297df4389l1nrfbsh70x73qqfgamhq0-sensu-plugins-http-6.1.0;
+  sensu-plugins-logs = getClosureFromStore /nix/store/cxya5kgd5rksqvqq4mx1cim32wv9nzr2-sensu-plugins-logs-4.1.1;
+  sensu-plugins-network-checks = getClosureFromStore /nix/store/155c327fy4din77fv4sk6xzc1k8afbam-sensu-plugins-network-checks-4.0.0;
+  sensu-plugins-postfix = getClosureFromStore /nix/store/ac14jxfzl77nm09i4w2p6mrbl6fj6ri4-sensu-plugins-postfix-1.0.0;
+  sensu-plugins-postgres = getClosureFromStore /nix/store/mzlxvlfwn8bga044vdabpzdcqwjjblr1-sensu-plugins-postgres-4.2.0;
+  sensu-plugins-rabbitmq = getClosureFromStore /nix/store/lcvrxlakcxiqzvwq7g284nhzqfc5gvjv-sensu-plugins-rabbitmq-8.1.0;
+  sensu-plugins-redis = getClosureFromStore /nix/store/qbqnynpw5mzx98nz8lx89gpjw91wyd5b-sensu-plugins-redis-4.1.0;
 
   solr = super.callPackage ./solr { };
 
