@@ -75,9 +75,9 @@
     "version": "121.0.6167.85"
   },
   "chromium": {
-    "name": "chromium-121.0.6167.139",
+    "name": "chromium-121.0.6167.160",
     "pname": "chromium",
-    "version": "121.0.6167.139"
+    "version": "121.0.6167.160"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -85,9 +85,9 @@
     "version": "7.0"
   },
   "clamav": {
-    "name": "clamav-1.2.1",
+    "name": "clamav-1.2.2",
     "pname": "clamav",
-    "version": "1.2.1"
+    "version": "1.2.2"
   },
   "cmake": {
     "name": "cmake-3.27.7",
@@ -185,9 +185,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-122.0",
+    "name": "firefox-122.0.1",
     "pname": "firefox",
-    "version": "122.0"
+    "version": "122.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -220,9 +220,9 @@
     "version": "16.7.5"
   },
   "github-runner": {
-    "name": "github-runner-2.312.0",
+    "name": "github-runner-2.313.0",
     "pname": "github-runner",
-    "version": "2.312.0"
+    "version": "2.313.0"
   },
   "gitlab": {
     "name": "gitlab-16.7.5",
@@ -460,9 +460,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.2.5",
+    "name": "mastodon-4.2.6",
     "pname": "mastodon",
-    "version": "4.2.5"
+    "version": "4.2.6"
   },
   "matomo": {
     "name": "matomo-4.15.1",
@@ -700,29 +700,29 @@
     "version": "3.8.5"
   },
   "postgresql": {
-    "name": "postgresql-15.5",
+    "name": "postgresql-15.6",
     "pname": "postgresql",
-    "version": "15.5"
+    "version": "15.6"
   },
   "postgresql_12": {
-    "name": "postgresql-12.17",
+    "name": "postgresql-12.18",
     "pname": "postgresql",
-    "version": "12.17"
+    "version": "12.18"
   },
   "postgresql_13": {
-    "name": "postgresql-13.13",
+    "name": "postgresql-13.14",
     "pname": "postgresql",
-    "version": "13.13"
+    "version": "13.14"
   },
   "postgresql_14": {
-    "name": "postgresql-14.10",
+    "name": "postgresql-14.11",
     "pname": "postgresql",
-    "version": "14.10"
+    "version": "14.11"
   },
   "postgresql_15": {
-    "name": "postgresql-15.5",
+    "name": "postgresql-15.6",
     "pname": "postgresql",
-    "version": "15.5"
+    "version": "15.6"
   },
   "powerdns": {
     "name": "pdns-4.8.4",
@@ -985,9 +985,9 @@
     "version": "9.0.2116"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.42.4+abi=4.0",
+    "name": "webkitgtk-2.42.5+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.42.4"
+    "version": "2.42.5"
   },
   "wget": {
     "name": "wget-1.21.4",
