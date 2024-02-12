@@ -368,6 +368,15 @@ in
           )) bridgedInterfaces) ++
         (lib.optionals (!isNull fclib.underlay)
           ([(lib.nameValuePair
+            "fc-lldp-to-altnames"
+            rec {
+              description = "Set interface altnames based on peer hostname advertised in LLDP";
+              after = [ "lldpd.service" ];
+              unitConfig.Requisite = after;
+              serviceConfig.Type = "oneshot";
+              script = "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${lib.concatStringsSep " " (attrNames fclib.underlay.interfaces)}";
+            }
+          ) (lib.nameValuePair
             "network-link-properties-ul-loopback-virt"
             rec {
               description = "Ensure network link properties for virtual interface ul-loopback";
@@ -501,6 +510,12 @@ in
            )
           ) vxlanInterfaces)))
       ));
+
+    systemd.timers.fc-lldp-to-altnames = lib.mkIf (!isNull fclib.underlay) {
+      description = "Timer for updating interface altnames based on peer hostname advertised in LLDP";
+      wantedBy = [ "timers.target" ];
+      timerConfig.OnCalendar = "*:0/10";
+    };
 
     boot.kernel.sysctl = lib.mkMerge [{
       "net.ipv4.tcp_congestion_control" = "bbr";
