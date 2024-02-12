@@ -192,9 +192,13 @@ def filter_and_merge_commit_msgs(msgs):
         "github-runner: pass overridden version to build scripts",
         "gitlab: make Git package configurable",
         "gitlab: remove DB migration warning",
+        "jicofo: 1.0-1050 -> 1.0-1059",
+        "jitsi-meet: 1.0.7531 -> 1.0.7712",
         "jitsi-videobridge: 2.3-44-g8983b11f -> 2.3-59-g5c48e421",
+        "jitsi-videobridge: 2.3-59-g5c48e421 -> 2.3-64-g719465d1",
         "libmodsecurity: 3.0.6 -> 3.0.7",
         "mongodb: fix build and sanitize package",
+        "pystemd: fix runtime deps",
         "solr: 8.6.3 -> 8.11.1",
         "solr: 8.6.3 -> 8.11.2",
     ]
