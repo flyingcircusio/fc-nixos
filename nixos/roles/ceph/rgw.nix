@@ -159,6 +159,13 @@ in
         '';
       };
 
+      systemd.services.fc-ceph-rgw-accounting = {
+        description = "Upload S3 usage data to the Directory";
+        path = [ cephPkgs.ceph ];
+        serviceConfig.Type = "oneshot";
+        script = "${pkgs.fc.agent}/bin/fc-s3accounting --enc ${config.flyingcircus.encPath}";
+      };
+
       services.logrotate.extraConfig = ''
         /var/log/ceph/client.radosgw.log {
             create 0644 root adm
@@ -187,6 +194,15 @@ in
         timerConfig = {
           OnBootSec = "10m";
           OnUnitActiveSec = "10m";
+        };
+      };
+
+      systemd.timers.fc-ceph-rgw-accounting = {
+        description = "Timer for uploading S3 usage data to the Directory";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          Persistent = true;
+          OnCalendar = "*:2/10";
         };
       };
 
