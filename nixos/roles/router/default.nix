@@ -37,14 +37,15 @@ in
       enable = mkEnableOption "Router";
       supportsContainers = fclib.mkDisableContainerSupport;
       isPrimary = mkOption {
-        type = types.nullOr types.bool;
-        default = null;
+        type = types.bool;
+        default = false;
       };
     };
   };
 
   imports = [
     ./bind.nix
+    ./bird
     ./keepalived
   ];
 
@@ -82,6 +83,8 @@ in
       "net.netfilter.nf_conntrack_max" = lib.mkOverride 90 1048576;
       "net.netfilter.nf_conntrack_buckets" = 32768;
     };
+
+    environment.etc."specialisation".text = lib.mkDefault "";
 
     environment.systemPackages = with pkgs; [
       kickInterfaces
@@ -143,26 +146,13 @@ in
     specialisation.primary = {
       configuration = {
         imports = [
-          ./bird
           ./dhcpd.nix
           ./radvd.nix
         ];
         system.nixos.tags = [ "primary" ];
         flyingcircus.roles.router.isPrimary = true;
+        environment.etc."is_primary".text = "";
         environment.etc."specialisation".text = "primary";
-
-      };
-    };
-
-    specialisation.secondary = {
-
-      configuration = {
-        imports = [
-          ./bird
-        ];
-        system.nixos.tags = [ "secondary" ];
-        flyingcircus.roles.router.isPrimary = false;
-        environment.etc."specialisation".text = "secondary";
       };
     };
 
