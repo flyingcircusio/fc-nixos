@@ -262,8 +262,10 @@ in {
         };
 
         systemd.tmpfiles.rules = [
-          "d /var/log/httpd 0750 root service"
-          "a+ /var/log/httpd - - - - group:sudo-srv:r-x"
+          "D /var/log/httpd 2750 root service"
+          "a+ /var/log/httpd - - - - default:group::r-X,default:group:sudo-srv:r-X,default:group:service:r-X,default:mask::r-X"
+          # recursive is required as well to adjust permissions of existing files
+          "A+ /var/log/httpd - - - - group:sudo-srv:r-X,group:service:r-X,group::r-X,mask::r-X"
         ];
 
       })
