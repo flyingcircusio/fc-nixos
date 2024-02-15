@@ -252,10 +252,16 @@ Show node info:
 sinfo -N
 ```
 
-Show job accounting info:
+Find jobs with high RAM consumption for all users (with custom output format):
 
 ```shell
-sacct
+sudo -u slurm sacct --format="MaxRSS,State,JobID,JobName,User,CPUTime" -a | awk 'NR <= 2; NR > 2 {print $0 | "sort -n"}'
+```
+
+Cancel jobs with a given job name:
+
+```shell
+sudo -u slurm scancel -n jobname
 ```
 
 ## Known limitations
