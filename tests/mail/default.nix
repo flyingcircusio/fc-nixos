@@ -25,7 +25,7 @@ in
   name = "mailserver";
   nodes = {
     mail =
-      { lib, ... }: {
+      { config, lib, ... }: {
         imports = [ ../../nixos ../../nixos/roles ];
         config = lib.mkMerge [
           commonConfig
@@ -36,6 +36,7 @@ in
               enable = true;
               mailHost = "mail.example.local";
               webmailHost = "webmail.example.local";
+              imprintUrl = "https://example.com";
               domains = {
                 "example.local" = {
                   primary = true;
@@ -107,6 +108,10 @@ in
             # LEC is not able to call remote services
             services.nginx.virtualHosts."autoconfig.example.local" = {
               addSSL = lib.mkForce false;
+              enableACME = lib.mkForce false;
+            };
+            services.nginx.virtualHosts.${config.flyingcircus.roles.mailserver.mailHost} = {
+              forceSSL = lib.mkForce false;
               enableACME = lib.mkForce false;
             };
 
@@ -181,7 +186,7 @@ in
         ];
     };
   };
-  testScript = let
+  testScript = { nodes, ... }: let
     passwdFile = "/var/lib/dovecot/passwd";
     chpasswdNixPath = "${pkgs.fc.roundcube-chpasswd-py}/bin/roundcube-chpasswd";
     globalChpasswd = "/run/current-system/sw/bin/roundcube-chpasswd";
@@ -191,6 +196,24 @@ in
 
     with subtest("postsuper sudo rule should be present for sudo-srv group"):
       mail.succeed('grep %sudo-srv /etc/sudoers | grep -q postsuper')
+
+    with subtest("imprint redirects to example.com"):
+      client.wait_for_unit("network-online.target")
+
+      mail.wait_for_unit("nginx")
+      mail.wait_for_open_port(80, addr='${nodes.mail.networking.primaryIPAddress}')
+
+      imprint_request_headers = client.succeed("curl http://mail.example.local -I | xargs -I {} echo {}").split('\n')
+      status_code = int(imprint_request_headers[0].split(' ')[1])
+
+      assert status_code == 302, "Status code of request against imprint must be 302! Got {status_code}."
+      assert len([
+        x for x in imprint_request_headers if x.startswith('Location: https://example.com')
+      ]) == 1, f"""
+        Expected a redirect to https://example.com, got the following headers:
+
+        {imprint_request_headers}
+      """
 
     with subtest("roundcube-chpasswd sudo rule should be present for roundcube user"):
       roundcube_sudo = mail.succeed('grep roundcube-chpasswd /etc/sudoers').strip().split()

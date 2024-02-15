@@ -98,7 +98,7 @@ in
 
       flyingcircus.roles.mysql.listenAddresses = [ "::" ];
 
-      flyingcircus.roles.webproxy.listenAddresses = [ "[::]" ];
+      flyingcircus.roles.webproxy.listenAddresses = [ "[::]" "0.0.0.0" ];
 
       flyingcircus.services.nginx.defaultListenAddresses = [ "0.0.0.0" "[::]" ];
       flyingcircus.services.redis.listenAddresses = [ "[::]" ];

@@ -133,7 +133,7 @@ let
   overlayPkgNames = getDottedPackageNames overlay [];
   overlayPkgNamesToTest = lib.subtractLists excludedPkgNames overlayPkgNames;
 
-  importantPkgNames = fromJSON (readFile ../important_packages.json);
+  importantPkgNames = fromJSON (readFile ../release/important_packages.json);
   importantPkgNamesToTest = lib.subtractLists excludedPkgNames importantPkgNames;
 
   # Results looks like: [ { python3Packages.requests.x86_64-linux = <job>; } ]

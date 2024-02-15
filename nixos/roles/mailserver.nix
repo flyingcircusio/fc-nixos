@@ -170,6 +170,15 @@ in
           You can instead provide your imprint in text form using the imprintText option
         '';
         default = null;
+        apply = url:
+          if url == null || null != builtins.match "^https?://.+" url then
+            url
+          else
+            # FIXME get rid of this after a few releases as grace period.
+            # Use `types.nullOr (types.strMatching "^https?://.+")` then to make sure a protocol is specified.
+            warn
+              ''Specifying flyingcircus.roles.mailserver.imprintUrl without a protocol scheme is deprecated. Add https:// to the declaration (i.e. "${url}" -> "https://${url}") to get rid of this warning.''
+              "https://${url}";
       };
 
       imprintText = mkOption {

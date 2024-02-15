@@ -13,6 +13,7 @@ in {
         (testlib.fcConfig { net.fe = false; })
       ];
       flyingcircus.roles.${rolename}.enable = true;
+      flyingcircus.allowedUnfreePackageNames = ["mongodb"];
     };
 
 

@@ -13,6 +13,9 @@ with lib;
 let
   inherit (import ../../../versions.nix { }) nixos-mailserver;
 
+  copyToStore = pathString:
+    let p = builtins.path { path = pathString; }; in "${p}";
+
   role = config.flyingcircus.roles.mailserver;
   svc = config.flyingcircus.services.mail;
   fclib = config.fclib;
@@ -49,6 +52,10 @@ in {
   config =
   let
     dynamicMapFiles = lib.flatten (lib.attrValues role.dynamicMaps);
+    # The way we use the mapFiles attribute has a collision potential on files
+    # with the same name in different paths. To avoid this, we hash the
+    # path and suffix the basename with the hash. This will not cause reloads
+    # if the content changes! (PL-132088)
     dynamicMapHash = p: "${baseNameOf p}-${substring 0 8 (hashString "sha1" p)}";
   in lib.mkMerge [
     (lib.mkIf (domains != []) {
@@ -261,7 +268,7 @@ in {
                 enableACME = true;
               }
               (lib.mkIf (role.imprintUrl != null) {
-                locations."/".return = "302 https://${role.imprintUrl}";
+                locations."/".return = "302 ${role.imprintUrl}";
               })
               (lib.mkIf (role.imprintText != null) {
                 root = with pkgs; writeTextDir "index.html" role.imprintText;
@@ -327,7 +334,9 @@ in {
 
         mapFiles = listToAttrs (map (path: {
           name = dynamicMapHash path;
-          value = path;
+          # The map files need to be in the store to ensure that they
+          # properly trigger reloads when their content changes.
+          value = copyToStore path;
         }) dynamicMapFiles);
 
         extraConfig = ''

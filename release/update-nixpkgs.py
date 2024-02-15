@@ -1,17 +1,14 @@
-#!/usr/bin/env nix-shell
-#! nix-shell -i python -p "python310.withPackages (p: with p; [ GitPython rich typer ])"
 import json
 import re
 import subprocess
-import sys
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Optional
 
 from git import Repo
 from rich import print
-from typer import Argument, Option, Typer, confirm, echo
+from typer import Argument, Option, Typer, confirm
 
 PKG_UPDATE_RE = re.compile(
     r"(?P<name>.+): "
@@ -19,10 +16,14 @@ PKG_UPDATE_RE = re.compile(
     r"(?P<comment>.*)"
 )
 
+NIXOS_VERSION_PATH = "release/nixos-version"
+PACKAGE_VERSIONS_PATH = "release/package-versions.json"
+VERSIONS_PATH = "release/versions.json"
+
 app = Typer()
 
 
-class NixOSVersion(str, Enum):
+class NixOSVersion(StrEnum):
     NIXOS_2211 = "nixos-22.11"
     NIXOS_2305 = "nixos-23.05"
     NIXOS_2311 = "nixos-23.11"
@@ -116,22 +117,6 @@ def rebase_nixpkgs(nixpkgs_repo: Repo, nixos_version: NixOSVersion):
         nixpkgs_repo.git.push(force_with_lease=True)
 
 
-def prefetch_nixpkgs(nixos_version: str) -> dict[str, str]:
-    prefetch_cmd = [
-        "/run/current-system/sw/bin/nix-prefetch-github",
-        "flyingcircusio",
-        "nixpkgs",
-        "--rev",
-        nixos_version,
-    ]
-
-    print("Prefetching nixpkgs, this takes some time...")
-    prefetch_proc = run_on_hydra(*prefetch_cmd)
-    prefetch_result = json.loads(prefetch_proc.stdout)
-    print(prefetch_result)
-    return prefetch_result
-
-
 def version_diff_lines(old_versions, new_versions):
     lines = []
     for pkg_name in old_versions:
@@ -152,9 +137,10 @@ def version_diff_lines(old_versions, new_versions):
     return lines
 
 
-def update_package_versions_json(package_versions_path: Path):
+def update_package_versions_json(workdir_path: Path):
     basedir = "$XDG_RUNTIME_DIR"
-    local_path = package_versions_path.parent.absolute()
+    package_versions_path = workdir_path / PACKAGE_VERSIONS_PATH
+    local_path = workdir_path.absolute()
     dest = f"{basedir}/{local_path.name}/"
     rsync_cmd = [
         "rsync",
@@ -167,7 +153,7 @@ def update_package_versions_json(package_versions_path: Path):
     print("rsync: ", " ".join(rsync_cmd))
     subprocess.run(rsync_cmd, check=True)
     proc = run_on_hydra(
-        f"(cd {dest}; eval $(./dev-setup); set pipefail; nix-build ./get-package-versions.nix | xargs cat)"
+        f"(cd {dest};nix develop --impure --command cat_package_versions_json)"
     )
     old_versions = json.loads(package_versions_path.read_text())
     new_versions = json.loads(proc.stdout)
@@ -178,8 +164,10 @@ def update_package_versions_json(package_versions_path: Path):
     package_versions_path.write_text(json.dumps(new_versions, indent=2) + "\n")
 
 
-def get_interesting_commit_msgs(nixpkgs_repo, old_rev, new_rev):
-    with open("package-versions.json") as f:
+def get_interesting_commit_msgs(
+    workdir_path: Path, nixpkgs_repo, old_rev, new_rev
+):
+    with open(workdir_path / PACKAGE_VERSIONS_PATH) as f:
         package_versions = json.load(f)
     version_range = f"{old_rev}..{new_rev}"
     print(f"comparing {version_range}")
@@ -204,9 +192,13 @@ def filter_and_merge_commit_msgs(msgs):
         "github-runner: pass overridden version to build scripts",
         "gitlab: make Git package configurable",
         "gitlab: remove DB migration warning",
+        "jicofo: 1.0-1050 -> 1.0-1059",
+        "jitsi-meet: 1.0.7531 -> 1.0.7712",
         "jitsi-videobridge: 2.3-44-g8983b11f -> 2.3-59-g5c48e421",
+        "jitsi-videobridge: 2.3-59-g5c48e421 -> 2.3-64-g719465d1",
         "libmodsecurity: 3.0.6 -> 3.0.7",
         "mongodb: fix build and sanitize package",
+        "pystemd: fix runtime deps",
         "solr: 8.6.3 -> 8.11.1",
         "solr: 8.6.3 -> 8.11.2",
     ]
@@ -239,18 +231,6 @@ def filter_and_merge_commit_msgs(msgs):
     return out_msgs
 
 
-def update_versions_json(versions_json_path: Path, rev, hash):
-    with open(versions_json_path) as f:
-        versions_json = json.load(f)
-
-    versions_json["nixpkgs"]["rev"] = rev
-    versions_json["nixpkgs"]["hash"] = hash
-
-    with open(versions_json_path, "w") as wf:
-        json.dump(versions_json, wf, indent=2)
-        wf.write("\n")
-
-
 def format_fcio_commit_msg(
     msgs: list[str], ticket_number: Optional[str]
 ) -> str:
@@ -273,29 +253,38 @@ def update_fc_nixos(
     nixpkgs_repo: Repo,
     fc_nixos_repo: Repo,
     ticket_number: str,
-    prefetch_json: dict[str, str],
 ):
     workdir_path = Path(fc_nixos_repo.working_dir)
-    versions_json_path = workdir_path / "versions.json"
-    package_versions_path = workdir_path / "package-versions.json"
+    flake_lock_path = workdir_path / "flake.lock"
+    versions_json_path = workdir_path / VERSIONS_PATH
+    package_versions_path = workdir_path / PACKAGE_VERSIONS_PATH
 
     with open(versions_json_path) as f:
         versions_json = json.load(f)
 
+    print(f"Updating {flake_lock_path}...")
+    subprocess.run(["nix", "flake", "update"])
+
+    print(f"Building {versions_json_path}")
+    subprocess.run(["build_versions_json"])
+    print()
+    print("-" * 80)
+    print(f"Updating {package_versions_path}...")
+    update_package_versions_json(workdir_path)
+
+    fc_nixos_repo.index.add(
+        [
+            str(flake_lock_path),
+            str(versions_json_path),
+            str(package_versions_path),
+        ]
+    )
+
     old_rev = versions_json["nixpkgs"]["rev"]
     new_rev = str(nixpkgs_repo.head.commit)
 
-    update_versions_json(versions_json_path, new_rev, prefetch_json["hash"])
-    print()
-    print("-" * 80)
-    update_package_versions_json(package_versions_path)
-
-    fc_nixos_repo.index.add(
-        [str(versions_json_path), str(package_versions_path)]
-    )
-
     interesting_msgs = get_interesting_commit_msgs(
-        nixpkgs_repo, old_rev, new_rev
+        workdir_path, nixpkgs_repo, old_rev, new_rev
     )
 
     print("All matching new commit messages (before filter & merge):")
@@ -313,12 +302,13 @@ def update_fc_nixos(
 
     if ticket_number:
         do_commit = confirm(
-            f"Create feature branch ${feature_branch_name} and commit fc-nixos now?",
+            f"Create feature branch {feature_branch_name} "
+            "and commit fc-nixos now?",
             default=True,
         )
     else:
         do_commit = confirm(
-            f"Commit to current fc-nixos now?",
+            "Commit to current fc-nixos now?",
             default=True,
         )
     if do_commit:
@@ -336,12 +326,14 @@ class Context:
     nixpkgs_path: Path
 
 
-context: Context
+context: Context | None = None
 
 
 @app.callback(no_args_is_help=True)
 def update_nixpkgs(
-    nixos_version: NixOSVersion = Option(default="nixos-23.11"),
+    nixos_version: NixOSVersion = Option(
+        default=None, help="Read from `release/nixos-version` if None"
+    ),
     fc_nixos_path: Path = Option(
         ".", dir_okay=True, file_okay=False, writable=True
     ),
@@ -351,7 +343,7 @@ def update_nixpkgs(
 ):
     global context
     if not nixos_version:
-        version_str = (fc_nixos_path / "nixos-version").read_text().strip()
+        version_str = (fc_nixos_path / NIXOS_VERSION_PATH).read_text().strip()
         nixos_version = NixOSVersion("nixos-" + version_str)
     context = Context(nixos_version, fc_nixos_path, nixpkgs_path)
 
@@ -364,14 +356,7 @@ def nixpkgs():
 
 @app.command()
 def package_versions():
-    update_package_versions_json(
-        context.fc_nixos_path / "package-versions.json"
-    )
-
-
-@app.command()
-def prefetch():
-    print(prefetch_nixpkgs(context.nixos_version))
+    update_package_versions_json(context.fc_nixos_path)
 
 
 @app.command()
@@ -379,11 +364,11 @@ def version_diff(
     old_fc_nixos_path: Path = Argument(..., dir_okay=True, file_okay=False)
 ):
     """
-    Shows package changes between the current (new) fc-nixos work tree and another (old)
-    one based on package-versions.json.
+    Shows package changes between the current (new) fc-nixos work tree and
+    another (old) one based on package-versions.json.
     """
-    package_versions_path = context.fc_nixos_path / "package-versions.json"
-    old_package_versions_path = old_fc_nixos_path / "package-versions.json"
+    package_versions_path = context.fc_nixos_path / PACKAGE_VERSIONS_PATH
+    old_package_versions_path = old_fc_nixos_path / PACKAGE_VERSIONS_PATH
     old_versions = json.loads(old_package_versions_path.read_text())
     new_versions = json.loads(package_versions_path.read_text())
 
@@ -402,8 +387,7 @@ def fc_nixos(
         ticket_number = ticket_number.removeprefix("PL-")
     nixpkgs_repo = Repo(context.nixpkgs_path)
     fc_nixos_repo = Repo(context.fc_nixos_path)
-    prefetch_json = prefetch_nixpkgs(context.nixos_version)
-    update_fc_nixos(nixpkgs_repo, fc_nixos_repo, ticket_number, prefetch_json)
+    update_fc_nixos(nixpkgs_repo, fc_nixos_repo, ticket_number)
 
 
 if __name__ == "__main__":

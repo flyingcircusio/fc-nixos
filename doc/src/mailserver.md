@@ -50,7 +50,12 @@ Additionally, some mail providers (namely \[Telekom/T-Online\]
 has an imprint served at its hostname.
 
 For this you can either set `imprintUrl` to the location of your existing
-imprint, or use `imprintText` to specify an imprint in HTML format
+imprint, or use `imprintText` to specify an imprint in HTML format.
+
+:::{warning}
+Specifying `imprintUrl` without a protocol scheme is still supported, but
+deprecated and will give a warning on evaluation.
+:::
 
 Note that it is not possible to set both `imprintUrl` and `imprintText` at the
 same time and imprint cannot be used if you serve webmail under the
@@ -83,7 +88,7 @@ and *test2.fcio.net*:
       "autoconfig": false
     }
   },
-  "imprintUrl": "your-company.tld/imprint"
+  "imprintUrl": "https://your-company.tld/imprint"
 }
 ```
 
