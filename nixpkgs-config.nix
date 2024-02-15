@@ -6,10 +6,6 @@
     # fc-sensuplugins and thus needed on all machines. Should be moved to
     # the raid service after decoupling fc-sensuplugins.
     "megacli"
-    # MongoDB starting with 4.0 uses the SSPL license, which is declared
-    # as unfree. We don't have alternatives to mongodb right now so we have
-    # to enable it.
-    "mongodb"
   ];
 
   permittedInsecurePackages = [
