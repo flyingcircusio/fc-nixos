@@ -96,28 +96,37 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
     gitlab.wait_for_unit("docker-registry.service")
 
     gitlab.wait_until_succeeds("curl -sSf http://gitlab/users/sign_in")
-    gitlab.succeed(
-        "curl -isSf http://gitlab | grep -i location | grep -q http://gitlab/users/sign_in"
-    )
-    gitlab.succeed(
-        "${pkgs.sudo}/bin/sudo -u gitlab -H gitlab-rake gitlab:check 1>&2"
-    )
-    gitlab.succeed(
-        "echo \"Authorization: Bearer \$(curl -X POST -H 'Content-Type: application/json' -d @${auth} http://gitlab/oauth/token | ${pkgs.jq}/bin/jq -r '.access_token')\" >/tmp/headers"
-    )
-    gitlab.succeed(
-        "curl -X POST -H 'Content-Type: application/json' -H @/tmp/headers -d @${createProject} http://gitlab/api/v4/projects"
-    )
-    gitlab.succeed(
-        "curl -X POST -H 'Content-Type: application/json' -H @/tmp/headers -d @${putFile} http://gitlab/api/v4/projects/1/repository/files/some-file.txt"
-    )
-    gitlab.succeed(
-        "curl -H @/tmp/headers http://gitlab/api/v4/projects/1/repository/archive.tar.gz > /tmp/archive.tar.gz"
-    )
-    gitlab.succeed(
-        "curl -H @/tmp/headers http://gitlab/api/v4/projects/1/repository/archive.tar.bz2 > /tmp/archive.tar.bz2"
-    )
-    gitlab.succeed("test -s /tmp/archive.tar.gz")
-    gitlab.succeed("test -s /tmp/archive.tar.bz2")
+
+    with subtest("Gitlab has HSTS headers"):
+      # curl supports parsing HSTS headers, but only when connecting via HTTPS.
+      # So just check for the header.
+      request_headers = gitlab.succeed("curl http://gitlab/users/sign_in -I | cat").split('\n')
+      print(request_headers)
+      assert 'Strict-Transport-Security: max-age=3600; includeSubDomains' in map(lambda s: s.strip(), request_headers)
+
+    with subtest("test basic Gitlab REST API actions"):
+      gitlab.succeed(
+          "curl -isSf http://gitlab | grep -i location | grep -q http://gitlab/users/sign_in"
+      )
+      gitlab.succeed(
+          "${pkgs.sudo}/bin/sudo -u gitlab -H gitlab-rake gitlab:check 1>&2"
+      )
+      gitlab.succeed(
+          "echo \"Authorization: Bearer \$(curl -X POST -H 'Content-Type: application/json' -d @${auth} http://gitlab/oauth/token | ${pkgs.jq}/bin/jq -r '.access_token')\" >/tmp/headers"
+      )
+      gitlab.succeed(
+          "curl -X POST -H 'Content-Type: application/json' -H @/tmp/headers -d @${createProject} http://gitlab/api/v4/projects"
+      )
+      gitlab.succeed(
+          "curl -X POST -H 'Content-Type: application/json' -H @/tmp/headers -d @${putFile} http://gitlab/api/v4/projects/1/repository/files/some-file.txt"
+      )
+      gitlab.succeed(
+          "curl -H @/tmp/headers http://gitlab/api/v4/projects/1/repository/archive.tar.gz > /tmp/archive.tar.gz"
+      )
+      gitlab.succeed(
+          "curl -H @/tmp/headers http://gitlab/api/v4/projects/1/repository/archive.tar.bz2 > /tmp/archive.tar.bz2"
+      )
+      gitlab.succeed("test -s /tmp/archive.tar.gz")
+      gitlab.succeed("test -s /tmp/archive.tar.bz2")
   '';
 })

@@ -53,6 +53,35 @@ in
         '';
       };
 
+      hsts = {
+        enable = lib.mkOption {
+          # GitLab not being the default vhost is a heuristic for uncommon setups
+          default = cfg.isDefaultVhost;
+          type = types.bool;
+          description = ''
+            Enable HTTP Strict-Transport-Security.
+            This causes browsers to only connect via HTTPS on subsequent visits.
+            Applies to all subdomains as well.
+            When disabled, the headers are still being sent with a max-age of 0,
+            effectively clearing up previously set HSTS times in browsers.
+          '';
+        };
+        maxAge = lib.mkOption {
+          type = types.ints.positive;
+          description = "Expiration time of HSTS caching in browser (unit: seconds)";
+          default = 3600;
+          defaultText = ''
+            3600 seconds (1 hour)
+            Note: We intend to massively increase that value in a following release.
+          '';
+        };
+        preload = lib.mkOption {
+          type = types.bool;
+          description = "Allow including this into the HSTS preloading list shipped with browsers.";
+          default = false;
+        };
+      };
+
       generateSecrets = mkOption {
         type = types.bool;
         description = ''
@@ -180,7 +209,17 @@ in
 
       "${cfg.hostName}" = {
         default = cfg.isDefaultVhost;
-        extraConfig = "access_log /var/log/nginx/gitlab_access.log gitlab_access;";
+        extraConfig = let
+          effectiveHstsMaxAge = if cfg.hsts.enable then cfg.hsts.maxAge else 0;
+          hstsOpts = lib.concatStringsSep "; " ([
+            "max-age=${toString effectiveHstsMaxAge}"
+            "includeSubDomains"
+          ]
+          ++ lib.optional cfg.hsts.preload "preload");
+        in ''
+          access_log /var/log/nginx/gitlab_access.log gitlab_access;
+          add_header Strict-Transport-Security "${hstsOpts}" always;
+        '';
         forceSSL = true;
         locations = {
           "/" = {
@@ -299,6 +338,15 @@ in
       '';
     };
   })
-
+  (lib.mkIf (cfg.enable && cfg.hsts.enable && cfg.hsts.preload) {
+    assertions = [{
+      assertion = cfg.hsts.maxAge >= 31536000;
+      message = ''
+        For inclusion in the HSTS preloading list, HSTS headers need to be valid for at least 1 year.
+        Please adjust flyingcircus.roles.gitlab.hsts.maxAge to a value >= 31536000 seconds
+        and consult https://hstspreload.org/ for further details.
+      '';
+    }];
+  })
   ];
 }
