@@ -70,6 +70,7 @@ in {
         enable = true;
         hostName = host;
       };
+      flyingcircus.allowedUnfreePackageNames = [ "mongodb" ];
 
     };
 
