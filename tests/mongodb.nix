@@ -24,6 +24,7 @@ in {
           gateways = {};
         };
       };
+      flyingcircus.allowedUnfreePackageNames = ["mongodb"];
     };
 
 
