@@ -120,6 +120,22 @@ in
                 "ext/dom/tests/bug80268.phpt"
               ];
             })
+          ] ++ lib.optionals (lib.versionOlder prev.php.version "7.3" && lib.versionAtLeast prev.php.version "7.1") [
+            # Patch rebased from https://github.com/php/php-src/commit/061058a9b1bbd90d27d97d79aebcf2b5029767b0
+            # Fix PHP tests with libxml2 2.12
+            ./patches/php71-libxml212-tests.patch
+          ] ++ lib.optionals (lib.versionOlder prev.php.version "7.4" && lib.versionAtLeast prev.php.version "7.3") [
+            # Patch rebased from https://github.com/php/php-src/commit/061058a9b1bbd90d27d97d79aebcf2b5029767b0
+            # Fix PHP tests with libxml2 2.12
+            ./patches/php73-libxml212-tests.patch
+          ] ++ lib.optionals (lib.versionOlder prev.php.version "8.1" && lib.versionAtLeast prev.php.version "7.4") [
+            # Patch rebased from https://github.com/php/php-src/commit/061058a9b1bbd90d27d97d79aebcf2b5029767b0
+            # Fix PHP tests with libxml2 2.12
+            ./patches/php74-libxml212-tests.patch
+          ] ++ lib.optionals (lib.versionOlder prev.php.version "8.2.14" && lib.versionAtLeast prev.php.version "8.1") [
+            # Patch rebased from https://github.com/php/php-src/commit/0a39890c967aa57225bb6bdf4821aff7a3a3c082
+            # Fix compilation errors with libxml2 2.12
+            ./patches/libxml-ext.patch
           ];
         in
         ourPatches ++ upstreamPatches;
@@ -151,6 +167,8 @@ in
             rm ext/dom/tests/DOMDocument_load_error2.phpt
           '')
         ];
+    } // lib.optionalAttrs (lib.versionOlder prev.php.version "7.1" && pkgs.stdenv.cc.isClang) {
+      NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-incompatible-function-pointer-types";
     });
 
     ds =
@@ -181,6 +199,14 @@ in
           "--with-enchant=${lib.getDev enchant1}"
         ];
     });
+
+    fileinfo =
+      if lib.versionOlder prev.php.version "7.2" && pkgs.stdenv.cc.isClang then
+        prev.extensions.fileinfo.overrideAttrs (attrs: {
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-implicit-int";
+        })
+      else
+        prev.extensions.fileinfo;
 
     ffi =
       if lib.versionAtLeast prev.php.version "7.4" then
@@ -292,6 +318,8 @@ in
             ];
         in
         ourPatches ++ upstreamPatches;
+    } // lib.optionalAttrs (lib.versionOlder prev.php.version "7.1" && pkgs.stdenv.cc.isClang) {
+      NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-register";
     });
 
     iconv = prev.extensions.iconv.overrideAttrs (attrs: {
@@ -308,6 +336,18 @@ in
         in
         ourPatches ++ upstreamPatches;
     });
+
+    imap =
+      if lib.versionOlder prev.php.version "8.1" && pkgs.stdenv.cc.isClang then
+        prev.extensions.imap.overrideAttrs (attrs: {
+          patches = (attrs.patches or [ ]) ++ [
+            (pkgs.fetchpatch {
+              url = "https://github.com/php/php-src/commit/f9cbeaa0338520f6c4a4b17555f558634b0dd955.patch";
+              hash = "sha256-Gzxsh99e0HIrDz6r+9XWUw1BQLKWuRm8RQq9p0KxBVs=";
+            })
+          ];
+        })
+      else prev.extensions.imap;
 
     json =
       if lib.versionAtLeast prev.php.version "8.0" then
@@ -344,6 +384,14 @@ in
         throw "php.extensions.maxminddb requires PHP >= 7.2."
       else
         prev.extensions.maxminddb;
+
+    mbstring =
+      if lib.versionOlder prev.php.version "7.0" && pkgs.stdenv.cc.isClang then
+        prev.extensions.mbstring.overrideAttrs (attrs: {
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-implicit-function-declaration";
+        })
+      else
+        prev.extensions.mbstring;
 
     memcached =
       if lib.versionOlder prev.php.version "7.0" then
@@ -582,6 +630,30 @@ in
       else
         prev.extensions.pdo_mysql;
 
+    pdo_odbc =
+      if lib.versionOlder prev.php.version "8.1" && pkgs.stdenv.cc.isClang then
+        prev.extensions.pdo_odbc.overrideAttrs (attrs: {
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-incompatible-function-pointer-types";
+        })
+      else
+        prev.extensions.pdo_odbc;
+
+    pdo_pgsql =
+      if lib.versionOlder prev.php.version "8.1" && pkgs.stdenv.cc.isClang then
+        prev.extensions.pdo_pgsql.overrideAttrs (attrs: {
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-incompatible-function-pointer-types";
+        })
+      else
+        prev.extensions.pdo_pgsql;
+
+    pdo_sqlite =
+      if lib.versionOlder prev.php.version "7.4" && pkgs.stdenv.cc.isClang then
+        prev.extensions.pdo_sqlite.overrideAttrs (attrs: {
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-incompatible-function-pointer-types";
+        })
+      else
+        prev.extensions.pdo_sqlite;
+
     readline = prev.extensions.readline.overrideAttrs (attrs: {
       patches =
         let
@@ -619,6 +691,8 @@ in
               ];
             in
             attrs.preConfigure or "" + linkInternalDeps deps;
+        } // lib.optionalAttrs (lib.versionOlder prev.php.version "7.2" && pkgs.stdenv.cc.isClang) {
+          NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-implicit-function-declaration -Wno-int-conversion";
         })
       else
         prev.extensions.redis;
@@ -677,6 +751,29 @@ in
           "--with-libxml-dir=${pkgs.libxml2.dev}"
         ];
       });
+
+
+    sqlite3 = prev.extensions.sqlite3.overrideAttrs (attrs: {
+      patches =
+        let
+          upstreamPatches =
+            attrs.patches or [];
+
+          ourPatches =
+            lib.optionals (lib.versionOlder prev.php.version "8.1" && lib.versionAtLeast prev.php.version "7.1") [
+              # Fix GH-12633: sqlite3_defensive.phpt fails with sqlite 3.44.0
+              # https://github.com/php/php-src/commit/2a4775d6a73e9f6d4fc8e7df6f052aa18790a8e9
+              (pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/2a4775d6a73e9f6d4fc8e7df6f052aa18790a8e9.patch";
+                hash = "sha256-2VNfURGZmIEXtoLxOLX5wec9mqNGEWPY3ofCMw4E7S0=";
+                excludes = [
+                  "NEWS"
+                ];
+              })
+            ];
+        in
+        ourPatches ++ upstreamPatches;
+    });
 
     tidy = prev.extensions.tidy.overrideAttrs (attrs: {
       patches =
@@ -839,6 +936,8 @@ in
           ++ lib.optionals (lib.versionOlder prev.php.version "7.4") [
             "--with-zlib-dir=${pkgs.zlib.dev}"
           ];
+    } // lib.optionalAttrs (lib.versionOlder prev.php.version "7.0" && pkgs.stdenv.cc.isClang) {
+      NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-incompatible-function-pointer-types";
     });
   };
 }
