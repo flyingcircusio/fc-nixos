@@ -40,8 +40,32 @@ class MdraidDevice(GenericBlockDevice):
     whole provided blockdevices without partitioning."""
 
     @classmethod
-    def create(cls, name: str, blockdevices: list[str]):
+    def create(
+        cls,
+        name: str,
+        # The mdraid individual member disks could also be generalised as
+        # GenericBlockDevices itself, but for simplicity directly use
+        # concrete string device paths here.
+        blockdevices: list[str],
+    ):
+        main_disks = blockdevices[:-1]
+        if main_disks:
+            spare_disk = blockdevices[-1]
+        else:
+            raise RuntimeError(
+                "MdraidDevice: at least 2 disks required. Aborting."
+            )
         obj = cls(name)
+        run.mdadm(
+            "--create",
+            obj.blockdevice,
+            "--level=6",
+            f"--raid-devices={len(main_disks)}",
+            *main_disks,
+        )
+        # add spare disk
+        run.mdadm("--add", obj.blockdevice, spare_disk)
+        return obj
 
     def __init__(self, name: str):
         self.name = name
