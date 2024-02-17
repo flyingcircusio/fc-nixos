@@ -8,7 +8,13 @@ import traceback
 from subprocess import CalledProcessError
 from typing import List, Optional
 
-from fc.ceph.lvm import GenericCephVolume, GenericLogicalVolume, XFSCephVolume
+from fc.ceph.lvm import (
+    GenericBlockDevice,
+    GenericCephVolume,
+    GenericLogicalVolume,
+    PartitionedDisk,
+    XFSCephVolume,
+)
 from fc.ceph.util import kill, run
 
 TiB = 1024**4
@@ -307,6 +313,7 @@ class JournalVG:
 
         jnl_vg = "vgjnl{:02d}".format(id_)
 
+        # TODO: could be switched to PartitionedDisk as well
         run.sgdisk("-Z", device)
         run.sgdisk("-a", "8192", "-n", "1:0:0", "-t", "1:8e00", device)
 
@@ -343,6 +350,7 @@ class WALVolume:
         )
 
     def create(self, disk: str, encrypt: bool, location: str):
+        disk_block = PartitionedDisk.create(disk)
         # External WAL
         if location == "external":
             lvm_wal_vg = JournalVG.get_largest_free()
@@ -354,7 +362,7 @@ class WALVolume:
             self.backup_lv = GenericLogicalVolume.create(
                 name=f"{self.name}-backup",
                 vg_name=self.internal_vg,
-                disk=disk,
+                base_device=disk_block,
                 encrypt=encrypt,
                 size="1G",
             )
@@ -367,7 +375,7 @@ class WALVolume:
         self.lv = GenericLogicalVolume.create(
             name=f"{self.name}",
             vg_name=lvm_wal_vg,
-            disk=disk,
+            base_device=disk_block,
             encrypt=encrypt,
             size="1G",
         )
@@ -445,10 +453,11 @@ class BlockVolume(GenericCephVolume):
 
     def create(self, disk: str, encrypt: bool, size: str = "100%vg"):
         print(f"Creating block volume on {disk}...")
+        disk_block = PartitionedDisk.create(disk)
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=self.vg_name,
-            disk=disk,
+            base_device=disk_block,
             encrypt=encrypt,
             size=size,
         )
