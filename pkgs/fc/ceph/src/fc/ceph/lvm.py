@@ -10,7 +10,92 @@ import fc.ceph.luks
 from fc.ceph.util import console, mount_status, run
 
 
+class GenericBlockDevice:
+    def __new__(cls, name: str):
+        # prevent explicitly instantiated child classes from returning as None
+        if cls is not GenericLogicalVolume:
+            return object.__new__(cls)
+        if MdraidDevice.exists(name):
+            return MdraidDevice(name)
+        elif PartitionedDisk.exists(name):
+            return PartitionedDisk(name)
+        # Allow operations to proceed by creating a block device
+        return None
+
+    def __init__(self, name: str):
+        self.name = name
+
+    # create cannot be a generic method, as it requires different params depending on the type
+    @property
+    def blockdevice(self) -> str:
+        raise NotImplementedError
+
+    @classmethod
+    def exists(cls, name: str) -> bool:
+        raise NotImplementedError
+
+
+class MdraidDevice(GenericBlockDevice):
+    """represents a software RAID array in mode RAID6 with spare disk. Uses the
+    whole provided blockdevices without partitioning."""
+
+    @classmethod
+    def create(cls, name: str, blockdevices: list[str]):
+        obj = cls(name)
+
+    def __init__(self, name: str):
+        self.name = name
+
+    @property
+    def blockdevice(self) -> str:
+        return f"/dev/md/{self.name}"
+
+    @classmethod
+    def exists(cls, name) -> bool:
+        return name.startswith("/dev/md") and os.path.exists(f"/dev/md/{name}")
+
+    # TODO do we need activating?
+
+
+class PartitionedDisk(GenericBlockDevice):
+    """name denotes the path to the whole unpartitioned disk"""
+
+    def __init__(self, name: str):
+        super().__init__(name)
+        self._blockdevice: Optional[str] = None
+
+    @staticmethod
+    def _partition_candidates(disk: str) -> list[str]:
+        return [f"{disk}1", f"{disk}p1"]
+
+    @property
+    def blockdevice(self):
+        if not self._blockdevice:
+            for partition in self._partition_candidates(self.name):
+                if os.path.exists(partition):
+                    self._blockdevice = partition
+                    break
+            else:
+                raise RuntimeError(f"Could not find partition 1 on {self.name}")
+        return self._blockdevice
+
+    @classmethod
+    def create(cls, disk: str) -> "PartitionedDisk":
+        obj = cls(disk)
+        run.sgdisk("-Z", disk)
+        run.sgdisk("-a", "8192", "-n", "1:0:0", "-t", "1:8e00", disk)
+        return obj
+
+    @classmethod
+    def exists(cls, name) -> bool:
+        return any(
+            [os.path.exists(part) for part in cls._partition_candidates(name)]
+        )
+
+
 class GenericLogicalVolume:
+    name: str
+
     def __new__(cls, name):
         # prevent explicitly instantiated child classes from returning as None
         if cls is not GenericLogicalVolume:
@@ -31,13 +116,18 @@ class GenericLogicalVolume:
 
     @classmethod
     def create(
-        cls, name, vg_name, disk, encrypt, size
+        cls,
+        name: str,
+        vg_name: str,
+        base_device: Optional[GenericBlockDevice],
+        encrypt: bool,
+        size,
     ) -> "GenericLogicalVolume":
         if cls.exists(name):
             raise RuntimeError("Volume already exists.")
         lv_factory = EncryptedLogicalVolume if encrypt else LogicalVolume
         lv = lv_factory(name)
-        lv._create(disk=disk, size=size, vg_name=vg_name)
+        lv._create(base_device=base_device, size=size, vg_name=vg_name)
         return lv
 
     @property
@@ -66,7 +156,9 @@ class GenericLogicalVolume:
     def encrypted(self):
         raise NotImplementedError
 
-    def _create(self, disk: str, size: str, vg_name: str):
+    def _create(
+        self, base_device: Optional[GenericBlockDevice], size: str, vg_name: str
+    ):
         raise NotImplementedError
 
     def purge(self, lv_only=False):
@@ -148,8 +240,10 @@ class LogicalVolume(GenericLogicalVolume):
             )
         self._vg_name = lv[0]["vg_name"]
 
-    def _create(self, disk: str, size: str, vg_name: str):
-        self.ensure_vg(vg_name, disk)
+    def _create(
+        self, base_device: Optional[GenericBlockDevice], size: str, vg_name: str
+    ):
+        self.ensure_vg(vg_name, base_device)
 
         # 3. Create OSD LV on remainder of the VG
         if "%" in size:
@@ -167,20 +261,18 @@ class LogicalVolume(GenericLogicalVolume):
         )
 
     @staticmethod
-    def ensure_vg(vg_name: str, disk: str):
+    def ensure_vg(vg_name: str, base_device: Optional[GenericBlockDevice]):
         if vg_name in vg_names():
             return
-        run.sgdisk("-Z", disk)
-        run.sgdisk("-a", "8192", "-n", "1:0:0", "-t", "1:8e00", disk)
 
-        for partition in [f"{disk}1", f"{disk}p1"]:
-            if os.path.exists(partition):
-                break
-        else:
-            raise RuntimeError(f"Could not find partition for PV on {disk}")
+        if not base_device:
+            raise RuntimeError(
+                f"VG {vg_name} not found and no base block device has been specified to create it on. Aborting."
+            )
 
-        run.pvcreate(partition)
-        run.vgcreate(vg_name, partition)
+        blockdevice_underlay = base_device.blockdevice
+        run.pvcreate(blockdevice_underlay)
+        run.vgcreate(vg_name, blockdevice_underlay)
 
     def purge(self, lv_only=False):
         # Delete LVs
@@ -227,9 +319,9 @@ class LogicalVolume(GenericLogicalVolume):
 class EncryptedLogicalVolume(GenericLogicalVolume):
     SUFFIX = "-crypted"
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
-        self.underlay = LogicalVolume(name + self.SUFFIX)
+        self.underlay: GenericLogicalVolume = LogicalVolume(name + self.SUFFIX)
         self._device = f"/dev/mapper/{self.name}"
         self._ready = False
 
@@ -260,10 +352,12 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
     def expected_mapper_name(self) -> str:
         return self.name
 
-    def _create(self, disk: str, size: str, vg_name: str):
+    def _create(
+        self, base_device: Optional[GenericBlockDevice], size: str, vg_name: str
+    ):
         self.underlay.create(
             name=self.underlay.name,
-            disk=disk,
+            base_device=base_device,
             size=size,
             vg_name=vg_name,
             encrypt=False,
@@ -389,7 +483,11 @@ class GenericCephVolume:
         disk: Optional[str] = None,
         encrypt: bool = False,
     ):
-        """convention: also calls activate() at the end"""
+        """The `disk` argument is optional and only considered for when the
+        VG does not exists yet. If a VG called `vg_name` can be found, `disk`
+        is ignored.
+
+        convention: also calls activate() at the end"""
         raise NotImplementedError
 
     def activate(self):
@@ -432,11 +530,16 @@ class XFSCephVolume(GenericCephVolume):
         disk: Optional[str] = None,
         encrypt: bool = False,
     ):
+        """The `disk` argument is optional and only considered for when the
+        VG does not exists yet. If a VG called `vg_name` can be found, `disk`
+        is ignored.
+        """
         print(f"Creating data volume on {disk or vg_name}...")
+        disk_block = PartitionedDisk.create(disk) if disk else None
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=vg_name,
-            disk=disk,
+            base_device=disk_block,
             encrypt=encrypt,
             size=size,
         )
