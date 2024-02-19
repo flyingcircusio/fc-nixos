@@ -35,9 +35,9 @@
     "version": "2.15.15"
   },
   "bash": {
-    "name": "bash-5.2-p21",
+    "name": "bash-5.2p26",
     "pname": "bash",
-    "version": "5.2"
+    "version": "5.2p26"
   },
   "bind": {
     "name": "bind-9.18.21",
@@ -60,9 +60,9 @@
     "version": "3.95"
   },
   "calibre": {
-    "name": "calibre-7.4.0",
+    "name": "calibre-7.5.1",
     "pname": "calibre",
-    "version": "7.4.0"
+    "version": "7.5.1"
   },
   "ceph": {
     "name": "ceph-18.2.1",
@@ -75,9 +75,9 @@
     "version": "121.0.6167.85"
   },
   "chromium": {
-    "name": "chromium-121.0.6167.160",
+    "name": "chromium-121.0.6167.184",
     "pname": "chromium",
-    "version": "121.0.6167.160"
+    "version": "121.0.6167.184"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -85,19 +85,19 @@
     "version": "7.0"
   },
   "clamav": {
-    "name": "clamav-1.2.2",
+    "name": "clamav-1.3.0",
     "pname": "clamav",
-    "version": "1.2.2"
+    "version": "1.3.0"
   },
   "cmake": {
-    "name": "cmake-3.27.8",
+    "name": "cmake-3.27.9",
     "pname": "cmake",
-    "version": "3.27.8"
+    "version": "3.27.9"
   },
   "consul": {
-    "name": "consul-1.17.2",
+    "name": "consul-1.17.3",
     "pname": "consul",
-    "version": "1.17.2"
+    "version": "1.17.3"
   },
   "containerd": {
     "name": "containerd-1.7.13",
@@ -110,9 +110,9 @@
     "version": "4.6.2"
   },
   "curl": {
-    "name": "curl-8.5.0",
+    "name": "curl-8.6.0",
     "pname": "curl",
-    "version": "8.5.0"
+    "version": "8.6.0"
   },
   "cyrus_sasl": {
     "name": "cyrus-sasl-2.1.28",
@@ -155,9 +155,9 @@
     "version": "1.11.57"
   },
   "erlang": {
-    "name": "erlang-25.3.2.8",
+    "name": "erlang-25.3.2.9",
     "pname": "erlang",
-    "version": "25.3.2.8"
+    "version": "25.3.2.9"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -255,7 +255,7 @@
     "version": "16.8.1"
   },
   "glibc": {
-    "name": "glibc-2.38-27",
+    "name": "glibc-2.38-44",
     "pname": "glibc",
     "version": "2.38"
   },
@@ -265,9 +265,9 @@
     "version": "4.4.1"
   },
   "gnupg": {
-    "name": "gnupg-2.4.3",
+    "name": "gnupg-2.4.4",
     "pname": "gnupg",
-    "version": "2.4.3"
+    "version": "2.4.4"
   },
   "go": {
     "name": "go-1.21.6",
@@ -276,14 +276,14 @@
   },
   "go_1_19": {},
   "go_1_20": {
-    "name": "go-1.20.13",
+    "name": "go-1.20.14",
     "pname": "go",
-    "version": "1.20.13"
+    "version": "1.20.14"
   },
   "grafana": {
-    "name": "grafana-10.3.1",
+    "name": "grafana-10.3.3",
     "pname": "grafana",
-    "version": "10.3.1"
+    "version": "10.3.3"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -291,14 +291,14 @@
     "version": "2.12"
   },
   "haproxy": {
-    "name": "haproxy-2.9.4",
+    "name": "haproxy-2.9.5",
     "pname": "haproxy",
-    "version": "2.9.4"
+    "version": "2.9.5"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-27",
+    "name": "imagemagick-7.1.1-28",
     "pname": "imagemagick",
-    "version": "7.1.1-27"
+    "version": "7.1.1-28"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.12-68",
@@ -306,9 +306,9 @@
     "version": "6.9.12-68"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-27",
+    "name": "imagemagick-7.1.1-28",
     "pname": "imagemagick",
-    "version": "7.1.1-27"
+    "version": "7.1.1-28"
   },
   "inetutils": {
     "name": "inetutils-2.5",
@@ -366,9 +366,9 @@
     "version": "23.0.6"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.14.0",
+    "name": "kubernetes-helm-3.14.1",
     "pname": "kubernetes-helm",
-    "version": "3.14.0"
+    "version": "3.14.1"
   },
   "libffi": {
     "name": "libffi-3.4.4",
@@ -381,9 +381,9 @@
     "version": "1.10.3"
   },
   "libjpeg": {
-    "name": "libjpeg-turbo-2.1.5.1",
+    "name": "libjpeg-turbo-3.0.2",
     "pname": "libjpeg-turbo",
-    "version": "2.1.5.1"
+    "version": "3.0.2"
   },
   "libmodsecurity": {
     "name": "libmodsecurity-3.0.8",
@@ -411,9 +411,9 @@
     "version": "1.3.2"
   },
   "libxml2": {
-    "name": "libxml2-2.12.3-unstable-2023-12-14",
+    "name": "libxml2-2.12.4",
     "pname": "libxml2",
-    "version": "2.12.3-unstable-2023-12-14"
+    "version": "2.12.4"
   },
   "libxslt": {
     "name": "libxslt-1.1.39",
@@ -441,9 +441,9 @@
     "version": "1.9.4"
   },
   "mailutils": {
-    "name": "mailutils-3.16",
+    "name": "mailutils-3.17",
     "pname": "mailutils",
-    "version": "3.16"
+    "version": "3.17"
   },
   "mariadb": {
     "name": "mariadb-server-10.11.6",
@@ -456,9 +456,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.2.6",
+    "name": "mastodon-4.2.7",
     "pname": "mastodon",
-    "version": "4.2.6"
+    "version": "4.2.7"
   },
   "matomo": {
     "name": "matomo-4.16.0",
@@ -466,9 +466,9 @@
     "version": "4.16.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.100.0",
+    "name": "matrix-synapse-wrapped-1.101.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.100.0"
+    "version": "1.101.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -506,9 +506,9 @@
     "version": "1.24.0"
   },
   "nginxMainline": {
-    "name": "nginx-1.25.3",
+    "name": "nginx-1.25.4",
     "pname": "nginx",
-    "version": "1.25.3"
+    "version": "1.25.4"
   },
   "nginxStable": {
     "name": "nginx-1.24.0",
@@ -521,24 +521,24 @@
     "version": "2.18.1"
   },
   "nodejs": {
-    "name": "nodejs-20.11.0",
+    "name": "nodejs-20.11.1",
     "pname": "nodejs",
-    "version": "20.11.0"
+    "version": "20.11.1"
   },
   "nodejs_18": {
-    "name": "nodejs-18.19.0",
+    "name": "nodejs-18.19.1",
     "pname": "nodejs",
-    "version": "18.19.0"
+    "version": "18.19.1"
   },
   "nodejs_20": {
-    "name": "nodejs-20.11.0",
+    "name": "nodejs-20.11.1",
     "pname": "nodejs",
-    "version": "20.11.0"
+    "version": "20.11.1"
   },
   "nodejs_21": {
-    "name": "nodejs-21.6.1",
+    "name": "nodejs-21.6.2",
     "pname": "nodejs",
-    "version": "21.6.1"
+    "version": "21.6.2"
   },
   "nspr": {
     "name": "nspr-4.35",
@@ -546,9 +546,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.97",
+    "name": "nss-3.98",
     "pname": "nss",
-    "version": "3.97"
+    "version": "3.98"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -561,9 +561,9 @@
     "version": "2.5.0"
   },
   "openldap": {
-    "name": "openldap-2.6.6",
+    "name": "openldap-2.6.7",
     "pname": "openldap",
-    "version": "2.6.6"
+    "version": "2.6.7"
   },
   "openldap_2_4": {
     "name": "openldap-2.4.58",
@@ -586,9 +586,9 @@
     "version": "9.6p1"
   },
   "openssl": {
-    "name": "openssl-3.0.12",
+    "name": "openssl-3.0.13",
     "pname": "openssl",
-    "version": "3.0.12"
+    "version": "3.0.13"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -596,14 +596,14 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.12",
+    "name": "openssl-3.0.13",
     "pname": "openssl",
-    "version": "3.0.12"
+    "version": "3.0.13"
   },
   "openvpn": {
-    "name": "openvpn-2.6.8",
+    "name": "openvpn-2.6.9",
     "pname": "openvpn",
-    "version": "2.6.8"
+    "version": "2.6.9"
   },
   "pcre": {
     "name": "pcre-8.45",
@@ -616,9 +616,9 @@
     "version": "10.42"
   },
   "percona": {
-    "name": "percona-server-8.0.34-26",
+    "name": "percona-server-8.0.35-27",
     "pname": "percona-server",
-    "version": "8.0.34-26"
+    "version": "8.0.35-27"
   },
   "percona-xtrabackup_8_0": {
     "name": "percona-xtrabackup-8.0.34-29",
@@ -631,9 +631,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-server-8.0.34-26",
+    "name": "percona-server-8.0.35-27",
     "pname": "percona-server",
-    "version": "8.0.34-26"
+    "version": "8.0.35-27"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
@@ -661,9 +661,9 @@
     "version": "8.1.27"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.15",
+    "name": "php-with-extensions-8.2.16",
     "pname": "php-with-extensions",
-    "version": "8.2.15"
+    "version": "8.2.16"
   },
   "phpPackages.composer": {
     "name": "composer-2.6.6",
@@ -676,9 +676,9 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-4.9.2",
+    "name": "podman-4.9.3",
     "pname": "podman",
-    "version": "4.9.2"
+    "version": "4.9.3"
   },
   "poetry": {
     "name": "poetry-1.7.1",
@@ -696,29 +696,29 @@
     "version": "3.8.5"
   },
   "postgresql": {
-    "name": "postgresql-15.6",
+    "name": "postgresql-15.5",
     "pname": "postgresql",
-    "version": "15.6"
+    "version": "15.5"
   },
   "postgresql_12": {
-    "name": "postgresql-12.18",
+    "name": "postgresql-12.17",
     "pname": "postgresql",
-    "version": "12.18"
+    "version": "12.17"
   },
   "postgresql_13": {
-    "name": "postgresql-13.14",
+    "name": "postgresql-13.13",
     "pname": "postgresql",
-    "version": "13.14"
+    "version": "13.13"
   },
   "postgresql_14": {
-    "name": "postgresql-14.11",
+    "name": "postgresql-14.10",
     "pname": "postgresql",
-    "version": "14.11"
+    "version": "14.10"
   },
   "postgresql_15": {
-    "name": "postgresql-15.6",
+    "name": "postgresql-15.5",
     "pname": "postgresql",
-    "version": "15.6"
+    "version": "15.5"
   },
   "powerdns": {
     "name": "pdns-4.8.4",
@@ -781,9 +781,9 @@
     "version": "4.9.4"
   },
   "python3Packages.pillow": {
-    "name": "python3.11-pillow-10.1.0",
+    "name": "python3.11-pillow-10.2.0",
     "pname": "pillow",
-    "version": "10.1.0"
+    "version": "10.2.0"
   },
   "python3Packages.pip": {
     "name": "python3.11-pip-23.3.1",
@@ -942,9 +942,9 @@
     "version": "1.29.4"
   },
   "tmux": {
-    "name": "tmux-3.3a",
+    "name": "tmux-3.4",
     "pname": "tmux",
-    "version": "3.3a"
+    "version": "3.4"
   },
   "tomcat10": {
     "name": "apache-tomcat-10.1.18",
@@ -1007,9 +1007,9 @@
     "version": "3.0"
   },
   "zlib": {
-    "name": "zlib-1.3",
+    "name": "zlib-1.3.1",
     "pname": "zlib",
-    "version": "1.3"
+    "version": "1.3.1"
   },
   "zsh": {
     "name": "zsh-5.9",
