@@ -14,6 +14,7 @@ from fc.util.logging import init_command_logging
 from fc.util.nixos import UnitChanges
 
 from ...util.channel import Channel
+from ...util.lock import locked
 from . import Activity, ActivityMergeResult, RebootType
 
 _log = structlog.get_logger()
@@ -72,7 +73,8 @@ class UpdateActivity(Activity):
         """
         if not enc or not enc.get("parameters"):
             log.warning(
-                "enc-data-missing", msg="No ENC data, cannot update the system."
+                "enc-data-missing",
+                msg="No ENC data, cannot update the system.",
             )
             return
 
@@ -276,7 +278,11 @@ class UpdateActivity(Activity):
             # configuration changes, so update it here.
             self.next_system = system_path
             nixos.register_system_profile(system_path, log=self.log)
-            nixos.switch_to_system(system_path, lazy=False, log=self.log)
+
+            with locked(
+                self.log, self.lock_dir, "switch_to_configuration.lock"
+            ):
+                nixos.switch_to_system(system_path, lazy=False, log=self.log)
 
         except nixos.ChannelException as e:
             self._handle_channel_exception(e)
