@@ -87,6 +87,12 @@ def dry_activate(
 
 @app.command(name="switch")
 def switch_cmd(
+    specialisation: str = Option(
+        None,
+        "--specialisation",
+        "-s",
+        help="Which system specialisation to switch to",
+    ),
     update_enc_data: bool = Option(
         False,
         "--update-enc",
@@ -130,6 +136,7 @@ def switch_cmd(
                 keep_cmd_output |= fc.manage.manage.switch_with_update(
                     log=log,
                     enc=enc,
+                    specialisation=specialisation,
                     lazy=lazy,
                     show_trace=context.show_trace or show_trace,
                 )
@@ -137,6 +144,7 @@ def switch_cmd(
                 keep_cmd_output |= fc.manage.manage.switch(
                     log=log,
                     enc=enc,
+                    specialisation=specialisation,
                     lazy=lazy,
                     show_trace=context.show_trace or show_trace,
                 )
@@ -178,6 +186,12 @@ def fc_manage(
         "--channel",
         "-c",
         help="(legacy flag) Update channel, build, switch.",
+    ),
+    specialisation: str = Option(
+        None,
+        "--specialisation",
+        "-s",
+        help="Which system specialisation to switch to",
     ),
     update_enc_data: bool = Option(
         False, "--directory", "-e", help="(legacy flag) Update inventory data."
@@ -282,6 +296,7 @@ def fc_manage(
                 keep_cmd_output |= fc.manage.manage.switch_with_update(
                     log=log,
                     enc=enc,
+                    specialisation=specialisation,
                     lazy=False,
                     show_trace=show_trace,
                 )
@@ -289,6 +304,7 @@ def fc_manage(
                 keep_cmd_output |= fc.manage.manage.switch(
                     log=log,
                     enc=enc,
+                    specialisation=specialisation,
                     lazy=False,
                     show_trace=show_trace,
                 )

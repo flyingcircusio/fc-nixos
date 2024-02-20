@@ -183,6 +183,7 @@ def initial_switch_if_needed(log, enc):
 def switch(
     log,
     enc,
+    specialisation=None,
     lazy=False,
     show_trace=False,
 ):
@@ -234,12 +235,13 @@ def switch(
         channel_to_build = Channel.current(log, "nixos")
 
     if channel_to_build:
-        return channel_to_build.switch(lazy, show_trace)
+        return channel_to_build.switch(specialisation, lazy, show_trace)
 
 
 def switch_with_update(
     log,
     enc,
+    specialisation=None,
     lazy=False,
     show_trace=False,
 ):
@@ -279,4 +281,4 @@ def switch_with_update(
     if not channel:
         return
 
-    return channel.switch(lazy, show_trace)
+    return channel.switch(specialisation, lazy, show_trace)

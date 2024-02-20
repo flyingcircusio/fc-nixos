@@ -1,5 +1,6 @@
 import os
 import os.path as p
+from pathlib import Path
 
 from fc.util import nixos
 from fc.util.nixos import RE_FC_CHANNEL
@@ -100,7 +101,7 @@ class Channel:
                 "the channel URL towards that directory?",
             )
 
-    def switch(self, lazy=True, show_trace=False):
+    def switch(self, specialisation: str | None, lazy=True, show_trace=False):
         """
         Build system with this channel and switch to it.
         Replicates the behaviour of nixos-rebuild switch and adds
@@ -116,7 +117,23 @@ class Channel:
         nixos.register_system_profile(self.system_path, self.log)
         # New system is registered, delete the temporary result link.
         os.unlink(out_link)
-        return nixos.switch_to_system(self.system_path, lazy, self.log)
+        # XXX: How can be get back to the base system?
+        # None reads current specialisation from the file
+        if specialisation is None:
+            current_specialisation_file = Path("/etc/specialisation")
+            if current_specialisation_file.exists():
+                specialisation = current_specialisation_file.read_text().strip()
+
+        if specialisation:
+            self.log_with_context.debug(
+                "channel-switch-specialisation", specialisation=specialisation
+            )
+            switch_path = (
+                Path(self.system_path) / "specialisation" / specialisation
+            )
+        else:
+            switch_path = self.system_path
+        return nixos.switch_to_system(switch_path, lazy, self.log)
 
     def build(self, out_link=None, show_trace=False):
         """
