@@ -3,6 +3,7 @@ import os
 import os.path
 import re
 import time
+from socket import gethostname
 from subprocess import CalledProcessError
 from typing import Optional
 
@@ -58,7 +59,7 @@ class MdraidDevice(GenericBlockDevice):
         obj = cls(name)
         run.mdadm(
             "--create",
-            obj.blockdevice,
+            f"/dev/md/{obj.name}",
             "--level=6",
             f"--raid-devices={len(main_disks)}",
             *main_disks,
@@ -72,11 +73,24 @@ class MdraidDevice(GenericBlockDevice):
 
     @property
     def blockdevice(self) -> str:
-        return f"/dev/md/{self.name}"
+        return self._bdname(self.name)
+
+    @staticmethod
+    def _bdname(name: str) -> str:
+        # By default, mdadm records the hostname of the host where the raid has
+        # been created in the superblock. This hostname becomes part of the
+        # device symlink name.
+        # Here we assume that RAID devices are not moved between hosts.
+        return f"/dev/disk/by-id/md-name-{gethostname()}:{name}"
 
     @classmethod
     def exists(cls, name) -> bool:
-        return name.startswith("/dev/md") and os.path.exists(f"/dev/md/{name}")
+        potential_name = cls._bdname(name)
+        return (
+            os.path.exists(potential_name)
+            and os.path.exists(os.readlink(potential_name))
+            and str(os.readlink(potential_name)).startswith("/dev/md")
+        )
 
     # TODO do we need activating?
 
@@ -115,6 +129,48 @@ class PartitionedDisk(GenericBlockDevice):
         return any(
             [os.path.exists(part) for part in cls._partition_candidates(name)]
         )
+
+
+class AutomountActivationMixin:
+    automount: bool
+    mountpoint: str
+    FSTYPE: str
+    MOUNT_OPTS: str
+
+    def activate(self):
+        mount_device = mount_status(self.mountpoint)
+        if not os.path.exists(self.mountpoint):
+            os.makedirs(self.mountpoint)
+
+        if self.automount:
+            time.sleep(1)
+            try:
+                run.mount(
+                    self.mountpoint
+                )  # device recreation does not always trigger automount
+            except CalledProcessError as e:
+                if e.returncode == 32:
+                    # we take this as "already mounted", but device could also be busy
+                    pass
+                else:
+                    raise e
+            while not (mount_device := mount_status(self.mountpoint)):
+                console.print(
+                    "Waiting for mountpoint to be activated automatically ... ",
+                    style="grey50",
+                )
+                time.sleep(1)
+        if not mount_device:
+            run.mount(
+                # fmt: off
+                "-t", self.FSTYPE, "-o", self.MOUNT_OPTS,
+                self.device, self.mountpoint,
+                # fmt: on
+            )
+        elif mount_device != self.lv.expected_mapper_name:
+            raise RuntimeError(
+                f"Mountpoint is using unexpected device `{mount_device}`."
+            )
 
 
 class GenericLogicalVolume:
@@ -459,6 +515,9 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
     # reduce CPU load for larger writes, can be removed after cryptsetup >=2.40
     _tunables_sectorsize = ("--sector-size", "4096")
 
+    # FIXME: probably want to move these pinned parameters over to luks.py,
+    # they don't just affect ceph
+
     # tunables that apply when (re)creating a LUKS volume and its data or reencrypting it
     _tunables_cipher = (
         # fmt: off
@@ -529,9 +588,11 @@ class GenericCephVolume:
         return [int(vg["vg_name"].replace("vgosd-", "", 1)) for vg in vgs]
 
 
-class XFSCephVolume(GenericCephVolume):
-    MKFS_XFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]
-    MOUNT_XFS_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
+# TODO: name can be a bit misleading, as we also utilise this for the XFS key volume
+class XFSCephVolume(AutomountActivationMixin, GenericCephVolume):
+    MKFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]
+    MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
+    FSTYPE = "xfs"
 
     def __init__(self, name: str, mountpoint: str, automount=False):
         self.name = name
@@ -572,7 +633,7 @@ class XFSCephVolume(GenericCephVolume):
             # fmt: off
             "-f",
             "-L", self.name,
-            *self.MKFS_XFS_OPTS,
+            *self.MKFS_OPTS,
             self.device,
             # fmt: on
         )
@@ -581,39 +642,8 @@ class XFSCephVolume(GenericCephVolume):
 
     def activate(self):
         self.lv.activate()
-        mount_device = mount_status(self.mountpoint)
-        if not os.path.exists(self.mountpoint):
-            os.makedirs(self.mountpoint)
 
-        if self.automount:
-            time.sleep(1)
-            try:
-                run.mount(
-                    self.mountpoint
-                )  # device recreation does not always trigger automount
-            except CalledProcessError as e:
-                if e.returncode == 32:
-                    # we take this as "already mounted", but device could also be busy
-                    pass
-                else:
-                    raise e
-            while not (mount_device := mount_status(self.mountpoint)):
-                console.print(
-                    "Waiting for mountpoint to be activated automatically ... ",
-                    style="grey50",
-                )
-                time.sleep(1)
-        if not mount_device:
-            run.mount(
-                # fmt: off
-                "-t", "xfs", "-o", self.MOUNT_XFS_OPTS,
-                self.device, self.mountpoint,
-                # fmt: on
-            )
-        elif mount_device != self.lv.expected_mapper_name:
-            raise RuntimeError(
-                f"Mountpoint is using unexpected device `{mount_device}`."
-            )
+        super().activate()
 
     def purge(self, lv_only=False):
         if os.path.exists(self.mountpoint):
