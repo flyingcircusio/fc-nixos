@@ -102,9 +102,9 @@ def mock_LUKSKeyStoreManager(monkeypatch):
     monkeypatch.setattr(
         "fc.ceph.util.run.json.lvs", (lambda *args, **kwargs: LV_DUMMY_DATA)
     )
-    monkeypatch.setattr(fc.ceph.luks, "KEYSTORE", LUKSKeyStoreMock())
-    keyman = fc.ceph.luks.LUKSKeyStoreManager()
+    keyman = fc.ceph.luks.manage.LUKSKeyStoreManager()
 
+    keyman._KEYSTORE = LUKSKeyStoreMock()
     keyman._do_rekey = do_nothing
     return keyman
 
