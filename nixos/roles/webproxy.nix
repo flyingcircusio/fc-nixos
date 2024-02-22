@@ -86,7 +86,7 @@ in
 
       flyingcircus.services.varnish = {
         enable = true;
-        extraCommandLine = "-s malloc,${toString cacheMemory}M";
+        extraCommandLine = fclib.mkPlatform "-s malloc,${toString cacheMemory}M";
         http_address = lib.concatMapStringsSep " -a "
           (addr: "${addr}:8008") fccfg.listenAddresses;
         virtualHosts = lib.optionalAttrs (varnishCfg != null) {

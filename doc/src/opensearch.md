@@ -134,9 +134,19 @@ Note that the key must be quoted to stop Nix from interpreting the name
 of the setting as a path to a nested attribute.
 
 
-## Upgrades
+## Migrate from Elasticsearch
 
-We will offer an upgrade path from Elasticsearch 6/7 in the future.
+Currently, the last platform version providing Elasticsearch is 22.11.
+The current upgrade path is:
+
+- On 22.11, switch from Elasticsearch 6 to 7 and reindex.
+- Migrate from Elasticsearch 7 to OpenSearch.
+- Upgrade the VM to 23.11 which also upgrades OpenSearch.
+
+See the [22.11 OpenSearch role docs](https://doc.flyingcircus.io/roles/fc-22.11-production/opensearch.html#migrate-upgrade-from-elasticsearch) for the migration process.
+
+We will provide Elasticsearch roles on 23.11 in the future to allow upgrading the VM first
+while keeping the same ES versions. You can migrate to OpenSearch later.
 
 ## Monitoring
 
