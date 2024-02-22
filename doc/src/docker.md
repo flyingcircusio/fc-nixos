@@ -35,13 +35,13 @@ work and how they are isolated.
 
 The storage driver is used for images and containers.
 
-Currently, docker is using the `overlayfs2` storage driver for new installations.
+Currently, docker is using the `overlay2` storage driver for new installations.
 
 For existing installations, Docker auto-detects the storage driver if not configured explicitly.
 
 Older versions of docker (NixOS 15.09) used the `devicemapper` storage driver which has been deprecated for some time. It will be removed in a future version of Docker.
 
-On 23.11, docker refuses to start if it detects `devicemapper` and is not explicitly configured to use it. You can still choose to continue using `devicemapper` or migrate to `overlayfs2`.
+On 23.11, docker refuses to start if it detects `devicemapper` and is not explicitly configured to use it. You can still choose to continue using `devicemapper` or migrate to `overlay2`.
 
 To find out which storage driver Docker is using, run as service user:
 
@@ -67,7 +67,7 @@ Add {ref}`custom NixOS config <nixos-local>` like:
 
 Rebuild the system with `sudo fc-manage switch`.
 
-### Switch to overlayfs2
+### Switch to overlay2
 
 :::{warning}
 It's not possible to use another storage driver without downtime. You have to re-create images and containers!
@@ -87,7 +87,7 @@ When you are ready to switch, add the following {ref}`custom NixOS config <nixos
 { ... }:
 {
   virtualisation.docker.daemon.settings = {
-    storage-driver = "overlayfs2";
+    storage-driver = "overlay2";
   };
 }
 ```
