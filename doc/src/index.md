@@ -1,3 +1,4 @@
+(nixos-platform-index)=
 # NixOS {{ release }} edition
 
 Platform & roles documentation for Flying Circus [NixOS] edition
