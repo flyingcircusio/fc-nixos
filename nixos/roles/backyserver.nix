@@ -68,6 +68,18 @@ in
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used as external backy tooling.";
       };
+
+      # this indirection is required by the tests as a config input
+      fsOptions = lib.mkOption {
+        type = lib.types.attrs;
+        readOnly = true;
+        internal = true;
+        default =  {
+          device = "/dev/disk/by-label/backy";
+          fsType = "xfs";
+          options = [ "nofail" "nodev" "nosuid" "noatime" "nodiratime"];
+        };
+      };
     };
 
   };
@@ -94,10 +106,7 @@ in
       backy	${role.blockDevice}	/mnt/keys/${config.networking.hostName}.key	discard,nofail,submit-from-crypt-cpus${lib.optionalString role.externalCryptHeader ",header=${external_header}"}
     '';
 
-    fileSystems.${backyMountDir} = {
-      device = "/dev/disk/by-label/backy";
-      fsType = "xfs";
-    };
+    fileSystems.${backyMountDir} = role.fsOptions;
 
     services.telegraf.extraConfig.inputs.disk = [
       { mount_points = [ "/srv/backy" ]; }
