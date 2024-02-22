@@ -2,8 +2,8 @@
 
 # OpenSearch
 
-Managed instance of [OpenSearch](https://opensearch.org) which was originally
-forked from Elasticsearch 7.10.2.
+Managed instance of [OpenSearch](https://opensearch.org) 2.6.0
+which was originally forked from Elasticsearch 7.10.2.
 
 
 ## Interaction
@@ -137,11 +137,11 @@ of the setting as a path to a nested attribute.
 
 ## Migrate/Upgrade from Elasticsearch
 
-
-Upgrading to OpenSearch is possible when starting from ES7.
+We support upgrading from Elasticsearch 7 to OpenSearch.
+Elasticsearch 6 must be upgraded to 7 first.
 
 :::{warning}
-All indices must have been indexed with ES7 before migrating or
+All indices must have been indexed with Elasticsearch 7 before migrating or
 starting OpenSearch will fail! See the
 [Elasticsearch documentation](https://www.elastic.co/guide/en/elasticsearch/reference/7.10/reindex-upgrade-inplace.html)
 for instructions.
@@ -151,9 +151,9 @@ Start the migration by activating the `opensearch` role and deactivating the
 `elasticsearch7` role at the same time, followed by a system rebuild with
 {command}`fc-manage switch -be` or just waiting for the next run of the fc-agent service.
 
-On OpenSearch startup, existing data from ES will be copied to the new data
-directory at {file}`/var/lib/opensearch`. This will only happen when the
-destination is empty to avoid overwriting existing OpenSearch data.
+On OpenSearch startup, existing data from Elasticsearch will be copied to the
+new data directory at {file}`/var/lib/opensearch`. This will only happen when
+the destination is empty to avoid overwriting existing OpenSearch data.
 
 The process is usually very fast regardless of the amount of data as the
 *reflink* feature of the XFS file system is used when copying the files. This

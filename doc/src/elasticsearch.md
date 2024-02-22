@@ -131,10 +131,16 @@ appended to the base configuration.
 
 ## Upgrades
 
+:::{warning}
+Upgrading from Elasticsearch 6 to 7 is irreversible! Elasticsearch 7 modifies
+indices in a way that makes them unusable for Elasticsearch 6.
+:::
+
 Rolling upgrades for Elasticsearch 6 multi-node clusters to 7 are supported.
 Nodes should be upgraded one at a time to ensure continous operation of the
 cluster. Upgrading nodes is done by changing the role of the machine to
 *elasticsearch7*.
+
 
 ### Upgrade/Migration to OpenSearch
 
