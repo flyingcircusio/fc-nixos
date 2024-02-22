@@ -133,6 +133,21 @@ let
     request_pool_size 4k;
     send_timeout 10m;
 
+    ${optionalString (cfg.rateLimit.enable) ''
+      # === Rate limiting ===
+
+      # CVE-2023-44487 handling with relatively high limits to
+      # not impact customer applications too much. Can be limited further
+      # if necessary.
+      limit_conn_zone $binary_remote_addr zone=addr:10m;
+      limit_conn addr ${toString cfg.rateLimit.maxConcurrent};
+      limit_conn_status 429;
+
+      limit_req_zone $binary_remote_addr zone=perclient:10m rate=${toString cfg.rateLimit.maxRequestsPerSecond}r/s;
+      limit_req zone=perclient burst=${toString cfg.rateLimit.burst};
+      limit_req_status 429;
+    ''}
+
     # === Temp Dirs ===
     # By default, Nginx creates another two levels of directories under the
     # temp dirs which doesn't make sense on a XFS filesystem.
@@ -276,6 +291,33 @@ in
       description = "Declarative vhost config";
     };
 
+    rateLimit = {
+      enable = mkEnableOption "Global rate limiting";
+
+      maxConcurrent = mkOption {
+        type = types.ints.positive;
+        default = 200;
+        description = ''
+            Sets the maximum number of concurrent requests per client.
+          '';
+      };
+
+      maxRequestsPerSecond = mkOption {
+        type = types.ints.positive;
+        default = 50;
+        description = ''
+            Sets the maximum number of requests per second per client.
+          '';
+      };
+
+      burst = mkOption {
+        type = types.ints.positive;
+        default = 500;
+        description = ''
+            Sets the maximum number of requests to delay/queue if exceeding the rate limit.
+          '';
+      };
+    };
   };
 
   config = lib.mkMerge [
