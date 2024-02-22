@@ -17,8 +17,8 @@ Contact our {ref}`support` for upgrade assistance.
 
 - Removed roles: {ref}`postgresql11 <nixos-upgrade-postgresql>`, {ref}`mongodb42 <nixos-upgrade-mongodb>`
 - Removed packages: `nodejs_14`, `nodejs_16`, `wkhtmltopdf`, `wkhtmltopdf_0_12_5`, `wkhtmltopdf_0_12_6`
-- No major breaking changes
-- Roles affected by significant changes:
+- Roles affected by significant breaking changes:
+  {ref}`docker <nixos-upgrade-docker>`,
   {ref}`postgresql15 <nixos-upgrade-postgresql>`,
   {ref}`rabbitmq <nixos-upgrade-rabbitmq>`
 
@@ -114,9 +114,20 @@ time-window.
 These changes often require action before the upgrade. Please review the
 following common breaking changes and role-specific notes below.
 
-### Common breaking changes
+(nixos-upgrade-docker)=
 
-- None for this version.
+### Docker
+
+The deprecated `devicemapper` storage driver must be enabled explicitly now or
+Docker won't start. This problem only affects old machines which already used
+Docker on NixOS 15.09.
+
+:::{warning}
+Before upgrading, check the current storage driver and add the recommended
+config, if needed, to avoid downtime.
+:::
+
+See {ref}`nixos-docker-storage-driver` for details.
 
 
 (nixos-upgrade-postgresql)=
