@@ -37,9 +37,10 @@ let
 
   mkFCServer = {
     id,
-    conf
+    conf,
+    rateLimit ? false
   }:
-  { pkgs, ... }: {
+  { pkgs, lib, ... }: {
     imports = [
       (testlib.fcConfig { inherit id; })
     ];
@@ -56,6 +57,13 @@ let
     flyingcircus.services.nginx.enable = true;
     flyingcircus.services.nginx.virtualHosts = conf;
     flyingcircus.services.nginx.logPerVirtualHost = false;
+
+    flyingcircus.services.nginx.rateLimit = lib.mkIf rateLimit {
+        enable = true;
+        maxRequestsPerSecond = 10;
+        maxConcurrent = 100;
+        burst = 50;
+    };
   };
 
 in {
@@ -134,7 +142,7 @@ in {
         "both.local" = {
           serverAliases = [ "fe.local" "srv.local" ];
           addSSL = true;
-          listenAddress = fcIP.quote.fe4 3;
+          listenAddresses = [ (fcIP.quote.fe4 3) ];
 
           locations."/".return = "200 'TESTOK'";
         };
@@ -147,7 +155,7 @@ in {
         "both.local" = {
           serverAliases = [ "fe.local" "srv.local" ];
           addSSL = true;
-          listenAddress6 = fcIP.quote.fe6 4;
+          listenAddresses = [ (fcIP.quote.fe6 4) ];
 
           locations."/".return = "200 'TESTOK'";
         };
@@ -168,6 +176,21 @@ in {
         };
       };
     };
+
+    server6 = mkFCServer {
+      id = 6;
+      rateLimit = true;
+      conf = {
+        "both.local" = {
+          serverAliases = [ "fe.local" "srv.local" ];
+          addSSL = true;
+          listenAddresses = [ (fcIP.quote.fe6 6) ];
+
+          locations."/".return = "200 'TESTOK'";
+        };
+      };
+    };
+
   };
 
   testScript = { nodes, ... }:
@@ -200,6 +223,7 @@ in {
     prep(server3)
     prep(server4)
     prep(server5)
+    prep(server6)
 
     with subtest("proxy cache directory should be accessible only for nginx"):
       assert_file_permissions("700:nginx:nginx", "/var/cache/nginx/proxy")
@@ -348,5 +372,32 @@ in {
       assert_reachable(server4, "fe.local -6")
       assert_unreachable(server4, "fe.local -4")
       assert_unreachable(server4, "srv.local")
+
+    with subtest("[5] not rate limiting connections"):
+      import re
+      # Running this against the other virtual hosts fails. I *think* this is
+      # because we have a "return 200" statement on the root location there
+      # which seems to short-circuit the rate limiting ... o_O
+      out = server4.execute("${pkgs.apacheHttpd}/bin/ab -n 1000 -c 75 http://localhost:81/")[1]
+      print(out)
+      assert re.search("Complete requests: +1000", out), "incomplete test"
+      error_match = re.search("Connect: ([0-9]+), Receive: ([0-9]+), Length: ([0-9]+), Exceptions: ([0-9]+)", out)
+      assert not error_match, "Unexpected connection errors"
+
+    with subtest("[6] rate limiting connections"):
+      import re
+      # Running this against the other virtual hosts fails. I *think* this is
+      # because we have a "return 200" statement on the root location there
+      # which seems to short-circuit the rate limiting ... o_O
+      out = server6.execute("${pkgs.apacheHttpd}/bin/ab -n 1000 -c 75 http://localhost:81/")[1]
+      print(out)
+      assert re.search("Complete requests: +1000", out), "incomplete test"
+      error_match = re.search("Connect: ([0-9]+), Receive: ([0-9]+), Length: ([0-9]+), Exceptions: ([0-9]+)", out)
+      assert error_match, "Missing connection errors"
+      errors = error_match.groups()  # type: ignore
+      assert int(errors[0]) == 0
+      assert int(errors[1]) == 0
+      assert int(errors[2]) > 900
+      assert int(errors[3]) == 0
   '';
 })
