@@ -3,9 +3,10 @@ import socket
 import sys
 from pathlib import Path
 
+import fc.ceph.backup
 import fc.ceph.keys
 import fc.ceph.logs
-import fc.ceph.luks
+import fc.ceph.luks.manage
 import fc.ceph.maintenance
 import fc.ceph.mgr
 import fc.ceph.mon
@@ -416,7 +417,8 @@ def luks(args=sys.argv[1:]):
 
     keystore = subparsers.add_parser("keystore", help="Manage the keystore.")
     keystore.set_defaults(
-        subsystem=fc.ceph.luks.LUKSKeyStoreManager, action=keystore.print_usage
+        subsystem=fc.ceph.luks.manage.LUKSKeyStoreManager,
+        action=keystore.print_usage,
     )
     keystore_sub = keystore.add_subparsers()
 
@@ -457,6 +459,47 @@ def luks(args=sys.argv[1:]):
         default="local",
     )
     parser_rekey.set_defaults(action="rekey")
+
+    backup = subparsers.add_parser("backup", help="Manage backup volumes.")
+    backup.set_defaults(
+        subsystem=fc.ceph.backup.BackupManager, action=backup.print_usage
+    )
+    backup_sub = backup.add_subparsers()
+
+    parser_create = backup_sub.add_parser(
+        "create",
+        help="Create new RAID backup volume.\n"
+        "Note: The backyserver integration relies on default name and vgname.",
+    )
+    parser_create.add_argument(
+        "disks",
+        help="Raw disks to use as part of the RAID. Path to the blockdevices.",
+        nargs="+",
+    )
+    parser_create.add_argument(
+        "--encrypt",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Encrypt the Volume.",
+    )
+    parser_create.add_argument(
+        "-n",
+        "--name",
+        help="Identifying name of the volume",
+        default="backy",
+    )
+    parser_create.add_argument(
+        "--vgname",
+        help="LVM VG to use for the volume.",
+        default="vgbackup",
+    )
+    parser_create.add_argument(
+        "--mountpoint",
+        default="/srv/backy",
+        help="Initial mountpoint after creation.\n"
+        "Note: Subsequent mounts might use another automatic mountpoint.",
+    )
+    parser_create.set_defaults(action="create")
 
     # extract parsed arguments from object into a dict
     args = vars(parser.parse_args(args))

@@ -1,39 +1,28 @@
 import fnmatch
-import getpass
 import secrets
 import shutil
 from pathlib import Path
-from socket import gethostname
 from typing import Optional
 
+from fc.ceph.luks import KEYSTORE  # singleton
 from fc.ceph.lvm import XFSCephVolume
-from fc.ceph.util import console, mlockall, run
-
-
-def get_password(prompt):
-    pw1 = pw2 = None
-    while not pw1:
-        pw1 = getpass.getpass(f"{prompt}: ")
-        pw2 = getpass.getpass(f"{prompt}, repeated: ")
-        if pw1 != pw2:
-            console.print("Keys do not match. Try again.", style="red")
-            pw1 = pw2 = None
-    return pw1
+from fc.ceph.util import console, run
 
 
 class LUKSKeyStoreManager(object):
     def __init__(self):
         self.volume = XFSCephVolume("keys", "/mnt/keys", automount=True)
+        self._KEYSTORE = KEYSTORE  # don't use directly, overridable in test
 
     def create(self, device):
         console.print(f"Creating keystore on {device} ...", style="bold")
         self.volume.create("vgkeys", "1g", device)
         console.print(
-            f"Creating secret key in {KEYSTORE.local_key_path()} ...",
+            f"Creating secret key in {self._KEYSTORE.local_key_path()} ...",
             style="bold",
         )
 
-        keyfile = Path(KEYSTORE.local_key_path())
+        keyfile = Path(self._KEYSTORE.local_key_path())
         with open(keyfile, "w") as f:
             keyfile.chmod(0o600)
             shutil.chown(keyfile, "root", "root")
@@ -99,7 +88,7 @@ class LUKSKeyStoreManager(object):
             )
 
         # Ensure to request the admin key early on.
-        KEYSTORE.admin_key_for_input()
+        self._KEYSTORE.admin_key_for_input()
 
         if device:
             self._do_rekey(
@@ -132,14 +121,14 @@ class LUKSKeyStoreManager(object):
         if slot == "local":
             # Rekey a new local key. Use the admin key for verifying.
             key_file_verification = "-"
-            new_key_file = KEYSTORE.local_key_path()
-            kill_input = add_input = KEYSTORE.admin_key_for_input()
+            new_key_file = self._KEYSTORE.local_key_path()
+            kill_input = add_input = self._KEYSTORE.admin_key_for_input()
         elif slot == "admin":
-            key_file_verification = KEYSTORE.local_key_path()
+            key_file_verification = self._KEYSTORE.local_key_path()
             new_key_file = "-"
             kill_input = None
-            add_input = KEYSTORE.admin_key_for_input()
-        slot_id = KEYSTORE.slots[slot]
+            add_input = self._KEYSTORE.admin_key_for_input()
+        slot_id = self._KEYSTORE.slots[slot]
 
         header_arg = [f"--header={header}"] if header else []
 
@@ -164,30 +153,4 @@ class LUKSKeyStoreManager(object):
         )
 
         if header:
-            KEYSTORE.backup_external_header(Path(header))
-
-
-class LUKSKeyStore(object):
-    __admin_key = None
-
-    slots = {"admin": "1", "local": "0"}
-    local_key_dir: Path = Path("/mnt/keys/")
-
-    def __init__(self):
-        # Ensure we're locking memory early to reduce risk
-        mlockall()
-
-    def local_key_path(self) -> str:
-        return str(self.local_key_dir / f"{gethostname()}.key")
-
-    def admin_key_for_input(self) -> str:
-        if not self.__admin_key:
-            self.__admin_key = get_password("LUKS admin key for this location")
-        return self.__admin_key.encode("ascii")
-
-    def backup_external_header(self, headerfile: Path):
-        # assumption: all external volume headers of a mchine have distinct names
-        shutil.copy(headerfile, self.local_key_dir)
-
-
-KEYSTORE = LUKSKeyStore()
+            self._KEYSTORE.backup_external_header(Path(header))

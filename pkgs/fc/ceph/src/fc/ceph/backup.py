@@ -22,12 +22,14 @@ class BackyVolume:
     MKFS_OPTS = ["-K"]
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime"
 
-    def __init__(self, name: str, mountpoint: str = "/srv/backy"):
-        self.name = f"backy-{name}"
+    def __init__(self, name: str, mountpoint: str):
+        self.name = name
         self.mountpoint = mountpoint
         self.lv = GenericLogicalVolume(self.name)
 
-    def create(self, blockdevices: list[str], encrypt: bool = True):
+    def create(
+        self, blockdevices: list[str], vgname: str, encrypt: bool = True
+    ):
         # underlay Mdraid hopefully always self-assembles, no need to keep an
         # instance-wide reference after successful creation
         raid = MdraidDevice.create(self.name, blockdevices)
