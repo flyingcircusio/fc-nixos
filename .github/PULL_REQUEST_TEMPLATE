@@ -18,6 +18,7 @@ Changelog:
 ## Design notes
 
 - [ ] Provide a feature toggle if the change might need to be adjusted/reverted quickly depending on context. Consider whether the default should be `on` or `off`. Example: rate limiting.
+- [ ] All customer-facing features and (NixOS) options need to be discoverable from documentation. Add or update relevant documentation such that hosted and guided customers can understand it as well.
 
 ## Security implications
 
