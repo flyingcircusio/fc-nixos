@@ -40,9 +40,9 @@
     "version": "5.2p26"
   },
   "bind": {
-    "name": "bind-9.18.21",
+    "name": "bind-9.18.24",
     "pname": "bind",
-    "version": "9.18.21"
+    "version": "9.18.24"
   },
   "binutils": {
     "name": "binutils-wrapper-2.40",
@@ -70,14 +70,14 @@
     "version": "18.2.1"
   },
   "chromedriver": {
-    "name": "chromedriver-121.0.6167.85",
+    "name": "chromedriver-122.0.6261.57",
     "pname": "chromedriver",
-    "version": "121.0.6167.85"
+    "version": "122.0.6261.57"
   },
   "chromium": {
-    "name": "chromium-121.0.6167.184",
+    "name": "chromium-122.0.6261.57",
     "pname": "chromium",
-    "version": "121.0.6167.184"
+    "version": "122.0.6261.57"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -140,9 +140,9 @@
     "version": "24.0.5"
   },
   "docker-compose": {
-    "name": "docker-compose-2.24.5",
+    "name": "docker-compose-2.24.6",
     "pname": "docker-compose",
-    "version": "2.24.5"
+    "version": "2.24.6"
   },
   "dovecot": {
     "name": "dovecot-2.3.21",
@@ -150,9 +150,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.57",
+    "name": "element-web-1.11.58",
     "pname": "element-web",
-    "version": "1.11.57"
+    "version": "1.11.58"
   },
   "erlang": {
     "name": "erlang-25.3.2.9",
@@ -185,9 +185,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-122.0.1",
+    "name": "firefox-123.0",
     "pname": "firefox",
-    "version": "122.0.1"
+    "version": "123.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.2.0",
@@ -356,9 +356,9 @@
     "version": "19.0.2+7"
   },
   "k3s": {
-    "name": "k3s-1.27.9+k3s1",
+    "name": "k3s-1.28.6+k3s2",
     "pname": "k3s",
-    "version": "1.27.9+k3s1"
+    "version": "1.28.6+k3s2"
   },
   "keycloak": {
     "name": "keycloak-23.0.6",
@@ -366,9 +366,9 @@
     "version": "23.0.6"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.14.1",
+    "name": "kubernetes-helm-3.14.2",
     "pname": "kubernetes-helm",
-    "version": "3.14.1"
+    "version": "3.14.2"
   },
   "libffi": {
     "name": "libffi-3.4.4",
@@ -621,9 +621,9 @@
     "version": "8.0.35-27"
   },
   "percona-xtrabackup_8_0": {
-    "name": "percona-xtrabackup-8.0.34-29",
+    "name": "percona-xtrabackup-8.0.35-30",
     "pname": "percona-xtrabackup",
-    "version": "8.0.34-29"
+    "version": "8.0.35-30"
   },
   "percona57": {
     "name": "percona-5.7.42-45",
@@ -726,9 +726,9 @@
     "version": "4.8.4"
   },
   "prometheus": {
-    "name": "prometheus-2.49.0",
+    "name": "prometheus-2.49.1",
     "pname": "prometheus",
-    "version": "2.49.0"
+    "version": "2.49.1"
   },
   "prosody": {
     "name": "prosody-0.12.4",
@@ -841,14 +841,14 @@
     "version": "8.2.1"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-3.12.12",
+    "name": "rabbitmq-server-3.12.13",
     "pname": "rabbitmq-server",
-    "version": "3.12.12"
+    "version": "3.12.13"
   },
   "rabbitmq-server_3_8": {
-    "name": "rabbitmq-server-3.12.12",
+    "name": "rabbitmq-server-3.12.13",
     "pname": "rabbitmq-server",
-    "version": "3.12.12"
+    "version": "3.12.13"
   },
   "re2c": {
     "name": "re2c-3.1",
