@@ -49,6 +49,7 @@ in {
 
       maxmemory = mkOption {
         type = types.str;
+        defaultText = "100mb";
         default = "${toString ((fclib.currentMemory 1024) * cfg.memoryPercentage / 100)}mb";
         description = "Maximum memory redis is allowed to use for a dataset";
         example = "100mb";

@@ -111,6 +111,7 @@ in
             extraSettings = mkOption { type = attrs; default = {}; };
           };
         });
+        defaultText = "{}";
         default = config.flyingcircus.beats.logTargets;
         description = ''
           Where filebeat should send logs from various files,
