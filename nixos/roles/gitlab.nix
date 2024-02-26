@@ -53,6 +53,16 @@ in
         '';
       };
 
+      csp.enable = lib.mkOption {
+        default = true;
+        type = types.bool;
+        description = ''
+          Enable sending Content Security Policy headers.
+          See the [Mozilla documentation about CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)
+          for details.
+        '';
+      };
+
       hsts = {
         enable = lib.mkOption {
           # GitLab not being the default vhost is a heuristic for uncommon setups
@@ -138,6 +148,10 @@ in
       https = true;
       port = 443;
       host = cfg.hostName;
+
+      extraConfig.gitlab = lib.mkIf cfg.csp.enable {
+        content_security_policy = { enabled = true; report_only = fclib.mkPlatform false; };
+      };
 
       secrets = fclib.mkPlatform {
         dbFile = "${cfg.secretsDir}/db";
