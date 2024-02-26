@@ -40,9 +40,9 @@
     "version": "5.2"
   },
   "bind": {
-    "name": "bind-9.18.19",
+    "name": "bind-9.18.24",
     "pname": "bind",
-    "version": "9.18.19"
+    "version": "9.18.24"
   },
   "binutils": {
     "name": "binutils-wrapper-2.40",
@@ -70,14 +70,14 @@
     "version": "18.2.0"
   },
   "chromedriver": {
-    "name": "chromedriver-121.0.6167.85",
+    "name": "chromedriver-122.0.6261.69",
     "pname": "chromedriver",
-    "version": "121.0.6167.85"
+    "version": "122.0.6261.69"
   },
   "chromium": {
-    "name": "chromium-121.0.6167.160",
+    "name": "chromium-122.0.6261.69",
     "pname": "chromium",
-    "version": "121.0.6167.160"
+    "version": "122.0.6261.69"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -150,9 +150,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.57",
+    "name": "element-web-1.11.58",
     "pname": "element-web",
-    "version": "1.11.57"
+    "version": "1.11.58"
   },
   "erlang": {
     "name": "erlang-25.3.2.7",
@@ -185,9 +185,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-122.0.1",
+    "name": "firefox-123.0",
     "pname": "firefox",
-    "version": "122.0.1"
+    "version": "123.0"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -255,7 +255,7 @@
     "version": "16.7.6"
   },
   "glibc": {
-    "name": "glibc-2.38-27",
+    "name": "glibc-2.38-44",
     "pname": "glibc",
     "version": "2.38"
   },
@@ -265,9 +265,9 @@
     "version": "4.4.1"
   },
   "gnupg": {
-    "name": "gnupg-2.4.1",
+    "name": "gnupg-2.4.4",
     "pname": "gnupg",
-    "version": "2.4.1"
+    "version": "2.4.4"
   },
   "go": {
     "name": "go-1.21.5",
@@ -285,9 +285,9 @@
     "version": "1.20.12"
   },
   "grafana": {
-    "name": "grafana-10.2.2",
+    "name": "grafana-10.2.4",
     "pname": "grafana",
-    "version": "10.2.2"
+    "version": "10.2.4"
   },
   "grub2": {
     "name": "grub-2.12-rc1",
@@ -300,9 +300,9 @@
     "version": "2.8.4"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-26",
+    "name": "imagemagick-7.1.1-27",
     "pname": "imagemagick",
-    "version": "7.1.1-26"
+    "version": "7.1.1-27"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.12-68",
@@ -310,9 +310,9 @@
     "version": "6.9.12-68"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-26",
+    "name": "imagemagick-7.1.1-27",
     "pname": "imagemagick",
-    "version": "7.1.1-26"
+    "version": "7.1.1-27"
   },
   "inetutils": {
     "name": "inetutils-2.5",
@@ -415,9 +415,9 @@
     "version": "1.3.2"
   },
   "libxml2": {
-    "name": "libxml2-2.11.5",
+    "name": "libxml2-2.11.7",
     "pname": "libxml2",
-    "version": "2.11.5"
+    "version": "2.11.7"
   },
   "libxslt": {
     "name": "libxslt-1.1.38",
@@ -430,9 +430,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.148",
+    "name": "linux-5.15.149",
     "pname": "linux",
-    "version": "5.15.148"
+    "version": "5.15.149"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -460,19 +460,19 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.2.7",
+    "name": "mastodon-4.2.8",
     "pname": "mastodon",
-    "version": "4.2.7"
+    "version": "4.2.8"
   },
   "matomo": {
-    "name": "matomo-4.15.1",
+    "name": "matomo-4.16.1",
     "pname": "matomo",
-    "version": "4.15.1"
+    "version": "4.16.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.100.0",
+    "name": "matrix-synapse-wrapped-1.101.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.100.0"
+    "version": "1.101.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -510,9 +510,9 @@
     "version": "1.24.0"
   },
   "nginxMainline": {
-    "name": "nginx-1.25.3",
+    "name": "nginx-1.25.4",
     "pname": "nginx",
-    "version": "1.25.3"
+    "version": "1.25.4"
   },
   "nginxStable": {
     "name": "nginx-1.24.0",
@@ -550,9 +550,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.97",
+    "name": "nss-3.98",
     "pname": "nss",
-    "version": "3.97"
+    "version": "3.98"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -590,9 +590,9 @@
     "version": "9.6p1"
   },
   "openssl": {
-    "name": "openssl-3.0.12",
+    "name": "openssl-3.0.13",
     "pname": "openssl",
-    "version": "3.0.12"
+    "version": "3.0.13"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -600,9 +600,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.12",
+    "name": "openssl-3.0.13",
     "pname": "openssl",
-    "version": "3.0.12"
+    "version": "3.0.13"
   },
   "openvpn": {
     "name": "openvpn-2.5.8",
@@ -620,10 +620,11 @@
     "version": "10.42"
   },
   "percona": {
-    "name": "percona-server-8.0.34-26",
+    "name": "percona-server-8.0.35-27",
     "pname": "percona-server",
-    "version": "8.0.34-26"
+    "version": "8.0.35-27"
   },
+  "percona-server": {},
   "percona-xtrabackup_8_0": {
     "name": "percona-xtrabackup-8.0.34-29",
     "pname": "percona-xtrabackup",
@@ -635,9 +636,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-server-8.0.34-26",
+    "name": "percona-server-8.0.35-27",
     "pname": "percona-server",
-    "version": "8.0.34-26"
+    "version": "8.0.35-27"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
@@ -665,9 +666,9 @@
     "version": "8.1.27"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.15",
+    "name": "php-with-extensions-8.2.16",
     "pname": "php-with-extensions",
-    "version": "8.2.15"
+    "version": "8.2.16"
   },
   "phpPackages.composer": {
     "name": "composer-2.6.5",
@@ -785,9 +786,9 @@
     "version": "4.9.3-3"
   },
   "python3Packages.pillow": {
-    "name": "python3.11-pillow-10.1.0",
+    "name": "python3.11-pillow-10.2.0",
     "pname": "pillow",
-    "version": "10.1.0"
+    "version": "10.2.0"
   },
   "python3Packages.pip": {
     "name": "python3.11-pip-23.2.1",
