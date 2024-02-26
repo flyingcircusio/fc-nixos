@@ -70,7 +70,7 @@ in {
   options.flyingcircus.services.varnish = {
     enable = mkEnableOption "varnish";
     extraCommandLine = mkOption {
-      type = types.str;
+      type = types.separatedString " ";
       default = "";
     };
     http_address = mkOption {
