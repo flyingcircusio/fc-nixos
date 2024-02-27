@@ -27,11 +27,11 @@ updated_at: null
 
 
 def test_legacy_reboot_activity_loading_serialization_should_work(
-    logger, tmp_path
+    logger, tmp_path, agent_configparser
 ):
     request_path = tmp_path / "request.yaml"
     request_path.write_text(SERIALIZED_REQUEST)
-    request = Request.load(tmp_path, logger)
+    request = Request.load(tmp_path, agent_configparser, logger)
     activity = request.activity
     assert activity.reboot_needed == RebootType.COLD
     assert activity.__rich__()

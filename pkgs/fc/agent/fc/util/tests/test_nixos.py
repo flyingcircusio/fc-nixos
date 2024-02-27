@@ -52,6 +52,9 @@ def test_build_system_with_changes(log, monkeypatch):
 
     popen_mock = mock.Mock(return_value=nix_build_fake)
     monkeypatch.setattr("subprocess.Popen", popen_mock)
+    monkeypatch.setattr(
+        "fc.util.nixos.system_closure_size", lambda *args: 2_000_000
+    )
 
     built_system_path = nixos.build_system(
         channel, build_options=["-v"], out_link="/run/fc-agent-test"
@@ -89,6 +92,9 @@ def test_build_system_unchanged(log, monkeypatch):
 
     popen_mock = mock.Mock(return_value=nix_build_fake)
     monkeypatch.setattr("subprocess.Popen", popen_mock)
+    monkeypatch.setattr(
+        "fc.util.nixos.system_closure_size", lambda *args: 2_000_000
+    )
 
     built_system_path = nixos.build_system(channel)
 

@@ -4,7 +4,9 @@ import datetime
 import os
 import os.path as p
 import tempfile
+from configparser import ConfigParser
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 import iso8601
@@ -216,7 +218,7 @@ class Request:
         return self.state not in state.ARCHIVE and self.attempts
 
     @classmethod
-    def load(cls, dir, log):
+    def load(cls, dir: str | Path, config: ConfigParser, log):
         # need imports because such objects may be loaded via YAML
         import fc.maintenance.activity.reboot
         import fc.maintenance.activity.update
@@ -256,6 +258,7 @@ class Request:
         if not hasattr(instance, "state"):
             instance.state = State.pending
 
+        instance.config = config
         instance.dir = dir
         instance.set_up_logging(log)
 

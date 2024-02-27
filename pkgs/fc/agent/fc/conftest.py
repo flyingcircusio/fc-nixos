@@ -1,3 +1,4 @@
+import configparser
 import contextlib
 import shutil
 import textwrap
@@ -21,6 +22,9 @@ def agent_maintenance_config(tmp_path):
         f.write(
             textwrap.dedent(
                 """\
+            [limits]
+            disk_keep_free = 4.9
+
             [maintenance-enter]
             demo = echo "entering demo"
 
@@ -31,6 +35,13 @@ def agent_maintenance_config(tmp_path):
             )
         )
     return config_file
+
+
+@fixture
+def agent_configparser(agent_maintenance_config):
+    config = configparser.ConfigParser()
+    config.read(agent_maintenance_config)
+    return config
 
 
 @fixture

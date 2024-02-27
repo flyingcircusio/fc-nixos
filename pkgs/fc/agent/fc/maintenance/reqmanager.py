@@ -30,7 +30,6 @@ from .request import Request, RequestMergeResult
 from .state import ARCHIVE, EXIT_POSTPONE, EXIT_TEMPFAIL, State
 
 DEFAULT_SPOOLDIR = "/var/spool/maintenance"
-DEFAULT_CONFIG_FILE = "/etc/fc-agent.conf"
 
 _log = structlog.get_logger()
 
@@ -267,7 +266,7 @@ class ReqManager:
             if not p.isdir(d):
                 continue
             try:
-                req = Request.load(d, self.log)
+                req = Request.load(d, self.config, self.log)
                 req._reqmanager = self
                 self.requests[req.id] = req
             except Exception as exc:
@@ -1013,7 +1012,10 @@ class ReqManager:
         name_matches = self.requestsdir.glob(req_id_prefix + "*")
         if name_matches:
             return sorted(
-                [Request.load(name, self.log) for name in name_matches],
+                [
+                    Request.load(name, self.config, self.log)
+                    for name in name_matches
+                ],
                 key=lambda r: r.added_at
                 or datetime.fromtimestamp(0, tz=timezone.utc),
             )
@@ -1027,7 +1029,10 @@ class ReqManager:
         name_matches = self.archivedir.glob(req_id_prefix + "*")
         if name_matches:
             return sorted(
-                [Request.load(name, self.log) for name in name_matches],
+                [
+                    Request.load(name, self.config, self.log)
+                    for name in name_matches
+                ],
                 key=lambda r: r.added_at
                 or datetime.fromtimestamp(0, tz=timezone.utc),
             )

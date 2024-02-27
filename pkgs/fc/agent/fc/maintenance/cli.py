@@ -15,14 +15,11 @@ from fc.maintenance.maintenance import (
     request_reboot_for_qemu,
     request_update,
 )
-from fc.maintenance.reqmanager import (
-    DEFAULT_CONFIG_FILE,
-    DEFAULT_SPOOLDIR,
-    ReqManager,
-)
+from fc.maintenance.reqmanager import DEFAULT_SPOOLDIR, ReqManager
 from fc.maintenance.request import Request
 from fc.maintenance.state import EXIT_POSTPONE, EXIT_TEMPFAIL
 from fc.util import nixos
+from fc.util.constants import DEFAULT_AGENT_CONFIG_FILE
 from fc.util.directory import directory_connection
 from fc.util.enc import load_enc
 from fc.util.lock import locked
@@ -86,7 +83,7 @@ def fc_maintenance(
     ),
     config_file: Path = Option(
         dir_okay=False,
-        default=DEFAULT_CONFIG_FILE,
+        default=DEFAULT_AGENT_CONFIG_FILE,
         help="Path to the agent config file.",
     ),
     # Normal users cannot read the default file but that's ok for many commands.
@@ -329,7 +326,7 @@ def update():
 
     with locked(log, context.lock_dir):
         try:
-            request = request_update(log, enc, current_requests)
+            request = request_update(log, enc, rm.config, current_requests)
         except nixos.ChannelException:
             raise Exit(2)
 

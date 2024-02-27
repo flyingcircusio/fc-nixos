@@ -8,12 +8,15 @@ import fc.util.enc
 import fc.util.logging
 import structlog
 from fc.util import nixos
+from fc.util.config import parse_agent_config
+from fc.util.constants import DEFAULT_AGENT_CONFIG_FILE
 from fc.util.lock import locked
 from fc.util.typer_utils import FCTyperApp
 from typer import Argument, Exit, Option
 
 
 class Context(NamedTuple):
+    config_file: Path
     tmpdir: Path
     logdir: Path
     lock_dir: Path
@@ -37,7 +40,8 @@ def check():
     log = structlog.get_logger()
     try:
         enc = fc.util.enc.load_enc(log, context.enc_path)
-        result = fc.manage.manage.check(log, enc)
+        config = parse_agent_config(log, context.config_file)
+        result = fc.manage.manage.check(log, enc, config)
     except Exception:
         print("UNKNOWN: Exception occurred while running checks")
         traceback.print_exc()
@@ -199,6 +203,11 @@ def fc_manage(
         False,
         help="Nix errors: show detailed location information",
     ),
+    config_file: Path = Option(
+        dir_okay=False,
+        default=DEFAULT_AGENT_CONFIG_FILE,
+        help="Path to the agent config file.",
+    ),
     logdir: Path = Option(
         exists=True,
         file_okay=False,
@@ -243,6 +252,7 @@ def fc_manage(
     if not (switch or switch_with_update or update_enc_data):
         # no action option given, new style call
         context = Context(
+            config_file=config_file,
             tmpdir=tmpdir,
             logdir=logdir,
             lock_dir=lock_dir,
