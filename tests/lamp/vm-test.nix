@@ -45,6 +45,29 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
         };
 
         virtualisation.qemu.options = [ "-smp 2" ];
+
+        flyingcircus.users.userData = [
+          {
+            id = 1002;
+            uid = "s-test";
+            name = "s-test";
+            permissions = {};
+            password = "";
+            home_directory = "/srv/s-test";
+            login_shell = "/bin/bash";
+            class = "service";
+          }
+          {
+            id = 1001;
+            uid = "test";
+            name = "test";
+            permissions = { test = [ "sudo-srv" ]; };
+            password = "";
+            home_directory = "/home/test";
+            login_shell = "/bin/bash";
+            class = "human";
+          }
+        ];
       };
   };
 
@@ -201,6 +224,13 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
       lamp.succeed("egrep 'max_execution_time.*800' result")
       lamp.succeed("egrep 'session.auto_start.*Off' result")
 
+    with subtest("Log directory accessible by services and sudo-srv"):
+      print(lamp.execute("ls -la /var/log/httpd/lamp-8000-slow.log")[1])
+      print(lamp.execute("getfacl /var/log/httpd/lamp-8000-slow.log")[1])
+      print(lamp.execute("getfacl /var/log/httpd")[1])
+      lamp.succeed("sudo -u s-test cat /var/log/httpd/*.log")
+      lamp.succeed("sudo -u test cat /var/log/httpd/*.log")
+      lamp.fail("sudo -u nobody cat /var/log/httpd/*.log")
     '';
 
 })
