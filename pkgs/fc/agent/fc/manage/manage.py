@@ -43,16 +43,26 @@ class SwitchFailed(Exception):
 def check(log, enc) -> CheckResult:
     errors = []
     warnings = []
+    ok_info = []
     if INITIAL_RUN_MARKER.exists():
         warnings.append(
             f"{INITIAL_RUN_MARKER} exists. Looks like the agent has not "
             f"run successfully, yet."
         )
 
+    system_version = nixos.running_system_version(log)
+
+    if system_version:
+        ok_info.append(f"System version: {system_version}.")
+    else:
+        warnings.append("Could not get version of running system.")
+
     if STATE_VERSION_FILE.exists():
         state_version = STATE_VERSION_FILE.read_text().strip()
         log.debug("check-state-version", state_version=state_version)
-        if not re.match(r"\d\d\.\d\d", state_version):
+        if re.match(r"\d\d\.\d\d", state_version):
+            ok_info.append(f"State version: {state_version}.")
+        else:
             warnings.append(
                 f"State version invalid: {state_version}, should look like 23.11"
             )
@@ -123,7 +133,7 @@ def check(log, enc) -> CheckResult:
             warnings.append(f"NixOS warnings found ({len(nixos_warnings)})")
             warnings.extend(nixos_warnings)
 
-    return CheckResult(errors, warnings)
+    return CheckResult(errors, warnings, ok_info)
 
 
 def dry_activate(log, channel_url, show_trace=False):
