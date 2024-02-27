@@ -7,8 +7,24 @@ let
     {} super;
 
   inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
+  phpLogPermissionPatch = fetchpatch {
+    url = "https://github.com/flyingcircusio/php-src/commit/f3a22e2ed6e461d8c3fac84c2fd2c9e441c9e4d4.patch";
+    hash = "sha256-ttHjEOGJomjs10PRtM2C6OLX9LCvboxyDSKdZZHanFQ=";
+  };
+  patchPhps = patch: phpPkg: phpPkg.override {extraPatches = [patch];};
 
-in {
+in
+builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
+  #
+  # == we need to patch upstream PHP for more liberal fpm log file permissions
+  #
+
+  # Import old php versions from nix-phps.
+  inherit (phps) php72 php73 php74 php80;
+  inherit (super) php81 php82;
+}
+//
+{
   #
   # == our own stuff
   #
@@ -113,9 +129,6 @@ in {
     preBuild = "rm -rf x-pack";
   });
 
-  # Import old php versions from nix-phps.
-  inherit (phps) php72 php73 php74 php80;
-
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
   # PHP versions from vendored nix-phps
@@ -154,7 +167,7 @@ in {
 
   #PHP versions from nixpkgs
 
-  lamp_php81 = super.php81.withExtensions ({ enabled, all }:
+  lamp_php81 = self.php81.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
@@ -162,7 +175,7 @@ in {
                 all.redis
               ]);
 
-  lamp_php82 = super.php82.withExtensions ({ enabled, all }:
+  lamp_php82 = self.php82.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
