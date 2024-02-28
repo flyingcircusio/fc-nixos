@@ -187,7 +187,7 @@ in
               wantedBy = [ "multi-user.target" ];
               after = [ "network-pre.target" "systemd-sysctl.service" ] ++ lib.optionals (service != "zebra") [ "zebra.service" ];
               bindsTo = lib.optionals (service != "zebra") [ "zebra.service" ];
-              wants = [ "network.target" ];
+              wants = [ "network.target" ] ++ lib.optionals (service == "zebra") (map (svc: "${daemonName svc}.service") (filter isEnabled services));
 
               description = if service == "zebra" then "FRR Zebra routing manager"
                 else "FRR ${toUpper service} routing daemon";
@@ -207,7 +207,7 @@ in
                   + optionalString (scfg.vtyListenPort != null) " -P ${toString scfg.vtyListenPort}"
                   + " " + (concatStringsSep " " scfg.extraOptions);
                 ExecReload = "${pkgs.python3.interpreter} ${pkgs.frr}/libexec/frr/frr-reload.py --reload --daemon ${daemonName service} --bindir ${pkgs.frr}/bin --rundir /run/frr /etc/frr/${service}.conf";
-                Restart = "on-abnormal";
+                Restart = "always";
               };
             });
        in

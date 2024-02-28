@@ -22,14 +22,13 @@ let
         mac = iface.mac;
       })
     ) ++
-    (if isNull fclib.underlay then []
-     else lib.mapAttrsToList
-       (name: value: {
-         name = name;
-         mtu = fclib.underlay.mtu;
-         mac = value;
-       })
-       fclib.underlay.interfaces
+    (lib.optionals (!isNull fclib.underlay) (lib.mapAttrsToList
+      (name: value: {
+        name = name;
+        mtu = fclib.underlay.mtu;
+        mac = value;
+      })
+      fclib.underlay.interfaces)
     );
 
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
@@ -137,8 +136,8 @@ in
 
           mtu = interface.mtu;
         })) nonUnderlayInterfaces) ++
-      (if isNull fclib.underlay then [] else [(
-        lib.nameValuePair "underlay" {
+      (lib.optionals (!isNull fclib.underlay) [(
+        lib.nameValuePair "ul-loopback" {
           ipv4.addresses = [{
             address = fclib.underlay.loopback;
             prefixLength = 32;
@@ -147,7 +146,7 @@ in
           mtu = fclib.underlay.mtu;
         }
       )]) ++
-      (if isNull fclib.underlay then [] else
+      (lib.optionals (!isNull fclib.underlay)
         (map (iface: lib.nameValuePair iface {
           tempAddress = "disabled";
           mtu = fclib.underlay.mtu;
@@ -183,9 +182,8 @@ in
       wireguard.enable = true;
 
       firewall.trustedInterfaces =
-        if isNull fclib.underlay || config.flyingcircus.infrastructureModule != "flyingcircus-physical"
-        then []
-        else [ "brsto" "brstb" ] ++ (attrNames fclib.underlay.interfaces);
+        lib.optionals (!isNull fclib.underlay && config.flyingcircus.infrastructureModule == "flyingcircus-physical")
+          ([ "brsto" "brstb" ] ++ (attrNames fclib.underlay.interfaces));
     };
 
     flyingcircus.activationScripts = {
@@ -258,16 +256,6 @@ in
             neighbor switches activate
             advertise-all-vni
             advertise-svi-ip
-            ${ # Workaround for FRR not advertising SVI IP when
-               # globally configured
-              lib.concatMapStringsSep "\n  "
-                (iface: concatStringsSep "\n  " [
-                  ("vni " + (toString iface.vlanId))
-                  " advertise-svi-ip"
-                  "exit-vni"
-                ])
-                vxlanInterfaces
-            }
            exit-address-family
           !
           exit
@@ -306,6 +294,9 @@ in
       in
       { nscd.restartTriggers = [
           config.environment.etc."host.conf".source
+        ];
+        systemd-sysctl.restartTriggers = lib.mkIf (!isNull fclib.underlay) [
+          config.environment.etc."sysctl.d/70-fcio-underlay.conf".source
         ];
       } //
       # These units performing network interface setup must be
@@ -375,17 +366,26 @@ in
               };
             }
           )) bridgedInterfaces) ++
-        (if isNull fclib.underlay then [] else
-          [(lib.nameValuePair
-            "network-link-properties-underlay-virt"
+        (lib.optionals (!isNull fclib.underlay)
+          ([(lib.nameValuePair
+            "fc-lldp-to-altnames"
             rec {
-              description = "Ensure network link properties for virtual interface underlay";
-              wantedBy = [ "network-addresses-underlay.service"
+              description = "Set interface altnames based on peer hostname advertised in LLDP";
+              after = [ "lldpd.service" ];
+              unitConfig.Requisite = after;
+              serviceConfig.Type = "oneshot";
+              script = "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${lib.concatStringsSep " " (attrNames fclib.underlay.interfaces)}";
+            }
+          ) (lib.nameValuePair
+            "network-link-properties-ul-loopback-virt"
+            rec {
+              description = "Ensure network link properties for virtual interface ul-loopback";
+              wantedBy = [ "network-addresses-ul-loopback.service"
                            "multi-user.target" ];
               before = wantedBy;
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
-                IFACE=underlay
+                IFACE=ul-loopback
 
                 # Create virtual interface underlay
                 ip link add $IFACE type dummy
@@ -395,7 +395,7 @@ in
                 ${sysctlSnippet}
               '';
               preStop = ''
-                IFACE=underlay
+                IFACE=ul-loopback
                 ip link delete $IFACE
               '';
               serviceConfig = {
@@ -407,10 +407,10 @@ in
             "network-underlay-routing-fallback"
             rec {
               description = "Ensure fallback unreachable route for underlay prefixes";
-              wantedBy = [ "network-addresses-underlay.service"
+              wantedBy = [ "network-addresses-ul-loopback.service"
                            "multi-user.target" ];
               before = wantedBy;
-              after = [ "network-link-properties-underlay-virt.service" ];
+              after = [ "network-link-properties-ul-loopback-virt.service" ];
               path = [ fclib.relaxedIp ];
               script = ''
                 ${lib.concatMapStringsSep "\n"
@@ -436,7 +436,7 @@ in
               description = "Ensure link properties for physical underlay interface ${iface}";
               wantedBy = [ "network-addresses-${iface}.service"
                            "multi-user.target" ];
-              after = [ "network-link-proprties-${iface}-phy.service" ];
+              after = [ "network-link-properties-${iface}-phy.service" ];
               path = [ pkgs.procps ];
               script = ''
                 sysctl net.ipv4.conf.${iface}.rp_filter=0
@@ -454,12 +454,12 @@ in
               wantedBy = [ "network-addresses-${iface.layer2device}.service"
                            "multi-user.target" ];
               before = wantedBy;
-              partOf = [ "network-addresses-underlay.service" ];
+              partOf = [ "network-addresses-ul-loopback.service" ];
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
                 IFACE=${iface.layer2device}
 
-                # Create virtual inteface ${iface.layer2device}
+                # Create virtual interface ${iface.layer2device}
                 ip link add $IFACE type vxlan \
                   id ${toString iface.vlanId} \
                   local ${fclib.underlay.loopback} \
@@ -508,8 +508,14 @@ in
                };
              }
            )
-          ) vxlanInterfaces))
+          ) vxlanInterfaces)))
       ));
+
+    systemd.timers.fc-lldp-to-altnames = lib.mkIf (!isNull fclib.underlay) {
+      description = "Timer for updating interface altnames based on peer hostname advertised in LLDP";
+      wantedBy = [ "timers.target" ];
+      timerConfig.OnCalendar = "*:0/10";
+    };
 
     boot.kernel.sysctl = lib.mkMerge [{
       "net.ipv4.tcp_congestion_control" = "bbr";
@@ -587,5 +593,15 @@ in
       # Optimize multi-path for VXLAN (layer3 in layer3)
       "net.ipv4.fib_multipath_hash_policy" = "2";
     })];
+
+    # Prevent underlay interfaces from matching the rp_filter sysctl
+    # glob in the default configuration shipped with systemd.
+    environment.etc."sysctl.d/70-fcio-underlay.conf" =
+      lib.mkIf (!isNull fclib.underlay) {
+        text = lib.concatMapStringsSep "\n"
+          (iface: "-net.ipv4.conf.${iface}.rp_filter")
+          (attrNames fclib.underlay.interfaces);
+      };
+
   };
 }

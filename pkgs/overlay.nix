@@ -78,6 +78,10 @@ in {
 
   docsplit = super.callPackage ./docsplit { };
 
+  dstat = super.dstat.overrideAttrs(old: rec {
+    patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
+  });
+
   elasticsearch7 = (super.elasticsearch7.override {
     jre_headless = self.jdk11_headless;
   }).overrideAttrs(_: rec {
@@ -114,7 +118,21 @@ in {
     };
   });
 
-  inherit (nixpkgs-23_05) frr;
+  frr = nixpkgs-23_05.frr.overrideAttrs (old: rec {
+    version = "8.5.4";
+    src = super.fetchFromGitHub {
+      owner = "FRRouting";
+      repo = old.pname;
+      rev = "${old.pname}-${version}";
+      sha256 = "1hyb5ji6fdzlhl28syvlqf1h4d6bv56rw5m547rbk3b1nknlmrbh";
+    };
+
+    patches = [
+      ./frr/0001-zebra-re-install-nhg-on-interface-up.patch
+      ./frr/0002-zebra-re-install-dependent-nhgs-on-interface-up.patch
+      ./frr/0003-zebra-fix-nhg-out-of-sync-between-zebra-and-kernel.patch
+    ];
+  });
 
   gitlab = super.callPackage ./gitlab { };
   gitlab-workhorse = super.callPackage ./gitlab/gitlab-workhorse { };
@@ -546,14 +564,10 @@ in {
     })];
   });
 
-  tcpdump-vxlan = (super.tcpdump.override {
+  tcpdump = (super.tcpdump.override {
     libpcap = self.libpcap-vxlan;
   }).overrideAttrs(old: {
     pname = "tcpdump-vxlan";
-    fixupPhase = ''
-      mv $out/bin/tcpdump $out/bin/tcpdump-vxlan
-      rm $out/bin/tcpdump.${super.tcpdump.version}
-    '';
   });
 
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
