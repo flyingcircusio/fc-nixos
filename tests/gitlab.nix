@@ -97,12 +97,13 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
 
     gitlab.wait_until_succeeds("curl -sSf http://gitlab/users/sign_in")
 
-    with subtest("Gitlab has HSTS headers"):
+    with subtest("Gitlab has HSTS/CSP headers"):
       # curl supports parsing HSTS headers, but only when connecting via HTTPS.
       # So just check for the header.
       request_headers = gitlab.succeed("curl http://gitlab/users/sign_in -I | cat").split('\n')
       print(request_headers)
       assert 'Strict-Transport-Security: max-age=3600; includeSubDomains' in map(lambda s: s.strip(), request_headers)
+      assert any(header.startswith("Content-Security-Policy: base-uri 'self';") for header in request_headers)
 
     with subtest("test basic Gitlab REST API actions"):
       gitlab.succeed(
