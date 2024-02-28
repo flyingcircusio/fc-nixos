@@ -25,6 +25,7 @@ rec {
   fix-so-rpath = callPackage ./fix-so-rpath {};
   ledtool = pkgs.writers.writePython3Bin "fc-ledtool"
     {} (builtins.readFile ./ledtool/led.py);
+  lldp-to-altname = callPackage ./lldp-to-altname {};
   logcheckhelper = callPackage ./logcheckhelper { };
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};

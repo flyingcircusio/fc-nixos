@@ -63,7 +63,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       nvme-cli
       pciutils
       smartmontools
-      tcpdump-vxlan
     ];
 
     fileSystems = {
