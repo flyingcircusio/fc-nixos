@@ -111,6 +111,7 @@ in
             extraSettings = mkOption { type = attrs; default = {}; };
           };
         });
+        defaultText = "{}";
         default = config.flyingcircus.beats.logTargets;
         description = ''
           Where filebeat should send logs from various files,
@@ -125,7 +126,7 @@ in
         type = types.package;
         default = pkgs.filebeat7-oss;
         defaultText = "pkgs.filebeat7-oss";
-        example = literalExample "pkgs.filebeat7";
+        example = literalExpression "pkgs.filebeat7";
         description = ''
           The filebeat package to use.
         '';

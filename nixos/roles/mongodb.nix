@@ -89,7 +89,7 @@ in {
       supportsContainers = fclib.mkEnableContainerSupport;
       extraCheckArgs = with lib; mkOption {
         type = types.str;
-        default = if (lib.versionOlder majorVersion "3.6") then "" else "-h localhost -p 27017";
+        default = if (lib.versionOlder v "3.6") then "" else "-h localhost -p 27017";
         example = "-h example00.fe.rzob.fcio.net -p 27017 -t -U admin -P /etc/local/mongodb/password.txt";
         description = "Extra arguments to be passed to the check_mongodb script";
       };

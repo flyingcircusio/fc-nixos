@@ -59,6 +59,7 @@ in {
             name = mkOption {
               type = str;
               default = "lamp-${toString config.port}";
+              defaultText = "lamp-\${port}";
             };
           };
         }));

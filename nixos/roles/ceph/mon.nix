@@ -19,6 +19,7 @@ in
       supportsContainers = fclib.mkDisableContainerSupport;
 
       primary = lib.mkOption {
+        defaultText = "false";
         default = (first_mon == config.networking.hostName);
         description = "Primary monitors take over additional maintenance tasks.";
         type = lib.types.bool;
@@ -26,6 +27,7 @@ in
 
       config = lib.mkOption {
         type = lib.types.lines;
+        defaultText = "";
         default = (lib.concatMapStringsSep "\n" (mon:
           let id = head (lib.splitString "." mon.address);
               addr = "${head (filter fclib.isIp4 mon.ips)}:${mon_port}";

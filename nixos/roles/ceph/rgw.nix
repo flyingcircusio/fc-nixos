@@ -21,6 +21,7 @@ in
       supportsContainers = fclib.mkDisableContainerSupport;
 
       primary = lib.mkOption {
+        defaultText = "false";
         default = (first_rgw == config.networking.hostName);
         description = "Primary monitors take over additional maintenance tasks.";
         type = lib.types.bool;

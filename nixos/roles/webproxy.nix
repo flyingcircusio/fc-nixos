@@ -28,6 +28,7 @@ in
 
       listenAddresses = lib.mkOption {
         type = lib.types.listOf lib.types.str;
+        defaultText = "the addresses of the networks `lo` and `srv` (IPv4 & IPv6)";
         default = fclib.network.srv.dualstack.addressesQuoted ++
                   fclib.network.lo.dualstack.addressesQuoted;
       };
