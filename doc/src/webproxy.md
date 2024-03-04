@@ -38,6 +38,14 @@ You can also put your verbatim Varnish configuration into {file}`/etc/local/varn
 Please note that this way of configuring Varnish is deprecated and will likely
 be removed in the future.
 
+The role passes a handful of command line arguments to Varnish to
+ensure reasonable default behaviour. If you wish to pass extra command
+line arguments to Varnish, then you should use the provided
+`flyingcircus.services.varnish.extraCommandLine` NixOS
+option. Arguments specified using this option (which may be defined
+multiple times) will be merged into the list of arguments passed to
+Varnish along with the role defaults.
+
 ### Monitoring
 
 - We monitor that the varnishd process is running.
