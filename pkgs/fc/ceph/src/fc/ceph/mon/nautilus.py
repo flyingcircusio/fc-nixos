@@ -4,7 +4,7 @@ import shutil
 import socket
 import tempfile
 
-from fc.ceph.lvm import XFSCephVolume
+from fc.ceph.lvm import XFSVolume
 from fc.ceph.util import kill, run
 
 
@@ -28,7 +28,7 @@ def find_vg_for_mon():
 class Monitor(object):
     def __init__(self):
         self.id = socket.gethostname()
-        self.volume = XFSCephVolume("ceph-mon", f"/srv/ceph/mon/ceph-{self.id}")
+        self.volume = XFSVolume("ceph-mon", f"/srv/ceph/mon/ceph-{self.id}")
         self.pid_file = f"/run/ceph/mon.{self.id}.pid"
 
     def activate(self):

@@ -3,7 +3,7 @@ import resource
 import shutil
 import socket
 
-from fc.ceph.lvm import XFSCephVolume
+from fc.ceph.lvm import XFSVolume
 from fc.ceph.mon.nautilus import find_vg_for_mon
 from fc.ceph.util import console, kill, run
 
@@ -11,7 +11,7 @@ from fc.ceph.util import console, kill, run
 class Manager(object):
     def __init__(self):
         self.id = socket.gethostname()
-        self.volume = XFSCephVolume("ceph-mgr", f"/srv/ceph/mgr/ceph-{self.id}")
+        self.volume = XFSVolume("ceph-mgr", f"/srv/ceph/mgr/ceph-{self.id}")
 
         self.pid_file = f"/run/ceph/mgr.{self.id}.pid"
         self.mgr_key_template = f"/etc/ceph/ceph.mgr.{self.id}.keyring"

@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import Optional
 
 from fc.ceph.luks import KEYSTORE  # singleton
-from fc.ceph.lvm import XFSCephVolume
+from fc.ceph.lvm import XFSVolume
 from fc.ceph.util import console, run
 
 
 class LUKSKeyStoreManager(object):
     def __init__(self):
-        self.volume = XFSCephVolume("keys", "/mnt/keys", automount=True)
+        self.volume = XFSVolume("keys", "/mnt/keys", automount=True)
         self._KEYSTORE = KEYSTORE  # don't use directly, overridable in test
 
     def create(self, device):
