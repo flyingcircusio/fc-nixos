@@ -188,6 +188,20 @@ in {
     };
   });
 
+  keepalived = super.keepalived.overrideAttrs(_: rec {
+    version = "2.2.8-g9d4579";
+
+    src = super.fetchFromGitHub {
+      rev = "9d4579b706048d55da664cf0e09b8dfd409c0266";
+      owner = "acassen";
+      repo = "keepalived";
+      sha256 = "gUW8PQoqQJipShxu3l8hSgLVNGS/KCS7SpATNHWh7nI=";
+    };
+
+    patches = [
+    ];
+  });
+
   kibana7 = super.kibana7.overrideAttrs(_: rec {
     version = elk7Version;
     name = "kibana-${version}";
