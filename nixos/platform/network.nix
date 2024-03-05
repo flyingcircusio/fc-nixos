@@ -422,15 +422,22 @@ in
               before = wantedBy;
               after = [ "network-link-properties-ul-loopback-virt.service" ];
               path = [ fclib.relaxedIp ];
+              # https://docs.frrouting.org/en/stable-8.5/zebra.html#administrative-distance
+              #
+              # Due to how zebra calculates administrative distance
+              # for routes learned from the kernel, we need to set a
+              # very high metric on these routes (i.e. very low
+              # preference) so that routes learned from BGP can
+              # override these statically configured routes.
               script = ''
                 ${lib.concatMapStringsSep "\n"
-                  (net: "ip route add unreachable " + net)
+                  (net: "ip route add unreachable " + net + " metric 335544321")
                   fclib.underlay.subnets
                  }
               '';
               preStop = ''
                 ${lib.concatMapStringsSep "\n"
-                  (net: "ip route del unreachable " + net)
+                  (net: "ip route del unreachable " + net + " metric 335544321")
                   fclib.underlay.subnets
                  }
               '';
