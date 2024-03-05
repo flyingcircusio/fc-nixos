@@ -13,7 +13,7 @@ from fc.ceph.lvm import (
     GenericCephVolume,
     GenericLogicalVolume,
     PartitionedDisk,
-    XFSCephVolume,
+    XFSVolume,
 )
 from fc.ceph.util import kill, run
 
@@ -485,7 +485,7 @@ class GenericOSD(object):
         self.name = f"osd.{id}"
         self.pid_file = f"/run/ceph/osd.{self.id}.pid"
 
-        self.data_volume = XFSCephVolume(
+        self.data_volume = XFSVolume(
             f"ceph-osd-{self.id}", f"/srv/ceph/osd/ceph-{self.id}"
         )
 

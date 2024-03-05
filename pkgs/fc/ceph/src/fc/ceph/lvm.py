@@ -541,8 +541,7 @@ class GenericCephVolume:
         return [int(vg["vg_name"].replace("vgosd-", "", 1)) for vg in vgs]
 
 
-# TODO: name can be a bit misleading, as we also utilise this for the XFS key volume
-class XFSCephVolume(AutomountActivationMixin, GenericCephVolume):
+class XFSVolume(AutomountActivationMixin, GenericCephVolume):
     MKFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
     FSTYPE = "xfs"
