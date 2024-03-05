@@ -92,8 +92,6 @@ class MdraidDevice(GenericBlockDevice):
             and str(os.readlink(potential_name)).startswith("/dev/md")
         )
 
-    # TODO do we need activating?
-
 
 class PartitionedDisk(GenericBlockDevice):
     """name denotes the path to the whole unpartitioned disk"""
