@@ -531,15 +531,15 @@ class GenericOSD(object):
 
         By default, the `ceph osd ok-to-stop` is run and checks for remaining
         data availability.
-        With `stric_safety_check`, the more strict `ceph osd safe-to-destroy`
+        With `strict_safety_check`, the more strict `ceph osd safe-to-destroy`
         checks whether edundancy is affected in any ways.
 
         Raises a SystemExit if the check fails.
         """
-        ids = map(str, ids)
+        idstr = map(str, ids)
         if strict_safety_check:
             try:
-                run.ceph("osd", "safe-to-destroy", *ids)
+                run.ceph("osd", "safe-to-destroy", *idstr)
             except CalledProcessError as e:
                 print(
                     # fmt: off
@@ -552,7 +552,7 @@ class GenericOSD(object):
                 sys.exit(e.returncode)
         else:
             try:
-                run.ceph("osd", "ok-to-stop", *ids)
+                run.ceph("osd", "ok-to-stop", *idstr)
             except CalledProcessError as e:
                 print(
                     # fmt: off
