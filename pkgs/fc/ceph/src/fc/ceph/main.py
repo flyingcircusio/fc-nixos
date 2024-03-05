@@ -82,7 +82,7 @@ def ceph(args=sys.argv[1:]):
     parser_create_bs.add_argument(
         "--encrypt",
         action=argparse.BooleanOptionalAction,
-        default=False,  # FIXME: at some point, decide to switch defaults
+        default=True,
         help="(Experimental) Set up OSD disk volumes with encryption",
     )
     parser_create_bs.set_defaults(action="create_bluestore")
@@ -202,7 +202,7 @@ def ceph(args=sys.argv[1:]):
     parser_create.add_argument(
         "--encrypt",
         action=argparse.BooleanOptionalAction,
-        default=False,  # FIXME: at some point, decide to switch defaults
+        default=True,
         help="(Experimental) Set up manager volumes with encryption",
     )
     parser_create.set_defaults(action="create")
@@ -247,7 +247,7 @@ def ceph(args=sys.argv[1:]):
     parser_create.add_argument(
         "--encrypt",
         action=argparse.BooleanOptionalAction,
-        default=False,  # FIXME: at some point, decide to switch defaults
+        default=True,
         help="(Experimental) Set up manager volumes with encryption",
     )
     parser_create.set_defaults(action="create")
