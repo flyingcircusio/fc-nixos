@@ -236,7 +236,6 @@ in
           router bgp ${toString fclib.underlay.asNumber}
            bgp router-id ${fclib.underlay.loopback}
            bgp bestpath as-path multipath-relax
-           no bgp ebgp-requires-policy
            neighbor switches peer-group
            neighbor switches remote-as external
            neighbor switches capability extended-nexthop
@@ -250,14 +249,27 @@ in
             redistribute connected
             neighbor switches prefix-list underlay-import in
             neighbor switches prefix-list underlay-export out
+            neighbor switches route-map accept-all-routes in
+            neighbor switches route-map accept-local-routes out
            exit-address-family
            !
            address-family l2vpn evpn
             neighbor switches activate
+            neighbor switches route-map accept-all-routes in
+            neighbor switches route-map accept-local-routes out
             advertise-all-vni
             advertise-svi-ip
            exit-address-family
           !
+          exit
+          !
+          bgp as-path access-list local-origin seq 1 permit ^$
+          !
+          route-map accept-local-routes permit 1
+           match as-path local-origin
+          exit
+          !
+          route-map accept-all-routes permit 1
           exit
           !
           ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
@@ -269,8 +281,6 @@ in
             fclib.underlay.subnets
            }
           !
-          route-map accept-routes permit 1
-          exit
         '';
       };
     };
