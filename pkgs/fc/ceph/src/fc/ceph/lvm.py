@@ -8,6 +8,7 @@ from subprocess import CalledProcessError
 from typing import Optional
 
 import fc.ceph.luks
+from fc.ceph.luks import Cryptsetup
 from fc.ceph.util import console, mount_status, run
 
 
@@ -443,24 +444,16 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
 
         # FIXME: handle keyfile not found errors,
         print(f"Encrypting volume {self.name} ...")
-        self.cryptsetup(
+        Cryptsetup.luksFormat(
             # fmt: off
-            "-q",
-            *self._tunables_sectorsize,
-            *self._tunables_luks_header,
-            *self._tunables_cipher,
-            "luksFormat",
             "--key-slot", str(fc.ceph.luks.KEYSTORE.slots["local"]),
             "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
             self.underlay.device,
             # fmt: on
         )
 
-        self.cryptsetup(
+        Cryptsetup.luksAddKey(
             # fmt: off
-            "-q",
-            *self._tunables_luks_header,
-            "luksAddKey",
             "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
             self.underlay.device,
             "--key-slot", str(fc.ceph.luks.KEYSTORE.slots["admin"]),
@@ -478,9 +471,8 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
         # FIXME: needs error catching and handling; adding that makes sense
         # once we know the role of systemd/udev in the activation cycle
         if not os.path.exists(self.device_path):
-            self.cryptsetup(
+            Cryptsetup.cryptsetup(
                 # fmt: off
-                "-q",
                 "--allow-discards",     # pass throught TRIM commands to disk
                 "open",
                 "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
@@ -492,49 +484,12 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
 
     def deactivate(self):
         if self._ready or os.path.exists(self.device_path):
-            self.cryptsetup("-q", "close", self.name)
+            Cryptsetup.cryptsetup("close", self.name)
 
     def purge(self, lv_only=False):
         self.deactivate()
-        self.cryptsetup("-q", "erase", self.underlay.device)
+        Cryptsetup.cryptsetup("erase", self.underlay.device)
         self.underlay.purge(lv_only)
-
-    cryptsetup_tunables = [
-        # fmt: off
-        # inspired by the measurements done in https://ceph.io/en/news/blog/2023/ceph-encryption-performance/:
-        "--perf-submit_from_crypt_cpus",
-        # for larger writes throughput
-        # might be useful as well and is discussed to be enabled in Ceph,
-        # but requires kernel >=5.9: https://github.com/ceph/ceph/pull/49554
-        # especially relevant for SSDs, see https://blog.cloudflare.com/speeding-up-linux-disk-encryption/
-        # "--perf-no_read_workqueue", "--perf-no_write_workqueue"
-        # fmt: on
-    ]
-    # reduce CPU load for larger writes, can be removed after cryptsetup >=2.40
-    _tunables_sectorsize = ("--sector-size", "4096")
-
-    # FIXME: probably want to move these pinned parameters over to luks.py,
-    # they don't just affect ceph
-
-    # tunables that apply when (re)creating a LUKS volume and its data or reencrypting it
-    _tunables_cipher = (
-        # fmt: off
-        "--cipher", "aes-xts-plain64",
-        "--key-size", "512",
-        # fmt: on
-    )
-    # tunables that apply when (re)creating a LUKS volume header
-    _tunables_luks_header = (
-        # fmt: off
-        "--pbkdf", "argon2id",
-        "--type", "luks2",
-        # fmt: on
-    )
-
-    @classmethod
-    def cryptsetup(cls, *args: str, **kwargs):
-        """cryptsetup wrapper that adds default tunable options to the calls"""
-        return run.cryptsetup(*cls.cryptsetup_tunables, *args, **kwargs)
 
 
 def lv_names():
