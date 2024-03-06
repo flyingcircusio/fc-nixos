@@ -3,7 +3,8 @@
 with builtins;
 
 let
-  fclib = config.fclib;
+  inherit (config.flyingcircus) location;
+  inherit (config) fclib;
   role = config.flyingcircus.roles.router;
   kickInterfaces = fclib.writeShellApplication {
     name = "kick-interfaces";
@@ -44,7 +45,7 @@ in
   };
 
   imports = [
-    ./bind.nix
+    ./bind
     ./bird
     ./keepalived
   ];
@@ -167,6 +168,11 @@ in
     };
 
     flyingcircus.agent = {
+      extraPreCommands = ''
+        fc-dhcpd -4 -o /etc/nixos/localconfig-dhcpd4.conf ${location}
+        fc-dhcpd -6 -o /etc/nixos/localconfig-dhcpd6.conf ${location}
+        fc-zones
+      '';
     };
 
   };

@@ -1,0 +1,13 @@
+$TTL 1W
+@	IN	SOA	127.in-addr.arpa. root.localhost. (
+				1
+				28800
+				14400
+				604800
+				86400
+				)
+		NS	localhost.
+
+1.0.0		PTR	localhost.
+
+; vim: set ts=8 sw=8 noet:
