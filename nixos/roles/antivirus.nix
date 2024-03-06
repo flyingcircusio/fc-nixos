@@ -18,6 +18,7 @@ in
         type = lib.types.listOf lib.types.str;
         default = fclib.network.lo.dualstack.addresses ++
                   fclib.network.srv.dualstack.addresses;
+        defaultText = "addresses of the interfaces `lo` and `srv` (IPv4 & IPv6)";
       };
     };
   };

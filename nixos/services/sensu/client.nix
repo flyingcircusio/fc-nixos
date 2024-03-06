@@ -211,6 +211,7 @@ in {
       expectedLoad = {
         warning = mkOption {
           type = types.str;
+          defaultText = "$n_cores * 8, $n_cores * 5, $n_cores * 2";
           default =
             "${toString (cores * 8)},${toString (cores * 5)}," +
             "${toString (cores * 2)}";
@@ -218,6 +219,7 @@ in {
         };
         critical = mkOption {
           type = types.str;
+          defaultText = "$n_cores * 10, $n_cores * 8, $n_cores * 3";
           default =
             "${toString (cores * 10)},${toString (cores * 8)}," +
             "${toString (cores * 3)}";

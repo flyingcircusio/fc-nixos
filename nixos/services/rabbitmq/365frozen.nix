@@ -17,6 +17,7 @@ in
       package = mkOption {
         type = types.package;
         default = storePath /nix/store/sqap94f4a0z8pxdal5wfgsm83ncwwbbd-rabbitmq-server-3.6.5;
+        defaultText = "a frozen rabbitmq store path";
         description = ''
           Which rabbitmq package to use. Should be the same as used in `service`.
         '';

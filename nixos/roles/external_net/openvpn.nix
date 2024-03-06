@@ -208,7 +208,7 @@ in
 {
   options = {
     flyingcircus.roles.openvpn = {
-      enable = lib.mkEnableOption { };
+      enable = lib.mkEnableOption "fcio openvpn role";
       supportsContainers = fclib.mkDisableContainerSupport;
 
       accessNets = lib.mkOption {

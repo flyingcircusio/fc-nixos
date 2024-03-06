@@ -19,6 +19,7 @@ in
       enable = lib.mkOption {
         description = "Access external networks via external_net gateway";
         type = lib.types.bool;
+        defaultText = "false";
         default = (gw != null) && (!cfg.roles.vxlan.gateway);
       };
       supportsContainers = fclib.mkDisableContainerSupport;
