@@ -30,6 +30,22 @@ let
     map
       (service: head (lib.splitString "." service.address))
       (fclib.findServices "opensearch-node");
+
+  thisNode =
+    if config.networking.domain != null
+    then "${config.networking.hostName}.${config.networking.domain}"
+    else "localhost";
+
+  waitForGreenCluster = pkgs.writeShellApplication {
+    name = "opensearch-wait-for-green-cluster";
+    text = ''
+      echo "Checking if the OpenSearch cluster is green..." >&2
+      echo "(timeout 60s, connect timeout 20s)" >&2
+      curl --connect-timeout 20 --fail-with-body \
+        "${thisNode}:9200/_cluster/health?wait_for_status=green&timeout=60s" \
+        || exit 75
+    '';
+  };
 in
 {
 
@@ -131,6 +147,21 @@ in
 
       Note that the key must be quoted to stop Nix from interpreting the name
       of the setting as a path to a nested attribute.
+
+
+      ## Automated Maintenance
+
+      Our automated maintenance system makes sure that only one member of the cluster
+      (as specified by `nodes`) is in maintenance at the same time.
+
+      Also, before running maintenance activities, the cluster state must be "green".
+      The check waits for 60 seconds for the cluster to become green.
+    '';
+
+    # Require other nodes to be in service before going into maintenance.
+    flyingcircus.agent.maintenanceConstraints.machinesInService = cfg.nodes;
+    flyingcircus.agent.maintenance."opensearch-cluster-green".enter = ''
+      ${waitForGreenCluster}/bin/opensearch-wait-for-green-cluster
     '';
 
     flyingcircus.services.opensearch = {
