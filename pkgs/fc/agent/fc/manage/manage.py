@@ -4,6 +4,7 @@ import os
 import re
 import socket
 import subprocess
+from configparser import ConfigParser
 from pathlib import Path
 
 from fc.util import nixos
@@ -40,19 +41,29 @@ class SwitchFailed(Exception):
     pass
 
 
-def check(log, enc) -> CheckResult:
+def check(log, enc, config: ConfigParser) -> CheckResult:
     errors = []
     warnings = []
+    ok_info = []
     if INITIAL_RUN_MARKER.exists():
         warnings.append(
             f"{INITIAL_RUN_MARKER} exists. Looks like the agent has not "
             f"run successfully, yet."
         )
 
+    system_version = nixos.running_system_version(log)
+
+    if system_version:
+        ok_info.append(f"System version: {system_version}.")
+    else:
+        warnings.append("Could not get version of running system.")
+
     if STATE_VERSION_FILE.exists():
         state_version = STATE_VERSION_FILE.read_text().strip()
         log.debug("check-state-version", state_version=state_version)
-        if not re.match(r"\d\d\.\d\d", state_version):
+        if re.match(r"\d\d\.\d\d", state_version):
+            ok_info.append(f"State version: {state_version}.")
+        else:
             warnings.append(
                 f"State version invalid: {state_version}, should look like 23.11"
             )
@@ -123,7 +134,41 @@ def check(log, enc) -> CheckResult:
             warnings.append(f"NixOS warnings found ({len(nixos_warnings)})")
             warnings.extend(nixos_warnings)
 
-    return CheckResult(errors, warnings)
+    try:
+        system_size = nixos.system_closure_size(
+            log, Path("/run/current-system")
+        )
+    except Exception:
+        warnings.append("Failed to get closure size of current system.")
+    else:
+        free_disk_gib = nixos.get_free_store_disk_space(log) / 1024**3
+        disk_keep_free = config.getfloat(
+            "limits", "disk_keep_free", fallback=5.0
+        )
+        size_gib = system_size / 1024**3
+        free_space_error_thresh = size_gib + disk_keep_free
+        free_space_warning_thresh = size_gib * 2 + disk_keep_free
+
+        if free_disk_gib < free_space_error_thresh:
+            errors.append(
+                "Not enough free disk space to build a new system. "
+                f"Free: {free_disk_gib:.1f} GiB. "
+                f"Required: {free_space_error_thresh:.1f} GiB "
+                f"({size_gib:.1f} system size + {disk_keep_free:.1f}). "
+                "Automated updates are suspended until more space is available."
+            )
+        elif free_disk_gib < free_space_warning_thresh:
+            warnings.append(
+                f"Free disk space is getting low. "
+                f"Free: {free_disk_gib:.1f} GiB. "
+                f"Required: {free_space_error_thresh:.1f} GiB "
+                f"({size_gib:.1f} system size + {disk_keep_free:.1f}). "
+                "Building a new system could fail if more disk space is used."
+            )
+        else:
+            ok_info.append(f"System size: {size_gib:.1f} GiB.")
+
+    return CheckResult(errors, warnings, ok_info)
 
 
 def dry_activate(log, channel_url, show_trace=False):

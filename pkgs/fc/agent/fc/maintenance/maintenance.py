@@ -8,6 +8,7 @@ TODO: better logging for created activites.
 import os.path
 import shutil
 import typing
+from pathlib import Path
 from typing import Iterable, Optional
 
 import fc.util
@@ -20,6 +21,7 @@ from fc.maintenance.activity.reboot import RebootActivity
 from fc.maintenance.activity.update import UpdateActivity
 from fc.maintenance.activity.vm_change import VMChangeActivity
 from fc.maintenance.state import State
+from fc.util import nixos
 
 
 def request_reboot_for_memory(log, enc) -> Optional[Request]:
@@ -147,7 +149,7 @@ def request_reboot_for_kernel(
 
 
 def request_update(
-    log, enc, current_requests: Iterable[Request]
+    log, enc, config, current_requests: Iterable[Request]
 ) -> Optional[Request]:
     """Schedule a system update if the channel has changed and the
     resulting system is different from the running system.
@@ -194,6 +196,25 @@ def request_update(
         and activity.identical_to_current_channel_url
     ):
         # Shortcut to save time preparing an activity which will have no effect.
+        return
+
+    free_disk_gib = nixos.get_free_store_disk_space(log) / 1024**3
+    size_gib = (
+        nixos.system_closure_size(log, Path("/run/current-system")) / 1024**3
+    )
+    disk_keep_free = config.getfloat("limits", "disk_keep_free", fallback=5.0)
+    free_disk_thresh = size_gib + disk_keep_free
+
+    if free_disk_gib < free_disk_thresh:
+        log.error(
+            "request-update-low-free-disk",
+            _replace_msg=(
+                "Not preparing the system update as free disk space is low. "
+                f"Free: {free_disk_gib:.1f} GiB. "
+                f"Required: {free_disk_thresh:.1f} GiB "
+                f"({size_gib:.1f} system size + {disk_keep_free:.1f})."
+            ),
+        )
         return
 
     activity.prepare()

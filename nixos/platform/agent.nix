@@ -147,6 +147,24 @@ in
         '';
       };
 
+      diskKeepFree = mkOption {
+        default = 5;
+        type = types.numbers.positive;
+        description = ''
+          Amount of disk space (GiB) to keep free when preparing system updates.
+
+          Updates are refused when less than this value plus the current system size
+          is available. The `fc-agent` Sensu check will also become critical.
+
+          The sensu check issues a warning when less than this value plus
+          double the current system size is available.
+
+          Example: current system closure size is 2.5 GiB, so at least 7.5 GiB
+          have to be available for the update preparation to start.
+          The Sensu check will warn if less than 10 GiB are available.
+        '';
+      };
+
       maintenancePreparationSeconds = mkOption {
         default = 300;
         description = ''
@@ -241,6 +259,9 @@ in
       ];
 
       environment.etc."fc-agent.conf".text = ''
+         [limits]
+         disk_keep_free = ${toString cfg.agent.diskKeepFree}
+
          [maintenance]
          preparation_seconds = ${toString cfg.agent.maintenancePreparationSeconds}
 

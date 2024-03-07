@@ -1,4 +1,5 @@
 """Base class for maintenance activities."""
+from configparser import ConfigParser
 from enum import Enum
 from typing import NamedTuple, Optional
 
@@ -44,6 +45,7 @@ class Activity:
     comment = ""
     estimate = Estimate("10m")
     log = None
+    config: None | ConfigParser
 
     def __init__(self):
         """Creates activity object (add args if you like).
