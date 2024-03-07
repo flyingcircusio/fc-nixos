@@ -154,14 +154,15 @@ def check(log, enc, config: ConfigParser) -> CheckResult:
                 "Not enough free disk space to build a new system. "
                 f"Free: {free_disk_gib:.1f} GiB. "
                 f"Required: {free_space_error_thresh:.1f} GiB "
-                f"({size_gib:.1f} system size + {disk_keep_free:.1f}) "
+                f"({size_gib:.1f} system size + {disk_keep_free:.1f}). "
                 "Automated updates are suspended until more space is available."
             )
         elif free_disk_gib < free_space_warning_thresh:
             warnings.append(
                 f"Free disk space is getting low. "
                 f"Free: {free_disk_gib:.1f} GiB. "
-                f"Required: {free_space_error_thresh:.1f} GiB. "
+                f"Required: {free_space_error_thresh:.1f} GiB "
+                f"({size_gib:.1f} system size + {disk_keep_free:.1f}). "
                 "Building a new system could fail if more disk space is used."
             )
         else:
