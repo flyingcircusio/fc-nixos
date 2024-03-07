@@ -111,8 +111,21 @@ in
       };
 
       updateInMaintenance = mkOption {
-        default = attrByPath [ "parameters" "production" ] false cfg.enc;
-        description = "Perform channel updates in scheduled maintenance. Default: all production VMs";
+        default =
+          let
+            isProduction = attrByPath [ "parameters" "production" ] false cfg.enc;
+            hasMaintenanceEnterExit = cfg.agent.maintenance != {};
+          in
+            isProduction || hasMaintenanceEnterExit;
+        description = ''
+          Perform channel updates in scheduled maintenance.
+          Enabled by default for production systems.
+
+          For non-production systems, it applies only to systems with
+          enter/exit maintenance commands. These commands could be needed to
+          keep redundant systems alive (like clusters with multiple nodes)
+          and to avoid problems caused by unclean service shutdowns.
+        '';
         type = types.bool;
       };
 
