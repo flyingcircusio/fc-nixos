@@ -1,3 +1,4 @@
+import configparser
 import datetime
 import unittest.mock
 from io import StringIO
@@ -158,7 +159,7 @@ class ExternalStateActivity(Activity):
             print("foo", file=f)
 
 
-def test_external_activity_state(tmpdir, logger):
+def test_external_activity_state(tmpdir, agent_configparser, logger):
     r = Request(ExternalStateActivity(), 1, dir=str(tmpdir))
     r.save()
     extstate = str(tmpdir / "external_state")
@@ -166,7 +167,7 @@ def test_external_activity_state(tmpdir, logger):
         assert "foo\n" == f.read()
     with open(extstate, "w") as f:
         print("bar", file=f)
-    r2 = Request.load(str(tmpdir), logger)
+    r2 = Request.load(str(tmpdir), agent_configparser, logger)
     assert r2.activity.external == "bar\n"
 
 

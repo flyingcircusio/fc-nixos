@@ -358,6 +358,32 @@ def find_nix_build_error(stderr: str, log=_log):
     return "Building the system failed!"
 
 
+def get_free_store_disk_space(log):
+    """
+    Returns free disk space for the device where /nix/store resides, in bytes.
+    """
+    statvfs = os.statvfs("/nix/store")
+    return statvfs.f_frsize * statvfs.f_bavail
+
+
+def system_closure_size(log, system_path: Path):
+    args = ["nix", "path-info", "-S", system_path]
+    try:
+        result = subprocess.run(
+            args,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        size = result.stdout.split()[1]
+
+    except subprocess.CalledProcessError:
+        log.error("nix-path-info-failed", args=args, exc_info=True)
+        raise
+
+    return int(size)
+
+
 def _increase_soft_fd_limit():
     """Increases the "soft" file descriptor limit (which is the actual limit)
     if it's currently at the default value.
@@ -440,14 +466,23 @@ def build_system(
 
     if proc.returncode == 0:
         if changed:
-            msg = "Successfully built new system."
+            msg = "Successfully built new system (closure size {size})."
         else:
             msg = "No building needed, wanted system was already present."
+
+        system_path = proc.stdout.read().strip()
+        try:
+            size_bytes = system_closure_size(log, Path(system_path))
+            size_humanized = f"{size_bytes/1024**3:.1f} GiB"
+        except Exception:
+            size_humanized = None
+
         log.info(
             "system-build-succeeded",
             _replace_msg=msg,
             changed=changed,
             build_output=stderr,
+            size=size_humanized,
         )
     else:
         build_error = find_nix_build_error(stderr, log)
@@ -463,8 +498,9 @@ def build_system(
         )
         raise BuildFailed(msg=msg, stdout=stdout, stderr=stderr)
 
-    system_path = proc.stdout.read().strip()
-    log.debug("system-build-finished", system=system_path)
+    log.debug(
+        "system-build-finished", system=system_path, size_bytes=size_bytes
+    )
     assert system_path.startswith(
         "/nix/store/"
     ), f"Output doesn't look like a Nix store path: {system_path}"

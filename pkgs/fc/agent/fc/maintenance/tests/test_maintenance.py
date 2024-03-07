@@ -161,22 +161,31 @@ def test_do_not_request_reboot_for_unchanged_kernel(logger):
     assert request is None
 
 
-def test_request_update(log, logger, monkeypatch):
-    enc = {}
+def test_request_update(log, logger, agent_configparser, monkeypatch):
     from_enc_mock = MagicMock()
     from_enc_mock.return_value.identical_to_current_channel_url = False
     from_enc_mock.return_value.identical_to_current_system = False
     monkeypatch.setattr(
         "fc.maintenance.maintenance.UpdateActivity.from_enc", from_enc_mock
     )
+    monkeypatch.setattr(
+        "fc.util.nixos.get_free_store_disk_space", lambda *a: 10 * 1024**3
+    )
 
-    request = fc.maintenance.maintenance.request_update(logger, enc, [])
+    monkeypatch.setattr(
+        "fc.util.nixos.system_closure_size", lambda *a: 2 * 1024**3
+    )
+    request = fc.maintenance.maintenance.request_update(
+        logger, enc={}, config=agent_configparser, current_requests=[]
+    )
 
     assert request
     assert log.has("request-update-prepared")
 
 
-def test_request_update_unchanged(log, logger, monkeypatch):
+def test_request_update_unchanged(
+    log, logger, agent_configparser, monkeypatch
+):
     from_enc_mock = MagicMock()
     from_enc_mock.return_value = None
     monkeypatch.setattr(
@@ -184,9 +193,7 @@ def test_request_update_unchanged(log, logger, monkeypatch):
     )
 
     request = fc.maintenance.maintenance.request_update(
-        logger,
-        enc={},
-        current_requests=[],
+        logger, enc={}, config=agent_configparser, current_requests=[]
     )
 
     assert request is None
@@ -194,7 +201,7 @@ def test_request_update_unchanged(log, logger, monkeypatch):
 
 
 def test_request_update_unchanged_system_and_no_other_requests_skips_request(
-    log, logger, monkeypatch
+    log, logger, agent_configparser, monkeypatch
 ):
     from_enc_mock = MagicMock()
     from_enc_mock.return_value.identical_to_current_channel_url = False
@@ -203,10 +210,15 @@ def test_request_update_unchanged_system_and_no_other_requests_skips_request(
         "fc.maintenance.maintenance.UpdateActivity.from_enc", from_enc_mock
     )
 
+    monkeypatch.setattr(
+        "fc.util.nixos.get_free_store_disk_space", lambda *a: 10 * 1024**3
+    )
+
+    monkeypatch.setattr(
+        "fc.util.nixos.system_closure_size", lambda *a: 2 * 1024**3
+    )
     request = fc.maintenance.maintenance.request_update(
-        logger,
-        enc={},
-        current_requests=[],
+        logger, enc={}, config=agent_configparser, current_requests=[]
     )
 
     assert request is None
@@ -222,7 +234,7 @@ class FakeUpdateActivity(UpdateActivity):
 
 
 def test_request_update_unchanged_system_and_other_requests_produces_request(
-    log, logger, monkeypatch
+    log, logger, agent_configparser, monkeypatch
 ):
     from_enc_mock = MagicMock()
     from_enc_mock.return_value.identical_to_current_system = True
@@ -230,11 +242,19 @@ def test_request_update_unchanged_system_and_other_requests_produces_request(
         "fc.maintenance.maintenance.UpdateActivity.from_enc", from_enc_mock
     )
 
+    monkeypatch.setattr(
+        "fc.util.nixos.get_free_store_disk_space", lambda *a: 10 * 1024**3
+    )
+
+    monkeypatch.setattr(
+        "fc.util.nixos.system_closure_size", lambda *a: 2 * 1024**3
+    )
     existing_request = Request(FakeUpdateActivity("https://fake"))
 
     request = fc.maintenance.maintenance.request_update(
         logger,
         enc={},
+        config=agent_configparser,
         current_requests=[existing_request],
     )
 
@@ -242,7 +262,7 @@ def test_request_update_unchanged_system_and_other_requests_produces_request(
 
 
 def test_request_update_equivalent_existing_request_skip_request(
-    log, logger, monkeypatch
+    log, logger, agent_configparser, monkeypatch
 ):
     from_enc_mock = MagicMock()
     from_enc_mock.return_value.next_channel_url = "https://fake"
@@ -255,6 +275,7 @@ def test_request_update_equivalent_existing_request_skip_request(
     request = fc.maintenance.maintenance.request_update(
         logger,
         enc={},
+        config=agent_configparser,
         current_requests=[existing_request],
     )
 
@@ -264,6 +285,30 @@ def test_request_update_equivalent_existing_request_skip_request(
         request=existing_request.id,
         channel_url="https://fake",
     )
+
+
+def test_request_update_skip_when_free_disk_low(
+    log, logger, agent_configparser, monkeypatch
+):
+    from_enc_mock = MagicMock()
+    from_enc_mock.return_value.identical_to_current_channel_url = False
+    from_enc_mock.return_value.identical_to_current_system = False
+    monkeypatch.setattr(
+        "fc.maintenance.maintenance.UpdateActivity.from_enc", from_enc_mock
+    )
+    monkeypatch.setattr(
+        "fc.util.nixos.get_free_store_disk_space", lambda *a: 6 * 1024**3
+    )
+
+    monkeypatch.setattr(
+        "fc.util.nixos.system_closure_size", lambda *a: 2 * 1024**3
+    )
+    request = fc.maintenance.maintenance.request_update(
+        logger, enc={}, config=agent_configparser, current_requests=[]
+    )
+
+    assert request is None
+    assert log.has("request-update-low-free-disk")
 
 
 def test_do_not_request_reboot_when_tempfail_update_present(
