@@ -52,6 +52,38 @@ and how you are used to configure, start, stop and maintain these packages.
 
 ## HAProxy
 
+### Structured configuration using Nix expressions
+
+All haproxy options are mapped into structured NixOS options. A basic example
+looks like this:
+
+```nix
+# /etc/local/nixos/myservice.nix
+{ ... }:
+{
+  flyingcircus.services.haproxy = {
+    enableStructuredConfig = true;
+
+    listen."http-in" = {
+      binds = [ "127.0.0.1:8002" "::1:8002" ];
+      default_backend = "myapp";
+    };
+
+    backend."myapp" = {
+      servers = [
+        "appserver1 localhost:8001"
+        "appserver2 localhost:8001"
+        "appserver3 localhost:8001"
+      ];
+    };
+
+  };
+}
+```
+
+
+### Unstructured configuration using config snippets
+
 Put your HAProxy configuration in {file}`/etc/local/haproxy/haproxy.cfg`.
 You can find an example config at {file}`/etc/local/haproxy/haproxy.cfg.example`.
 Please refer to the [official documentation](http://cbonte.github.io/haproxy-dconv/2.3/configuration.html)
