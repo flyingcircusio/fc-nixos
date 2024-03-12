@@ -79,10 +79,9 @@ in
         maxAge = lib.mkOption {
           type = types.ints.positive;
           description = "Expiration time of HSTS caching in browser (unit: seconds)";
-          default = 3600;
+          default = 63072000;
           defaultText = ''
-            3600 seconds (1 hour)
-            Note: We intend to massively increase that value in a following release.
+            63072000 seconds (2 years)
           '';
         };
         preload = lib.mkOption {
