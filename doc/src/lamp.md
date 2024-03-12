@@ -43,7 +43,7 @@ A complete configuration might looks something like this:
             };
         };
         apacheExtraConfig = ''
-          FancyIndexing on
+          IndexOptions FancyIndexing
         '';
       }
     ];
