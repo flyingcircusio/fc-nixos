@@ -6,6 +6,11 @@ This role provides a stack of components that enables you to serve a web
 application via HTTP. In addition, you can do load balancing and configure
 failover support.
 
+```{contents} Table of Contents
+:local: true
+:depth: 2
+```
+
 ## Versions
 
 - HAProxy: 2.8.x
@@ -293,3 +298,30 @@ If you still need them on 23.05/23.11, use the Nginx package which still support
 ~~~
 
 A package alias under the name `nginxLegacyCrypt` is already available in our NixOS 22.11 release, enabling seamless platform upgrades with the same configuration.
+
+
+### Rate limiting
+
+There are a few scenarios where you may need to rate limit connections going
+to nginx. One aspect can be DOS protection against some specific attacks like
+"[rapid reset](https://www.cisa.gov/news-events/alerts/2023/10/10/http2-rapid-reset-vulnerability-cve-2023-44487)". We generally keep nginx updated so that you will benefit from
+general counter measures against those kinds of attacks.
+
+However, in some scenarios rate limiting may be necessary to fend off attackers.
+As rate limits need to be carefully adjusted to your specific application
+we do not enable rate limits on our platform by default.
+
+The options available to control rate limiting in your nginx instance are:
+
+~~~
+# /etc/local/nixos/nginx-rate-limiting.nix
+{ pkgs, ... }:
+{
+  flyingcircus.services.nginx.rateLimit = {
+    enable = true;
+    maxConcurrent = 200;
+    maxRequestsPerSecond = 50;
+    burst = 500;
+  };
+}
+~~~
