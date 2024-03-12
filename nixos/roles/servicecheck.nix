@@ -26,6 +26,8 @@ in
       interval = 300;
     };
 
+    flyingcircus.services.sensu-client.checkEnvPackages = [ pkgs.fc.sensuplugins ];
+
     systemd.services.fc-servicecheck = {
       description = "Flying Circus global Service Checks";
       # Run this *before* fc-manage rebuilds the system. This service loads
