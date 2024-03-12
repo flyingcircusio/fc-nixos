@@ -10,6 +10,13 @@ let
 
   cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
 
+  osdServiceDeps = rec {
+    # Ceph requires the IPs to be properly attached to interfaces so it
+    # knows where to bind to the public and cluster networks.
+    wants = [ "network.target" "fc-blockdev.service" ];
+    after = wants;
+  };
+
   defaultOsdSettings = {
     # Assist speedy but balanced recovery
     osdMaxBackfills = 2;
@@ -190,10 +197,6 @@ in
       systemd.services.fc-ceph-osds-all = rec {
         description = "All locally known Ceph OSDs (via fc-ceph managed units)";
         wantedBy = [ "multi-user.target" ];
-        # Ceph requires the IPs to be properly attached to interfaces so it
-        # knows where to bind to the public and cluster networks.
-        wants = [ "network.target" ];
-        after = wants;
 
         environment = {
           PYTHONUNBUFFERED = "1";
@@ -217,15 +220,10 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
         };
-      };
+      } // osdServiceDeps;
 
       systemd.services."fc-ceph-osd@" = rec {
         description = "Ceph OSD %i";
-        # Ceph requires the IPs to be properly attached to interfaces so it
-        # knows where to bind to the public and cluster networks.
-        wants = [ "network.target" ];
-        requires = [ "fc-blockdev.service" ];
-        after = wants ++ requires;
 
         environment = {
           PYTHONUNBUFFERED = "1";
@@ -249,7 +247,7 @@ in
           TimeoutSec = "15m";
         };
 
-      };
+      } // osdServiceDeps;
 
 
     })
