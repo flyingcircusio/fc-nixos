@@ -203,7 +203,13 @@ in
           PYTHONUNBUFFERED = "1";
         };
 
-        restartIfChanged = false;
+        # Temporary necessary for upgrades from before f2c4dfb8f8f17f5b1c598710ce81ec85e8038e32,
+        # as otherwise the service won't pick up the changes of having to be
+        # restarted based on its newly added requirements.
+        # Can be reverted after successful production rollout.
+        restartTriggers = [ "foo" ];
+        restartIfChanged = true;
+        #restartIfChanged = false;
 
         script = ''
           ${cephPkgs.fc-ceph}/bin/fc-ceph osd activate all
