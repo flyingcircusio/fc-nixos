@@ -376,6 +376,7 @@ in
               bindsTo = [ "${iface.device}-netdev.service" ];
               after = [ "${iface.device}-netdev.service" ];
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
+              stopIfChanged = false;
               script = ''
                 IFACE=${iface.device}
                 ${sysctlSnippet}
@@ -387,23 +388,15 @@ in
             }
           )) bridgedInterfaces) ++
         (lib.optionals (!isNull fclib.underlay)
+          # loopback dummy device
           ([(lib.nameValuePair
-            "fc-lldp-to-altnames"
+            "ul-loopback-netdev"
             rec {
-              description = "Set interface altnames based on peer hostname advertised in LLDP";
-              after = [ "lldpd.service" ];
-              unitConfig.Requisite = after;
-              serviceConfig.Type = "oneshot";
-              script = "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${lib.concatStringsSep " " (attrNames fclib.underlay.interfaces)}";
-            }
-          ) (lib.nameValuePair
-            "network-link-properties-ul-loopback-virt"
-            rec {
-              description = "Ensure network link properties for virtual interface ul-loopback";
-              wantedBy = [ "network-addresses-ul-loopback.service"
-                           "multi-user.target" ];
+              description = "Dummy Interface ul-loopback";
+              wantedBy = [ "multi-user.target" ];
               before = wantedBy;
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
+              stopIfChanged = false;
               script = ''
                 IFACE=ul-loopback
 
@@ -424,64 +417,23 @@ in
               };
             }
           ) (lib.nameValuePair
-            "network-underlay-routing-fallback"
+            "network-addresses-ul-loopback"
             rec {
-              description = "Ensure fallback unreachable route for underlay prefixes";
-              wantedBy = [ "network-addresses-ul-loopback.service"
-                           "multi-user.target" ];
-              before = wantedBy;
-              after = [ "network-link-properties-ul-loopback-virt.service" ];
-              path = [ fclib.relaxedIp ];
-              # https://docs.frrouting.org/en/stable-8.5/zebra.html#administrative-distance
-              #
-              # Due to how zebra calculates administrative distance
-              # for routes learned from the kernel, we need to set a
-              # very high metric on these routes (i.e. very low
-              # preference) so that routes learned from BGP can
-              # override these statically configured routes.
-              script = ''
-                ${lib.concatMapStringsSep "\n"
-                  (net: "ip route add unreachable " + net + " metric 335544321")
-                  fclib.underlay.subnets
-                 }
-              '';
-              preStop = ''
-                ${lib.concatMapStringsSep "\n"
-                  (net: "ip route del unreachable " + net + " metric 335544321")
-                  fclib.underlay.subnets
-                 }
-              '';
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-              };
+              after = [ "ul-loopback-netdev.service" ];
+              bindsTo = after;
             }
           )] ++
+          # vxlan kernel devices
           (map (iface: (lib.nameValuePair
-            "network-link-properties-${iface}-underlay"
-            {
-              description = "Ensure link properties for physical underlay interface ${iface}";
-              wantedBy = [ "network-addresses-${iface}.service"
-                           "multi-user.target" ];
-              after = [ "network-link-properties-${iface}-phy.service" ];
-              path = [ pkgs.procps ];
-              script = ''
-                sysctl net.ipv4.conf.${iface}.rp_filter=0
-              '';
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-              };
-            }
-          )) (attrNames fclib.underlay.interfaces)) ++
-          (map (iface: (lib.nameValuePair
-            "network-link-properties-${iface.layer2device}-virt"
+            "${iface.layer2device}-netdev"
             rec {
-              description = "Ensure link properties for virtual interface ${iface.layer2device}";
-              wantedBy = [ "network-addresses-${iface.layer2device}.service"
-                           "multi-user.target" ];
+              description = "VXLAN Interface ${iface.layer2device}";
+              wantedBy = [ "multi-user.target" ];
               before = wantedBy;
-              partOf = [ "network-addresses-ul-loopback.service" ];
+              requires = [ "network-addresses-ul-loopback.service" ];
+              after = requires;
+              partOf = requires;
+              stopIfChanged = false;
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
                 IFACE=${iface.layer2device}
@@ -512,31 +464,102 @@ in
               };
             })) vxlanInterfaces) ++
           (map (iface: (lib.nameValuePair
-             "network-link-properties-${iface.layer2device}-bridged"
-             {
-               description = "Ensure link properties for bridge port ${iface.layer2device}";
-               wantedBy = [ "multi-user.target" ];
-               partOf = [ "${iface.device}-netdev.service" ];
-               after = [ "${iface.device}-netdev.service" ];
-
-               path = [ fclib.relaxedIp ];
-               script = ''
-                 ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
-               '';
-               reload = ''
-                 ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
-               '';
-               unitConfig = {
-                 ReloadPropagatedFrom = [ "${iface.device}-netdev.service" ];
-               };
-               serviceConfig = {
-                 Type = "oneshot";
-                 RemainAfterExit = true;
-               };
-             }
-           )
-          ) vxlanInterfaces)))
-      ));
+            "network-addresses-${iface.layer2device}"
+            rec {
+              after = [ "${iface.layer2device}-netdev.service" ];
+              bindsTo = after;
+            }
+          )) vxlanInterfaces) ++
+          # bridge port configuration for vxlan devices
+          (map (iface: (lib.nameValuePair
+            "network-link-properties-${iface.layer2device}-bridged"
+            {
+              description = "Ensure link properties for bridge port ${iface.layer2device}";
+              wantedBy = [ "multi-user.target" ];
+              partOf = [ "${iface.device}-netdev.service" ];
+              after = [ "${iface.device}-netdev.service" ];
+              stopIfChanged = false;
+              path = [ fclib.relaxedIp ];
+              script = ''
+                ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
+              '';
+              reload = ''
+                ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
+              '';
+              unitConfig.ReloadPropagatedFrom = [ "${iface.device}-netdev.service" ];
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }
+          )) vxlanInterfaces) ++
+          # underlay network physical interfaces
+          (map (iface: (lib.nameValuePair
+            "network-link-properties-${iface}-underlay"
+            {
+              description = "Ensure link properties for physical underlay interface ${iface}";
+              wantedBy = [ "network-addresses-${iface}.service"
+                           "multi-user.target" ];
+              after = [ "network-link-properties-${iface}-phy.service" ];
+              path = [ pkgs.procps ];
+              script = ''
+                sysctl net.ipv4.conf.${iface}.rp_filter=0
+              '';
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }
+          )) (attrNames fclib.underlay.interfaces)) ++ [
+            # fallback unreachable routes
+            (lib.nameValuePair
+              "network-underlay-routing-fallback"
+              rec {
+                description = "Ensure fallback unreachable route for underlay prefixes";
+                wantedBy = [ "network-addresses-ul-loopback.service"
+                             "multi-user.target" ];
+                before = wantedBy;
+                after = [ "ul-loopback-netdev.service" ];
+                path = [ fclib.relaxedIp ];
+                stopIfChanged = false;
+                # https://docs.frrouting.org/en/stable-8.5/zebra.html#administrative-distance
+                #
+                # Due to how zebra calculates administrative distance
+                # for routes learned from the kernel, we need to set a
+                # very high metric on these routes (i.e. very low
+                # preference) so that routes learned from BGP can
+                # override these statically configured routes.
+                script = ''
+                  ${lib.concatMapStringsSep "\n"
+                    (net: "ip route add unreachable " + net + " metric 335544321")
+                    fclib.underlay.subnets
+                   }
+                '';
+                preStop = ''
+                  ${lib.concatMapStringsSep "\n"
+                    (net: "ip route del unreachable " + net + " metric 335544321")
+                    fclib.underlay.subnets
+                   }
+                '';
+                serviceConfig = {
+                  Type = "oneshot";
+                  RemainAfterExit = true;
+                };
+              }
+            )
+            # interface altnames from lldp
+            (lib.nameValuePair
+              "fc-lldp-to-altnames"
+              rec {
+                description = "Set interface altnames based on peer hostname advertised in LLDP";
+                after = [ "lldpd.service" ];
+                unitConfig.Requisite = after;
+                serviceConfig.Type = "oneshot";
+                script = "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${lib.concatStringsSep " " (attrNames fclib.underlay.interfaces)}";
+              }
+            )
+          ])
+        )));
 
     systemd.timers.fc-lldp-to-altnames = lib.mkIf (!isNull fclib.underlay) {
       description = "Timer for updating interface altnames based on peer hostname advertised in LLDP";
