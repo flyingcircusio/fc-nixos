@@ -102,13 +102,13 @@ def main():
         session.mount("https://", SourceAddressAdapter(source_address))
 
     try:
-        resp = session.get(target, allow_redirects=args.follow)
+        resp = session.get(target, allow_redirects=args.follow, timeout=10)
     except requests.ConnectionError as ex:
         critical("could not connect to remote host")
     except requests.TooManyRedirects as ex:
         warning("maximum redirection depth exceeded")
     except requests.Timeout as ex:
-        critical("request to remote host timed out")
+        critical("request to remote host exceeded timeout: 10s")
 
     if args.expect is None:
         if resp.status_code >= 500:
