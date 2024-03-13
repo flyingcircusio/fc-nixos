@@ -104,7 +104,7 @@ def main():
     try:
         resp = session.get(target, allow_redirects=args.follow, timeout=10)
     except requests.ConnectionError as ex:
-        critical("could not connect to remote host")
+        critical(f"could not connect to remote host: {ex}")
     except requests.TooManyRedirects as ex:
         warning("maximum redirection depth exceeded")
     except requests.Timeout as ex:
