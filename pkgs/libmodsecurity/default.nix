@@ -1,29 +1,29 @@
 { lib, stdenv, fetchFromGitHub
 , autoreconfHook, bison, flex, pkg-config
-, curl, geoip, libmaxminddb, libxml2, lua, pcre
-, ssdeep, valgrind, yajl
+, curl, geoip, libmaxminddb, libxml2, lua, pcre, ssdeep, yajl
 , nixosTests
 }:
 
 stdenv.mkDerivation rec {
   pname = "libmodsecurity";
-  version = "3.0.8";
+  version = "3.0.12";
 
   src = fetchFromGitHub {
     owner = "SpiderLabs";
     repo = "ModSecurity";
     rev = "v${version}";
-    sha256 = "sha256-Xqg7Y6i5pG1WGDLE7Zry+6ZN5o1LpmpOwEL67LlzIDk=";
+    sha256 = "sha256-WIFAg9LvKAC8e3gpcIxtNHT53AIfPtUTyrv30woxP4M=";
     fetchSubmodules = true;
   };
 
   nativeBuildInputs = [ autoreconfHook bison flex pkg-config ];
-  buildInputs = [ curl geoip libmaxminddb libxml2 lua pcre ssdeep valgrind yajl ];
+  buildInputs = [ curl geoip libmaxminddb libxml2 lua pcre ssdeep yajl ];
 
   outputs = [ "out" "dev" ];
 
   configureFlags = [
     "--enable-parser-generation"
+    "--disable-doxygen-doc"
     "--with-curl=${curl.dev}"
     "--with-libxml=${libxml2.dev}"
     "--with-maxmind=${libmaxminddb}"
@@ -67,5 +67,6 @@ stdenv.mkDerivation rec {
     license = licenses.asl20;
     platforms = platforms.all;
     maintainers = with maintainers; [ izorkin ];
+    mainProgram = "modsec-rules-check";
   };
 }
