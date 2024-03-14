@@ -9,7 +9,7 @@ let
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
     {} super;
 
-  nixpkgs-23_05 = import versions.nixpkgs-23_05 {};
+  nixpkgs-23_05 = import versions.nixpkgs-23_05 {inherit (self) config;};
 
   inherit (super) fetchpatch fetchurl lib;
 
