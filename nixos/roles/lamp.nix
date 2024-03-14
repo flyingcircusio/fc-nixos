@@ -262,8 +262,12 @@ in {
           }];
         };
 
+        # required for PL-132312 hotfix: httpd needs to be restarted after the update to create new log.
+        # Can be removed again at some point.
+        systemd.services.httpd.restartTriggers = [ "2024-03-14-PL-132312" ];
+
         systemd.tmpfiles.rules = [
-          "D /var/log/httpd 2750 root service"
+          "d /var/log/httpd 2750 root service"
           "a+ /var/log/httpd - - - - default:group::r-X,default:group:sudo-srv:r-X,default:group:service:r-X,default:mask::r-X"
           # recursive is required as well to adjust permissions of existing files
           "A+ /var/log/httpd - - - - group:sudo-srv:r-X,group:service:r-X,group::r-X,mask::r-X"
