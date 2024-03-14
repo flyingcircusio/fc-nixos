@@ -16,12 +16,12 @@ from requests_toolbelt.adapters.source import SourceAddressAdapter
 
 def err(msg):
     print(msg, file=sys.stderr)
-    sys.exit(1)
+    sys.exit(2)
 
 
 def unknown(msg):
     print(f"HTTP UNKNOWN - {msg}")
-    sys.exit(1)
+    sys.exit(3)
 
 
 def warning(msg):
@@ -31,7 +31,7 @@ def warning(msg):
 
 def critical(msg):
     print(f"HTTP CRITICAL - {msg}")
-    sys.exit(1)
+    sys.exit(2)
 
 
 def ok(msg):
