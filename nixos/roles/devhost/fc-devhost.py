@@ -44,6 +44,7 @@ def generate_enc_json(cfg, channel_url):
         {
             "name": cfg["name"],
             "parameters": {
+                "cores": cfg["cpu"],
                 "environment_url": channel_url,
                 "environment": "dev-vm",
                 "interfaces": {
@@ -59,6 +60,7 @@ def generate_enc_json(cfg, channel_url):
                     }
                 },
                 "location": cfg["location"],
+                "memory": cfg["memory"],
             },
         }
     )
