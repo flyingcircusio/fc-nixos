@@ -26,11 +26,13 @@ class BackyConfig(object):
     prefix = ""
     hostname = socket.gethostname()
 
-    def __init__(self, location, consul_acl_token):
+    def __init__(self, location, consul_acl_token, services, clients):
         self.location = location
         self.consul_acl_token = consul_acl_token
         self.changed = False
         self._deletions = None
+        self.services = services
+        self.clients = clients
 
     def apply(self, restart=False):
         """Updates configuration file and reloads daemon if necessary."""
@@ -84,6 +86,42 @@ class BackyConfig(object):
             }
         return jobs
 
+    def api_config(self):
+        tokens = {}
+        for c in self.clients:
+            if c["service"] != "backyserver-sync":
+                continue
+            tokens[c["password"]] = c["node"].split(".")[0]
+        return {
+            "tokens": tokens,
+            "addrs": ",".join(
+                ["localhost"]
+                # + [
+                #     s["address"]
+                #     for s in self.services
+                #     if s["service"] == "backyserver-sync"
+                # ]
+            ),
+            "cli-default": {
+                "url": "http://localhost:6023",
+                **{"token": k for k, v in tokens.items() if v == self.hostname},
+            },
+        }
+
+    def peer_config(self):
+        peers = {}
+        for s in self.services:
+            if s["service"] != "backyserver-sync":
+                continue
+            name = s["address"].split(".")[0]
+            if name == self.hostname:
+                continue
+            peers[name] = {
+                "url": f"http://{s['address']}:6023",
+                "token": s["password"],
+            }
+        return peers
+
     def generate_config(self):
         """Writes main backy configuration file.
 
@@ -93,6 +131,8 @@ class BackyConfig(object):
         with open(global_conf) as f:
             config = yaml.safe_load(f)
         config["jobs"] = self.job_config()
+        config["api"] = self.api_config()
+        # config["peers"] = self.peer_config()
         output = fc.util.configfile.ConfigFile(
             self.prefix + "/etc/backy.conf", mode=0o640
         )
@@ -149,11 +189,19 @@ def main():
 
     h = logging.handlers.SysLogHandler(facility=syslog.LOG_LOCAL4)
     logging.basicConfig(level=logging.DEBUG, handlers=[h])
-    with open("/etc/nixos/enc.json") as f:
-        parameters = json.load(f)["parameters"]
+    with (
+        open("/etc/nixos/enc.json") as enc,
+        open("/etc/nixos/services.json") as services,
+        open("/etc/nixos/service_clients.json") as clients,
+    ):
+        parameters = json.load(enc)["parameters"]
+        services = json.load(services)
+        clients = json.load(clients)
     b = BackyConfig(
         parameters["location"],
         parameters["secrets"]["consul/master_token"],
+        services,
+        clients,
     )
 
     b.apply(restart=args.restart)
