@@ -558,6 +558,15 @@ in
                 script = "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${lib.concatStringsSep " " (attrNames fclib.underlay.interfaces)}";
               }
             )
+            # ensure that restarts of ul-loopback are propagated to zebra
+            (lib.nameValuePair
+              "zebra"
+              rec {
+                requires = [ "network-addresses-ul-loopback.service" ];
+                after = requires;
+                partOf = requires;
+              }
+            )
           ])
         )));
 
