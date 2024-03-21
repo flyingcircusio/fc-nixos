@@ -206,6 +206,14 @@ in
       }
     '';
 
+    flyingcircus.services.sensu-client.checks = with pkgs; {
+      interfaces = {
+        notification = "Network storage client interfaces are healthy";
+        command = "sudo ${fc.sensuplugins}/bin/check_interfaces -i ethsto -s 10000:";
+        interval = 60;
+      };
+    };
+
   };
 
 }

@@ -137,5 +137,14 @@ in
       "kernel.pid_max" = "999999";
       "kernel.threads-max" = "999999";
     };
+
+    flyingcircus.services.sensu-client.checks = with pkgs; {
+      interfaces = {
+        notification = "Network storage backend interfaces are healthy";
+        command = "sudo ${fc.sensuplugins}/bin/check_interfaces -i ethstb -s 10000:";
+        interval = 60;
+      };
+    };
+
   };
 }
