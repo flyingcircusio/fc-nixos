@@ -38,6 +38,7 @@ let
 
   waitForGreenCluster = pkgs.writeShellApplication {
     name = "opensearch-wait-for-green-cluster";
+    runtimeInputs = [ pkgs.curl ];
     text = ''
       echo "Checking if the OpenSearch cluster is green..." >&2
       echo "(timeout 60s, connect timeout 20s)" >&2
