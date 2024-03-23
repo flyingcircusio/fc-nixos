@@ -295,6 +295,7 @@ in
       path = [ pkgs.fc.agent role.package ];
       serviceConfig = {
         Type = "oneshot";
+        TimeoutStartSec = 600; # PL-132323
       };
 
       script = "fc-qemu-scrub";
