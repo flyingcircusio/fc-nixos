@@ -124,6 +124,16 @@ in
       environment = {
         PYTHONUNBUFFERED = "1";
       };
+
+      # workaround for properly getting rid of the RequiredBy = fc-ceph-osd@…
+      # done in 8ab330b2d48dc88a5b9698d191b75e0086fdcc0d without stopping these
+      # dependant units one last time at switch-to-configuration time based on
+      # the *previous* unit state. This *restarts* fc-blockdev already with its
+      # current dependency declarations.
+      #
+      # The main purpose of this is to manage the transition from before the
+      # mentioned commit, this *may* be removed in the future at some point again.
+      stopIfChanged = false;  # do a restart with the new unit file instead of stop-start
     };
 
     boot.kernel.sysctl = {
