@@ -341,8 +341,8 @@ in
 
       assert_clean_cluster(host2, 2, 3, 2, 320)
 
-      host1.succeed('fc-ceph mon create --size 500m > /dev/kmsg 2>&1')
-      host1.succeed('fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph mon create --size 500m > /dev/kmsg 2>&1')
+      host1.execute('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
       host1.sleep(5)
       show(host1, 'tail -n 500 /var/log/ceph/*mon*')
       show(host1, 'tail -n 500 /var/log/ceph/*mgr*')
@@ -358,7 +358,7 @@ in
       host1.fail('fc-ceph osd rebuild --strict-safety-check all> /dev/kmsg 2>&1')
 
     with subtest("Initialize extra OSD to enable safe rebuilding (bluestore)"):
-      host1.execute('fc-ceph osd create-bluestore /dev/vdd > /dev/kmsg 2>&1')
+      host1.execute('fc-ceph osd create-bluestore --no-encrypt /dev/vdd > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 4, 3, 320)
 
     with subtest("Rebuild the 2nd OSD on host 1 from bluestore to bluestore and disable encryption without redundancy loss"):

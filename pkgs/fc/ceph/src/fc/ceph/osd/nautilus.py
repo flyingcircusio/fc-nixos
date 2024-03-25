@@ -350,7 +350,7 @@ class WALVolume:
         )
 
     def create(self, disk: str, encrypt: bool, location: str):
-        disk_block = PartitionedDisk.create(disk)
+        disk_block = PartitionedDisk.ensure(disk)
         # External WAL
         if location == "external":
             lvm_wal_vg = JournalVG.get_largest_free()
@@ -453,7 +453,7 @@ class BlockVolume(GenericCephVolume):
 
     def create(self, disk: str, encrypt: bool, size: str = "100%vg"):
         print(f"Creating block volume on {disk}...")
-        disk_block = PartitionedDisk.create(disk)
+        disk_block = PartitionedDisk.ensure(disk)
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=self.vg_name,
