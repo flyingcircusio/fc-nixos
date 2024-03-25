@@ -396,12 +396,19 @@ in
               wantedBy = [ "multi-user.target" ];
               before = wantedBy;
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
-              stopIfChanged = false;
+              reloadIfChanged = true;
               script = ''
                 IFACE=ul-loopback
 
                 # Create virtual interface underlay
                 ip link add $IFACE type dummy
+
+                ip link set $IFACE mtu ${toString fclib.underlay.mtu}
+
+                ${sysctlSnippet}
+              '';
+              reload = ''
+                IFACE=ul-loopback
 
                 ip link set $IFACE mtu ${toString fclib.underlay.mtu}
 
@@ -433,7 +440,7 @@ in
               requires = [ "network-addresses-ul-loopback.service" ];
               after = requires;
               partOf = requires;
-              stopIfChanged = false;
+              reloadIfChanged = true;
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
                 IFACE=${iface.layer2device}
@@ -444,6 +451,21 @@ in
                   local ${fclib.underlay.loopback} \
                   dstport 4789 \
                   nolearning
+
+                # Set MTU and layer 2 address
+                ip link set $IFACE address ${iface.mac}
+                ip link set $IFACE mtu ${toString iface.mtu}
+
+                # Do not automatically generate IPv6 link-local address
+                ip link set $IFACE addrgenmode none
+
+                ${sysctlSnippet}
+              '';
+              reload = ''
+                IFACE=${iface.layer2device}
+
+                # Set underlay address for virtual interface ${iface.layer2device}
+                ip link set $IFACE type vxlan local ${fclib.underlay.loopback}
 
                 # Set MTU and layer 2 address
                 ip link set $IFACE address ${iface.mac}
