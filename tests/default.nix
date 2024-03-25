@@ -33,6 +33,7 @@ in {
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
   backyserver_ceph-nautilus = callTest ./backyserver.nix { clientCephRelease = "nautilus"; };
+  backyserver_volumes = callTest ./backy_volumes.nix {};
   channel = callTest ./channel.nix {};
   ceph-nautilus = callTest ./ceph-nautilus.nix {};
   coturn = callTest ./coturn.nix {};
