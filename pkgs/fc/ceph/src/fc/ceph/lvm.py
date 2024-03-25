@@ -124,9 +124,16 @@ class PartitionedDisk(GenericBlockDevice):
         return obj
 
     @classmethod
-    def exists(cls, name) -> bool:
+    def ensure(cls, disk: str):
+        if cls.exists(disk):
+            return cls(disk)
+        else:
+            return cls.create(disk)
+
+    @classmethod
+    def exists(cls, disk) -> bool:
         return any(
-            [os.path.exists(part) for part in cls._partition_candidates(name)]
+            [os.path.exists(part) for part in cls._partition_candidates(disk)]
         )
 
 
@@ -142,6 +149,7 @@ class AutomountActivationMixin:
             os.makedirs(self.mountpoint)
 
         if self.automount:
+            console.print("Waiting for automount…", style="grey50")
             time.sleep(1)
             try:
                 run.mount(
