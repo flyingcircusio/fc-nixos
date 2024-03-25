@@ -289,17 +289,17 @@ in
 
     with subtest("Initialize second MON and OSD (bluestore, internal WAL)"):
       host2.succeed('fc-ceph osd prepare-journal /dev/vdb')
-      host2.succeed('fc-ceph mon create --size 500m > /dev/kmsg 2>&1')
-      host2.execute('fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
+      host2.succeed('fc-ceph mon create --no-encrypt --size 500m > /dev/kmsg 2>&1')
+      host2.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
       # cover explicit specification of internal and external journals
-      host2.succeed('fc-ceph osd create-bluestore --wal=internal /dev/vdc > /dev/kmsg 2>&1')
+      host2.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=internal /dev/vdc > /dev/kmsg 2>&1')
 
     with subtest("Initialize third MON and OSD (bluestore, external WAL)"):
       host3.succeed('fc-ceph osd prepare-journal /dev/vdb')
-      host3.succeed('fc-ceph mon create --size 500m')
-      host3.execute('fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
+      host3.succeed('fc-ceph mon create --no-encrypt --size 500m')
+      host3.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
       # cover explicit specification of internal and external journals
-      host3.succeed('fc-ceph osd create-bluestore --wal=external /dev/vdc > /dev/kmsg 2>&1')
+      host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/kmsg 2>&1')
 
     with subtest("Move OSDs to correct crush location"):
       host1.succeed('ceph osd crush move host1 root=default')
@@ -361,13 +361,13 @@ in
       host1.execute('fc-ceph osd create-bluestore /dev/vdd > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 4, 3, 320)
 
-    with subtest("Rebuild the 2nd OSD on host 1 from bluestore to bluestore and enable encryption without redundancy loss"):
+    with subtest("Rebuild the 2nd OSD on host 1 from bluestore to bluestore and disable encryption without redundancy loss"):
       # set OSDs out and wait for cluster to rebalance
       host1.execute('ceph osd out 3')
       host1.sleep(5)
       assert_clean_cluster(host2, 3, (4, 3), 3, 320)
       # then rebuild
-      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph osd rebuild --encrypt --strict-safety-check 3 > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph osd rebuild --no-encrypt --strict-safety-check 3 > /dev/kmsg 2>&1')
       # and set the osds in again
       host1.execute('ceph osd in $(ceph osd ls-tree host1)')
       show(host1, "lsblk")
@@ -423,8 +423,8 @@ in
       wait_for_cluster_status(host3, "PG_AVAILABILITY")
       host3.succeed('ceph health | grep "Reduced data availability" > /dev/kmsg 2>&1')
       # re-provision the 2 OSDs and allow the cluster to recover
-      host2.succeed('fc-ceph osd create-bluestore --wal=internal /dev/vdc > /dev/kmsg 2>&1')
-      host3.succeed('fc-ceph osd create-bluestore --wal=external /dev/vdc > /dev/kmsg 2>&1')
+      host2.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=internal /dev/vdc > /dev/kmsg 2>&1')
+      host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
     with subtest("The check discovers non-conforming host key conditions"):

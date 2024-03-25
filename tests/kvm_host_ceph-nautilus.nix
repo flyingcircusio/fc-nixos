@@ -424,17 +424,17 @@ in
 
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb')
-      host1.execute('fc-ceph mon create --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
+      host1.execute('fc-ceph mon create --no-encrypt --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
       host1.sleep(5)
       host1.succeed('ceph -s > /dev/kmsg 2>&1')
       host1.succeed('fc-ceph keys mon-update-single-client host1 ceph_osd,ceph_mon,kvm_host salt-for-host-1-dhkasjy9')
       host1.succeed('fc-ceph keys mon-update-single-client host2 kvm_host salt-for-host-2-dhkasjy9')
 
       # mgr keys rely on 'fc-ceph keys' to be executes first
-      host1.execute('fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
+      host1.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
 
     with subtest("Initialize OSD"):
-      host1.execute('fc-ceph osd create-bluestore /dev/vdc')
+      host1.execute('fc-ceph osd create-bluestore --no-encrypt /dev/vdc')
       host1.succeed('ceph osd crush move host1 root=default')
 
     with subtest("Create pools and images"):
