@@ -393,8 +393,10 @@ in
             "ul-loopback-netdev"
             rec {
               description = "Dummy Interface ul-loopback";
-              wantedBy = [ "multi-user.target" ];
+              wantedBy = [ "network-setup.service" "multi-user.target" ];
               before = wantedBy;
+              after = [ "network-pre.service" ];
+              partOf = [ "network-setup.service" ];
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               reloadIfChanged = true;
               script = ''
@@ -435,11 +437,11 @@ in
             "${iface.layer2device}-netdev"
             rec {
               description = "VXLAN Interface ${iface.layer2device}";
-              wantedBy = [ "multi-user.target" ];
+              wantedBy = [ "network-setup.service" "multi-user.target" ];
               before = wantedBy;
               requires = [ "network-addresses-ul-loopback.service" ];
-              after = requires;
-              partOf = requires;
+              after = requires ++ [ "network-pre.target" ];
+              partOf = requires ++ [ "network-setup.service" ];
               reloadIfChanged = true;
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
