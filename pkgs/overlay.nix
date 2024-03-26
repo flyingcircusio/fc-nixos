@@ -313,9 +313,22 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   percona80 = super.percona-server_8_0;
 
+  percona81 = super.callPackage ./percona/8.1.nix {
+    boost = self.boost177;
+    icu = self.icu69;
+    protobuf = self.protobuf_21;
+    inherit (self.darwin) cctools developer_cmds DarwinTools;
+    inherit (self.darwin.apple_sdk.frameworks) CoreServices;
+  };
+
   percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
     boost = self.boost159;
     openssl = self.openssl_1_1;
+  };
+
+  percona-xtrabackup_8_1 = super.callPackage ./percona-xtrabackup/8_1.nix {
+    boost = self.boost177;
+    protobuf = self.protobuf_21;
   };
 
   # Has been renamed upstream, backy-extract still wants to use it.
