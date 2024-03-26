@@ -80,7 +80,7 @@ unit_changes:
 
 
 @fixture
-def activity(logger, nixos_mock):
+def activity(logger, nixos_mock, tmp_path):
     activity = UpdateActivity(next_channel_url=NEXT_CHANNEL_URL, log=logger)
     activity.current_channel_url = CURRENT_CHANNEL_URL
     activity.current_environment = ENVIRONMENT
@@ -93,6 +93,7 @@ def activity(logger, nixos_mock):
     activity.next_version = NEXT_VERSION
     activity.reboot_needed = RebootType.WARM
     activity.unit_changes = UNIT_CHANGES
+    activity.lock_dir = tmp_path
     return activity
 
 

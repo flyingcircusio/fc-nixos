@@ -75,6 +75,11 @@ with lib;
       description = "Where to find the ENC service clients json file.";
     };
 
+    location = mkOption {
+      type = str;
+      default = "standalone";
+    };
+
     systemState = mkOption {
       type = attrs;
       description = "The current system state as put out by fc-manage";
@@ -119,6 +124,8 @@ with lib;
         fclib.mkPlatform (fclib.jsonFromFile cfg.encServiceClientsPath "[]");
       systemState =
         fclib.mkPlatform (fclib.jsonFromFile cfg.systemStatePath "{}");
+
+      location = attrByPath [ "parameters" "location" ] "standalone" cfg.enc;
     };
 
   };

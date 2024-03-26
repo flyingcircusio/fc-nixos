@@ -9,6 +9,7 @@ let
   utils = import ./utils.nix { inherit config pkgs lib; };
   lists = import ./lists.nix { inherit config pkgs lib; };
   ceph = import ./ceph-common.nix { inherit lib pkgs; };
+  builders = import ./builders.nix { inherit lib pkgs; };
 
 in
 {
@@ -22,7 +23,7 @@ in
 
   config = {
     fclib =
-      { inherit attrsets ceph files math network system utils; }
-      // attrsets // files // math // network // system // utils // lists;
+      { inherit attrsets builders ceph files math network system utils; }
+      // attrsets // builders // files // math // network // system // utils // lists;
   };
 }
