@@ -5,6 +5,16 @@
 let
   cfg = config.flyingcircus.roles.servicecheck;
   fclib = config.fclib;
+
+  # we need check_http_service from fc-sensuplugins, however this
+  # package contains commands which collide with monitoring-plugins,
+  # so extract check_http_service into a separate package first.
+  envPackage = pkgs.linkFarm "fc-sensuplugins-check_http_service" [
+    {
+      name = "bin/check_http_service";
+      path = "${pkgs.fc.sensuplugins}/bin/check_http_service" ;
+    }
+  ];
 in
 {
 
@@ -26,7 +36,7 @@ in
       interval = 300;
     };
 
-    flyingcircus.services.sensu-client.checkEnvPackages = [ pkgs.fc.sensuplugins ];
+    flyingcircus.services.sensu-client.checkEnvPackages = [ envPackage ];
 
     systemd.services.fc-servicecheck = {
       description = "Flying Circus global Service Checks";
