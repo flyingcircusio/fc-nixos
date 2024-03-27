@@ -109,7 +109,7 @@ def main():
     except requests.ConnectionError as ex:
         critical(f"could not connect to remote host: {ex}")
     except requests.TooManyRedirects as ex:
-        warning("maximum redirection depth exceeded")
+        critical("maximum redirection depth exceeded")
     except requests.Timeout as ex:
         critical("request to remote host exceeded timeout: 10s")
 
@@ -119,7 +119,7 @@ def main():
                 f"request returned server error status code: {resp.status_code}"
             )
         elif resp.status_code >= 400:
-            warning(
+            critical(
                 f"request returned client error status code: {resp.status_code}"
             )
     elif resp.status_code not in args.expect:
