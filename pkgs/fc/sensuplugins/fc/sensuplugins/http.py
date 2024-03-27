@@ -87,7 +87,10 @@ def main():
         err("empty hostname in URL")
 
     session = requests.Session()
-    # match monitoring-plugins defaults
+    # default redirect depth limit is 10, which matches
+    # monitoring-plugins -- chrome and firefox have default limits of
+    # 20. the browsers also perform redirection loop detection,
+    # however we don't implement this yet.
     session.max_redirects = 10
 
     if url.username is not None:
