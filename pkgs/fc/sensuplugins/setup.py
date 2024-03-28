@@ -25,6 +25,7 @@ setup(
             "check_writable=fc.sensuplugins.writable:main",
             "check_interfaces=fc.sensuplugins.interfaces:main",
             "check_psi=fc.sensuplugins.pressure_stall_information:main",
+            "check_http_service=fc.sensuplugins.http:main",
         ],
     },
 )

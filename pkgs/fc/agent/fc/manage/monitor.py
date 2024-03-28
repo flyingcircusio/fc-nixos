@@ -32,24 +32,13 @@ def get_sensucheck_configuration(servicechecks):
             rg=servicecheck["resource_group"], id=servicecheck["id"]
         )
 
-        url = urllib.parse.urlsplit(servicecheck["url"])
-        path = "?".join([p for p in [url.path, url.query] if p])
-
-        command = ["check_http", "-4", "-H", shlex.quote(url.hostname)]
-        if url.port:
-            command.extend(["-p", str(url.port)])
-        if path:
-            command.extend(["-u", shlex.quote(path)])
-        if url.scheme == "https":
-            command.append("-S")
-            command.append("--sni")
-        if url.username:
-            auth_pair = ":".join([url.username, url.password or ""])
-            command.extend(["-a", auth_pair])
+        command = ["check_http_service", "-4"]
         if servicecheck["redirect"]:
-            command.extend(["-f", "follow"])
+            command.append("-f")
         if len(servicecheck["acceptable"]) > 0:
-            command.extend(["-e", ",".join(servicecheck["acceptable"])])
+            for code in servicecheck["acceptable"]:
+                command.extend(["-e", str(code)])
+        command.append(shlex.quote(servicecheck["url"]))
         checks[name] = dict(
             command=" ".join(command),
             interval=120,
