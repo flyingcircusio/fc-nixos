@@ -478,7 +478,6 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
             encrypt=False,
         )
 
-        # FIXME: handle keyfile not found errors,
         print(f"Encrypting volume {self.name} ...")
         Cryptsetup.luksFormat(
             # fmt: off
@@ -488,13 +487,15 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
             # fmt: on
         )
 
+        admin_key = fc.ceph.luks.KEYSTORE.admin_key_for_input()
+
         Cryptsetup.luksAddKey(
             # fmt: off
             "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
             self.underlay.device,
             "--key-slot", str(fc.ceph.luks.KEYSTORE.slots["admin"]),
             "-",
-            input=fc.ceph.luks.KEYSTORE.admin_key_for_input()
+            input=admin_key,
             # fmt: on
         )
 
@@ -504,12 +505,10 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
 
     def activate(self):
         self.underlay.activate()
-        # FIXME: needs error catching and handling; adding that makes sense
-        # once we know the role of systemd/udev in the activation cycle
         if not os.path.exists(self.device_path):
             Cryptsetup.cryptsetup(
                 # fmt: off
-                "--allow-discards",     # pass throught TRIM commands to disk
+                "--allow-discards",  # pass throught TRIM commands to disk
                 "open",
                 "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
                 self.underlay.device,

@@ -97,13 +97,18 @@ class LUKSKeyStoreManager(object):
 
         if slot == "local":
             console.print("Updating local machine key ...", style="bold")
+            # Ensure to request the admin key early on.
+            self._KEYSTORE.admin_key_for_input(
+                "Current LUKS admin key for unlocking this location"
+            )
         elif slot == "admin":
             console.print("Updating admin key ...", style="bold")
+            # Ensure to request the admin key early on.
+            self._KEYSTORE.admin_key_for_input(
+                "New LUKS admin key to be set for this location"
+            )
         else:
             raise ValueError(f"slot={slot}")
-
-        # Ensure to request the admin key early on.
-        self._KEYSTORE.admin_key_for_input()
 
         candidates = lsblk_to_cryptdevices(
             run.json.lsblk("-s", "-o", "NAME,PATH,TYPE,MOUNTPOINT")

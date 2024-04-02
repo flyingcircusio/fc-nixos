@@ -1,25 +1,32 @@
 import getpass
+import hashlib
+import os
 import shutil
+from base64 import standard_b64encode
+from functools import wraps
 from pathlib import Path
 from socket import gethostname
+from typing import Optional
 
-from fc.ceph.util import console, mlockall, run
+from fc.ceph.util import console, default_false_prompt, mlockall, run
 
 
-def get_password(prompt):
-    pw1 = pw2 = None
-    while not pw1:
-        pw1 = getpass.getpass(f"{prompt}: ")
-        pw2 = getpass.getpass(f"{prompt}, repeated: ")
-        if pw1 != pw2:
-            console.print("Keys do not match. Try again.", style="red")
-            pw1 = pw2 = None
-    return pw1
+def memoize(func):
+    """Caches the result of a memeber method invocation in an attribute of the
+    called function name prefixed with '__'
+    """
+
+    @wraps(func)
+    def wrapper(self, *args, **kw):
+        attr_name = "__" + func.__name__
+        if not hasattr(self, attr_name):
+            setattr(self, attr_name, func(self, *args, **kw))
+        return getattr(self, attr_name)
+
+    return wrapper
 
 
 class LUKSKeyStore(object):
-    __admin_key = None
-
     slots = {"admin": "1", "local": "0"}
     local_key_dir: Path = Path("/mnt/keys/")
 
@@ -30,13 +37,56 @@ class LUKSKeyStore(object):
     def local_key_path(self) -> str:
         return str(self.local_key_dir / f"{gethostname()}.key")
 
-    def admin_key_for_input(self) -> str:
-        if not self.__admin_key:
-            self.__admin_key = get_password("LUKS admin key for this location")
-        return self.__admin_key.encode("ascii")
+    @memoize
+    def admin_key_for_input(
+        self, prompt: str = "LUKS admin key for this location"
+    ) -> bytes:
+        while True:
+            admin_key = getpass.getpass(f"{prompt}: ").encode("ascii")
+
+            fingerprint_path = self.local_key_dir / "admin.fprint"
+            persisted_fingerprint: str = ""
+            if fingerprint_path.exists():
+                persisted_fingerprint = (
+                    open(fingerprint_path, "rt").read().strip()
+                )
+
+            fingerprint = hashlib.sha256(admin_key).hexdigest()
+
+            if fingerprint == persisted_fingerprint:
+                break
+
+            if not persisted_fingerprint:
+                console.print("No admin key fingerprint stored.\n")
+            else:
+                console.print(
+                    "Error: fingerprint mismatch:\n\n"
+                    f"fingerprint for your entry: '{fingerprint}'\n"
+                    f"fingerprint stored locally: '{persisted_fingerprint}'\n"
+                )
+
+            if not default_false_prompt(
+                f"Is '{fingerprint}' the correct new fingerprint?\nRetry otherwise."
+            ):
+                console.print("Retrying.")
+                continue
+
+            console.print(
+                f"Updating persisted fingerprint to {fingerprint_path!s}"
+            )
+
+            # Make a ticket: keep a history of the previously known fingerprints.
+            with open(fingerprint_path, "wt") as f:
+                f.write(fingerprint)
+            break
+
+        console.print(
+            f"Using admin key with matching fingerprint '{fingerprint}'."
+        )
+        return admin_key
 
     def backup_external_header(self, headerfile: Path):
-        # assumption: all external volume headers of a mchine have distinct names
+        # assumption: all external volume headers of a machine have distinct names
         shutil.copy(headerfile, self.local_key_dir)
 
 
@@ -71,8 +121,10 @@ class Cryptsetup:
     # tunables that apply when (re)creating a LUKS volume header
     _tunables_luks_header = (
         # fmt: off
-        "--pbkdf", "argon2id",
-        "--type", "luks2",
+        "--pbkdf",
+        "argon2id",
+        "--type",
+        "luks2",
         # fmt: on
     )
 

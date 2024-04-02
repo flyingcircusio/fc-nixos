@@ -258,7 +258,7 @@ in
 
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb > /dev/kmsg 2>&1')
-      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph mon create --encrypt --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-ceph mon create --encrypt --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
       show(host1, "ls -l /dev/disk/by-label")
       show(host1, 'lsblk')
       show(host1, 'journalctl -u fc-ceph-mon')
@@ -281,7 +281,7 @@ in
       show(host1, 'ceph mon dump')
 
       # mgr keys rely on 'fc-ceph keys' to be executed first
-      host1.execute('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph mgr create --encrypt --size 500m > /dev/kmsg 2>&1')
+      host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph mgr create --encrypt --size 500m > /dev/kmsg 2>&1')
       show(host1, 'journalctl -u fc-ceph-mgr')
       show(host1, 'ceph mgr module ls')
 
@@ -291,7 +291,7 @@ in
 
     with subtest("Initialize first OSD (bluestore)"):
       host1.execute('systemctl status fc-ceph-osd@0.service > /dev/kmsg 2>&1')
-      host1.execute('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph osd create-bluestore --encrypt /dev/vdc > /dev/kmsg 2>&1')
+      host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph osd create-bluestore --encrypt /dev/vdc > /dev/kmsg 2>&1')
       host1.execute('systemctl status fc-ceph-osd@0.service > /dev/kmsg 2>&1')
 
     with subtest("Initialize second MON and OSD (bluestore, internal WAL)"):
@@ -348,8 +348,8 @@ in
 
       assert_clean_cluster(host2, 2, 3, 2, 320)
 
-      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph mon create --size 500m > /dev/kmsg 2>&1')
-      host1.execute('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph mon create --size 500m > /dev/kmsg 2>&1')
+      host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
       host1.sleep(5)
       show(host1, 'tail -n 500 /var/log/ceph/*mon*')
       show(host1, 'tail -n 500 /var/log/ceph/*mgr*')
@@ -374,7 +374,7 @@ in
       host1.sleep(5)
       assert_clean_cluster(host2, 3, (4, 3), 3, 320)
       # then rebuild
-      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph osd rebuild --no-encrypt --strict-safety-check 3 > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --no-encrypt --strict-safety-check 3 > /dev/kmsg 2>&1')
       # and set the osds in again
       host1.execute('ceph osd in $(ceph osd ls-tree host1)')
       show(host1, "lsblk")
@@ -383,7 +383,7 @@ in
       assert_clean_cluster(host2, 3, 4, 3, 320)
 
     with subtest("Rebuild all OSDs on host 1 and ensure encryption is enabled"):
-      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-ceph osd rebuild --encrypt --no-safety-check all > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --encrypt --no-safety-check all > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 4, 3, 320)
 
     with subtest("Destroy the 2nd OSD on host 1 without redundancy loss"):
@@ -400,9 +400,9 @@ in
     with subtest("Destroy and re-create the keystore, rekey the OSD"):
       host1.succeed("fc-luks keystore destroy --no-overwrite > /dev/kmsg 2>&1")
       host1.succeed("fc-luks keystore create /dev/vde > /dev/kmsg 2>&1")
-      host1.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-luks keystore rekey "*" > /dev/kmsg 2>&1')
-      host1.succeed('echo -e "newphrase\nnewphrase" | setsid -w fc-luks keystore rekey --slot=admin "*" > /dev/kmsg 2>&1')
-      host1.succeed('echo -e "newphrase\nnewphrase" | setsid -w fc-luks keystore rekey "ceph-osd-0" > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-luks keystore rekey "*" > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore rekey --slot=admin "*" > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "newphrase\n" | setsid -w fc-luks keystore rekey "ceph-osd-0" > /dev/kmsg 2>&1')
       host1.succeed("fc-ceph osd reactivate all")
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
