@@ -34,7 +34,7 @@ The following NixOS module adds some modules to be loaded by Redis:
 # /etc/local/nixos/redis.nix
 { ... }:
 {
-    services.redis.server."".settings = {
+    services.redis.servers."".settings = {
         loadmodule = [ "/path/to/my_module.so" "/path/to/other_module.so" ];
     };
 }
