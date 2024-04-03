@@ -390,9 +390,9 @@
     "version": "2.1.5.1"
   },
   "libmodsecurity": {
-    "name": "libmodsecurity-3.0.8",
+    "name": "libmodsecurity-3.0.12",
     "pname": "libmodsecurity",
-    "version": "3.0.8"
+    "version": "3.0.12"
   },
   "libmysqlclient": {
     "name": "mariadb-connector-c-3.3.5",
@@ -1009,6 +1009,11 @@
     "name": "libX11-1.8.7",
     "pname": "libX11",
     "version": "1.8.7"
+  },
+  "xz": {
+    "name": "xz-5.4.4",
+    "pname": "xz",
+    "version": "5.4.4"
   },
   "zip": {
     "name": "zip-3.0",
