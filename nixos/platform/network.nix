@@ -466,7 +466,9 @@ in
               reload = ''
                 IFACE=${iface.layer2device}
 
-                # Set underlay address for virtual interface ${iface.layer2device}
+                # Set underlay address for virtual interface ${iface.layer2device}.
+                # Note that changing the VNI or destination port after the interface
+                # has been created is not supported.
                 ip link set $IFACE type vxlan local ${fclib.underlay.loopback}
 
                 # Set MTU and layer 2 address
