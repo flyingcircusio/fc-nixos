@@ -53,6 +53,7 @@ let
           bridged = false;
           networks = {
             "172.20.6.0/24" = [ "172.20.6.${toString id}" ];
+            "2a02:238:f030:1c6::/124" = [ "2a02:238:f030:1c6::${toString id}" ];
           };
           gateways = {};
         };
@@ -182,6 +183,11 @@ in
         primary.succeed("grep PRIMARY=1 /etc/bird/bird.conf")
         pp(primary.succeed("cat /etc/bird/bird.conf"))
 
+      with subtest("bird6 is configured as primary"):
+        primary.wait_for_unit("bird6")
+        primary.succeed("grep PRIMARY=1 /etc/bird/bird6.conf")
+        print(primary.succeed("cat /etc/bird/bird6.conf"))
+
       with subtest("bind is running"):
         primary.wait_for_unit("bind")
 
@@ -245,6 +251,11 @@ in
         secondary.wait_for_unit("bird")
         secondary.succeed("grep PRIMARY=0 /etc/bird/bird.conf")
         print(secondary.succeed("cat /etc/bird/bird.conf"))
+
+      with subtest("bird6 is configured as secondary"):
+        secondary.wait_for_unit("bird6")
+        secondary.succeed("grep PRIMARY=0 /etc/bird/bird6.conf")
+        print(secondary.succeed("cat /etc/bird/bird6.conf"))
 
       with subtest("stopping keepalived"):
         secondary.systemctl("stop keepalived")
