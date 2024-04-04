@@ -469,16 +469,27 @@ in
         inherit virtualHosts;
       };
 
-      services.logrotate.settings = {
-        "/var/log/nginx/*.log" = {
+      services.logrotate.settings = let
+      commonRotate = {
           rotate = cfg.rotateLogs;
           create = "0644 ${nginxCfg.masterUser} nginx";
           su = "${nginxCfg.masterUser} nginx";
+        };
+        in {
+        "/var/log/nginx/modsec_*.log" = {
+          # need higher prio, because more-specific match.
+          # Our platform header options use priority 900, we need to chose a
+          # higher number here for using them.
+          ignoreduplicates = true;
+          priority = 901;
+          copytruncate = true;
+        } // commonRotate;
+        "/var/log/nginx/*.log" = {
           postrotate = ''
             systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
             chown ${nginxCfg.masterUser}:nginx /var/log/nginx/*
           '';
-        };
+        } // commonRotate;
       };
 
       # Z: Recursively change permissions if they already exist.
