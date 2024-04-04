@@ -203,6 +203,7 @@
   "wireguard-tools",
   "xfsprogs",
   "xorg.libX11",
+  "xz",
   "zip",
   "zlib",
   "zsh",

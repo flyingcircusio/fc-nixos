@@ -16,6 +16,7 @@ in
       megacli
       py.nagiosplugin
       py.requests
+      py.requests_toolbelt
       py.psutil
       py.pyyaml
     ];
