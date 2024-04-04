@@ -47,6 +47,7 @@ in
   imports = [
     ./bind
     ./bird
+    ./bird6
     ./keepalived
   ];
 
@@ -100,46 +101,6 @@ in
         martianIptablesInput
         martianIptablesForward
       ];
-
-    services.bird6 = {
-      enable = true;
-      config = ''
-        define PRIMARY=1;
-        define UPLINK_MED=0;
-
-        protocol static local_dev {
-                route 2a02:238:f030:1c0::/58 unreachable;
-        }
-
-        log syslog all;
-        debug protocols { states,events,routes }
-
-        router id 11111;
-
-        protocol bfd {
-        }
-
-        filter net_dev {
-          if net ~ [ 2a02:238:f030:1c0::/58+ ] then {
-            bgp_med = UPLINK_MED;
-            accept;
-          } else reject;
-        }
-
-        filter default_route {
-          if net = ::/0 then accept; else reject;
-        }
-
-        protocol kernel {
-          export all;
-          merge paths on;
-        }
-
-        protocol device {
-          scan time 60;
-        }
-      '';
-    };
 
     services.logrotate.extraConfig = ''
     '';
