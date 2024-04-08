@@ -89,6 +89,207 @@ LV_DUMMY_DATA = [
     },
 ]
 
+LSBLK_PATTY_JSON = """
+[
+  {
+    "name": "sda1",
+    "path": "/dev/sda1",
+    "type": "part",
+    "mountpoint": null,
+    "children": [
+      {
+        "name": "sda",
+        "path": "/dev/sda",
+        "type": "disk",
+        "mountpoint": null
+      }
+    ]
+  },
+  {
+    "name": "sda2",
+    "path": "/dev/sda2",
+    "type": "part",
+    "mountpoint": "/boot",
+    "children": [
+      {
+        "name": "sda",
+        "path": "/dev/sda",
+        "type": "disk",
+        "mountpoint": null
+      }
+    ]
+  },
+  {
+    "name": "sdc1",
+    "path": "/dev/sdc1",
+    "type": "part",
+    "mountpoint": null,
+    "children": [
+      {
+        "name": "sdc",
+        "path": "/dev/sdc",
+        "type": "disk",
+        "mountpoint": null
+      }
+    ]
+  },
+  {
+    "name": "sr0",
+    "path": "/dev/sr0",
+    "type": "rom",
+    "mountpoint": null
+  },
+  {
+    "name": "vgsys-root",
+    "path": "/dev/mapper/vgsys-root",
+    "type": "lvm",
+    "mountpoint": "/",
+    "children": [
+      {
+        "name": "sda4",
+        "path": "/dev/sda4",
+        "type": "part",
+        "mountpoint": null,
+        "children": [
+          {
+            "name": "sda",
+            "path": "/dev/sda",
+            "type": "disk",
+            "mountpoint": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "vgsys-tmp",
+    "path": "/dev/mapper/vgsys-tmp",
+    "type": "lvm",
+    "mountpoint": "/tmp",
+    "children": [
+      {
+        "name": "sda4",
+        "path": "/dev/sda4",
+        "type": "part",
+        "mountpoint": null,
+        "children": [
+          {
+            "name": "sda",
+            "path": "/dev/sda",
+            "type": "disk",
+            "mountpoint": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "vgkeys-keys",
+    "path": "/dev/mapper/vgkeys-keys",
+    "type": "lvm",
+    "mountpoint": "/mnt/keys",
+    "children": [
+      {
+        "name": "sda3",
+        "path": "/dev/sda3",
+        "type": "part",
+        "mountpoint": null,
+        "children": [
+          {
+            "name": "sda",
+            "path": "/dev/sda",
+            "type": "disk",
+            "mountpoint": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "backy",
+    "path": "/dev/mapper/backy",
+    "type": "crypt",
+    "mountpoint": "/srv/backy",
+    "children": [
+      {
+        "name": "sdb1",
+        "path": "/dev/sdb1",
+        "type": "part",
+        "mountpoint": null,
+        "children": [
+          {
+            "name": "sdb",
+            "path": "/dev/sdb",
+            "type": "disk",
+            "mountpoint": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ceph-mon",
+    "path": "/dev/mapper/ceph-mon",
+    "type": "crypt",
+    "mountpoint": "/srv/ceph/mon/ceph-patty",
+    "children": [
+      {
+        "name": "vgsys-ceph--mon--crypted",
+        "path": "/dev/mapper/vgsys-ceph--mon--crypted",
+        "type": "lvm",
+        "mountpoint": null,
+        "children": [
+          {
+            "name": "sda4",
+            "path": "/dev/sda4",
+            "type": "part",
+            "mountpoint": null,
+            "children": [
+              {
+                "name": "sda",
+                "path": "/dev/sda",
+                "type": "disk",
+                "mountpoint": null
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ceph-mgr",
+    "path": "/dev/mapper/ceph-mgr",
+    "type": "crypt",
+    "mountpoint": "/srv/ceph/mgr/ceph-patty",
+    "children": [
+      {
+        "name": "vgsys-ceph--mgr--crypted",
+        "path": "/dev/mapper/vgsys-ceph--mgr--crypted",
+        "type": "lvm",
+        "mountpoint": null,
+        "children": [
+          {
+            "name": "sda4",
+            "path": "/dev/sda4",
+            "type": "part",
+            "mountpoint": null,
+            "children": [
+              {
+                "name": "sda",
+                "path": "/dev/sda",
+                "type": "disk",
+                "mountpoint": null
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+"""
+
 
 @pytest.fixture
 def mock_LUKSKeyStoreManager(monkeypatch):
@@ -102,6 +303,9 @@ def mock_LUKSKeyStoreManager(monkeypatch):
     monkeypatch.setattr(
         "fc.ceph.util.run.json.lvs", (lambda *args, **kwargs: LV_DUMMY_DATA)
     )
+    monkeypatch.setattr(
+        "fc.ceph.util.run.json.lsblk", (lambda *args, **kwargs: [])
+    )
     keyman = fc.ceph.luks.manage.LUKSKeyStoreManager()
 
     keyman._KEYSTORE = LUKSKeyStoreMock()
@@ -109,21 +313,85 @@ def mock_LUKSKeyStoreManager(monkeypatch):
     return keyman
 
 
-def test_keystore_rekey_argument_errors(mock_LUKSKeyStoreManager):
-    keyman = mock_LUKSKeyStoreManager
-    with pytest.raises(ValueError):
-        keyman.rekey(lvs=None, device=None, header=None)
-    with pytest.raises(ValueError):
-        keyman.rekey(lvs="*", device="/dev/foo", header="/srv/foo.luks")
-    with pytest.raises(ValueError):
-        keyman.rekey(
-            lvs="*", device=None, slot="whatever", header="/srv/foo.luks"
+def test_lsblk_to_cryptdevices():
+    import json
+
+    from fc.ceph.luks import manage
+
+    assert set(
+        manage.lsblk_to_cryptdevices(json.loads(LSBLK_PATTY_JSON))
+    ) == set(
+        (
+            manage.LuksDevice(
+                base_blockdev="/dev/mapper/vgsys-ceph--mon--crypted",
+                name="ceph-mon",
+                mountpoint="/srv/ceph/mon/ceph-patty",
+            ),
+            manage.LuksDevice(
+                base_blockdev="/dev/sdb1",
+                name="backy",
+                mountpoint="/srv/backy",
+            ),
+            manage.LuksDevice(
+                base_blockdev="/dev/mapper/vgsys-ceph--mgr--crypted",
+                name="ceph-mgr",
+                mountpoint="/srv/ceph/mgr/ceph-patty",
+            ),
         )
+    )
+    assert manage.lsblk_to_cryptdevices([]) == []
+    # disks, but no crypt and no children
+    assert (
+        manage.lsblk_to_cryptdevices(
+            [{"name": "sdb", "path": "/dev/sda", "type": "disk"}]
+        )
+        == []
+    )
+    # disks with mountpoint = null
+    assert manage.lsblk_to_cryptdevices(
+        [
+            {
+                "name": "ceph-osd3-block",
+                "path": "/dev/mapper/ceph-osd-3-block",
+                "type": "crypt",
+                "mountpoint": None,
+                "children": [
+                    {
+                        "name": "vgosd3-ceph--osd3--block--crypted",
+                        "path": "/dev/mapper/vgosd3-ceph--osd3--block--crypted",
+                        "type": "lvm",
+                        "mountpoint": None,
+                        "children": [
+                            {
+                                "name": "sdd4",
+                                "path": "/dev/sdd4",
+                                "type": "part",
+                                "mountpoint": None,
+                                "children": [
+                                    {
+                                        "name": "sdd",
+                                        "path": "/dev/sdd",
+                                        "type": "disk",
+                                        "mountpoint": None,
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+    ) == [
+        manage.LuksDevice(
+            name="ceph-osd3-block",
+            base_blockdev="/dev/mapper/vgosd3-ceph--osd3--block--crypted",
+            mountpoint=None,
+        )
+    ]
 
 
 def test_keystore_rekey_argument_calls(mock_LUKSKeyStoreManager):
     keyman = mock_LUKSKeyStoreManager
-    keyman.rekey(lvs="*", device=None, header=None)
-    keyman.rekey(lvs="*", slot="local", header="/srv/foo.luks", device=None)
-    keyman.rekey(lvs="*", slot="admin", header="/srv/foo.luks", device=None)
-    keyman.rekey(device="/dev/foo", header="/srv/foo.luks", lvs=None)
+    keyman.rekey(name_glob="*", header=None)
+    keyman.rekey(name_glob="backy", slot="local", header="/srv/foo.luks")
+    keyman.rekey(name_glob="ceph*", slot="admin", header="/srv/foo.luks")

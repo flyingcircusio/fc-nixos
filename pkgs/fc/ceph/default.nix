@@ -33,7 +33,7 @@ py.buildPythonApplication rec {
   };
 
   checkPhase = ''
-    pytest src/fc/ceph
+    pytest -vv src/fc/ceph
   '';
 
 }

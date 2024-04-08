@@ -93,7 +93,7 @@ in
       legacyBacky.succeed("${migrationScript}")
       legacyBacky.wait_for_unit("backy-reencrypt.service")
       print(legacyBacky.execute('systemctl status backy-reencrypt.service')[1])
-      legacyBacky.succeed('echo -e "newphrase\nnewphrase" | setsid -w fc-luks keystore rekey --slot=admin --header /srv/backy.luks --device=${nodes.legacyBacky.config.flyingcircus.roles.backyserver.blockDevice} > /dev/kmsg 2>&1')
+      legacyBacky.succeed('echo -e "newphrase\nnewphrase" | setsid -w fc-luks keystore rekey --slot=admin backy > /dev/kmsg 2>&1')
       legacyBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/kmsg 2>&1")
       legacyBacky.succeed("grep FOOTEST /srv/backy/testfile")
 

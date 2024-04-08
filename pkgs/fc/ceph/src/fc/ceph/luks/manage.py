@@ -1,12 +1,35 @@
 import fnmatch
+import os
 import secrets
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from fc.ceph.luks import KEYSTORE  # singleton
 from fc.ceph.lvm import XFSVolume
 from fc.ceph.util import console, run
+
+
+class LuksDevice(NamedTuple):
+    base_blockdev: str  # path of the underlying block device
+    name: str  # the LUKS name of the device
+    # required for external header discovery, which we only utilise for backy
+    mountpoint: Optional[str]
+
+
+# TODO: better typing signature
+# Todo: should this be a static class method instead?
+def lsblk_to_cryptdevices(lsblk_blockdevs: list) -> list:
+    """parses the output of lsblk -Js -o NAME,PATH,TYPE,MOUNTPOINT"""
+    return [
+        LuksDevice(
+            base_blockdev=dev["children"][0]["path"],
+            name=dev["name"],
+            mountpoint=dev["mountpoint"],
+        )
+        for dev in lsblk_blockdevs
+        if dev["type"] == "crypt"
+    ]
 
 
 class LUKSKeyStoreManager(object):
@@ -66,8 +89,7 @@ class LUKSKeyStoreManager(object):
 
     def rekey(
         self,
-        lvs: Optional[str],
-        device: Optional[str],
+        name_glob: str,
         header: Optional[str],
         slot="local",
     ):
@@ -80,40 +102,29 @@ class LUKSKeyStoreManager(object):
         else:
             raise ValueError(f"slot={slot}")
 
-        if not (lvs or device):
-            raise ValueError("Need to provide --lvs or --device.")
-        if not bool(lvs) ^ bool(device):
-            raise ValueError(
-                "--device and --lvs are mutually exclusive arguments, choose one."
-            )
-
         # Ensure to request the admin key early on.
         self._KEYSTORE.admin_key_for_input()
 
-        if device:
+        candidates = lsblk_to_cryptdevices(
+            run.json.lsblk("-s", "-o", "NAME,PATH,TYPE,MOUNTPOINT")
+        )
+        for candidate in candidates:
+            if not fnmatch.fnmatch(candidate.name, name_glob):
+                continue
+            console.print(f"Replacing key for {candidate.name}")
+
+            if (
+                (not header)
+                and (mp := candidate.mountpoint)
+                and os.path.exists(headerfile := f"{mp}.luks")
+            ):
+                header = headerfile
+            # TODO: nixos test?
             self._do_rekey(
-                device=device,
-                header=header,
                 slot=slot,
+                device=candidate.base_blockdev,
+                header=header,
             )
-        else:
-            candidates = run.json.lvs("-S", "lv_name=~\\-crypted$")
-            for candidate in candidates:
-                name = candidate["lv_name"].removesuffix("-crypted")
-                if not fnmatch.fnmatch(name, lvs):
-                    continue
-                console.print(f"Replacing key for {name}")
-
-                vg_name = candidate["vg_name"].replace("-", "--")
-                lv_name_mapper = candidate["lv_name"].replace("-", "--")
-
-                f"/dev/mapper/{vg_name}-{lv_name_mapper}"
-
-                self._do_rekey(
-                    slot=slot,
-                    device=f"/dev/mapper/{vg_name}-{lv_name_mapper}",
-                    header=header,
-                )
 
         console.print("Key updated.", style="bold green")
 

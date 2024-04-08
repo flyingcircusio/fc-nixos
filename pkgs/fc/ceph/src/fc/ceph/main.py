@@ -441,16 +441,13 @@ def luks(args=sys.argv[1:]):
 
     parser_rekey = keystore_sub.add_parser("rekey", help="Rekey volumes.")
     parser_rekey.add_argument(
-        "--lvs",
-        help="Names of encrypted LVs to update (globbing allowed), e.g. 'osd-1*'. Mutually exclusive with `--device`.",
-    )
-    parser_rekey.add_argument(
-        "--device",
-        help="Path to the underlying blockdevice of the encrypted volume to update, e.g. /dev/md/backup. Mutually exclusive with `--lvs`.",
+        "name_glob",
+        help="Names of LUKS volumes to update (globbing allowed), e.g. '*osd-*', 'backy'. Mutually exclusive with `--device`.",
     )
     parser_rekey.add_argument(
         "--header",
-        help="When using an external LUKS header file, provide a path to it here.",
+        help="When using an external LUKS header file, provide a path to it here."
+        "\nDefaults to autodetecting and using a file called ${mountpoint}.luks",
     )
     parser_rekey.add_argument(
         "--slot",
