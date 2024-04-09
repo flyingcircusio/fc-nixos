@@ -36,6 +36,13 @@ class GenericBlockDevice:
     def exists(cls, name: str) -> bool:
         raise NotImplementedError
 
+    def ensure_partition_type(self, hexcode: str):
+        """allow passing down and ensuring the correct partition type through
+        the stacked disk abstractions, to match the filesystem or volume manager
+        used at the partition level.
+        """
+        raise NotImplemented
+
 
 class MdraidDevice(GenericBlockDevice):
     """represents a software RAID array in mode RAID6 with spare disk. Uses the
@@ -96,6 +103,11 @@ class MdraidDevice(GenericBlockDevice):
             and str(os.readlink(potential_name)).startswith("/dev/md")
         )
 
+    def ensure_partition_type(self, hexcode: str):
+        """not necessary here, as we initialise the mdraid on a full
+        unpartitioned disk"""
+        pass
+
 
 class DiskWithSinglePartition(GenericBlockDevice):
     """
@@ -128,8 +140,11 @@ class DiskWithSinglePartition(GenericBlockDevice):
     def create(cls, disk: str) -> "DiskWithSinglePartition":
         obj = cls(disk)
         run.sgdisk("-Z", disk)
-        run.sgdisk("-a", "8192", "-n", "1:0:0", "-t", "1:8e00", disk)
+        run.sgdisk("-a", "8192", "-n", "1:0:0", disk)
         return obj
+
+    def ensure_partition_type(self, hexcode: str):
+        run.sgdisk("-t", f"1:{hexcode}", self.name)
 
     @classmethod
     def ensure(cls, disk: str):
@@ -224,6 +239,10 @@ class GenericLogicalVolume:
         lv = lv_factory(name)
         lv._create(base_device=base_device, size=size, vg_name=vg_name)
         return lv
+
+    def ensure_partition_type(self, hexcode: str):
+        """No need to pass this down further."""
+        pass
 
     @property
     def device(self) -> str:
@@ -368,6 +387,7 @@ class LogicalVolume(GenericLogicalVolume):
         blockdevice_underlay = base_device.blockdevice
         run.pvcreate(blockdevice_underlay)
         run.vgcreate(vg_name, blockdevice_underlay)
+        base_device.ensure_partition_type("8e00")
 
     def purge(self, lv_only=False):
         # Delete LVs
