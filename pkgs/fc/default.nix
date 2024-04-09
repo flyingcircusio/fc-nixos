@@ -60,5 +60,6 @@ rec {
   userscan = callPackage ./userscan.nix {};
   util-physical = callPackage ./util-physical {};
   telegraf-collect-psi = callPackage ./telegraf-collect-psi {};
+  telegraf-routes-summary = callPackage ./telegraf-routes-summary {};
 
 }
