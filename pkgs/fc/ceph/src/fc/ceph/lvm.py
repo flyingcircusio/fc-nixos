@@ -41,6 +41,10 @@ class MdraidDevice(GenericBlockDevice):
     """represents a software RAID array in mode RAID6 with spare disk. Uses the
     whole provided blockdevices without partitioning."""
 
+    RAID_PARITY = 3
+    RAID_SPARE = 1
+    RAID_MIN_DISKS = 1 + RAID_PARITY + RAID_SPARE
+
     @classmethod
     def create(
         cls,
@@ -50,13 +54,12 @@ class MdraidDevice(GenericBlockDevice):
         # concrete string device paths here.
         blockdevices: list[str],
     ):
-        main_disks = blockdevices[:-1]
-        if main_disks:
-            spare_disk = blockdevices[-1]
-        else:
+        if len(blockdevices) < cls.RAID_MIN_DISKS:
             raise RuntimeError(
-                "MdraidDevice: at least 2 disks required. Aborting."
+                f"MdraidDevice: at least {cls.RAID_MIN_DISKS} disks required. Aborting."
             )
+        main_disks = blockdevices[:-1]
+        spare_disk = blockdevices[-1]
         obj = cls(name)
         run.mdadm(
             "--create",
