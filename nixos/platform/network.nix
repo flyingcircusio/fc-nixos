@@ -207,6 +207,16 @@ in
 
     };
 
+    flyingcircus.services.telegraf.inputs = lib.optionalAttrs (cfg.infrastructureModule == "flyingcircus-physical") {
+      exec = [{
+        commands = [ "${pkgs.fc.telegraf-routes-summary}/bin/telegraf-routes-summary" ];
+        timeout = "10s";
+        data_format = "json";
+        json_name_key = "name";
+        tag_keys = [ "family" "path" ];
+      }];
+    };
+
     services.udev.initrdRules = interfaceRules;
     services.udev.extraRules = interfaceRules;
 
