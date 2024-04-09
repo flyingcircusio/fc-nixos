@@ -1,3 +1,5 @@
+import os
+
 from fc.ceph.lvm import (
     AutomountActivationMixin,
     GenericLogicalVolume,
@@ -44,6 +46,22 @@ class BackyVolume:
             self.device
         )
         run.sync()
+
+        if os.path.exists(ext_header := f"{self.mountpoint}.luks"):
+            console.print(
+                f"Found a stale external LUKS header from a previous volume in {ext_header}."
+            )
+            while True:
+                resp = input("Delete the file? y/[n]")
+                match resp:
+                    case "y":
+                        os.remove(ext_header)
+                        break
+                    case "n" | "":
+                        breakpoint
+                    case _:
+                        console.print("invalid choice, retry.")
+
         self.activate()
 
     def activate(self):
