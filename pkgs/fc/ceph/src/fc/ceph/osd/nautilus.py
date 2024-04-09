@@ -9,10 +9,10 @@ from subprocess import CalledProcessError
 from typing import List, Optional
 
 from fc.ceph.lvm import (
+    DiskWithSinglePartition,
     GenericBlockDevice,
     GenericCephVolume,
     GenericLogicalVolume,
-    PartitionedDisk,
     XFSVolume,
 )
 from fc.ceph.util import kill, run
@@ -313,7 +313,7 @@ class JournalVG:
 
         jnl_vg = "vgjnl{:02d}".format(id_)
 
-        # TODO: could be switched to PartitionedDisk as well
+        # TODO: could be switched to DiskWithSinglePartition as well
         run.sgdisk("-Z", device)
         run.sgdisk("-a", "8192", "-n", "1:0:0", "-t", "1:8e00", device)
 
@@ -350,7 +350,7 @@ class WALVolume:
         )
 
     def create(self, disk: str, encrypt: bool, location: str):
-        disk_block = PartitionedDisk.ensure(disk)
+        disk_block = DiskWithSinglePartition.ensure(disk)
         # External WAL
         if location == "external":
             lvm_wal_vg = JournalVG.get_largest_free()
@@ -453,7 +453,7 @@ class BlockVolume(GenericCephVolume):
 
     def create(self, disk: str, encrypt: bool, size: str = "100%vg"):
         print(f"Creating block volume on {disk}...")
-        disk_block = PartitionedDisk.ensure(disk)
+        disk_block = DiskWithSinglePartition.ensure(disk)
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=self.vg_name,

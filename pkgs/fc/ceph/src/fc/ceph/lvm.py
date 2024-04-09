@@ -19,8 +19,8 @@ class GenericBlockDevice:
             return object.__new__(cls)
         if MdraidDevice.exists(name):
             return MdraidDevice(name)
-        elif PartitionedDisk.exists(name):
-            return PartitionedDisk(name)
+        elif DiskWithSinglePartition.exists(name):
+            return DiskWithSinglePartition(name)
         # Allow operations to proceed by creating a block device
         return None
 
@@ -94,8 +94,13 @@ class MdraidDevice(GenericBlockDevice):
         )
 
 
-class PartitionedDisk(GenericBlockDevice):
-    """name denotes the path to the whole unpartitioned disk"""
+class DiskWithSinglePartition(GenericBlockDevice):
+    """
+    Abstracts a whole disk with a single partition, using GPT
+
+    name: the name of the full disk, e.g. /dev/sda
+    blockdevice: returns the path to the partition, e.g. /dev/sda1
+    """
 
     def __init__(self, name: str):
         super().__init__(name)
@@ -117,7 +122,7 @@ class PartitionedDisk(GenericBlockDevice):
         return self._blockdevice
 
     @classmethod
-    def create(cls, disk: str) -> "PartitionedDisk":
+    def create(cls, disk: str) -> "DiskWithSinglePartition":
         obj = cls(disk)
         run.sgdisk("-Z", disk)
         run.sgdisk("-a", "8192", "-n", "1:0:0", "-t", "1:8e00", disk)
@@ -580,7 +585,7 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
         is ignored.
         """
         print(f"Creating data volume on {disk or vg_name}...")
-        disk_block = PartitionedDisk.create(disk) if disk else None
+        disk_block = DiskWithSinglePartition.create(disk) if disk else None
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=vg_name,

@@ -47,7 +47,7 @@ in
       blockDevice = lib.mkOption {
         type = lib.types.str;
         description = ''
-          The *unencrypted* blockdevice to be used as a base for an encrypted Backy volume.
+          The underlying blockdevice to be used as a base for an encrypted Backy volume.
           Can be provided in fstab/ crypttab syntax as well, e.g. `LABEL=`.
           Examples are a partition, mdraid or logical volume.'';
         default = "/dev/vgbackup/backy-crypted";
