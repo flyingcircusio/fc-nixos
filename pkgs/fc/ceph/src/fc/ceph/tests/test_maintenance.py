@@ -32,8 +32,16 @@ def ceph_json_calls(monkeypatch):
     return ceph_json_calls
 
 
+@pytest.fixture
+def ceph_calls(monkeypatch):
+    ceph_calls = mock.Mock()
+    ceph_calls.return_value = ""
+    monkeypatch.setattr("fc.ceph.util.run.ceph", ceph_calls)
+    return ceph_calls
+
+
 def test_successful_maintenance_cycle(
-    ceph_json_calls, locktoolcalls, maintenance_manager
+    ceph_json_calls, ceph_calls, locktoolcalls, maintenance_manager
 ):
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
@@ -49,19 +57,46 @@ def test_successful_maintenance_cycle(
         # "-q", "-u", "rbd/.maintenance",
         "",
     ]
-    ceph_json_calls.return_value = {
-        "status": "HEALTH_OK",
-    }
+    ceph_json_calls.side_effect = [
+        {"status": "HEALTH_OK"},
+        # osd tree
+        {
+            "nodes": [
+                {"name": "localhost", "type": "host", "children": [14]},
+                {"name": "localhost-ssd", "type": "host", "children": [27, 13]},
+            ]
+        },
+        # osd tree
+        {
+            "nodes": [
+                {"name": "localhost", "type": "host", "children": [14]},
+                {"name": "localhost-ssd", "type": "host", "children": [27, 13]},
+            ]
+        },
+    ]
+
+    # (un)set-group and down commands
 
     maintenance_task.enter()
     maintenance_task.leave()
 
-    assert ceph_json_calls.call_count == 1
+    assert ceph_json_calls.call_count == 3
+    assert ceph_calls.call_count == 3
     assert locktoolcalls.call_count == 4
+
+    ceph_calls.assert_has_calls(
+        [
+            mock.call("osd", "set-group", "noup", "localhost", "localhost-ssd"),
+            mock.call("osd", "down", "13", "14", "27"),
+            mock.call(
+                "osd", "unset-group", "noup", "localhost", "localhost-ssd"
+            ),
+        ]
+    )
 
 
 def test_maintenance_enter_lock_timeout_causes_leave(
-    rbdcalls, locktoolcalls, maintenance_manager
+    rbdcalls, ceph_calls, ceph_json_calls, locktoolcalls, maintenance_manager
 ):
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
@@ -78,7 +113,12 @@ def test_maintenance_enter_lock_timeout_causes_leave(
         "",
     ]
 
-    with pytest.raises(SystemExit, match="75") as exit_info:
+    ceph_json_calls.side_effect = [
+        # osd tree
+        {"nodes": []},
+    ]
+
+    with pytest.raises(SystemExit, match="75"):
         maintenance_task.enter()
 
     locktoolcalls.assert_has_calls(
@@ -91,29 +131,57 @@ def test_maintenance_enter_lock_timeout_causes_leave(
     )
 
 
-def test_lockimage_created(
-    locktoolcalls, rbdcalls, ceph_json_calls, maintenance_manager
+def test_lockimage_created_on_enter(
+    locktoolcalls, ceph_calls, rbdcalls, ceph_json_calls, maintenance_manager
 ):
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
-    for opname in ["enter", "leave"]:
-        locktoolcalls.side_effect = [
-            # enter
-            # "-q", "-i", "rbd/.maintenance"
-            subprocess.CalledProcessError(1, "-q -i rbd/.maintenance"),
-            # "-l", "rbd/.maintenance", timeout=self.LOCKTOOL_TIMEOUT_SECS
-            "",
-        ]
-        rbdcalls.return_value = ""
-        ceph_json_calls.return_value = {
-            "status": "HEALTH_OK",
-        }
+    # Image gets created on `enter` path
+    locktoolcalls.side_effect = [
+        # enter
+        # "-q", "-i", "rbd/.maintenance"
+        subprocess.CalledProcessError(1, "-q -i rbd/.maintenance"),
+        # "-l", "rbd/.maintenance", timeout=self.LOCKTOOL_TIMEOUT_SECS
+        "",
+    ]
+    rbdcalls.return_value = ""
+    ceph_json_calls.side_effect = [
+        {"status": "HEALTH_OK"},
+        # osd tree
+        {"nodes": []},
+    ]
 
-        maintenance_task.__getattribute__(opname)()
+    maintenance_task.enter()
 
-        rbdcalls.assert_has_calls(
-            [mock.call("create", "--size", "1", "rbd/.maintenance")]
-        )
+    rbdcalls.assert_has_calls(
+        [mock.call("create", "--size", "1", "rbd/.maintenance")]
+    )
+
+
+def test_lockimage_created_on_leave(
+    locktoolcalls, ceph_calls, rbdcalls, ceph_json_calls, maintenance_manager
+):
+    maintenance_task = maintenance_manager.MaintenanceTasks()
+
+    # Image gets created on `enter` path
+    locktoolcalls.side_effect = [
+        # enter
+        # "-q", "-i", "rbd/.maintenance"
+        subprocess.CalledProcessError(1, "-q -i rbd/.maintenance"),
+        # "-l", "rbd/.maintenance", timeout=self.LOCKTOOL_TIMEOUT_SECS
+        "",
+    ]
+    rbdcalls.return_value = ""
+    ceph_json_calls.side_effect = [
+        # osd tree
+        {"nodes": []},
+    ]
+
+    maintenance_task.leave()
+
+    rbdcalls.assert_has_calls(
+        [mock.call("create", "--size", "1", "rbd/.maintenance")]
+    )
 
 
 def test_tempfail_when_another_lockholder(locktoolcalls, maintenance_manager):
@@ -145,7 +213,7 @@ def test_tempfail_when_another_lockholder(locktoolcalls, maintenance_manager):
 
 
 def test_postpone_and_leave_when_unclean(
-    locktoolcalls, ceph_json_calls, maintenance_manager
+    locktoolcalls, ceph_calls, ceph_json_calls, maintenance_manager
 ):
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
@@ -161,14 +229,16 @@ def test_postpone_and_leave_when_unclean(
         # "-q", "-u", "rbd/.maintenance",
         "",
     ]
-    ceph_json_calls.return_value = {
-        "status": "HEALTH_ERR",
-    }
+    ceph_json_calls.side_effect = [
+        {"status": "HEALTH_ERR"},
+        # osd tree
+        {"nodes": []},
+    ]
 
     with pytest.raises(SystemExit, match="69"):
         maintenance_task.enter()
 
-    assert ceph_json_calls.call_count == 1
+    assert ceph_json_calls.call_count == 2
     locktoolcalls.assert_has_calls(
         [
             mock.call("-q", "-i", "rbd/.maintenance", timeout=30),
@@ -180,7 +250,7 @@ def test_postpone_and_leave_when_unclean(
 
 
 def test_leave_unlock_timeout_retries(
-    locktoolcalls, nosleep, maintenance_manager
+    locktoolcalls, ceph_json_calls, ceph_calls, nosleep, maintenance_manager
 ):
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
@@ -194,6 +264,11 @@ def test_leave_unlock_timeout_retries(
         "",
         # successful unlock
         "",
+    ]
+
+    ceph_json_calls.side_effect = [
+        # osd tree
+        {"nodes": []},
     ]
 
     maintenance_task.leave()
@@ -210,7 +285,7 @@ def test_leave_unlock_timeout_retries(
 
 
 def test_leave_unlock_timeout_retries_exceeded(
-    locktoolcalls, nosleep, maintenance_manager
+    locktoolcalls, ceph_calls, ceph_json_calls, nosleep, maintenance_manager
 ):
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
@@ -219,6 +294,11 @@ def test_leave_unlock_timeout_retries_exceeded(
         "",
         # "-l", "rbd/.maintenance", timeout=self.LOCKTOOL_TIMEOUT_SECS
         subprocess.TimeoutExpired("rbd-locktool -l rbd/.maintenance", 30),
+    ]
+
+    ceph_json_calls.side_effect = [
+        # osd tree
+        {"nodes": []},
     ]
 
     with pytest.raises(subprocess.TimeoutExpired):
@@ -234,7 +314,9 @@ def test_leave_unlock_timeout_retries_exceeded(
     assert locktoolcalls.call_count == 10
 
 
-def test_lockimage_check_timeout(locktoolcalls, maintenance_manager):
+def test_lockimage_check_timeout(
+    locktoolcalls, ceph_calls, ceph_json_calls, maintenance_manager
+):
     maintenance_task = maintenance_manager.MaintenanceTasks()
 
     locktoolcalls.side_effect = [
@@ -249,7 +331,12 @@ def test_lockimage_check_timeout(locktoolcalls, maintenance_manager):
         "",
     ]
 
-    with pytest.raises(SystemExit, match="75") as exit_info:
+    ceph_json_calls.side_effect = [
+        # osd tree
+        {"nodes": []},
+    ]
+
+    with pytest.raises(SystemExit, match="75"):
         maintenance_task.enter()
 
     locktoolcalls.assert_has_calls(
