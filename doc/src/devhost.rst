@@ -1,11 +1,10 @@
 .. _nixos-devhost:
 
-Development Container Host
+Development Host
 ==========================
 
 The ``devhost`` role is a flexible way to run multiple development deployments
-using containers on a single powerful, virtual machine on our public
-infrastructure.
+using slim VMs on a single powerful, physical machine on our public infrastructure.
 
 
 Rationale
@@ -24,9 +23,9 @@ Why not run development deployments with a desktop virtualization tool like Virt
 * Your resources may be even more limited with the overhead of running additional VMs.
 * External access for colleagues and customers is also not possible.
 * Quality of Vagrant boxes proved too hard to ensure properly for a long time -
-  our container-based approach has a much higher coverage with automated
+  our dev VM-based approach has a much higher coverage with automated
   testing and a smaller chance to result in unexpected non-working conditions.
-* Using x86-based VMs is not possible on platforms like Apple M1.
+* Using x86-based VMs is not possible on platforms like Apple M-Series.
 
 Why not use persistent development environments using virtual machines in the Flying Circus platform?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,7 +46,7 @@ What are the benefits of using the ``devhost`` role?
   options for immediate personal environments without maintaining multiple
   environment definitions per developer.
 
-* Allow colleagues to access the same containers to assist debugging.
+* Allow colleagues to access the same development VMs to assist debugging.
 
 * Proper pinning of platform releases to ensure repeatability.
 
@@ -69,7 +68,7 @@ Setup
 1. Create a new resource group to grant/limit access for your developers.
    Developers need the ``login`` permission to interact with the devhost.
 
-2. Create a virtual machine with sufficient resources (CPU, RAM, SSD) and
+2. You need a physical machine with sufficient resources (CPU, RAM, SSD) and
    select the ``devhost`` role.
 
 3. The machine needs to be assigned a public IP address (v4 and v6 are
@@ -77,10 +76,10 @@ Setup
 
 4. Choose a public domain name (e.g. ``dev.example.com``) and register it as
    a CNAME for the VM's public interface, i.e. set
-   ``dev.example.com CNAME myvm00.fe.rzob.fcio.net``.
+   ``dev.example.com CNAME mydev00.fe.rzob.fcio.net``.
 
 5. Add a wildcard DNS for all subdomains within the chosen public domain name,
-   i.e. set ``*.dev.example.com CNAME myvm00.fe.rzob.fcio.net``.
+   i.e. set ``*.dev.example.com CNAME mydev00.fe.rzob.fcio.net``.
 
 4. Add the ``publicAddress`` option to the NixOS configuration on the host,
    e.g. in :file:`/etc/local/nixos/devhost.nix` and run :command:`fc-manage -b`:
@@ -96,9 +95,9 @@ Setup
 Configuring batou deployments
 -----------------------------
 
-batou (starting from 2.3) supports a specific provisioning mode that supports
-defining container based environments. A container environment (``dev``) would
-typically look like this:
+batou (starting from 2.4) supports a specific provisioning mode that supports
+defining environments based on VMs organized by the devhost role.
+A development environment (e.g. named ``dev``) would typically look like this:
 
 .. code-block:: sh
 
@@ -110,15 +109,16 @@ typically look like this:
    update_method = rsync
 
    [provisioner:default]
-   method = fc-nixos-dev-container
+   method = fc-nixos-dev-vm
+   # The release has the format fcrs://channel/release
+   # release can be empty, than the latest release for the channel is used.
+   release = fcrs://fc-23.11-production/2024_001
    host = dev.example.com
-   # Take this link from our changelog for the appropriate channel you want
-   # to use. At the time of this writing, this would be release 2021_038
-   # and the channel can be found here:
-   # https://doc.flyingcircus.io/platform/changes/2021/r038.html
+
    channel = https://hydra.flyingcircus.io/build/116563/download/1/nixexprs.tar.xz
 
-   [host:container]
+
+   [host:myvm]
    provision-dynamic-hostname = True
    provision-aliases =
        app
@@ -137,18 +137,19 @@ typically look like this:
    __EOF__
 
    $ cat >> environments/dev/provision.sh <<__EOF__
+   COPY ../../../sourcecode /srv/s-dev/
    ECHO $COMPONENT_MANAGEDMYSQL_ADMIN_PASSWORD /etc/local/nixos/mysql.passwd
    __EOF__
 
-Then, to deploy to your container simply run:
+Then, to deploy to your VM simply run:
 
 .. code-block:: sh
 
    $ ./batou deploy dev
 
-This will create, start and configure the container as necessary.
+This will create, start and configure the VM as necessary.
 
-If you want to rebuild your container from scratch, you can run:
+If you want to rebuild your VM from scratch, you can run:
 
 .. code-block:: sh
 
@@ -156,46 +157,45 @@ If you want to rebuild your container from scratch, you can run:
 
 The URLs for channels can be looked up in our changelog: each version is listed
 with a link to the appropriate channel. Only platform releases starting from
-21.05 are supported for development containers, though!
+23.11 are supported for development VMs, though!
 
-Using the ``provision-dynamic-hostname`` switch will result in containers
+Using the ``provision-dynamic-hostname`` switch will result in development VMs
 receiving a random hostname based on your local batou checkout. This is the
 core feature that allows using the same environment (e.g. ``dev``) for multiple
-developers independently. If you leave this off then the container name will be
+developers independently. If you leave this off then the VM name will be
 exactly what is written in the environment.
 
 Using the ``provision-aliases`` will create virtual hosts on the dev server that
-become available as ``<alias>.<container>.dev.example.com`` and are protected
+become available as ``<alias>.<vm>.dev.example.com`` and are protected
 with Let's Encrypt certificates automatically. They are intended to pass
 through access to the UI of your applications and act similar to port forwards
 for port 443 -> 443. You should use self-signed certificates within the
-containers. (``batou_ext.ssl.Certifiate`` already allows switching between
+vms. (``batou_ext.ssl.Certifiate`` already allows switching between
 custom )
 
-As the containers are not managed by our inventory you need to place relevant
+As the development VMs are not managed by our inventory you need to place relevant
 information about roles in a Nix expression file. You can then use a
-provisioning script :file:`provision.sh` to customize the container during
+provisioning script :file:`provision.sh` to customize the VMs during
 provisioning. :command:`fc-manage` will be called automatically for you. In the
 provision script you can use :command:`COPY` to copy local files (relative to
-the environment directory) to the container (relative to the root),
-use :command:`RUN` to run commands in the container (as root)
+the environment directory) to the VMs (relative to the root),
+use :command:`RUN` to run commands in the VMs (as root)
 or :command:`ECHO` to output a local comand (and access environment variables
 carrying secrets) into a remote file.
 
 
-Connecting to the container(s)
+Connecting to the VM(s)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 batou automatically maintains a number of :file:`ssh_config` files as well as a
-specific insecure key pair for each environment so you can easily access the
-container via SSH.
+specific insecure key pair for each environment so you can easily access the VM via SSH.
 
-For example, to access the container ``mycontainer`` in the ``dev`` environment
+For example, to access the VM ``myvm`` in the ``dev`` environment
 you can simply run:
 
 .. code-block:: sh
 
-   $ ssh -F ssh_config_dev mycontainer
+   $ ssh -F ssh_config_dev myvm
 
 The environment works similar to our regular platform: the user login
 (``developer``) represents a human user and the services are installed in the
@@ -204,7 +204,7 @@ service user (``s-dev``).
 Writing provision scripts
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For early changes to the target containers that aren't part of the deployment
+For early changes to the target dev VM that aren't part of the deployment
 but are expected by the deployment to be prepared by "the environment" you
 can write a provision script for which a number of special functions.
 
@@ -216,18 +216,18 @@ can write a provision script for which a number of special functions.
     RUN mkdir /tmp/some/directory
 
 The script will execute on the machine where you started batou and can interact
-with the container through the following features:
+with the VM through the following features:
 
 .. function:: COPY <local path> <remote path>
 
-   Copy a local file to a destination in the container.
+   Copy a local file to a destination in the VM.
 
    The local path is relative to the environment's directory
    (where `provision.sh` is placed). The remote path must be absolute.
 
 .. function:: RUN cmd arg1 arg2
 
-   Execute a command as root in the container.
+   Execute a command as root in the VM.
 
    .. note::
 
@@ -238,7 +238,7 @@ with the container through the following features:
     Execute an expression locally and store its output in a remote path.
 
     This can be used to evaluate a variable from the environment locally
-    and store its result in the container.
+    and store its result in the VM.
 
 Sometimes it may be necessary to seed data from the environment (like secrets)
 early to the provisioner in order to set predictable/repeatable passwords
@@ -248,9 +248,9 @@ provision script:
 ``COMPONENT_<COMPONENT_NAME>_<ATTRIBUTE_NAME>``
     All overrides and secrets for all components in the environment.
 ``PROVISION_CONTAINER``
-    The name of the container being provisioned.
+    The name of the VM being provisioned.
 ``PROVISION_HOST``
-    The name of the ``devhost`` that the container is being provisioned onto.
+    The name of the ``devhost`` that the VM is being provisioned onto.
 ``PROVISION_CHANNEL``
     The NixOS channel URL being used.
 ``PROVISION_ALIASES``
@@ -272,20 +272,20 @@ provision script:
     automatically.
 
 
-Syncing development code into the container
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Syncing development code into the VM
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Often you will be editing code using your local editor or IDE and need it to
-be synced to the target container quickly without much repeated effort.
+be synced to the target VM quickly without much repeated effort.
 
 We recommend to integrate this using one or more rsync commands of this form:
 
 .. code-block:: sh
 
    BATOUDIR=/Users/bob/code/mybatourepo
-   TARGET=thecontainer
+   TARGET=sourcecode
    SOURCE=/Users/bob/code/myappcode
-   rsync -avz --delete --exclude=.git --rsh='ssh -F ${BATOUDIR}/ssh_config_dev' --rsync-path='sudo -u s-dev rsync' ${SOURCE}/ container:/srv/s-dev/${TARGET}
+   rsync -avz --delete --exclude=.git --rsh='ssh -F ${BATOUDIR}/ssh_config_dev' --rsync-path='sudo -u s-dev rsync' ${SOURCE}/ myvm:/srv/s-dev/${TARGET}
 
 You can then use this command either with an ``on-save`` hook in your editor or
 by using a tool that responds to changes in your filesystem (like )
@@ -299,29 +299,29 @@ an editor / IDE on your local machine)
 Maintenance
 -----------
 
-To avoid developers having to manage deletion and cleanup of containers we have
-an automatic cleanup policy:
-
-* Containers are disabled 7 days after their last deployment, thus reducing RAM
-  and CPU requirements.
-
-* Containers are deleted 30 days after their last deployment, thus reducing
-  storage requirements.
-
-The automatic cleanup policy can be disabled using the
-``flyingcircus.roles.devhost.cleanupContainers`` option.
-
-To manually delete a container you can use the build script's ``destroy`` action:
+To manually delete a VM you can use the build script's ``destroy`` action:
 
 .. code-block:: sh
 
-   $ fc-build-dev-container destroy <mycontainer>
+   $ fc-devhost destroy $vmname
 
+To list all VMs running on a devhost with their users and creation date:
+
+.. code-block:: sh
+
+   $ fc-devhost ls -l
+
+All other commands can be seen with:
+
+.. code-block:: sh
+
+   $ fc-devhost --help
+
+If a VM hangs up, it's possible to see their log in ``/var/lib/devhost/$vmname/log``
 
 
 Known issues
 ------------
 
-* The NixOS container infrastructure currently does not (properly) support IPv6
-  so deployments need to disable IPv6 resolution for internal and public
+* Devhost VMs currently does no (properly) support IPv6 so deployments need to disable IPv6 resolution for internal and public
   services.
