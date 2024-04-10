@@ -65,8 +65,8 @@ class MdraidDevice(GenericBlockDevice):
             raise RuntimeError(
                 f"MdraidDevice: at least {cls.RAID_MIN_DISKS} disks required. Aborting."
             )
-        main_disks = blockdevices[:-1]
-        spare_disk = blockdevices[-1]
+        main_disks = blockdevices[: -cls.RAID_SPARE]
+        spare_disk = blockdevices[-cls.RAID_SPARE]
         obj = cls(name)
         run.mdadm(
             "--create",
