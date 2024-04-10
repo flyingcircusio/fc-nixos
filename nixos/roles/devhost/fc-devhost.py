@@ -528,7 +528,9 @@ class Manager:
 
 
 def main():
-    a = argparse.ArgumentParser(description="Manage DevHost VMs.")
+    a = argparse.ArgumentParser(
+        prog="fc-devhost", description="Manage DevHost VMs."
+    )
     a.set_defaults(func="print_usage")
     sub = a.add_subparsers(title="subcommands")
 
