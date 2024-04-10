@@ -182,7 +182,7 @@ in
       wireguard.enable = true;
 
       firewall.trustedInterfaces =
-        lib.optionals (!isNull fclib.underlay && config.flyingcircus.infrastructureModule == "flyingcircus-physical")
+        lib.optionals (!isNull fclib.underlay && cfg.infrastructureModule == "flyingcircus-physical")
           ([ "brsto" "brstb" ] ++ (attrNames fclib.underlay.interfaces));
     };
 
@@ -205,6 +205,16 @@ in
         ${pkgs.acl}/bin/setfacl -m g:sudo-srv:r publickey
       '';
 
+    };
+
+    flyingcircus.services.telegraf.inputs = lib.optionalAttrs (cfg.infrastructureModule == "flyingcircus-physical") {
+      exec = [{
+        commands = [ "${pkgs.fc.telegraf-routes-summary}/bin/telegraf-routes-summary" ];
+        timeout = "10s";
+        data_format = "json";
+        json_name_key = "name";
+        tag_keys = [ "family" "path" ];
+      }];
     };
 
     services.udev.initrdRules = interfaceRules;
