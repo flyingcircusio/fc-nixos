@@ -8,7 +8,13 @@ import traceback
 from subprocess import CalledProcessError
 from typing import List, Optional
 
-from fc.ceph.lvm import GenericCephVolume, GenericLogicalVolume, XFSCephVolume
+from fc.ceph.lvm import (
+    DiskWithSinglePartition,
+    GenericBlockDevice,
+    GenericCephVolume,
+    GenericLogicalVolume,
+    XFSVolume,
+)
 from fc.ceph.util import kill, run
 
 TiB = 1024**4
@@ -307,6 +313,7 @@ class JournalVG:
 
         jnl_vg = "vgjnl{:02d}".format(id_)
 
+        # TODO: could be switched to DiskWithSinglePartition as well
         run.sgdisk("-Z", device)
         run.sgdisk("-a", "8192", "-n", "1:0:0", "-t", "1:8e00", device)
 
@@ -343,6 +350,7 @@ class WALVolume:
         )
 
     def create(self, disk: str, encrypt: bool, location: str):
+        disk_block = DiskWithSinglePartition.ensure(disk)
         # External WAL
         if location == "external":
             lvm_wal_vg = JournalVG.get_largest_free()
@@ -354,7 +362,7 @@ class WALVolume:
             self.backup_lv = GenericLogicalVolume.create(
                 name=f"{self.name}-backup",
                 vg_name=self.internal_vg,
-                disk=disk,
+                base_device=disk_block,
                 encrypt=encrypt,
                 size="1G",
             )
@@ -367,7 +375,7 @@ class WALVolume:
         self.lv = GenericLogicalVolume.create(
             name=f"{self.name}",
             vg_name=lvm_wal_vg,
-            disk=disk,
+            base_device=disk_block,
             encrypt=encrypt,
             size="1G",
         )
@@ -445,10 +453,11 @@ class BlockVolume(GenericCephVolume):
 
     def create(self, disk: str, encrypt: bool, size: str = "100%vg"):
         print(f"Creating block volume on {disk}...")
+        disk_block = DiskWithSinglePartition.ensure(disk)
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=self.vg_name,
-            disk=disk,
+            base_device=disk_block,
             encrypt=encrypt,
             size=size,
         )
@@ -476,7 +485,7 @@ class GenericOSD(object):
         self.name = f"osd.{id}"
         self.pid_file = f"/run/ceph/osd.{self.id}.pid"
 
-        self.data_volume = XFSCephVolume(
+        self.data_volume = XFSVolume(
             f"ceph-osd-{self.id}", f"/srv/ceph/osd/ceph-{self.id}"
         )
 
@@ -522,15 +531,15 @@ class GenericOSD(object):
 
         By default, the `ceph osd ok-to-stop` is run and checks for remaining
         data availability.
-        With `stric_safety_check`, the more strict `ceph osd safe-to-destroy`
+        With `strict_safety_check`, the more strict `ceph osd safe-to-destroy`
         checks whether edundancy is affected in any ways.
 
         Raises a SystemExit if the check fails.
         """
-        ids = map(str, ids)
+        idstr = map(str, ids)
         if strict_safety_check:
             try:
-                run.ceph("osd", "safe-to-destroy", *ids)
+                run.ceph("osd", "safe-to-destroy", *idstr)
             except CalledProcessError as e:
                 print(
                     # fmt: off
@@ -543,7 +552,7 @@ class GenericOSD(object):
                 sys.exit(e.returncode)
         else:
             try:
-                run.ceph("osd", "ok-to-stop", *ids)
+                run.ceph("osd", "ok-to-stop", *idstr)
             except CalledProcessError as e:
                 print(
                     # fmt: off
