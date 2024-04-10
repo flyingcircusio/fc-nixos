@@ -184,8 +184,13 @@ in
             daemon = daemonName service;
           in
             nameValuePair daemon ({
-              wantedBy = [ "multi-user.target" ];
-              after = [ "network-pre.target" "systemd-sysctl.service" ] ++ lib.optionals (service != "zebra") [ "zebra.service" ];
+              # Inspired by Cumulus' dependency here. network-online isn't
+              # really intended for this but we need to go between the low level
+              # network setup (network.target) and before actual applications
+              # that need the network to function come up.
+              wantedBy = [ "network-online.target" ];
+              before = [ "network-online.target" ];
+              after = [ "network.target" "systemd-sysctl.service" ] ++ lib.optionals (service != "zebra") [ "zebra.service" ];
               bindsTo = lib.optionals (service != "zebra") [ "zebra.service" ];
               wants = [ "network.target" ] ++ lib.optionals (service == "zebra") (map (svc: "${daemonName svc}.service") (filter isEnabled services));
 
