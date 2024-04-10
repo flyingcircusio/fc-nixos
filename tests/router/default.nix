@@ -13,6 +13,7 @@ let
   makeRouterConfig = { id }:
     { config, pkgs, lib, ... }:
     let
+      inherit (config) fclib;
     in
     {
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ mgm fe srv tr ];
@@ -22,6 +23,8 @@ let
 
       # Copied from flyingcircus-physical.nix
       networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" "ethmgm" ];
+
+      environment.etc."networks/tr".source = fclib.writePrettyJSON "tr" fclib.network.tr.dualstack;
 
       flyingcircus.enc.name = "router${toString id}";
       flyingcircus.enc.parameters = {
@@ -55,12 +58,36 @@ let
             "172.20.6.0/24" = [ "172.20.6.${toString id}" ];
             "2a02:238:f030:1c6::/124" = [ "2a02:238:f030:1c6::${toString id}" ];
           };
-          gateways = {};
+          gateways = {
+            "172.20.6.0/24" = "172.20.6.254";
+            "2a02:238:f030:1c6::/124" = "2a02:238:f030:1c6::3";
+          };
         };
       };
-      system.activationScripts.setupSystemProfile = ''
-        ln -s $(dirname $0) /nix/var/nix/profiles/system
-      '';
+
+      services.telegraf.enable = lib.mkForce false;
+
+      specialisation.agentmock = let
+        agentMock = pkgs.writeShellScript "agent-mock" ''
+          msg="Agent Mock called at $(date) with args: $@"
+          echo $msg
+          echo $msg >> /tmp/agent-mock-called
+        '';
+      in {
+        configuration = config.specialisation.primary.configuration // {
+          environment.etc."keepalived/fc-manage".source = lib.mkForce "${agentMock}";
+          system.activationScripts.msg = ''
+            echo "This is specialisation agentmock, activated at $(date)"
+          '';
+        };
+      };
+
+     system.activationScripts.setupSystemProfile = ''
+       system_profile=/nix/var/nix/profiles/system
+       if [[ ! -e $system_profile ]]; then
+         ln -s $(dirname $0) /nix/var/nix/profiles/system
+       fi
+     '';
     };
 
   makeUpstreamRouterConfig = { id }:
@@ -98,14 +125,16 @@ let
             "10.0.13.0/24" = [ "10.0.13.${toString id}" ];
             #"${networkBase6}d::/48" = [ "${networkBase6}d::${id}" ];
           };
-          gateways = {};
+          gateways = {
+          };
         };
       };
 
     };
 
-  helpers = ''
-    from pathlib import Path
+  mkTestScript = { router, script }: ''
+    import pathlib
+    import subprocess
     import sys
     import time
 
@@ -116,37 +145,62 @@ let
 
     VERBOSE = True
 
+
     def pp(*a, **k):
       if VERBOSE:
         rich.print(*a, **k)
 
 
     def is_primary(machine):
+
+      secondary_system = pathlib.Path("${router.config.system.build.toplevel}")
+      primary_system = (secondary_system / "specialisation/primary").resolve()
+      print("primary system:", primary_system)
+      print("secondary system:", secondary_system)
+
       system_path = machine.execute("readlink -f /run/current-system")[1].strip()
       return system_path == primary_system
 
 
     def wait_until_is_primary(machine):
-      while 1:
-        current_system = Path(machine.execute("readlink -f /run/current-system")[1].strip())
-        print("current specialisation:", machine.execute("cat /etc/specialisation")[1])
-        print("current system_path:", current_system)
+
+      secondary_system = pathlib.Path("${router.config.system.build.toplevel}")
+      primary_system = (secondary_system / "specialisation/primary").resolve()
+      print("primary system:", primary_system)
+      print("secondary system:", secondary_system)
+
+      for x in range(30):
+        current_system = pathlib.Path(machine.execute("readlink -f /run/current-system")[1].strip())
+        print(f"Waiting for router to become primary (specialisation primary), try {x}")
+        print("Current specialisation:", machine.execute("cat /etc/specialisation")[1].strip() or "(base system)")
+        print("Current system_path:", current_system)
         if current_system == primary_system:
           machine.wait_for_unit("default.target")
+          current_date = machine.execute("date")[1]
+          print(f"Running as primary (specialisation primary) at {current_date}")
           return
         time.sleep(0.5)
 
 
     def wait_until_is_secondary(machine):
-      while 1:
-        current_system = Path(machine.execute("readlink -f /run/current-system")[1].strip())
-        print("current specialisation:", machine.execute("cat /etc/specialisation")[1])
-        print("current system_path:", current_system)
+
+      secondary_system = pathlib.Path("${router.config.system.build.toplevel}")
+      primary_system = (secondary_system / "specialisation/primary").resolve()
+      print("primary system:", primary_system)
+      print("secondary system:", secondary_system)
+
+      for x in range(30):
+        current_system = pathlib.Path(machine.execute("readlink -f /run/current-system")[1].strip())
+        print(f"Waiting for router to become secondary (base system), try {x}")
+        print("Current specialisation:", machine.execute("cat /etc/specialisation")[1].strip() or "(base system)")
+        print("Current system_path:", current_system)
         if current_system == secondary_system:
           machine.wait_for_unit("default.target")
+          current_date = machine.execute("date")[1]
+          print(f"Running as secondary (base system) at {current_date}")
           return
         time.sleep(0.5)
-  '';
+  '' + "\n" + script;
 in
 {
   name = "router";
@@ -157,45 +211,42 @@ in
       primary = makeRouterConfig { id = 1; };
     };
 
-    testScript = {nodes, ...}: helpers + ''
-      secondary_system = Path("${nodes.primary.config.system.build.toplevel}")
-      primary_system = (secondary_system / "specialisation/primary").resolve()
+    testScript = {nodes, ...}: mkTestScript {
+      router = nodes.primary;
+      script = ''
+        primary.wait_for_unit("default.target")
 
-      print("primary system:", primary_system)
-      print("secondary system:", secondary_system)
+        with subtest("networking"):
+          pp(primary.succeed("ip a"))
+          pp(primary.succeed("ip r"))
+          pp(primary.succeed("iptables -L -n"))
+          pp(primary.succeed("ip6tables -L -n"))
 
-      primary.wait_for_unit("default.target")
+        with subtest("wait for keepalived to become active"):
+          primary.wait_until_succeeds("systemctl is-active keepalived")
 
-      with subtest("networking"):
-        pp(primary.succeed("ip a"))
-        pp(primary.succeed("ip r"))
-        pp(primary.succeed("iptables -L -n"))
-        pp(primary.succeed("ip6tables -L -n"))
+        with subtest("wait for the system to switch to primary"):
+          wait_until_is_primary(primary)
 
-      with subtest("wait for keepalived to become active"):
-        primary.wait_until_succeeds("systemctl is-active keepalived")
+        with subtest("bird is configured as primary"):
+          primary.wait_for_unit("bird")
+          primary.succeed("grep PRIMARY=1 /etc/bird/bird.conf")
+          pp(primary.succeed("cat /etc/bird/bird.conf"))
 
-      with subtest("wait for the system to switch to primary"):
-        wait_until_is_primary(primary)
+        with subtest("bird6 is configured as primary"):
+          primary.wait_for_unit("bird6")
+          primary.succeed("grep PRIMARY=1 /etc/bird/bird6.conf")
+          print(primary.succeed("cat /etc/bird/bird6.conf"))
 
-      with subtest("bird is configured as primary"):
-        primary.wait_for_unit("bird")
-        primary.succeed("grep PRIMARY=1 /etc/bird/bird.conf")
-        pp(primary.succeed("cat /etc/bird/bird.conf"))
+        with subtest("radvd is running"):
+          pp(primary.succeed("systemctl cat -l radvd"))
+          pp(primary.execute("systemctl is-active radvd"))
+          primary.wait_for_unit("radvd")
 
-      with subtest("bird6 is configured as primary"):
-        primary.wait_for_unit("bird6")
-        primary.succeed("grep PRIMARY=1 /etc/bird/bird6.conf")
-        print(primary.succeed("cat /etc/bird/bird6.conf"))
-
-      with subtest("bind is running"):
-        primary.wait_for_unit("bind")
-
-      with subtest("radvd is running"):
-        pp(primary.succeed("systemctl cat -l radvd"))
-        pp(primary.execute("systemctl is-active radvd"))
-        primary.wait_for_unit("radvd")
-    '';
+        with subtest("bind is running"):
+          primary.wait_for_unit("bind")
+      '';
+    };
   };
 
   testCases.interactive = {
@@ -203,17 +254,12 @@ in
       router = makeRouterConfig { id = 1; };
     };
 
-    testScript = ''
-      import sys
-      rich_path = "${pkgs.python38Packages.rich}/lib/python3.8/site-packages/"
-      sys.path.append(rich_path)
-
-      import rich
-
-      def pp(machine, cmd):
-          import rich
-          rich.print(machine.execute(cmd)[1])
-    '';
+    testScript = { nodes, ... }: mkTestScript {
+      inherit (nodes) router;
+      script = ''
+        router.start()
+      '';
+    };
   };
 
   testCases.secondary = {
@@ -221,50 +267,89 @@ in
       secondary = makeRouterConfig { id = 1; };
     };
 
-    testScript = {nodes, ...}: helpers + ''
-      secondary_system = Path("${nodes.secondary.config.system.build.toplevel}")
-      primary_system = (secondary_system / "specialisation/primary").resolve()
+    testScript = { nodes, ... }: mkTestScript {
+      router = nodes.secondary;
+      script = ''
+        secondary.wait_for_unit("default.target")
 
-      print("primary system:", primary_system)
-      print("secondary system:", secondary_system)
+        with subtest("networking"):
+          print(secondary.succeed("ip a"))
+          print(secondary.succeed("ip r"))
+          print(secondary.succeed("iptables -L -n"))
+          print(secondary.succeed("ip6tables -L -n"))
 
-      secondary.wait_for_unit("default.target")
+        with subtest("wait for keepalived to become active"):
+          print(secondary.succeed("cat /etc/keepalived/keepalived.conf"))
+          print(secondary.succeed("systemctl cat keepalived"))
+          secondary.wait_until_succeeds("systemctl is-active keepalived")
+          wait_until_is_primary(secondary)
 
-      with subtest("networking"):
-        print(secondary.succeed("ip a"))
-        print(secondary.succeed("ip r"))
-        print(secondary.succeed("iptables -L -n"))
-        print(secondary.succeed("ip6tables -L -n"))
+        with subtest("keepalived: write stopper file"):
+          secondary.execute("sed -i 'c 1' /etc/keepalived/stop")
+          wait_until_is_secondary(secondary)
 
-      with subtest("wait for keepalived to become active"):
-        secondary.wait_until_succeeds("systemctl is-active keepalived")
-        wait_until_is_primary(secondary)
+        with subtest("radvd should not run"):
+          secondary.fail("systemctl is-active radvd")
 
-      with subtest("keepalived: write stopper file"):
-        secondary.execute("sed -i 'c 1' /etc/keepalived/stop")
-        wait_until_is_secondary(secondary)
+        with subtest("bird is configured as secondary"):
+          secondary.wait_for_unit("bird")
+          secondary.succeed("grep PRIMARY=0 /etc/bird/bird.conf")
+          print(secondary.succeed("cat /etc/bird/bird.conf"))
 
-      with subtest("radvd should not run"):
-        secondary.fail("systemctl is-active radvd")
+        with subtest("bird6 is configured as secondary"):
+          secondary.wait_for_unit("bird6")
+          secondary.succeed("grep PRIMARY=0 /etc/bird/bird6.conf")
+          print(secondary.succeed("cat /etc/bird/bird6.conf"))
 
-      with subtest("bird is configured as secondary"):
-        secondary.wait_for_unit("bird")
-        secondary.succeed("grep PRIMARY=0 /etc/bird/bird.conf")
-        print(secondary.succeed("cat /etc/bird/bird.conf"))
+        with subtest("stopping keepalived"):
+          secondary.systemctl("stop keepalived")
+          secondary.systemctl("stop keepalived-boot-delay.timer")
+          wait_until_is_secondary(secondary)
 
-      with subtest("bird6 is configured as secondary"):
-        secondary.wait_for_unit("bird6")
-        secondary.succeed("grep PRIMARY=0 /etc/bird/bird6.conf")
-        print(secondary.succeed("cat /etc/bird/bird6.conf"))
+        with subtest("bind is running"):
+          secondary.wait_for_unit("bind")
+      '';
+    };
+  };
 
-      with subtest("stopping keepalived"):
-        secondary.systemctl("stop keepalived")
-        secondary.systemctl("stop keepalived-boot-delay.timer")
-        wait_until_is_secondary(secondary)
+  testCases.agentswitch = {
+    nodes = {
+      router = makeRouterConfig { id = 1; };
+    };
 
-      with subtest("bind is running"):
-        secondary.wait_for_unit("bind")
-    '';
+    testScript = { nodes, ... }: mkTestScript {
+      inherit (nodes) router;
+      script = ''
+        with subtest("Should become primary router"):
+          router.wait_until_succeeds("systemctl is-active keepalived")
+          wait_until_is_primary(router)
+          print(router.succeed("systemctl cat keepalived"))
+
+        with subtest("Switch to system with mocked fc-manage command"):
+          agent_before = router.execute("readlink -f /etc/keepalived/fc-manage")[1]
+          print(router.succeed("systemctl status -l keepalived"))
+          print(router.succeed("systemctl cat keepalived"))
+          print(router.succeed("/etc/keepalived/fc-manage -v activate-configuration -s agentmock"))
+          # Script symlink changes its target, keepalived reloads (it's a primary router)
+          print(router.succeed("systemctl cat keepalived"))
+          print(router.execute("cat /etc/keepalived/fc-manage")[1])
+          agent_after = router.execute("readlink -f /etc/keepalived/fc-manage")[1]
+
+          for x in range(30):
+            print(f"Waiting for fc-manage script to change, try {x}")
+            if agent_before != agent_after:
+              break
+            router.sleep(1)
+          else:
+            assert agent_before != agent_after, "fc-manage script didn't change!"
+
+        with subtest("keepalived should call the fc-manage mock when the stop file is changed"):
+          router.execute("sed -i 'c 1' /etc/keepalived/stop")
+          router.wait_until_succeeds("cat /tmp/agent-mock-called")
+
+        print(router.succeed("journalctl -xb -u keepalived"))
+      '';
+    };
   };
 
   testCases.whq_dev = {
@@ -279,18 +364,20 @@ in
           (fcConfig { id = 5; })
         ];
       };
-
-
     };
-    testScript = {nodes, ...}: helpers + ''
-      start_all()
-      router1.wait_for_unit("default.target")
 
-      with subtest("networking"):
-        print(router1.succeed("iptables -L -n"))
-        print(router1.succeed("ip6tables -L -n"))
-        print(router1.succeed("ip a"))
-        print(router1.succeed("ip r"))
-    '';
+    testScript = {nodes, ...}: mkTestScript {
+      router = nodes.router1;
+      script = ''
+        start_all()
+        router1.wait_for_unit("default.target")
+
+        with subtest("networking"):
+          print(router1.succeed("iptables -L -n"))
+          print(router1.succeed("ip6tables -L -n"))
+          print(router1.succeed("ip a"))
+          print(router1.succeed("ip r"))
+      '';
+    };
   };
 })
