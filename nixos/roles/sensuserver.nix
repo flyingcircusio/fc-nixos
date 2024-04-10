@@ -17,7 +17,7 @@ in
               default = false;
               description = "Enable the Flying Circus sensu server role.";
           };
-          supportsContainers = fclib.mkDisableContainerSupport;
+          supportsContainers = fclib.mkDisableDevhostSupport;
 
           hostName = mkOption {
             type = types.str;

@@ -14,7 +14,7 @@ in
   options = {
     flyingcircus.roles.kvm_host = {
       enable = lib.mkEnableOption "Qemu/KVM server";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
       mkfsXfsFlags = lib.mkOption {
         type = with lib.types; nullOr str;
         # XXX: reflink=0 can be removed when 15.09 is out. See #PL-130977

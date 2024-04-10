@@ -1,13 +1,12 @@
 { config, lib, pkgs, ... }:
 
-with lib;
 
 let
   cfg = config.flyingcircus.roles.devhost;
   location = lib.attrByPath [ "parameters" "location" ] "" config.flyingcircus.enc;
 
   vmOptions = {
-    options = {
+    options = with lib; {
       id = mkOption {
         description = "Internal ID of the VM";
         type = types.int;
@@ -54,11 +53,11 @@ let
     path = [ pkgs.qemu_kvm ];
     serviceConfig.ExecStart = "${pkgs.coreutils}/bin/true";
   };
-  mkService = name: vmCfg: nameValuePair "fc-devhost-vm@${name}" (recursiveUpdate defaultService {
+  mkService = name: vmCfg: lib.nameValuePair "fc-devhost-vm@${name}" (lib.recursiveUpdate defaultService {
     enable = true;
     wantedBy = [ "machines.target" ];
 
-    serviceConfig.ExecStart = (escapeShellArgs
+    serviceConfig.ExecStart = (lib.escapeShellArgs
       [
         "${pkgs.qemu_kvm}/bin/qemu-system-x86_64"
         "-name" name
@@ -118,12 +117,12 @@ let
       chmod 600 /var/lib/devhost/ssh_bootstrap_key
     fi
 
-    export PATH="${makeBinPath runtimeInputs}:$PATH"
+    export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
     python ${./fc-devhost.py} "$@" --location ${location}
     '';
   };
 in {
-  options = {
+  options = with lib; {
     flyingcircus.roles.devhost = {
       virtualMachines = mkOption {
         description = ''
@@ -135,14 +134,14 @@ in {
       };
     };
   };
-  config = mkIf (cfg.enable && cfg.virtualisationType == "vm") {
+  config = lib.mkIf (cfg.enable && cfg.virtualisationType == "vm") {
     boot.kernelModules = [ "nbd" ];
     boot.extraModprobeConfig = ''
       options nbd max_part=4 nbds_max=8
     '';
 
     environment.systemPackages = [ manage_script ];
-    security.sudo.extraRules = mkAfter [{
+    security.sudo.extraRules = lib.mkAfter [{
       commands = [{
         command = "${manage_script}/bin/fc-devhost";
         options = [ "NOPASSWD" ];
@@ -177,14 +176,14 @@ in {
 
         dhcp-range=10.12.250.10,10.12.254.254,255.255.0.0,24h
         dhcp-option=option:router,10.12.0.1
-        dhcp-option=option:dns-server,${concatStringsSep "," config.networking.nameservers}
+        dhcp-option=option:dns-server,${lib.concatStringsSep "," config.networking.nameservers}
       '';
     };
     networking.firewall.interfaces."br-vm-srv".allowedUDPPorts = [ 67 ];
     networking.firewall.interfaces."vm-srv+".allowedUDPPorts = [ 67 ];
     systemd.services = {
       "fc-devhost-vm@" = defaultService;
-    } // mapAttrs' mkService cfg.virtualMachines // {
+    } // lib.mapAttrs' mkService cfg.virtualMachines // {
       "fc-devhost-vm-cleanup" = {
         serviceConfig = {
           Type = "oneshot";
@@ -205,11 +204,11 @@ in {
     services.nginx = let
       suffix = cfg.publicAddress;
       vms =
-        filterAttrs (name: vmCfg: vmCfg.aliases != [ ]) cfg.virtualMachines;
-      httpUpstreams = (concatStringsSep "\n" (mapAttrsToList (vmName: vmCfg:
+        lib.filterAttrs (name: vmCfg: vmCfg.aliases != [ ]) cfg.virtualMachines;
+      httpUpstreams = (lib.concatStringsSep "\n" (lib.mapAttrsToList (vmName: vmCfg:
         ".${vmName}.${suffix} http://${vmCfg.srvIp};"
       ) vms));
-      httpsUpstreams = (concatStringsSep "\n" (mapAttrsToList (vmName: vmCfg:
+      httpsUpstreams = (lib.concatStringsSep "\n" (lib.mapAttrsToList (vmName: vmCfg:
         ".${vmName}.${suffix} ${vmCfg.srvIp}:443;" 
       ) vms));
     in {
@@ -239,6 +238,6 @@ in {
     networking.extraHosts = ''
       # static entries for devhost vms to avoid nginx issues
       # if containers are not running and to use the existing batou ssh configs.
-    '' + (concatStringsSep "\n" (mapAttrsToList (vmName: vmCfg: "${vmCfg.srvIp} ${vmName}") cfg.virtualMachines));
+    '' + (lib.concatStringsSep "\n" (lib.mapAttrsToList (vmName: vmCfg: "${vmCfg.srvIp} ${vmName}") cfg.virtualMachines));
   };
 }

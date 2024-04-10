@@ -62,7 +62,7 @@ in
         default = false;
       };
 
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
 
       cephRelease = fclib.ceph.releaseOption // {

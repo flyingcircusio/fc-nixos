@@ -54,7 +54,7 @@ in
   options = {
     flyingcircus.roles.ceph_mon = {
       enable = lib.mkEnableOption "CEPH Monitor";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
       primary = lib.mkOption {
         default = (first_mon == config.networking.hostName);

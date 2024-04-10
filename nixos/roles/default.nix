@@ -55,7 +55,7 @@ in {
   options = {
     flyingcircus.roles.generic = {
       enable = lib.mkEnableOption "Generic role, which does nothing";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 

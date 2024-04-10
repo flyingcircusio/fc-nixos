@@ -126,7 +126,7 @@ in
   options = {
     flyingcircus.roles.ceph_osd = {
       enable = lib.mkEnableOption "CEPH OSD";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
       # This option can be used to disable automatic reactivation, e.g.
       # if you're working on a system and don't want to get (slow) reloads

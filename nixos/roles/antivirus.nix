@@ -12,7 +12,7 @@ in
 
       enable = lib.mkEnableOption "ClamAV antivirus scanner";
 
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       listenAddresses = lib.mkOption {
         type = lib.types.listOf lib.types.str;
