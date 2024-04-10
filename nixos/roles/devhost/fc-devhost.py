@@ -576,9 +576,13 @@ def main():
 
     # ---------------------------------
 
-    p = sub.add_parser("destroy", help="Destroy a given VM.")
+    p = sub.add_parser("destroy", aliases=["rm"], help="Destroy provided VMs.")
     p.set_defaults(func="destroy")
-    p.add_argument("name", help="name of the VM")
+    p.add_argument(
+        "name",
+        nargs="+",
+        help="name(s) of the VMs to be destroyed",
+    )
     p.add_argument("--location", help="location the VMs live in")
 
     # ---------------------------------
@@ -628,6 +632,12 @@ def main():
 
     name = getattr(args, "name", None)
     kwargs = dict(args._get_kwargs())
+
+    if func == "destroy":
+        for name in args.name:
+            manager = Manager(name)
+            manager.destroy()
+
     del kwargs["func"]
     if "name" in kwargs:
         del kwargs["name"]
