@@ -89,6 +89,21 @@ with lib;
         standalone = [ "9.9.9.9" "8.8.8.8" ];
       };
 
+      nameservers6 = {
+        # ns.$location.gocept.net, ns2.$location.gocept.net
+        # We are currently not using IPv6 resolvers as we have seen obscure bugs
+        # when enabling them, like weird search path confusion that results in
+        # arbitrary negative responses, combined with the rotate flag.
+        #
+        # This seems to be https://sourceware.org/bugzilla/show_bug.cgi?id=13028
+        # which is fixed in glibc 2.22 which is included in NixOS 16.03.
+        dev = [ "2a02:238:f030:1c2::1" # dev-router virt IP6
+                "2a02:238:f030:1c3::4" # ?
+                "2a02:238:f030:1c3::1087" # ?
+        ];
+        standalone = [ "9.9.9.9" "8.8.8.8" ];
+      };
+
       directory = {
         proxy_ips = [
           "195.62.125.11"

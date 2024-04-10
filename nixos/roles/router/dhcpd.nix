@@ -1,4 +1,4 @@
-{ config, lib, ...}:
+{ config, pkgs, lib, ...}:
 
 with builtins;
 
@@ -11,7 +11,8 @@ let
   baseConf = ''
     # Common DHCP configuration options (AF-agnostic)
     ddns-update-style none;
-    log-facility daemon;
+    authoritative;
+    log-facility local1;
     default-lease-time 1800;
     max-lease-time 7200;
     option domain-name "${suffix}";
@@ -19,19 +20,18 @@ let
     option ntp-servers ${hostName};
   '';
 
-  # from static.nameservers.${location}
-  # Includes dev-router virt IP4
-  resolvers = config.networking.nameservers;
+  resolvers4 = if (hasAttr location config.flyingcircus.static.nameservers)
+        then config.flyingcircus.static.nameservers.${location}
+        else [];
 
-  resolvers6 = [
-    "2a02:238:f030:1c2::1" # dev-router virt IP6
-    "2a02:238:f030:1c3::4" # ?
-    "2a02:238:f030:1c3::1087" # ?
-  ];
+  resolvers6 =
+        if (hasAttr location config.flyingcircus.static.nameservers6)
+        then config.flyingcircus.static.nameservers6.${location}
+        else [];
 
   dhcpd4Conf = ''
     # DHCPv4 specific general options
-    option domain-name-servers ${lib.concatStringsSep ", " resolvers};
+    option domain-name-servers ${lib.concatStringsSep ", " resolvers4};
 
     if exists user-class and option user-class = "iPXE" {
         # We are currently running iPXE: load the static boot script.
@@ -57,20 +57,20 @@ in
   config = lib.mkIf role.enable {
     services.dhcpd4 = {
       enable = true;
-      extraConfig = lib.concatStringsSep "\n\n" [
-        baseConf
-        dhcpd4Conf
-        local4Conf
-      ];
+      configFile = pkgs.writeText "dhcpd4.conf" ''
+        ${baseConf}
+        ${dhcpd4Conf}
+        ${local4Conf}
+      '';
     };
 
     services.dhcpd6 = {
       enable = true;
-      extraConfig = lib.concatStringsSep "\n\n" [
-        baseConf
-        dhcpd6Conf
-        local6Conf
-      ];
+      configFile = pkgs.writeText "dhcpd6.conf" ''
+        ${baseConf}
+        ${dhcpd6Conf}
+        ${local6Conf}
+      '';
     };
   };
 }
