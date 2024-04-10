@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, utils, ... }:
 
 with builtins;
 
@@ -342,6 +342,7 @@ in
               description = "Ensure link properties for physical interface ${iface.name}";
               wantedBy = [ "network-addresses-${iface.name}.service"
                            "multi-user.target" ];
+              after = [ "sys-subsystem-net-devices-${utils.escapeSystemdPath iface.name}.device" ];
               before = wantedBy;
               path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp ];
               script = ''
