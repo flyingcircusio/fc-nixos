@@ -606,6 +606,14 @@ in
           ])
         )));
 
+    flyingcircus.services.sensu-client.checks = lib.optionalAttrs (!isNull fclib.underlay) {
+      uplink_redundancy = {
+        notification = "Host has redundant switch connectivity";
+        interval = 600;
+        command = "${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy ${lib.concatStringsSep " " (attrNames fclib.underlay.interfaces)}";
+      };
+    };
+
     systemd.timers.fc-lldp-to-altnames = lib.mkIf (!isNull fclib.underlay) {
       description = "Timer for updating interface altnames based on peer hostname advertised in LLDP";
       wantedBy = [ "timers.target" ];
