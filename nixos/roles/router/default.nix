@@ -49,6 +49,7 @@ in
     ./bird
     ./bird6
     ./keepalived
+    ./chrony.nix
   ];
 
   config = lib.mkIf role.enable {
