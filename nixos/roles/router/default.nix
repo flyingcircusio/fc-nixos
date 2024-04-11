@@ -50,6 +50,8 @@ in
     ./bird6
     ./keepalived
     ./chrony.nix
+    ./dhcpd.nix
+    ./radvd.nix
   ];
 
   config = lib.mkIf role.enable {
@@ -108,10 +110,6 @@ in
 
     specialisation.primary = {
       configuration = {
-        imports = [
-          ./dhcpd.nix
-          ./radvd.nix
-        ];
         system.nixos.tags = [ "primary" ];
         flyingcircus.roles.router.isPrimary = true;
         environment.etc."is_primary".text = "";
@@ -133,6 +131,7 @@ in
       extraPreCommands = ''
         fc-dhcpd -4 -o /etc/nixos/localconfig-dhcpd4.conf ${location}
         fc-dhcpd -6 -o /etc/nixos/localconfig-dhcpd6.conf ${location}
+        # Updates files in /etc/bind and /etc/bind/pri where also Nix-generated config exists.
         fc-zones
       '';
     };

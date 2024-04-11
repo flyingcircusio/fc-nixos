@@ -25,6 +25,127 @@ let
       networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" "ethmgm" ];
 
       environment.etc."networks/tr".source = fclib.writePrettyJSON "tr" fclib.network.tr.dualstack;
+      environment.etc."networks/srv".source = fclib.writePrettyJSON "srv" fclib.network.tr.dualstack;
+      environment.etc."networks/mgm".source = fclib.writePrettyJSON "mgm" fclib.network.tr.dualstack;
+      environment.etc."networks/fe".source = fclib.writePrettyJSON "fe" fclib.network.tr.dualstack;
+
+      environment.etc."bind/pri/1.0.0.0.8.3.2.0.2.0.a.2.ip6.arpa.zone".text = ''
+        $TTL 86400
+        $ORIGIN 1.0.0.0.8.3.2.0.2.0.a.2.ip6.arpa.
+        @               86400   IN      SOA ns.dev.gocept.net. hostmaster.fcio.net. (
+                                                2024041000 ; serial
+                                                10800 ; refresh
+                                                900 ; retry
+                                                2419200 ; expire
+                                                1800 ; neg ttl
+                                        )
+                                        NS      ns.dev.gocept.net.
+        $TTL 7200
+        1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.3.0.f PTR     whq-router.tr.whq.gocept.net.
+        4.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.3.0.f PTR     lou.tr.whq.gocept.net.
+        5.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.3.0.f PTR     kenny01.tr.whq.gocept.net.
+      '';
+
+      environment.etc."bind/pri/252.105.185.in-addr.arpa.zone".text = ''
+        $TTL 86400
+        $ORIGIN 252.105.185.in-addr.arpa.
+        @               86400   IN      SOA ns.dev.gocept.net. hostmaster.fcio.net. (
+                                                2024041000 ; serial
+                                                10800 ; refresh
+                                                900 ; retry
+                                                2419200 ; expire
+                                                1800 ; neg ttl
+                                        )
+                                        NS      ns.dev.gocept.net.
+        $TTL 7200
+        1                               PTR     rzob-router.fe.rzob.gocept.net.
+      '';
+
+      environment.etc."bind/external-zones.conf".text = ''
+        zone "gocept.net" IN {
+            type master;
+            file "/etc/bind/pri/gocept.net-external.zone";
+        };
+
+        zone "1.0.0.0.8.3.2.0.2.0.a.2.ip6.arpa" IN {
+            type master;
+            file "/etc/bind/pri/1.0.0.0.8.3.2.0.2.0.a.2.ip6.arpa.zone";
+        };
+
+        zone "252.105.185.in-addr.arpa" IN {
+            type master;
+            file "/etc/bind/pri/252.105.185.in-addr.arpa.zone";
+        };
+      '';
+
+      environment.etc."bind/internal-zones.conf".text = ''
+        zone "gocept.net" IN {
+            type master;
+            file "/etc/bind/pri/gocept.net-internal.zone";
+        };
+
+        zone "1.0.0.0.8.3.2.0.2.0.a.2.ip6.arpa" IN {
+            type master;
+            file "/etc/bind/pri/1.0.0.0.8.3.2.0.2.0.a.2.ip6.arpa.zone";
+        };
+
+        zone "252.105.185.in-addr.arpa" IN {
+            type master;
+            file "/etc/bind/pri/252.105.185.in-addr.arpa.zone";
+        };
+      '';
+
+      environment.etc."bind/pri/gocept.net-external.zone".text = ''
+        $TTL 86400
+        $ORIGIN gocept.net.
+        @               86400   IN      SOA ns.dev.gocept.net. hostmaster.fcio.net. (
+                                                2024041000 ; serial
+                                                10800 ; refresh
+                                                900 ; retry
+                                                2419200 ; expire
+                                                1800 ; neg ttl
+                                        )
+                                        NS      ns.dev.gocept.net.
+        $TTL 7200
+        test00                        AAAA    2a02:248:101:63::222
+        test00.fe.rzob                A       195.62.125.222
+      '';
+
+      environment.etc."bind/pri/gocept.net-internal.zone".text = ''
+        $TTL 86400
+        $ORIGIN gocept.net.
+        @               86400   IN      SOA ns.dev.gocept.net. hostmaster.fcio.net. (
+                                                2024041001 ; serial
+                                                10800 ; refresh
+                                                900 ; retry
+                                                2419200 ; expire
+                                                1800 ; neg ttl
+                                        )
+                                        NS      ns.dev.gocept.net.
+        $TTL 7200
+        test00                        AAAA    2a02:248:101:63::222
+        test00                        A       172.22.22.222
+      '';
+
+      flyingcircus.services.dhcpd4.localconfig = ''
+        shared-network fe {
+            subnet 172.20.2.0 netmask 255.255.255.128 {
+                range 172.20.2.17 172.20.2.51;
+                range 172.20.2.125 172.20.2.125;
+                option subnet-mask 255.255.255.128;
+                option routers 172.20.2.1;
+                authoritative;
+            }
+        }
+      '';
+
+      flyingcircus.services.dhcpd6.localconfig = ''
+        shared-network fe {
+            subnet6 2a02:238:f030:1c2::/64 {
+                authoritative;
+            }
+        }
+      '';
 
       flyingcircus.enc.name = "router${toString id}";
       flyingcircus.enc.parameters = {
@@ -193,6 +314,12 @@ in
 
       with subtest("bind is running"):
         primary.wait_for_unit("bind")
+
+      with subtest("dhcpd4 is running"):
+        primary.wait_for_unit("dhcpd4")
+
+      with subtest("dhcpd6 is running"):
+        primary.wait_for_unit("dhcpd6")
     '';
   };
 
