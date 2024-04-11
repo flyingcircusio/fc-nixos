@@ -109,21 +109,21 @@ class LUKSKeyStoreManager(object):
             run.json.lsblk("-s", "-o", "NAME,PATH,TYPE,MOUNTPOINT")
         )
         for candidate in candidates:
+            this_header = header
             if not fnmatch.fnmatch(candidate.name, name_glob):
                 continue
             console.print(f"Replacing key for {candidate.name}")
 
             if (
-                (not header)
+                (not this_header)
                 and (mp := candidate.mountpoint)
                 and os.path.exists(headerfile := f"{mp}.luks")
             ):
-                header = headerfile
-            # TODO: nixos test?
+                this_header = headerfile
             self._do_rekey(
                 slot=slot,
                 device=candidate.base_blockdev,
-                header=header,
+                header=this_header,
             )
 
         console.print("Key updated.", style="bold green")
