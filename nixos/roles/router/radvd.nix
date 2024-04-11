@@ -46,7 +46,7 @@ let
     '';
 in
 {
-  config = lib.mkIf role.enable {
+  config = lib.mkIf (role.enable && role.isPrimary) {
     services.radvd = {
       enable = true;
       config = lib.concatStringsSep "\n\n" (lib.mapAttrsToList mkInterfaceBlock vlans);

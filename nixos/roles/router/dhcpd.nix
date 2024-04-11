@@ -44,32 +44,41 @@ let
     next-server ${location}-router.${suffix};
     '';
 
-  local4Conf = fclib.configFromFile "/etc/nixos/localconfig-dhcpd4.conf" "";
-
   dhcpd6Conf = ''
     # DHCPv6 specific general options
     option dhcp6.name-servers ${lib.concatStringsSep ", " resolvers6};
   '';
-
-  local6Conf = fclib.configFromFile "/etc/nixos/localconfig-dhcpd6.conf" "";
 in
 {
-  config = lib.mkIf role.enable {
+  options = with lib; {
+    flyingcircus.services.dhcpd4.localconfig = mkOption {
+      type = types.str;
+      default = fclib.configFromFile "/etc/nixos/localconfig-dhcpd4.conf" "";
+    };
+    flyingcircus.services.dhcpd6.localconfig = mkOption {
+      type = types.str;
+      default = fclib.configFromFile "/etc/nixos/localconfig-dhcpd6.conf" "";
+    };
+  };
+
+  config = lib.mkIf (role.enable && role.isPrimary) {
     services.dhcpd4 = {
       enable = true;
+      interfaces = [ "ethfe" "ethsrv" "ethmgm" ];
       configFile = pkgs.writeText "dhcpd4.conf" ''
         ${baseConf}
         ${dhcpd4Conf}
-        ${local4Conf}
+        ${config.flyingcircus.services.dhcpd4.localconfig}
       '';
     };
 
     services.dhcpd6 = {
       enable = true;
+      interfaces = [ "ethfe" "ethsrv" "ethmgm" ];
       configFile = pkgs.writeText "dhcpd6.conf" ''
         ${baseConf}
         ${dhcpd6Conf}
-        ${local6Conf}
+        ${config.flyingcircus.services.dhcpd6.localconfig}
       '';
     };
   };
