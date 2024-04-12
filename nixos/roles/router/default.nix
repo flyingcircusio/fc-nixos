@@ -56,6 +56,7 @@ in
 
   config = lib.mkIf role.enable {
 
+    flyingcircus.networking.enableInterfaceDefaultRoutes = false;
 
     boot.kernel.sysctl = {
       # It's a router: we want forwarding, obviously

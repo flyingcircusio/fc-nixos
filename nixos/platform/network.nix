@@ -65,6 +65,15 @@ let
 
 in
 {
+
+  options = {
+    flyingcircus.networking.enableInterfaceDefaultRoutes = lib.mkOption {
+      type = lib.types.bool;
+      description = "Enable default routes for all networks with known default gateways.";
+      default = true;
+    };
+  };
+
   config = rec {
     environment.etc."host.conf".text = ''
       order hosts, bind
@@ -105,13 +114,15 @@ in
           ipv4.addresses = interface.v4.attrs;
           ipv4.routes =
             let
-              defaultRoutes = map (gateway:
-                {
-                  address = "0.0.0.0";
-                  prefixLength = 0;
-                  via = gateway;
-                  options = { metric = toString interface.priority; };
-                }) interface.v4.defaultGateways;
+              defaultRoutes = lib.optionals
+                (config.flyingcircus.networking.enableInterfaceDefaultRoutes)
+                (map (gateway:
+                  {
+                    address = "0.0.0.0";
+                    prefixLength = 0;
+                    via = gateway;
+                    options = { metric = toString interface.priority; };
+                  }) interface.v4.defaultGateways);
 
               # To select the correct interface, add routes for other subnets
               # in which this machine doesn't have its own address.
@@ -133,12 +144,14 @@ in
 
           ipv6.routes =
             let
-              defaultRoutes = map (gateway:
-                { address = "::";
-                  prefixLength = 0;
-                  via = gateway;
-                  options = { metric = toString interface.priority; };
-                }) interface.v6.defaultGateways;
+              defaultRoutes = lib.optionals
+                (config.flyingcircus.networking.enableInterfaceDefaultRoutes)
+                (map (gateway:
+                  { address = "::";
+                    prefixLength = 0;
+                    via = gateway;
+                    options = { metric = toString interface.priority; };
+                  }) interface.v6.defaultGateways);
 
               additionalRoutes = map
                 (net: { address = net.network; inherit (net) prefixLength; })
