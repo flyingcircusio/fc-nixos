@@ -155,40 +155,49 @@ let
           mac = "52:54:00:12:01:0${toString id}";
           bridged = false;
           networks = {
-            "172.20.1.0/24" = [ "172.20.1.${toString id}" ];
-            "2a02:238:f030:1c1::/64" = [ "2a02:238:f030:1c1::${toString id}" ];
+            "172.20.1.0/24" = [ "172.20.1.1${toString id}" ];
+            "2a02:238:f030:1c1::/64" = [ "2a02:238:f030:1c1::1${toString id}" ];
           };
-          gateways = {};
+          gateways = {
+            "172.20.1.0/24" = "172.20.1.1";
+            "2a02:238:f030:1c1::/64" = "2a02:238:f030:1c1::1";
+          };
         };
         interfaces.fe = {
           mac = "52:54:00:12:02:0${toString id}";
           bridged = false;
           networks = {
-            "172.20.2.0/24" = [ "172.20.2.${toString id}" ];
-            "2a02:238:f030:1c2::/64" = [ "2a02:238:f030:1c2::${toString id}" ];
+            "172.20.2.0/24" = [ "172.20.2.1${toString id}" ];
+            "2a02:238:f030:1c2::/64" = [ "2a02:238:f030:1c2::1${toString id}" ];
           };
-          gateways = {};
+          gateways = {
+            "172.20.2.0/24" = "172.20.2.1";
+            "2a02:238:f030:1c2::/64" = "2a02:238:f030:1c2::1";
+          };
         };
         interfaces.srv = {
           mac = "52:54:00:12:03:0${toString id}";
           bridged = false;
           networks = {
-            "172.20.3.0/24" = [ "172.20.3.${toString id}" ];
-            "172.30.3.0/24" = [ "172.30.3.${toString id}" ];
-            "2a02:238:f030:1c3::/64" = [ "2a02:238:f030:1c3::${toString id}" ];
+            "172.20.3.0/24" = [ "172.20.3.1${toString id}" ];
+            "172.30.3.0/24" = [ "172.30.3.1${toString id}" ];
+            "2a02:238:f030:1c3::/64" = [ "2a02:238:f030:1c3::1${toString id}" ];
           };
-          gateways = {};
+          gateways = {
+            "172.20.3.0/24" = "172.20.3.1";
+            "2a02:238:f030:1c3::/64" = "2a02:238:f030:1c3::1";
+          };
         };
         interfaces.tr = {
           mac = "52:54:00:12:06:0${toString id}";
           bridged = false;
           networks = {
-            "172.20.6.0/24" = [ "172.20.6.${toString id}" ];
-            "2a02:238:f030:1c6::/124" = [ "2a02:238:f030:1c6::${toString id}" ];
+            "172.20.6.0/24" = [ "172.20.6.1${toString id}" ];
+            "2a02:238:f030:1c6::/124" = [ "2a02:238:f030:1c6::1${toString id}" ];
           };
           gateways = {
-            "172.20.6.0/24" = "172.20.6.254";
-            "2a02:238:f030:1c6::/124" = "2a02:238:f030:1c6::3";
+            "172.20.6.0/24" = "172.20.6.1";
+            "2a02:238:f030:1c6::/124" = "2a02:238:f030:1c6::1";
           };
         };
       };
@@ -417,6 +426,46 @@ in
         router.wait_until_succeeds("cat /tmp/agent-mock-called")
 
       print(router.succeed("journalctl -xb -u keepalived"))
+    '';
+  };
+
+  testCases.failover = {
+    nodes = {
+      router1 = makeRouterConfig { id = 1; };
+      router2 = makeRouterConfig { id = 2; };
+    };
+    testScript = { nodes, ... }: mkTestScript ''
+      with subtest("First router should become primary"):
+        router1.wait_until_succeeds("systemctl is-active keepalived")
+        router2.wait_until_succeeds("systemctl is-active keepalived")
+        router1.r.wait_until_is_primary()
+        router2.r.wait_until_is_secondary()
+
+      with subtest("router1: pull mgm, should switch to router2"):
+        router1.send_monitor_command("set_link virtio-net-pci.1 off")
+        router1.r.wait_until_is_secondary()
+        router2.r.wait_until_is_primary()
+        router1.send_monitor_command("set_link virtio-net-pci.1 on")
+
+      with subtest("router2: pull fe, should switch to router1"):
+        router2.send_monitor_command("set_link virtio-net-pci.2 off")
+        router1.r.wait_until_is_primary()
+        router2.r.wait_until_is_secondary()
+        router2.send_monitor_command("set_link virtio-net-pci.2 on")
+
+      with subtest("router1: pull srv, should switch to router2"):
+        router1.send_monitor_command("set_link virtio-net-pci.3 off")
+        router1.r.wait_until_is_secondary()
+        router2.r.wait_until_is_primary()
+        router1.send_monitor_command("set_link virtio-net-pci.3 on")
+
+      with subtest("router2: write stopper file, should switch to router1"):
+        router2.succeed("sed -i 'c 1' /etc/keepalived/stop")
+        router1.r.wait_until_is_primary()
+        router2.r.wait_until_is_secondary()
+
+      print(router1.succeed("journalctl -xb -u keepalived"))
+      print(router2.succeed("journalctl -xb -u keepalived"))
     '';
   };
 
