@@ -21,7 +21,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # Import old php versions from nix-phps.
   inherit (phps) php72 php73 php74 php80;
-  inherit (super) php81 php82;
+  inherit (super) php81 php82 php83;
 }
 //
 {
@@ -176,6 +176,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
               ]);
 
   lamp_php82 = self.php82.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
+
+  lamp_php83 = self.php83.withExtensions ({ enabled, all }:
               enabled ++ [
                 all.bcmath
                 all.imagick
