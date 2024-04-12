@@ -35,6 +35,7 @@ ferretdb
 kubernetes
 lamp
 mailserver
+mailstub
 matomo
 memcached
 mongodb
