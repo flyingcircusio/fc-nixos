@@ -81,6 +81,5 @@ lib.mkIf role.enable {
 
   systemd.tmpfiles.rules = [
     "d /etc/keepalived 0755 root root"
-    "f /etc/keepalived/stop 0644 root root - 0"
   ];
 }
