@@ -78,6 +78,10 @@ lib.mkIf role.enable {
     };
   };
 
+  networking.firewall.extraCommands = ''
+    ip6tables -A nixos-fw -p 112 -j ACCEPT
+  '';
+
   systemd.tmpfiles.rules = [
     "d /etc/keepalived 0755 root root"
     "f /etc/keepalived/stop 0644 root root - 0"
