@@ -1,7 +1,7 @@
 import os
 import traceback
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import fc.manage.manage
 import fc.util.enc
@@ -93,11 +93,17 @@ def dry_activate(
 
 @app.command(name="switch")
 def switch_cmd(
-    specialisation: str = Option(
+    specialisation_name: Optional[str] = Option(
         None,
         "--specialisation",
         "-s",
-        help="Which system specialisation to switch to",
+        help="Which system specialisation to activate. Choices: "
+        + ", ".join(EXISTING_SPECIALISATIONS),
+    ),
+    to_base_configuration: bool = Option(
+        False,
+        "--base-system",
+        help="Activate the base system without specialisation.",
     ),
     update_enc_data: bool = Option(
         False,
@@ -128,6 +134,22 @@ def switch_cmd(
     log.info(
         "fc-manage-start", _replace_msg="fc-manage started with PID: {pid}"
     )
+
+    if specialisation_name and to_base_configuration:
+        log.error("invalid-args")
+        raise Exit(1)
+
+    if specialisation_name:
+        if specialisation_name not in EXISTING_SPECIALISATIONS:
+            log.error(
+                "invalid-specialisation", specialisation=specialisation_name
+            )
+            raise Exit(1)
+        specialisation = specialisation_name
+    elif to_base_configuration:
+        specialisation = Specialisation.BASE_CONFIG
+    else:
+        specialisation = Specialisation.KEEP_CURRENT
 
     with locked(log, context.lock_dir):
         if update_enc_data:
@@ -169,7 +191,7 @@ def switch_cmd(
 
 @app.command()
 def activate_configuration(
-    specialisation_name: str = Option(
+    specialisation_name: Optional[str] = Option(
         None,
         "--specialisation",
         "-s",
@@ -250,11 +272,17 @@ def fc_manage(
         "-c",
         help="(legacy flag) Update channel, build, switch.",
     ),
-    specialisation: str = Option(
+    specialisation_name: Optional[str] = Option(
         None,
         "--specialisation",
         "-s",
-        help="Which system specialisation to switch to",
+        help="Which system specialisation to activate. Choices: "
+        + ", ".join(EXISTING_SPECIALISATIONS),
+    ),
+    to_base_configuration: bool = Option(
+        False,
+        "--base-system",
+        help="Activate the base system without specialisation.",
     ),
     update_enc_data: bool = Option(
         False, "--directory", "-e", help="(legacy flag) Update inventory data."
@@ -341,6 +369,22 @@ def fc_manage(
         _replace_msg="fc-manage started with PID: {pid}",
         legacy_call=True,
     )
+
+    if specialisation_name and to_base_configuration:
+        log.error("invalid-args")
+        raise Exit(1)
+
+    if specialisation_name:
+        if specialisation_name not in EXISTING_SPECIALISATIONS:
+            log.error(
+                "invalid-specialisation", specialisation=specialisation_name
+            )
+            raise Exit(1)
+        specialisation = specialisation_name
+    elif to_base_configuration:
+        specialisation = Specialisation.BASE_CONFIG
+    else:
+        specialisation = Specialisation.KEEP_CURRENT
 
     with locked(log, lock_dir):
         if update_enc_data:

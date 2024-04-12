@@ -8,6 +8,7 @@ import fc.manage.cli
 import fc.manage.manage
 import pytest
 import typer.testing
+from fc.util.nixos import Specialisation
 
 CHANNEL_URL = (
     "https://hydra.flyingcircus.io/build/138288/download/1/nixexprs.tar.xz"
@@ -76,7 +77,7 @@ def test_invoke_switch(
     expected = {
         "log": switch.call_args.kwargs["log"],
         "enc": ENC,
-        "specialisation": None,
+        "specialisation": Specialisation.KEEP_CURRENT,
         "lock_dir": tmpdir,
         "lazy": False,
         "show_trace": False,
@@ -118,7 +119,7 @@ def test_invoke_switch_with_channel_update(
     expected = {
         "log": switch_with_update.call_args.kwargs["log"],
         "enc": ENC,
-        "specialisation": None,
+        "specialisation": Specialisation.KEEP_CURRENT,
         "lock_dir": tmpdir,
         "lazy": False,
         "show_trace": False,
