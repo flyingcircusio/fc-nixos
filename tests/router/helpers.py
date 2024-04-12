@@ -38,21 +38,27 @@ class Router:
         print("primary system:", primary_system)
         return primary_system
 
-    def is_primary(self):
+    @property
+    def current_system(self):
         machine = self.machine
-        current_system_path = machine.execute(
-            "readlink -f /run/current-system"
-        )[1].strip()
-        return current_system_path == self.primary_system
+        return Path(
+            machine.execute("readlink -f /run/current-system")[1].strip()
+        )
+
+    @property
+    def is_primary(self):
+        return self.current_system == self.primary_system
 
     def wait_until_is_primary(self):
         machine = self.machine
-        for x in range(30):
+        name = machine.name
+
+        for x in range(60):
             current_system = Path(
                 machine.execute("readlink -f /run/current-system")[1].strip()
             )
             print(
-                f"Waiting for router to become primary (specialisation primary), try {x}"
+                f"Waiting for {name} to become primary (specialisation primary), try {x}"
             )
             print(
                 "Current specialisation:",
@@ -67,11 +73,16 @@ class Router:
                     f"Running as primary (specialisation primary) at {current_date}"
                 )
                 return
+
             time.sleep(0.5)
+
+        raise AssertionError(f"Router {name} did not become primary!")
 
     def wait_until_is_secondary(self):
         machine = self.machine
-        for x in range(30):
+        name = machine.name
+
+        for x in range(60):
             current_system = Path(
                 machine.execute("readlink -f /run/current-system")[1].strip()
             )
@@ -89,7 +100,10 @@ class Router:
                 current_date = machine.execute("date")[1]
                 print(f"Running as secondary (base system) at {current_date}")
                 return
+
             time.sleep(0.5)
+
+        raise AssertionError(f"Router {name} did not become primary!")
 
 
 def r(self):
