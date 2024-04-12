@@ -340,7 +340,7 @@ in
     testScript = { nodes, ... }: mkTestScript ''
       print(f"Initial system path: {router.r.initial_system_path}")
       router.r.secondary_system
-      print("primary ?", router.r.is_primary())
+      print("primary ?", router.r.is_primary)
       router.r.wait_until_is_secondary()
     '';
   };
