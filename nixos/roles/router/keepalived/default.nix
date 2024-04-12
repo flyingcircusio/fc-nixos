@@ -62,11 +62,8 @@ lib.mkIf role.enable {
   };
 
   systemd.services.keepalived = {
-    # Restarting is ok for secondary routers but we have to avoid
-    # restarts on the primary router to not interrupt things.
-    # XXX: This means that some changes won't be active on primary routers
-    # until a switchover happens.
-    reloadIfChanged = role.isPrimary;
+    reloadIfChanged = true;
+    # Don't be confused by the name "restartTriggers", reload also uses it.
     restartTriggers = [ keepalivedConf ];
     serviceConfig = {
       Type = lib.mkOverride 90 "simple";
