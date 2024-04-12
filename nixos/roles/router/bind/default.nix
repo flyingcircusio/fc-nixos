@@ -113,4 +113,9 @@ lib.mkIf role.enable {
       config.environment.etc."bind/pri/1.0.1.0.8.4.2.0.2.0.a.2.zone".source
   ];
 
+  networking.firewall.extraCommands = ''
+    ip46tables -A nixos-fw -p tcp --dport 53 -j nixos-fw-accept
+    ip46tables -A nixos-fw -p udp --dport 53 -j nixos-fw-accept
+  '';
+
 }
