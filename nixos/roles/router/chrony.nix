@@ -30,4 +30,6 @@ lib.mkIf role.enable {
     ip46tables -A nixos-fw -p udp --dport 123 -j ACCEPT
   '';
 
+  services.timesyncd.enable = false;
+
 }
