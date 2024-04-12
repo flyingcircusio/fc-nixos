@@ -544,7 +544,6 @@ def get_specialisation_path_for_system(
             log.debug(
                 "specialisation-requested", specialisation=specialisation_name
             )
-            pass
 
     if specialisation_name:
         return Path(system_path) / "specialisation" / specialisation_name
