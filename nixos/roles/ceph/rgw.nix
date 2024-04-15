@@ -113,6 +113,11 @@ in
         };
       };
 
+      flyingcircus.agent.maintenance.rgw = {
+        enter = "systemctl stop fc-ceph-rgw";
+        leave = "systemctl start fc-ceph-rgw";
+      };
+
       networking.firewall.extraStopCommands = ''
         ip46tables -w -t nat -D PREROUTING -j fc-nat-pre 2>/dev/null|| true
         ip46tables -w -t nat -F fc-nat-pre 2>/dev/null || true

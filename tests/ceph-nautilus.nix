@@ -433,6 +433,23 @@ in
       host1.execute('rm /mnt/keys/*')
       host1.fail("${check_key_file_cmd} > /dev/kmsg 2>&1")
 
+
+    # Maintenance integration
+    with subtest("Check maintenance integration"):
+      host1.execute('fc-maintenance request  script "test" "echo 1"')
+      maintenance_log = host1.execute('fc-maintenance run --run-all-now')[1]
+      print(maintenance_log)
+      assert "fc-ceph maintenance enter" in maintenance_log
+      assert "systemctl stop fc-ceph-rgw" in maintenance_log
+
+      assert "2 OSDs or CRUSH {nodes, device-classes} have {NOUP,NODOWN,NOIN,NOOUT} flags set"
+      assert "2 osds down"
+
+      assert "systemctl start fc-ceph-rgw" in maintenance_log
+      assert "fc-ceph maintenance leave" in maintenance_log
+
+      assert_clean_cluster(host2, 3, 3, 3, 320)
+
     # TODO: include test for rbd map rbdnamer udev rule functionality, after having rebased onto PL-130691
 
     # commented out because this test sometimes succeeds, but often just hangs
