@@ -433,20 +433,28 @@ in
       host1.execute('rm /mnt/keys/*')
       host1.fail("${check_key_file_cmd} > /dev/kmsg 2>&1")
 
-
     # Maintenance integration
     with subtest("Check maintenance integration"):
-      host1.execute('fc-maintenance request  script "test" "echo 1"')
-      maintenance_log = host1.execute('fc-maintenance run --run-all-now')[1]
-      print(maintenance_log)
-      assert "fc-ceph maintenance enter" in maintenance_log
-      assert "systemctl stop fc-ceph-rgw" in maintenance_log
+      host1.execute("rm /var/log/fc-agent.log")
+      host1.execute('fc-maintenance -v request script "test" "ceph -s"')
+      result = host1.execute("cat /var/log/fc-agent.log")[1]
+      print("="*80)
+      print(result)
 
-      assert "2 OSDs or CRUSH {nodes, device-classes} have {NOUP,NODOWN,NOIN,NOOUT} flags set"
-      assert "2 osds down"
+      host1.execute("rm /var/log/fc-agent.log")
+      host1.execute('fc-maintenance -v run --no-online --run-all-now 2>&1')
+      result = host1.execute("cat /var/log/fc-agent.log")[1]
+      print("="*80)
+      print(result)
 
-      assert "systemctl start fc-ceph-rgw" in maintenance_log
-      assert "fc-ceph maintenance leave" in maintenance_log
+      assert "fc-ceph maintenance enter" in result, "maintenance enter not seen"
+      assert "systemctl stop fc-ceph-rgw" in result, "fc-ceph-rgw not stopped"
+
+      assert "1 OSDs or CRUSH {nodes, device-classes} have {NOUP,NODOWN,NOIN,NOOUT} flags set" in result, "flags not set"
+      assert "osds down" in result, "osds not down"
+
+      assert "systemctl start fc-ceph-rgw" in result, "rgw not started"
+      assert "fc-ceph maintenance leave" in result, "maintenance not left"
 
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
