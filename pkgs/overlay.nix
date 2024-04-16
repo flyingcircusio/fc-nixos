@@ -366,6 +366,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     };
   });
 
+  # FIXME: do we really need libxcrypt-legacy or could we just use libxcrypt-with-sha256 instead?
+  proftpd = self.callPackage ./proftpd {perl = self.perl.override { libxcrypt = self.libxcrypt-legacy;}; };
+
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
   python27 = super.python27.overrideAttrs (prev: {
