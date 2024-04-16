@@ -78,17 +78,14 @@ with lib;
       };
 
       nameservers = {
-        # ns.$location.gocept.net, ns2.$location.gocept.net
+        # The virtual router SRV IP which acts as the location-wide resolver.
+        #
         # We are currently not using IPv6 resolvers as we have seen obscure bugs
         # when enabling them, like weird search path confusion that results in
         # arbitrary negative responses, combined with the rotate flag.
-        #
-        # This seems to be https://sourceware.org/bugzilla/show_bug.cgi?id=13028
-        # which is fixed in glibc 2.22 which is included in NixOS 16.03.
-        dev = [ "172.20.2.1" "172.20.3.7" "172.20.3.57" ];
-        whq = [ "212.122.41.129" "212.122.41.173" "212.122.41.169" ];
-        rzob = [ "195.62.125.1" "195.62.126.130" "195.62.126.131" ];
-        rzrl1 = [ "84.46.82.1" "172.24.48.2" "172.24.48.10" ];
+        dev = [ "172.20.3.1" ];
+        whq = [ "172.16.48.1" ];
+        rzob = [ "172.22.48.1" ];
         standalone = [ "9.9.9.9" "8.8.8.8" ];
       };
 
