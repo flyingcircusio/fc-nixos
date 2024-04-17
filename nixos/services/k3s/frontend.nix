@@ -237,7 +237,7 @@ in
       services.k3s = let
         nodeAddress = head fclib.network.srv.v4.addresses;
         k3sFlags = [
-          "--flannel-iface=${fclib.network.srv.device}"
+          "--flannel-iface=${fclib.network.srv.interface}"
           "--node-ip=${nodeAddress}"
           "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
           "--data-dir=/var/lib/k3s"

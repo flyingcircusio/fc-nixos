@@ -44,8 +44,8 @@ in
 
     # Internal interface
     networking.firewall.extraCommands = ''
-      ip6tables -A nixos-fw -i ${fclib.network.srv.device} -p tcp --dport 8301 -j nixos-fw-accept
-      ip6tables -A nixos-fw -i ${fclib.network.srv.device} -p tcp --dport 8300 -j nixos-fw-accept
+      ip6tables -A nixos-fw -i ${fclib.network.srv.interface} -p tcp --dport 8301 -j nixos-fw-accept
+      ip6tables -A nixos-fw -i ${fclib.network.srv.interface} -p tcp --dport 8300 -j nixos-fw-accept
     '';
 
     flyingcircus.services.nginx.enable = true;

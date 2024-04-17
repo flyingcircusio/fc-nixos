@@ -346,7 +346,7 @@ in
     };
 
     networking.firewall.extraCommands = let
-      srvDevice = config.fclib.network.srv.device;
+      srvDevice = config.fclib.network.srv.interface;
     in ''
       # Accept traffic to the radosgw service
       ${fclib.iptables "127.0.0.1"} -A nixos-fw -p tcp --dport 7480 -i ${srvDevice} -j nixos-fw-accept

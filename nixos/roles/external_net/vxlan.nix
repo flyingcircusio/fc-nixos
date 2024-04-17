@@ -91,8 +91,8 @@ let
       domain=ext.${domain}
       domain-needed
       interface=lo,${dev}
-      except-interface=${fclib.network.fe.device}
-      except-interface=${fclib.network.srv.device}
+      except-interface=${fclib.network.fe.interface}
+      except-interface=${fclib.network.srv.interface}
       local-ttl=60
       auth-server=${extnet.frontendName},ethfe
       auth-zone=ext.${domain}
