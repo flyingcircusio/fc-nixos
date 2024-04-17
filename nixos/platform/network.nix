@@ -36,6 +36,14 @@ let
     # XXX handling this within fclib.network.ul would be great.
     (lib.optionals (!isNull fclib.underlay) fclib.underlay.links);
 
+  virtualLinks = let
+    allLinks = lib.unique
+      (lib.foldl (acc: iface: acc ++ iface.linkStack) [] managedInterfaces);
+    ethernetLinks = lib.unique
+      (map (iface: iface.link) ethernetInterfaces);
+  in
+    lib.subtractLists ethernetLinks allLinks;
+
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
 
   # generally use DHCP in the current location?
@@ -398,34 +406,46 @@ in
                 RemainAfterExit = true;
               };
             })) ethernetInterfaces) ++
-        (map (iface:
-          (lib.nameValuePair
-            "network-disable-ipv6-autoconfig-${iface.interface}"
-            {
-              description = "Disable IPv6 autoconfig for all interfaces assembling ${iface.vlan}";
-              wantedBy = [ "network-addresses-${iface.interface}.service"
-                           "multi-user.target" ];
-              bindsTo = [ "${iface.interface}-netdev.service" ];
-              after = [ "${iface.interface}-netdev.service" ];
-              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp ];
-              stopIfChanged = false;
-              script =  lib.concatMapStringsSep "\n"
-                (link: ''
-                # Disable IPv6 SLAAC (autoconf)
-                sysctl net.ipv6.conf.${link}.accept_ra=0
-                sysctl net.ipv6.conf.${link}.autoconf=0
-                sysctl net.ipv6.conf.${link}.temp_valid_lft=0
-                sysctl net.ipv6.conf.${link}.temp_prefered_lft=0
-                for oldtmp in `ip -6 address show dev ${link} dynamic scope global | grep inet6 | cut -d ' ' -f6`; do
-                  ip addr del $oldtmp dev ${link}
-                done
-              '') iface.linkStack;
-              serviceConfig = {
-                Type = "oneshot";
-                RemainAfterExit = true;
-              };
-            }
-          )) managedInterfaces) ++
+        (let
+          unitName = link: "network-disable-ipv6-autoconfig-${link}";
+          unitTemplate = link: rec {
+            description = "Disable IPv6 autoconfig for link ${link}";
+            wantedBy = [ "network-addresses-${link}.service"
+                         "multi-user.target" ];
+            before = wantedBy;
+            path = [ pkgs.procps fclib.relaxedIp ];
+            stopIfChanged = false;
+            script = ''
+              # Disable IPv6 SLAAC (autoconf)
+              sysctl net.ipv6.conf.${link}.accept_ra=0
+              sysctl net.ipv6.conf.${link}.autoconf=0
+              sysctl net.ipv6.conf.${link}.temp_valid_lft=0
+              sysctl net.ipv6.conf.${link}.temp_prefered_lft=0
+              for oldtmp in `ip -6 address show dev ${link} dynamic scope global | grep inet6 | cut -d ' ' -f6`; do
+                ip addr del $oldtmp dev ${link}
+              done
+            '';
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+            };
+          };
+
+          hardwareLinkUnit = link: ((unitTemplate link) // {
+            after = [ "sys-subsystem-net-devices-${utils.escapeSystemdPath link}.device" ];
+          });
+          virtualLinkUnit = link: ((unitTemplate link) // {
+            bindsTo = [ "${link}-netdev.service" ];
+            after = [ "${link}-netdev.service" ];
+          });
+        in
+          (map (iface:
+            lib.nameValuePair (unitName iface.link) (hardwareLinkUnit iface.link))
+            ethernetInterfaces) ++
+          (map (link:
+            lib.nameValuePair (unitName link) (virtualLinkUnit link))
+            virtualLinks)
+        ) ++
         (lib.optionals (!isNull fclib.underlay)
           # loopback dummy device
           (let linkName = fclib.underlay.interface; in [
