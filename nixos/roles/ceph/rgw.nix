@@ -130,7 +130,7 @@ in
 
         '' + (lib.concatMapStringsSep "\n"
           (net: ''
-            iptables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 80 -j ACCEPT
+            iptables -A nixos-fw -i ${srv.interface} -s ${net} -p tcp --dport 80 -j ACCEPT
             # PL-130368 Fix S3 presigned URLs
             iptables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
           '')
@@ -138,7 +138,7 @@ in
         ) + "\n" +
         (lib.concatMapStringsSep "\n"
           (net: ''
-            ip6tables -A nixos-fw -i ${srv.device} -s ${net} -p tcp --dport 80 -j ACCEPT
+            ip6tables -A nixos-fw -i ${srv.interface} -s ${net} -p tcp --dport 80 -j ACCEPT
             # PL-130368 Fix S3 presigned URLs
             ip6tables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
           '')

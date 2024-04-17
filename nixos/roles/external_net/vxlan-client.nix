@@ -35,13 +35,14 @@ in
     {
       systemd.services."network-external-routing" =
         let
-          netdev = fclib.network.srv.device;
+          netdev = fclib.network.srv.interface;
         in rec {
-        description = "Custom routing rules dsafds for external networks";
+        description = "Custom routing rules for external networks";
         after = [ "network-addresses-${netdev}.service" "firewall.service" ];
         requires = after;
         wantedBy = [ "network.target" ];
-        bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.layer2device}.device" ];
+        # XXX quoting
+        bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.interface}.device" ];
         path = [ pkgs.gawk pkgs.iproute pkgs.glibc pkgs.iptables ];
 
         serviceConfig = {

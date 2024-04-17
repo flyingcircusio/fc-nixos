@@ -7,29 +7,34 @@ let
 
   fclib = config.fclib;
 
-  interfaces = filter (i: i.vlan != "ipmi" && i.vlan != "lo") (lib.attrValues fclib.network);
-  managedInterfaces = filter (i: i.policy != "unmanaged" && i.policy != "null") interfaces;
-  physicalInterfaces = filter (i: i.policy != "vxlan" && i.policy != "underlay") managedInterfaces;
+  # XXX there's a lot of conditionals here
+  interfaces = filter
+    (i: i.vlan != "ipmi" && i.vlan != "lo")
+    (lib.attrValues fclib.network);
 
-  nonUnderlayInterfaces = filter (i: i.policy != "underlay") managedInterfaces;
-  bridgedInterfaces = filter (i: i.bridged) managedInterfaces;
-  vxlanInterfaces = filter (i: i.policy == "vxlan") managedInterfaces;
-  ethernetDevices =
-    (lib.forEach physicalInterfaces
-      (iface: {
-        name = if iface.bridged then iface.layer2device else iface.device;
-        mtu = iface.mtu;
-        mac = iface.mac;
-      })
-    ) ++
-    (lib.optionals (!isNull fclib.underlay) (lib.mapAttrsToList
-      (name: value: {
-        name = name;
-        mtu = fclib.underlay.mtu;
-        mac = value;
-      })
-      fclib.underlay.interfaces)
-    );
+  managedInterfaces = filter
+    (i: i.policy != "unmanaged" && i.policy != "null")
+    interfaces;
+
+  physicalInterfaces = filter
+    (i: i.policy != "vxlan" && i.policy != "underlay")
+    managedInterfaces;
+
+  nonUnderlayInterfaces = filter
+    (i: i.policy != "underlay")
+    managedInterfaces;
+
+  bridgedInterfaces = filter
+    (i: i.bridged)
+    managedInterfaces;
+
+  vxlanInterfaces = filter
+    (i: i.policy == "vxlan")
+    managedInterfaces;
+
+  ethernetInterfaces = physicalInterfaces ++
+    # XXX handling this within fclib.network.ul would be great.
+    (lib.optionals (!isNull fclib.underlay) fclib.underlay.links);
 
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
 
@@ -59,9 +64,12 @@ let
     # Due to the way we report interface config we may und up with repeated
     # rules for physical interfaces (e.g. with with two tagged interfaces
     # on the same underlying device).
-    (map (interface: ''
-      SUBSYSTEM=="net" , ATTR{address}=="${interface.mac}", NAME="${interface.layer2device}"
-    '') interfaces));
+    # XXX this doesn't sound right
+    (map (iface: ''
+      SUBSYSTEM=="net" , ATTR{address}=="${iface.mac}", NAME="${iface.link}"
+    '') ethernetInterfaces));
+
+   quoteLabel = replaceStrings ["/"] ["-"];
 
 in
 {
@@ -97,11 +105,10 @@ in
         then cfg.static.nameservers.${location}
         else [];
 
-
       vlans = listToAttrs (map (interface:
-        lib.nameValuePair interface.taggedDevice {
+        lib.nameValuePair interface.taggedLink {
           id = interface.vlanId;
-          interface = interface.layer2device;
+          interface = interface.link;
         })
         (filter (interface: interface.policy == "tagged") interfaces));
 
@@ -110,7 +117,7 @@ in
       # or
       # { brfe = { ... }; brsrv = { }; ethsto = { }; ... }
       interfaces = listToAttrs ((map (interface:
-        (lib.nameValuePair "${interface.device}" {
+        (lib.nameValuePair "${interface.interface}" {
           ipv4.addresses = interface.v4.attrs;
           ipv4.routes =
             let
@@ -162,26 +169,25 @@ in
           mtu = interface.mtu;
         })) nonUnderlayInterfaces) ++
       (lib.optionals (!isNull fclib.underlay) [(
-        lib.nameValuePair "ul-loopback" {
+        lib.nameValuePair fclib.underlay.interface {
           ipv4.addresses = [{
             address = fclib.underlay.loopback;
             prefixLength = 32;
           }];
           tempAddress = "disabled";
-          mtu = fclib.underlay.mtu;
+          mtu = fclib.network.ul.mtu;
         }
       )]) ++
-      (lib.optionals (!isNull fclib.underlay)
-        (map (iface: lib.nameValuePair iface {
+      ((map (iface: lib.nameValuePair iface.link {
           tempAddress = "disabled";
-          mtu = fclib.underlay.mtu;
+          mtu = iface.mtu;
         })
-          (attrNames fclib.underlay.interfaces))));
+        fclib.underlay.links or [])));
 
       bridges = listToAttrs (map (interface:
         (lib.nameValuePair
-          "${interface.device}"
-          { interfaces = interface.attachedDevices; }))
+          "${interface.interface}"
+          { interfaces = interface.attachedLinks; }))
         bridgedInterfaces);
 
       resolvconf.extraOptions = [ "ndots:1" "timeout:1" "attempts:6" ];
@@ -208,7 +214,7 @@ in
 
       firewall.trustedInterfaces =
         lib.optionals (!isNull fclib.underlay && cfg.infrastructureModule == "flyingcircus-physical")
-          ([ "brsto" "brstb" ] ++ (attrNames fclib.underlay.interfaces));
+          ([ "brsto" "brstb" ] ++ (map (l: l.link) fclib.underlay.links or []));
     };
 
     flyingcircus.activationScripts = {
@@ -276,8 +282,8 @@ in
            neighbor switches capability extended-nexthop
            neighbor switches bfd
            ${lib.concatMapStringsSep "\n "
-             (name: "neighbor ${name} interface peer-group switches")
-             (attrNames fclib.underlay.interfaces)
+             (iface: "neighbor ${iface.link} interface peer-group switches")
+             fclib.underlay.links
            }
            !
            address-family ipv4 unicast
@@ -335,18 +341,6 @@ in
     boot.extraModprobeConfig = "options dummy numdummies=0";
 
     systemd.services =
-      let
-        sysctlSnippet = ''
-          # Disable IPv6 SLAAC (autoconf) on physical interfaces
-          sysctl net.ipv6.conf.$IFACE.accept_ra=0
-          sysctl net.ipv6.conf.$IFACE.autoconf=0
-          sysctl net.ipv6.conf.$IFACE.temp_valid_lft=0
-          sysctl net.ipv6.conf.$IFACE.temp_prefered_lft=0
-          for oldtmp in `ip -6 address show dev $IFACE dynamic scope global  | grep inet6 | cut -d ' ' -f6`; do
-            ip addr del $oldtmp dev $IFACE
-          done
-        '';
-      in
       { nscd.restartTriggers = [
           config.environment.etc."host.conf".source
         ];
@@ -362,73 +356,83 @@ in
       (listToAttrs
         ((map (iface:
           (lib.nameValuePair
-            "network-link-properties-${iface.name}-phy"
+            "network-link-properties-${iface.link}"
             rec {
-              description = "Ensure link properties for physical interface ${iface.name}";
-              wantedBy = [ "network-addresses-${iface.name}.service"
+              description = "Ensure link properties for ${iface.link}";
+              wantedBy = [ "network-addresses-${iface.interface}.service"
                            "multi-user.target" ];
-              after = [ "sys-subsystem-net-devices-${utils.escapeSystemdPath iface.name}.device" ];
+              after = [ "sys-subsystem-net-devices-${utils.escapeSystemdPath iface.link}.device" ];
               before = wantedBy;
               path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp ];
               script = ''
-                IFACE=${iface.name}
-
-                IFACE_DRIVER=$(ethtool -i $IFACE | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
-                case $IFACE_DRIVER in
+                LINK_DRIVER=$(ethtool -i ${iface.link} | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
+                case $LINK_DRIVER in
                     e1000|e1000e|igb|ixgbe|i40e)
                         # Set adaptive interrupt moderation. This does increase
-                        #
+                        # latency.
                         echo "Enabling adaptive interrupt moderation ..."
-                        ethtool -C "$IFACE" rx-usecs 1 || true
+                        ethtool -C "${iface.link}" rx-usecs 1 || true
                         # Larger buffers.
                         echo "Setting ring buffer ..."
-                        ethtool -G "$IFACE" rx 4096 tx 4096 || true
+                        ethtool -G "${iface.link}" rx 4096 tx 4096 || true
                         # Large receive offload to reduce small packet CPU/interrupt impact.
                         echo "Enabling large receive offload ..."
-                        ethtool -K "$IFACE" lro on || true
+                        ethtool -K "${iface.link}" lro on || true
                         ;;
                 esac
 
                 echo "Disabling flow control"
-                ethtool -A $IFACE autoneg off rx off tx off || true
+                ethtool -A ${iface.link} autoneg off rx off tx off || true
 
                 # Ensure MTU
-                ip l set $IFACE mtu ${toString iface.mtu}
+                ip l set ${iface.link} mtu ${toString iface.mtu}
 
-                ${sysctlSnippet}
+                # Add long alternative names according to the external label
+                ip l property add altname ${quoteLabel iface.externalLabel} dev ${iface.link}
+              '';
+              preStop = ''
+                ip l property del altname ${quoteLabel iface.externalLabel} dev ${iface.link}
               '';
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            })) ethernetDevices) ++
+            })) ethernetInterfaces) ++
         (map (iface:
           (lib.nameValuePair
-            "network-link-properties-${iface.device}-virt"
+            "network-disable-ipv6-autoconfig-${iface.interface}"
             {
-              description = "Ensure link properties for virtual interface ${iface.device}";
-              wantedBy = [ "network-addresses-${iface.device}.service"
+              description = "Disable IPv6 autoconfig for all interfaces assembling ${iface.vlan}";
+              wantedBy = [ "network-addresses-${iface.interface}.service"
                            "multi-user.target" ];
-              bindsTo = [ "${iface.device}-netdev.service" ];
-              after = [ "${iface.device}-netdev.service" ];
-              path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
+              bindsTo = [ "${iface.interface}-netdev.service" ];
+              after = [ "${iface.interface}-netdev.service" ];
+              path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp ];
               stopIfChanged = false;
-              script = ''
-                IFACE=${iface.device}
-                ${sysctlSnippet}
-              '';
+              script =  lib.concatMapStringsSep "\n"
+                (link: ''
+                # Disable IPv6 SLAAC (autoconf)
+                sysctl net.ipv6.conf.${link}.accept_ra=0
+                sysctl net.ipv6.conf.${link}.autoconf=0
+                sysctl net.ipv6.conf.${link}.temp_valid_lft=0
+                sysctl net.ipv6.conf.${link}.temp_prefered_lft=0
+                for oldtmp in `ip -6 address show dev ${link} dynamic scope global | grep inet6 | cut -d ' ' -f6`; do
+                  ip addr del $oldtmp dev ${link}
+                done
+              '') iface.linkStack;
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
             }
-          )) bridgedInterfaces) ++
+          )) managedInterfaces) ++
         (lib.optionals (!isNull fclib.underlay)
           # loopback dummy device
-          ([(lib.nameValuePair
-            "ul-loopback-netdev"
+          (let linkName = fclib.underlay.interface; in [
+            (lib.nameValuePair
+            "${linkName}-netdev"
             rec {
-              description = "Dummy Interface ul-loopback";
+              description = "Dummy interface ${linkName}";
               wantedBy = [ "network-setup.service" "multi-user.target" ];
               before = wantedBy;
               after = [ "network-pre.service" ];
@@ -436,25 +440,16 @@ in
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               reloadIfChanged = true;
               script = ''
-                IFACE=ul-loopback
-
                 # Create virtual interface underlay
-                ip link add $IFACE type dummy
+                ip link add ${linkName} type dummy
 
-                ip link set $IFACE mtu ${toString fclib.underlay.mtu}
-
-                ${sysctlSnippet}
+                ip link set ${linkName} mtu ${toString fclib.network.ul.mtu}
               '';
               reload = ''
-                IFACE=ul-loopback
-
-                ip link set $IFACE mtu ${toString fclib.underlay.mtu}
-
-                ${sysctlSnippet}
+                ip link set ${linkName} mtu ${toString fclib.network.ul.mtu}
               '';
               preStop = ''
-                IFACE=ul-loopback
-                ip link delete $IFACE
+                ip link delete ${linkName}
               '';
               serviceConfig = {
                 Type = "oneshot";
@@ -462,63 +457,54 @@ in
               };
             }
           ) (lib.nameValuePair
-            "network-addresses-ul-loopback"
+            "network-addresses-${linkName}"
             rec {
-              after = [ "ul-loopback-netdev.service" ];
+              after = [ "${linkName}-netdev.service" ];
               bindsTo = after;
             }
           )] ++
           # vxlan kernel devices
           (map (iface: (lib.nameValuePair
-            "${iface.layer2device}-netdev"
+            "${iface.link}-netdev"
             rec {
-              description = "VXLAN Interface ${iface.layer2device}";
+              description = "VXLAN link device ${iface.link}";
               wantedBy = [ "network-setup.service" "multi-user.target" ];
               before = wantedBy;
-              requires = [ "network-addresses-ul-loopback.service" ];
+              requires = [ "network-addresses-${fclib.underlay.interface}.service" ];
               after = requires ++ [ "network-pre.target" ];
               partOf = requires ++ [ "network-setup.service" ];
               reloadIfChanged = true;
               path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
               script = ''
-                IFACE=${iface.layer2device}
-
-                # Create virtual interface ${iface.layer2device}
-                ip link add $IFACE type vxlan \
+                # Create virtual link ${iface.link}
+                ip link add ${iface.link} type vxlan \
                   id ${toString iface.vlanId} \
                   local ${fclib.underlay.loopback} \
                   dstport 4789 \
                   nolearning
 
                 # Set MTU and layer 2 address
-                ip link set $IFACE address ${iface.mac}
-                ip link set $IFACE mtu ${toString iface.mtu}
+                ip link set ${iface.link} address ${iface.mac}
+                ip link set ${iface.link} mtu ${toString iface.mtu}
 
                 # Do not automatically generate IPv6 link-local address
-                ip link set $IFACE addrgenmode none
-
-                ${sysctlSnippet}
+                ip link set ${iface.link} addrgenmode none
               '';
               reload = ''
-                IFACE=${iface.layer2device}
-
-                # Set underlay address for virtual interface ${iface.layer2device}.
+                # Set underlay address for virtual interface ${iface.link}.
                 # Note that changing the VNI or destination port after the interface
                 # has been created is not supported.
-                ip link set $IFACE type vxlan local ${fclib.underlay.loopback}
+                ip link set ${iface.link} type vxlan local ${fclib.underlay.loopback}
 
                 # Set MTU and layer 2 address
-                ip link set $IFACE address ${iface.mac}
-                ip link set $IFACE mtu ${toString iface.mtu}
+                ip link set ${iface.link} address ${iface.mac}
+                ip link set ${iface.link} mtu ${toString iface.mtu}
 
                 # Do not automatically generate IPv6 link-local address
-                ip link set $IFACE addrgenmode none
-
-                ${sysctlSnippet}
+                ip link set ${iface.link} addrgenmode none
               '';
               preStop = ''
-                IFACE=${iface.layer2device}
-                ip link delete $IFACE
+                ip link delete ${iface.link}
               '';
               serviceConfig = {
                 Type = "oneshot";
@@ -526,29 +512,31 @@ in
               };
             })) vxlanInterfaces) ++
           (map (iface: (lib.nameValuePair
-            "network-addresses-${iface.layer2device}"
+            "network-addresses-${iface.interface}"
             rec {
-              after = [ "${iface.layer2device}-netdev.service" ];
+              after = [ "${iface.link}-netdev.service" ];
               bindsTo = after;
             }
           )) vxlanInterfaces) ++
           # bridge port configuration for vxlan devices
+          # XXX we always make VXLAN ports bridge ports ... this complicates the
+          # code a bit.
           (map (iface: (lib.nameValuePair
-            "network-link-properties-${iface.layer2device}-bridged"
+            "network-bridge-port-properties-${iface.link}"
             {
-              description = "Ensure link properties for bridge port ${iface.layer2device}";
+              description = "Ensure bridge port properties for ${iface.link}";
               wantedBy = [ "multi-user.target" ];
-              partOf = [ "${iface.device}-netdev.service" ];
-              after = [ "${iface.device}-netdev.service" ];
+              partOf = [ "${iface.interface}-netdev.service" ];
+              after = [ "${iface.interface}-netdev.service" ];
               stopIfChanged = false;
               path = [ fclib.relaxedIp ];
               script = ''
-                ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
+                ip link set ${iface.link} type bridge_slave neigh_suppress on learning off
               '';
               reload = ''
-                ip link set ${iface.layer2device} type bridge_slave neigh_suppress on learning off
+                ip link set ${iface.link} type bridge_slave neigh_suppress on learning off
               '';
-              unitConfig.ReloadPropagatedFrom = [ "${iface.device}-netdev.service" ];
+              unitConfig.ReloadPropagatedFrom = [ "${iface.interface}-netdev.service" ];
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
@@ -557,31 +545,31 @@ in
           )) vxlanInterfaces) ++
           # underlay network physical interfaces
           (map (iface: (lib.nameValuePair
-            "network-link-properties-${iface}-underlay"
+            "network-underlay-properties-${iface.link}"
             {
-              description = "Ensure link properties for physical underlay interface ${iface}";
-              wantedBy = [ "network-addresses-${iface}.service"
+              description = "Ensure underlay properties for ${iface.link}";
+              wantedBy = [ "network-addresses-${iface.link}.service"
                            "multi-user.target" ];
-              after = [ "network-link-properties-${iface}-phy.service" ];
+              after = [ "network-link-properties-${iface.link}.service" ];
               path = [ pkgs.procps ];
               script = ''
-                sysctl net.ipv4.conf.${iface}.rp_filter=0
+                sysctl net.ipv4.conf.${iface.link}.rp_filter=0
               '';
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
             }
-          )) (attrNames fclib.underlay.interfaces)) ++ [
+          )) fclib.underlay.links) ++ [
             # fallback unreachable routes
             (lib.nameValuePair
               "network-underlay-routing-fallback"
               rec {
                 description = "Ensure fallback unreachable route for underlay prefixes";
-                wantedBy = [ "network-addresses-ul-loopback.service"
+                wantedBy = [ "network-addresses-${fclib.underlay.interface}.service"
                              "multi-user.target" ];
                 before = wantedBy;
-                after = [ "ul-loopback-netdev.service" ];
+                after = [ "${fclib.underlay.interface}-netdev.service" ];
                 path = [ fclib.relaxedIp ];
                 stopIfChanged = false;
                 # https://docs.frrouting.org/en/stable-8.5/zebra.html#administrative-distance
@@ -617,14 +605,17 @@ in
                 after = [ "lldpd.service" ];
                 unitConfig.Requisite = after;
                 serviceConfig.Type = "oneshot";
-                script = "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${lib.concatStringsSep " " (attrNames fclib.underlay.interfaces)}";
+                script = let
+                  links = lib.concatStringsSep " " (map (i: i.link) ethernetInterfaces);
+                in
+                  "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${links}";
               }
             )
             # ensure that restarts of ul-loopback are propagated to zebra
             (lib.nameValuePair
               "zebra"
               rec {
-                requires = [ "network-addresses-ul-loopback.service" ];
+                requires = [ "network-addresses-${fclib.underlay.interface}.service" ];
                 after = requires;
                 partOf = requires;
               }
@@ -636,7 +627,10 @@ in
       uplink_redundancy = {
         notification = "Host has redundant switch connectivity";
         interval = 600;
-        command = "${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy ${lib.concatStringsSep " " (attrNames fclib.underlay.interfaces)}";
+        command = let
+          links = lib.concatStringsSep " " (map (i: i.link) fclib.underlay.links);
+        in
+          "${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy ${links}";
       };
     };
 
@@ -669,7 +663,7 @@ in
       # neighbour discovery. Seen on #denog on 2020-11-19
       "net.ipv6.route.max_size" = 2147483647;
 
-      # Ensure we can work in larger vLANs with hundreds of nodes.
+      # Ensure we can work in larger VLANs with hundreds of nodes.
       "net.ipv4.neigh.default.gc_thresh1" = 1024;
       "net.ipv4.neigh.default.gc_thresh2" = 4096;
       "net.ipv4.neigh.default.gc_thresh3" = 8192;
@@ -728,8 +722,8 @@ in
     environment.etc."sysctl.d/70-fcio-underlay.conf" =
       lib.mkIf (!isNull fclib.underlay) {
         text = lib.concatMapStringsSep "\n"
-          (iface: "-net.ipv4.conf.${iface}.rp_filter")
-          (attrNames fclib.underlay.interfaces);
+          (iface: "-net.ipv4.conf.${iface.link}.rp_filter")
+          fclib.underlay.links;
       };
 
   };
