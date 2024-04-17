@@ -454,7 +454,7 @@ rec {
         in if length addrs == 0
            then throw "Underlay network has no address assigned"
            else head addrs;
-      interface = underlayLoopbackInterfaceName;
+      interface = underlayLoopbackLinkName;
       subnets = network.ul.v4.networks;
       links = map (l: {
           # Unify with the fclib.network. structure
