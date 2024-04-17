@@ -92,6 +92,8 @@ in
       ];
 
       systemd.services.fc-ceph-rgw = rec {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Start/stop local Ceph Rados Gateway";
         wantedBy = [ "multi-user.target" ];
         # Ceph requires the IPs to be properly attached to interfaces so it
@@ -189,6 +191,8 @@ in
     (lib.mkIf (role.enable && role.primary) {
 
       systemd.timers.fc-ceph-rgw-update-stats = {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Timer for updating RGW stats";
         wantedBy = [ "timers.target" ];
         timerConfig = {
@@ -198,6 +202,8 @@ in
       };
 
       systemd.timers.fc-ceph-rgw-accounting = {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Timer for uploading S3 usage data to the Directory";
         wantedBy = [ "timers.target" ];
         timerConfig = {

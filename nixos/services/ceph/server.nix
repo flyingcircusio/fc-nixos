@@ -35,6 +35,8 @@ in
           Background: We operate our rbd.hdd and rbd.ssd pools under different Ceph crush
           roots to map them to disjoint sets of certain disks.'';
       };
+
+      passive = lib.mkEnableOption "Setup all configuration but disable any daemon units.";
     };
   };
 
