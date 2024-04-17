@@ -246,15 +246,18 @@ class MaintenanceTasks(object):
         # not automatically return.
         try:
             host_buckets, osd_ids = get_host_crush_buckets()
-            run.ceph("osd", "set-group", "noup", *sorted(host_buckets))
-            run.ceph("osd", "down", *sorted(osd_ids))
+            if host_buckets:
+                run.ceph("osd", "set-group", "noup", *sorted(host_buckets))
+            if osd_ids:
+                run.ceph("osd", "down", *sorted(osd_ids))
         except Exception:
             self.leave()
             sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
 
     def leave(self):
         host_buckets, osd_ids = get_host_crush_buckets()
-        run.ceph("osd", "unset-group", "noup", *sorted(host_buckets))
+        if host_buckets:
+            run.ceph("osd", "unset-group", "noup", *sorted(host_buckets))
 
         last_exc = None
         for _ in range(self.UNLOCK_MAX_RETRIES):
