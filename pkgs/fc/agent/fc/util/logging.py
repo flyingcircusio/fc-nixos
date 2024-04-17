@@ -6,6 +6,7 @@ import io
 import json
 import os
 import string
+import subprocess
 import sys
 import syslog
 from datetime import datetime
@@ -656,8 +657,19 @@ def init_logging(
 
     # If the journal module is available and stdout is connected to journal, we
     # shouldn't log to console because output would be duplicated in the journal.
-    if log_to_console and not (journal and os.environ.get("JOURNAL_STREAM")):
-        loggers["console"] = structlog.PrintLoggerFactory(sys.stderr)
+    if log_to_console:
+        if journal and os.environ.get("JOURNAL_STREAM"):
+            print(
+                "Detected systemd journal context. "
+                "Disabling output to stdout/stderr.",
+                file=sys.stderr,
+            )
+            print("Running in unit:", file=sys.stderr)
+            pid = os.getpid()
+            unit_info = subprocess.getoutput(f"systemctl status {pid}")
+            print(unit_info.splitlines()[0], file=sys.stderr)
+        else:
+            loggers["console"] = structlog.PrintLoggerFactory(sys.stderr)
 
     structlog.configure(
         processors=processors,

@@ -277,7 +277,7 @@ def test_execute_postpone(log, reqmanager):
     req.state = State.due
     req.execute = Mock()
 
-    def enter_maintenance_postpone():
+    def enter_maintenance_postpone(online: bool = True):
         raise PostponeMaintenance()
 
     reqmanager._runnable = lambda run_all_now, force_run: [req]
@@ -420,8 +420,9 @@ def test_schedule_run_end_to_end(connect, request_population):
                     }
                 }
             ),
-        ]
-    ), "unexpected end maintenance calls"
+        ],
+        "unexpected end maintenance calls",
+    )
     assert postp.call_count == 1, "unexpected postpone call count"
 
 

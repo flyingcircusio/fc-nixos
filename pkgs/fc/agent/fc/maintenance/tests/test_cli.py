@@ -7,7 +7,7 @@ import pytest
 import typer.testing
 
 CHANNEL_URL = (
-    "https://hydra.flyingcircus.io/build/138288/download/1/nixexprs" ".tar.xz"
+    "https://hydra.flyingcircus.io/build/138288/download/1/nixexprs.tar.xz"
 )
 ENVIRONMENT = "test"
 
@@ -75,7 +75,7 @@ def test_invoke_schedule(invoke_app_as_root):
 
 def test_invoke_run(invoke_app_as_root):
     invoke_app_as_root("run")
-    fc.maintenance.cli.rm.execute.assert_called_once_with(False, False)
+    fc.maintenance.cli.rm.execute.assert_called_once_with(False, False, True)
     fc.maintenance.cli.rm.postpone.assert_called_once()
     fc.maintenance.cli.rm.archive.assert_called_once()
 
@@ -86,12 +86,17 @@ def test_invoke_run_as_normal_user_should_fail(invoke_app_as_normal_user):
 
 def test_invoke_run_all_now(invoke_app_as_root):
     invoke_app_as_root("run", "--run-all-now")
-    fc.maintenance.cli.rm.execute.assert_called_once_with(True, False)
+    fc.maintenance.cli.rm.execute.assert_called_once_with(True, False, True)
 
 
 def test_invoke_run_all_now_force_run(invoke_app_as_root):
     invoke_app_as_root("run", "--run-all-now", "--force-run")
-    fc.maintenance.cli.rm.execute.assert_called_once_with(True, True)
+    fc.maintenance.cli.rm.execute.assert_called_once_with(True, True, True)
+
+
+def test_invoke_run_all_offline(invoke_app_as_root):
+    invoke_app_as_root("run", "--no-online")
+    fc.maintenance.cli.rm.execute.assert_called_once_with(False, False, False)
 
 
 def test_invoke_delete(invoke_app_as_root):
@@ -157,21 +162,12 @@ def test_invoke_request_cold_reboot(activity, invoke_app_as_root):
 @unittest.mock.patch("fc.maintenance.cli.request_reboot_for_cpu")
 @unittest.mock.patch("fc.maintenance.cli.request_reboot_for_memory")
 def test_invoke_request_system_properties_virtual(
-    memory, cpu, qemu, kernel, invoke_app_as_root
-):
-    invoke_app_as_root("request", "system-properties")
-    memory.assert_called_once()
-    cpu.assert_called_once()
-    qemu.assert_called_once()
-    kernel.assert_called_once()
-
-
-@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_kernel")
-@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_qemu")
-@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_cpu")
-@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_memory")
-def test_invoke_request_system_properties_virtual(
-    memory, cpu, qemu, kernel, tmpdir, invoke_app_as_root
+    memory,
+    cpu,
+    qemu,
+    kernel,
+    tmpdir,
+    invoke_app_as_root,
 ):
     enc_file = tmpdir / "enc.json"
     enc = ENC.copy()

@@ -404,7 +404,10 @@ class ReqManager:
         for existing_request in reversed(self.requests.values()):
             # We can stop if request was merged or removed, continue otherwise
             match self._merge_request(existing_request, request):
-                case RequestMergeResult.SIGNIFICANT_UPDATE | RequestMergeResult.UPDATE:
+                case (
+                    RequestMergeResult.SIGNIFICANT_UPDATE
+                    | RequestMergeResult.UPDATE
+                ):
                     return existing_request
                 case RequestMergeResult.REMOVE:
                     return
@@ -540,15 +543,15 @@ class ReqManager:
                 )
                 due_dt = max(utcnow(), request.next_due + delta)
 
-    @require_directory
-    def _enter_maintenance(self):
+    def _enter_maintenance(self, online: bool = True):
         """Enters maintenance mode which tells the directory to mark the machine
         as 'not in service'. The main reason is to avoid false alarms during expected
         service interruptions as the machine reboots or services are restarted.
         """
         self.log.debug("enter-maintenance")
         self.log.debug("mark-node-out-of-service")
-        self.directory.mark_node_service_status(socket.gethostname(), False)
+        if online:
+            self._mark_directory_service_status(False)
 
         if self.maintenance_marker_path.exists():
             previous_maintenance_entered_at = (
@@ -638,7 +641,10 @@ class ReqManager:
             raise TempfailMaintenance()
 
     @require_directory
-    def _leave_maintenance(self):
+    def _mark_directory_service_status(self, status: bool):
+        self.directory.mark_node_service_status(socket.gethostname(), status)
+
+    def _leave_maintenance(self, online: bool = True):
         """
         Tells the directory to mark the machine 'in service'.
         It's ok to call this method even when the machine is already in service.
@@ -652,7 +658,8 @@ class ReqManager:
             )
             subprocess.run(command, shell=True, check=True)
         self.log.debug("mark-node-in-service")
-        self.directory.mark_node_service_status(socket.gethostname(), True)
+        if online:
+            self._mark_directory_service_status(True)
         if self.maintenance_marker_path.exists():
             maintenance_entered_at = self.maintenance_marker_path.read_text()
             self.log.debug(
@@ -864,9 +871,13 @@ class ReqManager:
             subprocess.run("reboot", check=True, capture_output=True, text=True)
             sys.exit(0)
 
-    @require_directory
     @require_lock
-    def execute(self, run_all_now: bool = False, force_run: bool = False):
+    def execute(
+        self,
+        run_all_now: bool = False,
+        force_run: bool = False,
+        online: bool = True,
+    ):
         """
         Enters maintenance mode, executes requests and reboots if activities request it.
 
@@ -893,13 +904,13 @@ class ReqManager:
 
         runnable_requests = self._runnable(run_all_now, force_run)
         if not runnable_requests:
-            self._leave_maintenance()
+            self._leave_maintenance(online)
             self._write_stats_for_execute()
             return
 
         prepare_dt = utcnow()
         try:
-            self._enter_maintenance()
+            self._enter_maintenance(online)
         except PostponeMaintenance:
             res = self._handle_enter_postpone(run_all_now, force_run)
             if res.postpone:
@@ -907,7 +918,7 @@ class ReqManager:
                     self.log.debug("execute-requests-postpone", request=req.id)
                     req.state = State.postpone
             if res.exit:
-                self._leave_maintenance()
+                self._leave_maintenance(online)
                 self._write_stats_for_execute()
                 return
 
@@ -949,11 +960,15 @@ class ReqManager:
 
         # When we are still here, no reboot happened. We can leave maintenance now.
         self.log.debug("no-reboot-requested")
-        self._leave_maintenance()
+        self._leave_maintenance(online)
+
+    @require_directory
+    def _postpone(self, request: dict):
+        # This directory call just returns an empty string.
+        self.directory.postpone_maintenance(request)
 
     @require_lock
-    @require_directory
-    def postpone(self):
+    def postpone(self, online: bool = True):
         """Instructs directory to postpone requests.
 
         Postponed requests get their new scheduled time with the next
@@ -968,20 +983,24 @@ class ReqManager:
         postpone_maintenance = {
             req.id: {"postpone_by": 2 * int(req.estimate)} for req in postponed
         }
-        self.log.debug(
-            "postpone-maintenance-directory", args=postpone_maintenance
-        )
-        # This directory call just returns an empty string.
-        self.directory.postpone_maintenance(postpone_maintenance)
+
+        if online:
+            self.log.debug(
+                "postpone-maintenance-directory", args=postpone_maintenance
+            )
+            self._postpone(postpone_maintenance)
         for req in postponed:
             # Resetting the due datetime also sets the state to pending.
             # Request will be rescheduled on the next run.
             req.update_due(None)
             req.save()
 
-    @require_lock
     @require_directory
-    def archive(self):
+    def _end_maintenance(self, items: dict):
+        self.directory.end_maintenance(items)
+
+    @require_lock
+    def archive(self, online: bool = True):
         """Move all completed requests to archivedir."""
         self.log.debug("archive-start")
         archived = [r for r in self.requests.values() if r.state in ARCHIVE]
@@ -999,7 +1018,8 @@ class ReqManager:
         self.log.debug(
             "archive-end-maintenance-directory", args=end_maintenance
         )
-        self.directory.end_maintenance(end_maintenance)
+        if online:
+            self._end_maintenance(end_maintenance)
         for req in archived:
             self.log.info(
                 "archive-request",
