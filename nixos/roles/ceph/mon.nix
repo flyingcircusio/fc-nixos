@@ -137,6 +137,8 @@ in
       };
 
       systemd.services.fc-ceph-mon = rec {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Local Ceph Mon (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
         # Ceph requires the IPs to be properly attached to interfaces so it
@@ -220,6 +222,8 @@ in
       };
 
       systemd.services.fc-ceph-mgr = rec {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Local Ceph MGR (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
         # Ceph requires the IPs to be properly attached to interfaces so it
@@ -304,6 +308,8 @@ in
     (lib.mkIf (role.enable && role.primary) {
 
       systemd.timers.fc-ceph-load-vm-images = {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Timer for loading new VM base images";
         wantedBy = [ "timers.target" ];
         timerConfig = {
@@ -313,6 +319,8 @@ in
       };
 
       systemd.timers.fc-ceph-purge-old-snapshots = {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Timer for cleaning old snapshots";
         wantedBy = [ "timers.target" ];
         timerConfig = {
@@ -322,6 +330,8 @@ in
       };
 
       systemd.timers.fc-ceph-clean-deleted-vms = {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Timer for cleaning deleted VM disks";
         wantedBy = [ "timers.target" ];
         timerConfig = {
@@ -331,6 +341,8 @@ in
       };
 
       systemd.timers.fc-ceph-mon-update-client-keys = {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Timer for updating client keys and authorization in the monitor database.";
         wantedBy = [ "timers.target" ];
         timerConfig = {

@@ -9,6 +9,7 @@ rec {
   check-ceph-nautilus = callPackage ./check-ceph/nautilus {inherit (pkgs.ceph-nautilus) ceph-client;};
   check-haproxy = callPackage ./check-haproxy {};
   check-journal = callPackage ./check-journal.nix {};
+  check-link-redundancy = callPackage ./check-link-redundancy {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
 
@@ -60,5 +61,6 @@ rec {
   userscan = callPackage ./userscan.nix {};
   util-physical = callPackage ./util-physical {};
   telegraf-collect-psi = callPackage ./telegraf-collect-psi {};
+  telegraf-routes-summary = callPackage ./telegraf-routes-summary {};
 
 }

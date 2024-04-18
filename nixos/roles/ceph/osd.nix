@@ -195,6 +195,8 @@ in
       flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
 
       systemd.services.fc-ceph-osds-all = rec {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "All locally known Ceph OSDs (via fc-ceph managed units)";
         wantedBy = [ "multi-user.target" ];
 
@@ -223,6 +225,8 @@ in
       } // osdServiceDeps;
 
       systemd.services."fc-ceph-osd@" = rec {
+        enable = ! config.flyingcircus.services.ceph.server.passive;
+
         description = "Ceph OSD %i";
 
         environment = {

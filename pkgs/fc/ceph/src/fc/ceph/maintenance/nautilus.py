@@ -1,6 +1,7 @@
 """Configure pools on Ceph storage servers according to the directory."""
 
 import json
+import socket
 import subprocess
 import sys
 import time
@@ -109,6 +110,28 @@ class VolumeDeletions(object):
         return status_code
 
 
+def get_host_crush_buckets() -> tuple[set[str], set[str]]:
+    """Return  the names of the crush buckets that correspond with the
+    host entries of this host as well as their associated OSD IDs.
+    """
+    hostname = socket.gethostname()
+    osd_tree = run.json.ceph("osd", "tree")
+
+    osds: set[str] = set()
+
+    # Find the host entries in the crush map associated with this host
+    host_map_entries = set()
+    for node in osd_tree["nodes"]:
+        if node["type"] != "host":
+            continue
+        if node["name"].split("-")[0] != hostname:
+            continue
+        host_map_entries.add(node["name"])
+        osds.update(map(str, node["children"]))
+
+    return host_map_entries, osds
+
+
 class MaintenanceTasks(object):
     """Controller that holds a number of maintenance-related methods."""
 
@@ -185,7 +208,7 @@ class MaintenanceTasks(object):
                 timeout=self.LOCKTOOL_TIMEOUT_SECS,
             )
             # fmt: on
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             run.rbd("create", "--size", "1", "rbd/.maintenance")
 
     def enter(self):
@@ -203,8 +226,9 @@ class MaintenanceTasks(object):
             self.leave()
             sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
         # already locked by someone else
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
+
         # Check that the cluster is fully healhty
         cluster_status = run.json.ceph("health")
         if not self.check_cluster_maintenance(cluster_status):
@@ -218,7 +242,23 @@ class MaintenanceTasks(object):
             # 69 signals to postpone the maintenance, triggering a leave in fc-agent
             sys.exit(69)
 
+        # Prohibit OSD traffic by marking them down and flagging them to
+        # not automatically return.
+        try:
+            host_buckets, osd_ids = get_host_crush_buckets()
+            if host_buckets:
+                run.ceph("osd", "set-group", "noup", *sorted(host_buckets))
+            if osd_ids:
+                run.ceph("osd", "down", *sorted(osd_ids))
+        except Exception:
+            self.leave()
+            sys.exit(75)  # EXIT_TEMPFAIL, fc-agent might retry
+
     def leave(self):
+        host_buckets, osd_ids = get_host_crush_buckets()
+        if host_buckets:
+            run.ceph("osd", "unset-group", "noup", *sorted(host_buckets))
+
         last_exc = None
         for _ in range(self.UNLOCK_MAX_RETRIES):
             try:

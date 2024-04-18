@@ -3,14 +3,209 @@ import os
 import os.path
 import re
 import time
+from socket import gethostname
 from subprocess import CalledProcessError
 from typing import Optional
 
 import fc.ceph.luks
+from fc.ceph.luks import Cryptsetup
 from fc.ceph.util import console, mount_status, run
 
 
+class GenericBlockDevice:
+    def __new__(cls, name: str):
+        # prevent explicitly instantiated child classes from returning as None
+        if cls is not GenericLogicalVolume:
+            return object.__new__(cls)
+        if MdraidDevice.exists(name):
+            return MdraidDevice(name)
+        elif DiskWithSinglePartition.exists(name):
+            return DiskWithSinglePartition(name)
+        # Allow operations to proceed by creating a block device
+        return None
+
+    def __init__(self, name: str):
+        self.name = name
+
+    # create cannot be a generic method, as it requires different params depending on the type
+    @property
+    def blockdevice(self) -> str:
+        raise NotImplementedError
+
+    @classmethod
+    def exists(cls, name: str) -> bool:
+        raise NotImplementedError
+
+    def ensure_partition_type(self, hexcode: str):
+        """allow passing down and ensuring the correct partition type through
+        the stacked disk abstractions, to match the filesystem or volume manager
+        used at the partition level.
+        """
+        raise NotImplemented
+
+
+class MdraidDevice(GenericBlockDevice):
+    """represents a software RAID array in mode RAID6 with spare disk. Uses the
+    whole provided blockdevices without partitioning."""
+
+    RAID_PARITY = 3
+    RAID_SPARE = 1
+    RAID_MIN_DISKS = 1 + RAID_PARITY + RAID_SPARE
+
+    @classmethod
+    def create(
+        cls,
+        name: str,
+        # The mdraid individual member disks could also be generalised as
+        # GenericBlockDevices itself, but for simplicity directly use
+        # concrete string device paths here.
+        blockdevices: list[str],
+    ):
+        if len(blockdevices) < cls.RAID_MIN_DISKS:
+            raise RuntimeError(
+                f"MdraidDevice: at least {cls.RAID_MIN_DISKS} disks required. Aborting."
+            )
+        main_disks = blockdevices[:-1]
+        spare_disk = blockdevices[-1]
+        obj = cls(name)
+        run.mdadm(
+            "--create",
+            f"/dev/md/{obj.name}",
+            "--level=6",
+            f"--raid-devices={len(main_disks)}",
+            *main_disks,
+        )
+        # add spare disk
+        run.mdadm("--add", obj.blockdevice, spare_disk)
+        return obj
+
+    def __init__(self, name: str):
+        self.name = name
+
+    @property
+    def blockdevice(self) -> str:
+        return self._bdname(self.name)
+
+    @staticmethod
+    def _bdname(name: str) -> str:
+        # By default, mdadm records the hostname of the host where the raid has
+        # been created in the superblock. This hostname becomes part of the
+        # device symlink name.
+        # Here we assume that RAID devices are not moved between hosts.
+        return f"/dev/disk/by-id/md-name-{gethostname()}:{name}"
+
+    @classmethod
+    def exists(cls, name) -> bool:
+        potential_name = cls._bdname(name)
+        return (
+            os.path.exists(potential_name)
+            and os.path.exists(os.readlink(potential_name))
+            and str(os.readlink(potential_name)).startswith("/dev/md")
+        )
+
+    def ensure_partition_type(self, hexcode: str):
+        """not necessary here, as we initialise the mdraid on a full
+        unpartitioned disk"""
+        pass
+
+
+class DiskWithSinglePartition(GenericBlockDevice):
+    """
+    Abstracts a whole disk with a single partition, using GPT
+
+    name: the name of the full disk, e.g. /dev/sda
+    blockdevice: returns the path to the partition, e.g. /dev/sda1
+    """
+
+    def __init__(self, name: str):
+        super().__init__(name)
+        self._blockdevice: Optional[str] = None
+
+    @staticmethod
+    def _partition_candidates(disk: str) -> list[str]:
+        return [f"{disk}1", f"{disk}p1"]
+
+    @property
+    def blockdevice(self):
+        if not self._blockdevice:
+            for partition in self._partition_candidates(self.name):
+                if os.path.exists(partition):
+                    self._blockdevice = partition
+                    break
+            else:
+                raise RuntimeError(f"Could not find partition 1 on {self.name}")
+        return self._blockdevice
+
+    @classmethod
+    def create(cls, disk: str) -> "DiskWithSinglePartition":
+        obj = cls(disk)
+        run.sgdisk("-Z", disk)
+        run.sgdisk("-a", "8192", "-n", "1:0:0", disk)
+        return obj
+
+    def ensure_partition_type(self, hexcode: str):
+        run.sgdisk("-t", f"1:{hexcode}", self.name)
+
+    @classmethod
+    def ensure(cls, disk: str):
+        if cls.exists(disk):
+            return cls(disk)
+        else:
+            return cls.create(disk)
+
+    @classmethod
+    def exists(cls, disk) -> bool:
+        return any(
+            [os.path.exists(part) for part in cls._partition_candidates(disk)]
+        )
+
+
+class AutomountActivationMixin:
+    automount: bool
+    mountpoint: str
+    FSTYPE: str
+    MOUNT_OPTS: str
+
+    def activate(self):
+        mount_device = mount_status(self.mountpoint)
+        if not os.path.exists(self.mountpoint):
+            os.makedirs(self.mountpoint)
+
+        if self.automount:
+            console.print("Waiting for automount…", style="grey50")
+            time.sleep(1)
+            try:
+                run.mount(
+                    self.mountpoint
+                )  # device recreation does not always trigger automount
+            except CalledProcessError as e:
+                if e.returncode == 32:
+                    # we take this as "already mounted", but device could also be busy
+                    pass
+                else:
+                    raise e
+            while not (mount_device := mount_status(self.mountpoint)):
+                console.print(
+                    "Waiting for mountpoint to be activated automatically ... ",
+                    style="grey50",
+                )
+                time.sleep(1)
+        if not mount_device:
+            run.mount(
+                # fmt: off
+                "-t", self.FSTYPE, "-o", self.MOUNT_OPTS,
+                self.device, self.mountpoint,
+                # fmt: on
+            )
+        elif mount_device != self.lv.expected_mapper_name:
+            raise RuntimeError(
+                f"Mountpoint is using unexpected device `{mount_device}`."
+            )
+
+
 class GenericLogicalVolume:
+    name: str
+
     def __new__(cls, name):
         # prevent explicitly instantiated child classes from returning as None
         if cls is not GenericLogicalVolume:
@@ -31,14 +226,23 @@ class GenericLogicalVolume:
 
     @classmethod
     def create(
-        cls, name, vg_name, disk, encrypt, size
+        cls,
+        name: str,
+        vg_name: str,
+        base_device: Optional[GenericBlockDevice],
+        encrypt: bool,
+        size,
     ) -> "GenericLogicalVolume":
         if cls.exists(name):
             raise RuntimeError("Volume already exists.")
         lv_factory = EncryptedLogicalVolume if encrypt else LogicalVolume
         lv = lv_factory(name)
-        lv._create(disk=disk, size=size, vg_name=vg_name)
+        lv._create(base_device=base_device, size=size, vg_name=vg_name)
         return lv
+
+    def ensure_partition_type(self, hexcode: str):
+        """No need to pass this down further."""
+        pass
 
     @property
     def device(self) -> str:
@@ -66,7 +270,9 @@ class GenericLogicalVolume:
     def encrypted(self):
         raise NotImplementedError
 
-    def _create(self, disk: str, size: str, vg_name: str):
+    def _create(
+        self, base_device: Optional[GenericBlockDevice], size: str, vg_name: str
+    ):
         raise NotImplementedError
 
     def purge(self, lv_only=False):
@@ -148,8 +354,10 @@ class LogicalVolume(GenericLogicalVolume):
             )
         self._vg_name = lv[0]["vg_name"]
 
-    def _create(self, disk: str, size: str, vg_name: str):
-        self.ensure_vg(vg_name, disk)
+    def _create(
+        self, base_device: Optional[GenericBlockDevice], size: str, vg_name: str
+    ):
+        self.ensure_vg(vg_name, base_device)
 
         # 3. Create OSD LV on remainder of the VG
         if "%" in size:
@@ -167,20 +375,19 @@ class LogicalVolume(GenericLogicalVolume):
         )
 
     @staticmethod
-    def ensure_vg(vg_name: str, disk: str):
+    def ensure_vg(vg_name: str, base_device: Optional[GenericBlockDevice]):
         if vg_name in vg_names():
             return
-        run.sgdisk("-Z", disk)
-        run.sgdisk("-a", "8192", "-n", "1:0:0", "-t", "1:8e00", disk)
 
-        for partition in [f"{disk}1", f"{disk}p1"]:
-            if os.path.exists(partition):
-                break
-        else:
-            raise RuntimeError(f"Could not find partition for PV on {disk}")
+        if not base_device:
+            raise RuntimeError(
+                f"VG {vg_name} not found and no base block device has been specified to create it on. Aborting."
+            )
 
-        run.pvcreate(partition)
-        run.vgcreate(vg_name, partition)
+        blockdevice_underlay = base_device.blockdevice
+        run.pvcreate(blockdevice_underlay)
+        run.vgcreate(vg_name, blockdevice_underlay)
+        base_device.ensure_partition_type("8e00")
 
     def purge(self, lv_only=False):
         # Delete LVs
@@ -227,9 +434,9 @@ class LogicalVolume(GenericLogicalVolume):
 class EncryptedLogicalVolume(GenericLogicalVolume):
     SUFFIX = "-crypted"
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
-        self.underlay = LogicalVolume(name + self.SUFFIX)
+        self.underlay: GenericLogicalVolume = LogicalVolume(name + self.SUFFIX)
         self._device = f"/dev/mapper/{self.name}"
         self._ready = False
 
@@ -260,10 +467,12 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
     def expected_mapper_name(self) -> str:
         return self.name
 
-    def _create(self, disk: str, size: str, vg_name: str):
+    def _create(
+        self, base_device: Optional[GenericBlockDevice], size: str, vg_name: str
+    ):
         self.underlay.create(
             name=self.underlay.name,
-            disk=disk,
+            base_device=base_device,
             size=size,
             vg_name=vg_name,
             encrypt=False,
@@ -271,26 +480,19 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
 
         # FIXME: handle keyfile not found errors,
         print(f"Encrypting volume {self.name} ...")
-        self.cryptsetup(
+        Cryptsetup.luksFormat(
             # fmt: off
-            "-q",
-            *self._tunables_sectorsize,
-            "luksFormat",
             "--key-slot", str(fc.ceph.luks.KEYSTORE.slots["local"]),
             "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
             self.underlay.device,
-            "--pbkdf=argon2id",
             # fmt: on
         )
 
-        self.cryptsetup(
+        Cryptsetup.luksAddKey(
             # fmt: off
-            "-q",
-            "luksAddKey",
             "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
             self.underlay.device,
             "--key-slot", str(fc.ceph.luks.KEYSTORE.slots["admin"]),
-            "--pbkdf=argon2id",
             "-",
             input=fc.ceph.luks.KEYSTORE.admin_key_for_input()
             # fmt: on
@@ -305,9 +507,8 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
         # FIXME: needs error catching and handling; adding that makes sense
         # once we know the role of systemd/udev in the activation cycle
         if not os.path.exists(self.device_path):
-            self.cryptsetup(
+            Cryptsetup.cryptsetup(
                 # fmt: off
-                "-q",
                 "--allow-discards",     # pass throught TRIM commands to disk
                 "open",
                 "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
@@ -319,31 +520,12 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
 
     def deactivate(self):
         if self._ready or os.path.exists(self.device_path):
-            self.cryptsetup("-q", "close", self.name)
+            Cryptsetup.cryptsetup("close", self.name)
 
     def purge(self, lv_only=False):
         self.deactivate()
-        self.cryptsetup("-q", "erase", self.underlay.device)
+        Cryptsetup.cryptsetup("erase", self.underlay.device)
         self.underlay.purge(lv_only)
-
-    cryptsetup_tunables = [
-        # fmt: off
-        # inspired by the measurements done in https://ceph.io/en/news/blog/2023/ceph-encryption-performance/:
-        "--perf-submit_from_crypt_cpus",
-        # for larger writes throughput
-        # might be useful as well and is discussed to be enabled in Ceph,
-        # but requires kernel >=5.9: https://github.com/ceph/ceph/pull/49554
-        # especially relevant for SSDs, see https://blog.cloudflare.com/speeding-up-linux-disk-encryption/
-        # "--perf-no_read_workqueue", "--perf-no_write_workqueue"
-        # fmt: on
-    ]
-    # reduce CPU load for larger writes, can be removed after cryptsetup >=2.40
-    _tunables_sectorsize = ("--sector-size", "4096")
-
-    @classmethod
-    def cryptsetup(cls, *args: str, **kwargs):
-        """cryptsetup wrapper that adds default tunable options to the calls"""
-        return run.cryptsetup(*cls.cryptsetup_tunables, *args, **kwargs)
 
 
 def lv_names():
@@ -373,7 +555,11 @@ class GenericCephVolume:
         disk: Optional[str] = None,
         encrypt: bool = False,
     ):
-        """convention: also calls activate() at the end"""
+        """The `disk` argument is optional and only considered for when the
+        VG does not exists yet. If a VG called `vg_name` can be found, `disk`
+        is ignored.
+
+        convention: also calls activate() at the end"""
         raise NotImplementedError
 
     def activate(self):
@@ -391,9 +577,10 @@ class GenericCephVolume:
         return [int(vg["vg_name"].replace("vgosd-", "", 1)) for vg in vgs]
 
 
-class XFSCephVolume(GenericCephVolume):
-    MKFS_XFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]
-    MOUNT_XFS_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
+class XFSVolume(AutomountActivationMixin, GenericCephVolume):
+    MKFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]
+    MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
+    FSTYPE = "xfs"
 
     def __init__(self, name: str, mountpoint: str, automount=False):
         self.name = name
@@ -416,11 +603,16 @@ class XFSCephVolume(GenericCephVolume):
         disk: Optional[str] = None,
         encrypt: bool = False,
     ):
+        """The `disk` argument is optional and only considered for when the
+        VG does not exists yet. If a VG called `vg_name` can be found, `disk`
+        is ignored.
+        """
         print(f"Creating data volume on {disk or vg_name}...")
+        disk_block = DiskWithSinglePartition.create(disk) if disk else None
         self.lv = GenericLogicalVolume.create(
             name=self.name,
             vg_name=vg_name,
-            disk=disk,
+            base_device=disk_block,
             encrypt=encrypt,
             size=size,
         )
@@ -429,7 +621,7 @@ class XFSCephVolume(GenericCephVolume):
             # fmt: off
             "-f",
             "-L", self.name,
-            *self.MKFS_XFS_OPTS,
+            *self.MKFS_OPTS,
             self.device,
             # fmt: on
         )
@@ -438,39 +630,8 @@ class XFSCephVolume(GenericCephVolume):
 
     def activate(self):
         self.lv.activate()
-        mount_device = mount_status(self.mountpoint)
-        if not os.path.exists(self.mountpoint):
-            os.makedirs(self.mountpoint)
 
-        if self.automount:
-            time.sleep(1)
-            try:
-                run.mount(
-                    self.mountpoint
-                )  # device recreation does not always trigger automount
-            except CalledProcessError as e:
-                if e.returncode == 32:
-                    # we take this as "already mounted", but device could also be busy
-                    pass
-                else:
-                    raise e
-            while not (mount_device := mount_status(self.mountpoint)):
-                console.print(
-                    "Waiting for mountpoint to be activated automatically ... ",
-                    style="grey50",
-                )
-                time.sleep(1)
-        if not mount_device:
-            run.mount(
-                # fmt: off
-                "-t", "xfs", "-o", self.MOUNT_XFS_OPTS,
-                self.device, self.mountpoint,
-                # fmt: on
-            )
-        elif mount_device != self.lv.expected_mapper_name:
-            raise RuntimeError(
-                f"Mountpoint is using unexpected device `{mount_device}`."
-            )
+        super().activate()
 
     def purge(self, lv_only=False):
         if os.path.exists(self.mountpoint):
