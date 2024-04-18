@@ -278,6 +278,7 @@ in
       };
       bgp = {
         enable = true;
+        extraOptions = [ "-p" "0" ];
         config = ''
           frr version 8.5.1
           frr defaults datacenter
