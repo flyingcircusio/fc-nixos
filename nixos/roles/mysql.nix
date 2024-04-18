@@ -56,6 +56,7 @@ in
 
       mysql57 = mkRole "5.7";
       percona80 = mkRole "8.0";
+      percona81 = mkRole "8.1";
     };
 
   };
@@ -65,16 +66,19 @@ in
     mysqlRoles = with config.flyingcircus.roles; {
       "5.7" = mysql57.enable;
       "8.0" = percona80.enable;
+      "8.1" = percona81.enable;
     };
 
     mysqlPackages = with pkgs; {
       "5.7" = percona57;
       "8.0" = percona80;
+      "8.1" = percona81;
     };
 
     xtrabackupPackages = with pkgs; {
       "5.7" = percona-xtrabackup_2_4;
       "8.0" = percona-xtrabackup_8_0;
+      "8.1" = percona-xtrabackup_8_1;
     };
 
     cfg = config.flyingcircus.roles.mysql;

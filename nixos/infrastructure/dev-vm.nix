@@ -10,8 +10,9 @@ let
   visibleFCRoles = (lib.filterAttrs
     (n: v: (builtins.tryEval v.enable.visible or true).value)
     config.flyingcircus.roles);
-in
-{
+
+  location = lib.attrByPath [ "parameters" "location" ] "" config.flyingcircus.enc;
+in {
   config = lib.mkMerge [
     (lib.mkIf (config.flyingcircus.infrastructureModule == "dev-vm") {
       boot = {
@@ -119,6 +120,21 @@ in
         innodb_log_file_size = "64M";
         innodb_log_files_in_group = 2;
       };
+
+      # Allow to use NFS
+      flyingcircus.encServices = fclib.mkPlatform (lib.optional config.flyingcircus.roles.nfs_rg_share.enable {
+        password = null;
+        address = config.flyingcircus.enc.name;
+        location = location;
+        service = "nfs_rg_share-server";
+      });
+
+      flyingcircus.encServiceClients = fclib.mkPlatform (lib.optional config.flyingcircus.roles.nfs_rg_client.enable {
+        password = null;
+        node = config.flyingcircus.enc.name;
+        location = location;
+        service = "nfs_rg_share-server";
+      });
 
       services.redis.bind = lib.mkForce "0.0.0.0 ::";
 

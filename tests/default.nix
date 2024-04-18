@@ -62,11 +62,14 @@ in {
   lampVm81_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php81"; tideways = "1234"; };
   lampVm82 = callTest ./lamp/vm-test.nix { version = "lamp_php82"; };
   lampVm82_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php82"; tideways = "1234"; };
+  lampVm83 = callTest ./lamp/vm-test.nix { version = "lamp_php83"; };
+  lampVm83_tideways = callTest ./lamp/vm-test.nix { version = "lamp_php83"; tideways = "1234"; };
 
   lampPackage74 = callTest ./lamp/package-test.nix { version = "lamp_php74"; };
   lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
   lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
   lampPackage82 = callTest ./lamp/package-test.nix { version = "lamp_php82"; };
+  lampPackage83 = callTest ./lamp/package-test.nix { version = "lamp_php83"; };
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
@@ -89,6 +92,7 @@ in {
   opensearch_dashboards = callTest ./opensearch_dashboards.nix {};
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
+  percona81 = callTest ./mysql.nix { rolename = "percona81"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
   postgresql12 = callTest ./postgresql { version = "12"; };
   postgresql13 = callTest ./postgresql { version = "13"; };
