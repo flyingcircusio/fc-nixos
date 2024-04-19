@@ -186,7 +186,7 @@ rec {
   # exists) to make it idempotent.
   relaxedIp = pkgs.writeScriptBin "ip" ''
     #! ${pkgs.stdenv.shell} -e
-    echo ip "$@"
+    echo ip "$@" >&2
     rc=0
     ${pkgs.iproute}/bin/ip "$@" || rc=$?
     if ((rc == 2)); then
