@@ -104,6 +104,11 @@
     "pname": "containerd",
     "version": "1.7.13"
   },
+  "coreutils": {
+    "name": "coreutils-9.3",
+    "pname": "coreutils",
+    "version": "9.3"
+  },
   "coturn": {
     "name": "coturn-4.6.2",
     "pname": "coturn",
@@ -640,6 +645,11 @@
     "pname": "percona-server",
     "version": "8.0.36-28"
   },
+  "percona81": {
+    "name": "percona_8_1-8.1.0-1",
+    "pname": "percona_8_1",
+    "version": "8.1.0-1"
+  },
   "php72": {
     "name": "php-with-extensions-7.2.34",
     "pname": "php-with-extensions",
@@ -669,6 +679,11 @@
     "name": "php-with-extensions-8.2.18",
     "pname": "php-with-extensions",
     "version": "8.2.18"
+  },
+  "php83": {
+    "name": "php-with-extensions-8.3.6",
+    "pname": "php-with-extensions",
+    "version": "8.3.6"
   },
   "phpPackages.composer": {
     "name": "composer-2.7.1",
@@ -724,6 +739,11 @@
     "name": "postgresql-15.6",
     "pname": "postgresql",
     "version": "15.6"
+  },
+  "postgresql_16": {
+    "name": "postgresql-16.2",
+    "pname": "postgresql",
+    "version": "16.2"
   },
   "powerdns": {
     "name": "pdns-4.8.4",
