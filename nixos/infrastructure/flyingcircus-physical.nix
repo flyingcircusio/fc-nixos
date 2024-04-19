@@ -120,6 +120,12 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         '';
     };
 
+    services.journald.extraConfig = ''
+      SystemMaxUse=8G
+      MaxLevelConsole=err
+      ForwardToWall=no
+    '';
+
     systemd.services.lvm-upgrade-metadata = {
         wantedBy = [ "multi-user.target" ];
         serviceConfig.Type = "oneshot";
