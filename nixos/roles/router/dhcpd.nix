@@ -64,7 +64,7 @@ in
   config = lib.mkIf (role.enable && role.isPrimary) {
     services.dhcpd4 = {
       enable = true;
-      interfaces = [ "ethfe" "ethsrv" "ethmgm" ];
+      interfaces = [ "brfe" "brsrv" "ethmgm" ];
       configFile = pkgs.writeText "dhcpd4.conf" ''
         ${baseConf}
         ${dhcpd4Conf}
@@ -74,7 +74,7 @@ in
 
     services.dhcpd6 = {
       enable = true;
-      interfaces = [ "ethfe" "ethsrv" "ethmgm" ];
+      interfaces = [ "brfe" "brsrv" "ethmgm" ];
       configFile = pkgs.writeText "dhcpd6.conf" ''
         ${baseConf}
         ${dhcpd6Conf}
