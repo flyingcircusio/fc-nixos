@@ -21,7 +21,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # Import old php versions from nix-phps.
   inherit (phps) php72 php73 php74 php80;
-  inherit (super) php81 php82 php83;
+  inherit (super) php81 php82;
+}
+//
+{
+  php83 = patchPhps (fetchpatch {
+    url = "https://github.com/flyingcircusio/php-src/commit/1a7e4834d94d72564521fffd6ceec5a378693cb7.patch";
+    hash = "sha256-MWZdXUsvkpxhC9VVttrINY2E4X+PD7lChgkL3VYlk10=";
+  }) super.php83;
 }
 //
 {
