@@ -158,6 +158,7 @@ in
         description = "Update RGW stats";
         serviceConfig.Type = "oneshot";
         path = [ cephPkgs.ceph pkgs.jq ];
+        requires = [ "network-addresses-${fclib.network.sto.interface}.service" ];
         script = ''
           for uid in $(radosgw-admin metadata list user | jq -r '.[]'); do
             echo $uid
@@ -170,6 +171,7 @@ in
         description = "Upload S3 usage data to the Directory";
         path = [ cephPkgs.ceph ];
         serviceConfig.Type = "oneshot";
+        requires = [ "network-addresses-${fclib.network.sto.interface}.service" ];
         script = "${pkgs.fc.agent}/bin/fc-s3accounting --enc ${config.flyingcircus.encPath}";
       };
 
