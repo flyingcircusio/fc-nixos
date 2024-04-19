@@ -479,9 +479,9 @@ in
             }
           ) (lib.nameValuePair
             "network-addresses-${linkName}"
-            {
-              unitConfig.After = lib.mkForce "network-pre.target ${linkName}-netdev.service";
-              unitConfig.BindsTo = lib.mkForce "${linkName}-netdev.service";
+            rec {
+              after = [ "${linkName}-netdev.service" ];
+              bindsTo = after;
             }
           )] ++
           # vxlan kernel devices
@@ -532,24 +532,11 @@ in
                 RemainAfterExit = true;
               };
             })) vxlanInterfaces) ++
-          # NixOS scripted networking configuration does not know
-          # about VXLAN devices, and (incorrectly) generates
-          # dependencies for them as if they were physical ethernet
-          # devices. We need to patch some dependencies in other units
-          # so that the link configuration and bridge device creation
-          # depend on the correct units.
           (map (iface: (lib.nameValuePair
-            "network-addresses-${iface.link}"
-            {
-              unitConfig.After = lib.mkForce "network-pre.target ${iface.link}-netdev.service";
-              unitConfig.BindsTo = lib.mkForce "${iface.link}-netdev.service";
-            }
-          )) vxlanInterfaces) ++
-          (map (iface: (lib.nameValuePair
-            "${iface.interface}-netdev"
-            {
-              unitConfig.After = lib.mkForce "network-pre.target ${iface.link}-netdev.service network-addresses-${iface.link}.service";
-              unitConfig.BindsTo = lib.mkForce "${iface.link}-netdev.service";
+            "network-addresses-${iface.interface}"
+            rec {
+              after = [ "${iface.link}-netdev.service" ];
+              bindsTo = after;
             }
           )) vxlanInterfaces) ++
           # bridge port configuration for vxlan devices
