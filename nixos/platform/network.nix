@@ -376,6 +376,8 @@ in
                 # Look up the desired interface's current name by mac address
                 interface="$(ip -j -d link show | jq -r '.[] | select(.linkinfo?.info_kind? == null) | select(.address == "${iface.mac}") | .ifname')"
 
+                # XXX properly handle missing MAC address and cause this unit to fail.
+
                 if [[ "$interface" != "${iface.link}" ]]; then
                   echo "Interface is currently known as $interface ..."
 
@@ -393,6 +395,7 @@ in
                     # but an altname, try to delete that as well.
                     # This looks funny, but we can use the altname to look up the
                     # link to remove the altname ...
+                    # don't do this if the name is already gone
                     ip l property del altname ${iface.link} dev ${iface.link} || true
                     counter=$((counter+1))
                   done
@@ -460,6 +463,7 @@ in
                   # Try, don't care if it fails. We check the success on the
                   # next loop.
                   ip l set ${iface.link} name eth$counter || true
+                  # don't do this if the name is already gone
                   ip l property del altname ${iface.link} dev ${iface.link} || true
                   counter=$((counter+1))
                 done
@@ -541,12 +545,6 @@ in
                 RemainAfterExit = true;
               };
             }
-          ) (lib.nameValuePair
-            "network-addresses-${linkName}"
-            rec {
-              after = [ "${linkName}-netdev.service" ];
-              bindsTo = after;
-            }
           )] ++
           # vxlan kernel devices
           (map (iface: (lib.nameValuePair
@@ -598,29 +596,6 @@ in
               };
             })) vxlanInterfaces) ++
 
-          # NixOS scripted networking configuration does not know
-          # about VXLAN devices, and (incorrectly) generates
-          # dependencies for them as if they were physical ethernet
-          # devices. We need to patch some dependencies in other units
-          # so that the link configuration and bridge device creation
-          # depend on the correct units.
-
-          (map (iface: (lib.nameValuePair
-            "network-addresses-${iface.interface}"
-            {
-              after = [ "network-pre.target" "${iface.link}-netdev.service" ];
-              bindsTo = [ "${iface.link}-netdev.service" ];
-            }
-          )) vxlanInterfaces) ++
-
-          (map (iface: (lib.nameValuePair
-            "${iface.interface}-netdev"
-            {
-              after = [ "network-pre.target" "network-addresses-${iface.link}.service" ];
-              bindsTo = [ "network-addresses-${iface.link}.service" ];
-            }
-          )) vxlanInterfaces) ++
-
           # bridge port configuration for vxlan devices
           # XXX we always make VXLAN ports bridge ports ... this complicates the
           # code a bit.
@@ -649,7 +624,7 @@ in
 
           # underlay network physical interfaces
           (map (iface: (lib.nameValuePair
-            "network-underlay-properties-${iface.link}"
+            "network-underlay-link-properties-${iface.link}"
             rec {
               description = "Ensure underlay properties for ${iface.link}";
               wantedBy = [ "network-addresses-${iface.link}.service"

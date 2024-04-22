@@ -1,31 +1,45 @@
-import ../make-test-python.nix ({ pkgs, ... }:
+import ../make-test-python.nix ({ pkgs, lib, testlib, ... }:
+
+with lib;
+with testlib;
+
 {
   name = "rg-relay";
   nodes = {
     relay = {
-      imports = [ ../../nixos ../../nixos/roles ];
+      imports = [
+        (fcConfig { id = 1; })
+      ];
+
       flyingcircus.roles.statshost-relay.enable = true;
+
       networking.nameservers = [ "127.0.0.53" ];
       services.resolved.enable = true;
+
       networking.firewall.allowedTCPPorts = [ 9090 ];
+
       environment.etc."local/statshost/scrape-rg.json".text = ''
         [
           {"targets":["statsSource:9126"]}
         ]
       '';
-
       services.telegraf.enable = false;
-
     };
 
     statsSource = {
-      imports = [ ../../nixos ../../nixos/roles ];
+      imports = [
+        (fcConfig { id = 2; })
+      ];
+
       networking.firewall.allowedTCPPorts = [ 9126 ];
       services.telegraf.enable = false;
     };
 
     statshost = {
-      imports = [ ../../nixos ../../nixos/roles ];
+      imports = [
+        (fcConfig { id = 3; })
+      ];
+
       environment.systemPackages = [ pkgs.curl ];
       services.telegraf.enable = false;
     };
@@ -40,6 +54,13 @@ import ../make-test-python.nix ({ pkgs, ... }:
 
     relay.wait_for_unit("nginx.service")
     relay.wait_for_open_port(9090)
+
+    print("statshost")
+    print(statshost.execute("ip -4 a")[1])
+    print(statshost.execute("ping -c 3 relay")[1])
+
+    print("relay")
+    print(relay.execute("ip -4 a")[1])
 
     with subtest("scrapeconfig.json from relay should return config"):
       statshost.succeed('curl relay:9090/scrapeconfig.json | grep -q statsSource:9126')

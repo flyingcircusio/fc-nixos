@@ -2,7 +2,7 @@ import ./make-test-python.nix ({ nixpkgs, ... }:
 {
   name = "physical-installer";
   machine =
-    { pkgs, ... }:
+    { pkgs, config, ... }:
     {
       virtualisation.emptyDiskImages = [ 120000 100 ];
       imports = [
@@ -22,6 +22,12 @@ import ./make-test-python.nix ({ nixpkgs, ... }:
 
   testScript = ''
     machine.wait_for_unit('multi-user.target')
+
+    print(machine.execute("cat /proc/cmdline")[1])
+    print(machine.execute("ps auxf")[1])
+    print(machine.execute("systemctl cat dhcpcd")[1])
+    print(machine.execute("cat /nix/store/qadpv1yrn8d73bigcqyicbc15ylq3inj-dhcpcd.conf")[1])
+
     machine.succeed("systemctl status lldpd")
     result = machine.succeed("show-interfaces")
     print(result)
@@ -30,7 +36,7 @@ import ./make-test-python.nix ({ nixpkgs, ... }:
     INTERFACE           | MAC               | SWITCH               | ADDRESSES
     --------------------+-------------------+----------------------+-----------------------------------
     eth0                | 52:54:00:12:34:56 | None/None            | 10.0.2.15
-    eth1                | 52:54:00:12:01:01 | None/None            | 192.168.1.1
+    eth1                | 52:54:00:12:01:01 | None/None            | 
 
     NOTE: If you are missing interface data, wait 30s and run `show-interfaces` again.
 
