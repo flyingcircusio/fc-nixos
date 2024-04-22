@@ -31,6 +31,13 @@ in {
   # imports from other nixpkgs versions or local definitions
   #
 
+  bird = super.bird.overrideAttrs (old: {
+    patches = old.patches ++ [ ./bird-bfd-strict-bind.patch ];
+  });
+  bird6 = super.bird6.overrideAttrs (old: {
+    patches = old.patches ++ [ ./bird-bfd-strict-bind.patch ];
+  });
+
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;

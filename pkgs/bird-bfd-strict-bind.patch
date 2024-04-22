@@ -1,0 +1,168 @@
+From 41bd04bccbceb381e4f5c0588d928c7b2a70d796 Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Mon, 22 Apr 2024 21:29:09 +0200
+Subject: [PATCH] BFD: backport 'strict bind' option from 2.0.10
+
+---
+ proto/bfd/bfd.c     | 21 ++++++++++++++++++---
+ proto/bfd/bfd.h     |  3 +++
+ proto/bfd/config.Y  |  3 ++-
+ proto/bfd/packets.c | 37 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 60 insertions(+), 4 deletions(-)
+
+diff --git a/proto/bfd/bfd.c b/proto/bfd/bfd.c
+index 3af8a2be..945c3b8f 100644
+--- a/proto/bfd/bfd.c
++++ b/proto/bfd/bfd.c
+@@ -566,6 +566,9 @@ bfd_get_iface(struct bfd_proto *p, ip_addr local, struct iface *iface)
+   ifa->sk = bfd_open_tx_sk(p, local, iface);
+   ifa->uc = 1;
+ 
++  if (cf->strict_bind)
++    ifa->rx = bfd_open_rx_sk_bound(p, local, iface);
++
+   add_tail(&p->iface_list, &ifa->n);
+ 
+   return ifa;
+@@ -583,6 +586,12 @@ bfd_free_iface(struct bfd_iface *ifa)
+     rfree(ifa->sk);
+   }
+ 
++  if (ifa->rx)
++  {
++    sk_stop(ifa->rx);
++    rfree(ifa->rx);
++  }
++
+   rem_node(&ifa->n);
+   mb_free(ifa);
+ }
+@@ -988,8 +997,11 @@ bfd_start(struct proto *P)
+   add_tail(&bfd_proto_list, &p->bfd_node);
+ 
+   birdloop_enter(p->loop);
+-  p->rx_1 = bfd_open_rx_sk(p, 0);
+-  p->rx_m = bfd_open_rx_sk(p, 1);
++  if (!cf->strict_bind)
++  {
++    p->rx_1 = bfd_open_rx_sk(p, 0);
++    p->rx_m = bfd_open_rx_sk(p, 1);
++  }
+   birdloop_leave(p->loop);
+ 
+   bfd_take_requests(p);
+@@ -1034,10 +1046,13 @@ static int
+ bfd_reconfigure(struct proto *P, struct proto_config *c)
+ {
+   struct bfd_proto *p = (struct bfd_proto *) P;
+-  // struct bfd_config *old = (struct bfd_config *) (P->cf);
++  struct bfd_config *old = (struct bfd_config *) (P->cf);
+   struct bfd_config *new = (struct bfd_config *) c;
+   struct bfd_iface *ifa;
+ 
++  if (new->strict_bind != old->strict_bind)
++    return 0;
++
+   birdloop_mask_wakeups(p->loop);
+ 
+   WALK_LIST(ifa, p->iface_list)
+diff --git a/proto/bfd/bfd.h b/proto/bfd/bfd.h
+index 46e09879..80a2b878 100644
+--- a/proto/bfd/bfd.h
++++ b/proto/bfd/bfd.h
+@@ -43,6 +43,7 @@ struct bfd_config
+   list patt_list;		/* List of iface configs (struct bfd_iface_config) */
+   list neigh_list;		/* List of configured neighbors (struct bfd_neighbor) */
+   struct bfd_iface_config *multihop; /* Multihop pseudoiface config */
++  u8 strict_bind;
+ };
+ 
+ struct bfd_iface_config
+@@ -101,6 +102,7 @@ struct bfd_iface
+   struct bfd_proto *bfd;
+ 
+   sock *sk;
++  sock *rx;
+   u32 uc;
+   u8 changed;
+ };
+@@ -202,6 +204,7 @@ void bfd_show_sessions(struct proto *P);
+ /* packets.c */
+ void bfd_send_ctl(struct bfd_proto *p, struct bfd_session *s, int final);
+ sock * bfd_open_rx_sk(struct bfd_proto *p, int multihop);
++sock * bfd_open_rx_sk_bound(struct bfd_proto *p, ip_addr local, struct iface *ifa);
+ sock * bfd_open_tx_sk(struct bfd_proto *p, ip_addr local, struct iface *ifa);
+ 
+ 
+diff --git a/proto/bfd/config.Y b/proto/bfd/config.Y
+index 7e0d63bc..7b302a0f 100644
+--- a/proto/bfd/config.Y
++++ b/proto/bfd/config.Y
+@@ -23,7 +23,7 @@ CF_DECLS
+ 
+ CF_KEYWORDS(BFD, MIN, IDLE, RX, TX, INTERVAL, MULTIPLIER, PASSIVE,
+ 	INTERFACE, MULTIHOP, NEIGHBOR, DEV, LOCAL, AUTHENTICATION,
+-	NONE, SIMPLE, METICULOUS, KEYED, MD5, SHA1)
++	NONE, SIMPLE, METICULOUS, KEYED, MD5, SHA1, STRICT, BIND)
+ 
+ %type <iface> bfd_neigh_iface
+ %type <a> bfd_neigh_local
+@@ -45,6 +45,7 @@ bfd_proto_item:
+  | INTERFACE bfd_iface
+  | MULTIHOP bfd_multihop
+  | NEIGHBOR bfd_neighbor
++ | STRICT BIND bool { BFD_CFG->strict_bind = $3; }
+  ;
+ 
+ bfd_proto_opts:
+diff --git a/proto/bfd/packets.c b/proto/bfd/packets.c
+index 08c6c508..b5674386 100644
+--- a/proto/bfd/packets.c
++++ b/proto/bfd/packets.c
+@@ -440,6 +440,43 @@ bfd_open_rx_sk(struct bfd_proto *p, int multihop)
+   return NULL;
+ }
+ 
++sock *
++bfd_open_rx_sk_bound(struct bfd_proto *p, ip_addr local, struct iface *ifa)
++{
++  sock *sk = sk_new(p->tpool);
++  sk->type = SK_UDP;
++  sk->saddr = local;
++  sk->sport = ifa ? BFD_CONTROL_PORT : BFD_MULTI_CTL_PORT;
++  sk->iface = ifa;
++  sk->vrf = p->p.vrf;
++  sk->data = p;
++
++  sk->rbsize = BFD_MAX_LEN;
++  sk->rx_hook = bfd_rx_hook;
++  sk->err_hook = bfd_err_hook;
++
++  /* TODO: configurable ToS and priority */
++  sk->tos = IP_PREC_INTERNET_CONTROL;
++  sk->priority = sk_priority_control;
++  sk->flags = SKF_THREAD | SKF_BIND | (ifa ? SKF_TTL_RX : 0);
++
++#ifdef IPV6
++  sk->flags |= SKF_V6ONLY;
++#endif
++
++  if (sk_open(sk) < 0)
++    goto err;
++
++  sk_start(sk);
++  return sk;
++
++ err:
++  sk_log_error(sk, p->p.name);
++  rfree(sk);
++  return NULL;
++}
++
++
+ sock *
+ bfd_open_tx_sk(struct bfd_proto *p, ip_addr local, struct iface *ifa)
+ {
+-- 
+2.39.3 (Apple Git-146)
+
