@@ -332,7 +332,7 @@ rec {
           else if policy == "tagged" then "${buildComplexInterfaceName "eth-" (builtins.head interface'.nics).external_label or "vlan"}"
           else taggedLink;
 
-        externalLabel = if (length (interface' ? nics or 0) > 0) then (builtins.head interface'.nics).external_label else null;
+        externalLabel = if (length (interface'.nics or 0) > 0) then (builtins.head interface'.nics).external_label else null;
 
         linkStack = lib.unique (filter (l: l != null) [
           link
