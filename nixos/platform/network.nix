@@ -99,6 +99,8 @@ in
       # -> #PL-129549
       hosts = lib.mkOverride 90 {};
 
+      tempAddresses = "disabled";
+
       nameservers =
         if (hasAttr location cfg.static.nameservers)
         then cfg.static.nameservers.${location}
@@ -778,7 +780,7 @@ in
       "vm.min_free_kbytes" = "513690";
 
       "net.core.netdev_max_backlog" = "300000";
-      "net.core.optmem" = "40960";
+      "net.core.optmem_max" = "65536";
       "net.core.wmem_default" = "16777216";
       "net.core.wmem_max" = "16777216";
       "net.core.rmem_default" = "8388608";
@@ -795,7 +797,6 @@ in
       "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
       "net.ipv4.tcp_rmem" = "1048576 8388608 16777216";
 
-      "net.ipv4.tcp_tw_recycle" = "1";
       "net.ipv4.tcp_tw_reuse" = "1";
 
       # Supposedly this doesn't do much good anymore, but in one of my tests
