@@ -162,6 +162,9 @@ let
             "172.20.1.0/24" = "172.20.1.1";
             "2a02:238:f030:1c1::/64" = "2a02:238:f030:1c1::1";
           };
+          nics = [{"mac"= "52:54:00:12:01:0${toString id}";
+                   "external_label" = "label-management";
+            }];
         };
         interfaces.fe = {
           mac = "52:54:00:12:02:0${toString id}";
@@ -174,6 +177,9 @@ let
             "172.20.2.0/24" = "172.20.2.1";
             "2a02:238:f030:1c2::/64" = "2a02:238:f030:1c2::1";
           };
+          nics = [{"mac"= "52:54:00:12:02:0${toString id}";
+                   "external_label" = "label-fe";
+            }];
         };
         interfaces.srv = {
           mac = "52:54:00:12:03:0${toString id}";
@@ -187,6 +193,9 @@ let
             "172.20.3.0/24" = "172.20.3.1";
             "2a02:238:f030:1c3::/64" = "2a02:238:f030:1c3::1";
           };
+          nics = [{"mac"= "52:54:00:12:03:0${toString id}";
+                   "external_label" = "label-srv";
+            }];
         };
         interfaces.tr = {
           mac = "52:54:00:12:06:0${toString id}";
@@ -199,6 +208,9 @@ let
             "172.20.6.0/24" = "172.20.6.1";
             "2a02:238:f030:1c6::/124" = "2a02:238:f030:1c6::1";
           };
+          nics = [{"mac"= "52:54:00:12:03:0${toString id}";
+                   "external_label" = "label-tr";
+            }];
         };
       };
 
@@ -325,6 +337,9 @@ in
         primary.wait_for_unit("bind")
 
       with subtest("dhcpd4 is running"):
+        import time
+        time.sleep(10)
+        print(primary.execute("journalctl -u dhcpd4")[1])
         primary.wait_for_unit("dhcpd4")
 
       with subtest("dhcpd6 is running"):
