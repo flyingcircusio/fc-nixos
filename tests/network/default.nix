@@ -117,11 +117,11 @@ in {
           flyingcircus.encAddresses = [
             {
               name = "machine";
-              ip = "10.51.2.11";
+              ip = "10.51.3.11";
             }
             {
               name = "other";
-              ip = "10.51.2.12";
+              ip = "10.51.3.12";
             }
           ];
 

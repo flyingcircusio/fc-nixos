@@ -427,6 +427,9 @@ in
                 # Ensure MTU
                 ip l set ${iface.link} mtu ${toString iface.mtu}
 
+                ''
+
+             + (lib.optionalString (iface.externalLabel != null) ''
                 # Add long alternative names according to the external label
                 if ip l show dev ${quoteLabel iface.externalLabel} > /dev/null; then
                   # XXX There is an edge case we don't cover here:
@@ -437,9 +440,9 @@ in
                 fi
                 ip l property add altname ${quoteLabel iface.externalLabel} dev ${iface.link}
 
+              '') + ''
                 echo "Releasing lock"
                 exec 4>&-
-
               '';
               preStop = ''
                 set -e
