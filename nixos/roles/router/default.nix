@@ -27,7 +27,7 @@ let
   martianIptablesForward =
     (lib.concatMapStringsSep "\n"
       (network:
-        "${fclib.iptables network} -A FORWARD -i ethtr+ " +
+        "${fclib.iptables network} -A fc-router-forward -i ethtr+ " +
         "-s ${network} -j DROP")
       # Also drop link-local addresses here.
       (martianNetworks ++ [ "fe80::/10" ]));
@@ -103,14 +103,23 @@ in
     networking.firewall.extraCommands =
       (lib.concatStringsSep "\n" [
         martianIptablesInput
+        ''
+        ip46tables -N fc-router-forward 2>/dev/null || true
+        ip46tables -A FORWARD -j fc-router-forward
+        ''
         martianIptablesForward
-      ]) + ''
+        ''
         # TFTP
         ip46tables -A nixos-fw -p tcp --dport 69 -j nixos-fw-accept
         ip46tables -A nixos-fw -p udp --dport 69 -j nixos-fw-accept
         # Video for WHQ
         ip46tables -A nixos-fw -i ethvideo -j nixos-fw-accept
-      '';
+      '']);
+
+    networking.firewall.extraStopCommands = ''
+      ip46tables -F fc-router-forward 2>/dev/null || true
+      ip46tables -X fc-router-forward 2>/dev/null || true
+    '';
 
     services.logrotate.extraConfig = ''
     '';
