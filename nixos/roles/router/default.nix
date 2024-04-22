@@ -101,10 +101,16 @@ in
     };
 
     networking.firewall.extraCommands =
-      lib.concatStringsSep "\n" [
+      (lib.concatStringsSep "\n" [
         martianIptablesInput
         martianIptablesForward
-      ];
+      ]) + ''
+        # TFTP
+        ip46tables -A nixos-fw -p tcp --dport 69 -j nixos-fw-accept
+        ip46tables -A nixos-fw -p udp --dport 69 -j nixos-fw-accept
+        # Video for WHQ
+        ip46tables -A nixos-fw -i ethvideo -j nixos-fw-accept
+      '';
 
     services.logrotate.extraConfig = ''
     '';

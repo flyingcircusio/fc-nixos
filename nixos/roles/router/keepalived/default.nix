@@ -76,7 +76,7 @@ lib.mkIf role.enable {
   };
 
   networking.firewall.extraCommands = ''
-    ip6tables -A nixos-fw -p 112 -j ACCEPT
+    ip6tables -A nixos-fw -p 112 -j nixos-fw-accept
   '';
 
   systemd.tmpfiles.rules = [

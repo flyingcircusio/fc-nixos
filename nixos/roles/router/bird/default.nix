@@ -40,10 +40,15 @@ in
       ];
     };
 
-    # Allow BFD
     networking.firewall.extraCommands = ''
-      ip6tables -A nixos-fw -i ethtr+ -p udp --dport 3784 -j ACCEPT
-      ip6tables -A nixos-fw -i ethtr+ -p udp --dport 3785 -j ACCEPT
+      # Allow BFD
+      iptables -A nixos-fw -i ethdev -p udp --dport 3784 -j nixos-fw-accept
+      iptables -A nixos-fw -i ethdev -p udp --dport 3785 -j nixos-fw-accept
+      iptables -A nixos-fw -i ethtr+ -p udp --dport 3784 -j nixos-fw-accept
+      iptables -A nixos-fw -i ethtr+ -p udp --dport 3785 -j nixos-fw-accept
+      # Allow BGP
+      iptables -A nixos-fw -i ethdev -p tcp --dport 179 -j nixos-fw-accept
+      iptables -A nixos-fw -i ethtr+ -p tcp --dport 179 -j nixos-fw-accept
     '';
 
   };
