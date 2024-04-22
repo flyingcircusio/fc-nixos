@@ -186,7 +186,7 @@ rec {
   # exists) to make it idempotent.
   relaxedIp = pkgs.writeScriptBin "ip" ''
     #! ${pkgs.stdenv.shell} -e
-    echo ip "$@"
+    echo ip "$@" >&2
     rc=0
     ${pkgs.iproute}/bin/ip "$@" || rc=$?
     if ((rc == 2)); then
@@ -332,7 +332,7 @@ rec {
           else if policy == "tagged" then "${buildComplexInterfaceName "eth-" (builtins.head interface'.nics).external_label or "vlan"}"
           else taggedLink;
 
-        externalLabel = (builtins.head interface'.nics).external_label;
+        externalLabel = if (length (interface'.nics or []) > 0) then (builtins.head interface'.nics).external_label else null;
 
         linkStack = lib.unique (filter (l: l != null) [
           link

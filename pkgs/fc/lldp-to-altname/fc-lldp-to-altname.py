@@ -34,7 +34,7 @@ class Runner(object):
                     ),
                     file=sys.stderr,
                 )
-                sys.exit(1)
+                continue
             indices.add(index)
 
         interfaces = set()
@@ -48,7 +48,7 @@ class Runner(object):
                     ),
                     file=sys.stderr,
                 )
-                sys.exit(1)
+                continue
             interfaces.add(iface)
 
         # sort to ensure stable renames in case of altname collisions
