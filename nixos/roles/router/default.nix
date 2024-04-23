@@ -117,6 +117,7 @@ in
       '']);
 
     networking.firewall.extraStopCommands = ''
+      ip46tables -D FORWARD -j fc-router-forward
       ip46tables -F fc-router-forward 2>/dev/null || true
       ip46tables -X fc-router-forward 2>/dev/null || true
     '';
