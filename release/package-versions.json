@@ -104,6 +104,11 @@
     "pname": "containerd",
     "version": "1.7.15"
   },
+  "coreutils": {
+    "name": "coreutils-9.5",
+    "pname": "coreutils",
+    "version": "9.5"
+  },
   "coturn": {
     "name": "coturn-4.6.2",
     "pname": "coturn",
@@ -382,9 +387,9 @@
     "version": "3.0.2"
   },
   "libmodsecurity": {
-    "name": "libmodsecurity-3.0.8",
+    "name": "libmodsecurity-3.0.12",
     "pname": "libmodsecurity",
-    "version": "3.0.8"
+    "version": "3.0.12"
   },
   "libmysqlclient": {
     "name": "mariadb-connector-c-3.3.5",
@@ -616,6 +621,7 @@
     "pname": "percona-server",
     "version": "8.0.36-28"
   },
+  "percona-server": {},
   "percona-xtrabackup_8_0": {
     "name": "percona-xtrabackup-8.0.35-30",
     "pname": "percona-xtrabackup",
@@ -630,6 +636,11 @@
     "name": "percona-server-8.0.36-28",
     "pname": "percona-server",
     "version": "8.0.36-28"
+  },
+  "percona81": {
+    "name": "percona_8_1-8.1.0-1",
+    "pname": "percona_8_1",
+    "version": "8.1.0-1"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
@@ -660,6 +671,11 @@
     "name": "php-with-extensions-8.2.18",
     "pname": "php-with-extensions",
     "version": "8.2.18"
+  },
+  "php83": {
+    "name": "php-with-extensions-8.3.6",
+    "pname": "php-with-extensions",
+    "version": "8.3.6"
   },
   "phpPackages.composer": {
     "name": "composer-2.7.3",
@@ -715,6 +731,11 @@
     "name": "postgresql-15.6",
     "pname": "postgresql",
     "version": "15.6"
+  },
+  "postgresql_16": {
+    "name": "postgresql-16.2",
+    "pname": "postgresql",
+    "version": "16.2"
   },
   "powerdns": {
     "name": "pdns-4.9.0",
@@ -992,6 +1013,11 @@
     "name": "libX11-1.8.7",
     "pname": "libX11",
     "version": "1.8.7"
+  },
+  "xz": {
+    "name": "xz-5.4.6",
+    "pname": "xz",
+    "version": "5.4.6"
   },
   "zip": {
     "name": "zip-3.0",
