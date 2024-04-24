@@ -11,7 +11,21 @@ let
     url = "https://github.com/flyingcircusio/php-src/commit/f3a22e2ed6e461d8c3fac84c2fd2c9e441c9e4d4.patch";
     hash = "sha256-ttHjEOGJomjs10PRtM2C6OLX9LCvboxyDSKdZZHanFQ=";
   };
-  patchPhps = patch: phpPkg: phpPkg.override {extraPatches = [patch];};
+  patchPhps = patch: phpPkg: phpPkg.override {
+    extraPatches = [patch];
+    # FIXME: workaround for PL-132468, remove after glibc-2.38-66 has been
+    # pulled in from upstream nixpkgs
+    stdenv = (self.overrideCC self.stdenv
+      (self.wrapCCWith {
+        cc = self.gcc-unwrapped;
+        libc = self.glibc238-cve-2024-2961;
+        bintools = self.wrapBintoolsWith {
+          bintools = self.binutils-unwrapped;
+          libc = self.glibc238-cve-2024-2961;
+        };
+        }
+      ));
+    };
 
 in
 builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
@@ -135,6 +149,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     name = "filebeat-oss-${a.version}";
     preBuild = "rm -rf x-pack";
   });
+
+  glibc238-cve-2024-2961 = self.callPackage ./glibc {stdenv = self.gccStdenv;};
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
