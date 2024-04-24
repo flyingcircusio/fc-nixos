@@ -25,6 +25,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         "igb"
         "ixgbe"
         "bnx2"
+        "3w-9xxx"
       ];
 
       kernelParams = [
