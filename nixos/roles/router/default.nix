@@ -46,8 +46,7 @@ in
 
   imports = [
     ./bind
-    ./bird1-ipv4
-    ./bird1-ipv6
+    ./bird2
     ./keepalived
     ./chrony.nix
     ./dhcpd.nix
