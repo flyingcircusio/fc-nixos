@@ -38,6 +38,14 @@ in {
     patches = old.patches ++ [ ./bird-bfd-strict-bind.patch ];
   });
 
+  bird2 = super.bird2.overrideAttrs (old: rec {
+    version = "2.0.10";
+    src = fetchurl {
+      url = "ftp://bird.network.cz/pub/bird/${super.bird2.pname}-${version}.tar.gz";
+      sha256 = "sha256-ftNB3djch/qXNlhrNRVEeoQ2/sRC1l9AIhVaud4f/Vo=";
+    };
+  });
+
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
