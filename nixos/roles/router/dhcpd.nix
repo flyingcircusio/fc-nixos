@@ -41,7 +41,7 @@ let
         # iPXE kernel.
         filename "undionly.kpxe"; # we are in burned in PXE and load iPXE kernel
     }
-    next-server ${location}-router.${suffix};
+    next-server ${location}-router.mgm.${location}.${suffix};
     '';
 
   dhcpd6Conf = ''
