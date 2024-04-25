@@ -322,6 +322,13 @@ in
 
       with subtest("dhcpd6 is running"):
         primary.wait_for_unit("dhcpd6")
+
+      with subtest("tftp daemon (atftpd) is running and serves files"):
+        primary.wait_for_unit("atftpd")
+        primary.succeed("${pkgs.inetutils}/bin/tftp -v 127.0.0.1 <<< 'get flyingcircus.ipxe'")
+        primary.succeed("stat flyingcircus.ipxe")
+        primary.succeed("${pkgs.inetutils}/bin/tftp -v 127.0.0.1 <<< 'get undionly.kpxe'")
+        primary.succeed("stat undionly.kpxe")
     '';
   };
 
