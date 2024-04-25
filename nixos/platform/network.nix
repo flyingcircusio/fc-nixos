@@ -215,7 +215,17 @@ in
 
       firewall.trustedInterfaces =
         lib.optionals (!isNull fclib.underlay && cfg.infrastructureModule == "flyingcircus-physical")
-          ([ "brsto" "brstb" ] ++ (map (l: l.link) fclib.underlay.links or []));
+          (map (l: l.link) fclib.underlay.links or []);
+
+      firewall.extraCommands = ''
+      # Well-known space needed for IPV6 to function.
+      ip6tables -A nixos-fw -s ff0::/12 -j ACCEPT
+      # Ignore all other multi-cast traffic.
+      ip6tables -A nixos-fw -s ff::/8 -j DROP
+      ip6tables -A nixos-fw -d ff::/8 -j DROP
+      ip6tables -A nixos-fw -s 224.0.0.0/4 -j DROP
+      ip6tables -A nixos-fw -d 224.0.0.0/4 -j DROP
+      '';
     };
 
     flyingcircus.activationScripts = {

@@ -89,5 +89,19 @@ in
         ${config.flyingcircus.services.dhcpd6.localconfig}
       '';
     };
+
+    services.tftpd = {
+      enable = true;
+      path = ... {
+         # place a file called "flyingcircus.ipxe" in this path, take it from ./flyingcircus.ipxe
+         # place a file called "undionly.kpxe" in this path, take it from ${pkgs.ipxe}/undionly.kpxe
+      };
+    };
+
+    networking.firewall.extraCommands = ''
+      # TFTP
+      ip46tables -A nixos-fw -i ${fclib.network.mgm.interface} -p udp --dport 69 -j nixos-fw-accept
+    '';
+
   };
 }

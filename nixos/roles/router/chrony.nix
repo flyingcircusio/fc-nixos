@@ -25,8 +25,12 @@ lib.mkIf role.enable {
     '';
   };
 
+  # The + on the tr interface is slightly muddy: this is an assumption that
+  # all transfer interfaces are a) named tr<something> and b) consistently use
+  # eth/br on the same machine (either everything bridged/through vxlan or all
+  # directly on an ethernet link)
   networking.firewall.extraCommands = ''
-    ip46tables -A nixos-fw -i ethtr+ -p udp --dport 123 -j REJECT
+    ip46tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 123 -j REJECT
     ip46tables -A nixos-fw -p udp --dport 123 -j ACCEPT
   '';
 
