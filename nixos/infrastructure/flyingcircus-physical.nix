@@ -4,6 +4,7 @@ with lib;
 
 let
   cfg = config.flyingcircus;
+  inherit (config) fclib;
 in
 mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
 
