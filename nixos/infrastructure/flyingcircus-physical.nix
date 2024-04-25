@@ -91,10 +91,9 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
 
     services.irqbalance.enable = true;
 
-    # Not perfect but avoids triggering the 'established' rule which can
-    # lead to massive/weird Ceph instabilities. Also, coordination tasks
-    # like Qemu migrations run over ethmgm want to be trusted.
-    networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" "ethmgm" ];
+    # Qemu migration coordination uses random ports at the moment, so we
+    # trust this completely at the moment.
+    networking.firewall.trustedInterfaces = [ fclib.network.mgm.interface ];
 
     users.users.root = {
       # Overriden in local.nix

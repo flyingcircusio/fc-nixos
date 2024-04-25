@@ -42,13 +42,10 @@ in
 
     networking.firewall.extraCommands = ''
       # Allow BFD
-      ip6tables -A nixos-fw -i ethdev -p udp --dport 3784 -j nixos-fw-accept
-      ip6tables -A nixos-fw -i ethdev -p udp --dport 3785 -j nixos-fw-accept
-      ip6tables -A nixos-fw -i ethtr+ -p udp --dport 3784 -j nixos-fw-accept
-      ip6tables -A nixos-fw -i ethtr+ -p udp --dport 3785 -j nixos-fw-accept
+      ip6tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 3784 -j nixos-fw-accept
+      ip6tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 3785 -j nixos-fw-accept
       # Allow BGP
-      ip6tables -A nixos-fw -i ethdev -p tcp --dport 179 -j nixos-fw-accept
-      ip6tables -A nixos-fw -i ethtr+ -p tcp --dport 179 -j nixos-fw-accept
+      ip6tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p tcp --dport 179 -j nixos-fw-accept
     '';
 
   };

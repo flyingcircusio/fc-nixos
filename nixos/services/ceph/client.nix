@@ -180,6 +180,10 @@ in
 
     services.udev.extraRules = builtins.readFile "${cfg.client.package}/etc/udev/50-rbd.rules";
 
+    # We want this trusted on this level, to avoid filling up the connection
+    # tracking tables.
+    networking.firewall.trustedInterfaces = [ fclib.network.sto.interface ];
+
     flyingcircus.services.ceph.allMergedSettings = (
         lib.recursiveUpdate
           (expandCamelCaseSection cfg.extraSettingsSections)

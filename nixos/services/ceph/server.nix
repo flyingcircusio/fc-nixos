@@ -66,6 +66,10 @@ in
       "d /srv/ceph 0755"
     ];
 
+    # We want this trusted on this level, to avoid filling up the connection
+    # tracking tables.
+    networking.firewall.trustedInterfaces = [ fclib.network.stb.interface ];
+
     flyingcircus.services.sensu-client.expectedConnections = {
       warning = 20000;
       critical = 25000;

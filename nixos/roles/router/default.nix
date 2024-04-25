@@ -20,14 +20,14 @@ let
   martianIptablesInput =
     (lib.concatMapStringsSep "\n"
       (network:
-        "${fclib.iptables network} -A nixos-fw -i ethtr+ " +
+        "${fclib.iptables network} -A nixos-fw -i ${fclib.network.tr.interface}+ " +
         "-s ${network} -j DROP")
       martianNetworks);
 
   martianIptablesForward =
     (lib.concatMapStringsSep "\n"
       (network:
-        "${fclib.iptables network} -A fc-router-forward -i ethtr+ " +
+        "${fclib.iptables network} -A fc-router-forward -i ${fclib.network.tr.interface}+ " +
         "-s ${network} -j DROP")
       # Also drop link-local addresses here.
       (martianNetworks ++ [ "fe80::/10" ]));
@@ -108,11 +108,53 @@ in
         ''
         martianIptablesForward
         ''
-        # TFTP
-        ip46tables -A nixos-fw -p tcp --dport 69 -j nixos-fw-accept
-        ip46tables -A nixos-fw -p udp --dport 69 -j nixos-fw-accept
-        # Video for WHQ
-        ip46tables -A nixos-fw -i ethvideo -j nixos-fw-accept
+        # Suppress multicast forwarding
+        iptables -A fc-router-forward -s 224.0.0.0/4 -j DROP
+        iptables -A fc-router-forward -d 224.0.0.0/4 -j DROP
+        ip6tables -A fc-router-forward -s ff::/8 -j DROP
+        ip6tables -A fc-router-forward -d ff::/8 -j DROP
+
+        # memcached UDP amplification attacks (see also memcached.pp)
+        ip46tables -A fc-router-forward -p udp --dport 11211 -j REJECT
+        ip46tables -A fc-router-forward -p tcp --dport 11211 -j REJECT
+
+        # SunRPC/NFS/et al.
+        ip46tables -A fc-router-forward -p udp --dport 111 -j REJECT
+        ip46tables -A fc-router-forward -p tcp --dport 111 -j REJECT
+
+        # Always allow ICMP
+        iptables -A fc-router-forward -p icmp -j ACCEPT
+        ip6tables-A fc-router-forward -p icmpv6 -j ACCEPT
+
+        # Always allow related traffic
+        ip46tables -A fc-router-forward -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+        #############
+        # Protect MGM
+        iptables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmp -j ACCEPT
+        ip6tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmp6 -j ACCEPT
+        # allow prometheus
+        ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p tcp --dport 9126 -j ACCEPT
+        ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -j REJECT
+
+        #############
+        # Protect SRV
+        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 22 -j ACCEPT
+        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 8140 -j ACCEPT
+        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -j REJECT
+
+        #############
+        # Control FE and TR traffic
+        # We generally allow all traffic on FE
+        ip46tables -A fc-router-forward -o ${fclib.network.fe.interface} -j ACCEPT
+
+        # XXX we don't want accidents but need to allow traffic to the outside
+        # but don't generally know which transfer interfaces are active.
+        # If we can limit the open forwarding towards the internet and have a
+        # fall-through default of "REJECT" for everything else then terminating
+        # an arbitrary VXLAN on the router doesn't automatically cause
+        # everything to be forwarded.
+
       '']);
 
     networking.firewall.extraStopCommands = ''
