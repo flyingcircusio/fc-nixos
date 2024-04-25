@@ -3,13 +3,6 @@ import ../make-test-python.nix ({ testlib, pkgs, ... }:
 with testlib;
 
 let
-  networkBase = "192.168.";
-  networkBase6 = "fd00:1234:000";
-  getNetworkForVLAN = vlan: "${networkBase}${toString vlan}.0/24";
-  getNetwork6ForVLAN = vlan: "${networkBase6}${toString vlan}::/48";
-  getIPForVLAN = vlan: id: "${networkBase}${toString vlan}.${toString (5 + id)}";
-  getIP6ForVLAN = vlan: id: "${networkBase6}${toString vlan}::${toString (5 + id)}";
-
   makeRouterConfig = { id }:
     { config, pkgs, lib, ... }:
     let
@@ -250,11 +243,6 @@ let
       # Copied from flyingcircus-physical.nix
       networking.firewall.trustedInterfaces = [ "ethtr" ];
 
-      networking.extraHosts = ''
-        ${getIPForVLAN 6 1} router1.tr.upstream.fcio.net router1.tr.upstream.gocept.net
-        ${getIPForVLAN 6 2} router2.tr.upstream.fcio.net router2.tr.upstream.gocept.net
-      '';
-
       flyingcircus.enc.name = "upstream${toString id}";
       flyingcircus.enc.parameters = {
         location = "upstream";
@@ -272,7 +260,6 @@ let
           bridged = false;
           networks = {
             "10.0.13.0/24" = [ "10.0.13.${toString id}" ];
-            #"${networkBase6}d::/48" = [ "${networkBase6}d::${id}" ];
           };
           gateways = {
           };
@@ -318,15 +305,10 @@ in
       with subtest("wait for the system to switch to primary"):
         primary.r.wait_until_is_primary()
 
-      with subtest("bird is configured as primary"):
-        primary.wait_for_unit("bird")
-        primary.succeed("grep PRIMARY=1 /etc/bird/bird.conf")
-        pp(primary.succeed("cat /etc/bird/bird.conf"))
-
-      with subtest("bird6 is configured as primary"):
-        primary.wait_for_unit("bird6")
-        primary.succeed("grep PRIMARY=1 /etc/bird/bird6.conf")
-        print(primary.succeed("cat /etc/bird/bird6.conf"))
+      with subtest("bird2 is configured as primary"):
+        primary.wait_for_unit("bird2")
+        primary.succeed("grep PRIMARY=1 /etc/bird/bird2.conf")
+        pp(primary.succeed("cat /etc/bird/bird2.conf"))
 
       with subtest("radvd is running"):
         pp(primary.succeed("systemctl cat -l radvd"))
@@ -388,14 +370,9 @@ in
         secondary.fail("systemctl is-active radvd")
 
       with subtest("bird is configured as secondary"):
-        secondary.wait_for_unit("bird")
-        secondary.succeed("grep PRIMARY=0 /etc/bird/bird.conf")
-        print(secondary.succeed("cat /etc/bird/bird.conf"))
-
-      with subtest("bird6 is configured as secondary"):
-        secondary.wait_for_unit("bird6")
-        secondary.succeed("grep PRIMARY=0 /etc/bird/bird6.conf")
-        print(secondary.succeed("cat /etc/bird/bird6.conf"))
+        secondary.wait_for_unit("bird2")
+        secondary.succeed("grep PRIMARY=0 /etc/bird/bird2.conf")
+        print(secondary.succeed("cat /etc/bird/bird2.conf"))
 
       with subtest("stopping keepalived"):
         secondary.systemctl("stop keepalived")
