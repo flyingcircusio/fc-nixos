@@ -6,6 +6,9 @@ let
   inherit (config.flyingcircus) location static;
   inherit (config) fclib;
   role = config.flyingcircus.roles.router;
+  routers = fclib.findServices "router-router";
+  routerNames = map (service: head (lib.splitString "." service.address)) routers;
+  otherRouterNames = filter (m: m != config.networking.hostName) routerNames;
   kickInterfaces = fclib.writeShellApplication {
     name = "kick-interfaces";
     runtimeInputs = with pkgs; [ ethtool ];
@@ -235,6 +238,25 @@ in
         # Updates files in /etc/bind and /etc/bind/pri where also Nix-generated config exists.
         fc-zones
       '';
+
+      maintenance.router = {
+        enter =
+          let
+            nodeArgs = lib.concatMapStrings (u: " --in-service ${u}") otherRouterNames;
+            script = pkgs.writeScript "router-agent-enter-maintenance" ''
+              set -e
+              # Check if all other routers are in service, signal "tempfail" otherwise.
+              fc-maintenance constraints --failure-exit-code 75 ${nodeArgs}
+              # Returns 75 if switch to secondary timed out or
+              # keepalived is in failed/stop state.
+              fc-keepalived enter-maintenance
+            '';
+          in "${script}";
+
+        leave = ''
+          fc-keepalived leave-maintenance
+        '';
+      };
     };
 
   };

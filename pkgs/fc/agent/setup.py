@@ -70,6 +70,7 @@ setup(
             "fc-dhcpd=fc.manage.dhcpd:main",
             "fc-directory=fc.util.directory:directory_cli",
             "fc-graylog=fc.manage.graylog:main",
+            "fc-keepalived=fc.manage.keepalived:app",
             "fc-maintenance=fc.maintenance.cli:app",
             "fc-manage=fc.manage.cli:app",
             "fc-qemu-scrub=fc.manage.qemu:main",

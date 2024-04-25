@@ -218,13 +218,13 @@ let
 
       specialisation.agentmock = let
         agentMock = pkgs.writeShellScript "agent-mock" ''
-          msg="Agent Mock called at $(date) with args: $@"
+          msg="fc-keepalived mock called at $(date) with args: $@"
           echo $msg
           echo $msg >> /tmp/agent-mock-called
         '';
       in {
         configuration = config.specialisation.primary.configuration // {
-          environment.etc."keepalived/fc-manage".source = lib.mkForce "${agentMock}";
+          environment.etc."keepalived/fc-keepalived".source = lib.mkForce "${agentMock}";
           system.activationScripts.msg = ''
             echo "This is specialisation agentmock, activated at $(date)"
           '';
@@ -426,25 +426,25 @@ in
         router.r.wait_until_is_primary()
         print(router.succeed("systemctl cat keepalived"))
 
-      with subtest("Switch to system with mocked fc-manage command"):
-        agent_before = router.execute("readlink -f /etc/keepalived/fc-manage")[1]
+      with subtest("Switch to system with mocked fc-keepalived command"):
+        agent_before = router.execute("readlink -f /etc/keepalived/fc-keepalived")[1]
         print(router.succeed("systemctl status -l keepalived"))
         print(router.succeed("systemctl cat keepalived"))
-        print(router.succeed("/etc/keepalived/fc-manage -v activate-configuration -s agentmock"))
-        # Script symlink changes its target, keepalived reloads (it's a primary router)
+        print(router.succeed("fc-manage activate-configuration --specialisation agentmock"))
+        # fc-keepalived script symlink changes its target after activation.
         print(router.succeed("systemctl cat keepalived"))
-        print(router.execute("cat /etc/keepalived/fc-manage")[1])
-        agent_after = router.execute("readlink -f /etc/keepalived/fc-manage")[1]
+        print(router.execute("cat /etc/keepalived/fc-keepalived")[1])
+        agent_after = router.execute("readlink -f /etc/keepalived/fc-keepalived")[1]
 
         for x in range(30):
-          print(f"Waiting for fc-manage script to change, try {x}")
+          print(f"Waiting for fc-keepalived script to change, try {x}")
           if agent_before != agent_after:
             break
           router.sleep(1)
         else:
-          assert agent_before != agent_after, "fc-manage script didn't change!"
+          assert agent_before != agent_after, "fc-keepalived script didn't change!"
 
-      with subtest("keepalived should call the fc-manage mock when the stop file is changed"):
+      with subtest("keepalived should call the fc-keepalived mock when the stop file is changed"):
         router.execute("sed -i 'c 1' /etc/keepalived/stop")
         router.wait_until_succeeds("cat /tmp/agent-mock-called")
 
@@ -486,9 +486,53 @@ in
         router2.succeed("sed -i 'c 1' /etc/keepalived/stop")
         router1.r.wait_until_is_primary()
         router2.r.wait_until_is_secondary()
+        router2.succeed("sed -i 'c 0' /etc/keepalived/stop")
 
       print(router1.succeed("journalctl -xb -u keepalived"))
       print(router2.succeed("journalctl -xb -u keepalived"))
+    '';
+  };
+
+  testCases.maintenance = {
+    nodes = {
+      router1 = makeRouterConfig { id = 1; };
+      router2 = makeRouterConfig { id = 2; };
+    };
+    testScript = { nodes, ... }: let
+      fc-keepalived = "JOURNAL_STREAM= fc-keepalived";
+    in mkTestScript ''
+      with subtest("First router should become primary"):
+        router1.wait_until_succeeds("systemctl is-active keepalived")
+        router2.wait_until_succeeds("systemctl is-active keepalived")
+        router1.r.wait_until_is_primary()
+        router2.r.wait_until_is_secondary()
+
+      with subtest("router1: fc-keepalived enter-maintenance, should switch to router2"):
+        router1.succeed("${fc-keepalived} enter-maintenance")
+        router1.r.wait_until_is_secondary()
+        router2.r.wait_until_is_primary()
+        router1.succeed("${fc-keepalived} leave-maintenance")
+
+      with subtest("router2: run a maintenance activity, should switch to router1"):
+        router2.execute('fc-maintenance -v request script test true')
+        maintenance_out = router2.succeed("JOURNAL_STREAM= fc-maintenance -v run --no-online --run-all-now 2>&1")
+        print("fc-maintenance output:")
+        print("="*80)
+        print(maintenance_out)
+        assert router1.r.is_primary
+        assert not router2.r.is_primary
+
+      with subtest("router1: fc-keepalived check should be green"):
+        print(router1.succeed("${fc-keepalived} check"))
+
+      with subtest("router2: fc-keepalived check should be green"):
+        print(router2.succeed("${fc-keepalived} check"))
+
+      with subtest("keepalived router state files should reflect reality"):
+        router1_state = router1.succeed("cat /run/keepalived/state").strip()
+        assert router1_state == "master", f"router1 state file should have 'master', got {router1_state}"
+        router2_state = router2.succeed("cat /run/keepalived/state").strip()
+        assert router2_state == "backup", f"router2 state file should have 'backup', got {router2_state}"
     '';
   };
 
