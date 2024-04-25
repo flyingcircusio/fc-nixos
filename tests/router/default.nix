@@ -292,6 +292,8 @@ in
         pp(primary.succeed("ip r"))
         pp(primary.succeed("iptables -L -n"))
         pp(primary.succeed("ip6tables -L -n"))
+        pp(primary.succeed("systemctl status -l firewall"))
+
 
       with subtest("wait for keepalived to become active"):
         primary.wait_until_succeeds("systemctl is-active keepalived")
@@ -342,13 +344,15 @@ in
     };
 
     testScript = { nodes, ... }: mkTestScript ''
+      pp = rich.print
       secondary.wait_for_unit("default.target")
 
       with subtest("networking"):
-        print(secondary.succeed("ip a"))
-        print(secondary.succeed("ip r"))
-        print(secondary.succeed("iptables -L -n"))
-        print(secondary.succeed("ip6tables -L -n"))
+        pp(secondary.succeed("ip a"))
+        pp(secondary.succeed("ip r"))
+        pp(secondary.succeed("iptables -L -n"))
+        pp(secondary.succeed("ip6tables -L -n"))
+        pp(secondary.succeed("systemctl status -l firewall"))
 
       with subtest("wait for keepalived to become active"):
         print(secondary.succeed("cat /etc/keepalived/keepalived.conf"))

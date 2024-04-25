@@ -124,7 +124,7 @@ in
 
         # Always allow ICMP
         iptables -A fc-router-forward -p icmp -j ACCEPT
-        ip6tables-A fc-router-forward -p icmpv6 -j ACCEPT
+        ip6tables -A fc-router-forward -p icmpv6 -j ACCEPT
 
         # Always allow related traffic
         ip46tables -A fc-router-forward -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
@@ -132,7 +132,7 @@ in
         #############
         # Protect MGM
         iptables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmp -j ACCEPT
-        ip6tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmp6 -j ACCEPT
+        ip6tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmpv6 -j ACCEPT
         # allow prometheus
         ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p tcp --dport 9126 -j ACCEPT
         ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -j REJECT
