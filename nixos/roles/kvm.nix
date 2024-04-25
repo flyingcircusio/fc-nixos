@@ -291,7 +291,6 @@ in
 
     systemd.services.fc-qemu-scrub = {
       description = "Scrub Qemu/KVM VM inventory.";
-      wantedBy = [ "multi-user.target" ];
       path = [ pkgs.fc.agent role.package ];
       serviceConfig = {
         Type = "oneshot";
