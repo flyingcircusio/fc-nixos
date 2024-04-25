@@ -90,12 +90,18 @@ in
       '';
     };
 
-    services.tftpd = {
+    services.atftpd = {
       enable = true;
-      path = ... {
-         # place a file called "flyingcircus.ipxe" in this path, take it from ./flyingcircus.ipxe
-         # place a file called "undionly.kpxe" in this path, take it from ${pkgs.ipxe}/undionly.kpxe
-      };
+      extraOptions = [
+        "--verbose=5"
+      ];
+      root = pkgs.runCommand "tftpd-root-for-dhcpd4" {} ''
+        mkdir $out
+        # place a file called "flyingcircus.ipxe" in this path, take it from ./flyingcircus.ipxe
+        cp ${./flyingcircus.ipxe} $out/flyingcircus.ipxe
+        # place a file called "undionly.kpxe" in this path, take it from ${pkgs.ipxe}/undionly.kpxe
+        cp ${pkgs.ipxe}/undionly.kpxe $out/
+      '';
     };
 
     networking.firewall.extraCommands = ''
