@@ -223,8 +223,8 @@ in
       # Ignore all other multi-cast traffic.
       ip6tables -A nixos-fw -s ff::/8 -j DROP
       ip6tables -A nixos-fw -d ff::/8 -j DROP
-      ip6tables -A nixos-fw -s 224.0.0.0/4 -j DROP
-      ip6tables -A nixos-fw -d 224.0.0.0/4 -j DROP
+      iptables -A nixos-fw -s 224.0.0.0/4 -j DROP
+      iptables -A nixos-fw -d 224.0.0.0/4 -j DROP
       '';
     };
 
