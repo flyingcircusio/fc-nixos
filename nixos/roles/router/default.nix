@@ -103,7 +103,7 @@ in
       (lib.concatStringsSep "\n" [
         martianIptablesInput
         ''
-        ip46tables -N fc-router-forward
+        ip46tables -N fc-router-forward || true
         ip46tables -A FORWARD -j fc-router-forward
         ''
         martianIptablesForward
