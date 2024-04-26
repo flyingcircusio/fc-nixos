@@ -64,7 +64,9 @@ in {
           target=$out/bin/${name}
           runHook preCheck
           ${shellDryRun} "$target"
-          ${pkgs.shellcheck}/bin/shellcheck ${excludeOption} "$target"
+          # XXX building shellcheck is prohibitively ram expensive if
+          # it's not already available from a cache
+          # $\{pkgs.shellcheck}/bin/shellcheck $\{excludeOption} "$target"
           runHook postCheck
         ''
         else checkPhase;
