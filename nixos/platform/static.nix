@@ -70,6 +70,8 @@ with lib;
         "ul" = 20;
         # video surveillance
         "video" = 23;
+        # access network for unmanaged hosts
+        "access" = 41;
       };
 
       mtus = {
