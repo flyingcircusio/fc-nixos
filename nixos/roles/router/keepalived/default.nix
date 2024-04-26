@@ -37,6 +37,11 @@ let
       router_id ${routerId}
       script_user root
       use_symlink_paths true
+      # XXX: auto-generate interface variables for all vlans?
+      $MGM_INTERFACE=${fclib.network.mgm.interface}
+      $SRV_INTERFACE=${fclib.network.srv.interface}
+      $FE_INTERFACE=${fclib.network.fe.interface}
+      $TR_INTERFACE=${fclib.network.tr.interface}
     }
 
     ${locationConfig}
