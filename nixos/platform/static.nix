@@ -99,10 +99,8 @@ with lib;
         #
         # This seems to be https://sourceware.org/bugzilla/show_bug.cgi?id=13028
         # which is fixed in glibc 2.22 which is included in NixOS 16.03.
-        dev = [ "2a02:238:f030:1c2::1" # dev-router virt IP6
-                "2a02:238:f030:1c3::4" # ?
-                "2a02:238:f030:1c3::1087" # ?
-        ];
+        dev = [ "2a02:238:f030:1c3::1" ];
+        whq = [ "2a02:238:f030:103::1" ];
         test = [ "2a02:238:f030:1c2::1" ];
         standalone = [ "9.9.9.9" "8.8.8.8" ];
       };
