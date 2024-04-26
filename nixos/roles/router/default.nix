@@ -155,10 +155,20 @@ in
         # an arbitrary VXLAN on the router doesn't automatically cause
         # everything to be forwarded.
 
+
       '']);
 
+    networking.nat.extraCommands = ''
+      #############
+      # Masquerading rules for the uplink interface
+      ${lib.concatMapStringsSep "\n"
+        (iface: "iptables -t nat -A nixos-nat-post -o ${iface} -s 172.16.0.0/12 -j MASQUERADE")
+        config.flyingcircus.static.routerUplinkInterfaces."${location}"
+      }
+    '';
+
     networking.firewall.extraStopCommands = ''
-      ip46tables -D FORWARD -j fc-router-forward
+      ip46tables -D FORWARD -j fc-router-forward || true
       ip46tables -F fc-router-forward 2>/dev/null || true
       ip46tables -X fc-router-forward 2>/dev/null || true
     '';
