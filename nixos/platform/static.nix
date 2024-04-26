@@ -63,6 +63,7 @@ with lib;
         "srv2" = 17;
         # transfer 3 (blue): tertiary router-router connection
         "tr3" = 18;
+        "tr-whq-sl" = 18;
         # dynamic hardware pool: local endpoints for Kamp DHP tunnels
         "dhp" = 19;
         # underlay: EVPN-VXLAN network virtualisation underlay
