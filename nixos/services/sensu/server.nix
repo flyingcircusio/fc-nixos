@@ -127,11 +127,10 @@ in {
               ];
             in ''
               # Configure user and permissions for ${node}:
-              rabbitmqctl list_users | grep ^${node} || \
-                rabbitmqctl add_user ${node} ${password}
-
-              rabbitmqctl change_password ${client.node} ${password}
-              rabbitmqctl set_permissions -p /sensu ${node} ${lib.concatMapStringsSep " " (p: "'${p}'") permissions}
+              rabbitmqctl list_users | grep ^${node} || (
+                rabbitmqctl add_user ${node} ${password} ;
+                rabbitmqctl change_password ${client.node} ${password} ;
+                rabbitmqctl set_permissions -p /sensu ${node} ${lib.concatMapStringsSep " " (p: "'${p}'") permissions}
             '')
           sensuClients);
       in
