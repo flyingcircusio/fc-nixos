@@ -71,6 +71,15 @@ in
         + " see `--limit-burst` in `man 8 iptables-extensions`.\n"
         "Only enabled when `logRateLimit` is enabled.";
     };
+    logLevel = lib.mkOption {
+      type = lib.types.ints.positive;
+      # note for upstreaming: defaults to 6 (info) in NixOS
+      default = 7;
+      description = ''
+        Logging priority for `nixos-fw-log-refuse` messages. Possible values:
+        0 (emerg), 1 (alert), 2 (crit), 3 (error), 4 (warning), 5 (notice), 6 (info), 7 (debug)
+      '';
+    };
   };
   config = {
 
@@ -136,22 +145,22 @@ in
                 "-m limit --limit ${cfg.firewall.logRateLimit} --limit-burst ${toString cfg.firewall.logBurstLimit} ";
             fcChainMods = ''
               ${lib.optionalString cfgUpstream.logRefusedConnections ''
-                ip46tables -A nixos-fw-log-refuse ${logLimits}-p tcp --syn -j LOG --log-level info --log-prefix "refused connection: "
+                ip46tables -A nixos-fw-log-refuse ${logLimits}-p tcp --syn -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused connection: "
               ''}
               ${lib.optionalString (cfgUpstream.logRefusedPackets && !cfgUpstream.logRefusedUnicastsOnly) ''
                 ip46tables -A nixos-fw-log-refuse -m pkttype --pkt-type broadcast \
                   ${logLimits}\
-                  -j LOG --log-level info --log-prefix "refused broadcast: "
+                  -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused broadcast: "
                 ip46tables -A nixos-fw-log-refuse -m pkttype --pkt-type multicast \
                   ${logLimits}\
-                  -j LOG --log-level info --log-prefix "refused broadcast: "
-                  -j LOG --log-level info --log-prefix "refused multicast: "
+                  -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused broadcast: "
+                  -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused multicast: "
               ''}
               ip46tables -A nixos-fw-log-refuse -m pkttype ! --pkt-type unicast -j nixos-fw-refuse
               ${lib.optionalString cfgUpstream.logRefusedPackets ''
                 ip46tables -A nixos-fw-log-refuse \
                   ${logLimits}\
-                  -j LOG --log-level info --log-prefix "refused packet: "
+                  -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused packet: "
               ''}
               ip46tables -A nixos-fw-log-refuse -j nixos-fw-refuse
             '';

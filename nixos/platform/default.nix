@@ -181,7 +181,7 @@ in {
   config = {
 
     boot = {
-      consoleLogLevel = mkDefault 7;
+      consoleLogLevel = mkDefault 6;
 
       initrd.kernelModules = [
         "bfq"
