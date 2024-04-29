@@ -203,6 +203,16 @@ let
             }];
         };
       };
+      flyingcircus.encServices = [{
+        address = "sensu.gocept.net";
+        location = "test";
+        password = "uiae";
+        service = "sensuserver-source-address";
+        ips = [
+          "172.20.2.200"
+        ];
+      }];
+
 
       services.telegraf.enable = lib.mkForce false;
 
