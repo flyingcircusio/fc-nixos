@@ -153,6 +153,7 @@ with lib;
       routerUplinkInterfaces = {
         dev = [ "ethtr" ];
         whq = [ "brtr-whq-sl" ];
+        test = [ "ethtr" ];
       };
 
       adminKeys = {
