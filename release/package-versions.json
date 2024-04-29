@@ -75,9 +75,9 @@
     "version": "123.0.6312.122"
   },
   "chromium": {
-    "name": "chromium-123.0.6312.122",
+    "name": "chromium-124.0.6367.60",
     "pname": "chromium",
-    "version": "123.0.6312.122"
+    "version": "124.0.6367.60"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -155,9 +155,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.64",
+    "name": "element-web-1.11.65",
     "pname": "element-web",
-    "version": "1.11.64"
+    "version": "1.11.65"
   },
   "erlang": {
     "name": "erlang-25.3.2.7",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-124.0.2",
+    "name": "firefox-125.0.2",
     "pname": "firefox",
-    "version": "124.0.2"
+    "version": "125.0.2"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -435,9 +435,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.155",
+    "name": "linux-5.15.156",
     "pname": "linux",
-    "version": "5.15.155"
+    "version": "5.15.156"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -475,9 +475,9 @@
     "version": "4.16.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.104.0",
+    "name": "matrix-synapse-wrapped-1.105.1",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.104.0"
+    "version": "1.105.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -686,9 +686,9 @@
     "version": "8.3.6"
   },
   "phpPackages.composer": {
-    "name": "composer-2.7.1",
+    "name": "composer-2.7.3",
     "pname": "composer",
-    "version": "2.7.1"
+    "version": "2.7.3"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -1006,9 +1006,9 @@
     "version": "9.0.2116"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.44.0+abi=4.0",
+    "name": "webkitgtk-2.44.1+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.44.0"
+    "version": "2.44.1"
   },
   "wget": {
     "name": "wget-1.21.4",
