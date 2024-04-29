@@ -31,6 +31,13 @@ let
         "-s ${network} -j DROP")
       # Also drop link-local addresses here.
       (martianNetworks ++ [ "fe80::/10" ]));
+
+  locationSensuServer = lib.findFirst
+    (s: s.service == "sensuserver-source-address")
+    null
+    config.flyingcircus.encServices;
+
+  sensuSourceAddress = head (filter (i: fclib.isIp4 i) (locationSensuServer.ips));
 in
 {
   options = {
@@ -135,6 +142,8 @@ in
         ip6tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmpv6 -j ACCEPT
         # allow prometheus
         ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p tcp --dport 9126 -j ACCEPT
+        # allow SSH from the sensu server in order to remotely monitor switches
+        iptables -A fc-router-forward -i ${fclib.network.fe.interface} -o ${fclib.network.mgm.interface} -s ${sensuSourceAddress} -p tcp --dport 22 -j ACCEPT
         ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -j REJECT
 
         #############
