@@ -63,12 +63,15 @@ with lib;
         "srv2" = 17;
         # transfer 3 (blue): tertiary router-router connection
         "tr3" = 18;
+        "tr-whq-sl" = 18;
         # dynamic hardware pool: local endpoints for Kamp DHP tunnels
         "dhp" = 19;
         # underlay: EVPN-VXLAN network virtualisation underlay
         "ul" = 20;
         # video surveillance
         "video" = 23;
+        # access network for unmanaged hosts
+        "access" = 41;
       };
 
       mtus = {
@@ -101,10 +104,8 @@ with lib;
         #
         # This seems to be https://sourceware.org/bugzilla/show_bug.cgi?id=13028
         # which is fixed in glibc 2.22 which is included in NixOS 16.03.
-        dev = [ "2a02:238:f030:1c2::1" # dev-router virt IP6
-                "2a02:238:f030:1c3::4" # ?
-                "2a02:238:f030:1c3::1087" # ?
-        ];
+        dev = [ "2a02:238:f030:1c3::1" ];
+        whq = [ "2a02:238:f030:103::1" ];
         test = [ "2a02:238:f030:1c2::1" ];
         standalone = [ "9.9.9.9" "8.8.8.8" ];
       };
@@ -147,6 +148,12 @@ with lib;
         dev = [ "dev-router" ];
         whq = [ "whq-router" ];
         rzob = [ "rzob-router" ];
+      };
+
+      routerUplinkInterfaces = {
+        dev = [ "ethtr" ];
+        whq = [ "brtr-whq-sl" ];
+        test = [ "ethtr" ];
       };
 
       adminKeys = {

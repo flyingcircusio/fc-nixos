@@ -44,10 +44,10 @@ in
 
     networking.firewall.extraCommands = ''
       # Allow BFD
-      iptables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 3784 -j nixos-fw-accept
-      iptables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 3785 -j nixos-fw-accept
+      ip46tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 3784 -j nixos-fw-accept
+      ip46tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 3785 -j nixos-fw-accept
       # Allow BGP
-      iptables -A nixos-fw -i ${fclib.network.tr.interface}+ -p tcp --dport 179 -j nixos-fw-accept
+      ip46tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p tcp --dport 179 -j nixos-fw-accept
     '';
 
   };
