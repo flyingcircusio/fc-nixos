@@ -32,17 +32,31 @@ let
     (i: i.policy == "vxlan")
     managedInterfaces;
 
-  ethernetInterfaces = physicalInterfaces ++
-    # XXX handling this within fclib.network.ul would be great.
-    (lib.optionals (!isNull fclib.underlay) fclib.underlay.links);
+  ethernetLinks = let
+    # XXX handling this within fclib.network.ul would be great
+    underlayLinks = lib.optionals (!isNull fclib.underlay) fclib.underlay.links;
+
+    # The same physical link may be used by multiple distinct
+    # interfaces, as is the case with tagged vlans. When physical
+    # links are configured, they must have their MTU set to the
+    # greatest MTU of all dependent interfaces.
+    physicalLinkNames = lib.unique (map (iface: iface.link) physicalInterfaces);
+    physicalLinksByMtu = listToAttrs (map (link:
+      lib.nameValuePair link
+        (lib.foldl
+          (prev: next: if next.mtu > (prev.mtu or 0) then next else prev)
+          null
+          (filter (iface: iface.link == link) physicalInterfaces))
+    ) physicalLinkNames);
+  in (attrValues physicalLinksByMtu) ++ underlayLinks;
+
 
   virtualLinks = let
     allLinks = lib.unique
       (lib.foldl (acc: iface: acc ++ iface.linkStack) [] managedInterfaces);
-    ethernetLinks = lib.unique
-      (map (iface: iface.link) ethernetInterfaces);
+    ethernetLinkNames = map (iface: iface.link) ethernetLinks;
   in
-    lib.subtractLists ethernetLinks allLinks;
+    lib.subtractLists ethernetLinkNames allLinks;
 
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
 
@@ -490,7 +504,7 @@ in
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            })) ethernetInterfaces) ++
+            })) ethernetLinks) ++
 
 
         (let
@@ -703,7 +717,7 @@ in
                 unitConfig.Requisite = after;
                 serviceConfig.Type = "oneshot";
                 script = let
-                  links = lib.concatStringsSep " " (map (i: i.link) ethernetInterfaces);
+                  links = lib.concatStringsSep " " (map (i: i.link) ethernetLinks);
                 in
                   "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${links}";
               }
