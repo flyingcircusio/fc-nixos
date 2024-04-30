@@ -4,6 +4,7 @@ with builtins;
 
 let
   inherit (config) fclib;
+  inherit (config.flyingcircus) location static;
   role = config.flyingcircus.roles.router;
 in
 lib.mkIf role.enable {
@@ -25,14 +26,14 @@ lib.mkIf role.enable {
     '';
   };
 
-  # The + on the tr interface is slightly muddy: this is an assumption that
-  # all transfer interfaces are a) named tr<something> and b) consistently use
-  # eth/br on the same machine (either everything bridged/through vxlan or all
-  # directly on an ethernet link)
-  networking.firewall.extraCommands = ''
-    ip46tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 123 -j REJECT
-    ip46tables -A nixos-fw -p udp --dport 123 -j ACCEPT
-  '';
+  networking.firewall.extraCommands = let
+    uplinkNetworks = static.routerUplinkNetworks."${location}";
+    uplinkIfaces = map (network: fclib.network."${network}".interface) uplinkNetworks;
+  in
+    (lib.concatMapStringsSep "\n" (iface:
+      "ip46tables -A nixos-fw -i ${iface} -p udp --dport 123 -j REJECT"
+    ) uplinkIfaces)
+    + "\n" + "ip46tables -A nixos-fw -p udp --dport 123 -j ACCEPT";
 
   services.timesyncd.enable = false;
 
