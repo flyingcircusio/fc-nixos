@@ -298,7 +298,7 @@ LSBLK_PATTY_JSON = """
 
 
 @pytest.fixture
-def mock_LUKSKeyStoreManager(monkeypatch):
+def mock_LUKSKeyStoreManager(monkeypatch, tmpdir):
     class LUKSKeyStoreMock(fc.ceph.luks.LUKSKeyStore):
         def admin_key_for_input(*args, **kwargs):
             return "foo"
@@ -314,7 +314,9 @@ def mock_LUKSKeyStoreManager(monkeypatch):
     )
     keyman = fc.ceph.luks.manage.LUKSKeyStoreManager()
 
-    keyman._KEYSTORE = LUKSKeyStoreMock()
+    keystoremock = LUKSKeyStoreMock()
+    keystoremock.local_key_dir = tmpdir
+    keyman._KEYSTORE = keystoremock
     keyman._do_rekey = do_nothing
     return keyman
 
@@ -554,6 +556,134 @@ def test_keystore_admin_key_fingerprint_existing_update(
     pe.in_order(
         # fmt: off
         "LUKS admin key for this location: "
+        # fmt: on
+    )
+    assert pe == captured.err
+
+
+def test_luks_fingerprint_command_invocation(
+    inputs_mock, capsys, mock_LUKSKeyStoreManager
+):
+    """smoke test for invocation via CLI arguments"""
+    from fc.ceph.main import luks
+
+    # feed data to `input()`
+    inputs_mock.write(
+        "\n".join(
+            [
+                "foo",
+                "foo",
+                "foo",
+            ]
+        )
+    )
+    inputs_mock.seek(0)
+
+    luks(["keystore", "fingerprint"])
+    luks(["keystore", "fingerprint", "--no-confirm"])
+
+    captured = capsys.readouterr()
+    assert (
+        captured.out
+        == "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n"
+        "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n"
+    )
+
+
+def test_luks_fingerprint_mismatch_retry(
+    inputs_mock, capsys, mock_LUKSKeyStoreManager, patterns
+):
+    # feed data to `input()`
+    inputs_mock.write(
+        "\n".join(
+            [
+                "foo",
+                "notfoo",
+                "foo",
+                "foo",
+            ]
+        )
+    )
+    inputs_mock.seek(0)
+    mock_LUKSKeyStoreManager.fingerprint(confirm=True, verify=False)
+
+    captured = capsys.readouterr()
+
+    p = patterns.fpdialog
+    p.optional("<empty-line>")
+    p.in_order(
+        "Mismatching passphrases entered, please retry.\n"
+        "Error: fingerprint mismatch:\n"
+        "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+    )
+
+    pe = patterns.fpdialog_getpass
+    pe.optional("Warning: Password input may be echoed.")
+    pe.in_order(
+        # fmt: off
+        "Enter passphrase to fingerprint: \n"
+        "Confirm passphrase again: \n"
+        "Enter passphrase to fingerprint: \n"
+        "Confirm passphrase again: "
+        # fmt: on
+    )
+    assert pe == captured.err
+
+
+def test_luks_fingerprint_verify(
+    inputs_mock, capsys, tmpdir, mock_LUKSKeyStoreManager, patterns
+):
+    # feed data to `input()`
+    inputs_mock.write(
+        "\n".join(
+            [
+                "foo",
+                "foo",
+                "foo",
+            ]
+        )
+    )
+    inputs_mock.seek(0)
+
+    # no fingerprint file
+    assert mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
+
+    # mismatching fingerprint file
+    persist_fingerprint(b"notfoo", tmpdir)
+    assert mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
+
+    # matching fingerprint file
+    persist_fingerprint(b"foo", tmpdir)
+    assert mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 0
+
+    captured = capsys.readouterr()
+
+    p = patterns.fpdialog
+    p.optional("<empty-line>")
+    p.in_order(
+        # fmt: off
+      # 1sr invocation
+      "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n"
+      "No admin key fingerprint stored.\n"
+
+      # 2nd invocation
+      "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n"
+      "fingerprint for your entry: \n"
+      "'2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae'\n"
+      "fingerprint stored locally: \n"
+      "'28b0289d1cceb110614259333e64a77ea39e87ec9add8af435c1271f8d2e9e13'\n"
+
+      # 3rd invocation
+      "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+        # fmt: on
+    )
+    pe = patterns.fpdialog_getpass
+    pe.optional("Warning: Password input may be echoed.")
+    pe.in_order(
+        # fmt: off
+        "Enter passphrase to fingerprint: \n"
+        "Enter passphrase to fingerprint: \n"
+        "Enter passphrase to fingerprint: "
         # fmt: on
     )
     assert pe == captured.err
