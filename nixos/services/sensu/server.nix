@@ -101,8 +101,8 @@ in {
 
     systemd.services.prepare-rabbitmq-for-sensu = {
       description = "Prepare rabbitmq for sensu-server.";
-      partOf = [ "rabbitmq.service" ];
-      wantedBy = [ "rabbitmq.service" ];
+      wantedBy = [ "multi-user.target" ];
+      requires = ["rabbitmq.service" ];
       after = ["rabbitmq.service" ];
       path = [ config.services.rabbitmq.package ];
       serviceConfig = {
@@ -127,20 +127,27 @@ in {
               ];
             in ''
               # Configure user and permissions for ${node}:
-              rabbitmqctl list_users | grep ^${node} || \
-                rabbitmqctl add_user ${node} ${password}
-
-              rabbitmqctl change_password ${client.node} ${password}
-              rabbitmqctl set_permissions -p /sensu ${node} ${lib.concatMapStringsSep " " (p: "'${p}'") permissions}
+              grep ^${node} $known_users > /dev/null || (
+                echo "Adding user ${node} ..."
+                rabbitmqctl add_user ${node} ${password} ;
+                rabbitmqctl change_password ${client.node} ${password} ;
+                rabbitmqctl set_permissions -p /sensu ${node} ${lib.concatMapStringsSep " " (p: "'${p}'") permissions}
+              )
             '')
           sensuClients);
       in
       ''
+        known_users=$(mktemp)
+        trap 'rm -f "$known_users"; exit' ERR EXIT  # HUP INT TERM
+        rabbitmqctl list_users > $known_users
+
+        echo "Preparing rabbitmq for Sensu ..."
+
         # Create user for sensu-server, if it does not exist and make sure that the password is set
-        rabbitmqctl list_users | grep sensu-server || \
+        grep sensu-server $known_users > /dev/null || \
           rabbitmqctl add_user sensu-server ${serverPassword}
 
-        rabbitmqctl list_vhosts | grep /sensu || \
+        rabbitmqctl list_vhosts | grep /sensu > /dev/null || \
           rabbitmqctl add_vhost /sensu
 
         rabbitmqctl set_user_tags sensu-server administrator
@@ -148,7 +155,10 @@ in {
 
         rabbitmqctl set_permissions -p /sensu sensu-server ".*" ".*" ".*"
 
+        echo "Ensuring client users ..."
         ${clients}
+
+        echo "All done"
       '';
     };
 

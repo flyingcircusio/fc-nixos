@@ -173,6 +173,8 @@ in {
 
       environment = {
         RABBITMQ_MNESIA_BASE = "${cfg.dataDir}/mnesia";
+        # https://www.rabbitmq.com/docs/runtime#busy-waiting
+        RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS = "+sbwt none +sbwtdcpu none +sbwtdio none";
         RABBITMQ_LOGS = "-";
         SYS_PREFIX = "";
         RABBITMQ_CONFIG_FILE = config_file;
