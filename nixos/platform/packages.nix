@@ -64,7 +64,6 @@
         python3Packages.virtualenv
         ripgrep
         screen
-        shellcheck
         strace
         sysstat
         tcpdump
