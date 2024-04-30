@@ -92,10 +92,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
 
     services.irqbalance.enable = true;
 
-    # Qemu migration coordination uses random ports at the moment, so we
-    # trust this completely at the moment.
-    networking.firewall.trustedInterfaces = [ fclib.network.mgm.interface ];
-
     users.users.root = {
       # Overriden in local.nix
       hashedPassword = config.fclib.mkPlatform "*";

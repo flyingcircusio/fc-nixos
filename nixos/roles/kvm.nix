@@ -71,6 +71,10 @@ in
       bridge-utils
     ];
 
+    # Qemu migration coordination uses random ports at the moment, so we
+    # trust this completely at the moment.
+    networking.firewall.trustedInterfaces = [ fclib.network.mgm.interface ];
+
     environment.shellAliases = {
       # alias for observing both running VMs as well as the migration logs at once
       fc-vm-migration-watch = "watch '${role.package}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
