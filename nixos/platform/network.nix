@@ -241,7 +241,7 @@ in
         iptables -A nixos-fw -d 224.0.0.0/4 -j DROP
       '' +
         # Do not conntrack the VXLAN underlay packets
-        lib.optionalString (fclib.network.ul != null) (
+        lib.optionalString (fclib.underlay != null) (
           lib.concatMapStrings (address: ''
             iptables -t raw -A fc-raw-prerouting -d ${address} -j CT --notrack
             iptables -t raw -A fc-raw-output -s ${address} -j CT --notrack
