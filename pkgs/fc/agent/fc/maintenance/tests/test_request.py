@@ -142,12 +142,15 @@ class FailingActivity(Activity):
         raise RuntimeError("activity failing")
 
 
-def test_execute_catches_errors(tmpdir):
+def test_execute_catches_unhandled_activity_exceptions(tmpdir, log):
     r = Request(FailingActivity(), 1, dir=str(tmpdir))
     r.execute()
+    assert r.state == State.error
     assert len(r.attempts) == 1
-    assert "activity failing" in r.attempts[0].stderr
-    assert r.attempts[0].returncode != 0
+    attempt = r.attempts[0]
+    assert "activity failing" in attempt.stderr
+    assert attempt.returncode == 70
+    assert log.has("execute-request-failed")
 
 
 def test_load_request(tmp_path, logger):

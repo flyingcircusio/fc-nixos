@@ -327,6 +327,7 @@ class Request:
                 except Exception as e:
                     attempt.returncode = 70  # EX_SOFTWARE
                     attempt.stderr = str(e)
+                    raise
             self.state = evaluate_state(self.activity.returncode)
         except Exception:
             self.log.error(
