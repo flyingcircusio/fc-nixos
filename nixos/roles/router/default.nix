@@ -164,8 +164,21 @@ in
         # an arbitrary VXLAN on the router doesn't automatically cause
         # everything to be forwarded.
 
-
-      '']);
+        ''
+        (lib.optionalString (!isNull fclib.underlay) ''
+        #############
+        # Protect UL
+        # Forwarding should not be permitted onto or out of the underlay network
+        ${lib.concatMapStringsSep "\n"
+          (link: "ip46tables -A fc-router-forward -o ${link.link} -j REJECT")
+          fclib.underlay.links
+         }
+        ${lib.concatMapStringsSep "\n"
+          (link: "ip46tables -A fc-router-forward -i ${link.link} -j REJECT")
+          fclib.underlay.links
+         }
+        '')
+      ]);
 
     networking.nat.extraCommands = ''
       #############
