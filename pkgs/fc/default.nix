@@ -60,6 +60,7 @@ rec {
   sensusyntax = callPackage ./sensusyntax {};
   telegraf-collect-psi = callPackage ./telegraf-collect-psi {};
   telegraf-routes-summary = callPackage ./telegraf-routes-summary {};
+  trafficclient = pythonPackages.callPackage ./trafficclient.nix {};
   userscan = callPackage ./userscan.nix {};
   util-physical = callPackage ./util-physical {};
 

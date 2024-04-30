@@ -237,6 +237,8 @@ let
          ln -s $(dirname $0) /nix/var/nix/profiles/system
        fi
      '';
+
+      virtualisation.memorySize = 2048;
     };
 
   makeUpstreamRouterConfig = { id }:
@@ -339,6 +341,13 @@ in
         primary.succeed("stat flyingcircus.ipxe")
         primary.succeed("${pkgs.inetutils}/bin/tftp -v 127.0.0.1 <<< 'get undionly.kpxe'")
         primary.succeed("stat undionly.kpxe")
+
+      with subtest("pmacctd should be running for fe and srv interfaces"):
+        primary.wait_for_unit("pmacctd-ethfe")
+        primary.wait_for_unit("pmacctd-ethsrv")
+
+      with subtest("trafficclient timer should be active"):
+        primary.wait_for_unit("fc-trafficclient.timer")
     '';
   };
 
@@ -370,6 +379,13 @@ in
         pp(secondary.succeed("iptables -L -n"))
         pp(secondary.succeed("ip6tables -L -n"))
         pp(secondary.succeed("systemctl status -l firewall"))
+
+      with subtest("pmacctd should be running for fe and srv interfaces"):
+        secondary.wait_for_unit("pmacctd-ethfe")
+        secondary.wait_for_unit("pmacctd-ethsrv")
+
+      with subtest("trafficclient timer should be active"):
+        secondary.wait_for_unit("fc-trafficclient.timer")
 
       with subtest("wait for keepalived to become active"):
         print(secondary.succeed("cat /etc/keepalived/keepalived.conf"))
