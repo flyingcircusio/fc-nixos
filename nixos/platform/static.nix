@@ -72,12 +72,18 @@ with lib;
         "video" = 23;
         # access network for unmanaged hosts
         "access" = 41;
+        # uplink vlans for kamp in rzob
+        "tr-kamp-a" = 639;
+        "tr-kamp-b" = 640;
+        # uplink vlan for kamp DHP
+        "tr-kamp-dhp" = 679;
       };
 
       mtus = {
         "sto" = 9000;
         "stb" = 9000;
         "ul" = 9216;
+        "tr-kamp-dhp" = 1600;
       };
 
       nameservers = {
@@ -151,6 +157,7 @@ with lib;
       routerUplinkNetworks = {
         dev = [ "tr" ];
         whq = [ "tr-whq-sl" ];
+        rzob = [ "tr-kamp-a" "tr-kamp-b" ];
         test = [ "tr" ];
       };
 
