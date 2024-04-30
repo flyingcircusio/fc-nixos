@@ -278,6 +278,7 @@ class Request:
         with cd(dir):
             instance.activity.load()
             instance.activity.request = instance
+            instance.activity.lock_dir = lock_dir
         return instance
 
     def save(self):
