@@ -101,8 +101,8 @@ in {
 
     systemd.services.prepare-rabbitmq-for-sensu = {
       description = "Prepare rabbitmq for sensu-server.";
-      partOf = [ "rabbitmq.service" ];
-      wantedBy = [ "rabbitmq.service" ];
+      wantedBy = [ "multi-user.target" ];
+      requires = ["rabbitmq.service" ];
       after = ["rabbitmq.service" ];
       path = [ config.services.rabbitmq.package ];
       serviceConfig = {
