@@ -5,7 +5,7 @@ with builtins;
 let
   inherit (config) fclib;
   role = config.flyingcircus.roles.router;
-  inherit (config.flyingcircus) location;
+  inherit (config.flyingcircus) location static;
   locationConfig = readFile (./. + "/${location}.conf");
 
   primaryConfig = ''
@@ -20,7 +20,10 @@ let
     define UPLINK_MED=500;
   '';
 
-  routerId = head fclib.network.tr.v4.addresses;
+  routerId = static.routerIdSources.host."${config.networking.hostName}" or
+    (let
+      network = static.routerIdSources.location."${location}";
+    in head fclib.network."${network}".v4.addresses);
 
   commonConfig = ''
     log syslog all;
@@ -42,13 +45,17 @@ in
       ];
     };
 
-    networking.firewall.extraCommands = ''
-      # Allow BFD
-      ip46tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 3784 -j nixos-fw-accept
-      ip46tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p udp --dport 3785 -j nixos-fw-accept
-      # Allow BGP
-      ip46tables -A nixos-fw -i ${fclib.network.tr.interface}+ -p tcp --dport 179 -j nixos-fw-accept
-    '';
-
+    networking.firewall.extraCommands = let
+      bgpNetworks = static.routerUplinkNetworks."${location}" ++
+                    (static.routerDownlinkNetworks."${location}" or []);
+      bgpInterfaces = map (network: fclib.network."${network}".interface) bgpNetworks;
+    in ''
+      # Allow BFD and BGP
+    '' + (lib.concatMapStringsSep "\n" (iface: ''
+      ip46tables -A nixos-fw -i ${iface} -p udp --dport 3784 -j nixos-fw-accept
+      ip46tables -A nixos-fw -i ${iface} -p udp --dport 3785 -j nixos-fw-accept
+      ip46tables -A nixos-fw -i ${iface} -p tcp --dport 179 -j nixos-fw-accept
+    '') bgpInterfaces);
   };
+
 }

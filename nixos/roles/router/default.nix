@@ -3,7 +3,7 @@
 with builtins;
 
 let
-  inherit (config.flyingcircus) location;
+  inherit (config.flyingcircus) location static;
   inherit (config) fclib;
   role = config.flyingcircus.roles.router;
   kickInterfaces = fclib.writeShellApplication {
@@ -11,6 +11,10 @@ let
     runtimeInputs = with pkgs; [ ethtool ];
     text = lib.readFile ./kick-interfaces.sh;
   };
+
+  uplinkInterfaces = map
+    (network: fclib.network."${network}".interface)
+    static.routerUplinkNetworks."${location}";
 
   martianNetworks =
     lib.filter
@@ -20,15 +24,21 @@ let
   martianIptablesInput =
     (lib.concatMapStringsSep "\n"
       (network:
-        "${fclib.iptables network} -A nixos-fw -i ${fclib.network.tr.interface}+ " +
-        "-s ${network} -j DROP")
+        lib.concatMapStringsSep "\n"
+          (iface:
+            "${fclib.iptables network} -A nixos-fw -i ${iface} " +
+            "-s ${network} -j DROP")
+          uplinkInterfaces)
       martianNetworks);
 
   martianIptablesForward =
     (lib.concatMapStringsSep "\n"
       (network:
-        "${fclib.iptables network} -A fc-router-forward -i ${fclib.network.tr.interface}+ " +
-        "-s ${network} -j DROP")
+        lib.concatMapStringsSep "\n"
+          (iface:
+            "${fclib.iptables network} -A fc-router-forward -i ${iface} " +
+            "-s ${network} -j DROP")
+          uplinkInterfaces)
       # Also drop link-local addresses here.
       (martianNetworks ++ [ "fe80::/10" ]));
 
@@ -182,10 +192,10 @@ in
 
     networking.nat.extraCommands = ''
       #############
-      # Masquerading rules for the uplink interface
+      # Masquerading rules for the uplink interfaces
       ${lib.concatMapStringsSep "\n"
         (iface: "iptables -t nat -A nixos-nat-post -o ${iface} -s 172.16.0.0/12 -j MASQUERADE")
-        config.flyingcircus.static.routerUplinkInterfaces."${location}"
+        uplinkInterfaces
       }
     '';
 

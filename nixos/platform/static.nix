@@ -150,10 +150,26 @@ with lib;
         rzob = [ "rzob-router" ];
       };
 
-      routerUplinkInterfaces = {
-        dev = [ "ethtr" ];
-        whq = [ "brtr-whq-sl" ];
-        test = [ "ethtr" ];
+      # VLANs on which we accept connectivity to the outside world
+      routerUplinkNetworks = {
+        dev = [ "tr" ];
+        whq = [ "tr-whq-sl" ];
+        test = [ "tr" ];
+      };
+
+      # VLANs on which we provide connectivity to the outside world to others
+      routerDownlinkNetworks = {
+        whq = [ "tr" ];
+      };
+
+      # Derivation of router IDs for BGP, either the first IPv4
+      # address on given network, or per-host overrides
+      routerIdSources = {
+        location = {
+          dev = "tr";
+          whq = "tr";
+          test = "tr";
+        };
       };
 
       adminKeys = {
