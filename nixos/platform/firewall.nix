@@ -105,6 +105,8 @@ in
       See also https://doc.flyingcircus.io/roles/fc-21.05-production/firewall.html
     '';
 
+    environment.systemPackages = [ pkgs.conntrack-tools ];
+
     flyingcircus.services.sensu-client.checks = {
       firewall-config = {
         notification = "Firewall configuration did not terminate successfully";
@@ -133,19 +135,33 @@ in
         checkReversePath = "loose";
         rejectPackets = true;
 
-        extraCommands =
-          let
-            # As we flush the full chain defined in upstream NixOS, we need to
-            # recreate the parts we'd like to keep. Thus, this is mainly copied
-            # over, just modified by adding the option for rate-limiting the
-            # LOGs.
-            # Flushing and recreating the full chain is deemed more resilient
-            # than replacing single rules of a chain.
-            logLimits = lib.optionalString (! isNull cfg.firewall.logRateLimit)
-                "-m limit --limit ${cfg.firewall.logRateLimit} --limit-burst ${toString cfg.firewall.logBurstLimit} ";
-            fcChainMods = ''
+        extraCommands = lib.mkMerge [
+          # Introduce custom managed chains for raw OUTPUT and raw PREROUTING
+          (lib.mkBefore ''
+            # FC firewall managed chains (before)
+            ip46tables -t raw -N fc-raw-output 2>/dev/null || true
+            ip46tables -t raw -A OUTPUT -j fc-raw-output
+
+            ip46tables -t raw -N fc-raw-prerouting 2>/dev/null || true
+            ip46tables -t raw -A PREROUTING -j fc-raw-prerouting
+            # End FC firewall managed chains (before)
+          '')
+          # Introduce rate limited logging for refused connections -
+          # in contrast to non-rate limited logging defined by upstream.
+          #
+          # As we flush the full chain defined in upstream NixOS, we need to
+          # recreate the parts we'd like to keep. Thus, this is mainly copied
+          # over, just modified by adding the option for rate-limiting the
+          # LOGs.
+          # Flushing and recreating the full chain is deemed more resilient
+          # than replacing single rules of a chain.
+          (lib.mkOrder 1100 (
+            let
+              logLimits = lib.optionalString (! isNull cfg.firewall.logRateLimit)
+                  "-m limit --limit ${cfg.firewall.logRateLimit} --limit-burst ${toString cfg.firewall.logBurstLimit} ";
+            in ''
               ${lib.optionalString cfgUpstream.logRefusedConnections ''
-                ip46tables -A nixos-fw-log-refuse ${logLimits}-p tcp --syn -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused connection: "
+                  ip46tables -A nixos-fw-log-refuse ${logLimits}-p tcp --syn -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused connection: "
               ''}
               ${lib.optionalString (cfgUpstream.logRefusedPackets && !cfgUpstream.logRefusedUnicastsOnly) ''
                 ip46tables -A nixos-fw-log-refuse -m pkttype --pkt-type broadcast \
@@ -163,16 +179,30 @@ in
                   -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused packet: "
               ''}
               ip46tables -A nixos-fw-log-refuse -j nixos-fw-refuse
-            '';
-            rg = lib.optionalString
+            ''))
+            # Same RG SRV rules
+            (lib.mkOrder 1200 (lib.optionalString
               (rgRules != "")
-              "# Accept traffic within the same resource group.\n${rgRules}\n\n";
-            local = ''
+              "# Accept traffic within the same resource group.\n${rgRules}\n\n"))
+            # Local firewall rules.
+            (lib.mkOrder 1300 (''
               # Local firewall rules.
               set -v
               ${readFile filteredRules}
-            '';
-          in lib.mkAfter (fcChainMods + rg + local);
+            ''))
+          ];
+
+        extraStopCommands = lib.mkOrder 1300 ''
+          # FC firewall managed chains
+          ip46tables -t raw -D OUTPUT -j fc-raw-output 2>/dev/null || true
+          ip46tables -t raw -F fc-raw-output 2>/dev/null || true
+          ip46tables -t raw -X fc-raw-output 2>/dev/null || true
+
+          ip46tables -t raw -D PREROUTING -j fc-raw-prerouting 2>/dev/null || true
+          ip46tables -t raw -F fc-raw-prerouting 2>/dev/null || true
+          ip46tables -t raw -X fc-raw-prerouting 2>/dev/null || true
+          # End firewall managed chains
+        '';
       };
 
     flyingcircus.passwordlessSudoRules =
