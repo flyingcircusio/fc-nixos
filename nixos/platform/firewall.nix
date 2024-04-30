@@ -31,12 +31,12 @@ let
 
   rgAddrs = map (e: e.ip) cfg.encAddresses;
   rgRules = let
-    srv_device = fclib.network.srv.device or "";
+    srv_interface = fclib.network.srv.interface or "";
     in lib.optionalString
-    (lib.hasAttr srv_device config.networking.interfaces)
+    (lib.hasAttr srv_interface config.networking.interfaces)
     (lib.concatMapStringsSep "\n"
       (a:
-        "${fclib.iptables a} -A nixos-fw -i ${srv_device} " +
+        "${fclib.iptables a} -A nixos-fw -i ${srv_interface} " +
         "-s ${fclib.stripNetmask a} -j nixos-fw-accept")
       rgAddrs);
 
@@ -123,7 +123,7 @@ in
     # configuration on the NixOS side. Users may set additional networking.nat.*
     # options in /etc/local/nixos.
     networking.nat.enable = true;
-    networking.nat.externalInterface = fclib.network.fe.device;
+    networking.nat.externalInterface = fclib.network.fe.interface;
 
     networking.firewall =
       # our code generally assumes IPv6

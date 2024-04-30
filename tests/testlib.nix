@@ -93,7 +93,7 @@ rec {
     ];
 
     config = {
-      virtualisation.vlans = map (vlan: vlans.${vlan}) (attrNames config.flyingcircus.enc.parameters.interfaces);
+      virtualisation.vlans = map (vlan: vlans.${vlan}) (attrNames (trace config.flyingcircus.enc config.flyingcircus.enc.parameters.interfaces));
 
       flyingcircus.enc.parameters = (lib.recursiveUpdate {
         inherit resource_group location secrets;
@@ -106,6 +106,12 @@ rec {
             "2001:db8:${toString vid}::/64" = [ "2001:db8:${toString vid}::${toString id}" ];
           };
           gateways = {};
+          nics = [
+            {
+              "mac" = "52:54:00:12:0${toString vid}:0${toString id}"; 
+              "external_label" = "${name}nic${toString id}";
+            }
+          ];
         })
           (filterAttrs (name: vid: (!(net ? ${name}) && (name == "srv" || name == "fe")) || net ? ${name} && net.${name}) vlans);
       } extraEncParameters);

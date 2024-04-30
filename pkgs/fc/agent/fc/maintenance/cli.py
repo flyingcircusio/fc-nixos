@@ -124,6 +124,7 @@ def fc_maintenance(
         spooldir=spooldir,
         enc_path=enc_path,
         config_file=config_file,
+        lock_dir=lock_dir,
         log=log,
     )
 

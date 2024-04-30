@@ -4,6 +4,7 @@ import os
 import os.path as p
 import re
 import subprocess
+from enum import Enum
 from pathlib import Path
 from subprocess import PIPE, STDOUT
 from typing import Optional
@@ -65,6 +66,11 @@ class RegisterFailed(ChannelException):
 
 class DryActivateFailed(ChannelException):
     pass
+
+
+class Specialisation(Enum):
+    KEEP_CURRENT = 1
+    BASE_CONFIG = 2
 
 
 def kernel_version(kernel):
@@ -407,8 +413,11 @@ def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
     return system_path
 
 
-def switch_to_system(system_path, lazy, log=_log):
-    if lazy and p.realpath("/run/current-system") == system_path:
+def switch_to_system(
+    system_path: str | Path, lazy, update_bootloader=True, log=_log
+):
+    system_path = Path(system_path).resolve()
+    if lazy and Path("/run/current-system").resolve() == system_path:
         log.info(
             "system-switch-skip",
             _replace_msg="Lazy: system config did not change, skipping switch.",
@@ -422,7 +431,8 @@ def switch_to_system(system_path, lazy, log=_log):
         system=system_path,
     )
 
-    cmd = [f"{system_path}/bin/switch-to-configuration", "switch"]
+    action = "switch" if update_bootloader else "test"
+    cmd = [f"{system_path}/bin/switch-to-configuration", action]
 
     log.debug("system-switch-command", cmd=" ".join(cmd))
 
@@ -508,3 +518,34 @@ def register_system_profile(system_path, log=_log):
             stderr=e.stderr,
         )
         raise RegisterFailed(stdout=e.stdout, stderr=e.stderr)
+
+
+def get_specialisation_path_for_system(
+    system_path: Path, specialisation: str | Specialisation, log
+):
+    match specialisation:
+        case Specialisation.KEEP_CURRENT:
+            current_specialisation_file = Path("/etc/specialisation")
+            if current_specialisation_file.exists():
+                specialisation_name = (
+                    current_specialisation_file.read_text().strip()
+                )
+                log.debug(
+                    "specialisation-keep-current",
+                    specialisation=specialisation_name,
+                )
+            else:
+                log.debug("specialisation-keep-base-config")
+                specialisation_name = None
+        case Specialisation.BASE_CONFIG:
+            log.debug("base-config-requested")
+            specialisation_name = None
+        case specialisation_name:
+            log.debug(
+                "specialisation-requested", specialisation=specialisation_name
+            )
+
+    if specialisation_name:
+        return Path(system_path) / "specialisation" / specialisation_name
+    else:
+        return system_path

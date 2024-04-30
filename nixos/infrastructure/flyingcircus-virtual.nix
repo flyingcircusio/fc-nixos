@@ -84,6 +84,12 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     '';
   };
 
+  services.journald.extraConfig = ''
+    SystemMaxUse=2G
+    MaxLevelConsole=notice
+    ForwardToWall=no
+  '';
+
   systemd = {
     ctrlAltDelUnit = "poweroff.target";
 

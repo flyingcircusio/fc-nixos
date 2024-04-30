@@ -1,5 +1,6 @@
 import shlex
 import textwrap
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -154,7 +155,9 @@ def test_build_system_fail(log, monkeypatch):
 
 
 def test_switch_to_system(log, monkeypatch):
-    system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
+    system_path = Path(
+        "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
+    )
     switch_output = textwrap.dedent(
         """
         updating GRUB 2 menu...
@@ -175,7 +178,10 @@ def test_switch_to_system(log, monkeypatch):
 
     popen_mock = mock.Mock(return_value=switch_fake)
     monkeypatch.setattr("subprocess.Popen", popen_mock)
-    monkeypatch.setattr("os.path.realpath", lambda p: "other")
+    monkeypatch.setattr(
+        "pathlib.Path.resolve",
+        lambda p: system_path if p == system_path else "other",
+    )
 
     changed = nixos.switch_to_system(system_path, lazy=True)
     assert changed
@@ -183,7 +189,7 @@ def test_switch_to_system(log, monkeypatch):
 
 def test_switch_to_system_lazy_unchanged(log, monkeypatch):
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
-    monkeypatch.setattr("os.path.realpath", lambda p: system_path)
+    monkeypatch.setattr("pathlib.Path.resolve", lambda p: system_path)
 
     changed = nixos.switch_to_system(system_path, lazy=True)
     assert not changed

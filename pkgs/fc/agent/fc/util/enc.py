@@ -24,7 +24,7 @@ def load_enc(log, enc_path):
     except (OSError, ValueError):
         # This environment doesn't seem to use an ENC,
         # i.e. containers. Silently ignore for now.
-        log.info(
+        log.exception(
             "no-enc-data",
             msg="enc data not supported on this infrastructure, ignoring",
         )

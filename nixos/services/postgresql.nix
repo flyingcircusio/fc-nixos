@@ -80,7 +80,7 @@ in {
 
   in {
 
-    systemd.services.postgresql.bindsTo = [ "network-addresses-${fclib.network.srv.device}.service" ];
+    systemd.services.postgresql.bindsTo = [ "network-addresses-${fclib.network.srv.interface}.service" ];
 
     systemd.services.postgresql.serviceConfig = {
       Restart = "always";

@@ -27,12 +27,6 @@ in
       "admins"
     ];
 
-    services.journald.extraConfig = ''
-      SystemMaxUse=2G
-      MaxLevelConsole=notice
-      ForwardToWall=no
-    '';
-
     services.journald.forwardToSyslog = lib.mkOverride 90 false;
 
     flyingcircus.activationScripts = {

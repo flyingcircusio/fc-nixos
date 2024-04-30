@@ -63,12 +63,15 @@ with lib;
         "srv2" = 17;
         # transfer 3 (blue): tertiary router-router connection
         "tr3" = 18;
+        "tr-whq-sl" = 18;
         # dynamic hardware pool: local endpoints for Kamp DHP tunnels
         "dhp" = 19;
         # underlay: EVPN-VXLAN network virtualisation underlay
         "ul" = 20;
         # video surveillance
         "video" = 23;
+        # access network for unmanaged hosts
+        "access" = 41;
       };
 
       mtus = {
@@ -84,8 +87,23 @@ with lib;
         # when enabling them, like weird search path confusion that results in
         # arbitrary negative responses, combined with the rotate flag.
         dev = [ "172.20.3.1" ];
+        test = [ "172.20.2.1" ];
         whq = [ "172.16.48.1" ];
         rzob = [ "172.22.48.1" ];
+        standalone = [ "9.9.9.9" "8.8.8.8" ];
+      };
+
+      nameservers6 = {
+        # ns.$location.gocept.net, ns2.$location.gocept.net
+        # We are currently not using IPv6 resolvers as we have seen obscure bugs
+        # when enabling them, like weird search path confusion that results in
+        # arbitrary negative responses, combined with the rotate flag.
+        #
+        # This seems to be https://sourceware.org/bugzilla/show_bug.cgi?id=13028
+        # which is fixed in glibc 2.22 which is included in NixOS 16.03.
+        dev = [ "2a02:238:f030:1c3::1" ];
+        whq = [ "2a02:238:f030:103::1" ];
+        test = [ "2a02:238:f030:1c2::1" ];
         standalone = [ "9.9.9.9" "8.8.8.8" ];
       };
 
@@ -124,10 +142,34 @@ with lib;
         # Those are the routers and backup servers. This needs to move to the
         # directory service discovery or just make them part of the router and
         # backup server role.
-        dev = [ "kenny00" ];
-        whq = [ "lou" "kenny01" ];
-        rzob = [ "kenny06" "kenny07" ];
-        rzrl1 = [ "kenny02" "kenny03" ];
+        dev = [ "dev-router" ];
+        whq = [ "whq-router" ];
+        rzob = [ "rzob-router" ];
+      };
+
+      # VLANs on which we accept connectivity to the outside world
+      routerUplinkNetworks = {
+        dev = [ "tr" ];
+        whq = [ "tr-whq-sl" ];
+        test = [ "tr" ];
+      };
+
+      # VLANs on which we provide connectivity to the outside world to others
+      routerDownlinkNetworks = {
+        whq = [ "tr" ];
+      };
+
+      # Derivation of router IDs for BGP.
+      routerIdSources = {
+        # Either the first IPv4 addrress on a given network in a
+        # location
+        location = {
+          dev = "tr";
+          whq = "tr";
+          test = "tr";
+        };
+        # Or a per-host override
+        host = {};
       };
 
       adminKeys = {
