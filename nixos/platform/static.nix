@@ -159,14 +159,17 @@ with lib;
         whq = [ "tr" ];
       };
 
-      # Derivation of router IDs for BGP, either the first IPv4
-      # address on given network, or per-host overrides
+      # Derivation of router IDs for BGP.
       routerIdSources = {
+        # Either the first IPv4 addrress on a given network in a
+        # location
         location = {
           dev = "tr";
           whq = "tr";
           test = "tr";
         };
+        # Or a per-host override
+        host = {};
       };
 
       adminKeys = {
