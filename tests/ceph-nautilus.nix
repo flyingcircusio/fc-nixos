@@ -2,13 +2,16 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
 let
   getIPForVLAN = vlan: id: "192.168.${toString vlan}.${toString (5 + id)}";
 
-  makeCephHostConfig = { id, diskSizes ? [4000 4000], encrypted ? false, }:
-    { config, ... }:
+  makeCephHostConfig = { id, diskSizes ? [4000 4000], encrypted ? false, monOnly ? false }:
+    { config, lib, ... }:
     {
 
       virtualisation.memorySize = 3000;
       virtualisation.cores = 2;
-      virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ srv sto stb ];
+      virtualisation.vlans = with config.flyingcircus.static.vlanIds; [
+        srv
+        sto
+      ] ++ (if (!monOnly) then [ stb ] else [] );
       virtualisation.emptyDiskImages = diskSizes;
       imports = [ ../nixos ../nixos/roles ];
 
@@ -21,7 +24,7 @@ let
           ips = [ (getIPForVLAN 4 1) ];
           location = "test";
           service = "ceph_mon-mon";
-        }        {
+        }{
           address = "host2.fcio.net";
           ips = [ (getIPForVLAN 4 2) ];
           location = "test";
@@ -31,7 +34,13 @@ let
           ips = [ (getIPForVLAN 4 3) ];
           location = "test";
           service = "ceph_mon-mon";
+        }        {
+          address = "host4.fcio.net";
+          ips = [ (getIPForVLAN 4 4) ];
+          location = "test";
+          service = "ceph_mon-mon";
         }
+
       ];
 
       flyingcircus.services.ceph.extraSettings = {
@@ -56,7 +65,7 @@ let
       environment.etc."nixos/services.json".text = builtins.toJSON config.flyingcircus.encServices;
 
       flyingcircus.roles.ceph_osd = {
-        enable = true;
+        enable = !monOnly;
         cephRelease = "nautilus";
       };
       flyingcircus.roles.ceph_mon = {
@@ -64,7 +73,7 @@ let
         cephRelease = "nautilus";
       };
       flyingcircus.roles.ceph_rgw = {
-        enable = true;
+        enable = !monOnly;
         cephRelease = "nautilus";
       };
 
@@ -72,7 +81,6 @@ let
 
       # :( Work-around the split between qemu-built systems and regular systems.
       virtualisation.fileSystems."/mnt/keys" = config.flyingcircus.infrastructure.fullDiskEncryption.fsOptions;
-
 
       environment.etc."nixos/enc.json".text = builtins.toJSON {
         name =  "host${toString id}";
@@ -89,6 +97,7 @@ let
         ${getIPForVLAN 4 1} host1.sto.test.ipv4.gocept.net
         ${getIPForVLAN 4 2} host2.sto.test.ipv4.gocept.net
         ${getIPForVLAN 4 3} host3.sto.test.ipv4.gocept.net
+        ${getIPForVLAN 4 4} host4.sto.test.ipv4.gocept.net
       '';
 
       flyingcircus.enc.parameters = {
@@ -127,6 +136,7 @@ in
     host1 = makeCephHostConfig { id = 1; diskSizes = [ 4000 4000 4000 1100 ]; encrypted = true;};
     host2 = makeCephHostConfig { id = 2; };
     host3 = makeCephHostConfig { id = 3; };
+    host4 = makeCephHostConfig { id = 4; monOnly = true; };
   };
 
   testScript = { nodes, ...}:
