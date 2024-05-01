@@ -194,6 +194,19 @@ in
 
       flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
 
+      # Ceph OSDs are using a lot of ports so we're being gratuitous here about
+      # the firewall and we want to avoid spamming the connection tracking
+      # table.
+      networking.firewall = {
+
+        trustedInterfaces = [ fclib.network.stb.interface ];
+
+        extraCommands = ''
+          iptables -t raw -A fc-raw-prerouting -i ${fclib.network.stb.interface} -j CT --notrack
+          iptables -t raw -A fc-raw-output -o ${fclib.network.stb.interface} -j CT --notrack
+        '';
+      };
+
       systemd.services.fc-ceph-osds-all = rec {
         enable = ! config.flyingcircus.services.ceph.server.passive;
 

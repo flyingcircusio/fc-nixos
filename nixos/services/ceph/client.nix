@@ -187,8 +187,8 @@ in
       trustedInterfaces = [ fclib.network.sto.interface ];
 
       extraCommands = ''
-        iptables  -t raw -A fc-raw-prerouting -i brsto -j CT --notrack
-        iptables  -t raw -A fc-raw-output -o brsto -j CT --notrack
+        iptables  -t raw -A fc-raw-prerouting -i ${fclib.network.sto.interface} -j CT --notrack
+        iptables  -t raw -A fc-raw-output -o ${fclib.network.sto.interface} -j CT --notrack
       '';
 
     };
