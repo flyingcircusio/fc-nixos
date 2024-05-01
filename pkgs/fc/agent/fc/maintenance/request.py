@@ -5,6 +5,7 @@ import os
 import os.path as p
 import tempfile
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 import iso8601
@@ -102,8 +103,15 @@ class Request:
     updated_at: datetime.datetime | None
 
     def __init__(
-        self, activity, estimate=None, comment=None, dir=None, log=_log
+        self,
+        activity,
+        estimate=None,
+        comment=None,
+        dir=None,
+        lock_dir=None,
+        log=_log,
     ):
+        activity.lock_dir = lock_dir
         activity.request = self
         activity.set_up_logging(log)
         self.activity = activity
@@ -220,7 +228,9 @@ class Request:
         return self.state not in state.ARCHIVE and self.attempts
 
     @classmethod
-    def load(cls, dir, log, runnable_for_seconds: int):
+    def load(
+        cls, dir, log, runnable_for_seconds: int, lock_dir: Path | None = None
+    ):
         # need imports because such objects may be loaded via YAML
         import fc.maintenance.activity.reboot
         import fc.maintenance.activity.update
@@ -261,12 +271,14 @@ class Request:
             instance.state = State.pending
 
         instance.dir = dir
+        instance.lock_dir = lock_dir
         instance.set_up_logging(log)
         instance.runnable_for_seconds = runnable_for_seconds
 
         with cd(dir):
             instance.activity.load()
             instance.activity.request = instance
+            instance.activity.lock_dir = lock_dir
         return instance
 
     def save(self):
@@ -315,6 +327,7 @@ class Request:
                 except Exception as e:
                     attempt.returncode = 70  # EX_SOFTWARE
                     attempt.stderr = str(e)
+                    raise
             self.state = evaluate_state(self.activity.returncode)
         except Exception:
             self.log.error(

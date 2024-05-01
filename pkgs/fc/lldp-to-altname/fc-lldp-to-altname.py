@@ -6,10 +6,18 @@ import socket
 import subprocess
 import sys
 
+ALTNAME_PREFIX = "connected-switch-"
+KNOWN_PREFIXES = ["ul-port-", ALTNAME_PREFIX]
+
+
+def has_known_prefix(name):
+    for prefix in KNOWN_PREFIXES:
+        if name.startswith(prefix):
+            return True
+    return False
+
 
 class Runner(object):
-    ALTNAME_PREFIX = "ul-port-"
-
     def __init__(self, args):
         self.quiet = args.quiet
         self.dry_run = args.dry_run
@@ -26,7 +34,7 @@ class Runner(object):
                     ),
                     file=sys.stderr,
                 )
-                sys.exit(1)
+                continue
             indices.add(index)
 
         interfaces = set()
@@ -40,7 +48,7 @@ class Runner(object):
                     ),
                     file=sys.stderr,
                 )
-                sys.exit(1)
+                continue
             interfaces.add(iface)
 
         # sort to ensure stable renames in case of altname collisions
@@ -70,7 +78,7 @@ class Runner(object):
                     names = [
                         name
                         for name in datum["altnames"]
-                        if name.startswith(self.ALTNAME_PREFIX)
+                        if has_known_prefix(name)
                     ]
                     oldnames[iface].update(names)
 
@@ -82,26 +90,16 @@ class Runner(object):
                 and iface in data["interface"]
                 and "chassis" in data["interface"][iface]
             ):
-                data = data["interface"][iface]["chassis"]
-                lldpnames[iface].update(data.keys())
-
-        # ensure that peer names learned from lldp are globally unique
-        # across all interfaces.
-        for this_index, this_iface in enumerate(self.interfaces):
-            for this_name in lldpnames[this_iface]:
-                this_count = 0
-                for next_iface in self.interfaces[this_index + 1 :]:
-                    next_names = lldpnames[next_iface]
-                    if this_name in next_names:
-                        next_name = f"{this_name}-{this_count}"
-                        next_names.remove(this_name)
-                        next_names.add(next_name)
-                        this_count += 1
+                switch_name = list(data["interface"][iface]["chassis"].keys())[
+                    0
+                ]
+                port_name = data["interface"][iface]["port"]["id"]["value"]
+                lldpnames[iface].update([f"{switch_name}-port-{port_name}"])
 
         newnames = dict()
         for iface in self.interfaces:
             newnames[iface] = set(
-                map(lambda n: self.ALTNAME_PREFIX + n, lldpnames[iface])
+                map(lambda n: ALTNAME_PREFIX + n, lldpnames[iface])
             )
             newnames[iface].discard(iface)
 

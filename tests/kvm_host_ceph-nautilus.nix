@@ -219,9 +219,6 @@ let
         };
       };
 
-      # Copied from flyingcircus-physical.nix
-      networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" "ethmgm" ];
-
       networking.extraHosts = ''
         ${getIPForVLAN 1 1} host1.mgm.test.fcio.net host1.mgm.test.gocept.net
         ${getIPForVLAN 1 2} host2.mgm.test.fcio.net host2.mgm.test.gocept.net

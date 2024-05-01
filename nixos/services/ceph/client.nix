@@ -180,6 +180,19 @@ in
 
     services.udev.extraRules = builtins.readFile "${cfg.client.package}/etc/udev/50-rbd.rules";
 
+    # Ceph is using a lot of ports so we're being gratuitous here about
+    # the firewall and we want to avoid spamming the connection tracking table.
+    networking.firewall = {
+
+      trustedInterfaces = [ fclib.network.sto.interface ];
+
+      extraCommands = ''
+        iptables  -t raw -A fc-raw-prerouting -i brsto -j CT --notrack
+        iptables  -t raw -A fc-raw-output -o brsto -j CT --notrack
+      '';
+
+    };
+
     flyingcircus.services.ceph.allMergedSettings = (
         lib.recursiveUpdate
           (expandCamelCaseSection cfg.extraSettingsSections)

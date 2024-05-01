@@ -68,6 +68,18 @@ in
       "d /srv/ceph 0755"
     ];
 
+    # Ceph is using a lot of ports so we're being gratuitous here about
+    # the firewall and we want to avoid spamming the connection tracking table.
+    networking.firewall = {
+
+      trustedInterfaces = [ fclib.network.stb.interface ];
+
+      extraCommands = ''
+        iptables -t raw -A fc-raw-prerouting -i brstb -j CT --notrack
+        iptables -t raw -A fc-raw-output -o brstb -j CT --notrack
+      '';
+    };
+
     flyingcircus.services.sensu-client.expectedConnections = {
       warning = 20000;
       critical = 25000;

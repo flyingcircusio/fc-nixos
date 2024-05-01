@@ -135,6 +135,7 @@ class ReqManager:
         spooldir,
         enc_path,
         config_file,
+        lock_dir,
         log=_log,
     ):
         """Initialize ReqManager and create directories if necessary."""
@@ -144,6 +145,8 @@ class ReqManager:
             spooldir=str(spooldir),
             enc_path=str(enc_path),
         )
+        # XXX: not used by reqmanager at the moment, we probably should do it
+        self.lock_dir = lock_dir
         self.spooldir = Path(spooldir)
         self.requestsdir = self.spooldir / "requests"
         self.archivedir = self.spooldir / "archive"
@@ -273,7 +276,10 @@ class ReqManager:
                 continue
             try:
                 req = Request.load(
-                    d, self.log, self.request_runnable_for_seconds
+                    d,
+                    self.log,
+                    self.request_runnable_for_seconds,
+                    self.lock_dir,
                 )
                 req._reqmanager = self
                 self.requests[req.id] = req

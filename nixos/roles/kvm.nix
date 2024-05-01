@@ -71,6 +71,10 @@ in
       bridge-utils
     ];
 
+    # Qemu migration coordination uses random ports at the moment, so we
+    # trust this completely at the moment.
+    networking.firewall.trustedInterfaces = [ fclib.network.mgm.interface ];
+
     environment.shellAliases = {
       # alias for observing both running VMs as well as the migration logs at once
       fc-vm-migration-watch = "watch '${role.package}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
@@ -291,7 +295,6 @@ in
 
     systemd.services.fc-qemu-scrub = {
       description = "Scrub Qemu/KVM VM inventory.";
-      wantedBy = [ "multi-user.target" ];
       path = [ pkgs.fc.agent role.package ];
       serviceConfig = {
         Type = "oneshot";
@@ -346,7 +349,7 @@ in
     };
 
     networking.firewall.extraCommands = let
-      srvDevice = config.fclib.network.srv.device;
+      srvDevice = config.fclib.network.srv.interface;
     in ''
       # Accept traffic to the radosgw service
       ${fclib.iptables "127.0.0.1"} -A nixos-fw -p tcp --dport 7480 -i ${srvDevice} -j nixos-fw-accept

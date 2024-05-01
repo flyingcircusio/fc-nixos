@@ -58,13 +58,13 @@ in
     networking.extraHosts = additional_hosts;
 
     systemd.services."network-external-routing-ionos" = let
-          netdev = fclib.network.srv.device;
+          netdev = fclib.network.srv.interface;
       in rec {
       description = "Custom routing rules for external networks";
       after = [ "network-addresses-${netdev}.service" "firewall.service" ];
       requires = after;
       wantedBy = [ "multi-user.target" ];
-      bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.layer2device}.device" ];
+      bindsTo = [ "network-addresses-${fclib.network.srv.interface}.service" ];
       path = with pkgs; [ gawk iproute glibc iptables ];
 
       serviceConfig =

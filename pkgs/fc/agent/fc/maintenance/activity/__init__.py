@@ -1,5 +1,6 @@
 """Base class for maintenance activities."""
 from enum import Enum
+from pathlib import Path
 from typing import NamedTuple, Optional
 
 import fc.maintenance.state
@@ -43,6 +44,7 @@ class Activity:
     is_effective = True
     comment = ""
     estimate = Estimate("10m")
+    lock_dir: None | Path = None
     log = None
 
     def __init__(self):
@@ -58,6 +60,9 @@ class Activity:
         # Deserializing loggers breaks, remove them before serializing (to YAML).
         if "log" in state:
             del state["log"]
+        # These are set by the request when deserializing the activity
+        if "lock_dir" in state:
+            del state["lock_dir"]
         if "request" in state:
             del state["request"]
         return state

@@ -72,8 +72,10 @@ buildPythonPackage rec {
     nix
     py.click
     py.colorama
+    py.configobj
     py.python-dateutil
     py.iso8601
+    py.netaddr
     py.pytz
     py.requests
     py.rich

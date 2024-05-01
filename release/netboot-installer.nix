@@ -141,7 +141,7 @@ __EOF__
 root_disk_wwn=""
 # get unique root disk ID to be used in bootloader later
 # not all disks are able to export a WWN ID, fall back to ATA ID
-for x in /dev/disk/by-id/wwn-* /dev/disk/by-id/ata-*; do
+for x in /dev/disk/by-id/wwn-* /dev/disk/by-id/ata-* /dev/disk/by-id/scsi-*; do
   if [ "$(realpath $x)" == "''${root_disk}" ]; then
     root_disk_wwn=$x
     break

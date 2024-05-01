@@ -4,6 +4,7 @@ with lib;
 
 let
   cfg = config.flyingcircus;
+  inherit (config) fclib;
 in
 mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
 
@@ -25,6 +26,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         "igb"
         "ixgbe"
         "bnx2"
+        "3w-9xxx"
       ];
 
       kernelParams = [
@@ -90,11 +92,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
 
     services.irqbalance.enable = true;
 
-    # Not perfect but avoids triggering the 'established' rule which can
-    # lead to massive/weird Ceph instabilities. Also, coordination tasks
-    # like Qemu migrations run over ethmgm want to be trusted.
-    networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" "ethmgm" ];
-
     users.users.root = {
       # Overriden in local.nix
       hashedPassword = config.fclib.mkPlatform "*";
@@ -119,6 +116,12 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
           fi
         '';
     };
+
+    services.journald.extraConfig = ''
+      SystemMaxUse=8G
+      MaxLevelConsole=err
+      ForwardToWall=no
+    '';
 
     systemd.services.lvm-upgrade-metadata = {
         wantedBy = [ "multi-user.target" ];

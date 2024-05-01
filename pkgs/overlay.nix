@@ -31,6 +31,21 @@ in {
   # imports from other nixpkgs versions or local definitions
   #
 
+  bird = super.bird.overrideAttrs (old: {
+    patches = old.patches ++ [ ./bird-bfd-strict-bind.patch ];
+  });
+  bird6 = super.bird6.overrideAttrs (old: {
+    patches = old.patches ++ [ ./bird-bfd-strict-bind.patch ];
+  });
+
+  bird2 = super.bird2.overrideAttrs (old: rec {
+    version = "2.0.10";
+    src = fetchurl {
+      url = "ftp://bird.network.cz/pub/bird/${super.bird2.pname}-${version}.tar.gz";
+      sha256 = "sha256-ftNB3djch/qXNlhrNRVEeoQ2/sRC1l9AIhVaud4f/Vo=";
+    };
+  });
+
   bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
@@ -186,6 +201,20 @@ in {
       url = "https://www.haproxy.org/download/${lib.versions.majorMinor version}/src/${orig.pname}-${version}.tar.gz";
       sha256 = "0ah6xsxlk1a7jsxdg0pbdhzhssz9ysrfxd3bs5hm1shql1jmqzh4";
     };
+  });
+
+  keepalived = super.keepalived.overrideAttrs(_: rec {
+    version = "2.2.8-g9d4579";
+
+    src = super.fetchFromGitHub {
+      rev = "9d4579b706048d55da664cf0e09b8dfd409c0266";
+      owner = "acassen";
+      repo = "keepalived";
+      sha256 = "gUW8PQoqQJipShxu3l8hSgLVNGS/KCS7SpATNHWh7nI=";
+    };
+
+    patches = [
+    ];
   });
 
   kibana7 = super.kibana7.overrideAttrs(_: rec {

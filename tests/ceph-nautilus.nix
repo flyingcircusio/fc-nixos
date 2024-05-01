@@ -85,9 +85,6 @@ let
         };
       };
 
-      # Not perfect but avoids triggering the 'established' rule which can
-      # lead to massive/weird Ceph instabilities.
-      networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" ];
       networking.extraHosts = ''
         ${getIPForVLAN 4 1} host1.sto.test.ipv4.gocept.net
         ${getIPForVLAN 4 2} host2.sto.test.ipv4.gocept.net
