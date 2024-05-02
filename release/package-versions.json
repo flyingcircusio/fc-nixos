@@ -40,9 +40,9 @@
     "version": "5.2p26"
   },
   "bind": {
-    "name": "bind-9.18.25",
+    "name": "bind-9.18.26",
     "pname": "bind",
-    "version": "9.18.25"
+    "version": "9.18.26"
   },
   "binutils": {
     "name": "binutils-wrapper-2.41",
@@ -60,9 +60,9 @@
     "version": "3.98"
   },
   "calibre": {
-    "name": "calibre-7.8.0",
+    "name": "calibre-7.9.0",
     "pname": "calibre",
-    "version": "7.8.0"
+    "version": "7.9.0"
   },
   "ceph": {
     "name": "ceph-18.2.1",
@@ -100,9 +100,9 @@
     "version": "1.18.1"
   },
   "containerd": {
-    "name": "containerd-1.7.15",
+    "name": "containerd-1.7.16",
     "pname": "containerd",
-    "version": "1.7.15"
+    "version": "1.7.16"
   },
   "coreutils": {
     "name": "coreutils-9.5",
@@ -155,9 +155,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.64",
+    "name": "element-web-1.11.65",
     "pname": "element-web",
-    "version": "1.11.64"
+    "version": "1.11.65"
   },
   "erlang": {
     "name": "erlang-25.3.2.11",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-125.0.1",
+    "name": "firefox-125.0.2",
     "pname": "firefox",
-    "version": "125.0.1"
+    "version": "125.0.2"
   },
   "gcc": {
     "name": "gcc-wrapper-13.2.0",
@@ -220,9 +220,9 @@
     "version": "2.44.0"
   },
   "gitaly": {
-    "name": "gitaly-16.10.3",
+    "name": "gitaly-16.10.4",
     "pname": "gitaly",
-    "version": "16.10.3"
+    "version": "16.10.4"
   },
   "github-runner": {
     "name": "github-runner-2.315.0",
@@ -230,24 +230,24 @@
     "version": "2.315.0"
   },
   "gitlab": {
-    "name": "gitlab-16.10.3",
+    "name": "gitlab-16.10.4",
     "pname": "gitlab",
-    "version": "16.10.3"
+    "version": "16.10.4"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.92.0",
+    "name": "gitlab-container-registry-3.93.0",
     "pname": "gitlab-container-registry",
-    "version": "3.92.0"
+    "version": "3.93.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.10.3",
+    "name": "gitlab-ee-16.10.4",
     "pname": "gitlab-ee",
-    "version": "16.10.3"
+    "version": "16.10.4"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-16.10.3",
+    "name": "gitlab-pages-16.10.4",
     "pname": "gitlab-pages",
-    "version": "16.10.3"
+    "version": "16.10.4"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.10.0",
@@ -255,9 +255,9 @@
     "version": "16.10.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-16.10.3",
+    "name": "gitlab-workhorse-16.10.4",
     "pname": "gitlab-workhorse",
-    "version": "16.10.3"
+    "version": "16.10.4"
   },
   "glibc": {
     "name": "glibc-2.39-5",
@@ -337,14 +337,14 @@
     "version": "1.0-1075"
   },
   "jitsi-meet": {
-    "name": "jitsi-meet-1.0.7874",
+    "name": "jitsi-meet-1.0.7952",
     "pname": "jitsi-meet",
-    "version": "1.0.7874"
+    "version": "1.0.7952"
   },
   "jitsi-videobridge": {
-    "name": "jitsi-videobridge2-2.3-92-g64f9f34f",
+    "name": "jitsi-videobridge2-2.3-105-ge155b81e",
     "pname": "jitsi-videobridge2",
-    "version": "2.3-92-g64f9f34f"
+    "version": "2.3-105-ge155b81e"
   },
   "jq": {
     "name": "jq-1.7.1",
@@ -467,9 +467,9 @@
     "version": "4.16.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.105.0",
+    "name": "matrix-synapse-wrapped-1.105.1",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.105.0"
+    "version": "1.105.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -536,11 +536,7 @@
     "pname": "nodejs",
     "version": "20.12.2"
   },
-  "nodejs_21": {
-    "name": "nodejs-21.7.3",
-    "pname": "nodejs",
-    "version": "21.7.3"
-  },
+  "nodejs_21": {},
   "nspr": {
     "name": "nspr-4.35",
     "pname": "nspr",
@@ -950,9 +946,9 @@
     "version": "4.99.4"
   },
   "telegraf": {
-    "name": "telegraf-1.30.1",
+    "name": "telegraf-1.30.2",
     "pname": "telegraf",
-    "version": "1.30.1"
+    "version": "1.30.2"
   },
   "tmux": {
     "name": "tmux-3.4",
