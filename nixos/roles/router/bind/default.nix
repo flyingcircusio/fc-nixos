@@ -7,7 +7,8 @@ let
   role = config.flyingcircus.roles.router;
   inherit (config.flyingcircus) location;
   nameservers = [
-    "ns.${location}.gocept.net"
+    "ns.whq.gocept.net"
+    "ns.rzob.gocept.net"
   ];
 in
 lib.mkIf role.enable {
