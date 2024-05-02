@@ -165,6 +165,13 @@ in {
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
+  ipmitool = super.ipmitool.overrideAttrs(a: a // {
+    buildInputs = a.buildInputs ++ [ super.ncurses super.readline ];
+    configureFlags = a.configureFlags ++ [
+      "--enable-ipmishell"
+    ];
+  });
+
   jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
 
   jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
