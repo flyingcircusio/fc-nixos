@@ -15,14 +15,14 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
 
   testScript = with pkgs; ''
     package_versions = {
+      "${nodejs-slim_18}": "18",
+      "${nodejs-slim_20}": "20",
+      "${nodejs-slim_22}": "22",
+      "${nodejs-slim}": "20",
       "${nodejs_18}": "18",
       "${nodejs_20}": "20",
-      "${nodejs_21}": "21",
-      "${nodejs-slim_18}": "18",
-      "${nodejs-slim}": "20",
+      "${nodejs_22}": "22",
       "${nodejs}": "20",
-      "${nodejs-slim_20}": "20",
-      "${nodejs-slim_21}": "21",
     }
 
     for package, version in package_versions.items():
