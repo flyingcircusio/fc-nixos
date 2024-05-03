@@ -2,13 +2,12 @@ import getpass
 import hashlib
 import os
 import shutil
-from base64 import standard_b64encode
 from functools import wraps
 from pathlib import Path
 from socket import gethostname
 from typing import Optional
 
-from fc.ceph.util import console, default_false_prompt, mlockall, run
+from fc.ceph.util import console, mlockall, prompt_bool, run
 
 
 def memoize(func):
@@ -65,8 +64,9 @@ class LUKSKeyStore(object):
                     f"fingerprint stored locally: '{persisted_fingerprint}'\n"
                 )
 
-            if not default_false_prompt(
-                f"Is '{fingerprint}' the correct new fingerprint?\nRetry otherwise."
+            if not prompt_bool(
+                f"Is '{fingerprint}' the correct new fingerprint?\nRetry otherwise.",
+                default=False,
             ):
                 console.print("Retrying.")
                 continue
@@ -75,7 +75,6 @@ class LUKSKeyStore(object):
                 f"Updating persisted fingerprint to {fingerprint_path!s}"
             )
 
-            # Make a ticket: keep a history of the previously known fingerprints.
             with open(fingerprint_path, "wt") as f:
                 f.write(fingerprint)
             break
@@ -98,7 +97,6 @@ class Cryptsetup:
     """
 
     cryptsetup_tunables = [
-        # fmt: off
         # inspired by the measurements done in https://ceph.io/en/news/blog/2023/ceph-encryption-performance/:
         "--perf-submit_from_crypt_cpus",
         # for larger writes throughput
@@ -106,27 +104,20 @@ class Cryptsetup:
         # but requires kernel >=5.9: https://github.com/ceph/ceph/pull/49554
         # especially relevant for SSDs, see https://blog.cloudflare.com/speeding-up-linux-disk-encryption/
         # "--perf-no_read_workqueue", "--perf-no_write_workqueue"
-        # fmt: on
-    ]
+    ]  # fmt: skip
     # reduce CPU load for larger writes, can be removed after cryptsetup >=2.40
     _tunables_sectorsize = ("--sector-size", "4096")
 
-    # tunables that apply when (re)creating a LUKS volume and its data or reencrypting it
+    # tunables that aspply when (re)creating a LUKS volume and its data or reencrypting it
     _tunables_cipher = (
-        # fmt: off
         "--cipher", "aes-xts-plain64",
         "--key-size", "512",
-        # fmt: on
-    )
+    )  # fmt: skip
     # tunables that apply when (re)creating a LUKS volume header
     _tunables_luks_header = (
-        # fmt: off
-        "--pbkdf",
-        "argon2id",
-        "--type",
-        "luks2",
-        # fmt: on
-    )
+        "--pbkdf", "argon2id",
+        "--type", "luks2",
+    )  # fmt: skip
 
     @classmethod
     def cryptsetup(cls, *args: str, **kwargs):
@@ -136,24 +127,20 @@ class Cryptsetup:
     @classmethod
     def luksFormat(cls, *args: str, **kwargs):
         return cls.cryptsetup(
-            # fmt: off
             *cls._tunables_sectorsize,
             *cls._tunables_luks_header,
             *cls._tunables_cipher,
             "luksFormat",
             *args, **kwargs,
-            # fmt: on
-        )
+        )  # fmt: skip
 
     @classmethod
     def luksAddKey(cls, *args: str, **kwargs):
         return cls.cryptsetup(
-            # fmt: off
             *cls._tunables_luks_header,
             "luksAddKey",
             *args, **kwargs,
-            # fmt: on
-        )
+        )  # fmt: skip
 
 
 KEYSTORE = LUKSKeyStore()

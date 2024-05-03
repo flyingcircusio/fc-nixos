@@ -553,11 +553,7 @@ def test_keystore_admin_key_fingerprint_existing_update(
     assert p == captured.out
     pe = patterns.fpdialog_getpass
     pe.optional("Warning: Password input may be echoed.")
-    pe.in_order(
-        # fmt: off
-        "LUKS admin key for this location: "
-        # fmt: on
-    )
+    pe.in_order("LUKS admin key for this location: ")
     assert pe == captured.err
 
 
@@ -620,12 +616,10 @@ def test_luks_fingerprint_mismatch_retry(
     pe = patterns.fpdialog_getpass
     pe.optional("Warning: Password input may be echoed.")
     pe.in_order(
-        # fmt: off
         "Enter passphrase to fingerprint: \n"
         "Confirm passphrase again: \n"
         "Enter passphrase to fingerprint: \n"
         "Confirm passphrase again: "
-        # fmt: on
     )
     assert pe == captured.err
 
@@ -661,29 +655,23 @@ def test_luks_fingerprint_verify(
     p = patterns.fpdialog
     p.optional("<empty-line>")
     p.in_order(
-        # fmt: off
-      # 1sr invocation
-      "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n"
-      "No admin key fingerprint stored.\n"
-
-      # 2nd invocation
-      "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n"
-      "fingerprint for your entry: \n"
-      "'2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae'\n"
-      "fingerprint stored locally: \n"
-      "'28b0289d1cceb110614259333e64a77ea39e87ec9add8af435c1271f8d2e9e13'\n"
-
-      # 3rd invocation
-      "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
-        # fmt: on
+        # 1st invocation
+        "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n"
+        "No admin key fingerprint stored.\n"
+        # 2nd invocation
+        "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n"
+        "fingerprint for your entry: \n"
+        "'2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae'\n"
+        "fingerprint stored locally: \n"
+        "'28b0289d1cceb110614259333e64a77ea39e87ec9add8af435c1271f8d2e9e13'\n"
+        # 3rd invocation
+        "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
     )
     pe = patterns.fpdialog_getpass
     pe.optional("Warning: Password input may be echoed.")
     pe.in_order(
-        # fmt: off
         "Enter passphrase to fingerprint: \n"
         "Enter passphrase to fingerprint: \n"
         "Enter passphrase to fingerprint: "
-        # fmt: on
     )
     assert pe == captured.err

@@ -180,23 +180,15 @@ class LUKSKeyStoreManager(object):
         For `verify`, compare with stored fingerprint and return a status code
         1 at mismatch"""
 
-        input_phrase: Optional[bytes] = None
+        while True:
+            input_phrase = getpass.getpass("Enter passphrase to fingerprint: ")
+            if not confirm:
+                break
+            if getpass.getpass("Confirm passphrase again: ") == input_phrase:
+                break
+            print("Mismatching passphrases entered, please retry.")
 
-        while not input_phrase:
-            input_phrase = getpass.getpass(
-                "Enter passphrase to fingerprint: "
-            ).encode("ascii")
-            if (
-                confirm
-                and getpass.getpass("Confirm passphrase again: ").encode(
-                    "ascii"
-                )
-                != input_phrase
-            ):
-                print("Mismatching passphrases entered, please retry.")
-                input_phrase = None
-
-        fingerprint = hashlib.sha256(input_phrase).hexdigest()
+        fingerprint = hashlib.sha256(input_phrase.encode("ascii")).hexdigest()
         console.print(fingerprint)
 
         if verify:

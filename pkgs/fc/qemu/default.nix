@@ -76,7 +76,7 @@ in
       py.setuptools
       (py.toPythonModule ceph_client)
       # note: this is not really appropriate in theory, as test-only tooling
-      #should be part of *checkInputs instead. checkInputs vs. nativeCheckInputs
+      # should be part of *checkInputs instead. checkInputs vs. nativeCheckInputs
       # needs some adaptions in more recent NixOS releases anyways, so keeping this for now.
       py_pytest_patterns
     ];

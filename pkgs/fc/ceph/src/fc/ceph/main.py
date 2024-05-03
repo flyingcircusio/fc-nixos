@@ -534,6 +534,7 @@ def luks(args=sys.argv[1:]):
     action = getattr(subsystem, action)
     action_statuscode = action(**args)
 
-    # optionally allow actions to return a statuscode
+    # Help testing by avoiding superfluous SystemExit exceptions in the happy
+    # case.
     if isinstance(action_statuscode, int) and action_statuscode != 0:
         sys.exit(action_statuscode)

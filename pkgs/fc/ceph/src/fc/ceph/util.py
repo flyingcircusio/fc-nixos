@@ -193,37 +193,23 @@ def mlockall():
         raise Exception("cannot lock memory, errno=%s" % ctypes.get_errno())
 
 
-def default_true_prompt(msg: str) -> bool:
-    choice = True
-    print(msg, "[y]/n:", end=" ")
+def prompt_bool(msg: str, default) -> bool:
+    choice = default
+    prompt = "[y]/n:" if default else "y/[n]:"
+    print(msg, prompt, end=" ")
     while True:
         resp = input()
         match resp:
             case "n":
                 choice = False
                 break
-            case "y" | "":
-                break
-            case _:
-                print(f"Invalid input '{resp}', retry.")
-                continue
-
-    return choice
-
-
-def default_false_prompt(msg: str) -> bool:
-    choice = False
-    print(msg, "y/[n]:", end=" ")
-    while True:
-        resp = input()
-        match resp:
             case "y":
                 choice = True
                 break
-            case "n" | "":
+            case "":
+                choice = default
                 break
             case _:
                 print(f"Invalid input '{resp}', retry.")
                 continue
-
     return choice
