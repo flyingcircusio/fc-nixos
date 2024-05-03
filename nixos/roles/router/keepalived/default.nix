@@ -5,7 +5,7 @@ with builtins;
 let
   inherit (config) fclib;
   inherit (config.networking) hostName;
-  inherit (config.flyingcircus) location;
+  inherit (config.flyingcircus) location static;
   role = config.flyingcircus.roles.router;
   locationConfig = readFile (./. + "/${location}.conf");
   routerId = "${hostName}.gocept.net";
@@ -41,6 +41,14 @@ let
 
     ${locationConfig}
     '';
+
+  requiredInterfaces =
+    map (network: fclib.network."${network}".interface)
+      static.floatingGatewayNetworks."${location}";
+
+  addressDependencies = map (iface: "network-addresses-${iface}.service") requiredInterfaces;
+  deviceDependencies = map (iface: "${iface}-netdev.service") requiredInterfaces;
+
 in
 lib.mkIf role.enable {
 
@@ -65,6 +73,9 @@ lib.mkIf role.enable {
     reloadIfChanged = true;
     # Don't be confused by the name "restartTriggers", reload also uses it.
     restartTriggers = [ keepalivedConf ];
+    # Ensure that keepalived is stopped *before* interfaces are
+    # stopped at shutdown.
+    after = deviceDependencies;
     serviceConfig = {
       Type = lib.mkOverride 90 "simple";
       ExecStart = lib.mkOverride 90 ("${pkgs.keepalived}/sbin/keepalived"
@@ -72,6 +83,19 @@ lib.mkIf role.enable {
         + " -p /run/keepalived.pid"
         + " -n");
       StateDirectory = "keepalived";
+    };
+  };
+
+  systemd.services.keepalived-reload = {
+    description = "Reload keepalived when required interfaces are changed";
+    after = addressDependencies ++ deviceDependencies;
+    wantedBy = deviceDependencies;
+    serviceConfig = {
+      Type = "oneshot";
+      Restart = "on-abnormal";
+      TimeoutSec = 120;
+      ExecCondition = "/run/current-system/systemd/bin/systemctl -q is-active keepalived.service";
+      ExecStart = "/run/current-system/systemd/bin/systemctl reload keepalived.service";
     };
   };
 
