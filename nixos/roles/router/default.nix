@@ -67,7 +67,9 @@ in
     ./keepalived
     ./chrony.nix
     ./dhcpd.nix
+    ./pmacctd.nix
     ./radvd.nix
+    ./trafficclient.nix
   ];
 
   config = lib.mkIf role.enable {
@@ -110,7 +112,6 @@ in
 
     environment.systemPackages = with pkgs; [
       kickInterfaces
-      pmacct
     ];
 
     environment.shellAliases = {
