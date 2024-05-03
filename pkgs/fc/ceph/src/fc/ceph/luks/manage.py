@@ -115,22 +115,31 @@ class LUKSKeyStoreManager(object):
         candidates = lsblk_to_cryptdevices(
             run.json.lsblk("-s", "-o", "NAME,PATH,TYPE,MOUNTPOINT")
         )
-        for candidate in candidates:
-            this_header = header
-            if not fnmatch.fnmatch(candidate.name, name_glob):
-                continue
-            console.print(f"Replacing key for {candidate.name}")
+        matching_devs = [
+            candidate
+            for candidate in candidates
+            if fnmatch.fnmatch(candidate.name, name_glob)
+        ]
+        if header and (match_count := len(matching_devs)) > 1:
+            raise ValueError(
+                f"Got {match_count} matching devices for glob '{name_glob}'.\n"
+                "When specifying an external header file, the target device "
+                "needs to be a single specific match."
+            )
+        for dev in matching_devs:
+            dev_header = header
+            console.print(f"Replacing key for {dev.name}")
 
             if (
-                (not this_header)
-                and (mp := candidate.mountpoint)
+                (not dev_header)
+                and (mp := dev.mountpoint)
                 and os.path.exists(headerfile := f"{mp}.luks")
             ):
-                this_header = headerfile
+                dev_header = headerfile
             self._do_rekey(
                 slot=slot,
-                device=candidate.base_blockdev,
-                header=this_header,
+                device=dev.base_blockdev,
+                header=dev_header,
             )
 
         console.print("Key updated.", style="bold green")
