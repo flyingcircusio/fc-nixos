@@ -250,9 +250,11 @@ class ReqManager:
                 req.comment,
                 format_datetime(req.added_at) if req.added_at else "-",
                 format_datetime(req.updated_at) if req.updated_at else "-",
-                format_datetime(req.last_scheduled_at)
-                if req.last_scheduled_at
-                else "-",
+                (
+                    format_datetime(req.last_scheduled_at)
+                    if req.last_scheduled_at
+                    else "-"
+                ),
             )
 
         return table
@@ -1349,9 +1351,9 @@ class ReqManager:
             metrics["requests_pending"] = num_requests_pending
             metrics["requests_running"] = num_requests_running
             metrics["requests_scheduled"] = num_requests_scheduled
-            metrics[
-                "requests_waiting_for_schedule"
-            ] = num_requests_waiting_for_schedule
+            metrics["requests_waiting_for_schedule"] = (
+                num_requests_waiting_for_schedule
+            )
 
             metrics["request_longest_in_queue_duration"] = (
                 now.timestamp() - oldest_added_at.timestamp()
