@@ -138,7 +138,7 @@ let
         TUN m
         UNIX_DIAG m
         USB_EHCI_HCD m
-        USB_SERIAL m
+        USB_SERIAL y
         USB_SERIAL_FTDI_SIO m
         USB_SERIAL_PL2303 m
         USB_UHCI_HCD m
