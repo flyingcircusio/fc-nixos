@@ -201,7 +201,8 @@ in
 
         trustedInterfaces = [ fclib.network.stb.interface ];
 
-        extraCommands = ''
+        extraCommands = lib.mkOrder 800 ''
+          # Disable STB connection tracking to reduce kernel connection table overhead
           iptables -t raw -A fc-raw-prerouting -i ${fclib.network.stb.interface} -j CT --notrack
           iptables -t raw -A fc-raw-output -o ${fclib.network.stb.interface} -j CT --notrack
         '';
