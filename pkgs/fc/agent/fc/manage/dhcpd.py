@@ -1,6 +1,5 @@
 """Create dhcpd configuration based on directory data."""
 
-
 import optparse
 import os.path as p
 import sys

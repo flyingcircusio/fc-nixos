@@ -65,8 +65,8 @@ class MdraidDevice(GenericBlockDevice):
             raise RuntimeError(
                 f"MdraidDevice: at least {cls.RAID_MIN_DISKS} disks required. Aborting."
             )
-        main_disks = blockdevices[:-1]
-        spare_disk = blockdevices[-1]
+        main_disks = blockdevices[: -cls.RAID_SPARE]
+        spare_disk = blockdevices[-cls.RAID_SPARE]
         obj = cls(name)
         run.mdadm(
             "--create",
@@ -192,11 +192,9 @@ class AutomountActivationMixin:
                 time.sleep(1)
         if not mount_device:
             run.mount(
-                # fmt: off
                 "-t", self.FSTYPE, "-o", self.MOUNT_OPTS,
                 self.device, self.mountpoint,
-                # fmt: on
-            )
+            )  # fmt: skip
         elif mount_device != self.lv.expected_mapper_name:
             raise RuntimeError(
                 f"Mountpoint is using unexpected device `{mount_device}`."
@@ -367,12 +365,10 @@ class LogicalVolume(GenericLogicalVolume):
             # -L1g
             size = f"-L{size}"
         run.lvcreate(
-            # fmt: off
             "-W", "y", "-y",
             size, f"-n{self.name}",
             vg_name,
-            # fmt: on
-        )
+        )  # fmt: skip
 
     @staticmethod
     def ensure_vg(vg_name: str, base_device: Optional[GenericBlockDevice]):
@@ -478,25 +474,22 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
             encrypt=False,
         )
 
-        # FIXME: handle keyfile not found errors,
         print(f"Encrypting volume {self.name} ...")
         Cryptsetup.luksFormat(
-            # fmt: off
             "--key-slot", str(fc.ceph.luks.KEYSTORE.slots["local"]),
             "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
             self.underlay.device,
-            # fmt: on
-        )
+        )  # fmt: skip
+
+        admin_key = fc.ceph.luks.KEYSTORE.admin_key_for_input()
 
         Cryptsetup.luksAddKey(
-            # fmt: off
             "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
             self.underlay.device,
             "--key-slot", str(fc.ceph.luks.KEYSTORE.slots["admin"]),
             "-",
-            input=fc.ceph.luks.KEYSTORE.admin_key_for_input()
-            # fmt: on
-        )
+            input=admin_key,
+        )  # fmt: skip
 
     @property
     def encrypted(self):
@@ -504,18 +497,14 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
 
     def activate(self):
         self.underlay.activate()
-        # FIXME: needs error catching and handling; adding that makes sense
-        # once we know the role of systemd/udev in the activation cycle
         if not os.path.exists(self.device_path):
             Cryptsetup.cryptsetup(
-                # fmt: off
-                "--allow-discards",     # pass throught TRIM commands to disk
+                "--allow-discards",  # pass through TRIM commands to disk
                 "open",
                 "-d", fc.ceph.luks.KEYSTORE.local_key_path(),
                 self.underlay.device,
                 self.name,
-                # fmt: on
-            )
+            )  # fmt: skip
         self._ready = True
 
     def deactivate(self):
@@ -618,13 +607,11 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
         )
         # Create OSD filesystem
         run.mkfs_xfs(
-            # fmt: off
             "-f",
             "-L", self.name,
             *self.MKFS_OPTS,
             self.device,
-            # fmt: on
-        )
+        )  # fmt: skip
         run.sync()
         self.activate()
 

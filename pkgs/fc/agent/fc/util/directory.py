@@ -1,4 +1,5 @@
 """Unified client access to fc.directory."""
+
 import contextlib
 import functools
 import json

@@ -11,6 +11,7 @@ rec {
   # it can be parametrized via config file for each individual subsystem.
   ceph = pythonPackages.callPackage ./ceph {
     inherit agent blockdev;
+    py_pytest_patterns = pkgs.py_pytest_patterns.override {python3Packages = pythonPackages;};
   };
 
   check-age = callPackage ./check-age {};
@@ -20,6 +21,7 @@ rec {
   check-link-redundancy = callPackage ./check-link-redundancy {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
+
   check-xfs-broken = callPackage ./check-xfs-broken {};
   collectdproxy = callPackage ./collectdproxy {};
   fix-so-rpath = callPackage ./fix-so-rpath {};

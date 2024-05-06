@@ -83,7 +83,7 @@ def ceph(args=sys.argv[1:]):
         "--encrypt",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="(Experimental) Set up OSD disk volumes with encryption",
+        help="Set up OSD disk volumes with encryption",
     )
     parser_create_bs.set_defaults(action="create_bluestore")
 
@@ -203,7 +203,7 @@ def ceph(args=sys.argv[1:]):
         "--encrypt",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="(Experimental) Set up manager volumes with encryption",
+        help="Set up manager volumes with encryption",
     )
     parser_create.set_defaults(action="create")
 
@@ -248,7 +248,7 @@ def ceph(args=sys.argv[1:]):
         "--encrypt",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="(Experimental) Set up manager volumes with encryption",
+        help="Set up manager volumes with encryption",
     )
     parser_create.set_defaults(action="create")
 
@@ -457,6 +457,24 @@ def luks(args=sys.argv[1:]):
     )
     parser_rekey.set_defaults(action="rekey")
 
+    parser_fingerprint = keystore_sub.add_parser(
+        "fingerprint", help="Compute a fingerprint of an admin passphrase."
+    )
+    parser_fingerprint.add_argument(
+        "--confirm",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Request the passphrase twice to avoid accidental typos.",
+    )
+    parser_fingerprint.add_argument(
+        "--verify",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Verify if the entered passphrase confirms to the fingerprint "
+        "already stored. On mismatch, returns exitcode 1",
+    )
+    parser_fingerprint.set_defaults(action="fingerprint")
+
     backup = subparsers.add_parser("backup", help="Manage backup volumes.")
     backup.set_defaults(
         subsystem=fc.ceph.backup.BackupManager, action=backup.print_usage
@@ -516,6 +534,7 @@ def luks(args=sys.argv[1:]):
     action = getattr(subsystem, action)
     action_statuscode = action(**args)
 
-    # optionally allow actions to return a statuscode
-    if isinstance(action_statuscode, int):
+    # Help testing by avoiding superfluous SystemExit exceptions in the happy
+    # case.
+    if isinstance(action_statuscode, int) and action_statuscode != 0:
         sys.exit(action_statuscode)
