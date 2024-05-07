@@ -133,8 +133,8 @@ in
         in lib.mkMerge [
           (lib.mkOrder 700 ''
             # Ensure that conntrack is enabled for RGW connections using port redirects
-            iptables -w -t raw -A fc-raw-prerouting -i ${sto.interface} -p tcp --dport 7480 -j RETURN
-            iptables -w -t raw -A fc-raw-output -o ${sto.interface} -p tcp --sport 80 -j RETURN
+            ip46tables -w -t raw -A fc-raw-prerouting -i ${sto.interface} -p tcp --dport 7480 -j RETURN
+            ip46tables -w -t raw -A fc-raw-output -o ${sto.interface} -p tcp --sport 80 -j RETURN
           '')
           (''
             set -x

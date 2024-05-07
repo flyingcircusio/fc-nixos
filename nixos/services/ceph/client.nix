@@ -188,8 +188,8 @@ in
 
       extraCommands = lib.mkOrder 800 ''
         # Disable STO connection tracking to reduce kernel connection table overhead
-        iptables  -t raw -A fc-raw-prerouting -i ${fclib.network.sto.interface} -j CT --notrack
-        iptables  -t raw -A fc-raw-output -o ${fclib.network.sto.interface} -j CT --notrack
+        ip46tables  -t raw -A fc-raw-prerouting -i ${fclib.network.sto.interface} -j CT --notrack
+        ip46tables  -t raw -A fc-raw-output -o ${fclib.network.sto.interface} -j CT --notrack
       '';
 
     };
