@@ -19,6 +19,10 @@ let
     (network: fclib.network."${network}".interface)
     static.routerUplinkNetworks."${location}";
 
+  gatewayInterfaces = map
+    (network: fclib.network."${network}")
+    static.floatingGatewayNetworks."${location}";
+
   martianNetworks =
     lib.filter
       (n: n != "")
@@ -208,6 +212,14 @@ in
       ip46tables -F fc-router-forward 2>/dev/null || true
       ip46tables -X fc-router-forward 2>/dev/null || true
     '';
+
+    systemd.services = listToAttrs
+      (lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces)
+        (iface: lib.nameValuePair
+          "network-bridge-suppress-flooding-${iface.link}"
+          { enable = fclib.mkPlatform false; }
+        )
+      );
 
     services.logrotate.extraConfig = ''
     '';

@@ -61,9 +61,9 @@ in
     };
   };
 
-  config = lib.mkIf (role.enable && role.isPrimary) {
+  config = lib.mkIf (role.enable) {
     services.dhcpd4 = {
-      enable = true;
+      enable = role.isPrimary;
       interfaces = [
         fclib.network.fe.interface
         fclib.network.srv.interface
@@ -77,7 +77,7 @@ in
     };
 
     services.dhcpd6 = {
-      enable = true;
+      enable = role.isPrimary;
       interfaces = [
         fclib.network.fe.interface
         fclib.network.srv.interface
@@ -91,7 +91,7 @@ in
     };
 
     services.atftpd = {
-      enable = true;
+      enable = role.isPrimary;
       extraOptions = [
         "--verbose=5"
       ];
