@@ -631,23 +631,48 @@ in
               };
             })) vxlanInterfaces) ++
 
-          # bridge port configuration for vxlan devices
+          # bridge port configuration for vxlan devices. arp/nd
+          # suppression is configured separately, so the router role
+          # can turn it off.
           # XXX we always make VXLAN ports bridge ports ... this complicates the
           # code a bit.
+
           (map (iface: (lib.nameValuePair
-            "network-bridge-port-properties-${iface.link}"
+            "network-bridge-suppress-flooding-${iface.link}"
             {
-              description = "Ensure bridge port properties for ${iface.link}";
+              description = "Ensure ARP/ND suppression is enabled for bridge port ${iface.link}";
               wantedBy = [ "multi-user.target" ];
               requires = [ "${iface.interface}-netdev.service" ];
               after = [ "${iface.interface}-netdev.service" ];
               stopIfChanged = false;
               path = [ fclib.relaxedIp ];
               script = ''
-                ip link set ${iface.link} type bridge_slave neigh_suppress on learning off
+                ip link set ${iface.link} type bridge_slave neigh_suppress on
               '';
               reload = ''
-                ip link set ${iface.link} type bridge_slave neigh_suppress on learning off
+                ip link set ${iface.link} type bridge_slave neigh_suppress on
+              '';
+              unitConfig.ReloadPropagatedFrom = [ "${iface.interface}-netdev.service" ];
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+              };
+            }
+          )) vxlanInterfaces) ++
+          (map (iface: (lib.nameValuePair
+            "network-bridge-disable-learning-${iface.link}"
+            {
+              description = "Ensure MAC address learning is disabled for bridge port ${iface.link}";
+              wantedBy = [ "multi-user.target" ];
+              requires = [ "${iface.interface}-netdev.service" ];
+              after = [ "${iface.interface}-netdev.service" ];
+              stopIfChanged = false;
+              path = [ fclib.relaxedIp ];
+              script = ''
+                ip link set ${iface.link} type bridge_slave learning off
+              '';
+              reload = ''
+                ip link set ${iface.link} type bridge_slave learning off
               '';
               unitConfig.ReloadPropagatedFrom = [ "${iface.interface}-netdev.service" ];
               serviceConfig = {
