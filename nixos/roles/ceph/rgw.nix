@@ -96,9 +96,7 @@ in
 
         description = "Start/stop local Ceph Rados Gateway";
         wantedBy = [ "multi-user.target" ];
-        # Ceph requires the IPs to be properly attached to interfaces so it
-        # knows where to bind to the public and cluster networks.
-        wants = [ "network.target" ];
+        wants = [ fclib.network.sto.addressUnit ];
         after = wants;
 
         environment = {
@@ -154,11 +152,12 @@ in
           ip46tables -t nat -A PREROUTING -j fc-nat-pre
         '';
 
-      systemd.services.fc-ceph-rgw-update-stats = {
+      systemd.services.fc-ceph-rgw-update-stats = rec {
         description = "Update RGW stats";
         serviceConfig.Type = "oneshot";
         path = [ cephPkgs.ceph pkgs.jq ];
-        requires = [ "network-addresses-${fclib.network.sto.interface}.service" ];
+        wants = [ fclib.network.sto.addressUnit ];
+        after = wants;
         script = ''
           for uid in $(radosgw-admin metadata list user | jq -r '.[]'); do
             echo $uid
@@ -167,11 +166,12 @@ in
         '';
       };
 
-      systemd.services.fc-ceph-rgw-accounting = {
+      systemd.services.fc-ceph-rgw-accounting = rec {
         description = "Upload S3 usage data to the Directory";
         path = [ cephPkgs.ceph ];
         serviceConfig.Type = "oneshot";
-        requires = [ "network-addresses-${fclib.network.sto.interface}.service" ];
+        wants = [ fclib.network.sto.addressUnit ];
+        after = wants;
         script = "${pkgs.fc.agent}/bin/fc-s3accounting --enc ${config.flyingcircus.encPath}";
       };
 

@@ -210,6 +210,11 @@ def ceph(args=sys.argv[1:]):
     parser_activate = mon_sub.add_parser(
         "activate", help="Activate the local MON."
     )
+    parser_activate.add_argument(
+        "--as-systemd-unit",
+        action="store_true",
+        help="Flag if we are being called from the systemd unit startup.",
+    )
     parser_activate.set_defaults(action="activate")
 
     parser_deactivate = mon_sub.add_parser(
@@ -254,6 +259,11 @@ def ceph(args=sys.argv[1:]):
 
     parser_activate = mgr_sub.add_parser(
         "activate", help="Activate the local MGR."
+    )
+    parser_activate.add_argument(
+        "--as-systemd-unit",
+        action="store_true",
+        help="Flag if we are being called from the systemd unit startup.",
     )
     parser_activate.set_defaults(action="activate")
 

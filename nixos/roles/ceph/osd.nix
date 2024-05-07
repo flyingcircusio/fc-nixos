@@ -13,7 +13,11 @@ let
   osdServiceDeps = rec {
     # Ceph requires the IPs to be properly attached to interfaces so it
     # knows where to bind to the public and cluster networks.
-    wants = [ "network.target" "fc-blockdev.service" ];
+    wants = [
+      fclib.network.sto.addressUnit
+      fclib.network.stb.addressUnit
+      "fc-blockdev.service"
+    ];
     after = wants;
   };
 
