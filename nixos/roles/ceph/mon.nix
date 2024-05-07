@@ -141,9 +141,7 @@ in
 
         description = "Local Ceph Mon (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
-        # Ceph requires the IPs to be properly attached to interfaces so it
-        # knows where to bind to the public and cluster networks.
-        wants = [ "network.target" ];
+        wants = [ fclib.network.sto.addressUnit ];
         after = wants;
 
         restartTriggers = [
@@ -155,21 +153,14 @@ in
           PYTHONUNBUFFERED = "1";
         };
 
-        script = ''
-          ${cephPkgs.fc-ceph}/bin/fc-ceph mon activate
-        '';
-
-        reload = ''
-          ${cephPkgs.fc-ceph}/bin/fc-ceph mon reactivate
-        '';
-
-        preStop = ''
-          ${cephPkgs.fc-ceph}/bin/fc-ceph mon deactivate
-        '';
+        unitConfig = {
+          ConditionPathIsMountPoint = "/srv/ceph/mon/ceph-${config.networking.hostName}";
+        };
 
         serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
+          Type = "simple";
+          ExecStart = " ${cephPkgs.fc-ceph}/bin/fc-ceph mon activate --as-systemd-unit";
+          Restart = "always";
         };
       };
 
@@ -226,9 +217,7 @@ in
 
         description = "Local Ceph MGR (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
-        # Ceph requires the IPs to be properly attached to interfaces so it
-        # knows where to bind to the public and cluster networks.
-        wants = [ "network.target" ];
+        wants = [ fclib.network.sto.addressUnit ];
         after = wants;
 
         restartTriggers = [
@@ -240,14 +229,6 @@ in
           PYTHONUNBUFFERED = "1";
         };
 
-        script = ''
-          ${cephPkgs.fc-ceph}/bin/fc-ceph mgr activate
-        '';
-
-        reload = ''
-          ${cephPkgs.fc-ceph}/bin/fc-ceph mgr reactivate
-        '';
-
         # imperatively ensure mgr modules
         preStart = lib.concatStringsSep "\n" (
           lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${cephPkgs.ceph}/bin/ceph mgr module enable ${mod} --force")
@@ -255,13 +236,10 @@ in
           lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${cephPkgs.ceph}/bin/ceph mgr module disable ${mod}")
         );
 
-        preStop = ''
-          ${cephPkgs.fc-ceph}/bin/fc-ceph mgr deactivate
-        '';
-
         serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
+          Type = "simple";
+          ExecStart = " ${cephPkgs.fc-ceph}/bin/fc-ceph mgr activate --as-systemd-unit";
+          Restart = "always";
         };
       };
 

@@ -1,4 +1,5 @@
 """Base class for maintenance activities."""
+
 from enum import Enum
 from pathlib import Path
 from typing import NamedTuple, Optional

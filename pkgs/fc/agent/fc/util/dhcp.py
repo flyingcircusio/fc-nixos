@@ -1,6 +1,5 @@
 """Model entities commonly found in DHCP configuration files."""
 
-
 import collections
 import itertools
 

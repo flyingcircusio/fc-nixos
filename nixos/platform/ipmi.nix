@@ -37,7 +37,7 @@ in {
 
   config = mkIf cfg.ipmi.enable {
 
-    environment.systemPackages = [ pkgs.ipmitool ];
+    environment.systemPackages = [ pkgs.ipmitool pkgs.fc.ipmitool ];
 
     boot.blacklistedKernelModules = [ "wdat_wdt" ];
     boot.kernelModules = [ "ipmi_watchdog" ];

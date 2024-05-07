@@ -14,6 +14,7 @@ So this script deletes log files, iff:
 2. it is older than 14 days.
 
 """
+
 import datetime
 import pathlib
 import re

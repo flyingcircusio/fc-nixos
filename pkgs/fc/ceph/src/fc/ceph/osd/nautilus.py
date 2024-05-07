@@ -10,7 +10,6 @@ from typing import List, Optional
 
 from fc.ceph.lvm import (
     DiskWithSinglePartition,
-    GenericBlockDevice,
     GenericCephVolume,
     GenericLogicalVolume,
     XFSVolume,
@@ -330,12 +329,10 @@ class JournalVG:
     def get_largest_free() -> str:
         """Find suitable WAL VG: the one with the most free bytes"""
         return run.json.vgs(
-            # fmt: off
             "-S", "vg_name=~^vgjnl[0-9][0-9]$",
             "-o", "vg_name,vg_free",
             "-O", "-vg_free",
-            # fmt: on
-        )[0]["vg_name"]
+        )[0]["vg_name"]  # fmt: skip
 
 
 class WALVolume:
@@ -510,13 +507,11 @@ class GenericOSD(object):
               `ceph osd crush`
         """
         run.ceph(
-            # fmt: off
             "auth", "add", self.name,
             "osd", "allow *",
             "mon", "allow rwx",
             "-i", f"{self.data_volume.mountpoint}/keyring",
-            # fmt: on
-        )
+        )  # fmt: skip
 
         # Compute CRUSH weight (1.0 == 1TiB)
         weight = float(volume.actual_size()) / TiB
@@ -542,12 +537,10 @@ class GenericOSD(object):
                 run.ceph("osd", "safe-to-destroy", *idstr)
             except CalledProcessError as e:
                 print(
-                    # fmt: off
                     "OSD not safe to destroy:", e.stderr,
                     "\nTo override this check, remove the `--strict-safety-check` flag. "
                     "This can lead to reduced data redundancy, still within safety margins."
-                    # fmt: on
-                )
+                )  # fmt: skip
                 # ceph already returns ERRNO-style returncodes, so just pass them through
                 sys.exit(e.returncode)
         else:
@@ -555,12 +548,10 @@ class GenericOSD(object):
                 run.ceph("osd", "ok-to-stop", *idstr)
             except CalledProcessError as e:
                 print(
-                    # fmt: off
                     "OSD not okay to stop:", e.stderr,
                     "\nTo override this check, specify `--no-safety-check`. This can "
                     "cause data loss or cluster failure!!"
-                    # fmt: on
-                )
+                )  # fmt: skip
                 # ceph already returns ERRNO-style returncodes, so just pass them through
                 sys.exit(e.returncode)
 
@@ -704,7 +695,6 @@ class BlueStoreOSD(GenericOSD):
         )
 
         run.ceph_osd(
-            # fmt: off
             "-i", str(self.id),
             "--mkfs", "--mkkey",
             "--osd-objectstore", "bluestore",
@@ -714,8 +704,7 @@ class BlueStoreOSD(GenericOSD):
             # creating the OSD and its own key, so only use locally available
             # config here
             "--no-mon-config",
-            # fmt: on
-        )
+        )  # fmt: skip
         self._set_crush_and_auth(self.block_volume, crush_location)
 
     def activate(self):
@@ -733,12 +722,10 @@ class BlueStoreOSD(GenericOSD):
         # Relocating OSDs: Create WAL LV if the symlink is broken
         # and fix the symlink (in case the VG name changed).
         run.ceph_osd(
-            # fmt: off
             "-i", str(self.id),
             "--pid-file", self.pid_file,
             "--osd-data", self.data_volume.mountpoint,
-            # fmt: on
-        )
+        )  # fmt: skip
 
     def purge(self, no_safety_check, strict_safety_check):
         super().purge(no_safety_check, strict_safety_check)

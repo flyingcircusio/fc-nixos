@@ -7,7 +7,8 @@ let
   role = config.flyingcircus.roles.router;
   inherit (config.flyingcircus) location;
   nameservers = [
-    "ns.${location}.gocept.net"
+    "ns.whq.gocept.net"
+    "ns.rzob.gocept.net"
   ];
 in
 lib.mkIf role.enable {
@@ -104,14 +105,18 @@ lib.mkIf role.enable {
     configFile = ./named.conf;
   };
 
-  systemd.services.bind.restartTriggers = [
+  systemd.services.bind = {
+    serviceConfig.Restart = "always";
+
+    restartTriggers = [
       config.environment.etc."bind/acl.conf".source
       config.environment.etc."bind/pri/127.zone".source
       config.environment.etc."bind/pri/localhost.zone".source
       config.environment.etc."bind/pri/gocept.net-internal.zone.static".source
       config.environment.etc."bind/pri/gocept.net.zone.static".source
       config.environment.etc."bind/pri/1.0.1.0.8.4.2.0.2.0.a.2.zone".source
-  ];
+    ];
+  };
 
   networking.firewall.extraCommands = ''
     ip46tables -A nixos-fw -p tcp --dport 53 -j nixos-fw-accept

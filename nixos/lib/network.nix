@@ -317,6 +317,8 @@ rec {
           else if policy == "tagged" then taggedLink
           else link;
 
+        addressUnit = "network-addresses-${interface}.service";
+
         attachedLinks = if bridged then [link] else [];
         bridgedLink = "br${vlan}";  # the kernel device with type `bridge`
         taggedLink = "eth${vlan}";  # the kernel device with type `vlan`

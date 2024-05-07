@@ -13,7 +13,11 @@ let
   osdServiceDeps = rec {
     # Ceph requires the IPs to be properly attached to interfaces so it
     # knows where to bind to the public and cluster networks.
-    wants = [ "network.target" "fc-blockdev.service" ];
+    wants = [
+      fclib.network.sto.addressUnit
+      fclib.network.stb.addressUnit
+      "fc-blockdev.service"
+    ];
     after = wants;
   };
 
@@ -193,6 +197,20 @@ in
       };
 
       flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
+
+      # Ceph OSDs are using a lot of ports so we're being gratuitous here about
+      # the firewall and we want to avoid spamming the connection tracking
+      # table.
+      networking.firewall = {
+
+        trustedInterfaces = [ fclib.network.stb.interface ];
+
+        extraCommands = lib.mkOrder 800 ''
+          # Disable STB connection tracking to reduce kernel connection table overhead
+          ip46tables -t raw -A fc-raw-prerouting -i ${fclib.network.stb.interface} -j CT --notrack
+          ip46tables -t raw -A fc-raw-output -o ${fclib.network.stb.interface} -j CT --notrack
+        '';
+      };
 
       systemd.services.fc-ceph-osds-all = rec {
         enable = ! config.flyingcircus.services.ceph.server.passive;

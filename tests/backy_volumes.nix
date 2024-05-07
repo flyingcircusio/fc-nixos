@@ -30,7 +30,7 @@ let
     virtualisation.fileSystems."/mnt/keys" = config.flyingcircus.infrastructure.fullDiskEncryption.fsOptions;
     virtualisation.fileSystems."/srv/backy" = config.flyingcircus.roles.backyserver.fsOptions;
     # Cotherwise fc-luks OOMs
-    virtualisation.memorySize = 1000;
+    virtualisation.memorySize = 1200;
   };
 
 in
@@ -93,7 +93,7 @@ in
       legacyBacky.succeed("${migrationScript}")
       legacyBacky.wait_for_unit("backy-reencrypt.service")
       print(legacyBacky.execute('systemctl status backy-reencrypt.service')[1])
-      legacyBacky.succeed('echo -e "newphrase\nnewphrase" | setsid -w fc-luks keystore rekey --slot=admin backy > /dev/kmsg 2>&1')
+      legacyBacky.succeed('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore rekey --slot=admin backy > /dev/kmsg 2>&1')
       legacyBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/kmsg 2>&1")
       legacyBacky.succeed("grep FOOTEST /srv/backy/testfile")
 
@@ -106,7 +106,7 @@ in
     setupKeystore(newBacky)
 
     with subtest("Creating new backy volume from scratch"):
-      newBacky.succeed('echo -e "adminphrase\nadminphrase" | setsid -w fc-luks backup create /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf > /dev/kmsg 2>&1')
+      newBacky.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-luks backup create /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf > /dev/kmsg 2>&1')
       newBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/kmsg 2>&1")
 
     test_reboot_automount(newBacky)

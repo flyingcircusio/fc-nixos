@@ -133,9 +133,11 @@ def test_add_do_merge_compatible_request(connect, significant, log, reqmanager):
         # Should be merged
         assert rm.add(to_be_merged_request) is second_request
         assert log.has(
-            "requestmanager-merge-significant"
-            if significant
-            else "requestmanager-merge-update",
+            (
+                "requestmanager-merge-significant"
+                if significant
+                else "requestmanager-merge-update"
+            ),
             request=to_be_merged_request.id,
             merged=second_request.id,
         )

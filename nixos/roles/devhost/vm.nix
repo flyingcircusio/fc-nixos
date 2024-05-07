@@ -164,6 +164,8 @@ in {
         enable = true;
         enableIPv6 = true;
         internalInterfaces = [ "br-vm-srv" ];
+        # We need to NAT to brsrv and brfe
+        externalInterface = null;
       };
     };
     # Maybe switch to kea long-term, but it's not available in 21.05

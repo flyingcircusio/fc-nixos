@@ -165,6 +165,13 @@ in {
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
+  ipmitool = super.ipmitool.overrideAttrs(a: a // {
+    buildInputs = a.buildInputs ++ [ super.ncurses super.readline ];
+    configureFlags = a.configureFlags ++ [
+      "--enable-ipmishell"
+    ];
+  });
+
   jibri = super.callPackage ./jibri { jre_headless = super.jre8_headless; };
 
   jicofo = super.jicofo.overrideAttrs(oldAttrs: rec {
@@ -518,6 +525,7 @@ in {
 
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
+  py_pytest_patterns = self.callPackage ./python/pytest-patterns { };
   # python27 with several downgrades to make required modules work under python27 again
   python27-ceph-downgrades = let thisPy = self.python27-ceph-downgrades;
   in

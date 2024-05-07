@@ -15,7 +15,8 @@
   parted,
   xfsprogs,
   procps,
-  systemd
+  systemd,
+  py_pytest_patterns
 }:
 
 let
@@ -44,25 +45,7 @@ let
     };
   };
 
-  py_pytest_patterns = py.buildPythonPackage rec {
-    pname = "pytest_patterns";
-    version = "0.1.0";
 
-    src = py.fetchPypi {
-      inherit pname version;
-      hash = "sha256-guKexrkDP4Ovqc87M7s8qFtW1FuVcf2PiDwh+QHcp6A=";
-      format = "wheel";
-      python = "py3";
-    };
-
-    format = "wheel";
-    propagatedBuildInputs = [ py.pytest ];
-
-    meta = with lib; {
-      description = "pytest plugin to make testing complicated long string output easy to write and easy to debug";
-      homepage = "https://pypi.org/project/pytest-patterns/";
-    };
-  };
 
 in
   # We use buildPythonPackage instead of buildPythonApplication
@@ -92,6 +75,9 @@ in
       py.pyyaml
       py.setuptools
       (py.toPythonModule ceph_client)
+      # note: this is not really appropriate in theory, as test-only tooling
+      # should be part of *checkInputs instead. checkInputs vs. nativeCheckInputs
+      # needs some adaptions in more recent NixOS releases anyways, so keeping this for now.
       py_pytest_patterns
     ];
 

@@ -1,4 +1,5 @@
 import configparser
+import os
 import resource
 import shutil
 import socket
@@ -31,23 +32,20 @@ class Monitor(object):
         self.volume = XFSVolume("ceph-mon", f"/srv/ceph/mon/ceph-{self.id}")
         self.pid_file = f"/run/ceph/mon.{self.id}.pid"
 
-    def activate(self):
+    def activate(self, as_systemd_unit=False):
+        if not as_systemd_unit:
+            run.systemctl("start", "fc-ceph-mon")
+            return
         print(f"Activating MON {self.id}...")
         resource.setrlimit(resource.RLIMIT_NOFILE, (270000, 270000))
-
         self.volume.activate()
-        run.ceph_mon("-i", self.id, "--pid-file", self.pid_file)
+        os.execlp("ceph-mon", "ceph-mon", "-f", "-i", self.id)
 
     def deactivate(self):
-        print(f"Stopping MON {self.id} ...")
-        kill(self.pid_file)
+        run.systemctl("stop", "fc-ceph-mon")
 
     def reactivate(self):
-        try:
-            self.deactivate()
-        except Exception:
-            pass
-        self.activate()
+        run.systemctl("restart", "fc-ceph-mon")
 
     def create(
         self,
@@ -70,42 +68,34 @@ class Monitor(object):
         if bootstrap_cluster:
             # Generate initial mon keyring
             run.ceph_authtool(
-                # fmt: off
                 "-g",
                 "-n", "mon.",
                 "--create-keyring", f"{tmpdir}/keyring",
                 "--cap", "mon", "allow *",
-                # fmt: on
-            )
+            )  # fmt: skip
             # Import admin keyring
             run.ceph_authtool(
-                # fmt: off
                 f"{tmpdir}/keyring",
                 "--import-keyring", "/etc/ceph/ceph.client.admin.keyring",
-                # fmt: on
-            )
+            )  # fmt: skip
             # adjust admin capabilities
             run.ceph_authtool(
-                # fmt: off
                 f"{tmpdir}/keyring",
                 "--cap", "mds", "allow *",
                 "--cap", "mon", "allow *",
                 "--cap", "osd", "allow *",
                 "--cap", "mgr", "allow *",
-                # fmt: on
-            )
+            )  # fmt: skip
             # Generate initial monmap
             fsid = config["global"]["fsid"]
             run.monmaptool("--create", "--fsid", fsid, f"{tmpdir}/monmap")
         else:
             # Retrieve mon key and monmap
             run.ceph(
-                # fmt: off
                 "-n", "client.admin",
                 "auth", "get", "mon.",
                 "-o", f"{tmpdir}/keyring",
-                # fmt: on
-            )
+            )  # fmt: skip
             run.ceph("mon", "getmap", "-o", f"{tmpdir}/monmap")
 
         # Add yourself to the monmap
@@ -117,13 +107,11 @@ class Monitor(object):
         )
         # Create mon on disk structures
         run.ceph_mon(
-            # fmt: off
             "-i", self.id,
             "--mkfs",
             "--keyring", f"{tmpdir}/keyring",
             "--monmap", f"{tmpdir}/monmap",
-            # fmt: on
-        )
+        )  # fmt: skip
 
         shutil.rmtree(tmpdir)
 

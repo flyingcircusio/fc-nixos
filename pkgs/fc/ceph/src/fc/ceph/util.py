@@ -191,3 +191,25 @@ def mlockall():
     result = libc.mlockall(MCL_CURRENT | MCL_FUTURE)
     if result != 0:
         raise Exception("cannot lock memory, errno=%s" % ctypes.get_errno())
+
+
+def prompt_bool(msg: str, default) -> bool:
+    choice = default
+    prompt = "[y]/n:" if default else "y/[n]:"
+    print(msg, prompt, end=" ")
+    while True:
+        resp = input()
+        match resp:
+            case "n":
+                choice = False
+                break
+            case "y":
+                choice = True
+                break
+            case "":
+                choice = default
+                break
+            case _:
+                print(f"Invalid input '{resp}', retry.")
+                continue
+    return choice

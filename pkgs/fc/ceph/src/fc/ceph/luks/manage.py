@@ -1,4 +1,6 @@
 import fnmatch
+import getpass
+import hashlib
 import os
 import secrets
 import shutil
@@ -97,33 +99,47 @@ class LUKSKeyStoreManager(object):
 
         if slot == "local":
             console.print("Updating local machine key ...", style="bold")
+            # Ensure to request the admin key early on.
+            self._KEYSTORE.admin_key_for_input(
+                "Current LUKS admin key for unlocking this location"
+            )
         elif slot == "admin":
             console.print("Updating admin key ...", style="bold")
+            # Ensure to request the admin key early on.
+            self._KEYSTORE.admin_key_for_input(
+                "New LUKS admin key to be set for this location"
+            )
         else:
             raise ValueError(f"slot={slot}")
-
-        # Ensure to request the admin key early on.
-        self._KEYSTORE.admin_key_for_input()
 
         candidates = lsblk_to_cryptdevices(
             run.json.lsblk("-s", "-o", "NAME,PATH,TYPE,MOUNTPOINT")
         )
-        for candidate in candidates:
-            if not fnmatch.fnmatch(candidate.name, name_glob):
-                continue
-            console.print(f"Replacing key for {candidate.name}")
+        matching_devs = [
+            candidate
+            for candidate in candidates
+            if fnmatch.fnmatch(candidate.name, name_glob)
+        ]
+        if header and (match_count := len(matching_devs)) > 1:
+            raise ValueError(
+                f"Got {match_count} matching devices for glob '{name_glob}'.\n"
+                "When specifying an external header file, the target device "
+                "needs to be a single specific match."
+            )
+        for dev in matching_devs:
+            dev_header = header
+            console.print(f"Replacing key for {dev.name}")
 
             if (
-                (not header)
-                and (mp := candidate.mountpoint)
+                (not dev_header)
+                and (mp := dev.mountpoint)
                 and os.path.exists(headerfile := f"{mp}.luks")
             ):
-                header = headerfile
-            # TODO: nixos test?
+                dev_header = headerfile
             self._do_rekey(
                 slot=slot,
-                device=candidate.base_blockdev,
-                header=header,
+                device=dev.base_blockdev,
+                header=dev_header,
             )
 
         console.print("Key updated.", style="bold green")
@@ -165,3 +181,41 @@ class LUKSKeyStoreManager(object):
 
         if header:
             self._KEYSTORE.backup_external_header(Path(header))
+
+    def fingerprint(self, verify: bool, confirm: bool) -> int:
+        """
+        Ask for passphrase and print its fingerprint.
+
+        For `verify`, compare with stored fingerprint and return a status code
+        1 at mismatch"""
+
+        while True:
+            input_phrase = getpass.getpass("Enter passphrase to fingerprint: ")
+            if not confirm:
+                break
+            if getpass.getpass("Confirm passphrase again: ") == input_phrase:
+                break
+            print("Mismatching passphrases entered, please retry.")
+
+        fingerprint = hashlib.sha256(input_phrase.encode("ascii")).hexdigest()
+        console.print(fingerprint)
+
+        if verify:
+            fingerprint_path = self._KEYSTORE.local_key_dir / "admin.fprint"
+            persisted_fingerprint = (
+                open(fingerprint_path, "rt").read().strip()
+                if fingerprint_path.exists()
+                else ""
+            )
+            if not persisted_fingerprint:
+                console.print("No admin key fingerprint stored.\n")
+                return 1
+            elif persisted_fingerprint != fingerprint:
+                console.print(
+                    "Error: fingerprint mismatch:\n\n"
+                    f"fingerprint for your entry: '{fingerprint}'\n"
+                    f"fingerprint stored locally: '{persisted_fingerprint}'\n"
+                )
+                return 1
+
+        return 0

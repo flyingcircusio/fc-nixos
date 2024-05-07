@@ -6,6 +6,9 @@ let
   inherit (config.flyingcircus) location static;
   inherit (config) fclib;
   role = config.flyingcircus.roles.router;
+  routers = fclib.findServices "router-router";
+  routerNames = map (service: head (lib.splitString "." service.address)) routers;
+  otherRouterNames = filter (m: m != config.networking.hostName) routerNames;
   kickInterfaces = fclib.writeShellApplication {
     name = "kick-interfaces";
     runtimeInputs = with pkgs; [ ethtool ];
@@ -15,6 +18,10 @@ let
   uplinkInterfaces = map
     (network: fclib.network."${network}".interface)
     static.routerUplinkNetworks."${location}";
+
+  gatewayInterfaces = map
+    (network: fclib.network."${network}")
+    static.floatingGatewayNetworks."${location}";
 
   martianNetworks =
     lib.filter
@@ -67,7 +74,9 @@ in
     ./keepalived
     ./chrony.nix
     ./dhcpd.nix
+    ./pmacctd.nix
     ./radvd.nix
+    ./trafficclient.nix
   ];
 
   config = lib.mkIf role.enable {
@@ -110,7 +119,6 @@ in
 
     environment.systemPackages = with pkgs; [
       kickInterfaces
-      pmacct
     ];
 
     environment.shellAliases = {
@@ -205,6 +213,14 @@ in
       ip46tables -X fc-router-forward 2>/dev/null || true
     '';
 
+    systemd.services = listToAttrs
+      (lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces)
+        (iface: lib.nameValuePair
+          "network-bridge-suppress-flooding-${iface.link}"
+          { enable = fclib.mkPlatform false; }
+        )
+      );
+
     services.logrotate.extraConfig = ''
     '';
 
@@ -234,6 +250,25 @@ in
         # Updates files in /etc/bind and /etc/bind/pri where also Nix-generated config exists.
         fc-zones
       '';
+
+      maintenance.router = {
+        enter =
+          let
+            nodeArgs = lib.concatMapStrings (u: " --in-service ${u}") otherRouterNames;
+            script = pkgs.writeScript "router-agent-enter-maintenance" ''
+              set -e
+              # Check if all other routers are in service, signal "tempfail" otherwise.
+              fc-maintenance constraints --failure-exit-code 75 ${nodeArgs}
+              # Returns 75 if switch to secondary timed out or
+              # keepalived is in failed/stop state.
+              fc-keepalived enter-maintenance
+            '';
+          in "${script}";
+
+        leave = ''
+          fc-keepalived leave-maintenance
+        '';
+      };
     };
 
   };
