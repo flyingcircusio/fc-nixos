@@ -341,11 +341,15 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   percona80 = super.percona-server_8_0;
 
+  # assertion notifies us about the need to vendor the old innovation releases
+  percona83 = assert self.percona-server_innovation.mysqlVersion == "8.3"; self.percona-server_innovation;
+
   percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
     boost = self.boost159;
     openssl = self.openssl_1_1;
   };
 
+  percona-xtrabackup_8_3 = assert self.percona-xtrabackup_innovation.mysqlVersion == "8.3"; self.percona-xtrabackup_innovation;
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
 
