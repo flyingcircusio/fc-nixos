@@ -54,7 +54,7 @@ lib.mkIf role.enable {
 
   environment.etc."keepalived/check-default-route-v4".source = "${checkDefaultRoute4}/bin/check-default-route-v4";
   environment.etc."keepalived/check-default-route-v6".source = "${checkDefaultRoute6}/bin/check-default-route-v6";
-  environment.etc."keepalived/fc-manage".source = "${pkgs.fc.agent}/bin/fc-manage";
+  environment.etc."keepalived/fc-keepalived".source = "${pkgs.fc.agent}/bin/fc-keepalived";
   environment.etc."keepalived/keepalived.conf".source = keepalivedConf;
 
   environment.systemPackages = with pkgs; [
@@ -63,9 +63,19 @@ lib.mkIf role.enable {
     checkDefaultRoute6
   ];
 
+
+  flyingcircus.passwordlessSudoRules = [
+    {
+      commands = [
+        "${pkgs.fc.agent}/bin/fc-keepalived check"
+      ];
+      groups = [ "admins" "sudo-srv" "service" ];
+    }
+  ];
+
   services.keepalived = {
     enable = true;
-    # XXX: We override the keepalived config file in ExecStart below,
+    # Note: We override the keepalived config file in ExecStart below,
     # using config options here has no effect.
   };
 
@@ -83,6 +93,7 @@ lib.mkIf role.enable {
         + " -p /run/keepalived.pid"
         + " -n");
       StateDirectory = "keepalived";
+      RuntimeDirectory = "keepalived";
     };
   };
 
