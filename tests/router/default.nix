@@ -448,6 +448,14 @@ in
         router.execute("sed -i 'c 1' /etc/keepalived/stop")
         router.wait_until_succeeds("cat /tmp/agent-mock-called")
 
+      with subtest("Firewall configuration should not differ between primary and secondary"):
+        primary_system = router.r.primary_system
+        secondary_system = router.r.secondary_system
+
+        primary_firewall = router.execute(f"cat {primary_system}/etc/systemd/system/firewall.service")
+        secondary_firewall = router.execute(f"cat {secondary_system}/etc/systemd/system/firewall.service")
+        assert primary_firewall[1] == secondary_firewall[1], "firewall configuration differs between primary and secondary system"
+
       print(router.succeed("journalctl -xb -u keepalived"))
     '';
   };
