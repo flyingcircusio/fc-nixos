@@ -307,7 +307,7 @@ in {
       } ];
     };
 
-    systemd.services.kubernetes-ensure-db-permissions = {
+    systemd.services.fc-k3s-ensure-db-permissions = {
       description = "Ensure the root user has all permissions on kubernetes db";
       wantedBy = [ "k3s.service" ];
       before = [ "k3s.service" ];
@@ -324,6 +324,7 @@ in {
         fi
         done
           $PSQL -tAc 'GRANT ALL PRIVILEGES ON DATABASE kubernetes TO "root"'
+          $PSQL kubernetes -tAc 'GRANT CREATE ON SCHEMA public TO "root"'
       '';
       serviceConfig = {
         type = "oneshot";
