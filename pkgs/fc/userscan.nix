@@ -23,7 +23,7 @@ rustPlatform.buildRustPackage rec {
 
   postBuild = ''
     substituteAll $src/userscan.1.rst $TMP/userscan.1.rst
-    rst2man.py $TMP/userscan.1.rst > $TMP/userscan.1
+    rst2man $TMP/userscan.1.rst > $TMP/userscan.1
   '';
   postInstall = ''
     install -D $TMP/userscan.1 $out/share/man/man1/fc-userscan.1
