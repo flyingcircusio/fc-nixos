@@ -23,7 +23,9 @@ let
     url = "https://github.com/flyingcircusio/php-src/commit/f3a22e2ed6e461d8c3fac84c2fd2c9e441c9e4d4.patch";
     hash = "sha256-ttHjEOGJomjs10PRtM2C6OLX9LCvboxyDSKdZZHanFQ=";
   };
-  patchPhps = patch: phpPkg: phpPkg.override {extraPatches = [patch];};
+  # we need to use overrideAttrs, as the `extraPatches` function argument of the generic PHP builder is
+  # redefined and replaced ba the specific version builder.
+  patchPhps = patch: phpPkg: phpPkg.overrideAttrs (prev: {patches = [patch] ++ (prev.extraPatches or []);});
 
 in
 builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
