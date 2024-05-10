@@ -82,7 +82,7 @@ in {
 
     systemd.services.telegraf = {
       serviceConfig = {
-        ExecStart = mkOverride 90 (concatStringsSep " " (fclib.join [
+        ExecStart = mkOverride 90 (concatStringsSep " " (lib.flatten [
           ["${cfg.package}/bin/telegraf -config \"${configFile}\""]
           (if builtins.pathExists /etc/local/telegraf then ["-config-directory ${/etc/local/telegraf}"] else [])
         ]));

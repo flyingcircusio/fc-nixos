@@ -6,53 +6,53 @@ let
   cfg = config.flyingcircus.services.haproxy;
   fclib = config.fclib;
 
-  proxyGenerator = with lib; with fclib; data: (
-    indentWith "  " (with data; join [
-      (if mode != null then ["mode ${mode}"] else [])
-      (if data ? balance && balance != null then ["balance ${balance}"] else [])
-      (if data ? options then map (option: "option ${option}" ) options else [])
-      (if data ? timeout then join (mapAttrsToList (key: value: if value != null then ["timeout ${key} ${value}"] else []) timeout) else [])
-      (if data ? binds then map (bind: "bind ${bind}" ) binds else [])
-      (if data ? default_backend && default_backend != null then ["default_backend ${default_backend}"] else [])
-      (if data ? servers then map (server: "server ${server}") servers else [])
-      (lines extraConfig)
+  proxyGenerator = data: (
+    fclib.indentWith "  " (lib.flatten [
+      (if data.mode != null then ["mode ${data.mode}"] else [])
+      (if data ? balance && data.balance != null then ["balance ${data.balance}"] else [])
+      (if data ? options then map (option: "option ${option}" ) data.options else [])
+      (if data ? timeout then lib.flatten (lib.mapAttrsToList (key: value: if value != null then ["timeout ${key} ${value}"] else []) data.timeout) else [])
+      (if data ? binds then map (bind: "bind ${bind}" ) data.binds else [])
+      (if data ? default_backend && data.default_backend != null then ["default_backend ${data.default_backend}"] else [])
+      (if data ? servers then map (server: "server ${server}") data.servers else [])
+      (lib.splitString "\n" data.extraConfig)
     ])
   );
 
-  generatedConfig = with lib; with fclib; with cfg; (x: trivial.pipe x [ join unlines ]) [
-    (with global; join [
+  generatedConfig = (x: lib.trivial.pipe x [ lib.flatten (lib.concatStringsSep "\n") ]) [
+    (lib.flatten [
       ["global"]
-      (indentWith "  " (join [
-        (if global.daemon then ["daemon"] else []) # daemon is already set and won't be shadowed
-        ["chroot ${chroot}"]
-        ["user ${user}"]
-        ["group ${group}"]
-        ["maxconn ${toString maxconn}"]
-        (lines extraConfig)
+      (fclib.indentWith "  " (lib.flatten [
+        (if cfg.global.daemon then ["daemon"] else []) # daemon is already set and won't be shadowed
+        ["chroot ${cfg.global.chroot}"]
+        ["user ${cfg.global.user}"]
+        ["group ${cfg.global.group}"]
+        ["maxconn ${toString cfg.global.maxconn}"]
+        (lib.splitString "\n" cfg.global.extraConfig)
       ]))
     ])
     ["\n"]
-    (join [
+    (lib.flatten [
       ["defaults"]
-      (proxyGenerator defaults)
+      (proxyGenerator cfg.defaults)
     ])
     ["\n"]
-    (join (mapAttrsToList (name: data: ((join [
+    (lib.flatten (lib.mapAttrsToList (name: data: ((lib.flatten [
       ["listen ${name}"]
       (proxyGenerator data)
       ["\n"]
-    ]))) listen))
-    (join (mapAttrsToList (name: data: ((join [
+    ]))) cfg.listen))
+    (lib.flatten (lib.mapAttrsToList (name: data: ((lib.flatten [
       ["frontend ${name}"]
       (proxyGenerator data)
       ["\n"]
-    ]))) frontend))
-    (join (mapAttrsToList (name: data: ((join [
+    ]))) cfg.frontend))
+    (lib.flatten (lib.mapAttrsToList (name: data: ((lib.flatten [
       ["backend ${name}"]
       (proxyGenerator data)
       ["\n"]
-    ]))) backend))
-    (lines extraConfig)
+    ]))) cfg.backend))
+    (lib.splitString "\n" cfg.extraConfig)
   ];
 
   haproxyCfg = pkgs.writeText "haproxy.conf" config.services.haproxy.config;
