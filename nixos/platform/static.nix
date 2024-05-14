@@ -176,7 +176,9 @@ with lib;
           test = "tr";
         };
         # Or a per-host override
-        host = {};
+        host = {
+          kenny08 = "185.105.253.72";
+        };
       };
 
       # Networks which have floating gateways shared between routers
