@@ -63,26 +63,9 @@ in
           command = "${cfg.package}/bin/varnishadm status";
           timeout = 180;
         };
-        varnish_http = let
-          # remove the optional protocol option at the end
-          address = builtins.elemAt (lib.splitString "," cfg.http_address) 0;
-          ip-port = lib.splitString ":" address;
-          # default (empty) host and "*" are equivalent to 0.0.0.0
-          # so the check can be run on localhost
-          host = let
-            tmp = builtins.elemAt ip-port 0;
-          in
-            if builtins.stringLength tmp > 0 && tmp != "*"
-            then tmp
-            else "127.0.0.1";
-          # default port is 80 and can be omitted
-          port =
-            if builtins.length ip-port == 2
-            then builtins.elemAt ip-port 1
-            else 80;
-        in {
-          notification = "varnish port ${port} HTTP response";
-          command = "check_http -H ${host} -p ${port} -c 10 -w 3 -t 20 -e HTTP";
+        varnish_http = {
+          notification = "varnish port 8008 HTTP response";
+          command = "check_http -H localhost -p 8008 -c 10 -w 3 -t 20 -e HTTP";
         };
       };
 

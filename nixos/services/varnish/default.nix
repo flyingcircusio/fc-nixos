@@ -76,18 +76,9 @@ in {
     http_address = mkOption {
       type = types.str;
       default = "*:8008";
-      description = ''
-        The http address for the varnish service to listen on.
-        Unix sockets can technically be used for varnish, but are not currently supported on the FCIO platform due to monitoring constraints.
-        See `varnishd(1)` for details.
-      '';
     };
     virtualHosts = mkOption {
-      type = types.attrsOf (types.submodule ({
-        name,
-        config,
-        ...
-      }: {
+      type = types.attrsOf (types.submodule ({ name, config, ... }: {
         options = {
           host = mkOption {
             type = types.str;
