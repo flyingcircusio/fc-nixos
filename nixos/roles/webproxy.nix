@@ -79,7 +79,7 @@ in
           port =
             if builtins.length ip-port == 2
             then builtins.elemAt ip-port 1
-            else "80";
+            else 80;
         in {
           notification = "varnish port ${port} HTTP response";
           command = "check_http -H ${host} -p ${port} -c 10 -w 3 -t 20 -e HTTP";
