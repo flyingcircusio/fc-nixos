@@ -347,11 +347,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     openssl = self.openssl_1_1;
   };
 
-  percona-xtrabackup_8_1 = super.callPackage ./percona-xtrabackup/8_1.nix {
-    boost = self.boost177;
-    protobuf = self.protobuf_21;
-  };
-
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
 
