@@ -111,9 +111,9 @@ with lib;
         # Those are the routers and backup servers. This needs to move to the
         # directory service discovery or just make them part of the router and
         # backup server role.
-        dev = [ "kenny00" ];
-        whq = [ "lou" "kenny01" ];
-        rzob = [ "kenny06" "kenny07" ];
+        dev = [ "dev-router" ];
+        whq = [ "whq-router" ];
+        rzob = [ "rzob-router" ];
       };
 
       adminKeys = {
