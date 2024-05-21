@@ -70,14 +70,14 @@
     "version": "18.2.0"
   },
   "chromedriver": {
-    "name": "chromedriver-124.0.6367.91",
+    "name": "chromedriver-124.0.6367.201",
     "pname": "chromedriver",
-    "version": "124.0.6367.91"
+    "version": "124.0.6367.201"
   },
   "chromium": {
-    "name": "chromium-124.0.6367.118",
+    "name": "chromium-124.0.6367.201",
     "pname": "chromium",
-    "version": "124.0.6367.118"
+    "version": "124.0.6367.201"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -155,9 +155,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.65",
+    "name": "element-web-1.11.66",
     "pname": "element-web",
-    "version": "1.11.65"
+    "version": "1.11.66"
   },
   "erlang": {
     "name": "erlang-25.3.2.7",
@@ -225,9 +225,9 @@
     "version": "16.10.5"
   },
   "github-runner": {
-    "name": "github-runner-2.315.0",
+    "name": "github-runner-2.316.1",
     "pname": "github-runner",
-    "version": "2.315.0"
+    "version": "2.316.1"
   },
   "gitlab": {
     "name": "gitlab-16.10.5",
@@ -370,9 +370,9 @@
     "version": "1.27.6+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-23.0.6",
+    "name": "keycloak-24.0.4",
     "pname": "keycloak",
-    "version": "23.0.6"
+    "version": "24.0.4"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.13.2",
@@ -555,9 +555,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.99",
+    "name": "nss-3.100",
     "pname": "nss",
-    "version": "3.99"
+    "version": "3.100"
   },
   "openjdk": {
     "name": "openjdk-19.0.2+7",
@@ -676,14 +676,14 @@
     "version": "8.1.28"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.18",
+    "name": "php-with-extensions-8.2.19",
     "pname": "php-with-extensions",
-    "version": "8.2.18"
+    "version": "8.2.19"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.6",
+    "name": "php-with-extensions-8.3.7",
     "pname": "php-with-extensions",
-    "version": "8.3.6"
+    "version": "8.3.7"
   },
   "phpPackages.composer": {
     "name": "composer-2.7.6",

@@ -99,6 +99,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
+  keycloak = self.callPackage ./keycloak { };   # temporarily vendor from unstable, because 23.11 only has an insecure version
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
 
