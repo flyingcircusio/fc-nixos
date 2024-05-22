@@ -53,7 +53,7 @@ in {
       with subtest("killing the opensearch process should trigger an automatic restart"):
         _, out = machine.systemctl("show mongodb --property MainPID --value")
         previous_pid = int(out.strip())
-        machine.succeed("systemctl kill -s KILL mongodb")
+        machine.succeed("systemctl kill -s KILL --kill-whom main mongodb")
         machine.wait_until_succeeds('test $(systemctl show mongodb --property NRestarts --value) -eq "1"')
         machine.wait_until_succeeds("${sensuCheck "mongodb"}")
         _, out = machine.systemctl("show mongodb --property MainPID --value")
