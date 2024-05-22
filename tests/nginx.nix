@@ -15,7 +15,7 @@ let
     ${server4Fe} = [ "server" "other" ];
   };
 
-  expectedNginxMajorVersion = "1.24";
+  expectedNginxMajorVersion = "1.26";
 
   rootInitial = pkgs.writeTextFile {
     name = "nginx-root-initial";

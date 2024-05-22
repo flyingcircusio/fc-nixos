@@ -25,9 +25,9 @@
     "version": "1.16.5"
   },
   "awscli": {
-    "name": "awscli-1.32.58",
+    "name": "awscli-1.32.87",
     "pname": "awscli",
-    "version": "1.32.58"
+    "version": "1.32.87"
   },
   "awscli2": {
     "name": "awscli2-2.15.43",
@@ -40,9 +40,9 @@
     "version": "5.2p26"
   },
   "bind": {
-    "name": "bind-9.18.26",
+    "name": "bind-9.18.27",
     "pname": "bind",
-    "version": "9.18.26"
+    "version": "9.18.27"
   },
   "binutils": {
     "name": "binutils-wrapper-2.41",
@@ -70,14 +70,14 @@
     "version": "18.2.1"
   },
   "chromedriver": {
-    "name": "chromedriver-124.0.6367.91",
+    "name": "chromedriver-125.0.6422.60",
     "pname": "chromedriver",
-    "version": "124.0.6367.91"
+    "version": "125.0.6422.60"
   },
   "chromium": {
-    "name": "chromium-124.0.6367.118",
+    "name": "chromium-125.0.6422.60",
     "pname": "chromium",
-    "version": "124.0.6367.118"
+    "version": "125.0.6422.60"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -95,9 +95,9 @@
     "version": "3.29.2"
   },
   "consul": {
-    "name": "consul-1.18.1",
+    "name": "consul-1.18.2",
     "pname": "consul",
-    "version": "1.18.1"
+    "version": "1.18.2"
   },
   "containerd": {
     "name": "containerd-1.7.16",
@@ -140,9 +140,9 @@
     "version": "2.90"
   },
   "docker": {
-    "name": "docker-24.0.5",
+    "name": "docker-24.0.9",
     "pname": "docker",
-    "version": "24.0.5"
+    "version": "24.0.9"
   },
   "docker-compose": {
     "name": "docker-compose-2.27.0",
@@ -155,14 +155,14 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.65",
+    "name": "element-web-1.11.66",
     "pname": "element-web",
-    "version": "1.11.65"
+    "version": "1.11.66"
   },
   "erlang": {
-    "name": "erlang-25.3.2.11",
+    "name": "erlang-25.3.2.12",
     "pname": "erlang",
-    "version": "25.3.2.11"
+    "version": "25.3.2.12"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-125.0.3",
+    "name": "firefox-126.0",
     "pname": "firefox",
-    "version": "125.0.3"
+    "version": "126.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.2.0",
@@ -220,9 +220,9 @@
     "version": "2.44.0"
   },
   "gitaly": {
-    "name": "gitaly-16.10.4",
+    "name": "gitaly-16.10.5",
     "pname": "gitaly",
-    "version": "16.10.4"
+    "version": "16.10.5"
   },
   "github-runner": {
     "name": "github-runner-2.316.1",
@@ -230,34 +230,34 @@
     "version": "2.316.1"
   },
   "gitlab": {
-    "name": "gitlab-16.10.4",
+    "name": "gitlab-16.10.5",
     "pname": "gitlab",
-    "version": "16.10.4"
+    "version": "16.10.5"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-3.93.0",
+    "name": "gitlab-container-registry-4.1.0",
     "pname": "gitlab-container-registry",
-    "version": "3.93.0"
+    "version": "4.1.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.10.4",
+    "name": "gitlab-ee-16.10.5",
     "pname": "gitlab-ee",
-    "version": "16.10.4"
+    "version": "16.10.5"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-16.10.4",
+    "name": "gitlab-pages-16.10.5",
     "pname": "gitlab-pages",
-    "version": "16.10.4"
+    "version": "16.10.5"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-16.11.0",
+    "name": "gitlab-runner-16.11.1",
     "pname": "gitlab-runner",
-    "version": "16.11.0"
+    "version": "16.11.1"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-16.10.4",
+    "name": "gitlab-workhorse-16.10.5",
     "pname": "gitlab-workhorse",
-    "version": "16.10.4"
+    "version": "16.10.5"
   },
   "glibc": {
     "name": "glibc-2.39-31",
@@ -297,19 +297,14 @@
     "version": "2.9.7"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-30",
+    "name": "imagemagick-7.1.1-32",
     "pname": "imagemagick",
-    "version": "7.1.1-30"
-  },
-  "imagemagick6": {
-    "name": "imagemagick-6.9.12-68",
-    "pname": "imagemagick",
-    "version": "6.9.12-68"
+    "version": "7.1.1-32"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-30",
+    "name": "imagemagick-7.1.1-32",
     "pname": "imagemagick",
-    "version": "7.1.1-30"
+    "version": "7.1.1-32"
   },
   "inetutils": {
     "name": "inetutils-2.5",
@@ -357,19 +352,19 @@
     "version": "21+35"
   },
   "k3s": {
-    "name": "k3s-1.29.4+k3s1",
+    "name": "k3s-1.30.0+k3s1",
     "pname": "k3s",
-    "version": "1.29.4+k3s1"
+    "version": "1.30.0+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-24.0.3",
+    "name": "keycloak-24.0.4",
     "pname": "keycloak",
-    "version": "24.0.3"
+    "version": "24.0.4"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.14.4",
+    "name": "kubernetes-helm-3.15.0",
     "pname": "kubernetes-helm",
-    "version": "3.14.4"
+    "version": "3.15.0"
   },
   "libffi": {
     "name": "libffi-3.4.6",
@@ -397,9 +392,9 @@
     "version": "3.3.5"
   },
   "libressl": {
-    "name": "libressl-3.9.1",
+    "name": "libressl-3.9.2",
     "pname": "libressl",
-    "version": "3.9.1"
+    "version": "3.9.2"
   },
   "libtiff": {
     "name": "libtiff-4.6.0",
@@ -427,9 +422,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.158",
+    "name": "linux-5.15.159",
     "pname": "linux",
-    "version": "5.15.158"
+    "version": "5.15.159"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -467,9 +462,9 @@
     "version": "4.16.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.106.0",
+    "name": "matrix-synapse-wrapped-1.107.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.106.0"
+    "version": "1.107.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -502,9 +497,9 @@
     "version": "2.6.2"
   },
   "nginx": {
-    "name": "nginx-1.24.0",
+    "name": "nginx-1.26.0",
     "pname": "nginx",
-    "version": "1.24.0"
+    "version": "1.26.0"
   },
   "nginxMainline": {
     "name": "nginx-1.25.4",
@@ -512,9 +507,9 @@
     "version": "1.25.4"
   },
   "nginxStable": {
-    "name": "nginx-1.24.0",
+    "name": "nginx-1.26.0",
     "pname": "nginx",
-    "version": "1.24.0"
+    "version": "1.26.0"
   },
   "nix": {
     "name": "nix-2.18.2",
@@ -543,9 +538,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.99",
+    "name": "nss-3.100",
     "pname": "nss",
-    "version": "3.99"
+    "version": "3.100"
   },
   "openjdk": {
     "name": "openjdk-21+35",
@@ -568,9 +563,9 @@
     "version": "2.4.58"
   },
   "opensearch": {
-    "name": "opensearch-2.13.0",
+    "name": "opensearch-2.14.0",
     "pname": "opensearch",
-    "version": "2.13.0"
+    "version": "2.14.0"
   },
   "opensearch-dashboards": {
     "name": "opensearch-dashboards-2.11.0",
@@ -613,12 +608,41 @@
     "version": "10.43"
   },
   "percona": {
-    "name": "percona-server-8.0.36-28",
-    "pname": "percona-server",
+    "name": "percona-server_lts-8.0.36-28",
+    "pname": "percona-server_lts",
     "version": "8.0.36-28"
   },
-  "percona-server": {},
+  "percona-server": {
+    "name": "percona-server_lts-8.0.36-28",
+    "pname": "percona-server_lts",
+    "version": "8.0.36-28"
+  },
+  "percona-server_innovation": {
+    "name": "percona-server_innovation-8.3.0-1",
+    "pname": "percona-server_innovation",
+    "version": "8.3.0-1"
+  },
+  "percona-server_lts": {
+    "name": "percona-server_lts-8.0.36-28",
+    "pname": "percona-server_lts",
+    "version": "8.0.36-28"
+  },
   "percona-xtrabackup_8_0": {
+    "name": "percona-xtrabackup-8.0.35-30",
+    "pname": "percona-xtrabackup",
+    "version": "8.0.35-30"
+  },
+  "percona-xtrabackup_8_3": {
+    "name": "percona-xtrabackup-8.3.0-1",
+    "pname": "percona-xtrabackup",
+    "version": "8.3.0-1"
+  },
+  "percona-xtrabackup_innovation": {
+    "name": "percona-xtrabackup-8.3.0-1",
+    "pname": "percona-xtrabackup",
+    "version": "8.3.0-1"
+  },
+  "percona-xtrabackup_lts": {
     "name": "percona-xtrabackup-8.0.35-30",
     "pname": "percona-xtrabackup",
     "version": "8.0.35-30"
@@ -629,14 +653,15 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-server-8.0.36-28",
-    "pname": "percona-server",
+    "name": "percona-server_lts-8.0.36-28",
+    "pname": "percona-server_lts",
     "version": "8.0.36-28"
   },
-  "percona81": {
-    "name": "percona_8_1-8.1.0-1",
-    "pname": "percona_8_1",
-    "version": "8.1.0-1"
+  "percona81": {},
+  "percona83": {
+    "name": "percona-server_innovation-8.3.0-1",
+    "pname": "percona-server_innovation",
+    "version": "8.3.0-1"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
@@ -664,14 +689,14 @@
     "version": "8.1.28"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.18",
+    "name": "php-with-extensions-8.2.19",
     "pname": "php-with-extensions",
-    "version": "8.2.18"
+    "version": "8.2.19"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.6",
+    "name": "php-with-extensions-8.3.7",
     "pname": "php-with-extensions",
-    "version": "8.3.6"
+    "version": "8.3.7"
   },
   "phpPackages.composer": {
     "name": "composer-2.7.6",
@@ -684,14 +709,14 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-5.0.2",
+    "name": "podman-5.0.3",
     "pname": "podman",
-    "version": "5.0.2"
+    "version": "5.0.3"
   },
   "poetry": {
-    "name": "poetry-1.8.2",
+    "name": "poetry-1.8.3",
     "pname": "poetry",
-    "version": "1.8.2"
+    "version": "1.8.3"
   },
   "polkit": {
     "name": "polkit-123",
@@ -739,9 +764,9 @@
     "version": "4.9.0"
   },
   "prometheus": {
-    "name": "prometheus-2.49.1",
+    "name": "prometheus-2.52.0",
     "pname": "prometheus",
-    "version": "2.49.1"
+    "version": "2.52.0"
   },
   "prosody": {
     "name": "prosody-0.12.4",
@@ -845,9 +870,9 @@
     "version": "2.2.1"
   },
   "qemu": {
-    "name": "qemu-8.2.3",
+    "name": "qemu-8.2.4",
     "pname": "qemu",
-    "version": "8.2.3"
+    "version": "8.2.4"
   },
   "rabbitmq-server": {
     "name": "rabbitmq-server-3.12.13",
@@ -870,9 +895,9 @@
     "version": "7.2.4"
   },
   "roundcube": {
-    "name": "roundcube-1.6.6",
+    "name": "roundcube-1.6.7",
     "pname": "roundcube",
-    "version": "1.6.6"
+    "version": "1.6.7"
   },
   "rsync": {
     "name": "rsync-3.3.0",
@@ -911,9 +936,9 @@
     "version": "8.11.2"
   },
   "strace": {
-    "name": "strace-6.8",
+    "name": "strace-6.9",
     "pname": "strace",
-    "version": "6.8"
+    "version": "6.9"
   },
   "strongswan": {
     "name": "strongswan-5.9.14",
@@ -981,9 +1006,9 @@
     "version": "7.4.3"
   },
   "vim": {
-    "name": "vim-9.1.0200",
+    "name": "vim-9.1.0377",
     "pname": "vim",
-    "version": "9.1.0200"
+    "version": "9.1.0377"
   },
   "webkitgtk": {
     "name": "webkitgtk-2.44.1+abi=4.0",
