@@ -8,6 +8,8 @@ with builtins;
 
 let
   fclib = config.fclib;
+  supportedPerconaVersions = ["8.0" "8.3"];
+  removeDot = builtins.replaceStrings ["."] [""];
 in
 {
   options = with lib;
@@ -55,36 +57,35 @@ in
       };
 
       mysql57 = mkRole "5.7";
-      percona80 = mkRole "8.0";
-      percona81 = mkRole "8.1";
-      percona83 = mkRole "8.3";
-    };
+    }
+    // lib.listToAttrs (builtins.map
+      (ver: lib.nameValuePair "percona${removeDot ver}" (mkRole ver)
+    ) supportedPerconaVersions);
 
   };
 
   config =
   let
-    # TODO: with the impending explosion of percona releases, we might want to streamline this
-    mysqlRoles = with config.flyingcircus.roles; {
-      "5.7" = mysql57.enable;
-      "8.0" = percona80.enable;
-      "8.1" = percona81.enable;
-      "8.3" = percona83.enable;
-    };
+    mysqlRoles = {
+      "5.7" = config.flyingcircus.roles.mysql57.enable;
+    }
+    // lib.listToAttrs (builtins.map (
+      ver: lib.nameValuePair ver config.flyingcircus.roles."percona${removeDot ver}".enable
+    ) supportedPerconaVersions);
 
-    mysqlPackages = with pkgs; {
-      "5.7" = percona57;
-      "8.0" = percona80;
-      "8.1" = percona81;
-      "8.3" = percona83;
-    };
+    mysqlPackages = {
+      "5.7" = pkgs.percona57;
+    }
+    // lib.listToAttrs (builtins.map (
+      ver: lib.nameValuePair ver pkgs."percona${removeDot ver}"
+    ) supportedPerconaVersions);
 
     xtrabackupPackages = with pkgs; {
       "5.7" = percona-xtrabackup_2_4;
-      "8.0" = percona-xtrabackup_8_0;
-      "8.1" = percona-xtrabackup_8_1;
-      "8.3" = percona-xtrabackup_8_3;
-    };
+    }
+    // lib.listToAttrs (builtins.map (
+      ver: lib.nameValuePair ver pkgs."percona-xtrabackup_${builtins.replaceStrings ["."] ["_"] ver}"
+    ) supportedPerconaVersions);
 
     cfg = config.flyingcircus.roles.mysql;
     fclib = config.fclib;
