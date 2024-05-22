@@ -657,7 +657,6 @@
     "pname": "percona-server_lts",
     "version": "8.0.36-28"
   },
-  "percona81": {},
   "percona83": {
     "name": "percona-server_innovation-8.3.0-1",
     "pname": "percona-server_innovation",
