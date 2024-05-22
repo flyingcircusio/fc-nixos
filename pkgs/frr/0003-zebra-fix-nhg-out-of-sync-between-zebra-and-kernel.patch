@@ -1,7 +1,7 @@
 From 18042874ba5de1873e4dc312ef628c1f54255716 Mon Sep 17 00:00:00 2001
 From: anlan_cs <vic.lan@pica8.com>
 Date: Mon, 24 Jul 2023 14:40:22 +0800
-Subject: [PATCH 3/3] zebra: fix nhg out of sync between zebra and kernel
+Subject: [PATCH 3/4] zebra: fix nhg out of sync between zebra and kernel
 
 PR#13413 introduces reinstall mechanism, but there is problem with the route
 leak scenario.
@@ -87,5 +87,5 @@ index b17167540..5a5daecf5 100644
  					zlog_debug(
  						"%s: %pNHv given ifindex does not match nexthops ifindex found: %pNHv",
 -- 
-2.39.3 (Apple Git-145)
+2.39.3 (Apple Git-146)
 
