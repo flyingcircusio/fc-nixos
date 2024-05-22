@@ -4,14 +4,28 @@
 
 This component sets up a managed instance of the MySQL database server.
 
+We use the [Percona Distribution for MySQL](https://percona.com/software/mysql-database)
+which provides useful improvements over the standard Oracle MySQL/MariaDB implementations.
+
+## Supported versions
+
 There's a role for each supported major version, currently:
 
 - mysql57: Percona 5.7.x (End-of-life)
-- percona80: Percona 8.0.x
-- percona81: Percona 8.1.x
+- percona80: Percona 8.0.x (*LTS* release)
+- percona83: Percona 8.3.x (*Innovation* release)
 
-We use the [Percona Distribution for MySQL](https://percona.com/software/mysql-database)
-which provides useful improvements over the standard Oracle MySQL/MariaDB implementations.
+Percona and MySQL currently follow a [two-fold release model](https://www.percona.com/blog/lts-and-innovation-releases-for-percona-server-for-mysql/)
+and provide support for 2 releases in parallel:
+
+- *LTS (recommended)*: These long-term support releases are supported throughout the full release life-time
+  of this NixOS platform release and only receive minor bug and security fixes.
+- *Innovation*: A new innovation release is made roughly each quarter of a year,
+  containing new features and potentially breaking changes.\
+  Please note that these releases won't receive any further upstream support once the successor
+  is out. Our platform will keep each Innovation release made during the release life-time
+  available, enabling you to update at your own pace. But we won't backport changes from
+  newer Percona Innovation releases.
 
 ## Configuration
 
