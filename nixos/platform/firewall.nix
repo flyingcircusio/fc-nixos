@@ -80,6 +80,12 @@ in
         0 (emerg), 1 (alert), 2 (crit), 3 (error), 4 (warning), 5 (notice), 6 (info), 7 (debug)
       '';
     };
+    enableSrvRgFirewall = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Only accept connections from hosts in the same resource "
+        + "group on the SRV interface.";
+    };
   };
   config = {
 
@@ -181,9 +187,16 @@ in
               ip46tables -A nixos-fw-log-refuse -j nixos-fw-refuse
             ''))
             # Same RG SRV rules
-            (lib.mkOrder 1200 (lib.optionalString
-              (rgRules != "")
-              "# Accept traffic within the same resource group.\n${rgRules}\n\n"))
+          (lib.mkOrder 1200
+            (if cfg.firewall.enableSrvRgFirewall
+             then (lib.optionalString (rgRules != "")
+               "# Accept traffic within the same resource group.\n${rgRules}\n\n")
+             else ''
+               # Accept traffic on the SRV interface
+               ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -p tcp --dport 9126 -j nixos-fw-refuse
+               ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -j nixos-fw-accept
+             ''
+            ))
             # Local firewall rules.
             (lib.mkOrder 1300 (''
               # Local firewall rules.
