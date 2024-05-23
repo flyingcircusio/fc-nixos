@@ -136,7 +136,6 @@ with lib;
       # Our custom services
       sensuclient = 31004;
       powerdns = 31005;
-      tideways = 31006;
       coredns = 31007;
 
       # removed by upstream, we want to keep it
@@ -167,7 +166,6 @@ with lib;
       # Our custom services
       sensuclient = 31004;
       powerdns = 31005;
-      tideways = 31006;
 
       # removed by upstream, we want to keep it
       solr = 309;
