@@ -227,15 +227,6 @@ know what you are doing. ;) )
 For more information about PHP packaging on Nix, refer to the
 [PHP section of the Nixpkgs manual](https://nixos.org/manual/nixpkgs/stable/#sec-php).
 
-### `flyingcircus.roles.lamp.tideways_api_key` (optional)
-
-If you have an account with tideways.com then you can quickly enable the
-tideways profiler for your application by setting the API key here:
-
-```Nix
-flyingcircus.roles.lamp.tideways_api_key = "my-api-key";
-```
-
 ### `flyingcircus.roles.lamp.php_ini` (optional)
 
 We deliver a production-tested PHP configuration that you can extend by placing
@@ -276,17 +267,6 @@ The Apache server listens on the {external+doc:ref}`srv interface <logical-netwo
   thus can (by default) access files owned by service users.
 - Access is read-only for Apache by default, but you can grant write access for
   directories by running :command:`chmod g+rwsx` on the directory.
-
-## Debugging
-
-To assist with debugging we have integrated the [Tideways application performance monitoring](https://tideways.com/) daemon and PHP module by default.
-
-To enable it, you just have to place your Tideways API key in {file}`/etc/local/lamp/php.ini`:
-
-```console
-$ echo "tideways.api_key=<secretapikey>" >> /etc/local/lamp/php.ini
-$ sudo fc-manage -b
-```
 
 ## Logging
 

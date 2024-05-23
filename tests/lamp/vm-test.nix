@@ -1,4 +1,4 @@
-import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
+import ../make-test-python.nix ({ version ? "", lib, ... }:
 {
   name = "lamp";
   extraPythonPackages = p: with p; [ packaging ];
@@ -39,8 +39,6 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
           php_ini = ''
             # XXX test-i-a-m-the-custom-php-ini
           '';
-
-          tideways_api_key = tideways;
 
         };
 
@@ -87,13 +85,6 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
     php_version_str = php_version_str.split()[1]
     php_version = Version(php_version_str)
     print("Detected PHP version:", php_version)
-
-    tideways_api_key = "${tideways}"
-
-    if tideways_api_key:
-      lamp.wait_for_unit("tideways-daemon.service")
-      lamp.wait_for_open_port(9135)
-      print(lamp.succeed("echo '{\"type\": \"phpinfo\"}' | nc 127.0.0.1 9135"))
 
     with subtest("apache (httpd) opens expected ports"):
       assert_listen(lamp, "httpd", {"127.0.0.1:7999", "::1:7999", ":::8000", ":::8001"})
@@ -170,9 +161,6 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
       if php_version >= Version("7.3"):
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
 
-      if tideways_api_key:
-        lamp.succeed("egrep 'tideways' result")
-        lamp.succeed("grep 'Can connect to tideways-daemon?.*Yes' result")
 
       lamp.succeed("egrep 'Path to sendmail.*sendmail -t -i' result")
       lamp.succeed("egrep 'opcache.enable => On => On' result")
@@ -208,10 +196,6 @@ import ../make-test-python.nix ({ version ? "" , tideways ? "", lib, ... }:
 
       if php_version >= Version("7.3"):
         lamp.succeed("egrep 'curl.cainfo.*/etc/ssl/certs/ca-certificates.crt' result")
-
-      if tideways_api_key:
-        print(lamp.succeed("egrep 'tideways' result"))
-        lamp.succeed("grep 'Can connect to tideways-daemon?.*Yes' result")
 
       lamp.succeed("egrep 'Path to sendmail.*sendmail -t -i' result")
       lamp.succeed("egrep 'opcache.enable.*On' result")
