@@ -403,9 +403,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
 
-  tideways_daemon = super.callPackage ./tideways/daemon.nix {};
-  tideways_module = super.callPackage ./tideways/module.nix {};
-
   # XXX: qt4 was removed upstream, we have to bring it back somehow. Or just tell people to use old channels for this?
   #wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };
   #wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };

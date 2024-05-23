@@ -34,11 +34,6 @@ in {
         '';
       };
 
-      tideways_api_key = mkOption {
-        type = types.str;
-        default = "";
-      };
-
       vhosts = mkOption {
         type = with types; listOf (submodule ({ config, ... }: {
           options = {
@@ -109,200 +104,144 @@ in {
 
           ; Custom PHP ini
           ${role.php_ini}
-        '' + pkgs.lib.optionalString (role.tideways_api_key != "") ''
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          ; Tideways
-          ;
-          ; This is intended to be production-ready so it doesn't create too
-          ; much overhead. If you need to increase tracing, then you can
-          ; adjust this in your local php.ini
-
-          extension=${pkgs.tideways_module}/lib/php/extensions/tideways-php-${phpMajorMinor}.so
-
-          tideways.connection = tcp://127.0.0.1:9135
-
-          tideways.features.phpinfo = 1
-
-          tideways.dynamic_tracepoints.enable_web = 1
-          tideways.dynamic_tracepoints.enable_cli = 1
-
-          ; customers need to add their api key locally
-          tideways.api_key = ${role.tideways_api_key}
         '';
         phpMajorMinor = lib.concatStringsSep "." (lib.take 2 (builtins.splitVersion role.php.version));
         phpMajor = builtins.head (builtins.splitVersion role.php.version);
     in
+    lib.mkIf role.enable {
+      warnings =
+        fclib.obsoleteOptionWarning
+          options
+          [ "flyingcircus" "roles" "lamp" "useFPM" ]
+          "FPM is always used now.";
 
-      lib.mkMerge [
-      {
-        warnings =
-          fclib.obsoleteOptionWarning
-            options
-            [ "flyingcircus" "roles" "lamp" "useFPM" ]
-            "FPM is always used now.";
-      }
+      services.httpd.enable = true;
+      services.httpd.adminAddr = "admin@flyingcircus.io";
+      services.httpd.mpm = "event";
+      services.httpd.package = fclib.mkPlatform pkgs.apacheHttpdLegacyCrypt;
 
-      # General config if the role is enabled but not specific to the
-      # selection of mod_php or FPM
-      (lib.mkIf role.enable {
-        services.httpd.enable = true;
-        services.httpd.adminAddr = "admin@flyingcircus.io";
-        services.httpd.mpm = "event";
-        services.httpd.package = fclib.mkPlatform pkgs.apacheHttpdLegacyCrypt;
-
-        # We always provide the PHP cli environment but we need to ensure
-        # to choose the right one in case someone uses the LAMP role.
-        environment.systemPackages = [
-          role.php
-          role.php.packages.composer
-        ];
-
-        # Provide a similar PHP config for the PHP CLI as for Apache (httpd).
-        # The file referenced by PHPRC is loaded together with the php.ini
-        # from the global PHP package which only specifies the extensions.
-        environment.variables.PHPRC = "${pkgs.writeText "php.ini" phpOptions}";
-        services.httpd.logPerVirtualHost = true;
-        services.httpd.group = "service";
-        services.httpd.user = "nobody";
-        services.httpd.extraModules = [ "rewrite" "version" "status" "proxy_fcgi" ];
-        services.httpd.extraConfig = ''
-          # Those options are chosen for prefork
-          # StartServers 2 (default)
-          # MinSpareServers 5 (default)
-          # MaxSpareServers 10 (Default)
-
-          # MaxRequestWorkers default: 256, limit to lower number
-          # to avoid starvation/thrashing
-          MaxRequestWorkers 150
-
-          # Determine lifetime of processes
-          # MaxConnectionsPerChild default: 0, set limit to
-          # avoid potential memory leaks
-          MaxConnectionsPerChild     10000
-
-          Listen localhost:7999
-          <VirtualHost localhost:7999>
-          <Location "/server-status">
-              SetHandler server-status
-          </Location>
-          </VirtualHost>
-
-          # reuse _must_ be disable or apache will confuse different
-          # FPM pools and also screw up with keepalives consuming backend
-          # connections.
-          <Proxy "fcgi://localhost/" enablereuse=off>
-          </Proxy>
-
-          '' +
-          # * vhost configs
-          (lib.concatMapStrings (vhost:
-            let port=toString vhost.port;
-            in
-            ''
-
-            Listen *:${port}
-            <VirtualHost *:${port}>
-                ServerName "${config.networking.hostName}"
-                DocumentRoot "${vhost.docroot}"
-                <Directory "${vhost.docroot}">
-                    AllowOverride all
-                    Require all granted
-                    Options FollowSymlinks
-                    DirectoryIndex index.html index.php
-                </Directory>
-                <FilesMatch "\.php$">
-                    SetHandler "proxy:unix:${config.services.phpfpm.pools."${vhost.name}".socket}|fcgi://localhost/"
-                </FilesMatch>
-                ${vhost.apacheExtraConfig}
-            </VirtualHost>
-            ''
-          ) role.vhosts) +
-          role.apache_conf;
-
-        # The upstream module has a default that makes Apache listen on port 80
-        # which conflicts with our webgateway role.
-        services.httpd.virtualHosts = {};
-
-        services.phpfpm.phpPackage = role.php;
-
-        services.phpfpm.pools = builtins.listToAttrs (map
-          (vhost: {
-             inherit (vhost) name;
-             value = lib.attrsets.recursiveUpdate {
-                user = config.services.httpd.user;
-                group = config.services.httpd.group;
-                phpOptions = phpOptions;
-                settings = (builtins.mapAttrs (_: fclib.mkPlatform) {
-                  "listen.owner" = config.services.httpd.user;
-                  "listen.group" = config.services.httpd.group;
-                  "pm" = "dynamic";
-                  "pm.max_children" = (toString role.fpmMaxChildren);
-                  "pm.start_servers" = "5";
-                  "pm.min_spare_servers" = "5";
-                  "pm.max_spare_servers" = "10";
-                  "slowlog" = "/var/log/httpd/${vhost.name}-slow.log";
-                  "request_slowlog_timeout" = "6s";
-                  "request_slowlog_trace_depth" = "100";
-                  "catch_workers_output" = "true";
-                });
-              } vhost.pool; # only contains override values
-          }) role.vhosts);
-
-        flyingcircus.services.sensu-client.checks = {
-          httpd_status = {
-            notification = "Apache status page";
-            command = "check_http -H localhost -p 7999 -u /server-status?auto -v";
-            timeout = 30;
-          };
-        };
-
-        flyingcircus.services.telegraf.inputs = {
-          apache  = [{
-            urls = [ "http://localhost:7999/server-status?auto" ];
-          }];
-        };
-
-        # required for PL-132312 hotfix: httpd needs to be restarted after the update to create new log.
-        # Can be removed again at some point.
-        systemd.services.httpd.restartTriggers = [ "2024-03-14-PL-132312" ];
-
-        systemd.tmpfiles.rules = [
-          "d /var/log/httpd 2750 root service"
-          "a+ /var/log/httpd - - - - default:group::r-X,default:group:sudo-srv:r-X,default:group:service:r-X,default:mask::r-X"
-          # recursive is required as well to adjust permissions of existing files
-          "A+ /var/log/httpd - - - - group:sudo-srv:r-X,group:service:r-X,group::r-X,mask::r-X"
-        ];
-
-      })
-
-      (lib.mkIf (role.tideways_api_key != "") {
-
-        # tideways daemon
-        users.groups.tideways.gid = config.ids.gids.tideways;
-
-        users.users.tideways = {
-          description = "tideways daemon user";
-          uid = config.ids.uids.tideways;
-          isSystemUser = true;
-          group = "tideways";
-          extraGroups = [ "service" ];
-        };
-
-        systemd.services.tideways-daemon = rec {
-          description = "tideways daemon";
-          wantedBy = [ "multi-user.target" ];
-          wants = [ "network.target" ];
-          after = wants;
-          serviceConfig = {
-            ExecStart = ''
-              ${pkgs.tideways_daemon}/tideways-daemon --address=127.0.0.1:9135
-            '';
-            Restart = "always";
-            RestartSec = "60s";
-            User = "tideways";
-            Type = "simple";
-          };
-        };
-      })
+      # We always provide the PHP cli environment but we need to ensure
+      # to choose the right one in case someone uses the LAMP role.
+      environment.systemPackages = [
+        role.php
+        role.php.packages.composer
       ];
+
+      # Provide a similar PHP config for the PHP CLI as for Apache (httpd).
+      # The file referenced by PHPRC is loaded together with the php.ini
+      # from the global PHP package which only specifies the extensions.
+      environment.variables.PHPRC = "${pkgs.writeText "php.ini" phpOptions}";
+      services.httpd.logPerVirtualHost = true;
+      services.httpd.group = "service";
+      services.httpd.user = "nobody";
+      services.httpd.extraModules = [ "rewrite" "version" "status" "proxy_fcgi" ];
+      services.httpd.extraConfig = ''
+        # Those options are chosen for prefork
+        # StartServers 2 (default)
+        # MinSpareServers 5 (default)
+        # MaxSpareServers 10 (Default)
+
+        # MaxRequestWorkers default: 256, limit to lower number
+        # to avoid starvation/thrashing
+        MaxRequestWorkers 150
+
+        # Determine lifetime of processes
+        # MaxConnectionsPerChild default: 0, set limit to
+        # avoid potential memory leaks
+        MaxConnectionsPerChild     10000
+
+        Listen localhost:7999
+        <VirtualHost localhost:7999>
+        <Location "/server-status">
+            SetHandler server-status
+        </Location>
+        </VirtualHost>
+
+        # reuse _must_ be disable or apache will confuse different
+        # FPM pools and also screw up with keepalives consuming backend
+        # connections.
+        <Proxy "fcgi://localhost/" enablereuse=off>
+        </Proxy>
+
+        '' +
+        # * vhost configs
+        (lib.concatMapStrings (vhost:
+          let port=toString vhost.port;
+          in
+          ''
+
+          Listen *:${port}
+          <VirtualHost *:${port}>
+              ServerName "${config.networking.hostName}"
+              DocumentRoot "${vhost.docroot}"
+              <Directory "${vhost.docroot}">
+                  AllowOverride all
+                  Require all granted
+                  Options FollowSymlinks
+                  DirectoryIndex index.html index.php
+              </Directory>
+              <FilesMatch "\.php$">
+                  SetHandler "proxy:unix:${config.services.phpfpm.pools."${vhost.name}".socket}|fcgi://localhost/"
+              </FilesMatch>
+              ${vhost.apacheExtraConfig}
+          </VirtualHost>
+          ''
+        ) role.vhosts) +
+        role.apache_conf;
+
+      # The upstream module has a default that makes Apache listen on port 80
+      # which conflicts with our webgateway role.
+      services.httpd.virtualHosts = {};
+
+      services.phpfpm.phpPackage = role.php;
+
+      services.phpfpm.pools = builtins.listToAttrs (map
+        (vhost: {
+            inherit (vhost) name;
+            value = lib.attrsets.recursiveUpdate {
+              user = config.services.httpd.user;
+              group = config.services.httpd.group;
+              phpOptions = phpOptions;
+              settings = (builtins.mapAttrs (_: fclib.mkPlatform) {
+                "listen.owner" = config.services.httpd.user;
+                "listen.group" = config.services.httpd.group;
+                "pm" = "dynamic";
+                "pm.max_children" = (toString role.fpmMaxChildren);
+                "pm.start_servers" = "5";
+                "pm.min_spare_servers" = "5";
+                "pm.max_spare_servers" = "10";
+                "slowlog" = "/var/log/httpd/${vhost.name}-slow.log";
+                "request_slowlog_timeout" = "6s";
+                "request_slowlog_trace_depth" = "100";
+                "catch_workers_output" = "true";
+              });
+            } vhost.pool; # only contains override values
+        }) role.vhosts);
+
+      flyingcircus.services.sensu-client.checks = {
+        httpd_status = {
+          notification = "Apache status page";
+          command = "check_http -H localhost -p 7999 -u /server-status?auto -v";
+          timeout = 30;
+        };
+      };
+
+      flyingcircus.services.telegraf.inputs = {
+        apache  = [{
+          urls = [ "http://localhost:7999/server-status?auto" ];
+        }];
+      };
+
+      # required for PL-132312 hotfix: httpd needs to be restarted after the update to create new log.
+      # Can be removed again at some point.
+      systemd.services.httpd.restartTriggers = [ "2024-03-14-PL-132312" ];
+
+      systemd.tmpfiles.rules = [
+        "d /var/log/httpd 2750 root service"
+        "a+ /var/log/httpd - - - - default:group::r-X,default:group:sudo-srv:r-X,default:group:service:r-X,default:mask::r-X"
+        # recursive is required as well to adjust permissions of existing files
+        "A+ /var/log/httpd - - - - group:sudo-srv:r-X,group:service:r-X,group::r-X,mask::r-X"
+      ];
+
+    };
 }
