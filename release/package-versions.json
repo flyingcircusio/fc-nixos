@@ -10,9 +10,9 @@
     "version": "2.4.59"
   },
   "asterisk": {
-    "name": "asterisk-20.6.0",
+    "name": "asterisk-20.8.1",
     "pname": "asterisk",
-    "version": "20.6.0"
+    "version": "20.8.1"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.16",
@@ -70,14 +70,14 @@
     "version": "18.2.1"
   },
   "chromedriver": {
-    "name": "chromedriver-125.0.6422.60",
+    "name": "chromedriver-125.0.6422.76",
     "pname": "chromedriver",
-    "version": "125.0.6422.60"
+    "version": "125.0.6422.76"
   },
   "chromium": {
-    "name": "chromium-125.0.6422.60",
+    "name": "chromium-125.0.6422.76",
     "pname": "chromium",
-    "version": "125.0.6422.60"
+    "version": "125.0.6422.76"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -215,14 +215,14 @@
     "version": "10.02.1"
   },
   "git": {
-    "name": "git-2.44.0",
+    "name": "git-2.44.1",
     "pname": "git",
-    "version": "2.44.0"
+    "version": "2.44.1"
   },
   "gitaly": {
-    "name": "gitaly-16.10.5",
+    "name": "gitaly-16.10.6",
     "pname": "gitaly",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "github-runner": {
     "name": "github-runner-2.316.1",
@@ -230,9 +230,9 @@
     "version": "2.316.1"
   },
   "gitlab": {
-    "name": "gitlab-16.10.5",
+    "name": "gitlab-16.10.6",
     "pname": "gitlab",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.1.0",
@@ -240,14 +240,14 @@
     "version": "4.1.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.10.5",
+    "name": "gitlab-ee-16.10.6",
     "pname": "gitlab-ee",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-16.10.5",
+    "name": "gitlab-pages-16.10.6",
     "pname": "gitlab-pages",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.11.1",
@@ -255,12 +255,12 @@
     "version": "16.11.1"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-16.10.5",
+    "name": "gitlab-workhorse-16.10.6",
     "pname": "gitlab-workhorse",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "glibc": {
-    "name": "glibc-2.39-31",
+    "name": "glibc-2.39-52",
     "pname": "glibc",
     "version": "2.39"
   },
@@ -275,9 +275,9 @@
     "version": "2.4.5"
   },
   "go": {
-    "name": "go-1.22.2",
+    "name": "go-1.22.3",
     "pname": "go",
-    "version": "1.22.2"
+    "version": "1.22.3"
   },
   "go_1_19": {},
   "go_1_20": {},
@@ -377,9 +377,9 @@
     "version": "1.10.3"
   },
   "libjpeg": {
-    "name": "libjpeg-turbo-3.0.2",
+    "name": "libjpeg-turbo-3.0.3",
     "pname": "libjpeg-turbo",
-    "version": "3.0.2"
+    "version": "3.0.3"
   },
   "libmodsecurity": {
     "name": "libmodsecurity-3.0.12",
@@ -407,9 +407,9 @@
     "version": "1.4.0"
   },
   "libxml2": {
-    "name": "libxml2-2.12.6",
+    "name": "libxml2-2.12.7",
     "pname": "libxml2",
-    "version": "2.12.6"
+    "version": "2.12.7"
   },
   "libxslt": {
     "name": "libxslt-1.1.39",
@@ -718,9 +718,9 @@
     "version": "1.8.3"
   },
   "polkit": {
-    "name": "polkit-123",
+    "name": "polkit-124",
     "pname": "polkit",
-    "version": "123"
+    "version": "124"
   },
   "postfix": {
     "name": "postfix-3.9.0",
@@ -728,34 +728,34 @@
     "version": "3.9.0"
   },
   "postgresql": {
-    "name": "postgresql-15.6",
+    "name": "postgresql-15.7",
     "pname": "postgresql",
-    "version": "15.6"
+    "version": "15.7"
   },
   "postgresql_12": {
-    "name": "postgresql-12.18",
+    "name": "postgresql-12.19",
     "pname": "postgresql",
-    "version": "12.18"
+    "version": "12.19"
   },
   "postgresql_13": {
-    "name": "postgresql-13.14",
+    "name": "postgresql-13.15",
     "pname": "postgresql",
-    "version": "13.14"
+    "version": "13.15"
   },
   "postgresql_14": {
-    "name": "postgresql-14.11",
+    "name": "postgresql-14.12",
     "pname": "postgresql",
-    "version": "14.11"
+    "version": "14.12"
   },
   "postgresql_15": {
-    "name": "postgresql-15.6",
+    "name": "postgresql-15.7",
     "pname": "postgresql",
-    "version": "15.6"
+    "version": "15.7"
   },
   "postgresql_16": {
-    "name": "postgresql-16.2",
+    "name": "postgresql-16.3",
     "pname": "postgresql",
-    "version": "16.2"
+    "version": "16.3"
   },
   "powerdns": {
     "name": "pdns-4.9.0",
@@ -960,9 +960,9 @@
     "version": "12.7.4"
   },
   "systemd": {
-    "name": "systemd-255.4",
+    "name": "systemd-255.6",
     "pname": "systemd",
-    "version": "255.4"
+    "version": "255.6"
   },
   "tcpdump": {
     "name": "tcpdump-4.99.4",
@@ -970,9 +970,9 @@
     "version": "4.99.4"
   },
   "telegraf": {
-    "name": "telegraf-1.30.2",
+    "name": "telegraf-1.30.3",
     "pname": "telegraf",
-    "version": "1.30.2"
+    "version": "1.30.3"
   },
   "tmux": {
     "name": "tmux-3.4",
@@ -995,9 +995,9 @@
     "version": "6.0"
   },
   "util-linux": {
-    "name": "util-linux-2.39.3",
+    "name": "util-linux-2.40.1",
     "pname": "util-linux",
-    "version": "2.39.3"
+    "version": "2.40.1"
   },
   "varnish": {
     "name": "varnish-7.4.3",
@@ -1010,9 +1010,9 @@
     "version": "9.1.0377"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.44.1+abi=4.0",
+    "name": "webkitgtk-2.44.2+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.44.1"
+    "version": "2.44.2"
   },
   "wget": {
     "name": "wget-1.21.4",
@@ -1025,9 +1025,9 @@
     "version": "1.0.20210914"
   },
   "xfsprogs": {
-    "name": "xfsprogs-6.6.0",
+    "name": "xfsprogs-6.8.0",
     "pname": "xfsprogs",
-    "version": "6.6.0"
+    "version": "6.8.0"
   },
   "xorg.libX11": {
     "name": "libX11-1.8.9",
