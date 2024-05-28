@@ -27,7 +27,8 @@ class NixOSVersion(StrEnum):
     NIXOS_2211 = "nixos-22.11"
     NIXOS_2305 = "nixos-23.05"
     NIXOS_2311 = "nixos-23.11"
-    NIXOS_UNSTABLE = "nixos-24.05"
+    NIXOS_2405 = "nixos-24.05"
+    NIXOS_UNSTABLE = "nixos-24.11"
 
     @property
     def upstream_branch(self) -> str:
