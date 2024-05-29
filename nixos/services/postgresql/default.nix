@@ -265,7 +265,6 @@ in {
         dataDir = "/srv/postgresql/${cfg.majorVersion}";
         extraPlugins = extensions;
         initialScript = ./postgresql-init.sql;
-        logLinePrefix = "user=%u,db=%d ";
         package = postgresqlPkg;
 
         ensureDatabases = [ "fcio_monitoring" ];
@@ -323,6 +322,7 @@ in {
           #------------------------------------------------------------------------------
           # ERROR REPORTING AND LOGGING
           #------------------------------------------------------------------------------
+          log_line_prefix = "user=%u,db=%d ";
           log_min_duration_statement = 100;
           log_checkpoints = true;
           log_connections = true;
