@@ -55,7 +55,7 @@ You can look up packages and their descriptions via the [NixOS Package Search](h
 - netcat
 - ngrep
 - nix-top
-- nixfmt
+- nixfmt-rfc-style
 - nmap
 - nvd
 - openssl
