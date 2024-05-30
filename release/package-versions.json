@@ -70,14 +70,14 @@
     "version": "18.2.0"
   },
   "chromedriver": {
-    "name": "chromedriver-124.0.6367.201",
+    "name": "chromedriver-125.0.6422.78",
     "pname": "chromedriver",
-    "version": "124.0.6367.201"
+    "version": "125.0.6422.78"
   },
   "chromium": {
-    "name": "chromium-124.0.6367.201",
+    "name": "chromium-125.0.6422.112",
     "pname": "chromium",
-    "version": "124.0.6367.201"
+    "version": "125.0.6422.112"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -85,9 +85,9 @@
     "version": "7.0"
   },
   "clamav": {
-    "name": "clamav-1.2.2",
+    "name": "clamav-1.2.3",
     "pname": "clamav",
-    "version": "1.2.2"
+    "version": "1.2.3"
   },
   "cmake": {
     "name": "cmake-3.27.7",
@@ -140,9 +140,9 @@
     "version": "2.90"
   },
   "docker": {
-    "name": "docker-24.0.5",
+    "name": "docker-24.0.9",
     "pname": "docker",
-    "version": "24.0.5"
+    "version": "24.0.9"
   },
   "docker-compose": {
     "name": "docker-compose-2.23.1",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-125.0.3",
+    "name": "firefox-126.0",
     "pname": "firefox",
-    "version": "125.0.3"
+    "version": "126.0"
   },
   "gcc": {
     "name": "gcc-wrapper-12.3.0",
@@ -220,9 +220,9 @@
     "version": "2.42.0"
   },
   "gitaly": {
-    "name": "gitaly-16.10.5",
+    "name": "gitaly-16.10.6",
     "pname": "gitaly",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "github-runner": {
     "name": "github-runner-2.316.1",
@@ -230,24 +230,24 @@
     "version": "2.316.1"
   },
   "gitlab": {
-    "name": "gitlab-16.10.5",
+    "name": "gitlab-16.10.6",
     "pname": "gitlab",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.1.0",
+    "name": "gitlab-container-registry-4.2.0",
     "pname": "gitlab-container-registry",
-    "version": "4.1.0"
+    "version": "4.2.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.10.5",
+    "name": "gitlab-ee-16.10.6",
     "pname": "gitlab-ee",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-16.10.5",
+    "name": "gitlab-pages-16.10.6",
     "pname": "gitlab-pages",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.10.0",
@@ -255,9 +255,9 @@
     "version": "16.10.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-16.10.5",
+    "name": "gitlab-workhorse-16.10.6",
     "pname": "gitlab-workhorse",
-    "version": "16.10.5"
+    "version": "16.10.6"
   },
   "glibc": {
     "name": "glibc-2.38-66",
@@ -435,9 +435,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.158",
+    "name": "linux-5.15.159",
     "pname": "linux",
-    "version": "5.15.158"
+    "version": "5.15.159"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -475,9 +475,9 @@
     "version": "4.16.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.106.0",
+    "name": "matrix-synapse-wrapped-1.107.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.106.0"
+    "version": "1.107.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -886,9 +886,9 @@
     "version": "7.2.4"
   },
   "roundcube": {
-    "name": "roundcube-1.6.6",
+    "name": "roundcube-1.6.7",
     "pname": "roundcube",
-    "version": "1.6.6"
+    "version": "1.6.7"
   },
   "rsync": {
     "name": "rsync-3.2.7",
@@ -931,9 +931,9 @@
     "version": "8.11.2"
   },
   "strace": {
-    "name": "strace-6.8",
+    "name": "strace-6.9",
     "pname": "strace",
-    "version": "6.8"
+    "version": "6.9"
   },
   "strongswan": {
     "name": "strongswan-5.9.11",
@@ -1006,9 +1006,9 @@
     "version": "9.0.2116"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.44.1+abi=4.0",
+    "name": "webkitgtk-2.44.2+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.44.1"
+    "version": "2.44.2"
   },
   "wget": {
     "name": "wget-1.21.4",
