@@ -41,6 +41,8 @@ ns.whq                  A       212.122.41.129
 ns2.whq                 CNAME   ns.whq
 
 ; === RZOB ===
+kenny06                 CNAME   rzob-router
+kenny07                 CNAME   rzob-router
 puppet.rzob             CNAME   services04
 ftp.rzob                CNAME   services04.fe.rzob
 monitor.rzob            CNAME   services10.fe.rzob
