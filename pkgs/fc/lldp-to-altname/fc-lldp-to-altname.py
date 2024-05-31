@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 import socket
 import subprocess
 import sys
@@ -15,6 +16,10 @@ def has_known_prefix(name):
         if name.startswith(prefix):
             return True
     return False
+
+
+def quote_altname(name):
+    return re.sub(r"[^a-z0-9A-Z]+", "-", name)
 
 
 class Runner(object):
@@ -72,15 +77,13 @@ class Runner(object):
         for iface in self.interfaces:
             oldnames[iface] = set()
             data = self.check_json_output("ip", "-j", "link", "show", iface)
-
             for datum in data:
-                if "altnames" in datum:
-                    names = [
-                        name
-                        for name in datum["altnames"]
-                        if has_known_prefix(name)
-                    ]
-                    oldnames[iface].update(names)
+                names = [
+                    name
+                    for name in datum.get("altnames", [])
+                    if has_known_prefix(name)
+                ]
+                oldnames[iface].update(names)
 
             lldpnames[iface] = set()
             data = self.check_json_output("lldpctl", "-f", "json", iface)
@@ -90,11 +93,11 @@ class Runner(object):
                 and iface in data["interface"]
                 and "chassis" in data["interface"][iface]
             ):
-                switch_name = list(data["interface"][iface]["chassis"].keys())[
-                    0
-                ]
+                switch_name = list(data["interface"][iface]["chassis"])[0]
                 port_name = data["interface"][iface]["port"]["id"]["value"]
-                lldpnames[iface].update([f"{switch_name}-port-{port_name}"])
+                lldpnames[iface].update(
+                    [quote_altname(f"{switch_name}-port-{port_name}")]
+                )
 
         newnames = dict()
         for iface in self.interfaces:
