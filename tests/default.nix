@@ -88,9 +88,8 @@ in {
   nfs = callTest ./nfs.nix {};
   nginx = callTest ./nginx.nix {};
   nodejs = callTest ./nodejs.nix {};
-  # PL-132577 fails to build rich-rst
-  # opensearch = callTest ./opensearch.nix {};
-  # opensearch_dashboards = callTest ./opensearch_dashboards.nix {};
+  opensearch = callTest ./opensearch.nix {};
+  opensearch_dashboards = callTest ./opensearch_dashboards.nix {};
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   percona83 = callTest ./mysql.nix { rolename = "percona83"; };
