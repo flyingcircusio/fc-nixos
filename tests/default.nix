@@ -40,8 +40,7 @@ in {
   devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
   fcagent = callSubTests ./fcagent.nix {};
-  # PL-132578 problem with KILL
-  # ferretdb = callTest ./ferretdb.nix {};
+  ferretdb = callTest ./ferretdb.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
   collect-garbage = callTest ./collect-garbage.nix {};
@@ -77,12 +76,11 @@ in {
   mailstub = callTest ./mail/stub.nix {};
   matomo = callTest ./matomo.nix {};
   memcached = callTest ./memcached.nix {};
-  # PL-132578 all mongodb versions: problem with KILL
-  # mongodb32 = callTest ./mongodb.nix { version = "3.2"; };
-  # mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
-  # mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
-  # mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
-  # mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
+  mongodb32 = callTest ./mongodb.nix { version = "3.2"; };
+  mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
+  mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
+  mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
+  mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network {};
   nfs = callTest ./nfs.nix {};
