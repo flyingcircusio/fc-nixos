@@ -74,7 +74,7 @@ in
               };
             };
 
-            mailserver.certificateScheme = lib.mkOverride 50 2;
+            mailserver.certificateScheme = lib.mkOverride 50 "selfsigned";
             mailserver.loginAccounts = lib.mkForce {
               "user1@example.local" = {
                 # User1User1
