@@ -301,6 +301,11 @@
     "pname": "imagemagick",
     "version": "7.1.1-32"
   },
+  "imagemagick6": {
+    "name": "imagemagick-6.9.13-10",
+    "pname": "imagemagick",
+    "version": "6.9.13-10"
+  },
   "imagemagick7": {
     "name": "imagemagick-7.1.1-32",
     "pname": "imagemagick",
