@@ -27,8 +27,7 @@
     nixos-mailserver = {
       url = "gitlab:flyingcircus/nixos-mailserver?host=gitlab.flyingcircus.io";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-22_11.follows = "nixpkgs";
-      inputs.nixpkgs-23_05.follows = "nixpkgs";
+      inputs.nixpkgs-24_05.follows = "nixpkgs";
     };
     devenv = {
       url = "github:cachix/devenv";
