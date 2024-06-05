@@ -242,19 +242,6 @@ in
       show(host1, "lsblk")
       host1.succeed("${check_key_file_cmd} > /dev/kmsg 2>&1")
 
-    with subtest("Verify keystore automount on boot"):
-      host1.execute("systemctl poweroff --force")
-      host1.wait_for_shutdown()
-      host1.start()
-      host1.wait_for_unit("local-fs.target")
-      show(host1, "mount")
-      host1.execute("sleep 5")
-      show(host1, "mount")
-      show(host1, "systemctl status multi-user.target")
-      host1.execute("systemctl stop fc-ceph-rgw")
-      show(host1, "lsblk")
-      show(host1, "cat /etc/fstab")
-      host1.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/kmsg 2>&1")
 
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb > /dev/kmsg 2>&1')
@@ -486,6 +473,26 @@ in
     #  snapfillcheck = host1.execute('sudo -u sensuclient ' + check_command + ' >&2')
     #  print(snapfillcheck[1])
     #  assert snapfillcheck[0] == 2
+
+    with subtest("Verify keystore automount on boot"):
+      host1.execute("systemctl poweroff --force")
+      host1.wait_for_shutdown()
+      host1.start()
+      host1.wait_for_unit("local-fs.target")
+      show(host1, "mount")
+      host1.execute("sleep 5")
+      show(host1, "mount")
+      show(host1, "systemctl status multi-user.target")
+      show(host1, "lsblk")
+      show(host1, "cat /etc/fstab")
+      host1.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/kmsg 2>&1")
+
+    with subtest("Verify all services are up after a reboot"):
+      host1.wait_for_unit("fc-ceph-mon.service")
+      host1.wait_for_unit("fc-ceph-mgr.service")
+      host1.wait_for_unit("fc-ceph-rgw.service")
+      host1.wait_for_unit("fc-ceph-osds-all.service")
+      host1.wait_for_unit("fc-ceph-osd@0.service")
 
     print("Time spent waiting", time_waiting)
   '';
