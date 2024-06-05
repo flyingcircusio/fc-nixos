@@ -2,7 +2,7 @@
 
 # Mail stub
 
-The `mailstub` role provides a minimal Postfix which is mostly usable to locally collect and queue mails to hand them of another mail server for actual delivery (relay). Sending email directly will not work well due to spam protection on the receiving side. Notably the mail stub does not configure DKIM – use {ref}`nixos-mailserver`.
+The `mailstub` role provides a minimal Postfix which is mostly usable to locally collect and queue mails to hand them off to another mail server for actual delivery (relay). Sending email directly will not work well due to spam protection measures on the receiving side. Notably the mail stub does not configure DKIM signing – use {ref}`nixos-mailserver`.
 
 ## Configuring as relay
 
