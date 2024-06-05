@@ -153,10 +153,6 @@ in
           PYTHONUNBUFFERED = "1";
         };
 
-        unitConfig = {
-          ConditionPathIsMountPoint = "/srv/ceph/mon/ceph-${config.networking.hostName}";
-        };
-
         serviceConfig = {
           Type = "simple";
           ExecStart = " ${cephPkgs.fc-ceph}/bin/fc-ceph mon activate --as-systemd-unit";
