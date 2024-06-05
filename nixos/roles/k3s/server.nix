@@ -304,10 +304,31 @@ in {
       ensureDatabases = [ "kubernetes" ];
       ensureUsers = [ {
         name = "root";
-        ensurePermissions = {
-          "DATABASE kubernetes" = "ALL PRIVILEGES";
-        };
       } ];
+    };
+
+    systemd.services.fc-k3s-ensure-db-permissions = {
+      description = "Ensure the root user has all permissions on kubernetes db";
+      wantedBy = [ "k3s.service" ];
+      before = [ "k3s.service" ];
+      requires = [ "postgresql.service" ];
+      script = ''
+        PSQL="${config.services.postgresql.package}/bin/psql --port=${toString config.services.postgresql.port}"
+        for i in {1..10}; do
+          $PSQL -d postgres -c "" 2> /dev/null && break
+          sleep 0.5
+
+          if [[ $i -eq 10 ]];then
+            echo "couldn't establish connection to postgres"
+            exit 1
+        fi
+        done
+          $PSQL -tAc 'GRANT ALL PRIVILEGES ON DATABASE kubernetes TO "root"'
+          $PSQL kubernetes -tAc 'GRANT CREATE ON SCHEMA public TO "root"'
+      '';
+      serviceConfig = {
+        type = "oneshot";
+      };
     };
 
     flyingcircus.services.sensu-client = {
