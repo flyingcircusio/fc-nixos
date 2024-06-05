@@ -176,7 +176,7 @@ in {
     flyingcircus.platform = {
       version = mkOption {
         readOnly = true;
-        default = "23.11";
+        default = "24.05";
       };
 
       editions = mkOption {
