@@ -33,7 +33,7 @@ We do back-ports for critical security issues but this may take longer in some
 cases and less important security fixes will not be back-ported most of the time.
 
 NixOS provides regular security updates for about one month after the release.
-Upstream support for 23.11 ends on **2024-06-30**.
+Upstream support for 24.05 ends on **2024-06-30**.
 
 New platform features are always developed for the current stable platform version
 and only critical bug fixes are back-ported to older versions.
