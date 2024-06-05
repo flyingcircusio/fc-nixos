@@ -41,7 +41,7 @@ For existing installations, Docker auto-detects the storage driver if not config
 
 Older versions of docker (NixOS 15.09) used the `devicemapper` storage driver which has been deprecated for some time. It will be removed in a future version of Docker.
 
-On 23.11, docker refuses to start if it detects `devicemapper` and is not explicitly configured to use it. You can still choose to continue using `devicemapper` or migrate to `overlay2`.
+On 24.05, docker refuses to start if it detects `devicemapper` and is not explicitly configured to use it. You can still choose to continue using `devicemapper` or migrate to `overlay2`.
 
 To find out which storage driver Docker is using, run as service user:
 
