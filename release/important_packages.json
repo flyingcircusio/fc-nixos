@@ -74,6 +74,8 @@
   "jq",
   "jre",
   "k3s",
+  "k3s_1_27",
+  "k3s_1_30",
   "keycloak",
   "kubernetes-helm",
   "libffi",
