@@ -70,14 +70,14 @@
     "version": "18.2.1"
   },
   "chromedriver": {
-    "name": "chromedriver-125.0.6422.76",
+    "name": "chromedriver-125.0.6422.141",
     "pname": "chromedriver",
-    "version": "125.0.6422.76"
+    "version": "125.0.6422.141"
   },
   "chromium": {
-    "name": "chromium-125.0.6422.76",
+    "name": "chromium-125.0.6422.141",
     "pname": "chromium",
-    "version": "125.0.6422.76"
+    "version": "125.0.6422.141"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -130,9 +130,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-3.1.0",
+    "name": "discourse-3.2.2",
     "pname": "discourse",
-    "version": "3.1.0"
+    "version": "3.2.2"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.90",
@@ -155,9 +155,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.66",
+    "name": "element-web-1.11.67",
     "pname": "element-web",
-    "version": "1.11.66"
+    "version": "1.11.67"
   },
   "erlang": {
     "name": "erlang-25.3.2.12",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-126.0",
+    "name": "firefox-126.0.1",
     "pname": "firefox",
-    "version": "126.0"
+    "version": "126.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-13.2.0",
@@ -282,9 +282,9 @@
   "go_1_19": {},
   "go_1_20": {},
   "grafana": {
-    "name": "grafana-10.4.2",
+    "name": "grafana-10.4.3",
     "pname": "grafana",
-    "version": "10.4.2"
+    "version": "10.4.3"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -357,9 +357,9 @@
     "version": "21+35"
   },
   "k3s": {
-    "name": "k3s-1.30.0+k3s1",
+    "name": "k3s-1.30.1+k3s1",
     "pname": "k3s",
-    "version": "1.30.0+k3s1"
+    "version": "1.30.1+k3s1"
   },
   "keycloak": {
     "name": "keycloak-24.0.4",
@@ -427,9 +427,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.159",
+    "name": "linux-5.15.160",
     "pname": "linux",
-    "version": "5.15.159"
+    "version": "5.15.160"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -457,9 +457,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.2.8",
+    "name": "mastodon-4.2.9",
     "pname": "mastodon",
-    "version": "4.2.8"
+    "version": "4.2.9"
   },
   "matomo": {
     "name": "matomo-4.16.1",
@@ -467,9 +467,9 @@
     "version": "4.16.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.107.0",
+    "name": "matrix-synapse-wrapped-1.108.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.107.0"
+    "version": "1.108.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -763,9 +763,9 @@
     "version": "16.3"
   },
   "powerdns": {
-    "name": "pdns-4.9.0",
+    "name": "pdns-4.9.1",
     "pname": "pdns",
-    "version": "4.9.0"
+    "version": "4.9.1"
   },
   "prometheus": {
     "name": "prometheus-2.52.0",
@@ -930,9 +930,9 @@
     "version": "4.9.1"
   },
   "slurm": {
-    "name": "slurm-23.11.6.1",
+    "name": "slurm-23.11.7.1",
     "pname": "slurm",
-    "version": "23.11.6.1"
+    "version": "23.11.7.1"
   },
   "solr": {
     "name": "solr-8.11.2",
@@ -1030,9 +1030,9 @@
     "version": "1.0.20210914"
   },
   "xfsprogs": {
-    "name": "xfsprogs-6.8.0",
+    "name": "xfsprogs-6.6.0",
     "pname": "xfsprogs",
-    "version": "6.8.0"
+    "version": "6.6.0"
   },
   "xorg.libX11": {
     "name": "libX11-1.8.9",
