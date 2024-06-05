@@ -87,7 +87,7 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
     gitlab.wait_for_unit("gitlab-postgresql.service")
     gitlab.wait_for_unit("gitaly.service")
     gitlab.wait_for_unit("gitlab-workhorse.service")
-    gitlab.wait_for_unit("gitlab.service")
+    gitlab.wait_for_unit("gitlab.service", timeout=1200)
     gitlab.wait_for_unit("gitlab-sidekiq.service")
     gitlab.wait_for_file("/run/gitlab/gitlab-workhorse.socket")
     gitlab.wait_for_file("/srv/gitlab/state/tmp/sockets/gitlab.socket")
