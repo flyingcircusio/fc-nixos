@@ -65,7 +65,7 @@ def check(log, enc, config: ConfigParser) -> CheckResult:
             ok_info.append(f"State version: {state_version}.")
         else:
             warnings.append(
-                f"State version invalid: {state_version}, should look like 23.11"
+                f"State version invalid: {state_version}, should look like 24.05"
             )
     else:
         warnings.append(f"State version file {STATE_VERSION_FILE} missing.")
