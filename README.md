@@ -140,7 +140,7 @@ We use our [nixpkgs fork](https://github.com/flyingcircusio/nixpkgs) and the nix
 
 The typical workflow for a nixpkgs update looks like this (run in the dev shell):
 
-1. Rebase local nixpkgs onto current upstream version: `update_nixpkgs --nixpkgs-path ~/worksets/nixpkgs/fc/nixos-23.11 nixpkgs`
+1. Rebase local nixpkgs onto current upstream version: `update_nixpkgs --nixpkgs-path ~/worksets/nixpkgs/fc/nixos-24.05 nixpkgs`
 2. Update `versions.json` and `package-versions.json` (must be able to talk to hydra01): `update_nixpkgs fc-nixos`
 3. Create a draft PR with the changes and wait until Hydra finishes building.
 4. When Hydra is green, try it out on a test VM. Don't forget to run `build_channels_dir` if you haven't set up direnv!

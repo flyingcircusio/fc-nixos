@@ -194,7 +194,7 @@ sudo -u rabbitmq rabbitmqctl enable_feature_flag all
   versions accepted by `nodeRuntimes` tracks the versions the upstream GitHub
   Actions runner supports.
 - For more details, see the
-  [release notes of NixOS 23.11](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-23.11-notable-changes).
+  [release notes of NixOS 24.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-24.05-notable-changes).
 
 
 ## Significant package updates
