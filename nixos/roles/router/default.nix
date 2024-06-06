@@ -167,6 +167,8 @@ in
         #############
         # Protect SRV
         ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 22 -j ACCEPT
+        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 80 -j ACCEPT
+        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 443 -j ACCEPT
         ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 8140 -j ACCEPT
         ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -j REJECT
 
