@@ -156,7 +156,11 @@ in
         serviceConfig = {
           Type = "simple";
           ExecStart = " ${cephPkgs.fc-ceph}/bin/fc-ceph mon activate --as-systemd-unit";
+          # try to restart after 5s for 6 attempts, afterwards wait for a minute between attempts
           Restart = "always";
+          RestartSec = "5s";
+          RestartSteps = 6;
+          RestartMaxDelaySec = "1min";
         };
       };
 
@@ -235,7 +239,11 @@ in
         serviceConfig = {
           Type = "simple";
           ExecStart = " ${cephPkgs.fc-ceph}/bin/fc-ceph mgr activate --as-systemd-unit";
+          # try to restart after 5s for 6 attempts, afterwards wait for a minute between attempts
           Restart = "always";
+          RestartSec = "5s";
+          RestartSteps = 6;
+          RestartMaxDelaySec = "1min";
         };
       };
 
