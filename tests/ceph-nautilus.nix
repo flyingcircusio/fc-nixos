@@ -136,6 +136,7 @@ in
     host1 = makeCephHostConfig { id = 1; diskSizes = [ 4000 4000 4000 1100 ]; encrypted = true;};
     host2 = makeCephHostConfig { id = 2; };
     host3 = makeCephHostConfig { id = 3; };
+    # not utilised in the test, we only want to see the config eval succeed
     host4 = makeCephHostConfig { id = 4; monOnly = true; };
   };
 
@@ -147,7 +148,9 @@ in
     import json
 
     time_waiting = 0
-    start_all()
+    TEST_HOSTS = (host1, host2, host3)
+    for h in TEST_HOSTS:
+      h.start()
 
     def show(host, cmd):
         result = host.execute(cmd)[1]
@@ -215,6 +218,19 @@ in
         else:
           raise
 
+    def stop_failing_service(host, servicename):
+      # we cannot just wait for multi-user target, as it depends on the failing services
+      print(f"Waiting for {serv}…")
+      h.wait_until_succeeds(
+        f'systemctl show --property=ActiveState {serv}.service | tee /dev/kmsg | egrep "(ActiveState=active|ActiveState=activating|ActiveState=failed)"'
+      )
+      h.succeed(f"systemctl stop {serv}.service")
+
+    # services are uninitialised, stop their unsuccessful starting attempts
+    for h in TEST_HOSTS:
+      for serv in ("fc-ceph-rgw", "fc-ceph-mon", "fc-ceph-mgr"):
+        stop_failing_service(h, serv)
+
     show(host1, 'ip l')
     show(host1, 'cat /etc/fstab')
     show(host1, 'cat /proc/cpuinfo')
@@ -231,9 +247,6 @@ in
     show(host2, 'ceph --version')
     show(host3, 'ceph --version')
 
-    host1.execute("systemctl stop fc-ceph-rgw")
-    host2.execute("systemctl stop fc-ceph-rgw")
-    host3.execute("systemctl stop fc-ceph-rgw")
 
     with subtest("Initialize keystore on host 1"):
       # check succeeds as "not needed" as long as /mnt/keys does not exist
