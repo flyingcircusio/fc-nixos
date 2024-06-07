@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 
 import requests
 from fc.ceph.util import run
@@ -385,7 +386,7 @@ class BaseImage:
                 logger.exception("Error trying to purge snapshot:")
 
 
-def load_vm_images():
+def load_vm_images() -> int:
     level = logging.INFO
     try:
         if int(os.environ.get("VERBOSE", 0)):
@@ -396,17 +397,25 @@ def load_vm_images():
     requests_log = logging.getLogger("urllib3")
     requests_log.setLevel(logging.WARNING)
     requests_log.propagate = True
-    try:
-        for branch in RELEASES:
-            logger.info("Updating branch {}".format(branch))
+    status_code: int = 0
+    for branch in RELEASES:
+        logger.info("Updating branch {}".format(branch))
+        try:
             with BaseImage(branch) as image:
                 image.update()
                 image.flatten()
                 image.purge()
-    except LockingError:
-        sys.exit(69)
-    except Exception:
-        logger.exception(
-            "An error occured while updating branch `{}`".format(branch)
-        )
-        sys.exit(1)
+        except LockingError:
+            logger.exception(f"Could not lock image for {branch}.")
+            status_code = max(69, status_code)
+            logger.info("Continuing with next branch despite error...")
+        # In general, we decide to continue with the next branch when an exception happens.
+        # If there are certain exceptions where the whole process needs to be aborted,
+        # that exception needs to be cought specifically.
+        except Exception:
+            logger.exception(
+                f"An error occured while updating branch `{branch}`."
+            )
+            status_code = max(1, status_code)
+            logger.info("Continuing with next branch despite error...")
+    return status_code
