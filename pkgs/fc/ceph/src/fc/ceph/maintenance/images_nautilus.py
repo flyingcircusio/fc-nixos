@@ -36,6 +36,10 @@ RELEASES = [
     "fc-23.11-dev",
     "fc-23.11-staging",
     "fc-23.11-production",
+    "fc-24.05-dev",
+    "fc-24.05-staging",
+    "fc-24.05-production",
+    "pre-fc-24.05",
     "ts-test",
 ]
 CEPH_CONF = "/etc/ceph/ceph.conf"
