@@ -147,7 +147,7 @@ in
           login_shell = "/bin/bash";
           name = "Developer";
           # password: vagrant
-          password = "$5$xS9kX8R5VNC0g$ZS7QkUYTk/61dUyUgq9r0jLAX1NbiScBT5v1PODz4UC";
+          password = "$6$wOGPiYC.CCUnRIix$HcY4OtrjjOWGsKTvdG4fj6zNcJlhfban2nof3vQxo4CIE3f.rLqrBfsR84KMiGAlyqRul.MYJfNm3f15h/x7w1";
           permissions = { container = [ "admins" "login" "manager" "sudo-srv" ]; };
           ssh_pubkey = [
            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGc7V2c2zFPRMl8/gmBv1/MEldEuJau8jHjhx+2qziYs root@ct-dir-dev2"
