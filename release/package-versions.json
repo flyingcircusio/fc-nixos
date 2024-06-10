@@ -225,9 +225,9 @@
     "version": "16.10.6"
   },
   "github-runner": {
-    "name": "github-runner-2.316.1",
+    "name": "github-runner-2.317.0",
     "pname": "github-runner",
-    "version": "2.316.1"
+    "version": "2.317.0"
   },
   "gitlab": {
     "name": "gitlab-16.10.6",
@@ -327,9 +327,9 @@
     "version": "17.0.8-b1000.8"
   },
   "jetty": {
-    "name": "jetty-12.0.8",
+    "name": "jetty-12.0.9",
     "pname": "jetty",
-    "version": "12.0.8"
+    "version": "12.0.9"
   },
   "jicofo": {
     "name": "jicofo-1.0-1078",
@@ -357,6 +357,16 @@
     "version": "21+35"
   },
   "k3s": {
+    "name": "k3s-1.30.1+k3s1",
+    "pname": "k3s",
+    "version": "1.30.1+k3s1"
+  },
+  "k3s_1_27": {
+    "name": "k3s-1.27.14+k3s1",
+    "pname": "k3s",
+    "version": "1.27.14+k3s1"
+  },
+  "k3s_1_30": {
     "name": "k3s-1.30.1+k3s1",
     "pname": "k3s",
     "version": "1.30.1+k3s1"
@@ -502,19 +512,19 @@
     "version": "2.6.2"
   },
   "nginx": {
-    "name": "nginx-1.26.0",
+    "name": "nginx-1.26.1",
     "pname": "nginx",
-    "version": "1.26.0"
+    "version": "1.26.1"
   },
   "nginxMainline": {
-    "name": "nginx-1.25.4",
+    "name": "nginx-1.27.0",
     "pname": "nginx",
-    "version": "1.25.4"
+    "version": "1.27.0"
   },
   "nginxStable": {
-    "name": "nginx-1.26.0",
+    "name": "nginx-1.26.1",
     "pname": "nginx",
-    "version": "1.26.0"
+    "version": "1.26.1"
   },
   "nix": {
     "name": "nix-2.18.2",
