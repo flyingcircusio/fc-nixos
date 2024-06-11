@@ -192,7 +192,7 @@ in
              then (lib.optionalString (rgRules != "")
                "# Accept traffic within the same resource group.\n${rgRules}\n\n")
              else ''
-               # Accept traffic on the SRV interface
+               # Accept traffic on the SRV interface, but disallow arbitrary access to Telegraf
                ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -p tcp --dport 9126 -j nixos-fw-refuse
                ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -j nixos-fw-accept
              ''
