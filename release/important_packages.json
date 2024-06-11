@@ -98,6 +98,8 @@
   "matrix-synapse",
   "mcpp",
   "memcached",
+  "mongodb",
+  "mongodb-6_0",
   "monitoring-plugins",
   "mysql",
   "mysql80",
