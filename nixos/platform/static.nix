@@ -110,6 +110,7 @@ with lib;
         dev = [ "2a02:238:f030:1c3::1" ];
         whq = [ "2a02:238:f030:103::1" ];
         test = [ "2a02:238:f030:1c2::1" ];
+        rzob = [ "2a02:248:101:63::1" ];
         standalone = [ "9.9.9.9" "8.8.8.8" ];
       };
 
@@ -176,7 +177,10 @@ with lib;
           test = "tr";
         };
         # Or a per-host override
-        host = {};
+        host = {
+          kenny08 = "185.105.253.72";
+          kenny09 = "185.105.253.74";
+        };
       };
 
       # Networks which have floating gateways shared between routers
