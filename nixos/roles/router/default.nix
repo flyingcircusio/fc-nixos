@@ -215,6 +215,8 @@ in
       ip46tables -X fc-router-forward 2>/dev/null || true
     '';
 
+    flyingcircus.firewall.enableSrvRgFirewall = false;
+
     systemd.services = listToAttrs
       (lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces)
         (iface: lib.nameValuePair
