@@ -2,7 +2,7 @@ import ./make-test-python.nix ({ pkgs, ... }:
 
 {
   name = "login";
-  machine =
+  nodes.machine =
     { pkgs, lib, config, ... }:
     {
       imports = [ ../nixos ../nixos/roles ];

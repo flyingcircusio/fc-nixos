@@ -107,7 +107,7 @@ in {
 
   testScript = { nodes, ... }:
   let
-    config = nodes.turnserver.config;
+    config = nodes.turnserver;
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
     coturnCheck = lib.replaceChars ["\n"] [" "] sensuChecks.coturn.command;
   in ''

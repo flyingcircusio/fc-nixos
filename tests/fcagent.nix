@@ -4,7 +4,7 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
   testCases = {
     prod = {
       name = "prod";
-      machine =
+      nodes.machine =
         { config, lib, ... }:
         {
           imports = [
@@ -18,7 +18,7 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     };
     nonprod = {
       name = "nonprod";
-      machine =
+      nodes.machine =
         { config, lib, ... }:
         {
           imports = [

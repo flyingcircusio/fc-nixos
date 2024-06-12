@@ -3,7 +3,7 @@ import ./make-test-python.nix ({ pkgs, lib, ... }:
 {
   name = "rust-tools";
 
-  machine = {
+  nodes.machine = {
     imports = [ ../nixos ../nixos/roles ];
 
     environment.systemPackages = with pkgs; [

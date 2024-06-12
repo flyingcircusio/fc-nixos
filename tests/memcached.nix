@@ -4,7 +4,7 @@ let
   ipv6 = "2001:db8:f030:1c3::1";
 in {
   name = "memcached";
-  machine =
+  nodes.machine =
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];

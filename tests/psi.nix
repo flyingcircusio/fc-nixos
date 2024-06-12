@@ -4,7 +4,7 @@ import ./make-test-python.nix ({ testlib, ... }:
   testCases = {
     justpsi = {
       name = "justpsi";
-      machine = { lib, ... }:
+      nodes.machine = { lib, ... }:
       {
         imports = [ (testlib.fcConfig { net.fe = false; }) ];
         services.telegraf.enable = true;
@@ -19,7 +19,7 @@ import ./make-test-python.nix ({ testlib, ... }:
     };
     psicgroup = {
       name = "psicgroup";
-      machine = { lib, ... }:
+      nodes.machine = { lib, ... }:
       {
         imports = [ (testlib.fcConfig { net.fe = false; }) ];
         flyingcircus.services.telegraf.psiCgroupRegex = [ ".*\\.service" ];
