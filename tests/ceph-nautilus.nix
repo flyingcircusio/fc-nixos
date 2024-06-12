@@ -6,7 +6,7 @@ let
     { config, lib, ... }:
     {
 
-      virtualisation.memorySize = 3000;
+      virtualisation.memorySize = 4000;
       virtualisation.cores = 2;
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [
         srv
@@ -136,6 +136,7 @@ in
     host1 = makeCephHostConfig { id = 1; diskSizes = [ 4000 4000 4000 1100 ]; encrypted = true;};
     host2 = makeCephHostConfig { id = 2; };
     host3 = makeCephHostConfig { id = 3; };
+    # not utilised in the test, we only want to see the config eval succeed
     host4 = makeCephHostConfig { id = 4; monOnly = true; };
   };
 
@@ -147,7 +148,9 @@ in
     import json
 
     time_waiting = 0
-    start_all()
+    TEST_HOSTS = (host1, host2, host3)
+    for h in TEST_HOSTS:
+      h.start()
 
     def show(host, cmd):
         result = host.execute(cmd)[1]
@@ -215,6 +218,19 @@ in
         else:
           raise
 
+    def stop_failing_service(host, servicename):
+      # we cannot just wait for multi-user target, as it depends on the failing services
+      print(f"Waiting for {serv}…")
+      h.wait_until_succeeds(
+        f'systemctl show --property=ActiveState {serv}.service | tee /dev/kmsg | egrep "(ActiveState=active|ActiveState=activating|ActiveState=failed)"'
+      )
+      h.succeed(f"systemctl stop {serv}.service")
+
+    # services are uninitialised, stop their unsuccessful starting attempts
+    for h in TEST_HOSTS:
+      for serv in ("fc-ceph-rgw", "fc-ceph-mon", "fc-ceph-mgr"):
+        stop_failing_service(h, serv)
+
     show(host1, 'ip l')
     show(host1, 'cat /etc/fstab')
     show(host1, 'cat /proc/cpuinfo')
@@ -231,9 +247,6 @@ in
     show(host2, 'ceph --version')
     show(host3, 'ceph --version')
 
-    host1.execute("systemctl stop fc-ceph-rgw")
-    host2.execute("systemctl stop fc-ceph-rgw")
-    host3.execute("systemctl stop fc-ceph-rgw")
 
     with subtest("Initialize keystore on host 1"):
       # check succeeds as "not needed" as long as /mnt/keys does not exist
@@ -242,19 +255,6 @@ in
       show(host1, "lsblk")
       host1.succeed("${check_key_file_cmd} > /dev/kmsg 2>&1")
 
-    with subtest("Verify keystore automount on boot"):
-      host1.execute("systemctl poweroff --force")
-      host1.wait_for_shutdown()
-      host1.start()
-      host1.wait_for_unit("local-fs.target")
-      show(host1, "mount")
-      host1.execute("sleep 5")
-      show(host1, "mount")
-      show(host1, "systemctl status multi-user.target")
-      host1.execute("systemctl stop fc-ceph-rgw")
-      show(host1, "lsblk")
-      show(host1, "cat /etc/fstab")
-      host1.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/kmsg 2>&1")
 
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb > /dev/kmsg 2>&1')
@@ -486,6 +486,37 @@ in
     #  snapfillcheck = host1.execute('sudo -u sensuclient ' + check_command + ' >&2')
     #  print(snapfillcheck[1])
     #  assert snapfillcheck[0] == 2
+
+    with subtest("Verify keystore automount on boot"):
+      host1.execute("systemctl poweroff --force")
+      host1.wait_for_shutdown()
+      host1.start()
+      host1.wait_for_unit("local-fs.target")
+      show(host1, "mount")
+      host1.execute("sleep 5")
+      show(host1, "mount")
+      show(host1, "systemctl status multi-user.target")
+      show(host1, "lsblk")
+      show(host1, "cat /etc/fstab")
+      host1.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/kmsg 2>&1")
+
+    #with subtest("Verify all services are up after a reboot"):
+    #  host1.sleep(30)
+    #  show(host1, "systemctl status -l fc-ceph-mon.service")
+    #  show(host1, "cat /var/log/ceph/ceph-mon.host1.log")
+    #  show(host1, "systemctl status -l fc-ceph-mgr.service")
+    #  show(host1, "cat /var/log/ceph/ceph-mgr.host1.log")
+    #  show(host1, "systemctl status -l fc-ceph-rgw.service")
+    #  show(host1, "systemctl status -l fc-ceph-osd@0.service")
+    #  show(host1, "cat /var/log/ceph/ceph-osd.0.log")
+    #  show(host1, "journalctl -b -u systemd-tmpfiles-setup.service")
+    #  show(host1, "stat /run")
+    #  show(host1, "stat /run/ceph")
+    #  host1.wait_for_unit("fc-ceph-mon.service")
+    #  host1.wait_for_unit("fc-ceph-mgr.service")
+    #  host1.wait_for_unit("fc-ceph-rgw.service")
+    #  host1.wait_for_unit("fc-ceph-osds-all.service")
+    #  host1.wait_for_unit("fc-ceph-osd@0.service")
 
     print("Time spent waiting", time_waiting)
   '';

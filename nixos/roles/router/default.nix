@@ -167,6 +167,8 @@ in
         #############
         # Protect SRV
         ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 22 -j ACCEPT
+        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 80 -j ACCEPT
+        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 443 -j ACCEPT
         ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 8140 -j ACCEPT
         ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -j REJECT
 
@@ -212,6 +214,8 @@ in
       ip46tables -F fc-router-forward 2>/dev/null || true
       ip46tables -X fc-router-forward 2>/dev/null || true
     '';
+
+    flyingcircus.firewall.enableSrvRgFirewall = false;
 
     systemd.services = listToAttrs
       (lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces)
