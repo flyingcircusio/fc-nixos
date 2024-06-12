@@ -1,7 +1,7 @@
 From f6feefc2d6829ab81c3e81ab913a3c39ececba2c Mon Sep 17 00:00:00 2001
 From: Chirag Shah <chirag@nvidia.com>
 Date: Fri, 28 Apr 2023 19:09:55 -0700
-Subject: [PATCH 2/3] zebra:re-install dependent nhgs on interface up
+Subject: [PATCH 2/4] zebra:re-install dependent nhgs on interface up
 
 Upon interface up associated singleton NHG's
 dependent NHGs needs to be reinstalled as
@@ -101,5 +101,5 @@ index 78fa22de7..b17167540 100644
  	}
  }
 -- 
-2.39.3 (Apple Git-145)
+2.39.3 (Apple Git-146)
 
