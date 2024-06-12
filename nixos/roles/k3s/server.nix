@@ -110,7 +110,7 @@ let
         metadata.name = "flyingcircus:sensu-client";
         rules = [{
           apiGroups = [""];
-          resources = ["nodes"];
+          resources = ["nodes" "pods"];
           verbs = ["get" "list"];
         }];
       })
