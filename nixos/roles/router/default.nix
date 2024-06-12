@@ -115,6 +115,14 @@ in
       "net.netfilter.nf_conntrack_buckets" = 32768;
     };
 
+    services.openssh.extraConfig = ''
+      # Protect routers more aggressively against DOS on the MaxStartup settings.
+      # We do not support password logins, so a small login grace time helps
+      # reducing unauthenticated sessions piling up.
+      LoginGraceTime 10
+      MaxStartups 100:30:500
+    '';
+
     environment.etc."specialisation".text = lib.mkDefault "";
 
     environment.systemPackages = with pkgs; [
