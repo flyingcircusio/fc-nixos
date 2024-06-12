@@ -167,8 +167,8 @@ class MaintenanceTasks(object):
         else:
             return False
 
-    def load_vm_images(self):
-        load_vm_images_task()
+    def load_vm_images(self) -> int:
+        return load_vm_images_task()
 
     def purge_old_snapshots(self) -> int:
         status_code = 0
