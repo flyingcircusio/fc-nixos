@@ -278,6 +278,34 @@ let
     };
   };
 
+  podPendingScript = pkgs.writeScriptBin "check-kube-pending-pods" ''
+    set -euo pipefail
+
+    ret=0
+
+    kubectl get \
+      --kubeconfig /var/lib/k3s/tokens/sensuclient.cfg \
+      pods -A -o json | \
+      jq -e '.items[] |
+        select(.status.phase != "Running") |
+        select(.status.phase != "Succeeded") |
+        select(.status.conditions | map(.lastTransitionTime | fromdateiso8601 | ((now - .) > 600)) | any) |
+        {
+            "name": .metadata.name,
+            "ns": .metadata.namespace,
+            "phase": .status.phase,
+            "since": .status.conditions[].lastTransitionTime,
+            "message": .status.conditions[].message}' || ret=$?
+
+    if [ "$ret" -eq "4" ]; then
+        # no output, good.
+        exit 0
+    elif [ "$ret" -eq "0" ]; then
+        # critical
+        exit 2
+    fi
+  '';
+
 in {
   options = {
     flyingcircus.roles.k3s-server = {
@@ -394,6 +422,11 @@ in {
           command = ''
             ${pkgs.sensu-plugins-kubernetes}/bin/check-kube-nodes-ready.rb --token-file /var/lib/k3s/tokens/sensuclient -s https://localhost:6443
           '';
+        };
+
+        kube-pods-pending = {
+          notification = "Pods have been in pending state for longer than 10 minutes";
+          command = "${podPendingScript}/bin/check-kube-pending-pods";
         };
       };
 
