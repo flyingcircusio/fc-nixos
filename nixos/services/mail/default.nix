@@ -212,7 +212,7 @@ in {
         enableManageSieve = true;
         # FC-38677 - we have a properly configured local resolver in our
         # platform, so a bland unconfigured kresd is counterproductive.
-        mailserver.localDnsResolver = false;
+        localDnsResolver = false;
         lmtpSaveToDetailMailbox = "no";
         mailDirectory = vmailDir;
         mailboxes = {
@@ -235,6 +235,11 @@ in {
         vmailGroupName = "vmail";
         vmailUserName = "vmail";
       };
+
+      # See https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/issues/289
+      systemd.services.postfix.restartTriggers = [ config.mailserver.localDnsResolver  ];
+      systemd.services.rspamd.restartTriggers = [ config.mailserver.localDnsResolver ];
+      systemd.services.opendkim.restartTriggers = [ config.mailserver.localDnsResolver ];
 
       services.dovecot2.extraConfig = ''
         passdb {
