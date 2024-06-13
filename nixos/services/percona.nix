@@ -64,6 +64,7 @@ let
     user = root
     __EOT__
     chmod 440 /root/.my.cnf
+    # allow convenient logins as db `root` user for unix users `mysql` and `root
     cp -p /root/.my.cnf /srv/mysql/.my.cnf
     chown mysql:mysql /srv/mysql/.my.cnf
 
@@ -113,6 +114,8 @@ in
         description = "Port of MySQL";
       };
 
+      # FIXME: this cannot be configurable for us, we hard-code the `mysql`
+      # user home dir and its permissions later in the mysqlPreStart file
       user = mkOption {
         default = "mysql";
         description = "User account under which MySQL runs";
@@ -161,6 +164,7 @@ in
       };
 
       initialScript = mkOption {
+        type = with lib.types; nullOr path;
         default = null;
         description = ''
           A file containing SQL statements to be executed on the first startup.
@@ -288,7 +292,7 @@ in
               ${optionalString (cfg.initialScript != null)
                 ''
                   # Execute initial script
-                  cat ${cfg.initialScript} | ${mysql}/bin/mysql -u root -N
+                  cat ${cfg.initialScript} | ${mysql}/bin/mysql --defaults-extra-file=/root/.my.cnf -u root -N
                 ''}
 
             rm /run/mysql_init
