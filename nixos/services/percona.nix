@@ -249,7 +249,7 @@ in
           do
               if [ $count -eq 300 ]
               then
-                  echo "Tried 300 seconds, giving up..."
+                  echo "Tried 900 seconds, giving up..."
                   exit 1
               fi
 
