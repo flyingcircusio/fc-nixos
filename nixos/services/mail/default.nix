@@ -210,6 +210,9 @@ in {
         certificateScheme = 3;
         enableImapSsl = true;
         enableManageSieve = true;
+        # FC-38677 - we have a properly configured local resolver in our
+        # platform, so a bland unconfigured kresd is counterproductive.
+        mailserver.localDnsResolver = false;
         lmtpSaveToDetailMailbox = "no";
         mailDirectory = vmailDir;
         mailboxes = {
