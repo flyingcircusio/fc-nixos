@@ -1,0 +1,39 @@
+From 136865918a96631ea95e099572208cf2b6dc2cad Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Wed, 22 May 2024 16:23:07 +0200
+Subject: [PATCH 4/4] lib: add missing debug guards for route-map
+
+Upstream commit: 2336d279e083648e02034d54514b4a0a15b15f3f
+---
+ lib/routemap.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/lib/routemap.c b/lib/routemap.c
+index 683943eb6..ee5f2f9f4 100644
+--- a/lib/routemap.c
++++ b/lib/routemap.c
+@@ -2579,13 +2579,15 @@ route_map_result_t route_map_apply_ext(struct route_map *map,
+ 	 */
+ 	if (prefix->family == AF_EVPN) {
+ 		if (evpn_prefix2prefix(prefix, &conv) != 0) {
+-			zlog_debug(
+-				"Unable to convert EVPN prefix %pFX into IPv4/IPv6 prefix. Falling back to non-optimized route-map lookup",
+-				prefix);
++			if (rmap_debug)
++				zlog_debug(
++					   "Unable to convert EVPN prefix %pFX into IPv4/IPv6 prefix. Falling back to non-optimized route-map lookup",
++					   prefix);
+ 		} else {
+-			zlog_debug(
+-				"Converted EVPN prefix %pFX into %pFX for optimized route-map lookup",
+-				prefix, &conv);
++			if (rmap_debug)
++				zlog_debug(
++					   "Converted EVPN prefix %pFX into %pFX for optimized route-map lookup",
++					   prefix, &conv);
+ 
+ 			prefix = &conv;
+ 		}
+-- 
+2.39.3 (Apple Git-146)
+
