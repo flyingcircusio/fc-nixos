@@ -17,7 +17,7 @@ which provides useful improvements over the standard Oracle MySQL/MariaDB implem
 
 MySQL works out-of-the box without configuration.
 
-You can change the password for the mysql root user in {file}`/etc/local/mysql/mysql.passwd`.
+You can change the password for the mysql *root* user in {file}`/etc/local/mysql/mysql.passwd`.
 The MySQL service must be restarted to pick up the new password:
 
 ```
@@ -36,11 +36,11 @@ to activate the new configuration.
 
 ## Interaction
 
-You can find the password for the MySQL root user in {file}`/etc/local/mysql.passwd`.
+You can find the password for the MySQL *root* user in {file}`/etc/local/mysql.passwd`.
 Service users can read the password file.
 
 Service users can use {command}`sudo -iu mysql` to access the
-MySQL super user account to perform administrative commands
+MySQL *root* account to perform administrative commands
 and log files in {file}`/var/log/mysql`.
 To connect to the local MySQL server, run {command}`mysql` as *mysql* user:
 
