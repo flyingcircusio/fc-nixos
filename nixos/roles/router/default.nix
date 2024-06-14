@@ -60,7 +60,7 @@ in
   options = {
     flyingcircus.roles.router = with lib; {
       enable = mkEnableOption "Router";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
       isPrimary = mkOption {
         type = types.bool;
         default = false;
