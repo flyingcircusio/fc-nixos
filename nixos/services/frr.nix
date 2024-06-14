@@ -200,10 +200,15 @@ in
               unitConfig.Documentation = if service == "zebra" then "man:zebra(8)"
                 else "man:${daemon}(8) man:zebra(8)";
 
+              # We want to refactor this into reloadTriggers when upgrading to
+              # 24.05
               restartTriggers = [
                 (configFile service)
+                pkgs.frr
               ];
-              reloadIfChanged = true;
+
+              restartIfChanged = true;
+              stopIfChanged = false;
 
               serviceConfig = {
                 PIDFile = "frr/${daemon}.pid";
