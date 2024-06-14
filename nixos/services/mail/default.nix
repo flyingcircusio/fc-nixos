@@ -233,6 +233,8 @@ in {
         vmailUserName = "vmail";
       };
 
+      flyingcircus.agent.userscan-ignore-users = [ "vmail" ];
+
       services.dovecot2.extraConfig = ''
         passdb {
           driver = passwd-file
