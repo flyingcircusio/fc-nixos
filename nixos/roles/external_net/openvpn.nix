@@ -209,7 +209,7 @@ in
   options = {
     flyingcircus.roles.openvpn = {
       enable = lib.mkEnableOption { };
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
       accessNets = lib.mkOption {
         type = lib.types.attrs;

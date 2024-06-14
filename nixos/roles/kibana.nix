@@ -44,7 +44,7 @@ in
     flyingcircus.roles.kibana = {
 
       # Just a virtual role, needs version selection.
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
       elasticSearchUrl = mkOption {
         type = types.nullOr types.str;
@@ -56,12 +56,12 @@ in
 
     flyingcircus.roles.kibana6 = {
       enable = mkEnableOption "Enable the Flying Circus Kibana 6 role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
 
     flyingcircus.roles.kibana7 = {
       enable = mkEnableOption "Enable the Flying Circus Kibana 7 role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
 
   };

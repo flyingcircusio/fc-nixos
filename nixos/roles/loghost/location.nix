@@ -20,7 +20,7 @@ in
         all systems in that location.
       '';
 
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 

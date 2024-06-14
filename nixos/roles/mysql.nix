@@ -14,7 +14,7 @@ in
   let
     mkRole = v: {
       enable = lib.mkEnableOption "Enable the Flying Circus MySQL / Percona ${v} server role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   in {
 
@@ -24,7 +24,7 @@ in
 
         # This is a placeholder role and should not be enabled
         # by itself and can't directly run on containers either.
-        supportsContainers = fclib.mkDisableContainerSupport;
+        supportsContainers = fclib.mkDisableDevhostSupport;
 
         listenAddresses = lib.mkOption {
           type = lib.types.listOf lib.types.str;

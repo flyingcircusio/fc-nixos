@@ -37,7 +37,8 @@ in {
   channel = callTest ./channel.nix {};
   ceph-nautilus = callTest ./ceph-nautilus.nix {};
   coturn = callTest ./coturn.nix {};
-  devhost = callTest ./devhost.nix {};
+  # currently we don't have a devhost test, but will build one with the next rebuild/extension of the feature
+  #devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
   # Not supported on 21.05 anymore.
   # elasticsearch6 = callTest ./elasticsearch.nix { version = "6"; };

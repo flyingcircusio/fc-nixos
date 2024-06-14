@@ -38,7 +38,7 @@ in
 
     flyingcircus.roles.webproxy = {
       enable = mkEnableOption "Flying Circus varnish server role";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       mallocMemoryPercentage = mkOption {
         type = types.int;

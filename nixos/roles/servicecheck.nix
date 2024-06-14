@@ -11,7 +11,7 @@ in
   options = with lib; {
     flyingcircus.roles.servicecheck = {
       enable = mkEnableOption "Enable the Flying Circus Service Check role.";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 
