@@ -74,7 +74,7 @@ in
     flyingcircus.roles.elasticsearch = {
 
       # This is a placeholder role, it does not support containers itself.
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
       clusterName = mkOption {
         type = types.nullOr types.string;
@@ -123,12 +123,12 @@ in
 
     flyingcircus.roles.elasticsearch6 = {
       enable = mkEnableOption "Enable the Flying Circus elasticsearch6 role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
 
     flyingcircus.roles.elasticsearch7 = {
       enable = mkEnableOption "Enable the Flying Circus elasticsearch7 role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
 
     # Dummy option that does nothing on 21.05 to make upgrades to 21.11

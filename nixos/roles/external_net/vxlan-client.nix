@@ -21,7 +21,7 @@ in
         type = lib.types.bool;
         default = (gw != null) && (!cfg.roles.vxlan.gateway);
       };
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 

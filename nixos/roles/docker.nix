@@ -7,7 +7,7 @@ in
   options = {
     flyingcircus.roles.docker = {
       enable = lib.mkEnableOption "Enable Docker";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 

@@ -54,7 +54,7 @@ in {
   let
     mkRole = v: {
       enable = lib.mkEnableOption "Enable the Flying Circus MongoDB ${v} server role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   in {
     flyingcircus.roles = {

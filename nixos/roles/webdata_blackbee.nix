@@ -41,7 +41,7 @@ in
 
     flyingcircus.roles.webdata_blackbee = {
       enable = lib.mkEnableOption "Enable the customer specific role.";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
 
   };

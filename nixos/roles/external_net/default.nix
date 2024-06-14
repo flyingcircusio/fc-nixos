@@ -35,7 +35,7 @@ in
     flyingcircus.roles.external_net = {
 
       enable = lib.mkEnableOption { };
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
       vxlan4 = lib.mkOption {
         type = lib.types.str;

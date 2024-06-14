@@ -36,7 +36,7 @@ in
 
         This mounts /srv/nfs/shared from the server to /mnt/nfs/shared.
       '';
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
     flyingcircus.roles.nfs_rg_share = {
       enable = mkEnableOption ''
@@ -44,7 +44,7 @@ in
 
         This exports /srv/nfs/shared.
       '';
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 

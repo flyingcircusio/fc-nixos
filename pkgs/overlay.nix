@@ -147,6 +147,7 @@ in {
       ./frr/0002-zebra-re-install-dependent-nhgs-on-interface-up.patch
       ./frr/0003-zebra-fix-nhg-out-of-sync-between-zebra-and-kernel.patch
       ./frr/0004-lib-add-missing-debug-guards-for-route-map.patch
+      ./frr/0005-fix-reload-makedirs.patch
     ];
   });
 

@@ -91,7 +91,7 @@ in
         Flying Circus mailserver role with web mail.
         Mailout on all nodes in this RG/location.
       '';
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       # this allows finegrained control over each domain
       # for example domain."test.fcio.net".autoconfig = false;
@@ -199,7 +199,7 @@ in
         Flying Circus mail stub role which creates a simple Postfix instance for
         manual configuration.
       '';
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 

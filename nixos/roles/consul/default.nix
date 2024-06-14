@@ -14,7 +14,7 @@ in
   options = {
     flyingcircus.roles.consul_server = {
       enable = lib.mkEnableOption "Enable Consul server role";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 

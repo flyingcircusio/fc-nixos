@@ -104,7 +104,7 @@ in
     flyingcircus.roles.vxlan =  {
       gateway = mkEnableOption { };
 
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
       config = mkOption {
         type = types.attrs;

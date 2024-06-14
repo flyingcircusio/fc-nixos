@@ -64,7 +64,7 @@ in {
     flyingcircus.roles.k3s-server = {
       enable = lib.mkEnableOption
         "Enable K3s server (Kubernetes control plane, kube-dashboard) (only one per RG)";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 

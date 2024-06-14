@@ -20,7 +20,7 @@ in
   options = {
     flyingcircus.roles.k3s-agent = {
       enable = lib.mkEnableOption "Enable K3s (Kubernetes) Agent Node (experimental)";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 
