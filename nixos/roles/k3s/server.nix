@@ -274,7 +274,7 @@ let
       Restart = "on-failure";
       RestartSec = 10;
       ExecStart = "${authTokenScript}/bin/kubernetes-write-auth-token ${user} ${secret}";
-      ExecCondition = "${pkgs.coreutils}/bin/test ! -s /var/lib/k3s/tokens/${user}";
+      ExecCondition = "${pkgs.coreutils}/bin/test ! -s /var/lib/k3s/tokens/${user} -o ! -s /var/lib/k3s/tokens/${user}.cfg";
     };
   };
 
