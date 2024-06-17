@@ -200,6 +200,8 @@ let
 
     tokendir=/var/lib/k3s/tokens
     kubectl="${pkgs.kubectl}/bin/kubectl"
+    remarshal="${pkgs.remarshal}/bin/remarshal"
+    jq="${pkgs.jq}/bin/jq"
     export KUBECONFIG=${defaultKubeconfig}
 
     if [ -z "$secret" ]; then
@@ -215,6 +217,7 @@ let
     mkdir -p "$tokendir"
     install -o "$user" -g "$user" -m 600 /dev/null "$tokendir/$user.b64"
     install -o "$user" -g "$user" -m 600 /dev/null "$tokendir/$user.tmp"
+    install -o "$user" -g "$user" -m 600 /dev/null "$tokendir/$user.cfg.tmp"
 
     # this service may race with k3s loading and processing the vendor
     # manifests from disk -- they are not present on first run, and k3s only
@@ -246,7 +249,17 @@ let
       exit 1
     fi
 
+    "$remarshal" "$KUBECONFIG" -if yaml -of json | \
+      "$jq" --rawfile token "$tokendir/$user.tmp" \
+      '.users[0].user |= (del(."client-key-data", ."client-certificate-data") | .token = $token)' \
+      > "$tokendir/$user.cfg.tmp"
+    if [ "$?" != 0 ]; then
+      echo 'could not generate kubeconfig from token' 2>&1
+      exit 1
+    fi
+
     mv "$tokendir/$user.tmp" "$tokendir/$user"
+    mv "$tokendir/$user.cfg.tmp" "$tokendir/$user.cfg"
     rm -f "$tokendir/$user.b64"
   '';
 
