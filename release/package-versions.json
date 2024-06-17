@@ -491,6 +491,16 @@
     "pname": "memcached",
     "version": "1.6.26"
   },
+  "mongodb": {
+    "name": "mongodb-6.0.15",
+    "pname": "mongodb",
+    "version": "6.0.15"
+  },
+  "mongodb-6_0": {
+    "name": "mongodb-6.0.15",
+    "pname": "mongodb",
+    "version": "6.0.15"
+  },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.3.5",
     "pname": "monitoring-plugins",
