@@ -70,14 +70,14 @@
     "version": "18.2.1"
   },
   "chromedriver": {
-    "name": "chromedriver-125.0.6422.141",
+    "name": "chromedriver-126.0.6478.55",
     "pname": "chromedriver",
-    "version": "125.0.6422.141"
+    "version": "126.0.6478.55"
   },
   "chromium": {
-    "name": "chromium-125.0.6422.141",
+    "name": "chromium-126.0.6478.55",
     "pname": "chromium",
-    "version": "125.0.6422.141"
+    "version": "126.0.6478.55"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -155,9 +155,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.67",
+    "name": "element-web-1.11.68",
     "pname": "element-web",
-    "version": "1.11.67"
+    "version": "1.11.68"
   },
   "erlang": {
     "name": "erlang-25.3.2.12",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-126.0.1",
+    "name": "firefox-127.0",
     "pname": "firefox",
-    "version": "126.0.1"
+    "version": "127.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.2.0",
@@ -220,9 +220,9 @@
     "version": "2.44.1"
   },
   "gitaly": {
-    "name": "gitaly-16.10.6",
+    "name": "gitaly-16.11.4",
     "pname": "gitaly",
-    "version": "16.10.6"
+    "version": "16.11.4"
   },
   "github-runner": {
     "name": "github-runner-2.317.0",
@@ -230,24 +230,24 @@
     "version": "2.317.0"
   },
   "gitlab": {
-    "name": "gitlab-16.10.6",
+    "name": "gitlab-16.11.4",
     "pname": "gitlab",
-    "version": "16.10.6"
+    "version": "16.11.4"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.1.0",
+    "name": "gitlab-container-registry-4.5.0",
     "pname": "gitlab-container-registry",
-    "version": "4.1.0"
+    "version": "4.5.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-16.10.6",
+    "name": "gitlab-ee-16.11.4",
     "pname": "gitlab-ee",
-    "version": "16.10.6"
+    "version": "16.11.4"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-16.10.6",
+    "name": "gitlab-pages-16.11.4",
     "pname": "gitlab-pages",
-    "version": "16.10.6"
+    "version": "16.11.4"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-16.11.1",
@@ -255,9 +255,9 @@
     "version": "16.11.1"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-16.10.6",
+    "name": "gitlab-workhorse-16.11.4",
     "pname": "gitlab-workhorse",
-    "version": "16.10.6"
+    "version": "16.11.4"
   },
   "glibc": {
     "name": "glibc-2.39-52",
@@ -553,9 +553,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.100",
+    "name": "nss-3.101",
     "pname": "nss",
-    "version": "3.100"
+    "version": "3.101"
   },
   "openjdk": {
     "name": "openjdk-21+35",
@@ -698,24 +698,24 @@
     "version": "8.0.30"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.28",
+    "name": "php-with-extensions-8.1.29",
     "pname": "php-with-extensions",
-    "version": "8.1.28"
+    "version": "8.1.29"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.19",
+    "name": "php-with-extensions-8.2.20",
     "pname": "php-with-extensions",
-    "version": "8.2.19"
+    "version": "8.2.20"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.7",
+    "name": "php-with-extensions-8.3.8",
     "pname": "php-with-extensions",
-    "version": "8.3.7"
+    "version": "8.3.8"
   },
   "phpPackages.composer": {
-    "name": "composer-2.7.6",
+    "name": "composer-2.7.7",
     "pname": "composer",
-    "version": "2.7.6"
+    "version": "2.7.7"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
