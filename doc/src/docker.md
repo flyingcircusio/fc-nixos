@@ -39,7 +39,7 @@ Currently, docker is using the `overlay2` storage driver for new installations.
 
 For existing installations, Docker auto-detects the storage driver if not configured explicitly.
 
-Older versions of docker (NixOS 15.09) used the `devicemapper` storage driver which has been deprecated for some time. It will be removed in a future version of Docker.
+Older versions of docker (NixOS 15.09) used the `devicemapper` storage driver which has been deprecated for some time. It will be removed in version 25 of Docker.
 
 On 24.05, docker refuses to start if it detects `devicemapper` and is not explicitly configured to use it. You can still choose to continue using `devicemapper` or migrate to `overlay2`.
 
@@ -52,6 +52,13 @@ docker info | grep Storage
 Docker also logs warnings to the journal on startup if it is using `devicemapper`.
 
 ### Continue using devicemapper
+
+:::{warning}
+As Docker 25 has removed the *devicemapper* backend, it is now clear that storage driver
+migration has to happen. We expect that Docker >= 25 might become the new default in the next
+platform release 24.11, so be prepared to have a migration plan for all containers that need
+to persist until then.
+:::
 
 Add {ref}`custom NixOS config <nixos-local>` like:
 
