@@ -70,14 +70,14 @@
     "version": "18.2.1"
   },
   "chromedriver": {
-    "name": "chromedriver-126.0.6478.55",
+    "name": "chromedriver-126.0.6478.61",
     "pname": "chromedriver",
-    "version": "126.0.6478.55"
+    "version": "126.0.6478.61"
   },
   "chromium": {
-    "name": "chromium-126.0.6478.55",
+    "name": "chromium-126.0.6478.61",
     "pname": "chromium",
-    "version": "126.0.6478.55"
+    "version": "126.0.6478.61"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-127.0",
+    "name": "firefox-127.0.1",
     "pname": "firefox",
-    "version": "127.0"
+    "version": "127.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-13.2.0",
@@ -282,9 +282,9 @@
   "go_1_19": {},
   "go_1_20": {},
   "grafana": {
-    "name": "grafana-10.4.3",
+    "name": "grafana-10.4.4",
     "pname": "grafana",
-    "version": "10.4.3"
+    "version": "10.4.4"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -437,9 +437,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.160",
+    "name": "linux-5.15.161",
     "pname": "linux",
-    "version": "5.15.160"
+    "version": "5.15.161"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -477,9 +477,9 @@
     "version": "4.16.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.108.0",
+    "name": "matrix-synapse-wrapped-1.109.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.108.0"
+    "version": "1.109.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -593,9 +593,9 @@
     "version": "2.14.0"
   },
   "opensearch-dashboards": {
-    "name": "opensearch-dashboards-2.11.0",
+    "name": "opensearch-dashboards-2.14.0",
     "pname": "opensearch-dashboards",
-    "version": "2.11.0"
+    "version": "2.14.0"
   },
   "openssh": {
     "name": "openssh-9.7p1",
@@ -894,9 +894,9 @@
     "version": "2.2.1"
   },
   "qemu": {
-    "name": "qemu-8.2.4",
+    "name": "qemu-8.2.5",
     "pname": "qemu",
-    "version": "8.2.4"
+    "version": "8.2.5"
   },
   "rabbitmq-server": {
     "name": "rabbitmq-server-3.12.13",
