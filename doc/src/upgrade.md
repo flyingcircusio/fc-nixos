@@ -15,7 +15,8 @@ Contact our {ref}`support` for upgrade assistance.
 
 ## Overview
 
-- Removed roles:
+- New roles: {ref}`percona83 <nixos-upgrade-percona>`
+- Removed roles: {ref}`percona81 <nixos-upgrade-percona>`
 - Removed packages:
 - Roles affected by significant breaking changes:
 
@@ -108,11 +109,27 @@ time-window.
 
 ## Significant breaking changes
 
+(nixos-upgrade-percona)=
+
+### Percona/ MySQL
+
+Our Percona roles now reflect the upstream two-fold release model of the Percona
+and Oracle MySQL projects of providing both an *LTS* release and a more short-lived
+*Innovation* release in parallel. \
+We still recommend using the LTS `percona80` for most use cases, see
+{ref}`nixos-mysql-versions` for details.
+
+### K3S
+
+TODO details about used package version depending on NixOS state release, upgrade path
+
 ### ...
 
 ## Other notable changes
 
 - ...
+- `lamp` roles: Platform integration for the <https://tideways.com> application profiler has been dropped, the respective NixOS options are not available anymore.
+- TODO php packages: new versions, dropped versions?
 - For more details, see the
   [release notes of NixOS 24.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-24.05-notable-changes).
 

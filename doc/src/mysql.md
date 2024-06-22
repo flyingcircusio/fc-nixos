@@ -7,6 +7,8 @@ This component sets up a managed instance of the MySQL database server.
 We use the [Percona Distribution for MySQL](https://percona.com/software/mysql-database)
 which provides useful improvements over the standard Oracle MySQL/MariaDB implementations.
 
+(nixos-mysql-versions)=
+
 ## Supported versions
 
 There's a role for each supported major version, currently:
