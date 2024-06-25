@@ -69,8 +69,8 @@ in
     ];
 
     flyingcircus.services.sensu-client.expectedConnections = {
-      warning = 20000;
-      critical = 25000;
+      warning = 30000;
+      critical = 50000;
     };
 
     services.logrotate.extraConfig = ''
