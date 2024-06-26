@@ -55,9 +55,9 @@
     "version": "2.5.9"
   },
   "cacert": {
-    "name": "nss-cacert-3.98",
+    "name": "nss-cacert-3.101",
     "pname": "nss-cacert",
-    "version": "3.98"
+    "version": "3.101"
   },
   "calibre": {
     "name": "calibre-7.10.0",
@@ -155,9 +155,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.68",
+    "name": "element-web-1.11.69",
     "pname": "element-web",
-    "version": "1.11.68"
+    "version": "1.11.69"
   },
   "erlang": {
     "name": "erlang-25.3.2.12",
@@ -210,9 +210,9 @@
     "version": "2.3.3"
   },
   "ghostscript": {
-    "name": "ghostscript-with-X-10.02.1",
+    "name": "ghostscript-with-X-10.03.1",
     "pname": "ghostscript-with-X",
-    "version": "10.02.1"
+    "version": "10.03.1"
   },
   "git": {
     "name": "git-2.44.1",
@@ -275,9 +275,9 @@
     "version": "2.4.5"
   },
   "go": {
-    "name": "go-1.22.3",
+    "name": "go-1.22.4",
     "pname": "go",
-    "version": "1.22.3"
+    "version": "1.22.4"
   },
   "go_1_19": {},
   "go_1_20": {},
@@ -317,9 +317,9 @@
     "version": "2.5"
   },
   "jdk": {
-    "name": "openjdk-21+35",
+    "name": "openjdk-21.0.3+9",
     "pname": "openjdk",
-    "version": "21+35"
+    "version": "21.0.3+9"
   },
   "jetbrains.jdk": {
     "name": "jetbrains-jdk-jcef-17.0.8-b1000.8",
@@ -352,9 +352,9 @@
     "version": "1.7.1"
   },
   "jre": {
-    "name": "openjdk-21+35",
+    "name": "openjdk-21.0.3+9",
     "pname": "openjdk",
-    "version": "21+35"
+    "version": "21.0.3+9"
   },
   "k3s": {
     "name": "k3s-1.30.1+k3s1",
@@ -372,9 +372,9 @@
     "version": "1.30.1+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-23.0.6",
+    "name": "keycloak-24.0.5",
     "pname": "keycloak",
-    "version": "23.0.6"
+    "version": "24.0.5"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.15.0",
@@ -568,9 +568,9 @@
     "version": "3.101"
   },
   "openjdk": {
-    "name": "openjdk-21+35",
+    "name": "openjdk-21.0.3+9",
     "pname": "openjdk",
-    "version": "21+35"
+    "version": "21.0.3+9"
   },
   "openjpeg": {
     "name": "openjpeg-2.5.2",
@@ -603,9 +603,9 @@
     "version": "9.7p1"
   },
   "openssl": {
-    "name": "openssl-3.0.13",
+    "name": "openssl-3.0.14",
     "pname": "openssl",
-    "version": "3.0.13"
+    "version": "3.0.14"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -613,9 +613,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.13",
+    "name": "openssl-3.0.14",
     "pname": "openssl",
-    "version": "3.0.13"
+    "version": "3.0.14"
   },
   "openvpn": {
     "name": "openvpn-2.6.10",
@@ -813,9 +813,9 @@
     "version": "3.11.9"
   },
   "python312": {
-    "name": "python3-3.12.3",
+    "name": "python3-3.12.4",
     "pname": "python3",
-    "version": "3.12.3"
+    "version": "3.12.4"
   },
   "python38": {},
   "python39": {
@@ -1020,9 +1020,9 @@
     "version": "6.0"
   },
   "util-linux": {
-    "name": "util-linux-2.40.1",
+    "name": "util-linux-2.39.4",
     "pname": "util-linux",
-    "version": "2.40.1"
+    "version": "2.39.4"
   },
   "varnish": {
     "name": "varnish-7.4.3",
@@ -1060,9 +1060,9 @@
     "version": "1.8.9"
   },
   "xz": {
-    "name": "xz-5.4.6",
+    "name": "xz-5.4.7",
     "pname": "xz",
-    "version": "5.4.6"
+    "version": "5.4.7"
   },
   "zip": {
     "name": "zip-3.0",
