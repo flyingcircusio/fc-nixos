@@ -134,20 +134,16 @@ in {
   });
 
   frr = nixpkgs-23_05.frr.overrideAttrs (old: rec {
-    version = "8.5.4";
+    version = "8.5.5";
     src = super.fetchFromGitHub {
       owner = "FRRouting";
       repo = old.pname;
       rev = "${old.pname}-${version}";
-      sha256 = "1hyb5ji6fdzlhl28syvlqf1h4d6bv56rw5m547rbk3b1nknlmrbh";
+      sha256 = "1vz21xszqgaywplqwrna6r4sqd1cmhkb0xrrhnaw63979b67imvx";
     };
 
     patches = [
-      ./frr/0001-zebra-re-install-nhg-on-interface-up.patch
-      ./frr/0002-zebra-re-install-dependent-nhgs-on-interface-up.patch
-      ./frr/0003-zebra-fix-nhg-out-of-sync-between-zebra-and-kernel.patch
-      ./frr/0004-lib-add-missing-debug-guards-for-route-map.patch
-      ./frr/0005-fix-reload-makedirs.patch
+      ./frr/0001-Don-t-throw-error-when-log-directory-already-exists.patch
     ];
   });
 
