@@ -25,15 +25,33 @@ let
     boot.extraModprobeConfig = "options dummy numdummies=0";
     boot.initrd.availableKernelModules = [ "dummy" ];
 
-    systemd.services."network-link-properties-underlay" = rec {
-      description = "Set up underlay loopback device";
-      wantedBy = [ "network-addresses-underlay.service" "multi-user.target" ];
-      before = wantedBy;
-      path = [ pkgs.iproute2 ];
-      script = "ip link add underlay type dummy";
-      preStop = "ip link delete underlay";
-      serviceConfig.Type = "oneshot";
-      serviceConfig.RemainAfterExit = true;
+    systemd.services = {
+      eth1-netdev = {
+        wantedBy = [ "network-setup.service" "multi-user.target" ];
+        requires = [ "network-setup.service" ];
+        script = ":";
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+      };
+      eth2-netdev = {
+        wantedBy = [ "network-setup.service" "multi-user.target" ];
+        requires = [ "network-setup.service" ];
+        script = ":";
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+      };
+      underlay-netdev = rec {
+        description = "Set up underlay loopback device";
+        wantedBy = [ "network-setup.service" "multi-user.target" ];
+        before = wantedBy;
+        after = [ "network-pre.service" ];
+        requires = [ "network-setup.service" ];
+        path = [ pkgs.iproute2 ];
+        script = "ip link add underlay type dummy";
+        preStop = "ip link delete underlay";
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+      };
     };
 
     services.frr = {
