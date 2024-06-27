@@ -110,7 +110,7 @@ let
         metadata.name = "flyingcircus:sensu-client";
         rules = [{
           apiGroups = [""];
-          resources = ["nodes"];
+          resources = ["nodes" "pods"];
           verbs = ["get" "list"];
         }];
       })
@@ -200,6 +200,8 @@ let
 
     tokendir=/var/lib/k3s/tokens
     kubectl="${pkgs.kubectl}/bin/kubectl"
+    remarshal="${pkgs.remarshal}/bin/remarshal"
+    jq="${pkgs.jq}/bin/jq"
     export KUBECONFIG=${defaultKubeconfig}
 
     if [ -z "$secret" ]; then
@@ -215,6 +217,7 @@ let
     mkdir -p "$tokendir"
     install -o "$user" -g "$user" -m 600 /dev/null "$tokendir/$user.b64"
     install -o "$user" -g "$user" -m 600 /dev/null "$tokendir/$user.tmp"
+    install -o "$user" -g "$user" -m 600 /dev/null "$tokendir/$user.cfg.tmp"
 
     # this service may race with k3s loading and processing the vendor
     # manifests from disk -- they are not present on first run, and k3s only
@@ -246,7 +249,17 @@ let
       exit 1
     fi
 
+    "$remarshal" "$KUBECONFIG" -if yaml -of json | \
+      "$jq" --rawfile token "$tokendir/$user.tmp" \
+      '.users[0].user |= (del(."client-key-data", ."client-certificate-data") | .token = $token)' \
+      > "$tokendir/$user.cfg.tmp"
+    if [ "$?" != 0 ]; then
+      echo 'could not generate kubeconfig from token' 2>&1
+      exit 1
+    fi
+
     mv "$tokendir/$user.tmp" "$tokendir/$user"
+    mv "$tokendir/$user.cfg.tmp" "$tokendir/$user.cfg"
     rm -f "$tokendir/$user.b64"
   '';
 
@@ -261,9 +274,37 @@ let
       Restart = "on-failure";
       RestartSec = 10;
       ExecStart = "${authTokenScript}/bin/kubernetes-write-auth-token ${user} ${secret}";
-      ExecCondition = "${pkgs.coreutils}/bin/test ! -s /var/lib/k3s/tokens/${user}";
+      ExecCondition = "${pkgs.coreutils}/bin/test ! -s /var/lib/k3s/tokens/${user} -o ! -s /var/lib/k3s/tokens/${user}.cfg";
     };
   };
+
+  podPendingScript = pkgs.writeScriptBin "check-kube-pending-pods" ''
+    set -euo pipefail
+
+    ret=0
+
+    kubectl get \
+      --kubeconfig /var/lib/k3s/tokens/sensuclient.cfg \
+      pods -A -o json | \
+      jq -e '.items[] |
+        select(.status.phase != "Running") |
+        select(.status.phase != "Succeeded") |
+        select(.status.conditions | map(.lastTransitionTime | fromdateiso8601 | ((now - .) > 600)) | any) |
+        {
+            "name": .metadata.name,
+            "ns": .metadata.namespace,
+            "phase": .status.phase,
+            "since": .status.conditions[].lastTransitionTime,
+            "message": .status.conditions[].message}' || ret=$?
+
+    if [ "$ret" -eq "4" ]; then
+        # no output, good.
+        exit 0
+    elif [ "$ret" -eq "0" ]; then
+        # critical
+        exit 2
+    fi
+  '';
 
 in {
   options = {
@@ -381,6 +422,11 @@ in {
           command = ''
             ${pkgs.sensu-plugins-kubernetes}/bin/check-kube-nodes-ready.rb --token-file /var/lib/k3s/tokens/sensuclient -s https://localhost:6443
           '';
+        };
+
+        kube-pods-pending = {
+          notification = "Pods have been in pending state for longer than 10 minutes";
+          command = "${podPendingScript}/bin/check-kube-pending-pods";
         };
       };
 
