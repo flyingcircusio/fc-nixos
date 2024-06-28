@@ -128,6 +128,7 @@ let
   # Supports excluding packages from nested sets using "dotted names" like "fc.blockdev".
   excludedPkgNames = [
     "discourse"
+    "mc"
   ];
 
   overlay = import ../pkgs/overlay.nix pkgs pkgs;
