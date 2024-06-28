@@ -15,12 +15,10 @@ Contact our {ref}`support` for upgrade assistance.
 
 ## Overview
 
-- Removed roles: {ref}`postgresql11 <nixos-upgrade-postgresql>`, {ref}`mongodb42 <nixos-upgrade-mongodb>`
-- Removed packages: `nodejs_14`, `nodejs_16`, `wkhtmltopdf`, `wkhtmltopdf_0_12_5`, `wkhtmltopdf_0_12_6`
+- New roles: {ref}`percona83 <nixos-upgrade-percona>`
+- Removed roles: {ref}`percona81 <nixos-upgrade-percona>`
+- Removed packages:
 - Roles affected by significant breaking changes:
-  {ref}`docker <nixos-upgrade-docker>`,
-  {ref}`postgresql15 <nixos-upgrade-postgresql>`,
-  {ref}`rabbitmq <nixos-upgrade-rabbitmq>`
 
 
 ## Why upgrade? Security
@@ -33,7 +31,7 @@ We do back-ports for critical security issues but this may take longer in some
 cases and less important security fixes will not be back-ported most of the time.
 
 NixOS provides regular security updates for about one month after the release.
-Upstream support for 23.11 ends on **2024-06-30**.
+Upstream support for 24.05 ends on **2024-12-31**.
 
 New platform features are always developed for the current stable platform version
 and only critical bug fixes are back-ported to older versions.
@@ -77,7 +75,7 @@ also subscribe to updates.
 ### Upgrade to the next platform version
 
 We recommend upgrading platform versions one at a time without skipping
-versions. Here we assume that you are upgrading from the 23.05 platform.
+versions. Here we assume that you are upgrading from the 23.11 platform.
 
 Direct upgrades from older versions are possible in principle, but we cannot
 reliably test all combinations for all roles and custom configuration also
@@ -111,118 +109,31 @@ time-window.
 
 ## Significant breaking changes
 
-These changes often require action before the upgrade. Please review the
-following common breaking changes and role-specific notes below.
+(nixos-upgrade-percona)=
 
-(nixos-upgrade-docker)=
+### Percona/ MySQL
 
-### Docker
+Our Percona roles now reflect the upstream two-fold release model of the Percona
+and Oracle MySQL projects of providing both an *LTS* release and a more short-lived
+*Innovation* release in parallel. \
+We still recommend using the LTS `percona80` for most use cases, see
+{ref}`nixos-mysql-versions` for details.
 
-The deprecated `devicemapper` storage driver must be enabled explicitly now or
-Docker won't start. This problem only affects old machines which already used
-Docker on NixOS 15.09.
+### K3S
 
-:::{warning}
-Before upgrading, check the current storage driver and add the recommended
-config, if needed, to avoid downtime.
-:::
+TODO details about used package version depending on NixOS state release, upgrade path
 
-See {ref}`nixos-docker-storage-driver` for details.
-
-
-(nixos-upgrade-postgresql)=
-
-### PostgreSQL
-
-- PostgreSQL 11 is not supported anymore as it reached its end of life.
-  Upgrade to at least version 12 or preferably 15 as described in
-  {ref}`nixos-postgresql-major-upgrade`.
-- `services.postgresql.ensurePermissions` has been deprecated in favor of
-  `services.postgresql.ensureUsers.*.ensureDBOwnership` which simplifies the
-  setup of database owned by a certain system user in local database
-  contexts (which make use of peer authentication via UNIX sockets),
-  migration guidelines were provided in the NixOS manual, please refer to
-  them if you are affected by a PostgreSQL 15 changing the way `GRANT ALL
-  PRIVILEGES` is working. `services.postgresql.ensurePermissions` will be
-  removed in 24.05.
-
-(nixos-upgrade-mongodb)=
-
-### MongoDB
-
-`mongodb42` role and package have been removed. Machines that use MongoDB
-should stay on 23.05 for now. We will bring back older MongoDB versions(up to
-and including 4.2) for upgrading purposes only. As a long-term solution we
-are evaluating [FerretDB](https://www.ferretdb.com/) which builds on
-PostgreSQL and is compatible to MongoDB for many use cases.
-
-(nixos-upgrade-rabbitmq)=
-
-### RabbitMQ
-
-`rabbitmq` is upgraded to 3.12. Before upgrading to NixOS 23.11, make sure that all
-[Feature Flags](https://www.rabbitmq.com/feature-flags.html) are enabled.
-3.12 requires **all** flags to be enabled or it won't start.
-
-If all nodes in a cluster are the same version (3.11 on NixOS 23.05),
-just enable all feature flags:
-
-```shell
-sudo -u rabbitmq rabbitmqctl enable_feature_flag all
-```
+### ...
 
 ## Other notable changes
 
-- `python3` now defaults to Python 3.11.
-- PHP now defaults to PHP 8.2, updated from 8.1. When using the `lamp` role,
-  the default package changed from `lamp_php80` to `lamp_php82`.
-- Upstream NixOS dropped support for PHP 8.0 as it is end-of-life. It is still
-  useable on our platform but users should upgrade as soon as possible.
-- `nodejs_14` and `nodejs_16` packages have been removed.
-- Docker now defaults to version 24.
-- `wkhtmltopdf` packages have been removed. They require a Qt version which
-  has been unsupported for many years and wkhtmltopdf didn't get updates in a
-  long time.
-- Certificate generation via `security.acme` (used by the webgateway role) now
-  limits the concurrent number of running certificate renewals and generation
-  jobs, to avoid spiking resource usage when processing many certificates at
-  once. The limit defaults to *5* and can be adjusted via
-  `maxConcurrentRenewals`. Setting it to *0* disables the limits altogether.
-- `services.github-runner` / `services.github-runners.<name>` gained the
-  option `nodeRuntimes`. The option defaults to `[ "node20" ]`, i.e., the
-  service supports Node.js 20 GitHub Actions only. The list of Node.js
-  versions accepted by `nodeRuntimes` tracks the versions the upstream GitHub
-  Actions runner supports.
+- ...
+- `lamp` roles: Platform integration for the <https://tideways.com> application profiler has been dropped, the respective NixOS options are not available anymore.
+- TODO php packages: new versions, dropped versions?
 - For more details, see the
-  [release notes of NixOS 23.11](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-23.11-notable-changes).
+  [release notes of NixOS 24.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-24.05-notable-changes).
 
 
 ## Significant package updates
 
-- curl: 8.1 -> 8.4
-- docker: 20.10 -> 24.0
-- docker-compose: 2.18 -> 2.23
-- git: 2.40 -> 2.42
-- glibc: 2.37 -> 2.38
-- grafana: 9.5 -> 10.2
-- haproxy: 2.7 -> 2.8
-- k3s: 1.26 -> 1.27
-- keycloak: 21.1 -> 22.0
-- kubernetes-helm: 3.11 -> 3.13
-- mastodon: 4.1 -> 4.2
-- nginxMainline: 1.24 -> 1.25
-- nix: 2.13 -> 2.18
-- opensearch: 2.6 -> 2.11
-- opensearch-dashboards: 2.6 -> 2.11
-- openssh: 9.3 -> 9.5
-- phpPackages.composer: 2.5 -> 2.6
-- podman: 4.5 -> 4.7
-- poetry: 1.4 -> 1.7
-- powerdns: 4.7 -> 4.8
-- prometheus: 2.44 -> 2.48
-- redis: 7.0 -> 7.2
-- sudo: 1.9.13p3 -> 1.9.15p2
-- systemd: 253 -> 254
-- util-linux: 2.38 -> 2.39
-- varnish: 7.2 -> 7.4
-- zlib: 1.2.13 -> 1.3
+- ...

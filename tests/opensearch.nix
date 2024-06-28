@@ -64,7 +64,7 @@ in
         machine.succeed(check_cmd)
 
     with subtest("killing the opensearch process should trigger an automatic restart"):
-      machine.succeed("systemctl kill -s KILL opensearch")
+      machine.succeed("systemctl kill -s KILL --kill-whom main opensearch")
       machine.sleep(1)
       machine.wait_until_succeeds("${sensuCheck "opensearch_node_status"}")
 

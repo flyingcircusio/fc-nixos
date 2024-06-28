@@ -7,6 +7,18 @@ let
     {} super;
 
   inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
+  inherit (builtins) hasAttr storePath;
+
+  getClosureFromStore = path:
+    if hasAttr "fetchClosure" builtins then
+      builtins.fetchClosure {
+        fromStore = "https://s3.whq.fcio.net/hydra";
+        fromPath = path;
+        inputAddressed = true;
+      }
+    else
+      storePath path;
+
   phpLogPermissionPatch = fetchpatch {
     url = "https://github.com/flyingcircusio/php-src/commit/f3a22e2ed6e461d8c3fac84c2fd2c9e441c9e4d4.patch";
     hash = "sha256-ttHjEOGJomjs10PRtM2C6OLX9LCvboxyDSKdZZHanFQ=";
@@ -54,7 +66,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   inherit (super.callPackage ./boost { }) boost159;
 
-  bundlerSensuPlugin = super.callPackage ./sensuplugins-rb/bundler-sensu-plugin.nix { };
   busybox = super.busybox.overrideAttrs (oldAttrs: {
       meta.priority = 10;
     });
@@ -99,7 +110,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  keycloak = self.callPackage ./keycloak { };   # temporarily vendor from unstable, because 23.11 only has an insecure version
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
 
@@ -213,12 +223,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
 
   lkl = super.lkl.overrideAttrs(_: rec {
-    version = "2022-05-18";
+    version = "2023-11-07";
     src = fetchFromGitHub {
-      rev = "10c7b5dee8c424cc2ab754e519ecb73350283ff9";
+      rev = "970883c348b61954a11c8c1ab9a2ab3ff0d89f08";
       owner  = "lkl";
       repo   = "linux";
-      sha256 = "sha256-D3HQdKzhB172L62a+8884bNhcv7vm/c941wzbYtbf4I=";
+      hash = "sha256-MpvhYLH3toC5DaxeiQxKlYWjrPoFw+1eWkkX3XIiVQ0=";
     };
 
     prePatch = ''
@@ -331,24 +341,15 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   percona80 = super.percona-server_8_0;
 
-  percona81 = super.callPackage ./percona/8.1.nix {
-    boost = self.boost177;
-    icu = self.icu69;
-    protobuf = self.protobuf_21;
-    inherit (self.darwin) cctools developer_cmds DarwinTools;
-    inherit (self.darwin.apple_sdk.frameworks) CoreServices;
-  };
+  # assertion notifies us about the need to vendor the old innovation releases
+  percona83 = assert self.percona-server_innovation.mysqlVersion == "8.3"; self.percona-server_innovation;
 
   percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
     boost = self.boost159;
     openssl = self.openssl_1_1;
   };
 
-  percona-xtrabackup_8_1 = super.callPackage ./percona-xtrabackup/8_1.nix {
-    boost = self.boost177;
-    protobuf = self.protobuf_21;
-  };
-
+  percona-xtrabackup_8_3 = assert self.percona-xtrabackup_innovation.mysqlVersion == "8.3"; self.percona-xtrabackup_innovation;
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
 
@@ -382,27 +383,28 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
-  sensu = super.callPackage ./sensu { };
-  sensu-plugins-elasticsearch = super.callPackage ./sensuplugins-rb/sensu-plugins-elasticsearch { };
-  sensu-plugins-kubernetes = super.callPackage ./sensuplugins-rb/sensu-plugins-kubernetes { };
-  sensu-plugins-memcached = super.callPackage ./sensuplugins-rb/sensu-plugins-memcached { };
-  sensu-plugins-mysql = super.callPackage ./sensuplugins-rb/sensu-plugins-mysql { };
-  sensu-plugins-disk-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-disk-checks { };
-  sensu-plugins-entropy-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-entropy-checks { };
-  sensu-plugins-http = super.callPackage ./sensuplugins-rb/sensu-plugins-http { };
-  sensu-plugins-logs = super.callPackage ./sensuplugins-rb/sensu-plugins-logs { };
-  sensu-plugins-network-checks = super.callPackage ./sensuplugins-rb/sensu-plugins-network-checks { };
-  sensu-plugins-postfix = super.callPackage ./sensuplugins-rb/sensu-plugins-postfix { };
-  sensu-plugins-postgres = super.callPackage ./sensuplugins-rb/sensu-plugins-postgres { };
-  sensu-plugins-rabbitmq = super.callPackage ./sensuplugins-rb/sensu-plugins-rabbitmq { };
-  sensu-plugins-redis = super.callPackage ./sensuplugins-rb/sensu-plugins-redis { };
+  # Ruby 2.7 is EOL but we still need it for Sensu until Aramaki takes over ;)
+  #ruby_2_7 = getClosureFromStore /nix/store/qqc6v89xn0g2w123wx85blkpc4pz2ags-ruby-2.7.8;
+
+  sensu = getClosureFromStore /nix/store/3ya2sq1nl4i616mc40kpmag9ndhzj5fy-sensu-1.9.0;
+
+  sensu-plugins-elasticsearch = getClosureFromStore /nix/store/dawyv3kzr69qj2lq8cfm0j941i2hjnfb-sensu-plugins-elasticsearch-4.2.2;
+  sensu-plugins-kubernetes = getClosureFromStore /nix/store/cndsgrdmqlgdwc6hnvvrji17jlr7z15k-sensu-plugins-kubernetes-4.0.0;
+  sensu-plugins-memcached = getClosureFromStore /nix/store/9hw039bi9zkr33i5vm66403wkf5cqpnc-sensu-plugins-memcached-0.1.3;
+  sensu-plugins-mysql = getClosureFromStore /nix/store/ng5blik2ajm6hb5i4ay57yyzbiy5ana0-sensu-plugins-mysql-3.1.1;
+  sensu-plugins-disk-checks = getClosureFromStore /nix/store/kmrapdk57468z9zcl57wk1vhz550naqm-sensu-plugins-disk-checks-5.1.4;
+  sensu-plugins-entropy-checks = getClosureFromStore /nix/store/fa43q081m3hgvb2lkrqrmjki9349llrv-sensu-plugins-entropy-checks-1.0.0;
+  sensu-plugins-http = getClosureFromStore /nix/store/b297df4389l1nrfbsh70x73qqfgamhq0-sensu-plugins-http-6.1.0;
+  sensu-plugins-logs = getClosureFromStore /nix/store/cxya5kgd5rksqvqq4mx1cim32wv9nzr2-sensu-plugins-logs-4.1.1;
+  sensu-plugins-network-checks = getClosureFromStore /nix/store/155c327fy4din77fv4sk6xzc1k8afbam-sensu-plugins-network-checks-4.0.0;
+  sensu-plugins-postfix = getClosureFromStore /nix/store/ac14jxfzl77nm09i4w2p6mrbl6fj6ri4-sensu-plugins-postfix-1.0.0;
+  sensu-plugins-postgres = getClosureFromStore /nix/store/mzlxvlfwn8bga044vdabpzdcqwjjblr1-sensu-plugins-postgres-4.2.0;
+  sensu-plugins-rabbitmq = getClosureFromStore /nix/store/lcvrxlakcxiqzvwq7g284nhzqfc5gvjv-sensu-plugins-rabbitmq-8.1.0;
+  sensu-plugins-redis = getClosureFromStore /nix/store/qbqnynpw5mzx98nz8lx89gpjw91wyd5b-sensu-plugins-redis-4.1.0;
 
   solr = super.callPackage ./solr { };
 
   temporal_tables = super.callPackage ./postgresql/temporal_tables { };
-
-  tideways_daemon = super.callPackage ./tideways/daemon.nix {};
-  tideways_module = super.callPackage ./tideways/module.nix {};
 
   # XXX: qt4 was removed upstream, we have to bring it back somehow. Or just tell people to use old channels for this?
   #wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };

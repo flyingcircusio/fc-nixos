@@ -6,7 +6,6 @@
     boot.loader.grub.device = "/dev/sda";
     fileSystems."/".device = "/dev/disk/by-label/nixos";
     networking.useDHCP = lib.mkForce false;
-    users.users.root.password = "";
 
     flyingcircus.agent.enable = lib.mkOverride 200 false;
     flyingcircus.enc = config.fclib.mkPlatform {

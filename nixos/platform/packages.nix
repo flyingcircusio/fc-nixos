@@ -42,7 +42,7 @@
         netcat
         ngrep
         nix-top
-        nixfmt
+        nixfmt-rfc-style
         nmap
         nvd
         openssl
