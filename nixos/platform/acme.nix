@@ -42,4 +42,7 @@ in
     # fallback ACME settings
     security.acme.acceptTerms = true;
     security.acme.defaults.email = "admin@flyingcircus.io";
+    # get back ACME account hash generation of <= NixOS 23.11 to avoid forced
+    # re-registration, see https://github.com/NixOS/nixpkgs/issues/316608
+    security.acme.defaults.server = null;
 }

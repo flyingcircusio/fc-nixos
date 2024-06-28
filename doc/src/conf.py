@@ -34,10 +34,28 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-import sphinx_rtd_theme
+import furo
 
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = "furo"
+
+html_theme_options = {
+    "sidebar_hide_name": True,
+    "dark_logo": "RZ_FC-Logo_RGB_INV-BL_100-1080.svg",
+    "dark_css_variables": {
+        "color-brand-content": "#a9d2b6",
+        "color-brand-primary": "#a9d2b6",
+        "color-highlight-on-target": "#666",
+        "color-headings": "#fff",
+    },
+    "light_logo": "RZ_FC-Logo_RGB_100-1080.svg",
+    "light_css_variables": {
+        "color-brand-content": "#52a46c",
+        "color-brand-primary": "#52a46c",
+        "color-highlight-on-target": "#f2f5f8",
+        "color-headings": "#002855",
+        "font-stack": "Fira Sans, Helvetica, Arial, sans-serif",
+    },
+}
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -48,7 +66,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "images/flying-circus-logo.png"
+# html_logo = "images/flying-circus-logo.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32

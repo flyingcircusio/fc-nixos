@@ -19,9 +19,11 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     jdk11 = "${pkgs.jdk11}"
     jdk11_headless = "${pkgs.jdk11_headless}"
     jdk17 = "${pkgs.jdk17}"
-    jdk19 = "${pkgs.jdk19}"
     jdk17_headless = "${pkgs.jdk17_headless}"
+    jdk19 = "${pkgs.jdk19}"
     jdk19_headless = "${pkgs.jdk19_headless}"
+    jdk21 = "${pkgs.jdk21}"
+    jdk21_headless = "${pkgs.jdk21_headless}"
     jdk8 = "${pkgs.jdk8}"
     jdk8_headless = "${pkgs.jdk8_headless}"
     jre = "${pkgs.jre}"
@@ -35,10 +37,10 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     openjdk17_headless = "${pkgs.openjdk17_headless}"
     openjdk19 = "${pkgs.openjdk19}"
     openjdk19_headless = "${pkgs.openjdk19_headless}"
+    openjdk21 = "${pkgs.openjdk21}"
+    openjdk21_headless = "${pkgs.openjdk21_headless}"
     openjdk8 = "${pkgs.openjdk8}"
     openjdk8_headless = "${pkgs.openjdk8_headless}"
-
-    print()
 
     with subtest("Package aliases for Java 8 should point to the same package"):
       assert openjdk8 == jdk8
@@ -64,14 +66,19 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     with subtest("Package aliases for Java 19 headless should point to the same package"):
       assert openjdk19_headless == jdk19_headless
 
+    with subtest("Package aliases for Java 21 should point to the same package"):
+      assert openjdk21 == jdk21
 
-    with subtest("Java 19 is the default package"):
-      assert openjdk == jdk19
+    with subtest("Package aliases for Java 21 headless should point to the same package"):
+      assert openjdk21_headless == jdk21_headless
+
+    with subtest("Java 21 is the default package"):
+      assert openjdk == jdk21
       assert jre == jdk
       assert jdk == openjdk
 
-    with subtest("Java 19 is the default headless package"):
-      assert jre_headless == jdk19_headless
+    with subtest("Java 21 is the default headless package"):
+      assert jre_headless == jdk21_headless
 
     package_versions = {
       jdk8: "1.8",
@@ -82,11 +89,14 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
       jdk11_headless: "11",
       openjdk17: "17",
       openjdk19: "19",
+      openjdk21: "21",
     }
 
     for package, version in package_versions.items():
       with subtest(f"Checking java version in {package}"):
         out = machine.succeed(f"{package}/bin/java -version 2>&1")
-        assert f"openjdk version \"{version}." in out
+        assert f"openjdk version \"{version}" in out, (
+          f"Couldn't find expected string \"{version} in: {out}"
+        )
   '';
 })

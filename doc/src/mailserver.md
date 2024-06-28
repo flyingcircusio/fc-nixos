@@ -13,9 +13,6 @@ spam control.
 User accounts can be created/modified dynamically. There is, however, no default
 mechanism for user management besides text files.
 
-```{contents}
-```
-
 ## Which components are included?
 
 The main ingredients of this role are [Postfix] for mail delivery, [Dovecot] as

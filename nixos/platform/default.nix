@@ -176,7 +176,7 @@ in {
     flyingcircus.platform = {
       version = mkOption {
         readOnly = true;
-        default = "23.11";
+        default = "24.05";
       };
 
       editions = mkOption {
@@ -184,7 +184,7 @@ in {
         description = ''
           Documented branches of this platform version.
         '';
-        default = [ "fc-23.11-production" "fc-23.11-staging" "fc-23.11-dev" ];
+        default = [ "pre-fc-24.05" "fc-24.05-dev" "fc-24.05-staging" "fc-24.05-production" ];
       };
     };
 
