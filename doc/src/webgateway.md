@@ -6,11 +6,6 @@ This role provides a stack of components that enables you to serve a web
 application via HTTP. In addition, you can do load balancing and configure
 failover support.
 
-```{contents} Table of Contents
-:local: true
-:depth: 2
-```
-
 ## Versions
 
 - HAProxy: 2.9.x
