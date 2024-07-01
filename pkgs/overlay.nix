@@ -402,15 +402,13 @@ in {
     ];
   });
 
-  openssh_8_7 = super.openssh.overrideAttrs(_: rec {
-    version = "8.7p1";
-    name = "openssh-${version}";
+  openssh_9_6 = nixpkgs-23_05.openssh;
 
-    src = super.fetchurl {
-      url = "mirror://openbsd/OpenSSH/portable/openssh-${version}.tar.gz";
-      sha256 = "090yxpi03pxxzb4ppx8g8hdpw7c4nf8p0avr6c7ybsaana5lp8vw";
-    };
-
+  libpcap-vxlan = super.libpcap.overrideAttrs (old: {
+    pname = "libpcap-vxlan";
+    patches = old.patches or [] ++ [
+      ./libpcap-replace-geneve-with-vxlan.patch
+    ];
   });
 
   percona = self.percona80;
