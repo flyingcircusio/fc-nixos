@@ -462,7 +462,11 @@ in {
     patches = with builtins;
       filter (p: ! (elem (builtins.baseNameOf p)
                  ["CVE-2021-41617-1.patch" "CVE-2021-41617-2.patch"]))
-      old_ssh.patches;
+      old_ssh.patches
+      ++ [
+        ./openssh/openssh-9.6_p1-CVE-2024-6387.patch
+        ./openssh/openssh-9.6_p1-chaff-logic.patch
+      ];
 
   });
 
