@@ -1,10 +1,31 @@
+@import "https://flyingcircus.io/fileadmin/global-data/fira/fira-small.css";
 
-img.logo {
-    float: right;
-    margin-left: 2em;
-    margin-bottom: 2em;
+.highlight {
+    background: var(--color-highlight-on-target);
 }
 
-img.logo.frame {
-    border:2px solid black;
+h1, h2, h3, h4, h5, h6 {
+    color: var(--color-headings);
+}
+
+/* Layout */
+.sidebar-logo {
+    width: 80%;
+    max-width: 300px;
+    margin: 0;
+}
+
+.sidebar-container {
+    box-sizing: border-box;
+    width: 85%;
+}
+
+.toctree-l1,
+ul,
+ul ul {
+    list-style-type: square;
+}
+
+li::marker {
+    color: var(--color-brand-content);
 }

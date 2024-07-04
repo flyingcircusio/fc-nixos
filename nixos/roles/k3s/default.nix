@@ -63,6 +63,7 @@
           }
         ];
 
+      services.k3s.package = pkgs.k3s_1_27;
     }
 
     (lib.mkIf (server || agent) {

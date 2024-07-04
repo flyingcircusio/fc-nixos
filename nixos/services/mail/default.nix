@@ -210,6 +210,9 @@ in {
         certificateScheme = 3;
         enableImapSsl = true;
         enableManageSieve = true;
+        # FC-38677 - we have a properly configured local resolver in our
+        # platform, so a bland unconfigured kresd is counterproductive.
+        localDnsResolver = false;
         lmtpSaveToDetailMailbox = "no";
         mailDirectory = vmailDir;
         mailboxes = {
@@ -234,6 +237,11 @@ in {
       };
 
       flyingcircus.agent.userscan-ignore-users = [ "vmail" ];
+
+      # See https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/issues/289
+      systemd.services.postfix.restartTriggers = [ config.mailserver.localDnsResolver  ];
+      systemd.services.rspamd.restartTriggers = [ config.mailserver.localDnsResolver ];
+      systemd.services.opendkim.restartTriggers = [ config.mailserver.localDnsResolver ];
 
       services.dovecot2.extraConfig = ''
         passdb {
@@ -315,7 +323,6 @@ in {
             "reject_rbl_client ix.dnsbl.manitu.net"
             "reject_unknown_client_hostname"
           ];
-          smtpd_forbid_bare_newline = "normalize";
           smtpd_data_restrictions = "reject_unauth_pipelining";
           smtpd_helo_restrictions = [
             "permit_sasl_authenticated"

@@ -42,7 +42,7 @@ in {
       with subtest("killing the ferretdb process should trigger an automatic restart"):
         _, out = machine.systemctl("show ferretdb --property MainPID --value")
         previous_pid = int(out.strip())
-        machine.succeed("systemctl kill -s KILL ferretdb")
+        machine.succeed("systemctl kill -s KILL --kill-whom main ferretdb")
         machine.wait_until_succeeds('test $(systemctl show ferretdb --property NRestarts --value) -eq "1"')
         machine.wait_until_succeeds("${sensuCheck "ferretdb"}")
         _, out = machine.systemctl("show ferretdb --property MainPID --value")

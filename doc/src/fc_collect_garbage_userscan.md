@@ -93,6 +93,11 @@ Currently, the following paths are ignored:
 **/journal/
 **/lucene/
 **/solr/data/
+# Very big, has misleading store paths which shouldn't be registered.
+**/nixpkgs*/
+# If we missed a nixpkgs directory: test files from this directory trip
+# userscan over as they contain store paths which are too long on purpose.
+**/pkgs/test/make-binary-wrapper/*
 # Files in sub-directories to ignore (anywhere in the home directory)
 **/.local/share/fish/fish_history
 **/diagnostic.data/metrics.*

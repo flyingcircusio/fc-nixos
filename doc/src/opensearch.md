@@ -2,7 +2,7 @@
 
 # OpenSearch
 
-Managed instance of [OpenSearch](https://opensearch.org) in version 2.11.x.
+Managed instance of [OpenSearch](https://opensearch.org) in version 2.14.x.
 
 
 ## Interaction
@@ -141,11 +141,11 @@ The current upgrade path is:
 
 - On 22.11, switch from Elasticsearch 6 to 7 and reindex.
 - Migrate from Elasticsearch 7 to OpenSearch.
-- Upgrade the VM to 23.11 which also upgrades OpenSearch.
+- Upgrade the VM to 24.05 which also upgrades OpenSearch.
 
 See the [22.11 OpenSearch role docs](https://doc.flyingcircus.io/roles/fc-22.11-production/opensearch.html#migrate-upgrade-from-elasticsearch) for the migration process.
 
-We will provide Elasticsearch roles on 23.11 in the future to allow upgrading the VM first
+We will provide Elasticsearch roles on 24.05 in the future to allow upgrading the VM first
 while keeping the same ES versions. You can migrate to OpenSearch later.
 
 ## Monitoring
