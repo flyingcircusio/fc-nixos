@@ -28,6 +28,8 @@ def test_invoke(locked, getpwall: Mock, run, popen, tmpdir, log, logger):
     runner = typer.testing.CliRunner()
     exclude_file = tmpdir / "fc-userscan.exclude"
     exclude_file.write_text("ignorethis", encoding="utf8")
+    ignore_user_file = tmpdir / "fc-userscan.ignore_users"
+    ignore_user_file.write_text("notthisuser", encoding="utf8")
 
     args = (
         "--verbose",
@@ -37,6 +39,8 @@ def test_invoke(locked, getpwall: Mock, run, popen, tmpdir, log, logger):
         tmpdir,
         "--exclude-file",
         exclude_file,
+        "--ignore-users-file",
+        ignore_user_file,
     )
     result = runner.invoke(fc.manage.collect_garbage.app, args)
 

@@ -3,6 +3,7 @@ import os
 import pwd
 import subprocess
 from pathlib import Path
+from typing import List, Optional
 
 import fc.util.lock
 import structlog
@@ -56,6 +57,14 @@ def collect_garbage(
         default="/run/lock",
         help="Where the lock file for exclusive operations should be placed.",
     ),
+    ignore_users_file: Path = Option(
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        default="/etc/userscan/ignore-users",
+        help="File with names of users to ignore for fc-userscan",
+    ),
 ):
     init_logging(verbose, syslog_identifier="fc-collect-garbage")
     log = structlog.get_logger()
@@ -63,10 +72,15 @@ def collect_garbage(
     log.debug("collect-garbage-start")
 
     return_codes = []
+
+    with ignore_users_file.open("r") as f:
+        ignore_users = set([x.strip() for x in f])
     users_to_scan = [
         user
         for user in pwd.getpwall()
-        if user.pw_uid >= 1000 and user.pw_dir != "/var/empty"
+        if user.pw_uid >= 1000
+        and user.pw_dir != "/var/empty"
+        and user.pw_name not in ignore_users
     ]
     log.info(
         "userscan-start",
