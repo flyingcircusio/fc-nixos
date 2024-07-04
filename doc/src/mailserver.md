@@ -23,7 +23,7 @@ We rely mainly on [rspamd] for spam protection. To get outgoing mails
 delivered, they are signed with[OpenDKIM] and a basic [SPF] and [SRS] setup
 is included.
 
-Additionally, a Thunderbird-compatible client[autoconfiguration] XML file is
+Additionally, a Thunderbird-compatible client [autoconfiguration] XML file is
 provided which helps many clients to configure themselves properly.
 
 (nixos-mailserver-basic-setup)=
@@ -42,8 +42,8 @@ which will be advertised as MX name on your mail domain. This host name (called
 **mailHost** from here on) must resolve to the FE addresses with both forward
 and reverse lookups.
 
-Additionally, some mail providers (namely \[Telekom/T-Online\]
-(<https://postmaster.t-online.de/#t4.1>)) may require that your mailserver
+Additionally, some mail providers (namely [Telekom/T-Online](https://postmaster.t-online.de/#t4.1))
+may require that your mailserver
 has an imprint served at its hostname.
 
 For this you can either set `imprintUrl` to the location of your existing
