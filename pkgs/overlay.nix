@@ -305,6 +305,27 @@ in {
 
   openldap_2_4 = super.callPackage ./openldap_2_4.nix { };
 
+  # fixes critical CVEs, especially CVE-2024-6387
+  openssh_9_6 = super.openssh.overrideAttrs(old_ssh: rec {
+    version = "9.6p1";
+    name = "openssh-${version}";
+
+    src = super.fetchurl {
+      url = "mirror://openbsd/OpenSSH/portable/openssh-${version}.tar.gz";
+      hash = "sha256-kQIRwHJVqMWtZUORtA7lmABxDdgRndU2LeCThap6d3w=";
+    };
+
+    patches = with builtins;
+      filter (p: ! (elem (builtins.baseNameOf p)
+                 ["CVE-2021-41617-1.patch" "CVE-2021-41617-2.patch"]))
+      old_ssh.patches
+      ++ [
+        ./openssh/openssh-9.6_p1-CVE-2024-6387.patch
+        ./openssh/openssh-9.6_p1-chaff-logic.patch
+      ];
+
+  });
+
   # fixes several CVEs https://www.openssl.org/news/secadv/20230207.txt
   inherit (super.callPackages ./openssl { })
       openssl_1_1
