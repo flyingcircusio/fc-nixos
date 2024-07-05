@@ -153,7 +153,11 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     flyingcircus.services.sensu-client.checks = with pkgs; {
       interfaces = {
         notification = "Network interfaces are healthy";
-        command = "sudo ${fc.sensuplugins}/bin/check_interfaces -a -s 1000:";
+        command = "sudo ${fc.sensuplugins}/bin/check_interfaces " + (
+           lib.concatMapStringsSep " "
+             (link: "-i ${link.link},1000:10000")
+             cfg.networking.monitorLinks
+           );
         interval = 60;
       };
       lvm_integrity = {
