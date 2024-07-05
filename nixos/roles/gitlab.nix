@@ -268,7 +268,7 @@ in
     # Needed for Git via SSH.
     users.users.gitlab.extraGroups = [ "login" ];
 
-    systemd.services.gitlab-mailroom.serviceConfig.Restart = lib.mkForce "always";
+    systemd.services.gitlab-mailroom.serviceConfig.Restart = lib.mkOverride 90 "always";
   })
 
   (lib.mkIf (cfg.enable && cfg.extraSecrets != []) {
