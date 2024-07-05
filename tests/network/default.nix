@@ -59,7 +59,7 @@ in {
 
     loopback = {
       name = "loopback";
-      machine = {
+      nodes.machine = {
           imports = [ ../../nixos ../../nixos/roles ];
       };
       testScript = ''
@@ -71,7 +71,7 @@ in {
 
     wireguard = {
       name = "wireguard";
-      machine = {
+      nodes.machine = {
         imports = [ ../../nixos ../../nixos/roles ];
       };
       testScript = ''
@@ -111,7 +111,7 @@ in {
 
 
     name-resolution = {
-      machine =
+      nodes.machine =
         { pkgs, ... }:
         {
           imports = [ ../../nixos ../../nixos/roles ];

@@ -31,7 +31,7 @@ in
 
   testScript = { nodes, ... }:
   let
-    config = nodes.master.config;
+    config = nodes.master;
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
     mysqlCheck = "sudo -u sensuclient " + sensuChecks.mysql.command;
     version = config.services.percona.package.version;

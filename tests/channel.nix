@@ -10,7 +10,7 @@ let
 in {
   name = "channel";
 
-  machine = {
+  nodes.machine = {
     imports = [ ../nixos ../nixos/roles ];
 
     flyingcircus.enc.parameters = {

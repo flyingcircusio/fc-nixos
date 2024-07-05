@@ -3,7 +3,7 @@ import ./make-test-python.nix ({ ... }:
 # Checks that systemd does not detect any circular service dependencies on boot.
 {
   name = "systemd-service-cycles";
-  machine =
+  nodes.machine =
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];

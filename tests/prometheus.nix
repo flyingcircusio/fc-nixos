@@ -1,7 +1,7 @@
 import ./make-test-python.nix ({ ... }:
 {
   name = "prometheus";
-  machine =
+  nodes.machine =
     { config, ... }:
     {
       imports = [ ../nixos ../nixos/roles ];

@@ -2,7 +2,7 @@ import ./make-test-python.nix ({ pkgs, lib, ... }:
 {
   name = "servicecheck";
 
-  machine = {
+  nodes.machine = {
     imports = [ ../nixos ../nixos/roles ];
 
     flyingcircus.roles.servicecheck.enable = true;

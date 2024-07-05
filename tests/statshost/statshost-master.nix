@@ -1,7 +1,7 @@
 import ../make-test-python.nix ({ pkgs, ... }:
 {
   name = "statshost-master";
-  machine =
+  nodes.machine =
     { config, ... }:
     {
       imports = [ ../../nixos ../../nixos/roles ];

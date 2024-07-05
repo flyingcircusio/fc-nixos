@@ -3,7 +3,7 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
 {
   name = "backyserver";
 
-  machine = {
+  nodes.machine = {
     imports = [
       ../nixos
       ../nixos/roles
