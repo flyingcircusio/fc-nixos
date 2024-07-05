@@ -16,7 +16,9 @@ Also note that these packages don't provide running services/daemons, like
 `apacheHttpd`. Services are typically activated by adding _roles_
 (also called _components_) to a machine, for example `lamp`.
 
-You can look up packages and their descriptions via the [NixOS Package Search](https://search.nixos.org/packages).
+You can look up packages and their descriptions via:
+- the [Flying Circus Package Search](https://search.flyingcircus.io/search/packages): provides packages both from the upstream NixOS project as well as additions from our platform
+- or [NixOS Package Search](https://search.nixos.org/packages): only provides upstream NixOS packages, but also returns results from nested package sets
 
 ## Packages added by our platform
 

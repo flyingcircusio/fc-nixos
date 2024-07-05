@@ -195,10 +195,10 @@ CLI.
 
 Supported packages:
 
-- `pkgs.lamp_php72` (outdated but provided for legacy applications)
-- `pkgs.lamp_php73`
-- `pkgs.lamp_php74`
-- `pkgs.lamp_php80`
+- `pkgs.lamp_php72` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
+- `pkgs.lamp_php73` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
+- `pkgs.lamp_php74` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
+- `pkgs.lamp_php80` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
 - `pkgs.lamp_php81`
 - `pkgs.lamp_php82` (default)
 - `pkgs.lamp_php83`
