@@ -67,6 +67,7 @@
       "original": {
         "owner": "cachix",
         "repo": "devenv",
+        "rev": "f810f8d8cb4e674d7e635107510bcbbabaa755a3",
         "type": "github"
       }
     },
@@ -316,16 +317,17 @@
       },
       "locked": {
         "host": "gitlab.flyingcircus.io",
-        "lastModified": 1717507921,
-        "narHash": "sha256-T3BiZRyD/jsEYKYO8iBA0kBlAiyC2wnJehWO0Ky5tLU=",
+        "lastModified": 1720096716,
+        "narHash": "sha256-5wpN5zFhdY/L1WgZX8B/MKFnNws5rqNFU3NPVgTQQXk=",
         "owner": "flyingcircus",
         "repo": "nixos-mailserver",
-        "rev": "a03b2ae33db2f20961ef29b41e4696db58e0483a",
+        "rev": "d772ec77e8cc8133b00018a1e548d5a4b984e6e3",
         "type": "gitlab"
       },
       "original": {
         "host": "gitlab.flyingcircus.io",
         "owner": "flyingcircus",
+        "ref": "nixos-24.05",
         "repo": "nixos-mailserver",
         "type": "gitlab"
       }
