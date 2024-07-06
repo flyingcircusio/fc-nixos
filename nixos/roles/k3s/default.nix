@@ -63,8 +63,11 @@
           }
         ];
 
-      services.k3s.package = pkgs.k3s_1_27;
     }
+
+    (lib.mkIf (lib.versionOlder config.system.stateVersion "24.05") {
+        services.k3s.package = pkgs.k3s_1_27;
+    })
 
     (lib.mkIf (server || agent) {
       flyingcircus.passwordlessSudoPackages = [
