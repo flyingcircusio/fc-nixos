@@ -16,12 +16,20 @@ in {
       collect-garbage =
         mkEnableOption
         "automatic scanning for Nix store references and garbage collection";
+      userscan-ignore-users = lib.mkOption {
+        default = [];
+        type = types.listOf types.str;
+        description = "Users to ignore while scanning for store references.";
+      };
     };
   };
 
   config = lib.mkMerge [
     {
       environment.etc."userscan/exclude".source = ./collect-garbage-userscan.exclude;
+      environment.etc."userscan/ignore-users".text = (
+        lib.concatStringsSep "\n" config.flyingcircus.agent.userscan-ignore-users
+      );
       systemd.tmpfiles.rules = [
         "f ${log}"
       ];

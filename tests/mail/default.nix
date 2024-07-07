@@ -32,6 +32,9 @@ in
           {
             virtualisation.memorySize = 2048;
 
+            # lower limit for allowing the enabling of antivirus
+            flyingcircus.enc.parameters.memory = 3072;
+
             flyingcircus.roles.mailserver = {
               enable = true;
               mailHost = "mail.example.local";

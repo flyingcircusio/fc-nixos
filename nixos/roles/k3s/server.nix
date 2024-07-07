@@ -354,7 +354,7 @@ in {
       before = [ "k3s.service" ];
       requires = [ "postgresql.service" ];
       script = ''
-        PSQL="${config.services.postgresql.package}/bin/psql --port=${toString config.services.postgresql.port}"
+        PSQL="${config.services.postgresql.package}/bin/psql --port=${toString config.services.postgresql.settings.port}"
         for i in {1..10}; do
           $PSQL -d postgres -c "" 2> /dev/null && break
           sleep 0.5

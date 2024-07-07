@@ -236,6 +236,8 @@ in {
         vmailUserName = "vmail";
       };
 
+      flyingcircus.agent.userscan-ignore-users = [ "vmail" ];
+
       # See https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/issues/289
       systemd.services.postfix.restartTriggers = [ config.mailserver.localDnsResolver  ];
       systemd.services.rspamd.restartTriggers = [ config.mailserver.localDnsResolver ];

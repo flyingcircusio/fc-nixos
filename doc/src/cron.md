@@ -4,7 +4,7 @@
 
 NixOS generally uses `systemd` which provides "Timers" as a replacement for
 cron. However, for your convenience, regular cron is available on NixOS
-machines.
+machines as well.
 
 :::{note}
 User crontabs are not managed within the NixOS

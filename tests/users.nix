@@ -2,7 +2,7 @@ import ./make-test-python.nix ({ lib, testlib, ... }:
 
 {
   name = "users";
-  machine =
+  nodes.machine =
     { pkgs, lib, config, ... }:
     let
       userData =

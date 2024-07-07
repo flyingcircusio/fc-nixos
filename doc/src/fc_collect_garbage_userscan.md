@@ -67,6 +67,9 @@ which may be a long time.
 default set of excludes in {file}`/etc/userscan/exclude` which is used
 by *fc-collect-garbage* automatically.
 
+Whole *user home directories* can be excluded from scans by adding them to
+the NixOS option `flyingcircus.agent.userscan-ignore-users`.
+
 If you need to add more exclusion rules you may add them as one regex per line
 to {file}`~/.userscan-ignore`. The file uses a pattern format like
 [gitignore](https://git-scm.com/docs/gitignore).

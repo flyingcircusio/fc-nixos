@@ -41,7 +41,7 @@ in
 {
   name = "sudo";
   enableOCR = true;
-  machine =
+  nodes.machine =
     { pkgs, lib, config, ... }:
     {
       imports = [

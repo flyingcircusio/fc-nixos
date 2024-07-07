@@ -154,7 +154,7 @@ let
 in
  rec {
   name = "kernel-config";
-  machine =
+  nodes.machine =
     { config, ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
@@ -197,7 +197,7 @@ in
             opts[key] = value
         return cfg, opts
 
-    expectedRaw, expectedConfig = parseConfigDef("""${toString nodes.machine.config.flyingcircus.kernelOptions}\n${additionalExpectedConfig}""")
+    expectedRaw, expectedConfig = parseConfigDef("""${toString nodes.machine.flyingcircus.kernelOptions}\n${additionalExpectedConfig}""")
 
     duplicateOptions = []
     # Ensure the expected config has no double entries

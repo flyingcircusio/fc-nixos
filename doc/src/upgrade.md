@@ -136,4 +136,41 @@ TODO details about used package version depending on NixOS state release, upgrad
 
 ## Significant package updates
 
-- ...
+*as of 2024-07-05*
+
+- binutils: 2.40 -> 2.41
+- bundler: 2.4 -> 2.5
+- cmake: 3.27 -> 3.29
+- coreutils: 9.3 -> 9.5
+- curl: 8.4 -> 8.7
+- docker-compose: 2.23 -> 2.27
+- ffmpeg: 6.0 -> 6.1
+- gcc: 12.3 -> 13.2 (older versions available under alias)
+- ghostscript: 10.02 -> 10.03
+- git: 2.42 -> 2.44
+- gitlab: 16.10 -> 16.11
+- glibc: 2.38 -> 2.39
+- go: 1.21 -> 1.22 (1.21 remains available under alias)
+- grafana: 10.2 -> 10.4
+- k3s: see above
+- kubernetes-helm: 3.13 -> 3.15
+- libjpeg-turbo: 2.1 -> 3.0
+- libressl: 3.8 -> 3.9
+- libwep: 1.3 -> 1.4
+- libxml2: 2.11 -> 2.12
+- mailutils: 3.16 -> 3.17
+- nginx: 1.24 -> 1.26
+- nodejs: 18 -> 20 (older versions available under alias)
+- openjdk: 19 -> 21 (older versions available under alias)
+- opensearch: 2.11 -> 2.14
+- openssh: 9.6p1 -> 9.7p1
+- openvpn: 2.5 -> 2.6
+- podman: 4.7 -> 5.0
+- poetry: 1.7 -> 1.8
+- postfix: 3.8 -> 3.9
+- powerdns: 4.8 -> 4.9
+- prometheus: 2.49 -> 2.52
+- python3Packages.boto3: 1.28 -> 1.34
+- python3Packages.pillow: 10.2 -> 10.3
+- rsync: 3.2 -> 3.3
+- systemd: 254 -> 255

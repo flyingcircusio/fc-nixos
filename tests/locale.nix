@@ -1,7 +1,7 @@
 import ./make-test-python.nix ({ ... }:
 {
   name = "locale";
-  machine =
+  nodes.machine =
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];

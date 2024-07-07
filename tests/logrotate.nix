@@ -5,7 +5,7 @@ import ./make-test-python.nix (
   { pkgs, ... }:
   {
     name = "user-logrotate";
-    machine =
+    nodes.machine =
       { ... }:
       {
         imports = [ ../nixos ../nixos/roles ];

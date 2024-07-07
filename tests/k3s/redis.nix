@@ -5,7 +5,10 @@ rec {
   image = pkgs.dockerTools.buildImage {
     name = "redis";
     tag = "latest";
-    contents = [ pkgs.redis ];
+    copyToRoot = pkgs.buildEnv {
+      name = "image-root";
+      paths = [ pkgs.redis ];
+    };
     config.Entrypoint = ["/bin/redis-server"];
   };
 

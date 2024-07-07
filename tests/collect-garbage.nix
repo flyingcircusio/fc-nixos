@@ -10,7 +10,7 @@ import ./make-test-python.nix (
   in
   {
     name = "collect-garbage";
-    machine =
+    nodes.machine =
       { ... }:
       {
         imports = [ ../nixos ../nixos/roles ];

@@ -230,6 +230,10 @@ in
       flyingcircus.services.nginx.enable = true;
       flyingcircus.services.redis.enable = true;
 
+      # Ensure we enable our clamav customizations and not run with a
+      # default clamav as enabled by the nixos mailserver package.
+      flyingcircus.roles.antivirus.enable = true;
+
       flyingcircus.passwordlessSudoPackages = [
         {
           commands = [ "bin/postsuper" ];

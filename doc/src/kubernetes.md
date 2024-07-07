@@ -3,7 +3,7 @@
 # Kubernetes Cluster (k3s)
 
 :::{note}
-Kubernetes support is in beta. Feel free to use it but we suggest contacting
+Kubernetes/k3s is complex. Feel free to use it but we suggest contacting
 our support before putting anything into production.
 :::
 
@@ -30,7 +30,8 @@ run in a process called the `k3s agent`. We will prefer to use the words
 `server` and `agent` through the remainder of this document.
 :::
 
-We provide version 1.27.x of k3s.
+Machines created on NixOS 24.05 use k3s version 1.30.x. Machines upgraded
+from earlier platform versions use 1.27.x of k3s by default which was also the default for NixOS 23.11. Contact support if you want to use newer versions of k3s on these machines.
 
 ## Reference architecture and minimal resource requirements
 

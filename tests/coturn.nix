@@ -107,9 +107,9 @@ in {
 
   testScript = { nodes, ... }:
   let
-    config = nodes.turnserver.config;
+    config = nodes.turnserver;
     sensuChecks = config.flyingcircus.services.sensu-client.checks;
-    coturnCheck = lib.replaceChars ["\n"] [" "] sensuChecks.coturn.command;
+    coturnCheck = lib.replaceStrings ["\n"] [" "] sensuChecks.coturn.command;
   in ''
     start_all()
     turnserver.wait_for_unit("coturn.service")
