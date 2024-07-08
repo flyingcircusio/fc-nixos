@@ -325,6 +325,8 @@ in {
         attrByPath [ "static" "ntpServers" loc ] [ "pool.ntp.org" ] cfg;
     };
 
+    programs.ssh.package = pkgs.openssh_9_6;
+
     system.activationScripts = let
       cfgDirs = cfg.localConfigDirs;
 
