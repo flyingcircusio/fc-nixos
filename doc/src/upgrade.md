@@ -17,8 +17,8 @@ Contact our {ref}`support` for upgrade assistance.
 
 - New roles: {ref}`percona83 <nixos-upgrade-percona>`
 - Removed roles: {ref}`percona81 <nixos-upgrade-percona>`
-- Removed packages:
-- Roles affected by significant breaking changes:
+- Removed significant packages: `python38`
+- Roles affected by significant breaking changes: none
 
 
 ## Why upgrade? Security
@@ -121,15 +121,16 @@ We still recommend using the LTS `percona80` for most use cases, see
 
 ### K3S
 
-TODO details about used package version depending on NixOS state release, upgrade path
-
-### ...
+Machines created on NixOS 24.05 use k3s version 1.30.x. Machines upgraded
+from earlier platform versions use 1.27.x of k3s by default which was also the
+default for NixOS 23.11. Contact support if you want to use newer versions of k3s on these machines.
 
 ## Other notable changes
 
-- ...
 - `lamp` roles: Platform integration for the <https://tideways.com> application profiler has been dropped, the respective NixOS options are not available anymore.
-- TODO php packages: new versions, dropped versions?
+- `inetutils` now has a lower priority to avoid shadowing the commonly-used `util-linux`. If one wishes to restore the default priority, simply use `lib.setPrio 5 inetutils` or override with `meta.priority = 5`.
+- `pdns` was updated to version v4.9.x, which introduces breaking changes. Check out the Upgrade Notes for details.
+- `openssh`, `openssh_hpn` and `openssh_gssapi` are now compiled without support for the DSA signature algorithm as it is being deprecated upstream. Users still relying on DSA keys should consider upgrading to another signature algorithm. However, for the time being it is possible to restore DSA key support by overriding the Nix package parameters, e.g. setting `openssh.override {dsaKeysSupport = true;}`.
 - For more details, see the
   [release notes of NixOS 24.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-24.05-notable-changes).
 
