@@ -168,7 +168,13 @@ in
         default = null;
         description = ''
           A file containing SQL statements to be executed on the first startup.
-          Can be used for granting certain permissions on the database
+          Can be used for granting certain permissions on the database.
+
+          ::: {.caution}
+          The script will only be executed at first startup and is ignored afterwards.
+          Enabling the service first and only etting an `initialScript` later
+          won't have any effect.
+          :::
         '';
       };
 

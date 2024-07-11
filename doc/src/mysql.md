@@ -70,3 +70,18 @@ permission for executing xtrabackup from the service user as root.
 The default monitoring setup checks that the MySQL server process is
 running and that it responds to connection attempts to the standard MySQL
 port.
+
+## Populating with Initial Data
+
+For populating the database with data or executing other custom SQL commands at
+first startup, the NixOS option `services.percona.initialScript` can be set to a
+file containing such SQL commands.
+
+:::{caution}
+This is mainly useful for {ref}`nixos-devhost` deployments, as the script will only
+be executed at first startup and is ignored afterwards.
+
+Enabling a Percona role first and only setting an initial script later won't have
+any effect anymore.
+% hidden note as of 20240711: It is possible to re-trigger db initialisation by `touch /run/mysql_init`, but we have decided not to expose this as an official stable API.
+:::
