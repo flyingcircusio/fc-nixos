@@ -112,10 +112,10 @@ A development environment (e.g. named ``dev``) would typically look like this:
    method = fc-nixos-dev-vm
    # The release has the format fcrs://channel/release
    # release can be empty, than the latest release for the channel is used.
-   release = fcrs://fc-23.11-production/2024_001
+   release = fcrs://fc-24.05-production/2024_021
    host = dev.example.com
 
-   channel = https://hydra.flyingcircus.io/build/116563/download/1/nixexprs.tar.xz
+   channel = https://hydra.flyingcircus.io/build/457353/download/1/nixexprs.tar.xz
 
 
    [host:myvm]
