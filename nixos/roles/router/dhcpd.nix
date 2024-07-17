@@ -48,6 +48,12 @@ let
     # DHCPv6 specific general options
     option dhcp6.name-servers ${lib.concatStringsSep ", " resolvers6};
   '';
+
+  dhcpInterfaces = let
+    names = [ "mgm" "srv" "fe" ] ++
+            (config.flyingcircus.static.additionalDhcpNetworks."${location}" or []);
+  in
+    map (net: fclib.network."${net}".interface) names;
 in
 {
   options = with lib; {
@@ -64,11 +70,7 @@ in
   config = lib.mkIf (role.enable) {
     services.dhcpd4 = {
       enable = role.isPrimary;
-      interfaces = [
-        fclib.network.fe.interface
-        fclib.network.srv.interface
-        fclib.network.mgm.interface
-      ];
+      interfaces = dhcpInterfaces;
       configFile = pkgs.writeText "dhcpd4.conf" ''
         ${baseConf}
         ${dhcpd4Conf}
@@ -78,11 +80,7 @@ in
 
     services.dhcpd6 = {
       enable = role.isPrimary;
-      interfaces = [
-        fclib.network.fe.interface
-        fclib.network.srv.interface
-        fclib.network.mgm.interface
-      ];
+      interfaces = dhcpInterfaces;
       configFile = pkgs.writeText "dhcpd6.conf" ''
         ${baseConf}
         ${dhcpd6Conf}
