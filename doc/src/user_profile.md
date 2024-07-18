@@ -35,7 +35,7 @@ Create a file like {file}`myproject_env.nix` which specifies the packages to be 
 let
   # Imports. Which package sources should be used?
   # Use a pinned platform version
-  # pkgs = import (fetchTarball https://hydra.flyingcircus.io/build/330577/download/1/nixexprs.tar.xz) {};
+  # pkgs = import (fetchTarball "https://hydra.flyingcircus.io/build/457353/download/1/nixexprs.tar.xz") {};
   # ...or just use the current version of the platform
   pkgs = import <nixpkgs> {};
 in

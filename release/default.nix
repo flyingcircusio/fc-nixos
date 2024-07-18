@@ -379,7 +379,6 @@ jobs // {
     tarOpts = ''
       --owner=0 --group=0 \
       --mtime="1970-01-01 00:00:00 UTC" \
-      --exclude-vcs-ignores \
     '';
 
     installPhase = ''

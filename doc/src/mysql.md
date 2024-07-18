@@ -33,7 +33,7 @@ and provide support for 2 releases in parallel:
 
 MySQL works out-of-the box without configuration.
 
-You can change the password for the mysql root user in {file}`/etc/local/mysql/mysql.passwd`.
+You can change the password for the mysql *root* user in {file}`/etc/local/mysql/mysql.passwd`.
 The MySQL service must be restarted to pick up the new password:
 
 ```
@@ -52,11 +52,11 @@ to activate the new configuration.
 
 ## Interaction
 
-You can find the password for the MySQL root user in {file}`/etc/local/mysql.passwd`.
+You can find the password for the MySQL *root* user in {file}`/etc/local/mysql.passwd`.
 Service users can read the password file.
 
 Service users can use {command}`sudo -iu mysql` to access the
-MySQL super user account to perform administrative commands
+MySQL *root* account to perform administrative commands
 and log files in {file}`/var/log/mysql`.
 To connect to the local MySQL server, run {command}`mysql` as *mysql* user:
 
@@ -86,3 +86,18 @@ permission for executing xtrabackup from the service user as root.
 The default monitoring setup checks that the MySQL server process is
 running and that it responds to connection attempts to the standard MySQL
 port.
+
+## Populating with Initial Data
+
+For populating the database with data or executing other custom SQL commands at
+first startup, the NixOS option `services.percona.initialScript` can be set to a
+file containing such SQL commands.
+
+:::{caution}
+This is mainly useful for {ref}`nixos-devhost` deployments, as the script will only
+be executed at first startup and is ignored afterwards.
+
+Enabling a Percona role first and only setting an initial script later won't have
+any effect anymore.
+% hidden note as of 20240711: It is possible to re-trigger db initialisation by `touch /run/mysql_init`, but we have decided not to expose this as an official stable API.
+:::

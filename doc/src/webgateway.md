@@ -86,7 +86,7 @@ looks like this:
 
 Put your HAProxy configuration in {file}`/etc/local/haproxy/haproxy.cfg`.
 You can find an example config at {file}`/etc/local/haproxy/haproxy.cfg.example`.
-Please refer to the [official documentation](http://cbonte.github.io/haproxy-dconv/2.3/configuration.html)
+Please refer to the [official documentation](https://docs.haproxy.org/2.9/configuration.html)
 for more details.
 
 If you need more than just one centralized configuration file,

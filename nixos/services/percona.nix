@@ -64,6 +64,7 @@ let
     user = root
     __EOT__
     chmod 440 /root/.my.cnf
+    # allow convenient logins as db `root` user for unix users `mysql` and `root
     cp -p /root/.my.cnf /srv/mysql/.my.cnf
     chown mysql:mysql /srv/mysql/.my.cnf
 
@@ -113,6 +114,8 @@ in
         description = "Port of MySQL";
       };
 
+      # FIXME: this cannot be configurable for us, we hard-code the `mysql`
+      # user home dir and its permissions later in the mysqlPreStart file
       user = mkOption {
         default = "mysql";
         description = "User account under which MySQL runs";
@@ -161,10 +164,17 @@ in
       };
 
       initialScript = mkOption {
+        type = with lib.types; nullOr path;
         default = null;
         description = ''
           A file containing SQL statements to be executed on the first startup.
-          Can be used for granting certain permissions on the database
+          Can be used for granting certain permissions on the database.
+
+          ::: {.caution}
+          The script will only be executed at first startup and is ignored afterwards.
+          Enabling the service first and only etting an `initialScript` later
+          won't have any effect.
+          :::
         '';
       };
 
@@ -245,7 +255,7 @@ in
           do
               if [ $count -eq 300 ]
               then
-                  echo "Tried 300 seconds, giving up..."
+                  echo "Tried 900 seconds, giving up..."
                   exit 1
               fi
 
@@ -288,7 +298,7 @@ in
               ${optionalString (cfg.initialScript != null)
                 ''
                   # Execute initial script
-                  cat ${cfg.initialScript} | ${mysql}/bin/mysql -u root -N
+                  cat ${cfg.initialScript} | ${mysql}/bin/mysql --defaults-extra-file=/root/.my.cnf -u root -N
                 ''}
 
             rm /run/mysql_init
