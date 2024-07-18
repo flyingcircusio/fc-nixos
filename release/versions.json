@@ -2,15 +2,15 @@
   "nixos-mailserver": {
     "deepClone": false,
     "fetchSubmodules": false,
-    "hash": "sha256-T3BiZRyD/jsEYKYO8iBA0kBlAiyC2wnJehWO0Ky5tLU=",
+    "hash": "sha256-5wpN5zFhdY/L1WgZX8B/MKFnNws5rqNFU3NPVgTQQXk=",
     "leaveDotGit": false,
-    "rev": "a03b2ae33db2f20961ef29b41e4696db58e0483a",
+    "rev": "d772ec77e8cc8133b00018a1e548d5a4b984e6e3",
     "url": "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/"
   },
   "nixpkgs": {
-    "hash": "sha256-Uajr8Rm4pTsCXXDsttmUwoKfMX/xw8jLCBhkbZQnwCI=",
+    "hash": "sha256-NTxsSGYdItizMebyg93QeV8yFpxwx8mjZ21qM8L74mE=",
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "11e806085509a1517f33fe94019d969b13b323a6"
+    "rev": "41a14fc52d08954ad18d3efb05dc283cba9ce346"
   }
 }
