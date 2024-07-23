@@ -397,6 +397,8 @@ in
       show(host1, "vgs")
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
+    # TODO: this is non-ceph-specific and could be moved to a separate test.
+    # But we need some encrypted volumes to work with.
     with subtest("Destroy and re-create the keystore, rekey the OSD"):
       host1.succeed("fc-luks keystore destroy --no-overwrite > /dev/kmsg 2>&1")
       host1.succeed("fc-luks keystore create /dev/vde > /dev/kmsg 2>&1")
@@ -434,6 +436,19 @@ in
       host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
+    with subtest("`fc-luks keystore test-open` verifies that volumes can be unlocked"):
+      host1.succeed('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "*" > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "*osd-*" > /dev/kmsg 2>&1')
+      # no volume matched
+      host1.fail('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "asdfhjkl" > /dev/kmsg 2>&1')
+      # wrong admin passphrase (will also modify the fingerprint)
+      host1.fail('echo -e "wrongphrase\ny\n" | setsid -w fc-luks keystore test-open "*" > /dev/kmsg 2>&1')
+      # wrong local keyfile (will correct admin keyphrase fingerprint again)
+      host1.execute("mv /mnt/keys/host1.key{,.bak}; echo garbage > /mnt/keys/host1.key")
+      host1.fail('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore test-open "*" > /dev/kmsg 2>&1')
+      host1.execute("mv /mnt/keys/host1.key{.bak,}")
+
+    # FIXME: deleting this might affect following tests, especially the reboot test
     with subtest("The check discovers non-conforming host key conditions"):
       host1.execute('chmod o+rw /mnt/keys/*')
       host1.fail("${check_key_file_cmd} > /dev/kmsg 2>&1")

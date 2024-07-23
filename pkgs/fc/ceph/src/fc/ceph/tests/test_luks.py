@@ -327,36 +327,39 @@ def test_lsblk_to_cryptdevices():
     from fc.ceph.luks import manage
 
     assert set(
-        manage.lsblk_to_cryptdevices(json.loads(LSBLK_PATTY_JSON))
+        manage.LuksDevice.lsblk_to_cryptdevices(json.loads(LSBLK_PATTY_JSON))
     ) == set(
         (
             manage.LuksDevice(
                 base_blockdev="/dev/mapper/vgsys-ceph--mon--crypted",
                 name="ceph-mon",
                 mountpoint="/srv/ceph/mon/ceph-patty",
+                header=None,
             ),
             manage.LuksDevice(
                 base_blockdev="/dev/sdb1",
                 name="backy",
                 mountpoint="/srv/backy",
+                header=None,
             ),
             manage.LuksDevice(
                 base_blockdev="/dev/mapper/vgsys-ceph--mgr--crypted",
                 name="ceph-mgr",
                 mountpoint="/srv/ceph/mgr/ceph-patty",
+                header=None,
             ),
         )
     )
-    assert manage.lsblk_to_cryptdevices([]) == []
+    assert manage.LuksDevice.lsblk_to_cryptdevices([]) == []
     # disks, but no crypt and no children
     assert (
-        manage.lsblk_to_cryptdevices(
+        manage.LuksDevice.lsblk_to_cryptdevices(
             [{"name": "sdb", "path": "/dev/sda", "type": "disk"}]
         )
         == []
     )
     # disks with mountpoint = null
-    assert manage.lsblk_to_cryptdevices(
+    assert manage.LuksDevice.lsblk_to_cryptdevices(
         [
             {
                 "name": "ceph-osd3-block",

@@ -452,7 +452,7 @@ def luks(args=sys.argv[1:]):
     parser_rekey = keystore_sub.add_parser("rekey", help="Rekey volumes.")
     parser_rekey.add_argument(
         "name_glob",
-        help="Names of LUKS volumes to update (globbing allowed), e.g. '*osd-*', 'backy'. Mutually exclusive with `--device`.",
+        help="Names of LUKS volumes to update (globbing allowed), e.g. '*osd-*', 'backy'.",
     )
     parser_rekey.add_argument(
         "--header",
@@ -466,6 +466,21 @@ def luks(args=sys.argv[1:]):
         default="local",
     )
     parser_rekey.set_defaults(action="rekey")
+
+    parser_test = keystore_sub.add_parser(
+        "test-open",
+        help="Test that encrypted volumes can be successfully unlocked.",
+    )
+    parser_test.add_argument(
+        "name_glob",
+        help="Names of LUKS volumes to check (globbing allowed), e.g. '*osd-*', 'backy'.",
+    )
+    parser_test.add_argument(
+        "--header",
+        help="When using an external LUKS header file, provide a path to it here."
+        "\nDefaults to autodetecting and using a file called ${mountpoint}.luks",
+    )
+    parser_test.set_defaults(action="test_open")
 
     parser_fingerprint = keystore_sub.add_parser(
         "fingerprint", help="Compute a fingerprint of an admin passphrase."

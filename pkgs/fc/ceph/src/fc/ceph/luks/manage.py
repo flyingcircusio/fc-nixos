@@ -5,9 +5,11 @@ import os
 import secrets
 import shutil
 from pathlib import Path
+from subprocess import CalledProcessError
 from typing import NamedTuple, Optional
 
 from fc.ceph.luks import KEYSTORE  # singleton
+from fc.ceph.luks import Cryptsetup
 from fc.ceph.lvm import XFSVolume
 from fc.ceph.util import console, run
 
@@ -17,21 +19,59 @@ class LuksDevice(NamedTuple):
     name: str  # the LUKS name of the device
     # required for external header discovery, which we only utilise for backy
     mountpoint: Optional[str]
+    header: Optional[str] = None
 
+    @classmethod
+    def lsblk_to_cryptdevices(cls, lsblk_blockdevs: list) -> list["LuksDevice"]:
+        """parses the output of lsblk -Js -o NAME,PATH,TYPE,MOUNTPOINT"""
+        return [
+            cls(
+                base_blockdev=dev["children"][0]["path"],
+                name=dev["name"],
+                mountpoint=dev["mountpoint"],
+            )
+            for dev in lsblk_blockdevs
+            if dev["type"] == "crypt"
+        ]
 
-# TODO: better typing signature
-# Todo: should this be a static class method instead?
-def lsblk_to_cryptdevices(lsblk_blockdevs: list) -> list:
-    """parses the output of lsblk -Js -o NAME,PATH,TYPE,MOUNTPOINT"""
-    return [
-        LuksDevice(
-            base_blockdev=dev["children"][0]["path"],
-            name=dev["name"],
-            mountpoint=dev["mountpoint"],
+    @classmethod
+    def filter_cryptvolumes(
+        cls, name_glob: str, header: Optional[str]
+    ) -> list["LuksDevice"]:
+        """Retrieves visible crypt volumes via `lsblk`, filters their name to
+        match `name_glob`.
+
+        Optionally takes a path to an external `header` file, otherwise does
+        auto-discovery based on looking for a corresponding header file named
+        <mountpoint>.luks and passes an Optional[str].
+        """
+        candidates = cls.lsblk_to_cryptdevices(
+            run.json.lsblk("-s", "-o", "NAME,PATH,TYPE,MOUNTPOINT")
         )
-        for dev in lsblk_blockdevs
-        if dev["type"] == "crypt"
-    ]
+
+        matching_devs = []
+        for candidate in candidates:
+            if not fnmatch.fnmatch(candidate.name, name_glob):
+                continue
+
+            # adjust headers with autodetected heuristics
+            if (
+                (not header)
+                and (mp := candidate.mountpoint)
+                and os.path.exists(headerfile := f"{mp}.luks")
+            ):
+                matching_devs.append(candidate._replace(header=headerfile))
+            else:
+                matching_devs.append(candidate._replace(header=header))
+
+        if header and (match_count := len(matching_devs)) > 1:
+            raise ValueError(
+                f"Got {match_count} matching devices for glob '{name_glob}'.\n"
+                "When specifying an external header file, the target device "
+                "needs to be a single specific match."
+            )
+
+        return matching_devs
 
 
 class LUKSKeyStoreManager(object):
@@ -112,35 +152,9 @@ class LUKSKeyStoreManager(object):
         else:
             raise ValueError(f"slot={slot}")
 
-        candidates = lsblk_to_cryptdevices(
-            run.json.lsblk("-s", "-o", "NAME,PATH,TYPE,MOUNTPOINT")
-        )
-        matching_devs = [
-            candidate
-            for candidate in candidates
-            if fnmatch.fnmatch(candidate.name, name_glob)
-        ]
-        if header and (match_count := len(matching_devs)) > 1:
-            raise ValueError(
-                f"Got {match_count} matching devices for glob '{name_glob}'.\n"
-                "When specifying an external header file, the target device "
-                "needs to be a single specific match."
-            )
-        for dev in matching_devs:
-            dev_header = header
-            console.print(f"Replacing key for {dev.name}")
-
-            if (
-                (not dev_header)
-                and (mp := dev.mountpoint)
-                and os.path.exists(headerfile := f"{mp}.luks")
-            ):
-                dev_header = headerfile
-            self._do_rekey(
-                slot=slot,
-                device=dev.base_blockdev,
-                header=dev_header,
-            )
+        for dev in LuksDevice.filter_cryptvolumes(name_glob, header=header):
+            console.print(f"Rekeying {dev.name}")
+            self._do_rekey(slot, device=dev.base_blockdev, header=dev.header)
 
         console.print("Key updated.", style="bold green")
 
@@ -178,6 +192,73 @@ class LUKSKeyStoreManager(object):
             new_key_file,
             input=add_input,
         )
+
+    def test_open(self, name_glob: str, header: Optional[str]) -> int:
+        # Ensure to request the admin key early on.
+        self._KEYSTORE.admin_key_for_input()
+
+        devices = LuksDevice.filter_cryptvolumes(name_glob, header=header)
+        if not devices:
+            console.print(
+                f"Warning: The glob `{name_glob}` matches no volume.",
+                style="yellow",
+            )
+            return 1
+
+        failing_devices = []
+        for dev in devices:
+            console.print(f"Test opening {dev.name}")
+            if not self._do_test_open(dev.base_blockdev, header=dev.header):
+                failing_devices.append(dev)
+
+        if failing_devices:
+            console.print(
+                "The following devices failed to open:\n"
+                + (
+                    "\n".join(
+                        (
+                            f"{dev.base_blockdev} ({dev.name})"
+                            for dev in failing_devices
+                        )
+                    )
+                ),
+                style="red",
+            )
+            return 2
+
+        return 0
+
+    def _do_test_open(self, device: str, header: Optional[str]) -> bool:
+        header_arg = [f"--header={header}"] if header else []
+        success = True
+
+        # test unlocking both with local key file as well as with admin key
+        try:
+            test_admin = Cryptsetup.cryptsetup(
+                "open",
+                "--test-passphrase",
+                device,
+                input=self._KEYSTORE.admin_key_for_input(),
+            )
+        except CalledProcessError:
+            console.print(
+                f"Failed to open {device} with admin passphrase.", style="red"
+            )
+            success = False
+        try:
+            test_local = Cryptsetup.cryptsetup(
+                "open",
+                "--test-passphrase",
+                f"--key-file={self._KEYSTORE.local_key_path()}",
+                device,
+            )
+        except CalledProcessError:
+            console.print(
+                f"Failed to open {device} with local key file.", style="red"
+            )
+            success = False
+
+        return success
 
         if header:
             self._KEYSTORE.backup_external_header(Path(header))
