@@ -98,8 +98,12 @@ in
       };
 
       updateInMaintenance = mkOption {
-        default = attrByPath [ "parameters" "production" ] false cfg.enc;
-        description = "Perform channel updates in scheduled maintenance. Default: all production VMs";
+        default = true;
+        description = ''
+          Perform channel updates in scheduled maintenance. If set to false,
+          machines switch to new channels immediately, without running
+          maintenance enter and exit commands.
+          '';
         type = types.bool;
       };
 
