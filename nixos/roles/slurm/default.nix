@@ -394,7 +394,7 @@ in
           ExecStartPre = lib.mkForce [
             "${pkgs.coreutils}/bin/stat ${cfg.mungeKeyFile}"
           ];
-          Restart = "always";
+          Restart = lib.mkOverride 90 "always";
           RestartSec = "5s";
         };
       };
