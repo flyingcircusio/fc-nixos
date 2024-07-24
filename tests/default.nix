@@ -39,7 +39,7 @@ in {
   coturn = callTest ./coturn.nix {};
   devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
-  fcagent = callSubTests ./fcagent.nix {};
+  fcagent = callTest ./fcagent.nix {};
   ferretdb = callTest ./ferretdb.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
