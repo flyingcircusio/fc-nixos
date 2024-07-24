@@ -294,7 +294,7 @@ in
         (pkgs.writeShellScriptBin "slurm-config-dir" "echo ${slurmCfg.etcSlurm}")
         (pkgs.writeShellScriptBin
           "slurm-readme"
-          "${pkgs.rich-cli}/bin/rich --pager /etc/local/slurm/README.md"
+          "${pkgs.rich-cli}/bin/rich /etc/local/slurm/README.md"
         )
         (pkgs.writeShellScriptBin "slurm-show-config" ''
           for x in ${slurmCfg.etcSlurm}/*; do
