@@ -125,6 +125,10 @@ Machines created on NixOS 24.05 use k3s version 1.30.x. Machines upgraded
 from earlier platform versions use 1.27.x of k3s by default which was also the
 default for NixOS 23.11. Contact support if you want to use newer versions of k3s on these machines.
 
+### Slurm
+
+This release contains a major version upgrade of Slurm from 23.04.x.x (NixOS 23.11) to 23.11.x.x. Nodes of a cluster need to be upgraded in a prticular order, the the [upgrade instructions of the role](#nixos-slurm-upgrade) for details.
+
 ## Other notable changes
 
 - `lamp` roles: Platform integration for the <https://tideways.com> application profiler has been dropped, the respective NixOS options are not available anymore.
