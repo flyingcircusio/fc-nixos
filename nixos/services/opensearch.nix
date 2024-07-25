@@ -97,10 +97,10 @@ in
 
     environment.systemPackages = [
       (pkgs.writeShellScriptBin "opensearch-show-config" ''
-        ${pkgs.rich-cli}/bin/rich --pager /etc/current-config/opensearch.yml
+        ${pkgs.rich-cli}/bin/rich /etc/current-config/opensearch.yml
       '')
       (pkgs.writeShellScriptBin "opensearch-readme" ''
-        ${pkgs.rich-cli}/bin/rich --pager ${localConfigDir}/README.md
+        ${pkgs.rich-cli}/bin/rich ${localConfigDir}/README.md
       '')
     ];
 
