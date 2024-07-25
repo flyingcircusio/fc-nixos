@@ -561,7 +561,11 @@
     "pname": "nodejs",
     "version": "20.12.2"
   },
-  "nodejs_21": {},
+  "nodejs_22": {
+    "name": "nodejs-22.2.0",
+    "pname": "nodejs",
+    "version": "22.2.0"
+  },
   "nspr": {
     "name": "nspr-4.35",
     "pname": "nspr",
