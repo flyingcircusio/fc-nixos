@@ -776,9 +776,14 @@ in
         command = let
           links = lib.concatStringsSep " " (map (i: i.link) fclib.underlay.links);
         in
-          "${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy ${links}";
+          "/run/wrappers/bin/sudo ${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy ${links}";
       };
     };
+
+    flyingcircus.passwordlessSudoRules = lib.optionals (!isNull fclib.underlay) [{
+      commands = [ "${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy" ];
+      groups = [ "sensuclient" ];
+    }];
 
     systemd.timers.fc-lldp-to-altnames = lib.mkIf (!isNull fclib.underlay) {
       description = "Timer for updating interface altnames based on peer hostname advertised in LLDP";
