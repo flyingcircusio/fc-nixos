@@ -122,7 +122,7 @@ The usual Slurm commands are installed globally on every Slurm machine.
 
 In general, all users can run slurm commands on all machines with a `slurm-*`
 role. Some commands require the use of `sudo -u slurm` to run as slurm user.
-This is allowed for(human) user accounts with the `sudo-srv` permission
+This is allowed for (human) user accounts with the `sudo-srv` permission
 without password.
 
 Use `slurm-readme` to show dynamically-generated documentation specific for
@@ -273,7 +273,18 @@ sudo -u slurm scancel -n jobname
 - `slurm-dbdserver` and `slurm-controller` roles must be on the same machine.
 - we support only one `slurm-controller` per cluster at the moment.
 
+(nixos-slurm-upgrade)=
 
+## Upgrading the Slurm clsuter
+
+When upgrading nodes between different *major versions* of Slurm, this need to happen in a [recommended order](https://slurm.schedmd.com/upgrades.html#procedure):
+1. Upgrade the `slurm-controller` node (possibly also running the `slurm-dbdserver`).
+1. Upgrade the `slurm-node` machines. This can happen in a rolling manner by updating only a subset of the worker nodes at a time to reduce total cluster downtime.
+
+Machines only running the `slurm-external-dependency` role can be updated independently.
+
+*Major versions* of slurm are denoted by the first two numbers of a version string, making 23.04.2 and 23.11.1 different major releases. \
+When running the default Slurm versions provided by our platform, such major upgrades only happen between major platform releases and are listed in the [upgrade notes](#nixos-upgrade).
 
 (nixos-slurm-config-reference)=
 
