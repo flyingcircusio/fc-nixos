@@ -331,13 +331,14 @@ in
           # FCIO extra config
           # XXX: Some settings probably be separate options later.
 
+          MailProg = ${pkgs.mailutils}/bin/mail
+
           # JOB PRIORITY
           PriorityType = priority/multifactor
           PriorityWeightQOS = 2000
 
           # SCHEDULING
           # Allocate individual processors and memory
-          SelectType = select/cons_res
           SelectTypeParameters = CR_CPU_Memory
 
           # Upon registration with a valid configuration only if it was set
