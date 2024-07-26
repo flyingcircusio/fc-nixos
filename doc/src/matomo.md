@@ -4,7 +4,8 @@
 
 Managed instance of [Matomo](https://matomo.org), a real-time Web analytics application in the latest LTS version provided by NixOS which is 4.x.x.
 
-The next platform version 24.05 will use Matomo 5 as default version. Matomo 4 is supported until the end of 2024 and will still be available on 24.05.
+The next platform version 24.11 will use Matomo 5 as default version.
+Matomo 4 is supported only until the end of 2024.
 
 ## Setup
 
