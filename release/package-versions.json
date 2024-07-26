@@ -476,6 +476,11 @@
     "pname": "matomo",
     "version": "4.16.1"
   },
+  "matomo_5": {
+    "name": "matomo_5-5.0.2",
+    "pname": "matomo_5",
+    "version": "5.0.2"
+  },
   "matrix-synapse": {
     "name": "matrix-synapse-wrapped-1.110.0",
     "pname": "matrix-synapse-wrapped",
