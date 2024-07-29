@@ -5,9 +5,9 @@
     "version": "1.6.0"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.61",
+    "name": "apache-httpd-2.4.62",
     "pname": "apache-httpd",
-    "version": "2.4.61"
+    "version": "2.4.62"
   },
   "asterisk": {
     "name": "asterisk-20.8.1",
@@ -40,9 +40,9 @@
     "version": "5.2p26"
   },
   "bind": {
-    "name": "bind-9.18.27",
+    "name": "bind-9.18.28",
     "pname": "bind",
-    "version": "9.18.27"
+    "version": "9.18.28"
   },
   "binutils": {
     "name": "binutils-wrapper-2.41",
@@ -70,14 +70,14 @@
     "version": "18.2.1"
   },
   "chromedriver": {
-    "name": "chromedriver-126.0.6478.126",
+    "name": "chromedriver-126.0.6478.182",
     "pname": "chromedriver",
-    "version": "126.0.6478.126"
+    "version": "126.0.6478.182"
   },
   "chromium": {
-    "name": "chromium-126.0.6478.126",
+    "name": "chromium-126.0.6478.182",
     "pname": "chromium",
-    "version": "126.0.6478.126"
+    "version": "126.0.6478.182"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -95,9 +95,9 @@
     "version": "3.29.2"
   },
   "consul": {
-    "name": "consul-1.18.2",
+    "name": "consul-1.18.3",
     "pname": "consul",
-    "version": "1.18.2"
+    "version": "1.18.3"
   },
   "containerd": {
     "name": "containerd-1.7.16",
@@ -130,9 +130,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-3.2.3",
+    "name": "discourse-3.2.4",
     "pname": "discourse",
-    "version": "3.2.3"
+    "version": "3.2.4"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.90",
@@ -155,9 +155,9 @@
     "version": "2.3.21"
   },
   "element-web": {
-    "name": "element-web-1.11.70",
+    "name": "element-web-1.11.71",
     "pname": "element-web",
-    "version": "1.11.70"
+    "version": "1.11.71"
   },
   "erlang": {
     "name": "erlang-25.3.2.12",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-128.0",
+    "name": "firefox-128.0.3",
     "pname": "firefox",
-    "version": "128.0"
+    "version": "128.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-13.2.0",
@@ -275,16 +275,16 @@
     "version": "2.4.5"
   },
   "go": {
-    "name": "go-1.22.4",
+    "name": "go-1.22.5",
     "pname": "go",
-    "version": "1.22.4"
+    "version": "1.22.5"
   },
   "go_1_19": {},
   "go_1_20": {},
   "grafana": {
-    "name": "grafana-10.4.5",
+    "name": "grafana-10.4.6",
     "pname": "grafana",
-    "version": "10.4.5"
+    "version": "10.4.6"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -297,9 +297,9 @@
     "version": "2.9.7"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-32",
+    "name": "imagemagick-7.1.1-35",
     "pname": "imagemagick",
-    "version": "7.1.1-32"
+    "version": "7.1.1-35"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -307,9 +307,9 @@
     "version": "6.9.13-10"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-32",
+    "name": "imagemagick-7.1.1-35",
     "pname": "imagemagick",
-    "version": "7.1.1-32"
+    "version": "7.1.1-35"
   },
   "inetutils": {
     "name": "inetutils-2.5",
@@ -437,9 +437,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.162",
+    "name": "linux-5.15.163",
     "pname": "linux",
-    "version": "5.15.162"
+    "version": "5.15.163"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",
@@ -457,9 +457,9 @@
     "version": "3.17"
   },
   "mariadb": {
-    "name": "mariadb-server-10.11.6",
+    "name": "mariadb-server-10.11.8",
     "pname": "mariadb-server",
-    "version": "10.11.6"
+    "version": "10.11.8"
   },
   "mariadb-connector-c": {
     "name": "mariadb-connector-c-3.3.5",
@@ -482,9 +482,9 @@
     "version": "5.0.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.110.0",
+    "name": "matrix-synapse-wrapped-1.111.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.110.0"
+    "version": "1.111.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -517,9 +517,9 @@
     "version": "2.3.5"
   },
   "mysql": {
-    "name": "mariadb-server-10.11.6",
+    "name": "mariadb-server-10.11.8",
     "pname": "mariadb-server",
-    "version": "10.11.6"
+    "version": "10.11.8"
   },
   "mysql80": {
     "name": "mysql-8.0.37",
@@ -547,29 +547,29 @@
     "version": "1.26.1"
   },
   "nix": {
-    "name": "nix-2.18.4",
+    "name": "nix-2.18.5",
     "pname": "nix",
-    "version": "2.18.4"
+    "version": "2.18.5"
   },
   "nodejs": {
-    "name": "nodejs-20.12.2",
+    "name": "nodejs-20.15.1",
     "pname": "nodejs",
-    "version": "20.12.2"
+    "version": "20.15.1"
   },
   "nodejs_18": {
-    "name": "nodejs-18.20.3",
+    "name": "nodejs-18.20.4",
     "pname": "nodejs",
-    "version": "18.20.3"
+    "version": "18.20.4"
   },
   "nodejs_20": {
-    "name": "nodejs-20.12.2",
+    "name": "nodejs-20.15.1",
     "pname": "nodejs",
-    "version": "20.12.2"
+    "version": "20.15.1"
   },
   "nodejs_22": {
-    "name": "nodejs-22.2.0",
+    "name": "nodejs-22.4.1",
     "pname": "nodejs",
-    "version": "22.2.0"
+    "version": "22.4.1"
   },
   "nspr": {
     "name": "nspr-4.35",
@@ -577,9 +577,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.101.1",
+    "name": "nss-3.102",
     "pname": "nss",
-    "version": "3.101.1"
+    "version": "3.102"
   },
   "openjdk": {
     "name": "openjdk-21.0.3+9",
@@ -908,9 +908,9 @@
     "version": "2.2.1"
   },
   "qemu": {
-    "name": "qemu-8.2.5",
+    "name": "qemu-8.2.6",
     "pname": "qemu",
-    "version": "8.2.5"
+    "version": "8.2.6"
   },
   "rabbitmq-server": {
     "name": "rabbitmq-server-3.12.13",
@@ -943,9 +943,9 @@
     "version": "3.3.0"
   },
   "ruby": {
-    "name": "ruby-3.1.5",
+    "name": "ruby-3.1.6",
     "pname": "ruby",
-    "version": "3.1.5"
+    "version": "3.1.6"
   },
   "ruby_2_7": {},
   "ruby_3_2": {
@@ -974,9 +974,9 @@
     "version": "8.11.2"
   },
   "strace": {
-    "name": "strace-6.9",
+    "name": "strace-6.10",
     "pname": "strace",
-    "version": "6.9"
+    "version": "6.10"
   },
   "strongswan": {
     "name": "strongswan-5.9.14",
