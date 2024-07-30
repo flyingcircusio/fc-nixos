@@ -281,7 +281,7 @@ to generate backends that are dynamically populated with the pod IPs
 automatically when you add/remove pods. By default, up to 10 pods are used by
 HAProxy. You can change the `maxExpectedPods` setting described below.
 
-See {ref}`webgateway` for more details about general HAProxy and nginx
+See {ref}`nixos-webgateway` for more details about general HAProxy and nginx
 configuration.
 
 
