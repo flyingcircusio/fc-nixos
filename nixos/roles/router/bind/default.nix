@@ -119,6 +119,11 @@ lib.mkIf role.enable {
     ];
   };
 
+  flyingcircus.services.sensu-client.checks.bind_resolver = {
+    notification = "Bind can resolve hostnames";
+    command = "check_dig -H localhost -l flyingcircus.io";
+  };
+
   networking.firewall.extraCommands = ''
     ip46tables -A nixos-fw -p tcp --dport 53 -j nixos-fw-accept
     ip46tables -A nixos-fw -p udp --dport 53 -j nixos-fw-accept
