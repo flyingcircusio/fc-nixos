@@ -102,6 +102,7 @@ lib.mkIf role.enable {
 
   services.bind = {
     enable = true;
+    directory = "/var/cache/named";
     configFile = ./named.conf;
   };
 
