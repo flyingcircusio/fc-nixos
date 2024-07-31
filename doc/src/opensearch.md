@@ -157,3 +157,12 @@ The following checks are provided by our opensearch service:
 - Heap too full
 - Node status
 - Shard allocation status
+
+## Automated maintenance
+
+When operating as a multi-node cluster, the automated maintenance
+system ensures that at most one member of the cluster performs
+maintenance at the same time. Additionally, before running maintenance
+activities on hosts which are members of a multi-node cluster, the
+cluster state must be green. The check will wait for up to 60 seconds
+for the cluster to become green.
