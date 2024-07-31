@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-if (type tput && tput colors) >/dev/null 2>&1; then
+if (type tput && [[ "$(tput colors)" -gt 0 ]]) >/dev/null 2>&1; then
 	GOOD="$(tput sgr0)$(tput bold)$(tput setaf 2)"
 	WARN="$(tput sgr0)$(tput bold)$(tput setaf 3)"
 	BAD="$(tput sgr0)$(tput bold)$(tput setaf 1)"
