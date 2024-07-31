@@ -25,7 +25,7 @@ def main():
     check_age_cmd = [
         "check_file_age",
         "-w",
-        "86400",
+        "93600",
         "-c",
         "172800",
     ]
