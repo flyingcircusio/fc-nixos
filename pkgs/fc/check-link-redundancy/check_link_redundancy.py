@@ -36,7 +36,10 @@ def main():
             switches_all.append(data.keys())
             switches_unique.update(data.keys())
 
-    if len(switches_all) != len(switches_unique):
+    if len(switches_all) != len(args.interfaces):
+        print("CRITICAL - interfaces are missing visible peer devices in LLDP ")
+        sys.exit(2)
+    elif len(switches_all) != len(switches_unique):
         print("CRITICAL - multiple interfaces are connected to the same switch")
         sys.exit(2)
     else:

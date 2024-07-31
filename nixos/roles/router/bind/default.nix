@@ -102,6 +102,7 @@ lib.mkIf role.enable {
 
   services.bind = {
     enable = true;
+    directory = "/var/cache/named";
     configFile = ./named.conf;
   };
 
@@ -116,6 +117,11 @@ lib.mkIf role.enable {
       config.environment.etc."bind/pri/gocept.net.zone.static".source
       config.environment.etc."bind/pri/1.0.1.0.8.4.2.0.2.0.a.2.zone".source
     ];
+  };
+
+  flyingcircus.services.sensu-client.checks.bind_resolver = {
+    notification = "Bind can resolve hostnames";
+    command = "check_dig -H localhost -l flyingcircus.io";
   };
 
   networking.firewall.extraCommands = ''

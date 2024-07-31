@@ -1,7 +1,7 @@
 { lib, stdenv, makeWrapper, python3, lldpd }:
 
 stdenv.mkDerivation rec {
-  version = "1";
+  version = "2";
   pname = "check-link-redundancy";
 
   src = ./.;
