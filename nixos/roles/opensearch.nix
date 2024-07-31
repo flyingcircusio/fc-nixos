@@ -161,9 +161,11 @@ in
 
     # Require other nodes to be in service before going into maintenance.
     flyingcircus.agent.maintenanceConstraints.machinesInService = cfg.nodes;
-    flyingcircus.agent.maintenance."opensearch-cluster-green".enter = ''
-      ${waitForGreenCluster}/bin/opensearch-wait-for-green-cluster
-    '';
+    flyingcircus.agent.maintenance = lib.mkIf (lib.length cfg.nodes > 1) {
+      "opensearch-cluster-green".enter = ''
+        ${waitForGreenCluster}/bin/opensearch-wait-for-green-cluster
+      '';
+    };
 
     flyingcircus.services.opensearch = {
       enable = true;
