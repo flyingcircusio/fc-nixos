@@ -152,11 +152,14 @@ in
 
       ## Automated Maintenance
 
-      Our automated maintenance system makes sure that only one member of the cluster
-      (as specified by `nodes`) is in maintenance at the same time.
+      For multi-node clusters, our automated maintenance system makes sure that
+      only one member of the cluster (as specified by `nodes`) is in maintenance
+      at the same time. Also, before running maintenance activities, the cluster
+      state must be "green". The check waits for 60 seconds for the cluster to
+      become green.
 
-      Also, before running maintenance activities, the cluster state must be "green".
-      The check waits for 60 seconds for the cluster to become green.
+      Single-node clusters will not consider the cluster state before performing
+      automated maintenance.
     '';
 
     # Require other nodes to be in service before going into maintenance.
