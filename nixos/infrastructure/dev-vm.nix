@@ -93,8 +93,8 @@ in {
 
       flyingcircus.roles.memcached.listenAddresses = [ "0.0.0.0" "[::]" ];
 
-      flyingcircus.roles.mailserver.smtpBind4 = [ "127.0.0.1" ];
-      flyingcircus.roles.mailserver.smtpBind6 = [ "::1" ];
+      flyingcircus.roles.mailserver.smtpBind4 = "127.0.0.1";
+      flyingcircus.roles.mailserver.smtpBind6 = "::1";
       flyingcircus.roles.mailserver.explicitSmtpBind = false;
 
       flyingcircus.roles.mysql.listenAddresses = [ "::" ];
@@ -155,7 +155,8 @@ in {
           ssh_pubkey = [
            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGc7V2c2zFPRMl8/gmBv1/MEldEuJau8jHjhx+2qziYs root@ct-dir-dev2"
           ];
-          uid = "developer";}
+          uid = "developer";
+          email_addresses = []; }
         { class = "service";
           gid = 100;
           home_directory = "/srv/s-dev";
@@ -165,7 +166,8 @@ in {
           name = "s-dev";
           ssh_pubkey = [] ;
           permissions = { container = []; };
-          uid = "s-dev"; } ];
+          uid = "s-dev";
+          email_addresses = []; } ];
 
       flyingcircus.users.permissions = [
         { description = "commit to VCS repository";
