@@ -184,7 +184,7 @@ in {
         description = ''
           Documented branches of this platform version.
         '';
-        default = [ "pre-fc-24.05" "fc-24.05-dev" "fc-24.05-staging" "fc-24.05-production" ];
+        default = [ "fc-24.05-dev" "fc-24.05-staging" "fc-24.05-production" ];
       };
     };
 
