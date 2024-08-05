@@ -74,7 +74,7 @@ in
       - nixos-nat-pre: prerouting rules, e.g. port redirects (-t nat)
       - nixos-nat-post: postrouting rules, e.g. masquerading (-t nat)
 
-      See also https://doc.flyingcircus.io/roles/fc-23.11-production/firewall.html
+      See also ${fclib.roleDocUrl "firewall"}
     '';
 
     flyingcircus.services.sensu-client.checks = {
