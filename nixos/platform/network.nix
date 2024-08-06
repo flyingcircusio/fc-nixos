@@ -50,7 +50,6 @@ let
     ) physicalLinkNames);
   in (attrValues physicalLinksByMtu) ++ underlayLinks;
 
-
   virtualLinks = let
     allLinks = lib.unique
       (lib.foldl (acc: iface: acc ++ iface.linkStack) [] managedInterfaces);
@@ -92,6 +91,11 @@ in
       type = lib.types.bool;
       description = "Enable default routes for all networks with known default gateways.";
       default = true;
+    };
+    flyingcircus.networking.monitorLinks = lib.mkOption {
+      type = lib.types.listOf lib.types.attrs;
+      description = "Names of ethernet devices to monitor.";
+      default = [];
     };
   };
 
@@ -278,6 +282,8 @@ in
         tag_keys = [ "family" "path" ];
       }];
     };
+
+    flyingcircus.networking.monitorLinks = ethernetLinks;
 
     services.frr = lib.mkIf (!isNull fclib.underlay) {
       zebra = {
