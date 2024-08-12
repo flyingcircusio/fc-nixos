@@ -21,6 +21,7 @@ rec {
   check-link-redundancy = callPackage ./check-link-redundancy {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
+  check-rib-integrity = callPackage ./check-rib-integrity {};
 
   check-xfs-broken = callPackage ./check-xfs-broken {};
   collectdproxy = callPackage ./collectdproxy {};
