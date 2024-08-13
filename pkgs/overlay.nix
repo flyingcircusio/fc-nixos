@@ -84,6 +84,13 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   docsplit = super.callPackage ./docsplit { };
 
+  # Don't make docker 25.x the default yet, we still have old docker
+  # installs which use the devicemapper storage driver.
+  docker = super.docker_24.overrideAttrs (old: {
+    # Workaround for Hydra not reading nixpkgs-config.nix
+    meta = builtins.removeAttrs old.meta [ "knownVulnerabilites" ];
+  });
+
   innotop = super.callPackage ./percona/innotop.nix { };
 
   libmodsecurity = super.callPackage ./libmodsecurity { };

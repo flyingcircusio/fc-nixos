@@ -140,9 +140,9 @@
     "version": "2.90"
   },
   "docker": {
-    "name": "docker-25.0.6",
+    "name": "docker-24.0.9",
     "pname": "docker",
-    "version": "25.0.6"
+    "version": "24.0.9"
   },
   "docker-compose": {
     "name": "docker-compose-2.27.0",
