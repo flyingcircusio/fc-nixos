@@ -323,7 +323,7 @@ in
       `sudo systemctl restart mysql`
 
       For more information, see our documentation at
-      https://doc.flyingcircus.io/roles/fc-23.11-production/mysql.html
+      ${fclib.roleDocUrl "mysql"}
     '';
 
     systemd.services.fc-mysql-post-init = {
