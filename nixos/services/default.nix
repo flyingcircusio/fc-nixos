@@ -28,7 +28,7 @@ in {
     ./jitsi/prosody.nix
     ./k3s/frontend.nix
     ./logrotate
-    ./matomo.nix
+    ./matomo
     ./nginx
     ./nullmailer.nix
     ./opensearch.nix
