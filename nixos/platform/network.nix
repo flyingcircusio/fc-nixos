@@ -784,11 +784,31 @@ in
         in
           "/run/wrappers/bin/sudo ${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy ${links}";
       };
+      rib_integrity_ipv4 = {
+        notification = "Kernel network state has problems with underlay network routes";
+        interval = 300;
+        command = let
+          args = lib.concatMapStringsSep " " (p: "-p " + p) fclib.underlay.subnets;
+        in
+          "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-unicast-rib ${args}";
+      };
+      rib_integrity_evpn = {
+        notification = "Kernel network state has broken overlay MAC addresses";
+        interval = 300;
+        command = let
+          args = lib.concatMapStringsSep " " (iface: "-n " + (toString iface.vlanId)) vxlanInterfaces;
+        in
+          "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-evpn-rib ${args}";
+      };
     };
 
     flyingcircus.passwordlessSudoRules = lib.optionals (!isNull fclib.underlay) [{
       commands = [ "${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy" ];
       groups = [ "sensuclient" ];
+    } {
+      commands = [ "${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity" ];
+      groups = [ "sensuclient" ];
+      runAs = ":frrvty";
     }];
 
     systemd.timers.fc-lldp-to-altnames = lib.mkIf (!isNull fclib.underlay) {
