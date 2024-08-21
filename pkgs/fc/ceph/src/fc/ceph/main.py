@@ -425,6 +425,22 @@ def luks(args=sys.argv[1:]):
     # during construction of individual subcommands and might be re-used for
     # different command sections (mon, osd, ...)
 
+    parser_check = subparsers.add_parser(
+        "check", help="Check LUKS metadata header parameters."
+    )
+    parser_check.set_defaults(
+        subsystem=fc.ceph.luks.manage.LUKSKeyStoreManager, action="check_luks"
+    )
+    parser_check.add_argument(
+        "name_glob",
+        help="Names of LUKS volumes to check (globbing allowed), e.g. '*osd-*', 'backy'.",
+    )
+    parser_check.add_argument(
+        "--header",
+        help="When using an external LUKS header file, provide a path to it here."
+        "\nDefaults to autodetecting and using a file called ${mountpoint}.luks",
+    )
+
     keystore = subparsers.add_parser("keystore", help="Manage the keystore.")
     keystore.set_defaults(
         subsystem=fc.ceph.luks.manage.LUKSKeyStoreManager,

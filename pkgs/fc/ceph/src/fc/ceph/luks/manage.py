@@ -10,6 +10,7 @@ from typing import NamedTuple, Optional
 
 from fc.ceph.luks import KEYSTORE  # singleton
 from fc.ceph.luks import Cryptsetup
+from fc.ceph.luks.checks import all_checks
 from fc.ceph.lvm import XFSVolume
 from fc.ceph.util import console, run
 
@@ -192,6 +193,35 @@ class LUKSKeyStoreManager(object):
             new_key_file,
             input=add_input,
         )
+
+    @staticmethod
+    def check_luks(name_glob: str, header: Optional[str]) -> int:
+        devices = LuksDevice.filter_cryptvolumes(name_glob, header=header)
+        if not devices:
+            console.print(
+                f"Warning: The glob `{name_glob}` matches no volume.",
+                style="yellow",
+            )
+            return 1
+
+        errors = 0
+        for dev in devices:
+            console.print(f"Checking {dev.name}:")
+            dump_lines = (
+                Cryptsetup.cryptsetup("luksDump", dev.base_blockdev)
+                .decode("utf-8")
+                .splitlines()
+            )
+            for check in all_checks:
+                check_ok = True
+                for error in check(dump_lines):
+                    errors += 1
+                    check_ok = False
+                    console.print(f"{check.__name__}: {error}", style="red")
+                if check_ok:
+                    console.print(f"{check.__name__}: OK", style="green")
+
+        return 1 if errors else 0
 
     def test_open(self, name_glob: str, header: Optional[str]) -> int:
         # Ensure to request the admin key early on.

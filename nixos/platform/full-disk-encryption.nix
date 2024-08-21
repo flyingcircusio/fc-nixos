@@ -29,8 +29,8 @@ let
 
       exit 0
     '';
-
   cephPkgs = fclib.ceph.mkPkgs "nautilus";  # FIXME: just a workaround
+  check_luks_cmd = "${cephPkgs.fc-ceph}/bin/fc-luks check '*'";
 in
 {
 
@@ -74,10 +74,15 @@ in
             fi
           '');
         };
+        luksParams = {
+          notification = "LUKS Volumes use expected parameters.";
+          interval = 3600;
+          command = "sudo ${check_luks_cmd}";
+        };
       };
 
       flyingcircus.passwordlessSudoRules = [{
-        commands = [(toString check_key_file)];
+        commands = [(toString check_key_file) check_luks_cmd];
         groups = ["sensuclient"];
       }];
 
