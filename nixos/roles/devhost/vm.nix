@@ -7,6 +7,12 @@ let
 
   vmOptions = {
     options = with lib; {
+      enable = mkOption {
+        default = true;
+        example = true;
+        description = "Whether to enable VM";
+        type = types.bool;
+      };
       id = mkOption {
         description = "Internal ID of the VM";
         type = types.int;
@@ -54,7 +60,7 @@ let
     serviceConfig.ExecStart = "${pkgs.coreutils}/bin/true";
   };
   mkService = name: vmCfg: lib.nameValuePair "fc-devhost-vm@${name}" (lib.recursiveUpdate defaultService {
-    enable = true;
+    enable = vmCfg.enable;
     wantedBy = [ "machines.target" ];
 
     serviceConfig.ExecStart = (lib.escapeShellArgs
@@ -195,7 +201,7 @@ in {
       "fc-devhost-vm-cleanup" = {
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnCalendar = "weekly";
+          OnCalendar = "daily";
           Persistent = true;
         };
       };
