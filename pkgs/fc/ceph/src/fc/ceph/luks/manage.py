@@ -202,6 +202,10 @@ class LUKSKeyStoreManager(object):
                 f"Warning: The glob `{name_glob}` matches no volume.",
                 style="yellow",
             )
+            # based on the assumption that encrypted devices have to exist on a
+            # host in the normal case. Conditionalising the check to only run
+            # on hosts that are indeed expected to hav such devices needs to
+            # happen in platform code.
             return 1
 
         errors = 0

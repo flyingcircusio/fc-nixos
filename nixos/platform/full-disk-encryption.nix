@@ -77,7 +77,7 @@ in
         luksParams = {
           notification = "LUKS Volumes use expected parameters.";
           interval = 3600;
-          command = "sudo ${check_luks_cmd}";
+          command = "test ! -d ${keysMountDir} || sudo ${check_luks_cmd}";
         };
       };
 
