@@ -311,6 +311,8 @@ in {
           # Drop string fields. They are converted to labels in Prometheus
           # which blows up the number of metrics.
           fielddrop = [ "idle_since" ];
+          # The federation plugin is optional and causing spurious logging.
+          metric_exclude = [ "federation" ];
         }
       ];
 
