@@ -45,7 +45,10 @@ in
     };
     newBacky = mkMachine {};
   };
-  testScript = {nodes, ...}:''
+  testScript = {nodes, ...}:
+    let
+    check_luksParams = testlib.sensuCheckCmd nodes.newBacky "luksParams";
+    in ''
     from time import sleep
 
 
@@ -110,5 +113,8 @@ in
       newBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/kmsg 2>&1")
 
     test_reboot_automount(newBacky)
+
+    with subtest("Smoke test for LUKS metadata check"):
+      newBacky.succeed("(export PATH='${pkgs.sudo}/bin/'; ${check_luksParams} > /dev/kmsg 2>&1 )")
   '';
 })
