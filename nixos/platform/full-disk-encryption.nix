@@ -60,35 +60,35 @@ in
     # FIXME: isolate fc-luks tooling into separate package
     flyingcircus.services.ceph.fc-ceph.enable = true;
 
-      flyingcircus.services.sensu-client.checks = {
-        keystickMounted = {
-          notification = "USB stick with disk encryption keys is mounted and keyfile is readable.";
-          interval = 60;
-          command = "sudo ${check_key_file}";
-        };
-        noSwap = {
-          notification = "Machine does not use swap to arbitrarily persist memory pages with sensitive data.";
-          interval = 60;
-          command = toString (pkgs.writeShellScript "noSwapCheck" ''
-            # /proc/swaps always has a header line
-            if [ $(${pkgs.coreutils}/bin/cat /proc/swaps | ${pkgs.coreutils}/bin/wc -l) -ne 1 ]; then
-              exit 1
-            fi
-          '');
-        };
-        luksParams = {
-          notification = "LUKS Volumes use expected parameters.";
-          interval = 3600;
-          command = "test ! -d ${keysMountDir} || sudo ${check_luks_cmd} '*'";
-        };
+    flyingcircus.services.sensu-client.checks = {
+      keystickMounted = {
+        notification = "USB stick with disk encryption keys is mounted and keyfile is readable.";
+        interval = 60;
+        command = "sudo ${check_key_file}";
       };
+      noSwap = {
+        notification = "Machine does not use swap to arbitrarily persist memory pages with sensitive data.";
+        interval = 60;
+        command = toString (pkgs.writeShellScript "noSwapCheck" ''
+          # /proc/swaps always has a header line
+          if [ $(${pkgs.coreutils}/bin/cat /proc/swaps | ${pkgs.coreutils}/bin/wc -l) -ne 1 ]; then
+            exit 1
+          fi
+        '');
+      };
+      luksParams = {
+        notification = "LUKS Volumes use expected parameters.";
+        interval = 3600;
+        command = "test ! -d ${keysMountDir} || sudo ${check_luks_cmd} '*'";
+      };
+    };
 
-      flyingcircus.passwordlessSudoRules = [{
-        commands = [(toString check_key_file) "${check_luks_cmd} *"];
-        groups = ["sensuclient"];
-      }];
+    flyingcircus.passwordlessSudoRules = [{
+      commands = [(toString check_key_file) "${check_luks_cmd} *"];
+      groups = ["sensuclient"];
+    }];
 
-      fileSystems.${keysMountDir} = config.flyingcircus.infrastructure.fullDiskEncryption.fsOptions;
+    fileSystems.${keysMountDir} = config.flyingcircus.infrastructure.fullDiskEncryption.fsOptions;
   };
 
 }
