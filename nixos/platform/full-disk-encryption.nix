@@ -29,8 +29,7 @@ let
 
       exit 0
     '';
-  cephPkgs = fclib.ceph.mkPkgs "nautilus";  # FIXME: just a workaround
-  check_luks_cmd = "${cephPkgs.fc-ceph}/bin/fc-luks check";
+  check_luks_cmd = "${config.flyingcircus.services.ceph.fc-ceph.package}/bin/fc-luks check";
 in
 {
 
@@ -49,14 +48,17 @@ in
   };
 
   config = lib.mkIf (config.flyingcircus.infrastructureModule == "flyingcircus-physical" ||
+    # TODO: When merging nixos-hardware with our regular VM branch, we need to refine this
+    # to avoid that all regular VM tests (e.g. PHP) get fc-luks cruft added.
     config.flyingcircus.infrastructureModule == "testing"
     )
   {
-      environment.systemPackages = with pkgs; [
-        cryptsetup
-        # FIXME: isolate fc-luks tooling into separate package
-        cephPkgs.fc-ceph
-      ];
+    environment.systemPackages = with pkgs; [
+      cryptsetup
+    ];
+
+    # FIXME: isolate fc-luks tooling into separate package
+    flyingcircus.services.ceph.fc-ceph.enable = true;
 
       flyingcircus.services.sensu-client.checks = {
         keystickMounted = {
