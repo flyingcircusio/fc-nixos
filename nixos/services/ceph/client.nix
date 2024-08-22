@@ -45,7 +45,7 @@ let
     monCompactOnStart = true;     # Keep mondb small
     monHost = mons;
     monOsdDownOutInterval = 900;  # Allow 15 min for reboots to happen without backfilling.
-    monOsdNearfullRatio = .9;
+    monOsdNearfullRatio = 0.9;
 
     monData = "/srv/ceph/mon/$cluster-$id";
     monOsdAllowPrimaryAffinity = true;
