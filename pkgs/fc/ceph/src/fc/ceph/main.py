@@ -571,7 +571,8 @@ def luks(args=sys.argv[1:]):
         action()
         sys.exit(1)
 
-    subsystem = subsystem_factory()
+    environment = Environment(CONFIG_FILE_PATH)
+    subsystem = environment.prepare(subsystem_factory)
     action = getattr(subsystem, action)
     action_statuscode = action(**args)
 

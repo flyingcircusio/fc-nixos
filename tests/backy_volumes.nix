@@ -115,6 +115,6 @@ in
     test_reboot_automount(newBacky)
 
     with subtest("Smoke test for LUKS metadata check"):
-      newBacky.succeed("${check_luksParams} > /dev/kmsg 2>&1")
+      newBacky.succeed("(export PATH='${pkgs.sudo}/bin/'; ${check_luksParams} > /dev/kmsg 2>&1 )")
   '';
 })
