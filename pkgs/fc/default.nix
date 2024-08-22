@@ -34,6 +34,7 @@ rec {
   logcheckhelper = callPackage ./logcheckhelper { };
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
+  ping-on-tap = callPackage ./ping-on-tap {};
   qemu-nautilus = callPackage ./qemu rec {
     version = "1.4.3";
     src = pkgs.fetchFromGitHub {
