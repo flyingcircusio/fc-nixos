@@ -45,6 +45,7 @@ in {
   # elasticsearch7 = callTest ./elasticsearch.nix { version = "7"; };
   fcagent = callSubTests ./fcagent.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
+  frr = callSubTests ./frr.nix {};
   filebeat = callTest ./filebeat.nix {};
   garbagecollect = callTest ./garbagecollect.nix {};
   # Not supported on 21.05 anymore.
