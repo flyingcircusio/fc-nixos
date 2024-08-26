@@ -17,8 +17,9 @@ in
       supportsContainers = fclib.mkDisableDevhostSupport;
       mkfsXfsFlags = lib.mkOption {
         type = with lib.types; nullOr str;
-        # XXX: reflink=0 can be removed when 15.09 is out. See #PL-130977
+        # XXX: reflink=0 can be removed when 15.09 is gone. See PL-130977
         # XXX: set reflink=0 to make file systems compatible with NixOS 15.09
+        # XXX: set bigtime=1 once 15.09 and 20.09 are gone. See PL-130365.
         default = "-q -f -K -m crc=1,finobt=1,reflink=0 -d su=4m,sw=1";
       };
       migrationBandwidth = lib.mkOption {
