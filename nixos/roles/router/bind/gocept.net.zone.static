@@ -1,5 +1,5 @@
 $ORIGIN gocept.net.
-@                       MX      10 mail
+@                       MX      10 mail.flyingcircus.io.
 @                       A       195.62.125.26
 @                       AAAA    2a02:248:101:62::103a
 
@@ -9,7 +9,6 @@ ns2                     CNAME   ns2.gocept.com.
 ; generic services
 ; these aliases must match values in location.pp (if applicable)
 mail                    AAAA    2a02:248:101:62::19
-                        MX      10 mail
 mail                    A       195.62.125.19
 www                     CNAME   gocept.net.
 _http._tcp              SRV     10 0 80 gocept.com.
