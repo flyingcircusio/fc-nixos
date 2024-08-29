@@ -22,8 +22,10 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
         { config, lib, ... }:
         {
           imports = [
-            (testlib.fcConfig { extraEncParameters = { production = false; }; })
+            (testlib.fcConfig { })
           ];
+
+          flyingcircus.agent.updateInMaintenance = false;
         };
       testScript = ''
         machine.wait_for_unit('multi-user.target')

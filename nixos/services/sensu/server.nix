@@ -103,7 +103,7 @@ in {
       description = "Prepare rabbitmq for sensu-server.";
       wantedBy = [ "multi-user.target" ];
       requires = ["rabbitmq.service" ];
-      after = ["rabbitmq.service" ];
+      after = [ "rabbitmq.service" "fc-rabbitmq-settings.service"];
       path = [ config.services.rabbitmq.package ];
       serviceConfig = {
         Type = "oneshot";
@@ -115,25 +115,8 @@ in {
       script = let
         # Permission settings required for sensu
         # see https://docs.sensu.io/sensu-core/1.7/guides/securing-rabbitmq
-        clients = (lib.concatMapStrings (
-          client:
-            let
-              inherit (client) node password;
-              name = builtins.head (lib.splitString "." node);
-              permissions = [
-                "((?!keepalives|results).)*"
-                "^(keepalives|results|${name}.*)$"
-                "((?!keepalives|results).)*"
-              ];
-            in ''
-              # Configure user and permissions for ${node}:
-              grep ^${node} $known_users > /dev/null || (
-                echo "Adding user ${node} ..."
-                rabbitmqctl add_user ${node} ${password} ;
-                rabbitmqctl change_password ${client.node} ${password} ;
-                rabbitmqctl set_permissions -p /sensu ${node} ${lib.concatMapStringsSep " " (p: "'${p}'") permissions}
-              )
-            '')
+        clients = (lib.concatMapStrings
+          (client: "${builtins.head (lib.splitString "." client.node)}:${client.node}:${client.password}\n")
           sensuClients);
       in
       ''
@@ -156,8 +139,13 @@ in {
         rabbitmqctl set_permissions -p /sensu sensu-server ".*" ".*" ".*"
 
         echo "Ensuring client users ..."
+        touch /var/lib/rabbitmq/sensu-clients
+        chmod o-r /var/lib/rabbitmq/sensu-clients
+        cat > /var/lib/rabbitmq/sensu-clients <<__EOF__
         ${clients}
+        __EOF__
 
+        ${pkgs.python38Full}/bin/python -u ${./configure-sensu-clients.py} $known_users
         echo "All done"
       '';
     };

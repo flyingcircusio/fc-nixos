@@ -421,6 +421,8 @@ in
 
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb')
+      host1.execute('systemctl stop fc-ceph-mon')
+      host1.execute('systemctl reset-failed fc-ceph-mon')
       host1.execute('fc-ceph mon create --no-encrypt --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
       host1.sleep(5)
       host1.succeed('ceph -s > /dev/kmsg 2>&1')
@@ -452,6 +454,11 @@ in
       host1.succeed("rbd pool init rbd.hdd")
 
       host1.succeed("rbd create --size 100 rbd.hdd/fc-21.05-dev")
+      host1.succeed("rbd map rbd.hdd/fc-21.05-dev")
+      host1.succeed("sgdisk /dev/rbd0 -o -a 2048 -n 1:8192:0 -c 1:ROOT -t 1:8300")
+      host1.succeed("partprobe")
+      host1.succeed("mkfs.xfs /dev/rbd0p1")
+      host1.succeed("rbd unmap /dev/rbd0")
       host1.succeed("rbd snap create rbd.hdd/fc-21.05-dev@v1")
       host1.succeed("rbd snap protect rbd.hdd/fc-21.05-dev@v1")
 

@@ -107,8 +107,11 @@ in
       }
     ];
 
+    flyingcircus.services.ceph.fc-ceph = {
+      enable = true;
+      package = cephPkgs.fc-ceph;
+    };
     environment.systemPackages = with pkgs; [
-      cephPkgs.fc-ceph
       fc.blockdev
 
       # tools like radosgw-admin and crushtool are only included in the full ceph package, but are necessary admin tools

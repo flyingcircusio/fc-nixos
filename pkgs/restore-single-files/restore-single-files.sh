@@ -56,6 +56,13 @@ while [ ! -e $LOOPPART ]; do
 	sleep 0.2
 done
 
+info "Pre-mounting image to flush log"
+mount -oloop ${LOOPPART} $LOOPMNT
+umount $LOOPMNT
+
+info "Regenerating UUID to avoid collisions"
+xfs_admin -U generate ${LOOPPART}
+
 info "Mounting image"
 mount -oloop ${LOOPPART} $LOOPMNT
 

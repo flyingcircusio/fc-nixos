@@ -397,6 +397,8 @@ in
       show(host1, "vgs")
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
+    # TODO: this is non-ceph-specific and could be moved to a separate test.
+    # But we need some encrypted volumes to work with.
     with subtest("Destroy and re-create the keystore, rekey the OSD"):
       host1.succeed("fc-luks keystore destroy --no-overwrite > /dev/kmsg 2>&1")
       host1.succeed("fc-luks keystore create /dev/vde > /dev/kmsg 2>&1")
@@ -434,6 +436,44 @@ in
       host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/kmsg 2>&1')
       assert_clean_cluster(host2, 3, 3, 3, 320)
 
+    with subtest("Verify keystore automount on boot"):
+      host1.execute("systemctl poweroff --force")
+      host1.wait_for_shutdown()
+      host1.start()
+      host1.wait_for_unit("local-fs.target")
+      show(host1, "mount")
+      host1.execute("sleep 5")
+      show(host1, "mount")
+      show(host1, "systemctl status multi-user.target")
+      show(host1, "lsblk")
+      show(host1, "cat /etc/fstab")
+      host1.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/kmsg 2>&1")
+
+    with subtest("Verify all services are up after a reboot"):
+      #host1.sleep(30)
+      show(host1, "systemctl status -l fc-ceph-mon.service")
+      show(host1, "systemctl status -l fc-ceph-mgr.service")
+      show(host1, "systemctl status -l fc-ceph-rgw.service")
+      show(host1, "systemctl status -l fc-ceph-osd@0.service")
+      host1.wait_for_unit("fc-ceph-mon.service")
+      host1.wait_for_unit("fc-ceph-mgr.service")
+      host1.wait_for_unit("fc-ceph-rgw.service")
+      host1.wait_for_unit("fc-ceph-osds-all.service")
+      host1.wait_for_unit("fc-ceph-osd@0.service")
+
+    with subtest("`fc-luks keystore test-open` verifies that volumes can be unlocked"):
+      host1.succeed('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "*" > /dev/kmsg 2>&1')
+      host1.succeed('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "*osd-*" > /dev/kmsg 2>&1')
+      # no volume matched
+      host1.fail('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "asdfhjkl" > /dev/kmsg 2>&1')
+      # wrong admin passphrase (will also modify the fingerprint)
+      host1.fail('echo -e "wrongphrase\ny\n" | setsid -w fc-luks keystore test-open "*" > /dev/kmsg 2>&1')
+      # wrong local keyfile (will correct admin keyphrase fingerprint again)
+      host1.execute("mv /mnt/keys/host1.key{,.bak}; echo garbage > /mnt/keys/host1.key")
+      host1.fail('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore test-open "*" > /dev/kmsg 2>&1')
+      host1.execute("mv /mnt/keys/host1.key{.bak,}")
+
+    # FIXME: deleting this might affect following tests, especially the reboot test
     with subtest("The check discovers non-conforming host key conditions"):
       host1.execute('chmod o+rw /mnt/keys/*')
       host1.fail("${check_key_file_cmd} > /dev/kmsg 2>&1")
@@ -486,37 +526,6 @@ in
     #  snapfillcheck = host1.execute('sudo -u sensuclient ' + check_command + ' >&2')
     #  print(snapfillcheck[1])
     #  assert snapfillcheck[0] == 2
-
-    with subtest("Verify keystore automount on boot"):
-      host1.execute("systemctl poweroff --force")
-      host1.wait_for_shutdown()
-      host1.start()
-      host1.wait_for_unit("local-fs.target")
-      show(host1, "mount")
-      host1.execute("sleep 5")
-      show(host1, "mount")
-      show(host1, "systemctl status multi-user.target")
-      show(host1, "lsblk")
-      show(host1, "cat /etc/fstab")
-      host1.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/kmsg 2>&1")
-
-    #with subtest("Verify all services are up after a reboot"):
-    #  host1.sleep(30)
-    #  show(host1, "systemctl status -l fc-ceph-mon.service")
-    #  show(host1, "cat /var/log/ceph/ceph-mon.host1.log")
-    #  show(host1, "systemctl status -l fc-ceph-mgr.service")
-    #  show(host1, "cat /var/log/ceph/ceph-mgr.host1.log")
-    #  show(host1, "systemctl status -l fc-ceph-rgw.service")
-    #  show(host1, "systemctl status -l fc-ceph-osd@0.service")
-    #  show(host1, "cat /var/log/ceph/ceph-osd.0.log")
-    #  show(host1, "journalctl -b -u systemd-tmpfiles-setup.service")
-    #  show(host1, "stat /run")
-    #  show(host1, "stat /run/ceph")
-    #  host1.wait_for_unit("fc-ceph-mon.service")
-    #  host1.wait_for_unit("fc-ceph-mgr.service")
-    #  host1.wait_for_unit("fc-ceph-rgw.service")
-    #  host1.wait_for_unit("fc-ceph-osds-all.service")
-    #  host1.wait_for_unit("fc-ceph-osd@0.service")
 
     print("Time spent waiting", time_waiting)
   '';

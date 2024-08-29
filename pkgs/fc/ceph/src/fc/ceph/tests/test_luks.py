@@ -327,36 +327,39 @@ def test_lsblk_to_cryptdevices():
     from fc.ceph.luks import manage
 
     assert set(
-        manage.lsblk_to_cryptdevices(json.loads(LSBLK_PATTY_JSON))
+        manage.LuksDevice.lsblk_to_cryptdevices(json.loads(LSBLK_PATTY_JSON))
     ) == set(
         (
             manage.LuksDevice(
                 base_blockdev="/dev/mapper/vgsys-ceph--mon--crypted",
                 name="ceph-mon",
                 mountpoint="/srv/ceph/mon/ceph-patty",
+                header=None,
             ),
             manage.LuksDevice(
                 base_blockdev="/dev/sdb1",
                 name="backy",
                 mountpoint="/srv/backy",
+                header=None,
             ),
             manage.LuksDevice(
                 base_blockdev="/dev/mapper/vgsys-ceph--mgr--crypted",
                 name="ceph-mgr",
                 mountpoint="/srv/ceph/mgr/ceph-patty",
+                header=None,
             ),
         )
     )
-    assert manage.lsblk_to_cryptdevices([]) == []
+    assert manage.LuksDevice.lsblk_to_cryptdevices([]) == []
     # disks, but no crypt and no children
     assert (
-        manage.lsblk_to_cryptdevices(
+        manage.LuksDevice.lsblk_to_cryptdevices(
             [{"name": "sdb", "path": "/dev/sda", "type": "disk"}]
         )
         == []
     )
     # disks with mountpoint = null
-    assert manage.lsblk_to_cryptdevices(
+    assert manage.LuksDevice.lsblk_to_cryptdevices(
         [
             {
                 "name": "ceph-osd3-block",
@@ -558,10 +561,26 @@ def test_keystore_admin_key_fingerprint_existing_update(
 
 
 def test_luks_fingerprint_command_invocation(
-    inputs_mock, capsys, mock_LUKSKeyStoreManager
+    inputs_mock, capsys, mock_LUKSKeyStoreManager, monkeypatch, tmp_path
 ):
     """smoke test for invocation via CLI arguments"""
     from fc.ceph.main import luks
+
+    monkeypatch.setattr(
+        "fc.ceph.main.CONFIG_FILE_PATH", tmp_path / "fc-ceph.conf"
+    )
+
+    with open(tmp_path / "fc-ceph.conf", "wt") as configfilemock:
+        print(
+            dedent(
+                """\
+        [default]
+        path=/nix/store/qkb2vanjhgvhyn9c6d7nab97dp956cqn-ceph-14.2.22/bin:/nix/store/czcdjj2yjm3bdaamv2212ph11i446ldj-ceph-client-14.2.22/bin:/nix/store/qnwhmvhhs0kdd849zisbs0na0qr52qg4-xfsprogs-5.11.0-bin/bin:/nix/store/ljrwk0h6qifb661lc5mjz6vd712r05cd-lvm2-2.03.12-bin/bin:/nix/store/bfxkg8q43b5hbzhzmq6c5j2iqf6806a5-util-linux-2.36.2-bin/bin:/nix/store/6pzvibxjz7pdi1dgn1f2dav4b2fhdyga-systemd-247.6/bin:/nix/store/xa76ngikl4sqbk18f0zwhhxa9lfay3zq-gptfdisk-1.0.7/bin:/nix/store/y41s1vcn0irn9ahn9wh62yx2cygs7qjj-coreutils-8.32/bin:/nix/store/2w2v7y95ll8896kaybxhnaiv23rb7q9n-lz4-1.9.3-bin/bin:/nix/store/3j44b29gyrdkpvkj5cfn2cywgcx440ms-cryptsetup-2.3.5/bin
+        release=nautilus
+        """
+            ),
+            file=configfilemock,
+        )
 
     # feed data to `input()`
     inputs_mock.write(

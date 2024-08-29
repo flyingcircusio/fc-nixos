@@ -42,6 +42,33 @@ def check_if_nbd_device_is_used(number):
         return f.read() != "0"
 
 
+def write_nix_file(nix_file_path, cfg):
+    # Nixify the alias list
+    nix_aliases = " ".join(map(lambda x: f'"{x}"', cfg["aliases"]))
+    with open(nix_file_path, mode="w") as f:
+        f.write(
+            textwrap.dedent(
+                f"""\
+        # DO NOT TOUCH!
+        # Managed by fc-devhost
+        {{ ... }}: {{
+          flyingcircus.roles.devhost.virtualMachines = {{
+            "{cfg['name']}" = {{
+              enable = {"true" if cfg['online'] else "false"};
+              id = {cfg['id']};
+              memory = "{cfg['memory']}";
+              cpu = {cfg['cpu']};
+              srvIp = "{cfg['srv-ip']}";
+              srvMac = "{cfg['srv-mac']}";
+              aliases = [ {nix_aliases} ];
+            }};
+          }};
+        }}
+        """
+            )
+        )
+
+
 def generate_enc_json(cfg, channel_url):
     return json.dumps(
         {
@@ -168,6 +195,7 @@ class Manager:
         if os.path.isfile(self.config_file):
             self.cfg = json.load(open(self.config_file))
 
+        self.cfg["online"] = True
         self.cfg["cpu"] = cpu
         self.cfg["name"] = self.name
         self.cfg["memory"] = memory
@@ -175,6 +203,7 @@ class Manager:
         self.cfg["location"] = location
         self.cfg["image_url"] = image_url
         self.cfg["channel_url"] = image_url
+        self.cfg["last_deploy_date"] = datetime.datetime.utcnow().isoformat()
 
         if "user" not in self.cfg:
             self.cfg["user"] = os.getlogin()
@@ -216,33 +245,12 @@ class Manager:
             with open(self.config_file, mode="w") as f:
                 f.write(json.dumps(self.cfg))
 
-            # Nixify the alias list
-            nix_aliases = " ".join(map(lambda x: f'"{x}"', self.cfg["aliases"]))
-            with open(self.nix_file, mode="w") as f:
-                f.write(
-                    textwrap.dedent(
-                        f"""\
-                # DO NOT TOUCH!
-                # Managed by fc-devhost
-                {{ ... }}: {{
-                  flyingcircus.roles.devhost.virtualMachines = {{
-                    "{self.cfg['name']}" = {{
-                      id = {self.cfg['id']};
-                      memory = "{self.cfg['memory']}";
-                      cpu = {self.cfg['cpu']};
-                      srvIp = "{self.cfg['srv-ip']}";
-                      srvMac = "{self.cfg['srv-mac']}";
-                      aliases = [ {nix_aliases} ];
-                    }};
-                  }};
-                }}
-                """
-                    )
-                )
+            write_nix_file(self.nix_file, self.cfg)
 
             self.data_dir.mkdir(exist_ok=True)
             VM_BASE_IMAGE_DIR.mkdir(exist_ok=True)
-            if not os.path.isfile(self.image_file):
+            vm_has_image = os.path.isfile(self.image_file)
+            if not vm_has_image:
                 image_url_hash = hashlib.sha256(
                     image_url.encode("utf-8")
                 ).hexdigest()
@@ -317,7 +325,21 @@ class Manager:
                         run("umount", image_mount_directory)
                         run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
                 os.rename(self.image_file_tmp, self.image_file)
-            else:
+
+            # Make sure the VM is now online, even if was previously offline
+            run("fc-manage", "-v", "-b")
+
+            fcntl.flock(self.lockfile, fcntl.LOCK_UN)
+            # Wait for the VM to get online
+            print("Waiting for VM to become pingable ...")
+            while True:
+                response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
+                if response == 0:
+                    break
+                else:
+                    time.sleep(0.5)
+
+            if vm_has_image:
                 print("Syncing VM enc data into running VM ...")
                 with tempfile.NamedTemporaryFile(mode="w") as f:
                     f.write(generate_enc_json(self.cfg, channel_url))
@@ -330,18 +352,6 @@ class Manager:
                         f.name,
                         f"developer@{self.name}:/etc/nixos/enc.json",
                     )
-
-            run("fc-manage", "-v", "-b")
-
-            fcntl.flock(self.lockfile, fcntl.LOCK_UN)
-            # We need to wait for the VM to get online
-            print("Waiting for VM to become pingable ...")
-            while True:
-                response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
-                if response == 0:
-                    break
-                else:
-                    time.sleep(0.5)
 
         except Exception as e:
             # We want the script to end in a state, where other VMs can be
@@ -375,6 +385,37 @@ class Manager:
 
     def cleanup(self, location=None):
         fcntl.flock(self.lockfile, fcntl.LOCK_EX)
+
+        print("Cleaning up the devhost now.")
+        vm_shut_down = False
+        for vm_cfg in list_all_vm_configs():
+            if "last_deploy_date" not in vm_cfg:
+                vm_cfg["last_deploy_date"] = (
+                    datetime.datetime.utcnow().isoformat()
+                )
+                with open(CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w") as f:
+                    f.write(json.dumps(vm_cfg))
+
+            if datetime.datetime.fromisoformat(vm_cfg["last_deploy_date"]) < (
+                datetime.datetime.utcnow() - datetime.timedelta(days=14)
+            ):
+                print(f"Shutting down VM {vm_cfg['name']}.")
+                vm_shut_down = True
+                vm_cfg["online"] = False
+                write_nix_file(CONFIG_DIR / f"{vm_cfg['name']}.nix", vm_cfg)
+                with open(CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w") as f:
+                    f.write(json.dumps(vm_cfg))
+
+            if datetime.datetime.fromisoformat(vm_cfg["last_deploy_date"]) < (
+                datetime.datetime.utcnow() - datetime.timedelta(days=31)
+            ):
+                print(f"Deleting VM {vm_cfg['name']}.")
+                Manager(name=vm_cfg["name"]).destroy()
+
+        if vm_shut_down:
+            run("fc-manage", "-v", "-b")
+
+        print("Cleaning up old VM base images now.")
         VM_BASE_IMAGE_DIR.mkdir(exist_ok=True)
         for stored_image in VM_BASE_IMAGE_DIR.glob("*"):
             age = time.time() - stored_image.stat().st_mtime

@@ -45,7 +45,7 @@ let
     monCompactOnStart = true;     # Keep mondb small
     monHost = mons;
     monOsdDownOutInterval = 900;  # Allow 15 min for reboots to happen without backfilling.
-    monOsdNearfullRatio = .9;
+    monOsdNearfullRatio = 0.9;
 
     monData = "/srv/ceph/mon/$cluster-$id";
     monOsdAllowPrimaryAffinity = true;
@@ -114,10 +114,14 @@ in
       };
 
       fc-ceph = {
+        enable = lib.mkEnableOption "enable fc-ceph command and supporting infrastracture (also contains fc-luks)";
         settings = lib.mkOption {
           type = with lib.types; attrsOf (attrsOf (oneOf [ bool int str package ]));
-          default = { };
           description = "Configuration for the fc-ceph utility, will be turned into the contents of /etc/ceph/fc-ceph.conf";
+        };
+        package = lib.mkOption {
+          type = lib.types.package;
+          default = cephPkgs.fc-ceph;
         };
       };
 
@@ -152,7 +156,8 @@ in
     };
   };
 
-  config = lib.mkIf cfg.client.enable {
+  config = lib.mkMerge [
+    (lib.mkIf cfg.client.enable {
 
     assertions = [
       {
@@ -161,14 +166,7 @@ in
       }
     ];
 
-    # config file to be read by fc-ceph
-    environment.etc."ceph/fc-ceph.conf".text = lib.generators.toINI { } cfg.fc-ceph.settings;
 
-    # build a default binary path for fc-ceph
-    flyingcircus.services.ceph.fc-ceph.settings.default = {
-      release = cfg.client.cephRelease;
-      path = cephPkgs.fc-ceph-path;
-    };
     environment.systemPackages = [ cfg.client.package ];
 
     boot.kernelModules = [ "rbd" ];
@@ -220,6 +218,22 @@ in
       }
     '';
 
-  };
+  })
+  # fc-ceph can be enabled separately from the whole ceph (client)
+  # infrastructure, as it contains `fc-luks` for now which might be required on
+  # non-ceph hosts.
+  (lib.mkIf cfg.fc-ceph.enable {
+
+    # config file to be read by fc-ceph
+    environment.etc."ceph/fc-ceph.conf".text = lib.generators.toINI { } cfg.fc-ceph.settings;
+
+    # build a default binary path for fc-ceph
+    flyingcircus.services.ceph.fc-ceph.settings.default = {
+      release = cfg.client.cephRelease;
+      path = cephPkgs.fc-ceph-path;
+    };
+    environment.systemPackages = [ cfg.fc-ceph.package ];
+
+  })];
 
 }

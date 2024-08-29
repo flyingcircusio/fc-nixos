@@ -425,6 +425,22 @@ def luks(args=sys.argv[1:]):
     # during construction of individual subcommands and might be re-used for
     # different command sections (mon, osd, ...)
 
+    parser_check = subparsers.add_parser(
+        "check", help="Check LUKS metadata header parameters."
+    )
+    parser_check.set_defaults(
+        subsystem=fc.ceph.luks.manage.LUKSKeyStoreManager, action="check_luks"
+    )
+    parser_check.add_argument(
+        "name_glob",
+        help="Names of LUKS volumes to check (globbing allowed), e.g. '*osd-*', 'backy'.",
+    )
+    parser_check.add_argument(
+        "--header",
+        help="When using an external LUKS header file, provide a path to it here."
+        "\nDefaults to autodetecting and using a file called ${mountpoint}.luks",
+    )
+
     keystore = subparsers.add_parser("keystore", help="Manage the keystore.")
     keystore.set_defaults(
         subsystem=fc.ceph.luks.manage.LUKSKeyStoreManager,
@@ -452,7 +468,7 @@ def luks(args=sys.argv[1:]):
     parser_rekey = keystore_sub.add_parser("rekey", help="Rekey volumes.")
     parser_rekey.add_argument(
         "name_glob",
-        help="Names of LUKS volumes to update (globbing allowed), e.g. '*osd-*', 'backy'. Mutually exclusive with `--device`.",
+        help="Names of LUKS volumes to update (globbing allowed), e.g. '*osd-*', 'backy'.",
     )
     parser_rekey.add_argument(
         "--header",
@@ -466,6 +482,21 @@ def luks(args=sys.argv[1:]):
         default="local",
     )
     parser_rekey.set_defaults(action="rekey")
+
+    parser_test = keystore_sub.add_parser(
+        "test-open",
+        help="Test that encrypted volumes can be successfully unlocked.",
+    )
+    parser_test.add_argument(
+        "name_glob",
+        help="Names of LUKS volumes to check (globbing allowed), e.g. '*osd-*', 'backy'.",
+    )
+    parser_test.add_argument(
+        "--header",
+        help="When using an external LUKS header file, provide a path to it here."
+        "\nDefaults to autodetecting and using a file called ${mountpoint}.luks",
+    )
+    parser_test.set_defaults(action="test_open")
 
     parser_fingerprint = keystore_sub.add_parser(
         "fingerprint", help="Compute a fingerprint of an admin passphrase."
@@ -540,7 +571,8 @@ def luks(args=sys.argv[1:]):
         action()
         sys.exit(1)
 
-    subsystem = subsystem_factory()
+    environment = Environment(CONFIG_FILE_PATH)
+    subsystem = environment.prepare(subsystem_factory)
     action = getattr(subsystem, action)
     action_statuscode = action(**args)
 

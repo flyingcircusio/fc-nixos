@@ -21,6 +21,7 @@ rec {
   check-link-redundancy = callPackage ./check-link-redundancy {};
   check-mongodb = callPackage ./check-mongodb {};
   check-postfix = callPackage ./check-postfix {};
+  check-rib-integrity = callPackage ./check-rib-integrity {};
 
   check-xfs-broken = callPackage ./check-xfs-broken {};
   collectdproxy = callPackage ./collectdproxy {};
@@ -33,13 +34,14 @@ rec {
   logcheckhelper = callPackage ./logcheckhelper { };
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
+  ping-on-tap = callPackage ./ping-on-tap {};
   qemu-nautilus = callPackage ./qemu rec {
-    version = "1.4.3";
+    version = "1.4.4";
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "fc.qemu";
       rev = version;
-      hash = "sha256-1kMdHXjsxxIW0bEV6PfDeagdLVxZP87kPKm0Z4ZtXJA=";
+      hash = "sha256-JyKToKWrkA1GT8GtayDyXHZvp2/UzrFFNednAavax2w=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;
