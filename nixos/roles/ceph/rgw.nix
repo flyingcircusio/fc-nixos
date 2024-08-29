@@ -182,6 +182,14 @@ in
         script = "${pkgs.fc.agent}/bin/fc-s3accounting --enc ${config.flyingcircus.encPath}";
       };
 
+      flyingcircus.services.sensu-client.checks = {
+        radosgw_probe_object = {
+          notification = "Probe object (/rgw-monitoring/probe) not OK.";
+          command =
+            "check_http -u /rgw-monitoring/probe -H localhost -m 1000000:1500000 -w 5 -c 10";
+        };
+      };
+
       services.logrotate.extraConfig = ''
         /var/log/ceph/client.radosgw.log {
             create 0644 root adm
