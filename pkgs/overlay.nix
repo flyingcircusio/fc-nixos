@@ -390,6 +390,16 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
+  rich-cli = super.rich-cli.overridePythonAttrs (prev: {
+    propagatedBuildInputs = with self.python3Packages; [
+      rich
+      click
+      requests
+      textual
+      rich-rst
+    ];
+  });
+
   # Ruby 2.7 is EOL but we still need it for Sensu until Aramaki takes over ;)
   #ruby_2_7 = getClosureFromStore /nix/store/qqc6v89xn0g2w123wx85blkpc4pz2ags-ruby-2.7.8;
 
