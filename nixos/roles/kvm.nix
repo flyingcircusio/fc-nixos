@@ -345,6 +345,9 @@ in
              in
                 "s3-${name} ${address}:7480 check inter 10s rise 2 fall 1 maxconn 40")
             (fclib.findServices "ceph_rgw-internal-server");
+          extraConfig = ''
+              option httpchk GET /rgw-monitoring/probe
+          '';
         };
       };
     };
