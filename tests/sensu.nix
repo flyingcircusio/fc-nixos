@@ -150,6 +150,10 @@ in {
   in ''
     start_all()
     sensu.wait_for_unit("rabbitmq.service")
+    sensu.wait_for_unit("prepare-rabbitmq-for-sensu.service")
+
+    print(sensu.succeed("journalctl -u prepare-rabbitmq-for-sensu"))
+
     sensu.wait_until_succeeds("${amqpPortCheck}")
     sensu.wait_for_unit("sensu-server")
     sensu.wait_for_unit("sensu-api")
