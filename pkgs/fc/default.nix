@@ -34,6 +34,7 @@ rec {
   logcheckhelper = callPackage ./logcheckhelper { };
   megacli = callPackage ./megacli { };
   multiping = callPackage ./multiping.nix {};
+  neighbour-cache-monitor = callPackage ./neighbour-cache-monitor {};
   ping-on-tap = callPackage ./ping-on-tap {};
   qemu-nautilus = callPackage ./qemu rec {
     version = "1.4.4";
