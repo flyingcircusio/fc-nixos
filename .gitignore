@@ -21,3 +21,6 @@ result-*
 share/
 target/
 tmp/
+# direnv
+.envrc
+.direnv/
