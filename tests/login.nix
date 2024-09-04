@@ -7,7 +7,10 @@ import ./make-test-python.nix ({ pkgs, ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
 
-      sound.enable = true; # needed for the factl test, /dev/snd/* exists without them but udev doesn't care then
+      ### XXX: needed? sound.enable is gone on 24.11
+
+      # sound.enable = true; # needed for the factl test, /dev/snd/* exists without them but udev doesn't care then
+
 
     };
 

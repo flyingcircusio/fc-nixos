@@ -278,7 +278,6 @@ in {
     ];
 
     # make the image smaller
-    sound.enable = mkDefault false;
     documentation.dev.enable = mkDefault false;
     documentation.doc.enable = mkDefault false;
     # reduce build time
