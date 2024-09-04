@@ -23,7 +23,7 @@
   description = "Flying Circus NixOS platform (dev/release tooling)";
 
   inputs = {
-    nixpkgs.url = "github:flyingcircusio/nixpkgs/PL-132971-downgrade-kernel-5.15";
+    nixpkgs.url = "github:flyingcircusio/nixpkgs/nixos-24.11";
     nixos-mailserver = {
       url = "gitlab:flyingcircus/nixos-mailserver/nixos-24.05?host=gitlab.flyingcircus.io";
       inputs.nixpkgs.follows = "nixpkgs";
