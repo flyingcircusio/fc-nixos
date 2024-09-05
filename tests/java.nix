@@ -20,8 +20,6 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     jdk11_headless = "${pkgs.jdk11_headless}"
     jdk17 = "${pkgs.jdk17}"
     jdk17_headless = "${pkgs.jdk17_headless}"
-    jdk19 = "${pkgs.jdk19}"
-    jdk19_headless = "${pkgs.jdk19_headless}"
     jdk21 = "${pkgs.jdk21}"
     jdk21_headless = "${pkgs.jdk21_headless}"
     jdk8 = "${pkgs.jdk8}"
@@ -35,8 +33,6 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     openjdk11_headless = "${pkgs.openjdk11_headless}"
     openjdk17 = "${pkgs.openjdk17}"
     openjdk17_headless = "${pkgs.openjdk17_headless}"
-    openjdk19 = "${pkgs.openjdk19}"
-    openjdk19_headless = "${pkgs.openjdk19_headless}"
     openjdk21 = "${pkgs.openjdk21}"
     openjdk21_headless = "${pkgs.openjdk21_headless}"
     openjdk8 = "${pkgs.openjdk8}"
@@ -60,12 +56,6 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
     with subtest("Package aliases for Java 17 headless should point to the same package"):
       assert openjdk17_headless == jdk17_headless
 
-    with subtest("Package aliases for Java 19 should point to the same package"):
-      assert openjdk19 == jdk19
-
-    with subtest("Package aliases for Java 19 headless should point to the same package"):
-      assert openjdk19_headless == jdk19_headless
-
     with subtest("Package aliases for Java 21 should point to the same package"):
       assert openjdk21 == jdk21
 
@@ -88,7 +78,6 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
       jdk11: "11",
       jdk11_headless: "11",
       openjdk17: "17",
-      openjdk19: "19",
       openjdk21: "21",
     }
 
