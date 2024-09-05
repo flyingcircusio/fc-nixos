@@ -1,0 +1,2 @@
+use flake . --impure --allow-dirty --no-write-lock-file
+build_channels_dir

@@ -3,7 +3,7 @@
 # Slurm Workload Manager
 
 :::{note}
-Slurm support is in beta. Feel free to use it, but we suggest contacting
+Slurm is a complex system. Feel free to use it, but we suggest contacting
 our support before putting anything into production.
 :::
 
@@ -13,9 +13,108 @@ of various services which are represented by separate Flying Circus roles
 documented below.
 
 The remainder of this documentation assumes that you are aware of the basics of
-Slurm and understand the general terminology.
+Slurm and understand the general terminology as described in [Slurm Quickstart](https://slurm.schedmd.com/quickstart.html).
 
 We provide version 23.11.x.x of Slurm.
+
+## Command Cheat sheet
+
+The following command examples are especially useful to diagnose issues with jobs or slurm state/configuration.
+
+For more commands and explanations, also see [Useful Slurm Commands](https://curc.readthedocs.io/en/latest/running-jobs/slurm-commands.html).
+
+
+### Platform Role Management and Configuration
+
+Run on a controller node to check cluster state and display basic metrics:
+
+```shell
+fc-slurm check
+```
+
+Set all nodes to ready:
+
+```shell
+sudo fc-slurm all-nodes ready
+```
+
+View the dynamically-generated documentation for a machine:
+
+```shell
+slurm-readme
+```
+Show the current configuration:
+
+```shell
+slurm-show-configuration
+```
+
+Show full slurm metrics which are collected by statshost (Telegraf/Prometheus):
+
+```shell
+fc-slurm metrics | jq
+```
+
+### Cluster State
+
+Show partition state:
+
+```shell
+sinfo
+```
+
+Show node info:
+
+```shell
+sinfo -N
+```
+
+### Job Management
+
+Show running/pending jobs
+
+```shell
+squeue
+```
+
+Find jobs with high RAM consumption for all users (with custom output format):
+
+```shell
+sudo -u slurm sacct --format="MaxRSS,State,JobID,JobName,User,CPUTime" -a | awk 'NR <= 2; NR > 2 {print $0 | "sort -n"}'
+```
+
+Show info for specific job
+
+```shell
+scontrol show job <job_id>
+```
+
+
+Cancel jobs with a given job name:
+
+```shell
+sudo -u slurm scancel -n jobname
+```
+
+Cancel all jobs:
+
+```shell
+squeue | awk ' { print $1 } ' | xargs scancel
+```
+
+### Running Test Jobs
+
+Run a short test job on two nodes:
+
+```shell
+srun -N2 -lv date
+```
+
+Run a blocking test job on a single node:
+
+```shell
+srun -v sleep 30
+```
 
 ## Basic architecture and roles
 
@@ -211,57 +310,6 @@ Check the state of the controller and all nodes, also used by the `slurm` Sensu 
 
 ```shell
 fc-slurm check
-```
-
-
-## Command Cheat sheet
-
-
-Set all nodes to ready:
-
-```shell
-sudo fc-slurm all-nodes ready
-```
-
-View the dynamically-generated documentation for a machine:
-
-```shell
-slurm-readme
-```
-Show the current configuration:
-
-```shell
-slurm-show-configuration
-```
-
-Show running/pending jobs
-
-```shell
-squeue
-```
-
-Show partition state:
-
-```shell
-sinfo
-```
-
-Show node info:
-
-```shell
-sinfo -N
-```
-
-Find jobs with high RAM consumption for all users (with custom output format):
-
-```shell
-sudo -u slurm sacct --format="MaxRSS,State,JobID,JobName,User,CPUTime" -a | awk 'NR <= 2; NR > 2 {print $0 | "sort -n"}'
-```
-
-Cancel jobs with a given job name:
-
-```shell
-sudo -u slurm scancel -n jobname
 ```
 
 ## Known limitations

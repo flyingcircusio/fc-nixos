@@ -39,11 +39,15 @@ Automatically enter the dev shell with direnv
 
 Use `direnv` to automatically enter the dev shell when you change to the fc-nixos directory.
 
+A recommended direnv config is shipped in `.envrc.example` to use it in your repo checkout just
+`cp .envrc{.example,} && direnv allow`.
+
+We recommend the usage of the [nix-community/nix-direnv](https://github.com/nix-community/nix-direnv) hook
+instead of the one shipped by direnv itself.
 To set it up with `home-manager`, see:
 https://github.com/nix-community/nix-direnv?tab=readme-ov-file#via-home-manager
 
-Without home-manager
---------------------
+### Without home-manager
 
 On a NixOS machine, enabling `programs.direnv.enable` should be enough.
 
@@ -54,17 +58,13 @@ Add `/etc/local/nixos/dev_vm.nix`, for example:
       nix.extraOptions = ''
         keep-outputs = true
       '';
-      programs.direnv.enable = true;
+      programs.direnv = {
+        enable = true;
+        nix-direnv.enable = true;
+      };
     }
 
 Rebuild the system, close the shell/tmux session and log in again.
-
-In `fc-nixos`, add an `.envrc` file like:
-
-    use flake . --impure --allow-dirty
-    build_channels_dir
-
-Then, run `direnv allow` to build and enter the dev shell.
 
 Run `direnv allow` again if the dev shell disappears or doesn't reload automatically.
 
