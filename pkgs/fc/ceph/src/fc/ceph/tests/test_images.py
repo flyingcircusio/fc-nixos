@@ -1,7 +1,6 @@
 import pytest
 
-# TODO validate data format by calling dev deployment’s direcory API
-DIRECTOR_API_ENVIRONMENTS = [
+DIRECTORY_API_ENVIRONMENTS = [
     {
         "name": "default",
         "url": "p:default",
@@ -57,6 +56,23 @@ DIRECTOR_API_ENVIRONMENTS = [
         "title": "[NixOS] fc-23.05-staging",
         "environment_class": "NixOS",
     },
+    {
+        "name": "fc-23.05-dev",
+        "url": "https://hydra.flyingcircus.io/build/402269/download/1/nixexprs.tar.xz",
+        "release_metadata": {
+            "channel_url": "https://hydra.flyingcircus.io/build/402269/download/1/nixexprs.tar.xz",
+            "changelog_url": None,
+            "devhost_image_url": None,
+            "devhost_image_hash": None,
+            # as a test case, provide just image URL and not a hash
+            "image_url": "https://hydra.flyingcircus.io/build/450935/download/1",
+            "image_hash": None,
+            "release_name": "dev-rolling",
+            "rolling_channel": True,
+        },
+        "title": "[NixOS] fc-23.05-staging",
+        "environment_class": "NixOS",
+    },
 ]
 
 
@@ -78,3 +94,21 @@ def test_srihash_sha256():
         sri_to_sha256sum("")
     with pytest.raises(ValueError):
         sri_to_sha256sum("md5-asdfk")
+
+
+def test_image_data_processing_default(caplog):
+    from fc.ceph.maintenance.images_nautilus import get_release_images
+
+    caplog.set_level(logging.INFO)
+
+    filtered_data, got_errors = get_release_images(DIRECTORY_API_ENVIRONMENTS)
+    assert not got_errors
+    assert set(
+        map(
+            lambda x: x["environment"],
+            filtered_data,
+        )
+    ) == set(["fc-23.05-production"])
+    captured = caplog.text
+    assert "has no image URL, skipping." in captured
+    assert "has no image hash, skipping." in captured
