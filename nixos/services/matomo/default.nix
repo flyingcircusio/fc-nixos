@@ -97,6 +97,7 @@ let
       sudo -u nginx stat /var/lib/matomo/share/plugins/CoreHome/images/favicon.ico
     '';
   };
+  deleteUnnecessaryFilesScript = pkgs.writeShellScript "delete-unwanted-files" (builtins.readFile ./matomo-delete-unwanted-files.sh);
 
 in {
   imports = [
@@ -180,7 +181,7 @@ in {
       nginx = mkOption {
         type = types.nullOr (types.submodule (
           recursiveUpdate
-            (import ./nginx/vhost-options.nix { inherit config lib; })
+            (import ../nginx/vhost-options.nix { inherit config lib; })
             {
               # enable encryption by default,
               # as sensitive login and Matomo data should not be transmitted in clear text.
@@ -267,7 +268,7 @@ in {
       wants = [ databaseService ];
       after = [ databaseService ];
 
-      path = [ cfg.package pkgs.acl cfg.tools.matomoConsole ];
+      path = [ cfg.tools.matomoConsole pkgs.acl ];
       inherit environment;
 
       serviceConfig = {
@@ -333,6 +334,20 @@ in {
               echo "Package is unchanged."
             else
               echo "Package updated, installing new files to ${dataDir}..."
+
+              ${lib.optionalString (lib.versionAtLeast cfg.package.version "5.0.0") ''
+              if [[ -f ${webrootDir}/plugins/CoreConsole/Commands/GenerateAngularDirective.php ]]; then
+                # These files need to be deleted explicitly because if they are present, even matomo-console won't work.
+                echo "Deleting leftover core plugin files from matomo 4..."
+                rm -v ${webrootDir}/plugins/CoreConsole/Commands/GenerateAngularComponent.php
+                rm -v ${webrootDir}/plugins/CoreConsole/Commands/GenerateAngularDirective.php
+              fi
+              ''}
+
+              # Deleting files recommended by the Web UI
+              ${lib.optionalString (lib.versionAtLeast cfg.package.version "5.0") ''
+                ${deleteUnnecessaryFilesScript}
+              ''}
 
               cp -r ${cfg.package}/share/* ${webrootDir}/
               echo "Copied files, updating package link in ${dataDir}/current-package."
