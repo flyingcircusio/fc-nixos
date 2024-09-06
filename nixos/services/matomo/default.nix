@@ -268,7 +268,7 @@ in {
       wants = [ databaseService ];
       after = [ databaseService ];
 
-      path = [ cfg.tools.matomoConsole cfg.package pkgs.acl ];
+      path = [ cfg.tools.matomoConsole pkgs.acl ];
       inherit environment;
 
       serviceConfig = {
