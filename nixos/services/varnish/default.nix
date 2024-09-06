@@ -126,7 +126,12 @@ in {
       reloadIfChanged = true;
       restartTriggers = [ cfg.extraCommandLine vcfg.package cfg.http_address ];
       reload = ''
-        vadm="${vcfg.package}/bin/varnishadm -n ${vcfg.stateDir}"
+        if [ -d "${vcfg.stateDir}" ]; then
+          statedir="${vcfg.stateDir}"
+        else
+          statedir="/var/spool/varnish/${config.networking.hostName}" #temporary migration
+        fi
+        vadm="${vcfg.package}/bin/varnishadm -n $statedir"
         cat ${commandsfile} | $vadm
 
         coldvcls=$($vadm vcl.list | grep " cold " | ${pkgs.gawk}/bin/awk {'print $5'})
