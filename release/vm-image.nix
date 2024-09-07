@@ -47,7 +47,7 @@ in
           echo "creating Flying Circus VM image..."
           mkdir -p $out
           fn=$out/${fileName}
-          ${pkgs.lz4}/bin/lz4 $diskImage $fn
+          ${pkgs.lz4.out}/bin/lz4 $diskImage $fn
           rm $diskImage
           mkdir $out/nix-support
           echo "file img $fn" >> $out/nix-support/hydra-build-products
