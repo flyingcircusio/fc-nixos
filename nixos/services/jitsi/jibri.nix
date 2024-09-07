@@ -186,8 +186,6 @@ in
     '';
     boot.kernelModules = [ "snd-aloop" ];
 
-    sound.enable = true;
-
     environment.etc."asound.conf".source = "${pkgs.jibri}/etc/jitsi/jibri/asoundrc";
 
     environment.etc."chromium/policies/managed/managed_policies.json".source =
