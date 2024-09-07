@@ -16,7 +16,7 @@
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.16",
-    "pname": "filebeat",
+    "pname": "auditbeat",
     "version": "7.17.16"
   },
   "automake": {

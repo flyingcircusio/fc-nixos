@@ -120,24 +120,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
 
-  # Overriding the version for Go modules doesn't work properly so we
-  # include our own beats.nix here. The other beats below inherit the version
-  # change.
-  inherit (super.callPackage ./beats.nix {}) filebeat7;
-
-  auditbeat7 = self.filebeat7.overrideAttrs(a: a // {
-    name = "auditbeat-${a.version}";
-
-    postFixup = "";
-
-    subPackages = [
-      "auditbeat"
-    ];
-  });
-
   auditbeat7-oss = self.auditbeat7.overrideAttrs(a: a // {
     name = "auditbeat-oss-${a.version}";
-    preBuild = "rm -rf x-pack";
+    # XXX: tests break without x-pack (bad!)
+    # preBuild = "rm -rf x-pack";
   });
 
   cyrus_sasl-legacyCrypt = super.cyrus_sasl.override {
@@ -153,7 +139,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
     name = "filebeat-oss-${a.version}";
-    preBuild = "rm -rf x-pack";
+    # XXX: tests break without x-pack (bad!)
+    # preBuild = "rm -rf x-pack";
   });
 
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
