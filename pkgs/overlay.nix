@@ -364,16 +364,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     cyrus_sasl = self.cyrus_sasl-legacyCrypt;
   };
 
-  postgis_2_5 = (super.postgresqlPackages.postgis.override {
-      proj = self.proj_7;
-    }).overrideAttrs(_: rec {
-    version = "2.5.5";
-    src = super.fetchurl {
-      url = "https://download.osgeo.org/postgis/source/postgis-${version}.tar.gz";
-      sha256 = "0547xjk6jcwx44s6dsfp4f4j93qrbf2d2j8qhd23w55a58hs05qj";
-    };
-  });
-
   prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
 
   python27 = super.python27.overrideAttrs (prev: {
@@ -420,13 +410,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   sensu-plugins-redis = getClosureFromStore /nix/store/qbqnynpw5mzx98nz8lx89gpjw91wyd5b-sensu-plugins-redis-4.1.0;
 
   solr = super.callPackage ./solr { };
-
-  temporal_tables = super.callPackage ./postgresql/temporal_tables { };
-
-  # XXX: qt4 was removed upstream, we have to bring it back somehow. Or just tell people to use old channels for this?
-  #wkhtmltopdf_0_12_5 = super.callPackage ./wkhtmltopdf/0_12_5.nix { };
-  #wkhtmltopdf_0_12_6 = super.callPackage ./wkhtmltopdf/0_12_6.nix { };
-  #wkhtmltopdf = self.wkhtmltopdf_0_12_6;
 
   xtrabackup = self.percona-xtrabackup_8_0;
 }
