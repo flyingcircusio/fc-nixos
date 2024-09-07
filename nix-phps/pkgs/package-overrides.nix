@@ -120,19 +120,19 @@ in
                 "ext/dom/tests/bug80268.phpt"
               ];
             })
-          ] ++ lib.optionals (lib.versionOlder prev.php.version "7.3" && lib.versionAtLeast prev.php.version "7.1") [
+          ] ++ lib.optionals (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.3") [
             # Patch rebased from https://github.com/php/php-src/commit/061058a9b1bbd90d27d97d79aebcf2b5029767b0
             # Fix PHP tests with libxml2 2.12
             ./patches/php71-libxml212-tests.patch
-          ] ++ lib.optionals (lib.versionOlder prev.php.version "7.4" && lib.versionAtLeast prev.php.version "7.3") [
+          ] ++ lib.optionals (lib.versionAtLeast prev.php.version "7.3" && lib.versionOlder prev.php.version "7.4") [
             # Patch rebased from https://github.com/php/php-src/commit/061058a9b1bbd90d27d97d79aebcf2b5029767b0
             # Fix PHP tests with libxml2 2.12
             ./patches/php73-libxml212-tests.patch
-          ] ++ lib.optionals (lib.versionOlder prev.php.version "8.1" && lib.versionAtLeast prev.php.version "7.4") [
+          ] ++ lib.optionals (lib.versionAtLeast prev.php.version "7.4" && lib.versionOlder prev.php.version "8.1") [
             # Patch rebased from https://github.com/php/php-src/commit/061058a9b1bbd90d27d97d79aebcf2b5029767b0
             # Fix PHP tests with libxml2 2.12
             ./patches/php74-libxml212-tests.patch
-          ] ++ lib.optionals (lib.versionOlder prev.php.version "8.2.14" && lib.versionAtLeast prev.php.version "8.1") [
+          ] ++ lib.optionals (lib.versionAtLeast prev.php.version "8.1" && lib.versionOlder prev.php.version "8.2.14") [
             # Patch rebased from https://github.com/php/php-src/commit/0a39890c967aa57225bb6bdf4821aff7a3a3c082
             # Fix compilation errors with libxml2 2.12
             ./patches/libxml-ext.patch
@@ -147,11 +147,14 @@ in
           "--with-libxml-dir=${pkgs.libxml2.dev}"
         ];
 
+      # Tests fail on Darwin for some reason.
+      doCheck = lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux;
+
       postPatch =
         lib.concatStringsSep "\n" [
           (attrs.postPatch or "")
 
-          (lib.optionalString (lib.versionOlder prev.php.version "7.4" && lib.versionAtLeast prev.php.version "7.3") ''
+          (lib.optionalString (lib.versionAtLeast prev.php.version "7.3" && lib.versionOlder prev.php.version "7.4") ''
             # 4cc261aa6afca2190b1b74de39c3caa462ec6f0b deletes this file but fetchpatch does not support deletions.
             rm ext/dom/tests/bug80268.phpt
           '')
@@ -161,7 +164,7 @@ in
             rm ext/dom/tests/bug43364.phpt
           '')
 
-          (lib.optionalString (lib.versionOlder prev.php.version "8.1" && lib.versionAtLeast prev.php.version "7.1") ''
+          (lib.optionalString (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "8.1") ''
             # Removing tests failing with libxml2 (2.11.4) > 2.10.4
             rm ext/dom/tests/DOMDocument_loadXML_error2.phpt
             rm ext/dom/tests/DOMDocument_load_error2.phpt
@@ -290,6 +293,11 @@ in
         prev.extensions.inotify;
 
     intl = prev.extensions.intl.overrideAttrs (attrs: {
+      buildInputs =
+        if lib.versionOlder prev.php.version "8.1.0" then
+          (builtins.filter (pkg: pkg != pkgs.icu73) attrs.buildInputs) ++ [ pkgs.icu64 ]
+        else
+          attrs.buildInputs;
       doCheck = if lib.versionOlder prev.php.version "7.2" then false else attrs.doCheck or true;
       patches =
         let
@@ -392,6 +400,15 @@ in
         })
       else
         prev.extensions.mbstring;
+
+    mcrypt =
+      if lib.versionOlder prev.php.version "7.0" then
+        prev.mkExtension {
+          name = "mcrypt";
+          configureFlags = [ "--with-mcrypt=${pkgs.libmcrypt.outPath}" ];
+        }
+      else
+        throw "php.extensions.mcrypt requires PHP version < 7.0.";
 
     memcached =
       if lib.versionOlder prev.php.version "7.0" then
@@ -674,14 +691,9 @@ in
 
     redis =
       if lib.versionOlder prev.php.version "7.0" then
-        prev.extensions.redis.overrideAttrs (attrs: {
-          name = "redis-4.3.0";
-          version = "4.3.0";
-          src = pkgs.fetchurl {
-            url = "http://pecl.php.net/get/redis-4.3.0.tgz";
-            sha256 = "wPBM7DSZYKhCtgkg+4pDNlbi5JTq7W5mM5fWcQKlG6I=";
-          };
-        })
+        final.callPackage ./extensions/redis/4.nix { }
+      else if lib.versionOlder prev.php.version "7.1" then
+        final.callPackage ./extensions/redis/6.0.nix { }
       else if lib.versionOlder prev.php.version "8.0" then
         prev.extensions.redis.overrideAttrs (attrs: {
           preConfigure =
@@ -699,17 +711,7 @@ in
 
     redis3 =
       if lib.versionOlder prev.php.version "8.0" then
-        prev.extensions.redis.overrideAttrs (attrs: {
-          name = "redis-3.1.6";
-          version = "3.1.6";
-          src = pkgs.fetchurl {
-            url = "http://pecl.php.net/get/redis-3.1.6.tgz";
-            hash = "sha256-siknTNwUwi78Qf76ANtNxbsyqZfWgRJ4ZioEOnaqJgA=";
-          };
-          meta = attrs.meta // {
-            platforms = lib.platforms.linux;
-          };
-        })
+        final.callPackage ./extensions/redis/3.nix { }
       else
         throw "php.extensions.redis requires PHP version < 8.0.";
 
@@ -726,6 +728,10 @@ in
           # Required to build on darwin.
           "--with-libxml-dir=${pkgs.libxml2.dev}"
         ];
+
+        # Tests fail on Darwin for some reason.
+        doCheck = lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux;
+
       });
 
     swoole =
@@ -750,6 +756,9 @@ in
           # Required to build on darwin.
           "--with-libxml-dir=${pkgs.libxml2.dev}"
         ];
+
+        # Tests fail on Darwin with older PHP versions for some reason.
+        doCheck = attrs.doCheck or true && (lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux);
       });
 
 
@@ -760,7 +769,7 @@ in
             attrs.patches or [];
 
           ourPatches =
-            lib.optionals (lib.versionOlder prev.php.version "8.1" && lib.versionAtLeast prev.php.version "7.1") [
+            lib.optionals (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "8.1") [
               # Fix GH-12633: sqlite3_defensive.phpt fails with sqlite 3.44.0
               # https://github.com/php/php-src/commit/2a4775d6a73e9f6d4fc8e7df6f052aa18790a8e9
               (pkgs.fetchpatch {
@@ -826,7 +835,24 @@ in
 
     xdebug =
       # xdebug versions were determined using https://xdebug.org/docs/compat
-      if lib.versionAtLeast prev.php.version "8.0" then
+      if lib.versionAtLeast prev.php.version "8.4" then
+        prev.extensions.xdebug.overrideAttrs (attrs: {
+          name = "xdebug-3.4.0alpha1";
+          version = "3.4.0alpha1";
+          src = pkgs.fetchurl {
+            url = "https://xdebug.org/files/xdebug-3.4.0alpha1.tgz";
+            hash = "sha256-S4oizwlhom50uV+ToV6ctdWka8d2CKnAPb2YmWOytOc=";
+          };
+
+          patches = [
+            # Fix missing ZEND_EXIT
+            (pkgs.fetchpatch {
+              url = "https://github.com/xdebug/xdebug/commit/6ecd35f898e67cbe7f9257e7cb3a4c602a3dc8ec.patch";
+              hash = "sha256-IYc1KKPBYek4AXEijoM9RaTwp51J0Gz/CQ1HgmTct3Q=";
+            })
+          ];
+        })
+      else if lib.versionAtLeast prev.php.version "8.0" then
         prev.extensions.xdebug
       else if lib.versionAtLeast prev.php.version "7.2" then
         prev.extensions.xdebug.overrideAttrs (attrs: {
@@ -908,6 +934,9 @@ in
           # Required to build on darwin.
           "--with-libxml-dir=${pkgs.libxml2.dev}"
         ];
+
+        # Test tests/bug71536.phpt fails on Darwin with PHP 7.3 for some reason.
+        doCheck = attrs.doCheck or true && (lib.versions.majorMinor prev.php.version == "7.3" -> pkgs.stdenv.isLinux);
     });
 
     zip = prev.extensions.zip.overrideAttrs (attrs: {
