@@ -8,17 +8,27 @@ prev:
 let
   packageOverrides = import ./package-overrides.nix prev;
 
+  libxml2_12 = prev.callPackage ./libxml2/2.12.nix { };
+
   _mkArgs =
     args:
 
-    {
-      inherit packageOverrides;
+    let
+      libxml2 =
+        if prev.lib.versionAtLeast args.version "8.1"
+        then prev.libxml2
+        else libxml2_12;
 
-      # For passing pcre2 to generic.nix.
+      # Use a consistent libxml2 version.
+      libxslt = prev.libxslt.override { inherit libxml2; };
+
       pcre2 =
         if prev.lib.versionAtLeast args.version "7.3"
         then prev.pcre2
         else prev.pcre;
+    in
+    {
+      inherit packageOverrides libxml2 pcre2;
 
       phpAttrsOverrides =
         attrs:
@@ -58,7 +68,7 @@ let
               "--enable-hash"
 
               "--enable-libxml"
-              "--with-libxml-dir=${prev.libxml2.dev}"
+              "--with-libxml-dir=${libxml2.dev}"
             ]
             ++ prev.lib.optionals (prev.lib.versions.majorMinor args.version == "7.3") [
               # Force use of pkg-config.
@@ -98,7 +108,7 @@ let
             + prev.lib.optionalString (prev.lib.versionAtLeast args.version "7.3" && prev.lib.versionOlder args.version "7.4") " -Wno-int-conversion";
         };
 
-      # For passing pcre2 to php-packages.nix.
+      # For passing libxml2 and pcre2 to php-packages.nix.
       callPackage =
         cpFn:
         cpArgs:
@@ -108,10 +118,7 @@ let
 
           # Only pass these attributes if the package function actually expects them.
           prev.lib.filterAttrs (key: _v: builtins.hasAttr key prevArgs) {
-            pcre2 =
-              if prev.lib.versionAtLeast args.version "7.3"
-              then prev.pcre2
-              else prev.pcre;
+            inherit libxml2 libxslt pcre2;
 
             # For passing pcre2 to stuff called with callPackage in php-packages.nix.
             pkgs =
@@ -120,10 +127,7 @@ let
                 prev.lib.makeScope
                   prev.newScope
                   (self: {
-                    pcre2 =
-                      if prev.lib.versionAtLeast args.version "7.3"
-                      then prev.pcre2
-                      else prev.pcre;
+                    inherit libxml2 libxslt pcre2;
                   })
               );
           }
@@ -158,6 +162,10 @@ in
   };
 
   php83 = prev.php83.override {
+    inherit packageOverrides;
+  };
+
+  php84 = prev.php84.override {
     inherit packageOverrides;
   };
 }

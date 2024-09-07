@@ -1,4 +1,8 @@
-{ callPackage, stdenvNoCC, lib, writeTextDir, fetchFromGitHub, php }:
+{
+  stdenvNoCC,
+  lib,
+  php,
+}:
 
 let
   mkComposerRepositoryOverride =
@@ -18,16 +22,27 @@ let
 
     let
       phpDrv = finalAttrs.php or php;
-      composer = finalAttrs.composer or phpDrv.packages.composer;
-      composer-local-repo-plugin = callPackage ./pkgs/composer-local-repo-plugin.nix { };
+      composer = finalAttrs.composer or phpDrv.packages.composer-local-repo-plugin;
     in
     assert (lib.assertMsg (previousAttrs ? src) "mkComposerRepository expects src argument.");
-    assert (lib.assertMsg (previousAttrs ? vendorHash) "mkComposerRepository expects vendorHash argument.");
+    assert (
+      lib.assertMsg (previousAttrs ? vendorHash) "mkComposerRepository expects vendorHash argument."
+    );
     assert (lib.assertMsg (previousAttrs ? version) "mkComposerRepository expects version argument.");
     assert (lib.assertMsg (previousAttrs ? pname) "mkComposerRepository expects pname argument.");
-    assert (lib.assertMsg (previousAttrs ? composerNoDev) "mkComposerRepository expects composerNoDev argument.");
-    assert (lib.assertMsg (previousAttrs ? composerNoPlugins) "mkComposerRepository expects composerNoPlugins argument.");
-    assert (lib.assertMsg (previousAttrs ? composerNoScripts) "mkComposerRepository expects composerNoScripts argument.");
+    assert (
+      lib.assertMsg (previousAttrs ? composerNoDev) "mkComposerRepository expects composerNoDev argument."
+    );
+    assert (
+      lib.assertMsg (
+        previousAttrs ? composerNoPlugins
+      ) "mkComposerRepository expects composerNoPlugins argument."
+    );
+    assert (
+      lib.assertMsg (
+        previousAttrs ? composerNoScripts
+      ) "mkComposerRepository expects composerNoScripts argument."
+    );
     {
       composerNoDev = previousAttrs.composerNoDev or true;
       composerNoPlugins = previousAttrs.composerNoPlugins or true;
@@ -41,7 +56,6 @@ let
 
       nativeBuildInputs = (previousAttrs.nativeBuildInputs or [ ]) ++ [
         composer
-        composer-local-repo-plugin
         phpDrv
         phpDrv.composerHooks.composerRepositoryHook
       ];
@@ -51,45 +65,53 @@ let
       strictDeps = previousAttrs.strictDeps or true;
 
       # Should we keep these empty phases?
-      configurePhase = previousAttrs.configurePhase or ''
-        runHook preConfigure
+      configurePhase =
+        previousAttrs.configurePhase or ''
+          runHook preConfigure
 
-        runHook postConfigure
-      '';
+          runHook postConfigure
+        '';
 
-      buildPhase = previousAttrs.buildPhase or ''
-        runHook preBuild
+      buildPhase =
+        previousAttrs.buildPhase or ''
+          runHook preBuild
 
-        runHook postBuild
-      '';
+          runHook postBuild
+        '';
 
       doCheck = previousAttrs.doCheck or true;
-      checkPhase = previousAttrs.checkPhase or ''
-        runHook preCheck
+      checkPhase =
+        previousAttrs.checkPhase or ''
+          runHook preCheck
 
-        runHook postCheck
-      '';
+          runHook postCheck
+        '';
 
-      installPhase = previousAttrs.installPhase or ''
-        runHook preInstall
+      installPhase =
+        previousAttrs.installPhase or ''
+          runHook preInstall
 
-        runHook postInstall
-      '';
+          runHook postInstall
+        '';
 
       doInstallCheck = previousAttrs.doInstallCheck or false;
-      installCheckPhase = previousAttrs.installCheckPhase or ''
-        runHook preCheckInstall
+      installCheckPhase =
+        previousAttrs.installCheckPhase or ''
+          runHook preInstallCheck
 
-        runHook postCheckInstall
-      '';
+          runHook postInstallCheck
+        '';
 
-      COMPOSER_CACHE_DIR = "/dev/null";
-      COMPOSER_MIRROR_PATH_REPOS = "1";
-      COMPOSER_HTACCESS_PROTECT = "0";
-      COMPOSER_DISABLE_NETWORK = "0";
+      env = {
+        COMPOSER_CACHE_DIR = "/dev/null";
+        COMPOSER_MIRROR_PATH_REPOS = "1";
+        COMPOSER_HTACCESS_PROTECT = "0";
+        COMPOSER_DISABLE_NETWORK = "0";
+      };
 
       outputHashMode = "recursive";
-      outputHashAlgo = if (finalAttrs ? vendorHash && finalAttrs.vendorHash != "") then null else "sha256";
+      outputHashAlgo =
+        if (finalAttrs ? vendorHash && finalAttrs.vendorHash != "") then null else "sha256";
       outputHash = finalAttrs.vendorHash or "";
     };
 in
