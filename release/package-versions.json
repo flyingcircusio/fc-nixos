@@ -30,9 +30,9 @@
     "version": "1.33.13"
   },
   "awscli2": {
-    "name": "awscli2-2.17.18",
+    "name": "awscli2-2.17.42",
     "pname": "awscli2",
-    "version": "2.17.18"
+    "version": "2.17.42"
   },
   "bash": {
     "name": "bash-5.2p32",
@@ -70,14 +70,14 @@
     "version": "18.2.4"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-128.0.6613.113",
+    "name": "chromedriver-unwrapped-128.0.6613.119",
     "pname": "chromedriver-unwrapped",
-    "version": "128.0.6613.113"
+    "version": "128.0.6613.119"
   },
   "chromium": {
-    "name": "chromium-128.0.6613.113",
+    "name": "chromium-128.0.6613.119",
     "pname": "chromium",
-    "version": "128.0.6613.113"
+    "version": "128.0.6613.119"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -100,9 +100,9 @@
     "version": "1.19.2"
   },
   "containerd": {
-    "name": "containerd-1.7.20",
+    "name": "containerd-1.7.21",
     "pname": "containerd",
-    "version": "1.7.20"
+    "version": "1.7.21"
   },
   "coreutils": {
     "name": "coreutils-9.5",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-129.0.2",
+    "name": "firefox-130.0",
     "pname": "firefox",
-    "version": "129.0.2"
+    "version": "130.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -292,14 +292,14 @@
     "version": "2.12"
   },
   "haproxy": {
-    "name": "haproxy-3.0.3",
+    "name": "haproxy-3.0.4",
     "pname": "haproxy",
-    "version": "3.0.3"
+    "version": "3.0.4"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-37",
+    "name": "imagemagick-7.1.1-38",
     "pname": "imagemagick",
-    "version": "7.1.1-37"
+    "version": "7.1.1-38"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -307,9 +307,9 @@
     "version": "6.9.13-10"
   },
   "imagemagick7": {
-    "name": "imagemagick-7.1.1-37",
+    "name": "imagemagick-7.1.1-38",
     "pname": "imagemagick",
-    "version": "7.1.1-37"
+    "version": "7.1.1-38"
   },
   "inetutils": {
     "name": "inetutils-2.5",
@@ -327,9 +327,9 @@
     "version": "21.0.3-b509.11"
   },
   "jetty": {
-    "name": "jetty-12.0.11",
+    "name": "jetty-12.0.12",
     "pname": "jetty",
-    "version": "12.0.11"
+    "version": "12.0.12"
   },
   "jicofo": {
     "name": "jicofo-1.0-1090",
@@ -352,14 +352,14 @@
     "version": "21.0.3+9"
   },
   "k3s": {
-    "name": "k3s-1.30.3+k3s1",
+    "name": "k3s-1.31.0+k3s1",
     "pname": "k3s",
-    "version": "1.30.3+k3s1"
+    "version": "1.31.0+k3s1"
   },
   "k3s_1_30": {
-    "name": "k3s-1.30.3+k3s1",
+    "name": "k3s-1.30.4+k3s1",
     "pname": "k3s",
-    "version": "1.30.3+k3s1"
+    "version": "1.30.4+k3s1"
   },
   "keycloak": {
     "name": "keycloak-25.0.4",
@@ -427,9 +427,9 @@
     "version": "0.2.5"
   },
   "linux_5_15": {
-    "name": "linux-5.15.165",
+    "name": "linux-5.15.166",
     "pname": "linux",
-    "version": "5.15.165"
+    "version": "5.15.166"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -472,9 +472,9 @@
     "version": "5.1.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.113.0",
+    "name": "matrix-synapse-wrapped-1.114.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.113.0"
+    "version": "1.114.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -492,9 +492,9 @@
     "version": "6.0.17"
   },
   "mongodb-5_0": {
-    "name": "mongodb-5.0.28",
+    "name": "mongodb-5.0.29",
     "pname": "mongodb",
-    "version": "5.0.28"
+    "version": "5.0.29"
   },
   "mongodb-6_0": {
     "name": "mongodb-6.0.17",
@@ -567,9 +567,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.103",
+    "name": "nss-3.104",
     "pname": "nss",
-    "version": "3.103"
+    "version": "3.104"
   },
   "openjdk": {
     "name": "openjdk-21.0.3+9",
@@ -717,14 +717,14 @@
     "version": "8.1.29"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.22",
+    "name": "php-with-extensions-8.2.23",
     "pname": "php-with-extensions",
-    "version": "8.2.22"
+    "version": "8.2.23"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.10",
+    "name": "php-with-extensions-8.3.11",
     "pname": "php-with-extensions",
-    "version": "8.3.10"
+    "version": "8.3.11"
   },
   "phpPackages.composer": {
     "name": "composer-2.7.7",
@@ -792,9 +792,9 @@
     "version": "4.9.1"
   },
   "prometheus": {
-    "name": "prometheus-2.53.1",
+    "name": "prometheus-2.54.1",
     "pname": "prometheus",
-    "version": "2.53.1"
+    "version": "2.54.1"
   },
   "prosody": {
     "name": "prosody-0.12.4",
@@ -903,9 +903,9 @@
     "version": "2.2.2"
   },
   "qemu": {
-    "name": "qemu-9.0.2",
+    "name": "qemu-9.1.0",
     "pname": "qemu",
-    "version": "9.0.2"
+    "version": "9.1.0"
   },
   "rabbitmq-server": {
     "name": "rabbitmq-server-3.13.6",
@@ -933,9 +933,9 @@
     "version": "1.8.0"
   },
   "roundcube": {
-    "name": "roundcube-1.6.8",
+    "name": "roundcube-1.6.9",
     "pname": "roundcube",
-    "version": "1.6.8"
+    "version": "1.6.9"
   },
   "rsync": {
     "name": "rsync-3.3.0",
@@ -954,9 +954,9 @@
     "version": "3.2.4"
   },
   "runc": {
-    "name": "runc-1.1.13",
+    "name": "runc-1.1.14",
     "pname": "runc",
-    "version": "1.1.13"
+    "version": "1.1.14"
   },
   "screen": {
     "name": "screen-4.9.1",
@@ -1034,9 +1034,9 @@
     "version": "7.5.187"
   },
   "unifi8": {
-    "name": "unifi-controller-8.3.32",
+    "name": "unifi-controller-8.4.59",
     "pname": "unifi-controller",
-    "version": "8.3.32"
+    "version": "8.4.59"
   },
   "unzip": {
     "name": "unzip-6.0",
