@@ -336,11 +336,6 @@
     "pname": "jicofo",
     "version": "1.0-1090"
   },
-  "jitsi-meet": {
-    "name": "jitsi-meet-1.0.8043",
-    "pname": "jitsi-meet",
-    "version": "1.0.8043"
-  },
   "jitsi-videobridge": {
     "name": "jitsi-videobridge2-2.3-160-g97a1f15b",
     "pname": "jitsi-videobridge2",
