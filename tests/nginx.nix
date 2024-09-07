@@ -247,10 +247,14 @@ in {
 
     with subtest("acme script should have lego calls with custom key-type and required default settings"):
       lego_calls = server1.succeed("grep lego $(systemctl cat acme-server | awk -F '=' '/ExecStart=/ {print $2}')")
-      assert "'--key-type' 'rsa4096'" in lego_calls, "Can't find expected key-type option"
+      print("lego calls emitted:")
+      print("*" * 20)
+      print(lego_calls)
+
       # Make sure we don't accidentally override defaults by specifying the custom key type
-      assert "'--http.webroot' '/var/lib/acme/acme-challenge'" in lego_calls, "Can't find expected http.webroot option"
-      assert "'--email' 'admin@flyingcircus.io'" in lego_calls, "Can't find expected email option"
+      assert "--key-type rsa4096" in lego_calls, "Can't find expected key-type option"
+      assert "--http.webroot /var/lib/acme/acme-challenge" in lego_calls, "Can't find expected http.webroot option"
+      assert "--email admin@flyingcircus.io" in lego_calls, "Can't find expected email option"
 
     # This "web server" is used for the next 2 subtests, keeps running forever.
     # proxy.log should be reset at the end of each subtest.
