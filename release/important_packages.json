@@ -87,7 +87,7 @@
   "libxml2",
   "libxslt",
   "libyaml",
-  "linux_5_15",
+  "linux",
   "logrotate",
   "lz4",
   "mailutils",
