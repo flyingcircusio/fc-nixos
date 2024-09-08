@@ -10,7 +10,7 @@ rustPlatform.buildRustPackage rec {
     filter = n: t: baseNameOf n != "target";
     src = cleanSource ./.;
   };
-  cargoSha256 = "1zq8j25f61wz316sgpxbqqzq6sc8hn7divsdb0l365sfr0fz1p48";
+  cargoHash = "sha256-iNzwHchOFzMoWE3v2I6FiGmDP8ar36dNGJ8H44qQCP8=";
 
   meta = {
     description = ''

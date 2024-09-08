@@ -13,7 +13,7 @@ buildRustPackage rec {
     sha256 = "1p4l1j1qh7chsrikkvhv86w6a5nxpqifhl55jmga8w30rv11x645";
   };
 
-  cargoSha256 = "01rh6fc06issxghkvlb6m1gpyw5h3h4k6687chr4fjn4c39nhikb";
+  cargoHash = "sha256-a0Zo02DESkcyZAcZMwkcsHB/X6hm0T3h61pHA5gzMAc=";
 
   # used in src/main.rs to set default path for journalctl
   JOURNALCTL = "${systemd}/bin/journalctl";
