@@ -266,7 +266,7 @@ let
       };
 
   channelsUpstream =
-    lib.mapAttrs (name: src:
+    lib.mapAttrsToList (name: src:
     let
       fullName =
         if (parseDrvName name).version != ""
@@ -284,32 +284,60 @@ let
     })
     (removeAttrs upstreamSources [ "allUpstreams" ]);
 
-  channels = channelsUpstream // {
-    # The attribut ename `fc` if important because if channel is added without
-    # an explicit name argument, it will be available as <fc>.
-    fc = with lib; pkgs.releaseTools.channel {
-      name = "fc-${version}${versionSuffix}";
-      constituents = [ fcSrc ];
-      src = fcSrc;
-      patchPhase = ''
-        echo -n "${fc.rev}" > .git-revision
-        echo -n "${versionSuffix}" > .version-suffix
-        echo -n "${version}" > .version
-      '';
-      passthru.channelName = "fc";
-      meta = {
-        description = "Main channel of the <fc> overlay";
-        homepage = "https://flyingcircus.io/doc/";
-        license = [ licenses.bsd3 ];
-        maintainer = with maintainers; [ ckauhaus ];
-      };
+  fcChannel = with lib; pkgs.releaseTools.channel {
+    name = "fc-${version}${versionSuffix}";
+    constituents = [ fcSrc ];
+    src = fcSrc;
+    patchPhase = ''
+      echo -n "${fc.rev}" > .git-revision
+      echo -n "${versionSuffix}" > .version-suffix
+      echo -n "${version}" > .version
+    '';
+    passthru.channelName = "fc";
+    meta = {
+      description = "Main channel of the <fc> overlay";
+      homepage = "https://flyingcircus.io/doc/";
+      license = [ licenses.bsd3 ];
     };
+  };
+
+  channels = with lib; pkgs.releaseTools.aggregate {
+    name = "channels";
+    constituents = channelsUpstream ++ [ fcChannel ];
+    meta.description = "only channels, no tests";
   };
 
   tested = with lib; pkgs.releaseTools.aggregate {
     name = "tested";
-    constituents = collect isDerivation (jobs // { inherit channels; } );
+    constituents = [ channels ] ++ (collect isDerivation jobs);
     meta.description = "Indication that pkgs, tests and channels are fine";
+  };
+
+  testedSmall = with lib; pkgs.releaseTools.aggregate {
+    name = "testedSmall";
+    constituents = [
+      channels
+    ] ++ (with jobs.tests; [
+      audit
+      collect-garbage
+      fcagent
+      filebeat
+      kernelconfig
+      locale
+      login
+      logrotate
+      sensuclient
+      sudo
+      syslog.plain
+      systemd-service-cycles
+      users
+    ]) ++ (with jobs.tests.network; [
+      firewall
+      loopback
+      name-resolution
+      ping-vlans
+    ]);
+    meta.description = "Basic tests required for all machines are green.";
   };
 
   images =
@@ -359,56 +387,63 @@ let
 
   };
 
+  mkRelease = { releaseName, constituents ? [ ] }:
+    let
+      name = "${releaseName}-${version}${versionSuffix}";
+      tarOpts = ''
+        --owner=0 --group=0 \
+        --mtime="1970-01-01 00:00:00 UTC" \
+      '';
+
+    in pkgs.releaseTools.channel {
+      inherit constituents;
+      inherit name;
+      src = combinedSources;
+
+      preferLocalBuild = true;
+
+      passthru.src = combinedSources;
+
+      patchPhase = "touch .update-on-nixos-rebuild";
+      installPhase = ''
+        mkdir -p $out/{tarballs,nix-support}
+        tarball=$out/tarballs/nixexprs.tar
+
+        # Add all files in nixos/ including hidden ones.
+        # (-maxdepth 1: don't recurse into subdirs)
+        find nixos/ -maxdepth 1 -type f -exec \
+          tar uf "$tarball" --transform "s|^nixos|${name}|" ${tarOpts} {} \;
+
+        # Add files from linked subdirectories. We want to keep the name of the
+        # link in the archive, not the target. Example:
+        # "nixos/fc/default.nix" becomes "release-23.11.2222.12abcdef/fc/default.nix"
+        for d in nixos/*/; do
+            tar uf "$tarball" --transform "s|^$d\\.|${name}/$(basename "$d")|" ${tarOpts} "$d."
+        done
+
+        # Compress using multiple cores and with "extreme settings" to reduce compressed size.
+        xz -T0 -e "$tarball"
+
+        echo "channel - $out/tarballs/nixexprs.tar.xz" > "$out/nix-support/hydra-build-products"
+        echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
+
+        # Propagate build failures.
+        for i in $constituents; do
+          if [ -e "$i/nix-support/failed" ]; then
+            touch "$out/nix-support/failed"
+          fi
+        done
+      '';
+    };
 in
 
 jobs // {
-  inherit channels tested images doc;
+  inherit channels tested testedSmall images doc;
   # Helpful for debugging with nix repl -f release/default.nix but should not included as Hydra jobs.
   # inherit excludedPkgNames overlayPkgNames importantPkgNames overlayPkgNamesToTest importantPkgNamesToTest;
 
-  release = with lib; pkgs.releaseTools.channel rec {
-    name = "release-${version}${versionSuffix}";
-    src = combinedSources;
-    constituents = [ src tested ];
-    preferLocalBuild = true;
-
-    passthru.src = combinedSources;
-
-    patchPhase = "touch .update-on-nixos-rebuild";
-
-    tarOpts = ''
-      --owner=0 --group=0 \
-      --mtime="1970-01-01 00:00:00 UTC" \
-    '';
-
-    installPhase = ''
-      mkdir -p $out/{tarballs,nix-support}
-      tarball=$out/tarballs/nixexprs.tar
-
-      # Add all files in nixos/ including hidden ones.
-      # (-maxdepth 1: don't recurse into subdirs)
-      find nixos/ -maxdepth 1 -type f -exec \
-        tar uf "$tarball" --transform "s|^nixos|${name}|" ${tarOpts} {} \;
-
-      # Add files from linked subdirectories. We want to keep the name of the
-      # link in the archive, not the target. Example:
-      # "nixos/fc/default.nix" becomes "release-23.11.2222.12abcdef/fc/default.nix"
-      for d in nixos/*/; do
-          tar uf "$tarball" --transform "s|^$d\\.|${name}/$(basename "$d")|" ${tarOpts} "$d."
-      done
-
-      # Compress using multiple cores and with "extreme settings" to reduce compressed size.
-      xz -T0 -e "$tarball"
-
-      echo "channel - $out/tarballs/nixexprs.tar.xz" > "$out/nix-support/hydra-build-products"
-      echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
-
-      # Propagate build failures.
-      for i in $constituents; do
-        if [ -e "$i/nix-support/failed" ]; then
-          touch "$out/nix-support/failed"
-        fi
-      done
-    '';
-  };
+  release = mkRelease { releaseName = "release"; constituents = [ tested ]; };
+  releaseUntested = mkRelease { releaseName = "releaseUntested"; };
+  releaseSmall = mkRelease { releaseName = "releaseSmall"; constituents = [ testedSmall ]; };
 }
+
