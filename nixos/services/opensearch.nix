@@ -189,7 +189,6 @@ in
       OPENSEARCH_HOME = cfgUpstream.dataDir;
     };
 
-    environment.etc."current-config/opensearch.yml".source = cfgUpstream.configFile;
     environment.etc."local/opensearch/README.md".text = let
       discoveryType = if cfgUpstream.settings."discovery.type" != "" then cfgUpstream.settings."discovery.type" else "multi-node";
     in
@@ -232,14 +231,6 @@ in
 
       ```
       curl ${thisNode}:9200/_cat/indices
-      ```
-
-      ### Running Configuration
-
-      `/etc/current-config/opensearch.yml`:
-
-      ```yaml
-      ${readFile cfgUpstream.configFile}
       ```
     '';
 

@@ -3,14 +3,11 @@
 { lib, ... }:
 let
   modulesFromHere = [
-    "services/search/opensearch.nix"
   ];
 
 in {
   disabledModules = modulesFromHere;
 
   imports = with lib; [
-    # from nixos-23.05
-    ./opensearch
   ];
 }
