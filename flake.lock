@@ -410,16 +410,16 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1725351330,
-        "narHash": "sha256-/TWnMQLv73+pcuNiL2DI1m9bgZuItPGDrDANJ4EzY2A=",
+        "lastModified": 1726042130,
+        "narHash": "sha256-duZPZB5c2EL3/477mhExLLcaLDcxsSwLwojzThCRkwI=",
         "owner": "flyingcircusio",
         "repo": "nixpkgs",
-        "rev": "8dbeac8e250a79d33ae1eb9ec3d9bba294b7a3a4",
+        "rev": "7594624c94f84058473a0f6e79451717af3e7305",
         "type": "github"
       },
       "original": {
         "owner": "flyingcircusio",
-        "ref": "PL-132971-downgrade-kernel-5.15",
+        "ref": "nixos-24.05",
         "repo": "nixpkgs",
         "type": "github"
       }
