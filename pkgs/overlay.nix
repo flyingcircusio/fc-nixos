@@ -25,7 +25,9 @@ let
   };
   # we need to use overrideAttrs, as the `extraPatches` function argument of the generic PHP builder is
   # redefined and replaced ba the specific version builder.
-  patchPhps = patch: phpPkg: phpPkg.overrideAttrs (prev: {patches = [patch] ++ (prev.extraPatches or []);});
+  patchPhps = patch: phpPkg: phpPkg.overrideAttrs (prev: {
+    patches = (prev.patches or []) ++ (prev.extraPatches or []) ++ [ patch ];
+  });
 
 in
 builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
@@ -35,6 +37,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # Import old php versions from nix-phps.
   inherit (phps) php72 php73 php74 php80;
+  # Import NixOS upstream PHPs.
   inherit (super) php81 php82;
 }
 //
