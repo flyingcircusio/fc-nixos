@@ -20,6 +20,7 @@ in {
     ./jitsi
     ./k3s
     ./lamp.nix
+    ./loki.nix
     ./mailout.nix
     ./mailserver.nix
     ./matomo.nix
