@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 DIRECTORY_API_ENVIRONMENTS = [
@@ -112,3 +114,28 @@ def test_image_data_processing_default(caplog):
     captured = caplog.text
     assert "has no image URL, skipping." in captured
     assert "has no image hash, skipping." in captured
+
+
+def test_image_data_processing_continue_at_errors(caplog):
+    from fc.ceph.maintenance.images_nautilus import get_release_images
+
+    caplog.set_level(logging.INFO)
+    data_with_errors = [
+        {"release_metadata": {"release_name": "something"}},
+        *DIRECTORY_API_ENVIRONMENTS,
+        {},
+        {"just": "something"},
+    ]
+
+    filtered_data, got_errors = get_release_images(data_with_errors)
+
+    assert got_errors
+    assert set(
+        map(
+            lambda x: x["environment"],
+            filtered_data,
+        )
+    ) == set(["fc-23.05-production"])
+    captured = caplog.text
+    assert "Received unexpected data from directory:" in captured
+    assert "Continuing with next item despite error..." in captured
