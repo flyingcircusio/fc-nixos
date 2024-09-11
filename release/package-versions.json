@@ -964,9 +964,9 @@
     "version": "4.9.1"
   },
   "slurm": {
-    "name": "slurm-24.05.2.1",
+    "name": "slurm-23.11.7.1",
     "pname": "slurm",
-    "version": "24.05.2.1"
+    "version": "23.11.7.1"
   },
   "solr": {
     "name": "solr-8.11.2",
