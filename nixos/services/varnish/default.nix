@@ -122,14 +122,18 @@ in {
 
     systemd.services.varnish = let
       vcfg = config.services.varnish;
+      legacyStateDir = "/var/spool/varnish/${config.networking.hostName}";
     in {
       reloadIfChanged = true;
       restartTriggers = [ cfg.extraCommandLine vcfg.package cfg.http_address ];
       reload = ''
-        if [ -d "${vcfg.stateDir}" ]; then
+        if [ -d "${vcfg.stateDir}/_.pid" ]; then
           statedir="${vcfg.stateDir}"
+          echo "reload: using state dir ${vcfg.stateDir}."
         else
-          statedir="/var/spool/varnish/${config.networking.hostName}" #temporary migration
+          echo -n "reload: using legacy state dir ${legacyStateDir} until the "
+          echo "varnish service is restarted or the machine is rebooted."
+          statedir="${legacyStateDir}"
         fi
         vadm="${vcfg.package}/bin/varnishadm -n $statedir"
         cat ${commandsfile} | $vadm
