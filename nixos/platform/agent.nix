@@ -8,9 +8,6 @@ with lib;
 let
   cfg = config.flyingcircus;
 
-  # WARNING: path and environment are duplicated in
-  # devhost. Unfortunately using references causes conflicts
-  # that can not be easily resolved.
   # Path elements needed by both agent units.
   commonEnvPath = with pkgs; [
     bzip2
@@ -45,6 +42,8 @@ let
   '';
 
 
+  # WARNING: environment is duplicated in devhost. Unfortunately using references
+  # causes conflicts that can not be easily resolved.
   environment = config.nix.envVars // {
     HOME = "/root";
     LANG = "en_US.utf8";

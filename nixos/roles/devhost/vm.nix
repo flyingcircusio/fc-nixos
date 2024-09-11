@@ -191,6 +191,13 @@ in {
       "fc-devhost-vm@" = defaultService;
     } // lib.mapAttrs' mkService cfg.virtualMachines // {
       "fc-devhost-vm-cleanup" = {
+        inherit (config.systemd.services.fc-agent) path;
+        # duplicated from fc-agent.service
+        environment = config.nix.envVars // {
+          HOME = "/root";
+          LANG = "en_US.utf8";
+          NIX_PATH = lib.concatStringsSep ":" config.nix.nixPath;
+        };
         serviceConfig = {
           Type = "oneshot";
           ExecStart = "${manage_script}/bin/fc-devhost cleanup";

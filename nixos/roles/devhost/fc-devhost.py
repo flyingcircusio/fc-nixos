@@ -139,7 +139,7 @@ class Manager:
             self.nix_file.unlink()
         shutil.rmtree(self.data_dir, ignore_errors=True)
         print(f"Deleting {self.name} data ...")
-        run("fc-manage", "-v", "-b")
+        run("fc-manage", "switch")
 
     def ensure(
         self,
@@ -327,7 +327,7 @@ class Manager:
                 os.rename(self.image_file_tmp, self.image_file)
 
             # Make sure the VM is now online, even if was previously offline
-            run("fc-manage", "-v", "-b")
+            run("fc-manage", "switch")
 
             fcntl.flock(self.lockfile, fcntl.LOCK_UN)
             # Wait for the VM to get online
@@ -370,14 +370,25 @@ class Manager:
         if long_format:
             vms_output = [
                 [
+                    vm["name"],
+                    vm.get("online", "---"),
                     vm.get("user", "---"),
                     vm.get("creation-date", "---"),
-                    vm["name"],
+                    vm.get("last_deploy_date", "---"),
                 ]
                 for vm in vms
             ]
             print(
-                tabulate(vms_output, headers=["user", "creation date", "name"])
+                tabulate(
+                    vms_output,
+                    headers=[
+                        "name",
+                        "online",
+                        "user",
+                        "creation date",
+                        "last deploy date",
+                    ],
+                )
             )
         else:
             for vm in vms:
@@ -397,8 +408,16 @@ class Manager:
                     f.write(json.dumps(vm_cfg))
 
             if datetime.datetime.fromisoformat(vm_cfg["last_deploy_date"]) < (
+                datetime.datetime.utcnow() - datetime.timedelta(days=31)
+            ):
+                print(f"Deleting VM {vm_cfg['name']}.")
+                Manager(name=vm_cfg["name"]).destroy()
+
+            elif datetime.datetime.fromisoformat(vm_cfg["last_deploy_date"]) < (
                 datetime.datetime.utcnow() - datetime.timedelta(days=14)
             ):
+                if vm_cfg["online"] == False:
+                    continue
                 print(f"Shutting down VM {vm_cfg['name']}.")
                 vm_shut_down = True
                 vm_cfg["online"] = False
@@ -406,14 +425,8 @@ class Manager:
                 with open(CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w") as f:
                     f.write(json.dumps(vm_cfg))
 
-            if datetime.datetime.fromisoformat(vm_cfg["last_deploy_date"]) < (
-                datetime.datetime.utcnow() - datetime.timedelta(days=31)
-            ):
-                print(f"Deleting VM {vm_cfg['name']}.")
-                Manager(name=vm_cfg["name"]).destroy()
-
         if vm_shut_down:
-            run("fc-manage", "-v", "-b")
+            run("fc-manage", "switch")
 
         print("Cleaning up old VM base images now.")
         VM_BASE_IMAGE_DIR.mkdir(exist_ok=True)
