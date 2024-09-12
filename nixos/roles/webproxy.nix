@@ -121,13 +121,6 @@ in
       systemd.tmpfiles.rules = [
         "d /etc/local/varnish 2775 varnish service"
         "f /var/log/varnish.log 644 varnish varnish"
-        # Link the default dir expected by varnish tools to
-        # the actual location of the state dir. This makes the commands
-        # usable without specifying the -n option every time.
-
-        ### XXX: where do we rely on this symlink? Can be problematic when changing the state dir.
-        ### XXX: I think that platform code should explicitly set the work dir to force service restarts after changes.
-        "L /run/varnishd - - - - ${cfg.stateDir}"
       ];
 
       users.groups.varnish.members = [
