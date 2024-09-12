@@ -103,7 +103,9 @@ in {
     services.varnish = {
       enable = true;
       enableConfigCheck = false;
-      extraCommandLine = lib.concatStringsSep " " [ cfg.extraCommandLine "-I ${commandsfile}" ];
+
+      stateDir = "/run/varnishd";
+      extraCommandLine = lib.concatStringsSep " " [ cfg.extraCommandLine "-I /etc/varnish/startup" ];
       inherit (cfg) http_address;
       config = ''
         vcl 4.0;
@@ -120,23 +122,14 @@ in {
       '';
     };
 
-    systemd.services.varnish = let
-      vcfg = config.services.varnish;
-      legacyStateDir = "/var/spool/varnish/${config.networking.hostName}";
-    in {
-      reloadIfChanged = true;
-      restartTriggers = [ cfg.extraCommandLine vcfg.package cfg.http_address ];
+    environment.etc."varnish/startup".source = commandsfile;
+
+    systemd.services.varnish = {
+      stopIfChanged = false;
+      reloadTriggers = [ commandsfile ];
       reload = ''
-        if [ -d "${vcfg.stateDir}/_.pid" ]; then
-          statedir="${vcfg.stateDir}"
-          echo "reload: using state dir ${vcfg.stateDir}."
-        else
-          echo -n "reload: using legacy state dir ${legacyStateDir} until the "
-          echo "varnish service is restarted or the machine is rebooted."
-          statedir="${legacyStateDir}"
-        fi
-        vadm="${vcfg.package}/bin/varnishadm -n $statedir"
-        cat ${commandsfile} | $vadm
+        vadm="${vcfg.package}/bin/varnishadm -n ${vcfg.stateDir}"
+        cat /etc/varnish/startup | $vadm
 
         coldvcls=$($vadm vcl.list | grep " cold " | ${pkgs.gawk}/bin/awk {'print $5'})
 
