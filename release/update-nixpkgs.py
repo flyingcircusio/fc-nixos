@@ -1,3 +1,4 @@
+import datetime
 import json
 import re
 import subprocess
@@ -35,7 +36,7 @@ class NixOSVersion(StrEnum):
         if self == NixOSVersion.NIXOS_UNSTABLE:
             return "nixos-unstable"
 
-        return self.value
+        return self.value()
 
 
 def run_on_hydra(*args):
@@ -233,10 +234,12 @@ def filter_and_merge_commit_msgs(msgs):
 
 
 def format_fcio_commit_msg(
-    msgs: list[str], ticket_number: Optional[str]
+    msgs: list[str], date: datetime.date, ticket_number: Optional[str]
 ) -> str:
+    datestr = date.isoformat()
+
     commit_msg_lines = [
-        "Update nixpkgs",
+        f"Update nixpkgs ({datestr})",
         "",
         "Pull upstream NixOS changes, security fixes and package updates:",
         "",
@@ -283,6 +286,7 @@ def update_fc_nixos(
 
     old_rev = versions_json["nixpkgs"]["rev"]
     new_rev = str(nixpkgs_repo.head.commit)
+    date = datetime.date.today()
 
     interesting_msgs = get_interesting_commit_msgs(
         workdir_path, nixpkgs_repo, old_rev, new_rev
@@ -293,23 +297,26 @@ def update_fc_nixos(
         print(msg)
 
     final_msgs = filter_and_merge_commit_msgs(interesting_msgs)
-    commit_msg = format_fcio_commit_msg(final_msgs, ticket_number)
+    commit_msg = format_fcio_commit_msg(final_msgs, date, ticket_number)
     print()
     print("-" * 80)
     print("Commit message:")
     print()
     print(commit_msg)
-    feature_branch_name = f"PL-{ticket_number}-update-nixpkgs"
+
+    datestr = date.isoformat()
+    active_branch_name = fc_nixos_repo.active_branch.name
+    feature_branch_name = f"PL-{ticket_number}-update-nixpkgs-{datestr}"
 
     if ticket_number:
         do_commit = confirm(
-            f"Create feature branch {feature_branch_name} "
-            "and commit fc-nixos now?",
+            f"Create fc-nixos feature branch {feature_branch_name} based "
+            f"on branch {active_branch_name} and commit now?",
             default=True,
         )
     else:
         do_commit = confirm(
-            "Commit to current fc-nixos now?",
+            f"Commit to current fc-nixos branch {active_branch_name} now?",
             default=True,
         )
     if do_commit:
