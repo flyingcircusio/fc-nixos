@@ -10,9 +10,9 @@
     "version": "2.4.62"
   },
   "asterisk": {
-    "name": "asterisk-20.9.2",
+    "name": "asterisk-20.9.3",
     "pname": "asterisk",
-    "version": "20.9.2"
+    "version": "20.9.3"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.16",
@@ -275,9 +275,9 @@
     "version": "2.4.5"
   },
   "go": {
-    "name": "go-1.22.6",
+    "name": "go-1.22.7",
     "pname": "go",
-    "version": "1.22.6"
+    "version": "1.22.7"
   },
   "go_1_19": {},
   "go_1_20": {},
@@ -427,9 +427,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.6.49",
+    "name": "linux-6.6.50",
     "pname": "linux",
-    "version": "6.6.49"
+    "version": "6.6.50"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -542,9 +542,9 @@
     "version": "2.18.5"
   },
   "nodejs": {
-    "name": "nodejs-20.16.0",
+    "name": "nodejs-20.17.0",
     "pname": "nodejs",
-    "version": "20.16.0"
+    "version": "20.17.0"
   },
   "nodejs_18": {
     "name": "nodejs-18.20.4",
@@ -552,14 +552,14 @@
     "version": "18.20.4"
   },
   "nodejs_20": {
-    "name": "nodejs-20.16.0",
+    "name": "nodejs-20.17.0",
     "pname": "nodejs",
-    "version": "20.16.0"
+    "version": "20.17.0"
   },
   "nodejs_22": {
-    "name": "nodejs-22.6.0",
+    "name": "nodejs-22.8.0",
     "pname": "nodejs",
-    "version": "22.6.0"
+    "version": "22.8.0"
   },
   "nspr": {
     "name": "nspr-4.35",
@@ -727,9 +727,9 @@
     "version": "8.3.11"
   },
   "phpPackages.composer": {
-    "name": "composer-2.7.7",
+    "name": "composer-2.7.9",
     "pname": "composer",
-    "version": "2.7.7"
+    "version": "2.7.9"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -863,9 +863,9 @@
     "version": "0.13.2"
   },
   "python3Packages.pyyaml": {
-    "name": "python3.12-pyyaml-6.0.1",
+    "name": "python3.12-pyyaml-6.0.2",
     "pname": "pyyaml",
-    "version": "6.0.1"
+    "version": "6.0.2"
   },
   "python3Packages.requests": {
     "name": "python3.12-requests-2.32.3",
@@ -1054,9 +1054,9 @@
     "version": "7.4.3"
   },
   "vim": {
-    "name": "vim-9.1.0689",
+    "name": "vim-9.1.0707",
     "pname": "vim",
-    "version": "9.1.0689"
+    "version": "9.1.0707"
   },
   "webkitgtk": {
     "name": "webkitgtk-2.44.3+abi=4.0",
