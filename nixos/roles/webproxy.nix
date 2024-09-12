@@ -108,11 +108,11 @@ in
           serviceConfig = {
             Type = "forking";
             Restart = "always";
-            RuntimeDirectory = "varnish";
-            PIDFile = "/run/varnish/varnishncsa.pid";
+            RuntimeDirectory = "varnishncsa";
+            PIDFile = "/run/varnishncsa/varnishncsa.pid";
             User = "varnish";
             Group = "varnish";
-            ExecStart = "${cfg.package}/bin/varnishncsa -n ${cfg.stateDir} -D -a -w /var/log/varnish.log -P /run/varnish/varnishncsa.pid";
+            ExecStart = "${cfg.package}/bin/varnishncsa -n ${cfg.stateDir} -D -a -w /var/log/varnish.log -P /run/varnishncsa/varnishncsa.pid";
             ExecReload = "${kill} -HUP $MAINPID";
           };
         };
@@ -124,6 +124,9 @@ in
         # Link the default dir expected by varnish tools to
         # the actual location of the state dir. This makes the commands
         # usable without specifying the -n option every time.
+
+        ### XXX: where do we rely on this symlink? Can be problematic when changing the state dir.
+        ### XXX: I think that platform code should explicitly set the work dir to force service restarts after changes.
         "L /run/varnishd - - - - ${cfg.stateDir}"
       ];
 
