@@ -1,12 +1,16 @@
 { pkgs, lib, config, ... }: let
   cfg = config.flyingcircus.services.varnish;
+  vcfg = config.services.varnish;
+
   inherit (lib) mkOption mkEnableOption types;
 
   sanitizeConfigName = name: builtins.replaceStrings ["."] ["-"] (lib.strings.sanitizeDerivationName name);
   mkVclName = file: "vcl_${builtins.head (lib.splitString "." (builtins.baseNameOf file))}";
 
+  vhostConfigPath = hcfg: if (builtins.isPath hcfg.config) then hcfg.config else (pkgs.writeText "${hcfg.host}.vcl" hcfg.config);
+
   mkHostSelection = hcfg: let
-    includefile = if (builtins.isPath hcfg.config) then hcfg.config else (pkgs.writeText "${hcfg.host}.vcl" hcfg.config);
+    includefile = vhostConfigPath hcfg;
     # Varnish uses a two-step approach with config names and labels, that we
     # leverage in this way:
     # 1. Every vhost received a config file that is written as a VCL config
@@ -102,7 +106,7 @@ in {
   config = lib.mkIf cfg.enable {
     services.varnish = {
       enable = true;
-      enableConfigCheck = false;
+      enableConfigCheck = true;
 
       stateDir = "/run/varnishd";
       extraCommandLine = lib.concatStringsSep " " [ cfg.extraCommandLine "-I /etc/varnish/startup" ];
@@ -142,5 +146,12 @@ in {
 
       serviceConfig.RestartSec = lib.mkOverride 90 "10s";
     };
+
+    system.checks = lib.mkIf vcfg.enableConfigCheck (map (vhost: (pkgs.runCommand "check-varnish-syntax-${vhost.host}" {} ''
+        ${vcfg.package}/bin/varnishd -C -f ${vhostConfigPath vhost} 2> $out || (cat $out; exit 1)
+      ''))
+      (builtins.attrValues cfg.virtualHosts)
+    );
+
   };
 }
