@@ -1,4 +1,4 @@
-{ lib, config, ...}:
+{ lib, pkgs, config, ...}:
 
 {
 
@@ -14,6 +14,33 @@
 	# structured when needed.
 
 	config = {
+
+      boot.kernelPackages = pkgs.linuxKernel.packages.linux_5_15;
+
+      # Use this spelling if you need to try out custom kernels, try out patches
+      # or otherwise deviate from our nixpkgs upstream.
+      #
+			# boot.kernelPackages = let kernelPackage = pkgs.linux_5_15; in
+			# 	lib.mkForce (pkgs.linuxPackagesFor (kernelPackage.override {
+			# 	  argsOverride = {
+			# 	    src = pkgs.fetchurl {
+			# 	      url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.15.166.tar.xz";
+			# 	      hash = "sha256-LFbawrcIWcFrTvZRvvsNKMInSYvT7uCOikWjV/Itddc=";
+			# 	    };
+			# 	    version = "5.5";
+			# 	    modDirVersion = "5.15.166";
+			# 	    kernelPatches = kernelPackage.kernelPatches ++ [
+			# 	      {
+			# 	        name = "some-patch-name";
+			# 	        patch = (pkgs.fetchpatch {
+			# 	          url = "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/patch/?id=d5618eaea8868e2534c375b8a512693658068cf8";
+			# 	          hash = "sha256-w5ntJNyOdpLbojJWCGxGYs7ikbrd2W4zby3xv3VJqjY=";
+			# 	        });
+			# 	      }
+			# 	    ];
+			# 	  };
+			# 	}));
+
 		flyingcircus.kernelOptions =
 			''
 			ASYNC_TX_DMA y

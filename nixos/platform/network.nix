@@ -299,5 +299,15 @@ in
       # as a reasonable size and I'd suggest generalizing this number to all machines.
       "net.netfilter.nf_conntrack_max" = 262144;
     };
+
+    # This check is here to identify abysmal but otherwise subtle network speed
+    # issues as we have seen in PL-132971. If downloading a 1MiB test file
+    # takes longer than 5-10 seconds, something is very much off.
+    flyingcircus.services.sensu-client.checks.network_speed = {
+      notification = "General network speed";
+      command = "check_http -u /rgw-monitoring/probe -H rgw.local -p 7480 -m 1000000:1500000 -w 5 -c 10";
+      interval = 7200;
+    };
+
   };
 }
