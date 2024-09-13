@@ -252,8 +252,6 @@ in {
         "bfq"
       ];
 
-      kernelPackages = pkgs.linuxKernel.packages.linux_5_15;
-
       kernelParams = [
         # Crash management
         "panic=1"
