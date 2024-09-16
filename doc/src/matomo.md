@@ -2,12 +2,43 @@
 
 # Matomo
 
-Managed instance of [Matomo](https://matomo.org), a real-time Web analytics application in the latest LTS version provided by NixOS which is 4.x.x.
+Managed instance of [Matomo](https://matomo.org), a real-time Web analytics application. By default, we use the the latest LTS version provided by NixOS which is 4.x.x.
+
+Matomo 5.x.x is also supported by this platform version.
 
 The next platform version 24.11 will use Matomo 5 as default version.
 Matomo 4 is supported only until the end of 2024.
 
-## Setup
+(nixos-matomo-upgrade)=
+
+### Upgrading to Matomo 5
+
+
+:::{warning}
+Before upgrading, test Matomo 5 on a separate staging instance, if possible. Migrating from Matomo 4 to 5 is irreversible without manual admin intervention!
+:::
+
+To use Matomo 5, set the `services.matomo.package` option manually in custom config, like this:
+
+(note the added `pkgs` argument at the top of the module)
+
+```nix
+# /etc/local/nixos/matomo.nix
+# XXX: Example config for Matomo 5
+{ config, lib, pkgs, ... }:
+{
+  flyingcircus.roles.matomo = {
+    hostname = "matomo.test.example.org";
+  };
+
+  services.matomo.package = pkgs.matomo_5;
+}
+```
+
+The database and other Matomo state will be migrated automatically on service start after switching the system to the new config.
+
+
+## Initial Setup
 
 The `matomo` role sets up the Matomo PHP application and Nginx as reverse proxy
 with an automatically managed Letsencrypt certificate.
@@ -29,6 +60,7 @@ Before activating the `matomo` role, add at least the following custom config:
 
 ```nix
 # /etc/local/nixos/matomo.nix
+# XXX: Example config for Matomo 4
 { config, lib, ... }:
 {
   flyingcircus.roles.matomo = {
@@ -38,6 +70,8 @@ Before activating the `matomo` role, add at least the following custom config:
 ```
 See {ref}`nixos-custom-modules` for general information about writing custom NixOS
 modules in {file}`/etc/local/nixos`.
+
+If you want to use Matomo 5 instead, see the config example in {ref}`nixos-matomo-upgrade`.
 
 ### Create the database
 
@@ -97,7 +131,8 @@ Please do not try to update Matomo manually, files will be overwritten!
 :::
 
 Updates are handled by the role. New versions overwrite files in the
-installation directory, copied from the `matomo` Nix package.
+installation directory, copied from the `matomo` Nix package. If needed,
+database migrations are also run automatically.
 
 ## Interaction
 
@@ -139,6 +174,11 @@ Put additional nginx virtual host settings here which are the same options as
   };
 }
 ```
+
+**services.matomo.package**
+
+Package version to use. Default is `pkgs.matomo`, which is Matomo 4 at the moment.
+`pkgs.matomo_5` is also supported by us and `pkgs.matomo_beta` might be a newer but unsupported version.
 
 ## Monitoring
 
