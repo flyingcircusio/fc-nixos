@@ -11,7 +11,7 @@ Matomo 4 is supported only until the end of 2024.
 
 (nixos-matomo-upgrade)=
 
-### Upgrading to Matomo 5
+## Upgrading to Matomo 5
 
 
 :::{warning}
