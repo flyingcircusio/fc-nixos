@@ -70,14 +70,14 @@
     "version": "18.2.4"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-128.0.6613.119",
+    "name": "chromedriver-unwrapped-128.0.6613.137",
     "pname": "chromedriver-unwrapped",
-    "version": "128.0.6613.119"
+    "version": "128.0.6613.137"
   },
   "chromium": {
-    "name": "chromium-128.0.6613.119",
+    "name": "chromium-128.0.6613.137",
     "pname": "chromium",
-    "version": "128.0.6613.119"
+    "version": "128.0.6613.137"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -100,9 +100,9 @@
     "version": "1.19.2"
   },
   "containerd": {
-    "name": "containerd-1.7.21",
+    "name": "containerd-1.7.22",
     "pname": "containerd",
-    "version": "1.7.21"
+    "version": "1.7.22"
   },
   "coreutils": {
     "name": "coreutils-9.5",
@@ -220,9 +220,9 @@
     "version": "2.46.0"
   },
   "gitaly": {
-    "name": "gitaly-17.2.4",
+    "name": "gitaly-17.2.5",
     "pname": "gitaly",
-    "version": "17.2.4"
+    "version": "17.2.5"
   },
   "github-runner": {
     "name": "github-runner-2.319.1",
@@ -230,24 +230,24 @@
     "version": "2.319.1"
   },
   "gitlab": {
-    "name": "gitlab-17.2.4",
+    "name": "gitlab-17.2.5",
     "pname": "gitlab",
-    "version": "17.2.4"
+    "version": "17.2.5"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.7.0",
+    "name": "gitlab-container-registry-4.9.0",
     "pname": "gitlab-container-registry",
-    "version": "4.7.0"
+    "version": "4.9.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.2.4",
+    "name": "gitlab-ee-17.2.5",
     "pname": "gitlab-ee",
-    "version": "17.2.4"
+    "version": "17.2.5"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.2.4",
+    "name": "gitlab-pages-17.2.5",
     "pname": "gitlab-pages",
-    "version": "17.2.4"
+    "version": "17.2.5"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -255,9 +255,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.2.4",
+    "name": "gitlab-workhorse-17.2.5",
     "pname": "gitlab-workhorse",
-    "version": "17.2.4"
+    "version": "17.2.5"
   },
   "glibc": {
     "name": "glibc-2.39-52",
@@ -362,9 +362,9 @@
     "version": "1.30.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-25.0.4",
+    "name": "keycloak-25.0.5",
     "pname": "keycloak",
-    "version": "25.0.4"
+    "version": "25.0.5"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.15.4",
@@ -427,9 +427,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.6.50",
+    "name": "linux-6.6.51",
     "pname": "linux",
-    "version": "6.6.50"
+    "version": "6.6.51"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -807,9 +807,9 @@
     "version": "3.12.5"
   },
   "python310": {
-    "name": "python3-3.10.14",
+    "name": "python3-3.10.15",
     "pname": "python3",
-    "version": "3.10.14"
+    "version": "3.10.15"
   },
   "python311": {
     "name": "python3-3.11.9",
@@ -823,9 +823,9 @@
   },
   "python38": {},
   "python39": {
-    "name": "python3-3.9.19",
+    "name": "python3-3.9.20",
     "pname": "python3",
-    "version": "3.9.19"
+    "version": "3.9.20"
   },
   "python3Packages.boto3": {
     "name": "python3.12-boto3-1.34.131",
@@ -908,14 +908,14 @@
     "version": "9.1.0"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-3.13.6",
+    "name": "rabbitmq-server-3.13.7",
     "pname": "rabbitmq-server",
-    "version": "3.13.6"
+    "version": "3.13.7"
   },
   "rabbitmq-server_3_8": {
-    "name": "rabbitmq-server-3.13.6",
+    "name": "rabbitmq-server-3.13.7",
     "pname": "rabbitmq-server",
-    "version": "3.13.6"
+    "version": "3.13.7"
   },
   "re2c": {
     "name": "re2c-3.1",
@@ -1009,9 +1009,9 @@
     "version": "4.99.4"
   },
   "telegraf": {
-    "name": "telegraf-1.31.3",
+    "name": "telegraf-1.32.0",
     "pname": "telegraf",
-    "version": "1.31.3"
+    "version": "1.32.0"
   },
   "tmux": {
     "name": "tmux-3.4",
@@ -1027,16 +1027,6 @@
     "name": "apache-tomcat-9.0.93",
     "pname": "apache-tomcat",
     "version": "9.0.93"
-  },
-  "unifi7": {
-    "name": "unifi-controller-7.5.187",
-    "pname": "unifi-controller",
-    "version": "7.5.187"
-  },
-  "unifi8": {
-    "name": "unifi-controller-8.4.59",
-    "pname": "unifi-controller",
-    "version": "8.4.59"
   },
   "unzip": {
     "name": "unzip-6.0",
