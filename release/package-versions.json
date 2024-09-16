@@ -49,6 +49,11 @@
     "pname": "binutils-wrapper",
     "version": "2.42"
   },
+  "buildbot": {
+    "name": "buildbot-4.0.2",
+    "pname": "buildbot",
+    "version": "4.0.2"
+  },
   "bundler": {
     "name": "bundler-2.5.16",
     "pname": "bundler",
