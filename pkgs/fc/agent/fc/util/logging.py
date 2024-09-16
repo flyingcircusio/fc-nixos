@@ -612,7 +612,8 @@ def drop_cmd_output_logfile(log):
 
     log.debug(
         "logging-cmd-output-drop",
-        _replace_msg="Remove command logfile because nothing changed.",
+        _replace_msg="Nothing change; remove command log file at {cmd_log_file}",
+        cmd_log_file=cmd_log_file.name,
     )
 
     cmd_log_file.close()
