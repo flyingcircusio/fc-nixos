@@ -21,8 +21,7 @@ in
     services.loki = {
       enable = true;
       configuration = {
-        # XXX loki only uses a single listen address.
-        server.http_listen_address = builtins.head fclib.network.srv.v4.addresses;
+        server.http_listen_address = "127.0.0.1";
 
         auth_enabled = false;
 
@@ -62,6 +61,42 @@ in
           replication_factor = 1;
           ring.kvstore.store = "inmemory";
         };
+      };
+    };
+
+    flyingcircus.services.nginx = {
+      enable = true;
+      virtualHosts."${config.networking.hostName}" = {
+        serverAliases = [
+          (fclib.fqdn { vlan = "srv"; })
+          "${config.networking.hostName}.${config.networking.domain}"
+        ];
+        listen = builtins.map (addr: { inherit addr; port = 3100; })
+          fclib.network.srv.dualstack.addressesQuoted;
+        locations = with builtins; with lib; let
+          proxyConfig = { proxyPass = "http://127.0.0.1:3100"; };
+        in listToAttrs (
+          [(nameValuePair "/" { extraConfig = "return 403;"; })] ++
+          (map (path: nameValuePair path proxyConfig) [
+            # https://grafana.com/docs/loki/latest/reference/loki-http-api/
+
+            # ingestion endpoints
+            "/loki/api/v1/push"
+            "/otlp/v1/logs"
+
+            # query endpoints
+            "/loki/api/v1/query"
+            "/loki/api/v1/query_range"
+            "/loki/api/v1/labels"
+            "/loki/api/v1/label"
+            "/loki/api/v1/series"
+            "/loki/api/v1/index/stats"
+            "/loki/api/v1/index/volume"
+            "/loki/api/v1/index/volume_range"
+            "/loki/api/v1/patterns"
+            "/loki/api/v1/tail"
+          ])
+        );
       };
     };
   };

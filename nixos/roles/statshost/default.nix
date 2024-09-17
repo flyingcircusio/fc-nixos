@@ -531,7 +531,7 @@ in
               type: loki
               access: proxy
               orgId: 1
-              url: http://${config.networking.hostName}:3100
+              url: http://localhost:3100
               editable: false
               isDefault: false
           '';
