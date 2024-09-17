@@ -158,6 +158,7 @@ in
     { config, ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
+      flyingcircus.useVerificationKernel = false;
     };
 
   testScript = let
