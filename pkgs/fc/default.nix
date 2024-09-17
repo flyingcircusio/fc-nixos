@@ -66,12 +66,13 @@ rec {
   # it will break hydra and we can't cleanly filter it out of the automatic
   # test discovery at the moment.
   #
-  # qemu-dev-nautilus = qemu-nautilus.overrideAttrs (old: {
-  #   # for tests and development checkouts on kvm hosts:
-  #   src = ../../../../../fc.qemu/.;
-  #   # for nix-shell . -A fc.qemu-dev-nautilus
-  #   # src = ../../../fc.qemu/.;
-  # });
+  qemu-dev-nautilus = qemu-nautilus.overrideAttrs (old: {
+    version = "1.8dev";
+    # for tests and development checkouts on kvm hosts:
+    src = /home/developer/fc.qemu/.;
+    # for nix-shell . -A fc.qemu-dev-nautilus
+    # src = ../../../fc.qemu/.;
+  });
 
   roundcube-chpasswd = callPackage ./roundcube-chpasswd { };
   roundcube-chpasswd-py = callPackage ./roundcube-chpasswd-py { };

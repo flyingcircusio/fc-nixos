@@ -61,7 +61,7 @@ in
 
           Can be replaced for development and testing purposes.
         '';
-        default = cephPkgs.fc-qemu;
+        default = pkgs.qemu-dev-nautilus;
         defaultText = lib.literalMD "`pkgs.fc.qemu` *[parameterised with cephRelease]*";
       };
       cephRelease = fclib.ceph.releaseOption // {

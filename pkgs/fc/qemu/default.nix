@@ -83,6 +83,7 @@ py.buildPythonPackage rec {
     py.pyyaml
     py.setuptools
     py.websockets
+    py.rfc8785
     ceph_client
   ];
 
