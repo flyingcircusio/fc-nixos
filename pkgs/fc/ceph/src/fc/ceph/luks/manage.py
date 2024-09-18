@@ -172,7 +172,7 @@ class LUKSKeyStoreManager(object):
             add_input = self._KEYSTORE.admin_key_for_input()
         slot_id = self._KEYSTORE.slots[slot]
 
-        header_arg = [f"--header={header}"] if header else []
+        header_arg = ["--header", header] if header else []
 
         dump = run.cryptsetup("luksDump", *header_arg, device, encoding="ascii")
         if f"  {slot_id}: luks2" in dump:
@@ -211,11 +211,13 @@ class LUKSKeyStoreManager(object):
         errors = 0
         for dev in devices:
             console.print(f"Checking {dev.name}:")
-            dump_lines = (
-                Cryptsetup.cryptsetup("luksDump", dev.base_blockdev)
-                .decode("utf-8")
-                .splitlines()
-            )
+            if dev.header:
+                luks_dump = Cryptsetup.cryptsetup(
+                    "luksDump", "--header", dev.header, dev.base_blockdev
+                )
+            else:
+                luks_dump = Cryptsetup.cryptsetup("luksDump", dev.base_blockdev)
+            dump_lines = luks_dump.decode("utf-8").splitlines()
             for check in all_checks:
                 check_ok = True
                 for error in check(dump_lines):
@@ -263,13 +265,14 @@ class LUKSKeyStoreManager(object):
         return 0
 
     def _do_test_open(self, device: str, header: Optional[str]) -> bool:
-        header_arg = [f"--header={header}"] if header else []
+        header_arg = ["--header", header] if header else []
         success = True
 
         # test unlocking both with local key file as well as with admin key
         try:
             test_admin = Cryptsetup.cryptsetup(
                 "open",
+                *header_arg,
                 "--test-passphrase",
                 device,
                 input=self._KEYSTORE.admin_key_for_input(),
@@ -282,6 +285,7 @@ class LUKSKeyStoreManager(object):
         try:
             test_local = Cryptsetup.cryptsetup(
                 "open",
+                *header_arg,
                 "--test-passphrase",
                 f"--key-file={self._KEYSTORE.local_key_path()}",
                 device,
