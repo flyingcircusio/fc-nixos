@@ -188,6 +188,7 @@
   "qemu",
   "rabbitmq-server",
   "rabbitmq-server_3_8",
+  "rclone",
   "re2c",
   "redis",
   "rich-cli",
