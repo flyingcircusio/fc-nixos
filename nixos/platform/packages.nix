@@ -64,6 +64,7 @@
         python2Full
         python3
         python3Packages.virtualenv
+        rclone
         ripgrep
         screen
         strace
