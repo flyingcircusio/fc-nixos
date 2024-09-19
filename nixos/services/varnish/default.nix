@@ -103,7 +103,9 @@ in {
     services.varnish = {
       enable = true;
       enableConfigCheck = false;
-      extraCommandLine = lib.concatStringsSep " " [ cfg.extraCommandLine "-I ${commandsfile}" ];
+
+      stateDir = "/run/varnishd";
+      extraCommandLine = lib.concatStringsSep " " [ cfg.extraCommandLine "-I /etc/varnish/startup" ];
       inherit (cfg) http_address;
       config = ''
         vcl 4.0;
@@ -120,14 +122,19 @@ in {
       '';
     };
 
+    environment.etc."varnish/startup".source = commandsfile;
+
     systemd.services.varnish = let
       vcfg = config.services.varnish;
     in {
-      reloadIfChanged = true;
-      restartTriggers = [ cfg.extraCommandLine vcfg.package cfg.http_address ];
+      preStart = lib.mkBefore ''
+          rm -rf ${vcfg.stateDir}
+        '';
+      stopIfChanged = false;
+      reloadTriggers = [ commandsfile ];
       reload = ''
         vadm="${vcfg.package}/bin/varnishadm -n ${vcfg.stateDir}"
-        cat ${commandsfile} | $vadm
+        cat /etc/varnish/startup | $vadm
 
         coldvcls=$($vadm vcl.list | grep " cold " | ${pkgs.gawk}/bin/awk {'print $5'})
 
