@@ -220,9 +220,9 @@
     "version": "2.44.1"
   },
   "gitaly": {
-    "name": "gitaly-17.2.5",
+    "name": "gitaly-17.2.7",
     "pname": "gitaly",
-    "version": "17.2.5"
+    "version": "17.2.7"
   },
   "github-runner": {
     "name": "github-runner-2.319.1",
@@ -230,9 +230,9 @@
     "version": "2.319.1"
   },
   "gitlab": {
-    "name": "gitlab-17.2.5",
+    "name": "gitlab-17.2.7",
     "pname": "gitlab",
-    "version": "17.2.5"
+    "version": "17.2.7"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.9.0",
@@ -240,14 +240,14 @@
     "version": "4.9.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.2.5",
+    "name": "gitlab-ee-17.2.7",
     "pname": "gitlab-ee",
-    "version": "17.2.5"
+    "version": "17.2.7"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.2.5",
+    "name": "gitlab-pages-17.2.7",
     "pname": "gitlab-pages",
-    "version": "17.2.5"
+    "version": "17.2.7"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.1.0",
@@ -255,9 +255,9 @@
     "version": "17.1.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.2.5",
+    "name": "gitlab-workhorse-17.2.7",
     "pname": "gitlab-workhorse",
-    "version": "17.2.5"
+    "version": "17.2.7"
   },
   "glibc": {
     "name": "glibc-2.39-52",
