@@ -34,6 +34,7 @@ in {
     ./monitoring.nix
     ./network.nix
     ./packages.nix
+    ./promtail.nix
     ./shell.nix
     ./static.nix
     ./syslog.nix

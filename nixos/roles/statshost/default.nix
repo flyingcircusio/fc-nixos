@@ -18,6 +18,8 @@ let
   cfgProxyLocation = config.flyingcircus.roles.statshost-location-proxy;
   cfgProxyRG = config.flyingcircus.roles.statshost-relay;
 
+  cfgLokiRG = config.flyingcircus.roles.loki;
+
   promFlags = [
     "--storage.tsdb.retention.time ${toString cfgStats.prometheusRetention}d"
   ];
@@ -517,12 +519,30 @@ in
               isDefault: true
           '';
         };
+
+        # support loki running on the same host as grafana in
+        # single-RG mode.
+        lokiDatasource = pkgs.writeTextFile {
+          name = "loki.yaml";
+          text = ''
+            apiVersion: 1
+            datasources:
+            - name: Loki
+              type: loki
+              access: proxy
+              orgId: 1
+              url: http://localhost:3100
+              editable: false
+              isDefault: false
+          '';
+        };
       in ''
         rm -rf ${grafanaProvisioningPath}
         mkdir -p ${grafanaProvisioningPath}/dashboards ${grafanaProvisioningPath}/datasources
         ln -fs ${fcioDashboards} ${grafanaProvisioningPath}/dashboards/fcio.yaml
         ln -fs ${prometheusDatasource} ${grafanaProvisioningPath}/datasources/prometheus.yaml
-
+      '' + optionalString (cfgStatsRG.enable && cfgLokiRG.enable) ''
+        ln -fs ${lokiDatasource} ${grafanaProvisioningPath}/datasources/loki.yaml
       '';
 
       # Provide FC dashboards, and update them automatically.

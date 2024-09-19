@@ -53,6 +53,7 @@
         pwgen
         (python3.withPackages (ps: with ps; [ setuptools ]))
         python3Packages.virtualenv
+        rclone
         ripgrep
         screen
         statix
