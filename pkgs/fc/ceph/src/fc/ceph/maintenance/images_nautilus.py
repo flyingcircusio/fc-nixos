@@ -57,7 +57,7 @@ def get_release_images(envdata: Iterable[dict]) -> tuple[Iterable[dict], bool]:
 
             if not (image_url := env["release_metadata"]["image_url"]):
                 logger.info(
-                    f"Matched release {image_data['environment']}/{image_data['release_name']} "
+                    f"Release {image_data['environment']}/{image_data['release_name']} "
                     "has no image URL, skipping."
                 )
                 continue
@@ -65,7 +65,7 @@ def get_release_images(envdata: Iterable[dict]) -> tuple[Iterable[dict], bool]:
 
             if not (image_hash := env["release_metadata"]["image_hash"]):
                 logger.info(
-                    f"Matched release {image_data['environment']}/{image_data['release_name']} "
+                    f"Release {image_data['environment']}/{image_data['release_name']} "
                     "has no image hash, skipping."
                 )
                 continue
@@ -234,24 +234,32 @@ class BaseImage:
 
     def update(self):
         """Downloads newest image from Hydra and stores it."""
-        name = f"{self.release_name}-{self.image_hash_sha256}"
         current_snapshots = self._snapshot_names
-        if name in current_snapshots:
-            # All good. No need to update.
-            return
-
         logger.info(
             "\tHave builds: \n\t\t{}".format("\n\t\t".join(current_snapshots))
         )
-        logger.info("\tDownloading build: {}".format(name))
+
+        if self.name in current_snapshots:
+            # All good. No need to update.
+            return
+
+        logger.info("\tDownloading build: {}".format(self.name))
         td, filename = self.download_image()
         uncompressed = filename[0 : filename.rfind(".lz4")]
         subprocess.check_call(["unlz4", "-q", filename, uncompressed])
         os.unlink(filename)
         self.store_in_ceph(uncompressed)
-        logger.info("\tCreating snapshot %s", name)
-        run.rbd("snap", "create", self.volume + "@" + name)
-        run.rbd("snap", "protect", self.volume + "@" + name)
+        logger.info("\tCreating snapshot %s", self.name)
+        run.rbd("snap", "create", self.snap_spec)
+        run.rbd("snap", "protect", self.snap_spec)
+
+    @property
+    def name(self):
+        return f"{self.release_name}-{self.image_hash_sha256}"
+
+    @property
+    def snap_spec(self):
+        return self.volume + "@" + self.name
 
     def download_image(self):
         """Fetches compressed image from Hydra.
@@ -277,13 +285,38 @@ class BaseImage:
             )
         return td, outfile
 
-    def flatten(self):
-        """Decouple VMs created from their base snapshots."""
-        logger.debug("Flattening child images for %s", self.envname)
-        for snap in run.json.rbd("snap", "ls", self.volume):
-            for child in run.json.rbd(
-                "children", self.volume + "@" + snap["name"]
-            ):
+    def cleanup(self) -> None:
+        """Cleanup of old, unneeded snaphshots.
+
+        As a precondition, VMs created from old base snapshots need to be
+        flattened (decoupled from that base). Then unprotecting and removing
+        is possible.
+
+        This can fail due to a race condition: flatten+unprotect is not an
+        atomic operation. Snapshots can still be in use after flattening due to
+        a new VM is cloned from the old snapshot in the meantime, hence
+        unprotecting fails.
+        We accept that race condition, just continue, and try again at the next
+        command run.
+        """
+        snaps: list = run.json.rbd("snap", "ls", self.volume)
+        snap_specs = [self.volume + "@" + snap["name"] for snap in snaps]
+
+        # hard invariant: always keep at least 1 snapshot per image
+        if len(snap_specs) == 1:
+            return
+        # Do not clean up the current one.
+        # Also: expect that we successfully downloaded it) if that didn't
+        # happen we SHOULD have already errored out much much earlier,
+        # so this is a hard assert. Also notices if the only imag left is not
+        # the current one.
+        assert self.snap_spec in snap_specs
+        snap_specs.remove(self.snap_spec)
+
+        # Now delete the remaining snapshots.
+        for snap_spec in snap_specs:
+            # Decouple VMs created from their base snapshots.
+            for child in run.json.rbd("children", snap_spec):
                 logger.info(
                     "\tFlattening {}/{}".format(child["pool"], child["image"])
                 )
@@ -296,35 +329,18 @@ class BaseImage:
                         )
                     )
 
-    def purge(self):
-        """Delete old images, but keep the last three.
-
-        Keeping a few is good because there may be race conditions that
-        images are currently in use even after we called flatten. (This
-        is what unprotect does, but there is no way to run flatten/unprotect
-        in an atomic fashion. However, we expect all clients to always use
-        the newest one. So, the race condition that remains is that we just
-        downloaded a new image and someone else created a VM while we added
-        it and didn't see the new snapshot, but we already were done
-        flattening. Keeping 3 should be more than sufficient.
-
-        If the ones we want to purge won't work, then we just ignore that
-        for now.
-
-        The CLI returns snapshots in their ID order (which appears to be
-        guaranteed to increase) but the API isn't documented. Lets order
-        them ourselves to ensure reliability.
-        """
-        snaps = run.json.rbd("snap", "ls", self.volume)
-        snaps.sort(key=lambda x: x["id"])
-        for snap in snaps[:-3]:
-            snap_spec = self.volume + "@" + snap["name"]
+            # unprotecting a non-flattened image throws an error.
             logger.info("\tPurging snapshot " + snap_spec)
             try:
                 run.rbd("snap", "unprotect", snap_spec)
+            except Exception:
+                logger.exception(
+                    "Error trying to unprotect snapshot, it might still be in use:"
+                )
+            try:
                 run.rbd("snap", "rm", snap_spec)
             except Exception:
-                logger.exception("Error trying to purge snapshot:")
+                logger.exception("Error trying to remove snapshot:")
 
 
 def load_vm_images() -> int:
@@ -348,8 +364,7 @@ def load_vm_images() -> int:
         try:
             with BaseImage(releasedata) as image:
                 image.update()
-                image.flatten()
-                image.purge()
+                image.cleanup()
         except LockingError:
             logger.exception(f"Could not lock image for {envname}.")
             status_code = max(69, status_code)
