@@ -110,7 +110,6 @@ def delta_update(from_, to):
                     dest.seek(-len(b), os.SEEK_CUR)
                     dest.write(a)
                     written += 1
-                    time.sleep(0.01)
     logger.debug(
         "\t\t%d/%d 4MiB blocks updated (%d%%)",
         written,
@@ -296,7 +295,6 @@ class BaseImage:
                             child["pool"], child["image"]
                         )
                     )
-                time.sleep(5)  # give Ceph room to catch up with I/O
 
     def purge(self):
         """Delete old images, but keep the last three.
