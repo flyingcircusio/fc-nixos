@@ -2,7 +2,7 @@
 let
   inherit (config) fclib;
 in
-{
+lib.mkMerge [{
   # Generate a sensu check for each acme cert to check its validity and warn
   # when it expires.
   flyingcircus.services.sensu-client.checks =
@@ -42,7 +42,12 @@ in
     # fallback ACME settings
     security.acme.acceptTerms = true;
     security.acme.defaults.email = "admin@flyingcircus.io";
-    # get back ACME account hash generation of <= NixOS 23.11 to avoid forced
-    # re-registration, see https://github.com/NixOS/nixpkgs/issues/316608
-    security.acme.defaults.server = null;
-}
+  }
+
+  # Machines set up with 24.05 or earlier need to use the ACME account hash
+  # generation of <= NixOS 23.11 to avoid forced
+  # re-registration, see https://github.com/NixOS/nixpkgs/issues/316608
+  (lib.mkIf (lib.versionOlder config.system.stateVersion "24.11") {
+    security.acme.defaults.server = fclib.mkPlatform null;
+  })
+  ]
