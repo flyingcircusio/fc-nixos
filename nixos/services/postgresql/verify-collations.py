@@ -30,9 +30,9 @@ WHERE datname != 'template0'
 def psql(*args):
     env = os.environ.copy()
     env["PGCLIENTENCODING"] = "utf-8"
-    output = subprocess.check_output(
-        ("psql", "--csv") + args, env=env, encoding="utf-8"
-    )
+    command = ("psql", "--csv") + args
+    print(" ".join(command))
+    output = subprocess.check_output(command, env=env, encoding="utf-8")
     output = io.StringIO(output)
     rows = csv.DictReader(output, delimiter=",", quotechar='"')
     return rows
@@ -53,6 +53,7 @@ for database in databases:
     print(db_name)
     print(f"\tdb collation version: {db_collation_version}")
     print(f"\tos collation version: {os_collation_version}")
+
     if db_collation_version == os_collation_version:
         print("\tOK")
         continue
@@ -62,7 +63,7 @@ for database in databases:
         print("\tUpdating collation")
         psql(
             "-c",
-            f"ALTER DATABASE {db_name} REFRESH COLLATION VERSION",
+            f'ALTER DATABASE "{db_name}" REFRESH COLLATION VERSION',
             db_name,
         )
     else:
