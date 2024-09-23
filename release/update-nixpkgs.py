@@ -36,7 +36,7 @@ class NixOSVersion(StrEnum):
         if self == NixOSVersion.NIXOS_UNSTABLE:
             return "nixos-unstable"
 
-        return self.value()
+        return str(self)
 
 
 def run_on_hydra(*args):
