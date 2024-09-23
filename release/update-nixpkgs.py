@@ -9,7 +9,7 @@ from typing import Optional
 
 from git import Repo
 from rich import print
-from typer import Argument, Option, Typer, confirm
+from typer import Argument, Exit, Option, Typer, confirm
 
 PKG_UPDATE_RE = re.compile(
     r"(?P<name>.+): "
@@ -41,7 +41,17 @@ class NixOSVersion(StrEnum):
 
 def run_on_hydra(*args):
     cmd = ["ssh", "hydra01"] + list(args)
-    proc = subprocess.run(cmd, check=True, text=True, capture_output=True)
+    try:
+        proc = subprocess.run(cmd, check=True, text=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        print(e)
+        if e.stdout.strip():
+            print("stdout:")
+            print(e.stdout)
+        if e.stderr.strip():
+            print("stderr:")
+            print(e.stderr)
+        raise Exit(2)
     return proc
 
 
