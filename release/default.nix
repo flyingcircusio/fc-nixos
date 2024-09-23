@@ -446,4 +446,3 @@ jobs // {
   releaseUntested = mkRelease { releaseName = "releaseUntested"; };
   releaseSmall = mkRelease { releaseName = "releaseSmall"; constituents = [ testedSmall ]; };
 }
-
