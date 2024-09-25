@@ -66,6 +66,11 @@ class Node(object):
             "snap", "ls", f"{IMAGE_POOL}/{image}"
             # fmt: on
         )
+        # Note: The rbd cli returns snapshots ordered by their ID (which
+        # appears to be monotonously increasing). As output ordering is not
+        # documented as an API property, we order them again to ensure
+        # reliability.
+        snapshots.sort(key=lambda x: x["id"])
         print("Snapshots:")
         print("snapid", "name", "size", sep="\t")
         for snap in snapshots:

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import base64
 import contextlib
+import fnmatch
 import hashlib
 import logging
 import os
@@ -13,36 +15,12 @@ import sys
 import tempfile
 import time
 import traceback
+import xmlrpc.client
+from typing import Iterable, Optional
 
 import requests
-from fc.ceph.util import run
+from fc.ceph.util import directory, run
 
-RELEASES = [
-    "fc-20.09-production",
-    "fc-21.05-dev",
-    "fc-21.05-staging",
-    "fc-21.05-production",
-    "fc-21.11-dev",
-    "fc-21.11-staging",
-    "fc-21.11-production",
-    "fc-22.05-dev",
-    "fc-22.05-staging",
-    "fc-22.05-production",
-    "fc-22.11-dev",
-    "fc-22.11-staging",
-    "fc-22.11-production",
-    "fc-23.05-dev",
-    "fc-23.05-staging",
-    "fc-23.05-production",
-    "fc-23.11-dev",
-    "fc-23.11-staging",
-    "fc-23.11-production",
-    "fc-24.05-dev",
-    "fc-24.05-staging",
-    "fc-24.05-production",
-    "pre-fc-24.05",
-    "ts-test",
-]
 CEPH_CONF = "/etc/ceph/ceph.conf"
 CEPH_CLIENT = socket.gethostname()
 CEPH_POOL = "rbd.hdd"
@@ -51,96 +29,61 @@ LOCK_COOKIE = "{}.{}".format(CEPH_CLIENT, os.getpid())
 logger = logging.getLogger(__name__)
 
 
+def environment_data_from_directory(
+    enc_path: str = "/etc/nixos/enc.json",
+) -> Iterable[dict]:
+    with directory.directory_connection(enc_path) as conn:
+        return conn.list_environments()
+
+
+def get_release_images(envdata: Iterable[dict]) -> tuple[Iterable[dict], bool]:
+    """filters the gathered environment data according to a release name glob
+    and collects all relevant attributes for image loading.
+
+    Return value is a tuple of the data, and as a second element a boolean that
+    indicates skipped entries due to parser errors."""
+    images = []
+    got_errors = False
+    for env in envdata:
+        # not all releases have metadata, but this is not an error
+        try:
+            if not env["release_metadata"]:
+                continue
+
+            image_data = {
+                "environment": env["name"],
+                "release_name": env["release_metadata"]["release_name"],
+            }
+
+            if not (image_url := env["release_metadata"]["image_url"]):
+                logger.info(
+                    f"Release {image_data['environment']}/{image_data['release_name']} "
+                    "has no image URL, skipping."
+                )
+                continue
+            image_data["image_url"] = image_url
+
+            if not (image_hash := env["release_metadata"]["image_hash"]):
+                logger.info(
+                    f"Release {image_data['environment']}/{image_data['release_name']} "
+                    "has no image hash, skipping."
+                )
+                continue
+            image_data["image_hash"] = image_hash
+
+            images.append(image_data)
+        except (KeyError, NameError, TypeError):
+            # note down errors for later
+            got_errors = True
+
+            logger.exception(f"Received unexpected data from directory:")
+            logger.info("Continuing with next item despite error...")
+
+    return (images, got_errors)
+
+
 class LockingError(Exception):
     pass
-
-
-def build_url(build_id, download=False):
-    url = "https://hydra.flyingcircus.io/build/{}".format(build_id)
-    if download:
-        url += "/download/1"
-    return url
-
-
-def hydra_build_info(build_id):
-    """Queries build metadata.
-
-    Expected API response::
-    {
-      "job": "images.fc",
-      "drvpath":
-        "/nix/store/sqrb…-nixos-fc-18.09.44.ba01a3b-x86_64-linux.drv",
-      "buildoutputs": {
-        "out": {
-          "path": "/nix/store/9i3x…-nixos-fc-18.09.44.ba01a3b-x86_64-linux"
-        }
-      },
-      "jobset": "fc-18.09-dev",
-      "project": "flyingcircus",
-      "jobsetevals": [2470],
-      "buildstatus": 0,
-      "system": "x86_64-linux",
-      "finished": 1,
-      "nixname": "nixos-fc-18.09.44.ba01a3b-x86_64-linux",
-      "id": 50957,
-      "buildproducts": {
-        "1": {
-          "sha256hash": "2e1b017aa3…",
-          "filesize": 428987844,
-          "type": "file",
-          "name": "nixos-fc-18.09.44.ba01a3b-x86_64-linux.img.lz4",
-          "subtype": "img",
-          "sha1hash": "39a59622…"
-        }
-      }
-    }
-
-    Returns buildproduct dict.
-    """
-    r = requests.get(
-        build_url(build_id), headers={"Accept": "application/json"}
-    )
-    r.raise_for_status()
-    meta = r.json()
-    buildproduct = meta["buildproducts"]["1"]
-    if not buildproduct["type"] == "file":
-        raise RuntimeError("Cannot find build product in server response", meta)
-    return buildproduct
-
-
-def download_image(build_id):
-    """Fetches compressed image from Hydra.
-
-    Returns tmpdir handle and filename.
-    """
-    buildproduct = hydra_build_info(build_id)
-    url = build_url(build_id, download=True)
-    logging.debug("\t\tGetting %s", url)
-    r = requests.get(url, stream=True)
-    r.raise_for_status()
-    chksum = hashlib.sha256()
-    size = 0
-    td = tempfile.TemporaryDirectory(prefix="image.")
-    outfile = p.join(td.name, buildproduct["name"])
-    logging.debug("\t\tSaving to %s", outfile)
-    with open(outfile, "wb") as out:
-        for chunk in r.iter_content(4 * 2**20):
-            out.write(chunk)
-            chksum.update(chunk)
-            size += len(chunk)
-    expected_size = buildproduct["filesize"]
-    if expected_size != size:
-        raise RuntimeError(
-            "Image size mismatch: expect={}, got={}", expected_size, size
-        )
-    expected_hash = buildproduct["sha256hash"]
-    if expected_hash != chksum.hexdigest():
-        raise RuntimeError(
-            "Image checksum mismatch: expect={}, got={}",
-            expected_hash,
-            chksum.hexdigest(),
-        )
-    return td, outfile
 
 
 def delta_update(from_, to):
@@ -167,7 +110,6 @@ def delta_update(from_, to):
                     dest.seek(-len(b), os.SEEK_CUR)
                     dest.write(a)
                     written += 1
-                    time.sleep(0.01)
     logger.debug(
         "\t\t%d/%d 4MiB blocks updated (%d%%)",
         written,
@@ -176,10 +118,27 @@ def delta_update(from_, to):
     )
 
 
+def sha256sum_to_sri(sha256sum: str) -> str:
+    return (
+        f'sha256-{base64.b64encode(sha256sum.encode("ascii")).decode("utf-8")}'
+    )
+
+
+def sri_to_sha256sum(srihash: str) -> str:
+    parts = srihash.split("sha256-")
+    if len(parts) != 2 or len(parts[0]) or (not len(parts[1])):
+        raise ValueError(f"{srihash} is no sha256 SRI hash.")
+
+    return base64.b64decode(parts[1]).decode("utf-8")
+
+
 class BaseImage:
-    def __init__(self, release):
-        self.release = release
-        self.volume = f"{CEPH_POOL}/{self.release}"
+    def __init__(self, imagedata: dict):
+        self.envname = imagedata["environment"]
+        self.release_name = imagedata["release_name"]
+        self.image_url = imagedata["image_url"]
+        self.image_hash_sha256 = sri_to_sha256sum(imagedata["image_hash"])
+        self.volume = f"{CEPH_POOL}/{self.envname}"
         self.locker = None
 
     def __enter__(self):
@@ -187,8 +146,8 @@ class BaseImage:
 
         Creates image if necessary and locks the image.
         """
-        if self.release not in run.json.rbd("ls", CEPH_POOL):
-            logger.info(f"Creating image for {self.release}")
+        if self.envname not in run.json.rbd("ls", CEPH_POOL):
+            logger.info(f"Creating image for {self.envname}")
             run.rbd("create", "-s", str(10 * 2**30) + "B", self.volume)
 
         # ensure that the context manager unlocks the image in __exit__ before being
@@ -221,7 +180,7 @@ class BaseImage:
             run.rbd(
                 # fmt: off
                 "lock", "remove",
-                f"{CEPH_POOL}/{self.release}", LOCK_COOKIE, self.locker,
+                f"{CEPH_POOL}/{self.envname}", LOCK_COOKIE, self.locker,
                 # fmt: on
             )
         except Exception:
@@ -273,75 +232,91 @@ class BaseImage:
         with self.mapped() as blockdev:
             delta_update(img, blockdev)
 
-    def newest_hydra_build(self):
-        """Checks Hydra for the newest release.
-
-        Expected API response::
-        [
-          {
-            "project": "flyingcircus",
-            "id": 50957,
-            "jobset": "fc-18.09-dev",
-            "finished": 1,
-            "system": "x86_64-linux",
-            "nixname": "nixos-fc-18.09.44.ba01a3b-x86_64-linux",
-            "job": "images.fc",
-            "buildstatus": 0,
-            "timestamp": 1552383072
-          },
-          ...
-        ]
-        Note that this list may contain failed builds.
-        """
-        r = requests.get(
-            "https://hydra.flyingcircus.io/api/latestbuilds",
-            headers={"Accept": "application/json"},
-            params={
-                "nr": 5,
-                "project": "flyingcircus",
-                "jobset": self.release,
-                "job": "images.fc",
-            },
-        )
-        r.raise_for_status()
-        builds = r.json()
-        for b in builds:
-            if b["buildstatus"] != 0:
-                continue
-            build_id = int(b["id"])
-            assert build_id > 0
-            return build_id
-        raise RuntimeError("Failed to query API for newest build")
-
     def update(self):
         """Downloads newest image from Hydra and stores it."""
-        build_id = self.newest_hydra_build()
-        name = "build-{}".format(build_id)
         current_snapshots = self._snapshot_names
-        if name in current_snapshots:
-            # All good. No need to update.
-            return
-
         logger.info(
             "\tHave builds: \n\t\t{}".format("\n\t\t".join(current_snapshots))
         )
-        logger.info("\tDownloading build: {}".format(name))
-        td, filename = download_image(build_id)
+
+        if self.name in current_snapshots:
+            # All good. No need to update.
+            return
+
+        logger.info("\tDownloading build: {}".format(self.name))
+        td, filename = self.download_image()
         uncompressed = filename[0 : filename.rfind(".lz4")]
         subprocess.check_call(["unlz4", "-q", filename, uncompressed])
         os.unlink(filename)
         self.store_in_ceph(uncompressed)
-        logger.info("\tCreating snapshot %s", name)
-        run.rbd("snap", "create", self.volume + "@" + name)
-        run.rbd("snap", "protect", self.volume + "@" + name)
+        logger.info("\tCreating snapshot %s", self.name)
+        run.rbd("snap", "create", self.snap_spec)
+        run.rbd("snap", "protect", self.snap_spec)
 
-    def flatten(self):
-        """Decouple VMs created from their base snapshots."""
-        logger.debug("Flattening child images for %s", self.release)
-        for snap in run.json.rbd("snap", "ls", self.volume):
-            for child in run.json.rbd(
-                "children", self.volume + "@" + snap["name"]
-            ):
+    @property
+    def name(self):
+        return f"{self.release_name}-{self.image_hash_sha256}"
+
+    @property
+    def snap_spec(self):
+        return self.volume + "@" + self.name
+
+    def download_image(self):
+        """Fetches compressed image from Hydra.
+
+        Returns tmpdir handle and filename.
+        """
+        logging.debug("\t\tGetting %s", self.image_url)
+        r = requests.get(self.image_url, stream=True)
+        r.raise_for_status()
+        chksum = hashlib.sha256()
+        size = 0
+        td = tempfile.TemporaryDirectory(prefix="image.")
+        outfile = p.join(td.name, f"{self.release_name}-{self.envname}")
+        logging.debug("\t\tSaving to %s", outfile)
+        with open(outfile, "wb") as out:
+            for chunk in r.iter_content(4 * 2**20):
+                out.write(chunk)
+                chksum.update(chunk)
+                size += len(chunk)
+        if self.image_hash_sha256 != chksum.hexdigest():
+            raise RuntimeError(
+                f"Image checksum mismatch: expect={self.image_hash_sha256}, got={chksum.hexdigest()}"
+            )
+        return td, outfile
+
+    def cleanup(self) -> None:
+        """Cleanup of old, unneeded snaphshots.
+
+        As a precondition, VMs created from old base snapshots need to be
+        flattened (decoupled from that base). Then unprotecting and removing
+        is possible.
+
+        This can fail due to a race condition: flatten+unprotect is not an
+        atomic operation. Snapshots can still be in use after flattening due to
+        a new VM is cloned from the old snapshot in the meantime, hence
+        unprotecting fails.
+        We accept that race condition, just continue, and try again at the next
+        command run.
+        """
+        snaps: list = run.json.rbd("snap", "ls", self.volume)
+        snap_specs = [self.volume + "@" + snap["name"] for snap in snaps]
+
+        # hard invariant: always keep at least 1 snapshot per image
+        if len(snap_specs) == 1:
+            return
+        # Do not clean up the current one.
+        # Also: expect that we successfully downloaded it) if that didn't
+        # happen we SHOULD have already errored out much much earlier,
+        # so this is a hard assert. Also notices if the only imag left is not
+        # the current one.
+        assert self.snap_spec in snap_specs
+        snap_specs.remove(self.snap_spec)
+
+        # Now delete the remaining snapshots.
+        for snap_spec in snap_specs:
+            # Decouple VMs created from their base snapshots.
+            for child in run.json.rbd("children", snap_spec):
                 logger.info(
                     "\tFlattening {}/{}".format(child["pool"], child["image"])
                 )
@@ -353,37 +328,19 @@ class BaseImage:
                             child["pool"], child["image"]
                         )
                     )
-                time.sleep(5)  # give Ceph room to catch up with I/O
 
-    def purge(self):
-        """Delete old images, but keep the last three.
-
-        Keeping a few is good because there may be race conditions that
-        images are currently in use even after we called flatten. (This
-        is what unprotect does, but there is no way to run flatten/unprotect
-        in an atomic fashion. However, we expect all clients to always use
-        the newest one. So, the race condition that remains is that we just
-        downloaded a new image and someone else created a VM while we added
-        it and didn't see the new snapshot, but we already were done
-        flattening. Keeping 3 should be more than sufficient.
-
-        If the ones we want to purge won't work, then we just ignore that
-        for now.
-
-        The CLI returns snapshots in their ID order (which appears to be
-        guaranteed to increase) but the API isn't documented. Lets order
-        them ourselves to ensure reliability.
-        """
-        snaps = run.json.rbd("snap", "ls", self.volume)
-        snaps.sort(key=lambda x: x["id"])
-        for snap in snaps[:-3]:
-            snap_spec = self.volume + "@" + snap["name"]
+            # unprotecting a non-flattened image throws an error.
             logger.info("\tPurging snapshot " + snap_spec)
             try:
                 run.rbd("snap", "unprotect", snap_spec)
+            except Exception:
+                logger.exception(
+                    "Error trying to unprotect snapshot, it might still be in use:"
+                )
+            try:
                 run.rbd("snap", "rm", snap_spec)
             except Exception:
-                logger.exception("Error trying to purge snapshot:")
+                logger.exception("Error trying to remove snapshot:")
 
 
 def load_vm_images() -> int:
@@ -398,24 +355,28 @@ def load_vm_images() -> int:
     requests_log.setLevel(logging.WARNING)
     requests_log.propagate = True
     status_code: int = 0
-    for branch in RELEASES:
-        logger.info("Updating branch {}".format(branch))
+
+    environments = environment_data_from_directory()
+    image_data, processing_errors = get_release_images(environments)
+    for releasedata in image_data:
+        envname = releasedata["environment"]
+        logger.info(f"Updating environment {envname}")
         try:
-            with BaseImage(branch) as image:
+            with BaseImage(releasedata) as image:
                 image.update()
-                image.flatten()
-                image.purge()
+                image.cleanup()
         except LockingError:
-            logger.exception(f"Could not lock image for {branch}.")
+            logger.exception(f"Could not lock image for {envname}.")
             status_code = max(69, status_code)
             logger.info("Continuing with next branch despite error...")
         # In general, we decide to continue with the next branch when an exception happens.
         # If there are certain exceptions where the whole process needs to be aborted,
         # that exception needs to be cought specifically.
         except Exception:
-            logger.exception(
-                f"An error occured while updating branch `{branch}`."
-            )
+            logger.exception(f"An error occured while updating `{envname}`.")
             status_code = max(1, status_code)
-            logger.info("Continuing with next branch despite error...")
+            logger.info("Continuing with next image despite error...")
+
+    if processing_errors:
+        status_code = max(1, status_code)
     return status_code
