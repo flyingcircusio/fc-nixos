@@ -75,14 +75,14 @@
     "version": "18.2.4"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-128.0.6613.137",
+    "name": "chromedriver-unwrapped-129.0.6668.58",
     "pname": "chromedriver-unwrapped",
-    "version": "128.0.6613.137"
+    "version": "129.0.6668.58"
   },
   "chromium": {
-    "name": "chromium-128.0.6613.137",
+    "name": "chromium-129.0.6668.58",
     "pname": "chromium",
-    "version": "128.0.6613.137"
+    "version": "129.0.6668.58"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -90,9 +90,9 @@
     "version": "7.0"
   },
   "clamav": {
-    "name": "clamav-1.4.0",
+    "name": "clamav-1.4.1",
     "pname": "clamav",
-    "version": "1.4.0"
+    "version": "1.4.1"
   },
   "cmake": {
     "name": "cmake-3.29.6",
@@ -150,9 +150,9 @@
     "version": "24.0.9"
   },
   "docker-compose": {
-    "name": "docker-compose-2.29.2",
+    "name": "docker-compose-2.29.3",
     "pname": "docker-compose",
-    "version": "2.29.2"
+    "version": "2.29.3"
   },
   "dovecot": {
     "name": "dovecot-2.3.21.1",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.76",
+    "name": "element-web-1.11.77",
     "pname": "element-web",
-    "version": "1.11.76"
+    "version": "1.11.77"
   },
   "erlang": {
     "name": "erlang-25.3.2.13",
@@ -195,9 +195,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-130.0",
+    "name": "firefox-130.0.1",
     "pname": "firefox",
-    "version": "130.0"
+    "version": "130.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -367,14 +367,14 @@
     "version": "1.30.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-25.0.5",
+    "name": "keycloak-25.0.6",
     "pname": "keycloak",
-    "version": "25.0.5"
+    "version": "25.0.6"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.15.4",
+    "name": "kubernetes-helm-3.16.1",
     "pname": "kubernetes-helm",
-    "version": "3.15.4"
+    "version": "3.16.1"
   },
   "libffi": {
     "name": "libffi-3.4.6",
@@ -432,9 +432,9 @@
     "version": "0.2.5"
   },
   "linux": {
-    "name": "linux-6.6.51",
+    "name": "linux-6.6.52",
     "pname": "linux",
-    "version": "6.6.51"
+    "version": "6.6.52"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -542,9 +542,9 @@
     "version": "1.26.2"
   },
   "nix": {
-    "name": "nix-2.18.5",
+    "name": "nix-2.18.7",
     "pname": "nix",
-    "version": "2.18.5"
+    "version": "2.18.7"
   },
   "nodejs": {
     "name": "nodejs-20.17.0",
@@ -922,6 +922,11 @@
     "pname": "rabbitmq-server",
     "version": "3.13.7"
   },
+  "rclone": {
+    "name": "rclone-1.68.0",
+    "pname": "rclone",
+    "version": "1.68.0"
+  },
   "re2c": {
     "name": "re2c-3.1",
     "pname": "re2c",
@@ -979,9 +984,9 @@
     "version": "8.11.2"
   },
   "strace": {
-    "name": "strace-6.10",
+    "name": "strace-6.11",
     "pname": "strace",
-    "version": "6.10"
+    "version": "6.11"
   },
   "strongswan": {
     "name": "strongswan-5.9.14",
@@ -1024,14 +1029,14 @@
     "version": "3.4"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.28",
+    "name": "apache-tomcat-10.1.29",
     "pname": "apache-tomcat",
-    "version": "10.1.28"
+    "version": "10.1.29"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.93",
+    "name": "apache-tomcat-9.0.94",
     "pname": "apache-tomcat",
-    "version": "9.0.93"
+    "version": "9.0.94"
   },
   "unzip": {
     "name": "unzip-6.0",
