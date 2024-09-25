@@ -1,13 +1,8 @@
 { lib, pkgs, config, ...}:
 
 let
-  defaultUseVerificationKernel =
-    if
-      (config.flyingcircus.enc.parameters.location == "dev") ||
-      (config.flyingcircus.enc.parameters.location == "whq") ||
-      (config.flyingcircus.enc.parameters.production  == false)
-    then true
-    else false;
+  location = lib.attrByPath [ "parameters" "location" ] "" config.flyingcircus.enc;
+  production = lib.attrByPath [ "parameters" "production" ] "" config.flyingcircus.enc;
 in {
   options = {
     flyingcircus.kernelOptions = lib.mkOption {
@@ -16,9 +11,14 @@ in {
       description = "Additional options for the kernel configuration";
     };
     flyingcircus.useVerificationKernel = lib.mkOption {
-      default = defaultUseVerificationKernel;
+      default = (location == "dev") || (location == "whq") || (production  == false);
       type = lib.types.bool;
-      description = "Participate in using an evaluation kernel.";
+      description = ''
+        Participate in using an evaluation kernel.
+        This currently selects a 6.11 kernel for testing purposes.
+        By default, all non-prod VMs in all locations and all VMs in our internal locations
+        DEV and WHQ use the evaluation kernel.
+      '';
     };
   };
 
