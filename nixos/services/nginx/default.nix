@@ -55,8 +55,6 @@ let
   package = config.services.nginx.package;
   localCfgDir = config.flyingcircus.localConfigPath + "/nginx";
 
-  vhostsJSON = fclib.jsonFromDir localCfgDir;
-
   mkVanillaVhostFromFCVhost = name: vhost: let
     servername = if vhost.serverName != null then vhost.serverName else name;
   in (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]) // {
@@ -341,11 +339,6 @@ in
           The non-privileged `nginx` (the default) should be used instead.
           Make sure that certificates are readable by the `nginx` user and remove the `masterUser` setting.
         '']) ++
-        (lib.optionals (vhostsJSON != {}) [''
-          JSON config in /etc/local/nginx/*.json is deprecated and should be
-          replaced by the `flyingcircus.services.nginx.virtualHosts.* NixOS options.
-          See ${fclib.roleDocUrl "webgateway"} for more details.
-        '']) ++
         (map
           ({ hostname, host, laExtra }: ''
             ${hostname}: listenAddress and listenAddress6 are deprecated and will be removed in 24.05.
@@ -397,8 +390,6 @@ in
 
         "local/nixos/nginx.nix.example".source = ./example-nixos-module.nix;
       };
-
-      flyingcircus.services.nginx.virtualHosts = vhostsJSON;
 
       flyingcircus.services.telegraf.inputs = {
         nginx = [ {
