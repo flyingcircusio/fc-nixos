@@ -50,6 +50,8 @@ in {
   journal = callTest ./journal.nix {};
   journalbeat = callTest ./journalbeat.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
+  kernelversions = callTest ./kernelversions.nix {};
+
   k3s = callTest ./k3s {};
   k3s_monitoring = callTest ./k3s/monitoring.nix {};
   lampVm = callTest ./lamp/vm-test.nix { };
