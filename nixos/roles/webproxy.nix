@@ -38,8 +38,6 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf fccfg.enable {
-      warnings = lib.optional (varnishCfg != null) "Configuring varnish via /etc/local/varnish/default.vcl is deprecated, please migrate your Configuration to Nix";
-
       assertions = [{
         assertion = builtins.length (builtins.attrNames config.flyingcircus.services.varnish.virtualHosts) <= 1 || builtins.isNull varnishCfg;
         message  = ''
