@@ -26,6 +26,14 @@ let
     '';
   };
 
+  checkZebraLiveness= fclib.writeShellApplication {
+    name = "check-zebra-liveness";
+    runtimeInputs = with pkgs; [ systemd ];
+    text = ''
+      systemctl -q is-active zebra
+    '';
+  };
+
   keepalivedConf = pkgs.writeText "keepalived.conf" ''
     global_defs {
       enable_script_security
@@ -54,6 +62,7 @@ lib.mkIf role.enable {
 
   environment.etc."keepalived/check-default-route-v4".source = "${checkDefaultRoute4}/bin/check-default-route-v4";
   environment.etc."keepalived/check-default-route-v6".source = "${checkDefaultRoute6}/bin/check-default-route-v6";
+  environment.etc."keepalived/check-zebra-liveness".source = "${checkZebraLiveness}/bin/check-zebra-liveness";
   environment.etc."keepalived/fc-keepalived".source = "${pkgs.fc.agent}/bin/fc-keepalived";
   environment.etc."keepalived/keepalived.conf".source = keepalivedConf;
 

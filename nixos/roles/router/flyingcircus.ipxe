@@ -16,7 +16,7 @@ item --gap --				MAC: ${mac}
 item --gap --				Location: ${location}
 item --gap --				--- Boot ---
 item local					Boot machine from local disk
-item netboot				Launch netboot iPXE menu
+item netboot				Launch netboot.xyz (various live images and tools)
 item --gap --           	--- Install ---
 item install_nixos_20_09	Boot NixOS 20.09 install image
 item install_nixos_21_05	Boot NixOS 21.05 install image
@@ -47,7 +47,7 @@ imgargs installer root=/dev/ram0 init=/linuxrc loop=/image.squashfs looptype=squ
 boot || goto error
 
 :netboot
-chain --autofree https://boot.netboot.xyz/ipxe/netboot.xyz.lkrn
+chain --autofree https://boot.netboot.xyz
 goto start
 
 :local

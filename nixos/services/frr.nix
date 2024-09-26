@@ -197,8 +197,19 @@ in
               description = if service == "zebra" then "FRR Zebra routing manager"
                 else "FRR ${toUpper service} routing daemon";
 
-              unitConfig.Documentation = if service == "zebra" then "man:zebra(8)"
-                else "man:${daemon}(8) man:zebra(8)";
+              unitConfig = {
+                Documentation = if service == "zebra" then "man:zebra(8)"
+                                else "man:${daemon}(8) man:zebra(8)";
+              } // optionalAttrs (service == "zebra") {
+                # More generous restart limits for zebra to better recover from
+                # crash situations. We set the restart interval below to 10
+                # seconds. Give zebra up to 5m20s of grace time, and accommodate
+                # up to 20 restarts. 20 restarts in 5m20s gives up to 16 seconds
+                # per start attempt. If zebra restarts in a tight loop, the
+                # start limit will be triggered after 3m20s.
+                StartLimitInterval = 320;
+                StartLimitBurst = 20;
+              };
 
               # We want to refactor this into reloadTriggers when upgrading to
               # 24.05
@@ -218,6 +229,8 @@ in
                   + " " + (concatStringsSep " " scfg.extraOptions);
                 ExecReload = "${pkgs.python3.interpreter} ${pkgs.frr}/libexec/frr/frr-reload.py --reload --daemon ${daemonName service} --bindir ${pkgs.frr}/bin --rundir /run/frr /etc/frr/${service}.conf";
                 Restart = "always";
+              } // optionalAttrs (service == "zebra") {
+                RestartSec = 10;
               };
             });
        in

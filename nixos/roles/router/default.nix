@@ -245,8 +245,19 @@ in
       };
     };
 
+    systemd.tmpfiles.rules = [
+      "d /run/sensuclient 0755 sensuclient sensuclient -"
+    ];
+
     flyingcircus.services.sensu-client = {
       checks = {
+        neighbour_cache = {
+          notification = "Kernel neighbour cache is too full";
+          # Poll frequently in order to try to detect problems which
+          # occur suddenly before they wipe the router out.
+          interval = 60;
+          command = "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor sensu-check -s /run/sensuclient/neighbour_cache_state.json";
+        };
       };
 
       expectedConnections = {
@@ -254,6 +265,14 @@ in
         critical = 25000;
       };
     };
+
+    flyingcircus.services.telegraf.inputs.exec = [{
+      commands = [ "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor telegraf-metrics" ];
+      timeout = "10s";
+      data_format = "json";
+      name_override = "neighbour";
+      tag_keys = [ "family" ];
+    }];
 
     flyingcircus.agent = {
       extraPreCommands = ''
