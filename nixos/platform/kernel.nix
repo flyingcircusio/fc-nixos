@@ -29,7 +29,7 @@ in {
 
       boot.kernelPackages = if config.flyingcircus.useVerificationKernel
         then pkgs.linuxPackagesFor pkgs.linuxKernelVerify
-        else pkgs.linuxKernel.packages.linux_5_15;
+        else pkgs.linuxPackagesFor pkgs.linuxKernelStable;
 
       # Use this spelling if you need to try out custom kernels, try out patches
       # or otherwise deviate from our nixpkgs upstream.

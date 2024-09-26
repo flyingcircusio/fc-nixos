@@ -459,10 +459,15 @@
     "pname": "libyaml",
     "version": "0.2.5"
   },
-  "linux_5_15": {
-    "name": "linux-5.15.167",
+  "linuxKernelStable": {
+    "name": "linux-5.15.164",
     "pname": "linux",
-    "version": "5.15.167"
+    "version": "5.15.164"
+  },
+  "linuxKernelVerify": {
+    "name": "linux-6.11",
+    "pname": "linux",
+    "version": "6.11"
   },
   "logrotate": {
     "name": "logrotate-3.21.0",

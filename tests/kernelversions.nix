@@ -185,13 +185,12 @@ import ./make-test-python.nix ({ ... }:
         vm.wait_for_unit('memcached.service')
         vm.wait_for_open_port(11211)
 
-        foundKernel = vm.execute("uname -r")[1].strip()
-        if foundKernel != expected:
-            print(f"Expected kernel {expected!r}")
-            print(f"Found kernel {foundKernel!r}")
-            full = vm.execute("uname -a")[1]
-            print(f"Machine: {full}")
-            raise AssertionError("Unexpected kernel version")
+        found = vm.execute("uname -r")[1].strip()
+        if found != expected:
+            uname_a = vm.execute("uname -a")[1]
+            raise AssertionError(
+              f"Expected: {expected}, found: {found}. uname -a: {uname_a}"
+            )
 
     assertKernelVersion(verifyKernel, "6.11.0")
     assertKernelVersion(prodKernel, "5.15.164")
