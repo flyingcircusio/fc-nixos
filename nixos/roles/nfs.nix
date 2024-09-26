@@ -73,15 +73,23 @@ in
 
     (lib.mkIf (cfg.roles.nfs_rg_client.enable && service != null) {
       fileSystems = {
-        # WARNING: those settings are duplicated in the tests to
-        # fix a deficiency of the test harness.
         "${mountpoint}" = {
           device = "${service.address}:${export}";
           fsType = "nfs4";
+          #############################################################
+          # WARNING: those settings are DUPLICATED in tests/nfs.nix to
+          # work around a deficiency of the test harness.
+          #############################################################
           options = [
             "rw"
             "noauto"
-            "soft"
+            # Retry infinitely
+            "hard"
+            # Start over the retry process after 10 tries
+            "retrans=10"
+            # Start with a 3s (30 deciseconds) interval and add 3s as linear
+            # backoff
+            "timeo=30"
             "rsize=8192"
             "wsize=8192"
             "nfsvers=4"
