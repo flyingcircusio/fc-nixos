@@ -1,6 +1,6 @@
 import ./make-test-python.nix ({ testlib, useCheckout ? false, testOpts ? "", clientCephRelease ? "nautilus", ... }:
 #import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "-k test_vm_migration_pattern", clientCephRelease ? "nautilus", ... }:
-#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "", clientCephRelease ? "nautilus", ... }:
+#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "-vv", clientCephRelease ? "nautilus", ... }:
 #import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "--flake-finder --flake-runs=500 -x --no-cov", clientCephRelease ? "nautilus", ... }:
 with testlib;
 let

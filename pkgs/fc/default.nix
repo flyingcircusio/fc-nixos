@@ -54,7 +54,7 @@ rec {
   # qemu-dev-nautilus = callPackage ./qemu {
   #   version = "dev";
   #   # builtins.toPath (testPath + "/.")
-  #   src = ../../../fc.qemu/.;
+  #   src = ../../../../../fc.qemu/.;
   #   qemu_ceph = pkgs.qemu-ceph-nautilus;
   #   ceph_client = pkgs.ceph-nautilus.ceph-client;
   # };
