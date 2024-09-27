@@ -16,16 +16,16 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       initrd.availableKernelModules = [
         # assorted network drivers, for hardware discovery during
         # stage 1.
+        "3w-9xxx"
+        "bnx2"
+        "bnxt_en"
         "e1000e"
         "i40e"
-        "mlxfw"
-        "tg3"
-        "mlx5_core"
-        "bnxt_en"
         "igb"
         "ixgbe"
-        "bnx2"
-        "3w-9xxx"
+        "mlx5_core"
+        "mlxfw"
+        "tg3"
       ];
 
       kernelParams = [
