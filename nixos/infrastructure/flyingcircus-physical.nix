@@ -26,6 +26,8 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         "mlx5_core"
         "mlxfw"
         "tg3"
+        # storage drivers, for hardware discovery
+        "nvme"
       ];
 
       kernelParams = [

@@ -82,7 +82,6 @@ sgdisk $root_disk -a 2048 \
 
 udevadm settle
 
-mkfs -t ext4 -q -E stride=16 -m 1 -F -L boot ''${root_disk}2
 # We disabled swap in hardware, because it's basically detrimental to
 # continuous operation.
 # We keep the partition (see above) to be able to respond if we want it again,
@@ -90,9 +89,10 @@ mkfs -t ext4 -q -E stride=16 -m 1 -F -L boot ''${root_disk}2
 # activate it. I'm keeping this commented out here for future assistance of
 # whoever may need to tackle this again.
 # mkswap -L swap ''${root_disk}3
+mkfs -t ext4 -q -E stride=16 -m 1 -F -L boot /dev/disk/by-partlabel/boot
 
-pvcreate -ffy -Z y ''${root_disk}4
-vgcreate -fy --dataalignment 64k vgsys ''${root_disk}4
+pvcreate -ffy -Z y /dev/disk/by-partlabel/vgsys1
+vgcreate -fy vgsys /dev/disk/by-partlabel/vgsys1
 vgchange -ay
 
 udevadm settle
@@ -107,7 +107,7 @@ mkfs.xfs -L tmp /dev/vgsys/tmp
 mount /dev/vgsys/root /mnt
 
 mkdir /mnt/boot
-mount ''${root_disk}2 /mnt/boot
+mount /dev/disk/by-partlabel/boot /mnt/boot
 
 mkdir /mnt/tmp
 mount /dev/vgsys/tmp /mnt/tmp
@@ -138,27 +138,28 @@ cat > /mnt/etc/nixos/configuration.nix << __EOF__
 __EOF__
 
 
-root_disk_wwn=""
+root_disk_id=""
 # get unique root disk ID to be used in bootloader later
-# not all disks are able to export a WWN ID, fall back to ATA ID
-for x in /dev/disk/by-id/wwn-* /dev/disk/by-id/ata-* /dev/disk/by-id/scsi-*; do
+# we prefer getting a wwn or nvme-eui but fall back to whatever stable identifier
+# we can get.
+for x in /dev/disk/by-id/wwn-* /dev/disk/by-id/nvme-eui.* /dev/disk/by-id/*; do
   if [ "$(realpath $x)" == "''${root_disk}" ]; then
-    root_disk_wwn=$x
+    root_disk_id=$x
     break
   fi;
 done
 
-if [ "$root_disk_wwn" == "" ]; then
+if [ "$root_disk_id" == "" ]; then
   echo "ERROR: Could not find WWN for root disk"
   exit 1
 fi
 
-echo "Found root disk WWN: $root_disk_wwn"
+echo "Found stable root disk path: $root_disk_id"
 
 cat > /mnt/etc/nixos/local.nix << __EOF__
 { config, lib, ... }:
 {
-  boot.loader.grub.device = "''${root_disk_wwn}";
+  boot.loader.grub.device = "''${root_disk_id}";
   boot.kernelParams = [ "''${console}" ];
 
   users.users.root.hashedPassword = "''${root_password}";
