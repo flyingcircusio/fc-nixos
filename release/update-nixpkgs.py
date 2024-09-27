@@ -9,7 +9,7 @@ from typing import Optional
 
 from git import Repo
 from rich import print
-from typer import Argument, Option, Typer, confirm
+from typer import Argument, Exit, Option, Typer, confirm
 
 PKG_UPDATE_RE = re.compile(
     r"(?P<name>.+): "
@@ -36,12 +36,22 @@ class NixOSVersion(StrEnum):
         if self == NixOSVersion.NIXOS_UNSTABLE:
             return "nixos-unstable"
 
-        return self.value()
+        return str(self)
 
 
 def run_on_hydra(*args):
     cmd = ["ssh", "hydra01"] + list(args)
-    proc = subprocess.run(cmd, check=True, text=True, capture_output=True)
+    try:
+        proc = subprocess.run(cmd, check=True, text=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        print(e)
+        if e.stdout.strip():
+            print("stdout:")
+            print(e.stdout)
+        if e.stderr.strip():
+            print("stderr:")
+            print(e.stderr)
+        raise Exit(2)
     return proc
 
 
@@ -90,24 +100,31 @@ class PkgUpdate:
 
 
 def rebase_nixpkgs(nixpkgs_repo: Repo, nixos_version: NixOSVersion):
-    print("Fetching origin remote...")
+    print("nixpkgs: fetching origin remote...")
     nixpkgs_repo.git.fetch("origin")
     origin_ref_id = f"origin/{nixos_version}"
     origin_ref = nixpkgs_repo.refs[origin_ref_id]
 
-    if nixpkgs_repo.head.commit != origin_ref.commit:
-        do_reset = confirm(
-            f"local HEAD differs from {origin_ref_id}, hard-reset to origin?",
-            default=True,
-        )
-        if do_reset:
-            nixpkgs_repo.git.reset(hard=True)
+    print("nixpkgs status:")
+    print(nixpkgs_repo.git.status())
 
-    print("Fetching upstream remote...")
+    if nixpkgs_repo.head.commit != origin_ref.commit:
+        prompt = (
+            f"WARNING: local branch ({nixpkgs_repo.head.commit}) differs "
+            f"from {origin_ref_id}."
+            f"\nHard-reset to origin  ({origin_ref.commit})?"
+        )
+        do_reset = confirm(prompt, default=True)
+        if do_reset:
+            nixpkgs_repo.head.reset(origin_ref.commit, working_tree=True)
+
+    print(nixpkgs_repo.git.status())
+
+    print("nixpkgs: fetching upstream remote...")
     nixpkgs_repo.git.fetch("upstream")
     old_rev = str(nixpkgs_repo.head.ref.commit)
     upstream_ref = f"upstream/{nixos_version.upstream_branch}"
-    print(f"Using upstream ref {upstream_ref}")
+    print(f"nixpkgs: using upstream ref {upstream_ref}")
     nixpkgs_repo.git.rebase(upstream_ref)
     new_rev = str(nixpkgs_repo.head.ref.commit)
     version_range = f"{old_rev}..{new_rev}"
