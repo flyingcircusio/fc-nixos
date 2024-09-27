@@ -74,6 +74,10 @@ fi
 # also for keeping state (specifically old backup servers)
 # we need to ensure that grub and boot are placed early
 # on the disk.
+#
+# We keep creating a swap partition just out of an abundance of caution and
+# to stay in line with the long term partition numbers - even though we've
+# been using symbolic names for a long time now everywhere.
 sgdisk $root_disk -a 2048 \
   -n 1:1M:+1M -c 1:grub   -t 1:ef02 \
   -n 2:2M:+1G -c 2:boot   -t 2:ea00 \
@@ -82,13 +86,6 @@ sgdisk $root_disk -a 2048 \
 
 udevadm settle
 
-# We disabled swap in hardware, because it's basically detrimental to
-# continuous operation.
-# We keep the partition (see above) to be able to respond if we want it again,
-# but creating a swap signature here will cause systemd to automatically
-# activate it. I'm keeping this commented out here for future assistance of
-# whoever may need to tackle this again.
-# mkswap -L swap ''${root_disk}3
 mkfs -t ext4 -q -E stride=16 -m 1 -F -L boot /dev/disk/by-partlabel/boot
 
 pvcreate -ffy -Z y /dev/disk/by-partlabel/vgsys1
