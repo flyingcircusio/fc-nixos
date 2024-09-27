@@ -86,7 +86,7 @@ sgdisk $root_disk -a 2048 \
 
 udevadm settle
 
-mkfs -t ext4 -q -E stride=16 -m 1 -F -L boot /dev/disk/by-partlabel/boot
+mkfs -t ext4 -q -F -L boot /dev/disk/by-partlabel/boot
 
 pvcreate -ffy -Z y /dev/disk/by-partlabel/vgsys1
 vgcreate -fy vgsys /dev/disk/by-partlabel/vgsys1
