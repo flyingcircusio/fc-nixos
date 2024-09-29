@@ -120,6 +120,24 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
           };
         };
 
+  linuxKernelStable =
+    let
+      kernelPackage = super.linux_5_15;
+      version = "5.15.164";
+  in
+    kernelPackage.override {
+      argsOverride = {
+        src = super.fetchurl {
+          url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
+          hash = "sha256-7GCY+u1kuKR7oXcugSputEQ4X3qjxg0+RzmrL9OykYY=";
+        };
+        modDirVersion = version;
+        inherit version;
+      };
+    };
+
+
+
   matomo-beta = super.matomo-beta.overrideAttrs (oldAttrs: {
     installPhase = ''
       runHook preInstall
