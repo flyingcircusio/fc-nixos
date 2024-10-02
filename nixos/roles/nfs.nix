@@ -18,12 +18,22 @@ let
   export = "/srv/nfs/shared";
   mountpoint = "/mnt/nfs/shared";
 
+  # Workaround for DIR-155/ PL-133063: We need to use the same hostname as
+  # written into /etc/hosts for resilience against resolver failures. This
+  # currently deviates from the raw string provided by the directory.
+  normaliseHostname = hostname:
+    let hostPart = builtins.head (lib.splitString "." hostname);
+    in
+    if (config.networking.domain != null && hostPart != "")
+      then "${hostPart}.${config.networking.domain}"
+      else hostname;
+
   # This is a bit different than on Gentoo. We allow export to all nodes in the
   # RG, regardles of the node actually being a client.
   exportToClients =
     let
       flags = lib.concatStringsSep "," cfg.roles.nfs_rg_share.clientFlags;
-      clientWithFlags = c: "${c.node}(${flags})";
+      clientWithFlags = c: "${normaliseHostname c.node}(${flags})";
     in
       lib.concatMapStringsSep " " clientWithFlags serviceClients;
 
@@ -74,7 +84,7 @@ in
     (lib.mkIf (cfg.roles.nfs_rg_client.enable && service != null) {
       fileSystems = {
         "${mountpoint}" = {
-          device = "${service.address}:${export}";
+          device = "${normaliseHostname service.address}:${export}";
           fsType = "nfs4";
           #############################################################
           # WARNING: those settings are DUPLICATED in tests/nfs.nix to
@@ -82,7 +92,7 @@ in
           #############################################################
           options = [
             "rw"
-            "noauto"
+            "auto"
             # Retry infinitely
             "hard"
             # Start over the retry process after 10 tries
@@ -96,31 +106,6 @@ in
           ];
           noCheck = true;
         };
-      };
-
-      # SystemD strictly doesn't want to implement any kind of retry-logic
-      # around mount units. So lets not use them.
-      systemd.services.mount-nfs-shared = {
-          path = [ pkgs.util-linux ];
-          wantedBy = [ "remote-fs.target" ];
-          before = [ "remote-fs.target" ];
-          reloadIfChanged=true;
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-          };
-          reload = ''
-            set -x
-            while ! mount -o remount ${mountpoint}; do
-              sleep 5;
-            done
-          '';
-          script = ''
-            set -x
-            while ! mountpoint ${mountpoint}; do
-              mount ${mountpoint} || sleep 5
-            done
-          '';
       };
 
       systemd.tmpfiles.rules = [
