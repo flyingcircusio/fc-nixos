@@ -249,9 +249,17 @@ in
           # connect otherwise.
           lib.optionalString
           (lib.versionAtLeast package.version "8.0") ''
-            default_authentication_plugin = mysql_native_password
             log_error_suppression_list = MY-013360
           ''}
+        ${# In 8.4, the deprecated plugin is disabled by default and needs to be manually enabled
+          lib.optionalString (lib.versionAtLeast package.version "8.4")
+            "mysql_native_password = ON"
+        }
+        ${# while in earlier versions, it can just be set as default
+          lib.optionalString (lib.versionAtLeast package.version "8.0" && lib.versionOlder package.version "8.4")
+            "default_authentication_plugin = mysql_native_password"
+        }
+
 
         ${# Query cache is gone in 8.0
           # https://mysqlserverteam.com/mysql-8-0-retiring-support-for-the-query-cache/
