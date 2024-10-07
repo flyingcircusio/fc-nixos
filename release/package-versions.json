@@ -70,14 +70,14 @@
     "version": "18.2.4"
   },
   "chromedriver": {
-    "name": "chromedriver-129.0.6668.58",
+    "name": "chromedriver-129.0.6668.70",
     "pname": "chromedriver",
-    "version": "129.0.6668.58"
+    "version": "129.0.6668.70"
   },
   "chromium": {
-    "name": "chromium-129.0.6668.58",
+    "name": "chromium-129.0.6668.70",
     "pname": "chromium",
-    "version": "129.0.6668.58"
+    "version": "129.0.6668.70"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -155,9 +155,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.77",
+    "name": "element-web-1.11.79",
     "pname": "element-web",
-    "version": "1.11.77"
+    "version": "1.11.79"
   },
   "erlang": {
     "name": "erlang-25.3.2.12",
@@ -290,9 +290,9 @@
     "version": "1.22.6"
   },
   "grafana": {
-    "name": "grafana-10.4.8",
+    "name": "grafana-10.4.9",
     "pname": "grafana",
-    "version": "10.4.8"
+    "version": "10.4.9"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -495,9 +495,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.2.12",
+    "name": "mastodon-4.2.13",
     "pname": "mastodon",
-    "version": "4.2.12"
+    "version": "4.2.13"
   },
   "matomo": {
     "name": "matomo-4.16.1",
@@ -510,9 +510,9 @@
     "version": "5.1.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.114.0",
+    "name": "matrix-synapse-wrapped-1.116.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.114.0"
+    "version": "1.116.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -575,9 +575,9 @@
     "version": "1.26.2"
   },
   "nix": {
-    "name": "nix-2.18.5",
+    "name": "nix-2.18.8",
     "pname": "nix",
-    "version": "2.18.5"
+    "version": "2.18.8"
   },
   "nodejs": {
     "name": "nodejs-20.15.1",
@@ -605,9 +605,9 @@
     "version": "4.35"
   },
   "nss_latest": {
-    "name": "nss-3.104",
+    "name": "nss-3.105",
     "pname": "nss",
-    "version": "3.104"
+    "version": "3.105"
   },
   "openjdk": {
     "name": "openjdk-21.0.3+9",
@@ -750,19 +750,19 @@
     "version": "8.0.30"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.29",
+    "name": "php-with-extensions-8.1.30",
     "pname": "php-with-extensions",
-    "version": "8.1.29"
+    "version": "8.1.30"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.23",
+    "name": "php-with-extensions-8.2.24",
     "pname": "php-with-extensions",
-    "version": "8.2.23"
+    "version": "8.2.24"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.11",
+    "name": "php-with-extensions-8.3.12",
     "pname": "php-with-extensions",
-    "version": "8.3.11"
+    "version": "8.3.12"
   },
   "phpPackages.composer": {
     "name": "composer-2.7.7",
@@ -845,9 +845,9 @@
     "version": "3.11.9"
   },
   "python310": {
-    "name": "python3-3.10.14",
+    "name": "python3-3.10.15",
     "pname": "python3",
-    "version": "3.10.14"
+    "version": "3.10.15"
   },
   "python311": {
     "name": "python3-3.11.9",
@@ -861,9 +861,9 @@
   },
   "python38": {},
   "python39": {
-    "name": "python3-3.9.19",
+    "name": "python3-3.9.20",
     "pname": "python3",
-    "version": "3.9.19"
+    "version": "3.9.20"
   },
   "python3Packages.boto3": {
     "name": "python3.11-boto3-1.34.58",
