@@ -18,22 +18,12 @@ let
   export = "/srv/nfs/shared";
   mountpoint = "/mnt/nfs/shared";
 
-  # Workaround for DIR-155/ PL-133063: We need to use the same hostname as
-  # written into /etc/hosts for resilience against resolver failures. This
-  # currently deviates from the raw string provided by the directory.
-  normaliseHostname = hostname:
-    let hostPart = builtins.head (lib.splitString "." hostname);
-    in
-    if (config.networking.domain != null && hostPart != "")
-      then "${hostPart}.${config.networking.domain}"
-      else hostname;
-
   # This is a bit different than on Gentoo. We allow export to all nodes in the
   # RG, regardles of the node actually being a client.
   exportToClients =
     let
       flags = lib.concatStringsSep "," cfg.roles.nfs_rg_share.clientFlags;
-      clientWithFlags = c: "${normaliseHostname c.node}(${flags})";
+      clientWithFlags = c: "${c.node}(${flags})";
     in
       lib.concatMapStringsSep " " clientWithFlags serviceClients;
 
@@ -83,29 +73,46 @@ in
 
     (lib.mkIf (cfg.roles.nfs_rg_client.enable && service != null) {
       fileSystems = {
+        # WARNING: those settings are duplicated in the tests to
+        # fix a deficiency of the test harness.
         "${mountpoint}" = {
-          device = "${normaliseHostname service.address}:${export}";
+          device = "${service.address}:${export}";
           fsType = "nfs4";
-          #############################################################
-          # WARNING: those settings are DUPLICATED in tests/nfs.nix to
-          # work around a deficiency of the test harness.
-          #############################################################
           options = [
             "rw"
-            "auto"
-            # Retry infinitely
-            "hard"
-            # Start over the retry process after 10 tries
-            "retrans=10"
-            # Start with a 3s (30 deciseconds) interval and add 3s as linear
-            # backoff
-            "timeo=30"
+            "noauto"
+            "soft"
             "rsize=8192"
             "wsize=8192"
             "nfsvers=4"
           ];
           noCheck = true;
         };
+      };
+
+      # SystemD strictly doesn't want to implement any kind of retry-logic
+      # around mount units. So lets not use them.
+      systemd.services.mount-nfs-shared = {
+          path = [ pkgs.util-linux ];
+          wantedBy = [ "remote-fs.target" ];
+          before = [ "remote-fs.target" ];
+          reloadIfChanged=true;
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          reload = ''
+            set -x
+            while ! mount -o remount ${mountpoint}; do
+              sleep 5;
+            done
+          '';
+          script = ''
+            set -x
+            while ! mountpoint ${mountpoint}; do
+              mount ${mountpoint} || sleep 5
+            done
+          '';
       };
 
       systemd.tmpfiles.rules = [
