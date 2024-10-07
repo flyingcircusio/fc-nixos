@@ -18,22 +18,12 @@ let
   export = "/srv/nfs/shared";
   mountpoint = "/mnt/nfs/shared";
 
-  # Workaround for DIR-155/ PL-133063: We need to use the same hostname as
-  # written into /etc/hosts for resilience against resolver failures. This
-  # currently deviates from the raw string provided by the directory.
-  normaliseHostname = hostname:
-    let hostPart = builtins.head (lib.splitString "." hostname);
-    in
-    if (config.networking.domain != null && hostPart != "")
-      then "${hostPart}.${config.networking.domain}"
-      else hostname;
-
   # This is a bit different than on Gentoo. We allow export to all nodes in the
   # RG, regardles of the node actually being a client.
   exportToClients =
     let
       flags = lib.concatStringsSep "," cfg.roles.nfs_rg_share.clientFlags;
-      clientWithFlags = c: "${normaliseHostname c.node}(${flags})";
+      clientWithFlags = c: "${c.node}(${flags})";
     in
       lib.concatMapStringsSep " " clientWithFlags serviceClients;
 
@@ -84,7 +74,7 @@ in
     (lib.mkIf (cfg.roles.nfs_rg_client.enable && service != null) {
       fileSystems = {
         "${mountpoint}" = {
-          device = "${normaliseHostname service.address}:${export}";
+          device = "${service.address}:${export}";
           fsType = "nfs4";
           #############################################################
           # WARNING: those settings are DUPLICATED in tests/nfs.nix to
