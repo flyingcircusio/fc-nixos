@@ -65,7 +65,7 @@ in {
               ################################################################
               options = [
                 "rw"
-                "auto"
+                "noauto"
                 # Retry infinitely
                 "hard"
                 # Start over the retry process after 10 tries

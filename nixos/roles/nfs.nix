@@ -82,7 +82,7 @@ in
           #############################################################
           options = [
             "rw"
-            "auto"
+            "noauto"
             # Retry infinitely
             "hard"
             # Start over the retry process after 10 tries
@@ -96,6 +96,31 @@ in
           ];
           noCheck = true;
         };
+      };
+
+      # SystemD strictly doesn't want to implement any kind of retry-logic
+      # around mount units. So lets not use them.
+      systemd.services.mount-nfs-shared = {
+          path = [ pkgs.util-linux ];
+          wantedBy = [ "remote-fs.target" ];
+          before = [ "remote-fs.target" ];
+          reloadIfChanged=true;
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+          reload = ''
+            set -x
+            while ! mount -o remount ${mountpoint}; do
+              sleep 5;
+            done
+          '';
+          script = ''
+            set -x
+            while ! mountpoint ${mountpoint}; do
+              mount ${mountpoint} || sleep 5
+            done
+          '';
       };
 
       systemd.tmpfiles.rules = [
