@@ -59,20 +59,9 @@ in {
             "${cdir}" = {
               device = "server:${sdir}";
               fsType = "nfs4";
-              ################################################################
-              # WARNING: those settings are DUPLICATED in nixos/roles/nfs.nix
-              # to work around a deficiency of the test harness.
-              ################################################################
               options = [
                 "rw"
-                "noauto"
-                # Retry infinitely
-                "hard"
-                # Start over the retry process after 10 tries
-                "retrans=10"
-                # Start with a 3s (30 deciseconds) interval and add 3s as linear
-                # backoff
-                "timeo=30"
+                "soft"
                 "rsize=8192"
                 "wsize=8192"
                 "nfsvers=4"
