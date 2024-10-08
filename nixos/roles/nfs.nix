@@ -36,7 +36,7 @@ in
 
         This mounts /srv/nfs/shared from the server to /mnt/nfs/shared.
       '';
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
 
     flyingcircus.roles.nfs_rg_share = {
@@ -45,7 +45,7 @@ in
 
         This exports /srv/nfs/shared.
       '';
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
       clientFlags = lib.mkOption {
           default = ["rw" "sync" "root_squash" "no_subtree_check"];
           type = with types; listOf str;

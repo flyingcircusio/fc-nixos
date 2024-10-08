@@ -9,7 +9,7 @@ in
   let
     mkRole = v: {
       enable = lib.mkEnableOption "Enable the Flying Circus PostgreSQL ${v} server role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
 
   in {

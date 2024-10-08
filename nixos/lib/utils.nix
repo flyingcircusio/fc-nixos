@@ -79,15 +79,15 @@ rec {
   # defaults, i.e. for containers.
   mkPlatformOverride = lib.mkOverride 850;
 
-  mkDisableContainerSupport = lib.mkOption {
+  mkDisableDevhostSupport = lib.mkOption {
     type = lib.types.bool;
-    description = "This role is not compatible with (dev) containers.";
+    description = "This role is not compatible with devhost.";
     default = false;
   };
 
-  mkEnableContainerSupport = lib.mkOption {
+  mkEnableDevhostSupport = lib.mkOption {
     type = lib.types.bool;
-    description = "This role is compatible with (dev) containers.";
+    description = "This role is compatible with devhost.";
     default = true;
   };
 

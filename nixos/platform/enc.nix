@@ -40,9 +40,20 @@ with lib;
       description = "Where to find the address list json file.";
     };
 
-    systemState = mkOption {
-      type = attrs;
-      description = "The current system state as put out by fc-manage";
+    encNetworks = mkOption {
+      type = listOf str;
+      description = "Known networks as provided by the ENC.";
+    };
+
+    encNetworksPath = mkOption {
+      default = /etc/nixos/networks.json;
+      type = path;
+      description = "Where to find the ENC networks json file.";
+    };
+
+    encServices = mkOption {
+      type = listOf attrs;
+      description = "Services in the environment as provided by the ENC.";
     };
 
     encServicesPath = mkOption {
@@ -70,15 +81,21 @@ with lib;
       type = path;
       description = "Where to find the releases json file.";
     };
+
+    location = mkOption {
+      type = str;
+      default = "standalone";
+    };
+
+    systemState = mkOption {
+      type = attrs;
+      description = "The current system state as put out by fc-manage";
+    };
+
     systemStatePath = mkOption {
       default = /etc/nixos/system_state.json;
       type = path;
       description = "Where to find the system state json file.";
-    };
-
-    encServices = mkOption {
-      type = listOf attrs;
-      description = "Services in the environment as provided by the ENC.";
     };
 
     active-roles = mkOption {
@@ -120,12 +137,16 @@ with lib;
         fclib.mkPlatform (fclib.jsonFromFile cfg.encPath "{}");
       encAddresses =
         fclib.mkPlatform (fclib.jsonFromFile cfg.encAddressesPath "[]");
+      encNetworks =
+        fclib.mkPlatform (fclib.jsonFromFile cfg.encNetworksPath "[]");
       encServices =
         fclib.mkPlatform (fclib.jsonFromFile cfg.encServicesPath "[]");
       encServiceClients =
         fclib.mkPlatform (fclib.jsonFromFile cfg.encServiceClientsPath "[]");
       systemState =
         fclib.mkPlatform (fclib.jsonFromFile cfg.systemStatePath "{}");
+
+      location = attrByPath [ "parameters" "location" ] "standalone" cfg.enc;
     };
 
   };

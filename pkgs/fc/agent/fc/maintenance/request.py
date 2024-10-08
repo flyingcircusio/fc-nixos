@@ -99,12 +99,20 @@ class Request:
     added_at: datetime.datetime | None
     last_scheduled_at: datetime.datetime | None
     next_due: datetime.datetime | None
+    runnable_for_seconds: int
     state: State
     updated_at: datetime.datetime | None
 
     def __init__(
-        self, activity, estimate=None, comment=None, dir=None, log=_log
+        self,
+        activity,
+        estimate=None,
+        comment=None,
+        dir=None,
+        lock_dir=None,
+        log=_log,
     ):
+        activity.lock_dir = lock_dir
         activity.request = self
         activity.set_up_logging(log)
         self.activity = activity
@@ -120,6 +128,7 @@ class Request:
         self.next_due = None
         self.state = State.pending
         self.updated_at = None
+        self.runnable_for_seconds = 1800  # will be set by ReqManager
 
     @property
     def comment(self):
@@ -205,7 +214,9 @@ class Request:
     def not_after(self) -> Optional[datetime.datetime]:
         if not self.next_due:
             return
-        return self.next_due + datetime.timedelta(seconds=1800)
+        return self.next_due + datetime.timedelta(
+            seconds=self.runnable_for_seconds
+        )
 
     @property
     def overdue(self) -> bool:
@@ -218,7 +229,14 @@ class Request:
         return self.state not in state.ARCHIVE and self.attempts
 
     @classmethod
-    def load(cls, dir: str | Path, config: ConfigParser, log):
+    def load(
+        cls,
+        dir: str | Path,
+        config: ConfigParser,
+        log,
+        runnable_for_seconds: int,
+        lock_dir: Path | None = None,
+    ):
         # need imports because such objects may be loaded via YAML
         import fc.maintenance.activity.reboot
         import fc.maintenance.activity.update
@@ -260,11 +278,14 @@ class Request:
 
         instance.config = config
         instance.dir = dir
+        instance.lock_dir = lock_dir
         instance.set_up_logging(log)
+        instance.runnable_for_seconds = runnable_for_seconds
 
         with cd(dir):
             instance.activity.load()
             instance.activity.request = instance
+            instance.activity.lock_dir = lock_dir
         return instance
 
     def save(self):
@@ -313,6 +334,7 @@ class Request:
                 except Exception as e:
                     attempt.returncode = 70  # EX_SOFTWARE
                     attempt.stderr = str(e)
+                    raise
             self.state = evaluate_state(self.activity.returncode)
         except Exception:
             self.log.error(

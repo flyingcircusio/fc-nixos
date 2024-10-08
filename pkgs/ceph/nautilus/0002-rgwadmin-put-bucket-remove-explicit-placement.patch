@@ -1,0 +1,29 @@
+From b3a317987e50f089efc4e9694cf6e3d5d9c23bd5 Mon Sep 17 00:00:00 2001
+From: Christian Theune <ct@flyingcircus.io>
+Date: Wed, 21 Jun 2023 15:37:54 +0200
+Subject: [PATCH] Allow modifying the explicit_placement of buckets to migrate
+ from older clusters.
+
+---
+ src/rgw/rgw_bucket.cc | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/rgw/rgw_bucket.cc b/src/rgw/rgw_bucket.cc
+index f022222faf4..d0cdf78d7ef 100644
+--- a/src/rgw/rgw_bucket.cc
++++ b/src/rgw/rgw_bucket.cc
+@@ -2979,8 +2979,10 @@ public:
+       }
+       bci.info.index_type = rule_info.index_type;
+     } else {
++      /* existing bucket, allow manipulating the explicit placement
++         to help older clusters migrate */
++      // bci.info.bucket.explicit_placement = old_bci.info.bucket.explicit_placement;
+       /* existing bucket, keep its placement */
+-      bci.info.bucket.explicit_placement = old_bci.info.bucket.explicit_placement;
+       bci.info.placement_rule = old_bci.info.placement_rule;
+     }
+ 
+-- 
+2.38.3
+

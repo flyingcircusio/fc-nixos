@@ -22,6 +22,11 @@ in {
         description = "Manage the IPMI controller.";
         type = types.bool;
       };
+      watchdogTimeout = mkOption {
+         default = 300;
+         description = "Watchdog timeout (0 = off)";
+         type = types.int;
+      };
       check_additional_options = mkOption {
         default = "";
         description = "Additional options to pass to `check_ipmi_sensor`.";
@@ -32,10 +37,14 @@ in {
 
   config = mkIf cfg.ipmi.enable {
 
-    environment.systemPackages = [ pkgs.ipmitool ];
+    environment.systemPackages = [ pkgs.ipmitool pkgs.fc.ipmitool ];
 
     boot.blacklistedKernelModules = [ "wdat_wdt" ];
     boot.kernelModules = [ "ipmi_watchdog" ];
+
+    systemd.extraConfig = ''
+      RuntimeWatchdogSec=${toString cfg.ipmi.watchdogTimeout}
+    '';
 
     services.udev.extraRules = ''
       KERNEL=="ipmi[0-9]", GROUP="adm", MODE="0660"
@@ -62,19 +71,26 @@ in {
       description = "Configure IPMI controller";
       serviceConfig.Type = "oneshot";
       serviceConfig.RemainAfterExit = true;
+      path = [ pkgs.ipmitool ];
       wantedBy = [ "basic.target" ];
       script = ''
-        ${pkgs.ipmitool}/bin/ipmitool lan set 1 ipsrc static
+        ipmitool lan set 1 ipsrc static
         sleep 1
-        ${pkgs.ipmitool}/bin/ipmitool lan set 1 ipaddr ${ipmi_addr}
+        ipmitool lan set 1 ipaddr ${ipmi_addr}
         sleep 1
-        ${pkgs.ipmitool}/bin/ipmitool lan set 1 netmask ${ipmi_netmask}
+        ipmitool lan set 1 netmask ${ipmi_netmask}
         sleep 1
-        ${pkgs.ipmitool}/bin/ipmitool lan set 1 defgw ipaddr ${ipmi_gw}
+        ipmitool lan set 1 defgw ipaddr ${ipmi_gw}
         sleep 1
-        ${pkgs.ipmitool}/bin/ipmitool sol set non-volatile-bit-rate 115.2 1
+        ipmitool sol set non-volatile-bit-rate 115.2 1
         sleep 1
-        ${pkgs.ipmitool}/bin/ipmitool sol set volatile-bit-rate 115.2 1
+        ipmitool sol set volatile-bit-rate 115.2 1
+        sleep 1
+        # See https://serverfault.com/questions/361940/configuring-supermicro-ipmi-to-use-one-of-the-lan-interfaces-instead-of-the-ipmi/677087
+        # Ensure BMC is set to failover (SuperMicro only)
+        if ipmitool mc info | grep Supermicro > /dev/null ; then
+          ipmitool raw 0x30 0x70 0x0c 1 2 || true
+        fi
       '';
     };
 
@@ -89,9 +105,7 @@ in {
     flyingcircus.services.sensu-client.checks = {
       IPMI-sensors = {
         notification = "IPMI sensors";
-        command = ''
-          sudo ${pkgs.check_ipmi_sensor}/bin/check_ipmi_sensor  --noentityabsent ${cfg.ipmi.check_additional_options}
-        '';
+        command = "sudo ${pkgs.check_ipmi_sensor}/bin/check_ipmi_sensor --noentityabsent ${cfg.ipmi.check_additional_options}";
       };
     };
 

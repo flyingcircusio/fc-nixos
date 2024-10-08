@@ -10,6 +10,8 @@ let
   system = import ./system.nix { inherit config pkgs lib; };
   utils = import ./utils.nix { inherit config pkgs lib; };
   lists = import ./lists.nix { inherit config pkgs lib; };
+  ceph = import ./ceph-common.nix { inherit lib pkgs; };
+  builders = import ./builders.nix { inherit lib pkgs; };
 
 in
 {
@@ -23,7 +25,7 @@ in
 
   config = {
     fclib =
-      { inherit attrsets files math modules network system utils; }
-      // attrsets // doc // files // math // modules // network // system // utils // lists;
+      { inherit attrsets builders ceph doc files math modules network system utils lists; }
+      // attrsets // builders // ceph // doc // files // math // modules // network // system // utils // lists;
   };
 }

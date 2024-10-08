@@ -22,7 +22,7 @@ in {
     flyingcircus.roles.jitsi = {
 
       enable = mkEnableOption "Enable a Jitsi Meet server with all needed services.";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
       coturn = mkOption {
         default = {};

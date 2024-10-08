@@ -1,4 +1,7 @@
-import ./make-test-python.nix ({ pkgs, ... }:
+import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
+
+with lib;
+with testlib;
 
 let
   user = {
@@ -37,7 +40,10 @@ in {
     client =
       { lib, ... }:
       {
-        imports = [ ../nixos ../nixos/roles ];
+        imports = [
+          (fcConfig { id = 1; })
+        ];
+
         config = {
           flyingcircus.roles.nfs_rg_client.enable = true;
           flyingcircus.roles.lamp.enable = true;
@@ -67,8 +73,8 @@ in {
                 "nfsvers=4"
               ];
             noCheck = true;
+            };
           };
-        };
 
           users.users.u = user;
         };
@@ -78,7 +84,10 @@ in {
     server =
       { ... }:
       {
-        imports = [ ../nixos ../nixos/roles ];
+        imports = [
+          (fcConfig { id = 2; })
+        ];
+
         config = {
           flyingcircus.roles.nfs_rg_share.enable = true;
           flyingcircus.encServiceClients = encServiceClients;

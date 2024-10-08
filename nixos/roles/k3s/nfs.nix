@@ -18,7 +18,7 @@ in
   options = with lib; {
     flyingcircus.roles.k3s-nfs = {
       enable = lib.mkEnableOption "Enable K3s (Kubernetes) NFS server (experimental)";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 

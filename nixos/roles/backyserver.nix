@@ -7,7 +7,7 @@ let
   role = config.flyingcircus.roles.backyserver;
   enc = config.flyingcircus.enc;
 
-  backy = pkgs.callPackage ../../pkgs/backy.nix { };
+  backy = pkgs.backy;
 
   backyExtract = let
     src = pkgs.fetchFromGitHub {
@@ -22,6 +22,16 @@ let
 
   restoreSingleFiles = pkgs.callPackage ../../pkgs/restore-single-files {};
 
+  cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
+  backyRbdVersioned = {
+    BACKY_RBD = "${cephPkgs.ceph-client}/bin/rbd";
+  };
+
+  external_header = "/srv/backy.luks";
+  mountDirToSystemdUnit = path: builtins.substring 1 (-1) (builtins.replaceStrings ["/"] ["-"] path);
+  backyMountDir = "/srv/backy";
+  backyMountUnit = "${mountDirToSystemdUnit backyMountDir}.mount";
+
 in
 {
   options = {
@@ -34,15 +44,53 @@ in
         type = lib.types.int;
       };
 
-      supportsContainers = fclib.mkDisableContainerSupport;
+      blockDevice = lib.mkOption {
+        type = lib.types.str;
+        description = ''
+          The underlying blockdevice to be used as a base for an encrypted Backy volume.
+          Can be provided in fstab/ crypttab syntax as well, e.g. `LABEL=`.
+          Examples are a partition, mdraid or logical volume.'';
+        default = "/dev/vgbackup/backy-crypted";
+      };
 
+      externalCryptHeader = lib.mkOption {
+        type = lib.types.bool;
+        description = ''
+          Does the specified `blockdevice` require an external LUKS header?
+          This is the case for existing reencrypted devices. Expects a file in ${external_header}.
+        '';
+        default = false;
+      };
+
+      supportsContainers = fclib.mkDisableDevhostSupport;
+
+
+      cephRelease = fclib.ceph.releaseOption // {
+        description = "Codename of the Ceph release series used as external backy tooling.";
+      };
+
+      # this indirection is required by the tests as a config input
+      fsOptions = lib.mkOption {
+        type = lib.types.attrs;
+        readOnly = true;
+        internal = true;
+        default =  {
+          device = "/dev/disk/by-label/backy";
+          fsType = "xfs";
+          options = [ "nofail" "nodev" "nosuid" "noatime" "nodiratime"];
+        };
+      };
     };
 
   };
 
   config = lib.mkIf role.enable {
 
-    flyingcircus.services.ceph.client.enable = true;
+    flyingcircus.services.ceph.client = {
+      enable = true;
+      cephRelease = role.cephRelease;
+    };
+
     flyingcircus.services.consul.enable = true;
 
     environment.systemPackages = [
@@ -51,12 +99,18 @@ in
       restoreSingleFiles
     ];
 
-    fileSystems = {
-      "/srv/backy" = {
-        device = "/dev/disk/by-label/backy";
-        fsType = "xfs";
-      };
-    };
+    # globally set the RBD to be used by backy, in case it is invoked manually by an operator
+    environment.variables = backyRbdVersioned;
+
+    environment.etc.crypttab.text = ''
+      backy	${role.blockDevice}	/mnt/keys/${config.networking.hostName}.key	discard,nofail,submit-from-crypt-cpus${lib.optionalString role.externalCryptHeader ",header=${external_header}"}
+    '';
+
+    fileSystems.${backyMountDir} = role.fsOptions;
+
+    services.telegraf.extraConfig.inputs.disk = [
+      { mount_points = [ "/srv/backy" ]; }
+    ];
 
     boot = {
       # Extracted to flyingcircus-physical.nix
@@ -68,21 +122,26 @@ in
       global:
         base-dir: /srv/backy
         worker-limit: ${toString role.worker-limit}
+        backup-completed-callback: fc-backy-publish
       schedules:
         default:
           daily: {interval: 1d, keep: 10}
-          monthly: {interval: 30d, keep: 4}
           weekly: {interval: 7d, keep: 4}
+          monthly: {interval: 30d, keep: 4}
         frequent:
-          daily: {interval: 1d, keep: 10}
           hourly: {interval: 1h, keep: 25}
-          monthly: {interval: 30d, keep: 4}
+          daily: {interval: 1d, keep: 10}
           weekly: {interval: 7d, keep: 4}
+          monthly: {interval: 30d, keep: 4}
         reduced:
           daily: {interval: 1d, keep: 8}
-          monthly: {interval: 30d, keep: 2}
           weekly: {interval: 7d, keep: 3}
+          monthly: {interval: 30d, keep: 2}
         longterm:
+          daily: {interval: 1d, keep: 30}
+          monthly: {interval: 30d, keep: 12}
+        frequent+longterm:
+          hourly: {interval: 1h, keep: 25}
           daily: {interval: 1d, keep: 30}
           monthly: {interval: 30d, keep: 12}
     '';
@@ -95,13 +154,18 @@ in
         description = "Backy backup server";
         wantedBy = [ "multi-user.target" ];
         path = [ backy config.flyingcircus.agent.package ];
+        # prevent accidentally writing into an empty mount directory,
+        # as mountpoint is nofail now
+        requires = [ backyMountUnit ];
+        after = [ backyMountUnit ];
 
         environment = {
           CEPH_ARGS = "--id ${enc.name}";
-        };
+        } // backyRbdVersioned;
 
         serviceConfig = {
           ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
+          Restart = "always";
         };
 
         script = ''

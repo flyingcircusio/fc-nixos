@@ -7,7 +7,7 @@ in {
     # redis4 is an alias for redis, see rename.nix
     flyingcircus.roles.redis = {
       enable = lib.mkEnableOption "Flying Circus Redis";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 

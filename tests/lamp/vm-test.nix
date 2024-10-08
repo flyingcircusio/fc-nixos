@@ -92,6 +92,7 @@ import ../make-test-python.nix ({ version ? "", lib, ... }:
     print(lamp.execute("cat /etc/httpd/httpd.conf")[1])
     print(lamp.execute("cat $PHPRC")[1])
 
+    ''
     lamp.succeed('mkdir -p /srv/docroot')
     lamp.succeed('echo "<? phpinfo(); ?>" > /srv/docroot/test.php')
 

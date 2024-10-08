@@ -8,6 +8,7 @@ import fc.manage.cli
 import fc.manage.manage
 import pytest
 import typer.testing
+from fc.util.nixos import Specialisation
 
 CHANNEL_URL = (
     "https://hydra.flyingcircus.io/build/138288/download/1/nixexprs.tar.xz"
@@ -66,6 +67,7 @@ def test_invoke_switch(
     switch: Mock,
     log,
     logger,
+    tmpdir,
     invoke_app,
     cmd,
 ):
@@ -75,6 +77,8 @@ def test_invoke_switch(
     expected = {
         "log": switch.call_args.kwargs["log"],
         "enc": ENC,
+        "specialisation": Specialisation.KEEP_CURRENT,
+        "lock_dir": tmpdir,
         "lazy": False,
         "show_trace": False,
     }
@@ -109,12 +113,14 @@ def test_invoke_switch_should_not_drop_meaningful_cmd_output(
 @pytest.mark.parametrize("cmd", [["switch", "--update-channel"], ["-c"]])
 @unittest.mock.patch("fc.manage.manage.switch_with_update")
 def test_invoke_switch_with_channel_update(
-    switch_with_update, log, logger, invoke_app, cmd
+    switch_with_update, log, logger, tmpdir, invoke_app, cmd
 ):
     invoke_app(*cmd)
     expected = {
         "log": switch_with_update.call_args.kwargs["log"],
         "enc": ENC,
+        "specialisation": Specialisation.KEEP_CURRENT,
+        "lock_dir": tmpdir,
         "lazy": False,
         "show_trace": False,
     }

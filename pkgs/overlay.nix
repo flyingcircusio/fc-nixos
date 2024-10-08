@@ -59,6 +59,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     pythonPackages = self.python311Packages;
   });
 
+  backy = super.callPackage ./backy { inherit (nixpkgs-23_05) poetry2nix python310 mkShellNoCC;};
+
   #
   # imports from other nixpkgs versions or local definitions
   #
@@ -66,6 +68,21 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   apacheHttpdLegacyCrypt = self.apacheHttpd.override {
     aprutil = self.aprutil.override { libxcrypt = self.libxcrypt-legacy; };
   };
+
+  bird = super.bird.overrideAttrs (old: {
+    patches = old.patches ++ [ ./bird-bfd-strict-bind.patch ];
+  });
+  bird6 = super.bird6.overrideAttrs (old: {
+    patches = old.patches ++ [ ./bird-bfd-strict-bind.patch ];
+  });
+
+  bird2 = super.bird2.overrideAttrs (old: rec {
+    version = "2.0.10";
+    src = fetchurl {
+      url = "ftp://bird.network.cz/pub/bird/${super.bird2.pname}-${version}.tar.gz";
+      sha256 = "sha256-ftNB3djch/qXNlhrNRVEeoQ2/sRC1l9AIhVaud4f/Vo=";
+    };
+  });
 
   inherit (super.callPackage ./boost { }) boost159;
 
@@ -79,11 +96,26 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  # XXX: ceph doesn't build
-  # ceph = (super.callPackage ./ceph {
-  #     pythonPackages = super.python3Packages;
-  #     boost = super.boost155;
-  # });
+  # default ceph packages
+  inherit (self.ceph-nautilus) ceph ceph-client libceph;
+  # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
+  ceph-nautilus = rec {
+    inherit (super.callPackages ./ceph/nautilus {
+        boost = super.boost16x.override { enablePython = true; python = self.python3; };
+      })
+      ceph
+      ceph-client;
+    libceph = ceph.lib;
+  };
+  ceph-nautilus-tmp-patches = rec {
+    inherit (super.callPackages ./ceph/nautilus {
+        tmp-patches = true;
+        boost = super.boost16x.override { enablePython = true; python = self.python3; };
+      })
+      ceph
+      ceph-client;
+    libceph = ceph.lib;
+  };
 
   docsplit = super.callPackage ./docsplit { };
 
@@ -94,7 +126,46 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     meta = builtins.removeAttrs old.meta [ "knownVulnerabilites" ];
   });
 
+  dstat = super.dstat.overrideAttrs(old: rec {
+    patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
+  });
+
+  frr = super.frr.overrideAttrs (old: rec {
+    version = "8.5.5";
+    src = super.fetchFromGitHub {
+      owner = "FRRouting";
+      repo = old.pname;
+      rev = "${old.pname}-${version}";
+      sha256 = "1vz21xszqgaywplqwrna6r4sqd1cmhkb0xrrhnaw63979b67imvx";
+    };
+
+    patches = [
+      ./frr/0001-Don-t-throw-error-when-log-directory-already-exists.patch
+    ];
+  });
+
   innotop = super.callPackage ./percona/innotop.nix { };
+
+  ipmitool = super.ipmitool.overrideAttrs(a: a // {
+    buildInputs = a.buildInputs ++ [ super.ncurses super.readline ];
+    configureFlags = a.configureFlags ++ [
+      "--enable-ipmishell"
+    ];
+  });
+
+  keepalived = super.keepalived.overrideAttrs(_: rec {
+    version = "2.2.8-g9d4579";
+
+    src = super.fetchFromGitHub {
+      rev = "9d4579b706048d55da664cf0e09b8dfd409c0266";
+      owner = "acassen";
+      repo = "keepalived";
+      sha256 = "gUW8PQoqQJipShxu3l8hSgLVNGS/KCS7SpATNHWh7nI=";
+    };
+
+    patches = [
+    ];
+  });
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
@@ -242,6 +313,13 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   latencytop_nox = super.latencytop.overrideAttrs(_: {
     buildInputs = with self; [ ncurses glib ];
     makeFlags = [ "HAS_GTK_GUI=" ];
+  });
+
+  libpcap-vxlan = super.libpcap.overrideAttrs (old: {
+    pname = "libpcap-vxlan";
+    patches = old.patches or [] ++ [
+      ./libpcap-replace-geneve-with-vxlan.patch
+    ];
   });
 
   libxcrypt-with-sha256 = super.libxcrypt.override {
@@ -399,6 +477,21 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
 
+  py_pytest_patterns = self.callPackage ./python/pytest-patterns { };
+
+  # Speed up NixOS tests by making the 9p file system more efficient.
+  qemu = super.qemu.overrideAttrs (o: {
+    patches = o.patches ++ [ (super.fetchpatch {
+      name = "qemu-9p-performance-fix.patch";
+      url = "https://gitlab.com/lheckemann/qemu/-/commit/ca8c4a95a320dba9854c3fd4159ff4f52613311f.patch";
+      sha256 = "sha256-9jYpGmD28yJGZU4zlae9BL4uU3iukWdPWpSkgHHvOxI=";
+    }) ];
+  });
+  qemu-ceph-nautilus = self.qemu.override {
+    cephSupport = true;
+    ceph = self.ceph-nautilus.ceph;
+  };
+
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
   rich-cli = super.rich-cli.overridePythonAttrs (prev: {
@@ -431,6 +524,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   sensu-plugins-redis = getClosureFromStore /nix/store/qbqnynpw5mzx98nz8lx89gpjw91wyd5b-sensu-plugins-redis-4.1.0;
 
   solr = super.callPackage ./solr { };
+
+  tcpdump = (super.tcpdump.override {
+    libpcap = self.libpcap-vxlan;
+  }).overrideAttrs(old: {
+    pname = "tcpdump-vxlan";
+  });
 
   xtrabackup = self.percona-xtrabackup_8_0;
 }

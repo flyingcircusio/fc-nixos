@@ -20,14 +20,20 @@ with lib;
         "dev" = { id = 3; site = "Halle"; };
       };
 
-      ceph.fsids = {
-        # These are needed once per cluster.
-        # Generate a new one via: `uuidgen -t` and record
-        # it here with the ${location}.${resourcegroup} key
-        dev.services = "b67bad36-3273-11e3-a2ed-0200000311bf";
-        whq.services = "be45fd6c-ea68-11e2-ad96-0200000311c0";
-        rzob.services = "d4b91002-eaf4-11e2-bc7c-0200000311c1";
-        rzob.risclog = "1f417812-eafa-11e2-aa4f-0200000311c1";
+      ceph = {
+        fsids = {
+          # These are needed once per cluster.
+          # Generate a new one via: `uuidgen -t` and record
+          # it here with the ${location}.${resourcegroup} key
+          dev.services = "b67bad36-3273-11e3-a2ed-0200000311bf";
+          whq.services = "be45fd6c-ea68-11e2-ad96-0200000311c0";
+          rzob.services = "d4b91002-eaf4-11e2-bc7c-0200000311c1";
+          rzob.risclog = "1f417812-eafa-11e2-aa4f-0200000311c1";
+        };
+        crushroot_to_rbdpool_mapping = {  # for now the same in all locations
+          default = [ "rbd.hdd" ];
+          ssd = [ "rbd.ssd" ];
+        };
       };
 
       # Note: this list of VLAN classes should be kept in sync with
@@ -55,13 +61,27 @@ with lib;
         "srv2" = 17;
         # transfer 3 (blue): tertiary router-router connection
         "tr3" = 18;
+        "tr-whq-sl" = 18;
         # dynamic hardware pool: local endpoints for Kamp DHP tunnels
         "dhp" = 19;
+        # underlay: EVPN-VXLAN network virtualisation underlay
+        "ul" = 20;
+        # video surveillance
+        "video" = 23;
+        # access network for unmanaged hosts
+        "access" = 41;
+        # uplink vlans for kamp in rzob
+        "tr-kamp-a" = 639;
+        "tr-kamp-b" = 640;
+        # uplink vlan for kamp DHP
+        "tr-kamp-dhp" = 679;
       };
 
       mtus = {
         "sto" = 9000;
         "stb" = 9000;
+        "ul" = 9216;
+        "tr-kamp-dhp" = 1600;
       };
 
       nameservers = {
@@ -71,9 +91,25 @@ with lib;
         # when enabling them, like weird search path confusion that results in
         # arbitrary negative responses, combined with the rotate flag.
         dev = [ "172.20.3.1" ];
+        test = [ "172.20.2.1" ];
         whq = [ "172.16.48.1" ];
         rzob = [ "172.22.48.1" ];
         standalone = [ "9.9.9.9" "8.8.8.8" ];
+      };
+
+      nameservers6 = {
+        # ns.$location.gocept.net, ns2.$location.gocept.net
+        # We are currently not using IPv6 resolvers as we have seen obscure bugs
+        # when enabling them, like weird search path confusion that results in
+        # arbitrary negative responses, combined with the rotate flag.
+        #
+        # This seems to be https://sourceware.org/bugzilla/show_bug.cgi?id=13028
+        # which is fixed in glibc 2.22 which is included in NixOS 16.03.
+        dev = [ "2a02:238:f030:1c3::1" ];
+        whq = [ "2a02:238:f030:103::1" ];
+        test = [ "2a02:238:f030:1c2::1" ];
+        rzob = [ "2a02:248:101:63::1" ];
+        standalone = [ "2620:fe::fe" "2001:4860:4860::8888" ];
       };
 
       directory = {
@@ -114,6 +150,48 @@ with lib;
         dev = [ "dev-router" ];
         whq = [ "whq-router" ];
         rzob = [ "rzob-router" ];
+      };
+
+      # VLANs on which we accept connectivity to the outside world
+      routerUplinkNetworks = {
+        dev = [ "tr" ];
+        whq = [ "tr-whq-sl" ];
+        rzob = [ "tr-kamp-a" "tr-kamp-b" ];
+        test = [ "tr" ];
+      };
+
+      # VLANs on which we provide connectivity to the outside world to others
+      routerDownlinkNetworks = {
+        whq = [ "tr" ];
+      };
+
+      # Derivation of router IDs for BGP.
+      routerIdSources = {
+        # Either the first IPv4 addrress on a given network in a
+        # location
+        location = {
+          dev = "tr";
+          whq = "tr";
+          test = "tr";
+        };
+        # Or a per-host override
+        host = {
+          kenny08 = "185.105.253.72";
+          kenny09 = "185.105.253.74";
+        };
+      };
+
+      # Networks which have floating gateways shared between routers
+      floatingGatewayNetworks = {
+        test = [ "mgm" "srv" "fe" ];
+        dev = [ "mgm" "srv" "fe" ];
+        whq = [ "mgm" "srv" "fe" "tr-whq-sl" "video" "access" ];
+        rzob = [ "mgm" "srv" "fe" "tr-kamp-dhp" ];
+      };
+
+      # Additional networks for which the routers provide DHCP service
+      additionalDhcpNetworks = {
+        whq = [ "video" "access" ];
       };
 
       adminKeys = {

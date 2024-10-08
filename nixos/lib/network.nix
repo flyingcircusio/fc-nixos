@@ -5,6 +5,88 @@
 with builtins;
 let
   fclib = config.fclib;
+
+  encInterfaces = lib.attrByPath [ "parameters" "interfaces" ] {} config.flyingcircus.enc;
+
+  foldConds = value: conds:
+    let
+      f = base: elem: if elem.cond then throw elem.fail else base;
+    in lib.foldl f value conds;
+
+  interfaceData =
+    let
+      underlayInterfaces = lib.filterAttrs (name: value: name != "ul" && value.policy or null == "underlay") encInterfaces;
+      underlayCount = length (attrNames underlayInterfaces);
+      vxlanInterfaces = lib.filterAttrs (name: value: value.policy or null == "vxlan") encInterfaces;
+      vxlanCount = length (attrNames vxlanInterfaces);
+    in
+      if config.flyingcircus.infrastructureModule != "flyingcircus-physical"
+      then foldConds encInterfaces
+        [
+          {
+            cond = underlayCount > 0;
+            fail = "Only physical hosts may have interfaces with policy 'underlay'";
+          }
+          {
+            cond = hasAttr "ul" encInterfaces;
+            fail = "Only physical hosts may be connected to the 'ul' network";
+          }
+          {
+            cond = vxlanCount > 0;
+            fail = "Only physical hosts may have interfaces with policy 'vxlan'";
+          }
+        ]
+      else foldConds encInterfaces
+        [
+          {
+            cond = underlayCount > 0;
+            fail = "Only the 'ul' network may have policy 'underlay'";
+          }
+          {
+            cond = hasAttr "ul" encInterfaces && encInterfaces.ul.policy == "vxlan";
+            fail = "The 'ul' network may not have policy 'vxlan'";
+          }
+          {
+            cond = vxlanCount > 0 && (!hasAttr "ul" encInterfaces || encInterfaces.ul.policy != "underlay");
+            fail = "VXLAN devices cannot be configured without an underlay interface";
+          }
+        ];
+
+  underlayLoopbackLinkName = "ul-loopback";
+
+  buildComplexInterfaceName = prefix: label: let
+    splitLabel = split "[^a-z0-9]" label;
+    parts = filter isString splitLabel;
+    dashes = length (filter (p: ! (isString p)) splitLabel);
+    prefixLen = stringLength prefix;
+    partsLen = length parts;
+    namebytes =
+      # Canonical interface names must be at most 16 bytes in length,
+      # *including* the trailing null byte(!). The fixed prefix "ul-"
+      # is three bytes long, and name fragments are separated by
+      # dashes.
+      assert (partsLen + dashes + prefixLen) < 16;
+      # There's an off by one down there which does end up with
+      # 16 characters sometimes ...
+      # e.g. "eth-onboard-left"
+      15 - dashes - prefixLen;
+
+    stringListLength = lib.foldl (a: b: a + (stringLength b)) 0;
+
+    go = item: state: let
+      capacity = namebytes - (stringListLength state);
+      remaining = partsLen - (length state);
+      prefixBaseLen = capacity / remaining;
+      moduloOffset =
+        if (lib.mod capacity remaining) >= (length state)
+        then 1 else 0;
+
+      prefixLength = prefixBaseLen + moduloOffset;
+    in [(lib.substring 0 prefixLength item)] ++ state;
+
+    builder = lib.foldr go [] parts;
+  in prefix + (lib.concatStringsSep "-" builder);
+
 in
 rec {
   stripNetmask = cidr: head (lib.splitString "/" cidr);
@@ -104,7 +186,7 @@ rec {
   # exists) to make it idempotent.
   relaxedIp = pkgs.writeScriptBin "ip" ''
     #! ${pkgs.stdenv.shell} -e
-    echo ip "$@"
+    echo ip "$@" >&2
     rc=0
     ${pkgs.iproute2}/bin/ip "$@" || rc=$?
     if ((rc == 2)); then
@@ -157,12 +239,19 @@ rec {
         fromNumber ((toNumber addr) / shiftAmount * shiftAmount) pfl;
   };
 
+  networks = with fclib; rec {
+    all = config.flyingcircus.encNetworks;
+
+    v4 = filter isIp4 all;
+    v6 = filter isIp6 all;
+  };
+
   network = (lib.mapAttrs'
-    (vlan: interface:
+    (vlan: interface':
       lib.nameValuePair vlan (
       let
         priority = routingPriority vlan;
-        bridged = interface.bridged;
+        bridged = interface'.bridged || interface'.policy or null == "vxlan";
 
         mtu = if hasAttr vlan config.flyingcircus.static.mtus
               then config.flyingcircus.static.mtus.${vlan}
@@ -173,16 +262,92 @@ rec {
 
         vlanId = config.flyingcircus.static.vlanIds.${vlan};
 
-        device = if bridged then bridgedDevice else physicalDevice;
-        attachedDevices = if bridged then [physicalDevice] else [];
-        bridgedDevice = "br${vlan}";
-        physicalDevice = "eth${vlan}";
+        # Our nomenclature:
+        #
+        # An `interface` is the thing that we configure IP addresses on. It's
+        # mostly layer 3 oriented.
+        #
+        # A `link` is a thing that carries a MAC address and provides a physical
+        # or virtual connection to the network that IP can run on. It's mostly
+        # layer 2 oriented.
+        #
+        # We explicitly do not follow a strict OSI model here, as the model
+        # just doesn't correspond well with reality:
+        #
+        # Interfaces know which network segment they belong to (the VLAN)
+        # and may indicate that they want to run `tagged` on their associated
+        # link.
+        #
+        # We do not fully model the stack of `links` that make up the
+        # `interface` but the `link` part is responsible for setting up things
+        # like bridges.
+        #
+        # The challenge here is, that this code needs to "marry" the two concepts:
+        # IP addresses are assigned to kernel objects that have conflicting
+        # conceptual names: sometimes they are called `links`, sometimes
+        # `devices`, or `interfaces`. Our variables here need to help us
+        # understand this.
+        #
+        # The general stacking order is:
+        #
+        #   link [-> taggedLink (decapsulated) ] [-> bridgedLink]
+        #
+        # Examples:
+        #
+        # Untagged, unbridged:
+        #         ethsrv (link and taggedLink and interface)
+        #
+        # Untagged, bridged:
+        #         ethsrv (link and taggedLink)
+        #         brsrv (interface and bridgedLink)
+        #
+        # Tagged, unbridged:
+        #         ethextleft (link)
+        #         ethsrv (interface and taggedLink)
+        #
+        # Tagged, bridged:
+        #         ethextleft (link)
+        #         ethsrv (taggedLink)
+        #         brsrv (interface and bridgedLink)
+
+        # interface: the kernel object that we assign the IP addresses for this
+        # ... well ... interface
+        interface =
+          if bridged then bridgedLink
+          else if policy == "tagged" then taggedLink
+          else link;
+
+        addressUnit = "network-addresses-${interface}.service";
+
+        attachedLinks = if bridged then [link] else [];
+        bridgedLink = "br${vlan}";  # the kernel device with type `bridge`
+        taggedLink = "eth${vlan}";  # the kernel device with type `vlan`
+
+        # The basic link that provides connectivity to the outside world.
+        # In simple cases this can be the plain physical ethernet device/
+        # interface like `ethmgm` or `ethmgm`.
+        # Depending on the policy this can be a more indirect object like
+        # the underlay loopback device.
+        link =
+          if policy == "underlay" then underlayLoopbackLinkName
+          else if policy == "vxlan" then "vx${vlan}"
+          else if policy == "tagged" then "${buildComplexInterfaceName "eth-" (builtins.head interface'.nics).external_label or "vlan"}"
+          else taggedLink;
+
+        externalLabel = if (length (interface'.nics or []) > 0) then (builtins.head interface'.nics).external_label else null;
+
+        linkStack = lib.unique (filter (l: l != null) [
+          link
+          (if (policy == "underlay") then underlayLoopbackLinkName else null)
+          (if (policy == "tagged") then taggedLink else null)
+          interface
+        ]);
 
         macFallback = "02:00:00:${fclib.byteToHex vlanId}:??:??";
         mac = lib.toLower
-                (lib.attrByPath [ "mac" ] macFallback interface);
+                (lib.attrByPath [ "mac" ] macFallback interface');
 
-        policy = interface.policy;
+        policy = interface'.policy or "puppet";
 
         dualstack = rec {
           # Without netmask
@@ -192,7 +357,7 @@ rec {
           # as cidr
           cidrs = map (attr: "${attr.address}/${toString attr.prefixLength}") attrs;
 
-          networks = attrNames interface.networks;
+          networks = attrNames interface'.networks;
 
           # networks as attribute sets of netmask/prefixLength/addresses
           networkAttrs =
@@ -202,20 +367,20 @@ rec {
                 prefixLength = fclib.prefixLength network;
                 inherit addresses;
               })
-              interface.networks;
+              interface'.networks;
 
           # addresses as attribute sets of address/prefixLength
           attrs = lib.flatten (lib.mapAttrsToList
             (network: addresses:
               let prefix = fclib.prefixLength network;
               in (map (address: { address = address; prefixLength = prefix; }) addresses))
-            interface.networks);
+            interface'.networks);
 
           defaultGateways = lib.mapAttrsToList
             (network: gateway: gateway)
             (lib.filterAttrs (network: gateway:
-              (length interface.networks.${network} >= 1) && (priority < 100))
-              interface.gateways);
+              (length interface'.networks.${network} >= 1) && (priority < 100))
+              interface'.gateways);
         };
 
         v4 = {
@@ -240,7 +405,7 @@ rec {
         };
 
       }))
-    (lib.attrByPath [ "parameters" "interfaces" ] {} config.flyingcircus.enc) //
+    interfaceData //
       # Provide homogenous access to loopback data
       { lo = {
         vlan = "lo";
@@ -258,4 +423,48 @@ rec {
         };
       }; });
 
+
+
+  underlay =
+    if !hasAttr "ul" interfaceData ||
+       (lib.attrByPath [ "ul" "policy" ] "puppet" interfaceData) != "underlay" ||
+       # XXX the directory should switch to the `links` nomenclature
+       length (lib.attrByPath [ "ul" "nics" ] [] interfaceData) == 0
+    then null
+    else let
+      hostId = lib.attrByPath [ "parameters" "id" ] 0 config.flyingcircus.enc;
+      links = interfaceData.ul.nics; # xxx directory should rename this field
+
+      underlayLinkName = buildComplexInterfaceName "ul-";
+
+      underlayMacFallback = mac: let
+        digits = lib.drop 3 (lib.splitString ":" mac);
+      in "ul-mac-" + (lib.concatStrings digits);
+
+      emptyLabels = any (l: l.external_label == "") links;
+      uniqueNames =
+        length links ==
+          length (lib.unique (map (l: underlayLinkName l.external_label) links));
+
+      makeName = if emptyLabels || !uniqueNames
+                 then (l: underlayMacFallback l.mac)
+                 else (l: underlayLinkName l.external_label);
+    in {
+      asNumber = 4200000000 + hostId;
+      loopback =
+        let addrs = network.ul.v4.addresses;
+        in if length addrs == 0
+           then throw "Underlay network has no address assigned"
+           else head addrs;
+      interface = underlayLoopbackLinkName;
+      subnets = network.ul.v4.networks;
+      links = map (l: {
+          # Unify with the fclib.network. structure
+          mac = l.mac;
+          mtu = network.ul.mtu;
+          interface = underlayLoopbackLinkName;
+          link = (makeName l);
+          externalLabel = l.external_label;
+        }) links;
+    };
 }

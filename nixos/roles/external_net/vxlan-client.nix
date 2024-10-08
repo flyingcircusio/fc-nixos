@@ -22,7 +22,7 @@ in
         defaultText = "false";
         default = (gw != null) && (!cfg.roles.vxlan.gateway);
       };
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 
@@ -36,14 +36,14 @@ in
     {
       systemd.services."network-external-routing" =
         let
-          netdev = fclib.network.srv.device;
+          netdev = fclib.network.srv.interface;
         in rec {
-        description = "Custom routing rules dsafds for external networks";
+        description = "Custom routing rules for external networks";
         after = [ "network-addresses-${netdev}.service" "firewall.service" ];
         requires = after;
-        wantedBy = [ "network.target" ];
-        bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.physicalDevice}.device" ];
-        path = [ pkgs.gawk pkgs.iproute2 pkgs.glibc pkgs.iptables ];
+        wantedBy = [ "network.target" "multi-user.target" ];
+        bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.link}.device" ];
+        path = [ pkgs.gawk fclib.relaxedIp pkgs.glibc pkgs.iptables ];
 
         serviceConfig = {
           Type = "oneshot";

@@ -1,8 +1,10 @@
 import os
 import os.path as p
+from pathlib import Path
 
 from fc.util import nixos
-from fc.util.nixos import RE_FC_CHANNEL
+from fc.util.lock import locked
+from fc.util.nixos import RE_FC_CHANNEL, Specialisation
 
 
 class Channel:
@@ -68,7 +70,7 @@ class Channel:
                 if name == channel_name:
                     # We don't have to resolve the URL if it's a direct link
                     # to a Hydra build product. This is the normal case for
-                    # running VMs because the nixos channel is set to an
+                    # running machines because the nixos channel is set to an
                     # already resolved URL.
                     # Resolve all other URLs, for example initial URLs used
                     # during VM bootstrapping.
@@ -100,7 +102,13 @@ class Channel:
                 "the channel URL towards that directory?",
             )
 
-    def switch(self, lazy=True, show_trace=False):
+    def switch(
+        self,
+        specialisation: str | Specialisation,
+        lock_dir: Path,
+        lazy=True,
+        show_trace=False,
+    ) -> bool:
         """
         Build system with this channel and switch to it.
         Replicates the behaviour of nixos-rebuild switch and adds
@@ -116,7 +124,7 @@ class Channel:
         nixos.register_system_profile(self.system_path, self.log)
         # New system is registered, delete the temporary result link.
         os.unlink(out_link)
-        return nixos.switch_to_system(self.system_path, lazy, self.log)
+        return self.switch_to_configuration(specialisation, lock_dir, lazy)
 
     def build(self, out_link=None, show_trace=False):
         """
@@ -136,6 +144,16 @@ class Channel:
             self.resolved_url, build_options, out_link, self.log
         )
         self.system_path = system_path
+
+    def switch_to_configuration(
+        self, specialisation: str | Specialisation, lock_dir: Path, lazy=True
+    ) -> bool:
+        switch_path = nixos.get_specialisation_path_for_system(
+            Path(self.system_path), specialisation, self.log
+        )
+
+        with locked(self.log, lock_dir, "switch_to_configuration.lock"):
+            return nixos.switch_to_system(switch_path, lazy, self.log)
 
     def dry_activate(self):
         return nixos.dry_activate_system(self.system_path, self.log)

@@ -2,6 +2,7 @@ import configparser
 import datetime
 import unittest.mock
 from io import StringIO
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import freezegun
@@ -108,6 +109,7 @@ attempts: []
 dir: {tmp_path}
 last_scheduled_at: null
 next_due: null
+runnable_for_seconds: 1800
 state: !!python/object/apply:fc.maintenance.state.State
 - '-'
 updated_at: null
@@ -141,12 +143,33 @@ class FailingActivity(Activity):
         raise RuntimeError("activity failing")
 
 
-def test_execute_catches_errors(tmpdir):
+def test_execute_catches_unhandled_activity_exceptions(tmpdir, log):
     r = Request(FailingActivity(), 1, dir=str(tmpdir))
     r.execute()
+    assert r.state == State.error
     assert len(r.attempts) == 1
-    assert "activity failing" in r.attempts[0].stderr
-    assert r.attempts[0].returncode != 0
+    attempt = r.attempts[0]
+    assert "activity failing" in attempt.stderr
+    assert attempt.returncode == 70
+    assert log.has("execute-request-failed")
+
+
+def test_load_request(tmp_path, logger):
+    req = Request(Activity(), dir=tmp_path)
+    req.save()
+
+    lock_dir = Path("/dir")
+    loaded_req = Request.load(
+        tmp_path,
+        logger,
+        1800,
+        lock_dir,
+    )
+    activity = loaded_req.activity
+    assert isinstance(activity, Activity)
+    assert activity.log
+    assert activity.lock_dir is lock_dir
+    assert activity.request is loaded_req
 
 
 class ExternalStateActivity(Activity):
@@ -167,7 +190,7 @@ def test_external_activity_state(tmpdir, agent_configparser, logger):
         assert "foo\n" == f.read()
     with open(extstate, "w") as f:
         print("bar", file=f)
-    r2 = Request.load(str(tmpdir), agent_configparser, logger)
+    r2 = Request.load(str(tmpdir), logger, 1800)
     assert r2.activity.external == "bar\n"
 
 
