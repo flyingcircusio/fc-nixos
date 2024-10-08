@@ -476,14 +476,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   py_pytest_patterns = self.callPackage ./python/pytest-patterns { };
 
-  # Speed up NixOS tests by making the 9p file system more efficient.
-  qemu = super.qemu.overrideAttrs (o: {
-    patches = o.patches ++ [ (super.fetchpatch {
-      name = "qemu-9p-performance-fix.patch";
-      url = "https://gitlab.com/lheckemann/qemu/-/commit/ca8c4a95a320dba9854c3fd4159ff4f52613311f.patch";
-      sha256 = "sha256-9jYpGmD28yJGZU4zlae9BL4uU3iukWdPWpSkgHHvOxI=";
-    }) ];
-  });
   qemu-ceph-nautilus = self.qemu.override {
     cephSupport = true;
     ceph = self.ceph-nautilus.ceph;
