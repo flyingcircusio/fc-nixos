@@ -1,6 +1,8 @@
 self: super:
 let
-  versions = import ../versions.nix { pkgs = super; };
+  poetry2nixSrc = (import ../versions.nix { }).poetry2nix;
+  poetry2nix = import poetry2nixSrc { pkgs = self; };
+
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
@@ -59,7 +61,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     pythonPackages = self.python311Packages;
   });
 
-  backy = super.callPackage ./backy { inherit (nixpkgs-23_05) poetry2nix python310 mkShellNoCC;};
+  backy = super.callPackage ./backy { inherit poetry2nix;};
 
   #
   # imports from other nixpkgs versions or local definitions
@@ -68,13 +70,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   apacheHttpdLegacyCrypt = self.apacheHttpd.override {
     aprutil = self.aprutil.override { libxcrypt = self.libxcrypt-legacy; };
   };
-
-  bird = super.bird.overrideAttrs (old: {
-    patches = old.patches ++ [ ./bird-bfd-strict-bind.patch ];
-  });
-  bird6 = super.bird6.overrideAttrs (old: {
-    patches = old.patches ++ [ ./bird-bfd-strict-bind.patch ];
-  });
 
   bird2 = super.bird2.overrideAttrs (old: rec {
     version = "2.0.10";
@@ -101,7 +96,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = rec {
     inherit (super.callPackages ./ceph/nautilus {
-        boost = super.boost16x.override { enablePython = true; python = self.python3; };
+        boost = super.boost181.override { enablePython = true; python = self.python310; };
+        stdenv = self.gcc10Stdenv;
+        python3Packages = self.python310Packages;
       })
       ceph
       ceph-client;
@@ -284,7 +281,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
                all.redis
              ]));
 
-  #PHP versions from nixpkgs
+  # PHP versions from nixpkgs
 
   lamp_php81 = self.php81.withExtensions ({ enabled, all }:
               enabled ++ [
