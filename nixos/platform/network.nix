@@ -117,8 +117,6 @@ in
       # -> #PL-129549
       hosts = lib.mkOverride 90 {};
 
-      tempAddresses = "disabled";
-
       nameservers =
         if (hasAttr location cfg.static.nameservers)
         then cfg.static.nameservers.${location}
