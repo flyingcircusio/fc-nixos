@@ -27,6 +27,7 @@ in {
     ./filebeat.nix
     ./enc.nix
     ./firewall.nix
+    ./full-disk-encryption.nix
     ./journalbeat.nix
     ./collect-garbage.nix
     ./ipmi.nix
@@ -247,7 +248,7 @@ in {
   config = {
 
     boot = {
-      consoleLogLevel = mkDefault 7;
+      consoleLogLevel = mkDefault 6;
 
       initrd.kernelModules = [
         "bfq"
@@ -465,9 +466,6 @@ in {
       ];
 
       ctrlAltDelUnit = "poweroff.target";
-      extraConfig = ''
-        RuntimeWatchdogSec=60
-      '';
     };
 
 

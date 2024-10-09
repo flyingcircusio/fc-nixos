@@ -18,7 +18,7 @@ in
     flyingcircus.roles.matomo = {
       enable = mkEnableOption "Matomo Web Analytics";
 
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       hostname = mkOption {
         type = types.str;

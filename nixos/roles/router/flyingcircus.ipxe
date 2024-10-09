@@ -1,0 +1,69 @@
+#!ipxe
+
+
+# 30s in ms
+set menu-timeout 30000
+set menu-default local
+set location whq
+
+dhcp net0 || error
+
+:start
+menu Flying Circus boot menu
+item --gap --				--- Info ---
+item --gap --				Serial: ${serial}
+item --gap --				MAC: ${mac}
+item --gap --				Location: ${location}
+item --gap --				--- Boot ---
+item local					Boot machine from local disk
+item netboot				Launch netboot.xyz (various live images and tools)
+item --gap --           	--- Install ---
+item install_nixos_20_09	Boot NixOS 20.09 install image
+item install_nixos_21_05	Boot NixOS 21.05 install image
+item install_nixos_dev		Boot NixOS development install image
+item install_gentoo 		Boot Gentoo install image (57.6k)
+item --gap --				--- Other ---
+item --key x exit			Exit iPXE and continue BIOS boot
+item shell					Drop to iPXE shell
+item reboot					Reboot computer
+choose --timeout ${menu-timeout} --default ${menu-default} selected || goto cancel
+set menu-timeout 0
+goto ${selected}
+
+
+:install_nixos_20_09
+boot https://hydra.flyingcircus.io/job/flyingcircus/fc-20.09-production/images.netboot/latest/download/netboot.ipxe || goto error
+
+:install_nixos_21_05
+boot https://hydra.flyingcircus.io/job/flyingcircus/fc-21.05-production/images.netboot/latest/download/netboot.ipxe || goto error
+
+:install_nixos_dev
+boot https://hydra.flyingcircus.io/channels/installer/dev/netboot.ipxe || goto error
+
+:install_gentoo
+kernel --name installer http://portag	-bin-amd64.${location}.gocept.net/installer/boot/kernel || goto error
+initrd http://portage-bin-amd64.${location}.gocept.net/installer/boot/initrd || goto error
+imgargs installer root=/dev/ram0 init=/linuxrc loop=/image.squashfs looptype=squashfs cdroot=1 real_root=/ console=ttyS1,57600
+boot || goto error
+
+:netboot
+chain --autofree https://boot.netboot.xyz
+goto start
+
+:local
+sanboot || error
+
+:reboot
+reboot
+
+:shell
+echo Type 'exit' to get the back to the menu
+shell
+set menu-timeout 0
+set submenu-timeout 0
+goto start
+
+:error
+echo An error occured. Will fall back to menu in 15 seconds.
+sleep 15
+goto start

@@ -1,0 +1,52 @@
+From f8f06e591cd448f9e0be5479462d58345eb4b952 Mon Sep 17 00:00:00 2001
+From: Christian Theune <ct@flyingcircus.io>
+Date: Thu, 8 Dec 2022 09:41:40 +0100
+Subject: [PATCH 1/2] try fixing iterator when erasing
+
+---
+ src/mon/PGMap.cc | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/mon/PGMap.cc b/src/mon/PGMap.cc
+index 38bc187748fc7..e5fe2b5ccae16 100644
+--- a/src/mon/PGMap.cc
++++ b/src/mon/PGMap.cc
+@@ -1205,10 +1205,12 @@ void PGMap::apply_incremental(CephContext *cct, const Incremental& inc)
+       stat_osd_sub(t->first, t->second);
+       osd_stat.erase(t);
+     }
+-    for (auto i = pool_statfs.begin();  i != pool_statfs.end(); ++i) {
++    for (auto i = pool_statfs.begin();  i != pool_statfs.end();) {
+       if (i->first.second == *p) {
+ 	pg_pool_sum[i->first.first].sub(i->second);
+-	pool_statfs.erase(i);
++	i = pool_statfs.erase(i);
++      } else {
++        ++i;
+       }
+     }
+   }
+
+From ef646a544caffcd0581b6c2b579f2885d79f2974 Mon Sep 17 00:00:00 2001
+From: Christian Theune <ct@flyingcircus.io>
+Date: Thu, 8 Dec 2022 11:59:23 +0100
+Subject: [PATCH 2/2] another iterator issue (in python this time)
+
+---
+ src/pybind/mgr/progress/module.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/pybind/mgr/progress/module.py b/src/pybind/mgr/progress/module.py
+index 5225021c5ebcb..4b12728811244 100644
+--- a/src/pybind/mgr/progress/module.py
++++ b/src/pybind/mgr/progress/module.py
+@@ -488,7 +488,8 @@ def notify(self, notify_type, notify_data):
+                 return
+             data = self.get("pg_stats")
+             ready = self.get("pg_ready")
+-            for ev_id, ev in self._events.items():
++
++            for ev_id, ev in list(self._events.items()):
+                 if isinstance(ev, PgRecoveryEvent):
+                     ev.pg_update(data, ready, self.log)
+                     self.maybe_complete(ev)

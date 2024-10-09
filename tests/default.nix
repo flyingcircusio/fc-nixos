@@ -31,18 +31,18 @@ in {
 
   antivirus = callTest ./antivirus.nix {};
   audit = callTest ./audit.nix {};
-  # XXX: fails with fetchPypi missing in py.fetchPypi
-  # backyserver = callTest ./backyserver.nix {};
+  backyserver_ceph-nautilus = callTest ./backyserver.nix { clientCephRelease = "nautilus"; };
+  backyserver_volumes = callTest ./backy_volumes.nix {};
   # channel = callTest ./channel.nix {};
-  # XXX: ceph build failure
-  # ceph = callTest ./ceph.nix {};
+  ceph-nautilus = callTest ./ceph-nautilus.nix {};
   coturn = callTest ./coturn.nix {};
-  devhost = callTest ./devhost.nix {};
+  #devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
   fcagent = callTest ./fcagent.nix {};
   ferretdb = callTest ./ferretdb.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
+  frr = callSubTests ./frr.nix {};
   collect-garbage = callTest ./collect-garbage.nix {};
   gitlab = callTest ./gitlab.nix {};
   haproxy = callTest ./haproxy.nix {};
@@ -51,6 +51,7 @@ in {
   journalbeat = callTest ./journalbeat.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
   kernelversions = callTest ./kernelversions.nix {};
+  kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {clientCephRelease = "nautilus";};
 
   k3s = callTest ./k3s {};
   k3s_monitoring = callTest ./k3s/monitoring.nix {};
@@ -102,6 +103,7 @@ in {
   rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};
   rg-relay = callTest ./statshost/rg-relay.nix {};
+  router = callSubTests ./router {};
   sensuclient = callTest ./sensuclient.nix {};
   servicecheck = callTest ./servicecheck.nix {};
   statshost-global = callTest ./statshost/statshost-global.nix {};

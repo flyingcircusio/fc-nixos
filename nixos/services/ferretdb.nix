@@ -11,7 +11,7 @@ in
   options = with lib; {
     flyingcircus.services.ferretdb = {
       enable = mkEnableOption "Enable FerretDB, a (mostly) drop-in replacement for MongoDB";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       address = mkOption {
         type = types.str;

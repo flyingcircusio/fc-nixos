@@ -114,6 +114,12 @@ rec {
             "2001:db8:${toString vid}::/64" = [ "2001:db8:${toString vid}::${toString id}" ];
           };
           gateways = {};
+          nics = [
+            {
+              "mac" = "52:54:00:12:0${toString vid}:0${toString id}"; 
+              "external_label" = "${name}nic${toString id}";
+            }
+          ];
         })
           (filterAttrs (name: vid: (!(net ? ${name}) && (name == "srv" || name == "fe")) || net ? ${name} && net.${name}) vlans);
       } extraEncParameters);

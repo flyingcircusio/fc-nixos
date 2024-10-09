@@ -1,4 +1,4 @@
-exclude: ^secrets/|^appenv$|pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(nixos/infrastructure/container.nix|tests/testlib.nix|nixos/roles/devhost/vm.nix)
+exclude: ^secrets/|^appenv$|pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(tests/testlib.nix|nixos/roles/devhost/vm.nix|tests/physical-installer.nix)
 repos:
 - hooks:
   - exclude: "(?x)^(\n  secrets/|environments/.*/secret.*|\n  .*\\.patch\n)$\n"
@@ -14,15 +14,12 @@ repos:
   repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v3.2.0
 - hooks:
-  - args:
-    - --profile
-    - black
-    - --filter-files
+  - args: ["--profile", "black", "--filter-files"]
     id: isort
     name: isort (python)
   repo: https://github.com/pycqa/isort
-  rev: 5.12.0
+  rev: 5.13.1
 - hooks:
   - id: black
   repo: https://github.com/psf/black
-  rev: 23.1.0
+  rev: 24.4.2

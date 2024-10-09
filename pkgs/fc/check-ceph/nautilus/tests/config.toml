@@ -1,0 +1,10 @@
+[thresholds]
+# warning thresholds used for comparison
+nearfull = 0.85
+full = 0.95
+
+[ceph_roots]
+# configuration of which Ceph crush root (keys) is used for which RBD pools
+# (list of values). Only pools mentioned as values are considered at all.
+default = ["rbd.hdd"]
+ssd = ["rbd.ssd"]

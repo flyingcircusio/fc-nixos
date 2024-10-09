@@ -69,6 +69,11 @@ let
   };
 
   logDaysKeep = 180;
+
+  # ulimits in nix-build context are a bit hairy: root needs those both in
+  # interactive environments and units that interact with nix, whereas
+  # regular users will rely on the the ulimits set for the nix-daemon.
+  nixBuildMEMLOCK = "1073741824";
 in
 {
   options = {
@@ -110,6 +115,15 @@ in
         };
       };
 
+      resizeDisk = mkOption {
+        default = (attrByPath [ "parameters" "machine" ] "virtual" cfg.enc) == "virtual";
+        description = ''
+          Automatically resize root disk when the underlying device changes.
+          Enabled for all virtual machines by default.
+        '';
+        type = types.bool;
+      };
+
       updateInMaintenance = mkOption {
         default = true;
         description = ''
@@ -128,6 +142,22 @@ in
           after the main NixOS configuration/build has been
           activated.
         '';
+      };
+
+      extraPreCommands = mkOption {
+        type = types.lines;
+        default = "";
+        description = ''
+          Additional commands to execute within an agent run
+          before doing anything else.
+        '';
+      };
+
+
+      extraSettings = lib.mkOption {
+        type = with lib.types; attrsOf (attrsOf (oneOf [ bool int str package ]));
+        default = { };
+        description = "Additional configuration for fc-agent utilities, will be turned into the contents of /etc/fc-agent.conf";
       };
 
       verbose = mkOption {
@@ -169,8 +199,29 @@ in
         '';
       };
 
+      maintenanceRequestRunnableFor = mkOption {
+        default = 1800;
+        # XXX: Ideally, this option would use the max value when set from multiple
+        # places but there's no type for that right now. We could implement
+        # one if we use this option more often to avoid conflicts.
+        type = types.ints.positive;
+        description = ''
+          Maintenance request are scheduled for a certain time by the directory
+          but the local agent may delay execution a bit.
+          Requests will be postponed if they had to wait for too long and
+          they are "overdue", which is: planned execution time plus the
+          value of this option, in seconds.
+          By default, there's a window of 30 minutes in which the request
+          may be executed.
+        '';
+      };
+
       maintenancePreparationSeconds = mkOption {
         default = 300;
+        # XXX: Ideally, this option would use the max value when set from multiple
+        # places but there's no type for that right now. We could implement
+        # one if we use this option more often to avoid conflicts.
+        type = types.ints.positive;
         description = ''
           Expected time in seconds needed to prepare for the execution of
           maintenance activities. The value should cover typical cases where
@@ -192,7 +243,6 @@ in
           We don't enforce it at the moment but will probably add a timeout
           for maintenance-enter commands later based on this value.
         '';
-        type = types.ints.positive;
       };
 
     };
@@ -238,9 +288,23 @@ in
           groups = [ "admins" "sudo-srv" "service" ];
         }
         {
+          commands = [
+            "bin/fc-maintenance request reboot"
+          ];
+          package = cfg.agent.package;
+          groups = [ "admins" ];
+        }
+        {
           commands = [ "bin/fc-manage check" ];
           package = cfg.agent.package;
           users = [ "sensuclient" ];
+        }
+        {
+          commands = [
+            "bin/fc-maintenance metrics"
+          ];
+          package = cfg.agent.package;
+          groups = [ "telegraf" ];
         }
         {
           commands = [ "bin/fc-postgresql check-autoupgrade-unexpected-dbs" ];
@@ -262,12 +326,21 @@ in
         }
       ];
 
+      security.pam.loginLimits = [
+        { domain = "root";
+          item = "memlock";
+          type = "-";
+          value = nixBuildMEMLOCK;
+        }
+      ];
+
       environment.etc."fc-agent.conf".text = ''
          [limits]
          disk_keep_free = ${toString cfg.agent.diskKeepFree}
 
          [maintenance]
          preparation_seconds = ${toString cfg.agent.maintenancePreparationSeconds}
+         request_runnable_for_seconds = ${toString cfg.agent.maintenanceRequestRunnableFor}
 
          [maintenance-enter]
          ${concatStringsSep "\n" (
@@ -276,7 +349,8 @@ in
          [maintenance-leave]
          ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.leave}")
            cfg.agent.maintenance)}
-      '';
+      ''
+      + lib.generators.toINI { } cfg.agent.extraSettings;
 
       systemd.services.fc-agent = rec {
         description = "Flying Circus Management Task";
@@ -291,6 +365,7 @@ in
           IOSchedulingClass = "idle";
           IOSchedulingPriority = 7; #lowest
           IOWeight = 10; # 1-10000
+          LimitMEMLOCK = nixBuildMEMLOCK;
         };
 
         path = with pkgs; [
@@ -304,6 +379,12 @@ in
           let
             verbose = lib.optionalString cfg.agent.verbose "--show-caller-info";
             options = "--enc-path=${cfg.encPath} ${verbose}";
+            wrappedExtraPreCommands = lib.optionalString (cfg.agent.extraPreCommands != "") ''
+              (
+              # flyingcircus.agent.extraPreCommands
+              ${cfg.agent.extraPreCommands}
+              ) || rc=$?
+            '';
             wrappedExtraCommands = lib.optionalString (cfg.agent.extraCommands != "") ''
               (
               # flyingcircus.agent.extraCommands
@@ -312,7 +393,8 @@ in
             '';
           in ''
             rc=0
-            fc-resize-disk || rc=$?
+            ${wrappedExtraPreCommands}
+            ${lib.optionalString cfg.agent.resizeDisk "fc-resize-disk || rc=$?"}
             # Ignore failing attempts at getting ENC data from the directory.
             # This happens sometimes when the directory is overloaded and
             # usually works on the next try.
@@ -359,6 +441,8 @@ in
 
         inherit environment;
       };
+
+      systemd.services.nix-daemon.serviceConfig.LimitMEMLOCK = nixBuildMEMLOCK;
 
       systemd.tmpfiles.rules = [
         "r! /reboot"

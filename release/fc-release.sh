@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -e
+
 releaseid="${1:?no release id given}"
 
 if ! echo "$releaseid" | grep -Eq '^[0-9]{4}_[0-9]{3}$'; then

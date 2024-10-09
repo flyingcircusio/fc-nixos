@@ -10,6 +10,7 @@ in
     mkRole = v: {
       enable = lib.mkEnableOption
         "Enable the Flying Circus RabbitMQ ${v} server role.";
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   in {
     flyingcircus.roles = {
@@ -22,7 +23,7 @@ in
       rabbitmq = {
         enable = lib.mkEnableOption
           "Enable the Flying Circus RabbitMQ server role.";
-        supportsContainers = fclib.mkEnableContainerSupport;
+        supportsContainers = fclib.mkEnableDevhostSupport;
       };
     };
   };

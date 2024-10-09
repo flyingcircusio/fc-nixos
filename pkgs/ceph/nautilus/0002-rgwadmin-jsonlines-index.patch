@@ -1,0 +1,29 @@
+diff --git a/src/rgw/rgw_admin.cc b/src/rgw/rgw_admin.cc
+index 6ef099951c6..d57864863e0 100644
+--- a/src/rgw/rgw_admin.cc
++++ b/src/rgw/rgw_admin.cc
+@@ -6081,8 +6081,6 @@ next:
+ 
+     int max_shards = (bucket_info.num_shards > 0 ? bucket_info.num_shards : 1);
+ 
+-    formatter->open_array_section("entries");
+-
+     for (int i = 0; i < max_shards; i++) {
+       RGWRados::BucketShard bs(store);
+       int shard_id = (bucket_info.num_shards > 0  ? i : -1);
+@@ -6107,12 +6105,13 @@ next:
+           rgw_cls_bi_entry& entry = *iter;
+           encode_json("entry", entry, formatter);
+           marker = entry.idx;
++          formatter->flush(cout);
++          cout << "\n";
++          formatter->reset();
+         }
+-        formatter->flush(cout);
+       } while (is_truncated);
+       formatter->flush(cout);
+     }
+-    formatter->close_section();
+     formatter->flush(cout);
+   }
+ 

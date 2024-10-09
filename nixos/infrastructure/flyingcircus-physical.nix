@@ -13,13 +13,27 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     flyingcircus.raid.enable = true;
 
     boot = {
+      initrd.availableKernelModules = [
+        # assorted network drivers, for hardware discovery during
+        # stage 1.
+        "3w-9xxx"
+        "bnx2"
+        "bnxt_en"
+        "e1000e"
+        "i40e"
+        "igb"
+        "ixgbe"
+        "mlx5_core"
+        "mlxfw"
+        "tg3"
+        # storage drivers, for hardware discovery
+        "nvme"
+      ];
 
       kernelParams = [
         # Drivers
         "dolvm"
-        "ipmi_watchdog.timeout=60"
         "igb.InterruptThrottleRate=1"
-        "ixgbe.InterruptThrottleRate=1"
       ];
 
       loader.grub = {
@@ -31,12 +45,27 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       # Wanted by backy and Ceph servers
       kernel.sysctl."vm.vfs_cache_pressure" = 10;
 
+      kernel.sysctl."vm.swappiness" = config.fclib.mkPlatform 0;
+
     };
 
+    flyingcircus.activationScripts = {
+      disableSwap = ''
+        swapoff -a
+        if [[ -e /dev/disk/by-label/swap ]]; then
+          wipefs  -af /dev/disk/by-label/swap || true
+        fi
+      '';
+    };
+    systemd.targets.swap.enable = false;  # implicitly mask the unit to prevent pulling in existing `*.swap` units
+
     environment.systemPackages = with pkgs; [
+      fc.ledtool
       fc.secure-erase
       fc.util-physical
+      iperf3
       mstflint
+      nvme-cli
       pciutils
       smartmontools
       usbutils
@@ -63,11 +92,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
     };
 
-    # Not perfect but avoids triggering the 'established' rule which can
-    # lead to massive/weird Ceph instabilities.
-    networking.firewall.trustedInterfaces = [ "ethsto" "ethstb" ];
-
-    swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
+    services.irqbalance.enable = true;
 
     users.users.root = {
       # Overriden in local.nix
@@ -76,7 +101,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         attrValues cfg.static.adminKeys;
     };
 
-    powerManagement.cpuFreqGovernor = "ondemand";
+    powerManagement.cpuFreqGovernor = "performance";
 
     services.lldpd.enable = true;
 
@@ -93,6 +118,12 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
           fi
         '';
     };
+
+    services.journald.extraConfig = ''
+      SystemMaxUse=8G
+      MaxLevelConsole=err
+      ForwardToWall=no
+    '';
 
     systemd.services.lvm-upgrade-metadata = {
         wantedBy = [ "multi-user.target" ];
@@ -125,7 +156,11 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     flyingcircus.services.sensu-client.checks = with pkgs; {
       interfaces = {
         notification = "Network interfaces are healthy";
-        command = "sudo ${fc.sensuplugins}/bin/check_interfaces -a -s 1000:";
+        command = "sudo ${fc.sensuplugins}/bin/check_interfaces " + (
+           lib.concatMapStringsSep " "
+             (link: "-i ${link.link},1000:10000")
+             cfg.networking.monitorLinks
+           );
         interval = 60;
       };
       lvm_integrity = {
@@ -133,5 +168,11 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         command = "sudo ${fc.sensuplugins}/bin/check_lvm_integrity -v -c 1";
       };
     };
+
+    # PL-130846 Temporary fix until having Nix >= 2.4:
+    # Ensure there are enough build users available to fulfill `maxJobs`, which is
+    # automatically set to the number of cores. Our largest machines currently have
+    # 128 core-threads.
+    nix.nrBuildUsers = 128;
 
 }

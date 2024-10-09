@@ -4,6 +4,7 @@ with builtins;
 
 let
   cfg = config.flyingcircus;
+  cfgUpstream = config.networking.firewall;
 
   fclib = config.fclib;
 
@@ -29,11 +30,13 @@ let
     '';
 
   rgAddrs = map (e: e.ip) cfg.encAddresses;
-  rgRules = lib.optionalString
-    (lib.hasAttr "ethsrv" config.networking.interfaces)
+  rgRules = let
+    srv_interface = fclib.network.srv.interface or "";
+    in lib.optionalString
+    (lib.hasAttr srv_interface config.networking.interfaces)
     (lib.concatMapStringsSep "\n"
       (a:
-        "${fclib.iptables a} -A fc-resource-group " +
+        "${fclib.iptables a} -A fc-resource-group -i ${srv_interface} " +
         "-s ${fclib.stripNetmask a} -j nixos-fw-accept")
       rgAddrs);
 
@@ -53,6 +56,37 @@ let
 
 in
 {
+  options.flyingcircus.firewall = {
+    logRateLimit = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = "10/second";
+      description = "average rate limit to use for logging refused IPtables matches,"
+        + " see `--limit` in `man 8 iptables-extensions`.\n"
+        "Disabled when `null`.";
+    };
+    logBurstLimit = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 5;
+      description = "burst limit to use for logging refused IPtables matches,"
+        + " see `--limit-burst` in `man 8 iptables-extensions`.\n"
+        "Only enabled when `logRateLimit` is enabled.";
+    };
+    logLevel = lib.mkOption {
+      type = lib.types.ints.positive;
+      # note for upstreaming: defaults to 6 (info) in NixOS
+      default = 7;
+      description = ''
+        Logging priority for `nixos-fw-log-refuse` messages. Possible values:
+        0 (emerg), 1 (alert), 2 (crit), 3 (error), 4 (warning), 5 (notice), 6 (info), 7 (debug)
+      '';
+    };
+    enableSrvRgFirewall = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Only accept connections from hosts in the same resource "
+        + "group on the SRV interface.";
+    };
+  };
   config = {
 
     environment.etc."local/firewall/README".text = ''
@@ -77,6 +111,8 @@ in
       See also ${fclib.roleDocUrl "firewall"}
     '';
 
+    environment.systemPackages = [ pkgs.conntrack-tools ];
+
     flyingcircus.services.sensu-client.checks = {
       firewall-config = {
         notification = "Firewall configuration did not terminate successfully";
@@ -95,7 +131,7 @@ in
     # configuration on the NixOS side. Users may set additional networking.nat.*
     # options in /etc/local/nixos.
     networking.nat.enable = true;
-    networking.nat.externalInterface = fclib.network.fe.device;
+    networking.nat.externalInterface = fclib.mkPlatform fclib.network.fe.interface;
 
     networking.firewall =
       # our code generally assumes IPv6
@@ -105,18 +141,71 @@ in
         checkReversePath = "loose";
         rejectPackets = true;
 
-        extraCommands =
-        lib.mkMerge [
-          (lib.mkOrder 1100 ''
-            # FC firewall rules (1100)
-            # Accept traffic within the same resource group.
-            ip46tables -N fc-resource-group
-            ${rgRules}
-            ip46tables -A nixos-fw -i ethsrv -j fc-resource-group
-            # End FC firewall rules (1100)
+        extraCommands = lib.mkMerge [
+          # Introduce custom managed chains for raw OUTPUT and raw PREROUTING
+          (lib.mkBefore ''
+            # FC firewall managed chains (before)
+            ip46tables -t raw -N fc-raw-output 2>/dev/null || true
+            ip46tables -t raw -A OUTPUT -j fc-raw-output
+
+            ip46tables -t raw -N fc-raw-prerouting 2>/dev/null || true
+            ip46tables -t raw -A PREROUTING -j fc-raw-prerouting
+            # End FC firewall managed chains (before)
           '')
 
-          (lib.mkAfter ''
+          # Introduce rate limited logging for refused connections -
+          # in contrast to non-rate limited logging defined by upstream.
+          #
+          # As we flush the full chain defined in upstream NixOS, we need to
+          # recreate the parts we'd like to keep. Thus, this is mainly copied
+          # over, just modified by adding the option for rate-limiting the
+          # LOGs.
+          # Flushing and recreating the full chain is deemed more resilient
+          # than replacing single rules of a chain.
+          (lib.mkOrder 1100 (
+            let
+              logLimits = lib.optionalString (! isNull cfg.firewall.logRateLimit)
+                  "-m limit --limit ${cfg.firewall.logRateLimit} --limit-burst ${toString cfg.firewall.logBurstLimit} ";
+            in ''
+              ${lib.optionalString cfgUpstream.logRefusedConnections ''
+                  ip46tables -A nixos-fw-log-refuse ${logLimits}-p tcp --syn -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused connection: "
+              ''}
+              ${lib.optionalString (cfgUpstream.logRefusedPackets && !cfgUpstream.logRefusedUnicastsOnly) ''
+                ip46tables -A nixos-fw-log-refuse -m pkttype --pkt-type broadcast \
+                  ${logLimits}\
+                  -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused broadcast: "
+                ip46tables -A nixos-fw-log-refuse -m pkttype --pkt-type multicast \
+                  ${logLimits}\
+                  -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused broadcast: "
+                  -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused multicast: "
+              ''}
+              ip46tables -A nixos-fw-log-refuse -m pkttype ! --pkt-type unicast -j nixos-fw-refuse
+              ${lib.optionalString cfgUpstream.logRefusedPackets ''
+                ip46tables -A nixos-fw-log-refuse \
+                  ${logLimits}\
+                  -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused packet: "
+              ''}
+              ip46tables -A nixos-fw-log-refuse -j nixos-fw-refuse
+            ''))
+
+          (lib.mkOrder 1200
+            (if cfg.firewall.enableSrvRgFirewall
+             then lib.optionalString (rgRules != "") ''
+               # FC firewall rules (1200)
+               # Accept traffic within the same resource group.
+               ip46tables -N fc-resource-group
+               ${rgRules}
+               ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -j fc-resource-group
+               # End FC firewall rules (1200)
+             ''
+             else ''
+               # Accept traffic on the SRV interface, but disallow arbitrary access to Telegraf
+               ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -p tcp --dport 9126 -j nixos-fw-refuse
+               ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -j nixos-fw-accept
+             ''
+            ))
+
+          (lib.mkOrder 1300 ''
             # Local firewall rules (after).
             # This option instructs bash to print shell input lines as they are read.
             set -v
@@ -125,14 +214,21 @@ in
           '')
         ];
 
-        extraStopCommands = lib.mkOrder 1200 ''
-          # FC firewall rules (1200)
-          ip46tables -D nixos-fw -i ethsrv -j fc-resource-group 2>/dev/null || true
+        extraStopCommands = lib.mkOrder 1300 ''
+          # FC firewall managed chains
+          ip46tables -t raw -D OUTPUT -j fc-raw-output 2>/dev/null || true
+          ip46tables -t raw -F fc-raw-output 2>/dev/null || true
+          ip46tables -t raw -X fc-raw-output 2>/dev/null || true
+
+          ip46tables -t raw -D PREROUTING -j fc-raw-prerouting 2>/dev/null || true
+          ip46tables -t raw -F fc-raw-prerouting 2>/dev/null || true
+          ip46tables -t raw -X fc-raw-prerouting 2>/dev/null || true
+
+          ip46tables -D nixos-fw -i ${fclib.network.srv.interface} -j fc-resource-group 2>/dev/null || true
           ip46tables -F fc-resource-group 2>/dev/null || true
           ip46tables -X fc-resource-group 2>/dev/null || true
-          # End FC firewall rules (1200)
+          # End firewall managed chains
         '';
-
       };
 
     flyingcircus.passwordlessSudoPackages =

@@ -21,16 +21,23 @@ from rich.console import Console
 CURRENT_BUILD = 93111
 NEXT_BUILD = 93222
 NEXT_NEXT_BUILD = 93333
+
 CURRENT_RELEASE = "2021_002"
 NEXT_RELEASE = "2021_003"
+
 CHANGELOG_URL = "https://doc.flyingcircus.io/platform/changes/2021/r003.html"
+
 CURRENT_CHANNEL_URL = f"https://hydra.flyingcircus.io/build/{CURRENT_BUILD}/download/1/nixexprs.tar.xz"
 NEXT_CHANNEL_URL = f"https://hydra.flyingcircus.io/build/{NEXT_BUILD}/download/1/nixexprs.tar.xz"
+
 ENVIRONMENT = "fc-21.05-production"
+
 CURRENT_VERSION = "21.05.1233.a9cc58d"
 NEXT_VERSION = "21.05.1235.bacc11d"
+
 CURRENT_SYSTEM_PATH = f"/nix/store/zbx8i9v4j8dzlwp83qvrzjgvj7d0qm0d-nixos-system-test-{NEXT_VERSION}"
 NEXT_SYSTEM_PATH = f"/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-{NEXT_VERSION}"
+
 CURRENT_KERNEL_VERSION = "5.10.45"
 NEXT_KERNEL_VERSION = "5.10.50"
 
@@ -125,7 +132,7 @@ unit_changes:
 
 
 @fixture
-def activity(logger, nixos_mock):
+def activity(logger, nixos_mock, tmp_path):
     activity = UpdateActivity(next_channel_url=NEXT_CHANNEL_URL, log=logger)
     activity.current_channel_url = CURRENT_CHANNEL_URL
     activity.changelog_url = CHANGELOG_URL
@@ -141,6 +148,7 @@ def activity(logger, nixos_mock):
     activity.next_version = NEXT_VERSION
     activity.reboot_needed = RebootType.WARM
     activity.unit_changes = UNIT_CHANGES
+    activity.lock_dir = tmp_path
     return activity
 
 

@@ -86,7 +86,7 @@ in {
   let
     mkRole = v: {
       enable = lib.mkEnableOption "Enable the Flying Circus MongoDB ${v} server role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
       extraCheckArgs = with lib; mkOption {
         type = types.str;
         default = if (lib.versionOlder v "3.6") then "" else "-h localhost -p 27017";

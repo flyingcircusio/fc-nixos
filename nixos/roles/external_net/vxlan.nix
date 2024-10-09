@@ -18,13 +18,12 @@ let
   vxlanRole = config.flyingcircus.roles.vxlan;
   extnet = cfg.roles.external_net;
   parameters = lib.attrByPath [ "enc" "parameters" ] {} cfg;
-  interfaces = lib.attrByPath [ "interfaces" ] {} parameters;
   resource_group = lib.attrByPath [ "resource_group" ] null parameters;
 
   net4 = extnet.vxlan4;
   net6 = extnet.vxlan6;
   dev = "nx0";
-  realdev = "ethfe";
+  interface = fclib.network.fe.interface;
   port = 8472;
 
   exampleConfig = ''
@@ -95,7 +94,7 @@ let
       domain = "ext.${domain}";
       domain-needed = true;
       interface = "lo,${dev}";
-      except-interface = [ "ethfe" "ethsrv" ];
+      except-interface = [ fclib.network.fe.interface fclib.network.srv.interface ];
       local-ttl = 60;
       auth-server= "${extnet.frontendName},ethfe";
       auth-zone = "ext.${domain}";
@@ -108,7 +107,7 @@ in
     flyingcircus.roles.vxlan =  {
       gateway = mkEnableOption "fcio vxlan gateway";
 
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
 
       config = mkOption {
         type = types.attrs;
@@ -140,10 +139,9 @@ in
 
       systemd.services."vxlan-${dev}" = rec {
         description = "VxLAN tunnel ${dev}";
-        after = [ "network-addresses-${realdev}.service" ];
+        after = [ "network-addresses-${interface}.service" ];
         wantedBy = [ "dnsmasq.service" ];
         before = wantedBy;
-        bindsTo = [ "sys-subsystem-net-devices-${realdev}.device" ];
 
         serviceConfig = let
           ip = "${pkgs.iproute2}/bin/ip";
@@ -157,7 +155,7 @@ in
             echo "adding link ${dev}"
             ${ip} link del ${dev} 2>/dev/null || true
             ${ip} link add ${dev} type vxlan id ${toString vid} \
-              dev ${realdev} local ${local} remote ${remote} \
+              dev ${interface} local ${local} remote ${remote} \
               dstport ${toString port}
             ${ip} link set up mtu ${toString mtu} dev ${dev}
             ${ip} -4 addr add ${gw4} dev ${dev}
