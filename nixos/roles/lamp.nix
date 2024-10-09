@@ -9,8 +9,6 @@ in {
       enable = mkEnableOption "Flying Circus LAMP stack";
       supportsContainers = fclib.mkEnableDevhostSupport;
 
-      useFPM = mkEnableOption "Use PHP-FPM instead of mod_php";
-
       useFPM = fclib.mkObsoleteOption "FPM is always used now.";
 
       fpmMaxChildren = mkOption {

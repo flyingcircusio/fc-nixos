@@ -799,6 +799,14 @@ in
         in
           "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-evpn-rib ${args}";
       };
+      # This check is here to identify abysmal but otherwise subtle network speed
+      # issues as we have seen in PL-132971. If downloading a 1MiB test file
+      # takes longer than 5-10 seconds, something is very much off.
+      network_speed = {
+        notification = "General network speed";
+        command = "check_http -u /rgw-monitoring/probe -H rgw.local -p 7480 -m 1000000:1500000 -w 5 -c 10";
+        interval = 7200;
+      };
     };
 
     flyingcircus.passwordlessSudoRules = lib.optionals (!isNull fclib.underlay) [{
@@ -891,15 +899,6 @@ in
       # Optimize multi-path for VXLAN (layer3 in layer3)
       "net.ipv4.fib_multipath_hash_policy" = "2";
     })];
-
-    # This check is here to identify abysmal but otherwise subtle network speed
-    # issues as we have seen in PL-132971. If downloading a 1MiB test file
-    # takes longer than 5-10 seconds, something is very much off.
-    flyingcircus.services.sensu-client.checks.network_speed = {
-      notification = "General network speed";
-      command = "check_http -u /rgw-monitoring/probe -H rgw.local -p 7480 -m 1000000:1500000 -w 5 -c 10";
-      interval = 7200;
-    };
 
     # Prevent underlay interfaces from matching the rp_filter sysctl
     # glob in the default configuration shipped with systemd.

@@ -23,7 +23,7 @@ in
       rabbitmq = {
         enable = lib.mkEnableOption
           "Enable the Flying Circus RabbitMQ server role.";
-        supportsContainers = fclib.mkEnableContainerSupport;
+        supportsContainers = fclib.mkEnableDevhostSupport;
       };
     };
   };

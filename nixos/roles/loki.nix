@@ -31,7 +31,7 @@ in
   options = with lib; {
     flyingcircus.roles.loki = {
       enable = mkEnableOption "Flying Circus Grafana Loki server";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       logRetentionPeriod = mkOption {
         type = types.ints.unsigned;

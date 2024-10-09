@@ -58,7 +58,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     pkgs = self;
     # Only used by the agent for now but we should probably use this
     # for all our Python packages and update Python in sync then.
-    pythonPackages = self.python311Packages;
+    pythonPackages = self.python312Packages;
   });
 
   backy = super.callPackage ./backy { inherit poetry2nix;};

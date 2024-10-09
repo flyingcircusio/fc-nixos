@@ -3,8 +3,9 @@ let
   modulesFromHere = [
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
-    "services/networking/jicofo.nix"
+    "services/networking/frr.nix"
     "services/networking/jibri/default.nix"
+    "services/networking/jicofo.nix"
     "services/networking/jitsi-videobridge.nix"
     "services/networking/prosody.nix"
     "services/web-apps/jitsi-meet.nix"
@@ -18,7 +19,7 @@ in {
   imports = with lib; [
     ./ceph/client.nix
     ./ceph/server.nix
-    ./consul.nix
+    ./consul
     ./ferretdb.nix
     ./haproxy
     ./jitsi/jibri.nix
