@@ -381,6 +381,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # assertion notifies us about the need to vendor the old innovation releases
   percona83 = assert self.percona-server_innovation.mysqlVersion == "8.3"; self.percona-server_innovation;
+  percona84 = super.percona-server_8_4;
 
   percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
     boost = self.boost159;
