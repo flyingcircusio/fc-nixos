@@ -8,7 +8,7 @@ with builtins;
 
 let
   fclib = config.fclib;
-  supportedPerconaVersions = ["8.0" "8.3"];
+  supportedPerconaVersions = ["8.0" "8.3" "8.4"];
   removeDot = builtins.replaceStrings ["."] [""];
 in
 {
