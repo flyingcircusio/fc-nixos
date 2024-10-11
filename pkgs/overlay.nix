@@ -377,18 +377,26 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     openssl = self.openssl_1_1;
   };
 
-  percona80 = super.percona-server_8_0;
+  percona80 = self.percona-server_8_0;
+  # EOL, but we vendor it throughout the 24.05 release cycle
+  percona83 = self.callPackage ./percona/8.3.nix {
+    inherit (self.darwin) cctools developer_cmds DarwinTools;
+    inherit (self.darwin.apple_sdk.frameworks) CoreServices;
+    # newer versions cause linking failures against `libabsl_spinlock_wait`
+    protobuf = self.protobuf_21;
+
+  };
 
   # assertion notifies us about the need to vendor the old innovation releases
-  percona83 = assert self.percona-server_innovation.mysqlVersion == "8.3"; self.percona-server_innovation;
-  percona84 = super.percona-server_8_4;
+  percona84 = assert self.percona-server_innovation.mysqlVersion == "8.3"; self.percona-server_innovation;
 
-  percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4.nix {
+  percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4/2_4.nix {
     boost = self.boost159;
     openssl = self.openssl_1_1;
   };
+  percona-xtrabackup_8_3 = self.callPackage ./percona-xtrabackup/8_3/8_3.nix { };
 
-  percona-xtrabackup_8_3 = assert self.percona-xtrabackup_innovation.mysqlVersion == "8.3"; self.percona-xtrabackup_innovation;
+  percona-xtrabackup_8_4 = assert self.percona-xtrabackup_innovation.mysqlVersion == "8.4"; self.percona-xtrabackup_innovation;
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
 
