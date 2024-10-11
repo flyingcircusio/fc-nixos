@@ -37,12 +37,12 @@ rec {
   neighbour-cache-monitor = callPackage ./neighbour-cache-monitor {};
   ping-on-tap = callPackage ./ping-on-tap {};
   qemu-nautilus = callPackage ./qemu rec {
-    version = "1.4.6";
+    version = "1.5.0";
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "fc.qemu";
       rev = version;
-      hash = "sha256-lf0ByXo6cMg089DPnvYJpJHX6/445k8IKNawOA5Pf08=";
+      hash = "sha256-AbL8Xta+rZSJ/RmfBIYNSnDqH/G/l4rjg89RJrJ6xeY=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;
