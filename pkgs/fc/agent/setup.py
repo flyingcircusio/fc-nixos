@@ -76,7 +76,7 @@ setup(
             "fc-qemu-scrub=fc.manage.qemu:main",
             "fc-monitor=fc.manage.monitor:main",
             "fc-resize-disk=fc.manage.resize_disk:app",
-            "fc-s3accounting=fc.manage.s3accounting:main",
+            "fc-s3users=fc.manage.s3users:main",
             "fc-zones=fc.manage.zones:update",
             "fctl=fc.util.fctl:app",
         ],

@@ -2,6 +2,7 @@
 import ctypes
 import json
 import os
+import shlex
 import subprocess
 import time
 from subprocess import PIPE
@@ -99,7 +100,7 @@ class Runner(object):
             options.update(kw)
 
             console.print(
-                "$", name, " ".join([str(a) for a in args]), style="grey50"
+                "$", name, shlex.join([str(a) for a in args]), style="grey50"
             )
 
             check = options["check"]
