@@ -67,6 +67,9 @@ class JSONRunner(object):
             result.append(candidate)
         return result
 
+    def radosgw_admin(self, *args, **kw):
+        return self.__run__("radosgw-admin", "--format", "json", *args, **kw)
+
     def rbd(self, *args, **kw):
         return self.__run__("rbd", "--format", "json", *args, **kw)
 
@@ -115,5 +118,6 @@ run = Runner(
         "ceph_mon": "ceph-mon",
         "ceph_authtool": "ceph-authtool",
         "mkfs_xfs": "mkfs.xfs",
+        "radosgw_admin": "radosgw-admin",
     }
 )

@@ -1,10 +1,25 @@
-"""Uploads usage data from Ceph/RadosGW into the Directory"""
+"""realises pending actions on S3 users based on directory data;
+accountig for usage data"""
 
 import argparse
 import json
 import subprocess
 
 from fc.util.directory import connect
+from fc.util.runners import run
+
+
+def accounting(location: str, dir_conn):
+    """Uploads usage data from Ceph/RadosGW into the Directory"""
+    # TODO: only account users from the directory list?
+    users = run.json.radosgw_admin("user", "list")
+
+    usage = dict()
+    for user in users:
+        stats = run.json.radosgw_admin("user", "stats", "--uid", user)
+        usage[user] = str(stats["stats"]["total_bytes"])
+
+    dir_conn.store_s3(location, usage)
 
 
 def main():
@@ -22,25 +37,11 @@ def main():
     with open(args.enc) as f:
         enc = json.load(f)
 
-    result = subprocess.run(
-        ["radosgw-admin", "user", "list"], check=True, capture_output=True
-    )
-    users = json.loads(result.stdout)
-
-    usage = dict()
-    for user in users:
-        result = subprocess.run(
-            ["radosgw-admin", "user", "stats", "--uid", user],
-            check=True,
-            capture_output=True,
-        )
-        stats = json.loads(result.stdout)
-        usage[user] = str(stats["stats"]["total_bytes"])
-
-    location = enc["parameters"]["location"]
-
     directory = connect(enc, ring=0)
-    directory.store_s3(location, usage)
+
+    # first do accounting based on the existing users, might be the last time
+    # in case of user deletions.
+    accounting(enc["parameters"]["location"], directory)
 
 
 if __name__ == "__main__":
