@@ -4,6 +4,7 @@ accountig for usage data"""
 import argparse
 import errno
 import json
+import sys
 from subprocess import CalledProcessError
 from typing import Optional
 
@@ -101,44 +102,52 @@ class RadosgwUserManager:
             else None
         )
 
-    def ensure_users(self):
+    def sync_users(self):
         local_users = self.get_local_user_report()
         directory_users = self.get_directory_user_report()
 
         for uid, directory_user_dict in directory_users.items():
-            match directory_user_dict["status"]:
-                case "pending":
-                    self.ensure_radosgw_user(
-                        directory_user_dict, replace=uid in local_users
-                    )
-                    break
-                case "active":
-                    if err := self.check_user(
-                        directory_user=directory_user_dict,
-                        local_user=local_users.get(uid, None),
-                    ):
-                        # FIXME: could we provide the error list directly to structlog?
-                        log.error(err)
-                        self.processing_errors = True
-                    break
-                case "pending_deletion":
-                    if "soft" in directory_user_dict["deletion"]["stages"]:
-                        try:
-                            local_user_dict = local_users[uid]
-                        except KeyError:
-                            log.error(
-                                f"User {uid} not found locally, soft deletion failed."
-                            )
+            try:
+                # TODO: too much indentation, refactor?
+                match directory_user_dict["status"]:
+                    case "pending":
+                        self.ensure_radosgw_user(
+                            directory_user_dict, replace=uid in local_users
+                        )
+                        break
+                    case "active":
+                        if err := self.check_user(
+                            directory_user=directory_user_dict,
+                            local_user=local_users.get(uid, None),
+                        ):
+                            # FIXME: could we provide the error list directly to structlog?
+                            log.error(err)
                             self.processing_errors = True
-                        else:
-                            self.purge_user_keys(uid)
-                            local_users[uid]["access_key"] = None
-                            local_users[uid]["secret_key"] = None
-                    if "purge" in directory_user_dict["deletion"]["stages"]:
-                        # needs to be idempotent/ still pass when user does not exist anymore
-                        self.remove_user()
-                        local_users.pop(uid, None)
-                    break
+                        break
+                    case "pending_deletion":
+                        if "soft" in directory_user_dict["deletion"]["stages"]:
+                            try:
+                                local_user_dict = local_users[uid]
+                            except KeyError:
+                                log.error(
+                                    f"User {uid} not found locally, soft deletion failed."
+                                )
+                                self.processing_errors = True
+                            else:
+                                self.purge_user_keys(uid)
+                                local_users[uid]["access_key"] = None
+                                local_users[uid]["secret_key"] = None
+                        if "hard" in directory_user_dict["deletion"]["stages"]:
+                            # needs to be idempotent/ still pass when user does not exist anymore
+                            self.remove_user()
+                            local_users.pop(uid, None)
+                        break
+            except Exception:
+                # individual errors shall not block progress on all other users
+                log.exception(
+                    f"Encountered an error while handling {uid}, continuing:"
+                )
+                self.processing_errors = True
 
         # report_users: report all users present with uid, display_name, access_key
         self.report_to_directory(local_users)
@@ -157,10 +166,6 @@ class RadosgwUserManager:
                     for uid, user_dict in users.items()
                 }
             )
-
-        # location mitschicken
-        # access keys mitschicken
-        # _keinen_ state zurück mitschicken
 
     def remove_user(self, user_dict):
         # --purge-keys is not really necessary, but still do it
@@ -238,7 +243,7 @@ class RadosgwUserManager:
             )
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(
         description="Flying Circus S3 usage accounting"
     )
@@ -263,17 +268,25 @@ def main():
 
     # first do accounting based on the existing users, might be the last time
     # in case of user deletions.
-    # TODO error behaviour: accounting as a first but separate step is good,
+    # accounting as a first but separate step is good,
     # because we want accounting to succeed independent from any additional
     # user management failures. Users pending deletion are accounted one last
     # time, users to be created are accounted first in the next run.
-    accounting(location, directory)
+    got_errors = False
+    try:
+        accounting(location, directory)
+    except Exception:
+        log.exception("Error during S3 accounting, continuing with user sync:")
 
-    account_manager = RadosgwUserManager(
+    user_manager = RadosgwUserManager(
         directory, location, enc["parameters"]["rg"]
     )
-    account_manager.ensure_users()
+    user_manager.sync_users()
+    got_errors = got_errors or user_manager.processing_errors
+
+    # on errors, the service shall return a non-zero exit code to be caught by our monitoring
+    return 2 if got_errors else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
