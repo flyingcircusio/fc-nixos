@@ -34,11 +34,13 @@ def accounting(location: str, dir_conn):
 
 class RadosgwUserManager:
 
-    def __init__(directory_connection):
+    def __init__(self, directory_connection, location: str, rg: str):
         self.dir_conn = directory_connection
+        self.location = location
+        self.rg = rg
         self.processing_errors = False
 
-    def local_user_report(self) -> dict[str, dict]:
+    def get_local_user_report(self) -> dict[str, dict]:
         """Retrieve details about all locally known radosgw users for reporting to
         directory"""
         user_report = dict()
@@ -63,7 +65,11 @@ class RadosgwUserManager:
 
         return user_report
 
-    def directory_user_report(self) -> dict[str, dict]: ...
+    def get_directory_user_report(self) -> dict[str, dict]:
+        """Retrieve user data from directory"""
+        return self.dir_conn.list_s3_users(
+            location=self.location, storage_resource_group_filter=self.rg
+        )
 
     @staticmethod
     def check_user(
@@ -96,42 +102,65 @@ class RadosgwUserManager:
         )
 
     def ensure_users(self):
-        local_users = self.local_user_report()
-        directory_users = self.directory_user_report()
+        local_users = self.get_local_user_report()
+        directory_users = self.get_directory_user_report()
 
-        for uid, user_dict in directory_users.items():
-            match user["state"]:
-                case "PENDING":
-                    self.ensure_radosgw_user(user_dict)
+        for uid, directory_user_dict in directory_users.items():
+            match directory_user_dict["status"]:
+                case "pending":
+                    self.ensure_radosgw_user(
+                        directory_user_dict, replace=uid in local_users
+                    )
                     break
-                case "ACTIVE":
+                case "active":
                     if err := self.check_user(
-                        directory_user=user_dict,
+                        directory_user=directory_user_dict,
                         local_user=local_users.get(uid, None),
                     ):
                         # FIXME: could we provide the error list directly to structlog?
                         log.error(err)
                         self.processing_errors = True
                     break
-                case "SOFT_DELETE":
-                    try:
-                        user_dict = local_users[uid]
-                    except KeyError:
-                        log.error(
-                            f"User {uid} not found locally, soft deletion failed."
-                        )
-                        self.processing_errors = True
-                    else:
-                        self.purge_user_keys(user_dict)
-                    break
-                case "HARD_DELETE":
-                    # needs to be idempotent/ still pass when user does not exist anymore
-                    self.remove_user()
-                    local_users.pop(uid, None)
+                case "pending_deletion":
+                    if "soft" in directory_user_dict["deletion"]["stages"]:
+                        try:
+                            local_user_dict = local_users[uid]
+                        except KeyError:
+                            log.error(
+                                f"User {uid} not found locally, soft deletion failed."
+                            )
+                            self.processing_errors = True
+                        else:
+                            self.purge_user_keys(uid)
+                            local_users[uid]["access_key"] = None
+                            local_users[uid]["secret_key"] = None
+                    if "purge" in directory_user_dict["deletion"]["stages"]:
+                        # needs to be idempotent/ still pass when user does not exist anymore
+                        self.remove_user()
+                        local_users.pop(uid, None)
                     break
 
-        # report_users: report all users present with uid and display_name
-        # self.dir_conn.report_radosgw_users(local_users)
+        # report_users: report all users present with uid, display_name, access_key
+        self.report_to_directory(local_users)
+
+        def report_to_directory(self, users):
+            dir_conn.update_s3_users(
+                {
+                    uid: user_dict.update(
+                        {
+                            # directory ring0 API wants to have RG and location as explicit values
+                            "location": self.location,
+                            "storage_resource_group": self.rg,
+                            "secret_key": None,
+                        }
+                    )
+                    for uid, user_dict in users.items()
+                }
+            )
+
+        # location mitschicken
+        # access keys mitschicken
+        # _keinen_ state zurück mitschicken
 
     def remove_user(self, user_dict):
         # --purge-keys is not really necessary, but still do it
@@ -229,7 +258,8 @@ def main():
     #    context.verbose, context.logdir, show_caller_info=show_caller_info
     # )
 
-    directory = connect(enc, ring=0)
+    directory = connect(enc, ring="max")
+    location = enc["parameters"]["location"]
 
     # first do accounting based on the existing users, might be the last time
     # in case of user deletions.
@@ -237,9 +267,12 @@ def main():
     # because we want accounting to succeed independent from any additional
     # user management failures. Users pending deletion are accounted one last
     # time, users to be created are accounted first in the next run.
-    accounting(enc["parameters"]["location"], directory)
+    accounting(location, directory)
 
-    ensure_s3_users(directory)
+    account_manager = RadosgwUserManager(
+        directory, location, enc["parameters"]["rg"]
+    )
+    account_manager.ensure_users()
 
 
 if __name__ == "__main__":
