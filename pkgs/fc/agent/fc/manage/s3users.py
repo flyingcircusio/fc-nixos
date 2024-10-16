@@ -5,8 +5,9 @@ import argparse
 import errno
 import json
 import sys
+from dataclasses import dataclass
 from subprocess import CalledProcessError
-from typing import Optional
+from typing import Optional, Tuple
 
 import structlog
 from fc.util.directory import connect
@@ -33,193 +34,68 @@ def accounting(location: str, dir_conn):
     dir_conn.store_s3(location, usage)
 
 
-class RadosgwUserManager:
+@dataclass
+class S3User:
+    uid: str
+    display_name: str
+    access_key: Optional[str]
+    secret_key: Optional[str]
+    status: str  # might as well be an Enum
 
-    def __init__(self, directory_connection, location: str, rg: str):
-        self.dir_conn = directory_connection
-        self.location = location
-        self.rg = rg
-        self.processing_errors = False
-
-    def get_local_user_report(self) -> dict[str, dict]:
-        """Retrieve details about all locally known radosgw users for reporting to
-        directory"""
-        user_report = dict()
-        for uid in list_radosgw_users():
-            user_info = run.json.radosgw_admin("user", "info", "--uid", uid)
-            try:
-                main_key = user_info["keys"][0]
-                key = {
-                    "access_key": main_key["access_key"],
-                    "secret_key": main_key["secret_key"],
-                }
-            except IndexError:
-                key = {"access_key": None, "secret_key": None}
-            if (num_keys := len(user_info["keys"])) > 1:
-                log.error(
-                    f"radosgw user {uid} has {num_keys}, this is more then expected"
-                )
-                self.processing_errors = True
-            user_report[uid] = dict(
-                display_name=user_info["display_name"], **key
-            )
-
-        return user_report
-
-    def get_directory_user_report(self) -> dict[str, dict]:
-        """Retrieve user data from directory"""
-        return self.dir_conn.list_s3_users(
-            location=self.location, storage_resource_group_filter=self.rg
-        )
-
-    @staticmethod
-    def check_user(
-        uid: str,
-        directory_user: Optional[dict],
-        local_user: Optional[dict],
-    ) -> Optional[str]:
-        """Check whether the local user data corresponds to the data received
-        from directory.
-        return value: Error message str on mismatch, None when equal"""
-        mismatches: list[str] = []
-        compare_properties = ("display_name", "access_key")
-        missing = False
-        if not directory_user:
-            mismatches.append(f"- not found in directory users")
-            missing = True
-        if not local_user:
-            mismatches.append(f"- not found in local users")
-            missing = True
-        for prop in compare_properties:
-            # make MyPy happy
-            assert directory_user is not None and local_user is not None
-            if (not missing) and directory_user[prop] != local_user[prop]:
-                mismatches.append(f"- differ in {prop}")
-
-        return (
-            f"User data mismatch for {uid}:\n" + "\n\t".join(mismatches)
-            if mismatches
-            else None
-        )
-
-    def sync_users(self):
-        local_users = self.get_local_user_report()
-        directory_users = self.get_directory_user_report()
-
-        for uid, directory_user_dict in directory_users.items():
-            try:
-                # TODO: too much indentation, refactor?
-                match directory_user_dict["status"]:
-                    case "pending":
-                        self.ensure_radosgw_user(
-                            directory_user_dict, replace=uid in local_users
-                        )
-                        break
-                    case "active":
-                        if err := self.check_user(
-                            directory_user=directory_user_dict,
-                            local_user=local_users.get(uid, None),
-                        ):
-                            # FIXME: could we provide the error list directly to structlog?
-                            log.error(err)
-                            self.processing_errors = True
-                        break
-                    case "pending_deletion":
-                        if "soft" in directory_user_dict["deletion"]["stages"]:
-                            try:
-                                local_user_dict = local_users[uid]
-                            except KeyError:
-                                log.error(
-                                    f"User {uid} not found locally, soft deletion failed."
-                                )
-                                self.processing_errors = True
-                            else:
-                                self.purge_user_keys(uid)
-                                local_users[uid]["access_key"] = None
-                                local_users[uid]["secret_key"] = None
-                        if "hard" in directory_user_dict["deletion"]["stages"]:
-                            # needs to be idempotent/ still pass when user does not exist anymore
-                            self.remove_user()
-                            local_users.pop(uid, None)
-                        break
-            except Exception:
-                # individual errors shall not block progress on all other users
-                log.exception(
-                    f"Encountered an error while handling {uid}, continuing:"
-                )
-                self.processing_errors = True
-
-        # report_users: report all users present with uid, display_name, access_key
-        self.report_to_directory(local_users)
-
-        def report_to_directory(self, users):
-            dir_conn.update_s3_users(
-                {
-                    uid: user_dict.update(
-                        {
-                            # directory ring0 API wants to have RG and location as explicit values
-                            "location": self.location,
-                            "storage_resource_group": self.rg,
-                            "secret_key": None,
-                        }
-                    )
-                    for uid, user_dict in users.items()
-                }
-            )
-
-    def remove_user(self, user_dict):
-        # --purge-keys is not really necessary, but still do it
+    @classmethod
+    def from_radosgw(cls, uid):
+        radosgw_user_info = run.json.radosgw_admin("user", "info", "--uid", uid)
         try:
-            run.radosgw_admin(
-                "user",
-                "rm",
-                "--uid",
-                user_dict["uid"],
-                "--purge-data",
-                "--purge-keys",
-            )
-        except CalledProcessError as err:
-            if (
-                err.status_code == 2
-                and user_dict["uid"] not in list_radosgw_users()
-            ):
-                # potential atomicity problem, but user is gone -> all good
-                pass
-            else:
-                raise
-
-    def purge_user_keys(self, uid: str):
-        for key in run.json.radosgw_admin("user", "info", "--uid", uid)["keys"]:
-            run.radosgw_admin("key", "rm", "--access-key", key["access_key"])
-
-    def ensure_radosgw_user(self, uid: str, user_dict: dict, replace: bool):
-        """Ensures that a radosgw user with the desired properties and keys exists.
-        Called upon user creation, as well as when rotating keys."""
-
-        has_keys = user_dict["access_key"] and user_dict["secret_key"]
-        conditional_key_args = (
-            (
-                # fmt: off
-                    "--access-key", user_dict["access_key"],
-                    "--secret-key", user_dict["secret_key"],
-                # fmt: on
-            )
-            if has_keys
-            else ()
+            # we silently ignore any additional keys here, logging this case is
+            # left to an explicit check method.
+            main_key = radosgw_user_info["keys"][0]
+            key = {
+                "access_key": main_key["access_key"],
+                "secret_key": main_key["secret_key"],
+            }
+        except IndexError:
+            key = {"access_key": None, "secret_key": None}
+        return cls(
+            uid=radosgw_user_info["uid"],
+            display_name=radosgw_user_info["display_name"],
+            **key,
+            # users retrieved from the local radosgw are always active per definition
+            status="active",
         )
 
-        if not replace:
-            if not has_keys:
+
+@dataclass
+class DirectoryS3User(S3User):
+    deletion_stages: list[str]
+
+    def ensure_exists(self, user: S3User, local_users: dict[str, S3User]):
+        """Ensures that a radosgw user with the desired properties and keys exists.
+        Called upon user creation, as well as when rotating key or information.
+        """
+
+        # only modify/ add keys when we have sufficient data:
+        has_both_keys = user.access_key and user.secret_key
+        conditional_args: list[str] = []
+
+        if user.uid not in local_users:
+            if not has_both_keys:
                 log.warn(
                     "user create: no access key pair provided, "
                     "this is likely a directory bug. "
                     "Proceeding nonetheless."
                 )
-            run.json.radosgw_admin(
+            # neither access_key nor secret_key: both are autogenerated
+            if user.access_key:
+                # only access_key: secret_key is autogenerated
+                conditional_args += ["--access-key", user.access_key]
+            if has_both_keys:
+                assert user.secret_key  # make MyPy happy
+                conditional_args += ["--secret-key", user.secret_key]
+            radosgw_info = run.json.radosgw_admin(
                 # fmt: off
                 "user", "create",
-                "--uid", uid,
-                "--display-name", user_dict["display_name"],
+                "--uid", self.uid,
+                "--display-name", self.display_name,
                 # Security Warning: by passing around the keys as command line
                 # arguments, we potentially leak them via ps/ proc. This is
                 # acceptable for now, as ceph hosts are accessible to admins only.
@@ -227,20 +103,188 @@ class RadosgwUserManager:
                 # to read from env variables. There's also the admin RESTful API of
                 # radosgw, unfortunately that's based on S3 authentication logic.
                 # Implementing this, e.g. via boto3, is rather complex and not a pleasure.
-                *conditional_key_args,
+                *conditional_args,
                 # fmt: on
             )
         else:
-            # idempotent: always remove all keys and add new one
-            self.purge_user_keys(uid)
-            run.radosgw_admin(
+            # modifying keys requires provided values for both keys
+            if has_both_keys:
+                assert user.secret_key and user.access_key  # make MyPy happy
+                conditional_args += ["--access-key", user.access_key]
+                conditional_args += ["--secret-key", user.secret_key]
+            radosgw_info = run.json.radosgw_admin(
                 # fmt: off
                 "user", "modify",
-                "--uid", uid,
-                "--display-name", user_dict["display_name"],
-                *conditional_key_args,
+                "--uid", self.uid,
+                "--display-name", self.display_name,
                 # fmt: on
             )
+
+        # use the directory-provided user info, because that contains the single
+        # access_key expected by the directory
+        local_users[user.uid] = user
+
+    def ensure_no_keys(self):
+        """While other methods only manage the access key provided by the
+        directory, this will remove _all_ keys to make potentially remaining
+        users aware of the impending hard deletion."""
+
+        for keydata in run.json.radosgw_admin(
+            "user", "info", "--uid", self.uid
+        )["keys"]:
+            run.radosgw_admin("key", "rm", "access_key", keydata["access_key"])
+
+        self.access_key = None
+        self.secret_key = None
+
+    def ensure_deleted(self):
+        # --purge-keys is not really necessary, but still do it
+        try:
+            run.radosgw_admin(
+                "user",
+                "rm",
+                "--uid",
+                self.uid,
+                "--purge-data",
+                "--purge-keys",
+            )
+        except CalledProcessError as err:
+            if err.status_code == 2 and self.uid not in list_radosgw_users():
+                # potential atomicity problem, but user is gone -> all good
+                pass
+            else:
+                raise
+
+    @classmethod
+    def from_directory(cls, uid, user_dict):
+
+        return cls(
+            uid=uid,
+            display_name=user_dict["display_name"],
+            access_key=user_dict["access_key"],
+            secret_key=user_dict["secret_key"],
+            status=user_dict["state"],
+            deletion_stages=user_dict["deletion"]["stages"],
+        )
+
+
+class RadosgwUserManager:
+
+    def __init__(self, directory_connection, location: str, rg: str):
+        self.dir_conn = directory_connection
+        self.location = location
+        self.rg = rg
+        self.processing_errors = False
+        self.local_users = self._get_local_user_report()
+        self.directory_users = self._get_directory_user_report()
+
+    def _get_local_user_report(self) -> dict[str, S3User]:
+        """Retrieve details about all locally known radosgw users for reporting to
+        directory"""
+        local_users = {}
+        for uid in list_radosgw_users():
+            local_users[uid] = S3User.from_radosgw(uid)
+
+        return local_users
+
+    def _get_directory_user_report(self) -> dict[str, DirectoryS3User]:
+        """Retrieve user data from directory"""
+        directory_users: dict[str, DirectoryS3User] = {}
+        directory_info = self.dir_conn.list_s3_users(
+            location=self.location, storage_resource_group_filter=self.rg
+        )
+        directory_users = {}
+        for uid, user_dict in directory_info.items():
+            directory_users[uid] = DirectoryS3User.from_directory(
+                uid, user_dict
+            )
+        return directory_users
+
+    def report_local_users_to_directory(self):
+        dir_conn.update_s3_users(
+            {
+                uid: {
+                    "display_name": user.display_name,
+                    "access_key": user.access_key,
+                    # directory ring0 API wants to have RG and location as explicit values
+                    "location": self.location,
+                    "storage_resource_group": self.rg,
+                    "secret_key": None,
+                }
+                for uid, user in self.local_users.items()
+            }
+        )
+
+    def check_user_consistency(self, uid: str):
+        """Check whether the local user data corresponds to the data received
+        from directory.
+        return value: Error message str on mismatch, None when equal"""
+        mismatches: list[str] = []
+        compare_properties = ("display_name", "access_key")
+        local_user_data = self.local_users.get(uid, None)
+        directory_user_data = self.directory_users.get(uid, None)
+        missing = False
+        if not directory_user_data:
+            mismatches.append(f"- not found in directory users")
+            missing = True
+        if uid not in self.local_users:
+            mismatches.append(f"- not found in local users")
+            missing = True
+        if not missing:
+            for prop in compare_properties:
+                # make MyPy happy
+                assert (
+                    directory_user_data is not None
+                    and local_user_data is not None
+                )
+                if (not missing) and getattr(
+                    directory_user_data, prop
+                ) != getattr(local_user_data, prop):
+                    mismatches.append(f"- differ in {prop}")
+
+        # additional checks on fresh radosgw data
+        radosgw_user_info = run.json.radosgw_admin("user", "info", "--uid", uid)
+        if (num_keys := len(radosgw_user_info["keys"])) > 1:
+            # only a warning condition, not an error
+            log.warn(
+                f"radosgw user {uid} has {num_keys}, this is more then expected."
+            )
+
+        if mismatches:
+            # FIXME: could we provide the error list directly to structlog?
+            log.error(
+                f"User data mismatch for {uid}:\n" + "\n\t".join(mismatches)
+            )
+            self.processing_errors = True
+
+    def sync_users(self):
+        for uid, directory_user_data in self.directory_users.items():
+            try:
+                if directory_user_data.status == "pending":
+                    directory_user_data.ensure_exists()
+                    self.check_user_consistency(uid)
+                elif directory_user_data.status == "active":
+                    self.check_user_consistency(uid)
+                elif directory_user_data.status == "pending_deletion":
+                    if "soft" in directory_user_data.deletion_stages:
+                        directory_user_data.ensure_no_keys()
+                    if "hard" in directory_user_data - deletion_stages:
+                        # needs to be idempotent/ still pass when user does not exist anymore
+                        directory_user_data.ensure_deleted()
+                        self.local_users.pop(uid, None)
+                else:
+                    raise RuntimeError(
+                        f"user {uid} with unexpected status {directory_user_data.status}"
+                    )
+            except Exception:
+                # individual errors shall not block progress on all other users
+                log.exception(
+                    f"Encountered an error while handling {uid}, continuing:"
+                )
+                self.processing_errors = True
+
+        # report all users present with uid, display_name, access_key
+        self.report_local_users_to_directory()
 
 
 def main() -> int:
@@ -277,6 +321,7 @@ def main() -> int:
         accounting(location, directory)
     except Exception:
         log.exception("Error during S3 accounting, continuing with user sync:")
+        got_errors = True
 
     user_manager = RadosgwUserManager(
         directory, location, enc["parameters"]["rg"]
