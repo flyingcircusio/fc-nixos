@@ -11,8 +11,8 @@ from fc.maintenance.lib.shellscript import ShellScriptActivity
 from fc.maintenance.maintenance import (
     request_reboot_for_cpu,
     request_reboot_for_kernel,
+    request_reboot_for_kvm_environment,
     request_reboot_for_memory,
-    request_reboot_for_qemu,
     request_update,
 )
 from fc.maintenance.reqmanager import DEFAULT_SPOOLDIR, ReqManager
@@ -299,7 +299,7 @@ def system_properties():
         if enc["parameters"]["machine"] == "virtual":
             rm.add(request_reboot_for_memory(log, enc))
             rm.add(request_reboot_for_cpu(log, enc))
-            rm.add(request_reboot_for_qemu(log))
+            rm.add(request_reboot_for_kvm_environment(log))
 
         rm.add(request_reboot_for_kernel(log, current_requests))
         log.info("fc-maintenance-system-properties-finished")

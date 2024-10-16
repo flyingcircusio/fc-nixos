@@ -5,6 +5,8 @@ system state. All maintenance activities start their life here in this module.
 TODO: better logging for created activites.
 
 """
+
+import json
 import os.path
 import shutil
 import typing
@@ -22,6 +24,10 @@ from fc.maintenance.activity.update import UpdateActivity
 from fc.maintenance.activity.vm_change import VMChangeActivity
 from fc.maintenance.state import State
 from fc.util import nixos
+
+QEMU_STATE_DIR = "/var/lib/qemu"
+KVM_SEED_DIR = "/tmp/fc-data"
+RUNTIME_DIR = "/run"
 
 
 def request_reboot_for_memory(log, enc) -> Optional[Request]:
@@ -56,53 +62,143 @@ def request_reboot_for_cpu(log, enc) -> Optional[Request]:
         return Request(activity)
 
 
-def request_reboot_for_qemu(log) -> Optional[Request]:
-    """Schedules a reboot if the Qemu binary environment has changed."""
-    # Update the -booted marker if necessary. We need to store the marker
-    # in a place where it does not get removed after _internal_ reboots
-    # of the virtual machine. However, if we got rebooted with a fresh
-    # Qemu instance, we need to update it from the marker on the tmp
-    # partition.
-    log.debug("request-reboot-for-qemu-start")
-    if not os.path.isdir("/var/lib/qemu"):
-        os.makedirs("/var/lib/qemu")
-    if os.path.exists("/tmp/fc-data/qemu-binary-generation-booted"):
+def request_reboot_for_kvm_environment(log) -> Optional[Request]:
+    """Schedules a reboot if the hypervisor environment has changed."""
+    # Update the -booted marker if necessary. We need to store the
+    # marker in a place where it does not get removed after warm
+    # reboots of the virtual machine (i.e. same Qemu process on the
+    # KVM host). However, if we get a cold reboot (i.e. fresh Qemu
+    # process) then we need to update it from the marker seeded on the
+    # tmp partition.
+    log.debug("request-reboot-for-kvm-environment-start")
+
+    qemu_state_dir = Path(QEMU_STATE_DIR)
+
+    cold_state_file = lambda stem: Path(KVM_SEED_DIR) / f"qemu-{stem}-booted"
+    warm_state_file = lambda stem: qemu_state_dir / f"qemu-{stem}-booted"
+    running_state_file = (
+        lambda stem: Path(RUNTIME_DIR) / f"qemu-{stem}-current"
+    )
+
+    if not qemu_state_dir.is_dir():
+        qemu_state_dir.mkdir(parents=True)
+
+    # Newer versions of fc.qemu can signal multiple relevant guest
+    # properties in a single file. Older versions will only signal the
+    # boot-time qemu binary generation.
+    if cold_state_file("guest-properties").exists():
         shutil.move(
-            "/tmp/fc-data/qemu-binary-generation-booted",
-            "/var/lib/qemu/qemu-binary-generation-booted",
+            cold_state_file("guest-properties"),
+            warm_state_file("guest-properties"),
         )
-    # Schedule maintenance if the current marker differs from booted
-    # marker.
-    if not os.path.exists("/run/qemu-binary-generation-current"):
+        cold_state_file("binary-generation").unlink(missing_ok=True)
+    elif cold_state_file("binary-generation").exists():
+        shutil.move(
+            cold_state_file("binary-generation"),
+            warm_state_file("binary-generation"),
+        )
+
+    # Optimistically load combined guest properties files
+    try:
+        with open(running_state_file("guest-properties")) as f:
+            current_properties = json.load(f)
+    except FileNotFoundError:
+        current_properties = None
+    except Exception:
+        current_properties = {}
+
+    # If the combined properties do not exist then fall back to the
+    # old binary generation file.
+    if current_properties is None:
+        try:
+            with open(
+                running_state_file("binary-generation"), encoding="ascii"
+            ) as f:
+                current_generation = int(f.read().strip())
+        except Exception:
+            current_generation = None
+
+        try:
+            with open(
+                warm_state_file("binary-generation"), encoding="ascii"
+            ) as f:
+                booted_generation = int(f.read().strip())
+        except Exception:
+            # Assume 0 as the generation marker as that is our upgrade
+            # path: VMs started with an earlier version of fc.qemu
+            # will not have this marker at all
+            booted_generation = 0
+
+        if (
+            current_generation is not None
+            and current_generation > booted_generation
+        ):
+            msg = (
+                "Cold restart because the Qemu binary environment has changed"
+            )
+            return Request(RebootActivity("poweroff"), comment=msg)
+
+        return
+
+    # If the combined properties file exists but could not be decoded,
+    # then ignore it. Note that we always expect at least the binary
+    # generation to be provided in the combined file.
+    if not current_properties:
         return
 
     try:
-        with open(
-            "/run/qemu-binary-generation-current", encoding="ascii"
-        ) as f:
-            current_generation = int(f.read().strip())
+        with open(warm_state_file("guest-properties")) as f:
+            booted_properties = json.load(f)
     except Exception:
-        # Do not perform maintenance if no current marker is there.
-        return
+        booted_properties = None
 
-    try:
-        with open(
-            "/var/lib/qemu/qemu-binary-generation-booted", encoding="ascii"
-        ) as f:
-            booted_generation = int(f.read().strip())
-    except Exception:
-        # Assume 0 as the generation marker as that is our upgrade path:
-        # VMs started with an earlier version of fc.qemu will not have
-        # this marker at all.
-        booted_generation = 0
+    # If the boot-time properties file does not exist, or does not
+    # have valid content, then we should reboot and re-run the seeding
+    # process from the start. This covers the case we were booted on a
+    # hypervisor which did not provide guest properties which has
+    # since been upgraded to start providing them, and it also handles
+    # the case where a bug on the hypervisor has delivered us invalid
+    # data, in which case we reboot optimistically in the hopes that
+    # the hypervisor has since been fixed.
+    if not booted_properties:
+        msg = "Cold restart because the KVM environment has been updated"
+        return Request(RebootActivity("poweroff"), comment=msg)
 
-    if booted_generation >= current_generation:
-        # We do not automatically downgrade. If we ever want that then I
-        # want us to reconsider the side effects.
-        return
+    # Special handling for the binary generation, which should ignore
+    # downgrades.
+    current_generation = current_properties.pop("binary_generation", None)
+    booted_generation = booted_properties.pop("binary_generation", 0)
 
-    msg = "Cold restart because the Qemu binary environment has changed"
-    return Request(RebootActivity("poweroff"), comment=msg)
+    if (
+        current_generation is not None
+        and current_generation > booted_generation
+    ):
+        msg = "Cold restart because the Qemu binary environment has changed"
+        return Request(RebootActivity("poweroff"), comment=msg)
+
+    fragments = []
+    # Keys which are present at boot time but no longer at runtime are
+    # implicitly ignored here.
+    for key in current_properties.keys():
+        # New keys which were not present at boot but were introduced
+        # at runtime should cause a reboot.
+        if key not in booted_properties:
+            fragments.append(f"{key} (new parameter)")
+
+        # Changes in values between boot and runtime should cause a
+        # reboot.
+        elif booted_properties[key] != current_properties[key]:
+            fragments.append(
+                "{}: {} -> {}".format(
+                    key, booted_properties[key], current_properties[key]
+                )
+            )
+
+    if fragments:
+        msg = "Cold restart because KVM parameters have changed: {}".format(
+            ", ".join(fragments)
+        )
+        return Request(RebootActivity("poweroff"), comment=msg)
 
 
 def request_reboot_for_kernel(
