@@ -4,6 +4,7 @@
   pkgs,
   python3Packages,
   lib,
+  file,
   libceph,
   ceph_client,
   fetchFromGitHub,
@@ -85,7 +86,9 @@ in
       py.pytest
       py.pytest-cov
       py.pytest-timeout
+      py.pytest-xdist
       py.mock
+      file
 
       # Allow passing through to pytest in the NixOS test.
       (py.buildPythonPackage rec {
@@ -109,7 +112,8 @@ in
     doCheck = true;
     checkPhase = ''
       runHook preCheck
-      PATH="${lib.makeBinPath propagatedBuildInputs}:$PATH" pytest -vv -m "unit"
+      export PATH="${lib.makeBinPath propagatedBuildInputs}:$PATH"
+      pytest -vv -n auto --maxprocesses 10 -m "not live"
       runHook postCheck
     '';
 

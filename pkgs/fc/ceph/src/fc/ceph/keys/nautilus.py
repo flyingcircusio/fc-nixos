@@ -177,15 +177,15 @@ class KeyConfig(object):
     ids, and interaction with Ceph and text keyring files.
     """
 
-    filename = None
+    filename: str
     is_stub = False
 
     # Ceph knows two concepts:
     # 1. 'usernames' and 'entities'. The include the type like 'client.admin'
     # 2. 'names' and 'ids'. They do not include the type like 'admin'
 
-    entity = None
-    capabilities = None
+    entity: str
+    capabilities: dict[str, str]
     additional_salt = b""
 
     def __init__(self, id):
@@ -218,21 +218,32 @@ key = {self.key.to_string()}
 class ClientKey(KeyConfig):
     filename = "/etc/ceph/ceph.client.{id}.keyring"
     entity = "client.{id}"
-    # assumption: all clients are allowed to use RBD
-    capabilities = {"mon": "allow r, allow profile rbd", "osd": "allow rwx"}
+    capabilities = {
+        # assumption: all clients are allowed to use RBD
+        "mon": "allow r, allow profile rbd",
+        "osd": "allow rwx",
+        # clients are also allowed to start rbd live migration tasks
+        "mgr": "allow profile rbd",
+    }
 
 
 class RGWKey(KeyConfig):
     filename = "/etc/ceph/ceph.client.radosgw.{id}.keyring"
     entity = "client.radosgw.{id}"
-    capabilities = {"mon": "allow rwx", "osd": "allow rwx"}
+    capabilities = {
+        "mon": "allow rwx",
+        "osd": "allow rwx",
+    }
     additional_salt = b"rgw"
 
 
 class ManagerKey(KeyConfig):
     filename = "/etc/ceph/ceph.mgr.{id}.keyring"
     entity = "mgr.{id}"
-    capabilities = {"mon": "allow profile mgr", "osd": "allow *"}
+    capabilities = {
+        "mon": "allow profile mgr",
+        "osd": "allow *",
+    }
     additional_salt = b"mgr"
 
 

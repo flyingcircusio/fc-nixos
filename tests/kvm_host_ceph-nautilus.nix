@@ -10,7 +10,7 @@ let
   makeHostConfig = { id }:
     { config, pkgs, lib, ... }:
     let
-      testPackage = if useCheckout then pkgs.fc.qemu-dev-nautilus else pkgs.fc.qemu-nautilus;
+      fcqemu = if useCheckout then pkgs.fc.qemu-dev-nautilus else pkgs.fc.qemu-nautilus;
     in
     {
 
@@ -76,16 +76,46 @@ let
       };
 
       environment.systemPackages = [
+         (pkgs.python38.withPackages
+            (ps: fcqemu.propagatedBuildInputs ++
+              [
+                pkgs.python38Packages.pytest
+                pkgs.python38Packages.pytest-cov
+                pkgs.python38Packages.pytest-xdist
+                pkgs.python38Packages.pytest-timeout
+                pkgs.python38Packages.mock
+                fcqemu
+
+                (pkgs.python38Packages.buildPythonPackage rec {
+                  pname = "pytest-flakefinder";
+                  version = "1.1.0";
+
+                  src = pkgs.python38Packages.fetchPypi {
+                    inherit pname version;
+                    hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
+                  };
+
+                  propagatedBuildInputs = [ pkgs.python38Packages.pytest ];
+
+                  meta = with lib; {
+                    description = "Runs tests multiple times to expose flakiness.";
+                    homepage = "https://github.com/dropbox/pytest-flakefinder";
+                  };
+                })
+
+              ])
+          )
+
           # Beware: never get the idea to name this script anything that matches
           # "qemu". The tests include a fixture that kills everything with the
           # substring "qemu" in it and naming this script incorrectly can cause
           # the test to kill the test runner itself which in turn causes
           # confusion that may take about 1 hour to figure out what the hell
           # is going on.
-          (pkgs.writeShellScriptBin "run-tests" ''
-            cd /root/fc.qemu
-            export PY_IGNORE_IMPORTMISMATCH=1
-            /root/fc.qemu-env/bin/pytest -vv "$@" 2>&1
+          (pkgs.writeShellScriptBin "run-tests" (
+            ''
+            cd ${fcqemu.src}
+            pytest -vv --cov-append "$@" 2>&1
             ${if testOpts != "" then ''
             # If we run with custom test options we might be filtering
             # for tests and due to the live/not live split either phase
@@ -99,7 +129,7 @@ let
               exit $PYTESTRET;
             fi
             '' else ""}
-          '')
+          ''))
       ];
 
       services.openssh.enable = lib.mkForce true;
@@ -119,47 +149,7 @@ let
         ];
       };
 
-      system.activationScripts.fcQemuSrc = let
-        cephPkgs = config.fclib.ceph.mkPkgs "nautilus";
-        py = pkgs.python3;
-        pyPkgs = py.pkgs;
-        qemuTestEnv = py.buildEnv.override {
-          extraLibs = [
-            testPackage
 
-            # Additional packages to run the tests
-            pyPkgs.pytest
-            pyPkgs.pytest-xdist
-            pyPkgs.pytest-cov
-            pyPkgs.mock
-            pyPkgs.pytest-timeout
-
-            (pyPkgs.buildPythonPackage rec {
-              pname = "pytest-flakefinder";
-              version = "1.1.0";
-
-              src = pyPkgs.fetchPypi {
-                inherit pname version;
-                hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
-              };
-
-              propagatedBuildInputs = [ pyPkgs.pytest ];
-
-              meta = with lib; {
-                description = "Runs tests multiple times to expose flakiness.";
-                homepage = "https://github.com/dropbox/pytest-flakefinder";
-              };
-            })
-          ];
-          # There are some namespace packages that collide on `backports`.
-          ignoreCollisions = true;
-        };
-      in ''
-        # Provide a writable copy so the coverage etc. can be recorded.
-        cp -a ${testPackage.src} /root/fc.qemu
-        chmod u+w /root/fc.qemu -R
-        ln -s ${qemuTestEnv} /root/fc.qemu-env
-      '';
 
       # We need this in the enc files as well so that timer jobs can update
       # the keys etc.
@@ -181,7 +171,7 @@ let
       # KVM
       flyingcircus.roles.kvm_host = {
         enable = true;
-        package = testPackage;
+        package = fcqemu;
         cephRelease = clientCephRelease;
       };
 
@@ -375,6 +365,24 @@ in
           else:
             raise
 
+    ############################################################################
+    # NO CEPH AND NO CONSUL INTERACTION - Ceph is not set up properly, yet. Any
+    # interaction with Ceph will hang mysteriously!
+    ############################################################################
+
+    with subtest("Exercise fast standalone fc-qemu features"):
+      result = show(host1, "fc-qemu --help")
+      assert result.startswith("usage: fc-qemu"), "Unexpected help output"
+
+      result = show(host1, "fc-qemu ls")
+      assert result == "", repr(result)
+
+      result = show(host1, "fc-qemu check")
+      assert result == "OK - 0 VMs - 0 MiB used - 0 MiB expected"
+
+      result = show(host1, "fc-qemu-scrub")
+      assert "" == result
+
     host1.wait_for_unit("consul")
     host2.wait_for_unit("consul")
     host3.wait_for_unit("consul")
@@ -390,34 +398,6 @@ in
     host2.wait_for_unit("nginx")
     host3.wait_for_unit("nginx")
 
-    ########################################################################
-    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
-    # interaction with Ceph will hang mysteriously!
-    ########################################################################
-
-    with subtest("Run unit tests"):
-      show(host1, "run-tests ${testOpts} -m 'not live'")
-
-    ########################################################################
-    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
-    # interaction with Ceph will hang mysteriously!
-    ########################################################################
-
-    with subtest("Exercise standalone fc-qemu features"):
-      result = show(host1, "fc-qemu --help")
-      assert result.startswith("usage: fc-qemu"), "Unexpected help output"
-
-      result = show(host1, "fc-qemu ls")
-      assert result == "", repr(result)
-
-      result = show(host1, "fc-qemu check")
-      assert result == "OK - 0 VMs - 0 MiB used - 0 MiB expected"
-
-      result = show(host1, "fc-qemu report-supported-cpu-models")
-      assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result
-
-      result = show(host1, "fc-qemu-scrub")
-      assert "" == result
 
     with subtest("Initialize first mon"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb')
@@ -431,6 +411,8 @@ in
 
       # mgr keys rely on 'fc-ceph keys' to be executes first
       host1.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
+      host2.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
+      host2.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
 
     with subtest("Initialize OSD"):
       host1.execute('fc-ceph osd create-bluestore --no-encrypt /dev/vdc')
@@ -475,7 +457,7 @@ in
     show(host1, "df -h")
     show(host1, "rbd ls rbd.hdd")
     show(host1, "rbd ls rbd.ssd")
-    show(host1, "rbd rm rbd/.fc-qemu.maintenance")
+    show(host1, "rbd rm rbd/.fc-qemu.maintenance || true")
 
     with subtest("Check maintenance enter/exit works"):
       result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
@@ -499,6 +481,16 @@ in
       assert "I evacuation-pending" in result
       assert "I evacuation-running" in result
       assert "I evacuation-success" in result
+
+    with subtest("Exercise slow standalone fc-qemu features"):
+      result = show(host1, "fc-qemu report-supported-cpu-models")
+      assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result
+    with subtest("Run unit tests"):
+      show(host1, "run-tests ${testOpts} -m 'not live' -n auto")
+
+    show(host1, "ls -lah")
+    host1.copy_from_vm('fc.qemu-coverage', './coverage')
+    host1.copy_from_vm('fc.qemu-report.xml', './report.xml')
 
   '';
 })
