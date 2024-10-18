@@ -6,6 +6,7 @@ import errno
 import json
 import logging
 import sys
+import traceback
 from dataclasses import dataclass
 from subprocess import CalledProcessError
 from typing import Optional, Tuple
@@ -64,36 +65,54 @@ class DirectoryS3User(S3User):
     deletion_stages: list[str]
 
     def ensure(self, local_users: dict[str, S3User]):
-        if "hard" not in self.deletion_stages:
+        if self.should_exist:
             self.ensure_exists(local_users)
-        if "soft" in self.deletion_stages:
-            self.ensure_no_keys(local_users)
-        if "hard" in self.deletion_stages:
+            if "soft" in self.deletion_stages:
+                self.ensure_no_keys(local_users)
+        else:
             self.ensure_deleted(local_users)
+
+    @property
+    def should_exist(self):
+        return "hard" not in self.deletion_stages
 
     def is_consistent_with_local(self, local_users) -> bool:
         mismatches: list[str] = []
         compare_properties = ("display_name", "access_key")
         local_user_data = local_users.get(self.uid, None)
-        if not local_user_data:
+
+        found_locally = bool(local_user_data)
+
+        if self.should_exist and not found_locally:
             mismatches.append(f"- not found in local users")
-        else:
+        elif found_locally and not self.should_exist:
+            mismatches.append(f"- should be deleted but still exists locally")
+
+        elif self.should_exist and found_locally:
             for prop in compare_properties:
                 if getattr(self, prop) != getattr(local_user_data, prop):
                     mismatches.append(f"- differ in {prop}")
 
         # additional checks on fresh radosgw data
-        radosgw_user_info = run.json.radosgw_admin(
-            "user", "info", "--uid", self.uid
-        )
-        if (num_keys := len(radosgw_user_info["keys"])) > 1:
-            # only a warning condition, not an error
-            log.warning(
-                f"radosgw user {self.uid} has {num_keys}, this is more then expected."
+        try:
+            radosgw_user_info = run.json.radosgw_admin(
+                "user", "info", "--uid", self.uid
             )
+            if (num_keys := len(radosgw_user_info["keys"])) > 1:
+                # only a warning condition, not an error
+                log.warning(
+                    f"radosgw user {self.uid} has {num_keys}, this is more then expected."
+                )
+        except CalledProcessError as err:
+            if err.returncode == 22 and not self.should_exist:
+                pass
+            else:
+                mismatches.append(
+                    "- failed to retreive user info from `radosgw-admin:\n"
+                    + traceback.format_exc()
+                )
 
         if mismatches:
-            # FIXME: could we provide the error list directly to structlog?
             log.error(
                 f"User data mismatch for {self.uid}:\n"
                 + "\n\t".join(mismatches)
@@ -156,7 +175,9 @@ class DirectoryS3User(S3User):
         for keydata in run.json.radosgw_admin(
             "user", "info", "--uid", self.uid
         )["keys"]:
-            run.radosgw_admin("key", "rm", "access_key", keydata["access_key"])
+            run.radosgw_admin(
+                "key", "rm", "--access_key", keydata["access_key"]
+            )
 
         self.secret_key = None
         local_users[self.uid].secret_key = None
@@ -165,12 +186,12 @@ class DirectoryS3User(S3User):
         # --purge-keys is not really necessary, but still do it
         try:
             run.radosgw_admin(
-                "user",
-                "rm",
-                "--uid",
-                self.uid,
+                # fmt: off
+                "user", "rm",
+                "--uid", self.uid,
                 "--purge-data",
                 "--purge-keys",
+                # fmt: on
             )
         except CalledProcessError as err:
             if err.returncode == 2 and self.uid not in list_radosgw_users():
@@ -211,7 +232,7 @@ class RadosgwUserManager:
             radosgw_user_info = run.json.radosgw_admin(
                 "user", "info", "--uid", uid
             )
-            local_users[radosgw_user_info["uid"]] = S3User.from_radosgw(
+            local_users[radosgw_user_info["user_id"]] = S3User.from_radosgw(
                 radosgw_user_info
             )
 
@@ -220,9 +241,7 @@ class RadosgwUserManager:
     def _get_directory_user_report(self) -> dict[str, DirectoryS3User]:
         """Retrieve user data from directory"""
         directory_users: dict[str, DirectoryS3User] = {}
-        directory_info = self.dir_conn.list_s3_users(
-            location=self.location, storage_resource_group_filter=self.rg
-        )
+        directory_info = self.dir_conn.list_s3_users(self.location, self.rg)
         directory_users = {}
         for uid, user_dict in directory_info.items():
             directory_users[uid] = DirectoryS3User.from_directory(
@@ -231,7 +250,7 @@ class RadosgwUserManager:
         return directory_users
 
     def report_local_users_to_directory(self):
-        dir_conn.update_s3_users(
+        self.dir_conn.update_s3_users(
             {
                 uid: {
                     "display_name": user.display_name,
@@ -249,7 +268,7 @@ class RadosgwUserManager:
         for uid, directory_user in self.directory_users.items():
             try:
                 directory_user.ensure(self.local_users)
-                directory_user.check_consistency()
+                directory_user.is_consistent_with_local(self.local_users)
             except Exception:
                 # individual errors shall not block progress on all other users
                 log.exception(
@@ -286,14 +305,14 @@ def main() -> int:
     # user management failures. Users pending deletion are accounted one last
     # time, users to be created are accounted first in the next run.
     got_errors = False
-    try:
-        accounting(location, directory)
-    except Exception:
-        log.exception("Error during S3 accounting, continuing with user sync:")
-        got_errors = True
+    # try:
+    #    accounting(location, directory)
+    # except Exception:
+    #    log.exception("Error during S3 accounting, continuing with user sync:")
+    #    got_errors = True
 
     user_manager = RadosgwUserManager(
-        directory, location, enc["parameters"]["rg"]
+        directory, location, enc["parameters"]["resource_group"]
     )
     user_manager.sync_users()
     got_errors = got_errors or user_manager.processing_errors
