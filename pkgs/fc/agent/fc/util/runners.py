@@ -1,5 +1,6 @@
 # copied from pkgs/fc/ceph/src/fc/ceph/util.py
 import json
+import shlex
 import subprocess
 from subprocess import PIPE
 
@@ -92,7 +93,7 @@ class Runner(object):
             options = self.default_options.copy()
             options.update(kw)
 
-            print("$", name, " ".join(args), flush=True)
+            print("$", name, shlex.join(args), flush=True)
 
             check = options["check"]
             options["check"] = True
