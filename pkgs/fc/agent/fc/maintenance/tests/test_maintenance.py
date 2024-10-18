@@ -1,4 +1,5 @@
 import contextlib
+import json
 import unittest.mock
 from unittest.mock import MagicMock
 
@@ -8,6 +9,7 @@ from fc.maintenance.activity import RebootType
 from fc.maintenance.activity.reboot import RebootActivity
 from fc.maintenance.activity.update import UpdateActivity
 from fc.maintenance.activity.vm_change import VMChangeActivity
+from pytest import fixture
 
 ENC = {
     "parameters": {
@@ -15,6 +17,31 @@ ENC = {
         "cores": 2,
     }
 }
+
+
+@fixture
+def guest_properties(tmp_path):
+    qemu_state_dir = tmp_path / "qemu"
+    kvm_seed_dir = tmp_path / "fc-data"
+    runtime_dir = tmp_path / "run"
+
+    qemu_state_dir.mkdir(parents=True, exist_ok=True)
+    kvm_seed_dir.mkdir(parents=True, exist_ok=True)
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+
+    fc.maintenance.maintenance.QEMU_STATE_DIR = str(qemu_state_dir)
+    fc.maintenance.maintenance.KVM_SEED_DIR = str(kvm_seed_dir)
+    fc.maintenance.maintenance.RUNTIME_DIR = str(runtime_dir)
+
+    return (qemu_state_dir, runtime_dir)
+
+
+def write_properties_file(directory, filename, content):
+    with open(directory / filename, "w") as f:
+        if isinstance(content, dict):
+            json.dump(content, f)
+        else:
+            f.write(content)
 
 
 @unittest.mock.patch("fc.util.dmi_memory.main")
@@ -63,64 +90,215 @@ def test_do_not_request_reboot_for_unchanged_cpu(
     assert request is None
 
 
-@unittest.mock.patch("os.path.isdir")
-@unittest.mock.patch("os.path.exists")
-@unittest.mock.patch("shutil.move")
-def test_request_reboot_for_qemu_change(
-    shutil_move,
-    path_exists,
-    path_isdir,
-    logger,
+def test_request_reboot_for_qemu_binary_generation_change(
+    logger, guest_properties
 ):
-    path_isdir.return_value = True
-    path_exists.return_value = True
+    qemu, run = guest_properties
 
-    def fake_open_qemu_files(filename, encoding):
-        mock = unittest.mock.Mock()
-        if filename == "/run/qemu-binary-generation-current":
-            mock.read.return_value = "2"
-        elif filename == "/var/lib/qemu/qemu-binary-generation-booted":
-            mock.read.return_value = "1"
+    write_properties_file(qemu, "qemu-binary-generation-booted", "1")
+    write_properties_file(run, "qemu-binary-generation-current", "2")
 
-        yield mock
-
-    with unittest.mock.patch(
-        "builtins.open", contextlib.contextmanager(fake_open_qemu_files)
-    ):
-        request = fc.maintenance.maintenance.request_reboot_for_qemu(logger)
-
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
     assert "Qemu binary environment has changed" in request.comment
     activity = request.activity
     assert isinstance(activity, RebootActivity)
     assert activity.reboot_needed == RebootType.COLD
 
 
-@unittest.mock.patch("os.path.isdir")
-@unittest.mock.patch("os.path.exists")
-@unittest.mock.patch("shutil.move")
-def test_do_not_request_reboot_for_unchanged_qemu(
-    shutil_move,
-    path_exists,
-    path_isdir,
-    logger,
+def test_do_not_request_reboot_for_unchanged_qemu_binary_generation(
+    logger, guest_properties
 ):
-    path_isdir.return_value = True
-    path_exists.return_value = True
+    qemu, run = guest_properties
 
-    def fake_open_qemu_files(filename, encoding):
-        mock = unittest.mock.Mock()
-        if filename == "/run/qemu-binary-generation-current":
-            mock.read.return_value = "1"
-        elif filename == "/var/lib/qemu/qemu-binary-generation-booted":
-            mock.read.return_value = "1"
+    write_properties_file(qemu, "qemu-binary-generation-booted", "2")
+    write_properties_file(run, "qemu-binary-generation-current", "2")
 
-        yield mock
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
+    assert request is None
 
-    with unittest.mock.patch(
-        "builtins.open", contextlib.contextmanager(fake_open_qemu_files)
-    ):
-        request = fc.maintenance.maintenance.request_reboot_for_qemu(logger)
 
+def test_do_not_request_reboot_for_downgraded_qemu_binary_generation(
+    logger, guest_properties
+):
+    qemu, run = guest_properties
+
+    write_properties_file(qemu, "qemu-binary-generation-booted", "2")
+    write_properties_file(run, "qemu-binary-generation-current", "1")
+
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
+    assert request is None
+
+
+def test_request_reboot_for_guest_properties_upgrade(logger, guest_properties):
+    qemu, run = guest_properties
+
+    write_properties_file(qemu, "qemu-binary-generation-booted", "2")
+    write_properties_file(run, "qemu-binary-generation-current", "2")
+    write_properties_file(
+        run, "qemu-guest-properties-current", {"binary_generation": 2}
+    )
+
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
+    assert "KVM environment has been updated" in request.comment
+    activity = request.activity
+    assert isinstance(activity, RebootActivity)
+    assert activity.reboot_needed == RebootType.COLD
+
+
+def test_request_reboot_for_guest_properties_qemu_change(
+    logger, guest_properties
+):
+    qemu, run = guest_properties
+
+    write_properties_file(
+        qemu, "qemu-guest-properties-booted", {"binary_generation": 1}
+    )
+    write_properties_file(
+        run, "qemu-guest-properties-current", {"binary_generation": 2}
+    )
+
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
+    assert "Qemu binary environment has changed" in request.comment
+    activity = request.activity
+    assert isinstance(activity, RebootActivity)
+    assert activity.reboot_needed == RebootType.COLD
+
+
+def test_do_not_request_reboot_for_unchanged_guest_properties_qemu(
+    logger, guest_properties
+):
+    qemu, run = guest_properties
+
+    write_properties_file(
+        qemu, "qemu-guest-properties-booted", {"binary_generation": 2}
+    )
+    write_properties_file(
+        run, "qemu-guest-properties-current", {"binary_generation": 2}
+    )
+
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
+    assert request is None
+
+
+def test_do_not_request_reboot_for_downgraded_guest_properties_qemu(
+    logger, guest_properties
+):
+    qemu, run = guest_properties
+
+    write_properties_file(
+        qemu, "qemu-guest-properties-booted", {"binary_generation": 2}
+    )
+    write_properties_file(
+        run, "qemu-guest-properties-current", {"binary_generation": 1}
+    )
+
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
+    assert request is None
+
+
+def test_request_reboot_for_guest_property_new_property(
+    logger, guest_properties
+):
+    qemu, run = guest_properties
+
+    write_properties_file(
+        qemu, "qemu-guest-properties-booted", {"binary_generation": 2}
+    )
+    write_properties_file(
+        run,
+        "qemu-guest-properties-current",
+        {"binary_generation": 2, "cpu_model": "qemu64-v1"},
+    )
+
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
+    assert "KVM parameters have changed" in request.comment
+    assert "cpu_model (new parameter)" in request.comment
+    activity = request.activity
+    assert isinstance(activity, RebootActivity)
+    assert activity.reboot_needed == RebootType.COLD
+
+
+def test_do_not_request_reboot_for_guest_property_removed_property(
+    logger, guest_properties
+):
+    qemu, run = guest_properties
+
+    write_properties_file(
+        qemu,
+        "qemu-guest-properties-booted",
+        {"binary_generation": 2, "cpu_model": "qemu64-v1"},
+    )
+    write_properties_file(
+        run, "qemu-guest-properties-current", {"binary_generation": 2}
+    )
+
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
+    assert request is None
+
+
+def test_request_reboot_for_guest_property_value_change(
+    logger, guest_properties
+):
+    qemu, run = guest_properties
+
+    write_properties_file(
+        qemu,
+        "qemu-guest-properties-booted",
+        {"binary_generation": 2, "cpu_model": "qemu64-v1"},
+    )
+    write_properties_file(
+        run,
+        "qemu-guest-properties-current",
+        {"binary_generation": 2, "cpu_model": "Haswell-v4"},
+    )
+
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
+    assert "KVM parameters have changed" in request.comment
+    assert "cpu_model: qemu64-v1 -> Haswell-v4" in request.comment
+    activity = request.activity
+    assert isinstance(activity, RebootActivity)
+    assert activity.reboot_needed == RebootType.COLD
+
+
+def test_do_not_request_for_unchanged_guest_properties(
+    logger, guest_properties
+):
+    qemu, run = guest_properties
+
+    write_properties_file(
+        qemu,
+        "qemu-guest-properties-booted",
+        {"binary_generation": 2, "cpu_model": "qemu64-v1"},
+    )
+    write_properties_file(
+        run,
+        "qemu-guest-properties-current",
+        {"binary_generation": 2, "cpu_model": "qemu64-v1"},
+    )
+
+    request = fc.maintenance.maintenance.request_reboot_for_kvm_environment(
+        logger
+    )
     assert request is None
 
 
