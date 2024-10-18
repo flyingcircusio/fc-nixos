@@ -135,7 +135,7 @@ in
         BRIDGE="br''${VLAN}"
 
         ${pkgs.iproute}/bin/ip link set $INTERFACE up
-        ${pkgs.iproute}/bin/ip link set mtu $(< /sys/class/net/eth''${VLAN}/mtu) dev $INTERFACE
+        ${pkgs.iproute}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev $INTERFACE
         ${pkgs.bridge-utils}/bin/brctl addif $BRIDGE $INTERFACE
         '';
       mode = "0744";
