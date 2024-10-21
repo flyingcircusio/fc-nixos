@@ -5,7 +5,8 @@ with lib;
 let
   cfg = config.flyingcircus;
 in
-mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
+mkIf (cfg.infrastructureModule == "flyingcircus-physical") (lib.mkMerge [
+  {
 
     hardware.enableRedistributableFirmware = true;
     hardware.cpu.amd.updateMicrocode = true;
@@ -35,12 +36,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
         "dolvm"
         "igb.InterruptThrottleRate=1"
       ];
-
-      loader.grub = {
-        device = config.fclib.mkPlatform "/dev/sda";
-        fsIdentifier = "provided";
-        gfxmodeBios = "text";
-      };
 
       # Wanted by backy and Ceph servers
       kernel.sysctl."vm.vfs_cache_pressure" = 10;
@@ -73,7 +68,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     fileSystems = {
       "/boot" = {
         device = "/dev/disk/by-label/boot";
-        fsType = "ext4";
+        fsType = "auto";
       };
       "/" = {
         device = "/dev/disk/by-label/root";
@@ -173,4 +168,21 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
     # 128 core-threads.
     nix.nrBuildUsers = 128;
 
-}
+  }
+
+  (lib.mkIf (config.flyingcircus.boot-style == "bios") {
+    boot.loader.grub = {
+      device = config.fclib.mkPlatform "/dev/sda";
+      fsIdentifier = "provided";
+      gfxmodeBios = "text";
+    };
+  })
+
+  (lib.mkIf (config.flyingcircus.boot-style == "efi") {
+    boot.loader = {
+      systemd-boot.enable = true;
+      efi.canTouchEfiVariables = true;
+    };
+  })
+
+])

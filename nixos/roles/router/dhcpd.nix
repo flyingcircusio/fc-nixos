@@ -37,9 +37,17 @@ let
         # We are currently running iPXE: load the static boot script.
         filename "flyingcircus.ipxe";
     } else {
-        # We are currently running the built-in ROM PXE and switch to boot the
-        # iPXE kernel.
-        filename "undionly.kpxe"; # we are in burned in PXE and load iPXE kernel
+      # https://wiki.fogproject.org/wiki/index.php?title=BIOS_and_UEFI_Co-Existence
+      # and https://ipxe.org/cfg/platform
+      if substring (option vendor-class-identifier, 15, 5) = "00000" {
+          # BIOS client
+          filename "undionly.kpxe";
+      }
+      else {
+          # default to EFI 64 bit. This should work for classes 7 and 9 as long
+          # as secure boot is disabled.
+          filename "ipxe.efi";
+      }
     }
     next-server ${location}-router.mgm.${location}.${suffix};
     '';
@@ -99,6 +107,7 @@ in
         cp ${./flyingcircus.ipxe} $out/flyingcircus.ipxe
         # place a file called "undionly.kpxe" in this path, take it from ${pkgs.ipxe}/undionly.kpxe
         cp ${pkgs.ipxe}/undionly.kpxe $out/
+        cp ${pkgs.ipxe}/ipxe.efi $out/
       '';
     };
 

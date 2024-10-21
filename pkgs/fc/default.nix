@@ -27,6 +27,7 @@ rec {
   collectdproxy = callPackage ./collectdproxy {};
   fix-so-rpath = callPackage ./fix-so-rpath {};
   ipmitool = callPackage ./ipmitool {};
+  install = callPackage ./install {};
 
   ledtool = pkgs.writers.writePython3Bin "fc-ledtool"
     {} (builtins.readFile ./ledtool/led.py);
