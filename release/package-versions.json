@@ -70,14 +70,14 @@
     "version": "18.2.4"
   },
   "chromedriver": {
-    "name": "chromedriver-129.0.6668.70",
+    "name": "chromedriver-129.0.6668.91",
     "pname": "chromedriver",
-    "version": "129.0.6668.70"
+    "version": "129.0.6668.91"
   },
   "chromium": {
-    "name": "chromium-129.0.6668.70",
+    "name": "chromium-129.0.6668.100",
     "pname": "chromium",
-    "version": "129.0.6668.70"
+    "version": "129.0.6668.100"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -155,9 +155,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.79",
+    "name": "element-web-1.11.81",
     "pname": "element-web",
-    "version": "1.11.79"
+    "version": "1.11.81"
   },
   "erlang": {
     "name": "erlang-25.3.2.12",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-130.0.1",
+    "name": "firefox-131.0.3",
     "pname": "firefox",
-    "version": "130.0.1"
+    "version": "131.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-13.2.0",
@@ -220,9 +220,9 @@
     "version": "2.44.1"
   },
   "gitaly": {
-    "name": "gitaly-17.2.8",
+    "name": "gitaly-17.2.9",
     "pname": "gitaly",
-    "version": "17.2.8"
+    "version": "17.2.9"
   },
   "github-runner": {
     "name": "github-runner-2.319.1",
@@ -230,24 +230,24 @@
     "version": "2.319.1"
   },
   "gitlab": {
-    "name": "gitlab-17.2.8",
+    "name": "gitlab-17.2.9",
     "pname": "gitlab",
-    "version": "17.2.8"
+    "version": "17.2.9"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.9.0",
+    "name": "gitlab-container-registry-4.10.0",
     "pname": "gitlab-container-registry",
-    "version": "4.9.0"
+    "version": "4.10.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.2.8",
+    "name": "gitlab-ee-17.2.9",
     "pname": "gitlab-ee",
-    "version": "17.2.8"
+    "version": "17.2.9"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.2.8",
+    "name": "gitlab-pages-17.2.9",
     "pname": "gitlab-pages",
-    "version": "17.2.8"
+    "version": "17.2.9"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.1.0",
@@ -255,9 +255,9 @@
     "version": "17.1.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.2.8",
+    "name": "gitlab-workhorse-17.2.9",
     "pname": "gitlab-workhorse",
-    "version": "17.2.8"
+    "version": "17.2.9"
   },
   "glibc": {
     "name": "glibc-2.39-52",
@@ -290,9 +290,9 @@
     "version": "1.22.6"
   },
   "grafana": {
-    "name": "grafana-10.4.9",
+    "name": "grafana-10.4.10",
     "pname": "grafana",
-    "version": "10.4.9"
+    "version": "10.4.10"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -395,9 +395,9 @@
     "version": "1.31.0+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-24.0.5",
+    "name": "keycloak-25.0.6",
     "pname": "keycloak",
-    "version": "24.0.5"
+    "version": "25.0.6"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.15.0",
@@ -510,9 +510,9 @@
     "version": "5.1.1"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.116.0",
+    "name": "matrix-synapse-wrapped-1.117.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.116.0"
+    "version": "1.117.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -565,9 +565,9 @@
     "version": "1.26.2"
   },
   "nginxMainline": {
-    "name": "nginx-1.27.1",
+    "name": "nginx-1.27.2",
     "pname": "nginx",
-    "version": "1.27.1"
+    "version": "1.27.2"
   },
   "nginxStable": {
     "name": "nginx-1.26.2",
@@ -675,29 +675,29 @@
     "version": "10.43"
   },
   "percona": {
-    "name": "percona-server_lts-8.0.36-28",
-    "pname": "percona-server_lts",
-    "version": "8.0.36-28"
+    "name": "percona-server-8.0.37-29",
+    "pname": "percona-server",
+    "version": "8.0.37-29"
   },
   "percona-server": {
-    "name": "percona-server_lts-8.0.36-28",
-    "pname": "percona-server_lts",
-    "version": "8.0.36-28"
+    "name": "percona-server-8.0.37-29",
+    "pname": "percona-server",
+    "version": "8.0.37-29"
   },
   "percona-server_innovation": {
-    "name": "percona-server_innovation-8.3.0-1",
-    "pname": "percona-server_innovation",
-    "version": "8.3.0-1"
+    "name": "percona-server-8.4.0-1",
+    "pname": "percona-server",
+    "version": "8.4.0-1"
   },
   "percona-server_lts": {
-    "name": "percona-server_lts-8.0.36-28",
-    "pname": "percona-server_lts",
-    "version": "8.0.36-28"
+    "name": "percona-server-8.0.37-29",
+    "pname": "percona-server",
+    "version": "8.0.37-29"
   },
   "percona-xtrabackup_8_0": {
-    "name": "percona-xtrabackup-8.0.35-30",
+    "name": "percona-xtrabackup-8.0.35-31",
     "pname": "percona-xtrabackup",
-    "version": "8.0.35-30"
+    "version": "8.0.35-31"
   },
   "percona-xtrabackup_8_3": {
     "name": "percona-xtrabackup-8.3.0-1",
@@ -705,14 +705,14 @@
     "version": "8.3.0-1"
   },
   "percona-xtrabackup_innovation": {
-    "name": "percona-xtrabackup-8.3.0-1",
+    "name": "percona-xtrabackup-8.4.0-1",
     "pname": "percona-xtrabackup",
-    "version": "8.3.0-1"
+    "version": "8.4.0-1"
   },
   "percona-xtrabackup_lts": {
-    "name": "percona-xtrabackup-8.0.35-30",
+    "name": "percona-xtrabackup-8.0.35-31",
     "pname": "percona-xtrabackup",
-    "version": "8.0.35-30"
+    "version": "8.0.35-31"
   },
   "percona57": {
     "name": "percona-5.7.42-45",
@@ -720,9 +720,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-server_lts-8.0.36-28",
-    "pname": "percona-server_lts",
-    "version": "8.0.36-28"
+    "name": "percona-server-8.0.37-29",
+    "pname": "percona-server",
+    "version": "8.0.37-29"
   },
   "percona83": {
     "name": "percona-server_innovation-8.3.0-1",
