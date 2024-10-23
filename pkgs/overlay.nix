@@ -121,7 +121,9 @@ in {
     };
   });
 
-  flannel = super.flannel.overrideAttrs(_: rec {
+  ipxe = super.callPackage ./ipxe.nix { };
+
+  flannel = super.flannel.overrideAttrs (_: rec {
     version = "0.13.1-rc1";
     rev = "v${version}";
 

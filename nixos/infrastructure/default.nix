@@ -22,6 +22,12 @@
       default = false;
       description = "If running on SSD set I/O scheduler to none";
     };
+    flyingcircus.boot-style = mkOption {
+      type = types.enum [ "bios" "efi"];
+      default = "bios";
+      example = "efi";
+      description = "Whether to boot using BIOS (grub) or EFI (systemd-boot).";
+    };
   };
 
 }

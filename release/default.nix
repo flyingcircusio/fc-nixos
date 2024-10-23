@@ -126,6 +126,7 @@ let
 
   includedPkgNames = [
     "calibre"
+    "irqbalance"
   ];
 
   testPkgNames = includedPkgNames ++
@@ -304,7 +305,7 @@ let
     (removeAttrs upstreamSources [ "allUpstreams" ]);
 
   channels = channelsUpstream // {
-    # The attribut ename `fc` if important because if channel is added without
+    # The attribute name `fc` if important because if channel is added without
     # an explicit name argument, it will be available as <fc>.
     fc = with lib; pkgs.releaseTools.channel {
       name = "fc-${version}${versionSuffix}";
