@@ -15,7 +15,8 @@ There's a role for each supported major version, currently:
 
 - mysql57: Percona 5.7.x (End-of-life)
 - percona80: Percona 8.0.x (*LTS* release)
-- percona83: Percona 8.3.x (*Innovation* release)
+- percona83: Percona 8.3.x (*Innovation* release, End-of-life)
+- percona84: Percona 8.4.x (*LTS* release)
 
 Percona and MySQL currently follow a [two-fold release model](https://www.percona.com/blog/lts-and-innovation-releases-for-percona-server-for-mysql/)
 and provide support for 2 releases in parallel:
