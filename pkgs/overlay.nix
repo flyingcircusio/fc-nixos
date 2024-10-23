@@ -448,7 +448,7 @@ in {
     ];
   });
 
-  openssh_9_6 = super.openssh.overrideAttrs(old_ssh: rec {
+  openssh_9_6 = super.openssh.overrideAttrs (old_ssh: rec {
     version = "9.6p1";
     name = "openssh-${version}";
 
