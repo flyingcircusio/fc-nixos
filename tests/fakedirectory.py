@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from xmlrpc.server import SimpleXMLRPCRequestHandler, SimpleXMLRPCServer
 
 
@@ -18,6 +20,15 @@ class Directory(object):
 
     def deletions(self, type_=""):
         return {}
+
+    def list_virtual_machines(self, location):
+        p = Path("/directory_response/list_virtual_machines").joinpath(location)
+        if p.exists:
+            return json.loads(p.read_text())
+        return []
+
+    def publish_backup_status(self, machine, status):
+        return ""
 
 
 # Create server

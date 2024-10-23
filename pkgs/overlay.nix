@@ -25,7 +25,7 @@ in {
     pythonPackages = nixpkgs-23_05.python310Packages;
   });
 
-  backy = super.callPackage ./backy { inherit (nixpkgs-23_05) poetry2nix python310 mkShellNoCC;};
+  backy = super.callPackage ./backy { inherit (nixpkgs-23_05) poetry2nix python310 mkShellNoCC rustPlatform;};
 
   #
   # imports from other nixpkgs versions or local definitions
