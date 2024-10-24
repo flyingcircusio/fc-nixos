@@ -1,6 +1,5 @@
 import ./make-test-python.nix ({ testlib, useCheckout ? false, testOpts ? "", clientCephRelease ? "nautilus", ... }:
 #import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "-k test_vm_migration_pattern", clientCephRelease ? "nautilus", ... }:
-#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "-vv", clientCephRelease ? "nautilus", ... }:
 #import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "--flake-finder --flake-runs=500 -x --no-cov", clientCephRelease ? "nautilus", ... }:
 with testlib;
 let
@@ -85,7 +84,7 @@ let
           (pkgs.writeShellScriptBin "run-tests" ''
             cd /root/fc.qemu
             export PY_IGNORE_IMPORTMISMATCH=1
-            /root/fc.qemu-env/bin/pytest -vv "$@" 2>&1
+            /root/fc.qemu-env/bin/pytest -vv --cov-append "$@" 2>&1
             ${if testOpts != "" then ''
             # If we run with custom test options we might be filtering
             # for tests and due to the live/not live split either phase
@@ -375,6 +374,11 @@ in
           else:
             raise
 
+    host1.execute("systemctl stop fc-ceph-mon")
+    host2.execute("systemctl stop fc-ceph-mon")
+    host1.execute("systemctl stop fc-ceph-mgr")
+    host2.execute("systemctl stop fc-ceph-mgr")
+
     host1.wait_for_unit("consul")
     host2.wait_for_unit("consul")
     host3.wait_for_unit("consul")
@@ -398,28 +402,7 @@ in
     with subtest("Run unit tests"):
       show(host1, "run-tests ${testOpts} -m 'not live'")
 
-    ########################################################################
-    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
-    # interaction with Ceph will hang mysteriously!
-    ########################################################################
-
-    with subtest("Exercise standalone fc-qemu features"):
-      result = show(host1, "fc-qemu --help")
-      assert result.startswith("usage: fc-qemu"), "Unexpected help output"
-
-      result = show(host1, "fc-qemu ls")
-      assert result == "", repr(result)
-
-      result = show(host1, "fc-qemu check")
-      assert result == "OK - 0 VMs - 0 MiB used - 0 MiB expected"
-
-      result = show(host1, "fc-qemu report-supported-cpu-models")
-      assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result
-
-      result = show(host1, "fc-qemu-scrub")
-      assert "" == result
-
-    with subtest("Initialize first mon"):
+    with subtest("Initialize mons"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb')
       host1.execute('systemctl stop fc-ceph-mon')
       host1.execute('systemctl reset-failed fc-ceph-mon')
@@ -429,7 +412,7 @@ in
       host1.succeed('fc-ceph keys mon-update-single-client host1 ceph_osd,ceph_mon,kvm_host salt-for-host-1-dhkasjy9')
       host1.succeed('fc-ceph keys mon-update-single-client host2 kvm_host salt-for-host-2-dhkasjy9')
 
-      # mgr keys rely on 'fc-ceph keys' to be executes first
+      # mgr keys rely on 'fc-ceph keys' to be executed first
       host1.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
 
     with subtest("Initialize OSD"):
@@ -475,7 +458,7 @@ in
     show(host1, "df -h")
     show(host1, "rbd ls rbd.hdd")
     show(host1, "rbd ls rbd.ssd")
-    show(host1, "rbd rm rbd/.fc-qemu.maintenance")
+    show(host1, "rbd rm rbd/.fc-qemu.maintenance || true")
 
     with subtest("Check maintenance enter/exit works"):
       result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
@@ -499,6 +482,25 @@ in
       assert "I evacuation-pending" in result
       assert "I evacuation-running" in result
       assert "I evacuation-success" in result
+
+    with subtest("Exercise standalone fc-qemu features"):
+      result = show(host1, "fc-qemu --help")
+      assert result.startswith("usage: fc-qemu"), "Unexpected help output"
+
+      result = show(host1, "fc-qemu ls")
+      assert "I simplevm              offline" in result, repr(result)
+
+      result = show(host1, "fc-qemu check")
+      assert result == "OK - 1 VMs - 0 MiB used - 0 MiB expected", result
+
+      result = show(host1, "fc-qemu report-supported-cpu-models")
+      assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result, result
+
+      result = show(host1, "fc-qemu-scrub")
+      assert "I simplevm              running-ensure                 generation=0" in result, result
+
+    # host1.copy_from_vm('fc.qemu-coverage', './coverage')
+    host1.copy_from_vm('fc.qemu-report.xml', './report.xml')
 
   '';
 })
