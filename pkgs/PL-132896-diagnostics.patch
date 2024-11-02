@@ -1,0 +1,82 @@
+diff --git a/drivers/md/raid5.c b/drivers/md/raid5.c
+index c14cf2410365..6a417f795b52 100644
+--- a/drivers/md/raid5.c
++++ b/drivers/md/raid5.c
+@@ -2369,6 +2369,7 @@ static struct stripe_head *alloc_stripe(struct kmem_cache *sc, gfp_t gfp,
+ 		atomic_set(&sh->count, 1);
+ 		sh->raid_conf = conf;
+ 		sh->log_start = MaxSector;
++		atomic_set(&sh->bitmap_counts, 0);
+ 
+ 		if (raid5_has_ppl(conf)) {
+ 			sh->ppl_page = alloc_page(gfp);
+@@ -3565,6 +3566,7 @@ static void __add_stripe_bio(struct stripe_head *sh, struct bio *bi,
+ 		spin_unlock_irq(&sh->stripe_lock);
+ 		md_bitmap_startwrite(conf->mddev->bitmap, sh->sector,
+ 				     RAID5_STRIPE_SECTORS(conf), 0);
++		printk("%s: %s: start %px(%llu+%lu) %u\n", __func__, mdname(conf->mddev), sh, sh->sector, RAID5_STRIPE_SECTORS(conf), atomic_inc_return(&sh->bitmap_counts));
+ 		spin_lock_irq(&sh->stripe_lock);
+ 		clear_bit(STRIPE_BITMAP_PENDING, &sh->state);
+ 		if (!sh->batch_head) {
+@@ -3662,9 +3664,12 @@ handle_failed_stripe(struct r5conf *conf, struct stripe_head *sh,
+ 			bio_io_error(bi);
+ 			bi = nextbi;
+ 		}
+-		if (bitmap_end)
++		if (bitmap_end) {
+ 			md_bitmap_endwrite(conf->mddev->bitmap, sh->sector,
+ 					   RAID5_STRIPE_SECTORS(conf), 0, 0);
++			printk("%s: %s: end %px(%llu+%lu) %u\n", __func__, mdname(conf->mddev), sh, sh->sector, RAID5_STRIPE_SECTORS(conf), atomic_dec_return(&sh->bitmap_counts));
++		}
++		
+ 		bitmap_end = 0;
+ 		/* and fail all 'written' */
+ 		bi = sh->dev[i].written;
+@@ -3708,9 +3713,11 @@ handle_failed_stripe(struct r5conf *conf, struct stripe_head *sh,
+ 				bi = nextbi;
+ 			}
+ 		}
+-		if (bitmap_end)
++		if (bitmap_end) {
+ 			md_bitmap_endwrite(conf->mddev->bitmap, sh->sector,
+ 					   RAID5_STRIPE_SECTORS(conf), 0, 0);
++			printk("%s: %s: end %px(%llu+%lu) %u\n", __func__, mdname(conf->mddev), sh, sh->sector, RAID5_STRIPE_SECTORS(conf), atomic_dec_return(&sh->bitmap_counts));
++		}
+ 		/* If we were in the middle of a write the parity block might
+ 		 * still be locked - so just clear all R5_LOCKED flags
+ 		 */
+@@ -4059,6 +4066,7 @@ static void handle_stripe_clean_event(struct r5conf *conf,
+ 					bio_endio(wbi);
+ 					wbi = wbi2;
+ 				}
++				printk("%s: %s: end %px(%llu+%lu) %u\n", __func__, mdname(conf->mddev), sh, sh->sector, RAID5_STRIPE_SECTORS(conf), atomic_dec_return(&sh->bitmap_counts));
+ 				md_bitmap_endwrite(conf->mddev->bitmap, sh->sector,
+ 						   RAID5_STRIPE_SECTORS(conf),
+ 						   !test_bit(STRIPE_DEGRADED, &sh->state),
+@@ -5790,11 +5798,13 @@ static void make_discard_request(struct mddev *mddev, struct bio *bi)
+ 		if (conf->mddev->bitmap) {
+ 			for (d = 0;
+ 			     d < conf->raid_disks - conf->max_degraded;
+-			     d++)
++			     d++) {
+ 				md_bitmap_startwrite(mddev->bitmap,
+ 						     sh->sector,
+ 						     RAID5_STRIPE_SECTORS(conf),
+ 						     0);
++				printk("%s: %s: start %px(%llu+%lu) %u\n", __func__, mdname(conf->mddev), sh, sh->sector, RAID5_STRIPE_SECTORS(conf), atomic_inc_return(&sh->bitmap_counts));
++			}
+ 			sh->bm_seq = conf->seq_flush + 1;
+ 			set_bit(STRIPE_BIT_DELAY, &sh->state);
+ 		}
+diff --git a/drivers/md/raid5.h b/drivers/md/raid5.h
+index 9b5a7dc3f2a0..247e3039113c 100644
+--- a/drivers/md/raid5.h
++++ b/drivers/md/raid5.h
+@@ -255,6 +255,7 @@ struct stripe_head {
+ 	int	nr_pages;	/* page array size */
+ 	int	stripes_per_page;
+ #endif
++	atomic_t bitmap_counts;
+ 	struct r5dev {
+ 		/* rreq and rvec are used for the replacement device when
+ 		 * writing data to both devices.

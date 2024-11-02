@@ -10,6 +10,7 @@ let
     {} super;
 
   nixpkgs-23_05 = import versions.nixpkgs-23_05 {inherit (self) config;};
+  nixpkgs-24_05 = import versions.nixpkgs-24_05 {inherit (self) config;};
 
   inherit (super) fetchpatch fetchurl lib;
 
@@ -315,14 +316,20 @@ in {
 
   # Newer linux kernel. Includes mitigations for the Inception and Downfall
   # CPU vulnerabilities.
-  linuxPackages = super.linuxPackagesFor (nixpkgs-23_05.linux_5_15.override {
+  linuxPackages = super.linuxPackagesFor (nixpkgs-24_05.linux_6_11.override {
     argsOverride = rec {
       src = self.fetchurl {
-        url = "mirror://kernel/linux/kernel/v5.x/linux-${version}.tar.xz";
-        hash = "sha256-r4TlQWThwB9ZdkulKESO02s3fSKq+9gbSwz0d5LvSqo=";
+        url = "mirror://kernel/linux/kernel/v6.x/linux-${version}.tar.xz";
+        hash = "sha256-yVT2AZcAjx4fMqHncpOQPPOAHSVD7Ev1IfVlHrfxM84=";
       };
-      version = "5.15.138";
+      version = "6.11.6";
       modDirVersion = version;
+      ignoreConfigErrors = true;
+      kernelPatches = [
+        {name = "PL-132896-candidate-fix";
+         patch = ./PL-132896-candidate-fix.patch;
+       }
+      ];
     };
   });
 
