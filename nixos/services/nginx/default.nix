@@ -55,8 +55,6 @@ let
   package = config.services.nginx.package;
   localCfgDir = config.flyingcircus.localConfigPath + "/nginx";
 
-  vhostsJSON = fclib.jsonFromDir localCfgDir;
-
   mkVanillaVhostFromFCVhost = name: vhost: let
     servername = if vhost.serverName != null then vhost.serverName else name;
   in (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]) // {
@@ -335,18 +333,7 @@ in
           })
           hostsWithLegacyListenOptions;
 
-      warnings =
-        (lib.optionals (nginxCfg.masterUser == "root") [''
-          The main process of Nginx is still running as `root` user, which is deprecated.
-          The non-privileged `nginx` (the default) should be used instead.
-          Make sure that certificates are readable by the `nginx` user and remove the `masterUser` setting.
-        '']) ++
-        (lib.optionals (vhostsJSON != {}) [''
-          JSON config in /etc/local/nginx/*.json is deprecated and should be
-          replaced by the `flyingcircus.services.nginx.virtualHosts.* NixOS options.
-          See ${fclib.roleDocUrl "webgateway"} for more details.
-        '']) ++
-        (map
+      warnings = (map
           ({ hostname, host, laExtra }: ''
             ${hostname}: listenAddress and listenAddress6 are deprecated and will be removed in 24.05.
             Please exclusively use listenAddresses instead:
@@ -397,8 +384,6 @@ in
 
         "local/nixos/nginx.nix.example".source = ./example-nixos-module.nix;
       };
-
-      flyingcircus.services.nginx.virtualHosts = vhostsJSON;
 
       flyingcircus.services.telegraf.inputs = {
         nginx = [ {
@@ -472,8 +457,8 @@ in
       services.logrotate.settings = let
       commonRotate = {
           rotate = cfg.rotateLogs;
-          create = "0644 ${nginxCfg.masterUser} nginx";
-          su = "${nginxCfg.masterUser} nginx";
+          create = "0644 ${nginxCfg.user} nginx";
+          su = "${nginxCfg.user} nginx";
         };
         in {
         "/var/log/nginx/modsec_*.log" = {
@@ -487,7 +472,7 @@ in
         "/var/log/nginx/*.log" = {
           postrotate = ''
             systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
-            chown ${nginxCfg.masterUser}:nginx /var/log/nginx/*
+            chown ${nginxCfg.user}:nginx /var/log/nginx/*
           '';
         } // commonRotate;
       };
@@ -496,8 +481,8 @@ in
       systemd.tmpfiles.rules = [
         "d /etc/local/nginx/modsecurity 2775 nginx service"
         # Clean up whatever logrotate may have missed three days later.
-        "d /var/log/nginx 0755 ${nginxCfg.masterUser} nginx ${toString (cfg.rotateLogs + 3)}d"
-        "Z /var/log/nginx/* - ${nginxCfg.masterUser} nginx"
+        "d /var/log/nginx 0755 ${nginxCfg.user} nginx ${toString (cfg.rotateLogs + 3)}d"
+        "Z /var/log/nginx/* - ${nginxCfg.user} nginx"
       ]
       # d: Create temp subdirs if they don't exist and clean up files after 10 days.
       ++ map (subdir: ''
