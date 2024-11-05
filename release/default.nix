@@ -485,7 +485,7 @@ jobs // {
       "importantPackages.jetbrains.jdk.x86_64-linux"
       "importantPackages.jetty.x86_64-linux"
       "importantPackages.jicofo.x86_64-linux"
-      "importantPackages.jitsi-meet.x86_64-linux"
+      # "importantPackages.jitsi-meet.x86_64-linux"
       "importantPackages.jitsi-videobridge.x86_64-linux"
       "importantPackages.jq.x86_64-linux"
       "importantPackages.jre.x86_64-linux"
