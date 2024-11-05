@@ -652,7 +652,6 @@ jobs // {
       "importantPackages.zstd.x86_64-linux"
       "pkgs.apacheHttpdLegacyCrypt.x86_64-linux"
       "pkgs.auditbeat7-oss.x86_64-linux"
-      "pkgs.auditbeat7.x86_64-linux"
       "pkgs.boost159.x86_64-linux"
       "pkgs.busybox.x86_64-linux"
       "pkgs.certmgr.x86_64-linux"
