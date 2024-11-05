@@ -259,7 +259,7 @@ $ sudo fc-manage -b
 
 ## Network
 
-The Apache server listens on the {external+doc:ref}`srv interface <logical-networks>` only.
+The Apache server listens on the [SRV interface](/platform/infrastructure/networking/networking.html#logical-networks) only.
 
 ## Security
 

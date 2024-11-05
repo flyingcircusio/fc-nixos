@@ -21,8 +21,7 @@ The choice has not been made yet, we are evaluating the options [Valkey](https:/
 
 Out of the box, Redis is set up with a couple of common default
 parameters and listens on the IP-addresses of the *loopback* (localhost) and
-*ethsrv*-interfaces of your VM on port 6379 (See {ref}`networking`
-for details on this topic).
+*ethsrv*-interfaces of your VM on port 6379 (See [networking](platform/infrastructure/networking/networking.html) for details on this topic).
 
 In previous versions, custom redis configuration could be set
 via {file}`/etc/local/redis/custom.conf` which is not supported anymore.

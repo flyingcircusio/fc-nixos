@@ -37,8 +37,9 @@ has many moving parts which could interfere with roles and applications.
 :::
 
 First, you need public IPv4 and IPv6 addresses for your mail server's frontend
-interface. Contact {ref}`support` if you don't have. Then, pick a mail host name
-which will be advertised as MX name on your mail domain. This host name (called
+interface. Contact our [support](/platform/index.html#support) if you don't
+have. Then, pick a mail host name which will be advertised as MX name on your
+mail domain. This host name (called
 **mailHost** from here on) must resolve to the FE addresses with both forward
 and reverse lookups.
 
@@ -60,7 +61,7 @@ same time and imprint cannot be used if you serve webmail under the
 
 :::{warning}
 Incorrect DNS setup is the most frequent source of delivery problems. Let our
-{ref}`support` check your setup if in doubt.
+[support](/platform/index.html#support) check your setup if in doubt.
 :::
 
 If you choose to use the Roundcube webmail UI by adding the `webmailHost`

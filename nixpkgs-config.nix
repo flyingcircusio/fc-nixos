@@ -14,6 +14,7 @@
     "python-2.7.18.8" # Needed for some legacy customer applications.
     "ruby-2.7.8" # EOL 2023-03-31, needed for Sensu checks
     "docker-24.0.9" # Old installs still use storage driver removed in 25.x.
-    "jitsi-meet-1.0.7952" # insecure libolm but this only affects optional e2ee which we don't really support.
+    "jitsi-meet-1.0.8043" # insecure libolm but this only affects optional e2ee which we don't really support.
+    "discourse-3.2.5"  # currently not regularly updated in nixpkgs as upstream keeps changing build system in minor versions
   ];
 }

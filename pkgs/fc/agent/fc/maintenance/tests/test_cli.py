@@ -160,10 +160,24 @@ def test_invoke_request_cold_reboot(activity, invoke_app_as_root):
 
 
 @unittest.mock.patch("fc.maintenance.cli.request_reboot_for_kernel")
-@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_qemu")
+@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_kvm_environment")
 @unittest.mock.patch("fc.maintenance.cli.request_reboot_for_cpu")
 @unittest.mock.patch("fc.maintenance.cli.request_reboot_for_memory")
 def test_invoke_request_system_properties_virtual(
+    memory, cpu, qemu, kernel, invoke_app_as_root
+):
+    invoke_app_as_root("request", "system-properties")
+    memory.assert_called_once()
+    cpu.assert_called_once()
+    qemu.assert_called_once()
+    kernel.assert_called_once()
+
+
+@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_kernel")
+@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_kvm_environment")
+@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_cpu")
+@unittest.mock.patch("fc.maintenance.cli.request_reboot_for_memory")
+def test_invoke_request_system_properties_physical(
     memory, cpu, qemu, kernel, tmpdir, invoke_app_as_root
 ):
     enc_file = tmpdir / "enc.json"

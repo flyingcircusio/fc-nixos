@@ -20,6 +20,15 @@ if ! git remote -v | grep -Eq "^origin\s.*github.com.flyingcircusio/fc-nixos"; t
     exit 64
 fi
 
+if [[ ! -d ../doc/changelog.d ]] || ! git -C ../doc remote -v | grep -Eq "^origin\s.*github.com.flyingcircusio/doc"; then
+    echo "$0: please ensure that you have a checkout of flyingcircusio/doc next to this repo"
+    exit 64
+fi
+if [[ -e ../doc/changelog.d/"$nixos_version".md ]]; then
+    echo "$0: the changelog fragment '../doc/changelog.d/$nixos_version.md' already exists"
+    exit 64
+fi
+
 git fetch origin --tags --prune
 git checkout "$dev"
 git merge --ff-only  # expected to fail on unclean/unpushed workdirs
@@ -27,8 +36,22 @@ git merge --ff-only  # expected to fail on unclean/unpushed workdirs
 git checkout "$stag"
 git merge --ff-only
 
+TEMP_CHANGELOG=changelog.d/CHANGELOG.md.tmp
+CHANGELOG=changelog.d/CHANGELOG.md
+truncate -s 0 $TEMP_CHANGELOG
+scriv collect --add
+sed -e "s/^## Impact/## Impact\n### $nixos_version/" \
+    -e "s/^## NixOS XX.XX platform/## NixOS $nixos_version platform/" $TEMP_CHANGELOG > ../doc/changelog.d/"$nixos_version".md
+echo -e "\n" >> $TEMP_CHANGELOG
+cat $CHANGELOG >> $TEMP_CHANGELOG
+(echo "# Release $releaseid"; cat $TEMP_CHANGELOG) > $CHANGELOG
+rm $TEMP_CHANGELOG
+git add $TEMP_CHANGELOG $CHANGELOG
+git commit -m "Collect changelog fragments"
+
 git checkout "$prod"
 git merge --ff-only
+
 msg="Merge branch '$stag' into $prod for release $releaseid"
 git merge -m "$msg" "$stag"
 

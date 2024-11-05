@@ -1,8 +1,13 @@
 (nixos-platform-index)=
-# NixOS {{ release }} edition
+# Flying Circus platform {{ version }}
 
-Platform & roles documentation for Flying Circus [NixOS] edition
-{{ release }}.
+This is the documentation of the Flying Circus platform based on [NixOS]
+{{ version }}.
+
+It contains general information about our platform as well as individual
+software components (roles).
+
+## General platform
 
 ```{toctree}
 :titlesonly: true
@@ -23,7 +28,7 @@ fc_collect_garbage_userscan
 
 (nixos-components)=
 
-## Components/Roles
+## Specific software components (roles)
 
 ```{toctree}
 :titlesonly: true

@@ -106,14 +106,6 @@ htmlhelp_basename = "flyingcircus"
 
 # -- Options for extensions ----------------------------------------------------
 
-doc_objects_inventory = os.environ.get("docObjectsInventory")
-if doc_objects_inventory in ("", "null"):
-    doc_objects_inventory = None
-
-intersphinx_mapping = {
-    "doc": ("https://doc.flyingcircus.io/platform", doc_objects_inventory)
-}
-
 myst_enable_extensions = [
     "colon_fence",
     "deflist",
@@ -124,6 +116,7 @@ myst_enable_extensions = [
 ]
 myst_heading_anchors = 3
 myst_substitutions = {"release": release, "version": version}
+myst_all_links_external = True
 
 
 def setup(app):

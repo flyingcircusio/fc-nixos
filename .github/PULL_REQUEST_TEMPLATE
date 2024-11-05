@@ -2,11 +2,10 @@
 
 ## Release process
 
-Impact:
+- [ ] Created changelog entry using `./changelog.sh`
 
-Changelog:
 
-### PR release workflow (internal)
+## PR release workflow (internal)
 
 - [ ] PR has internal ticket
 - [ ] internal issue ID (PL-…) part of branch name

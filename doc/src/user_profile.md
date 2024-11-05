@@ -65,8 +65,8 @@ We recommend to keep the pinned version close to the system version to get the
 latest security fixes. NixOS re-uses packages if the wanted version is already
 in the Nix store, saving disk space and reducing installation time.
 
-The URL for the current release can be found in the {ref}`changelog` for the
-24.05 platform.
+The URL for the current release can be found in the [changelog](/platform/changes)
+for the 24.05 platform.
 
 If you want to try NixOS unstable with the newest packages, get the URL from the channel:
 

@@ -162,11 +162,12 @@ $ kubectl get nodes
 
 ## Networking
 
-Our Kubernetes cluster uses `flannel` with the `host-gw` backend. Nodes
-interact with each other on the {external+doc:ref}`SRV network
-<logical-networks>` and create an overlay network automatically. VMs with
-specialized roles (`k3s-server`, `k3s-agent` and the `webgateway`) have full
-access to the overlay network.
+Our Kubernetes cluster uses `flannel` with the `host-gw` backend. Nodes interact
+with each other on the [SRV network]
+(/platform/infrastructure/networking/networking.html#logical-networks) and
+create an overlay network automatically. VMs with specialized roles
+(`k3s-server`, `k3s-agent` and the `webgateway`) have full access to the
+overlay network.
 
 ### Interaction with non-Kubernetes services
 
@@ -215,7 +216,8 @@ The setup in Kubernetes looks like this:
 
 On the platform side, we have:
 
-- Nginx listening on the public {external+doc:ref}`FE interface <logical-networks>`,
+- Nginx listening on the public
+  [FE interface](/platform/infrastructure/networking/networking.html#logical-networks),
   terminating SSL connections and doing the virtual host association.
 - HAProxy listening on *localhost*, running in HTTP mode, discovering pod IPs
   for the headless service via DNS and load balancing between pods.
@@ -302,9 +304,7 @@ The setup in Kubernetes looks like this:
 On the platform side, we have:
 
 - HAProxy in *tcp* mode, listening on the public
-  {external+doc:ref}`FE interface <logical-networks>`, forwarding requests
-  from the Internet to Kubernetes ingress.
-
+  [FE interface](/platform/infrastructure/networking/networking.html#logical-networks), forwarding requests from the Internet to Kubernetes ingress.
 
 Here's a diagram of the setup focusing on your application's traffic flow:
 

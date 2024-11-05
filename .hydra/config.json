@@ -7,16 +7,6 @@
             "value": "https://github.com/flyingcircusio/nixpkgs.git nixos-24.05",
             "emailresponsible": false
         },
-        "platformDoc": {
-            "type": "git",
-            "value": "https://github.com/flyingcircusio/doc.git old-restructuredtext",
-            "emailresponsible": false
-        },
-        "docObjectsInventory": {
-            "type": "path",
-            "value": "https://hydra.flyingcircus.io/job/flyingcircus/doc/platformDoc/latest/download-by-type/file/inventory",
-            "emailresponsible": false
-        },
         "branch": {
             "type": "string",
             "value": "fc-24.05-dev",

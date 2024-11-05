@@ -40,14 +40,8 @@ in pkgs.stdenv.mkDerivation rec {
 
   installPhase = ":";
   doCheck = failOnWarnings;
-  checkPhase =
-    let
-      preprocess = pkgs.writeScript "filter-acceptable-warnings" ''
-        #! ${pkgs.stdenv.shell}
-        ${rg} -vF 'WARNING: failed to reach any of the inventories'
-      '';
-    in ''
-      if ${rg} --pre ${preprocess} -F 'WARNING: ' build.log; then
+  checkPhase = ''
+      if ${rg} -F 'WARNING: ' build.log; then
         echo "^^^ Warnings mentioned above must be fixed ^^^"
         false
       fi
