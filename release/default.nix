@@ -682,7 +682,6 @@ jobs // {
       "pkgs.fc.telegraf-collect-psi.x86_64-linux"
       "pkgs.fc.userscan.x86_64-linux"
       "pkgs.filebeat7-oss.x86_64-linux"
-      "pkgs.filebeat7.x86_64-linux"
       "pkgs.innotop.x86_64-linux"
       "pkgs.kubernetes-dashboard-metrics-scraper.x86_64-linux"
       "pkgs.kubernetes-dashboard.x86_64-linux"
