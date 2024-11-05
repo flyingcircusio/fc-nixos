@@ -61,7 +61,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     pythonPackages = self.python312Packages;
   });
 
-  backy = super.callPackage ./backy { inherit poetry2nix;};
+  backy = super.callPackage ./backy { inherit poetry2nix python310 mkShellNoCC;};
 
   #
   # imports from other nixpkgs versions or local definitions
@@ -126,6 +126,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   dstat = super.dstat.overrideAttrs(old: rec {
     patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
   });
+
+  ipxe = super.callPackage ./ipxe.nix { };
 
   frr = super.frr.overrideAttrs (old: rec {
     version = "8.5.5";

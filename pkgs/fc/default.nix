@@ -27,6 +27,7 @@ rec {
 
   fix-so-rpath = callPackage ./fix-so-rpath {};
   ipmitool = callPackage ./ipmitool {};
+  install = callPackage ./install {};
 
   ledtool = pkgs.writers.writePython3Bin "fc-ledtool"
     {} (builtins.readFile ./ledtool/led.py);
@@ -37,12 +38,12 @@ rec {
   neighbour-cache-monitor = callPackage ./neighbour-cache-monitor {};
   ping-on-tap = callPackage ./ping-on-tap {};
   qemu-nautilus = callPackage ./qemu rec {
-    version = "1.4.6";
+    version = "1.6";
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "fc.qemu";
       rev = version;
-      hash = "sha256-lf0ByXo6cMg089DPnvYJpJHX6/445k8IKNawOA5Pf08=";
+      hash = "sha256-oxV29okkTqkNm5HvwrwWS+hABcH7cd70mL83f72SLsQ=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;

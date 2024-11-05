@@ -80,6 +80,20 @@ Or build package by directly calling a Nix expression:
 
     nix-build -E 'with import <fc> {}; callPackage path/to/file.nix {}'
 
+Editable development versions of our core packages
+--------------------------------------------------
+
+fc.agent
+
+    $ cd fc-nixos
+    $ eval $(./dev-setup)  # not nix-shell!
+    $ nix-shell pkgs/fc/agent
+    $ which fc-manage
+    /tmp/.../bin/fc-manage
+
+fc.qemu
+
+    TBD
 
 (Dry-)Build System
 ------------------

@@ -1,11 +1,11 @@
 { python3Packages }:
 python3Packages.buildPythonPackage rec {
   pname = "pytest_patterns";
-  version = "0.1.0";
+  version = "0.3.0";
 
   src = python3Packages.fetchPypi {
     inherit pname version;
-    hash = "sha256-guKexrkDP4Ovqc87M7s8qFtW1FuVcf2PiDwh+QHcp6A=";
+    hash = "sha256-OZlzoyWlYfb28mFJ8PBz4KApOZNeOtPxaLQn/pINLz0=";
     format = "wheel";
     python = "py3";
   };
