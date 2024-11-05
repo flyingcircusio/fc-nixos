@@ -61,7 +61,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     pythonPackages = self.python312Packages;
   });
 
-  backy = super.callPackage ./backy { inherit poetry2nix python310 mkShellNoCC;};
+  backy = super.callPackage ./backy { inherit (super) poetry2nix python310 mkShellNoCC;};
 
   #
   # imports from other nixpkgs versions or local definitions
