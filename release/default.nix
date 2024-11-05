@@ -473,7 +473,6 @@ jobs // {
       "importantPackages.gnumake.x86_64-linux"
       "importantPackages.gnupg.x86_64-linux"
       "importantPackages.go.x86_64-linux"
-      "importantPackages.go_1_21.x86_64-linux"
       "importantPackages.go_1_22.x86_64-linux"
       "importantPackages.grafana.x86_64-linux"
       "importantPackages.grub2.x86_64-linux"
