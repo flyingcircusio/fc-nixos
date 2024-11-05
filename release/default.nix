@@ -740,7 +740,6 @@ jobs // {
       "pkgs.rabbitmq-server_3_8.x86_64-linux"
       "pkgs.rich-cli.x86_64-linux"
       "pkgs.solr.x86_64-linux"
-      "pkgs.temporal_tables.x86_64-linux"
       "pkgs.xtrabackup.x86_64-linux"
       "tests.antivirus"
       "tests.audit"
