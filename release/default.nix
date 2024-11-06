@@ -265,7 +265,7 @@ let
       };
 
   channelsUpstream =
-    lib.mapAttrsToList (name: src:
+    lib.mapAttrs (name: src:
     let
       fullName =
         if (parseDrvName name).version != ""
@@ -283,27 +283,28 @@ let
     })
     (removeAttrs upstreamSources [ "allUpstreams" ]);
 
-  fcChannel = with lib; pkgs.releaseTools.channel {
-    name = "fc-${version}${versionSuffix}";
-    constituents = [ fcSrc ];
-    src = fcSrc;
-    patchPhase = ''
-      echo -n "${fc.rev}" > .git-revision
-      echo -n "${versionSuffix}" > .version-suffix
-      echo -n "${version}" > .version
-    '';
-    passthru.channelName = "fc";
-    meta = {
-      description = "Main channel of the <fc> overlay";
-      homepage = "https://flyingcircus.io/doc/";
-      license = [ licenses.bsd3 ];
+  channels = channelsUpstream // {
+    # The attribut ename `fc` if important because if channel is added without
+    # an explicit name argument, it will be available as <fc>.
+    fc = with lib; pkgs.releaseTools.channel {
+      name = "fc-${version}${versionSuffix}";
+      constituents = [ fcSrc ];
+      src = fcSrc;
+      patchPhase = ''
+        echo -n "${fc.rev}" > .git-revision
+        echo -n "${versionSuffix}" > .version-suffix
+        echo -n "${version}" > .version
+      '';
+      passthru.channelName = "fc";
+      meta = {
+        description = "Main channel of the <fc> overlay";
+        homepage = "https://flyingcircus.io/doc/";
+        license = [ licenses.bsd3 ];
+        maintainer = with maintainers; [ ckauhaus ];
+      };
     };
   };
 
-  channels = with lib; pkgs.releaseTools.aggregate {
-    name = "channels";
-    constituents = channelsUpstream ++ [ fcChannel ];
-    meta.description = "only channels, no tests";
   };
 
   images =
@@ -353,54 +354,6 @@ let
 
   };
 
-  mkRelease = { releaseName, constituents ? [ ] }:
-    let
-      name = "${releaseName}-${version}${versionSuffix}";
-      tarOpts = ''
-        --owner=0 --group=0 \
-        --mtime="1970-01-01 00:00:00 UTC" \
-      '';
-
-    in pkgs.releaseTools.channel {
-      inherit constituents;
-      inherit name;
-      src = combinedSources;
-
-      preferLocalBuild = true;
-
-      passthru.src = combinedSources;
-
-      patchPhase = "touch .update-on-nixos-rebuild";
-      installPhase = ''
-        mkdir -p $out/{tarballs,nix-support}
-        tarball=$out/tarballs/nixexprs.tar
-
-        # Add all files in nixos/ including hidden ones.
-        # (-maxdepth 1: don't recurse into subdirs)
-        find nixos/ -maxdepth 1 -type f -exec \
-          tar uf "$tarball" --transform "s|^nixos|${name}|" ${tarOpts} {} \;
-
-        # Add files from linked subdirectories. We want to keep the name of the
-        # link in the archive, not the target. Example:
-        # "nixos/fc/default.nix" becomes "release-23.11.2222.12abcdef/fc/default.nix"
-        for d in nixos/*/; do
-            tar uf "$tarball" --transform "s|^$d\\.|${name}/$(basename "$d")|" ${tarOpts} "$d."
-        done
-
-        # Compress using multiple cores and with "extreme settings" to reduce compressed size.
-        xz -T0 -e "$tarball"
-
-        echo "channel - $out/tarballs/nixexprs.tar.xz" > "$out/nix-support/hydra-build-products"
-        echo $constituents > "$out/nix-support/hydra-aggregate-constituents"
-
-        # Propagate build failures.
-        for i in $constituents; do
-          if [ -e "$i/nix-support/failed" ]; then
-            touch "$out/nix-support/failed"
-          fi
-        done
-      '';
-    };
 in
 
 jobs // {
