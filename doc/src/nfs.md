@@ -22,6 +22,12 @@ server before the system call returns control to user space. This provides
 greater data cache coherence among clients, but at a significant performance
 cost.
 
+The NFS clients are connected in `hard` mode to ensure data consistency. In
+addition we use an automount unit, to avoid applications unexpectedly running
+without access to NFS due to mounting issues at boot time. If NFS is absent
+applications will experience infinite blocking or receive explicit errors
+when accessing NFS-backed paths.
+
 **flyingcircus.roles.nfs_rg_share.clientFlags**
 
 List of strings that are applied as options for every client.

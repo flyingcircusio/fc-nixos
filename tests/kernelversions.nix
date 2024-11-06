@@ -1,6 +1,7 @@
 # Start VMs with the different kernels we expect to be pre-built
-import ./make-test-python.nix ({ ... }:
-{
+import ./make-test-python.nix ({ pkgs, ... }: let
+  stableVersion = pkgs.linuxKernelStable.version;
+in {
   name = "kernelversions";
   nodes.rzobProdKernel =
       { pkgs, lib, ... }:
@@ -192,9 +193,10 @@ import ./make-test-python.nix ({ ... }:
               f"Expected: {expected}, found: {found}. uname -a: {uname_a}"
             )
 
+    assert "${stableVersion}".startswith("5.15."), "Expecting a 5.15.x kernel as stable kernel"
     assertKernelVersion(verifyKernel, "6.11.0")
-    assertKernelVersion(prodKernel, "5.15.164")
-    assertKernelVersion(rzobProdKernel, "5.15.164")
+    assertKernelVersion(prodKernel, "${stableVersion}")
+    assertKernelVersion(rzobProdKernel, "${stableVersion}")
     assertKernelVersion(rzobNonProdKernel, "6.11.0")
     assertKernelVersion(whqProdKernel, "6.11.0")
     assertKernelVersion(devProdKernel, "6.11.0")

@@ -168,6 +168,7 @@ class UpdateActivity(Activity):
             self.next_system, self.log
         )
 
+        self._register_reboot_for_units()
         self._register_reboot_for_kernel()
 
         if self.reboot_needed:
@@ -433,6 +434,17 @@ class UpdateActivity(Activity):
             merged, merged.is_effective, is_significant, changes
         )
 
+    def _register_reboot_for_units(self):
+        reboot_on_unit_change = {"mnt-nfs-shared.mount"}
+        changed = set().union(*self.unit_changes.values())
+        changed = changed.intersection(reboot_on_unit_change)
+        if changed:
+            self.log.info(
+                "changed-units-require-reboot",
+                units=",".join(sorted(changed)),
+            )
+            self.reboot_needed = RebootType.WARM
+
     def _register_reboot_for_kernel(self):
         current_kernel = nixos.kernel_version(
             p.join(self.current_system, "kernel")
@@ -441,7 +453,6 @@ class UpdateActivity(Activity):
 
         if current_kernel == next_kernel:
             self.log.debug("update-kernel-unchanged")
-            self.reboot_needed = None
         else:
             self.log.info(
                 "update-kernel-changed",

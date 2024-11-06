@@ -110,13 +110,11 @@ A development environment (e.g. named ``dev``) would typically look like this:
 
    [provisioner:default]
    method = fc-nixos-dev-vm
-   # The release has the format fcrs://channel/release
-   # release can be empty, than the latest release for the channel is used.
-   release = fcrs://fc-24.05-production/2024_021
    host = dev.example.com
-
-   channel = https://hydra.flyingcircus.io/build/457353/download/1/nixexprs.tar.xz
-
+   # URL to the release metadata file. See below for an explanation
+   release = https://my.flyingcircus.io/releases/metadata/fc-24.05-staging
+   # Older batou versions (<=2.5.0) only support the hydra_eval attribute instead of `release`
+   # hydra-eval = 309628
 
    [host:myvm]
    provision-dynamic-hostname = True
@@ -155,9 +153,11 @@ If you want to rebuild your VM from scratch, you can run:
 
    $ ./batou deploy --provision-rebuild dev
 
-The URLs for channels can be looked up in our changelog: each version is listed
-with a link to the appropriate channel. Only platform releases starting from
-23.11 are supported for development VMs, though!
+The URL for the release metadata file can be looked up in our changelog.
+The general format of these URLs is ``https://my.flyingcircus.io/releases/metadata/<environment_name>/<release_name>``.
+``release_name`` is optional, and if not specified the latest version of the environment will be deployed with each batou deployment.
+This is probably what you want.
+Only platform releases starting from 23.11 are supported for development VMs.
 
 Using the ``provision-dynamic-hostname`` switch will result in development VMs
 receiving a random hostname based on your local batou checkout. This is the
@@ -253,6 +253,8 @@ provision script:
     The name of the ``devhost`` that the VM is being provisioned onto.
 ``PROVISION_CHANNEL``
     The NixOS channel URL being used.
+``PROVISION_IMAGE``
+    The NixOS devhost image being used to provision the VM on its first start.
 ``PROVISION_ALIASES``
     The list of aliases.
 ``SSH_CONFIG``

@@ -35,27 +35,44 @@ in {
       {
         imports = [ (testlib.fcConfig { id = 2; }) ];
 
-        specialisation.varnish-switch-test.configuration = let
-          switchport = serverport + 1;
-        in {
-          system.nixos.tags = [ "varnish-switch-test" ];
-          flyingcircus.services.varnish.virtualHosts.test = lib.mkForce {
-            condition = "true";
-            config = ''
-              vcl 4.0;
-              backend test {
-                .host = "127.0.0.1";
-                .port = "${builtins.toString switchport}";
-              }
-            '';
+        specialisation = {
+          varnish-switch-test.configuration = let
+            switchport = serverport + 1;
+          in {
+            system.nixos.tags = [ "varnish-switch-test" ];
+            flyingcircus.services.varnish.virtualHosts.test = lib.mkForce {
+              condition = "true";
+              config = ''
+                vcl 4.0;
+                backend test {
+                  .host = "127.0.0.1";
+                  .port = "${builtins.toString switchport}";
+                }
+              '';
+            };
+
+            systemd.services.helloserver = {
+              wantedBy = [ "multi-user.target" ];
+              script = ''
+                echo 'Hello World!' > hello.txt
+                ${pkgs.python3.interpreter} -m http.server ${builtins.toString switchport} >&2
+              '';
+            };
           };
 
-          systemd.services.helloserver = {
-            wantedBy = [ "multi-user.target" ];
-            script = ''
-              echo 'Hello World!' > hello.txt
-              ${pkgs.python3.interpreter} -m http.server ${builtins.toString switchport} >&2
-            '';
+          varnish-broken-config-test.configuration = {
+            system.nixos.tags = [ "varnish-broken-config-test" ];
+            flyingcircus.services.varnish.virtualHosts.test = lib.mkForce {
+              condition = "true";
+              config = ''
+                vcl 4.0;
+                backend test {
+                  .host = "127.0.0.1";
+                  .port = "80;
+                }
+              '';
+            };
+
           };
         };
 
@@ -101,7 +118,7 @@ in {
     with subtest("varnish pid should be the same across small configuration changes"):
       old_pid = webproxy.succeed("systemctl show varnish.service --property MainPID --value")
       old_port = webproxy.succeed("varnishadm vcl.show label-test | grep \"\\.port\" | cut -d \"\\\"\" -f 2")
-      webproxy.wait_until_succeeds("/run/current-system/specialisation/varnish-switch-test/bin/switch-to-configuration switch")
+      webproxy.succeed("/run/current-system/specialisation/varnish-switch-test/bin/switch-to-configuration switch")
       new_pid = webproxy.succeed("systemctl show varnish.service --property MainPID --value")
       new_port = webproxy.succeed("varnishadm vcl.show label-test | grep \"\\.port\" | cut -d \"\\\"\" -f 2")
 
@@ -114,5 +131,13 @@ in {
       webproxy_old_varnish.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
       webproxy_old_varnish.systemctl("reload varnish")
       webproxy_old_varnish.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
+
+    with subtest("varnish with broken config should fail to switch"):
+      # switching to a different specialisation requires a reboot, otherwise `/run/current-system/specialisation/` is empty
+      # reboot is broken since it doesn't set `booted = False` and the VM will not boot with `booted = True`
+      webproxy.shutdown()
+      webproxy.start()
+      webproxy.wait_for_unit("varnish.service")
+      webproxy.fail("/run/current-system/specialisation/varnish-broken-config-test/bin/switch-to-configuration switch")
   '';
 })
