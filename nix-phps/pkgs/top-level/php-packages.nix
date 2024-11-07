@@ -586,7 +586,7 @@ in {
         {
           name = "pdo_pgsql";
           internalDeps = [ php.extensions.pdo ];
-          configureFlags = [ "--with-pdo-pgsql=${postgresql}" ];
+          configureFlags = [ "--with-pdo-pgsql=${postgresql.dev}" ];
           doCheck = false;
         }
         {
@@ -599,7 +599,7 @@ in {
         {
           name = "pgsql";
           buildInputs = [ pcre2 ];
-          configureFlags = [ "--with-pgsql=${postgresql}" ];
+          configureFlags = [ "--with-pgsql=${postgresql.dev}" ];
           doCheck = false;
         }
         { name = "posix"; doCheck = false; }
