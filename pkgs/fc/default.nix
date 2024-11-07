@@ -38,12 +38,14 @@ rec {
   neighbour-cache-monitor = callPackage ./neighbour-cache-monitor {};
   ping-on-tap = callPackage ./ping-on-tap {};
   qemu-nautilus = callPackage ./qemu rec {
-    version = "1.6";
+    version = "1.7dev";
     src = pkgs.fetchFromGitHub {
       owner = "flyingcircusio";
       repo = "fc.qemu";
-      rev = version;
-      hash = "sha256-oxV29okkTqkNm5HvwrwWS+hABcH7cd70mL83f72SLsQ=";
+      # The release tooling didn't upgrade properly so we had to pick a specific
+      # commit instead.
+      rev = "001045a84fc89e75fc3100ec29ac8de7b3ba8839";
+      hash = "sha256-7qEq7nUb9FubpGZ+I006F599FULvxilxvfszBPmYE9Q=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;

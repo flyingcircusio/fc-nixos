@@ -119,6 +119,10 @@ lib.mkIf role.enable {
     ];
   };
 
+  systemd.tmpfiles.rules = [
+    "d /var/log/bind 0755 named nogroup 180d"
+  ];
+
   flyingcircus.services.sensu-client.checks.bind_resolver = {
     notification = "Bind can resolve hostnames";
     command = "check_dig -H localhost -l flyingcircus.io";
