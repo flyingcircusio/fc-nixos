@@ -110,18 +110,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  # PL-131574
-  linuxKernelVerify = let kernelPackage = super.linux_6_10;  in
-    kernelPackage.override {
-          argsOverride = {
-            src = super.fetchurl {
-              url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.11.tar.xz";
-              hash = "sha256-VdLGwCXrwngQx0jWYyXdW8YB6NMvhYHZ53ZzUpvayy4=";
-            };
-            version = "6.11";
-            modDirVersion = "6.11.0";
-          };
-        };
+  linuxKernelVerify = self.linux_latest;
 
   linuxKernelStable = self.linux_5_15;
 
