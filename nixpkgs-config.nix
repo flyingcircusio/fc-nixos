@@ -16,6 +16,5 @@
     "docker-24.0.9" # Old installs still use storage driver removed in 25.x.
     "jitsi-meet-1.0.8043" # insecure libolm but this only affects optional e2ee which we don't really support.
     "discourse-3.2.5"  # currently not regularly updated in nixpkgs as upstream keeps changing build system in minor versions
-    "unifi-controller-7.5.187"  # temporarily allow until next nixpkgs upgrade
   ];
 }
