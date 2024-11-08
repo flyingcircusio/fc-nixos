@@ -1,12 +1,18 @@
 { pkgs, lib, config, ... }: let
   cfg = config.flyingcircus.services.varnish;
+  vcfg = config.services.varnish;
+  vadm = "${vcfg.package}/bin/varnishadm -n ${vcfg.stateDir}";
+
   inherit (lib) mkOption mkEnableOption types;
 
   sanitizeConfigName = name: builtins.replaceStrings ["."] ["-"] (lib.strings.sanitizeDerivationName name);
   mkVclName = file: "vcl_${builtins.head (lib.splitString "." (builtins.baseNameOf file))}";
 
   mkHostSelection = hcfg: let
-    includefile = if (builtins.isPath hcfg.config) then hcfg.config else (pkgs.writeText "${hcfg.host}.vcl" hcfg.config);
+    # enforce a nix-generated filepath here to ensure that it will change with the input
+    # otherwise there is no reliable way to tell that we need to reload the file
+    includefile = pkgs.writeText "${hcfg.host}.vcl" hcfg.config;
+
     # Varnish uses a two-step approach with config names and labels, that we
     # leverage in this way:
     # 1. Every vhost received a config file that is written as a VCL config
@@ -26,10 +32,11 @@
         return(vcl(${label}));
       }
     '';
-    # These are the commands to activate new config (both at startup and reload.)
+
+    # this is a shell snippet that reloads the File if necessary and labels it appropriately
     command = ''
-      vcl.load ${name} ${includefile}
-      vcl.label ${label} ${name}
+      load ${name} ${includefile}
+      label ${label} ${name}
     '';
   };
 
@@ -52,20 +59,57 @@
   '';
 
   vhosts = map mkHostSelection (builtins.attrValues cfg.virtualHosts);
-  virtualHostSelection = lib.concatStringsSep "else" (map (x: x.config) vhosts);
+  virtualHostSelection = lib.concatStringsSep "else" (builtins.catAttrs "config" vhosts);
 
-  vhostActivationCommands = lib.concatStringsSep "\n" (map (x: x.command) vhosts);
-  mainActivationCommands = let
+  startupscript = let
     name = mkVclName mainConfig;
-  in ''
-    vcl.load ${name} ${mainConfig}
-    vcl.use ${name}
-  '';
+    vhostActivationCommands = lib.concatStringsSep "\n" (builtins.catAttrs "command" vhosts);
+  in
+    pkgs.writeShellScript "varnishd-commands.sh" ''
+      set -e
+      vadm="${vadm}"
 
-  commandsfile = pkgs.writeText "varnishd-commands" ''
-    ${vhostActivationCommands}
-    ${mainActivationCommands}
-  '';
+      # the vcl.load call will fail in either of 2 cases:
+      # 1. the name is already taken
+      # 2. the file cannot be compiled (e.g. due to syntax errors)
+      # the former does not provide useful information since the vcl names include a nix hash
+      # that changes with the files contents. if the name doesnt change odds are the file
+      # didnt either so we can just ignore it
+      # the latter case we are interested in. failing to compile the file should fail during
+      # service reloads and let the caller know that it did
+      # since both of these cases return an exit code of 1 and parsing the error output is brittle
+      # and breaks easily, we resort to checking if the name is already loaded at the time a reload
+      # is triggered
+      vcls=$($vadm vcl.list | ${pkgs.gawk}/bin/awk '{ print $5; }')
+      load() {
+        vcl_name=$1
+        vcl_file=$2
+
+        for vcl in $vcls; do
+            if [[ "$vcl" == "$vcl_name" ]]; then
+                return
+            fi
+        done
+        $vadm vcl.load $vcl_name $vcl_file
+      }
+
+      # labeling does not throw an error if the label name is already given to the same vcl name so it
+      # can be run every time for good measure and doesnt need to be guarded and should be run every time
+      label() {
+        label_name=$1
+        vcl_name=$2
+        $vadm vcl.label $label_name $vcl_name
+      }
+
+      # activate all vhosts
+      ${vhostActivationCommands}
+
+      load ${name} ${mainConfig}
+
+      # just like labelling vcl.use does not error when calling it with an identical vcl name
+      # so can/shouuld be run every time
+      $vadm vcl.use ${name}
+    '';
 in {
   options.flyingcircus.services.varnish = {
     enable = mkEnableOption "varnish";
@@ -101,12 +145,10 @@ in {
 
   config = lib.mkIf cfg.enable {
     services.varnish = {
-      enable = true;
-      enableConfigCheck = false;
+      inherit (cfg) enable extraCommandLine http_address;
 
+      enableConfigCheck = false;
       stateDir = "/run/varnishd";
-      extraCommandLine = lib.concatStringsSep " " [ cfg.extraCommandLine "-I /etc/varnish/startup" ];
-      inherit (cfg) http_address;
       config = ''
         vcl 4.0;
         import std;
@@ -122,21 +164,22 @@ in {
       '';
     };
 
-    environment.etc."varnish/startup".source = commandsfile;
+    environment.etc."varnish/startup.sh".source = startupscript;
 
-    systemd.services.varnish = let
-      vcfg = config.services.varnish;
-    in {
+    systemd.services.varnish = {
       preStart = lib.mkBefore ''
-          rm -rf ${vcfg.stateDir}
-        '';
-      stopIfChanged = false;
-      reloadTriggers = [ commandsfile ];
-      reload = ''
-        vadm="${vcfg.package}/bin/varnishadm -n ${vcfg.stateDir}"
-        cat /etc/varnish/startup | $vadm
+        rm -rf ${vcfg.stateDir}
+      '';
+      postStart = ''
+        /etc/varnish/startup.sh
+      '';
 
-        coldvcls=$($vadm vcl.list | grep " cold " | ${pkgs.gawk}/bin/awk {'print $5'})
+      stopIfChanged = false;
+      reloadTriggers = [startupscript];
+      reload = ''
+        /etc/varnish/startup.sh
+
+        coldvcls=$(${vadm} vcl.list | grep " cold " | ${pkgs.gawk}/bin/awk {'print $5'})
 
         if [ ! -z "$coldvcls" ]; then
           for vcl in "$coldvcls"; do

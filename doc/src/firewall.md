@@ -114,3 +114,10 @@ ip6tables -L -nv   # show IPv6 firewall rules w/o DNS resolution
 
 If the intended rules do not show up, check the system journal for possible
 syntax errors in {file}`/etc/local/firewall` and re-run {command}`fc-manage -b`.
+
+## Fail2ban
+
+We use fail2ban to protect against brute-force attacks and DoS vectors via unauthenticated connections.
+
+Currently we only have the SSH jail enabled in the `ddos` mode. If you have 5 authentication failures
+or trigger the DDoS rules within 10 minutes, your IP will be blocked for 10 minutes.

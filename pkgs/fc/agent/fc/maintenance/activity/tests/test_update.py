@@ -322,6 +322,52 @@ def test_update_activity_prepare(log, logger, tmp_path, activity, nixos_mock):
     )
 
 
+def test_update_nfs_reboot_required(
+    log, logger, tmp_path, activity, nixos_mock
+):
+    # I'd rather like to call prepare() here but the overall logic isn't
+    # factored for testability.
+
+    activity.reboot_needed = None
+    activity._register_reboot_for_units()
+    assert not activity.reboot_needed
+
+    # The method is ignorant to the state before, so it doesn't change what's
+    # already there.
+    activity.reboot_needed = RebootType.WARM
+    activity._register_reboot_for_units()
+    assert activity.reboot_needed == RebootType.WARM
+
+    # But we do explicitly set the reboot type in the case that a unit
+    # needs a reboot.
+    activity.reboot_needed = None
+    activity.unit_changes = {
+        "restart": ["mnt-nfs-shared.mount"],
+        "start": [],
+        "reload": [],
+        "stop": [],
+    }
+    activity._register_reboot_for_units()
+    assert activity.reboot_needed == RebootType.WARM
+    assert activity.summary == textwrap.dedent(
+        """\
+        System update: 21.05.1233.a9cc58d -> 21.05.1235.bacc11d
+
+        Will reboot after the update.
+
+        Restart: mnt-nfs-shared.mount
+
+        Release: 2021_002 -> 2021_003
+        ChangeLog: https://doc.flyingcircus.io/platform/changes/2021/r003.html
+        Environment: fc-21.05-production (unchanged)
+        Build number: 93111 -> 93222
+        Channel URL: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"""
+    )
+    assert log.has(
+        "changed-units-require-reboot", units="mnt-nfs-shared.mount"
+    )
+
+
 def test_update_activity_run(log, nixos_mock, activity, logger):
     activity.run()
 
