@@ -37,6 +37,7 @@ rec {
   multiping = callPackage ./multiping.nix {};
   neighbour-cache-monitor = callPackage ./neighbour-cache-monitor {};
   ping-on-tap = callPackage ./ping-on-tap {};
+
   qemu-nautilus = callPackage ./qemu rec {
     version = "1.7dev";
     src = pkgs.fetchFromGitHub {
@@ -44,8 +45,8 @@ rec {
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "001045a84fc89e75fc3100ec29ac8de7b3ba8839";
-      hash = "sha256-7qEq7nUb9FubpGZ+I006F599FULvxilxvfszBPmYE9Q=";
+      rev = "a0223a339c09deda39ce368bb5089f880aabd544";
+      hash = "sha256-rmNTGz1qrdKeB6Qk+Ty1Ly+x29OFg5uyY9CowNMpBkA=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;
