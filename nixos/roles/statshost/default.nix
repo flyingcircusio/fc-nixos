@@ -517,6 +517,7 @@ in
               url: http://${config.networking.hostName}:9090
               editable: false
               isDefault: true
+              uid: PBFA97CFB590B2093
           '';
         };
 
@@ -534,6 +535,7 @@ in
               url: http://localhost:3100
               editable: false
               isDefault: false
+              uid: P8E80F9AEF21F6940
           '';
         };
       in ''
