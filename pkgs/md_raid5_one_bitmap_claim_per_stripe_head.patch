@@ -1,0 +1,125 @@
+diff --git a/drivers/md/raid5.c b/drivers/md/raid5.c
+index c14cf2410365..6e318598a7b6 100644
+--- a/drivers/md/raid5.c
++++ b/drivers/md/raid5.c
+@@ -3548,7 +3548,7 @@ static void __add_stripe_bio(struct stripe_head *sh, struct bio *bi,
+ 		 (*bip)->bi_iter.bi_sector, sh->sector, dd_idx,
+ 		 sh->dev[dd_idx].sector);
+ 
+-	if (conf->mddev->bitmap && firstwrite) {
++	if (conf->mddev->bitmap && firstwrite && !test_and_set_bit(STRIPE_BITMAP_CLAIM, &sh->state)) {
+ 		/* Cannot hold spinlock over bitmap_startwrite,
+ 		 * but must ensure this isn't added to a batch until
+ 		 * we have added to the bitmap and set bm_seq.
+@@ -3621,7 +3621,6 @@ handle_failed_stripe(struct r5conf *conf, struct stripe_head *sh,
+ 	BUG_ON(sh->batch_head);
+ 	for (i = disks; i--; ) {
+ 		struct bio *bi;
+-		int bitmap_end = 0;
+ 
+ 		if (test_bit(R5_ReadError, &sh->dev[i].flags)) {
+ 			struct md_rdev *rdev = conf->disks[i].rdev;
+@@ -3646,8 +3645,6 @@ handle_failed_stripe(struct r5conf *conf, struct stripe_head *sh,
+ 		sh->dev[i].towrite = NULL;
+ 		sh->overwrite_disks = 0;
+ 		spin_unlock_irq(&sh->stripe_lock);
+-		if (bi)
+-			bitmap_end = 1;
+ 
+ 		log_stripe_write_finished(sh);
+ 
+@@ -3662,10 +3659,6 @@ handle_failed_stripe(struct r5conf *conf, struct stripe_head *sh,
+ 			bio_io_error(bi);
+ 			bi = nextbi;
+ 		}
+-		if (bitmap_end)
+-			md_bitmap_endwrite(conf->mddev->bitmap, sh->sector,
+-					   RAID5_STRIPE_SECTORS(conf), 0, 0);
+-		bitmap_end = 0;
+ 		/* and fail all 'written' */
+ 		bi = sh->dev[i].written;
+ 		sh->dev[i].written = NULL;
+@@ -3674,7 +3667,6 @@ handle_failed_stripe(struct r5conf *conf, struct stripe_head *sh,
+ 			sh->dev[i].page = sh->dev[i].orig_page;
+ 		}
+ 
+-		if (bi) bitmap_end = 1;
+ 		while (bi && bi->bi_iter.bi_sector <
+ 		       sh->dev[i].sector + RAID5_STRIPE_SECTORS(conf)) {
+ 			struct bio *bi2 = r5_next_bio(conf, bi, sh->dev[i].sector);
+@@ -3708,14 +3700,15 @@ handle_failed_stripe(struct r5conf *conf, struct stripe_head *sh,
+ 				bi = nextbi;
+ 			}
+ 		}
+-		if (bitmap_end)
+-			md_bitmap_endwrite(conf->mddev->bitmap, sh->sector,
+-					   RAID5_STRIPE_SECTORS(conf), 0, 0);
+ 		/* If we were in the middle of a write the parity block might
+ 		 * still be locked - so just clear all R5_LOCKED flags
+ 		 */
+ 		clear_bit(R5_LOCKED, &sh->dev[i].flags);
+ 	}
++	if (test_and_clear_bit(STRIPE_BITMAP_CLAIM, &sh->state)) {
++		md_bitmap_endwrite(conf->mddev->bitmap, sh->sector,
++				   RAID5_STRIPE_SECTORS(conf), 0, 0);
++	}
+ 	s->to_write = 0;
+ 	s->written = 0;
+ 
+@@ -4059,10 +4052,6 @@ static void handle_stripe_clean_event(struct r5conf *conf,
+ 					bio_endio(wbi);
+ 					wbi = wbi2;
+ 				}
+-				md_bitmap_endwrite(conf->mddev->bitmap, sh->sector,
+-						   RAID5_STRIPE_SECTORS(conf),
+-						   !test_bit(STRIPE_DEGRADED, &sh->state),
+-						   0);
+ 				if (head_sh->batch_head) {
+ 					sh = list_first_entry(&sh->batch_list,
+ 							      struct stripe_head,
+@@ -4077,7 +4066,11 @@ static void handle_stripe_clean_event(struct r5conf *conf,
+ 			} else if (test_bit(R5_Discard, &dev->flags))
+ 				discard_pending = 1;
+ 		}
+-
++	if (test_and_clear_bit(STRIPE_BITMAP_CLAIM, &sh->state)) {
++		md_bitmap_endwrite(conf->mddev->bitmap, sh->sector,
++				   RAID5_STRIPE_SECTORS(conf),
++				   !test_bit(STRIPE_DEGRADED, &sh->state), 0);
++	}
+ 	log_stripe_write_finished(sh);
+ 
+ 	if (!discard_pending &&
+@@ -5788,13 +5781,11 @@ static void make_discard_request(struct mddev *mddev, struct bio *bi)
+ 		}
+ 		spin_unlock_irq(&sh->stripe_lock);
+ 		if (conf->mddev->bitmap) {
+-			for (d = 0;
+-			     d < conf->raid_disks - conf->max_degraded;
+-			     d++)
+-				md_bitmap_startwrite(mddev->bitmap,
+-						     sh->sector,
+-						     RAID5_STRIPE_SECTORS(conf),
+-						     0);
++			set_bit(STRIPE_BITMAP_CLAIM, &sh->state);
++			md_bitmap_startwrite(mddev->bitmap,
++					     sh->sector,
++					     RAID5_STRIPE_SECTORS(conf),
++					     0);
+ 			sh->bm_seq = conf->seq_flush + 1;
+ 			set_bit(STRIPE_BIT_DELAY, &sh->state);
+ 		}
+diff --git a/drivers/md/raid5.h b/drivers/md/raid5.h
+index 9b5a7dc3f2a0..830d5b33a4fc 100644
+--- a/drivers/md/raid5.h
++++ b/drivers/md/raid5.h
+@@ -399,6 +399,9 @@ enum {
+ 				 * in conf->r5c_full_stripe_list)
+ 				 */
+ 	STRIPE_R5C_PREFLUSH,	/* need to flush journal device */
++	STRIPE_BITMAP_CLAIM,	/* Has a claim on the bitmap which will need to
++				 * be released
++				 */
+ };
+ 
+ #define STRIPE_EXPAND_SYNC_FLAGS \

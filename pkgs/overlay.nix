@@ -320,14 +320,14 @@ in {
     argsOverride = rec {
       src = self.fetchurl {
         url = "mirror://kernel/linux/kernel/v6.x/linux-${version}.tar.xz";
-        hash = "sha256-yVT2AZcAjx4fMqHncpOQPPOAHSVD7Ev1IfVlHrfxM84=";
+        hash = "sha256-C/XsZEgX15KJIPdjWBMR9b8lipJ1nPLzCYXadDrz67I=";
       };
-      version = "6.11.6";
+      version = "6.11.7";
       modDirVersion = version;
       ignoreConfigErrors = true;
       kernelPatches = [
-        {name = "PL-132896-candidate-fix";
-         patch = ./PL-132896-candidate-fix.patch;
+        {name = "PL-132896-candidate-fix2";
+         patch = ./md_raid5_one_bitmap_claim_per_stripe_head.patch;
        }
       ];
     };
