@@ -266,9 +266,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     # program and not a script like other checks), so check_ping needs to
     # be compiled with the full path.
     postPatch = ''
-      substituteInPlace po/Makefile.in.in \
-        --replace /bin/sh ${self.runtimeShell}
-
       sed -i configure.ac \
         -e 's|^DEFAULT_PATH=.*|DEFAULT_PATH=\"${binPath}\"|'
 
