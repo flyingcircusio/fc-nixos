@@ -15,9 +15,9 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 
 ## Overview
 
-- New roles: {ref}`percona83 <nixos-upgrade-percona>`
-- Removed roles: {ref}`percona81 <nixos-upgrade-percona>`
-- Removed significant packages: `python38`
+- New roles: {ref}`percona84 <nixos-upgrade-percona>`
+- Removed roles: {ref}`percona81 percona82 percona83 <nixos-upgrade-percona>`
+- Removed significant packages:
 - Roles affected by significant breaking changes: none
 
 
@@ -113,71 +113,29 @@ time-window.
 
 ### Percona/ MySQL
 
-Our Percona roles now reflect the upstream two-fold release model of the Percona
-and Oracle MySQL projects of providing both an *LTS* release and a more short-lived
-*Innovation* release in parallel. \
-We still recommend using the LTS `percona80` for most use cases, see
+TODO
+
+We recommend using the LTS `percona84` for most use cases, see
 {ref}`nixos-mysql-versions` for details.
 
 ### K3S
 
-Machines created on NixOS 24.05 use k3s version 1.30.x. Machines upgraded
-from earlier platform versions use 1.27.x of k3s by default which was also the
-default for NixOS 23.11. Contact support if you want to use newer versions of k3s on these machines.
+TODO
 
 ### Slurm
 
-This release contains a major version upgrade of Slurm from 23.04.x.x (NixOS 23.11) to 23.11.x.x. Nodes of a cluster need to be upgraded in a prticular order, the the [upgrade instructions of the role](#nixos-slurm-upgrade) for details.
+TODO
 
-The default scheduler `SelectType` has been changed from `select/cons_res` to the default. As of now, this is `cons/tres`.
+% This release contains a major version upgrade of Slurm from 23.04.x.x (NixOS 23.11) to 23.11.x.x. Nodes of a cluster need to be upgraded in a prticular order, the the [upgrade instructions of the role](#nixos-slurm-upgrade) for details.
 
 ## Other notable changes
 
-- `lamp` roles: Platform integration for the <https://tideways.com> application profiler has been dropped, the respective NixOS options are not available anymore.
-- `inetutils` now has a lower priority to avoid shadowing the commonly-used `util-linux`. If one wishes to restore the default priority, simply use `lib.setPrio 5 inetutils` or override with `meta.priority = 5`.
-- `pdns` was updated to version v4.9.x, which introduces breaking changes. Check out the Upgrade Notes for details.
-- `openssh`, `openssh_hpn` and `openssh_gssapi` are now compiled without support for the DSA signature algorithm as it is being deprecated upstream. Users still relying on DSA keys should consider upgrading to another signature algorithm. However, for the time being it is possible to restore DSA key support by overriding the Nix package parameters, e.g. setting `openssh.override {dsaKeysSupport = true;}`.
+TODO
+
 - For more details, see the
-  [release notes of NixOS 24.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-24.05-notable-changes).
+  [release notes of NixOS 24.11](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-24.11-notable-changes).
 
 
 ## Significant package updates
 
-*as of 2024-07-05*
-
-- binutils: 2.40 -> 2.41
-- bundler: 2.4 -> 2.5
-- cmake: 3.27 -> 3.29
-- coreutils: 9.3 -> 9.5
-- curl: 8.4 -> 8.7
-- docker-compose: 2.23 -> 2.27
-- ffmpeg: 6.0 -> 6.1
-- gcc: 12.3 -> 13.2 (older versions available under alias)
-- ghostscript: 10.02 -> 10.03
-- git: 2.42 -> 2.44
-- gitlab: 16.10 -> 16.11
-- glibc: 2.38 -> 2.39
-- go: 1.21 -> 1.22 (1.21 remains available under alias)
-- grafana: 10.2 -> 10.4
-- k3s: see above
-- kubernetes-helm: 3.13 -> 3.15
-- libjpeg-turbo: 2.1 -> 3.0
-- libressl: 3.8 -> 3.9
-- libwep: 1.3 -> 1.4
-- libxml2: 2.11 -> 2.12
-- mailutils: 3.16 -> 3.17
-- nginx: 1.24 -> 1.26
-- nodejs: 18 -> 20 (older versions available under alias)
-- openjdk: 19 -> 21 (older versions available under alias)
-- opensearch: 2.11 -> 2.14
-- openssh: 9.6p1 -> 9.7p1
-- openvpn: 2.5 -> 2.6
-- podman: 4.7 -> 5.0
-- poetry: 1.7 -> 1.8
-- postfix: 3.8 -> 3.9
-- powerdns: 4.8 -> 4.9
-- prometheus: 2.49 -> 2.52
-- python3Packages.boto3: 1.28 -> 1.34
-- python3Packages.pillow: 10.2 -> 10.3
-- rsync: 3.2 -> 3.3
-- systemd: 254 -> 255
+TODO
