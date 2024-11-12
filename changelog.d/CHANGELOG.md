@@ -1,3 +1,11 @@
+# Release 2024_032
+
+## NixOS XX.XX platform
+
+- fc.qemu: fix bug that may cause accidental root disk shrinks after a
+  cold reboot. (PL-133166)
+
+
 # Release 2024_031
 
 ## NixOS XX.XX platform
