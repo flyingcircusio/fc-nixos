@@ -133,6 +133,7 @@
   "openssl_1_1",
   "openssl_3",
   "openvpn",
+  "patchelf-venv",
   "pcre",
   "pcre2",
   "percona",

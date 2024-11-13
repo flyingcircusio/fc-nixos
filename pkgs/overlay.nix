@@ -347,6 +347,18 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
+  patchelf-venv = super.patchelf.overrideAttrs ({ patches ? [], ... }: {
+    patches = patches ++ [
+      # Adds `--add-rpath-and-shrink` option, required for convergent deployment
+      # tooling invoking `patchelf` multiple times on a virtualenv (see
+      # `batou_ext.python.FixELFRunPath`)
+      (fetchpatch {
+        url = "https://github.com/flyingcircusio/patchelf/commit/6ffde887d77275323c81c2e091891251b021abb3.patch";
+        hash = "sha256-4Qct2Ez3v6DyUG26JTWt6/tkaqB9h1gYaoaObqhvFS8=";
+      })
+    ];
+  });
+
   percona = self.percona80;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
