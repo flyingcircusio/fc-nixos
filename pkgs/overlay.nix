@@ -26,12 +26,34 @@ let
     hash = "sha256-ttHjEOGJomjs10PRtM2C6OLX9LCvboxyDSKdZZHanFQ=";
   };
   # we need to use overrideAttrs, as the `extraPatches` function argument of the generic PHP builder is
-  # redefined and replaced ba the specific version builder.
+  # redefined and replaced by the specific version builder.
   patchPhps = patch: phpPkg: phpPkg.overrideAttrs (prev: {
     patches = (prev.patches or []) ++ (prev.extraPatches or []) ++ [ patch ];
   });
 
+  additionalPythonPackages = python-self: python-super: {
+    pytest_patterns = python-self.callPackage ./python/pytest-patterns { };
+  };
+  pythonVersions = [ "3" "39" "310" "311" "312" "313" ];
+
 in
+builtins.listToAttrs (builtins.map (pythonVersion:
+{
+  name = "python${pythonVersion}";
+  value = let
+    # this `self` denotes the python interpreter, not the overlay self.
+    pyself = super."python${pythonVersion}".override {self = pyself; packageOverrides = additionalPythonPackages;};
+    in pyself;
+  }
+  ) pythonVersions)
+//
+builtins.listToAttrs (builtins.map (pythonVersion:
+{
+  name = "python${pythonVersion}Packages";
+  value = self."python${pythonVersion}".pkgs;
+}
+) pythonVersions)
+//
 builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   #
   # == we need to patch upstream PHP for more liberal fpm log file permissions
@@ -61,10 +83,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     pythonPackages = self.python312Packages;
   });
 
-  backy = super.callPackage ./backy {
-    inherit (super) python310 mkShellNoCC;
-    inherit (self) poetry2nix;
-  };
+  backy = self.callPackage ./backy { };
 
   #
   # imports from other nixpkgs versions or local definitions
@@ -461,8 +480,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
-
-  py_pytest_patterns = self.callPackage ./python/pytest-patterns { };
 
   qemu-ceph-nautilus = self.qemu.override {
     cephSupport = true;
