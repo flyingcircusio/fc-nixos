@@ -15,8 +15,7 @@
   parted,
   xfsprogs,
   procps,
-  systemd,
-  py_pytest_patterns
+  systemd
 }:
 
 let
@@ -40,7 +39,7 @@ let
     meta = with lib; {
       description = "Consulate is a Python client library and set of application for the Consul service discovery and configuration system.
 ";
-      homepage = https://pypi.org/project/consulate/;
+      homepage = "https://pypi.org/project/consulate/";
       license = licenses.publicDomain;
     };
   };
@@ -78,7 +77,7 @@ in
       # note: this is not really appropriate in theory, as test-only tooling
       # should be part of *checkInputs instead. checkInputs vs. nativeCheckInputs
       # needs some adaptions in more recent NixOS releases anyways, so keeping this for now.
-      py_pytest_patterns
+      py.pytest_patterns
     ];
 
     checkInputs = [

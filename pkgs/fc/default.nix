@@ -12,7 +12,6 @@ rec {
   # it can be parametrized via config file for each individual subsystem.
   ceph = pythonPackages.callPackage ./ceph {
     inherit agent blockdev;
-    py_pytest_patterns = pkgs.py_pytest_patterns.override {python3Packages = pythonPackages;};
   };
 
   check-age = callPackage ./check-age {};

@@ -1,4 +1,4 @@
-{ lib, stdenv, python3Full, python3Packages, cryptsetup, lz4, blockdev, lvm2, agent, py_pytest_patterns }:
+{ lib, stdenv, python3Full, python3Packages, cryptsetup, lz4, blockdev, lvm2, agent }:
 
 let
   py = python3Packages;
@@ -20,7 +20,7 @@ py.buildPythonApplication rec {
   checkInputs = [
     python3Packages.mock
     python3Packages.freezegun
-    py_pytest_patterns
+    python3Packages.pytest_patterns
   ];
 
   nativeCheckInputs = [
