@@ -252,7 +252,7 @@ def request_update(
 
     There are several shortcuts. The first one skip preparing the update
     altogether if the new channel URL is the same as the current channel of the system.
-    This save preparing, thus building the system which is quite expensive to do.
+    This saves preparing (and thus building) the system which is quite expensive to do.
 
     Also, if the preparation yields a system which is the same as the current one,
     we just switch to the new channel to save time and avoid announcing an update which

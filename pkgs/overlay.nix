@@ -180,35 +180,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  # PL-131574
-  linuxKernelVerify = let kernelPackage = super.linux_6_10;  in
-    kernelPackage.override {
-          argsOverride = {
-            src = super.fetchurl {
-              url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.11.tar.xz";
-              hash = "sha256-VdLGwCXrwngQx0jWYyXdW8YB6NMvhYHZ53ZzUpvayy4=";
-            };
-            version = "6.11";
-            modDirVersion = "6.11.0";
-          };
-        };
+  linuxKernelVerify = self.linux_latest;
 
-  linuxKernelStable =
-    let
-      kernelPackage = super.linux_5_15;
-      version = "5.15.164";
-  in
-    kernelPackage.override {
-      argsOverride = {
-        src = super.fetchurl {
-          url = "https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-${version}.tar.xz";
-          hash = "sha256-7GCY+u1kuKR7oXcugSputEQ4X3qjxg0+RzmrL9OykYY=";
-        };
-        modDirVersion = version;
-        inherit version;
-      };
-    };
-
+  linuxKernelStable = self.linux_5_15;
 
 
   matomo-beta = super.matomo-beta.overrideAttrs (oldAttrs: {
@@ -369,9 +343,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     # program and not a script like other checks), so check_ping needs to
     # be compiled with the full path.
     postPatch = ''
-      substituteInPlace po/Makefile.in.in \
-        --replace /bin/sh ${self.runtimeShell}
-
       sed -i configure.ac \
         -e 's|^DEFAULT_PATH=.*|DEFAULT_PATH=\"${binPath}\"|'
 

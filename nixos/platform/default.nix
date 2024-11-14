@@ -377,22 +377,28 @@ in {
       # overrides it
       cron.enable = fclib.mkPlatform true;
 
-      fail2ban.enable = fclib.mkPlatform true;
-      fail2ban.ignoreIP =
-        [
-          # loopback
-          "127.0.0.1/8"
-          "::1"
+      fail2ban = let
+        production = lib.attrByPath [ "parameters" "production" ] false config.flyingcircus.enc;
+      in {
+        enable = fclib.mkPlatform true;
+        maxretry = fclib.mkPlatform 5;
+        jails.sshd.settings.mode = lib.mkIf production (fclib.mkPlatform "ddos");
+        ignoreIP =
+          [
+            # loopback
+            "127.0.0.1/8"
+            "::1"
 
-          # rfc1918 addresses
-          "10.0.0.0/8"
-          "172.16.0.0/12"
-          "192.168.0.0/16"
-        ] ++
-        cfg.static.firewall.trusted ++
-        (flatten
-          (builtins.map (v: builtins.attrNames v.networks)
-            (builtins.attrValues (attrByPath [ "parameters" "interfaces" ] {} cfg.enc))));
+            # rfc1918 addresses
+            "10.0.0.0/8"
+            "172.16.0.0/12"
+            "192.168.0.0/16"
+          ] ++
+          cfg.static.firewall.trusted ++
+          (flatten
+            (builtins.map (v: builtins.attrNames v.networks)
+              (builtins.attrValues (attrByPath [ "parameters" "interfaces" ] {} cfg.enc))));
+      };
 
       nscd.enable = true;
       openssh.enable = fclib.mkPlatform true;
