@@ -199,9 +199,7 @@ class KeyConfig(object):
         return self.entity, self.key.to_string(), self.capabilities
 
     def save_client_keyring(self):
-        f = fc.util.configfile.ConfigFile(
-            self.filename, mode=0o600, diff=False
-        )
+        f = fc.util.configfile.ConfigFile(self.filename, mode=0o600, diff=False)
         f.write(
             f"""\
 [{self.entity}]
@@ -221,7 +219,11 @@ class ClientKey(KeyConfig):
     filename = "/etc/ceph/ceph.client.{id}.keyring"
     entity = "client.{id}"
     # assumption: all clients are allowed to use RBD
-    capabilities = {"mon": "allow r, allow profile rbd", "osd": "allow rwx"}
+    capabilities = {
+        "mon": "allow r, allow profile rbd",
+        "mgr": "allow profile rbd",
+        "osd": "allow rwx",
+    }
 
 
 class RGWKey(KeyConfig):
