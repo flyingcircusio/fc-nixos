@@ -61,7 +61,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     pythonPackages = self.python312Packages;
   });
 
-  backy = super.callPackage ./backy { inherit (super) poetry2nix python310 mkShellNoCC;};
+  backy = super.callPackage ./backy {
+    inherit (super) python310 mkShellNoCC;
+    inherit (self) poetry2nix;
+  };
 
   #
   # imports from other nixpkgs versions or local definitions
@@ -437,6 +440,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
+
+  # fetched from a different flake input, but make easily available via our overlay
+  inherit poetry2nix;
 
   postfix = super.postfix.override {
     cyrus_sasl = self.cyrus_sasl-legacyCrypt;

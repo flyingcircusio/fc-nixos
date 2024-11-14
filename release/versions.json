@@ -12,5 +12,11 @@
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
     "rev": "a47e58577910a47b59885af4ac0599b3bc60bfcd"
+  },
+  "poetry2nix": {
+    "hash": "sha256-F7N1mxH1VrkVNHR3JGNMRvp9+98KYO4b832KS8Gl2xI=",
+    "owner": "nix-community",
+    "repo": "poetry2nix",
+    "rev": "f554d27c1544d9c56e5f1f8e2b8aff399803674e"
   }
 }

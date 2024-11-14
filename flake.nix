@@ -34,6 +34,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-parts.url = "github:hercules-ci/flake-parts";
+    poetry2nix = {
+      url = "github:nix-community/poetry2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs@{ flake-parts, ... }:
@@ -117,6 +121,12 @@
                 fetchSubmodules = false;
                 deepClone = false;
                 leaveDotGit = false;
+              };
+              poetry2nix = with inputs.poetry2nix; {
+                inherit rev;
+                hash = narHash;
+                owner = "nix-community";
+                repo = "poetry2nix";
               };
             }
           );
