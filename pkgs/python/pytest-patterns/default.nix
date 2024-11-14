@@ -9,6 +9,7 @@ buildPythonPackage rec {
     hash = "sha256-OZlzoyWlYfb28mFJ8PBz4KApOZNeOtPxaLQn/pINLz0=";
     format = "wheel";
     python = "py3";
+    dist = "py3";
   };
 
   format = "wheel";
