@@ -34,25 +34,32 @@ let
   additionalPythonPackages = python-self: python-super: {
     pytest_patterns = python-self.callPackage ./python/pytest-patterns { };
   };
-  pythonVersions = [ "3" "39" "310" "311" "312" "313" ];
+  # custom additional python packages need to be embedded in the relevant
+  # `pythonXYPackages` sets to make them select the correct dependencies and
+  # interpreters. To have the package available in all of them, we generate
+  # overrides here.
+  genPythonWithVersion = pythonVersion: {
+    "python${pythonVersion}" = let
+      # this `self` denotes the python interpreter, not the overlay self.
+      pyself = super."python${pythonVersion}".override {self = pyself; packageOverrides = additionalPythonPackages;};
+    in pyself;
+    "python${pythonVersion}Packages" = self."python${pythonVersion}".pkgs;
+  };
 
 in
-builtins.listToAttrs (builtins.map (pythonVersion:
-{
-  name = "python${pythonVersion}";
-  value = let
-    # this `self` denotes the python interpreter, not the overlay self.
-    pyself = super."python${pythonVersion}".override {self = pyself; packageOverrides = additionalPythonPackages;};
-    in pyself;
-  }
-  ) pythonVersions)
+genPythonWithVersion ""
 //
-builtins.listToAttrs (builtins.map (pythonVersion:
-{
-  name = "python${pythonVersion}Packages";
-  value = self."python${pythonVersion}".pkgs;
-}
-) pythonVersions)
+genPythonWithVersion "3"
+//
+genPythonWithVersion "39"
+//
+genPythonWithVersion "310"
+//
+genPythonWithVersion "311"
+//
+genPythonWithVersion "312"
+//
+genPythonWithVersion "313"
 //
 builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   #
