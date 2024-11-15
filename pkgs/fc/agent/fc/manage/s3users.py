@@ -262,8 +262,20 @@ class UserManager:
         self.users = {}
 
         # Get the desired state from the directory
-        directory_info = self.dir_conn.list_s3_users(self.location, self.rg)
+        directory_info = self.dir_conn.list_s3_users()
         for uid, user_dict in directory_info.items():
+            # Safety-belt: ensure we're acting on the right users. Distinct
+            # RGW instances can carry the same user names twice and I'd like to
+            # absolutely make sure that we never ever locally delete a user
+            # that was marked for deletion in a different cluster.
+            assert user_dict["location"] == self.location, (
+                f"Encountered user from unexpected location: "
+                + user_dict["location"]
+            )
+            assert user_dict["storage_resource_group"] == self.rg, (
+                "Encountered user from unexpected storage resource group: "
+                + user_dict["storage_resource_group"]
+            )
             user = self.get_user(uid)
             user.directory.update(user_dict)
 

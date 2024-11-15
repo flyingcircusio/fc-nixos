@@ -644,7 +644,7 @@ def test_user_manager(subprocess_run, caplog):
     directory = Mock()
     directory.list_s3_users.return_value = {
         "services:sometest": {
-            "location": "rzob",
+            "location": "test",
             "storage_resource_group": "services",
             "display_name": "test test",
             "access_key": "dnDlid0jyRs1sK9vEOGV",
@@ -692,6 +692,7 @@ def test_user_manager(subprocess_run, caplog):
     manager = UserManager(directory, "test", "services")
     manager.sync_users()
 
+    assert directory.list_s3_users.call_args_list == [call()]
     assert directory.update_s3_users.call_args_list == [
         call(
             {
@@ -716,4 +717,43 @@ def test_user_manager(subprocess_run, caplog):
     assert (
         " User data mismatch for services:user1:\n- is not known in the directory but exists (unmanaged) in RGW"
         in caplog.text
+    )
+
+
+def test_usermanager_blocks_users_from_foreign_location_or_resource_group():
+    directory = Mock()
+    directory.list_s3_users.return_value = {
+        "services:sometest": {
+            "location": "wrong-location",
+            "storage_resource_group": "correct-resource-group",
+            "display_name": "test test",
+            "access_key": "dnDlid0jyRs1sK9vEOGV",
+            "secret_key": "VqBfxCqupucBSjo7ksDcf4K6vhgsIdGKnL0ielLi",
+            "deletion": {"deadline": "", "stages": []},
+        }
+    }
+
+    with pytest.raises(AssertionError) as e:
+        UserManager(directory, "correct-location", "correct-resource-group")
+    assert (
+        e.value.args[0]
+        == "Encountered user from unexpected location: wrong-location"
+    )
+
+    directory.list_s3_users.return_value = {
+        "services:sometest": {
+            "location": "correct-location",
+            "storage_resource_group": "wrong-resource-group",
+            "display_name": "test test",
+            "access_key": "dnDlid0jyRs1sK9vEOGV",
+            "secret_key": "VqBfxCqupucBSjo7ksDcf4K6vhgsIdGKnL0ielLi",
+            "deletion": {"deadline": "", "stages": []},
+        }
+    }
+
+    with pytest.raises(AssertionError) as e:
+        UserManager(directory, "correct-location", "correct-resource-group")
+    assert (
+        e.value.args[0]
+        == "Encountered user from unexpected storage resource group: wrong-resource-group"
     )
