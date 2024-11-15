@@ -133,7 +133,9 @@ class DiskWithSinglePartition(GenericBlockDevice):
                     self._blockdevice = partition
                     break
             else:
-                raise RuntimeError(f"Could not find partition 1 on {self.name}")
+                raise RuntimeError(
+                    f"Could not find partition 1 on {self.name}"
+                )
         return self._blockdevice
 
     @classmethod
@@ -269,7 +271,10 @@ class GenericLogicalVolume:
         raise NotImplementedError
 
     def _create(
-        self, base_device: Optional[GenericBlockDevice], size: str, vg_name: str
+        self,
+        base_device: Optional[GenericBlockDevice],
+        size: str,
+        vg_name: str,
     ):
         raise NotImplementedError
 
@@ -353,7 +358,10 @@ class LogicalVolume(GenericLogicalVolume):
         self._vg_name = lv[0]["vg_name"]
 
     def _create(
-        self, base_device: Optional[GenericBlockDevice], size: str, vg_name: str
+        self,
+        base_device: Optional[GenericBlockDevice],
+        size: str,
+        vg_name: str,
     ):
         self.ensure_vg(vg_name, base_device)
 
@@ -399,7 +407,9 @@ class LogicalVolume(GenericLogicalVolume):
             return
 
         try:
-            pv = run.json.pvs("-S", f"vg_name=~^{re.escape(self._vg_name)}$")[0]
+            pv = run.json.pvs("-S", f"vg_name=~^{re.escape(self._vg_name)}$")[
+                0
+            ]
         except IndexError:
             pass
         else:
@@ -464,7 +474,10 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
         return self.name
 
     def _create(
-        self, base_device: Optional[GenericBlockDevice], size: str, vg_name: str
+        self,
+        base_device: Optional[GenericBlockDevice],
+        size: str,
+        vg_name: str,
     ):
         self.underlay.create(
             name=self.underlay.name,

@@ -11,7 +11,11 @@ from fc.ceph.util import console, run
 class BackupManager:
     @staticmethod
     def create(
-        name: str, vgname: str, disks: list[str], encrypt: bool, mountpoint: str
+        name: str,
+        vgname: str,
+        disks: list[str],
+        encrypt: bool,
+        mountpoint: str,
     ):
         console.print(
             f"Creating new backup volume {vgname}/{name} on disks {', '.join(disks)}…"

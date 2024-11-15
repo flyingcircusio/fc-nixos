@@ -26,7 +26,8 @@ def wait_for_clean_cluster():
         """
         try:
             check_unclean = (
-                status["health"]["checks"][checkname]["severity"] != "HEALTH_OK"
+                status["health"]["checks"][checkname]["severity"]
+                != "HEALTH_OK"
             )
         except KeyError:
             # clean checks generally do not appear in output
@@ -220,7 +221,9 @@ class OSDManager(object):
             osd = OSD(id_)
             wait_for_clean_cluster()
             try:
-                self._deactivate_single(osd, as_systemd_unit=False, flush=False)
+                self._deactivate_single(
+                    osd, as_systemd_unit=False, flush=False
+                )
                 self._activate_single(osd, as_systemd_unit=False)
             except Exception:
                 traceback.print_exc()
@@ -288,7 +291,10 @@ class JournalVG:
         try:
             partition_table = run.json.sfdisk(device)["partitiontable"]
         except CalledProcessError as e:
-            if b"does not contain a recognized partition table" not in e.stderr:
+            if (
+                b"does not contain a recognized partition table"
+                not in e.stderr
+            ):
                 # Not an empty disk, propagate the error
                 raise
         else:
@@ -584,7 +590,9 @@ class GenericOSD(object):
         # Delete OSD object
         while True:
             try:
-                run.ceph("osd", "purge", str(self.id), "--yes-i-really-mean-it")
+                run.ceph(
+                    "osd", "purge", str(self.id), "--yes-i-really-mean-it"
+                )
             except CalledProcessError as e:
                 # OSD is still shutting down, keep trying.
                 if e.returncode == errno.EBUSY:
@@ -608,7 +616,9 @@ class GenericOSD(object):
 
         # what's the crush location (host?)
         crush_location = "host={0}".format(
-            run.json.ceph("osd", "find", str(self.id))["crush_location"]["host"]
+            run.json.ceph("osd", "find", str(self.id))["crush_location"][
+                "host"
+            ]
         )
 
         print(f"--crush-location={crush_location}")

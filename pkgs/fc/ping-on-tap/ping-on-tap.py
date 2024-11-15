@@ -33,7 +33,9 @@ class ArpIcmpMux_am(scapy.AnsweringMachine):
         if self.arp_am.is_request(req):
             self.arp_am.print_reply(req, reply)
         else:
-            print("Replying %s to %s" % (reply.getlayer(scapy.IP).dst, req.dst))
+            print(
+                "Replying %s to %s" % (reply.getlayer(scapy.IP).dst, req.dst)
+            )
 
     def make_reply(self, req):
         if self.arp_am.is_request(req):

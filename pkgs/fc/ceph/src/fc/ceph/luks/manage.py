@@ -23,7 +23,9 @@ class LuksDevice(NamedTuple):
     header: Optional[str] = None
 
     @classmethod
-    def lsblk_to_cryptdevices(cls, lsblk_blockdevs: list) -> list["LuksDevice"]:
+    def lsblk_to_cryptdevices(
+        cls, lsblk_blockdevs: list
+    ) -> list["LuksDevice"]:
         """parses the output of lsblk -Js -o NAME,PATH,TYPE,MOUNTPOINT"""
         return [
             cls(
@@ -97,7 +99,8 @@ class LUKSKeyStoreManager(object):
 
     def destroy(self, overwrite=True):
         console.print(
-            f"Destroying keystore in {self.volume.mountpoint} ...", style="bold"
+            f"Destroying keystore in {self.volume.mountpoint} ...",
+            style="bold",
         )
         base_disk = self.volume.lv.base_disk
         self.volume.purge()
@@ -174,7 +177,9 @@ class LUKSKeyStoreManager(object):
 
         header_arg = ["--header", header] if header else []
 
-        dump = run.cryptsetup("luksDump", *header_arg, device, encoding="ascii")
+        dump = run.cryptsetup(
+            "luksDump", *header_arg, device, encoding="ascii"
+        )
         if f"  {slot_id}: luks2" in dump:
             run.cryptsetup(
                 "luksKillSlot",
@@ -216,7 +221,9 @@ class LUKSKeyStoreManager(object):
                     "luksDump", "--header", dev.header, dev.base_blockdev
                 )
             else:
-                luks_dump = Cryptsetup.cryptsetup("luksDump", dev.base_blockdev)
+                luks_dump = Cryptsetup.cryptsetup(
+                    "luksDump", dev.base_blockdev
+                )
             dump_lines = luks_dump.decode("utf-8").splitlines()
             for check in all_checks:
                 check_ok = True

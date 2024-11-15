@@ -63,14 +63,22 @@ def test_successful_maintenance_cycle(
         {
             "nodes": [
                 {"name": "localhost", "type": "host", "children": [14]},
-                {"name": "localhost-ssd", "type": "host", "children": [27, 13]},
+                {
+                    "name": "localhost-ssd",
+                    "type": "host",
+                    "children": [27, 13],
+                },
             ]
         },
         # osd tree
         {
             "nodes": [
                 {"name": "localhost", "type": "host", "children": [14]},
-                {"name": "localhost-ssd", "type": "host", "children": [27, 13]},
+                {
+                    "name": "localhost-ssd",
+                    "type": "host",
+                    "children": [27, 13],
+                },
             ]
         },
     ]
@@ -86,7 +94,9 @@ def test_successful_maintenance_cycle(
 
     ceph_calls.assert_has_calls(
         [
-            mock.call("osd", "set-group", "noup", "localhost", "localhost-ssd"),
+            mock.call(
+                "osd", "set-group", "noup", "localhost", "localhost-ssd"
+            ),
             mock.call("osd", "down", "13", "14", "27"),
             mock.call(
                 "osd", "unset-group", "noup", "localhost", "localhost-ssd"

@@ -349,7 +349,9 @@ def main():
     dhcpd.query_directory()
     if options.output:
         conffile = fc.util.configfile.ConfigFile(options.output)
-        conffile.write(dhcpd.render(options.include, options.local_include_dir))
+        conffile.write(
+            dhcpd.render(options.include, options.local_include_dir)
+        )
         changed = conffile.commit()
     else:
         sys.stdout.write(dhcpd.render(options.include))

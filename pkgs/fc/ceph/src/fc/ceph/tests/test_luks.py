@@ -659,15 +659,21 @@ def test_luks_fingerprint_verify(
     inputs_mock.seek(0)
 
     # no fingerprint file
-    assert mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
+    assert (
+        mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
+    )
 
     # mismatching fingerprint file
     persist_fingerprint(b"notfoo", tmpdir)
-    assert mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
+    assert (
+        mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 1
+    )
 
     # matching fingerprint file
     persist_fingerprint(b"foo", tmpdir)
-    assert mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 0
+    assert (
+        mock_LUKSKeyStoreManager.fingerprint(confirm=False, verify=True) == 0
+    )
 
     captured = capsys.readouterr()
 
