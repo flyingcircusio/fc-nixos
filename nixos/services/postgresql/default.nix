@@ -167,6 +167,7 @@ in {
 
       systemd.services.postgresql.serviceConfig = {
         Restart = "always";
+        ReadWritePaths = [ "/nix/var/nix/gcroots/per-user/postgres" ];
       } // lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "12") {
         RuntimeDirectory = "postgresql";
       };
@@ -211,7 +212,7 @@ in {
 
       flyingcircus.activationScripts = {
         postgresql-srv = lib.stringAfter [ "users" "groups" ] ''
-          install -d -o postgres /srv/postgresql
+          install -d -o postgres /srv/postgresql/${cfg.majorVersion}
           install -d -o postgres /nix/var/nix/gcroots/per-user/postgres
         '';
       };
