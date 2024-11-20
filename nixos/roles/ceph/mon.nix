@@ -171,7 +171,7 @@ in
             "bin/check_ceph"
             "bin/check_snapshot_restore_fill"
           ];
-          package = pkgs.fc.check-ceph;
+          package = cephPkgs.fc-check-ceph;
           groups = [ "sensuclient" ];
         }
       ];

@@ -73,28 +73,26 @@ in
       critical = 50000;
     };
 
-    services.logrotate.extraConfig = ''
-      /var/log/ceph/ceph.log
-      /var/log/ceph/ceph.audit.log
-      /var/log/ceph/ceph-mon.*.log
-      /var/log/ceph/ceph-osd.*.log
-      {
-          rotate 30
-          create 0644 root adm
-          prerotate
-              for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
-                  echo "Flushing log for $dmn"
-                  ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
-              done
-          endscript
-          postrotate
-              for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
-                  echo "Reopening log for $dmn"
-                  ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
-              done
-          endscript
-      }
-    '';
+    services.logrotate.settings.ceph-server = {
+      files = [ "/var/log/ceph/ceph.log"
+                "/var/log/ceph/ceph.audit.log"
+                "/var/log/ceph/ceph-mon.*.log"
+                "/var/log/ceph/ceph-osd.*.log"];
+      rotate = "30";
+      create = "0644 root adm";
+      prerotate = ''
+        for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
+            echo "Flushing log for $dmn"
+            ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log flush || true
+        done
+      '';
+      postrotate = ''
+        for dmn in $(cd /run/ceph && ls ceph-*.asok 2>/dev/null); do
+            echo "Reopening log for $dmn"
+            ${cephPkgs.ceph}/bin/ceph --admin-daemon /run/ceph/''${dmn} log reopen || true
+        done
+      '';
+    };
 
     services.telegraf.extraConfig.inputs.ceph = [
       { ceph_binary = "${ceph_sudo}/bin/ceph-sudo"; }

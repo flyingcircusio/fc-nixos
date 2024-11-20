@@ -134,8 +134,8 @@ in
         VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
         BRIDGE="br''${VLAN}"
 
-        ${pkgs.iproute}/bin/ip link set $INTERFACE up
-        ${pkgs.iproute}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev $INTERFACE
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE up
+        ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev $INTERFACE
         ${pkgs.bridge-utils}/bin/brctl addif $BRIDGE $INTERFACE
         '';
       mode = "0744";
@@ -149,7 +149,7 @@ in
         BRIDGE="br''${VLAN}"
 
         ${pkgs.bridge-utils}/bin/brctl delif $BRIDGE $INTERFACE
-        ${pkgs.iproute}/bin/ip link set $INTERFACE down
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE down
         '';
       mode = "0744";
     };
@@ -186,7 +186,7 @@ in
     systemd.services.fc-qemu-reattach-taps = {
       description = "Reattach all VM taps if needed.";
 
-      path = [ pkgs.jq pkgs.iproute ];
+      path = [ pkgs.jq pkgs.iproute2 ];
 
       script = ''
         for interface in $(ip -j link show |  jq '.[] | .ifname' -r | egrep '^t(srv|fe)'); do
@@ -251,24 +251,25 @@ in
       "d /etc/qemu/vm 0755 root root -"
     ];
 
-    services.logrotate.extraConfig =
-      ''
-        /var/log/vm/*.[!q]*log {
-            # "create" is important - stops log files of outmigrated VMs to be dropped
-            # from the shell glob above.
-            create 0644 root root
-            copytruncate
-            nodelaycompress
-            rotate 14
-        }
+    services.logrotate.settings = {
+      vms = {
+        files = [ "/var/log/vm/*.[!q]*log" ];
+        # "create" is important - stops log files of outmigrated VMs to be dropped
+        # from the shell glob above.
+        create = "0644 root root";
+        copytruncate = true;
+        nodelaycompress = true;
+        rotate = 14;
+      };
 
-        /var/log/fc-qemu.log {
-            # There is no sensitive data in this log and we sometimes miss to extract
-            # crash information within two weeks. Keep a longer history so we can
-            # actually analyze crashes even much later.
-            rotate 90
-        }
-      '';
+      fc-qemu = {
+        files = [ "/var/log/fc-qemu.log" ];
+        # There is no sensitive data in this log and we sometimes miss to extract
+        # crash information within two weeks. Keep a longer history so we can
+        # actually analyze crashes even much later.
+        rotate = 90;
+      };
+    };
 
     flyingcircus.services.sensu-client = {
       checks = {
