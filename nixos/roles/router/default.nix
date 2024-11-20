@@ -233,9 +233,6 @@ in
         )
       );
 
-    services.logrotate.extraConfig = ''
-    '';
-
     specialisation.primary = {
       configuration = {
         system.nixos.tags = [ "primary" ];

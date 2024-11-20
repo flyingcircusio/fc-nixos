@@ -19,7 +19,6 @@ lib.mkIf role.enable {
       makestep 0.001 1
       maxdrift 100
       maxslewrate 100
-      rtcsync
 
       ${lib.concatStringsSep "\n" (map (n: "allow ${n};") fclib.networks.all)}
 
