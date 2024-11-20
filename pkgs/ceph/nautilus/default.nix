@@ -114,6 +114,7 @@ in rec {
     patches = [
       ./0000-fix-SPDK-build-env.patch
       ./0001-fix-iterator.patch
+      ./0002-fix-snappy.patch
       ./rgw-reduce-log-verbosity.patch
     ] ++
     (if tmp-patches then
