@@ -168,7 +168,9 @@ in
   nodes.machine =
     { config, ... }:
     {
-      imports = [ ../nixos ../nixos/roles ];
+      imports = [
+        (testlib.fcConfig { id = 1; })
+      ];
       flyingcircus.useVerificationKernel = false;
     };
 

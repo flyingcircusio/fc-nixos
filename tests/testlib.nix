@@ -42,7 +42,7 @@ rec {
     Parameters:
 
       id
-        Number of the test node in alphabetic ordered, starting from 1.
+        Number of the test node in alphabetic order, starting from 1.
 
         Example: IDs for the following servers would be assigned:
 
@@ -83,7 +83,9 @@ rec {
   fcConfig = {
     id ? 1,
     net ? {},
-    resource_group ? "test", location ? "test", secrets ? {},
+    resource_group ? "test",
+    location ? "test",
+    secrets ? {},
     extraEncParameters ? {},
   }: { config, ... }:
   {

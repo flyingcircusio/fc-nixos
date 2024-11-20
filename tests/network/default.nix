@@ -1,9 +1,11 @@
-import ../make-test-python.nix ({ pkgs, ... }:
+import ../make-test-python.nix ({ pkgs, testlib, ... }:
 let
   router =
     { config, pkgs, ... }:
     with pkgs.lib; {
-      imports = [ ../../nixos ../../nixos/roles ];
+      imports = [
+        (testlib.fcConfig { id = 1; })
+      ];
 
       environment.systemPackages = with pkgs; [ iptables curl ];
       virtualisation.vlans = [ 2 3 6 ];  # fe srv tr
@@ -55,7 +57,9 @@ in {
     loopback = {
       name = "loopback";
       nodes.machine = {
-          imports = [ ../../nixos ../../nixos/roles ];
+        imports = [
+          (testlib.fcConfig { id = 1; })
+        ];
       };
       testScript = ''
         machine.wait_for_unit("network.target")
@@ -67,7 +71,9 @@ in {
     wireguard = {
       name = "wireguard";
       nodes.machine = {
-        imports = [ ../../nixos ../../nixos/roles ];
+        imports = [
+          (testlib.fcConfig { id = 1; })
+        ];
       };
       testScript = ''
         machine.wait_for_unit("network.target")
@@ -109,7 +115,9 @@ in {
       nodes.machine =
         { pkgs, ... }:
         {
-          imports = [ ../../nixos ../../nixos/roles ];
+          imports = [
+            (testlib.fcConfig { id = 1; })
+          ];
           virtualisation.interfaces = {
             ethfe = { vlan = 2; };
             ethsrv = { vlan = 3; };
@@ -163,7 +171,9 @@ in {
       nodes.n2_client =
         { ... }:
         {
-          imports = [ ../../nixos ../../nixos/roles ];
+          imports = [
+            (testlib.fcConfig { id = 2; })
+          ];
           virtualisation.interfaces = {
             ethfe = { vlan = 2; };
             ethsrv = { vlan = 3; };
@@ -297,8 +307,10 @@ in {
           { hostId, localConfigPath ? "/etc/local" }:
             { config, pkgs, ... }:
             {
-              networking.hostName = "srv${hostId}";
-              imports = [ ../../nixos ../../nixos/roles ];
+              networking.hostName = "srv${toString hostId}";
+              imports = [
+                (testlib.fcConfig { id = 1; })
+              ];
               virtualisation.interfaces = {
                 ethfe = { vlan = 2; };
                 ethsrv = { vlan = 3; };
@@ -307,7 +319,7 @@ in {
               flyingcircus.enc.parameters.interfaces = encInterfaces hostId;
               flyingcircus.localConfigPath = localConfigPath;
               services.nginx.enable = true;
-              services.nginx.virtualHosts."srv${hostId}" = { root = ./.; };
+              services.nginx.virtualHosts."srv${toString hostId}" = { root = ./.; };
               users.users.s-test = {
                 isNormalUser = true;
                 extraGroups = [ "service" ];
@@ -316,7 +328,7 @@ in {
       in {
         name = "firewall";
         nodes.client = router;
-        nodes.srv2 = firewalledServer { hostId = "2"; };
+        nodes.srv2 = firewalledServer { hostId = 2; };
         nodes.srv3 = firewalledServer {
           hostId = "3";
           localConfigPath = ./open-fe-80;
