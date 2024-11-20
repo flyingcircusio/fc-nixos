@@ -1,3 +1,12 @@
+# Release 2024_033
+
+## NixOS XX.XX platform
+
+- physical machines: load `dm_mirror` kernel module by default, to support several LVM disk migration scenarios
+
+- Update fc.qemu to ensure reduce cluster load on rbd list. (PL-133194)
+
+
 # Release 2024_032
 
 ## NixOS XX.XX platform
