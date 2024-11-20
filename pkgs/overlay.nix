@@ -176,9 +176,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   ipmitool = super.ipmitool.overrideAttrs(a: a // {
     buildInputs = a.buildInputs ++ [ super.ncurses super.readline ];
-    configureFlags = a.configureFlags ++ [
-      "--enable-ipmishell"
-    ];
   });
 
   keepalived = super.keepalived.overrideAttrs(_: rec {
@@ -191,8 +188,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       sha256 = "gUW8PQoqQJipShxu3l8hSgLVNGS/KCS7SpATNHWh7nI=";
     };
 
-    patches = [
-    ];
   });
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
