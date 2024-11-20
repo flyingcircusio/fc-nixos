@@ -293,7 +293,7 @@ def test_update_activity_loading_outdated_serialization_should_work(
 ):
     request_path = tmp_path / "request.yaml"
     request_path.write_text(OUTDATED_SERIALIZED_REQUEST)
-    request = Request.load(tmp_path, agent_configparser, logger)
+    request = Request.load(tmp_path, agent_configparser, logger, 1800)
     activity = request.activity
     assert activity.changelog_url is None
     assert activity.current_release is None

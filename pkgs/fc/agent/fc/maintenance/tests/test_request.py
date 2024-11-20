@@ -154,13 +154,14 @@ def test_execute_catches_unhandled_activity_exceptions(tmpdir, log):
     assert log.has("execute-request-failed")
 
 
-def test_load_request(tmp_path, logger):
+def test_load_request(tmp_path, agent_configparser, logger):
     req = Request(Activity(), dir=tmp_path)
     req.save()
 
     lock_dir = Path("/dir")
     loaded_req = Request.load(
         tmp_path,
+        agent_configparser,
         logger,
         1800,
         lock_dir,
@@ -190,7 +191,7 @@ def test_external_activity_state(tmpdir, agent_configparser, logger):
         assert "foo\n" == f.read()
     with open(extstate, "w") as f:
         print("bar", file=f)
-    r2 = Request.load(str(tmpdir), logger, 1800)
+    r2 = Request.load(str(tmpdir), agent_configparser, logger, 1800)
     assert r2.activity.external == "bar\n"
 
 
