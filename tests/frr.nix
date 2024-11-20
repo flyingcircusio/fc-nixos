@@ -23,6 +23,8 @@ let
     boot.kernel.sysctl."net.ipv4.conf.all.ip_forward" = 1;
     boot.extraModprobeConfig = "options dummy numdummies=0";
     boot.initrd.availableKernelModules = [ "dummy" ];
+
+    networking.firewall.enable = false;
   };
 
   underlayLink = name: { lib, ... }: {
