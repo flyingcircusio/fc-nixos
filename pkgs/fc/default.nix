@@ -15,7 +15,10 @@ rec {
   };
 
   check-age = callPackage ./check-age {};
-  check-ceph-nautilus = callPackage ./check-ceph/nautilus {inherit (pkgs.ceph-nautilus) ceph-client;};
+  check-ceph-nautilus = callPackage ./check-ceph/nautilus {
+    inherit (pkgs.ceph-nautilus) ceph-client;
+    python3Packages = pkgs.python38Packages;
+  };
   check-haproxy = callPackage ./check-haproxy {};
   check-journal = callPackage ./check-journal.nix {};
   check-link-redundancy = callPackage ./check-link-redundancy {};
@@ -49,6 +52,8 @@ rec {
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;
+    python3Packages = pkgs.python38Packages;
+    py_pytest_patterns = pkgs.py38_pytest_patterns;
   };
   # Enable this temporarily during development, but DO NOT commit this as
   # it will break hydra and we can't cleanly filter it out of the automatic

@@ -8,6 +8,10 @@ let
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
     {} super;
 
+  nixpkgs-21_05-src = (import ../versions.nix { }).nixpkgs-21_05;
+  fc-nixos-21_05-src = (import ../versions.nix { }).fc-nixos-21_05;
+  fc-nixos-21_05 = import fc-nixos-21_05-src {inherit (self) config; nixpkgs = nixpkgs-21_05-src; };
+
   inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
   inherit (builtins) hasAttr storePath;
 
@@ -123,25 +127,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # default ceph packages
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
-  ceph-nautilus = rec {
-    inherit (super.callPackages ./ceph/nautilus {
-        boost = super.boost181.override { enablePython = true; python = self.python310; };
-        stdenv = self.gcc10Stdenv;
-        python3Packages = self.python310Packages;
-      })
-      ceph
-      ceph-client;
-    libceph = ceph.lib;
-  };
-  ceph-nautilus-tmp-patches = rec {
-    inherit (super.callPackages ./ceph/nautilus {
-        tmp-patches = true;
-        boost = super.boost16x.override { enablePython = true; python = self.python3; };
-      })
-      ceph
-      ceph-client;
-    libceph = ceph.lib;
-  };
+  ceph-nautilus = fc-nixos-21_05.ceph-nautilus;
 
   docsplit = super.callPackage ./docsplit { };
 
@@ -480,13 +466,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     ];
   });
 
+  python38 = fc-nixos-21_05.python38;
+  python38Packages = fc-nixos-21_05.python38Packages;
+  py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
+
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
 
-  qemu-ceph-nautilus = self.qemu.override {
-    cephSupport = true;
-    ceph = self.ceph-nautilus.ceph;
-  };
+  qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 

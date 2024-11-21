@@ -13,6 +13,18 @@
     "repo": "nixpkgs",
     "rev": "a47e58577910a47b59885af4ac0599b3bc60bfcd"
   },
+  "nixpkgs-21.05": {
+    "hash": "sha256-5ufC/t0sUFS/LspiEwU8DW5+uVYM3diZ1IC7KjX9ek4=",
+    "owner": "flyingcircusio",
+    "repo": "nixpkgs",
+    "rev": "a467063b4abb8bd7636d9bb2475edbd2f0e6c6b6"
+  },
+  "fc-nixos-21.05": {
+    "hash": "sha256-kEQeEhR9j+n8YuMTkkpHQoMZSKe596GxIpPB+g/Ci4A=",
+    "owner": "flyingcircusio",
+    "repo": "fc-nixos",
+    "rev": "0b52963cef46e62fbf6397c3aba334ff02fdfb16"
+  },
   "poetry2nix": {
     "hash": "sha256-F7N1mxH1VrkVNHR3JGNMRvp9+98KYO4b832KS8Gl2xI=",
     "owner": "nix-community",

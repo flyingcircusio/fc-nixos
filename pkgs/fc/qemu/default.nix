@@ -15,7 +15,8 @@
   parted,
   xfsprogs,
   procps,
-  systemd
+  systemd,
+  py_pytest_patterns
 }:
 
 let
@@ -77,7 +78,7 @@ in
       # note: this is not really appropriate in theory, as test-only tooling
       # should be part of *checkInputs instead. checkInputs vs. nativeCheckInputs
       # needs some adaptions in more recent NixOS releases anyways, so keeping this for now.
-      py.pytest_patterns
+      py_pytest_patterns
     ];
 
     checkInputs = [
