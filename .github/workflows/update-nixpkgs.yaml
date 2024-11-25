@@ -1,0 +1,41 @@
+name: update-nixpkgs
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "5 8 * * *"
+
+jobs:
+  run-nixpkgs-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v21
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.18.9/install
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.NIXPKGS_UPDATE_APP_ID }}
+          private-key: ${{ secrets.NIXPKGS_UPDATE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - run: |
+          echo "::add-mask::${{steps.app-token.outputs.token}}"
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      - run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>'
+      - run: |
+          pip install pygithub gitpython
+      - run: |
+          python ci/update-nixpkgs.py \
+            --nixpkgs-dir ../nixpkgs \
+            --nixpkgs-upstream-url https://github.com/NixOS/nixpkgs \
+            --nixpkgs-origin-url https://x-access-token:${{steps.app-token.outputs.token}}@github.com/flyingcircusio/nixpkgs.git \
+            --platform-versions 24.05
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
