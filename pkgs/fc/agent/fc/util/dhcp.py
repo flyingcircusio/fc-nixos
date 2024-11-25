@@ -78,6 +78,15 @@ class Subnet(object):
                 if hostaddr.ip in self.network:
                     yield hostaddr
 
+    @property
+    def hostaddrs_unique_mac(self):
+        if not self._hosts:
+            return
+        for host in self._hosts.iter_unique_mac():
+            for hostaddr in host:
+                if hostaddr.ip in self.network:
+                    yield hostaddr
+
 
 class SharedNetwork(object):
     """Represents a collection of subnets on the same physical network."""
