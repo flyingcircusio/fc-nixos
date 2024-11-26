@@ -98,11 +98,11 @@ in
   options = with lib; {
     flyingcircus.services.dhcpd4.localconfig = mkOption {
       type = types.attrs;
-      default = fclib.jsonFromFile "/etc/nixos/localconfig-dhcpd4.json" "";
+      default = fclib.jsonFromFile "/etc/nixos/localconfig-dhcpd4.json" "{}";
     };
     flyingcircus.services.dhcpd6.localconfig = mkOption {
       type = types.attrs;
-      default = fclib.jsonFromFile "/etc/nixos/localconfig-dhcpd6.json" "";
+      default = fclib.jsonFromFile "/etc/nixos/localconfig-dhcpd6.json" "{}";
     };
   };
 
