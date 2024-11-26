@@ -16,6 +16,8 @@ let
   dhcpNetworks = [ "ipmi" ] ++ dhcpNetworks';
   dhcpInterfaces = map (net: fclib.network."${net}".interface) dhcpNetworks';
 
+  bootServer = head fclib.network.mgm.v4.defaultGateways;
+
   resolvers4 = if (hasAttr location config.flyingcircus.static.nameservers)
         then config.flyingcircus.static.nameservers.${location}
         else [];
@@ -50,11 +52,12 @@ let
       # NTP options set on a per-subnet basis by fc-kea
     ];
 
-    # default efi netboot configuration, overridden for bios clients
-    # and ipxe in client classes
-    next-server = "${location}-router.mgm.${location}.${suffix}";
-    boot-file-name = "ipxe.efi";
+    next-server = bootServer;
 
+    # default to efi netboot. bios clients and the ipxe loader are
+    # identified with client classes, with the options specified in
+    # the first match taking precedence.
+    boot-file-name = "ipxe.efi";
     client-classes = [
       {
         name = "iPXE";
