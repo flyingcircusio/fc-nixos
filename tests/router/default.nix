@@ -117,25 +117,32 @@ let
         test00                        A       172.22.22.222
       '';
 
-      flyingcircus.services.dhcpd4.localconfig = ''
-        shared-network fe {
-            subnet 172.20.2.0 netmask 255.255.255.128 {
-                range 172.20.2.17 172.20.2.51;
-                range 172.20.2.125 172.20.2.125;
-                option subnet-mask 255.255.255.128;
-                option routers 172.20.2.1;
-                authoritative;
-            }
-        }
-      '';
+      flyingcircus.services.dhcpd4.localconfig = {
+        shared-networks = [{
+          name = "fe";
+          subnet4 = [{
+            subnet = "172.20.2.0/25";
+            option-data = [{
+              name = "routers";
+              data = "172.20.2.1";
+            }];
+            pools = [{
+              pool = "172.20.2.17 - 172.20.2.51";
+            } {
+              pool = "172.20.2.125 - 172.20.2.125";
+            }];
+          }];
+        }];
+      };
 
-      flyingcircus.services.dhcpd6.localconfig = ''
-        shared-network fe {
-            subnet6 2a02:238:f030:1c2::/64 {
-                authoritative;
-            }
-        }
-      '';
+      flyingcircus.services.dhcpd6.localconfig = {
+        shared-networks = [{
+          name = "fe";
+          subnet6 = [{
+            subnet = "2a02:238:f030:1c2::/64";
+          }];
+        }];
+      };
 
       flyingcircus.enc.name = "router${toString id}";
       flyingcircus.enc.parameters = {
@@ -326,14 +333,14 @@ in
       with subtest("bind is running"):
         primary.wait_for_unit("bind")
 
-      with subtest("dhcpd4 is running"):
+      with subtest("kea-dhcp4-server is running"):
         import time
         time.sleep(10)
-        print(primary.execute("journalctl -u dhcpd4")[1])
-        primary.wait_for_unit("dhcpd4")
+        print(primary.execute("journalctl -u kea-dhcp4-server")[1])
+        primary.wait_for_unit("kea-dhcp4-server")
 
-      with subtest("dhcpd6 is running"):
-        primary.wait_for_unit("dhcpd6")
+      with subtest("kea-dhcp6-server is running"):
+        primary.wait_for_unit("kea-dhcp6-server")
 
       with subtest("tftp daemon (atftpd) is running and serves files"):
         primary.wait_for_unit("atftpd")
