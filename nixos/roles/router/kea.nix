@@ -45,6 +45,8 @@ let
       name = "/var/lib/kea/dhcp4.leases";
     };
 
+    authoritative = true;  # match previous isc-dhcpd behaviour
+
     option-data = [
       { name = "domain-name"; data = suffix; }
       { name = "domain-search"; data = "${suffix}, ${location}.${suffix}"; }
