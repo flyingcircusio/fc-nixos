@@ -212,7 +212,11 @@ in {
 
       flyingcircus.activationScripts = {
         postgresql-srv = lib.stringAfter [ "users" "groups" ] ''
-          install -d -o postgres /srv/postgresql/${cfg.majorVersion}
+          # postgres data dirs are referenced in the unit as ReadWritePaths and
+          # already need to exist at unit start
+          install -d -o postgres -g postgres -m 0700 /srv/postgresql
+          install -d -o postgres -g postgres -m 0700 /srv/postgresql/${cfg.majorVersion}
+          # keep around required postgres packages for upgrading
           install -d -o postgres /nix/var/nix/gcroots/per-user/postgres
         '';
       };

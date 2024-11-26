@@ -6,6 +6,7 @@ import tempfile
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from stat import S_IMODE as modebits
 from subprocess import CalledProcessError, run
 
 MIGRATED_TO_TEMPLATE = """\
@@ -31,13 +32,17 @@ Prepared as new data directory for a migration from {old_data_dir} by
 {initdb_cmd}
 """
 
+# the leading 04 descibes being a directory according to `stat`. Pass through
+# `modebits` before using it for `chmod`
+DATA_DIR_ST_MODE = 0o040700
+
 
 class PGVersion(str, Enum):
-    PG12 = "12"
     PG13 = "13"
     PG14 = "14"
     PG15 = "15"
     PG16 = "16"
+    # PG17 = "17"
 
 
 def run_as_postgres(cmd, **kwargs):
@@ -171,7 +176,7 @@ def create_new_data_dir(
         collate=collate,
         ctype=ctype,
     )
-    new_data_dir.mkdir(mode=0o0700)
+    new_data_dir.mkdir(mode=modebits(DATA_DIR_ST_MODE))
     shutil.chown(new_data_dir, "postgres", "postgres")
     initdb_cmd = [
         new_bin_dir / "initdb",
@@ -294,6 +299,17 @@ class NewDataDirUnusable(Exception):
         self.data_dir = data_dir
 
 
+def fix_permissions(toplevel: Path, filemode: int, dirmode: int):
+    """Recursively adjust file and directory mode."""
+    assert os.path.isdir(toplevel), f"{toplevel} is not a directory"
+    for root, dirs, files in os.walk(toplevel):
+        os.chmod(root, dirmode)
+        for directory in dirs:
+            os.chmod(os.path.join(root, directory), dirmode)
+        for file in files:
+            os.chmod(os.path.join(root, file), filemode)
+
+
 def check_new_data_dir(log, new_data_dir):
     if (new_data_dir / "fcio_upgrade_prepared").exists():
         new_data_dir_mode = new_data_dir.stat().st_mode
@@ -305,8 +321,23 @@ def check_new_data_dir(log, new_data_dir):
             group=new_data_dir.group(),
             mode=oct(new_data_dir_mode)[3:],
         )
-        if new_data_dir_mode != 0o040700:
-            log.error("upgrade-existing-data-dir-wrong-mode")
+        if new_data_dir_mode != DATA_DIR_ST_MODE:
+            log.warn(
+                "upgrade-existing-data-dir-wrong-mode",
+                _replace_msg=f"{new_data_dir} has incorrect permission. Adjusting the permissions recursively now.",
+                new_data_dir_mode=new_data_dir_mode,
+                expected_mode=DATA_DIR_ST_MODE,
+            )
+            try:
+                fix_permissions(
+                    new_data_dir,
+                    modebits(DATA_DIR_ST_MODE),
+                    modebits(DATA_DIR_ST_MODE),
+                )
+            except os.PermissionError:
+                log.exception(
+                    "upgrade-existing-data-dir-insufficient-permissions"
+                )
     else:
         raise NewDataDirUnusable(new_data_dir)
 
@@ -359,6 +390,17 @@ def prepare_upgrade(
         collate=collate,
         ctype=ctype,
     )
+    if new_data_dir.exists() and not any(new_data_dir.iterdir()):
+        # empty directories created at system activation time can be ignored,
+        # just let the upgrade process create a new one.
+        log.info(
+            "existing-empty-data-dir",
+            _replace_msg=(
+                "New data dir {new_data_dir} is empty. Removing and recreating it."
+            ),
+            new_data_dir=new_data_dir,
+        )
+        new_data_dir.rmdir()
     if new_data_dir.exists():
         check_new_data_dir(
             log,
