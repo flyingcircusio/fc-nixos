@@ -296,17 +296,6 @@ class NewDataDirUnusable(Exception):
         self.data_dir = data_dir
 
 
-def fix_permissions(toplevel: Path, filemode: int, dirmode: int):
-    """Recursively adjust file and directory mode."""
-    assert os.path.isdir(toplevel), f"{toplevel} is not a directory"
-    for root, dirs, files in os.walk(toplevel):
-        os.chmod(root, dirmode)
-        for directory in dirs:
-            os.chmod(os.path.join(root, directory), dirmode)
-        for file in files:
-            os.chmod(os.path.join(root, file), filemode)
-
-
 def check_new_data_dir(log, new_data_dir):
     if (new_data_dir / "fcio_upgrade_prepared").exists():
         new_data_dir_mode = new_data_dir.stat().st_mode
@@ -327,12 +316,7 @@ def check_new_data_dir(log, new_data_dir):
                 expected_mode=0o040700,
             )
             try:
-                fix_permissions(
-                    new_data_dir,
-                    # files are not executable
-                    filemode=0o600,
-                    dirmode=0o700,
-                )
+                os.chmod(new_data_dir, 0o700)
             except PermissionError:
                 log.exception(
                     "upgrade-existing-data-dir-insufficient-permissions"
