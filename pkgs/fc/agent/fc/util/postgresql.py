@@ -33,10 +33,6 @@ Prepared as new data directory for a migration from {old_data_dir} by
 {initdb_cmd}
 """
 
-# the leading 04 descibes being a directory according to `stat`. Pass through
-# `modebits` before using it for `chmod`
-DATA_DIR_ST_MODE = 0o040700
-
 
 class PGVersion(str, Enum):
     PG13 = "13"
@@ -177,7 +173,7 @@ def create_new_data_dir(
         collate=collate,
         ctype=ctype,
     )
-    new_data_dir.mkdir(mode=modebits(DATA_DIR_ST_MODE))
+    new_data_dir.mkdir(mode=0o700)
     shutil.chown(new_data_dir, "postgres", "postgres")
     initdb_cmd = [
         new_bin_dir / "initdb",
@@ -322,19 +318,20 @@ def check_new_data_dir(log, new_data_dir):
             group=new_data_dir.group(),
             mode=oct(new_data_dir_mode)[3:],
         )
-        if new_data_dir_mode != DATA_DIR_ST_MODE:
+        # the leading 04 descibes being a directory according to `stat`.
+        if new_data_dir_mode != 0o040700:
             log.warn(
                 "upgrade-existing-data-dir-wrong-mode",
                 _replace_msg=f"{new_data_dir} has incorrect permission. Adjusting the permissions recursively now.",
                 new_data_dir_mode=new_data_dir_mode,
-                expected_mode=DATA_DIR_ST_MODE,
+                expected_mode=0o040700,
             )
             try:
                 fix_permissions(
                     new_data_dir,
                     # files are not executable
-                    filemode=modebits(DATA_DIR_ST_MODE & ~stat.S_IXUSR),
-                    dirmode=modebits(DATA_DIR_ST_MODE),
+                    filemode=0o600,
+                    dirmode=0o700,
                 )
             except PermissionError:
                 log.exception(
