@@ -138,6 +138,7 @@ class Cryptsetup:
     def luksAddKey(cls, *args: str, **kwargs):
         return cls.cryptsetup(
             *cls._tunables_luks_header,
+            *cls._tunables_cipher,
             "luksAddKey",
             *args, **kwargs,
         )  # fmt: skip

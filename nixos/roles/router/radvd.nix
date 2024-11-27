@@ -6,6 +6,7 @@ let
 
   role = config.flyingcircus.roles.router;
   inherit (config) fclib;
+  inherit (config.flyingcircus) location static;
   blockIndent = width: text:
     let
       # Create a string of `width` number of spaces.
@@ -15,15 +16,15 @@ let
       fclib.unlines
         ([(head lines)] ++ (fclib.indentWith spaces (tail lines)));
 
-  vlans =
-    lib.filterAttrs
-      (vlan: networkAttrs: networkAttrs != [])
-      (lib.mapAttrs
-        (vlan: interface:
-          if lib.elem vlan ["lo" "ipmi" "tr" "sto" "stb"]
-          then []
-          else (filter (na: na.addresses != []) interface.v6.networkAttrs))
-        fclib.network);
+  ifaces = listToAttrs
+    (filter (iface: iface.value.networkAttrs != [])
+      (map (vlan: lib.nameValuePair vlan (
+        let iface = fclib.network."${vlan}";
+        in {
+          inherit (iface) interface;
+          networkAttrs = filter (attr: attr.addresses != []) iface.v6.networkAttrs;
+        }
+      )) static.floatingGatewayNetworks."${location}"));
 
   mkPrefixBlock = { network, prefixLength, ... }: ''
     prefix ${network}/${toString prefixLength} {
@@ -32,24 +33,24 @@ let
     };
   '';
 
-  mkInterfaceBlock = vlan: networkAttrs:
+  mkInterfaceBlock = vlan: iface:
     let
-      interfaceName = if vlan == "ws" then "br${vlan}" else "eth${vlan}";
-      prefixConfigurations = lib.concatMapStringsSep "\n\n" mkPrefixBlock networkAttrs;
+      prefixConfigurations = lib.concatMapStringsSep "\n\n" mkPrefixBlock iface.networkAttrs;
     in ''
-      # ${vlan} VLAN
-      interface ${interfaceName} {
+      # ${vlan} network
+      interface ${iface.interface} {
         AdvSendAdvert on;
         AdvOtherConfigFlag on;
         ${blockIndent 2 prefixConfigurations}
       };
     '';
+
 in
 {
   config = lib.mkIf (role.enable && role.isPrimary) {
     services.radvd = {
       enable = true;
-      config = lib.concatStringsSep "\n\n" (lib.mapAttrsToList mkInterfaceBlock vlans);
+      config = lib.concatStringsSep "\n\n" (lib.mapAttrsToList mkInterfaceBlock ifaces);
     };
   };
 }

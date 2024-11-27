@@ -207,7 +207,7 @@ def check_unicast_rib(args):
             continue
 
         nexthops = [
-            IPv6Address(n["ip"])
+            IPv6Address(p["peerId"] if n["ip"] == "::" else n["ip"])
             for p in paths
             for n in p["nexthops"]
             if "used" in n and n["used"]
