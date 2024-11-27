@@ -2,6 +2,7 @@ import getpass
 import os
 import re
 import shutil
+import stat
 import tempfile
 from datetime import datetime
 from enum import Enum
@@ -331,10 +332,11 @@ def check_new_data_dir(log, new_data_dir):
             try:
                 fix_permissions(
                     new_data_dir,
-                    modebits(DATA_DIR_ST_MODE),
-                    modebits(DATA_DIR_ST_MODE),
+                    # files are not executable
+                    filemode=modebits(DATA_DIR_ST_MODE & ~stat.S_IXUSR),
+                    dirmode=modebits(DATA_DIR_ST_MODE),
                 )
-            except os.PermissionError:
+            except PermissionError:
                 log.exception(
                     "upgrade-existing-data-dir-insufficient-permissions"
                 )

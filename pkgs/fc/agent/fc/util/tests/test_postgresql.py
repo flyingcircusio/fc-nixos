@@ -108,7 +108,7 @@ def test_prepare_upgrade_adjusts_permissions(
         os.stat(new_data_dir).st_mode == 0o040700
     ), "Permissions not adjusted correctly"
     assert (
-        os.stat(new_data_dir / "fcio_upgrade_prepared").st_mode == 0o100700
+        os.stat(new_data_dir / "fcio_upgrade_prepared").st_mode == 0o100600
     ), "Permissions not adjusted correctly"
 
 
