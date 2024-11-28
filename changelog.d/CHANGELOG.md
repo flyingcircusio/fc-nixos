@@ -1,3 +1,22 @@
+# Release 2024_034
+
+
+## Impact
+
+## NixOS XX.XX platform
+
+- fc-luks: fix rekeying to use the specified encryption parameters. We accidentally fell back to defaults before. (PL-133174)
+
+- router: the ISC DHCP server, which is end-of-life, has been replaced
+  with its successor implementation, Kea. (PL-133205)
+
+- pkgs: fix the monitoring script for the IPv4 underlay network to
+  correctly handle next hop addresses sent by Nokia SR Linux
+  switches. (PL-133199)
+
+- router: fix radvd config generation to use the correct derived
+  interface name. (PL-133201)
+
 # Release 2024_033
 
 ## NixOS XX.XX platform
