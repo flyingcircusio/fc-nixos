@@ -175,6 +175,12 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
     buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
   });
 
+  elasticsearch6-oss =
+    (lib.toDerivation
+      (getClosureFromStore
+        /nix/store/gkw63x51dmnyr7v66vf713ni7b8i3z37-elasticsearch-oss-6.8.21)
+    // { version = "6.8.21"; });
+
   filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
     name = "filebeat-oss-${a.version}";
     # XXX: tests break without x-pack (bad!)
@@ -187,6 +193,23 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
     lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagickBig;
   imagemagick7_light = assert lib.versions.major super.imagemagick_light.version == "7";
     lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick_light;
+
+  graylogFrozen =
+    (lib.toDerivation
+      (getClosureFromStore
+        /nix/store/yj365yr01p6yp2axj943b4l8ngzzxvkw-graylog-3.3.16)
+    // { version = "3.3.16"; });
+
+  graylog = self.graylog-3_3;
+
+  graylog-3_3 = super.callPackage ./graylog {};
+
+  graylogPlugins = lib.recurseIntoAttrs (
+    super.callPackage ./graylog/plugins.nix {
+      graylog = self.graylog-3_3;
+    }
+  );
+
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
   # PHP versions from vendored nix-phps
