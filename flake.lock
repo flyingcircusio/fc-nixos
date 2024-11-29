@@ -102,6 +102,23 @@
         "type": "github"
       }
     },
+    "fc-nixos-21_05": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1732803710,
+        "narHash": "sha256-+Pv5mVb8WT9EP/nfJvneqW5ZHZ3PAkEXIFZAWXgdZ90=",
+        "owner": "flyingcircusio",
+        "repo": "fc-nixos",
+        "rev": "0d336728318db4687b018dca786863c39fb564d9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "flyingcircusio",
+        "ref": "fc-21.05-production",
+        "repo": "fc-nixos",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -387,6 +404,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-21_05": {
+      "locked": {
+        "lastModified": 1722265539,
+        "narHash": "sha256-5ufC/t0sUFS/LspiEwU8DW5+uVYM3diZ1IC7KjX9ek4=",
+        "owner": "flyingcircusio",
+        "repo": "nixpkgs",
+        "rev": "a467063b4abb8bd7636d9bb2475edbd2f0e6c6b6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "flyingcircusio",
+        "ref": "nixos-21.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1730504152,
@@ -543,9 +576,11 @@
     "root": {
       "inputs": {
         "devenv": "devenv",
+        "fc-nixos-21_05": "fc-nixos-21_05",
         "flake-parts": "flake-parts",
         "nixos-mailserver": "nixos-mailserver",
         "nixpkgs": "nixpkgs_2",
+        "nixpkgs-21_05": "nixpkgs-21_05",
         "poetry2nix": "poetry2nix_2"
       }
     },

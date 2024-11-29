@@ -38,6 +38,11 @@
       url = "github:nix-community/poetry2nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixpkgs-21_05.url = "github:flyingcircusio/nixpkgs/nixos-21.05";
+    fc-nixos-21_05 = {
+      url = "github:flyingcircusio/fc-nixos/fc-21.05-production";
+      flake = false;
+    };
   };
 
   outputs = inputs@{ flake-parts, ... }:
@@ -127,6 +132,18 @@
                 hash = narHash;
                 owner = "nix-community";
                 repo = "poetry2nix";
+              };
+              nixpkgs-21_05 = with inputs.nixpkgs-21_05; {
+                inherit rev;
+                hash = narHash;
+                owner = "flyingcircusio";
+                repo = "nixpkgs";
+              };
+              fc-nixos-21_05 = with inputs.fc-nixos-21_05; {
+                inherit rev;
+                hash = narHash;
+                owner = "flyingcircusio";
+                repo = "fc-nixos";
               };
             }
           );
