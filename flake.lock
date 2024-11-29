@@ -482,16 +482,16 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1731318247,
-        "narHash": "sha256-gQDuAW2aAMpOHiSqbTNSIYpIftLui38Pu5qybmxU2oo=",
+        "lastModified": 1732888032,
+        "narHash": "sha256-QkYCE3AQ3oQd7UV2tj2LZ+CICet+QfoioC49gydLitE=",
         "owner": "flyingcircusio",
         "repo": "nixpkgs",
-        "rev": "a47e58577910a47b59885af4ac0599b3bc60bfcd",
+        "rev": "46335fead0582bbd857fff4099d7a88ddfb32a76",
         "type": "github"
       },
       "original": {
         "owner": "flyingcircusio",
-        "ref": "nixos-24.11",
+        "ref": "PL-132122-scripted-network-interfaces",
         "repo": "nixpkgs",
         "type": "github"
       }
