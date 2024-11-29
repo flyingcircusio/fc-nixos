@@ -173,6 +173,14 @@ in
   options.flyingcircus.services.nginx = with lib; {
     enable = mkEnableOption "FC-customized nginx";
 
+    disableDHEATMitigation = lib.mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Disable the suggested mitigations against the D(HE)at Attack
+      '';
+    };
+
     defaultListenAddresses = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = fclib.network.fe.dualstack.addressesQuoted;
@@ -439,6 +447,12 @@ in
 
           # === Config from flyingcircus.services.nginx ===
           ${cfg.httpConfig}
+
+          ${lib.optionalString (!cfg.disableDHEATMitigation) ''
+          # mitigate the D(HE)at Attack
+          # see https://dheatattack.gitlab.io/mitigations/
+          ssl_ecdh_curve x25519:secp256r1:x448;
+          ''}
         '';
 
         eventsConfig = ''

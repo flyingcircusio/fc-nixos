@@ -45,7 +45,7 @@ in {
 
   options = {
     flyingcircus.services.mail.enable = lib.mkEnableOption ''
-      Mail server (SNM) with Postfix, Dovecot, rspamd, DKIM & SPF
+      Mail server (SNM) with Postfix, Dovecot, Rspamd, DKIM & SPF
     '';
   };
 

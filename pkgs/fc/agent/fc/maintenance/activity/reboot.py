@@ -67,6 +67,9 @@ class RebootActivity(Activity):
                     "cold reboot. This is a significant change."
                 ),
             )
+
+            self.reboot_needed = RebootType.COLD
+
             return ActivityMergeResult(
                 self,
                 is_effective=True,

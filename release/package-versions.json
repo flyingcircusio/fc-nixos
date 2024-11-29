@@ -850,9 +850,9 @@
     "version": "15.9"
   },
   "postgresql_16": {
-    "name": "postgresql-16.4",
+    "name": "postgresql-16.5",
     "pname": "postgresql",
-    "version": "16.4"
+    "version": "16.5"
   },
   "postgresql_17": {
     "name": "postgresql-17.1",

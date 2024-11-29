@@ -226,8 +226,7 @@ in {
 
       preStart = ''
         ${optionalString (cfg.cookie != "") ''
-            echo -n ${cfg.cookie} > ${cfg.dataDir}/.erlang.cookie
-            chmod 600 ${cfg.dataDir}/.erlang.cookie
+            install -m 400 <(echo -n ${cfg.cookie}) ${cfg.dataDir}/.erlang.cookie
         ''}
       '';
     };

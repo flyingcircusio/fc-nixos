@@ -9,7 +9,11 @@ lib.mkMerge [{
     lib.listToAttrs
       (map (n: lib.nameValuePair "ssl_cert_acme_${n}" {
         notification = "ACME (Letsencrypt) certificate for ${n} is invalid or will expire soon";
-        command = "check_http -p 443 -S --sni -C 25,14 -H ${n}";
+        # We're using a timeout of 15 seconds because 10 seconds is the timeout
+        # that will trigger if DNS issues occur and giving the check a higher
+        # timeout allows us to see those. Otherwise they get hidden behind
+        # a generic timeout message.
+        command = "check_http -p 443 -S --sni -C 25,14 -H ${n} -t 15";
         interval = 600;
       })
       (lib.attrNames config.security.acme.certs));

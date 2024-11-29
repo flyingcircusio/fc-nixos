@@ -121,7 +121,7 @@ with lib;
         ctheune = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA/lhMiMJBednrahZUJvb+dZVhLysbcuGf4p2J4D6MU/ ctheune@fourteen-3.local";
         zagy = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKqKaOCYLUxtjAs9e3amnTRH5NM2j0kjLOE+5ZGy9/W4 zagy@drrr.local";
         flanitz = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAg5mbkbBk0dngSVmlZJEH0hAUqnu3maJzqEV9Su1Cff flanitz";
-        cs = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKIlrvXV9TzM1uppd8oAbph1dcab6h28VZSUthsp2eZL christians@colbert";
+        cs = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII1tIRq9ughgKdSl3brTNRyA4ywvNG2mWEqVfToBy3XW cs@CSMBP20";
         ts = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOpJ59uGzQAB/n9YFQoOPWHiUFaKPGj2OivAxQmTkeyN ts";
         nm = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDFBloz5mf4SxX0/GwvOmTD2itWTRjyrmxh13Nzc2oSP nm";
         os = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJemLKFmr09o6zBscLJSD3KcAs/dnIYBjgxYzJ59VvHx os@Olivers-MBP-3";
