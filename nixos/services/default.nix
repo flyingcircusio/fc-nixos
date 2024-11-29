@@ -49,6 +49,9 @@ in {
     # Imported from NixOS 23.05
     ./frr.nix
 
+    # Imported from NixOS 24.05
+    ./kea.nix
+
     (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")
   ];
 }

@@ -177,11 +177,11 @@ class LUKSKeyStoreManager(object):
 
         header_arg = ["--header", header] if header else []
 
-        dump = run.cryptsetup(
+        dump = Cryptsetup.cryptsetup(
             "luksDump", *header_arg, device, encoding="ascii"
         )
         if f"  {slot_id}: luks2" in dump:
-            run.cryptsetup(
+            Cryptsetup.cryptsetup(
                 "luksKillSlot",
                 f"--key-file={key_file_verification}",
                 *header_arg,
@@ -189,11 +189,13 @@ class LUKSKeyStoreManager(object):
                 slot_id,
                 input=kill_input,
             )
-        run.cryptsetup(
+        Cryptsetup.cryptsetup(
             "luksAddKey",
             f"--key-file={key_file_verification}",
             f"--key-slot={slot_id}",
             *header_arg,
+            *Cryptsetup._tunables_luks_header,
+            *Cryptsetup._tunables_cipher,
             device,
             new_key_file,
             input=add_input,

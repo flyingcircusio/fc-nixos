@@ -73,7 +73,7 @@ in
     ./bird2
     ./keepalived
     ./chrony.nix
-    ./dhcpd.nix
+    ./kea.nix
     ./pmacctd.nix
     ./radvd.nix
     ./trafficclient.nix
@@ -273,8 +273,6 @@ in
 
     flyingcircus.agent = {
       extraPreCommands = ''
-        fc-dhcpd -4 -o /etc/nixos/localconfig-dhcpd4.conf ${location}
-        fc-dhcpd -6 -o /etc/nixos/localconfig-dhcpd6.conf ${location}
         # Updates files in /etc/bind and /etc/bind/pri where also Nix-generated config exists.
         fc-zones
       '';

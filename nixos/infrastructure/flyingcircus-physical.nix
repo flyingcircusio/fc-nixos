@@ -31,6 +31,11 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (lib.mkMerge [
         "nvme"
       ];
 
+      # not relevant for boot stage1
+      kernelModules = [
+        "dm_mirror"   # LVM disk migration scenarios
+      ];
+
       kernelParams = [
         # Drivers
         "dolvm"

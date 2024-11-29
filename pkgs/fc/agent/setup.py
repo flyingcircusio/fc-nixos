@@ -74,6 +74,8 @@ setup(
             "fc-create-vm=fc.manage.createvm:main",
             "fc-dhcpd=fc.manage.dhcpd:main",
             "fc-directory=fc.util.directory:directory_cli",
+            "fc-graylog=fc.manage.graylog:main",
+            "fc-kea=fc.manage.kea:main",
             "fc-keepalived=fc.manage.keepalived:app",
             "fc-kubernetes=fc.manage.kubernetes:app",
             "fc-maintenance=fc.maintenance.cli:app",
