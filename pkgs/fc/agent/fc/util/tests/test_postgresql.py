@@ -1,4 +1,5 @@
 import json
+import os
 from unittest.mock import Mock
 
 import fc.manage.postgresql
@@ -32,7 +33,8 @@ def test_build_new_bin_dir(logger, tmp_path):
     assert (new_bin_dir / "pg_upgrade").exists()
 
 
-def test_prepare_upgrade(logger, old_data_dir, monkeypatch, tmp_path):
+@pytest.fixture
+def patch_prepare(monkeypatch):
     monkeypatch.setattr("shutil.chown", Mock())
     monkeypatch.setattr(
         "fc.util.postgresql.get_existing_dbs",
@@ -49,6 +51,11 @@ def test_prepare_upgrade(logger, old_data_dir, monkeypatch, tmp_path):
     monkeypatch.setattr(
         "fc.util.postgresql.is_service_running", (lambda: True)
     )
+
+
+def test_prepare_upgrade(
+    logger, old_data_dir, monkeypatch, tmp_path, patch_prepare
+):
     new_data_dir = tmp_path / "postgresql/15"
     new_data_dir.mkdir()
     (new_data_dir / "fcio_upgrade_prepared").touch()
@@ -61,6 +68,45 @@ def test_prepare_upgrade(logger, old_data_dir, monkeypatch, tmp_path):
         new_data_dir=new_data_dir,
         expected_databases=[],
     )
+
+
+def test_prepare_upgrade_on_empty_dir(
+    logger, old_data_dir, monkeypatch, tmp_path, patch_prepare
+):
+    monkeypatch.setattr("fc.util.postgresql.run_as_postgres", Mock())
+    new_data_dir = tmp_path / "postgresql/15"
+    new_data_dir.mkdir()
+    new_bin_dir = new_data_dir
+    fc.util.postgresql.prepare_upgrade(
+        logger,
+        old_data_dir=old_data_dir,
+        new_version=PGVersion.PG15,
+        new_bin_dir=new_bin_dir,
+        new_data_dir=new_data_dir,
+        expected_databases=[],
+    )
+    # TODO: check logger for existence of "existing-empty-data-dir"
+
+
+def test_prepare_upgrade_adjusts_permissions(
+    logger, old_data_dir, monkeypatch, tmp_path, patch_prepare
+):
+    new_data_dir = tmp_path / "postgresql/15"
+    new_data_dir.mkdir()
+    (new_data_dir / "fcio_upgrade_prepared").touch()
+    os.chmod(new_data_dir, 0o777)
+    new_bin_dir = new_data_dir
+    fc.util.postgresql.prepare_upgrade(
+        logger,
+        old_data_dir=old_data_dir,
+        new_version=PGVersion.PG15,
+        new_bin_dir=new_bin_dir,
+        new_data_dir=new_data_dir,
+        expected_databases=[],
+    )
+    assert (
+        os.stat(new_data_dir).st_mode == 0o040700
+    ), "Permissions not adjusted correctly"
 
 
 EXPECTED_EXISTING_DBS = {

@@ -377,12 +377,10 @@ in {
       # overrides it
       cron.enable = fclib.mkPlatform true;
 
-      fail2ban = let
-        production = lib.attrByPath [ "parameters" "production" ] false config.flyingcircus.enc;
-      in {
+      fail2ban = {
         enable = fclib.mkPlatform true;
         maxretry = fclib.mkPlatform 5;
-        jails.sshd.settings.mode = lib.mkIf production (fclib.mkPlatform "ddos");
+        jails.sshd.settings.mode = fclib.mkPlatform "ddos";
         ignoreIP =
           [
             # loopback

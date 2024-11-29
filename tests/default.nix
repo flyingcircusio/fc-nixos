@@ -95,7 +95,6 @@ in {
   # XXX
   # percona84 = callTest ./mysql.nix { rolename = "percona84"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
-  postgresql12 = callTest ./postgresql { version = "12"; };
   postgresql13 = callTest ./postgresql { version = "13"; };
   postgresql14 = callTest ./postgresql { version = "14"; };
   postgresql15 = callTest ./postgresql { version = "15"; };

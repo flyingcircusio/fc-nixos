@@ -17,9 +17,9 @@ mechanism for user management besides text files.
 
 The main ingredients of this role are [Postfix] for mail delivery, [Dovecot] as
 IMAP access server, and [Roundcube] as web frontend.
-{ref}`nixos-postgresql-server` is used as database for Roundcube settings.
+{ref}`nixos-postgresql-server` is used as a database to store Roundcube settings.
 
-We rely mainly on [rspamd] for spam protection. To get outgoing mails
+We rely mainly on [Rspamd] for spam protection. To get outgoing mails
 delivered, they are signed with[OpenDKIM] and a basic [SPF] and [SRS] setup
 is included.
 
@@ -36,16 +36,17 @@ VM without other roles (`postgresql` being the only exception). The role
 has many moving parts which could interfere with roles and applications.
 :::
 
-First, you need public IPv4 and IPv6 addresses for your mail server's frontend
+First, you need a public IPv4 and IPv6 address for your mail server's frontend
 interface. Contact our [support](/platform/index.html#support) if you don't
-have. Then, pick a mail host name which will be advertised as MX name on your
-mail domain. This host name (called
-**mailHost** from here on) must resolve to the FE addresses with both forward
-and reverse lookups.
+have any.
+Then, pick a host to serve mails from. This host will be advertised via the MX
+record on your domain. You could for example choose `mail.example.com` to handle mail
+for `example.com`.
+The host (called **mailHost** from here on) of your choosing must resolve to the
+FE addresses for both forward and reverse lookups (A and AAAA records).
 
 Additionally, some mail providers (namely [Telekom/T-Online](https://postmaster.t-online.de/#t4.1))
-may require that your mailserver
-has an imprint served at its hostname.
+may require that your mailserver has an imprint served at its hostname.
 
 For this you can either set `imprintUrl` to the location of your existing
 imprint, or use `imprintText` to specify an imprint in HTML format.
@@ -65,28 +66,26 @@ Incorrect DNS setup is the most frequent source of delivery problems. Let our
 :::
 
 If you choose to use the Roundcube webmail UI by adding the `webmailHost`
-setting, like in the example, make sure to enable a `postgresql` role on the
-machine because Roundcube needs it to store settings. Just use the newest
-version that is available at the moment.
+setting like in the example, make sure to enable a `postgresql` role on the
+machine because Roundcube needs it to store its settings. We recommend you
+use the newest version that is available at the moment.
 
-Create a configuration file {file}`/etc/local/mail/config.json` which contains
-all the basic pieces. In the following example, the server's mailHost is
-*mail.test.fcio.net* and it serves as MX for the mail domains *test.fcio.net*
+Create a configuration file like {file}`/etc/local/nixos/mail-config.nix` which
+contains all the basic pieces. In the following example, the server's `mailHost`
+is *mail.test.fcio.net* and it serves as MX for the mail domains *test.fcio.net*
 and *test2.fcio.net*:
 
-```
+```nix
 {
-  "mailHost": "mail.test.fcio.net",
-  "webmailHost": "webmail.test.fcio.net",
-  "domains": {
-    "test.fcio.net": {
-      "primary": true
-    },
-    "test2.fcio.net": {
-      "autoconfig": false
-    }
-  },
-  "imprintUrl": "https://your-company.tld/imprint"
+  flyingcircus.roles.mailserver = {
+    mailHost = "mail.test.fcio.net";
+    webmailHost = "webmail.test.fcio.net";
+    domains = {
+      "test.fcio.net".primary = true;
+      "test2.fcio.net".autoconfig = false;
+    };
+    imprintUrl = "https://your-company.tld/imprint";
+  };
 }
 ```
 
@@ -97,17 +96,44 @@ There must always be exactly one domain with the primary option set.
 This sets up [autoconfiguration] for mail clients that wish to use *test.fcio.net*.
 Autoconfiguration is disabled for *test2.fcio.net* in the example.
 
-Run {command}`sudo fc-manage -b` to have everything configured on the system.
+Run {command}`sudo fc-manage switch` to have everything configured on the system.
 
-Afterwards, a generated file {file}`/etc/local/mail/dns.zone` contains all
-necessary DNS settings for your mail server. Insert the records found in this
-file into the appropriate DNS zones and don't forget to check reverses.
+After running the above command, a newly-generated file {file}`/etc/local/mail/dns.zone`
+will contain all necessary DNS records for your mail server.
+Insert the records contained within the file into the appropriate DNS zones and
+don't forget to check PTR records for reverse DNS lookups.
 
 ## How do I create users?
 
-Edit {file}`/etc/local/mail/users.json` to add user accounts. Example:
+Users can be added in either of two ways:
 
+### 1. via Nix
+
+Users can be added in your NixOS configuration using the key `mailserver.loginAccounts`.
+The value is an attribute set that represents your users, for example
+
+```nix
+{
+  mailserver.loginAccounts = {
+    "user1@test.fcio.net" = {
+      quota = "4G";
+      sendOnly = true;
+      aliases = ["noreply@test.fcio.net"];
+      hashedPassword = "$y$j9T$whHoksmVCZ1rjW2htMznw/$4WzPhNQAe8VcVllG7jC7kFGZMIy/TiIGSULMp3vzAL7";
+    };
+    "user2@test.fcio.net" = {
+      quota = "10G";
+      hashedPassword = "$y$j9T$whHoksmVCZ1rjW2htMznw/$4WzPhNQAe8VcVllG7jC7kFGZMIy/TiIGSULMp3vzAL7";
+    };
+  };
+}
 ```
+
+### 2. via /etc/local/mail/users.json
+
+Edit the file {file}`/etc/local/mail/users.json` to add user accounts. Example:
+
+```json
 {
   "user1@test.fcio.net": {
     "aliases": ["first.last@test.fcio.net"],
@@ -119,11 +145,11 @@ Edit {file}`/etc/local/mail/users.json` to add user accounts. Example:
 ```
 
 This file contains of key/value pairs where the key is the main email address
-and the value is a attribute set of configuration options. Domain
-parts of all e-mail addresses must be listed in the `domains` option in
-{file}`/etc/local/mail/config.json`.
+and the value is an attribute set of configuration options.
+The domain parts of all e-mail addresses must be listed in the `domains` option
+in the corresponding configuration file, e.g. {file}`/etc/local/nixos/mail-config.nix`
+and the password must be hashed via {command}`mkpasswd -m yescrypt {PASSWORD}`.
 
-The password must be hashed with {command}`mkpasswd -m yescrypt {PASSWORD}`.
 
 ## How do mail users log into the mail server?
 
@@ -140,7 +166,7 @@ We support two scenarios: static passwords and dynamic passwords.
 
 ### Static passwords
 
-Passwords are set by the administrator and put into users.json. They cannot be
+Passwords are set by the administrator and put into {file}`users.json`. They cannot be
 changed by users.
 
 ### Dynamic passwords
@@ -148,19 +174,19 @@ changed by users.
 To enable users to change their password themselves, leave the
 **hashedPassword** option in {file}`/etc/local/mail/users.json` empty and set
 the initial password in {file}`/var/lib/dovecot/passwd` instead. This file
-consists of a e-mail address/password pair per user. Example:
+consists of an e-mail address/password pair per user. Example:
 
 ```
 user1@test.fcio.net:$y$j9T$whHoksmVCZ1rjW2htMznw/$4WzPhNQAe8VcVllG7jC7kFGZMIy/TiIGSULMp3vzAL7
 ```
 
 The initial password hash can be created with {command}`mkpasswd -m yescrypt
-{PASSWORD}` as shown above. Afterwards, user can log into the Roundcube web mail
+{PASSWORD}`, as shown above. Afterwards, user can log into the Roundcube web mail
 frontend and change their password in the settings menu.
 
 ## The spam filter misclassifies mails. What to do?
 
-rspamd has a good set of defaults but is not perfect. To get be results, it must
+`Rspamd` has a good set of defaults but is not perfect. To get be results, it must
 receive training.
 
 False positive (ham classified as spam)
@@ -181,35 +207,33 @@ and not immediately.
 ## How do I forward mails to remote addresses?
 
 Declare a [virtual alias] map and create remote aliases there. Add the
-following snippet to config.json:
+following snippet to your NixOS configuration, for example in the
+file {file}`/etc/local/nixos/mail-config.nix`:
 
 ```
-"dynamicMaps": {
-  "virtual_alias_maps": ["/etc/local/mail/virtual_aliases"]
-}
+flyingcircus.roles.mailserver.dynamicMaps.virtual_alias_maps = ["/etc/local/mail/virtual_aliases"];
 ```
 
-Create {file}`/etc/local/mail/virtual_aliases`. Example contents:
+Then, create the file {file}`/etc/local/mail/virtual_aliases` and define your aliases.
+Example contents:
 
 ```
 alias@test.fcio.net remote@address
 ```
 
-Invoke {command}`sudo systemctl reload postfix` to recompile maps after map
-contents has been changed. Invoke {command}`sudo fc-manage --build` as usual if
-the contents of config.json has been changed.
+Invoke {command}`sudo systemctl reload postfix` to recompile the maps after the map
+contents has been changed. Invoke {command}`sudo fc-manage switch` as usual if
+the content of the NixOS module {file}`/etc/local/nixos/mail-config.nix` have been changed.
 
 ## How do I feed mails into an application?
 
 Feeding mails destined to special accounts into backend application servers can
 be done with a [transport] map. Transport and other Postfix lookup tables are
-declared inside a `dynamicMaps` key in config.json. The application should open a
+declared inside a `dynamicMaps` key in `mail-config.nix`. The application should open a
 port capable of speaking SMTP on its srv interface. Example:
 
 ```
-"dynamicMaps": {
-  "transport_maps": [ "/etc/local/mail/transport" ]
-}
+flyingcircus.roles.mailserver.dynamicMaps.transport_maps = [ "/etc/local/mail/transport" ];
 ```
 
 Example transport file contents:
@@ -222,12 +246,14 @@ In case a whole subdomain should be piped into an application server, we need
 both a transport and a [relay_domains] map. Both map declarations may point to
 the same source as *relay_domains* uses only the first field of each line.
 
-Example config.json snippet:
+Example config snippet:
 
-```
-dynamicMaps": {
-  "transport_maps": [ "/etc/local/mail/transport" ],
-  "relay_domains": [ "/etc/local/mail/transport" ]
+```nix
+{
+  flyingcircus.roles.mailserver.dynamicMaps = {
+    transport_maps = [ "/etc/local/mail/transport" ];
+    relay_domains = [ "/etc/local/mail/transport" ];
+  };
 }
 ```
 
@@ -240,8 +266,8 @@ subdomain.test.fcio.net relay:172.30.40.50:8025
 An DNS MX record for that subdomain must be present as well.
 
 Invoke {command}`sudo systemctl reload postfix` to recompile maps after map
-contents has been changed. Invoke {command}`sudo fc-manage --build` as usual if
-the contents of config.json has been changed.
+contents has been changed. Invoke {command}`sudo fc-manage switch` as usual if
+the contents of `mail-config.nix` have been changed.
 
 ## Reference
 
@@ -330,7 +356,7 @@ Specialist options:
 
 redisDatabase
 
-: Database number (0-15) for rspamd. Defaults to 5. The database number can
+: Database number (0-15) for Rspamd. Defaults to 5. The database number can
   be adjusted if any another local application happens to use DB 5.
 
 smtpBind4 and smtpBind6

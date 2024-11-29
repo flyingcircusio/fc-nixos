@@ -14,7 +14,6 @@ in
 
   in {
     flyingcircus.roles = {
-      postgresql12 = mkRole "12";
       postgresql13 = mkRole "13";
       postgresql14 = mkRole "14";
       postgresql15 = mkRole "15";
@@ -26,7 +25,6 @@ in
   config =
   let
     pgroles = with config.flyingcircus.roles; {
-      "12" = postgresql12.enable;
       "13" = postgresql13.enable;
       "14" = postgresql14.enable;
       "15" = postgresql15.enable;

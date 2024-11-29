@@ -4,7 +4,7 @@
     "description": "GitHub Pull Request Jobset Generator",
     "nixexprinput": "generator",
     "nixexprpath": "jobset/generate.nix",
-    "checkinterval": 300,
+    "checkinterval": 60,
     "schedulingshares": 100,
     "enableemail": false,
     "emailoverride": "",

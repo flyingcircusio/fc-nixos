@@ -77,6 +77,7 @@ def test_reboot_merge_warm_into_cold_is_an_insignificant_update(warm, cold):
 def test_reboot_merge_warm_is_an_insignificant_update(warm):
     other_warm = RebootActivity(RebootType.WARM)
     result = warm.merge(other_warm)
+    assert result.merged.reboot_needed == RebootType.WARM
     assert result.merged is warm
     assert result.is_effective is True
     assert result.is_significant is False
@@ -87,6 +88,7 @@ def test_reboot_merge_cold_is_an_significant_update(warm, cold):
     original = warm
     result = original.merge(cold)
     assert result.merged is original
+    assert result.merged.reboot_needed == RebootType.COLD
     assert result.is_effective is True
     assert result.is_significant is True
     assert result.changes == {"before": "reboot", "after": "poweroff"}

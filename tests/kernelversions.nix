@@ -195,7 +195,7 @@ in {
             )
 
     assert "${stableVersion}".startswith("5.15."), "Expecting a 5.15.x kernel as stable kernel"
-    assert "${verifyVersion}".startswith("6.11."), "Expecting a 6.11.x kernel as verify kernel"
+    assert "${verifyVersion}".startswith("6.12."), "Expecting a 6.12.x kernel as verify kernel"
     assertKernelVersion(verifyKernel, "${verifyVersion}")
     assertKernelVersion(prodKernel, "${stableVersion}")
     assertKernelVersion(rzobProdKernel, "${stableVersion}")

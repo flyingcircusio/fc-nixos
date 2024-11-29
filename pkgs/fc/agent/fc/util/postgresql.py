@@ -2,10 +2,12 @@ import getpass
 import os
 import re
 import shutil
+import stat
 import tempfile
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from stat import S_IMODE as modebits
 from subprocess import CalledProcessError, run
 
 MIGRATED_TO_TEMPLATE = """\
@@ -33,11 +35,11 @@ Prepared as new data directory for a migration from {old_data_dir} by
 
 
 class PGVersion(str, Enum):
-    PG12 = "12"
     PG13 = "13"
     PG14 = "14"
     PG15 = "15"
     PG16 = "16"
+    # PG17 = "17"
 
 
 def run_as_postgres(cmd, **kwargs):
@@ -171,7 +173,7 @@ def create_new_data_dir(
         collate=collate,
         ctype=ctype,
     )
-    new_data_dir.mkdir(mode=0o0700)
+    new_data_dir.mkdir(mode=0o700)
     shutil.chown(new_data_dir, "postgres", "postgres")
     initdb_cmd = [
         new_bin_dir / "initdb",
@@ -305,8 +307,20 @@ def check_new_data_dir(log, new_data_dir):
             group=new_data_dir.group(),
             mode=oct(new_data_dir_mode)[3:],
         )
+        # the leading 04 descibes being a directory according to `stat`.
         if new_data_dir_mode != 0o040700:
-            log.error("upgrade-existing-data-dir-wrong-mode")
+            log.warn(
+                "upgrade-existing-data-dir-wrong-mode",
+                _replace_msg=f"{new_data_dir} has incorrect permission. Adjusting the permissions recursively now.",
+                new_data_dir_mode=new_data_dir_mode,
+                expected_mode=0o040700,
+            )
+            try:
+                os.chmod(new_data_dir, 0o700)
+            except PermissionError:
+                log.exception(
+                    "upgrade-existing-data-dir-insufficient-permissions"
+                )
     else:
         raise NewDataDirUnusable(new_data_dir)
 
@@ -359,6 +373,17 @@ def prepare_upgrade(
         collate=collate,
         ctype=ctype,
     )
+    if new_data_dir.exists() and not any(new_data_dir.iterdir()):
+        # empty directories created at system activation time can be ignored,
+        # just let the upgrade process create a new one.
+        log.info(
+            "existing-empty-data-dir",
+            _replace_msg=(
+                "New data dir {new_data_dir} is empty. Removing and recreating it."
+            ),
+            new_data_dir=new_data_dir,
+        )
+        new_data_dir.rmdir()
     if new_data_dir.exists():
         check_new_data_dir(
             log,
