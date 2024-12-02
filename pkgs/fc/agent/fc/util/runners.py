@@ -100,7 +100,9 @@ class Runner(object):
         name = self.__aliases.get(name, name)
 
         def callable(*args, **kw):
-            silent_errors = kw.pop("silent_errors", lambda x: False)
+            silent_errors = kw.pop(
+                "silent_errors", lambda code, stdout, stderr: False
+            )
             options = self.default_options.copy()
             options.update(kw)
 

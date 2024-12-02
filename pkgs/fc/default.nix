@@ -55,13 +55,13 @@ rec {
   # it will break hydra and we can't cleanly filter it out of the automatic
   # test discovery at the moment.
   #
-  # qemu-dev-nautilus = callPackage ./qemu {
-  #   version = "dev";
-  #   # builtins.toPath (testPath + "/.")
-  #   src = ../../../../../fc.qemu/.;
-  #   qemu_ceph = pkgs.qemu-ceph-nautilus;
-  #   ceph_client = pkgs.ceph-nautilus.ceph-client;
-  # };
+  qemu-dev-nautilus = callPackage ./qemu {
+    version = "dev";
+    # builtins.toPath (testPath + "/.")
+    src = ../../../../../fc.qemu/.;
+    qemu_ceph = pkgs.qemu-ceph-nautilus;
+    ceph_client = pkgs.ceph-nautilus.ceph-client;
+  };
 
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
   secure-erase = callPackage ./secure-erase {};
