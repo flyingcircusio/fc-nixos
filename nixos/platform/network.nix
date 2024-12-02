@@ -658,6 +658,9 @@ in
               reload = ''
                 ip link set ${iface.link} type bridge_slave neigh_suppress on
               '';
+              preStop = ''
+                ip link set ${iface.link} type bridge_slave neigh_suppress off
+              '';
               unitConfig.ReloadPropagatedFrom = [ "${iface.interface}-netdev.service" ];
               serviceConfig = {
                 Type = "oneshot";
@@ -679,6 +682,9 @@ in
               '';
               reload = ''
                 ip link set ${iface.link} type bridge_slave learning off
+              '';
+              preStop = ''
+                ip link set ${iface.link} type bridge_slave learning on
               '';
               unitConfig.ReloadPropagatedFrom = [ "${iface.interface}-netdev.service" ];
               serviceConfig = {
