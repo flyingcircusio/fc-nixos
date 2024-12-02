@@ -1,10 +1,10 @@
-import ./make-test-python.nix ({ ... }:
+import ./make-test-python.nix ({ testlib, ... }:
 {
   name = "prometheus";
   nodes.machine =
     { config, ... }:
     {
-      imports = [ ../nixos ../nixos/roles ];
+      imports = [ (testlib.fcConfig {}) ];
       config.services.prometheus.enable = true;
 
     };

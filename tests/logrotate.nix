@@ -2,13 +2,13 @@ import ./make-test-python.nix (
   let
     home = "/srv/s-svc";
   in
-  { pkgs, ... }:
+  { testlib, ... }:
   {
     name = "user-logrotate";
     nodes.machine =
       { ... }:
       {
-        imports = [ ../nixos ../nixos/roles ];
+        imports = [ (testlib.fcConfig {}) ];
 
         config = {
           flyingcircus.logrotate.enable = true;

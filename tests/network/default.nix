@@ -222,9 +222,11 @@ in {
       nodes.machine1 =
         { pkgs, ... }:
         {
-          imports = [ ../../nixos ../../nixos/roles ];
+          imports = [ (testlib.fcConfig {id = 1;}) ];
           virtualisation.interfaces.ethsrv.vlan = 3;
           flyingcircus.enc.parameters.interfaces = {
+            # TODO: this partly overrides the defaults from `testlib.fcConfig`,
+            # clean up and deduplicat where possible.
             srv = {  # VLAN 3
               mac = "52:54:00:12:03:01";
               bridged = false;
@@ -248,7 +250,7 @@ in {
       nodes.machine2 =
         { pkgs, ... }:
         {
-          imports = [ ../../nixos ../../nixos/roles ];
+          imports = [ (testlib.fcConfig {id = 2;}) ];
           virtualisation.interfaces.ethsrv.vlan = 3;
           flyingcircus.enc.parameters.interfaces = {
             srv = {  # VLAN 3
@@ -309,7 +311,7 @@ in {
             {
               networking.hostName = "srv${toString hostId}";
               imports = [
-                (testlib.fcConfig { id = 1; })
+                (testlib.fcConfig { id = hostId; })
               ];
               virtualisation.interfaces = {
                 ethfe = { vlan = 2; };
