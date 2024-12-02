@@ -1,6 +1,11 @@
-import ./make-test-python.nix ({ testlib, useCheckout ? false, testOpts ? "", clientCephRelease ? "nautilus", ... }:
-#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "", clientCephRelease ? "nautilus", ... }:
-#import ./make-test-python.nix ({ testlib, useCheckout ? true, testOpts ? "--flake-finder --flake-runs=500 -x --no-cov", clientCephRelease ? "nautilus", ... }:
+import ./make-test-python.nix ({
+  testlib,
+  useCheckout ? false,
+  testOpts ? "",
+  # examples to specify tests
+  # "-k mytest"
+  # "--flake-finder --flake-runs=500 -x --no-cov""
+  clientCephRelease ? "nautilus", ... }:
 with testlib;
 let
   getIPForVLAN = vlan: id: "192.168.${toString vlan}.${toString (5 + id)}";
