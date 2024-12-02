@@ -165,22 +165,22 @@ in
     flyingcircus.roles = {
       slurm-node = {
         enable = mkEnableOption "";
-        supportsContainers = fclib.mkDisableContainerSupport;
+        supportsContainers = fclib.mkDisableDevhostSupport;
       };
 
       slurm-controller = {
         enable = mkEnableOption "";
-        supportsContainers = fclib.mkDisableContainerSupport;
+        supportsContainers = fclib.mkDisableDevhostSupport;
       };
 
       slurm-dbdserver = {
         enable = mkEnableOption "";
-        supportsContainers = fclib.mkDisableContainerSupport;
+        supportsContainers = fclib.mkDisableDevhostSupport;
       };
 
       slurm-external-dependency = {
         enable = mkEnableOption "";
-        supportsContainers = fclib.mkDisableContainerSupport;
+        supportsContainers = fclib.mkDisableDevhostSupport;
       };
     };
   };

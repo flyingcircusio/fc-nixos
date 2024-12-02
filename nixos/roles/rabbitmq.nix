@@ -17,7 +17,7 @@ in
       rabbitmq36_5 = {
         enable = lib.mkEnableOption
           "Enable the Flying Circus RabbitMQ 3.6.5 server role (only for upgrades from 20.09).";
-        supportsContainers = fclib.mkDisableContainerSupport;
+        supportsContainers = fclib.mkDisableDevhostSupport;
       };
 
       rabbitmq = {
