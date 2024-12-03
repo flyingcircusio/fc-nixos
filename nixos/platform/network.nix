@@ -2,8 +2,6 @@
 
 with builtins;
 
-# XXX test 2
-
 let
   cfg = config.flyingcircus;
 
@@ -279,89 +277,78 @@ in
     flyingcircus.networking.monitorLinks = ethernetLinks;
 
     services.frr = lib.mkIf (!isNull fclib.underlay) {
-      zebra = {
-        enable = true;
-        config = ''
-          frr version 8.5.1
-          frr defaults datacenter
-          !
-          route-map set-source-address permit 1
-           set src ${fclib.underlay.loopback}
-          exit
-          !
-          ip protocol bgp route-map set-source-address
-        '';
-      };
-      bfd = {
-        enable = true;
-      };
-      bgp = {
-        enable = true;
-        extraOptions = [ "-p" "0" ];
-        config = ''
-          frr version 8.5.1
-          frr defaults datacenter
-          !
-          router bgp ${toString fclib.underlay.asNumber}
-           bgp router-id ${fclib.underlay.loopback}
-           bgp bestpath as-path multipath-relax
-           neighbor switches peer-group
-           neighbor switches remote-as external
-           neighbor switches capability extended-nexthop
-           neighbor switches bfd
-           ${lib.concatMapStringsSep "\n "
-             (iface: "neighbor ${iface.link} interface peer-group switches")
-             fclib.underlay.links
-           }
-           !
-           address-family ipv4 unicast
-            redistribute connected
-            neighbor switches prefix-list underlay-import in
-            neighbor switches prefix-list underlay-export out
-            neighbor switches route-map accept-all-routes in
-            neighbor switches route-map accept-local-routes out
-           exit-address-family
-           !
-           address-family l2vpn evpn
-            neighbor switches activate
-            neighbor switches route-map accept-all-routes in
-            neighbor switches route-map accept-local-routes out
-            advertise-all-vni
-            advertise-svi-ip
-            ${ # Workaround for FRR not advertising SVI IP when
-               # globally configured
-              lib.concatMapStringsSep "\n  "
-                (iface: concatStringsSep "\n  " [
-                  ("vni " + (toString iface.vlanId))
-                  " advertise-svi-ip"
-                  "exit-vni"
-                ])
-                vxlanInterfaces
-            }
-           exit-address-family
-          !
-          exit
-          !
-          bgp as-path access-list local-origin seq 1 permit ^$
-          !
-          route-map accept-local-routes permit 1
-           match as-path local-origin
-          exit
-          !
-          route-map accept-all-routes permit 1
-          exit
-          !
-          ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
-          !
-          ${lib.concatImapStringsSep "\n"
-            (idx: net:
-              "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
-            )
-            fclib.underlay.subnets
-           }
-          !
-        '';
-      };
+      bfd.enable = true;
+      bgp.enable = true;
+      bgp.extraOptions = [ "-p" "0" ];
+      config = ''
+        frr version 8.5.1
+        frr defaults datacenter
+        !
+        router bgp ${toString fclib.underlay.asNumber}
+        bgp router-id ${fclib.underlay.loopback}
+        bgp bestpath as-path multipath-relax
+        neighbor switches peer-group
+        neighbor switches remote-as external
+        neighbor switches capability extended-nexthop
+        neighbor switches bfd
+        ${lib.concatMapStringsSep "\n "
+          (iface: "neighbor ${iface.link} interface peer-group switches")
+          fclib.underlay.links
+        }
+        !
+        address-family ipv4 unicast
+         redistribute connected
+         neighbor switches prefix-list underlay-import in
+         neighbor switches prefix-list underlay-export out
+         neighbor switches route-map accept-all-routes in
+         neighbor switches route-map accept-local-routes out
+        exit-address-family
+        !
+        address-family l2vpn evpn
+         neighbor switches activate
+         neighbor switches route-map accept-all-routes in
+         neighbor switches route-map accept-local-routes out
+         advertise-all-vni
+         advertise-svi-ip
+         ${ # Workaround for FRR not advertising SVI IP when
+            # globally configured
+           lib.concatMapStringsSep "\n  "
+             (iface: concatStringsSep "\n  " [
+               ("vni " + (toString iface.vlanId))
+               " advertise-svi-ip"
+               "exit-vni"
+             ])
+             vxlanInterfaces
+         }
+        exit-address-family
+       !
+       exit
+       !
+       bgp as-path access-list local-origin seq 1 permit ^$
+       !
+       route-map accept-local-routes permit 1
+        match as-path local-origin
+       exit
+       !
+       route-map accept-all-routes permit 1
+       exit
+       !
+       route-map set-source-address permit 1
+        set src ${fclib.underlay.loopback}
+       exit
+       !
+       ip protocol bgp route-map set-source-address
+       !
+       ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
+       !
+       ${lib.concatImapStringsSep "\n"
+         (idx: net:
+           "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
+         )
+         fclib.underlay.subnets
+        }
+       !
+     '';
     };
 
     # Don't automatically create a dummy0 interface when the kernel
@@ -760,17 +747,39 @@ in
                   "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${links}";
               }
             )
-            # ensure that restarts of ul-loopback are propagated to zebra
-            # because zebra doesn't correctly recover from this so we need a
-            # hard restart.
+            # adjust dependencies of the frr service.
+            #
+            # the default config shipped by upstream considers frr to
+            # be part of the system network configuration, and sets
+            # Before=network.target, so by the time the host network
+            # is *configured*, frr should be running. however, in our
+            # use case, frr is in an awkward grey area between static
+            # network configuration and actual application services:
+            # it isn't strictly required to be running for the static
+            # configuration to be *correct*, however it provides
+            # dynamic services at runtime so that the host's network
+            # actually functions at all.
+            #
+            # we move frr slightly forward in the boot process so it
+            # isn't in the critical path for getting interfaces up and
+            # configured correctly
+            # (network.target). network-online.target isn't really
+            # intended for this case, but frr needs to be started
+            # after the low-level setup but before actual applications
+            # which require network connectivity.
+            #
+            # we also need to ensure that restarts of ul-loopback are
+            # propagated to zebra, because zebra doesn't correctly
+            # recover from this; hence the hard restart.
             (lib.nameValuePair
-              "zebra"
+              "frr"
               rec {
-                requires = [ "network-addresses-${fclib.underlay.interface}.service" ];
-                # The default zebra has an after for `network.target` but zebra is itself
-                # a network service and this creates a dependency cycle. We really just
-                # want the underlay to be there.
-                after = lib.mkForce requires;
+                # dependencies inspired by Cumulus Linux's setup.
+                wantedBy = fclib.mkOverrideUpstreamModule [ "network-online.target" ];
+                before = fclib.mkOverrideUpstreamModule [ "network-online.target" ];
+                requires = fclib.mkOverrideUpstreamModule [ "network-addresses-${fclib.underlay.interface}.service" ];
+                after = fclib.mkOverrideUpstreamModule [ "network.target" "systemd-sysctl.service" "network-addresses-${fclib.underlay.interface}.service" ];
+                # Wants=network.target set in upstream module.
               }
             )
           ])
