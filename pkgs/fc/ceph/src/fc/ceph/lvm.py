@@ -133,9 +133,7 @@ class DiskWithSinglePartition(GenericBlockDevice):
                     self._blockdevice = partition
                     break
             else:
-                raise RuntimeError(
-                    f"Could not find partition 1 on {self.name}"
-                )
+                raise RuntimeError(f"Could not find partition 1 on {self.name}")
         return self._blockdevice
 
     @classmethod
@@ -407,9 +405,7 @@ class LogicalVolume(GenericLogicalVolume):
             return
 
         try:
-            pv = run.json.pvs("-S", f"vg_name=~^{re.escape(self._vg_name)}$")[
-                0
-            ]
+            pv = run.json.pvs("-S", f"vg_name=~^{re.escape(self._vg_name)}$")[0]
         except IndexError:
             pass
         else:
@@ -580,7 +576,8 @@ class GenericCephVolume:
 
 
 class XFSVolume(AutomountActivationMixin, GenericCephVolume):
-    MKFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048", "-K"]
+    # nrext64 is default but requires kernel 6.6+
+    MKFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048,nrext64=0", "-K"]
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
     FSTYPE = "xfs"
 
