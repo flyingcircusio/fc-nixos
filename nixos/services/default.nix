@@ -3,7 +3,6 @@ let
   modulesFromHere = [
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
-    "services/networking/frr.nix"
     "services/networking/jibri/default.nix"
     "services/networking/jicofo.nix"
     "services/networking/jitsi-videobridge.nix"
@@ -45,9 +44,6 @@ in {
     ./solr.nix
     ./telegraf
     ./varnish
-
-    # Imported from NixOS 23.05
-    ./frr.nix
 
     (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")
   ];
