@@ -318,7 +318,7 @@ in {
                 ethsrv = { vlan = 3; };
               };
               flyingcircus.infrastructureModule = "flyingcircus";
-              flyingcircus.enc.parameters.interfaces = encInterfaces hostId;
+              flyingcircus.enc.parameters.interfaces = encInterfaces (toString hostId);
               flyingcircus.localConfigPath = localConfigPath;
               services.nginx.enable = true;
               services.nginx.virtualHosts."srv${toString hostId}" = { root = ./.; };
@@ -332,7 +332,7 @@ in {
         nodes.client = router;
         nodes.srv2 = firewalledServer { hostId = 2; };
         nodes.srv3 = firewalledServer {
-          hostId = "3";
+          hostId = 3;
           localConfigPath = ./open-fe-80;
         };
         testScript = ''
