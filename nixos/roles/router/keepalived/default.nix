@@ -62,7 +62,8 @@ lib.mkIf role.enable {
 
   environment.etc."keepalived/check-default-route-v4".source = "${checkDefaultRoute4}/bin/check-default-route-v4";
   environment.etc."keepalived/check-default-route-v6".source = "${checkDefaultRoute6}/bin/check-default-route-v6";
-  environment.etc."keepalived/check-zebra-liveness".source = "${checkZebraLiveness}/bin/check-zebra-liveness";
+  # XXX: not compatible with 24.11 frr module, zebra is no longer a separate system service
+  #environment.etc."keepalived/check-zebra-liveness".source = "${checkZebraLiveness}/bin/check-zebra-liveness";
   environment.etc."keepalived/fc-keepalived".source = "${pkgs.fc.agent}/bin/fc-keepalived";
   environment.etc."keepalived/keepalived.conf".source = keepalivedConf;
 
