@@ -1,7 +1,19 @@
-import ../make-test-python.nix ({ lib, pkgs, testlib, ... }:
+# FIXME: this test wrapping using the recommended runNixOSTest should be folded
+# into an updated make-test-python instead.
+{ 
+  #system ? builtins.currentSystem,
+  nixpkgs ? (import ../../versions.nix {}).nixpkgs,
+  # FIXME: we want to pass around already instantiated nixpkgs instances to
+  # cut down eval times
+  # FIXME: importing code is partly imported from top-level default.nix, but
+  # we must not specify and additional `config` here as that is already set in
+  # platform/default.nix
+  pkgs ? import nixpkgs {overlays = [(import ../../pkgs/overlay.nix)];},
+  }:
 with builtins;
-
 let
+  lib = pkgs.lib;
+  testlib = pkgs.callPackage ../testlib.nix {};
 
   images = map pkgs.dockerTools.pullImage (import ./airgapped-k3s-images.nix);
 
@@ -50,8 +62,8 @@ let
 
   redis = import ./redis.nix { inherit pkgs; };
 
-in {
-
+in 
+pkgs.testers.runNixOSTest {
   name = "k3s";
   nodes = {
 
@@ -227,6 +239,24 @@ in {
 
   };
 
+  interactive.nodes = {
+    master = builtins.trace "eval interactive master" {
+      imports = [ ../interactive-debugging-module.nix ];
+    };
+    nodeA = {
+      imports = [ ../interactive-debugging-module.nix ];
+      testdebug.sshport = 2223;
+    };
+    nodeB = {
+      imports = [ ../interactive-debugging-module.nix ];
+      testdebug.sshport = 2224;
+    };
+    frontend = {
+      imports = [ ../interactive-debugging-module.nix ];
+      testdebug.sshport = 2225;
+    };
+  };
+
   testScript = { nodes, ... }: let
     masterSensuCheck = testlib.sensuCheckCmd nodes.master;
   in ''
@@ -302,4 +332,5 @@ in {
       k3sserver.systemctl("stop kube-dashboard")
       k3sserver.fail("${lib.strings.escape ["\""] (masterSensuCheck "kube-dashboard")}")
   '';
-})
+}
+
