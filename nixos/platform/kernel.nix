@@ -73,8 +73,8 @@ in {
       XFS_QUOTA y
       WARN_ALL_UNSEEDED_RANDOM y
       '' + (if !config.flyingcircus.useVerificationKernel
+        # extend when experimenting with newer kernels
         then ''
-        RANDOM_TRUST_CPU y
         '' else "");
 
     boot.kernelPatches = lib.mkIf ( config.flyingcircus.kernelOptions != null ) [ {
