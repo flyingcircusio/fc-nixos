@@ -11,9 +11,9 @@ let
     let
       # Create a string of `width` number of spaces.
       spaces = lib.fixedWidthString width " " " ";
-      lines = fclib.lines text;
+      lines = lib.splitString "\n" text;
     in
-      fclib.unlines
+      lib.concatStringsSep "\n"
         ([(head lines)] ++ (fclib.indentWith spaces (tail lines)));
 
   ifaces = listToAttrs

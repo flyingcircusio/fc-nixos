@@ -230,7 +230,10 @@ let
           echo $msg >> /tmp/agent-mock-called
         '';
       in {
-        configuration = config.specialisation.primary.configuration // {
+        # we cannot plainly merge into `config.specialisations.primary.configuration`
+        # anymore, as this is now already an instantiated NixOS config and not
+        # just the specified attributes.
+        configuration = config.flyingcircus.roles.router.primarySpecialisationConfig // {
           environment.etc."keepalived/fc-keepalived".source = lib.mkForce "${agentMock}";
           system.activationScripts.msg = ''
             echo "This is specialisation agentmock, activated at $(date)"

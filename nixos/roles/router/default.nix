@@ -65,6 +65,19 @@ in
         type = types.bool;
         default = false;
       };
+      primarySpecialisationConfig = mkOption {
+        type = types.attrs;
+        internal = true;
+        readOnly = true;
+        default = {
+          system.nixos.tags = [ "primary" ];
+          flyingcircus.roles.router.isPrimary = true;
+          environment.etc."is_primary".text = "";
+          environment.etc."specialisation".text = "primary";
+        };
+        description = "Internal helper for exposing the specialisation config
+          of the primary role to the NixOS test.";
+      };
     };
   };
 
@@ -234,12 +247,7 @@ in
       );
 
     specialisation.primary = {
-      configuration = {
-        system.nixos.tags = [ "primary" ];
-        flyingcircus.roles.router.isPrimary = true;
-        environment.etc."is_primary".text = "";
-        environment.etc."specialisation".text = "primary";
-      };
+      configuration = role.primarySpecialisationConfig;
     };
 
     systemd.tmpfiles.rules = [
