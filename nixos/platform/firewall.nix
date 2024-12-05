@@ -224,7 +224,11 @@ in
           ip46tables -t raw -F fc-raw-prerouting 2>/dev/null || true
           ip46tables -t raw -X fc-raw-prerouting 2>/dev/null || true
 
+          ${ # during bootstrap or image building, there are no srv-specific information in the enc yet
+            lib.optionalString (fclib.network ? srv) ''
           ip46tables -D nixos-fw -i ${fclib.network.srv.interface} -j fc-resource-group 2>/dev/null || true
+          ''
+          }
           ip46tables -F fc-resource-group 2>/dev/null || true
           ip46tables -X fc-resource-group 2>/dev/null || true
           # End firewall managed chains
