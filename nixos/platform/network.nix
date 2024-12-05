@@ -277,8 +277,8 @@ in
     flyingcircus.networking.monitorLinks = ethernetLinks;
 
     services.frr = lib.mkIf (!isNull fclib.underlay) {
-      bfd.enable = true;
-      bgp.enable = true;
+      bfdd.enable = true;
+      bgpd.enable = true;
       bgp.extraOptions = [ "-p" "0" ];
       config = ''
         frr version 8.5.1
