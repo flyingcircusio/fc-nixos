@@ -119,20 +119,9 @@ let
       virtualisation.vlans = vlans;
 
       services.frr = {
-        zebra.enable = true;
-        zebra.config = ''
-          frr version 8.5.1
-          frr defaults datacenter
-          !
-          route-map set-source-address permit 1
-           set src ${address}
-          exit
-          !
-          ip protocol bgp route-map set-source-address
-        '';
-        bfd.enable = true;
-        bgp.enable = true;
-        bgp.config = ''
+        bfdd.enable = true;
+        bgpd.enable = true;
+        config = ''
           frr version 8.5.1
           frr defaults datacenter
           !
@@ -173,6 +162,12 @@ let
           !
           route-map accept-all-routes permit 1
           exit
+          !
+          route-map set-source-address permit 1
+           set src ${address}
+          exit
+          !
+          ip protocol bgp route-map set-source-address
           !
         '';
       };
@@ -258,12 +253,12 @@ in {
             # simulate link loss (e.g. hardware fluke) by simply setting the
             # link down.
             host1.succeed("ip link set eth1 down")
-            host1.wait_until_succeeds("journalctl -u bgpd | grep -E 'eth1.*in vrf default Down'")
+            host1.wait_until_succeeds("journalctl -u frr | grep -E 'eth1.*in vrf default Down'")
             host1.sleep(2)
 
             # recover from link loss event
             host1.succeed("ip link set eth1 up")
-            host1.wait_until_succeeds("journalctl -u bgpd -n1 | grep -F 'End-of-RIB for IPv4 Unicast from eth1'")
+            host1.wait_until_succeeds("journalctl -u frr -n1 | grep -F 'End-of-RIB for IPv4 Unicast from eth1'")
             host1.sleep(5)
 
             out = host1.succeed("ip route show 192.168.42.3")
