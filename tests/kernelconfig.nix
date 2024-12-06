@@ -26,7 +26,7 @@ let
         CRYPTO_AES_NI_INTEL m
         CRYPTO_CRC32C_INTEL m
         CRYPTO_SHA256 y
-        CRYPTO_SHA512 m
+        CRYPTO_SHA512 y
         DEBUG_FS y
         DEFAULT_SECURITY_APPARMOR y
         DM_CRYPT m
@@ -91,7 +91,6 @@ let
         MEGARAID_NEWGEN y
         MEGARAID_SAS m
         MICROCODE y
-        MICROCODE_INTEL y
         MLX5_CORE m
         MLX5_CORE_EN y
         MLX5_EN_ARFS y

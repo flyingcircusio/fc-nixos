@@ -190,9 +190,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  linuxKernelVerify = self.linux_latest;
+  # Change this alias for trying out other kernel packages on non-production
+  # machines.
+  # The logic for enabling different kernels on prod and non-prod remains active
+  # the whole time. But in the normal case, both kernels point to the same
+  # stable kernel packages.
+  linuxKernelVerify = self.linuxKernelStable;
 
-  linuxKernelStable = self.linux_5_15;
+  linuxKernelStable = self.linux_6_6;
 
 
   matomo-beta = super.matomo-beta.overrideAttrs (oldAttrs: {
