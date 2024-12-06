@@ -39,6 +39,7 @@ in {
   #devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
   fcagent = callTest ./fcagent.nix {};
+  fde-tooling = callTest ./fde-tooling.nix {};
   ferretdb = callTest ./ferretdb.nix {};
   ffmpeg = callTest ./ffmpeg.nix {};
   filebeat = callTest ./filebeat.nix {};
