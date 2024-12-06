@@ -127,7 +127,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # default ceph packages
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
-  ceph-nautilus = fc-nixos-21_05.ceph-nautilus;
+  ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
 
   docsplit = super.callPackage ./docsplit { };
 
@@ -466,8 +466,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     ];
   });
 
-  python38 = fc-nixos-21_05.python38;
-  python38Packages = fc-nixos-21_05.python38Packages;
+  python38 = lib.dontRecurseIntoAttrs fc-nixos-21_05.python38;
+  python38Packages = lib.dontRecurseIntoAttrs fc-nixos-21_05.python38Packages;
   py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
 
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
