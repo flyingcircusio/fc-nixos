@@ -25,7 +25,8 @@ class BackupManager:
 
 
 class BackyVolume:
-    MKFS_OPTS = ["-K"]
+    # nrext64 is default but requires kernel 6.6+
+    MKFS_OPTS = ["-K", "-i", "nrext64=0"]
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime"
 
     def __init__(self, name: str, mountpoint: str):

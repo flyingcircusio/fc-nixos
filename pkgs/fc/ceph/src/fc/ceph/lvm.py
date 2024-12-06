@@ -72,6 +72,7 @@ class MdraidDevice(GenericBlockDevice):
             "--create",
             f"/dev/md/{obj.name}",
             "--level=6",
+            "--name=backy",
             f"--raid-devices={len(main_disks)}",
             *main_disks,
         )
@@ -92,7 +93,7 @@ class MdraidDevice(GenericBlockDevice):
         # been created in the superblock. This hostname becomes part of the
         # device symlink name.
         # Here we assume that RAID devices are not moved between hosts.
-        return f"/dev/disk/by-id/md-name-{gethostname()}:{name}"
+        return f"/dev/md/{name}"
 
     @classmethod
     def exists(cls, name) -> bool:
@@ -631,10 +632,10 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
         super().activate()
 
     def purge(self, lv_only=False):
-        if os.path.exists(self.mountpoint):
+        while os.path.ismount(self.mountpoint):
             run.umount("-f", self.mountpoint, check=False)
+        if os.path.isdir(self.mountpoint):
             os.rmdir(self.mountpoint)
-
         if self.lv:
             self.lv.purge(lv_only)
 
