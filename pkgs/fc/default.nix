@@ -47,8 +47,8 @@ rec {
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "b340e88d6d2e1016f22d8bbfaa698481bf723648";
-      hash = "sha256-dJ1NyUj4YH1MZ3SFht2jPzzOvZOyimR4psYEDgvawI4=";
+      rev = "ce55fc804edaec4dd34b0030833e0736130cea7b";
+      hash = "sha256-7v2fbVm37m84N8n9ICmfJaPKcxfTp+YKtsRXguyr6I0=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;

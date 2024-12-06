@@ -17,5 +17,9 @@ branches.
 
 ### NixOS XX.XX platform
 
-- router: fix radvd config generation to use the correct derived
-  interface name. (PL-133201)
+- Fix systemd units managing flooding suppression and MAC learning
+  configuration so that settings are restored to their defaults when
+  the units are stopped. (PL-133202)
+
+- Add sensu check on routers to monitor whether flooding suppression
+  is correctly configured on gateway interfaces. (PL-133202)

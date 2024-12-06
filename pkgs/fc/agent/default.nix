@@ -109,4 +109,10 @@ buildPythonPackage rec {
     checkInputs ++ [ py.pytest ] ++ propagatedBuildInputs
   );
 
+  outputs = [ "out" "qa" ];
+
+  postCheck = ''
+    cp -a htmlcov/ $qa/
+  '';
+
 }

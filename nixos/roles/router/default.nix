@@ -14,6 +14,21 @@ let
     runtimeInputs = with pkgs; [ ethtool ];
     text = lib.readFile ./kick-interfaces.sh;
   };
+  checkFloodSuppression = with pkgs; writeScript "check-flood-suppression" ''
+    #! ${runtimeShell}
+    set -euo pipefail
+    IFACE="$1"
+
+    if ip -d -j link show "$IFACE" | jq -e '.[] | .linkinfo.info_slave_data.neigh_suppress' >/dev/null;
+    then
+        echo "CRITICAL: $IFACE: flood suppression enabled on interface -- this should be disabled!"
+        echo
+        echo "Run 'ip link set $IFACE type bridge_slave neigh_suppress off' to fix"
+        exit 2
+    else
+        echo "OK: $IFACE: flood suppression is disabled"
+    fi
+  '';
 
   uplinkInterfaces = map
     (network: fclib.network."${network}".interface)
@@ -263,7 +278,13 @@ in
           interval = 60;
           command = "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor sensu-check -s /run/sensuclient/neighbour_cache_state.json";
         };
-      };
+      } // (listToAttrs (lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces)
+        (iface: lib.nameValuePair "flood_suppression_iface_${iface.link}" {
+          notification = "Flood suppression is erroneously enabled";
+          interval = 300;
+          command = "${checkFloodSuppression} ${iface.link}";
+        })
+      ));
 
       expectedConnections = {
         warning = 18000;

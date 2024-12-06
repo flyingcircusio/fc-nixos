@@ -84,7 +84,7 @@ setup(
             "fc-postgresql=fc.manage.postgresql:app",
             "fc-qemu-scrub=fc.manage.qemu:main",
             "fc-resize-disk=fc.manage.resize_disk:app",
-            "fc-s3accounting=fc.manage.s3accounting:main",
+            "fc-s3users=fc.manage.s3users:main",
             "fc-slurm=fc.manage.slurm:app",
             "fc-systemd=fc.manage.systemd:app",
             "fc-zones=fc.manage.zones:update",
