@@ -106,6 +106,11 @@ in
       backy	${role.blockDevice}	/mnt/keys/${config.networking.hostName}.key	discard,nofail,submit-from-crypt-cpus${lib.optionalString role.externalCryptHeader ",header=${external_header}"}
     '';
 
+    boot.swraid.enable = true;
+    boot.swraid.mdadmConf = ''
+      PROGRAM true
+    '';
+
     fileSystems.${backyMountDir} = role.fsOptions;
 
     services.telegraf.extraConfig.inputs.disk = [
