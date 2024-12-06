@@ -1,5 +1,6 @@
 {
   fetchFromGitHub,
+  fetchPypi,
   poetry2nix,
   lzo,
   python310,
@@ -11,8 +12,8 @@ let
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "backy";
-    rev = "2.5.1";
-    hash = "sha256-w83Q7d3vJmh5dLiL7iI7K8YbMvWKQtr9pTsL9u7jAEg=";
+    rev = "ecfb9849a6516d9fdbd0e0b97fd28216e13f4c91";
+    hash = "sha256-ENtzVjNaouFHySOmQ3KLGQsBL+8YxtIm5PvLiEYq+5E=";
   };
 
   lib = import "${src}/lib.nix" inputs;
