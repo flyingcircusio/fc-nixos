@@ -63,7 +63,16 @@ in
         };
         varnish_http = {
           notification = "varnish port 8008 HTTP response";
-          command = "check_http -H localhost -p 8008 -c 10 -w 3 -t 20 -e HTTP";
+          command = "${pkgs.writeShellScript "check-varnish-http" ''
+            ADDRS=$(${cfg.package}/bin/varnishadm debug.listen_address | awk '/([0-9.]+\.)+/ { print $2":"$3; }')
+            for ADDR in $ADDRS; do
+              host=$(echo $ADDR | cut -d ":" -f 1)
+              port=$(echo $ADDR | cut -d ":" -f 2)
+
+              echo "checking host '$host' on port '$port'"
+              ${pkgs.monitoring-plugins}/bin/check_http -H $host -p $port -c 10 -w 3 -t 20 -e HTTP
+            done
+          ''}";
         };
       };
 
