@@ -1,4 +1,9 @@
-{ pkgs, lib, config, ... }: let
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}: let
   cfg = config.flyingcircus.services.varnish;
   vcfg = config.services.varnish;
   vadm = "${vcfg.package}/bin/varnishadm -n ${vcfg.stateDir}";
@@ -128,7 +133,11 @@ in {
       '';
     };
     virtualHosts = mkOption {
-      type = types.attrsOf (types.submodule ({ name, config, ... }: {
+      type = types.attrsOf (types.submodule ({
+        name,
+        config,
+        ...
+      }: {
         options = {
           host = mkOption {
             type = types.str;
@@ -189,7 +198,7 @@ in {
 
         if [ ! -z "$coldvcls" ]; then
           for vcl in "$coldvcls"; do
-            $vadm vcl.discard $vcl
+            ${vadm} vcl.discard $vcl
           done
         fi
       '';
