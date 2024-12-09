@@ -173,13 +173,13 @@ in
         '';
       };
 
-      systemd.services.fc-ceph-rgw-accounting = rec {
-        description = "Upload S3 usage data to the Directory";
+      systemd.services.fc-ceph-rgw-users = rec {
+        description = "Sync S3 users and accounting with directory";
         path = [ cephPkgs.ceph ];
         serviceConfig.Type = "oneshot";
         wants = [ fclib.network.sto.addressUnit ];
         after = wants;
-        script = "${pkgs.fc.agent}/bin/fc-s3accounting --enc ${config.flyingcircus.encPath}";
+        script = "${pkgs.fc.agent}/bin/fc-s3users --enc ${config.flyingcircus.encPath}";
       };
 
       flyingcircus.services.sensu-client.checks = {
@@ -223,10 +223,10 @@ in
         };
       };
 
-      systemd.timers.fc-ceph-rgw-accounting = {
+      systemd.timers.fc-ceph-rgw-users = {
         enable = ! config.flyingcircus.services.ceph.server.passive;
 
-        description = "Timer for uploading S3 usage data to the Directory";
+        description = "Timer for syncing S3 users and accounting with the directory";
         wantedBy = [ "timers.target" ];
         timerConfig = {
           Persistent = true;
