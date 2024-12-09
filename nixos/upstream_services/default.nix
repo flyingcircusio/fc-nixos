@@ -12,5 +12,7 @@ in {
   imports = with lib; [
     # from nixos-23.05
     ./opensearch
+    # from nixos-24.11
+    ./alloy.nix
   ];
 }
