@@ -21,6 +21,7 @@ in {
   imports = [
     ./acme.nix
     ./agent.nix
+    ./alloy.nix
     ./audit.nix
     ./auditbeat.nix
     ./beats.nix
@@ -34,7 +35,6 @@ in {
     ./monitoring.nix
     ./network.nix
     ./packages.nix
-    ./promtail.nix
     ./shell.nix
     ./static.nix
     ./syslog.nix
