@@ -91,6 +91,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     meta = builtins.removeAttrs old.meta [ "knownVulnerabilites" ];
   });
 
+  grafana-alloy = super.callPackage ./grafana-alloy.nix { };
+
   innotop = super.callPackage ./percona/innotop.nix { };
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
