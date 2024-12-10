@@ -285,14 +285,18 @@ let
     };
 
   mkTestScript = script: ''
+    import importlib.util
     import sys
-    sys.path.extend([
-      "${pkgs.python38Packages.rich}/lib/python3.8/site-packages/",
-      "${pkgs.writeTextDir "helpers.py" (builtins.readFile ./helpers.py)}"
-    ])
+    from importlib.machinery import ModuleSpec
 
-    import helpers
     import rich
+
+    # workaround to import a local module that is not a package
+    spec = importlib.util.spec_from_file_location("helpers", "${./helpers.py}")
+    helpers = importlib.util.module_from_spec(spec)
+    sys.modules["helpers"] = helpers
+    spec.loader.exec_module(helpers)
+
     Machine.r = property(helpers.r)
   '' + "\n" + script;
 in
@@ -304,6 +308,9 @@ in
     nodes = {
       primary = makeRouterConfig { id = 1; };
     };
+
+    extraPythonPackages = ps: [ ps.rich ];
+    skipTypeCheck = true; # due to cursed importing of helpers
 
     testScript = { nodes, ... }: mkTestScript ''
       pp = rich.print
