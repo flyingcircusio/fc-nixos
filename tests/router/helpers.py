@@ -7,28 +7,21 @@ import rich
 
 
 class Router:
-    def __init__(self, machine, verbose=True):
+    def __init__(self, machine, system_top_level: str, verbose=True):
         self.machine = machine
         self.rich = rich
         self.verbose = verbose
+        self.system_top_level = Path(system_top_level)
 
     def inspect_machine(*a, **k):
         if self.verbose:
             rich.inspect(self.machine)
 
     @cached_property
-    def initial_system_path(self):
-        vm_script = Path(self.machine.script).read_text()
-        return Path(
-            re.search(
-                "(/nix/store/.*-nixos-system.*)/kernel ", vm_script
-            ).group(1)
-        )
-
-    @cached_property
     def secondary_system(self):
-        print("secondary system:", self.initial_system_path)
-        return self.initial_system_path
+        # secondary systems are the default config of a router role, without specialisation
+        print("secondary system:", self.system_top_level)
+        return self.system_top_level
 
     @cached_property
     def primary_system(self):

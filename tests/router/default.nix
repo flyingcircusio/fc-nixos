@@ -1,4 +1,4 @@
-import ../make-test-python.nix ({ testlib, pkgs, ... }:
+import ../make-test-python.nix ({ testlib, pkgs, lib, ... }:
 
 with testlib;
 
@@ -284,7 +284,7 @@ let
 
     };
 
-  mkTestScript = script: ''
+  mkTestScript = nodes: script: ''
     import importlib.util
     import sys
     from importlib.machinery import ModuleSpec
@@ -297,8 +297,15 @@ let
     sys.modules["helpers"] = helpers
     spec.loader.exec_module(helpers)
 
-    Machine.r = property(helpers.r)
-  '' + "\n" + script;
+    #Machine.r = property(helpers.r)
+
+    # initialise node initial system paths
+  '' + "\n"
+  + builtins.concatStringsSep "\n" (
+      lib.mapAttrsToList (nodeName: node: ''
+        ${nodeName}.r = helpers.Router(${nodeName}, "${toString node.system.build.toplevel}")'') nodes
+  )
+   + "\n" + script;
 in
 {
   name = "router";
@@ -312,7 +319,7 @@ in
     extraPythonPackages = ps: [ ps.rich ];
     skipTypeCheck = true; # due to cursed importing of helpers
 
-    testScript = { nodes, ... }: mkTestScript ''
+    testScript = { nodes, ... }: mkTestScript nodes ''
       pp = rich.print
       primary.wait_for_unit("default.target")
 
@@ -373,7 +380,7 @@ in
       router = makeRouterConfig { id = 1; };
     };
 
-    testScript = { nodes, ... }: mkTestScript ''
+    testScript = { nodes, ... }: mkTestScript nodes ''
       print(f"Initial system path: {router.r.initial_system_path}")
       router.r.secondary_system
       print("primary ?", router.r.is_primary)
@@ -386,7 +393,7 @@ in
       secondary = makeRouterConfig { id = 1; };
     };
 
-    testScript = { nodes, ... }: mkTestScript ''
+    testScript = { nodes, ... }: mkTestScript nodes ''
       pp = rich.print
       secondary.wait_for_unit("default.target")
 
@@ -437,7 +444,7 @@ in
       router = makeRouterConfig { id = 1; };
     };
 
-    testScript = { nodes, ... }: mkTestScript ''
+    testScript = { nodes, ... }: mkTestScript nodes ''
       with subtest("Should become primary router"):
         router.wait_until_succeeds("systemctl is-active keepalived")
         router.r.wait_until_is_primary()
@@ -482,7 +489,7 @@ in
       router1 = makeRouterConfig { id = 1; };
       router2 = makeRouterConfig { id = 2; };
     };
-    testScript = { nodes, ... }: mkTestScript ''
+    testScript = { nodes, ... }: mkTestScript nodes ''
       with subtest("First router should become primary"):
         router1.wait_until_succeeds("systemctl is-active keepalived")
         router2.wait_until_succeeds("systemctl is-active keepalived")
@@ -525,7 +532,7 @@ in
     };
     testScript = { nodes, ... }: let
       fc-keepalived = "JOURNAL_STREAM= fc-keepalived";
-    in mkTestScript ''
+    in mkTestScript nodes ''
       with subtest("First router should become primary"):
         router1.wait_until_succeeds("systemctl is-active keepalived")
         router2.wait_until_succeeds("systemctl is-active keepalived")
@@ -575,7 +582,7 @@ in
       };
     };
 
-    testScript = {nodes, ...}: mkTestScript ''
+    testScript = {nodes, ...}: mkTestScript nodes ''
       router1.wait_for_unit("default.target")
 
       with subtest("networking"):
