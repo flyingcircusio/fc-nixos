@@ -241,7 +241,16 @@ let
         };
       };
 
+     # normally the agent (or on vanilla NixOS systems, `nixos-rebuild`) registers
+     # the profile symlink for later access. In tests, the agent is not properly
+     # run though. so let's simulate this.
+
+     # FIXME: the activation script in 24.11 has changed to not create /nix/var/nix/profiles anymore
+     # we're including the snippet removed in f0154409a199152522818e70f23a75b49fcdff5d
+     # here again. Let's see whether this breaks in non-test environments then.
      system.activationScripts.setupSystemProfile = ''
+       install -m 0755 -d /nix/var/nix/{gcroots,profiles}/per-user
+
        system_profile=/nix/var/nix/profiles/system
        if [[ ! -e $system_profile ]]; then
          ln -s $(dirname $0) /nix/var/nix/profiles/system
@@ -335,6 +344,7 @@ in
         primary.wait_until_succeeds("systemctl is-active keepalived")
 
       with subtest("wait for the system to switch to primary"):
+        breakpoint()
         primary.r.wait_until_is_primary()
 
       with subtest("bird2 is configured as primary"):
