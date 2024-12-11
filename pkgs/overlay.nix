@@ -316,13 +316,13 @@ in {
 
   # Newer linux kernel. Includes mitigations for the Inception and Downfall
   # CPU vulnerabilities.
-  linuxPackages = super.linuxPackagesFor (nixpkgs-24_05.linux_6_11.override {
+  linuxPackages = super.linuxPackagesFor (nixpkgs-24_05.linux_6_6.override {
     argsOverride = rec {
       src = self.fetchurl {
         url = "mirror://kernel/linux/kernel/v6.x/linux-${version}.tar.xz";
-        hash = "sha256-C/XsZEgX15KJIPdjWBMR9b8lipJ1nPLzCYXadDrz67I=";
+        hash = "sha256-Bl/ZP6bLQi9lD7Vj8V0+AQfIUAn3ZkBZk9eV/Tl5arE=";
       };
-      version = "6.11.7";
+      version = "6.6.64";
       modDirVersion = version;
       ignoreConfigErrors = true;
       kernelPatches = [

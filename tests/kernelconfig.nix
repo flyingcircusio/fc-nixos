@@ -91,7 +91,6 @@ let
         MEGARAID_NEWGEN y
         MEGARAID_SAS m
         MICROCODE y
-        MICROCODE_INTEL y
         MLX5_CORE m
         MLX5_CORE_EN y
         MLX5_EN_ARFS y
@@ -122,7 +121,6 @@ let
         PAGE_POOL y
         RAID_ATTRS m
         RELAY y
-        SCSI_DH_RDAC m
         SCSI_LOWLEVEL y
         SCSI_MPT3SAS m
         SCSI_SAS_ATA y
@@ -142,7 +140,7 @@ let
         TUN m
         UNIX_DIAG m
         USB_EHCI_HCD m
-        USB_SERIAL m
+        USB_SERIAL y
         USB_SERIAL_FTDI_SIO m
         USB_SERIAL_PL2303 m
         USB_UHCI_HCD m
