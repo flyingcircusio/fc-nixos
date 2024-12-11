@@ -122,6 +122,7 @@ let
           name = "fe";
           subnet4 = [{
             subnet = "172.20.2.0/25";
+            id = 1;
             option-data = [{
               name = "routers";
               data = "172.20.2.1";
@@ -140,6 +141,7 @@ let
           name = "fe";
           subnet6 = [{
             subnet = "2a02:238:f030:1c2::/64";
+            id = 1;
           }];
         }];
       };
@@ -344,7 +346,6 @@ in
         primary.wait_until_succeeds("systemctl is-active keepalived")
 
       with subtest("wait for the system to switch to primary"):
-        breakpoint()
         primary.r.wait_until_is_primary()
 
       with subtest("bird2 is configured as primary"):
