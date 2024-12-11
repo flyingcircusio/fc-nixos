@@ -384,6 +384,14 @@ in
     host1.execute("systemctl stop fc-ceph-mgr")
     host2.execute("systemctl stop fc-ceph-mgr")
 
+    with subtest("fc-qemu-scrub timer is correctly activated"):
+      _, output = host1.execute("systemctl list-timers | grep fc-qemu-scrub")
+      print(output)
+      assert "fc-qemu-scrub" in output
+      assert "min left "
+      assert not output.startswith("n/a")
+      assert output.count("n/a") <= 2
+
     host1.wait_for_unit("consul")
     host2.wait_for_unit("consul")
     host3.wait_for_unit("consul")
