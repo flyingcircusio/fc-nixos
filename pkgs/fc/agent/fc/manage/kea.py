@@ -21,14 +21,16 @@ class ConfigRenderer(object):
         else:
             raise NotImplementedError("unsupported IP version", ipversion)
 
-    def render(self):
+    def render(self, ident_base):
         config = {}
         config["name"] = self.vlan
         config[self.subnet_keyword] = [
-            self.render_subnet(subnet) for subnet in self.shared_network
+            # SharedNetwork iterator guarantees stable sort order
+            self.render_subnet(subnet, ident)
+            for ident, subnet in enumerate(self.shared_network, index_base)
         ]
 
-        return config
+        return len(self.shared_network), config
 
 
 class Config4Renderer(ConfigRenderer):
@@ -38,7 +40,7 @@ class Config4Renderer(ConfigRenderer):
         self.vlan = vlan
         self.shared_network = shared_network
 
-    def render_subnet(self, subnet):
+    def render_subnet(self, subnet, ident):
         reservations = []
         for host in subnet.hostaddrs_unique_mac:
             reservations.append(
@@ -50,6 +52,7 @@ class Config4Renderer(ConfigRenderer):
             )
 
         config = {}
+        config["id"] = ident
         config["subnet"] = str(subnet.network)
         config["reservations"] = reservations
         config["option-data"] = [
@@ -89,7 +92,7 @@ class Config6Renderer(ConfigRenderer):
         self.shared_network = shared_network
         self.domain = domain
 
-    def render_subnet(self, subnet):
+    def render_subnet(self, subnet, ident):
         reservations = []
         for host in subnet.hostaddrs_unique_mac:
             hostname = (
@@ -104,6 +107,7 @@ class Config6Renderer(ConfigRenderer):
             )
 
         config = {}
+        config["id"] = ident
         config["subnet"] = str(subnet.network)
         config["reservations"] = reservations
 
@@ -200,11 +204,18 @@ class Kea(object):
     def render(self, output):
         network_configs = []
         render_class = ConfigRenderer.get_class(self.ipversion)
-        for vlan, shnet in self.networks.items():
+
+        idx = 1
+        # sort networks by vlan name to avoid subnet identifiers being
+        # renumbered
+        for vlan in sorted(self.networks.keys()):
             if vlan in self.excluded_networks:
                 continue
+            shnet = self.networks[vlan]
             renderer = render_class(vlan, shnet, self.domain)
-            network_configs.append(renderer.render())
+            count, cfg = renderer.render(idx)
+            idx += count
+            network_configs.append(cfg)
 
         config = {"shared-networks": network_configs}
         json.dump(config, output, indent=2)
