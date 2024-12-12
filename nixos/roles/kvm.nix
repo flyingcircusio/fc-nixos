@@ -309,6 +309,7 @@ in
       description = "Runs the Qemu/KVM scrub script regularly.";
       wantedBy = [ "timers.target" ];
       timerConfig = {
+        OnBootSec = "10m";
         OnUnitActiveSec = "10m";
       };
     };
