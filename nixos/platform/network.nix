@@ -385,7 +385,7 @@ in
                 touch /var/lock/interface-rename.lock
                 exec 4</var/lock/interface-rename.lock
 
-                echo "Renaming to ${iface.link} ..."
+                echo "Ensuring interface name '${iface.link}' ..."
 
                 echo "Acquiring interface renaming lock ..."
                 flock -x -w 60 4 || exit 1
@@ -394,16 +394,21 @@ in
                 # Look up the desired interface's current name by mac address
                 interface="$(ip -j -d link show | jq -r '.[] | select(.linkinfo?.info_kind? == null) | select(.address == "${iface.mac}") | .ifname')"
 
-                # XXX properly handle missing MAC address and cause this unit to fail.
+                if [[ "$interface" == "" ]]; then
+                  echo "ERROR: Missing interface with MAC address '${iface.mac}'."
+                  echo "Found interfaces:"
+                  ip link show
+                  exit 1
+                fi
 
                 if [[ "$interface" != "${iface.link}" ]]; then
-                  echo "Interface is currently known as $interface ..."
+                  echo "Interface is currently known as `$interface` ..."
 
                   # Check whether our desired name is also already in use,
                   # rename that one to a unique name.
                   counter=0
                   while ip l show dev ${iface.link} > /dev/null; do
-                    echo "${iface.link} is still being used, trying to clean up."
+                    echo "'${iface.link}' is still being used, trying to clean up."
                     # Down the other interface and rename it
                     ip l set ${iface.link} down
                     # Try, don't care if it fails. We check the success on the
@@ -418,7 +423,7 @@ in
                     counter=$((counter+1))
                   done
 
-                  echo "Performing rename from $interface to ${iface.link}"
+                  echo "Performing rename from '$interface' to '${iface.link}'"
                   ip l set $interface down
                   ip l set $interface name ${iface.link}
                 fi

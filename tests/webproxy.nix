@@ -8,7 +8,7 @@ in {
       {lib, ... }: let
         serverport = 8080;
       in {
-        imports = [ (testlib.fcConfig { id = 1; }) ];
+        imports = [ (testlib.fcConfig { id = 2; }) ];
 
         flyingcircus.roles.webproxy.enable = true;
 
@@ -33,7 +33,7 @@ in {
     webproxy =
       { lib, ... }:
       {
-        imports = [ (testlib.fcConfig { id = 2; }) ];
+        imports = [ (testlib.fcConfig { id = 1; }) ];
 
         specialisation = {
           varnish-switch-test.configuration = let
