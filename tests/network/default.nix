@@ -4,17 +4,18 @@ let
     { config, pkgs, ... }:
     with pkgs.lib; {
       imports = [
-        (testlib.fcConfig { id = 1; })
+        (testlib.fcConfig { id = 1; net = { fe = true; srv = true; tr = true;};})
       ];
 
       environment.systemPackages = with pkgs; [ iptables curl ];
-      virtualisation.vlans = [ 2 3 6 ];  # fe srv tr
       boot.kernel.sysctl."net.ipv6.conf.all.forwarding" = true;
 
       flyingcircus.enc.parameters.interfaces = encInterfaces "1";
     };
 
   encInterfaces = id: {
+    # TODO: this mostly duplicates the network interface definitions of testlib,
+    # with a difference in the IPv4 addressess assigned.
     fe = {  # VLAN 2
       mac = "52:54:00:12:02:0${id}";
       bridged = false;
@@ -190,6 +191,7 @@ in {
         print("\n* n2_client network overview\n")
         print(n2_client.succeed("ip a"))
         # ipv6 needs more time, wait until self-ping works
+
         n1_router.wait_until_succeeds("ping -c1 2001:db8:2::11")
         n2_client.wait_until_succeeds("ping -c1 2001:db8:2::12")
 
