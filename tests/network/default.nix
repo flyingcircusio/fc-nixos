@@ -223,57 +223,64 @@ in {
       name = "routes";
       nodes.machine1 =
         { pkgs, ... }:
-        {
-          imports = [ (testlib.fcConfig {id = 1;}) ];
-          virtualisation.interfaces.ethsrv.vlan = 3;
-          flyingcircus.enc.parameters.interfaces = {
-            # TODO: this partly overrides the defaults from `testlib.fcConfig`,
-            # clean up and deduplicat where possible.
-            srv = {  # VLAN 3
-              mac = "52:54:00:12:03:01";
-              bridged = false;
-              networks = {
-                "10.51.3.0/24" = [ "10.51.3.11" ];
-                "10.51.99.0/24" = [ ];
-                "2001:db8:3::/64" = [ "2001:db8:3::11" ];
-                "2001:db8:99::/64" = [ ];
-              };
-              nics = [
-                {"mac" = "52:54:00:12:03:01";
-                 "external_label" = "srvnic1"; }
-              ];
-              gateways = {
-                "10.51.3.0/24" = "10.51.3.1";
-                "2001:db8:3::/64" = "2001:db8:3::1";
-              };
-            };
+        let srvEnc = {  # VLAN 3
+          # TODO: this partly overrides the defaults from `testlib.fcConfig`,
+          # clean up and deduplicate where possible.
+          mac = "52:54:00:12:03:01";
+          bridged = false;
+          networks = {
+            "10.51.3.0/24" = [ "10.51.3.11" ];
+            "10.51.99.0/24" = [ ];
+            "2001:db8:3::/64" = [ "2001:db8:3::11" ];
+            "2001:db8:99::/64" = [ ];
           };
+          nics = [
+            {"mac" = "52:54:00:12:03:01";
+              "external_label" = "srvnic1"; }
+          ];
+          gateways = {
+            "10.51.3.0/24" = "10.51.3.1";
+            "2001:db8:3::/64" = "2001:db8:3::1";
+          };
+        };
+        in
+        {
+          imports = [ (testlib.fcConfig {
+            id = 1;
+            extraEncParameters.interfaces.srv = srvEnc;
+            net = { fe = false; srv = true;};
+          }) ];
         };
       nodes.machine2 =
         { pkgs, ... }:
-        {
-          imports = [ (testlib.fcConfig {id = 2;}) ];
-          virtualisation.interfaces.ethsrv.vlan = 3;
-          flyingcircus.enc.parameters.interfaces = {
-            srv = {  # VLAN 3
-              mac = "52:54:00:12:03:02";
-              bridged = false;
-              networks = {
-                "10.51.3.0/24" = [ ];
-                "10.51.99.0/24" = [ "10.51.99.12" ];
-                "2001:db8:3::/64" = [ ];
-                "2001:db8:99::/64" = [ "2001:db8:99::12" ];
-              };
-              nics = [
-                {"mac" = "52:54:00:12:03:02";
-                 "external_label" = "srvnic2"; }
-              ];
-              gateways = {
-                "10.51.99.0/24" = "10.51.99.1";
-                "2001:db8:99::/64" = "2001:db8:99::1";
-              };
-            };
+        let
+        srvEnc = {  # VLAN 3
+        # TODO: this partly overrides the defaults from `testlib.fcConfig`,
+        # clean up and deduplicate where possible.
+          mac = "52:54:00:12:03:02";
+          bridged = false;
+          networks = {
+            "10.51.3.0/24" = [ ];
+            "10.51.99.0/24" = [ "10.51.99.12" ];
+            "2001:db8:3::/64" = [ ];
+            "2001:db8:99::/64" = [ "2001:db8:99::12" ];
           };
+          nics = [
+            {"mac" = "52:54:00:12:03:02";
+              "external_label" = "srvnic2"; }
+          ];
+          gateways = {
+            "10.51.99.0/24" = "10.51.99.1";
+            "2001:db8:99::/64" = "2001:db8:99::1";
+          };
+        };
+        in
+        {
+          imports = [ (testlib.fcConfig {
+            id = 2;
+            extraEncParameters.interfaces.srv = srvEnc;
+            net = { fe = false; srv = true;};
+          }) ];
         };
       testScript = ''
         start_all()
