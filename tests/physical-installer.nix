@@ -49,76 +49,51 @@ in
 
     """
 
-
-    # In 24.05 wait_until_tty_matches has a timeout argument, but 21.05 doesn't
-    # this can be refactored once we update.
-    TIMEOUT=900
-
-    def retry(fn: Callable) -> None:
-        """Call the given function repeatedly, with 1 second intervals,
-        until it returns True or a timeout is reached.
-        """
-        global TIMEOUT
-        for _ in range(TIMEOUT):
-            if fn(False):
-                return
-            time.sleep(1)
-
-        if not fn(True):
-            raise Exception("action timed out")
-
-    import sys
-    sys.modules[machine.__module__].retry = retry
-
     print(machine.succeed("lsblk"))
     print(machine.succeed("fc-secure-erase /dev/vdc"))
 
-    TIMEOUT=10
-    machine.wait_until_tty_matches("1", "nixos@machine")
+    machine.wait_until_tty_matches("1", "nixos@machine", timeout=10)
 
     machine.screenshot('01boot')
 
     machine.send_chars("sudo -i\n")
-    machine.wait_until_tty_matches("1", "root@machine")
+    machine.wait_until_tty_matches("1", "root@machine", timeout=10)
 
     machine.screenshot('02sudo')
 
-    TIMEOUT=5
     machine.send_chars("fc-install\n")
-    machine.wait_until_tty_matches("1", "52:54:00:12:34:56")
-    machine.wait_until_tty_matches("1", "Ready to continue")
+    machine.wait_until_tty_matches("1", "52:54:00:12:34:56", timeout=5)
+    machine.wait_until_tty_matches("1", "Ready to continue", timeout=5)
     machine.screenshot('03lldp')
     machine.send_chars("\n")
 
-    machine.wait_until_tty_matches("1", "ENC wormhole URL")
+    machine.wait_until_tty_matches("1", "ENC wormhole URL", timeout=5)
     machine.send_chars("file:///tmp/wormhole.json\n")
     machine.screenshot('04wormhole')
 
-    machine.wait_until_tty_matches("1", "Root disk")
+    machine.wait_until_tty_matches("1", "Root disk", timeout=5)
     machine.send_chars("/dev/vdb\n")
     machine.screenshot('05rootdisk')
 
-    machine.wait_until_tty_matches("1", "Root password:")
+    machine.wait_until_tty_matches("1", "Root password:", timeout=5)
     machine.send_chars("asdf\n")
     machine.screenshot("06passwords")
 
-    machine.wait_until_tty_matches("1", "No IPMI controller detected")
+    machine.wait_until_tty_matches("1", "No IPMI controller detected", timeout=5)
 
     machine.screenshot("07noipmi")
 
-    machine.wait_until_tty_matches("1", "Boot style")
+    machine.wait_until_tty_matches("1", "Boot style", timeout=5)
     machine.send_chars("efi\n")
 
-    machine.wait_until_tty_matches("1", "Wipe whole disk?")
+    machine.wait_until_tty_matches("1", "Wipe whole disk?", timeout=5)
 
     machine.execute("ln -sf /dev/vdb /dev/disk/by-id/wwn-34789374891")
     machine.send_chars("y\n")
 
-    TIMEOUT=30
-
     # This is how far I got creating a test. We now would have to create
     # a fake server serving the channel and the nix store...
-    machine.wait_until_tty_matches("1", "error: unable to download")
+    machine.wait_until_tty_matches("1", "error: unable to download", timeout=30)
 
     machine.screenshot("99finish")
 
