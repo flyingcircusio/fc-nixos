@@ -14,6 +14,10 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
 
     flyingcircus.roles.servicecheck.enable = true;
 
+    environment.etc."nixos/enc.json".text = ''
+      {"parameters": {"directory_password": "test"}}
+    '';
+
     networking.extraHosts = ''
       127.0.0.1 directory.fcio.net
     '';
