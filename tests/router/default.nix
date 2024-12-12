@@ -391,6 +391,9 @@ in
       router = makeRouterConfig { id = 1; };
     };
 
+
+    extraPythonPackages = ps: [ ps.rich ];
+    skipTypeCheck = true; # due to cursed importing of helpers
     testScript = { nodes, ... }: mkTestScript nodes ''
       print(f"Initial system path: {router.r.initial_system_path}")
       router.r.secondary_system
@@ -404,6 +407,8 @@ in
       secondary = makeRouterConfig { id = 1; };
     };
 
+    extraPythonPackages = ps: [ ps.rich ];
+    skipTypeCheck = true; # due to cursed importing of helpers
     testScript = { nodes, ... }: mkTestScript nodes ''
       pp = rich.print
       secondary.wait_for_unit("default.target")
@@ -455,6 +460,8 @@ in
       router = makeRouterConfig { id = 1; };
     };
 
+    extraPythonPackages = ps: [ ps.rich ];
+    skipTypeCheck = true; # due to cursed importing of helpers
     testScript = { nodes, ... }: mkTestScript nodes ''
       with subtest("Should become primary router"):
         router.wait_until_succeeds("systemctl is-active keepalived")
@@ -500,6 +507,9 @@ in
       router1 = makeRouterConfig { id = 1; };
       router2 = makeRouterConfig { id = 2; };
     };
+
+    extraPythonPackages = ps: [ ps.rich ];
+    skipTypeCheck = true; # due to cursed importing of helpers
     testScript = { nodes, ... }: mkTestScript nodes ''
       with subtest("First router should become primary"):
         router1.wait_until_succeeds("systemctl is-active keepalived")
@@ -541,6 +551,9 @@ in
       router1 = makeRouterConfig { id = 1; };
       router2 = makeRouterConfig { id = 2; };
     };
+
+    extraPythonPackages = ps: [ ps.rich ];
+    skipTypeCheck = true; # due to cursed importing of helpers
     testScript = { nodes, ... }: let
       fc-keepalived = "JOURNAL_STREAM= fc-keepalived";
     in mkTestScript nodes ''
@@ -593,6 +606,9 @@ in
       };
     };
 
+
+    extraPythonPackages = ps: [ ps.rich ];
+    skipTypeCheck = true; # due to cursed importing of helpers
     testScript = {nodes, ...}: mkTestScript nodes ''
       router1.wait_for_unit("default.target")
 
