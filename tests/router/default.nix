@@ -395,7 +395,7 @@ in
     extraPythonPackages = ps: [ ps.rich ];
     skipTypeCheck = true; # due to cursed importing of helpers
     testScript = { nodes, ... }: mkTestScript nodes ''
-      print(f"Initial system path: {router.r.initial_system_path}")
+      print(f"Initial system path: {router.r.system_top_level}")
       router.r.secondary_system
       print("primary ?", router.r.is_primary)
       router.r.wait_until_is_secondary()
