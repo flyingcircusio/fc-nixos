@@ -326,6 +326,32 @@ in {
     };
   });
 
+  nix = super.nix.overrideAttrs (old: rec {
+    name = "nix-${version}";
+    version = "2.3.18";
+    src = self.fetchFromGitHub {
+      owner = "NixOS";
+      repo = "nix";
+      rev = version;
+      hash = "sha256-jBz2Ub65eFYG+aWgSI3AJYvLSghio77fWQiIW1svA9U=";
+    };
+    nativeBuildInputs = (old.nativeBuildInputs or []) ++ [
+      self.libxslt
+      self.libxml2
+      self.docbook_xsl_ns
+      self.docbook5
+      self.bison
+      self.flex
+      self.jq
+      self.autoconf-archive
+      self.autoreconfHook
+    ];
+    buildInputs = (old.buildInputs or []) ++ [
+      self.libarchive
+      self.zstd
+    ];
+  });
+
   matrix-synapse = super.matrix-synapse.overrideAttrs(orig: rec {
     pname = "matrix-synapse";
     version = "1.47.1";
