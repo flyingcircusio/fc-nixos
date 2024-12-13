@@ -5,7 +5,7 @@ let
 
 in {
   name = "rabbitmq";
-  machine =
+  nodes.machine =
     { ... }:
     {
       imports = [ ../nixos ../nixos/roles ];
@@ -31,6 +31,7 @@ in {
     sensuOpts = "-u fc-sensu -w ${ipv4} -p ${testlib.derivePasswordForHost "sensu"}";
     amqpAliveCheck = "${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-amqp-alive.rb ${sensuOpts}";
     nodeHealthCheck = "${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-node-health.rb ${sensuOpts}";
+    featureFlagCheck = "! sudo -u rabbitmq ${pkgs.rabbitmq-server}/bin/rabbitmqctl list_feature_flags state stability |${pkgs.gnugrep}/bin/grep stable | ${pkgs.gnugrep}/bin/grep  disabled";
   in ''
     machine.wait_for_unit("rabbitmq.service")
     machine.wait_until_succeeds("${amqpPortCheck}")
@@ -49,6 +50,7 @@ in {
 
     with subtest("sensu checks should be green"):
       machine.succeed("${amqpAliveCheck}")
+      machine.succeed("${featureFlagCheck}")
       machine.wait_until_succeeds("${nodeHealthCheck}")
       machine.systemctl("stop rabbitmq.service")
       machine.wait_until_fails("${amqpPortCheck}")
