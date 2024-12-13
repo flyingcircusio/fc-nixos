@@ -4,8 +4,7 @@ import ../make-test-python.nix ({ pkgs, testlib, ... }:
 #
 # As of 24.11 the following rules apply:
 #
-# - upstream assumes node IDs based on some (lexicographic?) order, but
-#   we always override this ID with the explicit id given to fcConfig
+# - upstream assumes node IDs based on some (lexicographic?) order
 # - every node automatically receives an IPv6 address (2001:db8:$vlan::$nodeid)
 #   and IPv4 address (192.168.$vlan.$nodeid) from the upstream test harness
 #
