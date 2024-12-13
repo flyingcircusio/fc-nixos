@@ -82,12 +82,20 @@ rec {
 
   fcConfig = {
     id ? 1,
-    net ? {},
+    net ? {}, 
     resource_group ? "test",
     location ? "test",
     secrets ? {},
     extraEncParameters ? {},
   }: { config, ... }:
+  let
+    # This is a dance around enabling/disabling and defining defaults of 
+    # which VLANs/interface to enable in a test that can be overriden.
+    network_options = mapAttrs (name: val: false) vlans;
+    chosen_networks = (network_options // { srv = true; fe = true; } // net);
+    active_vlan_attrs = 
+      filterAttrs (name: vid: chosen_networks.${name}) vlans;
+  in
   {
     imports = [
       ../nixos
@@ -122,8 +130,7 @@ rec {
               "external_label" = "${name}nic${toString id}";
             }
           ];
-        })
-          (filterAttrs (name: vid: (!(net ? ${name}) && (name == "srv" || name == "fe")) || net ? ${name} && net.${name}) vlans);
+        }) active_vlan_attrs;
       } extraEncParameters);
     };
   };
