@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ pkgs, ... }:
+import ./make-test-python.nix ({ pkgs, testlib, ... }:
 
 let
   user = {
@@ -36,9 +36,9 @@ let
           sleep(600000);
         ?>
   ''; };
-  clientConfig = extraConfig: { lib, ... }:
+  clientConfig = id: extraConfig: { lib, ... }:
     {
-      imports = [ ../nixos ../nixos/roles ];
+      imports = [ (testlib.fcConfig { id = id; }) ];
       config = lib.recursiveUpdate {
         flyingcircus.roles.nfs_rg_client.enable = true;
         flyingcircus.roles.lamp.enable = true;
@@ -96,15 +96,15 @@ let
 in {
   name = "nfs";
   nodes = {
-    client1 = clientConfig {
+    client1 = clientConfig 1 {
         networking.domain = "fcio.net"; # PL-133063
     };
-    client2 = clientConfig {};
+    client2 = clientConfig 2 {};
 
     server =
       { ... }:
       {
-        imports = [ ../nixos ../nixos/roles ];
+        imports = [ (testlib.fcConfig { id = 3; }) ];
         config = {
           flyingcircus.roles.nfs_rg_share.enable = true;
           flyingcircus.encServiceClients = encServiceClients;
@@ -128,6 +128,28 @@ in {
     server.wait_for_unit("nfs-server")
     server.wait_for_unit("nfs-idmapd")
     server.wait_for_unit("nfs-mountd")
+
+    def show_succeed_content(machine, cmd, expected_content):
+        code, result = machine.execute(cmd)
+        print(f"$ {cmd}")
+        print(result)
+        assert code == 0, f"ERROR: result code {code}"
+        if result != expected_content:
+            print(repr(result))
+            print(repr(expected_content))
+            result = result.splitlines(keepends=True)
+            expected_content = expected_content.splitlines(keepends=True)
+            print(
+              "".join(difflib.ndiff(result, expected_content)), end="")
+            assert False, "Expected content does not match"
+
+    show_succeed_content(server,
+      "${pkgs.strace}/bin/strace showmount --exports",
+      """\
+    Export list for server:
+    /srv/nfs/shared client1.fcio.net
+    """)
+
     client1.start()
     client2.start()
 
@@ -140,27 +162,13 @@ in {
     client1.wait_for_unit("multi-user.target")
     client2.wait_for_unit("multi-user.target")
 
-    client1.succeed("grep test_on_server ${cdir}/test")
-
-    client1.succeed("sudo -u test sh -c 'echo test_on_client > ${cdir}/test'")
-    server.succeed("grep test_on_client ${sdir}/test")
-
-    client1.fail("echo from_root_user > ${cdir}/test")
-    server.succeed("grep test_on_client ${sdir}/test")
-
-    # Verify proper shutdown while NFS is being used.
-    # See PL-129954
-    client1.wait_for_unit("httpd.service")
-    client1.succeed("cd ${cdir}")
-
-    server.copy_from_host("${php_blocking_script}", "${sdir}/index.php")
-
-    client1.execute('curl -v http://localhost:8000/index.php >&2 &')
-    time.sleep(2)
-    print(client1.execute('lsof -n ${cdir}/test2')[1])
-    print(client1.execute('journalctl -u httpd')[1])
-    content = client1.execute('cat ${cdir}/test2')[1]
-    assert content == "asdf", repr(content)
+    # enable debugging
+    # client1.execute("rpcdebug -m nfs -s all")
+    # client1.execute("rpcdebug -m rpc -s all")
+    # client2.execute("rpcdebug -m nfs -s all")
+    # client2.execute("rpcdebug -m rpc -s all")
+    # server.execute("rpcdebug -m nfsd -s all")
+    # server.execute("rpcdebug -m rpc -s all")
 
     # PL-133063
     with subtest("NFS client and server can be resolved via /etc/hosts"):
@@ -198,6 +206,34 @@ in {
       print(client1.execute("findmnt")[1])
       print(client2.execute("findmnt")[1])
       print(client2.execute("systemctl status mnt-nfs-shared.mount")[1])
+
+    with subtest("automount and basic interactions"):
+      client1.execute("grep test_on_server ${cdir}/test")
+      print(client1.execute("mount")[1])
+      print(client1.execute("journalctl -u mnt-nfs-shared.automount")[1])
+      print(server.execute("journalctl -u nfs-server")[1])
+      print(server.execute("journalctl -u nfs-idmapd")[1])
+      print(server.execute("journalctl -u nfs-mountd")[1])
+
+      client1.succeed("sudo -u test sh -c 'echo test_on_client > ${cdir}/test'")
+      server.succeed("grep test_on_client ${sdir}/test")
+
+      client1.fail("echo from_root_user > ${cdir}/test")
+      server.succeed("grep test_on_client ${sdir}/test")
+
+      # Verify proper shutdown while NFS is being used.
+      # See PL-129954
+      client1.wait_for_unit("httpd.service")
+      client1.succeed("cd ${cdir}")
+
+      server.copy_from_host("${php_blocking_script}", "${sdir}/index.php")
+
+      client1.execute('curl -v http://localhost:8000/index.php >&2 &')
+      time.sleep(2)
+      print(client1.execute('lsof -n ${cdir}/test2')[1])
+      print(client1.execute('journalctl -u httpd')[1])
+      content = client1.execute('cat ${cdir}/test2')[1]
+      assert content == "asdf", repr(content)
 
     deadline = time.time() + 10
     def wait_for_console_text(self, regex: str) -> str:
