@@ -145,12 +145,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   ipxe = super.callPackage ./ipxe.nix { };
 
   frr = super.frr.overrideAttrs (old: rec {
-    version = "8.5.5";
+    version = "8.5.6";
     src = super.fetchFromGitHub {
       owner = "FRRouting";
       repo = old.pname;
       rev = "${old.pname}-${version}";
-      sha256 = "1vz21xszqgaywplqwrna6r4sqd1cmhkb0xrrhnaw63979b67imvx";
+      hash = "sha256-/36R0YXpIZTGe6EQCNNRLBQ0LrKw7ZCDcFKIdiNPhh8=";
     };
 
     patches = [

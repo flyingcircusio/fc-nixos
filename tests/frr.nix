@@ -189,6 +189,9 @@ let
         requires = [ "network-addresses-${iface}.service" ];
         after = requires;
         serviceConfig.ExecStart = "${pkgs.fc.ping-on-tap}/bin/ping-on-tap ${iface} ${macaddr} ${ipaddr}";
+        # XXX There's a race condition with scapy that gets fixed in 2.6.1 and
+        # is worked around with the restart=always.
+        serviceConfig.Restart = "always";
       });
 
     in {
@@ -294,7 +297,7 @@ in {
             ]:
                 for addr in addrs:
                     host.wait_until_succeeds(
-                        f"bridge fdb show br br0 | grep -F {addr}"
+                        f"bridge fdb show br br0 | grep -F {addr}", timeout=10
                     )
 
         with subtest("wait for remote tap MAC addresses to appear"):
@@ -304,7 +307,7 @@ in {
             ]:
                 for addr in addrs:
                     host.wait_until_succeeds(
-                        f"bridge fdb show br br0 | grep -F {addr}"
+                        f"bridge fdb show br br0 | grep -F {addr}", timeout=10
                     )
 
         with subtest("check evpn network reachability"):
@@ -321,9 +324,9 @@ in {
                         host.succeed(f"ping -A -c5 {addr}")
 
         with subtest("rib and fib should not have mismatches"):
-            for host in [host1, host2]:
-                host.succeed("check_rib_integrity check-unicast-rib -p 192.168.42.0/24")
-                host.succeed("check_rib_integrity check-evpn-rib -n 23")
+            for host in [host2, host1]:
+                host.wait_until_succeeds("check_rib_integrity check-unicast-rib -p 192.168.42.0/24", timeout=10)
+                host.wait_until_succeeds("check_rib_integrity check-evpn-rib -n 23", timeout=10)
 
         with subtest("check script should detect ipv4 rib mismatches"):
             # monitoring script should detect extra addresses in the kernel
