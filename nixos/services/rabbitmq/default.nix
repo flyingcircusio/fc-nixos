@@ -285,20 +285,31 @@ in {
 
     flyingcircus.services = {
 
-      sensu-client.checks.rabbitmq-alive = {
-        notification = "rabbitmq amqp alive";
-        command = ''
-          ${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-amqp-alive.rb \
-            -u fc-sensu -w ${cfg.listenAddress} -p ${sensuPassword}
-        '';
-      };
+      sensu-client.checks = {
+        rabbitmq-alive = {
+          notification = "rabbitmq amqp alive";
+          command = ''
+            ${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-amqp-alive.rb \
+              -u fc-sensu -w ${cfg.listenAddress} -p ${sensuPassword}
+          '';
+        };
 
-      sensu-client.checks.rabbitmq-node-health = {
-        notification = "rabbitmq node healthy";
-        command = ''
-          ${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-node-health.rb \
-            -u fc-sensu -w ${cfg.listenAddress} -p ${sensuPassword}
-        '';
+        rabbitmq-node-health = {
+          notification = "rabbitmq node healthy";
+          command = ''
+            ${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-node-health.rb \
+              -u fc-sensu -w ${cfg.listenAddress} -p ${sensuPassword}
+          '';
+        };
+
+        rabbitmq-feature-flags-enabled = {
+          notification = "rabbitmq all stable feature flags enabled";
+          command = ''
+            ! sudo -u rabbitmq ${pkgs.rabbitmq-server}/bin/rabbitmqctl list_feature_flags state stability |
+              ${pkgs.gnugrep}/bin/grep stable | ${pkgs.gnugrep}/bin/grep  disabled
+          '';
+          interval = 600;
+        };
       };
 
       telegraf.inputs.rabbitmq = [
