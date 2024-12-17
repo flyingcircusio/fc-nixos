@@ -67,7 +67,7 @@ let
   bridgeLink = mac: address: children: { ... }: {
     networking.bridges.br0.interfaces = children;
     networking.interfaces.br0 = {
-      macAddress = mac;
+      # macAddress = mac;
       ipv4.addresses = [
         { address = address; prefixLength = 24; }
       ];
