@@ -25,13 +25,13 @@ in {
       virtualisation.diskSize = 1000;
     };
 
-  testScript = let
+  testScript = {nodes, ...}: let
     cli = "sudo -u rabbitmq rabbitmqctl";
     amqpPortCheck = "nc -z ${ipv4} 5672";
     sensuOpts = "-u fc-sensu -w ${ipv4} -p ${testlib.derivePasswordForHost "sensu"}";
     amqpAliveCheck = "${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-amqp-alive.rb ${sensuOpts}";
     nodeHealthCheck = "${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-node-health.rb ${sensuOpts}";
-    featureFlagCheck = "! sudo -u rabbitmq ${pkgs.rabbitmq-server}/bin/rabbitmqctl list_feature_flags state stability |${pkgs.gnugrep}/bin/grep stable | ${pkgs.gnugrep}/bin/grep  disabled";
+    featureFlagCheck = testlib.sensuCheckCmd nodes.machine "rabbitmq-feature-flags-enabled";
   in ''
     machine.wait_for_unit("rabbitmq.service")
     machine.wait_until_succeeds("${amqpPortCheck}")
