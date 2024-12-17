@@ -75,14 +75,14 @@
     "version": "19.2.0"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-131.0.6778.108",
+    "name": "chromedriver-unwrapped-131.0.6778.139",
     "pname": "chromedriver-unwrapped",
-    "version": "131.0.6778.108"
+    "version": "131.0.6778.139"
   },
   "chromium": {
-    "name": "chromium-131.0.6778.108",
+    "name": "chromium-131.0.6778.139",
     "pname": "chromium",
-    "version": "131.0.6778.108"
+    "version": "131.0.6778.139"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -150,9 +150,9 @@
     "version": "24.0.9"
   },
   "docker-compose": {
-    "name": "docker-compose-2.30.0",
+    "name": "docker-compose-2.30.3",
     "pname": "docker-compose",
-    "version": "2.30.0"
+    "version": "2.30.3"
   },
   "dovecot": {
     "name": "dovecot-2.3.21.1",
@@ -195,9 +195,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-133.0",
+    "name": "firefox-133.0.3",
     "pname": "firefox",
-    "version": "133.0"
+    "version": "133.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -225,9 +225,9 @@
     "version": "2.47.0"
   },
   "gitaly": {
-    "name": "gitaly-17.5.2",
+    "name": "gitaly-17.6.2",
     "pname": "gitaly",
-    "version": "17.5.2"
+    "version": "17.6.2"
   },
   "github-runner": {
     "name": "github-runner-2.321.0",
@@ -235,9 +235,9 @@
     "version": "2.321.0"
   },
   "gitlab": {
-    "name": "gitlab-17.5.2",
+    "name": "gitlab-17.6.2",
     "pname": "gitlab",
-    "version": "17.5.2"
+    "version": "17.6.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.14.0",
@@ -245,14 +245,14 @@
     "version": "4.14.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.5.2",
+    "name": "gitlab-ee-17.6.2",
     "pname": "gitlab-ee",
-    "version": "17.5.2"
+    "version": "17.6.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.5.2",
+    "name": "gitlab-pages-17.6.2",
     "pname": "gitlab-pages",
-    "version": "17.5.2"
+    "version": "17.6.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.5.2",
+    "name": "gitlab-workhorse-17.6.2",
     "pname": "gitlab-workhorse",
-    "version": "17.5.2"
+    "version": "17.6.2"
   },
   "glibc": {
     "name": "glibc-2.40-36",
@@ -290,9 +290,9 @@
     "version": "1.22.9"
   },
   "grafana": {
-    "name": "grafana-11.3.1",
+    "name": "grafana-11.3.2",
     "pname": "grafana",
-    "version": "11.3.1"
+    "version": "11.3.2"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -375,9 +375,9 @@
     "version": "1.30.5+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.0.6",
+    "name": "keycloak-26.0.7",
     "pname": "keycloak",
-    "version": "26.0.6"
+    "version": "26.0.7"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.16.3",
@@ -440,14 +440,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.63",
+    "name": "linux-6.6.64",
     "pname": "linux",
-    "version": "6.6.63"
+    "version": "6.6.64"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.63",
+    "name": "linux-6.6.64",
     "pname": "linux",
-    "version": "6.6.63"
+    "version": "6.6.64"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -485,9 +485,9 @@
     "version": "4.16.1"
   },
   "matomo_5": {
-    "name": "matomo_5-5.1.1",
+    "name": "matomo_5-5.1.2",
     "pname": "matomo_5",
-    "version": "5.1.1"
+    "version": "5.1.2"
   },
   "matrix-synapse": {
     "name": "matrix-synapse-wrapped-1.120.2",
@@ -540,9 +540,9 @@
     "version": "1.26.2"
   },
   "nginxMainline": {
-    "name": "nginx-1.27.2",
+    "name": "nginx-1.27.3",
     "pname": "nginx",
-    "version": "1.27.2"
+    "version": "1.27.3"
   },
   "nginxStable": {
     "name": "nginx-1.26.2",
@@ -765,9 +765,9 @@
     "version": "124"
   },
   "postfix": {
-    "name": "postfix-3.9.0",
+    "name": "postfix-3.9.1",
     "pname": "postfix",
-    "version": "3.9.0"
+    "version": "3.9.1"
   },
   "postgresql": {
     "name": "postgresql-16.5",
@@ -880,9 +880,9 @@
     "version": "3.12.7"
   },
   "python310": {
-    "name": "python3-3.10.15",
+    "name": "python3-3.10.16",
     "pname": "python3",
-    "version": "3.10.15"
+    "version": "3.10.16"
   },
   "python311": {
     "name": "python3-3.11.10",
@@ -896,9 +896,9 @@
   },
   "python38": {},
   "python39": {
-    "name": "python3-3.9.20",
+    "name": "python3-3.9.21",
     "pname": "python3",
-    "version": "3.9.20"
+    "version": "3.9.21"
   },
   "python3Packages.boto3": {
     "name": "python3.12-boto3-1.35.30",
@@ -926,9 +926,9 @@
     "version": "24.0"
   },
   "python3Packages.pyslurm": {
-    "name": "python3.12-pyslurm-23.11.0",
+    "name": "python3.12-pyslurm-24.5.0",
     "pname": "pyslurm",
-    "version": "23.11.0"
+    "version": "24.5.0"
   },
   "python3Packages.pystemd": {
     "name": "python3.12-pystemd-0.13.2",
@@ -1042,9 +1042,9 @@
     "version": "4.9.1"
   },
   "slurm": {
-    "name": "slurm-23.11.7.1",
+    "name": "slurm-24.05.4.1",
     "pname": "slurm",
-    "version": "23.11.7.1"
+    "version": "24.05.4.1"
   },
   "solr": {
     "name": "solr-8.11.2",
@@ -1062,9 +1062,9 @@
     "version": "5.9.14"
   },
   "subversion": {
-    "name": "subversion-1.14.4",
+    "name": "subversion-1.14.5",
     "pname": "subversion",
-    "version": "1.14.4"
+    "version": "1.14.5"
   },
   "sudo": {
     "name": "sudo-1.9.16p2",
