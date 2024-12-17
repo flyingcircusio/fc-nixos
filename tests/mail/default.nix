@@ -16,7 +16,9 @@ let
         "/org/"
         "/com/"
       ];
-      address = "/webmail.example.local/192.168.1.3";
+      address = [
+        "/webmail.example.local/192.168.2.3"
+      ];
     };
     services.haveged.enable = true;
   };
@@ -26,14 +28,17 @@ in
   nodes = {
     mail =
       { config, lib, ... }: {
-        imports = [ ../../nixos ../../nixos/roles ];
+        imports = [ (testlib.fcConfig {
+          id = 3;
+          extraEncParameters = {
+            # lower limit for allowing the enabling of antivirus
+            memory = 3072;
+          };
+        })];
         config = lib.mkMerge [
           commonConfig
           {
             virtualisation.memorySize = 2048;
-
-            # lower limit for allowing the enabling of antivirus
-            flyingcircus.enc.parameters.memory = 3072;
 
             flyingcircus.roles.mailserver = {
               enable = true;
@@ -49,33 +54,6 @@ in
             };
 
             flyingcircus.roles.postgresql14.enable = true;
-
-            virtualisation.interfaces = testlib.fcVlanIfaces {
-              fe = 1;
-              srv = 3;
-            };
-
-            flyingcircus.enc.parameters = {
-              resource_group = "test";
-              interfaces.srv = {
-                mac = "52:54:00:12:03:03";
-                bridged = false;
-                networks = {
-                  "192.168.3.0/24" = [ "192.168.3.3" ];
-                  "2001:db8:3::/64" = [ "2001:db8:3::3" ];
-                };
-                gateways = {};
-              };
-              interfaces.fe = {
-                mac = "52:54:00:12:01:03";
-                bridged = false;
-                networks = {
-                  "192.168.1.0/24" = [ "192.168.1.3" ];
-                  "2001:db8:1::/64" = [ "2001:db8:1::3" ];
-                };
-                gateways = {};
-              };
-            };
 
             mailserver.certificateScheme = lib.mkOverride 50 "selfsigned";
             mailserver.loginAccounts = lib.mkForce {
@@ -125,36 +103,11 @@ in
       };
     client =
       { lib, ... }: {
-        imports = [ ../../nixos ../../nixos/roles ];
+        imports = [ (testlib.fcConfig { id = 1; }) ];
         config = lib.mkMerge [
           commonConfig
           {
             flyingcircus.services.nullmailer.enable = true;
-
-            virtualisation.interfaces = testlib.fcVlanIfaces {
-              fe = 1;
-              srv = 3;
-            };
-
-            flyingcircus.enc.parameters.interfaces.srv = {
-              mac = "52:54:00:12:03:01";
-              bridged = false;
-              networks = {
-                "192.168.3.0/24" = [ "192.168.3.1" ];
-                "2001:db8:3::/64" = [ "2001:db8:3::1" ];
-              };
-              gateways = {};
-            };
-
-            flyingcircus.enc.parameters.interfaces.fe = {
-              mac = "52:54:00:12:01:01";
-              bridged = false;
-              networks = {
-                "192.168.1.0/24" = [ "192.168.1.1" ];
-                "2001:db8:1::/64" = [ "2001:db8:1::1" ];
-              };
-              gateways = {};
-            };
 
             flyingcircus.encServices = [
               {
@@ -167,6 +120,7 @@ in
       };
     ext =
       { pkgs, ... }: {
+        imports = [ (testlib.fcConfig { id = 2; }) ];
         config = lib.mkMerge [
           commonConfig
           {
