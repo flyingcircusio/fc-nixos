@@ -1,3 +1,26 @@
+# Release 2024_035
+
+
+## Impact
+
+## NixOS XX.XX platform
+
+- S3 users are now managed automatically and can be viewed and managed via our
+  customer portal. (PL-133084)
+
+- Fix systemd units managing flooding suppression and MAC learning
+  configuration so that settings are restored to their defaults when
+  the units are stopped. (PL-133202)
+
+- Add sensu check on routers to monitor whether flooding suppression
+  is correctly configured on gateway interfaces. (PL-133202)
+
+- kvm_host: fix fc-qemu-scrub timer which was not properly activating
+  after boot. (PL-133211)
+
+- Updated Nix to 2.3.18 to be able to download `zstd`-compressed paths from our Hydra. It will
+  switch from `xz` to `zstd` to increase its throughput.
+
 # Release 2024_034
 
 ## Impact
