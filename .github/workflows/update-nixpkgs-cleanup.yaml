@@ -1,7 +1,7 @@
 name: update-nixpkgs-cleanup
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - closed
 
@@ -10,6 +10,11 @@ jobs:
     if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'nixpkgs-auto-update/')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: 'fc-nixos'
+          fetch-depth: 0
       - uses: actions/checkout@v4
         with:
           repository: flyingcircusio/fc-nixos-release-tools
@@ -40,7 +45,9 @@ jobs:
       - run: |
           ./result/bin/update-nixpkgs cleanup \
             --merged-pr-id ${{ github.event.number }} \
+            --fc-nixos-dir fc-nixos \
             --nixpkgs-dir nixpkgs \
             --nixpkgs-origin-url https://x-access-token:${{steps.app-token.outputs.token}}@github.com/flyingcircusio/nixpkgs.git
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          MATRIX_HOOKSHOT_URL: ${{ secrets.MATRIX_HOOKSHOT_URL }}
