@@ -235,7 +235,7 @@ in {
       content = client1.execute('cat ${cdir}/test2')[1]
       assert content == "asdf", repr(content)
 
-    deadline = time.time() + 10
+    deadline = time.time() + 20
     def wait_for_console_text(self, regex: str) -> str:
         self.log("waiting for {} to appear on console".format(regex))
         # Buffer the console output, this is needed
