@@ -15,8 +15,8 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
         (testlib.fcConfig { })
       ];
 
-      virtualisation.memorySize = 4096;
-      virtualisation.cores = 4;
+      virtualisation.memorySize = 6144;
+      virtualisation.cores = 6;
       virtualisation.writableStore = false;
 
       flyingcircus.roles.gitlab = {
@@ -54,6 +54,10 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
           dbFile = pkgs.writeText "dbsecret" "lsGltKWTejOf6JxCVa7nLDenzkO9wPLR";
           jwsFile = pkgs.runCommand "oidcKeyBase" {} "${pkgs.openssl}/bin/openssl genrsa 2048 > $out";
         };
+
+        # less memory consumption
+        sidekiq.concurrency = 1;
+        puma.workers = 2;
       };
 
       systemd.services.gitlab.serviceConfig.Restart = mkForce "no";
@@ -87,7 +91,7 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ...} : with lib; {
     gitlab.wait_for_unit("gitlab-postgresql.service")
     gitlab.wait_for_unit("gitaly.service")
     gitlab.wait_for_unit("gitlab-workhorse.service")
-    gitlab.wait_for_unit("gitlab.service", timeout=1200)
+    gitlab.wait_for_unit("gitlab.service", timeout=1800)
     gitlab.wait_for_unit("gitlab-sidekiq.service")
     gitlab.wait_for_file("/run/gitlab/gitlab-workhorse.socket")
     gitlab.wait_for_file("/srv/gitlab/state/tmp/sockets/gitlab.socket")
