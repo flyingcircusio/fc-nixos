@@ -117,7 +117,7 @@ in {
       enable = mkOption {
         type = types.bool;
         default = false;
-        description = lib.mdDoc ''
+        description = ''
           Enable Matomo web analytics with php-fpm backend.
           Either the nginx option or the webServerUser option is mandatory.
         '';
@@ -125,7 +125,7 @@ in {
 
       package = mkOption {
         type = types.package;
-        description = lib.mdDoc ''
+        description = ''
           Matomo package for the service to use.
         '';
         default = pkgs.matomo;
@@ -137,7 +137,7 @@ in {
         type = types.nullOr types.str;
         default = null;
         example = "lighttpd";
-        description = lib.mdDoc ''
+        description = ''
           Name of the web server user that forwards requests to {option}`services.phpfpm.pools.<name>.socket` the fastcgi socket for Matomo if the nginx
           option is not used. Either this option or the nginx option is mandatory.
           If you want to use another webserver than nginx, you need to set this to that server's user
@@ -148,7 +148,7 @@ in {
       periodicArchiveProcessing = mkOption {
         type = types.bool;
         default = true;
-        description = lib.mdDoc ''
+        description = ''
           Enable periodic archive processing, which generates aggregated reports from the visits.
 
           This means that you can safely disable browser triggers for Matomo archiving,
@@ -164,7 +164,7 @@ in {
         default = "${user}.${fqdn}";
         defaultText = literalExpression "${user}.\${fqdn}";
         example = "matomo.yourdomain.org";
-        description = lib.mdDoc ''
+        description = ''
           URL of the host, without https prefix. You may want to change it if you
           run Matomo on a different URL than matomo.yourdomain.
         '';
@@ -200,7 +200,7 @@ in {
             enableACME = false;
           }
         '';
-        description = lib.mdDoc ''
+        description = ''
             With this option, you can customize an nginx virtualHost which already has sensible defaults for Matomo.
             Either this option or the webServerUser option is mandatory.
             Set this to {} to just enable the virtualHost if you don't need any customization.

@@ -90,7 +90,7 @@ in
         example = literalExpression "pkgs.fc.agentWithSlurm";
         default = pkgs.fc.agent;
         defaultText = "pkgs.fc.agent";
-        description = lib.mdDoc ''
+        description = ''
           agent package to use.
         '';
       };

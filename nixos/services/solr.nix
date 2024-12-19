@@ -12,43 +12,43 @@ in
 {
   options = {
     services.solr = {
-      enable = mkEnableOption (lib.mdDoc "Solr");
+      enable = mkEnableOption "Solr";
 
       package = mkOption {
         type = types.package;
         default = pkgs.solr;
         defaultText = literalExpression "pkgs.solr";
-        description = lib.mdDoc "Which Solr package to use.";
+        description = "Which Solr package to use.";
       };
 
       port = mkOption {
         type = types.port;
         default = 8983;
-        description = lib.mdDoc "Port on which Solr is ran.";
+        description = "Port on which Solr is ran.";
       };
 
       stateDir = mkOption {
         type = types.path;
         default = "/var/lib/solr";
-        description = lib.mdDoc "The solr home directory containing config, data, and logging files.";
+        description = "The solr home directory containing config, data, and logging files.";
       };
 
       extraJavaOptions = mkOption {
         type = types.listOf types.str;
         default = [];
-        description = lib.mdDoc "Extra command line options given to the java process running Solr.";
+        description = "Extra command line options given to the java process running Solr.";
       };
 
       user = mkOption {
         type = types.str;
         default = "solr";
-        description = lib.mdDoc "User under which Solr is ran.";
+        description = "User under which Solr is ran.";
       };
 
       group = mkOption {
         type = types.str;
         default = "solr";
-        description = lib.mdDoc "Group under which Solr is ran.";
+        description = "Group under which Solr is ran.";
       };
     };
   };

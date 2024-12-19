@@ -71,8 +71,8 @@ in
       clusterName = mkOption {
         type = types.str;
         default = params.resource_group or "default";
-        defaultText = lib.mdDoc "*resource group name*";
-        description = lib.mdDoc ''
+        defaultText = "*resource group name*";
+        description = ''
           Name of the cluster. Defaults to the name of the resource group.
 
           The cluster name is used in various places like state files or accounting
@@ -85,7 +85,7 @@ in
         type = with types; nullOr str;
         default = null;
         example = "associations";
-        description = lib.mdDoc ''
+        description = ''
           This controls what level of association-based enforcement to impose on
           job submissions. Valid options are any combination of associations,
           limits, nojobs, nosteps, qos, safe, and wckeys, or all for all
@@ -113,7 +113,7 @@ in
       partitionName = mkOption {
         type = types.str;
         default = "all";
-        description = lib.mdDoc ''
+        description = ''
           Name of the default partition which includes the machines defined via the `nodes` option.
           Don't use `default` as partition name, it will fail!
         '';
@@ -122,15 +122,15 @@ in
       cpus = mkOption {
         type = types.ints.positive;
         default = params.cores or 1;
-        defaultText = lib.mdDoc "*number of VM cores*";
-        description = lib.mdDoc ''Number of CPU cores used by a slurm compute node.'';
+        defaultText = "*number of VM cores*";
+        description = ''Number of CPU cores used by a slurm compute node.'';
       };
 
       realMemory = mkOption {
         type = types.ints.positive;
         default = floor ((params.memory or 1024) * 0.98) - 500;
-        defaultText = lib.mdDoc "*98% of physical RAM minus 500 MiB*";
-        description = lib.mdDoc ''Memory in MiB used by a slurm compute node.'';
+        defaultText = "*98% of physical RAM minus 500 MiB*";
+        description = ''Memory in MiB used by a slurm compute node.'';
       };
 
       mungeKeyFile = mkOption {
@@ -142,8 +142,8 @@ in
       nodes = mkOption {
         type = types.listOf types.str;
         default = defaultSlurmNodes;
-        defaultText = lib.mdDoc "*all Slurm nodes in the resource group*";
-        description = lib.mdDoc ''
+        defaultText = "*all Slurm nodes in the resource group*";
+        description = ''
           Names of the nodes that are added to the automatically generated partition.
           By default, all Slurm nodes in a resource group are part of the partition
           called `partitionName`.
