@@ -79,17 +79,25 @@ let
         };
       };
 
-      environment.systemPackages = [
+      environment.systemPackages = let
+          testPackages = ([testPackage] ++ testPackage.propagatedBuildInputs ++ testPackage.checkInputs);
+          PYTHONPATH = testPackage.py.makePythonPath testPackages;
+          PATH = lib.makeBinPath testPackages;
+        in
+        [
           # Beware: never get the idea to name this script anything that matches
           # "qemu". The tests include a fixture that kills everything with the
           # substring "qemu" in it and naming this script incorrectly can cause
           # the test to kill the test runner itself which in turn causes
           # confusion that may take about 1 hour to figure out what the hell
           # is going on.
-          (pkgs.writeShellScriptBin "run-tests" ''
-            cd /root/fc.qemu
-            export PY_IGNORE_IMPORTMISMATCH=1
-            /root/fc.qemu-env/bin/pytest -vv --cov-append "$@" 2>&1
+          (pkgs.writeShellScriptBin "run-tests" # BEWARE: DO NOT RENAME!
+              ''
+            export PYTHONPATH="${PYTHONPATH}"
+            export PATH="${PATH}"
+            echo $PATH
+            cd ${testPackage.src}
+            pytest -vv --cov-append -c ${testPackage.src}/pytest.ini "$@" 2>&1
             ${if testOpts != "" then ''
             # If we run with custom test options we might be filtering
             # for tests and due to the live/not live split either phase
@@ -123,47 +131,47 @@ let
         ];
       };
 
-      system.activationScripts.fcQemuSrc = let
-        cephPkgs = config.fclib.ceph.mkPkgs "nautilus";
-        py = pkgs.python3;
-        pyPkgs = py.pkgs;
-        qemuTestEnv = py.buildEnv.override {
-          extraLibs = [
-            testPackage
+      # system.activationScripts.fcQemuSrc = let
+      #   cephPkgs = config.fclib.ceph.mkPkgs "nautilus";
+      #   py = pkgs.python3;
+      #   pyPkgs = py.pkgs;
+      #   qemuTestEnv = py.buildEnv.override {
+      #     extraLibs = [
+      #       testPackage
 
-            # Additional packages to run the tests
-            pyPkgs.pytest
-            pyPkgs.pytest-xdist
-            pyPkgs.pytest-cov
-            pyPkgs.mock
-            pyPkgs.pytest-timeout
+      #       # Additional packages to run the tests
+      #       pyPkgs.pytest
+      #       pyPkgs.pytest-xdist
+      #       pyPkgs.pytest-cov
+      #       pyPkgs.mock
+      #       pyPkgs.pytest-timeout
 
-            (pyPkgs.buildPythonPackage rec {
-              pname = "pytest-flakefinder";
-              version = "1.1.0";
+      #       (pyPkgs.buildPythonPackage rec {
+      #         pname = "pytest-flakefinder";
+      #         version = "1.1.0";
 
-              src = pyPkgs.fetchPypi {
-                inherit pname version;
-                hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
-              };
+      #         src = pyPkgs.fetchPypi {
+      #           inherit pname version;
+      #           hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
+      #         };
 
-              propagatedBuildInputs = [ pyPkgs.pytest ];
+      #         propagatedBuildInputs = [ pyPkgs.pytest ];
 
-              meta = with lib; {
-                description = "Runs tests multiple times to expose flakiness.";
-                homepage = "https://github.com/dropbox/pytest-flakefinder";
-              };
-            })
-          ];
-          # There are some namespace packages that collide on `backports`.
-          ignoreCollisions = true;
-        };
-      in ''
-        # Provide a writable copy so the coverage etc. can be recorded.
-        cp -a ${testPackage.src} /root/fc.qemu
-        chmod u+w /root/fc.qemu -R
-        ln -s ${qemuTestEnv} /root/fc.qemu-env
-      '';
+      #         meta = with lib; {
+      #           description = "Runs tests multiple times to expose flakiness.";
+      #           homepage = "https://github.com/dropbox/pytest-flakefinder";
+      #         };
+      #       })
+      #     ];
+      #     # There are some namespace packages that collide on `backports`.
+      #     ignoreCollisions = true;
+      #   };
+      # in ''
+      #   # Provide a writable copy so the coverage etc. can be recorded.
+      #   cp -a ${testPackage.src} /root/fc.qemu
+      #   chmod u+w /root/fc.qemu -R
+      #   ln -s ${qemuTestEnv} /root/fc.qemu-env
+      # '';
 
       # We need this in the enc files as well so that timer jobs can update
       # the keys etc.
@@ -198,12 +206,14 @@ let
       services.nginx.virtualHosts."host${toString id}.fe.test.fcio.net" = {
         enableACME = lib.mkForce false;
         addSSL = true;
-        sslCertificateKey = "/var/self-signed.key";
-        sslCertificate = "/var/self-signed.crt";
+        sslCertificateKey = "/var/run/nginx/self-signed.key";
+        sslCertificate = "/var/run/nginx/self-signed.crt";
       };
-      system.activationScripts.consul_certificate = ''
-        ${pkgs.openssl}/bin/openssl req -nodes -x509 -newkey rsa:4096 -keyout /var/self-signed.key -out /var/self-signed.crt -sha256 -days 365 -subj '/CN=host${toString id}'
-      '';
+      systemd.services.nginx.serviceConfig.ExecStartPre = (
+        pkgs.writeShellScript "setup-private-key" ''
+        set -ex
+        ${pkgs.openssl}/bin/openssl req -nodes -x509 -newkey rsa:4096 -keyout /var/run/nginx/self-signed.key -out /var/run/nginx/self-signed.crt -sha256 -days 365 -subj '/CN=host${toString id}'
+      '');
 
       environment.etc."nixos/enc.json".text = builtins.toJSON {
         name =  "host${toString id}";
@@ -384,6 +394,14 @@ in
     host1.execute("systemctl stop fc-ceph-mgr")
     host2.execute("systemctl stop fc-ceph-mgr")
 
+    ########################################################################
+    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
+    # interaction with Ceph will hang mysteriously!
+    ########################################################################
+
+    with subtest("Run unit tests"):
+      show(host1, "run-tests ${testOpts} -m 'not live'")
+
     with subtest("fc-qemu-scrub timer is correctly activated"):
       _, output = host1.execute("systemctl list-timers | grep fc-qemu-scrub")
       print(output)
@@ -403,17 +421,9 @@ in
     wait(show, host2, "consul members")
     wait(show, host3, "consul members")
 
-    host1.wait_for_unit("nginx")
-    host2.wait_for_unit("nginx")
-    host3.wait_for_unit("nginx")
-
-    ########################################################################
-    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
-    # interaction with Ceph will hang mysteriously!
-    ########################################################################
-
-    with subtest("Run unit tests"):
-      show(host1, "run-tests ${testOpts} -m 'not live'")
+    host1.wait_for_unit("nginx", timeout=5)
+    host2.wait_for_unit("nginx", timeout=5)
+    host3.wait_for_unit("nginx", timeout=5)
 
     with subtest("Initialize mons"):
       host1.succeed('fc-ceph osd prepare-journal /dev/vdb')
@@ -449,7 +459,7 @@ in
       host1.succeed("rbd pool init rbd.ssd")
       host1.succeed("rbd pool init rbd.hdd")
 
-      host1.succeed("rbd create --size 100 rbd.hdd/fc-21.05-dev")
+      host1.succeed("rbd create --size 500 rbd.hdd/fc-21.05-dev")
       host1.succeed("rbd map rbd.hdd/fc-21.05-dev")
       host1.succeed("sgdisk /dev/rbd0 -o -a 2048 -n 1:8192:0 -c 1:ROOT -t 1:8300")
       host1.succeed("partprobe")

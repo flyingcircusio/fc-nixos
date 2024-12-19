@@ -15,6 +15,7 @@
   parted,
   xfsprogs,
   procps,
+  file,
   systemd,
   py_pytest_patterns
 }:
@@ -45,8 +46,6 @@ let
     };
   };
 
-
-
 in
   # We use buildPythonPackage instead of buildPythonApplication
   # to assist using this in a mixed buildEnv for external unit testing.
@@ -75,14 +74,17 @@ in
       py.pyyaml
       py.setuptools
       (py.toPythonModule ceph_client)
-      # note: this is not really appropriate in theory, as test-only tooling
-      # should be part of *checkInputs instead. checkInputs vs. nativeCheckInputs
-      # needs some adaptions in more recent NixOS releases anyways, so keeping this for now.
-      py_pytest_patterns
     ];
 
+    passthru = {
+      inherit py checkInputs;
+    };
+
     checkInputs = [
+      file
+      py_pytest_patterns
       py.pytest
+      py.pytest-xdist
       py.pytest-cov
       py.pytest-timeout
       py.mock
