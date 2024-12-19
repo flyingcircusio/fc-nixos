@@ -279,7 +279,7 @@ in
     services.frr = lib.mkIf (!isNull fclib.underlay) {
       bfdd.enable = true;
       bgpd.enable = true;
-      bgp.extraOptions = [ "-p" "0" ];
+      bgpd.extraOptions = [ "-p" "0" ];
       config = ''
         frr version 8.5.1
         frr defaults datacenter
@@ -526,7 +526,7 @@ in
               # addresses. This can leave the interface without a link-local address when
               # dhcpcd deletes addresses from the interface when it exits. Resetting this
               # to 0 restores the default kernel behaviour.
-              sysctl net.ipv6.conf.$IFACE.addr_gen_mode=0
+              sysctl net.ipv6.conf.${link}.addr_gen_mode=0
 
               for oldtmp in `ip -6 address show dev ${link} dynamic scope global | grep inet6 | cut -d ' ' -f6`; do
                 ip addr del $oldtmp dev ${link}
@@ -894,32 +894,32 @@ in
     (lib.mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
       "vm.min_free_kbytes" = "513690";
 
-      "net.core.netdev_max_backlog" = "300000";
-      "net.core.optmem_max" = "65536";
-      "net.core.wmem_default" = "16777216";
-      "net.core.wmem_max" = "16777216";
-      "net.core.rmem_default" = "8388608";
-      "net.core.rmem_max" = "16777216";
-      "net.core.somaxconn" = "1024";
+      "net.core.netdev_max_backlog" = 300000;
+      "net.core.optmem_max" = 65536;
+      "net.core.wmem_default" = 16777216;
+      "net.core.wmem_max" = 16777216;
+      "net.core.rmem_default" = 8388608;
+      "net.core.rmem_max" = 16777216;
+      "net.core.somaxconn" = 1024;
 
-      "net.ipv4.tcp_fin_timeout" = "10";
-      "net.ipv4.tcp_max_syn_backlog" = "30000";
-      "net.ipv4.tcp_slow_start_after_idle" = "0";
-      "net.ipv4.tcp_syncookies" = "0";
-      "net.ipv4.tcp_timestamps" = "0";
-                                  # 1MiB   8MiB    # 16 MiB
+      "net.ipv4.tcp_fin_timeout" = 10;
+      "net.ipv4.tcp_max_syn_backlog" = 30000;
+      "net.ipv4.tcp_slow_start_after_idle" = 0;
+      "net.ipv4.tcp_syncookies" = 0;
+      "net.ipv4.tcp_timestamps" = 0;
+                            # 1MiB   8MiB    # 16 MiB
       "net.ipv4.tcp_mem" = "1048576 8388608 16777216";
       "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
       "net.ipv4.tcp_rmem" = "1048576 8388608 16777216";
 
-      "net.ipv4.tcp_tw_reuse" = "1";
+      "net.ipv4.tcp_tw_reuse" = 1;
 
       # Supposedly this doesn't do much good anymore, but in one of my tests
       # (too many, can't prove right now.) this appeared to have been helpful.
-      "net.ipv4.tcp_low_latency" = "1";
+      "net.ipv4.tcp_low_latency" = 1;
 
       # Optimize multi-path for VXLAN (layer3 in layer3)
-      "net.ipv4.fib_multipath_hash_policy" = "2";
+      "net.ipv4.fib_multipath_hash_policy" = 2;
     })];
 
     # Prevent underlay interfaces from matching the rp_filter sysctl
