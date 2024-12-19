@@ -20,7 +20,7 @@ lib.mkIf role.enable {
       maxdrift 100
       maxslewrate 100
 
-      ${lib.concatStringsSep "\n" (map (n: "allow ${n};") fclib.networks.all)}
+      ${lib.concatStringsSep "\n" (map (n: "allow ${n}") fclib.networks.all)}
 
     '';
   };

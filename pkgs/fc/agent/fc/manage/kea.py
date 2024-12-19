@@ -27,7 +27,7 @@ class ConfigRenderer(object):
         config[self.subnet_keyword] = [
             # SharedNetwork iterator guarantees stable sort order
             self.render_subnet(subnet, ident)
-            for ident, subnet in enumerate(self.shared_network, index_base)
+            for ident, subnet in enumerate(self.shared_network, ident_base)
         ]
 
         return len(self.shared_network), config
