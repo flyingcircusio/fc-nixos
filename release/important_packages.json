@@ -180,6 +180,7 @@
   "postgresqlPackages.temporal_tables",
   "powerdns",
   "prometheus",
+  "promtail",
   "prosody",
   "python3",
   "python310",
