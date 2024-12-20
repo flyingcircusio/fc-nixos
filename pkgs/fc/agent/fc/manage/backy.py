@@ -8,7 +8,9 @@ import os.path as p
 import shutil
 import socket
 import subprocess
+import sys
 import syslog
+import xmlrpc.client
 
 import fc.util.configfile
 import fc.util.directory
@@ -109,6 +111,31 @@ class BackyConfig(object):
                 shutil.rmtree(node_dir, ignore_errors=True)
 
 
+def publish():
+    a = argparse.ArgumentParser(
+        description="Helper to publish backy status to directory. Expects the actual data on stdin"
+    )
+    a.add_argument(
+        "name", metavar="<name>", help="service to publish status for"
+    )
+    args = a.parse_args()
+
+    h = logging.handlers.SysLogHandler(facility=syslog.LOG_LOCAL4)
+    logging.basicConfig(level=logging.DEBUG, handlers=[h])
+
+    xmlrpc.client.Marshaller.dispatch[int] = lambda _, v, w: w(
+        "<value><i8>%d</i8></value>" % v
+    )
+
+    try:
+        status = yaml.safe_load(sys.stdin)
+        d = fc.util.directory.connect()
+        d.publish_backup_status(args.name, status)
+    except Exception:
+        logging.exception("error publishing backy status")
+        raise
+
+
 def main():
     a = argparse.ArgumentParser(description=__doc__)
     a.add_argument(
@@ -122,12 +149,11 @@ def main():
 
     h = logging.handlers.SysLogHandler(facility=syslog.LOG_LOCAL4)
     logging.basicConfig(level=logging.DEBUG, handlers=[h])
-    with open("/etc/consul.json") as f:
-        consul_config = json.load(f)
     with open("/etc/nixos/enc.json") as f:
-        enc = json.load(f)
+        parameters = json.load(f)["parameters"]
     b = BackyConfig(
-        enc["parameters"]["location"], consul_config["acl"]["tokens"]["agent"]
+        parameters["location"],
+        parameters["secrets"]["consul/master_token"],
     )
 
     b.apply(restart=args.restart)

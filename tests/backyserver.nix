@@ -1,5 +1,5 @@
 # This is just a stub to check if backy tools are present and to build on Hydra.
-import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
+import ./make-test-python.nix ({ pkgs, lib, testlib, clientCephRelease, ... }:
 {
   name = "backyserver";
 
@@ -10,7 +10,10 @@ import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
       (testlib.fcConfig { net.fe = false; })
     ];
 
-    flyingcircus.roles.backyserver.enable = true;
+    flyingcircus.roles.backyserver = {
+      enable = true;
+      cephRelease = clientCephRelease;
+    };
     flyingcircus.services.ceph.client.enable = lib.mkForce false;
     flyingcircus.services.consul.enable = lib.mkForce false;
     flyingcircus.enc.name = "machine";

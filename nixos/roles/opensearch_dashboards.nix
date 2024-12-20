@@ -30,7 +30,7 @@ in
     flyingcircus.roles.opensearch_dashboards = {
 
       enable = mkEnableOption "Enable the Flying Circus opensearch dashboards role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       opensearchUrl = mkOption {
         type = types.nullOr types.str;

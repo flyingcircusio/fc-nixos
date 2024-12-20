@@ -8,7 +8,7 @@ in
   options = {
     flyingcircus.roles.docker = {
       enable = lib.mkEnableOption "Enable Docker";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 
@@ -28,9 +28,9 @@ in
 
         ip46tables -N fc-docker 2>/dev/null || true
         ip46tables -A fc-docker -m conntrack --ctstate RELATED,ESTABLISHED -j nixos-fw-accept
-        ip46tables -A fc-docker -i ethsrv -j fc-resource-group
-        ip46tables -A fc-docker -i ethsrv -j nixos-fw-refuse
-        ip46tables -A fc-docker -i ethfe -j nixos-fw-refuse
+        ip46tables -A fc-docker -i ${fclib.network.srv.interface} -j fc-resource-group
+        ip46tables -A fc-docker -i ${fclib.network.srv.interface} -j nixos-fw-refuse
+        ip46tables -A fc-docker -i ${fclib.network.fe.interface} -j nixos-fw-refuse
 
         ip46tables -N DOCKER-USER 2>/dev/null || true
         ip46tables -I DOCKER-USER 1 ! -i docker+ -o docker+ -j fc-docker

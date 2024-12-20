@@ -268,7 +268,7 @@ in {
         # would be interesting.
         checkConfig = false;
         dataDir = "/srv/postgresql/${cfg.majorVersion}";
-        extraPlugins = extensions;
+        extensions = extensions;
         initialScript = ./postgresql-init.sql;
         package = postgresqlPkg;
 

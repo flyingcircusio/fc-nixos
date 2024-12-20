@@ -12,7 +12,7 @@ in
 
     flyingcircus.roles.webgateway = with lib; {
       enable = mkEnableOption "FC web gateway role (nginx/haproxy)";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 

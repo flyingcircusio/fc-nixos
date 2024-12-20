@@ -1,5 +1,6 @@
 """Handle VM changes that need a cold reboot.
 """
+
 from typing import Optional
 
 import fc.util.dmi_memory

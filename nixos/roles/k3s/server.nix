@@ -311,7 +311,7 @@ in {
     flyingcircus.roles.k3s-server = {
       enable = lib.mkEnableOption
         "Enable K3s server (Kubernetes control plane, kube-dashboard) (only one per RG)";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 
@@ -463,7 +463,7 @@ in {
         "--write-kubeconfig=${defaultKubeconfig}"
         "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
         "--flannel-backend=host-gw"
-        "--flannel-iface=ethsrv"
+        "--flannel-iface=${fclib.network.srv.interface}"
         "--datastore-endpoint=postgres:///kubernetes?host=/run/postgresql"
         "--token-file=/var/lib/k3s/secret_token"
         "--data-dir=/var/lib/k3s"

@@ -7,7 +7,7 @@ import pytest
 import typer.testing
 
 CHANNEL_URL = (
-    "https://hydra.flyingcircus.io/build/138288/download/1/nixexprs" ".tar.xz"
+    "https://hydra.flyingcircus.io/build/138288/download/1/nixexprs.tar.xz"
 )
 ENVIRONMENT = "test"
 
@@ -77,7 +77,7 @@ def test_invoke_schedule(invoke_app_as_root):
 
 def test_invoke_run(invoke_app_as_root):
     invoke_app_as_root("run")
-    fc.maintenance.cli.rm.execute.assert_called_once_with(False, False)
+    fc.maintenance.cli.rm.execute.assert_called_once_with(False, False, True)
     fc.maintenance.cli.rm.postpone.assert_called_once()
     fc.maintenance.cli.rm.archive.assert_called_once()
 
@@ -88,12 +88,17 @@ def test_invoke_run_as_normal_user_should_fail(invoke_app_as_normal_user):
 
 def test_invoke_run_all_now(invoke_app_as_root):
     invoke_app_as_root("run", "--run-all-now")
-    fc.maintenance.cli.rm.execute.assert_called_once_with(True, False)
+    fc.maintenance.cli.rm.execute.assert_called_once_with(True, False, True)
 
 
 def test_invoke_run_all_now_force_run(invoke_app_as_root):
     invoke_app_as_root("run", "--run-all-now", "--force-run")
-    fc.maintenance.cli.rm.execute.assert_called_once_with(True, True)
+    fc.maintenance.cli.rm.execute.assert_called_once_with(True, True, True)
+
+
+def test_invoke_run_all_offline(invoke_app_as_root):
+    invoke_app_as_root("run", "--no-online")
+    fc.maintenance.cli.rm.execute.assert_called_once_with(False, False, False)
 
 
 def test_invoke_delete(invoke_app_as_root):

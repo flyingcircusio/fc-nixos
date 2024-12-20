@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ lib, ... }:
+import ./make-test-python.nix ({ lib, testlib, ... }:
 
 let
   userData =
@@ -45,7 +45,7 @@ in
     { pkgs, lib, config, ... }:
     {
       imports = [
-        ../nixos ../nixos/roles
+        (testlib.fcConfig { id = 1; })
       ];
 
       flyingcircus.users = {
@@ -58,7 +58,6 @@ in
         ];
       };
 
-      flyingcircus.enc.parameters.resource_group = "test";
     };
 
   testScript = ''

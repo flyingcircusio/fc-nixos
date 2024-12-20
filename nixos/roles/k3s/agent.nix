@@ -13,7 +13,7 @@ let
   agentAddress = head fclib.network.srv.v4.addresses;
   tokenFile = "/var/lib/k3s/secret_token";
   k3sFlags = [
-    "--flannel-iface=ethsrv"
+    "--flannel-iface=${fclib.network.srv.interface}"
     "--node-ip=${agentAddress}"
     "--data-dir=/var/lib/k3s"
     # k3s disables this port by default, we re-enable it to conform to
@@ -26,7 +26,7 @@ in
   options = {
     flyingcircus.roles.k3s-agent = {
       enable = lib.mkEnableOption "Enable K3s (Kubernetes) Agent Node (experimental)";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 

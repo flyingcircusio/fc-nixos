@@ -35,7 +35,7 @@ in
     flyingcircus.roles.coturn = {
       enable = mkEnableOption "Coturn TURN server";
 
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       hostName = mkOption {
         type = types.str;

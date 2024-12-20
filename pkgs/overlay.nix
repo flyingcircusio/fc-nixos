@@ -1,10 +1,16 @@
 self: super:
 let
-  versions = import ../versions.nix { pkgs = super; };
+  poetry2nixSrc = (import ../versions.nix { }).poetry2nix;
+  poetry2nix = import poetry2nixSrc { pkgs = self; };
+
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
     {} super;
+
+  nixpkgs-21_05-src = (import ../versions.nix { }).nixpkgs-21_05;
+  fc-nixos-21_05-src = (import ../versions.nix { }).fc-nixos-21_05;
+  fc-nixos-21_05 = import fc-nixos-21_05-src {inherit (self) config; nixpkgs = nixpkgs-21_05-src; };
 
   inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
   inherit (builtins) hasAttr storePath;
@@ -24,12 +30,41 @@ let
     hash = "sha256-ttHjEOGJomjs10PRtM2C6OLX9LCvboxyDSKdZZHanFQ=";
   };
   # we need to use overrideAttrs, as the `extraPatches` function argument of the generic PHP builder is
-  # redefined and replaced ba the specific version builder.
+  # redefined and replaced by the specific version builder.
   patchPhps = patch: phpPkg: phpPkg.overrideAttrs (prev: {
     patches = (prev.patches or []) ++ (prev.extraPatches or []) ++ [ patch ];
   });
 
+  additionalPythonPackages = python-self: python-super: {
+    pytest_patterns = python-self.callPackage ./python/pytest-patterns { };
+  };
+  # custom additional python packages need to be embedded in the relevant
+  # `pythonXYPackages` sets to make them select the correct dependencies and
+  # interpreters. To have the package available in all of them, we generate
+  # overrides here.
+  genPythonWithVersion = pythonVersion: {
+    "python${pythonVersion}" = let
+      # this `self` denotes the python interpreter, not the overlay self.
+      pyself = super."python${pythonVersion}".override {self = pyself; packageOverrides = additionalPythonPackages;};
+    in pyself;
+    "python${pythonVersion}Packages" = self."python${pythonVersion}".pkgs;
+  };
+
 in
+genPythonWithVersion ""
+//
+genPythonWithVersion "3"
+//
+genPythonWithVersion "39"
+//
+genPythonWithVersion "310"
+//
+genPythonWithVersion "311"
+//
+genPythonWithVersion "312"
+//
+genPythonWithVersion "313"
+//
 builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   #
   # == we need to patch upstream PHP for more liberal fpm log file permissions
@@ -56,8 +91,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     pkgs = self;
     # Only used by the agent for now but we should probably use this
     # for all our Python packages and update Python in sync then.
-    pythonPackages = self.python311Packages;
+    pythonPackages = self.python312Packages;
   });
+
+  backy = self.callPackage ./backy { };
 
   #
   # imports from other nixpkgs versions or local definitions
@@ -66,6 +103,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   apacheHttpdLegacyCrypt = self.apacheHttpd.override {
     aprutil = self.aprutil.override { libxcrypt = self.libxcrypt-legacy; };
   };
+
+  bird2 = super.bird2.overrideAttrs (old: rec {
+    version = "2.0.10";
+    src = fetchurl {
+      url = "ftp://bird.network.cz/pub/bird/${super.bird2.pname}-${version}.tar.gz";
+      sha256 = "sha256-ftNB3djch/qXNlhrNRVEeoQ2/sRC1l9AIhVaud4f/Vo=";
+    };
+  });
 
   inherit (super.callPackage ./boost { }) boost159;
 
@@ -79,11 +124,13 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   check_md_raid = super.callPackage ./check_md_raid { };
   check_megaraid = super.callPackage ./check_megaraid { };
 
-  # XXX: ceph doesn't build
-  # ceph = (super.callPackage ./ceph {
-  #     pythonPackages = super.python3Packages;
-  #     boost = super.boost155;
-  # });
+  # default ceph packages
+  inherit (self.ceph-nautilus) ceph ceph-client libceph;
+  # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
+  ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
+  consul = fc-nixos-21_05.consul.overrideAttrs (old:
+    { meta.mainProgram = "consul"; }
+  );
 
   docsplit = super.callPackage ./docsplit { };
 
@@ -94,7 +141,43 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     meta = builtins.removeAttrs old.meta [ "knownVulnerabilites" ];
   });
 
+  dstat = super.dstat.overrideAttrs(old: rec {
+    patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
+  });
+
+  ipxe = super.callPackage ./ipxe.nix { };
+
+  frr = super.frr.overrideAttrs (old: rec {
+    version = "8.5.6";
+    src = super.fetchFromGitHub {
+      owner = "FRRouting";
+      repo = old.pname;
+      rev = "${old.pname}-${version}";
+      hash = "sha256-/36R0YXpIZTGe6EQCNNRLBQ0LrKw7ZCDcFKIdiNPhh8=";
+    };
+
+    patches = [
+      ./frr/0001-Don-t-throw-error-when-log-directory-already-exists.patch
+    ];
+  });
+
   innotop = super.callPackage ./percona/innotop.nix { };
+
+  ipmitool = super.ipmitool.overrideAttrs(a: a // {
+    buildInputs = a.buildInputs ++ [ super.ncurses super.readline ];
+  });
+
+  keepalived = super.keepalived.overrideAttrs(_: rec {
+    version = "2.2.8-g9d4579";
+
+    src = super.fetchFromGitHub {
+      rev = "9d4579b706048d55da664cf0e09b8dfd409c0266";
+      owner = "acassen";
+      repo = "keepalived";
+      sha256 = "gUW8PQoqQJipShxu3l8hSgLVNGS/KCS7SpATNHWh7nI=";
+    };
+
+  });
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
@@ -192,7 +275,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
                all.redis
              ]));
 
-  #PHP versions from nixpkgs
+  # PHP versions from nixpkgs
 
   lamp_php81 = self.php81.withExtensions ({ enabled, all }:
               enabled ++ [
@@ -221,6 +304,13 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   latencytop_nox = super.latencytop.overrideAttrs(_: {
     buildInputs = with self; [ ncurses glib ];
     makeFlags = [ "HAS_GTK_GUI=" ];
+  });
+
+  libpcap-vxlan = super.libpcap.overrideAttrs (old: {
+    pname = "libpcap-vxlan";
+    patches = old.patches or [] ++ [
+      ./libpcap-replace-geneve-with-vxlan.patch
+    ];
   });
 
   libxcrypt-with-sha256 = super.libxcrypt.override {
@@ -366,6 +456,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
 
+  # fetched from a different flake input, but make easily available via our overlay
+  inherit poetry2nix;
+
   postfix = super.postfix.override {
     cyrus_sasl = self.cyrus_sasl-legacyCrypt;
   };
@@ -381,8 +474,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     ];
   });
 
+  python38 = lib.dontRecurseIntoAttrs fc-nixos-21_05.python38;
+  python38Packages = lib.dontRecurseIntoAttrs fc-nixos-21_05.python38Packages;
+  py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
+
   # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
   pypolicyd-spf = self.spf-engine;
+
+  qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
 
   rabbitmq-server_3_8 = super.rabbitmq-server;
 
@@ -416,6 +515,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   sensu-plugins-redis = getClosureFromStore /nix/store/qbqnynpw5mzx98nz8lx89gpjw91wyd5b-sensu-plugins-redis-4.1.0;
 
   solr = super.callPackage ./solr { };
+
+  tcpdump = (super.tcpdump.override {
+    libpcap = self.libpcap-vxlan;
+  }).overrideAttrs(old: {
+    pname = "tcpdump-vxlan";
+  });
 
   xtrabackup = self.percona-xtrabackup_8_0;
 }

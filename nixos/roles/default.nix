@@ -9,6 +9,7 @@ in {
     ./antivirus.nix
     ./backyserver.nix
     ./coturn.nix
+    ./consul
     ./docker.nix
     ./ceph/mon.nix
     ./ceph/osd.nix
@@ -19,6 +20,7 @@ in {
     ./gitlab.nix
     ./jitsi
     ./k3s
+    ./kvm.nix
     ./lamp.nix
     ./loki.nix
     ./mailout.nix
@@ -34,6 +36,7 @@ in {
     ./postgresql.nix
     ./rabbitmq.nix
     ./redis.nix
+    ./router
     ./servicecheck.nix
     ./slurm
     ./statshost
@@ -58,7 +61,7 @@ in {
   options = {
     flyingcircus.roles.generic = {
       enable = lib.mkEnableOption "Generic role, which does nothing";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 

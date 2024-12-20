@@ -116,10 +116,12 @@ let
                 attrPath = visitedAttrPath ++ [n];
                 dottedName = (lib.concatStringsSep "." attrPath);
                 shouldRecurse = (isAttrs v && v.recurseForDerivations or false);
-              in
+              in lib.traceValFn (v: if builtins.isAttrs v
+                then "getDottedPackageNames in attrset with ${builtins.attrNames v}\n\n"
+                else "getDottedPackageNames on ${toString v}\n\n") (
                 if lib.isDerivation v then dottedName
                 else if shouldRecurse then getDottedPackageNames v attrPath
-                else null)
+                else null))
             attrs)));
 
   # Exclude packages from being built by Hydra.

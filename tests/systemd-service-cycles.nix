@@ -1,4 +1,4 @@
-import ./make-test-python.nix ({ ... }:
+import ./make-test-python.nix ({ testlib, ... }:
 
 # Checks that systemd does not detect any circular service dependencies on boot.
 {
@@ -6,7 +6,7 @@ import ./make-test-python.nix ({ ... }:
   nodes.machine =
     { ... }:
     {
-      imports = [ ../nixos ../nixos/roles ];
+      imports = [ (testlib.fcConfig {}) ];
     };
 
   testScript = ''

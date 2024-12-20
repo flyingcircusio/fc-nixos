@@ -1,7 +1,7 @@
 import os
 import traceback
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import fc.manage.manage
 import fc.util.enc
@@ -11,6 +11,7 @@ from fc.util import nixos
 from fc.util.config import parse_agent_config
 from fc.util.constants import DEFAULT_AGENT_CONFIG_FILE
 from fc.util.lock import locked
+from fc.util.nixos import Specialisation
 from fc.util.typer_utils import FCTyperApp
 from typer import Argument, Exit, Option
 
@@ -30,6 +31,11 @@ context: Context
 
 
 app = FCTyperApp("fc-manage")
+
+EXISTING_SPECIALISATIONS = [
+    p.name
+    for p in Path("/nix/var/nix/profiles/system/").glob("specialisation/*")
+]
 
 
 @app.command()
@@ -91,6 +97,18 @@ def dry_activate(
 
 @app.command(name="switch")
 def switch_cmd(
+    specialisation_name: Optional[str] = Option(
+        None,
+        "--specialisation",
+        "-s",
+        help="Which system specialisation to activate. Choices: "
+        + ", ".join(EXISTING_SPECIALISATIONS),
+    ),
+    to_base_configuration: bool = Option(
+        False,
+        "--base-system",
+        help="Activate the base system without specialisation.",
+    ),
     update_enc_data: bool = Option(
         False,
         "--update-enc",
@@ -121,19 +139,39 @@ def switch_cmd(
         "fc-manage-start", _replace_msg="fc-manage started with PID: {pid}"
     )
 
+    if specialisation_name and to_base_configuration:
+        log.error("invalid-args")
+        raise Exit(1)
+
+    if specialisation_name:
+        if specialisation_name not in EXISTING_SPECIALISATIONS:
+            log.error(
+                "invalid-specialisation", specialisation=specialisation_name
+            )
+            raise Exit(1)
+        specialisation = specialisation_name
+    elif to_base_configuration:
+        specialisation = Specialisation.BASE_CONFIG
+    else:
+        specialisation = Specialisation.KEEP_CURRENT
+
     with locked(log, context.lock_dir):
         if update_enc_data:
             fc.util.enc.update_enc(log, context.tmpdir, context.enc_path)
 
         enc = fc.util.enc.load_enc(log, context.enc_path)
 
-        keep_cmd_output = fc.manage.manage.initial_switch_if_needed(log, enc)
+        keep_cmd_output = fc.manage.manage.initial_switch_if_needed(
+            log, enc, context.lock_dir
+        )
 
         try:
             if update_channel:
                 keep_cmd_output |= fc.manage.manage.switch_with_update(
                     log=log,
                     enc=enc,
+                    specialisation=specialisation,
+                    lock_dir=context.lock_dir,
                     lazy=lazy,
                     show_trace=context.show_trace or show_trace,
                 )
@@ -141,6 +179,8 @@ def switch_cmd(
                 keep_cmd_output |= fc.manage.manage.switch(
                     log=log,
                     enc=enc,
+                    specialisation=specialisation,
+                    lock_dir=context.lock_dir,
                     lazy=lazy,
                     show_trace=context.show_trace or show_trace,
                 )
@@ -149,6 +189,59 @@ def switch_cmd(
 
         if not keep_cmd_output:
             fc.util.logging.drop_cmd_output_logfile(log)
+
+    log.info("fc-manage-succeeded")
+
+
+@app.command()
+def activate_configuration(
+    specialisation_name: Optional[str] = Option(
+        None,
+        "--specialisation",
+        "-s",
+        help="Which system specialisation to activate. Choices: "
+        + ", ".join(EXISTING_SPECIALISATIONS),
+    ),
+    to_base_configuration: bool = Option(
+        False,
+        "--base-system",
+        help="Activate the base system without specialisation.",
+    ),
+    lazy: bool = Option(
+        False,
+        help="Skip the system activation script if system is unchanged.",
+    ),
+):
+    fc.util.logging.init_logging(
+        context.verbose, context.logdir, log_cmd_output=True
+    )
+    log = structlog.get_logger()
+    log.info(
+        "fc-manage-start", _replace_msg="fc-manage started with PID: {pid}"
+    )
+
+    if specialisation_name and to_base_configuration:
+        log.error("invalid-args")
+        raise Exit(1)
+
+    if specialisation_name:
+        if specialisation_name not in EXISTING_SPECIALISATIONS:
+            log.error(
+                "invalid-specialisation", specialisation=specialisation_name
+            )
+            raise Exit(1)
+        specialisation = specialisation_name
+    elif to_base_configuration:
+        specialisation = Specialisation.BASE_CONFIG
+    else:
+        specialisation = Specialisation.KEEP_CURRENT
+
+    fc.manage.manage.switch_to_configuration(
+        log=log,
+        specialisation=specialisation,
+        lock_dir=context.lock_dir,
+        lazy=lazy,
+    )
 
     log.info("fc-manage-succeeded")
 
@@ -182,6 +275,18 @@ def fc_manage(
         "--channel",
         "-c",
         help="(legacy flag) Update channel, build, switch.",
+    ),
+    specialisation_name: Optional[str] = Option(
+        None,
+        "--specialisation",
+        "-s",
+        help="Which system specialisation to activate. Choices: "
+        + ", ".join(EXISTING_SPECIALISATIONS),
+    ),
+    to_base_configuration: bool = Option(
+        False,
+        "--base-system",
+        help="Activate the base system without specialisation.",
     ),
     update_enc_data: bool = Option(
         False, "--directory", "-e", help="(legacy flag) Update inventory data."
@@ -275,6 +380,22 @@ def fc_manage(
         legacy_call=True,
     )
 
+    if specialisation_name and to_base_configuration:
+        log.error("invalid-args")
+        raise Exit(1)
+
+    if specialisation_name:
+        if specialisation_name not in EXISTING_SPECIALISATIONS:
+            log.error(
+                "invalid-specialisation", specialisation=specialisation_name
+            )
+            raise Exit(1)
+        specialisation = specialisation_name
+    elif to_base_configuration:
+        specialisation = Specialisation.BASE_CONFIG
+    else:
+        specialisation = Specialisation.KEEP_CURRENT
+
     with locked(log, lock_dir):
         if update_enc_data:
             fc.util.enc.update_enc(log, tmpdir, enc_path)
@@ -284,7 +405,9 @@ def fc_manage(
 
         if switch or switch_with_update:
             keep_cmd_output = fc.manage.manage.initial_switch_if_needed(
-                log, enc
+                log,
+                enc,
+                lock_dir,
             )
 
         try:
@@ -292,6 +415,8 @@ def fc_manage(
                 keep_cmd_output |= fc.manage.manage.switch_with_update(
                     log=log,
                     enc=enc,
+                    specialisation=specialisation,
+                    lock_dir=lock_dir,
                     lazy=False,
                     show_trace=show_trace,
                 )
@@ -299,6 +424,8 @@ def fc_manage(
                 keep_cmd_output |= fc.manage.manage.switch(
                     log=log,
                     enc=enc,
+                    specialisation=specialisation,
+                    lock_dir=lock_dir,
                     lazy=False,
                     show_trace=show_trace,
                 )

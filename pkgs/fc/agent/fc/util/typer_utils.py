@@ -26,7 +26,7 @@ class FCTyperApp(typer.Typer):
                         command=self.command_name,
                         _log_settings=dict(console_ignore=True),
                     )
-                except:
+                except:  # noqa
                     # Raise the original exception when logging fails.
                     print("WARNING: logging an unhandled exception failed.")
                     raise e

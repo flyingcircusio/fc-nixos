@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Usage: eval `./dev-setup2`
+set -e
+
+# ensure PWD is the directory this script resides in (allows calls like ../dev-setup or $HOME/fc-nixos/dev-setup)
+cd "$(dirname "$(readlink -f "$0")")"
+
+base=$PWD
+# preserve nixos-config
+config=$(nix-instantiate --find-file nixos-config 2>/dev/null) || true
+
+# bootstrapping with what we find on the system
+if [[ ! -e /tmp/nixos-2411-bootstrap/nixpkgs ]]; then
+    rm -rf /tmp/nixos-2411-bootstrap
+    mkdir /tmp/nixos-2411-bootstrap
+    cd /tmp/nixos-2411-bootstrap
+    curl -o nixpkgs.tar.gz -L https://github.com/flyingcircusio/nixpkgs/archive/refs/heads/nixos-24.11.tar.gz
+    tar xf nixpkgs.tar.gz
+    ln -s nixpkgs-nixos-24.11 nixpkgs
+fi
+cd $base
+NIX_PATH="/tmp/nixos-2411-bootstrap"
+export NIX_PATH
+channels=`nix-build -Q --quiet versions.nix -A allUpstreams --no-out-link`
+if [[ -z $channels ]]; then
+    echo "$0: failed to build nixpkgs+overlay" >&2
+    exit 1
+fi
+mkdir -p channels
+find $channels -maxdepth 1 -type l | while read channel; do
+    target="channels/${channel##*/}"
+    # don't toucn anything which is not a link into the nix store
+    if [[ ! -L $target && -d $target ]]; then
+        echo "$0: warning: $target appears to be a local dev checkout" >&2
+        continue
+    elif [[ -L $target && $(readlink $target) != /nix/store/* ]]; then
+        echo "$0: warning: $target appears to be a local dev checkout" >&2
+        continue
+    fi
+    ln -fs $channel channels
+done
+if ! [[ -e channels/fc ]]; then
+    ln -s .. channels/fc
+fi
+
+NIX_PATH="$base/channels"
+if [[ -n "$config" ]]; then
+    NIX_PATH="${NIX_PATH}:nixos-config=$config"
+else
+    NIX_PATH="${NIX_PATH}:nixos-config=${base}/nixos"
+fi
+
+echo "export NIX_PATH=$NIX_PATH"

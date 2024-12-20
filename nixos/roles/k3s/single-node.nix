@@ -67,7 +67,7 @@ in {
     flyingcircus.roles.k3s-single-node = {
       enable = lib.mkEnableOption
         "Enable K3s everything on one node (Kubernetes control plane, kube-dashboard) (only one per RG)";
-      supportsContainers = fclib.mkDisableContainerSupport;
+      supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
 

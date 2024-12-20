@@ -78,16 +78,20 @@ rec {
   # Allow overrides with default priority (100) but override mkPlatform
   # defaults, i.e. for containers.
   mkPlatformOverride = lib.mkOverride 850;
+  # Override configuration set in upstream modules with the default
+  # priority (100), but allow hosts to override further with
+  # mkForce. Intentionally verbose.
+  mkOverrideUpstreamModule = lib.mkOverride 75;
 
-  mkDisableContainerSupport = lib.mkOption {
+  mkDisableDevhostSupport = lib.mkOption {
     type = lib.types.bool;
-    description = "This role is not compatible with (dev) containers.";
+    description = "This role is not compatible with devhost.";
     default = false;
   };
 
-  mkEnableContainerSupport = lib.mkOption {
+  mkEnableDevhostSupport = lib.mkOption {
     type = lib.types.bool;
-    description = "This role is compatible with (dev) containers.";
+    description = "This role is compatible with devhost.";
     default = true;
   };
 

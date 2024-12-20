@@ -9,7 +9,7 @@ in
 
     flyingcircus.roles.nginx = {
       enable = mkEnableOption "FC nginx role";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 

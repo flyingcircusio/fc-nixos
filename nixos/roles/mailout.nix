@@ -10,7 +10,7 @@ in {
   options = {
     flyingcircus.roles.mailout = {
       enable = lib.mkEnableOption "Deprecated: use mailstub instead";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
     };
   };
 

@@ -23,7 +23,8 @@
   description = "Flying Circus NixOS platform (dev/release tooling)";
 
   inputs = {
-    nixpkgs.url = "github:flyingcircusio/nixpkgs/nixos-24.11";
+    #nixpkgs.url = "github:flyingcircusio/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:flyingcircusio/nixpkgs/PL-132122-scripted-network-interfaces";
     nixos-mailserver = {
       url = "gitlab:flyingcircus/nixos-mailserver/nixos-24.05?host=gitlab.flyingcircus.io";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -34,6 +35,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-parts.url = "github:hercules-ci/flake-parts";
+    poetry2nix = {
+      url = "github:nix-community/poetry2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nixpkgs-21_05.url = "github:flyingcircusio/nixpkgs/nixos-21.05";
+    fc-nixos-21_05 = {
+      url = "github:flyingcircusio/fc-nixos/fc-21.05-production";
+      flake = false;
+    };
   };
 
   outputs = inputs@{ flake-parts, ... }:
@@ -130,6 +140,24 @@
                 fetchSubmodules = false;
                 deepClone = false;
                 leaveDotGit = false;
+              };
+              poetry2nix = with inputs.poetry2nix; {
+                inherit rev;
+                hash = narHash;
+                owner = "nix-community";
+                repo = "poetry2nix";
+              };
+              nixpkgs-21_05 = with inputs.nixpkgs-21_05; {
+                inherit rev;
+                hash = narHash;
+                owner = "flyingcircusio";
+                repo = "nixpkgs";
+              };
+              fc-nixos-21_05 = with inputs.fc-nixos-21_05; {
+                inherit rev;
+                hash = narHash;
+                owner = "flyingcircusio";
+                repo = "fc-nixos";
               };
             }
           );

@@ -56,6 +56,13 @@ in
     relay.wait_for_unit("nginx.service")
     relay.wait_for_open_port(9090)
 
+    print("statshost")
+    print(statshost.execute("ip -4 a")[1])
+    print(statshost.execute("ping -c 3 relay")[1])
+
+    print("relay")
+    print(relay.execute("ip -4 a")[1])
+
     with subtest("scrapeconfig.json from relay should return config"):
       statshost.wait_until_succeeds('curl -sSf relay:9090/scrapeconfig.json')
       statshost.succeed('curl relay:9090/scrapeconfig.json | grep -q statsSource:9126')

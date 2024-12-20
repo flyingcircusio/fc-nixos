@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 @contextlib.contextmanager
-def locked(log, lockdir, lockfile_name="fc-agent.lock"):
+def locked(log, lockdir: Path | str, lockfile_name="fc-agent.lock"):
     """Execute the associated with-block exclusively.
 
     A lockfile will be created as necessary. Once the exclusive lock has

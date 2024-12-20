@@ -42,7 +42,7 @@ rec {
     Parameters:
 
       id
-        Number of the test node in alphabetic ordered, starting from 1.
+        Number of the test node in alphabetic order, starting from 1.
 
         Example: IDs for the following servers would be assigned:
 
@@ -82,10 +82,20 @@ rec {
 
   fcConfig = {
     id ? 1,
-    net ? {},
-    resource_group ? "test", location ? "test", secrets ? {},
+    net ? {}, 
+    resource_group ? "test",
+    location ? "test",
+    secrets ? {},
     extraEncParameters ? {},
   }: { config, ... }:
+  let
+    # This is a dance around enabling/disabling and defining defaults of 
+    # which VLANs/interface to enable in a test that can be overriden.
+    network_options = mapAttrs (name: val: false) vlans;
+    chosen_networks = (network_options // { srv = true; fe = true; } // net);
+    active_vlan_attrs = 
+      filterAttrs (name: vid: chosen_networks.${name}) vlans;
+  in
   {
     imports = [
       ../nixos
@@ -114,8 +124,13 @@ rec {
             "2001:db8:${toString vid}::/64" = [ "2001:db8:${toString vid}::${toString id}" ];
           };
           gateways = {};
-        })
-          (filterAttrs (name: vid: (!(net ? ${name}) && (name == "srv" || name == "fe")) || net ? ${name} && net.${name}) vlans);
+          nics = [
+            {
+              "mac" = "52:54:00:12:0${toString vid}:0${toString id}"; 
+              "external_label" = "${name}nic${toString id}";
+            }
+          ];
+        }) active_vlan_attrs;
       } extraEncParameters);
     };
   };

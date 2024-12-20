@@ -54,7 +54,7 @@ in
 
     flyingcircus.roles.opensearch = {
       enable = mkEnableOption "Enable the Flying Circus OpenSearch role.";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       clusterName = mkOption {
         type = types.str;

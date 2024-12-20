@@ -7,7 +7,7 @@ in {
   options = with lib; {
     flyingcircus.roles.lamp = {
       enable = mkEnableOption "Flying Circus LAMP stack";
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       useFPM = fclib.mkObsoleteOption "FPM is always used now.";
 

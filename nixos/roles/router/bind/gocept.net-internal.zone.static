@@ -1,0 +1,8 @@
+$INCLUDE "/etc/bind/pri/gocept.net.zone.static"
+$ORIGIN gocept.net.
+
+; nameservers - keep in sync with reverses
+; dev-router.fe
+ns.dev                  A       172.20.2.1
+
+; vim: set et ts=8 sts=8 ft=bindzone:

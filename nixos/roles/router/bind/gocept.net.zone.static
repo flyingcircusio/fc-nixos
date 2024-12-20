@@ -1,0 +1,56 @@
+$ORIGIN gocept.net.
+@                       MX      10 mail.flyingcircus.io.
+@                       A       195.62.125.26
+@                       AAAA    2a02:248:101:62::103a
+
+ns1                     CNAME   ns1.gocept.com.
+ns2                     CNAME   ns2.gocept.com.
+
+; generic services
+; these aliases must match values in location.pp (if applicable)
+mail                    AAAA    2a02:248:101:62::19
+mail                    A       195.62.125.19
+www                     CNAME   gocept.net.
+_http._tcp              SRV     10 0 80 gocept.com.
+servercept              A       195.62.125.27
+fettealtedreckigeratte  CNAME   servercept
+
+; === DEV ===
+puppet.dev              CNAME   services07
+ftp.dev                 CNAME   services07.fe.dev
+directory.dev           CNAME   services07.fe.dev
+monitor.dev             CNAME   services08.fe.dev
+sensu.dev               CNAME   services12.fe.dev
+portage-bin-x86.dev     CNAME   services03.fe.dev
+portage-bin-amd64.dev   CNAME   lovejoy.fe.dev
+; dev-router.fe
+ns.dev                  AAAA    2a02:238:f030:1c2::1
+ns2.dev                 CNAME   ns.dev
+
+; === WHQ ===
+puppet.whq              CNAME   services06
+ftp.whq                 CNAME   services06.fe.whq
+monitor.whq             CNAME   services09.fe.whq
+sensu.whq               CNAME   services13.fe.whq
+portage-bin-x86.whq     CNAME   services00.fe.whq
+; whq-router.fe
+ns.whq                  A       212.122.41.129
+                        AAAA    2a02:238:f030:102::1
+ns2.whq                 CNAME   ns.whq
+
+; === RZOB ===
+kenny06                 CNAME   rzob-router
+kenny07                 CNAME   rzob-router
+puppet.rzob             CNAME   services04
+ftp.rzob                CNAME   services04.fe.rzob
+monitor.rzob            CNAME   services10.fe.rzob
+sensu.rzob              CNAME   services14.fe.rzob
+ldap.rzob           300 CNAME   ldap.fcio.net.
+portage-bin-x86.rzob    CNAME   services02.fe.rzob
+portage-bin-amd64.rzob  CNAME   apu.fe.rzob
+; rzob-router.fe
+ns.rzob                 A       195.62.125.1
+                        AAAA    2a02:248:101:62::1
+ns2.rzob                CNAME   ns.rzob
+
+; vim: set et ts=8 sts=8 ft=bindzone:

@@ -1,6 +1,7 @@
 import shlex
 import textwrap
 import unittest.mock
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -13,6 +14,18 @@ structlog.configure(wrapper_class=structlog.BoundLogger)
 FC_CHANNEL = (
     "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
 )
+
+
+def test_get_fc_channel_build(log):
+    build = nixos.get_fc_channel_build(FC_CHANNEL)
+    assert build == "93111"
+
+
+def test_get_fc_channel_build_should_warn_for_non_fc_channel(log):
+    invalid_channel = "http://invalid"
+    build = nixos.get_fc_channel_build(invalid_channel)
+    assert build is None
+    log.has("no-fc-channel-url", channel_url=invalid_channel)
 
 
 def test_get_fc_channel_build(log):
@@ -144,7 +157,9 @@ def test_build_system_fail(log, monkeypatch):
 
 
 def test_switch_to_system(log, monkeypatch):
-    system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
+    system_path = Path(
+        "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
+    )
     switch_output = textwrap.dedent(
         """
         updating GRUB 2 menu...
@@ -165,7 +180,10 @@ def test_switch_to_system(log, monkeypatch):
 
     popen_mock = mock.Mock(return_value=switch_fake)
     monkeypatch.setattr("subprocess.Popen", popen_mock)
-    monkeypatch.setattr("os.path.realpath", lambda p: "other")
+    monkeypatch.setattr(
+        "pathlib.Path.resolve",
+        lambda p: system_path if p == system_path else "other",
+    )
 
     changed = nixos.switch_to_system(system_path, lazy=True)
     assert changed
@@ -173,7 +191,7 @@ def test_switch_to_system(log, monkeypatch):
 
 def test_switch_to_system_lazy_unchanged(log, monkeypatch):
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
-    monkeypatch.setattr("os.path.realpath", lambda p: system_path)
+    monkeypatch.setattr("pathlib.Path.resolve", lambda p: system_path)
 
     changed = nixos.switch_to_system(system_path, lazy=True)
     assert not changed

@@ -1,0 +1,69 @@
+#!ipxe
+
+
+# 30s in ms
+set menu-timeout 30000
+
+iseq ${platform} efi && set menu-default local_efi || set menu-default local_bios
+
+set location whq
+
+# Lets assume network has already been initialized from our ipxe bootstrap script and we'd like to save time here.
+# dhcp || error
+
+:start
+menu Flying Circus boot menu
+item --gap --               --- Info ---
+item --gap --               Serial: ${serial}
+item --gap --               MAC: ${mac}
+item --gap --               Location: ${location}
+item --gap --               Platform: ${platform}
+item --gap --               --- Boot ---
+item local_bios             Boot machine from local disk (BIOS)
+item local_efi              Boot machine from local disk (EFI)
+item netboot                Launch netboot.xyz (various live images and tools)
+item --gap --               --- Install ---
+item install_nixos_20_09    Boot NixOS 20.09 install image
+item install_nixos_21_05    Boot NixOS 21.05 install image
+item install_nixos_dev      Boot NixOS development install image
+item --gap --               --- Other ---
+item --key x exit           Exit iPXE and continue BIOS boot
+item shell                  Drop to iPXE shell
+item reboot                 Reboot computer
+choose --timeout ${menu-timeout} --default ${menu-default} selected || goto cancel
+set menu-timeout 0
+goto ${selected}
+
+:install_nixos_20_09
+boot https://hydra.flyingcircus.io/job/flyingcircus/fc-20.09-production/images.netboot/latest/download/netboot.ipxe || goto error
+
+:install_nixos_21_05
+boot https://hydra.flyingcircus.io/job/flyingcircus/fc-21.05-production/images.netboot/latest/download/netboot.ipxe || goto error
+
+:install_nixos_dev
+boot https://hydra.flyingcircus.io/channels/installer/dev/netboot.ipxe || goto error
+
+:netboot
+chain --autofree https://boot.netboot.xyz
+goto start
+
+:local_bios
+sanboot || error
+
+:local_efi
+sanboot --drive 0 || error
+
+:reboot
+reboot
+
+:shell
+echo Type 'exit' to get the back to the menu
+shell
+set menu-timeout 0
+set submenu-timeout 0
+goto start
+
+:error
+echo An error occured. Will fall back to menu in 15 seconds.
+sleep 15
+goto start

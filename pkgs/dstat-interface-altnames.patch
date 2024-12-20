@@ -1,0 +1,46 @@
+From 1eaf72a37ac9d4d960c0872c3992be725a7d222e Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Wed, 7 Feb 2024 09:30:54 +0100
+Subject: [PATCH] Use canonical network interface names from the kernel.
+
+Under Linux it's possible for network interfaces to have alias
+names (or "altnames"), added by "ip link property add
+altname". However, /proc/net/dev only lists interfaces with their
+canonical names, which means that dstat will reject alias names as
+unknown. Instead, use if_nametoindex(3) and if_indextoname(3) to
+discover the canonical names of the user-specified interfaces.
+---
+ dstat | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/dstat b/dstat
+index 9359965..799d523 100755
+--- a/dstat
++++ b/dstat
+@@ -30,6 +30,7 @@ import re
+ import resource
+ import sched
+ import six
++import socket
+ import sys
+ import time
+ 
+@@ -1343,7 +1344,14 @@ class dstat_net(dstat):
+     def vars(self):
+         ret = []
+         if op.netlist:
+-            varlist = op.netlist
++            varlist = []
++            for iface in op.netlist:
++                try:
++                    idx = socket.if_nametoindex(iface)
++                    name = socket.if_indextoname(idx)
++                    varlist.append(name)
++                except OSError:
++                    pass
+         elif not op.full:
+             varlist = ('total',)
+         else:
+-- 
+2.39.3 (Apple Git-145)
+

@@ -71,8 +71,10 @@ buildPythonPackage rec {
     nix
     py.click
     py.colorama
+    py.configobj
     py.python-dateutil
     py.iso8601
+    py.netaddr
     py.pendulum
     py.pytz
     py.requests
@@ -106,5 +108,11 @@ buildPythonPackage rec {
   passthru.pythonDevEnv = python.withPackages (_:
     checkInputs ++ [ py.pytest ] ++ propagatedBuildInputs
   );
+
+  outputs = [ "out" "qa" ];
+
+  postCheck = ''
+    cp -a htmlcov/ $qa/
+  '';
 
 }

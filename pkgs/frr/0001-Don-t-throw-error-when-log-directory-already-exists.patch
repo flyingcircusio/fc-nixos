@@ -1,0 +1,26 @@
+From f90575e52f2acd2f857cfc580bd5063a7a5c6032 Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Wed, 26 Jun 2024 17:08:15 +0200
+Subject: [PATCH] Don't throw error when log directory already exists
+
+Co-authored-by: Christian Theune <ct@flyingcircus.io>
+---
+ tools/frr-reload.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/frr-reload.py b/tools/frr-reload.py
+index 7e5a6d284..91d2a3e81 100755
+--- a/tools/frr-reload.py
++++ b/tools/frr-reload.py
+@@ -1869,7 +1869,7 @@ if __name__ == "__main__":
+ 
+     elif args.reload:
+         if not os.path.isdir("/var/log/frr/"):
+-            os.makedirs("/var/log/frr/", mode=0o0755)
++            os.makedirs("/var/log/frr/", mode=0o0755, exist_ok=True)
+ 
+         logging.basicConfig(
+             filename="/var/log/frr/frr-reload.log",
+-- 
+2.39.3 (Apple Git-146)
+

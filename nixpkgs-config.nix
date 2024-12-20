@@ -6,6 +6,7 @@
     # fc-sensuplugins and thus needed on all machines. Should be moved to
     # the raid service after decoupling fc-sensuplugins.
     "megacli"
+    "consul"
   ];
 
   permittedInsecurePackages = [

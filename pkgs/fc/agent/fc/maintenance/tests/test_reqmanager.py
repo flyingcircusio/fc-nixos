@@ -115,6 +115,7 @@ def test_do_add_ineffective_req_with_add_always(reqmanager):
 def test_add_dont_add_none(log, reqmanager):
     with reqmanager as rm:
         rm.add(None)
+    assert len(rm.requests) == 0
 
 
 @pytest.mark.parametrize("significant", [False, True])
@@ -135,9 +136,11 @@ def test_add_do_merge_compatible_request(
         # Should be merged
         assert rm.add(to_be_merged_request) is second_request
         assert log.has(
-            "requestmanager-merge-significant"
-            if significant
-            else "requestmanager-merge-update",
+            (
+                "requestmanager-merge-significant"
+                if significant
+                else "requestmanager-merge-update"
+            ),
             request=to_be_merged_request.id,
             merged=second_request.id,
         )
@@ -279,7 +282,7 @@ def test_execute_postpone(log, reqmanager):
     req.state = State.due
     req.execute = Mock()
 
-    def enter_maintenance_postpone():
+    def enter_maintenance_postpone(online: bool = True):
         raise PostponeMaintenance()
 
     reqmanager._runnable = lambda run_all_now, force_run: [req]
@@ -422,8 +425,9 @@ def test_schedule_run_end_to_end(connect, request_population):
                     }
                 }
             ),
-        ]
-    ), "unexpected end maintenance calls"
+        ],
+        "unexpected end maintenance calls",
+    )
     assert postp.call_count == 1, "unexpected postpone call count"
 
 

@@ -121,6 +121,7 @@ def fc_maintenance(
         spooldir=spooldir,
         enc_path=enc_path,
         config_file=config_file,
+        lock_dir=lock_dir,
         log=log,
     )
 
@@ -137,7 +138,9 @@ def schedule():
 
 @app.command()
 @requires_sudo
-def run(run_all_now: bool = False, force_run: bool = False):
+def run(
+    run_all_now: bool = False, force_run: bool = False, online: bool = True
+):
     """[sudo] Run all maintenance activity requests that are due.
 
     Note that this does not schedule pending requests like running the script without
@@ -166,6 +169,9 @@ def run(run_all_now: bool = False, force_run: bool = False):
     The --force-run flag also runs requests in state 'success' again when they are still
     in the queue after a recent system reboot.
 
+    The --online flag (enabled by default) causes interaction with outside
+    systems like the directory. Use --no-online to avoid outside interaction.
+
     After executing all runnable requests, requests that want to be postponed
     are postponed (they get a new execution time) and finished requests
     (successful or failed permanently) moved from the current request to the
@@ -174,9 +180,9 @@ def run(run_all_now: bool = False, force_run: bool = False):
     log.info("fc-maintenance-run-start")
     with rm:
         rm.update_states()
-        rm.execute(run_all_now, force_run)
-        rm.postpone()
-        rm.archive()
+        rm.execute(run_all_now, force_run, online)
+        rm.postpone(online)
+        rm.archive(online)
     log.info("fc-maintenance-run-finished")
 
 

@@ -1,3 +1,5 @@
+# has been vendored to pkgs/fc/ceph/src/fc/ceph/util as well, this is the main
+# development file
 """Unified client access to fc.directory."""
 import contextlib
 import functools

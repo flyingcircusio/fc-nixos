@@ -27,8 +27,8 @@ warn()
 	printf "${BAD}* $*${NORMAL}\n"
 }
 
-VM="$1"
-REV="${2:-last}"
+VM="${1?need VM name}"
+REV="${2?need revision identifier}"
 
 if [[ -z "$VM" ]]; then
 	warn "VM or revision not specified"
@@ -51,9 +51,20 @@ echo $LOOPDEV
 
 TERMINATE="umount $LOOPMNT; losetup -d $LOOPDEV; sleep 1; fusermount -u $FUSEMNT"
 trap "$TERMINATE" ERR 1 2 3 5 15
+LOOPPART="${LOOPDEV}p1"
+while [ ! -e $LOOPPART ]; do
+	sleep 0.2
+done
+
+info "Pre-mounting image to flush log"
+mount -oloop ${LOOPPART} $LOOPMNT
+umount $LOOPMNT
+
+info "Regenerating UUID to avoid collisions"
+xfs_admin -U generate ${LOOPPART}
 
 info "Mounting image"
-mount -oloop ${LOOPDEV}p1 $LOOPMNT
+mount -oloop ${LOOPPART} $LOOPMNT
 
 info "Image data ready in ${HILITE}$LOOPMNT${NORMAL}"
 while true; do

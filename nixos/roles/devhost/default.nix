@@ -1,13 +1,12 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, ... }:
 
 let
   cfg = config.flyingcircus.roles.devhost;
-  fclib = config.fclib;
 in
 {
   imports = [
-    ./container.nix
     ./vm.nix
+    (lib.mkRemovedOptionModule [ "flyingcircus" "roles" "devhost" "cleanupContainers" ] "Automatic cleanup of VMs is not supported right now.")
   ];
 
   options = {
@@ -20,8 +19,6 @@ in
         default = "container";
       };
 
-      supportsContainers = fclib.mkDisableContainerSupport;
-
       enableAliasProxy = lib.mkOption {
         description = "Enable HTTPS-Proxy for containers and their aliases.";
         type = lib.types.bool;
@@ -33,26 +30,17 @@ in
         type = lib.types.str;
         default = "example.com";
       };
-
-      cleanupContainers = lib.mkOption {
-        description = "Whether to automatically shut down and destroy unused containers.";
-        type = lib.types.bool;
-        default = true;
-      };
-
-      testing = lib.mkEnableOption "Enable testing mode that routinely creates and destroys containers and reports status to sensu.";
-
-      testingChannelURL = lib.mkOption {
-        description = "URL to an hydra build (see directory) that containers use.";
-        type = lib.types.str;
-        default = config.flyingcircus.enc.parameters.environment_url;
-      };
-
     };
   };
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
+      assertions = [
+        {
+          assertion = cfg.virtualisationType != "container";
+          message = "Container-type virtualisation is deprecated. Only VM is supported now.";
+        }
+      ];
 
       flyingcircus.roles.webgateway.enable = true;
 

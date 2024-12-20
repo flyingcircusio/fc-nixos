@@ -48,6 +48,8 @@ def agent_configparser(agent_maintenance_config):
 def reqmanager(tmp_path, logger, agent_maintenance_config):
     spooldir = tmp_path / "maintenance"
     spooldir.mkdir()
+    lock_dir = tmp_path / "lock"
+    lock_dir.mkdir()
     enc_path = tmp_path / "enc.json"
     enc_path.write_text("{}")
     with unittest.mock.patch("fc.util.directory.connect"):
@@ -55,6 +57,7 @@ def reqmanager(tmp_path, logger, agent_maintenance_config):
             spooldir=spooldir,
             enc_path=enc_path,
             config_file=agent_maintenance_config,
+            lock_dir=lock_dir,
             log=logger,
         ) as rm:
             yield rm

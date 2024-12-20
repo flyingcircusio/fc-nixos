@@ -11,6 +11,8 @@ from fc.util import nixos
 from fc.util.channel import Channel
 from fc.util.checks import CheckResult
 from fc.util.enc import STATE_VERSION_FILE
+from fc.util.lock import locked
+from fc.util.nixos import Specialisation
 
 # Other platform code can also check the presence of this marker file to
 # change behaviour before/during the first agent run.
@@ -180,7 +182,7 @@ def dry_activate(log, channel_url, show_trace=False):
     return channel.dry_activate()
 
 
-def initial_switch_if_needed(log, enc):
+def initial_switch_if_needed(log, enc, lock_dir):
     if not INITIAL_RUN_MARKER.exists():
         return False
 
@@ -243,7 +245,9 @@ def initial_switch_if_needed(log, enc):
 
     # The NixOS configuration also checks INITIAL_RUN_MARKER. As it's still
     # present, the system will build without roles.
-    switch_with_update(log, enc, lazy=True)
+    switch_with_update(
+        log, enc, Specialisation.BASE_CONFIG, lock_dir, lazy=True
+    )
 
     INITIAL_RUN_MARKER.unlink()
     log.info(
@@ -261,6 +265,8 @@ def initial_switch_if_needed(log, enc):
 def switch(
     log,
     enc,
+    specialisation: str | Specialisation,
+    lock_dir: Path,
     lazy=False,
     show_trace=False,
 ):
@@ -312,12 +318,16 @@ def switch(
         channel_to_build = Channel.current(log, "nixos")
 
     if channel_to_build:
-        return channel_to_build.switch(lazy, show_trace)
+        return channel_to_build.switch(
+            specialisation, lock_dir, lazy, show_trace
+        )
 
 
 def switch_with_update(
     log,
     enc,
+    specialisation: str | Specialisation,
+    lock_dir: Path,
     lazy=False,
     show_trace=False,
 ):
@@ -357,4 +367,26 @@ def switch_with_update(
     if not channel:
         return
 
-    return channel.switch(lazy, show_trace)
+    return channel.switch(specialisation, lock_dir, lazy, show_trace)
+
+
+def switch_to_configuration(
+    log,
+    specialisation: str | Specialisation,
+    lock_dir: Path,
+    lazy=False,
+):
+    """Switch to an already existing system, by default the current system.
+    This can be used to switch to a different specialisation, switch back from a
+    specialisation to the base system or just run the system activation again for
+    the already active system.
+    """
+
+    system_path = Path("/nix/var/nix/profiles/system").resolve()
+    switch_path = nixos.get_specialisation_path_for_system(
+        system_path, specialisation, log
+    )
+    with locked(log, lock_dir, "switch_to_configuration.lock"):
+        nixos.switch_to_system(
+            switch_path, lazy, update_bootloader=False, log=log
+        )

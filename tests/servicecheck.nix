@@ -1,9 +1,16 @@
-import ./make-test-python.nix ({ pkgs, lib, ... }:
+import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
 {
   name = "servicecheck";
 
   nodes.machine = {
-    imports = [ ../nixos ../nixos/roles ];
+    imports = [
+      (testlib.fcConfig {
+        id = 1;
+        extraEncParameters = {
+          directory_password = "test";
+        };
+      })
+    ];
 
     flyingcircus.roles.servicecheck.enable = true;
 

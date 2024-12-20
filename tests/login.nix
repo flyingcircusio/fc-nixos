@@ -1,16 +1,13 @@
-import ./make-test-python.nix ({ pkgs, ... }:
+import ./make-test-python.nix ({ pkgs, testlib, ... }:
 
 {
   name = "login";
   nodes.machine =
     { pkgs, lib, config, ... }:
     {
-      imports = [ ../nixos ../nixos/roles ];
-
-      ### XXX: needed? sound.enable is gone on 24.11
-
-      # sound.enable = true; # needed for the factl test, /dev/snd/* exists without them but udev doesn't care then
-
+      imports = [
+        (testlib.fcConfig { id = 1; })
+      ];
 
     };
 

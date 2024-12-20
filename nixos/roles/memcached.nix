@@ -30,7 +30,7 @@ in
         description = "Enable the Flying Circus memcached role.";
       };
 
-      supportsContainers = fclib.mkEnableContainerSupport;
+      supportsContainers = fclib.mkEnableDevhostSupport;
 
       listenAddresses = lib.mkOption {
         type = lib.types.listOf lib.types.str;
