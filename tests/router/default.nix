@@ -16,8 +16,6 @@ let
 
       flyingcircus.roles.router.enable = true;
 
-      systemd.timers.fc-trafficclient.enable = false;
-
       environment.etc."networks/tr".source = fclib.writePrettyJSON "tr" fclib.network.tr.dualstack;
       environment.etc."networks/srv".source = fclib.writePrettyJSON "srv" fclib.network.tr.dualstack;
       environment.etc."networks/mgm".source = fclib.writePrettyJSON "mgm" fclib.network.tr.dualstack;
