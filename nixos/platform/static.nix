@@ -18,6 +18,7 @@ with lib;
         "yard" = { id = 1; site = "Halle"; };
         "rzob" = { id = 2; site = "Oberhausen"; };
         "dev" = { id = 3; site = "Halle"; };
+        "saltlabs" = { id = 4; site = "SaltLabs / ISP"; };
       };
 
       ceph = {
