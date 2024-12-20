@@ -39,12 +39,22 @@ in {
       + (testlib.sensuCheckCmd nodes.machine "clamav-updater");
   in ''
     with subtest("systemd services should be present"):
-      machine.succeed('systemctl cat clamav-daemon.service')
-      machine.succeed('systemctl cat clamav-freshclam.service')
-      machine.succeed('systemctl cat clamav-init-database.service')
+      machine.succeed('systemctl cat clamav-daemon.service >/dev/kmsg 2>&1')
+      machine.succeed('systemctl cat clamav-freshclam.service >/dev/kmsg 2>&1')
+      machine.succeed('systemctl cat clamav-init-database.service >/dev/kmsg 2>&1')
 
     with subtest("freshclam timer should be active"):
       machine.wait_for_unit('clamav-freshclam.timer')
+      # we expect clamav-freshclam.service to fail in the test due to a missing internet
+      # connection, nonetheless we need to wait for its initial start attempt
+      # for /var/lib/clamav to be initially created by the service.
+      try:
+        machine.wait_for_unit('clamav-freshclam.service')
+      except Exception as e:
+        if 'unit "clamav-freshclam.service" is inactive and there are no pending jobs' in str(e):
+          pass
+        else:
+          raise
 
     with subtest("private mirror should be set up"):
       ${grepFreshclamConfig "PrivateMirror https://clamavmirror.fcio.net"}

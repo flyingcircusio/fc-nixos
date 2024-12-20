@@ -64,7 +64,7 @@ in
 
     systemd.services.clamav-init-database = {
       # Shouldn't have a dependency on clamav-freshclam to avoid unneccessary
-      # starts. For example, using `requires would always trigger freshclam
+      # starts. For example, using `requires` would always trigger freshclam
       # when the daemon (re)starts, causing unwanted startup delays.
       wantedBy = [ "clamav-daemon.service" ];
       before = [ "clamav-daemon.service" ];
