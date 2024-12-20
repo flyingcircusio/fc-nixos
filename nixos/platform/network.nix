@@ -402,7 +402,7 @@ in
                 fi
 
                 if [[ "$interface" != "${iface.link}" ]]; then
-                  echo "Interface is currently known as `$interface` ..."
+                  echo "Interface is currently known as \`$interface\` ..."
 
                   # Check whether our desired name is also already in use,
                   # rename that one to a unique name.
@@ -444,8 +444,13 @@ in
                         ;;
                 esac
 
+                # TODO: it'd be preferrable to manage this on a by-interface base
+                # and distinguish whether an interface is physical.
+                # Can this be done based on `config.flyingcircus.enc.parameters.interfaces.fe.policy`?
+                ${lib.optionalString (config.flyingcircus.infrastructureModule == "flyingcircus-physical") ''
                 echo "Disabling flow control"
                 ethtool -A ${iface.link} autoneg off rx off tx off || true
+                ''}
 
                 # Ensure MTU
                 ip l set ${iface.link} mtu ${toString iface.mtu}
@@ -528,7 +533,7 @@ in
               # to 0 restores the default kernel behaviour.
               sysctl net.ipv6.conf.${link}.addr_gen_mode=0
 
-              for oldtmp in `ip -6 address show dev ${link} dynamic scope global | grep inet6 | cut -d ' ' -f6`; do
+              for oldtmp in $(ip -6 address show dev ${link} dynamic scope global | grep inet6 | cut -d ' ' -f6); do
                 ip addr del $oldtmp dev ${link}
               done
             '';
