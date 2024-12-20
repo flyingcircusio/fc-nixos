@@ -102,3 +102,6 @@ class SharedNetwork(object):
     def __iter__(self):
         """Iterate over all registered subnets."""
         return iter(sorted(self.subnets, key=lambda x: x.network))
+
+    def __len__(self):
+        return len(self.subnets)
