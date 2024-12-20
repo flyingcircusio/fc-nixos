@@ -156,8 +156,6 @@ def notify(
     """
     Triggers a system switch when keepalived state changes.
     To be used as keepalived notify script.
-
-
     """
     log = structlog.get_logger()
     log.debug("notify", new_state=new_state)

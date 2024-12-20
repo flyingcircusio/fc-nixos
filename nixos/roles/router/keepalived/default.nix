@@ -100,6 +100,7 @@ lib.mkIf role.enable {
       Type = lib.mkOverride 90 "simple";
       ExecStart = lib.mkOverride 90 ("${pkgs.keepalived}/sbin/keepalived"
         + " -f /etc/keepalived/keepalived.conf"
+        + " -D"
         + " -p /run/keepalived.pid"
         + " -n");
       StateDirectory = "keepalived";

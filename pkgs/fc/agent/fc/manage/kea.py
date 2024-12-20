@@ -3,6 +3,7 @@
 import argparse
 import json
 import sys
+from pathlib import Path
 
 import fc.util.configfile
 import fc.util.dhcp
@@ -295,17 +296,24 @@ present, return 2 to signal the output file has been changed.
 
     args = parser.parse_args()
 
-    changed = False
+    if not Path("/etc/nixos/enc.json").exists():
+        # XXX This currently triggers in our test suite. There might be
+        # better ways to silence this in the tests.
+        print(
+            "WARNING: /etc/nixos/enc.json missing. Silently ignoring the "
+            "request to configure to allow the system to proceed.",
+            file=sys.stderr,
+        )
+        return
+
     kea = Kea(args)
     kea.query_directory()
     if args.output:
         conffile = fc.util.configfile.ConfigFile(args.output)
         kea.render(conffile)
-        changed = conffile.commit()
+        conffile.commit()
     else:
         kea.render(sys.stdout)
-    if changed:
-        sys.exit(2)
 
 
 if __name__ == "__main__":

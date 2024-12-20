@@ -10,9 +10,13 @@ let
     in
     {
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ mgm fe srv tr ];
+      virtualisation.memorySize = 2048;
+
       imports = [ <fc/nixos> <fc/nixos/roles> ];
 
       flyingcircus.roles.router.enable = true;
+
+      systemd.timers.fc-trafficclient.enable = false;
 
       environment.etc."networks/tr".source = fclib.writePrettyJSON "tr" fclib.network.tr.dualstack;
       environment.etc."networks/srv".source = fclib.writePrettyJSON "srv" fclib.network.tr.dualstack;
@@ -222,7 +226,6 @@ let
         ];
       }];
 
-
       services.telegraf.enable = lib.mkForce false;
 
       specialisation.agentmock = let
@@ -258,8 +261,6 @@ let
          ln -s $(dirname $0) /nix/var/nix/profiles/system
        fi
      '';
-
-      virtualisation.memorySize = 2048;
     };
 
   makeUpstreamRouterConfig = { id }:
@@ -569,20 +570,28 @@ in
         router2.r.wait_until_is_primary()
         router1.succeed("${fc-keepalived} leave-maintenance")
 
+      import time
+
       with subtest("router2: run a maintenance activity, should switch to router1"):
-        router2.execute('fc-maintenance -v request script test true')
+        router2.execute('fc-maintenance -v request script test "sleep 3"')
         maintenance_out = router2.succeed("JOURNAL_STREAM= fc-maintenance -v run --no-online --run-all-now 2>&1")
         print("fc-maintenance output:")
         print("="*80)
         print(maintenance_out)
-        assert router1.r.is_primary
-        assert not router2.r.is_primary
+        print(router1.execute("journalctl --since -20s")[1])
+        print(router2.execute("journalctl --since -20s")[1])
+        router2.r.wait_until_is_secondary()
+        router1.r.wait_until_is_primary()
+        assert router1.r.is_primary, "router 1 is not primary"
+        assert not router2.r.is_primary, "router 2 is still primary"
 
       with subtest("router1: fc-keepalived check should be green"):
         print(router1.succeed("${fc-keepalived} check"))
 
       with subtest("router2: fc-keepalived check should be green"):
         print(router2.succeed("${fc-keepalived} check"))
+
+      print(router1.execute("cat /var/log/fc-agent.log")[1])
 
       with subtest("keepalived router state files should reflect reality"):
         router1_state = router1.succeed("cat /run/keepalived/state").strip()
@@ -605,7 +614,6 @@ in
         ];
       };
     };
-
 
     extraPythonPackages = ps: [ ps.rich ];
     skipTypeCheck = true; # due to cursed importing of helpers
