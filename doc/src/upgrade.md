@@ -124,9 +124,8 @@ TODO
 
 ### Slurm
 
-TODO
 
-% This release contains a major version upgrade of Slurm from 23.04.x.x (NixOS 23.11) to 23.11.x.x. Nodes of a cluster need to be upgraded in a prticular order, the the [upgrade instructions of the role](#nixos-slurm-upgrade) for details.
+This release contains a major version upgrade of Slurm from 23.11.x.x (NixOS 24.05) to 24.05.x.x. Nodes of a cluster need to be upgraded in a particular order, please consult the [upgrade instructions of the role](#nixos-slurm-upgrade) for details.
 
 ## Other notable changes
 
