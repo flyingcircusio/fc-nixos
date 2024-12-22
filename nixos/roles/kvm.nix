@@ -130,9 +130,10 @@ in
         # Wire up Qemu tap devices to the bridge of the corresponding VLAN.
         # Interface names are expected to be of the form `t<VLAN><ifnumber>`, for example:
         # tsrv0, tsrv1, tfe0, ...
+        set -e
 
         INTERFACE="$1"
-        VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+        VLAN=$(echo $INTERFACE | ${pkgs.gnused}/bin/sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
         BRIDGE="br''${VLAN}"
 
         ${pkgs.iproute2}/bin/ip link set $INTERFACE up

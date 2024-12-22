@@ -97,7 +97,7 @@ let
             export PATH="${PATH}"
             echo $PATH
             cd ${testPackage.src}
-            pytest -vv --cov-append -c ${testPackage.src}/pytest.ini "$@" 2>&1
+            pytest -vv --cov-config=/etc/coveragerc --cov-append -c ${testPackage.src}/pytest.ini "$@" 2>&1
             ${if testOpts != "" then ''
             # If we run with custom test options we might be filtering
             # for tests and due to the live/not live split either phase
@@ -176,6 +176,13 @@ let
       # We need this in the enc files as well so that timer jobs can update
       # the keys etc.
       environment.etc."nixos/services.json".text = builtins.toJSON config.flyingcircus.encServices;
+      environment.etc."coveragerc".text = ''
+        [run]
+        data_file = /tmp/coverage/data
+
+        [html]
+        directory = /tmp/coverage/html
+      '';
 
       flyingcircus.roles.ceph_osd = {
         enable = true;
@@ -522,8 +529,8 @@ in
       result = show(host1, "fc-qemu-scrub")
       assert "I simplevm              running-ensure                 generation=0" in result, result
 
-    # host1.copy_from_vm('fc.qemu-coverage', './coverage')
-    host1.copy_from_vm('fc.qemu-report.xml', './report.xml')
+    host1.copy_from_vm('/tmp/coverage', './')
+    host1.copy_from_vm('/tmp/fc.qemu-report.xml', './')
 
   '';
 })
