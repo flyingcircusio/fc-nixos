@@ -55,9 +55,9 @@
     "version": "2.5.9"
   },
   "cacert": {
-    "name": "nss-cacert-3.104",
+    "name": "nss-cacert-3.107",
     "pname": "nss-cacert",
-    "version": "3.104"
+    "version": "3.107"
   },
   "calibre": {
     "name": "calibre-7.10.0",
@@ -445,9 +445,9 @@
     "version": "1.4.0"
   },
   "libxml2": {
-    "name": "libxml2-2.12.7",
+    "name": "libxml2-2.12.9",
     "pname": "libxml2",
-    "version": "2.12.7"
+    "version": "2.12.9"
   },
   "libxslt": {
     "name": "libxslt-1.1.39",
@@ -580,9 +580,9 @@
     "version": "2.18.8"
   },
   "nodejs": {
-    "name": "nodejs-20.17.0",
+    "name": "nodejs-20.18.1",
     "pname": "nodejs",
-    "version": "20.17.0"
+    "version": "20.18.1"
   },
   "nodejs_18": {
     "name": "nodejs-18.20.5",
@@ -590,9 +590,9 @@
     "version": "18.20.5"
   },
   "nodejs_20": {
-    "name": "nodejs-20.17.0",
+    "name": "nodejs-20.18.1",
     "pname": "nodejs",
-    "version": "20.17.0"
+    "version": "20.18.1"
   },
   "nodejs_22": {
     "name": "nodejs-22.10.0",
@@ -620,9 +620,9 @@
     "version": "2.5.2"
   },
   "openldap": {
-    "name": "openldap-2.6.8",
+    "name": "openldap-2.6.9",
     "pname": "openldap",
-    "version": "2.6.8"
+    "version": "2.6.9"
   },
   "openldap_2_4": {
     "name": "openldap-2.4.58",
@@ -795,34 +795,34 @@
     "version": "3.9.0"
   },
   "postgresql": {
-    "name": "postgresql-15.8",
+    "name": "postgresql-15.10",
     "pname": "postgresql",
-    "version": "15.8"
+    "version": "15.10"
   },
   "postgresql_12": {
-    "name": "postgresql-12.21",
+    "name": "postgresql-12.22",
     "pname": "postgresql",
-    "version": "12.21"
+    "version": "12.22"
   },
   "postgresql_13": {
-    "name": "postgresql-13.17",
+    "name": "postgresql-13.18",
     "pname": "postgresql",
-    "version": "13.17"
+    "version": "13.18"
   },
   "postgresql_14": {
-    "name": "postgresql-14.14",
+    "name": "postgresql-14.15",
     "pname": "postgresql",
-    "version": "14.14"
+    "version": "14.15"
   },
   "postgresql_15": {
-    "name": "postgresql-15.8",
+    "name": "postgresql-15.10",
     "pname": "postgresql",
-    "version": "15.8"
+    "version": "15.10"
   },
   "postgresql_16": {
-    "name": "postgresql-16.5",
+    "name": "postgresql-16.6",
     "pname": "postgresql",
-    "version": "16.5"
+    "version": "16.6"
   },
   "powerdns": {
     "name": "pdns-4.9.1",
@@ -855,9 +855,9 @@
     "version": "3.11.10"
   },
   "python312": {
-    "name": "python3-3.12.6",
+    "name": "python3-3.12.7",
     "pname": "python3",
-    "version": "3.12.6"
+    "version": "3.12.7"
   },
   "python38": {},
   "python39": {
