@@ -86,24 +86,24 @@ in {
             (testlib.fcConfig { net.fe = false; })
           ];
 
-          flyingcircus.roles.postgresql12.enable = lib.mkDefault true;
           services.postgresql = {
             extraPlugins = ps: with ps; [ anonymizer ];
             settings.shared_preload_libraries = lib.mkForce "auto_explain, pg_stat_statements, anon";
           };
+          flyingcircus.roles.postgresql13.enable = lib.mkDefault true;
 
           specialisation = {
-            pg13.configuration = {
-              flyingcircus.roles.postgresql12.enable = false;
-              flyingcircus.roles.postgresql13.enable = true;
-            };
             pg14.configuration = {
-              flyingcircus.roles.postgresql12.enable = false;
+              flyingcircus.roles.postgresql13.enable = false;
               flyingcircus.roles.postgresql14.enable = true;
             };
             pg15.configuration = {
-              flyingcircus.roles.postgresql12.enable = false;
+              flyingcircus.roles.postgresql13.enable = false;
               flyingcircus.roles.postgresql15.enable = true;
+            };
+            pg16.configuration = {
+              flyingcircus.roles.postgresql13.enable = false;
+              flyingcircus.roles.postgresql16.enable = true;
             };
           };
 
@@ -111,14 +111,14 @@ in {
             # these attributes are being `nix-build` by `fc-postgresql` at
             # upgrade time. Ensure these are already present in the nix store
             # to avoid building them in the sandboxed test.
-            (postgresql_12.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_13.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_14.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_15.withPackages (ps: with ps; [ anonymizer ]))
-            (postgresql_12.withPackages (ps: [ ]))
+            (postgresql_16.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_13.withPackages (ps: [ ]))
             (postgresql_14.withPackages (ps: [ ]))
             (postgresql_15.withPackages (ps: [ ]))
+            (postgresql_16.withPackages (ps: [ ]))
           ];
         };
       };
@@ -127,54 +127,54 @@ in {
         ${testSetup}
 
         with subtest("prepare-autoupgrade should fail when the option is not enabled"):
-          machine.fail("${fc-postgresql} prepare-autoupgrade --new-version 13")
+          machine.fail("${fc-postgresql} prepare-autoupgrade --new-version 14")
 
         with subtest("prepare should fail with unexpected database anonymized"):
-          machine.fail('${fc-postgresql} upgrade --new-version 13')
+          machine.fail('${fc-postgresql} upgrade --new-version 14')
 
         print(machine.succeed("${fc-postgresql} list-versions"))
 
-        with subtest("prepare upgrade 12 -> 13"):
-          machine.fail('${fc-postgresql} upgrade --new-version 13 --expected anonymized')
-          machine.succeed("rm -f /srv/postgresql/12/fcio_stopper && systemctl start postgresql")
-          machine.succeed('${fc-postgresql} upgrade --new-version 13 --expected anonymized --extension-names anonymizer')
-          machine.succeed("stat /srv/postgresql/13/fcio_upgrade_prepared")
+        with subtest("prepare upgrade 13 -> 14"):
+          machine.fail('${fc-postgresql} upgrade --new-version 14 --expected anonymized')
+          machine.succeed("rm -f /srv/postgresql/13/fcio_stopper && systemctl start postgresql")
+          machine.succeed('${fc-postgresql} upgrade --new-version 14 --expected anonymized --extension-names anonymizer')
+          machine.succeed("stat /srv/postgresql/14/fcio_upgrade_prepared")
           # postgresql should still run
           machine.succeed("systemctl status postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
 
-        with subtest("upgrade 12 -> 13 from prepared state"):
+        with subtest("upgrade 13 -> 14 from prepared state"):
           machine.succeed("systemctl status postgresql")
-          machine.succeed("rm -f /srv/postgresql/13/pg_upgrade_server.log")
-          print(machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 13 --stop --upgrade-now --extension-names anonymizer || cat /srv/postgresql/13/pg_upgrade_server.log'))
-          machine.succeed("stat /srv/postgresql/12/fcio_migrated_to")
-          machine.succeed("stat /srv/postgresql/13/fcio_migrated_from")
+          machine.succeed("rm -f /srv/postgresql/14/pg_upgrade_server.log")
+          print(machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 14 --stop --upgrade-now --extension-names anonymizer || cat /srv/postgresql/14/pg_upgrade_server.log'))
+          machine.succeed("stat /srv/postgresql/13/fcio_migrated_to")
+          machine.succeed("stat /srv/postgresql/14/fcio_migrated_from")
           # postgresql should be stopped
           machine.fail("systemctl status postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
 
-        # Clean up migration and start postgresql12 again for the next round.
-        machine.execute("rm -rf /srv/postgresql/13")
-        machine.execute("rm -rf /srv/postgresql/12/fcio_migrated_to")
+        # Clean up migration and start postgresql13 again for the next round.
+        machine.execute("rm -rf /srv/postgresql/14")
+        machine.execute("rm -rf /srv/postgresql/13/fcio_migrated_to")
         machine.systemctl("start postgresql")
 
-        with subtest("upgrade 12 -> 14 in one step"):
-          machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 14 --stop --upgrade-now --extension-names anonymizer')
-          machine.succeed("stat /srv/postgresql/12/fcio_migrated_to")
-          machine.succeed("stat /srv/postgresql/14/fcio_migrated_from")
+        with subtest("upgrade 13 -> 15 in one step"):
+          machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 15 --stop --upgrade-now --extension-names anonymizer')
+          machine.succeed("stat /srv/postgresql/13/fcio_migrated_to")
+          machine.succeed("stat /srv/postgresql/15/fcio_migrated_from")
           # postgresql should be stopped
           machine.fail("systemctl status postgresql")
-          # move to pg14 role and wait for postgresql to start
-          switch_to(machine, "pg14")
+          # move to pg15 role and wait for postgresql to start
+          switch_to(machine, "pg15")
           machine.wait_for_unit("postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
           check_anonymized_rows(get_player_table_contents())
 
-        with subtest("upgrade 14 -> 15 in one step"):
-          machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 15 --stop --upgrade-now --extension-names anonymizer')
-          machine.succeed("stat /srv/postgresql/14/fcio_migrated_to")
-          machine.succeed("stat /srv/postgresql/15/fcio_migrated_from")
-          switch_to(machine, "pg15")
+        with subtest("upgrade 15 -> 16 in one step"):
+          machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 16 --stop --upgrade-now --extension-names anonymizer')
+          machine.succeed("stat /srv/postgresql/15/fcio_migrated_to")
+          machine.succeed("stat /srv/postgresql/16/fcio_migrated_from")
+          switch_to(machine, "pg16")
           machine.wait_for_unit("postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
           check_anonymized_rows(get_player_table_contents())
@@ -188,33 +188,33 @@ in {
             (testlib.fcConfig { net.fe = false; })
           ];
 
-          flyingcircus.roles.postgresql12.enable = lib.mkDefault true;
+          flyingcircus.roles.postgresql13.enable = lib.mkDefault true;
           flyingcircus.services.postgresql.autoUpgrade = {
             enable = true;
             expectedDatabases = [ "anonymized" ];
           };
           services.postgresql = {
-            extraPlugins = ps: with ps; [ anonymizer ];
+            extensions = ps: with ps; [ anonymizer ];
             settings.shared_preload_libraries = lib.mkForce "auto_explain, pg_stat_statements, anon";
           };
 
           specialisation = {
-            pg13UnexpectedDb.configuration = {
-              flyingcircus.roles.postgresql12.enable = false;
-              flyingcircus.roles.postgresql13.enable = true;
+            pg14UnexpectedDb.configuration = {
+              flyingcircus.roles.postgresql13.enable = false;
+              flyingcircus.roles.postgresql14.enable = true;
               flyingcircus.services.postgresql.autoUpgrade.expectedDatabases = lib.mkForce [];
             };
-            pg13.configuration = {
-              flyingcircus.roles.postgresql12.enable = false;
-              flyingcircus.roles.postgresql13.enable = true;
-            };
             pg14.configuration = {
-              flyingcircus.roles.postgresql12.enable = false;
+              flyingcircus.roles.postgresql13.enable = false;
               flyingcircus.roles.postgresql14.enable = true;
             };
             pg15.configuration = {
-              flyingcircus.roles.postgresql12.enable = false;
+              flyingcircus.roles.postgresql13.enable = false;
               flyingcircus.roles.postgresql15.enable = true;
+            };
+            pg16.configuration = {
+              flyingcircus.roles.postgresql13.enable = false;
+              flyingcircus.roles.postgresql16.enable = true;
             };
           };
 
@@ -222,14 +222,14 @@ in {
             # these attributes are being `nix-build` by `fc-postgresql` at
             # upgrade time. Ensure these are already present in the nix store
             # to avoid building them in the sandboxed test.
-            (postgresql_12.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_13.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_14.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_15.withPackages (ps: with ps; [ anonymizer ]))
-            (postgresql_12.withPackages (ps: [ ]))
+            (postgresql_16.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_13.withPackages (ps: [ ]))
             (postgresql_14.withPackages (ps: [ ]))
             (postgresql_15.withPackages (ps: [ ]))
+            (postgresql_16.withPackages (ps: [ ]))
           ];
         };
       };
@@ -239,29 +239,13 @@ in {
         print(machine.succeed("${fc-postgresql} list-versions"))
 
         with subtest("autoupgrade should refuse when unexpected DB is present"):
-          switch_to(machine, "pg13UnexpectedDb", expect="fail")
+          switch_to(machine, "pg14UnexpectedDb", expect="fail")
           machine.fail("systemctl status postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
 
         with subtest("prepare autoupgrade should fail when unexpected DB is present"):
-          machine.fail('${fc-postgresql} prepare-autoupgrade --new-version 13')
+          machine.fail('${fc-postgresql} prepare-autoupgrade --new-version 14')
           print(machine.succeed("${fc-postgresql} list-versions"))
-
-        with subtest("autoupgrade 12 -> 13"):
-          # move to new role and wait for postgresql to start
-          switch_to(machine, "pg13")
-          machine.wait_for_unit("postgresql")
-          machine.succeed("stat /srv/postgresql/12/fcio_migrated_to")
-          machine.succeed("stat /srv/postgresql/13/fcio_migrated_from")
-          print(machine.succeed("${fc-postgresql} list-versions"))
-
-        with subtest("prepare autoupgrade 13 -> 14"):
-          machine.succeed('${fc-postgresql} prepare-autoupgrade --new-version 14 --extension-names anonymizer')
-          machine.succeed("stat /srv/postgresql/14/fcio_upgrade_prepared")
-          # postgresql should still run
-          machine.succeed("systemctl status postgresql")
-          print(machine.succeed("${fc-postgresql} list-versions"))
-
 
         with subtest("autoupgrade 13 -> 14"):
           # move to new role and wait for postgresql to start
@@ -270,7 +254,14 @@ in {
           machine.succeed("stat /srv/postgresql/13/fcio_migrated_to")
           machine.succeed("stat /srv/postgresql/14/fcio_migrated_from")
           print(machine.succeed("${fc-postgresql} list-versions"))
-          check_anonymized_rows(get_player_table_contents())
+
+        with subtest("prepare autoupgrade 14 -> 15"):
+          machine.succeed('${fc-postgresql} prepare-autoupgrade --new-version 15 --extension-names anonymizer')
+          machine.succeed("stat /srv/postgresql/15/fcio_upgrade_prepared")
+          # postgresql should still run
+          machine.succeed("systemctl status postgresql")
+          print(machine.succeed("${fc-postgresql} list-versions"))
+
 
         with subtest("autoupgrade 14 -> 15"):
           # move to new role and wait for postgresql to start
@@ -278,6 +269,15 @@ in {
           machine.wait_for_unit("postgresql")
           machine.succeed("stat /srv/postgresql/14/fcio_migrated_to")
           machine.succeed("stat /srv/postgresql/15/fcio_migrated_from")
+          print(machine.succeed("${fc-postgresql} list-versions"))
+          check_anonymized_rows(get_player_table_contents())
+
+        with subtest("autoupgrade 15 -> 16"):
+          # move to new role and wait for postgresql to start
+          switch_to(machine, "pg16")
+          machine.wait_for_unit("postgresql")
+          machine.succeed("stat /srv/postgresql/15/fcio_migrated_to")
+          machine.succeed("stat /srv/postgresql/16/fcio_migrated_from")
           print(machine.succeed("${fc-postgresql} list-versions"))
           check_anonymized_rows(get_player_table_contents())
       '';

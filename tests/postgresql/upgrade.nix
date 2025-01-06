@@ -121,21 +121,13 @@ in {
         machine.execute("rm -rf /srv/postgresql/13/fcio_migrated_to")
         machine.systemctl("start postgresql")
 
-        with subtest("upgrade 13 -> 14 in one step"):
-          machine.succeed('${fc-postgresql} upgrade --expected employees --new-version 14 --stop --upgrade-now')
+        with subtest("upgrade 13 -> 15 in one step"):
+          machine.succeed('${fc-postgresql} upgrade --expected employees --new-version 15 --stop --upgrade-now')
           machine.succeed("stat /srv/postgresql/13/fcio_migrated_to")
-          machine.succeed("stat /srv/postgresql/14/fcio_migrated_from")
+          machine.succeed("stat /srv/postgresql/15/fcio_migrated_from")
           # postgresql should be stopped
           machine.fail("systemctl status postgresql")
-          # move to pg14 role and wait for postgresql to start
-          switch_to(machine, "pg14")
-          machine.wait_for_unit("postgresql")
-          print(machine.succeed("${fc-postgresql} list-versions"))
-
-        with subtest("upgrade 14 -> 15 in one step"):
-          machine.succeed('${fc-postgresql} upgrade --expected employees --new-version 15 --stop --upgrade-now')
-          machine.succeed("stat /srv/postgresql/14/fcio_migrated_to")
-          machine.succeed("stat /srv/postgresql/15/fcio_migrated_from")
+          # move to pg15 role and wait for postgresql to start
           switch_to(machine, "pg15")
           machine.wait_for_unit("postgresql")
           print(machine.succeed("${fc-postgresql} list-versions"))
@@ -205,7 +197,7 @@ in {
           print(machine.succeed("${fc-postgresql} list-versions"))
 
         with subtest("prepare autoupgrade should fail when unexpected DB is present"):
-          machine.fail('${fc-postgresql} prepare-autoupgrade --new-version 13')
+          machine.fail('${fc-postgresql} prepare-autoupgrade --new-version 14')
           print(machine.succeed("${fc-postgresql} list-versions"))
 
         with subtest("autoupgrade 13 -> 14"):
