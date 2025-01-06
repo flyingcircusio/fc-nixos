@@ -80,10 +80,13 @@ in {
           };
 
           system.extraDependencies = with pkgs; [
-            postgresql_13
-            postgresql_14
-            postgresql_15
-            postgresql_16
+            # these attributes are being `nix-build` by `fc-postgresql` at
+            # upgrade time. Ensure these are already present in the nix store
+            # to avoid building them in the sandboxed test.
+            (postgresql_13.withPackages (ps: [ ]))
+            (postgresql_14.withPackages (ps: [ ]))
+            (postgresql_15.withPackages (ps: [ ]))
+            (postgresql_16.withPackages (ps: [ ]))
           ];
         };
       };
@@ -181,10 +184,13 @@ in {
           };
 
           system.extraDependencies = with pkgs; [
-            postgresql_13
-            postgresql_14
-            postgresql_15
-            postgresql_16
+            # these attributes are being `nix-build` by `fc-postgresql` at
+            # upgrade time. Ensure these are already present in the nix store
+            # to avoid building them in the sandboxed test.
+            (postgresql_13.withPackages (ps: [ ]))
+            (postgresql_14.withPackages (ps: [ ]))
+            (postgresql_15.withPackages (ps: [ ]))
+            (postgresql_16.withPackages (ps: [ ]))
           ];
         };
       };

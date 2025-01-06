@@ -108,6 +108,9 @@ in {
           };
 
           system.extraDependencies = with pkgs; [
+            # these attributes are being `nix-build` by `fc-postgresql` at
+            # upgrade time. Ensure these are already present in the nix store
+            # to avoid building them in the sandboxed test.
             (postgresql_12.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_13.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_14.withPackages (ps: with ps; [ anonymizer ]))
@@ -216,6 +219,9 @@ in {
           };
 
           system.extraDependencies = with pkgs; [
+            # these attributes are being `nix-build` by `fc-postgresql` at
+            # upgrade time. Ensure these are already present in the nix store
+            # to avoid building them in the sandboxed test.
             (postgresql_12.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_13.withPackages (ps: with ps; [ anonymizer ]))
             (postgresql_14.withPackages (ps: with ps; [ anonymizer ]))
