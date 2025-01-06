@@ -85,7 +85,7 @@
         apps.buildPackageVersionsJson = {
           type = "app";
           program = "${pkgs.writeShellScript "update-package-versions-json" ''
-            jq < $(nix build .#packageVersions --print-out-paths) > release/package-versions.json
+            jq < $(nix build .#packageVersions --print-out-paths --impure) > release/package-versions.json
           ''}";
         };
 
