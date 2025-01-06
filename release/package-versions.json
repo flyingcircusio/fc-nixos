@@ -55,9 +55,9 @@
     "version": "2.5.9"
   },
   "cacert": {
-    "name": "nss-cacert-3.104",
+    "name": "nss-cacert-3.107",
     "pname": "nss-cacert",
-    "version": "3.104"
+    "version": "3.107"
   },
   "calibre": {
     "name": "calibre-7.10.0",
@@ -70,14 +70,14 @@
     "version": "18.2.4"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-131.0.6778.108",
+    "name": "chromedriver-unwrapped-131.0.6778.204",
     "pname": "chromedriver-unwrapped",
-    "version": "131.0.6778.108"
+    "version": "131.0.6778.204"
   },
   "chromium": {
-    "name": "chromium-131.0.6778.108",
+    "name": "chromium-131.0.6778.204",
     "pname": "chromium",
-    "version": "131.0.6778.108"
+    "version": "131.0.6778.204"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.0",
@@ -190,9 +190,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-133.0",
+    "name": "firefox-133.0.3",
     "pname": "firefox",
-    "version": "133.0"
+    "version": "133.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-13.2.0",
@@ -220,9 +220,9 @@
     "version": "2.44.2"
   },
   "gitaly": {
-    "name": "gitaly-17.5.3",
+    "name": "gitaly-17.6.2",
     "pname": "gitaly",
-    "version": "17.5.3"
+    "version": "17.6.2"
   },
   "github-runner": {
     "name": "github-runner-2.321.0",
@@ -230,9 +230,9 @@
     "version": "2.321.0"
   },
   "gitlab": {
-    "name": "gitlab-17.5.3",
+    "name": "gitlab-17.6.2",
     "pname": "gitlab",
-    "version": "17.5.3"
+    "version": "17.6.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.14.0",
@@ -240,14 +240,14 @@
     "version": "4.14.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.5.3",
+    "name": "gitlab-ee-17.6.2",
     "pname": "gitlab-ee",
-    "version": "17.5.3"
+    "version": "17.6.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.5.3",
+    "name": "gitlab-pages-17.6.2",
     "pname": "gitlab-pages",
-    "version": "17.5.3"
+    "version": "17.6.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.1.0",
@@ -255,9 +255,9 @@
     "version": "17.1.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.5.3",
+    "name": "gitlab-workhorse-17.6.2",
     "pname": "gitlab-workhorse",
-    "version": "17.5.3"
+    "version": "17.6.2"
   },
   "glibc": {
     "name": "glibc-2.39-52",
@@ -290,9 +290,9 @@
     "version": "1.22.8"
   },
   "grafana": {
-    "name": "grafana-10.4.13",
+    "name": "grafana-10.4.14",
     "pname": "grafana",
-    "version": "10.4.13"
+    "version": "10.4.14"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -445,9 +445,9 @@
     "version": "1.4.0"
   },
   "libxml2": {
-    "name": "libxml2-2.12.7",
+    "name": "libxml2-2.12.9",
     "pname": "libxml2",
-    "version": "2.12.7"
+    "version": "2.12.9"
   },
   "libxslt": {
     "name": "libxslt-1.1.39",
@@ -460,9 +460,9 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-5.15.173",
+    "name": "linux-5.15.175",
     "pname": "linux",
-    "version": "5.15.173"
+    "version": "5.15.175"
   },
   "linuxKernelVerify": {
     "name": "linux-6.11",
@@ -505,14 +505,14 @@
     "version": "4.16.1"
   },
   "matomo_5": {
-    "name": "matomo_5-5.1.1",
+    "name": "matomo_5-5.2.0",
     "pname": "matomo_5",
-    "version": "5.1.1"
+    "version": "5.2.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.120.2",
+    "name": "matrix-synapse-wrapped-1.121.1",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.120.2"
+    "version": "1.121.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -580,9 +580,9 @@
     "version": "2.18.8"
   },
   "nodejs": {
-    "name": "nodejs-20.17.0",
+    "name": "nodejs-20.18.1",
     "pname": "nodejs",
-    "version": "20.17.0"
+    "version": "20.18.1"
   },
   "nodejs_18": {
     "name": "nodejs-18.20.5",
@@ -590,9 +590,9 @@
     "version": "18.20.5"
   },
   "nodejs_20": {
-    "name": "nodejs-20.17.0",
+    "name": "nodejs-20.18.1",
     "pname": "nodejs",
-    "version": "20.17.0"
+    "version": "20.18.1"
   },
   "nodejs_22": {
     "name": "nodejs-22.10.0",
@@ -620,9 +620,9 @@
     "version": "2.5.2"
   },
   "openldap": {
-    "name": "openldap-2.6.8",
+    "name": "openldap-2.6.9",
     "pname": "openldap",
-    "version": "2.6.8"
+    "version": "2.6.9"
   },
   "openldap_2_4": {
     "name": "openldap-2.4.58",
@@ -685,9 +685,9 @@
     "version": "8.0.39-30"
   },
   "percona-server_innovation": {
-    "name": "percona-server-8.4.2-2",
+    "name": "percona-server-8.4.3-3",
     "pname": "percona-server",
-    "version": "8.4.2-2"
+    "version": "8.4.3-3"
   },
   "percona-server_lts": {
     "name": "percona-server-8.0.39-30",
@@ -705,9 +705,9 @@
     "version": "8.3.0-1"
   },
   "percona-xtrabackup_innovation": {
-    "name": "percona-xtrabackup-8.4.0-1",
+    "name": "percona-xtrabackup-8.4.0-2",
     "pname": "percona-xtrabackup",
-    "version": "8.4.0-1"
+    "version": "8.4.0-2"
   },
   "percona-xtrabackup_lts": {
     "name": "percona-xtrabackup-8.0.35-31",
@@ -755,14 +755,14 @@
     "version": "8.1.31"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.26",
+    "name": "php-with-extensions-8.2.27",
     "pname": "php-with-extensions",
-    "version": "8.2.26"
+    "version": "8.2.27"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.14",
+    "name": "php-with-extensions-8.3.15",
     "pname": "php-with-extensions",
-    "version": "8.3.14"
+    "version": "8.3.15"
   },
   "phpPackages.composer": {
     "name": "composer-2.7.7",
@@ -795,34 +795,34 @@
     "version": "3.9.0"
   },
   "postgresql": {
-    "name": "postgresql-15.8",
+    "name": "postgresql-15.10",
     "pname": "postgresql",
-    "version": "15.8"
+    "version": "15.10"
   },
   "postgresql_12": {
-    "name": "postgresql-12.21",
+    "name": "postgresql-12.22",
     "pname": "postgresql",
-    "version": "12.21"
+    "version": "12.22"
   },
   "postgresql_13": {
-    "name": "postgresql-13.17",
+    "name": "postgresql-13.18",
     "pname": "postgresql",
-    "version": "13.17"
+    "version": "13.18"
   },
   "postgresql_14": {
-    "name": "postgresql-14.14",
+    "name": "postgresql-14.15",
     "pname": "postgresql",
-    "version": "14.14"
+    "version": "14.15"
   },
   "postgresql_15": {
-    "name": "postgresql-15.8",
+    "name": "postgresql-15.10",
     "pname": "postgresql",
-    "version": "15.8"
+    "version": "15.10"
   },
   "postgresql_16": {
-    "name": "postgresql-16.5",
+    "name": "postgresql-16.6",
     "pname": "postgresql",
-    "version": "16.5"
+    "version": "16.6"
   },
   "powerdns": {
     "name": "pdns-4.9.1",
@@ -855,9 +855,9 @@
     "version": "3.11.10"
   },
   "python312": {
-    "name": "python3-3.12.6",
+    "name": "python3-3.12.7",
     "pname": "python3",
-    "version": "3.12.6"
+    "version": "3.12.7"
   },
   "python38": {},
   "python39": {
