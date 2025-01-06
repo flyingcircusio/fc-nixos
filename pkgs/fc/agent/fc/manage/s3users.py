@@ -152,7 +152,9 @@ class RGWState:
 
     def ensure_no_keys(self):
         """Remove _all_ keys to make users aware of the impending hard deletion."""
-        keys = run.json.radosgw_admin("user", "info", "--uid", self.uid)["keys"]
+        keys = run.json.radosgw_admin("user", "info", "--uid", self.uid)[
+            "keys"
+        ]
         for key in keys:
             run.radosgw_admin("key", "rm", "--access-key", key["access_key"])
         if keys:
