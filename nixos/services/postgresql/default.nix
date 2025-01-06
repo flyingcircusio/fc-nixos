@@ -73,7 +73,7 @@ let
         availableExtensions.${lib.getName package}
       ];
     in
-    lib.concatMap pluginByPname (config.services.postgresql.extraPlugins config.services.postgresql.package.pkgs);
+    lib.concatMap pluginByPname (config.services.postgresql.extensions config.services.postgresql.package.pkgs);
 in {
   options = with lib; {
 
@@ -169,7 +169,7 @@ in {
       '';
 
       systemd.services.postgresql.postStart = ''
-        ln -sfT ${config.services.postgresql.package.withPackages config.services.postgresql.extraPlugins} ${upstreamCfg.dataDir}/package
+        ln -sfT ${config.services.postgresql.package.withPackages config.services.postgresql.extensions} ${upstreamCfg.dataDir}/package
         ln -sfT ${upstreamCfg.dataDir}/package /nix/var/nix/gcroots/per-user/postgres/package_${cfg.majorVersion}
       '' + (lib.optionalString (lib.versionAtLeast cfg.majorVersion "15") ''
         ${collationVerifierScript}/bin/verify-collations ${upstreamCfg.dataDir}

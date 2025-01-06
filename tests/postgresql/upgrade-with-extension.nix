@@ -87,7 +87,7 @@ in {
           ];
 
           services.postgresql = {
-            extraPlugins = ps: with ps; [ anonymizer ];
+            extensions = ps: with ps; [ anonymizer ];
             settings.shared_preload_libraries = lib.mkForce "auto_explain, pg_stat_statements, anon";
           };
           flyingcircus.roles.postgresql13.enable = lib.mkDefault true;
