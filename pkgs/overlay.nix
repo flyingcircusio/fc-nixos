@@ -34,37 +34,7 @@ let
   patchPhps = patch: phpPkg: phpPkg.overrideAttrs (prev: {
     patches = (prev.patches or []) ++ (prev.extraPatches or []) ++ [ patch ];
   });
-
-  additionalPythonPackages = python-self: python-super: {
-    pytest_patterns = python-self.callPackage ./python/pytest-patterns { };
-  };
-  # custom additional python packages need to be embedded in the relevant
-  # `pythonXYPackages` sets to make them select the correct dependencies and
-  # interpreters. To have the package available in all of them, we generate
-  # overrides here.
-  genPythonWithVersion = pythonVersion: {
-    "python${pythonVersion}" = let
-      # this `self` denotes the python interpreter, not the overlay self.
-      pyself = super."python${pythonVersion}".override {self = pyself; packageOverrides = additionalPythonPackages;};
-    in pyself;
-    "python${pythonVersion}Packages" = self."python${pythonVersion}".pkgs;
-  };
-
 in
-genPythonWithVersion ""
-//
-genPythonWithVersion "3"
-//
-genPythonWithVersion "39"
-//
-genPythonWithVersion "310"
-//
-genPythonWithVersion "311"
-//
-genPythonWithVersion "312"
-//
-genPythonWithVersion "313"
-//
 builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   #
   # == we need to patch upstream PHP for more liberal fpm log file permissions
@@ -81,9 +51,13 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     url = "https://github.com/flyingcircusio/php-src/commit/1a7e4834d94d72564521fffd6ceec5a378693cb7.patch";
     hash = "sha256-MWZdXUsvkpxhC9VVttrINY2E4X+PD7lChgkL3VYlk10=";
   }) super.php83;
-}
-//
-{
+
+  pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
+    (python-self: python-super: {
+      pytest_patterns = python-self.callPackage ./python/pytest-patterns { };
+    })
+  ];
+
   #
   # == our own stuff
   #
@@ -145,8 +119,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
   });
 
-  ipxe = super.callPackage ./ipxe.nix { };
-
   frr = super.frr.overrideAttrs (old: rec {
     version = "8.5.6";
     src = super.fetchFromGitHub {
@@ -181,6 +153,15 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
+  # Change this alias for trying out other kernel packages on non-production
+  # machines.
+  # The logic for enabling different kernels on prod and non-prod remains active
+  # the whole time. But in the normal case, both kernels point to the same
+  # stable kernel packages.
+  linuxKernelVerify = self.linuxKernelStable;
+
+  linuxKernelStable = self.linux_6_6;
+
   # We don't try to run matomo from the Nix store like upstream does,
   # so we need an installPhase that is a bit different.
   matomo = super.matomo.overrideAttrs (oldAttrs: {
@@ -192,16 +173,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       runHook postInstall
     '';
   });
-
-  # Change this alias for trying out other kernel packages on non-production
-  # machines.
-  # The logic for enabling different kernels on prod and non-prod remains active
-  # the whole time. But in the normal case, both kernels point to the same
-  # stable kernel packages.
-  linuxKernelVerify = self.linuxKernelStable;
-
-  linuxKernelStable = self.linux_6_6;
-
 
   matomo-beta = super.matomo-beta.overrideAttrs (oldAttrs: {
     installPhase = ''
@@ -478,22 +449,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   python38Packages = lib.dontRecurseIntoAttrs fc-nixos-21_05.python38Packages;
   py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
 
-  # This was renamed in NixOS 22.11, nixos-mailserver still refers to the old name.
-  pypolicyd-spf = self.spf-engine;
-
   qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
-
-  rabbitmq-server_3_8 = super.rabbitmq-server;
-
-  rich-cli = super.rich-cli.overridePythonAttrs (prev: {
-    propagatedBuildInputs = with self.python3Packages; [
-      rich
-      click
-      requests
-      textual
-      rich-rst
-    ];
-  });
 
   # Ruby 2.7 is EOL but we still need it for Sensu until Aramaki takes over ;)
   #ruby_2_7 = getClosureFromStore /nix/store/qqc6v89xn0g2w123wx85blkpc4pz2ags-ruby-2.7.8;
