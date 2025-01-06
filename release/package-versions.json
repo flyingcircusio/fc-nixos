@@ -595,9 +595,9 @@
     "version": "2.5.2"
   },
   "openldap": {
-    "name": "openldap-2.6.8",
+    "name": "openldap-2.6.9",
     "pname": "openldap",
-    "version": "2.6.8"
+    "version": "2.6.9"
   },
   "openldap_2_4": {
     "name": "openldap-2.4.58",
@@ -680,9 +680,9 @@
     "version": "8.3.0-1"
   },
   "percona-xtrabackup_innovation": {
-    "name": "percona-xtrabackup-8.4.0-1",
+    "name": "percona-xtrabackup-8.4.0-2",
     "pname": "percona-xtrabackup",
-    "version": "8.4.0-1"
+    "version": "8.4.0-2"
   },
   "percona-xtrabackup_lts": {
     "name": "percona-xtrabackup-8.4.0-1",
@@ -835,14 +835,14 @@
     "version": "1.2.2"
   },
   "postgresql_13": {
-    "name": "postgresql-13.17",
+    "name": "postgresql-13.18",
     "pname": "postgresql",
-    "version": "13.17"
+    "version": "13.18"
   },
   "postgresql_14": {
-    "name": "postgresql-14.14",
+    "name": "postgresql-14.15",
     "pname": "postgresql",
-    "version": "14.14"
+    "version": "14.15"
   },
   "postgresql_15": {
     "name": "postgresql-15.9",
@@ -850,9 +850,9 @@
     "version": "15.9"
   },
   "postgresql_16": {
-    "name": "postgresql-16.5",
+    "name": "postgresql-16.6",
     "pname": "postgresql",
-    "version": "16.5"
+    "version": "16.6"
   },
   "postgresql_17": {
     "name": "postgresql-17.1",

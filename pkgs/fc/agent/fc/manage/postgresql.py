@@ -150,6 +150,10 @@ def upgrade(
         ),
         default=None,
     ),
+    extension_names: Optional[List[str]] = Option(
+        default=[],
+        help="Extensions that are used in the databases. Must be the package name from https://search.nixos.org without the `postgresqlXXPackages.`-prefix.",
+    ),
     stop: Optional[bool] = Option(default=None),
     nothing_to_do_is_ok: Optional[bool] = False,
 ):
@@ -166,7 +170,7 @@ def upgrade(
             raise Exit(2)
 
         new_bin_dir = fc.util.postgresql.build_new_bin_dir(
-            log, context.pg_data_root, new_version
+            log, context.pg_data_root, new_version, extension_names
         )
         new_data_dir = context.pg_data_root / new_version.value
 
@@ -345,6 +349,10 @@ def prepare_autoupgrade(
         show_choices=True,
         help="PostgreSQL version to upgrade to.",
     ),
+    extension_names: Optional[List[str]] = Option(
+        default=[],
+        help="Extensions that are used in the databases. Must be the package name from https://search.nixos.org without the `postgresqlXXPackages.`-prefix.",
+    ),
     nothing_to_do_is_ok: Optional[bool] = False,
 ):
     with open(config) as f:
@@ -354,7 +362,7 @@ def prepare_autoupgrade(
     log = structlog.get_logger()
 
     new_bin_dir = fc.util.postgresql.build_new_bin_dir(
-        log, context.pg_data_root, new_version
+        log, context.pg_data_root, new_version, extension_names
     )
     new_data_dir = context.pg_data_root / new_version.value
 

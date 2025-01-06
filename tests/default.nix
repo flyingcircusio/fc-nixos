@@ -106,6 +106,7 @@ in {
   # postgres17 is going to be introduced later throughout the release cycle
   #postgresql17 = callTest ./postgresql { version = "17"; };
   postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix {};
+  postgresql-autoupgrade-exts = callSubTests ./postgresql/upgrade-with-extension.nix {};
   prometheus = callTest ./prometheus.nix {};
   rabbitmq = callTest ./rabbitmq.nix {};
   redis = callTest ./redis.nix {};

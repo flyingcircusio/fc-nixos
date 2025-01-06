@@ -152,6 +152,21 @@ Note that this is done while the old role is still active. It's safe to run
 the command while PostgreSQL is running as it does not have an impact on the
 current cluster and downtime is not required.
 
+If custom extensions are enabled with `services.postgresql.extraPlugins`, make sure
+to add those to the `fc-postgresql` invocation. I.e. for
+
+```nix
+{
+  services.postgresql.extraPlugins = plugins: [ plugins.anonymizer plugins.pgvector ];
+}
+```
+
+you'll need
+
+```
+sudo -u postgres fc-postgresql upgrade --new-version 14 --expected mydb --expected otherdb --extension-names anonymizer --extension-names pgvector
+```
+
 The command should automatically find the old data directory for 13, create
 the new data directory for 14, set it up, and succeed if no problems with the
 old cluster were found. Problems may occur if the old cluster has been
@@ -169,6 +184,9 @@ To actually run the upgrade, use:
 ```sh
 sudo -u postgres fc-postgresql upgrade --new-version 14 --expected mydb --expected otherdb --upgrade-now
 ```
+
+Please note that you'll also need the `--extension-names` parameters as described
+above.
 
 This will stop the postgresql service, prevent it from starting during the
 upgrade, migrate data and mark the old data directory as migrated. This data

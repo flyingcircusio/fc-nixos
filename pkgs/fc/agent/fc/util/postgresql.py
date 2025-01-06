@@ -9,6 +9,7 @@ from enum import Enum
 from pathlib import Path
 from stat import S_IMODE as modebits
 from subprocess import CalledProcessError, run
+from typing import List
 
 MIGRATED_TO_TEMPLATE = """\
 WARNING: This data directory should not be used anymore!
@@ -81,12 +82,17 @@ def is_service_running():
     return proc.returncode == 0
 
 
-def build_new_bin_dir(log, pg_data_root: Path, new_version: PGVersion):
+def build_new_bin_dir(
+    log,
+    pg_data_root: Path,
+    new_version: PGVersion,
+    extension_names: List[str] = [],
+):
+    extension_names_str = " ".join(extension_names)
     nix_build_new_pg_cmd = [
         "nix-build",
-        "<fc>",
-        "-A",
-        "postgresql_" + new_version.value,
+        "-E",
+        f"with import <fc> {{}}; postgresql_{new_version.value}.withPackages (ps: with ps; [ {extension_names_str} ])",
         "--out-link",
         pg_data_root / "pg_upgrade-package",
     ]
@@ -497,6 +503,22 @@ def run_pg_upgrade_check(
         raise
 
 
+def retrieve_shared_preload_libraries_setting(
+    old_data_dir: Path,
+) -> str | None:
+    """
+    The setting `shared_preload_libraries` must be correctly set for upgrades with
+    e.g. `pg_anon` installed. This function assumes that `old_data_dir` has a `postgresql.conf`
+    managed by NixOS, i.e. a trivial key-value text with quoted strings.
+    """
+    postgresql_conf = old_data_dir / "postgresql.conf"
+    if postgresql_conf.exists():
+        with open(postgresql_conf) as f:
+            for line in f.readlines():
+                if line.startswith("shared_preload_libraries"):
+                    return line.split("=")[1].strip()
+
+
 def run_pg_upgrade(
     log,
     new_bin_dir: Path,
@@ -514,6 +536,17 @@ def run_pg_upgrade(
         "--new-bindir",
         new_bin_dir,
     ]
+
+    if shared_preload_libraries := retrieve_shared_preload_libraries_setting(
+        old_data_dir
+    ):
+        setting = f"-c shared_preload_libraries={shared_preload_libraries}"
+        upgrade_cmd += [
+            "-o",
+            setting,
+            "-O",
+            setting,
+        ]
 
     if pg_upgrade_clone_available(
         log,

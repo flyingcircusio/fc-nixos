@@ -189,7 +189,7 @@ in {
 
         if [ ! -z "$coldvcls" ]; then
           for vcl in "$coldvcls"; do
-            $vadm vcl.discard $vcl
+            ${vadm} vcl.discard $vcl
           done
         fi
       '';

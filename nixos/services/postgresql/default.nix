@@ -64,6 +64,16 @@ let
   collationVerifierScript = pkgs.writers.writePython3Bin "verify-collations"
       {} (builtins.readFile ./verify-collations.py);
 
+  mkExtensionNamesForAutoUpgrade = postgresqlMajor:
+    let
+      availableExtensions = lib.mapAttrs'
+        (attrName: package: lib.nameValuePair (lib.getName package) attrName)
+        (builtins.removeAttrs pkgs."postgresql${toString postgresqlMajor}Packages" [ "recurseForDerivations" ]);
+      pluginByPname = package: lib.optionals (availableExtensions?${lib.getName package}) [
+        availableExtensions.${lib.getName package}
+      ];
+    in
+    lib.concatMap pluginByPname (config.services.postgresql.extraPlugins config.services.postgresql.package.pkgs);
 in {
   options = with lib; {
 
@@ -159,7 +169,7 @@ in {
       '';
 
       systemd.services.postgresql.postStart = ''
-        ln -sfT ${postgresqlPkg} ${upstreamCfg.dataDir}/package
+        ln -sfT ${config.services.postgresql.package.withPackages config.services.postgresql.extraPlugins} ${upstreamCfg.dataDir}/package
         ln -sfT ${upstreamCfg.dataDir}/package /nix/var/nix/gcroots/per-user/postgres/package_${cfg.majorVersion}
       '' + (lib.optionalString (lib.versionAtLeast cfg.majorVersion "15") ''
         ${collationVerifierScript}/bin/verify-collations ${upstreamCfg.dataDir}
@@ -426,12 +436,13 @@ in {
             "${config.flyingcircus.agent.package}/bin/fc-postgresql upgrade"
             "--new-version ${cfg.majorVersion}"
             "--new-data-dir ${upstreamCfg.dataDir}"
-            "--new-bin-dir ${upstreamCfg.package}/bin"
+            "--new-bin-dir ${upstreamCfg.package.withPackages (ps: attrValues (lib.getAttrs (mkExtensionNamesForAutoUpgrade cfg.majorVersion) ps))}/bin"
             "--no-stop"
             "--nothing-to-do-is-ok"
             "--upgrade-now"
-          ] ++ lib.optional cfg.autoUpgrade.checkExpectedDatabases
-            "--existing-db-check ${expectedDatabaseStr}";
+          ] ++ lib.optionals cfg.autoUpgrade.checkExpectedDatabases [
+            "--existing-db-check ${expectedDatabaseStr}"
+          ] ++ map (extName: "--extension-names ${extName}") (mkExtensionNamesForAutoUpgrade cfg.majorVersion);
         in
           concatStringsSep " \\\n  " upgradeCmd;
 

@@ -1,6 +1,14 @@
 import ./make-test-python.nix ({ pkgs, testlib, ... }: let
   varnishport = 8008;
   serverport = 8080;
+
+  cold_testvcl = pkgs.writeText "test_vcl" ''
+      vcl 4.0;
+      backend test_another_cold_vcl {
+        .host = "127.0.0.1";
+        .port = "200";
+      }
+  '';
 in {
   name = "webproxy";
   nodes = {
@@ -131,6 +139,20 @@ in {
       webproxy_old_varnish.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
       webproxy_old_varnish.systemctl("reload varnish")
       webproxy_old_varnish.wait_until_succeeds(f"{curl} | grep -q 'Hello World!'")
+
+    with subtest("varnish reloads with cold vcl and the cold vcl is discarded"):
+      webproxy.succeed("varnishadm vcl.list | grep \"0 boot\"")
+      webproxy.succeed("varnishadm vcl.state boot cold")
+      webproxy.systemctl("reload varnish")
+      webproxy.fail("varnishadm vcl.list | grep cold")
+
+    with subtest("varnish reloads with multiple cold vcls and the cold vcls are discarded"):
+      webproxy.systemctl("restart varnish")
+      webproxy.succeed("varnishadm vcl.list | grep \"0 boot\"")
+      webproxy.succeed("varnishadm vcl.state boot cold")
+      webproxy.succeed("varnishadm vcl.load another_cold_vcl ${cold_testvcl} cold")
+      webproxy.systemctl("reload varnish")
+      webproxy.fail("varnishadm vcl.list | grep \" cold \"")
 
     with subtest("varnish with broken config should fail to switch"):
       # switching to a different specialisation requires a reboot, otherwise `/run/current-system/specialisation/` is empty
