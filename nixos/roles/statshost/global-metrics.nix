@@ -5,7 +5,6 @@ let
   # Replaces flyingcircus.statshost.globalAllowedMetrics in role code.
   # This also includes the host metrics from telegraf defined in platform/monitoring.nix.
   globalAllowedMetrics = [
-    # We don't have apache on 19.03 but we still have 15.09 VMs using it.
     "apache"
     "ceph"
     "cpu"
