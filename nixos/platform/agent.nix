@@ -450,11 +450,6 @@ in
         "d /var/log/fc-agent - - - ${toString logDaysKeep}d"
         "d /var/spool/maintenance/archive - - - ${toString logDaysKeep}d"
         # Remove various obsolete files and directories
-        # /var/lib/fc-manage was only used on 15.09.
-        # The next three entries can be removed when all 15.09 VMs are gone.
-        "r /var/lib/fc-manage/fc-manage.stamp"
-        "r /var/lib/fc-manage/stamp-channel-update"
-        "r /var/lib/fc-manage"
         # The next 2 entries can be removed when all VMs with versions before 22.05 are gone.
         "r /var/log/fc-agent/fc-maintenance-command-output.log"
         "r /var/log/fc-agent/update-activity-command-output.log"
