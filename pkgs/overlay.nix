@@ -1,6 +1,6 @@
 self: super:
 let
-  poetry2nixSrc = (import ../versions.nix { }).poetry2nix;
+  poetry2nixSrc = (import ../versions.nix { pkgs = super; }).poetry2nix;
   poetry2nix = import poetry2nixSrc { pkgs = self; };
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
@@ -8,8 +8,8 @@ let
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
     {} super;
 
-  nixpkgs-21_05-src = (import ../versions.nix { }).nixpkgs-21_05;
-  fc-nixos-21_05-src = (import ../versions.nix { }).fc-nixos-21_05;
+  nixpkgs-21_05-src = (import ../versions.nix { pkgs = super; }).nixpkgs-21_05;
+  fc-nixos-21_05-src = (import ../versions.nix { pkgs = super; }).fc-nixos-21_05;
   fc-nixos-21_05 = import fc-nixos-21_05-src {inherit (self) config; nixpkgs = nixpkgs-21_05-src; };
 
   inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
