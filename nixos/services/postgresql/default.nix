@@ -145,7 +145,7 @@ in {
         ];
       };
 
-      systemd.services.postgresql.bindsTo = [ "network-addresses-ethsrv.service" ];
+      systemd.services.postgresql.bindsTo = [ fclib.network.srv.addressUnit ];
 
       systemd.services.postgresql.preStart = lib.mkBefore ''
         if [[ -e ${upstreamCfg.dataDir}/fcio_migrated_to ]]; then
