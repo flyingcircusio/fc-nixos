@@ -249,6 +249,15 @@ in {
         k3snodeA.wait_until_succeeds(f"k3s ctr images import {image}")
       k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodea | grep -vq NotReady")
 
+    with subtest("all kube-system images pulled successfully"):
+      print("waiting for containers to be created…")
+      print(k3sserver.execute("k3s kubectl -n kube-system get pods")[1])
+      k3sserver.wait_until_succeeds("k3s kubectl -n kube-system get pods | grep -zvq ContainerCreating")
+      if k3sserver.execute("k3s kubectl -n kube-system get pods | grep -zvq ErrImagePull")[0]:
+        print(k3sserver.execute("k3s kubectl -n kube-system get pods")[1])
+        raise AssertionError("Error pulling some images. If k3s was just recently updated, "
+          "consider updating the airgapped-k3s-images.nix hashes.")
+
     with subtest("dashboard sensu check should be green"):
       k3sserver.wait_for_unit("kube-dashboard")
       k3sserver.wait_until_succeeds("${lib.strings.escape ["\""] (masterSensuCheck "kube-dashboard")}")
