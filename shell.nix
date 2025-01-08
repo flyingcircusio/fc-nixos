@@ -1,7 +1,6 @@
-{}:
+{ pkgs ? import <nixpkgs> {} }:
 with builtins;
 let
-  pkgs = (import ./default.nix {});
   lib = pkgs.lib;
   channels = (import ./versions.nix { });
   nixPathUpstreams =
@@ -15,10 +14,6 @@ let
 
 in pkgs.mkShell {
   name = "fc-nixos";
-  buildInputs = [
-    pkgs.scriv
-    pkgs.bash
-  ];
   shellHook = ''
     export NIX_PATH="fc=${toString ./.}:${nixPathUpstreams}:nixos-config=/etc/nixos/configuration.nix"
     export PATH=$PATH:${nixosRepl}/bin
