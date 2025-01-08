@@ -10,7 +10,7 @@ fi
 base="./changelog.d"
 branch=$(git rev-parse --abbrev-ref HEAD)
 
-new_item="${base}/$(date '+%Y%m%d_%H%M%S')_${branch/\//-}_scriv.md"
+new_item="${base}/$(date '+%Y%m%d_%H%M%S')_${branch//\//-}_scriv.md"
 template="${base}/new_fragment.md.j2"
 
 cp "$template" "$new_item"
