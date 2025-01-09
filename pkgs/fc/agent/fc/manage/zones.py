@@ -180,7 +180,7 @@ class ReverseZone(Zone):
         else:
             self.strip_suffix = "." + self.origin + "."
         self.private = (
-            self.prefix[0].is_private() and self.prefix[-1].is_private()
+            not self.prefix[0].is_global() and not self.prefix[-1].is_global()
         )
 
     def add_ptr(self, addr, name):
@@ -280,7 +280,7 @@ class Zones(object):
         self.internal_forward.add_a(rdn, addr)
         for alias in aliases:
             self.internal_forward.add_cname(alias, rdn)
-        if not addr.is_private():
+        if addr.is_global():
             self.external_forward.add_a(rdn, addr)
             for alias in aliases:
                 self.external_forward.add_cname(alias, rdn)
