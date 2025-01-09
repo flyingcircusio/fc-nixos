@@ -90,6 +90,31 @@ lib.mkIf role.enable {
       2a02:2028:1007:8000::/56 =
       2a02:2028:ff00::2:8:0/112 =
       2a02:248:0:1032::/125 =
+
+      # bug: fc-zones does not correctly support ipv6 prefixes which don't lie on a
+      # nibble boundary, so we have to round the prefix length up to the next nibble
+      # and then split the prefixes into subnets there. see also:
+      # https://docs.db.ripe.net/Database-Support/Configuring-Reverse-DNS/#dealing-with-multiple-zones-for-one-address-block
+
+      # 2a06:3a80::/29
+      2a06:3a80::/32 =
+      2a06:3a81::/32 =
+      2a06:3a82::/32 =
+      2a06:3a83::/32 =
+      2a06:3a84::/32 =
+      2a06:3a85::/32 =
+      2a06:3a86::/32 =
+      2a06:3a87::/32 =
+
+      # 2a07:ed00::/29
+      2a07:ed00::/32 =
+      2a07:ed01::/32 =
+      2a07:ed02::/32 =
+      2a07:ed03::/32 =
+      2a07:ed04::/32 =
+      2a07:ed05::/32 =
+      2a07:ed06::/32 =
+      2a07:ed07::/32 =
     '';
   };
 
