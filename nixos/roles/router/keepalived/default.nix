@@ -28,9 +28,9 @@ let
 
   checkZebraLiveness= fclib.writeShellApplication {
     name = "check-zebra-liveness";
-    runtimeInputs = with pkgs; [ systemd ];
+    runtimeInputs = with pkgs; [ frr ];
     text = ''
-      systemctl -q is-active zebra
+      vtysh -d zebra -c ""
     '';
   };
 
