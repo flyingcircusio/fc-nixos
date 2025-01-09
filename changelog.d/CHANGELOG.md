@@ -1,3 +1,26 @@
+# Release 2025_001
+
+## NixOS XX.XX platform
+
+- Changing a planned warm reboot to a cold reboot by merging does not trigger customer notifications and reschedule the maintenance window anymore. (PL-133301)
+
+- Update nixpkgs from ff898be476375d3673334608f5a41efd9805258a to cc1f352acc315c2b36e5056055c026bfe3dd23cb
+
+- matomo: continue to allow usage of matomo-4.x
+  - The version is end-of-life now and has been marked as insecure by NixOS upstream. We continue to allow its usage during the 24.05 release cycle, but nonetheless recommend you to upgrade to matomo-5.x
+
+- Internal: make gitlab NixOS test more stable
+
+- Update nixpkgs from 28b740864b4e68f6a72bc35129d28ede5b273e62 to 9c9d7506c8f0883338ed9737dd8c886c64768ad2
+
+- Rotate FL’ root ssh key as the old one was over 5 years old (FC-42115)
+
+- Update nixpkgs from 81292057aadeb59b2d755a9a85e35e47492f4c2e to 28b740864b4e68f6a72bc35129d28ede5b273e62
+
+- Update nixpkgs from ebcc9ab51d9d5495508eb5c520eb188aecd7f799 to ff898be476375d3673334608f5a41efd9805258a
+
+
+
 # Release 2024_035
 
 
