@@ -64,7 +64,7 @@ class RebootActivity(Activity):
                 "merge-reboot-warm-to-cold",
                 help=(
                     "merging a cold reboot into a warm reboot results in a "
-                    "cold reboot. This is a significant change."
+                    "cold reboot."
                 ),
             )
 
@@ -73,6 +73,5 @@ class RebootActivity(Activity):
             return ActivityMergeResult(
                 self,
                 is_effective=True,
-                is_significant=True,
                 changes={"before": RebootType.WARM, "after": RebootType.COLD},
             )

@@ -3,7 +3,7 @@
 
 # Platform dependencies are still read from
 # release/versions.json, but the file is updated from flake inputs
-# when update_nixpkgs / build_versions_json is used.
+# when build_versions_json is used.
 
 # All former stand-alone scripts are now integrated into this flake.
 # They can be executed from the dev shell:
@@ -13,10 +13,7 @@
 # nixos_repl
 
 # ## Release
-# update_nixpkgs (was: update-nixpkgs.py)
 # update_phps (was: up-nix-phps.sh)
-# show_release_branch_status (was: fc-branch-diff-release.sh)
-# perform_release (was: fc-release.sh)
 # get_current_channel_url (was: fc-get-current-channel-url.sh)
 
 {
@@ -84,18 +81,6 @@
           # These are packages that work on all systems.
           # Also see release/flake-part-linux-only-packages.nix
 
-          fcRelease = pkgs.writeShellApplication {
-            name = "perform_release";
-            runtimeInputs = with pkgs; [ git coreutils ];
-            text = (lib.readFile release/fc-release.sh);
-          };
-
-          fcBranchDiffRelease = pkgs.writeShellApplication {
-            name = "show_release_branch_status";
-            runtimeInputs = with pkgs; [ gh git coreutils ];
-            text = (lib.readFile release/fc-branch-diff-release.sh);
-          };
-
           fcGetCurrentChannelUrl = pkgs.writeShellApplication {
             name = "get_current_channel_url";
             runtimeInputs = with pkgs; [ curl ];
@@ -108,12 +93,6 @@
             runtimeInputs = with pkgs; [ git curl jq ];
             text = (lib.readFile release/up-nix-phps.sh);
           };
-
-          updateNixpkgs =
-            pkgs.writers.writePython3Bin
-              "update_nixpkgs"
-              { libraries = with pkgs.python3Packages; [ GitPython rich typer ]; }
-              (lib.readFile release/update-nixpkgs.py);
 
           versionsJson = pkgs.writeText "versions.json" (lib.generators.toJSON {}
             {
@@ -152,13 +131,9 @@
 
             packages = with pkgs; [
               jq
-              scriv
             ] ++ (with self'.packages; [
-              fcBranchDiffRelease
               fcGetCurrentChannelUrl
-              fcRelease
               upNixPhps
-              updateNixpkgs
             ]);
 
             scripts = {
