@@ -1,3 +1,14 @@
+# Release 2025_001
+
+## NixOS XX.XX platform
+
+- Rotate FL’ root ssh key as the old one was over 5 years old (FC-42115)
+
+- router: add new IPv6 ranges to the reverse DNS
+  configuration. (PL-133322)
+
+
+
 # Release 2024_035
 
 
