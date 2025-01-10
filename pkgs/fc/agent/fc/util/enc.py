@@ -94,10 +94,37 @@ def initialize_state_version(
             ),
             state_version=state_version,
         )
+    else:
+        # Until 21.05, the state version persisted was incorrect and contained
+        # the build revision as well. Fix it up when necessary.
+        # https://github.com/NixOS/nixpkgs/issues/127654
+        state_version = state_version_file.read_text().strip()
+        try:
+            version_parts = state_version.split(".")
+            version_major = version_parts[0]
+            version_minor = version_parts[1]
+        except IndexError:
+            log.error(
+                "initialize-state-version-format-err",
+                _replace_msg=f"Found state version with unexpected format: `{state_version}`",
+            )
+            return
+        expected_version = f"{version_major}.{version_minor}"
+        if state_version == expected_version:
+            return
+        else:
+            log.warn(
+                "initialize-state-version-format-fixup",
+                _replace_msg=(
+                    f"Fixing up state version {state_version} to "
+                    f"correct format {expected_version}"
+                ),
+            )
+            state_version = expected_version
 
-        state_version_file.write_text(state_version)
-        state_version_file.chmod(0o664)
-        shutil.chown(state_version_file, "root", "service")
+    state_version_file.write_text(state_version)
+    state_version_file.chmod(0o664)
+    shutil.chown(state_version_file, "root", "service")
 
 
 def update_enc_nixos_config(log, enc, enc_path):
