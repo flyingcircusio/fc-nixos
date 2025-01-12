@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-131.0.6778.204",
+    "name": "chromedriver-unwrapped-131.0.6778.264",
     "pname": "chromedriver-unwrapped",
-    "version": "131.0.6778.204"
+    "version": "131.0.6778.264"
   },
   "chromium": {
-    "name": "chromium-131.0.6778.204",
+    "name": "chromium-131.0.6778.264",
     "pname": "chromium",
-    "version": "131.0.6778.204"
+    "version": "131.0.6778.264"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -120,9 +120,9 @@
     "version": "4.6.2"
   },
   "curl": {
-    "name": "curl-8.11.0",
+    "name": "curl-8.11.1",
     "pname": "curl",
-    "version": "8.11.0"
+    "version": "8.11.1"
   },
   "cyrus_sasl": {
     "name": "cyrus-sasl-2.1.28",
@@ -195,9 +195,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-133.0.3",
+    "name": "firefox-134.0",
     "pname": "firefox",
-    "version": "133.0.3"
+    "version": "134.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -220,14 +220,14 @@
     "version": "10.04.0"
   },
   "git": {
-    "name": "git-2.47.0",
+    "name": "git-2.47.1",
     "pname": "git",
-    "version": "2.47.0"
+    "version": "2.47.1"
   },
   "gitaly": {
-    "name": "gitaly-17.6.2",
+    "name": "gitaly-17.7.1",
     "pname": "gitaly",
-    "version": "17.6.2"
+    "version": "17.7.1"
   },
   "github-runner": {
     "name": "github-runner-2.321.0",
@@ -235,9 +235,9 @@
     "version": "2.321.0"
   },
   "gitlab": {
-    "name": "gitlab-17.6.2",
+    "name": "gitlab-17.7.1",
     "pname": "gitlab",
-    "version": "17.6.2"
+    "version": "17.7.1"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.14.0",
@@ -245,14 +245,14 @@
     "version": "4.14.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.6.2",
+    "name": "gitlab-ee-17.7.1",
     "pname": "gitlab-ee",
-    "version": "17.6.2"
+    "version": "17.7.1"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.6.2",
+    "name": "gitlab-pages-17.7.1",
     "pname": "gitlab-pages",
-    "version": "17.6.2"
+    "version": "17.7.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.6.2",
+    "name": "gitlab-workhorse-17.7.1",
     "pname": "gitlab-workhorse",
-    "version": "17.6.2"
+    "version": "17.7.1"
   },
   "glibc": {
     "name": "glibc-2.40-36",
@@ -435,9 +435,9 @@
     "version": "1.4.0"
   },
   "libxml2": {
-    "name": "libxml2-2.13.4",
+    "name": "libxml2-2.13.5",
     "pname": "libxml2",
-    "version": "2.13.4"
+    "version": "2.13.5"
   },
   "libxslt": {
     "name": "libxslt-1.1.42",
@@ -450,14 +450,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.69",
+    "name": "linux-6.6.71",
     "pname": "linux",
-    "version": "6.6.69"
+    "version": "6.6.71"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.69",
+    "name": "linux-6.6.71",
     "pname": "linux",
-    "version": "6.6.69"
+    "version": "6.6.71"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -585,9 +585,9 @@
     "version": "20.18.1"
   },
   "nodejs_22": {
-    "name": "nodejs-22.10.0",
+    "name": "nodejs-22.12.0",
     "pname": "nodejs",
-    "version": "22.10.0"
+    "version": "22.12.0"
   },
   "nspr": {
     "name": "nspr-4.36",
@@ -615,9 +615,9 @@
     "version": "2.5.2"
   },
   "openldap": {
-    "name": "openldap-2.6.8",
+    "name": "openldap-2.6.9",
     "pname": "openldap",
-    "version": "2.6.8"
+    "version": "2.6.9"
   },
   "openldap_2_4": {
     "name": "openldap-2.4.58",
@@ -761,9 +761,9 @@
     "version": "8.3.15"
   },
   "phpPackages.composer": {
-    "name": "composer-2.8.1",
+    "name": "composer-2.8.4",
     "pname": "composer",
-    "version": "2.8.1"
+    "version": "2.8.4"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -791,9 +791,9 @@
     "version": "3.9.1"
   },
   "postgresql": {
-    "name": "postgresql-16.5",
+    "name": "postgresql-16.6",
     "pname": "postgresql",
-    "version": "16.5"
+    "version": "16.6"
   },
   "postgresql13Packages.postgis": {
     "name": "postgis-3.5.0",
@@ -856,29 +856,29 @@
     "version": "1.2.2"
   },
   "postgresql_13": {
-    "name": "postgresql-13.17",
+    "name": "postgresql-13.18",
     "pname": "postgresql",
-    "version": "13.17"
+    "version": "13.18"
   },
   "postgresql_14": {
-    "name": "postgresql-14.14",
+    "name": "postgresql-14.15",
     "pname": "postgresql",
-    "version": "14.14"
+    "version": "14.15"
   },
   "postgresql_15": {
-    "name": "postgresql-15.9",
+    "name": "postgresql-15.10",
     "pname": "postgresql",
-    "version": "15.9"
+    "version": "15.10"
   },
   "postgresql_16": {
-    "name": "postgresql-16.5",
+    "name": "postgresql-16.6",
     "pname": "postgresql",
-    "version": "16.5"
+    "version": "16.6"
   },
   "postgresql_17": {
-    "name": "postgresql-17.1",
+    "name": "postgresql-17.2",
     "pname": "postgresql",
-    "version": "17.1"
+    "version": "17.2"
   },
   "powerdns": {
     "name": "pdns-4.9.2",
@@ -901,9 +901,9 @@
     "version": "0.12.4"
   },
   "python3": {
-    "name": "python3-3.12.7",
+    "name": "python3-3.12.8",
     "pname": "python3",
-    "version": "3.12.7"
+    "version": "3.12.8"
   },
   "python310": {
     "name": "python3-3.10.16",
@@ -911,14 +911,14 @@
     "version": "3.10.16"
   },
   "python311": {
-    "name": "python3-3.11.10",
+    "name": "python3-3.11.11",
     "pname": "python3",
-    "version": "3.11.10"
+    "version": "3.11.11"
   },
   "python312": {
-    "name": "python3-3.12.7",
+    "name": "python3-3.12.8",
     "pname": "python3",
-    "version": "3.12.7"
+    "version": "3.12.8"
   },
   "python38": {
     "name": "python3-3.8.11",
@@ -1005,11 +1005,6 @@
     "pname": "urllib3",
     "version": "2.2.3"
   },
-  "qemu": {
-    "name": "qemu-9.1.2",
-    "pname": "qemu",
-    "version": "9.1.2"
-  },
   "qemu-ceph-nautilus": {
     "name": "qemu-6.0.0",
     "pname": "qemu",
@@ -1052,9 +1047,9 @@
     "version": "3.3.0"
   },
   "ruby": {
-    "name": "ruby-3.3.5",
+    "name": "ruby-3.3.6",
     "pname": "ruby",
-    "version": "3.3.5"
+    "version": "3.3.6"
   },
   "ruby_2_7": {},
   "ruby_3_2": {
@@ -1113,9 +1108,9 @@
     "version": "12.7.4"
   },
   "systemd": {
-    "name": "systemd-256.8",
+    "name": "systemd-256.10",
     "pname": "systemd",
-    "version": "256.8"
+    "version": "256.10"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.5",
