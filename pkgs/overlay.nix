@@ -162,18 +162,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   linuxKernelStable = self.linux_6_6;
 
-  # We don't try to run matomo from the Nix store like upstream does,
-  # so we need an installPhase that is a bit different.
-  matomo = super.matomo.overrideAttrs (oldAttrs: {
-    installPhase = ''
-      runHook preInstall
-      mkdir -p $out/share
-      cp -ra * $out/share/
-      rmdir $out/share/tmp
-      runHook postInstall
-    '';
-  });
-
+  # TODO: for matomo-4 we used to override the installPhase as well. matomo-5
+  # worked well with the originial nixpkgs pkg in a testvm, so is this still
+  # needed?
   matomo-beta = super.matomo-beta.overrideAttrs (oldAttrs: {
     installPhase = ''
       runHook preInstall

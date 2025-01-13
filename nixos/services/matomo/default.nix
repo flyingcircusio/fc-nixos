@@ -128,8 +128,8 @@ in {
         description = ''
           Matomo package for the service to use.
         '';
-        default = pkgs.matomo;
-        defaultText = literalExpression "pkgs.matomo";
+        default = pkgs.matomo_5;
+        defaultText = literalExpression "pkgs.matomo_5";
         example = literalExpression "pkgs.matomo-beta";
       };
 
