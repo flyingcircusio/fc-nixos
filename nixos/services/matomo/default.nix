@@ -404,7 +404,10 @@ in {
       script = ''
         # Check whether user setup has already been done.
         echo "Checking main config file ${configIniPhpFile}..."
-        if [[ -f ${configIniPhpFile} ]]; then
+        if test -f "${configIniPhpFile}" &&
+          # since matomo-5.2.0, the config.ini.php is already created at first
+          # installer page access https://github.com/matomo-org/matomo/issues/22932
+          grep -q -F "[database]" "${configIniPhpFile}"; then
           echo "${configIniPhpFile} already exists, looks like Matomo is already installed."
           echo "Executing possibly pending database updates..."
           matomo-console core:update --yes
