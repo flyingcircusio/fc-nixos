@@ -29,10 +29,10 @@ let
     pname = "consulate";
     version = "1.1.0"; # unreleased version
     src = fetchFromGitHub {
-      owner = "gmr";
+      owner = "flyingcircusio";
       repo = "consulate";
-      rev = "c431de9e629614b49c61c334d5f491fea3a9c5a3";
-      sha256 = "1jm8l3xl274xjamsf39zgn6zz00xq5wshhvqkncnyvhqw0597cqv";
+      rev = "90e46a4f307e281bf0e050d510fa367fd2826a2f";
+      sha256 = "sha256-dt2hKcCtsGx5mtqyd83eTMhFRKjtqK/CcCGBy6ShNk8=";
     };
     doCheck = false;  # tests require a running Consul via Docker
     propagatedBuildInputs = [

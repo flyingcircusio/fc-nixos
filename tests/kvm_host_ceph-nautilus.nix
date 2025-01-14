@@ -35,6 +35,11 @@ let
       flyingcircus.static.mtus.sto = 1500;
       flyingcircus.static.mtus.stb = 1500;
 
+      systemd.timers.fc-ceph-load-vm-images.enable = lib.mkForce false;
+      systemd.timers.fc-ceph-mon-update-client-keys.enable = lib.mkForce false;
+      systemd.timers.logrotate.enable = lib.mkForce false;
+
+
       flyingcircus.encServices = [
         {
           address = "host1.fcio.net";
@@ -97,7 +102,7 @@ let
             export PATH="${PATH}"
             echo $PATH
             cd ${testPackage.src}
-            pytest -vv --cov-config=/etc/coveragerc --cov-append -c ${testPackage.src}/pytest.ini "$@" 2>&1
+            pytest -vv --cov-config=/etc/coveragerc --cov-append -c ${testPackage.src}/pytest.ini "$@" 2>&1 | tee /dev/kmsg
             ${if testOpts != "" then ''
             # If we run with custom test options we might be filtering
             # for tests and due to the live/not live split either phase
@@ -400,6 +405,8 @@ in
     host2.execute("systemctl stop fc-ceph-mon")
     host1.execute("systemctl stop fc-ceph-mgr")
     host2.execute("systemctl stop fc-ceph-mgr")
+    host3.execute("systemctl stop fc-ceph-mgr")
+    host3.execute("systemctl stop fc-ceph-mon")
 
     ########################################################################
     # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
