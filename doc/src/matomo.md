@@ -2,21 +2,25 @@
 
 # Matomo
 
-Managed instance of [Matomo](https://matomo.org), a real-time Web analytics application. By default, we use the the latest LTS version provided by NixOS which is 4.x.x.
+Managed instance of [Matomo](https://matomo.org), a real-time Web analytics application. By default, we use the the latest LTS version provided by NixOS which is 5.x.x.
 
-Matomo 5.x.x is also supported by this platform version.
-
-The next platform version 24.11 will use Matomo 5 as default version.
-Matomo 4 is supported only until the end of 2024.
+Matomo 4.x.x is not supported anymore by this platform version, please ensure that you have upgraded from that version.
 
 (nixos-matomo-upgrade)=
 
 ## Upgrading to Matomo 5
 
+The upgrade from Matomo 4 to 5 contains breaking changes especially
+relevant when using additional plugins. Ensure that your plugins are
+compatible to Matomo 5 before upgrading.
 
+The 24.11 platform already sets `matomo_5` as the default package to be used. Hence, when upgrading from platform 24.05 with matomo-4, the upgrade will happen automatically.
 :::{warning}
 Before upgrading, test Matomo 5 on a separate staging instance, if possible. Migrating from Matomo 4 to 5 is irreversible without manual admin intervention!
 :::
+
+
+It is also possible to upgrade to matomo_5 while still using the 24.05 platform:
 
 To use Matomo 5, set the `services.matomo.package` option manually in custom config, like this:
 
@@ -70,8 +74,6 @@ Before activating the `matomo` role, add at least the following custom config:
 ```
 See {ref}`nixos-custom-modules` for general information about writing custom NixOS
 modules in {file}`/etc/local/nixos`.
-
-If you want to use Matomo 5 instead, see the config example in {ref}`nixos-matomo-upgrade`.
 
 ### Create the database
 
@@ -177,8 +179,8 @@ Put additional nginx virtual host settings here which are the same options as
 
 **services.matomo.package**
 
-Package version to use. Default is `pkgs.matomo`, which is Matomo 4 at the moment.
-`pkgs.matomo_5` is also supported by us and `pkgs.matomo_beta` might be a newer but unsupported version.
+Package version to use. Default is `pkgs.matomo_5`.
+`pkgs.matomo_beta` might be used as a newer but unsupported version.
 
 ## Monitoring
 

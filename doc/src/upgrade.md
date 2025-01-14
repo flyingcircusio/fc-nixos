@@ -18,7 +18,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 - New roles: {ref}`percona84 <nixos-upgrade-percona>`
 - Removed roles: {ref}`percona81 percona82 percona83 <nixos-upgrade-percona>`
 - Removed significant packages:
-- Roles affected by significant breaking changes: none
+- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`
 
 
 ## Why upgrade? Security
@@ -108,6 +108,21 @@ time-window.
 (nixos-upgrade-breaking)=
 
 ## Significant breaking changes
+
+(2411-upgrade-matomo)=
+
+### Matomo
+
+This platform release removes support for version 4 of the Matomo web analytics
+tool. Existing installations will be upgraded to version 5.
+
+This update is irreversable without manual admin interventions. For more details
+and upgrade instructions when still on the 24.05 platform, consult
+{ref}`the upgrade documentation <nixos-matomo-upgrade>`.
+
+Installations that already upgraded to Matomo 5 during the 24.05 NixOS platform
+may remove `services.matomo.package = pkgs.matomo_5;` from their custom NixOS
+config after upgrading, this is the default now.
 
 (nixos-upgrade-percona)=
 
