@@ -59,18 +59,18 @@ rec {
   # it will break hydra and we can't cleanly filter it out of the automatic
   # test discovery at the moment.
   #
-  qemu-dev-nautilus = callPackage ./qemu {
-    version = "dev";
-    # builtins.toPath (testPath + "/.")
-    # for tests:
-    src = ../../../../../fc.qemu/.;
-    # for nix-shell . -A fc.qemu-dev-nautilus
-    # src = ../../../fc.qemu/.;
-    qemu_ceph = pkgs.qemu-ceph-nautilus;
-    ceph_client = pkgs.ceph-nautilus.ceph-client;
-    python3Packages = pkgs.python38Packages;
-    py_pytest_patterns = pkgs.py38_pytest_patterns;
-  };
+  # qemu-dev-nautilus = callPackage ./qemu {
+  #   version = "dev";
+  #   # builtins.toPath (testPath + "/.")
+  #   # for tests:
+  #   src = ../../../../../fc.qemu/.;
+  #   # for nix-shell . -A fc.qemu-dev-nautilus
+  #   # src = ../../../fc.qemu/.;
+  #   qemu_ceph = pkgs.qemu-ceph-nautilus;
+  #   ceph_client = pkgs.ceph-nautilus.ceph-client;
+  #   python3Packages = pkgs.python38Packages;
+  #   py_pytest_patterns = pkgs.py38_pytest_patterns;
+  # };
 
   roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
   roundcube-chpasswd-py = callPackage ./roundcube-chpasswd-py {};
