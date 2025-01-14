@@ -108,6 +108,7 @@
   "mongodb-6_0",
   "monitoring-plugins",
   "mstflint",
+  "mstflint",
   "mysql",
   "mysql80",
   "nfs-utils",
