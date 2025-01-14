@@ -72,7 +72,6 @@ setup(
             "fc-backy-publish=fc.manage.backy:publish",
             "fc-collect-garbage=fc.manage.collect_garbage:app",
             "fc-create-vm=fc.manage.createvm:main",
-            "fc-dhcpd=fc.manage.dhcpd:main",
             "fc-directory=fc.util.directory:directory_cli",
             "fc-graylog=fc.manage.graylog:main",
             "fc-kea=fc.manage.kea:main",

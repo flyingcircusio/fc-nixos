@@ -326,5 +326,10 @@ in
       };
     };
 
+    # BBB: can be removed in 25.05
+    system.activationScripts.removeISCDHCPConfig = ''
+      rm -f /etc/nixos/localconfig-dhcpd4.conf
+      rm -f /etc/nixos/localconfig-dhcpd6.conf
+    '';
   };
 }
