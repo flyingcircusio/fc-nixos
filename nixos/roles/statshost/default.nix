@@ -497,12 +497,12 @@ in
             providers:
             - name: 'default'
               orgId: 1
-              folder: 'FCIO'
               type: file
               disableDeletion: false
               updateIntervalSeconds: 360
               options:
                 path: ${grafanaJsonDashboardPath}
+                foldersFromFilesStructure: true
           '';
         };
         prometheusDatasource = pkgs.writeTextFile {
