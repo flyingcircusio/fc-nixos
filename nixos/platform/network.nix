@@ -797,6 +797,20 @@ in
                   requires = fclib.mkOverrideUpstreamModule [ "network-addresses-${fclib.underlay.interface}.service" ];
                   after = fclib.mkOverrideUpstreamModule [ "network.target" "systemd-sysctl.service" "network-addresses-${fclib.underlay.interface}.service" ];
                   # Wants=network.target set in upstream module.
+
+                  # upstream's settings will cause frr to be restarted
+                  # if the configuration is changed, but only reloaded
+                  # if the package changes. we want this to be the
+                  # other way round: reload if only the configuration
+                  # changes, otherwise restart the daemons entirely.
+                  stopIfChanged = false;
+                  reloadIfChanged = fclib.mkOverrideUpstreamModule false;
+                  restartTriggers = fclib.mkOverrideUpstreamModule [ ];
+                  reloadTriggers = fclib.mkOverrideUpstreamModule [
+                    # see upstream module sources
+                    config.environment.etc."frr/frr.conf".source
+                    config.environment.etc."frr/daemons".text
+                  ];
                 }
               )
             ])
