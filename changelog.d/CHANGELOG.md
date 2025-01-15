@@ -19,6 +19,8 @@
 
 - Update nixpkgs from ebcc9ab51d9d5495508eb5c520eb188aecd7f799 to ff898be476375d3673334608f5a41efd9805258a
 
+- router: add new IPv6 ranges to the reverse DNS
+  configuration. (PL-133322)
 
 
 # Release 2024_035
