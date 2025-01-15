@@ -47,14 +47,15 @@ rec {
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "f3712a972a37591249a2dacd223192302a447a4a";
-      hash = "sha256-4vLiEdTJBqddjZ5O04GdyEozqYYEspzZZMKTQz16kyE=";
+      rev = "8e211f3602cdc3fe4ed33514e277eb27929cce12";
+      hash = "sha256-bnd4RVaB1J0dlz6x1Vdyr29xsqL+QhVCXd2McH+voPk=";
     };
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;
     python3Packages = pkgs.python38Packages;
     py_pytest_patterns = pkgs.py38_pytest_patterns;
   };
+
   # Enable this temporarily during development, but DO NOT commit this as
   # it will break hydra and we can't cleanly filter it out of the automatic
   # test discovery at the moment.
