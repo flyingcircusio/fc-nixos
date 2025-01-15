@@ -195,9 +195,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-134.0",
+    "name": "firefox-134.0.1",
     "pname": "firefox",
-    "version": "134.0"
+    "version": "134.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -1156,6 +1156,11 @@
     "name": "util-linux-2.39.4",
     "pname": "util-linux",
     "version": "2.39.4"
+  },
+  "uv": {
+    "name": "uv-0.4.30",
+    "pname": "uv",
+    "version": "0.4.30"
   },
   "varnish": {
     "name": "varnish-7.5.0",
