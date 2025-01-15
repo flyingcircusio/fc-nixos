@@ -36,7 +36,6 @@ in {
   # channel = callTest ./channel.nix {};
   ceph-nautilus = callTest ./ceph-nautilus.nix {};
   coturn = callTest ./coturn.nix {};
-  #devhost = callTest ./devhost.nix {};
   docker = callTest ./docker.nix {};
   fcagent = callTest ./fcagent.nix {};
   fde-tooling = callTest ./fde-tooling.nix {};
