@@ -98,24 +98,40 @@ let
           # is going on.
           (pkgs.writeShellScriptBin "run-tests" # BEWARE: DO NOT RENAME!
               ''
+            set -o pipefail
+            set -x
+
             export PYTHONPATH="${PYTHONPATH}"
-            export PATH="${PATH}"
-            echo $PATH
+            export PATH="${PATH}:${pkgs.openssh}/bin:${pkgs.gnused}/bin"
             cd ${testPackage.src}
+
+            rm /tmp/fc.qemu-report.xml
+
             pytest -vv --cov-config=/etc/coveragerc --cov-append -c ${testPackage.src}/pytest.ini "$@" 2>&1 | tee /dev/kmsg
+            PYTESTRET=$?
+
             ${if testOpts != "" then ''
             # If we run with custom test options we might be filtering
             # for tests and due to the live/not live split either phase
             # might not have any tests. However, we do not want to
             # accidentally accept the `no tests found` failure in Hydra.
-            PYTESTRET=$?
+            echo "Pytest result code: $PYTESTRET"
             if [ $PYTESTRET -eq 0 ] || [ $PYTESTRET -eq 5 ]; then
               # 5 means no tests found, which might happen if we have options
               true;
-            else
-              exit $PYTESTRET;
             fi
             '' else ""}
+
+            if ! ${pkgs.gnugrep}/bin/grep -q 'errors="0" failures="0"' /tmp/fc.qemu-report.xml ; then
+              # I've seen weird situations where pytest exited with an error but we exited
+              # with a zero return code. This is a safety-belt. If no report file is there
+              # or the report file shows non-zero errors or failures we return with an error
+              echo "Pytest exit status: $PYTESTRET"
+              echo "Detected failures in unit test report!"
+              exit 1
+            fi
+
+            exit $PYTESTRET
           '')
       ];
 
@@ -135,48 +151,6 @@ let
           testkey.pub
         ];
       };
-
-      # system.activationScripts.fcQemuSrc = let
-      #   cephPkgs = config.fclib.ceph.mkPkgs "nautilus";
-      #   py = pkgs.python3;
-      #   pyPkgs = py.pkgs;
-      #   qemuTestEnv = py.buildEnv.override {
-      #     extraLibs = [
-      #       testPackage
-
-      #       # Additional packages to run the tests
-      #       pyPkgs.pytest
-      #       pyPkgs.pytest-xdist
-      #       pyPkgs.pytest-cov
-      #       pyPkgs.mock
-      #       pyPkgs.pytest-timeout
-
-      #       (pyPkgs.buildPythonPackage rec {
-      #         pname = "pytest-flakefinder";
-      #         version = "1.1.0";
-
-      #         src = pyPkgs.fetchPypi {
-      #           inherit pname version;
-      #           hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
-      #         };
-
-      #         propagatedBuildInputs = [ pyPkgs.pytest ];
-
-      #         meta = with lib; {
-      #           description = "Runs tests multiple times to expose flakiness.";
-      #           homepage = "https://github.com/dropbox/pytest-flakefinder";
-      #         };
-      #       })
-      #     ];
-      #     # There are some namespace packages that collide on `backports`.
-      #     ignoreCollisions = true;
-      #   };
-      # in ''
-      #   # Provide a writable copy so the coverage etc. can be recorded.
-      #   cp -a ${testPackage.src} /root/fc.qemu
-      #   chmod u+w /root/fc.qemu -R
-      #   ln -s ${qemuTestEnv} /root/fc.qemu-env
-      # '';
 
       # We need this in the enc files as well so that timer jobs can update
       # the keys etc.
