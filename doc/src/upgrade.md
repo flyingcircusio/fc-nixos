@@ -18,7 +18,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 - New roles: {ref}`percona84 <nixos-upgrade-percona>`
 - Removed roles: {ref}`percona81 percona82 percona83 <nixos-upgrade-percona>`
 - Removed significant packages:
-- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`
+- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`
 
 
 ## Why upgrade? Security
@@ -133,9 +133,21 @@ TODO
 We recommend using the LTS `percona84` for most use cases, see
 {ref}`nixos-mysql-versions` for details.
 
+(nixos-upgrade-k3s)=
 ### K3S
 
-TODO
+k3s-1.30.x is the default k3s version in this release.
+
+Clusters that were created on the NixOS 24.05 platform already use that version.
+Clusters created at an earlier release might still be using an older k3s version,
+please verify that they are upgraded to k3s-1.30.x before upgrading to NixOS 24.11.
+
+k3s nodes are only allowed to be updated ins steps of one minor version at a time.
+The Kubernetes control plane with the `k3s-server` role needs to be updated before
+the cluster's worker nodes with the `k3s-agent` role are updated.
+
+Contact support of you need help with updating your k3s cluster, or if you still
+need to use another specific k3s version for your cluster.
 
 ### Slurm
 

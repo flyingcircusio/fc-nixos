@@ -30,8 +30,8 @@ run in a process called the `k3s agent`. We will prefer to use the words
 `server` and `agent` through the remainder of this document.
 :::
 
-Machines created on NixOS 24.05 use k3s version 1.30.x. Machines upgraded
-from earlier platform versions use 1.27.x of k3s by default which was also the default for NixOS 23.11. Contact support if you want to use newer versions of k3s on these machines.
+This platform release defaults to using k3s version 1.30.x.
+Machines created on NixOS 24.05 use k3s version 1.30.x.
 
 ## Reference architecture and minimal resource requirements
 
