@@ -1,6 +1,7 @@
 import sys
 import unittest.mock
 from itertools import chain, repeat
+from textwrap import dedent
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,6 +10,7 @@ from pytest import fixture, raises
 
 pyslurm = type(sys)("pyslurm")
 pyslurm.node = MagicMock()
+pyslurm.get_controllers = MagicMock()
 pyslurm.NODE_STATE_DRAIN = 1
 pyslurm.NODE_STATE_DOWN = 2
 pyslurm.NODE_RESUME = 3
@@ -412,4 +414,30 @@ def test_ready_many_timeout(logger, log, monkeypatch):
         "ready-many-timeout",
         timeout=3,
         remaining_node_states=remaining_node_states,
+    )
+
+
+def test_fc_slurm_check_returns_fallback_warning_on_no_data(logger):
+
+    from fc.util.checks import CheckResult
+
+    pyslurm.node.return_value.get.return_value = {
+        "test20": {"state": "IDLE"},
+        "test21": {"state": "ALLOCATED"},
+        "test22": {"state": "MIXED"},
+    }
+    pyslurm.get_controllers.return_value = ["test20"]
+
+    check_result = fc.util.slurm.check("logger", "somehost")
+
+    assert check_result == CheckResult(
+        errors=[],
+        ok_info=[],
+        warnings=[
+            dedent(
+                """\
+                No data available for this node `somehost`. Is this a `slurm-node`?
+                Got data for nodes {'test22', 'test20', 'test21'}."""
+            )
+        ],
     )

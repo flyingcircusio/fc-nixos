@@ -4,6 +4,7 @@ import time
 from collections import Counter
 from enum import Enum
 from functools import reduce
+from itertools import chain
 from typing import NamedTuple, Optional
 
 import pyslurm
@@ -733,16 +734,35 @@ def check(log, hostname) -> CheckResult:
 
     try:
         controller_names = pyslurm.get_controllers()
+        slurm_nodes = pyslurm.node().get()
     except ValueError as e:
         return CheckResult(errors=[e.args[0]], warnings=[])
 
     if hostname in controller_names:
         results.append(check_controller(log, hostname))
 
-    if hostname in pyslurm.node().get():
+    if hostname in slurm_nodes:
         results.append(check_node(log, hostname))
 
-    return reduce(CheckResult.merge, results)
+    if not results:
+        # No results being available could have 2 reasons:
+        # - core slurm node: an issue with the cluster data
+        # - helper node in the slurm cluster, e.g. a `slurm-external-dependency`:
+        #   not managed by the slurm-controller, so rightfully no data available
+        # Helper nodes still have `fc-slurm` in path as they're part of the coordinated
+        # maintenance logic, but this check is not automatically invoked.
+        # And to better diagnose the situation when it is indeed a core slurm node
+        # and data *should* be available, we list all available data.
+        # We can then spot in the warning what data is missing – instead of
+        # just observing a crash.
+        return CheckResult(
+            warnings=[
+                f"No data available for this node `{hostname}`. Is this a `slurm-node`?\n"
+                f"Got data for nodes {set(chain(controller_names, slurm_nodes))}."
+            ]
+        )
+    else:
+        return reduce(CheckResult.merge, results)
 
 
 def get_account_metrics(account, running, pending, suspended) -> dict:
