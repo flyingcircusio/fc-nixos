@@ -7,7 +7,7 @@ Slurm is a complex system. Feel free to use it, but we suggest contacting
 our support before putting anything into production.
 :::
 
-[Slurm](https://www.schedmd.com/) is an open source, fault-tolerant, and
+[Slurm](https://slurm.schedmd.com/) is an open source, fault-tolerant, and
 highly scalable cluster management and job scheduling system. Slurm consists
 of various services which are represented by separate Flying Circus roles
 documented below.
@@ -323,7 +323,7 @@ fc-slurm check
 
 (nixos-slurm-upgrade)=
 
-## Upgrading the Slurm clsuter
+## Upgrading the Slurm cluster
 
 When upgrading nodes between different *major versions* of Slurm, this need to happen in a [recommended order](https://slurm.schedmd.com/upgrades.html#procedure):
 1. Upgrade the `slurm-controller` node (possibly also running the `slurm-dbdserver`).
