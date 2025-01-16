@@ -2,7 +2,7 @@
 # Inspired by the installer.nix test from upstream.
 with builtins;
 
-import ./make-test-python.nix ({ pkgs, lib, ... }:
+import ./make-test-python.nix ({ pkgs, lib, testlib, ... }:
 let
   release = import ../release {};
   channel = release.release.src;
@@ -11,20 +11,7 @@ in {
   name = "channel";
 
   nodes.machine = {
-    imports = [ ../nixos ../nixos/roles ];
-
-    flyingcircus.enc.parameters = {
-      resource_group = "test";
-      interfaces.srv = {
-        mac = "52:54:00:12:34:56";
-        bridged = false;
-        networks = {
-          "192.168.101.0/24" = [ "192.168.101.1" ];
-          "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::1" ];
-        };
-        gateways = {};
-      };
-    };
+    imports = [ (testlib.fcConfig {}) ];
 
     environment.etc."nixpkgs-paths-debug".text = toJSON {
       pkgs = "${pkgs.path}";
@@ -44,6 +31,7 @@ in {
 
   testScript = ''
     print(machine.succeed("cat /etc/nixpkgs-paths-debug | ${pkgs.jq}/bin/jq"))
+    machine.execute("mkdir -p /nix/var/nix/profiles/per-user/root")
     machine.execute("ln -s ${channel} /nix/var/nix/profiles/per-user/root/channels")
 
     with subtest("Root should be able to nix-env install from nixpkgs"):
