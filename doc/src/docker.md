@@ -39,9 +39,12 @@ Currently, docker is using the `overlay2` storage driver for new installations.
 
 For existing installations, Docker auto-detects the storage driver if not configured explicitly.
 
-Older versions of docker (NixOS 15.09) used the `devicemapper` storage driver which has been deprecated for some time. It will be removed in version 25 of Docker.
+### Migrating from `devicemapper` to `overlay2`
 
-On 24.05, docker refuses to start if it detects `devicemapper` and is not explicitly configured to use it. You can still choose to continue using `devicemapper` or migrate to `overlay2`.
+Older versions of docker (NixOS 15.09) used the `devicemapper` storage driver.
+If your docker setup is still using that storage driver, you need to migrate the storage
+before updating to the NixOS 24.11 platform. The platform default for docker is
+now docker-27, which does not support the `devicemapper` storage driver anymore.
 
 To find out which storage driver Docker is using, run as service user:
 
@@ -49,32 +52,7 @@ To find out which storage driver Docker is using, run as service user:
 docker info | grep Storage
 ```
 
-Docker also logs warnings to the journal on startup if it is using `devicemapper`.
-
-### Continue using devicemapper
-
-:::{warning}
-As Docker 25 has removed the *devicemapper* backend, it is now clear that storage driver
-migration has to happen. We expect that Docker >= 25 might become the new default in the next
-platform release 24.11, so be prepared to have a migration plan for all containers that need
-to persist until then.
-:::
-
-Add {ref}`custom NixOS config <nixos-local>` like:
-
-```nix
-# /etc/local/nixos/docker.nix
-{ ... }:
-{
-  virtualisation.docker.daemon.settings = {
-    storage-driver = "devicemapper";
-  };
-}
-```
-
-Rebuild the system with `sudo fc-manage switch`.
-
-### Switch to overlay2
+On the NixOS 24.05 platform, docker also logs warnings to the journal on startup if it is using `devicemapper`.
 
 :::{warning}
 It's not possible to use another storage driver without downtime. You have to re-create images and containers!
@@ -101,7 +79,8 @@ When you are ready to switch, add the following {ref}`custom NixOS config <nixos
 
 Rebuild the system with `sudo fc-manage switch` and re-create containers after that.
 
-You can remove the config after a successful migration.
+You are now ready to update your system to the NixOS 24.11 platform.
+The config may be removed after a successful migration.
 
 
 % vim: set spell spelllang=en:

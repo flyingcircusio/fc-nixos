@@ -18,7 +18,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 - New roles: {ref}`percona84 <nixos-upgrade-percona>`
 - Removed roles: {ref}`percona81 percona82 percona83 <nixos-upgrade-percona>`
 - Removed significant packages:
-- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`
+- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`docker <nixos-upgrade-docker>`
 
 
 ## Why upgrade? Security
@@ -149,10 +149,19 @@ the cluster's worker nodes with the `k3s-agent` role are updated.
 Contact support of you need help with updating your k3s cluster, or if you still
 need to use another specific k3s version for your cluster.
 
+(nixos-upgrade-slurm)=
 ### Slurm
 
-
 This release contains a major version upgrade of Slurm from 23.11.x.x (NixOS 24.05) to 24.05.x.x. Nodes of a cluster need to be upgraded in a particular order, please consult the [upgrade instructions of the role](#nixos-slurm-upgrade) for details.
+
+(nixos-upgrade-docker)=
+### Docker
+
+The default docker version is updated from 24 to 27. Some of the major changes are:
+
+- The `devicemapper` storage driver is not supported anymore. See {ref}`nixos-docker-storage-driver` for background information and instructions on how to migrate your existing containers before upgrading.
+- docker-27 finally supports IPv6 networking by default. While this enables more modern networking setups, please ensure that your service security does not rely on the implicit assumption that containers have no IPv6 networking.
+- Read-only bind mounts are **recursively read-only** by default [since docker-25](https://docs.docker.com/engine/release-notes/25.0/#2500).
 
 ## Other notable changes
 
