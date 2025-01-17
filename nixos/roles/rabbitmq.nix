@@ -83,5 +83,11 @@ in
         }
       ];
     }
+
+    {
+      systemd.services.rabbitmq.postStart = lib.optionalString ((length (fclib.findServices "rabbitmq-node")) == 1) ''
+          rabbitmqctl enable_feature_flag all
+        '';
+    }
   ];
 }
