@@ -22,9 +22,9 @@
   inputs = {
     nixpkgs.url = "github:flyingcircusio/nixpkgs/nixos-24.11";
     nixos-mailserver = {
-      url = "gitlab:flyingcircus/nixos-mailserver/nixos-24.05?host=gitlab.flyingcircus.io";
+      url = "gitlab:flyingcircus/nixos-mailserver/nixos-24.11?host=gitlab.flyingcircus.io";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-24_05.follows = "nixpkgs";
+      inputs.nixpkgs-24_11.follows = "nixpkgs";
     };
     devenv = {
       url = "github:cachix/devenv/f810f8d8cb4e674d7e635107510bcbbabaa755a3";
