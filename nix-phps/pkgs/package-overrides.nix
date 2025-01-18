@@ -132,7 +132,11 @@ in
             # Patch rebased from https://github.com/php/php-src/commit/061058a9b1bbd90d27d97d79aebcf2b5029767b0
             # Fix PHP tests with libxml2 2.12
             ./patches/php74-libxml212-tests.patch
-          ] ++ lib.optionals (lib.versionAtLeast prev.php.version "8.1" && lib.versionOlder prev.php.version "8.2.14") [
+          ] ++ lib.optionals (lib.versionAtLeast prev.php.version "8.2" && lib.versionOlder prev.php.version "8.2.14") [
+            # Patch rebased from https://github.com/php/php-src/commit/0a39890c967aa57225bb6bdf4821aff7a3a3c082
+            # Fix compilation errors with libxml2 2.12
+            ./patches/libxml-ext.patch
+          ] ++ lib.optionals (lib.versionAtLeast prev.php.version "8.1" && lib.versionOlder prev.php.version "8.1.31") [
             # Patch rebased from https://github.com/php/php-src/commit/0a39890c967aa57225bb6bdf4821aff7a3a3c082
             # Fix compilation errors with libxml2 2.12
             ./patches/libxml-ext.patch
@@ -266,6 +270,21 @@ in
       else
         prev.extensions.grpc;
 
+    iconv = prev.extensions.iconv.overrideAttrs (attrs: {
+      patches =
+        let
+          upstreamPatches =
+            attrs.patches or [];
+
+          ourPatches =
+            lib.optionals (lib.versionOlder prev.php.version "8.0") [
+              # Header path defaults to FHS location, preventing the configure script from detecting errno support.
+              ./patches/iconv-header-path.patch
+            ];
+        in
+        ourPatches ++ upstreamPatches;
+    });
+
     igbinary =
       if lib.versionOlder prev.php.version "7.0" then
         prev.extensions.igbinary.overrideAttrs (attrs: {
@@ -278,6 +297,18 @@ in
         })
       else
         prev.extensions.igbinary;
+
+    imap =
+      if lib.versionOlder prev.php.version "8.1" && pkgs.stdenv.cc.isClang then
+        prev.extensions.imap.overrideAttrs (attrs: {
+          patches = (attrs.patches or [ ]) ++ [
+            (pkgs.fetchpatch {
+              url = "https://github.com/php/php-src/commit/f9cbeaa0338520f6c4a4b17555f558634b0dd955.patch";
+              hash = "sha256-Gzxsh99e0HIrDz6r+9XWUw1BQLKWuRm8RQq9p0KxBVs=";
+            })
+          ];
+        })
+      else prev.extensions.imap;
 
     inotify =
       if lib.versionOlder prev.php.version "7.0" then
@@ -329,33 +360,6 @@ in
     } // lib.optionalAttrs (lib.versionOlder prev.php.version "7.1" && pkgs.stdenv.cc.isClang) {
       NIX_CFLAGS_COMPILE = (attrs.NIX_CFLAGS_COMPILE or "") + " -Wno-register";
     });
-
-    iconv = prev.extensions.iconv.overrideAttrs (attrs: {
-      patches =
-        let
-          upstreamPatches =
-            attrs.patches or [];
-
-          ourPatches =
-            lib.optionals (lib.versionOlder prev.php.version "8.0") [
-              # Header path defaults to FHS location, preventing the configure script from detecting errno support.
-              ./patches/iconv-header-path.patch
-            ];
-        in
-        ourPatches ++ upstreamPatches;
-    });
-
-    imap =
-      if lib.versionOlder prev.php.version "8.1" && pkgs.stdenv.cc.isClang then
-        prev.extensions.imap.overrideAttrs (attrs: {
-          patches = (attrs.patches or [ ]) ++ [
-            (pkgs.fetchpatch {
-              url = "https://github.com/php/php-src/commit/f9cbeaa0338520f6c4a4b17555f558634b0dd955.patch";
-              hash = "sha256-Gzxsh99e0HIrDz6r+9XWUw1BQLKWuRm8RQq9p0KxBVs=";
-            })
-          ];
-        })
-      else prev.extensions.imap;
 
     json =
       if lib.versionAtLeast prev.php.version "8.0" then
@@ -692,7 +696,7 @@ in
     redis =
       if lib.versionOlder prev.php.version "7.0" then
         final.callPackage ./extensions/redis/4.nix { }
-      else if lib.versionOlder prev.php.version "7.1" then
+      else if lib.versionOlder prev.php.version "7.3" then
         final.callPackage ./extensions/redis/6.0.nix { }
       else if lib.versionOlder prev.php.version "8.0" then
         prev.extensions.redis.overrideAttrs (attrs: {
@@ -757,8 +761,17 @@ in
           "--with-libxml-dir=${pkgs.libxml2.dev}"
         ];
 
-        # Tests fail on Darwin with older PHP versions for some reason.
-        doCheck = attrs.doCheck or true && (lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux);
+      # Tests fail on Darwin with older PHP versions for some reason.
+      doCheck = attrs.doCheck or true && (lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux);
+
+      postPatch =
+        attrs.postPatch or ""
+        + lib.optionalString (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.4") ''
+          rm ext/soap/tests/bugs/bug66112.phpt
+        ''
+        + lib.optionalString (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.2") ''
+          rm ext/soap/tests/bugs/bug76348.phpt
+        '';
       });
 
 
@@ -835,24 +848,7 @@ in
 
     xdebug =
       # xdebug versions were determined using https://xdebug.org/docs/compat
-      if lib.versionAtLeast prev.php.version "8.4" then
-        prev.extensions.xdebug.overrideAttrs (attrs: {
-          name = "xdebug-3.4.0alpha1";
-          version = "3.4.0alpha1";
-          src = pkgs.fetchurl {
-            url = "https://xdebug.org/files/xdebug-3.4.0alpha1.tgz";
-            hash = "sha256-S4oizwlhom50uV+ToV6ctdWka8d2CKnAPb2YmWOytOc=";
-          };
-
-          patches = [
-            # Fix missing ZEND_EXIT
-            (pkgs.fetchpatch {
-              url = "https://github.com/xdebug/xdebug/commit/6ecd35f898e67cbe7f9257e7cb3a4c602a3dc8ec.patch";
-              hash = "sha256-IYc1KKPBYek4AXEijoM9RaTwp51J0Gz/CQ1HgmTct3Q=";
-            })
-          ];
-        })
-      else if lib.versionAtLeast prev.php.version "8.0" then
+      if lib.versionAtLeast prev.php.version "8.0" then
         prev.extensions.xdebug
       else if lib.versionAtLeast prev.php.version "7.2" then
         prev.extensions.xdebug.overrideAttrs (attrs: {
