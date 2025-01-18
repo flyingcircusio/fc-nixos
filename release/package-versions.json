@@ -369,11 +369,6 @@
     "pname": "k3s",
     "version": "1.31.4+k3s1"
   },
-  "k3s_1_28": {
-    "name": "k3s-1.28.14+k3s1",
-    "pname": "k3s",
-    "version": "1.28.14+k3s1"
-  },
   "k3s_1_29": {
     "name": "k3s-1.29.12+k3s1",
     "pname": "k3s",
@@ -383,6 +378,11 @@
     "name": "k3s-1.30.8+k3s1",
     "pname": "k3s",
     "version": "1.30.8+k3s1"
+  },
+  "k3s_1_31": {
+    "name": "k3s-1.31.4+k3s1",
+    "pname": "k3s",
+    "version": "1.31.4+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.0.7",
@@ -488,11 +488,6 @@
     "name": "mastodon-4.3.2",
     "pname": "mastodon",
     "version": "4.3.2"
-  },
-  "matomo": {
-    "name": "matomo-4.16.1",
-    "pname": "matomo",
-    "version": "4.16.1"
   },
   "matomo_5": {
     "name": "matomo_5-5.2.0",
