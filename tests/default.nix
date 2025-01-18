@@ -69,7 +69,8 @@ in {
   lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
   lampPackage82 = callTest ./lamp/package-test.nix { version = "lamp_php82"; };
   lampPackage83 = callTest ./lamp/package-test.nix { version = "lamp_php83"; };
-  lampPackage84 = callTest ./lamp/package-test.nix { version = "lamp_php84"; };
+  # PL-133352: disabling due to some deprecations in the test PHP code
+  #lampPackage84 = callTest ./lamp/package-test.nix { version = "lamp_php84"; };
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
