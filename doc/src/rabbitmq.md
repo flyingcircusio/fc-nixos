@@ -27,13 +27,15 @@ The default monitoring setup checks that the RabbitMQ server is healthy and resp
 RabbitMQ 3.8 introduced [Feature Flags](https://www.rabbitmq.com/feature-flags.html)
 to allow rolling upgrades of clusters. Newer versions can require certain
 feature flags to be enabled before upgrading or they will refuse to start.
+There is a Sensu check which fails when there are disabled feature flags.
 
-After upgrading a cluster, enable all feature flags:
+After upgrading a cluster, all stable feature flags need to be enabled.
+This is done automatically in resource groups where only one node has the `rabbitmq` role.
 
+For larger clusters, enable them manually by running:
 ```shell
 sudo -u rabbitmq rabbitmqctl enable_feature_flag all
 ```
-
 ## Upgrading from NixOS 20.09 while keeping RabbitMQ 3.6.5
 
 To be able to upgrade NixOS 20.09 machines using the `rabbitmq36_5` role,
