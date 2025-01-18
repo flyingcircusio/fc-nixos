@@ -62,12 +62,14 @@ in {
   lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
   lampVm82 = callTest ./lamp/vm-test.nix { version = "lamp_php82"; };
   lampVm83 = callTest ./lamp/vm-test.nix { version = "lamp_php83"; };
+  lampVm84 = callTest ./lamp/vm-test.nix { version = "lamp_php84"; };
 
   lampPackage74 = callTest ./lamp/package-test.nix { version = "lamp_php74"; };
   lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
   lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
   lampPackage82 = callTest ./lamp/package-test.nix { version = "lamp_php82"; };
   lampPackage83 = callTest ./lamp/package-test.nix { version = "lamp_php83"; };
+  lampPackage84 = callTest ./lamp/package-test.nix { version = "lamp_php84"; };
 
   locale = callTest ./locale.nix {};
   login = callTest ./login.nix {};
@@ -90,7 +92,6 @@ in {
   opensearch_dashboards = callTest ./opensearch_dashboards.nix {};
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
-  percona83 = callTest ./mysql.nix { rolename = "percona83"; };
   # XXX
   # percona84 is going to be introduced later throughout the release cycle
   # percona84 = callTest ./mysql.nix { rolename = "percona84"; };

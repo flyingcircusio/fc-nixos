@@ -43,15 +43,16 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # Import old php versions from nix-phps.
   inherit (phps) php72 php73 php74 php80;
   # Import NixOS upstream PHPs.
-  inherit (super) php81 php82;
+  inherit (super) php81 php82 php83 php84;
 }
 //
-{
-  php83 = patchPhps (fetchpatch {
+builtins.mapAttrs (_: patchPhps (fetchpatch {
     url = "https://github.com/flyingcircusio/php-src/commit/1a7e4834d94d72564521fffd6ceec5a378693cb7.patch";
     hash = "sha256-MWZdXUsvkpxhC9VVttrINY2E4X+PD7lChgkL3VYlk10=";
-  }) super.php83;
-
+  })) {
+    inherit (super) php83 php84;
+  }
+// {
   pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
     (python-self: python-super: {
       pytest_patterns = python-self.callPackage ./python/pytest-patterns { };
@@ -107,7 +108,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   docsplit = super.callPackage ./docsplit { };
 
-  dstat = super.dstat.overrideAttrs(old: rec {
+  dstat = super.dstat.overrideAttrs(old: {
     patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
   });
 
@@ -131,7 +132,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     buildInputs = a.buildInputs ++ [ super.ncurses super.readline ];
   });
 
-  keepalived = super.keepalived.overrideAttrs(_: rec {
+  keepalived = super.keepalived.overrideAttrs(_: {
     version = "2.2.8-g9d4579";
 
     src = super.fetchFromGitHub {
@@ -242,6 +243,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
                 all.redis
               ]);
 
+  lamp_php84 = self.php84.withExtensions ({ enabled, all }:
+              enabled ++ [
+                all.bcmath
+                all.imagick
+                all.memcached
+                all.redis
+              ]);
+
   latencytop_nox = super.latencytop.overrideAttrs(_: {
     buildInputs = with self; [ ncurses glib ];
     makeFlags = [ "HAS_GTK_GUI=" ];
@@ -311,7 +320,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
     # These checks are not included by default.
     # Our platform doesn't use them, maybe some customer?
-    # XXX: Remove in 24.05 if nobody needs it.
     postInstall = (super.monitoring-plugins.postInstall or "") + ''
       cp plugins-root/check_dhcp $out/bin
       cp plugins-root/check_icmp $out/bin
@@ -340,7 +348,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       modsecurity
       rtmp
     ];
-  }).overrideAttrs(a: rec {
+  }).overrideAttrs(a: {
     patches = a.patches ++ [
       ./remote_addr_anon.patch
     ];
@@ -369,24 +377,11 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   };
 
   percona80 = self.percona-server_8_0;
-  # EOL, but we vendor it throughout the 24.05 release cycle
-  percona83 = self.callPackage ./percona/8.3.nix {
-    inherit (self.darwin) cctools developer_cmds DarwinTools;
-    inherit (self.darwin.apple_sdk.frameworks) CoreServices;
-    # newer versions cause linking failures against `libabsl_spinlock_wait`
-    protobuf = self.protobuf_21;
-  };
-  # assertion notifies us about the need to vendor the old innovation releases
-  # XXX
-  # percona84 = assert super.percona-server_innovation.mysqlVersion == "8.4"; super.percona-server_8_4;
 
   percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4/2_4.nix {
     boost = self.boost159;
     openssl = self.openssl_1_1;
   };
-  # EOL, but we vendor it throughout the 24.05 release cycle
-  percona-xtrabackup_8_3 = self.callPackage ./percona-xtrabackup/8_3/innovation.nix { };
-  # percona-xtrabackup_8_4 = super.percona-xtrabackup_8_4;
 
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
@@ -442,5 +437,5 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     pname = "tcpdump-vxlan";
   });
 
-  xtrabackup = self.percona-xtrabackup_8_0;
+  xtrabackup = lib.warn "The `xtrabackup` package has been renamed to `percona-xtrabackup`." self.percona-xtrabackup;
 }
