@@ -92,7 +92,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       meta.priority = 10;
     });
 
-  certmgr = super.callPackage ./certmgr.nix {  };
 
   check_ipmi_sensor = super.callPackage ./check_ipmi_sensor.nix { };
   check_md_raid = super.callPackage ./check_md_raid { };
