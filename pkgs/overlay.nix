@@ -279,8 +279,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   });
 
 
-  mc = super.callPackage ./mc.nix { };
-
   mysql = super.mariadb;
 
   monitoring-plugins = let
