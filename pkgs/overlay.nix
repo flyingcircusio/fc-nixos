@@ -351,10 +351,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
   });
 
-  openldap_2_4 = super.callPackage ./openldap_2_4.nix {
-    libxcrypt = self.libxcrypt-legacy;
-  };
-
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
   percona = self.percona80;
