@@ -352,7 +352,7 @@ in
 
       warnings = (map
           ({ hostname, host, laExtra }: ''
-            ${hostname}: listenAddress and listenAddress6 are deprecated and will be removed in 24.05.
+            ${hostname}: listenAddress and listenAddress6 are deprecated and will be removed in 25.05.
             Please exclusively use listenAddresses instead:
               listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
           '')

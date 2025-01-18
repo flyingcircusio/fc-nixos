@@ -16,6 +16,7 @@ let
           (fn: lib.hasSuffix ".nix" fn)
           (lib.attrNames (builtins.readDir path)))
     else [];
+  currentPlatform = "24.11";
 
 in {
   imports = [
@@ -178,7 +179,7 @@ in {
     flyingcircus.platform = {
       version = mkOption {
         readOnly = true;
-        default = "24.05";
+        default = currentPlatform;
       };
 
       editions = mkOption {
@@ -186,7 +187,7 @@ in {
         description = ''
           Documented branches of this platform version.
         '';
-        default = [ "fc-24.05-dev" "fc-24.05-staging" "fc-24.05-production" ];
+        default = [ "fc-${currentPlatform}-dev" "fc-${currentPlatform}-staging" "fc-${currentPlatform}-production" ];
       };
     };
 

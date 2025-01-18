@@ -5,8 +5,9 @@
 # nix-build
 
 {
+  # TODO: update pinned tarball after first 24.11 release hase been made
   pkgs ? import (fetchTarball "https://hydra.flyingcircus.io/build/457353/download/1/nixexprs.tar.xz") {}
-, branch ? "24.05"
+, branch ? "24.11"
 , updated ? "1970-01-01 01:00"
 , failOnWarnings ? false
 }:

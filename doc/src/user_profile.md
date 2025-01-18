@@ -35,6 +35,7 @@ Create a file like {file}`myproject_env.nix` which specifies the packages to be 
 let
   # Imports. Which package sources should be used?
   # Use a pinned platform version
+  # TODO: update pinned tarball after first 24.11 release hase been made
   # pkgs = import (fetchTarball "https://hydra.flyingcircus.io/build/457353/download/1/nixexprs.tar.xz") {};
   # ...or just use the current version of the platform
   pkgs = import <nixpkgs> {};
@@ -52,7 +53,6 @@ pkgs.buildEnv {
 }
 ```
 
-% FIXME: move this to a 24.05 tarball once the first release is out.
 The code shown above defines an environment with 5 packages installed from a
 specific build of our NixOS 23.11 platform.
 The pinned version can be newer or older than the installed system version.
@@ -66,9 +66,11 @@ latest security fixes. NixOS re-uses packages if the wanted version is already
 in the Nix store, saving disk space and reducing installation time.
 
 The URL for the current release can be found in the [changelog](/platform/changes)
-for the 24.05 platform.
+for the 24.11 platform.
 
 If you want to try NixOS unstable with the newest packages, get the URL from the channel:
+
+% TODO: move this to a 24.11 tarball once the first release is out.
 
 ```
 $ curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null https://nixos.org/channels/nixos-unstable/nixexprs.tar.xz
@@ -78,11 +80,11 @@ https://releases.nixos.org/nixos/unstable/nixos-24.11pre647193.9f4128e00b0a/nixe
 Note that the unstable channel may be broken and that upstream NixOS channels
 don't have some additional packages we provide on our platform.
 
-Older NixOS versions than 24.05 usually don't get security updates anymore.
+Older NixOS versions than 24.11 usually don't get security updates anymore.
 
-Links to all staging platform builds for 24.05 can be found here (no production channel, yet):
+Links to all staging platform builds for 24.11 can be found here (no production channel, yet):
 
-<https://hydra.flyingcircus.io/job/flyingcircus/fc-24.05-staging/release>
+<https://hydra.flyingcircus.io/job/flyingcircus/fc-24.11-staging/release>
 
 See <https://nixos.org/nixos/packages.html> for a list of packages.
 Use the *attribute name* from the list and include it in `paths`.
@@ -200,7 +202,7 @@ You can import packages from different NixOS versions or other sources:
 ```
 let
   pkgs = import <nixpkgs> {};
-  pkgsUnstable = import (fetchTarball https://releases.nixos.org/nixos/unstable/nixos-24.11pre647193.9f4128e00b0a/nixexprs.tar.xz) {};
+  pkgsUnstable = import (fetchTarball https://releases.nixos.org/nixos/unstable/nixos-25.05beta738172.eb62e6aa39ea/nixexprs.tar.xz) {};
 in
 pkgs.buildEnv {
   name = "myproject-env";
@@ -212,7 +214,7 @@ pkgs.buildEnv {
 }
 ```
 
-This installs the `zlib` from the platform NixOS version but `libjpeg` from NixOS unstable (here 24.11pre).
+This installs the `zlib` from the platform NixOS version but `libjpeg` from NixOS unstable (here 25.05pre).
 
 % XXX list env vars
 
