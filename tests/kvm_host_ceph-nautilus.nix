@@ -118,7 +118,7 @@ let
             echo "Pytest result code: $PYTESTRET"
             if [ $PYTESTRET -eq 0 ] || [ $PYTESTRET -eq 5 ]; then
               # 5 means no tests found, which might happen if we have options
-              true;
+              exit 0
             fi
             '' else ""}
 
@@ -126,7 +126,6 @@ let
               # I've seen weird situations where pytest exited with an error but we exited
               # with a zero return code. This is a safety-belt. If no report file is there
               # or the report file shows non-zero errors or failures we return with an error
-              echo "Pytest exit status: $PYTESTRET"
               echo "Detected failures in unit test report!"
               exit 1
             fi
@@ -382,14 +381,6 @@ in
     host3.execute("systemctl stop fc-ceph-mgr")
     host3.execute("systemctl stop fc-ceph-mon")
 
-    ########################################################################
-    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
-    # interaction with Ceph will hang mysteriously!
-    ########################################################################
-
-    with subtest("Run unit tests"):
-      show(host1, "run-tests ${testOpts} -m 'not live'")
-
     with subtest("fc-qemu-scrub timer is correctly activated"):
       _, output = host1.execute("systemctl list-timers | grep fc-qemu-scrub")
       print(output)
@@ -397,6 +388,18 @@ in
       assert "min left "
       assert not output.startswith("n/a")
       assert output.count("n/a") <= 2
+
+    host1.succeed("systemctl stop fc-qemu-scrub.timer")
+    host2.succeed("systemctl stop fc-qemu-scrub.timer")
+    host3.succeed("systemctl stop fc-qemu-scrub.timer")
+
+    ########################################################################
+    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
+    # interaction with Ceph will hang mysteriously!
+    ########################################################################
+
+    with subtest("Run unit tests"):
+      show(host1, "run-tests ${testOpts} -m 'not live'")
 
     host1.wait_for_unit("consul")
     host2.wait_for_unit("consul")
