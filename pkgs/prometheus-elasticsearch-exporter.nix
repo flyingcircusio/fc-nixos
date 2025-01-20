@@ -1,25 +1,24 @@
-{ lib, buildGoPackage, fetchFromGitHub }:
+{ lib, buildGoModule, fetchFromGitHub }:
 
-buildGoPackage rec {
+buildGoModule rec {
   name = "elasticsearch_exporter-${version}";
-  version = "1.0.2";
+  version = "1.8.0";
   rev = "v${version}";
-
-  goPackagePath = "github.com/justwatchcom/elasticsearch_exporter";
 
   src = fetchFromGitHub {
     inherit rev;
-    owner = "justwatchcom";
+    owner = "prometheus-community";
     repo = "elasticsearch_exporter";
-    sha256 = "0ms23hqgz5xvzc74ysc5d43v3rvv4hbg6p3zcg84cimfqhg4ilcy";
+    sha256 = "sha256-8WPDBlp6ftBmY/lu0wuuvs3A9KAzEM/A6RqSvYYLm7w=";
   };
+   vendorHash = "sha256-jbPFxwrXWwxPamMnbBxFvGBrt38YG7N5fTweAYULEYQ=";
 
   # # FIXME: megacli test fails
   # doCheck = false;
 
   meta = with lib; {
     description = "Prometheus exporter for elasticsearch";
-    homepage = https://github.com/justwatchcom/elasticsearch_exporter;
+    homepage = "https://github.com/prometheus-community/elasticsearch_exporter";
     license = licenses.asl20;
     maintainers = with maintainers; [ zagy ];
     platforms = platforms.unix;
