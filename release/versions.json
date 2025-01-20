@@ -14,10 +14,10 @@
     "url": "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/"
   },
   "nixpkgs": {
-    "hash": "sha256-LEUNVlcALUnSwWiUZwZoXdZ32/sBczJeLU7HnFyRlV4=",
+    "hash": "sha256-wyzv2tzRk9zWjR/ehkzXo0bR8WUKHq1Lg6nJ9P7ZYjM=",
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "459bf7e4cb82e420cab1c457f8b6845234e3baa3"
+    "rev": "092858ef8404b4c1dd230fe03ecae9c1e1ac1962"
   },
   "nixpkgs-21_05": {
     "hash": "sha256-5ufC/t0sUFS/LspiEwU8DW5+uVYM3diZ1IC7KjX9ek4=",
