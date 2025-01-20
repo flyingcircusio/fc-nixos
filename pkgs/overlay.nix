@@ -320,15 +320,27 @@ in {
     argsOverride = rec {
       src = self.fetchurl {
         url = "mirror://kernel/linux/kernel/v6.x/linux-${version}.tar.xz";
-        hash = "sha256-Bl/ZP6bLQi9lD7Vj8V0+AQfIUAn3ZkBZk9eV/Tl5arE=";
+        hash = "sha256-553Mbrhmlca6v7B8KGGRK2NdUHXGzRzQVn0eoVX4DW4=";
       };
-      version = "6.6.64";
+      version = "6.13";
       modDirVersion = version;
       ignoreConfigErrors = true;
       kernelPatches = [
-        {name = "PL-132896-candidate-fix2";
-         patch = ./md_raid5_one_bitmap_claim_per_stripe_head.patch;
-       }
+        {name = "PL-132896-candidate-fix-1";
+         patch = ./patch1.patch;
+        }
+        {name = "PL-132896-candidate-fix-2";
+         patch = ./patch2.patch;
+        }
+        {name = "PL-132896-candidate-fix-3";
+         patch = ./patch3.patch;
+        }
+        {name = "PL-132896-candidate-fix-4";
+         patch = ./patch4.patch;
+        }
+        {name = "PL-132896-candidate-fix-5";
+         patch = ./patch5.patch;
+        }
       ];
     };
   });
