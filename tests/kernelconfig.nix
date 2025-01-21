@@ -82,7 +82,6 @@ let
         KVM_AMD m
         KVM_INTEL m
         MD y
-        MD_MULTIPATH m
         MD_RAID0 m
         MD_RAID1 m
         MD_RAID456 m

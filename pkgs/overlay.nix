@@ -323,7 +323,7 @@ in {
         hash = "sha256-553Mbrhmlca6v7B8KGGRK2NdUHXGzRzQVn0eoVX4DW4=";
       };
       version = "6.13";
-      modDirVersion = version;
+      modDirVersion = "6.13.0";
       ignoreConfigErrors = true;
       kernelPatches = [
         {name = "PL-132896-candidate-fix-1";

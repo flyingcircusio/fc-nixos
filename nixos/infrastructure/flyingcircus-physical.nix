@@ -95,7 +95,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (lib.mkMerge [
         attrValues cfg.static.adminKeys;
     };
 
-    powerManagement.cpuFreqGovernor = "performance";
+    # powerManagement.cpuFreqGovernor = "performance";
 
     services.lldpd.enable = true;
 
