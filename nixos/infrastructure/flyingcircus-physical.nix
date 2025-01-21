@@ -12,6 +12,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (lib.mkMerge [
     hardware.cpu.amd.updateMicrocode = true;
     hardware.cpu.intel.updateMicrocode = true;
     flyingcircus.raid.enable = true;
+    flyingcircus.networking.physicalHostNetworking = true;
 
     boot = {
       initrd.availableKernelModules = [

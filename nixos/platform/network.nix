@@ -97,6 +97,11 @@ in
       description = "Names of ethernet devices to monitor.";
       default = [];
     };
+    flyingcircus.networking.physicalHostNetworking = lib.mkOption {
+      type = lib.types.bool;
+      description = "Use a network configuration profile suitable for physical hosts";
+      default = false;
+    };
   };
 
   config = lib.mkMerge [
@@ -224,7 +229,7 @@ in
         wireguard.enable = true;
 
         firewall.trustedInterfaces =
-          lib.optionals (!isNull fclib.underlay && cfg.infrastructureModule == "flyingcircus-physical")
+          lib.optionals (!isNull fclib.underlay && cfg.networking.physicalHostNetworking)
             (map (l: l.link) fclib.underlay.links or []);
 
         firewall.extraCommands = ''
@@ -265,7 +270,7 @@ in
 
       };
 
-      flyingcircus.services.telegraf.inputs = lib.optionalAttrs (cfg.infrastructureModule == "flyingcircus-physical") {
+      flyingcircus.services.telegraf.inputs = lib.optionalAttrs (cfg.networking.physicalHostNetworking) {
         exec = [{
           commands = [ "${pkgs.fc.telegraf-routes-summary}/bin/telegraf-routes-summary" ];
           timeout = "10s";
@@ -448,7 +453,7 @@ in
                   # TODO: it'd be preferrable to manage this on a by-interface base
                   # and distinguish whether an interface is physical.
                   # Can this be done based on `config.flyingcircus.enc.parameters.interfaces.fe.policy`?
-                  ${lib.optionalString (config.flyingcircus.infrastructureModule == "flyingcircus-physical") ''
+                  ${lib.optionalString (config.flyingcircus.networking.physicalHostNetworking) ''
                   echo "Disabling flow control"
                   ethtool -A ${iface.link} autoneg off rx off tx off || true
                   ''}
@@ -900,10 +905,10 @@ in
         # as a reasonable size and I'd suggest generalizing this number to all machines.
         "net.netfilter.nf_conntrack_max" = 262144;
       }
-      (lib.mkIf (cfg.infrastructureModule != "flyingcircus-physical") {
+      (lib.mkIf (!cfg.networking.physicalHostNetworking) {
         "net.core.rmem_max" = 8388608;
       })
-      (lib.mkIf (cfg.infrastructureModule == "flyingcircus-physical") {
+      (lib.mkIf (cfg.networking.physicalHostNetworking) {
         "vm.min_free_kbytes" = "513690";
 
         "net.core.netdev_max_backlog" = 300000;
@@ -944,7 +949,7 @@ in
         };
 
   }
-  (lib.mkIf (config.flyingcircus.infrastructureModule == "flyingcircus") {
+  (lib.mkIf (cfg.infrastructureModule == "flyingcircus") {
     # This check is here to identify abysmal but otherwise subtle network speed
     # issues *in VMs* as we have seen in PL-132971. If downloading a 1MiB test
     # file takes longer than 5-10 seconds, something is very much off.
