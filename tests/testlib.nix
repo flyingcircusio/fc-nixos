@@ -95,6 +95,12 @@ rec {
     chosen_networks = (network_options // { srv = true; fe = true; } // net);
     active_vlan_attrs = 
       filterAttrs (name: vid: chosen_networks.${name}) vlans;
+
+    # the nixos test driver internally assigns each test vm an id
+    # which is used for generating the mac addresses on each
+    # vlan. however, this might be a different id from the one we use
+    # for generating ip addresses.
+    test_node_id = config.virtualisation.test.nodeNumber;
   in
   {
     imports = [
@@ -117,7 +123,7 @@ rec {
         inherit resource_group location secrets;
 
         interfaces = mapAttrs (name: vid: {
-          mac = "52:54:00:12:0${toString vid}:0${toString id}";
+          mac = "52:54:00:12:0${toString vid}:0${toString test_node_id}";
           bridged = false;
           networks = {
             "192.168.${toString vid}.0/24" = [ "192.168.${toString vid}.${toString id}" ];
@@ -126,7 +132,7 @@ rec {
           gateways = {};
           nics = [
             {
-              "mac" = "52:54:00:12:0${toString vid}:0${toString id}"; 
+              "mac" = "52:54:00:12:0${toString vid}:0${toString test_node_id}";
               "external_label" = "${name}nic${toString id}";
             }
           ];
