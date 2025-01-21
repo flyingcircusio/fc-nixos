@@ -349,6 +349,8 @@ rec {
 
         policy = interface'.policy or "puppet";
 
+        routed = interface'.routed or false;
+
         dualstack = rec {
           # Without netmask
           addresses = map stripNetmask cidrs;
