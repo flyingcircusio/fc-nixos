@@ -298,69 +298,69 @@ in
           frr defaults datacenter
           !
           router bgp ${toString fclib.underlay.asNumber}
-          bgp router-id ${fclib.underlay.loopback}
-          bgp bestpath as-path multipath-relax
-          neighbor switches peer-group
-          neighbor switches remote-as external
-          neighbor switches capability extended-nexthop
-          neighbor switches bfd
-          ${lib.concatMapStringsSep "\n "
-            (iface: "neighbor ${iface.link} interface peer-group switches")
-            fclib.underlay.links
-          }
+           bgp router-id ${fclib.underlay.loopback}
+           bgp bestpath as-path multipath-relax
+           neighbor switches peer-group
+           neighbor switches remote-as external
+           neighbor switches capability extended-nexthop
+           neighbor switches bfd
+           ${lib.concatMapStringsSep "\n "
+             (iface: "neighbor ${iface.link} interface peer-group switches")
+             fclib.underlay.links
+           }
+           !
+           address-family ipv4 unicast
+            redistribute connected
+            neighbor switches prefix-list underlay-import in
+            neighbor switches prefix-list underlay-export out
+            neighbor switches route-map accept-all-routes in
+            neighbor switches route-map accept-local-routes out
+           exit-address-family
+           !
+           address-family l2vpn evpn
+            neighbor switches activate
+            neighbor switches route-map accept-all-routes in
+            neighbor switches route-map accept-local-routes out
+            advertise-all-vni
+            advertise-svi-ip
+            ${ # Workaround for FRR not advertising SVI IP when
+               # globally configured
+              lib.concatMapStringsSep "\n  "
+                (iface: concatStringsSep "\n  " [
+                  ("vni " + (toString iface.vlanId))
+                  " advertise-svi-ip"
+                  "exit-vni"
+                ])
+                vxlanInterfaces
+            }
+           exit-address-family
+           !
+          exit
           !
-          address-family ipv4 unicast
-          redistribute connected
-          neighbor switches prefix-list underlay-import in
-          neighbor switches prefix-list underlay-export out
-          neighbor switches route-map accept-all-routes in
-          neighbor switches route-map accept-local-routes out
-          exit-address-family
+          bgp as-path access-list local-origin seq 1 permit ^$
           !
-          address-family l2vpn evpn
-          neighbor switches activate
-          neighbor switches route-map accept-all-routes in
-          neighbor switches route-map accept-local-routes out
-          advertise-all-vni
-          advertise-svi-ip
-          ${ # Workaround for FRR not advertising SVI IP when
-              # globally configured
-            lib.concatMapStringsSep "\n  "
-              (iface: concatStringsSep "\n  " [
-                ("vni " + (toString iface.vlanId))
-                " advertise-svi-ip"
-                "exit-vni"
-              ])
-              vxlanInterfaces
-          }
-          exit-address-family
-        !
-        exit
-        !
-        bgp as-path access-list local-origin seq 1 permit ^$
-        !
-        route-map accept-local-routes permit 1
-          match as-path local-origin
-        exit
-        !
-        route-map accept-all-routes permit 1
-        exit
-        !
-        route-map set-source-address permit 1
-          set src ${fclib.underlay.loopback}
-        exit
-        !
-        ip protocol bgp route-map set-source-address
-        !
-        ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
-        !
-        ${lib.concatImapStringsSep "\n"
-          (idx: net:
-            "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
-          )
-          fclib.underlay.subnets
-          }
-        !
+          route-map accept-local-routes permit 1
+            match as-path local-origin
+          exit
+          !
+          route-map accept-all-routes permit 1
+          exit
+          !
+          route-map set-source-address permit 1
+            set src ${fclib.underlay.loopback}
+          exit
+          !
+          ip protocol bgp route-map set-source-address
+          !
+          ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
+          !
+          ${lib.concatImapStringsSep "\n"
+            (idx: net:
+              "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
+            )
+            fclib.underlay.subnets
+           }
+          !
       '';
       };
 
