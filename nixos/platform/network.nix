@@ -514,14 +514,14 @@ in
                 };
               })) ethernetLinks) ++
 
-
           (let
             unitName = link: "network-disable-ipv6-autoconfig-${link}";
-            unitTemplate = link: rec {
+            unitTemplate = link: fixAddrGen: rec {
               description = "Disable IPv6 autoconfig for link ${link}";
               wantedBy = [ "network-addresses-${link}.service" ];
               before = wantedBy;
               requires = [ "${link}-netdev.service" ];
+              bindsTo = requires;
               after = requires;
               path = [ pkgs.procps fclib.relaxedIp ];
               stopIfChanged = false;
@@ -532,12 +532,14 @@ in
                 sysctl net.ipv6.conf.${link}.temp_valid_lft=0
                 sysctl net.ipv6.conf.${link}.temp_prefered_lft=0
 
-                # If an interface has previously been managed by dhcpcd this sysctl might be
-                # set to a non-zero value, which disables automatic generation of link-local
-                # addresses. This can leave the interface without a link-local address when
-                # dhcpcd deletes addresses from the interface when it exits. Resetting this
-                # to 0 restores the default kernel behaviour.
-                sysctl net.ipv6.conf.${link}.addr_gen_mode=0
+                ${lib.optionalString fixAddrGen ''
+                  # If an interface has previously been managed by dhcpcd this sysctl might be
+                  # set to a non-zero value, which disables automatic generation of link-local
+                  # addresses. This can leave the interface without a link-local address when
+                  # dhcpcd deletes addresses from the interface when it exits. Resetting this
+                  # to 0 restores the default kernel behaviour.
+                  sysctl net.ipv6.conf.${link}.addr_gen_mode=0
+                ''}
 
                 for oldtmp in $(ip -6 address show dev ${link} dynamic scope global | grep inet6 | cut -d ' ' -f6); do
                   ip addr del $oldtmp dev ${link}
@@ -548,15 +550,13 @@ in
                 RemainAfterExit = true;
               };
             };
-
-            virtualLinkUnit = link: ((unitTemplate link) // {
-              bindsTo = [ "${link}-netdev.service" ];
-              after = [ "${link}-netdev.service" ];
-            });
           in
             (map (link:
-              lib.nameValuePair (unitName link) (virtualLinkUnit link))
-              virtualLinks)
+              lib.nameValuePair (unitName link) (unitTemplate link false))
+              virtualLinks) ++
+            (map (link:
+              lib.nameValuePair (unitName link.link) (unitTemplate link.link true))
+              ethernetLinks)
           ) ++
 
           (lib.optionals (!isNull fclib.underlay)
