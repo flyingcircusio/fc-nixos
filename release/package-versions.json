@@ -485,9 +485,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.2",
+    "name": "mastodon-4.3.3",
     "pname": "mastodon",
-    "version": "4.3.2"
+    "version": "4.3.3"
   },
   "matomo_5": {
     "name": "matomo_5-5.2.1",
