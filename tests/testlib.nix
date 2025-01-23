@@ -95,6 +95,12 @@ rec {
     chosen_networks = (network_options // { srv = true; fe = true; } // net);
     active_vlan_attrs = 
       filterAttrs (name: vid: chosen_networks.${name}) vlans;
+
+    # the nixos test driver internally assigns each test vm an id
+    # which is used for generating the mac addresses on each
+    # vlan. however, this might be a different id from the one we use
+    # for generating ip addresses.
+    test_node_id = config.virtualisation.test.nodeNumber;
   in
   {
     imports = [
@@ -117,7 +123,7 @@ rec {
         inherit resource_group location secrets;
 
         interfaces = mapAttrs (name: vid: {
-          mac = "52:54:00:12:0${toString vid}:0${toString id}";
+          mac = "52:54:00:12:0${toString vid}:0${toString test_node_id}";
           bridged = false;
           networks = {
             "192.168.${toString vid}.0/24" = [ "192.168.${toString vid}.${toString id}" ];
@@ -126,12 +132,126 @@ rec {
           gateways = {};
           nics = [
             {
-              "mac" = "52:54:00:12:0${toString vid}:0${toString id}"; 
+              "mac" = "52:54:00:12:0${toString vid}:0${toString test_node_id}";
               "external_label" = "${name}nic${toString id}";
             }
           ];
         }) active_vlan_attrs;
       } extraEncParameters);
+    };
+  };
+
+  /*
+    Generate a machine configuration which mocks a datacentre VXLAN switch
+  */
+  mockVxlanSwitch = {
+    id,
+    links ? [],
+  }: { pkgs, lib, config, ... }: let
+    vlanInterfaces = listToAttrs (map (v: lib.nameValuePair "eth${toString v}" v) links);
+    underlayAddress = "192.168.${toString vlans.ul}.${toString id}";
+  in {
+    imports = [ ../nixos ../nixos/roles ];
+    services.telegraf.enable = false;
+    networking = {
+      useDHCP = lib.mkForce false;
+      firewall.allowPing = lib.mkForce true;
+      firewall.checkReversePath = lib.mkForce false;
+    };
+    boot.kernel.sysctl."net.ipv4.conf.all.ip_forward" = 1;
+    boot.initrd.availableKernelModules = [ "dummy" ];
+    networking.firewall.enable = false;
+
+    virtualisation.vlans = lib.mkForce [];
+    virtualisation.interfaces = mapAttrs (_: vlan: { inherit vlan; }) vlanInterfaces;
+
+    networking.firewall.trustedInterfaces = attrNames vlanInterfaces;
+    networking.interfaces = {
+      underlay.ipv4.addresses = [{
+        address = underlayAddress; prefixLength = 32;
+      }];
+    } // (listToAttrs
+      (map (name: lib.nameValuePair name {
+        ipv4.addresses = lib.mkForce [];
+        ipv6.addresses = lib.mkForce [];
+      }) (attrNames vlanInterfaces))
+    );
+
+    systemd.services = {
+      underlay-netdev = rec {
+        description = "Set up underlay loopback device";
+        wantedBy = [ "network-setup.service" "multi-user.target" ];
+        before = wantedBy;
+        after = [ "network-pre.service" ];
+        requires = [ "network-setup.service" ];
+        path = [ pkgs.iproute2 ];
+        script = "ip link add underlay type dummy";
+        preStop = "ip link delete underlay";
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+      };
+    } // (listToAttrs
+      (map (name: lib.nameValuePair "${name}-netdev" {
+        wantedBy = [ "network-setup.service" "multi-user.target" ];
+        requires = [ "network-setup.service" ];
+        script = ":";
+        serviceConfig.Type = "oneshot";
+        serviceConfig.RemainAfterExit = true;
+      }) (attrNames vlanInterfaces))
+
+    );
+
+    # udev in the test vm initrd sometimes run before hardware
+    # enumeration completes.
+    services.udev.extraRules = config.boot.initrd.services.udev.rules;
+
+    services.frr = {
+      bfdd.enable = true;
+      bgpd.enable = true;
+      config = ''
+        frr version 8.5.1
+        frr defaults datacenter
+        !
+        router bgp ${toString (65000 + id)}
+         bgp router-id ${underlayAddress}
+         bgp bestpath as-path multipath-relax
+         no bgp ebgp-requires-policy
+         neighbor remotes peer-group
+         neighbor remotes remote-as external
+         neighbor remotes capability extended-nexthop
+         neighbor remotes passive
+         neighbor remotes bfd
+         ${lib.concatMapStringsSep "\n "
+           (name: "neighbor ${name} interface peer-group remotes")
+           (attrNames vlanInterfaces)
+          }
+         !
+         address-family ipv4 unicast
+          redistribute connected
+          neighbor remotes route-map accept-all-routes in
+          neighbor remotes route-map accept-all-routes out
+         exit-address-family
+         !
+         address-family l2vpn evpn
+          neighbor remotes activate
+          neighbor remotes route-map accept-all-routes in
+          neighbor remotes route-map accept-all-routes out
+          advertise-all-vni
+          advertise-svi-ip
+         exit-address-family
+        !
+        exit
+        !
+        route-map accept-all-routes permit 1
+        exit
+        !
+        route-map set-source-address permit 1
+         set src ${underlayAddress}
+        exit
+        !
+        ip protocol bgp route-map set-source-address
+        !
+      '';
     };
   };
 
