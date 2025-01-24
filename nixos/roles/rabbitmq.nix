@@ -40,6 +40,7 @@ in
     enabledRolesCount = length (lib.attrNames enabledRoles);
     enabled = enabledRolesCount > 0;
     roleVersion = head (lib.attrNames enabledRoles);
+    isSingleNode = length (fclib.findServices "rabbitmq-node") == 1;
   in
   lib.mkMerge [
 
@@ -49,6 +50,15 @@ in
 
     (lib.mkIf (config.flyingcircus.roles.rabbitmq.enable) {
       flyingcircus.services.rabbitmq.enable = true;
+    })
+
+    # For single-node setups of current RabbitMQ versions, set feature flags
+    # automatically after platform upgrades. This is the easy and common case.
+    # Cluster setups require manual intervention for enabling feature flags.
+    # Note that we simply check the number of rabbitmq instances in the RG to be safe,
+    # we don't know here if they actually form a cluster.
+    (lib.mkIf (config.flyingcircus.roles.rabbitmq.enable && isSingleNode) {
+      systemd.services.rabbitmq.postStart = "rabbitmqctl enable_feature_flag all";
     })
 
     (lib.mkIf enabled {
@@ -82,12 +92,6 @@ in
           action = "labeldrop";
         }
       ];
-    }
-
-    {
-      systemd.services.rabbitmq.postStart = lib.optionalString ((length (fclib.findServices "rabbitmq-node")) == 1) ''
-          rabbitmqctl enable_feature_flag all
-        '';
     }
   ];
 }
