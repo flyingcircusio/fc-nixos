@@ -1,3 +1,11 @@
+# Release 2025_002
+
+## NixOS XX.XX platform
+
+- Reorganize the dashboards that are provided for every customer with a statshost component in the Grafana UI into separate folders
+
+
+
 # Release 2025_001
 
 ## NixOS XX.XX platform
