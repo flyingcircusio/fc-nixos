@@ -20,7 +20,7 @@ let
       vxlanInterfaces = lib.filterAttrs (name: value: value.policy or null == "vxlan") encInterfaces;
       vxlanCount = length (attrNames vxlanInterfaces);
     in
-      if config.flyingcircus.infrastructureModule != "flyingcircus-physical"
+      if !config.flyingcircus.networking.physicalHostNetworking
       then foldConds encInterfaces
         [
           {

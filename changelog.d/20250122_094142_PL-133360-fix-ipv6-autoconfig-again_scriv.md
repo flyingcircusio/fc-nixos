@@ -14,6 +14,8 @@ branches.
 ### Impact
 
 
+
 ### NixOS XX.XX platform
 
-- Reorganize the dashboards that are provided for every customer with a statshost component in the Grafana UI into separate folders
+- platform: ensure that IPv6 autoconfiguration is correctly disabled
+  on both physical and virtual hosts. (PL-133360)
