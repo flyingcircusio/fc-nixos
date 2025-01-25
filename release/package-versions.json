@@ -740,9 +740,9 @@
     "version": "8.3.15"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.2",
+    "name": "php-with-extensions-8.4.3",
     "pname": "php-with-extensions",
-    "version": "8.4.2"
+    "version": "8.4.3"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.5",
