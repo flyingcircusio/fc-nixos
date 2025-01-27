@@ -181,6 +181,12 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
     # preBuild = "rm -rf x-pack";
   });
 
+  imagemagick7 = assert lib.versions.major super.imagemagick.version == "7";
+    lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick;
+  imagemagick7Big = assert lib.versions.major super.imagemagickBig.version == "7";
+    lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagickBig;
+  imagemagick7_light = assert lib.versions.major super.imagemagick_light.version == "7";
+    lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick_light;
   # Those are specialised packages for "direct consumption" use in our LAMP roles.
 
   # PHP versions from vendored nix-phps
