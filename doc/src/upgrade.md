@@ -19,6 +19,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 - Removed roles: {ref}`percona81 percona82 percona83 <nixos-upgrade-percona>`
 - Removed significant packages:
 - Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`docker <nixos-upgrade-docker>`
+- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`docker <nixos-upgrade-docker>`, {ref}`webgateway <nixos-upgrade-webgateway>`
 
 
 ## Why upgrade? Security
@@ -124,8 +125,17 @@ Installations that already upgraded to Matomo 5 during the 24.05 NixOS platform
 may remove `services.matomo.package = pkgs.matomo_5;` from their custom NixOS
 config after upgrading, this is the default now.
 
-(nixos-upgrade-percona)=
+(nixos-upgrade-webgateway)=
+### Webgateway (Nginx)
 
+Configuring nginx via structured JSON config files in {file}`/etc/local/nginx/*.json` has been removed. Affected machines already showed a NixOS warning in platform version 24.05.
+Nginx vhost configuration needs to be migrated to *Structured Nix Configuration*. As JSON config supports the same options as Nix config, converting from JSON to
+Nix is basically just a syntax change. Consult the examples in the {ref}`role documentation <nixos-webgateway>` or the [option search](https://search.flyingcircus.io/search/options?q=flyingcircus.services.nginx) for details.
+
+In the next platform version, we plan to deprecate our custom option set `flyingcircus.services.nginx` in favour of the very similar NixOS upstream [`services.nginx`](https://search.flyingcircus.io/search/options?q=services.nginx) options. \
+Consequentially, prefer using `services.nginx` options when migrating the JSON config if possible.
+
+(nixos-upgrade-percona)=
 ### Percona/ MySQL
 
 TODO
