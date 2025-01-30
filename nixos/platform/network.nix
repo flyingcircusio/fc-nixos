@@ -7,21 +7,29 @@ let
 
   fclib = config.fclib;
 
-  # XXX there's a lot of conditionals here
-  interfaces = filter
-    (i: i.vlan != "ipmi" && i.vlan != "lo")
+  # Reminder:
+  # * interfaces are those things that we configure IP addresses on.
+  # * links are things that carry MAC addresses and provide (physical) transport to a network
+  # see lib/network.nix for the full nomenclature.
+
+  # Some interfaces aren't managed through this code. For example: IPMI
+  # is configured using the ipmitool elsewhere.
+  managedInterfaces = filter
+    (i: ! (elem i.policy [ "unmanaged" "null" ]) &&
+        ! (elem i.vlan ["ipmi" "lo"]))
     (lib.attrValues fclib.network);
 
-  managedInterfaces = filter
-    (i: i.policy != "unmanaged" && i.policy != "null")
-    interfaces;
-
-  physicalInterfaces = filter
+  # These are interfaces that have a direct association with a physical
+  # link, but might be bridged, carry tags, or run DHCP.
+  physicallyLinkedInterfaces = filter
     (i: i.policy != "vxlan" && i.policy != "underlay")
     managedInterfaces;
 
-  nonUnderlaySwitchedInterfaces = filter
-    (i: i.policy != "underlay" && !(i.policy == "vxlan" && i.routed))
+  # These are interfaces configured as one would expect in a traditional
+  # Linux environment: they receive addresses and are attached to some link.
+  simpleAddressedInterfaces = filter
+    (i: !(i.policy == "underlay") &&
+        !(i.policy == "vxlan" && i.routed))
     managedInterfaces;
 
   bridgedInterfaces = filter
@@ -44,13 +52,13 @@ let
     # interfaces, as is the case with tagged vlans. When physical
     # links are configured, they must have their MTU set to the
     # greatest MTU of all dependent interfaces.
-    physicalLinkNames = lib.unique (map (iface: iface.link) physicalInterfaces);
+    physicalLinkNames = lib.unique (map (iface: iface.link) physicallyLinkedInterfaces);
     physicalLinksByMtu = listToAttrs (map (link:
       lib.nameValuePair link
         (lib.foldl
           (prev: next: if next.mtu > (prev.mtu or 0) then next else prev)
           null
-          (filter (iface: iface.link == link) physicalInterfaces))
+          (filter (iface: iface.link == link) physicallyLinkedInterfaces))
     ) physicalLinkNames);
   in (attrValues physicalLinksByMtu) ++ underlayLinks;
 
@@ -145,18 +153,22 @@ in
             id = interface.vlanId;
             interface = interface.link;
           })
-          (filter (interface: interface.policy == "tagged") interfaces));
+          (filter (interface: interface.policy == "tagged") managedInterfaces));
 
         # Using SLAAC/privacy addresses will cause firewalls to block us
         # internally and also have customers get problems with outgoing
         # connections.
         tempAddresses = "disabled";
 
-        # data structure for all configured interfaces with their IP addresses:
-        # { ethfe = { ... }; ethsrv = { }; ... }
-        # or
-        # { brfe = { ... }; brsrv = { }; ethsto = { }; ... }
+        # There are 3 fundamentally different flavours of configuration
+        # for addresses on interfaces:
+        #   1. "normal" interfaces
+        #   2. underlay interfaces
+        #   3. VXLAN+VRF
         interfaces = listToAttrs ((map (interface:
+          ####################################################################
+          # 1. "Normal" configured interfaces with IPv4/IPv6 adresses,
+          # a default gateway, etc.
           (lib.nameValuePair "${interface.interface}" {
             ipv4.addresses = interface.v4.attrs;
             ipv4.routes =
@@ -202,33 +214,40 @@ in
                 defaultRoutes ++ additionalRoutes;
 
             mtu = interface.mtu;
-          })) nonUnderlaySwitchedInterfaces) ++
-        (lib.optionals (!isNull fclib.underlay) ([(
-          lib.nameValuePair fclib.underlay.interface {
-            ipv4.addresses = [{
-              address = fclib.underlay.loopback;
-              prefixLength = 32;
-            }];
+          })) simpleAddressedInterfaces) ++
+
+          ####################################################################
+          # 2. The underlay: a loopback IP address.
+          (lib.optionals (!isNull fclib.underlay) ([(
+            lib.nameValuePair fclib.underlay.interface {
+              ipv4.addresses = [{
+                address = fclib.underlay.loopback;
+                prefixLength = 32;
+              }];
+              tempAddress = "disabled";
+              mtu = fclib.network.ul.mtu;
+            }
+          )] ++
+          (map (iface: lib.nameValuePair iface.link {
             tempAddress = "disabled";
-            mtu = fclib.network.ul.mtu;
-          }
-        )] ++
-        (map (iface: lib.nameValuePair iface.link {
-          tempAddress = "disabled";
-          mtu = iface.mtu;
-        }) fclib.underlay.links) ++
-        (map (iface: lib.nameValuePair (vrfName iface) {
-          tempAddress = "disabled";
-        }) vxlanVrfInterfaces) ++
-        (map (iface: lib.nameValuePair iface.interface {
-          mtu = iface.mtu;
-          ipv4.addresses = map
-            (attr: { inherit (attr) address; prefixLength = 32; })
-            iface.v4.attrs;
-          ipv6.addresses = map
-            (attr: { inherit (attr) address; prefixLength = 128; })
-            iface.v6.attrs;
-        }) vxlanVrfInterfaces)
+            mtu = iface.mtu;
+          }) fclib.underlay.links) ++
+
+          ####################################################################
+          # 3. VXLAN+VRF interfaces
+          (map (iface: lib.nameValuePair iface.interface {
+            mtu = iface.mtu;
+            ipv4.addresses = map
+              (attr: { inherit (attr) address; prefixLength = 32; })
+              iface.v4.attrs;
+            ipv6.addresses = map
+              (attr: { inherit (attr) address; prefixLength = 128; })
+              iface.v6.attrs;
+          }) vxlanVrfInterfaces) ++
+          (map (iface: lib.nameValuePair (vrfName iface) {
+            tempAddress = "disabled";
+          }) vxlanVrfInterfaces)
+
         )));
 
         bridges = listToAttrs (map (interface:
@@ -372,6 +391,11 @@ in
           exit
           !
           ${lib.concatMapStringsSep "\n"
+            # `kernel` routes are mostly those routes we insert into the
+            # kernel routing table through fc-qemu for our virtual machines.
+            # `connected` routes are for those (special) cases where the host
+            # might receive an address on the VXLAN/VRF interface, even
+            # though usually they don't.
             (iface: ''
               router bgp ${toString fclib.underlay.asNumber} vrf vrf${iface.vlan}
                bgp router-id ${fclib.underlay.loopback}
