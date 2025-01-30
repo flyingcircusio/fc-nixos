@@ -96,12 +96,11 @@ let
   quoteLabel = replaceStrings ["/"] ["-"];
 
   vrfName = iface: "vrf${iface.vlan}";
-  vrfTable = iface: let
+  vrfTable = iface:
     # the routing tables 0, 253, 254, and 255 are reserved by the
-    # kernel. this base number is chosen as an arbitrary offset for
-    # numbering kernel routing tables for vrfs
-    tableBase = 1000;
-  in tableBase + iface.vlanId;
+    # kernel.
+    assert ! (elem iface.vlanId [ 0 253 254 255 ]);
+    iface.vlanId;
 
 in
 {
@@ -821,7 +820,6 @@ in
               serviceConfig.Type = "oneshot";
               serviceConfig.RemainAfterExit = true;
               path = [ fclib.relaxedIp ];
-              reloadIfChanged = true;
               script = ''
                 # remove dead interface
                 echo "Removing old VRF ${name}..."
