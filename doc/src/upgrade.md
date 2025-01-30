@@ -138,10 +138,10 @@ Consequentially, prefer using `services.nginx` options when migrating the JSON c
 (nixos-upgrade-percona)=
 ### Percona/ MySQL
 
-TODO
+The release schema of Percona versions changed yet again. Percona will only create releases based on Oracle MySQL LTS releases anymore.
+Percona version 8.0 is still a supported LTS release and the one we recommend right now. The most current LTS release 8.4 is not supported from the start of the NixOS 24.11 release cycle, but will be introduced very soon in one of the regular releases.
 
-We recommend using the LTS `percona84` for most use cases, see
-{ref}`nixos-mysql-versions` for details.
+The versions *8.1*, *8.2*, and *8.3* have been removed in this platform release. Users relying on these versions must not downgrade to Percona 8.0, but can upgrade to Üercona 8.4 once that is available in our platform.
 
 (nixos-upgrade-k3s)=
 ### K3S
