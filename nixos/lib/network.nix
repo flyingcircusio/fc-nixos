@@ -411,6 +411,7 @@ rec {
       # Provide homogenous access to loopback data
       { lo = {
         vlan = "lo";
+        policy = "unmanaged";
         dualstack = {
           addresses = [ "127.0.0.1" "::1" ];
           addressesQuoted = [ "127.0.0.1" "[::1]" ];
