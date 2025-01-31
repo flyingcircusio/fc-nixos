@@ -31,7 +31,7 @@ We do back-ports for critical security issues but this may take longer in some
 cases and less important security fixes will not be back-ported most of the time.
 
 NixOS provides regular security updates for about one month after the release.
-Upstream support for 24.05 ends on **2024-12-31**.
+Upstream support for 24.05 ended on **2024-12-31**.
 
 New platform features are always developed for the current stable platform version
 and only critical bug fixes are back-ported to older versions.
@@ -39,13 +39,11 @@ and only critical bug fixes are back-ported to older versions.
 
 ## How to upgrade?
 
-At the moment, upgrading for customers is only possible by setting the platform
-version using the API. Ask our [support](/platform/index.html#support) to
-schedule an upgrade in a maintenance window or upgrade immediately if you don't
-use the API.
+To upgrade your machines, the *Environment* to one of the `fc-24.11-…`
+values. \
+This can be done either via our customer portal, or by setting the platform
+version using the API.
 
-We are working on a feature to request upgrades from the customer self-service
-portal.
 
 (nixos-upgrade-general)=
 
@@ -75,7 +73,7 @@ also subscribe to updates.
 ### Upgrade to the next platform version
 
 We recommend upgrading platform versions one at a time without skipping
-versions. Here we assume that you are upgrading from the 23.11 platform.
+versions. Here we assume that you are upgrading from the 24.05 platform.
 
 Direct upgrades from older versions are possible in principle, but we cannot
 reliably test all combinations for all roles and custom configuration also
@@ -97,7 +95,7 @@ days.
 
 Upgrading may take some time, depending on the number of activated roles and
 disk speed. For production machines, upgrades are usually done in a
-maintenance window to reduce impact on regular operations. VM may have
+maintenance window to reduce impact on regular operations. A VM may have
 degraded performance for some minutes when packages are being downloaded and
 built.
 
