@@ -180,12 +180,55 @@ The default docker version is updated from 24 to 27. Some of the major changes a
 
 ## Other notable changes
 
-TODO
-
+- New supported PHP version: PHP 8.4
+- All Oracle JDKs and JREs were dropped due to being unmaintained and heavily insecure. OpenJDK provides compatible replacements for JDKs and JREs.
+- gradle_6 was removed due to being unsupported upstream
+- While `openssl` was updated from 3.0.x to 3.3.x, the `openssl_3` package name continues to point to the 3.0.x series
 - For more details, see the
-  [release notes of NixOS 24.11](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-24.11-notable-changes).
+  [release notes of NixOS 24.11](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-24.11).
 
 
 ## Significant package updates
 
-TODO
+*as of 2025-01-31*
+
+- awscli: 1.32 -> 1.34
+- awscli2: 2.15 -> 2.19
+- binutils: 2.41 -> 2.43
+- calibre: 7.10 -> 7.21
+- clamav: 1.3 -> 1.4
+- cmake: 3.29 -> 3.30
+- curl: 8.7 -> 8.11
+- docker: 24.0 -> 27.3 (other versions available under alias)
+- ffmpeg: 6.1 -> 7.1
+- gcc: 13.2 -> 13.3
+- git: 2.44 -> 2.47
+- gitlab: 17.6 -> 17.7
+- glibc: 2.39 -> 2.40
+- go: 1.22 -> 1.23 (other versions available under alias)
+- grafana: 10.4 -> 11.3
+- haproxy: 2.9 -> 3.0
+- k3s: see above
+- keycloak: 25.0 -> 26.1
+- libressl: 3.9 -> 4.0
+- libtiff: 4.6 -> 4.7
+- libxml2: 2.12 -> 2.13
+- linux: 5.15 -> 6.6
+- mastodon: 4.2 -> 4.3
+- mongodb: 6.0 -> 7.0 (not managed by platform role)
+- nix: 2.18 -> 2.24
+- opensearch: 2.14 -> 2.17
+- openssh: 9.7p1 -> 9.9p1
+- openssl: 3.0 -> 3.3
+- phpPackages.composer: 2.7 -> 2.8
+- podman: 5.0 -> 5.2
+- python3: 3.11 -> 3.12 (other versions available under alias)
+- python3Packages.boto3: 1.34 -> 1.35
+- python3Packages.pillow: 10.3 -> 11.0
+- rabbitmq-server: 3.12 -> 4.0
+- rclone: 1.66 -> 1.68
+- rsync: 3.3 -> 3.4
+- ruby: 3.1 -> 3.3 (other versions available under alias)
+- systemd: 255 -> 256
+- varnish: 7.4 -> 7.5
+- wget: 1.21 -> 1.25
