@@ -93,9 +93,6 @@ let
     ];
   };
 
-  # The script is embedded in two locations: before the start of the
-  # kea server, to ensure that we have a known-good configuration and in
-  # the agent to update it continuously from the directory data.
   configUpdateScript = pkgs.writeShellScript "update-kea-config" ''
       # Generate DHCP server configuration
       ${pkgs.fc.agent}/bin/fc-kea -4 -L ${location} -o /etc/nixos/localconfig-dhcpd4.json -e ipmi ${lib.concatMapStringsSep " " (net: "-n ${net}") dhcpNetworks}
@@ -117,10 +114,6 @@ in
 
   config = lib.mkIf role.enable {
     flyingcircus.agent.extraPreCommands = ''
-      ${configUpdateScript}
-    '';
-
-    system.activationScripts.kea-config = ''
       ${configUpdateScript}
     '';
 
