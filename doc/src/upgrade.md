@@ -17,9 +17,8 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 
 - New roles: {ref}`percona84 <nixos-upgrade-percona>`
 - Removed roles: {ref}`percona81 percona82 percona83 <nixos-upgrade-percona>`
-- Removed significant packages:
-- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`docker <nixos-upgrade-docker>`
-- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`docker <nixos-upgrade-docker>`, {ref}`webgateway <nixos-upgrade-webgateway>`
+- Removed significant packages: postgresql12
+- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`docker <nixos-upgrade-docker>`, {ref}`webgateway <nixos-upgrade-webgateway>`, {ref}`postgresql12 <nixos-upgrade-postgresql>`
 
 
 ## Why upgrade? Security
@@ -142,6 +141,14 @@ The release schema of Percona versions changed yet again. Percona will only crea
 Percona version 8.0 is still a supported LTS release and the one we recommend right now. The most current LTS release 8.4 is not supported from the start of the NixOS 24.11 release cycle, but will be introduced very soon in one of the regular releases.
 
 The versions *8.1*, *8.2*, and *8.3* have been removed in this platform release. Users relying on these versions must not downgrade to Percona 8.0, but can upgrade to Üercona 8.4 once that is available in our platform.
+
+(nixos-upgrade-postgresql)=
+### Postgresql
+
+The `postgresql12` role has been dropped. The oldest supported PostgreSQL release is now 13.
+Upgrading PostgreSQL to at least version 13 needs to be done ahead of the platform upgrade, our {ref}`fc-postgresql <nixos-postgresql-major-upgrade>` tool can help with that.
+
+`postgresql.service` has enabled [several hardening options](https://nixos.org/manual/nixos/stable/#module-services-postgres-hardening) by default now. Our platform role was adapted to be able to deal with this, but if your application relies on direct access to postgresql data directories, hardening options might need to be adjusted.
 
 (nixos-upgrade-k3s)=
 ### K3S
