@@ -69,7 +69,7 @@ in
       default = 5;
       description = "burst limit to use for logging refused IPtables matches,"
         + " see `--limit-burst` in `man 8 iptables-extensions`.\n"
-        "Only enabled when `logRateLimit` is enabled.";
+        + "Only enabled when `logRateLimit` is enabled.";
     };
     logLevel = lib.mkOption {
       type = lib.types.ints.positive;
