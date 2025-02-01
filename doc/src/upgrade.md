@@ -17,7 +17,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 
 - New roles: {ref}`percona84 <nixos-upgrade-percona>`
 - Removed roles: {ref}`percona81 percona82 percona83 <nixos-upgrade-percona>`
-- Removed significant packages: postgresql12
+- Removed significant packages: `go_1_21`, `k3s_1_27`, `k3s_1_28`, `postgresql12`, `rabbitmq-server_3_8`
 - Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`docker <nixos-upgrade-docker>`, {ref}`webgateway <nixos-upgrade-webgateway>`, {ref}`postgresql12 <nixos-upgrade-postgresql>`
 
 
