@@ -999,7 +999,6 @@
     "pname": "rabbitmq-server",
     "version": "4.0.2"
   },
-  "rabbitmq-server_3_8": {},
   "rclone": {
     "name": "rclone-1.68.2",
     "pname": "rclone",
@@ -1035,7 +1034,6 @@
     "pname": "ruby",
     "version": "3.3.6"
   },
-  "ruby_2_7": {},
   "ruby_3_2": {
     "name": "ruby-3.2.6",
     "pname": "ruby",
