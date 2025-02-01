@@ -125,6 +125,8 @@ config after upgrading, this is the default now.
 (nixos-upgrade-webgateway)=
 ### Webgateway (Nginx)
 
+The nginx main process is running as user *nginx* by default since NixOS 22.11. The option `services.nginx.masterUser` to still run the main process as *root* has been removed in this platform version.
+
 Configuring nginx via structured JSON config files in {file}`/etc/local/nginx/*.json` has been removed. Affected machines already showed a NixOS warning in platform version 24.05.
 Nginx vhost configuration needs to be migrated to *Structured Nix Configuration*. As JSON config supports the same options as Nix config, converting from JSON to
 Nix is basically just a syntax change. Consult the examples in the {ref}`role documentation <nixos-webgateway>` or the [option search](https://search.flyingcircus.io/search/options?q=flyingcircus.services.nginx) for details.
