@@ -4,7 +4,9 @@
 
 VMs perform automated maintenance activities in announced maintenance windows.
 Typical activities are system updates and reboots necessary to activate VM
-property changes like memory size and the number of CPUs.
+property changes like memory size and the number of CPUs. \
+Lead time and the allowed time window for maintenances can be configured per
+resource group in our customer portal [My Flying Circus](https://my.flyingcircus.io).
 
 When new activities are scheduled by our central VM directory, a mail is sent
 out to technical contacts with information about what's happening and when.

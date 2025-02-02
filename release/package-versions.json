@@ -40,9 +40,9 @@
     "version": "5.2p37"
   },
   "bind": {
-    "name": "bind-9.18.28",
+    "name": "bind-9.18.33",
     "pname": "bind",
-    "version": "9.18.28"
+    "version": "9.18.33"
   },
   "binutils": {
     "name": "binutils-wrapper-2.43.1",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-132.0.6834.110",
+    "name": "chromedriver-unwrapped-132.0.6834.159",
     "pname": "chromedriver-unwrapped",
-    "version": "132.0.6834.110"
+    "version": "132.0.6834.159"
   },
   "chromium": {
-    "name": "chromium-132.0.6834.110",
+    "name": "chromium-132.0.6834.159",
     "pname": "chromium",
-    "version": "132.0.6834.110"
+    "version": "132.0.6834.159"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.89",
+    "name": "element-web-1.11.91",
     "pname": "element-web",
-    "version": "1.11.89"
+    "version": "1.11.91"
   },
   "erlang": {
     "name": "erlang-25.3.2.16",
@@ -289,6 +289,11 @@
     "pname": "go",
     "version": "1.22.11"
   },
+  "go_1_23": {
+    "name": "go-1.23.5",
+    "pname": "go",
+    "version": "1.23.5"
+  },
   "grafana": {
     "name": "grafana-11.3.2",
     "pname": "grafana",
@@ -348,6 +353,11 @@
     "name": "jicofo-1.0-1090",
     "pname": "jicofo",
     "version": "1.0-1090"
+  },
+  "jitsi-meet": {
+    "name": "jitsi-meet-1.0.8043",
+    "pname": "jitsi-meet",
+    "version": "1.0.8043"
   },
   "jitsi-videobridge": {
     "name": "jitsi-videobridge2-2.3-160-g97a1f15b",
@@ -560,9 +570,9 @@
     "version": "1.26.2"
   },
   "nix": {
-    "name": "nix-2.24.11",
+    "name": "nix-2.24.12",
     "pname": "nix",
-    "version": "2.24.11"
+    "version": "2.24.12"
   },
   "nodejs": {
     "name": "nodejs-20.18.1",
@@ -570,9 +580,9 @@
     "version": "20.18.1"
   },
   "nodejs_18": {
-    "name": "nodejs-18.20.5",
+    "name": "nodejs-18.20.6",
     "pname": "nodejs",
-    "version": "18.20.5"
+    "version": "18.20.6"
   },
   "nodejs_20": {
     "name": "nodejs-20.18.1",
@@ -999,7 +1009,6 @@
     "pname": "rabbitmq-server",
     "version": "4.0.2"
   },
-  "rabbitmq-server_3_8": {},
   "rclone": {
     "name": "rclone-1.68.2",
     "pname": "rclone",
@@ -1035,7 +1044,6 @@
     "pname": "ruby",
     "version": "3.3.6"
   },
-  "ruby_2_7": {},
   "ruby_3_2": {
     "name": "ruby-3.2.6",
     "pname": "ruby",
