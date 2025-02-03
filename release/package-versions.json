@@ -225,9 +225,9 @@
     "version": "2.47.2"
   },
   "gitaly": {
-    "name": "gitaly-17.7.1",
+    "name": "gitaly-17.8.0",
     "pname": "gitaly",
-    "version": "17.7.1"
+    "version": "17.8.0"
   },
   "github-runner": {
     "name": "github-runner-2.321.0",
@@ -235,24 +235,24 @@
     "version": "2.321.0"
   },
   "gitlab": {
-    "name": "gitlab-17.7.1",
+    "name": "gitlab-17.8.0",
     "pname": "gitlab",
-    "version": "17.7.1"
+    "version": "17.8.0"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.14.0",
+    "name": "gitlab-container-registry-4.15.2",
     "pname": "gitlab-container-registry",
-    "version": "4.14.0"
+    "version": "4.15.2"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.7.1",
+    "name": "gitlab-ee-17.8.0",
     "pname": "gitlab-ee",
-    "version": "17.7.1"
+    "version": "17.8.0"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.7.1",
+    "name": "gitlab-pages-17.8.0",
     "pname": "gitlab-pages",
-    "version": "17.7.1"
+    "version": "17.8.0"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.7.1",
+    "name": "gitlab-workhorse-17.8.0",
     "pname": "gitlab-workhorse",
-    "version": "17.7.1"
+    "version": "17.8.0"
   },
   "glibc": {
     "name": "glibc-2.40-36",
@@ -295,9 +295,9 @@
     "version": "1.23.5"
   },
   "grafana": {
-    "name": "grafana-11.3.2",
+    "name": "grafana-11.3.3",
     "pname": "grafana",
-    "version": "11.3.2"
+    "version": "11.3.3"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -545,9 +545,9 @@
     "version": "10.11.10"
   },
   "mysql80": {
-    "name": "mysql-8.0.40",
+    "name": "mysql-8.0.41",
     "pname": "mysql",
-    "version": "8.0.40"
+    "version": "8.0.41"
   },
   "nfs-utils": {
     "name": "nfs-utils-2.7.1",
@@ -695,9 +695,9 @@
     "version": "8.4.3-3"
   },
   "percona-xtrabackup_8_0": {
-    "name": "percona-xtrabackup-8.0.35-31",
+    "name": "percona-xtrabackup-8.0.35-32",
     "pname": "percona-xtrabackup",
-    "version": "8.0.35-31"
+    "version": "8.0.35-32"
   },
   "percona-xtrabackup_8_4": {
     "name": "percona-xtrabackup-8.4.0-2",
@@ -790,9 +790,9 @@
     "version": "16.6"
   },
   "postgresql13Packages.postgis": {
-    "name": "postgis-3.5.0",
+    "name": "postgis-3.5.2",
     "pname": "postgis",
-    "version": "3.5.0"
+    "version": "3.5.2"
   },
   "postgresql13Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -800,9 +800,9 @@
     "version": "1.2.2"
   },
   "postgresql14Packages.postgis": {
-    "name": "postgis-3.5.0",
+    "name": "postgis-3.5.2",
     "pname": "postgis",
-    "version": "3.5.0"
+    "version": "3.5.2"
   },
   "postgresql14Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -810,9 +810,9 @@
     "version": "1.2.2"
   },
   "postgresql15Packages.postgis": {
-    "name": "postgis-3.5.0",
+    "name": "postgis-3.5.2",
     "pname": "postgis",
-    "version": "3.5.0"
+    "version": "3.5.2"
   },
   "postgresql15Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -820,9 +820,9 @@
     "version": "1.2.2"
   },
   "postgresql16Packages.postgis": {
-    "name": "postgis-3.5.0",
+    "name": "postgis-3.5.2",
     "pname": "postgis",
-    "version": "3.5.0"
+    "version": "3.5.2"
   },
   "postgresql16Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -830,9 +830,9 @@
     "version": "1.2.2"
   },
   "postgresql17Packages.postgis": {
-    "name": "postgis-3.5.0",
+    "name": "postgis-3.5.2",
     "pname": "postgis",
-    "version": "3.5.0"
+    "version": "3.5.2"
   },
   "postgresql17Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -840,9 +840,9 @@
     "version": "1.2.2"
   },
   "postgresqlPackages.postgis": {
-    "name": "postgis-3.5.0",
+    "name": "postgis-3.5.2",
     "pname": "postgis",
-    "version": "3.5.0"
+    "version": "3.5.2"
   },
   "postgresqlPackages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
