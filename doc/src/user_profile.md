@@ -35,7 +35,6 @@ Create a file like {file}`myproject_env.nix` which specifies the packages to be 
 let
   # Imports. Which package sources should be used?
   # Use a pinned platform version
-  # TODO: update pinned tarball after first 24.11 release hase been made
   # pkgs = import (fetchTarball "https://hydra.flyingcircus.io/build/457353/download/1/nixexprs.tar.xz") {};
   # ...or just use the current version of the platform
   pkgs = import <nixpkgs> {};
@@ -54,7 +53,7 @@ pkgs.buildEnv {
 ```
 
 The code shown above defines an environment with 5 packages installed from a
-specific build of our NixOS 23.11 platform.
+specific build of our NixOS 24.05 platform.
 The pinned version can be newer or older than the installed system version.
 
 Pinning the version of the import prevents unwanted changes in your

@@ -2,7 +2,7 @@
 
 # OpenSearch
 
-Managed instance of [OpenSearch](https://opensearch.org) in version 2.14.x.
+Managed instance of [OpenSearch](https://opensearch.org) in version 2.17.x.
 
 
 ## Interaction

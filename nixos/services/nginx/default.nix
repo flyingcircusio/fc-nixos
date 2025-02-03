@@ -11,9 +11,6 @@ let
   nginxCfg = config.services.nginx;
   fclib = config.fclib;
 
-  nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
-
-  '';
 
   nginxShowConfig = pkgs.writeScriptBin "nginx-show-config" ''
     cat /etc/nginx/nginx.conf

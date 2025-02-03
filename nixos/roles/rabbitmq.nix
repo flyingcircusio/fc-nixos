@@ -5,14 +5,7 @@ let
   fclib = config.fclib;
 in
 {
-  options =
-  let
-    mkRole = v: {
-      enable = lib.mkEnableOption
-        "Enable the Flying Circus RabbitMQ ${v} server role.";
-      supportsContainers = fclib.mkEnableDevhostSupport;
-    };
-  in {
+  options = {
     flyingcircus.roles = {
       rabbitmq36_5 = {
         enable = lib.mkEnableOption
@@ -30,17 +23,15 @@ in
 
   config =
   let
-    roles = config.flyingcircus.roles;
     fclib = config.fclib;
 
     rabbitRoles = with config.flyingcircus.roles; {
       "3.6.5" = rabbitmq36_5.enable;
-      "3.12" = rabbitmq.enable;
+      "current" = rabbitmq.enable;
     };
     enabledRoles = lib.filterAttrs (n: v: v) rabbitRoles;
     enabledRolesCount = length (lib.attrNames enabledRoles);
     enabled = enabledRolesCount > 0;
-    roleVersion = head (lib.attrNames enabledRoles);
     isSingleNode = length (fclib.findServices "rabbitmq-node") == 1;
   in
   lib.mkMerge [

@@ -8,7 +8,7 @@ failover support.
 
 ## Versions
 
-- HAProxy: 2.9.x
+- HAProxy: 3.0.x
 - Nginx: 1.26.x
 
 ## Role architecture
@@ -119,9 +119,15 @@ You can check if the config is valid with: {command}`nginx-check-config`.
 The script also warns about potential security issues with your current config.
 
 The recommended method is structured configuration via Nix code as described in the next section.
-We still support plain nginx config and structured JSON config in {file}`/etc/local/nginx`.
+Alternatively, we still support plain nginx config files in {file}`/etc/local/nginx`. \
+Support for structured JSON config was removed in platform version 24.11.
 
 ### Structured Nix Configuration (recommended)
+
+:::{note}
+We plan to deprecate our custom-prefix `flyingcircus.services.nginx` options in favour of the very similar NixOS upstream `services.nginx` options. \
+When migrating from JSON-config or starting from scratch, consider already using `services.nginx` for your configuration.
+:::
 
 Define Nginx virtual hosts with the NixOS option `flyingcircus.services.nginx.virtualHosts`.
 
@@ -278,15 +284,6 @@ will then be integrated with our nginx base config. Therefore, please omit
 the http clause. It is already set by the base config.
 
 See {file}`/etc/local/nginx/example-configuration` for an example and {file}`/etc/local/nginx/README.txt`.
-
-### JSON Configuration (old)
-
-Although not recommended anymore, JSON config can be added to {file}`/etc/local/nginx`,
-alongside with plain nginx config files. Nix config should be used instead, as described above.
-JSON config supports the same options as Nix config so converting from JSON to
-Nix is basically just a syntax change.
-
-See {file}`/etc/local/nginx/README.txt` for an example and more info.
 
 ### Logging
 
