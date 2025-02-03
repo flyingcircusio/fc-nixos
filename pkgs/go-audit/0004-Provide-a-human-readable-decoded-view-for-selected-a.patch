@@ -1,0 +1,192 @@
+From 54e29375729569f43ef58e569c5481730a903920 Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Mon, 3 Feb 2025 12:00:57 +0100
+Subject: [PATCH 4/4] Provide a human-readable decoded view for selected audit
+ events
+
+---
+ extras_readable.go | 159 +++++++++++++++++++++++++++++++++++++++++++++
+ parser.go          |   1 +
+ 2 files changed, 160 insertions(+)
+ create mode 100644 extras_readable.go
+
+diff --git a/extras_readable.go b/extras_readable.go
+new file mode 100644
+index 0000000..5bc2bac
+--- /dev/null
++++ b/extras_readable.go
+@@ -0,0 +1,159 @@
++package main
++
++import (
++	"encoding/hex"
++	"strconv"
++	"strings"
++
++	"github.com/spf13/viper"
++)
++
++func init() {
++	RegisterExtraParser(func(config *viper.Viper) (ExtraParser, error) {
++		return &ReadableMessageParser{}, nil
++	})
++}
++
++const kernelHexChars = "0123456789abcdefABCDEF"
++
++type ReadableMessageParser struct {
++}
++
++func (p *ReadableMessageParser) Parse(am *AuditMessage) {
++	switch am.Type {
++	case 1309: // AUDIT_EXECVE
++		p.formatExecve(am)
++	case 1319: // AUDIT_TTY
++		p.formatTty(am)
++	case 1327: // AUDIT_PROCTITLE
++		p.formatProctitle(am)
++		// decode: audit_proctitle, *maybe* audit_tty, at least in strconv.Quote form
++	default:
++		am.Readable = am.Data
++	}
++}
++
++func (p *ReadableMessageParser) formatExecve(am *AuditMessage) {
++	argc, ok := am.DataMap["argc"]
++	if !ok {
++		return
++	}
++
++	count, err := strconv.ParseUint(argc, 10, 32)
++	if err != nil || count == 0 {
++		return
++	}
++
++	rawArgs := []string{}
++	for idx := uint64(0); idx < count; idx++ {
++		key := "a" + strconv.FormatUint(idx, 10)
++		value, ok := am.DataMap[key]
++		if !ok {
++			break
++		}
++		rawArgs = append(rawArgs, value)
++	}
++
++	args := []string{}
++	for _, raw := range rawArgs {
++		decoded, ok := renderString(raw, true)
++		if !ok {
++			decoded = raw
++		}
++		args = append(args, decoded)
++	}
++
++	am.Readable = strings.Join(args, " ")
++}
++
++func (p *ReadableMessageParser) formatTty(am *AuditMessage) {
++	// only interested in making the raw keystrokes visible in the
++	// readable message here. the process and user id reading the
++	// keystrokes are still available as metadata on the message
++	// line.
++	keystrokes, ok := am.DataMap["data"]
++	if !ok {
++		return
++	}
++
++	keystrokes, ok = renderString(keystrokes, true)
++	if !ok {
++		return
++	}
++
++	am.Readable = keystrokes
++}
++
++func (p *ReadableMessageParser) formatProctitle(am *AuditMessage) {
++	proctitle, ok := am.DataMap["proctitle"]
++	if !ok {
++		return
++	}
++
++	proctitle, ok = renderString(proctitle, false)
++	if !ok {
++		return
++	}
++
++	am.Readable = proctitle
++}
++
++func renderString(data string, nils bool) (string, bool) {
++	var started, ishex = false, true
++	var first, last rune
++	for _, r := range data {
++		if !started {
++			first = r
++			started = true
++		}
++		last = r
++		ishex = ishex && strings.ContainsRune(kernelHexChars, r)
++	}
++
++	if first == '"' && last == '"' {
++		data = strings.TrimPrefix(data, "\"")
++		data = strings.TrimSuffix(data, "\"")
++		return data, true
++	}
++
++	if ishex {
++		return escapeBytes(data, nils)
++	}
++
++	return "", false
++}
++
++// Convert a byte slice into a readable string with escaping. This
++// first converts the byte slice into a Go string literal using
++// strconv.Quote, and then processes the string to reduce the quoting
++// to improve readability.
++func escapeBytes(encoded string, nils bool) (string, bool) {
++	var builder strings.Builder
++
++	decodedBytes, err := hex.DecodeString(encoded)
++	if err != nil {
++		return "", false
++	}
++
++	if !nils {
++		for idx, _ := range decodedBytes {
++			if decodedBytes[idx] == 0 {
++				decodedBytes[idx] = 0x20
++			}
++		}
++	}
++
++	builder.Write(decodedBytes)
++	decoded := builder.String()
++	decoded = strconv.Quote(decoded)
++
++	// undo the quoting to leave a bare string with escape
++	// sequences
++	decoded = strings.TrimPrefix(decoded, "\"")
++	decoded = strings.TrimSuffix(decoded, "\"")
++	decoded = strings.Replace(decoded, "\\\"", "\"", -1)
++	decoded = strings.Replace(decoded, "\\\\", "\\", -1)
++
++	return decoded, true
++}
++
+diff --git a/parser.go b/parser.go
+index 9b0f412..4f85ac4 100644
+--- a/parser.go
++++ b/parser.go
+@@ -30,6 +30,7 @@ type AuditMessage struct {
+ 
+ 	Containers map[string]string `json:"containers,omitempty"`
+ 	Extras     *AuditExtras      `json:"extras,omitempty"`
++	Readable   string            `json:"readable,omitempty"`
+ }
+ 
+ type AuditExtras struct {
+-- 
+2.39.5 (Apple Git-154)
+
