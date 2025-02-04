@@ -128,6 +128,13 @@ in
           then cfg.static.nameservers.${location}
           else [];
 
+        vlans = listToAttrs (map (interface:
+          lib.nameValuePair interface.taggedLink {
+            id = interface.vlanId;
+            interface = interface.link;
+          })
+          (filter (interface: interface.policy == "tagged") interfaces));
+
         # Using SLAAC/privacy addresses will cause firewalls to block us
         # internally and also have customers get problems with outgoing
         # connections.
