@@ -298,6 +298,7 @@ in {
         http-connections = 2
         log-lines = 25
         experimental-features = nix-command flakes fetch-closure
+        connect-timeout = 1
       '';
 
       settings = {
