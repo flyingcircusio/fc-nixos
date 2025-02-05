@@ -235,6 +235,7 @@ in {
       extraOptions = ''
         fallback = true
         http-connections = 2
+        connect-timeout = 1
       '';
     };
 
