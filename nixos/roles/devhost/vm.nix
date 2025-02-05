@@ -177,13 +177,11 @@ in {
     services.dnsmasq = {
       enable = true;
       resolveLocalQueries = false;
-      extraConfig = ''
-        interface=br-vm-srv
-
-        dhcp-range=10.12.250.10,10.12.254.254,255.255.0.0,24h
-        dhcp-option=option:router,10.12.0.1
-        dhcp-option=option:dns-server,${lib.concatStringsSep "," config.networking.nameservers}
-      '';
+      settings = {
+        interface = "br-vm-srv";
+        dhcp-range="10.12.250.10,10.12.254.254,255.255.0.0,24h";
+        dhcp-option=[ "option:router,10.12.0.1" "option:dns-server,${lib.concatStringsSep "," config.networking.nameservers}"];
+      };
     };
     networking.firewall.interfaces."br-vm-srv".allowedUDPPorts = [ 67 ];
     networking.firewall.interfaces."vm-srv+".allowedUDPPorts = [ 67 ];
