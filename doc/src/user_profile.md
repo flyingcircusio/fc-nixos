@@ -69,11 +69,9 @@ for the 24.11 platform.
 
 If you want to try NixOS unstable with the newest packages, get the URL from the channel:
 
-% TODO: move this to a 24.11 tarball once the first release is out.
-
 ```
 $ curl -w "%{url_effective}\n" -I -L -s -S $URL -o /dev/null https://nixos.org/channels/nixos-unstable/nixexprs.tar.xz
-https://releases.nixos.org/nixos/unstable/nixos-24.11pre647193.9f4128e00b0a/nixexprs.tar.xz
+https://releases.nixos.org/nixos/unstable/nixos-25.05beta746337.3a228057f5b6/nixexprs.tar.xz
 ```
 
 Note that the unstable channel may be broken and that upstream NixOS channels
