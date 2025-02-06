@@ -1,3 +1,16 @@
+# Release 2025_004
+
+## Impact
+
+- None.
+
+
+## NixOS XX.XX platform
+
+- Set the `download-timeout` for Nix to 1 second.
+
+
+
 # Release 2025_002
 
 ## NixOS XX.XX platform
