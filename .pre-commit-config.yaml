@@ -37,6 +37,9 @@ repos:
     - --ignore
     - F401
     id: ruff
-    exclude: ".*"
   repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.6.9
+- hooks:
+  - id: nixfmt
+  repo: https://github.com/NixOS/nixfmt
+  rev: a4639036723e510d8331124c80d9ca14dd7aba02
