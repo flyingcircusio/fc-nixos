@@ -62,7 +62,7 @@ in
       default = "10/second";
       description = "average rate limit to use for logging refused IPtables matches,"
         + " see `--limit` in `man 8 iptables-extensions`.\n"
-        "Disabled when `null`.";
+        + "Disabled when `null`.";
     };
     logBurstLimit = lib.mkOption {
       type = lib.types.ints.positive;
