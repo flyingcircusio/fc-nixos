@@ -50,9 +50,7 @@ class Volume(object):
         lockers = self._rbd("lock", "--format", "json", "list", self.name)
         lockers = json.loads(lockers.decode())
         if len(lockers) > 1:
-            raise RuntimeError(
-                "cannot handle multiple (shared) locks", lockers
-            )
+            raise RuntimeError("cannot handle multiple (shared) locks", lockers)
         try:
             locker = lockers[0]
         except IndexError:
@@ -111,9 +109,7 @@ def main():
     if args.quiet and args.verbose:
         argp.error("-q and -v don't go together")
     if not (args.lock ^ args.unlock ^ args.info):
-        argp.error(
-            'must specify exactly one of "--lock", "--unlock", "--info"'
-        )
+        argp.error('must specify exactly one of "--lock", "--unlock", "--info"')
     logging.basicConfig(
         stream=sys.stdout,
         format="{}: %(message)s".format(argp.prog),

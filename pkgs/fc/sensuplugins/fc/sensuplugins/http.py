@@ -123,9 +123,7 @@ def main():
                 f"request returned client error status code: {resp.status_code}"
             )
     elif resp.status_code not in args.expect:
-        critical(
-            f"request returned unexpected status code: {resp.status_code}"
-        )
+        critical(f"request returned unexpected status code: {resp.status_code}")
 
     ok(f"request returned status code: {resp.status_code}")
 

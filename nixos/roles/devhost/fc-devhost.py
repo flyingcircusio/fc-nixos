@@ -323,9 +323,7 @@ class Manager:
                             f.write(generate_enc_json(self.cfg, channel_url))
                     finally:
                         run("umount", image_mount_directory)
-                        run(
-                            "qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}"
-                        )
+                        run("qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}")
                 os.rename(self.image_file_tmp, self.image_file)
 
             # Make sure the VM is now online, even if was previously offline
@@ -406,9 +404,7 @@ class Manager:
                 vm_cfg["last_deploy_date"] = (
                     datetime.datetime.utcnow().isoformat()
                 )
-                with open(
-                    CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w"
-                ) as f:
+                with open(CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w") as f:
                     f.write(json.dumps(vm_cfg))
 
             if datetime.datetime.fromisoformat(vm_cfg["last_deploy_date"]) < (
@@ -417,18 +413,16 @@ class Manager:
                 print(f"Deleting VM {vm_cfg['name']}.")
                 Manager(name=vm_cfg["name"]).destroy()
 
-            elif datetime.datetime.fromisoformat(
-                vm_cfg["last_deploy_date"]
-            ) < (datetime.datetime.utcnow() - datetime.timedelta(days=14)):
+            elif datetime.datetime.fromisoformat(vm_cfg["last_deploy_date"]) < (
+                datetime.datetime.utcnow() - datetime.timedelta(days=14)
+            ):
                 if vm_cfg["online"] == False:
                     continue
                 print(f"Shutting down VM {vm_cfg['name']}.")
                 vm_shut_down = True
                 vm_cfg["online"] = False
                 write_nix_file(CONFIG_DIR / f"{vm_cfg['name']}.nix", vm_cfg)
-                with open(
-                    CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w"
-                ) as f:
+                with open(CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w") as f:
                     f.write(json.dumps(vm_cfg))
 
         if vm_shut_down:

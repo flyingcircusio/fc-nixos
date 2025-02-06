@@ -361,9 +361,7 @@ def test_request_update(log, logger, agent_configparser, monkeypatch):
     assert log.has("request-update-prepared")
 
 
-def test_request_update_unchanged(
-    log, logger, agent_configparser, monkeypatch
-):
+def test_request_update_unchanged(log, logger, agent_configparser, monkeypatch):
     from_enc_mock = MagicMock()
     from_enc_mock.return_value = None
     monkeypatch.setattr(

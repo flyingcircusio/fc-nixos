@@ -48,9 +48,7 @@ def patch_prepare(monkeypatch):
             }
         ),
     )
-    monkeypatch.setattr(
-        "fc.util.postgresql.is_service_running", (lambda: True)
-    )
+    monkeypatch.setattr("fc.util.postgresql.is_service_running", (lambda: True))
 
 
 def test_prepare_upgrade(

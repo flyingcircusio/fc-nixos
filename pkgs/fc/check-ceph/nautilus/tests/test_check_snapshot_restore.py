@@ -191,9 +191,7 @@ def test_parse_pools(
     assert parsed_pools[1].root.used == 65970697666560
 
 
-def test_parse_pools_no_stats_available(
-    example_thresholds, default_pool_roots
-):
+def test_parse_pools_no_stats_available(example_thresholds, default_pool_roots):
     (parse_status, parsed_pools) = snapcheck.parse_pools(
         iter([]), default_pool_roots, example_thresholds
     )

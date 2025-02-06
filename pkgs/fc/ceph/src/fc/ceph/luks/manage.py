@@ -23,9 +23,7 @@ class LuksDevice(NamedTuple):
     header: Optional[str] = None
 
     @classmethod
-    def lsblk_to_cryptdevices(
-        cls, lsblk_blockdevs: list
-    ) -> list["LuksDevice"]:
+    def lsblk_to_cryptdevices(cls, lsblk_blockdevs: list) -> list["LuksDevice"]:
         """parses the output of lsblk -Js -o NAME,PATH,TYPE,MOUNTPOINT"""
         return [
             cls(
@@ -223,9 +221,7 @@ class LUKSKeyStoreManager(object):
                     "luksDump", "--header", dev.header, dev.base_blockdev
                 )
             else:
-                luks_dump = Cryptsetup.cryptsetup(
-                    "luksDump", dev.base_blockdev
-                )
+                luks_dump = Cryptsetup.cryptsetup("luksDump", dev.base_blockdev)
             dump_lines = luks_dump.decode("utf-8").splitlines()
             for check in all_checks:
                 check_ok = True

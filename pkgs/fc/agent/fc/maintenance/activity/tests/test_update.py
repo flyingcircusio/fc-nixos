@@ -371,9 +371,7 @@ def test_update_nfs_reboot_required(
         Build number: 93111 -> 93222
         Channel URL: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"""
     )
-    assert log.has(
-        "changed-units-require-reboot", units="mnt-nfs-shared.mount"
-    )
+    assert log.has("changed-units-require-reboot", units="mnt-nfs-shared.mount")
 
 
 def test_update_activity_run(log, nixos_mock, activity, logger):

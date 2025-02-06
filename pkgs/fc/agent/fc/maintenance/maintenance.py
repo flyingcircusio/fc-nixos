@@ -76,9 +76,7 @@ def request_reboot_for_kvm_environment(log) -> Optional[Request]:
 
     cold_state_file = lambda stem: Path(KVM_SEED_DIR) / f"qemu-{stem}-booted"
     warm_state_file = lambda stem: qemu_state_dir / f"qemu-{stem}-booted"
-    running_state_file = (
-        lambda stem: Path(RUNTIME_DIR) / f"qemu-{stem}-current"
-    )
+    running_state_file = lambda stem: Path(RUNTIME_DIR) / f"qemu-{stem}-current"
 
     if not qemu_state_dir.is_dir():
         qemu_state_dir.mkdir(parents=True)
@@ -133,9 +131,7 @@ def request_reboot_for_kvm_environment(log) -> Optional[Request]:
             current_generation is not None
             and current_generation > booted_generation
         ):
-            msg = (
-                "Cold restart because the Qemu binary environment has changed"
-            )
+            msg = "Cold restart because the Qemu binary environment has changed"
             return Request(RebootActivity("poweroff"), comment=msg)
 
         return
@@ -287,10 +283,7 @@ def request_update(
         )
         return
 
-    if (
-        not other_planned_requests
-        and activity.identical_to_current_channel_url
-    ):
+    if not other_planned_requests and activity.identical_to_current_channel_url:
         # Shortcut to save time preparing an activity which will have no effect.
         return
 

@@ -134,9 +134,7 @@ class DiskWithSinglePartition(GenericBlockDevice):
                     self._blockdevice = partition
                     break
             else:
-                raise RuntimeError(
-                    f"Could not find partition 1 on {self.name}"
-                )
+                raise RuntimeError(f"Could not find partition 1 on {self.name}")
         return self._blockdevice
 
     @classmethod
@@ -408,9 +406,7 @@ class LogicalVolume(GenericLogicalVolume):
             return
 
         try:
-            pv = run.json.pvs("-S", f"vg_name=~^{re.escape(self._vg_name)}$")[
-                0
-            ]
+            pv = run.json.pvs("-S", f"vg_name=~^{re.escape(self._vg_name)}$")[0]
         except IndexError:
             pass
         else:

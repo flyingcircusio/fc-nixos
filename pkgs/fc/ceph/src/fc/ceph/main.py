@@ -383,14 +383,10 @@ requests. Useful for identifying slacky OSDs.""",
     )
     parser_clean_deleted_vms.set_defaults(action="clean_deleted_vms")
 
-    parser_enter = maint_sub.add_parser(
-        "enter", help="Enter maintenance mode."
-    )
+    parser_enter = maint_sub.add_parser("enter", help="Enter maintenance mode.")
     parser_enter.set_defaults(action="enter")
 
-    parser_leave = maint_sub.add_parser(
-        "leave", help="Leave maintenance mode."
-    )
+    parser_leave = maint_sub.add_parser("leave", help="Leave maintenance mode.")
     parser_leave.set_defaults(action="leave")
 
     # extract parsed arguments from object into a dict

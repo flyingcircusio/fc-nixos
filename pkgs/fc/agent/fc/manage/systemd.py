@@ -12,9 +12,7 @@ class Context(NamedTuple):
 
 
 app = Typer(
-    pretty_exceptions_show_locals=bool(
-        os.getenv("FC_AGENT_SHOW_LOCALS", False)
-    )
+    pretty_exceptions_show_locals=bool(os.getenv("FC_AGENT_SHOW_LOCALS", False))
 )
 context: Context
 
@@ -73,9 +71,7 @@ def check_units(
 ):
     log = structlog.get_logger()
     try:
-        result = fc.util.systemd_units.check_find_failed(
-            log, exclude, critical
-        )
+        result = fc.util.systemd_units.check_find_failed(log, exclude, critical)
     except Exception:
         print("UNKNOWN: Exception occurred while running checks")
         traceback.print_exc()

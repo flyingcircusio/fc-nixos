@@ -94,9 +94,7 @@ def test_successful_maintenance_cycle(
 
     ceph_calls.assert_has_calls(
         [
-            mock.call(
-                "osd", "set-group", "noup", "localhost", "localhost-ssd"
-            ),
+            mock.call("osd", "set-group", "noup", "localhost", "localhost-ssd"),
             mock.call("osd", "down", "13", "14", "27"),
             mock.call(
                 "osd", "unset-group", "noup", "localhost", "localhost-ssd"
