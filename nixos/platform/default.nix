@@ -48,6 +48,14 @@ in {
 
   options = with lib.types; {
 
+    flyingcircus.nix.connectTimeout = mkOption {
+      default = 1;
+      type = types.int;
+      description = ''
+        Corresponds to the `connect-timeout` setting of `nix.conf`.
+      '';
+    };
+
     flyingcircus.activationScripts = mkOption {
       description = ''
         This does the same as system.activationScripts,
@@ -235,7 +243,7 @@ in {
       extraOptions = ''
         fallback = true
         http-connections = 2
-        connect-timeout = 1
+        connect-timeout = ${toString cfg.nix.connectTimeout}
       '';
     };
 
