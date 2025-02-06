@@ -298,7 +298,6 @@ in {
         http-connections = 2
         log-lines = 25
         experimental-features = nix-command flakes fetch-closure
-        connect-timeout = 1
       '';
 
       settings = {
@@ -312,6 +311,8 @@ in {
           "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
           "flyingcircus.io-1:Rr9CwiPv8cdVf3EQu633IOTb6iJKnWbVfCC8x8gVz2o="
         ];
+
+        connect-timeout = 1;
       };
     };
 
