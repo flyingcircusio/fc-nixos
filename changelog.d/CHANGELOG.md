@@ -1,3 +1,54 @@
+# Release 2025_004
+
+## Impact
+
+- Remove the postgresql12 role
+
+- A bullet item for the Impact category.
+
+- None.
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- pkgs, nixos: update frr to 8.5.7, and fix reload and restart
+  behaviour to handle config changes and package upgrades correctly.
+
+- Remove the postgresql12 role
+
+- devhost: migrate dnsmasq extraConfig to structured settings (PL-133369)
+
+- rabbitmq: add sensu check whether all feature-flags are enabled
+
+- Internal: Prepare update-nixpkgs for new fc-release-tools versions
+
+- router: fix reverse DNS zone generation to work with newer library
+  version. (PL-132122)
+
+- `fc-slurm check` does not crash anymore on hosts that are not a core slurm-node, but provides a helpful warning (PL-133153)
+
+- Update nixpkgs from ba5c33f496bb04348a45e22ed4ef8c840e49fe29 to 3fc2232ff5841ed06df7d2cc2eb66a2c32e67cc6
+
+- Set the `download-timeout` for Nix to 1 second.
+
+- router: adapt and re-enable zebra integration in keepalived
+  configuration. (PL-132122)
+
+- Update nixpkgs from cd9c10b20341b57ab0ea1a757d1dd369b0065822 to ba5c33f496bb04348a45e22ed4ef8c840e49fe29
+
+- platform: ensure that IPv6 autoconfiguration is correctly disabled
+  on both physical and virtual hosts. (PL-133360)
+
+- pulling in upstream package updates (TODO: put into upgrade docs)
+  - postgres17: new package
+  - imagemagick: now defaults to version 7, `imagemagick7` has been removed
+  - mongodb_5_0: remove
+  - linuxKernelVerify: just an alias to linux_latest for now
+
+
+
 # Release 2025_002
 
 ## NixOS XX.XX platform
