@@ -12,17 +12,12 @@ in
   options = {
     flyingcircus.roles.devhost = {
 
-      enable = lib.mkEnableOption "Enable our container-based development host";
+      enable = lib.mkEnableOption "Enable our development host for slim virtual machines";
 
       virtualisationType = lib.mkOption {
         type = lib.types.enum [ "vm" "container" ];
+        # FIXME: Why is this still the default?
         default = "container";
-      };
-
-      enableAliasProxy = lib.mkOption {
-        description = "Enable HTTPS-Proxy for containers and their aliases.";
-        type = lib.types.bool;
-        default = !cfg.testing;  # Disable on testing by default.
       };
 
       publicAddress = lib.mkOption {
