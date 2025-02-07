@@ -147,13 +147,13 @@ in {
     '';
 
     environment.systemPackages = [ manage_script ];
-    security.sudo.extraRules = lib.mkAfter [{
-      commands = [{
-        command = "${manage_script}/bin/fc-devhost";
-        options = [ "NOPASSWD" ];
-      }];
-      groups = [ "service" "users" ];
-    }];
+    flyingcircus.passwordlessSudoPackages = [
+      {
+        commands = [ "bin/fc-devhost" ];
+        package = manage_script;
+        groups = [ "service" "users" ];
+      }
+    ];
     networking = {
       bridges."br-vm-srv" = {
         interfaces = [];
