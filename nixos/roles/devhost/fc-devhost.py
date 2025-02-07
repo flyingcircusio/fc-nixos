@@ -203,12 +203,16 @@ class Manager:
         self.cfg["location"] = location
         self.cfg["image_url"] = image_url
         self.cfg["channel_url"] = image_url
-        self.cfg["last_deploy_date"] = datetime.datetime.utcnow().isoformat()
+        self.cfg["last_deploy_date"] = datetime.datetime.now(
+            datetime.UTC
+        ).isoformat()
 
         if "user" not in self.cfg:
             self.cfg["user"] = os.getlogin()
         if "creation-date" not in self.cfg:
-            self.cfg["creation-date"] = datetime.datetime.utcnow().isoformat()
+            self.cfg["creation-date"] = datetime.datetime.now(
+                datetime.UTC
+            ).isoformat()
 
         if "id" not in self.cfg:
             known_ids = set(vm["id"] for vm in list_all_vm_configs())
