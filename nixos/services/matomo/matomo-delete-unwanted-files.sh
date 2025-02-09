@@ -191,9 +191,18 @@ files=(\
   "/var/lib/matomo/share/node_modules/angular-sanitize/README.md"\
   "/var/lib/matomo/share/node_modules/angular-sanitize/angular-sanitize.min.js"\
   "/var/lib/matomo/share/node_modules/angular-sanitize/index.js"\
+  "/var/lib/matomo/share/libs/Zend/Session/SaveHandler/DbTable.php"\
+  "/var/lib/matomo/share/libs/Zend/Session/SaveHandler/Exception.php"\
+  "/var/lib/matomo/share/libs/Zend/Session/SaveHandler/Interface.php"\
+  "/var/lib/matomo/share/plugins/CoreHome/javascripts/numberFormatter.js"\
+  "/var/lib/matomo/share/plugins/CoreHome/vue/src/getFormattedEvolution.ts"\
+  "/var/lib/matomo/share/plugins/Installation/FormDatabaseSetup.php.orig"\
+  "/var/lib/matomo/share/plugins/TagManager/stylesheets/gettingStarted.less"\
+  "/var/lib/matomo/share/plugins/TagManager/templates/gettingStarted.twig"\
+  "/var/lib/matomo/share/plugins/TagManager/templates/trackingHelp.twig"\
 )
 
-for file in "''${files[@]}";do
+for file in "${files[@]}";do
   if [ -f "$file" ]; then
     rm -v "$file"
   fi
@@ -214,7 +223,7 @@ directories=(\
   "/var/lib/matomo/share/vendor/symfony/monolog-bridge/Symfony"\
 )
 
-for dir in "''${directories[@]}";do
+for dir in "${directories[@]}";do
   if [ -d "$dir" ]; then
     rm -Rvf "$dir"
   fi
