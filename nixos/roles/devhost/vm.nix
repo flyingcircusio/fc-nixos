@@ -83,32 +83,14 @@ let
 
   # We unfortunately cannot use writePython3Bin as that only supports
   # python libs in path, and not other applications.
-  # XXX: Switch to the following code with 23.05
-  # manage_script = pkgs.writeShellApplication {
-  #   name = "fc-devhost";
-  #   runtimeInputs = with pkgs; [
-  #     ...
-  #   ];
-  #   text = ''
-  #     --- include ssh snippet + PATH ---
-  #     python ${./fc-devhost.py}
-  #   '';
-  # };
-  manage_script = let 
+  manage_script = pkgs.writeShellApplication {
+    name = "fc-devhost";
     runtimeInputs = with pkgs; [
       (python3.withPackages(ps: with ps; [ requests tabulate ]))
       xfsprogs
       qemu
     ];
-  in pkgs.writeTextFile rec {
-    name = "fc-devhost";
-    executable = true;
-    destination = "/bin/${name}";
     text = ''
-    #!${pkgs.runtimeShell}
-    set -o errexit
-    set -o nounset
-    set -o pipefail
 
     if [[ ! -f "/var/lib/devhost/ssh_bootstrap_key" ]]; then
        cat > /var/lib/devhost/ssh_bootstrap_key <<EOF
@@ -123,7 +105,6 @@ let
       chmod 600 /var/lib/devhost/ssh_bootstrap_key
     fi
 
-    export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
     python ${./fc-devhost.py} "$@" --location ${location}
     '';
   };
