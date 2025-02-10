@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-132.0.6834.159",
+    "name": "chromedriver-unwrapped-133.0.6943.53",
     "pname": "chromedriver-unwrapped",
-    "version": "132.0.6834.159"
+    "version": "133.0.6943.53"
   },
   "chromium": {
-    "name": "chromium-132.0.6834.159",
+    "name": "chromium-133.0.6943.53",
     "pname": "chromium",
-    "version": "132.0.6834.159"
+    "version": "133.0.6943.53"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -195,9 +195,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-134.0.2",
+    "name": "firefox-135.0",
     "pname": "firefox",
-    "version": "134.0.2"
+    "version": "135.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -230,9 +230,9 @@
     "version": "17.8.1"
   },
   "github-runner": {
-    "name": "github-runner-2.321.0",
+    "name": "github-runner-2.322.0",
     "pname": "github-runner",
-    "version": "2.321.0"
+    "version": "2.322.0"
   },
   "gitlab": {
     "name": "gitlab-17.8.1",
@@ -285,9 +285,9 @@
     "version": "1.23.5"
   },
   "go_1_22": {
-    "name": "go-1.22.11",
+    "name": "go-1.22.12",
     "pname": "go",
-    "version": "1.22.11"
+    "version": "1.22.12"
   },
   "go_1_23": {
     "name": "go-1.23.5",
@@ -395,9 +395,9 @@
     "version": "1.31.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.1.0",
+    "name": "keycloak-26.1.1",
     "pname": "keycloak",
-    "version": "26.1.0"
+    "version": "26.1.1"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.16.3",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.75",
+    "name": "linux-6.6.76",
     "pname": "linux",
-    "version": "6.6.75"
+    "version": "6.6.76"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.75",
+    "name": "linux-6.6.76",
     "pname": "linux",
-    "version": "6.6.75"
+    "version": "6.6.76"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -485,9 +485,9 @@
     "version": "3.17"
   },
   "mariadb": {
-    "name": "mariadb-server-10.11.10",
+    "name": "mariadb-server-10.11.11",
     "pname": "mariadb-server",
-    "version": "10.11.10"
+    "version": "10.11.11"
   },
   "mariadb-connector-c": {
     "name": "mariadb-connector-c-3.3.5",
@@ -540,9 +540,9 @@
     "version": "4.29.0-1"
   },
   "mysql": {
-    "name": "mariadb-server-10.11.10",
+    "name": "mariadb-server-10.11.11",
     "pname": "mariadb-server",
-    "version": "10.11.10"
+    "version": "10.11.11"
   },
   "mysql80": {
     "name": "mysql-8.0.41",
@@ -875,9 +875,9 @@
     "version": "17.2"
   },
   "powerdns": {
-    "name": "pdns-4.9.2",
+    "name": "pdns-4.9.4",
     "pname": "pdns",
-    "version": "4.9.2"
+    "version": "4.9.4"
   },
   "prometheus": {
     "name": "prometheus-2.55.0",
