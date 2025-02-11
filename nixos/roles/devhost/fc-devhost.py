@@ -306,11 +306,15 @@ class Manager:
                                 time.sleep(0.5)
                                 break
 
-                        new_fs_uuid = str(uuid.uuid4())
+                        # xfs_admin gets confused by conflicting fs labels, see PL-133416
+                        # So use xfs_db directly
                         run(
-                            "xfs_admin",
-                            "-U",
-                            new_fs_uuid,
+                            # XXX: keep in sync with the args from the `xfs_admin`
+                            # shell script
+                            "xfs_db",
+                            "-x",
+                            "-c",
+                            f"uuid generate",
                             f"/dev/nbd{nbd_number}p1",
                         )
 
