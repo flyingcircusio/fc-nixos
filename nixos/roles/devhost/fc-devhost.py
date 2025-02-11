@@ -203,12 +203,16 @@ class Manager:
         self.cfg["location"] = location
         self.cfg["image_url"] = image_url
         self.cfg["channel_url"] = image_url
-        self.cfg["last_deploy_date"] = datetime.datetime.utcnow().isoformat()
+        self.cfg["last_deploy_date"] = datetime.datetime.now(
+            datetime.UTC
+        ).isoformat()
 
         if "user" not in self.cfg:
             self.cfg["user"] = os.getlogin()
         if "creation-date" not in self.cfg:
-            self.cfg["creation-date"] = datetime.datetime.utcnow().isoformat()
+            self.cfg["creation-date"] = datetime.datetime.now(
+                datetime.UTC
+            ).isoformat()
 
         if "id" not in self.cfg:
             known_ids = set(vm["id"] for vm in list_all_vm_configs())
@@ -302,11 +306,15 @@ class Manager:
                                 time.sleep(0.5)
                                 break
 
-                        new_fs_uuid = str(uuid.uuid4())
+                        # xfs_admin gets confused by conflicting fs labels, see PL-133416
+                        # So use xfs_db directly
                         run(
-                            "xfs_admin",
-                            "-U",
-                            new_fs_uuid,
+                            # XXX: keep in sync with the args from the `xfs_admin`
+                            # shell script
+                            "xfs_db",
+                            "-x",
+                            "-c",
+                            f"uuid generate",
                             f"/dev/nbd{nbd_number}p1",
                         )
 
@@ -322,10 +330,27 @@ class Manager:
                         with open(enc_file_path, mode="w") as f:
                             f.write(generate_enc_json(self.cfg, channel_url))
                     finally:
-                        run("umount", image_mount_directory)
-                        run(
-                            "qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}"
-                        )
+                        # even for partially successful operations (e.g. successful
+                        # nbd map, but failing mount) try to clean everything up
+                        errs = []
+                        try:
+                            run("umount", image_mount_directory)
+                        except Exception as e:
+                            errs.append(e)
+                        try:
+                            run(
+                                "qemu-nbd",
+                                "--disconnect",
+                                f"/dev/nbd{nbd_number}",
+                            )
+                        except Exception as e:
+                            errs.append(e)
+
+                        if errs:
+                            print(
+                                "Suppressed the following exceptions during cleanup:",
+                                errs,
+                            )
                 os.rename(self.image_file_tmp, self.image_file)
 
             # Make sure the VM is now online, even if was previously offline
