@@ -326,10 +326,27 @@ class Manager:
                         with open(enc_file_path, mode="w") as f:
                             f.write(generate_enc_json(self.cfg, channel_url))
                     finally:
-                        run("umount", image_mount_directory)
-                        run(
-                            "qemu-nbd", "--disconnect", f"/dev/nbd{nbd_number}"
-                        )
+                        # even for partially successful operations (e.g. successful
+                        # nbd map, but failing mount) try to clean everything up
+                        errs = []
+                        try:
+                            run("umount", image_mount_directory)
+                        except Exception as e:
+                            errs.append(e)
+                        try:
+                            run(
+                                "qemu-nbd",
+                                "--disconnect",
+                                f"/dev/nbd{nbd_number}",
+                            )
+                        except Exception as e:
+                            errs.append(e)
+
+                        if errs:
+                            print(
+                                "Suppressed the following exceptions during cleanup:",
+                                errs,
+                            )
                 os.rename(self.image_file_tmp, self.image_file)
 
             # Make sure the VM is now online, even if was previously offline
