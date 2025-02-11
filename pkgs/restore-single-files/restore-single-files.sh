@@ -61,7 +61,10 @@ mount -oloop ${LOOPPART} $LOOPMNT
 umount $LOOPMNT
 
 info "Regenerating UUID to avoid collisions"
-xfs_admin -U generate ${LOOPPART}
+# xfs_admin gets confused by conflicting fs labels, see PL-133416
+# So use xfs_db directly.
+# XXX: keep in sync with the args from the `xfs_admin` shell script
+xfs_db -x -c "uuid generate" ${LOOPPART}
 
 info "Mounting image"
 mount -oloop ${LOOPPART} $LOOPMNT
