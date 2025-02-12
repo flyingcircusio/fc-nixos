@@ -39,6 +39,8 @@ import ./make-test-python.nix (
       };
 
     testScript = ''
+      import time
+
       # initial run on empty VM must succeed
       machine.start_job("fc-collect-garbage")
       machine.fail("systemctl is-failed fc-collect-garbage.service")
@@ -54,6 +56,12 @@ import ./make-test-python.nix (
       """))
       machine.start_job("fc-collect-garbage")
       machine.wait_for_file("${home}/.cache/fc-userscan.cache")
+
+
+      for _ in range(10):
+        print(machine.execute("tree /nix/var/nix/gcroots/per-user/")[1])
+        print(machine.execute("ls -lR /nix/var/nix/gcroots/per-user/u0${home}")[1])
+        time.sleep(0.5)
 
       # check that a GC root has been registered
       machine.succeed("ls -lR /nix/var/nix/gcroots/per-user/u0${home} | grep ${pypkg}")

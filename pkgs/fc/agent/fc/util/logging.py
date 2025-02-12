@@ -524,33 +524,50 @@ def format_exc_info(logger, name, event_dict):
     return event_dict
 
 
-def init_command_logging(log, logdir=None):
+def init_command_logging(
+    log, logdir_root=None, identifier="fc-agent", log_name="command-output"
+):
     """
     Adds a cmd_output_file logger factory to an already configured
-    MultiOptimisticLoggerFactory, used for logging Nix command output to a
-    separate file.
-    Overwrites existing log files. If called from a systemd unit, the file
-    name will be made unique by adding the time and systemd invocation ID.
+    MultiOptimisticLoggerFactory, useful for logging (Nix) command output to a
+    separate file. Other factory types are silently ignored (no-op).
 
-    Other factory types are ignored.
+    Command log files are written to a subdirectory of `logdir_root` (typically
+    /var/log) using `identifier` as directory name. This function creates missing
+    subdirectories.
+
+    The base name of the log file (`.log` is added automatically) can be specified
+    via `log_name`. With default arguments and /var/log as logdir root, the file
+    would be called /var/log/fc-agent/cmd-output.log.
+
+    Overwrites existing log files.
+
+    If called from a systemd unit, the file name will be made unique by adding
+    the time and systemd invocation ID, like
+    /var/log/fc-agent/2025-01-30T01_02_30_cmd-output_0123456789641989abcdef.log
+
     """
     logger_factory = structlog.get_config()["logger_factory"]
 
     if not isinstance(logger_factory, MultiOptimisticLoggerFactory):
         return
 
-    if logdir is None:
-        logdir = logger_factory.context.get("logdir")
+    if logdir_root is None:
+        logdir_root = logger_factory.context.get("logdir")
 
-    if logdir is None:
+    if logdir_root is None:
         log.warn(
             "logging-cmd-output-no-logdir",
             _replace_msg=(
                 "Cannot set up command logging: "
-                "No logdir given and factory context has no logdir either."
+                "No logdir_root given and factory context has no logdir either."
             ),
         )
         return
+
+    logdir = logdir_root / identifier
+
+    logdir.mkdir(exist_ok=True)
 
     # The invocation ID is normally set by systemd when the script is called
     # from a systemd unit.
@@ -558,17 +575,16 @@ def init_command_logging(log, logdir=None):
     if invocation_id:
         formatted_dt = datetime.now().strftime("%Y-%m-%dT%H_%m_%S")
         cmd_log_file_name = (
-            logdir / f"fc-agent/{formatted_dt}_build-output"
-            f"_{invocation_id}.log"
+            logdir / f"{formatted_dt}_{log_name}_{invocation_id}.log"
         )
     else:
-        cmd_log_file_name = logdir / "fc-agent/build-output.log"
+        cmd_log_file_name = logdir / f"{log_name}.log"
 
     cmd_log_file = open(cmd_log_file_name, "w")
 
     log.info(
         "logging-cmd-output",
-        _replace_msg="Nix command output goes to: {cmd_log_file}",
+        _replace_msg="Command output goes to: {cmd_log_file}",
         cmd_log_file=cmd_log_file.name,
     )
 

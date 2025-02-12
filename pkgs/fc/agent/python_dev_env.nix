@@ -6,7 +6,7 @@
 
 let
   pkgs = import <nixpkgs> { };
-  fcagent = pkgs.python310Packages.callPackage ./. { };
+  fcagent = pkgs.python312Packages.callPackage ./. { };
 
 in
 fcagent.pythonDevEnv

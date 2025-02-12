@@ -25,4 +25,4 @@ class PollingFakePopen:
         self._poll = poll
 
     def wait(self):
-        pass
+        return self.returncode
