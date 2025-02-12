@@ -23,7 +23,6 @@ in
         Flying Circus Loghost role.
         This role enables the full graylog stack at once (GL, ES, Mongo).
       '';
-      supportsContainers = fclib.mkDisableContainerSupport;
     };
   };
 

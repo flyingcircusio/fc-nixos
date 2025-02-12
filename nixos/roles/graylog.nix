@@ -53,7 +53,6 @@ in
 
           Note: there can be multiple graylogs per RG, unlike loghost.
         '';
-      supportsContainers = fclib.mkDisableContainerSupport;
 
       serviceTypes = mkOption {
         type = types.listOf types.str;
