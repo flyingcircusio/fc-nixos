@@ -600,9 +600,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.107",
+    "name": "nss-3.108",
     "pname": "nss",
-    "version": "3.107"
+    "version": "3.108"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.10.2",
