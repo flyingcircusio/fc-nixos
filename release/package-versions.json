@@ -395,9 +395,9 @@
     "version": "1.31.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.1.1",
+    "name": "keycloak-26.1.2",
     "pname": "keycloak",
-    "version": "26.1.1"
+    "version": "26.1.2"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.16.3",
@@ -555,19 +555,19 @@
     "version": "2.7.1"
   },
   "nginx": {
-    "name": "nginx-1.26.2",
+    "name": "nginx-1.26.3",
     "pname": "nginx",
-    "version": "1.26.2"
+    "version": "1.26.3"
   },
   "nginxMainline": {
-    "name": "nginx-1.27.3",
+    "name": "nginx-1.27.4",
     "pname": "nginx",
-    "version": "1.27.3"
+    "version": "1.27.4"
   },
   "nginxStable": {
-    "name": "nginx-1.26.2",
+    "name": "nginx-1.26.3",
     "pname": "nginx",
-    "version": "1.26.2"
+    "version": "1.26.3"
   },
   "nix": {
     "name": "nix-2.24.12",
@@ -590,9 +590,9 @@
     "version": "20.18.1"
   },
   "nodejs_22": {
-    "name": "nodejs-22.13.1",
+    "name": "nodejs-22.14.0",
     "pname": "nodejs",
-    "version": "22.13.1"
+    "version": "22.14.0"
   },
   "nspr": {
     "name": "nspr-4.36",
