@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-133.0.6943.53",
+    "name": "chromedriver-unwrapped-133.0.6943.98",
     "pname": "chromedriver-unwrapped",
-    "version": "133.0.6943.53"
+    "version": "133.0.6943.98"
   },
   "chromium": {
-    "name": "chromium-133.0.6943.53",
+    "name": "chromium-133.0.6943.98",
     "pname": "chromium",
-    "version": "133.0.6943.53"
+    "version": "133.0.6943.98"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -505,9 +505,9 @@
     "version": "5.2.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.123.0",
+    "name": "matrix-synapse-wrapped-1.124.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.123.0"
+    "version": "1.124.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
