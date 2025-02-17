@@ -60,9 +60,22 @@ class RGWState:
     def __init__(self, uid):
         self.uid = uid
 
-    def update(self):
+    def update(self, previously_deleted=False):
         try:
-            state = run.json.radosgw_admin("user", "info", "--uid", self.uid)
+            state = run.json.radosgw_admin(
+                "user",
+                "info",
+                "--uid",
+                self.uid,
+                # silence error when the user was previously deleted
+                silent_errors=(
+                    lambda code, stdout, stderr: previously_deleted
+                    and code == 22
+                    and b"could not fetch user info: no user info saved"
+                    in stderr
+                ),
+            )
+
         except Exception:
             self.exists = False
             self.display_name = None
@@ -103,7 +116,7 @@ class RGWState:
                 pass
             else:
                 raise
-        self.update()
+        self.update(previously_deleted=True)
 
     def ensure_exists(
         self, display_name: str, access_key: str, secret_key: str | None = None
