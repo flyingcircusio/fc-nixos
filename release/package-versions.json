@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-133.0.6943.53",
+    "name": "chromedriver-unwrapped-133.0.6943.98",
     "pname": "chromedriver-unwrapped",
-    "version": "133.0.6943.53"
+    "version": "133.0.6943.98"
   },
   "chromium": {
-    "name": "chromium-133.0.6943.53",
+    "name": "chromium-133.0.6943.98",
     "pname": "chromium",
-    "version": "133.0.6943.53"
+    "version": "133.0.6943.98"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -225,9 +225,9 @@
     "version": "2.47.2"
   },
   "gitaly": {
-    "name": "gitaly-17.8.1",
+    "name": "gitaly-17.8.2",
     "pname": "gitaly",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "github-runner": {
     "name": "github-runner-2.322.0",
@@ -235,9 +235,9 @@
     "version": "2.322.0"
   },
   "gitlab": {
-    "name": "gitlab-17.8.1",
+    "name": "gitlab-17.8.2",
     "pname": "gitlab",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.15.2",
@@ -245,14 +245,14 @@
     "version": "4.15.2"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.8.1",
+    "name": "gitlab-ee-17.8.2",
     "pname": "gitlab-ee",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.8.1",
+    "name": "gitlab-pages-17.8.2",
     "pname": "gitlab-pages",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.8.1",
+    "name": "gitlab-workhorse-17.8.2",
     "pname": "gitlab-workhorse",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "glibc": {
     "name": "glibc-2.40-36",
@@ -505,9 +505,9 @@
     "version": "5.2.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.123.0",
+    "name": "matrix-synapse-wrapped-1.124.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.123.0"
+    "version": "1.124.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -1165,9 +1165,9 @@
     "version": "9.1.0787"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.46.5+abi=4.0",
+    "name": "webkitgtk-2.46.6+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.46.5"
+    "version": "2.46.6"
   },
   "wget": {
     "name": "wget-1.25.0",
