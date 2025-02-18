@@ -15,14 +15,17 @@ in {
     ./ceph/osd.nix
     ./ceph/rgw.nix
     ./devhost
+    ./elasticsearch.nix
     ./external_net
     ./ferretdb.nix
     ./gitlab.nix
+    ./graylog.nix
     ./jitsi
     ./k3s
     ./kvm.nix
     ./lamp.nix
     ./loki.nix
+    ./loghost.nix
     ./mailout.nix
     ./mailserver.nix
     ./matomo.nix
@@ -45,10 +48,6 @@ in {
     ./webproxy.nix
 
     # Removed
-    (mkRemovedOptionModule [ "flyingcircus" "roles" "graylog" "enable" ] "Last platform version that supported graylog/loghost was 22.05.")
-    (mkRemovedOptionModule [ "flyingcircus" "roles" "elasticsearch6" "enable" ] "Last platform version that supported elasticsearch6 was 22.11.")
-    (mkRemovedOptionModule [ "flyingcircus" "roles" "elasticsearch7" "enable" ] "Last platform version that supported elasticsearch7 was 22.11.")
-    (mkRemovedOptionModule [ "flyingcircus" "roles" "loghost" "enable" ] "Last platform version that supported graylog/loghost was 22.05.")
     (mkRemovedOptionModule [ "flyingcircus" "roles" "loghost-location" "enable" ] "Last platform version that supported graylog/loghost was 22.05.")
     (mkRemovedOptionModule [ "flyingcircus" "roles" "mysql" "rootPassword" ] "Change the root password via MySQL and modify secret files.")
     (mkRemovedOptionModule [ "flyingcircus" "roles" "statshostproxy" "enable" ] "Use flyingcircus.roles.statshost-location-proxy.enable instead.")

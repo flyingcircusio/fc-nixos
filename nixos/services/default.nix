@@ -20,6 +20,7 @@ in {
     ./ceph/server.nix
     ./consul
     ./ferretdb.nix
+    ./graylog
     ./haproxy
     ./jitsi/jibri.nix
     ./jitsi/jicofo.nix

@@ -35,7 +35,7 @@ in
           Can be replaced for development and testing purposes.
         '';
         default = cephPkgs.fc-qemu;
-        defaultText = literalExpression "pkgs.fc.qemu [parameterised with cephRelease]";
+        defaultText = lib.literalMD "`pkgs.fc.qemu` *[parameterised with cephRelease]*";
       };
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used by qemu.";

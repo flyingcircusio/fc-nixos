@@ -129,6 +129,8 @@ let
   # Supports excluding packages from nested sets using "dotted names" like "fc.blockdev".
   excludedPkgNames = [
     "discourse"
+    "elasticsearch6-oss"
+    "graylogFrozen"
     "mc"
   ];
 

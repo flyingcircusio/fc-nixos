@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-133.0.6943.53",
+    "name": "chromedriver-unwrapped-133.0.6943.98",
     "pname": "chromedriver-unwrapped",
-    "version": "133.0.6943.53"
+    "version": "133.0.6943.98"
   },
   "chromium": {
-    "name": "chromium-133.0.6943.53",
+    "name": "chromium-133.0.6943.98",
     "pname": "chromium",
-    "version": "133.0.6943.53"
+    "version": "133.0.6943.98"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -225,9 +225,9 @@
     "version": "2.47.2"
   },
   "gitaly": {
-    "name": "gitaly-17.8.1",
+    "name": "gitaly-17.8.2",
     "pname": "gitaly",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "github-runner": {
     "name": "github-runner-2.322.0",
@@ -235,9 +235,9 @@
     "version": "2.322.0"
   },
   "gitlab": {
-    "name": "gitlab-17.8.1",
+    "name": "gitlab-17.8.2",
     "pname": "gitlab",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.15.2",
@@ -245,14 +245,14 @@
     "version": "4.15.2"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.8.1",
+    "name": "gitlab-ee-17.8.2",
     "pname": "gitlab-ee",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.8.1",
+    "name": "gitlab-pages-17.8.2",
     "pname": "gitlab-pages",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.8.1",
+    "name": "gitlab-workhorse-17.8.2",
     "pname": "gitlab-workhorse",
-    "version": "17.8.1"
+    "version": "17.8.2"
   },
   "glibc": {
     "name": "glibc-2.40-36",
@@ -395,9 +395,9 @@
     "version": "1.31.4+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.1.1",
+    "name": "keycloak-26.1.2",
     "pname": "keycloak",
-    "version": "26.1.1"
+    "version": "26.1.2"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.16.3",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.76",
+    "name": "linux-6.6.77",
     "pname": "linux",
-    "version": "6.6.76"
+    "version": "6.6.77"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.76",
+    "name": "linux-6.6.77",
     "pname": "linux",
-    "version": "6.6.76"
+    "version": "6.6.77"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.2.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.123.0",
+    "name": "matrix-synapse-wrapped-1.124.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.123.0"
+    "version": "1.124.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -555,19 +555,19 @@
     "version": "2.7.1"
   },
   "nginx": {
-    "name": "nginx-1.26.2",
+    "name": "nginx-1.26.3",
     "pname": "nginx",
-    "version": "1.26.2"
+    "version": "1.26.3"
   },
   "nginxMainline": {
-    "name": "nginx-1.27.3",
+    "name": "nginx-1.27.4",
     "pname": "nginx",
-    "version": "1.27.3"
+    "version": "1.27.4"
   },
   "nginxStable": {
-    "name": "nginx-1.26.2",
+    "name": "nginx-1.26.3",
     "pname": "nginx",
-    "version": "1.26.2"
+    "version": "1.26.3"
   },
   "nix": {
     "name": "nix-2.24.12",
@@ -590,9 +590,9 @@
     "version": "20.18.1"
   },
   "nodejs_22": {
-    "name": "nodejs-22.13.1",
+    "name": "nodejs-22.14.0",
     "pname": "nodejs",
-    "version": "22.13.1"
+    "version": "22.14.0"
   },
   "nspr": {
     "name": "nspr-4.36",
@@ -600,9 +600,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.107",
+    "name": "nss-3.108",
     "pname": "nss",
-    "version": "3.107"
+    "version": "3.108"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.10.2",
@@ -1165,9 +1165,9 @@
     "version": "9.1.0787"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.46.5+abi=4.0",
+    "name": "webkitgtk-2.46.6+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.46.5"
+    "version": "2.46.6"
   },
   "wget": {
     "name": "wget-1.25.0",
