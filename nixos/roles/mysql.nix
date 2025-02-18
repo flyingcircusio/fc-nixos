@@ -10,6 +10,7 @@ let
   fclib = config.fclib;
   supportedPerconaVersions = ["8.0" "8.3" "8.4"];
   removeDot = builtins.replaceStrings ["."] [""];
+  lokiServer = fclib.findOneService "loki-collector";
 in
 {
   options = with lib;
@@ -462,5 +463,98 @@ in
       }
     ];
   }
+
+  (lib.mkIf (!builtins.isNull lokiServer) {
+    systemd.services.alloy = lib.mkIf config.services.alloy.enable {
+      reloadTriggers = [config.environment.etc."alloy/mysql_slowlog.alloy".source];
+      serviceConfig.SupplementaryGroups = ["service"];
+    };
+
+    environment.etc."alloy/mysql_slowlog.alloy".text = ''
+        local.file_match "mysql_slowlogs" {
+            path_targets = [{
+                __path__ = "/var/log/mysql/mysql.slow",
+                job_name = "mysql/slowlogs",
+            }]
+        }
+
+        loki.source.file "mysql_slowlogs" {
+            targets    = local.file_match.mysql_slowlogs.targets
+            forward_to = [loki.process.mysql_slowlogs.receiver]
+        }
+
+        loki.process "mysql_slowlogs" {
+            forward_to = [loki.write.fcio_rg_loki.receiver]
+
+            stage.multiline {
+                firstline = "^# Time: (?P<time>.+?)"
+            }
+
+            stage.regex {
+                // the patterns are separated by a non-greedy match-everything
+                // the query pattern matches everything after the first line that doesnt start with a '#'
+                // since this is a regular regex, the order of these capture groups is very important
+                // when in doubt, check the slow log file itself for the correct order
+                expression = "${lib.escape ["\"" "\\"] ("(?s)^.*?" + (builtins.concatStringsSep ".*?" [
+                    "Time: (?P<time>.+Z)"
+                    "User@Host: (?P<user>\\S+) @ (?P<host>\\S+)"
+                    "Id:\\s+(?P<id>\\d+)"
+                    "Schema: (?P<schema>\\S*?)?"
+                    "Last_errno: (?P<last_errno>\\d+)"
+                    "Killed: (?P<killed>\\d+)"
+                    "Query_time: (?P<query_time>\\S+)"
+                    "Lock_time: (?P<lock_time>\\S+)"
+                    "Rows_sent: (?P<rows_sent>\\d+)"
+                    "Rows_examined: (?P<rows_examined>\\d+)"
+                    "Rows_affected: (?P<rows_affected>\\d+)"
+                    "Bytes_sent: (?P<bytes_sent>\\d+)"
+                    "Tmp_tables: (?P<tmp_tables>\\d+)"
+                    "Tmp_disk_tables: (?P<tmp_disk_tables>\\d+)"
+                    "Tmp_table_sizes: (?P<tmp_table_sizes>\\d+)"
+                    # "QC_Hit: (?P<qc_hit>\\S+)"
+                    "Full_scan: (?P<full_scan>\\S+)"
+                    "Full_join: (?P<full_join>\\S+)"
+                    "Tmp_table: (?P<tmp_table>\\S+)"
+                    "Tmp_table_on_disk: (?P<tmp_table_on_disk>\\S+)"
+                    "Filesort: (?P<filesort>\\S+)"
+                    "Filesort_on_disk: (?P<filesort_on_disk>\\S+)"
+                    "Merge_passes: (?P<merge_passes>\\d+)"
+                    "SET timestamp=(.*?);"
+              ]) + ".*?\\n(?P<query>[^#](?s:.+))")}"
+            }
+
+            stage.labels {
+                values = {
+                    time = null,
+                    user = null,
+                }
+            }
+
+            stage.timestamp {
+                source = "time"
+                format = "RFC3339Nano"
+            }
+
+            stage.template {
+                source   = "output_line"
+                template = "${lib.escape ["\"" "\\"] (builtins.concatStringsSep " "
+                  (map
+                    (field: "${field}=\"{{ Replace .${field} \"\\n\" \" \" -1 }}\"")
+                    [
+                      "id" "schema" "last_errno" "killed" "query_time" "lock_time" "rows_sent"
+                      "rows_affected" "bytes_sent" "tmp_tables" "tmp_disk_tables"
+                      "tmp_table_sizes" "full_scan" "full_join" "tmp_table" "tmp_table_on_disk"
+                      "filesort" "filesort_on_disk" "merge_passes" "query"
+                    ]
+                  )
+                )}"
+            }
+
+            stage.output {
+                source = "output_line"
+            }
+        }
+    '';
+  })
   ];
 }
