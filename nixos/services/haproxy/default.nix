@@ -55,8 +55,6 @@ let
     (lib.splitString "\n" cfg.extraConfig)
   ];
 
-  haproxyCfg = pkgs.writeText "haproxy.conf" config.services.haproxy.config;
-
   configFiles = filter (lib.hasSuffix ".cfg") (fclib.files /etc/local/haproxy);
 
   # This was included in our old example config. Breaks on 20.09 because HAProxy
