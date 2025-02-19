@@ -14,8 +14,8 @@ let
       owner = "flyingcircusio";
       repo = "backy-extract";
       # 1.1.0
-      rev = "5fd4c02e757918e22b634b16ae86927b82eb9f2a";
-      sha256 = "1msg4p4h6ksj3vrsshhh5msfwgllai42jczyvd4nvrsqpncg12ik";
+      rev = "3f1efdc6d9d52d13b91b640d8005913efbd80e1c";
+      hash = "sha256-fOM3dvSH6rIXkOK/pKKp1xPeiUYabG8dI65lEhQNZas=";
     };
     in
       pkgs.callPackage src {};
