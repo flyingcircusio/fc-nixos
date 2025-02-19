@@ -33,6 +33,7 @@ A complete configuration might looks something like this:
     vhosts = [
       { port = 8000;
         docroot = "/srv/s-myserviceuser/application.git/docroot";
+        name = "app-name";
       }
       { port = 8001;
         docroot = "/srv/s-myserviceuser/application.git/other_php_version_root";
@@ -45,6 +46,7 @@ A complete configuration might looks something like this:
         apacheExtraConfig = ''
           IndexOptions FancyIndexing
         '';
+        name = "second-app-name";
       }
     ];
 
@@ -76,6 +78,18 @@ A complete configuration might looks something like this:
 
 The vhost configuration allows you to configure multiple applications per VM
 each running on a separate port. The two options for every vhost thus are:
+
+`name`
+
+: The identifier of the application running here. The phpfpm service
+  will be called `phpfpm-{name}.service` where `{name}` is the value of this
+  option.
+
+  Additionally, wrappers `php-{name}` and `composer-{name}` are available
+  globally that refer to the PHP interpreter and `php.ini` configuration
+  used by the vhost.
+
+  When unset, the `port` will be used as `name`.
 
 `port`
 
