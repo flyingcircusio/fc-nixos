@@ -16,4 +16,4 @@ branches.
 
 ### NixOS XX.XX platform
 
-- fc.agent.s3users: add timeouts, silence errors after user was deleted (PL-133447)
+- fc.agent.s3users: add timeouts, silence errors after user was deleted and add monitoring (PL-133447)

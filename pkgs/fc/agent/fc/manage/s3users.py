@@ -10,12 +10,15 @@ import json
 import logging
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from subprocess import CalledProcessError
 
 from fc.util.directory import connect
 from fc.util.runners import run
 
 log = logging.getLogger()
+
+STAMP_FILE_PATH = Path("/var/log/fc-ceph-rgw-users-stamp.log")
 
 
 def list_radosgw_users() -> list[str]:
@@ -370,6 +373,9 @@ def main() -> int:
     )
     user_manager.sync_users()
     got_errors = got_errors or user_manager.processing_errors
+
+    if not got_errors:
+        STAMP_FILE_PATH.write_text(str(datetime.datetime.now()) + "\n")
 
     # on errors, the service shall return a non-zero exit code to be caught by
     # our monitoring

@@ -239,6 +239,20 @@ in
         };
       };
 
+      systemd.tmpfiles.rules = [
+        "f /var/log/fc-ceph-rgw-users-stamp.log"
+      ];
+
+      flyingcircus.services.sensu-client = {
+        checks.fc-ceph-rgw-users = {
+          notification = "fc-ceph-rgw-users stamp recent";
+          command =
+            "${pkgs.monitoring-plugins}/bin/check_file_age"
+            + " -f /var/log/fc-ceph-rgw-users-stamp.log -w 1500 -c 2700";
+          interval = 300;
+        };
+      };
+
     })
 
   ];
