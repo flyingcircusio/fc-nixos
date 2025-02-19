@@ -114,18 +114,11 @@ in
           # and 100 to place them even before the header.
           fcio = platformSettings // { global = true; priority = 900; };
         };
+        # part of our un-hardening, we at least require Unix socket communications
+        # to daemons like MySQL or Ceph (admin socket)
+        # TODO: consider restricting to these address families only
+        allowNetworking = true;
       };
-
-      # We create one directory for each service user. I decided not to remove
-      # old directories as this may be manually placed data that I don't want
-      # to delete accidentally.
-      flyingcircus.localConfigDirs = let
-        cfgDir = u:
-          lib.nameValuePair
-            "logrotate-${u.name}"
-            { dir = "${localDir}/${u.name}"; user = u.name; permissions = "0755"; };
-
-        in listToAttrs (map cfgDir serviceUsers);
 
       systemd.services = {
         # XXX logrotate does not allow setting options and I need to rebuild the
@@ -139,7 +132,15 @@ in
           config = {
             # Upstream puts logrotate in multi-user.target which triggers unwanted
             # service starts on fc-manage. It should only be activated by the timer.
-             wantedBy = lib.mkForce [ ];
+            wantedBy = lib.mkForce [ ];
+
+            # The upstream service is a bit too hardened for what we want to do in
+            # the platform. Only necessary for the system logrotate, the user units
+            # are not hardened yet as they are not running as privileged users.
+            serviceConfig = with config.fclib; {
+              # our MySQL logic relies on config files in the home directory
+              ProtectHome = mkOverrideUpstreamModule false;
+            };
           };
         };
       } // listToAttrs (
@@ -155,6 +156,18 @@ in
           stopIfChanged = false;
         })
         serviceUsers);
+
+      # We create one directory for each service user. I decided not to remove
+      # old directories as this may be manually placed data that I don't want
+      # to delete accidentally.
+      flyingcircus.localConfigDirs = let
+        cfgDir = u:
+          lib.nameValuePair
+            "logrotate-${u.name}"
+            { dir = "${localDir}/${u.name}"; user = u.name; permissions = "0755"; };
+
+        in listToAttrs (map cfgDir serviceUsers);
+
 
       systemd.timers =
         listToAttrs (
