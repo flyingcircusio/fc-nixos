@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 if (type tput && tput colors) >/dev/null 2>&1; then
 	GOOD="$(tput sgr0)$(tput bold)$(tput setaf 2)"
@@ -17,24 +17,32 @@ else
 	NORMAL=$(printf '\033[0m')
 fi
 
-info()
-{
-	printf "${GOOD}*${NORMAL} $*\n"
+info() {
+	echo "${GOOD}*${NORMAL} $*"
 }
 
-warn()
-{
-	printf "${BAD}* $*${NORMAL}\n"
+warn() {
+	echo "${BAD}* $*${NORMAL}"
 }
 
-VM="${1?need VM name}"
-REV="${2?need revision identifier}"
-
-if [[ -z "$VM" ]]; then
-	warn "VM or revision not specified"
-	echo "Usage: $0 VM REV"
+usage() {
+	info "Usage: $0 VM REV"
 	exit 3
+}
+
+for i in "$@"; do
+	if [[ "$i" == "-h" || "$i" == "--help" ]]; then
+		usage
+	fi
+done
+
+if [[ $# -ne 2 ]]; then
+	warn "Expected two positional arguments"
+	usage
 fi
+
+VM="$1"
+REV="$2"
 
 LOOPMNT="/mnt/restore/$VM"
 FUSEMNT="/mnt/backy-fuse/$VM"
@@ -42,38 +50,40 @@ FUSEMNT="/mnt/backy-fuse/$VM"
 mkdir -p "$LOOPMNT" "$FUSEMNT"
 
 info "Starting FUSE"
-backy-fuse -d /srv/backy/$VM $FUSEMNT &
+backy-fuse -d "/srv/backy/$VM" "$FUSEMNT" &
 sleep 1
 
 info "Registering loop device"
-LOOPDEV=$(losetup --show -f -P $FUSEMNT/$REV)
-echo $LOOPDEV
+LOOPDEV=$(losetup --show -f -P "$FUSEMNT/$REV")
+echo "$LOOPDEV"
 
-TERMINATE="umount $LOOPMNT; losetup -d $LOOPDEV; sleep 1; fusermount -u $FUSEMNT"
-trap "$TERMINATE" ERR 1 2 3 5 15
+cleanup() {
+	umount "$LOOPMNT"; losetup -d "$LOOPDEV"; sleep 1; fusermount -u "$FUSEMNT"
+}
+trap cleanup ERR 1 2 3 15
 LOOPPART="${LOOPDEV}p1"
-while [ ! -e $LOOPPART ]; do
+while [ ! -e "$LOOPPART" ]; do
 	sleep 0.2
 done
 
 info "Pre-mounting image to flush log"
-mount -oloop ${LOOPPART} $LOOPMNT
-umount $LOOPMNT
+mount -oloop "$LOOPPART" "$LOOPMNT"
+umount "$LOOPMNT"
 
 info "Regenerating UUID to avoid collisions"
 # xfs_admin gets confused by conflicting fs labels, see PL-133416
 # So use xfs_db directly.
 # XXX: keep in sync with the args from the `xfs_admin` shell script
-xfs_db -x -c "uuid generate" ${LOOPPART}
+xfs_db -x -c "uuid generate" "$LOOPPART"
 
 info "Mounting image"
-mount -oloop ${LOOPPART} $LOOPMNT
+mount -oloop "$LOOPPART" "$LOOPMNT"
 
 info "Image data ready in ${HILITE}$LOOPMNT${NORMAL}"
 while true; do
 	echo -n "Hit Enter to terminate... "
 	read _wait_for_user
-	if fuser $LOOPMNT ; then
+	if fuser "$LOOPMNT" ; then
 		echo "Directory $LOOPMNT still busy"
 	else
 		break
@@ -81,5 +91,5 @@ while true; do
 done
 
 info "Unmounting devices"
-eval $TERMINATE
+cleanup
 wait
