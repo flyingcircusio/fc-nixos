@@ -152,6 +152,15 @@ The nixpkgs and nixos-mailserver versions used by the platform are pinned in `fl
 
 We use our [nixpkgs fork](https://github.com/flyingcircusio/nixpkgs) and the nixos-mailserver fork from our Gitlab.
 
+Our nixpkgs fork is automatically updated by the update-nixpkgs GitHub action in fc-nixos-release-tools.
+
+If you need to manually cherry-pick a commit from nixpkgs or add another commit on top of our nixpkgs fork, please add
+the commit to the nixos-xx.xx (replace with the current version) and run
+
+    ./update-nixpkgs-lock.sh
+
+on an x86_64-linux machine and commit the changed files to this repository.
+
 To learn more about our release tooling, look at the fc-nixos-release-tooling repo.
 
 License
