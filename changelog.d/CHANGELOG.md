@@ -1,3 +1,33 @@
+# Release 2025_005
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- internal: fix a regression in `restore-single-files` for accessing backups (PL-133416)
+  - A behaviour change in `xfs_admin` resulted in a bug when adjusting filesystem UUIDs
+
+- make fc-devhost operational on this platform version (PL-133416)
+
+- Update backup software (backy and backy-extract). Mostly cosmetic changes
+  and minor bug fixes.
+
+- fc.agent.s3users: add timeouts, silence errors after user was deleted and add monitoring (PL-133447)
+
+- Fix rotation of some service logs by relaxing logrotate service hardening (haproxy, mysql, ceph, …) [PL-133439]
+    - The affected services might need to be restarted, but this will also happen as a side affect of the machine reboot scheduled by this release.
+
+- lamp: For a phpfpm pool `name`, the executables `php-name` and `composer-name` are available in the VM.
+  `php-name` calls the PHP interpreter that's also used by the phpfpm pool with the `php.ini` configuration
+  of the phpfpm pool.
+
+- percona: add configuration for alloy that exports slow logs to loki if configured for the resource group (PL-133028)
+
+
+
 # Release 2025_004
 
 ## Impact
