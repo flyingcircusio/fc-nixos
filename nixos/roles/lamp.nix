@@ -2,6 +2,25 @@
 let
   role = config.flyingcircus.roles.lamp;
   fclib = config.fclib;
+
+  phpWrappers = map
+    ({ name, ... }: let
+      inherit (config.services.phpfpm.pools.${name}) phpOptions phpPackage;
+    in
+    # The pattern of exposing `php-{project}` is common in existing projects.
+    # Decreasing the priority in systemPackages so that upgrades to newer platform
+    # versions don't fail hard.
+    lib.lowPrio
+      (pkgs.runCommand "wrapped-php-for-${name}" {
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+      } ''
+        mkdir -p $out/bin
+        makeWrapper ${phpPackage}/bin/php $out/bin/php-${name} \
+          --add-flags "-c ${builtins.toFile "php-${name}.ini" phpOptions}"
+
+        ln -sfv ${phpPackage.packages.composer}/bin/composer $out/bin/composer-${name}
+      ''))
+    config.flyingcircus.roles.lamp.vhosts;
 in {
 
   options = with lib; {
@@ -125,7 +144,7 @@ in {
       environment.systemPackages = [
         role.php
         role.php.packages.composer
-      ];
+      ] ++ phpWrappers;
 
       # Provide a similar PHP config for the PHP CLI as for Apache (httpd).
       # The file referenced by PHPRC is loaded together with the php.ini

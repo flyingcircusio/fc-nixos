@@ -6,16 +6,20 @@
 """
 
 import argparse
+import datetime
 import json
 import logging
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from subprocess import CalledProcessError
 
 from fc.util.directory import connect
 from fc.util.runners import run
 
 log = logging.getLogger()
+
+STAMP_FILE_PATH = Path("/var/log/fc-ceph-rgw-users-stamp.log")
 
 
 def list_radosgw_users() -> list[str]:
@@ -60,9 +64,22 @@ class RGWState:
     def __init__(self, uid):
         self.uid = uid
 
-    def update(self):
+    def update(self, previously_deleted=False):
         try:
-            state = run.json.radosgw_admin("user", "info", "--uid", self.uid)
+            state = run.json.radosgw_admin(
+                "user",
+                "info",
+                "--uid",
+                self.uid,
+                # silence error when the user was previously deleted
+                silent_errors=(
+                    lambda code, stdout, stderr: previously_deleted
+                    and code == 22
+                    and b"could not fetch user info: no user info saved"
+                    in stderr
+                ),
+            )
+
         except Exception:
             self.exists = False
             self.display_name = None
@@ -103,7 +120,7 @@ class RGWState:
                 pass
             else:
                 raise
-        self.update()
+        self.update(previously_deleted=True)
 
     def ensure_exists(
         self, display_name: str, access_key: str, secret_key: str | None = None
@@ -357,6 +374,9 @@ def main() -> int:
     )
     user_manager.sync_users()
     got_errors = got_errors or user_manager.processing_errors
+
+    if not got_errors:
+        STAMP_FILE_PATH.write_text(str(datetime.datetime.now()) + "\n")
 
     # on errors, the service shall return a non-zero exit code to be caught by
     # our monitoring
