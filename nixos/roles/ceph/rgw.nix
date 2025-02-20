@@ -177,7 +177,12 @@ in
       systemd.services.fc-ceph-rgw-users = rec {
         description = "Sync S3 users and accounting with directory";
         path = [ cephPkgs.ceph ];
-        serviceConfig.Type = "oneshot";
+        serviceConfig = {
+          Type = "oneshot";
+          # The unit gets run every 10 minutes, so stop the unit after 9 minutes runtime
+          # This protects against not terminating radosgw-admin calls.
+          TimeoutStartSec = 9 * 60;
+        };
         wants = [ fclib.network.sto.addressUnit ];
         after = wants;
         script = "${pkgs.fc.agent}/bin/fc-s3users --enc ${config.flyingcircus.encPath}";
@@ -231,6 +236,20 @@ in
         timerConfig = {
           Persistent = true;
           OnCalendar = "*:2/10";
+        };
+      };
+
+      systemd.tmpfiles.rules = [
+        "f /var/log/fc-ceph-rgw-users-stamp.log"
+      ];
+
+      flyingcircus.services.sensu-client = {
+        checks.fc-ceph-rgw-users = {
+          notification = "fc-ceph-rgw-users stamp recent";
+          command =
+            "${pkgs.monitoring-plugins}/bin/check_file_age"
+            + " -f /var/log/fc-ceph-rgw-users-stamp.log -w 1500 -c 2700";
+          interval = 300;
         };
       };
 
