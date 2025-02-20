@@ -194,7 +194,7 @@ let
       customIPXEScript = pkgs.writeTextDir "netboot.ipxe" ''
         #!ipxe
 
-        set console ttyS2,115200
+        set console ttyS0,115200
 
         :start
         menu Flying Circus Installer boot menu
@@ -202,8 +202,10 @@ let
         item --gap --           Console: ''${console}
         item --gap --          --- Settings ---
         item console_tty0      console=tty0
+        item console_ttys0     console=ttyS0,115200
         item console_ttys1     console=ttyS1,115200
         item console_ttys2     console=ttyS2,115200
+        item console_edit      Edit console settings
         item --gap --          --- Install ---
         item boot_installer    Boot installer
         item --gap --          --- Other ---
@@ -220,12 +222,22 @@ let
         set console tty0
         goto start
 
+        :console_ttys0
+        set console ttyS0,115200
+        goto start
+
         :console_ttys1
         set console ttyS1,115200
         goto start
 
         :console_ttys2
         set console ttyS2,115200
+        goto start
+
+        :console_edit
+        form              Configure console settings
+        item console      console=
+        present || goto start
         goto start
 
         :local
