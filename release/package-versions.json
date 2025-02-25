@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-133.0.6943.98",
+    "name": "chromedriver-unwrapped-133.0.6943.126",
     "pname": "chromedriver-unwrapped",
-    "version": "133.0.6943.98"
+    "version": "133.0.6943.126"
   },
   "chromium": {
-    "name": "chromium-133.0.6943.98",
+    "name": "chromium-133.0.6943.126",
     "pname": "chromium",
-    "version": "133.0.6943.98"
+    "version": "133.0.6943.126"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -195,9 +195,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-135.0",
+    "name": "firefox-135.0.1",
     "pname": "firefox",
-    "version": "135.0"
+    "version": "135.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -295,9 +295,9 @@
     "version": "1.23.5"
   },
   "grafana": {
-    "name": "grafana-11.3.3",
+    "name": "grafana-11.3.4",
     "pname": "grafana",
-    "version": "11.3.3"
+    "version": "11.3.4"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.77",
+    "name": "linux-6.6.79",
     "pname": "linux",
-    "version": "6.6.77"
+    "version": "6.6.79"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.77",
+    "name": "linux-6.6.79",
     "pname": "linux",
-    "version": "6.6.77"
+    "version": "6.6.79"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -635,9 +635,9 @@
     "version": "2.17.1"
   },
   "openssh": {
-    "name": "openssh-9.9p1",
+    "name": "openssh-9.9p2",
     "pname": "openssh",
-    "version": "9.9p1"
+    "version": "9.9p2"
   },
   "openssl": {
     "name": "openssl-3.3.2",
@@ -745,14 +745,14 @@
     "version": "8.2.27"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.16",
+    "name": "php-with-extensions-8.3.17",
     "pname": "php-with-extensions",
-    "version": "8.3.16"
+    "version": "8.3.17"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.3",
+    "name": "php-with-extensions-8.4.4",
     "pname": "php-with-extensions",
-    "version": "8.4.3"
+    "version": "8.4.4"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.5",
@@ -780,9 +780,9 @@
     "version": "124"
   },
   "postfix": {
-    "name": "postfix-3.9.1",
+    "name": "postfix-3.9.2",
     "pname": "postfix",
-    "version": "3.9.1"
+    "version": "3.9.2"
   },
   "postgresql": {
     "name": "postgresql-16.6",
