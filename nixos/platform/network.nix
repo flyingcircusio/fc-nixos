@@ -964,7 +964,8 @@ in
           notification = "Kernel network state has broken overlay MAC addresses";
           interval = 300;
           command = let
-            args = lib.concatMapStringsSep " " (iface: "-n " + (toString iface.vlanId)) vxlanInterfaces;
+            ifaces = filter (i: !i.routed) vxlanInterfaces;
+            args = lib.concatMapStringsSep " " (iface: "-n " + (toString iface.vlanId)) ifaces;
           in
             "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-evpn-rib ${args}";
         };
