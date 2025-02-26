@@ -40,10 +40,7 @@ def ip_route_json(net):
 
 
 def bridge_macs(bridge, vxlan):
-    # XXX: newer versions of iproute2 support bridge -j for json
-    # output
-    data = subprocess.check_output(["bridge", "fdb", "show", "br", bridge])
-    data = [item.split() for item in data.decode("utf-8").splitlines()]
+    data = json_cmd(["bridge", "-j", "fdb", "show", "br", bridge])
     data = [
         item
         for item in data
@@ -52,23 +49,32 @@ def bridge_macs(bridge, vxlan):
     ]
 
     local_macs = {
-        item[0]: (item[2] if item[2] != vxlan else bridge)
+        item["mac"]: (item["ifname"] if item["ifname"] != vxlan else bridge)
         for item in data
-        # extern_learn records managed by zebra, self records handled
-        # internally by device drivers
-        if "extern_learn" not in item and "self" not in item
-        # ignore the mac addresses assigned to the host side of tap
-        # interfaces, but include the mac address assigned to the
-        # bridge interface
-        and ("permanent" not in item or item[2] == vxlan)
+        # extern_learn records managed by zebra
+        if "extern_learn" not in item["flags"]
+        # self records handled internally by device drivers
+        and "self" not in item["flags"]
+        # ignore mac addresses assigned to the host side of tap
+        # interfaces (marked permanent), but include the mac address
+        # assigned to the bridge interface itself
+        and (item["state"] != "permanent" or item["ifname"] == vxlan)
     }
 
     remote_macs = {
-        mac[0]: IPv4Address(dest[4])
-        for mac in data
-        if mac[2] == vxlan and mac[4] == "master" and mac[5] == bridge
+        lladdr["mac"]: IPv4Address(dest["dst"])
+        for lladdr in data
+        # entries indicating the vxlan interface as the port on the
+        # bridge for a given mac address
+        if lladdr["ifname"] == vxlan
+        and "master" in lladdr
+        and lladdr["master"] == bridge
+        # join with entries associating the same mac address with a
+        # remote vtep address
         for dest in data
-        if dest[0] == mac[0] and dest[2] == vxlan and dest[3] == "dst"
+        if dest["mac"] == lladdr["mac"]
+        and dest["ifname"] == vxlan
+        and "dst" in dest
     }
 
     return local_macs, remote_macs
