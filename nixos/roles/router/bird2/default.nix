@@ -35,9 +35,17 @@ let
 
     ipv4 table master4;
     ipv6 table master6;
+
+    # Flag for operating BGP session migration from NixOS config
+    define MIGRATION_STATE=${toString role.migrationState};
   '';
 in
 {
+  options.flyingcircus.roles.router.migrationState = lib.mkOption {
+    type = lib.types.ints.unsigned;
+    default = 0;
+  };
+
   config = lib.mkIf role.enable {
     services.bird2 = {
       enable = true;
