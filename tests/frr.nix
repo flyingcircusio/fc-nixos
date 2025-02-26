@@ -173,7 +173,7 @@ let
       };
     };
 
-  makeEvpnHost = { idx, taps }: { pkgs, lib, ... }:
+  makeEvpnHost = { idx, taps, tapsEnabled ? true }: { pkgs, lib, ... }:
     let
       underlayAddr = makeUnderlayAddress idx;
       bridgeMac = makeHostMac idx;
@@ -185,7 +185,7 @@ let
         macaddr = makeTapMac tapidx;
       in lib.nameValuePair "ping-${iface}" (rec {
         description = "Respond to ping and arp on ${iface}";
-        wantedBy = [ "multi-user.target" ];
+        wantedBy = if tapsEnabled then [ "multi-user.target" ] else [];
         requires = [ "network-addresses-${iface}.service" ];
         after = requires;
         serviceConfig.ExecStart = "${pkgs.fc.ping-on-tap}/bin/ping-on-tap ${iface} ${macaddr} ${ipaddr}";
@@ -395,6 +395,73 @@ in {
             # allow frr to reset the fib automatically
             host1.succeed("bridge fdb del 06:00:00:00:23:03 dev vxlan0")
             host1.wait_until_succeeds("check_rib_integrity check-evpn-rib -n 23")
+      '';
+    };
+    migration = {
+      name = "migration";
+      nodes = {
+        host1 = makeEvpnHost { idx = 1; taps = [ 1 ]; tapsEnabled = false; };
+        switch1 = makeFrrHost { idx = 2; redistribute = true; evpn = true; };
+        host2 = makeEvpnHost { idx = 3; taps = [ 1 ]; tapsEnabled = false; };
+        switch2 = makeFrrHost { idx = 4; redistribute = true; evpn = true; };
+      };
+
+      testScript = ''
+        start_all()
+        all_vms = [host1, host2, switch1, switch2]
+        for vm in all_vms:
+            vm.wait_for_unit("network-online.target")
+
+        for vm in all_vms:
+            x = vm.succeed("vtysh -c 'show version'")
+
+        guest_mac = "06:00:00:00:23:01"
+        guest_ip = "192.168.23.101"
+
+        with subtest("wait for peer SVI MAC addresses to appear"):
+            for host, addr in [(host1, "06:00:00:00:42:03"), (host2, "06:00:00:00:42:01")]:
+                host.wait_until_succeeds(f"bridge fdb show br br0 | grep -F {addr}", timeout=10)
+
+        with subtest("checking SVI addresses are reachable"):
+            host1.succeed("ping -c1 192.168.23.3")
+            host2.succeed("ping -c1 192.168.23.1")
+
+        with subtest("start guest TAP responder"):
+            host1.succeed("systemctl start ping-tap0")
+            with subtest("wait for local mac to appear"):
+                host1.wait_until_succeeds(f"bridge fdb show br br0 | grep -F '{guest_mac} dev tap0'", timeout=10)
+            with subtest("wait for remote mac to appear"):
+                host2.wait_until_succeeds(f"bridge fdb show br br0 | grep -F extern_learn | grep -F {guest_mac}", timeout=10)
+
+            with subtest("check TAP responder is reachable"):
+                # ensure the neighbour tables on both hosts are primed.
+                host1.succeed(f"ping -A -c5 {guest_ip}")
+                host2.succeed(f"ping -A -c5 {guest_ip}")
+
+        with subtest("rib and fib should not have mismatches"):
+            for host in [host2, host1]:
+                host.wait_until_succeeds("check_rib_integrity check-unicast-rib -p 192.168.42.0/24", timeout=10)
+                host.wait_until_succeeds("check_rib_integrity check-evpn-rib -n 23", timeout=10)
+
+
+        with subtest("migrate guest TAP responder"):
+            # pathological case: the guest interface starts on the receiving
+            # host before it stops on the sending host.
+            host2.succeed("systemctl start ping-tap0")
+            host1.succeed("systemctl stop ping-tap0")
+
+            with subtest("wait for local mac to appear"):
+                host2.wait_until_succeeds(f"bridge fdb show br br0 | grep -F '{guest_mac} dev tap0'", timeout=10)
+            with subtest("wait for remote mac to appear"):
+                host1.wait_until_succeeds(f"bridge fdb show br br0 | grep -F extern_learn | grep -F {guest_mac}", timeout=10)
+
+            with subtest("check remote TAP responder is reachable"):
+                host1.succeed(f"ping -A -c5 {guest_ip}")
+
+        with subtest("rib and fib should not have mismatches"):
+            for host in [host2, host1]:
+                host.wait_until_succeeds("check_rib_integrity check-unicast-rib -p 192.168.42.0/24", timeout=10)
+                host.wait_until_succeeds("check_rib_integrity check-evpn-rib -n 23", timeout=10)
       '';
     };
   };
