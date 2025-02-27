@@ -310,9 +310,9 @@
     "version": "3.0.5"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-40",
+    "name": "imagemagick-7.1.1-43",
     "pname": "imagemagick",
-    "version": "7.1.1-40"
+    "version": "7.1.1-43"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -325,9 +325,9 @@
     "version": "2.5"
   },
   "iperf3": {
-    "name": "iperf-3.17.1",
+    "name": "iperf-3.18",
     "pname": "iperf",
-    "version": "3.17.1"
+    "version": "3.18"
   },
   "irqbalance": {
     "name": "irqbalance-1.9.4",
