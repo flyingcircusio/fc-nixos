@@ -7,21 +7,29 @@ let
 
   fclib = config.fclib;
 
-  # XXX there's a lot of conditionals here
-  interfaces = filter
-    (i: i.vlan != "ipmi" && i.vlan != "lo")
+  # Reminder:
+  # * interfaces are those things that we configure IP addresses on.
+  # * links are things that carry MAC addresses and provide (physical) transport to a network
+  # see lib/network.nix for the full nomenclature.
+
+  # Some interfaces aren't managed through this code. For example: IPMI
+  # is configured using the ipmitool elsewhere.
+  managedInterfaces = filter
+    (i: ! (elem i.policy [ "unmanaged" "null" ]) &&
+        ! (elem i.vlan ["ipmi" "lo"]))
     (lib.attrValues fclib.network);
 
-  managedInterfaces = filter
-    (i: i.policy != "unmanaged" && i.policy != "null")
-    interfaces;
-
-  physicalInterfaces = filter
+  # These are interfaces that have a direct association with a physical
+  # link, but might be bridged, carry tags, or run DHCP.
+  physicallyLinkedInterfaces = filter
     (i: i.policy != "vxlan" && i.policy != "underlay")
     managedInterfaces;
 
-  nonUnderlayInterfaces = filter
-    (i: i.policy != "underlay")
+  # These are interfaces configured as one would expect in a traditional
+  # Linux environment: they receive addresses and are attached to some link.
+  simpleAddressedInterfaces = filter
+    (i: !(i.policy == "underlay") &&
+        !(i.policy == "vxlan" && i.routed))
     managedInterfaces;
 
   bridgedInterfaces = filter
@@ -32,6 +40,10 @@ let
     (i: i.policy == "vxlan")
     managedInterfaces;
 
+  vxlanVrfInterfaces = filter
+    (i: i.routed)
+    vxlanInterfaces;
+
   ethernetLinks = let
     # XXX handling this within fclib.network.ul would be great
     underlayLinks = lib.optionals (!isNull fclib.underlay) fclib.underlay.links;
@@ -40,13 +52,13 @@ let
     # interfaces, as is the case with tagged vlans. When physical
     # links are configured, they must have their MTU set to the
     # greatest MTU of all dependent interfaces.
-    physicalLinkNames = lib.unique (map (iface: iface.link) physicalInterfaces);
+    physicalLinkNames = lib.unique (map (iface: iface.link) physicallyLinkedInterfaces);
     physicalLinksByMtu = listToAttrs (map (link:
       lib.nameValuePair link
         (lib.foldl
           (prev: next: if next.mtu > (prev.mtu or 0) then next else prev)
           null
-          (filter (iface: iface.link == link) physicalInterfaces))
+          (filter (iface: iface.link == link) physicallyLinkedInterfaces))
     ) physicalLinkNames);
   in (attrValues physicalLinksByMtu) ++ underlayLinks;
 
@@ -81,7 +93,14 @@ let
         ((filter (a: fclib.isIp6 a.ip) encAddresses) ++
          (filter (a: fclib.isIp4 a.ip) encAddresses));
 
-   quoteLabel = replaceStrings ["/"] ["-"];
+  quoteLabel = replaceStrings ["/"] ["-"];
+
+  vrfName = iface: "vrf${iface.vlan}";
+  vrfTable = iface:
+    # the routing tables 0, 253, 254, and 255 are reserved by the
+    # kernel.
+    assert ! (elem iface.vlanId [ 0 253 254 255 ]);
+    iface.vlanId;
 
 in
 {
@@ -133,18 +152,22 @@ in
             id = interface.vlanId;
             interface = interface.link;
           })
-          (filter (interface: interface.policy == "tagged") interfaces));
+          (filter (interface: interface.policy == "tagged") managedInterfaces));
 
         # Using SLAAC/privacy addresses will cause firewalls to block us
         # internally and also have customers get problems with outgoing
         # connections.
         tempAddresses = "disabled";
 
-        # data structure for all configured interfaces with their IP addresses:
-        # { ethfe = { ... }; ethsrv = { }; ... }
-        # or
-        # { brfe = { ... }; brsrv = { }; ethsto = { }; ... }
+        # There are 3 fundamentally different flavours of configuration
+        # for addresses on interfaces:
+        #   1. "normal" interfaces
+        #   2. underlay interfaces
+        #   3. VXLAN+VRF
         interfaces = listToAttrs ((map (interface:
+          ####################################################################
+          # 1. "Normal" configured interfaces with IPv4/IPv6 adresses,
+          # a default gateway, etc.
           (lib.nameValuePair "${interface.interface}" {
             ipv4.addresses = interface.v4.attrs;
             ipv4.routes =
@@ -190,22 +213,41 @@ in
                 defaultRoutes ++ additionalRoutes;
 
             mtu = interface.mtu;
-          })) nonUnderlayInterfaces) ++
-        (lib.optionals (!isNull fclib.underlay) [(
-          lib.nameValuePair fclib.underlay.interface {
-            ipv4.addresses = [{
-              address = fclib.underlay.loopback;
-              prefixLength = 32;
-            }];
-            tempAddress = "disabled";
-            mtu = fclib.network.ul.mtu;
-          }
-        )]) ++
-        ((map (iface: lib.nameValuePair iface.link {
+          })) simpleAddressedInterfaces) ++
+
+          ####################################################################
+          # 2. The underlay: a loopback IP address.
+          (lib.optionals (!isNull fclib.underlay) ([(
+            lib.nameValuePair fclib.underlay.interface {
+              ipv4.addresses = [{
+                address = fclib.underlay.loopback;
+                prefixLength = 32;
+              }];
+              tempAddress = "disabled";
+              mtu = fclib.network.ul.mtu;
+            }
+          )] ++
+          (map (iface: lib.nameValuePair iface.link {
             tempAddress = "disabled";
             mtu = iface.mtu;
-          })
-          fclib.underlay.links or [])));
+          }) fclib.underlay.links) ++
+
+          ####################################################################
+          # 3. VXLAN+VRF interfaces
+          (map (iface: lib.nameValuePair iface.interface {
+            mtu = iface.mtu;
+            ipv4.addresses = map
+              (attr: { inherit (attr) address; prefixLength = 32; })
+              iface.v4.attrs;
+            ipv6.addresses = map
+              (attr: { inherit (attr) address; prefixLength = 128; })
+              iface.v6.attrs;
+          }) vxlanVrfInterfaces) ++
+          (map (iface: lib.nameValuePair (vrfName iface) {
+            tempAddress = "disabled";
+          }) vxlanVrfInterfaces)
+
+        )));
 
         bridges = listToAttrs (map (interface:
           (lib.nameValuePair
@@ -297,70 +339,110 @@ in
           frr version 8.5.1
           frr defaults datacenter
           !
+          ${lib.concatMapStringsSep "\n"
+            (iface: ''
+              vrf vrf${iface.vlan}
+               vni ${toString iface.vlanId}
+              exit-vrf
+              !
+            '')
+            vxlanVrfInterfaces
+           }
+          !
           router bgp ${toString fclib.underlay.asNumber}
-          bgp router-id ${fclib.underlay.loopback}
-          bgp bestpath as-path multipath-relax
-          neighbor switches peer-group
-          neighbor switches remote-as external
-          neighbor switches capability extended-nexthop
-          neighbor switches bfd
-          ${lib.concatMapStringsSep "\n "
-            (iface: "neighbor ${iface.link} interface peer-group switches")
-            fclib.underlay.links
-          }
+           bgp router-id ${fclib.underlay.loopback}
+           bgp bestpath as-path multipath-relax
+           neighbor switches peer-group
+           neighbor switches remote-as external
+           neighbor switches capability extended-nexthop
+           neighbor switches bfd
+           ${lib.concatMapStringsSep "\n "
+             (iface: "neighbor ${iface.link} interface peer-group switches")
+             fclib.underlay.links
+           }
+           !
+           address-family ipv4 unicast
+            redistribute connected
+            neighbor switches prefix-list underlay-import in
+            neighbor switches prefix-list underlay-export out
+            neighbor switches route-map accept-all-routes in
+            neighbor switches route-map accept-local-routes out
+           exit-address-family
+           !
+           address-family l2vpn evpn
+            neighbor switches activate
+            neighbor switches route-map accept-all-routes in
+            neighbor switches route-map accept-local-routes out
+            advertise-all-vni
+            advertise-svi-ip
+            ${ # Workaround for FRR not advertising SVI IP when
+               # globally configured
+              lib.concatMapStringsSep "\n  "
+                (iface: concatStringsSep "\n  " [
+                  ("vni " + (toString iface.vlanId))
+                  " advertise-svi-ip"
+                  "exit-vni"
+                ])
+                vxlanInterfaces
+            }
+           exit-address-family
+           !
+          exit
           !
-          address-family ipv4 unicast
-          redistribute connected
-          neighbor switches prefix-list underlay-import in
-          neighbor switches prefix-list underlay-export out
-          neighbor switches route-map accept-all-routes in
-          neighbor switches route-map accept-local-routes out
-          exit-address-family
+          ${lib.concatMapStringsSep "\n"
+            # `kernel` routes are mostly those routes we insert into the
+            # kernel routing table through fc-qemu for our virtual machines.
+            # `connected` routes are for those (special) cases where the host
+            # might receive an address on the VXLAN/VRF interface, even
+            # though usually they don't.
+            (iface: ''
+              router bgp ${toString fclib.underlay.asNumber} vrf vrf${iface.vlan}
+               bgp router-id ${fclib.underlay.loopback}
+               !
+               address-family ipv4 unicast
+                redistribute connected
+                redistribute kernel
+               exit-address-family
+               !
+               address-family ipv6 unicast
+                redistribute connected
+                redistribute kernel
+               exit-address-family
+               !
+               address-family l2vpn evpn
+                advertise ipv4 unicast
+                advertise ipv6 unicast
+               exit-address-family
+              exit
+              !
+            '')
+            vxlanVrfInterfaces
+           }
           !
-          address-family l2vpn evpn
-          neighbor switches activate
-          neighbor switches route-map accept-all-routes in
-          neighbor switches route-map accept-local-routes out
-          advertise-all-vni
-          advertise-svi-ip
-          ${ # Workaround for FRR not advertising SVI IP when
-              # globally configured
-            lib.concatMapStringsSep "\n  "
-              (iface: concatStringsSep "\n  " [
-                ("vni " + (toString iface.vlanId))
-                " advertise-svi-ip"
-                "exit-vni"
-              ])
-              vxlanInterfaces
-          }
-          exit-address-family
-        !
-        exit
-        !
-        bgp as-path access-list local-origin seq 1 permit ^$
-        !
-        route-map accept-local-routes permit 1
-          match as-path local-origin
-        exit
-        !
-        route-map accept-all-routes permit 1
-        exit
-        !
-        route-map set-source-address permit 1
-          set src ${fclib.underlay.loopback}
-        exit
-        !
-        ip protocol bgp route-map set-source-address
-        !
-        ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
-        !
-        ${lib.concatImapStringsSep "\n"
-          (idx: net:
-            "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
-          )
-          fclib.underlay.subnets
-          }
-        !
+          bgp as-path access-list local-origin seq 1 permit ^$
+          !
+          route-map accept-local-routes permit 1
+            match as-path local-origin
+          exit
+          !
+          route-map accept-all-routes permit 1
+          exit
+          !
+          route-map set-source-address permit 1
+            set src ${fclib.underlay.loopback}
+          exit
+          !
+          ip protocol bgp route-map set-source-address
+          !
+          ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
+          !
+          ${lib.concatImapStringsSep "\n"
+            (idx: net:
+              "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
+            )
+            fclib.underlay.subnets
+           }
+          !
       '';
       };
 
@@ -651,9 +733,6 @@ in
             # bridge port configuration for vxlan devices. arp/nd
             # suppression is configured separately, so the router role
             # can turn it off.
-            # XXX we always make VXLAN ports bridge ports ... this complicates the
-            # code a bit.
-
             (map (iface: (lib.nameValuePair
               "network-bridge-suppress-flooding-${iface.link}"
               {
@@ -725,6 +804,42 @@ in
                 };
               }
             )) fclib.underlay.links) ++
+
+            # VRF devices for layer 3 VNIs
+            (map (iface: let
+              name = vrfName iface;
+              interfaceUnit = "${iface.interface}-netdev.service";
+              addressUnit = "network-addresses-${iface.interface}.service";
+            in lib.nameValuePair "${name}-netdev" {
+              description = "VRF Interface ${name}";
+              wantedBy = [ "network-setup.service" "sys-subsystem-net-devices-${name}.device" ];
+              bindsTo = [ interfaceUnit ];
+              requires = [ "network-setup.service" ];
+              after = [ "network-pre.target" interfaceUnit ];
+              before = [ "network-setup.service" addressUnit ];
+              serviceConfig.Type = "oneshot";
+              serviceConfig.RemainAfterExit = true;
+              path = [ fclib.relaxedIp ];
+              script = ''
+                # remove dead interface
+                echo "Removing old VRF ${name}..."
+                ip link show dev "${name}" >/dev/null 2>&1 && ip link del dev "${name}"
+
+                echo "Adding VRF ${name}..."
+                ip link add ${name} type vrf table ${toString (vrfTable iface)}
+
+                # add child interfaces. no need to set up, the network-addresses
+                # unit will do that.
+                ip link set ${iface.interface} master ${name}
+
+                ip link set ${name} up
+              '';
+              postStop = ''
+                ip link set dev "${name}" down || true
+                ip link del dev "${name}" || true
+              '';
+            }) vxlanVrfInterfaces) ++
+
             [
               # fallback unreachable routes
               (lib.nameValuePair
@@ -849,7 +964,8 @@ in
           notification = "Kernel network state has broken overlay MAC addresses";
           interval = 300;
           command = let
-            args = lib.concatMapStringsSep " " (iface: "-n " + (toString iface.vlanId)) vxlanInterfaces;
+            ifaces = filter (i: !i.routed) vxlanInterfaces;
+            args = lib.concatMapStringsSep " " (iface: "-n " + (toString iface.vlanId)) ifaces;
           in
             "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-evpn-rib ${args}";
         };

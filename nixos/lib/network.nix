@@ -349,6 +349,8 @@ rec {
 
         policy = interface'.policy or "puppet";
 
+        routed = interface'.routed or false;
+
         dualstack = rec {
           # Without netmask
           addresses = map stripNetmask cidrs;
@@ -409,6 +411,7 @@ rec {
       # Provide homogenous access to loopback data
       { lo = {
         vlan = "lo";
+        policy = "unmanaged";
         dualstack = {
           addresses = [ "127.0.0.1" "::1" ];
           addressesQuoted = [ "127.0.0.1" "[::1]" ];
