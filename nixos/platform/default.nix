@@ -25,6 +25,7 @@ in {
     ./alloy.nix
     ./audit.nix
     ./auditbeat.nix
+    ./go-audit.nix
     ./beats.nix
     ./filebeat.nix
     ./enc.nix

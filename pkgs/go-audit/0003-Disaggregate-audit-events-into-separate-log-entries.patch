@@ -1,0 +1,79 @@
+From 82cd14c67a4a77625f4b39af2bc000d504826712 Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Mon, 3 Feb 2025 11:13:23 +0100
+Subject: [PATCH 3/4] Disaggregate audit events into separate log entries
+
+---
+ marshaller.go |  9 ++++++---
+ parser.go     | 17 +++++++++++++++++
+ writer.go     |  2 +-
+ 3 files changed, 24 insertions(+), 4 deletions(-)
+
+diff --git a/marshaller.go b/marshaller.go
+index 7d02051..2f1be09 100644
+--- a/marshaller.go
++++ b/marshaller.go
+@@ -125,9 +125,12 @@ func (a *AuditMarshaller) completeMessage(seq int) {
+ 		return
+ 	}
+ 
+-	if err := a.writer.Write(msg); err != nil {
+-		el.Println("Failed to write message. Error:", err)
+-		os.Exit(1)
++	logs := msg.Flatten()
++	for _, item := range logs {
++		if err := a.writer.Write(item); err != nil {
++			el.Println("Failed to write message. Error:", err)
++			os.Exit(1)
++		}
+ 	}
+ 
+ 	delete(a.msgs, seq)
+diff --git a/parser.go b/parser.go
+index f19b899..9b0f412 100644
+--- a/parser.go
++++ b/parser.go
+@@ -45,6 +45,13 @@ type AuditMessageGroup struct {
+ 	Syscall       string            `json:"-"`
+ }
+ 
++type AuditLogMessage struct {
++	Seq       int               `json:"sequence"`
++	AuditTime string            `json:"timestamp"`
++	Msg       *AuditMessage     `json:"message"`
++	UidMap    map[string]string `json:"uid_map"`
++}
++
+ // Creates a new message group from the details parsed from the message
+ func NewAuditMessageGroup(am *AuditMessage) *AuditMessageGroup {
+ 	//TODO: allocating 6 msgs per group is lame and we _should_ know ahead of time roughly how many we need
+@@ -292,3 +299,13 @@ func getUsername(uid string) string {
+ 
+ 	return uname
+ }
++
++func (amg *AuditMessageGroup) Flatten() []*AuditLogMessage {
++	msgs := []*AuditLogMessage{}
++
++	for _, msg := range amg.Msgs {
++		msgs = append(msgs, &AuditLogMessage{amg.Seq, amg.AuditTime, msg, amg.UidMap})
++	}
++
++	return msgs
++}
+diff --git a/writer.go b/writer.go
+index e3b3a69..5ed2e05 100644
+--- a/writer.go
++++ b/writer.go
+@@ -20,7 +20,7 @@ func NewAuditWriter(w io.Writer, attempts int) *AuditWriter {
+ 	}
+ }
+ 
+-func (a *AuditWriter) Write(msg *AuditMessageGroup) (err error) {
++func (a *AuditWriter) Write(msg *AuditLogMessage) (err error) {
+ 	for i := 0; i < a.attempts; i++ {
+ 		err = a.e.Encode(msg)
+ 		if err == nil {
+-- 
+2.39.5 (Apple Git-154)
+

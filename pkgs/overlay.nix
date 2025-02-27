@@ -126,6 +126,15 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
     ];
   });
 
+  go-audit = super.go-audit.overrideAttrs (goSelf: goSuper: {
+    patches = [
+      ./go-audit/0001-Split-audit-message-into-key-value-pairs-for-better-.patch
+      ./go-audit/0002-Decode-audit-message-type-number-into-string-constan.patch
+      ./go-audit/0003-Disaggregate-audit-events-into-separate-log-entries.patch
+      ./go-audit/0004-Provide-a-human-readable-decoded-view-for-selected-a.patch
+    ];
+  });
+
   innotop = super.callPackage ./percona/innotop.nix { };
 
   ipmitool = super.ipmitool.overrideAttrs(a: a // {

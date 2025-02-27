@@ -2,6 +2,10 @@
 
 with lib;
 
+let
+  cfg = config.flyingcircus.audit;
+in
+
 {
   /* XXX after beta
     imports = [
@@ -11,9 +15,10 @@ with lib;
 
   options.flyingcircus.audit = {
     enable = mkEnableOption "auditing (beta)";
+    useAlloy = mkEnableOption "auditing implementation using grafana alloy and loki";
   };
 
-  config = (mkIf (config.flyingcircus.audit.enable) {
+  config = (mkIf cfg.enable {
     security.audit = {
       enable = true;
       rules = [
