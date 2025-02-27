@@ -428,23 +428,29 @@ class Manager:
         vm_shut_down = False
         for vm_cfg in list_all_vm_configs():
             if "last_deploy_date" not in vm_cfg:
-                vm_cfg["last_deploy_date"] = (
-                    datetime.datetime.utcnow().isoformat()
-                )
+                vm_cfg["last_deploy_date"] = datetime.datetime.now(
+                    datetime.UTC
+                ).isoformat()
                 with open(
                     CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w"
                 ) as f:
                     f.write(json.dumps(vm_cfg))
 
-            if datetime.datetime.fromisoformat(vm_cfg["last_deploy_date"]) < (
-                datetime.datetime.utcnow() - datetime.timedelta(days=31)
+            # existing VMs might have persisted a timezone-naive timestamp
+            last_deploy_date_parsed = datetime.datetime.fromisoformat(
+                vm_cfg["last_deploy_date"]
+            ).astimezone(datetime.UTC)
+            if last_deploy_date_parsed < (
+                datetime.datetime.now(datetime.UTC)
+                - datetime.timedelta(days=31)
             ):
                 print(f"Deleting VM {vm_cfg['name']}.")
                 Manager(name=vm_cfg["name"]).destroy()
 
-            elif datetime.datetime.fromisoformat(
-                vm_cfg["last_deploy_date"]
-            ) < (datetime.datetime.utcnow() - datetime.timedelta(days=14)):
+            elif last_deploy_date_parsed < (
+                datetime.datetime.now(datetime.UTC)
+                - datetime.timedelta(days=14)
+            ):
                 if vm_cfg["online"] == False:
                     continue
                 print(f"Shutting down VM {vm_cfg['name']}.")
