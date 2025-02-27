@@ -154,6 +154,12 @@ with lib;
         rzob = [ "rzob-router" ];
       };
 
+      minimumPortSpeeds = {
+        sto = 10000;
+        stb = 10000;
+        ul = 10000;
+      };
+
       # VLANs on which we accept connectivity to the outside world
       routerUplinkNetworks = {
         dev = [ "tr" ];
