@@ -113,12 +113,12 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   });
 
   frr = super.frr.overrideAttrs (old: rec {
-    version = "8.5.7";
+    version = "10.1.2";
     src = super.fetchFromGitHub {
       owner = "FRRouting";
       repo = old.pname;
       rev = "${old.pname}-${version}";
-      hash = "sha256-2ViapJNLO+jwtORtarj+UTdHN/uE2PqyJTwf4dkXBmg=";
+      hash = "sha256-yenWMFHQ8F3/GJ+BVnoi5t//6qtFqH8i3uNq4X0/qdI==";
     };
 
     patches = [
