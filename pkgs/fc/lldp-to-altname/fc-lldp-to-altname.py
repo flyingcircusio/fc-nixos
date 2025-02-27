@@ -19,7 +19,10 @@ def has_known_prefix(name):
 
 
 def quote_altname(name):
-    return re.sub(r"[^a-z0-9A-Z]+", "-", name)
+    name = re.sub(r"[^a-z0-9A-Z]+", "-", name)
+    name = name.strip("-")
+    name = re.sub(f"--+", "-", name)
+    return name
 
 
 class Runner(object):
