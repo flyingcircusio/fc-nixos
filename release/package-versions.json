@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-133.0.6943.126",
+    "name": "chromedriver-unwrapped-133.0.6943.141",
     "pname": "chromedriver-unwrapped",
-    "version": "133.0.6943.126"
+    "version": "133.0.6943.141"
   },
   "chromium": {
-    "name": "chromium-133.0.6943.126",
+    "name": "chromium-133.0.6943.141",
     "pname": "chromium",
-    "version": "133.0.6943.126"
+    "version": "133.0.6943.141"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -375,9 +375,9 @@
     "version": "21.0.5+11"
   },
   "k3s": {
-    "name": "k3s-1.31.4+k3s1",
+    "name": "k3s-1.31.5+k3s1",
     "pname": "k3s",
-    "version": "1.31.4+k3s1"
+    "version": "1.31.5+k3s1"
   },
   "k3s_1_29": {
     "name": "k3s-1.29.12+k3s1",
@@ -390,9 +390,9 @@
     "version": "1.30.8+k3s1"
   },
   "k3s_1_31": {
-    "name": "k3s-1.31.4+k3s1",
+    "name": "k3s-1.31.5+k3s1",
     "pname": "k3s",
-    "version": "1.31.4+k3s1"
+    "version": "1.31.5+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.1.2",
