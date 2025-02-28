@@ -7,7 +7,7 @@ let
   role = config.flyingcircus.roles.router;
   mkConfig = interface:
     pkgs.writeText "pmacctd-${interface}.conf" ''
-      interface: ${interface}
+      pcap_interface: ${interface}
       aggregate: src_host,dst_host
 
       plugins: print
