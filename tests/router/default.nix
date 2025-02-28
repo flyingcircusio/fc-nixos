@@ -9,6 +9,18 @@ let
       inherit (config) fclib;
     in
     {
+      assertions = [
+        # XXX: so in the test we're expecting the interface names ethfe and ethsrv,
+        # but on real routers it's brfe and brsrv?
+        {
+          assertion = config.fclib.network.fe.interface == "ethfe";
+          message = "router test: Expected the fe interface to be named `ethfe`, got `${config.fclib.network.fe.interface}`";
+        }
+        {
+          assertion = config.fclib.network.srv.interface == "ethsrv";
+          message = "router test: Expected the srv interface to be named `ethsrv`, got `${config.fclib.network.srv.interface}`";
+        }
+      ];
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ mgm fe srv tr ];
       virtualisation.memorySize = 2048;
 
@@ -329,7 +341,11 @@ in
     extraPythonPackages = ps: [ ps.rich ];
     skipTypeCheck = true; # due to cursed importing of helpers
 
-    testScript = { nodes, ... }: mkTestScript nodes ''
+    testScript = { nodes, ... }:
+      let
+      feInterface = nodes.primary.fclib.network.fe.interface;
+      srvInterface = nodes.primary.fclib.network.srv.interface;
+      in mkTestScript nodes ''
       pp = rich.print
       primary.wait_for_unit("default.target")
 
@@ -377,8 +393,18 @@ in
         primary.succeed("stat undionly.kpxe")
 
       with subtest("pmacctd should be running for fe and srv interfaces"):
-        primary.wait_for_unit("pmacctd-ethfe")
-        primary.wait_for_unit("pmacctd-ethsrv")
+        primary.wait_for_unit("pmacctd-${feInterface}")
+        primary.wait_for_unit("pmacctd-${srvInterface}")
+
+      with subtest("pmacctd does not issue warnings and binds to correct interfaces"):
+        print(primary.execute("journalctl -b -u pmacctd*")[1])
+        # deliberately broad condition: We'd like to know about each warning for now.
+        # the one we actually want to ensure to not exist for PL-133497 is:
+        # WARN: [/nix/store/9pa54fv0jksk9kx4zlq98y3mh3676hk1-pmacctd-brsrv.conf:1] Unknown key: interface. Ignored.
+        primary.fail('journalctl -b -u pmacctd* --grep "WARN:"')
+
+        primary.succeed('journalctl -b -u pmacctd-${feInterface} | tee | grep "\[${feInterface},0\] link type is: 1"')
+        primary.succeed('journalctl -b -u pmacctd-${srvInterface} --grep "\[${srvInterface},0\] link type is: 1"')
 
       with subtest("trafficclient timer should be active"):
         primary.wait_for_unit("fc-trafficclient.timer")
@@ -408,7 +434,11 @@ in
 
     extraPythonPackages = ps: [ ps.rich ];
     skipTypeCheck = true; # due to cursed importing of helpers
-    testScript = { nodes, ... }: mkTestScript nodes ''
+    testScript = { nodes, ... }:
+    let
+      feInterface = nodes.secondary.fclib.network.fe.interface;
+      srvInterface = nodes.secondary.fclib.network.srv.interface;
+    in mkTestScript nodes ''
       pp = rich.print
       secondary.wait_for_unit("default.target")
 
@@ -420,8 +450,11 @@ in
         pp(secondary.succeed("systemctl status -l firewall"))
 
       with subtest("pmacctd should be running for fe and srv interfaces"):
-        secondary.wait_for_unit("pmacctd-ethfe")
-        secondary.wait_for_unit("pmacctd-ethsrv")
+        print(secondary.execute("systemctl status pmacctd*")[1])
+        print(secondary.execute("journalctl -b -u pmacctd*")[1])
+
+        secondary.wait_for_unit("pmacctd-${feInterface}")
+        secondary.wait_for_unit("pmacctd-${srvInterface}")
 
       with subtest("trafficclient timer should be active"):
         secondary.wait_for_unit("fc-trafficclient.timer")
