@@ -1,0 +1,67 @@
+From 5d975a9446cf77e5393b489fd3b2e291d6595dee Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Mon, 3 Feb 2025 10:06:00 +0100
+Subject: [PATCH 1/4] Split audit message into key-value pairs for better JSON
+ parsing
+
+---
+ parser.go | 27 ++++++++++++++++++++++-----
+ 1 file changed, 22 insertions(+), 5 deletions(-)
+
+diff --git a/parser.go b/parser.go
+index ffb241f..82e86ab 100644
+--- a/parser.go
++++ b/parser.go
+@@ -21,10 +21,11 @@ const (
+ )
+ 
+ type AuditMessage struct {
+-	Type      uint16 `json:"type"`
+-	Data      string `json:"data"`
+-	Seq       int    `json:"-"`
+-	AuditTime string `json:"-"`
++	Type      uint16            `json:"type"`
++	Data      string            `json:"data_raw"`
++	DataMap   map[string]string `json:"data"`
++	Seq       int               `json:"-"`
++	AuditTime string            `json:"-"`
+ 
+ 	Containers map[string]string `json:"containers,omitempty"`
+ 	Extras     *AuditExtras      `json:"extras,omitempty"`
+@@ -61,9 +62,11 @@ func NewAuditMessageGroup(am *AuditMessage) *AuditMessageGroup {
+ // Creates a new go-audit message from a netlink message
+ func NewAuditMessage(nlm *syscall.NetlinkMessage) *AuditMessage {
+ 	aTime, seq := parseAuditHeader(nlm)
++	rawData := string(nlm.Data)
+ 	return &AuditMessage{
+ 		Type:      nlm.Header.Type,
+-		Data:      string(nlm.Data),
++		Data:      rawData,
++		DataMap:   splitMessageData(rawData),
+ 		Seq:       seq,
+ 		AuditTime: aTime,
+ 	}
+@@ -91,6 +94,20 @@ func parseAuditHeader(msg *syscall.NetlinkMessage) (time string, seq int) {
+ 	return time, seq
+ }
+ 
++// Splits the data string into key-value pairs
++func splitMessageData(data string) map[string]string {
++	s := make(map[string]string)
++	for _, v := range strings.Fields(data) {
++		splits := strings.SplitAfterN(v, "=", 2)
++		if len(splits) == 2 {
++			splits[0] = strings.Trim(splits[0], "=")
++			splits[1] = strings.TrimPrefix(splits[1], "=")
++			s[splits[0]] = splits[1]
++		}
++	}
++	return s
++}
++
+ // Add a new message to the current message group
+ func (amg *AuditMessageGroup) AddMessage(am *AuditMessage) {
+ 	amg.Msgs = append(amg.Msgs, am)
+-- 
+2.39.5 (Apple Git-154)
+

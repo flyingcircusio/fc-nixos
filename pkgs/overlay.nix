@@ -113,16 +113,25 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   });
 
   frr = super.frr.overrideAttrs (old: rec {
-    version = "8.5.7";
+    version = "10.1.2";
     src = super.fetchFromGitHub {
       owner = "FRRouting";
       repo = old.pname;
       rev = "${old.pname}-${version}";
-      hash = "sha256-2ViapJNLO+jwtORtarj+UTdHN/uE2PqyJTwf4dkXBmg=";
+      hash = "sha256-yenWMFHQ8F3/GJ+BVnoi5t//6qtFqH8i3uNq4X0/qdI==";
     };
 
     patches = [
       ./frr/0001-Don-t-throw-error-when-log-directory-already-exists.patch
+    ];
+  });
+
+  go-audit = super.go-audit.overrideAttrs (goSelf: goSuper: {
+    patches = [
+      ./go-audit/0001-Split-audit-message-into-key-value-pairs-for-better-.patch
+      ./go-audit/0002-Decode-audit-message-type-number-into-string-constan.patch
+      ./go-audit/0003-Disaggregate-audit-events-into-separate-log-entries.patch
+      ./go-audit/0004-Provide-a-human-readable-decoded-view-for-selected-a.patch
     ];
   });
 

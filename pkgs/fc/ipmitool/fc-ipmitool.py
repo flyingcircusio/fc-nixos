@@ -30,6 +30,10 @@ if "." not in args.host:
     location = os.environ["FCIO_LOCATION"]
     host = f"{host}.ipmi.{location}.gocept.net"
 
+ipmi_args = args.args
+if not ipmi_args:
+    ipmi_args = ["shell"]
+
 exec_args = [
     "ipmitool",
     "-4",
@@ -39,9 +43,10 @@ exec_args = [
     "lanplus",
     "-H",
     host,
-    *args.args,
+    *ipmi_args,
 ]
 
 exec_path = shutil.which("ipmitool")
+assert exec_path
 print(exec_path, " ".join(exec_args))
 os.execve(exec_path, exec_args, os.environ)

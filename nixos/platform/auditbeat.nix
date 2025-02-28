@@ -5,6 +5,7 @@ with lib;
 let
   fclib = config.fclib;
   cfg = config.flyingcircus.auditbeat;
+  cfgAudit = config.flyingcircus.audit;
 
 in
 {
@@ -21,7 +22,7 @@ in
   };
 
   # TODO: remove mkIf after beta
-  config = mkIf (config.flyingcircus.audit.enable) {
+  config = mkIf (cfgAudit.enable && !cfgAudit.useAlloy) {
     flyingcircus.filebeat.inputs.auditbeat = {
       type = "log";
       enabled = true;

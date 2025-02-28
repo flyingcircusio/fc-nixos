@@ -1,0 +1,145 @@
+From c871410d5e79eb4a0a0df9496ec3a1bed0d4413e Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Mon, 3 Feb 2025 10:17:02 +0100
+Subject: [PATCH 2/4] Decode audit message type number into string constants
+
+---
+ parser.go | 106 ++++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 96 insertions(+), 10 deletions(-)
+
+diff --git a/parser.go b/parser.go
+index 82e86ab..f19b899 100644
+--- a/parser.go
++++ b/parser.go
+@@ -21,11 +21,12 @@ const (
+ )
+ 
+ type AuditMessage struct {
+-	Type      uint16            `json:"type"`
+-	Data      string            `json:"data_raw"`
+-	DataMap   map[string]string `json:"data"`
+-	Seq       int               `json:"-"`
+-	AuditTime string            `json:"-"`
++	Type       uint16            `json:"type_raw"`
++	TypeString string            `json:"type"`
++	Data       string            `json:"data_raw"`
++	DataMap    map[string]string `json:"data"`
++	Seq        int               `json:"-"`
++	AuditTime  string            `json:"-"`
+ 
+ 	Containers map[string]string `json:"containers,omitempty"`
+ 	Extras     *AuditExtras      `json:"extras,omitempty"`
+@@ -62,13 +63,15 @@ func NewAuditMessageGroup(am *AuditMessage) *AuditMessageGroup {
+ // Creates a new go-audit message from a netlink message
+ func NewAuditMessage(nlm *syscall.NetlinkMessage) *AuditMessage {
+ 	aTime, seq := parseAuditHeader(nlm)
++	rawType := nlm.Header.Type
+ 	rawData := string(nlm.Data)
+ 	return &AuditMessage{
+-		Type:      nlm.Header.Type,
+-		Data:      rawData,
+-		DataMap:   splitMessageData(rawData),
+-		Seq:       seq,
+-		AuditTime: aTime,
++		Type:       rawType,
++		TypeString: decodeMessageType(rawType),
++		Data:       rawData,
++		DataMap:    splitMessageData(rawData),
++		Seq:        seq,
++		AuditTime:  aTime,
+ 	}
+ }
+ 
+@@ -108,6 +111,89 @@ func splitMessageData(data string) map[string]string {
+ 	return s
+ }
+ 
++// Decode the message type into a symbolic string
++func decodeMessageType(val uint16) string {
++	// Audit message types from include/uapi/linux/audit.h
++	switch val {
++	case 1300:
++		return "SYSCALL"
++	case 1302:
++		return "PATH"
++	case 1303:
++		return "IPC"
++	case 1304:
++		return "SOCKETCALL"
++	case 1305:
++		return "CONFIG_CHANGE"
++	case 1306:
++		return "SOCKADDR"
++	case 1307:
++		return "CWD"
++	case 1309:
++		return "EXECVE"
++	case 1311:
++		return "IPC_SET_PERM"
++	case 1312:
++		return "MQ_OPEN"
++	case 1313:
++		return "MQ_SENDRECV"
++	case 1314:
++		return "MQ_NOTIFY"
++	case 1315:
++		return "MQ_GETSETATTR"
++	case 1316:
++		return "KERNEL_OTHER"
++	case 1317:
++		return "FD_PAIR"
++	case 1318:
++		return "OBJ_PID"
++	case 1319:
++		return "TTY"
++	case 1320:
++		return "EOE"
++	case 1321:
++		return "BPRM_FCAPS"
++	case 1322:
++		return "CAPSET"
++	case 1323:
++		return "MMAP"
++	case 1324:
++		return "NETFILTER_PKT"
++	case 1325:
++		return "NETFILTER_CFG"
++	case 1326:
++		return "SECCOMP"
++	case 1327:
++		return "PROCTITLE"
++	case 1328:
++		return "FEATURE_CHANGE"
++	case 1329:
++		return "REPLACE"
++	case 1330:
++		return "KERN_MODULE"
++	case 1331:
++		return "FANOTIFY"
++	case 1332:
++		return "TIME_INJOFFSET"
++	case 1333:
++		return "TIME_ADJNTPVAL"
++	case 1334:
++		return "BPF"
++	case 1335:
++		return "EVENT_LISTENER"
++	case 1336:
++		return "URINGOP"
++	case 1337:
++		return "OPENAT2"
++	case 1338:
++		return "DM_CTRL"
++	case 1339:
++		return "DM_EVENT"
++	default:
++		return strconv.FormatUint(uint64(val), 10)
++	}
++}
++
+ // Add a new message to the current message group
+ func (amg *AuditMessageGroup) AddMessage(am *AuditMessage) {
+ 	amg.Msgs = append(amg.Msgs, am)
+-- 
+2.39.5 (Apple Git-154)
+
