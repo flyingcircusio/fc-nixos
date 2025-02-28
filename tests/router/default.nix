@@ -160,6 +160,12 @@ let
         }];
       };
 
+      # fc-trafficclient tries to connect to the directory. So far we do not test
+      # any actual functionality of that service here, so just mock it away to avoid
+      # - having to expose an /etc/nixos/enc.json
+      # - having to provide a fake directory to connect and report to
+      systemd.services.fc-trafficclient.serviceConfig.ExecStart = lib.mkForce "${pkgs.coreutils}/bin/true";
+
       flyingcircus.enc.name = "router${toString id}";
       flyingcircus.enc.parameters = {
         location = "test";
