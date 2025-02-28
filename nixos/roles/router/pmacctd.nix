@@ -23,6 +23,7 @@ let
     description = "Collect traffic accounting data";
     wantedBy = [ "multi-user.target" ];
     requires = [ "network-addresses-${interface}.service" ];
+    after = [ "network-addresses-${interface}.service" ];
     stopIfChanged = false;
     script = ''
       ${pkgs.pmacct}/bin/pmacctd -f ${mkConfig interface}
