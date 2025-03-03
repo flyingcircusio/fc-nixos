@@ -68,6 +68,8 @@ with lib;
         "dhp" = 19;
         # underlay: EVPN-VXLAN network virtualisation underlay
         "ul" = 20;
+        # routed frontend: frontend network using routed layer 3 transport
+        "pub" = 21;
         # video surveillance
         "video" = 23;
         # access network for unmanaged hosts
