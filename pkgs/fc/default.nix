@@ -3,8 +3,10 @@
 rec {
   recurseForDerivations = true;
 
-  agent = pythonPackages.callPackage ./agent {};
-  agentWithSlurm = pythonPackages.callPackage ./agent { enableSlurm = true; };
+  agent = pythonPackages.callPackage ./agent {
+    nix = pkgs.nixVersions.nix_2_18;
+  };
+  agentWithSlurm = agent.override { enableSlurm = true; };
 
   blockdev = callPackage ./blockdev {};
 
