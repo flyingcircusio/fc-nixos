@@ -123,6 +123,12 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
 
     patches = [
       ./frr/0001-Don-t-throw-error-when-log-directory-already-exists.patch
+      # issue with best path selection erroneously deleting local mac
+      # addresses during incoming guest migration.
+      (fetchpatch {
+        url = "https://github.com/FRRouting/frr/commit/c3e264e27ac5b682c4647aeeaf4e61f09d5243f9.patch";
+        hash = "sha256-YUNyE2ZeW3q58E+fpFhmMGpp56eba8HUI7pcLLbQDTE=";
+      })
     ];
   });
 
