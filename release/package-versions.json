@@ -60,9 +60,9 @@
     "version": "2.5.22"
   },
   "cacert": {
-    "name": "nss-cacert-3.107",
+    "name": "nss-cacert-3.108",
     "pname": "nss-cacert",
-    "version": "3.107"
+    "version": "3.108"
   },
   "calibre": {
     "name": "calibre-7.21.0",
@@ -120,9 +120,9 @@
     "version": "4.6.2"
   },
   "curl": {
-    "name": "curl-8.11.1",
+    "name": "curl-8.12.1",
     "pname": "curl",
-    "version": "8.11.1"
+    "version": "8.12.1"
   },
   "cyrus_sasl": {
     "name": "cyrus-sasl-2.1.28",
@@ -265,7 +265,7 @@
     "version": "17.9.1"
   },
   "glibc": {
-    "name": "glibc-2.40-36",
+    "name": "glibc-2.40-66",
     "pname": "glibc",
     "version": "2.40"
   },
@@ -280,9 +280,9 @@
     "version": "2.4.5"
   },
   "go": {
-    "name": "go-1.23.5",
+    "name": "go-1.23.6",
     "pname": "go",
-    "version": "1.23.5"
+    "version": "1.23.6"
   },
   "go_1_22": {
     "name": "go-1.22.12",
@@ -290,9 +290,9 @@
     "version": "1.22.12"
   },
   "go_1_23": {
-    "name": "go-1.23.5",
+    "name": "go-1.23.6",
     "pname": "go",
-    "version": "1.23.5"
+    "version": "1.23.6"
   },
   "grafana": {
     "name": "grafana-11.3.4",
@@ -445,9 +445,9 @@
     "version": "1.4.0"
   },
   "libxml2": {
-    "name": "libxml2-2.13.5",
+    "name": "libxml2-2.13.6",
     "pname": "libxml2",
-    "version": "2.13.5"
+    "version": "2.13.6"
   },
   "libxslt": {
     "name": "libxslt-1.1.42",
@@ -575,9 +575,9 @@
     "version": "2.24.12"
   },
   "nodejs": {
-    "name": "nodejs-20.18.1",
+    "name": "nodejs-20.18.3",
     "pname": "nodejs",
-    "version": "20.18.1"
+    "version": "20.18.3"
   },
   "nodejs_18": {
     "name": "nodejs-18.20.6",
@@ -585,9 +585,9 @@
     "version": "18.20.6"
   },
   "nodejs_20": {
-    "name": "nodejs-20.18.1",
+    "name": "nodejs-20.18.3",
     "pname": "nodejs",
-    "version": "20.18.1"
+    "version": "20.18.3"
   },
   "nodejs_22": {
     "name": "nodejs-22.14.0",
@@ -640,9 +640,9 @@
     "version": "9.9p2"
   },
   "openssl": {
-    "name": "openssl-3.3.2",
+    "name": "openssl-3.3.3",
     "pname": "openssl",
-    "version": "3.3.2"
+    "version": "3.3.3"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -650,9 +650,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.15",
+    "name": "openssl-3.0.16",
     "pname": "openssl",
-    "version": "3.0.15"
+    "version": "3.0.16"
   },
   "openvpn": {
     "name": "openvpn-2.6.12",
@@ -785,9 +785,9 @@
     "version": "3.9.3"
   },
   "postgresql": {
-    "name": "postgresql-16.6",
+    "name": "postgresql-16.8",
     "pname": "postgresql",
-    "version": "16.6"
+    "version": "16.8"
   },
   "postgresql13Packages.postgis": {
     "name": "postgis-3.5.2",
@@ -850,29 +850,29 @@
     "version": "1.2.2"
   },
   "postgresql_13": {
-    "name": "postgresql-13.18",
+    "name": "postgresql-13.20",
     "pname": "postgresql",
-    "version": "13.18"
+    "version": "13.20"
   },
   "postgresql_14": {
-    "name": "postgresql-14.15",
+    "name": "postgresql-14.17",
     "pname": "postgresql",
-    "version": "14.15"
+    "version": "14.17"
   },
   "postgresql_15": {
-    "name": "postgresql-15.10",
+    "name": "postgresql-15.12",
     "pname": "postgresql",
-    "version": "15.10"
+    "version": "15.12"
   },
   "postgresql_16": {
-    "name": "postgresql-16.6",
+    "name": "postgresql-16.8",
     "pname": "postgresql",
-    "version": "16.6"
+    "version": "16.8"
   },
   "postgresql_17": {
-    "name": "postgresql-17.2",
+    "name": "postgresql-17.4",
     "pname": "postgresql",
-    "version": "17.2"
+    "version": "17.4"
   },
   "powerdns": {
     "name": "pdns-4.9.4",
@@ -1160,9 +1160,9 @@
     "version": "7.5.0"
   },
   "vim": {
-    "name": "vim-9.1.0787",
+    "name": "vim-9.1.1046",
     "pname": "vim",
-    "version": "9.1.0787"
+    "version": "9.1.1046"
   },
   "webkitgtk": {
     "name": "webkitgtk-2.46.6+abi=4.0",
