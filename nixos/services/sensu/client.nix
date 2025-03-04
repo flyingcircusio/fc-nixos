@@ -609,7 +609,7 @@ in {
         glibc
         lm_sensors
         monitoring-plugins
-        nix
+        config.nix.package
         openssl
         procps
         python3

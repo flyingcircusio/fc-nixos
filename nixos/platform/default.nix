@@ -37,6 +37,7 @@ in {
     ./kernel.nix
     ./monitoring.nix
     ./network.nix
+    ./nix.nix
     ./packages.nix
     ./shell.nix
     ./static.nix

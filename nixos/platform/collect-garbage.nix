@@ -66,7 +66,7 @@ in {
           SuccessExitStatus = [ 1 2 3 ];
           TimeoutStartSec = "infinity";
         };
-        path = with pkgs; [ fc.userscan nix glibc util-linux ];
+        path = with pkgs; [ fc.userscan glibc util-linux ];
         environment = {
           LANG = "en_US.utf8";
           PYTHONUNBUFFERED = "1";
