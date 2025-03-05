@@ -580,9 +580,9 @@
     "version": "20.18.3"
   },
   "nodejs_18": {
-    "name": "nodejs-18.20.6",
+    "name": "nodejs-18.20.7",
     "pname": "nodejs",
-    "version": "18.20.6"
+    "version": "18.20.7"
   },
   "nodejs_20": {
     "name": "nodejs-20.18.3",
