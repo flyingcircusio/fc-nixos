@@ -3,7 +3,12 @@
 {
   config = {
 
-    environment.systemPackages = with pkgs; [
+    environment.systemPackages = with pkgs;
+    let
+      previousPythonVersion = ver:
+        "${lib.versions.major ver}${toString (lib.toInt(lib.versions.minor ver) - 1)}";
+      previousPython = pkgs."python${previousPythonVersion pkgs.python3.version}";
+    in [
         apacheHttpd
         atop
         automake
@@ -52,6 +57,8 @@
         psmisc
         pwgen
         (python3.withPackages (ps: with ps; [ setuptools ]))
+        # keep around at least one previous python version for upgrade compatibility
+        (previousPython.withPackages (ps: with ps; [setuptools]))
         python3Packages.virtualenv
         rclone
         ripgrep
