@@ -18,6 +18,28 @@ We remove the guest user for security reasons.
 Service users can access the rabbitmq account with {command}`sudo -iu rabbitmq`
 to perform administrative tasks with {command}`rabbitmqctl`.
 
+Alternatively, [`rabbitmqadmin-ng`](https://www.rabbitmq.com/docs/management-cli) may be used
+to interact with the HTTP API. It is installed by default with the `rabbitmq` role.
+
+For this to work, a `~/.rabbitmqadmin.conf` is required with a configuration like this:
+
+```toml
+[default]
+hostname = "localhost"
+port = 15672
+username = "myusername"
+password = "mypassword"
+vhost = '/'
+```
+
+For this, you need a user `myusername` in RabbitMQ with the tags
+`administrator` & `management`. Such a user can be created like this:
+
+```
+rabbitmqctl add_user myusername mypassword
+rabbitmqctl set_user_tags myusername management administrator
+```
+
 ## Monitoring
 
 The default monitoring setup checks that the RabbitMQ server is healthy and responding to AMQP connections.
