@@ -1,3 +1,32 @@
+# Release 2025_006
+
+## NixOS XX.XX platform
+
+- Add 24.11 to our physical installer and improve IPXE settings editor.
+
+- matomo: improve cleanup of unwanted files after upgrading from matomo4 to matomo5 (PL-133012)
+
+- install python-3.11 by default in addition to the default python-3.12
+
+- fc-ipmitool: use `shell` as the default command.
+
+- devhost: fix cleanup of old development VMs (PL-133467)
+
+- Restart of `nix-daemon`.
+
+- routers: fix traffic accounting with pmacctd by binding to correct interface again (PL-133497)
+
+
+## Impact
+
+- Nix: downgrade production VMs to 2.18 (and upgrade the rest to 2.25).
+
+  Due to a significant performance regression in 2.24, Nix will be rolled back
+  to 2.18, the default from 24.05 and 23.11. Staging machines will get Nix 2.25
+  as a preparation for upgrading the entire platform to 2.25.
+
+
+
 # Release 2025_005
 
 ## Impact
