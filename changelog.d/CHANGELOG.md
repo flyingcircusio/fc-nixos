@@ -1,18 +1,5 @@
 # Release 2025_006
 
-## Impact
-
-- A bullet item for the Impact category.
-
-
-## NixOS XX.XX platform
-
-- Remove anti-spam DNS blacklist ix.dnsbl.manitu.net Manitu, which has been discontinued. (PL-133519)
-
-
-
-# Release 2025_006
-
 ## NixOS XX.XX platform
 
 - Add 24.11 to our physical installer and improve IPXE settings editor.
@@ -28,6 +15,8 @@
 - Restart of `nix-daemon`.
 
 - routers: fix traffic accounting with pmacctd by binding to correct interface again (PL-133497)
+
+- Remove anti-spam DNS blacklist ix.dnsbl.manitu.net Manitu, which has been discontinued. (PL-133519)
 
 
 ## Impact
