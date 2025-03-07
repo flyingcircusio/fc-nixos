@@ -195,9 +195,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-135.0.1",
+    "name": "firefox-136.0",
     "pname": "firefox",
-    "version": "135.0.1"
+    "version": "136.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -675,9 +675,9 @@
     "version": "10.44"
   },
   "percona": {
-    "name": "percona-server-8.0.40-31",
+    "name": "percona-server-8.0.41-32",
     "pname": "percona-server",
-    "version": "8.0.40-31"
+    "version": "8.0.41-32"
   },
   "percona-server": {
     "name": "percona-server-8.4.3-3",
@@ -685,9 +685,9 @@
     "version": "8.4.3-3"
   },
   "percona-server_8_0": {
-    "name": "percona-server-8.0.40-31",
+    "name": "percona-server-8.0.41-32",
     "pname": "percona-server",
-    "version": "8.0.40-31"
+    "version": "8.0.41-32"
   },
   "percona-server_8_4": {
     "name": "percona-server-8.4.3-3",
@@ -710,9 +710,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-server-8.0.40-31",
+    "name": "percona-server-8.0.41-32",
     "pname": "percona-server",
-    "version": "8.0.40-31"
+    "version": "8.0.41-32"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
