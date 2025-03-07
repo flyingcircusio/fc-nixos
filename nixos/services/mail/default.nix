@@ -320,7 +320,6 @@ in {
           sender_canonical_classes = "envelope_sender";
           smtpd_client_restrictions = [
             "permit_mynetworks"
-            "reject_rbl_client ix.dnsbl.manitu.net"
             "reject_unknown_client_hostname"
           ];
           smtpd_data_restrictions = "reject_unauth_pipelining";
