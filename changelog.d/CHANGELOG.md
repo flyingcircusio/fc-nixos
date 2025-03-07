@@ -1,3 +1,16 @@
+# Release 2025_006
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- Remove anti-spam DNS blacklist Manitu, which has been discontinued. (PL-133519)
+
+
+
 # Release 2025_004
 
 ## Impact
