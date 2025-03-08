@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-133.0.6943.141",
+    "name": "chromedriver-unwrapped-134.0.6998.35",
     "pname": "chromedriver-unwrapped",
-    "version": "133.0.6943.141"
+    "version": "134.0.6998.35"
   },
   "chromium": {
-    "name": "chromium-133.0.6943.141",
+    "name": "chromium-134.0.6998.35",
     "pname": "chromium",
-    "version": "133.0.6943.141"
+    "version": "134.0.6998.35"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -195,9 +195,9 @@
     "version": "7.17.16"
   },
   "firefox": {
-    "name": "firefox-135.0.1",
+    "name": "firefox-136.0",
     "pname": "firefox",
-    "version": "135.0.1"
+    "version": "136.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -600,9 +600,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.108",
+    "name": "nss-3.109",
     "pname": "nss",
-    "version": "3.108"
+    "version": "3.109"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.10.2",
@@ -675,9 +675,9 @@
     "version": "10.44"
   },
   "percona": {
-    "name": "percona-server-8.0.40-31",
+    "name": "percona-server-8.0.41-32",
     "pname": "percona-server",
-    "version": "8.0.40-31"
+    "version": "8.0.41-32"
   },
   "percona-server": {
     "name": "percona-server-8.4.3-3",
@@ -685,9 +685,9 @@
     "version": "8.4.3-3"
   },
   "percona-server_8_0": {
-    "name": "percona-server-8.0.40-31",
+    "name": "percona-server-8.0.41-32",
     "pname": "percona-server",
-    "version": "8.0.40-31"
+    "version": "8.0.41-32"
   },
   "percona-server_8_4": {
     "name": "percona-server-8.4.3-3",
@@ -710,9 +710,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-server-8.0.40-31",
+    "name": "percona-server-8.0.41-32",
     "pname": "percona-server",
-    "version": "8.0.40-31"
+    "version": "8.0.41-32"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
