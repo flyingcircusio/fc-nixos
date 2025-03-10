@@ -44,6 +44,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   inherit (phps) php72 php73 php74 php80;
   # Import NixOS upstream PHPs.
   inherit (super) php81 php82 php83 php84;
+
 }
 //
 builtins.mapAttrs (_: patchPhps (fetchpatch {
@@ -52,6 +53,36 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   })) {
     inherit (super) php83 php84;
   }
+# temporarily added to overlay to ensure it is built by hydra.
+# TODO: drop in 25.05
+# Use curl 8.4.0 for PHP
+# FC-40106, FC-40100
+// lib.listToAttrs (map (v: lib.nameValuePair "php${v}-FC-40106" (
+  super."php${v}".override {
+          packageOverrides = final: prev: {
+            extensions = prev.extensions // {
+              curl = prev.extensions.curl.overrideAttrs (_: let
+                curl_8_4 = self.curl.overrideAttrs (_: {
+                  version = "8.4.0";
+                  patches = [];
+                  src = self.fetchurl {
+                    urls = [
+                      "https://curl.haxx.se/download/curl-8.4.0.tar.xz"
+                      "https://github.com/curl/curl/releases/download/curl-${builtins.replaceStrings [ "." ] [ "_" ] "8.4.0"}/curl-8.4.0.tar.xz"
+                    ];
+                    hash = "sha256-FsYqnErw9wPSi9pte783ukcFWtNBTXDexj4uYzbyqC0=";
+                  };
+                });
+              in {
+                buildInputs = [ curl_8_4 ];
+                configureFlags = [ "--with-curl=${curl_8_4.dev}" ];
+              });
+            };
+          };
+        }
+    )
+  ) [ "82" "83"]
+)
 // {
   pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
     (python-self: python-super: {
