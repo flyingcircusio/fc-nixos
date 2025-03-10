@@ -2,7 +2,7 @@ name: "Check auto-mergeability of PR"
 on:
   # use pull_request_target to also run on PRs with merge conflict
   pull_request_target:
-    types: [labeled, unlabeled, ready_for_review, opened, synchronize]
+    types: [labeled, unlabeled, ready_for_review, opened, reopened, synchronize]
   pull_request_review:
     types: [submitted, dismissed]
 
@@ -25,6 +25,6 @@ jobs:
         run: |
           nix build .#
       - run: |
-          ./result/bin/auto-merge check-pr ${{ github.event.number }}
+          ./result/bin/auto-merge check-pr ${{ github.event.pull_request.number }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
