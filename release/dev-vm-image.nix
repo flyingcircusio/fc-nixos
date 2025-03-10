@@ -34,6 +34,7 @@ in
       format = "qcow2-compressed";
       filename-prefix = name;
       postVM = ''
+
         echo "creating Flying Circus VM image..."
         mkdir -p $out
         mkdir $out/nix-support
