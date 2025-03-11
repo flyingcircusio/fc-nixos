@@ -1,22 +1,44 @@
 { config, pkgs, lib, ... }:
 let
   inherit (config) fclib;
+  checkCert = pkgs.writeShellScript "check-local-acme-cert" ''
+    certificate_path="$1"
+    critical_sec=$((14 * 24 * 3600))
+    warning_sec=$((25 * 24 * 3600))
+
+    openssl x509 -in "$certificate_path" -noout -enddate
+
+    if ! openssl x509 -checkend $critical_sec -noout -in "$certificate_path" > /dev/null
+    then
+        exit 2
+    fi
+
+    if ! openssl x509 -checkend $warning_sec -noout -in "$certificate_path" > /dev/null
+    then
+        exit 1
+    fi
+  '';
+
 in
 lib.mkMerge [{
+  flyingcircus.passwordlessSudoRules = [
+    {
+      commands = [ "${checkCert}" ];
+      groups = [ "sensuclient" ];
+    }
+  ];
+
   # Generate a sensu check for each acme cert to check its validity and warn
   # when it expires.
+
   flyingcircus.services.sensu-client.checks =
-    lib.listToAttrs
-      (map (n: lib.nameValuePair "ssl_cert_acme_${n}" {
+    lib.mapAttrs'
+      (n: cert: lib.nameValuePair "ssl_cert_acme_${n}" {
         notification = "ACME (Letsencrypt) certificate for ${n} is invalid or will expire soon";
-        # We're using a timeout of 15 seconds because 10 seconds is the timeout
-        # that will trigger if DNS issues occur and giving the check a higher
-        # timeout allows us to see those. Otherwise they get hidden behind
-        # a generic timeout message.
-        command = "check_http -p 443 -S --sni -C 25,14 -H ${n} -t 15";
-        interval = 600;
+        command = "/run/wrappers/bin/sudo ${checkCert} ${cert.directory}/fullchain.pem";
+        interval = 3600;
       })
-      (lib.attrNames config.security.acme.certs));
+      config.security.acme.certs;
 
   systemd.services =
   let

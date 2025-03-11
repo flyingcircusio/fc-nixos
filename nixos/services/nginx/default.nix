@@ -64,11 +64,11 @@ let
   virtualHosts = lib.mapAttrs mkVanillaVhostFromFCVhost cfg.virtualHosts;
 
   # only email setting supported at the moment
-  acmeSettings =
+  fcioAcmeSettings =
     lib.mapAttrs (name: val: { email = val.emailACME; })
-    (lib.filterAttrs (_: val: val ? emailACME && val.emailACME != null ) cfg.virtualHosts);
+    (lib.filterAttrs (_: val: val ? emailACME && val.emailACME != null) cfg.virtualHosts);
 
-  acmeVhosts = (lib.filterAttrs (_: val: val ? enableACME ) cfg.virtualHosts);
+  acmeVhosts = (lib.filterAttrs (_: vhost: vhost.enableACME) nginxCfg.virtualHosts);
 
   mainConfig = ''
     worker_processes ${toString cfg.workerProcesses};
@@ -428,11 +428,26 @@ in
           interval = 60;
         };
 
-      };
+      } // (
+      lib.listToAttrs
+        (map (n:
+          lib.nameValuePair "nginx_https_${n}" {
+          notification = "HTTPS certificate check failed for vhost ${n}";
+          # We're using a timeout of 15 seconds because 10 seconds is the timeout
+          # that will trigger if DNS issues occur and giving the check a higher
+          # timeout allows us to see those. Otherwise they get hidden behind
+          # a generic timeout message.
+          # Note that we assume that the certificate is reachable via port 443.
+          # Other configurations might need overrides for the sensu check command.
+          command = "check_http -p 443 -S --sni -C 25,14 -H ${n} -t 15";
+          interval = 600;
+        })
+        (lib.attrNames acmeVhosts)));
+
 
       networking.firewall.allowedTCPPorts = [ 80 443 ];
 
-      security.acme.certs = acmeSettings;
+      security.acme.certs = fcioAcmeSettings;
 
       flyingcircus.passwordlessSudoRules = [
         {
