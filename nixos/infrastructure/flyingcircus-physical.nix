@@ -141,6 +141,15 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (lib.mkMerge [
         '';
     };
 
+    # PL-133421: some hardware+kernel combinations don't seem to
+    # deconfigure USB devices properly at shutdown time, which can
+    # lead to devices getting stuck and then failing to reappear on
+    # the bus after a reboot. unloading the driver in late shutdown
+    # before userland ends avoids this problem.
+    systemd.shutdown."unload-xhci-driver.shutdown" = pkgs.writeShellScript "rmmod-xhci" ''
+      ${pkgs.kmod}/bin/modprobe -v -r xhci_pci
+    '';
+
     flyingcircus.ipmi.enable = true;
 
     flyingcircus.passwordlessSudoPackages = [
