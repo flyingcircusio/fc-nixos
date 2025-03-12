@@ -11,13 +11,15 @@ which provides useful improvements over the standard Oracle MySQL/MariaDB implem
 
 ## Supported versions
 
-There's a role for each supported major version, currently:
+There's a role for each supported version, currently:
 
 - mysql57: Percona 5.7.x (End-of-life)
 - percona80: Percona 8.0.x (*LTS* release)
+- percona83: Percona 8.3.x (End-of-life)
 
-Available soon:
-- percona84: Percona 8.4.x (*LTS* release)
+We recommend the use of `percona80`, as this is the only role version that receives
+security updates. All other versions are only included to allow the upgrade of
+existing machines to this platform version.
 
 ## Configuration
 
