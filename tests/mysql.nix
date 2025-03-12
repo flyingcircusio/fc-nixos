@@ -75,8 +75,9 @@ import ./make-test-python.nix (
 
         master.sleep(5)
 
-        with subtest("can login with root password"):
-            master.succeed("mysql mysql -u root -p$(< /etc/local/mysql/mysql.passwd) -e 'select 1'")
+        with subtest("can connect as root"):
+            master.succeed("sudo -u mysql mysql -e 'select 1'")
+            master.succeed("mysql -e 'select 1'")
 
         with subtest("mysql only opens expected ports"):
             # check for expected ports
@@ -108,17 +109,6 @@ import ./make-test-python.nix (
         with subtest("status check should be red after shutting down mysql"):
             master.succeed('systemctl stop mysql')
             master.fail("""${mysqlCheck}""")
-
-        with subtest("secret files should have correct permissions"):
-            master.succeed("stat /etc/local/mysql/mysql.passwd -c %a:%U:%G | grep '660:root:service'")
-            master.succeed("stat /root/.my.cnf -c %a:%U:%G | grep '440:root:root'")
-            master.succeed("stat /run/mysqld/init_set_root_password.sql -c %a:%U:%G | grep '440:mysql:root'")
-
-        with subtest("root should be able to connect after changing the password"):
-            master.succeed("echo tt > /etc/local/mysql/mysql.passwd")
-            master.succeed("systemctl restart mysql")
-            master.wait_until_succeeds("mysql mysql -u root -ptt -e 'select 1'")
-
         with subtest("xtrabackup works"): # sensuclient has service group
             master.succeed("sudo -u sensuclient sudo xtrabackup --backup -S /run/mysqld/mysqld.sock")
             master.succeed("grep uuid /tmp/xtrabackup_backupfiles/xtrabackup_info")

@@ -545,12 +545,7 @@ in
               CREATE DATABASE IF NOT EXISTS slurm_acct_db;
               GRANT ALL ON slurm_acct_db.* TO slurm@localhost;
             '';
-            mysqlCmd =
-              sql:
-              "${config.services.percona.package}/bin/mysql"
-              + " --defaults-extra-file=/root/.my.cnf"
-              + " -v"
-              + " -e '${sql}'";
+            mysqlCmd = sql: "${config.services.percona.package}/bin/mysql" + " -v" + " -e '${sql}'";
           in
           "${mysqlCmd ensureUserAndDatabase}";
       };

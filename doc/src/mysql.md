@@ -25,12 +25,7 @@ existing machines to this platform version.
 
 MySQL works out-of-the box without configuration.
 
-You can change the password for the mysql *root* user in {file}`/etc/local/mysql/mysql.passwd`.
-The MySQL service must be restarted to pick up the new password:
-
-```
-sudo systemctl restart mysql
-```
+The root user is authenticated by socket auth with the `mysql` and `root` system users.
 
 Custom config files in {file}`/etc/local/mysql` are included in the
 main mysql configuration file on the next system build.
@@ -44,9 +39,6 @@ to activate the new configuration.
 
 ## Interaction
 
-You can find the password for the MySQL *root* user in {file}`/etc/local/mysql.passwd`.
-Service users can read the password file.
-
 Service users can use {command}`sudo -iu mysql` to access the
 MySQL *root* account to perform administrative commands
 and log files in {file}`/var/log/mysql`.
@@ -56,7 +48,7 @@ To connect to the local MySQL server, run {command}`mysql` as *mysql* user:
 sudo -u mysql mysql
 ```
 
-The MySQL server can be accessed from other machines in the same project on the
+The MySQL server can be accessed from other machines in the same resource group on the
 default port 3306.
 
 ## Slow Log
