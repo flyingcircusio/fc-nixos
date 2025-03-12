@@ -165,9 +165,9 @@
     "version": "1.11.91"
   },
   "erlang": {
-    "name": "erlang-25.3.2.16",
+    "name": "erlang-25.3.2.18",
     "pname": "erlang",
-    "version": "25.3.2.16"
+    "version": "25.3.2.18"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.81",
+    "name": "linux-6.6.82",
     "pname": "linux",
-    "version": "6.6.81"
+    "version": "6.6.82"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.81",
+    "name": "linux-6.6.82",
     "pname": "linux",
-    "version": "6.6.81"
+    "version": "6.6.82"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
