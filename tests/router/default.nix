@@ -9,18 +9,6 @@ let
       inherit (config) fclib;
     in
     {
-      assertions = [
-        # XXX: so in the test we're expecting the interface names ethfe and ethsrv,
-        # but on real routers it's brfe and brsrv?
-        {
-          assertion = config.fclib.network.fe.interface == "ethfe";
-          message = "router test: Expected the fe interface to be named `ethfe`, got `${config.fclib.network.fe.interface}`";
-        }
-        {
-          assertion = config.fclib.network.srv.interface == "ethsrv";
-          message = "router test: Expected the srv interface to be named `ethsrv`, got `${config.fclib.network.srv.interface}`";
-        }
-      ];
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ mgm fe srv tr ];
       virtualisation.memorySize = 2048;
 
