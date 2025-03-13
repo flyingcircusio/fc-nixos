@@ -10,7 +10,7 @@ let
 
   nixpkgs-21_05-src = (import ../versions.nix { pkgs = super; }).nixpkgs-21_05;
   fc-nixos-21_05-src = (import ../versions.nix { pkgs = super; }).fc-nixos-21_05;
-  fc-nixos-21_05 = import fc-nixos-21_05-src {inherit (self) config; nixpkgs = nixpkgs-21_05-src; };
+  fc-nixos-21_05 = builtins.trace "using fc-nixos-21:05" (import fc-nixos-21_05-src {inherit (self) config; nixpkgs = nixpkgs-21_05-src; });
 
   inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
   inherit (builtins) hasAttr storePath;
@@ -133,9 +133,9 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
-  consul = fc-nixos-21_05.consul.overrideAttrs (old:
+  consul = builtins.trace "using 21_05 consul" (fc-nixos-21_05.consul.overrideAttrs (old:
     { meta.mainProgram = "consul"; }
-  );
+  ));
 
   docsplit = super.callPackage ./docsplit { };
 
@@ -479,8 +479,8 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
     ];
   });
 
-  python38 = lib.dontRecurseIntoAttrs fc-nixos-21_05.python38;
-  python38Packages = lib.dontRecurseIntoAttrs fc-nixos-21_05.python38Packages;
+  python38 = builtins.trace "using 21_05 python38" (lib.dontRecurseIntoAttrs fc-nixos-21_05.python38);
+  python38Packages = builtins.trace "using 21_05 python38Packages" (lib.dontRecurseIntoAttrs fc-nixos-21_05.python38Packages);
   py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
 
   qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
