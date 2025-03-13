@@ -271,6 +271,7 @@ class Manager:
                     # Download the base image. We rename the file afterwards
                     # to ensure that the image is fully there.
                     r = requests.get(image_url)
+                    r.raise_for_status()
                     with open(vm_base_image_path_tmp, "wb") as f:
                         f.write(r.content)
                     os.rename(vm_base_image_path_tmp, vm_base_image_path)
