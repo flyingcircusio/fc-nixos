@@ -63,22 +63,34 @@ let
     enable = vmCfg.enable;
     wantedBy = [ "machines.target" ];
 
-    serviceConfig.ExecStart = (lib.escapeShellArgs
-      [
-        "${pkgs.qemu_kvm}/bin/qemu-system-x86_64"
-        "-name" name
-        "-enable-kvm"
-        "-cpu" "host"
-        "-smp" vmCfg.cpu
-        "-m" vmCfg.memory
-        "-nodefaults"
-        "-no-user-config"
-        "-nographic"
-        "-drive" "id=root,format=qcow2,file=/var/lib/devhost/vms/${name}/rootfs.qcow2,if=virtio,aio=threads"
-        "-netdev" "tap,id=ethsrv-${name},ifname=vm-srv-${name},script=${ifaceUpScript},downscript=${ifaceDownScript}"
-        "-device" "virtio-net,netdev=ethsrv-${name},mac=${vmCfg.srvMac}"
-        "-serial" "file:/var/lib/devhost/vms/${name}/log"
-      ]);
+    serviceConfig = {
+      ExecStart = (lib.escapeShellArgs
+        [
+          "${pkgs.qemu_kvm}/bin/qemu-system-x86_64"
+          "-name" name
+          "-enable-kvm"
+          "-cpu" "host"
+          "-smp" vmCfg.cpu
+          "-m" vmCfg.memory
+          "-nodefaults"
+          "-no-user-config"
+          "-nographic"
+          "-drive" "id=root,format=qcow2,file=/var/lib/devhost/vms/${name}/rootfs.qcow2,if=virtio,aio=threads"
+          "-netdev" "tap,id=ethsrv-${name},ifname=vm-srv-${name},script=${ifaceUpScript},downscript=${ifaceDownScript}"
+          "-device" "virtio-net,netdev=ethsrv-${name},mac=${vmCfg.srvMac}"
+          "-serial" "file:/var/lib/devhost/vms/${name}/log"
+          "-qmp" "unix:/var/lib/devhost/vms/${name}/qmp.sock,server,nowait"
+        ]);
+      ExecStop = pkgs.writeShellScript "shutdown-devhost-vm" ''
+        (
+          ${pkgs.coreutils}/bin/echo '{"execute": "qmp_capabilities" } { "execute": "system_powerdown" }'
+          # wait for shutdown
+          cat
+        ) | \
+        ${pkgs.socat}/bin/socat STDIO UNIX:/var/lib/devhost/vms/${name}/qmp.sock,shut-none
+      '';
+      TimeoutStopSec = 180;
+     };
   });
 
   # We unfortunately cannot use writePython3Bin as that only supports
