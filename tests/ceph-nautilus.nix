@@ -15,6 +15,7 @@ let
       virtualisation.emptyDiskImages = diskSizes;
       imports = [ ../nixos ../nixos/roles ];
 
+      flyingcircus.infrastructure.fullDiskEncryption.enable = true;
       flyingcircus.static.mtus.sto = 1500;
       flyingcircus.static.mtus.stb = 1500;
 

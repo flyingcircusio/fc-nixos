@@ -34,25 +34,28 @@ in
 {
 
   options = {
-    flyingcircus.infrastructure.fullDiskEncryption.fsOptions = lib.mkOption {
-      type = lib.types.attrs;
-      readOnly = true;
-      internal = true;
-      default =  {
-        device = "/dev/vgkeys/keys";
-        fsType = "xfs";
-        options = [ "nofail" "auto" "noexec" "nosuid" "nodev" "nouser"];
-        neededForBoot = false;    # change this when introducing rootfs encryption
+    flyingcircus.infrastructure.fullDiskEncryption = {
+      enable = lib.mkOption {
+        default = config.flyingcircus.infrastructureModule == "flyingcircus-physical";
+        defaultText = lib.literalExpression ''config.flyingcircus.infrastructureModule == "flyingcircus-physical"'';
+        description = "Whether to enable full disk encryption compatability.";
+        type = lib.types.bool;
+      };
+      fsOptions = lib.mkOption {
+        type = lib.types.attrs;
+        readOnly = true;
+        internal = true;
+        default =  {
+          device = "/dev/vgkeys/keys";
+          fsType = "xfs";
+          options = [ "nofail" "auto" "noexec" "nosuid" "nodev" "nouser"];
+          neededForBoot = false;    # change this when introducing rootfs encryption
+        };
       };
     };
   };
 
-  config = lib.mkIf (config.flyingcircus.infrastructureModule == "flyingcircus-physical" ||
-    # TODO: When merging nixos-hardware with our regular VM branch, we need to refine this
-    # to avoid that all regular VM tests (e.g. PHP) get fc-luks cruft added.
-    config.flyingcircus.infrastructureModule == "testing"
-    )
-  {
+  config = lib.mkIf (config.flyingcircus.infrastructure.fullDiskEncryption.enable) {
     environment.systemPackages = with pkgs; [
       cryptsetup
     ];

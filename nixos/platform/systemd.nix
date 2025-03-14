@@ -27,10 +27,12 @@ in
       "admins"
     ];
 
-    services.journald.extraConfig = ''
+    # Gets overwritten by nixpkgs test tooling
+    services.journald.extraConfig = fclib.mkPlatform ''
       SystemMaxUse=2G
       MaxLevelConsole=notice
       ForwardToWall=no
+      ForwardToConsole=no
     '';
 
     services.journald.forwardToSyslog = lib.mkOverride 90 false;

@@ -263,7 +263,6 @@ in {
         "boot.panic_on_fail"
 
         # Output management
-        "systemd.journald.forward_to_console=no"
         "systemd.log_target=kmsg"
       ];
 

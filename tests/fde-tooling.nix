@@ -19,6 +19,7 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
       virtualisation.fileSystems."/mnt/keys" = config.flyingcircus.infrastructure.fullDiskEncryption.fsOptions;
       virtualisation.fileSystems."/srv/backy" = config.flyingcircus.roles.backyserver.fsOptions;
 
+      flyingcircus.infrastructure.fullDiskEncryption.enable = true;
       flyingcircus.roles.backyserver.enable = true;
       flyingcircus.services.ceph.client.enable = lib.mkForce false;
       flyingcircus.services.consul.enable = lib.mkForce false;

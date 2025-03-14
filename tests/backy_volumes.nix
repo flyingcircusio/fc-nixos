@@ -18,6 +18,7 @@ let
       (testlib.fcConfig { net.fe = false; })
     ];
 
+    flyingcircus.infrastructure.fullDiskEncryption.enable = true;
     flyingcircus.roles.backyserver = {
       enable = true;
     } // backyserverRoleConfig;

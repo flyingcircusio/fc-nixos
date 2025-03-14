@@ -290,7 +290,7 @@ in {
 
           locations = {
             "= /xmpp-websocket" = {
-              proxyPass = http://127.0.0.1:5280/xmpp-websocket;
+              proxyPass = "http://127.0.0.1:5280/xmpp-websocket";
               extraConfig = ''
                 proxy_buffer_size 128k;
                 proxy_buffers 4 256k;
