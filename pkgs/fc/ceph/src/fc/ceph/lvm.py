@@ -144,6 +144,9 @@ class DiskWithSinglePartition(GenericBlockDevice):
         obj = cls(disk)
         run.sgdisk("-Z", disk)
         run.sgdisk("-a", "8192", "-n", "1:0:0", disk)
+        # Some devices (like loopback) do not automatically cause the
+        # kernel to see the new partitions.
+        run.partprobe(disk)
         return obj
 
     def ensure_partition_type(self, hexcode: str):

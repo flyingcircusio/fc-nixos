@@ -6,19 +6,17 @@ let
   cfg = config.flyingcircus.services.ceph;
   fclib = config.fclib;
   static = config.flyingcircus.static.ceph;
-  public_network = head fclib.network.sto.v4.networks;
+  network = cfg.client.network;
+  public_network = head network.v4.networks;
   location = config.flyingcircus.enc.parameters.location;
   resource_group = config.flyingcircus.enc.parameters.resource_group;
-  fs_id = static.fsids.${location}.${resource_group};
-  mons = lib.concatMapStringsSep ","
-    (mon: "${head (lib.splitString "." mon.address)}.sto.${location}.ipv4.gocept.net")
-    (fclib.findServices "ceph_mon-mon");
+  mons = (lib.concatStringsSep "," cfg.client.mons);
   inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
   cephPkgs = fclib.ceph.mkPkgs cfg.client.cephRelease;
 
   defaultGlobalSettings = {
-    fsid = fs_id;
+    fsid = cfg.client.fsId;
 
     publicNetwork = public_network;
 
@@ -152,6 +150,32 @@ in
             Can override existing default setting values. Configuration keys like `mon osd full ratio` can alternatively be written in camelCase as `monOsdFullRatio`.
             '';
         };
+
+        mons = lib.mkOption {
+          type = with lib.types; listOf str;
+          default = (map
+              (mon: "${head (lib.splitString "." mon.address)}.${cfg.network.vlan}.${location}.ipv4.gocept.net")
+              (fclib.findServices "ceph_mon-mon"));
+          description = ''
+              List of hostnames that are mons in this cluster.
+            '';
+        };
+
+        fsId = lib.mkOption {
+          type = lib.types.str;
+          default = static.fsids.${location}.${resource_group};
+          description = ''
+            The Ceph fsid for this cluster.
+            '';
+        };
+
+        network = lib.mkOption {
+          type = with lib.types; attrs; # an attrset from fclib.network.<xy>
+          default = fclib.network.sto;
+          description = ''
+            The Ceph client network.
+            '';
+        };
       };
     };
   };
@@ -166,6 +190,7 @@ in
       }
     ];
 
+    flyingcircus.services.ceph.fc-ceph.enable = true;
 
     environment.systemPackages = [ cfg.client.package ];
 
@@ -182,12 +207,12 @@ in
     # the firewall and we want to avoid spamming the connection tracking table.
     networking.firewall = {
 
-      trustedInterfaces = [ fclib.network.sto.interface ];
+      trustedInterfaces = [ network.interface ];
 
       extraCommands = lib.mkOrder 800 ''
         # Disable STO connection tracking to reduce kernel connection table overhead
-        ip46tables  -t raw -A fc-raw-prerouting -i ${fclib.network.sto.interface} -j CT --notrack
-        ip46tables  -t raw -A fc-raw-output -o ${fclib.network.sto.interface} -j CT --notrack
+        ip46tables  -t raw -A fc-raw-prerouting -i ${network.interface} -j CT --notrack
+        ip46tables  -t raw -A fc-raw-output -o ${network.interface} -j CT --notrack
       '';
 
     };

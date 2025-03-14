@@ -6,19 +6,24 @@ let
   fclib = config.fclib;
   enc = config.flyingcircus.enc;
   secrets = enc.parameters.secrets;
-  public_address = head fclib.network.fe.v6.addressesQuoted;
   public_fqdn = "${enc.name}.fe.${enc.parameters.location}.fcio.net";
   server_secret_script = fclib.python3BinFromFile ./update-server-secrets.py;
+  cfg = config.flyingcircus.roles.consul_server;
 in
 {
   options = {
     flyingcircus.roles.consul_server = {
       enable = lib.mkEnableOption "Enable Consul server role";
       supportsContainers = fclib.mkDisableDevhostSupport;
+
+      publicAddress = lib.mkOption {
+        type = lib.types.str;
+        default = head fclib.network.fe.v6.addressesQuoted;
+      };
     };
   };
 
-  config = lib.mkIf config.flyingcircus.roles.consul_server.enable {
+  config = lib.mkIf cfg.enable {
 
     flyingcircus.services.consul.enable = true;
 
@@ -52,10 +57,10 @@ in
 
     services.nginx = {
       virtualHosts."${public_fqdn}" = {
-        listen = [ { addr = public_address; port = 8500; ssl = true;}
+        listen = [ { addr = cfg.publicAddress; port = 8500; ssl = true;}
                    # allow acme and the certificate checks to work
-                   { addr = public_address; port = 80; ssl = false;}
-                   { addr = public_address; port = 443; ssl = true;} ];
+                   { addr = cfg.publicAddress; port = 80; ssl = false;}
+                   { addr = cfg.publicAddress; port = 443; ssl = true;} ];
         enableACME = true;
         addSSL = true;
         locations."/" = {

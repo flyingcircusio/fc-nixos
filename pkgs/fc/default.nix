@@ -49,9 +49,10 @@ rec {
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "8e211f3602cdc3fe4ed33514e277eb27929cce12";
-      hash = "sha256-bnd4RVaB1J0dlz6x1Vdyr29xsqL+QhVCXd2McH+voPk=";
+      rev = "50a6a814283ba6173dfb4f4c98d5f17d85ccfd7d";
+      hash = "sha256-QWfhsO4DLHwKCilL7XvKAOeS9yGR6miatEF0HcLmfN4=";
     };
+    fc-ceph = ceph;
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;
     python3Packages = pkgs.python38Packages;
@@ -69,6 +70,7 @@ rec {
   #   src = ../../../../../fc.qemu/.;
   #   # for nix-shell . -A fc.qemu-dev-nautilus
   #   # src = ../../../fc.qemu/.;
+  #   fc-ceph = ceph;
   #   qemu_ceph = pkgs.qemu-ceph-nautilus;
   #   ceph_client = pkgs.ceph-nautilus.ceph-client;
   #   python3Packages = pkgs.python38Packages;

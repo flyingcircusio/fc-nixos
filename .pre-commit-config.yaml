@@ -12,14 +12,14 @@ repos:
   - id: check-toml
   - id: detect-private-key
   repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v3.2.0
+  rev: v5.0.0
 - hooks:
   - args: ["--profile", "black", "--filter-files"]
     id: isort
     name: isort (python)
   repo: https://github.com/pycqa/isort
-  rev: 5.13.1
+  rev: 6.0.1
 - hooks:
   - id: black
   repo: https://github.com/psf/black
-  rev: 24.4.2
+  rev: 25.1.0

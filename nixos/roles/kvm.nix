@@ -4,16 +4,23 @@ with builtins;
 
 let
   fclib = config.fclib;
-  role = config.flyingcircus.roles.kvm_host;
+  cfg = config.flyingcircus.roles.kvm_host;
   enc = config.flyingcircus.enc;
 
-  cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
+  cephPkgs = fclib.ceph.mkPkgs cfg.cephRelease;
 
 in
 {
   options = {
     flyingcircus.roles.kvm_host = {
       enable = lib.mkEnableOption "Qemu/KVM server";
+      enableS3Proxy = lib.mkOption {
+        default = true;
+        example = false;
+        description = "Whether to enable the local S3 proxy.";
+        type = lib.types.bool;
+      };
+
       supportsContainers = fclib.mkDisableDevhostSupport;
       mkfsXfsFlags = lib.mkOption {
         type = with lib.types; nullOr str;
@@ -40,10 +47,17 @@ in
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used by qemu.";
       };
+
+      network = lib.mkOption {
+        type = with lib.types; attrs; # an attrset from fclib.network.<xy>
+        default = fclib.network.sto;
+        description = "Network to use for migration";
+      };
+
     };
   };
 
-  config = lib.mkIf role.enable {
+  config = lib.mkIf cfg.enable {
 
     # Do not enable the watchdog for KVM hosts globally as we dealt with
     # way too many times.
@@ -51,7 +65,7 @@ in
 
     flyingcircus.services.ceph.client = {
       enable = true;
-      cephRelease = role.cephRelease;
+      cephRelease = cfg.cephRelease;
     };
 
     # toolpath for agent (fc-create-vm)
@@ -66,24 +80,24 @@ in
     };
 
     environment.systemPackages = with pkgs; [
-      role.package
+      cfg.package
       cephPkgs.qemu
       bridge-utils
     ];
 
     # Qemu migration coordination uses random ports at the moment, so we
     # trust this completely at the moment.
-    networking.firewall.trustedInterfaces = [ fclib.network.mgm.interface ];
+    networking.firewall.trustedInterfaces = [ cfg.network.interface ];
 
     environment.shellAliases = {
       # alias for observing both running VMs as well as the migration logs at once
-      fc-vm-migration-watch = "watch '${role.package}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
+      fc-vm-migration-watch = "watch '${cfg.package}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
     };
 
     environment.etc."qemu/fc-qemu.conf".text = let
       hostname = config.networking.hostName;
-      migration_address = fclib.fqdn { vlan = "sto"; domain = "gocept.net"; };
-      migration_ctl_address = fclib.fqdn { vlan = "mgm"; domain = "gocept.net"; };
+      migration_address = fclib.fqdn { vlan = cfg.network.vlan; domain = "gocept.net"; };
+      migration_ctl_address = fclib.fqdn { vlan = cfg.network.vlan; domain = "gocept.net"; };
     in ''
         [qemu]
         accelerator = kvm
@@ -96,7 +110,7 @@ in
         timeout-graceful = 120
         migration-address = tcp:${migration_address}:{id}
         migration-ctl-address = ${migration_ctl_address}:0
-        migration-bandwidth = ${toString role.migrationBandwidth}
+        migration-bandwidth = ${toString cfg.migrationBandwidth}
         max-downtime = 4.0
         ; generation 2 = #23965 upgrade to 2.7 due to security issues
         binary-generation = 2
@@ -116,8 +130,8 @@ in
         cluster = ceph
         lock_host = ${hostname}
         create-vm = ${pkgs.fc.agent}/bin/fc-create-vm -I {name}
-     '' + lib.optionalString (role.mkfsXfsFlags != null) ''
-        mkfs-xfs = ${role.mkfsXfsFlags}
+     '' + lib.optionalString (cfg.mkfsXfsFlags != null) ''
+        mkfs-xfs = ${cfg.mkfsXfsFlags}
      '';
 
     # This needs to stay as is because the path is kept alive during live
@@ -157,13 +171,13 @@ in
     flyingcircus.services.consul.enable = true;
     flyingcircus.services.consul.watches = [
       { handler_type = "script";
-        args = ["/run/wrappers/bin/sudo" "${role.package}/bin/fc-qemu" "-v" "handle-consul-event"];
+        args = ["/run/wrappers/bin/sudo" "${cfg.package}/bin/fc-qemu" "-v" "handle-consul-event"];
         type = "keyprefix";
         prefix = "node/";
       }
 
       { handler_type = "script";
-        args = ["/run/wrappers/bin/sudo" "${role.package}/bin/fc-qemu" "-v" "handle-consul-event"];
+        args = ["/run/wrappers/bin/sudo" "${cfg.package}/bin/fc-qemu" "-v" "handle-consul-event"];
         type = "keyprefix";
         prefix = "snapshot/";
       }
@@ -172,13 +186,13 @@ in
     flyingcircus.passwordlessSudoRules = [
       {
         commands = [
-          "${role.package}/bin/fc-qemu -v handle-consul-event"
+          "${cfg.package}/bin/fc-qemu -v handle-consul-event"
           "/home/ctheune/fc.qemu/result/bin/fc-qemu -v handle-consul-event"
            ];
         users = [ "consul" ];
       }
 
-      { commands = [ "${role.package}/bin/fc-qemu check" ];
+      { commands = [ "${cfg.package}/bin/fc-qemu check" ];
         groups = [ "sensuclient" ];
       }
     ];
@@ -236,7 +250,7 @@ in
       wantedBy = [ "multi-user.target" ];
 
       script = ''
-        ${role.package}/bin/fc-qemu report-supported-cpu-models
+        ${cfg.package}/bin/fc-qemu report-supported-cpu-models
       '';
 
       serviceConfig = {
@@ -275,7 +289,7 @@ in
       checks = {
         qemu = {
           notification = "Qemu health check";
-          command = "sudo ${role.package}/bin/fc-qemu check";
+          command = "sudo ${cfg.package}/bin/fc-qemu check";
         };
       };
       # each qemu process connects directly to multiple OSD's in the
@@ -290,14 +304,14 @@ in
       maintenancePreparationSeconds = 1800;
       maintenanceRequestRunnableFor = 3600;
       maintenance.kvm = {
-        enter = "${role.package}/bin/fc-qemu maintenance enter";
-        leave = "${role.package}/bin/fc-qemu maintenance leave";
+        enter = "${cfg.package}/bin/fc-qemu maintenance enter";
+        leave = "${cfg.package}/bin/fc-qemu maintenance leave";
       };
     };
 
     systemd.services.fc-qemu-scrub = {
       description = "Scrub Qemu/KVM VM inventory.";
-      path = [ pkgs.fc.agent role.package ];
+      path = [ pkgs.fc.agent cfg.package ];
       serviceConfig = {
         Type = "oneshot";
         TimeoutStartSec = 600; # PL-132323
@@ -327,7 +341,7 @@ in
 
     # Run a proxy to give VMs running on this host fast access to radosgw.
 
-    flyingcircus.services.haproxy = {
+    flyingcircus.services.haproxy = lib.mkIf cfg.enableS3Proxy {
       enable = true;
       enableStructuredConfig = true;
 

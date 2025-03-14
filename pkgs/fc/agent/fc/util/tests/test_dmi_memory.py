@@ -1,4 +1,4 @@
-""" Unit-test for dmidecode parser"""
+"""Unit-test for dmidecode parser"""
 
 from unittest import mock
 
