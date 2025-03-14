@@ -159,7 +159,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (lib.mkMerge [
         notification = "Network interfaces are healthy";
         command = "sudo ${fc.sensuplugins}/bin/check_interfaces " + (
            lib.concatMapStringsSep " "
-             (link: "-i ${link.link},${toString (trace link link.minimumPortSpeed)}:")
+             (link: "-i ${link.link},${toString link.minimumPortSpeed}:")
              cfg.networking.monitorLinks
            );
         interval = 60;
