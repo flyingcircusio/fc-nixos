@@ -1,0 +1,18 @@
+<!--
+
+A new changelog entry.
+
+Delete placeholder items that do not apply. Empty sections will be removed
+automatically during release.
+
+Leave the XX.XX as is: this is a placeholder and will be automatically filled
+correctly during the release and helps when backporting over multiple platform
+branches.
+
+-->
+
+
+### NixOS XX.XX platform
+
+- rabbitmq: provide metrics from native prometheus exporter as well (PL-133391)
+  - the existing metrics remain in place for now, this is in preparation for a later deprecation of `management_metrics_collection` in rabbitmq
