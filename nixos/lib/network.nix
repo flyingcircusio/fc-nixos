@@ -260,6 +260,8 @@ rec {
 
         inherit vlan mtu priority bridged;
 
+        minimumPortSpeed = config.flyingcircus.static.minimumPortSpeeds.${vlan} or 1000; # Mbit/s
+
         vlanId = config.flyingcircus.static.vlanIds.${vlan};
 
         # Our nomenclature:
@@ -465,6 +467,7 @@ rec {
           # Unify with the fclib.network. structure
           mac = l.mac;
           mtu = network.ul.mtu;
+          minimumPortSpeed = network.ul.minimumPortSpeed;
           interface = underlayLoopbackLinkName;
           link = (makeName l);
           externalLabel = l.external_label;
