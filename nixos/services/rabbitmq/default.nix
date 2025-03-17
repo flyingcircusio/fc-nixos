@@ -142,7 +142,7 @@ in {
   config = mkIf cfg.enable {
 
     # This is needed so we will have 'rabbitmqctl' in our PATH
-    environment.systemPackages = [ cfg.package ];
+    environment.systemPackages = [ cfg.package pkgs.rabbitmqadmin-ng ];
     environment.etc."local/rabbitmq/README.txt".text = ''
       RabbitMQ (${cfg.package.version}) is running on this machine.
 
