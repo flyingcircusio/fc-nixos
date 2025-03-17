@@ -44,41 +44,58 @@ in {
           }];
         };
       };
-
-    };
-  };
-
-  config = mkIf cfg.enable {
-
-    environment.systemPackages = [
-      telegrafShowConfig
-    ];
-
-    environment.etc."local/telegraf/README.txt".text = ''
-      There is a telegraf daemon running on this machine to gather statistics.
-      To gather additional or custom statistics add a proper configuration file
-      here. `*.conf` will be loaded.
-
-      See https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
-      for details on how to configure telegraf.
-    '';
-
-    systemd.tmpfiles.rules = [
-      "d /etc/local/telegraf 2775 root service"
-      "d /run/telegraf 0755 telegraf"
-    ];
-
-    systemd.services.telegraf = {
-      serviceConfig = {
-        ExecStart = mkOverride 90 (concatStringsSep " " (lib.flatten [
-          ["${cfg.package}/bin/telegraf -config \"${configFile}\""]
-          (if builtins.pathExists /etc/local/telegraf then ["-config-directory ${/etc/local/telegraf}"] else [])
-        ]));
-        Nice = -10;
-      # merge in our platform configs
-      services.telegraf.extraConfig.inputs = config.flyingcircus.services.telegraf.inputs;
+      prometheus-metric_version = mkOption {
+        default = 1;
+        type = types.int;
+        description = ''
+          `metric_version` used by prometheus input and output plugin. Needs to
+          be the same version for both plugins.
+          See https://github.com/influxdata/telegraf/blob/master/plugins/inputs/prometheus/README.md#metric-format-configuration
+        '';
       };
     };
-
   };
+
+  config = mkMerge [
+    (mkIf cfg.enable {
+
+      # merge in our platform configs
+      services.telegraf.extraConfig.inputs = config.flyingcircus.services.telegraf.inputs;
+
+      environment.systemPackages = [
+        telegrafShowConfig
+      ];
+
+      environment.etc."local/telegraf/README.txt".text = ''
+        There is a telegraf daemon running on this machine to gather statistics.
+        To gather additional or custom statistics add a proper configuration file
+        here. `*.conf` will be loaded.
+
+        See https://github.com/influxdata/telegraf/blob/master/docs/CONFIGURATION.md
+        for details on how to configure telegraf.
+      '';
+
+      systemd.tmpfiles.rules = [
+        "d /etc/local/telegraf 2775 root service"
+        "d /run/telegraf 0755 telegraf"
+      ];
+
+      systemd.services.telegraf = {
+        serviceConfig = {
+          ExecStart = mkOverride 90 (concatStringsSep " " (lib.flatten [
+            ["${cfg.package}/bin/telegraf -config \"${configFile}\""]
+            (if builtins.pathExists /etc/local/telegraf then ["-config-directory ${/etc/local/telegraf}"] else [])
+          ]));
+          Nice = -10;
+        };
+      };
+
+    })
+    (mkIf (config.flyingcircus.services.telegraf.inputs ? prometheus) {
+      # only set when that plugin is configured to be used, to not accidentally enable it without use
+      services.telegraf.extraConfig.inputs.prometheus = builtins.map (attr: attr // {
+        metric_version = config.flyingcircus.services.telegraf.prometheus-metric_version;
+        } ) config.flyingcircus.services.telegraf.inputs.prometheus;
+    })
+  ];
 }
