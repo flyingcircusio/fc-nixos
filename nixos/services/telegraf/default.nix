@@ -10,10 +10,6 @@ let
   cfg = config.services.telegraf;
   fclib = config.fclib;
 
-  unifiedConfig = lib.recursiveUpdate
-    cfg.extraConfig
-    { inputs = config.flyingcircus.services.telegraf.inputs; };
-
   telegrafShowConfig = pkgs.writeScriptBin "telegraf-show-config" ''
     cat $(systemctl cat telegraf | grep "ExecStart=" | cut -d" " -f3 | tr -d '"')
     echo ""
@@ -22,16 +18,8 @@ let
     cat ${if builtins.pathExists /etc/local/telegraf then "${/etc/local/telegraf}/*.conf" else ""}
   '';
 
-  # Partially copied from nixos/modules/services/monitoring/telegraf.nix.
-  configFile = pkgs.runCommand "config.toml" {
-    buildInputs = [ pkgs.remarshal ];
-  } ''
-    remarshal -if json -of toml \
-      < ${pkgs.writeText "config.json" (builtins.toJSON unifiedConfig)} \
-      > $out
-  '';
-
-
+    settingsFormat = pkgs.formats.toml { };
+    configFile = settingsFormat.generate "config.toml" cfg.extraConfig;
 
 in {
 
@@ -87,6 +75,8 @@ in {
           (if builtins.pathExists /etc/local/telegraf then ["-config-directory ${/etc/local/telegraf}"] else [])
         ]));
         Nice = -10;
+      # merge in our platform configs
+      services.telegraf.extraConfig.inputs = config.flyingcircus.services.telegraf.inputs;
       };
     };
 
