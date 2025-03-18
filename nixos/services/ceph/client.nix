@@ -154,7 +154,7 @@ in
         mons = lib.mkOption {
           type = with lib.types; listOf str;
           default = (map
-              (mon: "${head (lib.splitString "." mon.address)}.${cfg.network.vlan}.${location}.ipv4.gocept.net")
+              (mon: "${head (lib.splitString "." mon.address)}.${cfg.client.network.vlan}.${location}.ipv4.gocept.net")
               (fclib.findServices "ceph_mon-mon"));
           description = ''
               List of hostnames that are mons in this cluster.

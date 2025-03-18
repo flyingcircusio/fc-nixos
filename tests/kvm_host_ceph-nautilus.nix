@@ -113,8 +113,6 @@ let
 
             pytest -vv --cov-config=/etc/coveragerc --cov-append -c ${testPackage.src}/pytest.ini "$@" | tee /dev/console
 
-            # We're not looking at the exit code of the above pipe as the
-            # tee to /dev/kmsg sometimes causes a non-zero exit code ...
             if ! ${pkgs.gnugrep}/bin/grep -q 'errors="0" failures="0"' /tmp/fc.qemu-report.xml ; then
               # I've seen weird situations where pytest exited with an error but we exited
               # with a zero return code. This is a safety-belt. If no report file is there
