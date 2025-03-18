@@ -97,9 +97,7 @@ in {
   opensearch_dashboards = callTest ./opensearch_dashboards.nix {};
   openvpn = callTest ./openvpn.nix {};
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
-  # XXX
-  # percona84 is going to be introduced later throughout the release cycle
-  # percona84 = callTest ./mysql.nix { rolename = "percona84"; };
+  percona83 = callTest ./mysql.nix { rolename = "percona83"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
   postgresql13 = callTest ./postgresql { version = "13"; };
   postgresql14 = callTest ./postgresql { version = "14"; };
