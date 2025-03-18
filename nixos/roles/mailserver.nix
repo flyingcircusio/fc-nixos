@@ -206,6 +206,15 @@ in
         default = 5;
       };
 
+      ipDNSBLs = mkOption {
+        type = with types; listOf str;
+        description = ''
+          IP-oriented DNS-based lists (block lists) to use. Applied in the specified order.
+        '';
+        default = [ "bl.spamcop.net" ];
+        example = [ "bl.spamcop.net" "b.barracudacentral.org" ];
+      };
+
       passwdFile = mkOption {
         type = types.str;
         description = "Virtual mail user passwd file (shared Postfix/Dovecot)";
