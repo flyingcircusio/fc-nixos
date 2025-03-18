@@ -14,6 +14,11 @@ let
 
   cephPkgs = fclib.ceph.mkPkgs cfg.cephRelease;
 
+  # virtual ipv4 gateway address selected by 254-169=85, with each
+  # octet +85 mod 256 the preceding octet
+  virtualGatewayV4 = "169.254.83.168";
+  virtualGatewayV6 = "fe80::1";
+
 in
 {
   options = {
@@ -138,6 +143,12 @@ in
         rbd.hdd = 250
         rbd.ssd = 10000
 
+        [network]
+        tap-ifup-bridge = /etc/kvm/kvm-ifup
+        tap-ifdown-bridge = /etc/kvm/kvm-ifdown
+        tap-ifup-vrf = /etc/kvm/kvm-ifup-vrf
+        tap-ifdown-vrf = /etc/kvm/kvm-ifdown-vrf
+
         [consul]
         access-token = ${enc.parameters.secrets."consul/master_token"}
         event-threads = 10
@@ -182,6 +193,36 @@ in
 
         ${pkgs.bridge-utils}/bin/brctl delif $BRIDGE $INTERFACE
         ${pkgs.iproute2}/bin/ip link set $INTERFACE down
+      '';
+      mode = "0744";
+    };
+
+    environment.etc."kvm/kvm-ifup-vrf" = {
+      text = ''
+        #!${pkgs.stdenv.shell}
+        INTERFACE="$1"
+        VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+        VRF="vrf''${VLAN}"
+
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE master $VRF
+
+        # add addresses idempotently
+        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV4}/16 dev $INTERFACE
+        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV6}/64 dev $INTERFACE
+
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE up
+      '';
+      mode = "0744";
+    };
+
+    environment.etc."kvm/kvm-ifdown-vrf" = {
+      text = ''
+        #!${pkgs.stdenv.shell}
+        INTERFACE="$1"
+
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE down
+        ${pkgs.iproute2}/bin/ip address flush dev $INTERFACE
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE nomaster
       '';
       mode = "0744";
     };
