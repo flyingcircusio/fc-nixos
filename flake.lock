@@ -493,7 +493,7 @@
       },
       "original": {
         "owner": "flyingcircusio",
-        "ref": "master",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
