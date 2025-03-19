@@ -108,6 +108,10 @@ in
       fc-vm-migration-watch = "watch '${cfg.package}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
     };
 
+    # iproute2 configuration required by fc-qemu
+    environment.etc."iproute2/rt_protos.d/fc-qemu.conf".source =
+      "${cfg.package}/share/iproute2/rt_protos";
+
     environment.etc."qemu/fc-qemu.conf".text =
       let
         hostname = config.networking.hostName;
