@@ -158,6 +158,7 @@
 
             packages = with pkgs; [
               jq
+              nixfmt-rfc-style
             ] ++ (with self'.packages; [
               fcGetCurrentChannelUrl
               upNixPhps

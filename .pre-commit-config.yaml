@@ -23,3 +23,10 @@ repos:
   - id: black
   repo: https://github.com/psf/black
   rev: 25.1.0
+- hooks:
+  - entry: nixfmt
+    files: \.nix$
+    id: nixfmt
+    language: system
+    name: nixfmt
+  repo: local
