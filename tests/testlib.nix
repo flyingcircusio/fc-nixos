@@ -158,7 +158,7 @@ rec {
       firewall.allowPing = lib.mkForce true;
       firewall.checkReversePath = lib.mkForce false;
     };
-    boot.kernel.sysctl."net.ipv4.conf.all.ip_forward" = 1;
+    boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = lib.mkForce 1;
     boot.initrd.availableKernelModules = [ "dummy" ];
     networking.firewall.enable = false;
 

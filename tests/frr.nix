@@ -11,7 +11,7 @@ let
   makeHostMac = makePrivateMac "42";
   makeTapMac = makePrivateMac "23";
 
-  baseConfig = { lib, ... }: {
+  baseConfig = { lib, config, ... }: {
     imports = [ ../nixos ../nixos/roles ];
     services.telegraf.enable = false;
     networking = {
@@ -20,7 +20,7 @@ let
       firewall.checkReversePath = lib.mkForce false;
     };
 
-    boot.kernel.sysctl."net.ipv4.conf.all.ip_forward" = 1;
+    boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = lib.mkForce 1;
     boot.extraModprobeConfig = "options dummy numdummies=0";
     boot.initrd.availableKernelModules = [ "dummy" ];
 

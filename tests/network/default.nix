@@ -19,7 +19,7 @@ let
       ];
 
       environment.systemPackages = with pkgs; [ iptables curl ];
-      boot.kernel.sysctl."net.ipv6.conf.all.forwarding" = true;
+      boot.kernel.sysctl."net.ipv6.conf.all.forwarding" = mkForce true;
 
       flyingcircus.enc.parameters.interfaces = encInterfaces "1";
     };

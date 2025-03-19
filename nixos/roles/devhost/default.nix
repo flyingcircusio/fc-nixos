@@ -2,6 +2,7 @@
 
 let
   cfg = config.flyingcircus.roles.devhost;
+  fclib = config.fclib;
 in
 {
   imports = [
@@ -40,7 +41,7 @@ in
       flyingcircus.roles.webgateway.enable = true;
 
       boot.kernel.sysctl = {
-        "net.ipv4.ip_forward" = 1;
+        "net.ipv4.ip_forward" = fclib.mkOverridePlatformModule 1;
         # Increase inotify limits to avoid running out of them when
         # running many containers:
         # https://forum.proxmox.com/threads/failed-to-allocate-directory-watch-too-many-open-files.28700/
