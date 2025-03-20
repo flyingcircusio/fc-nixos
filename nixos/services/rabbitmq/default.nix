@@ -61,6 +61,17 @@ in {
         type = types.int;
       };
 
+      prometheusPort = mkOption {
+        default = 9125;
+        description = ''
+          Listening port for the RabbitMQ Prometheus exporter. Is exposed via
+          telegraf again, only change this value of the default port is used otherwise.
+          '';
+        type = types.port;
+        internal = true;
+        apply = builtins.toString;
+      };
+
       dataDir = mkOption {
         type = types.path;
         default = "/var/lib/rabbitmq";
@@ -176,10 +187,14 @@ in {
 
     flyingcircus.services.rabbitmq.configItems = {
       "listeners.tcp.1" = mkDefault "${cfg.listenAddress}:${toString cfg.port}";
+      "prometheus.tcp.ip" = fclib.mkPlatform (head fclib.network.srv.dualstack.addresses);
+      "prometheus.tcp.port" = cfg.prometheusPort;
+      # recommended by https://www.rabbitmq.com/docs/prometheus#prometheus-configuration
+      "collect_statistics_interval" = mkDefault "10000"; # 10s
     };
 
     flyingcircus.services.rabbitmq = {
-      plugins = [ "rabbitmq_management" ];
+      plugins = [ "rabbitmq_management" "rabbitmq_prometheus" ];
       # XXX: can we have more than one IP?
       listenAddress = fclib.mkPlatform (head fclib.network.srv.dualstack.addresses);
       config = fclib.configFromFile /etc/local/rabbitmq/rabbitmq.config "";
@@ -251,6 +266,7 @@ in {
         rabbitmqctl list_users | grep guest && \
           rabbitmqctl delete_user guest
 
+        # TODO: We can remove the fc-telegraf user when having migrated to prometheus only (PL-133391)
         # Create user for telegraf, if it does not exist and make sure that the password is set
         rabbitmqctl list_users | grep fc-telegraf || \
           rabbitmqctl add_user fc-telegraf ${telegrafPassword}
@@ -312,21 +328,27 @@ in {
         };
       };
 
-      telegraf.inputs.rabbitmq = [
-        {
-          client_timeout = "10s";
-          header_timeout = "10s";
-          url = "http://${config.networking.hostName}:15672";
-          username = "fc-telegraf";
-          password = telegrafPassword;
-          nodes = [ "rabbit@${config.networking.hostName}" ];
-          # Drop string fields. They are converted to labels in Prometheus
-          # which blows up the number of metrics.
-          fielddrop = [ "idle_since" ];
-          # The federation plugin is optional and causing spurious logging.
-          metric_exclude = [ "federation" ];
-        }
-      ];
+      telegraf.inputs = {
+        prometheus = [{
+          urls = [ "http://${config.networking.hostName}:${cfg.prometheusPort}" ];
+        }];
+        # TODO: remove once we have a new dashboard ready
+        rabbitmq = [
+          {
+            client_timeout = "10s";
+            header_timeout = "10s";
+            url = "http://${config.networking.hostName}:15672";
+            username = "fc-telegraf";
+            password = telegrafPassword;
+            nodes = [ "rabbit@${config.networking.hostName}" ];
+            # Drop string fields. They are converted to labels in Prometheus
+            # which blows up the number of metrics.
+            fielddrop = [ "idle_since" ];
+            # The federation plugin is optional and causing spurious logging.
+            metric_exclude = [ "federation" ];
+          }
+        ];
+      };
 
     };
   };

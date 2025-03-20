@@ -103,7 +103,9 @@ in {
         outputs = {
           prometheus_client = map
             (a: {
-              listen = "${a}:${telegrafPort}"; })
+              listen = "${a}:${telegrafPort}";
+              metric_version = config.flyingcircus.services.telegraf.prometheus-metric_version;
+            })
             (fclib.network.srv.dualstack.addressesQuoted);
         };
         inputs = telegrafInputs;
