@@ -86,6 +86,7 @@ in {
         sleep 1
         ipmitool sol set volatile-bit-rate 115.2 1
         sleep 1
+        ipmitool user set name 2 ADMIN
         # See https://serverfault.com/questions/361940/configuring-supermicro-ipmi-to-use-one-of-the-lan-interfaces-instead-of-the-ipmi/677087
         # Ensure BMC is set to failover (SuperMicro only)
         if ipmitool mc info | grep Supermicro > /dev/null ; then
