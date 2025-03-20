@@ -157,6 +157,11 @@ in {
         plug = "${pkgs.monitoring-plugins}/bin";
         mailq = "${pkgs.postfix}/bin/mailq";
         checkMailq = "${pkgs.fc.check-postfix}/bin/check_mailq";
+        check_blocklist = pkgs.writeShellScript "check_blocklist" ''
+          set -euo pipefail
+          ${plug}/check_dns -H 1.0.0.127.$1 --expect-nxdomain
+          ${plug}/check_dns -H 2.0.0.127.$1 -a 127.0.0.0/8
+        '';
       in {
         postfix_mailq = {
           command = "sudo ${checkMailq} -w 200 -c 2000 --mailq ${mailq}";
@@ -180,7 +185,10 @@ in {
           notification = "Dovecot listening on IMAPs port 993";
           command = "${plug}/check_imap -H ${role.mailHost} -p 993 -S -w 5 -c 30";
         };
-      };
+      } // listToAttrs (map (host: nameValuePair "ipDNSBL_${host}" {
+        notification = "DNSBL health (${host})";
+        command = "${check_blocklist} ${host}";
+      }) role.ipDNSBLs);
 
       flyingcircus.passwordlessSudoPackages = [
         {
@@ -320,6 +328,7 @@ in {
           sender_canonical_classes = "envelope_sender";
           smtpd_client_restrictions = [
             "permit_mynetworks"
+          ] ++ lib.map (e: "reject_rbl_client ${e}") role.ipDNSBLs ++ [
             "reject_unknown_client_hostname"
           ];
           smtpd_data_restrictions = "reject_unauth_pipelining";
