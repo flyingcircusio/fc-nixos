@@ -82,6 +82,10 @@ rec {
   # priority (100), but allow hosts to override further with
   # mkForce. Intentionally verbose.
   mkOverrideUpstreamModule = lib.mkOverride 75;
+  # Override configuration set in platform modules, which may itself
+  # be overridden from upstream, but allow further host customisation
+  # with mkForce.
+  mkOverridePlatformModule = lib.mkOverride 70;
 
   mkDisableDevhostSupport = lib.mkOption {
     type = lib.types.bool;

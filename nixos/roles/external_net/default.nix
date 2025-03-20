@@ -78,9 +78,9 @@ in
     flyingcircus.roles.vxlan.gateway = true;
 
     boot.kernel.sysctl = {
-      "net.ipv4.ip_forward" = 1;
-      "net.ipv6.conf.all.forwarding" = 1;
-      "net.ipv6.conf.default.forwarding" = 1;
+      "net.ipv4.ip_forward" = fclib.mkOverridePlatformModule 1;
+      "net.ipv6.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv6.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
     };
 
     environment.systemPackages = [ pkgs.mosh ];

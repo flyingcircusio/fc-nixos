@@ -11,7 +11,7 @@ let
   makeHostMac = makePrivateMac "42";
   makeTapMac = makePrivateMac "23";
 
-  baseConfig = { lib, ... }: {
+  baseConfig = { lib, config, ... }: {
     imports = [ ../nixos ../nixos/roles ];
     services.telegraf.enable = false;
     networking = {
@@ -20,7 +20,7 @@ let
       firewall.checkReversePath = lib.mkForce false;
     };
 
-    boot.kernel.sysctl."net.ipv4.conf.all.ip_forward" = 1;
+    boot.kernel.sysctl."net.ipv4.conf.all.forwarding" = lib.mkForce 1;
     boot.extraModprobeConfig = "options dummy numdummies=0";
     boot.initrd.availableKernelModules = [ "dummy" ];
 
@@ -456,6 +456,12 @@ in {
                 host1.wait_until_succeeds(f"bridge fdb show br br0 | grep -F extern_learn | grep -F {guest_mac}", timeout=10)
 
             with subtest("check remote TAP responder is reachable"):
+                # if ping-on-tap sends its garp before the neighbour entry from the
+                # remote host is withdrawn, then the remotely learned entry will take
+                # precedence and a locally learned entry will not be created. we need to
+                # reprime the local neighbour table to ensure that an entry is learned
+                # which exported to the remote host.
+                host2.succeed(f"ping -A -c5 {guest_ip}")
                 host1.succeed(f"ping -A -c5 {guest_ip}")
 
         with subtest("rib and fib should not have mismatches"):

@@ -113,11 +113,11 @@ in
 
     boot.kernel.sysctl = {
       # It's a router: we want forwarding, obviously
-      "net.ipv4.conf.all.forwarding" = 1;
-      "net.ipv4.conf.default.forwarding" = 1;
-      "net.ipv4.ip_forward" = 1;
-      "net.ipv6.conf.all.forwarding" = 1;
-      "net.ipv6.conf.default.forwarding" = 1;
+      "net.ipv4.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv4.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv4.ip_forward" = fclib.mkOverridePlatformModule 1;
+      "net.ipv6.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv6.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
 
       # Avoid neighbour discovery table overflow on our relatively large segments
       "net.ipv4.neigh.default.gc_thresh1" = lib.mkOverride 90 4096;

@@ -996,6 +996,12 @@ in
         # only accept a single bind address.
         "net.ipv6.bindv6only" = "0";
 
+        # Ensure that forwarding is not enabled by default
+        "net.ipv4.conf.all.forwarding" = fclib.mkOverrideUpstreamModule false;
+        "net.ipv4.conf.default.forwarding" = fclib.mkOverrideUpstreamModule false;
+        "net.ipv6.conf.all.forwarding" = fclib.mkOverrideUpstreamModule false;
+        "net.ipv6.conf.default.forwarding" = fclib.mkOverrideUpstreamModule false;
+
         # Ensure that we can use IPv6 as early as possible.
         # This fixes startup race conditions like
         # https://yt.flyingcircus.io/issue/PL-130190
