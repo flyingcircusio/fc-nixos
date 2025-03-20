@@ -1,3 +1,17 @@
+# Release 2025_007
+
+## Impact
+
+- rabbitmq users: When running multiple VMs with the `rabbitmq` role in the same RG, [feature flags need to be enabled manually](https://doc.flyingcircus.io/roles/fc-24.05-production/rabbitmq.html#feature-flags-and-upgrading) after the upgrade to prepare for later updates.
+
+
+## NixOS XX.XX platform
+
+- rabbitmq-server: 3.12.13 -> 3.13.7
+  - necessary preparation for the update to rabbitmq-server 4.x in NixOS 24.11
+
+
+
 # Release 2025_006
 
 ## Impact
