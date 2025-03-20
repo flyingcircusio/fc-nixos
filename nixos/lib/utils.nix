@@ -165,6 +165,8 @@ rec {
       filter (u: any (g: g == group) (getAttr currentRG u.permissions)) config.flyingcircus.users.userData
     );
 
+  # TODO: consider moving writers like this to overlay, such that they are
+  # accessible as a package, not just via `fclib`
   writePrettyJSON =
     name: x:
     let
