@@ -54,8 +54,7 @@ in {
   k3s_monitoring = callTest ./k3s/monitoring.nix {};
   kernelconfig = callTest ./kernelconfig.nix {};
   kernelversions = callTest ./kernelversions.nix {};
-  # diabled due to test flakiness PL-133300
-  #kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {clientCephRelease = "nautilus";};
+  kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {clientCephRelease = "nautilus";};
   lampVm = callTest ./lamp/vm-test.nix { };
   lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
   lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };

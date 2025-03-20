@@ -1,5 +1,4 @@
-"""Handle VM changes that need a cold reboot.
-"""
+"""Handle VM changes that need a cold reboot."""
 
 from typing import Optional
 

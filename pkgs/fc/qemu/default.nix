@@ -6,6 +6,7 @@
   lib,
   libceph,
   ceph_client,
+  fc-ceph,
   fetchFromGitHub,
   utillinux,
   coreutils,
@@ -15,6 +16,7 @@
   parted,
   xfsprogs,
   procps,
+  strace,
   file,
   systemd,
   py_pytest_patterns
@@ -71,6 +73,7 @@ in
       py.structlog
       py_consulate
       py.psutil
+      strace
       py.pyyaml
       py.setuptools
       (py.toPythonModule ceph_client)
@@ -88,7 +91,7 @@ in
       py.pytest-cov
       py.pytest-timeout
       py.mock
-
+      fc-ceph
       # Allow passing through to pytest in the NixOS test.
       (py.buildPythonPackage rec {
         pname = "pytest-flakefinder";

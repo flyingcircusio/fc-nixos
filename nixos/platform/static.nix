@@ -95,7 +95,7 @@ with lib;
         # when enabling them, like weird search path confusion that results in
         # arbitrary negative responses, combined with the rotate flag.
         dev = [ "172.20.3.1" ];
-        test = [ "172.20.2.1" ];
+        test = [ "9.9.9.9" "8.8.8.8" ];
         whq = [ "172.16.48.1" ];
         rzob = [ "172.22.48.1" ];
         standalone = [ "9.9.9.9" "8.8.8.8" ];

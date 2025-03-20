@@ -22,6 +22,21 @@ in
           '';
            default = [];
       };
+
+      bindAddr = lib.mkOption {
+        type = with lib.types; str;
+        default = head fclib.network.srv.v6.addresses;
+      };
+
+      advertiseAddr = lib.mkOption {
+        type = with lib.types; str;
+        default = head fclib.network.srv.v6.addresses;
+      };
+
+      dc = lib.mkOption {
+        type = lib.types.str;
+        default = enc.parameters.resource_group;
+      };
     };
   };
 
@@ -32,7 +47,7 @@ in
     };
 
     services.consul.extraConfig = let
-      dc = enc.parameters.resource_group;
+      dc = cfg.dc;
     in {
       primary_datacenter = dc;
       acl.default_policy = "deny";
@@ -47,8 +62,8 @@ in
         (service: service.address)
         (fclib.findServices "consul_server-server");
 
-      bind_addr = head fclib.network.srv.v6.addresses;
-      advertise_addr = head fclib.network.srv.v6.addresses;
+      bind_addr = cfg.bindAddr;
+      advertise_addr =  cfg.advertiseAddr;
     };
 
     systemd.services.consul.restartTriggers = [

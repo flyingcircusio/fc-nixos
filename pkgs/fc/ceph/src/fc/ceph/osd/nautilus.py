@@ -15,6 +15,7 @@ from fc.ceph.lvm import (
     XFSVolume,
 )
 from fc.ceph.util import kill, run
+from fc.ceph.util.timeout import TimeOut
 
 TiB = 1024**4
 
@@ -320,11 +321,19 @@ class JournalVG:
 
         # TODO: could be switched to DiskWithSinglePartition as well
         run.sgdisk("-Z", device)
-        run.sgdisk("-a", "8192", "-n", "1:0:0", "-t", "1:8e00", device)
+        run.sgdisk("-n", "1::", "-t", "1:8e00", device)
+        # Some devices (like loopback) do not automatically cause the
+        # kernel to see the new partitions.
+        run.partprobe(device)
 
-        for partition in [f"{device}1", f"{device}p1"]:
-            if os.path.exists(partition):
-                break
+        timeout = TimeOut(30)
+        while timeout.tick():
+            for partition in [f"{device}1", f"{device}p1"]:
+                if os.path.exists(partition):
+                    break
+            else:
+                continue
+            break
         else:
             raise RuntimeError(f"Could not find partition for PV on {device}")
 

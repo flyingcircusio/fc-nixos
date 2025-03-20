@@ -37,6 +37,7 @@ rec {
       pkgs.lz4  # required by image loading task
       pkgs.cryptsetup  # full-disk encryption
       pkgs.mdadm  # fc-luks, backup RAID
+      pkgs.parted # partprobe
     ];
 
     fc-check-ceph = pkgs.fc."check-ceph-${release}";

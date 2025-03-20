@@ -1,7 +1,8 @@
 """Check that the largest RBD image snapshot of each Ceph cluster root can be restored,
 without exceeding the near_full threshold of the cluster capacity.
 Please consider that this is not a guarantee for not getting `OSD_NEARFULL` warnings,
-as individual fill levels of OSDs below a cluster root is not perfectly balanced."""
+as individual fill levels of OSDs below a cluster root is not perfectly balanced.
+"""
 
 import contextlib
 import json
@@ -304,7 +305,7 @@ def categorise_snaps(
 
 
 def eval_report(
-    categorised_snaps: Dict[SensuStatus, List[Snapshot]]
+    categorised_snaps: Dict[SensuStatus, List[Snapshot]],
 ) -> Tuple[SensuStatus, str]:
     # eval total status code _from categorised snaps only_, as it still needs to be
     # combined with potential other status results from the cluster querying functions

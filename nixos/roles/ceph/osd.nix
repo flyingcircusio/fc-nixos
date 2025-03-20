@@ -4,18 +4,20 @@ with builtins;
 
 let
   fclib = config.fclib;
-  role = config.flyingcircus.roles.ceph_osd;
+  cfg = config.flyingcircus.roles.ceph_osd;
+  clientConfig = config.flyingcircus.services.ceph.client;
   enc = config.flyingcircus.enc;
+
   inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
-  cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
+  cephPkgs = fclib.ceph.mkPkgs cfg.cephRelease;
 
   osdServiceDeps = rec {
     # Ceph requires the IPs to be properly attached to interfaces so it
     # knows where to bind to the public and cluster networks.
     wants = [
-      fclib.network.sto.addressUnit
-      fclib.network.stb.addressUnit
+      clientConfig.network.addressUnit
+      cfg.network.addressUnit
       "fc-blockdev.service"
     ];
     after = wants;
@@ -158,32 +160,41 @@ in
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used for the the osd package.";
       };
+
+      network = lib.mkOption {
+        type = with lib.types; attrs; # an attrset from fclib.network.<xy>
+        default = fclib.network.stb;
+        description = ''
+          The Ceph cluster (replication) network.
+          '';
+      };
+
     };
 
   };
 
   config = lib.mkMerge [
-      (lib.mkIf role.enable {
+      (lib.mkIf cfg.enable {
 
       assertions = [
         {
           assertion = (
-            ( role.extraSettings != {}
+            ( cfg.extraSettings != {}
             || config.flyingcircus.services.ceph.extraSettings != {}
             || config.flyingcircus.services.ceph.client.extraSettings != {}
-            ) -> role.config == "");
+            ) -> cfg.config == "");
           message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
         }
       ];
       flyingcircus.services.ceph = {
         server = {
           enable = true;
-          cephRelease = role.cephRelease;
+          cephRelease = cfg.cephRelease;
         };
 
         fc-ceph.settings = let
           osdSettings =  {
-            release = role.cephRelease;
+            release = cfg.cephRelease;
             path = cephPkgs.fc-ceph-path;
           };
         in {
@@ -196,19 +207,19 @@ in
           };
       };
 
-      flyingcircus.services.ceph.cluster_network = head fclib.network.stb.v4.networks;
+      flyingcircus.services.ceph.cluster_network = head cfg.network.v4.networks;
 
       # Ceph OSDs are using a lot of ports so we're being gratuitous here about
       # the firewall and we want to avoid spamming the connection tracking
       # table.
       networking.firewall = {
 
-        trustedInterfaces = [ fclib.network.stb.interface ];
+        trustedInterfaces = [ cfg.network.interface ];
 
         extraCommands = lib.mkOrder 800 ''
           # Disable STB connection tracking to reduce kernel connection table overhead
-          ip46tables -t raw -A fc-raw-prerouting -i ${fclib.network.stb.interface} -j CT --notrack
-          ip46tables -t raw -A fc-raw-output -o ${fclib.network.stb.interface} -j CT --notrack
+          ip46tables -t raw -A fc-raw-prerouting -i ${cfg.network.interface} -j CT --notrack
+          ip46tables -t raw -A fc-raw-output -o ${cfg.network.interface} -j CT --notrack
         '';
       };
 
@@ -228,7 +239,7 @@ in
           ${cephPkgs.fc-ceph}/bin/fc-ceph osd activate all
         '';
 
-        reload = lib.optionalString role.reactivate ''
+        reload = lib.optionalString cfg.reactivate ''
           ${cephPkgs.fc-ceph}/bin/fc-ceph osd reactivate all
         '';
 
@@ -273,12 +284,12 @@ in
 
 
     })
-    (lib.mkIf (role.enable && role.config == "") {
+    (lib.mkIf (cfg.enable && cfg.config == "") {
       flyingcircus.services.ceph.extraSettingsSections.osd = lib.recursiveUpdate
-        (expandCamelCaseAttrs defaultOsdSettings) (expandCamelCaseAttrs role.extraSettings);
+        (expandCamelCaseAttrs defaultOsdSettings) (expandCamelCaseAttrs cfg.extraSettings);
     })
-    (lib.mkIf (role.enable && role.config != "") {
-      environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
+    (lib.mkIf (cfg.enable && cfg.config != "") {
+      environment.etc."ceph/ceph.conf".text = lib.mkAfter cfg.config;
     })
     ];
 }

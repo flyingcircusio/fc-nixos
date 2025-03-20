@@ -81,6 +81,7 @@ class Monitor(object):
             # adjust admin capabilities
             run.ceph_authtool(
                 f"{tmpdir}/keyring",
+                "-n", "client.admin",
                 "--cap", "mds", "allow *",
                 "--cap", "mon", "allow *",
                 "--cap", "osd", "allow *",

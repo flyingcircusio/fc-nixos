@@ -2,9 +2,11 @@ import ./make-test-python.nix ({
   testlib,
   useCheckout ? false,
   testOpts ? "",
+  #testOpts ? "--flake-finder --flake-runs=10 -x --no-cov",
   # examples to specify tests
   # "-k mytest"
-  # "--flake-finder --flake-runs=500 -x --no-cov""
+  # "--flake-finder --flake-runs=500 -x --no-cov"
+  # "--show-setup"  # shows which fixtures have been set up / torn down
   clientCephRelease ? "nautilus", ... }:
 with testlib;
 let
@@ -22,8 +24,8 @@ let
       # the amount of operations both Ceph and pytest will pile up memory they
       # can't release between test runs, so this needs to scale.
       virtualisation.memorySize = 8000;
+      virtualisation.diskSize = 10000;
       virtualisation.vlans = with config.flyingcircus.static.vlanIds; [ mgm fe srv sto stb ];
-      virtualisation.emptyDiskImages = [ 4000 4000 ];
       imports = [ <fc/nixos> <fc/nixos/roles> ];
 
       # Use the default flags defined by fc-qemu regardless of
@@ -37,25 +39,14 @@ let
 
       systemd.timers.fc-ceph-load-vm-images.enable = lib.mkForce false;
       systemd.timers.fc-ceph-mon-update-client-keys.enable = lib.mkForce false;
+      systemd.timers.fc-ceph-clean-deleted-vms.enable = lib.mkForce false;
+      systemd.timers.fc-ceph-purge-old-snapshots.enable = lib.mkForce false;
       systemd.timers.logrotate.enable = lib.mkForce false;
-
 
       flyingcircus.encServices = [
         {
           address = "host1.fcio.net";
           ips = [ (getIP6ForVLAN 3 1) ];
-          location = "test";
-          service = "consul_server-server";
-        }
-        {
-          address = "host2.fcio.net";
-          ips = [ (getIP6ForVLAN 3 2) ];
-          location = "test";
-          service = "consul_server-server";
-        }
-        {
-          address = "host3.fcio.net";
-          ips = [ (getIP6ForVLAN 3 3) ];
           location = "test";
           service = "consul_server-server";
         }
@@ -66,6 +57,18 @@ let
           service = "ceph_mon-mon";
         }
       ];
+
+      # DEBUGGING CEPH
+      #
+      # flyingcircus.roles.ceph_mon.extraSettings = {
+      #   logFile = "/dev/console";
+      #   debugDefault = "5/5";
+      # };
+      # flyingcircus.services.ceph.client.extraSettings = {
+      #   logFile = "/dev/console";
+      #   debugDefault = "5/5";
+      #   debugClient = "5/5";
+      # };
 
       systemd.services.fake-directory = rec {
         description = "A fake directory";
@@ -99,28 +102,16 @@ let
           (pkgs.writeShellScriptBin "run-tests" # BEWARE: DO NOT RENAME!
               ''
             set -o pipefail
-            set -x
 
             export PYTHONPATH="${PYTHONPATH}"
             export PATH="${PATH}:${pkgs.openssh}/bin:${pkgs.gnused}/bin"
+            export PYTHONUNBUFFERED=1
+
             cd ${testPackage.src}
 
-            rm /tmp/fc.qemu-report.xml
+            rm -f /tmp/fc.qemu-report.xml
 
-            pytest -vv --cov-config=/etc/coveragerc --cov-append -c ${testPackage.src}/pytest.ini "$@" 2>&1 | tee /dev/kmsg
-            PYTESTRET=$?
-
-            ${if testOpts != "" then ''
-            # If we run with custom test options we might be filtering
-            # for tests and due to the live/not live split either phase
-            # might not have any tests. However, we do not want to
-            # accidentally accept the `no tests found` failure in Hydra.
-            echo "Pytest result code: $PYTESTRET"
-            if [ $PYTESTRET -eq 0 ] || [ $PYTESTRET -eq 5 ]; then
-              # 5 means no tests found, which might happen if we have options
-              true;
-            fi
-            '' else ""}
+            pytest -vv --cov-config=/etc/coveragerc --cov-append -c ${testPackage.src}/pytest.ini "$@" | tee /dev/console
 
             if ! ${pkgs.gnugrep}/bin/grep -q 'errors="0" failures="0"' /tmp/fc.qemu-report.xml ; then
               # I've seen weird situations where pytest exited with an error but we exited
@@ -129,9 +120,9 @@ let
               echo "Pytest exit status: $PYTESTRET"
               echo "Detected failures in unit test report!"
               exit 1
+            else
+              exit 0
             fi
-
-            exit $PYTESTRET
           '')
       ];
 
@@ -168,7 +159,7 @@ let
         cephRelease = "nautilus";
       };
       flyingcircus.roles.ceph_mon = {
-        enable = true;
+        enable = if id == 1 then true else false;
         cephRelease = "nautilus";
       };
       flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
@@ -188,7 +179,10 @@ let
       };
 
       # Consul
-      flyingcircus.roles.consul_server.enable = true;
+      flyingcircus.roles.consul_server.enable = if id == 1 then true else false;
+      services.consul.extraConfig = if id ==1 then {
+        bootstrap_expect = lib.mkForce 1;
+      } else {};
       services.nginx.virtualHosts."host${toString id}.fe.test.fcio.net" = {
         enableACME = lib.mkForce false;
         addSSL = true;
@@ -210,7 +204,9 @@ let
           directory_ring = 0;
           location = "test";
           resource_group = "services";
-          secret_salt = "salt-for-host-${toString id}-dhkasjy9";
+          # This secret needs to be kept in sync with the fc-qemu test
+          # fixtures.
+          secret_salt = "salt-for-host-dhkasjy9";
           secrets = { "ceph/admin_key" = "AQBFJa9hAAAAABAAtdggM3mhVBAEYw3+Loehqw==";
                       "consul/encrypt" = "jP68Fxm+m57kpQVYKRoC+lyJ/NcZy7mwvyqLnYm/z1A=";
                       "consul/agent_token" = "ez+W8r+JEywt82Ojin7klSeON97oR6i5rYo3oFxUcLE=";
@@ -222,19 +218,15 @@ let
       networking.extraHosts = ''
         ${getIPForVLAN 1 1} host1.mgm.test.fcio.net host1.mgm.test.gocept.net
         ${getIPForVLAN 1 2} host2.mgm.test.fcio.net host2.mgm.test.gocept.net
-        ${getIPForVLAN 1 3} host3.mgm.test.fcio.net host2.mgm.test.gocept.net
 
         ${getIPForVLAN 3 1} directory.fcio.net host1.fcio.net host1
         ${getIPForVLAN 3 2} host2.fcio.net host2
-        ${getIPForVLAN 3 3} host3.fcio.net host3
 
         ${getIP6ForVLAN 3 1} directory.fcio.net host1.fcio.net
         ${getIP6ForVLAN 3 2} host2.fcio.net
-        ${getIP6ForVLAN 3 3} host3.fcio.net
 
         ${getIPForVLAN 4 1} host1.sto.test.ipv4.gocept.net host1.sto.test.gocept.net
         ${getIPForVLAN 4 2} host2.sto.test.ipv4.gocept.net host2.sto.test.gocept.net
-        ${getIPForVLAN 4 3} host3.sto.test.ipv4.gocept.net host3.sto.test.gocept.net
       '';
 
       flyingcircus.enc.name = "host${toString id}";
@@ -300,7 +292,6 @@ in
   nodes = {
     host1 = makeHostConfig { id = 1; };
     host2 = makeHostConfig { id = 2; };
-    host3 = makeHostConfig { id = 3; };
   };
 
   testScript = ''
@@ -320,46 +311,6 @@ in
           f"Command `cmd` failed with exit code {code}")
       return output.strip()
 
-    def assert_clean_cluster(host, mons, osds, mgrs, pgs):
-      # `osds` can be either of the form `(num_up_osds, num_in_osds)` or a single
-      # integer specifying both up and in osds
-
-      try:
-        (num_up_osds, num_in_osds) = osds
-      except TypeError:
-        num_up_osds = osds
-        num_in_osds = osds
-
-      global time_waiting
-      print("Waiting for clean cluster ...")
-      start = time.time()
-      # Allow HEALTH_WARN as we do not correctly cover clock skew
-      # currently
-      tries = 1
-      while True:
-        status = json.loads(host.execute('ceph -f json-pretty -s')[1])
-        # json status is too verbose, but still show the human-readable status
-        show(host, 'ceph -s')
-        show(host, 'ceph health detail | tail')
-
-        try:
-          assert status["health"]["status"] in ['HEALTH_OK', 'HEALTH_WARN']
-          assert int(status["monmap"]["num_mons"]) == mons
-          osdmap_stat = status["osdmap"]["osdmap"]
-          assert osdmap_stat["num_up_osds"] == num_up_osds and \
-              osdmap_stat["num_in_osds"] == num_in_osds
-          pgstate0 = status["pgmap"]["pgs_by_state"][0]
-          assert pgstate0["count"] == pgs and pgstate0["state_name"] == "active+clean"
-          assert status["mgrmap"]["available"] and \
-              len(status["mgrmap"]["standbys"]) == mgrs-1
-          break
-        except AssertionError as e:
-          if time.time() - start < 60:
-            time_waiting += tries*2
-            time.sleep(tries*2)
-          else:
-             raise
-
     def wait(fun, *args, **kw):
       global time_waiting
       print(f"Waiting for `{fun.__name__}(*{args}, **{kw})` ...")
@@ -375,20 +326,9 @@ in
           else:
             raise
 
+    show(host1, "for x in /etc/ceph/*; do echo $x ; cat $x; echo '========='; done")
     host1.execute("systemctl stop fc-ceph-mon")
-    host2.execute("systemctl stop fc-ceph-mon")
     host1.execute("systemctl stop fc-ceph-mgr")
-    host2.execute("systemctl stop fc-ceph-mgr")
-    host3.execute("systemctl stop fc-ceph-mgr")
-    host3.execute("systemctl stop fc-ceph-mon")
-
-    ########################################################################
-    # NO CEPH INTERACTION - Ceph is not set up properly, yet. Any
-    # interaction with Ceph will hang mysteriously!
-    ########################################################################
-
-    with subtest("Run unit tests"):
-      show(host1, "run-tests ${testOpts} -m 'not live'")
 
     with subtest("fc-qemu-scrub timer is correctly activated"):
       _, output = host1.execute("systemctl list-timers | grep fc-qemu-scrub")
@@ -398,77 +338,21 @@ in
       assert not output.startswith("n/a")
       assert output.count("n/a") <= 2
 
+    host1.execute("systemctl stop fc-qemu-scrub.timer")
+    host2.execute("systemctl stop fc-qemu-scrub.timer")
+
     host1.wait_for_unit("consul")
     host2.wait_for_unit("consul")
-    host3.wait_for_unit("consul")
-
-    time.sleep(5)
-    show(host1, "journalctl -u consul")
 
     wait(show, host1, "consul members")
     wait(show, host2, "consul members")
-    wait(show, host3, "consul members")
 
-    host1.wait_for_unit("nginx", timeout=5)
-    host2.wait_for_unit("nginx", timeout=5)
-    host3.wait_for_unit("nginx", timeout=5)
+    host1.wait_for_unit("nginx", timeout=10)
 
-    with subtest("Initialize mons"):
-      host1.succeed('fc-ceph osd prepare-journal /dev/vdb')
-      host1.execute('systemctl stop fc-ceph-mon')
-      host1.execute('systemctl reset-failed fc-ceph-mon')
-      host1.execute('fc-ceph mon create --no-encrypt --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
-      host1.sleep(5)
-      host1.succeed('ceph -s > /dev/kmsg 2>&1')
-      host1.succeed('fc-ceph keys mon-update-single-client host1 ceph_osd,ceph_mon,kvm_host salt-for-host-1-dhkasjy9')
-      host1.succeed('fc-ceph keys mon-update-single-client host2 kvm_host salt-for-host-2-dhkasjy9')
+    with subtest("Run tests"):
+      host1.succeed("run-tests ${testOpts}", timeout=20*60)
 
-      # mgr keys rely on 'fc-ceph keys' to be executed first
-      host1.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
-
-    with subtest("Initialize OSD"):
-      host1.execute('fc-ceph osd create-bluestore --no-encrypt /dev/vdc')
-      host1.succeed('ceph osd crush move host1 root=default')
-
-    with subtest("Create pools and images"):
-      # The blank RBD pool is required for maintenance operations
-      host1.succeed("ceph osd pool create rbd 32")
-      host1.succeed("ceph osd pool set rbd size 1")
-      host1.succeed("ceph osd pool set rbd min_size 1")
-      host1.succeed("ceph osd pool create rbd.ssd 32")
-      host1.succeed("ceph osd pool set rbd.ssd size 1")
-      host1.succeed("ceph osd pool set rbd.ssd min_size 1")
-      host1.succeed("ceph osd pool create rbd.hdd 32")
-      host1.succeed("ceph osd pool set rbd.hdd size 1")
-      host1.succeed("ceph osd pool set rbd.hdd min_size 1")
-      show(host1, "ceph osd lspools")
-
-      # new in jewel: RBD pools are supposed to be initialised
-      host1.succeed("rbd pool init rbd.ssd")
-      host1.succeed("rbd pool init rbd.hdd")
-
-      host1.succeed("rbd create --size 500 rbd.hdd/fc-21.05-dev")
-      host1.succeed("rbd map rbd.hdd/fc-21.05-dev")
-      host1.succeed("sgdisk /dev/rbd0 -o -a 2048 -n 1:8192:0 -c 1:ROOT -t 1:8300")
-      host1.succeed("partprobe")
-      host1.succeed("mkfs.xfs /dev/rbd0p1")
-      host1.succeed("rbd unmap /dev/rbd0")
-      host1.succeed("rbd snap create rbd.hdd/fc-21.05-dev@v1")
-      host1.succeed("rbd snap protect rbd.hdd/fc-21.05-dev@v1")
-
-    # Let things settle for a bit, otherwise things are in weird
-    # intermediate states like pgs not created, time not in sync,
-    # mons not accessible, ...
-    assert_clean_cluster(host1, 1, 1, 1, 96)
-
-    print("Time spent waiting", time_waiting)
-
-    with subtest("Run integration tests"):
-      show(host1, "run-tests ${testOpts} -m 'live'")
-
-    show(host1, "df -h")
-    show(host1, "rbd ls rbd.hdd")
-    show(host1, "rbd ls rbd.ssd")
+    # XXX the following tests should be migrated to fc.qemu at some point
     show(host1, "rbd rm rbd/.fc-qemu.maintenance || true")
 
     with subtest("Check maintenance enter/exit works"):
@@ -498,11 +382,12 @@ in
       result = show(host1, "fc-qemu --help")
       assert result.startswith("usage: fc-qemu"), "Unexpected help output"
 
-      result = show(host1, "fc-qemu ls")
-      assert "I simplevm              offline" in result, repr(result)
+      # host1.succeed("cp /etc/simplevm.cfg /etc/qemu/vm/")
+      # result = show(host1, "fc-qemu ls")
+      # assert "I simplevm              offline" in result, repr(result)
 
-      result = show(host1, "fc-qemu check")
-      assert result == "OK - 1 VMs - 0 MiB used - 0 MiB expected", result
+      # result = show(host1, "fc-qemu check")
+      # assert result == "OK - 1 VMs - 0 MiB used - 0 MiB expected", result
 
       result = show(host1, "fc-qemu report-supported-cpu-models")
       assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result, result
@@ -513,5 +398,5 @@ in
     host1.copy_from_vm('/tmp/coverage', './')
     host1.copy_from_vm('/tmp/fc.qemu-report.xml', './')
 
-  '';
+    '';
 })

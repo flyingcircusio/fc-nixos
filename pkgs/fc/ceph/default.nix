@@ -1,4 +1,4 @@
-{ lib, stdenv, python3Full, python3Packages, cryptsetup, lz4, blockdev, lvm2, agent }:
+{ lib, stdenv, python3Full, python3Packages, parted, cryptsetup, lz4, blockdev, lvm2, agent }:
 
 let
   py = python3Packages;
@@ -15,6 +15,7 @@ py.buildPythonApplication rec {
     agent
     python3Packages.requests
     cryptsetup
+    parted
   ];
 
   checkInputs = [

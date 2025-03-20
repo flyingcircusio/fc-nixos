@@ -136,7 +136,7 @@ in {
         service = "nfs_rg_share-server";
       });
 
-      services.redis.bind = lib.mkForce "0.0.0.0 ::";
+      services.redis.servers."".bind = lib.mkForce "0.0.0.0 ::";
 
       users.users.root.password = "";
 
