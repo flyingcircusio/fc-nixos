@@ -1,4 +1,8 @@
-{ pkgs, python3Packages, megacli }:
+{
+  pkgs,
+  python3Packages,
+  megacli,
+}:
 
 let
   py = python3Packages;
@@ -10,10 +14,10 @@ let
       inherit pname version;
       hash = "sha256-cFHX3UlsplsUqKTFwcmS2q+d93O1gZ8Queatu9L1i0A=";
     };
-    propagatedBuildInputs = [  ];
+    propagatedBuildInputs = [ ];
     meta = with pkgs.lib; {
       description = "Python library for MegaCli";
-      homepage = https://github.com/m4ce/megacli-python;
+      homepage = "https://github.com/m4ce/megacli-python";
       license = licenses.asl20;
     };
   };
@@ -25,35 +29,37 @@ let
       inherit pname version;
       hash = "sha256-um7KXLW6ArukyfT5ha+AxU7D3M+Uz80ZAVQ4YlXkdUM=";
     };
-    propagatedBuildInputs = [  ];
+    propagatedBuildInputs = [ ];
     meta = with pkgs.lib; {
       description = "Generate simple tables in terminals from a nested list of strings.";
-      homepage = https://github.com/Robpol86/terminaltables;
+      homepage = "https://github.com/Robpol86/terminaltables";
       license = licenses.mit;
     };
   };
 
 in
-  py.buildPythonApplication rec {
-    name = "fc.megacli-${version}";
-    version = "0.1";
+py.buildPythonApplication rec {
+  name = "fc.megacli-${version}";
+  version = "0.1";
 
-    pyproject = true;
+  pyproject = true;
 
-    src = pkgs.fetchFromGitHub {
-      owner = "flyingcircusio";
-      repo = "fc.megacli";
-      rev = "bde8406d6b992c6d4fa24d5caddfcd7ec830ba13";
-      hash = "sha256-LzC4vl70FlXqXn44w5HI7kd14RQ7YV6W6phPJSDJ75E=";
-    };
+  src = pkgs.fetchFromGitHub {
+    owner = "flyingcircusio";
+    repo = "fc.megacli";
+    rev = "bde8406d6b992c6d4fa24d5caddfcd7ec830ba13";
+    hash = "sha256-LzC4vl70FlXqXn44w5HI7kd14RQ7YV6W6phPJSDJ75E=";
+  };
 
-    build-system = [
-      py.hatchling
-    ];
+  build-system = [
+    py.hatchling
+  ];
 
-    dontStrip = true;
+  dontStrip = true;
 
-    propagatedBuildInputs = [
-      megacli py_megacli py_terminaltables
-    ];
-  }
+  propagatedBuildInputs = [
+    megacli
+    py_megacli
+    py_terminaltables
+  ];
+}

@@ -1,4 +1,8 @@
-{ lib, buildGoModule, fetchFromGitHub }:
+{
+  lib,
+  buildGoModule,
+  fetchFromGitHub,
+}:
 
 buildGoModule rec {
   name = "elasticsearch_exporter-${version}";
@@ -11,7 +15,7 @@ buildGoModule rec {
     repo = "elasticsearch_exporter";
     sha256 = "sha256-8WPDBlp6ftBmY/lu0wuuvs3A9KAzEM/A6RqSvYYLm7w=";
   };
-   vendorHash = "sha256-jbPFxwrXWwxPamMnbBxFvGBrt38YG7N5fTweAYULEYQ=";
+  vendorHash = "sha256-jbPFxwrXWwxPamMnbBxFvGBrt38YG7N5fTweAYULEYQ=";
 
   # # FIXME: megacli test fails
   # doCheck = false;

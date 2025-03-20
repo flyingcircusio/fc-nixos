@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -148,13 +153,22 @@ in
       };
 
       extraSettings = lib.mkOption {
-        type = with lib.types; attrsOf (oneOf [ str int float bool ]);
-        default = {};   # defaults are provided in the config section with a lower priority
-        description = ''
-          osd config section of the Ceph config file.
-          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
-          + '' can alternatively be written in camelCase as `monOsdFullRatio`.
-        '';
+        type =
+          with lib.types;
+          attrsOf (oneOf [
+            str
+            int
+            float
+            bool
+          ]);
+        default = { }; # defaults are provided in the config section with a lower priority
+        description =
+          ''
+            osd config section of the Ceph config file.
+            Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+          + ''
+            can alternatively be written in camelCase as `monOsdFullRatio`.
+          '';
       };
 
       cephRelease = fclib.ceph.releaseOption // {
@@ -166,7 +180,7 @@ in
         default = fclib.network.stb;
         description = ''
           The Ceph cluster (replication) network.
-          '';
+        '';
       };
 
     };
@@ -174,15 +188,18 @@ in
   };
 
   config = lib.mkMerge [
-      (lib.mkIf cfg.enable {
+    (lib.mkIf cfg.enable {
 
       assertions = [
         {
           assertion = (
-            ( cfg.extraSettings != {}
-            || config.flyingcircus.services.ceph.extraSettings != {}
-            || config.flyingcircus.services.ceph.client.extraSettings != {}
-            ) -> cfg.config == "");
+            (
+              cfg.extraSettings != { }
+              || config.flyingcircus.services.ceph.extraSettings != { }
+              || config.flyingcircus.services.ceph.client.extraSettings != { }
+            )
+            -> cfg.config == ""
+          );
           message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
         }
       ];
@@ -192,18 +209,20 @@ in
           cephRelease = cfg.cephRelease;
         };
 
-        fc-ceph.settings = let
-          osdSettings =  {
-            release = cfg.cephRelease;
-            path = cephPkgs.fc-ceph-path;
-          };
-        in {
-          # fc-ceph OSD
-          OSDManager = osdSettings;
-          # The MaintenanceTasks module uses the `rbd` binary. While it'd be safer to handle it's
-          # ceph version separately, for now just pragmatically follow the OSD version as
-          # by then both OSDs and MONs are already updated.
-          MaintenanceTasks = osdSettings;
+        fc-ceph.settings =
+          let
+            osdSettings = {
+              release = cfg.cephRelease;
+              path = cephPkgs.fc-ceph-path;
+            };
+          in
+          {
+            # fc-ceph OSD
+            OSDManager = osdSettings;
+            # The MaintenanceTasks module uses the `rbd` binary. While it'd be safer to handle it's
+            # ceph version separately, for now just pragmatically follow the OSD version as
+            # by then both OSDs and MONs are already updated.
+            MaintenanceTasks = osdSettings;
           };
       };
 
@@ -224,7 +243,7 @@ in
       };
 
       systemd.services.fc-ceph-osds-all = rec {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "All locally known Ceph OSDs (via fc-ceph managed units)";
         wantedBy = [ "multi-user.target" ];
@@ -254,7 +273,7 @@ in
       } // osdServiceDeps;
 
       systemd.services."fc-ceph-osd@" = rec {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Ceph OSD %i";
 
@@ -282,14 +301,15 @@ in
 
       } // osdServiceDeps;
 
-
     })
     (lib.mkIf (cfg.enable && cfg.config == "") {
-      flyingcircus.services.ceph.extraSettingsSections.osd = lib.recursiveUpdate
-        (expandCamelCaseAttrs defaultOsdSettings) (expandCamelCaseAttrs cfg.extraSettings);
+      flyingcircus.services.ceph.extraSettingsSections.osd =
+        lib.recursiveUpdate (expandCamelCaseAttrs defaultOsdSettings) (
+          expandCamelCaseAttrs cfg.extraSettings
+        );
     })
     (lib.mkIf (cfg.enable && cfg.config != "") {
       environment.etc."ceph/ceph.conf".text = lib.mkAfter cfg.config;
     })
-    ];
+  ];
 }

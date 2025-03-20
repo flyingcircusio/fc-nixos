@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.services.varnish;
@@ -12,7 +17,11 @@ let
   # if there is a default.vcl file, use that instead of the NixOS Varnish configuration
   rawVarnishCfg = fclib.configFromFile /etc/local/varnish/default.vcl null;
   # this is required for testing since the default.vcl file does not exist at build time
-  varnishCfg = if rawVarnishCfg == null && config.environment.etc ? "local/varnish/default.vcl" then config.environment.etc."local/varnish/default.vcl".text else rawVarnishCfg;
+  varnishCfg =
+    if rawVarnishCfg == null && config.environment.etc ? "local/varnish/default.vcl" then
+      config.environment.etc."local/varnish/default.vcl".text
+    else
+      rawVarnishCfg;
 in
 {
   options = with lib; {
@@ -29,8 +38,7 @@ in
       listenAddresses = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         defaultText = "the addresses of the networks `lo` and `srv` (IPv4 & IPv6)";
-        default = fclib.network.srv.dualstack.addressesQuoted ++
-                  fclib.network.lo.dualstack.addressesQuoted;
+        default = fclib.network.srv.dualstack.addressesQuoted ++ fclib.network.lo.dualstack.addressesQuoted;
       };
 
     };
@@ -38,12 +46,16 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf fccfg.enable {
-      assertions = [{
-        assertion = builtins.length (builtins.attrNames config.flyingcircus.services.varnish.virtualHosts) <= 1 || builtins.isNull varnishCfg;
-        message  = ''
-          Please remove the file `/etc/local/varnish/default.vcl` if you want to specify your Varnish configuration in Nix code.
-        '';
-      }];
+      assertions = [
+        {
+          assertion =
+            builtins.length (builtins.attrNames config.flyingcircus.services.varnish.virtualHosts) <= 1
+            || builtins.isNull varnishCfg;
+          message = ''
+            Please remove the file `/etc/local/varnish/default.vcl` if you want to specify your Varnish configuration in Nix code.
+          '';
+        }
+      ];
 
       environment.etc = {
         "local/varnish/README.txt".text = ''
@@ -61,60 +73,65 @@ in
           command = "${cfg.package}/bin/varnishadm status";
           timeout = 180;
         };
-        varnish_http = let
-          check-varnish-http = pkgs.writers.writePython3 "check-varnish-http" {
-            flakeIgnore = [ "E501" ]; # ignore long lines
-          } ''
-            import subprocess
-            import sys
+        varnish_http =
+          let
+            check-varnish-http =
+              pkgs.writers.writePython3 "check-varnish-http"
+                {
+                  flakeIgnore = [ "E501" ]; # ignore long lines
+                }
+                ''
+                  import subprocess
+                  import sys
 
-            ports = []
+                  ports = []
 
-            for line in (
-                subprocess.check_output(["${cfg.package}/bin/varnishadm", "debug.listen_address"])
-                .decode("ascii")
-                .splitlines()
-            ):
-                line = line.strip()
-                if not line:
-                    continue
-                _, ip, port = line.split()
-                ports.append((ip, port))
+                  for line in (
+                      subprocess.check_output(["${cfg.package}/bin/varnishadm", "debug.listen_address"])
+                      .decode("ascii")
+                      .splitlines()
+                  ):
+                      line = line.strip()
+                      if not line:
+                          continue
+                      _, ip, port = line.split()
+                      ports.append((ip, port))
 
-            if not ports:
-                print("No listen_address reported by varnishadm")
-                sys.exit(2)
+                  if not ports:
+                      print("No listen_address reported by varnishadm")
+                      sys.exit(2)
 
-            STATUS = 0
+                  STATUS = 0
 
-            for ip, port in ports:
-                if ":" in ip:
-                    ip_version = "-6"
-                    print(f"Checking [{ip}]:{port} ...")
-                else:
-                    ip_version = "-4"
-                    print(f"Checking {ip}:{port} ...")
-                proc = subprocess.run(
-                    [
-                        "${pkgs.monitoring-plugins}/bin/check_http",
-                        "-H", ip,
-                        "-p", port,
-                        ip_version,
-                        "-c", "10",
-                        "-w", "3",
-                        "-t", "20",
-                        "-e", "HTTP",
-                    ]
-                )
-                print()
-                STATUS = max([STATUS, proc.returncode])
+                  for ip, port in ports:
+                      if ":" in ip:
+                          ip_version = "-6"
+                          print(f"Checking [{ip}]:{port} ...")
+                      else:
+                          ip_version = "-4"
+                          print(f"Checking {ip}:{port} ...")
+                      proc = subprocess.run(
+                          [
+                              "${pkgs.monitoring-plugins}/bin/check_http",
+                              "-H", ip,
+                              "-p", port,
+                              ip_version,
+                              "-c", "10",
+                              "-w", "3",
+                              "-t", "20",
+                              "-e", "HTTP",
+                          ]
+                      )
+                      print()
+                      STATUS = max([STATUS, proc.returncode])
 
-            sys.exit(STATUS)
-          '';
-          in {
-          notification = "varnish port 8008 HTTP response";
-          command = toString check-varnish-http;
-        };
+                  sys.exit(STATUS)
+                '';
+          in
+          {
+            notification = "varnish port 8008 HTTP response";
+            command = toString check-varnish-http;
+          };
       };
 
       flyingcircus.services.telegraf.inputs.varnish = [
@@ -136,8 +153,7 @@ in
       flyingcircus.services.varnish = {
         enable = true;
         extraCommandLine = "-s malloc,${toString cacheMemory}M";
-        http_address = lib.concatMapStringsSep " -a "
-          (addr: "${addr}:8008") fccfg.listenAddresses;
+        http_address = lib.concatMapStringsSep " -a " (addr: "${addr}:8008") fccfg.listenAddresses;
         virtualHosts = lib.optionalAttrs (varnishCfg != null) {
           "default-vcl" = {
             condition = "true";

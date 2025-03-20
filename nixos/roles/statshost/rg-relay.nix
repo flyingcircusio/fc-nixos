@@ -1,6 +1,11 @@
 # Relay stats of a resource group via NGINX.
 # TODO: rename, the role name should say that it's acting as a resource group proxy.
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 

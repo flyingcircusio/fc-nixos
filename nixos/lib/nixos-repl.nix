@@ -18,16 +18,24 @@
 
 with builtins;
 let
-  pkgs = import <nixpkgs> {};
-  nixos = import <nixpkgs/nixos> {};
+  pkgs = import <nixpkgs> { };
+  nixos = import <nixpkgs/nixos> { };
   inherit (nixos) options;
 
   etc = printEtcFile options;
-  replHelpers = pkgs.callPackage ./repl-helpers.nix {};
+  replHelpers = pkgs.callPackage ./repl-helpers.nix { };
   inherit (replHelpers) printEtcFile format print;
 
-in builtins // nixos.config // {
-  inherit pkgs etc format print;
+in
+builtins
+// nixos.config
+// {
+  inherit
+    pkgs
+    etc
+    format
+    print
+    ;
   inherit (pkgs) lib;
   inherit (nixos) config options;
 }

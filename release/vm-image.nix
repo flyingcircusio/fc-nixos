@@ -1,17 +1,23 @@
-{ nixpkgs        # path of upstream source tree
-, channelSources # initial content of /root/.nix-defexprs/channels/nixos
-, configFile     # initial /etc/nixos/configuration.nix
-, contents ? []  # files to be placed inside the image (see make-disk-image.nix)
-, version ? "0"
+{
+  nixpkgs, # path of upstream source tree
+  channelSources, # initial content of /root/.nix-defexprs/channels/nixos
+  configFile, # initial /etc/nixos/configuration.nix
+  contents ? [ ], # files to be placed inside the image (see make-disk-image.nix)
+  version ? "0",
 }:
 
-{ config, lib, pkgs, system, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  system,
+  ...
+}:
 
 with lib;
 
 let
-  name =
-    "nixos-fc-${config.system.nixos.label}-${pkgs.stdenv.hostPlatform.system}";
+  name = "nixos-fc-${config.system.nixos.label}-${pkgs.stdenv.hostPlatform.system}";
   fileName = "${name}.img.lz4";
 
 in
@@ -19,9 +25,9 @@ in
   config = {
 
     boot.initrd.services.udev.rules = ''
-        # static/bootstrap fallback rules for VMs
-        SUBSYSTEM=="net", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
-        SUBSYSTEM=="net", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
+      # static/bootstrap fallback rules for VMs
+      SUBSYSTEM=="net", ATTR{address}=="02:00:00:02:??:??", NAME="ethfe"
+      SUBSYSTEM=="net", ATTR{address}=="02:00:00:03:??:??", NAME="ethsrv"
     '';
 
     networking.useDHCP = true;
@@ -40,19 +46,27 @@ in
     system.extraDependencies = config.flyingcircus.services.sensu-client.checkEnvPackages;
 
     system.build.fcImage = import ./make-disk-image.nix {
-      inherit pkgs lib config channelSources configFile contents name;
+      inherit
+        pkgs
+        lib
+        config
+        channelSources
+        configFile
+        contents
+        name
+        ;
       rootLabel = "root";
       diskSize = 10240;
       postVM = ''
-          echo "creating Flying Circus VM image..."
-          mkdir -p $out
-          fn=$out/${fileName}
-          ${pkgs.lz4.out}/bin/lz4 $diskImage $fn
-          rm $diskImage
-          mkdir $out/nix-support
-          echo "file img $fn" >> $out/nix-support/hydra-build-products
-        '';
-      };
+        echo "creating Flying Circus VM image..."
+        mkdir -p $out
+        fn=$out/${fileName}
+        ${pkgs.lz4.out}/bin/lz4 $diskImage $fn
+        rm $diskImage
+        mkdir $out/nix-support
+        echo "file img $fn" >> $out/nix-support/hydra-build-products
+      '';
+    };
   };
 
 }

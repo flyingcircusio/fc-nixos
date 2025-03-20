@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -12,7 +17,7 @@ let
     let
       flags = "rw,sync,no_root_squash,no_subtree_check,anonuid=162,anongid=900";
     in
-      lib.concatMapStringsSep " " (a: "${head a.ips}(${flags})") agents;
+    lib.concatMapStringsSep " " (a: "${head a.ips}(${flags})") agents;
 in
 {
   options = with lib; {

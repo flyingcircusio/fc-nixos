@@ -1,8 +1,9 @@
-{ lib
-, docutils
-, fetchFromGitHub
-, lzo
-, rustPlatform
+{
+  lib,
+  docutils,
+  fetchFromGitHub,
+  lzo,
+  rustPlatform,
 }:
 
 rustPlatform.buildRustPackage rec {

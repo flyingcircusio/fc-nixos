@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -20,12 +25,14 @@ in
         description = "Address to listen to. FerretDB only supports listen on a single address.";
       };
 
-      extraCheckArgs = with lib; mkOption {
-        type = types.str;
-        default = "-h ${cfg.address} -p ${toString cfg.port}";
-        example = "-h example00.fe.rzob.fcio.net -p 27017 -t";
-        description = "Extra arguments to be passed to the check_mongodb script";
-      };
+      extraCheckArgs =
+        with lib;
+        mkOption {
+          type = types.str;
+          default = "-h ${cfg.address} -p ${toString cfg.port}";
+          example = "-h example00.fe.rzob.fcio.net -p 27017 -t";
+          description = "Extra arguments to be passed to the check_mongodb script";
+        };
 
       port = mkOption {
         type = types.port;
@@ -78,10 +85,12 @@ in
       };
 
       services.postgresql.ensureDatabases = [ "ferretdb" ];
-      services.postgresql.ensureUsers = [{
-        name = "ferretdb";
-        ensureDBOwnership = true;
-      }];
+      services.postgresql.ensureUsers = [
+        {
+          name = "ferretdb";
+          ensureDBOwnership = true;
+        }
+      ];
 
       systemd.services.ferretdb = {
         serviceConfig = {

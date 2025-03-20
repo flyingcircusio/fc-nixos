@@ -1,4 +1,5 @@
-{ lib, ... }: {
+{ lib, ... }:
+{
   # indentWith prepends a list fo strings with the first parameter
   # indentWith :: String -> [String] -> [String]
   # ```haskell

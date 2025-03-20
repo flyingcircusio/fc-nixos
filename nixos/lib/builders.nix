@@ -4,7 +4,8 @@ with builtins;
 
 let
   shellDryRun = "${pkgs.stdenv.shell} -n -O extglob";
-in {
+in
+{
   /*
     Similar to writeShellScriptBin and writeScriptBin.
     Writes an executable Shell script to /nix/store/<store path>/bin/<name> and
@@ -22,7 +23,6 @@ in {
 
     Writes my-file to /nix/store/<store path>/bin/my-file and makes executable.
 
-
     writeShellApplication {
       name = "my-file";
       runtimeInputs = [ curl w3m ];
@@ -30,46 +30,53 @@ in {
         curl -s 'https://nixos.org' | w3m -dump -T text/html
        '';
     }
-
   */
   writeShellApplication =
-    { name
-    , text
-    , runtimeInputs ? [ ]
-    , checkPhase ? null
-    , excludeShellChecks ? [  ]
+    {
+      name,
+      text,
+      runtimeInputs ? [ ],
+      checkPhase ? null,
+      excludeShellChecks ? [ ],
     }:
     pkgs.writeTextFile {
       inherit name;
       executable = true;
       destination = "/bin/${name}";
-      text = ''
-        #!${pkgs.runtimeShell}
-        set -o errexit
-        set -o nounset
-        set -o pipefail
-      '' + lib.optionalString (runtimeInputs != [ ]) ''
+      text =
+        ''
+          #!${pkgs.runtimeShell}
+          set -o errexit
+          set -o nounset
+          set -o pipefail
+        ''
+        + lib.optionalString (runtimeInputs != [ ]) ''
 
-        export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
-      '' + ''
+          export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
+        ''
+        + ''
 
-        ${text}
-      '';
+          ${text}
+        '';
 
       checkPhase =
         let
-          excludeOption = lib.optionalString (excludeShellChecks != [ ]) "--exclude '${lib.concatStringsSep "," excludeShellChecks}'";
+          excludeOption = lib.optionalString (
+            excludeShellChecks != [ ]
+          ) "--exclude '${lib.concatStringsSep "," excludeShellChecks}'";
         in
-        if checkPhase == null then ''
-          target=$out/bin/${name}
-          runHook preCheck
-          ${shellDryRun} "$target"
-          # XXX building shellcheck is prohibitively ram expensive if
-          # it's not already available from a cache
-          # $\{pkgs.shellcheck}/bin/shellcheck $\{excludeOption} "$target"
-          runHook postCheck
-        ''
-        else checkPhase;
+        if checkPhase == null then
+          ''
+            target=$out/bin/${name}
+            runHook preCheck
+            ${shellDryRun} "$target"
+            # XXX building shellcheck is prohibitively ram expensive if
+            # it's not already available from a cache
+            # $\{pkgs.shellcheck}/bin/shellcheck $\{excludeOption} "$target"
+            runHook postCheck
+          ''
+        else
+          checkPhase;
     };
 
 }

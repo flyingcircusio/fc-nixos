@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -76,7 +81,11 @@ in
     ];
 
     boot = {
-      kernelModules = [ "kvm" "kvm_intel" "kvm_amd" ];
+      kernelModules = [
+        "kvm"
+        "kvm_intel"
+        "kvm_amd"
+      ];
     };
 
     environment.systemPackages = with pkgs; [
@@ -94,11 +103,19 @@ in
       fc-vm-migration-watch = "watch '${cfg.package}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
     };
 
-    environment.etc."qemu/fc-qemu.conf".text = let
-      hostname = config.networking.hostName;
-      migration_address = fclib.fqdn { vlan = cfg.network.vlan; domain = "gocept.net"; };
-      migration_ctl_address = fclib.fqdn { vlan = cfg.network.vlan; domain = "gocept.net"; };
-    in ''
+    environment.etc."qemu/fc-qemu.conf".text =
+      let
+        hostname = config.networking.hostName;
+        migration_address = fclib.fqdn {
+          vlan = cfg.network.vlan;
+          domain = "gocept.net";
+        };
+        migration_ctl_address = fclib.fqdn {
+          vlan = cfg.network.vlan;
+          domain = "gocept.net";
+        };
+      in
+      ''
         [qemu]
         accelerator = kvm
         ; qemu 4.1 compatibility
@@ -130,9 +147,10 @@ in
         cluster = ceph
         lock_host = ${hostname}
         create-vm = ${pkgs.fc.agent}/bin/fc-create-vm -I {name}
-     '' + lib.optionalString (cfg.mkfsXfsFlags != null) ''
+      ''
+      + lib.optionalString (cfg.mkfsXfsFlags != null) ''
         mkfs-xfs = ${cfg.mkfsXfsFlags}
-     '';
+      '';
 
     # This needs to stay as is because the path is kept alive during live
     # migration.
@@ -151,7 +169,7 @@ in
         ${pkgs.iproute2}/bin/ip link set $INTERFACE up
         ${pkgs.iproute2}/bin/ip link set mtu $(< /sys/class/net/br''${VLAN}/mtu) dev $INTERFACE
         ${pkgs.bridge-utils}/bin/brctl addif $BRIDGE $INTERFACE
-        '';
+      '';
       mode = "0744";
     };
 
@@ -164,20 +182,32 @@ in
 
         ${pkgs.bridge-utils}/bin/brctl delif $BRIDGE $INTERFACE
         ${pkgs.iproute2}/bin/ip link set $INTERFACE down
-        '';
+      '';
       mode = "0744";
     };
 
     flyingcircus.services.consul.enable = true;
     flyingcircus.services.consul.watches = [
-      { handler_type = "script";
-        args = ["/run/wrappers/bin/sudo" "${cfg.package}/bin/fc-qemu" "-v" "handle-consul-event"];
+      {
+        handler_type = "script";
+        args = [
+          "/run/wrappers/bin/sudo"
+          "${cfg.package}/bin/fc-qemu"
+          "-v"
+          "handle-consul-event"
+        ];
         type = "keyprefix";
         prefix = "node/";
       }
 
-      { handler_type = "script";
-        args = ["/run/wrappers/bin/sudo" "${cfg.package}/bin/fc-qemu" "-v" "handle-consul-event"];
+      {
+        handler_type = "script";
+        args = [
+          "/run/wrappers/bin/sudo"
+          "${cfg.package}/bin/fc-qemu"
+          "-v"
+          "handle-consul-event"
+        ];
         type = "keyprefix";
         prefix = "snapshot/";
       }
@@ -188,11 +218,12 @@ in
         commands = [
           "${cfg.package}/bin/fc-qemu -v handle-consul-event"
           "/home/ctheune/fc.qemu/result/bin/fc-qemu -v handle-consul-event"
-           ];
+        ];
         users = [ "consul" ];
       }
 
-      { commands = [ "${cfg.package}/bin/fc-qemu check" ];
+      {
+        commands = [ "${cfg.package}/bin/fc-qemu check" ];
         groups = [ "sensuclient" ];
       }
     ];
@@ -200,7 +231,10 @@ in
     systemd.services.fc-qemu-reattach-taps = {
       description = "Reattach all VM taps if needed.";
 
-      path = [ pkgs.jq pkgs.iproute2 ];
+      path = [
+        pkgs.jq
+        pkgs.iproute2
+      ];
 
       script = ''
         for interface in $(ip -j link show |  jq '.[] | .ifname' -r | egrep '^t(srv|fe)'); do
@@ -210,31 +244,43 @@ in
       '';
 
       wantedBy = [ "multi-user.target" ];
-      bindsTo = [ "brfe-netdev.service" "brsrv-netdev.service" ];
-      after = [ "brfe-netdev.service" "brsrv-netdev.service" ];
-
-      serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-        };
-
-    };
-
-
-    systemd.services.fc-qemu-clean-logs = let
-      fcQemuCleanLogScript = (
-        pkgs.writers.writePython3Bin "fc-qemu-clean-logs"
-        {} (builtins.readFile ../../pkgs/fc/qemu/clean-logs.py));
-    in {
-      description = "Clean orphaned fc.qemu logs.";
-
-      path = [ pkgs.python3 pkgs.lsof ];
+      bindsTo = [
+        "brfe-netdev.service"
+        "brsrv-netdev.service"
+      ];
+      after = [
+        "brfe-netdev.service"
+        "brsrv-netdev.service"
+      ];
 
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "${fcQemuCleanLogScript}/bin/fc-qemu-clean-logs";
-       };
+        RemainAfterExit = true;
+      };
+
     };
+
+    systemd.services.fc-qemu-clean-logs =
+      let
+        fcQemuCleanLogScript = (
+          pkgs.writers.writePython3Bin "fc-qemu-clean-logs" { } (
+            builtins.readFile ../../pkgs/fc/qemu/clean-logs.py
+          )
+        );
+      in
+      {
+        description = "Clean orphaned fc.qemu logs.";
+
+        path = [
+          pkgs.python3
+          pkgs.lsof
+        ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = "${fcQemuCleanLogScript}/bin/fc-qemu-clean-logs";
+        };
+      };
 
     systemd.timers.fc-qemu-clean-logs = {
       wantedBy = [ "timers.target" ];
@@ -254,8 +300,8 @@ in
       '';
 
       serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
+        Type = "oneshot";
+        RemainAfterExit = true;
       };
 
     };
@@ -311,7 +357,10 @@ in
 
     systemd.services.fc-qemu-scrub = {
       description = "Scrub Qemu/KVM VM inventory.";
-      path = [ pkgs.fc.agent cfg.package ];
+      path = [
+        pkgs.fc.agent
+        cfg.package
+      ];
       serviceConfig = {
         Type = "oneshot";
         TimeoutStartSec = 600; # PL-132323
@@ -336,7 +385,7 @@ in
       "vm.zone_reclaim_mode" = "1";
 
       # Qemu hosts tend to cycle PIDs pretty fast
-      "kernel.pid_max" = lib.mkForce "999999";  # mkForce to avoid conflict with ceph role
+      "kernel.pid_max" = lib.mkForce "999999"; # mkForce to avoid conflict with ceph role
     };
 
     # Run a proxy to give VMs running on this host fast access to radosgw.
@@ -354,25 +403,28 @@ in
 
       backend = {
         s3 = {
-          servers = map
-            (service: let
-                name = head (lib.splitString "." service.address);
-                address = head (filter fclib.isIp4 service.ips);
-             in
-                "s3-${name} ${address}:7480 check inter 10s rise 2 fall 1 maxconn 40")
-            (fclib.findServices "ceph_rgw-internal-server");
+          servers = map (
+            service:
+            let
+              name = head (lib.splitString "." service.address);
+              address = head (filter fclib.isIp4 service.ips);
+            in
+            "s3-${name} ${address}:7480 check inter 10s rise 2 fall 1 maxconn 40"
+          ) (fclib.findServices "ceph_rgw-internal-server");
           extraConfig = ''
-              option httpchk GET /rgw-monitoring/probe
+            option httpchk GET /rgw-monitoring/probe
           '';
         };
       };
     };
 
-    networking.firewall.extraCommands = let
-      srvDevice = config.fclib.network.srv.interface;
-    in ''
-      # Accept traffic to the radosgw service
-      ${fclib.iptables "127.0.0.1"} -A nixos-fw -p tcp --dport 7480 -i ${srvDevice} -j nixos-fw-accept
-    '';
+    networking.firewall.extraCommands =
+      let
+        srvDevice = config.fclib.network.srv.interface;
+      in
+      ''
+        # Accept traffic to the radosgw service
+        ${fclib.iptables "127.0.0.1"} -A nixos-fw -p tcp --dport 7480 -i ${srvDevice} -j nixos-fw-accept
+      '';
   };
 }

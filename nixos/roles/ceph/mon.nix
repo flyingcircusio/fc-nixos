@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -35,17 +40,20 @@ let
     monOsdNearfullRatio = 0.85;
     monOsdFullRatio = 0.95;
   };
-  perMonSettings = mon:
-  let
-    id = head (lib.splitString "." mon.address);
-    # we have always been using the default mon ports, so there is no need
-    # to explicitly specify a port
-    addr = toString (head (filter fclib.isIp4 mon.ips));
-  in
-  { "mon.${id}" = {
-    host = id;
-    publicAddr = addr;
-  };};
+  perMonSettings =
+    mon:
+    let
+      id = head (lib.splitString "." mon.address);
+      # we have always been using the default mon ports, so there is no need
+      # to explicitly specify a port
+      addr = toString (head (filter fclib.isIp4 mon.ips));
+    in
+    {
+      "mon.${id}" = {
+        host = id;
+        publicAddr = addr;
+      };
+    };
   defaultMgrSettings = {
     mgrInitialModules = lib.concatStringsSep " " mgrEnabledModules.${role.cephRelease};
   };
@@ -71,13 +79,22 @@ in
         '';
       };
       extraSettings = lib.mkOption {
-        type = with lib.types; attrsOf (oneOf [ str int float bool ]);
-        default = {};   # defaults are provided in the config section with a lower priority
-        description = ''
-          mon config of the Ceph config file.
-          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
-          + '' can alternatively be written in camelCase as `monOsdFullRatio`.
-        '';
+        type =
+          with lib.types;
+          attrsOf (oneOf [
+            str
+            int
+            float
+            bool
+          ]);
+        default = { }; # defaults are provided in the config section with a lower priority
+        description =
+          ''
+            mon config of the Ceph config file.
+            Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+          + ''
+            can alternatively be written in camelCase as `monOsdFullRatio`.
+          '';
       };
 
       cephRelease = fclib.ceph.releaseOption // {
@@ -88,7 +105,8 @@ in
         enabledModules = lib.mkOption {
           type = with lib.types; listOf str;
           default = mgrEnabledModules."${role.cephRelease}";
-          description = "Modules to be explicitly activated via this config,"
+          description =
+            "Modules to be explicitly activated via this config,"
             + " always_on modules do not need to be listed here.";
         };
         disabledModules = lib.mkOption {
@@ -109,26 +127,31 @@ in
       assertions = [
         {
           assertion = (
-            ( role.extraSettings != {}
-            || config.flyingcircus.services.ceph.extraSettings != {}
-            || config.flyingcircus.services.ceph.client.extraSettings != {}
-            ) -> role.config == "");
+            (
+              role.extraSettings != { }
+              || config.flyingcircus.services.ceph.extraSettings != { }
+              || config.flyingcircus.services.ceph.client.extraSettings != { }
+            )
+            -> role.config == ""
+          );
           message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
         }
       ];
       flyingcircus.services.ceph = {
-        fc-ceph.settings = let
-          monSettings =  {
-            release = role.cephRelease;
-            path = cephPkgs.fc-ceph-path;
-          };
-        in {
-          # fc-ceph monitor components
-          Monitor = monSettings;
-          Manager = monSettings;
-          # use the same ceph release for KeyManager, as authentication is significantly
-          # coordinated by mons
-          KeyManager = monSettings;
+        fc-ceph.settings =
+          let
+            monSettings = {
+              release = role.cephRelease;
+              path = cephPkgs.fc-ceph-path;
+            };
+          in
+          {
+            # fc-ceph monitor components
+            Monitor = monSettings;
+            Manager = monSettings;
+            # use the same ceph release for KeyManager, as authentication is significantly
+            # coordinated by mons
+            KeyManager = monSettings;
           };
 
         server = {
@@ -138,7 +161,7 @@ in
       };
 
       systemd.services.fc-ceph-mon = rec {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Local Ceph Mon (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
@@ -215,7 +238,7 @@ in
       };
 
       systemd.services.fc-ceph-mgr = rec {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Local Ceph MGR (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
@@ -233,9 +256,12 @@ in
 
         # imperatively ensure mgr modules
         preStart = lib.concatStringsSep "\n" (
-          lib.forEach mgrEnabledModules.${role.cephRelease} (mod: "${cephPkgs.ceph}/bin/ceph mgr module enable ${mod} --force")
-          ++
-          lib.forEach mgrDisabledModules.${role.cephRelease} (mod: "${cephPkgs.ceph}/bin/ceph mgr module disable ${mod}")
+          lib.forEach mgrEnabledModules.${role.cephRelease} (
+            mod: "${cephPkgs.ceph}/bin/ceph mgr module enable ${mod} --force"
+          )
+          ++ lib.forEach mgrDisabledModules.${role.cephRelease} (
+            mod: "${cephPkgs.ceph}/bin/ceph mgr module disable ${mod}"
+          )
         );
 
         serviceConfig = {
@@ -249,9 +275,10 @@ in
         };
       };
 
-      flyingcircus.services.sensu-client.checks = let
+      flyingcircus.services.sensu-client.checks =
+        let
           # check config generated directly from our platform settings
-          configtoml = (pkgs.formats.toml {}).generate "config.toml" {
+          configtoml = (pkgs.formats.toml { }).generate "config.toml" {
             thresholds = {
               # use canonical, non-camelCase form of ceph settings
               nearfull = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd nearfull ratio";
@@ -259,9 +286,11 @@ in
             };
             ceph_roots = config.flyingcircus.services.ceph.server.crushroot_to_rbdpool_mapping;
           };
-        in {
+        in
+        {
           ceph_snapshot_restore_fill = {
-            notification = "The Ceph cluster might not have enough space for restoring "
+            notification =
+              "The Ceph cluster might not have enough space for restoring "
               + "the largest RBD snapshot. (does not consider sparse allocation)";
             command = "sudo ${cephPkgs.fc-check-ceph}/bin/check_snapshot_restore_fill ${configtoml}";
             interval = 600;
@@ -275,15 +304,19 @@ in
 
     })
     (lib.mkIf (role.enable && role.config == "") {
-      flyingcircus.services.ceph.extraSettingsSections = lib.recursiveUpdate
-      { mon = expandCamelCaseAttrs defaultMonSettings; }
-      (lib.recursiveUpdate
-        (expandCamelCaseSection (lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))))
-        (lib.recursiveUpdate
-          { mon = expandCamelCaseAttrs role.extraSettings; }
-          { mon = expandCamelCaseAttrs defaultMgrSettings; }
-        )
-      );
+      flyingcircus.services.ceph.extraSettingsSections =
+        lib.recursiveUpdate { mon = expandCamelCaseAttrs defaultMonSettings; }
+          (
+            lib.recursiveUpdate
+              (expandCamelCaseSection (
+                lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))
+              ))
+              (
+                lib.recursiveUpdate { mon = expandCamelCaseAttrs role.extraSettings; } {
+                  mon = expandCamelCaseAttrs defaultMgrSettings;
+                }
+              )
+          );
     })
 
     (lib.mkIf (role.enable && role.config != "") {
@@ -292,7 +325,7 @@ in
     (lib.mkIf (role.enable && role.primary) {
 
       systemd.timers.fc-ceph-load-vm-images = {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Timer for loading new VM base images";
         wantedBy = [ "timers.target" ];
@@ -303,7 +336,7 @@ in
       };
 
       systemd.timers.fc-ceph-purge-old-snapshots = {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Timer for cleaning old snapshots";
         wantedBy = [ "timers.target" ];
@@ -314,7 +347,7 @@ in
       };
 
       systemd.timers.fc-ceph-clean-deleted-vms = {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Timer for cleaning deleted VM disks";
         wantedBy = [ "timers.target" ];
@@ -325,7 +358,7 @@ in
       };
 
       systemd.timers.fc-ceph-mon-update-client-keys = {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Timer for updating client keys and authorization in the monitor database.";
         wantedBy = [ "timers.target" ];

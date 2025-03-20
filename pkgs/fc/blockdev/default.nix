@@ -1,5 +1,11 @@
-{ lib, stdenv, python3Full, megacli, lvm2, makeWrapper }:
-
+{
+  lib,
+  stdenv,
+  python3Full,
+  megacli,
+  lvm2,
+  makeWrapper,
+}:
 
 stdenv.mkDerivation rec {
   version = "0.1";
@@ -19,7 +25,12 @@ stdenv.mkDerivation rec {
     chmod +x $out/bin/fc-blockdev
     patchShebangs $out/bin
     wrapProgram $out/bin/fc-blockdev \
-      --prefix PATH : "${lib.makeBinPath [ lvm2 megacli ]}"
+      --prefix PATH : "${
+        lib.makeBinPath [
+          lvm2
+          megacli
+        ]
+      }"
   '';
 
   meta = with lib; {

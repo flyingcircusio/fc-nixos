@@ -1,25 +1,38 @@
-{ system ? builtins.currentSystem
-, nixpkgs ? (import ../versions.nix {}).nixpkgs
-, pkgs ? import nixpkgs { inherit system; }
+{
+  system ? builtins.currentSystem,
+  nixpkgs ? (import ../versions.nix { }).nixpkgs,
+  pkgs ? import nixpkgs { inherit system; },
 }:
 
 with pkgs.lib;
 
 let
   # test calling code copied from nixos/release.nix
-  importTest = fn: args: system: import fn ({
-    inherit system;
-  } // args);
+  importTest =
+    fn: args: system:
+    import fn (
+      {
+        inherit system;
+      }
+      // args
+    );
 
   callTest = fn: args: hydraJob (importTest fn args system).test;
 
-  callSubTests = fn: args: let
-    discover = attrs: let
-      subTests = filterAttrs (const (hasAttr "test")) attrs;
-    in mapAttrs (const (t: hydraJob t.test)) subTests;
-  in discover (importTest fn args system);
+  callSubTests =
+    fn: args:
+    let
+      discover =
+        attrs:
+        let
+          subTests = filterAttrs (const (hasAttr "test")) attrs;
+        in
+        mapAttrs (const (t: hydraJob t.test)) subTests;
+    in
+    discover (importTest fn args system);
 
-in {
+in
+{
   # Run selected upstream tests against our overlay.
   # !!! Be careful when inheriting tests from upstream as tests
   # may not use our package overlay properly!
@@ -29,32 +42,34 @@ in {
   # When in doubt, it's better to write our own test or copy&paste from nixpkgs.
   # inherit (pkgs.nixosTests)
 
-  antivirus = callTest ./antivirus.nix {};
-  audit = callTest ./audit.nix {};
+  antivirus = callTest ./antivirus.nix { };
+  audit = callTest ./audit.nix { };
   backyserver_ceph-nautilus = callTest ./backyserver.nix { clientCephRelease = "nautilus"; };
-  backyserver_volumes = callTest ./backy_volumes.nix {};
-  channel = callTest ./channel.nix {};
-  ceph-nautilus = callTest ./ceph-nautilus.nix {};
-  coturn = callTest ./coturn.nix {};
-  docker = callTest ./docker.nix {};
-  fcagent = callTest ./fcagent.nix {};
-  fde-tooling = callTest ./fde-tooling.nix {};
-  ferretdb = callTest ./ferretdb.nix {};
-  ffmpeg = callTest ./ffmpeg.nix {};
-  filebeat = callTest ./filebeat.nix {};
-  frr = callSubTests ./frr.nix {};
-  collect-garbage = callTest ./collect-garbage.nix {};
-  gitlab = callTest ./gitlab.nix {};
-  haproxy = callTest ./haproxy.nix {};
-  ipv6-autoconfig = callSubTests ./ipv6-autoconfig.nix {};
-  java = callTest ./java.nix {};
-  journal = callTest ./journal.nix {};
-  journalbeat = callTest ./journalbeat.nix {};
-  k3s = callTest ./k3s {};
-  k3s_monitoring = callTest ./k3s/monitoring.nix {};
-  kernelconfig = callTest ./kernelconfig.nix {};
-  kernelversions = callTest ./kernelversions.nix {};
-  kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {clientCephRelease = "nautilus";};
+  backyserver_volumes = callTest ./backy_volumes.nix { };
+  channel = callTest ./channel.nix { };
+  ceph-nautilus = callTest ./ceph-nautilus.nix { };
+  coturn = callTest ./coturn.nix { };
+  docker = callTest ./docker.nix { };
+  fcagent = callTest ./fcagent.nix { };
+  fde-tooling = callTest ./fde-tooling.nix { };
+  ferretdb = callTest ./ferretdb.nix { };
+  ffmpeg = callTest ./ffmpeg.nix { };
+  filebeat = callTest ./filebeat.nix { };
+  frr = callSubTests ./frr.nix { };
+  collect-garbage = callTest ./collect-garbage.nix { };
+  gitlab = callTest ./gitlab.nix { };
+  haproxy = callTest ./haproxy.nix { };
+  ipv6-autoconfig = callSubTests ./ipv6-autoconfig.nix { };
+  java = callTest ./java.nix { };
+  journal = callTest ./journal.nix { };
+  journalbeat = callTest ./journalbeat.nix { };
+  k3s = callTest ./k3s { };
+  k3s_monitoring = callTest ./k3s/monitoring.nix { };
+  kernelconfig = callTest ./kernelconfig.nix { };
+  kernelversions = callTest ./kernelversions.nix { };
+  kvm_host_ceph-nautilus-nautilus = callTest ./kvm_host_ceph-nautilus.nix {
+    clientCephRelease = "nautilus";
+  };
   lampVm = callTest ./lamp/vm-test.nix { };
   lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
   lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
@@ -73,28 +88,28 @@ in {
   # PL-133352: disabling due to some deprecations in the test PHP code
   #lampPackage84 = callTest ./lamp/package-test.nix { version = "lamp_php84"; };
 
-  locale = callTest ./locale.nix {};
-  loghost = callTest ./loghost.nix {};
-  login = callTest ./login.nix {};
-  logrotate = callTest ./logrotate.nix {};
-  mail = callTest ./mail {};
-  mailstub = callTest ./mail/stub.nix {};
-  matomo = callTest ./matomo.nix {};
-  memcached = callTest ./memcached.nix {};
+  locale = callTest ./locale.nix { };
+  loghost = callTest ./loghost.nix { };
+  login = callTest ./login.nix { };
+  logrotate = callTest ./logrotate.nix { };
+  mail = callTest ./mail { };
+  mailstub = callTest ./mail/stub.nix { };
+  matomo = callTest ./matomo.nix { };
+  memcached = callTest ./memcached.nix { };
   mongodb32 = callTest ./mongodb.nix { version = "3.2"; };
   mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
   mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
   mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
   mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
-  network = callSubTests ./network {};
-  nfs = callTest ./nfs.nix {};
-  nginx = callTest ./nginx.nix {};
-  nix-version = callTest ./nix-version.nix {};
-  nodejs = callTest ./nodejs.nix {};
-  opensearch = callTest ./opensearch.nix {};
-  opensearch_dashboards = callTest ./opensearch_dashboards.nix {};
-  openvpn = callTest ./openvpn.nix {};
+  network = callSubTests ./network { };
+  nfs = callTest ./nfs.nix { };
+  nginx = callTest ./nginx.nix { };
+  nix-version = callTest ./nix-version.nix { };
+  nodejs = callTest ./nodejs.nix { };
+  opensearch = callTest ./opensearch.nix { };
+  opensearch_dashboards = callTest ./opensearch_dashboards.nix { };
+  openvpn = callTest ./openvpn.nix { };
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   percona83 = callTest ./mysql.nix { rolename = "percona83"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
@@ -104,21 +119,21 @@ in {
   postgresql16 = callTest ./postgresql { version = "16"; };
   # postgres17 is going to be introduced later throughout the release cycle
   #postgresql17 = callTest ./postgresql { version = "17"; };
-  postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix {};
-  postgresql-autoupgrade-exts = callSubTests ./postgresql/upgrade-with-extension.nix {};
-  prometheus = callTest ./prometheus.nix {};
-  rabbitmq = callTest ./rabbitmq.nix {};
-  redis = callTest ./redis.nix {};
-  rg-relay = callTest ./statshost/rg-relay.nix {};
-  router = callSubTests ./router {};
-  sensuclient = callTest ./sensuclient.nix {};
-  servicecheck = callTest ./servicecheck.nix {};
-  statshost-global = callTest ./statshost/statshost-global.nix {};
-  statshost-master = callTest ./statshost/statshost-master.nix {};
-  sudo = callTest ./sudo.nix {};
-  syslog = callSubTests ./syslog.nix {};
-  systemd-service-cycles = callTest ./systemd-service-cycles.nix {};
-  users = callTest ./users.nix {};
-  vxlan = callTest ./vxlan.nix {};
-  webproxy = callTest ./webproxy.nix {};
+  postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix { };
+  postgresql-autoupgrade-exts = callSubTests ./postgresql/upgrade-with-extension.nix { };
+  prometheus = callTest ./prometheus.nix { };
+  rabbitmq = callTest ./rabbitmq.nix { };
+  redis = callTest ./redis.nix { };
+  rg-relay = callTest ./statshost/rg-relay.nix { };
+  router = callSubTests ./router { };
+  sensuclient = callTest ./sensuclient.nix { };
+  servicecheck = callTest ./servicecheck.nix { };
+  statshost-global = callTest ./statshost/statshost-global.nix { };
+  statshost-master = callTest ./statshost/statshost-master.nix { };
+  sudo = callTest ./sudo.nix { };
+  syslog = callSubTests ./syslog.nix { };
+  systemd-service-cycles = callTest ./systemd-service-cycles.nix { };
+  users = callTest ./users.nix { };
+  vxlan = callTest ./vxlan.nix { };
+  webproxy = callTest ./webproxy.nix { };
 }

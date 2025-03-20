@@ -1,4 +1,8 @@
-{ pkgs, lib, rustPlatform }:
+{
+  pkgs,
+  lib,
+  rustPlatform,
+}:
 
 with rustPlatform;
 

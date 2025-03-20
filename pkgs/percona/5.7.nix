@@ -1,5 +1,21 @@
-{ lib, stdenv, fetchurl, cmake, curl, boost, bison, ncurses, libaio
-, pkg-config, openssl, readline, zlib, perl, libtirpc, rpcsvc-proto }:
+{
+  lib,
+  stdenv,
+  fetchurl,
+  cmake,
+  curl,
+  boost,
+  bison,
+  ncurses,
+  libaio,
+  pkg-config,
+  openssl,
+  readline,
+  zlib,
+  perl,
+  libtirpc,
+  rpcsvc-proto,
+}:
 
 # Note: zlib is not required; MySQL can use an internal zlib.
 
@@ -18,12 +34,22 @@ stdenv.mkDerivation rec {
     export PATH=$PATH:$TMPDIR
   '';
 
-  nativeBuildInputs = [ bison cmake pkg-config ]
-    ++ lib.optionals (!stdenv.isDarwin) [ rpcsvc-proto ];
+  nativeBuildInputs = [
+    bison
+    cmake
+    pkg-config
+  ] ++ lib.optionals (!stdenv.isDarwin) [ rpcsvc-proto ];
 
   buildInputs = [
-      curl ncurses openssl readline zlib boost libaio libtirpc
-    ] ++ lib.optional stdenv.isDarwin perl;
+    curl
+    ncurses
+    openssl
+    readline
+    zlib
+    boost
+    libaio
+    libtirpc
+  ] ++ lib.optional stdenv.isDarwin perl;
 
   enableParallelBuilding = true;
 
@@ -78,7 +104,7 @@ stdenv.mkDerivation rec {
   passthru.mysqlVersion = "5.7";
 
   meta = {
-    homepage = http://www.percona.com/;
+    homepage = "http://www.percona.com/";
     description = ''
       Is a free, fully compatible, enhanced, open source drop-in replacement for
       MySQL® that provides superior performance, scalability and instrumentation.

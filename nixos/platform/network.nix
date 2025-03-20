@@ -1,4 +1,10 @@
-{ config, lib, pkgs, utils, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  utils,
+  ...
+}:
 
 with builtins;
 
@@ -14,92 +20,106 @@ let
 
   # Some interfaces aren't managed through this code. For example: IPMI
   # is configured using the ipmitool elsewhere.
-  managedInterfaces = filter
-    (i: ! (elem i.policy [ "unmanaged" "null" ]) &&
-        ! (elem i.vlan ["ipmi" "lo"]))
-    (lib.attrValues fclib.network);
+  managedInterfaces = filter (
+    i:
+    !(elem i.policy [
+      "unmanaged"
+      "null"
+    ])
+    && !(elem i.vlan [
+      "ipmi"
+      "lo"
+    ])
+  ) (lib.attrValues fclib.network);
 
   # These are interfaces that have a direct association with a physical
   # link, but might be bridged, carry tags, or run DHCP.
-  physicallyLinkedInterfaces = filter
-    (i: i.policy != "vxlan" && i.policy != "underlay")
-    managedInterfaces;
+  physicallyLinkedInterfaces = filter (
+    i: i.policy != "vxlan" && i.policy != "underlay"
+  ) managedInterfaces;
 
   # These are interfaces configured as one would expect in a traditional
   # Linux environment: they receive addresses and are attached to some link.
-  simpleAddressedInterfaces = filter
-    (i: !(i.policy == "underlay") &&
-        !(i.policy == "vxlan" && i.routed))
-    managedInterfaces;
+  simpleAddressedInterfaces = filter (
+    i: !(i.policy == "underlay") && !(i.policy == "vxlan" && i.routed)
+  ) managedInterfaces;
 
-  bridgedInterfaces = filter
-    (i: i.bridged)
-    managedInterfaces;
+  bridgedInterfaces = filter (i: i.bridged) managedInterfaces;
 
-  vxlanInterfaces = filter
-    (i: i.policy == "vxlan")
-    managedInterfaces;
+  vxlanInterfaces = filter (i: i.policy == "vxlan") managedInterfaces;
 
-  vxlanVrfInterfaces = filter
-    (i: i.routed)
-    vxlanInterfaces;
+  vxlanVrfInterfaces = filter (i: i.routed) vxlanInterfaces;
 
-  ethernetLinks = let
-    # XXX handling this within fclib.network.ul would be great
-    underlayLinks = lib.optionals (!isNull fclib.underlay) fclib.underlay.links;
+  ethernetLinks =
+    let
+      # XXX handling this within fclib.network.ul would be great
+      underlayLinks = lib.optionals (!isNull fclib.underlay) fclib.underlay.links;
 
-    # The same physical link may be used by multiple distinct
-    # interfaces, as is the case with tagged vlans. When physical
-    # links are configured, they must have their MTU set to the
-    # greatest MTU of all dependent interfaces.
-    physicalLinkNames = lib.unique (map (iface: iface.link) physicallyLinkedInterfaces);
-    physicalLinksByMtu = listToAttrs (map (link:
-      lib.nameValuePair link
-        (lib.foldl
-          (prev: next: if next.mtu > (prev.mtu or 0) then next else prev)
-          null
-          (filter (iface: iface.link == link) physicallyLinkedInterfaces))
-    ) physicalLinkNames);
-  in (attrValues physicalLinksByMtu) ++ underlayLinks;
+      # The same physical link may be used by multiple distinct
+      # interfaces, as is the case with tagged vlans. When physical
+      # links are configured, they must have their MTU set to the
+      # greatest MTU of all dependent interfaces.
+      physicalLinkNames = lib.unique (map (iface: iface.link) physicallyLinkedInterfaces);
+      physicalLinksByMtu = listToAttrs (
+        map (
+          link:
+          lib.nameValuePair link (
+            lib.foldl (prev: next: if next.mtu > (prev.mtu or 0) then next else prev) null (
+              filter (iface: iface.link == link) physicallyLinkedInterfaces
+            )
+          )
+        ) physicalLinkNames
+      );
+    in
+    (attrValues physicalLinksByMtu) ++ underlayLinks;
 
-  virtualLinks = let
-    allLinks = lib.unique
-      (lib.foldl (acc: iface: acc ++ iface.linkStack) [] managedInterfaces);
-    ethernetLinkNames = map (iface: iface.link) ethernetLinks;
-  in
+  virtualLinks =
+    let
+      allLinks = lib.unique (lib.foldl (acc: iface: acc ++ iface.linkStack) [ ] managedInterfaces);
+      ethernetLinkNames = map (iface: iface.link) ethernetLinks;
+    in
     lib.subtractLists ethernetLinkNames allLinks;
 
   location = lib.attrByPath [ "parameters" "location" ] "" cfg.enc;
 
   # generally use DHCP in the current location?
-  allowDHCP = location:
-    if hasAttr location cfg.static.allowDHCP
-    then cfg.static.allowDHCP.${location}
-    else false;
+  allowDHCP =
+    location: if hasAttr location cfg.static.allowDHCP then cfg.static.allowDHCP.${location} else false;
 
   # add srv addresses from my own resource group to /etc/hosts
-  hostsFromEncAddresses = encAddresses:
+  hostsFromEncAddresses =
+    encAddresses:
     let
-      recordToEtcHostsLine = r:
-      let hostName =
-        if config.networking.domain != null
-        then "${r.name}.${config.networking.domain} ${r.name}"
-        else "${r.name}";
-      in
+      recordToEtcHostsLine =
+        r:
+        let
+          hostName =
+            if config.networking.domain != null then
+              "${r.name}.${config.networking.domain} ${r.name}"
+            else
+              "${r.name}";
+        in
         "${fclib.stripNetmask r.ip} ${hostName}";
     in
-      # always mention IPv6 addresses first to get predictable behaviour
-      lib.concatMapStringsSep "\n" recordToEtcHostsLine
-        ((filter (a: fclib.isIp6 a.ip) encAddresses) ++
-         (filter (a: fclib.isIp4 a.ip) encAddresses));
+    # always mention IPv6 addresses first to get predictable behaviour
+    lib.concatMapStringsSep "\n" recordToEtcHostsLine (
+      (filter (a: fclib.isIp6 a.ip) encAddresses) ++ (filter (a: fclib.isIp4 a.ip) encAddresses)
+    );
 
-  quoteLabel = replaceStrings ["/"] ["-"];
+  quoteLabel = replaceStrings [ "/" ] [ "-" ];
 
   vrfName = iface: "vrf${iface.vlan}";
-  vrfTable = iface:
+  vrfTable =
+    iface:
     # the routing tables 0, 253, 254, and 255 are reserved by the
     # kernel.
-    assert ! (elem iface.vlanId [ 0 253 254 255 ]);
+    assert
+      !(elem iface.vlanId [
+        0
+        253
+        254
+        255
+      ]);
     iface.vlanId;
 
 in
@@ -114,7 +134,7 @@ in
     flyingcircus.networking.monitorLinks = lib.mkOption {
       type = lib.types.listOf lib.types.attrs;
       description = "Names of ethernet devices to monitor.";
-      default = [];
+      default = [ ];
     };
     flyingcircus.networking.physicalHostNetworking = lib.mkOption {
       type = lib.types.bool;
@@ -140,19 +160,20 @@ in
         # (set by hostsFromEncAddresses) and not 127.0.0.1.
         # Restores old behaviour that we know from 15.09.
         # -> #PL-129549
-        hosts = lib.mkOverride 90 {};
+        hosts = lib.mkOverride 90 { };
 
         nameservers =
-          if (hasAttr location cfg.static.nameservers)
-          then cfg.static.nameservers.${location}
-          else [];
+          if (hasAttr location cfg.static.nameservers) then cfg.static.nameservers.${location} else [ ];
 
-        vlans = listToAttrs (map (interface:
-          lib.nameValuePair interface.taggedLink {
-            id = interface.vlanId;
-            interface = interface.link;
-          })
-          (filter (interface: interface.policy == "tagged") managedInterfaces));
+        vlans = listToAttrs (
+          map (
+            interface:
+            lib.nameValuePair interface.taggedLink {
+              id = interface.vlanId;
+              interface = interface.link;
+            }
+          ) (filter (interface: interface.policy == "tagged") managedInterfaces)
+        );
 
         # Using SLAAC/privacy addresses will cause firewalls to block us
         # internally and also have customers get problems with outgoing
@@ -164,104 +185,132 @@ in
         #   1. "normal" interfaces
         #   2. underlay interfaces
         #   3. VXLAN+VRF
-        interfaces = listToAttrs ((map (interface:
-          ####################################################################
-          # 1. "Normal" configured interfaces with IPv4/IPv6 adresses,
-          # a default gateway, etc.
-          (lib.nameValuePair "${interface.interface}" {
-            ipv4.addresses = interface.v4.attrs;
-            ipv4.routes =
-              let
-                defaultRoutes = lib.optionals
-                  (config.flyingcircus.networking.enableInterfaceDefaultRoutes)
-                  (map (gateway:
-                    {
+        interfaces = listToAttrs (
+          (map (
+            interface:
+            ####################################################################
+            # 1. "Normal" configured interfaces with IPv4/IPv6 adresses,
+            # a default gateway, etc.
+            (lib.nameValuePair "${interface.interface}" {
+              ipv4.addresses = interface.v4.attrs;
+              ipv4.routes =
+                let
+                  defaultRoutes = lib.optionals (config.flyingcircus.networking.enableInterfaceDefaultRoutes) (
+                    map (gateway: {
                       address = "0.0.0.0";
                       prefixLength = 0;
                       via = gateway;
-                      options = { metric = toString interface.priority; };
-                    }) interface.v4.defaultGateways);
+                      options = {
+                        metric = toString interface.priority;
+                      };
+                    }) interface.v4.defaultGateways
+                  );
 
-                # To select the correct interface, add routes for other subnets
-                # in which this machine doesn't have its own address.
-                # We did this with policy routing before. After deactivating it,
-                # we had problems with srv traffic going out via fe because its default route
-                # has higher priority.
-                additionalRoutes = map
-                  (net: { address = net.network; inherit (net) prefixLength; })
-                  (filter (n: n.addresses == []) interface.v4.networkAttrs);
-              in
+                  # To select the correct interface, add routes for other subnets
+                  # in which this machine doesn't have its own address.
+                  # We did this with policy routing before. After deactivating it,
+                  # we had problems with srv traffic going out via fe because its default route
+                  # has higher priority.
+                  additionalRoutes = map (net: {
+                    address = net.network;
+                    inherit (net) prefixLength;
+                  }) (filter (n: n.addresses == [ ]) interface.v4.networkAttrs);
+                in
                 defaultRoutes ++ additionalRoutes;
 
-            ipv6.addresses = interface.v6.attrs;
+              ipv6.addresses = interface.v6.attrs;
 
-            ipv6.routes =
-              let
-                defaultRoutes = lib.optionals
-                  (config.flyingcircus.networking.enableInterfaceDefaultRoutes)
-                  (map (gateway:
-                    { address = "::";
+              ipv6.routes =
+                let
+                  defaultRoutes = lib.optionals (config.flyingcircus.networking.enableInterfaceDefaultRoutes) (
+                    map (gateway: {
+                      address = "::";
                       prefixLength = 0;
                       via = gateway;
-                      options = { metric = toString interface.priority; };
-                    }) interface.v6.defaultGateways);
+                      options = {
+                        metric = toString interface.priority;
+                      };
+                    }) interface.v6.defaultGateways
+                  );
 
-                additionalRoutes = map
-                  (net: { address = net.network; inherit (net) prefixLength; })
-                  (filter (n: n.addresses == []) interface.v6.networkAttrs);
-              in
+                  additionalRoutes = map (net: {
+                    address = net.network;
+                    inherit (net) prefixLength;
+                  }) (filter (n: n.addresses == [ ]) interface.v6.networkAttrs);
+                in
                 defaultRoutes ++ additionalRoutes;
 
-            mtu = interface.mtu;
-          })) simpleAddressedInterfaces) ++
+              mtu = interface.mtu;
+            })
+          ) simpleAddressedInterfaces)
+          ++
 
-          ####################################################################
-          # 2. The underlay: a loopback IP address.
-          (lib.optionals (!isNull fclib.underlay) ([(
-            lib.nameValuePair fclib.underlay.interface {
-              ipv4.addresses = [{
-                address = fclib.underlay.loopback;
-                prefixLength = 32;
-              }];
-              tempAddress = "disabled";
-              mtu = fclib.network.ul.mtu;
-            }
-          )] ++
-          (map (iface: lib.nameValuePair iface.link {
-            tempAddress = "disabled";
-            mtu = iface.mtu;
-          }) fclib.underlay.links) ++
+            ####################################################################
+            # 2. The underlay: a loopback IP address.
+            (lib.optionals (!isNull fclib.underlay) (
+              [
+                (lib.nameValuePair fclib.underlay.interface {
+                  ipv4.addresses = [
+                    {
+                      address = fclib.underlay.loopback;
+                      prefixLength = 32;
+                    }
+                  ];
+                  tempAddress = "disabled";
+                  mtu = fclib.network.ul.mtu;
+                })
+              ]
+              ++ (map (
+                iface:
+                lib.nameValuePair iface.link {
+                  tempAddress = "disabled";
+                  mtu = iface.mtu;
+                }
+              ) fclib.underlay.links)
+              ++
 
-          ####################################################################
-          # 3. VXLAN+VRF interfaces
-          (map (iface: lib.nameValuePair iface.interface {
-            mtu = iface.mtu;
-            ipv4.addresses = map
-              (attr: { inherit (attr) address; prefixLength = 32; })
-              iface.v4.attrs;
-            ipv6.addresses = map
-              (attr: { inherit (attr) address; prefixLength = 128; })
-              iface.v6.attrs;
-          }) vxlanVrfInterfaces) ++
-          (map (iface: lib.nameValuePair (vrfName iface) {
-            tempAddress = "disabled";
-          }) vxlanVrfInterfaces)
+                ####################################################################
+                # 3. VXLAN+VRF interfaces
+                (map (
+                  iface:
+                  lib.nameValuePair iface.interface {
+                    mtu = iface.mtu;
+                    ipv4.addresses = map (attr: {
+                      inherit (attr) address;
+                      prefixLength = 32;
+                    }) iface.v4.attrs;
+                    ipv6.addresses = map (attr: {
+                      inherit (attr) address;
+                      prefixLength = 128;
+                    }) iface.v6.attrs;
+                  }
+                ) vxlanVrfInterfaces)
+              ++ (map (
+                iface:
+                lib.nameValuePair (vrfName iface) {
+                  tempAddress = "disabled";
+                }
+              ) vxlanVrfInterfaces)
 
-        )));
+            ))
+        );
 
-        bridges = listToAttrs (map (interface:
-          (lib.nameValuePair
-            "${interface.interface}"
-            { interfaces = interface.attachedLinks; }))
-          bridgedInterfaces);
+        bridges = listToAttrs (
+          map (
+            interface: (lib.nameValuePair "${interface.interface}" { interfaces = interface.attachedLinks; })
+          ) bridgedInterfaces
+        );
 
-        resolvconf.extraOptions = [ "ndots:1" "timeout:1" "attempts:6" ];
+        resolvconf.extraOptions = [
+          "ndots:1"
+          "timeout:1"
+          "attempts:6"
+        ];
 
-        search = lib.optionals
-          (location != "" && config.networking.domain != null)
-          [ "${location}.${config.networking.domain}"
-            config.networking.domain
-          ];
+        search = lib.optionals (location != "" && config.networking.domain != null) [
+          "${location}.${config.networking.domain}"
+          config.networking.domain
+        ];
 
         # DHCP settings: never do IPv4ll and don't use DHCP by default.
         useDHCP = fclib.mkPlatform false;
@@ -271,31 +320,32 @@ in
           noipv4ll
         '';
 
-        extraHosts = lib.optionalString
-          (cfg.encAddresses != [])
-          (hostsFromEncAddresses cfg.encAddresses);
+        extraHosts = lib.optionalString (cfg.encAddresses != [ ]) (hostsFromEncAddresses cfg.encAddresses);
 
         wireguard.enable = true;
 
-        firewall.trustedInterfaces =
-          lib.optionals (!isNull fclib.underlay && cfg.networking.physicalHostNetworking)
-            (map (l: l.link) fclib.underlay.links or []);
+        firewall.trustedInterfaces = lib.optionals (
+          !isNull fclib.underlay && cfg.networking.physicalHostNetworking
+        ) (map (l: l.link) fclib.underlay.links or [ ]);
 
-        firewall.extraCommands = ''
-          # Well-known space needed for IPV6 to function.
-          ip6tables -A nixos-fw -s ff0::/12 -j ACCEPT
-          # Ignore all other multi-cast traffic.
-          ip6tables -A nixos-fw -s ff::/8 -j DROP
-          ip6tables -A nixos-fw -d ff::/8 -j DROP
-          iptables -A nixos-fw -s 224.0.0.0/4 -j DROP
-          iptables -A nixos-fw -d 224.0.0.0/4 -j DROP
-        '' +
-          # Do not conntrack the VXLAN underlay packets
-          lib.optionalString (fclib.underlay != null) (
-            lib.concatMapStrings (address: ''
-              iptables -t raw -A fc-raw-prerouting -d ${address} -j CT --notrack
-              iptables -t raw -A fc-raw-output -s ${address} -j CT --notrack
-            '') fclib.network.ul.v4.addresses);
+        firewall.extraCommands =
+          ''
+            # Well-known space needed for IPV6 to function.
+            ip6tables -A nixos-fw -s ff0::/12 -j ACCEPT
+            # Ignore all other multi-cast traffic.
+            ip6tables -A nixos-fw -s ff::/8 -j DROP
+            ip6tables -A nixos-fw -d ff::/8 -j DROP
+            iptables -A nixos-fw -s 224.0.0.0/4 -j DROP
+            iptables -A nixos-fw -d 224.0.0.0/4 -j DROP
+          ''
+          +
+            # Do not conntrack the VXLAN underlay packets
+            lib.optionalString (fclib.underlay != null) (
+              lib.concatMapStrings (address: ''
+                iptables -t raw -A fc-raw-prerouting -d ${address} -j CT --notrack
+                iptables -t raw -A fc-raw-output -s ${address} -j CT --notrack
+              '') fclib.network.ul.v4.addresses
+            );
       };
 
       flyingcircus.activationScripts = {
@@ -320,13 +370,18 @@ in
       };
 
       flyingcircus.services.telegraf.inputs = lib.optionalAttrs (cfg.networking.physicalHostNetworking) {
-        exec = [{
-          commands = [ "${pkgs.fc.telegraf-routes-summary}/bin/telegraf-routes-summary" ];
-          timeout = "10s";
-          data_format = "json";
-          json_name_key = "name";
-          tag_keys = [ "family" "path" ];
-        }];
+        exec = [
+          {
+            commands = [ "${pkgs.fc.telegraf-routes-summary}/bin/telegraf-routes-summary" ];
+            timeout = "10s";
+            data_format = "json";
+            json_name_key = "name";
+            tag_keys = [
+              "family"
+              "path"
+            ];
+          }
+        ];
       };
 
       flyingcircus.networking.monitorLinks = ethernetLinks;
@@ -334,20 +389,20 @@ in
       services.frr = lib.mkIf (!isNull fclib.underlay) {
         bfdd.enable = true;
         bgpd.enable = true;
-        bgpd.extraOptions = [ "-p" "0" ];
+        bgpd.extraOptions = [
+          "-p"
+          "0"
+        ];
         config = ''
           frr version 8.5.1
           frr defaults datacenter
           !
-          ${lib.concatMapStringsSep "\n"
-            (iface: ''
-              vrf vrf${iface.vlan}
-               vni ${toString iface.vlanId}
-              exit-vrf
-              !
-            '')
-            vxlanVrfInterfaces
-           }
+          ${lib.concatMapStringsSep "\n" (iface: ''
+            vrf vrf${iface.vlan}
+             vni ${toString iface.vlanId}
+            exit-vrf
+            !
+          '') vxlanVrfInterfaces}
           !
           router bgp ${toString fclib.underlay.asNumber}
            bgp router-id ${fclib.underlay.loopback}
@@ -356,10 +411,9 @@ in
            neighbor switches remote-as external
            neighbor switches capability extended-nexthop
            neighbor switches bfd
-           ${lib.concatMapStringsSep "\n "
-             (iface: "neighbor ${iface.link} interface peer-group switches")
-             fclib.underlay.links
-           }
+           ${lib.concatMapStringsSep "\n " (
+             iface: "neighbor ${iface.link} interface peer-group switches"
+           ) fclib.underlay.links}
            !
            address-family ipv4 unicast
             redistribute connected
@@ -375,15 +429,17 @@ in
             neighbor switches route-map accept-local-routes out
             advertise-all-vni
             advertise-svi-ip
-            ${ # Workaround for FRR not advertising SVI IP when
-               # globally configured
-              lib.concatMapStringsSep "\n  "
-                (iface: concatStringsSep "\n  " [
+            ${
+              # Workaround for FRR not advertising SVI IP when
+              # globally configured
+              lib.concatMapStringsSep "\n  " (
+                iface:
+                concatStringsSep "\n  " [
                   ("vni " + (toString iface.vlanId))
                   " advertise-svi-ip"
                   "exit-vni"
-                ])
-                vxlanInterfaces
+                ]
+              ) vxlanInterfaces
             }
            exit-address-family
            !
@@ -417,7 +473,7 @@ in
               !
             '')
             vxlanVrfInterfaces
-           }
+          }
           !
           bgp as-path access-list local-origin seq 1 permit ^$
           !
@@ -436,14 +492,11 @@ in
           !
           ip prefix-list underlay-export seq 1 permit ${fclib.underlay.loopback}/32
           !
-          ${lib.concatImapStringsSep "\n"
-            (idx: net:
-              "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
-            )
-            fclib.underlay.subnets
-           }
+          ${lib.concatImapStringsSep "\n" (
+            idx: net: "ip prefix-list underlay-import seq ${toString idx} permit ${net} le 32"
+          ) fclib.underlay.subnets}
           !
-      '';
+        '';
       };
 
       # Don't automatically create a dummy0 interface when the kernel
@@ -451,13 +504,15 @@ in
       boot.extraModprobeConfig = "options dummy numdummies=0";
 
       systemd.services =
-        { nscd.restartTriggers = [
+        {
+          nscd.restartTriggers = [
             config.environment.etc."host.conf".source
           ];
           systemd-sysctl.restartTriggers = lib.mkIf (!isNull fclib.underlay) [
             config.environment.etc."sysctl.d/70-fcio-underlay.conf".source
           ];
-        } //
+        }
+        //
 
         # These units performing network interface setup must be
         # explicitly wanted by the multi-user target, otherwise they
@@ -466,15 +521,25 @@ in
         # does not propagate to the network target, etc etc.
         (listToAttrs (
 
-          (map (iface:
-            (lib.nameValuePair
-              "${iface.link}-netdev"
-              rec {
-                description = "Ensure network device settings for ${iface.link}";
-                wantedBy = [ "network-setup.service" "multi-user.target"  ];
-                requires = [ "network-setup.service" ];
-                path = [ pkgs.nettools pkgs.ethtool pkgs.procps fclib.relaxedIp pkgs.jq pkgs.util-linux];
-                script = ''
+          (map (
+            iface:
+            (lib.nameValuePair "${iface.link}-netdev" rec {
+              description = "Ensure network device settings for ${iface.link}";
+              wantedBy = [
+                "network-setup.service"
+                "multi-user.target"
+              ];
+              requires = [ "network-setup.service" ];
+              path = [
+                pkgs.nettools
+                pkgs.ethtool
+                pkgs.procps
+                fclib.relaxedIp
+                pkgs.jq
+                pkgs.util-linux
+              ];
+              script =
+                ''
                   set -e
 
                   touch /var/lock/interface-rename.lock
@@ -543,16 +608,16 @@ in
                   # and distinguish whether an interface is physical.
                   # Can this be done based on `config.flyingcircus.enc.parameters.interfaces.fe.policy`?
                   ${lib.optionalString (config.flyingcircus.networking.physicalHostNetworking) ''
-                  echo "Disabling flow control"
-                  ethtool -A ${iface.link} autoneg off rx off tx off || true
+                    echo "Disabling flow control"
+                    ethtool -A ${iface.link} autoneg off rx off tx off || true
                   ''}
 
                   # Ensure MTU
                   ip l set ${iface.link} mtu ${toString iface.mtu}
 
-                  ''
+                ''
 
-              + (lib.optionalString (iface.externalLabel != null) ''
+                + (lib.optionalString (iface.externalLabel != null) ''
                   # Add long alternative names according to the external label
                   if ip l show dev ${quoteLabel iface.externalLabel} > /dev/null; then
                     # XXX There is an edge case we don't cover here:
@@ -563,422 +628,474 @@ in
                   fi
                   ip l property add altname ${quoteLabel iface.externalLabel} dev ${iface.link}
 
-                '') + ''
+                '')
+                + ''
                   echo "Releasing lock"
                   exec 4>&-
                 '';
-                preStop = ''
-                  set -e
+              preStop = ''
+                set -e
 
-                  touch /var/lock/interface-rename.lock
-                  exec 4</var/lock/interface-rename.lock
+                touch /var/lock/interface-rename.lock
+                exec 4</var/lock/interface-rename.lock
 
-                  echo "Renaming ${iface.link} to neutral name ..."
+                echo "Renaming ${iface.link} to neutral name ..."
 
-                  echo "Acquiring interface renaming lock ..."
-                  flock -x -w 60 4 || exit 1
-                  echo "Got interface renaming lock ..."
+                echo "Acquiring interface renaming lock ..."
+                flock -x -w 60 4 || exit 1
+                echo "Got interface renaming lock ..."
 
-                  # Shut down the interface so the systemd device unit goes away
-                  # so we can perform proper renames.
+                # Shut down the interface so the systemd device unit goes away
+                # so we can perform proper renames.
+                ip l set ${iface.link} down
+
+                counter=0
+                while ip l show dev ${iface.link} > /dev/null; do
                   ip l set ${iface.link} down
-
-                  counter=0
-                  while ip l show dev ${iface.link} > /dev/null; do
-                    ip l set ${iface.link} down
-                    # Try, don't care if it fails. We check the success on the
-                    # next loop.
-                    ip l set ${iface.link} name eth$counter || true
-                    # don't do this if the name is already gone
-                    ip l property del altname ${iface.link} dev ${iface.link} || true
-                    counter=$((counter+1))
-                  done
-
-                  echo "Releasing lock"
-                  exec 4>&-
-                '';
-                serviceConfig = {
-                  Type = "oneshot";
-                  RemainAfterExit = true;
-                };
-              })) ethernetLinks) ++
-
-          (let
-            unitName = link: "network-disable-ipv6-autoconfig-${link}";
-            unitTemplate = link: fixAddrGen: rec {
-              description = "Disable IPv6 autoconfig for link ${link}";
-              wantedBy = [ "network-addresses-${link}.service" ];
-              before = wantedBy;
-              requires = [ "${link}-netdev.service" ];
-              bindsTo = requires;
-              after = requires;
-              path = [ pkgs.procps fclib.relaxedIp ];
-              stopIfChanged = false;
-              script = ''
-                # Disable IPv6 SLAAC (autoconf)
-                sysctl net.ipv6.conf.${link}.accept_ra=0
-                sysctl net.ipv6.conf.${link}.autoconf=0
-                sysctl net.ipv6.conf.${link}.temp_valid_lft=0
-                sysctl net.ipv6.conf.${link}.temp_prefered_lft=0
-
-                ${lib.optionalString fixAddrGen ''
-                  # If an interface has previously been managed by dhcpcd this sysctl might be
-                  # set to a non-zero value, which disables automatic generation of link-local
-                  # addresses. This can leave the interface without a link-local address when
-                  # dhcpcd deletes addresses from the interface when it exits. Resetting this
-                  # to 0 restores the default kernel behaviour.
-                  sysctl net.ipv6.conf.${link}.addr_gen_mode=0
-                ''}
-
-                for oldtmp in $(ip -6 address show dev ${link} dynamic scope global | grep inet6 | cut -d ' ' -f6); do
-                  ip addr del $oldtmp dev ${link}
+                  # Try, don't care if it fails. We check the success on the
+                  # next loop.
+                  ip l set ${iface.link} name eth$counter || true
+                  # don't do this if the name is already gone
+                  ip l property del altname ${iface.link} dev ${iface.link} || true
+                  counter=$((counter+1))
                 done
+
+                echo "Releasing lock"
+                exec 4>&-
               '';
               serviceConfig = {
                 Type = "oneshot";
                 RemainAfterExit = true;
               };
-            };
-          in
-            (map (link:
-              lib.nameValuePair (unitName link) (unitTemplate link false))
-              virtualLinks) ++
-            (map (link:
-              lib.nameValuePair (unitName link.link) (unitTemplate link.link true))
-              ethernetLinks)
-          ) ++
+            })
+          ) ethernetLinks)
+          ++
 
-          (lib.optionals (!isNull fclib.underlay)
-            # loopback dummy device
-              (let linkName = fclib.underlay.interface; in
-            [
-              (lib.nameValuePair
-              "${linkName}-netdev"
-              rec {
-                description = "Dummy interface ${linkName}";
-                wantedBy = [ "network-setup.service" "multi-user.target" ];
-                before = wantedBy;
-                after = [ "network-pre.service" ];
-                requires = [ "network-setup.service" ];
-                path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
-                reloadIfChanged = true;
-                script = ''
-                  # Create virtual interface underlay
-                  ip link add ${linkName} type dummy
-
-                  ip link set ${linkName} mtu ${toString fclib.network.ul.mtu}
-                '';
-                reload = ''
-                  ip link set ${linkName} mtu ${toString fclib.network.ul.mtu}
-                '';
-                preStop = ''
-                  ip link delete ${linkName}
-                '';
-                serviceConfig = {
-                  Type = "oneshot";
-                  RemainAfterExit = true;
-                };
-              }
-            )] ++
-            # vxlan kernel devices
-            (map (iface: (lib.nameValuePair
-              "${iface.link}-netdev"
-              rec {
-                description = "VXLAN link device ${iface.link}";
-                wantedBy = [ "network-setup.service" "multi-user.target" ];
-                before = wantedBy;
-                requires = [ "network-addresses-${fclib.underlay.interface}.service" "network-setup.service" ];
-                # do not order after network-setup.service as we already declare
-                # a before= dependency.
-                after = [ "network-addresses-${fclib.underlay.interface}.service" "network-pre.target" ];
-                reloadIfChanged = true;
-                path = [ pkgs.nettools pkgs.procps fclib.relaxedIp ];
-                script = ''
-                  # Create virtual link ${iface.link}
-                  ip link add ${iface.link} type vxlan \
-                    id ${toString iface.vlanId} \
-                    local ${fclib.underlay.loopback} \
-                    dstport 4789 \
-                    nolearning
-
-                  # Set MTU and layer 2 address
-                  ip link set ${iface.link} address ${iface.mac}
-                  ip link set ${iface.link} mtu ${toString iface.mtu}
-
-                  # Do not automatically generate IPv6 link-local address
-                  ip link set ${iface.link} addrgenmode none
-                '';
-                reload = ''
-                  # Set underlay address for virtual interface ${iface.link}.
-                  # Note that changing the VNI or destination port after the interface
-                  # has been created is not supported.
-                  ip link set ${iface.link} type vxlan local ${fclib.underlay.loopback}
-
-                  # Set MTU and layer 2 address
-                  ip link set ${iface.link} address ${iface.mac}
-                  ip link set ${iface.link} mtu ${toString iface.mtu}
-
-                  # Do not automatically generate IPv6 link-local address
-                  ip link set ${iface.link} addrgenmode none
-                '';
-                preStop = ''
-                  ip link delete ${iface.link}
-                '';
-                serviceConfig = {
-                  Type = "oneshot";
-                  RemainAfterExit = true;
-                };
-              })) vxlanInterfaces) ++
-
-            # bridge port configuration for vxlan devices. arp/nd
-            # suppression is configured separately, so the router role
-            # can turn it off.
-            (map (iface: (lib.nameValuePair
-              "network-bridge-suppress-flooding-${iface.link}"
-              {
-                description = "Ensure ARP/ND suppression is enabled for bridge port ${iface.link}";
-                wantedBy = [ "multi-user.target" ];
-                requires = [ "${iface.interface}-netdev.service" ];
-                after = [ "${iface.interface}-netdev.service" ];
-                stopIfChanged = false;
-                path = [ fclib.relaxedIp ];
-                script = ''
-                  ip link set ${iface.link} type bridge_slave neigh_suppress on
-                '';
-                reload = ''
-                  ip link set ${iface.link} type bridge_slave neigh_suppress on
-                '';
-                preStop = ''
-                  ip link set ${iface.link} type bridge_slave neigh_suppress off
-                '';
-                unitConfig.ReloadPropagatedFrom = [ "${iface.interface}-netdev.service" ];
-                serviceConfig = {
-                  Type = "oneshot";
-                  RemainAfterExit = true;
-                };
-              }
-            )) vxlanInterfaces) ++
-            (map (iface: (lib.nameValuePair
-              "network-bridge-disable-learning-${iface.link}"
-              {
-                description = "Ensure MAC address learning is disabled for bridge port ${iface.link}";
-                wantedBy = [ "multi-user.target" ];
-                requires = [ "${iface.interface}-netdev.service" ];
-                after = [ "${iface.interface}-netdev.service" ];
-                stopIfChanged = false;
-                path = [ fclib.relaxedIp ];
-                script = ''
-                  ip link set ${iface.link} type bridge_slave learning off
-                '';
-                reload = ''
-                  ip link set ${iface.link} type bridge_slave learning off
-                '';
-                preStop = ''
-                  ip link set ${iface.link} type bridge_slave learning on
-                '';
-                unitConfig.ReloadPropagatedFrom = [ "${iface.interface}-netdev.service" ];
-                serviceConfig = {
-                  Type = "oneshot";
-                  RemainAfterExit = true;
-                };
-              }
-            )) vxlanInterfaces) ++
-
-            # underlay network physical interfaces
-            (map (iface: (lib.nameValuePair
-              "network-underlay-link-properties-${iface.link}"
-              rec {
-                description = "Ensure underlay properties for ${iface.link}";
-                wantedBy = [ "network-addresses-${iface.link}.service"
-                            "multi-user.target" ];
-                before = wantedBy;
-                requires = [ "${iface.link}-netdev.service" ];
-                after = requires;
-                path = [ pkgs.procps ];
-                script = ''
-                  sysctl net.ipv4.conf.${iface.link}.rp_filter=0
-                '';
-                serviceConfig = {
-                  Type = "oneshot";
-                  RemainAfterExit = true;
-                };
-              }
-            )) fclib.underlay.links) ++
-
-            # VRF devices for layer 3 VNIs
-            (map (iface: let
-              name = vrfName iface;
-              interfaceUnit = "${iface.interface}-netdev.service";
-              addressUnit = "network-addresses-${iface.interface}.service";
-            in lib.nameValuePair "${name}-netdev" {
-              description = "VRF Interface ${name}";
-              wantedBy = [ "network-setup.service" "sys-subsystem-net-devices-${name}.device" ];
-              bindsTo = [ interfaceUnit ];
-              requires = [ "network-setup.service" ];
-              after = [ "network-pre.target" interfaceUnit ];
-              before = [ "network-setup.service" addressUnit ];
-              serviceConfig.Type = "oneshot";
-              serviceConfig.RemainAfterExit = true;
-              path = [ fclib.relaxedIp ];
-              script = ''
-                # remove dead interface
-                echo "Removing old VRF ${name}..."
-                ip link show dev "${name}" >/dev/null 2>&1 && ip link del dev "${name}"
-
-                echo "Adding VRF ${name}..."
-                ip link add ${name} type vrf table ${toString (vrfTable iface)}
-
-                # add child interfaces. no need to set up, the network-addresses
-                # unit will do that.
-                ip link set ${iface.interface} master ${name}
-
-                ip link set ${name} up
-              '';
-              postStop = ''
-                ip link set dev "${name}" down || true
-                ip link del dev "${name}" || true
-              '';
-            }) vxlanVrfInterfaces) ++
-
-            [
-              # fallback unreachable routes
-              (lib.nameValuePair
-                "network-underlay-routing-fallback"
-                rec {
-                  description = "Ensure fallback unreachable route for underlay prefixes";
-                  wantedBy = [ "network-addresses-${fclib.underlay.interface}.service"
-                              "multi-user.target" ];
+            (
+              let
+                unitName = link: "network-disable-ipv6-autoconfig-${link}";
+                unitTemplate = link: fixAddrGen: rec {
+                  description = "Disable IPv6 autoconfig for link ${link}";
+                  wantedBy = [ "network-addresses-${link}.service" ];
                   before = wantedBy;
-                  after = [ "${fclib.underlay.interface}-netdev.service" ];
-                  path = [ fclib.relaxedIp ];
+                  requires = [ "${link}-netdev.service" ];
+                  bindsTo = requires;
+                  after = requires;
+                  path = [
+                    pkgs.procps
+                    fclib.relaxedIp
+                  ];
                   stopIfChanged = false;
-                  # https://docs.frrouting.org/en/stable-8.5/zebra.html#administrative-distance
-                  #
-                  # Due to how zebra calculates administrative distance
-                  # for routes learned from the kernel, we need to set a
-                  # very high metric on these routes (i.e. very low
-                  # preference) so that routes learned from BGP can
-                  # override these statically configured routes.
                   script = ''
-                    ${lib.concatMapStringsSep "\n"
-                      (net: "ip route add unreachable " + net + " metric 335544321")
-                      fclib.underlay.subnets
-                    }
-                  '';
-                  preStop = ''
-                    ${lib.concatMapStringsSep "\n"
-                      (net: "ip route del unreachable " + net + " metric 335544321")
-                      fclib.underlay.subnets
-                    }
+                    # Disable IPv6 SLAAC (autoconf)
+                    sysctl net.ipv6.conf.${link}.accept_ra=0
+                    sysctl net.ipv6.conf.${link}.autoconf=0
+                    sysctl net.ipv6.conf.${link}.temp_valid_lft=0
+                    sysctl net.ipv6.conf.${link}.temp_prefered_lft=0
+
+                    ${lib.optionalString fixAddrGen ''
+                      # If an interface has previously been managed by dhcpcd this sysctl might be
+                      # set to a non-zero value, which disables automatic generation of link-local
+                      # addresses. This can leave the interface without a link-local address when
+                      # dhcpcd deletes addresses from the interface when it exits. Resetting this
+                      # to 0 restores the default kernel behaviour.
+                      sysctl net.ipv6.conf.${link}.addr_gen_mode=0
+                    ''}
+
+                    for oldtmp in $(ip -6 address show dev ${link} dynamic scope global | grep inet6 | cut -d ' ' -f6); do
+                      ip addr del $oldtmp dev ${link}
+                    done
                   '';
                   serviceConfig = {
                     Type = "oneshot";
                     RemainAfterExit = true;
                   };
-                }
-              )
-              # interface altnames from lldp
-              (lib.nameValuePair
-                "fc-lldp-to-altnames"
-                rec {
-                  description = "Set interface altnames based on peer hostname advertised in LLDP";
-                  after = [ "lldpd.service" ];
-                  unitConfig.Requisite = after;
-                  serviceConfig.Type = "oneshot";
-                  script = let
-                    links = lib.concatStringsSep " " (map (i: i.link) ethernetLinks);
-                  in
-                    "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${links}";
-                }
-              )
-              # adjust dependencies of the frr service.
-              #
-              # the default config shipped by upstream considers frr to
-              # be part of the system network configuration, and sets
-              # Before=network.target, so by the time the host network
-              # is *configured*, frr should be running. however, in our
-              # use case, frr is in an awkward grey area between static
-              # network configuration and actual application services:
-              # it isn't strictly required to be running for the static
-              # configuration to be *correct*, however it provides
-              # dynamic services at runtime so that the host's network
-              # actually functions at all.
-              #
-              # we move frr slightly forward in the boot process so it
-              # isn't in the critical path for getting interfaces up and
-              # configured correctly
-              # (network.target). network-online.target isn't really
-              # intended for this case, but frr needs to be started
-              # after the low-level setup but before actual applications
-              # which require network connectivity.
-              #
-              # we also need to ensure that restarts of ul-loopback are
-              # propagated to zebra, because zebra doesn't correctly
-              # recover from this; hence the hard restart.
-              (lib.nameValuePair
-                "frr"
-                rec {
-                  # dependencies inspired by Cumulus Linux's setup.
-                  wantedBy = fclib.mkOverrideUpstreamModule [ "network-online.target" ];
-                  before = fclib.mkOverrideUpstreamModule [ "network-online.target" ];
-                  requires = fclib.mkOverrideUpstreamModule [ "network-addresses-${fclib.underlay.interface}.service" ];
-                  after = fclib.mkOverrideUpstreamModule [ "network.target" "systemd-sysctl.service" "network-addresses-${fclib.underlay.interface}.service" ];
-                  # Wants=network.target set in upstream module.
+                };
+              in
+              (map (link: lib.nameValuePair (unitName link) (unitTemplate link false)) virtualLinks)
+              ++ (map (link: lib.nameValuePair (unitName link.link) (unitTemplate link.link true)) ethernetLinks)
+            )
+          ++
 
-                  # upstream's settings will cause frr to be restarted
-                  # if the configuration is changed, but only reloaded
-                  # if the package changes. we want this to be the
-                  # other way round: reload if only the configuration
-                  # changes, otherwise restart the daemons entirely.
-                  stopIfChanged = false;
-                  reloadIfChanged = fclib.mkOverrideUpstreamModule false;
-                  restartTriggers = fclib.mkOverrideUpstreamModule [ ];
-                  reloadTriggers = fclib.mkOverrideUpstreamModule [
-                    # see upstream module sources
-                    config.environment.etc."frr/frr.conf".source
-                    config.environment.etc."frr/daemons".text
-                  ];
-                }
+            (lib.optionals (!isNull fclib.underlay)
+              # loopback dummy device
+              (
+                let
+                  linkName = fclib.underlay.interface;
+                in
+                [
+                  (lib.nameValuePair "${linkName}-netdev" rec {
+                    description = "Dummy interface ${linkName}";
+                    wantedBy = [
+                      "network-setup.service"
+                      "multi-user.target"
+                    ];
+                    before = wantedBy;
+                    after = [ "network-pre.service" ];
+                    requires = [ "network-setup.service" ];
+                    path = [
+                      pkgs.nettools
+                      pkgs.procps
+                      fclib.relaxedIp
+                    ];
+                    reloadIfChanged = true;
+                    script = ''
+                      # Create virtual interface underlay
+                      ip link add ${linkName} type dummy
+
+                      ip link set ${linkName} mtu ${toString fclib.network.ul.mtu}
+                    '';
+                    reload = ''
+                      ip link set ${linkName} mtu ${toString fclib.network.ul.mtu}
+                    '';
+                    preStop = ''
+                      ip link delete ${linkName}
+                    '';
+                    serviceConfig = {
+                      Type = "oneshot";
+                      RemainAfterExit = true;
+                    };
+                  })
+                ]
+                ++
+                  # vxlan kernel devices
+                  (map (
+                    iface:
+                    (lib.nameValuePair "${iface.link}-netdev" rec {
+                      description = "VXLAN link device ${iface.link}";
+                      wantedBy = [
+                        "network-setup.service"
+                        "multi-user.target"
+                      ];
+                      before = wantedBy;
+                      requires = [
+                        "network-addresses-${fclib.underlay.interface}.service"
+                        "network-setup.service"
+                      ];
+                      # do not order after network-setup.service as we already declare
+                      # a before= dependency.
+                      after = [
+                        "network-addresses-${fclib.underlay.interface}.service"
+                        "network-pre.target"
+                      ];
+                      reloadIfChanged = true;
+                      path = [
+                        pkgs.nettools
+                        pkgs.procps
+                        fclib.relaxedIp
+                      ];
+                      script = ''
+                        # Create virtual link ${iface.link}
+                        ip link add ${iface.link} type vxlan \
+                          id ${toString iface.vlanId} \
+                          local ${fclib.underlay.loopback} \
+                          dstport 4789 \
+                          nolearning
+
+                        # Set MTU and layer 2 address
+                        ip link set ${iface.link} address ${iface.mac}
+                        ip link set ${iface.link} mtu ${toString iface.mtu}
+
+                        # Do not automatically generate IPv6 link-local address
+                        ip link set ${iface.link} addrgenmode none
+                      '';
+                      reload = ''
+                        # Set underlay address for virtual interface ${iface.link}.
+                        # Note that changing the VNI or destination port after the interface
+                        # has been created is not supported.
+                        ip link set ${iface.link} type vxlan local ${fclib.underlay.loopback}
+
+                        # Set MTU and layer 2 address
+                        ip link set ${iface.link} address ${iface.mac}
+                        ip link set ${iface.link} mtu ${toString iface.mtu}
+
+                        # Do not automatically generate IPv6 link-local address
+                        ip link set ${iface.link} addrgenmode none
+                      '';
+                      preStop = ''
+                        ip link delete ${iface.link}
+                      '';
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                    })
+                  ) vxlanInterfaces)
+                ++
+
+                  # bridge port configuration for vxlan devices. arp/nd
+                  # suppression is configured separately, so the router role
+                  # can turn it off.
+                  (map (
+                    iface:
+                    (lib.nameValuePair "network-bridge-suppress-flooding-${iface.link}" {
+                      description = "Ensure ARP/ND suppression is enabled for bridge port ${iface.link}";
+                      wantedBy = [ "multi-user.target" ];
+                      requires = [ "${iface.interface}-netdev.service" ];
+                      after = [ "${iface.interface}-netdev.service" ];
+                      stopIfChanged = false;
+                      path = [ fclib.relaxedIp ];
+                      script = ''
+                        ip link set ${iface.link} type bridge_slave neigh_suppress on
+                      '';
+                      reload = ''
+                        ip link set ${iface.link} type bridge_slave neigh_suppress on
+                      '';
+                      preStop = ''
+                        ip link set ${iface.link} type bridge_slave neigh_suppress off
+                      '';
+                      unitConfig.ReloadPropagatedFrom = [ "${iface.interface}-netdev.service" ];
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                    })
+                  ) vxlanInterfaces)
+                ++ (map (
+                  iface:
+                  (lib.nameValuePair "network-bridge-disable-learning-${iface.link}" {
+                    description = "Ensure MAC address learning is disabled for bridge port ${iface.link}";
+                    wantedBy = [ "multi-user.target" ];
+                    requires = [ "${iface.interface}-netdev.service" ];
+                    after = [ "${iface.interface}-netdev.service" ];
+                    stopIfChanged = false;
+                    path = [ fclib.relaxedIp ];
+                    script = ''
+                      ip link set ${iface.link} type bridge_slave learning off
+                    '';
+                    reload = ''
+                      ip link set ${iface.link} type bridge_slave learning off
+                    '';
+                    preStop = ''
+                      ip link set ${iface.link} type bridge_slave learning on
+                    '';
+                    unitConfig.ReloadPropagatedFrom = [ "${iface.interface}-netdev.service" ];
+                    serviceConfig = {
+                      Type = "oneshot";
+                      RemainAfterExit = true;
+                    };
+                  })
+                ) vxlanInterfaces)
+                ++
+
+                  # underlay network physical interfaces
+                  (map (
+                    iface:
+                    (lib.nameValuePair "network-underlay-link-properties-${iface.link}" rec {
+                      description = "Ensure underlay properties for ${iface.link}";
+                      wantedBy = [
+                        "network-addresses-${iface.link}.service"
+                        "multi-user.target"
+                      ];
+                      before = wantedBy;
+                      requires = [ "${iface.link}-netdev.service" ];
+                      after = requires;
+                      path = [ pkgs.procps ];
+                      script = ''
+                        sysctl net.ipv4.conf.${iface.link}.rp_filter=0
+                      '';
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                    })
+                  ) fclib.underlay.links)
+                ++
+
+                  # VRF devices for layer 3 VNIs
+                  (map (
+                    iface:
+                    let
+                      name = vrfName iface;
+                      interfaceUnit = "${iface.interface}-netdev.service";
+                      addressUnit = "network-addresses-${iface.interface}.service";
+                    in
+                    lib.nameValuePair "${name}-netdev" {
+                      description = "VRF Interface ${name}";
+                      wantedBy = [
+                        "network-setup.service"
+                        "sys-subsystem-net-devices-${name}.device"
+                      ];
+                      bindsTo = [ interfaceUnit ];
+                      requires = [ "network-setup.service" ];
+                      after = [
+                        "network-pre.target"
+                        interfaceUnit
+                      ];
+                      before = [
+                        "network-setup.service"
+                        addressUnit
+                      ];
+                      serviceConfig.Type = "oneshot";
+                      serviceConfig.RemainAfterExit = true;
+                      path = [ fclib.relaxedIp ];
+                      script = ''
+                        # remove dead interface
+                        echo "Removing old VRF ${name}..."
+                        ip link show dev "${name}" >/dev/null 2>&1 && ip link del dev "${name}"
+
+                        echo "Adding VRF ${name}..."
+                        ip link add ${name} type vrf table ${toString (vrfTable iface)}
+
+                        # add child interfaces. no need to set up, the network-addresses
+                        # unit will do that.
+                        ip link set ${iface.interface} master ${name}
+
+                        ip link set ${name} up
+                      '';
+                      postStop = ''
+                        ip link set dev "${name}" down || true
+                        ip link del dev "${name}" || true
+                      '';
+                    }
+                  ) vxlanVrfInterfaces)
+                ++
+
+                  [
+                    # fallback unreachable routes
+                    (lib.nameValuePair "network-underlay-routing-fallback" rec {
+                      description = "Ensure fallback unreachable route for underlay prefixes";
+                      wantedBy = [
+                        "network-addresses-${fclib.underlay.interface}.service"
+                        "multi-user.target"
+                      ];
+                      before = wantedBy;
+                      after = [ "${fclib.underlay.interface}-netdev.service" ];
+                      path = [ fclib.relaxedIp ];
+                      stopIfChanged = false;
+                      # https://docs.frrouting.org/en/stable-8.5/zebra.html#administrative-distance
+                      #
+                      # Due to how zebra calculates administrative distance
+                      # for routes learned from the kernel, we need to set a
+                      # very high metric on these routes (i.e. very low
+                      # preference) so that routes learned from BGP can
+                      # override these statically configured routes.
+                      script = ''
+                        ${lib.concatMapStringsSep "\n" (
+                          net: "ip route add unreachable " + net + " metric 335544321"
+                        ) fclib.underlay.subnets}
+                      '';
+                      preStop = ''
+                        ${lib.concatMapStringsSep "\n" (
+                          net: "ip route del unreachable " + net + " metric 335544321"
+                        ) fclib.underlay.subnets}
+                      '';
+                      serviceConfig = {
+                        Type = "oneshot";
+                        RemainAfterExit = true;
+                      };
+                    })
+                    # interface altnames from lldp
+                    (lib.nameValuePair "fc-lldp-to-altnames" rec {
+                      description = "Set interface altnames based on peer hostname advertised in LLDP";
+                      after = [ "lldpd.service" ];
+                      unitConfig.Requisite = after;
+                      serviceConfig.Type = "oneshot";
+                      script =
+                        let
+                          links = lib.concatStringsSep " " (map (i: i.link) ethernetLinks);
+                        in
+                        "${pkgs.fc.lldp-to-altname}/bin/fc-lldp-to-altname -q ${links}";
+                    })
+                    # adjust dependencies of the frr service.
+                    #
+                    # the default config shipped by upstream considers frr to
+                    # be part of the system network configuration, and sets
+                    # Before=network.target, so by the time the host network
+                    # is *configured*, frr should be running. however, in our
+                    # use case, frr is in an awkward grey area between static
+                    # network configuration and actual application services:
+                    # it isn't strictly required to be running for the static
+                    # configuration to be *correct*, however it provides
+                    # dynamic services at runtime so that the host's network
+                    # actually functions at all.
+                    #
+                    # we move frr slightly forward in the boot process so it
+                    # isn't in the critical path for getting interfaces up and
+                    # configured correctly
+                    # (network.target). network-online.target isn't really
+                    # intended for this case, but frr needs to be started
+                    # after the low-level setup but before actual applications
+                    # which require network connectivity.
+                    #
+                    # we also need to ensure that restarts of ul-loopback are
+                    # propagated to zebra, because zebra doesn't correctly
+                    # recover from this; hence the hard restart.
+                    (lib.nameValuePair "frr" rec {
+                      # dependencies inspired by Cumulus Linux's setup.
+                      wantedBy = fclib.mkOverrideUpstreamModule [ "network-online.target" ];
+                      before = fclib.mkOverrideUpstreamModule [ "network-online.target" ];
+                      requires = fclib.mkOverrideUpstreamModule [
+                        "network-addresses-${fclib.underlay.interface}.service"
+                      ];
+                      after = fclib.mkOverrideUpstreamModule [
+                        "network.target"
+                        "systemd-sysctl.service"
+                        "network-addresses-${fclib.underlay.interface}.service"
+                      ];
+                      # Wants=network.target set in upstream module.
+
+                      # upstream's settings will cause frr to be restarted
+                      # if the configuration is changed, but only reloaded
+                      # if the package changes. we want this to be the
+                      # other way round: reload if only the configuration
+                      # changes, otherwise restart the daemons entirely.
+                      stopIfChanged = false;
+                      reloadIfChanged = fclib.mkOverrideUpstreamModule false;
+                      restartTriggers = fclib.mkOverrideUpstreamModule [ ];
+                      reloadTriggers = fclib.mkOverrideUpstreamModule [
+                        # see upstream module sources
+                        config.environment.etc."frr/frr.conf".source
+                        config.environment.etc."frr/daemons".text
+                      ];
+                    })
+                  ]
               )
-            ])
-          )));
+            )
+        ));
 
       flyingcircus.services.sensu-client.checks = lib.optionalAttrs (!isNull fclib.underlay) {
         uplink_redundancy = {
           notification = "Host has redundant switch connectivity";
           interval = 600;
-          command = let
-            links = lib.concatStringsSep " " (map (i: i.link) fclib.underlay.links);
-          in
+          command =
+            let
+              links = lib.concatStringsSep " " (map (i: i.link) fclib.underlay.links);
+            in
             "/run/wrappers/bin/sudo ${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy ${links}";
         };
         rib_integrity_ipv4 = {
           notification = "Kernel network state has problems with underlay network routes";
           interval = 300;
-          command = let
-            args = lib.concatMapStringsSep " " (p: "-p " + p) fclib.underlay.subnets;
-          in
+          command =
+            let
+              args = lib.concatMapStringsSep " " (p: "-p " + p) fclib.underlay.subnets;
+            in
             "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-unicast-rib ${args}";
         };
         rib_integrity_evpn = {
           notification = "Kernel network state has broken overlay MAC addresses";
           interval = 300;
-          command = let
-            ifaces = filter (i: !i.routed) vxlanInterfaces;
-            args = lib.concatMapStringsSep " " (iface: "-n " + (toString iface.vlanId)) ifaces;
-          in
+          command =
+            let
+              ifaces = filter (i: !i.routed) vxlanInterfaces;
+              args = lib.concatMapStringsSep " " (iface: "-n " + (toString iface.vlanId)) ifaces;
+            in
             "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-evpn-rib ${args}";
         };
       };
 
-      flyingcircus.passwordlessSudoRules = lib.optionals (!isNull fclib.underlay) [{
-        commands = [ "${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy" ];
-        groups = [ "sensuclient" ];
-      } {
-        commands = [ "${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity" ];
-        groups = [ "sensuclient" ];
-        runAs = ":frrvty";
-      }];
+      flyingcircus.passwordlessSudoRules = lib.optionals (!isNull fclib.underlay) [
+        {
+          commands = [ "${pkgs.fc.check-link-redundancy}/bin/check_link_redundancy" ];
+          groups = [ "sensuclient" ];
+        }
+        {
+          commands = [ "${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity" ];
+          groups = [ "sensuclient" ];
+          runAs = ":frrvty";
+        }
+      ];
 
       systemd.timers.fc-lldp-to-altnames = lib.mkIf (!isNull fclib.underlay) {
         description = "Timer for updating interface altnames based on peer hostname advertised in LLDP";
@@ -986,107 +1103,108 @@ in
         timerConfig.OnCalendar = "*:0/10";
       };
 
-      boot.kernel.sysctl = lib.mkMerge [{
-        "net.ipv4.tcp_congestion_control" = "bbr";
-        # Ensure that we can do early binds before addresses are configured.
-        "net.ipv4.ip_nonlocal_bind" = "1";
-        "net.ipv6.ip_nonlocal_bind" = "1";
+      boot.kernel.sysctl = lib.mkMerge [
+        {
+          "net.ipv4.tcp_congestion_control" = "bbr";
+          # Ensure that we can do early binds before addresses are configured.
+          "net.ipv4.ip_nonlocal_bind" = "1";
+          "net.ipv6.ip_nonlocal_bind" = "1";
 
-        # Ensure dual stack support for binding to [::] for services that
-        # only accept a single bind address.
-        "net.ipv6.bindv6only" = "0";
+          # Ensure dual stack support for binding to [::] for services that
+          # only accept a single bind address.
+          "net.ipv6.bindv6only" = "0";
 
-        # Ensure that forwarding is not enabled by default
-        "net.ipv4.conf.all.forwarding" = fclib.mkOverrideUpstreamModule false;
-        "net.ipv4.conf.default.forwarding" = fclib.mkOverrideUpstreamModule false;
-        "net.ipv6.conf.all.forwarding" = fclib.mkOverrideUpstreamModule false;
-        "net.ipv6.conf.default.forwarding" = fclib.mkOverrideUpstreamModule false;
+          # Ensure that forwarding is not enabled by default
+          "net.ipv4.conf.all.forwarding" = fclib.mkOverrideUpstreamModule false;
+          "net.ipv4.conf.default.forwarding" = fclib.mkOverrideUpstreamModule false;
+          "net.ipv6.conf.all.forwarding" = fclib.mkOverrideUpstreamModule false;
+          "net.ipv6.conf.default.forwarding" = fclib.mkOverrideUpstreamModule false;
 
-        # Ensure that we can use IPv6 as early as possible.
-        # This fixes startup race conditions like
-        # https://yt.flyingcircus.io/issue/PL-130190
-        "net.ipv6.conf.all.optimistic_dad" = 1;
-        "net.ipv6.conf.all.use_optimistic" = 1;
+          # Ensure that we can use IPv6 as early as possible.
+          # This fixes startup race conditions like
+          # https://yt.flyingcircus.io/issue/PL-130190
+          "net.ipv6.conf.all.optimistic_dad" = 1;
+          "net.ipv6.conf.all.use_optimistic" = 1;
 
-        # Ensure we reserve ports as promised to our customers.
-        "net.ipv4.ip_local_port_range" = "32768 60999";
-        "net.ipv4.ip_local_reserved_ports" = "61000-61999";
-        # Linux currently has 4096 as default and that includes
-        # neighbour discovery. Seen on #denog on 2020-11-19
-        "net.ipv6.route.max_size" = 2147483647;
+          # Ensure we reserve ports as promised to our customers.
+          "net.ipv4.ip_local_port_range" = "32768 60999";
+          "net.ipv4.ip_local_reserved_ports" = "61000-61999";
+          # Linux currently has 4096 as default and that includes
+          # neighbour discovery. Seen on #denog on 2020-11-19
+          "net.ipv6.route.max_size" = 2147483647;
 
-        # Ensure we can work in larger VLANs with hundreds of nodes.
-        "net.ipv4.neigh.default.gc_thresh1" = 1024;
-        "net.ipv4.neigh.default.gc_thresh2" = 4096;
-        "net.ipv4.neigh.default.gc_thresh3" = 8192;
-        "net.ipv6.neigh.default.gc_thresh1" = 1024;
-        "net.ipv6.neigh.default.gc_thresh2" = 4096;
-        "net.ipv6.neigh.default.gc_thresh3" = 8192;
+          # Ensure we can work in larger VLANs with hundreds of nodes.
+          "net.ipv4.neigh.default.gc_thresh1" = 1024;
+          "net.ipv4.neigh.default.gc_thresh2" = 4096;
+          "net.ipv4.neigh.default.gc_thresh3" = 8192;
+          "net.ipv6.neigh.default.gc_thresh1" = 1024;
+          "net.ipv6.neigh.default.gc_thresh2" = 4096;
+          "net.ipv6.neigh.default.gc_thresh3" = 8192;
 
-        # See PL-130189
-        # conntrack entries are created (for v4/v6) if any rules
-        # for related/established and/or NATing are used in the
-        # PREROUTING hook
-        # suppressing/disabling conntrack on individual machines will
-        # likely lead to a confusing platform behaviour as we will need
-        # connection tracking more and more on VPN servers, container hosts, etc.
-        # we already dealt with this in Ceph and have established 250k tracked connections
-        # as a reasonable size and I'd suggest generalizing this number to all machines.
-        "net.netfilter.nf_conntrack_max" = 262144;
-      }
-      (lib.mkIf (!cfg.networking.physicalHostNetworking) {
-        "net.core.rmem_max" = 8388608;
-      })
-      (lib.mkIf (cfg.networking.physicalHostNetworking) {
-        "vm.min_free_kbytes" = "513690";
+          # See PL-130189
+          # conntrack entries are created (for v4/v6) if any rules
+          # for related/established and/or NATing are used in the
+          # PREROUTING hook
+          # suppressing/disabling conntrack on individual machines will
+          # likely lead to a confusing platform behaviour as we will need
+          # connection tracking more and more on VPN servers, container hosts, etc.
+          # we already dealt with this in Ceph and have established 250k tracked connections
+          # as a reasonable size and I'd suggest generalizing this number to all machines.
+          "net.netfilter.nf_conntrack_max" = 262144;
+        }
+        (lib.mkIf (!cfg.networking.physicalHostNetworking) {
+          "net.core.rmem_max" = 8388608;
+        })
+        (lib.mkIf (cfg.networking.physicalHostNetworking) {
+          "vm.min_free_kbytes" = "513690";
 
-        "net.core.netdev_max_backlog" = 300000;
-        "net.core.optmem_max" = 65536;
-        "net.core.wmem_default" = 16777216;
-        "net.core.wmem_max" = 16777216;
-        "net.core.rmem_default" = 8388608;
-        "net.core.rmem_max" = 16777216;
-        "net.core.somaxconn" = 1024;
+          "net.core.netdev_max_backlog" = 300000;
+          "net.core.optmem_max" = 65536;
+          "net.core.wmem_default" = 16777216;
+          "net.core.wmem_max" = 16777216;
+          "net.core.rmem_default" = 8388608;
+          "net.core.rmem_max" = 16777216;
+          "net.core.somaxconn" = 1024;
 
-        "net.ipv4.tcp_fin_timeout" = 10;
-        "net.ipv4.tcp_max_syn_backlog" = 30000;
-        "net.ipv4.tcp_slow_start_after_idle" = 0;
-        "net.ipv4.tcp_syncookies" = 0;
-        "net.ipv4.tcp_timestamps" = 0;
-                              # 1MiB   8MiB    # 16 MiB
-        "net.ipv4.tcp_mem" = "1048576 8388608 16777216";
-        "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
-        "net.ipv4.tcp_rmem" = "1048576 8388608 16777216";
+          "net.ipv4.tcp_fin_timeout" = 10;
+          "net.ipv4.tcp_max_syn_backlog" = 30000;
+          "net.ipv4.tcp_slow_start_after_idle" = 0;
+          "net.ipv4.tcp_syncookies" = 0;
+          "net.ipv4.tcp_timestamps" = 0;
+          # 1MiB   8MiB    # 16 MiB
+          "net.ipv4.tcp_mem" = "1048576 8388608 16777216";
+          "net.ipv4.tcp_wmem" = "1048576 8388608 16777216";
+          "net.ipv4.tcp_rmem" = "1048576 8388608 16777216";
 
-        "net.ipv4.tcp_tw_reuse" = 1;
+          "net.ipv4.tcp_tw_reuse" = 1;
 
-        # Supposedly this doesn't do much good anymore, but in one of my tests
-        # (too many, can't prove right now.) this appeared to have been helpful.
-        "net.ipv4.tcp_low_latency" = 1;
+          # Supposedly this doesn't do much good anymore, but in one of my tests
+          # (too many, can't prove right now.) this appeared to have been helpful.
+          "net.ipv4.tcp_low_latency" = 1;
 
-        # Optimize multi-path for VXLAN (layer3 in layer3)
-        "net.ipv4.fib_multipath_hash_policy" = 2;
-      })];
+          # Optimize multi-path for VXLAN (layer3 in layer3)
+          "net.ipv4.fib_multipath_hash_policy" = 2;
+        })
+      ];
 
       # Prevent underlay interfaces from matching the rp_filter sysctl
       # glob in the default configuration shipped with systemd.
-      environment.etc."sysctl.d/70-fcio-underlay.conf" =
-        lib.mkIf (!isNull fclib.underlay) {
-          text = lib.concatMapStringsSep "\n"
-            (iface: "-net.ipv4.conf.${iface.link}.rp_filter")
-            fclib.underlay.links;
-        };
+      environment.etc."sysctl.d/70-fcio-underlay.conf" = lib.mkIf (!isNull fclib.underlay) {
+        text = lib.concatMapStringsSep "\n" (
+          iface: "-net.ipv4.conf.${iface.link}.rp_filter"
+        ) fclib.underlay.links;
+      };
 
-  }
-  (lib.mkIf (cfg.infrastructureModule == "flyingcircus") {
-    # This check is here to identify abysmal but otherwise subtle network speed
-    # issues *in VMs* as we have seen in PL-132971. If downloading a 1MiB test
-    # file takes longer than 5-10 seconds, something is very much off.
-    flyingcircus.services.sensu-client.checks.network_speed = {
-          notification = "General network speed";
-          command = "check_http -u /rgw-monitoring/probe -H rgw.local -p 7480 -m 1000000:1500000 -w 5 -c 10";
-          interval = 7200;
-        };
-  })
+    }
+    (lib.mkIf (cfg.infrastructureModule == "flyingcircus") {
+      # This check is here to identify abysmal but otherwise subtle network speed
+      # issues *in VMs* as we have seen in PL-132971. If downloading a 1MiB test
+      # file takes longer than 5-10 seconds, something is very much off.
+      flyingcircus.services.sensu-client.checks.network_speed = {
+        notification = "General network speed";
+        command = "check_http -u /rgw-monitoring/probe -H rgw.local -p 7480 -m 1000000:1500000 -w 5 -c 10";
+        interval = 7200;
+      };
+    })
   ];
 }

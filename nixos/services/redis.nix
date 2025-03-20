@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -6,20 +11,21 @@ let
   cfg = config.flyingcircus.services.redis;
   fclib = config.fclib;
 
-  generatedPassword =
-    lib.removeSuffix "\n" (readFile
-      (pkgs.runCommand "redis.password" {}
-      "${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > $out"));
+  generatedPassword = lib.removeSuffix "\n" (
+    readFile (pkgs.runCommand "redis.password" { } "${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > $out")
+  );
 
   password = lib.removeSuffix "\n" (
-    if cfg.password == null
-    then (fclib.configFromFile /etc/local/redis/password generatedPassword)
-    else cfg.password
+    if cfg.password == null then
+      (fclib.configFromFile /etc/local/redis/password generatedPassword)
+    else
+      cfg.password
   );
 
   extraConfig = fclib.configFromFile /etc/local/redis/custom.conf "";
 
-in {
+in
+{
   options = with lib; {
 
     flyingcircus.services.redis = {
@@ -28,8 +34,7 @@ in {
       listenAddresses = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         defaultText = "the addresses of the networks `lo` and `srv` (IPv4 & IPv6)";
-        default = fclib.network.lo.dualstack.addresses ++
-                  fclib.network.srv.dualstack.addresses;
+        default = fclib.network.lo.dualstack.addresses ++ fclib.network.srv.dualstack.addresses;
       };
 
       password = mkOption {
@@ -85,104 +90,101 @@ in {
 
   };
 
-  config =
-    lib.mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
-      assertions =
-        [
-          {
-            assertion = extraConfig == "";
-            message = ''
-              Config via /etc/local/redis/custom.conf is not supported anymore.
-              Please use a NixOS module with the option services.redis.servers."".settings instead
-            '';
-          }
-        ];
-
-      services.redis = {
-        package = cfg.package;
-        vmOverCommit = true;
-
-        servers = {
-          "" = {
-            bind = concatStringsSep " " cfg.listenAddresses;
-            enable = true;
-            requirePass = password;
-            settings = lib.mkMerge [
-              (lib.mkIf (cfg.maxmemory-policy != null) {
-                inherit (cfg) maxmemory-policy;
-              })
-              ({
-                inherit (cfg) maxmemory;
-              })
-            ];
-          };
-        };
-      };
-
-      systemd.services.redis.serviceConfig.Restart = "always";
-
-      flyingcircus.activationScripts.redis =
-        lib.stringAfter [ "fc-local-config" ] ''
-          if [[ ! -e /etc/local/redis/password ]]; then
-            ( umask 007;
-              echo ${lib.escapeShellArg password} > /etc/local/redis/password
-              chown redis:service /etc/local/redis/password
-            )
-          fi
-          chmod 0660 /etc/local/redis/password
+    assertions = [
+      {
+        assertion = extraConfig == "";
+        message = ''
+          Config via /etc/local/redis/custom.conf is not supported anymore.
+          Please use a NixOS module with the option services.redis.servers."".settings instead
         '';
+      }
+    ];
 
-      flyingcircus.localConfigDirs.redis = {
-        dir = "/etc/local/redis";
-        user = "redis";
-      };
+    services.redis = {
+      package = cfg.package;
+      vmOverCommit = true;
 
-      flyingcircus.services = {
-        sensu-client.checks.redis = {
-          notification = "Redis alive";
-          command = ''
-            ${pkgs.sensu-plugins-redis}/bin/check-redis-ping.rb \
-              -h localhost -P ${lib.escapeShellArg password}
-          '';
+      servers = {
+        "" = {
+          bind = concatStringsSep " " cfg.listenAddresses;
+          enable = true;
+          requirePass = password;
+          settings = lib.mkMerge [
+            (lib.mkIf (cfg.maxmemory-policy != null) {
+              inherit (cfg) maxmemory-policy;
+            })
+            ({
+              inherit (cfg) maxmemory;
+            })
+          ];
         };
-
-        telegraf.inputs.redis = [
-          {
-            servers = [
-              "tcp://:${password}@localhost:${toString config.services.redis.servers."".port}"
-            ];
-            # Drop string fields. They are converted to labels in Prometheus
-            # which blows up the number of metrics.
-            fielddrop = [
-              "aof_last_bgrewrite_status"
-              "aof_last_write_status"
-              "maxmemory_policy"
-              "rdb_last_bgsave_status"
-              "used_memory_dataset_perc"
-              "used_memory_peak_perc"
-            ];
-          }
-        ];
       };
-
-      boot.kernel.sysctl = {
-        "net.core.somaxconn" = 512;
-      };
-
-      environment.etc."local/redis/README.txt".text = ''
-        Redis is running on this machine.
-
-        You can find the password for the redis in the `password`. You can also change
-        the redis password by changing the `password` file.
-
-        Changing the config via custom.conf is not supported anymore. Please use a NixOS module
-        with the option `services.redis.servers."".settings` instead.
-      '';
-
-      # We want a fixed uid that is compatible with older releases.
-      # Upstream doesn't set the uid.
-      users.users.redis.uid = config.ids.uids.redis;
-
     };
+
+    systemd.services.redis.serviceConfig.Restart = "always";
+
+    flyingcircus.activationScripts.redis = lib.stringAfter [ "fc-local-config" ] ''
+      if [[ ! -e /etc/local/redis/password ]]; then
+        ( umask 007;
+          echo ${lib.escapeShellArg password} > /etc/local/redis/password
+          chown redis:service /etc/local/redis/password
+        )
+      fi
+      chmod 0660 /etc/local/redis/password
+    '';
+
+    flyingcircus.localConfigDirs.redis = {
+      dir = "/etc/local/redis";
+      user = "redis";
+    };
+
+    flyingcircus.services = {
+      sensu-client.checks.redis = {
+        notification = "Redis alive";
+        command = ''
+          ${pkgs.sensu-plugins-redis}/bin/check-redis-ping.rb \
+            -h localhost -P ${lib.escapeShellArg password}
+        '';
+      };
+
+      telegraf.inputs.redis = [
+        {
+          servers = [
+            "tcp://:${password}@localhost:${toString config.services.redis.servers."".port}"
+          ];
+          # Drop string fields. They are converted to labels in Prometheus
+          # which blows up the number of metrics.
+          fielddrop = [
+            "aof_last_bgrewrite_status"
+            "aof_last_write_status"
+            "maxmemory_policy"
+            "rdb_last_bgsave_status"
+            "used_memory_dataset_perc"
+            "used_memory_peak_perc"
+          ];
+        }
+      ];
+    };
+
+    boot.kernel.sysctl = {
+      "net.core.somaxconn" = 512;
+    };
+
+    environment.etc."local/redis/README.txt".text = ''
+      Redis is running on this machine.
+
+      You can find the password for the redis in the `password`. You can also change
+      the redis password by changing the `password` file.
+
+      Changing the config via custom.conf is not supported anymore. Please use a NixOS module
+      with the option `services.redis.servers."".settings` instead.
+    '';
+
+    # We want a fixed uid that is compatible with older releases.
+    # Upstream doesn't set the uid.
+    users.users.redis.uid = config.ids.uids.redis;
+
+  };
 }

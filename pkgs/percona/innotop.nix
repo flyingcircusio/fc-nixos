@@ -1,6 +1,7 @@
-{ lib
-, fetchgit
-, perlPackages
+{
+  lib,
+  fetchgit,
+  perlPackages,
 }:
 
 perlPackages.buildPerlPackage rec {
@@ -23,7 +24,11 @@ perlPackages.buildPerlPackage rec {
     patchShebangs .
   '';
 
-  propagatedBuildInputs = with perlPackages; [ DBI DBDmysql TermReadKey ];
+  propagatedBuildInputs = with perlPackages; [
+    DBI
+    DBDmysql
+    TermReadKey
+  ];
 
   meta = {
     description = "innotop is a 'top' clone for MySQL with many features and flexibility.";

@@ -5,7 +5,8 @@ let
   modulesFromHere = [
   ];
 
-in {
+in
+{
   disabledModules = modulesFromHere;
 
   imports = with lib; [

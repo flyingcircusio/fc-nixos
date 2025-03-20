@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 # Our management agent keeping the system up to date, configuring it based on
 # changes to our nixpkgs clone and data from our directory
@@ -53,11 +58,10 @@ let
     compdef _fc_kubernetes_completion fc-kubernetes
   '';
 
-  agentZshCompletionsPkg = pkgs.runCommand "agent-zshcomplete" {} ''
+  agentZshCompletionsPkg = pkgs.runCommand "agent-zshcomplete" { } ''
     mkdir -p $out/share/zsh/site-functions
     cp ${agentZshCompletions} $out/share/zsh/site-functions/_fc_agent
   '';
-
 
   # WARNING: environment is duplicated in devhost. Unfortunately using references
   # causes conflicts that can not be easily resolved.
@@ -101,7 +105,7 @@ in
 
       maintenanceConstraints = {
         machinesInService = mkOption {
-          default = [];
+          default = [ ];
           type = with types; listOf str;
           description = ''
             Machines that must not be in maintenance mode at the same time.
@@ -129,7 +133,7 @@ in
           Perform channel updates in scheduled maintenance. If set to false,
           machines switch to new channels immediately, without running
           maintenance enter and exit commands.
-          '';
+        '';
         type = types.bool;
       };
 
@@ -152,9 +156,17 @@ in
         '';
       };
 
-
       extraSettings = lib.mkOption {
-        type = with lib.types; attrsOf (attrsOf (oneOf [ bool int str package ]));
+        type =
+          with lib.types;
+          attrsOf (
+            attrsOf (oneOf [
+              bool
+              int
+              str
+              package
+            ])
+          );
         default = { };
         description = "Additional configuration for fc-agent utilities, will be turned into the contents of /etc/fc-agent.conf";
       };
@@ -166,13 +178,21 @@ in
       };
 
       maintenance = mkOption {
-        type = with types; attrsOf (submodule {
-          options = {
-            enter = mkOption { type = str; default = ""; };
-            leave = mkOption { type = str; default = ""; };
-          };
-        });
-        default = {};
+        type =
+          with types;
+          attrsOf (submodule {
+            options = {
+              enter = mkOption {
+                type = str;
+                default = "";
+              };
+              leave = mkOption {
+                type = str;
+                default = "";
+              };
+            };
+          });
+        default = { };
         description = ''
           Commands that fc.agent will call before entering or leaving
           a maintenance cycle. Those commands must be
@@ -251,9 +271,9 @@ in
     {
       # Write NixOS warnings to a file, separated by two newlines.
       # We use that for `fc-manage check` to display (deprecation) warnings.
-      environment.etc."fcio_nixos_warnings".text =
-        lib.optionalString (config.warnings != [])
-          ((lib.concatStringsSep "\n\n" config.warnings) + "\n");
+      environment.etc."fcio_nixos_warnings".text = lib.optionalString (config.warnings != [ ]) (
+        (lib.concatStringsSep "\n\n" config.warnings) + "\n"
+      );
     }
 
     (mkIf cfg.agent.install {
@@ -263,16 +283,15 @@ in
       ];
 
       flyingcircus.agent.maintenance =
-      let
-        machines =
-          filter
-            (m: m != config.networking.hostName)
-            cfg.agent.maintenanceConstraints.machinesInService;
-      in
-        lib.optionalAttrs (machines != []) {
+        let
+          machines = filter (
+            m: m != config.networking.hostName
+          ) cfg.agent.maintenanceConstraints.machinesInService;
+        in
+        lib.optionalAttrs (machines != [ ]) {
           other-machines-not-in-maintenance.enter =
-              "${cfg.agent.package}/bin/fc-maintenance constraints"
-              + (lib.concatMapStrings (u: " --in-service ${u}") machines);
+            "${cfg.agent.package}/bin/fc-maintenance constraints"
+            + (lib.concatMapStrings (u: " --in-service ${u}") machines);
         };
 
       flyingcircus.passwordlessSudoPackages = [
@@ -284,7 +303,11 @@ in
             "bin/fc-maintenance -v delete"
           ];
           package = cfg.agent.package;
-          groups = [ "admins" "sudo-srv" "service" ];
+          groups = [
+            "admins"
+            "sudo-srv"
+            "service"
+          ];
         }
         {
           commands = [
@@ -326,30 +349,30 @@ in
       ];
 
       security.pam.loginLimits = [
-        { domain = "root";
+        {
+          domain = "root";
           item = "memlock";
           type = "-";
           value = nixBuildMEMLOCK;
         }
       ];
 
-      environment.etc."fc-agent.conf".text = ''
-         [limits]
-         disk_keep_free = ${toString cfg.agent.diskKeepFree}
+      environment.etc."fc-agent.conf".text =
+        ''
+          [limits]
+          disk_keep_free = ${toString cfg.agent.diskKeepFree}
 
-         [maintenance]
-         preparation_seconds = ${toString cfg.agent.maintenancePreparationSeconds}
-         request_runnable_for_seconds = ${toString cfg.agent.maintenanceRequestRunnableFor}
+          [maintenance]
+          preparation_seconds = ${toString cfg.agent.maintenancePreparationSeconds}
+          request_runnable_for_seconds = ${toString cfg.agent.maintenanceRequestRunnableFor}
 
-         [maintenance-enter]
-         ${concatStringsSep "\n" (
-           mapAttrsToList (k: v: "${k} = ${v.enter}") cfg.agent.maintenance)}
+          [maintenance-enter]
+          ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.enter}") cfg.agent.maintenance)}
 
-         [maintenance-leave]
-         ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.leave}")
-           cfg.agent.maintenance)}
-      ''
-      + lib.generators.toINI { } cfg.agent.extraSettings;
+          [maintenance-leave]
+          ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.leave}") cfg.agent.maintenance)}
+        ''
+        + lib.generators.toINI { } cfg.agent.extraSettings;
 
       systemd.services.fc-agent = rec {
         description = "Flying Circus Management Task";
@@ -362,15 +385,18 @@ in
           TimeoutSec = "2h";
           Nice = 18; # 19 is the lowest
           IOSchedulingClass = "idle";
-          IOSchedulingPriority = 7; #lowest
+          IOSchedulingPriority = 7; # lowest
           IOWeight = 10; # 1-10000
           LimitMEMLOCK = nixBuildMEMLOCK;
         };
 
-        path = with pkgs; [
-          config.system.build.nixos-rebuild
-          cfg.agent.package
-        ] ++ commonEnvPath;
+        path =
+          with pkgs;
+          [
+            config.system.build.nixos-rebuild
+            cfg.agent.package
+          ]
+          ++ commonEnvPath;
 
         inherit environment;
 
@@ -390,7 +416,8 @@ in
               ${cfg.agent.extraCommands}
               ) || rc=$?
             '';
-          in ''
+          in
+          ''
             rc=0
             ${wrappedExtraPreCommands}
             ${lib.optionalString cfg.agent.resizeDisk "fc-resize-disk || rc=$?"}
@@ -424,16 +451,17 @@ in
           TimeoutSec = "2h";
           Nice = 18; # 19 is the lowest
           IOSchedulingClass = "idle";
-          IOSchedulingPriority = 7; #lowest
+          IOSchedulingPriority = 7; # lowest
           IOWeight = 10; # 1-10000
           ExecStart =
             let
               verbose = lib.optionalString cfg.agent.verbose "--show-caller-info";
               options = "--enc-path=${cfg.encPath} ${verbose}";
             in
-              if cfg.agent.updateInMaintenance
-              then "${cfg.agent.package}/bin/fc-maintenance ${options} request update"
-              else "${cfg.agent.package}/bin/fc-manage ${options} switch --update-channel --lazy";
+            if cfg.agent.updateInMaintenance then
+              "${cfg.agent.package}/bin/fc-maintenance ${options} request update"
+            else
+              "${cfg.agent.package}/bin/fc-manage ${options} switch --update-channel --lazy";
         };
 
         path = commonEnvPath;
@@ -456,7 +484,7 @@ in
       ];
 
       # Remove obsolete `/result` symlink
-      system.activationScripts.result-symlink = stringAfter [] ''
+      system.activationScripts.result-symlink = stringAfter [ ] ''
         ${pkgs.fc.check-age}/bin/check_age -m -w 3d /result >/dev/null || \
           rm /result
       '';
@@ -468,9 +496,11 @@ in
           # `builtins.ceil` is only available in Nix 2.4+ <=> NixOS 22.05+, blocking
           # updates from 21.11. The alternative, integer division, implicitly applies a
           # `floor`. With the current logDaysKeep = 180, this does not make any difference anyways.
-          rotate = if (builtins ? ceil)
-            then builtins.ceil (logDaysKeep / (30 + 0.0))  # enforce floating point division
-            else (logDaysKeep / 30);
+          rotate =
+            if (builtins ? ceil) then
+              builtins.ceil (logDaysKeep / (30 + 0.0)) # enforce floating point division
+            else
+              (logDaysKeep / 30);
           frequency = "monthly";
         };
       };
@@ -528,15 +558,16 @@ in
         };
       };
       flyingcircus.services.telegraf.inputs = {
-        exec = [{
-          commands = [ "${cfg.agent.package}/bin/fc-maintenance metrics" ];
-          timeout = "10s";
-          data_format = "json";
-          json_name_key = "name";
-          interval = "60s";
-        }];
+        exec = [
+          {
+            commands = [ "${cfg.agent.package}/bin/fc-maintenance metrics" ];
+            timeout = "10s";
+            data_format = "json";
+            json_name_key = "name";
+            interval = "60s";
+          }
+        ];
       };
-
 
     }
   ];

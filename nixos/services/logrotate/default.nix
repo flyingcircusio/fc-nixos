@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -112,7 +117,10 @@ in
           # sections so we use 900 (like mkPlatform) here.
           # Use a priority of 200 to place sections before our global settings
           # and 100 to place them even before the header.
-          fcio = platformSettings // { global = true; priority = 900; };
+          fcio = platformSettings // {
+            global = true;
+            priority = 900;
+          };
         };
         # part of our un-hardening, we at least require Unix socket communications
         # to daemons like MySQL or Ceph (admin socket)
@@ -120,66 +128,82 @@ in
         allowNetworking = true;
       };
 
-      systemd.services = {
-        # XXX logrotate does not allow setting options and I need to rebuild the
-        # command line here so we can get decent debugging output.
-        logrotate = { ... }: {
-          options = {
-            script = lib.mkOption {
-              apply = v: lib.replaceStrings [ "sbin/logrotate /nix" ] [ "sbin/logrotate -v /nix" ] v;
-            };
-          };
-          config = {
-            # Upstream puts logrotate in multi-user.target which triggers unwanted
-            # service starts on fc-manage. It should only be activated by the timer.
-            wantedBy = lib.mkForce [ ];
+      systemd.services =
+        {
+          # XXX logrotate does not allow setting options and I need to rebuild the
+          # command line here so we can get decent debugging output.
+          logrotate =
+            { ... }:
+            {
+              options = {
+                script = lib.mkOption {
+                  apply = v: lib.replaceStrings [ "sbin/logrotate /nix" ] [ "sbin/logrotate -v /nix" ] v;
+                };
+              };
+              config = {
+                # Upstream puts logrotate in multi-user.target which triggers unwanted
+                # service starts on fc-manage. It should only be activated by the timer.
+                wantedBy = lib.mkForce [ ];
 
-            # The upstream service is a bit too hardened for what we want to do in
-            # the platform. Only necessary for the system logrotate, the user units
-            # are not hardened yet as they are not running as privileged users.
-            serviceConfig = with config.fclib; {
-              # our MySQL logic relies on config files in the home directory
-              ProtectHome = mkOverrideUpstreamModule false;
+                # The upstream service is a bit too hardened for what we want to do in
+                # the platform. Only necessary for the system logrotate, the user units
+                # are not hardened yet as they are not running as privileged users.
+                serviceConfig = with config.fclib; {
+                  # our MySQL logic relies on config files in the home directory
+                  ProtectHome = mkOverrideUpstreamModule false;
+                };
+              };
             };
-          };
-        };
-      } // listToAttrs (
-        map (u: nameValuePair "user-logrotate-${u.name}" {
-          description = "logrotate for ${u.name}";
-          path = with pkgs; [ bash logrotate ];
-          restartIfChanged = false;
-          script = "${./user-logrotate.sh} ${localDir}/${u.name}";
-          serviceConfig = {
-            User = u.name;
-            Type = "oneshot";
-          };
-          stopIfChanged = false;
-        })
-        serviceUsers);
+        }
+        // listToAttrs (
+          map (
+            u:
+            nameValuePair "user-logrotate-${u.name}" {
+              description = "logrotate for ${u.name}";
+              path = with pkgs; [
+                bash
+                logrotate
+              ];
+              restartIfChanged = false;
+              script = "${./user-logrotate.sh} ${localDir}/${u.name}";
+              serviceConfig = {
+                User = u.name;
+                Type = "oneshot";
+              };
+              stopIfChanged = false;
+            }
+          ) serviceUsers
+        );
 
       # We create one directory for each service user. I decided not to remove
       # old directories as this may be manually placed data that I don't want
       # to delete accidentally.
-      flyingcircus.localConfigDirs = let
-        cfgDir = u:
-          lib.nameValuePair
-            "logrotate-${u.name}"
-            { dir = "${localDir}/${u.name}"; user = u.name; permissions = "0755"; };
+      flyingcircus.localConfigDirs =
+        let
+          cfgDir =
+            u:
+            lib.nameValuePair "logrotate-${u.name}" {
+              dir = "${localDir}/${u.name}";
+              user = u.name;
+              permissions = "0755";
+            };
 
-        in listToAttrs (map cfgDir serviceUsers);
+        in
+        listToAttrs (map cfgDir serviceUsers);
 
-
-      systemd.timers =
-        listToAttrs (
-          map (u: nameValuePair "user-logrotate-${u.name}" {
+      systemd.timers = listToAttrs (
+        map (
+          u:
+          nameValuePair "user-logrotate-${u.name}" {
             description = "logrotate timer for ${u.name}";
             timerConfig = {
               OnCalendar = "*-*-* 00:01:00";
               RandomizedDelaySec = "15m";
             };
             wantedBy = [ "timers.target" ];
-          })
-          serviceUsers);
+          }
+        ) serviceUsers
+      );
 
     })
   ];

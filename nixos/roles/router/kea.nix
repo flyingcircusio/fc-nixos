@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with builtins;
 
@@ -9,26 +14,33 @@ let
   inherit (config.networking) hostName;
   suffix = "gocept.net";
 
-  dhcpNetworks' =
-    [ "mgm" "srv" "fe" ] ++
-    (config.flyingcircus.static.additionalDhcpNetworks."${location}" or []);
+  dhcpNetworks' = [
+    "mgm"
+    "srv"
+    "fe"
+  ] ++ (config.flyingcircus.static.additionalDhcpNetworks."${location}" or [ ]);
 
   dhcpNetworks = [ "ipmi" ] ++ dhcpNetworks';
   dhcpInterfaces = map (net: fclib.network."${net}".interface) dhcpNetworks';
 
   bootServer = head fclib.network.mgm.v4.defaultGateways;
 
-  resolvers4 = if (hasAttr location config.flyingcircus.static.nameservers)
-        then config.flyingcircus.static.nameservers.${location}
-        else [];
+  resolvers4 =
+    if (hasAttr location config.flyingcircus.static.nameservers) then
+      config.flyingcircus.static.nameservers.${location}
+    else
+      [ ];
 
   resolvers6 =
-        if (hasAttr location config.flyingcircus.static.nameservers6)
-        then config.flyingcircus.static.nameservers6.${location}
-        else [];
+    if (hasAttr location config.flyingcircus.static.nameservers6) then
+      config.flyingcircus.static.nameservers6.${location}
+    else
+      [ ];
 
   baseConfig = {
-    dhcp-ddns = { enable-updates = false; };
+    dhcp-ddns = {
+      enable-updates = false;
+    };
     valid-lifetime = 1800;
     max-valid-lifetime = 7200;
   };
@@ -45,12 +57,21 @@ let
       name = "/var/lib/kea/dhcp4.leases";
     };
 
-    authoritative = true;  # match previous isc-dhcpd behaviour
+    authoritative = true; # match previous isc-dhcpd behaviour
 
     option-data = [
-      { name = "domain-name"; data = suffix; }
-      { name = "domain-search"; data = "${suffix}, ${location}.${suffix}"; }
-      { name = "domain-name-servers"; data = lib.concatStringsSep ", " resolvers4; }
+      {
+        name = "domain-name";
+        data = suffix;
+      }
+      {
+        name = "domain-search";
+        data = "${suffix}, ${location}.${suffix}";
+      }
+      {
+        name = "domain-name-servers";
+        data = lib.concatStringsSep ", " resolvers4;
+      }
       # NTP options set on a per-subnet basis by fc-kea
     ];
 
@@ -86,17 +107,27 @@ let
     };
 
     option-data = [
-      { name = "dns-servers"; data = lib.concatStringsSep ", " resolvers6; }
-      { name = "domain-search"; data = "${suffix}, ${location}.${suffix}"; }
+      {
+        name = "dns-servers";
+        data = lib.concatStringsSep ", " resolvers6;
+      }
+      {
+        name = "domain-search";
+        data = "${suffix}, ${location}.${suffix}";
+      }
       # no direct equivalent to dhcpv4 option 15 in dhcpv6, fqdn
       # configured on a per-host basis.
     ];
   };
 
   configUpdateScript = pkgs.writeShellScript "update-kea-config" ''
-      # Generate DHCP server configuration
-      ${pkgs.fc.agent}/bin/fc-kea -4 -L ${location} -o /etc/nixos/localconfig-dhcpd4.json -e ipmi ${lib.concatMapStringsSep " " (net: "-n ${net}") dhcpNetworks}
-      ${pkgs.fc.agent}/bin/fc-kea -6 -L ${location} -o /etc/nixos/localconfig-dhcpd6.json -e ipmi ${lib.concatMapStringsSep " " (net: "-n ${net}") dhcpNetworks} -d ${suffix}
+    # Generate DHCP server configuration
+    ${pkgs.fc.agent}/bin/fc-kea -4 -L ${location} -o /etc/nixos/localconfig-dhcpd4.json -e ipmi ${
+      lib.concatMapStringsSep " " (net: "-n ${net}") dhcpNetworks
+    }
+    ${pkgs.fc.agent}/bin/fc-kea -6 -L ${location} -o /etc/nixos/localconfig-dhcpd6.json -e ipmi ${
+      lib.concatMapStringsSep " " (net: "-n ${net}") dhcpNetworks
+    } -d ${suffix}
   '';
 
 in
@@ -119,19 +150,11 @@ in
 
     services.kea.dhcp4 = {
       enable = role.isPrimary;
-      settings = (
-        baseConfig //
-        kea4Config //
-        config.flyingcircus.services.dhcpd4.localconfig
-      );
+      settings = (baseConfig // kea4Config // config.flyingcircus.services.dhcpd4.localconfig);
     };
     services.kea.dhcp6 = {
       enable = role.isPrimary;
-      settings = (
-        baseConfig //
-        kea6Config //
-        config.flyingcircus.services.dhcpd6.localconfig
-      );
+      settings = (baseConfig // kea6Config // config.flyingcircus.services.dhcpd6.localconfig);
     };
 
     services.atftpd = {
@@ -139,7 +162,7 @@ in
       extraOptions = [
         "--verbose=5"
       ];
-      root = pkgs.runCommand "tftpd-root-for-dhcpd4" {} ''
+      root = pkgs.runCommand "tftpd-root-for-dhcpd4" { } ''
         mkdir $out
         # place a file called "flyingcircus.ipxe" in this path, take it from ./flyingcircus.ipxe
         cp ${./flyingcircus.ipxe} $out/flyingcircus.ipxe

@@ -1,27 +1,33 @@
 # Managed external network (OpenVPN/DHP/...) gateway
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
 let
   fclib = config.fclib;
   cfg = config.flyingcircus;
-  parameters = lib.attrByPath [ "enc" "parameters" ] {} cfg;
+  parameters = lib.attrByPath [ "enc" "parameters" ] { } cfg;
 
   # attrset of those fe addresses that have a reverse
   feReverses =
     # fake attrset from listenAddresses: { "addr" = null; ... }
-    let feAddrSet =
-      lib.genAttrs (fclib.network.fe.dualstack.addresses) (x: null);
+    let
+      feAddrSet = lib.genAttrs (fclib.network.fe.dualstack.addresses) (x: null);
     in
-    intersectAttrs feAddrSet (lib.attrByPath [ "reverses" ] {} parameters);
+    intersectAttrs feAddrSet (lib.attrByPath [ "reverses" ] { } parameters);
 
   # pick a suitable DNS name for client config
   domain = config.networking.domain;
   defaultFrontendName =
-    if feReverses != {}
-    then fclib.normalizeDomain domain (head (attrValues feReverses))
-    else fclib.fqdn { vlan = "fe"; };
+    if feReverses != { } then
+      fclib.normalizeDomain domain (head (attrValues feReverses))
+    else
+      fclib.fqdn { vlan = "fe"; };
 
 in
 {
@@ -87,6 +93,12 @@ in
 
     # we need 53/udp in any case, both openvpn and vxlan use dnsmasq
     # 60000-60003 is for mosh
-    networking.firewall.allowedUDPPorts = [ 53 60000 60001 60002 60003 ];
+    networking.firewall.allowedUDPPorts = [
+      53
+      60000
+      60001
+      60002
+      60003
+    ];
   };
 }

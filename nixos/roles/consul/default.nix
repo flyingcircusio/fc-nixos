@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -30,15 +35,15 @@ in
     services.consul.webUi = true;
 
     services.consul.extraConfig = {
-        server = true;
-        bootstrap_expect = 3;
+      server = true;
+      bootstrap_expect = 3;
     };
 
     systemd.services.consul.restartTriggers = [
-        (builtins.hashString "sha256" secrets."consul/master_token")
-        (builtins.hashString "sha256" secrets."consul/agent_token")
-        server_secret_script
-      ];
+      (builtins.hashString "sha256" secrets."consul/master_token")
+      (builtins.hashString "sha256" secrets."consul/agent_token")
+      server_secret_script
+    ];
 
     flyingcircus.activationScripts.consul-update-server-secrets = ''
       ${server_secret_script}/bin/update-server-secrets
@@ -57,31 +62,47 @@ in
 
     services.nginx = {
       virtualHosts."${public_fqdn}" = {
-        listen = [ { addr = cfg.publicAddress; port = 8500; ssl = true;}
-                   # allow acme and the certificate checks to work
-                   { addr = cfg.publicAddress; port = 80; ssl = false;}
-                   { addr = cfg.publicAddress; port = 443; ssl = true;} ];
+        listen = [
+          {
+            addr = cfg.publicAddress;
+            port = 8500;
+            ssl = true;
+          }
+          # allow acme and the certificate checks to work
+          {
+            addr = cfg.publicAddress;
+            port = 80;
+            ssl = false;
+          }
+          {
+            addr = cfg.publicAddress;
+            port = 443;
+            ssl = true;
+          }
+        ];
         enableACME = true;
         addSSL = true;
         locations."/" = {
           proxyPass = "http://localhost:8500";
-          extraConfig = ''
-            # Workaround for nginx bug
-            # https://yt.flyingcircus.io/issue/PL-130533
-            #
-            keepalive_requests 0;
-            # Consul server access
-          '' + (lib.concatMapStrings (net: ''
-            allow ${net};
-          '') fclib.networks.all) + ''
-            deny all;
-          '';
+          extraConfig =
+            ''
+              # Workaround for nginx bug
+              # https://yt.flyingcircus.io/issue/PL-130533
+              #
+              keepalive_requests 0;
+              # Consul server access
+            ''
+            + (lib.concatMapStrings (net: ''
+              allow ${net};
+            '') fclib.networks.all)
+            + ''
+              deny all;
+            '';
         };
 
       };
     };
 
   };
-
 
 }

@@ -1,4 +1,9 @@
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -7,49 +12,51 @@ let
   fclib = config.fclib;
   enc_services = fclib.jsonFromFile cfg.enc_services_path "[]";
   nixpkgsConfig = import ../../nixpkgs-config.nix;
-  additionalModules = path:
-    if builtins.pathExists path
-    then
-      map
-        (name: "${path}/${name}")
-        (filter
-          (fn: lib.hasSuffix ".nix" fn)
-          (lib.attrNames (builtins.readDir path)))
-    else [];
+  additionalModules =
+    path:
+    if builtins.pathExists path then
+      map (name: "${path}/${name}") (
+        filter (fn: lib.hasSuffix ".nix" fn) (lib.attrNames (builtins.readDir path))
+      )
+    else
+      [ ];
   currentPlatform = "24.11";
 
-in {
-  imports = [
-    ./acme.nix
-    ./agent.nix
-    ./alloy.nix
-    ./audit.nix
-    ./auditbeat.nix
-    ./go-audit.nix
-    ./beats.nix
-    ./filebeat.nix
-    ./enc.nix
-    ./firewall.nix
-    ./full-disk-encryption.nix
-    ./journalbeat.nix
-    ./collect-garbage.nix
-    ./ipmi.nix
-    ./kernel.nix
-    ./monitoring.nix
-    ./network.nix
-    ./nix.nix
-    ./packages.nix
-    ./shell.nix
-    ./static.nix
-    ./syslog.nix
-    ./systemd.nix
-    ./upgrade.nix
-    ./users.nix
-  ] ++
-    (additionalModules "/etc/nixos/enc-configs") ++
-    (additionalModules "/etc/local/nixos") ++
-    ### XXX: Think about the directory name, also imported even when devhost not activated
-    (additionalModules "/etc/devhost/vm-configs");
+in
+{
+  imports =
+    [
+      ./acme.nix
+      ./agent.nix
+      ./alloy.nix
+      ./audit.nix
+      ./auditbeat.nix
+      ./go-audit.nix
+      ./beats.nix
+      ./filebeat.nix
+      ./enc.nix
+      ./firewall.nix
+      ./full-disk-encryption.nix
+      ./journalbeat.nix
+      ./collect-garbage.nix
+      ./ipmi.nix
+      ./kernel.nix
+      ./monitoring.nix
+      ./network.nix
+      ./nix.nix
+      ./packages.nix
+      ./shell.nix
+      ./static.nix
+      ./syslog.nix
+      ./systemd.nix
+      ./upgrade.nix
+      ./users.nix
+    ]
+    ++ (additionalModules "/etc/nixos/enc-configs")
+    ++ (additionalModules "/etc/local/nixos")
+    ++
+      ### XXX: Think about the directory name, also imported even when devhost not activated
+      (additionalModules "/etc/devhost/vm-configs");
 
   options = with lib.types; {
 
@@ -63,7 +70,7 @@ in {
 
         Dependencies specified with lib.stringAfter must include the prefix.
       '';
-      default = {};
+      default = { };
       # like in system.activationScripts, can be a string or a set (lib.stringAfter)
       type = types.attrsOf types.unspecified;
     };
@@ -79,11 +86,11 @@ in {
         release/default.nix includedPkgNames). Otherwise, it will be built
         directly on the machine using the package.
       '';
-      default = [];
+      default = [ ];
     };
 
     flyingcircus.enc_services = mkOption {
-      default = [];
+      default = [ ];
       type = listOf attrs;
       description = "Services in the environment as provided by the ENC.";
     };
@@ -118,47 +125,54 @@ in {
 
         flyingcircus.activationScripts.needsCfg = lib.stringAfter ["fc-local-config"] "script..."
       '';
-      default = {};
+      default = { };
 
-      example = { myservice = { dir = "/etc/local/myservice"; user = "myservice"; }; };
-
-      type = types.attrsOf (types.submodule {
-
-        options = {
-
-          dir = mkOption {
-            description = "Path to the directory, typically starting with /etc/local.";
-            type = types.path;
-          };
-
-          user = mkOption {
-            default = "root";
-            description = ''
-              Name of the user owning the config directory,
-              typically the name of the service or root.
-            '';
-            type = types.str;
-          };
-
-          group = mkOption {
-            default = "service";
-            description = "Name of the group.";
-            type = types.str;
-          };
-
-          permissions = mkOption {
-            default = "02775";
-            description = ''
-              Directory permissions.
-              By default, owner and group can write to the directory and the
-              sticky bit is set.
-            '';
-            type = types.str;
-          };
-
+      example = {
+        myservice = {
+          dir = "/etc/local/myservice";
+          user = "myservice";
         };
+      };
 
-      });
+      type = types.attrsOf (
+        types.submodule {
+
+          options = {
+
+            dir = mkOption {
+              description = "Path to the directory, typically starting with /etc/local.";
+              type = types.path;
+            };
+
+            user = mkOption {
+              default = "root";
+              description = ''
+                Name of the user owning the config directory,
+                typically the name of the service or root.
+              '';
+              type = types.str;
+            };
+
+            group = mkOption {
+              default = "service";
+              description = "Name of the group.";
+              type = types.str;
+            };
+
+            permissions = mkOption {
+              default = "02775";
+              description = ''
+                Directory permissions.
+                By default, owner and group can write to the directory and the
+                sticky bit is set.
+              '';
+              type = types.str;
+            };
+
+          };
+
+        }
+      );
     };
 
     flyingcircus.localConfigPath = mkOption {
@@ -189,7 +203,11 @@ in {
         description = ''
           Documented branches of this platform version.
         '';
-        default = [ "fc-${currentPlatform}-dev" "fc-${currentPlatform}-staging" "fc-${currentPlatform}-production" ];
+        default = [
+          "fc-${currentPlatform}-dev"
+          "fc-${currentPlatform}-staging"
+          "fc-${currentPlatform}-production"
+        ];
       };
     };
 
@@ -221,7 +239,7 @@ in {
         ]
       '';
 
-      default = [];
+      default = [ ];
     };
 
     flyingcircus.passwordlessSudoRules = mkOption {
@@ -239,7 +257,7 @@ in {
         ];
       '';
 
-      default = [];
+      default = [ ];
     };
 
     flyingcircus.stateVersionFile = mkOption {
@@ -317,10 +335,8 @@ in {
       };
     };
 
-    nixpkgs.config.allowUnfreePredicate = pkg:
-      builtins.elem
-        (lib.getName pkg)
-        config.flyingcircus.allowedUnfreePackageNames;
+    nixpkgs.config.allowUnfreePredicate =
+      pkg: builtins.elem (lib.getName pkg) config.flyingcircus.allowedUnfreePackageNames;
 
     nixpkgs.config.permittedInsecurePackages = nixpkgsConfig.permittedInsecurePackages;
 
@@ -349,30 +365,39 @@ in {
     };
 
     # implementation for flyingcircus.passwordlessSudoRules
-    security.sudo.extraRules = let
-      nopasswd = [ "NOPASSWD" ];
-      addPasswordOption = c:
-        if builtins.typeOf c == "string"
-        then { command = c; options = nopasswd; }
-        else c // { options = (c.options or []) ++ nopasswd; };
+    security.sudo.extraRules =
+      let
+        nopasswd = [ "NOPASSWD" ];
+        addPasswordOption =
+          c:
+          if builtins.typeOf c == "string" then
+            {
+              command = c;
+              options = nopasswd;
+            }
+          else
+            c // { options = (c.options or [ ]) ++ nopasswd; };
 
       in
-      lib.mkOrder
-        1100
-        (map
-          (rule: rule // { commands = (map addPasswordOption rule.commands); })
-          config.flyingcircus.passwordlessSudoRules);
+      lib.mkOrder 1100 (
+        map (
+          rule: rule // { commands = (map addPasswordOption rule.commands); }
+        ) config.flyingcircus.passwordlessSudoRules
+      );
 
     # implementation for flyingcircus.passwordlessSudoPackages
-    flyingcircus.passwordlessSudoRules =
-      map
-        (e: {
-          commands = lib.flatten (map (path: [
+    flyingcircus.passwordlessSudoRules = map (
+      e:
+      {
+        commands = lib.flatten (
+          map (path: [
             "/run/current-system/sw/${path}"
             "${e.package}/${path}"
-          ]) e.commands);
-        } // (filterAttrs (n: v: n != "commands" && n != "package") e))
-        cfg.passwordlessSudoPackages;
+          ]) e.commands
+        );
+      }
+      // (filterAttrs (n: v: n != "commands" && n != "package") e)
+    ) cfg.passwordlessSudoPackages;
 
     security.dhparams.enable = true;
 
@@ -395,11 +420,13 @@ in {
             "10.0.0.0/8"
             "172.16.0.0/12"
             "192.168.0.0/16"
-          ] ++
-          cfg.static.firewall.trusted ++
-          (flatten
-            (builtins.map (v: builtins.attrNames v.networks)
-              (builtins.attrValues (attrByPath [ "parameters" "interfaces" ] {} cfg.enc))));
+          ]
+          ++ cfg.static.firewall.trusted
+          ++ (flatten (
+            builtins.map (v: builtins.attrNames v.networks) (
+              builtins.attrValues (attrByPath [ "parameters" "interfaces" ] { } cfg.enc)
+            )
+          ));
       };
 
       nscd.enable = true;
@@ -425,50 +452,54 @@ in {
         attrByPath [ "static" "ntpServers" loc ] [ "pool.ntp.org" ] cfg;
     };
 
-    system.activationScripts = let
-      cfgDirs = cfg.localConfigDirs;
+    system.activationScripts =
+      let
+        cfgDirs = cfg.localConfigDirs;
 
-      snippet = name: ''
-        # flyingcircus.localConfigDirs.${name}
-        ${fclib.installDirWithPermissions {
-          inherit (cfgDirs.${name}) user group permissions dir;
-        }}
-      '';
+        snippet = name: ''
+          # flyingcircus.localConfigDirs.${name}
+          ${fclib.installDirWithPermissions {
+            inherit (cfgDirs.${name})
+              user
+              group
+              permissions
+              dir
+              ;
+          }}
+        '';
 
-      # concat script snippets for all local config dirs
-      cfgScript = lib.fold
-        (name: acc: acc + "\n" + (snippet name))
-        ""
-        (lib.attrNames cfgDirs);
+        # concat script snippets for all local config dirs
+        cfgScript = lib.fold (name: acc: acc + "\n" + (snippet name)) "" (lib.attrNames cfgDirs);
 
-      fromCfgDirs = {
-        fc-local-config = lib.stringAfter ["users" "groups"] cfgScript;
-      };
+        fromCfgDirs = {
+          fc-local-config = lib.stringAfter [ "users" "groups" ] cfgScript;
+        };
 
-      wrapInSubshell = with fclib; text: "(\n" + text + "\n)";
+        wrapInSubshell = with fclib; text: "(\n" + text + "\n)";
 
-      wrapActivationScript = value:
-        if builtins.isAttrs value
-        then value // { text = (wrapInSubshell value.text); }
-        else wrapInSubshell value;
+        wrapActivationScript =
+          value:
+          if builtins.isAttrs value then
+            value // { text = (wrapInSubshell value.text); }
+          else
+            wrapInSubshell value;
 
-      # prefix our activation scripts with "fc-" and run them in a subshell
-      fromActivationScripts = lib.mapAttrs'
-        (name: value: lib.nameValuePair ("fc-" + name) (wrapActivationScript value))
-        cfg.activationScripts;
+        # prefix our activation scripts with "fc-" and run them in a subshell
+        fromActivationScripts = lib.mapAttrs' (
+          name: value: lib.nameValuePair ("fc-" + name) (wrapActivationScript value)
+        ) cfg.activationScripts;
 
-    in fromCfgDirs // fromActivationScripts;
+      in
+      fromCfgDirs // fromActivationScripts;
 
     system.stateVersion =
-      if pathExists cfg.stateVersionFile
-      then fileContents cfg.stateVersionFile
-      else cfg.platform.version;
+      if pathExists cfg.stateVersionFile then fileContents cfg.stateVersionFile else cfg.platform.version;
 
     systemd = {
       tmpfiles.rules = [
         # d instead of r to a) respect the age rule and b) allow exclusion
         # of fc-data to avoid killing the seeded ENC upon boot.
-        "d /etc/current-config"  # used by various FC roles
+        "d /etc/current-config" # used by various FC roles
         "d /etc/local/nixos 2775 root service"
         "d /srv 0755"
       ];
@@ -476,9 +507,9 @@ in {
       ctrlAltDelUnit = "poweroff.target";
     };
 
-
-    time.timeZone = fclib.mkPlatform
-      (attrByPath [ "parameters" "timezone" ] "UTC" config.flyingcircus.enc);
+    time.timeZone = fclib.mkPlatform (
+      attrByPath [ "parameters" "timezone" ] "UTC" config.flyingcircus.enc
+    );
 
   };
 }

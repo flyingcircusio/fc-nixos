@@ -1,21 +1,22 @@
-{ lib
-, stdenv
-, fetchPypi
-, fetchFromGitHub
-, dmidecode
-, gitMinimal
-, gptfdisk
-, libyaml
-, multipath-tools
-, nix
-, buildPythonPackage
-, pythonPackages
-, python
-, util-linux
-, xfsprogs
-, pytest
-, structlog
-, enableSlurm ? false
+{
+  lib,
+  stdenv,
+  fetchPypi,
+  fetchFromGitHub,
+  dmidecode,
+  gitMinimal,
+  gptfdisk,
+  libyaml,
+  multipath-tools,
+  nix,
+  buildPythonPackage,
+  pythonPackages,
+  python,
+  util-linux,
+  xfsprogs,
+  pytest,
+  structlog,
+  enableSlurm ? false,
 }:
 
 let
@@ -32,7 +33,10 @@ let
       hash = "sha256-ktLsdEtxfiWhCTTaKowBoAAijOF9640m5XV/rdahpl0=";
     };
 
-    buildInputs = [ pytest structlog ];
+    buildInputs = [
+      pytest
+      structlog
+    ];
   };
 
   stamina = py.buildPythonPackage rec {
@@ -45,8 +49,16 @@ let
       hash = "sha256-sWzj1S1liqdduBP8amZht3Cr/qkV9yzaSOMl8qeFR4Y=";
     };
 
-    nativeBuildInputs = with py; [ hatchling hatch-vcs hatch-fancy-pypi-readme ];
-    propagatedBuildInputs = with py; [ structlog tenacity typing-extensions ];
+    nativeBuildInputs = with py; [
+      hatchling
+      hatch-vcs
+      hatch-fancy-pypi-readme
+    ];
+    propagatedBuildInputs = with py; [
+      structlog
+      tenacity
+      typing-extensions
+    ];
   };
 
 in
@@ -66,36 +78,39 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     py.pytestCheckHook
   ];
-  propagatedBuildInputs = [
-    gitMinimal
-    nix
-    py.click
-    py.colorama
-    py.configobj
-    py.python-dateutil
-    py.iso8601
-    py.netaddr
-    py.pendulum
-    py.pytz
-    py.requests
-    py.rich
-    py.setuptools
-    py.shortuuid
-    py.structlog
-    py.typer
-    py.pyyaml
-    stamina
-    util-linux
-  ] ++ lib.optionals stdenv.isLinux [
-    dmidecode
-    gptfdisk
-    multipath-tools
-    py.pystemd
-    py.systemd
-    xfsprogs
-  ] ++ lib.optionals enableSlurm [
-    py.pyslurm
-  ];
+  propagatedBuildInputs =
+    [
+      gitMinimal
+      nix
+      py.click
+      py.colorama
+      py.configobj
+      py.python-dateutil
+      py.iso8601
+      py.netaddr
+      py.pendulum
+      py.pytz
+      py.requests
+      py.rich
+      py.setuptools
+      py.shortuuid
+      py.structlog
+      py.typer
+      py.pyyaml
+      stamina
+      util-linux
+    ]
+    ++ lib.optionals stdenv.isLinux [
+      dmidecode
+      gptfdisk
+      multipath-tools
+      py.pystemd
+      py.systemd
+      xfsprogs
+    ]
+    ++ lib.optionals enableSlurm [
+      py.pyslurm
+    ];
   dontStrip = true;
   doCheck = true;
   checkPhase = ''
@@ -105,11 +120,14 @@ buildPythonPackage rec {
 
     runHook postCheck
   '';
-  passthru.pythonDevEnv = python.withPackages (_:
-    checkInputs ++ [ py.pytest ] ++ propagatedBuildInputs
+  passthru.pythonDevEnv = python.withPackages (
+    _: checkInputs ++ [ py.pytest ] ++ propagatedBuildInputs
   );
 
-  outputs = [ "out" "qa" ];
+  outputs = [
+    "out"
+    "qa"
+  ];
 
   postCheck = ''
     cp -a htmlcov/ $qa/

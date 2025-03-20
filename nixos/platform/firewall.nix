@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with builtins;
 
@@ -14,45 +19,51 @@ let
     let
       suf = lib.hasSuffix;
     in
-    lib.optionalString (pathExists localCfgDir)
-      (filterSource
-        (p: t: t != "directory" && !(suf "~" p) && !(suf "/README" p))
-        localCfgDir);
+    lib.optionalString (pathExists localCfgDir) (
+      filterSource (p: t: t != "directory" && !(suf "~" p) && !(suf "/README" p)) localCfgDir
+    );
 
-  filteredRules =
-    pkgs.runCommand "firewall-local-rules" { inherit localRules; }
-    ''
-      if [[ -d $localRules ]]; then
-        ${pkgs.python3.interpreter} ${./filter-rules.py} $localRules/* > $out
-      else
-        touch $out
-      fi
-    '';
+  filteredRules = pkgs.runCommand "firewall-local-rules" { inherit localRules; } ''
+    if [[ -d $localRules ]]; then
+      ${pkgs.python3.interpreter} ${./filter-rules.py} $localRules/* > $out
+    else
+      touch $out
+    fi
+  '';
 
   rgAddrs = map (e: e.ip) cfg.encAddresses;
-  rgRules = let
-    srv_interface = fclib.network.srv.interface or "";
-    in lib.optionalString
-    (lib.hasAttr srv_interface config.networking.interfaces)
-    (lib.concatMapStringsSep "\n"
-      (a:
-        "${fclib.iptables a} -A fc-resource-group -i ${srv_interface} " +
-        "-s ${fclib.stripNetmask a} -j nixos-fw-accept")
-      rgAddrs);
+  rgRules =
+    let
+      srv_interface = fclib.network.srv.interface or "";
+    in
+    lib.optionalString (lib.hasAttr srv_interface config.networking.interfaces) (
+      lib.concatMapStringsSep "\n" (
+        a:
+        "${fclib.iptables a} -A fc-resource-group -i ${srv_interface} "
+        + "-s ${fclib.stripNetmask a} -j nixos-fw-accept"
+      ) rgAddrs
+    );
 
-  checkIPTables = with pkgs; writeScript "check-iptables" ''
-    #! ${runtimeShell} -e
-    PATH=${lib.makeBinPath [ iptables gnugrep ]}:$PATH
-    check=CHECK_IPTABLES
-    for cmd in iptables ip6tables; do
-      if ! $cmd -L INPUT -n | egrep -q '^nixos-fw'; then
-        echo "$check CRITICAL - chain nixos-fw not active in $cmd"
-        exit 2
-      fi
-    done
-    echo "$check OK - chain nixos-fw active"
-    exit 0
-  '';
+  checkIPTables =
+    with pkgs;
+    writeScript "check-iptables" ''
+      #! ${runtimeShell} -e
+      PATH=${
+        lib.makeBinPath [
+          iptables
+          gnugrep
+        ]
+      }:$PATH
+      check=CHECK_IPTABLES
+      for cmd in iptables ip6tables; do
+        if ! $cmd -L INPUT -n | egrep -q '^nixos-fw'; then
+          echo "$check CRITICAL - chain nixos-fw not active in $cmd"
+          exit 2
+        fi
+      done
+      echo "$check OK - chain nixos-fw active"
+      exit 0
+    '';
 
 in
 {
@@ -60,14 +71,16 @@ in
     logRateLimit = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = "10/second";
-      description = "average rate limit to use for logging refused IPtables matches,"
+      description =
+        "average rate limit to use for logging refused IPtables matches,"
         + " see `--limit` in `man 8 iptables-extensions`.\n"
         + "Disabled when `null`.";
     };
     logBurstLimit = lib.mkOption {
       type = lib.types.ints.positive;
       default = 5;
-      description = "burst limit to use for logging refused IPtables matches,"
+      description =
+        "burst limit to use for logging refused IPtables matches,"
         + " see `--limit-burst` in `man 8 iptables-extensions`.\n"
         + "Only enabled when `logRateLimit` is enabled.";
     };
@@ -83,8 +96,8 @@ in
     enableSrvRgFirewall = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Only accept connections from hosts in the same resource "
-        + "group on the SRV interface.";
+      description =
+        "Only accept connections from hosts in the same resource " + "group on the SRV interface.";
     };
   };
   config = {
@@ -164,11 +177,13 @@ in
           # than replacing single rules of a chain.
           (lib.mkOrder 1100 (
             let
-              logLimits = lib.optionalString (! isNull cfg.firewall.logRateLimit)
+              logLimits =
+                lib.optionalString (!isNull cfg.firewall.logRateLimit)
                   "-m limit --limit ${cfg.firewall.logRateLimit} --limit-burst ${toString cfg.firewall.logBurstLimit} ";
-            in ''
+            in
+            ''
               ${lib.optionalString cfgUpstream.logRefusedConnections ''
-                  ip46tables -A nixos-fw-log-refuse ${logLimits}-p tcp --syn -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused connection: "
+                ip46tables -A nixos-fw-log-refuse ${logLimits}-p tcp --syn -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused connection: "
               ''}
               ${lib.optionalString (cfgUpstream.logRefusedPackets && !cfgUpstream.logRefusedUnicastsOnly) ''
                 ip46tables -A nixos-fw-log-refuse -m pkttype --pkt-type broadcast \
@@ -186,24 +201,26 @@ in
                   -j LOG --log-level ${toString cfg.firewall.logLevel} --log-prefix "refused packet: "
               ''}
               ip46tables -A nixos-fw-log-refuse -j nixos-fw-refuse
-            ''))
+            ''
+          ))
 
-          (lib.mkOrder 1200
-            (if cfg.firewall.enableSrvRgFirewall
-             then lib.optionalString (rgRules != "") ''
-               # FC firewall rules (1200)
-               # Accept traffic within the same resource group.
-               ip46tables -N fc-resource-group
-               ${rgRules}
-               ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -j fc-resource-group
-               # End FC firewall rules (1200)
-             ''
-             else ''
-               # Accept traffic on the SRV interface, but disallow arbitrary access to Telegraf
-               ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -p tcp --dport 9126 -j nixos-fw-refuse
-               ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -j nixos-fw-accept
-             ''
-            ))
+          (lib.mkOrder 1200 (
+            if cfg.firewall.enableSrvRgFirewall then
+              lib.optionalString (rgRules != "") ''
+                # FC firewall rules (1200)
+                # Accept traffic within the same resource group.
+                ip46tables -N fc-resource-group
+                ${rgRules}
+                ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -j fc-resource-group
+                # End FC firewall rules (1200)
+              ''
+            else
+              ''
+                # Accept traffic on the SRV interface, but disallow arbitrary access to Telegraf
+                ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -p tcp --dport 9126 -j nixos-fw-refuse
+                ip46tables -A nixos-fw -i ${fclib.network.srv.interface} -j nixos-fw-accept
+              ''
+          ))
 
           (lib.mkOrder 1300 ''
             # Local firewall rules (after).
@@ -224,10 +241,11 @@ in
           ip46tables -t raw -F fc-raw-prerouting 2>/dev/null || true
           ip46tables -t raw -X fc-raw-prerouting 2>/dev/null || true
 
-          ${ # during bootstrap or image building, there are no srv-specific information in the enc yet
+          ${
+            # during bootstrap or image building, there are no srv-specific information in the enc yet
             lib.optionalString (fclib.network ? srv) ''
-          ip46tables -D nixos-fw -i ${fclib.network.srv.interface} -j fc-resource-group 2>/dev/null || true
-          ''
+              ip46tables -D nixos-fw -i ${fclib.network.srv.interface} -j fc-resource-group 2>/dev/null || true
+            ''
           }
           ip46tables -F fc-resource-group 2>/dev/null || true
           ip46tables -X fc-resource-group 2>/dev/null || true
@@ -236,13 +254,20 @@ in
       };
 
     flyingcircus.passwordlessSudoPackages =
-      let ipt = x: "bin/ip${x}tables";
-      in [
+      let
+        ipt = x: "bin/ip${x}tables";
+      in
+      [
         {
-          commands = [ "${ipt ""} -L*"
-                       "${ipt "6"} -L*" ];
+          commands = [
+            "${ipt ""} -L*"
+            "${ipt "6"} -L*"
+          ];
           package = pkgs.iptables;
-          groups = [ "users" "service" ];
+          groups = [
+            "users"
+            "service"
+          ];
         }
       ];
 

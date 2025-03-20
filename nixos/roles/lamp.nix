@@ -1,27 +1,38 @@
-{ config, options, pkgs, lib, ... }:
+{
+  config,
+  options,
+  pkgs,
+  lib,
+  ...
+}:
 let
   role = config.flyingcircus.roles.lamp;
   fclib = config.fclib;
 
-  phpWrappers = map
-    ({ name, ... }: let
+  phpWrappers = map (
+    { name, ... }:
+    let
       inherit (config.services.phpfpm.pools.${name}) phpOptions phpPackage;
     in
     # The pattern of exposing `php-{project}` is common in existing projects.
     # Decreasing the priority in systemPackages so that upgrades to newer platform
     # versions don't fail hard.
-    lib.lowPrio
-      (pkgs.runCommand "wrapped-php-for-${name}" {
-        nativeBuildInputs = [ pkgs.makeWrapper ];
-      } ''
-        mkdir -p $out/bin
-        makeWrapper ${phpPackage}/bin/php $out/bin/php-${name} \
-          --add-flags "-c ${builtins.toFile "php-${name}.ini" phpOptions}"
+    lib.lowPrio (
+      pkgs.runCommand "wrapped-php-for-${name}"
+        {
+          nativeBuildInputs = [ pkgs.makeWrapper ];
+        }
+        ''
+          mkdir -p $out/bin
+          makeWrapper ${phpPackage}/bin/php $out/bin/php-${name} \
+            --add-flags "-c ${builtins.toFile "php-${name}.ini" phpOptions}"
 
-        ln -sfv ${phpPackage.packages.composer}/bin/composer $out/bin/composer-${name}
-      ''))
-    config.flyingcircus.roles.lamp.vhosts;
-in {
+          ln -sfv ${phpPackage.packages.composer}/bin/composer $out/bin/composer-${name}
+        ''
+    )
+  ) config.flyingcircus.roles.lamp.vhosts;
+in
+{
 
   options = with lib; {
     flyingcircus.roles.lamp = {
@@ -54,85 +65,94 @@ in {
       };
 
       vhosts = mkOption {
-        type = with types; listOf (submodule ({ config, ... }: {
-          options = {
-            port = mkOption { type = int; };
-            docroot = mkOption { type = str; };
-            apacheExtraConfig = mkOption {
-              type = lines;
-              default = "";
-              description = ''
-                Additional text appended to virtualhost section of apache config.
-              '';
-            };
-            pool = mkOption {
-              type = lib.types.attrsOf lib.types.anything;
-              description = "Overrides for underlying NixOS Pool options";
-              default = {};
-            };
-            name = mkOption {
-              type = str;
-              default = "lamp-${toString config.port}";
-              defaultText = "lamp-\${port}";
-            };
-          };
-        }));
-        default = [];
+        type =
+          with types;
+          listOf (
+            submodule (
+              { config, ... }:
+              {
+                options = {
+                  port = mkOption { type = int; };
+                  docroot = mkOption { type = str; };
+                  apacheExtraConfig = mkOption {
+                    type = lines;
+                    default = "";
+                    description = ''
+                      Additional text appended to virtualhost section of apache config.
+                    '';
+                  };
+                  pool = mkOption {
+                    type = lib.types.attrsOf lib.types.anything;
+                    description = "Overrides for underlying NixOS Pool options";
+                    default = { };
+                  };
+                  name = mkOption {
+                    type = str;
+                    default = "lamp-${toString config.port}";
+                    defaultText = "lamp-\${port}";
+                  };
+                };
+              }
+            )
+          );
+        default = [ ];
       };
 
     };
   };
 
-  config = let
+  config =
+    let
 
       phpOptions = ''
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          ; General settings
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; General settings
 
-          output_buffering = On
-          short_open_tag = On
-          curl.cainfo = /etc/ssl/certs/ca-certificates.crt
-          sendmail_path = /run/wrappers/bin/sendmail -t -i
+        output_buffering = On
+        short_open_tag = On
+        curl.cainfo = /etc/ssl/certs/ca-certificates.crt
+        sendmail_path = /run/wrappers/bin/sendmail -t -i
 
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          ; opcache
-          opcache.enable = 1
-          opcache.enable_cli = 0
-          opcache.interned_strings_buffer = 8
-          opcache.max_accelerated_files = 40000
-          opcache.memory_consumption = 512
-          opcache.validate_timestamps = 0
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; opcache
+        opcache.enable = 1
+        opcache.enable_cli = 0
+        opcache.interned_strings_buffer = 8
+        opcache.max_accelerated_files = 40000
+        opcache.memory_consumption = 512
+        opcache.validate_timestamps = 0
 
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          ; logging and errors
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; logging and errors
 
-          error_log = syslog
-          display_errors = Off
-          log_errors = On
+        error_log = syslog
+        display_errors = Off
+        log_errors = On
 
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          ; memory and execution limits
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; memory and execution limits
 
-          memory_limit = 1024m
-          max_execution_time = 800
+        memory_limit = 1024m
+        max_execution_time = 800
 
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          ; session management
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; session management
 
-          session.auto_start = Off
+        session.auto_start = Off
 
-          ; Custom PHP ini
-          ${role.php_ini}
-        '';
-        phpMajorMinor = lib.concatStringsSep "." (lib.take 2 (builtins.splitVersion role.php.version));
-        phpMajor = builtins.head (builtins.splitVersion role.php.version);
+        ; Custom PHP ini
+        ${role.php_ini}
+      '';
+      phpMajorMinor = lib.concatStringsSep "." (lib.take 2 (builtins.splitVersion role.php.version));
+      phpMajor = builtins.head (builtins.splitVersion role.php.version);
     in
     lib.mkIf role.enable {
-      warnings =
-        fclib.obsoleteOptionWarning
-          options
-          [ "flyingcircus" "roles" "lamp" "useFPM" ]
-          "FPM is always used now.";
+      warnings = fclib.obsoleteOptionWarning options [
+        "flyingcircus"
+        "roles"
+        "lamp"
+        "useFPM"
+      ] "FPM is always used now.";
 
       services.httpd.enable = true;
       services.httpd.adminAddr = "admin@flyingcircus.io";
@@ -153,75 +173,87 @@ in {
       services.httpd.logPerVirtualHost = true;
       services.httpd.group = "service";
       services.httpd.user = "nobody";
-      services.httpd.extraModules = [ "rewrite" "version" "status" "proxy_fcgi" ];
-      services.httpd.extraConfig = ''
-        # Those options are chosen for prefork
-        # StartServers 2 (default)
-        # MinSpareServers 5 (default)
-        # MaxSpareServers 10 (Default)
+      services.httpd.extraModules = [
+        "rewrite"
+        "version"
+        "status"
+        "proxy_fcgi"
+      ];
+      services.httpd.extraConfig =
+        ''
+          # Those options are chosen for prefork
+          # StartServers 2 (default)
+          # MinSpareServers 5 (default)
+          # MaxSpareServers 10 (Default)
 
-        # MaxRequestWorkers default: 256, limit to lower number
-        # to avoid starvation/thrashing
-        MaxRequestWorkers 150
+          # MaxRequestWorkers default: 256, limit to lower number
+          # to avoid starvation/thrashing
+          MaxRequestWorkers 150
 
-        # Determine lifetime of processes
-        # MaxConnectionsPerChild default: 0, set limit to
-        # avoid potential memory leaks
-        MaxConnectionsPerChild     10000
+          # Determine lifetime of processes
+          # MaxConnectionsPerChild default: 0, set limit to
+          # avoid potential memory leaks
+          MaxConnectionsPerChild     10000
 
-        Listen localhost:7999
-        <VirtualHost localhost:7999>
-        <Location "/server-status">
-            SetHandler server-status
-        </Location>
-        </VirtualHost>
-
-        # reuse _must_ be disable or apache will confuse different
-        # FPM pools and also screw up with keepalives consuming backend
-        # connections.
-        <Proxy "fcgi://localhost/" enablereuse=off>
-        </Proxy>
-
-        '' +
-        # * vhost configs
-        (lib.concatMapStrings (vhost:
-          let port=toString vhost.port;
-          in
-          ''
-
-          Listen *:${port}
-          <VirtualHost *:${port}>
-              ServerName "${config.networking.hostName}"
-              DocumentRoot "${vhost.docroot}"
-              <Directory "${vhost.docroot}">
-                  AllowOverride all
-                  Require all granted
-                  Options FollowSymlinks
-                  DirectoryIndex index.html index.php
-              </Directory>
-              <FilesMatch "\.php$">
-                  SetHandler "proxy:unix:${config.services.phpfpm.pools."${vhost.name}".socket}|fcgi://localhost/"
-              </FilesMatch>
-              ${vhost.apacheExtraConfig}
+          Listen localhost:7999
+          <VirtualHost localhost:7999>
+          <Location "/server-status">
+              SetHandler server-status
+          </Location>
           </VirtualHost>
-          ''
-        ) role.vhosts) +
-        role.apache_conf;
+
+          # reuse _must_ be disable or apache will confuse different
+          # FPM pools and also screw up with keepalives consuming backend
+          # connections.
+          <Proxy "fcgi://localhost/" enablereuse=off>
+          </Proxy>
+
+        ''
+        +
+          # * vhost configs
+          (lib.concatMapStrings (
+            vhost:
+            let
+              port = toString vhost.port;
+            in
+            ''
+
+              Listen *:${port}
+              <VirtualHost *:${port}>
+                  ServerName "${config.networking.hostName}"
+                  DocumentRoot "${vhost.docroot}"
+                  <Directory "${vhost.docroot}">
+                      AllowOverride all
+                      Require all granted
+                      Options FollowSymlinks
+                      DirectoryIndex index.html index.php
+                  </Directory>
+                  <FilesMatch "\.php$">
+                      SetHandler "proxy:unix:${
+                        config.services.phpfpm.pools."${vhost.name}".socket
+                      }|fcgi://localhost/"
+                  </FilesMatch>
+                  ${vhost.apacheExtraConfig}
+              </VirtualHost>
+            ''
+          ) role.vhosts)
+        + role.apache_conf;
 
       # The upstream module has a default that makes Apache listen on port 80
       # which conflicts with our webgateway role.
-      services.httpd.virtualHosts = {};
+      services.httpd.virtualHosts = { };
 
       services.phpfpm.phpPackage = role.php;
 
-      services.phpfpm.pools = builtins.listToAttrs (map
-        (vhost: {
-            inherit (vhost) name;
-            value = lib.attrsets.recursiveUpdate {
-              user = config.services.httpd.user;
-              group = config.services.httpd.group;
-              phpOptions = phpOptions;
-              settings = (builtins.mapAttrs (_: fclib.mkPlatform) {
+      services.phpfpm.pools = builtins.listToAttrs (
+        map (vhost: {
+          inherit (vhost) name;
+          value = lib.attrsets.recursiveUpdate {
+            user = config.services.httpd.user;
+            group = config.services.httpd.group;
+            phpOptions = phpOptions;
+            settings = (
+              builtins.mapAttrs (_: fclib.mkPlatform) {
                 "listen.owner" = config.services.httpd.user;
                 "listen.group" = config.services.httpd.group;
                 "pm" = "dynamic";
@@ -233,9 +265,11 @@ in {
                 "request_slowlog_timeout" = "6s";
                 "request_slowlog_trace_depth" = "100";
                 "catch_workers_output" = "true";
-              });
-            } vhost.pool; # only contains override values
-        }) role.vhosts);
+              }
+            );
+          } vhost.pool; # only contains override values
+        }) role.vhosts
+      );
 
       flyingcircus.services.sensu-client.checks = {
         httpd_status = {
@@ -246,9 +280,11 @@ in {
       };
 
       flyingcircus.services.telegraf.inputs = {
-        apache  = [{
-          urls = [ "http://localhost:7999/server-status?auto" ];
-        }];
+        apache = [
+          {
+            urls = [ "http://localhost:7999/server-status?auto" ];
+          }
+        ];
       };
 
       # required for PL-132312 hotfix: httpd needs to be restarted after the update to create new log.

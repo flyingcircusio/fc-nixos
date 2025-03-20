@@ -22,13 +22,20 @@
 
 with builtins;
 let
-  pkgs = import <nixpkgs> {};
+  pkgs = import <nixpkgs> { };
 
   etc = node: printEtcFile node;
-  replHelpers = pkgs.callPackage ../nixos/lib/repl-helpers.nix {};
+  replHelpers = pkgs.callPackage ../nixos/lib/repl-helpers.nix { };
   inherit (replHelpers) printEtcFile format print;
 
-in builtins // {
-  inherit pkgs etc format print;
+in
+builtins
+// {
+  inherit
+    pkgs
+    etc
+    format
+    print
+    ;
   inherit (pkgs) lib;
 }

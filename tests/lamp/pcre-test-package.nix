@@ -1,10 +1,11 @@
-{ pkgs ? import <nixpkgs> { }
-, stdenv ? pkgs.stdenv
-, mkDerivation ? stdenv.mkDerivation
-, makeWrapper ? pkgs.makeWrapper
-, php ? pkgs.php
-, lib ? pkgs.lib
-, ...
+{
+  pkgs ? import <nixpkgs> { },
+  stdenv ? pkgs.stdenv,
+  mkDerivation ? stdenv.mkDerivation,
+  makeWrapper ? pkgs.makeWrapper,
+  php ? pkgs.php,
+  lib ? pkgs.lib,
+  ...
 }:
 let
   src = builtins.fetchTarball {

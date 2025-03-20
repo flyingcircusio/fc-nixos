@@ -23,15 +23,17 @@ with lib;
     encAddresses = mkOption {
       type = listOf attrs;
       description = "List of addresses of machines in the neighbourhood.";
-      example = [ {
-        ip = "2a02:238:f030:1c3::104c/64";
-        mac = "02:00:00:03:11:b1";
-        name = "test03";
-        rg = "test";
-        rg_parent = "";
-        ring = 1;
-        vlan = "srv";
-      } ];
+      example = [
+        {
+          ip = "2a02:238:f030:1c3::104c/64";
+          mac = "02:00:00:03:11:b1";
+          name = "test03";
+          rg = "test";
+          rg_parent = "";
+          ring = 1;
+          vlan = "srv";
+        }
+      ];
     };
 
     encAddressesPath = mkOption {
@@ -99,9 +101,13 @@ with lib;
     };
 
     active-roles = mkOption {
-      default = attrByPath [ "roles" ] [] cfg.enc;
+      default = attrByPath [ "roles" ] [ ] cfg.enc;
       type = types.listOf types.str;
-      example = [ "generic" "webgateway" "webproxy" ];
+      example = [
+        "generic"
+        "webgateway"
+        "webproxy"
+      ];
       description = ''
         Which roles to activate.  Defaults to the roles provided by the ENC.
       '';
@@ -110,7 +116,7 @@ with lib;
     platform = {
       release = mkOption {
         readOnly = true;
-        default = (config.flyingcircus.platform.knownReleases.${config.system.nixos.label} or {});
+        default = (config.flyingcircus.platform.knownReleases.${config.system.nixos.label} or { });
         defaultText = "Platform release metadata loaded from the file at `releasesPath`";
       };
 
@@ -125,26 +131,18 @@ with lib;
 
   config = {
 
-    environment.etc = optionalAttrs
-      (hasAttrByPath ["parameters" "directory_secret"] cfg.enc)
-      {
-        "directory.secret".text = cfg.enc.parameters.directory_secret;
-        "directory.secret".mode = "0600";
-      };
+    environment.etc = optionalAttrs (hasAttrByPath [ "parameters" "directory_secret" ] cfg.enc) {
+      "directory.secret".text = cfg.enc.parameters.directory_secret;
+      "directory.secret".mode = "0600";
+    };
 
     flyingcircus = {
-      enc =
-        fclib.mkPlatform (fclib.jsonFromFile cfg.encPath "{}");
-      encAddresses =
-        fclib.mkPlatform (fclib.jsonFromFile cfg.encAddressesPath "[]");
-      encNetworks =
-        fclib.mkPlatform (fclib.jsonFromFile cfg.encNetworksPath "[]");
-      encServices =
-        fclib.mkPlatform (fclib.jsonFromFile cfg.encServicesPath "[]");
-      encServiceClients =
-        fclib.mkPlatform (fclib.jsonFromFile cfg.encServiceClientsPath "[]");
-      systemState =
-        fclib.mkPlatform (fclib.jsonFromFile cfg.systemStatePath "{}");
+      enc = fclib.mkPlatform (fclib.jsonFromFile cfg.encPath "{}");
+      encAddresses = fclib.mkPlatform (fclib.jsonFromFile cfg.encAddressesPath "[]");
+      encNetworks = fclib.mkPlatform (fclib.jsonFromFile cfg.encNetworksPath "[]");
+      encServices = fclib.mkPlatform (fclib.jsonFromFile cfg.encServicesPath "[]");
+      encServiceClients = fclib.mkPlatform (fclib.jsonFromFile cfg.encServiceClientsPath "[]");
+      systemState = fclib.mkPlatform (fclib.jsonFromFile cfg.systemStatePath "{}");
 
       location = attrByPath [ "parameters" "location" ] "standalone" cfg.enc;
     };

@@ -1,14 +1,16 @@
-{ lib
-, bundlerApp
-, ruby
-, libreoffice
-, file
-, graphicsmagick
-, poppler_utils
-, pdftk
-, jre
-, makeWrapper
-, ... }:
+{
+  lib,
+  bundlerApp,
+  ruby,
+  libreoffice,
+  file,
+  graphicsmagick,
+  poppler_utils,
+  pdftk,
+  jre,
+  makeWrapper,
+  ...
+}:
 
 bundlerApp {
   pname = "docsplit";
@@ -21,8 +23,15 @@ bundlerApp {
 
     wrapProgram $out/bin/docsplit \
       --set OFFICE_PATH ${libreoffice}/bin \
-      --prefix PATH : ${lib.makeBinPath
-        [ file graphicsmagick poppler_utils pdftk jre ] }
+      --prefix PATH : ${
+        lib.makeBinPath [
+          file
+          graphicsmagick
+          poppler_utils
+          pdftk
+          jre
+        ]
+      }
   '';
 
   meta = with lib; {
@@ -30,9 +39,9 @@ bundlerApp {
       A command-line utility and Ruby library for splitting apart documents
       into their component parts
     '';
-    homepage    = https://documentcloud.github.io/docsplit/;
-    license     = licenses.lgpl2;
+    homepage = "https://documentcloud.github.io/docsplit/";
+    license = licenses.lgpl2;
     maintainers = with maintainers; [ zagy ];
-    platforms   = platforms.unix;
+    platforms = platforms.unix;
   };
 }

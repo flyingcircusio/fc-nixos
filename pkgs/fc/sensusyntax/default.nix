@@ -1,4 +1,8 @@
-{ lib, rustPlatform, docutils }:
+{
+  lib,
+  rustPlatform,
+  docutils,
+}:
 
 rustPlatform.buildRustPackage rec {
   name = "sensu-syntax-${version}";

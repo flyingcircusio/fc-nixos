@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with builtins;
 
@@ -7,16 +12,19 @@ let
   fclib = config.fclib;
   cfg = config.flyingcircus.roles.jitsi;
 
-  generatedTurnSecret = readFile
-      (pkgs.runCommand "jitsi-turn-secret" {}
-      "${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > $out");
-  turnSecret = lib.removeSuffix "\n" (fclib.configFromFile /etc/local/jitsi/turn-secret generatedTurnSecret);
+  generatedTurnSecret = readFile (
+    pkgs.runCommand "jitsi-turn-secret" { } "${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > $out"
+  );
+  turnSecret = lib.removeSuffix "\n" (
+    fclib.configFromFile /etc/local/jitsi/turn-secret generatedTurnSecret
+  );
   turnHostName = if cfg.coturn.enable then cfg.coturn.hostName else cfg.turnHostName;
 
   # Does the same on the backend side but UI buttons can be turned on/off seperately.
   enableJibri = cfg.enableRecording || cfg.enableLivestreaming;
 
-in {
+in
+{
 
   options = with lib; {
     flyingcircus.roles.jitsi = {
@@ -25,7 +33,7 @@ in {
       supportsContainers = fclib.mkDisableDevhostSupport;
 
       coturn = mkOption {
-        default = {};
+        default = { };
         type = types.submodule {
           options = {
             enable = mkEnableOption ''
@@ -55,13 +63,13 @@ in {
       };
 
       enablePublicUDP = mkOption {
-        description =  "Allow public access to the videobridge via UDP 10000";
+        description = "Allow public access to the videobridge via UDP 10000";
         type = types.bool;
         default = true;
       };
 
       enableRecording = mkOption {
-        description =  ''
+        description = ''
           Enable integration for recording and show the recording button in the UI.
           Needs a separate Jibri installation which is not part of this role.
         '';
@@ -70,7 +78,7 @@ in {
       };
 
       enableLivestreaming = mkOption {
-        description =  ''
+        description = ''
           Enable integration for recording and show the livestream button in the UI.
           Needs a separate Jibri installation which is not part of this role.
         '';
@@ -84,7 +92,7 @@ in {
       };
 
       enablePrejoinPage = mkOption {
-        description =  ''
+        description = ''
           Shows a page after opening a conference where users can change
           settings and enter their name before joining the conference.
         '';
@@ -93,7 +101,7 @@ in {
       };
 
       enableRoomAuthentication = mkOption {
-        description =  ''
+        description = ''
           Require a username and password to create new rooms.
           Guests can join after the room is created
         '';
@@ -187,16 +195,21 @@ in {
 
       flyingcircus.roles.nginx.enable = true;
 
-      flyingcircus.services.telegraf.inputs.http = [{
+      flyingcircus.services.telegraf.inputs.http = [
+        {
           urls = [ "http://127.0.0.1:8080/colibri/stats" ];
           tagexclude = [ "url" ];
           name_override = "jitsi_jvb";
           data_format = "json";
-          fielddrop = [ "p2p_conferences" "version" ];
+          fielddrop = [
+            "p2p_conferences"
+            "version"
+          ];
           json_time_key = "current_timestamp";
           json_time_format = "2006-01-02 15:04:05.000";
           json_timezone = "UTC";
-        }];
+        }
+      ];
 
       flyingcircus.services.sensu-client.checks = {
         jitsi-videobridge-alive = {
@@ -211,10 +224,10 @@ in {
       services.jicofo.config =
         lib.optionalAttrs cfg.enableRoomAuthentication {
           "org.jitsi.jicofo.auth.URL" = "XMPP:${cfg.hostName}";
-        } //
-        lib.optionalAttrs enableJibri {
+        }
+        // lib.optionalAttrs enableJibri {
           "org.jitsi.jicofo.jibri.BREWERY" = "jibribrewery@internal.${cfg.hostName}";
-          "org.jitsi.jicofo.jibri.PENDING_TIMEOUT"= "90";
+          "org.jitsi.jicofo.jibri.PENDING_TIMEOUT" = "90";
         };
 
       services.jitsi-meet = {
@@ -225,52 +238,53 @@ in {
         videobridge.enable = true;
         prosody.enable = true;
 
-        config = {
-          channelLastN = cfg.maxVideoSenders;
-          constraints = {
-            video = {
-              height = {
-                ideal = cfg.resolution;
-                max = cfg.resolution;
-                min = 144;
+        config =
+          {
+            channelLastN = cfg.maxVideoSenders;
+            constraints = {
+              video = {
+                height = {
+                  ideal = cfg.resolution;
+                  max = cfg.resolution;
+                  min = 144;
+                };
               };
             };
+            enableTcc = true;
+            enableRemb = true;
+            minHDHeight = 540;
+            startBitrate = "800";
+            disableSimulcast = false;
+            defaultLanguage = cfg.defaultLanguage;
+            enableLipSync = false;
+            enableAutomaticUrlCopy = true;
+            enableLayerSuspension = true;
+            openBridgeChannel = "websocket";
+            prejoinPageEnabled = cfg.enablePrejoinPage;
+            useNewBandwidthAllocationStrategy = true;
+            desktopSharingFrameRate = {
+              min = 5;
+              max = 10;
+            };
+            videoQuality = {
+              preferredCodec = "VP9";
+            };
+            p2p.enabled = false;
+            inherit (cfg) resolution;
+            startVideoMuted = 8;
+            stunServers = [ ];
+            fileRecordingsEnabled = cfg.enableRecording;
+            liveStreamingEnabled = cfg.enableLivestreaming;
+          }
+          // lib.optionalAttrs cfg.enableRoomAuthentication {
+            hosts.anonymousdomain = "guest.${cfg.hostName}";
+          }
+          // lib.optionalAttrs enableJibri {
+            hiddenDomain = "recorder.${cfg.hostName}";
+          }
+          // lib.optionalAttrs cfg.enableXMPPWebsockets {
+            websocket = "wss://${cfg.hostName}/xmpp-websocket";
           };
-          enableTcc = true;
-          enableRemb = true;
-          minHDHeight = 540;
-          startBitrate = "800";
-          disableSimulcast = false;
-          defaultLanguage = cfg.defaultLanguage;
-          enableLipSync = false;
-          enableAutomaticUrlCopy = true;
-          enableLayerSuspension = true;
-          openBridgeChannel = "websocket";
-          prejoinPageEnabled = cfg.enablePrejoinPage;
-          useNewBandwidthAllocationStrategy = true;
-          desktopSharingFrameRate = {
-            min = 5;
-            max = 10;
-          };
-          videoQuality = {
-            preferredCodec = "VP9";
-          };
-          p2p.enabled = false;
-          inherit (cfg) resolution;
-          startVideoMuted = 8;
-          stunServers = [];
-          fileRecordingsEnabled = cfg.enableRecording;
-          liveStreamingEnabled = cfg.enableLivestreaming;
-        } //
-        lib.optionalAttrs cfg.enableRoomAuthentication {
-          hosts.anonymousdomain = "guest.${cfg.hostName}";
-        } //
-        lib.optionalAttrs enableJibri {
-          hiddenDomain = "recorder.${cfg.hostName}";
-        } //
-        lib.optionalAttrs cfg.enableXMPPWebsockets {
-          websocket = "wss://${cfg.hostName}/xmpp-websocket";
-        };
 
         hostName = cfg.hostName;
 
@@ -286,38 +300,42 @@ in {
 
       services.nginx.virtualHosts = {
         "${cfg.hostName}" = {
-          listenAddresses = [ cfg.listenAddress (fclib.quoteIPv6Address cfg.listenAddress6) ];
+          listenAddresses = [
+            cfg.listenAddress
+            (fclib.quoteIPv6Address cfg.listenAddress6)
+          ];
 
-          locations = {
-            "= /xmpp-websocket" = {
-              proxyPass = "http://127.0.0.1:5280/xmpp-websocket";
-              extraConfig = ''
-                proxy_buffer_size 128k;
-                proxy_buffers 4 256k;
-                proxy_busy_buffers_size  256k;
-                proxy_http_version 1.1;
-                proxy_set_header Connection "upgrade";
-                proxy_set_header Host $host;
-                proxy_set_header X-Forwarded-For $remote_addr;
-                tcp_nodelay on;
-              '';
-            };
+          locations =
+            {
+              "= /xmpp-websocket" = {
+                proxyPass = "http://127.0.0.1:5280/xmpp-websocket";
+                extraConfig = ''
+                  proxy_buffer_size 128k;
+                  proxy_buffers 4 256k;
+                  proxy_busy_buffers_size  256k;
+                  proxy_http_version 1.1;
+                  proxy_set_header Connection "upgrade";
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Forwarded-For $remote_addr;
+                  tcp_nodelay on;
+                '';
+              };
 
-            "~ ^/colibri-ws/jvb1/(.*)" = {
-              proxyPass = "http://127.0.0.1:9090/colibri-ws/jvb1/$1$is_args$args";
-              extraConfig = ''
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection "upgrade";
-                tcp_nodelay on;
-              '';
+              "~ ^/colibri-ws/jvb1/(.*)" = {
+                proxyPass = "http://127.0.0.1:9090/colibri-ws/jvb1/$1$is_args$args";
+                extraConfig = ''
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  tcp_nodelay on;
+                '';
+              };
+            }
+            // lib.optionalAttrs (pathExists /etc/local/jitsi/welcomePageAdditionalContent.html) {
+              "= /static/welcomePageAdditionalContent.html" = {
+                alias = "${/etc/local/jitsi/welcomePageAdditionalContent.html}";
+              };
             };
-          } //
-          lib.optionalAttrs (pathExists /etc/local/jitsi/welcomePageAdditionalContent.html) {
-            "= /static/welcomePageAdditionalContent.html" = {
-              alias = "${/etc/local/jitsi/welcomePageAdditionalContent.html}";
-            };
-          };
         };
       };
 
@@ -388,8 +406,8 @@ in {
                 smacks_max_old_sessions = 1;
               '';
             };
-          } //
-          lib.optionalAttrs enableJibri {
+          }
+          // lib.optionalAttrs enableJibri {
             # Jibri gets special rights and needs its own vhost for that.
             # c2s encryption doesn't work for unknown reasons but both are on the
             # same host, so it's ok.
@@ -428,11 +446,11 @@ in {
           };
         };
 
-        extraProperties =
-          lib.optionalAttrs (!cfg.enablePublicUDP) {
-            "org.ice4j.ice.harvest.ALLOWED_ADDRESSES" =
-              lib.concatStringsSep ";" (fclib.network.srv.dualstack.addresses);
-          };
+        extraProperties = lib.optionalAttrs (!cfg.enablePublicUDP) {
+          "org.ice4j.ice.harvest.ALLOWED_ADDRESSES" = lib.concatStringsSep ";" (
+            fclib.network.srv.dualstack.addresses
+          );
+        };
       };
 
       systemd.services.jicofo = {
@@ -450,7 +468,10 @@ in {
       };
 
       services.coturn = {
-        listening-ips = [ cfg.coturn.listenAddress cfg.coturn.listenAddress6 ];
+        listening-ips = [
+          cfg.coturn.listenAddress
+          cfg.coturn.listenAddress6
+        ];
         no-tcp = false;
         static-auth-secret = turnSecret;
         tls-listening-port = 443;

@@ -1,36 +1,38 @@
 # This is just a stub to check if nodejs packages can display their version.
 # The test makes sure that the nodejs packages we want still exist and are
 # built by our hydra or are available upstream.
-import ./make-test-python.nix ({ pkgs, testlib, ... }:
-{
-  name = "nodejs";
+import ./make-test-python.nix (
+  { pkgs, testlib, ... }:
+  {
+    name = "nodejs";
 
-  nodes.machine =
-    { pkgs, config, ... }:
-    {
-      imports = [
-        (testlib.fcConfig { })
-      ];
-    };
+    nodes.machine =
+      { pkgs, config, ... }:
+      {
+        imports = [
+          (testlib.fcConfig { })
+        ];
+      };
 
-  testScript = with pkgs; ''
-    package_versions = {
-      "${nodejs-slim_18}": "18",
-      "${nodejs-slim_20}": "20",
-      "${nodejs-slim_22}": "22",
-      "${nodejs-slim}": "20",
-      "${nodejs_18}": "18",
-      "${nodejs_20}": "20",
-      "${nodejs_22}": "22",
-      "${nodejs}": "20",
-    }
+    testScript = with pkgs; ''
+      package_versions = {
+        "${nodejs-slim_18}": "18",
+        "${nodejs-slim_20}": "20",
+        "${nodejs-slim_22}": "22",
+        "${nodejs-slim}": "20",
+        "${nodejs_18}": "18",
+        "${nodejs_20}": "20",
+        "${nodejs_22}": "22",
+        "${nodejs}": "20",
+      }
 
-    for package, version in package_versions.items():
-      with subtest(f"Checking package {package}"):
-        out = machine.succeed(f"{package}/bin/node -v").strip()
-        expected = f"v{version}."
-        assert out.startswith(expected), (
-          "version must start with {expected}, got: " + out
-        )
-  '';
-})
+      for package, version in package_versions.items():
+        with subtest(f"Checking package {package}"):
+          out = machine.succeed(f"{package}/bin/node -v").strip()
+          expected = f"v{version}."
+          assert out.startswith(expected), (
+            "version must start with {expected}, got: " + out
+          )
+    '';
+  }
+)

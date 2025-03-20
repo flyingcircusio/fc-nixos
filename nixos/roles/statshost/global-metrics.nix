@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 with lib;
 let
   # Add metric prefixes here that should be accepted by the central statshost.
@@ -35,26 +40,31 @@ let
     "psi"
   ];
 
-  markAllowedMetrics = map
-    (name: { source_labels = [ "__name__" ];
-             regex = "${name}_.*";
-             replacement = "yes";
-             target_label = "__tmp_globally_allowed"; })
-    config.flyingcircus.roles.statshost-global.allowedMetricPrefixes;
+  markAllowedMetrics = map (name: {
+    source_labels = [ "__name__" ];
+    regex = "${name}_.*";
+    replacement = "yes";
+    target_label = "__tmp_globally_allowed";
+  }) config.flyingcircus.roles.statshost-global.allowedMetricPrefixes;
 
   dropUnmarkedMetrics = [
-    { source_labels = [ "__tmp_globally_allowed" ];
+    {
+      source_labels = [ "__tmp_globally_allowed" ];
       regex = "yes";
-      action = "keep"; }
-    { regex = "__tmp_globally_allowed";
-      action = "labeldrop"; }
+      action = "keep";
+    }
+    {
+      regex = "__tmp_globally_allowed";
+      action = "labeldrop";
+    }
   ];
 
-in mkIf config.flyingcircus.roles.statshost-global.enable
-{
+in
+mkIf config.flyingcircus.roles.statshost-global.enable {
   # Telegraf host metrics are added in platform/monitoring.nix.
   flyingcircus.roles.statshost-global.allowedMetricPrefixes = globalAllowedMetrics;
 
-  flyingcircus.roles.statshost.prometheusMetricRelabel =
-    lib.mkAfter (markAllowedMetrics ++ dropUnmarkedMetrics);
+  flyingcircus.roles.statshost.prometheusMetricRelabel = lib.mkAfter (
+    markAllowedMetrics ++ dropUnmarkedMetrics
+  );
 }

@@ -1,4 +1,11 @@
-{ lib, stdenv, fetchurl, makeWrapper, openjdk11_headless, nixosTests }:
+{
+  lib,
+  stdenv,
+  fetchurl,
+  makeWrapper,
+  openjdk11_headless,
+  nixosTests,
+}:
 
 stdenv.mkDerivation rec {
   pname = "graylog";
@@ -13,7 +20,11 @@ stdenv.mkDerivation rec {
   dontStrip = true;
 
   nativeBuildInputs = [ makeWrapper ];
-  makeWrapperArgs = [ "--set-default" "JAVA_HOME" "${openjdk11_headless}" ];
+  makeWrapperArgs = [
+    "--set-default"
+    "JAVA_HOME"
+    "${openjdk11_headless}"
+  ];
 
   passthru.tests = { inherit (nixosTests) graylog; };
 
@@ -25,9 +36,9 @@ stdenv.mkDerivation rec {
 
   meta = with lib; {
     description = "Open source log management solution";
-    homepage    = "https://www.graylog.org/";
-    license     = licenses.gpl3;
+    homepage = "https://www.graylog.org/";
+    license = licenses.gpl3;
     mainProgram = "graylogctl";
-    platforms   = platforms.unix;
+    platforms = platforms.unix;
   };
 }

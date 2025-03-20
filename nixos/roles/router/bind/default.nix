@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with builtins;
 
@@ -14,8 +19,8 @@ in
 lib.mkIf role.enable {
   environment.etc = {
 
-     # Note: all files that we change here that implicitly change the config
-     # must also be added to the reload triggers for the service below!
+    # Note: all files that we change here that implicitly change the config
+    # must also be added to the reload triggers for the service below!
     "bind/acl.conf".text = ''
       acl "gocept.net" {
           127.0.0.0/8;

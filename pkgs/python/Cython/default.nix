@@ -1,30 +1,38 @@
-{ lib
-, stdenv
-, buildPythonPackage
-, fetchPypi
-, fetchpatch
-, python
-, glibcLocales
-, pkg-config
-, gdb
-, numpy
-, ncurses
+{
+  lib,
+  stdenv,
+  buildPythonPackage,
+  fetchPypi,
+  fetchpatch,
+  python,
+  glibcLocales,
+  pkg-config,
+  gdb,
+  numpy,
+  ncurses,
 }:
 
 let
-  excludedTests = []
+  excludedTests =
+    [ ]
     ++ [ "reimport_from_subinterpreter" ]
     # cython's testsuite is not working very well with libc++
     # We are however optimistic about things outside of testsuite still working
-    ++ lib.optionals (stdenv.cc.isClang or false) [ "cpdef_extern_func" "libcpp_algo" ]
+    ++ lib.optionals (stdenv.cc.isClang or false) [
+      "cpdef_extern_func"
+      "libcpp_algo"
+    ]
     # Some tests in the test suite isn't working on aarch64. Disable them for
     # now until upstream finds a workaround.
     # Upstream issue here: https://github.com/cython/cython/issues/2308
     ++ lib.optionals stdenv.isAarch64 [ "numpy_memoryview" ]
-    ++ lib.optionals stdenv.isi686 [ "future_division" "overflow_check_longlong" ]
-  ;
+    ++ lib.optionals stdenv.isi686 [
+      "future_division"
+      "overflow_check_longlong"
+    ];
 
-in buildPythonPackage rec {
+in
+buildPythonPackage rec {
   pname = "Cython";
   version = "0.29.28";
 
@@ -37,9 +45,13 @@ in buildPythonPackage rec {
     pkg-config
   ];
   checkInputs = [
-    numpy ncurses
+    numpy
+    ncurses
   ];
-  buildInputs = [ glibcLocales gdb ];
+  buildInputs = [
+    glibcLocales
+    gdb
+  ];
   LC_ALL = "en_US.UTF-8";
 
   patches = [
@@ -64,16 +76,16 @@ in buildPythonPackage rec {
     export HOME="$NIX_BUILD_TOP"
     ${python.interpreter} runtests.py -j$NIX_BUILD_CORES \
       --no-code-style \
-      ${lib.optionalString (builtins.length excludedTests != 0)
-        ''--exclude="(${builtins.concatStringsSep "|" excludedTests})"''}
+      ${lib.optionalString (
+        builtins.length excludedTests != 0
+      ) ''--exclude="(${builtins.concatStringsSep "|" excludedTests})"''}
   '';
 
   # https://github.com/cython/cython/issues/2785
   # Temporary solution
   doCheck = false;
 
-#   doCheck = !stdenv.isDarwin;
-
+  #   doCheck = !stdenv.isDarwin;
 
   meta = {
     description = "An optimising static compiler for both the Python programming language and the extended Cython programming language";

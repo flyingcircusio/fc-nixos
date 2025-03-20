@@ -1,4 +1,11 @@
-{ lib, fetchFromGitHub, rustPlatform, ronn, util-linux, systemd }:
+{
+  lib,
+  fetchFromGitHub,
+  rustPlatform,
+  ronn,
+  util-linux,
+  systemd,
+}:
 
 with rustPlatform;
 
@@ -18,7 +25,10 @@ buildRustPackage rec {
   # used in src/main.rs to set default path for journalctl
   JOURNALCTL = "${systemd}/bin/journalctl";
 
-  nativeBuildInputs = [ ronn util-linux ];
+  nativeBuildInputs = [
+    ronn
+    util-linux
+  ];
   postBuild = "make man";
 
   preCheck = "patchShebangs fixtures/journalctl-cursor-file.sh";
@@ -29,8 +39,8 @@ buildRustPackage rec {
   '';
 
   meta = with lib; {
-    description = "Nagios/Icinga compatible plugin to search `journalctl` " +
-      "output for matching lines.";
+    description =
+      "Nagios/Icinga compatible plugin to search `journalctl` " + "output for matching lines.";
     homepage = "https://github.com/flyingcircusio/check_journal";
     maintainer = with maintainers; [ ckauhaus ];
     license = with licenses; [ bsd3 ];

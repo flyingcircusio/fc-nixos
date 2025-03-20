@@ -1,407 +1,451 @@
-import ./make-test-python.nix ({ lib, pkgs, testlib, ... }:
-
-with lib;
-with testlib;
-
-let
-  server6Srv = fcIP.srv6 1;
-  server6Fe = fcIP.fe6 1;
-  server4Srv = fcIP.srv4 1;
-  server4Fe = fcIP.fe4 1;
-  hosts = {
-    "127.0.0.1" = [ "localhost" ];
-    "::1" = [ "localhost" ];
-    ${server6Fe} = [ "server" "other" ];
-    ${server4Fe} = [ "server" "other" ];
-  };
-
-  expectedNginxMajorVersion = "1.26";
-
-  rootInitial = pkgs.writeTextFile {
-    name = "nginx-root-initial";
-    text = "initial content\n";
-    destination = "/index.html";
-  };
-
-  rootChanged = pkgs.writeTextFile {
-    name = "nginx-root-changed";
-    text = "changed content\n";
-    destination = "/index.html";
-  };
-
-  owaspCoreRules = pkgs.fetchgit {
-    url = "https://github.com/coreruleset/coreruleset.git";
-    rev = "v3.3.0";
-    sha256 = "0n8q5pa913cjbxhgmdi8jaivqnrc8y4pyqcv0y3si1i5dzn15lgw";
-  };
-
-  mkFCServer = {
-    id,
-    conf,
-    rateLimit ? false
+import ./make-test-python.nix (
+  {
+    lib,
+    pkgs,
+    testlib,
+    ...
   }:
-  { pkgs, lib, ... }: {
-    imports = [
-      (testlib.fcConfig { inherit id; })
-    ];
 
-    networking.hosts = mkForce {
+  with lib;
+  with testlib;
+
+  let
+    server6Srv = fcIP.srv6 1;
+    server6Fe = fcIP.fe6 1;
+    server4Srv = fcIP.srv4 1;
+    server4Fe = fcIP.fe4 1;
+    hosts = {
       "127.0.0.1" = [ "localhost" ];
       "::1" = [ "localhost" ];
-      ${fcIP.srv6 id} = [ "srv.local" "both.local" ];
-      ${fcIP.srv4 id} = [ "srv.local" "both.local" ];
-      ${fcIP.fe6 id} = [ "fe.local" "both.local" ];
-      ${fcIP.fe4 id} = [ "fe.local" "both.local" ];
-    };
-
-    flyingcircus.services.nginx.enable = true;
-    flyingcircus.services.nginx.virtualHosts = conf;
-    flyingcircus.services.nginx.logPerVirtualHost = false;
-
-    flyingcircus.services.nginx.rateLimit = lib.mkIf rateLimit {
-        enable = true;
-        maxRequestsPerSecond = 10;
-        maxConcurrent = 100;
-        burst = 50;
-    };
-  };
-
-in {
-  name = "nginx";
-  nodes = {
-    server1 = { lib, pkgs, ... }: {
-      imports = [
-        (testlib.fcConfig { id = 1; })
+      ${server6Fe} = [
+        "server"
+        "other"
       ];
+      ${server4Fe} = [
+        "server"
+        "other"
+      ];
+    };
 
-      networking.hosts = lib.mkForce hosts;
+    expectedNginxMajorVersion = "1.26";
 
-      environment.etc."proxy.http".text = ''
-        HTTP/1.1 200 OK
-        Content-Type: text/html; charset=UTF-8
-        Server: netcat!
+    rootInitial = pkgs.writeTextFile {
+      name = "nginx-root-initial";
+      text = "initial content\n";
+      destination = "/index.html";
+    };
 
-        <!doctype html>
-        <html><body><h1>A webpage served by netcat</h1></body></html>
-      '';
+    rootChanged = pkgs.writeTextFile {
+      name = "nginx-root-changed";
+      text = "changed content\n";
+      destination = "/index.html";
+    };
 
-      environment.etc = {
-        "local/nginx/modsecurity/modsecurity.conf".source =
-          ../nixos/services/nginx/modsecurity.conf;
+    owaspCoreRules = pkgs.fetchgit {
+      url = "https://github.com/coreruleset/coreruleset.git";
+      rev = "v3.3.0";
+      sha256 = "0n8q5pa913cjbxhgmdi8jaivqnrc8y4pyqcv0y3si1i5dzn15lgw";
+    };
 
-        "local/nginx/modsecurity/modsecurity_includes.conf".text =
-          ''
-          include modsecurity.conf
-          include ${owaspCoreRules}/crs-setup.conf.example
-          include ${owaspCoreRules}/rules/*.conf
-          SecRule ARGS:testparam "@contains test" "id:1234,deny,status:999"
+    mkFCServer =
+      {
+        id,
+        conf,
+        rateLimit ? false,
+      }:
+      { pkgs, lib, ... }:
+      {
+        imports = [
+          (testlib.fcConfig { inherit id; })
+        ];
+
+        networking.hosts = mkForce {
+          "127.0.0.1" = [ "localhost" ];
+          "::1" = [ "localhost" ];
+          ${fcIP.srv6 id} = [
+            "srv.local"
+            "both.local"
+          ];
+          ${fcIP.srv4 id} = [
+            "srv.local"
+            "both.local"
+          ];
+          ${fcIP.fe6 id} = [
+            "fe.local"
+            "both.local"
+          ];
+          ${fcIP.fe4 id} = [
+            "fe.local"
+            "both.local"
+          ];
+        };
+
+        flyingcircus.services.nginx.enable = true;
+        flyingcircus.services.nginx.virtualHosts = conf;
+        flyingcircus.services.nginx.logPerVirtualHost = false;
+
+        flyingcircus.services.nginx.rateLimit = lib.mkIf rateLimit {
+          enable = true;
+          maxRequestsPerSecond = 10;
+          maxConcurrent = 100;
+          burst = 50;
+        };
+      };
+
+  in
+  {
+    name = "nginx";
+    nodes = {
+      server1 =
+        { lib, pkgs, ... }:
+        {
+          imports = [
+            (testlib.fcConfig { id = 1; })
+          ];
+
+          networking.hosts = lib.mkForce hosts;
+
+          environment.etc."proxy.http".text = ''
+            HTTP/1.1 200 OK
+            Content-Type: text/html; charset=UTF-8
+            Server: netcat!
+
+            <!doctype html>
+            <html><body><h1>A webpage served by netcat</h1></body></html>
           '';
-      };
 
-      flyingcircus.logrotate.enable = true;
-      flyingcircus.services.nginx.enable = true;
-      flyingcircus.services.nginx.logPerVirtualHost = false;
+          environment.etc = {
+            "local/nginx/modsecurity/modsecurity.conf".source = ../nixos/services/nginx/modsecurity.conf;
 
-      # Vhost for localhost is predefined by the nginx module and serves the
-      # nginx status page which is expected by the sensu check.
+            "local/nginx/modsecurity/modsecurity_includes.conf".text = ''
+              include modsecurity.conf
+              include ${owaspCoreRules}/crs-setup.conf.example
+              include ${owaspCoreRules}/rules/*.conf
+              SecRule ARGS:testparam "@contains test" "id:1234,deny,status:999"
+            '';
+          };
 
-      # Vhost for config reload check.
-      services.nginx.virtualHosts.server = {
-        root = rootInitial;
-        serverAliases = [ "other" ];
-        addSSL = true;
-        enableACME = true;
-        locations."/proxy".proxyPass = "http://127.0.0.1:8008";
+          flyingcircus.logrotate.enable = true;
+          flyingcircus.services.nginx.enable = true;
+          flyingcircus.services.nginx.logPerVirtualHost = false;
 
-        extraConfig = ''
-          modsecurity on;
-          modsecurity_rules_file /etc/local/nginx/modsecurity/modsecurity_includes.conf;
-        '';
-      };
+          # Vhost for localhost is predefined by the nginx module and serves the
+          # nginx status page which is expected by the sensu check.
 
-      # Display the nginx version on the 404 page.
-      services.nginx.serverTokens = true;
+          # Vhost for config reload check.
+          services.nginx.virtualHosts.server = {
+            root = rootInitial;
+            serverAliases = [ "other" ];
+            addSSL = true;
+            enableACME = true;
+            locations."/proxy".proxyPass = "http://127.0.0.1:8008";
 
-      security.acme.certs.server.keyType = "rsa4096";
-    };
+            extraConfig = ''
+              modsecurity on;
+              modsecurity_rules_file /etc/local/nginx/modsecurity/modsecurity_includes.conf;
+            '';
+          };
 
-    server2 = mkFCServer {
-      id = 2;
-      conf = {
-        "both.local" = {
-          serverAliases = [ "fe.local" "srv.local" ];
-          addSSL = true;
-          locations."/".return = "200 'TESTOK'";
+          # Display the nginx version on the 404 page.
+          services.nginx.serverTokens = true;
+
+          security.acme.certs.server.keyType = "rsa4096";
+        };
+
+      server2 = mkFCServer {
+        id = 2;
+        conf = {
+          "both.local" = {
+            serverAliases = [
+              "fe.local"
+              "srv.local"
+            ];
+            addSSL = true;
+            locations."/".return = "200 'TESTOK'";
+          };
         };
       };
-    };
 
-    server3 = mkFCServer {
-      id = 3;
-      conf = {
-        "both.local" = {
-          serverAliases = [ "fe.local" "srv.local" ];
-          addSSL = true;
-          listenAddresses = [ (fcIP.quote.fe4 3) ];
+      server3 = mkFCServer {
+        id = 3;
+        conf = {
+          "both.local" = {
+            serverAliases = [
+              "fe.local"
+              "srv.local"
+            ];
+            addSSL = true;
+            listenAddresses = [ (fcIP.quote.fe4 3) ];
 
-          locations."/".return = "200 'TESTOK'";
+            locations."/".return = "200 'TESTOK'";
+          };
         };
       };
-    };
 
-    server4 = mkFCServer {
-      id = 4;
-      conf = {
-        "both.local" = {
-          serverAliases = [ "fe.local" "srv.local" ];
-          addSSL = true;
-          listenAddresses = [ (fcIP.quote.fe6 4) ];
+      server4 = mkFCServer {
+        id = 4;
+        conf = {
+          "both.local" = {
+            serverAliases = [
+              "fe.local"
+              "srv.local"
+            ];
+            addSSL = true;
+            listenAddresses = [ (fcIP.quote.fe6 4) ];
 
-          locations."/".return = "200 'TESTOK'";
+            locations."/".return = "200 'TESTOK'";
+          };
         };
       };
-    };
 
-    server5 = { lib, pkgs, ... }: {
-      imports = [
-        (testlib.fcConfig { id = 5; })
-      ];
+      server5 =
+        { lib, pkgs, ... }:
+        {
+          imports = [
+            (testlib.fcConfig { id = 5; })
+          ];
 
-      flyingcircus.services.nginx = {
-        enable = true;
-        logPerVirtualHost = true;
-        virtualHosts.server = {
-          listenAddresses = [ "127.0.0.1" ];
-          locations."/".return = "204";
+          flyingcircus.services.nginx = {
+            enable = true;
+            logPerVirtualHost = true;
+            virtualHosts.server = {
+              listenAddresses = [ "127.0.0.1" ];
+              locations."/".return = "204";
+            };
+          };
+        };
+
+      server6 = mkFCServer {
+        id = 6;
+        rateLimit = true;
+        conf = {
+          "both.local" = {
+            serverAliases = [
+              "fe.local"
+              "srv.local"
+            ];
+            addSSL = true;
+            listenAddresses = [ (fcIP.quote.fe6 6) ];
+
+            locations."/".return = "200 'TESTOK'";
+          };
         };
       };
+
     };
 
-    server6 = mkFCServer {
-      id = 6;
-      rateLimit = true;
-      conf = {
-        "both.local" = {
-          serverAliases = [ "fe.local" "srv.local" ];
-          addSSL = true;
-          listenAddresses = [ (fcIP.quote.fe6 6) ];
+    testScript =
+      { nodes, ... }:
+      let
+        sensuCheck = testlib.sensuCheckCmd nodes.server1;
+      in
+      ''
+        def prep(server):
+          server.wait_for_unit('nginx.service')
+          server.wait_for_open_port(81)
 
-          locations."/".return = "200 'TESTOK'";
-        };
-      };
-    };
+        def assert_file_permissions(expected, path):
+          permissions = server1.succeed(f"stat {path} -c %a:%U:%G").strip()
+          assert permissions == expected, f"expected: {expected}, got {permissions}"
 
-  };
+        def assert_logdir():
+          assert_file_permissions("755:nginx:nginx", "/var/log/nginx")
+          assert_file_permissions("644:nginx:nginx", "/var/log/nginx/performance.log")
+          assert_file_permissions("644:nginx:nginx", "/var/log/nginx/error.log")
+          assert_file_permissions("644:nginx:nginx", "/var/log/nginx/access.log")
 
-  testScript = { nodes, ... }:
-  let
-    sensuCheck = testlib.sensuCheckCmd nodes.server1;
-  in ''
-    def prep(server):
-      server.wait_for_unit('nginx.service')
-      server.wait_for_open_port(81)
+        def assert_reachable(server, intf):
+          server.succeed("curl -k https://" + intf + " | grep TESTOK")
 
-    def assert_file_permissions(expected, path):
-      permissions = server1.succeed(f"stat {path} -c %a:%U:%G").strip()
-      assert permissions == expected, f"expected: {expected}, got {permissions}"
+        def assert_unreachable(server, intf):
+          server.fail("curl -k https://" + intf + " | grep TESTOK")
 
-    def assert_logdir():
-      assert_file_permissions("755:nginx:nginx", "/var/log/nginx")
-      assert_file_permissions("644:nginx:nginx", "/var/log/nginx/performance.log")
-      assert_file_permissions("644:nginx:nginx", "/var/log/nginx/error.log")
-      assert_file_permissions("644:nginx:nginx", "/var/log/nginx/access.log")
+        # Prep all servers to avoid hard to read output.
+        prep(server1)
+        prep(server2)
+        prep(server3)
+        prep(server4)
+        prep(server5)
+        prep(server6)
 
-    def assert_reachable(server, intf):
-      server.succeed("curl -k https://" + intf + " | grep TESTOK")
+        with subtest("proxy cache directory should be accessible only for nginx"):
+          assert_file_permissions("700:nginx:nginx", "/var/cache/nginx/proxy")
 
-    def assert_unreachable(server, intf):
-      server.fail("curl -k https://" + intf + " | grep TESTOK")
+        with subtest("log directory should have correct permissions"):
+          assert_logdir()
 
-    # Prep all servers to avoid hard to read output.
-    prep(server1)
-    prep(server2)
-    prep(server3)
-    prep(server4)
-    prep(server5)
-    prep(server6)
+        with subtest("dependencies between acme services and nginx-config-reload-(pre|post)-renew should be present"):
+          # pre-renew reloading
+          after = server1.succeed("systemctl show --property After --value nginx-config-reload-pre-renew.service")
+          assert "acme-selfsigned-server.service" in after, f"acme-selfsigned-server.service missing: {after}"
+          before = server1.succeed("systemctl show --property Before --value nginx-config-reload-pre-renew.service")
+          assert "acme-server.service" in before, f"acme-server.service missing: {before}"
+          server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload-pre-renew.service")
+          # post-renew reloading
+          after = server1.succeed("systemctl show --property After --value nginx-config-reload-post-renew.service")
+          assert "acme-server.service" in after, f"acme-server.service missing: {after}"
+          before = server1.succeed("systemctl show --property Before --value nginx-config-reload-post-renew.service")
+          assert "acme-finished-server.target" in before, f"acme-finished-server.target missing: {before}"
+          server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload-post-renew.service")
 
-    with subtest("proxy cache directory should be accessible only for nginx"):
-      assert_file_permissions("700:nginx:nginx", "/var/cache/nginx/proxy")
+        with subtest("acme script should have lego calls with custom key-type and required default settings"):
+          lego_calls = server1.succeed("grep lego $(systemctl cat acme-server | awk -F '=' '/ExecStart=/ {print $2}')")
+          print("lego calls emitted:")
+          print("*" * 20)
+          print(lego_calls)
 
-    with subtest("log directory should have correct permissions"):
-      assert_logdir()
+          # Make sure we don't accidentally override defaults by specifying the custom key type
+          assert "--key-type rsa4096" in lego_calls, "Can't find expected key-type option"
+          assert "--http.webroot /var/lib/acme/acme-challenge" in lego_calls, "Can't find expected http.webroot option"
+          assert "--email admin@flyingcircus.io" in lego_calls, "Can't find expected email option"
 
-    with subtest("dependencies between acme services and nginx-config-reload-(pre|post)-renew should be present"):
-      # pre-renew reloading
-      after = server1.succeed("systemctl show --property After --value nginx-config-reload-pre-renew.service")
-      assert "acme-selfsigned-server.service" in after, f"acme-selfsigned-server.service missing: {after}"
-      before = server1.succeed("systemctl show --property Before --value nginx-config-reload-pre-renew.service")
-      assert "acme-server.service" in before, f"acme-server.service missing: {before}"
-      server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload-pre-renew.service")
-      # post-renew reloading
-      after = server1.succeed("systemctl show --property After --value nginx-config-reload-post-renew.service")
-      assert "acme-server.service" in after, f"acme-server.service missing: {after}"
-      before = server1.succeed("systemctl show --property Before --value nginx-config-reload-post-renew.service")
-      assert "acme-finished-server.target" in before, f"acme-finished-server.target missing: {before}"
-      server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload-post-renew.service")
+        # This "web server" is used for the next 2 subtests, keeps running forever.
+        # proxy.log should be reset at the end of each subtest.
+        server1.execute("(while true; do cat /etc/proxy.http | nc -l 8008 -N >> /tmp/proxy.log; done) >&2 &")
 
-    with subtest("acme script should have lego calls with custom key-type and required default settings"):
-      lego_calls = server1.succeed("grep lego $(systemctl cat acme-server | awk -F '=' '/ExecStart=/ {print $2}')")
-      print("lego calls emitted:")
-      print("*" * 20)
-      print(lego_calls)
+        with subtest("nginx should forward proxied host and server headers (primary name)"):
+          server1.wait_until_succeeds("curl -sSf http://server/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
+          _, proxy_log = server1.execute("cat /tmp/proxy.log")
+          print(proxy_log)
+          assert 'X-Forwarded-Host: server' in proxy_log, f"expected X-Forwarded-Host not found, got '{proxy_log}'"
+          assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got '{proxy_log}'"
+          # Reset proxy log
+          server1.execute("truncate -s 0 /tmp/proxy.log")
 
-      # Make sure we don't accidentally override defaults by specifying the custom key type
-      assert "--key-type rsa4096" in lego_calls, "Can't find expected key-type option"
-      assert "--http.webroot /var/lib/acme/acme-challenge" in lego_calls, "Can't find expected http.webroot option"
-      assert "--email admin@flyingcircus.io" in lego_calls, "Can't find expected email option"
+        with subtest("nginx should forward proxied host and server headers (alias)"):
+          server1.wait_until_succeeds("curl -sSf http://other/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
+          _, proxy_log = server1.execute("cat /tmp/proxy.log")
+          print(proxy_log)
+          assert 'X-Forwarded-Host: other' in proxy_log, f"expected X-Forwarded-Host not found, got: '{proxy_log}'"
+          assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got: '{proxy_log}'"
+          # Reset proxy log
+          server1.execute("truncate -s 0 /tmp/proxy.log")
 
-    # This "web server" is used for the next 2 subtests, keeps running forever.
-    # proxy.log should be reset at the end of each subtest.
-    server1.execute("(while true; do cat /etc/proxy.http | nc -l 8008 -N >> /tmp/proxy.log; done) >&2 &")
+        with subtest("nginx should log only anonymized IPs"):
+          server1.succeed("curl -4 server -s -o/dev/null")
+          server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe4.prefix}0 - -'")
+          server1.succeed("curl -6 server -s -o/dev/null")
+          server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe6.prefix} - -'")
 
-    with subtest("nginx should forward proxied host and server headers (primary name)"):
-      server1.wait_until_succeeds("curl -sSf http://server/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
-      _, proxy_log = server1.execute("cat /tmp/proxy.log")
-      print(proxy_log)
-      assert 'X-Forwarded-Host: server' in proxy_log, f"expected X-Forwarded-Host not found, got '{proxy_log}'"
-      assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got '{proxy_log}'"
-      # Reset proxy log
-      server1.execute("truncate -s 0 /tmp/proxy.log")
+        with subtest("nginx should have separate log files per vhost"):
+          server5.succeed("curl -4 127.0.0.1 -s -o/dev/null")
+          server5.succeed("cat /var/log/nginx/access-server.log | grep '^127.0.0.[0-9]\\+ - -'")
 
-    with subtest("nginx should forward proxied host and server headers (alias)"):
-      server1.wait_until_succeeds("curl -sSf http://other/proxy/ && sleep 1 && grep X-Forwarded /tmp/proxy.log")
-      _, proxy_log = server1.execute("cat /tmp/proxy.log")
-      print(proxy_log)
-      assert 'X-Forwarded-Host: other' in proxy_log, f"expected X-Forwarded-Host not found, got: '{proxy_log}'"
-      assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got: '{proxy_log}'"
-      # Reset proxy log
-      server1.execute("truncate -s 0 /tmp/proxy.log")
+        with subtest("nginx should respond with configured content"):
+          server1.succeed("curl server | grep -q 'initial content'")
 
-    with subtest("nginx should log only anonymized IPs"):
-      server1.succeed("curl -4 server -s -o/dev/null")
-      server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe4.prefix}0 - -'")
-      server1.succeed("curl -6 server -s -o/dev/null")
-      server1.succeed("cat /var/log/nginx/access.log | grep '^${fcIPMap.fe6.prefix} - -'")
+        with subtest("running nginx should have the expected version"):
+          server1.succeed("curl server/404 | grep -q ${expectedNginxMajorVersion}")
 
-    with subtest("nginx should have separate log files per vhost"):
-      server5.succeed("curl -4 127.0.0.1 -s -o/dev/null")
-      server5.succeed("cat /var/log/nginx/access-server.log | grep '^127.0.0.[0-9]\\+ - -'")
+        with subtest("nginx should use changed config after reload"):
+          # Replace config symlink with a new config file.
+          server1.execute("sed 's#${rootInitial}#${rootChanged}#' /etc/nginx/nginx.conf > /etc/nginx/changed_nginx.conf")
+          server1.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
+          server1.systemctl("reload nginx")
+          server1.wait_until_succeeds("curl server | grep -q 'changed content'")
 
-    with subtest("nginx should respond with configured content"):
-      server1.succeed("curl server | grep -q 'initial content'")
+        with subtest("logs should have correct permissions after reload"):
+          assert_logdir()
 
-    with subtest("running nginx should have the expected version"):
-      server1.succeed("curl server/404 | grep -q ${expectedNginxMajorVersion}")
+        with subtest("nginx should use changed binary after reload"):
+          # Prepare change to mainline nginx. We are not interested in testing mainline itself here.
+          # We only need it as a different version so we can test binary reloading.
+          server1.execute("ln -sfT ${pkgs.nginxMainline} /etc/nginx/running-package")
+          # Go to mainline (this doesn't overwrite /etc/nginx/running-package).
+          server1.succeed("nginx-reload-master")
+          server1.wait_until_succeeds("curl server/404 | grep -q ${pkgs.nginxMainline.version}")
+          # Back to initial binary from nginx stable (this does overwrite /etc/nginx/running-package with the wanted package).
+          server1.systemctl("reload nginx")
+          server1.wait_until_succeeds("curl server/404 | grep -q ${expectedNginxMajorVersion}")
 
-    with subtest("nginx should use changed config after reload"):
-      # Replace config symlink with a new config file.
-      server1.execute("sed 's#${rootInitial}#${rootChanged}#' /etc/nginx/nginx.conf > /etc/nginx/changed_nginx.conf")
-      server1.execute("mv /etc/nginx/changed_nginx.conf /etc/nginx/nginx.conf")
-      server1.systemctl("reload nginx")
-      server1.wait_until_succeeds("curl server | grep -q 'changed content'")
+        with subtest("log directory should have correct permissions after binary reload"):
+          assert_logdir()
 
-    with subtest("logs should have correct permissions after reload"):
-      assert_logdir()
+        with subtest("logs should have correct permissions after logrotate"):
+          server1.succeed("fc-logrotate -f")
+          assert_logdir()
 
-    with subtest("nginx should use changed binary after reload"):
-      # Prepare change to mainline nginx. We are not interested in testing mainline itself here.
-      # We only need it as a different version so we can test binary reloading.
-      server1.execute("ln -sfT ${pkgs.nginxMainline} /etc/nginx/running-package")
-      # Go to mainline (this doesn't overwrite /etc/nginx/running-package).
-      server1.succeed("nginx-reload-master")
-      server1.wait_until_succeeds("curl server/404 | grep -q ${pkgs.nginxMainline.version}")
-      # Back to initial binary from nginx stable (this does overwrite /etc/nginx/running-package with the wanted package).
-      server1.systemctl("reload nginx")
-      server1.wait_until_succeeds("curl server/404 | grep -q ${expectedNginxMajorVersion}")
+        with subtest("reload should fix wrong log permissions and recreate missing files"):
+          server1.execute("chown nginx:nginx /var/log/nginx/performance.log")
+          server1.execute("chown nobody:nobody /var/log/nginx/access.log")
+          server1.execute("rm /var/log/nginx/error.log")
+          server1.succeed("systemctl reload nginx")
+          assert_logdir()
 
-    with subtest("log directory should have correct permissions after binary reload"):
-      assert_logdir()
+        with subtest("restart should fix wrong log permissions and recreate missing files"):
+          server1.execute("chown nginx:nginx /var/log/nginx/performance.log")
+          server1.execute("chown nobody:nobody /var/log/nginx/access.log")
+          server1.execute("rm /var/log/nginx/error.log")
+          server1.succeed("systemctl restart nginx")
+          assert_logdir()
 
-    with subtest("logs should have correct permissions after logrotate"):
-      server1.succeed("fc-logrotate -f")
-      assert_logdir()
+        with subtest("nginx modsecurity rules apply"):
+          out = server1.succeed("curl -v http://server/?testparam=test")
+          print(out)
 
-    with subtest("reload should fix wrong log permissions and recreate missing files"):
-      server1.execute("chown nginx:nginx /var/log/nginx/performance.log")
-      server1.execute("chown nobody:nobody /var/log/nginx/access.log")
-      server1.execute("rm /var/log/nginx/error.log")
-      server1.succeed("systemctl reload nginx")
-      assert_logdir()
+        with subtest("service user should be able to write to local config dir"):
+          server1.succeed('sudo -u nginx touch /etc/local/nginx/vhosts.json')
 
-    with subtest("restart should fix wrong log permissions and recreate missing files"):
-      server1.execute("chown nginx:nginx /var/log/nginx/performance.log")
-      server1.execute("chown nobody:nobody /var/log/nginx/access.log")
-      server1.execute("rm /var/log/nginx/error.log")
-      server1.succeed("systemctl restart nginx")
-      assert_logdir()
+        with subtest("all sensu checks should be green"):
+          server1.succeed("${sensuCheck "nginx_config"}")
+          server1.succeed("${sensuCheck "nginx_worker_age"}")
+          server1.succeed("${sensuCheck "nginx_status"}")
 
-    with subtest("nginx modsecurity rules apply"):
-      out = server1.succeed("curl -v http://server/?testparam=test")
-      print(out)
+        with subtest("killing the nginx process should trigger an automatic restart"):
+          server1.succeed("pkill -9 -F /run/nginx/nginx.pid");
+          server1.wait_until_succeeds("${sensuCheck "nginx_status"}")
 
-    with subtest("service user should be able to write to local config dir"):
-      server1.succeed('sudo -u nginx touch /etc/local/nginx/vhosts.json')
+        with subtest("status check should be red after shutting down nginx"):
+          server1.systemctl('stop nginx')
+          server1.fail("${sensuCheck "nginx_status"}")
 
-    with subtest("all sensu checks should be green"):
-      server1.succeed("${sensuCheck "nginx_config"}")
-      server1.succeed("${sensuCheck "nginx_worker_age"}")
-      server1.succeed("${sensuCheck "nginx_status"}")
+        with subtest("[2] fc nginx should listen on fc by default"):
+          prep(server2)
+          assert_reachable(server2, "fe.local")
+          assert_unreachable(server2, "srv.local")
 
-    with subtest("killing the nginx process should trigger an automatic restart"):
-      server1.succeed("pkill -9 -F /run/nginx/nginx.pid");
-      server1.wait_until_succeeds("${sensuCheck "nginx_status"}")
+        with subtest("[3] fc nginx with fe4 specified as listen should only listen on fe4"):
+          prep(server3)
+          assert_reachable(server3, "fe.local")
+          assert_reachable(server3, "fe.local -4")
+          assert_unreachable(server3, "fe.local -6")
+          assert_unreachable(server3, "srv.local")
 
-    with subtest("status check should be red after shutting down nginx"):
-      server1.systemctl('stop nginx')
-      server1.fail("${sensuCheck "nginx_status"}")
+        with subtest("[4] fc nginx with fe6 specified as listen should only listen on fe6"):
+          out = server4.succeed("journalctl -xeu nginx")
+          print(out)
+          prep(server4)
+          assert_reachable(server4, "fe.local")
+          assert_reachable(server4, "fe.local -6")
+          assert_unreachable(server4, "fe.local -4")
+          assert_unreachable(server4, "srv.local")
 
-    with subtest("[2] fc nginx should listen on fc by default"):
-      prep(server2)
-      assert_reachable(server2, "fe.local")
-      assert_unreachable(server2, "srv.local")
+        with subtest("[5] not rate limiting connections"):
+          import re
+          # Running this against the other virtual hosts fails. I *think* this is
+          # because we have a "return 200" statement on the root location there
+          # which seems to short-circuit the rate limiting ... o_O
+          out = server4.execute("${pkgs.apacheHttpd}/bin/ab -n 1000 -c 75 http://localhost:81/")[1]
+          print(out)
+          assert re.search("Complete requests: +1000", out), "incomplete test"
+          error_match = re.search("Connect: ([0-9]+), Receive: ([0-9]+), Length: ([0-9]+), Exceptions: ([0-9]+)", out)
+          assert not error_match, "Unexpected connection errors"
 
-    with subtest("[3] fc nginx with fe4 specified as listen should only listen on fe4"):
-      prep(server3)
-      assert_reachable(server3, "fe.local")
-      assert_reachable(server3, "fe.local -4")
-      assert_unreachable(server3, "fe.local -6")
-      assert_unreachable(server3, "srv.local")
-
-    with subtest("[4] fc nginx with fe6 specified as listen should only listen on fe6"):
-      out = server4.succeed("journalctl -xeu nginx")
-      print(out)
-      prep(server4)
-      assert_reachable(server4, "fe.local")
-      assert_reachable(server4, "fe.local -6")
-      assert_unreachable(server4, "fe.local -4")
-      assert_unreachable(server4, "srv.local")
-
-    with subtest("[5] not rate limiting connections"):
-      import re
-      # Running this against the other virtual hosts fails. I *think* this is
-      # because we have a "return 200" statement on the root location there
-      # which seems to short-circuit the rate limiting ... o_O
-      out = server4.execute("${pkgs.apacheHttpd}/bin/ab -n 1000 -c 75 http://localhost:81/")[1]
-      print(out)
-      assert re.search("Complete requests: +1000", out), "incomplete test"
-      error_match = re.search("Connect: ([0-9]+), Receive: ([0-9]+), Length: ([0-9]+), Exceptions: ([0-9]+)", out)
-      assert not error_match, "Unexpected connection errors"
-
-    with subtest("[6] rate limiting connections"):
-      import re
-      # Running this against the other virtual hosts fails. I *think* this is
-      # because we have a "return 200" statement on the root location there
-      # which seems to short-circuit the rate limiting ... o_O
-      out = server6.execute("${pkgs.apacheHttpd}/bin/ab -n 1000 -c 75 http://localhost:81/")[1]
-      print(out)
-      assert re.search("Complete requests: +1000", out), "incomplete test"
-      error_match = re.search("Connect: ([0-9]+), Receive: ([0-9]+), Length: ([0-9]+), Exceptions: ([0-9]+)", out)
-      assert error_match, "Missing connection errors"
-      errors = error_match.groups()  # type: ignore
-      assert int(errors[0]) == 0
-      assert int(errors[1]) == 0
-      assert int(errors[2]) > 900
-      assert int(errors[3]) == 0
-  '';
-})
+        with subtest("[6] rate limiting connections"):
+          import re
+          # Running this against the other virtual hosts fails. I *think* this is
+          # because we have a "return 200" statement on the root location there
+          # which seems to short-circuit the rate limiting ... o_O
+          out = server6.execute("${pkgs.apacheHttpd}/bin/ab -n 1000 -c 75 http://localhost:81/")[1]
+          print(out)
+          assert re.search("Complete requests: +1000", out), "incomplete test"
+          error_match = re.search("Connect: ([0-9]+), Receive: ([0-9]+), Length: ([0-9]+), Exceptions: ([0-9]+)", out)
+          assert error_match, "Missing connection errors"
+          errors = error_match.groups()  # type: ignore
+          assert int(errors[0]) == 0
+          assert int(errors[1]) == 0
+          assert int(errors[2]) > 900
+          assert int(errors[3]) == 0
+      '';
+  }
+)

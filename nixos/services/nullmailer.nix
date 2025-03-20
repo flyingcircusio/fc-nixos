@@ -7,23 +7,24 @@ let
   net = config.networking;
 
   mailoutService =
-    let services =
-      (fclib.listServiceAddresses "mailserver-mailout" ++
-       fclib.listServiceAddresses "mailstub-mailout" ++
-       fclib.listServiceAddresses "mailout-mailout");
+    let
+      services = (
+        fclib.listServiceAddresses "mailserver-mailout"
+        ++ fclib.listServiceAddresses "mailstub-mailout"
+        ++ fclib.listServiceAddresses "mailout-mailout"
+      );
     in
-      if services == [] then null else head services;
+    if services == [ ] then null else head services;
 
-  fqdn = net.hostName + (
-    lib.optionalString (net.domain != null) ".${net.domain}");
+  fqdn = net.hostName + (lib.optionalString (net.domain != null) ".${net.domain}");
 
-in {
+in
+{
   options.flyingcircus.services.nullmailer.enable = lib.mkEnableOption ''
     Simple mail relay to the next mail server
   '';
 
-  config = lib.mkIf (config.flyingcircus.services.nullmailer.enable &&
-                     mailoutService != null) {
+  config = lib.mkIf (config.flyingcircus.services.nullmailer.enable && mailoutService != null) {
     services.nullmailer = {
       enable = true;
       config = {

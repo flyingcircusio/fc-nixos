@@ -1,31 +1,42 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
 let
   cfg = config.flyingcircus.services.opensearch-dashboards;
 
-  cfgFile = pkgs.writeText "opensearch-dashboards.json" (builtins.toJSON (
-    (filterAttrsRecursive (n: v: v != null && v != []) ({
-      server.host = cfg.listenAddress;
-      server.port = cfg.port;
-      server.ssl.certificate = cfg.cert;
-      server.ssl.key = cfg.key;
+  cfgFile = pkgs.writeText "opensearch-dashboards.json" (
+    builtins.toJSON (
+      (filterAttrsRecursive (n: v: v != null && v != [ ]) (
+        {
+          server.host = cfg.listenAddress;
+          server.port = cfg.port;
+          server.ssl.certificate = cfg.cert;
+          server.ssl.key = cfg.key;
 
-      opensearchDashboards.index = cfg.index;
-      opensearchDashboards.defaultAppId = cfg.defaultAppId;
+          opensearchDashboards.index = cfg.index;
+          opensearchDashboards.defaultAppId = cfg.defaultAppId;
 
-      opensearch.hosts = cfg.opensearch.hosts;
-      opensearch.username = cfg.opensearch.username;
-      opensearch.password = cfg.opensearch.password;
+          opensearch.hosts = cfg.opensearch.hosts;
+          opensearch.username = cfg.opensearch.username;
+          opensearch.password = cfg.opensearch.password;
 
-      opensearch.ssl.certificate = cfg.opensearch.cert;
-      opensearch.ssl.key = cfg.opensearch.key;
-      opensearch.ssl.certificateAuthorities = cfg.opensearch.certificateAuthorities;
-    } // cfg.extraConf)
-  )));
+          opensearch.ssl.certificate = cfg.opensearch.cert;
+          opensearch.ssl.key = cfg.opensearch.key;
+          opensearch.ssl.certificateAuthorities = cfg.opensearch.certificateAuthorities;
+        }
+        // cfg.extraConf
+      ))
+    )
+  );
 
-in {
+in
+{
   options.flyingcircus.services.opensearch-dashboards = {
     enable = mkEnableOption "opensearch-dashboards service";
 
@@ -109,7 +120,7 @@ in {
 
           This defaults to the singleton list [ca] when the <option>ca</option> option is defined.
         '';
-        default = if cfg.opensearch.ca == null then [] else [ca];
+        default = if cfg.opensearch.ca == null then [ ] else [ ca ];
         type = types.listOf types.path;
       };
 
@@ -141,7 +152,7 @@ in {
 
     extraConf = mkOption {
       description = "opensearch-dashboards extra configuration";
-      default = {};
+      default = { };
       type = types.attrs;
     };
   };
@@ -150,8 +161,14 @@ in {
     systemd.services.opensearch-dashboards = {
       description = "opensearch-dashboards Service";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" "elasticsearch.service" "opensearch.service" ];
-      environment = { BABEL_CACHE_PATH = "${cfg.dataDir}/.babelcache.json"; };
+      after = [
+        "network.target"
+        "elasticsearch.service"
+        "opensearch.service"
+      ];
+      environment = {
+        BABEL_CACHE_PATH = "${cfg.dataDir}/.babelcache.json";
+      };
       preStart = ''
         set -x
         pkg_dir=$STATE_DIRECTORY/package
@@ -186,6 +203,6 @@ in {
       createHome = true;
       group = "opensearch-dashboards";
     };
-    users.groups.opensearch-dashboards = {};
+    users.groups.opensearch-dashboards = { };
   };
 }

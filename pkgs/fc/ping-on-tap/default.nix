@@ -1,4 +1,9 @@
-{ lib, stdenv, makeWrapper, python3 }:
+{
+  lib,
+  stdenv,
+  makeWrapper,
+  python3,
+}:
 
 let
   pythonWithPackages = python3.withPackages (ps: [ ps.scapy ]);

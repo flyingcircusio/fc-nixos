@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -15,12 +20,12 @@ in
       enable = lib.mkEnableOption "Consul agent";
 
       watches = lib.mkOption {
-          type = with lib.types; listOf attrs;
-          description = ''
-            List of Consul watches that get automatically extended
-            with an appropriate token.
-          '';
-           default = [];
+        type = with lib.types; listOf attrs;
+        description = ''
+          List of Consul watches that get automatically extended
+          with an appropriate token.
+        '';
+        default = [ ];
       };
 
       bindAddr = lib.mkOption {
@@ -46,40 +51,44 @@ in
       enable = true;
     };
 
-    services.consul.extraConfig = let
-      dc = cfg.dc;
-    in {
-      primary_datacenter = dc;
-      acl.default_policy = "deny";
-      acl.down_policy = "extend-cache";
+    services.consul.extraConfig =
+      let
+        dc = cfg.dc;
+      in
+      {
+        primary_datacenter = dc;
+        acl.default_policy = "deny";
+        acl.down_policy = "extend-cache";
 
-      client_addr = "{{ GetInterfaceIPs \"^lo$\" }}";
-      datacenter = dc;
-      dns_config = { node_ttl = "3s"; service_ttl = {"*" = "3s";};};
-      enable_script_checks = true;
+        client_addr = "{{ GetInterfaceIPs \"^lo$\" }}";
+        datacenter = dc;
+        dns_config = {
+          node_ttl = "3s";
+          service_ttl = {
+            "*" = "3s";
+          };
+        };
+        enable_script_checks = true;
 
-      retry_join = map
-        (service: service.address)
-        (fclib.findServices "consul_server-server");
+        retry_join = map (service: service.address) (fclib.findServices "consul_server-server");
 
-      bind_addr = cfg.bindAddr;
-      advertise_addr =  cfg.advertiseAddr;
-    };
+        bind_addr = cfg.bindAddr;
+        advertise_addr = cfg.advertiseAddr;
+      };
 
     systemd.services.consul.restartTriggers = [
-        (builtins.hashString "sha256" secrets."consul/master_token")
-        (builtins.hashString "sha256" secrets."consul/agent_token")
-        (secrets."consul/encrypt")
-        client_secret_script
-        config.environment.etc."consul.d/watches.json.in".text
-      ];
+      (builtins.hashString "sha256" secrets."consul/master_token")
+      (builtins.hashString "sha256" secrets."consul/agent_token")
+      (secrets."consul/encrypt")
+      client_secret_script
+      config.environment.etc."consul.d/watches.json.in".text
+    ];
 
     flyingcircus.activationScripts.consul-update-client-secrets = ''
       ${client_secret_script}/bin/update-client-secrets
     '';
 
-    environment.etc."consul.d/watches.json.in".text = toJSON (
-      { watches = cfg.watches; });
+    environment.etc."consul.d/watches.json.in".text = toJSON ({ watches = cfg.watches; });
 
     flyingcircus.services.sensu-client.checks = {
 

@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -9,18 +14,19 @@ let
 
   backy = pkgs.backy;
 
-  backyExtract = let
-    src = pkgs.fetchFromGitHub {
-      owner = "flyingcircusio";
-      repo = "backy-extract";
-      # 1.1.0
-      rev = "3f1efdc6d9d52d13b91b640d8005913efbd80e1c";
-      hash = "sha256-fOM3dvSH6rIXkOK/pKKp1xPeiUYabG8dI65lEhQNZas=";
-    };
+  backyExtract =
+    let
+      src = pkgs.fetchFromGitHub {
+        owner = "flyingcircusio";
+        repo = "backy-extract";
+        # 1.1.0
+        rev = "3f1efdc6d9d52d13b91b640d8005913efbd80e1c";
+        hash = "sha256-fOM3dvSH6rIXkOK/pKKp1xPeiUYabG8dI65lEhQNZas=";
+      };
     in
-      pkgs.callPackage src {};
+    pkgs.callPackage src { };
 
-  restoreSingleFiles = pkgs.callPackage ../../pkgs/restore-single-files {};
+  restoreSingleFiles = pkgs.callPackage ../../pkgs/restore-single-files { };
 
   cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
   backyRbdVersioned = {
@@ -28,7 +34,8 @@ let
   };
 
   external_header = "/srv/backy.luks";
-  mountDirToSystemdUnit = path: builtins.substring 1 (-1) (builtins.replaceStrings ["/"] ["-"] path);
+  mountDirToSystemdUnit =
+    path: builtins.substring 1 (-1) (builtins.replaceStrings [ "/" ] [ "-" ] path);
   backyMountDir = "/srv/backy";
   backyMountUnit = "${mountDirToSystemdUnit backyMountDir}.mount";
 
@@ -64,7 +71,6 @@ in
 
       supportsContainers = fclib.mkDisableDevhostSupport;
 
-
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used as external backy tooling.";
       };
@@ -74,10 +80,16 @@ in
         type = lib.types.attrs;
         readOnly = true;
         internal = true;
-        default =  {
+        default = {
           device = "/dev/disk/by-label/backy";
           fsType = "xfs";
-          options = [ "nofail" "nodev" "nosuid" "noatime" "nodiratime"];
+          options = [
+            "nofail"
+            "nodev"
+            "nosuid"
+            "noatime"
+            "nodiratime"
+          ];
         };
       };
     };
@@ -152,38 +164,41 @@ in
     '';
 
     flyingcircus.agent.extraCommands = ''
-        timeout 900 fc-backy -r || rc=$?
+      timeout 900 fc-backy -r || rc=$?
     '';
 
     systemd.services.backy = {
-        description = "Backy backup server";
-        wantedBy = [ "multi-user.target" ];
-        path = [ backy config.flyingcircus.agent.package ];
-        # prevent accidentally writing into an empty mount directory,
-        # as mountpoint is nofail now
-        requires = [ backyMountUnit ];
-        after = [ backyMountUnit ];
+      description = "Backy backup server";
+      wantedBy = [ "multi-user.target" ];
+      path = [
+        backy
+        config.flyingcircus.agent.package
+      ];
+      # prevent accidentally writing into an empty mount directory,
+      # as mountpoint is nofail now
+      requires = [ backyMountUnit ];
+      after = [ backyMountUnit ];
 
-        environment = {
-          CEPH_ARGS = "--id ${enc.name}";
-        } // backyRbdVersioned;
+      environment = {
+        CEPH_ARGS = "--id ${enc.name}";
+      } // backyRbdVersioned;
 
-        serviceConfig = {
-          ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
-          Restart = "always";
-        };
+      serviceConfig = {
+        ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
+        Restart = "always";
+      };
 
-        script = ''
-            set -e
+      script = ''
+        set -e
 
-            # Delete old logs from pre-journal days.
-            rm -f /var/log/backy.log*
+        # Delete old logs from pre-journal days.
+        rm -f /var/log/backy.log*
 
-            if ! [[ -f /etc/backy.conf ]]; then
-              fc-backy
-            fi
-            exec ${backy}/bin/backy scheduler
-        '';
+        if ! [[ -f /etc/backy.conf ]]; then
+          fc-backy
+        fi
+        exec ${backy}/bin/backy scheduler
+      '';
 
     };
 
@@ -201,7 +216,8 @@ in
     };
 
     flyingcircus.passwordlessSudoPackages = [
-      { commands = [ "bin/backy check" ];
+      {
+        commands = [ "bin/backy check" ];
         package = backy;
         groups = [ "sensuclient" ];
       }

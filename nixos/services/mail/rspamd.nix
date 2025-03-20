@@ -1,15 +1,20 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with builtins;
 
 let
   cfg = config.flyingcircus;
   role = cfg.roles.mailserver;
-  interfaces = lib.attrByPath [ "parameters" "interfaces" ] {} cfg.enc;
-  localNets =
-    [ "127.0.0.0/8" "::/64" ] ++
-    (lib.flatten (
-      lib.mapAttrsToList (_: iface: lib.attrNames iface.networks) interfaces));
+  interfaces = lib.attrByPath [ "parameters" "interfaces" ] { } cfg.enc;
+  localNets = [
+    "127.0.0.0/8"
+    "::/64"
+  ] ++ (lib.flatten (lib.mapAttrsToList (_: iface: lib.attrNames iface.networks) interfaces));
 
   # see also genericVirtual in default.nix
   spamtrapMap = builtins.toFile "spamtrap.map" ''
@@ -25,7 +30,7 @@ in
   config = {
     services.nginx = lib.mkIf (role.webmailHost != null) {
       upstreams."@rspamd".servers = {
-        "unix:/run/rspamd/worker-controller.sock" = {};
+        "unix:/run/rspamd/worker-controller.sock" = { };
       };
 
       virtualHosts.${role.webmailHost}.locations."/rspamd/" = {
@@ -39,8 +44,7 @@ in
 
     services.rspamd.locals = {
       "options.inc".text = ''
-        local_addrs = [${
-          concatStringsSep ", " (map (n: "\"${n}\"") localNets)}]
+        local_addrs = [${concatStringsSep ", " (map (n: "\"${n}\"") localNets)}]
       '';
 
       "greylist.conf".text = ''

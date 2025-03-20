@@ -1,5 +1,11 @@
-{ lib, stdenv, fetchurl, lzo, fuse, autoPatchelfHook }:
-
+{
+  lib,
+  stdenv,
+  fetchurl,
+  lzo,
+  fuse,
+  autoPatchelfHook,
+}:
 
 stdenv.mkDerivation rec {
   version = "1.0.0";
@@ -10,7 +16,10 @@ stdenv.mkDerivation rec {
     autoPatchelfHook
   ];
 
-  phases = ["installPhase" "fixupPhase"];
+  phases = [
+    "installPhase"
+    "fixupPhase"
+  ];
 
   installPhase = ''
     mkdir -p $out/bin

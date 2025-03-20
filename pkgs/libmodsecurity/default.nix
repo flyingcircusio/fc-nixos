@@ -1,7 +1,20 @@
-{ lib, stdenv, fetchFromGitHub
-, autoreconfHook, bison, flex, pkg-config
-, curl, geoip, libmaxminddb, libxml2, lua, pcre, ssdeep, yajl
-, nixosTests
+{
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  autoreconfHook,
+  bison,
+  flex,
+  pkg-config,
+  curl,
+  geoip,
+  libmaxminddb,
+  libxml2,
+  lua,
+  pcre,
+  ssdeep,
+  yajl,
+  nixosTests,
 }:
 
 stdenv.mkDerivation rec {
@@ -16,10 +29,27 @@ stdenv.mkDerivation rec {
     fetchSubmodules = true;
   };
 
-  nativeBuildInputs = [ autoreconfHook bison flex pkg-config ];
-  buildInputs = [ curl geoip libmaxminddb libxml2 lua pcre ssdeep yajl ];
+  nativeBuildInputs = [
+    autoreconfHook
+    bison
+    flex
+    pkg-config
+  ];
+  buildInputs = [
+    curl
+    geoip
+    libmaxminddb
+    libxml2
+    lua
+    pcre
+    ssdeep
+    yajl
+  ];
 
-  outputs = [ "out" "dev" ];
+  outputs = [
+    "out"
+    "dev"
+  ];
 
   configureFlags = [
     "--enable-parser-generation"

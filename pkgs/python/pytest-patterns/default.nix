@@ -1,5 +1,8 @@
-{ buildPythonPackage, fetchPypi,
-pytest }:
+{
+  buildPythonPackage,
+  fetchPypi,
+  pytest,
+}:
 buildPythonPackage rec {
   pname = "pytest_patterns";
   version = "0.3.0";

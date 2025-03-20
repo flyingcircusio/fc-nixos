@@ -1,4 +1,7 @@
-{ pkgs ? import <nixpkgs> {} , ... }:
+{
+  pkgs ? import <nixpkgs> { },
+  ...
+}:
 pkgs.writeScript "check-xfs-broken.sh" ''
   # script to check if xfs is broken
   # does so by checking if '"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.'

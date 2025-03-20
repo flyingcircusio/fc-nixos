@@ -1,5 +1,10 @@
 # copied from 19.03 (c99b5b4) and adapted (remote read+write)
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with lib;
 
@@ -10,79 +15,101 @@ let
 
   dataDir = "${cfg.workingDir}/metrics";
 
-  _filter = attrs:
-    filterAttrs
-      (k: v: k != "_module" && v != null)
-      attrs;
+  _filter = attrs: filterAttrs (k: v: k != "_module" && v != null) attrs;
 
   # a wrapper that verifies that the configuration is valid
-  promtoolCheck = what: name: file:
-    pkgs.runCommand
-      "${name}-${replaceStrings [" "] [""] what}-checked"
-      { buildInputs = [ cfg.package.cli ]; } ''
-    ln -s ${file} $out
-    promtool ${what} $out
-  '';
+  promtoolCheck =
+    what: name: file:
+    pkgs.runCommand "${name}-${replaceStrings [ " " ] [ "" ] what}-checked"
+      { buildInputs = [ cfg.package.cli ]; }
+      ''
+        ln -s ${file} $out
+        promtool ${what} $out
+      '';
 
   # Pretty-print JSON to a file
-  writePrettyJSON = name: x:
+  writePrettyJSON =
+    name: x:
     pkgs.runCommand name { preferLocalBuild = true; } ''
       echo '${builtins.toJSON x}' | ${pkgs.jq}/bin/jq . > $out
     '';
 
   promConfig = {
     global = filterValidPrometheus cfg.globalConfig;
-    rule_files = map (promtoolCheck "check rules" "rules") (cfg.ruleFiles ++ [
-      (pkgs.writeText "prometheus.rules" (concatStringsSep "\n" cfg.rules))
-    ]);
+    rule_files = map (promtoolCheck "check rules" "rules") (
+      cfg.ruleFiles
+      ++ [
+        (pkgs.writeText "prometheus.rules" (concatStringsSep "\n" cfg.rules))
+      ]
+    );
     scrape_configs = filterValidPrometheus cfg.scrapeConfigs;
     inherit (cfg) remote_write remote_read;
   };
 
   generatedPrometheusYml = writePrettyJSON "prometheus.yml" promConfig;
 
-  prometheusYml = let
-    yml = if cfg.configText != null then
-      pkgs.writeText "prometheus.yml" cfg.configText
-      else generatedPrometheusYml;
-    in promtoolCheck "check config" "prometheus.yml" yml;
+  prometheusYml =
+    let
+      yml =
+        if cfg.configText != null then
+          pkgs.writeText "prometheus.yml" cfg.configText
+        else
+          generatedPrometheusYml;
+    in
+    promtoolCheck "check config" "prometheus.yml" yml;
 
-  cmdlineArgs = cfg.extraFlags ++ [
-    "--storage.tsdb.path=${dataDir}"
-    "--config.file=${prometheusYml}"
-    "--web.listen-address=${cfg.listenAddress}"
-  ] ++
-  optional (cfg.webExternalUrl != null) "--web.external-url=${cfg.webExternalUrl}";
+  cmdlineArgs =
+    cfg.extraFlags
+    ++ [
+      "--storage.tsdb.path=${dataDir}"
+      "--config.file=${prometheusYml}"
+      "--web.listen-address=${cfg.listenAddress}"
+    ]
+    ++ optional (cfg.webExternalUrl != null) "--web.external-url=${cfg.webExternalUrl}";
 
-  prometheusShowConfig =
-    pkgs.writeScriptBin "prometheus-show-config" "cat ${prometheusYml}";
+  prometheusShowConfig = pkgs.writeScriptBin "prometheus-show-config" "cat ${prometheusYml}";
 
   filterValidPrometheus = filterAttrsListRecursive (n: v: !(n == "_module" || v == null));
-  filterAttrsListRecursive = pred: x:
+  filterAttrsListRecursive =
+    pred: x:
     if isAttrs x then
       listToAttrs (
-        concatMap (name:
-          let v = x.${name}; in
-          if pred name v then [
-            (nameValuePair name (filterAttrsListRecursive pred v))
-          ] else []
+        concatMap (
+          name:
+          let
+            v = x.${name};
+          in
+          if pred name v then
+            [
+              (nameValuePair name (filterAttrsListRecursive pred v))
+            ]
+          else
+            [ ]
         ) (attrNames x)
       )
     else if isList x then
       map (filterAttrsListRecursive pred) x
-    else x;
+    else
+      x;
 
-  mkDefOpt = type : defaultStr : description : mkOpt type (description + ''
+  mkDefOpt =
+    type: defaultStr: description:
+    mkOpt type (
+      description
+      + ''
 
-    Defaults to <literal>${builtins.toString defaultStr}</literal> in prometheus
-    when set to <literal>null</literal>.
-  '');
+        Defaults to <literal>${builtins.toString defaultStr}</literal> in prometheus
+        when set to <literal>null</literal>.
+      ''
+    );
 
-  mkOpt = type : description : mkOption {
-    type = types.nullOr type;
-    default = null;
-    inherit description;
-  };
+  mkOpt =
+    type: description:
+    mkOption {
+      type = types.nullOr type;
+      default = null;
+      inherit description;
+    };
 
   promTypes.globalConfig = types.submodule {
     options = {
@@ -159,32 +186,42 @@ let
         by the target will be ignored.
       '';
 
-      scheme = mkDefOpt (types.enum ["http" "https"]) "http" ''
-        The URL scheme with which to fetch metrics from targets.
-      '';
+      scheme =
+        mkDefOpt
+          (types.enum [
+            "http"
+            "https"
+          ])
+          "http"
+          ''
+            The URL scheme with which to fetch metrics from targets.
+          '';
 
       params = mkOpt (types.attrsOf (types.listOf types.str)) ''
         Optional HTTP URL parameters.
       '';
 
-      basic_auth = mkOpt (types.submodule {
-        options = {
-          username = mkOption {
-            type = types.str;
-            description = ''
-              HTTP username
-            '';
-          };
-          password = mkOption {
-            type = types.str;
-            description = ''
-              HTTP password
-            '';
-          };
-        };
-      }) ''
-        Optional http login credentials for metrics scraping.
-      '';
+      basic_auth =
+        mkOpt
+          (types.submodule {
+            options = {
+              username = mkOption {
+                type = types.str;
+                description = ''
+                  HTTP username
+                '';
+              };
+              password = mkOption {
+                type = types.str;
+                description = ''
+                  HTTP password
+                '';
+              };
+            };
+          })
+          ''
+            Optional http login credentials for metrics scraping.
+          '';
 
       bearer_token = mkOpt types.str ''
         Sets the `Authorization` header on every scrape request with
@@ -256,7 +293,7 @@ let
       };
       labels = mkOption {
         type = types.attrsOf types.str;
-        default = {};
+        default = { };
         description = ''
           Labels assigned to all metrics scraped from the targets.
         '';
@@ -286,7 +323,7 @@ let
          <literal>AWS_SECRET_ACCESS_KEY</literal> is used.
       '';
 
-      profile = mkOpt  types.str ''
+      profile = mkOpt types.str ''
         Named AWS profile used to connect to the API.
       '';
 
@@ -322,7 +359,7 @@ let
 
       value = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           Value of the filter.
         '';
@@ -445,12 +482,15 @@ let
         regular expression matches.
       '';
 
-      action = mkDefOpt
-        (types.enum [
-          "replace" "keep" "drop" "hashmod" "labelmap" "labeldrop" "labelkeep"
-        ])
+      action = mkDefOpt (types.enum [
         "replace"
-        "Action to perform based on regex matching.";
+        "keep"
+        "drop"
+        "hashmod"
+        "labelmap"
+        "labeldrop"
+        "labelkeep"
+      ]) "replace" "Action to perform based on regex matching.";
     };
   };
 
@@ -496,36 +536,38 @@ let
       };
       write_relabel_configs = mkOption {
         type = types.listOf promTypes.relabel_config;
-        default = [];
+        default = [ ];
         apply = x: map _filter x;
         description = ''
           List of remote write relabel configurations.
         '';
       };
       basic_auth = mkOption {
-        type = types.nullOr (types.submodule {
-          options = {
-            username = mkOption {
-              type = types.str;
-              description = ''
-                HTTP username
-              '';
+        type = types.nullOr (
+          types.submodule {
+            options = {
+              username = mkOption {
+                type = types.str;
+                description = ''
+                  HTTP username
+                '';
+              };
+              password = mkOption {
+                type = types.str;
+                description = ''
+                  HTTP password
+                '';
+              };
+              password_file = mkOption {
+                type = types.path;
+                description = ''
+                  HTTP password file.
+                  `password` and `password_file` are mutually exclusive.
+                '';
+              };
             };
-            password = mkOption {
-              type = types.str;
-              description = ''
-                HTTP password
-              '';
-            };
-            password_file = mkOption {
-              type = types.path;
-              description = ''
-                HTTP password file.
-                `password` and `password_file` are mutually exclusive.
-              '';
-            };
-          };
-        });
+          }
+        );
         default = null;
         apply = x: mapNullable _filter x;
         description = ''
@@ -605,29 +647,31 @@ let
         '';
       };
       basic_auth = mkOption {
-        type = types.nullOr (types.submodule {
-          options = {
-            username = mkOption {
-              type = types.str;
-              description = ''
-                HTTP username
-              '';
+        type = types.nullOr (
+          types.submodule {
+            options = {
+              username = mkOption {
+                type = types.str;
+                description = ''
+                  HTTP username
+                '';
+              };
+              password = mkOption {
+                type = types.str;
+                description = ''
+                  HTTP password
+                '';
+              };
+              password_file = mkOption {
+                type = types.path;
+                description = ''
+                  HTTP password file.
+                  `password` and `password_file` are mutually exclusive.
+                '';
+              };
             };
-            password = mkOption {
-              type = types.str;
-              description = ''
-                HTTP password
-              '';
-            };
-            password_file = mkOption {
-              type = types.path;
-              description = ''
-                HTTP password file.
-                `password` and `password_file` are mutually exclusive.
-              '';
-            };
-          };
-        });
+          }
+        );
         default = null;
         apply = x: mapNullable _filter x;
         description = ''
@@ -671,7 +715,8 @@ let
     };
   };
 
-in {
+in
+{
   options = {
     services.prometheus = {
 
@@ -702,7 +747,7 @@ in {
 
       extraFlags = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           Extra commandline options when launching Prometheus 2.
         '';
@@ -720,7 +765,7 @@ in {
 
       globalConfig = mkOption {
         type = promTypes.globalConfig;
-        default = {};
+        default = { };
         description = ''
           Parameters that are valid in all  configuration contexts. They
           also serve as defaults for other configuration sections
@@ -729,7 +774,7 @@ in {
 
       rules = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           Alerting and/or Recording rules to evaluate at runtime.
         '';
@@ -737,7 +782,7 @@ in {
 
       ruleFiles = mkOption {
         type = types.listOf types.path;
-        default = [];
+        default = [ ];
         description = ''
           Any additional rules files to include in this configuration.
         '';
@@ -745,7 +790,7 @@ in {
 
       scrapeConfigs = mkOption {
         type = types.listOf promTypes.scrape_config;
-        default = [];
+        default = [ ];
         description = ''
           A list of scrape configurations.
         '';
@@ -771,7 +816,7 @@ in {
       };
       remote_write = mkOption {
         type = types.listOf promTypes.remote_write_config;
-        default = [];
+        default = [ ];
         apply = x: map _filter x;
         description = ''
           List of remote write configurations.
@@ -780,7 +825,7 @@ in {
 
       remote_read = mkOption {
         type = types.listOf promTypes.remote_read_config;
-        default = [];
+        default = [ ];
         apply = x: map _filter x;
         description = ''
           List of remote read configurations.
@@ -788,7 +833,7 @@ in {
       };
 
     };
-   };
+  };
 
   config = mkMerge [
     (mkIf (cfg.enable) {
@@ -807,13 +852,13 @@ in {
       ];
       systemd.services.prometheus = {
         wantedBy = [ "multi-user.target" ];
-        after    = [ "network.target" ];
+        after = [ "network.target" ];
         serviceConfig = {
-          ExecStart = "${cfg.package}/bin/prometheus" +
-            optionalString (length cmdlineArgs != 0) (" \\\n  " +
-              concatStringsSep " \\\n  " cmdlineArgs);
+          ExecStart =
+            "${cfg.package}/bin/prometheus"
+            + optionalString (length cmdlineArgs != 0) (" \\\n  " + concatStringsSep " \\\n  " cmdlineArgs);
           User = promUser;
-          Restart  = "always";
+          Restart = "always";
           WorkingDirectory = cfg.workingDir;
         };
       };

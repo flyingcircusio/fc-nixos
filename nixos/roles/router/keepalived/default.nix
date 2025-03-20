@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with builtins;
 
@@ -26,7 +31,7 @@ let
     '';
   };
 
-  checkZebraLiveness= fclib.writeShellApplication {
+  checkZebraLiveness = fclib.writeShellApplication {
     name = "check-zebra-liveness";
     runtimeInputs = with pkgs; [ frr ];
     text = ''
@@ -48,11 +53,11 @@ let
     }
 
     ${locationConfig}
-    '';
+  '';
 
-  requiredInterfaces =
-    map (network: fclib.network."${network}".interface)
-      static.floatingGatewayNetworks."${location}";
+  requiredInterfaces = map (
+    network: fclib.network."${network}".interface
+  ) static.floatingGatewayNetworks."${location}";
 
   addressDependencies = map (iface: "network-addresses-${iface}.service") requiredInterfaces;
   deviceDependencies = map (iface: "${iface}-netdev.service") requiredInterfaces;
@@ -60,9 +65,12 @@ let
 in
 lib.mkIf role.enable {
 
-  environment.etc."keepalived/check-default-route-v4".source = "${checkDefaultRoute4}/bin/check-default-route-v4";
-  environment.etc."keepalived/check-default-route-v6".source = "${checkDefaultRoute6}/bin/check-default-route-v6";
-  environment.etc."keepalived/check-zebra-liveness".source = "${checkZebraLiveness}/bin/check-zebra-liveness";
+  environment.etc."keepalived/check-default-route-v4".source =
+    "${checkDefaultRoute4}/bin/check-default-route-v4";
+  environment.etc."keepalived/check-default-route-v6".source =
+    "${checkDefaultRoute6}/bin/check-default-route-v6";
+  environment.etc."keepalived/check-zebra-liveness".source =
+    "${checkZebraLiveness}/bin/check-zebra-liveness";
   environment.etc."keepalived/fc-keepalived".source = "${pkgs.fc.agent}/bin/fc-keepalived";
   environment.etc."keepalived/keepalived.conf".source = keepalivedConf;
 
@@ -72,13 +80,16 @@ lib.mkIf role.enable {
     checkDefaultRoute6
   ];
 
-
   flyingcircus.passwordlessSudoRules = [
     {
       commands = [
         "${pkgs.fc.agent}/bin/fc-keepalived check"
       ];
-      groups = [ "admins" "sudo-srv" "service" ];
+      groups = [
+        "admins"
+        "sudo-srv"
+        "service"
+      ];
     }
   ];
 
@@ -97,11 +108,13 @@ lib.mkIf role.enable {
     after = deviceDependencies;
     serviceConfig = {
       Type = lib.mkOverride 90 "simple";
-      ExecStart = lib.mkOverride 90 ("${pkgs.keepalived}/sbin/keepalived"
+      ExecStart = lib.mkOverride 90 (
+        "${pkgs.keepalived}/sbin/keepalived"
         + " -f /etc/keepalived/keepalived.conf"
         + " -D"
         + " -p /run/keepalived.pid"
-        + " -n");
+        + " -n"
+      );
       StateDirectory = "keepalived";
       RuntimeDirectory = "keepalived";
     };

@@ -9,7 +9,7 @@ rec {
       name = "image-root";
       paths = [ pkgs.redis ];
     };
-    config.Entrypoint = ["/bin/redis-server"];
+    config.Entrypoint = [ "/bin/redis-server" ];
   };
 
   podJson = toJSON {
@@ -17,16 +17,23 @@ rec {
     apiVersion = "v1";
     metadata.name = "redis";
     metadata.labels.name = "redis";
-    spec.containers = [{
-      name = "redis";
-      image = "redis";
-      args = ["--bind" "0.0.0.0"];
-      imagePullPolicy = "Never";
-      ports = [{
-        name = "redis-server";
-        containerPort = 6379;
-      }];
-    }];
+    spec.containers = [
+      {
+        name = "redis";
+        image = "redis";
+        args = [
+          "--bind"
+          "0.0.0.0"
+        ];
+        imagePullPolicy = "Never";
+        ports = [
+          {
+            name = "redis-server";
+            containerPort = 6379;
+          }
+        ];
+      }
+    ];
   };
 
   serviceJson = toJSON {
@@ -34,8 +41,15 @@ rec {
     apiVersion = "v1";
     metadata.name = "redis";
     spec = {
-      ports = [{port = 6379; targetPort = 6379;}];
-      selector = {name = "redis";};
+      ports = [
+        {
+          port = 6379;
+          targetPort = 6379;
+        }
+      ];
+      selector = {
+        name = "redis";
+      };
     };
   };
 
@@ -54,12 +68,14 @@ rec {
       template = {
         metadata.labels.name = "redis";
         spec = {
-          containers = [{
-            name = "redis";
-            image = "redis";
-            imagePullPolicy = "Never";
-            ports = [ { containerPort = 6379; } ];
-          }];
+          containers = [
+            {
+              name = "redis";
+              image = "redis";
+              imagePullPolicy = "Never";
+              ports = [ { containerPort = 6379; } ];
+            }
+          ];
         };
       };
     };

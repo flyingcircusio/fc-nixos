@@ -12,7 +12,8 @@ let
     "services/web-servers/nginx/default.nix"
   ];
 
-in {
+in
+{
   disabledModules = modulesFromHere;
 
   imports = with lib; [
@@ -46,6 +47,11 @@ in {
     ./telegraf
     ./varnish
 
-    (mkRemovedOptionModule [ "flyingcircus" "services" "percona" "rootPassword" ] "Change the root password via MySQL and modify secret files")
+    (mkRemovedOptionModule [
+      "flyingcircus"
+      "services"
+      "percona"
+      "rootPassword"
+    ] "Change the root password via MySQL and modify secret files")
   ];
 }

@@ -1,5 +1,9 @@
-
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -27,170 +31,210 @@ let
     srvFQDN
   ];
 
-  fcNameservers = config.flyingcircus.static.nameservers.${location} or [];
+  fcNameservers = config.flyingcircus.static.nameservers.${location} or [ ];
 
   # Use the same location as NixOS k8s.
   defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
 
-  kubernetesMakeKubeconfig = let
-    kc = "${pkgs.kubectl}/bin/kubectl";
-    remarshal = "${pkgs.remarshal}/bin/remarshal";
-  in
-  pkgs.writeScriptBin "kubernetes-make-kubeconfig" ''
-    #!${pkgs.stdenv.shell} -e
-    name=''${1:-$USER}
-    src_config=/etc/kubernetes/cluster-admin.kubeconfig
+  kubernetesMakeKubeconfig =
+    let
+      kc = "${pkgs.kubectl}/bin/kubectl";
+      remarshal = "${pkgs.remarshal}/bin/remarshal";
+    in
+    pkgs.writeScriptBin "kubernetes-make-kubeconfig" ''
+      #!${pkgs.stdenv.shell} -e
+      name=''${1:-$USER}
+      src_config=/etc/kubernetes/cluster-admin.kubeconfig
 
-    ${kc} get serviceaccount $name &> /dev/null \
-      || ${kc} create serviceaccount $name > /dev/null
+      ${kc} get serviceaccount $name &> /dev/null \
+        || ${kc} create serviceaccount $name > /dev/null
 
-    ${kc} get clusterrolebinding cluster-admin-$name &> /dev/null \
-      || ${kc} create clusterrolebinding cluster-admin-$name \
-          --clusterrole=cluster-admin --serviceaccount=default:$name \
-          > /dev/null
+      ${kc} get clusterrolebinding cluster-admin-$name &> /dev/null \
+        || ${kc} create clusterrolebinding cluster-admin-$name \
+            --clusterrole=cluster-admin --serviceaccount=default:$name \
+            > /dev/null
 
-    ${kc} get secret $name-token &> /dev/null \
-      || ${kc} apply -f - <<EOF > /dev/null
-    apiVersion: v1
-    kind: Secret
-    type: kubernetes.io/service-account-token
-    metadata:
-      name: $name-token
-      annotations:
-        kubernetes.io/service-account.name: $name
-    EOF
+      ${kc} get secret $name-token &> /dev/null \
+        || ${kc} apply -f - <<EOF > /dev/null
+      apiVersion: v1
+      kind: Secret
+      type: kubernetes.io/service-account-token
+      metadata:
+        name: $name-token
+        annotations:
+          kubernetes.io/service-account.name: $name
+      EOF
 
-    token=$(${kc} describe secret $name-token | grep token: | cut -c 13-)
+      token=$(${kc} describe secret $name-token | grep token: | cut -c 13-)
 
-    ${remarshal} $src_config -if yaml -of json | \
-      jq --arg token "$token" \
-      '.users[0].user |= (del(."client-key-data", ."client-certificate-data") | .token = $token)' \
-      > /tmp/$name.kubeconfig
+      ${remarshal} $src_config -if yaml -of json | \
+        jq --arg token "$token" \
+        '.users[0].user |= (del(."client-key-data", ."client-certificate-data") | .token = $token)' \
+        > /tmp/$name.kubeconfig
 
-    KUBECONFIG=/tmp/$name.kubeconfig ${kc} config view --flatten
-    rm /tmp/$name.kubeconfig
-  '';
+      KUBECONFIG=/tmp/$name.kubeconfig ${kc} config view --flatten
+      rm /tmp/$name.kubeconfig
+    '';
 
-  additionalManifests = let
-    serviceAccount = name: {
-      apiVersion = "v1";
-      kind = "ServiceAccount";
-      metadata = {
-        name = "io.flyingcircus.service.${name}";
-        namespace = "kube-system";
-      };
-    };
-    serviceAccountSecret = name: {
-      apiVersion = "v1";
-      kind = "Secret";
-      type = "kubernetes.io/service-account-token";
-      metadata = {
-        name = "io.flyingcircus.service-token.${name}";
-        namespace = "kube-system";
-        annotations."kubernetes.io/service-account.name" =
-          "io.flyingcircus.service.${name}";
-      };
-    };
-    authorizationApi = m: {
-      apiVersion = "rbac.authorization.k8s.io/v1";
-    } // m;
-    clusterRole = c: {
-      kind = "ClusterRole";
-    } // (authorizationApi c);
-    clusterRoleBinding = c: {
-      kind = "ClusterRoleBinding";
-    } // (authorizationApi c);
-
-    manifests = [
-      (serviceAccount "sensu-client")
-      (serviceAccount "telegraf")
-      (serviceAccountSecret "sensu-client")
-      (serviceAccountSecret "telegraf")
-      (clusterRole {
-        metadata.name = "flyingcircus:sensu-client";
-        rules = [{
-          apiGroups = [""];
-          resources = ["nodes" "pods"];
-          verbs = ["get" "list"];
-        }];
-      })
-      (clusterRoleBinding {
-        metadata.name = "flyingcircus:sensu-client:viewer";
-        roleRef = {
-          apiGroup = "rbac.authorization.k8s.io";
-          kind = "ClusterRole";
-          name = "flyingcircus:sensu-client";
-        };
-        subjects = [{
-          kind = "ServiceAccount";
-          name = "io.flyingcircus.service.sensu-client";
-          namespace = "kube-system";
-        }];
-      })
-      (clusterRole {
+  additionalManifests =
+    let
+      serviceAccount = name: {
+        apiVersion = "v1";
+        kind = "ServiceAccount";
         metadata = {
-          name = "flyingcircus:cluster:viewer";
-          labels."rbac.flyingcircus.io/aggregate-view-cluster" = "true";
+          name = "io.flyingcircus.service.${name}";
+          namespace = "kube-system";
         };
-        rules = [{
-          apiGroups = [""];
-          resources = ["persistentvolumes" "nodes"];
-          verbs = ["get" "list"];
-        }];
-      })
-      (clusterRole {
-        metadata.name = "flyingcircus:telegraf";
-        # aggregate the access control rules of the
-        # flyingcircus:cluster:viewer role defined above and the
-        # built-in view role
-        aggregationRule.clusterRoleSelectors =
-          map (m: { matchLabels."${m}" = "true"; }) [
+      };
+      serviceAccountSecret = name: {
+        apiVersion = "v1";
+        kind = "Secret";
+        type = "kubernetes.io/service-account-token";
+        metadata = {
+          name = "io.flyingcircus.service-token.${name}";
+          namespace = "kube-system";
+          annotations."kubernetes.io/service-account.name" = "io.flyingcircus.service.${name}";
+        };
+      };
+      authorizationApi =
+        m:
+        {
+          apiVersion = "rbac.authorization.k8s.io/v1";
+        }
+        // m;
+      clusterRole =
+        c:
+        {
+          kind = "ClusterRole";
+        }
+        // (authorizationApi c);
+      clusterRoleBinding =
+        c:
+        {
+          kind = "ClusterRoleBinding";
+        }
+        // (authorizationApi c);
+
+      manifests = [
+        (serviceAccount "sensu-client")
+        (serviceAccount "telegraf")
+        (serviceAccountSecret "sensu-client")
+        (serviceAccountSecret "telegraf")
+        (clusterRole {
+          metadata.name = "flyingcircus:sensu-client";
+          rules = [
+            {
+              apiGroups = [ "" ];
+              resources = [
+                "nodes"
+                "pods"
+              ];
+              verbs = [
+                "get"
+                "list"
+              ];
+            }
+          ];
+        })
+        (clusterRoleBinding {
+          metadata.name = "flyingcircus:sensu-client:viewer";
+          roleRef = {
+            apiGroup = "rbac.authorization.k8s.io";
+            kind = "ClusterRole";
+            name = "flyingcircus:sensu-client";
+          };
+          subjects = [
+            {
+              kind = "ServiceAccount";
+              name = "io.flyingcircus.service.sensu-client";
+              namespace = "kube-system";
+            }
+          ];
+        })
+        (clusterRole {
+          metadata = {
+            name = "flyingcircus:cluster:viewer";
+            labels."rbac.flyingcircus.io/aggregate-view-cluster" = "true";
+          };
+          rules = [
+            {
+              apiGroups = [ "" ];
+              resources = [
+                "persistentvolumes"
+                "nodes"
+              ];
+              verbs = [
+                "get"
+                "list"
+              ];
+            }
+          ];
+        })
+        (clusterRole {
+          metadata.name = "flyingcircus:telegraf";
+          # aggregate the access control rules of the
+          # flyingcircus:cluster:viewer role defined above and the
+          # built-in view role
+          aggregationRule.clusterRoleSelectors = map (m: { matchLabels."${m}" = "true"; }) [
             "rbac.flyingcircus.io/aggregate-view-cluster"
             "rbac.authorization.k8s.io/aggregate-to-view"
           ];
-      })
-      (clusterRoleBinding {
-        metadata.name = "flyingcircus:telegraf:viewer";
-        roleRef = {
-          apiGroup = "rbac.authorization.k8s.io";
-          kind = "ClusterRole";
-          name = "flyingcircus:telegraf";
-        };
-        subjects = [{
-          kind = "ServiceAccount";
-          name = "io.flyingcircus.service.telegraf";
-          namespace = "kube-system";
-        }];
-      })
-      (clusterRole {
-        metadata.name = "flyingcircus:daemonset:viewer";
-        rules = [{
-          apiGroups = ["apps"];
-          resources = ["daemonsets"];
-          verbs = ["get"];
-        }];
-      })
-      (clusterRoleBinding {
-        metadata.name = "flyingcircus:nodes";
-        roleRef = {
-          apiGroup = "rbac.authorization.k8s.io";
-          kind = "ClusterRole";
-          name = "flyingcircus:daemonset:viewer";
-        };
-        subjects = [{
-          apiGroup = "rbac.authorization.k8s.io";
-          kind = "Group";
-          name = "system:nodes";
-        }];
-      })
-    ];
-    renderedManifests = lib.concatStringsSep "\n"
-      (lib.flatten (map (m: ["---" (toJSON m)]) manifests));
-  in pkgs.writeTextFile {
-    name = "kubernetes-additional-manifests";
-    text = renderedManifests;
-    destination = "/flyingcircus.yaml";
-  };
+        })
+        (clusterRoleBinding {
+          metadata.name = "flyingcircus:telegraf:viewer";
+          roleRef = {
+            apiGroup = "rbac.authorization.k8s.io";
+            kind = "ClusterRole";
+            name = "flyingcircus:telegraf";
+          };
+          subjects = [
+            {
+              kind = "ServiceAccount";
+              name = "io.flyingcircus.service.telegraf";
+              namespace = "kube-system";
+            }
+          ];
+        })
+        (clusterRole {
+          metadata.name = "flyingcircus:daemonset:viewer";
+          rules = [
+            {
+              apiGroups = [ "apps" ];
+              resources = [ "daemonsets" ];
+              verbs = [ "get" ];
+            }
+          ];
+        })
+        (clusterRoleBinding {
+          metadata.name = "flyingcircus:nodes";
+          roleRef = {
+            apiGroup = "rbac.authorization.k8s.io";
+            kind = "ClusterRole";
+            name = "flyingcircus:daemonset:viewer";
+          };
+          subjects = [
+            {
+              apiGroup = "rbac.authorization.k8s.io";
+              kind = "Group";
+              name = "system:nodes";
+            }
+          ];
+        })
+      ];
+      renderedManifests = lib.concatStringsSep "\n" (
+        lib.flatten (
+          map (m: [
+            "---"
+            (toJSON m)
+          ]) manifests
+        )
+      );
+    in
+    pkgs.writeTextFile {
+      name = "kubernetes-additional-manifests";
+      text = renderedManifests;
+      destination = "/flyingcircus.yaml";
+    };
 
   authTokenScript = pkgs.writeShellScriptBin "kubernetes-write-auth-token" ''
     set -o pipefail
@@ -265,8 +309,14 @@ let
 
   makeAuthTokenService = user: secret: {
     wantedBy = [ "multi-user.target" ];
-    requires = [ "k3s.service" "fc-k3s-load-manifests.service" ];
-    after = [ "k3s.service" "fc-k3s-load-manifests.service" ];
+    requires = [
+      "k3s.service"
+      "fc-k3s-load-manifests.service"
+    ];
+    after = [
+      "k3s.service"
+      "fc-k3s-load-manifests.service"
+    ];
     path = [ pkgs.coreutils ];
     serviceConfig = {
       RemainAfterExit = true;
@@ -306,11 +356,11 @@ let
     fi
   '';
 
-in {
+in
+{
   options = {
     flyingcircus.roles.k3s-server = {
-      enable = lib.mkEnableOption
-        "Enable K3s server (Kubernetes control plane, kube-dashboard) (only one per RG)";
+      enable = lib.mkEnableOption "Enable K3s server (Kubernetes control plane, kube-dashboard) (only one per RG)";
       supportsContainers = fclib.mkDisableDevhostSupport;
     };
   };
@@ -327,14 +377,13 @@ in {
       kubernetesMakeKubeconfig
     ];
 
-    flyingcircus.activationScripts.k3s-apitoken =
-      lib.stringAfter [ "users" ] ''
-        mkdir -p /var/lib/k3s
-        umask 077
-        token=/var/lib/k3s/secret_token
-        echo ${server.password} | sha256sum | head -c64 > $token
-        chmod 400 $token
-      '';
+    flyingcircus.activationScripts.k3s-apitoken = lib.stringAfter [ "users" ] ''
+      mkdir -p /var/lib/k3s
+      umask 077
+      token=/var/lib/k3s/secret_token
+      echo ${server.password} | sha256sum | head -c64 > $token
+      chmod 400 $token
+    '';
 
     flyingcircus.services.postgresql = {
       enable = true;
@@ -343,9 +392,11 @@ in {
 
     services.postgresql = {
       ensureDatabases = [ "kubernetes" ];
-      ensureUsers = [ {
-        name = "root";
-      } ];
+      ensureUsers = [
+        {
+          name = "root";
+        }
+      ];
     };
 
     systemd.services.fc-k3s-ensure-db-permissions = {
@@ -431,51 +482,55 @@ in {
       };
 
       systemdUnitChecks = {
-        "k3s.service" = {};
-        "kube-dashboard.service" = {};
-        "kube-dashboard-metrics-scraper.service" = {};
+        "k3s.service" = { };
+        "kube-dashboard.service" = { };
+        "kube-dashboard-metrics-scraper.service" = { };
       };
     };
 
     flyingcircus.services.telegraf.inputs = {
-      kube_inventory = [{
-        url = "https://localhost:6443";
-        bearer_token = "/var/lib/k3s/tokens/telegraf";
-        insecure_skip_verify = true;
-        namespace = "";
-        resource_exclude = [
-          "persistentvolumes"
-          "persistentvolumeclaims"
-          "endpoints"
-          "ingress"
-        ];
-      }];
-    };
-
-    networking.nameservers = lib.mkOverride 90 (lib.take 3 ([netCfg.clusterDns] ++ fcNameservers));
-
-    services.k3s = let
-      k3sFlags = [
-        "--cluster-cidr=${netCfg.podCidr}"
-        "--service-cidr=${netCfg.serviceCidr}"
-        "--cluster-dns=${netCfg.clusterDns}"
-        "--node-ip=${nodeAddress}"
-        "--write-kubeconfig=${defaultKubeconfig}"
-        "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
-        "--flannel-backend=host-gw"
-        "--flannel-iface=${fclib.network.srv.interface}"
-        "--datastore-endpoint=postgres:///kubernetes?host=/run/postgresql"
-        "--token-file=/var/lib/k3s/secret_token"
-        "--data-dir=/var/lib/k3s"
-        "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
-        # required for anonymous access to apiserver health port
-        "--kube-apiserver-arg anonymous-auth=true"
+      kube_inventory = [
+        {
+          url = "https://localhost:6443";
+          bearer_token = "/var/lib/k3s/tokens/telegraf";
+          insecure_skip_verify = true;
+          namespace = "";
+          resource_exclude = [
+            "persistentvolumes"
+            "persistentvolumeclaims"
+            "endpoints"
+            "ingress"
+          ];
+        }
       ];
-    in {
-      enable = true;
-      role = "server";
-      extraFlags = lib.concatStringsSep " " k3sFlags;
     };
+
+    networking.nameservers = lib.mkOverride 90 (lib.take 3 ([ netCfg.clusterDns ] ++ fcNameservers));
+
+    services.k3s =
+      let
+        k3sFlags = [
+          "--cluster-cidr=${netCfg.podCidr}"
+          "--service-cidr=${netCfg.serviceCidr}"
+          "--cluster-dns=${netCfg.clusterDns}"
+          "--node-ip=${nodeAddress}"
+          "--write-kubeconfig=${defaultKubeconfig}"
+          "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
+          "--flannel-backend=host-gw"
+          "--flannel-iface=${fclib.network.srv.interface}"
+          "--datastore-endpoint=postgres:///kubernetes?host=/run/postgresql"
+          "--token-file=/var/lib/k3s/secret_token"
+          "--data-dir=/var/lib/k3s"
+          "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
+          # required for anonymous access to apiserver health port
+          "--kube-apiserver-arg anonymous-auth=true"
+        ];
+      in
+      {
+        enable = true;
+        role = "server";
+        extraFlags = lib.concatStringsSep " " k3sFlags;
+      };
 
     systemd.services.fc-set-k3s-config-permissions = {
       requires = [ "k3s.service" ];
@@ -527,10 +582,8 @@ in {
       '';
     };
 
-    systemd.services.fc-k3s-token-telegraf =
-      makeAuthTokenService "telegraf" "io.flyingcircus.service-token.telegraf";
-    systemd.services.fc-k3s-token-sensuclient =
-      makeAuthTokenService "sensuclient" "io.flyingcircus.service-token.sensu-client";
+    systemd.services.fc-k3s-token-telegraf = makeAuthTokenService "telegraf" "io.flyingcircus.service-token.telegraf";
+    systemd.services.fc-k3s-token-sensuclient = makeAuthTokenService "sensuclient" "io.flyingcircus.service-token.sensu-client";
     systemd.services.telegraf.after = [ "fc-k3s-token-telegraf.service" ];
     systemd.services.sensu-client.after = [ "fc-k3s-token-sensuclient.service" ];
 
@@ -561,7 +614,7 @@ in {
 
     systemd.services.kube-dashboard = rec {
       requires = [ "k3s.service" ];
-      wants = ["kube-dashboard-metrics-scraper.service" ];
+      wants = [ "kube-dashboard-metrics-scraper.service" ];
       wantedBy = [ "multi-user.target" ];
       after = requires ++ wants;
       description = "Backend for Kubernetes Dashboard";
@@ -613,12 +666,25 @@ in {
     ### Fixes for upstream issues
 
     # https://github.com/NixOS/nixpkgs/issues/103158
-    systemd.services.k3s.after = [ "network-online.service" "firewall.service" "postgresql.service" ];
-    systemd.services.k3s.requires = [ "firewall.service" "postgresql.service" ];
+    systemd.services.k3s.after = [
+      "network-online.service"
+      "firewall.service"
+      "postgresql.service"
+    ];
+    systemd.services.k3s.requires = [
+      "firewall.service"
+      "postgresql.service"
+    ];
     systemd.services.k3s.serviceConfig.KillMode = lib.mkForce "control-group";
 
     # https://github.com/NixOS/nixpkgs/issues/98766
-    boot.kernelModules = [ "ip_conntrack" "ip_vs" "ip_vs_rr" "ip_vs_wrr" "ip_vs_sh" ];
+    boot.kernelModules = [
+      "ip_conntrack"
+      "ip_vs"
+      "ip_vs_rr"
+      "ip_vs_wrr"
+      "ip_vs_sh"
+    ];
   };
 
 }

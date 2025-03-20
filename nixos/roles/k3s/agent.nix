@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -9,7 +14,7 @@ let
   agents = fclib.findServices "k3s-agent-agent";
   agentNames = map (service: head (lib.splitString "." service.address)) agents;
   otherAgentNames = filter (m: m != config.networking.hostName) agentNames;
-  serverAddress = lib.replaceStrings ["gocept.net"] ["fcio.net"] server.address or "";
+  serverAddress = lib.replaceStrings [ "gocept.net" ] [ "fcio.net" ] server.address or "";
   agentAddress = head fclib.network.srv.v4.addresses;
   tokenFile = "/var/lib/k3s/secret_token";
   k3sFlags = [
@@ -41,7 +46,10 @@ in
         }
       ];
 
-      boot.supportedFilesystems = [ "nfs" "nfs4" ];
+      boot.supportedFilesystems = [
+        "nfs"
+        "nfs4"
+      ];
 
       environment.systemPackages = with pkgs; [
         config.services.k3s.package
@@ -61,7 +69,8 @@ in
                 fc-maintenance -v constraints --failure-exit-code 75 ${nodeArgs}
                 fc-kubernetes -v drain --reason fc-agent-maintenance
               '';
-            in "${script}";
+            in
+            "${script}";
 
           # Uncordon node at the end of maintenance request execution.
           leave = ''
@@ -71,13 +80,15 @@ in
       };
 
       flyingcircus.services.telegraf.inputs = {
-        kubernetes  = [{
-          # Works without auth on localhost.
-          url = "http://localhost:10255";
-          # If the string isn't defined, the kubernetes plugin uses a default location
-          # for the bearer token which we don't use.
-          bearer_token_string = "doesntmatter";
-        }];
+        kubernetes = [
+          {
+            # Works without auth on localhost.
+            url = "http://localhost:10255";
+            # If the string isn't defined, the kubernetes plugin uses a default location
+            # for the bearer token which we don't use.
+            bearer_token_string = "doesntmatter";
+          }
+        ];
       };
 
       flyingcircus.services.sensu-client = {
@@ -98,7 +109,7 @@ in
         };
 
         systemdUnitChecks = {
-          "k3s.service" = {};
+          "k3s.service" = { };
         };
       };
 
@@ -115,7 +126,6 @@ in
         inherit tokenFile;
         extraFlags = lib.concatStringsSep " " k3sFlags;
       };
-
 
       users.groups.kubernetes.gid = config.ids.gids.kubernetes;
 
@@ -135,11 +145,20 @@ in
       ### Fixes for upstream issues
 
       # https://github.com/NixOS/nixpkgs/issues/103158
-      systemd.services.k3s.after = [ "network-online.service" "firewall.service" ];
+      systemd.services.k3s.after = [
+        "network-online.service"
+        "firewall.service"
+      ];
       systemd.services.k3s.serviceConfig.KillMode = lib.mkForce "control-group";
 
       # https://github.com/NixOS/nixpkgs/issues/98766
-      boot.kernelModules = [ "ip_conntrack" "ip_vs" "ip_vs_rr" "ip_vs_wrr" "ip_vs_sh" ];
+      boot.kernelModules = [
+        "ip_conntrack"
+        "ip_vs"
+        "ip_vs_rr"
+        "ip_vs_wrr"
+        "ip_vs_sh"
+      ];
       networking.firewall.extraCommands = ''
         iptables -A INPUT -i cni+ -j ACCEPT
       '';

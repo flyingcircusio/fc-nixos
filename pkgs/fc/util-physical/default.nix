@@ -1,9 +1,16 @@
 {
-  lib, stdenv, makeWrapper
-, bash, ceph-client, util-linux, systemd, coreutils, gnugrep, xfsprogs
-, fc
+  lib,
+  stdenv,
+  makeWrapper,
+  bash,
+  ceph-client,
+  util-linux,
+  systemd,
+  coreutils,
+  gnugrep,
+  xfsprogs,
+  fc,
 }:
-
 
 stdenv.mkDerivation rec {
   version = "0.3";
@@ -15,7 +22,16 @@ stdenv.mkDerivation rec {
   dontConfigure = true;
 
   nativeBuildInputs = [ makeWrapper ];
-  propagatedBuildInputs = [ bash ceph-client systemd fc.agent gnugrep util-linux coreutils xfsprogs ];
+  propagatedBuildInputs = [
+    bash
+    ceph-client
+    systemd
+    fc.agent
+    gnugrep
+    util-linux
+    coreutils
+    xfsprogs
+  ];
 
   installPhase = ''
     mkdir $out

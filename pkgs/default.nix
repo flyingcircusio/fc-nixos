@@ -12,4 +12,5 @@ let
 
   };
 
-in self.fc
+in
+self.fc

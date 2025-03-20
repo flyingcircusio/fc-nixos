@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -6,54 +11,101 @@ let
   cfg = config.flyingcircus.services.haproxy;
   fclib = config.fclib;
 
-  proxyGenerator = data: (
-    fclib.indentWith "  " (lib.flatten [
-      (if data.mode != null then ["mode ${data.mode}"] else [])
-      (if data ? balance && data.balance != null then ["balance ${data.balance}"] else [])
-      (if data ? options then map (option: "option ${option}" ) data.options else [])
-      (if data ? timeout then lib.flatten (lib.mapAttrsToList (key: value: if value != null then ["timeout ${key} ${value}"] else []) data.timeout) else [])
-      (if data ? binds then map (bind: "bind ${bind}" ) data.binds else [])
-      (if data ? default_backend && data.default_backend != null then ["default_backend ${data.default_backend}"] else [])
-      (if data ? servers then map (server: "server ${server}") data.servers else [])
-      (lib.splitString "\n" data.extraConfig)
-    ])
-  );
+  proxyGenerator =
+    data:
+    (fclib.indentWith "  " (
+      lib.flatten [
+        (if data.mode != null then [ "mode ${data.mode}" ] else [ ])
+        (if data ? balance && data.balance != null then [ "balance ${data.balance}" ] else [ ])
+        (if data ? options then map (option: "option ${option}") data.options else [ ])
+        (
+          if data ? timeout then
+            lib.flatten (
+              lib.mapAttrsToList (
+                key: value: if value != null then [ "timeout ${key} ${value}" ] else [ ]
+              ) data.timeout
+            )
+          else
+            [ ]
+        )
+        (if data ? binds then map (bind: "bind ${bind}") data.binds else [ ])
+        (
+          if data ? default_backend && data.default_backend != null then
+            [ "default_backend ${data.default_backend}" ]
+          else
+            [ ]
+        )
+        (if data ? servers then map (server: "server ${server}") data.servers else [ ])
+        (lib.splitString "\n" data.extraConfig)
+      ]
+    ));
 
-  generatedConfig = (x: lib.trivial.pipe x [ lib.flatten (lib.concatStringsSep "\n") ]) [
-    (lib.flatten [
-      ["global"]
-      (fclib.indentWith "  " (lib.flatten [
-        (if cfg.global.daemon then ["daemon"] else []) # daemon is already set and won't be shadowed
-        ["chroot ${cfg.global.chroot}"]
-        ["user ${cfg.global.user}"]
-        ["group ${cfg.global.group}"]
-        ["maxconn ${toString cfg.global.maxconn}"]
-        (lib.splitString "\n" cfg.global.extraConfig)
-      ]))
-    ])
-    ["\n"]
-    (lib.flatten [
-      ["defaults"]
-      (proxyGenerator cfg.defaults)
-    ])
-    ["\n"]
-    (lib.flatten (lib.mapAttrsToList (name: data: ((lib.flatten [
-      ["listen ${name}"]
-      (proxyGenerator data)
-      ["\n"]
-    ]))) cfg.listen))
-    (lib.flatten (lib.mapAttrsToList (name: data: ((lib.flatten [
-      ["frontend ${name}"]
-      (proxyGenerator data)
-      ["\n"]
-    ]))) cfg.frontend))
-    (lib.flatten (lib.mapAttrsToList (name: data: ((lib.flatten [
-      ["backend ${name}"]
-      (proxyGenerator data)
-      ["\n"]
-    ]))) cfg.backend))
-    (lib.splitString "\n" cfg.extraConfig)
-  ];
+  generatedConfig =
+    (
+      x:
+      lib.trivial.pipe x [
+        lib.flatten
+        (lib.concatStringsSep "\n")
+      ]
+    )
+      [
+        (lib.flatten [
+          [ "global" ]
+          (fclib.indentWith "  " (
+            lib.flatten [
+              (if cfg.global.daemon then [ "daemon" ] else [ ]) # daemon is already set and won't be shadowed
+              [ "chroot ${cfg.global.chroot}" ]
+              [ "user ${cfg.global.user}" ]
+              [ "group ${cfg.global.group}" ]
+              [ "maxconn ${toString cfg.global.maxconn}" ]
+              (lib.splitString "\n" cfg.global.extraConfig)
+            ]
+          ))
+        ])
+        [ "\n" ]
+        (lib.flatten [
+          [ "defaults" ]
+          (proxyGenerator cfg.defaults)
+        ])
+        [ "\n" ]
+        (lib.flatten (
+          lib.mapAttrsToList (
+            name: data:
+            (
+              (lib.flatten [
+                [ "listen ${name}" ]
+                (proxyGenerator data)
+                [ "\n" ]
+              ])
+            )
+          ) cfg.listen
+        ))
+        (lib.flatten (
+          lib.mapAttrsToList (
+            name: data:
+            (
+              (lib.flatten [
+                [ "frontend ${name}" ]
+                (proxyGenerator data)
+                [ "\n" ]
+              ])
+            )
+          ) cfg.frontend
+        ))
+        (lib.flatten (
+          lib.mapAttrsToList (
+            name: data:
+            (
+              (lib.flatten [
+                [ "backend ${name}" ]
+                (proxyGenerator data)
+                [ "\n" ]
+              ])
+            )
+          ) cfg.backend
+        ))
+        (lib.splitString "\n" cfg.extraConfig)
+      ];
 
   configFiles = filter (lib.hasSuffix ".cfg") (fclib.files /etc/local/haproxy);
 
@@ -69,16 +121,25 @@ let
       [ ("# XXX: you can remove this after upgrading to 20.09: " + oldStatsLine) ]
       importedCfgContent;
 
-  haproxyCfgContent = (
-    if importedCfgContent != modifiedCfgContent
-    then lib.info
-      ("HAProxy: you can remove the 'stats socket' line from your config."
-      + " It's ignored on NixOS 20.09.")
-    else lib.id
-    ) (
-      (if cfg.enableStructuredConfig then generatedConfig else "") +
-      (if cfg.enableLocalPlainConfig then "\n# Plain config from /etc/local/haproxy/*.conf starts here\n" + modifiedCfgContent else "")
-    );
+  haproxyCfgContent =
+    (
+      if importedCfgContent != modifiedCfgContent then
+        lib.info (
+          "HAProxy: you can remove the 'stats socket' line from your config."
+          + " It's ignored on NixOS 20.09."
+        )
+      else
+        lib.id
+    )
+      (
+        (if cfg.enableStructuredConfig then generatedConfig else "")
+        + (
+          if cfg.enableLocalPlainConfig then
+            "\n# Plain config from /etc/local/haproxy/*.conf starts here\n" + modifiedCfgContent
+          else
+            ""
+        )
+      );
 
   example = ''
     # haproxy configuration example - copy to haproxy.cfg and adapt.
@@ -114,11 +175,14 @@ let
 
 in
 {
-  options = with lib; with types; {
-    flyingcircus.services.haproxy = {
-      enable = mkEnableOption "FC-customized HAproxy";
-    } // (import ./config-options.nix { inherit lib; });
-  };
+  options =
+    with lib;
+    with types;
+    {
+      flyingcircus.services.haproxy = {
+        enable = mkEnableOption "FC-customized HAproxy";
+      } // (import ./config-options.nix { inherit lib; });
+    };
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
@@ -138,9 +202,7 @@ in
       };
 
       environment.systemPackages = [
-        (pkgs.writeScriptBin
-          "haproxy-show-config"
-          "cat /etc/haproxy.cfg")
+        (pkgs.writeScriptBin "haproxy-show-config" "cat /etc/haproxy.cfg")
       ];
 
       flyingcircus.services = {
@@ -151,7 +213,7 @@ in
         };
 
         telegraf.inputs = {
-          prometheus  = [ { urls = [ "http://localhost:9127/metrics" ]; } ];
+          prometheus = [ { urls = [ "http://localhost:9127/metrics" ]; } ];
         };
       };
 

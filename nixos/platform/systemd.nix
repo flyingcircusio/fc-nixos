@@ -1,5 +1,10 @@
 # Configure systemd journal access and local units.
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -39,24 +44,28 @@ in
 
     flyingcircus.activationScripts = {
 
-      systemd-journal-acl = let
-      mkSetfaclCmd = group: ''
-        if [ $(getent group ${group}) ]; then
-          ${pkgs.acl}/bin/setfacl -R -m g:${group}:rX -m d:g:${group}:rX /var/log/journal
-        else
-          echo "Warning: expected group '${group}' not found, skipping ACL."
-        fi
-      '';
+      systemd-journal-acl =
+        let
+          mkSetfaclCmd = group: ''
+            if [ $(getent group ${group}) ]; then
+              ${pkgs.acl}/bin/setfacl -R -m g:${group}:rX -m d:g:${group}:rX /var/log/journal
+            else
+              echo "Warning: expected group '${group}' not found, skipping ACL."
+            fi
+          '';
 
-      in {
-        deps = [ "users" ];
-        text = ''
-          # Note: journald seems to change some permissions and the group if they
-          # differ from its expectations for /var/log/journal.
-          # Changing permissions via ACL like here is supported by journald.
-          install -d -g systemd-journal /var/log/journal
-        '' + lib.concatMapStringsSep "\n" mkSetfaclCmd cfg.journalReadGroups;
-      };
+        in
+        {
+          deps = [ "users" ];
+          text =
+            ''
+              # Note: journald seems to change some permissions and the group if they
+              # differ from its expectations for /var/log/journal.
+              # Changing permissions via ACL like here is supported by journald.
+              install -d -g systemd-journal /var/log/journal
+            ''
+            + lib.concatMapStringsSep "\n" mkSetfaclCmd cfg.journalReadGroups;
+        };
     };
 
     flyingcircus.localConfigDirs.systemd = {
@@ -71,14 +80,19 @@ in
 
     systemd.units =
       let
-        unit_files = if (builtins.pathExists "/etc/local/systemd")
-          then config.fclib.filesRel "/etc/local/systemd" else [];
-        unit_configs = map
-          (file: { "${file}" =
-             { text = readFile ("/etc/local/systemd/" + file);
-               wantedBy = [ "multi-user.target" ];};})
-          unit_files;
-      in zipAttrsWith (name: values: (last values)) unit_configs;
+        unit_files =
+          if (builtins.pathExists "/etc/local/systemd") then
+            config.fclib.filesRel "/etc/local/systemd"
+          else
+            [ ];
+        unit_configs = map (file: {
+          "${file}" = {
+            text = readFile ("/etc/local/systemd/" + file);
+            wantedBy = [ "multi-user.target" ];
+          };
+        }) unit_files;
+      in
+      zipAttrsWith (name: values: (last values)) unit_configs;
 
   };
 }
