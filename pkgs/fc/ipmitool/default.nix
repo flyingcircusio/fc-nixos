@@ -1,5 +1,10 @@
-{ lib, stdenv, python3Full, ipmitool, makeWrapper }:
-
+{
+  lib,
+  stdenv,
+  python3Full,
+  ipmitool,
+  makeWrapper,
+}:
 
 stdenv.mkDerivation rec {
   version = "0.1";

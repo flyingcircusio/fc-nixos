@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -15,8 +20,8 @@ let
   restListenUri = "${webListenUri}/api";
 
   glNodes =
-    fclib.listServiceAddresses "loghost-server" ++
-    fclib.listServiceAddresses "graylog-server";
+    fclib.listServiceAddresses "loghost-server"
+    ++ fclib.listServiceAddresses "graylog-server";
 
   glPlugins = pkgs.buildEnv {
     name = "graylog-plugins";
@@ -46,41 +51,40 @@ let
     cat /run/graylog/graylog.conf
   '';
 
-  defaultGraylogConfig = let
-    slash = addr: if fclib.isIp4 addr then "/32" else "/128";
-    otherGraylogNodes =
-      filter
-        (a: elem "${a.name}.${config.networking.domain}" glNodes)
-        config.flyingcircus.encAddresses;
+  defaultGraylogConfig =
+    let
+      slash = addr: if fclib.isIp4 addr then "/32" else "/128";
+      otherGraylogNodes = filter (
+        a: elem "${a.name}.${config.networking.domain}" glNodes
+      ) config.flyingcircus.encAddresses;
 
-  in {
-    http_bind_address = httpBindAddress;
-    http_publish_uri = webListenUri;
-    timezone = config.time.timeZone;
+    in
+    {
+      http_bind_address = httpBindAddress;
+      http_publish_uri = webListenUri;
+      timezone = config.time.timeZone;
 
-    processbuffer_processors =
-      fclib.max [
+      processbuffer_processors = fclib.max [
         ((fclib.currentCores 1) - 2)
         5
       ];
 
-    outputbuffer_processors =
-      fclib.max [
+      outputbuffer_processors = fclib.max [
         ((fclib.currentCores 1) / 2)
         3
       ];
-  } //
-  lib.optionalAttrs (otherGraylogNodes != []) {
-    trusted_proxies =
-      concatMapStringsSep
-        ", "
-        (a: (fclib.stripNetmask a.ip) + (slash a.ip))
-        otherGraylogNodes;
-  };
+    }
+    // lib.optionalAttrs (otherGraylogNodes != [ ]) {
+      trusted_proxies = concatMapStringsSep ", " (
+        a: (fclib.stripNetmask a.ip) + (slash a.ip)
+      ) otherGraylogNodes;
+    };
 
-  graylogConf = let
+  graylogConf =
+    let
       mkLine = name: value: "${name} = ${toString value}";
-    in ''
+    in
+    ''
       is_master = ${lib.boolToString cfg.isMaster}
       node_id_file = ${cfg.nodeIdFile}
       elasticsearch_hosts = ${lib.concatStringsSep "," cfg.elasticsearchHosts}
@@ -96,18 +100,16 @@ let
       versionchecks = false
 
       # Settings here can be overridden by flyingcircus.services.graylog.config.
-    '' + lib.concatStringsSep
-            "\n"
-            (lib.mapAttrsToList
-              mkLine
-                (defaultGraylogConfig // cfg.config));
+    ''
+    + lib.concatStringsSep "\n" (lib.mapAttrsToList mkLine (defaultGraylogConfig // cfg.config));
 
   graylogConfPath = "/run/graylog/graylog.conf";
 
   telegrafUsername = "telegraf-${config.networking.hostName}";
   telegrafPassword = fclib.derivePasswordForHost "graylog-telegraf";
 
-in {
+in
+{
 
   options = with lib; {
 
@@ -194,7 +196,7 @@ in {
 
       config = mkOption {
         type = types.attrs;
-        default = {};
+        default = { };
         description = ''
           Additional config params for the Graylog server config file.
           They override default settings defined by this service with the same name.
@@ -202,7 +204,6 @@ in {
       };
     };
   };
-
 
   config = lib.mkIf cfg.enable {
 
@@ -216,7 +217,7 @@ in {
     };
 
     users.groups = lib.mkIf (cfg.user == "graylog") {
-      graylog = {};
+      graylog = { };
     };
 
     systemd.tmpfiles.rules = [
@@ -234,35 +235,44 @@ in {
 
       description = "Graylog Server";
       wantedBy = [ "multi-user.target" ];
-      environment = let
-        javaHeap = ''${toString
-          (fclib.max [
-            ((fclib.currentMemory 1024) * cfg.heapPercentage / 100)
-            768
-            ])}m'';
+      environment =
+        let
+          javaHeap = ''${
+            toString (
+              fclib.max [
+                ((fclib.currentMemory 1024) * cfg.heapPercentage / 100)
+                768
+              ]
+            )
+          }m'';
 
-        javaOpts = [
-          "-Djava.library.path=${cfg.package}/lib/sigar"
-          "-Dlog4j.configurationFile=file://${./log4j2.xml}"
-          "-Xms${javaHeap}"
-          "-Xmx${javaHeap}"
-          "-XX:NewRatio=1"
-          "-server"
-          "-XX:+ResizeTLAB"
-          "-XX:+UseConcMarkSweepGC"
-          "-XX:+CMSConcurrentMTEnabled"
-          "-XX:+CMSClassUnloadingEnabled"
-          "-XX:+UseParNewGC"
-          "-XX:-OmitStackTraceInFastThrow"
-        ];
+          javaOpts = [
+            "-Djava.library.path=${cfg.package}/lib/sigar"
+            "-Dlog4j.configurationFile=file://${./log4j2.xml}"
+            "-Xms${javaHeap}"
+            "-Xmx${javaHeap}"
+            "-XX:NewRatio=1"
+            "-server"
+            "-XX:+ResizeTLAB"
+            "-XX:+UseConcMarkSweepGC"
+            "-XX:+CMSConcurrentMTEnabled"
+            "-XX:+CMSClassUnloadingEnabled"
+            "-XX:+UseParNewGC"
+            "-XX:-OmitStackTraceInFastThrow"
+          ];
 
-      in {
-        JAVA_HOME = pkgs.jdk8_headless;
-        GRAYLOG_CONF = graylogConfPath;
-        JAVA_OPTS = lib.concatStringsSep " " javaOpts;
-      };
+        in
+        {
+          JAVA_HOME = pkgs.jdk8_headless;
+          GRAYLOG_CONF = graylogConfPath;
+          JAVA_OPTS = lib.concatStringsSep " " javaOpts;
+        };
 
-      path = [ pkgs.jdk8_headless pkgs.which pkgs.procps ];
+      path = [
+        pkgs.jdk8_headless
+        pkgs.which
+        pkgs.procps
+      ];
 
       preStart = ''
         rm -rf /var/lib/graylog/plugins || true
@@ -316,55 +326,61 @@ in {
     systemd.services.fc-graylog-config = {
       description = "Configure Graylog FCIO settings";
       requires = [ "graylog.service" ];
-      after = [ "graylog.service" "mongodb.service" "elasticsearch.service" ];
+      after = [
+        "graylog.service"
+        "mongodb.service"
+        "elasticsearch.service"
+      ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";
         User = config.services.graylog.user;
         RemainAfterExit = true;
       };
-      script = let
+      script =
+        let
 
-        syslogUdpConfiguration = {
-          configuration = {
-            bind_address = "0.0.0.0";
-            port = cfg.syslogInputPort;
+          syslogUdpConfiguration = {
+            configuration = {
+              bind_address = "0.0.0.0";
+              port = cfg.syslogInputPort;
+            };
+            title = "Syslog UDP";
+            # be careful changing it, it's used as
+            # a primary key for identifying the config
+            # object
+            type = "org.graylog2.inputs.syslog.udp.SyslogUDPInput";
+            global = true;
           };
-          title = "Syslog UDP"; # be careful changing it, it's used as
-                                # a primary key for identifying the config
-                                # object
-          type = "org.graylog2.inputs.syslog.udp.SyslogUDPInput";
-          global = true;
-        };
 
-        gelfTcpConfiguration = {
-          configuration = {
-            bind_address = "0.0.0.0";
-            port = cfg.gelfTCPGraylogPort;
+          gelfTcpConfiguration = {
+            configuration = {
+              bind_address = "0.0.0.0";
+              port = cfg.gelfTCPGraylogPort;
+            };
+            title = "GELF TCP";
+            type = "org.graylog2.inputs.gelf.tcp.GELFTCPInput";
+            global = true;
           };
-          title = "GELF TCP";
-          type = "org.graylog2.inputs.gelf.tcp.GELFTCPInput";
-          global = true;
-        };
 
-        beatsTcpConfiguration = {
-          configuration = {
-            bind_address = "0.0.0.0";
-            no_beats_prefix = true;
-            port = cfg.beatsTCPGraylogPort;
+          beatsTcpConfiguration = {
+            configuration = {
+              bind_address = "0.0.0.0";
+              no_beats_prefix = true;
+              port = cfg.beatsTCPGraylogPort;
+            };
+            title = "Beats TCP";
+            type = "org.graylog.plugins.beats.Beats2Input";
+            global = true;
           };
-          title = "Beats TCP";
-          type = "org.graylog.plugins.beats.Beats2Input";
-          global = true;
-        };
 
-        geodbConfiguration = {
-          enabled = true;
-          db_type = "MAXMIND_CITY";
-          db_path = "/var/lib/graylog/GeoLite2-City.mmdb";
-        };
+          geodbConfiguration = {
+            enabled = true;
+            db_type = "MAXMIND_CITY";
+            db_path = "/var/lib/graylog/GeoLite2-City.mmdb";
+          };
 
-        ldapConfiguration = {
+          ldapConfiguration = {
             enabled = true;
             system_username = fclib.getLdapNodeDN;
             system_password = fclib.getLdapNodePassword;
@@ -376,51 +392,55 @@ in {
             search_pattern = "(&(&(objectClass=inetOrgPerson)(uid={0}))(memberOf=cn=${config.flyingcircus.enc.parameters.resource_group},ou=GroupOfNames,dc=gocept,dc=com))";
             display_name_attribute = "displayName";
             default_group = "Admin";
-        };
+          };
 
-        metricsRole = {
-          description = "Provides read access to all system metrics";
-          permissions = ["metrics:*"];
-          read_only = false;
-        };
+          metricsRole = {
+            description = "Provides read access to all system metrics";
+            permissions = [ "metrics:*" ];
+            read_only = false;
+          };
 
-        telegrafUser = {
-          password = telegrafPassword;
-          roles = [ "Metrics" ];
-        };
+          telegrafUser = {
+            password = telegrafPassword;
+            roles = [ "Metrics" ];
+          };
 
-        callApi = what: "${pkgs.fc.agent}/bin/fc-graylog ${what}";
+          callApi = what: "${pkgs.fc.agent}/bin/fc-graylog ${what}";
 
-        configureInput = input:
-          callApi "configure --input '${toJSON input}'";
-      in ''
-        ${configureInput syslogUdpConfiguration}
-        ${configureInput gelfTcpConfiguration}
-        ${configureInput beatsTcpConfiguration}
+          configureInput = input: callApi "configure --input '${toJSON input}'";
+        in
+        ''
+          ${configureInput syslogUdpConfiguration}
+          ${configureInput gelfTcpConfiguration}
+          ${configureInput beatsTcpConfiguration}
 
-        ${callApi ''
-          call \
-          -s 202 \
-          /system/cluster_config/org.graylog.plugins.map.config.GeoIpResolverConfig \
-          '${toJSON geodbConfiguration}'
-        ''}
+          ${callApi ''
+            call \
+            -s 202 \
+            /system/cluster_config/org.graylog.plugins.map.config.GeoIpResolverConfig \
+            '${toJSON geodbConfiguration}'
+          ''}
 
-        ${callApi ''
-          call \
-          -s 204 \
-          /system/ldap/settings \
-          '${toJSON ldapConfiguration}'
-        ''}
+          ${callApi ''
+            call \
+            -s 204 \
+            /system/ldap/settings \
+            '${toJSON ldapConfiguration}'
+          ''}
 
-        ${callApi "ensure-role Metrics '${toJSON metricsRole}'"}
+          ${callApi "ensure-role Metrics '${toJSON metricsRole}'"}
 
-        ${callApi "ensure-user ${telegrafUsername} '${toJSON telegrafUser}'"}
-      '';
+          ${callApi "ensure-user ${telegrafUsername} '${toJSON telegrafUser}'"}
+        '';
     };
 
     systemd.services.graylog-collect-journal-age-metric = rec {
       description = "Collect journal age and report to Telegraf";
-      wantedBy = [ "graylog.service" "telegraf.service" "fc-graylog-config.service" ];
+      wantedBy = [
+        "graylog.service"
+        "telegraf.service"
+        "fc-graylog-config.service"
+      ];
       after = wantedBy;
       serviceConfig = {
         User = "telegraf";
@@ -482,20 +502,22 @@ in {
     flyingcircus.services.telegraf.inputs.graylog = [
       {
         servers = [ "${restListenUri}/system/metrics/multiple" ];
-        metrics = [ "jvm.memory.total.committed"
-                    "jvm.memory.total.used"
-                    "jvm.threads.count"
-                    "org.graylog2.buffers.input.size"
-                    "org.graylog2.buffers.input.usage"
-                    "org.graylog2.buffers.output.size"
-                    "org.graylog2.buffers.output.usage"
-                    "org.graylog2.buffers.process.size"
-                    "org.graylog2.buffers.process.usage"
-                    "org.graylog2.journal.oldest-segment"
-                    "org.graylog2.journal.size"
-                    "org.graylog2.journal.size-limit"
-                    "org.graylog2.throughput.input"
-                    "org.graylog2.throughput.output" ];
+        metrics = [
+          "jvm.memory.total.committed"
+          "jvm.memory.total.used"
+          "jvm.threads.count"
+          "org.graylog2.buffers.input.size"
+          "org.graylog2.buffers.input.usage"
+          "org.graylog2.buffers.output.size"
+          "org.graylog2.buffers.output.usage"
+          "org.graylog2.buffers.process.size"
+          "org.graylog2.buffers.process.usage"
+          "org.graylog2.journal.oldest-segment"
+          "org.graylog2.journal.size"
+          "org.graylog2.journal.size-limit"
+          "org.graylog2.throughput.input"
+          "org.graylog2.throughput.output"
+        ];
         username = telegrafUsername;
         password = telegrafPassword;
       }

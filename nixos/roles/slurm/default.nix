@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with builtins;
 
@@ -12,7 +17,7 @@ let
   extDependencyEnabled = config.flyingcircus.roles.slurm-external-dependency.enable;
   anyRoleEnabled = controllerEnabled || nodeEnabled || dbdserverEnabled || extDependencyEnabled;
 
-  serviceHostName = service: lib.head ( lib.splitString "." service.address );
+  serviceHostName = service: lib.head (lib.splitString "." service.address);
 
   # XXX: We expect controlMachine and dbdserverService to be the same at the moment.
   # Exactly one control machine should exist at the moment
@@ -24,11 +29,12 @@ let
   # Other machines in the RG that are needed to run jobs, for example databases.
   # Compute Nodes will not be set to ready if these machines are not
   # in service (doing maintenance).
-  externalDependencyMachines = map serviceHostName (fclib.findServices "slurm-external-dependency-dep");
+  externalDependencyMachines = map serviceHostName (
+    fclib.findServices "slurm-external-dependency-dep"
+  );
 
   inherit (config.flyingcircus) enc;
-  params = if enc ? parameters then enc.parameters else {};
-
+  params = if enc ? parameters then enc.parameters else { };
 
   nodeStr = lib.concatStringsSep "," cfg.nodes;
 
@@ -102,7 +108,7 @@ in
 
       extraRequiredMachines = mkOption {
         type = with types; listOf str;
-        default = [];
+        default = [ ];
         description = ''
           XXX: this should probably be a separate role
           A list of additional machine names that are required for running
@@ -189,8 +195,7 @@ in
 
     (lib.mkIf anyRoleEnabled {
 
-    assertions =
-      [
+      assertions = [
         {
           assertion = dbdserverEnabled -> controllerEnabled;
           message = "slurm-dbdserver requires the slurm-controller role on the same machine!";
@@ -201,101 +206,100 @@ in
 
       environment.etc."local/slurm/README.md".text =
         let
-          roleStr = lib.concatStringsSep ", "
-            (lib.optional controllerEnabled "*controller*" ++
-             lib.optional dbdserverEnabled "*dbdserver*" ++
-             lib.optional extDependencyEnabled "*external dependency*" ++
-             lib.optional nodeEnabled "*compute node*");
+          roleStr = lib.concatStringsSep ", " (
+            lib.optional controllerEnabled "*controller*"
+            ++ lib.optional dbdserverEnabled "*dbdserver*"
+            ++ lib.optional extDependencyEnabled "*external dependency*"
+            ++ lib.optional nodeEnabled "*compute node*"
+          );
         in
         ''
-        # Slurm Workload Manager
+          # Slurm Workload Manager
 
-        ${lib.optionalString (roleStr != "")
-        "This VM is acting as: slurm ${roleStr}."
-        }
+          ${lib.optionalString (roleStr != "") "This VM is acting as: slurm ${roleStr}."}
 
-        ${lib.optionalString cfg.requiresGlobalMaintenance
-        "This VM has the global maintenance flag set which means that all
+          ${lib.optionalString cfg.requiresGlobalMaintenance "This VM has the global maintenance flag set which means that all
          compute nodes will be drained and set to DOWN before maintenance
-         tasks are executed."
-        }
+         tasks are executed."}
 
-        Generated config is at `${slurmCfg.etcSlurm}` which is also linked to `/etc/slurm`.
-        You can use `slurm-show-config` to view contents of all config files.
+          Generated config is at `${slurmCfg.etcSlurm}` which is also linked to `/etc/slurm`.
+          You can use `slurm-show-config` to view contents of all config files.
 
-        Cluster name is `${cfg.clusterName}`.
+          Cluster name is `${cfg.clusterName}`.
 
-        Our slurm roles work without additional configuration.
-        They automatically set up and use a slurm partition named `${cfg.partitionName}`.
+          Our slurm roles work without additional configuration.
+          They automatically set up and use a slurm partition named `${cfg.partitionName}`.
 
-        ${if cfg.nodes != [] then ''
-        Following nodes are members of the `${cfg.partitionName}` partition:
-        `${fclib.docList cfg.nodes}`
-        '' else ''
-        **Warning**: No nodes are configured! If default config is used, this
-        means that no machine with the *slurm-node* role was found in the
-        resource group.
-        *slurmctld* is disabled on this machine until nodes are added.
-        ''}
+          ${
+            if cfg.nodes != [ ] then
+              ''
+                Following nodes are members of the `${cfg.partitionName}` partition:
+                `${fclib.docList cfg.nodes}`
+              ''
+            else
+              ''
+                **Warning**: No nodes are configured! If default config is used, this
+                means that no machine with the *slurm-node* role was found in the
+                resource group.
+                *slurmctld* is disabled on this machine until nodes are added.
+              ''
+          }
 
-        ## Slurm commands
+          ## Slurm commands
 
-        The standard slurm commands like `srun`, `sacct`, `scontrol` and `sinfo` are
-        installed globally. Some require elevated privileges and must be run
-        with `sudo -u slurm`. `sudo-srv` users can run all commads as `slurm`
-        user.
+          The standard slurm commands like `srun`, `sacct`, `scontrol` and `sinfo` are
+          installed globally. Some require elevated privileges and must be run
+          with `sudo -u slurm`. `sudo-srv` users can run all commads as `slurm`
+          user.
 
-        ${lib.optionalString nodeEnabled ''
-        Usable real memory for this node is set to ${toString cfg.realMemory} MiB
-        and CPU count is ${toString cfg.cpus}.
-        ''}
+          ${lib.optionalString nodeEnabled ''
+            Usable real memory for this node is set to ${toString cfg.realMemory} MiB
+            and CPU count is ${toString cfg.cpus}.
+          ''}
 
-        ## fc-slurm Global/Controller Commands
+          ## fc-slurm Global/Controller Commands
 
-        You can use fc-slurm to manage the state of slurm compute nodes
-        managed by this controller.
+          You can use fc-slurm to manage the state of slurm compute nodes
+          managed by this controller.
 
-        Commands should be run with sudo.
-        `fc-slurm all-nodes state` works as normal user.
+          Commands should be run with sudo.
+          `fc-slurm all-nodes state` works as normal user.
 
-        *sudo-srv* users may use `fc-slurm` without password.
+          *sudo-srv* users may use `fc-slurm` without password.
 
-        Dump node state info as JSON:
+          Dump node state info as JSON:
 
-        `fc-slurm all-nodes state`
+          `fc-slurm all-nodes state`
 
-        Drain all nodes (no new jobs allowed) and set them to DOWN afterwards:
+          Drain all nodes (no new jobs allowed) and set them to DOWN afterwards:
 
-        `sudo fc-slurm all-nodes drain-and-down`
+          `sudo fc-slurm all-nodes drain-and-down`
 
-        Mark all nodes as READY:
+          Mark all nodes as READY:
 
-        `sudo fc-slurm all-nodes ready`
+          `sudo fc-slurm all-nodes ready`
 
-        ## NixOS Options
-        ${fclib.docOption "flyingcircus.slurm.accountingStorageEnforce"}
+          ## NixOS Options
+          ${fclib.docOption "flyingcircus.slurm.accountingStorageEnforce"}
 
-        ${fclib.docOption "flyingcircus.slurm.nodes"}
+          ${fclib.docOption "flyingcircus.slurm.nodes"}
 
-        ${fclib.docOption "flyingcircus.slurm.clusterName"}
+          ${fclib.docOption "flyingcircus.slurm.clusterName"}
 
-        ${fclib.docOption "flyingcircus.slurm.partitionName"}
+          ${fclib.docOption "flyingcircus.slurm.partitionName"}
 
-        ${fclib.docOption "flyingcircus.slurm.realMemory"}
+          ${fclib.docOption "flyingcircus.slurm.realMemory"}
 
-        ${fclib.docOption "flyingcircus.slurm.cpus"}
+          ${fclib.docOption "flyingcircus.slurm.cpus"}
 
-        ${fclib.docOption "services.slurm.extraConfig"}
+          ${fclib.docOption "services.slurm.extraConfig"}
 
-        ${fclib.docOption "services.slurm.dbdserver.extraConfig"}
-      '';
+          ${fclib.docOption "services.slurm.dbdserver.extraConfig"}
+        '';
 
       environment.systemPackages = [
         (pkgs.writeShellScriptBin "slurm-config-dir" "echo ${slurmCfg.etcSlurm}")
-        (pkgs.writeShellScriptBin
-          "slurm-readme"
-          "${pkgs.rich-cli}/bin/rich /etc/local/slurm/README.md"
-        )
+        (pkgs.writeShellScriptBin "slurm-readme" "${pkgs.rich-cli}/bin/rich /etc/local/slurm/README.md")
         (pkgs.writeShellScriptBin "slurm-show-config" ''
           for x in ${slurmCfg.etcSlurm}/*; do
             echo "''${x}:"
@@ -325,46 +329,50 @@ in
       services.slurm = {
         inherit (cfg) clusterName;
         inherit controlMachine;
-        nodeName = [ "${nodeStr} State=UNKNOWN CPUs=${toString cfg.cpus} RealMemory=${toString cfg.realMemory}" ];
+        nodeName = [
+          "${nodeStr} State=UNKNOWN CPUs=${toString cfg.cpus} RealMemory=${toString cfg.realMemory}"
+        ];
         partitionName = [ "${cfg.partitionName} Nodes=${nodeStr} Default=YES MaxTime=INFINITE State=UP" ];
-        extraConfig = ''
-          # FCIO extra config
-          # XXX: Some settings probably be separate options later.
+        extraConfig =
+          ''
+            # FCIO extra config
+            # XXX: Some settings probably be separate options later.
 
-          MailProg = ${pkgs.mailutils}/bin/mail
+            MailProg = ${pkgs.mailutils}/bin/mail
 
-          # JOB PRIORITY
-          PriorityType = priority/multifactor
-          PriorityWeightQOS = 2000
+            # JOB PRIORITY
+            PriorityType = priority/multifactor
+            PriorityWeightQOS = 2000
 
-          # SCHEDULING
-          # Allocate individual processors and memory
-          SelectTypeParameters = CR_CPU_Memory
+            # SCHEDULING
+            # Allocate individual processors and memory
+            SelectTypeParameters = CR_CPU_Memory
 
-          # Upon registration with a valid configuration only if it was set
-          # DOWN due to being non-responsive.
+            # Upon registration with a valid configuration only if it was set
+            # DOWN due to being non-responsive.
 
-          ReturnToService = 1
+            ReturnToService = 1
 
-          SlurmctldDebug = info
-          SlurmdDebug = info
+            SlurmctldDebug = info
+            SlurmdDebug = info
 
-          # Enables resource containment using sched_setaffinity(). This
-          # enables the --cpu-bind and/or --mem-bind srun options.
-          TaskPlugin = task/cgroup,task/affinity
+            # Enables resource containment using sched_setaffinity(). This
+            # enables the --cpu-bind and/or --mem-bind srun options.
+            TaskPlugin = task/cgroup,task/affinity
 
-        '' + (lib.optionalString (dbdserverService != null) ''
-          AccountingStorageType = accounting_storage/slurmdbd
+          ''
+          + (lib.optionalString (dbdserverService != null) ''
+            AccountingStorageType = accounting_storage/slurmdbd
 
-          ${lib.optionalString (cfg.accountingStorageEnforce != null)
-          "AccountingStorageEnforce = ${cfg.accountingStorageEnforce}"
-          }
+            ${lib.optionalString (
+              cfg.accountingStorageEnforce != null
+            ) "AccountingStorageEnforce = ${cfg.accountingStorageEnforce}"}
 
-          # Include the job's comment field in the job complete message sent
-          # to the Accounting Storage database.
-          AccountingStoreFlags = job_comment
-          JobAcctGatherType = jobacct_gather/linux
-        '');
+            # Include the job's comment field in the job complete message sent
+            # to the Accounting Storage database.
+            AccountingStoreFlags = job_comment
+            JobAcctGatherType = jobacct_gather/linux
+          '');
       };
 
       systemd.services.fc-set-munge-key = {
@@ -379,12 +387,17 @@ in
           Type = "oneshot";
           ExecStart =
             let
-              pkg = (pkgs.writers.writePython3Bin
-                "fc-set-munge-key"
-                { libraries = with pkgs.python3Packages; [ rich pystemd ]; }
-                (lib.readFile ./fc-set-munge-key.py));
+              pkg = (
+                pkgs.writers.writePython3Bin "fc-set-munge-key" {
+                  libraries = with pkgs.python3Packages; [
+                    rich
+                    pystemd
+                  ];
+                } (lib.readFile ./fc-set-munge-key.py)
+              );
 
-          in "${pkg}/bin/fc-set-munge-key";
+            in
+            "${pkg}/bin/fc-set-munge-key";
         };
       };
 
@@ -428,7 +441,7 @@ in
     })
 
     # We need at least one compute node or the controller will crash on startup.
-    (lib.mkIf (controllerEnabled && cfg.nodes != []) {
+    (lib.mkIf (controllerEnabled && cfg.nodes != [ ]) {
 
       # The controller must be out of maintenance for running jobs.
       # Nodes are set to ready after controller maintenance is done
@@ -436,20 +449,20 @@ in
       # nothing to do).
       flyingcircus.agent.maintenance.slurm-controller = {
         leave =
-          "fc-slurm -v all-nodes ready --reason-must-match fc-agent:" +
-            (lib.concatMapStrings
-              (m: " --required-in-service ${m}")
-              externalDependencyMachines);
+          "fc-slurm -v all-nodes ready --reason-must-match fc-agent:"
+          + (lib.concatMapStrings (m: " --required-in-service ${m}") externalDependencyMachines);
       };
 
       flyingcircus.services.telegraf.inputs = {
-        exec = [{
-          commands = [ "${config.flyingcircus.agent.package}/bin/fc-slurm metrics" ];
-          timeout = "10s";
-          data_format = "json";
-          json_name_key = "name";
-          tag_keys = [ "account" ];
-        }];
+        exec = [
+          {
+            commands = [ "${config.flyingcircus.agent.package}/bin/fc-slurm metrics" ];
+            timeout = "10s";
+            data_format = "json";
+            json_name_key = "name";
+            tag_keys = [ "account" ];
+          }
+        ];
       };
 
       services.slurm = {
@@ -481,7 +494,10 @@ in
       };
 
       systemd.services.slurmd = {
-        after = [ "munged.service" "slurmctld.service" ];
+        after = [
+          "munged.service"
+          "slurmctld.service"
+        ];
         serviceConfig = {
           Restart = "always";
         };
@@ -490,7 +506,6 @@ in
       systemd.services.fc-agent.environment = {
         SLURM_CONF = "${slurmCfg.etcSlurm}/slurm.conf";
       };
-
 
     })
 
@@ -513,26 +528,31 @@ in
         ];
         partOf = [ "mysql.service" ];
         requiredBy = [ "slurmdbd.service" ];
-        after = [ "mysql.service" "fc-mysql-post-init.service" ];
+        after = [
+          "mysql.service"
+          "fc-mysql-post-init.service"
+        ];
 
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
         };
 
-        script = let
-          ensureUserAndDatabase = ''
-            CREATE USER IF NOT EXISTS slurm@localhost;
-            CREATE DATABASE IF NOT EXISTS slurm_acct_db;
-            GRANT ALL ON slurm_acct_db.* TO slurm@localhost;
-          '';
-          mysqlCmd = sql:
-            "${config.services.percona.package}/bin/mysql" +
-            " --defaults-extra-file=/root/.my.cnf" +
-            " -v" +
-            " -e '${sql}'";
-        in
-        "${mysqlCmd ensureUserAndDatabase}";
+        script =
+          let
+            ensureUserAndDatabase = ''
+              CREATE USER IF NOT EXISTS slurm@localhost;
+              CREATE DATABASE IF NOT EXISTS slurm_acct_db;
+              GRANT ALL ON slurm_acct_db.* TO slurm@localhost;
+            '';
+            mysqlCmd =
+              sql:
+              "${config.services.percona.package}/bin/mysql"
+              + " --defaults-extra-file=/root/.my.cnf"
+              + " -v"
+              + " -e '${sql}'";
+          in
+          "${mysqlCmd ensureUserAndDatabase}";
       };
 
       services.slurm.dbdserver = {

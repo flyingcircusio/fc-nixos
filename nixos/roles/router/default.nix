@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -14,60 +19,58 @@ let
     runtimeInputs = with pkgs; [ ethtool ];
     text = lib.readFile ./kick-interfaces.sh;
   };
-  checkFloodSuppression = with pkgs; writeScript "check-flood-suppression" ''
-    #! ${runtimeShell}
-    set -euo pipefail
-    IFACE="$1"
+  checkFloodSuppression =
+    with pkgs;
+    writeScript "check-flood-suppression" ''
+      #! ${runtimeShell}
+      set -euo pipefail
+      IFACE="$1"
 
-    if ip -d -j link show "$IFACE" | jq -e '.[] | .linkinfo.info_slave_data.neigh_suppress' >/dev/null;
-    then
-        echo "CRITICAL: $IFACE: flood suppression enabled on interface -- this should be disabled!"
-        echo
-        echo "Run 'ip link set $IFACE type bridge_slave neigh_suppress off' to fix"
-        exit 2
-    else
-        echo "OK: $IFACE: flood suppression is disabled"
-    fi
-  '';
+      if ip -d -j link show "$IFACE" | jq -e '.[] | .linkinfo.info_slave_data.neigh_suppress' >/dev/null;
+      then
+          echo "CRITICAL: $IFACE: flood suppression enabled on interface -- this should be disabled!"
+          echo
+          echo "Run 'ip link set $IFACE type bridge_slave neigh_suppress off' to fix"
+          exit 2
+      else
+          echo "OK: $IFACE: flood suppression is disabled"
+      fi
+    '';
 
-  uplinkInterfaces = map
-    (network: fclib.network."${network}".interface)
-    static.routerUplinkNetworks."${location}";
+  uplinkInterfaces = map (
+    network: fclib.network."${network}".interface
+  ) static.routerUplinkNetworks."${location}";
 
-  gatewayInterfaces = map
-    (network: fclib.network."${network}")
-    static.floatingGatewayNetworks."${location}";
+  gatewayInterfaces =
+    map (network: fclib.network."${network}")
+      static.floatingGatewayNetworks."${location}";
 
-  martianNetworks =
-    lib.filter
-      (n: n != "")
-      (lib.splitString "\n" (lib.readFile ./martian_networks));
+  martianNetworks = lib.filter (n: n != "") (lib.splitString "\n" (lib.readFile ./martian_networks));
 
-  martianIptablesInput =
-    (lib.concatMapStringsSep "\n"
-      (network:
-        lib.concatMapStringsSep "\n"
-          (iface:
-            "${fclib.iptables network} -A nixos-fw -i ${iface} " +
-            "-s ${network} -j DROP")
-          uplinkInterfaces)
-      martianNetworks);
+  martianIptablesInput = (
+    lib.concatMapStringsSep "\n" (
+      network:
+      lib.concatMapStringsSep "\n" (
+        iface: "${fclib.iptables network} -A nixos-fw -i ${iface} " + "-s ${network} -j DROP"
+      ) uplinkInterfaces
+    ) martianNetworks
+  );
 
-  martianIptablesForward =
-    (lib.concatMapStringsSep "\n"
-      (network:
-        lib.concatMapStringsSep "\n"
-          (iface:
-            "${fclib.iptables network} -A fc-router-forward -i ${iface} " +
-            "-s ${network} -j DROP")
-          uplinkInterfaces)
+  martianIptablesForward = (
+    lib.concatMapStringsSep "\n"
+      (
+        network:
+        lib.concatMapStringsSep "\n" (
+          iface: "${fclib.iptables network} -A fc-router-forward -i ${iface} " + "-s ${network} -j DROP"
+        ) uplinkInterfaces
+      )
       # Also drop link-local addresses here.
-      (martianNetworks ++ [ "fe80::/10" ]));
+      (martianNetworks ++ [ "fe80::/10" ])
+  );
 
-  locationSensuServer = lib.findFirst
-    (s: s.service == "sensuserver-source-address")
-    null
-    config.flyingcircus.encServices;
+  locationSensuServer = lib.findFirst (
+    s: s.service == "sensuserver-source-address"
+  ) null config.flyingcircus.encServices;
 
   sensuSourceAddress = head (filter (i: fclib.isIp4 i) (locationSensuServer.ips));
 in
@@ -160,89 +163,87 @@ in
     environment.shellAliases = {
     };
 
-    networking.firewall.extraCommands =
-      (lib.concatStringsSep "\n" [
+    networking.firewall.extraCommands = (
+      lib.concatStringsSep "\n" [
         martianIptablesInput
         ''
-        ip46tables -N fc-router-forward || true
-        ip46tables -A FORWARD -j fc-router-forward
+          ip46tables -N fc-router-forward || true
+          ip46tables -A FORWARD -j fc-router-forward
         ''
         martianIptablesForward
         ''
-        # Suppress multicast forwarding
-        iptables -A fc-router-forward -s 224.0.0.0/4 -j DROP
-        iptables -A fc-router-forward -d 224.0.0.0/4 -j DROP
-        ip6tables -A fc-router-forward -s ff::/8 -j DROP
-        ip6tables -A fc-router-forward -d ff::/8 -j DROP
+          # Suppress multicast forwarding
+          iptables -A fc-router-forward -s 224.0.0.0/4 -j DROP
+          iptables -A fc-router-forward -d 224.0.0.0/4 -j DROP
+          ip6tables -A fc-router-forward -s ff::/8 -j DROP
+          ip6tables -A fc-router-forward -d ff::/8 -j DROP
 
-        # memcached UDP amplification attacks (see also memcached.pp)
-        ip46tables -A fc-router-forward -p udp --dport 11211 -j REJECT
-        ip46tables -A fc-router-forward -p tcp --dport 11211 -j REJECT
+          # memcached UDP amplification attacks (see also memcached.pp)
+          ip46tables -A fc-router-forward -p udp --dport 11211 -j REJECT
+          ip46tables -A fc-router-forward -p tcp --dport 11211 -j REJECT
 
-        # SunRPC/NFS/et al.
-        ip46tables -A fc-router-forward -p udp --dport 111 -j REJECT
-        ip46tables -A fc-router-forward -p tcp --dport 111 -j REJECT
+          # SunRPC/NFS/et al.
+          ip46tables -A fc-router-forward -p udp --dport 111 -j REJECT
+          ip46tables -A fc-router-forward -p tcp --dport 111 -j REJECT
 
-        # Always allow ICMP
-        iptables -A fc-router-forward -p icmp -j ACCEPT
-        ip6tables -A fc-router-forward -p icmpv6 -j ACCEPT
+          # Always allow ICMP
+          iptables -A fc-router-forward -p icmp -j ACCEPT
+          ip6tables -A fc-router-forward -p icmpv6 -j ACCEPT
 
-        # Always allow related traffic
-        ip46tables -A fc-router-forward -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+          # Always allow related traffic
+          ip46tables -A fc-router-forward -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
-        #############
-        # Protect MGM
-        iptables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmp -j ACCEPT
-        ip6tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmpv6 -j ACCEPT
-        # allow prometheus
-        ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p tcp --dport 9126 -j ACCEPT
-        # allow SSH from the sensu server in order to remotely monitor switches
-        iptables -A fc-router-forward -i ${fclib.network.fe.interface} -o ${fclib.network.mgm.interface} -s ${sensuSourceAddress} -p tcp --dport 22 -j ACCEPT
-        ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -j REJECT
+          #############
+          # Protect MGM
+          iptables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmp -j ACCEPT
+          ip6tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmpv6 -j ACCEPT
+          # allow prometheus
+          ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p tcp --dport 9126 -j ACCEPT
+          # allow SSH from the sensu server in order to remotely monitor switches
+          iptables -A fc-router-forward -i ${fclib.network.fe.interface} -o ${fclib.network.mgm.interface} -s ${sensuSourceAddress} -p tcp --dport 22 -j ACCEPT
+          ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -j REJECT
 
-        #############
-        # Protect SRV
-        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 22 -j ACCEPT
-        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 80 -j ACCEPT
-        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 443 -j ACCEPT
-        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 8140 -j ACCEPT
-        ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -j REJECT
+          #############
+          # Protect SRV
+          ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 22 -j ACCEPT
+          ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 80 -j ACCEPT
+          ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 443 -j ACCEPT
+          ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -p tcp --dport 8140 -j ACCEPT
+          ip46tables -A fc-router-forward -o ${fclib.network.srv.interface} -j REJECT
 
-        #############
-        # Control FE and TR traffic
-        # We generally allow all traffic on FE
-        ip46tables -A fc-router-forward -o ${fclib.network.fe.interface} -j ACCEPT
+          #############
+          # Control FE and TR traffic
+          # We generally allow all traffic on FE
+          ip46tables -A fc-router-forward -o ${fclib.network.fe.interface} -j ACCEPT
 
-        # XXX we don't want accidents but need to allow traffic to the outside
-        # but don't generally know which transfer interfaces are active.
-        # If we can limit the open forwarding towards the internet and have a
-        # fall-through default of "REJECT" for everything else then terminating
-        # an arbitrary VXLAN on the router doesn't automatically cause
-        # everything to be forwarded.
+          # XXX we don't want accidents but need to allow traffic to the outside
+          # but don't generally know which transfer interfaces are active.
+          # If we can limit the open forwarding towards the internet and have a
+          # fall-through default of "REJECT" for everything else then terminating
+          # an arbitrary VXLAN on the router doesn't automatically cause
+          # everything to be forwarded.
 
         ''
         (lib.optionalString (!isNull fclib.underlay) ''
-        #############
-        # Protect UL
-        # Forwarding should not be permitted onto or out of the underlay network
-        ${lib.concatMapStringsSep "\n"
-          (link: "ip46tables -A fc-router-forward -o ${link.link} -j REJECT")
-          fclib.underlay.links
-         }
-        ${lib.concatMapStringsSep "\n"
-          (link: "ip46tables -A fc-router-forward -i ${link.link} -j REJECT")
-          fclib.underlay.links
-         }
+          #############
+          # Protect UL
+          # Forwarding should not be permitted onto or out of the underlay network
+          ${lib.concatMapStringsSep "\n" (
+            link: "ip46tables -A fc-router-forward -o ${link.link} -j REJECT"
+          ) fclib.underlay.links}
+          ${lib.concatMapStringsSep "\n" (
+            link: "ip46tables -A fc-router-forward -i ${link.link} -j REJECT"
+          ) fclib.underlay.links}
         '')
-      ]);
+      ]
+    );
 
     networking.nat.extraCommands = ''
       #############
       # Masquerading rules for the uplink interfaces
-      ${lib.concatMapStringsSep "\n"
-        (iface: "iptables -t nat -A nixos-nat-post -o ${iface} -s 172.16.0.0/12 -j MASQUERADE")
-        uplinkInterfaces
-      }
+      ${lib.concatMapStringsSep "\n" (
+        iface: "iptables -t nat -A nixos-nat-post -o ${iface} -s 172.16.0.0/12 -j MASQUERADE"
+      ) uplinkInterfaces}
     '';
 
     networking.firewall.extraStopCommands = ''
@@ -253,13 +254,14 @@ in
 
     flyingcircus.firewall.enableSrvRgFirewall = false;
 
-    systemd.services = listToAttrs
-      (lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces)
-        (iface: lib.nameValuePair
-          "network-bridge-suppress-flooding-${iface.link}"
-          { enable = fclib.mkPlatform false; }
-        )
-      );
+    systemd.services = listToAttrs (
+      lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces) (
+        iface:
+        lib.nameValuePair "network-bridge-suppress-flooding-${iface.link}" {
+          enable = fclib.mkPlatform false;
+        }
+      )
+    );
 
     specialisation.primary = {
       configuration = role.primarySpecialisationConfig;
@@ -270,21 +272,26 @@ in
     ];
 
     flyingcircus.services.sensu-client = {
-      checks = {
-        neighbour_cache = {
-          notification = "Kernel neighbour cache is too full";
-          # Poll frequently in order to try to detect problems which
-          # occur suddenly before they wipe the router out.
-          interval = 60;
-          command = "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor sensu-check -s /run/sensuclient/neighbour_cache_state.json";
-        };
-      } // (listToAttrs (lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces)
-        (iface: lib.nameValuePair "flood_suppression_iface_${iface.link}" {
-          notification = "Flood suppression is erroneously enabled";
-          interval = 300;
-          command = "${checkFloodSuppression} ${iface.link}";
-        })
-      ));
+      checks =
+        {
+          neighbour_cache = {
+            notification = "Kernel neighbour cache is too full";
+            # Poll frequently in order to try to detect problems which
+            # occur suddenly before they wipe the router out.
+            interval = 60;
+            command = "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor sensu-check -s /run/sensuclient/neighbour_cache_state.json";
+          };
+        }
+        // (listToAttrs (
+          lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces) (
+            iface:
+            lib.nameValuePair "flood_suppression_iface_${iface.link}" {
+              notification = "Flood suppression is erroneously enabled";
+              interval = 300;
+              command = "${checkFloodSuppression} ${iface.link}";
+            }
+          )
+        ));
 
       expectedConnections = {
         warning = 18000;
@@ -292,13 +299,15 @@ in
       };
     };
 
-    flyingcircus.services.telegraf.inputs.exec = [{
-      commands = [ "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor telegraf-metrics" ];
-      timeout = "10s";
-      data_format = "json";
-      name_override = "neighbour";
-      tag_keys = [ "family" ];
-    }];
+    flyingcircus.services.telegraf.inputs.exec = [
+      {
+        commands = [ "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor telegraf-metrics" ];
+        timeout = "10s";
+        data_format = "json";
+        name_override = "neighbour";
+        tag_keys = [ "family" ];
+      }
+    ];
 
     flyingcircus.agent = {
       extraPreCommands = ''
@@ -318,7 +327,8 @@ in
               # keepalived is in failed/stop state.
               fc-keepalived enter-maintenance
             '';
-          in "${script}";
+          in
+          "${script}";
 
         leave = ''
           fc-keepalived leave-maintenance

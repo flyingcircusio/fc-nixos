@@ -14,11 +14,26 @@ with lib;
     flyingcircus.static = {
 
       locations = {
-        "whq" = { id = 0; site = "Halle"; };
-        "yard" = { id = 1; site = "Halle"; };
-        "rzob" = { id = 2; site = "Oberhausen"; };
-        "dev" = { id = 3; site = "Halle"; };
-        "saltlabs" = { id = 4; site = "SaltLabs / ISP"; };
+        "whq" = {
+          id = 0;
+          site = "Halle";
+        };
+        "yard" = {
+          id = 1;
+          site = "Halle";
+        };
+        "rzob" = {
+          id = 2;
+          site = "Oberhausen";
+        };
+        "dev" = {
+          id = 3;
+          site = "Halle";
+        };
+        "saltlabs" = {
+          id = 4;
+          site = "SaltLabs / ISP";
+        };
       };
 
       ceph = {
@@ -32,7 +47,8 @@ with lib;
           rzob.services = "d4b91002-eaf4-11e2-bc7c-0200000311c1";
           rzob.risclog = "1f417812-eafa-11e2-aa4f-0200000311c1";
         };
-        crushroot_to_rbdpool_mapping = {  # for now the same in all locations
+        crushroot_to_rbdpool_mapping = {
+          # for now the same in all locations
           default = [ "rbd.hdd" ];
           ssd = [ "rbd.ssd" ];
         };
@@ -95,10 +111,16 @@ with lib;
         # when enabling them, like weird search path confusion that results in
         # arbitrary negative responses, combined with the rotate flag.
         dev = [ "172.20.3.1" ];
-        test = [ "9.9.9.9" "8.8.8.8" ];
+        test = [
+          "9.9.9.9"
+          "8.8.8.8"
+        ];
         whq = [ "172.16.48.1" ];
         rzob = [ "172.22.48.1" ];
-        standalone = [ "9.9.9.9" "8.8.8.8" ];
+        standalone = [
+          "9.9.9.9"
+          "8.8.8.8"
+        ];
       };
 
       nameservers6 = {
@@ -113,7 +135,10 @@ with lib;
         whq = [ "2a02:238:f030:103::1" ];
         test = [ "2a02:238:f030:1c2::1" ];
         rzob = [ "2a02:248:101:63::1" ];
-        standalone = [ "2620:fe::fe" "2001:4860:4860::8888" ];
+        standalone = [
+          "2620:fe::fe"
+          "2001:4860:4860::8888"
+        ];
       };
 
       directory = {
@@ -166,7 +191,10 @@ with lib;
       routerUplinkNetworks = {
         dev = [ "tr" ];
         whq = [ "tr-whq-sl" ];
-        rzob = [ "tr-kamp-a" "tr-kamp-b" ];
+        rzob = [
+          "tr-kamp-a"
+          "tr-kamp-b"
+        ];
         test = [ "tr" ];
       };
 
@@ -193,15 +221,38 @@ with lib;
 
       # Networks which have floating gateways shared between routers
       floatingGatewayNetworks = {
-        test = [ "mgm" "srv" "fe" ];
-        dev = [ "mgm" "srv" "fe" ];
-        whq = [ "mgm" "srv" "fe" "tr-whq-sl" "video" "access" ];
-        rzob = [ "mgm" "srv" "fe" "tr-kamp-dhp" ];
+        test = [
+          "mgm"
+          "srv"
+          "fe"
+        ];
+        dev = [
+          "mgm"
+          "srv"
+          "fe"
+        ];
+        whq = [
+          "mgm"
+          "srv"
+          "fe"
+          "tr-whq-sl"
+          "video"
+          "access"
+        ];
+        rzob = [
+          "mgm"
+          "srv"
+          "fe"
+          "tr-kamp-dhp"
+        ];
       };
 
       # Additional networks for which the routers provide DHCP service
       additionalDhcpNetworks = {
-        whq = [ "video" "access" ];
+        whq = [
+          "video"
+          "access"
+        ];
       };
 
       adminKeys = {

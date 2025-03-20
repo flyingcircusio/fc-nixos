@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -11,12 +16,13 @@ let
   telegrafPassword = fclib.derivePasswordForHost "telegraf";
   sensuPassword = fclib.derivePasswordForHost "sensu";
 
-  config_file_content = lib.generators.toKeyValue {} cfg.configItems;
+  config_file_content = lib.generators.toKeyValue { } cfg.configItems;
   config_file = pkgs.writeText "rabbitmq.conf" config_file_content;
 
   advanced_config_file = pkgs.writeText "advanced.config" cfg.config;
 
-in {
+in
+{
   ###### interface
   options = {
     flyingcircus.services.rabbitmq = {
@@ -66,7 +72,7 @@ in {
         description = ''
           Listening port for the RabbitMQ Prometheus exporter. Is exposed via
           telegraf again, only change this value of the default port is used otherwise.
-          '';
+        '';
         type = types.port;
         internal = true;
         apply = builtins.toString;
@@ -91,7 +97,7 @@ in {
       };
 
       configItems = mkOption {
-        default = {};
+        default = { };
         type = types.attrsOf types.str;
         example = ''
           {
@@ -135,25 +141,27 @@ in {
       };
 
       plugins = mkOption {
-        default = [];
+        default = [ ];
         type = types.listOf types.str;
         description = "The names of plugins to enable";
       };
 
       pluginDirs = mkOption {
-        default = [];
+        default = [ ];
         type = types.listOf types.path;
         description = "The list of directories containing external plugins";
       };
     };
   };
 
-
   ###### implementation
   config = mkIf cfg.enable {
 
     # This is needed so we will have 'rabbitmqctl' in our PATH
-    environment.systemPackages = [ cfg.package pkgs.rabbitmqadmin-ng ];
+    environment.systemPackages = [
+      cfg.package
+      pkgs.rabbitmqadmin-ng
+    ];
     environment.etc."local/rabbitmq/README.txt".text = ''
       RabbitMQ (${cfg.package.version}) is running on this machine.
 
@@ -166,7 +174,7 @@ in {
 
         $ sudo -iu rabbitmq
         % rabbitmqctl status
-      '';
+    '';
 
     flyingcircus.localConfigDirs.rabbitmq = {
       dir = "/etc/local/rabbitmq";
@@ -194,7 +202,10 @@ in {
     };
 
     flyingcircus.services.rabbitmq = {
-      plugins = [ "rabbitmq_management" "rabbitmq_prometheus" ];
+      plugins = [
+        "rabbitmq_management"
+        "rabbitmq_prometheus"
+      ];
       # XXX: can we have more than one IP?
       listenAddress = fclib.mkPlatform (head fclib.network.srv.dualstack.addresses);
       config = fclib.configFromFile /etc/local/rabbitmq/rabbitmq.config "";
@@ -204,8 +215,14 @@ in {
       description = "RabbitMQ Server";
 
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" "epmd.socket" ];
-      wants = [ "network.target" "epmd.socket" ];
+      after = [
+        "network.target"
+        "epmd.socket"
+      ];
+      wants = [
+        "network.target"
+        "epmd.socket"
+      ];
 
       path = [
         cfg.package
@@ -223,7 +240,7 @@ in {
         RABBITMQ_ENABLED_PLUGINS_FILE = pkgs.writeText "enabled_plugins" ''
           [ ${concatStringsSep "," cfg.plugins} ].
         '';
-      } //  optionalAttrs (cfg.config != "") { RABBITMQ_ADVANCED_CONFIG_FILE = advanced_config_file; };
+      } // optionalAttrs (cfg.config != "") { RABBITMQ_ADVANCED_CONFIG_FILE = advanced_config_file; };
 
       serviceConfig = {
         ExecStart = "${cfg.package}/sbin/rabbitmq-server";
@@ -243,7 +260,7 @@ in {
 
       preStart = ''
         ${optionalString (cfg.cookie != "") ''
-            install -m 400 <(echo -n ${cfg.cookie}) ${cfg.dataDir}/.erlang.cookie
+          install -m 400 <(echo -n ${cfg.cookie}) ${cfg.dataDir}/.erlang.cookie
         ''}
       '';
     };
@@ -329,9 +346,11 @@ in {
       };
 
       telegraf.inputs = {
-        prometheus = [{
-          urls = [ "http://${config.networking.hostName}:${cfg.prometheusPort}" ];
-        }];
+        prometheus = [
+          {
+            urls = [ "http://${config.networking.hostName}:${cfg.prometheusPort}" ];
+          }
+        ];
         # TODO: remove once we have a new dashboard ready
         rabbitmq = [
           {

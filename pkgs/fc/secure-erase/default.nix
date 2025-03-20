@@ -1,4 +1,9 @@
-{ lib, stdenv, cryptsetup, bash }:
+{
+  lib,
+  stdenv,
+  cryptsetup,
+  bash,
+}:
 
 stdenv.mkDerivation rec {
   version = "0.1";
@@ -9,7 +14,10 @@ stdenv.mkDerivation rec {
   dontBuild = true;
   dontConfigure = true;
 
-  propagatedBuildInputs = [ bash cryptsetup ];
+  propagatedBuildInputs = [
+    bash
+    cryptsetup
+  ];
 
   installPhase = ''
     mkdir -p $out/bin

@@ -1,6 +1,11 @@
 # This node runs service checks as defined in directory.
 # Requires ring 0 access.
-{ config, lib, pkgs, ...}:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.flyingcircus.roles.servicecheck;
@@ -12,7 +17,7 @@ let
   envPackage = pkgs.linkFarm "fc-sensuplugins-check_http_service" [
     {
       name = "bin/check_http_service";
-      path = "${pkgs.fc.sensuplugins}/bin/check_http_service" ;
+      path = "${pkgs.fc.sensuplugins}/bin/check_http_service";
     }
   ];
 in

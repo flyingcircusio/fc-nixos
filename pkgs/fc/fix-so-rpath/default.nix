@@ -1,11 +1,23 @@
-{ pkgs, lib, stdenv, python3, patchelf, binutils, makeWrapper }:
+{
+  pkgs,
+  lib,
+  stdenv,
+  python3,
+  patchelf,
+  binutils,
+  makeWrapper,
+}:
 
 stdenv.mkDerivation rec {
   name = "fix-so-rpath";
   src = ./fix-so-rpath.py;
   unpackPhase = ":";
   nativeBuildInputs = [ makeWrapper ];
-  propagatedBuildInputs = [ python3 patchelf binutils ];
+  propagatedBuildInputs = [
+    python3
+    patchelf
+    binutils
+  ];
   dontBuild = true;
   dontStrip = true;
   dontPatchELF = true;

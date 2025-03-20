@@ -1,4 +1,8 @@
-{ lib, buildGoPackage, fetchFromGitHub }:
+{
+  lib,
+  buildGoPackage,
+  fetchFromGitHub,
+}:
 
 buildGoPackage rec {
   name = "consul-${version}";
@@ -28,9 +32,13 @@ buildGoPackage rec {
 
   meta = with lib; {
     description = "Tool for service discovery, monitoring and configuration";
-    homepage = https://www.consul.io/;
+    homepage = "https://www.consul.io/";
     platforms = platforms.linux ++ platforms.darwin;
     license = licenses.mpl20;
-    maintainers = with maintainers; [ pradeepchhetri vdemeester nh2 ];
+    maintainers = with maintainers; [
+      pradeepchhetri
+      vdemeester
+      nh2
+    ];
   };
 }

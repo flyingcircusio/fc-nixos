@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with lib;
 
@@ -23,12 +28,13 @@ let
   '';
 
   localSensuConf =
-    if pathExists "/etc/local/sensu-client"
-    then cleanSourceWith {
-      filter = name: _: (baseNameOf name) != "README.txt";
-      src = /etc/local/sensu-client;
-    }
-    else "/var/empty";
+    if pathExists "/etc/local/sensu-client" then
+      cleanSourceWith {
+        filter = name: _: (baseNameOf name) != "README.txt";
+        src = /etc/local/sensu-client;
+      }
+    else
+      "/var/empty";
 
   sensuClientConfigFile = pkgs.writeText "client.json" ''
     {
@@ -48,10 +54,11 @@ let
         "password": "${cfg.password}",
         "vhost": "/sensu"
       },
-      "checks": ${builtins.toJSON
-        (mapAttrs (
-          name: value: filterAttrs (
-            name: value: name != "_module") value) cfg.checks)}
+      "checks": ${
+        builtins.toJSON (
+          mapAttrs (name: value: filterAttrs (name: value: name != "_module") value) cfg.checks
+        )
+      }
     }
   '';
 
@@ -108,7 +115,7 @@ let
   systemdUnitCheckOptions = {
     options = {
       enable = mkOption {
-        type  = types.bool;
+        type = types.bool;
         default = true;
       };
     };
@@ -119,7 +126,8 @@ let
     paths = cfg.checkEnvPackages;
   };
 
-in {
+in
+{
   options = {
 
     flyingcircus.services.sensu-client = {
@@ -151,7 +159,7 @@ in {
         '';
       };
       checks = mkOption {
-        default = {};
+        default = { };
         type = with types; attrsOf (submodule checkOptions);
         description = ''
           Checks that should be run by this client.
@@ -171,7 +179,7 @@ in {
 
       extraOpts = mkOption {
         type = with types; listOf str;
-        default = [];
+        default = [ ];
         description = ''
           Extra options used when launching sensu.
         '';
@@ -212,17 +220,13 @@ in {
         warning = mkOption {
           type = types.str;
           defaultText = "$n_cores * 8, $n_cores * 5, $n_cores * 2";
-          default =
-            "${toString (cores * 8)},${toString (cores * 5)}," +
-            "${toString (cores * 2)}";
+          default = "${toString (cores * 8)},${toString (cores * 5)}," + "${toString (cores * 2)}";
           description = "Limit of load thresholds before warning.";
         };
         critical = mkOption {
           type = types.str;
           defaultText = "$n_cores * 10, $n_cores * 8, $n_cores * 3";
-          default =
-            "${toString (cores * 10)},${toString (cores * 8)}," +
-            "${toString (cores * 3)}";
+          default = "${toString (cores * 10)},${toString (cores * 8)}," + "${toString (cores * 3)}";
           description = "Limit of load thresholds before reaching critical.";
         };
       };
@@ -299,7 +303,7 @@ in {
 
       mutedSystemdUnits = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Units that may fail without triggering the check for non-critical failed systemd units";
         example = [ "failing-testunit.service" ];
       };
@@ -310,8 +314,10 @@ in {
           Units that will get a separate check which becomes critical when the
           unit is in an unwanted state.
         '';
-        default = {};
-        example = { "important.service" = {}; };
+        default = { };
+        example = {
+          "important.service" = { };
+        };
       };
     };
   };
@@ -320,12 +326,8 @@ in {
     (mkIf cfg.enable {
 
       environment.systemPackages = [
-        (pkgs.writeScriptBin
-          "sensu-check-env"
-          "echo ${sensuCheckEnv}/bin/")
-        (pkgs.writeScriptBin
-          "sensu-client-show-config"
-          "${pkgs.perl}/bin/json_pp < ${sensuClientConfigFile}")
+        (pkgs.writeScriptBin "sensu-check-env" "echo ${sensuCheckEnv}/bin/")
+        (pkgs.writeScriptBin "sensu-client-show-config" "${pkgs.perl}/bin/json_pp < ${sensuClientConfigFile}")
       ];
 
       flyingcircus.passwordlessSudoPackages = [
@@ -360,7 +362,6 @@ in {
         '';
       };
 
-
       systemd.services.sensu-client = {
         wantedBy = [ "multi-user.target" ];
         after = [ "network.target" ];
@@ -368,7 +369,10 @@ in {
         # Sensu check scripts inherit the PATH of sensu-client by default.
         # We provide common external dependencies in sensuCheckEnv.  Checks can
         # define their own PATH in a wrapper to include other dependencies.
-        path = [ sensuCheckEnv "/run/wrappers" ];
+        path = [
+          sensuCheckEnv
+          "/run/wrappers"
+        ];
         script = ''
           ${ifJsonSyntaxError}
             # graceful degradation -> leave local config out
@@ -390,7 +394,7 @@ in {
         environment = {
           LANG = "en_US.utf8";
           # Hide annoying warnings, old Sensu is not developed anymore.
-          RUBYOPT="-W0";
+          RUBYOPT = "-W0";
         };
       };
 
@@ -398,174 +402,175 @@ in {
         "d /var/tmp/sensu 0775 sensuclient service"
       ];
 
-      flyingcircus.services.sensu-client.checks = with pkgs;
-      let
-        uplink = ipvers: {
-          notification = "Internet uplink IPv${ipvers} slow/unavailable";
-          command =
-            "${sudo} ${fc.multiping}/bin/multiping -${ipvers} " +
-            "google.com dns.quad9.net heise.de";
-          interval = 300;
-        };
-      in {
-        # psi_cpu = {
-        #   notification = "Pressure stalling on CPU too much";
-        #   command =
-        #     "${fc.sensuplugins}/bin/check_psi " +
-        #     "--some-warning ${cfg.expectedPSI.cpu.some-warning} " +
-        #     "--some-critical ${cfg.expectedPSI.cpu.some-critical} " +
-        #     "cpu";
-        #   interval = 10;
-        # };
-        # psi_memory = {
-        #   notification = "Pressure stalling on Memory too much";
-        #   command =
-        #     "${fc.sensuplugins}/bin/check_psi " +
-        #     "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
-        #     "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
-        #     "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
-        #     "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
-        #     "memory";
-        #   interval = 10;
-        # };
-        # psi_io = {
-        #   notification = "Pressure stalling on IO too much";
-        #   command =
-        #     "${fc.sensuplugins}/bin/check_psi " +
-        #     "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
-        #     "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
-        #     "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
-        #     "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
-        #     "io";
-        #   interval = 10;
-        # };
-        # load = {
-        #   notification = "Load is too high";
-        #   command =
-        #     "check_load -r -w ${cfg.expectedLoad.warning} " +
-        #     "-c ${cfg.expectedLoad.critical}";
-        #   interval = 10;
-        # };
-        swap = {
-          notification = "Swap usage is too high";
-          command =
-            "${fc.sensuplugins}/bin/check_swap_abs " +
-            "-w ${toString cfg.expectedSwap.warning} " +
-            "-c ${toString cfg.expectedSwap.critical}";
-          interval = 300;
-        };
-        ssh = {
-          notification = "SSH server is not responding properly";
-          command = "check_ssh localhost";
-          interval = 300;
-        };
-        ntp_time = {
-          notification = "Clock is skewed";
-          command = "check_ntp_time -H ${elemAt ntpServers 0}";
-          interval = 300;
-        };
-        sensu_syntax = {
-          notification = ''
-            Problematic check definitions in /etc/local/sensu-client
-          '';
-          command = sensusyntax;
-          interval = 60;
-        };
-        internet_uplink_ipv4 = uplink "4";
-        internet_uplink_ipv6 = uplink "6";
-        # Signal for 30 minutes that it was not OK for the VM to reboot. We may
-        # need something to counter this on planned reboots. 30 minutes is enough
-        # for status pages to pick this up. After that, we'll leave it in "warning"
-        # for 1 day so that regular support can spot the issue even if it didn't
-        # cause an alarm, but have it visible for context.
-        uptime = {
-          notification = "Host was down";
-          command = "${check-uptime}/bin/check_uptime -c @:30 -w @:1440";
-          interval = 300;
-        };
-        systemd_units_non_critical = {
-          notification = "Some non-critical systemd units failed.";
-          command =
-            "${config.flyingcircus.agent.package}/bin/fc-systemd check-units --no-critical"
-            + (lib.concatMapStrings (u: " --exclude ${u}") cfg.mutedSystemdUnits);
-        };
-        disk = {
-          notification = "Disk usage too high";
-          command = "${sudo} ${fc.sensuplugins}/bin/check_disk -v " +
-                    "-w ${toString cfg.expectedDiskCapacity.warning} " +
-                    "-c ${toString cfg.expectedDiskCapacity.critical}";
-          interval = 300;
-        };
-        writable = {
-          notification = "Disks are writable";
-          command =
-            "${fc.sensuplugins}/bin/check_writable /tmp/.sensu_writable " +
-            "/var/tmp/sensu/.sensu_writable";
-          interval = 60;
-          ttl = 120;
-          warnIsCritical = true;
-        };
-        entropy = {
-          notification = "Too little entropy available";
-          command = ''
-            ${pkgs.sensu-plugins-entropy-checks}/bin/check-entropy.rb \
-              -w 120 -c 60
-          '';
-        };
-        journal = {
-          notification = "Journal errors in the last 10 minutes";
-          command =
-            "${fc.check-journal}/bin/check_journal " +
-            "-j ${systemd}/bin/journalctl " +
-            "https://gitlab.flyingcircus.io/flyingcircus/fc-logcheck-config/" +
-            "raw/master/nixos-journal.yaml";
-          interval = 600;
-        };
-        journal_file = {
-          notification = "Journal file too small.";
-          command = "${fc.sensuplugins}/bin/check_journal_file";
-        };
-        manage = {
-          notification = "The FC manage job is not enabled.";
-          command = "${check_timer} fc-agent";
-        };
-        netstat_tcp = {
-          notification = "Netstat TCP connections";
-          command = ''
-            ${pkgs.sensu-plugins-network-checks}/bin/check-netstat-tcp.rb \
-              -w ${toString cfg.expectedConnections.warning} \
-              -c ${toString cfg.expectedConnections.critical}
-          '';
-        };
-        obsolete-result-links = {
-          notification = ''
-            Obsolete 'result' symlinks possibly causing Nix store bloat
-          '';
-          # see also activationScript in nixos/platform/agent.nix
-          command = "${fc.check-age}/bin/check_age -m -w 3h /result";
-          interval = 300;
-        };
-        root_lost_and_found = {
-          notification = ''
-            lost+found indicating filesystem issues on /
-          '';
-          command = "${fc.check-age}/bin/check_age -m /lost+found -w 2h -c 1d";
-          interval = 300;
-        };
-        xfs-broken = {
-          notification = ''
-            XFS filesystem has entered a broken state
-          '';
-          command = "${fc.check-xfs-broken}";
-          interval = 300;
-        };
-      } //
-        lib.mapAttrs'
-          (name: val: lib.nameValuePair "systemd_unit-${name}" {
+      flyingcircus.services.sensu-client.checks =
+        with pkgs;
+        let
+          uplink = ipvers: {
+            notification = "Internet uplink IPv${ipvers} slow/unavailable";
+            command = "${sudo} ${fc.multiping}/bin/multiping -${ipvers} " + "google.com dns.quad9.net heise.de";
+            interval = 300;
+          };
+        in
+        {
+          # psi_cpu = {
+          #   notification = "Pressure stalling on CPU too much";
+          #   command =
+          #     "${fc.sensuplugins}/bin/check_psi " +
+          #     "--some-warning ${cfg.expectedPSI.cpu.some-warning} " +
+          #     "--some-critical ${cfg.expectedPSI.cpu.some-critical} " +
+          #     "cpu";
+          #   interval = 10;
+          # };
+          # psi_memory = {
+          #   notification = "Pressure stalling on Memory too much";
+          #   command =
+          #     "${fc.sensuplugins}/bin/check_psi " +
+          #     "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
+          #     "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
+          #     "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
+          #     "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
+          #     "memory";
+          #   interval = 10;
+          # };
+          # psi_io = {
+          #   notification = "Pressure stalling on IO too much";
+          #   command =
+          #     "${fc.sensuplugins}/bin/check_psi " +
+          #     "--some-warning ${cfg.expectedPSI.memory.some-warning} " +
+          #     "--some-critical ${cfg.expectedPSI.memory.some-critical} " +
+          #     "--full-warning ${cfg.expectedPSI.memory.full-warning} " +
+          #     "--full-critical ${cfg.expectedPSI.memory.full-critical} " +
+          #     "io";
+          #   interval = 10;
+          # };
+          # load = {
+          #   notification = "Load is too high";
+          #   command =
+          #     "check_load -r -w ${cfg.expectedLoad.warning} " +
+          #     "-c ${cfg.expectedLoad.critical}";
+          #   interval = 10;
+          # };
+          swap = {
+            notification = "Swap usage is too high";
+            command =
+              "${fc.sensuplugins}/bin/check_swap_abs "
+              + "-w ${toString cfg.expectedSwap.warning} "
+              + "-c ${toString cfg.expectedSwap.critical}";
+            interval = 300;
+          };
+          ssh = {
+            notification = "SSH server is not responding properly";
+            command = "check_ssh localhost";
+            interval = 300;
+          };
+          ntp_time = {
+            notification = "Clock is skewed";
+            command = "check_ntp_time -H ${elemAt ntpServers 0}";
+            interval = 300;
+          };
+          sensu_syntax = {
+            notification = ''
+              Problematic check definitions in /etc/local/sensu-client
+            '';
+            command = sensusyntax;
+            interval = 60;
+          };
+          internet_uplink_ipv4 = uplink "4";
+          internet_uplink_ipv6 = uplink "6";
+          # Signal for 30 minutes that it was not OK for the VM to reboot. We may
+          # need something to counter this on planned reboots. 30 minutes is enough
+          # for status pages to pick this up. After that, we'll leave it in "warning"
+          # for 1 day so that regular support can spot the issue even if it didn't
+          # cause an alarm, but have it visible for context.
+          uptime = {
+            notification = "Host was down";
+            command = "${check-uptime}/bin/check_uptime -c @:30 -w @:1440";
+            interval = 300;
+          };
+          systemd_units_non_critical = {
+            notification = "Some non-critical systemd units failed.";
+            command =
+              "${config.flyingcircus.agent.package}/bin/fc-systemd check-units --no-critical"
+              + (lib.concatMapStrings (u: " --exclude ${u}") cfg.mutedSystemdUnits);
+          };
+          disk = {
+            notification = "Disk usage too high";
+            command =
+              "${sudo} ${fc.sensuplugins}/bin/check_disk -v "
+              + "-w ${toString cfg.expectedDiskCapacity.warning} "
+              + "-c ${toString cfg.expectedDiskCapacity.critical}";
+            interval = 300;
+          };
+          writable = {
+            notification = "Disks are writable";
+            command =
+              "${fc.sensuplugins}/bin/check_writable /tmp/.sensu_writable " + "/var/tmp/sensu/.sensu_writable";
+            interval = 60;
+            ttl = 120;
+            warnIsCritical = true;
+          };
+          entropy = {
+            notification = "Too little entropy available";
+            command = ''
+              ${pkgs.sensu-plugins-entropy-checks}/bin/check-entropy.rb \
+                -w 120 -c 60
+            '';
+          };
+          journal = {
+            notification = "Journal errors in the last 10 minutes";
+            command =
+              "${fc.check-journal}/bin/check_journal "
+              + "-j ${systemd}/bin/journalctl "
+              + "https://gitlab.flyingcircus.io/flyingcircus/fc-logcheck-config/"
+              + "raw/master/nixos-journal.yaml";
+            interval = 600;
+          };
+          journal_file = {
+            notification = "Journal file too small.";
+            command = "${fc.sensuplugins}/bin/check_journal_file";
+          };
+          manage = {
+            notification = "The FC manage job is not enabled.";
+            command = "${check_timer} fc-agent";
+          };
+          netstat_tcp = {
+            notification = "Netstat TCP connections";
+            command = ''
+              ${pkgs.sensu-plugins-network-checks}/bin/check-netstat-tcp.rb \
+                -w ${toString cfg.expectedConnections.warning} \
+                -c ${toString cfg.expectedConnections.critical}
+            '';
+          };
+          obsolete-result-links = {
+            notification = ''
+              Obsolete 'result' symlinks possibly causing Nix store bloat
+            '';
+            # see also activationScript in nixos/platform/agent.nix
+            command = "${fc.check-age}/bin/check_age -m -w 3h /result";
+            interval = 300;
+          };
+          root_lost_and_found = {
+            notification = ''
+              lost+found indicating filesystem issues on /
+            '';
+            command = "${fc.check-age}/bin/check_age -m /lost+found -w 2h -c 1d";
+            interval = 300;
+          };
+          xfs-broken = {
+            notification = ''
+              XFS filesystem has entered a broken state
+            '';
+            command = "${fc.check-xfs-broken}";
+            interval = 300;
+          };
+        }
+        // lib.mapAttrs' (
+          name: val:
+          lib.nameValuePair "systemd_unit-${name}" {
             notification = "${name} is in an unwanted state.";
             command = "${config.flyingcircus.agent.package}/bin/fc-systemd check-unit ${name}";
-          })
-          cfg.systemdUnitChecks;
+          }
+        ) cfg.systemdUnitChecks;
     })
 
     {
@@ -630,7 +635,11 @@ in {
         # Allow sensuclient to interact with services, adm stuff and the journal.
         # This especially helps to check supervisor with a group-writable
         # socket:
-        extraGroups = [ "service" "adm" "systemd-journal" ];
+        extraGroups = [
+          "service"
+          "adm"
+          "systemd-journal"
+        ];
       };
     }
   ];

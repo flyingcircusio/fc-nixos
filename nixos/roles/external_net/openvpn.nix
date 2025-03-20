@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -7,8 +12,8 @@ let
   decomposeCIDR = fclib.decomposeCIDR;
   cfg = config.flyingcircus;
   extnetRole = cfg.roles.external_net;
-  parameters = lib.attrByPath [ "enc" "parameters" ] {} cfg;
-  interfaces = lib.attrByPath [ "interfaces" ] {} parameters;
+  parameters = lib.attrByPath [ "enc" "parameters" ] { } cfg;
+  interfaces = lib.attrByPath [ "interfaces" ] { } parameters;
   location = lib.attrByPath [ "location" ] null parameters;
   resource_group = lib.attrByPath [ "resource_group" ] null parameters;
   domain = config.networking.domain;
@@ -25,20 +30,25 @@ let
 
   # Compute server addresses via Python as Nix lacks expressiveness here.
   # XXX: move python call to a function, could be shared with vxlan role.
-  addrs = fromJSON (readFile (
-    pkgs.stdenv.mkDerivation {
-      name = "openvpn-network-params.json";
-      script = ''
-        import ipaddress
-        import sys
-        net4, net6 = sys.argv[1:]
-        print('{{"ip4": "{}", "ip6": "{}"}}'.format(
-          ipaddress.ip_network(net4)[1], ipaddress.ip_network(net6)[1]))
-      '';
-      passAsFile = [ "script" ];
-      nets = [ accessNets.ipv4 accessNets.ipv6 ];
-      buildCommand = "${pkgs.python3.interpreter} $scriptPath $nets > $out";
-    }).out);
+  addrs = fromJSON (
+    readFile
+      (pkgs.stdenv.mkDerivation {
+        name = "openvpn-network-params.json";
+        script = ''
+          import ipaddress
+          import sys
+          net4, net6 = sys.argv[1:]
+          print('{{"ip4": "{}", "ip6": "{}"}}'.format(
+            ipaddress.ip_network(net4)[1], ipaddress.ip_network(net6)[1]))
+        '';
+        passAsFile = [ "script" ];
+        nets = [
+          accessNets.ipv4
+          accessNets.ipv6
+        ];
+        buildCommand = "${pkgs.python3.interpreter} $scriptPath $nets > $out";
+      }).out
+  );
 
   clientConfigFile = "${pki.caDir}/${extnetRole.frontendName}.ovpn";
 
@@ -68,19 +78,15 @@ let
 
   allNetworks = lib.zipAttrs (lib.catAttrs "networks" (attrValues interfaces));
 
-  extraroutes = lib.attrByPath [ "extraroutes" ] [] accessNets;
+  extraroutes = lib.attrByPath [ "extraroutes" ] [ ] accessNets;
 
-  pushRoutes4 =
-    lib.concatMapStringsSep "\n"
-      (cidr: "push \"route ${decomposeCIDR cidr}\"")
-      ((filter fclib.isIp4
-        (attrNames allNetworks ++ extraroutes)) ++ [extnetRole.vxlan4]);
+  pushRoutes4 = lib.concatMapStringsSep "\n" (cidr: "push \"route ${decomposeCIDR cidr}\"") (
+    (filter fclib.isIp4 (attrNames allNetworks ++ extraroutes)) ++ [ extnetRole.vxlan4 ]
+  );
 
-  pushRoutes6 =
-    lib.concatMapStringsSep "\n"
-      (cidr: "push \"route-ipv6 ${cidr}\"")
-      ((filter fclib.isIp6
-        (attrNames allNetworks ++ extraroutes)) ++ [extnetRole.vxlan6]);
+  pushRoutes6 = lib.concatMapStringsSep "\n" (cidr: "push \"route-ipv6 ${cidr}\"") (
+    (filter fclib.isIp6 (attrNames allNetworks ++ extraroutes)) ++ [ extnetRole.vxlan6 ]
+  );
 
   pushNameservers = ''
     push "dhcp-option DNS ${addrs.ip4}"
@@ -191,18 +197,20 @@ let
 
   # Provide additional rules for VxLAN gateways. We need to mix it up here since
   # everything should go into the same FW ruleset.
-  srvRG = if lib.hasAttrByPath [ "enc_addresses" "srv" ] cfg
-    then map (x: fclib.stripNetmask x.ip) cfg.enc_addresses.srv
-    else [];
+  srvRG =
+    if lib.hasAttrByPath [ "enc_addresses" "srv" ] cfg then
+      map (x: fclib.stripNetmask x.ip) cfg.enc_addresses.srv
+    else
+      [ ];
 
-  dontMasqueradeSrvRG = lib.concatMapStringsSep "\n"
-    (addr:
-      let
-        ipt = fclib.iptables addr;
-        src = if fclib.isIp4 addr then extnetRole.vxlan4 else extnetRole.vxlan6;
-      in
-      "${ipt} -t nat -A openvpn -s ${src} -d ${addr} -j RETURN")
-    srvRG;
+  dontMasqueradeSrvRG = lib.concatMapStringsSep "\n" (
+    addr:
+    let
+      ipt = fclib.iptables addr;
+      src = if fclib.isIp4 addr then extnetRole.vxlan4 else extnetRole.vxlan6;
+    in
+    "${ipt} -t nat -A openvpn -s ${src} -d ${addr} -j RETURN"
+  ) srvRG;
 
 in
 {
@@ -213,8 +221,7 @@ in
 
       accessNets = lib.mkOption {
         type = lib.types.attrs;
-        default = fromJSON
-          (fclib.configFromFile /etc/local/openvpn/networks.json defaultAccessNets);
+        default = fromJSON (fclib.configFromFile /etc/local/openvpn/networks.json defaultAccessNets);
         example = fromJSON defaultAccessNets;
         description = "Definition of networks for the OpenVPN access instance.";
       };
@@ -231,8 +238,7 @@ in
       "local/openvpn/README.txt".text = readFile ./README.openvpn;
     };
 
-    flyingcircus.services.sensu-client.checks =
-    {
+    flyingcircus.services.sensu-client.checks = {
       openvpn_port = {
         notification = "OpenVPN management interface";
         command = toString checkOpenVPN;
@@ -241,34 +247,34 @@ in
     };
 
     networking.firewall =
-    assert accessNets.ipv4 != extnetRole.vxlan4;
-    assert accessNets.ipv6 != extnetRole.vxlan6;
-    {
-      allowedUDPPorts = [ 1194 ];
-      allowedTCPPorts = [ 1194 ];
-      extraCommands = ''
-        ip46tables -t nat -N openvpn || true
-        ip46tables -t nat -F openvpn
-        ${dontMasqueradeSrvRG}
-        # XXX: why is there no symmetric rule?
-        iptables -t nat -A openvpn -s ${accessNets.ipv4} -d ${extnetRole.vxlan4} -j RETURN
-        ip6tables -t nat -A openvpn -s ${accessNets.ipv6} -d ${extnetRole.vxlan6} -j RETURN
+      assert accessNets.ipv4 != extnetRole.vxlan4;
+      assert accessNets.ipv6 != extnetRole.vxlan6;
+      {
+        allowedUDPPorts = [ 1194 ];
+        allowedTCPPorts = [ 1194 ];
+        extraCommands = ''
+          ip46tables -t nat -N openvpn || true
+          ip46tables -t nat -F openvpn
+          ${dontMasqueradeSrvRG}
+          # XXX: why is there no symmetric rule?
+          iptables -t nat -A openvpn -s ${accessNets.ipv4} -d ${extnetRole.vxlan4} -j RETURN
+          ip6tables -t nat -A openvpn -s ${accessNets.ipv6} -d ${extnetRole.vxlan6} -j RETURN
 
-        # masquerade everything else from VPN access net / VXLAN to a different net
-        iptables -t nat -A openvpn -s ${extnetRole.vxlan4} \! -d ${extnetRole.vxlan4} -j MASQUERADE
-        ip6tables -t nat -A openvpn -s ${extnetRole.vxlan6} \! -d ${extnetRole.vxlan6} -j MASQUERADE
-        iptables -t nat -A openvpn -s ${accessNets.ipv4} \! -d ${accessNets.ipv4} -j MASQUERADE
-        ip6tables -t nat -A openvpn -s ${accessNets.ipv6} \! -d ${accessNets.ipv6} -j MASQUERADE
+          # masquerade everything else from VPN access net / VXLAN to a different net
+          iptables -t nat -A openvpn -s ${extnetRole.vxlan4} \! -d ${extnetRole.vxlan4} -j MASQUERADE
+          ip6tables -t nat -A openvpn -s ${extnetRole.vxlan6} \! -d ${extnetRole.vxlan6} -j MASQUERADE
+          iptables -t nat -A openvpn -s ${accessNets.ipv4} \! -d ${accessNets.ipv4} -j MASQUERADE
+          ip6tables -t nat -A openvpn -s ${accessNets.ipv6} \! -d ${accessNets.ipv6} -j MASQUERADE
 
-        ip46tables -t nat -D POSTROUTING -j openvpn || true
-        ip46tables -t nat -A POSTROUTING -j openvpn
-      '';
-      extraStopCommands = ''
-        ip46tables -t nat -D POSTROUTING -j openvpn || true
-        ip46tables -t nat -F openvpn || true
-        ip46tables -t nat -X openvpn || true
-      '';
-    };
+          ip46tables -t nat -D POSTROUTING -j openvpn || true
+          ip46tables -t nat -A POSTROUTING -j openvpn
+        '';
+        extraStopCommands = ''
+          ip46tables -t nat -D POSTROUTING -j openvpn || true
+          ip46tables -t nat -F openvpn || true
+          ip46tables -t nat -X openvpn || true
+        '';
+      };
 
     security.pam.services.openvpn.text = ''
       auth    required        pam_unix.so    shadow    nodelay
@@ -281,59 +287,61 @@ in
         # OpenVPN specific configuration
         bind-dynamic = true;
         interface = "lo";
-        listen-address = [ addrs.ip4 addrs.ip6 ];
+        listen-address = [
+          addrs.ip4
+          addrs.ip6
+        ];
       };
     };
 
     services.openvpn.servers.access.config = serverConfig;
 
-    flyingcircus.activationScripts.openvpn-pki =
-      lib.stringAfter [] ''
-        # generate pki / certificates
-        ${pki.generate}
+    flyingcircus.activationScripts.openvpn-pki = lib.stringAfter [ ] ''
+      # generate pki / certificates
+      ${pki.generate}
 
-        # generate client config (depends on results from pki.generate)
-        cat > ${clientConfigFile} << EOF
-        #viscosity name ${extnetRole.frontendName}
+      # generate client config (depends on results from pki.generate)
+      cat > ${clientConfigFile} << EOF
+      #viscosity name ${extnetRole.frontendName}
 
-        client
-        dev tun
+      client
+      dev tun
 
-        proto ${lib.removeSuffix "6" proto}
-        #proto ${proto}
-        remote ${extnetRole.frontendName}
-        nobind
-        persist-key
-        persist-tun
-        verb 3
-        remote-cert-tls server
-        auth-user-pass
-        auth-nocache
+      proto ${lib.removeSuffix "6" proto}
+      #proto ${proto}
+      remote ${extnetRole.frontendName}
+      nobind
+      persist-key
+      persist-tun
+      verb 3
+      remote-cert-tls server
+      auth-user-pass
+      auth-nocache
 
-        ca [inline]
-        cert [inline]
-        key [inline]
-        tls-auth [inline] 1
+      ca [inline]
+      cert [inline]
+      key [inline]
+      tls-auth [inline] 1
 
-        <ca>
-        $(< ${pki.caCrt} )
-        </ca>
+      <ca>
+      $(< ${pki.caCrt} )
+      </ca>
 
-        <cert>
-        $(< ${pki.clientCrt} )
-        </cert>
+      <cert>
+      $(< ${pki.clientCrt} )
+      </cert>
 
-        <key>
-        $(< ${pki.clientKey} )
-        </key>
+      <key>
+      $(< ${pki.clientKey} )
+      </key>
 
-        <tls-auth>
-        $(< ${pki.ta} )
-        </tls-auth>
-        EOF
+      <tls-auth>
+      $(< ${pki.ta} )
+      </tls-auth>
+      EOF
 
-        chgrp login ${clientConfigFile}
-        chmod 640 ${clientConfigFile}
-      '';
+      chgrp login ${clientConfigFile}
+      chmod 640 ${clientConfigFile}
+    '';
   };
 }

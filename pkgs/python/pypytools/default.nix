@@ -1,12 +1,13 @@
-{ lib
-, buildPythonPackage
-, fetchpatch
-, fetchPypi
-, freezegun
-, numpy
-, py
-, pytestCheckHook
-, pythonOlder
+{
+  lib,
+  buildPythonPackage,
+  fetchpatch,
+  fetchPypi,
+  freezegun,
+  numpy,
+  py,
+  pytestCheckHook,
+  pythonOlder,
 }:
 
 buildPythonPackage rec {
@@ -31,14 +32,14 @@ buildPythonPackage rec {
     pytestCheckHook
   ];
 
-#  patches = [
-#    # Support for later Python releases, https://github.com/antocuni/pypytools/pull/2
-#    (fetchpatch {
-#      name = "support-later-python.patch";
-#      url = "https://github.com/antocuni/pypytools/commit/c6aed496ec35a6ef7ce9e95084849eebc16bafef.patch";
-#      sha256 = "sha256-YoYRZmgueQmxRtGaeP4zEVxuA0U7TB0PmoYHHVI7ICQ=";
-#    })
-#  ];
+  #  patches = [
+  #    # Support for later Python releases, https://github.com/antocuni/pypytools/pull/2
+  #    (fetchpatch {
+  #      name = "support-later-python.patch";
+  #      url = "https://github.com/antocuni/pypytools/commit/c6aed496ec35a6ef7ce9e95084849eebc16bafef.patch";
+  #      sha256 = "sha256-YoYRZmgueQmxRtGaeP4zEVxuA0U7TB0PmoYHHVI7ICQ=";
+  #    })
+  #  ];
 
   pythonImportsCheck = [
     "pypytools"

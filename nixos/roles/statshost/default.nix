@@ -1,7 +1,13 @@
 # statshost: an Prometheus/Grafana server.
 # TODO: don't build if more than one location relay is active in the same location.
 # Having more than one breaks prometheus.
-{ config, options, lib, pkgs, ... }:
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 with builtins;
@@ -27,70 +33,74 @@ let
 
   customRelabelPath = "${localDir}/metric-relabel.yaml";
   customRelabelConfig = relabelConfiguration customRelabelPath;
-  customRelabelJSON = filename:
+  customRelabelJSON =
+    filename:
     pkgs.runCommand "${baseNameOf filename}.json" {
       buildInputs = [ pkgs.remarshal ];
       preferLocalBuild = true;
     } "remarshal -if yaml -of json < ${filename} > $out";
 
-  relabelConfiguration = filename:
-    if pathExists filename
-    then fromJSON (readFile (customRelabelJSON filename))
-    else [];
+  relabelConfiguration =
+    filename: if pathExists filename then fromJSON (readFile (customRelabelJSON filename)) else [ ];
 
-  prometheusMetricRelabel =
-    cfgStats.prometheusMetricRelabel ++ customRelabelConfig;
+  prometheusMetricRelabel = cfgStats.prometheusMetricRelabel ++ customRelabelConfig;
 
-  relayRGNodes =
-    fclib.jsonFromFile "${localDir}/relays.json" "[]";
+  relayRGNodes = fclib.jsonFromFile "${localDir}/relays.json" "[]";
 
-  relayLocationNodes = map
-    (proxy: { job_name = proxy.location;
-              proxy_url = "https://${proxy.address}:9443";
-            } // cfgStats.prometheusLocationProxyExtraSettings)
-    relayLocationProxies;
+  relayLocationNodes = map (
+    proxy:
+    {
+      job_name = proxy.location;
+      proxy_url = "https://${proxy.address}:9443";
+    }
+    // cfgStats.prometheusLocationProxyExtraSettings
+  ) relayLocationProxies;
 
   relayLocationProxies =
     # We need the FE address, which is not published by directory. I'd think
     # "interface" should become an attribute in the services table.
     let
-      makeFE = s:
+      makeFE =
+        s:
         let
           proxyHostname = removeSuffix ".fcio.net" (removeSuffix ".gocept.net" s.address);
-        in "${proxyHostname}.fe.${s.location}.fcio.net";
-    in map
-      (service: service // { address = makeFE service; })
-      (filter
-        (s: s.service == "statshostproxy-location")
-        config.flyingcircus.encServices);
+        in
+        "${proxyHostname}.fe.${s.location}.fcio.net";
+    in
+    map (service: service // { address = makeFE service; }) (
+      filter (s: s.service == "statshostproxy-location") config.flyingcircus.encServices
+    );
 
-  buildRelayConfig = relayNodes: nodeConfig: map
-    (relayNode: {
+  buildRelayConfig =
+    relayNodes: nodeConfig:
+    map (
+      relayNode:
+      {
         scrape_interval = cfgStats.prometheusScrapeInterval;
         file_sd_configs = [
           {
-            files = [ (nodeConfig relayNode)];
+            files = [ (nodeConfig relayNode) ];
             refresh_interval = "10m";
           }
         ];
         metric_relabel_configs =
-          prometheusMetricRelabel ++
-          (relabelConfiguration "${localDir}/metric-relabel.${relayNode.job_name}.yaml");
-      } // relayNode)
-      relayNodes;
+          prometheusMetricRelabel
+          ++ (relabelConfiguration "${localDir}/metric-relabel.${relayNode.job_name}.yaml");
+      }
+      // relayNode
+    ) relayNodes;
 
-  relayRGConfig = buildRelayConfig
-    relayRGNodes
-    (relayNode: "/var/cache/statshost-relay-${relayNode.job_name}.json");
+  relayRGConfig = buildRelayConfig relayRGNodes (
+    relayNode: "/var/cache/statshost-relay-${relayNode.job_name}.json"
+  );
 
-  relayLocationConfig = buildRelayConfig
-    relayLocationNodes
-    (relayNode: "/etc/current-config/statshost-relay-${relayNode.job_name}.json");
+  relayLocationConfig = buildRelayConfig relayLocationNodes (
+    relayNode: "/etc/current-config/statshost-relay-${relayNode.job_name}.json"
+  );
 
-  statshostService = findFirst
-    (s: s.service == "statshost-collector")
-    null
-    config.flyingcircus.encServices;
+  statshostService = findFirst (
+    s: s.service == "statshost-collector"
+  ) null config.flyingcircus.encServices;
 
   grafanaLdapConfig = pkgs.writeText "ldap.toml" ''
     verbose_logging = true
@@ -168,20 +178,20 @@ in
 
       prometheusMetricRelabel = mkOption {
         type = types.listOf types.attrs;
-        default = [];
+        default = [ ];
         description = "Prometheus metric relabel configuration.";
       };
 
       prometheusLocationProxyExtraSettings = mkOption {
         type = types.attrs;
-        default = {};
+        default = { };
         description = "Additional settings for jobs fetching from location proxies.";
         example = ''
-        {
-          tls_config = {
-            ca_file = "/srv/prometheus/proxy_cert.pem";
-          };
-        }
+          {
+            tls_config = {
+              ca_file = "/srv/prometheus/proxy_cert.pem";
+            };
+          }
         '';
       };
 
@@ -225,7 +235,7 @@ in
 
       allowedMetricPrefixes = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           List of globally allowed metric prefixes. Metrics not matching the
           prefix will be dropped on the *central* prometheus. This is useful
@@ -260,13 +270,22 @@ in
     {
       warnings =
         let
-          obsoleteOptions = [ "enableInfluxDB" "readFromInfluxDB" "writeToInfluxDB" "influxdbRetention" ];
-          mkObsoleteWarning = opt:
-            (fclib.obsoleteOptionWarning
-              options
-              [ "flyingcircus" "roles" "statshost" opt ]
-              "InfluxDB is not supported anymore for statshost.");
-        in lib.mkMerge (lib.flatten (map mkObsoleteWarning obsoleteOptions));
+          obsoleteOptions = [
+            "enableInfluxDB"
+            "readFromInfluxDB"
+            "writeToInfluxDB"
+            "influxdbRetention"
+          ];
+          mkObsoleteWarning =
+            opt:
+            (fclib.obsoleteOptionWarning options [
+              "flyingcircus"
+              "roles"
+              "statshost"
+              opt
+            ] "InfluxDB is not supported anymore for statshost.");
+        in
+        lib.mkMerge (lib.flatten (map mkObsoleteWarning obsoleteOptions));
     }
 
     # Global stats host.
@@ -274,29 +293,36 @@ in
       boot.kernel.sysctl."net.core.rmem_max" = mkOverride 90 25165824;
 
       # Global prometheus configuration
-      environment.etc = listToAttrs
-        (map
-          (p: nameValuePair "current-config/statshost-relay-${p.location}.json"  {
+      environment.etc = listToAttrs (
+        map (
+          p:
+          nameValuePair "current-config/statshost-relay-${p.location}.json" {
             text = toJSON [
-              { targets = (map
-                (s: "${s.node}:9126")
-                (filter
-                  (s: s.service == "statshost-collector" && s.location == p.location)
-                  config.flyingcircus.encServiceClients));
-              }];
-          })
-        relayLocationProxies);
+              {
+                targets = (
+                  map (s: "${s.node}:9126") (
+                    filter (
+                      s: s.service == "statshost-collector" && s.location == p.location
+                    ) config.flyingcircus.encServiceClients
+                  )
+                );
+              }
+            ];
+          }
+        ) relayLocationProxies
+      );
 
       flyingcircus.roles.statshost.ldapMemberOf = "crew";
     })
 
     (mkIf (cfgStatsRG.enable || cfgProxyRG.enable) {
-      environment.etc."local/statshost/scrape-rg.json".text = toJSON [{
-        targets = sort lessThan (unique
-          (map
-            (host: "${host.name}.fcio.net:9126")
-            config.flyingcircus.encAddresses));
-      }];
+      environment.etc."local/statshost/scrape-rg.json".text = toJSON [
+        {
+          targets = sort lessThan (
+            unique (map (host: "${host.name}.fcio.net:9126") config.flyingcircus.encAddresses)
+          );
+        }
+      ];
     })
 
     (mkIf cfgStatsRG.enable {
@@ -317,13 +343,12 @@ in
             }
           ]
         '';
-        "local/statshost/README.txt".text =
-          import ./README.nix config.networking.hostName;
+        "local/statshost/README.txt".text = import ./README.nix config.networking.hostName;
       };
 
       # Update relayed nodes.
-      systemd.services.fc-prometheus-update-relayed-nodes =
-        (mkIf (relayRGNodes != []) {
+      systemd.services.fc-prometheus-update-relayed-nodes = (
+        mkIf (relayRGNodes != [ ]) {
           description = "Update prometheus proxy relayed nodes.";
           restartIfChanged = false;
           after = [ "network.target" ];
@@ -332,27 +357,31 @@ in
             User = "root";
             Type = "oneshot";
           };
-          path = [ pkgs.curl pkgs.coreutils ];
-          script = concatStringsSep "\n" (map
-            (relayNode: ''
-                curl -s -o /var/cache/.statshost-relay-${relayNode.job_name}.json.download \
-                ${relayNode.proxy_url}/scrapeconfig.json && \
-                mv /var/cache/.statshost-relay-${relayNode.job_name}.json.download /var/cache/statshost-relay-${relayNode.job_name}.json
-              '')
-            relayRGNodes);
-        });
+          path = [
+            pkgs.curl
+            pkgs.coreutils
+          ];
+          script = concatStringsSep "\n" (
+            map (relayNode: ''
+              curl -s -o /var/cache/.statshost-relay-${relayNode.job_name}.json.download \
+              ${relayNode.proxy_url}/scrapeconfig.json && \
+              mv /var/cache/.statshost-relay-${relayNode.job_name}.json.download /var/cache/statshost-relay-${relayNode.job_name}.json
+            '') relayRGNodes
+          );
+        }
+      );
 
-      systemd.timers.fc-prometheus-update-relayed-nodes =
-        (mkIf (relayRGNodes != []) {
+      systemd.timers.fc-prometheus-update-relayed-nodes = (
+        mkIf (relayRGNodes != [ ]) {
           description = "Timer for updating relayed targets";
           wantedBy = [ "timers.target" ];
           timerConfig = {
             OnUnitActiveSec = "11m";
             RandomizedDelaySec = "3m";
           };
-        });
-      }
-    )
+        }
+      );
+    })
 
     # An actual statshost. Enable Prometheus.
     (mkIf (cfgStatsGlobal.enable || cfgStatsRG.enable) {
@@ -369,50 +398,56 @@ in
         enable = true;
         extraFlags = promFlags;
         listenAddress = prometheusListenAddress;
-        scrapeConfigs = [
-          {
-            job_name = "prometheus";
-            scrape_interval = "5s";
-            static_configs = [{
-              targets = [ prometheusListenAddress ];
-              labels = {
-                host = config.networking.hostName;
+        scrapeConfigs =
+          [
+            {
+              job_name = "prometheus";
+              scrape_interval = "5s";
+              static_configs = [
+                {
+                  targets = [ prometheusListenAddress ];
+                  labels = {
+                    host = config.networking.hostName;
+                  };
+                }
+              ];
+            }
+            rec {
+              job_name = config.flyingcircus.enc.parameters.resource_group;
+              scrape_interval = cfgStats.prometheusScrapeInterval;
+              # We use a file sd here. Static config would restart prometheus
+              # for each change. This way prometheus picks up the change
+              # automatically and without restart.
+              file_sd_configs = [
+                {
+                  files = [ "${localDir}/scrape-*.json" ];
+                  refresh_interval = "10m";
+                }
+              ];
+              metric_relabel_configs =
+                prometheusMetricRelabel ++ (relabelConfiguration "${localDir}/metric-relabel.${job_name}.yaml");
+            }
+            {
+              job_name = "federate";
+              scrape_interval = cfgStats.prometheusScrapeInterval;
+              metrics_path = "/federate";
+              honor_labels = true;
+              params = {
+                "match[]" = [ "{job=~\"static|prometheus\"}" ];
               };
-            }];
-          }
-          rec {
-            job_name = config.flyingcircus.enc.parameters.resource_group;
-            scrape_interval = cfgStats.prometheusScrapeInterval;
-            # We use a file sd here. Static config would restart prometheus
-            # for each change. This way prometheus picks up the change
-            # automatically and without restart.
-            file_sd_configs = [{
-              files = [ "${localDir}/scrape-*.json" ];
-              refresh_interval = "10m";
-            }];
-            metric_relabel_configs =
-              prometheusMetricRelabel ++
-              (relabelConfiguration
-                "${localDir}/metric-relabel.${job_name}.yaml");
-          }
-          {
-            job_name = "federate";
-            scrape_interval = cfgStats.prometheusScrapeInterval;
-            metrics_path = "/federate";
-            honor_labels = true;
-            params = {
-              "match[]" = [ "{job=~\"static|prometheus\"}" ];
-            };
-            file_sd_configs = [{
-              files = [ "${localDir}/federate-*.json" ];
-              refresh_interval = "10m";
-            }];
-            metric_relabel_configs = prometheusMetricRelabel;
-          }
+              file_sd_configs = [
+                {
+                  files = [ "${localDir}/federate-*.json" ];
+                  refresh_interval = "10m";
+                }
+              ];
+              metric_relabel_configs = prometheusMetricRelabel;
+            }
 
-        ] ++ relayRGConfig ++ relayLocationConfig;
+          ]
+          ++ relayRGConfig
+          ++ relayLocationConfig;
       };
-
 
       flyingcircus.localConfigDirs.statshost = {
         dir = localDir;
@@ -433,7 +468,11 @@ in
     (mkIf (cfgStatsGlobal.enable || cfgStatsRG.enable) {
 
       networking.firewall = {
-        allowedTCPPorts = [ 80 443 2004 ];
+        allowedTCPPorts = [
+          80
+          443
+          2004
+        ];
         allowedUDPPorts = [ 2003 ];
       };
 
@@ -489,73 +528,82 @@ in
         };
       };
 
-      systemd.services.grafana.preStart = let
-        fcioDashboards = pkgs.writeTextFile {
-          name = "fcio.yaml";
-          text = ''
-            apiVersion: 1
-            providers:
-            - name: 'default'
-              orgId: 1
-              type: file
-              disableDeletion: false
-              updateIntervalSeconds: 360
-              options:
-                path: ${grafanaJsonDashboardPath}
-                foldersFromFilesStructure: true
-          '';
-        };
-        prometheusDatasource = pkgs.writeTextFile {
-          name = "prometheus.yaml";
-          text = ''
-            apiVersion: 1
-            datasources:
-            - name: Prometheus
-              type: prometheus
-              access: proxy
-              orgId: 1
-              url: http://${config.networking.hostName}:9090
-              editable: false
-              isDefault: true
-          '';
-        };
+      systemd.services.grafana.preStart =
+        let
+          fcioDashboards = pkgs.writeTextFile {
+            name = "fcio.yaml";
+            text = ''
+              apiVersion: 1
+              providers:
+              - name: 'default'
+                orgId: 1
+                type: file
+                disableDeletion: false
+                updateIntervalSeconds: 360
+                options:
+                  path: ${grafanaJsonDashboardPath}
+                  foldersFromFilesStructure: true
+            '';
+          };
+          prometheusDatasource = pkgs.writeTextFile {
+            name = "prometheus.yaml";
+            text = ''
+              apiVersion: 1
+              datasources:
+              - name: Prometheus
+                type: prometheus
+                access: proxy
+                orgId: 1
+                url: http://${config.networking.hostName}:9090
+                editable: false
+                isDefault: true
+            '';
+          };
 
-        # support loki running on the same host as grafana in
-        # single-RG mode.
-        lokiDatasource = pkgs.writeTextFile {
-          name = "loki.yaml";
-          text = ''
-            apiVersion: 1
-            datasources:
-            - name: Loki
-              type: loki
-              access: proxy
-              orgId: 1
-              url: http://localhost:3100
-              editable: false
-              isDefault: false
-          '';
-        };
-      in ''
-        rm -rf ${grafanaProvisioningPath}
-        mkdir -p ${grafanaProvisioningPath}/dashboards ${grafanaProvisioningPath}/datasources
-        ln -fs ${fcioDashboards} ${grafanaProvisioningPath}/dashboards/fcio.yaml
-        ln -fs ${prometheusDatasource} ${grafanaProvisioningPath}/datasources/prometheus.yaml
-      '' + optionalString (cfgStatsRG.enable && cfgLokiRG.enable) ''
-        ln -fs ${lokiDatasource} ${grafanaProvisioningPath}/datasources/loki.yaml
-      '';
+          # support loki running on the same host as grafana in
+          # single-RG mode.
+          lokiDatasource = pkgs.writeTextFile {
+            name = "loki.yaml";
+            text = ''
+              apiVersion: 1
+              datasources:
+              - name: Loki
+                type: loki
+                access: proxy
+                orgId: 1
+                url: http://localhost:3100
+                editable: false
+                isDefault: false
+            '';
+          };
+        in
+        ''
+          rm -rf ${grafanaProvisioningPath}
+          mkdir -p ${grafanaProvisioningPath}/dashboards ${grafanaProvisioningPath}/datasources
+          ln -fs ${fcioDashboards} ${grafanaProvisioningPath}/dashboards/fcio.yaml
+          ln -fs ${prometheusDatasource} ${grafanaProvisioningPath}/datasources/prometheus.yaml
+        ''
+        + optionalString (cfgStatsRG.enable && cfgLokiRG.enable) ''
+          ln -fs ${lokiDatasource} ${grafanaProvisioningPath}/datasources/loki.yaml
+        '';
 
       # Provide FC dashboards, and update them automatically.
       systemd.services.fc-grafana-load-dashboards = {
         description = "Update grafana dashboards.";
         restartIfChanged = false;
-        after = [ "network.target" "grafana.service" ];
+        after = [
+          "network.target"
+          "grafana.service"
+        ];
         wantedBy = [ "grafana.service" ];
         serviceConfig = {
           User = "grafana";
           Type = "oneshot";
         };
-        path = with pkgs; [ git coreutils ];
+        path = with pkgs; [
+          git
+          coreutils
+        ];
         environment = {
           SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
         };

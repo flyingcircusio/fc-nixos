@@ -7,7 +7,12 @@ in
 {
   imports = [
     ./vm.nix
-    (lib.mkRemovedOptionModule [ "flyingcircus" "roles" "devhost" "cleanupContainers" ] "Automatic cleanup of VMs is not supported right now.")
+    (lib.mkRemovedOptionModule [
+      "flyingcircus"
+      "roles"
+      "devhost"
+      "cleanupContainers"
+    ] "Automatic cleanup of VMs is not supported right now.")
   ];
 
   options = {
@@ -16,7 +21,10 @@ in
       enable = lib.mkEnableOption "Enable our development host for slim virtual machines";
 
       virtualisationType = lib.mkOption {
-        type = lib.types.enum [ "vm" "container" ];
+        type = lib.types.enum [
+          "vm"
+          "container"
+        ];
         # FIXME: Why is this still the default?
         default = "container";
       };
@@ -48,7 +56,7 @@ in
         "fs.inotify.max_user_instances" = 512;
         "fs.inotify.max_user_watches" = 16384;
       };
-      networking.nat.internalInterfaces = ["ve-+"];
+      networking.nat.internalInterfaces = [ "ve-+" ];
     })
   ];
 }

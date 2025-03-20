@@ -2,15 +2,20 @@
 # Future changes may require a full Nginx restart to become active.
 # We can use systemd.services.nginx.restartTriggers to force a restart.
 # This may also affect other services that use reloading.
-{ lib, config, pkgs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 
-with builtins; with lib;
+with builtins;
+with lib;
 
 let
   cfg = config.flyingcircus.services.nginx;
   nginxCfg = config.services.nginx;
   fclib = config.fclib;
-
 
   nginxShowConfig = pkgs.writeScriptBin "nginx-show-config" ''
     cat /etc/nginx/nginx.conf
@@ -52,21 +57,31 @@ let
   package = config.services.nginx.package;
   localCfgDir = config.flyingcircus.localConfigPath + "/nginx";
 
-  mkVanillaVhostFromFCVhost = name: vhost: let
-    servername = if vhost.serverName != null then vhost.serverName else name;
-  in (removeAttrs vhost [ "emailACME" "listenAddress" "listenAddress6" ]) // {
-    extraConfig = vhost.extraConfig + (lib.optionalString cfg.logPerVirtualHost ''
-      access_log /var/log/nginx/access-${servername}.log;
-      error_log /var/log/nginx/error-${servername}.log;
-    '');
-  };
+  mkVanillaVhostFromFCVhost =
+    name: vhost:
+    let
+      servername = if vhost.serverName != null then vhost.serverName else name;
+    in
+    (removeAttrs vhost [
+      "emailACME"
+      "listenAddress"
+      "listenAddress6"
+    ])
+    // {
+      extraConfig =
+        vhost.extraConfig
+        + (lib.optionalString cfg.logPerVirtualHost ''
+          access_log /var/log/nginx/access-${servername}.log;
+          error_log /var/log/nginx/error-${servername}.log;
+        '');
+    };
 
   virtualHosts = lib.mapAttrs mkVanillaVhostFromFCVhost cfg.virtualHosts;
 
   # only email setting supported at the moment
-  fcioAcmeSettings =
-    lib.mapAttrs (name: val: { email = val.emailACME; })
-    (lib.filterAttrs (_: val: val ? emailACME && val.emailACME != null) cfg.virtualHosts);
+  fcioAcmeSettings = lib.mapAttrs (name: val: { email = val.emailACME; }) (
+    lib.filterAttrs (_: val: val ? emailACME && val.emailACME != null) cfg.virtualHosts
+  );
 
   acmeVhosts = (lib.filterAttrs (_: vhost: vhost.enableACME) nginxCfg.virtualHosts);
 
@@ -153,14 +168,20 @@ let
   plainConfigFiles = filter (p: lib.hasSuffix ".conf" p) (fclib.files localCfgDir);
   localHttpConfig = concatStringsSep "\n" (map readFile plainConfigFiles);
 
-  hostsWithLegacyListenOptions =
-    filter
-      (x: x.laExtra != [])
-      (mapAttrsToList
-        (hostname: host: let
-          laExtra = filter (x: x != null) [ host.listenAddress host.listenAddress6 ];
-        in { inherit hostname host laExtra; })
-        cfg.virtualHosts);
+  hostsWithLegacyListenOptions = filter (x: x.laExtra != [ ]) (
+    mapAttrsToList (
+      hostname: host:
+      let
+        laExtra = filter (x: x != null) [
+          host.listenAddress
+          host.listenAddress6
+        ];
+      in
+      {
+        inherit hostname host laExtra;
+      }
+    ) cfg.virtualHosts
+  );
 
 in
 {
@@ -211,7 +232,10 @@ in
       description = ''
         Configures the number of worker processes.
       '';
-      default = fclib.min [(fclib.currentCores 1) 12];
+      default = fclib.min [
+        (fclib.currentCores 1)
+        12
+      ];
       defaultText = literalExpression "fclib.min [(fclib.currentCores 1) 12]";
     };
 
@@ -219,8 +243,8 @@ in
       type = types.int;
       default = 7;
       description = ''
-       Configures how often log files are rotated before being removed.
-       If count is 0, old versions are removed rather than rotated.
+        Configures how often log files are rotated before being removed.
+        If count is 0, old versions are removed rather than rotated.
       '';
     };
 
@@ -234,62 +258,75 @@ in
 
     # FIXME: use upstream
     virtualHosts = mkOption {
-      type = let
-        vhost = import ./vhost-options.nix {
-          inherit config lib;
-        };
-      in types.attrsOf (types.submodule ({ config, ... }: {
-        options = vhost.options // {
-          listenAddress = mkOption {
-            type = types.nullOr types.str;
-            description = ''
-              IPv4 address to listen on.
-              If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
-              the service listens on the frontend addresses.
-
-              If you need more options, use <option>listen</option>.
-              If you want to configure any number of IPs use <literal>listenAddresses</literal>.
-            '';
-            default = null;
+      type =
+        let
+          vhost = import ./vhost-options.nix {
+            inherit config lib;
           };
+        in
+        types.attrsOf (
+          types.submodule (
+            { config, ... }:
+            {
+              options = vhost.options // {
+                listenAddress = mkOption {
+                  type = types.nullOr types.str;
+                  description = ''
+                    IPv4 address to listen on.
+                    If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
+                    the service listens on the frontend addresses.
 
-          listenAddress6 = mkOption {
-            type = types.nullOr types.str;
-            description = ''
-              IPv6 address to listen on.
-              If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
-              the service listens on the frontend addresses.
+                    If you need more options, use <option>listen</option>.
+                    If you want to configure any number of IPs use <literal>listenAddresses</literal>.
+                  '';
+                  default = null;
+                };
 
-              If you need more options, use <option>listen</option>.
-              If you want to configure any number of IPs use <literal>listenAddresses</literal>.
-            '';
-            default = null;
-          };
+                listenAddress6 = mkOption {
+                  type = types.nullOr types.str;
+                  description = ''
+                    IPv6 address to listen on.
+                    If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
+                    the service listens on the frontend addresses.
 
-          emailACME = mkOption {
-            type = types.nullOr types.str;
-            description = ''
-              Set the contact address for Let's Encrypt (certificate expiry, policy changes).
-              Defaults to none.
-            '';
-            default = null;
-          };
+                    If you need more options, use <option>listen</option>.
+                    If you want to configure any number of IPs use <literal>listenAddresses</literal>.
+                  '';
+                  default = null;
+                };
 
-          enableACME = vhost.options.enableACME // {
-            default = config.onlySSL or false || config.enableSSL or false || config.addSSL or false || config.forceSSL or false;
-          };
+                emailACME = mkOption {
+                  type = types.nullOr types.str;
+                  description = ''
+                    Set the contact address for Let's Encrypt (certificate expiry, policy changes).
+                    Defaults to none.
+                  '';
+                  default = null;
+                };
 
-          listenAddresses = vhost.options.listenAddresses // {
-            default = if (config.listenAddress != null || config.listenAddress6 != null)
-              then filter (x: x != null) [
-                config.listenAddress
-                config.listenAddress6
-              ]
-              else cfg.defaultListenAddresses;
-          };
-        };
-      }));
-      default = {};
+                enableACME = vhost.options.enableACME // {
+                  default =
+                    config.onlySSL or false
+                    || config.enableSSL or false
+                    || config.addSSL or false
+                    || config.forceSSL or false;
+                };
+
+                listenAddresses = vhost.options.listenAddresses // {
+                  default =
+                    if (config.listenAddress != null || config.listenAddress6 != null) then
+                      filter (x: x != null) [
+                        config.listenAddress
+                        config.listenAddress6
+                      ]
+                    else
+                      cfg.defaultListenAddresses;
+                };
+              };
+            }
+          )
+        );
+      default = { };
       example = literalExpression ''
         {
           "hydra.example.com" = {
@@ -311,49 +348,60 @@ in
         type = types.ints.positive;
         default = 200;
         description = ''
-            Sets the maximum number of concurrent requests per client.
-          '';
+          Sets the maximum number of concurrent requests per client.
+        '';
       };
 
       maxRequestsPerSecond = mkOption {
         type = types.ints.positive;
         default = 50;
         description = ''
-            Sets the maximum number of requests per second per client.
-          '';
+          Sets the maximum number of requests per second per client.
+        '';
       };
 
       burst = mkOption {
         type = types.ints.positive;
         default = 500;
         description = ''
-            Sets the maximum number of requests to delay/queue if exceeding the rate limit.
-          '';
+          Sets the maximum number of requests to delay/queue if exceeding the rate limit.
+        '';
       };
     };
   };
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      assertions =
-        map
-          ({ hostname, host, laExtra }: {
-            assertion = host.listenAddresses == laExtra;
-            message = ''
-              ${hostname}: listenAddress(6) and the new array-format listenAddresses cannot be mixed
-              Please exclusively use listenAddresses instead:
-                listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
-            '';
-          })
-          hostsWithLegacyListenOptions;
+      assertions = map (
+        {
+          hostname,
+          host,
+          laExtra,
+        }:
+        {
+          assertion = host.listenAddresses == laExtra;
+          message = ''
+            ${hostname}: listenAddress(6) and the new array-format listenAddresses cannot be mixed
+            Please exclusively use listenAddresses instead:
+              listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
+          '';
+        }
+      ) hostsWithLegacyListenOptions;
 
-      warnings = (map
-          ({ hostname, host, laExtra }: ''
+      warnings = (
+        map (
+          {
+            hostname,
+            host,
+            laExtra,
+          }:
+          ''
             ${hostname}: listenAddress and listenAddress6 are deprecated and will be removed in 25.05.
             Please exclusively use listenAddresses instead:
               listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
-          '')
-          hostsWithLegacyListenOptions);
+          ''
+        ) hostsWithLegacyListenOptions
+      );
 
       environment.etc = {
         "local/nginx/README.txt".source = ./README.txt;
@@ -371,8 +419,9 @@ in
           source = "/etc/local/htpasswd_fcio_users.login";
         };
 
-        "local/nginx/example-configuration".text =
-          import ./example-plain-config.nix { inherit config lib; };
+        "local/nginx/example-configuration".text = import ./example-plain-config.nix {
+          inherit config lib;
+        };
 
         "local/nginx/modsecurity/README.txt".text = ''
           Here are example configuration files for ModSecurity.
@@ -387,65 +436,69 @@ in
           modsecurity_includes.conf.
         '';
 
-        "local/nginx/modsecurity/modsecurity.conf.example".source =
-          ./modsecurity.conf;
+        "local/nginx/modsecurity/modsecurity.conf.example".source = ./modsecurity.conf;
 
-        "local/nginx/modsecurity/modsecurity_includes.conf.example".source =
-          ./modsecurity_includes.conf;
+        "local/nginx/modsecurity/modsecurity_includes.conf.example".source = ./modsecurity_includes.conf;
 
-        "local/nginx/modsecurity/unicode.mapping".source =
-          "${pkgs.libmodsecurity.src}/unicode.mapping";
+        "local/nginx/modsecurity/unicode.mapping".source = "${pkgs.libmodsecurity.src}/unicode.mapping";
 
         "local/nixos/nginx.nix.example".source = ./example-nixos-module.nix;
       };
 
       flyingcircus.services.telegraf.inputs = {
-        nginx = [ {
-          urls = [ "http://localhost:81/nginx_status" ];
-        } ];
+        nginx = [
+          {
+            urls = [ "http://localhost:81/nginx_status" ];
+          }
+        ];
       };
 
-      flyingcircus.services.sensu-client.checks = {
+      flyingcircus.services.sensu-client.checks =
+        {
 
-        nginx_config = {
-          notification = "Nginx configuration check problems";
-          command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config";
-          interval = 300;
-        };
+          nginx_config = {
+            notification = "Nginx configuration check problems";
+            command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config";
+            interval = 300;
+          };
 
-        nginx_status = {
-          notification = "nginx does not listen on port 80";
-          command = ''
-            ${pkgs.monitoring-plugins}/bin/check_http \
-              -H localhost -u /nginx_status -p 81 -s server -c 5 -w 2
-          '';
-          interval = 60;
-        };
+          nginx_status = {
+            notification = "nginx does not listen on port 80";
+            command = ''
+              ${pkgs.monitoring-plugins}/bin/check_http \
+                -H localhost -u /nginx_status -p 81 -s server -c 5 -w 2
+            '';
+            interval = 60;
+          };
 
-        nginx_worker_age = {
-          notification = "Some nginx worker processes don't use the current config";
-          command = "${nginxCheckWorkerAge}";
-          interval = 60;
-        };
+          nginx_worker_age = {
+            notification = "Some nginx worker processes don't use the current config";
+            command = "${nginxCheckWorkerAge}";
+            interval = 60;
+          };
 
-      } // (
-      lib.listToAttrs
-        (map (n:
-          lib.nameValuePair "nginx_https_${n}" {
-          notification = "HTTPS certificate check failed for vhost ${n}";
-          # We're using a timeout of 15 seconds because 10 seconds is the timeout
-          # that will trigger if DNS issues occur and giving the check a higher
-          # timeout allows us to see those. Otherwise they get hidden behind
-          # a generic timeout message.
-          # Note that we assume that the certificate is reachable via port 443.
-          # Other configurations might need overrides for the sensu check command.
-          command = "check_http -p 443 -S --sni -C 25,14 -H ${n} -t 15";
-          interval = 600;
-        })
-        (lib.attrNames acmeVhosts)));
+        }
+        // (lib.listToAttrs (
+          map (
+            n:
+            lib.nameValuePair "nginx_https_${n}" {
+              notification = "HTTPS certificate check failed for vhost ${n}";
+              # We're using a timeout of 15 seconds because 10 seconds is the timeout
+              # that will trigger if DNS issues occur and giving the check a higher
+              # timeout allows us to see those. Otherwise they get hidden behind
+              # a generic timeout message.
+              # Note that we assume that the certificate is reachable via port 443.
+              # Other configurations might need overrides for the sensu check command.
+              command = "check_http -p 443 -S --sni -C 25,14 -H ${n} -t 15";
+              interval = 600;
+            }
+          ) (lib.attrNames acmeVhosts)
+        ));
 
-
-      networking.firewall.allowedTCPPorts = [ 80 443 ];
+      networking.firewall.allowedTCPPorts = [
+        80
+        443
+      ];
 
       security.acme.certs = fcioAcmeSettings;
 
@@ -470,9 +523,9 @@ in
           ${cfg.httpConfig}
 
           ${lib.optionalString (!cfg.disableDHEATMitigation) ''
-          # mitigate the D(HE)at Attack
-          # see https://dheatattack.gitlab.io/mitigations/
-          ssl_ecdh_curve x25519:secp256r1:x448;
+            # mitigate the D(HE)at Attack
+            # see https://dheatattack.gitlab.io/mitigations/
+            ssl_ecdh_curve x25519:secp256r1:x448;
           ''}
         '';
 
@@ -489,42 +542,44 @@ in
         inherit virtualHosts;
       };
 
-      services.logrotate.settings = let
-      commonRotate = {
-          rotate = cfg.rotateLogs;
-          create = "0644 ${nginxCfg.user} nginx";
-          su = "${nginxCfg.user} nginx";
+      services.logrotate.settings =
+        let
+          commonRotate = {
+            rotate = cfg.rotateLogs;
+            create = "0644 ${nginxCfg.user} nginx";
+            su = "${nginxCfg.user} nginx";
+          };
+        in
+        {
+          "/var/log/nginx/modsec_*.log" = {
+            # need higher prio, because more-specific match.
+            # Our platform header options use priority 900, we need to chose a
+            # higher number here for using them.
+            ignoreduplicates = true;
+            priority = 901;
+            copytruncate = true;
+          } // commonRotate;
+          "/var/log/nginx/*.log" = {
+            postrotate = ''
+              systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
+              chown ${nginxCfg.user}:nginx /var/log/nginx/*
+            '';
+          } // commonRotate;
         };
-        in {
-        "/var/log/nginx/modsec_*.log" = {
-          # need higher prio, because more-specific match.
-          # Our platform header options use priority 900, we need to chose a
-          # higher number here for using them.
-          ignoreduplicates = true;
-          priority = 901;
-          copytruncate = true;
-        } // commonRotate;
-        "/var/log/nginx/*.log" = {
-          postrotate = ''
-            systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
-            chown ${nginxCfg.user}:nginx /var/log/nginx/*
-          '';
-        } // commonRotate;
-      };
 
       # Z: Recursively change permissions if they already exist.
-      systemd.tmpfiles.rules = [
-        "d /etc/local/nginx/modsecurity 2775 nginx service"
-        # Clean up whatever logrotate may have missed three days later.
-        "d /var/log/nginx 0755 ${nginxCfg.user} nginx ${toString (cfg.rotateLogs + 3)}d"
-        "Z /var/log/nginx/* - ${nginxCfg.user} nginx"
-      ]
-      # d: Create temp subdirs if they don't exist and clean up files after 10 days.
-      ++ map (subdir: ''
-        d /var/cache/nginx/${subdir} 0700 nginx nginx 10d
-        Z /var/cache/nginx/${subdir} 0700 nginx nginx
-      ''
-      ) tempSubdirs;
+      systemd.tmpfiles.rules =
+        [
+          "d /etc/local/nginx/modsecurity 2775 nginx service"
+          # Clean up whatever logrotate may have missed three days later.
+          "d /var/log/nginx 0755 ${nginxCfg.user} nginx ${toString (cfg.rotateLogs + 3)}d"
+          "Z /var/log/nginx/* - ${nginxCfg.user} nginx"
+        ]
+        # d: Create temp subdirs if they don't exist and clean up files after 10 days.
+        ++ map (subdir: ''
+          d /var/cache/nginx/${subdir} 0700 nginx nginx 10d
+          Z /var/cache/nginx/${subdir} 0700 nginx nginx
+        '') tempSubdirs;
 
       flyingcircus.localConfigDirs.nginx = {
         dir = "/etc/local/nginx";

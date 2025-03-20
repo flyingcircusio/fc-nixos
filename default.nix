@@ -5,15 +5,18 @@
 # Build own package: nix-build -A fc.userscan
 # ===
 # <nixpkgs> should usually point to FC patched upstream nixpkgs
-{ nixpkgs ? <nixpkgs>
-, localSystem ? builtins.intersectAttrs { system = null; platform = null; } args
-, system ? localSystem.system
-, platform ? localSystem.platform
-, crossSystem ? null
-, overlays ? []
-, config ? {}
-} @ args:
-
+{
+  nixpkgs ? <nixpkgs>,
+  localSystem ? builtins.intersectAttrs {
+    system = null;
+    platform = null;
+  } args,
+  system ? localSystem.system,
+  platform ? localSystem.platform,
+  crossSystem ? null,
+  overlays ? [ ],
+  config ? { },
+}@args:
 
 with builtins;
 
@@ -27,7 +30,7 @@ import nixpkgs {
 
     inherit (nixpkgsConfig) permittedInsecurePackages;
 
-    allowUnfreePredicate = pkg:
-      elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames;
+    allowUnfreePredicate = pkg: elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames;
   };
-} // args
+}
+// args

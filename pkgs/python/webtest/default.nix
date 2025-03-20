@@ -1,16 +1,17 @@
-{ lib
-, buildPythonPackage
-, fetchPypi
-, isPy27
-, nose
-, webob
-, six
-, beautifulsoup4
-, waitress
-, mock
-, pyquery
-, wsgiproxy2
-, pastedeploy
+{
+  lib,
+  buildPythonPackage,
+  fetchPypi,
+  isPy27,
+  nose,
+  webob,
+  six,
+  beautifulsoup4,
+  waitress,
+  mock,
+  pyquery,
+  wsgiproxy2,
+  pastedeploy,
 }:
 
 buildPythonPackage rec {

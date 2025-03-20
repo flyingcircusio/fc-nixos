@@ -1,8 +1,21 @@
-{ config, options, pkgs, lib, ... }:
+{
+  config,
+  options,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   attrsets = import ./attrsets.nix { inherit config lib; };
-  doc = import ./doc.nix { inherit config options pkgs lib; };
+  doc = import ./doc.nix {
+    inherit
+      config
+      options
+      pkgs
+      lib
+      ;
+  };
   files = import ./files.nix { inherit config pkgs lib; };
   math = import ./math.nix { inherit pkgs lib; };
   modules = import ./modules.nix { inherit pkgs lib; };
@@ -17,7 +30,7 @@ in
 {
   options = {
     fclib = lib.mkOption {
-      default = {};
+      default = { };
       type = lib.types.attrs;
       description = "FC-specific helper functions.";
     };
@@ -25,7 +38,31 @@ in
 
   config = {
     fclib =
-      { inherit attrsets builders ceph doc files math modules network system utils lists; }
-      // attrsets // builders // ceph // doc // files // math // modules // network // system // utils // lists;
+      {
+        inherit
+          attrsets
+          builders
+          ceph
+          doc
+          files
+          math
+          modules
+          network
+          system
+          utils
+          lists
+          ;
+      }
+      // attrsets
+      // builders
+      // ceph
+      // doc
+      // files
+      // math
+      // modules
+      // network
+      // system
+      // utils
+      // lists;
   };
 }

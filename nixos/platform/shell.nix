@@ -4,8 +4,9 @@
 
 let
   enc = config.flyingcircus.enc;
-  parameters = lib.attrByPath [ "parameters" ] {} enc;
-  isProd = (lib.attrByPath [ "location" ] "dev" parameters) != "dev"
+  parameters = lib.attrByPath [ "parameters" ] { } enc;
+  isProd =
+    (lib.attrByPath [ "location" ] "dev" parameters) != "dev"
     && lib.attrByPath [ "production" ] false parameters;
   opt = lib.optionalString;
 
@@ -19,42 +20,42 @@ in
       export TMOUT=43200
     '';
 
-    environment.shellInit = lib.mkAfter (''
-      # help building locally compiled programs
-      export LIBRARY_PATH=$HOME/.nix-profile/lib
-      # header files
-      export CPATH=$HOME/.nix-profile/include
-      export C_INCLUDE_PATH=$CPATH
-      export CPLUS_INCLUDE_PATH=$CPATH
-      # pkg-config
-      export PKG_CONFIG_PATH=$HOME/.nix-profile/lib/pkgconfig:$HOME/.nix-profile/share/pkgconfig
-      # user init from shell snippets, see
-      # https://nixos.org/nixpkgs/manual/#sec-declarative-package-management
-      if [[ -d $HOME/.nix-profile/etc/profile.d ]]; then
-        for f in $HOME/.nix-profile/etc/profile.d/*.sh; do
-          if [[ -r $f ]]; then
-            source $f
+    environment.shellInit = lib.mkAfter (
+      ''
+        # help building locally compiled programs
+        export LIBRARY_PATH=$HOME/.nix-profile/lib
+        # header files
+        export CPATH=$HOME/.nix-profile/include
+        export C_INCLUDE_PATH=$CPATH
+        export CPLUS_INCLUDE_PATH=$CPATH
+        # pkg-config
+        export PKG_CONFIG_PATH=$HOME/.nix-profile/lib/pkgconfig:$HOME/.nix-profile/share/pkgconfig
+        # user init from shell snippets, see
+        # https://nixos.org/nixpkgs/manual/#sec-declarative-package-management
+        if [[ -d $HOME/.nix-profile/etc/profile.d ]]; then
+          for f in $HOME/.nix-profile/etc/profile.d/*.sh; do
+            if [[ -r $f ]]; then
+              source $f
+            fi
+          done
+        fi
+        unset f
+
+        if [[ "$USER" != root ]]; then
+
+          # We don't need that hack anymore because our combined channel works
+          # as expected by Nix tools now.
+          if [[ -e $HOME/.nix-defexpr/nixos ]]; then
+            rm $HOME/.nix-defexpr/nixos
           fi
-        done
-      fi
-      unset f
 
-      if [[ "$USER" != root ]]; then
-
-        # We don't need that hack anymore because our combined channel works
-        # as expected by Nix tools now.
-        if [[ -e $HOME/.nix-defexpr/nixos ]]; then
-          rm $HOME/.nix-defexpr/nixos
+          # Delete empty dir, nix-env will recreate it with the correct channel links
+          if [[ ! "$(ls -A $HOME/.nix-defexpr 2> /dev/null)" ]]; then
+            rmdir $HOME/.nix-defexpr 2> /dev/null || true
+          fi
         fi
-
-        # Delete empty dir, nix-env will recreate it with the correct channel links
-        if [[ ! "$(ls -A $HOME/.nix-defexpr 2> /dev/null)" ]]; then
-          rmdir $HOME/.nix-defexpr 2> /dev/null || true
-        fi
-      fi
-    '' +
-      (opt
-        (enc ? name && parameters ? location && parameters ? environment)
+      ''
+      + (opt (enc ? name && parameters ? location && parameters ? environment)
         # FCIO_* only exported if ENC data is present.
         ''
           # Grant easy access to the machine's ENC data for some variables to
@@ -66,34 +67,39 @@ in
       )
     );
 
-    users.motd = let
-      inherit (config.flyingcircus.platform) release;
-      isStableRelease = release != {};
-    in
-    ''
-      Welcome to the Flying Circus!
-
-      Status:     https://status.flyingcircus.io/
-      Docs:       https://doc.flyingcircus.io/
-      Release:    ${opt isStableRelease "${release.release_name} (" + config.system.nixos.label + opt isStableRelease ")"}
-      ${opt isStableRelease ("ChangeLog:  " + release.release_changelog)}
-
-    '' +
-    (opt (enc ? name && parameters ? location && parameters ? environment)
-      ''
-        Hostname:   ${enc.name}  Environment: ${parameters.environment}  Location: ${parameters.location}
-      '') +
-    (opt (parameters ? service_description)
-      ''
-        Services:   ${parameters.service_description}${opt isProd "  [production]"}
-      '') +
-      (let
-         roles = lib.concatStringsSep ", " (enc.roles or []);
+    users.motd =
+      let
+        inherit (config.flyingcircus.platform) release;
+        isStableRelease = release != { };
       in
+      ''
+        Welcome to the Flying Circus!
+
+        Status:     https://status.flyingcircus.io/
+        Docs:       https://doc.flyingcircus.io/
+        Release:    ${
+          opt isStableRelease "${release.release_name} ("
+          + config.system.nixos.label
+          + opt isStableRelease ")"
+        }
+        ${opt isStableRelease ("ChangeLog:  " + release.release_changelog)}
+
+      ''
+      + (opt (enc ? name && parameters ? location && parameters ? environment) ''
+        Hostname:   ${enc.name}  Environment: ${parameters.environment}  Location: ${parameters.location}
+      '')
+      + (opt (parameters ? service_description) ''
+        Services:   ${parameters.service_description}${opt isProd "  [production]"}
+      '')
+      + (
+        let
+          roles = lib.concatStringsSep ", " (enc.roles or [ ]);
+        in
         ''
           Roles:      ${roles}
 
-        '');
+        ''
+      );
 
     programs.bash.promptInit =
       let
@@ -101,7 +107,8 @@ in
         root = "01;31m";
         prod = "00;36m";
         dir = "01;34m";
-      in ''
+      in
+      ''
         ### prompting
         PROMPT_DIRTRIM=2
 
@@ -128,10 +135,11 @@ in
           else
             PS1+='\[\e[${user}\]\u@\h '
           fi
-      '' + (opt isProd ''
-          PS1+='\[\e[${prod}\][prod] '
-      '') +
       ''
+      + (opt isProd ''
+        PS1+='\[\e[${prod}\][prod] '
+      '')
+      + ''
           PS1+='\[\e[${dir}\]\w \$\[\e[0m\] '
         else
           PS1+='\u@\h ${opt isProd "[prod] "}\w \$ '

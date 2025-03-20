@@ -1,7 +1,7 @@
 {
   stdenv,
   pkgs,
-  prev
+  prev,
 }:
 
 let
@@ -28,22 +28,27 @@ let
     };
     "aarch64-darwin" = {
       system = "arm64";
-      hash = {};
+      hash = { };
     };
     "x86_64-darwin" = {
       system = "amd64";
-      hash = {};
+      hash = { };
     };
   };
 
-  makeSource = { system, phpMajor }:
+  makeSource =
+    { system, phpMajor }:
     let
       isLinux = builtins.match ".+-linux" system != null;
     in
     assert !isLinux -> (phpMajor != null);
     pkgs.fetchurl {
-      url = "https://packages.blackfire.io/binaries/blackfire-php/${version}/blackfire-php-${if isLinux then "linux" else "darwin"}_${hashes.${system}.system}-php-${builtins.replaceStrings [ "." ] [ "" ] phpMajor}.so";
-      hash = hashes.${system}.hash.${phpMajor} or (throw "php.extensions.blackfire unsupported on PHP ${phpMajor} on ${system}");
+      url = "https://packages.blackfire.io/binaries/blackfire-php/${version}/blackfire-php-${
+        if isLinux then "linux" else "darwin"
+      }_${hashes.${system}.system}-php-${builtins.replaceStrings [ "." ] [ "" ] phpMajor}.so";
+      hash =
+        hashes.${system}.hash.${phpMajor}
+          or (throw "php.extensions.blackfire unsupported on PHP ${phpMajor} on ${system}");
     };
 in
 prev.extensions.blackfire.overrideAttrs (attrs: {

@@ -42,177 +42,206 @@
     };
   };
 
-  outputs = inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; }
-    {
+  outputs =
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         inputs.devenv.flakeModule
         ./release/flake-part-linux-only-packages.nix
       ];
-      systems = [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ];
-      perSystem = { config, self', inputs', pkgs, lib, system, ... }: {
-        # Per-system attributes can be defined here. The self' and inputs'
-        # module parameters provide easy access to attributes of the same
-        # system.
+      systems = [
+        "x86_64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
+      perSystem =
+        {
+          config,
+          self',
+          inputs',
+          pkgs,
+          lib,
+          system,
+          ...
+        }:
+        {
+          # Per-system attributes can be defined here. The self' and inputs'
+          # module parameters provide easy access to attributes of the same
+          # system.
 
-        # We need our overlay here to get the right package versions.
-        # Other than that, it has no effect.
-        _module.args.pkgs =
-          let
-            inherit (builtins) elem getName;
-            nixpkgsConfig = import ./nixpkgs-config.nix;
-          in
-          import inputs.nixpkgs {
-            inherit system;
-            overlays = [ (import ./pkgs/overlay.nix) ];
-            config = {
-              inherit (nixpkgsConfig) permittedInsecurePackages;
+          # We need our overlay here to get the right package versions.
+          # Other than that, it has no effect.
+          _module.args.pkgs =
+            let
+              inherit (builtins) elem getName;
+              nixpkgsConfig = import ./nixpkgs-config.nix;
+            in
+            import inputs.nixpkgs {
+              inherit system;
+              overlays = [ (import ./pkgs/overlay.nix) ];
+              config = {
+                inherit (nixpkgsConfig) permittedInsecurePackages;
 
-              allowUnfreePredicate = pkg:
-                elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames;
+                allowUnfreePredicate = pkg: elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames;
+              };
             };
+
+          apps.buildVersionsJson = {
+            type = "app";
+            program = "${pkgs.writeShellScript "update-versions-json" ''
+              jq < $(nix build .#versionsJson --print-out-paths) > release/versions.json
+            ''}";
+          };
+          apps.buildPackageVersionsJson = {
+            type = "app";
+            program = "${pkgs.writeShellScript "update-package-versions-json" ''
+              jq < $(nix build .#packageVersions --print-out-paths --impure) > release/package-versions.json
+            ''}";
           };
 
-        apps.buildVersionsJson = {
-          type = "app";
-          program = "${pkgs.writeShellScript "update-versions-json" ''
-            jq < $(nix build .#versionsJson --print-out-paths) > release/versions.json
-          ''}";
-        };
-        apps.buildPackageVersionsJson = {
-          type = "app";
-          program = "${pkgs.writeShellScript "update-package-versions-json" ''
-            jq < $(nix build .#packageVersions --print-out-paths --impure) > release/package-versions.json
-          ''}";
-        };
+          packages = {
+            # These are packages that work on all systems.
+            # Also see release/flake-part-linux-only-packages.nix
 
-        packages = {
-          # These are packages that work on all systems.
-          # Also see release/flake-part-linux-only-packages.nix
+            fcGetCurrentChannelUrl = pkgs.writeShellApplication {
+              name = "get_current_channel_url";
+              runtimeInputs = with pkgs; [ curl ];
+              text = (lib.readFile release/fc-get-current-channel-url.sh);
+            };
 
-          fcGetCurrentChannelUrl = pkgs.writeShellApplication {
-            name = "get_current_channel_url";
-            runtimeInputs = with pkgs; [ curl ];
-            text = (lib.readFile release/fc-get-current-channel-url.sh);
+            upNixPhps = pkgs.writeShellApplication {
+              name = "update_phps";
+              excludeShellChecks = [
+                "SC2086"
+                "SC2164"
+                "SC2064"
+                "SC2002"
+              ];
+              runtimeInputs = with pkgs; [
+                git
+                curl
+                jq
+              ];
+              text = (lib.readFile release/up-nix-phps.sh);
+            };
+
+            versionsJson = pkgs.writeText "versions.json" (
+              lib.generators.toJSON { } {
+                nixpkgs = with inputs.nixpkgs; {
+                  inherit rev;
+                  hash = narHash;
+                  owner = "flyingcircusio";
+                  repo = "nixpkgs";
+                };
+                nixos-mailserver = with inputs.nixos-mailserver; {
+                  inherit rev;
+                  hash = narHash;
+                  url = "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/";
+                  fetchSubmodules = false;
+                  deepClone = false;
+                  leaveDotGit = false;
+                };
+                poetry2nix = with inputs.poetry2nix; {
+                  inherit rev;
+                  hash = narHash;
+                  owner = "nix-community";
+                  repo = "poetry2nix";
+                };
+                nixpkgs-21_05 = with inputs.nixpkgs-21_05; {
+                  inherit rev;
+                  hash = narHash;
+                  owner = "flyingcircusio";
+                  repo = "nixpkgs";
+                };
+                fc-nixos-21_05 = with inputs.fc-nixos-21_05; {
+                  inherit rev;
+                  hash = narHash;
+                  owner = "flyingcircusio";
+                  repo = "fc-nixos";
+                };
+              }
+            );
           };
 
-          upNixPhps = pkgs.writeShellApplication {
-            name = "update_phps";
-            excludeShellChecks = [ "SC2086" "SC2164" "SC2064" "SC2002" ];
-            runtimeInputs = with pkgs; [ git curl jq ];
-            text = (lib.readFile release/up-nix-phps.sh);
-          };
-
-          versionsJson = pkgs.writeText "versions.json" (lib.generators.toJSON {}
+          devenv.shells.default =
+            let
+              inherit (builtins) getEnv;
+              upstreams = { inherit (inputs) nixpkgs nixos-mailserver; };
+              nixPathUpstreams = lib.concatStringsSep ":" (
+                lib.mapAttrsToList (name: flake: "${name}=${flake.outPath}") upstreams
+              );
+              NIX_PATH = "fc=${getEnv "PWD"}:${nixPathUpstreams}:nixos-config=/etc/nixos/configuration.nix";
+            in
             {
-              nixpkgs = with inputs.nixpkgs; {
-                inherit rev;
-                hash = narHash;
-                owner = "flyingcircusio";
-                repo = "nixpkgs";
+              name = "fc-nixos-dev";
+              env = {
+                inherit NIX_PATH;
               };
-              nixos-mailserver = with inputs.nixos-mailserver; {
-                inherit rev;
-                hash = narHash;
-                url = "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/";
-                fetchSubmodules = false;
-                deepClone = false;
-                leaveDotGit = false;
-              };
-              poetry2nix = with inputs.poetry2nix; {
-                inherit rev;
-                hash = narHash;
-                owner = "nix-community";
-                repo = "poetry2nix";
-              };
-              nixpkgs-21_05 = with inputs.nixpkgs-21_05; {
-                inherit rev;
-                hash = narHash;
-                owner = "flyingcircusio";
-                repo = "nixpkgs";
-              };
-              fc-nixos-21_05 = with inputs.fc-nixos-21_05; {
-                inherit rev;
-                hash = narHash;
-                owner = "flyingcircusio";
-                repo = "fc-nixos";
-              };
-            }
-          );
-        };
 
-        devenv.shells.default =
-         let
-            inherit (builtins) getEnv;
-            upstreams = { inherit (inputs) nixpkgs nixos-mailserver; };
-            nixPathUpstreams =
-              lib.concatStringsSep ":"
-                (lib.mapAttrsToList (name: flake: "${name}=${flake.outPath}") upstreams);
-            NIX_PATH = "fc=${getEnv "PWD"}:${nixPathUpstreams}:nixos-config=/etc/nixos/configuration.nix";
-          in
-          {
-            name = "fc-nixos-dev";
-            env = {
-              inherit NIX_PATH;
+              packages =
+                with pkgs;
+                [
+                  jq
+                  nixfmt-rfc-style
+                ]
+                ++ (with self'.packages; [
+                  fcGetCurrentChannelUrl
+                  upNixPhps
+                ]);
+
+              scripts = {
+                # This only works on Linux but I couldn't find an easy way to
+                # only build this script on Linux. It just produces an error
+                # message on Non-Linux because packageVersions is missing.
+                build_package_versions_json.exec = ''
+                  nix run .#buildPackageVersionsJson
+                '';
+
+                build_versions_json.exec = ''
+                  nix run .#buildVersionsJson
+                '';
+
+                build_channels_dir.exec =
+                  ''
+                    set -e
+                    mkdir -p channels
+                    if ! [[ -e channels/fc ]]; then
+                        ln -s .. channels/fc
+                    fi
+                  ''
+                  + (lib.concatStringsSep "\n" (
+                    lib.mapAttrsToList (name: flake: ''
+                      ln -sfT ${flake.outPath} channels/${name}
+                    '') upstreams
+                  ));
+
+                cat_package_versions_json.exec = ''
+                  jq < $(nix build .#packageVersions --print-out-paths)
+                '';
+
+                dev_setup.exec = ''
+                  build_channels_dir
+
+                  # -s gives us the absolute path without resolving symlinks.
+                  NIX_PATH=`realpath -s channels`
+
+                  # preserve nixos-config
+                  config=$(nix-instantiate --find-file nixos-config 2>/dev/null) || true
+
+                  if [[ -n "$config" ]]; then
+                      NIX_PATH="$NIX_PATH:nixos-config=$config"
+                  else
+                      NIX_PATH="$NIX_PATH:nixos-config=$base/nixos"
+                  fi
+
+                  echo "export NIX_PATH=$NIX_PATH"
+                '';
+
+                nixos_repl.exec = ''
+                  sudo -E nix repl -f nixos/lib/nixos-repl.nix
+                '';
+              };
             };
-
-            packages = with pkgs; [
-              jq
-              nixfmt-rfc-style
-            ] ++ (with self'.packages; [
-              fcGetCurrentChannelUrl
-              upNixPhps
-            ]);
-
-            scripts = {
-              # This only works on Linux but I couldn't find an easy way to
-              # only build this script on Linux. It just produces an error
-              # message on Non-Linux because packageVersions is missing.
-              build_package_versions_json.exec = ''
-                nix run .#buildPackageVersionsJson
-              '';
-
-              build_versions_json.exec = ''
-                nix run .#buildVersionsJson
-              '';
-
-              build_channels_dir.exec = ''
-                set -e
-                mkdir -p channels
-                if ! [[ -e channels/fc ]]; then
-                    ln -s .. channels/fc
-                fi
-              '' + (lib.concatStringsSep "\n" (lib.mapAttrsToList (name: flake: ''
-                ln -sfT ${flake.outPath} channels/${name}
-              '') upstreams ));
-
-              cat_package_versions_json.exec = ''
-                jq < $(nix build .#packageVersions --print-out-paths)
-              '';
-
-              dev_setup.exec = ''
-                build_channels_dir
-
-                # -s gives us the absolute path without resolving symlinks.
-                NIX_PATH=`realpath -s channels`
-
-                # preserve nixos-config
-                config=$(nix-instantiate --find-file nixos-config 2>/dev/null) || true
-
-                if [[ -n "$config" ]]; then
-                    NIX_PATH="$NIX_PATH:nixos-config=$config"
-                else
-                    NIX_PATH="$NIX_PATH:nixos-config=$base/nixos"
-                fi
-
-                echo "export NIX_PATH=$NIX_PATH"
-              '';
-
-              nixos_repl.exec = ''
-                sudo -E nix repl -f nixos/lib/nixos-repl.nix
-              '';
-            };
-          };
         };
     }; # end mkFlake
 }

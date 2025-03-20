@@ -1,6 +1,11 @@
 # Relay stats of a location via NGINX.
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib;
 let
   fclib = config.fclib;
@@ -9,52 +14,63 @@ let
   httpsPort = 9443;
 in
 {
-  config = mkIf (
-      config.flyingcircus.roles.statshost-location-proxy.enable &&
-      statshostServiceIPs != []) {
+  config =
+    mkIf (config.flyingcircus.roles.statshost-location-proxy.enable && statshostServiceIPs != [ ])
+      {
 
-    networking.firewall.extraCommands = let
-      rule = ip: port: ''
-        ${fclib.iptables ip} -A nixos-fw -i ethfe -s ${ip} -p tcp \
-          --dport ${toString port} -j nixos-fw-accept
-      '';
-     in "# statshost-collector\n" + concatStringsSep ""
-        (map (ip: (rule ip httpPort) + (rule ip httpsPort)) statshostServiceIPs);
-
-    services.nginx = let
-        vhost_name = fclib.fqdn { vlan = "fe"; };
-      in {
-      enable = true;
-      recommendedGzipSettings = true;
-      recommendedOptimisation = true;
-      recommendedProxySettings = true;
-      recommendedTlsSettings = true;
-      virtualHosts.${vhost_name} = {
-        serverAliases = [ "${config.networking.hostName}.${config.networking.domain}" ];
-        enableACME = true;
-        addSSL = true;
-        listen =
-          flatten
-            (map
-              (a: [{ addr = a; port = httpsPort; ssl = true; }
-                   { addr = a; port = httpPort; }])
-              fclib.network.fe.dualstack.addressesQuoted);
-        locations = {
-          "/" = {
-            extraConfig = ''
-              resolver ${concatStringsSep " " config.networking.nameservers};
-              limit_except GET { deny all; }
+        networking.firewall.extraCommands =
+          let
+            rule = ip: port: ''
+              ${fclib.iptables ip} -A nixos-fw -i ethfe -s ${ip} -p tcp \
+                --dport ${toString port} -j nixos-fw-accept
             '';
-            proxyPass = "http://$host:9126$request_uri$is_args$args";
+          in
+          "# statshost-collector\n"
+          + concatStringsSep "" (map (ip: (rule ip httpPort) + (rule ip httpsPort)) statshostServiceIPs);
 
+        services.nginx =
+          let
+            vhost_name = fclib.fqdn { vlan = "fe"; };
+          in
+          {
+            enable = true;
+            recommendedGzipSettings = true;
+            recommendedOptimisation = true;
+            recommendedProxySettings = true;
+            recommendedTlsSettings = true;
+            virtualHosts.${vhost_name} = {
+              serverAliases = [ "${config.networking.hostName}.${config.networking.domain}" ];
+              enableACME = true;
+              addSSL = true;
+              listen = flatten (
+                map (a: [
+                  {
+                    addr = a;
+                    port = httpsPort;
+                    ssl = true;
+                  }
+                  {
+                    addr = a;
+                    port = httpPort;
+                  }
+                ]) fclib.network.fe.dualstack.addressesQuoted
+              );
+              locations = {
+                "/" = {
+                  extraConfig = ''
+                    resolver ${concatStringsSep " " config.networking.nameservers};
+                    limit_except GET { deny all; }
+                  '';
+                  proxyPass = "http://$host:9126$request_uri$is_args$args";
+
+                };
+              };
+              extraConfig = ''
+                access_log /var/log/nginx/statshost-location-proxy_access.log;
+                error_log /var/log/nginx/statshost-location-proxy_error.log;
+              '';
+            };
           };
-        };
-        extraConfig = ''
-          access_log /var/log/nginx/statshost-location-proxy_access.log;
-          error_log /var/log/nginx/statshost-location-proxy_error.log;
-        '';
-      };
-    };
 
-  };
+      };
 }

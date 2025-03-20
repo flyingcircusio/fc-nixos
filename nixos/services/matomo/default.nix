@@ -1,4 +1,10 @@
-{ config, lib, options, pkgs, ... }:
+{
+  config,
+  lib,
+  options,
+  pkgs,
+  ...
+}:
 with lib;
 let
   cfg = config.services.matomo;
@@ -12,7 +18,8 @@ let
 
   phpPackage = pkgs.php82;
 
-  fqdn = if config.networking.domain != null then config.networking.fqdn else config.networking.hostName;
+  fqdn =
+    if config.networking.domain != null then config.networking.fqdn else config.networking.hostName;
 
   dataDir = "/var/lib/${user}";
   # Additional Plugins installed locally by a service user (deployment).
@@ -68,7 +75,10 @@ let
     "${corePluginsDir}/;plugins"
   ];
 
-  matomoPathExtra = [ pkgs.gawk pkgs.procps ];
+  matomoPathExtra = [
+    pkgs.gawk
+    pkgs.procps
+  ];
 
   environment = {
     MATOMO_PLUGIN_DIRS = lib.concatStringsSep ":" pluginDirs;
@@ -77,9 +87,12 @@ let
     MATOMO_PLUGIN_COPY_DIR = "${extraPluginsDir}/";
   };
 
-  phpEnv = mapAttrs (n: v: "'${v}'") (environment // {
-    PATH = lib.makeBinPath matomoPathExtra;
-  });
+  phpEnv = mapAttrs (n: v: "'${v}'") (
+    environment
+    // {
+      PATH = lib.makeBinPath matomoPathExtra;
+    }
+  );
 
   matomoCheckPermissions = pkgs.writeShellApplication {
     runtimeInputs = [ pkgs.acl ];
@@ -97,16 +110,33 @@ let
       sudo -u nginx stat /var/lib/matomo/share/plugins/CoreHome/images/favicon.ico
     '';
   };
-  deleteUnnecessaryFilesScript = pkgs.writeShellScript "delete-unwanted-files" (builtins.readFile ./matomo-delete-unwanted-files.sh);
+  deleteUnnecessaryFilesScript = pkgs.writeShellScript "delete-unwanted-files" (
+    builtins.readFile ./matomo-delete-unwanted-files.sh
+  );
 
-in {
+in
+{
   imports = [
     (mkRenamedOptionModule [ "services" "piwik" "enable" ] [ "services" "matomo" "enable" ])
-    (mkRenamedOptionModule [ "services" "piwik" "webServerUser" ] [ "services" "matomo" "webServerUser" ])
-    (mkRemovedOptionModule [ "services" "piwik" "phpfpmProcessManagerConfig" ] "Use services.phpfpm.pools.<name>.settings")
-    (mkRemovedOptionModule [ "services" "matomo" "phpfpmProcessManagerConfig" ] "Use services.phpfpm.pools.<name>.settings")
+    (mkRenamedOptionModule
+      [ "services" "piwik" "webServerUser" ]
+      [ "services" "matomo" "webServerUser" ]
+    )
+    (mkRemovedOptionModule [
+      "services"
+      "piwik"
+      "phpfpmProcessManagerConfig"
+    ] "Use services.phpfpm.pools.<name>.settings")
+    (mkRemovedOptionModule [
+      "services"
+      "matomo"
+      "phpfpmProcessManagerConfig"
+    ] "Use services.phpfpm.pools.<name>.settings")
     (mkRenamedOptionModule [ "services" "piwik" "nginx" ] [ "services" "matomo" "nginx" ])
-    (mkRenamedOptionModule [ "services" "matomo" "periodicArchiveProcessingUrl" ] [ "services" "matomo" "hostname" ])
+    (mkRenamedOptionModule
+      [ "services" "matomo" "periodicArchiveProcessingUrl" ]
+      [ "services" "matomo" "hostname" ]
+    )
   ];
 
   options = {
@@ -179,16 +209,15 @@ in {
       };
 
       nginx = mkOption {
-        type = types.nullOr (types.submodule (
-          recursiveUpdate
-            (import ../nginx/vhost-options.nix { inherit config lib; })
-            {
+        type = types.nullOr (
+          types.submodule (
+            recursiveUpdate (import ../nginx/vhost-options.nix { inherit config lib; }) {
               # enable encryption by default,
               # as sensitive login and Matomo data should not be transmitted in clear text.
               options.forceSSL.default = true;
               options.enableACME.default = true;
             }
-        )
+          )
         );
         default = null;
         example = literalExpression ''
@@ -201,13 +230,13 @@ in {
           }
         '';
         description = ''
-            With this option, you can customize an nginx virtualHost which already has sensible defaults for Matomo.
-            Either this option or the webServerUser option is mandatory.
-            Set this to {} to just enable the virtualHost if you don't need any customization.
-            If enabled, then by default, the {option}`serverName` is
-            `''${user}.''${config.networking.hostName}.''${config.networking.domain}`,
-            SSL is active, and certificates are acquired via ACME.
-            If this is set to null (the default), no nginx virtualHost will be configured.
+          With this option, you can customize an nginx virtualHost which already has sensible defaults for Matomo.
+          Either this option or the webServerUser option is mandatory.
+          Set this to {} to just enable the virtualHost if you don't need any customization.
+          If enabled, then by default, the {option}`serverName` is
+          `''${user}.''${config.networking.hostName}.''${config.networking.domain}`,
+          SSL is active, and certificates are acquired via ACME.
+          If this is set to null (the default), no nginx virtualHost will be configured.
         '';
       };
 
@@ -226,7 +255,6 @@ in {
         };
       };
 
-
     };
   };
 
@@ -235,10 +263,12 @@ in {
       "If services.matomo.nginx is set, services.matomo.nginx.webServerUser is ignored and should be removed."
     ];
 
-    assertions = [ {
+    assertions = [
+      {
         assertion = cfg.nginx != null || cfg.webServerUser != null;
         message = "Either services.matomo.nginx or services.matomo.nginx.webServerUser is mandatory";
-    }];
+      }
+    ];
 
     environment.systemPackages = [
       cfg.tools.matomoConsole
@@ -249,9 +279,9 @@ in {
       isSystemUser = true;
       createHome = true;
       home = "${dataDir}/home";
-      group  = user;
+      group = user;
     };
-    users.groups.${user} = {};
+    users.groups.${user} = { };
 
     services.percona.extraOptions = ''
       local-infile = 1
@@ -268,7 +298,10 @@ in {
       wants = [ databaseService ];
       after = [ databaseService ];
 
-      path = [ cfg.tools.matomoConsole pkgs.acl ];
+      path = [
+        cfg.tools.matomoConsole
+        pkgs.acl
+      ];
       inherit environment;
 
       serviceConfig = {
@@ -277,128 +310,130 @@ in {
         User = user;
         # hide especially config.ini.php from other
         UMask = "0007";
-        ExecStartPre = let
-          preStartScript = pkgs.writeShellScript "matomo-setup-update-pre" ''
-            # Note that ${configIniPhpFile} might contain the MySQL password.
-            # Use User-Private Group scheme to protect Matomo data, but allow administration / backup via 'matomo' group
+        ExecStartPre =
+          let
+            preStartScript = pkgs.writeShellScript "matomo-setup-update-pre" ''
+              # Note that ${configIniPhpFile} might contain the MySQL password.
+              # Use User-Private Group scheme to protect Matomo data, but allow administration / backup via 'matomo' group
 
-            echo "Setting up Matomo data dir ${dataDir}."
-            echo "Web root is at ${webrootDir}".
+              echo "Setting up Matomo data dir ${dataDir}."
+              echo "Web root is at ${webrootDir}".
 
-            mkdir -p ${webrootDir}
+              mkdir -p ${webrootDir}
 
-            echo "Checking if data migration from older matomo installations is needed..."
+              echo "Checking if data migration from older matomo installations is needed..."
 
-            if [ -d ${dataDir}/config ]; then
-              echo "Migrating config from old location ${dataDir}/config"
-              mkdir -p ${configDir}
-              mv ${dataDir}/config/* ${configDir}/
-              rm ${dataDir}/config/.htaccess
-              rmdir ${dataDir}/config
-            fi
-
-            if [ -d ${dataDir}/misc ]; then
-              echo "Migrating misc data from old location ${dataDir}/misc"
-              mkdir -p ${miscDir}
-              mv ${dataDir}/misc/* ${miscDir}/
-              rmdir ${dataDir}/misc
-            fi
-
-            if [ -d ${dataDir}/tagmanager ]; then
-              echo "Migrating tagmanager data from old location ${dataDir}/tagmanager"
-              mkdir -p ${jsDir}
-              mv ${dataDir}/tagmanager/* ${jsDir}/
-              rmdir ${dataDir}/tagmanager
-            fi
-
-            if [ -f ${dataDir}/matomo.js ]; then
-              echo "Cleaning up old matomo.js"
-              rm ${dataDir}/matomo.js
-            fi
-
-            if [ -d ${dataDir}/tmp ]; then
-              echo "Cleaning up old tmpdir"
-              rm -rf ${dataDir}/tmp
-            fi
-
-            mkdir -p ${extraPluginsDir}
-            chown ${user}:${user} ${extraPluginsDir}
-
-            CURRENT_PACKAGE=$(readlink ${dataDir}/current-package || true)
-            NEW_PACKAGE=${cfg.package}
-
-            echo "Currently used package: $CURRENT_PACKAGE"
-            echo "Possibly new package:   $NEW_PACKAGE"
-
-            if [ "$CURRENT_PACKAGE" == "$NEW_PACKAGE" ]; then
-              echo "Package is unchanged."
-            else
-              echo "Package updated, installing new files to ${dataDir}..."
-
-              ${lib.optionalString (lib.versionAtLeast cfg.package.version "5.0.0") ''
-              if [[ -f ${webrootDir}/plugins/CoreConsole/Commands/GenerateAngularDirective.php ]]; then
-                # These files need to be deleted explicitly because if they are present, even matomo-console won't work.
-                echo "Deleting leftover core plugin files from matomo 4..."
-                rm -v ${webrootDir}/plugins/CoreConsole/Commands/GenerateAngularComponent.php
-                rm -v ${webrootDir}/plugins/CoreConsole/Commands/GenerateAngularDirective.php
+              if [ -d ${dataDir}/config ]; then
+                echo "Migrating config from old location ${dataDir}/config"
+                mkdir -p ${configDir}
+                mv ${dataDir}/config/* ${configDir}/
+                rm ${dataDir}/config/.htaccess
+                rmdir ${dataDir}/config
               fi
-              ''}
 
-              # Deleting files recommended by the Web UI
-              ${lib.optionalString (lib.versionAtLeast cfg.package.version "5.0") ''
-                ${deleteUnnecessaryFilesScript}
-              ''}
-
-              cp -r ${cfg.package}/share/* ${webrootDir}/
-              echo "Copied files, updating package link in ${dataDir}/current-package."
-              ln -sfT ${cfg.package} ${dataDir}/current-package
-
-              if [[ -f ${configIniPhpFile} ]]; then
-                echo "Clearing caches..."
-                matomo-console cache:clear
+              if [ -d ${dataDir}/misc ]; then
+                echo "Migrating misc data from old location ${dataDir}/misc"
+                mkdir -p ${miscDir}
+                mv ${dataDir}/misc/* ${miscDir}/
+                rmdir ${dataDir}/misc
               fi
-            fi
 
-            mkdir -p ${tmpDir}
+              if [ -d ${dataDir}/tagmanager ]; then
+                echo "Migrating tagmanager data from old location ${dataDir}/tagmanager"
+                mkdir -p ${jsDir}
+                mv ${dataDir}/tagmanager/* ${jsDir}/
+                rmdir ${dataDir}/tagmanager
+              fi
 
-            # Reset ACLs to avoid surprises, especially when upgrading from
-            # pre-role Matomo.
-            setfacl -Rb ${dataDir}
+              if [ -f ${dataDir}/matomo.js ]; then
+                echo "Cleaning up old matomo.js"
+                rm ${dataDir}/matomo.js
+              fi
 
-            # matomo user owns the data directory.
-            chown -R ${user}:${user} ${dataDir}
+              if [ -d ${dataDir}/tmp ]; then
+                echo "Cleaning up old tmpdir"
+                rm -rf ${dataDir}/tmp
+              fi
 
-            # matomo user is allowed to read everything in the data dir.
-            chmod -R u=rX,g=rX,o= ${dataDir}
+              mkdir -p ${extraPluginsDir}
+              chown ${user}:${user} ${extraPluginsDir}
 
-            echo "Giving matomo read+write access to ${lib.concatStringsSep ", " matomoReadWritePaths}"
-            chmod -R u+wX,g+wX \
-              ${lib.concatStringsSep " \\\n  " matomoReadWritePaths}
+              CURRENT_PACKAGE=$(readlink ${dataDir}/current-package || true)
+              NEW_PACKAGE=${cfg.package}
 
-            # Set masks for directories where we want to use ACLs that extend
-            # permissions to other users.
-            setfacl -Rm m:x ${dataDir}
-            setfacl -Rm m:rx ${jsDir} ${corePluginsDir}
-            setfacl -Rm m:rwx ${extraPluginsDir}
+              echo "Currently used package: $CURRENT_PACKAGE"
+              echo "Possibly new package:   $NEW_PACKAGE"
 
-            # Nginx must be able to read files from some locations in the Matomo data dir.
+              if [ "$CURRENT_PACKAGE" == "$NEW_PACKAGE" ]; then
+                echo "Package is unchanged."
+              else
+                echo "Package updated, installing new files to ${dataDir}..."
 
-            echo "Giving nginx x dir access to the web root at ${webrootDir}."
-            setfacl -m u:nginx:x ${dataDir} ${webrootDir}
+                ${lib.optionalString (lib.versionAtLeast cfg.package.version "5.0.0") ''
+                  if [[ -f ${webrootDir}/plugins/CoreConsole/Commands/GenerateAngularDirective.php ]]; then
+                    # These files need to be deleted explicitly because if they are present, even matomo-console won't work.
+                    echo "Deleting leftover core plugin files from matomo 4..."
+                    rm -v ${webrootDir}/plugins/CoreConsole/Commands/GenerateAngularComponent.php
+                    rm -v ${webrootDir}/plugins/CoreConsole/Commands/GenerateAngularDirective.php
+                  fi
+                ''}
 
-            echo "Giving nginx read access to ${lib.concatStringsSep ", " nginxReadPaths}"
-            setfacl -Rm u:nginx:rX ${lib.concatStringsSep " " nginxReadPaths}
-            setfacl -Rm d:u:nginx:rX ${lib.concatStringsSep " " nginxReadPaths}
+                # Deleting files recommended by the Web UI
+                ${lib.optionalString (lib.versionAtLeast cfg.package.version "5.0") ''
+                  ${deleteUnnecessaryFilesScript}
+                ''}
 
-            # Service users must be able to add plugin bundles.
-            setfacl -m g:service:x ${dataDir}
+                cp -r ${cfg.package}/share/* ${webrootDir}/
+                echo "Copied files, updating package link in ${dataDir}/current-package."
+                ln -sfT ${cfg.package} ${dataDir}/current-package
 
-            echo "Giving service users write access to ${lib.concatStringsSep ", " serviceGroupReadWritePaths}"
-            setfacl -Rm g:service:rwX ${lib.concatStringsSep " " serviceGroupReadWritePaths}
-            setfacl -Rm d:g:service:rwX ${lib.concatStringsSep " " serviceGroupReadWritePaths}
-            chmod g+s ${lib.concatStringsSep " " serviceGroupReadWritePaths}
-          '';
-        in [ "+${preStartScript}" ];
+                if [[ -f ${configIniPhpFile} ]]; then
+                  echo "Clearing caches..."
+                  matomo-console cache:clear
+                fi
+              fi
+
+              mkdir -p ${tmpDir}
+
+              # Reset ACLs to avoid surprises, especially when upgrading from
+              # pre-role Matomo.
+              setfacl -Rb ${dataDir}
+
+              # matomo user owns the data directory.
+              chown -R ${user}:${user} ${dataDir}
+
+              # matomo user is allowed to read everything in the data dir.
+              chmod -R u=rX,g=rX,o= ${dataDir}
+
+              echo "Giving matomo read+write access to ${lib.concatStringsSep ", " matomoReadWritePaths}"
+              chmod -R u+wX,g+wX \
+                ${lib.concatStringsSep " \\\n  " matomoReadWritePaths}
+
+              # Set masks for directories where we want to use ACLs that extend
+              # permissions to other users.
+              setfacl -Rm m:x ${dataDir}
+              setfacl -Rm m:rx ${jsDir} ${corePluginsDir}
+              setfacl -Rm m:rwx ${extraPluginsDir}
+
+              # Nginx must be able to read files from some locations in the Matomo data dir.
+
+              echo "Giving nginx x dir access to the web root at ${webrootDir}."
+              setfacl -m u:nginx:x ${dataDir} ${webrootDir}
+
+              echo "Giving nginx read access to ${lib.concatStringsSep ", " nginxReadPaths}"
+              setfacl -Rm u:nginx:rX ${lib.concatStringsSep " " nginxReadPaths}
+              setfacl -Rm d:u:nginx:rX ${lib.concatStringsSep " " nginxReadPaths}
+
+              # Service users must be able to add plugin bundles.
+              setfacl -m g:service:x ${dataDir}
+
+              echo "Giving service users write access to ${lib.concatStringsSep ", " serviceGroupReadWritePaths}"
+              setfacl -Rm g:service:rwX ${lib.concatStringsSep " " serviceGroupReadWritePaths}
+              setfacl -Rm d:g:service:rwX ${lib.concatStringsSep " " serviceGroupReadWritePaths}
+              chmod g+s ${lib.concatStringsSep " " serviceGroupReadWritePaths}
+            '';
+          in
+          [ "+${preStartScript}" ];
       };
 
       script = ''
@@ -485,111 +520,121 @@ in {
       serviceConfig.UMask = "0007";
     };
 
-    services.phpfpm.pools = let
-      # workaround for when both are null and need to generate a string,
-      # which is illegal, but as assertions apparently are being triggered *after* config generation,
-      # we have to avoid already throwing errors at this previous stage.
-      socketOwner = if (cfg.nginx != null) then config.services.nginx.user
-      else if (cfg.webServerUser != null) then cfg.webServerUser else "";
-    in {
-      ${pool} = {
-        inherit user;
-        phpOptions = ''
-          error_log = 'stderr'
-          log_errors = on
-          memory_limit = ${toString cfg.memoryLimit}M
-          # Settings to make the SecurityInfo plugin happy.
-          open_basedir = "${dataDir}"
-          upload_tmp_dir = "${tmpDir}"
-          expose_php = off
-          # This path doesn't exist and is not needed for Matomo but SecurityInfo
-          # wants this setting.
-          session.save_path = "${dataDir}/sessions/"
-        '';
+    services.phpfpm.pools =
+      let
+        # workaround for when both are null and need to generate a string,
+        # which is illegal, but as assertions apparently are being triggered *after* config generation,
+        # we have to avoid already throwing errors at this previous stage.
+        socketOwner =
+          if (cfg.nginx != null) then
+            config.services.nginx.user
+          else if (cfg.webServerUser != null) then
+            cfg.webServerUser
+          else
+            "";
+      in
+      {
+        ${pool} = {
+          inherit user;
+          phpOptions = ''
+            error_log = 'stderr'
+            log_errors = on
+            memory_limit = ${toString cfg.memoryLimit}M
+            # Settings to make the SecurityInfo plugin happy.
+            open_basedir = "${dataDir}"
+            upload_tmp_dir = "${tmpDir}"
+            expose_php = off
+            # This path doesn't exist and is not needed for Matomo but SecurityInfo
+            # wants this setting.
+            session.save_path = "${dataDir}/sessions/"
+          '';
 
-        inherit phpPackage;
-        settings = mapAttrs (name: mkDefault) {
-          "listen.owner" = socketOwner;
-          "listen.group" = "root";
-          "listen.mode" = "0660";
-          "pm" = "dynamic";
-          "pm.max_children" = 75;
-          "pm.start_servers" = 10;
-          "pm.min_spare_servers" = 5;
-          "pm.max_spare_servers" = 20;
-          "pm.max_requests" = 500;
-          "catch_workers_output" = true;
+          inherit phpPackage;
+          settings = mapAttrs (name: mkDefault) {
+            "listen.owner" = socketOwner;
+            "listen.group" = "root";
+            "listen.mode" = "0660";
+            "pm" = "dynamic";
+            "pm.max_children" = 75;
+            "pm.start_servers" = 10;
+            "pm.min_spare_servers" = 5;
+            "pm.max_spare_servers" = 20;
+            "pm.max_requests" = 500;
+            "catch_workers_output" = true;
+          };
+          inherit phpEnv;
         };
-        inherit phpEnv;
       };
-    };
 
     services.nginx.virtualHosts = mkIf (cfg.nginx != null) {
       # References:
       # https://fralef.me/piwik-hardening-with-nginx-and-php-fpm.html
       # https://github.com/perusio/piwik-nginx
-      "${cfg.hostname}" = mkMerge [ cfg.nginx {
-        # don't allow to override the root easily, as it will almost certainly break Matomo.
-        # disadvantage: not shown as default in docs.
-        root = mkForce webrootDir;
+      "${cfg.hostname}" = mkMerge [
+        cfg.nginx
+        {
+          # don't allow to override the root easily, as it will almost certainly break Matomo.
+          # disadvantage: not shown as default in docs.
+          root = mkForce webrootDir;
 
-        # define locations here instead of as the submodule option's default
-        # so that they can easily be extended with additional locations if required
-        # without needing to redefine the Matomo ones.
-        # disadvantage: not shown as default in docs.
-        locations."/" = {
-          index = "index.php";
-        };
-        # allow index.php for webinterface
-        locations."= /index.php".extraConfig = ''
-          fastcgi_pass unix:${fpm.socket};
-        '';
-        # allow matomo.php for tracking
-        locations."= /matomo.php".extraConfig = ''
-          fastcgi_pass unix:${fpm.socket};
-        '';
-        # allow piwik.php for tracking (deprecated name)
-        locations."= /piwik.php".extraConfig = ''
-          fastcgi_pass unix:${fpm.socket};
-        '';
-        # Alternative path for the tracking API (matomo.php) AND matomo.js.
-        # See https://github.com/matomo-org/matomo/blob/4.x-dev/js/README.md
-        # index.php can also be left out in the call, just using `/js?action_name=...` will
-        # also use index.php.
-        locations."= /js/index.php".extraConfig = ''
-          fastcgi_pass unix:${fpm.socket};
-        '';
-        # Any other attempt to access any php files is forbidden
-        locations."~* ^.+\\.php$".extraConfig = ''
-          return 403;
-        '';
-        # Disallow access to unneeded directories
-        locations."~ ^/(?:config|core|lang|misc|tmp)/".extraConfig = ''
-          return 403;
-        '';
-        # Disallow access to several helper files
-        locations."~* \\.(?:bat|git|ini|sh|txt|tpl|xml|md)$".extraConfig = ''
-          return 403;
-        '';
-        # No crawling of this site for bots that obey robots.txt - no useful information here.
-        locations."= /robots.txt".extraConfig = ''
-          return 200 "User-agent: *\nDisallow: /\n";
-        '';
-        # let browsers cache matomo.js
-        locations."= /matomo.js".extraConfig = ''
-          expires 1M;
-        '';
-        # let browsers cache piwik.js (deprecated name)
-        locations."= /piwik.js".extraConfig = ''
-          expires 1M;
-        '';
-        # Alias for the previous Tag Manager container location which
-        # may still be in use by tracked applications because the old
-        # path is embedded in the tracking code.
-        locations."/js/tagmanager/" = {
+          # define locations here instead of as the submodule option's default
+          # so that they can easily be extended with additional locations if required
+          # without needing to redefine the Matomo ones.
+          # disadvantage: not shown as default in docs.
+          locations."/" = {
+            index = "index.php";
+          };
+          # allow index.php for webinterface
+          locations."= /index.php".extraConfig = ''
+            fastcgi_pass unix:${fpm.socket};
+          '';
+          # allow matomo.php for tracking
+          locations."= /matomo.php".extraConfig = ''
+            fastcgi_pass unix:${fpm.socket};
+          '';
+          # allow piwik.php for tracking (deprecated name)
+          locations."= /piwik.php".extraConfig = ''
+            fastcgi_pass unix:${fpm.socket};
+          '';
+          # Alternative path for the tracking API (matomo.php) AND matomo.js.
+          # See https://github.com/matomo-org/matomo/blob/4.x-dev/js/README.md
+          # index.php can also be left out in the call, just using `/js?action_name=...` will
+          # also use index.php.
+          locations."= /js/index.php".extraConfig = ''
+            fastcgi_pass unix:${fpm.socket};
+          '';
+          # Any other attempt to access any php files is forbidden
+          locations."~* ^.+\\.php$".extraConfig = ''
+            return 403;
+          '';
+          # Disallow access to unneeded directories
+          locations."~ ^/(?:config|core|lang|misc|tmp)/".extraConfig = ''
+            return 403;
+          '';
+          # Disallow access to several helper files
+          locations."~* \\.(?:bat|git|ini|sh|txt|tpl|xml|md)$".extraConfig = ''
+            return 403;
+          '';
+          # No crawling of this site for bots that obey robots.txt - no useful information here.
+          locations."= /robots.txt".extraConfig = ''
+            return 200 "User-agent: *\nDisallow: /\n";
+          '';
+          # let browsers cache matomo.js
+          locations."= /matomo.js".extraConfig = ''
+            expires 1M;
+          '';
+          # let browsers cache piwik.js (deprecated name)
+          locations."= /piwik.js".extraConfig = ''
+            expires 1M;
+          '';
+          # Alias for the previous Tag Manager container location which
+          # may still be in use by tracked applications because the old
+          # path is embedded in the tracking code.
+          locations."/js/tagmanager/" = {
             alias = "${jsDir}/";
-        };
-      }];
+          };
+        }
+      ];
     };
   };
 }

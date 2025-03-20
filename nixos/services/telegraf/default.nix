@@ -2,7 +2,12 @@
 # Note that there are both `services.telegraf` and
 # `flyingcircus.services.telegraf` in use. The latter is the home for FC
 # additions whilst the former referes to what upstream defines.
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -18,10 +23,11 @@ let
     cat ${if builtins.pathExists /etc/local/telegraf then "${/etc/local/telegraf}/*.conf" else ""}
   '';
 
-    settingsFormat = pkgs.formats.toml { };
-    configFile = settingsFormat.generate "config.toml" cfg.extraConfig;
+  settingsFormat = pkgs.formats.toml { };
+  configFile = settingsFormat.generate "config.toml" cfg.extraConfig;
 
-in {
+in
+{
 
   imports = [
     ./psi_input.nix
@@ -31,17 +37,19 @@ in {
     flyingcircus.services.telegraf = {
 
       inputs = mkOption {
-        default = {};
+        default = { };
         type = types.attrsOf (types.listOf types.attrs);
         description = ''
           Easy to use attrset of telegraf inputs. Will be folded into
           services.telegraf.extraConfig.
         '';
         example = {
-          varnish = [{
-            binary = "${pkgs.varnish}/bin/varnishstat";
-            stats = [ "all" ];
-          }];
+          varnish = [
+            {
+              binary = "${pkgs.varnish}/bin/varnishstat";
+              stats = [ "all" ];
+            }
+          ];
         };
       };
       prometheus-metric_version = mkOption {
@@ -82,10 +90,19 @@ in {
 
       systemd.services.telegraf = {
         serviceConfig = {
-          ExecStart = mkOverride 90 (concatStringsSep " " (lib.flatten [
-            ["${cfg.package}/bin/telegraf -config \"${configFile}\""]
-            (if builtins.pathExists /etc/local/telegraf then ["-config-directory ${/etc/local/telegraf}"] else [])
-          ]));
+          ExecStart = mkOverride 90 (
+            concatStringsSep " " (
+              lib.flatten [
+                [ "${cfg.package}/bin/telegraf -config \"${configFile}\"" ]
+                (
+                  if builtins.pathExists /etc/local/telegraf then
+                    [ "-config-directory ${/etc/local/telegraf}" ]
+                  else
+                    [ ]
+                )
+              ]
+            )
+          );
           Nice = -10;
         };
       };
@@ -93,9 +110,13 @@ in {
     })
     (mkIf (config.flyingcircus.services.telegraf.inputs ? prometheus) {
       # only set when that plugin is configured to be used, to not accidentally enable it without use
-      services.telegraf.extraConfig.inputs.prometheus = builtins.map (attr: attr // {
-        metric_version = config.flyingcircus.services.telegraf.prometheus-metric_version;
-        } ) config.flyingcircus.services.telegraf.inputs.prometheus;
+      services.telegraf.extraConfig.inputs.prometheus = builtins.map (
+        attr:
+        attr
+        // {
+          metric_version = config.flyingcircus.services.telegraf.prometheus-metric_version;
+        }
+      ) config.flyingcircus.services.telegraf.inputs.prometheus;
     })
   ];
 }

@@ -1,4 +1,9 @@
-{ pkgs, lib, fetchFromGitHub, rustPlatform }:
+{
+  pkgs,
+  lib,
+  fetchFromGitHub,
+  rustPlatform,
+}:
 
 with rustPlatform;
 

@@ -1,20 +1,21 @@
-{ lib
-, stdenv
-, fetchPypi
-, fetchFromGitHub
-, dmidecode
-, gitMinimal
-, gptfdisk
-, libyaml
-, multipath-tools
-, nix
-, buildPythonApplication
-, pythonPackages
-, python
-, util-linux
-, xfsprogs
-, pytest
-, structlog
+{
+  lib,
+  stdenv,
+  fetchPypi,
+  fetchFromGitHub,
+  dmidecode,
+  gitMinimal,
+  gptfdisk,
+  libyaml,
+  multipath-tools,
+  nix,
+  buildPythonApplication,
+  pythonPackages,
+  python,
+  util-linux,
+  xfsprogs,
+  pytest,
+  structlog,
 }:
 
 let
@@ -30,8 +31,16 @@ let
       hash = "sha256-sWzj1S1liqdduBP8amZht3Cr/qkV9yzaSOMl8qeFR4Y=";
     };
 
-    nativeBuildInputs = with py; [ hatchling hatch-vcs hatch-fancy-pypi-readme ];
-    propagatedBuildInputs = with py; [ structlog tenacity typing-extensions ];
+    nativeBuildInputs = with py; [
+      hatchling
+      hatch-vcs
+      hatch-fancy-pypi-readme
+    ];
+    propagatedBuildInputs = with py; [
+      structlog
+      tenacity
+      typing-extensions
+    ];
   };
 in
 buildPythonApplication rec {
@@ -73,8 +82,8 @@ buildPythonApplication rec {
     "test_tilde_is_expanded_to_home_dir"
   ];
 
-  passthru.pythonDevEnv = python.withPackages (_:
-    checkInputs ++ [ py.pytest ] ++ propagatedBuildInputs
+  passthru.pythonDevEnv = python.withPackages (
+    _: checkInputs ++ [ py.pytest ] ++ propagatedBuildInputs
   );
 
 }

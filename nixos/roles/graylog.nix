@@ -3,7 +3,13 @@
 # * Logstash lumberjack plugin doesn't exist for graylog 3.x.
 #   Use integrated beats support.
 
-{ config, options, lib, pkgs, ... }:
+{
+  config,
+  options,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -22,25 +28,26 @@ let
   glAPIPort = cfgService.apiPort;
   replSetName = if cfg.cluster then "graylog" else "";
 
-  jsonConfig = (fromJSON
-    (fclib.configFromFile /etc/local/graylog/graylog.json "{}"));
+  jsonConfig = (fromJSON (fclib.configFromFile /etc/local/graylog/graylog.json "{}"));
 
   # First cluster node becomes master
   clusterNodes =
     if cfg.cluster then
-      lib.unique
-        (filter
-          (s: lib.any (serviceType: s.service == serviceType) cfg.serviceTypes)
-          config.flyingcircus.encServices)
+      lib.unique (
+        filter (
+          s: lib.any (serviceType: s.service == serviceType) cfg.serviceTypes
+        ) config.flyingcircus.encServices
+      )
     # single-node "cluster"
-    else [ { address = "${config.networking.hostName}.fcio.net";
-             ips = fclib.network.srv.dualstack.addresses; } ];
+    else
+      [
+        {
+          address = "${config.networking.hostName}.fcio.net";
+          ips = fclib.network.srv.dualstack.addresses;
+        }
+      ];
 
-  masterHostname =
-    (head
-      (lib.splitString
-        "."
-        (head clusterNodes).address));
+  masterHostname = (head (lib.splitString "." (head clusterNodes).address));
 in
 {
 
@@ -49,10 +56,10 @@ in
     flyingcircus.roles.graylog = {
 
       enable = mkEnableOption ''
-          Graylog (3.x) role.
+        Graylog (3.x) role.
 
-          Note: there can be multiple graylogs per RG, unlike loghost.
-        '';
+        Note: there can be multiple graylogs per RG, unlike loghost.
+      '';
 
       serviceTypes = mkOption {
         type = types.listOf types.str;
@@ -142,14 +149,16 @@ in
         enable = true;
         isMaster = masterHostname == config.networking.hostName;
 
-        mongodbUri = let
-          repl = if (length clusterNodes) > 1 then "?replicaSet=${replSetName}" else "";
-          mongodbNodes = concatStringsSep ","
-              (map (node: "${fclib.quoteIPv6Address (head (filter fclib.isIp6 node.ips))}:27017") clusterNodes);
+        mongodbUri =
+          let
+            repl = if (length clusterNodes) > 1 then "?replicaSet=${replSetName}" else "";
+            mongodbNodes = concatStringsSep "," (
+              map (node: "${fclib.quoteIPv6Address (head (filter fclib.isIp6 node.ips))}:27017") clusterNodes
+            );
           in
-            "mongodb://${mongodbNodes}/graylog${repl}";
+          "mongodb://${mongodbNodes}/graylog${repl}";
 
-        config = jsonConfig.extraGraylogConfig or {};
+        config = jsonConfig.extraGraylogConfig or { };
 
       };
 
@@ -186,7 +195,7 @@ in
           Graylog's server config file.
           See https://docs.graylog.org/en/3.0/pages/configuration/server.conf.html.
 
-        '';
+      '';
 
       environment.etc."local/graylog/graylog.json.example".text = ''
         {
@@ -200,113 +209,113 @@ in
       '';
 
       services.nginx.virtualHosts."${cfg.publicFrontend.hostName}:9002" =
-      let
-        mkListen = addr: { inherit addr; port = 9002; };
-      in {
-        listen = map mkListen (fclib.network.srv.dualstack.addressesQuoted);
-        locations = {
-          "/" = {
-            proxyPass = "http://${listenFQDN}:${toString glAPIHAPort}";
-            extraConfig = ''
-              # Direct access w/o prior authentication. This is useful for API access.
-              # Strip Remote-User as there is nothing in between the user and us.
-              proxy_set_header Remote-User "";
-              proxy_set_header X-Graylog-Server-URL http://${listenFQDN}:9002/;
-            '';
+        let
+          mkListen = addr: {
+            inherit addr;
+            port = 9002;
+          };
+        in
+        {
+          listen = map mkListen (fclib.network.srv.dualstack.addressesQuoted);
+          locations = {
+            "/" = {
+              proxyPass = "http://${listenFQDN}:${toString glAPIHAPort}";
+              extraConfig = ''
+                # Direct access w/o prior authentication. This is useful for API access.
+                # Strip Remote-User as there is nothing in between the user and us.
+                proxy_set_header Remote-User "";
+                proxy_set_header X-Graylog-Server-URL http://${listenFQDN}:9002/;
+              '';
+            };
           };
         };
-      };
       # HAProxy load balancer.
       # Since haproxy is rather lightweight we just fire up one on each graylog
       # node, talking to all known graylog nodes.
-      flyingcircus.services.haproxy = let
-        # Journalbeat uses long-running connections and may send nothing
-        # for a while. Use ttl 120s for Journalbeat to make sure it
-        # reconnects before it's thrown out by HAproxy.
-        beatsTimeout = "121s";
-        graylogTimeout = "121s";
-        gelfTimeout = "10s";
-        mkBinds = port:
-          map
-            (addr: "${addr}:${toString port}")
-            fclib.network.srv.dualstack.addresses;
-      in {
-        enable = true;
-        enableStructuredConfig = true;
+      flyingcircus.services.haproxy =
+        let
+          # Journalbeat uses long-running connections and may send nothing
+          # for a while. Use ttl 120s for Journalbeat to make sure it
+          # reconnects before it's thrown out by HAproxy.
+          beatsTimeout = "121s";
+          graylogTimeout = "121s";
+          gelfTimeout = "10s";
+          mkBinds = port: map (addr: "${addr}:${toString port}") fclib.network.srv.dualstack.addresses;
+        in
+        {
+          enable = true;
+          enableStructuredConfig = true;
 
-        frontend = {
-          gelf-tcp-in = {
-            binds = mkBinds gelfTCPHAPort;
-            mode = "tcp";
-            options = [ "tcplog" ];
-            timeout.client = gelfTimeout;
-            default_backend = "gelf_tcp";
+          frontend = {
+            gelf-tcp-in = {
+              binds = mkBinds gelfTCPHAPort;
+              mode = "tcp";
+              options = [ "tcplog" ];
+              timeout.client = gelfTimeout;
+              default_backend = "gelf_tcp";
+            };
+
+            beats-tcp-in = {
+              binds = mkBinds beatsTCPHAPort;
+              mode = "tcp";
+              options = [ "tcplog" ];
+              timeout.client = beatsTimeout;
+              default_backend = "beats_tcp";
+            };
+
+            graylog_http = {
+              binds = mkBinds glAPIHAPort;
+              options = [ "httplog" ];
+              timeout.client = graylogTimeout;
+              default_backend = "graylog";
+            };
           };
 
-          beats-tcp-in = {
-            binds = mkBinds beatsTCPHAPort;
-            mode = "tcp";
-            options = [ "tcplog" ];
-            timeout.client = beatsTimeout;
-            default_backend = "beats_tcp";
-          };
+          backend = {
+            gelf_tcp = {
+              mode = "tcp";
+              options = [ "httpchk HEAD /api/system/lbstatus" ];
+              timeout.server = gelfTimeout;
+              timeout.tunnel = "61s";
+              servers = map (
+                node:
+                "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString gelfTCPGraylogPort}"
+                + " check port ${toString glAPIPort} inter 10s rise 2 fall 1"
+              ) clusterNodes;
+              balance = "leastconn";
+            };
 
-          graylog_http = {
-            binds = mkBinds glAPIHAPort;
-            options = [ "httplog" ];
-            timeout.client = graylogTimeout;
-            default_backend = "graylog";
-          };
-        };
+            beats_tcp = {
+              mode = "tcp";
+              options = [ "httpchk HEAD /api/system/lbstatus" ];
+              timeout.server = beatsTimeout;
+              servers = map (
+                node:
+                "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString beatsTCPGraylogPort}"
+                + " check port ${toString glAPIPort} inter 10s rise 2 fall 1"
+              ) clusterNodes;
+              balance = "leastconn";
+            };
 
-        backend = {
-          gelf_tcp = {
-            mode = "tcp";
-            options = [ "httpchk HEAD /api/system/lbstatus" ];
-            timeout.server = gelfTimeout;
-            timeout.tunnel = "61s";
-            servers = map
-              ( node:
-                  "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString gelfTCPGraylogPort}"
-                  + " check port ${toString glAPIPort} inter 10s rise 2 fall 1"
-              )
-              clusterNodes;
-            balance = "leastconn";
-          };
+            graylog = {
+              options = [ "httpchk GET /" ];
+              timeout.server = graylogTimeout;
+              servers = map (
+                node:
+                "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString glAPIPort}"
+                + " check fall 1 rise 2 inter 10s maxconn 500"
+              ) clusterNodes;
+              balance = "roundrobin";
+            };
 
-          beats_tcp = {
-            mode = "tcp";
-            options = [ "httpchk HEAD /api/system/lbstatus" ];
-            timeout.server = beatsTimeout;
-            servers = map
-              ( node:
-                  "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString beatsTCPGraylogPort}"
-                  + " check port ${toString glAPIPort} inter 10s rise 2 fall 1"
-              )
-              clusterNodes;
-            balance = "leastconn";
-          };
-
-          graylog = {
-            options = [ "httpchk GET /" ];
-            timeout.server = graylogTimeout;
-            servers = map
-              ( node:
-                  "${node.address} ${head (filter fclib.isIp6 node.ips)}:${toString glAPIPort}"
-                  + " check fall 1 rise 2 inter 10s maxconn 500"
-              )
-              clusterNodes;
-            balance = "roundrobin";
-          };
-
-          stats = {
-            extraConfig = ''
-              stats uri /
-              stats refresh 5s
-            '';
+            stats = {
+              extraConfig = ''
+                stats uri /
+                stats refresh 5s
+              '';
+            };
           };
         };
-      };
     })
 
     {

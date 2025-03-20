@@ -1,34 +1,40 @@
-{ lib, pkgs, config, options, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  options,
+  ...
+}:
 
 let
   fclib = config.fclib;
   keysMountDir = "/mnt/keys";
   check_key_file = pkgs.writeShellScript "check_key_file" ''
 
-      if [ ! -d ${keysMountDir} ]; then
-        echo "Key directory ${keysMountDir} does not exist. Check not needed."
-        exit 0
-      fi
-
-      if ! ${pkgs.util-linux}/bin/findmnt "${keysMountDir}" > /dev/null; then
-        echo "error: ${keysMountDir} not mounted. Aborting."
-        exit 2
-      fi
-
-      KF_PATH="${keysMountDir}/$(${pkgs.inetutils}/bin/hostname).key"
-      if [ ! -s "$KF_PATH" ]; then
-        echo "error: disk encryption keyfile is empty or does not exist. Aborting."
-        exit 2
-      fi
-
-      KF_PERMS="$(${pkgs.coreutils}/bin/stat -L -c '%a %G %U' $KF_PATH)"
-      if [ "$KF_PERMS" != "600 root root" ]; then
-        echo "error: disk encryption keyfile has permissions $KF_PERMS, but should be root-accessible only. Aborting."
-        exit 2
-      fi
-
+    if [ ! -d ${keysMountDir} ]; then
+      echo "Key directory ${keysMountDir} does not exist. Check not needed."
       exit 0
-    '';
+    fi
+
+    if ! ${pkgs.util-linux}/bin/findmnt "${keysMountDir}" > /dev/null; then
+      echo "error: ${keysMountDir} not mounted. Aborting."
+      exit 2
+    fi
+
+    KF_PATH="${keysMountDir}/$(${pkgs.inetutils}/bin/hostname).key"
+    if [ ! -s "$KF_PATH" ]; then
+      echo "error: disk encryption keyfile is empty or does not exist. Aborting."
+      exit 2
+    fi
+
+    KF_PERMS="$(${pkgs.coreutils}/bin/stat -L -c '%a %G %U' $KF_PATH)"
+    if [ "$KF_PERMS" != "600 root root" ]; then
+      echo "error: disk encryption keyfile has permissions $KF_PERMS, but should be root-accessible only. Aborting."
+      exit 2
+    fi
+
+    exit 0
+  '';
   check_luks_cmd = "${config.flyingcircus.services.ceph.fc-ceph.package}/bin/fc-luks check";
 in
 {
@@ -45,11 +51,18 @@ in
         type = lib.types.attrs;
         readOnly = true;
         internal = true;
-        default =  {
+        default = {
           device = "/dev/vgkeys/keys";
           fsType = "xfs";
-          options = [ "nofail" "auto" "noexec" "nosuid" "nodev" "nouser"];
-          neededForBoot = false;    # change this when introducing rootfs encryption
+          options = [
+            "nofail"
+            "auto"
+            "noexec"
+            "nosuid"
+            "nodev"
+            "nouser"
+          ];
+          neededForBoot = false; # change this when introducing rootfs encryption
         };
       };
     };
@@ -72,12 +85,14 @@ in
       noSwap = {
         notification = "Machine does not use swap to arbitrarily persist memory pages with sensitive data.";
         interval = 60;
-        command = toString (pkgs.writeShellScript "noSwapCheck" ''
-          # /proc/swaps always has a header line
-          if [ $(${pkgs.coreutils}/bin/cat /proc/swaps | ${pkgs.coreutils}/bin/wc -l) -ne 1 ]; then
-            exit 1
-          fi
-        '');
+        command = toString (
+          pkgs.writeShellScript "noSwapCheck" ''
+            # /proc/swaps always has a header line
+            if [ $(${pkgs.coreutils}/bin/cat /proc/swaps | ${pkgs.coreutils}/bin/wc -l) -ne 1 ]; then
+              exit 1
+            fi
+          ''
+        );
       };
       luksParams = {
         notification = "LUKS Volumes use expected parameters.";
@@ -86,10 +101,15 @@ in
       };
     };
 
-    flyingcircus.passwordlessSudoRules = [{
-      commands = [(toString check_key_file) "${check_luks_cmd} *"];
-      groups = ["sensuclient"];
-    }];
+    flyingcircus.passwordlessSudoRules = [
+      {
+        commands = [
+          (toString check_key_file)
+          "${check_luks_cmd} *"
+        ];
+        groups = [ "sensuclient" ];
+      }
+    ];
 
     fileSystems.${keysMountDir} = config.flyingcircus.infrastructure.fullDiskEncryption.fsOptions;
   };

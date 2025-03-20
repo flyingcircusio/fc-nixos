@@ -1,4 +1,12 @@
-{ lib, stdenv, fetchurl, perl, freeipmi, makeWrapper, perlPackages }:
+{
+  lib,
+  stdenv,
+  fetchurl,
+  perl,
+  freeipmi,
+  makeWrapper,
+  perlPackages,
+}:
 
 stdenv.mkDerivation rec {
   version = "3.13";

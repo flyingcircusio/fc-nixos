@@ -3,7 +3,12 @@
 # This must not overlap with "real" subnets.
 # It can be set with flyingcircus.kubernetes.network.serviceCidr.
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   imports = with lib; [
     ./nfs.nix
@@ -46,9 +51,8 @@
       frontend = config.flyingcircus.roles.webgateway.enable;
     in
     lib.mkMerge [
-    {
-      assertions =
-        [
+      {
+        assertions = [
           {
             assertion = !(server && agent);
             message = "The k3s-agent role must not be enabled together with the k3s-server role.";
@@ -65,16 +69,19 @@
 
         services.k3s.package = pkgs.k3s_1_30;
 
-    }
+      }
 
-    (lib.mkIf (server || agent) {
-      flyingcircus.passwordlessSudoPackages = [
-        {
-          commands = [ "bin/fc-kubernetes" ];
-          package = config.flyingcircus.agent.package;
-          groups = [ "admins" "sudo-srv" ];
-        }
-      ];
-    })
-  ];
+      (lib.mkIf (server || agent) {
+        flyingcircus.passwordlessSudoPackages = [
+          {
+            commands = [ "bin/fc-kubernetes" ];
+            package = config.flyingcircus.agent.package;
+            groups = [
+              "admins"
+              "sudo-srv"
+            ];
+          }
+        ];
+      })
+    ];
 }

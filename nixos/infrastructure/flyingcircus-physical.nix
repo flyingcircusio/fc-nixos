@@ -1,112 +1,117 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
 let
   cfg = config.flyingcircus;
 in
-mkIf (cfg.infrastructureModule == "flyingcircus-physical") (lib.mkMerge [
-  {
+mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
+  lib.mkMerge [
+    {
 
-    hardware.enableRedistributableFirmware = true;
-    hardware.cpu.amd.updateMicrocode = true;
-    hardware.cpu.intel.updateMicrocode = true;
-    flyingcircus.raid.enable = true;
-    flyingcircus.networking.physicalHostNetworking = true;
+      hardware.enableRedistributableFirmware = true;
+      hardware.cpu.amd.updateMicrocode = true;
+      hardware.cpu.intel.updateMicrocode = true;
+      flyingcircus.raid.enable = true;
+      flyingcircus.networking.physicalHostNetworking = true;
 
-    boot = {
-      initrd.availableKernelModules = [
-        # assorted network drivers, for hardware discovery during
-        # stage 1.
-        "3w-9xxx"
-        "bnx2"
-        "bnxt_en"
-        "e1000e"
-        "i40e"
-        "igb"
-        "ixgbe"
-        "mlx5_core"
-        "mlxfw"
-        "tg3"
-        # storage drivers, for hardware discovery
-        "nvme"
+      boot = {
+        initrd.availableKernelModules = [
+          # assorted network drivers, for hardware discovery during
+          # stage 1.
+          "3w-9xxx"
+          "bnx2"
+          "bnxt_en"
+          "e1000e"
+          "i40e"
+          "igb"
+          "ixgbe"
+          "mlx5_core"
+          "mlxfw"
+          "tg3"
+          # storage drivers, for hardware discovery
+          "nvme"
+        ];
+
+        # not relevant for boot stage1
+        kernelModules = [
+          "dm_mirror" # LVM disk migration scenarios
+        ];
+
+        kernelParams = [
+          # Drivers
+          "dolvm"
+          "igb.InterruptThrottleRate=1"
+        ];
+
+        # Wanted by backy and Ceph servers
+        kernel.sysctl."vm.vfs_cache_pressure" = 10;
+
+        kernel.sysctl."vm.swappiness" = config.fclib.mkPlatform 0;
+
+      };
+
+      flyingcircus.activationScripts = {
+        disableSwap = ''
+          swapoff -a
+          if [[ -e /dev/disk/by-label/swap ]]; then
+            wipefs  -af /dev/disk/by-label/swap || true
+          fi
+        '';
+      };
+      systemd.targets.swap.enable = false; # implicitly mask the unit to prevent pulling in existing `*.swap` units
+
+      environment.systemPackages = with pkgs; [
+        fc.ledtool
+        fc.secure-erase
+        fc.util-physical
+        iperf3
+        mstflint
+        nvme-cli
+        pciutils
+        smartmontools
+        usbutils
       ];
 
-      # not relevant for boot stage1
-      kernelModules = [
-        "dm_mirror"   # LVM disk migration scenarios
-      ];
-
-      kernelParams = [
-        # Drivers
-        "dolvm"
-        "igb.InterruptThrottleRate=1"
-      ];
-
-      # Wanted by backy and Ceph servers
-      kernel.sysctl."vm.vfs_cache_pressure" = 10;
-
-      kernel.sysctl."vm.swappiness" = config.fclib.mkPlatform 0;
-
-    };
-
-    flyingcircus.activationScripts = {
-      disableSwap = ''
-        swapoff -a
-        if [[ -e /dev/disk/by-label/swap ]]; then
-          wipefs  -af /dev/disk/by-label/swap || true
-        fi
-      '';
-    };
-    systemd.targets.swap.enable = false;  # implicitly mask the unit to prevent pulling in existing `*.swap` units
-
-    environment.systemPackages = with pkgs; [
-      fc.ledtool
-      fc.secure-erase
-      fc.util-physical
-      iperf3
-      mstflint
-      nvme-cli
-      pciutils
-      smartmontools
-      usbutils
-    ];
-
-    fileSystems = {
-      "/boot" = {
-        device = "/dev/disk/by-label/boot";
-        fsType = "auto";
+      fileSystems = {
+        "/boot" = {
+          device = "/dev/disk/by-label/boot";
+          fsType = "auto";
+        };
+        "/" = {
+          device = "/dev/disk/by-label/root";
+          fsType = "xfs";
+        };
+        "/tmp" = {
+          device = "/dev/disk/by-label/tmp";
+          fsType = "xfs";
+          noCheck = true;
+        };
       };
-      "/" = {
-        device = "/dev/disk/by-label/root";
-        fsType = "xfs";
+
+      networking = {
+        domain = "fcio.net";
+        hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
       };
-      "/tmp" = {
-        device = "/dev/disk/by-label/tmp";
-        fsType = "xfs";
-        noCheck = true;
+
+      services.irqbalance.enable = true;
+
+      users.users.root = {
+        # Overriden in local.nix
+        hashedPassword = config.fclib.mkPlatform "*";
+        openssh.authorizedKeys.keys = attrValues cfg.static.adminKeys;
       };
-    };
 
-    networking = {
-      domain = "fcio.net";
-      hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
-    };
+      powerManagement.cpuFreqGovernor = "performance";
 
-    services.irqbalance.enable = true;
+      services.lldpd.enable = true;
 
-    users.users.root = {
-      # Overriden in local.nix
-      hashedPassword = config.fclib.mkPlatform "*";
-      openssh.authorizedKeys.keys =
-        attrValues cfg.static.adminKeys;
-    };
-
-    powerManagement.cpuFreqGovernor = "performance";
-
-    services.lldpd.enable = true;
-
-    systemd.services.lldp-intel-bug-126553 = {
+      systemd.services.lldp-intel-bug-126553 = {
         wantedBy = [ "multi-user.target" ];
         before = [ "lldpd.service" ];
         serviceConfig.Type = "oneshot";
@@ -118,15 +123,15 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (lib.mkMerge [
             done
           fi
         '';
-    };
+      };
 
-    services.journald.extraConfig = ''
-      SystemMaxUse=8G
-      MaxLevelConsole=err
-      ForwardToWall=no
-    '';
+      services.journald.extraConfig = ''
+        SystemMaxUse=8G
+        MaxLevelConsole=err
+        ForwardToWall=no
+      '';
 
-    systemd.services.lvm-upgrade-metadata = {
+      systemd.services.lvm-upgrade-metadata = {
         wantedBy = [ "multi-user.target" ];
         serviceConfig.Type = "oneshot";
         serviceConfig.RemainAfterExit = true;
@@ -139,67 +144,68 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (lib.mkMerge [
             ${pkgs.lvm2.bin}/bin/vgck --updatemetadata $vg;
           done
         '';
-    };
-
-    # PL-133421: some hardware+kernel combinations don't seem to
-    # deconfigure USB devices properly at shutdown time, which can
-    # lead to devices getting stuck and then failing to reappear on
-    # the bus after a reboot. unloading the driver in late shutdown
-    # before userland ends avoids this problem.
-    systemd.shutdown."unload-xhci-driver.shutdown" = pkgs.writeShellScript "rmmod-xhci" ''
-      ${pkgs.kmod}/bin/modprobe -v -r xhci_pci
-    '';
-
-    flyingcircus.ipmi.enable = true;
-
-    flyingcircus.passwordlessSudoPackages = [
-      {
-        commands = [
-          "bin/check_interfaces"
-          "bin/check_lvm_integrity"
-        ];
-        package = pkgs.fc.sensuplugins;
-        groups = [ "sensuclient" ];
-      }
-    ];
-
-    flyingcircus.services.sensu-client.checks = with pkgs; {
-      interfaces = {
-        notification = "Network interfaces are healthy";
-        command = "sudo ${fc.sensuplugins}/bin/check_interfaces " + (
-           lib.concatMapStringsSep " "
-             (link: "-i ${link.link},${toString link.minimumPortSpeed}:")
-             cfg.networking.monitorLinks
-           );
-        interval = 60;
       };
-      lvm_integrity = {
-        notification = "LVM integrity is intact";
-        command = "sudo ${fc.sensuplugins}/bin/check_lvm_integrity -v -c 1";
+
+      # PL-133421: some hardware+kernel combinations don't seem to
+      # deconfigure USB devices properly at shutdown time, which can
+      # lead to devices getting stuck and then failing to reappear on
+      # the bus after a reboot. unloading the driver in late shutdown
+      # before userland ends avoids this problem.
+      systemd.shutdown."unload-xhci-driver.shutdown" = pkgs.writeShellScript "rmmod-xhci" ''
+        ${pkgs.kmod}/bin/modprobe -v -r xhci_pci
+      '';
+
+      flyingcircus.ipmi.enable = true;
+
+      flyingcircus.passwordlessSudoPackages = [
+        {
+          commands = [
+            "bin/check_interfaces"
+            "bin/check_lvm_integrity"
+          ];
+          package = pkgs.fc.sensuplugins;
+          groups = [ "sensuclient" ];
+        }
+      ];
+
+      flyingcircus.services.sensu-client.checks = with pkgs; {
+        interfaces = {
+          notification = "Network interfaces are healthy";
+          command =
+            "sudo ${fc.sensuplugins}/bin/check_interfaces "
+            + (lib.concatMapStringsSep " " (
+              link: "-i ${link.link},${toString link.minimumPortSpeed}:"
+            ) cfg.networking.monitorLinks);
+          interval = 60;
+        };
+        lvm_integrity = {
+          notification = "LVM integrity is intact";
+          command = "sudo ${fc.sensuplugins}/bin/check_lvm_integrity -v -c 1";
+        };
       };
-    };
 
-    # PL-130846 Temporary fix until having Nix >= 2.4:
-    # Ensure there are enough build users available to fulfill `maxJobs`, which is
-    # automatically set to the number of cores. Our largest machines currently have
-    # 128 core-threads.
-    nix.nrBuildUsers = 128;
+      # PL-130846 Temporary fix until having Nix >= 2.4:
+      # Ensure there are enough build users available to fulfill `maxJobs`, which is
+      # automatically set to the number of cores. Our largest machines currently have
+      # 128 core-threads.
+      nix.nrBuildUsers = 128;
 
-  }
+    }
 
-  (lib.mkIf (config.flyingcircus.boot-style == "bios") {
-    boot.loader.grub = {
-      device = config.fclib.mkPlatform "/dev/sda";
-      fsIdentifier = "provided";
-      gfxmodeBios = "text";
-    };
-  })
+    (lib.mkIf (config.flyingcircus.boot-style == "bios") {
+      boot.loader.grub = {
+        device = config.fclib.mkPlatform "/dev/sda";
+        fsIdentifier = "provided";
+        gfxmodeBios = "text";
+      };
+    })
 
-  (lib.mkIf (config.flyingcircus.boot-style == "efi") {
-    boot.loader = {
-      systemd-boot.enable = true;
-      efi.canTouchEfiVariables = true;
-    };
-  })
+    (lib.mkIf (config.flyingcircus.boot-style == "efi") {
+      boot.loader = {
+        systemd-boot.enable = true;
+        efi.canTouchEfiVariables = true;
+      };
+    })
 
-])
+  ]
+)

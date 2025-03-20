@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 let
   inherit (config) fclib;
   checkCert = pkgs.writeShellScript "check-local-acme-cert" ''
@@ -20,50 +25,54 @@ let
   '';
 
 in
-lib.mkMerge [{
-  flyingcircus.passwordlessSudoRules = [
-    {
-      commands = [ "${checkCert}" ];
-      groups = [ "sensuclient" ];
-    }
-  ];
+lib.mkMerge [
+  {
+    flyingcircus.passwordlessSudoRules = [
+      {
+        commands = [ "${checkCert}" ];
+        groups = [ "sensuclient" ];
+      }
+    ];
 
-  # Generate a sensu check for each acme cert to check its validity and warn
-  # when it expires.
+    # Generate a sensu check for each acme cert to check its validity and warn
+    # when it expires.
 
-  flyingcircus.services.sensu-client.checks =
-    lib.mapAttrs'
-      (n: cert: lib.nameValuePair "ssl_cert_acme_${n}" {
+    flyingcircus.services.sensu-client.checks = lib.mapAttrs' (
+      n: cert:
+      lib.nameValuePair "ssl_cert_acme_${n}" {
         notification = "ACME (Letsencrypt) certificate for ${n} is invalid or will expire soon";
         command = "/run/wrappers/bin/sudo ${checkCert} ${cert.directory}/fullchain.pem";
         interval = 3600;
-      })
-      config.security.acme.certs;
+      }
+    ) config.security.acme.certs;
 
-  systemd.services =
-  let
-    # Retry certificate renewal 30s after a failure.
-    serviceConfig = {
-      Restart = "on-failure";
-      RestartSec = fclib.mkPlatformOverride 30;
-    };
+    systemd.services =
+      let
+        # Retry certificate renewal 30s after a failure.
+        serviceConfig = {
+          Restart = "on-failure";
+          RestartSec = fclib.mkPlatformOverride 30;
+        };
 
-    # Allow 3 retries/starts per hour to not hit the rate limit
-    # of 5 per hour so we have two left to try manually.
-    unitConfig = {
-      StartLimitIntervalSec = "1h";
-      StartLimitBurst = 3;
-    };
-  in
-    lib.listToAttrs
-      (map (n: lib.nameValuePair "acme-${n}" {
-        inherit serviceConfig unitConfig;
-        # Upstream added the renewal service to multi-user.target which means that
-        # every fc-manage run triggers a renewal. We want that the renewal is
-        # only triggered by the timer.
-        wantedBy = lib.mkForce [];
-      })
-      (lib.attrNames config.security.acme.certs));
+        # Allow 3 retries/starts per hour to not hit the rate limit
+        # of 5 per hour so we have two left to try manually.
+        unitConfig = {
+          StartLimitIntervalSec = "1h";
+          StartLimitBurst = 3;
+        };
+      in
+      lib.listToAttrs (
+        map (
+          n:
+          lib.nameValuePair "acme-${n}" {
+            inherit serviceConfig unitConfig;
+            # Upstream added the renewal service to multi-user.target which means that
+            # every fc-manage run triggers a renewal. We want that the renewal is
+            # only triggered by the timer.
+            wantedBy = lib.mkForce [ ];
+          }
+        ) (lib.attrNames config.security.acme.certs)
+      );
 
     # fallback ACME settings
     security.acme.acceptTerms = true;
@@ -76,4 +85,4 @@ lib.mkMerge [{
   (lib.mkIf (lib.versionOlder config.system.stateVersion "24.11") {
     security.acme.defaults.server = fclib.mkPlatform null;
   })
-  ]
+]

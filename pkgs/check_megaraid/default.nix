@@ -1,5 +1,13 @@
-{ lib, stdenv, bash, gawk, dmidecode, megacli, util-linux, makeWrapper }:
-
+{
+  lib,
+  stdenv,
+  bash,
+  gawk,
+  dmidecode,
+  megacli,
+  util-linux,
+  makeWrapper,
+}:
 
 stdenv.mkDerivation rec {
   version = "0.1";
@@ -11,7 +19,13 @@ stdenv.mkDerivation rec {
   dontConfigure = true;
 
   buildInputs = [ makeWrapper ];
-  propagatedBuildInputs = [ bash dmidecode gawk megacli util-linux ];
+  propagatedBuildInputs = [
+    bash
+    dmidecode
+    gawk
+    megacli
+    util-linux
+  ];
 
   installPhase = ''
     install -D -m 755 $src $out/bin/.check_megaraid

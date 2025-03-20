@@ -1,27 +1,43 @@
-{ lib, fetchFromGitHub, buildGoModule, libpcap, nixosTests, systemd }:
+{
+  lib,
+  fetchFromGitHub,
+  buildGoModule,
+  libpcap,
+  nixosTests,
+  systemd,
+}:
 
-let beat = package: extraArgs: buildGoModule (rec {
-  pname = package;
-  version = "7.17.16";
+let
+  beat =
+    package: extraArgs:
+    buildGoModule (
+      rec {
+        pname = package;
+        version = "7.17.16";
 
-  src = fetchFromGitHub {
-    owner = "elastic";
-    repo = "beats";
-    rev = "v${version}";
-    hash = "sha256-0qwWHRIDLlnaPOCRmiiFGg+/jdanWuQtggM2QSaMR1o=";
-  };
+        src = fetchFromGitHub {
+          owner = "elastic";
+          repo = "beats";
+          rev = "v${version}";
+          hash = "sha256-0qwWHRIDLlnaPOCRmiiFGg+/jdanWuQtggM2QSaMR1o=";
+        };
 
-  vendorHash = "sha256-rwCCpptppkpvwQWUtqTjBUumP8GSpPHBTCaj0nYVQv8=";
+        vendorHash = "sha256-rwCCpptppkpvwQWUtqTjBUumP8GSpPHBTCaj0nYVQv8=";
 
-  subPackages = [ package ];
+        subPackages = [ package ];
 
-  meta = with lib; {
-    homepage = "https://www.elastic.co/products/beats";
-    license = licenses.asl20;
-    maintainers = with maintainers; [ fadenb basvandijk ];
-    platforms = platforms.linux;
-  };
-} // extraArgs);
+        meta = with lib; {
+          homepage = "https://www.elastic.co/products/beats";
+          license = licenses.asl20;
+          maintainers = with maintainers; [
+            fadenb
+            basvandijk
+          ];
+          platforms = platforms.linux;
+        };
+      }
+      // extraArgs
+    );
 in
 rec {
   filebeat7 = beat "filebeat" {

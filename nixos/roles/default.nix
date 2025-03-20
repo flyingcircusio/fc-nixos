@@ -4,7 +4,8 @@ with builtins;
 
 let
   fclib = config.fclib;
-in {
+in
+{
   imports = with lib; [
     ./antivirus.nix
     ./backyserver.nix
@@ -48,13 +49,34 @@ in {
     ./webproxy.nix
 
     # Removed
-    (mkRemovedOptionModule [ "flyingcircus" "roles" "loghost-location" "enable" ] "Last platform version that supported graylog/loghost was 22.05.")
-    (mkRemovedOptionModule [ "flyingcircus" "roles" "mysql" "rootPassword" ] "Change the root password via MySQL and modify secret files.")
-    (mkRemovedOptionModule [ "flyingcircus" "roles" "statshostproxy" "enable" ] "Use flyingcircus.roles.statshost-location-proxy.enable instead.")
+    (mkRemovedOptionModule [
+      "flyingcircus"
+      "roles"
+      "loghost-location"
+      "enable"
+    ] "Last platform version that supported graylog/loghost was 22.05.")
+    (mkRemovedOptionModule [
+      "flyingcircus"
+      "roles"
+      "mysql"
+      "rootPassword"
+    ] "Change the root password via MySQL and modify secret files.")
+    (mkRemovedOptionModule [
+      "flyingcircus"
+      "roles"
+      "statshostproxy"
+      "enable"
+    ] "Use flyingcircus.roles.statshost-location-proxy.enable instead.")
 
     # Renamed
-    (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "enable" ] [ "flyingcircus" "roles" "statshost-global" "enable" ])
-    (mkRenamedOptionModule [ "flyingcircus" "roles" "statshost" "globalAllowedMetrics" ] [ "flyingcircus" "roles" "statshost-global" "allowedMetricPrefixes" ])
+    (mkRenamedOptionModule
+      [ "flyingcircus" "roles" "statshost" "enable" ]
+      [ "flyingcircus" "roles" "statshost-global" "enable" ]
+    )
+    (mkRenamedOptionModule
+      [ "flyingcircus" "roles" "statshost" "globalAllowedMetrics" ]
+      [ "flyingcircus" "roles" "statshost-global" "allowedMetricPrefixes" ]
+    )
   ];
 
   options = {
@@ -70,12 +92,18 @@ in {
     # ala { <role> = { enable = true;}; }
     # Roles are ignored if the initial run marker of fc-agent is still present
     # to get the new system ready for SSH connections more quickly and reliably.
-    flyingcircus.roles =
-      (lib.optionalAttrs
-        (!pathExists "/etc/nixos/fc_agent_initial_run")
-        (lib.listToAttrs (
-          map (role: { name = role; value = { enable = true; }; })
-            config.flyingcircus.active-roles)));
+    flyingcircus.roles = (
+      lib.optionalAttrs (!pathExists "/etc/nixos/fc_agent_initial_run") (
+        lib.listToAttrs (
+          map (role: {
+            name = role;
+            value = {
+              enable = true;
+            };
+          }) config.flyingcircus.active-roles
+        )
+      )
+    );
   };
 
 }

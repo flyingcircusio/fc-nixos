@@ -1,30 +1,43 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 with lib;
 
 let
-  params = lib.attrByPath [ "parameters" ] {} config.flyingcircus.enc;
+  params = lib.attrByPath [ "parameters" ] { } config.flyingcircus.enc;
   fclib = config.fclib;
   roles = config.flyingcircus.roles;
 
-  listenFe = lib.attrByPath [ "fe" "dualstack" "addresses" ] [] fclib.network;
-  listenFe4 = lib.attrByPath [ "fe" "v4" "addresses" ] [] fclib.network;
-  listenFe6 = lib.attrByPath [ "fe" "v6" "addresses" ] [] fclib.network;
-  listenSrv = lib.attrByPath [ "srv" "dualstack" "addresses" ] [] fclib.network;
-  listenSrv4 = lib.attrByPath [ "fe" "v4" "addresses" ] [] fclib.network;
-  listenSrv6 = lib.attrByPath [ "fe" "v6" "addresses" ] [] fclib.network;
-  hasFE = (params ? location &&
-    lib.hasAttrByPath [ "interfaces" "fe" ] params &&
-    listenFe4 != [] && listenFe6 != []);
+  listenFe = lib.attrByPath [ "fe" "dualstack" "addresses" ] [ ] fclib.network;
+  listenFe4 = lib.attrByPath [ "fe" "v4" "addresses" ] [ ] fclib.network;
+  listenFe6 = lib.attrByPath [ "fe" "v6" "addresses" ] [ ] fclib.network;
+  listenSrv = lib.attrByPath [ "srv" "dualstack" "addresses" ] [ ] fclib.network;
+  listenSrv4 = lib.attrByPath [ "fe" "v4" "addresses" ] [ ] fclib.network;
+  listenSrv6 = lib.attrByPath [ "fe" "v6" "addresses" ] [ ] fclib.network;
+  hasFE = (
+    params ? location
+    && lib.hasAttrByPath [ "interfaces" "fe" ] params
+    && listenFe4 != [ ]
+    && listenFe6 != [ ]
+  );
 
   stdOptions = {
 
     mailHost = mkOption {
       type = types.str;
-      default = with config.networking; if hasFE
-        then "${hostName}.fe.${params.location}.${domain}"
-        else if domain != null then "${hostName}.${domain}" else hostName;
+      default =
+        with config.networking;
+        if hasFE then
+          "${hostName}.fe.${params.location}.${domain}"
+        else if domain != null then
+          "${hostName}.${domain}"
+        else
+          hostName;
       description = ''
         FQDN of the mail server's frontend address. IP adresses and
         forward/reverse DNS must match exactly.
@@ -39,8 +52,13 @@ let
         Local addresses are always skipped.
         This extends the `skip_addresses` setting in policyd-spf.conf.
       '';
-      default = if hasFE then listenFe else
-                if listenSrv != [] then listenSrv else [];
+      default =
+        if hasFE then
+          listenFe
+        else if listenSrv != [ ] then
+          listenSrv
+        else
+          [ ];
     };
 
     rootAlias = mkOption {
@@ -54,8 +72,13 @@ let
       description = ''
         IPv4 address for outgoing connections. Must match forward/reverse DNS.
       '';
-      default = if hasFE then head listenFe4 else
-                if listenSrv4 != [] then head listenSrv4 else "";
+      default =
+        if hasFE then
+          head listenFe4
+        else if listenSrv4 != [ ] then
+          head listenSrv4
+        else
+          "";
     };
 
     smtpBind6 = mkOption {
@@ -63,8 +86,13 @@ let
       description = ''
         IPv6 address for outgoing connections. Must match forward/reverse DNS.
       '';
-      default = if hasFE then head listenFe6 else
-                if listenSrv6 != [] then head listenSrv6 else "";
+      default =
+        if hasFE then
+          head listenFe6
+        else if listenSrv6 != [ ] then
+          head listenSrv6
+        else
+          "";
     };
 
     explicitSmtpBind = mkOption {
@@ -78,10 +106,9 @@ let
     };
 
     dynamicMaps = mkOption {
-      description = ''
-      '';
+      description = '''';
       type = with types; attrsOf (listOf path);
-      default = {};
+      default = { };
       example = {
         virtual_alias_maps = [ "/srv/test/valias" ];
       };
@@ -97,145 +124,179 @@ in
 
   options = {
 
-    flyingcircus.roles.mailserver = with lib; stdOptions // {
-      enable = mkEnableOption ''
-        Flying Circus mailserver role with web mail.
-        Mailout on all nodes in this RG/location.
-      '';
-      supportsContainers = fclib.mkEnableDevhostSupport;
-
-      # this allows finegrained control over each domain
-      # for example domain."test.fcio.net".autoconfig = false;
-      domains = mkOption {
-        type = with types; either (types.attrsOf (types.submodule {
-          options = {
-            enable = mkOption {
-              description = "Enable mail services for this domain";
-              default = true;
-              type = types.bool;
-            };
-
-            primary = mkOption {
-              description = "Make this domain the primary mail domain";
-              default = false;
-              type = types.bool;
-            };
-
-            autoconfig = mkOption {
-              description = "Enable autoconfig host for this domain";
-              default = true;
-              type = types.bool;
-            };
-          };
-        })) (listOf str);
-
-        description = ''
-          Mail domain configuration
+    flyingcircus.roles.mailserver =
+      with lib;
+      stdOptions
+      // {
+        enable = mkEnableOption ''
+          Flying Circus mailserver role with web mail.
+          Mailout on all nodes in this RG/location.
         '';
+        supportsContainers = fclib.mkEnableDevhostSupport;
 
-        example = {
-          "your-company.tld" = {
-            primary = true;
-          };
+        # this allows finegrained control over each domain
+        # for example domain."test.fcio.net".autoconfig = false;
+        domains = mkOption {
+          type =
+            with types;
+            either (types.attrsOf (
+              types.submodule {
+                options = {
+                  enable = mkOption {
+                    description = "Enable mail services for this domain";
+                    default = true;
+                    type = types.bool;
+                  };
 
-          "newsletter.your-company.tld" = {
-            autoconfig = false;
-          };
-        };
+                  primary = mkOption {
+                    description = "Make this domain the primary mail domain";
+                    default = false;
+                    type = types.bool;
+                  };
 
-        default = {};
-
-        apply = v: (if isList v then
-          trace ''
-            WARN: Using outdated domains = [] list. Please upgrade to the new format
-              {
-                "domain.tld" = {
-                  primary = true;
+                  autoconfig = mkOption {
+                    description = "Enable autoconfig host for this domain";
+                    default = true;
+                    type = types.bool;
+                  };
                 };
               }
-          ''
-          recursiveUpdate
-            (listToAttrs (map (domain: (nameValuePair domain {
-              enable = true;
-              autoconfig = true;
-              primary = false; })) v))
-            (optionalAttrs (v != []) { "${head v}" = { primary = true; }; })
-          else v);
+            )) (listOf str);
+
+          description = ''
+            Mail domain configuration
+          '';
+
+          example = {
+            "your-company.tld" = {
+              primary = true;
+            };
+
+            "newsletter.your-company.tld" = {
+              autoconfig = false;
+            };
+          };
+
+          default = { };
+
+          apply =
+            v:
+            (
+              if isList v then
+                trace
+                  ''
+                    WARN: Using outdated domains = [] list. Please upgrade to the new format
+                      {
+                        "domain.tld" = {
+                          primary = true;
+                        };
+                      }
+                  ''
+                  recursiveUpdate
+                  (listToAttrs (
+                    map (
+                      domain:
+                      (nameValuePair domain {
+                        enable = true;
+                        autoconfig = true;
+                        primary = false;
+                      })
+                    ) v
+                  ))
+                  (
+                    optionalAttrs (v != [ ]) {
+                      "${head v}" = {
+                        primary = true;
+                      };
+                    }
+                  )
+              else
+                v
+            );
+        };
+
+        imprintUrl = mkOption {
+          type = with types; nullOr str;
+          description = ''
+            Webaddress of your imprint to be in compilance with T-Online Postmaster Rules
+            You can instead provide your imprint in text form using the imprintText option
+          '';
+          default = null;
+          apply =
+            url:
+            if url == null || null != builtins.match "^https?://.+" url then
+              url
+            else
+              # FIXME get rid of this after a few releases as grace period.
+              # Use `types.nullOr (types.strMatching "^https?://.+")` then to make sure a protocol is specified.
+              warn
+                ''Specifying flyingcircus.roles.mailserver.imprintUrl without a protocol scheme is deprecated. Add https:// to the declaration (i.e. "${url}" -> "https://${url}") to get rid of this warning.''
+                "https://${url}";
+        };
+
+        imprintText = mkOption {
+          type = with types; nullOr str;
+          description = ''
+            Imprint as HTML text to be in compilance with T-Online Postmaster Rules
+            You can instead provide the webaddress to your imprint using the imprintUrl option
+          '';
+          default = null;
+        };
+
+        webmailHost = mkOption {
+          type = with types; nullOr str;
+          description = "(Virtual) host name of the webmail service.";
+          example = "webmail.example.com";
+          default = null;
+        };
+
+        redisDatabase = mkOption {
+          type = types.int;
+          description = ''
+            Redis DB id to store spam-related data. Should be set to an unique
+            number (machine-local )to avoid conflicts.
+          '';
+          default = 5;
+        };
+
+        ipDNSBLs = mkOption {
+          type = with types; listOf str;
+          description = ''
+            IP-oriented DNS-based lists (block lists) to use. Applied in the specified order.
+          '';
+          default = [ "bl.spamcop.net" ];
+          example = [
+            "bl.spamcop.net"
+            "b.barracudacentral.org"
+          ];
+        };
+
+        passwdFile = mkOption {
+          type = types.str;
+          description = "Virtual mail user passwd file (shared Postfix/Dovecot)";
+          default = "/var/lib/dovecot/passwd";
+        };
+
       };
 
-      imprintUrl = mkOption {
-        type = with types; nullOr str;
-        description = ''
-          Webaddress of your imprint to be in compilance with T-Online Postmaster Rules
-          You can instead provide your imprint in text form using the imprintText option
+    flyingcircus.roles.mailstub =
+      with lib;
+      stdOptions
+      // {
+        enable = mkEnableOption ''
+          Flying Circus mail stub role which creates a simple Postfix instance for
+          manual configuration.
         '';
-        default = null;
-        apply = url:
-          if url == null || null != builtins.match "^https?://.+" url then
-            url
-          else
-            # FIXME get rid of this after a few releases as grace period.
-            # Use `types.nullOr (types.strMatching "^https?://.+")` then to make sure a protocol is specified.
-            warn
-              ''Specifying flyingcircus.roles.mailserver.imprintUrl without a protocol scheme is deprecated. Add https:// to the declaration (i.e. "${url}" -> "https://${url}") to get rid of this warning.''
-              "https://${url}";
+        supportsContainers = fclib.mkEnableDevhostSupport;
       };
-
-      imprintText = mkOption {
-        type = with types; nullOr str;
-        description = ''
-          Imprint as HTML text to be in compilance with T-Online Postmaster Rules
-          You can instead provide the webaddress to your imprint using the imprintUrl option
-        '';
-        default = null;
-      };
-
-      webmailHost = mkOption {
-        type = with types; nullOr str;
-        description = "(Virtual) host name of the webmail service.";
-        example = "webmail.example.com";
-        default = null;
-      };
-
-      redisDatabase = mkOption {
-        type = types.int;
-        description = ''
-          Redis DB id to store spam-related data. Should be set to an unique
-          number (machine-local )to avoid conflicts.
-        '';
-        default = 5;
-      };
-
-      ipDNSBLs = mkOption {
-        type = with types; listOf str;
-        description = ''
-          IP-oriented DNS-based lists (block lists) to use. Applied in the specified order.
-        '';
-        default = [ "bl.spamcop.net" ];
-        example = [ "bl.spamcop.net" "b.barracudacentral.org" ];
-      };
-
-      passwdFile = mkOption {
-        type = types.str;
-        description = "Virtual mail user passwd file (shared Postfix/Dovecot)";
-        default = "/var/lib/dovecot/passwd";
-      };
-
-    };
-
-    flyingcircus.roles.mailstub = with lib; stdOptions // {
-      enable = mkEnableOption ''
-        Flying Circus mail stub role which creates a simple Postfix instance for
-        manual configuration.
-      '';
-      supportsContainers = fclib.mkEnableDevhostSupport;
-    };
   };
 
   config = lib.mkMerge [
 
     (lib.mkIf roles.mailserver.enable {
-      flyingcircus.services.mail.enable = assert !roles.mailstub.enable; true;
+      flyingcircus.services.mail.enable =
+        assert !roles.mailstub.enable;
+        true;
       flyingcircus.services.nginx.enable = true;
       flyingcircus.services.redis.enable = true;
 
@@ -247,17 +308,20 @@ in
         {
           commands = [ "bin/postsuper" ];
           package = pkgs.postfix;
-          groups = [ "sudo-srv" "service" ];
+          groups = [
+            "sudo-srv"
+            "service"
+          ];
         }
       ];
 
-      flyingcircus.roles.mailserver =
-        fclib.jsonFromFile "/etc/local/mail/config.json" "{}";
+      flyingcircus.roles.mailserver = fclib.jsonFromFile "/etc/local/mail/config.json" "{}";
     })
 
     (lib.mkIf roles.mailstub.enable {
       flyingcircus.services.postfix.enable =
-        assert !roles.mailserver.enable; true;
+        assert !roles.mailserver.enable;
+        true;
     })
 
     (lib.mkIf (!roles.mailserver.enable && !roles.mailstub.enable) {

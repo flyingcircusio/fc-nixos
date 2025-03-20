@@ -5,7 +5,8 @@
 # project interpreter.
 
 let
-  pkgs = import <nixpkgs> {};
-  fcagent = pkgs.python310Packages.callPackage ./. {};
+  pkgs = import <nixpkgs> { };
+  fcagent = pkgs.python310Packages.callPackage ./. { };
 
-in fcagent.pythonDevEnv
+in
+fcagent.pythonDevEnv

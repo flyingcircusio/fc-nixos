@@ -1,4 +1,10 @@
-{ options, config, lib, pkgs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -11,15 +17,17 @@ let
   localConfigDir = "/etc/local/opensearch";
 
   thisNode =
-    if config.networking.domain != null
-    then "${config.networking.hostName}.${config.networking.domain}"
-    else "localhost";
+    if config.networking.domain != null then
+      "${config.networking.hostName}.${config.networking.domain}"
+    else
+      "localhost";
 
   currentMemory = fclib.currentMemory 1024;
 
-  openSearchHeap = fclib.min
-    [ (currentMemory * cfg.heapPercentage / 100)
-      (31 * 1024)];
+  openSearchHeap = fclib.min [
+    (currentMemory * cfg.heapPercentage / 100)
+    (31 * 1024)
+  ];
 
   usingDefaultDataDir = cfgUpstream.dataDir == "/var/lib/opensearch";
   usingDefaultUserAndGroup = cfgUpstream.user == "opensearch" && cfgUpstream.group == "opensearch";
@@ -60,7 +68,7 @@ in
 
       initialMasterNodes = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = ''
           Name of the nodes that should take a part in the initial master election.
           WARNING: This should only be set when initializing a cluster with multiple nodes
@@ -79,7 +87,6 @@ in
         '';
       };
 
-
       nodeName = mkOption {
         type = types.nullOr types.str;
         default = config.networking.hostName;
@@ -95,226 +102,241 @@ in
 
     (lib.mkIf cfg.enable {
 
-    environment.systemPackages = [
-      (pkgs.writeShellScriptBin "opensearch-show-config" ''
-        ${pkgs.rich-cli}/bin/rich /etc/current-config/opensearch.yml
-      '')
-      (pkgs.writeShellScriptBin "opensearch-readme" ''
-        ${pkgs.rich-cli}/bin/rich ${localConfigDir}/README.md
-      '')
-    ];
-
-    services.opensearch = {
-      enable = true;
-
-      settings = {
-        "bootstrap.memory_lock" = true;
-        "cluster.name" = cfg.clusterName;
-        "discovery.seed_hosts" = cfg.nodes;
-        "discovery.type" = if lib.length cfg.nodes == 1 then "single-node" else "";
-        "network.host" = thisNode;
-        "node.name" = cfg.nodeName;
-      } // lib.optionalAttrs (cfg.initialMasterNodes != []) {
-        "cluster.initial_master_nodes" = cfg.initialMasterNodes;
-      };
-
-      extraJavaOptions = [
-        "-Des.path.scripts=${cfgUpstream.dataDir}/scripts"
-        # Xms and Xmx are already defined as cmdline args by config/jvm.options.
-        # Appending the next two lines overrides the former.
-        "-Xms${toString openSearchHeap}m"
-        "-Xmx${toString openSearchHeap}m"
-        "-Dopensearch.transport.cname_in_publish_address=true"
+      environment.systemPackages = [
+        (pkgs.writeShellScriptBin "opensearch-show-config" ''
+          ${pkgs.rich-cli}/bin/rich /etc/current-config/opensearch.yml
+        '')
+        (pkgs.writeShellScriptBin "opensearch-readme" ''
+          ${pkgs.rich-cli}/bin/rich ${localConfigDir}/README.md
+        '')
       ];
-    };
 
-    # Allow sudo-srv and service users to run commands as opensearch.
-    # There are various opensearch utilities that have to be run as
-    # opensearch user.
-    flyingcircus.passwordlessSudoRules = [
-      {
-        commands = [ "ALL" ];
-        groups = [ "sudo-srv" "service" "opensearch" ];
-        runAs = "opensearch";
-      }
-    ];
+      services.opensearch = {
+        enable = true;
 
-    flyingcircus.services.sensu-client = {
-      expectedDiskCapacity = {
-        # These values match the OpenSearch defaults for watermark.low and .high.
-        # See https://opensearch.org/docs/latest/api-reference/cluster-api/cluster-settings/
-        # for an explanation of what they do.
-        warning = 85;
-        critical = 90;
+        settings =
+          {
+            "bootstrap.memory_lock" = true;
+            "cluster.name" = cfg.clusterName;
+            "discovery.seed_hosts" = cfg.nodes;
+            "discovery.type" = if lib.length cfg.nodes == 1 then "single-node" else "";
+            "network.host" = thisNode;
+            "node.name" = cfg.nodeName;
+          }
+          // lib.optionalAttrs (cfg.initialMasterNodes != [ ]) {
+            "cluster.initial_master_nodes" = cfg.initialMasterNodes;
+          };
+
+        extraJavaOptions = [
+          "-Des.path.scripts=${cfgUpstream.dataDir}/scripts"
+          # Xms and Xmx are already defined as cmdline args by config/jvm.options.
+          # Appending the next two lines overrides the former.
+          "-Xms${toString openSearchHeap}m"
+          "-Xmx${toString openSearchHeap}m"
+          "-Dopensearch.transport.cname_in_publish_address=true"
+        ];
       };
-    };
 
-    systemd.services.opensearch = {
-      startLimitIntervalSec = 480;
-      startLimitBurst = 3;
-      serviceConfig = {
-        DynamicUser = lib.mkOverride 90 false;
-        LimitMEMLOCK = "infinity";
-        ExecStartPre =
-          let
-            migrateDataDir = ''
-              set -e
-              echo "Running as $(id opensearch)."
-              if ls -A /srv/opensearch/*; then
-                echo "Old data dir /srv/opensearch is not empty."
-                if ls -A /var/lib/opensearch/*; then
-                  echo "Not moving old data, new data dir /var/lib/opensearch already has content!"
-                else
-                  echo "Migrating existing data to /var/lib/opensearch..."
-                  mv /srv/opensearch/* /var/lib/opensearch/
-                  rm -rf /srv/opensearch
-                  ln -s /var/lib/opensearch /srv/opensearch
+      # Allow sudo-srv and service users to run commands as opensearch.
+      # There are various opensearch utilities that have to be run as
+      # opensearch user.
+      flyingcircus.passwordlessSudoRules = [
+        {
+          commands = [ "ALL" ];
+          groups = [
+            "sudo-srv"
+            "service"
+            "opensearch"
+          ];
+          runAs = "opensearch";
+        }
+      ];
+
+      flyingcircus.services.sensu-client = {
+        expectedDiskCapacity = {
+          # These values match the OpenSearch defaults for watermark.low and .high.
+          # See https://opensearch.org/docs/latest/api-reference/cluster-api/cluster-settings/
+          # for an explanation of what they do.
+          warning = 85;
+          critical = 90;
+        };
+      };
+
+      systemd.services.opensearch = {
+        startLimitIntervalSec = 480;
+        startLimitBurst = 3;
+        serviceConfig = {
+          DynamicUser = lib.mkOverride 90 false;
+          LimitMEMLOCK = "infinity";
+          ExecStartPre =
+            let
+              migrateDataDir = ''
+                set -e
+                echo "Running as $(id opensearch)."
+                if ls -A /srv/opensearch/*; then
+                  echo "Old data dir /srv/opensearch is not empty."
+                  if ls -A /var/lib/opensearch/*; then
+                    echo "Not moving old data, new data dir /var/lib/opensearch already has content!"
+                  else
+                    echo "Migrating existing data to /var/lib/opensearch..."
+                    mv /srv/opensearch/* /var/lib/opensearch/
+                    rm -rf /srv/opensearch
+                    ln -s /var/lib/opensearch /srv/opensearch
+                  fi
+                else echo "Nothing found in old data dir.".
                 fi
-              else echo "Nothing found in old data dir.".
-              fi
 
-              chown -R opensearch:opensearch ${cfgUpstream.dataDir}/
-            '';
-          in
-            lib.mkBefore
-              (lib.optionals (usingDefaultDataDir && usingDefaultUserAndGroup) [
-              "+${pkgs.writeShellScript "opensearch-migrate-datadir" migrateDataDir}"
-            ] ++ [
-              "${pkgs.writeShellScript "opensearch-link-jdk" "ln -sfT ${pkgs.jre_headless} ${cfgUpstream.dataDir}/jdk"}"
-            ]);
+                chown -R opensearch:opensearch ${cfgUpstream.dataDir}/
+              '';
+            in
+            lib.mkBefore (
+              lib.optionals (usingDefaultDataDir && usingDefaultUserAndGroup) [
+                "+${pkgs.writeShellScript "opensearch-migrate-datadir" migrateDataDir}"
+              ]
+              ++ [
+                "${pkgs.writeShellScript "opensearch-link-jdk" "ln -sfT ${pkgs.jre_headless} ${cfgUpstream.dataDir}/jdk"}"
+              ]
+            );
+        };
       };
-    };
 
-    environment.variables = {
-      OPENSEARCH_HOME = cfgUpstream.dataDir;
-    };
+      environment.variables = {
+        OPENSEARCH_HOME = cfgUpstream.dataDir;
+      };
 
-    environment.etc."local/opensearch/README.md".text = let
-      discoveryType = if cfgUpstream.settings."discovery.type" != "" then cfgUpstream.settings."discovery.type" else "multi-node";
-    in
-    ''
-      # OpenSearch
+      environment.etc."local/opensearch/README.md".text =
+        let
+          discoveryType =
+            if cfgUpstream.settings."discovery.type" != "" then
+              cfgUpstream.settings."discovery.type"
+            else
+              "multi-node";
+        in
+        ''
+          # OpenSearch
 
-      [OpenSearch](https://opensearch.org) version ${cfgUpstream.package.version} is running on this VM, with node
-      name `${cfgUpstream.settings."node.name"}`. It is forming the cluster named
-      `${cfgUpstream.settings."cluster.name"}` (${discoveryType}).
+          [OpenSearch](https://opensearch.org) version ${cfgUpstream.package.version} is running on this VM, with node
+          name `${cfgUpstream.settings."node.name"}`. It is forming the cluster named
+          `${cfgUpstream.settings."cluster.name"}` (${discoveryType}).
 
-      The following nodes are eligible to be elected as master nodes:
-      `${fclib.docList cfg.nodes}`
+          The following nodes are eligible to be elected as master nodes:
+          `${fclib.docList cfg.nodes}`
 
-      ${lib.optionalString (cfg.initialMasterNodes != []) ''
-      The node is running in multi-node bootstrap mode, `initialMasterNodes` is set to:
-      `${fclib.docList cfg.initialMasterNodes}`
+          ${lib.optionalString (cfg.initialMasterNodes != [ ]) ''
+            The node is running in multi-node bootstrap mode, `initialMasterNodes` is set to:
+            `${fclib.docList cfg.initialMasterNodes}`
 
-      WARNING: the `initialMasterNodes` setting should be removed after the cluster has formed!
-      ''}
+            WARNING: the `initialMasterNodes` setting should be removed after the cluster has formed!
+          ''}
 
-      ## Interaction
+          ## Interaction
 
-      The OpenSearch API is listening on the SRV interface. You can access
-      the API of nodes in the same project via HTTP without authentication.
-      Some examples:
+          The OpenSearch API is listening on the SRV interface. You can access
+          the API of nodes in the same project via HTTP without authentication.
+          Some examples:
 
-      Show active nodes:
+          Show active nodes:
 
-      ```
-      curl ${thisNode}:9200/_cat/nodes
-      ```
+          ```
+          curl ${thisNode}:9200/_cat/nodes
+          ```
 
-      Show cluster health:
+          Show cluster health:
 
-      ```
-      curl ${thisNode}:9200/_cat/health
-      ```
+          ```
+          curl ${thisNode}:9200/_cat/health
+          ```
 
-      Show indices:
+          Show indices:
 
-      ```
-      curl ${thisNode}:9200/_cat/indices
-      ```
-    '';
-
-    flyingcircus.services.sensu-client.checks = {
-
-      opensearch_circuit_breakers = {
-        notification = "OpenSearch: Circuit Breakers active";
-        command = ''
-          ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-circuit-breakers.rb \
-            -h ${thisNode}
+          ```
+          curl ${thisNode}:9200/_cat/indices
+          ```
         '';
-        interval = 300;
+
+      flyingcircus.services.sensu-client.checks = {
+
+        opensearch_circuit_breakers = {
+          notification = "OpenSearch: Circuit Breakers active";
+          command = ''
+            ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-circuit-breakers.rb \
+              -h ${thisNode}
+          '';
+          interval = 300;
+        };
+
+        opensearch_cluster_health = {
+          notification = "OpenSearch: Cluster Health";
+          command = ''
+            ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-cluster-health.rb \
+              -h ${thisNode}
+          '';
+        };
+
+        opensearch_heap = {
+          notification = "OpenSearch: Heap too full";
+          command = ''
+            ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-heap.rb \
+              -h ${thisNode} -w 80 -c 90 -P
+          '';
+          interval = 300;
+        };
+
+        opensearch_node_status = {
+          notification = "OpenSearch: Node status";
+          command = ''
+            ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-node-status.rb \
+              -h ${thisNode}
+          '';
+        };
+
+        opensearch_shard_allocation_status = {
+          notification = "OpenSearch: Shard allocation status";
+          command = ''
+            ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-shard-allocation-status.rb \
+              -s ${thisNode}
+          '';
+          interval = 300;
+        };
+
       };
 
-      opensearch_cluster_health = {
-        notification = "OpenSearch: Cluster Health";
-        command = ''
-        ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-cluster-health.rb \
-          -h ${thisNode}
+      systemd.services.prometheus-opensearch-exporter = {
+        description = "Prometheus exporter for opensearch metrics";
+        wantedBy = [ "multi-user.target" ];
+        path = [ pkgs.prometheus-elasticsearch-exporter ];
+        script = ''
+          exec elasticsearch_exporter\
+              --es.uri http://${thisNode}:9200 \
+              --web.listen-address localhost:9108
         '';
+        serviceConfig = {
+          User = "nobody";
+          Restart = "always";
+          PrivateTmp = true;
+          WorkingDirectory = /tmp;
+          ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
+        };
       };
 
-      opensearch_heap = {
-        notification = "OpenSearch: Heap too full";
-        command = ''
-          ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-heap.rb \
-            -h ${thisNode} -w 80 -c 90 -P
-        '';
-        interval = 300;
+      flyingcircus.services.telegraf.inputs = {
+        prometheus = [
+          {
+            urls = [ "http://localhost:9108/metrics" ];
+          }
+        ];
       };
 
-      opensearch_node_status = {
-        notification = "OpenSearch: Node status";
-        command = ''
-          ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-node-status.rb \
-            -h ${thisNode}
-        '';
+      users = {
+        groups.opensearch.gid = config.ids.gids.opensearch;
+        users.opensearch = {
+          uid = config.ids.uids.opensearch;
+          description = "Opensearch daemon user";
+          home = cfgUpstream.dataDir;
+          group = "opensearch";
+        };
       };
-
-      opensearch_shard_allocation_status = {
-        notification = "OpenSearch: Shard allocation status";
-        command = ''
-          ${pkgs.sensu-plugins-elasticsearch}/bin/check-es-shard-allocation-status.rb \
-            -s ${thisNode}
-        '';
-        interval = 300;
-      };
-
-    };
-
-    systemd.services.prometheus-opensearch-exporter = {
-      description = "Prometheus exporter for opensearch metrics";
-      wantedBy = [ "multi-user.target" ];
-      path = [ pkgs.prometheus-elasticsearch-exporter ];
-      script = ''
-        exec elasticsearch_exporter\
-            --es.uri http://${thisNode}:9200 \
-            --web.listen-address localhost:9108
-      '';
-      serviceConfig = {
-        User = "nobody";
-        Restart = "always";
-        PrivateTmp = true;
-        WorkingDirectory = /tmp;
-        ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
-      };
-    };
-
-    flyingcircus.services.telegraf.inputs = {
-      prometheus  = [{
-        urls = [ "http://localhost:9108/metrics" ];
-      }];
-    };
-
-    users = {
-      groups.opensearch.gid = config.ids.gids.opensearch;
-      users.opensearch = {
-        uid = config.ids.uids.opensearch;
-        description = "Opensearch daemon user";
-        home = cfgUpstream.dataDir;
-        group = "opensearch";
-      };
-    };
-  })
+    })
 
   ];
 }

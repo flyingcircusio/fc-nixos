@@ -1,17 +1,23 @@
-import ./make-test-python.nix ({ pkgs, testlib, ... }:
+import ./make-test-python.nix (
+  { pkgs, testlib, ... }:
 
-{
-  name = "login";
-  nodes.machine =
-    { pkgs, lib, config, ... }:
-    {
-      imports = [
-        (testlib.fcConfig { id = 1; })
-      ];
+  {
+    name = "login";
+    nodes.machine =
+      {
+        pkgs,
+        lib,
+        config,
+        ...
+      }:
+      {
+        imports = [
+          (testlib.fcConfig { id = 1; })
+        ];
 
-    };
+      };
 
-  testScript = ''
+    testScript = ''
       machine.wait_for_unit("multi-user.target")
       machine.wait_until_succeeds("pgrep -f 'agetty.*tty1'")
       machine.screenshot("postboot")
@@ -55,4 +61,5 @@ import ./make-test-python.nix ({ pkgs, testlib, ... }:
           machine.send_key("ctrl-alt-delete")
           machine.wait_for_shutdown()
     '';
-})
+  }
+)

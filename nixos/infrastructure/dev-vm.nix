@@ -7,12 +7,13 @@ let
   # `mkRemovedOptionModule` or manually set to `visible = false`.
   # The `tryEval` is needed because visiting the role option throws an error if
   # the option is declared by `mkRemovedOptionModule`.
-  visibleFCRoles = (lib.filterAttrs
-    (n: v: (builtins.tryEval v.enable.visible or true).value)
-    config.flyingcircus.roles);
+  visibleFCRoles = (
+    lib.filterAttrs (n: v: (builtins.tryEval v.enable.visible or true).value) config.flyingcircus.roles
+  );
 
   location = lib.attrByPath [ "parameters" "location" ] "" config.flyingcircus.enc;
-in {
+in
+{
   config = lib.mkMerge [
     (lib.mkIf (config.flyingcircus.infrastructureModule == "dev-vm") {
       boot = {
@@ -76,7 +77,9 @@ in {
         };
       };
 
-      environment.sessionVariables = { NIX_REMOTE = "daemon"; };
+      environment.sessionVariables = {
+        NIX_REMOTE = "daemon";
+      };
 
       services.mongodb.bind_ip = "[::]";
 
@@ -89,9 +92,12 @@ in {
       flyingcircus.roles.antivirus.listenAddresses = [ "[::]" ];
 
       flyingcircus.roles.coturn.hostName = config.networking.hostName;
-      flyingcircus.roles.coturn.config.listening-ips =  [ "[::]" ];
+      flyingcircus.roles.coturn.config.listening-ips = [ "[::]" ];
 
-      flyingcircus.roles.memcached.listenAddresses = [ "0.0.0.0" "[::]" ];
+      flyingcircus.roles.memcached.listenAddresses = [
+        "0.0.0.0"
+        "[::]"
+      ];
 
       flyingcircus.roles.mailserver.smtpBind4 = "127.0.0.1";
       flyingcircus.roles.mailserver.smtpBind6 = "::1";
@@ -99,9 +105,15 @@ in {
 
       flyingcircus.roles.mysql.listenAddresses = [ "::" ];
 
-      flyingcircus.roles.webproxy.listenAddresses = [ "[::]" "0.0.0.0" ];
+      flyingcircus.roles.webproxy.listenAddresses = [
+        "[::]"
+        "0.0.0.0"
+      ];
 
-      flyingcircus.services.nginx.defaultListenAddresses = [ "0.0.0.0" "[::]" ];
+      flyingcircus.services.nginx.defaultListenAddresses = [
+        "0.0.0.0"
+        "[::]"
+      ];
       flyingcircus.services.redis.listenAddresses = [ "[::]" ];
       flyingcircus.services.rabbitmq.listenAddress = "::";
 
@@ -122,19 +134,23 @@ in {
       };
 
       # Allow to use NFS
-      flyingcircus.encServices = fclib.mkPlatform (lib.optional config.flyingcircus.roles.nfs_rg_share.enable {
-        password = null;
-        address = config.flyingcircus.enc.name;
-        location = location;
-        service = "nfs_rg_share-server";
-      });
+      flyingcircus.encServices = fclib.mkPlatform (
+        lib.optional config.flyingcircus.roles.nfs_rg_share.enable {
+          password = null;
+          address = config.flyingcircus.enc.name;
+          location = location;
+          service = "nfs_rg_share-server";
+        }
+      );
 
-      flyingcircus.encServiceClients = fclib.mkPlatform (lib.optional config.flyingcircus.roles.nfs_rg_client.enable {
-        password = null;
-        node = config.flyingcircus.enc.name;
-        location = location;
-        service = "nfs_rg_share-server";
-      });
+      flyingcircus.encServiceClients = fclib.mkPlatform (
+        lib.optional config.flyingcircus.roles.nfs_rg_client.enable {
+          password = null;
+          node = config.flyingcircus.enc.name;
+          location = location;
+          service = "nfs_rg_share-server";
+        }
+      );
 
       services.redis.servers."".bind = lib.mkForce "0.0.0.0 ::";
 
@@ -143,7 +159,8 @@ in {
       time.timeZone = fclib.mkPlatformOverride "Europe/Berlin";
 
       flyingcircus.users.userData = [
-        { class = "human";
+        {
+          class = "human";
           gid = 100;
           home_directory = "/home/developer";
           id = 1000;
@@ -151,52 +168,82 @@ in {
           name = "Developer";
           # password: vagrant
           password = "$6$wOGPiYC.CCUnRIix$HcY4OtrjjOWGsKTvdG4fj6zNcJlhfban2nof3vQxo4CIE3f.rLqrBfsR84KMiGAlyqRul.MYJfNm3f15h/x7w1";
-          permissions = { container = [ "admins" "login" "manager" "sudo-srv" ]; };
+          permissions = {
+            container = [
+              "admins"
+              "login"
+              "manager"
+              "sudo-srv"
+            ];
+          };
           ssh_pubkey = [
-           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGc7V2c2zFPRMl8/gmBv1/MEldEuJau8jHjhx+2qziYs root@ct-dir-dev2"
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGc7V2c2zFPRMl8/gmBv1/MEldEuJau8jHjhx+2qziYs root@ct-dir-dev2"
           ];
           uid = "developer";
-          email_addresses = []; }
-        { class = "service";
+          email_addresses = [ ];
+        }
+        {
+          class = "service";
           gid = 100;
           home_directory = "/srv/s-dev";
           id = 1001;
           login_shell = "/bin/bash";
           password = "*";
           name = "s-dev";
-          ssh_pubkey = [] ;
-          permissions = { container = []; };
+          ssh_pubkey = [ ];
+          permissions = {
+            container = [ ];
+          };
           uid = "s-dev";
-          email_addresses = []; } ];
+          email_addresses = [ ];
+        }
+      ];
 
       flyingcircus.users.permissions = [
-        { description = "commit to VCS repository";
+        {
+          description = "commit to VCS repository";
           id = 2029;
-          name = "code"; }
-        { description = "perform interactive or web logins (e.g., ssh, monitoring)";
+          name = "code";
+        }
+        {
+          description = "perform interactive or web logins (e.g., ssh, monitoring)";
           id = 502;
-          name = "login"; }
-        { description = "access web statistics";
+          name = "login";
+        }
+        {
+          description = "access web statistics";
           id = 2046;
-          name = "stats"; }
-        { description = "sudo to service user";
+          name = "stats";
+        }
+        {
+          description = "sudo to service user";
           id = 2028;
-          name = "sudo-srv"; }
-        { description = "sudo to root";
+          name = "sudo-srv";
+        }
+        {
+          description = "sudo to root";
           id = 10;
-          name = "wheel"; }
-        { description = "Manage users of RG";
+          name = "wheel";
+        }
+        {
+          description = "Manage users of RG";
           id = 2272;
-          name = "manager"; } ];
+          name = "manager";
+        }
+      ];
 
       users.users.developer = {
         # Make the human user a service user, too so that we can place stuff in
         # /etc/local/nixos for provisioning.
-        extraGroups = [ "service" "login" ];
+        extraGroups = [
+          "service"
+          "login"
+        ];
       };
 
       flyingcircus.passwordlessSudoRules = [
-        { # Grant unrestricted access to developer
+        {
+          # Grant unrestricted access to developer
           commands = [ "ALL" ];
           users = [ "developer" ];
         }
@@ -206,6 +253,7 @@ in {
         mkdir -p /nix/var/nix/profiles/per-user/s-dev
         chown s-dev: /nix/var/nix/profiles/per-user/s-dev
       '';
-    }) ];
+    })
+  ];
 
 }

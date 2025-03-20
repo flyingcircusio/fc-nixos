@@ -1,4 +1,11 @@
-{ lib, stdenv, fetchurl, jre, makeWrapper, nixosTests }:
+{
+  lib,
+  stdenv,
+  fetchurl,
+  jre,
+  makeWrapper,
+  nixosTests,
+}:
 
 stdenv.mkDerivation rec {
   pname = "solr";

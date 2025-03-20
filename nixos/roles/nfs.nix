@@ -3,7 +3,12 @@
 # to a race condition. Re-run fc-manage in this case.
 # RG shares exported from a NixOS server cannot be written to by service users
 # running Gentoo and vice versa.
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -23,12 +28,15 @@ let
   # Workaround for DIR-155/ PL-133063: We need to use the same hostname as
   # written into /etc/hosts for resilience against resolver failures. This
   # currently deviates from the raw string provided by the directory.
-  normaliseHostname = hostname:
-    let hostPart = builtins.head (lib.splitString "." hostname);
+  normaliseHostname =
+    hostname:
+    let
+      hostPart = builtins.head (lib.splitString "." hostname);
     in
-    if (config.networking.domain != null && hostPart != "")
-      then "${hostPart}.${config.networking.domain}"
-      else hostname;
+    if (config.networking.domain != null && hostPart != "") then
+      "${hostPart}.${config.networking.domain}"
+    else
+      hostname;
 
   # This is a bit different than on Gentoo. We allow export to all nodes in the
   # RG, regardles of the node actually being a client.
@@ -37,7 +45,7 @@ let
       flags = lib.concatStringsSep "," cfg.roles.nfs_rg_share.clientFlags;
       clientWithFlags = c: "${normaliseHostname c.node}(${flags})";
     in
-      lib.concatMapStringsSep " " clientWithFlags serviceClients;
+    lib.concatMapStringsSep " " clientWithFlags serviceClients;
 
 in
 {
@@ -59,12 +67,17 @@ in
       '';
       supportsContainers = fclib.mkEnableDevhostSupport;
       clientFlags = lib.mkOption {
-          default = ["rw" "sync" "root_squash" "no_subtree_check"];
-          type = with types; listOf str;
-          description = ''
-            Flags for each client's export rule.
-          '';
-        };
+        default = [
+          "rw"
+          "sync"
+          "root_squash"
+          "no_subtree_check"
+        ];
+        type = with types; listOf str;
+        description = ''
+          Flags for each client's export rule.
+        '';
+      };
 
     };
   };
@@ -119,7 +132,7 @@ in
       ];
     })
 
-    (lib.mkIf (cfg.roles.nfs_rg_share.enable && serviceClients != []) {
+    (lib.mkIf (cfg.roles.nfs_rg_share.enable && serviceClients != [ ]) {
       services.nfs.server.enable = true;
       services.nfs.server.exports = ''
         ${export}  ${exportToClients}
@@ -134,15 +147,16 @@ in
       systemd.services.nfs-mountd.reload = ''
         ${pkgs.nfs-utils}/bin/exportfs -ra
       '';
-      systemd.services.nfs-server.serviceConfig.ExecStartPre = let
-        exportScript = pkgs.writeShellScript "ensure-exports" ''
-          echo "Retrying failed exports .."
-          while exportfs -r 2>&1 | grep Fail; do
-            sleep 5
-          done
-          echo "All exports successful."
+      systemd.services.nfs-server.serviceConfig.ExecStartPre =
+        let
+          exportScript = pkgs.writeShellScript "ensure-exports" ''
+            echo "Retrying failed exports .."
+            while exportfs -r 2>&1 | grep Fail; do
+              sleep 5
+            done
+            echo "All exports successful."
           '';
-      in
+        in
         lib.mkForce exportScript;
 
     })

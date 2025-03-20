@@ -1,6 +1,15 @@
-{ lib, buildPythonPackage, fetchPypi
-, setuptools_scm, pytest, freezegun, backports_unittest-mock
-, six, pytz, jaraco_functools }:
+{
+  lib,
+  buildPythonPackage,
+  fetchPypi,
+  setuptools_scm,
+  pytest,
+  freezegun,
+  backports_unittest-mock,
+  six,
+  pytz,
+  jaraco_functools,
+}:
 
 buildPythonPackage rec {
   pname = "tempora";
@@ -13,9 +22,17 @@ buildPythonPackage rec {
 
   buildInputs = [ setuptools_scm ];
 
-  propagatedBuildInputs = [ six pytz jaraco_functools ];
+  propagatedBuildInputs = [
+    six
+    pytz
+    jaraco_functools
+  ];
 
-  checkInputs = [ pytest freezegun backports_unittest-mock ];
+  checkInputs = [
+    pytest
+    freezegun
+    backports_unittest-mock
+  ];
 
   checkPhase = ''
     substituteInPlace pytest.ini --replace "--flake8" ""

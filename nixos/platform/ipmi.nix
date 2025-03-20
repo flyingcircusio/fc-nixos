@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -13,7 +18,8 @@ let
   ipmi_netmask = fclib.netmaskFromCIDR ipmi_v4_network_cidr;
   ipmi_gw = ipmi_interface.gateways.${ipmi_v4_network_cidr};
 
-in {
+in
+{
 
   options = {
     flyingcircus.ipmi = {
@@ -23,9 +29,9 @@ in {
         type = types.bool;
       };
       watchdogTimeout = mkOption {
-         default = 300;
-         description = "Watchdog timeout (0 = off)";
-         type = types.int;
+        default = 300;
+        description = "Watchdog timeout (0 = off)";
+        type = types.int;
       };
       check_additional_options = mkOption {
         default = "";
@@ -37,7 +43,10 @@ in {
 
   config = mkIf cfg.ipmi.enable {
 
-    environment.systemPackages = [ pkgs.ipmitool pkgs.fc.ipmitool ];
+    environment.systemPackages = [
+      pkgs.ipmitool
+      pkgs.fc.ipmitool
+    ];
 
     boot.blacklistedKernelModules = [ "wdat_wdt" ];
     boot.kernelModules = [ "ipmi_watchdog" ];
@@ -53,8 +62,8 @@ in {
     systemd.timers.ipmi-log = {
       wantedBy = [ "timers.target" ];
       timerConfig = {
-         OnBootSec = "1m";
-         OnUnitActiveSec = "10m";
+        OnBootSec = "1m";
+        OnUnitActiveSec = "10m";
       };
     };
 
@@ -62,8 +71,8 @@ in {
       description = "Export (and clear) the ipmi log.";
       serviceConfig.Type = "oneshot";
       script = ''
-          ${pkgs.ipmitool}/bin/ipmitool sel elist
-          ${pkgs.ipmitool}/bin/ipmitool sel clear
+        ${pkgs.ipmitool}/bin/ipmitool sel elist
+        ${pkgs.ipmitool}/bin/ipmitool sel clear
       '';
     };
 
@@ -110,6 +119,6 @@ in {
       };
     };
 
-   };
+  };
 
 }

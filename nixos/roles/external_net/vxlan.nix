@@ -8,7 +8,12 @@
 # vxlan.test.fcio.net.  CNAME test31.fe
 # ext.test.fcio.net.    NS    vxlan.test.fcio.net.
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -17,7 +22,7 @@ let
   cfg = config.flyingcircus;
   vxlanRole = config.flyingcircus.roles.vxlan;
   extnet = cfg.roles.external_net;
-  parameters = lib.attrByPath [ "enc" "parameters" ] {} cfg;
+  parameters = lib.attrByPath [ "enc" "parameters" ] { } cfg;
   resource_group = lib.attrByPath [ "resource_group" ] null parameters;
 
   net4 = extnet.vxlan4;
@@ -35,13 +40,13 @@ let
     }
   '';
 
-  jsonConfig = (fromJSON
-    (fclib.configFromFile /etc/local/vxlan/config.json "{}"));
+  jsonConfig = (fromJSON (fclib.configFromFile /etc/local/vxlan/config.json "{}"));
 
-    # Compute all necessary parameters with Python and funnel them into Nix
-    # via JSON marshalling. You could call this a hack.
-    params = fromJSON (readFile (
-      pkgs.stdenv.mkDerivation {
+  # Compute all necessary parameters with Python and funnel them into Nix
+  # via JSON marshalling. You could call this a hack.
+  params = fromJSON (
+    readFile
+      (pkgs.stdenv.mkDerivation {
         name = "vxlan-network-params.json";
         # expects net4 and net6 as command line arguments, returns a JSON
         # containg all kinds of VxLAN/dnsmasq addresses/networks
@@ -64,47 +69,48 @@ let
         buildCommand = ''
           ${pkgs.python3.interpreter} $scriptPath ${net4} ${net6} > $out
         '';
-      }).out);
+      }).out
+  );
 
-    mtu = lib.attrByPath [ "mtu" ] 1430 vxlanRole.config;
+  mtu = lib.attrByPath [ "mtu" ] 1430 vxlanRole.config;
 
-    domain =
-      if resource_group != null
-      then "${resource_group}.fcio.net"
-      else "local";
+  domain = if resource_group != null then "${resource_group}.fcio.net" else "local";
 
-    feAddrs = fclib.network.fe.dualstack.addresses;
-    fqdn = "${config.networking.hostName}.ext.${domain}";
+  feAddrs = fclib.network.fe.dualstack.addresses;
+  fqdn = "${config.networking.hostName}.ext.${domain}";
 
-    dnsmasqConf = {
-      # VXLan specific configuration
-      dhcp-authoritative = true;
-      dhcp-fqdn = true;
-      dhcp-option = [
-        "option6:dns-server,[::]"
-        "option6:ntp-server,[::]"
-        "option:dns-server,0.0.0.0"
-        "option:mtu,${toString mtu}"
-        "option:ntp-server,0.0.0.0"
-      ];
-      dhcp-range = [
-        "::,constructor:${dev},ra-names"
-        "${lib.concatStringsSep "," params.dhcp},24h"
-      ];
-      domain = "ext.${domain}";
-      domain-needed = true;
-      interface = "lo,${dev}";
-      except-interface = [ fclib.network.fe.interface fclib.network.srv.interface ];
-      local-ttl = 60;
-      auth-server= "${extnet.frontendName},ethfe";
-      auth-zone = "ext.${domain}";
-      host-record = "${fqdn},${params.a},${params.aaaa}";
-    };
+  dnsmasqConf = {
+    # VXLan specific configuration
+    dhcp-authoritative = true;
+    dhcp-fqdn = true;
+    dhcp-option = [
+      "option6:dns-server,[::]"
+      "option6:ntp-server,[::]"
+      "option:dns-server,0.0.0.0"
+      "option:mtu,${toString mtu}"
+      "option:ntp-server,0.0.0.0"
+    ];
+    dhcp-range = [
+      "::,constructor:${dev},ra-names"
+      "${lib.concatStringsSep "," params.dhcp},24h"
+    ];
+    domain = "ext.${domain}";
+    domain-needed = true;
+    interface = "lo,${dev}";
+    except-interface = [
+      fclib.network.fe.interface
+      fclib.network.srv.interface
+    ];
+    local-ttl = 60;
+    auth-server = "${extnet.frontendName},ethfe";
+    auth-zone = "ext.${domain}";
+    host-record = "${fqdn},${params.a},${params.aaaa}";
+  };
 
 in
 {
   options = with lib; {
-    flyingcircus.roles.vxlan =  {
+    flyingcircus.roles.vxlan = {
       gateway = mkEnableOption "fcio vxlan gateway";
 
       supportsContainers = fclib.mkDisableDevhostSupport;
@@ -124,7 +130,7 @@ in
   config = lib.mkMerge [
 
     # vxlan service is only loaded if config is present
-    (lib.mkIf (cfg.roles.vxlan.gateway && vxlanRole.config != {}) {
+    (lib.mkIf (cfg.roles.vxlan.gateway && vxlanRole.config != { }) {
       services.dnsmasq = {
         enable = true;
         settings = dnsmasqConf;
@@ -135,7 +141,12 @@ in
         allow ${net6}
       '';
       # See default.nix and openvpn.nix for additional firewall rules
-      networking.firewall.allowedUDPPorts = [ 67 68 123 port ];
+      networking.firewall.allowedUDPPorts = [
+        67
+        68
+        123
+        port
+      ];
 
       systemd.services."vxlan-${dev}" = rec {
         description = "VxLAN tunnel ${dev}";
@@ -143,31 +154,33 @@ in
         wantedBy = [ "dnsmasq.service" ];
         before = wantedBy;
 
-        serviceConfig = let
-          ip = "${pkgs.iproute2}/bin/ip";
-          inherit (params) gw4 gw6;
-          inherit (vxlanRole.config) vid remote local;
-        in {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          ExecStart = pkgs.writeScript "vxlan-${dev}-start" ''
-            #!${pkgs.stdenv.shell} -e
-            echo "adding link ${dev}"
-            ${ip} link del ${dev} 2>/dev/null || true
-            ${ip} link add ${dev} type vxlan id ${toString vid} \
-              dev ${interface} local ${local} remote ${remote} \
-              dstport ${toString port}
-            ${ip} link set up mtu ${toString mtu} dev ${dev}
-            ${ip} -4 addr add ${gw4} dev ${dev}
-            ${ip} -6 addr add ${gw6} dev ${dev}
-          '';
-          ExecStop = pkgs.writeScript "vxlan-${dev}-stop" ''
-            #!${pkgs.stdenv.shell} -e
-            echo "removing link ${dev}"
-            ${ip} link set ${dev} down
-            ${ip} link del ${dev}
-          '';
-        };
+        serviceConfig =
+          let
+            ip = "${pkgs.iproute2}/bin/ip";
+            inherit (params) gw4 gw6;
+            inherit (vxlanRole.config) vid remote local;
+          in
+          {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            ExecStart = pkgs.writeScript "vxlan-${dev}-start" ''
+              #!${pkgs.stdenv.shell} -e
+              echo "adding link ${dev}"
+              ${ip} link del ${dev} 2>/dev/null || true
+              ${ip} link add ${dev} type vxlan id ${toString vid} \
+                dev ${interface} local ${local} remote ${remote} \
+                dstport ${toString port}
+              ${ip} link set up mtu ${toString mtu} dev ${dev}
+              ${ip} -4 addr add ${gw4} dev ${dev}
+              ${ip} -6 addr add ${gw6} dev ${dev}
+            '';
+            ExecStop = pkgs.writeScript "vxlan-${dev}-stop" ''
+              #!${pkgs.stdenv.shell} -e
+              echo "removing link ${dev}"
+              ${ip} link set ${dev} down
+              ${ip} link del ${dev}
+            '';
+          };
       };
     })
 

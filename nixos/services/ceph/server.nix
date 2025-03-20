@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -22,13 +27,18 @@ in
       enable = lib.mkEnableOption "Generic CEPH server configuration";
       cephRelease = lib.mkOption {
         type = fclib.ceph.highestCephReleaseType;
-        description = "Ceph release series that the main package belongs to. "
+        description =
+          "Ceph release series that the main package belongs to. "
           + "This option behaves special in a way that, if defined multiple times, the latest release name will be chosen."
           + "Explicitly has no default but needs to be defined by roles or manual config.";
       };
       crushroot_to_rbdpool_mapping = lib.mkOption {
         default = config.flyingcircus.static.ceph.crushroot_to_rbdpool_mapping;
-        type = let t = lib.types; in t.attrsOf (t.listOf t.str);
+        type =
+          let
+            t = lib.types;
+          in
+          t.attrsOf (t.listOf t.str);
         description = ''
           Mapping of which rbd pools are operated under which crush root.
           Currently only used by the check_snapshot_restore_fill check.
@@ -74,10 +84,12 @@ in
     };
 
     services.logrotate.settings.ceph-server = {
-      files = [ "/var/log/ceph/ceph.log"
-                "/var/log/ceph/ceph.audit.log"
-                "/var/log/ceph/ceph-mon.*.log"
-                "/var/log/ceph/ceph-osd.*.log"];
+      files = [
+        "/var/log/ceph/ceph.log"
+        "/var/log/ceph/ceph.audit.log"
+        "/var/log/ceph/ceph-mon.*.log"
+        "/var/log/ceph/ceph-osd.*.log"
+      ];
       rotate = "30";
       create = "0644 root adm";
       prerotate = ''
@@ -137,7 +149,7 @@ in
       #
       # The main purpose of this is to manage the transition from before the
       # mentioned commit, this *may* be removed in the future at some point again.
-      stopIfChanged = false;  # do a restart with the new unit file instead of stop-start
+      stopIfChanged = false; # do a restart with the new unit file instead of stop-start
     };
 
     boot.kernel.sysctl = {

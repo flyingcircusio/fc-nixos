@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -11,7 +16,10 @@ let
 
   currentMemory = fclib.currentMemory 1024;
 
-  phpFpmMemoryLimit = fclib.min [ (currentMemory * 25 / 100) 1024 ];
+  phpFpmMemoryLimit = fclib.min [
+    (currentMemory * 25 / 100)
+    1024
+  ];
 in
 {
   options = with lib; {
@@ -41,14 +49,17 @@ in
         commands = [ "bin/matomo-console" ];
         package = serviceCfg.tools.matomoConsole;
         users = [ "sensuclient" ];
-        groups = [ "service" "sudo-srv" ];
+        groups = [
+          "service"
+          "sudo-srv"
+        ];
         runAs = "matomo";
       }
       {
         commands = [ "bin/matomo-check-permissions" ];
         package = serviceCfg.tools.matomoCheckPermissions;
         users = [ "sensuclient" ];
-        groups = ["service" ];
+        groups = [ "service" ];
       }
       {
         commands = [
@@ -56,7 +67,7 @@ in
         ];
         package = pkgs.coreutils;
         users = [ "sensuclient" ];
-        groups = ["service" ];
+        groups = [ "service" ];
       }
     ];
 

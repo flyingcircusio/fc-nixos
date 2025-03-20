@@ -1,11 +1,17 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with builtins;
 
 let
   inherit (config) fclib;
   role = config.flyingcircus.roles.router;
-  mkConfig = interface:
+  mkConfig =
+    interface:
     pkgs.writeText "pmacctd-${interface}.conf" ''
       pcap_interface: ${interface}
       aggregate: src_host,dst_host
@@ -19,34 +25,37 @@ let
       print_output_file_append: true
     '';
 
-  mkService = interface: lib.nameValuePair "pmacctd-${interface}" {
-    description = "Collect traffic accounting data";
-    wantedBy = [ "multi-user.target" ];
-    requires = [ "network-addresses-${interface}.service" ];
-    after = [ "network-addresses-${interface}.service" ];
-    stopIfChanged = false;
-    script = ''
-      ${pkgs.pmacct}/bin/pmacctd -f ${mkConfig interface}
-    '';
-    serviceConfig = {
-      Restart = "always";
-      RestartSec = "1s";
+  mkService =
+    interface:
+    lib.nameValuePair "pmacctd-${interface}" {
+      description = "Collect traffic accounting data";
+      wantedBy = [ "multi-user.target" ];
+      requires = [ "network-addresses-${interface}.service" ];
+      after = [ "network-addresses-${interface}.service" ];
+      stopIfChanged = false;
+      script = ''
+        ${pkgs.pmacct}/bin/pmacctd -f ${mkConfig interface}
+      '';
+      serviceConfig = {
+        Restart = "always";
+        RestartSec = "1s";
+      };
     };
-  };
 in
 lib.mkIf role.enable {
   environment.systemPackages = with pkgs; [
     pmacct
   ];
 
-  environment.etc."pmacctd-${fclib.network.fe.interface}".source = mkConfig fclib.network.fe.interface;
-  environment.etc."pmacctd-${fclib.network.srv.interface}".source = mkConfig fclib.network.srv.interface;
+  environment.etc."pmacctd-${fclib.network.fe.interface}".source =
+    mkConfig fclib.network.fe.interface;
+  environment.etc."pmacctd-${fclib.network.srv.interface}".source =
+    mkConfig fclib.network.srv.interface;
 
-  systemd.services =
-    lib.listToAttrs [
-      (mkService fclib.network.fe.interface)
-      (mkService fclib.network.srv.interface)
-    ];
+  systemd.services = lib.listToAttrs [
+    (mkService fclib.network.fe.interface)
+    (mkService fclib.network.srv.interface)
+  ];
 
   systemd.tmpfiles.rules = [
     "d /var/spool/pmacctd 0700 root root 5d"

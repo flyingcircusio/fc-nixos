@@ -1,4 +1,4 @@
-{ lib, ...}:
+{ lib, ... }:
 
 with lib;
 
@@ -8,12 +8,6 @@ rec {
   #
   # duplicateAttrNames [ { a = 1; } { b = 2; } { a = 3; } ]
   # => [ "a" ]
-  duplicateAttrNames = listOfAttrs:
-    attrNames
-      (filterAttrs
-        (n: a: a > 1)
-        (foldAttrs
-          (n: acc: acc + 1)
-          0
-          listOfAttrs));
+  duplicateAttrNames =
+    listOfAttrs: attrNames (filterAttrs (n: a: a > 1) (foldAttrs (n: acc: acc + 1) 0 listOfAttrs));
 }

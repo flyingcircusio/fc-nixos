@@ -1,4 +1,9 @@
-{ lib, config, pkgs, ...}:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 
 {
 
@@ -26,9 +31,9 @@
     # MegaRAID
 
     boot.initrd.kernelModules = [
-        "megaraid_sas"
-        "mpt3sas"
-      ];
+      "megaraid_sas"
+      "mpt3sas"
+    ];
 
     environment.systemPackages = with pkgs; [
       megacli
@@ -37,8 +42,10 @@
 
     flyingcircus.passwordlessSudoRules = [
       {
-        commands = [ "${pkgs.check_megaraid}/bin/check_megaraid"
-                     "${pkgs.fc.sensuplugins}/bin/check_megaraid_cache" ];
+        commands = [
+          "${pkgs.check_megaraid}/bin/check_megaraid"
+          "${pkgs.fc.sensuplugins}/bin/check_megaraid_cache"
+        ];
         groups = [ "sensuclient" ];
       }
     ];

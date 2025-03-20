@@ -1,4 +1,8 @@
-{ pkgs, pythonPackages, callPackage }:
+{
+  pkgs,
+  pythonPackages,
+  callPackage,
+}:
 
 rec {
   recurseForDerivations = true;
@@ -8,7 +12,7 @@ rec {
   };
   agentWithSlurm = agent.override { enableSlurm = true; };
 
-  blockdev = callPackage ./blockdev {};
+  blockdev = callPackage ./blockdev { };
 
   # fc-ceph does not need to be versioned on the Nix-package level as
   # it can be parametrized via config file for each individual subsystem.
@@ -16,31 +20,30 @@ rec {
     inherit agent blockdev;
   };
 
-  check-age = callPackage ./check-age {};
+  check-age = callPackage ./check-age { };
   check-ceph-nautilus = callPackage ./check-ceph/nautilus {
     inherit (pkgs.ceph-nautilus) ceph-client;
     python3Packages = pkgs.python38Packages;
   };
-  check-haproxy = callPackage ./check-haproxy {};
-  check-journal = callPackage ./check-journal.nix {};
-  check-link-redundancy = callPackage ./check-link-redundancy {};
-  check-mongodb = callPackage ./check-mongodb {};
-  check-postfix = callPackage ./check-postfix {};
-  check-rib-integrity = callPackage ./check-rib-integrity {};
-  check-xfs-broken = callPackage ./check-xfs-broken {};
+  check-haproxy = callPackage ./check-haproxy { };
+  check-journal = callPackage ./check-journal.nix { };
+  check-link-redundancy = callPackage ./check-link-redundancy { };
+  check-mongodb = callPackage ./check-mongodb { };
+  check-postfix = callPackage ./check-postfix { };
+  check-rib-integrity = callPackage ./check-rib-integrity { };
+  check-xfs-broken = callPackage ./check-xfs-broken { };
 
-  fix-so-rpath = callPackage ./fix-so-rpath {};
-  ipmitool = callPackage ./ipmitool {};
-  install = callPackage ./install {};
+  fix-so-rpath = callPackage ./fix-so-rpath { };
+  ipmitool = callPackage ./ipmitool { };
+  install = callPackage ./install { };
 
-  ledtool = pkgs.writers.writePython3Bin "fc-ledtool"
-    {} (builtins.readFile ./ledtool/led.py);
-  lldp-to-altname = callPackage ./lldp-to-altname {};
+  ledtool = pkgs.writers.writePython3Bin "fc-ledtool" { } (builtins.readFile ./ledtool/led.py);
+  lldp-to-altname = callPackage ./lldp-to-altname { };
   logcheckhelper = callPackage ./logcheckhelper { };
   megacli = callPackage ./megacli { };
-  multiping = callPackage ./multiping.nix {};
-  neighbour-cache-monitor = callPackage ./neighbour-cache-monitor {};
-  ping-on-tap = callPackage ./ping-on-tap {};
+  multiping = callPackage ./multiping.nix { };
+  neighbour-cache-monitor = callPackage ./neighbour-cache-monitor { };
+  ping-on-tap = callPackage ./ping-on-tap { };
 
   qemu-nautilus = callPackage ./qemu rec {
     version = "1.7dev";
@@ -77,14 +80,14 @@ rec {
   #   py_pytest_patterns = pkgs.py38_pytest_patterns;
   # };
 
-  roundcube-chpasswd = callPackage ./roundcube-chpasswd {};
-  roundcube-chpasswd-py = callPackage ./roundcube-chpasswd-py {};
-  secure-erase = callPackage ./secure-erase {};
-  sensuplugins = callPackage ./sensuplugins {};
-  sensusyntax = callPackage ./sensusyntax {};
-  telegraf-collect-psi = callPackage ./telegraf-collect-psi {};
-  telegraf-routes-summary = callPackage ./telegraf-routes-summary {};
-  trafficclient = pythonPackages.callPackage ./trafficclient.nix {};
-  userscan = callPackage ./userscan.nix {};
-  util-physical = callPackage ./util-physical {};
+  roundcube-chpasswd = callPackage ./roundcube-chpasswd { };
+  roundcube-chpasswd-py = callPackage ./roundcube-chpasswd-py { };
+  secure-erase = callPackage ./secure-erase { };
+  sensuplugins = callPackage ./sensuplugins { };
+  sensusyntax = callPackage ./sensusyntax { };
+  telegraf-collect-psi = callPackage ./telegraf-collect-psi { };
+  telegraf-routes-summary = callPackage ./telegraf-routes-summary { };
+  trafficclient = pythonPackages.callPackage ./trafficclient.nix { };
+  userscan = callPackage ./userscan.nix { };
+  util-physical = callPackage ./util-physical { };
 }

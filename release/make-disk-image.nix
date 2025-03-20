@@ -1,19 +1,20 @@
-{ pkgs
-, lib
+{
+  pkgs,
+  lib,
 
-, # The NixOS configuration to be installed onto the disk image.
-  config
+  # The NixOS configuration to be installed onto the disk image.
+  config,
 
-, # The size of the disk, in megabytes.
-  diskSize
+  # The size of the disk, in megabytes.
+  diskSize,
 
   # The files and directories to be placed in the target file system.
   # This is a list of attribute sets {source, target} where `source'
   # is the file system object (regular file or directory) to be
   # grafted in the file system at path `target'.
-, contents ? []
+  contents ? [ ],
 
-, # Type of partition table to use; either "legacy", "efi", or "none".
+  # Type of partition table to use; either "legacy", "efi", or "none".
   # For "efi" images, the GPT partition table is used and a mandatory ESP
   #   partition of reasonable size is created in addition to the root partition.
   #   If `installBootLoader` is true, GRUB will be installed in EFI mode.
@@ -22,72 +23,87 @@
   #   installed in legacy mode.
   # For "none", no partition table is created. Enabling `installBootLoader`
   #   most likely fails as GRUB will probably refuse to install.
-  partitionTableType ? "efi"
+  partitionTableType ? "efi",
 
-, # the root filesystems fslabel (not partition label!)
-  rootLabel ? "nixos"
+  # the root filesystems fslabel (not partition label!)
+  rootLabel ? "nixos",
 
-, # The initial NixOS configuration file to be copied to
+  # The initial NixOS configuration file to be copied to
   # /etc/nixos/configuration.nix.
-  configFile ? null
+  configFile ? null,
 
-, # Shell code executed after the VM has finished.
-  postVM ? ""
+  # Shell code executed after the VM has finished.
+  postVM ? "",
 
-, name ? "nixos-disk-image"
+  name ? "nixos-disk-image",
 
-, filename-prefix ? "nixos"
+  filename-prefix ? "nixos",
 
-, # Disk image format, one of qcow2, qcow2-compressed, vpc, raw.
-  format ? "raw"
+  # Disk image format, one of qcow2, qcow2-compressed, vpc, raw.
+  format ? "raw",
 
-, # initial content of /root/.nix-defexprs/channels/nixos
-  channelSources
+  # initial content of /root/.nix-defexprs/channels/nixos
+  channelSources,
 }:
 
-assert partitionTableType == "legacy" || partitionTableType == "efi" || partitionTableType == "none";
+assert
+  partitionTableType == "legacy" || partitionTableType == "efi" || partitionTableType == "none";
 
 with lib;
 
-let format' = format; in let
+let
+  format' = format;
+in
+let
 
   format = if format' == "qcow2-compressed" then "qcow2" else format';
 
   compress = optionalString (format' == "qcow2-compressed") "-c";
 
-  filename = "${filename-prefix}." + {
-    qcow2 = "qcow2";
-    vpc   = "vhd";
-    raw   = "img";
-  }.${format};
+  filename =
+    "${filename-prefix}."
+    + {
+      qcow2 = "qcow2";
+      vpc = "vhd";
+      raw = "img";
+    }
+    .${format};
 
-  partitionDiskScript = { # switch-case
-    legacy = ''
-      parted --script $diskImage -- \
-        mklabel msdos \
-        mkpart primary ext4 1MiB -1
-    '';
-    efi = ''
-      sgdisk $diskImage -o -a 2048 \
-        -n 1:8192:0   -c 1:ROOT      -t 1:8300 \
-        -n 2:2048:+1M -c 2:BIOS-BOOT -t 2:EF02
-    '';
-    none = "";
-  }.${partitionTableType};
+  partitionDiskScript =
+    {
+      # switch-case
+      legacy = ''
+        parted --script $diskImage -- \
+          mklabel msdos \
+          mkpart primary ext4 1MiB -1
+      '';
+      efi = ''
+        sgdisk $diskImage -o -a 2048 \
+          -n 1:8192:0   -c 1:ROOT      -t 1:8300 \
+          -n 2:2048:+1M -c 2:BIOS-BOOT -t 2:EF02
+      '';
+      none = "";
+    }
+    .${partitionTableType};
 
   nixpkgs = channelSources;
 
-  binPath = with pkgs; makeBinPath (
-    [ rsync
-      util-linux
-      parted
-      gptfdisk
-      xfsprogs
-      lkl
-      config.system.build.nixos-install
-      config.system.build.nixos-enter
-      nix
-    ] ++ stdenv.initialPath);
+  binPath =
+    with pkgs;
+    makeBinPath (
+      [
+        rsync
+        util-linux
+        parted
+        gptfdisk
+        xfsprogs
+        lkl
+        config.system.build.nixos-install
+        config.system.build.nixos-enter
+        nix
+      ]
+      ++ stdenv.initialPath
+    );
 
   # I'm preserving the line below because I'm going to search for it across nixpkgs to consolidate
   # image building logic. The comment right below this now appears in 4 different places in nixpkgs :)
@@ -95,7 +111,12 @@ let format' = format; in let
   sources = map (x: x.source) contents;
   targets = map (x: x.target) contents;
 
-  closureInfo = pkgs.closureInfo { rootPaths = [ config.system.build.toplevel channelSources ]; };
+  closureInfo = pkgs.closureInfo {
+    rootPaths = [
+      config.system.build.toplevel
+      channelSources
+    ];
+  };
 
   prepareImage = ''
     export PATH=${binPath}
@@ -105,22 +126,27 @@ let format' = format; in let
 
     ${partitionDiskScript}
 
-    ${if partitionTableType != "none" then ''
-      # Get start & length of the root partition in sectors to $START and $SECTORS.
-      eval $(partx $diskImage -o START,SECTORS --nr 1 --pairs)
-      startMB=$((START / 2048))
-      sizeMB=$((SECTORS / 2048))
-      # mkfs.xfs does not support --offset, so we must place a separately
-      # generated XFS image into the main disk image.
-      truncate -s ''${sizeMB}M rootfs.img
-      # TODO: nrext64 can be enabled again once we are at kernel >= 6.5 in the VMs
-      mkfs.xfs -i nrext64=0 -L ${rootLabel} rootfs.img
-      dd if=rootfs.img of=$diskImage bs=1M seek=$startMB count=$sizeMB \
-        conv=sparse,notrunc iflag=direct
-      rm rootfs.img
-    '' else ''
-      mkfs.xfs -i nrext64=0 -L ${rootLabel} $diskImage
-    ''}
+    ${
+      if partitionTableType != "none" then
+        ''
+          # Get start & length of the root partition in sectors to $START and $SECTORS.
+          eval $(partx $diskImage -o START,SECTORS --nr 1 --pairs)
+          startMB=$((START / 2048))
+          sizeMB=$((SECTORS / 2048))
+          # mkfs.xfs does not support --offset, so we must place a separately
+          # generated XFS image into the main disk image.
+          truncate -s ''${sizeMB}M rootfs.img
+          # TODO: nrext64 can be enabled again once we are at kernel >= 6.5 in the VMs
+          mkfs.xfs -i nrext64=0 -L ${rootLabel} rootfs.img
+          dd if=rootfs.img of=$diskImage bs=1M seek=$startMB count=$sizeMB \
+            conv=sparse,notrunc iflag=direct
+          rm rootfs.img
+        ''
+      else
+        ''
+          mkfs.xfs -i nrext64=0 -L ${rootLabel} $diskImage
+        ''
+    }
 
     root="$PWD/root"
     mkdir -p $root
@@ -177,8 +203,13 @@ let format' = format; in let
 in
 pkgs.vmTools.runInLinuxVM (
   pkgs.runCommand name
-    { preVM = prepareImage;
-      buildInputs = with pkgs; [ util-linux e2fsprogs dosfstools ];
+    {
+      preVM = prepareImage;
+      buildInputs = with pkgs; [
+        util-linux
+        e2fsprogs
+        dosfstools
+      ];
       postVM = ''
         ${lib.optionalString (format != "raw") ''
           ${pkgs.qemu}/bin/qemu-img convert -f raw -O ${format} ${compress} $diskImage $out/${filename}

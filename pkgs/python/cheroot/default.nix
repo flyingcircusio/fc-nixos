@@ -1,29 +1,29 @@
-{ lib
-, stdenv
-, buildPythonPackage
-, fetchPypi
-, jaraco_functools
-, jaraco_text
-, more-itertools
-, portend
-, pyopenssl
-, pypytools
-, pytest-mock
-, pytestCheckHook
-, requests
-, requests-toolbelt
-, requests-unixsocket
-, selectors2
-, setuptools-scm
-, setuptools-scm-git-archive
-, six
-, trustme
+{
+  lib,
+  stdenv,
+  buildPythonPackage,
+  fetchPypi,
+  jaraco_functools,
+  jaraco_text,
+  more-itertools,
+  portend,
+  pyopenssl,
+  pypytools,
+  pytest-mock,
+  pytestCheckHook,
+  requests,
+  requests-toolbelt,
+  requests-unixsocket,
+  selectors2,
+  setuptools-scm,
+  setuptools-scm-git-archive,
+  six,
+  trustme,
 }:
 
 buildPythonPackage rec {
   pname = "cheroot";
   version = "8.6.0";
-
 
   src = fetchPypi {
     inherit pname version;
@@ -66,14 +66,16 @@ buildPythonPackage rec {
     rm pytest.ini
   '';
 
-  disabledTests = [
-    "tls" # touches network
-    "peercreds_unix_sock" # test urls no longer allowed
-  ] ++ lib.optionals stdenv.isDarwin [
-    "http_over_https_error"
-    "bind_addr_unix"
-    "test_ssl_env"
-  ];
+  disabledTests =
+    [
+      "tls" # touches network
+      "peercreds_unix_sock" # test urls no longer allowed
+    ]
+    ++ lib.optionals stdenv.isDarwin [
+      "http_over_https_error"
+      "bind_addr_unix"
+      "test_ssl_env"
+    ];
 
   disabledTestPaths = [
     # avoid attempting to use 3 packages not available on nixpkgs

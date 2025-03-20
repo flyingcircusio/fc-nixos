@@ -1,4 +1,10 @@
-{ lib, stdenv, makeWrapper, python3, lldpd }:
+{
+  lib,
+  stdenv,
+  makeWrapper,
+  python3,
+  lldpd,
+}:
 
 stdenv.mkDerivation rec {
   version = "2";
@@ -9,7 +15,10 @@ stdenv.mkDerivation rec {
   dontBuild = true;
   dontConfigure = true;
   nativeBuildInputs = [ makeWrapper ];
-  propagatedBuildInputs = [ python3 lldpd ];
+  propagatedBuildInputs = [
+    python3
+    lldpd
+  ];
 
   installPhase = ''
     mkdir -p $out/bin

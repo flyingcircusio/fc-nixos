@@ -1,13 +1,20 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
 let
   inherit (config) fclib;
   cfg = config.flyingcircus;
-  ioScheduler =  if (cfg.infrastructure.preferNoneSchedulerOnSsd && (cfg.enc.parameters.rbd_pool == "rbd.ssd"))
-                 then "none"
-                 else "bfq";
+  ioScheduler =
+    if (cfg.infrastructure.preferNoneSchedulerOnSsd && (cfg.enc.parameters.rbd_pool == "rbd.ssd")) then
+      "none"
+    else
+      "bfq";
   maxIops = attrByPath [ "parameters" "iops" ] 250 cfg.enc;
 
 in
@@ -41,17 +48,17 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       # We allow VMs to talk to their KVM host's radosgw proxy to provide them
       # with fast storage access.
       hostRgwServices = fclib.findServices "kvm_host-local-rgw";
-      hostmap =
-        lib.listToAttrs
-          (map (s: lib.nameValuePair (head (lib.splitString "." s.address)) (head s.ips))
-          hostRgwServices);
+      hostmap = lib.listToAttrs (
+        map (s: lib.nameValuePair (head (lib.splitString "." s.address)) (head s.ips)) hostRgwServices
+      );
 
       kvmHost = config.flyingcircus.enc.parameters.kvm_host or "none";
     in
     hostmap."${kvmHost}" or null;
 
   flyingcircus.journalbeat.fields =
-    let encParams = [
+    let
+      encParams = [
         "cores"
         "disk"
         "environment"
@@ -62,14 +69,13 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
         "rbd_pool"
       ];
     in
-    lib.optionalAttrs
-      (cfg.enc ? "parameters")
-      (lib.filterAttrs
-        (n: v: v != null)
-        (lib.listToAttrs
-          (map
-            (name: lib.nameValuePair name (cfg.enc.parameters."${name}" or null))
-            encParams)));
+    lib.optionalAttrs (cfg.enc ? "parameters") (
+      lib.filterAttrs (n: v: v != null) (
+        lib.listToAttrs (
+          map (name: lib.nameValuePair name (cfg.enc.parameters."${name}" or null)) encParams
+        )
+      )
+    );
 
   fileSystems = {
     "/" = {
@@ -136,7 +142,8 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
           # we only have one IOPS limit for the VM so combined we
           # could get requests that are over the VM limit.
           vdaIopsMax = "/dev/vda ${toString (maxIops - maxIops / 4)}";
-        in {
+        in
+        {
           IOReadIOPSMax = vdaIopsMax;
           IOWriteIOPSMax = vdaIopsMax;
         };
@@ -146,7 +153,8 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
           # Must not consume more than 12.5% of available IOPS.
           # We don't have a problem with this taking really long.
           vdaIopsMax = "/dev/vda ${toString (maxIops / 8)}";
-        in {
+        in
+        {
           IOReadIOPSMax = vdaIopsMax;
           IOWriteIOPSMax = vdaIopsMax;
         };
@@ -155,16 +163,13 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
 
   users.users.root = {
     hashedPassword = "*";
-    openssh.authorizedKeys.keys =
-      attrValues cfg.static.adminKeys;
+    openssh.authorizedKeys.keys = attrValues cfg.static.adminKeys;
   };
 
   flyingcircus.services.sensu-client.checks = {
     cpu_steal = {
       notification = "CPU has high amount of `%steal` ";
-      command =
-        "${pkgs.fc.sensuplugins}/bin/check_cpu_steal " +
-        "--mpstat ${pkgs.sysstat}/bin/mpstat";
+      command = "${pkgs.fc.sensuplugins}/bin/check_cpu_steal " + "--mpstat ${pkgs.sysstat}/bin/mpstat";
       interval = 600;
     };
   };

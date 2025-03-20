@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 with builtins;
 
@@ -14,8 +19,7 @@ with builtins;
 
   config = {
     environment = {
-      etc."nixos/configuration.nix".text =
-        import ./etc_nixos_configuration.nix { inherit config; };
+      etc."nixos/configuration.nix".text = import ./etc_nixos_configuration.nix { inherit config; };
 
       etc._nix-phps.source = ../nix-phps;
     };

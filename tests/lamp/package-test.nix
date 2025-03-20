@@ -1,13 +1,18 @@
-{ version ? "lamp_php82"
-, nixpkgs ? (import ../../versions.nix {}).nixpkgs
-, pkgs ? import ../../. { inherit nixpkgs; }
-, ... }:
+{
+  version ? "lamp_php82",
+  nixpkgs ? (import ../../versions.nix { }).nixpkgs,
+  pkgs ? import ../../. { inherit nixpkgs; },
+  ...
+}:
 let
   php = pkgs.${version};
-  pcreTestPackage = import ./pcre-test-package.nix { pkgs = pkgs; php = php; };
+  pcreTestPackage = import ./pcre-test-package.nix {
+    pkgs = pkgs;
+    php = php;
+  };
 in
 {
-  test = pkgs.runCommand "php-pcre-test-${version}" {} ''
+  test = pkgs.runCommand "php-pcre-test-${version}" { } ''
     set -eo pipefail
 
     # run ${pcreTestPackage}/testPcre.sh and save output as variable

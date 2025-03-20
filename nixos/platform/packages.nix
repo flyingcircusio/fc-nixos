@@ -1,14 +1,21 @@
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   config = {
 
-    environment.systemPackages = with pkgs;
-    let
-      previousPythonVersion = ver:
-        "${lib.versions.major ver}${toString (lib.toInt(lib.versions.minor ver) - 1)}";
-      previousPython = pkgs."python${previousPythonVersion pkgs.python3.version}";
-    in [
+    environment.systemPackages =
+      with pkgs;
+      let
+        previousPythonVersion =
+          ver: "${lib.versions.major ver}${toString (lib.toInt (lib.versions.minor ver) - 1)}";
+        previousPython = pkgs."python${previousPythonVersion pkgs.python3.version}";
+      in
+      [
         apacheHttpd
         atop
         automake
@@ -30,7 +37,7 @@
         gptfdisk
         htop
         inetutils
-        multipath-tools  # kpartx
+        multipath-tools # kpartx
         iotop
         jq
         latencytop_nox
@@ -58,7 +65,7 @@
         pwgen
         (python3.withPackages (ps: with ps; [ setuptools ]))
         # keep around at least one previous python version for upgrade compatibility
-        (previousPython.withPackages (ps: with ps; [setuptools]))
+        (previousPython.withPackages (ps: with ps; [ setuptools ]))
         python3Packages.virtualenv
         rclone
         ripgrep
@@ -75,7 +82,7 @@
         wget
         xfsprogs
         zip
-    ];
+      ];
 
     programs.mtr.enable = config.fclib.mkPlatform true;
 
@@ -83,7 +90,11 @@
       {
         commands = [ "bin/iotop" ];
         package = pkgs.iotop;
-        groups = [ "admins" "sudo-srv" "service" ];
+        groups = [
+          "admins"
+          "sudo-srv"
+          "service"
+        ];
       }
     ];
 

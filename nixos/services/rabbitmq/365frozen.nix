@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -25,9 +30,7 @@ in
 
       service = mkOption {
         type = types.package;
-        example =
-          literalExpression
-            "builtins.storePath /nix/store/4vn6482k7vhafyqdq1lvw9yyb37agv8z-unit-rabbitmq.service;";
+        example = literalExpression "builtins.storePath /nix/store/4vn6482k7vhafyqdq1lvw9yyb37agv8z-unit-rabbitmq.service;";
         description = ''
           Which rabbitmq service package to use. The package is expected to
           contain a `rabbitmq.service` unit file. This is usually generated
@@ -86,12 +89,12 @@ in
     };
 
     systemd.packages = [
-      (pkgs.runCommand "rabbitmq-3.6.5-service" {} ''
+      (pkgs.runCommand "rabbitmq-3.6.5-service" { } ''
         service_dir=$out/lib/systemd/system
         mkdir -p $service_dir
         cp ${cfg.service}/rabbitmq.service $service_dir
       '')
-      ];
+    ];
 
     systemd.services.fc-rabbitmq-settings = {
       description = "Check/update FCIO rabbitmq settings (for monitoring)";

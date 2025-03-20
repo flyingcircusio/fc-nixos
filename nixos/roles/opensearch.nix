@@ -1,4 +1,10 @@
-{ options, config, lib, pkgs, ... }:
+{
+  options,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -26,15 +32,15 @@ let
     }
   '';
 
-  defaultNodes =
-    map
-      (service: head (lib.splitString "." service.address))
-      (fclib.findServices "opensearch-node");
+  defaultNodes = map (service: head (lib.splitString "." service.address)) (
+    fclib.findServices "opensearch-node"
+  );
 
   thisNode =
-    if config.networking.domain != null
-    then "${config.networking.hostName}.${config.networking.domain}"
-    else "localhost";
+    if config.networking.domain != null then
+      "${config.networking.hostName}.${config.networking.domain}"
+    else
+      "localhost";
 
   waitForGreenCluster = pkgs.writeShellApplication {
     name = "opensearch-wait-for-green-cluster";
@@ -95,8 +101,7 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    environment.etc."local/opensearch/opensearch.nix.example".text =
-      fclib.mkPlatform exampleConfig;
+    environment.etc."local/opensearch/opensearch.nix.example".text = fclib.mkPlatform exampleConfig;
 
     environment.etc."local/opensearch/README.md".text = lib.mkAfter ''
       ## Role Configuration
@@ -112,7 +117,7 @@ in
       Example:
 
       ```nix
-      ${replaceStrings ["# "] [""] exampleConfig}
+      ${replaceStrings [ "# " ] [ "" ] exampleConfig}
       ```
 
       See `${localConfigDir}/opensearch.nix.example`.
@@ -172,7 +177,12 @@ in
 
     flyingcircus.services.opensearch = {
       enable = true;
-      inherit (cfg) clusterName heapPercentage initialMasterNodes nodes;
+      inherit (cfg)
+        clusterName
+        heapPercentage
+        initialMasterNodes
+        nodes
+        ;
     };
   };
 }

@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -9,10 +14,7 @@ let
   # It's common to have stathost and loghost on the same node. Each should
   # use half of the memory then. A general approach for this kind of
   # multi-service would be nice.
-  heapCorrection =
-    if config.flyingcircus.roles.statshost-master.enable
-    then 50
-    else 100;
+  heapCorrection = if config.flyingcircus.roles.statshost-master.enable then 50 else 100;
 in
 {
 

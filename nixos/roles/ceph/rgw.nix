@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -28,7 +33,7 @@ let
     debugRados = "1 5";
     rgwFrontends = "beast port=80";
     debugRgw = "1 5";
-    };
+  };
 in
 {
   options = {
@@ -53,13 +58,22 @@ in
       };
 
       extraSettings = lib.mkOption {
-        type = with lib.types; attrsOf (oneOf [ str int float bool ]);
-        default = {};   # defaults are provided in the config section with a lower priority
-        description = ''
-          config section of the Ceph config file of the radosgw client user.
-          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
-          + '' can alternatively be written in camelCase as `monOsdFullRatio`.
-        '';
+        type =
+          with lib.types;
+          attrsOf (oneOf [
+            str
+            int
+            float
+            bool
+          ]);
+        default = { }; # defaults are provided in the config section with a lower priority
+        description =
+          ''
+            config section of the Ceph config file of the radosgw client user.
+            Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+          + ''
+            can alternatively be written in camelCase as `monOsdFullRatio`.
+          '';
       };
 
       cephRelease = fclib.ceph.releaseOption // {
@@ -74,10 +88,13 @@ in
       assertions = [
         {
           assertion = (
-            ( role.extraSettings != {}
-            || config.flyingcircus.services.ceph.extraSettings != {}
-            || config.flyingcircus.services.ceph.client.extraSettings != {}
-            ) -> role.config == "");
+            (
+              role.extraSettings != { }
+              || config.flyingcircus.services.ceph.extraSettings != { }
+              || config.flyingcircus.services.ceph.client.extraSettings != { }
+            )
+            -> role.config == ""
+          );
           message = "Mixing the configuration styles (extra)Config and (extra)Settings is unsupported, please use either plaintext config or structured settings for ceph.";
         }
       ];
@@ -93,7 +110,7 @@ in
       ];
 
       systemd.services.fc-ceph-rgw = rec {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Start/stop local Ceph Rados Gateway";
         wantedBy = [ "multi-user.target" ];
@@ -129,41 +146,44 @@ in
         let
           srv = fclib.network.srv;
           sto = fclib.network.sto;
-        in lib.mkMerge [
+        in
+        lib.mkMerge [
           (lib.mkOrder 700 ''
             # Ensure that conntrack is enabled for RGW connections using port redirects
             ip46tables -w -t raw -A fc-raw-prerouting -i ${sto.interface} -p tcp --dport 7480 -j RETURN
             ip46tables -w -t raw -A fc-raw-output -o ${sto.interface} -p tcp --sport 80 -j RETURN
           '')
-          (''
-            set -x
-            # Accept traffic from S3 gateways from within the SRV network.
-            ip46tables -w -t nat -N fc-nat-pre
+          (
+            ''
+              set -x
+              # Accept traffic from S3 gateways from within the SRV network.
+              ip46tables -w -t nat -N fc-nat-pre
 
-          '' + (lib.concatMapStringsSep "\n"
-            (net: ''
+            ''
+            + (lib.concatMapStringsSep "\n" (net: ''
               iptables -A nixos-fw -i ${srv.interface} -s ${net} -p tcp --dport 80 -j ACCEPT
               # PL-130368 Fix S3 presigned URLs
               iptables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
-            '')
-            srv.v4.networks
-          ) + "\n" +
-          (lib.concatMapStringsSep "\n"
-            (net: ''
+            '') srv.v4.networks)
+            + "\n"
+            + (lib.concatMapStringsSep "\n" (net: ''
               ip6tables -A nixos-fw -i ${srv.interface} -s ${net} -p tcp --dport 80 -j ACCEPT
               # PL-130368 Fix S3 presigned URLs
               ip6tables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
-            '')
-            srv.v6.networks) +
-          ''
-            ip46tables -t nat -A PREROUTING -j fc-nat-pre
-          '')
+            '') srv.v6.networks)
+            + ''
+              ip46tables -t nat -A PREROUTING -j fc-nat-pre
+            ''
+          )
         ];
 
       systemd.services.fc-ceph-rgw-update-stats = rec {
         description = "Update RGW stats";
         serviceConfig.Type = "oneshot";
-        path = [ cephPkgs.ceph pkgs.jq ];
+        path = [
+          cephPkgs.ceph
+          pkgs.jq
+        ];
         wants = [ fclib.network.sto.addressUnit ];
         after = wants;
         script = ''
@@ -191,8 +211,7 @@ in
       flyingcircus.services.sensu-client.checks = {
         radosgw_probe_object = {
           notification = "Probe object (/rgw-monitoring/probe) not OK.";
-          command =
-            "check_http -u /rgw-monitoring/probe -H localhost -m 1000000:1500000 -w 5 -c 10";
+          command = "check_http -u /rgw-monitoring/probe -H localhost -m 1000000:1500000 -w 5 -c 10";
         };
       };
 
@@ -207,8 +226,10 @@ in
     })
 
     (lib.mkIf (role.enable && role.config == "") {
-        flyingcircus.services.ceph.extraSettingsSections.${username} = lib.recursiveUpdate
-        (expandCamelCaseAttrs defaultRgwSettings) (expandCamelCaseAttrs role.extraSettings);
+      flyingcircus.services.ceph.extraSettingsSections.${username} =
+        lib.recursiveUpdate (expandCamelCaseAttrs defaultRgwSettings) (
+          expandCamelCaseAttrs role.extraSettings
+        );
     })
 
     (lib.mkIf (role.enable && role.config != "") {
@@ -218,7 +239,7 @@ in
     (lib.mkIf (role.enable && role.primary) {
 
       systemd.timers.fc-ceph-rgw-update-stats = {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Timer for updating RGW stats";
         wantedBy = [ "timers.target" ];
@@ -229,7 +250,7 @@ in
       };
 
       systemd.timers.fc-ceph-rgw-users = {
-        enable = ! config.flyingcircus.services.ceph.server.passive;
+        enable = !config.flyingcircus.services.ceph.server.passive;
 
         description = "Timer for syncing S3 users and accounting with the directory";
         wantedBy = [ "timers.target" ];

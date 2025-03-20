@@ -1,6 +1,10 @@
 # Generic stuff that does not fit elsewhere.
 
-{ config, pkgs, lib }:
+{
+  config,
+  pkgs,
+  lib,
+}:
 
 let
   fclib = config.fclib;
@@ -10,24 +14,28 @@ with builtins;
 with lib;
 rec {
 
-  currentRG = with config.flyingcircus;
-    if lib.hasAttrByPath [ "parameters" "resource_group" ] enc
-    then enc.parameters.resource_group
-    else null;
+  currentRG =
+    with config.flyingcircus;
+    if lib.hasAttrByPath [ "parameters" "resource_group" ] enc then
+      enc.parameters.resource_group
+    else
+      null;
 
   # Derives a password from host data and a custom prefix
-  derivePasswordForHost = prefix:
-    builtins.hashString "sha256" (concatStringsSep "/" [
-      prefix
-      (lib.attrByPath ["parameters" "directory_password"] "" config.flyingcircus.enc)
-      config.networking.hostName
-    ]);
+  derivePasswordForHost =
+    prefix:
+    builtins.hashString "sha256" (
+      concatStringsSep "/" [
+        prefix
+        (lib.attrByPath [ "parameters" "directory_password" ] "" config.flyingcircus.enc)
+        config.networking.hostName
+      ]
+    );
 
   getLdapNodePassword = derivePasswordForHost "ldap";
 
   # get the DN of this node for LDAP logins.
-  getLdapNodeDN =
-    "cn=${config.networking.hostName},ou=Nodes,dc=gocept,dc=com";
+  getLdapNodeDN = "cn=${config.networking.hostName},ou=Nodes,dc=gocept,dc=com";
 
   # Service discovery functions
 
@@ -46,31 +54,37 @@ rec {
   # Returns service from /etc/nixos/services.json
   # that matches the given name or null, if nothing matches.
   # If there are multiple matches, an error is thrown.
-  findOneService = name:
+  findOneService =
+    name:
     let
       found = filter (s: s.service == name) config.flyingcircus.encServices;
       len = length found;
-    in if len == 0 then null
-      else if len == 1 then head found
-      else throw ("Multiple matches for service ${name}: "
-        + lib.concatMapStringsSep "; " (s: s.address or "<no address>") found);
-
+    in
+    if len == 0 then
+      null
+    else if len == 1 then
+      head found
+    else
+      throw (
+        "Multiple matches for service ${name}: "
+        + lib.concatMapStringsSep "; " (s: s.address or "<no address>") found
+      );
 
   # Returns all service clients from /etc/nixos/service_clients.json
   # that match the given name or an empty list, if nothing matches.
-  findServiceClients = name:
-    filter
-      (s: s.service == name)
-      config.flyingcircus.encServiceClients;
+  findServiceClients = name: filter (s: s.service == name) config.flyingcircus.encServiceClients;
 
   # Returns all services from /etc/nixos/services.json
   # that match the given name or an empty list, if nothing matches.
-  findServices = name:
-    filter
-      (s: s.service == name)
-      config.flyingcircus.encServices;
+  findServices = name: filter (s: s.service == name) config.flyingcircus.encServices;
 
-  installDirWithPermissions = { user, group, permissions, dir }:
+  installDirWithPermissions =
+    {
+      user,
+      group,
+      permissions,
+      dir,
+    }:
     "install -d -o ${user} -g ${group} -m ${permissions} ${dir}";
 
   # Allow overrides with default priority (100)
@@ -102,19 +116,18 @@ rec {
   coalesce = list: findFirst (el: el != null) null list;
 
   servicePassword =
-    { file
-    , user ? "root"
-    , mode ? "0660"
-    , token ? ""  # personalize derivation to prevent Nix hash collisions
+    {
+      file,
+      user ? "root",
+      mode ? "0660",
+      token ? "", # personalize derivation to prevent Nix hash collisions
     }:
     let
-      name = builtins.replaceStrings ["/"] ["-"] file;
-      generatePasswordCommand =
-        "${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 -d -c \"${token}\"";
-      generatedPassword =
-        readFile (
-          pkgs.runCommand name { preferLocalBuild = true; }
-          "${generatePasswordCommand} > $out");
+      name = builtins.replaceStrings [ "/" ] [ "-" ] file;
+      generatePasswordCommand = "${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 -d -c \"${token}\"";
+      generatedPassword = readFile (
+        pkgs.runCommand name { preferLocalBuild = true; } "${generatePasswordCommand} > $out"
+      );
 
       # Only install directory if not there, otherwise, permissions might
       # change.
@@ -127,9 +140,10 @@ rec {
           )
         fi
         chmod ${mode} ${file}
-        '';
+      '';
 
-    in rec {
+    in
+    rec {
       inherit file;
 
       # Generate in activation, with usable password.value, but with password
@@ -145,20 +159,25 @@ rec {
       value = removeSuffix "\n" (fclib.configFromFile file generatedPassword);
     };
 
-  usersInGroup = group:
-    map
-      (getAttr "uid")
-      (filter
-        (u: any (g: g == group) (getAttr currentRG u.permissions))
-        config.flyingcircus.users.userData
-      );
+  usersInGroup =
+    group:
+    map (getAttr "uid") (
+      filter (u: any (g: g == group) (getAttr currentRG u.permissions)) config.flyingcircus.users.userData
+    );
 
-  writePrettyJSON = name: x:
-  let json = pkgs.writeText "write-pretty-json-input" (toJSON x);
-  in pkgs.runCommand name { preferLocalBuild = true; } ''
+  writePrettyJSON =
+    name: x:
+    let
+      json = pkgs.writeText "write-pretty-json-input" (toJSON x);
+    in
+    pkgs.runCommand name { preferLocalBuild = true; } ''
       ${pkgs.jq}/bin/jq . < ${json} > $out
     '';
 
-  python3BinFromFile = path: pkgs.writers.writePython3Bin (removeSuffix ".py" (builtins.baseNameOf path)) {} (lib.readFile path);
+  python3BinFromFile =
+    path:
+    pkgs.writers.writePython3Bin (removeSuffix ".py" (builtins.baseNameOf path)) { } (
+      lib.readFile path
+    );
 
 }

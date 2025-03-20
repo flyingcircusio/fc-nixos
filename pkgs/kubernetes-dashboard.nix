@@ -1,4 +1,8 @@
-{ stdenv, fetchurl, tree }:
+{
+  stdenv,
+  fetchurl,
+  tree,
+}:
 
 stdenv.mkDerivation rec {
   version = "2.4.0";

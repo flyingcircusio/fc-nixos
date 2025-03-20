@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -16,8 +21,7 @@ in
 
       listenAddresses = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = fclib.network.lo.dualstack.addresses ++
-                  fclib.network.srv.dualstack.addresses;
+        default = fclib.network.lo.dualstack.addresses ++ fclib.network.srv.dualstack.addresses;
         defaultText = "addresses of the interfaces `lo` and `srv` (IPv4 & IPv6)";
       };
     };
@@ -25,10 +29,12 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    assertions = [{
-      assertion = config.flyingcircus.enc.parameters.memory >= 3072;
-      message = "antivirus role: ClamAV needs at least 3GiB of memory to run stable";
-    }];
+    assertions = [
+      {
+        assertion = config.flyingcircus.enc.parameters.memory >= 3072;
+        message = "antivirus role: ClamAV needs at least 3GiB of memory to run stable";
+      }
+    ];
 
     # The update service isn't critical enough to wake up people.
     # We'll catch errors when the file age check for the database update goes critical.
@@ -101,7 +107,23 @@ in
         # timer fails during the rebuild.
         # The list is mostly taken from the freshclam manpage.
         # We added 11 which is used when rate limiting hits.
-        SuccessExitStatus = lib.mkForce [ 11 40 50 51 52 53 54 55 56 57 58 59 60 61 62 ];
+        SuccessExitStatus = lib.mkForce [
+          11
+          40
+          50
+          51
+          52
+          53
+          54
+          55
+          56
+          57
+          58
+          59
+          60
+          61
+          62
+        ];
       };
     };
 
@@ -121,7 +143,7 @@ in
           notification = "ClamAV virus database out-of-date";
           command = "${pkgs.fc.sensuplugins}/bin/check_clamav_database";
           interval = 300;
-          };
+        };
 
         clamav-listen = {
           notification = "clamd not reachable via TCP";

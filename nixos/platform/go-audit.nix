@@ -1,4 +1,9 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 
 let
   fclib = config.fclib;
@@ -41,24 +46,28 @@ in
     '';
     systemd.services.alloy.restartTriggers = [ config.environment.etc."alloy/go-audit.alloy".source ];
 
-    systemd.services.go-audit = let
-      configFile = pkgs.writeText "go-audit.yaml" (lib.generators.toJSON {} {
-        rules = config.security.audit.rules;
-        output.gelf = {
-          enabled = true;
-          address = "127.0.0.1:12201";
+    systemd.services.go-audit =
+      let
+        configFile = pkgs.writeText "go-audit.yaml" (
+          lib.generators.toJSON { } {
+            rules = config.security.audit.rules;
+            output.gelf = {
+              enabled = true;
+              address = "127.0.0.1:12201";
+            };
+          }
+        );
+      in
+      {
+        description = "go-audit";
+        after = [ "network.target" ];
+        wantedBy = [ "multi-user.target" ];
+        conflicts = [ "auditd.service" ];
+        path = [ pkgs.audit ];
+        serviceConfig = {
+          Restart = "always";
+          ExecStart = "${cfg.package}/bin/go-audit -config ${configFile}";
         };
-      });
-    in {
-      description = "go-audit";
-      after = [ "network.target" ];
-      wantedBy = [ "multi-user.target" ];
-      conflicts = [ "auditd.service" ];
-      path = [ pkgs.audit ];
-      serviceConfig = {
-        Restart = "always";
-        ExecStart = "${cfg.package}/bin/go-audit -config ${configFile}";
       };
-    };
   };
 }

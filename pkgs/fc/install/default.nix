@@ -1,5 +1,11 @@
-{ lib, stdenv, python3Full, megacli, lvm2, makeWrapper }:
-
+{
+  lib,
+  stdenv,
+  python3Full,
+  megacli,
+  lvm2,
+  makeWrapper,
+}:
 
 stdenv.mkDerivation rec {
   version = "0.1";

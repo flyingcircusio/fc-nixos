@@ -1,5 +1,10 @@
 # Taken from NixOS 22.11, see pkgs/solr/COPYING.md
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -35,7 +40,7 @@ in
 
       extraJavaOptions = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
         description = "Extra command line options given to the java process running Solr.";
       };
 
@@ -58,7 +63,12 @@ in
     environment.systemPackages = [ cfg.package ];
 
     systemd.services.solr = {
-      after = [ "network.target" "remote-fs.target" "nss-lookup.target" "systemd-journald-dev-log.socket" ];
+      after = [
+        "network.target"
+        "remote-fs.target"
+        "nss-lookup.target"
+        "systemd-journald-dev-log.socket"
+      ];
       wantedBy = [ "multi-user.target" ];
 
       environment = {
@@ -88,8 +98,8 @@ in
       serviceConfig = {
         User = cfg.user;
         Group = cfg.group;
-        ExecStart="${cfg.package}/bin/solr start -f -a \"${concatStringsSep " " cfg.extraJavaOptions}\"";
-        ExecStop="${cfg.package}/bin/solr stop";
+        ExecStart = "${cfg.package}/bin/solr start -f -a \"${concatStringsSep " " cfg.extraJavaOptions}\"";
+        ExecStop = "${cfg.package}/bin/solr stop";
       };
     };
 

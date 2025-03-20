@@ -1,5 +1,10 @@
 # Customer specific role
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -27,12 +32,13 @@ let
     "192.168.204.0/24"
   ];
 
-  additional_hosts =
-    if pathExists /srv/s-blackbee/hosts
-    then readFile /srv/s-blackbee/hosts
-    else "";
+  additional_hosts = if pathExists /srv/s-blackbee/hosts then readFile /srv/s-blackbee/hosts else "";
 
-  routes = [ "10.0.0.0/24" "10.10.10.0/24" "10.242.2.0/24" ];
+  routes = [
+    "10.0.0.0/24"
+    "10.10.10.0/24"
+    "10.242.2.0/24"
+  ];
   gwHost = "172.22.49.50";
 
 in
@@ -57,30 +63,39 @@ in
 
     networking.extraHosts = additional_hosts;
 
-    systemd.services."network-external-routing-ionos" = let
-          netdev = fclib.network.srv.interface;
-      in rec {
-      description = "Custom routing rules for external networks";
-      after = [ "network-addresses-${netdev}.service" "firewall.service" ];
-      requires = after;
-      wantedBy = [ "multi-user.target" ];
-      bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.link}.device" ];
-      path = with pkgs; [ gawk iproute2 glibc iptables ];
+    systemd.services."network-external-routing-ionos" =
+      let
+        netdev = fclib.network.srv.interface;
+      in
+      rec {
+        description = "Custom routing rules for external networks";
+        after = [
+          "network-addresses-${netdev}.service"
+          "firewall.service"
+        ];
+        requires = after;
+        wantedBy = [ "multi-user.target" ];
+        bindsTo = [ "sys-subsystem-net-devices-${fclib.network.srv.link}.device" ];
+        path = with pkgs; [
+          gawk
+          iproute2
+          glibc
+          iptables
+        ];
 
-      serviceConfig =
-        {
+        serviceConfig = {
           Type = "oneshot";
           ExecStart = pkgs.writeScript "network-external-routing-start" ''
             #! ${pkgs.stdenv.shell} -e
-            ${lib.concatMapStringsSep "\n"
-              (route: "ip -4 route add ${route} via ${gwHost} dev ${netdev} onlink")
-              routes}
+            ${lib.concatMapStringsSep "\n" (
+              route: "ip -4 route add ${route} via ${gwHost} dev ${netdev} onlink"
+            ) routes}
           '';
           ExecStop = pkgs.writeScript "network-external-routing-stop" ''
             #! ${pkgs.stdenv.shell}
-            ${lib.concatMapStringsSep "\n"
-              (route: "ip -4 route del ${route} via ${gwHost} dev ${netdev}")
-              routes}
+            ${lib.concatMapStringsSep "\n" (
+              route: "ip -4 route del ${route} via ${gwHost} dev ${netdev}"
+            ) routes}
           '';
           RemainAfterExit = true;
         };
@@ -110,25 +125,25 @@ in
 
     # Don't allow SSH access from everywhere. Set custom iptables rules.
     services.openssh.openFirewall = lib.mkForce false;
-    networking.firewall.extraCommands = let
-      allowed = lib.concatStringsSep "\n"
-        (map
-          (ip: ''
+    networking.firewall.extraCommands =
+      let
+        allowed = lib.concatStringsSep "\n" (
+          map (ip: ''
             ${fclib.iptables ip} -A nixos-fw -s ${ip} -p tcp --dport 22 \
               -j nixos-fw-accept
-          '')
-          (config.flyingcircus.static.firewall.trusted ++ firewallTrustedSSH));
-    in
+          '') (config.flyingcircus.static.firewall.trusted ++ firewallTrustedSSH)
+        );
+      in
 
-    ''
-      # Allow ssh from trusted nets/hosts
-      ${allowed}
+      ''
+        # Allow ssh from trusted nets/hosts
+        ${allowed}
 
-      # Allow ionos routes
-      ${lib.concatMapStringsSep "\n"
-        (route: "iptables -A nixos-fw -s ${route} -j nixos-fw-accept")
-        routes}
-    '';
+        # Allow ionos routes
+        ${lib.concatMapStringsSep "\n" (
+          route: "iptables -A nixos-fw -s ${route} -j nixos-fw-accept"
+        ) routes}
+      '';
 
   };
 }

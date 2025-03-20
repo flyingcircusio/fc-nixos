@@ -1,4 +1,4 @@
-{ config, lib, ...}:
+{ config, lib, ... }:
 
 with builtins;
 
@@ -7,36 +7,47 @@ let
   role = config.flyingcircus.roles.router;
   inherit (config) fclib;
   inherit (config.flyingcircus) location static;
-  blockIndent = width: text:
+  blockIndent =
+    width: text:
     let
       # Create a string of `width` number of spaces.
       spaces = lib.fixedWidthString width " " " ";
       lines = lib.splitString "\n" text;
     in
-      lib.concatStringsSep "\n"
-        ([(head lines)] ++ (fclib.indentWith spaces (tail lines)));
+    lib.concatStringsSep "\n" ([ (head lines) ] ++ (fclib.indentWith spaces (tail lines)));
 
-  ifaces = listToAttrs
-    (filter (iface: iface.value.networkAttrs != [])
-      (map (vlan: lib.nameValuePair vlan (
-        let iface = fclib.network."${vlan}";
-        in {
-          inherit (iface) interface;
-          networkAttrs = filter (attr: attr.addresses != []) iface.v6.networkAttrs;
-        }
-      )) static.floatingGatewayNetworks."${location}"));
+  ifaces = listToAttrs (
+    filter (iface: iface.value.networkAttrs != [ ]) (
+      map (
+        vlan:
+        lib.nameValuePair vlan (
+          let
+            iface = fclib.network."${vlan}";
+          in
+          {
+            inherit (iface) interface;
+            networkAttrs = filter (attr: attr.addresses != [ ]) iface.v6.networkAttrs;
+          }
+        )
+      ) static.floatingGatewayNetworks."${location}"
+    )
+  );
 
-  mkPrefixBlock = { network, prefixLength, ... }: ''
-    prefix ${network}/${toString prefixLength} {
-      AdvOnLink on;
-      AdvAutonomous on;
-    };
-  '';
+  mkPrefixBlock =
+    { network, prefixLength, ... }:
+    ''
+      prefix ${network}/${toString prefixLength} {
+        AdvOnLink on;
+        AdvAutonomous on;
+      };
+    '';
 
-  mkInterfaceBlock = vlan: iface:
+  mkInterfaceBlock =
+    vlan: iface:
     let
       prefixConfigurations = lib.concatMapStringsSep "\n\n" mkPrefixBlock iface.networkAttrs;
-    in ''
+    in
+    ''
       # ${vlan} network
       interface ${iface.interface} {
         AdvSendAdvert on;

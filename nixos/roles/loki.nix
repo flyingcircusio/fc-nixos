@@ -1,18 +1,34 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.flyingcircus.roles.loki;
   fclib = config.fclib;
 
-  storageScheduleSubmodule = with lib; with types; submodule {
-    options = {
-      startDate = mkOption {
-        type = strMatching "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}";
+  storageScheduleSubmodule =
+    with lib;
+    with types;
+    submodule {
+      options = {
+        startDate = mkOption {
+          type = strMatching "[[:digit:]]{4}-[[:digit:]]{2}-[[:digit:]]{2}";
+        };
+        backend = mkOption {
+          type = enum [
+            "filesystem"
+            "s3"
+          ];
+        };
+        schemaVersion = mkOption {
+          type = ints.positive;
+          default = 13;
+        };
       };
-      backend = mkOption { type = enum [ "filesystem" "s3" ]; };
-      schemaVersion = mkOption { type = ints.positive; default = 13; };
     };
-  };
 
   renderStorageSchema = opts: {
     from = opts.startDate;
@@ -41,7 +57,7 @@ in
 
       s3 = mkOption {
         description = "Configure log storage in S3-compatible object store";
-        default = {};
+        default = { };
         type = types.submodule {
           options = {
             enable = mkEnableOption "store log data in S3";
@@ -65,22 +81,29 @@ in
 
       storageSchedule = mkOption {
         description = "Log storage schedule configuration";
-        default = {};
-        type = with types; submodule {
-          options = {
-            default = mkOption {
-              visible = false;
-              type = listOf storageScheduleSubmodule;
-              default = [{ startDate = "2024-09-10"; backend = "filesystem"; }];
-            };
-            extra = mkOption {
-              description = "Additional entries to add to the log storage schedule";
-              type = listOf storageScheduleSubmodule;
-              default = [];
-              defaultText = "[]";
+        default = { };
+        type =
+          with types;
+          submodule {
+            options = {
+              default = mkOption {
+                visible = false;
+                type = listOf storageScheduleSubmodule;
+                default = [
+                  {
+                    startDate = "2024-09-10";
+                    backend = "filesystem";
+                  }
+                ];
+              };
+              extra = mkOption {
+                description = "Additional entries to add to the log storage schedule";
+                type = listOf storageScheduleSubmodule;
+                default = [ ];
+                defaultText = "[]";
+              };
             };
           };
-        };
       };
     };
   };
@@ -97,25 +120,28 @@ in
 
         auth_enabled = false;
 
-        schema_config.configs = map renderStorageSchema
-          (cfg.storageSchedule.default ++ cfg.storageSchedule.extra);
+        schema_config.configs = map renderStorageSchema (
+          cfg.storageSchedule.default ++ cfg.storageSchedule.extra
+        );
 
-        storage_config = {
-          # index file management
-          tsdb_shipper = {
-            active_index_directory = "/var/lib/loki/tsdb-shipper-index";
-            cache_location = "/var/lib/loki/tsdb-shipper-cache";
+        storage_config =
+          {
+            # index file management
+            tsdb_shipper = {
+              active_index_directory = "/var/lib/loki/tsdb-shipper-index";
+              cache_location = "/var/lib/loki/tsdb-shipper-cache";
+            };
+            # log data configuration
+            filesystem.directory = "/var/lib/loki/chunk-store";
+          }
+          // lib.optionalAttrs (cfg.s3.enable) {
+            s3 = {
+              # authentication configured separately
+              endpoint = cfg.s3.endpoint;
+              bucketNames = cfg.s3.bucketNames;
+              s3forcepathstyle = true;
+            };
           };
-          # log data configuration
-          filesystem.directory = "/var/lib/loki/chunk-store";
-        } // lib.optionalAttrs (cfg.s3.enable) {
-          s3 = {
-            # authentication configured separately
-            endpoint = cfg.s3.endpoint;
-            bucketNames = cfg.s3.bucketNames;
-            s3forcepathstyle = true;
-          };
-        };
 
         compactor = {
           working_directory = "/var/lib/loki/compactor-workdir";
@@ -146,32 +172,40 @@ in
           (fclib.fqdn { vlan = "srv"; })
           "${config.networking.hostName}.${config.networking.domain}"
         ];
-        listen = builtins.map (addr: { inherit addr; port = 3100; })
-          fclib.network.srv.dualstack.addressesQuoted;
-        locations = with builtins; with lib; let
-          proxyConfig = { proxyPass = "http://127.0.0.1:3100"; };
-        in listToAttrs (
-          [(nameValuePair "/" { extraConfig = "return 403;"; })] ++
-          (map (path: nameValuePair path proxyConfig) [
-            # https://grafana.com/docs/loki/latest/reference/loki-http-api/
+        listen = builtins.map (addr: {
+          inherit addr;
+          port = 3100;
+        }) fclib.network.srv.dualstack.addressesQuoted;
+        locations =
+          with builtins;
+          with lib;
+          let
+            proxyConfig = {
+              proxyPass = "http://127.0.0.1:3100";
+            };
+          in
+          listToAttrs (
+            [ (nameValuePair "/" { extraConfig = "return 403;"; }) ]
+            ++ (map (path: nameValuePair path proxyConfig) [
+              # https://grafana.com/docs/loki/latest/reference/loki-http-api/
 
-            # ingestion endpoints
-            "/loki/api/v1/push"
-            "/otlp/v1/logs"
+              # ingestion endpoints
+              "/loki/api/v1/push"
+              "/otlp/v1/logs"
 
-            # query endpoints
-            "/loki/api/v1/query"
-            "/loki/api/v1/query_range"
-            "/loki/api/v1/labels"
-            "/loki/api/v1/label"
-            "/loki/api/v1/series"
-            "/loki/api/v1/index/stats"
-            "/loki/api/v1/index/volume"
-            "/loki/api/v1/index/volume_range"
-            "/loki/api/v1/patterns"
-            "/loki/api/v1/tail"
-          ])
-        );
+              # query endpoints
+              "/loki/api/v1/query"
+              "/loki/api/v1/query_range"
+              "/loki/api/v1/labels"
+              "/loki/api/v1/label"
+              "/loki/api/v1/series"
+              "/loki/api/v1/index/stats"
+              "/loki/api/v1/index/volume"
+              "/loki/api/v1/index/volume_range"
+              "/loki/api/v1/patterns"
+              "/loki/api/v1/tail"
+            ])
+          );
       };
     };
   };

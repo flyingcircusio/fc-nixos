@@ -1,4 +1,11 @@
-{ lib, stdenv, makeWrapper, python3, iproute2, procps }:
+{
+  lib,
+  stdenv,
+  makeWrapper,
+  python3,
+  iproute2,
+  procps,
+}:
 
 stdenv.mkDerivation rec {
   version = "1";
@@ -9,7 +16,11 @@ stdenv.mkDerivation rec {
   dontBuild = true;
   dontConfigure = true;
   nativeBuildInputs = [ makeWrapper ];
-  propagatedBuildInputs = [ python3 iproute2 procps ];
+  propagatedBuildInputs = [
+    python3
+    iproute2
+    procps
+  ];
 
   installPhase = ''
     mkdir -p $out/bin

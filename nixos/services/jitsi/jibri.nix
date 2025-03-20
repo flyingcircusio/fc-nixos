@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -10,42 +15,54 @@ let
   #
   # Substitution for environment variable FOO is represented as attribute set
   # { __hocon_envvar = "FOO"; }
-  toHOCON = x: if isAttrs x && x ? __hocon_envvar then ("\${" + x.__hocon_envvar + "}")
-    else if isAttrs x then "{${ lib.concatStringsSep "," (lib.mapAttrsToList (k: v: ''"${k}":${toHOCON v}'') x) }}"
-    else if isList x then "[${ lib.concatMapStringsSep "," toHOCON x }]"
-    else toJSON x;
+  toHOCON =
+    x:
+    if isAttrs x && x ? __hocon_envvar then
+      ("\${" + x.__hocon_envvar + "}")
+    else if isAttrs x then
+      "{${lib.concatStringsSep "," (lib.mapAttrsToList (k: v: ''"${k}":${toHOCON v}'') x)}}"
+    else if isList x then
+      "[${lib.concatMapStringsSep "," toHOCON x}]"
+    else
+      toJSON x;
 
   settings = with cfg; {
     jibri = {
       api = {
         xmpp = {
-          environments = [{
-            name = "prod environment";
-            xmpp-server-hosts = ["${xmppDomain}"];
-            xmpp-domain = "${xmppDomain}";
+          environments = [
+            {
+              name = "prod environment";
+              xmpp-server-hosts = [ "${xmppDomain}" ];
+              xmpp-domain = "${xmppDomain}";
 
-            control-muc = {
-              domain = "internal.${xmppDomain}";
-              room-name = "JibriBrewery";
-              nickname = "jibri-nickname";
-            };
+              control-muc = {
+                domain = "internal.${xmppDomain}";
+                room-name = "JibriBrewery";
+                nickname = "jibri-nickname";
+              };
 
-            control-login = {
-              domain = "${controlDomain}";
-              username = "${controlUser}";
-              password = { __hocon_envvar = "JIBRI_CONTROL_PASSWORD"; };
-            };
+              control-login = {
+                domain = "${controlDomain}";
+                username = "${controlUser}";
+                password = {
+                  __hocon_envvar = "JIBRI_CONTROL_PASSWORD";
+                };
+              };
 
-            call-login = {
-              domain = "${recorderDomain}";
-              username = "${recorderUser}";
-              password = { __hocon_envvar = "JIBRI_RECORDER_PASSWORD"; };
-            };
+              call-login = {
+                domain = "${recorderDomain}";
+                username = "${recorderUser}";
+                password = {
+                  __hocon_envvar = "JIBRI_RECORDER_PASSWORD";
+                };
+              };
 
-            strip-from-room-domain = "conference.";
-            usage-timeout = 0;
-            trust-all-xmpp-certs = true;
-          }];
+              strip-from-room-domain = "conference.";
+              usage-timeout = 0;
+              trust-all-xmpp-certs = true;
+            }
+          ];
         };
       };
 
@@ -116,7 +133,7 @@ in
     };
 
     resolution = mkOption {
-      default = {};
+      default = { };
       type = types.submodule {
         options = {
           width = mkOption {
@@ -172,7 +189,7 @@ in
 
     settings = mkOption {
       type = types.attrs;
-      defaultText = {};
+      defaultText = { };
       default = settings;
       description = "Settings used to generate the default config file";
     };
@@ -189,11 +206,12 @@ in
     environment.etc."asound.conf".source = "${pkgs.jibri}/etc/jitsi/jibri/asoundrc";
 
     environment.etc."chromium/policies/managed/managed_policies.json".source =
-      pkgs.writeText "managed_policies.json" (
-        lib.generators.toJSON {} {
-          CommandLineFlagSecurityWarningsEnabled = false;
-        }
-      );
+      pkgs.writeText "managed_policies.json"
+        (
+          lib.generators.toJSON { } {
+            CommandLineFlagSecurityWarningsEnabled = false;
+          }
+        );
 
     systemd.services.jibri-icewm = {
       after = [ "jibri-xorg.service" ];
@@ -226,7 +244,11 @@ in
         ProtectKernelModules = true;
         ProtectKernelTunables = true;
         ProtectSystem = "strict";
-        RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+        RestrictAddressFamilies = [
+          "AF_INET"
+          "AF_INET6"
+          "AF_UNIX"
+        ];
         RestrictNamespaces = true;
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
@@ -247,16 +269,18 @@ in
       };
 
       script =
-      let
-        xorgConf = pkgs.writeText "jitsi-xorg.conf" (pkgs.callPackage
-          ./xorg-video-dummy.conf.nix { inherit (cfg) resolution; });
-      in ''
-        ${pkgs.xorg.xorgserver.out}/bin/Xorg \
-          -nocursor -noreset +extension RANDR +extension RENDER \
-          -config ${xorgConf} \
-          -logfile /var/log/jibri-xorg/xorg.log
-          :0
-      '';
+        let
+          xorgConf = pkgs.writeText "jitsi-xorg.conf" (
+            pkgs.callPackage ./xorg-video-dummy.conf.nix { inherit (cfg) resolution; }
+          );
+        in
+        ''
+          ${pkgs.xorg.xorgserver.out}/bin/Xorg \
+            -nocursor -noreset +extension RANDR +extension RENDER \
+            -config ${xorgConf} \
+            -logfile /var/log/jibri-xorg/xorg.log
+            :0
+        '';
       serviceConfig = {
         DynamicUser = true;
         LogsDirectory = "jibri-xorg";
@@ -277,7 +301,11 @@ in
         ProtectKernelModules = true;
         ProtectKernelTunables = true;
         ProtectSystem = "strict";
-        RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+        RestrictAddressFamilies = [
+          "AF_INET"
+          "AF_INET6"
+          "AF_UNIX"
+        ];
         RestrictNamespaces = true;
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
@@ -296,7 +324,10 @@ in
     systemd.services.jibri = {
       description = "JItsi BRoadcasting Infrastructure";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" "jibri-xorg.service" ];
+      after = [
+        "network.target"
+        "jibri-xorg.service"
+      ];
       wants = [ "jibri-icewm.service" ];
 
       environment = {
@@ -323,7 +354,6 @@ in
         SupplementaryGroups = [
           "audio"
         ];
-
 
         # Security restrictions, systemd-analyze security score is 3.6
         CapabilityBoundingSet = "";

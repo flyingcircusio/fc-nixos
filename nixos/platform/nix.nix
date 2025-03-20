@@ -1,12 +1,20 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   production = lib.attrByPath [ "parameters" "production" ] "" config.flyingcircus.enc;
 
-  nixPackage = if config.flyingcircus.nix.useUnstableNix
-    then pkgs.nixVersions.nix_2_25
-    else pkgs.nixVersions.nix_2_18;
-in {
+  nixPackage =
+    if config.flyingcircus.nix.useUnstableNix then
+      pkgs.nixVersions.nix_2_25
+    else
+      pkgs.nixVersions.nix_2_18;
+in
+{
   options.flyingcircus = {
     nix.useUnstableNix = lib.mkOption {
       default = production == false;

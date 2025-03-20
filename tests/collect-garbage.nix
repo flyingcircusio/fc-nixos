@@ -13,7 +13,10 @@ import ./make-test-python.nix (
     nodes.machine =
       { ... }:
       {
-        imports = [ ../nixos ../nixos/roles ];
+        imports = [
+          ../nixos
+          ../nixos/roles
+        ];
 
         config = {
           flyingcircus.agent.collect-garbage = true;
@@ -25,7 +28,7 @@ import ./make-test-python.nix (
               "192.168.101.0/24" = [ "192.168.101.1" ];
               "2001:db8:f030:1c3::/64" = [ "2001:db8:f030:1c3::1" ];
             };
-            gateways = {};
+            gateways = { };
           };
 
           users.users.u0 = {

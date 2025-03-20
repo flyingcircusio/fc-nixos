@@ -5,17 +5,27 @@ let
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
   # then use release-set as pkgs
-  phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps)
-    {} super;
+  phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps) { } super;
 
   nixpkgs-21_05-src = (import ../versions.nix { pkgs = super; }).nixpkgs-21_05;
   fc-nixos-21_05-src = (import ../versions.nix { pkgs = super; }).fc-nixos-21_05;
-  fc-nixos-21_05 = builtins.trace "using fc-nixos-21:05" (import fc-nixos-21_05-src {inherit (self) config; nixpkgs = nixpkgs-21_05-src; });
+  fc-nixos-21_05 = builtins.trace "using fc-nixos-21:05" (
+    import fc-nixos-21_05-src {
+      inherit (self) config;
+      nixpkgs = nixpkgs-21_05-src;
+    }
+  );
 
-  inherit (super) fetchpatch fetchFromGitHub fetchurl lib;
+  inherit (super)
+    fetchpatch
+    fetchFromGitHub
+    fetchurl
+    lib
+    ;
   inherit (builtins) hasAttr storePath;
 
-  getClosureFromStore = path:
+  getClosureFromStore =
+    path:
     if hasAttr "fetchClosure" builtins then
       builtins.fetchClosure {
         fromStore = "https://s3.whq.fcio.net/hydra";
@@ -31,9 +41,11 @@ let
   };
   # we need to use overrideAttrs, as the `extraPatches` function argument of the generic PHP builder is
   # redefined and replaced by the specific version builder.
-  patchPhps = patch: phpPkg: phpPkg.overrideAttrs (prev: {
-    patches = (prev.patches or []) ++ (prev.extraPatches or []) ++ [ patch ];
-  });
+  patchPhps =
+    patch: phpPkg:
+    phpPkg.overrideAttrs (prev: {
+      patches = (prev.patches or [ ]) ++ (prev.extraPatches or [ ]) ++ [ patch ];
+    });
 in
 builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   #
@@ -41,47 +53,76 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   #
 
   # Import old php versions from nix-phps.
-  inherit (phps) php72 php73 php74 php80;
+  inherit (phps)
+    php72
+    php73
+    php74
+    php80
+    ;
   # Import NixOS upstream PHPs.
-  inherit (super) php81 php82 php83 php84;
+  inherit (super)
+    php81
+    php82
+    php83
+    php84
+    ;
 
 }
 //
-builtins.mapAttrs (_: patchPhps (fetchpatch {
-    url = "https://github.com/flyingcircusio/php-src/commit/1a7e4834d94d72564521fffd6ceec5a378693cb7.patch";
-    hash = "sha256-MWZdXUsvkpxhC9VVttrINY2E4X+PD7lChgkL3VYlk10=";
-  })) {
-    inherit (super) php83 php84;
-  }
+  builtins.mapAttrs
+    (
+      _:
+      patchPhps (fetchpatch {
+        url = "https://github.com/flyingcircusio/php-src/commit/1a7e4834d94d72564521fffd6ceec5a378693cb7.patch";
+        hash = "sha256-MWZdXUsvkpxhC9VVttrINY2E4X+PD7lChgkL3VYlk10=";
+      })
+    )
+    {
+      inherit (super) php83 php84;
+    }
 # temporarily added to overlay to ensure it is built by hydra.
 # TODO: drop in 25.05
 # Use curl 8.4.0 for PHP
 # FC-40106, FC-40100
-// lib.listToAttrs (map (v: lib.nameValuePair "php${v}-FC-40106" (
-  super."php${v}".override {
+// lib.listToAttrs (
+  map
+    (
+      v:
+      lib.nameValuePair "php${v}-FC-40106" (
+        super."php${v}".override {
           packageOverrides = final: prev: {
             extensions = prev.extensions // {
-              curl = prev.extensions.curl.overrideAttrs (_: let
-                curl_8_4 = self.curl.overrideAttrs (_: {
-                  version = "8.4.0";
-                  patches = [];
-                  src = self.fetchurl {
-                    urls = [
-                      "https://curl.haxx.se/download/curl-8.4.0.tar.xz"
-                      "https://github.com/curl/curl/releases/download/curl-${builtins.replaceStrings [ "." ] [ "_" ] "8.4.0"}/curl-8.4.0.tar.xz"
-                    ];
-                    hash = "sha256-FsYqnErw9wPSi9pte783ukcFWtNBTXDexj4uYzbyqC0=";
-                  };
-                });
-              in {
-                buildInputs = [ curl_8_4 ];
-                configureFlags = [ "--with-curl=${curl_8_4.dev}" ];
-              });
+              curl = prev.extensions.curl.overrideAttrs (
+                _:
+                let
+                  curl_8_4 = self.curl.overrideAttrs (_: {
+                    version = "8.4.0";
+                    patches = [ ];
+                    src = self.fetchurl {
+                      urls = [
+                        "https://curl.haxx.se/download/curl-8.4.0.tar.xz"
+                        "https://github.com/curl/curl/releases/download/curl-${
+                          builtins.replaceStrings [ "." ] [ "_" ] "8.4.0"
+                        }/curl-8.4.0.tar.xz"
+                      ];
+                      hash = "sha256-FsYqnErw9wPSi9pte783ukcFWtNBTXDexj4uYzbyqC0=";
+                    };
+                  });
+                in
+                {
+                  buildInputs = [ curl_8_4 ];
+                  configureFlags = [ "--with-curl=${curl_8_4.dev}" ];
+                }
+              );
             };
           };
         }
+      )
     )
-  ) [ "82" "83"]
+    [
+      "82"
+      "83"
+    ]
 )
 // {
   pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
@@ -93,12 +134,14 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   #
   # == our own stuff
   #
-  fc = (import ./default.nix {
-    pkgs = self;
-    # Only used by the agent for now but we should probably use this
-    # for all our Python packages and update Python in sync then.
-    pythonPackages = self.python312Packages;
-  });
+  fc = (
+    import ./default.nix {
+      pkgs = self;
+      # Only used by the agent for now but we should probably use this
+      # for all our Python packages and update Python in sync then.
+      pythonPackages = self.python312Packages;
+    }
+  );
 
   backy = self.callPackage ./backy { };
 
@@ -121,9 +164,8 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   inherit (super.callPackage ./boost { }) boost159;
 
   busybox = super.busybox.overrideAttrs (oldAttrs: {
-      meta.priority = 10;
-    });
-
+    meta.priority = 10;
+  });
 
   check_ipmi_sensor = super.callPackage ./check_ipmi_sensor.nix { };
   check_md_raid = super.callPackage ./check_md_raid { };
@@ -133,13 +175,15 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
-  consul = builtins.trace "using 21_05 consul" (fc-nixos-21_05.consul.overrideAttrs (old:
-    { meta.mainProgram = "consul"; }
-  ));
+  consul = builtins.trace "using 21_05 consul" (
+    fc-nixos-21_05.consul.overrideAttrs (old: {
+      meta.mainProgram = "consul";
+    })
+  );
 
   docsplit = super.callPackage ./docsplit { };
 
-  dstat = super.dstat.overrideAttrs(old: {
+  dstat = super.dstat.overrideAttrs (old: {
     patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
   });
 
@@ -163,22 +207,31 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
     ];
   });
 
-  go-audit = super.go-audit.overrideAttrs (goSelf: goSuper: {
-    patches = [
-      ./go-audit/0001-Split-audit-message-into-key-value-pairs-for-better-.patch
-      ./go-audit/0002-Decode-audit-message-type-number-into-string-constan.patch
-      ./go-audit/0003-Disaggregate-audit-events-into-separate-log-entries.patch
-      ./go-audit/0004-Provide-a-human-readable-decoded-view-for-selected-a.patch
-    ];
-  });
+  go-audit = super.go-audit.overrideAttrs (
+    goSelf: goSuper: {
+      patches = [
+        ./go-audit/0001-Split-audit-message-into-key-value-pairs-for-better-.patch
+        ./go-audit/0002-Decode-audit-message-type-number-into-string-constan.patch
+        ./go-audit/0003-Disaggregate-audit-events-into-separate-log-entries.patch
+        ./go-audit/0004-Provide-a-human-readable-decoded-view-for-selected-a.patch
+      ];
+    }
+  );
 
   innotop = super.callPackage ./percona/innotop.nix { };
 
-  ipmitool = super.ipmitool.overrideAttrs(a: a // {
-    buildInputs = a.buildInputs ++ [ super.ncurses super.readline ];
-  });
+  ipmitool = super.ipmitool.overrideAttrs (
+    a:
+    a
+    // {
+      buildInputs = a.buildInputs ++ [
+        super.ncurses
+        super.readline
+      ];
+    }
+  );
 
-  keepalived = super.keepalived.overrideAttrs(_: {
+  keepalived = super.keepalived.overrideAttrs (_: {
     version = "2.2.8-g9d4579";
 
     src = super.fetchFromGitHub {
@@ -202,53 +255,70 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   linuxKernelStable = self.linux_6_6;
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
-  kubernetes-dashboard-metrics-scraper = super.callPackage ./kubernetes-dashboard-metrics-scraper.nix { };
+  kubernetes-dashboard-metrics-scraper =
+    super.callPackage ./kubernetes-dashboard-metrics-scraper.nix
+      { };
 
-  auditbeat7-oss = self.auditbeat7.overrideAttrs(a: a // {
-    name = "auditbeat-oss-${a.version}";
-    # XXX: tests break without x-pack (bad!)
-    # preBuild = "rm -rf x-pack";
-  });
+  auditbeat7-oss = self.auditbeat7.overrideAttrs (
+    a:
+    a
+    // {
+      name = "auditbeat-oss-${a.version}";
+      # XXX: tests break without x-pack (bad!)
+      # preBuild = "rm -rf x-pack";
+    }
+  );
 
   cyrus_sasl-legacyCrypt = super.cyrus_sasl.override {
     libxcrypt = self.libxcrypt-legacy;
   };
 
-  dovecot = (super.dovecot.override {
-    cyrus_sasl = self.cyrus_sasl-legacyCrypt;
-  }).overrideAttrs(old: {
-    strictDeps = true;
-    buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
-  });
+  dovecot =
+    (super.dovecot.override {
+      cyrus_sasl = self.cyrus_sasl-legacyCrypt;
+    }).overrideAttrs
+      (old: {
+        strictDeps = true;
+        buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
+      });
 
-  elasticsearch6-oss =
-    (lib.toDerivation
-      (getClosureFromStore
-        /nix/store/gkw63x51dmnyr7v66vf713ni7b8i3z37-elasticsearch-oss-6.8.21)
-    // { version = "6.8.21"; });
+  elasticsearch6-oss = (
+    lib.toDerivation (getClosureFromStore /nix/store/gkw63x51dmnyr7v66vf713ni7b8i3z37-elasticsearch-oss-6.8.21)
+    // {
+      version = "6.8.21";
+    }
+  );
 
-  filebeat7-oss = self.filebeat7.overrideAttrs(a: a // {
-    name = "filebeat-oss-${a.version}";
-    # XXX: tests break without x-pack (bad!)
-    # preBuild = "rm -rf x-pack";
-  });
+  filebeat7-oss = self.filebeat7.overrideAttrs (
+    a:
+    a
+    // {
+      name = "filebeat-oss-${a.version}";
+      # XXX: tests break without x-pack (bad!)
+      # preBuild = "rm -rf x-pack";
+    }
+  );
 
-  imagemagick7 = assert lib.versions.major super.imagemagick.version == "7";
+  imagemagick7 =
+    assert lib.versions.major super.imagemagick.version == "7";
     lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick;
-  imagemagick7Big = assert lib.versions.major super.imagemagickBig.version == "7";
+  imagemagick7Big =
+    assert lib.versions.major super.imagemagickBig.version == "7";
     lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagickBig;
-  imagemagick7_light = assert lib.versions.major super.imagemagick_light.version == "7";
+  imagemagick7_light =
+    assert lib.versions.major super.imagemagick_light.version == "7";
     lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick_light;
 
-  graylogFrozen =
-    (lib.toDerivation
-      (getClosureFromStore
-        /nix/store/yj365yr01p6yp2axj943b4l8ngzzxvkw-graylog-3.3.16)
-    // { version = "3.3.16"; });
+  graylogFrozen = (
+    lib.toDerivation (getClosureFromStore /nix/store/yj365yr01p6yp2axj943b4l8ngzzxvkw-graylog-3.3.16)
+    // {
+      version = "3.3.16";
+    }
+  );
 
   graylog = self.graylog-3_3;
 
-  graylog-3_3 = super.callPackage ./graylog {};
+  graylog-3_3 = super.callPackage ./graylog { };
 
   graylogPlugins = lib.recurseIntoAttrs (
     super.callPackage ./graylog/plugins.nix {
@@ -260,80 +330,111 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
 
   # PHP versions from vendored nix-phps
 
-  lamp_php72 = self.php72.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
+  lamp_php72 = self.php72.withExtensions (
+    { enabled, all }:
+    enabled
+    ++ [
+      all.bcmath
+      all.imagick
+      all.memcached
+      all.redis
+    ]
+  );
 
-  lamp_php73 = self.php73.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
+  lamp_php73 = self.php73.withExtensions (
+    { enabled, all }:
+    enabled
+    ++ [
+      all.bcmath
+      all.imagick
+      all.memcached
+      all.redis
+    ]
+  );
 
-  lamp_php74 = (self.php74.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]));
+  lamp_php74 = (
+    self.php74.withExtensions (
+      { enabled, all }:
+      enabled
+      ++ [
+        all.bcmath
+        all.imagick
+        all.memcached
+        all.redis
+      ]
+    )
+  );
 
-  lamp_php80 = (self.php80.withExtensions ({ enabled, all }:
-              enabled ++ [
-               all.bcmath
-               all.imagick
-               all.memcached
-               all.redis
-             ]));
+  lamp_php80 = (
+    self.php80.withExtensions (
+      { enabled, all }:
+      enabled
+      ++ [
+        all.bcmath
+        all.imagick
+        all.memcached
+        all.redis
+      ]
+    )
+  );
 
   # PHP versions from nixpkgs
 
-  lamp_php81 = self.php81.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
+  lamp_php81 = self.php81.withExtensions (
+    { enabled, all }:
+    enabled
+    ++ [
+      all.bcmath
+      all.imagick
+      all.memcached
+      all.redis
+    ]
+  );
 
-  lamp_php82 = self.php82.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
+  lamp_php82 = self.php82.withExtensions (
+    { enabled, all }:
+    enabled
+    ++ [
+      all.bcmath
+      all.imagick
+      all.memcached
+      all.redis
+    ]
+  );
 
-  lamp_php83 = self.php83.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
+  lamp_php83 = self.php83.withExtensions (
+    { enabled, all }:
+    enabled
+    ++ [
+      all.bcmath
+      all.imagick
+      all.memcached
+      all.redis
+    ]
+  );
 
-  lamp_php84 = self.php84.withExtensions ({ enabled, all }:
-              enabled ++ [
-                all.bcmath
-                all.imagick
-                all.memcached
-                all.redis
-              ]);
+  lamp_php84 = self.php84.withExtensions (
+    { enabled, all }:
+    enabled
+    ++ [
+      all.bcmath
+      all.imagick
+      all.memcached
+      all.redis
+    ]
+  );
 
-  latencytop_nox = super.latencytop.overrideAttrs(_: {
-    buildInputs = with self; [ ncurses glib ];
+  latencytop_nox = super.latencytop.overrideAttrs (_: {
+    buildInputs = with self; [
+      ncurses
+      glib
+    ];
     makeFlags = [ "HAS_GTK_GUI=" ];
   });
 
   libpcap-vxlan = super.libpcap.overrideAttrs (old: {
     pname = "libpcap-vxlan";
-    patches = old.patches or [] ++ [
+    patches = old.patches or [ ] ++ [
       ./libpcap-replace-geneve-with-vxlan.patch
     ];
   });
@@ -342,14 +443,17 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
     enableHashes = "strong,sha256crypt";
   };
 
-  links2_nox = super.links2.override { enableX11 = false; enableFB = false; };
+  links2_nox = super.links2.override {
+    enableX11 = false;
+    enableFB = false;
+  };
 
-  lkl = super.lkl.overrideAttrs(_: rec {
+  lkl = super.lkl.overrideAttrs (_: rec {
     version = "2023-11-07";
     src = fetchFromGitHub {
       rev = "970883c348b61954a11c8c1ab9a2ab3ff0d89f08";
-      owner  = "lkl";
-      repo   = "linux";
+      owner = "lkl";
+      repo = "linux";
       hash = "sha256-MpvhYLH3toC5DaxeiQxKlYWjrPoFw+1eWkkX3XIiVQ0=";
     };
 
@@ -361,75 +465,88 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
     '';
   });
 
-
   mysql = super.mariadb;
 
-  monitoring-plugins = let
-    binPath = lib.makeBinPath (with self; [
-      (placeholder "out")
-      "/run/wrappers"
-      coreutils
-      gnugrep
-      gnused
-      lm_sensors
-      net-snmp
-      procps
-      unixtools.ping
-    ]);
-    ping = "${self.unixtools.ping}/bin/ping";
-  in
-  super.monitoring-plugins.overrideAttrs(_: rec {
-    # Taken from upstream postPatch, but with an absolute path for ping instead
-    # of relying on PATH. Looks like PATH doesn't apply to check_ping (it's a C
-    # program and not a script like other checks), so check_ping needs to
-    # be compiled with the full path.
-    postPatch = ''
-      sed -i configure.ac \
-        -e 's|^DEFAULT_PATH=.*|DEFAULT_PATH=\"${binPath}\"|'
+  monitoring-plugins =
+    let
+      binPath = lib.makeBinPath (
+        with self;
+        [
+          (placeholder "out")
+          "/run/wrappers"
+          coreutils
+          gnugrep
+          gnused
+          lm_sensors
+          net-snmp
+          procps
+          unixtools.ping
+        ]
+      );
+      ping = "${self.unixtools.ping}/bin/ping";
+    in
+    super.monitoring-plugins.overrideAttrs (_: rec {
+      # Taken from upstream postPatch, but with an absolute path for ping instead
+      # of relying on PATH. Looks like PATH doesn't apply to check_ping (it's a C
+      # program and not a script like other checks), so check_ping needs to
+      # be compiled with the full path.
+      postPatch = ''
+        sed -i configure.ac \
+          -e 's|^DEFAULT_PATH=.*|DEFAULT_PATH=\"${binPath}\"|'
 
-      configureFlagsArray+=(
-        --with-ping-command='${ping} -4 -n -U -w %d -c %d %s'
-        --with-ping6-command='${ping} -6 -n -U -w %d -c %d %s'
-      )
-    '';
+        configureFlagsArray+=(
+          --with-ping-command='${ping} -4 -n -U -w %d -c %d %s'
+          --with-ping6-command='${ping} -6 -n -U -w %d -c %d %s'
+        )
+      '';
 
-    # These checks are not included by default.
-    # Our platform doesn't use them, maybe some customer?
-    postInstall = (super.monitoring-plugins.postInstall or "") + ''
-      cp plugins-root/check_dhcp $out/bin
-      cp plugins-root/check_icmp $out/bin
-    '';
-  });
+      # These checks are not included by default.
+      # Our platform doesn't use them, maybe some customer?
+      postInstall =
+        (super.monitoring-plugins.postInstall or "")
+        + ''
+          cp plugins-root/check_dhcp $out/bin
+          cp plugins-root/check_icmp $out/bin
+        '';
+    });
 
   # This is our default version.
-  nginxStable = (super.nginxStable.override {
-    modules = with super.nginxModules; [
-      dav
-      modsecurity
-      moreheaders
-      rtmp
-    ];
-  }).overrideAttrs(a: a // {
-    patches = a.patches ++ [
-      ./remote_addr_anon.patch
-    ];
-  });
+  nginxStable =
+    (super.nginxStable.override {
+      modules = with super.nginxModules; [
+        dav
+        modsecurity
+        moreheaders
+        rtmp
+      ];
+    }).overrideAttrs
+      (
+        a:
+        a
+        // {
+          patches = a.patches ++ [
+            ./remote_addr_anon.patch
+          ];
+        }
+      );
 
   nginx = self.nginxStable;
 
-  nginxMainline = (super.nginxMainline.override {
-    modules = with super.nginxModules; [
-      dav
-      modsecurity
-      rtmp
-    ];
-  }).overrideAttrs(a: {
-    patches = a.patches ++ [
-      ./remote_addr_anon.patch
-    ];
-  });
+  nginxMainline =
+    (super.nginxMainline.override {
+      modules = with super.nginxModules; [
+        dav
+        modsecurity
+        rtmp
+      ];
+    }).overrideAttrs
+      (a: {
+        patches = a.patches ++ [
+          ./remote_addr_anon.patch
+        ];
+      });
 
-  nginxLegacyCrypt = self.nginx.overrideAttrs(old: {
+  nginxLegacyCrypt = self.nginx.overrideAttrs (old: {
     strictDeps = true;
     buildInputs = [ self.libxcrypt-legacy ] ++ old.buildInputs;
   });
@@ -437,7 +554,7 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
   percona = self.percona80;
-  percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs(oldAttrs: {
+  percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs (oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
     # This doesn't work. Looks like a bug in Nixpkgs.
     # Replacing the interpreter path before the Perl builder touches it fixes this.
@@ -489,7 +606,9 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
   });
 
   python38 = builtins.trace "using 21_05 python38" (lib.dontRecurseIntoAttrs fc-nixos-21_05.python38);
-  python38Packages = builtins.trace "using 21_05 python38Packages" (lib.dontRecurseIntoAttrs fc-nixos-21_05.python38Packages);
+  python38Packages = builtins.trace "using 21_05 python38Packages" (
+    lib.dontRecurseIntoAttrs fc-nixos-21_05.python38Packages
+  );
   py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
 
   qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
@@ -515,11 +634,13 @@ builtins.mapAttrs (_: patchPhps (fetchpatch {
 
   solr = super.callPackage ./solr { };
 
-  tcpdump = (super.tcpdump.override {
-    libpcap = self.libpcap-vxlan;
-  }).overrideAttrs(old: {
-    pname = "tcpdump-vxlan";
-  });
+  tcpdump =
+    (super.tcpdump.override {
+      libpcap = self.libpcap-vxlan;
+    }).overrideAttrs
+      (old: {
+        pname = "tcpdump-vxlan";
+      });
 
   xtrabackup = lib.warn "The `xtrabackup` package has been renamed to `percona-xtrabackup`." self.percona-xtrabackup;
 }

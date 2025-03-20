@@ -8,7 +8,7 @@ import ./make-test-python.nix (
     nodes.machine =
       { ... }:
       {
-        imports = [ (testlib.fcConfig {}) ];
+        imports = [ (testlib.fcConfig { }) ];
 
         config = {
           flyingcircus.logrotate.enable = true;

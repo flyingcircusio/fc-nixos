@@ -1,4 +1,10 @@
-{ pkgs, lib, domain, mailHost, webmailHost }:
+{
+  pkgs,
+  lib,
+  domain,
+  mailHost,
+  webmailHost,
+}:
 
 with builtins;
 
@@ -27,9 +33,9 @@ pkgs.writeTextFile {
         </outgoingServer>
       </emailProvider>
     ${lib.optionalString (webmailHost != null) ''
-    ${"  "}<webMail>
-        <loginPage url="https://${webmailHost}/" />
-      </webMail>''}
+      ${"  "}<webMail>
+          <loginPage url="https://${webmailHost}/" />
+        </webMail>''}
     </clientConfig>
   '';
 }

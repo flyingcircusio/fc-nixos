@@ -1,8 +1,9 @@
-{ lib
-, buildPythonPackage
-, cssselect
-, fetchPypi
-, lxml
+{
+  lib,
+  buildPythonPackage,
+  cssselect,
+  fetchPypi,
+  lxml,
 }:
 
 buildPythonPackage rec {

@@ -1,4 +1,9 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 
 with lib;
 
@@ -7,27 +12,33 @@ let
   cfg = config.flyingcircus.beats;
 
   resourceGroupLoghosts =
-    fclib.listServiceAddresses "graylog-server" ++
-    fclib.listServiceAddresses "loghost-server";
+    fclib.listServiceAddresses "graylog-server"
+    ++ fclib.listServiceAddresses "loghost-server";
 
   loghostsToUse = lib.unique (
     # Pick one of the resource group loghosts or a graylog from the cluster...
-    (if (length resourceGroupLoghosts > 0) then
-      [(head resourceGroupLoghosts)] else []) ++
+    (if (length resourceGroupLoghosts > 0) then [ (head resourceGroupLoghosts) ] else [ ])
+    ++
 
-    # ... and always add the central location loghost (if it exists).
-    (fclib.listServiceAddresses "loghost-location-server"));
+      # ... and always add the central location loghost (if it exists).
+      (fclib.listServiceAddresses "loghost-location-server")
+  );
 in
 {
   options.flyingcircus.beats = {
     logTargets = mkOption {
-      type = with types; attrsOf (submodule {
-        options = {
-          host = mkOption { type = str; };
-          port = mkOption { type = int; };
-          extraSettings = mkOption { type = attrs; default = {}; };
-        };
-      });
+      type =
+        with types;
+        attrsOf (submodule {
+          options = {
+            host = mkOption { type = str; };
+            port = mkOption { type = int; };
+            extraSettings = mkOption {
+              type = attrs;
+              default = { };
+            };
+          };
+        });
       description = ''
         Where beats should send the messages,
         using the logstash output.
@@ -39,16 +50,21 @@ in
 
     fields = mkOption {
       type = types.attrs;
-      default = {};
+      default = { };
       description = ''
         Additional fields that are added to each log message.
         They appear as field_<name> in the log message.
       '';
-     };
+    };
   };
 
-  config.flyingcircus.beats.logTargets =
-    lib.listToAttrs
-      (map (l: lib.nameValuePair l { host = l; port = 12301; })
-      loghostsToUse);
+  config.flyingcircus.beats.logTargets = lib.listToAttrs (
+    map (
+      l:
+      lib.nameValuePair l {
+        host = l;
+        port = 12301;
+      }
+    ) loghostsToUse
+  );
 }
