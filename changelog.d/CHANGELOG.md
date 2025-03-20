@@ -1,3 +1,51 @@
+# Release 2025_007
+
+## Impact
+
+- A bullet item for the Impact category.
+
+Devhost VMs get restarted
+
+- A bullet item for the Impact category.
+
+- [`rabbitmqadmin-ng`](https://www.rabbitmq.com/docs/management-cli) is now installed by default on machines with
+  the `rabbitmq` role.
+
+
+## NixOS XX.XX platform
+
+- nginx, monitoring: also check validity of ACME (Letsencrypt) certificates
+  that are not used for nginx HTTPS.
+  There are two separate checks now: all ACME certs are checked via the local
+  file system.
+  Certificates used for nginx HTTPS get an additional check that works like the
+  previous one, using HTTPS requests.
+  We still assume here that nginx is listening for HTTPS on port 443.
+  For special configurations, the sensu check command has to be overridden manually.
+
+- devhost: stop VMs gracefully (PL-133536)
+
+- percona83: bring back role to allow upgrading existing VMs from platform 24.05
+  - percona-8.3.x is already end-of-life, we do not recommend adopting this role for new VMs
+  - percona80 continues to be supported as a long-term support release thoughout the 24.11 platform version
+
+- hardware: unload the XHCI USB driver at shutdown to work around a
+  problem with certain kernel and hardware combinations improperly
+  deconfiguring USB devices at shutdown (PL-133421).
+
+- varnish: fix `varnish_http` sensu check execution, also check IPv6 bind addresses (PL-133554)
+
+- issue trace messages when nixpkgs-21.05 is evaluated (PL-33522)
+    - We still use parts of nixpkgs-21.05 for certain hardware and infrastructure features. As we generally do not expect it to be used in virtual machines though, emit a trace during evaluation to discover cases that differ.
+
+- Monitoring for network interface speed: remove the limit for maximum speeds
+  and make a more differentiated expectation around where we expect 1G or 10G+
+  links. (PL-133472)
+
+- devhost: improve error handling in image download (PL-133539)
+
+
+
 # Release 2025_006
 
 ## NixOS XX.XX platform
