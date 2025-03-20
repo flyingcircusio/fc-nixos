@@ -258,7 +258,7 @@ rec {
 
   fcVlanIfaces = mapAttrs' (vlan: vid: {
     name = "eth${vlan}";
-    value = { vlan = vid; assignIP = true; };
+    value = { vlan = vid; assignIP = false; };
   });
 
   fcIPMap = listToAttrs (concatLists (mapAttrsToList (name: vid: [
