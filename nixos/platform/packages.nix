@@ -60,7 +60,6 @@
         openssl
         parted
         pkg-config
-        w3m-nographics
         psmisc
         pwgen
         (python3.withPackages (ps: with ps; [ setuptools ]))
@@ -78,11 +77,16 @@
         tree
         unzip
         vim
+        w3m-nographics
         wdiff
         wget
         xfsprogs
         zip
       ];
+
+    environment.shellAliases = {
+      dstat = "dool";
+    };
 
     programs.mtr.enable = config.fclib.mkPlatform true;
 
