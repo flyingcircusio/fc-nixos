@@ -24,7 +24,7 @@
         curl
         db
         dnsutils
-        dstat
+        dool
         ethtool
         fd
         file
