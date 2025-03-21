@@ -1,20 +1,27 @@
 exclude: ^secrets/|^appenv$|pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(tests/testlib.nix|nixos/roles/devhost/vm.nix|tests/physical-installer.nix)|^changelog.d/new_fragment.md.j2$
 repos:
 - hooks:
+  - id: detect-private-key
+  - id: check-added-large-files
   - exclude: "(?x)^(\n  secrets/|environments/.*/secret.*|\n  .*\\.patch\n)$\n"
     id: trailing-whitespace
   - exclude: "(?x)^(\n  environments/.*/secret.*|\n  .*\\.patch\n)$\n"
     id: end-of-file-fixer
-  - id: check-yaml
-  - id: check-added-large-files
-  - id: check-json
-  - id: check-xml
-  - id: check-toml
-  - id: detect-private-key
+  - exclude: "(?x)^(\n  environments/.*/secret.*|\n  .*\\.patch\n)$\n"
+    id: check-yaml
+  - exclude: "(?x)^(\n  environments/.*/secret.*|\n  .*\\.patch\n)$\n"
+    id: check-json
+  - exclude: "(?x)^(\n  environments/.*/secret.*|\n  .*\\.patch\n)$\n"
+    id: check-xml
+  - exclude: "(?x)^(\n  environments/.*/secret.*|\n  .*\\.patch\n)$\n"
+    id: check-toml
   repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v5.0.0
 - hooks:
-  - args: ["--profile", "black", "--filter-files"]
+  - args:
+    - --profile
+    - black
+    - --filter-files
     id: isort
     name: isort (python)
   repo: https://github.com/pycqa/isort
