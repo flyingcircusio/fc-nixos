@@ -18,3 +18,4 @@ branches.
 - nix: use nix-2.25 on all machines
 - dstat: drop as it is unmaintained, replace with `dool`
   - `dstat` is now an alias for `dool`
+- latencytop: drop package, remove from default installation
