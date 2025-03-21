@@ -8,7 +8,7 @@ rec {
   recurseForDerivations = true;
 
   agent = pythonPackages.callPackage ./agent {
-    nix = pkgs.nixVersions.nix_2_18;
+    nix = pkgs.nixVersions.nix_2_25;
   };
   agentWithSlurm = agent.override { enableSlurm = true; };
 

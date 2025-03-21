@@ -66,8 +66,8 @@ import ./make-test-python.nix (
 
       relevant_nix_versions = [
         # the default on production
-        "2.18",
-        # default Nix in 24.11
+        "2.25",
+        # default Nix in 25.05
         "2.24",
         # the default on staging
         "2.25",
