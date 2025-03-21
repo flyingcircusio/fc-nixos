@@ -174,9 +174,6 @@ in
       kickInterfaces
     ];
 
-    environment.shellAliases = {
-    };
-
     networking.firewall.extraCommands = (
       lib.concatStringsSep "\n" [
         martianIptablesInput
