@@ -30,7 +30,7 @@ You can look up packages and their descriptions via:
 - curl
 - db
 - dnsutils
-- dstat
+- dool
 - ethtool
 - fd
 - file

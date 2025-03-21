@@ -183,8 +183,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   docsplit = super.callPackage ./docsplit { };
 
-  dstat = super.dstat.overrideAttrs (old: {
-    patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
+  dool = super.dool.overrideAttrs (old: {
+    patches = old.patches or [ ] ++ [ ./dool-interface-altnames.patch ];
   });
 
   frr = super.frr.overrideAttrs (old: rec {
