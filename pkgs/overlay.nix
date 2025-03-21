@@ -453,14 +453,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     ]
   );
 
-  latencytop_nox = super.latencytop.overrideAttrs (_: {
-    buildInputs = with self; [
-      ncurses
-      glib
-    ];
-    makeFlags = [ "HAS_GTK_GUI=" ];
-  });
-
   libpcap-vxlan = super.libpcap.overrideAttrs (old: {
     pname = "libpcap-vxlan";
     patches = old.patches or [ ] ++ [

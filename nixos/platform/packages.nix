@@ -39,7 +39,6 @@
         multipath-tools # kpartx
         iotop
         jq
-        latencytop_nox
         links2_nox
         lsof
         lnav

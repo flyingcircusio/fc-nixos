@@ -45,7 +45,6 @@ You can look up packages and their descriptions via:
 - multipath-tools (kpartx)
 - iotop
 - jq
-- latencytop
 - links2
 - lsof
 - lnav
