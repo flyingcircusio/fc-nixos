@@ -66,8 +66,8 @@ import ./make-test-python.nix (
 
       relevant_nix_versions = [
         # the default on production
-        "2.18",
-        # default Nix in 24.11
+        "2.25",
+        # default Nix in 25.05
         "2.24",
         # the default on staging
         "2.25",
@@ -120,25 +120,25 @@ import ./make-test-python.nix (
 
 
       with subtest("rzob production vm"):
-          verify_nix_versions(production, "2.18")
+          verify_nix_versions(production, "2.25")
 
       with subtest("rzob non-prod vm"):
           verify_nix_versions(nonProd, "2.25")
 
       with subtest("rzob prod vm with slurm"):
-          verify_nix_versions(slurmOnProduction, "2.18", expect_slurm=True)
+          verify_nix_versions(slurmOnProduction, "2.25", expect_slurm=True)
 
       with subtest("rzob non-prod vm with slurm"):
           verify_nix_versions(slurmOnNonProd, "2.25", expect_slurm=True)
 
       with subtest("whq vm"):
-          verify_nix_versions(whqVM, "2.18")
+          verify_nix_versions(whqVM, "2.25")
 
       with subtest("whq vm with non-prod flag"):
           verify_nix_versions(whqVMNonProd, "2.25")
 
       with subtest("dev vm prod"):
-          verify_nix_versions(devVM, "2.18")
+          verify_nix_versions(devVM, "2.25")
 
       with subtest("dev vm non-prod"):
           verify_nix_versions(devVMNonProd, "2.25")
