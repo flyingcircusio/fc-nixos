@@ -1,23 +1,23 @@
 {
   "fc-nixos-21_05": {
-    "hash": "sha256-+Pv5mVb8WT9EP/nfJvneqW5ZHZ3PAkEXIFZAWXgdZ90=",
+    "hash": "sha256-jXN15QR0e7JpXLpC9I4w6Arw2h0KUjgZMvSjv/aesms=",
     "owner": "flyingcircusio",
     "repo": "fc-nixos",
-    "rev": "0d336728318db4687b018dca786863c39fb564d9"
+    "rev": "cb34a33a284401eb8ae87ec5e90d8b9226d4cff2"
   },
   "nixos-mailserver": {
     "deepClone": false,
     "fetchSubmodules": false,
-    "hash": "sha256-HUZj/r/9B4Dq0nhSi+dCWYkUO+nzkcgvVgL9tXTRnb4=",
+    "hash": "sha256-xgsL3M91BO5wnoIAZ/tpmRH2u4YC+eQG13P7n4D1JDU=",
     "leaveDotGit": false,
-    "rev": "2a9852c9331ccf7841bf4d7b133c2bc288db8b03",
+    "rev": "3440c718b63bce427e6a0d7ffee002a0722bcb17",
     "url": "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/"
   },
   "nixpkgs": {
-    "hash": "sha256-htFYumMkBW0aRKdSOjbVHMV5+EKBpAldA4zKs1zlw5g=",
+    "hash": "sha256-N9waS5jeKAStvcYCW+Rk83SbsZxNpFhBblXaQ+Mu/8w=",
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
-    "rev": "dcea629e894217ce1399bb507b25e27ffb1e0362"
+    "rev": "b647091714c37bb5320429e6cb10ac16c4950461"
   },
   "nixpkgs-21_05": {
     "hash": "sha256-5ufC/t0sUFS/LspiEwU8DW5+uVYM3diZ1IC7KjX9ek4=",
@@ -26,9 +26,9 @@
     "rev": "a467063b4abb8bd7636d9bb2475edbd2f0e6c6b6"
   },
   "poetry2nix": {
-    "hash": "sha256-F7N1mxH1VrkVNHR3JGNMRvp9+98KYO4b832KS8Gl2xI=",
+    "hash": "sha256-nzgO/ZCSBzWjbMkYDxG+yl9Z2eGbCgQu06Oku3ir5D4=",
     "owner": "nix-community",
     "repo": "poetry2nix",
-    "rev": "f554d27c1544d9c56e5f1f8e2b8aff399803674e"
+    "rev": "b9a98080beff0903a5e5fe431f42cde1e3e50d6b"
   }
 }
