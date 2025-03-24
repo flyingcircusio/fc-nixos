@@ -176,7 +176,7 @@ in
             PIDFile = "/run/varnishncsa/varnishncsa.pid";
             User = "varnish";
             Group = "varnish";
-            ExecStart = "${cfg.package}/bin/varnishncsa -n ${cfg.stateDir} -D -a -w /var/log/varnish.log -P /run/varnishncsa/varnishncsa.pid";
+            ExecStart = "${cfg.package}/bin/varnishncsa -D -a -w /var/log/varnish.log -P /run/varnishncsa/varnishncsa.pid";
             ExecReload = "${kill} -HUP $MAINPID";
           };
         };
