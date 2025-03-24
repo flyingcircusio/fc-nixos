@@ -12,8 +12,10 @@ import subprocess
 import sys
 import syslog
 from multiprocessing.pool import ThreadPool
+from pathlib import Path
 
 import fc.util.directory
+import fc.util.enc
 
 _log = logging.getLogger(__name__)
 
@@ -54,10 +56,34 @@ def delete_configs():
             VM(name).unlink()
 
 
+def update_all_rg_users():
+    directory = fc.util.directory.connect(ring="max")
+    _log.info("retrieve-all-rg-users")
+    Path("/etc/qemu/users").mkdir(exist_ok=True)
+    try:
+        rgs = directory.list_resource_groups()
+    except Exception:
+        _log.warning("retrieve-all-resource-groups-failed", exc_info=True)
+        return
+    for rg in rgs:
+        try:
+            users = directory.list_users(rg)
+        except Exception:
+            _log.warning("retrieve-all-rg-users-failed", exc_info=True)
+            continue
+        try:
+            fc.util.enc.conditional_update(
+                f"/etc/qemu/users/{rg}.json", users, 0o640
+            )
+        except (IOError, OSError):
+            fc.util.enc.inplace_update(f"/etc/qemu/users/{rg}.json", users)
+
+
 def main():
     h = logging.handlers.SysLogHandler(facility=syslog.LOG_LOCAL4)
     logging.basicConfig(level=logging.DEBUG, handlers=[h])
 
+    update_all_rg_users()
     results = []
     pool = ThreadPool(5)
     for cfg in glob.glob("/etc/qemu/vm/*.cfg"):

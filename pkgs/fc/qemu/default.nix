@@ -15,6 +15,7 @@
   gptfdisk,
   parted,
   xfsprogs,
+  dosfstools,
   procps,
   strace,
   file,
@@ -67,6 +68,7 @@ py.buildPythonPackage rec {
     systemd
     utillinux
     xfsprogs
+    dosfstools
     py.requests
     py.future
     py.colorama

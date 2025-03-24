@@ -57,13 +57,19 @@ class Node(object):
     def setup(self):
         """Decide which setup mode to use and run it."""
         p = self.enc["parameters"]
-        image = p["environment"]
+
+        # TODO: cleanup after image migration
+        environment_class = p["environment_class"].lower()
+        if environment_class == "ubuntu":
+            image_path = f"images-{environment_class}/{p['environment']}"
+        else:
+            image_path = p["environment"]
 
         # use json command output as its output is more stable between Ceph releases
         snapshots = run.json.rbd(
             # fmt: off
             "--id", self.disk.ceph_id,
-            "snap", "ls", f"{IMAGE_POOL}/{image}"
+            "snap", "ls", f"{IMAGE_POOL}/{image_path}"
             # fmt: on
         )
         # Note: The rbd cli returns snapshots ordered by their ID (which
@@ -81,14 +87,16 @@ class Node(object):
             last_snap_name = snapshots[-1]["name"]
         except IndexError:
             raise RuntimeError(
-                "Could not find a valid snapshot for image {}.".format(image)
+                "Could not find a valid snapshot for image {}.".format(
+                    image_path
+                )
             )
         run.rbd(
             # fmt: off
             "--id", self.disk.ceph_id,
             "clone",
-            f"{IMAGE_POOL}/{image}@{last_snap_name}",
-            f"{self.enc['parameters']['rbd_pool']}/{self.name}.root"
+            f"{IMAGE_POOL}/{image_path}@{last_snap_name}",
+            f"{p['rbd_pool']}/{self.name}.root"
             # fmt: on
         )
 
