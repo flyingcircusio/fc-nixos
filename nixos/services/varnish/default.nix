@@ -7,7 +7,7 @@
 let
   cfg = config.flyingcircus.services.varnish;
   vcfg = config.services.varnish;
-  vadm = "${vcfg.package}/bin/varnishadm -n ${vcfg.stateDir}";
+  vadm = "${vcfg.package}/bin/varnishadm";
 
   inherit (lib) mkOption mkEnableOption types;
 
@@ -171,7 +171,6 @@ in
       inherit (cfg) enable extraCommandLine http_address;
 
       enableConfigCheck = false;
-      stateDir = "/run/varnishd";
       config = ''
         vcl 4.0;
         import std;
@@ -190,9 +189,6 @@ in
     environment.etc."varnish/startup.sh".source = startupscript;
 
     systemd.services.varnish = {
-      preStart = lib.mkBefore ''
-        rm -rf ${vcfg.stateDir}
-      '';
       postStart = ''
         /etc/varnish/startup.sh
       '';
