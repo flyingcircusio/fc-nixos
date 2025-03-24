@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with builtins;
 
@@ -39,8 +44,9 @@ let
 in
 {
   config = lib.mkIf role.enable {
-    services.bird2 = {
+    services.bird = {
       enable = true;
+      package = pkgs.bird2;
       config = lib.concatStringsSep "\n\n" [
         (if role.isPrimary then primaryConfig else secondaryConfig)
         commonConfig
