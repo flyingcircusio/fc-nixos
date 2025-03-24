@@ -11,17 +11,6 @@ let
   cfg = config.flyingcircus.services.redis;
   fclib = config.fclib;
 
-  generatedPassword = lib.removeSuffix "\n" (
-    readFile (pkgs.runCommand "redis.password" { } "${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > $out")
-  );
-
-  password = lib.removeSuffix "\n" (
-    if cfg.password == null then
-      (fclib.configFromFile /etc/local/redis/password generatedPassword)
-    else
-      cfg.password
-  );
-
   extraConfig = fclib.configFromFile /etc/local/redis/custom.conf "";
 
 in
@@ -110,7 +99,7 @@ in
         "" = {
           bind = concatStringsSep " " cfg.listenAddresses;
           enable = true;
-          requirePass = password;
+          requirePassFile = "/etc/local/redis/password";
           settings = lib.mkMerge [
             (lib.mkIf (cfg.maxmemory-policy != null) {
               inherit (cfg) maxmemory-policy;
@@ -123,17 +112,32 @@ in
       };
     };
 
-    systemd.services.redis.serviceConfig.Restart = "always";
-
-    flyingcircus.activationScripts.redis = lib.stringAfter [ "fc-local-config" ] ''
-      if [[ ! -e /etc/local/redis/password ]]; then
-        ( umask 007;
-          echo ${lib.escapeShellArg password} > /etc/local/redis/password
-          chown redis:service /etc/local/redis/password
-        )
-      fi
-      chmod 0660 /etc/local/redis/password
-    '';
+    systemd.services.redis.serviceConfig =
+      let
+        preStart = pkgs.writeShellScript "redis-prestart" (
+          ''
+            if [[ ! -e /etc/local/redis/password ]]; then (
+            umask 007;
+          ''
+          + lib.optionalString (cfg.password == null) ''
+            ${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > /etc/local/redis/password
+          ''
+          + lib.optionalString (cfg.password != null) ''
+            echo ${lib.escapeShellArg cfg.password} > /etc/local/redis/password
+          ''
+          + ''
+            ) fi
+            chmod 0660 /etc/local/redis/password
+            chown redis:service /etc/local/redis/password
+          ''
+        );
+      in
+      {
+        ExecStartPre = lib.mkBefore [
+          ("+" + preStart)
+        ];
+        Restart = "always";
+      };
 
     flyingcircus.localConfigDirs.redis = {
       dir = "/etc/local/redis";
@@ -143,16 +147,21 @@ in
     flyingcircus.services = {
       sensu-client.checks.redis = {
         notification = "Redis alive";
-        command = ''
-          ${pkgs.sensu-plugins-redis}/bin/check-redis-ping.rb \
-            -h localhost -P ${lib.escapeShellArg password}
-        '';
+        command = toString (
+          pkgs.writeShellScript "redis-sensu-check" ''
+            password=$(</etc/local/redis/password)
+            ${pkgs.sensu-plugins-redis}/bin/check-redis-ping.rb -h localhost -P $password
+          ''
+        );
       };
 
+      telegraf.environmentVariablesFromFile = {
+        REDIS_PASSWORD = "/etc/local/redis/password";
+      };
       telegraf.inputs.redis = [
         {
           servers = [
-            "tcp://:${password}@localhost:${toString config.services.redis.servers."".port}"
+            "tcp://:$REDIS_PASSWORD@localhost:${toString config.services.redis.servers."".port}"
           ];
           # Drop string fields. They are converted to labels in Prometheus
           # which blows up the number of metrics.
@@ -175,8 +184,8 @@ in
     environment.etc."local/redis/README.txt".text = ''
       Redis is running on this machine.
 
-      You can find the password for the redis in the `password`. You can also change
-      the redis password by changing the `password` file.
+      You can find the password for the redis in the `password` file.
+      You can also change the redis password by changing the `password` file.
 
       Changing the config via custom.conf is not supported anymore. Please use a NixOS module
       with the option `services.redis.servers."".settings` instead.
