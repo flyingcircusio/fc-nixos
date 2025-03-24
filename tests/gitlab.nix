@@ -28,6 +28,7 @@ import ./make-test-python.nix (
           virtualisation.memorySize = 6144;
           virtualisation.cores = 6;
           virtualisation.writableStore = false;
+          virtualisation.useNixStoreImage = true;
 
           flyingcircus.roles.gitlab = {
             enable = true;
