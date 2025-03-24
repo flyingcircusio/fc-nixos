@@ -122,6 +122,7 @@ rec {
       flyingcircus.enc.parameters = (lib.recursiveUpdate {
         inherit resource_group location secrets;
 
+        memory = config.virtualisation.memorySize;
         interfaces = mapAttrs (name: vid: {
           mac = "52:54:00:12:0${toString vid}:0${toString test_node_id}";
           bridged = false;
