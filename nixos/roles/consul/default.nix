@@ -12,7 +12,7 @@ let
   enc = config.flyingcircus.enc;
   secrets = enc.parameters.secrets;
   public_fqdn = "${enc.name}.fe.${enc.parameters.location}.fcio.net";
-  server_secret_script = fclib.python3BinFromFile ./update-server-secrets.py;
+  server_secret_script = fclib.python3BinFromFile ./update-server-secrets.py { };
   cfg = config.flyingcircus.roles.consul_server;
 in
 {

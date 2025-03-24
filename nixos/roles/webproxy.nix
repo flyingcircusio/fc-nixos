@@ -75,62 +75,17 @@ in
         };
         varnish_http =
           let
-            check-varnish-http =
-              pkgs.writers.writePython3 "check-varnish-http"
-                {
-                  flakeIgnore = [ "E501" ]; # ignore long lines
-                }
-                ''
-                  import subprocess
-                  import sys
-
-                  ports = []
-
-                  for line in (
-                      subprocess.check_output(["${cfg.package}/bin/varnishadm", "debug.listen_address"])
-                      .decode("ascii")
-                      .splitlines()
-                  ):
-                      line = line.strip()
-                      if not line:
-                          continue
-                      _, ip, port = line.split()
-                      ports.append((ip, port))
-
-                  if not ports:
-                      print("No listen_address reported by varnishadm")
-                      sys.exit(2)
-
-                  STATUS = 0
-
-                  for ip, port in ports:
-                      if ":" in ip:
-                          ip_version = "-6"
-                          print(f"Checking [{ip}]:{port} ...")
-                      else:
-                          ip_version = "-4"
-                          print(f"Checking {ip}:{port} ...")
-                      proc = subprocess.run(
-                          [
-                              "${pkgs.monitoring-plugins}/bin/check_http",
-                              "-H", ip,
-                              "-p", port,
-                              ip_version,
-                              "-c", "10",
-                              "-w", "3",
-                              "-t", "20",
-                              "-e", "HTTP",
-                          ]
-                      )
-                      print()
-                      STATUS = max([STATUS, proc.returncode])
-
-                  sys.exit(STATUS)
-                '';
+            check-varnish-http = fclib.python3BinFromFile ./check-varnish-http.py {
+              dependencies = [
+                cfg.package
+                pkgs.monitoring-plugins
+              ];
+              flakeIgnore = [ "E501" ]; # ignore long lines
+            };
           in
           {
             notification = "varnish port 8008 HTTP response";
-            command = toString check-varnish-http;
+            command = lib.getExe check-varnish-http;
           };
       };
 

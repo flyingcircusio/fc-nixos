@@ -165,6 +165,8 @@ rec {
       filter (u: any (g: g == group) (getAttr currentRG u.permissions)) config.flyingcircus.users.userData
     );
 
+  # TODO: consider moving writers like this to overlay, such that they are
+  # accessible as a package, not just via `fclib`
   writePrettyJSON =
     name: x:
     let
@@ -174,10 +176,48 @@ rec {
       ${pkgs.jq}/bin/jq . < ${json} > $out
     '';
 
+  /**
+     python3BinFromFile takes a path to a python file and an attributeset with some further options.
+     It outputs a directory with `bin/basename_of_python_file`.
+     Attrset options:
+     - dependencies: list of packages with executables that are added to PATH for the python program
+     - all other options are passed through to `writePython3Bin`.
+
+     # Examples
+     :::{.example}
+     ## `python3BinFromFile` usage example
+
+     ```nix
+     python3BinFromFile ./pkgs/test.py {
+       dependencies = [ pkgs.sl ];
+       libraries = [ pkgs.python3Packages.pyyaml ];
+     }
+     ```
+
+     :::
+  */
   python3BinFromFile =
     path:
-    pkgs.writers.writePython3Bin (removeSuffix ".py" (builtins.baseNameOf path)) { } (
-      lib.readFile path
-    );
+    {
+      dependencies ? [ ],
+      ...
+    }@args:
+    let
+      progname = removeSuffix ".py" (builtins.baseNameOf path);
+      writerArgs = lib.removeAttrs args [ "dependencies" ];
+      python3Writer = pkgs.writers.writePython3Bin progname writerArgs (lib.readFile path);
+      pathWrapper =
+        pkgs.runCommand "wrap-${progname}"
+          {
+            nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
+            meta.mainProgram = progname;
+          }
+          ''
+            mkdir -p $out/bin
+            makeBinaryWrapper ${lib.getExe python3Writer} $out/bin/${progname} \
+              --prefix PATH : "${lib.makeBinPath dependencies}"
+          '';
+    in
+    if dependencies == [ ] then python3Writer else pathWrapper;
 
 }
