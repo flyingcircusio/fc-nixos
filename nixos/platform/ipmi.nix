@@ -38,6 +38,11 @@ in
         description = "Additional options to pass to `check_ipmi_sensor`.";
         type = types.str;
       };
+      manageAdminUserName = mkOption {
+        default = true;
+        description = "Manage the admin user name (setting it to `ADMIN`).";
+        type = types.bool;
+      };
     };
   };
 
@@ -82,26 +87,31 @@ in
       serviceConfig.RemainAfterExit = true;
       path = [ pkgs.ipmitool ];
       wantedBy = [ "basic.target" ];
-      script = ''
-        ipmitool lan set 1 ipsrc static
-        sleep 1
-        ipmitool lan set 1 ipaddr ${ipmi_addr}
-        sleep 1
-        ipmitool lan set 1 netmask ${ipmi_netmask}
-        sleep 1
-        ipmitool lan set 1 defgw ipaddr ${ipmi_gw}
-        sleep 1
-        ipmitool sol set non-volatile-bit-rate 115.2 1
-        sleep 1
-        ipmitool sol set volatile-bit-rate 115.2 1
-        sleep 1
-        ipmitool user set name 2 ADMIN
-        # See https://serverfault.com/questions/361940/configuring-supermicro-ipmi-to-use-one-of-the-lan-interfaces-instead-of-the-ipmi/677087
-        # Ensure BMC is set to failover (SuperMicro only)
-        if ipmitool mc info | grep Supermicro > /dev/null ; then
-          ipmitool raw 0x30 0x70 0x0c 1 2 || true
-        fi
-      '';
+      script =
+        ''
+          ipmitool lan set 1 ipsrc static
+          sleep 1
+          ipmitool lan set 1 ipaddr ${ipmi_addr}
+          sleep 1
+          ipmitool lan set 1 netmask ${ipmi_netmask}
+          sleep 1
+          ipmitool lan set 1 defgw ipaddr ${ipmi_gw}
+          sleep 1
+          ipmitool sol set non-volatile-bit-rate 115.2 1
+          sleep 1
+          ipmitool sol set volatile-bit-rate 115.2 1
+          sleep 1
+        ''
+        + (lib.optionalString cfg.ipmi.manageAdminUserName ''
+          ipmitool user set name 2 ADMIN
+        '')
+        + ''
+          # See https://serverfault.com/questions/361940/configuring-supermicro-ipmi-to-use-one-of-the-lan-interfaces-instead-of-the-ipmi/677087
+          # Ensure BMC is set to failover (SuperMicro only)
+          if ipmitool mc info | grep Supermicro > /dev/null ; then
+            ipmitool raw 0x30 0x70 0x0c 1 2 || true
+          fi
+        '';
     };
 
     flyingcircus.passwordlessSudoPackages = [
