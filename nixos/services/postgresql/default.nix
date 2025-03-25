@@ -82,13 +82,10 @@ let
   mkExtensionNamesForAutoUpgrade =
     postgresqlMajor:
     let
-      availableExtensions =
-        lib.mapAttrs' (attrName: package: lib.nameValuePair (lib.getName package) attrName)
-          (
-            builtins.removeAttrs pkgs."postgresql${toString postgresqlMajor}Packages" [
-              "recurseForDerivations"
-            ]
-          );
+      pgSubpackages = fclib.attrsets.filterSuccessfulEval (packages."${toString postgresqlMajor}".pkgs);
+      availableExtensions = lib.mapAttrs' (
+        attrName: package: lib.nameValuePair (lib.getName package) attrName
+      ) pgSubpackages;
       pluginByPname =
         package:
         lib.optionals (availableExtensions ? ${lib.getName package}) [
