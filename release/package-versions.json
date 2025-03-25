@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-134.0.6998.88",
+    "name": "chromedriver-unwrapped-134.0.6998.165",
     "pname": "chromedriver-unwrapped",
-    "version": "134.0.6998.88"
+    "version": "134.0.6998.165"
   },
   "chromium": {
-    "name": "chromium-134.0.6998.88",
+    "name": "chromium-134.0.6998.165",
     "pname": "chromium",
-    "version": "134.0.6998.88"
+    "version": "134.0.6998.165"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -495,9 +495,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.4",
+    "name": "mastodon-4.3.6",
     "pname": "mastodon",
-    "version": "4.3.4"
+    "version": "4.3.6"
   },
   "matomo_5": {
     "name": "matomo_5-5.2.2",
