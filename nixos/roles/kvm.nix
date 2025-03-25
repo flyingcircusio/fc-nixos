@@ -262,7 +262,6 @@ in
       {
         commands = [
           "${cfg.package}/bin/fc-qemu -v handle-consul-event"
-          "/home/ctheune/fc.qemu/result/bin/fc-qemu -v handle-consul-event"
         ];
         users = [ "consul" ];
       }
