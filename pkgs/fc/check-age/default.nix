@@ -10,7 +10,8 @@ rustPlatform.buildRustPackage rec {
     filter = n: t: baseNameOf n != "target";
     src = cleanSource ./.;
   };
-  cargoHash = "sha256-UCoUQaUyVPUSCG6Qlg0CFGMqPoLaIc0iZnn92kWlibY=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-TK67iq1tv+L2DuYX7yNx4mY3O0SpcgUxzM/X6/TkkUo=";
 
   meta = {
     description = "Checks for outdated files and symlinks";
