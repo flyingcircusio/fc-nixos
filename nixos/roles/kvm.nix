@@ -19,6 +19,8 @@ let
   virtualGatewayV4 = "169.254.83.168";
   virtualGatewayV6 = "fe80::1";
 
+  vrfInterfaces = lib.filterAttrs (n: v: v.routed or false) fclib.network;
+
 in
 {
   options = {
@@ -456,15 +458,41 @@ in
       };
     };
 
-    boot.kernel.sysctl = {
-      # Agressively try to reclaim memory on the local NUMA node if a slub cache runs
-      # empty. Note that we still don't allow disk I/O to happen to satisfy kernel
-      # memory allocations.
-      "vm.zone_reclaim_mode" = "1";
+    boot.kernel.sysctl =
+      {
+        # Agressively try to reclaim memory on the local NUMA node if a slub cache runs
+        # empty. Note that we still don't allow disk I/O to happen to satisfy kernel
+        # memory allocations.
+        "vm.zone_reclaim_mode" = "1";
 
-      # Qemu hosts tend to cycle PIDs pretty fast
-      "kernel.pid_max" = lib.mkForce "999999"; # mkForce to avoid conflict with ceph role
-    };
+        # Qemu hosts tend to cycle PIDs pretty fast
+        "kernel.pid_max" = lib.mkForce "999999"; # mkForce to avoid conflict with ceph role
+      }
+      // (lib.optionalAttrs (vrfInterfaces != { }) {
+        # When we have guests which are attached to layer 3 routed VRFs,
+        # we need to enable forwarding for traffic from the guest tap
+        # interfaces and the bridge interface for the associated
+        # L3VNI.
+        #
+        # For IPv4 this is easy, as the kernel provides per-interface
+        # sysctls which control whether packets received on specific
+        # interfaces should be forwarded or not.
+        #
+        # Under IPv6 however, the per-interface sysctls named
+        # "forwarding" don't actually have any control over whether
+        # packets received on specific interfaces are forwarded or
+        # not. Instead, there is a single *global* sysctl which controls
+        # forwarding for *all* interfaces, and the administrator is
+        # expected to use a firewall to enforce forwarding policy.
+        #
+        # In the interests of keeping IPv4 and IPv6 configuration
+        # reasonably symmetric, we'll turn on global forwarding and set
+        # a firewall for both protocols here.
+        "net.ipv4.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+        "net.ipv4.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+        "net.ipv6.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+        "net.ipv6.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+      });
 
     # Run a proxy to give VMs running on this host fast access to radosgw.
 
@@ -503,6 +531,34 @@ in
       ''
         # Accept traffic to the radosgw service
         ${fclib.iptables "127.0.0.1"} -A nixos-fw -p tcp --dport 7480 -i ${srvDevice} -j nixos-fw-accept
-      '';
+      ''
+      + (lib.optionalString (vrfInterfaces != { }) ''
+        # Set up KVM server forwarding firewall
+        ip46tables -N fc-kvm-forward || true
+        ip46tables -A FORWARD -j fc-kvm-forward
+
+        # Allow traffic between the VM pub interfaces and the bridge
+        # for the pub VNI. This internally traverses "through" the
+        # VRF interface, so this needs to be included in the firewall
+        # here as well.
+        ${lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (name: net: ''
+            ip46tables -A fc-kvm-forward -i t${name}+ -o ${net.vrfInterface} -j ACCEPT
+            ip46tables -A fc-kvm-forward -i ${net.vrfInterface} -o t${name}+ -j ACCEPT
+            ip46tables -A fc-kvm-forward -i ${net.bridgedLink} -o ${net.vrfInterface} -j ACCEPT
+            ip46tables -A fc-kvm-forward -i ${net.vrfInterface} -o ${net.bridgedLink} -j ACCEPT
+          '') vrfInterfaces
+        )}
+
+        # Block all further forwarding traffic
+        ip46tables -A fc-kvm-forward -j nixos-fw-refuse
+      '');
+
+    networking.firewall.extraStopCommands = lib.optionalString (fclib.network ? pub) ''
+      ip46tables -D FORWARD -j fc-kvm-forward || true
+      ip46tables -F fc-kvm-forward 2>/dev/null || true
+      ip46tables -X fc-kvm-forward 2>/dev/null || true
+    '';
+
   };
 }
