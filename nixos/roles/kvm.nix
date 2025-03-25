@@ -304,6 +304,40 @@ in
 
     };
 
+    systemd.services.fc-qemu-reattach-vrf-taps = lib.mkIf (fclib.network ? pub) {
+      description = "Reattach all VM taps to VRF devices if needed.";
+
+      path = [
+        pkgs.jq
+        pkgs.iproute2
+      ];
+
+      script = ''
+        for interface in $(ip -j link show |  jq '.[] | .ifname' -r | egrep '^tpub'); do
+          echo "Ensuring attachment of $interface"
+          /etc/kvm/kvm-ifup-vrf $interface || true
+        done
+      '';
+
+      wantedBy = [ "multi-user.target" ];
+      bindsTo = [
+        "vrfpub-netdev.service"
+      ];
+      after = [
+        "vrfpub-netdev.service"
+      ];
+
+      # trigger a scrub when the vrf netdev changes to ensure that the
+      # host routes for the guest interfaces are also set up properly.
+      wants = [ "fc-qemu-scrub.service" ];
+      before = [ "fc-qemu-scrub.service" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+    };
+
     systemd.services.fc-qemu-clean-logs =
       let
         fcQemuCleanLogScript = (
