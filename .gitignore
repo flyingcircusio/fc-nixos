@@ -29,3 +29,9 @@ pkgs/fc/agent/lib
 pkgs/fc/agent/htmlcov
 pyenv
 .vscode/settings.json
+
+**/batou/.appenv
+**/batou/.batou*
+**/batou/**/hostmap.json
+**/batou/ssh_config*
+**/batou/insecure-private.key
