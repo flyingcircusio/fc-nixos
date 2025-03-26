@@ -256,10 +256,6 @@ let
           # We don't enable insecure ciphers by default, so this allows
           # clients to pick the most performant, per https://github.com/mozilla/server-side-tls/issues/260
           ssl_prefer_server_ciphers off;
-
-          # OCSP stapling
-          ssl_stapling on;
-          ssl_stapling_verify on;
         ''}
 
         ${optionalString (cfg.legacyTlsSettings) ''
@@ -269,10 +265,6 @@ let
           ssl_session_cache shared:SSL:10m;
           ssl_session_tickets off;
           ssl_prefer_server_ciphers on;
-
-          # OCSP stapling
-          ssl_stapling on;
-          ssl_stapling_verify on;
         ''}
 
         ${optionalString cfg.recommendedBrotliSettings ''
