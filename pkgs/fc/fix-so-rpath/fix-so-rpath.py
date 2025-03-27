@@ -14,11 +14,15 @@ def _verbose(msg):
     print(msg)
 
 
+def _no_verbose(msg):
+    pass
+
+
 def run(args):
     if args.verbose:
         verbose = _verbose
     else:
-        verbose = lambda msg: None
+        verbose = _no_verbose
     if args.prepend_rpath:
         rpath = "{}:{}".format(args.prepend_rpath, RPATH)
     else:

@@ -217,9 +217,7 @@ main.add_command(ensure_role)
 @click.argument("path")
 @click.argument("raw")
 @click.option("--method", type=click.Choice(["POST", "PUT"]), default="PUT")
-@click.option(
-    "--expected-status", "-s", multiple=True, default=[200], type=int
-)
+@click.option("--expected-status", "-s", multiple=True, default=[200], type=int)
 @click.pass_obj
 def call(graylog, path, raw, method, expected_status):
     """Runs an arbitrary API PUT/POST request."""
@@ -239,7 +237,7 @@ main.add_command(call)
 def get(graylog, path, expected_status, log_response):
     """Runs an arbitrary API GET request."""
     resp = graylog.get(graylog.api + path)
-    result = handle_api_response(resp, expected_status, log_response)
+    handle_api_response(resp, expected_status, log_response)
     print(resp.text)
 
 

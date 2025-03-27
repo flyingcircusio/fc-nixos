@@ -160,7 +160,7 @@ class BatteryReplace(nagiosplugin.Resource):
             raise RuntimeError(
                 "failed to query BBU status", e.output, e.returncode
             )
-        if not "BBU status for Adapter" in stdout:
+        if "BBU status for Adapter" not in stdout:
             # There is no adapter (with BBU) here at all. Nothing to report
             return [nagiosplugin.Metric("battery_replacement", "none")]
         _log.info("battery status: %s", stdout)

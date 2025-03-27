@@ -332,7 +332,7 @@ def check_autoupgrade_unexpected_dbs(
         traceback.print_exc()
         raise Exit(3)
 
-    print(f"OK: no unexpected databases found that would block autoupgrade.")
+    print("OK: no unexpected databases found that would block autoupgrade.")
 
 
 @app.command(help="Prep data dir for autoupgrade")

@@ -181,9 +181,7 @@ class Pool(object):
             [
                 "snap",
                 "rm",
-                "{}/{}@{}".format(
-                    self.name, rbdimage.image, rbdimage.snapshot
-                ),
+                "{}/{}@{}".format(self.name, rbdimage.image, rbdimage.snapshot),
             ]
         )
         self._images = None

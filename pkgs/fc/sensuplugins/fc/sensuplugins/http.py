@@ -108,9 +108,9 @@ def main():
         resp = session.get(target, allow_redirects=args.follow, timeout=10)
     except requests.ConnectionError as ex:
         critical(f"could not connect to remote host: {ex}")
-    except requests.TooManyRedirects as ex:
+    except requests.TooManyRedirects:
         critical("maximum redirection depth exceeded")
-    except requests.Timeout as ex:
+    except requests.Timeout:
         critical("request to remote host exceeded timeout: 10s")
 
     if args.expect is None:
@@ -123,9 +123,7 @@ def main():
                 f"request returned client error status code: {resp.status_code}"
             )
     elif resp.status_code not in args.expect:
-        critical(
-            f"request returned unexpected status code: {resp.status_code}"
-        )
+        critical(f"request returned unexpected status code: {resp.status_code}")
 
     ok(f"request returned status code: {resp.status_code}")
 

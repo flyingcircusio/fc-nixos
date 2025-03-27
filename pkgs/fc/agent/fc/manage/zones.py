@@ -120,7 +120,6 @@ $ORIGIN {origin}.
 """.format(
                 origin=self.origin,
                 ns0=self.parent.nameservers[0],
-                suffix=self.parent.suffix,
                 serial=serial,
             )
         ]

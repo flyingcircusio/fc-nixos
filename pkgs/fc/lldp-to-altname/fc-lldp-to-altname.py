@@ -21,7 +21,7 @@ def has_known_prefix(name):
 def quote_altname(name):
     name = re.sub(r"[^a-z0-9A-Z]+", "-", name)
     name = name.strip("-")
-    name = re.sub(f"--+", "-", name)
+    name = re.sub("--+", "-", name)
     return name
 
 

@@ -130,9 +130,7 @@ def vtysh_load_evpn_rib():
 
     return {
         int(outer_vni): {
-            mac: hops
-            for inner_vni, mac, hops in macs
-            if inner_vni == outer_vni
+            mac: hops for inner_vni, mac, hops in macs if inner_vni == outer_vni
         }
         for outer_vni in {mac[0] for mac in macs}
     }
@@ -163,9 +161,7 @@ def check_unicast_rib(args):
         if len(set(dests)) != len(dests):
             critical(
                 "duplicate addresses in kernel routing table",
-                "duplicate-kernel-address {}".format(
-                    " ".join(fmtaddrs(dests))
-                ),
+                "duplicate-kernel-address {}".format(" ".join(fmtaddrs(dests))),
             )
 
         for entry in data:
@@ -248,7 +244,6 @@ def check_unicast_rib(args):
             "extra-kernel-addresses {}".format(" ".join(fmtaddrs(fib_only)))
         )
 
-    neighdiff = dict()
     for addr in set(rib.keys()).intersection(set(fib.keys())):
         ribhops = rib[addr]
         fibhops = fib[addr]

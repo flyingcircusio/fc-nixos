@@ -714,7 +714,7 @@ def check_node(log, hostname):
         node_info = get_node_info(hostname)
     except Exception as e:
         log.error("check-node-api-error", exc_info=True)
-        errors.append("Cannot get node info from API: {e}")
+        errors.append(f"Cannot get node info from API: {e}")
         return CheckResult(errors)
 
     state, *flags = node_info["state"].split("+")

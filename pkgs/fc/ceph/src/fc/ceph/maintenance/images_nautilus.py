@@ -76,7 +76,7 @@ def get_release_images(envdata: Iterable[dict]) -> tuple[Iterable[dict], bool]:
             # note down errors for later
             got_errors = True
 
-            logger.exception(f"Received unexpected data from directory:")
+            logger.exception("Received unexpected data from directory:")
             logger.info("Continuing with next item despite error...")
 
     return (images, got_errors)
