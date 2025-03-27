@@ -183,8 +183,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   docsplit = super.callPackage ./docsplit { };
 
-  dstat = super.dstat.overrideAttrs (old: {
-    patches = old.patches ++ [ ./dstat-interface-altnames.patch ];
+  dool = super.dool.overrideAttrs (old: {
+    patches = old.patches or [ ] ++ [ ./dool-interface-altnames.patch ];
   });
 
   frr = super.frr.overrideAttrs (old: rec {
@@ -423,14 +423,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       all.redis
     ]
   );
-
-  latencytop_nox = super.latencytop.overrideAttrs (_: {
-    buildInputs = with self; [
-      ncurses
-      glib
-    ];
-    makeFlags = [ "HAS_GTK_GUI=" ];
-  });
 
   libpcap-vxlan = super.libpcap.overrideAttrs (old: {
     pname = "libpcap-vxlan";

@@ -30,8 +30,9 @@ You can look up packages and their descriptions via:
 - curl
 - db
 - dnsutils
-- dstat
+- dool
 - ethtool
+- fd
 - file
 - fc.logcheckhelper
 - fio
@@ -42,12 +43,14 @@ You can look up packages and their descriptions via:
 - gptfdisk
 - htop
 - inetutils (telnet)
+- multipath-tools (kpartx)
 - iotop
 - jq
-- latencytop
 - links2
 - lsof
+- lnav
 - lynx
+- magic-wormhole
 - mailx
 - mercurial
 - mmv
@@ -61,11 +64,13 @@ You can look up packages and their descriptions via:
 - nmap
 - nvd
 - openssl
+- parted
 - pkg-config
 - psmisc
 - pwgen
 - python3
 - pythonPackages.virtualenv
+- rclone
 - ripgrep
 - screen
 - statix
@@ -79,6 +84,7 @@ You can look up packages and their descriptions via:
 - wdiff
 - wget
 - xfsprogs
+- zip
 
 ## Configuration
 

@@ -18,7 +18,8 @@ buildRustPackage rec {
     sha256 = "DPjrnzEo//z41422GyCwL2T/quMdlKKk09Mpazpg30E=";
   };
 
-  cargoHash = "sha256-xi00EMfiZBl5TTIQC2GdiaEP72arFqt77EqCBy/l5O4=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-q5XeZbGdYPPF5bbvN2k5fOnu9AsH9IiVIg1Q3vBDjms=";
   RUSTFLAGS = "--cfg feature=\"oldglibc\"";
 
   meta = with lib; {
