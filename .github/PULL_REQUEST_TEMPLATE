@@ -4,7 +4,6 @@
 
 - [ ] Created changelog entry using `./changelog.sh`
 
-
 ## PR release workflow (internal)
 
 - [ ] PR has internal ticket
@@ -13,6 +12,11 @@
 - [ ] ticket is on Platform agile board
 - [ ] ticket state set to *Pull request ready*
 - [ ] if ticket is more urgent than within the next few days, directly contact a member of the Platform team
+
+- [ ] set urgency and risk labels
+- [ ] ensure the merge bot has determined a merge date
+- [ ] ensure all checks are green
+- [ ] get a review from a colleague
 
 ## Design notes
 
