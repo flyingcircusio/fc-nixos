@@ -1,3 +1,29 @@
+# Release 2025_008
+
+## NixOS XX.XX platform
+
+- platform: ensure that IPv4 forwarding is properly disabled by
+  default, and is only enabled by roles which explicitly require it
+  (PL-133557).
+
+- Add support Ubuntu VMs (and pave the way for general cloud-init based distributions) (PL-133325, PL-133372)
+
+  Fetch users of all resource groups in qemu scrub to local filesystem.
+
+  Fetch Ubuntu VM images from the `ubuntu` namespace in Ceph.
+
+- Ensure the administrator username is always `ADMIN` and does not deviate
+  depending on the vendor/integrator. (PL-133527)
+
+- Add anti-spam DNS blocklist option with sensu checks and default to bl.spamcop.net. (PL-133519)
+
+- rabbitmq: provide metrics from native prometheus exporter as well (PL-133391)
+  - the existing metrics remain in place for now, this is in preparation for a later deprecation of `management_metrics_collection` in rabbitmq
+
+- Improve test stability of our internal Qemu tooling. (PL-133300)
+
+
+
 # Release 2025_007
 
 ## Impact
