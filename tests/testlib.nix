@@ -87,8 +87,10 @@ rec {
     location ? "test",
     secrets ? {},
     extraEncParameters ? {},
-  }: { config, ... }:
+  }: { lib, config, nodes, ... }:
   let
+    fclib = config.fclib;
+
     # This is a dance around enabling/disabling and defining defaults of 
     # which VLANs/interface to enable in a test that can be overriden.
     network_options = mapAttrs (name: val: false) vlans;
@@ -101,6 +103,51 @@ rec {
     # vlan. however, this might be a different id from the one we use
     # for generating ip addresses.
     test_node_id = config.virtualisation.test.nodeNumber;
+
+    # Set options in the test harness to indicate our "primary" IP
+    # addresses. Take the first v4/v6 addresses from FE, otherwise
+    # falling back to SRV if configured.
+    primaryAddresses = let
+      ifaces = config.flyingcircus.enc.parameters.interfaces;
+      iface = ifaces.fe or ifaces.srv or null;
+
+      networks = if iface == null then [] else attrsToList (iface.networks);
+      networksV4 = filter (net: fclib.isIp4 net.name) networks;
+      networksV6 = filter (net: fclib.isIp6 net.name) networks;
+
+      primaryAddr = nets:
+        if nets == []
+        then null
+        else
+          let net = head nets;
+          in if net.value == []
+             then null
+             else head net.value;
+      in {
+        v4 = primaryAddr networksV4;
+        v6 = primaryAddr networksV6;
+      };
+
+    # Read the configs of other VMs in this test to configure the
+    # hosts file.
+    hostEntries = let
+      go = prev: name: cfg:
+        let
+          host = (lib.optionalString (cfg.networking.domain != null)
+            "${cfg.networking.hostName}.${cfg.networking.domain} "
+          ) + "${cfg.networking.hostName}";
+
+        in lib.foldr (hself: hprev:
+          if hself == ""
+          then hprev
+          else [ "${hself} ${host}" ] ++ hprev
+        ) prev [
+          cfg.networking.primaryIPAddress
+          cfg.networking.primaryIPv6Address
+        ];
+    in lib.foldlAttrs go [] nodes;
+
+    extraHosts = lib.concatStringsSep "\n" hostEntries;
   in
   {
     imports = [
@@ -118,6 +165,15 @@ rec {
       virtualisation.interfaces =
         fcVlanIfaces (listToAttrs (map (vlan: nameValuePair vlan vlans.${vlan})
           (attrNames config.flyingcircus.enc.parameters.interfaces)));
+
+      networking = {
+        inherit extraHosts;
+        
+        primaryIPAddress = fclib.mkOverrideUpstreamModule
+          (lib.optionalString (primaryAddresses.v4 != null) primaryAddresses.v4);
+        primaryIPv6Address = fclib.mkOverrideUpstreamModule
+          (lib.optionalString (primaryAddresses.v4 != null) primaryAddresses.v6);
+      };
 
       flyingcircus.enc.parameters = (lib.recursiveUpdate {
         inherit resource_group location secrets;
@@ -258,7 +314,7 @@ rec {
 
   fcVlanIfaces = mapAttrs' (vlan: vid: {
     name = "eth${vlan}";
-    value = { vlan = vid; assignIP = true; };
+    value = { vlan = vid; assignIP = false; };
   });
 
   fcIPMap = listToAttrs (concatLists (mapAttrsToList (name: vid: [
