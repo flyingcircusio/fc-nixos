@@ -15,9 +15,9 @@
     "version": "20.11.1"
   },
   "auditbeat7-oss": {
-    "name": "auditbeat-oss-7.17.16",
+    "name": "auditbeat-oss-7.17.27",
     "pname": "auditbeat",
-    "version": "7.17.16"
+    "version": "7.17.27"
   },
   "automake": {
     "name": "automake-1.16.5",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-134.0.6998.88",
+    "name": "chromedriver-unwrapped-134.0.6998.165",
     "pname": "chromedriver-unwrapped",
-    "version": "134.0.6998.88"
+    "version": "134.0.6998.165"
   },
   "chromium": {
-    "name": "chromium-134.0.6998.88",
+    "name": "chromium-134.0.6998.165",
     "pname": "chromium",
-    "version": "134.0.6998.88"
+    "version": "134.0.6998.165"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -190,9 +190,9 @@
     "version": "5.45"
   },
   "filebeat7-oss": {
-    "name": "filebeat-oss-7.17.16",
+    "name": "filebeat-oss-7.17.27",
     "pname": "filebeat",
-    "version": "7.17.16"
+    "version": "7.17.27"
   },
   "firefox": {
     "name": "firefox-136.0.2",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.83",
+    "name": "linux-6.6.84",
     "pname": "linux",
-    "version": "6.6.83"
+    "version": "6.6.84"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.83",
+    "name": "linux-6.6.84",
     "pname": "linux",
-    "version": "6.6.83"
+    "version": "6.6.84"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -495,9 +495,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.4",
+    "name": "mastodon-4.3.6",
     "pname": "mastodon",
-    "version": "4.3.4"
+    "version": "4.3.6"
   },
   "matomo_5": {
     "name": "matomo_5-5.2.2",
