@@ -1,4 +1,4 @@
-exclude: ^secrets/|^appenv$|pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(tests/testlib.nix|nixos/roles/devhost/vm.nix|tests/physical-installer.nix)|^changelog.d/new_fragment.md.j2$
+exclude: ^secrets/|^appenv$|pkgs/fc/sensusyntax/fixtures/(syntaxerror|empty).json|(tests/testlib.nix|nixos/roles/devhost/vm.nix|tests/physical-installer.nix)|^changelog.d/new_fragment.md.j2$|tests/.+\.py
 repos:
 - hooks:
   - id: detect-private-key
@@ -30,6 +30,15 @@ repos:
   - id: black
   repo: https://github.com/psf/black
   rev: 25.1.0
+- hooks:
+  - args:
+    - --ignore
+    - E501
+    - --ignore
+    - F401
+    id: ruff
+  repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.6.9
 - hooks:
   - entry: nixfmt
     files: \.nix$

@@ -199,9 +199,7 @@ class KeyConfig(object):
         return self.entity, self.key.to_string(), self.capabilities
 
     def save_client_keyring(self):
-        f = fc.util.configfile.ConfigFile(
-            self.filename, mode=0o600, diff=False
-        )
+        f = fc.util.configfile.ConfigFile(self.filename, mode=0o600, diff=False)
         f.write(
             f"""\
 [{self.entity}]

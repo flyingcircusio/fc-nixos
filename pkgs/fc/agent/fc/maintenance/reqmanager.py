@@ -877,9 +877,7 @@ class ReqManager:
                 ),
             )
             time.sleep(5)
-            subprocess.run(
-                "reboot", check=True, capture_output=True, text=True
-            )
+            subprocess.run("reboot", check=True, capture_output=True, text=True)
             sys.exit(0)
 
     @require_lock
@@ -1255,12 +1253,10 @@ class ReqManager:
                     f"Next scheduled request is due at {next_due}."
                 )
 
-        if num_waiting_for_schedule := metrics[
-            "requests_waiting_for_schedule"
-        ]:
+        if num_waiting_for_schedule := metrics["requests_waiting_for_schedule"]:
             if num_waiting_for_schedule == 1:
                 ok_info.append(
-                    f"A maintenance request is waiting to be scheduled."
+                    "A maintenance request is waiting to be scheduled."
                 )
             else:
                 ok_info.append(

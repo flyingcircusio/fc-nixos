@@ -107,7 +107,7 @@ class MultiOptimisticLogger:
 
     def __repr__(self):
         return "<MultiOptimisticLogger {}>".format(
-            [repr(l) for l in self.loggers]
+            [repr(logger) for logger in self.loggers]
         )
 
     def msg(self, **messages):
@@ -159,16 +159,14 @@ class CmdOutputFileRenderer:
 
 
 def prefix(prefix, line):
-    return "{}>\t".format(prefix) + line.replace(
-        "\n", "\n{}>\t".format(prefix)
-    )
+    return "{}>\t".format(prefix) + line.replace("\n", "\n{}>\t".format(prefix))
 
 
-def _pad(s, l):
+def _pad(s, length):
     """
-    Pads *s* to length *l*.
+    Pads *s* to length *length*.
     """
-    missing = l - len(s)
+    missing = length - len(s)
     return s + " " * (missing if missing > 0 else 0)
 
 
@@ -196,9 +194,7 @@ class ConsoleFileRenderer:
         self.show_caller_info = show_caller_info
         if colorama is None:
             print(
-                _MISSING.format(
-                    who=self.__class__.__name__, package="colorama"
-                )
+                _MISSING.format(who=self.__class__.__name__, package="colorama")
             )
         if sys.stdout.isatty():
             colorama.init()
@@ -275,10 +271,7 @@ class ConsoleFileRenderer:
         level = event_dict.pop("level", None)
         if level is not None:
             write(
-                self._level_to_color[level]
-                + level[0].upper()
-                + RESET_ALL
-                + " "
+                self._level_to_color[level] + level[0].upper() + RESET_ALL + " "
             )
 
         event = event_dict.pop("event")
@@ -355,7 +348,9 @@ class MultiRenderer:
         self.renderers = renderers
 
     def __repr__(self):
-        return "<MultiRenderer {}>".format([repr(l) for l in self.renderers])
+        return "<MultiRenderer {}>".format(
+            [repr(logger) for logger in self.renderers]
+        )
 
     def __call__(self, logger, method_name, event_dict):
         merged_messages = {}
@@ -384,11 +379,6 @@ def add_caller_info(logger, method_name, event_dict):
     event_dict["code_func"] = frame.f_code.co_name
     event_dict["code_lineno"] = frame.f_lineno
     event_dict["code_module"] = module_str
-    return event_dict
-
-
-def add_pid(logger, method_name, event_dict):
-    event_dict["pid"] = os.getpid()
     return event_dict
 
 

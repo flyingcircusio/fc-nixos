@@ -318,7 +318,9 @@ def find_nix_build_error(stderr: str, log=_log):
         error_lines = []
 
         lines = list(
-            itertools.dropwhile(lambda l: not l.startswith("error:"), lines)
+            itertools.dropwhile(
+                lambda line: not line.startswith("error:"), lines
+            )
         )
 
         for pos, line in enumerate(lines):
@@ -343,7 +345,9 @@ def find_nix_build_error(stderr: str, log=_log):
                     and lines[pos + 1].strip() == "Failed assertions:"
                 ):
                     error_lines.append("Failed assertions:")
-                    error_lines.extend(l.strip() for l in lines[pos + 2 :])
+                    error_lines.extend(
+                        line.strip() for line in lines[pos + 2 :]
+                    )
                     break
                 elif not error:
                     continue
@@ -411,9 +415,7 @@ def _increase_soft_fd_limit():
     resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
 
 
-def build_system(
-    channel_url=None, build_options=None, out_link=None, log=_log
-):
+def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
     """
     Build system with this channel. Works like nixos-rebuild build.
     Does not modify the running system.

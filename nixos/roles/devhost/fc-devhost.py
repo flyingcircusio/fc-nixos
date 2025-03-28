@@ -315,7 +315,7 @@ class Manager:
                             "xfs_db",
                             "-x",
                             "-c",
-                            f"uuid generate",
+                            "uuid generate",
                             f"/dev/nbd{nbd_number}p1",
                         )
 
@@ -432,9 +432,7 @@ class Manager:
                 vm_cfg["last_deploy_date"] = datetime.datetime.now(
                     datetime.UTC
                 ).isoformat()
-                with open(
-                    CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w"
-                ) as f:
+                with open(CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w") as f:
                     f.write(json.dumps(vm_cfg))
 
             # existing VMs might have persisted a timezone-naive timestamp
@@ -452,15 +450,13 @@ class Manager:
                 datetime.datetime.now(datetime.UTC)
                 - datetime.timedelta(days=14)
             ):
-                if vm_cfg["online"] == False:
+                if not vm_cfg["online"]:
                     continue
                 print(f"Shutting down VM {vm_cfg['name']}.")
                 vm_shut_down = True
                 vm_cfg["online"] = False
                 write_nix_file(CONFIG_DIR / f"{vm_cfg['name']}.nix", vm_cfg)
-                with open(
-                    CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w"
-                ) as f:
+                with open(CONFIG_DIR / f"{vm_cfg['name']}.json", mode="w") as f:
                     f.write(json.dumps(vm_cfg))
 
         if vm_shut_down:

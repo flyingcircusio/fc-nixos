@@ -197,7 +197,7 @@ class Kea(object):
                     netaddr.EUI(mac, dialect=netaddr.mac_unix_expanded),
                     netaddr.IPNetwork(record["ip"]),  # XXX: IPAddress?
                 )
-            except (KeyError, ValueError, netaddr.AddrFormatError) as exc:
+            except (KeyError, ValueError, netaddr.AddrFormatError):
                 continue
 
             self.hosts.add(hostaddr)

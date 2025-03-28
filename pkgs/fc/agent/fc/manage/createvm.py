@@ -123,9 +123,7 @@ class Disk(object):
             )
         )
         cmd(
-            "sgdisk {} -n 2:2048:+1M -c 2:gptbios -t 2:EF02".format(
-                self.device
-            )
+            "sgdisk {} -n 2:2048:+1M -c 2:gptbios -t 2:EF02".format(self.device)
         )
 
     def apply(self):

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-#
+import os
+
+import furo
+
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ["myst_parser", "sphinx.ext.intersphinx"]
 
-import os
 
 # The version info for the project you're documenting, acts as replacement for
 # {{ version }} and {{ release }}, also used in various other places throughout the
@@ -34,7 +36,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-import furo
 
 html_theme = "furo"
 

@@ -23,9 +23,7 @@ class LuksDevice(NamedTuple):
     header: Optional[str] = None
 
     @classmethod
-    def lsblk_to_cryptdevices(
-        cls, lsblk_blockdevs: list
-    ) -> list["LuksDevice"]:
+    def lsblk_to_cryptdevices(cls, lsblk_blockdevs: list) -> list["LuksDevice"]:
         """parses the output of lsblk -Js -o NAME,PATH,TYPE,MOUNTPOINT"""
         return [
             cls(
@@ -223,9 +221,7 @@ class LUKSKeyStoreManager(object):
                     "luksDump", "--header", dev.header, dev.base_blockdev
                 )
             else:
-                luks_dump = Cryptsetup.cryptsetup(
-                    "luksDump", dev.base_blockdev
-                )
+                luks_dump = Cryptsetup.cryptsetup("luksDump", dev.base_blockdev)
             dump_lines = luks_dump.decode("utf-8").splitlines()
             for check in all_checks:
                 check_ok = True
@@ -279,7 +275,7 @@ class LUKSKeyStoreManager(object):
 
         # test unlocking both with local key file as well as with admin key
         try:
-            test_admin = Cryptsetup.cryptsetup(
+            Cryptsetup.cryptsetup(
                 "open",
                 *header_arg,
                 "--test-passphrase",
@@ -292,7 +288,7 @@ class LUKSKeyStoreManager(object):
             )
             success = False
         try:
-            test_local = Cryptsetup.cryptsetup(
+            Cryptsetup.cryptsetup(
                 "open",
                 *header_arg,
                 "--test-passphrase",

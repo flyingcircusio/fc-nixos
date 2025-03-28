@@ -169,9 +169,7 @@ class RGWState:
 
     def ensure_no_keys(self):
         """Remove _all_ keys to make users aware of the impending hard deletion."""
-        keys = run.json.radosgw_admin("user", "info", "--uid", self.uid)[
-            "keys"
-        ]
+        keys = run.json.radosgw_admin("user", "info", "--uid", self.uid)["keys"]
         for key in keys:
             run.radosgw_admin("key", "rm", "--access-key", key["access_key"])
         if keys:
@@ -288,7 +286,7 @@ class UserManager:
             # absolutely make sure that we never ever locally delete a user
             # that was marked for deletion in a different cluster.
             assert user_dict["location"] == self.location, (
-                f"Encountered user from unexpected location: "
+                "Encountered user from unexpected location: "
                 + user_dict["location"]
             )
             assert user_dict["storage_resource_group"] == self.rg, (

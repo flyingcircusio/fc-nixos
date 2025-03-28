@@ -32,7 +32,7 @@ def _extract_keyslot_numbers(lines: str):
     for line in lines_iter:
         if line.startswith("Tokens:"):
             break
-        if not ":" in line:
+        if ":" not in line:
             continue
         header, value = line.split(":")
         try:
