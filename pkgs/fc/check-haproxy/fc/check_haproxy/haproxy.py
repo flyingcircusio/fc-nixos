@@ -92,12 +92,15 @@ class HAProxyLog(nagiosplugin.Resource):
 
     def metrics(self, label, records):
         """Compute metrics for a set of `records`."""
+
+        def apply_label(name):
+            return " ".join(filter(None, [label, name]))
+
         requests = len(records)
         if requests:
             for pct in self.percentiles:
-                timing_name = "t_tot%s" % pct
                 yield nagiosplugin.Metric(
-                    f"{label} {timing_name}" if label else timing_name,
+                    apply_label(f"t_tot{pct}"),
                     numpy.percentile(records["t_tot"], int(pct)) / 1000,
                     "s",
                     min=0,
@@ -110,7 +113,7 @@ class HAProxyLog(nagiosplugin.Resource):
             )
         errors = 100 * numpy.sum(records["err"] / requests) if requests else 0
         yield nagiosplugin.Metric(
-            (name := "http_errors") + f" {label}" if label else name,
+            apply_label("http_errors"),
             errors,
             "%",
             0,
@@ -118,7 +121,7 @@ class HAProxyLog(nagiosplugin.Resource):
             context="http_errors",
         )
         yield nagiosplugin.Metric(
-            (name := "requests") + f" {label}" if label else name,
+            apply_label("requests"),
             requests,
             min=0,
             context="default",
