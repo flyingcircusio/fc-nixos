@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-136.0.2",
+    "name": "firefox-136.0.3",
     "pname": "firefox",
-    "version": "136.0.2"
+    "version": "136.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -225,9 +225,9 @@
     "version": "2.47.2"
   },
   "gitaly": {
-    "name": "gitaly-17.9.2",
+    "name": "gitaly-17.9.3",
     "pname": "gitaly",
-    "version": "17.9.2"
+    "version": "17.9.3"
   },
   "github-runner": {
     "name": "github-runner-2.322.0",
@@ -235,24 +235,24 @@
     "version": "2.322.0"
   },
   "gitlab": {
-    "name": "gitlab-17.9.2",
+    "name": "gitlab-17.9.3",
     "pname": "gitlab",
-    "version": "17.9.2"
+    "version": "17.9.3"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.17.1",
+    "name": "gitlab-container-registry-4.19.0",
     "pname": "gitlab-container-registry",
-    "version": "4.17.1"
+    "version": "4.19.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.9.2",
+    "name": "gitlab-ee-17.9.3",
     "pname": "gitlab-ee",
-    "version": "17.9.2"
+    "version": "17.9.3"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.9.2",
+    "name": "gitlab-pages-17.9.3",
     "pname": "gitlab-pages",
-    "version": "17.9.2"
+    "version": "17.9.3"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.9.2",
+    "name": "gitlab-workhorse-17.9.3",
     "pname": "gitlab-workhorse",
-    "version": "17.9.2"
+    "version": "17.9.3"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -375,24 +375,24 @@
     "version": "21.0.5+11"
   },
   "k3s": {
-    "name": "k3s-1.31.6+k3s1",
+    "name": "k3s-1.31.7+k3s1",
     "pname": "k3s",
-    "version": "1.31.6+k3s1"
+    "version": "1.31.7+k3s1"
   },
   "k3s_1_29": {
-    "name": "k3s-1.29.14+k3s1",
+    "name": "k3s-1.29.15+k3s1",
     "pname": "k3s",
-    "version": "1.29.14+k3s1"
+    "version": "1.29.15+k3s1"
   },
   "k3s_1_30": {
-    "name": "k3s-1.30.10+k3s1",
+    "name": "k3s-1.30.11+k3s1",
     "pname": "k3s",
-    "version": "1.30.10+k3s1"
+    "version": "1.30.11+k3s1"
   },
   "k3s_1_31": {
-    "name": "k3s-1.31.6+k3s1",
+    "name": "k3s-1.31.7+k3s1",
     "pname": "k3s",
-    "version": "1.31.6+k3s1"
+    "version": "1.31.7+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.1.4",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.84",
+    "name": "linux-6.6.85",
     "pname": "linux",
-    "version": "6.6.84"
+    "version": "6.6.85"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.84",
+    "name": "linux-6.6.85",
     "pname": "linux",
-    "version": "6.6.84"
+    "version": "6.6.85"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.2.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.126.0",
+    "name": "matrix-synapse-wrapped-1.127.1",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.126.0"
+    "version": "1.127.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -570,9 +570,9 @@
     "version": "1.26.3"
   },
   "nix": {
-    "name": "nix-2.24.12",
+    "name": "nix-2.24.13",
     "pname": "nix",
-    "version": "2.24.12"
+    "version": "2.24.13"
   },
   "nodejs": {
     "name": "nodejs-20.18.3",
@@ -680,9 +680,9 @@
     "version": "8.0.41-32"
   },
   "percona-server": {
-    "name": "percona-server-8.4.3-3",
+    "name": "percona-server-8.4.4-4",
     "pname": "percona-server",
-    "version": "8.4.3-3"
+    "version": "8.4.4-4"
   },
   "percona-server_8_0": {
     "name": "percona-server-8.0.41-32",
@@ -1075,9 +1075,9 @@
     "version": "8.11.4"
   },
   "strace": {
-    "name": "strace-6.13",
+    "name": "strace-6.14",
     "pname": "strace",
-    "version": "6.13"
+    "version": "6.14"
   },
   "strongswan": {
     "name": "strongswan-5.9.14",
