@@ -27,7 +27,7 @@
       inputs.nixpkgs-24_11.follows = "nixpkgs";
     };
     devenv = {
-      url = "github:cachix/devenv/f810f8d8cb4e674d7e635107510bcbbabaa755a3";
+      url = "github:cachix/devenv/fa5cbf91fb1f1614936997badbb6018a2fdef320";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-parts.url = "github:hercules-ci/flake-parts";
