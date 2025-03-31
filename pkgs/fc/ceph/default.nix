@@ -1,5 +1,6 @@
 {
   lib,
+  python,
   buildPythonApplication,
   parted,
   cryptsetup,
@@ -32,6 +33,11 @@ buildPythonApplication rec {
     parted
   ];
 
+  passthru = {
+    inherit checkInputs;
+    py = python.pkgs;
+  };
+
   checkInputs = [
     mock
     freezegun
@@ -44,7 +50,10 @@ buildPythonApplication rec {
 
   meta = with lib; {
     description = "fc-ceph";
-    maintainers = [ maintainers.theuni ];
+    maintainers = [
+      maintainers.theuni
+      maintainers.osnyx
+    ];
     platforms = platforms.unix;
   };
 
