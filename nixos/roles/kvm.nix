@@ -8,6 +8,7 @@
 with builtins;
 
 let
+  inherit (config.flyingcircus) location;
   fclib = config.fclib;
   cfg = config.flyingcircus.roles.kvm_host;
   enc = config.flyingcircus.enc;
@@ -20,6 +21,7 @@ let
   virtualGatewayV6 = "fe80::1";
 
   vrfInterfaces = lib.filterAttrs (n: v: v.routed or false) fclib.network;
+  locationNameserver = head config.flyingcircus.static.nameservers."${location}";
 
 in
 {
@@ -558,6 +560,18 @@ in
       ip46tables -D FORWARD -j fc-kvm-forward || true
       ip46tables -F fc-kvm-forward 2>/dev/null || true
       ip46tables -X fc-kvm-forward 2>/dev/null || true
+    '';
+
+    networking.nat.extraCommands = lib.optionalString (vrfInterfaces != { }) ''
+      # Use destination NAT to allow guests to use the virtual
+      # gateway address as their DNS resolver, and forward queries
+      # to the location-wide resolver
+      ${lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (name: _: ''
+          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p udp --dport 53 -j DNAT --to-destination ${locationNameserver}
+          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p tcp --dport 53 -j DNAT --to-destination ${locationNameserver}
+        '') vrfInterfaces
+      )}
     '';
 
   };
