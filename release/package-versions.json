@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.95",
+    "name": "element-web-1.11.96",
     "pname": "element-web",
-    "version": "1.11.95"
+    "version": "1.11.96"
   },
   "erlang": {
     "name": "erlang-25.3.2.18",
@@ -295,9 +295,9 @@
     "version": "1.23.6"
   },
   "grafana": {
-    "name": "grafana-11.3.4",
+    "name": "grafana-11.3.5",
     "pname": "grafana",
-    "version": "11.3.4"
+    "version": "11.3.5"
   },
   "grub2": {
     "name": "grub-2.12",
