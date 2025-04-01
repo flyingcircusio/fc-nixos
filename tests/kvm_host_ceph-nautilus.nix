@@ -106,8 +106,19 @@ import ./make-test-python.nix (
         };
 
         environment.systemPackages =
+          # This is a horrible dance for two reasons:
+          # 1. pytest doesn't properly inherit the PATH environment from the propagatedBuildInputs.
+          #    We might want to reconsider using an additional buildPythonApplication with pytest
+          #    added to the primary dependencies (propagatedBuildInputs)
+          # 2. There's a bug(?) in stdenv.mkDerivation that causes external access to the
+          #    attribute's items to end up with their .dev outputs ... -_-
           let
-            testPackages = ([ testPackage ] ++ testPackage.propagatedBuildInputs ++ testPackage.checkInputs);
+
+            testPackages = (
+              [ testPackage ]
+              ++ (map (x: builtins.removeAttrs x [ "outputSpecified" ]) testPackage.propagatedBuildInputs)
+              ++ testPackage.nativeCheckInputs
+            );
             PYTHONPATH = testPackage.py.makePythonPath testPackages;
             PATH = lib.makeBinPath testPackages;
           in
@@ -123,7 +134,7 @@ import ./make-test-python.nix (
                 set -o pipefail
 
                 export PYTHONPATH="${PYTHONPATH}"
-                export PATH="${PATH}:${pkgs.openssh}/bin:${pkgs.gnused}/bin"
+                export PATH="${PATH}:$PATH"
                 export PYTHONUNBUFFERED=1
 
                 cd ${testPackage.src}
