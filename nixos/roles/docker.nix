@@ -23,6 +23,17 @@ in
       flyingcircus.users.serviceUsers.extraGroups = [ "docker" ];
       virtualisation.docker.enable = true;
 
+      boot.kernel.sysctl = {
+        # IPv4 forwarding is enabled by default in the NixOS docker
+        # module, but as the platform overrides the upstream settings
+        # we need to in turn override the platform defaults here.
+        #
+        # Use manual override priorities here to avoid conflicts with
+        # external_net
+        "net.ipv4.conf.all.forwarding" = lib.mkOverride 71 true;
+        "net.ipv4.conf.default.forwarding" = lib.mkOverride 71 true;
+      };
+
       networking.firewall.extraCommands = lib.mkOrder 1200 ''
         # FC docker rules (1200)
         # allow access to host from docker networks, we consider this identical
