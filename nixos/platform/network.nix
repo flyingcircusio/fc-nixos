@@ -109,6 +109,17 @@ let
 
   quoteLabel = replaceStrings [ "/" ] [ "-" ];
 
+  concatFuncWithIndent =
+    func: indent:
+    let
+      spaces = lib.strings.replicate indent " ";
+      sep = "\n" + spaces;
+    in
+    func sep;
+  concatLinesIndent = concatFuncWithIndent lib.concatStringsSep;
+  concatMapLinesIndent = concatFuncWithIndent lib.concatMapStringsSep;
+  concatMapLines = lib.concatMapStringsSep "\n";
+
 in
 {
 
@@ -401,7 +412,7 @@ in
           frr version 8.5.1
           frr defaults datacenter
           !
-          ${lib.concatMapStringsSep "\n" (iface: ''
+          ${concatMapLines (iface: ''
             vrf vrf${iface.vlan}
              vni ${toString iface.vlanId}
             exit-vrf
@@ -415,7 +426,7 @@ in
            neighbor switches remote-as external
            neighbor switches capability extended-nexthop
            neighbor switches bfd
-           ${lib.concatMapStringsSep "\n " (
+           ${concatMapLinesIndent 1 (
              iface: "neighbor ${iface.link} interface peer-group switches"
            ) fclib.underlay.links}
            !
@@ -436,9 +447,9 @@ in
             ${
               # Workaround for FRR not advertising SVI IP when
               # globally configured
-              lib.concatMapStringsSep "\n  " (
+              concatMapLinesIndent 2 (
                 iface:
-                concatStringsSep "\n  " [
+                concatLinesIndent 2 [
                   ("vni " + (toString iface.vlanId))
                   " advertise-svi-ip"
                   "exit-vni"
@@ -449,7 +460,7 @@ in
            !
           exit
           !
-          ${lib.concatMapStringsSep "\n"
+          ${concatMapLines
             # `kernel` routes are mostly those routes we insert into the
             # kernel routing table through fc-qemu for our virtual machines.
             # `connected` routes are for those (special) cases where the host
