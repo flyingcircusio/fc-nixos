@@ -160,14 +160,14 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.95",
+    "name": "element-web-1.11.96",
     "pname": "element-web",
-    "version": "1.11.95"
+    "version": "1.11.96"
   },
   "erlang": {
-    "name": "erlang-25.3.2.18",
+    "name": "erlang-25.3.2.19",
     "pname": "erlang",
-    "version": "25.3.2.18"
+    "version": "25.3.2.19"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -295,9 +295,9 @@
     "version": "1.23.6"
   },
   "grafana": {
-    "name": "grafana-11.3.4",
+    "name": "grafana-11.3.5",
     "pname": "grafana",
-    "version": "11.3.4"
+    "version": "11.3.5"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -580,9 +580,9 @@
     "version": "20.18.3"
   },
   "nodejs_18": {
-    "name": "nodejs-18.20.7",
+    "name": "nodejs-18.20.8",
     "pname": "nodejs",
-    "version": "18.20.7"
+    "version": "18.20.8"
   },
   "nodejs_20": {
     "name": "nodejs-20.18.3",
@@ -600,9 +600,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.109",
+    "name": "nss-3.110",
     "pname": "nss",
-    "version": "3.109"
+    "version": "3.110"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.10.2",
