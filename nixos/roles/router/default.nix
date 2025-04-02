@@ -103,6 +103,7 @@ in
     ./bind
     ./bird2
     ./keepalived
+    ./bird2-vrf-bridge.nix
     ./chrony.nix
     ./kea.nix
     ./pmacctd.nix
