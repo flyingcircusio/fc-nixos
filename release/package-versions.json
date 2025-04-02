@@ -30,9 +30,9 @@
     "version": "1.37.21"
   },
   "awscli2": {
-    "name": "awscli2-2.24.24",
+    "name": "awscli2-2.25.5",
     "pname": "awscli2",
-    "version": "2.24.24"
+    "version": "2.25.5"
   },
   "bash": {
     "name": "bash-interactive-5.2p37",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.95",
+    "name": "element-web-1.11.96",
     "pname": "element-web",
-    "version": "1.11.95"
+    "version": "1.11.96"
   },
   "erlang": {
     "name": "erlang-27.3.1",
@@ -295,9 +295,9 @@
     "version": "1.23.7"
   },
   "grafana": {
-    "name": "grafana-11.5.2",
+    "name": "grafana-11.6.0",
     "pname": "grafana",
-    "version": "11.5.2"
+    "version": "11.6.0"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -600,9 +600,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.109",
+    "name": "nss-3.110",
     "pname": "nss",
-    "version": "3.109"
+    "version": "3.110"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.11",
@@ -770,9 +770,9 @@
     "version": "5.4.1"
   },
   "poetry": {
-    "name": "poetry-2.1.1",
+    "name": "poetry-2.1.2",
     "pname": "poetry",
-    "version": "2.1.1"
+    "version": "2.1.2"
   },
   "polkit": {
     "name": "polkit-126",
