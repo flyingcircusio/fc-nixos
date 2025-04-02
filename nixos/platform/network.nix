@@ -10,6 +10,7 @@ with builtins;
 
 let
   cfg = config.flyingcircus;
+  cfgNet = config.flyingcircus.networking;
 
   fclib = config.fclib;
 
@@ -125,6 +126,11 @@ in
     flyingcircus.networking.physicalHostNetworking = lib.mkOption {
       type = lib.types.bool;
       description = "Use a network configuration profile suitable for physical hosts";
+      default = false;
+    };
+    flyingcircus.networking.assignVrfRoutes = lib.mkOption {
+      type = lib.types.bool;
+      description = "Assign routes in the default routing table on VRF interfaces";
       default = false;
     };
   };
@@ -275,6 +281,18 @@ in
                 iface:
                 lib.nameValuePair iface.vrfInterface {
                   tempAddress = "disabled";
+                  ipv4.routes = lib.optionals cfgNet.assignVrfRoutes (
+                    map (net: {
+                      address = net.network;
+                      inherit (net) prefixLength;
+                    }) iface.v4.networkAttrs
+                  );
+                  ipv6.routes = lib.optionals cfgNet.assignVrfRoutes (
+                    map (net: {
+                      address = net.network;
+                      inherit (net) prefixLength;
+                    }) iface.v6.networkAttrs
+                  );
                 }
               ) vxlanVrfInterfaces)
 
@@ -311,7 +329,7 @@ in
         wireguard.enable = true;
 
         firewall.trustedInterfaces = lib.optionals (
-          !isNull fclib.underlay && cfg.networking.physicalHostNetworking
+          !isNull fclib.underlay && cfgNet.physicalHostNetworking
         ) (map (l: l.link) fclib.underlay.links or [ ]);
 
         firewall.extraCommands =
@@ -355,7 +373,7 @@ in
 
       };
 
-      flyingcircus.services.telegraf.inputs = lib.optionalAttrs (cfg.networking.physicalHostNetworking) {
+      flyingcircus.services.telegraf.inputs = lib.optionalAttrs (cfgNet.physicalHostNetworking) {
         exec = [
           {
             commands = [ "${pkgs.fc.telegraf-routes-summary}/bin/telegraf-routes-summary" ];
@@ -1144,10 +1162,10 @@ in
           # as a reasonable size and I'd suggest generalizing this number to all machines.
           "net.netfilter.nf_conntrack_max" = 262144;
         }
-        (lib.mkIf (!cfg.networking.physicalHostNetworking) {
+        (lib.mkIf (!cfgNet.physicalHostNetworking) {
           "net.core.rmem_max" = 8388608;
         })
-        (lib.mkIf (cfg.networking.physicalHostNetworking) {
+        (lib.mkIf (cfgNet.physicalHostNetworking) {
           "vm.min_free_kbytes" = "513690";
 
           "net.core.netdev_max_backlog" = 300000;

@@ -113,6 +113,7 @@ in
   config = lib.mkIf role.enable {
 
     flyingcircus.networking.enableInterfaceDefaultRoutes = false;
+    flyingcircus.networking.assignVrfRoutes = any (net: net.routed or false) (attrValues fclib.network);
 
     boot.kernel.sysctl = {
       # It's a router: we want forwarding, obviously
