@@ -139,7 +139,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       pkgs = self;
       # Only used by the agent for now but we should probably use this
       # for all our Python packages and update Python in sync then.
-      pythonPackages = self.python312Packages;
+      pyPackages = self.python312Packages;
     }
   );
 
