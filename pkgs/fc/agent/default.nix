@@ -9,20 +9,15 @@
   libyaml,
   multipath-tools,
   nix,
-  buildPythonPackage,
-  pythonPackages,
+  pyPackages,
   python,
   util-linux,
   xfsprogs,
-  pytest,
-  structlog,
   enableSlurm ? false,
 }:
 
 let
-  py = pythonPackages;
-
-  pytest-structlog = py.buildPythonPackage rec {
+  pytest-structlog = pyPackages.buildPythonPackage rec {
     pname = "pytest-structlog";
     version = "0.6-cb82f00";
 
@@ -33,13 +28,13 @@ let
       hash = "sha256-ktLsdEtxfiWhCTTaKowBoAAijOF9640m5XV/rdahpl0=";
     };
 
-    buildInputs = [
+    buildInputs = with pyPackages; [
       pytest
       structlog
     ];
   };
 
-  stamina = py.buildPythonPackage rec {
+  stamina = pyPackages.buildPythonPackage rec {
     pname = "stamina";
     version = "23.1.0";
     format = "pyproject";
@@ -49,12 +44,12 @@ let
       hash = "sha256-sWzj1S1liqdduBP8amZht3Cr/qkV9yzaSOMl8qeFR4Y=";
     };
 
-    nativeBuildInputs = with py; [
+    nativeBuildInputs = with pyPackages; [
       hatchling
       hatch-vcs
       hatch-fancy-pypi-readme
     ];
-    propagatedBuildInputs = with py; [
+    propagatedBuildInputs = with pyPackages; [
       structlog
       tenacity
       typing-extensions
@@ -62,41 +57,41 @@ let
   };
 
 in
-buildPythonPackage rec {
+pyPackages.buildPythonPackage rec {
   name = "fc-agent-${version}";
   version = "1.0";
   namePrefix = "";
   src = ./.;
   checkInputs = [
-    py.freezegun
-    py.pytest-cov
-    py.responses
-    py.pytest-mock
-    py.pytest-subprocess
+    pyPackages.freezegun
+    pyPackages.pytest-cov
+    pyPackages.responses
+    pyPackages.pytest-mock
+    pyPackages.pytest-subprocess
     pytest-structlog
   ];
   nativeCheckInputs = [
-    py.pytestCheckHook
+    pyPackages.pytestCheckHook
   ];
   propagatedBuildInputs =
     [
       gitMinimal
       nix
-      py.click
-      py.colorama
-      py.configobj
-      py.python-dateutil
-      py.iso8601
-      py.netaddr
-      py.pendulum
-      py.pytz
-      py.requests
-      py.rich
-      py.setuptools
-      py.shortuuid
-      py.structlog
-      py.typer
-      py.pyyaml
+      pyPackages.click
+      pyPackages.colorama
+      pyPackages.configobj
+      pyPackages.python-dateutil
+      pyPackages.iso8601
+      pyPackages.netaddr
+      pyPackages.pendulum
+      pyPackages.pytz
+      pyPackages.requests
+      pyPackages.rich
+      pyPackages.setuptools
+      pyPackages.shortuuid
+      pyPackages.structlog
+      pyPackages.typer
+      pyPackages.pyyaml
       stamina
       util-linux
     ]
@@ -104,12 +99,12 @@ buildPythonPackage rec {
       dmidecode
       gptfdisk
       multipath-tools
-      py.pystemd
-      py.systemd
+      pyPackages.pystemd
+      pyPackages.systemd
       xfsprogs
     ]
     ++ lib.optionals enableSlurm [
-      py.pyslurm
+      pyPackages.pyslurm
     ];
   dontStrip = true;
   doCheck = true;
@@ -121,7 +116,7 @@ buildPythonPackage rec {
     runHook postCheck
   '';
   passthru.pythonDevEnv = python.withPackages (
-    _: checkInputs ++ [ py.pytest ] ++ propagatedBuildInputs
+    _: checkInputs ++ [ pyPackages.pytest ] ++ propagatedBuildInputs
   );
 
   outputs = [

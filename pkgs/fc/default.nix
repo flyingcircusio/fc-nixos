@@ -1,14 +1,15 @@
 {
   pkgs,
-  pythonPackages,
+  pyPackages,
   callPackage,
 }:
 
 rec {
   recurseForDerivations = true;
 
-  agent = pythonPackages.callPackage ./agent {
+  agent = callPackage ./agent {
     nix = pkgs.nixVersions.nix_2_25;
+    pyPackages = pyPackages;
   };
   agentWithSlurm = agent.override { enableSlurm = true; };
 
@@ -16,7 +17,7 @@ rec {
 
   # fc-ceph does not need to be versioned on the Nix-package level as
   # it can be parametrized via config file for each individual subsystem.
-  ceph = pythonPackages.callPackage ./ceph {
+  ceph = pyPackages.callPackage ./ceph {
     inherit agent blockdev;
   };
 
@@ -87,7 +88,7 @@ rec {
   sensusyntax = callPackage ./sensusyntax { };
   telegraf-collect-psi = callPackage ./telegraf-collect-psi { };
   telegraf-routes-summary = callPackage ./telegraf-routes-summary { };
-  trafficclient = pythonPackages.callPackage ./trafficclient.nix { };
+  trafficclient = pyPackages.callPackage ./trafficclient.nix { };
   userscan = callPackage ./userscan.nix { };
   util-physical = callPackage ./util-physical { };
 }
