@@ -1,3 +1,23 @@
+# Release 2025_009
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- docker: enable IP forwarding when the docker role is enabled, in
+  order to allow containers to access external services. (PL-133589)
+
+- Remove SSL Stapling from the default Nginx configuration since the default CA for NixOS provisioned certificates (Let's Encrypt) is ending OCSP support in 2025 (PL-133259)
+
+- Make managing the IPMI admin username optional. Some machines do not support changing the name. (PL-133561)
+
+- postgresql: pgvectorscale extension is now available as a package
+
+
+
 # Release 2025_008
 
 ## NixOS XX.XX platform
