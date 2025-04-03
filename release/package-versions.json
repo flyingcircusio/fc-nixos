@@ -30,9 +30,9 @@
     "version": "1.37.21"
   },
   "awscli2": {
-    "name": "awscli2-2.24.24",
+    "name": "awscli2-2.25.5",
     "pname": "awscli2",
-    "version": "2.24.24"
+    "version": "2.25.5"
   },
   "bash": {
     "name": "bash-interactive-5.2p37",
@@ -65,9 +65,9 @@
     "version": "3.108"
   },
   "calibre": {
-    "name": "calibre-7.26.0",
+    "name": "calibre-8.1.1",
     "pname": "calibre",
-    "version": "7.26.0"
+    "version": "8.1.1"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-136.0.7103.92",
+    "name": "chromedriver-unwrapped-135.0.7049.52",
     "pname": "chromedriver-unwrapped",
-    "version": "136.0.7103.92"
+    "version": "135.0.7049.52"
   },
   "chromium": {
-    "name": "chromium-136.0.7103.92",
+    "name": "chromium-135.0.7049.52",
     "pname": "chromium",
-    "version": "136.0.7103.92"
+    "version": "135.0.7049.52"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.99",
+    "name": "element-web-1.11.96",
     "pname": "element-web",
-    "version": "1.11.99"
+    "version": "1.11.96"
   },
   "erlang": {
     "name": "erlang-27.3.1",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-136.0.3",
+    "name": "firefox-137.0",
     "pname": "firefox",
-    "version": "136.0.3"
+    "version": "137.0"
   },
   "gcc": {
     "name": "gcc-wrapper-14-20241116",
@@ -225,9 +225,9 @@
     "version": "2.48.1"
   },
   "gitaly": {
-    "name": "gitaly-17.9.3",
+    "name": "gitaly-17.10.1",
     "pname": "gitaly",
-    "version": "17.9.3"
+    "version": "17.10.1"
   },
   "github-runner": {
     "name": "github-runner-2.323.0",
@@ -235,9 +235,9 @@
     "version": "2.323.0"
   },
   "gitlab": {
-    "name": "gitlab-17.9.3",
+    "name": "gitlab-17.10.1",
     "pname": "gitlab",
-    "version": "17.9.3"
+    "version": "17.10.1"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.19.0",
@@ -245,14 +245,14 @@
     "version": "4.19.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.9.3",
+    "name": "gitlab-ee-17.10.1",
     "pname": "gitlab-ee",
-    "version": "17.9.3"
+    "version": "17.10.1"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.9.3",
+    "name": "gitlab-pages-17.10.1",
     "pname": "gitlab-pages",
-    "version": "17.9.3"
+    "version": "17.10.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.9.3",
+    "name": "gitlab-workhorse-17.10.1",
     "pname": "gitlab-workhorse",
-    "version": "17.9.3"
+    "version": "17.10.1"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -285,14 +285,14 @@
     "version": "1.24.1"
   },
   "go_1_23": {
-    "name": "go-1.23.7",
+    "name": "go-1.23.8",
     "pname": "go",
-    "version": "1.23.7"
+    "version": "1.23.8"
   },
   "grafana": {
-    "name": "grafana-11.5.2",
+    "name": "grafana-11.6.0",
     "pname": "grafana",
-    "version": "11.5.2"
+    "version": "11.6.0"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -765,9 +765,9 @@
     "version": "5.4.1"
   },
   "poetry": {
-    "name": "poetry-2.1.1",
+    "name": "poetry-2.1.2",
     "pname": "poetry",
-    "version": "2.1.1"
+    "version": "2.1.2"
   },
   "polkit": {
     "name": "polkit-126",
@@ -1145,9 +1145,9 @@
     "version": "2.40.4"
   },
   "uv": {
-    "name": "uv-0.6.10",
+    "name": "uv-0.6.11",
     "pname": "uv",
-    "version": "0.6.10"
+    "version": "0.6.11"
   },
   "varnish": {
     "name": "varnish-7.5.0",
