@@ -9,6 +9,7 @@ with lib;
 
 let
   cfg = config.flyingcircus;
+  fclib = config.fclib;
 in
 mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
   lib.mkMerge [
@@ -49,11 +50,18 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
           "igb.InterruptThrottleRate=1"
         ];
 
-        # Wanted by backy and Ceph servers
-        kernel.sysctl."vm.vfs_cache_pressure" = 10;
-
-        kernel.sysctl."vm.swappiness" = config.fclib.mkPlatform 0;
-
+        kernel.sysctl = {
+          # We don't want to allow VMs with routed pub interfaces to
+          # be able to connect to e.g. the sshd on the KVM server from
+          # within the VRF. This is the kernel default, but we ensure
+          # that it's set here correctly anyway. (Compare the
+          # corresponding configuration in the router role.)
+          "net.ipv4.tcp_l3mdev_accept" = fclib.mkPlatform false;
+          "net.ipv4.udp_l3mdev_accept" = fclib.mkPlatform false;
+          "vm.swappiness" = fclib.mkPlatform 0;
+          # Wanted by backy and Ceph servers
+          "vm.vfs_cache_pressure" = 10;
+        };
       };
 
       flyingcircus.activationScripts = {
@@ -96,14 +104,14 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
 
       networking = {
         domain = "fcio.net";
-        hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
+        hostName = fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
       };
 
       services.irqbalance.enable = true;
 
       users.users.root = {
         # Overriden in local.nix
-        hashedPassword = config.fclib.mkPlatform "*";
+        hashedPassword = fclib.mkPlatform "*";
         openssh.authorizedKeys.keys = attrValues cfg.static.adminKeys;
       };
 
@@ -194,7 +202,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
 
     (lib.mkIf (config.flyingcircus.boot-style == "bios") {
       boot.loader.grub = {
-        device = config.fclib.mkPlatform "/dev/sda";
+        device = fclib.mkPlatform "/dev/sda";
         fsIdentifier = "provided";
         gfxmodeBios = "text";
       };
