@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-134.0.6998.165",
+    "name": "chromedriver-unwrapped-135.0.7049.52",
     "pname": "chromedriver-unwrapped",
-    "version": "134.0.6998.165"
+    "version": "135.0.7049.52"
   },
   "chromium": {
-    "name": "chromium-134.0.6998.165",
+    "name": "chromium-135.0.7049.52",
     "pname": "chromium",
-    "version": "134.0.6998.165"
+    "version": "135.0.7049.52"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
