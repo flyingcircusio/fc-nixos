@@ -165,9 +165,9 @@
     "version": "1.11.96"
   },
   "erlang": {
-    "name": "erlang-27.3.1",
+    "name": "erlang-27.3.2",
     "pname": "erlang",
-    "version": "27.3.1"
+    "version": "27.3.2"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -305,9 +305,9 @@
     "version": "3.1.6"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-46",
+    "name": "imagemagick-7.1.1-47",
     "pname": "imagemagick",
-    "version": "7.1.1-46"
+    "version": "7.1.1-47"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -880,9 +880,9 @@
     "version": "3.1.0"
   },
   "promtail": {
-    "name": "promtail-3.4.2",
+    "name": "promtail-3.4.3",
     "pname": "promtail",
-    "version": "3.4.2"
+    "version": "3.4.3"
   },
   "prosody": {
     "name": "prosody-0.12.4",
@@ -1000,9 +1000,9 @@
     "version": "6.0.0"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-4.0.7",
+    "name": "rabbitmq-server-4.0.8",
     "pname": "rabbitmq-server",
-    "version": "4.0.7"
+    "version": "4.0.8"
   },
   "rclone": {
     "name": "rclone-1.69.1",
@@ -1145,9 +1145,9 @@
     "version": "2.40.4"
   },
   "uv": {
-    "name": "uv-0.6.11",
+    "name": "uv-0.6.12",
     "pname": "uv",
-    "version": "0.6.11"
+    "version": "0.6.12"
   },
   "varnish": {
     "name": "varnish-7.5.0",
