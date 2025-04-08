@@ -355,9 +355,9 @@
     "version": "1.0.8043"
   },
   "jitsi-videobridge": {
-    "name": "jitsi-videobridge2-2.3-209-gb5fbe618",
+    "name": "jitsi-videobridge2-2.3-215-gbee626bf",
     "pname": "jitsi-videobridge2",
-    "version": "2.3-209-gb5fbe618"
+    "version": "2.3-215-gbee626bf"
   },
   "jq": {
     "name": "jq-1.7.1",
@@ -650,9 +650,9 @@
     "version": "3.0.16"
   },
   "openvpn": {
-    "name": "openvpn-2.6.13",
+    "name": "openvpn-2.6.14",
     "pname": "openvpn",
-    "version": "2.6.13"
+    "version": "2.6.14"
   },
   "pciutils": {
     "name": "pciutils-3.13.0",
@@ -1115,14 +1115,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.34",
+    "name": "apache-tomcat-10.1.39",
     "pname": "apache-tomcat",
-    "version": "10.1.34"
+    "version": "10.1.39"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.100",
+    "name": "apache-tomcat-9.0.102",
     "pname": "apache-tomcat",
-    "version": "9.0.100"
+    "version": "9.0.102"
   },
   "unifi": {
     "name": "unifi-controller-9.0.114",
