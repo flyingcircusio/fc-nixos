@@ -511,6 +511,11 @@ in
           systemd-sysctl.restartTriggers = lib.mkIf (!isNull fclib.underlay) [
             config.environment.etc."sysctl.d/70-fcio-underlay.conf".source
           ];
+          # Stop+starting the network can break
+          # switch-to-configuration on NFS clients by reloading the
+          # systemd config when the NFS server is unreachable. Do an
+          # in-place restart after systemd has reloaded instead.
+          network-setup.stopIfChanged = fclib.mkOverrideUpstreamModule false;
         }
         //
 
