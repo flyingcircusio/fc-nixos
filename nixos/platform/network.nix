@@ -538,6 +538,7 @@ in
                 pkgs.jq
                 pkgs.util-linux
               ];
+              stopIfChanged = false;
               script =
                 ''
                   set -e
