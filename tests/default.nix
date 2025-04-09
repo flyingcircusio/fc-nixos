@@ -104,7 +104,7 @@ in
   mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network { };
-  nfs = callTest ./nfs.nix { };
+  nfs = callSubTests ./nfs.nix { };
   nginx = callTest ./nginx.nix { };
   nix-version = callTest ./nix-version.nix { };
   nodejs = callTest ./nodejs.nix { };
