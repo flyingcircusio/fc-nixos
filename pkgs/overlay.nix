@@ -300,6 +300,16 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     }
   );
 
+  gptfdisk = super.gptfdisk.overrideAttrs (
+    a:
+    a
+    // {
+      patches = a.patches or [ ] ++ [
+        ./gptfdisk-dont-sleep.patch
+      ];
+    }
+  );
+
   imagemagick7 =
     assert lib.versions.major super.imagemagick.version == "7";
     lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick;

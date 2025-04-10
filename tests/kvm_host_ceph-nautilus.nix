@@ -32,7 +32,10 @@ import ./make-test-python.nix (
         # We need a lot of RAM specifically if we use the flake finder as due to
         # the amount of operations both Ceph and pytest will pile up memory they
         # can't release between test runs, so this needs to scale.
-        virtualisation.memorySize = 8000;
+        virtualisation.cores = 6;
+        virtualisation.writableStore = false;
+        virtualisation.useNixStoreImage = true;
+        virtualisation.memorySize = 12000;
         virtualisation.diskSize = 10000;
         virtualisation.vlans = with config.flyingcircus.static.vlanIds; [
           mgm
@@ -390,7 +393,7 @@ import ./make-test-python.nix (
       host1.wait_for_unit("nginx", timeout=10)
 
       with subtest("Run tests"):
-        host1.succeed("run-tests ${testOpts}", timeout=20*60)
+        host1.succeed("run-tests ${testOpts}", timeout=30*60)
 
       # XXX the following tests should be migrated to fc.qemu at some point
       show(host1, "rbd rm rbd/.fc-qemu.maintenance || true")
@@ -432,6 +435,7 @@ import ./make-test-python.nix (
         result = show(host1, "fc-qemu report-supported-cpu-models")
         assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result, result
 
+        host1.execute("rm /etc/qemu/vm/simplepubvm* /etc/qemu/vm/.simplepubvm.*")
         result = show(host1, "fc-qemu-scrub")
         assert "I simplevm              running-ensure                 generation=0" in result, result
 

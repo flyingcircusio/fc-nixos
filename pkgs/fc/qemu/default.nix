@@ -9,6 +9,7 @@
   file,
   gnused,
   gptfdisk,
+  iproute2,
   lib,
   libceph,
   openssh,
@@ -66,6 +67,7 @@ py.buildPythonPackage rec {
     dosfstools
     gnused
     gptfdisk
+    iproute2
     parted
     procps
     qemu_ceph
@@ -87,6 +89,10 @@ py.buildPythonPackage rec {
   passthru = {
     inherit py nativeCheckInputs;
   };
+
+  postInstall = ''
+    cp -Pr $src/share $out/share
+  '';
 
   nativeCheckInputs = [
     file

@@ -108,20 +108,6 @@ let
 
   quoteLabel = replaceStrings [ "/" ] [ "-" ];
 
-  vrfName = iface: "vrf${iface.vlan}";
-  vrfTable =
-    iface:
-    # the routing tables 0, 253, 254, and 255 are reserved by the
-    # kernel.
-    assert
-      !(elem iface.vlanId [
-        0
-        253
-        254
-        255
-      ]);
-    iface.vlanId;
-
 in
 {
 
@@ -287,7 +273,7 @@ in
                 ) vxlanVrfInterfaces)
               ++ (map (
                 iface:
-                lib.nameValuePair (vrfName iface) {
+                lib.nameValuePair iface.vrfInterface {
                   tempAddress = "disabled";
                 }
               ) vxlanVrfInterfaces)
@@ -912,7 +898,7 @@ in
                   (map (
                     iface:
                     let
-                      name = vrfName iface;
+                      name = iface.vrfInterface;
                       interfaceUnit = "${iface.interface}-netdev.service";
                       addressUnit = "network-addresses-${iface.interface}.service";
                     in
@@ -941,7 +927,7 @@ in
                         ip link show dev "${name}" >/dev/null 2>&1 && ip link del dev "${name}"
 
                         echo "Adding VRF ${name}..."
-                        ip link add ${name} type vrf table ${toString (vrfTable iface)}
+                        ip link add ${name} type vrf table ${toString iface.vrfTable}
 
                         # add child interfaces. no need to set up, the network-addresses
                         # unit will do that.

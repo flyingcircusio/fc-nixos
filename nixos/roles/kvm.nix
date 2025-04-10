@@ -8,11 +8,20 @@
 with builtins;
 
 let
+  inherit (config.flyingcircus) location;
   fclib = config.fclib;
   cfg = config.flyingcircus.roles.kvm_host;
   enc = config.flyingcircus.enc;
 
   cephPkgs = fclib.ceph.mkPkgs cfg.cephRelease;
+
+  # virtual ipv4 gateway address selected by 254-169=85, with each
+  # octet +85 mod 256 the preceding octet
+  virtualGatewayV4 = "169.254.83.168";
+  virtualGatewayV6 = "fe80::1";
+
+  vrfInterfaces = lib.filterAttrs (n: v: v.routed or false) fclib.network;
+  locationNameserver = head config.flyingcircus.static.nameservers."${location}";
 
 in
 {
@@ -103,6 +112,10 @@ in
       fc-vm-migration-watch = "watch '${cfg.package}/bin/fc-qemu ls; echo; grep migration-status /var/log/fc-qemu.log | tail'";
     };
 
+    # iproute2 configuration required by fc-qemu
+    environment.etc."iproute2/rt_protos.d/fc-qemu.conf".source =
+      "${cfg.package}/share/iproute2/rt_protos";
+
     environment.etc."qemu/fc-qemu.conf".text =
       let
         hostname = config.networking.hostName;
@@ -137,6 +150,12 @@ in
         [qemu-throttle-by-pool]
         rbd.hdd = 250
         rbd.ssd = 10000
+
+        [network]
+        tap-ifup-bridge = /etc/kvm/kvm-ifup
+        tap-ifdown-bridge = /etc/kvm/kvm-ifdown
+        tap-ifup-vrf = /etc/kvm/kvm-ifup-vrf
+        tap-ifdown-vrf = /etc/kvm/kvm-ifdown-vrf
 
         [consul]
         access-token = ${enc.parameters.secrets."consul/master_token"}
@@ -186,6 +205,36 @@ in
       mode = "0744";
     };
 
+    environment.etc."kvm/kvm-ifup-vrf" = {
+      text = ''
+        #!${pkgs.stdenv.shell}
+        INTERFACE="$1"
+        VLAN=$(echo $INTERFACE | sed 's/t\([a-zA-Z]\+\)[0-9]\+/\1/')
+        VRF="vrf''${VLAN}"
+
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE master $VRF
+
+        # add addresses idempotently
+        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV4}/16 dev $INTERFACE
+        ${pkgs.iproute2}/bin/ip address replace ${virtualGatewayV6}/64 dev $INTERFACE
+
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE up
+      '';
+      mode = "0744";
+    };
+
+    environment.etc."kvm/kvm-ifdown-vrf" = {
+      text = ''
+        #!${pkgs.stdenv.shell}
+        INTERFACE="$1"
+
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE down
+        ${pkgs.iproute2}/bin/ip address flush dev $INTERFACE
+        ${pkgs.iproute2}/bin/ip link set $INTERFACE nomaster
+      '';
+      mode = "0744";
+    };
+
     flyingcircus.services.consul.enable = true;
     flyingcircus.services.consul.watches = [
       {
@@ -217,7 +266,6 @@ in
       {
         commands = [
           "${cfg.package}/bin/fc-qemu -v handle-consul-event"
-          "/home/ctheune/fc.qemu/result/bin/fc-qemu -v handle-consul-event"
         ];
         users = [ "consul" ];
       }
@@ -258,6 +306,40 @@ in
         RemainAfterExit = true;
       };
 
+    };
+
+    systemd.services.fc-qemu-reattach-vrf-taps = lib.mkIf (fclib.network ? pub) {
+      description = "Reattach all VM taps to VRF devices if needed.";
+
+      path = [
+        pkgs.jq
+        pkgs.iproute2
+      ];
+
+      script = ''
+        for interface in $(ip -j link show |  jq '.[] | .ifname' -r | egrep '^tpub'); do
+          echo "Ensuring attachment of $interface"
+          /etc/kvm/kvm-ifup-vrf $interface || true
+        done
+      '';
+
+      wantedBy = [ "multi-user.target" ];
+      bindsTo = [
+        "vrfpub-netdev.service"
+      ];
+      after = [
+        "vrfpub-netdev.service"
+      ];
+
+      # trigger a scrub when the vrf netdev changes to ensure that the
+      # host routes for the guest interfaces are also set up properly.
+      wants = [ "fc-qemu-scrub.service" ];
+      before = [ "fc-qemu-scrub.service" ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
     };
 
     systemd.services.fc-qemu-clean-logs =
@@ -378,15 +460,41 @@ in
       };
     };
 
-    boot.kernel.sysctl = {
-      # Agressively try to reclaim memory on the local NUMA node if a slub cache runs
-      # empty. Note that we still don't allow disk I/O to happen to satisfy kernel
-      # memory allocations.
-      "vm.zone_reclaim_mode" = "1";
+    boot.kernel.sysctl =
+      {
+        # Agressively try to reclaim memory on the local NUMA node if a slub cache runs
+        # empty. Note that we still don't allow disk I/O to happen to satisfy kernel
+        # memory allocations.
+        "vm.zone_reclaim_mode" = "1";
 
-      # Qemu hosts tend to cycle PIDs pretty fast
-      "kernel.pid_max" = lib.mkForce "999999"; # mkForce to avoid conflict with ceph role
-    };
+        # Qemu hosts tend to cycle PIDs pretty fast
+        "kernel.pid_max" = lib.mkForce "999999"; # mkForce to avoid conflict with ceph role
+      }
+      // (lib.optionalAttrs (vrfInterfaces != { }) {
+        # When we have guests which are attached to layer 3 routed VRFs,
+        # we need to enable forwarding for traffic from the guest tap
+        # interfaces and the bridge interface for the associated
+        # L3VNI.
+        #
+        # For IPv4 this is easy, as the kernel provides per-interface
+        # sysctls which control whether packets received on specific
+        # interfaces should be forwarded or not.
+        #
+        # Under IPv6 however, the per-interface sysctls named
+        # "forwarding" don't actually have any control over whether
+        # packets received on specific interfaces are forwarded or
+        # not. Instead, there is a single *global* sysctl which controls
+        # forwarding for *all* interfaces, and the administrator is
+        # expected to use a firewall to enforce forwarding policy.
+        #
+        # In the interests of keeping IPv4 and IPv6 configuration
+        # reasonably symmetric, we'll turn on global forwarding and set
+        # a firewall for both protocols here.
+        "net.ipv4.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+        "net.ipv4.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+        "net.ipv6.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+        "net.ipv6.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+      });
 
     # Run a proxy to give VMs running on this host fast access to radosgw.
 
@@ -425,6 +533,46 @@ in
       ''
         # Accept traffic to the radosgw service
         ${fclib.iptables "127.0.0.1"} -A nixos-fw -p tcp --dport 7480 -i ${srvDevice} -j nixos-fw-accept
-      '';
+      ''
+      + (lib.optionalString (vrfInterfaces != { }) ''
+        # Set up KVM server forwarding firewall
+        ip46tables -N fc-kvm-forward || true
+        ip46tables -A FORWARD -j fc-kvm-forward
+
+        # Allow traffic between the VM pub interfaces and the bridge
+        # for the pub VNI. This internally traverses "through" the
+        # VRF interface, so this needs to be included in the firewall
+        # here as well.
+        ${lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (name: net: ''
+            ip46tables -A fc-kvm-forward -i t${name}+ -o ${net.vrfInterface} -j ACCEPT
+            ip46tables -A fc-kvm-forward -i ${net.vrfInterface} -o t${name}+ -j ACCEPT
+            ip46tables -A fc-kvm-forward -i ${net.bridgedLink} -o ${net.vrfInterface} -j ACCEPT
+            ip46tables -A fc-kvm-forward -i ${net.vrfInterface} -o ${net.bridgedLink} -j ACCEPT
+          '') vrfInterfaces
+        )}
+
+        # Block all further forwarding traffic
+        ip46tables -A fc-kvm-forward -j nixos-fw-refuse
+      '');
+
+    networking.firewall.extraStopCommands = lib.optionalString (fclib.network ? pub) ''
+      ip46tables -D FORWARD -j fc-kvm-forward || true
+      ip46tables -F fc-kvm-forward 2>/dev/null || true
+      ip46tables -X fc-kvm-forward 2>/dev/null || true
+    '';
+
+    networking.nat.extraCommands = lib.optionalString (vrfInterfaces != { }) ''
+      # Use destination NAT to allow guests to use the virtual
+      # gateway address as their DNS resolver, and forward queries
+      # to the location-wide resolver
+      ${lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (name: _: ''
+          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p udp --dport 53 -j DNAT --to-destination ${locationNameserver}
+          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p tcp --dport 53 -j DNAT --to-destination ${locationNameserver}
+        '') vrfInterfaces
+      )}
+    '';
+
   };
 }
