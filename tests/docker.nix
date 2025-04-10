@@ -55,6 +55,11 @@ import ./make-test-python.nix (
         # Taken from upstream test
         machine.succeed("grep 1 /proc/sys/net/ipv4/conf/all/forwarding")
         machine.succeed("grep 1 /proc/sys/net/ipv4/conf/default/forwarding")
+
+      with subtest("sysctl forwarding should be enabled after reloading"):
+        machine.succeed("systemctl restart systemd-sysctl.service")
+        machine.succeed("grep 1 /proc/sys/net/ipv4/conf/all/forwarding")
+        machine.succeed("grep 1 /proc/sys/net/ipv4/conf/default/forwarding")
     '';
   }
 )
