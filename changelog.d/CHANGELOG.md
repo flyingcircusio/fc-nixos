@@ -1,3 +1,22 @@
+# Release 2025_010
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- nfs: fix platform network configuration to prevent machines with NFS
+  mountpoints from hanging when switching to new system
+  configurations. (PL-133570)
+
+- Update our virtualisation tooling to Python 3.11 and remove C-level Ceph dependencies. (FC-133553)
+
+- Add documentation for the statshost role, specifically on how to use it from a customer's perspective (PL-133028)
+
+
+
 # Release 2025_009
 
 ## Impact
