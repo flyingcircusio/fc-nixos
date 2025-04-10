@@ -161,6 +161,29 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     };
   });
 
+  # Sidecar bird for managing VRF routes on routers
+  bird2-vrf = self.bird2.overrideAttrs (old: {
+    configureFlags = [
+      "--localstatedir=/var"
+      "--runstatedir=/run/bird-vrf"
+    ];
+
+    # Bird will not import routes in the kernel which are tagged with
+    # the "proto bird" flag, as these are considered bird's own
+    # routes. So let's change the VRF Bird's idea of what its "own"
+    # routes are so it can interoperate with the main Bird instance.
+    postPatch = ''
+      echo Updating native route protocol flag
+      ${self.gnused}/bin/sed -i -E -e 's/RTPROT_BIRD/201/g' sysdep/linux/netlink.c
+    '';
+
+    postInstall = ''
+      for prog in bird birdc birdcl; do
+          mv $out/sbin/$prog $out/sbin/vrf-$prog
+      done
+    '';
+  });
+
   inherit (super.callPackage ./boost { }) boost159;
 
   busybox = super.busybox.overrideAttrs (oldAttrs: {
