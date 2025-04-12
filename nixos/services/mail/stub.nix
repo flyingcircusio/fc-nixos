@@ -80,7 +80,6 @@ in
       };
 
       environment.etc."local/postfix/README.txt".text = readme;
-      environment.systemPackages = with pkgs; [ mailutils ];
 
       flyingcircus.services.sensu-client.checks = {
         postfix_mailq =

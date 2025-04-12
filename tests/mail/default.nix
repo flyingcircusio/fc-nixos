@@ -110,6 +110,13 @@ import ../make-test-python.nix (
             }
           ];
         };
+      nomail =
+        { lib, ... }:
+        {
+          networking.domain = "example.local";
+          networking.hostName = "nomail";
+          imports = [ (testlib.fcConfig { id = 4; }) ];
+        };
       client =
         { lib, ... }:
         {
@@ -162,6 +169,12 @@ import ../make-test-python.nix (
         globalChpasswd = "/run/current-system/sw/bin/roundcube-chpasswd";
       in
       ''
+        start_all()
+
+        with subtest("naive machine has mailutils config"):
+          nomail.execute("cat /etc/mailutils.conf > /dev/console")
+          nomail.succeed("grep 'email-domain nomail.example.local' /etc/mailutils.conf")
+
         with subtest("postsuper sudo rule should be present for service group"):
           mail.succeed('grep %service /etc/sudoers | grep -q postsuper')
 
