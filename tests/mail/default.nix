@@ -263,7 +263,7 @@ import ../make-test-python.nix (
         mail.succeed('echo | mail -s testmail6 user1@external.local')
         ext.wait_until_succeeds('ls /tmp/mh/*')
         ext.succeed("fgrep 'HELO:<mail.example.local>\n"
-          "FROM:<root\@mail.example.local>\nTO:<user1\@external.local>' /tmp/mh/*")
+          r"FROM:<root\@mail.example.local>\nTO:<user1\@external.local>' /tmp/mh/*")
 
         print("### Relaying & SMTP AUTH ###\n")
         ext.execute('rm -f /tmp/mh/*')
@@ -274,7 +274,7 @@ import ../make-test-python.nix (
             fgrep 'DKIM-Signature: v=1; a=rsa-sha256;
             c=relaxed/simple; d=example.local;' /tmp/mh/*
             """)
-        ext.succeed("egrep 'Message-Id: <.*\@mail\.example\.local>' /tmp/mh/*")
+        ext.succeed(r"egrep 'Message-Id: <.*\@mail\.example\.local>' /tmp/mh/*")
 
         client.shutdown()
         mail.shutdown()
