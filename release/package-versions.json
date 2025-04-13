@@ -40,9 +40,9 @@
     "version": "5.2p37"
   },
   "bind": {
-    "name": "bind-9.20.6",
+    "name": "bind-9.20.7",
     "pname": "bind",
-    "version": "9.20.6"
+    "version": "9.20.7"
   },
   "binutils": {
     "name": "binutils-wrapper-2.43.1",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-135.0.7049.52",
+    "name": "chromedriver-unwrapped-135.0.7049.84",
     "pname": "chromedriver-unwrapped",
-    "version": "135.0.7049.52"
+    "version": "135.0.7049.84"
   },
   "chromium": {
-    "name": "chromium-135.0.7049.52",
+    "name": "chromium-135.0.7049.84",
     "pname": "chromium",
-    "version": "135.0.7049.52"
+    "version": "135.0.7049.84"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -150,9 +150,9 @@
     "version": "27.5.1"
   },
   "docker-compose": {
-    "name": "docker-compose-2.34.0",
+    "name": "docker-compose-2.35.0",
     "pname": "docker-compose",
-    "version": "2.34.0"
+    "version": "2.35.0"
   },
   "dovecot": {
     "name": "dovecot-2.3.21.1",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-137.0",
+    "name": "firefox-137.0.1",
     "pname": "firefox",
-    "version": "137.0"
+    "version": "137.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-14-20241116",
@@ -255,9 +255,9 @@
     "version": "17.10.1"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-17.2.0",
+    "name": "gitlab-runner-17.10.1",
     "pname": "gitlab-runner",
-    "version": "17.2.0"
+    "version": "17.10.1"
   },
   "gitlab-workhorse": {
     "name": "gitlab-workhorse-17.10.1",
@@ -395,9 +395,9 @@
     "version": "26.1.4"
   },
   "kubernetes-helm": {
-    "name": "kubernetes-helm-3.17.2",
+    "name": "kubernetes-helm-3.17.3",
     "pname": "kubernetes-helm",
-    "version": "3.17.2"
+    "version": "3.17.3"
   },
   "libffi": {
     "name": "libffi-3.4.6",
@@ -455,14 +455,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.85",
+    "name": "linux-6.6.87",
     "pname": "linux",
-    "version": "6.6.85"
+    "version": "6.6.87"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.85",
+    "name": "linux-6.6.87",
     "pname": "linux",
-    "version": "6.6.85"
+    "version": "6.6.87"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -490,9 +490,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.6",
+    "name": "mastodon-4.3.7",
     "pname": "mastodon",
-    "version": "4.3.6"
+    "version": "4.3.7"
   },
   "matomo_5": {
     "name": "matomo-5.2.2",
@@ -500,9 +500,9 @@
     "version": "5.2.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.127.1",
+    "name": "matrix-synapse-wrapped-1.128.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.127.1"
+    "version": "1.128.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -565,9 +565,9 @@
     "version": "1.26.3"
   },
   "nix": {
-    "name": "nix-2.24.13",
+    "name": "nix-2.28.1",
     "pname": "nix",
-    "version": "2.24.13"
+    "version": "2.28.1"
   },
   "nodejs": {
     "name": "nodejs-22.14.0",
@@ -740,14 +740,14 @@
     "version": "8.2.28"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.19",
+    "name": "php-with-extensions-8.3.20",
     "pname": "php-with-extensions",
-    "version": "8.3.19"
+    "version": "8.3.20"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.5",
+    "name": "php-with-extensions-8.4.6",
     "pname": "php-with-extensions",
-    "version": "8.4.5"
+    "version": "8.4.6"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.5",
@@ -1145,9 +1145,9 @@
     "version": "2.40.4"
   },
   "uv": {
-    "name": "uv-0.6.12",
+    "name": "uv-0.6.14",
     "pname": "uv",
-    "version": "0.6.12"
+    "version": "0.6.14"
   },
   "varnish": {
     "name": "varnish-7.5.0",
@@ -1160,9 +1160,9 @@
     "version": "9.1.1122"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.48.0+abi=4.0",
+    "name": "webkitgtk-2.48.1+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.48.0"
+    "version": "2.48.1"
   },
   "wget": {
     "name": "wget-1.25.0",

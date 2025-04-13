@@ -386,11 +386,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1744083639,
-        "narHash": "sha256-R60mW9HATYl06YlXT7cDgLUWVYH6Ixuu4UrHJMom1RY=",
+        "lastModified": 1744519066,
+        "narHash": "sha256-iXlx4dFzWtz9elBgQll5/OOY0n+r9piW/hatbZB8m80=",
         "owner": "flyingcircusio",
         "repo": "nixpkgs",
-        "rev": "ef6691fd2e13238ee17a03f998dbe4ae2c5a988a",
+        "rev": "043227acd0498d1f1d0486536e247c8ec26c066f",
         "type": "github"
       },
       "original": {
