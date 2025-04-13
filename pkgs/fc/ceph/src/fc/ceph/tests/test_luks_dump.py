@@ -2,6 +2,8 @@ import textwrap
 import unittest.mock
 from unittest.mock import MagicMock
 
+from fc.ceph.luks import KEYSTORE
+
 data_correct = """LUKS header information
 Version:       	2
 Epoch:         	8
@@ -205,6 +207,31 @@ def test_check_pbkdf_is_argon2id_error():
     ]
 
 
+def test_check_header_backup_valid(tmp_path, monkeypatch):
+    from fc.ceph.luks.checks import check_header_backup_valid
+
+    keystore_path = tmp_path / "keystore"
+    keystore_path.mkdir()
+    orig_header = tmp_path / "header.luks"
+    backup_header = keystore_path / "header.luks"
+    monkeypatch.setattr(KEYSTORE, "local_key_dir", keystore_path)
+
+    assert list(check_header_backup_valid([], orig_header)) == [
+        "Error checking header backup"
+    ]
+
+    orig_header.write_text("abc")
+    backup_header.write_text("aaa")
+
+    assert list(check_header_backup_valid([], orig_header)) == [
+        "Header backup differs from local header"
+    ]
+
+    backup_header.write_text("abc")
+
+    assert list(check_header_backup_valid([], orig_header)) == []
+
+
 def test_check_integration_ok(monkeypatch, capsys):
     from fc.ceph.luks.manage import LuksDevice, LUKSKeyStoreManager
 
@@ -239,11 +266,13 @@ def test_check_integration_ok(monkeypatch, capsys):
         check_key_slots_exactly_1_and_0: OK
         check_512_bit_keys: OK
         check_pbkdf_is_argon2id: OK
+        check_header_backup_valid: OK
         Checking testdev2:
         check_cipher: OK
         check_key_slots_exactly_1_and_0: OK
         check_512_bit_keys: OK
         check_pbkdf_is_argon2id: OK
+        check_header_backup_valid: OK
         """
     )
     assert captured.err == ""
@@ -258,11 +287,13 @@ def test_check_integration_error(monkeypatch, capsys):
                 base_blockdev="/dev/mapper/foo",
                 name="testdev1",
                 mountpoint="/mnt/foo",
+                header="/mnt/foo.luks",
             ),
             LuksDevice(
                 base_blockdev="/dev/vgbar/holygrail",
                 name="testdev2",
                 mountpoint="/mnt/bar",
+                header="/mnt/bar.luks",
             ),
         ]
     )
@@ -287,6 +318,7 @@ def test_check_integration_error(monkeypatch, capsys):
         check_key_slots_exactly_1_and_0: keyslots: unexpected configuration ({0, 3})
         check_512_bit_keys: keysize: 256 bits does not match expected 512 bits
         check_pbkdf_is_argon2id: pbkdf: SHAKE382 does not match expected argon2id
+        check_header_backup_valid: Error checking header backup
         Checking testdev2:
         check_cipher: Unable to check cipher correctness, no `Cipher:` found in dump
         check_key_slots_exactly_1_and_0: keyslots: unexpected configuration (set())
@@ -295,6 +327,7 @@ def test_check_integration_error(monkeypatch, capsys):
         dump
         check_pbkdf_is_argon2id: Unable to check PBKDF correctness, no `PBKDF:` found in
         dump
+        check_header_backup_valid: Error checking header backup
         """
     )
     assert captured.err == ""
