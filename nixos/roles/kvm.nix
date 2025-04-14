@@ -421,11 +421,17 @@ in
         };
       };
       # each qemu process connects directly to multiple OSD's in the
-      # ceph cluster.
-      expectedConnections = {
-        warning = 18000;
-        critical = 25000;
-      };
+      # ceph cluster for at least 3-4 volumes. let's
+      expectedConnections =
+        let
+          vms = 250;
+          disks = 4;
+          conn_per_disk = 50;
+        in
+        {
+          warning = vms * disks * conn_per_disk;
+          critical = 2 * vms * disks * conn_per_disk;
+        };
     };
 
     flyingcircus.agent = {
