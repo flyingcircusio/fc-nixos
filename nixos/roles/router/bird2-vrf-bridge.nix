@@ -142,7 +142,7 @@ let
 
 in
 {
-  config = lib.mkIf enableVrfBridge {
+  config = lib.mkIf (role.enable && enableVrfBridge) {
     environment.systemPackages = [ package ];
 
     environment.etc."bird/bird2-vrf.conf".source = pkgs.writeTextFile {
