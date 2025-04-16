@@ -87,6 +87,16 @@ def main():
 
     # ---------------------------------
 
+    p = sub.add_parser(
+        "shutdown",
+        help="Shutdown the specified VM.",
+    )
+    p.set_defaults(func="shutdown")
+    p.add_argument("name", help="name of the VM")
+    p.add_argument("--location", help="location the VMs live in")
+
+    # ---------------------------------
+
     args = a.parse_args()
     func = args.func
 

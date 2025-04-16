@@ -56,7 +56,7 @@ let
 
   defaultService = {
     description = "FC dev Virtual Machine '%i'";
-    path = [ pkgs.qemu_kvm ];
+    path = [ pkgs.qemu_kvm manage_script ];
     serviceConfig.ExecStart = "${pkgs.coreutils}/bin/true";
   };
   mkService = name: vmCfg: lib.nameValuePair "fc-devhost-vm@${name}" (lib.recursiveUpdate defaultService {
@@ -80,14 +80,10 @@ let
           "-device" "virtio-net,netdev=ethsrv-${name},mac=${vmCfg.srvMac}"
           "-serial" "file:/var/lib/devhost/vms/${name}/log"
           "-qmp" "unix:/var/lib/devhost/vms/${name}/qmp.sock,server,nowait"
+          "-pidfile" "/var/lib/devhost/vms/${name}/pid"
         ]);
       ExecStop = pkgs.writeShellScript "shutdown-devhost-vm" ''
-        (
-          ${pkgs.coreutils}/bin/echo '{"execute": "qmp_capabilities" } { "execute": "system_powerdown" }'
-          # wait for shutdown
-          cat
-        ) | \
-        ${pkgs.socat}/bin/socat STDIO UNIX:/var/lib/devhost/vms/${name}/qmp.sock,shut-none
+        fc-devhost shutdown ${name}
       '';
       TimeoutStopSec = 180;
      };
