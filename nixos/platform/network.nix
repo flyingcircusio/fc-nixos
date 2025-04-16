@@ -454,7 +454,7 @@ in
                   " advertise-svi-ip"
                   "exit-vni"
                 ]
-              ) vxlanInterfaces
+              ) (filter (i: !i.routed) vxlanInterfaces)
             }
            exit-address-family
            !
