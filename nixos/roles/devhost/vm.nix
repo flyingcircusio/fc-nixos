@@ -93,15 +93,12 @@ let
      };
   });
 
+  fc_devhost = pkgs.callPackage ./fc.devhost {};
+
   # We unfortunately cannot use writePython3Bin as that only supports
   # python libs in path, and not other applications.
   manage_script = pkgs.writeShellApplication {
     name = "fc-devhost";
-    runtimeInputs = with pkgs; [
-      (python3.withPackages(ps: with ps; [ requests tabulate ]))
-      xfsprogs
-      qemu
-    ];
     text = ''
 
     if [[ ! -f "/var/lib/devhost/ssh_bootstrap_key" ]]; then
@@ -117,7 +114,7 @@ let
       chmod 600 /var/lib/devhost/ssh_bootstrap_key
     fi
 
-    python ${./fc-devhost.py} "$@" --location ${location}
+    ${lib.getExe fc_devhost} "$@" --location ${location}
     '';
   };
 in {
