@@ -1,4 +1,3 @@
-import argparse
 import datetime
 import fcntl
 import hashlib
@@ -6,15 +5,17 @@ import ipaddress
 import json
 import os
 import shutil
+import socket
 import subprocess
-import sys
 import tempfile
 import textwrap
 import time
-import uuid
 from pathlib import Path
 
+import psutil
 import requests
+from fc.devhost.qmp import QEMUMonitorProtocol, QMPConnectError
+from fc.devhost.timeout import TimeOut
 from tabulate import tabulate
 
 MAX_VM_ID = 1024
@@ -124,8 +125,33 @@ class Manager:
         return VM_DATA_DIR / self.name / "rootfs.qcow2.tmp"
 
     @property
+    def qmp_sock(self):
+        return VM_DATA_DIR / self.name / "qmp.sock"
+
+    @property
+    def pid_file(self):
+        return VM_DATA_DIR / self.name / "pid"
+
+    @property
     def lockfile(self):
         return open(LOCKFILE_PATH, "a+")
+
+    __qmp = None
+
+    @property
+    def qmp(self):
+        if self.__qmp is None:
+            qmp = QEMUMonitorProtocol(str(self.qmp_sock))
+            qmp.settimeout(5 * 60)
+            try:
+                qmp.connect()
+            except socket.error:
+                # We do not log this as this does happen quite regularly and
+                # is usually fine as the VM wasn't started (yet).
+                pass
+            else:
+                self.__qmp = qmp
+        return self.__qmp
 
     def destroy(self, location=None):
         print("Assuming devhost lock ...")
@@ -487,112 +513,106 @@ class Manager:
             ],
         )
 
+    def proc(self):
+        """Qemu processes as psutil.Process object.
 
-def main():
-    a = argparse.ArgumentParser(
-        prog="fc-devhost", description="Manage DevHost VMs."
-    )
-    a.set_defaults(func="print_usage")
-    sub = a.add_subparsers(title="subcommands")
+        Returns None if the PID file does not exist or the process is
+        not running.
+        """
+        try:
+            with self.pid_file.open() as p:
+                # pid file may contain trailing lines with garbage
+                for line in p:
+                    proc = psutil.Process(int(line))
+                    marker = "{name},process=kvm.{name}".format(name=self.name)
+                    # Do not use proc.name() here - it's only 16 bytes ...
+                    if marker not in proc.cmdline():
+                        break
+                    return proc
+        except (IOError, OSError, ValueError, psutil.NoSuchProcess):
+            pass
 
-    def space_separated_list(str):
-        if str == "":
-            return []
-        return str.split(" ")
+    def process_exists(self):
+        proc = self.proc()
+        if proc is None:
+            return False
+        return proc.is_running()
 
-    p = sub.add_parser("ensure", help="Create or update a given VM.")
-    p.set_defaults(func="ensure")
-    p.add_argument("--cpu", type=int, help="number of cores")
-    p.add_argument("--memory", type=int, help="amount of memory")
-    p.add_argument("--location", help="location the VMs live in")
-    p.add_argument("--image-url", type=str, help="url to an image for the vm")
-    p.add_argument(
-        "--channel-url", type=str, help="url to the nix channel for the vm"
-    )
-    p.add_argument(
-        "--hydra-eval",
-        type=int,
-        help="hydra eval to use for base image (deprecated, use --image-url and --channel-url)",
-    )
-    p.add_argument(
-        "--aliases",
-        type=space_separated_list,
-        default=[],
-        help="aliases for the nginx",
-    )
-    p.add_argument("name", help="name of the VM")
+    def is_running(self):
+        # Simplified version from fc.qemu
 
-    # ---------------------------------
+        # This method must be very reliable. It is perfectly OK to error
+        # out in the case of inconsistencies. But a "true" must mean:
+        # we have a working Qemu instance here. And a "false" must mean:
+        # there is no reason to think that any remainder of a Qemu process is
+        # still running
 
-    p = sub.add_parser("destroy", aliases=["rm"], help="Destroy provided VMs.")
-    p.set_defaults(func="destroy")
-    p.add_argument(
-        "name",
-        nargs="+",
-        help="name(s) of the VMs to be destroyed",
-    )
-    p.add_argument("--location", help="location the VMs live in")
+        timeout = TimeOut(10, raise_on_timeout=False)
+        while timeout.tick():
+            # Try to find a stable result within a few seconds - ignore
+            # unstable results in between. Qemu might just be starting
+            # and the process already there but QMP not, or vice versa.
 
-    # ---------------------------------
+            # a) is there a process?
+            expected_process_exists = self.process_exists()
 
-    p = sub.add_parser(
-        "list",
-        aliases=["ls"],
-        help="List VMs. By default all, can be limited by parameters.",
-    )
-    p.set_defaults(func="list_vms")
-    p.add_argument("--user", type=str, help="user name creating the vm")
-    p.add_argument(
-        "-l",
-        "--long-format",
-        action="store_true",
-        help="show more details of the vms",
-    )
-    p.add_argument("--location", help="location the VMs live in")
+            # b) is the monitor port around reliably? Let's assume it does.
+            qmp_available = self.qmp
 
-    # ---------------------------------
+            # c) is the monitor available and talks to us?
+            monitor_says_running = False
+            status = {}
 
-    p = sub.add_parser(
-        "cleanup",
-        help="Cleanup. This is an automated task. In this process old base images will be deleted.",
-    )
-    p.set_defaults(func="cleanup")
-    p.add_argument("--location", help="location the VMs live in")
+            if qmp_available:
+                try:
+                    status = self.qmp.command("query-status")
+                except (QMPConnectError, socket.error):
+                    # Force a reconnect in the next iteration.
+                    self.__qmp.close()
+                    self.__qmp = None
+                    qmp_available = False
+                    monitor_says_running = False
+                else:
+                    monitor_says_running = status["running"]
 
-    # ---------------------------------
+            if (
+                expected_process_exists
+                and qmp_available
+                and monitor_says_running
+            ):
+                return True
 
-    p = sub.add_parser(
-        "login",
-        help="Login into the specified VM.",
-    )
-    p.set_defaults(func="login")
-    p.add_argument("name", help="name of the VM")
-    p.add_argument("--location", help="location the VMs live in")
+            if not expected_process_exists and not qmp_available:
+                return False
 
-    args = a.parse_args()
-    func = args.func
+        # The timeout passed and we were not able to determine a consistent
+        # result. :/
+        raise RuntimeError(
+            "Can not determine whether Qemu is running. "
+            "Process exists: {}, QMP socket reliable: {}, "
+            "Status is running: {}".format(
+                expected_process_exists, qmp_available, monitor_says_running
+            ),
+            status,
+        )
 
-    if func == "print_usage":
-        a.print_usage()
-        sys.exit(1)
+    def graceful_shutdown(self):
+        if not self.qmp:
+            return
+        self.qmp.command("system_powerdown")
 
-    CONFIG_DIR.mkdir(exist_ok=True)
-
-    name = getattr(args, "name", None)
-    kwargs = dict(args._get_kwargs())
-
-    if func == "destroy":
-        for name in args.name:
-            manager = Manager(name)
-            manager.destroy()
-
-    del kwargs["func"]
-    if "name" in kwargs:
-        del kwargs["name"]
-
-    manager = Manager(name)
-    getattr(manager, func)(**kwargs)
-
-
-if __name__ == "__main__":
-    main()
+    def shutdown(self, location=None):
+        timeout = TimeOut(5, interval=3)
+        try:
+            self.graceful_shutdown()
+        except (socket.error, RuntimeError):
+            pass
+        while timeout.tick():
+            print(f"checking-offline, remaining={timeout.remaining}")
+            if not self.is_running():
+                print("vm-offline")
+                print("graceful-shutdown-completed")
+                break
+        else:
+            # Shutdown failed, now the VM gets killed by systemd
+            print("graceful-shutdown-failed")
