@@ -46,7 +46,6 @@
         lnav
         lynx
         magic-wormhole
-        mailutils
         mercurial
         mmv
         nano
