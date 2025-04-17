@@ -110,9 +110,24 @@ in
     systemd.services.coturn = rec {
       requires = [ "acme-selfsigned-${hostname}.service" ];
       after = requires;
-      serviceConfig = {
-        Restart = lib.mkForce "always";
-      };
+      serviceConfig =
+        {
+          Restart = lib.mkForce "always";
+        }
+        //
+        # Disable sandboxing which prevents binding on privileged ports
+        # when these are explicitly requested in the configuration
+        (lib.optionalAttrs
+          (any (p: p < 1024) [
+            serviceCfg.listening-port
+            serviceCfg.tls-listening-port
+            serviceCfg.alt-listening-port
+            serviceCfg.alt-tls-listening-port
+          ])
+          {
+            PrivateUsers = lib.mkForce false;
+          }
+        );
     };
 
     security.acme.certs."${hostname}" = {
