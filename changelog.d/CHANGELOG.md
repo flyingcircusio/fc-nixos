@@ -1,5 +1,24 @@
 # Release 2025_011
 
+## Impact
+
+- DevHost VMs restart
+
+
+## NixOS XX.XX platform
+
+- devhost: Fix graceful shutdown of devhost VMs (PL-133536)
+
+- router: add support for providing gateway services on layer 3 routed
+  networks using VRFs. (PL-133324)
+
+- kvm: support layer 3 routed networks when bootstrapping cloud-init
+  VM's. (PL-133325)
+
+
+
+# Release 2025_011
+
 
 # Release 2025_011
 
