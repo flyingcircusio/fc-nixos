@@ -52,8 +52,8 @@ rec {
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "15d68f75bf2200b1f1ffea1aba33829ac253a63d";
-      hash = "sha256-rqsZW4tLbFVwmyjYx1Z/K6vEc2Rb4HHSS5zUFKVVxOM=";
+      rev = "bedc0adf0a95f3c8585111899cf4855d30f3c441";
+      hash = "sha256-wc8wC0+i7Lj1sdJPT/iqIXICVAmt0TJUCIqsxeyapeo=";
     };
     fc-ceph = ceph;
     qemu_ceph = pkgs.qemu-ceph-nautilus;
@@ -66,7 +66,7 @@ rec {
   # test discovery at the moment.
   #
   # qemu-dev-nautilus = qemu-nautilus.overrideAttrs (old: {
-  #   # for tests:
+  #   # for tests and development checkouts on kvm hosts:
   #   src = ../../../../../fc.qemu/.;
   #   # for nix-shell . -A fc.qemu-dev-nautilus
   #   # src = ../../../fc.qemu/.;
