@@ -21,7 +21,10 @@ let
   virtualGatewayV6 = "fe80::1";
 
   vrfInterfaces = lib.filterAttrs (n: v: v.routed or false) fclib.network;
-  locationNameserver = head config.flyingcircus.static.nameservers."${location}";
+  locationNameserverV4 = head config.flyingcircus.static.nameservers."${location}";
+  locationNameserverV6 = head config.flyingcircus.static.nameservers6."${location}";
+
+  vrfV6Resolvers = iface: map (net: "${net.network}1") iface.v6.networkAttrs;
 
 in
 {
@@ -574,9 +577,20 @@ in
       # to the location-wide resolver
       ${lib.concatStringsSep "\n" (
         lib.mapAttrsToList (name: _: ''
-          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p udp --dport 53 -j DNAT --to-destination ${locationNameserver}
-          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p tcp --dport 53 -j DNAT --to-destination ${locationNameserver}
+          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p udp --dport 53 -j DNAT --to-destination ${locationNameserverV4}
+          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p tcp --dport 53 -j DNAT --to-destination ${locationNameserverV4}
         '') vrfInterfaces
+      )}
+      ${lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (
+          name: iface:
+          lib.concatStringsSep "\n" (
+            map (gw: ''
+              ip6tables -t nat -A nixos-nat-pre -i t${name}+ -d ${gw} -p udp --dport 53 -j DNAT --to-destination ${locationNameserverV6}
+              ip6tables -t nat -A nixos-nat-pre -i t${name}+ -d ${gw} -p tcp --dport 53 -j DNAT --to-destination ${locationNameserverV6}
+            '') (vrfV6Resolvers iface)
+          )
+        ) vrfInterfaces
       )}
     '';
 
