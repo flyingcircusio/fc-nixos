@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-135.0.7049.84",
+    "name": "chromedriver-unwrapped-135.0.7049.95",
     "pname": "chromedriver-unwrapped",
-    "version": "135.0.7049.84"
+    "version": "135.0.7049.95"
   },
   "chromium": {
-    "name": "chromium-135.0.7049.84",
+    "name": "chromium-135.0.7049.95",
     "pname": "chromium",
-    "version": "135.0.7049.84"
+    "version": "135.0.7049.95"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -160,14 +160,14 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.96",
+    "name": "element-web-1.11.97",
     "pname": "element-web",
-    "version": "1.11.96"
+    "version": "1.11.97"
   },
   "erlang": {
-    "name": "erlang-25.3.2.19",
+    "name": "erlang-25.3.2.20",
     "pname": "erlang",
-    "version": "25.3.2.19"
+    "version": "25.3.2.20"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-137.0.1",
+    "name": "firefox-137.0.2",
     "pname": "firefox",
-    "version": "137.0.1"
+    "version": "137.0.2"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -225,9 +225,9 @@
     "version": "2.47.2"
   },
   "gitaly": {
-    "name": "gitaly-17.9.3",
+    "name": "gitaly-17.10.4",
     "pname": "gitaly",
-    "version": "17.9.3"
+    "version": "17.10.4"
   },
   "github-runner": {
     "name": "github-runner-2.323.0",
@@ -235,9 +235,9 @@
     "version": "2.323.0"
   },
   "gitlab": {
-    "name": "gitlab-17.9.3",
+    "name": "gitlab-17.10.4",
     "pname": "gitlab",
-    "version": "17.9.3"
+    "version": "17.10.4"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.19.0",
@@ -245,14 +245,14 @@
     "version": "4.19.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.9.3",
+    "name": "gitlab-ee-17.10.4",
     "pname": "gitlab-ee",
-    "version": "17.9.3"
+    "version": "17.10.4"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.9.3",
+    "name": "gitlab-pages-17.10.4",
     "pname": "gitlab-pages",
-    "version": "17.9.3"
+    "version": "17.10.4"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.9.3",
+    "name": "gitlab-workhorse-17.10.4",
     "pname": "gitlab-workhorse",
-    "version": "17.9.3"
+    "version": "17.10.4"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -280,9 +280,9 @@
     "version": "2.4.5"
   },
   "go": {
-    "name": "go-1.23.7",
+    "name": "go-1.23.8",
     "pname": "go",
-    "version": "1.23.7"
+    "version": "1.23.8"
   },
   "go_1_22": {
     "name": "go-1.22.12",
@@ -290,9 +290,9 @@
     "version": "1.22.12"
   },
   "go_1_23": {
-    "name": "go-1.23.7",
+    "name": "go-1.23.8",
     "pname": "go",
-    "version": "1.23.7"
+    "version": "1.23.8"
   },
   "grafana": {
     "name": "grafana-11.3.5",
@@ -545,9 +545,9 @@
     "version": "10.11.11"
   },
   "mysql80": {
-    "name": "mysql-8.0.41",
+    "name": "mysql-8.0.42",
     "pname": "mysql",
-    "version": "8.0.41"
+    "version": "8.0.42"
   },
   "nfs-utils": {
     "name": "nfs-utils-2.7.1",
@@ -655,9 +655,9 @@
     "version": "3.0.16"
   },
   "openvpn": {
-    "name": "openvpn-2.6.12",
+    "name": "openvpn-2.6.14",
     "pname": "openvpn",
-    "version": "2.6.12"
+    "version": "2.6.14"
   },
   "pciutils": {
     "name": "pciutils-3.13.0",
@@ -745,14 +745,14 @@
     "version": "8.2.28"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.19",
+    "name": "php-with-extensions-8.3.20",
     "pname": "php-with-extensions",
-    "version": "8.3.19"
+    "version": "8.3.20"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.5",
+    "name": "php-with-extensions-8.4.6",
     "pname": "php-with-extensions",
-    "version": "8.4.5"
+    "version": "8.4.6"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.5",
@@ -1040,14 +1040,14 @@
     "version": "3.4.1"
   },
   "ruby": {
-    "name": "ruby-3.3.6",
+    "name": "ruby-3.3.7",
     "pname": "ruby",
-    "version": "3.3.6"
+    "version": "3.3.7"
   },
   "ruby_3_2": {
-    "name": "ruby-3.2.6",
+    "name": "ruby-3.2.8",
     "pname": "ruby",
-    "version": "3.2.6"
+    "version": "3.2.8"
   },
   "runc": {
     "name": "runc-1.1.15",
@@ -1165,9 +1165,9 @@
     "version": "9.1.1122"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.46.6+abi=4.0",
+    "name": "webkitgtk-2.48.0+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.46.6"
+    "version": "2.48.0"
   },
   "wget": {
     "name": "wget-1.25.0",
