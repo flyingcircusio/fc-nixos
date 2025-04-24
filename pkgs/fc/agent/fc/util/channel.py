@@ -1,5 +1,8 @@
 import os
 import os.path as p
+import subprocess
+import time
+from pathlib import Path
 
 from fc.util import nixos
 from fc.util.nixos import RE_FC_CHANNEL
@@ -116,7 +119,41 @@ class Channel:
         nixos.register_system_profile(self.system_path, self.log)
         # New system is registered, delete the temporary result link.
         os.unlink(out_link)
-        return nixos.switch_to_system(self.system_path, lazy, self.log)
+
+        current_release = nixos.get_release_version(
+            nixos.running_system_version()
+        )
+        next_release = nixos.get_release_version(
+            (Path(self.system_path) / "nixos-version").read_text()
+        )
+
+        if current_release != next_release:
+            reboot_delay = 10
+            self.log.warn(
+                "release-change-requires-reboot",
+                current_release=current_release,
+                next_release=next_release,
+            )
+            while reboot_delay:
+                self.log.warn(
+                    "reboot-scheduled",
+                    _replace_msg=f"WILL REBOOT IN {reboot_delay} SECONDS. PRESS Ctrl-C TO ABORT.",
+                )
+                time.sleep(1)
+                reboot_delay -= 1
+            if not nixos.switch_to_system(
+                self.system_path, lazy, "boot", self.log
+            ):
+                return False
+            self.log.warn(
+                "reboot-scheduled",
+                _replace_msg="System switched. Triggering reboot NOW.",
+            )
+            subprocess.check_call(["reboot"])
+        else:
+            return nixos.switch_to_system(
+                self.system_path, lazy, "switch", self.log
+            )
 
     def build(self, out_link=None, show_trace=False):
         """
