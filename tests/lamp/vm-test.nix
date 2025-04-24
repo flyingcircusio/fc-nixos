@@ -52,6 +52,7 @@ import ../make-test-python.nix (
             '';
 
             php_ini = ''
+              ; Make sure references to derivations are allowed: ${pkgs.hello}
               # XXX test-i-a-m-the-custom-php-ini
             '';
 
