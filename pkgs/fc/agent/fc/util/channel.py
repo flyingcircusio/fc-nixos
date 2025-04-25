@@ -176,9 +176,8 @@ class Channel:
                 time.sleep(1)
                 reboot_delay -= 1
             with locked(self.log, lock_dir, "switch_to_configuration.lock"):
-                if (
-                    nixos.switch_to_system(switch_path, lazy, "boot", self.log)
-                    is False
+                if not nixos.switch_to_system(
+                    switch_path, lazy, "boot", self.log
                 ):
                     return False
             self.log.warn(
