@@ -142,6 +142,17 @@ def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
         )
 
 
+def get_release_version(v):
+    """Extract the "major" release version to detection distro
+    upgrades/downgrades.
+    Accept development versions, like 24.11pre-git and release versions
+    like "24.05.12355.adc37d7fe"
+    """
+    v = v.replace("pre-git", "")
+    v = v.split(".")[:2]
+    return ".".join(v)
+
+
 def running_system_version(log=_log):
     nixos_version_path = Path("/run/current-system/nixos-version")
 
@@ -517,9 +528,7 @@ def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
     return system_path
 
 
-def switch_to_system(
-    system_path: str | Path, lazy, update_bootloader=True, log=_log
-):
+def switch_to_system(system_path: str | Path, lazy, switch_type: str, log=_log):
     system_path = Path(system_path).resolve()
     if lazy and Path("/run/current-system").resolve() == system_path:
         log.info(
@@ -535,8 +544,7 @@ def switch_to_system(
         system=system_path,
     )
 
-    action = "switch" if update_bootloader else "test"
-    cmd = [f"{system_path}/bin/switch-to-configuration", action]
+    cmd = [f"{system_path}/bin/switch-to-configuration", switch_type]
 
     log.debug("system-switch-command", cmd=" ".join(cmd))
 

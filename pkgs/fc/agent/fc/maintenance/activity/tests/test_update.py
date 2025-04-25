@@ -252,6 +252,7 @@ def nixos_mock(monkeypatch):
     )
 
     mocked.format_unit_change_lines = fc.util.nixos.format_unit_change_lines
+    mocked.get_release_version = fc.util.nixos.get_release_version
     mocked.get_fc_channel_build = fake_get_fc_channel_build
     mocked.channel_version = fake_channel_version
     mocked.kernel_version = fake_changed_kernel_version
@@ -376,6 +377,63 @@ def test_update_nfs_reboot_required(
     )
 
 
+def test_update_release_change_reboot_required(
+    log, logger, tmp_path, activity, nixos_mock
+):
+    # I'd rather like to call prepare() here but the overall logic isn't
+    # factored for testability.
+
+    activity.reboot_needed = None
+    activity._register_reboot_for_release_change()
+    assert not activity.reboot_needed
+
+    # The method is ignorant to the state before, so it doesn't change what's
+    # already there.
+    activity.reboot_needed = RebootType.WARM
+    activity._register_reboot_for_release_change()
+    assert activity.reboot_needed == RebootType.WARM
+
+    # We do not require a reboot if the release path contains only
+    # a single (current) version
+    activity.reboot_needed = None
+    activity.current_version = "24.11"
+    activity.next_version = "24.11"
+    assert activity.release_path() == ["24.11"]
+    activity._register_reboot_for_release_change()
+    assert not activity.reboot_needed
+
+    # We do not require a reboot if the release path contains only
+    # a single (current) version
+    activity.reboot_needed = None
+    activity.current_version = "24.11"
+    activity.next_version = "25.05"
+    assert activity.release_path() == ["24.11", "25.05"]
+    activity._register_reboot_for_release_change()
+    assert activity.reboot_needed == RebootType.WARM
+
+    assert activity.summary == textwrap.dedent(
+        """\
+        System update: 24.11 -> 25.05
+        
+        Will reboot after the update.
+        
+        Start/Stop: postgresql
+        Restart: telegraf
+        Reload: nginx
+        
+        Release: 2021_002 -> 2021_003
+        ChangeLog: https://doc.flyingcircus.io/platform/changes/2021/r003.html
+        Environment: fc-21.05-production (unchanged)
+        Build number: 93111 -> 93222
+        Channel URL: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"""
+    )
+    assert log.has(
+        "distro-release-change-require-reboot",
+        current_release="24.11",
+        next_release="25.05",
+    )
+
+
 def test_update_activity_run(log, nixos_mock, activity, logger):
     activity.run()
 
@@ -390,7 +448,7 @@ def test_update_activity_run(log, nixos_mock, activity, logger):
         NEXT_SYSTEM_PATH, log=activity.log
     )
     nixos_mock.switch_to_system.assert_called_with(
-        NEXT_SYSTEM_PATH, lazy=False, log=activity.log
+        NEXT_SYSTEM_PATH, lazy=False, switch_type="switch", log=activity.log
     )
     assert log.has("update-run-succeeded")
 
@@ -452,6 +510,34 @@ def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
 
     assert activity.returncode == state.EXIT_TEMPFAIL
     assert log.has("update-run-tempfail", returncode=state.EXIT_TEMPFAIL)
+
+
+def test_update_activity_switch_if_no_release_change(
+    log, nixos_mock, activity
+):
+    activity.current_version = "24.11.1111"
+    activity.next_version = "24.11.9999"
+    activity.run()
+
+    nixos_mock.switch_to_system.assert_called_once_with(
+        NEXT_SYSTEM_PATH,
+        lazy=False,
+        switch_type="switch",
+        log=activity.log,
+    )
+
+
+def test_update_activity_boot_if_release_change(log, nixos_mock, activity):
+    activity.current_version = "24.11.1111"
+    activity.next_version = "25.05.9999"
+    activity.run()
+
+    nixos_mock.switch_to_system.assert_called_once_with(
+        NEXT_SYSTEM_PATH,
+        lazy=False,
+        switch_type="boot",
+        log=activity.log,
+    )
 
 
 def test_update_activity_from_enc(
