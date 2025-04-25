@@ -1060,9 +1060,9 @@
     "version": "4.9.1"
   },
   "slurm": {
-    "name": "slurm-24.05.4.1",
+    "name": "slurm-24.05.7.1",
     "pname": "slurm",
-    "version": "24.05.4.1"
+    "version": "24.05.7.1"
   },
   "smartmontools": {
     "name": "smartmontools-7.4",
