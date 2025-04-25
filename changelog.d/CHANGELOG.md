@@ -1,3 +1,41 @@
+# Release 2025_012
+
+## NixOS XX.XX platform
+
+- Update fc-qemu to fix performance issue that caused a storage outage due to
+  OSD hotspot behaviour. (PL-133632)
+
+- Configure the sender domain for `mailutils` based programs to be the fully qualified hostname by default. (PL-133552)
+
+- coturn: ensure that the coturn process can bind to port 443 when
+  enabled by the Jitsi role. (PL-133419)
+
+- Increase interval for scrubbing VMs. In large clusters this is becoming
+  too expensive and since we introduced the per-VM supervisor this isn't
+  as relevant any longer. (PL-133632)
+
+- kvm: provide resolver services to layer 3 routed guest interfaces
+  also on the subnet virtual router IPv6 address. (PL-133325)
+
+- fc.qemu: multiple changes to improve the support for cloud-init-based VMs (Ubuntu) (PL-133325)
+
+  - Provision IPv6 nameserver to support IPv6-only VMs
+
+  - Upgrade packages on first boot.
+
+  - Fix cloud-init instance ID handling to avoid regenerating SSH host keys too often.
+
+  - Ensure network settings are updated on every boot.
+
+
+## Impact
+
+- A bullet item for the Impact category.
+
+- A bullet item for the Impact category.
+
+
+
 # Release 2025_011
 
 ## Impact
