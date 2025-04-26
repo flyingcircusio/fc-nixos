@@ -1,4 +1,5 @@
 """Helpers for interaction with the NixOS system"""
+
 import itertools
 import os
 import os.path as p
@@ -83,7 +84,7 @@ def kernel_version(kernel):
     moddir = os.listdir(p.join(p.dirname(bzImage), "lib", "modules"))
     if len(moddir) != 1:
         raise RuntimeError(
-            "modules subdir does not contain exactly " "one item", moddir
+            "modules subdir does not contain exactly one item", moddir
         )
     return moddir[0]
 
@@ -133,6 +134,19 @@ def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
             ),
             channel_url=channel_url,
         )
+
+
+def get_release_version(v):
+    """Extract the "major" release version to detection distro
+    upgrades/downgrades.
+
+    Accept development versions, like 24.11pre-git and release versions
+    like "24.05.12355.adc37d7fe"
+
+    """
+    v = v.replace("pre-git", "")
+    v = v.split(".")[:2]
+    return ".".join(v)
 
 
 def running_system_version(log=_log):
@@ -473,7 +487,7 @@ def build_system(
         system_path = proc.stdout.read().strip()
         try:
             size_bytes = system_closure_size(log, Path(system_path))
-            size_humanized = f"{size_bytes/1024**3:.1f} GiB"
+            size_humanized = f"{size_bytes / 1024**3:.1f} GiB"
         except Exception:
             size_humanized = None
 
@@ -508,7 +522,7 @@ def build_system(
     return system_path
 
 
-def switch_to_system(system_path, lazy, log=_log):
+def switch_to_system(system_path, lazy, switch_type, log=_log):
     if lazy and p.realpath("/run/current-system") == system_path:
         log.info(
             "system-switch-skip",
@@ -523,7 +537,7 @@ def switch_to_system(system_path, lazy, log=_log):
         system=system_path,
     )
 
-    cmd = [f"{system_path}/bin/switch-to-configuration", "switch"]
+    cmd = [f"{system_path}/bin/switch-to-configuration", switch_type]
 
     log.debug("system-switch-command", cmd=" ".join(cmd))
 

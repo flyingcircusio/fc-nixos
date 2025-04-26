@@ -168,6 +168,7 @@ class UpdateActivity(Activity):
             self.next_system, self.log
         )
 
+        self._register_reboot_for_release_change()
         self._register_reboot_for_units()
         self._register_reboot_for_kernel()
 
@@ -292,7 +293,13 @@ class UpdateActivity(Activity):
             # configuration changes, so update it here.
             self.next_system = system_path
             nixos.register_system_profile(system_path, log=self.log)
-            nixos.switch_to_system(system_path, lazy=False, log=self.log)
+
+            switch_type = "switch"
+            if len(self.release_path()) > 1:
+                switch_type = "boot"
+            nixos.switch_to_system(
+                system_path, lazy=False, switch_type=switch_type, log=self.log
+            )
 
         except nixos.ChannelException as e:
             self._handle_channel_exception(e)
@@ -433,6 +440,30 @@ class UpdateActivity(Activity):
         return ActivityMergeResult(
             merged, merged.is_effective, is_significant, changes
         )
+
+    def release_path(self):
+        """Return the path of involved NixOS releases.
+
+        Returns a single element if no upgrade/downgrade happening, e.g. ["24.05"]
+        or more than one if there is a downgrade happening. e.g. ["24.05", "24.11"]
+
+        The order reflects the before -> after progression.
+
+        """
+        result = [nixos.get_release_version(self.current_version)]
+        next_release = nixos.get_release_version(self.next_version)
+        if next_release not in result:
+            result.append(next_release)
+        return result
+
+    def _register_reboot_for_release_change(self):
+        if len(release_path := self.release_path()) > 1:
+            self.log.info(
+                "distro-release-change-require-reboot",
+                current_release=release_path[0],
+                next_release=release_path[1],
+            )
+            self.reboot_needed = RebootType.WARM
 
     def _register_reboot_for_units(self):
         reboot_on_unit_change = {"mnt-nfs-shared.mount"}

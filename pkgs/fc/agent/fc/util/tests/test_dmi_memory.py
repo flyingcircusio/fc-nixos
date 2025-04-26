@@ -1,8 +1,8 @@
-""" Unit-test for dmidecode parser"""
+"""Unit-test for dmidecode parser"""
 
+import importlib.resources
 from unittest import mock
 
-import pkg_resources
 from fc.util.dmi_memory import calc_mem, get_device, main
 
 
@@ -30,15 +30,19 @@ def test_get_device():
 
 @mock.patch("subprocess.check_output")
 def test_multibank_should_be_calculated_correctly(check_output):
-    check_output().decode.return_value = pkg_resources.resource_string(
-        __name__, "dmidecode_multibank.out"
-    ).decode("us-ascii")
+    check_output().decode.return_value = (
+        importlib.resources.files(__package__)
+        .joinpath("dmidecode_multibank.out")
+        .read_text(encoding="us-ascii")
+    )
     assert 262144 == main()
 
 
 @mock.patch("subprocess.check_output")
 def test_singlebank_should_be_calculated_correctly(check_output):
-    check_output().decode.return_value = pkg_resources.resource_string(
-        __name__, "dmidecode.out"
-    ).decode("us-ascii")
+    check_output().decode.return_value = (
+        importlib.resources.files(__package__)
+        .joinpath("dmidecode.out")
+        .read_text(encoding="us-ascii")
+    )
     assert 8192 == main()

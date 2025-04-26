@@ -167,7 +167,9 @@ def test_switch_to_system(log, monkeypatch):
     monkeypatch.setattr("subprocess.Popen", popen_mock)
     monkeypatch.setattr("os.path.realpath", lambda p: "other")
 
-    changed = nixos.switch_to_system(system_path, lazy=True)
+    changed = nixos.switch_to_system(
+        system_path, lazy=True, switch_type="switch"
+    )
     assert changed
 
 
@@ -175,7 +177,9 @@ def test_switch_to_system_lazy_unchanged(log, monkeypatch):
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     monkeypatch.setattr("os.path.realpath", lambda p: system_path)
 
-    changed = nixos.switch_to_system(system_path, lazy=True)
+    changed = nixos.switch_to_system(
+        system_path, lazy=True, switch_type="switch"
+    )
     assert not changed
     assert log.has("system-switch-skip")
 
@@ -483,3 +487,10 @@ def test_multiple_kernel_versions(dirsetup, tmpdir):
     mod.mkdir("4.4.28")
     with pytest.raises(RuntimeError):
         nixos.kernel_version(str(kernel))
+
+
+def test_nixos_release_version():
+    assert nixos.get_release_version("24.05") == "24.05"
+    assert nixos.get_release_version("24.11.5377.8f6c4605") == "24.11"
+    assert nixos.get_release_version("24.05pre-git") == "24.05"
+    assert nixos.get_release_version("25.11pre-git") == "25.11"

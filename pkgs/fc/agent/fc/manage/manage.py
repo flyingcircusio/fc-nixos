@@ -215,7 +215,16 @@ def initial_switch_if_needed(log, enc):
         nixos.register_system_profile(system_path, log)
         # New system is registered, delete the temporary result link.
         os.unlink(out_link)
-        nixos.switch_to_system(system_path, lazy=False, log=log)
+        nixos.switch_to_system(
+            system_path,
+            lazy=False,
+            # There is a slight potential that this does cause a distro
+            # change, because the user may have updated the ENC faster than
+            # we booted the first time, but I think this chance is relatively
+            # neglible and hasn't bitten us before.
+            switch_type="switch",
+            log=log,
+        )
     except Exception:
         log.warn(
             "fc-manage-initial-build-failed",
