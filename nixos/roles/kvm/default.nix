@@ -26,6 +26,12 @@ let
 
   vrfV6Resolvers = iface: map (net: "${net.network}1") iface.v6.networkAttrs;
 
+  ubuntuUpdateScript = pkgs.writeShellApplication {
+    name = "fc-update-ubuntu";
+    runtimeInputs = with pkgs; [ wget ];
+    text = (lib.readFile ./update-ubuntu.sh);
+  };
+
 in
 {
   options = {
@@ -108,6 +114,7 @@ in
       cfg.package
       cephPkgs.qemu
       bridge-utils
+      ubuntuUpdateScript
     ];
 
     # Qemu migration coordination uses random ports at the moment, so we
@@ -365,9 +372,7 @@ in
     systemd.services.fc-qemu-clean-logs =
       let
         fcQemuCleanLogScript = (
-          pkgs.writers.writePython3Bin "fc-qemu-clean-logs" { } (
-            builtins.readFile ../../pkgs/fc/qemu/clean-logs.py
-          )
+          pkgs.writers.writePython3Bin "fc-qemu-clean-logs" { } (builtins.readFile ./clean-logs.py)
         );
       in
       {
