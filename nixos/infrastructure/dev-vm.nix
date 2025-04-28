@@ -89,7 +89,7 @@ in
       services.postgresql.settings.full_page_writes = "off";
       services.postgresql.settings.synchronous_commit = "off";
 
-      flyingcircus.roles.antivirus.listenAddresses = [ "[::]" ];
+      flyingcircus.roles.antivirus.listenAddresses = [ "::" ];
 
       flyingcircus.roles.coturn.hostName = config.networking.hostName;
       flyingcircus.roles.coturn.config.listening-ips = [ "[::]" ];
