@@ -1,21 +1,19 @@
 {
   lib,
-  stdenv,
-  python3Full,
-  python3Packages,
+  buildPythonApplication,
   parted,
   cryptsetup,
   lz4,
   blockdev,
-  lvm2,
   agent,
+  mock,
+  freezegun,
+  requests,
+  pytest,
+  pytest_patterns,
 }:
 
-let
-  py = python3Packages;
-in
-
-py.buildPythonApplication rec {
+buildPythonApplication rec {
   name = "fc-ceph-${version}";
   version = "2.1";
   src = ./.;
@@ -24,19 +22,19 @@ py.buildPythonApplication rec {
     blockdev
     lz4
     agent
-    python3Packages.requests
+    requests
     cryptsetup
     parted
   ];
 
   checkInputs = [
-    python3Packages.mock
-    python3Packages.freezegun
-    python3Packages.pytest_patterns
+    mock
+    freezegun
+    pytest_patterns
   ];
 
   nativeCheckInputs = [
-    python3Packages.pytest
+    pytest
   ];
 
   meta = with lib; {
