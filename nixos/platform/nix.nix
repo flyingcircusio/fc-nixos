@@ -8,11 +8,7 @@
 let
   production = lib.attrByPath [ "parameters" "production" ] "" config.flyingcircus.enc;
 
-  nixPackage =
-    if config.flyingcircus.nix.useUnstableNix then
-      pkgs.nixVersions.nix_2_25
-    else
-      pkgs.nixVersions.nix_2_18;
+  nixPackage = pkgs.nixVersions.nix_2_25;
 in
 {
   options.flyingcircus = {
@@ -21,8 +17,8 @@ in
       defaultText = lib.literalExpression ''production == false'';
       type = lib.types.bool;
       description = ''
-        Whether to use a known stable Nix (i.e. 2.18) or a
-        newer, potentially unstable version (i.e. 2.25).
+        This option is used to roll out newer Nix versions earlier for gradual testing.
+        Right now, this has no effect.
       '';
     };
 
