@@ -21,7 +21,7 @@ in
       type = lib.types.bool;
       description = ''
         Participate in using an evaluation kernel.
-        This currently selects a 6.11 kernel for testing purposes.
+        This currently selects a 6.12 kernel for testing purposes.
         By default, all non-prod VMs in all locations and all VMs in our internal locations
         DEV and WHQ use the evaluation kernel.
       '';
