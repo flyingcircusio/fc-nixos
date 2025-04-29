@@ -23,7 +23,6 @@ You can look up packages and their descriptions via:
 ## Packages added by our platform
 
 - apacheHttpd
-- atop
 - automake
 - bc
 - cmake
