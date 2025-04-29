@@ -1,0 +1,57 @@
+From 4e5a945339b4157cfd236758c30600cc4990241d Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Tue, 29 Apr 2025 16:12:01 +0200
+Subject: [PATCH 2/2] zebra-dplane: sleep after writing batches to netlink
+
+When synchronising the RIB for an L2-VNI into the kernel (e.g. bgpd is
+learning the initial EVPN RIB from a peer, a new VNI interface has
+been brought up, etc), the batched sending of netlink messages by the
+zebra-dplane thread may result in new macfdb entries being inserted
+into the kernel faster than the kernel can resize the hash table
+backing the bridge macfdb. This can result in the entries which don't
+fit in the hash table at that moment getting dropped, which are then
+missing and can't be recovered.
+
+As a workaround, sleep for 100 microseconds after sending each batch
+of messages to the kernel, to give it a chance to do its housekeeping
+and resize the hashtables in the background.
+---
+ zebra/kernel_netlink.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/zebra/kernel_netlink.c b/zebra/kernel_netlink.c
+index 561f16609f..f938193eb4 100644
+--- a/zebra/kernel_netlink.c
++++ b/zebra/kernel_netlink.c
+@@ -5,6 +5,7 @@
+ 
+ #include <zebra.h>
+ #include <fcntl.h>
++#include <time.h>
+ 
+ #ifdef HAVE_NETLINK
+ #include <linux/netlink.h>
+@@ -1482,6 +1483,7 @@ static void nl_batch_init(struct nl_batch *bth,
+ static void nl_batch_send(struct nl_batch *bth)
+ {
+ 	struct zebra_dplane_ctx *ctx;
++	const struct timespec post_delay = { .tv_sec = 0, .tv_nsec = 100000 };
+ 	bool err = false;
+ 
+ 	if (bth->curlen != 0 && bth->zns != NULL) {
+@@ -1516,6 +1518,12 @@ static void nl_batch_send(struct nl_batch *bth)
+ 	}
+ 
+ 	nl_batch_reset(bth);
++
++	/* Sleep for 100 microseconds after pushing a batch into the
++	   kernel. If we send e.g. macfdb entries too fast, then the
++	   kernel might not be able to (asynchronously!) resize the
++	   hash table backing the fdb fast enough. */
++	(void) nanosleep(&post_delay, NULL);
+ }
+ 
+ enum netlink_msg_status netlink_batch_add_msg(
+-- 
+2.39.5 (Apple Git-154)
+
