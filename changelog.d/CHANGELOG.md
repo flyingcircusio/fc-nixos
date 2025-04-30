@@ -1,3 +1,32 @@
+# Release 2025_013
+
+## NixOS XX.XX platform
+
+- lamp: Fix evaluation error when a `php.ini` references a derivation (PL-133642).
+
+- Activate configuration changes in an (immediate) boot cycle when upgrading (or downgrading)
+  the NixOS major release. (PL-133570)
+
+  We've experienced too many paper cuts, trying to get pure "online upgrades" working reliably
+  in our fleet. Many edge cases like systemd upgrades, NFS connections, have shown that this
+  isn't possible in the general case.
+
+  As NixOS major releases ship with different kernel versions anyway and thus always scheduled
+  to perform an immediate reboot in maintenance, we no defer the whole config update into
+  that reboot.
+
+  If a config change is applied manually and causes a major version change, the reboot will
+  be applied immediately - after warning the user visually and giving a 10 second countdown
+  in case of the user wanting to abort.
+
+- nixos/kernel: update verification kernel 6.6 -> 6.12 (PL-133562)
+  Kernel verision 6.12 is the new LTS. This change makes that version
+  default on non-production hosts to try it out.
+
+- Rotate zagy's root ssh key (PL-133335)
+
+
+
 # Release 2025_012
 
 ## NixOS XX.XX platform
