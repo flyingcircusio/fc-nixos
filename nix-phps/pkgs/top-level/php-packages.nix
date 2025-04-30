@@ -20,6 +20,7 @@
   libffi,
   libiconv,
   libkrb5,
+  libpq,
   libsodium,
   libxml2,
   libxslt,
@@ -33,7 +34,6 @@
   overrideSDK,
   pam,
   pcre2,
-  postgresql,
   bison,
   re2c,
   readline,
@@ -43,7 +43,6 @@
   uwimap,
   valgrind,
   zlib,
-  fetchpatch,
 }:
 
 lib.makeScope pkgs.newScope (
@@ -281,7 +280,7 @@ lib.makeScope pkgs.newScope (
 
         ast = callPackage ../development/php-packages/ast { };
 
-        blackfire = callPackage ../development/tools/misc/blackfire/php-probe.nix { };
+        blackfire = callPackage ../by-name/bl/blackfire/php-probe.nix { };
 
         couchbase = callPackage ../development/php-packages/couchbase { };
 
@@ -292,9 +291,13 @@ lib.makeScope pkgs.newScope (
           inherit (pkgs) darwin;
         };
 
+        decimal = callPackage ../development/php-packages/decimal { };
+
         ds = callPackage ../development/php-packages/ds { };
 
         event = callPackage ../development/php-packages/event { };
+
+        excimer = callPackage ../development/php-packages/excimer { };
 
         gnupg = callPackage ../development/php-packages/gnupg { };
 
@@ -341,23 +344,26 @@ lib.makeScope pkgs.newScope (
 
         pcov = callPackage ../development/php-packages/pcov { };
 
-        pdo_oci = buildPecl rec {
-          inherit (php.unwrapped) src version;
+        pdo_oci =
+          if (lib.versionAtLeast php.version "8.4") then
+            callPackage ../development/php-packages/pdo_oci { }
+          else
+            buildPecl rec {
+              inherit (php.unwrapped) src version;
 
-          pname = "pdo_oci";
-          sourceRoot = "php-${version}/ext/pdo_oci";
+              pname = "pdo_oci";
+              sourceRoot = "php-${version}/ext/pdo_oci";
 
-          buildInputs = [ pkgs.oracle-instantclient ];
-          configureFlags = [ "--with-pdo-oci=instantclient,${pkgs.oracle-instantclient.lib}/lib" ];
+              buildInputs = [ pkgs.oracle-instantclient ];
+              configureFlags = [ "--with-pdo-oci=instantclient,${pkgs.oracle-instantclient.lib}/lib" ];
 
-          internalDeps = [ php.extensions.pdo ];
+              internalDeps = [ php.extensions.pdo ];
+              postPatch = ''
+                sed -i -e 's|OCISDKMANINC=`.*$|OCISDKMANINC="${pkgs.oracle-instantclient.dev}/include"|' config.m4
+              '';
 
-          postPatch = ''
-            sed -i -e 's|OCISDKMANINC=`.*$|OCISDKMANINC="${pkgs.oracle-instantclient.dev}/include"|' config.m4
-          '';
-
-          meta.maintainers = lib.teams.php.members;
-        };
+              meta.maintainers = lib.teams.php.members;
+            };
 
         pdo_sqlsrv = callPackage ../development/php-packages/pdo_sqlsrv { };
 
@@ -399,6 +405,8 @@ lib.makeScope pkgs.newScope (
 
         vld = callPackage ../development/php-packages/vld { };
 
+        wikidiff2 = callPackage ../development/php-packages/wikidiff2 { };
+
         xdebug = callPackage ../development/php-packages/xdebug { };
 
         yaml = callPackage ../development/php-packages/yaml { };
@@ -424,7 +432,15 @@ lib.makeScope pkgs.newScope (
                 configureFlags = [ "--with-bz2=${bzip2.dev}" ];
               }
               { name = "calendar"; }
-              { name = "ctype"; }
+              {
+                name = "ctype";
+                postPatch =
+                  lib.optionalString (stdenv.hostPlatform.isDarwin && lib.versionAtLeast php.version "8.2")
+                    # Broken test on aarch64-darwin
+                    ''
+                      rm ext/ctype/tests/lc_ctype_inheritance.phpt
+                    '';
+              }
               {
                 name = "curl";
                 buildInputs = [ curl ];
@@ -543,6 +559,7 @@ lib.makeScope pkgs.newScope (
                   zlib
                   openssl
                 ];
+                configureFlags = [ "--with-mysqlnd-ssl" ];
                 # The configure script doesn't correctly add library link
                 # flags, so we add them to the variable used by the Makefile
                 # when linking.
@@ -635,7 +652,7 @@ lib.makeScope pkgs.newScope (
               {
                 name = "pdo_pgsql";
                 internalDeps = [ php.extensions.pdo ];
-                configureFlags = [ "--with-pdo-pgsql=${lib.getDev postgresql}" ];
+                configureFlags = [ "--with-pdo-pgsql=${libpq.pg_config}" ];
                 doCheck = false;
               }
               {
@@ -647,8 +664,10 @@ lib.makeScope pkgs.newScope (
               }
               {
                 name = "pgsql";
-                buildInputs = [ pcre2 ];
-                configureFlags = [ "--with-pgsql=${lib.getDev postgresql}" ];
+                buildInputs = [
+                  pcre2
+                ];
+                configureFlags = [ "--with-pgsql=${libpq.pg_config}" ];
                 doCheck = false;
               }
               {
@@ -712,15 +731,6 @@ lib.makeScope pkgs.newScope (
                 #   Unknown: php_network_getaddresses: getaddrinfo for localhost failed: nodename nor servname provided
                 doCheck = !stdenv.hostPlatform.isDarwin && lib.versionOlder php.version "8.4";
                 internalDeps = [ php.extensions.session ];
-                patches =
-                  lib.optionals (lib.versionAtLeast php.version "8.3" && lib.versionOlder php.version "8.4")
-                    [
-                      # https://github.com/php/php-src/pull/16733 (fix soap test)
-                      (fetchpatch {
-                        url = "https://github.com/php/php-src/commit/5c308d61db104854e4ff84ab123e3ea56e1b4046.patch";
-                        hash = "sha256-xQ4Sg4kL0cgHYauRW2AzGgFXfcqtxeRVhI9zNh7CsoM=";
-                      })
-                    ];
               }
               {
                 name = "sockets";

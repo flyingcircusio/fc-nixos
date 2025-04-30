@@ -1,4 +1,7 @@
-{ prev, mkPhp }:
+{
+  prev,
+  mkPhp,
+}:
 
 let
   base = mkPhp {
@@ -16,7 +19,10 @@ let
   };
 in
 base.withExtensions (
-  { all, ... }:
+  {
+    all,
+    ...
+  }:
 
   with all;
   (
