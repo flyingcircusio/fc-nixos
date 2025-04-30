@@ -8,7 +8,7 @@
 let
   production = lib.attrByPath [ "parameters" "production" ] "" config.flyingcircus.enc;
 
-  nixPackage = pkgs.nixVersions.nix_2_25;
+  nixPackage = pkgs.nixVersions.nix_2_28;
 in
 {
   options.flyingcircus = {

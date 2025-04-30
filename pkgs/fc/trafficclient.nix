@@ -1,27 +1,31 @@
 {
-  lib,
-  stdenv,
   fetchPypi,
   fetchFromGitHub,
-  dmidecode,
-  gitMinimal,
-  gptfdisk,
-  libyaml,
-  multipath-tools,
-  nix,
+  buildPythonPackage,
   buildPythonApplication,
-  pythonPackages,
   python,
-  util-linux,
-  xfsprogs,
   pytest,
+  pytest-cov,
+  pytest-timeout,
+  hatchling,
+  hatch-vcs,
+  hatch-fancy-pypi-readme,
   structlog,
+  tenacity,
+  typing-extensions,
+  setuptools,
+  pip,
+  ipy,
+  persistent,
+  pyyaml,
+  transaction,
+  zodb,
+  pytestCheckHook,
 }:
 
 let
-  py = pythonPackages;
 
-  stamina = py.buildPythonPackage rec {
+  stamina = buildPythonPackage rec {
     pname = "stamina";
     version = "23.1.0";
     format = "pyproject";
@@ -31,12 +35,12 @@ let
       hash = "sha256-sWzj1S1liqdduBP8amZht3Cr/qkV9yzaSOMl8qeFR4Y=";
     };
 
-    nativeBuildInputs = with py; [
+    nativeBuildInputs = [
       hatchling
       hatch-vcs
       hatch-fancy-pypi-readme
     ];
-    propagatedBuildInputs = with py; [
+    propagatedBuildInputs = [
       structlog
       tenacity
       typing-extensions
@@ -56,23 +60,23 @@ buildPythonApplication rec {
   };
 
   checkInputs = [
-    py.pytest
-    py.pytest-cov
-    py.pytest-timeout
+    pytest
+    pytest-cov
+    pytest-timeout
   ];
   nativeBuildInputs = [
-    py.setuptools
-    py.pip
+    setuptools
+    pip
   ];
   nativeCheckInputs = [
-    py.pytestCheckHook
+    pytestCheckHook
   ];
   propagatedBuildInputs = [
-    py.ipy
-    py.persistent
-    py.pyyaml
-    py.transaction
-    py.zodb
+    ipy
+    persistent
+    pyyaml
+    transaction
+    zodb
     stamina
   ];
   dontStrip = true;
@@ -82,8 +86,6 @@ buildPythonApplication rec {
     "test_tilde_is_expanded_to_home_dir"
   ];
 
-  passthru.pythonDevEnv = python.withPackages (
-    _: checkInputs ++ [ py.pytest ] ++ propagatedBuildInputs
-  );
+  passthru.pythonDevEnv = python.withPackages (_: checkInputs ++ [ pytest ] ++ propagatedBuildInputs);
 
 }

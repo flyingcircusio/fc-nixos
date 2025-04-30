@@ -13,8 +13,12 @@ from fc.util.postgresql import PGVersion
 from rich.table import Table
 from typer import Exit, Option, Typer, confirm, echo
 
-STOPPER_TEMPLATE = """\
-A fc-postgresql upgrade command is running with PID {pid}, postgresql service
+# needs to be hardcoded and cannot be derived from sys.argv[0], because the
+# typer.testing.CliRunner otherwise falls back to `root` as name.
+APP_NAME = "fc-postgresql"
+
+STOPPER_TEMPLATE = f"""\
+A {APP_NAME} upgrade command is running with PID {{pid}}, postgresql service
 won't start with this file present. Remove this if you really want to start
 the service with this data dir.
 """
@@ -26,7 +30,7 @@ class Context(NamedTuple):
     pg_data_root: Path
 
 
-app = Typer(pretty_exceptions_show_locals=False)
+app = Typer(pretty_exceptions_show_locals=False, name=APP_NAME)
 context: Context
 
 
@@ -97,7 +101,7 @@ def fc_postgresql(
         pg_data_root=pg_data_root,
     )
 
-    init_logging(verbose, syslog_identifier="fc-postgresql")
+    init_logging(verbose, syslog_identifier=APP_NAME)
 
 
 @app.command(
@@ -457,7 +461,7 @@ def prepare_autoupgrade(
     )
 
 
-LIST_VERSION_HELP = """\
+LIST_VERSION_HELP = f"""\
 Data dirs and migration state.
 
 ## Fields
@@ -489,12 +493,12 @@ Source data dir where data has been migrated from.
 `Yes` if the `package` link in data dir is valid. The link points to the
 PostgreSQL version that is or has been used for this data dir. The link is
 needed to upgrade to a newer version as pg_upgrade needs the old binaries to
-work. fc-postgresql upgrade and auto-upgrades will fail if this is missing.
+work. {APP_NAME} upgrade and auto-upgrades will fail if this is missing.
 
 *Prepared As Upgrade Target?*
 
 `Yes` if data dir is prepared to be used as target for an upgrade migration.
-This means that `fc-postgresql prepare-autoupgrade` or `fc-postgresql
+This means that `{APP_NAME} prepare-autoupgrade` or `{APP_NAME}
 upgrade` without `--upgrade-now` has created this data dir with an empty
 cluster.
 
