@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchurl,
+  fetchpatch,
   bison,
   cmake,
   pkg-config,
@@ -60,6 +61,11 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     ./no-force-outline-atomics.patch # Do not force compilers to turn on -moutline-atomics switch
+    # GCC 14 build fix
+    (fetchpatch {
+      url = "https://github.com/percona/percona-server/commit/7f4b4fdfa6ee42cec2f3e780d3841bd2c5761b55.diff?full_index=1";
+      hash = "sha256-OCM9dUe4IxKtXYi1thgiMHTLJV+YFFvzXpl/vQYmFOI=";
+    })
   ];
 
   ## NOTE: MySQL upstream frequently twiddles the invocations of libtool. When updating, you might proactively grep for libtool references.
