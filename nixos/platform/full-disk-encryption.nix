@@ -7,6 +7,7 @@
 }:
 
 let
+  cfg = config.flyingcircus.infrastructure.fullDiskEncryption;
   fclib = config.fclib;
   keysMountDir = "/mnt/keys";
   check_key_file = pkgs.writeShellScript "check_key_file" ''
@@ -62,13 +63,17 @@ in
             "nodev"
             "nouser"
           ];
-          neededForBoot = false; # change this when introducing rootfs encryption
         };
+      };
+      encryptedRoot = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Whether this system has an encrypted root disk.";
       };
     };
   };
 
-  config = lib.mkIf (config.flyingcircus.infrastructure.fullDiskEncryption.enable) {
+  config = lib.mkIf cfg.enable {
     environment.systemPackages = with pkgs; [
       cryptsetup
     ];
@@ -111,7 +116,30 @@ in
       }
     ];
 
-    fileSystems.${keysMountDir} = config.flyingcircus.infrastructure.fullDiskEncryption.fsOptions;
+    fileSystems.${keysMountDir} = cfg.fsOptions;
+
+    boot.initrd = lib.mkIf cfg.encryptedRoot {
+      postDeviceCommands = pkgs.lib.mkMerge [
+        (pkgs.lib.mkBefore ''
+          mkdir -m 0755 -p /key
+          udevadm settle
+          mount -n -t ${cfg.fsOptions.fsType} -o ro /dev/vgkeys/keys /key
+        '')
+        (pkgs.lib.mkAfter ''
+          umount -n /key
+        '')
+      ];
+
+      luks.devices = lib.genAttrs [ "root" "tmp" ] (dev: {
+        device = "/dev/vgsys/${dev}-crypted";
+        keyFile = "/key/${config.networking.hostName}.key";
+        preLVM = false; # If this is true the decryption is attempted before the postDeviceCommands can run
+        allowDiscards = true;
+        postOpenCommands = ''
+          cryptsetup refresh -q --perf-submit_from_crypt_cpus ${dev}
+        '';
+      });
+    };
   };
 
 }

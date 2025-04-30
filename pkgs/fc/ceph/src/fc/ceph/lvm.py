@@ -15,7 +15,7 @@ from fc.ceph.util import console, mount_status, run
 class GenericBlockDevice:
     def __new__(cls, name: str):
         # prevent explicitly instantiated child classes from returning as None
-        if cls is not GenericLogicalVolume:
+        if cls is not GenericBlockDevice:
             return object.__new__(cls)
         if MdraidDevice.exists(name):
             return MdraidDevice(name)

@@ -19,6 +19,7 @@ dependencies = [
 [project.entry-points.console_scripts]
 fc-ceph="fc.ceph.main:ceph"
 fc-luks="fc.ceph.main:luks"
+fc-install="fc.ceph.fc_install:main"
 
 [tool.black]
 line-length = 80

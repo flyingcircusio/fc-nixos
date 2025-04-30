@@ -7,27 +7,44 @@
 }:
 
 let
+  # TODO: test that by-label works without encryption
   fc_enter = pkgs.writeScriptBin "fc-enter" ''
     #!/bin/sh
     set -eu
 
     vgchange -ay vgsys
 
-    umount -R /mnt || true
+    mkdir -p /mnt/install
+    umount -R /mnt/install || true
 
-    mount /dev/disk/by-label/root /mnt
-    mount /dev/disk/by-label/tmp /mnt/tmp
-    mount /dev/disk/by-label/boot /mnt/boot
+    if [[ -e /dev/vgsys/root-crypted ]]; then
+        cryptsetup --allow-discards open -d /mnt/keys/$(hostname).key /dev/vgsys/root-crypted root
+    fi
+    if [[ -e /dev/vgsys/tmp-crypted ]]; then
+        cryptsetup --allow-discards open -d /mnt/keys/$(hostname).key /dev/vgsys/tmp-crypted tmp
+    fi
 
-    mount --rbind /dev /mnt/dev
-    mount --rbind /sys /mnt/sys
-    mount -t proc /proc /mnt/proc/
+    mount /dev/disk/by-label/root /mnt/install
+    mount /dev/disk/by-label/tmp /mnt/install/tmp
+    mount /dev/disk/by-label/boot /mnt/install/boot
 
-    nixos-enter --root /mnt
+    mkdir /mnt/install/{dev,sys,proc}
+    mount --rbind /dev /mnt/install/dev
+    mount --rbind /sys /mnt/install/sys
+    mount -t proc /proc /mnt/install/proc/
 
-    umount -l /mnt/dev
-    umount -l /mnt/sys
-    umount -R /mnt
+    nixos-enter --root /mnt/install
+
+    umount -l /mnt/install/dev
+    umount -l /mnt/install/sys
+    umount -R /mnt/install
+
+    if [[ -e /dev/mapper/root ]]; then
+        cryptsetup close root
+    fi
+    if [[ -e /dev/mapper/tmp ]]; then
+        cryptsetup close tmp
+    fi
 
   '';
 
@@ -132,6 +149,8 @@ in
 
     nixpkgs.config.allowUnfree = true;
 
+    flyingcircus.infrastructure.fullDiskEncryption.enable = true;
+
     services.lldpd.enable = true;
 
     environment.systemPackages = with pkgs; [
@@ -141,7 +160,6 @@ in
       mdadm
       fc_enter
       jq
-      (pkgs.callPackage ../pkgs/fc/install { })
       show_interfaces
       secure_erase
       ipmitool

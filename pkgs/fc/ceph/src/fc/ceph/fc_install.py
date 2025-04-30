@@ -3,11 +3,17 @@ import crypt
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import textwrap
 import urllib.request
 from pathlib import Path
+
+from fc.ceph.luks import KEYSTORE
+from fc.ceph.lvm import XFSVolume
+
+INSTALL_DIR = Path("/mnt/install")
 
 
 def run(*args, check=True, **kw):
@@ -107,7 +113,9 @@ Enter "<skip>" if you want to skip this step.
 
 def main():
     udevadm_settle()
-    run("umount", "-R", "/mnt", check=False)
+
+    INSTALL_DIR.mkdir(parents=True, exist_ok=True)
+    run("umount", "-R", str(INSTALL_DIR), check=False)
 
     print("Please review the interface / MAC addresses in the directory")
 
@@ -121,6 +129,14 @@ def main():
         enc = json.load(enc_response)
 
     channel = enc["parameters"]["environment_url"]
+    # TODO: use the /etc/nixos/enc.json instead for fc-enter.sh? store the hostname in lvm/luks metadata?
+    run("hostname", enc["name"])  # used to find the correct key
+
+    if not Path(KEYSTORE.local_key_path()).exists():
+        print(
+            f"Error: {KEYSTORE.local_key_path()} does not exist. Create it with `fc-luks keystore create`"
+        )
+        sys.exit(1)
 
     console = "console=tty0"
     with open("/proc/cmdline") as f:
@@ -139,6 +155,7 @@ def main():
     root_password = crypt.crypt(
         root_password, salt=crypt.mksalt(crypt.METHOD_SHA512)
     )
+    KEYSTORE.admin_key_for_input()
 
     configure_ipmi()
 
@@ -160,15 +177,11 @@ def main():
         raise ""
 
     print("Preparing OS disk ...")
-    run("vgchange", "-an")
-    run("vgremove", "-y", "vgsys", check=False)
 
     pvs = run(
         "pvs",
-        "--select",
-        "pv_in_use=0",
         "-o",
-        "pv_name",
+        "pv_name,vg_name",
         "--reportformat",
         "json",
         stdout=subprocess.PIPE,
@@ -176,8 +189,11 @@ def main():
     )
     pvs = json.loads(pvs.stdout)
     for report in pvs["report"]:
-        for unused_pv in report["pv"]:
-            run("pvremove", "-y", unused_pv["pv_name"])
+        for pv in report["pv"]:
+            if pv["pv_name"].startswith(root_disk):
+                run("vgchange", "-an", pv["vg_name"])
+                run("vgremove", "-y", pv["vg_name"])
+                run("pvremove", "-y", pv["pv_name"])
 
     # Partitioning
     if yes_or_no("Wipe whole disk?"):
@@ -261,50 +277,26 @@ def main():
 
     udevadm_settle()
 
-    run(
-        "lvcreate",
-        "-ay",
-        "-L",
-        "80G",
-        "-n",
-        "root",
-        "vgsys",
-        input="y\n",
-        encoding="ascii",
-    )
-    run(
-        "lvcreate",
-        "-ay",
-        "-L",
-        "16G",
-        "-n",
-        "tmp",
-        "vgsys",
-        input="y\n",
-        encoding="ascii",
+    # TODO: modify mount_opts, mkfs_opts?
+    XFSVolume("root", str(INSTALL_DIR)).create("vgsys", "80G", encrypt=True)
+    XFSVolume("tmp", str(INSTALL_DIR / "tmp")).create(
+        "vgsys", "16G", encrypt=True
     )
 
-    udevadm_settle()
+    (INSTALL_DIR / "boot").mkdir(parents=True, exist_ok=True)
+    run("mount", "/dev/disk/by-partlabel/boot", str(INSTALL_DIR / "boot"))
 
-    run("mkfs.xfs", "-L", "root", "/dev/vgsys/root")
-    run("mkfs.xfs", "-L", "tmp", "/dev/vgsys/tmp")
-
-    run("mount", "/dev/vgsys/root", "/mnt")
-
-    Path("/mnt/boot").mkdir(parents=True, exist_ok=True)
-    run("mount", "/dev/disk/by-partlabel/boot", "/mnt/boot")
-
-    Path("/mnt/tmp").mkdir(parents=True, exist_ok=True)
-    run("mount", "/dev/vgsys/tmp", "/mnt/tmp")
-
-    os.chdir("/mnt")
+    os.chdir(INSTALL_DIR)
 
     print("Configuring system ...")
 
-    Path("/mnt/etc/nixos").mkdir(parents=True, exist_ok=True)
+    (INSTALL_DIR / "etc/nixos").mkdir(parents=True, exist_ok=True)
+
+    if (backy_header := KEYSTORE.local_key_dir / "backy.luks").exists():
+        shutil.copy(backy_header, INSTALL_DIR / "srv/backy.luks")
 
     # # This version needs to use ./local.nix, but our managed one doesn't!
-    with Path("/mnt/etc/nixos/configuration.nix").open("w") as f:
+    with (INSTALL_DIR / "etc/nixos/configuration.nix").open("w") as f:
         f.write(
             textwrap.dedent(
                 """\
@@ -346,7 +338,7 @@ def main():
 
     print(f"Found stable root disk path: {root_disk_stable_path}")
 
-    with Path("/mnt/etc/nixos/local.nix").open("w") as f:
+    with (INSTALL_DIR / "etc/nixos/local.nix").open("w") as f:
         f.write(
             textwrap.dedent(
                 f"""
@@ -358,12 +350,13 @@ def main():
           users.users.root.hashedPassword = "{root_password}";
 
           flyingcircus.boot-style = "{boot_style}";
+          flyingcircus.infrastructure.fullDiskEncryption.encryptedRoot = true;
         }}
         """
             )
         )
 
-    with Path("/mnt/etc/nixos/enc.json").open("w") as f:
+    with (INSTALL_DIR / "etc/nixos/enc.json").open("w") as f:
         json.dump(enc, f)
 
     # nixos-install will evaluate using /etc/nixos in the installer environment
@@ -386,6 +379,8 @@ def main():
 
     run(
         "nixos-install",
+        "--root",
+        str(INSTALL_DIR),
         "--max-jobs",
         "5",
         "--cores",
@@ -399,16 +394,18 @@ def main():
         "--option",
         "trusted-public-keys",
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= flyingcircus.io-1:Rr9CwiPv8cdVf3EQu633IOTb6iJKnWbVfCC8x8gVz2o= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=",
+        *shlex.split(os.environ.get("NIXOS_INSTALL_ARGS", "")),
     )
 
     print("Writing channel file ...")
-    with Path("/mnt/root/.nix-channels").open("w") as f:
+    (INSTALL_DIR / "root").mkdir(exist_ok=True)
+    with (INSTALL_DIR / "root/.nix-channels").open("w") as f:
         f.write(f"{channel} nixos")
 
     print("Cleaning up ...")
 
     os.chdir("/")
-    run("umount", "-R", "/mnt")
+    run("umount", "-R", str(INSTALL_DIR))
 
     print("=== Done - reboot at your convenience ===")
 
