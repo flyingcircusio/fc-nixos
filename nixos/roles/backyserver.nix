@@ -5,8 +5,6 @@
   ...
 }:
 
-with builtins;
-
 let
   fclib = config.fclib;
   role = config.flyingcircus.roles.backyserver;
@@ -19,9 +17,9 @@ let
       src = pkgs.fetchFromGitHub {
         owner = "flyingcircusio";
         repo = "backy-extract";
-        # 1.1.0
-        rev = "3f1efdc6d9d52d13b91b640d8005913efbd80e1c";
-        hash = "sha256-fOM3dvSH6rIXkOK/pKKp1xPeiUYabG8dI65lEhQNZas=";
+        # 1.1.0, NixOS >= 25.05
+        rev = "293296ebbb8bb37e3f6ef6faf26c68d71103e7c0";
+        hash = "sha256-fhfPNiFnmFEamhv18eneGoKYaW3GH/n75HZvV8uZxCo=";
       };
     in
     pkgs.callPackage src { };
