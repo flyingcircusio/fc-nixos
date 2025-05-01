@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-137.0.2",
+    "name": "firefox-138.0",
     "pname": "firefox",
-    "version": "137.0.2"
+    "version": "138.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -465,9 +465,9 @@
     "version": "6.6.88"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.88",
+    "name": "linux-6.12.25",
     "pname": "linux",
-    "version": "6.6.88"
+    "version": "6.12.25"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
