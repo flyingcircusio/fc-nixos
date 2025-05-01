@@ -1,4 +1,4 @@
-The Haproxy service can be configured by adding `/etc/local/haproxy/*.conf`
+The Haproxy service can be configured by adding `/etc/local/haproxy/*.cfg`
 files in the HAproxy format as well as from custom Nix Configuration Options.
 
 The local plain configuration files are enabled by default and can be disabled

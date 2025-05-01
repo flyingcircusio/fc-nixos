@@ -135,7 +135,7 @@ let
         (if cfg.enableStructuredConfig then generatedConfig else "")
         + (
           if cfg.enableLocalPlainConfig then
-            "\n# Plain config from /etc/local/haproxy/*.conf starts here\n" + modifiedCfgContent
+            "\n# Plain config from /etc/local/haproxy/*.cfg starts here.\n" + modifiedCfgContent
           else
             ""
         )
