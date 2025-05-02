@@ -199,6 +199,9 @@ class LUKSKeyStoreManager(object):
             input=add_input,
         )
 
+        if header:
+            self._KEYSTORE.backup_external_header(Path(header))
+
     @staticmethod
     def check_luks(name_glob: str, header: Optional[str]) -> int:
         devices = LuksDevice.filter_cryptvolumes(name_glob, header=header)
@@ -225,7 +228,7 @@ class LUKSKeyStoreManager(object):
             dump_lines = luks_dump.decode("utf-8").splitlines()
             for check in all_checks:
                 check_ok = True
-                for error in check(dump_lines):
+                for error in check(dump_lines, header=dev.header):
                     errors += 1
                     check_ok = False
                     console.print(f"{check.__name__}: {error}", style="red")
@@ -302,9 +305,6 @@ class LUKSKeyStoreManager(object):
             success = False
 
         return success
-
-        if header:
-            self._KEYSTORE.backup_external_header(Path(header))
 
     def fingerprint(self, verify: bool, confirm: bool) -> int:
         """
