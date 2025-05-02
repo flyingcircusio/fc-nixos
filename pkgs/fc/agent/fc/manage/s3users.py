@@ -9,6 +9,7 @@ import argparse
 import datetime
 import json
 import logging
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -65,6 +66,12 @@ class RGWState:
         self.uid = uid
 
     def update(self, previously_deleted=False):
+        def check_user_doesnt_exist(code, stdout, stderr):
+            return (
+                code == 22
+                and b"could not fetch user info: no user info saved" in stderr
+            )
+
         try:
             state = run.json.radosgw_admin(
                 "user",
@@ -72,20 +79,22 @@ class RGWState:
                 "--uid",
                 self.uid,
                 # silence error when the user was previously deleted
-                silent_errors=(
-                    lambda code, stdout, stderr: previously_deleted
-                    and code == 22
-                    and b"could not fetch user info: no user info saved"
-                    in stderr
-                ),
+                silent_errors=lambda code, stdout, stderr: previously_deleted
+                and check_user_doesnt_exist(code, stdout, stderr),
             )
 
-        except Exception:
-            self.exists = False
-            self.display_name = None
-            self.key_count = 0
-            self.access_key = None
-            self.secret_key = None
+        except subprocess.CalledProcessError as e:
+            if check_user_doesnt_exist(e.returncode, e.stdout, e.stderr):
+                self.exists = False
+                self.display_name = None
+                self.key_count = 0
+                self.access_key = None
+                self.secret_key = None
+            else:
+                # We have an inconsistent state now.
+                # We could still handle other users, but we have no consistent state to report to the directory,
+                # so raise the error and break loud.
+                raise
         else:
             self.exists = True
             self.display_name = state["display_name"]
