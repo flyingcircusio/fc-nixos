@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-135.0.7049.114",
+    "name": "chromedriver-unwrapped-136.0.7103.59",
     "pname": "chromedriver-unwrapped",
-    "version": "135.0.7049.114"
+    "version": "136.0.7103.59"
   },
   "chromium": {
-    "name": "chromium-135.0.7049.114",
+    "name": "chromium-136.0.7103.59",
     "pname": "chromium",
-    "version": "135.0.7049.114"
+    "version": "136.0.7103.59"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-137.0.2",
+    "name": "firefox-138.0",
     "pname": "firefox",
-    "version": "137.0.2"
+    "version": "138.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -465,9 +465,9 @@
     "version": "6.6.88"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.88",
+    "name": "linux-6.12.25",
     "pname": "linux",
-    "version": "6.6.88"
+    "version": "6.12.25"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
