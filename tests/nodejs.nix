@@ -18,10 +18,10 @@ import ./make-test-python.nix (
       package_versions = {
         "${nodejs-slim_20}": "20",
         "${nodejs-slim_22}": "22",
-        "${nodejs-slim}": "20",
+        "${nodejs-slim}": "22",
         "${nodejs_20}": "20",
         "${nodejs_22}": "22",
-        "${nodejs}": "20",
+        "${nodejs}": "22",
       }
 
       for package, version in package_versions.items():
@@ -29,7 +29,7 @@ import ./make-test-python.nix (
           out = machine.succeed(f"{package}/bin/node -v").strip()
           expected = f"v{version}."
           assert out.startswith(expected), (
-            "version must start with {expected}, got: " + out
+            f"version must start with {expected}, got: " + out
           )
     '';
   }
