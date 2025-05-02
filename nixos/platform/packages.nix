@@ -17,7 +17,6 @@
       in
       [
         apacheHttpd
-        atop
         automake
         bc
         cmake
