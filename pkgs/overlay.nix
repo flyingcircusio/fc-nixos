@@ -212,22 +212,17 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   });
 
   frr = super.frr.overrideAttrs (old: rec {
-    version = "10.1.2";
+    version = "10.1.3";
     src = super.fetchFromGitHub {
       owner = "FRRouting";
       repo = old.pname;
       rev = "${old.pname}-${version}";
-      hash = "sha256-yenWMFHQ8F3/GJ+BVnoi5t//6qtFqH8i3uNq4X0/qdI==";
+      hash = "sha256-bfCNh/ZjHtZAoij7kimFDZzCcGTHshcFaPM+yq9bBJQ=";
     };
 
     patches = [
       ./frr/0001-Don-t-throw-error-when-log-directory-already-exists.patch
-      # issue with best path selection erroneously deleting local mac
-      # addresses during incoming guest migration.
-      (fetchpatch {
-        url = "https://github.com/FRRouting/frr/commit/c3e264e27ac5b682c4647aeeaf4e61f09d5243f9.patch";
-        hash = "sha256-YUNyE2ZeW3q58E+fpFhmMGpp56eba8HUI7pcLLbQDTE=";
-      })
+      ./frr/0002-zebra-dplane-sleep-after-writing-batches-to-netlink.patch
     ];
   });
 
