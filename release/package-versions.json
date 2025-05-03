@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-138.0",
+    "name": "firefox-138.0.1",
     "pname": "firefox",
-    "version": "138.0"
+    "version": "138.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
