@@ -428,9 +428,9 @@ import ../make-test-python.nix (
             primary.r.wait_until_is_primary()
 
           with subtest("bird2 is configured as primary"):
-            primary.wait_for_unit("bird2")
-            primary.succeed("grep PRIMARY=1 /etc/bird/bird2.conf")
-            pp(primary.succeed("cat /etc/bird/bird2.conf"))
+            primary.wait_for_unit("bird")
+            primary.succeed("grep PRIMARY=1 /etc/bird/bird.conf")
+            pp(primary.succeed("cat /etc/bird/bird.conf"))
 
           with subtest("radvd is running"):
             pp(primary.succeed("systemctl cat -l radvd"))
@@ -540,9 +540,9 @@ import ../make-test-python.nix (
             secondary.fail("systemctl is-active radvd")
 
           with subtest("bird is configured as secondary"):
-            secondary.wait_for_unit("bird2")
-            secondary.succeed("grep PRIMARY=0 /etc/bird/bird2.conf")
-            print(secondary.succeed("cat /etc/bird/bird2.conf"))
+            secondary.wait_for_unit("bird")
+            secondary.succeed("grep PRIMARY=0 /etc/bird/bird.conf")
+            print(secondary.succeed("cat /etc/bird/bird.conf"))
 
           with subtest("stopping keepalived"):
             secondary.systemctl("stop keepalived")
