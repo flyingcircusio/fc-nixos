@@ -270,6 +270,10 @@ import ./make-test-python.nix (
           for serv in ("fc-ceph-rgw", "fc-ceph-mon", "fc-ceph-mgr"):
             stop_failing_service(h, serv)
 
+          # TODO: This is a workaround for PL-133673, fc-agent interactive logs shall **not** go to the
+          # journal of `backdoor.service` only.
+          h.execute("unset JOURNAL_STREAM")
+
         show(host1, 'ip l')
         show(host1, 'cat /etc/fstab')
         show(host1, 'cat /proc/cpuinfo')
