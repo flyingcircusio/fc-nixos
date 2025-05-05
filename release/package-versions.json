@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-138.0",
+    "name": "firefox-138.0.1",
     "pname": "firefox",
-    "version": "138.0"
+    "version": "138.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.88",
+    "name": "linux-6.6.89",
     "pname": "linux",
-    "version": "6.6.88"
+    "version": "6.6.89"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.25",
+    "name": "linux-6.12.26",
     "pname": "linux",
-    "version": "6.12.25"
+    "version": "6.12.26"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -600,9 +600,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.110",
+    "name": "nss-3.111",
     "pname": "nss",
-    "version": "3.110"
+    "version": "3.111"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.10.2",
