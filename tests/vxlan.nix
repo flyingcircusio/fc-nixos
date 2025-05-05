@@ -162,9 +162,9 @@ import ./make-test-python.nix (
 
     testScript = with lib; ''
       start_all()
-      gw.wait_for_unit("network-online.target")
-      remote.wait_for_unit("network-online.target")
-      vclient.wait_for_unit("network-online.target")
+      gw.wait_for_unit("network.target")
+      remote.wait_for_unit("network.target")
+      vclient.wait_for_unit("network.target")
 
       # set up remote side for the VxLAN tunnel
       remote.execute("ip link add nx0 type vxlan id ${toString vxlanId} dev ethfe local ${remote6Fe} remote ${gw6Fe} dstport 8472")

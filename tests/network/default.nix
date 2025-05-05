@@ -234,8 +234,8 @@ import ../make-test-python.nix (
           };
         testScript = ''
           start_all()
-          n2_client.wait_for_unit("network-online.target")
-          n1_router.wait_for_unit("network-online.target")
+          n2_client.wait_for_unit("network.target")
+          n1_router.wait_for_unit("network.target")
 
           print("\n* n1_router network overview\n")
           print(n1_router.succeed("ip a"))
@@ -456,7 +456,7 @@ import ../make-test-python.nix (
             { nodes, ... }:
             ''
               start_all()
-              client.wait_for_unit("network-online.target")
+              client.wait_for_unit("network.target")
 
               print()
               print("client")

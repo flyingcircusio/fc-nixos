@@ -182,7 +182,6 @@ import ../make-test-python.nix (
           mail.succeed('grep %sudo-srv /etc/sudoers | grep -q postsuper')
 
         with subtest("imprint redirects to example.com"):
-          client.wait_for_unit("network-online.target")
 
           mail.wait_for_unit("nginx")
           mail.wait_for_open_port(80, addr='${nodes.mail.networking.primaryIPAddress}')
@@ -222,15 +221,14 @@ import ../make-test-python.nix (
           mail.succeed("grep user1@example.local: ${passwdFile}")
           mail.succeed("grep -v :placeholder ${passwdFile}")
 
-        mail.wait_for_unit('network-online.target')
+        mail.wait_for_unit('network.target')
 
         with subtest("roundcube webmailer should work"):
           mail.wait_for_unit("phpfpm-roundcube.service")
           mail.succeed("sudo -u roundcube psql -c 'select from users;'")
           mail.succeed("curl webmail.example.local")
 
-        client.wait_for_unit('network-online.target')
-        ext.wait_for_unit('network-online.target')
+        ext.wait_for_unit('network.target')
 
         mail.execute('rm -rf /srv/mail/example.local')
         mail.wait_for_file('/run/rspamd/rspamd-milter.sock')

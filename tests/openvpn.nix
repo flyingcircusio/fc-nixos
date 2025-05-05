@@ -144,9 +144,10 @@ import ./make-test-python.nix (
       oclient.execute(f"echo '{ovpn}' > /tmp/gw.ovpn")
       oclient.execute("echo 'test\ntest' > /tmp/user-pass; chmod 600 /tmp/user-pass")
 
-      gw.wait_for_unit("network-online.target")
-      internal.wait_for_unit("network-online.target")
-      oclient.wait_for_unit("network-online.target")
+
+      gw.wait_for_unit("network.target")
+      internal.wait_for_unit("network.target")
+      oclient.wait_for_unit("network.target")
 
       gw.wait_for_unit("openvpn-access.service")
       gw.wait_until_succeeds("ip link show tun0")
