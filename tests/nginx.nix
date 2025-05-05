@@ -27,7 +27,7 @@ import ./make-test-python.nix (
       ];
     };
 
-    expectedNginxMajorVersion = "1.26";
+    expectedNginxMajorVersion = "1.28";
 
     rootInitial = pkgs.writeTextFile {
       name = "nginx-root-initial";
