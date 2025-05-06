@@ -42,7 +42,7 @@ let
     chmod 0755 /run/mysqld
     chown -R ${cfg.user} /run/mysqld
 
-    cat > /srv/mysql/.my.cnf <<__EOT__
+    cat > ${config.users.users."${cfg.user}".home}/.my.cnf <<__EOT__
     # Do not modify this file, it will be overwritten when MySQL starts!
     # The following options will be passed to all MySQL clients
     [client]

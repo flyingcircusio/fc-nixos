@@ -102,6 +102,14 @@ import ./make-test-python.nix (
             master.wait_for_unit("mysql")
             master.wait_until_succeeds("mysqladmin ping")
 
+        with subtest("creating user and connecting on port works"):
+            master.succeed("mysql -e \"create user test@127.0.0.1 identified by 'foobar' \"")
+            master.succeed("mysql -h 127.0.0.1 -u test -pfoobar -e 'select 1'")
+
+        with subtest("xtrabackup works"): # sensuclient has service group
+            master.succeed("sudo -u sensuclient sudo xtrabackup --backup -S /run/mysqld/mysqld.sock")
+            master.succeed("grep uuid /tmp/xtrabackup_backupfiles/xtrabackup_info")
+
         with subtest("all sensu checks should be green"):
             master.wait_for_unit("fc-mysql-post-init.service")
             master.succeed("""${mysqlCheck}""")
@@ -109,9 +117,6 @@ import ./make-test-python.nix (
         with subtest("status check should be red after shutting down mysql"):
             master.succeed('systemctl stop mysql')
             master.fail("""${mysqlCheck}""")
-        with subtest("xtrabackup works"): # sensuclient has service group
-            master.succeed("sudo -u sensuclient sudo xtrabackup --backup -S /run/mysqld/mysqld.sock")
-            master.succeed("grep uuid /tmp/xtrabackup_backupfiles/xtrabackup_info")
       '';
 
   }

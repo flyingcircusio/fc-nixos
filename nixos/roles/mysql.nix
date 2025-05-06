@@ -15,6 +15,7 @@ let
   supportedPerconaVersions = [
     "8.0"
     "8.3"
+    "8.4"
   ];
   removeDot = builtins.replaceStrings [ "." ] [ "" ];
   lokiServer = fclib.findOneService "loki-collector";
@@ -263,15 +264,22 @@ in
               thread_cache_size          = 8
 
               ${
-                # For 8.0 we still use native password because there are
+                # For 8.4 we need to enable this manually. Will be removed in 9.0
+                lib.optionalString (lib.versionAtLeast package.version "8.4") ''
+                  mysql_native_password = ON
+                ''
+              }
+
+              ${
+                # For 8.0 and 8.3 we still use native password because there are
                 # too many non 8.0 client libs out there, which cannot
                 # connect otherwise.
-                # FIXME: disable from 8.4 on
-                # TODO: migration strategy for existing users?
-                lib.optionalString (lib.versionAtLeast package.version "8.0") ''
-                  default_authentication_plugin = mysql_native_password
-                  log_error_suppression_list = MY-013360
-                ''
+                lib.optionalString
+                  (lib.versionAtLeast package.version "8.0" && lib.versionOlder package.version "8.4")
+                  ''
+                    default_authentication_plugin = mysql_native_password
+                    log_error_suppression_list = MY-013360
+                  ''
               }
 
               ${

@@ -16,10 +16,12 @@ There's a role for each supported version, currently:
 - mysql57: Percona 5.7.x (End-of-life)
 - percona80: Percona 8.0.x (*LTS* release)
 - percona83: Percona 8.3.x (End-of-life)
+- percona84: Percona 8.4.x
 
-We recommend the use of `percona80`, as this is the only role version that receives
-security updates. All other versions are only included to allow the upgrade of
-existing machines to this platform version.
+We recommend the use of `percona84`, as this is the most up to date LTS release.
+You might also use `percona80` if you are unable to use 8.4.
+All other versions don't receive security updates and are only included to allow
+the upgrade of existing machines to this platform version.
 
 ## Configuration
 
@@ -85,3 +87,15 @@ Enabling a Percona role first and only setting an initial script later won't hav
 any effect anymore.
 % hidden note as of 20240711: It is possible to re-trigger db initialisation by `touch /run/mysql_init`, but we have decided not to expose this as an official stable API.
 :::
+
+## Migrate user password hash algorithm
+
+Before Percona (and generally MySQL) 8.4, `mysql_native_password` was the default authentication and password hash algorithm.
+This algorithm will be removed in our platform with NixOS 25.11.
+With 8.4 `caching_sha2_password` is the new default algorithm to use.
+Users need to  be manually migrated to the new algorithm with the following SQL statement (insert `username`, `host`, `password`):
+```
+ALTER USER 'username'@'host' IDENTIFIED WITH 'caching_sha2_password' by 'password';
+```
+This migration needs to be done before using Percona 9.0.
+Please check your MySQL client library support for `caching_sha2_password` before migrating the user.
