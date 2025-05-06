@@ -1,4 +1,4 @@
-# statshost: an Prometheus/Grafana server.
+# Statshost: an Prometheus/Grafana server.
 # TODO: don't build if more than one location relay is active in the same location.
 # Having more than one breaks prometheus.
 {
@@ -106,13 +106,13 @@ let
     verbose_logging = true
 
     [[servers]]
-    host = "ldap.fcio.net"
+    host = "${cfgStats.ldap.server}"
     port = 636
     start_tls = false
     use_ssl = true
     bind_dn = "uid=%s,ou=People,dc=gocept,dc=com"
     search_base_dns = ["ou=People,dc=gocept,dc=com"]
-    search_filter = "(&(&(objectClass=inetOrgPerson)(uid=%s))(memberOf=cn=${config.flyingcircus.roles.statshost.ldapMemberOf},ou=GroupOfNames,dc=gocept,dc=com))"
+    search_filter = "(&(&(objectClass=inetOrgPerson)(uid=%s))(memberOf=cn=${cfgStats.ldap.memberOf},ou=GroupOfNames,dc=gocept,dc=com))"
     group_search_base_dns = ["ou=Group,dc=gocept,dc=com"]
     group_search_filter = "(&(objectClass=posixGroup)(memberUid=%s))"
 
@@ -128,6 +128,7 @@ let
     org_role = "Admin"
 
   '';
+
   grafanaJsonDashboardPath = "${config.services.grafana.dataDir}/dashboards";
   grafanaProvisioningPath = "${config.services.grafana.dataDir}/provisioning";
 
@@ -139,6 +140,11 @@ in
     ./location-proxy.nix
     ./relabel.nix
     ./rg-relay.nix
+
+    (mkRenamedOptionModule
+      [ "flyingcircus" "roles" "statshost" "ldapMemberOf" ]
+      [ "flyingcircus" "roles" "statshost" "ldap" "memberOf" ]
+    )
   ];
 
   options = {
@@ -159,16 +165,42 @@ in
         example = "stats.example.com";
       };
 
-      ldapMemberOf = mkOption {
-        default = config.flyingcircus.enc.parameters.resource_group;
-        defaultText = "The VM's resource group";
-        type = types.str;
-        description = ''
-          LDAP group to use for the "memberOf" attribute.
-          Defaults to the resource group.
-          Checks if the user is a member of this group to grant access.
-        '';
-        example = "cn=stats,ou=Group,dc=gocept,dc=com";
+      ldap = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+        };
+
+        memberOf = mkOption {
+          default = config.flyingcircus.enc.parameters.resource_group;
+          defaultText = "The VM's resource group";
+          type = types.str;
+          description = ''
+            LDAP group to use for the "memberOf" attribute.
+            Defaults to the resource group.
+            Checks if the user is a member of this group to grant access.
+          '';
+          example = "cn=stats,ou=Group,dc=gocept,dc=com";
+        };
+
+        server = mkOption {
+          type = types.str;
+          default = "ldap.fcio.net";
+        };
+
+      };
+
+      oidc = {
+        enable = mkEnableOption "Enable OIDC for Grafana";
+        realm = mkOption {
+          type = types.str;
+          default = "fcio";
+        };
+
+        server = mkOption {
+          type = types.str;
+          default = "https://auth.flyingcircus.io";
+        };
       };
 
       useSSL = mkOption {
@@ -313,7 +345,7 @@ in
         ) relayLocationProxies
       );
 
-      flyingcircus.roles.statshost.ldapMemberOf = "crew";
+      flyingcircus.roles.statshost.ldap.memberOf = "crew";
     })
 
     (mkIf (cfgStatsRG.enable || cfgProxyRG.enable) {
@@ -478,33 +510,63 @@ in
       };
 
       security.acme.certs = mkIf cfgStats.useSSL {
-        ${cfgStats.hostName}.email = mkDefault "admin@flyingcircus.io";
+        "${cfgStats.hostName}".email = mkDefault "admin@flyingcircus.io";
       };
 
       services.grafana = {
         enable = true;
 
-        settings = {
-          auth = {
-            login_cookie_name = "grafana9_session";
-          };
+        settings = mkMerge [
+          {
+            auth = {
+              login_cookie_name = "grafana9_session";
+            };
 
-          "auth.ldap" = {
-            enabled = true;
-            config_file = toString grafanaLdapConfig;
-          };
+            paths = {
+              provisioning = grafanaProvisioningPath;
+            };
 
-          paths = {
-            provisioning = grafanaProvisioningPath;
-          };
+            server = {
+              http_port = 3001;
+              http_addr = "127.0.0.1";
+              root_url = "https://${cfgStats.hostName}/grafana/";
+            };
+          }
 
-          server = {
-            http_port = 3001;
-            http_addr = "127.0.0.1";
-            root_url = "http://${cfgStats.hostName}/grafana";
-          };
+          (lib.mkIf cfgStats.ldap.enable {
+            "auth.ldap" = {
+              enabled = true;
+              config_file = toString grafanaLdapConfig;
+            };
+          })
 
-        };
+          (lib.mkIf cfgStats.oidc.enable {
+
+            auth = {
+              oauth_allow_insecure_email_lookup = true;
+            };
+
+            "auth.generic_oauth" =
+              let
+                realmUrl = "${cfgStats.oidc.server}/realms/${cfgStats.oidc.realm}";
+              in
+              {
+                enabled = true;
+                auto_login = true;
+                name = "FCIO oidc";
+                allow_sign_up = true;
+                client_id = "${config.networking.hostName}_statshost-master";
+                client_secret = fclib.derivePasswordForHost "oidc_statshost-master";
+                scopes = "openid email profile offline_access roles";
+                email_attribute_path = "email";
+                login_attribute_path = "preferred_username";
+                name_attribute_path = "full_name";
+                auth_url = "${realmUrl}/protocol/openid-connect/auth";
+                token_url = "${realmUrl}/protocol/openid-connect/token";
+                role_attribute_path = "'Admin'";
+              };
+          })
+        ];
       };
 
       services.nginx = {
