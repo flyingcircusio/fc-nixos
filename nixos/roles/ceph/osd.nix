@@ -178,6 +178,7 @@ in
       network = lib.mkOption {
         type = with lib.types; attrs; # an attrset from fclib.network.<xy>
         default = fclib.network.stb;
+        defaultText = "The `stb` network";
         description = ''
           The Ceph cluster (replication) network.
         '';

@@ -24,6 +24,7 @@ in
       publicAddress = lib.mkOption {
         type = lib.types.str;
         default = head fclib.network.fe.v6.addressesQuoted;
+        defaultText = "The public v6 address";
       };
     };
   };

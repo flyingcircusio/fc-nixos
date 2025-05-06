@@ -31,16 +31,19 @@ in
       bindAddr = lib.mkOption {
         type = with lib.types; str;
         default = head fclib.network.srv.v6.addresses;
+        defaultText = "The `srv` network's first ipv6 address";
       };
 
       advertiseAddr = lib.mkOption {
         type = with lib.types; str;
         default = head fclib.network.srv.v6.addresses;
+        defaultText = "The `srv` network's first ipv6 address";
       };
 
       dc = lib.mkOption {
         type = lib.types.str;
         default = enc.parameters.resource_group;
+        defaultText = "The VM's resource group";
       };
     };
   };

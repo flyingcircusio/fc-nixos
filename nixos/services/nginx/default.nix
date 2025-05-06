@@ -322,6 +322,7 @@ in
                 };
 
                 listenAddresses = vhost.options.listenAddresses // {
+                  defaultText = "The default listen addresses configured in `flyingcircus.services.nginx.defaultListenAddresses`";
                   default =
                     if (config.listenAddress != null || config.listenAddress6 != null) then
                       filter (x: x != null) [

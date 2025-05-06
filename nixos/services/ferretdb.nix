@@ -30,6 +30,7 @@ in
         mkOption {
           type = types.str;
           default = "-h ${cfg.address} -p ${toString cfg.port}";
+          defaultText = "-h <address> -p <port>";
           example = "-h example00.fe.rzob.fcio.net -p 27017 -t";
           description = "Extra arguments to be passed to the check_mongodb script";
         };

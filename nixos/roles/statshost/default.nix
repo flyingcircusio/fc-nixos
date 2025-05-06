@@ -161,6 +161,7 @@ in
 
       ldapMemberOf = mkOption {
         default = config.flyingcircus.enc.parameters.resource_group;
+        defaultText = "The VM's resource group";
         type = types.str;
         description = ''
           LDAP group to use for the "memberOf" attribute.
