@@ -337,7 +337,7 @@ in
         "${cfg.dockerHostName}" = {
           forceSSL = true;
           locations."/" = {
-            proxyPass = "http://127.0.0.1:5000";
+            proxyPass = "http://127.0.0.1:${toString config.services.gitlab.registry.port}";
             extraConfig = ''
               client_max_body_size 2000M;
               proxy_read_timeout 900;
