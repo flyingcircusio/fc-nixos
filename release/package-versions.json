@@ -110,9 +110,9 @@
     "version": "2.0.5"
   },
   "coreutils": {
-    "name": "coreutils-9.6",
+    "name": "coreutils-9.7",
     "pname": "coreutils",
-    "version": "9.6"
+    "version": "9.7"
   },
   "coturn": {
     "name": "coturn-4.6.3",
@@ -330,9 +330,9 @@
     "version": "1.9.4"
   },
   "jdk": {
-    "name": "openjdk-21.0.5+11",
+    "name": "openjdk-21.0.7+6",
     "pname": "openjdk",
-    "version": "21.0.5+11"
+    "version": "21.0.7+6"
   },
   "jetbrains.jdk": {
     "name": "jetbrains-jdk-jcef-21.0.4-b598.4",
@@ -340,9 +340,9 @@
     "version": "21.0.4-b598.4"
   },
   "jetty": {
-    "name": "jetty-12.0.14",
+    "name": "jetty-12.0.20",
     "pname": "jetty",
-    "version": "12.0.14"
+    "version": "12.0.20"
   },
   "jicofo": {
     "name": "jicofo-1.0-1128",
@@ -365,9 +365,9 @@
     "version": "1.7.1"
   },
   "jre": {
-    "name": "openjdk-21.0.5+11",
+    "name": "openjdk-21.0.7+6",
     "pname": "openjdk",
-    "version": "21.0.5+11"
+    "version": "21.0.7+6"
   },
   "k3s": {
     "name": "k3s-1.32.3+k3s1",
@@ -400,9 +400,9 @@
     "version": "3.17.3"
   },
   "libffi": {
-    "name": "libffi-3.4.7",
+    "name": "libffi-3.4.8",
     "pname": "libffi",
-    "version": "3.4.7"
+    "version": "3.4.8"
   },
   "libgcrypt": {
     "name": "libgcrypt-1.10.3",
@@ -440,9 +440,9 @@
     "version": "1.5.0"
   },
   "libxml2": {
-    "name": "libxml2-2.13.6",
+    "name": "libxml2-2.13.8",
     "pname": "libxml2",
-    "version": "2.13.6"
+    "version": "2.13.8"
   },
   "libxslt": {
     "name": "libxslt-1.1.43",
@@ -600,9 +600,9 @@
     "version": "2.11"
   },
   "openjdk": {
-    "name": "openjdk-21.0.5+11",
+    "name": "openjdk-21.0.7+6",
     "pname": "openjdk",
-    "version": "21.0.5+11"
+    "version": "21.0.7+6"
   },
   "openjpeg": {
     "name": "openjpeg-2.5.2",
@@ -625,9 +625,9 @@
     "version": "2.17.1"
   },
   "openssh": {
-    "name": "openssh-9.9p2",
+    "name": "openssh-10.0p2",
     "pname": "openssh",
-    "version": "9.9p2"
+    "version": "10.0p2"
   },
   "openssl": {
     "name": "openssl-3.4.1",
@@ -885,24 +885,24 @@
     "version": "0.12.4"
   },
   "python3": {
-    "name": "python3-3.12.9",
+    "name": "python3-3.12.10",
     "pname": "python3",
-    "version": "3.12.9"
+    "version": "3.12.10"
   },
   "python310": {
-    "name": "python3-3.10.16",
+    "name": "python3-3.10.17",
     "pname": "python3",
-    "version": "3.10.16"
+    "version": "3.10.17"
   },
   "python311": {
-    "name": "python3-3.11.11",
+    "name": "python3-3.11.12",
     "pname": "python3",
-    "version": "3.11.11"
+    "version": "3.11.12"
   },
   "python312": {
-    "name": "python3-3.12.9",
+    "name": "python3-3.12.10",
     "pname": "python3",
-    "version": "3.12.9"
+    "version": "3.12.10"
   },
   "python38": {
     "name": "python3-3.8.11",
@@ -1001,9 +1001,9 @@
     "version": "1.69.1"
   },
   "re2c": {
-    "name": "re2c-4.0.2",
+    "name": "re2c-4.1",
     "pname": "re2c",
-    "version": "4.0.2"
+    "version": "4.1"
   },
   "redis": {
     "name": "redis-7.2.7",
@@ -1026,9 +1026,9 @@
     "version": "3.4.1"
   },
   "ruby": {
-    "name": "ruby-3.3.7",
+    "name": "ruby-3.3.8",
     "pname": "ruby",
-    "version": "3.3.7"
+    "version": "3.3.8"
   },
   "ruby_3_2": {
     "name": "ruby-3.2.8",
@@ -1086,9 +1086,9 @@
     "version": "12.7.4"
   },
   "systemd": {
-    "name": "systemd-257.3",
+    "name": "systemd-257.5",
     "pname": "systemd",
-    "version": "257.3"
+    "version": "257.5"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.5",
@@ -1131,9 +1131,9 @@
     "version": "018"
   },
   "util-linux": {
-    "name": "util-linux-2.40.4",
+    "name": "util-linux-2.41",
     "pname": "util-linux",
-    "version": "2.40.4"
+    "version": "2.41"
   },
   "uv": {
     "name": "uv-0.7.2",
@@ -1146,9 +1146,9 @@
     "version": "7.7.0"
   },
   "vim": {
-    "name": "vim-9.1.1231",
+    "name": "vim-9.1.1336",
     "pname": "vim",
-    "version": "9.1.1231"
+    "version": "9.1.1336"
   },
   "webkitgtk": {
     "name": "webkitgtk-2.48.1+abi=4.0",
