@@ -375,9 +375,9 @@
     "version": "21.0.5+11"
   },
   "k3s": {
-    "name": "k3s-1.31.7+k3s1",
+    "name": "k3s-1.31.8+k3s1",
     "pname": "k3s",
-    "version": "1.31.7+k3s1"
+    "version": "1.31.8+k3s1"
   },
   "k3s_1_29": {
     "name": "k3s-1.29.15+k3s1",
@@ -385,14 +385,14 @@
     "version": "1.29.15+k3s1"
   },
   "k3s_1_30": {
-    "name": "k3s-1.30.11+k3s1",
+    "name": "k3s-1.30.12+k3s1",
     "pname": "k3s",
-    "version": "1.30.11+k3s1"
+    "version": "1.30.12+k3s1"
   },
   "k3s_1_31": {
-    "name": "k3s-1.31.7+k3s1",
+    "name": "k3s-1.31.8+k3s1",
     "pname": "k3s",
-    "version": "1.31.7+k3s1"
+    "version": "1.31.8+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.1.4",
