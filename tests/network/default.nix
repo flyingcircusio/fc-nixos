@@ -117,6 +117,13 @@ import ../make-test-python.nix (
           imports = [
             (testlib.fcConfig { id = 1; })
           ];
+          # since NixOS 25.05, `wg` is only in PATH when wireguard interfaces are defined.
+          # Apart from that, this stub makes no sense.
+          networking.wireguard.interfaces = {
+            stub = {
+              privateKeyFile = "/root/wireguard-keys/privatekey";
+            };
+          };
         };
         testScript = ''
           machine.wait_for_unit("network.target")
