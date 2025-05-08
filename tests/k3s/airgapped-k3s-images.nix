@@ -38,10 +38,10 @@
   }
   {
     imageName = "docker.io/rancher/mirrored-library-traefik";
-    imageDigest = "sha256:d9b1433d05834551d2814d4e7f7eeaa6fe8d4143f1bf67dd9c13d12a42447350";
-    sha256 = "0hhqq7ip1pmangpr99w71293b7hwmhc6p312apryvq4smz7zz6kl";
+    imageDigest = "sha256:a03ee2f858f77975fa943f6797da5446b7ac9a83beef6bbdae2afd8feaf67b76";
+    sha256 = "07k2rr3x46yhkrzxgdfsjykqbzpxd95ra4bmc7dz2a4lmfdya5gr";
     finalImageName = "docker.io/rancher/mirrored-library-traefik";
-    finalImageTag = "2.11.24";
+    finalImageTag = "3.3.2";
   }
   {
     imageName = "docker.io/rancher/mirrored-metrics-server";
