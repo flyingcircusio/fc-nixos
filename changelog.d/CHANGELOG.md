@@ -1,3 +1,24 @@
+# Release 2025_014
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- nixos/default-packages: remove atop (PL-133575)
+  atop has/had security problems and we see not much use.
+  Remove in the default platform as it's still accessible with nix-shell.
+
+- antivirus: fix listen statement on devhost setups (PL-133648)
+
+- s3users: error when unknown error occurs (PL-133656)
+  This is a safeguard against unexpected errors happen in the rgw user list
+  / user info calls leading to a re-creation of the user with a new secret key.
+
+
+
 # Release 2025_013
 
 ## NixOS XX.XX platform
