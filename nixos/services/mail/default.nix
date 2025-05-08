@@ -377,13 +377,15 @@ in
                   "permit_mynetworks"
                   "permit_sasl_authenticated"
                 ];
-                recipient_canonical_maps = "tcp:localhost:10002";
+                # --- postsrsd integration ---
+                recipient_canonical_maps = "socketmap:unix:/run/postsrsd/socket:reverse";
                 recipient_canonical_classes = [
                   "envelope_recipient"
                   "header_recipient"
                 ];
-                sender_canonical_maps = "tcp:localhost:10001";
+                sender_canonical_maps = "socketmap:unix:/run/postsrsd/socket:forward";
                 sender_canonical_classes = "envelope_sender";
+                # ------
                 smtpd_client_restrictions =
                   [
                     "permit_mynetworks"
@@ -438,14 +440,15 @@ in
 
           services.postsrsd = {
             enable = true;
-            domain = primaryDomain;
-            excludeDomains = optionals (domains != [ ]) (
-              domains
-              ++ [
-                role.mailHost
-                fqdn
-              ]
-            );
+            domains =
+              [ primaryDomain ]
+              ++ optionals (domains != [ ]) (
+                domains
+                ++ [
+                  role.mailHost
+                  fqdn
+                ]
+              );
           };
 
           system.activationScripts.postfix-dynamicMaps-permissions = lib.stringAfter [ ] (
