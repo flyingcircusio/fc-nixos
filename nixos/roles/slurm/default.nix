@@ -351,7 +351,7 @@ in
             # Upon registration with a valid configuration only if it was set
             # DOWN due to being non-responsive.
 
-            ReturnToService = 1
+            ReturnToService = 2
 
             SlurmctldDebug = info
             SlurmdDebug = info
