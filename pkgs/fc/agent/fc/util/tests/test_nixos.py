@@ -5,6 +5,7 @@ from unittest import mock
 
 import pytest
 import structlog
+
 from fc.util import nixos
 from fc.util.tests import PollingFakePopen
 
@@ -24,19 +25,7 @@ def test_get_fc_channel_build_should_warn_for_non_fc_channel(log):
     invalid_channel = "http://invalid"
     build = nixos.get_fc_channel_build(invalid_channel)
     assert build is None
-    log.has("no-fc-channel-url", channel_url=invalid_channel)
-
-
-def test_get_fc_channel_build(log):
-    build = nixos.get_fc_channel_build(FC_CHANNEL)
-    assert build == "93111"
-
-
-def test_get_fc_channel_build_should_warn_for_non_fc_channel(log):
-    invalid_channel = "http://invalid"
-    build = nixos.get_fc_channel_build(invalid_channel)
-    assert build is None
-    log.has("no-fc-channel-url", channel_url=invalid_channel)
+    assert log.has("no-fc-channel-url", channel_url=invalid_channel)
 
 
 def test_build_system_with_changes(log, monkeypatch):
@@ -184,7 +173,9 @@ def test_switch_to_system(log, monkeypatch):
         lambda p: system_path if p == system_path else "other",
     )
 
-    changed = nixos.switch_to_system(system_path, lazy=True, switch_type="switch")
+    changed = nixos.switch_to_system(
+        system_path, lazy=True, switch_type="switch"
+    )
     assert changed
 
 
@@ -192,7 +183,9 @@ def test_switch_to_system_lazy_unchanged(log, monkeypatch):
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     monkeypatch.setattr("pathlib.Path.resolve", lambda p: system_path)
 
-    changed = nixos.switch_to_system(system_path, lazy=True, switch_type="switch")
+    changed = nixos.switch_to_system(
+        system_path, lazy=True, switch_type="switch"
+    )
     assert not changed
     assert log.has("system-switch-skip")
 
@@ -500,6 +493,7 @@ def test_multiple_kernel_versions(dirsetup, tmpdir):
     mod.mkdir("4.4.28")
     with pytest.raises(RuntimeError):
         nixos.kernel_version(str(kernel))
+
 
 def test_nixos_release_version():
     assert nixos.get_release_version("24.05") == "24.05"
