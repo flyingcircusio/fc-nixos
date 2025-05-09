@@ -155,6 +155,9 @@ in
 
       environment.systemPackages = with pkgs; [
         ethtool
+        # since NixOS 25.05, `services.wireguard.enable` is not sufficient unless
+        # no wireguard.interfaces are defined
+        wireguard-tools
       ];
 
       networking = {
