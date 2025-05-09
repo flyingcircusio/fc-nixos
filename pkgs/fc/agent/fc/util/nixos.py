@@ -28,6 +28,7 @@ FC_ENV_FILE = "/etc/fcio_environment_name"
 RE_FC_CHANNEL = re.compile(
     r"https://hydra.flyingcircus.io/build/(\d+)/download/1/nixexprs.tar.xz"
 )
+RE_NUMERIC_VERSION = re.compile(r"\D*([\d.]+)[^\d.]?.*")
 
 
 UnitChanges = dict[str, list[str]]
@@ -143,15 +144,22 @@ def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
         )
 
 
-def get_release_version(v):
-    """Extract the "major" release version to detection distro
+def get_release_version(nixos_version: str) -> str:
+    """Extract the "major" numeric release version to detect distro
     upgrades/downgrades.
     Accept development versions, like 24.11pre-git and release versions
     like "24.05.12355.adc37d7fe"
+    Specialisation prefixes like "primary-24.11pre-git" are stripped to only
+    return the numeric "24.11".
     """
-    v = v.replace("pre-git", "")
-    v = v.split(".")[:2]
-    return ".".join(v)
+    v_match = RE_NUMERIC_VERSION.match(nixos_version)
+    if v_match:
+        v = v_match.group(1).split(".")[:2]
+        return ".".join(v)
+    else:
+        # if no numeric version can be extracted, treat this as a special
+        # symbolic name
+        return nixos_version
 
 
 def running_system_version(log=_log):

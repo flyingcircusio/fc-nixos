@@ -500,3 +500,5 @@ def test_nixos_release_version():
     assert nixos.get_release_version("24.11.5377.8f6c4605") == "24.11"
     assert nixos.get_release_version("24.05pre-git") == "24.05"
     assert nixos.get_release_version("25.11pre-git") == "25.11"
+    assert nixos.get_release_version("primary-24.11.5377.8f6c4605") == "24.11"
+    assert nixos.get_release_version("fallback") == "fallback"
