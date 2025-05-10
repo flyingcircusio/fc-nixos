@@ -1,0 +1,119 @@
+[project]
+name = "fc.agent"
+version = "1.0"
+
+description = "FC NixOS platform management utilities."
+
+authors = [
+  {name = "Flying Circus IO GmbH <mail@flyingcircus.io>", email = "mail@flyingcircus.io" }
+]
+
+license = { text = "ZPL-2.1" }
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: System :: Systems Administration",
+]
+
+
+requires-python = "==3.12.*"
+# NOTE: Please keep this sorted!
+dependencies = [
+    "click",
+    "configobj",
+    "iso8601",
+    "netaddr",
+    "pendulum",
+    "python-dateutil",
+    "pytz",
+    "PyYAML>=6",
+    "requests",
+    "rich",
+    "shortuuid",
+    "stamina",
+    "structlog",
+    "typer",
+
+]
+# NOTE: Please keep this sorted!
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src/"]
+include = [
+        "fc.maintenance",
+        "fc.maintenance.lib",
+        "fc.maintenance.activity",
+        "fc.manage",
+        "fc.util",
+]
+
+[project.optional-dependencies]
+# NOTE: Please keep this sorted!
+test = [
+    "freezegun>=0.3",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-structlog",
+    "pytest>=3",
+    "responses",
+]
+linux = ["pystemd", "systemd"]
+slurm = ["pyslurm"]
+# NOTE: Please keep this sorted!
+
+
+[dependency-groups]
+# NOTE: Please keep this sorted!
+dev = [
+    "freezegun>=0.3",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-structlog",
+    "pytest>=3",
+    "responses",
+]
+# NOTE: Please keep this sorted!
+
+[project.scripts]
+# NOTE: Please keep this sorted!
+fc-backy-publish = "fc.manage.backy:publish"
+fc-backy = "fc.manage.backy:main"
+fc-collect-garbage = "fc.manage.collect_garbage:app"
+fc-create-vm = "fc.manage.createvm:main"
+fc-directory = "fc.util.directory:directory_cli"
+fc-graylog = "fc.manage.graylog:main"
+fc-kea = "fc.manage.kea:main"
+fc-keepalived = "fc.manage.keepalived:app"
+fc-kubernetes = "fc.manage.kubernetes:app"
+fc-maintenance = "fc.maintenance.cli:app"
+fc-manage = "fc.manage.cli:app"
+fc-monitor = "fc.manage.monitor:main"
+fc-postgresql = "fc.manage.postgresql:app"
+fc-qemu-scrub = "fc.manage.qemu:main"
+fc-resize-disk = "fc.manage.resize_disk:app"
+fc-s3users = "fc.manage.s3users:main"
+fc-slurm = "fc.manage.slurm:app"
+fc-systemd = "fc.manage.systemd:app"
+fc-zones = "fc.manage.zones:update"
+fctl = "fc.util.fctl:app"
+# NOTE: Please keep this sorted!
+
+[tool.black]
+line-length = 80
+
+[tool.isort]
+profile = "black"
+line_length = 80
+
+[tool.pytest.ini_options]
+addopts = "-vv --showlocals --strict-markers --cov=fc --cov-report=html"
+markers = [
+  "needs_nix: marks test that need a working Nix environment to download and build things"
+]
+testpaths = [ "src" ]

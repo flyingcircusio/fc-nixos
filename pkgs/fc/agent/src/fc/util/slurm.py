@@ -757,7 +757,7 @@ def check(log, hostname) -> CheckResult:
         return CheckResult(
             warnings=[
                 f"No data available for this node `{hostname}`. Is this a `slurm-node`?\n"
-                f"Got data for nodes {set(chain(controller_names, slurm_nodes))}."
+                f"Got data for nodes {sorted(set(chain(controller_names, slurm_nodes)))}."
             ]
         )
     else:

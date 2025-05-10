@@ -65,6 +65,7 @@ in
 buildPythonPackage rec {
   name = "fc-agent-${version}";
   version = "1.0";
+  format = "pyproject";
   namePrefix = "";
   src = ./.;
   checkInputs = [
