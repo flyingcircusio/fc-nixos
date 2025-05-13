@@ -11,9 +11,7 @@ from fc.util.tests import PollingFakePopen
 
 structlog.configure(wrapper_class=structlog.BoundLogger)
 
-FC_CHANNEL = (
-    "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
-)
+FC_CHANNEL = "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
 
 
 def test_get_fc_channel_build(log):
@@ -29,9 +27,7 @@ def test_get_fc_channel_build_should_warn_for_non_fc_channel(log):
 
 
 def test_build_system_with_changes(log, monkeypatch):
-    channel = (
-        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
-    )
+    channel = "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     build_output = textwrap.dedent(
         """
@@ -53,9 +49,7 @@ def test_build_system_with_changes(log, monkeypatch):
 
     popen_mock = mock.Mock(return_value=nix_build_fake)
     monkeypatch.setattr("subprocess.Popen", popen_mock)
-    monkeypatch.setattr(
-        "fc.util.nixos.system_closure_size", lambda *args: 2_000_000
-    )
+    monkeypatch.setattr("fc.util.nixos.system_closure_size", lambda *args: 2_000_000)
 
     built_system_path = nixos.build_system(
         channel, build_options=["-v"], out_link="/run/fc-agent-test"
@@ -77,9 +71,7 @@ def test_build_system_with_changes(log, monkeypatch):
 
 
 def test_build_system_unchanged(log, monkeypatch):
-    channel = (
-        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
-    )
+    channel = "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     build_output = "\n"
 
@@ -93,9 +85,7 @@ def test_build_system_unchanged(log, monkeypatch):
 
     popen_mock = mock.Mock(return_value=nix_build_fake)
     monkeypatch.setattr("subprocess.Popen", popen_mock)
-    monkeypatch.setattr(
-        "fc.util.nixos.system_closure_size", lambda *args: 2_000_000
-    )
+    monkeypatch.setattr("fc.util.nixos.system_closure_size", lambda *args: 2_000_000)
 
     built_system_path = nixos.build_system(channel)
 
@@ -111,9 +101,7 @@ def test_build_system_unchanged(log, monkeypatch):
 
 
 def test_build_system_fail(log, monkeypatch):
-    channel = (
-        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
-    )
+    channel = "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     build_output = textwrap.dedent(
         """
@@ -173,9 +161,7 @@ def test_switch_to_system(log, monkeypatch):
         lambda p: system_path if p == system_path else "other",
     )
 
-    changed = nixos.switch_to_system(
-        system_path, lazy=True, switch_type="switch"
-    )
+    changed = nixos.switch_to_system(system_path, lazy=True, switch_type="switch")
     assert changed
 
 
@@ -183,9 +169,7 @@ def test_switch_to_system_lazy_unchanged(log, monkeypatch):
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     monkeypatch.setattr("pathlib.Path.resolve", lambda p: system_path)
 
-    changed = nixos.switch_to_system(
-        system_path, lazy=True, switch_type="switch"
-    )
+    changed = nixos.switch_to_system(system_path, lazy=True, switch_type="switch")
     assert not changed
     assert log.has("system-switch-skip")
 
@@ -495,10 +479,31 @@ def test_multiple_kernel_versions(dirsetup, tmpdir):
         nixos.kernel_version(str(kernel))
 
 
-def test_nixos_release_version():
-    assert nixos.get_release_version("24.05") == "24.05"
-    assert nixos.get_release_version("24.11.5377.8f6c4605") == "24.11"
-    assert nixos.get_release_version("24.05pre-git") == "24.05"
-    assert nixos.get_release_version("25.11pre-git") == "25.11"
-    assert nixos.get_release_version("primary-24.11.5377.8f6c4605") == "24.11"
-    assert nixos.get_release_version("fallback") == "fallback"
+def test_os_release_parser(tmp_path):
+    os_release = tmp_path / "etc/os-release"
+    os_release.parent.mkdir(parents=True)
+    os_release.write_text("""\
+
+
+# comment with emptly lines before
+A=1
+B="fdasfda"
+C='word word = word word'
+D=""
+E=
+""")
+
+    assert nixos.os_release(tmp_path) == {
+        "A": "1",
+        "B": "fdasfda",
+        "C": "word word = word word",
+        "D": "",
+        "E": "",
+    }
+
+    os_release.write_text("""\
+B="bad quoting'
+""")
+
+    with pytest.raises(AssertionError):
+        assert nixos.os_release(tmp_path)

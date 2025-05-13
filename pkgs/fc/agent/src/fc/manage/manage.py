@@ -53,7 +53,7 @@ def check(log, enc, config: ConfigParser) -> CheckResult:
             f"run successfully, yet."
         )
 
-    system_version = nixos.running_system_version(log)
+    system_version = nixos.os_release()["BUILD_ID"]
 
     if system_version:
         ok_info.append(f"System version: {system_version}.")

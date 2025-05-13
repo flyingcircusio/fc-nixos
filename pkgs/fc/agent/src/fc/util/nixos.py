@@ -144,32 +144,27 @@ def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
         )
 
 
-def get_release_version(nixos_version: str) -> str:
-    """Extract the "major" numeric release version to detect distro
-    upgrades/downgrades.
-    Accept development versions, like 24.11pre-git and release versions
-    like "24.05.12355.adc37d7fe"
-    Specialisation prefixes like "primary-24.11pre-git" are stripped to only
-    return the numeric "24.11".
-    """
-    v_match = RE_NUMERIC_VERSION.match(nixos_version)
-    if v_match:
-        v = v_match.group(1).split(".")[:2]
-        return ".".join(v)
-    else:
-        # if no numeric version can be extracted, treat this as a special
-        # symbolic name
-        return nixos_version
+CURRENT_SYSTEM = Path("/run/current-system")
 
 
-def running_system_version(log=_log):
-    nixos_version_path = Path("/run/current-system/nixos-version")
-
-    if not nixos_version_path.exists():
-        log.warn("nixos-version-missing")
-        return
-
-    return nixos_version_path.read_text()
+def os_release(system: Path = None):
+    if not system:
+        # Not used as default arg due to monkeypatch support.
+        system = CURRENT_SYSTEM
+    result = {}
+    for line in (system / "etc/os-release").read_text().splitlines():
+        line = line.strip()
+        if line.startswith("#"):
+            continue
+        if not line:
+            continue
+        k, v = line.split("=", maxsplit=1)
+        if v and v[0] in set("'\""):
+            assert len(v) >= 2
+            assert v[0] == v[-1]
+            v = v[1:-1]
+        result[k] = v
+    return result
 
 
 def current_nixos_channel_version():
