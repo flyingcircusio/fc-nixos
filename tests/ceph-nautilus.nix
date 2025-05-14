@@ -293,15 +293,15 @@ import ./make-test-python.nix (
 
         with subtest("Initialize keystore on host 1"):
           # check succeeds as "not needed" as long as /mnt/keys does not exist
-          host1.succeed("${check_key_file_cmd} > /dev/kmsg 2>&1")
-          host1.succeed("fc-luks keystore create /dev/vde > /dev/kmsg 2>&1")
+          host1.succeed("${check_key_file_cmd} > /dev/stderr")
+          host1.succeed("fc-luks keystore create /dev/vde > /dev/stderr")
           show(host1, "lsblk")
-          host1.succeed("${check_key_file_cmd} > /dev/kmsg 2>&1")
+          host1.succeed("${check_key_file_cmd} > /dev/stderr")
 
 
         with subtest("Initialize first mon"):
-          host1.succeed('fc-ceph osd prepare-journal /dev/vdb > /dev/kmsg 2>&1')
-          host1.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-ceph mon create --encrypt --size 500m --bootstrap-cluster > /dev/kmsg 2>&1')
+          host1.succeed('fc-ceph osd prepare-journal /dev/vdb > /dev/stderr')
+          host1.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-ceph mon create --encrypt --size 500m --bootstrap-cluster > /dev/stderr')
           show(host1, "ls -l /dev/disk/by-label")
           show(host1, 'lsblk')
           show(host1, 'journalctl -u fc-ceph-mon')
@@ -309,22 +309,22 @@ import ./make-test-python.nix (
           show(host1, 'cat /var/log/ceph/*mon*')
           show(host1, 'ps aux | grep ceph')
 
-          host1.succeed('ceph -s > /dev/kmsg 2>&1')
+          host1.succeed('ceph -s > /dev/stderr')
 
           host1.succeed('fc-ceph keys mon-update-single-client host1 ceph_osd,ceph_mon,ceph_rgw salt-for-host-1-dhkasjy9')
           host1.succeed('fc-ceph keys mon-update-single-client host2 ceph_osd,ceph_mon salt-for-host-2-dhkasjy9')
           host1.succeed('fc-ceph keys mon-update-single-client host3 ceph_osd,ceph_mon salt-for-host-3-dhkasjy9')
 
           # fix default warnings by enabling new backwards-incompatible client auth behaviour
-          host1.succeed('ceph config set mon auth_allow_insecure_global_id_reclaim false > /dev/kmsg 2>&1')
-          host1.succeed('ceph mon enable-msgr2 > /dev/kmsg 2>&1')
+          host1.succeed('ceph config set mon auth_allow_insecure_global_id_reclaim false > /dev/stderr')
+          host1.succeed('ceph mon enable-msgr2 > /dev/stderr')
 
           show(host1, 'ceph auth list')
 
           show(host1, 'ceph mon dump')
 
           # mgr keys rely on 'fc-ceph keys' to be executed first
-          host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph mgr create --encrypt --size 500m > /dev/kmsg 2>&1')
+          host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph mgr create --encrypt --size 500m > /dev/stderr')
           show(host1, 'journalctl -u fc-ceph-mgr')
           show(host1, 'ceph mgr module ls')
 
@@ -333,23 +333,23 @@ import ./make-test-python.nix (
           show(host1, 'ceph osd lspools')
 
         with subtest("Initialize first OSD (bluestore)"):
-          host1.execute('systemctl status fc-ceph-osd@0.service > /dev/kmsg 2>&1')
-          host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph osd create-bluestore --encrypt /dev/vdc > /dev/kmsg 2>&1')
-          host1.execute('systemctl status fc-ceph-osd@0.service > /dev/kmsg 2>&1')
+          host1.execute('systemctl status fc-ceph-osd@0.service > /dev/stderr')
+          host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph osd create-bluestore --encrypt /dev/vdc > /dev/stderr')
+          host1.execute('systemctl status fc-ceph-osd@0.service > /dev/stderr')
 
         with subtest("Initialize second MON and OSD (bluestore, internal WAL)"):
           host2.succeed('fc-ceph osd prepare-journal /dev/vdb')
-          host2.succeed('fc-ceph mon create --no-encrypt --size 500m > /dev/kmsg 2>&1')
-          host2.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
+          host2.succeed('fc-ceph mon create --no-encrypt --size 500m > /dev/stderr')
+          host2.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/stderr')
           # cover explicit specification of internal and external journals
-          host2.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=internal /dev/vdc > /dev/kmsg 2>&1')
+          host2.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=internal /dev/vdc > /dev/stderr')
 
         with subtest("Initialize third MON and OSD (bluestore, external WAL)"):
           host3.succeed('fc-ceph osd prepare-journal /dev/vdb')
           host3.succeed('fc-ceph mon create --no-encrypt --size 500m')
-          host3.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/kmsg 2>&1')
+          host3.execute('fc-ceph mgr create --no-encrypt --size 500m > /dev/stderr')
           # cover explicit specification of internal and external journals
-          host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/kmsg 2>&1')
+          host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/stderr')
 
         with subtest("Move OSDs to correct crush location"):
           host1.succeed('ceph osd crush move host1 root=default')
@@ -391,8 +391,8 @@ import ./make-test-python.nix (
 
           assert_clean_cluster(host2, 2, 3, 2, 320)
 
-          host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph mon create --size 500m > /dev/kmsg 2>&1')
-          host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph mgr create --size 500m > /dev/kmsg 2>&1')
+          host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph mon create --size 500m > /dev/stderr')
+          host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph mgr create --size 500m > /dev/stderr')
           host1.sleep(5)
           show(host1, 'tail -n 500 /var/log/ceph/*mon*')
           show(host1, 'tail -n 500 /var/log/ceph/*mgr*')
@@ -404,11 +404,11 @@ import ./make-test-python.nix (
           assert_clean_cluster(host2, 3, 3, 3, 320)
 
         with subtest("Test strict safety check of destroy and rebuild"):
-          host1.fail("fc-ceph osd destroy --strict-safety-check all > /dev/kmsg 2>&1")
-          host1.fail('fc-ceph osd rebuild --strict-safety-check all> /dev/kmsg 2>&1')
+          host1.fail("fc-ceph osd destroy --strict-safety-check all > /dev/stderr")
+          host1.fail('fc-ceph osd rebuild --strict-safety-check all> /dev/stderr')
 
         with subtest("Initialize extra OSD to enable safe rebuilding (bluestore)"):
-          host1.execute('fc-ceph osd create-bluestore --no-encrypt /dev/vdd > /dev/kmsg 2>&1')
+          host1.execute('fc-ceph osd create-bluestore --no-encrypt /dev/vdd > /dev/stderr')
           assert_clean_cluster(host2, 3, 4, 3, 320)
 
         with subtest("Rebuild the 2nd OSD on host 1 from bluestore to bluestore and disable encryption without redundancy loss"):
@@ -417,7 +417,7 @@ import ./make-test-python.nix (
           host1.sleep(5)
           assert_clean_cluster(host2, 3, (4, 3), 3, 320)
           # then rebuild
-          host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --no-encrypt --strict-safety-check 3 > /dev/kmsg 2>&1')
+          host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --no-encrypt --strict-safety-check 3 > /dev/stderr')
           # and set the osds in again
           host1.execute('ceph osd in $(ceph osd ls-tree host1)')
           show(host1, "lsblk")
@@ -426,7 +426,7 @@ import ./make-test-python.nix (
           assert_clean_cluster(host2, 3, 4, 3, 320)
 
         with subtest("Rebuild all OSDs on host 1 and ensure encryption is enabled"):
-          host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --encrypt --no-safety-check all > /dev/kmsg 2>&1')
+          host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --encrypt --no-safety-check all > /dev/stderr')
           assert_clean_cluster(host2, 3, 4, 3, 320)
 
         with subtest("Destroy the 2nd OSD on host 1 without redundancy loss"):
@@ -435,7 +435,7 @@ import ./make-test-python.nix (
           host1.sleep(5)
           assert_clean_cluster(host2, 3, (4, 3), 3, 320)
           # then destroy
-          host1.succeed('fc-ceph osd destroy --strict-safety-check 3 > /dev/kmsg 2>&1')
+          host1.succeed('fc-ceph osd destroy --strict-safety-check 3 > /dev/stderr')
           show(host1, "lsblk")
           show(host1, "vgs")
           assert_clean_cluster(host2, 3, 3, 3, 320)
@@ -443,7 +443,7 @@ import ./make-test-python.nix (
         # from now on always default to allowing some reduced redundancy to save time
 
         with subtest("Rebuild all OSDs on host 2"):
-          host2.succeed('fc-ceph osd rebuild all > /dev/kmsg 2>&1')
+          host2.succeed('fc-ceph osd rebuild all > /dev/stderr')
           show(host1, "lsblk")
           show(host1, "vgs")
           assert_clean_cluster(host3, 3, 3, 3, 320)
@@ -456,16 +456,16 @@ import ./make-test-python.nix (
           assert_clean_cluster(host2, 3, 3, 3, 320)
 
         with subtest("Test destroy safety check and its override, destroy, recreate, recover OSDs"):
-          host2.succeed('fc-ceph osd destroy all > /dev/kmsg 2>&1')
+          host2.succeed('fc-ceph osd destroy all > /dev/stderr')
           wait_for_cluster_status(host3, "PG_DEGRADED")
-          host3.fail('fc-ceph osd destroy all > /dev/kmsg 2>&1')
-          host3.succeed('fc-ceph osd destroy --no-safety-check all > /dev/kmsg 2>&1')
+          host3.fail('fc-ceph osd destroy all > /dev/stderr')
+          host3.succeed('fc-ceph osd destroy --no-safety-check all > /dev/stderr')
           # now the cluster should block I/O due to being on only 1/3 redundancy
           wait_for_cluster_status(host3, "PG_AVAILABILITY")
-          host3.succeed('ceph health | grep "Reduced data availability" > /dev/kmsg 2>&1')
+          host3.succeed('ceph health | grep "Reduced data availability" > /dev/stderr')
           # re-provision the 2 OSDs and allow the cluster to recover
-          host2.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=internal /dev/vdc > /dev/kmsg 2>&1')
-          host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/kmsg 2>&1')
+          host2.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=internal /dev/vdc > /dev/stderr')
+          host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/stderr')
           assert_clean_cluster(host2, 3, 3, 3, 320)
 
         # Maintenance integration
@@ -499,15 +499,15 @@ import ./make-test-python.nix (
         #with subtest("Integration test for check_snapshot_restore_fill"):
         #  check_command = "${nodes.host1.config.flyingcircus.services.sensu-client.checks.ceph_snapshot_restore_fill.command}"
         #  print("Executing check command", check_command)
-        #  snapfillcheck = host1.succeed('sudo -u sensuclient ' + check_command + ' > /dev/kmsg 2>&1')
+        #  snapfillcheck = host1.succeed('sudo -u sensuclient ' + check_command + ' > /dev/stderr')
         #  print(snapfillcheck)
 
         #  # calculation of image size: The empty image itself accounts for almost nothing,
         #  # but after generating a snapshot it's accounted size is the provisioned size of
         #  # the image.
         #  # Thus, we need to create an image of the size that can exceed the threshold alone.
-        #  host1.succeed("rbd create rbd/snapfilltest -s 5324M > /dev/kmsg 2>&1")
-        #  host1.succeed("rbd snap create rbd/snapfilltest@firstsnap > /dev/kmsg 2>&1")
+        #  host1.succeed("rbd create rbd/snapfilltest -s 5324M > /dev/stderr")
+        #  host1.succeed("rbd snap create rbd/snapfilltest@firstsnap > /dev/stderr")
 
         #  host1.sleep(1)
         #  print("Executing check command", check_command)
