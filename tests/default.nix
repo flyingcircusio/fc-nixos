@@ -81,14 +81,6 @@ in
   lampVm83 = callTest ./lamp/vm-test.nix { version = "lamp_php83"; };
   lampVm84 = callTest ./lamp/vm-test.nix { version = "lamp_php84"; };
 
-  lampPackage74 = callTest ./lamp/package-test.nix { version = "lamp_php74"; };
-  lampPackage80 = callTest ./lamp/package-test.nix { version = "lamp_php80"; };
-  lampPackage81 = callTest ./lamp/package-test.nix { version = "lamp_php81"; };
-  lampPackage82 = callTest ./lamp/package-test.nix { version = "lamp_php82"; };
-  lampPackage83 = callTest ./lamp/package-test.nix { version = "lamp_php83"; };
-  # PL-133352: disabling due to some deprecations in the test PHP code
-  #lampPackage84 = callTest ./lamp/package-test.nix { version = "lamp_php84"; };
-
   locale = callTest ./locale.nix { };
   loghost = callTest ./loghost.nix { };
   login = callTest ./login.nix { };
