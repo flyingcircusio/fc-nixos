@@ -1,3 +1,24 @@
+# Release 2025_015
+
+## Impact
+
+- k3s: version 1.29 is end-of-life and should be considered insecure. Users are encouraged to upgrade their k3s cluster to a more recent version.
+
+- Slurm services will be restarted.
+
+
+## NixOS XX.XX platform
+
+- varnish: Listen addresses are filtered by uniqueness. Before that, adding the same listen IP twice would break Varnish on startup.
+
+- A bullet item for the NixOS XX.XX platform category. (FC-XXXX)
+
+- The default Nix has been upgraded to 2.25.
+
+- Slurm nodes will be returned to service after an unexpected reboot.
+
+
+
 # Release 2025_014
 
 ## Impact
