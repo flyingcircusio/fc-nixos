@@ -161,6 +161,9 @@ in
           secretFile = "${cfg.secretsDir}/secret";
           otpFile = "${cfg.secretsDir}/otp";
           jwsFile = "${cfg.secretsDir}/jws";
+          activeRecordPrimaryKeyFile = "${cfg.secretsDir}/active_record_primary_key";
+          activeRecordDeterministicKeyFile = "${cfg.secretsDir}/active_record_deterministic_key";
+          activeRecordSaltFile = "${cfg.secretsDir}/active_record_salt";
         };
 
         # less memory usage with jemalloc
@@ -366,6 +369,13 @@ in
           for x in db db_password jws otp root_password secret; do
             if [ ! -e "$x" ]; then
               apg -n1 -m40 > "$x"
+            fi
+          done
+          # Generate keys similar to Rails
+          # https://guides.rubyonrails.org/active_record_encryption.html#basic-usage
+          for x in active_record_primary_key active_record_deterministic_key active_record_salt; do
+            if [ ! -e "$x" ]; then
+              apg -n1 -m32 -MNCL > "$x"
             fi
           done
         '';
