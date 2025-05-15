@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-138.0.1",
+    "name": "firefox-138.0.3",
     "pname": "firefox",
-    "version": "138.0.1"
+    "version": "138.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.89",
+    "name": "linux-6.6.90",
     "pname": "linux",
-    "version": "6.6.89"
+    "version": "6.6.90"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.26",
+    "name": "linux-6.12.28",
     "pname": "linux",
-    "version": "6.12.26"
+    "version": "6.12.28"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -1120,14 +1120,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.34",
+    "name": "apache-tomcat-10.1.40",
     "pname": "apache-tomcat",
-    "version": "10.1.34"
+    "version": "10.1.40"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.98",
+    "name": "apache-tomcat-9.0.104",
     "pname": "apache-tomcat",
-    "version": "9.0.98"
+    "version": "9.0.104"
   },
   "unifi": {
     "name": "unifi-controller-8.5.6",
