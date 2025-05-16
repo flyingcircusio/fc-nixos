@@ -597,6 +597,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     # newer versions cause linking failures against `libabsl_spinlock_wait`
     protobuf = self.protobuf_21;
   };
+  percona84 = self.percona-server_8_4;
 
   percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4/2_4.nix {
     boost = self.boost159;

@@ -13,7 +13,9 @@ let
 
   mysql = cfg.package;
 
-  initFile = "/run/mysqld/init_set_root_password.sql";
+  initFile = pkgs.writeText "mysql_set_root_socket" ''
+    ALTER USER 'root'@'localhost' IDENTIFIED WITH auth_socket AS 'mysql';
+  '';
 
   pidFile = "${cfg.pidDir}/mysqld.pid";
 
@@ -31,17 +33,7 @@ let
     ${cfg.extraOptions}
   '';
 
-  mysqlInit =
-    if versionAtLeast mysql.mysqlVersion "5.7" then
-      "${mysql}/bin/mysqld --initialize-insecure ${mysqldOptions}"
-    else
-      "${pkgs.perl}/bin/perl ${mysql}/bin/mysql_install_db ${mysqldOptions}";
-
-  setPasswordSql =
-    if (lib.versionAtLeast mysql.mysqlVersion "5.7") then
-      "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY \'$pw\';"
-    else
-      "SET PASSWORD FOR 'root'@'localhost' = PASSWORD(\'$pw\');";
+  mysqlInit = "${mysql}/bin/mysqld --initialize-insecure ${mysqldOptions}";
 
   mysqlPreStart = ''
     umask 0066
@@ -50,33 +42,14 @@ let
     chmod 0755 /run/mysqld
     chown -R ${cfg.user} /run/mysqld
 
-    # Generate mysql root password file if it's not present.
-    if [[ ! -f ${cfg.rootPasswordFile} ]]; then
-      pw=`${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 12`
-      echo -n "''${pw}" > ${cfg.rootPasswordFile}
-    fi
-    chown root:service ${cfg.rootPasswordFile}
-    chmod 660 ${cfg.rootPasswordFile}
-
-    pw=$(<${cfg.rootPasswordFile})
-    cat > /root/.my.cnf <<__EOT__
+    cat > ${config.users.users."${cfg.user}".home}/.my.cnf <<__EOT__
     # Do not modify this file, it will be overwritten when MySQL starts!
     # The following options will be passed to all MySQL clients
     [client]
-    password = ''${pw}
     user = root
     __EOT__
-    chmod 440 /root/.my.cnf
-    # allow convenient logins as db `root` user for unix users `mysql` and `root
-    cp -p /root/.my.cnf /srv/mysql/.my.cnf
+    chmod 440 /srv/mysql/.my.cnf
     chown mysql:mysql /srv/mysql/.my.cnf
-
-    # write init file for mysqld to set the root password
-    cat > ${initFile} <<__EOT__
-    ${setPasswordSql}
-    __EOT__
-    chmod 440 ${initFile}
-    chown ${cfg.user} ${initFile}
 
     if ! test -e ${cfg.dataDir}/mysql; then
         mkdir -m 0700 -p ${cfg.dataDir}
@@ -127,10 +100,6 @@ in
       dataDir = mkOption {
         default = "/srv/mysql";
         description = "Location where MySQL stores its table files";
-      };
-
-      rootPasswordFile = mkOption {
-        description = "Location of the root password file";
       };
 
       pidDir = mkOption {
@@ -302,7 +271,7 @@ in
 
             ${optionalString (cfg.initialScript != null) ''
               # Execute initial script
-              cat ${cfg.initialScript} | ${mysql}/bin/mysql --defaults-extra-file=/root/.my.cnf -u root -N
+              cat ${cfg.initialScript} | ${mysql}/bin/mysql -u root -N
             ''}
 
           rm /run/mysql_init

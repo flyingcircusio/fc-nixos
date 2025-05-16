@@ -15,6 +15,7 @@ let
   supportedPerconaVersions = [
     "8.0"
     "8.3"
+    "8.4"
   ];
   removeDot = builtins.replaceStrings [ "." ] [ "" ];
   lokiServer = fclib.findOneService "loki-collector";
@@ -114,8 +115,6 @@ in
 
       localConfigPath = /etc/local/mysql;
 
-      rootPasswordFile = "${toString localConfigPath}/mysql.passwd";
-
       isCnf = path: t: lib.hasSuffix ".cnf" path;
 
       localConfig =
@@ -172,6 +171,9 @@ in
         systemd.tmpfiles.rules = [
           "d /var/log/mysql 0755 mysql service 90d"
           "f /var/log/mysql/mysql.slow 0640 mysql service -"
+          # Cleanup files that are not required anymore and confusing
+          "r /root/.my.cnf"
+          "r ${toString localConfigPath}/mysql.passwd"
         ];
 
         # Note that this does not use platform defaults, by using priority 100.
@@ -185,7 +187,7 @@ in
             compress = true;
             create = "0640 mysql service";
             postrotate = ''
-              ${package}/bin/mysql --defaults-extra-file=/root/.my.cnf -e \
+              ${package}/bin/mysql -e \
                     'select @@global.long_query_time into @lqt_save; set global long_query_time=2000; select sleep(2); FLUSH LOGS; select sleep(2); set global long_query_time=@lqt_save;'
             '';
             missingok = true;
@@ -194,7 +196,7 @@ in
 
         services.percona = {
           enable = true;
-          inherit package rootPasswordFile;
+          inherit package;
           dataDir = "/srv/mysql";
           extraOptions =
             let
@@ -262,13 +264,22 @@ in
               thread_cache_size          = 8
 
               ${
-                # For 8.0 we still use native password because there are
+                # For 8.4 we need to enable this manually. Will be removed in 9.0
+                lib.optionalString (lib.versionAtLeast package.version "8.4") ''
+                  mysql_native_password = ON
+                ''
+              }
+
+              ${
+                # For 8.0 and 8.3 we still use native password because there are
                 # too many non 8.0 client libs out there, which cannot
                 # connect otherwise.
-                lib.optionalString (lib.versionAtLeast package.version "8.0") ''
-                  default_authentication_plugin = mysql_native_password
-                  log_error_suppression_list = MY-013360
-                ''
+                lib.optionalString
+                  (lib.versionAtLeast package.version "8.0" && lib.versionOlder package.version "8.4")
+                  ''
+                    default_authentication_plugin = mysql_native_password
+                    log_error_suppression_list = MY-013360
+                  ''
               }
 
               ${
@@ -327,8 +338,9 @@ in
         environment.etc."local/mysql/README.txt".text = ''
           MySQL / Percona (${package.name}) is running on this machine.
 
-          You can find the password for the MySQL root user in the file `mysql.passwd`.
-          Service users can read the password file.
+          The root user is authenticated by socket auth with the `mysql` and `root` system users.
+          If you want to add a password to this user, you can do this manually with interactive
+          SQL commands.
 
           Config files from this directory (/etc/local/mysql) are included in the
           mysql configuration. To set custom options, add a `local.cnf`
@@ -336,10 +348,6 @@ in
 
           ATTENTION: Changes to *.cnf files in this directory will restart MySQL
           to activate the new configuration.
-
-          You can change the password for the mysql root user in the file `mysql.passwd`.
-          The MySQL service must be restarted to pick up the new password:
-          `sudo systemctl restart mysql`
 
           For more information, see our documentation at
           ${fclib.roleDocUrl "mysql"}
@@ -372,7 +380,7 @@ in
                     CREATE DATABASE IF NOT EXISTS ${dbUser};
                     GRANT SELECT ON ${dbUser}.* TO ${dbUser}@localhost IDENTIFIED WITH auth_socket AS '${systemUser}';
                   '';
-              mysqlCmd = sql: ''mysql --defaults-extra-file=/root/.my.cnf -e "${sql}"'';
+              mysqlCmd = sql: ''mysql -e "${sql}"'';
             in
             ''
               # Wait until the MySQL server is available for use
