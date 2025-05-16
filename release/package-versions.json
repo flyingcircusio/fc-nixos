@@ -374,11 +374,6 @@
     "pname": "k3s",
     "version": "1.32.3+k3s1"
   },
-  "k3s_1_29": {
-    "name": "k3s-1.29.15+k3s1",
-    "pname": "k3s",
-    "version": "1.29.15+k3s1"
-  },
   "k3s_1_30": {
     "name": "k3s-1.30.12+k3s1",
     "pname": "k3s",
