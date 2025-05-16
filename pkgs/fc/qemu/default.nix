@@ -1,26 +1,27 @@
 {
   version,
   src,
-  pkgs,
-  python3Packages,
-  lib,
-  libceph,
   ceph_client,
+  coreutils,
+  dosfstools,
   fc-ceph,
   fetchFromGitHub,
-  utillinux,
-  coreutils,
+  file,
+  gnused,
+  gptfdisk,
+  iproute2,
+  lib,
+  libceph,
+  openssh,
+  parted,
+  procps,
+  python3Packages,
   qemu_ceph,
   stdenv,
-  gptfdisk,
-  parted,
-  xfsprogs,
-  dosfstools,
-  procps,
   strace,
-  file,
   systemd,
-  py_pytest_patterns,
+  utillinux,
+  xfsprogs,
 }:
 
 let
@@ -59,35 +60,44 @@ py.buildPythonPackage rec {
 
   dontStrip = true;
 
+  pyproject = true;
+
   propagatedBuildInputs = [
     coreutils
+    dosfstools
+    gnused
     gptfdisk
+    iproute2
     parted
     procps
     qemu_ceph
     systemd
     utillinux
     xfsprogs
-    dosfstools
     py.requests
     py.future
     py.colorama
     py.structlog
     py_consulate
     py.psutil
-    strace
     py.pyyaml
     py.setuptools
-    (py.toPythonModule ceph_client)
+    py.websockets
+    ceph_client
   ];
 
   passthru = {
-    inherit py checkInputs;
+    inherit py nativeCheckInputs;
   };
 
-  checkInputs = [
+  postInstall = ''
+    cp -Pr $src/share $out/share
+  '';
+
+  nativeCheckInputs = [
     file
-    py_pytest_patterns
+    openssh
+    py.pytest_patterns
     py.pytest
     py.pytest-xdist
     py.pytest-cov

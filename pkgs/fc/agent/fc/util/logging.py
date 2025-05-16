@@ -644,9 +644,13 @@ def init_logging(
 
     if logdir is not None:
         try:
-            main_log_file = open(logdir / f"{syslog_identifier}.log", "a")
+            main_log_file_name = logdir / f"{syslog_identifier}.log"
+            main_log_file = open(main_log_file_name, "a")
         except PermissionError:
-            pass
+            print(
+                f"Warning: failed to set up logging to {main_log_file_name}, continuing.",
+                file=sys.stderr,
+            )
         else:
             loggers["file"] = structlog.PrintLoggerFactory(main_log_file)
             context["logdir"] = logdir

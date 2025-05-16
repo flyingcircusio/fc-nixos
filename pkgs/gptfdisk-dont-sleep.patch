@@ -1,0 +1,13 @@
+diff --git a/diskio-unix.cc b/diskio-unix.cc
+index 0897c56..c6260d1 100644
+--- a/diskio-unix.cc
++++ b/diskio-unix.cc
+@@ -291,7 +291,7 @@ int DiskIO::DiskSync(void) {
+       platformFound++;
+ #endif
+ #ifdef __linux__
+-      sleep(1); // Theoretically unnecessary, but ioctl() fails sometimes if omitted....
++      sleep(0); // Theoretically unnecessary, but ioctl() fails sometimes if omitted....
+       fsync(fd);
+       i = ioctl(fd, BLKRRPART);
+       if (i) {

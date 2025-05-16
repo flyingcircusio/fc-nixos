@@ -115,6 +115,30 @@ import ./make-test-python.nix (
           systemd.services.coturn.serviceConfig.ExecStartPre = [
             "+${pkgs.acl}/bin/setfacl -Rm u:turnserver:rX /var/lib/acme/${turnserverFe}"
           ];
+
+          # The Jitsi role configures coturn to listen on port 443. However the
+          # stock systemd unit configuration puts coturn into a separate user
+          # namespace, and the additional process capabilities
+          # (e.g. CAP_NET_BIND_SERVICE) are only set within this separate
+          # namespace and not the host namespace. This prevents coturn from
+          # binding to port 443 properly, so this sandboxing measure needs to be
+          # disabled if coturn has a privileged listen port.
+          specialisation = {
+            withPrivilegedBind = {
+              configuration = {
+                services.coturn.tls-listening-port = 443;
+
+                # The ACME services get stuck when running
+                # switch-to-configuration inside the test VM. The self-signed
+                # certs have already been created by the primary system which we
+                # booted into, so we can turn those services off when switching
+                # to the specialisation.
+                systemd.services.coturn.requires = lib.mkForce [ ];
+                services.nginx.enable = lib.mkForce false;
+                security.acme.certs = lib.mkForce { };
+              };
+            };
+          };
         };
     };
 
@@ -159,6 +183,12 @@ import ./make-test-python.nix (
         with subtest("coturn opens no unexpected ports"):
             turnserver.fail("netstat -tlpn | grep turnserver | egrep -qv ':3478 |:3479 |:5349 |:5350 '")
 
+        with subtest("coturn is able to bind to privileged ports"):
+            turnserver.succeed(
+                "/run/current-system/specialisation/withPrivilegedBind/bin/switch-to-configuration test",
+                timeout=30,
+            )
+            turnserver.wait_for_open_port(443, timeout=30)
       '';
   }
 )

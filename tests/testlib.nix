@@ -169,6 +169,8 @@ rec {
       networking = {
         inherit extraHosts;
         
+        domain = fclib.mkPlatform "example.local";
+
         primaryIPAddress = fclib.mkOverrideUpstreamModule
           (lib.optionalString (primaryAddresses.v4 != null) primaryAddresses.v4);
         primaryIPv6Address = fclib.mkOverrideUpstreamModule

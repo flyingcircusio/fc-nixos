@@ -366,6 +366,19 @@ rec {
           bridgedLink = "br${vlan}"; # the kernel device with type `bridge`
           taggedLink = "eth${vlan}"; # the kernel device with type `vlan`
 
+          vrfInterface = "vrf${vlan}"; # the kernel device with type `vrf`
+          vrfTable =
+            assert
+              # the routing tables 0, 253, 254, and 255 are reserved by the
+              # kernel.
+              !(elem vlanId [
+                0
+                253
+                254
+                255
+              ]);
+            vlanId;
+
           # The basic link that provides connectivity to the outside world.
           # In simple cases this can be the plain physical ethernet device/
           # interface like `ethmgm` or `ethmgm`.

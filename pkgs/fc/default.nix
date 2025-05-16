@@ -53,33 +53,25 @@ rec {
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "5672728c27c09bbcabb58e8944e4b2dc2ed20be4";
-      hash = "sha256-+duAZCCRCqFqF2TIJHtRtYrmXfgvlxLEvFZH82G2GSg=";
+      rev = "fcb67e4e20b7a53202a61a982ae79a60a20d87d4";
+      hash = "sha256-ah7R0igMOIckZyF3WBLsN8tTajryHnSufqjbfJDgvRE=";
     };
     fc-ceph = ceph;
     qemu_ceph = pkgs.qemu-ceph-nautilus;
     ceph_client = pkgs.ceph-nautilus.ceph-client;
-    python3Packages = pkgs.python38Packages;
-    py_pytest_patterns = pkgs.py38_pytest_patterns;
+    python3Packages = pkgs.python311Packages;
   };
 
   # Enable this temporarily during development, but DO NOT commit this as
   # it will break hydra and we can't cleanly filter it out of the automatic
   # test discovery at the moment.
   #
-  # qemu-dev-nautilus = callPackage ./qemu {
-  #   version = "dev";
-  #   # builtins.toPath (testPath + "/.")
-  #   # for tests:
+  # qemu-dev-nautilus = qemu-nautilus.overrideAttrs (old: {
+  #   # for tests and development checkouts on kvm hosts:
   #   src = ../../../../../fc.qemu/.;
   #   # for nix-shell . -A fc.qemu-dev-nautilus
   #   # src = ../../../fc.qemu/.;
-  #   fc-ceph = ceph;
-  #   qemu_ceph = pkgs.qemu-ceph-nautilus;
-  #   ceph_client = pkgs.ceph-nautilus.ceph-client;
-  #   python3Packages = pkgs.python38Packages;
-  #   py_pytest_patterns = pkgs.py38_pytest_patterns;
-  # };
+  # });
 
   roundcube-chpasswd = callPackage ./roundcube-chpasswd { };
   roundcube-chpasswd-py = callPackage ./roundcube-chpasswd-py { };

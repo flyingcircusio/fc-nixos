@@ -380,14 +380,14 @@
     "version": "1.29.15+k3s1"
   },
   "k3s_1_30": {
-    "name": "k3s-1.30.11+k3s1",
+    "name": "k3s-1.30.12+k3s1",
     "pname": "k3s",
-    "version": "1.30.11+k3s1"
+    "version": "1.30.12+k3s1"
   },
   "k3s_1_31": {
-    "name": "k3s-1.31.7+k3s1",
+    "name": "k3s-1.31.8+k3s1",
     "pname": "k3s",
-    "version": "1.31.7+k3s1"
+    "version": "1.31.8+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.1.4",
@@ -490,9 +490,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.7",
+    "name": "mastodon-4.3.8",
     "pname": "mastodon",
-    "version": "4.3.7"
+    "version": "4.3.8"
   },
   "matomo_5": {
     "name": "matomo-5.3.1",
@@ -735,14 +735,14 @@
     "version": "8.2.28"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.20",
+    "name": "php-with-extensions-8.3.21",
     "pname": "php-with-extensions",
-    "version": "8.3.20"
+    "version": "8.3.21"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.6",
+    "name": "php-with-extensions-8.4.7",
     "pname": "php-with-extensions",
-    "version": "8.4.6"
+    "version": "8.4.7"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.5",
@@ -840,19 +840,19 @@
     "version": "1.2.2"
   },
   "postgresql_13": {
-    "name": "postgresql-13.20",
+    "name": "postgresql-13.21",
     "pname": "postgresql",
-    "version": "13.20"
+    "version": "13.21"
   },
   "postgresql_14": {
-    "name": "postgresql-14.17",
+    "name": "postgresql-14.18",
     "pname": "postgresql",
-    "version": "14.17"
+    "version": "14.18"
   },
   "postgresql_15": {
-    "name": "postgresql-15.12",
+    "name": "postgresql-15.13",
     "pname": "postgresql",
-    "version": "15.12"
+    "version": "15.13"
   },
   "postgresql_16": {
     "name": "postgresql-16.8",
@@ -860,9 +860,9 @@
     "version": "16.8"
   },
   "postgresql_17": {
-    "name": "postgresql-17.4",
+    "name": "postgresql-17.5",
     "pname": "postgresql",
-    "version": "17.4"
+    "version": "17.5"
   },
   "powerdns": {
     "name": "pdns-4.9.4",

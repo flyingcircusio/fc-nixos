@@ -10,6 +10,7 @@ with builtins;
 
 let
   cfg = config.flyingcircus;
+  cfgNet = config.flyingcircus.networking;
 
   fclib = config.fclib;
 
@@ -108,19 +109,16 @@ let
 
   quoteLabel = replaceStrings [ "/" ] [ "-" ];
 
-  vrfName = iface: "vrf${iface.vlan}";
-  vrfTable =
-    iface:
-    # the routing tables 0, 253, 254, and 255 are reserved by the
-    # kernel.
-    assert
-      !(elem iface.vlanId [
-        0
-        253
-        254
-        255
-      ]);
-    iface.vlanId;
+  concatFuncWithIndent =
+    func: indent:
+    let
+      spaces = lib.strings.replicate indent " ";
+      sep = "\n" + spaces;
+    in
+    func sep;
+  concatLinesIndent = concatFuncWithIndent lib.concatStringsSep;
+  concatMapLinesIndent = concatFuncWithIndent lib.concatMapStringsSep;
+  concatMapLines = lib.concatMapStringsSep "\n";
 
 in
 {
@@ -141,6 +139,11 @@ in
       description = "Use a network configuration profile suitable for physical hosts";
       default = false;
     };
+    flyingcircus.networking.assignVrfRoutes = lib.mkOption {
+      type = lib.types.bool;
+      description = "Assign routes in the default routing table on VRF interfaces";
+      default = false;
+    };
   };
 
   config = lib.mkMerge [
@@ -152,6 +155,9 @@ in
 
       environment.systemPackages = with pkgs; [
         ethtool
+        # since NixOS 25.05, `services.wireguard.enable` is not sufficient unless
+        # no wireguard.interfaces are defined
+        wireguard-tools
       ];
 
       networking = {
@@ -287,8 +293,20 @@ in
                 ) vxlanVrfInterfaces)
               ++ (map (
                 iface:
-                lib.nameValuePair (vrfName iface) {
+                lib.nameValuePair iface.vrfInterface {
                   tempAddress = "disabled";
+                  ipv4.routes = lib.optionals cfgNet.assignVrfRoutes (
+                    map (net: {
+                      address = net.network;
+                      inherit (net) prefixLength;
+                    }) iface.v4.networkAttrs
+                  );
+                  ipv6.routes = lib.optionals cfgNet.assignVrfRoutes (
+                    map (net: {
+                      address = net.network;
+                      inherit (net) prefixLength;
+                    }) iface.v6.networkAttrs
+                  );
                 }
               ) vxlanVrfInterfaces)
 
@@ -325,7 +343,7 @@ in
         wireguard.enable = true;
 
         firewall.trustedInterfaces = lib.optionals (
-          !isNull fclib.underlay && cfg.networking.physicalHostNetworking
+          !isNull fclib.underlay && cfgNet.physicalHostNetworking
         ) (map (l: l.link) fclib.underlay.links or [ ]);
 
         firewall.extraCommands =
@@ -369,7 +387,7 @@ in
 
       };
 
-      flyingcircus.services.telegraf.inputs = lib.optionalAttrs (cfg.networking.physicalHostNetworking) {
+      flyingcircus.services.telegraf.inputs = lib.optionalAttrs (cfgNet.physicalHostNetworking) {
         exec = [
           {
             commands = [ "${pkgs.fc.telegraf-routes-summary}/bin/telegraf-routes-summary" ];
@@ -397,7 +415,7 @@ in
           frr version 8.5.1
           frr defaults datacenter
           !
-          ${lib.concatMapStringsSep "\n" (iface: ''
+          ${concatMapLines (iface: ''
             vrf vrf${iface.vlan}
              vni ${toString iface.vlanId}
             exit-vrf
@@ -411,7 +429,7 @@ in
            neighbor switches remote-as external
            neighbor switches capability extended-nexthop
            neighbor switches bfd
-           ${lib.concatMapStringsSep "\n " (
+           ${concatMapLinesIndent 1 (
              iface: "neighbor ${iface.link} interface peer-group switches"
            ) fclib.underlay.links}
            !
@@ -432,20 +450,20 @@ in
             ${
               # Workaround for FRR not advertising SVI IP when
               # globally configured
-              lib.concatMapStringsSep "\n  " (
+              concatMapLinesIndent 2 (
                 iface:
-                concatStringsSep "\n  " [
+                concatLinesIndent 2 [
                   ("vni " + (toString iface.vlanId))
                   " advertise-svi-ip"
                   "exit-vni"
                 ]
-              ) vxlanInterfaces
+              ) (filter (i: !i.routed) vxlanInterfaces)
             }
            exit-address-family
            !
           exit
           !
-          ${lib.concatMapStringsSep "\n"
+          ${concatMapLines
             # `kernel` routes are mostly those routes we insert into the
             # kernel routing table through fc-qemu for our virtual machines.
             # `connected` routes are for those (special) cases where the host
@@ -511,6 +529,11 @@ in
           systemd-sysctl.restartTriggers = lib.mkIf (!isNull fclib.underlay) [
             config.environment.etc."sysctl.d/70-fcio-underlay.conf".source
           ];
+          # Stop+starting the network can break
+          # switch-to-configuration on NFS clients by reloading the
+          # systemd config when the NFS server is unreachable. Do an
+          # in-place restart after systemd has reloaded instead.
+          network-setup.stopIfChanged = fclib.mkOverrideUpstreamModule false;
         }
         //
 
@@ -538,6 +561,7 @@ in
                 pkgs.jq
                 pkgs.util-linux
               ];
+              stopIfChanged = false;
               script =
                 ''
                   set -e
@@ -906,7 +930,7 @@ in
                   (map (
                     iface:
                     let
-                      name = vrfName iface;
+                      name = iface.vrfInterface;
                       interfaceUnit = "${iface.interface}-netdev.service";
                       addressUnit = "network-addresses-${iface.interface}.service";
                     in
@@ -935,7 +959,7 @@ in
                         ip link show dev "${name}" >/dev/null 2>&1 && ip link del dev "${name}"
 
                         echo "Adding VRF ${name}..."
-                        ip link add ${name} type vrf table ${toString (vrfTable iface)}
+                        ip link add ${name} type vrf table ${toString iface.vrfTable}
 
                         # add child interfaces. no need to set up, the network-addresses
                         # unit will do that.
@@ -1152,10 +1176,10 @@ in
           # as a reasonable size and I'd suggest generalizing this number to all machines.
           "net.netfilter.nf_conntrack_max" = 262144;
         }
-        (lib.mkIf (!cfg.networking.physicalHostNetworking) {
+        (lib.mkIf (!cfgNet.physicalHostNetworking) {
           "net.core.rmem_max" = 8388608;
         })
-        (lib.mkIf (cfg.networking.physicalHostNetworking) {
+        (lib.mkIf (cfgNet.physicalHostNetworking) {
           "vm.min_free_kbytes" = "513690";
 
           "net.core.netdev_max_backlog" = 300000;

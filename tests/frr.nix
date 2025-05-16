@@ -285,7 +285,7 @@ import ./make-test-python.nix (
           start_all()
           all_vms = [host1, host2, switch1, switch2]
           for vm in all_vms:
-              vm.wait_for_unit("network-online.target")
+              vm.wait_for_unit("network.target")
 
           for vm in all_vms:
               x = vm.succeed("vtysh -c 'show version'")
@@ -364,7 +364,7 @@ import ./make-test-python.nix (
           start_all()
           all_vms = [host1, host2, switch1, switch2]
           for vm in all_vms:
-              vm.wait_for_unit("network-online.target")
+              vm.wait_for_unit("network.target")
 
           for vm in all_vms:
               x = vm.succeed("vtysh -c 'show version'")
@@ -505,7 +505,7 @@ import ./make-test-python.nix (
           start_all()
           all_vms = [host1, host2, switch1, switch2]
           for vm in all_vms:
-              vm.wait_for_unit("network-online.target")
+              vm.wait_for_unit("network.target")
 
           for vm in all_vms:
               x = vm.succeed("vtysh -c 'show version'")

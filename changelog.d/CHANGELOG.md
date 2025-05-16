@@ -1,3 +1,158 @@
+# Release 2025_014
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- nixos/default-packages: remove atop (PL-133575)
+  atop has/had security problems and we see not much use.
+  Remove in the default platform as it's still accessible with nix-shell.
+
+- antivirus: fix listen statement on devhost setups (PL-133648)
+
+- s3users: error when unknown error occurs (PL-133656)
+  This is a safeguard against unexpected errors happen in the rgw user list
+  / user info calls leading to a re-creation of the user with a new secret key.
+
+
+
+# Release 2025_013
+
+## NixOS XX.XX platform
+
+- lamp: Fix evaluation error when a `php.ini` references a derivation (PL-133642).
+
+- Activate configuration changes in an (immediate) boot cycle when upgrading (or downgrading)
+  the NixOS major release. (PL-133570)
+
+  We've experienced too many paper cuts, trying to get pure "online upgrades" working reliably
+  in our fleet. Many edge cases like systemd upgrades, NFS connections, have shown that this
+  isn't possible in the general case.
+
+  As NixOS major releases ship with different kernel versions anyway and thus always scheduled
+  to perform an immediate reboot in maintenance, we no defer the whole config update into
+  that reboot.
+
+  If a config change is applied manually and causes a major version change, the reboot will
+  be applied immediately - after warning the user visually and giving a 10 second countdown
+  in case of the user wanting to abort.
+
+- nixos/kernel: update verification kernel 6.6 -> 6.12 (PL-133562)
+  Kernel verision 6.12 is the new LTS. This change makes that version
+  default on non-production hosts to try it out.
+
+- Rotate zagy's root ssh key (PL-133335)
+
+
+
+# Release 2025_012
+
+## NixOS XX.XX platform
+
+- Update fc-qemu to fix performance issue that caused a storage outage due to
+  OSD hotspot behaviour. (PL-133632)
+
+- Configure the sender domain for `mailutils` based programs to be the fully qualified hostname by default. (PL-133552)
+
+- coturn: ensure that the coturn process can bind to port 443 when
+  enabled by the Jitsi role. (PL-133419)
+
+- Increase interval for scrubbing VMs. In large clusters this is becoming
+  too expensive and since we introduced the per-VM supervisor this isn't
+  as relevant any longer. (PL-133632)
+
+- kvm: provide resolver services to layer 3 routed guest interfaces
+  also on the subnet virtual router IPv6 address. (PL-133325)
+
+- fc.qemu: multiple changes to improve the support for cloud-init-based VMs (Ubuntu) (PL-133325)
+
+  - Provision IPv6 nameserver to support IPv6-only VMs
+
+  - Upgrade packages on first boot.
+
+  - Fix cloud-init instance ID handling to avoid regenerating SSH host keys too often.
+
+  - Ensure network settings are updated on every boot.
+
+
+## Impact
+
+- A bullet item for the Impact category.
+
+- A bullet item for the Impact category.
+
+
+
+# Release 2025_011
+
+## Impact
+
+- DevHost VMs restart
+
+
+## NixOS XX.XX platform
+
+- devhost: Fix graceful shutdown of devhost VMs (PL-133536)
+
+- router: add support for providing gateway services on layer 3 routed
+  networks using VRFs. (PL-133324)
+
+- kvm: support layer 3 routed networks when bootstrapping cloud-init
+  VM's. (PL-133325)
+
+
+
+# Release 2025_011
+
+
+# Release 2025_011
+
+
+# Release 2025_010
+
+
+# Release 2025_010
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- nfs: fix platform network configuration to prevent machines with NFS
+  mountpoints from hanging when switching to new system
+  configurations. (PL-133570)
+
+- Update our virtualisation tooling to Python 3.11 and remove C-level Ceph dependencies. (FC-133553)
+
+- Add documentation for the statshost role, specifically on how to use it from a customer's perspective (PL-133028)
+
+
+
+# Release 2025_009
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- docker: enable IP forwarding when the docker role is enabled, in
+  order to allow containers to access external services. (PL-133589)
+
+- Remove SSL Stapling from the default Nginx configuration since the default CA for NixOS provisioned certificates (Let's Encrypt) is ending OCSP support in 2025 (PL-133259)
+
+- Make managing the IPMI admin username optional. Some machines do not support changing the name. (PL-133561)
+
+- postgresql: pgvectorscale extension is now available as a package
+
+
+
 # Release 2025_008
 
 ## NixOS XX.XX platform

@@ -212,6 +212,7 @@ import ../make-test-python.nix (
           ../../nixos/roles
         ];
         networking.firewall.allowedTCPPorts = [ 9126 ];
+        services.telegraf.enable = true;
         environment.etc.hosts.text = lib.mkForce hosts;
         networking.domain = "fcio.net";
         flyingcircus.enc.parameters = {
@@ -237,12 +238,22 @@ import ../make-test-python.nix (
         api = "http://${statshostSrv}:9090/api/v1";
       in
       ''
-        statssource.execute("""
-          echo 'system_test 42' > metrics
-          echo 'org_graylog2_test 42' >> metrics
-          echo 'not_allowed_globally 42' >> metrics
-          ${pkgs.python3.interpreter} -m http.server 9126 >&2 &
-        """)
+
+        def send_background_metrics(key, value):
+          """Fork a background process that feeds a metric to telegraf via the
+          socket input. Repeated each second.
+          This metric is then exported via the Prometheus exporter interface.
+          """
+          statssource.execute(f"""(
+          exec >&2  # close stdout so the test_script continues
+          while true; do
+              echo {key} value={value} | \
+              ${pkgs.socat}/bin/socat - UNIX-CONNECT:/run/telegraf/influx.sock;
+              sleep 1;
+              done
+              )&""")
+
+
 
         proxy.wait_for_unit("nginx.service")
         proxy.execute("systemctl stop acme-proxy.fe.remote.fcio.net.service")
@@ -254,16 +265,26 @@ import ../make-test-python.nix (
         statshost.wait_for_unit("prometheus.service")
         statshost.wait_for_unit("grafana.service")
 
-        statssource.wait_for_open_port(9126)
+        statssource.wait_for_unit("telegraf.service")
+        statssource.wait_for_file("/run/telegraf/influx.sock")
+
+        # feed some custom metrics into telegraf, which are then exported to
+        # prometheus
+        send_background_metrics("system_test", 42)
+        send_background_metrics("org_graylog2_test", 42)
+        send_background_metrics("not_allowed_globally", 42)
+
+        statssource.wait_for_open_port(9126, "${statsSource4Srv}")
+        statssource.wait_for_open_port(9126, "${statsSource6Srv}")
 
         with subtest("request through location proxy should return metrics (HTTP)"):
-          statshost.succeed('curl -x http://${proxyFe}:9090 ${statssourceSrv}:9126/metrics | grep -q system_test')
+          statshost.wait_until_succeeds('curl -x http://${proxyFe}:9090 ${statssourceSrv}:9126/metrics | tee /dev/stderr | grep -q system_test')
 
         with subtest("nginx access log file should show metrics request"):
           proxy.succeed('grep "metrics" /var/log/nginx/statshost-location-proxy_access.log')
 
         with subtest("request through location proxy should return metrics (HTTPS)"):
-          statshost.succeed('SSL_CERT_FILE=/proxy_cert.pem curl -x https://${proxyFe}:9443 ${statssourceSrv}:9126/metrics | grep -q system_test')
+          statshost.wait_until_succeeds('SSL_CERT_FILE=/proxy_cert.pem curl -x https://${proxyFe}:9443 ${statssourceSrv}:9126/metrics | grep -q system_test')
 
         check_remote_target = """
           curl -s ${api}/targets | jq -e '.data.activeTargets[] | select(.health == "up" and .labels.job == "remote")'

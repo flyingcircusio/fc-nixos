@@ -65,19 +65,15 @@ import ./make-test-python.nix (
       import re
 
       relevant_nix_versions = [
-        # the default on production
-        "2.25",
         # default Nix in 25.05
-        "2.24",
-        # the default on staging
-        "2.25",
+        "2.28",
       ]
 
       def strip_hash(store_path):
           basename = os.path.basename(store_path)
           return basename.split("-", 1)[1]
 
-      def verify_nix_versions(vm, expected_nix="2.25", expect_slurm=False):
+      def verify_nix_versions(vm, expected_nix="2.28", expect_slurm=False):
           vm.start()
           version = vm.succeed("nix --version")
           assert version.startswith(f"nix (Nix) {expected_nix}."), f"""
@@ -120,28 +116,28 @@ import ./make-test-python.nix (
 
 
       with subtest("rzob production vm"):
-          verify_nix_versions(production, "2.25")
+          verify_nix_versions(production, "2.28")
 
       with subtest("rzob non-prod vm"):
-          verify_nix_versions(nonProd, "2.25")
+          verify_nix_versions(nonProd, "2.28")
 
       with subtest("rzob prod vm with slurm"):
-          verify_nix_versions(slurmOnProduction, "2.25", expect_slurm=True)
+          verify_nix_versions(slurmOnProduction, "2.28", expect_slurm=True)
 
       with subtest("rzob non-prod vm with slurm"):
-          verify_nix_versions(slurmOnNonProd, "2.25", expect_slurm=True)
+          verify_nix_versions(slurmOnNonProd, "2.28", expect_slurm=True)
 
       with subtest("whq vm"):
-          verify_nix_versions(whqVM, "2.25")
+          verify_nix_versions(whqVM, "2.28")
 
       with subtest("whq vm with non-prod flag"):
-          verify_nix_versions(whqVMNonProd, "2.25")
+          verify_nix_versions(whqVMNonProd, "2.28")
 
       with subtest("dev vm prod"):
-          verify_nix_versions(devVM, "2.25")
+          verify_nix_versions(devVM, "2.28")
 
       with subtest("dev vm non-prod"):
-          verify_nix_versions(devVMNonProd, "2.25")
+          verify_nix_versions(devVMNonProd, "2.28")
     '';
   }
 )

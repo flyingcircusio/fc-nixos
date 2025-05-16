@@ -13,7 +13,9 @@ branches.
 
 ### Impact
 
+- A bullet item for the Impact category.
+
 
 ### NixOS XX.XX platform
 
-- Make managing the IPMI admin username optional. Some machines do not support changing the name. (PL-133561)
+- pkgs.nodejs is updated from version 20 to 22

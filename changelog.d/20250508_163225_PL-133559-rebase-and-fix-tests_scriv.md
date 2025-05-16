@@ -18,4 +18,4 @@ branches.
 
 ### NixOS XX.XX platform
 
-- postgresql: pgvectorscale extension is now available as a package
+- k3s: The default package has been updated to k3s-1.32

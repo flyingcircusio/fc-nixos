@@ -63,7 +63,7 @@ class BackyVolume:
                         os.remove(ext_header)
                         break
                     case "n" | "":
-                        breakpoint
+                        break
                     case _:
                         console.print("invalid choice, retry.")
 

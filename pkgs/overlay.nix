@@ -161,6 +161,29 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     };
   });
 
+  # Sidecar bird for managing VRF routes on routers
+  bird2-vrf = self.bird2.overrideAttrs (old: {
+    configureFlags = [
+      "--localstatedir=/var"
+      "--runstatedir=/run/bird-vrf"
+    ];
+
+    # Bird will not import routes in the kernel which are tagged with
+    # the "proto bird" flag, as these are considered bird's own
+    # routes. So let's change the VRF Bird's idea of what its "own"
+    # routes are so it can interoperate with the main Bird instance.
+    postPatch = ''
+      echo Updating native route protocol flag
+      ${self.gnused}/bin/sed -i -E -e 's/RTPROT_BIRD/201/g' sysdep/linux/netlink.c
+    '';
+
+    postInstall = ''
+      for prog in bird birdc birdcl; do
+          mv $out/sbin/$prog $out/sbin/vrf-$prog
+      done
+    '';
+  });
+
   inherit (super.callPackage ./boost { }) boost159;
 
   busybox = super.busybox.overrideAttrs (oldAttrs: {
@@ -175,6 +198,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
+
   consul = builtins.trace "using 21_05 consul" (
     fc-nixos-21_05.consul.overrideAttrs (old: {
       meta.mainProgram = "consul";
@@ -188,22 +212,17 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   });
 
   frr = super.frr.overrideAttrs (old: rec {
-    version = "10.1.2";
+    version = "10.1.3";
     src = super.fetchFromGitHub {
       owner = "FRRouting";
       repo = old.pname;
       rev = "${old.pname}-${version}";
-      hash = "sha256-yenWMFHQ8F3/GJ+BVnoi5t//6qtFqH8i3uNq4X0/qdI==";
+      hash = "sha256-bfCNh/ZjHtZAoij7kimFDZzCcGTHshcFaPM+yq9bBJQ=";
     };
 
     patches = [
       ./frr/0001-Don-t-throw-error-when-log-directory-already-exists.patch
-      # issue with best path selection erroneously deleting local mac
-      # addresses during incoming guest migration.
-      (fetchpatch {
-        url = "https://github.com/FRRouting/frr/commit/c3e264e27ac5b682c4647aeeaf4e61f09d5243f9.patch";
-        hash = "sha256-YUNyE2ZeW3q58E+fpFhmMGpp56eba8HUI7pcLLbQDTE=";
-      })
+      ./frr/0002-zebra-dplane-sleep-after-writing-batches-to-netlink.patch
     ];
   });
 
@@ -250,7 +269,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # The logic for enabling different kernels on prod and non-prod remains active
   # the whole time. But in the normal case, both kernels point to the same
   # stable kernel packages.
-  linuxKernelVerify = self.linuxKernelStable;
+  linuxKernelVerify = self.linux_6_12;
 
   linuxKernelStable = self.linux_6_6;
 
@@ -296,6 +315,16 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       name = "filebeat-oss-${a.version}";
       # XXX: tests break without x-pack (bad!)
       # preBuild = "rm -rf x-pack";
+    }
+  );
+
+  gptfdisk = super.gptfdisk.overrideAttrs (
+    a:
+    a
+    // {
+      patches = a.patches or [ ] ++ [
+        ./gptfdisk-dont-sleep.patch
+      ];
     }
   );
 

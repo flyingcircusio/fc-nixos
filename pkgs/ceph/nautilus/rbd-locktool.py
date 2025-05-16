@@ -84,7 +84,7 @@ def main():
     argp.add_argument(
         "-f",
         "--force",
-        help="unlock even if we are not the " "locker",
+        help="unlock even if we are not the locker",
         action="store_true",
         default=False,
     )

@@ -41,6 +41,7 @@ in
       ./collect-garbage.nix
       ./ipmi.nix
       ./kernel.nix
+      ./mailutils.nix
       ./monitoring.nix
       ./network.nix
       ./nix.nix

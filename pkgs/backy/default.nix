@@ -1,16 +1,12 @@
 {
   fetchFromGitHub,
-  lib,
-  stdenv,
   poetry2nix,
   lzo,
   python312,
   mkShellNoCC,
   poetry,
   runCommand,
-  libiconv,
-  darwin,
-  rustPlatform,
+  fetchPypi,
 
 }@inputs:
 let
@@ -18,8 +14,8 @@ let
     owner = "flyingcircusio";
     repo = "backy";
     # FIXME: currently targets a PR branch PL-133651
-    rev = "9fa1a828495e14d3eb65000935022aef8083db9a";
-    hash = "sha256-ssU4sUtD8SliP/ZcqGwXkSZ0xPpSdiCx3R3rAROwb3k=";
+    rev = "64f0944a7747dd543534aa83a85813030b7fcf4d";
+    hash = "sha256-oXntbqWkgMQZqdoFx1n4BoukFiqwnzJ0w8uQ0zU1FAw=";
   };
 
   lib = import "${src}/lib.nix" inputs;

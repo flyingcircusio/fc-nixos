@@ -110,6 +110,13 @@ import ../make-test-python.nix (
             }
           ];
         };
+      nomail =
+        { lib, ... }:
+        {
+          networking.domain = "example.local";
+          networking.hostName = "nomail";
+          imports = [ (testlib.fcConfig { id = 4; }) ];
+        };
       client =
         { lib, ... }:
         {
@@ -162,6 +169,12 @@ import ../make-test-python.nix (
         globalChpasswd = "/run/current-system/sw/bin/roundcube-chpasswd";
       in
       ''
+        start_all()
+
+        with subtest("naive machine has mailutils config"):
+          nomail.execute("cat /etc/mailutils.conf > /dev/console")
+          nomail.succeed("grep 'email-domain nomail.example.local' /etc/mailutils.conf")
+
         with subtest("postsuper sudo rule should be present for service group"):
           mail.succeed('grep %service /etc/sudoers | grep -q postsuper')
 
@@ -169,7 +182,6 @@ import ../make-test-python.nix (
           mail.succeed('grep %sudo-srv /etc/sudoers | grep -q postsuper')
 
         with subtest("imprint redirects to example.com"):
-          client.wait_for_unit("network-online.target")
 
           mail.wait_for_unit("nginx")
           mail.wait_for_open_port(80, addr='${nodes.mail.networking.primaryIPAddress}')
@@ -209,15 +221,14 @@ import ../make-test-python.nix (
           mail.succeed("grep user1@example.local: ${passwdFile}")
           mail.succeed("grep -v :placeholder ${passwdFile}")
 
-        mail.wait_for_unit('network-online.target')
+        mail.wait_for_unit('network.target')
 
         with subtest("roundcube webmailer should work"):
           mail.wait_for_unit("phpfpm-roundcube.service")
           mail.succeed("sudo -u roundcube psql -c 'select from users;'")
           mail.succeed("curl webmail.example.local")
 
-        client.wait_for_unit('network-online.target')
-        ext.wait_for_unit('network-online.target')
+        ext.wait_for_unit('network.target')
 
         mail.execute('rm -rf /srv/mail/example.local')
         mail.wait_for_file('/run/rspamd/rspamd-milter.sock')
@@ -263,7 +274,7 @@ import ../make-test-python.nix (
         mail.succeed('echo | mail -s testmail6 user1@external.local')
         ext.wait_until_succeeds('ls /tmp/mh/*')
         ext.succeed("fgrep 'HELO:<mail.example.local>\n"
-          "FROM:<root\@mail.example.local>\nTO:<user1\@external.local>' /tmp/mh/*")
+          r"FROM:<root\@mail.example.local>\nTO:<user1\@external.local>' /tmp/mh/*")
 
         print("### Relaying & SMTP AUTH ###\n")
         ext.execute('rm -f /tmp/mh/*')
@@ -274,7 +285,7 @@ import ../make-test-python.nix (
             fgrep 'DKIM-Signature: v=1; a=rsa-sha256;
             c=relaxed/simple; d=example.local;' /tmp/mh/*
             """)
-        ext.succeed("egrep 'Message-Id: <.*\@mail\.example\.local>' /tmp/mh/*")
+        ext.succeed(r"egrep 'Message-Id: <.*\@mail\.example\.local>' /tmp/mh/*")
 
         client.shutdown()
         mail.shutdown()

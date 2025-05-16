@@ -17,7 +17,6 @@
       in
       [
         apacheHttpd
-        atop
         automake
         bc
         cmake
@@ -45,7 +44,6 @@
         lnav
         lynx
         magic-wormhole
-        mailutils
         mercurial
         mmv
         nano

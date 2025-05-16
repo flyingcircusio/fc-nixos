@@ -32,7 +32,10 @@ import ./make-test-python.nix (
         # We need a lot of RAM specifically if we use the flake finder as due to
         # the amount of operations both Ceph and pytest will pile up memory they
         # can't release between test runs, so this needs to scale.
-        virtualisation.memorySize = 8000;
+        virtualisation.cores = 6;
+        virtualisation.writableStore = false;
+        virtualisation.useNixStoreImage = true;
+        virtualisation.memorySize = 12000;
         virtualisation.diskSize = 10000;
         virtualisation.vlans = with config.flyingcircus.static.vlanIds; [
           mgm
@@ -106,8 +109,19 @@ import ./make-test-python.nix (
         };
 
         environment.systemPackages =
+          # This is a horrible dance for two reasons:
+          # 1. pytest doesn't properly inherit the PATH environment from the propagatedBuildInputs.
+          #    We might want to reconsider using an additional buildPythonApplication with pytest
+          #    added to the primary dependencies (propagatedBuildInputs)
+          # 2. There's a bug(?) in stdenv.mkDerivation that causes external access to the
+          #    attribute's items to end up with their .dev outputs ... -_-
           let
-            testPackages = ([ testPackage ] ++ testPackage.propagatedBuildInputs ++ testPackage.checkInputs);
+
+            testPackages = (
+              [ testPackage ]
+              ++ (map (x: builtins.removeAttrs x [ "outputSpecified" ]) testPackage.propagatedBuildInputs)
+              ++ testPackage.nativeCheckInputs
+            );
             PYTHONPATH = testPackage.py.makePythonPath testPackages;
             PATH = lib.makeBinPath testPackages;
           in
@@ -123,7 +137,7 @@ import ./make-test-python.nix (
                 set -o pipefail
 
                 export PYTHONPATH="${PYTHONPATH}"
-                export PATH="${PATH}:${pkgs.openssh}/bin:${pkgs.gnused}/bin"
+                export PATH="${PATH}:$PATH"
                 export PYTHONUNBUFFERED=1
 
                 cd ${testPackage.src}
@@ -379,7 +393,7 @@ import ./make-test-python.nix (
       host1.wait_for_unit("nginx", timeout=10)
 
       with subtest("Run tests"):
-        host1.succeed("run-tests ${testOpts}", timeout=20*60)
+        host1.succeed("run-tests ${testOpts}", timeout=30*60)
 
       # XXX the following tests should be migrated to fc.qemu at some point
       show(host1, "rbd rm rbd/.fc-qemu.maintenance || true")
@@ -421,6 +435,7 @@ import ./make-test-python.nix (
         result = show(host1, "fc-qemu report-supported-cpu-models")
         assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result, result
 
+        host1.execute("rm /etc/qemu/vm/simplepubvm* /etc/qemu/vm/.simplepubvm.*")
         result = show(host1, "fc-qemu-scrub")
         assert "I simplevm              running-ensure                 generation=0" in result, result
 

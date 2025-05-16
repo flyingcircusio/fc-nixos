@@ -67,7 +67,7 @@
           }
         ];
 
-        services.k3s.package = pkgs.k3s_1_30;
+        services.k3s.package = pkgs.k3s_1_32;
 
       }
 

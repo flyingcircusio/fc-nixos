@@ -1,5 +1,7 @@
 import json
 import logging
+import subprocess
+from subprocess import CalledProcessError
 from unittest.mock import Mock, call
 
 import pytest
@@ -585,7 +587,7 @@ def test_ensure_hard_state_deletes_users(subprocess_run):
 
     subprocess_run.side_effect = [
         Mock(stdout=""),
-        Mock(stdout=""),
+        subprocess.CalledProcessError(cmd="", returncode=22, output=b"", stderr=b"could not fetch user info: no user info saved")
     ]
 
     user.ensure()
@@ -757,3 +759,82 @@ def test_usermanager_blocks_users_from_foreign_location_or_resource_group():
         e.value.args[0]
         == "Encountered user from unexpected storage resource group: wrong-resource-group"
     )
+
+def test_rgw_user_unknown_error_info_doesnt_create_user_again(subprocess_run, caplog):
+    caplog.set_level(logging.INFO)
+
+    directory = Mock()
+    directory.list_s3_users.return_value = {
+        "services:sometest": {
+            "location": "test",
+            "storage_resource_group": "services",
+            "display_name": "test test",
+            "access_key": "dnDlid0jyRs1sK9vEOGV",
+            "secret_key": "",
+            "deletion": {"deadline": "", "stages": []},
+        }
+    }
+
+    subprocess_run.side_effect = [
+        Mock(stdout=json.dumps(["services:sometest"])),
+        CalledProcessError(returncode=1, cmd="", output=b"", stderr=b"uh, i'm a weird error")
+    ]
+
+    with pytest.raises(CalledProcessError):
+        UserManager(directory, "test", "services")
+
+    assert subprocess_run.call_args_list == [
+        call(
+            [
+                "radosgw-admin", "--format", "json",
+                "user", "list",
+            ],
+            check=True, stdout=-1, stderr=-1,
+        ),
+        call(
+            [
+                "radosgw-admin", "--format", "json",
+                "user", "info", "--uid", "services:sometest",
+            ],
+            check=True, stdout=-1, stderr=-1,
+        ),
+    ]
+
+    assert directory.list_s3_users.call_args_list == [call()]
+    assert directory.update_s3_users.call_args_list == []
+
+
+def test_rgw_user_unknown_error_list_doesnt_create_user_again(subprocess_run, caplog):
+    caplog.set_level(logging.INFO)
+
+    directory = Mock()
+    directory.list_s3_users.return_value = {
+        "services:sometest": {
+            "location": "test",
+            "storage_resource_group": "services",
+            "display_name": "test test",
+            "access_key": "dnDlid0jyRs1sK9vEOGV",
+            "secret_key": "",
+            "deletion": {"deadline": "", "stages": []},
+        }
+    }
+
+    subprocess_run.side_effect = [
+        CalledProcessError(returncode=1, cmd="", output=b"", stderr=b"uh, i'm a weird list error")
+    ]
+
+    with pytest.raises(CalledProcessError):
+        UserManager(directory, "test", "services")
+
+    assert subprocess_run.call_args_list == [
+        call(
+            [
+                "radosgw-admin", "--format", "json",
+                "user", "list",
+            ],
+            check=True, stdout=-1, stderr=-1,
+        ),
+    ]
+
+    assert directory.list_s3_users.call_args_list == [call()]
+    assert directory.update_s3_users.call_args_list == []

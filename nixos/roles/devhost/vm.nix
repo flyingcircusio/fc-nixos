@@ -56,7 +56,7 @@ let
 
   defaultService = {
     description = "FC dev Virtual Machine '%i'";
-    path = [ pkgs.qemu_kvm ];
+    path = [ pkgs.qemu_kvm manage_script ];
     serviceConfig.ExecStart = "${pkgs.coreutils}/bin/true";
   };
   mkService = name: vmCfg: lib.nameValuePair "fc-devhost-vm@${name}" (lib.recursiveUpdate defaultService {
@@ -80,28 +80,21 @@ let
           "-device" "virtio-net,netdev=ethsrv-${name},mac=${vmCfg.srvMac}"
           "-serial" "file:/var/lib/devhost/vms/${name}/log"
           "-qmp" "unix:/var/lib/devhost/vms/${name}/qmp.sock,server,nowait"
+          "-pidfile" "/var/lib/devhost/vms/${name}/pid"
         ]);
       ExecStop = pkgs.writeShellScript "shutdown-devhost-vm" ''
-        (
-          ${pkgs.coreutils}/bin/echo '{"execute": "qmp_capabilities" } { "execute": "system_powerdown" }'
-          # wait for shutdown
-          cat
-        ) | \
-        ${pkgs.socat}/bin/socat STDIO UNIX:/var/lib/devhost/vms/${name}/qmp.sock,shut-none
+        fc-devhost shutdown ${name}
       '';
       TimeoutStopSec = 180;
      };
   });
 
+  fc_devhost = pkgs.callPackage ./fc.devhost {};
+
   # We unfortunately cannot use writePython3Bin as that only supports
   # python libs in path, and not other applications.
   manage_script = pkgs.writeShellApplication {
     name = "fc-devhost";
-    runtimeInputs = with pkgs; [
-      (python3.withPackages(ps: with ps; [ requests tabulate ]))
-      xfsprogs
-      qemu
-    ];
     text = ''
 
     if [[ ! -f "/var/lib/devhost/ssh_bootstrap_key" ]]; then
@@ -117,7 +110,7 @@ let
       chmod 600 /var/lib/devhost/ssh_bootstrap_key
     fi
 
-    python ${./fc-devhost.py} "$@" --location ${location}
+    ${lib.getExe fc_devhost} "$@" --location ${location}
     '';
   };
 in {

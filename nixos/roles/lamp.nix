@@ -25,7 +25,7 @@ let
         ''
           mkdir -p $out/bin
           makeWrapper ${phpPackage}/bin/php $out/bin/php-${name} \
-            --add-flags "-c ${builtins.toFile "php-${name}.ini" phpOptions}"
+            --add-flags "-c ${pkgs.writeText "php-${name}.ini" phpOptions}"
 
           ln -sfv ${phpPackage.packages.composer}/bin/composer $out/bin/composer-${name}
         ''

@@ -84,9 +84,13 @@ in
     flyingcircus.roles.vxlan.gateway = true;
 
     boot.kernel.sysctl = {
-      "net.ipv4.ip_forward" = fclib.mkOverridePlatformModule 1;
-      "net.ipv6.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
-      "net.ipv6.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+      # Use manual override priorities here to avoid conflicts with
+      # the docker role.
+      "net.ipv4.ip_forward" = lib.mkOverride 70 true;
+      "net.ipv4.conf.all.forwarding" = lib.mkOverride 70 true;
+      "net.ipv4.conf.default.forwarding" = lib.mkOverride 70 true;
+      "net.ipv6.conf.all.forwarding" = lib.mkOverride 70 true;
+      "net.ipv6.conf.default.forwarding" = lib.mkOverride 70 true;
     };
 
     environment.systemPackages = [ pkgs.mosh ];

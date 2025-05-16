@@ -1,11 +1,15 @@
-from typing import Iterator
+import filecmp
+from pathlib import Path
+from typing import Iterator, Optional
+
+from fc.ceph.luks import KEYSTORE
 
 # In case these checks ever break: More recent cryptsetup versions also support
 # JSON-formatted output via `cryptsetup luksDump --dump-json-metadata <dev>`.
 # It most likely makes sense parsing that data instead once available.
 
 
-def check_cipher(lines: str) -> Iterator[str]:
+def check_cipher(lines: list[str], **_) -> Iterator[str]:
     checked = False  # plausibility check: did we get any cipher info?
     for line in lines:
         line = line.strip()
@@ -20,7 +24,7 @@ def check_cipher(lines: str) -> Iterator[str]:
         yield "Unable to check cipher correctness, no `Cipher:` found in dump"
 
 
-def _extract_keyslot_numbers(lines: str):
+def _extract_keyslot_numbers(lines: list[str]):
     known_keyslots: set[int] = set()
     lines_iter = iter(lines)
     for line in lines_iter:
@@ -44,13 +48,13 @@ def _extract_keyslot_numbers(lines: str):
     return known_keyslots
 
 
-def check_key_slots_exactly_1_and_0(lines: str) -> Iterator[str]:
+def check_key_slots_exactly_1_and_0(lines: list[str], **_) -> Iterator[str]:
     keyslots = _extract_keyslot_numbers(lines)
     if set([0, 1]) != keyslots:
         yield f"keyslots: unexpected configuration ({keyslots})"
 
 
-def check_512_bit_keys(lines: str) -> Iterator[str]:
+def check_512_bit_keys(lines: list[str], **_) -> Iterator[str]:
     checked = False
     for line in lines:
         line = line.strip()
@@ -65,7 +69,7 @@ def check_512_bit_keys(lines: str) -> Iterator[str]:
         yield "Unable to check key size correctness, no `Key:` found in dump"
 
 
-def check_pbkdf_is_argon2id(lines: str) -> Iterator[str]:
+def check_pbkdf_is_argon2id(lines: list[str], **_) -> Iterator[str]:
     checked = False
     for line in lines:
         line = line.strip()
@@ -80,10 +84,25 @@ def check_pbkdf_is_argon2id(lines: str) -> Iterator[str]:
         yield "Unable to check PBKDF correctness, no `PBKDF:` found in dump"
 
 
+def check_header_backup_valid(
+    lines: list[str], header: Optional[str]
+) -> Iterator[str]:
+    if header is None:
+        return
+    backup = KEYSTORE.local_key_dir / Path(header).name
+    try:
+        filecmp.clear_cache()
+        if not filecmp.cmp(header, backup, shallow=False):
+            yield "Header backup differs from local header"
+    except IOError:
+        yield "Error checking header backup"
+
+
 # All these checks work on a list of lines output by `cryptsetup luksDump`
 all_checks = [
     check_cipher,
     check_key_slots_exactly_1_and_0,
     check_512_bit_keys,
     check_pbkdf_is_argon2id,
+    check_header_backup_valid,
 ]
