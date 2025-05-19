@@ -395,7 +395,7 @@
       },
       "original": {
         "owner": "flyingcircusio",
-        "ref": "nixos-unstable",
+        "ref": "nixos-25.05",
         "repo": "nixpkgs",
         "type": "github"
       }
