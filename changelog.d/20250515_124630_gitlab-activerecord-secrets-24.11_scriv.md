@@ -16,4 +16,4 @@ branches.
 
 ### NixOS XX.XX platform
 
-- varnish: Listen addresses are filtered by uniqueness. Before that, adding the same listen IP twice would break Varnish on startup.
+- gitlab: generate ActiveRecord encryption secrets

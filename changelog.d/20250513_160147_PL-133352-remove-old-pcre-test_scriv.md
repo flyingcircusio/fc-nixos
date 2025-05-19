@@ -13,8 +13,9 @@ branches.
 
 ### Impact
 
-- Slurm services will be restarted.
+-
+
 
 ### NixOS XX.XX platform
 
-- Slurm nodes will be returned to service after an unexpected reboot.
+- Removed a PHP test which checked for an issue that has been resolved for some time now (PL-133352)
