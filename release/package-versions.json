@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-136.0.7103.92",
+    "name": "chromedriver-unwrapped-136.0.7103.113",
     "pname": "chromedriver-unwrapped",
-    "version": "136.0.7103.92"
+    "version": "136.0.7103.113"
   },
   "chromium": {
-    "name": "chromium-136.0.7103.92",
+    "name": "chromium-136.0.7103.113",
     "pname": "chromium",
-    "version": "136.0.7103.92"
+    "version": "136.0.7103.113"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -1055,9 +1055,9 @@
     "version": "1.1.15"
   },
   "screen": {
-    "name": "screen-4.9.1",
+    "name": "screen-5.0.1",
     "pname": "screen",
-    "version": "4.9.1"
+    "version": "5.0.1"
   },
   "slurm": {
     "name": "slurm-24.05.7.1",
