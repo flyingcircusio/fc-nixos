@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-138.0.1",
+    "name": "firefox-138.0.3",
     "pname": "firefox",
-    "version": "138.0.1"
+    "version": "138.0.3"
   },
   "gcc": {
     "name": "gcc-wrapper-14.2.1.20250322",
@@ -455,14 +455,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.89",
+    "name": "linux-6.6.90",
     "pname": "linux",
-    "version": "6.6.89"
+    "version": "6.6.90"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.6.89",
+    "name": "linux-6.12.28",
     "pname": "linux",
-    "version": "6.6.89"
+    "version": "6.12.28"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
