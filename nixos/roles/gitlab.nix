@@ -117,6 +117,15 @@ in
 
     (lib.mkIf cfg.enable {
 
+      assertions = [
+        {
+          assertion = config.flyingcircus.roles.redis.enable;
+          message = ''
+            Please enable the 'Redis' role to enable the GitLab role!
+          '';
+        }
+      ];
+
       environment.systemPackages = with pkgs; [
         (writeScriptBin "gitlab-show-config" ''sudo -u gitlab jq '.' /srv/gitlab/state/config/gitlab.yml'')
       ];
@@ -143,7 +152,6 @@ in
         databaseCreateLocally = fclib.mkPlatform true;
         databasePasswordFile = "${cfg.secretsDir}/db_password";
         initialRootPasswordFile = "${cfg.secretsDir}/root_password";
-        redisUrl = "redis://:${config.services.redis.servers."".requirePass}@localhost:6379/";
         statePath = "/srv/gitlab/state";
         https = true;
         port = 443;
