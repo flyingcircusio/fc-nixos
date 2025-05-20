@@ -378,12 +378,12 @@ in
                   "permit_sasl_authenticated"
                 ];
                 # --- postsrsd integration ---
-                recipient_canonical_maps = "socketmap:unix:/run/postsrsd/socket:reverse";
+                recipient_canonical_maps = "socketmap:unix:${config.services.postsrsd.socketPath}:reverse";
                 recipient_canonical_classes = [
                   "envelope_recipient"
                   "header_recipient"
                 ];
-                sender_canonical_maps = "socketmap:unix:/run/postsrsd/socket:forward";
+                sender_canonical_maps = "socketmap:unix:${config.services.postsrsd.socketPath}:forward";
                 sender_canonical_classes = "envelope_sender";
                 # ------
                 smtpd_client_restrictions =
