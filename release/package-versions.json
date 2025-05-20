@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-138.0.3",
+    "name": "firefox-138.0.4",
     "pname": "firefox",
-    "version": "138.0.3"
+    "version": "138.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-14.2.1.20250322",
@@ -340,9 +340,9 @@
     "version": "21.0.4-b598.4"
   },
   "jetty": {
-    "name": "jetty-12.0.20",
+    "name": "jetty-12.0.21",
     "pname": "jetty",
-    "version": "12.0.20"
+    "version": "12.0.21"
   },
   "jicofo": {
     "name": "jicofo-1.0-1128",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.90",
+    "name": "linux-6.6.91",
     "pname": "linux",
-    "version": "6.6.90"
+    "version": "6.6.91"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.28",
+    "name": "linux-6.12.29",
     "pname": "linux",
-    "version": "6.12.28"
+    "version": "6.12.29"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -580,9 +580,9 @@
     "version": "22.14.0"
   },
   "nodejs_20": {
-    "name": "nodejs-20.19.1",
+    "name": "nodejs-20.19.2",
     "pname": "nodejs",
-    "version": "20.19.1"
+    "version": "20.19.2"
   },
   "nodejs_22": {
     "name": "nodejs-22.14.0",
@@ -1111,14 +1111,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.40",
+    "name": "apache-tomcat-10.1.41",
     "pname": "apache-tomcat",
-    "version": "10.1.40"
+    "version": "10.1.41"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.104",
+    "name": "apache-tomcat-9.0.105",
     "pname": "apache-tomcat",
-    "version": "9.0.104"
+    "version": "9.0.105"
   },
   "unifi": {
     "name": "unifi-controller-9.1.120",
