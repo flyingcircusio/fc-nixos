@@ -3,14 +3,15 @@ import socket
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-import fc.util.kubernetes
 import structlog
+from rich import print
+from typer import Exit, Option, Typer
+
+import fc.util.kubernetes
 from fc.maintenance.state import EXIT_TEMPFAIL
 from fc.util.directory import directory_connection
 from fc.util.logging import init_logging
 from fc.util.typer_utils import FCTyperApp
-from rich import print
-from typer import Exit, Option, Typer
 
 
 class Context(NamedTuple):

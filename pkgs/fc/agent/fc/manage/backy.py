@@ -12,9 +12,10 @@ import sys
 import syslog
 import xmlrpc.client
 
+import yaml
+
 import fc.util.configfile
 import fc.util.directory
-import yaml
 
 _log = logging.getLogger(__name__)
 BASEDIR = "/srv/backy"

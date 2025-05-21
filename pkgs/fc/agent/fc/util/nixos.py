@@ -13,6 +13,7 @@ from typing import Optional
 
 import requests
 import structlog
+
 from fc.util.subprocess_helper import (
     get_popen_stderr_lines,
     get_popen_stdout_lines,
@@ -90,7 +91,7 @@ def kernel_version(kernel):
     moddir = os.listdir(p.join(p.dirname(bzImage), "lib", "modules"))
     if len(moddir) != 1:
         raise RuntimeError(
-            "modules subdir does not contain exactly " "one item", moddir
+            "modules subdir does not contain exactly one item", moddir
         )
     return moddir[0]
 
@@ -493,7 +494,7 @@ def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
         system_path = proc.stdout.read().strip()
         try:
             size_bytes = system_closure_size(log, Path(system_path))
-            size_humanized = f"{size_bytes/1024**3:.1f} GiB"
+            size_humanized = f"{size_bytes / 1024**3:.1f} GiB"
         except Exception:
             size_humanized = None
 
@@ -521,9 +522,9 @@ def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
     log.debug(
         "system-build-finished", system=system_path, size_bytes=size_bytes
     )
-    assert system_path.startswith(
-        "/nix/store/"
-    ), f"Output doesn't look like a Nix store path: {system_path}"
+    assert system_path.startswith("/nix/store/"), (
+        f"Output doesn't look like a Nix store path: {system_path}"
+    )
 
     return system_path
 

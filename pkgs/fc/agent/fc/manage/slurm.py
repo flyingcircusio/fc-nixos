@@ -6,13 +6,14 @@ import traceback
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-import fc.util.slurm
 import rich
 import rich.syntax
 import structlog
+from typer import Exit, Option, Typer
+
+import fc.util.slurm
 from fc.util.directory import directory_connection
 from fc.util.logging import init_logging
-from typer import Exit, Option, Typer
 
 
 class Context(NamedTuple):

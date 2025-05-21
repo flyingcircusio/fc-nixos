@@ -5,8 +5,9 @@ from enum import Enum
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-import fc.maintenance.state
 import structlog
+
+import fc.maintenance.state
 from fc.maintenance.estimate import Estimate
 
 

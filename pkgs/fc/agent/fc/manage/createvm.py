@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 
 import yaml
+
 from fc.util.runners import run
 
 from . import Environment
@@ -67,11 +68,9 @@ class Node(object):
 
         # use json command output as its output is more stable between Ceph releases
         snapshots = run.json.rbd(
-            # fmt: off
             "--id", self.disk.ceph_id,
             "snap", "ls", f"{IMAGE_POOL}/{image_path}"
-            # fmt: on
-        )
+        )  # fmt: skip
         # Note: The rbd cli returns snapshots ordered by their ID (which
         # appears to be monotonously increasing). As output ordering is not
         # documented as an API property, we order them again to ensure
@@ -92,13 +91,11 @@ class Node(object):
                 )
             )
         run.rbd(
-            # fmt: off
             "--id", self.disk.ceph_id,
             "clone",
             f"{IMAGE_POOL}/{image_path}@{last_snap_name}",
             f"{p['rbd_pool']}/{self.name}.root"
-            # fmt: on
-        )
+        )  # fmt: skip
 
 
 class Disk(object):

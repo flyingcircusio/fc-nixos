@@ -5,10 +5,11 @@ import json
 import sys
 from pathlib import Path
 
+import netaddr
+
 import fc.util.configfile
 import fc.util.dhcp
 import fc.util.directory
-import netaddr
 
 
 class ConfigRenderer(object):

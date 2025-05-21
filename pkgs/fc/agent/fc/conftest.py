@@ -9,10 +9,11 @@ from pathlib import Path
 import responses
 import shortuuid
 import structlog
+from pytest import fixture
+
 from fc.maintenance.activity import Activity
 from fc.maintenance.reqmanager import ReqManager
 from fc.maintenance.request import Request
-from pytest import fixture
 
 
 @fixture

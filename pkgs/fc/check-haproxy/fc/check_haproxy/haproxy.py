@@ -181,7 +181,7 @@ options are given, all requests are counted."""
         "--percentiles",
         metavar="N,N,...",
         default="50,95",
-        help="check Nth percentiles of total time " "(default: %(default)s)",
+        help="check Nth percentiles of total time (default: %(default)s)",
     )
     argp.add_argument(
         "-v",

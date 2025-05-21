@@ -245,7 +245,7 @@ def main():
         "--auto-tune",
         default=False,
         action="store_true",
-        help="apply kernel settings and LSI settings (if " "appropriate)",
+        help="apply kernel settings and LSI settings (if appropriate)",
     )
     a.add_argument("-v", "--verbose", default=False, action="store_true")
     a.add_argument("--megacli", default="MegaCli64")

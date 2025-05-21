@@ -14,6 +14,7 @@ import rich.table
 import shortuuid
 import structlog
 import yaml
+
 from fc.maintenance import state
 from fc.util.time_date import ensure_timezone_present, format_datetime, utcnow
 
@@ -433,9 +434,9 @@ class Request:
             )
 
         activity_merge_result = self.activity.merge(other.activity)
-        assert isinstance(
-            activity_merge_result, ActivityMergeResult
-        ), f"{activity_merge_result} has wrong type, must be ActivityMergeResult"
+        assert isinstance(activity_merge_result, ActivityMergeResult), (
+            f"{activity_merge_result} has wrong type, must be ActivityMergeResult"
+        )
 
         if not activity_merge_result.merged:
             return RequestMergeResult.NO_MERGE

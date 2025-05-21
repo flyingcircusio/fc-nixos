@@ -44,9 +44,7 @@ def exit_with_error(message, line):
     fn = fileinput.filename()
     ln = fileinput.lineno()
     print(
-        'File "{fn}", line {ln}\n'
-        "  {line}\n\n"
-        "Error: {message}".format(
+        'File "{fn}", line {ln}\n  {line}\n\nError: {message}'.format(
             message=message, line=line.strip(), fn=fn, ln=ln
         ),
         file=sys.stderr,

@@ -3,11 +3,13 @@ import time
 from pathlib import Path
 from typing import NamedTuple
 
+import structlog
+from typer import Argument, Exit, Option
+
 import fc.manage.manage
 import fc.util.enc
 import fc.util.keepalived
 import fc.util.logging
-import structlog
 from fc.maintenance.state import EXIT_TEMPFAIL
 from fc.util.keepalived import (
     KEEPALIVED_STATE_FILE,
@@ -17,7 +19,6 @@ from fc.util.keepalived import (
 )
 from fc.util.nixos import Specialisation
 from fc.util.typer_utils import FCTyperApp
-from typer import Argument, Exit, Option
 
 app = FCTyperApp("fc-keepalived")
 

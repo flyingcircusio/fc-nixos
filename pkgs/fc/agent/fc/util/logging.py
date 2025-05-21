@@ -260,10 +260,7 @@ class ConsoleFileRenderer:
         if ts is not None:
             write(
                 # can be a number if timestamp is UNIXy
-                DIM
-                + str(ts)
-                + RESET_ALL
-                + " "
+                DIM + str(ts) + RESET_ALL + " "
             )
 
         event_dict.pop("pid", None)
@@ -558,8 +555,7 @@ def init_command_logging(log, logdir=None):
     if invocation_id:
         formatted_dt = datetime.now().strftime("%Y-%m-%dT%H_%m_%S")
         cmd_log_file_name = (
-            logdir / f"fc-agent/{formatted_dt}_build-output"
-            f"_{invocation_id}.log"
+            logdir / f"fc-agent/{formatted_dt}_build-output_{invocation_id}.log"
         )
     else:
         cmd_log_file_name = logdir / "fc-agent/build-output.log"

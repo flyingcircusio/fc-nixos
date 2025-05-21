@@ -2,9 +2,10 @@ import os
 import traceback
 from typing import NamedTuple
 
-import fc.util.systemd_units
 import structlog
 from typer import Argument, Exit, Option, Typer
+
+import fc.util.systemd_units
 
 
 class Context(NamedTuple):

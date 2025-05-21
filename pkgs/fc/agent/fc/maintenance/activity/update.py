@@ -7,6 +7,7 @@ import os.path as p
 from typing import Optional
 
 import structlog
+
 from fc.maintenance import state
 from fc.maintenance.estimate import Estimate
 from fc.util import nixos

@@ -3,9 +3,11 @@ import traceback
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-import fc.util.directory
 import structlog
 import typer
+from typer import Argument, Exit, Option
+
+import fc.util.directory
 from fc.maintenance.activity.reboot import RebootActivity
 from fc.maintenance.lib.shellscript import ShellScriptActivity
 from fc.maintenance.maintenance import (
@@ -29,7 +31,6 @@ from fc.util.logging import (
     init_logging,
 )
 from fc.util.typer_utils import FCTyperApp, requires_root, requires_sudo
-from typer import Argument, Exit, Option
 
 app = FCTyperApp("fc-maintenance")
 log = structlog.get_logger()

@@ -5,13 +5,14 @@ import traceback
 from pathlib import Path
 from typing import List, NamedTuple, Optional
 
-import fc.util.postgresql
 import rich
 import structlog
-from fc.util.logging import init_logging
-from fc.util.postgresql import PGVersion
 from rich.table import Table
 from typer import Exit, Option, Typer, confirm, echo
+
+import fc.util.postgresql
+from fc.util.logging import init_logging
+from fc.util.postgresql import PGVersion
 
 STOPPER_TEMPLATE = """\
 A fc-postgresql upgrade command is running with PID {pid}, postgresql service
