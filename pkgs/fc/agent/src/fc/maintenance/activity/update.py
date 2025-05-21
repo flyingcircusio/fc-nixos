@@ -455,8 +455,8 @@ class UpdateActivity(Activity):
         or more than one if there is a downgrade happening. e.g. ["24.05", "24.11"]
         The order reflects the before -> after progression.
         """
-        result = [nixos.get_release_version(self.current_version)]
-        next_release = nixos.get_release_version(self.next_version)
+        result = [nixos.os_release(self.current_system)["VERSION_ID"]]
+        next_release = nixos.os_release(self.next_system)["VERSION_ID"]
         if next_release not in result:
             result.append(next_release)
         return result
@@ -501,7 +501,8 @@ class UpdateActivity(Activity):
         self.next_kernel = next_kernel
 
     def _detect_current_state(self):
-        self.current_version = nixos.running_system_version(self.log)
+        self.current_os_release = nixos.os_release()
+        self.current_version = self.current_os_release["BUILD_ID"]
         self.current_channel_url = nixos.current_nixos_channel_url()
         self.current_environment = nixos.current_fc_environment_name()
         self.current_system = nixos.current_system()

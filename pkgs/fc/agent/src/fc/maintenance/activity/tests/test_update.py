@@ -32,11 +32,13 @@ NEXT_CHANNEL_URL = f"https://hydra.flyingcircus.io/build/{NEXT_BUILD}/download/1
 
 ENVIRONMENT = "fc-21.05-production"
 
-CURRENT_VERSION = "21.05.1233.a9cc58d"
-NEXT_VERSION = "21.05.1235.bacc11d"
+CURRENT_BUILD_ID = "21.05.1233.a9cc58d"
+CURRENT_VERSION_ID = "21.05"
+NEXT_BUILD_ID = "21.05.1235.bacc11d"
+NEXT_VERSION_ID = "21.05"
 
-CURRENT_SYSTEM_PATH = f"/nix/store/zbx8i9v4j8dzlwp83qvrzjgvj7d0qm0d-nixos-system-test-{NEXT_VERSION}"
-NEXT_SYSTEM_PATH = f"/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-{NEXT_VERSION}"
+CURRENT_SYSTEM_PATH = f"/nix/store/zbx8i9v4j8dzlwp83qvrzjgvj7d0qm0d-nixos-system-test-{NEXT_BUILD_ID}"
+NEXT_SYSTEM_PATH = f"/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-{NEXT_BUILD_ID}"
 
 CURRENT_KERNEL_VERSION = "5.10.45"
 NEXT_KERNEL_VERSION = "5.10.50"
@@ -50,7 +52,7 @@ UNIT_CHANGES = {
 
 SUMMARY = textwrap.dedent(
     f"""\
-    System update: {CURRENT_VERSION} -> {NEXT_VERSION}
+    System update: {CURRENT_BUILD_ID} -> {NEXT_BUILD_ID}
 
     Will reboot after the update.
 
@@ -108,6 +110,9 @@ changelog_url: {CHANGELOG_URL}
 current_channel_url: https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz
 current_environment: fc-21.05-production
 current_kernel: 5.10.45
+current_os_release:
+  BUILD_ID: 21.05.1233.a9cc58d
+  VERSION_ID: '21.05'
 current_release: '{CURRENT_RELEASE}'
 current_system: {CURRENT_SYSTEM_PATH}
 current_version: 21.05.1233.a9cc58d
@@ -138,14 +143,14 @@ def activity(logger, nixos_mock, tmp_path):
     activity.changelog_url = CHANGELOG_URL
     activity.current_environment = ENVIRONMENT
     activity.current_release = CURRENT_RELEASE
-    activity.current_version = CURRENT_VERSION
+    activity.current_version = CURRENT_BUILD_ID
     activity.current_kernel = CURRENT_KERNEL_VERSION
     activity.next_channel_url = NEXT_CHANNEL_URL
     activity.next_environment = ENVIRONMENT
     activity.next_kernel = NEXT_KERNEL_VERSION
     activity.next_release = NEXT_RELEASE
     activity.next_system = NEXT_SYSTEM_PATH
-    activity.next_version = NEXT_VERSION
+    activity.next_version = NEXT_BUILD_ID
     activity.reboot_needed = RebootType.WARM
     activity.unit_changes = UNIT_CHANGES
     activity.lock_dir = tmp_path
@@ -226,21 +231,33 @@ def nixos_mock(monkeypatch):
 
     def fake_get_fc_channel_build(channel_url, _):
         if channel_url == CURRENT_CHANNEL_URL:
-            return CURRENT_BUILD
+            return mocked.CURRENT_BUILD
         elif channel_url == NEXT_CHANNEL_URL:
-            return NEXT_BUILD
+            return mocked.NEXT_BUILD
 
     def fake_channel_version(channel_url):
         if channel_url == CURRENT_CHANNEL_URL:
-            return CURRENT_VERSION
+            return mocked.CURRENT_BUILD_ID
         elif channel_url == NEXT_CHANNEL_URL:
-            return NEXT_VERSION
+            return mocked.NEXT_BUILD_ID
 
     def fake_changed_kernel_version(path):
         if path == CURRENT_SYSTEM_PATH + "/kernel":
             return CURRENT_KERNEL_VERSION
         elif path == NEXT_SYSTEM_PATH + "/kernel":
             return NEXT_KERNEL_VERSION
+
+    def fake_os_release(path=None):
+        if path in [CURRENT_SYSTEM_PATH, None]:
+            return {
+                "BUILD_ID": mocked.CURRENT_BUILD_ID,
+                "VERSION_ID": mocked.CURRENT_VERSION_ID,
+            }
+        elif path == NEXT_SYSTEM_PATH:
+            return {
+                "BUILD_ID": mocked.NEXT_BUILD_ID,
+                "VERSION_ID": mocked.NEXT_VERSION_ID,
+            }
 
     mocked = create_autospec(
         fc.util.nixos,
@@ -251,16 +268,22 @@ def nixos_mock(monkeypatch):
         RegisterFailed=RegisterFailed,
     )
 
+    mocked.CURRENT_BUILD = CURRENT_BUILD
+    mocked.CURRENT_BUILD_ID = CURRENT_BUILD_ID
+    mocked.CURRENT_VERSION_ID = CURRENT_VERSION_ID
+    mocked.NEXT_BUILD = NEXT_BUILD
+    mocked.NEXT_BUILD_ID = NEXT_BUILD_ID
+    mocked.NEXT_VERSION_ID = NEXT_VERSION_ID
+
     mocked.format_unit_change_lines = fc.util.nixos.format_unit_change_lines
-    mocked.get_release_version = fc.util.nixos.get_release_version
     mocked.get_fc_channel_build = fake_get_fc_channel_build
     mocked.channel_version = fake_channel_version
     mocked.kernel_version = fake_changed_kernel_version
     mocked.resolve_url_redirects = lambda url: url
+    mocked.os_release = fake_os_release
     mocked.build_system.return_value = NEXT_SYSTEM_PATH
     mocked.current_nixos_channel_url.return_value = CURRENT_CHANNEL_URL
     mocked.dry_activate_system.return_value = UNIT_CHANGES
-    mocked.running_system_version.return_value = CURRENT_VERSION
     mocked.current_system.return_value = CURRENT_SYSTEM_PATH
     mocked.current_fc_environment_name.return_value = ENVIRONMENT
     monkeypatch.setattr("fc.maintenance.activity.update.nixos", mocked)
@@ -272,8 +295,8 @@ def test_update_activity(nixos_mock):
     activity = UpdateActivity(NEXT_CHANNEL_URL, ENVIRONMENT)
 
     assert activity
-    assert activity.current_version == CURRENT_VERSION
-    assert activity.next_version == NEXT_VERSION
+    assert activity.current_version == CURRENT_BUILD_ID
+    assert activity.next_version == NEXT_BUILD_ID
     assert activity.current_environment == ENVIRONMENT
     assert activity.current_channel_url == CURRENT_CHANNEL_URL
 
@@ -314,9 +337,9 @@ def test_update_activity_prepare(log, logger, tmp_path, activity, nixos_mock):
         NEXT_SYSTEM_PATH, activity.log
     )
 
-    assert (
-        activity.reboot_needed == RebootType.WARM
-    ), "expected warm reboot request"
+    assert activity.reboot_needed == RebootType.WARM, (
+        "expected warm reboot request"
+    )
     assert activity.summary == SUMMARY
 
     assert log.has(
@@ -372,13 +395,11 @@ def test_update_nfs_reboot_required(
         Build number: 93111 -> 93222
         Channel URL: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"""
     )
-    assert log.has(
-        "changed-units-require-reboot", units="mnt-nfs-shared.mount"
-    )
+    assert log.has("changed-units-require-reboot", units="mnt-nfs-shared.mount")
 
 
 def test_update_release_change_reboot_required(
-    log, logger, tmp_path, activity, nixos_mock
+    log, logger, tmp_path, activity, nixos_mock, monkeypatch
 ):
     # I'd rather like to call prepare() here but the overall logic isn't
     # factored for testability.
@@ -396,8 +417,10 @@ def test_update_release_change_reboot_required(
     # We do not require a reboot if the release path contains only
     # a single (current) version
     activity.reboot_needed = None
-    activity.current_version = "24.11"
-    activity.next_version = "24.11"
+    nixos_mock.CURRENT_VERSION_ID = "24.11"
+    nixos_mock.NEXT_VERSION_ID = "24.11"
+    activity._detect_current_state()
+    activity._detect_next_version()
     assert activity.release_path() == ["24.11"]
     activity._register_reboot_for_release_change()
     assert not activity.reboot_needed
@@ -405,15 +428,19 @@ def test_update_release_change_reboot_required(
     # We do not require a reboot if the release path contains only
     # a single (current) version
     activity.reboot_needed = None
-    activity.current_version = "24.11"
-    activity.next_version = "25.05"
+    nixos_mock.CURRENT_VERSION_ID = "24.11"
+    nixos_mock.NEXT_VERSION_ID = "25.05"
+    nixos_mock.CURRENT_BUILD_ID = "24.11.abcde.12345"
+    nixos_mock.NEXT_BUILD_ID = "25.05.edcba.54321"
+    activity._detect_current_state()
+    activity._detect_next_version()
     assert activity.release_path() == ["24.11", "25.05"]
     activity._register_reboot_for_release_change()
     assert activity.reboot_needed == RebootType.WARM
 
     assert activity.summary == textwrap.dedent(
         """\
-        System update: 24.11 -> 25.05
+        System update: 24.11.abcde.12345 -> 25.05.edcba.54321
         
         Will reboot after the update.
         
@@ -512,9 +539,7 @@ def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
     assert log.has("update-run-tempfail", returncode=state.EXIT_TEMPFAIL)
 
 
-def test_update_activity_switch_if_no_release_change(
-    log, nixos_mock, activity
-):
+def test_update_activity_switch_if_no_release_change(log, nixos_mock, activity):
     activity.current_version = "24.11.1111"
     activity.next_version = "24.11.9999"
     activity.run()
@@ -528,8 +553,13 @@ def test_update_activity_switch_if_no_release_change(
 
 
 def test_update_activity_boot_if_release_change(log, nixos_mock, activity):
-    activity.current_version = "24.11.1111"
-    activity.next_version = "25.05.9999"
+    nixos_mock.CURRENT_VERSION_ID = "24.11"
+    nixos_mock.NEXT_VERSION_ID = "25.05"
+    nixos_mock.CURRENT_BUILD_ID = "24.11.abcde.12345"
+    nixos_mock.NEXT_BUILD_ID = "25.05.edcba.54321"
+
+    activity._detect_current_state()
+    activity._detect_next_version()
     activity.run()
 
     nixos_mock.switch_to_system.assert_called_once_with(

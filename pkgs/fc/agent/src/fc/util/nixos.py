@@ -28,6 +28,7 @@ FC_ENV_FILE = "/etc/fcio_environment_name"
 RE_FC_CHANNEL = re.compile(
     r"https://hydra.flyingcircus.io/build/(\d+)/download/1/nixexprs.tar.xz"
 )
+RE_NUMERIC_VERSION = re.compile(r"\D*([\d.]+)[^\d.]?.*")
 
 
 UnitChanges = dict[str, list[str]]
@@ -143,25 +144,27 @@ def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
         )
 
 
-def get_release_version(v):
-    """Extract the "major" release version to detection distro
-    upgrades/downgrades.
-    Accept development versions, like 24.11pre-git and release versions
-    like "24.05.12355.adc37d7fe"
-    """
-    v = v.replace("pre-git", "")
-    v = v.split(".")[:2]
-    return ".".join(v)
+CURRENT_SYSTEM = Path("/run/current-system")
 
 
-def running_system_version(log=_log):
-    nixos_version_path = Path("/run/current-system/nixos-version")
-
-    if not nixos_version_path.exists():
-        log.warn("nixos-version-missing")
-        return
-
-    return nixos_version_path.read_text()
+def os_release(system: Path = None):
+    if not system:
+        # Not used as default arg due to monkeypatch support.
+        system = CURRENT_SYSTEM
+    result = {}
+    for line in (system / "etc/os-release").read_text().splitlines():
+        line = line.strip()
+        if line.startswith("#"):
+            continue
+        if not line:
+            continue
+        k, v = line.split("=", maxsplit=1)
+        if v and v[0] in set("'\""):
+            assert len(v) >= 2
+            assert v[0] == v[-1]
+            v = v[1:-1]
+        result[k] = v
+    return result
 
 
 def current_nixos_channel_version():

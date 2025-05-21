@@ -3,9 +3,10 @@ import traceback
 from typing import List
 from unittest.mock import Mock, patch
 
-import fc.manage.postgresql
 import pytest
 import typer.testing
+
+import fc.manage.postgresql
 
 
 @pytest.fixture
@@ -39,7 +40,7 @@ def invoke_app(log, tmp_path, old_data_dir):
         if result.exc_info:
             traceback.print_tb(result.exc_info[2])
         assert result.exit_code == 0, (
-            f"unexpected exit code, output:" f" {result.output}"
+            f"unexpected exit code, output: {result.output}"
         )
 
         return result
@@ -49,7 +50,8 @@ def invoke_app(log, tmp_path, old_data_dir):
 
 def test_invoke_main_help(invoke_app):
     result = invoke_app("--help")
-    assert "Usage: fc-postgresql" in result.output
+    assert "Usage: " in result.output
+    assert "--pg-data-root" in result.output
 
 
 def test_invoke_list_versions(invoke_app, monkeypatch, tmp_path):
@@ -57,9 +59,7 @@ def test_invoke_list_versions(invoke_app, monkeypatch, tmp_path):
         "fc.util.postgresql.get_current_pgdata_from_service",
         (lambda: tmp_path / "postgresql/14"),
     )
-    monkeypatch.setattr(
-        "fc.util.postgresql.is_service_running", (lambda: True)
-    )
+    monkeypatch.setattr("fc.util.postgresql.is_service_running", (lambda: True))
     result = invoke_app("list-versions")
     print(result.output)
 
@@ -122,12 +122,8 @@ def test_invoke_prepare_autoupgrade(
     config = tmp_path / "autoupgrade.json"
     conf = {"expected_databases": ["test"]}
     config.write_text(json.dumps(conf), encoding="utf8")
-    monkeypatch.setattr(
-        "fc.util.postgresql.is_service_running", (lambda: True)
-    )
-    invoke_app(
-        "prepare-autoupgrade", "--config", config, "--new-version", "15"
-    )
+    monkeypatch.setattr("fc.util.postgresql.is_service_running", (lambda: True))
+    invoke_app("prepare-autoupgrade", "--config", config, "--new-version", "15")
     build_new_bin_dir.assert_called()
     prepare_upgrade.assert_called()
     run_pg_upgrade_check.assert_called()

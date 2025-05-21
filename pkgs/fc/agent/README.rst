@@ -89,45 +89,15 @@ It should hardly be necessary to call fc-resize from an interactive session.
 Hacking
 -------
 
-Create a virtualenv::
+Use `uv`::
 
-    pyvenv-3.4 .
-    bin/pip install -e ../fcutil
-    bin/pip install -e ../fcmaintenance
-    bin/pip install -e .\[test]
-
-Run tests::
-
-    bin/py.test
-
-Set up NIX_PATH and use nix-build::
-
-    nix-build -E 'with import <nixpkgs> {}; callPackage ./pkgs/fc/agent {}'
-
+    uv run pytest
 
 fc.maintenance
 ==============
 
 Manages and runs maintenance requests in the Flying Circus. Communicates with
 fc.directory to schedule requests.
-
-
-Local development
------------------
-
-Create a virtualenv::
-
-    virtualenv -p python3.4 .
-    bin/pip install -e ../fcutil
-    bin/pip install -e .\[dev]
-
-Run unit tests::
-
-    bin/py.test
-
-Test coverage report::
-
-    bin/py.test --cov=fc.maintenance --cov-report=html
 
 
 fc.util

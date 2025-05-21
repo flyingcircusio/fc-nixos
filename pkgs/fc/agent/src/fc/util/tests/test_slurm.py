@@ -5,8 +5,9 @@ from textwrap import dedent
 from unittest.mock import MagicMock
 
 import pytest
-from fc.util.logging import init_logging
 from pytest import fixture, raises
+
+from fc.util.logging import init_logging
 
 pyslurm = type(sys)("pyslurm")
 pyslurm.node = MagicMock()
@@ -80,9 +81,7 @@ def test_down(update_nodes: MagicMock, get_node_info, logger, monkeypatch):
 
 @unittest.mock.patch("fc.util.slurm.get_node_info")
 @unittest.mock.patch("fc.util.slurm.update_nodes")
-def test_down_noop(
-    update_nodes: MagicMock, get_node_info, logger, monkeypatch
-):
+def test_down_noop(update_nodes: MagicMock, get_node_info, logger, monkeypatch):
     get_node_info.return_value = {"name": "test20", "state": "DOWN+DRAIN"}
     fc.util.slurm.down(logger, "test20", "test down noop")
     update_nodes.assert_not_called()
@@ -152,9 +151,7 @@ def test_drain_many_noop(logger, monkeypatch):
 
     monkeypatch.setattr(fc.util.slurm, "get_node_info", fake_get_node_info)
 
-    fc.util.slurm.drain_many(
-        logger, ["test20", "test21"], 3, "test drain noop"
-    )
+    fc.util.slurm.drain_many(logger, ["test20", "test21"], 3, "test drain noop")
 
 
 def test_check_controller(logger):
@@ -168,7 +165,7 @@ def test_check_controller(logger):
     assert res.warnings == []
     assert res.ok_info == [
         "All 3 nodes are operational.",
-        "Running jobs: " "1.",
+        "Running jobs: 1.",
         "Pending jobs: 2.",
         "Total started jobs: 3.",
         "Slurm version: 22.5.0",
@@ -418,7 +415,6 @@ def test_ready_many_timeout(logger, log, monkeypatch):
 
 
 def test_fc_slurm_check_returns_fallback_warning_on_no_data(logger):
-
     from fc.util.checks import CheckResult
 
     pyslurm.node.return_value.get.return_value = {
@@ -437,7 +433,7 @@ def test_fc_slurm_check_returns_fallback_warning_on_no_data(logger):
             dedent(
                 """\
                 No data available for this node `somehost`. Is this a `slurm-node`?
-                Got data for nodes {'test22', 'test20', 'test21'}."""
+                Got data for nodes ['test20', 'test21', 'test22']."""
             )
         ],
     )

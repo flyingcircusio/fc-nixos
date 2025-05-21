@@ -10,6 +10,8 @@ from fc.util.nixos import RE_FC_CHANNEL, Specialisation
 
 
 class Channel:
+    REBOOT_DELAY = 10
+
     is_local = False
 
     def __init__(self, log, url, name="", environment=None, resolve_url=True):
@@ -154,15 +156,11 @@ class Channel:
             Path(self.system_path), specialisation, self.log
         )
 
-        current_release = nixos.get_release_version(
-            nixos.running_system_version()
-        )
-        next_release = nixos.get_release_version(
-            (Path(self.system_path) / "nixos-version").read_text()
-        )
+        current_release = nixos.os_release()["VERSION_ID"]
+        next_release = nixos.os_release(Path(switch_path))["VERSION_ID"]
 
         if current_release != next_release:
-            reboot_delay = 10
+            reboot_delay = self.REBOOT_DELAY
             self.log.warn(
                 "release-change-requires-reboot",
                 current_release=current_release,
