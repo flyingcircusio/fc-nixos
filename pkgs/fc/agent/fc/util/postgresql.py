@@ -144,11 +144,13 @@ def get_pg_version_from_data_dir(log, data_dir: Path):
     try:
         version_str = (data_dir / "PG_VERSION").read_text().strip()
     except OSError:
-        log.error(
-            "cannot-read-pg-version",
-            _replace_msg="Unable to read PG_VERSION from {data_dir}",
-            data_dir=data_dir,
-        ),
+        (
+            log.error(
+                "cannot-read-pg-version",
+                _replace_msg="Unable to read PG_VERSION from {data_dir}",
+                data_dir=data_dir,
+            ),
+        )
         raise
     try:
         version = PGVersion(version_str)

@@ -14,16 +14,17 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import NamedTuple
 
-import fc.maintenance.state
-import fc.util.directory
 import rich
 import rich.syntax
 import structlog
+from rich.table import Table
+
+import fc.maintenance.state
+import fc.util.directory
 from fc.maintenance.activity import RebootType
 from fc.util.checks import CheckResult
 from fc.util.subprocess_helper import get_popen_stdout_lines
 from fc.util.time_date import format_datetime, utcnow
-from rich.table import Table
 
 from . import state
 from .request import Request, RequestMergeResult

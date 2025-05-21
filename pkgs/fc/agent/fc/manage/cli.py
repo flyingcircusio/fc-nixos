@@ -3,17 +3,18 @@ import traceback
 from pathlib import Path
 from typing import NamedTuple, Optional
 
+import structlog
+from typer import Argument, Exit, Option
+
 import fc.manage.manage
 import fc.util.enc
 import fc.util.logging
-import structlog
 from fc.util import nixos
 from fc.util.config import parse_agent_config
 from fc.util.constants import DEFAULT_AGENT_CONFIG_FILE
 from fc.util.lock import locked
 from fc.util.nixos import Specialisation
 from fc.util.typer_utils import FCTyperApp
-from typer import Argument, Exit, Option
 
 
 class Context(NamedTuple):

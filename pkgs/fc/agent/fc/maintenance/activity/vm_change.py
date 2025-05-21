@@ -2,9 +2,10 @@
 
 from typing import Optional
 
+import structlog
+
 import fc.util.dmi_memory
 import fc.util.vm
-import structlog
 
 from ..estimate import Estimate
 from . import Activity, ActivityMergeResult, RebootType
@@ -34,8 +35,7 @@ class VMChangeActivity(Activity):
 
         if self.wanted_memory and self.current_memory != self.wanted_memory:
             msgs.append(
-                f"Memory {self.current_memory} MiB -> "
-                f"{self.wanted_memory} MiB."
+                f"Memory {self.current_memory} MiB -> {self.wanted_memory} MiB."
             )
 
         if self.wanted_cores and self.current_cores != self.wanted_cores:

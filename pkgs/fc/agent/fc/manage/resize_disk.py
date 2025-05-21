@@ -6,11 +6,12 @@ looking up the device by checking the root partition by label first.
 
 from pathlib import Path
 
-import fc.util.disk
 import structlog
 import typer
-from fc.util.logging import init_logging
 from typer import Option
+
+import fc.util.disk
+from fc.util.logging import init_logging
 
 log = structlog.get_logger()
 app = typer.Typer(pretty_exceptions_show_locals=False)

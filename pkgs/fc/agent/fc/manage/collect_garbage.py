@@ -5,10 +5,11 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 
-import fc.util.lock
 import structlog
-from fc.util.logging import init_logging
 from typer import Exit, Option, Typer
+
+import fc.util.lock
+from fc.util.logging import init_logging
 
 app = Typer()
 

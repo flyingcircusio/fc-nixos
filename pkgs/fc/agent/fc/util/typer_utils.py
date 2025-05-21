@@ -1,10 +1,11 @@
 import os
 from functools import wraps
 
-import fc.util.logging
 import rich
 import structlog
 import typer
+
+import fc.util.logging
 
 
 class FCTyperApp(typer.Typer):

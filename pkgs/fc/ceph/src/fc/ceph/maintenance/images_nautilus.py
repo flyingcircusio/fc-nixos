@@ -120,7 +120,7 @@ def delta_update(from_, to):
 
 def sha256sum_to_sri(sha256sum: str) -> str:
     return (
-        f'sha256-{base64.b64encode(sha256sum.encode("ascii")).decode("utf-8")}'
+        f"sha256-{base64.b64encode(sha256sum.encode('ascii')).decode('utf-8')}"
     )
 
 
@@ -178,11 +178,9 @@ class BaseImage:
         logger.debug(f"Unlocking image {self.volume}")
         try:
             run.rbd(
-                # fmt: off
                 "lock", "remove",
                 f"{CEPH_POOL}/{self.envname}", LOCK_COOKIE, self.locker,
-                # fmt: on
-            )
+            )  # fmt: skip
         except Exception:
             logger.exception()
 

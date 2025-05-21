@@ -6,10 +6,11 @@ import subprocess
 import sys
 
 import configobj
+from netaddr import ip
+
 import fc.util.directory
 from fc.util.configfile import ConfigFile
 from fc.util.time_date import utcnow
-from netaddr import ip
 
 
 class RR(collections.namedtuple("RR", ["label", "rtype", "value"])):
@@ -339,9 +340,7 @@ zone "{origin}" IN {{
     type master;
     file "{filename}";
 }};
-""".format(
-                        origin=zone.origin, filename=zone.fullpath()
-                    )
+""".format(origin=zone.origin, filename=zone.fullpath())
                 )
             changed |= f.commit()
         return changed

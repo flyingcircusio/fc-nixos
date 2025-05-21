@@ -8,6 +8,7 @@ from itertools import chain
 from typing import NamedTuple, Optional
 
 import pyslurm
+
 from fc.util.checks import CheckResult
 from fc.util.directory import directory_connection, is_node_in_service
 
@@ -656,8 +657,7 @@ def check_controller(log, hostname):
 
     if not nodes_in:
         nodes_with_state = [
-            f"{n} ({o['state']}, \"{o['reason']}\")"
-            for n, o in nodes_out.items()
+            f'{n} ({o["state"]}, "{o["reason"]}")' for n, o in nodes_out.items()
         ] + [f"{n} (not responding)" for n in nodes_offline]
 
         node_state_str = ", ".join(nodes_with_state)
@@ -665,8 +665,7 @@ def check_controller(log, hostname):
 
     elif nodes_out or nodes_offline:
         nodes_with_state = [
-            f"{n} ({o['state']}, \"{o['reason']}\")"
-            for n, o in nodes_out.items()
+            f'{n} ({o["state"]}, "{o["reason"]}")' for n, o in nodes_out.items()
         ] + [f"{n} (not responding)" for n in nodes_offline]
 
         node_state_str = ", ".join(nodes_with_state)
@@ -684,7 +683,7 @@ def check_controller(log, hostname):
         f"Running jobs: {stats['jobs_running']}.",
         f"Pending jobs: {stats['jobs_pending']}.",
         f"Total started jobs: {stats['jobs_started']}.",
-        f"Slurm version:" f" {pyslurm.version()}",
+        f"Slurm version: {pyslurm.version()}",
     ]
 
     return CheckResult(errors, warnings, info)
