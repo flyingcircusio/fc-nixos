@@ -265,7 +265,7 @@ def main():
         "--log",
         metavar="PATH",
         default=DEFAULT_LOGFILE,
-        help="scan log file for slow requests (default: " "%(default)s)",
+        help="scan log file for slow requests (default: %(default)s)",
     )
     argp.add_argument(
         "-r",

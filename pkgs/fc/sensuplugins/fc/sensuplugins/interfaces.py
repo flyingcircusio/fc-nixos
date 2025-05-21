@@ -165,7 +165,7 @@ def main():
         "-s",
         "--speed",
         default="1000:1000",
-        help="require at least SPEED Mb/s (default: " "%(default)s)",
+        help="require at least SPEED Mb/s (default: %(default)s)",
     )
     argp.add_argument(
         "-d",

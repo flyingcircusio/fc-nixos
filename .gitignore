@@ -24,5 +24,8 @@ tmp/
 .envrc
 .direnv
 pkgs/fc/agent/.envrc
+pkgs/fc/agent/include
+pkgs/fc/agent/lib
+pkgs/fc/agent/htmlcov
 pyenv
 .vscode/settings.json

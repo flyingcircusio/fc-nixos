@@ -387,7 +387,7 @@ def package_versions():
 
 @app.command()
 def version_diff(
-    old_fc_nixos_path: Path = Argument(..., dir_okay=True, file_okay=False)
+    old_fc_nixos_path: Path = Argument(..., dir_okay=True, file_okay=False),
 ):
     """
     Shows package changes between the current (new) fc-nixos work tree and

@@ -52,9 +52,7 @@ def main():
 Add an rpath (actually RUNPATH) field to all .so files which don't have one.
 The rpath contains the most common local lib dirs as well as the calling user's
 nix profile (default: {}). Custom rpath elements can be prepended.
-""".format(
-            RPATH
-        )
+""".format(RPATH)
     )
     a.add_argument("DIR", nargs="+", help="directories to walk recursively")
     a.add_argument(

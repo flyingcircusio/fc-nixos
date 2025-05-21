@@ -8,8 +8,10 @@ from pathlib import Path
 from subprocess import CalledProcessError
 from typing import NamedTuple, Optional
 
-from fc.ceph.luks import KEYSTORE  # singleton
-from fc.ceph.luks import Cryptsetup
+from fc.ceph.luks import (
+    KEYSTORE,  # singleton
+    Cryptsetup,
+)
 from fc.ceph.luks.checks import all_checks
 from fc.ceph.lvm import XFSVolume
 from fc.ceph.util import console, run

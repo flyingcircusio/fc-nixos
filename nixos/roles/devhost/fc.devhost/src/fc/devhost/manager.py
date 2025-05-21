@@ -14,9 +14,10 @@ from pathlib import Path
 
 import psutil
 import requests
+from tabulate import tabulate
+
 from fc.devhost.qmp import QEMUMonitorProtocol, QMPConnectError
 from fc.devhost.timeout import TimeOut
-from tabulate import tabulate
 
 MAX_VM_ID = 1024
 NETWORK = ipaddress.ip_network("10.12.0.0/16")
@@ -54,13 +55,13 @@ def write_nix_file(nix_file_path, cfg):
         # Managed by fc-devhost
         {{ ... }}: {{
           flyingcircus.roles.devhost.virtualMachines = {{
-            "{cfg['name']}" = {{
-              enable = {"true" if cfg['online'] else "false"};
-              id = {cfg['id']};
-              memory = "{cfg['memory']}";
-              cpu = {cfg['cpu']};
-              srvIp = "{cfg['srv-ip']}";
-              srvMac = "{cfg['srv-mac']}";
+            "{cfg["name"]}" = {{
+              enable = {"true" if cfg["online"] else "false"};
+              id = {cfg["id"]};
+              memory = "{cfg["memory"]}";
+              cpu = {cfg["cpu"]};
+              srvIp = "{cfg["srv-ip"]}";
+              srvMac = "{cfg["srv-mac"]}";
               aliases = [ {nix_aliases} ];
             }};
           }};

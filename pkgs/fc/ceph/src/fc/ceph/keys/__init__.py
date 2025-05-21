@@ -4,5 +4,4 @@ from . import nautilus
 
 
 class KeyManager(fc.ceph.VersionedSubsystem):
-
     nautilus = nautilus.KeyManager

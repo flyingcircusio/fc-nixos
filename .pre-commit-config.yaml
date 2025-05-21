@@ -18,27 +18,13 @@ repos:
   repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v5.0.0
 - hooks:
-  - args:
-    - --profile
-    - black
-    - --filter-files
-    id: isort
-    name: isort (python)
-  repo: https://github.com/pycqa/isort
-  rev: 6.0.1
-- hooks:
-  - id: black
-  repo: https://github.com/psf/black
-  rev: 25.1.0
-- hooks:
-  - args:
-    - --ignore
-    - E501
-    - --ignore
-    - F401
-    id: ruff
+  # Run the linter.
+    - id: ruff-check
+      args: [ "--select", "I", "--fix" ]
+    # Run the formatter.
+    - id: ruff-format
   repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.6.9
+  rev: v0.11.10
 - hooks:
   - entry: nixfmt
     files: \.nix$

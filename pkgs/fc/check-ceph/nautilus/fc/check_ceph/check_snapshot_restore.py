@@ -113,8 +113,8 @@ class Snapshot:
                 # of the snapshot, the calculation considers the worst case of 100% of
                 # all snapshot blocks being allocated *and* not shared with the main
                 # image (or image being flattened afterwards).
-                f"with {self.size / GiB :,.2f}GiB might result in a fill "
-                f"ratio of {fill_ratio_after_restore * 100 :.2f}%, "
+                f"with {self.size / GiB:,.2f}GiB might result in a fill "
+                f"ratio of {fill_ratio_after_restore * 100:.2f}%, "
                 f"exceeding the FULL threshold in cluster root {self.pool.root.name}."
             )
         # exit_code = max_exitcode(exit_code, EXIT_CRITICAL)
@@ -122,8 +122,8 @@ class Snapshot:
             return (
                 f"WARN: Restoring the snapshot "
                 f"{self.pool.name}/{self.image}@{self.snapname} "
-                f"with {self.size / GiB :,.2f}GiB might result in a fill "
-                f"ratio of {fill_ratio_after_restore * 100 :.2f}%, "
+                f"with {self.size / GiB:,.2f}GiB might result in a fill "
+                f"ratio of {fill_ratio_after_restore * 100:.2f}%, "
                 f"exceeding the NEAR_FULL threshold in cluster root {self.pool.root.name}."
             )
         # exit_code = max_exitcode(exit_code, EXIT_WARN)
@@ -132,9 +132,9 @@ class Snapshot:
             return (
                 "OK: Restoring the snapshot "
                 f"{self.pool.name}/{self.image}@{self.snapname} "
-                f"with {self.size / GiB :,.2f}GiB could just increase the "
+                f"with {self.size / GiB:,.2f}GiB could just increase the "
                 f"fill ratio in cluster root {self.pool.root} to "
-                f"{fill_ratio_after_restore * 100 :.2f}%."
+                f"{fill_ratio_after_restore * 100:.2f}%."
             )
         else:
             return (
@@ -265,20 +265,18 @@ def parse_config(argv) -> Tuple[Thresholds, dict]:
         )
         pool_roots = config["ceph_roots"]
         for root, pools in pool_roots.items():
-            assert (
-                len(pools) > 0
-            ), "parse_config: roots must have at least one pool"
+            assert len(pools) > 0, (
+                "parse_config: roots must have at least one pool"
+            )
             for pool in pools:
-                assert isinstance(
-                    pool, str
-                ), "parse_config: pools must be strings"
+                assert isinstance(pool, str), (
+                    "parse_config: pools must be strings"
+                )
     except (KeyError, ValueError, AssertionError) as ex:
         print(
-            # fmt: off
             f"Error loading config file {argv[1]}: Values missing or of wrong type.\n"
             "details:", repr(ex)
-            # fmt: on
-        )
+        )  # fmt: skip
         sys.exit(SensuStatus.CRITICAL)
 
     return (thresholds, pool_roots)
