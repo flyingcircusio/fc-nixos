@@ -194,8 +194,9 @@ class Pool(object):
     def delete(self):
         if self.images:
             raise RuntimeError(
-                "cannot delete non-empty pool {} -- remove "
-                "images first".format(self.name)
+                "cannot delete non-empty pool {} -- remove images first".format(
+                    self.name
+                )
             )
         self.cluster.ceph_osd(
             [

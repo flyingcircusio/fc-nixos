@@ -28,14 +28,12 @@ for ip, port in ports:
         ip_version = "-4"
         print(f"Checking {ip}:{port} ...")
     proc = subprocess.run(
-        # fmt: off
         [
             "check_http", "-H", ip, "-p", port, ip_version,
             "-c", "10", "-w", "3", "-t", "20",
             "-e", "HTTP",
         ]
-        # fmt: on
-    )
+    )  # fmt: skip
     print()
     STATUS = max([STATUS, proc.returncode])
 

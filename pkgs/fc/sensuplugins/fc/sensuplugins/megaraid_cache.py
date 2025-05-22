@@ -255,16 +255,14 @@ def parse_args():
         "--errors-warning",
         metavar="RANGE",
         default="0",
-        help="warning if error count is outside RANGE "
-        "(default: %(default)s)",
+        help="warning if error count is outside RANGE (default: %(default)s)",
     )
     a.add_argument(
         "-C",
         "--errors-critical",
         metavar="RANGE",
         default="2",
-        help="critical if error count is outside RANGE "
-        "(default: %(default)s)",
+        help="critical if error count is outside RANGE (default: %(default)s)",
     )
     a.add_argument(
         "-f",
@@ -293,7 +291,7 @@ def parse_args():
         "-t",
         "--timeout",
         default=20,
-        help="abort execution after " "TIMEOUT seconds (default: %(default)s)",
+        help="abort execution after TIMEOUT seconds (default: %(default)s)",
     )
     a.add_argument(
         "-v", "--verbose", default=0, action="count", help="increase verbosity"

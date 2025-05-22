@@ -43,13 +43,7 @@ class BackyVolume:
         self.lv = GenericLogicalVolume.create(
             self.name, vgname, raid, encrypt, size="100%vg"
         )
-        run.mkfs_xfs(
-            # fmt: off
-            "-f",
-            "-L", self.name,
-            *self.MKFS_OPTS,
-            self.device
-        )
+        run.mkfs_xfs("-f", "-L", self.name, *self.MKFS_OPTS, self.device)
         run.sync()
 
         if os.path.exists(ext_header := f"{self.mountpoint}.luks"):

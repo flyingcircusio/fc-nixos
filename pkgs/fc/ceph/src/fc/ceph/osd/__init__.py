@@ -7,5 +7,4 @@ OBJECTSTORE_TYPES = ["filestore", "bluestore"]
 
 
 class OSDManager(fc.ceph.VersionedSubsystem):
-
     nautilus = nautilus.OSDManager
