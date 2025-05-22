@@ -12,7 +12,8 @@
 with lib;
 
 let
-  cfg = config.services.telegraf;
+  upstreamCfg = config.services.telegraf;
+  cfg = config.flyingcircus.services.telegraf;
   fclib = config.fclib;
 
   telegrafShowConfig = pkgs.writeScriptBin "telegraf-show-config" ''
@@ -24,7 +25,7 @@ let
   '';
 
   settingsFormat = pkgs.formats.toml { };
-  configFile = settingsFormat.generate "config.toml" cfg.extraConfig;
+  configFile = settingsFormat.generate "config.toml" upstreamCfg.extraConfig;
 
 in
 {
@@ -61,11 +62,23 @@ in
           See https://github.com/influxdata/telegraf/blob/master/plugins/inputs/prometheus/README.md#metric-format-configuration
         '';
       };
+      environmentVariablesFromFile = mkOption {
+        default = { };
+        type = types.attrsOf types.str;
+        description = ''
+          Sets environment variables based on the content of given files.
+          These will be interpolated into the config file using envsubst
+          with this syntax: `$ENVIRONMENT` or `''${VARIABLE}`.
+        '';
+        example = {
+          REDIS_PASSWORD = "/etc/local/redis/password";
+        };
+      };
     };
   };
 
   config = mkMerge [
-    (mkIf cfg.enable {
+    (mkIf upstreamCfg.enable {
 
       # merge in our platform configs
       services.telegraf.extraConfig.inputs = config.flyingcircus.services.telegraf.inputs;
@@ -90,10 +103,28 @@ in
 
       systemd.services.telegraf = {
         serviceConfig = {
+          LoadCredential = lib.mapAttrsToList (
+            name: file: "${name}:${file}"
+          ) cfg.environmentVariablesFromFile;
+          ExecStartPre =
+            let
+              envInvocation = builtins.concatStringsSep "\n" (
+                lib.mapAttrsToList (
+                  name: file: "export ${name}=$(<$CREDENTIALS_DIRECTORY/${name})"
+                ) cfg.environmentVariablesFromFile
+              );
+            in
+            [
+              (pkgs.writeShellScript "telegraf-pre-start" ''
+                ${envInvocation}
+                umask 077
+                ${pkgs.envsubst}/bin/envsubst -i "${configFile}" > /var/run/telegraf/config.toml
+              '')
+            ];
           ExecStart = mkOverride 90 (
             concatStringsSep " " (
               lib.flatten [
-                [ "${cfg.package}/bin/telegraf -config \"${configFile}\"" ]
+                [ "${upstreamCfg.package}/bin/telegraf -config '/var/run/telegraf/config.toml'" ]
                 (
                   if builtins.pathExists /etc/local/telegraf then
                     [ "-config-directory ${/etc/local/telegraf}" ]
@@ -108,15 +139,15 @@ in
       };
 
     })
-    (mkIf (config.flyingcircus.services.telegraf.inputs ? prometheus) {
+    (mkIf (cfg.inputs ? prometheus) {
       # only set when that plugin is configured to be used, to not accidentally enable it without use
       services.telegraf.extraConfig.inputs.prometheus = builtins.map (
         attr:
         attr
         // {
-          metric_version = config.flyingcircus.services.telegraf.prometheus-metric_version;
+          metric_version = cfg.prometheus-metric_version;
         }
-      ) config.flyingcircus.services.telegraf.inputs.prometheus;
+      ) cfg.inputs.prometheus;
     })
   ];
 }
