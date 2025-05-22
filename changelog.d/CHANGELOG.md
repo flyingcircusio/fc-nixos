@@ -1,3 +1,20 @@
+# Release 2025_016
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- gitlab: generate ActiveRecord encryption secrets
+
+- agent: fix accidental immediate reboots on machines that use specialisations. (PL-133685)
+
+- Removed a PHP test which checked for an issue that has been resolved for some time now (PL-133352)
+
+
+
 # Release 2025_015
 
 ## Impact
