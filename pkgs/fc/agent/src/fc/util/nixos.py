@@ -152,6 +152,12 @@ def os_release(system: Path = None):
         # Not used as default arg due to monkeypatch support.
         system = CURRENT_SYSTEM
     result = {}
+
+    # On some machines, this path is a str when this runs in maintenance.
+    # So convert it to Path.
+    if not isinstance(system, Path):
+        system = Path(system)
+
     for line in (system / "etc/os-release").read_text().splitlines():
         line = line.strip()
         if line.startswith("#"):
