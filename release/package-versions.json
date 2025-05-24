@@ -590,9 +590,9 @@
     "version": "20.19.0"
   },
   "nodejs_22": {
-    "name": "nodejs-22.15.1",
+    "name": "nodejs-22.16.0",
     "pname": "nodejs",
-    "version": "22.15.1"
+    "version": "22.16.0"
   },
   "nspr": {
     "name": "nspr-4.36",
@@ -675,9 +675,9 @@
     "version": "10.44"
   },
   "percona": {
-    "name": "percona-server-8.0.41-32",
+    "name": "percona-server-8.0.42-33",
     "pname": "percona-server",
-    "version": "8.0.41-32"
+    "version": "8.0.42-33"
   },
   "percona-server": {
     "name": "percona-server-8.4.4-4",
@@ -685,9 +685,9 @@
     "version": "8.4.4-4"
   },
   "percona-server_8_0": {
-    "name": "percona-server-8.0.41-32",
+    "name": "percona-server-8.0.42-33",
     "pname": "percona-server",
-    "version": "8.0.41-32"
+    "version": "8.0.42-33"
   },
   "percona-xtrabackup_8_0": {
     "name": "percona-xtrabackup-8.0.35-32",
@@ -705,9 +705,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-server-8.0.41-32",
+    "name": "percona-server-8.0.42-33",
     "pname": "percona-server",
-    "version": "8.0.41-32"
+    "version": "8.0.42-33"
   },
   "percona83": {
     "name": "percona-server_innovation-8.3.0-1",
