@@ -20,7 +20,7 @@ let
         backend = mkOption {
           type = enum [
             "filesystem"
-            "s3"
+            "aws"
           ];
         };
         schemaVersion = mkOption {
@@ -135,10 +135,10 @@ in
             filesystem.directory = "/var/lib/loki/chunk-store";
           }
           // lib.optionalAttrs (cfg.s3.enable) {
-            s3 = {
+            aws = {
               # authentication configured separately
               endpoint = cfg.s3.endpoint;
-              bucketNames = cfg.s3.bucketNames;
+              bucketNames = cfg.s3.bucketName;
               s3forcepathstyle = true;
             };
           };
