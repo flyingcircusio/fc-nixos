@@ -3,7 +3,6 @@
 """Unified client access to fc.directory."""
 
 import contextlib
-import functools
 import json
 import re
 import urllib.parse
@@ -117,7 +116,7 @@ def directory_cli():
     import sys
 
     cmd = sys.argv[1]
-    connect(ring="max")
+    d = connect(ring="max")  # noqa: F841 - used in fc-directory cli (fs-check) with the name d
     exec(cmd)
 
 
