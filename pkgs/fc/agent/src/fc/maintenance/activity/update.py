@@ -35,7 +35,10 @@ class UpdateActivity(Activity):
     """
 
     def __init__(
-        self, next_channel_url: str, next_environment: str = None, log=_log
+        self,
+        next_channel_url: str,
+        next_environment: str | None = None,
+        log=_log,
     ):
         super().__init__()
         self.next_environment = next_environment

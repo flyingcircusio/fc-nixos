@@ -147,7 +147,7 @@ def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
 CURRENT_SYSTEM = Path("/run/current-system")
 
 
-def os_release(system: Path = None):
+def os_release(system: Path | None = None):
     if not system:
         # Not used as default arg due to monkeypatch support.
         system = CURRENT_SYSTEM
@@ -209,11 +209,11 @@ def current_nixos_channel_url(log=_log) -> Optional[str]:
 
 
 def current_system(log=_log):
-    if not p.exists("/run/current-system"):
+    if not p.exists(CURRENT_SYSTEM):
         log.warn("current-system-missing")
-        return
+        return None
 
-    return os.readlink("/run/current-system")
+    return os.path.realpath(CURRENT_SYSTEM)
 
 
 def resolve_url_redirects(url):
@@ -436,7 +436,9 @@ def _increase_soft_fd_limit():
     resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
 
 
-def build_system(channel_url=None, build_options=None, out_link=None, log=_log):
+def build_system(
+    channel_url=None, build_options=None, out_link=None, log=_log
+) -> str:
     """
     Build system with this channel. Works like nixos-rebuild build.
     Does not modify the running system.
