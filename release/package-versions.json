@@ -585,9 +585,9 @@
     "version": "20.19.2"
   },
   "nodejs_22": {
-    "name": "nodejs-22.14.0",
+    "name": "nodejs-22.16.0",
     "pname": "nodejs",
-    "version": "22.14.0"
+    "version": "22.16.0"
   },
   "nspr": {
     "name": "nspr-4.36",

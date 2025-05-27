@@ -123,4 +123,44 @@ service configuration changes and trigger service restarts (if necessary).
 The default monitoring setup checks that the Redis server is running
 and is responding to [PING](https://redis.io/commands/ping).
 
+## Additional servers
+
+By default, a single instance of Redis is started when enabling the role.
+
+It's possible to set up more Redis servers like this:
+
+```nix
+{
+  services.redis.servers = {
+    foo = {
+      enable = true;
+      port = 6380;
+    };
+    bar = {
+      enable = true;
+      port = 6381;
+    };
+  };
+}
+```
+
+Additionally, this has the following impact on a system:
+
+* For each of these instances, another Sensu check doing a `PING` is added
+  and metrics will be scraped using Telegraf.
+
+  If a server is configured with no TCP socket and a UNIX socket that
+  cannot be written to & read from its owning group, this __won't__ be configured
+  and a warning will be printed by the agent.
+
+* By default, Redis gets to use 80% of the RAM available on a machine.
+  With >1 machine being enabled, each machine will get
+  `floor(80 / N)` percent of the machine's RAM with N being the amount
+  of enabled Redis servers.
+
+  This can be changed by setting the option
+  `services.redis.servers.<name>.settings.maxmemory` to a
+  [different value](https://redis.io/docs/latest/develop/reference/eviction/#maxmem).
+  Please keep in mind that this only takes absolute values.
+
 % vim: set spell spelllang=en:
