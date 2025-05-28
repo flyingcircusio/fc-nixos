@@ -143,12 +143,12 @@ import ./make-test-python.nix (
 
         with subtest("Metrics for servers are scraped by telegraf"):
             ret_val = query_prom('redis_uptime{port="6379"}')
-            assert ret_val['status'] == 'success'
-            assert len(ret_val['data']['result']) == 1
+            t.assertEqual(ret_val['status'], 'success')
+            t.assertEqual(len(ret_val['data']['result']), 1)
 
             ret_val = query_prom('redis_uptime{socket="/run/redis-gitlab/redis.sock"}')
-            assert ret_val['status'] == 'success'
-            assert len(ret_val['data']['result']) == 1
+            t.assertEqual(ret_val['status'], 'success')
+            t.assertEqual(len(ret_val['data']['result']), 1)
 
         with subtest("killing the redis process should trigger an automatic restart"):
             redis.succeed("kill $(systemctl show redis.service --property MainPID | sed -e 's/MainPID=//')")
@@ -161,16 +161,16 @@ import ./make-test-python.nix (
             redis.succeed(f"redis-cli -a aligator3 -p 6380 ping | grep PONG")
             ret_val = query_prom('redis_uptime{port="6380"}')
 
-            assert ret_val['status'] == 'success'
+            t.assertEqual(ret_val['status'], 'success')
             data = ret_val['data']['result']
-            assert len(data) == 1
+            t.assertEqual(len(ret_val['data']['result']), 1)
 
         with subtest("/etc/local/redis/password is kept up-to-date"):
             password = redis.succeed("cat /etc/local/redis/password").strip()
             switch_specialisation("withpw")
             from_pw_string = redis.succeed("cat /etc/local/redis/password").strip()
 
-            assert password != from_pw_string
+            t.assertNotEqual(password, from_pw_string)
             redis.succeed(f"redis-cli -a {from_pw_string} ping | grep PONG")
 
             redis.succeed("${pkgs.writeShellScript "sensu-redis" sensuChecksWithPW.redis.command}")
@@ -183,7 +183,7 @@ import ./make-test-python.nix (
 
             switch_specialisation("withpwfile")
             from_pwfile = redis.succeed("cat /etc/local/redis/password").strip()
-            assert from_pwfile != from_pw_string
+            t.assertNotEqual(from_pwfile, from_pw_string)
             redis.succeed(f"redis-cli -a {from_pwfile} ping | grep PONG")
       '';
   }
