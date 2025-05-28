@@ -470,6 +470,10 @@ import ./make-test-python.nix (
 
         # Maintenance integration
         with subtest("Check maintenance integration"):
+          # TODO: This is a workaround for PL-133673, fc-agent interactive logs shall **not** go to the
+          # journal of `backdoor.service` only.
+          h.execute("unset JOURNAL_STREAM")
+
           host1.execute("rm /var/log/fc-agent.log")
           host1.execute('fc-maintenance -v request script "test" "ceph -s"')
           result = host1.execute("cat /var/log/fc-agent.log")[1]
