@@ -145,13 +145,13 @@ in
   config = lib.mkIf (role.enable && enableVrfBridge) {
     environment.systemPackages = [ package ];
 
-    environment.etc."bird/bird2-vrf.conf".source = pkgs.writeTextFile {
-      name = "bird2-vrf";
+    environment.etc."bird/bird-vrf.conf".source = pkgs.writeTextFile {
+      name = "bird-vrf";
       text = configText;
       derivationArgs.nativeBuildInputs = [ package ];
       checkPhase = ''
-        ln -s $out bird2.conf
-        vrf-bird -d -p -c bird2.conf
+        ln -s $out bird.conf
+        vrf-bird -d -p -c bird.conf
       '';
     };
 
@@ -159,18 +159,18 @@ in
       201 bird-vrf
     '';
 
-    systemd.services.bird2-vrf-bridge = {
+    systemd.services.bird-vrf-bridge = {
       description = "BIRD Internet Routing Daemon (VRF Bridge)";
       wantedBy = [ "multi-user.target" ];
       reloadTriggers = [
-        config.environment.etc."bird/bird2-vrf.conf".source
+        config.environment.etc."bird/bird-vrf.conf".source
       ];
       serviceConfig = {
         Type = "forking";
         Restart = "on-failure";
-        User = "bird2";
-        Group = "bird2";
-        ExecStart = "${lib.getExe' package "vrf-bird"} -c /etc/bird/bird2-vrf.conf";
+        User = "bird";
+        Group = "bird";
+        ExecStart = "${lib.getExe' package "vrf-bird"} -c /etc/bird/bird-vrf.conf";
         ExecReload = "${lib.getExe' package "vrf-birdc"} configure";
         ExecStop = "${lib.getExe' package "vrf-birdc"} down";
         RuntimeDirectory = "bird-vrf";
