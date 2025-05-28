@@ -188,6 +188,9 @@ import ./make-test-python.nix (
                 "/run/current-system/specialisation/withPrivilegedBind/bin/switch-to-configuration test",
                 timeout=30,
             )
+            # XXX: for some reason coturn.service is not started at switch-to-configuration *in the test*.
+            # The restart happens in actual VMs though.
+            turnserver.execute("systemctl restart coturn")
             turnserver.wait_for_open_port(443, timeout=30)
       '';
   }

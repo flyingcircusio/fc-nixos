@@ -48,8 +48,7 @@ in
   backyserver_volumes = callTest ./backy_volumes.nix { };
   channel = callTest ./channel.nix { };
   ceph-nautilus = callTest ./ceph-nautilus.nix { };
-  # FIXME: fix and re-enable
-  #coturn = callTest ./coturn.nix { };
+  coturn = callTest ./coturn.nix { };
   docker = callTest ./docker.nix { };
   fcagent = callTest ./fcagent.nix { };
   fde-tooling = callTest ./fde-tooling.nix { };
