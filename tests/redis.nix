@@ -18,6 +18,11 @@ import ./make-test-python.nix (
             requirePassFile = "${pkgs.writeText "password" "hunter2"}";
           };
 
+          services.redis.servers.socket_no_pw = {
+            enable = true;
+            unixSocketPerm = 770;
+          };
+
           flyingcircus.enc.parameters = {
             resource_group = "test";
             interfaces.srv = {
@@ -89,6 +94,11 @@ import ./make-test-python.nix (
         redis.wait_until_succeeds(f"{cli_gitlab} set msg 'hello world'")
         redis.wait_until_succeeds(f"{cli_gitlab} get msg | grep 'hello world'")
 
+        cli_socket_no_pw = "redis-cli -s /run/redis-socket_no_pw/redis.sock"
+        redis.wait_until_succeeds(f"{cli_socket_no_pw} ping | grep PONG")
+        redis.wait_until_succeeds(f"{cli_socket_no_pw} set msg 'hello world'")
+        redis.wait_until_succeeds(f"{cli_socket_no_pw} get msg | grep 'hello world'")
+
         with subtest("service user should be able to write the password file"):
             redis.succeed('sudo -u redis touch /etc/local/redis/password')
 
@@ -106,7 +116,7 @@ import ./make-test-python.nix (
 
             assert ret_val['status'] == 'success'
             data = ret_val['data']['result']
-            assert len(data) == 2
+            assert len(data) == 3
 
             assert '/run/redis-gitlab/redis.sock' ==  [x['metric']['socket'] for x in data if 'socket' in x['metric']][0]
             assert '127.0.0.1:6379' ==  [
