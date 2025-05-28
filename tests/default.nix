@@ -60,6 +60,7 @@ in
   collect-garbage = callTest ./collect-garbage.nix { };
   gitlab = callTest ./gitlab.nix { };
   haproxy = callTest ./haproxy.nix { };
+  initrd = callTest ./initrd.nix { };
   ip-forward = callTest ./ip-forward.nix { };
   ipv6-autoconfig = callSubTests ./ipv6-autoconfig.nix { };
   java = callTest ./java.nix { };

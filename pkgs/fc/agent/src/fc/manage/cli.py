@@ -19,7 +19,6 @@ from fc.util.typer_utils import FCTyperApp
 
 class Context(NamedTuple):
     config_file: Path
-    tmpdir: Path
     logdir: Path
     lock_dir: Path
     enc_path: Path
@@ -158,7 +157,7 @@ def switch_cmd(
 
     with locked(log, context.lock_dir):
         if update_enc_data:
-            fc.util.enc.update_enc(log, context.tmpdir, context.enc_path)
+            fc.util.enc.update_enc(log, context.enc_path)
 
         enc = fc.util.enc.load_enc(log, context.enc_path)
 
@@ -261,7 +260,7 @@ def update_enc_cmd():
     )
 
     with locked(log, context.lock_dir):
-        fc.util.enc.update_enc(log, context.tmpdir, context.enc_path)
+        fc.util.enc.update_enc(log, context.enc_path)
 
     log.info("fc-manage-succeeded")
 
@@ -321,13 +320,6 @@ def fc_manage(
         default="/var/log",
         help="Directory for log files, expects a fc-agent subdirectory there.",
     ),
-    tmpdir: Path = Option(
-        exists=True,
-        file_okay=False,
-        writable=True,
-        default="/tmp",
-        help="Directory where temporary files should be placed.",
-    ),
     lock_dir: Path = Option(
         exists=True,
         file_okay=False,
@@ -359,7 +351,6 @@ def fc_manage(
         # no action option given, new style call
         context = Context(
             config_file=config_file,
-            tmpdir=tmpdir,
             logdir=logdir,
             lock_dir=lock_dir,
             enc_path=enc_path,
@@ -399,7 +390,7 @@ def fc_manage(
 
     with locked(log, lock_dir):
         if update_enc_data:
-            fc.util.enc.update_enc(log, tmpdir, enc_path)
+            fc.util.enc.update_enc(log, enc_path)
 
         enc = fc.util.enc.load_enc(log, enc_path)
         keep_cmd_output = False

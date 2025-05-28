@@ -32,8 +32,6 @@ def invoke_app(log, tmpdir, agent_maintenance_config):
         "--show-caller-info",
         "--logdir",
         tmpdir,
-        "--tmpdir",
-        tmpdir,
         "--lock-dir",
         tmpdir,
         "--enc-path",

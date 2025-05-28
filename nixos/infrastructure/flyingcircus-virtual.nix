@@ -83,10 +83,24 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       fsType = "xfs";
     };
     "/tmp" = {
-      device = "/dev/disk/by-label/tmp";
+      device = "/dev/disk/by-partlabel/tmp";
       fsType = "xfs";
       noCheck = true;
     };
+  };
+
+  flyingcircus.initrd = {
+    upgradeXFS = {
+      "/dev/disk/by-label/root" = [
+        "bigtime=1"
+        "inobtcount=1"
+        "nrext64=1"
+      ];
+    };
+    formatXFS = {
+      "/dev/disk/by-partlabel/tmp" = "-L tmp -q -K -d su=4m,sw=1";
+    };
+    collectQemuData = true;
   };
 
   networking = {

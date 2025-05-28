@@ -37,6 +37,7 @@ in
       ./enc.nix
       ./firewall.nix
       ./full-disk-encryption.nix
+      ./initrd.nix
       ./journalbeat.nix
       ./collect-garbage.nix
       ./ipmi.nix
