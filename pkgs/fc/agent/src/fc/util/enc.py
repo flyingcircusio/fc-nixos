@@ -3,6 +3,7 @@ import grp
 import hashlib
 import json
 import os
+import re
 import shutil
 import socket
 import tempfile
@@ -100,11 +101,10 @@ def initialize_state_version(
         # the build revision as well. Fix it up when necessary.
         # https://github.com/NixOS/nixpkgs/issues/127654
         state_version = state_version_file.read_text().strip()
-        try:
-            version_parts = state_version.split(".")
-            version_major = version_parts[0]
-            version_minor = version_parts[1]
-        except IndexError:
+        if version_matches := re.match(r"(\d\d)\.(\d\d)", state_version):
+            version_major = version_matches[1]
+            version_minor = version_matches[2]
+        else:
             log.error(
                 "initialize-state-version-format-err",
                 _replace_msg=f"Found state version with unexpected format: `{state_version}`",
