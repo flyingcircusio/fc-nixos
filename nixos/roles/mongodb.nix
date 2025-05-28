@@ -122,6 +122,8 @@ in
 
       environment.systemPackages = [
         pkgs.mongodb-tools
+        # the nixpkgs service has moved towards `mongosh`, but we continue to provide the legacy `mongo` in PATH
+        mcfg.package
       ];
 
       services.mongodb.enable = true;
