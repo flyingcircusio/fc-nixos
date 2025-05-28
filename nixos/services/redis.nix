@@ -99,7 +99,7 @@ let
 
   telegrafInputs =
     let
-      mkPassword = name: getRedisPassword name (lib.const "\${REDIS_PASSWORD_${name}}");
+      mkPassword = name: getRedisPassword name (lib.const "\${REDIS_PASSWORD_${escape name}}");
     in
     map (
       name:
@@ -137,6 +137,8 @@ let
   supplementaryGroups = map (name: config.services.redis.servers.${name}.group) (
     serversByConnection.uds or [ ]
   );
+
+  escape = builtins.replaceStrings [ "-" ] [ "__" ];
 
 in
 {
@@ -225,6 +227,17 @@ in
           Please use a NixOS module with the option services.redis.servers."".settings instead
         '';
       }
+      {
+        # This limitation is relevant for telegraf because we generate env
+        # vars from the server names (and `__` is used to escape dashes).
+        assertion = all (name: null != builtins.match "^[A-Za-z0-9_-]*$" name && !lib.hasInfix "__" name) (
+          attrNames enabledServers
+        );
+        message = ''
+          All Redis server names (keys of `services.redis.servers`) can only
+          contain alphanumeric chars, `-` and `_`, but no consecutive underscores.
+        '';
+      }
     ];
 
     # Ensure sensu client can talk to Redis via socket.
@@ -284,7 +297,7 @@ in
         name:
         { requirePassFile, ... }:
         lib.optionalAttrs (requirePassFile != null) {
-          "REDIS_PASSWORD_${name}" = requirePassFile;
+          "REDIS_PASSWORD_${escape name}" = requirePassFile;
         }
       ) enabledServers;
 
