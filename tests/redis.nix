@@ -31,6 +31,10 @@ import ./make-test-python.nix (
             };
           };
 
+          specialisation.withpw.configuration.flyingcircus.services.redis.password = "aligator3";
+          specialisation.withpwfile.configuration.services.redis.servers."".requirePassFile =
+            lib.mkForce "${pkgs.writeText "pw" "aligator4"}";
+
           flyingcircus.enc.parameters = {
             resource_group = "test";
             interfaces.srv = {
@@ -83,6 +87,9 @@ import ./make-test-python.nix (
         sensuChecks = nodes.redis.flyingcircus.services.sensu-client.checks;
         api = "http://192.168.1.1:9090/api/v1";
         config = nodes.redis.system.build.toplevel;
+
+        sensuChecksWithPW =
+          nodes.redis.specialisation.withpw.configuration.flyingcircus.services.sensu-client.checks;
       in
       ''
         import json
@@ -157,6 +164,27 @@ import ./make-test-python.nix (
             assert ret_val['status'] == 'success'
             data = ret_val['data']['result']
             assert len(data) == 1
+
+        with subtest("/etc/local/redis/password is kept up-to-date"):
+            password = redis.succeed("cat /etc/local/redis/password").strip()
+            switch_specialisation("withpw")
+            from_pw_string = redis.succeed("cat /etc/local/redis/password").strip()
+
+            assert password != from_pw_string
+            redis.succeed(f"redis-cli -a {from_pw_string} ping | grep PONG")
+
+            redis.succeed("${pkgs.writeShellScript "sensu-redis" sensuChecksWithPW.redis.command}")
+            redis.succeed("${pkgs.writeShellScript "sensu-redis-gitlab" sensuChecksWithPW.redis-gitlab.command}")
+
+            # We don't generate a password if /etc/local/redis/password already
+            # exists, even if there are no other settings.
+            switch_specialisation(None)
+            redis.succeed(f"redis-cli -a {from_pw_string} ping | grep PONG")
+
+            switch_specialisation("withpwfile")
+            from_pwfile = redis.succeed("cat /etc/local/redis/password").strip()
+            assert from_pwfile != from_pw_string
+            redis.succeed(f"redis-cli -a {from_pwfile} ping | grep PONG")
       '';
   }
 )

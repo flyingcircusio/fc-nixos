@@ -13,13 +13,11 @@ branches.
 
 ### Impact
 
-- If you access `services.redis."".password` in your NixOS config, please change this to
-  `flyingcircus.services.redis.password`.
-
 ### NixOS XX.XX platform
 
 - redis: restructure internal password handling
   The password file /etc/local/redis/password now gets written as systemd ExecStartPre. (PL-133653)
 
-- telegraf: Add new option `environmentVariablesFromFile` that allows users to store
-  passwords in files and using them as substituted environment variable in a telegraf input. (PL-133563)
+  If you set `services.redis."".requirePassFile` in your NixOS config, please use
+  `flyingcircus.services.redis.password` instead. Also, reading the Redis password
+  at evaluation time from `config.flyingcircus.services.redis.password` is not supported anymore.

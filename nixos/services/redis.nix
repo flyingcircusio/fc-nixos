@@ -227,6 +227,27 @@ in
           contain alphanumeric chars, `-` and `_`, but no consecutive underscores.
         '';
       }
+      {
+        assertion =
+          config.services.redis.servers."".enable -> config.services.redis.servers."".requirePass == null;
+        message = ''
+          Setting a password for the default Redis server with requirePass
+          is not supported. Please use `flyingcircus.services.redis.password`
+          instead.
+        '';
+      }
+      {
+        # The default set by the platform is /etc/local/redis/password. If this is set
+        # to something else, we read the password from that value.
+        # The `null` case is undefined and thus rejected.
+        assertion =
+          config.services.redis.servers."".enable -> config.services.redis.servers."".requirePassFile != null;
+        message = ''
+          Value of `services.redis.servers."".requirePassFile`
+          (currently `${toString config.services.redis.servers."".requirePassFile}`)
+          must not be null.
+        '';
+      }
     ];
 
     # Ensure sensu client can talk to Redis via socket.
@@ -245,23 +266,29 @@ in
         redis.before = [ "telegraf.service" ];
         redis.serviceConfig =
           let
-            preStart = pkgs.writeShellScript "redis-prestart" (
-              ''
-                if [[ ! -e /etc/local/redis/password ]]; then (
-                umask 007;
-              ''
-              + lib.optionalString (cfg.password == null) ''
-                ${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > /etc/local/redis/password
-              ''
-              + lib.optionalString (cfg.password != null) ''
-                echo ${lib.escapeShellArg cfg.password} > /etc/local/redis/password
-              ''
-              + ''
-                ) fi
-                chmod 0660 /etc/local/redis/password
-                chown redis:service /etc/local/redis/password
-              ''
-            );
+            preStart = pkgs.writeShellScript "redis-prestart" (''
+              (
+                umask 077;
+                ${
+                  if cfg.password != null then
+                    ''
+                      echo ${lib.escapeShellArg cfg.password} > /etc/local/redis/password
+                    ''
+                  else if config.services.redis.servers."".requirePassFile != "/etc/local/redis/password" then
+                    ''
+                      cp ${config.services.redis.servers."".requirePassFile} /etc/local/redis/password
+                    ''
+                  else
+                    ''
+                      if [[ ! -e /etc/local/redis/password ]]; then
+                        ${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > /etc/local/redis/password
+                      fi
+                    ''
+                }
+              )
+              chmod 0660 /etc/local/redis/password
+              chown redis:service /etc/local/redis/password
+            '');
           in
           {
             ExecStartPre = lib.mkBefore [
