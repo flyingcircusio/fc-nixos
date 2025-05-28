@@ -1,3 +1,36 @@
+# Release 2025_017
+
+## Impact
+
+- Telegraf will be restarted.
+
+-
+
+- The Redis cache of GitLab will be flushed.
+
+- GitLab will be restarted.
+
+
+## NixOS XX.XX platform
+
+- Additional Redis servers configured with `services.redis.servers` now
+  get Sensu checks and their metrics are scraped by Telegraf.
+
+  This is not possible if a server doesn't have a TCP listener and its UNIX socket isn't
+  readable & writable by its owning group. For each server like that, a warning
+  will be printed.
+
+- The option `services.telegraf.environmentVariablesFromFile` was introduced which allows
+  substituting variables inside the Telegraf config with the content of a file.
+
+- fix some configuration options for the loki role (PL-133581)
+
+- Fix fs-check script by restoring old use of fc-directory cli (PL-133676)
+
+- The GitLab role requires an active Redis role on the same machine.
+
+
+
 # Release 2025_016
 
 ## Impact
