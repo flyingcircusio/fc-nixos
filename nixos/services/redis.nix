@@ -125,6 +125,8 @@ let
           "unix://${enabledServers.${name}.unixSocket}"
         ];
         fielddrop = telegrafFielddrop;
+      }
+      // lib.optionalAttrs (password != null) {
         inherit password;
       }
     ) (serversByConnection.uds or [ ]);
