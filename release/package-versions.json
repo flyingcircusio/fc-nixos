@@ -60,9 +60,9 @@
     "version": "2.5.22"
   },
   "cacert": {
-    "name": "nss-cacert-3.108",
+    "name": "nss-cacert-3.111",
     "pname": "nss-cacert",
-    "version": "3.108"
+    "version": "3.111"
   },
   "calibre": {
     "name": "calibre-7.21.0",
@@ -180,9 +180,9 @@
     "version": "6.4.39"
   },
   "ffmpeg": {
-    "name": "ffmpeg-7.1",
+    "name": "ffmpeg-7.1.1",
     "pname": "ffmpeg",
-    "version": "7.1"
+    "version": "7.1.1"
   },
   "file": {
     "name": "file-5.45",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-138.0.4",
+    "name": "firefox-139.0",
     "pname": "firefox",
-    "version": "138.0.4"
+    "version": "139.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -215,9 +215,9 @@
     "version": "2.3.3"
   },
   "ghostscript": {
-    "name": "ghostscript-with-X-10.05.0",
+    "name": "ghostscript-with-X-10.05.1",
     "pname": "ghostscript-with-X",
-    "version": "10.05.0"
+    "version": "10.05.1"
   },
   "git": {
     "name": "git-2.47.2",
@@ -295,9 +295,9 @@
     "version": "1.23.8"
   },
   "grafana": {
-    "name": "grafana-11.3.6",
+    "name": "grafana-11.3.7",
     "pname": "grafana",
-    "version": "11.3.6"
+    "version": "11.3.7"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -335,9 +335,9 @@
     "version": "1.9.4"
   },
   "jdk": {
-    "name": "openjdk-21.0.5+11",
+    "name": "openjdk-21.0.7+6",
     "pname": "openjdk",
-    "version": "21.0.5+11"
+    "version": "21.0.7+6"
   },
   "jetbrains.jdk": {
     "name": "jetbrains-jdk-jcef-21.0.4-b598.4",
@@ -370,9 +370,9 @@
     "version": "1.7.1"
   },
   "jre": {
-    "name": "openjdk-21.0.5+11",
+    "name": "openjdk-21.0.7+6",
     "pname": "openjdk",
-    "version": "21.0.5+11"
+    "version": "21.0.7+6"
   },
   "k3s": {
     "name": "k3s-1.31.8+k3s1",
@@ -445,9 +445,9 @@
     "version": "1.4.0"
   },
   "libxml2": {
-    "name": "libxml2-2.13.6",
+    "name": "libxml2-2.13.8",
     "pname": "libxml2",
-    "version": "2.13.6"
+    "version": "2.13.8"
   },
   "libxslt": {
     "name": "libxslt-1.1.42",
@@ -505,9 +505,9 @@
     "version": "5.2.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.129.0",
+    "name": "matrix-synapse-wrapped-1.130.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.129.0"
+    "version": "1.130.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -575,9 +575,9 @@
     "version": "2.24.14"
   },
   "nodejs": {
-    "name": "nodejs-20.19.0",
+    "name": "nodejs-20.19.1",
     "pname": "nodejs",
-    "version": "20.19.0"
+    "version": "20.19.1"
   },
   "nodejs_18": {
     "name": "nodejs-18.20.8",
@@ -585,9 +585,9 @@
     "version": "18.20.8"
   },
   "nodejs_20": {
-    "name": "nodejs-20.19.0",
+    "name": "nodejs-20.19.1",
     "pname": "nodejs",
-    "version": "20.19.0"
+    "version": "20.19.1"
   },
   "nodejs_22": {
     "name": "nodejs-22.16.0",
@@ -600,9 +600,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.111",
+    "name": "nss-3.112",
     "pname": "nss",
-    "version": "3.111"
+    "version": "3.112"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.10.2",
@@ -610,9 +610,9 @@
     "version": "2.10.2"
   },
   "openjdk": {
-    "name": "openjdk-21.0.5+11",
+    "name": "openjdk-21.0.7+6",
     "pname": "openjdk",
-    "version": "21.0.5+11"
+    "version": "21.0.7+6"
   },
   "openjpeg": {
     "name": "openjpeg-2.5.2",
@@ -785,9 +785,9 @@
     "version": "3.9.3"
   },
   "postgresql": {
-    "name": "postgresql-16.8",
+    "name": "postgresql-16.9",
     "pname": "postgresql",
-    "version": "16.8"
+    "version": "16.9"
   },
   "postgresql13Packages.postgis": {
     "name": "postgis-3.5.2",
@@ -865,9 +865,9 @@
     "version": "15.13"
   },
   "postgresql_16": {
-    "name": "postgresql-16.8",
+    "name": "postgresql-16.9",
     "pname": "postgresql",
-    "version": "16.8"
+    "version": "16.9"
   },
   "postgresql_17": {
     "name": "postgresql-17.5",
@@ -1040,9 +1040,9 @@
     "version": "3.4.1"
   },
   "ruby": {
-    "name": "ruby-3.3.7",
+    "name": "ruby-3.3.8",
     "pname": "ruby",
-    "version": "3.3.7"
+    "version": "3.3.8"
   },
   "ruby_3_2": {
     "name": "ruby-3.2.8",
@@ -1125,9 +1125,9 @@
     "version": "10.1.41"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.104",
+    "name": "apache-tomcat-9.0.105",
     "pname": "apache-tomcat",
-    "version": "9.0.104"
+    "version": "9.0.105"
   },
   "unifi": {
     "name": "unifi-controller-8.5.6",
