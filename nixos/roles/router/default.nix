@@ -268,14 +268,28 @@ in
 
     flyingcircus.firewall.enableSrvRgFirewall = false;
 
-    systemd.services = listToAttrs (
-      lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces) (
-        iface:
-        lib.nameValuePair "network-bridge-suppress-flooding-${iface.link}" {
-          enable = fclib.mkPlatform false;
-        }
-      )
-    );
+    systemd.services =
+      (listToAttrs (
+        lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces) (
+          iface:
+          lib.nameValuePair "network-bridge-suppress-flooding-${iface.link}" {
+            enable = fclib.mkPlatform false;
+          }
+        )
+      ))
+      // {
+        keepalived.wantedBy = [ "multi-user.target" ];
+      };
+
+    # the upstream module does not start keepalived immediately on
+    # boot in order to prevent it from immediately switching into
+    # master state, instead using a timer to defer the start by a few
+    # seconds. this has the problem that if keepalived crashes for
+    # some reason the next switch-to-configuration run will not
+    # attempt to restart it as it is not wanted by
+    # multi-user.target. we drop this layer of indirection to allow a
+    # crashed keepalived to be recovered.
+    systemd.timers.keepalived-boot-delay.enable = fclib.mkPlatform false;
 
     specialisation.primary = {
       configuration = role.primarySpecialisationConfig;
