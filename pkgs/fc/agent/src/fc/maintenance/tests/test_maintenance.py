@@ -1,7 +1,7 @@
-import contextlib
 import json
 import unittest.mock
 from unittest.mock import MagicMock
+from pathlib import Path
 
 import fc.maintenance.maintenance
 from fc.maintenance import Request
@@ -361,9 +361,7 @@ def test_request_update(log, logger, agent_configparser, monkeypatch):
     assert log.has("request-update-prepared")
 
 
-def test_request_update_unchanged(
-    log, logger, agent_configparser, monkeypatch
-):
+def test_request_update_unchanged(log, logger, agent_configparser, monkeypatch):
     from_enc_mock = MagicMock()
     from_enc_mock.return_value = None
     monkeypatch.setattr(
@@ -504,3 +502,34 @@ def test_do_not_request_reboot_when_tempfail_update_present(
         assert not mock.called
 
     assert request is None
+
+
+def test_release_path(tmp_path, logger, log, monkeypatch):
+    import fc.util.nixos
+
+    current_d = Path(tmp_path / "current")
+    next_d = Path(tmp_path / "next")
+    current_os_release = current_d / "etc/os-release"
+    current_os_release.parent.mkdir(parents=True)
+    next_os_release = next_d / "etc/os-release"
+    next_os_release.parent.mkdir(parents=True)
+
+    monkeypatch.setattr("fc.util.nixos.CURRENT_SYSTEM", current_d)
+
+    class PathAwareFakeUpdateActivity(FakeUpdateActivity):
+        def _detect_current_state(self):
+            self.current_system = fc.util.nixos.current_system()
+            # usually acquired through `nixos.build_system`, which returns a str
+            self.next_system = str(next_d)
+
+    activity = PathAwareFakeUpdateActivity(
+        "https://fake/1", "https://fake/2", logger
+    )
+
+    current_os_release.write_text("VERSION_ID=24.11")
+    next_os_release.write_text("VERSION_ID=24.11")
+
+    assert activity.release_path() == ["24.11"]
+
+    next_os_release.write_text("VERSION_ID=25.05")
+    assert activity.release_path() == ["24.11", "25.05"]
