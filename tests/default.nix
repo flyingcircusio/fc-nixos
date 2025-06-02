@@ -42,6 +42,7 @@ in
   # When in doubt, it's better to write our own test or copy&paste from nixpkgs.
   # inherit (pkgs.nixosTests)
 
+  alloy = callTest ./alloy.nix { };
   antivirus = callTest ./antivirus.nix { };
   audit = callTest ./audit.nix { };
   backyserver_ceph-nautilus = callTest ./backyserver.nix { clientCephRelease = "nautilus"; };

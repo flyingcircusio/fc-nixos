@@ -424,243 +424,243 @@ in
     };
   };
 
-  config = lib.mkMerge [
-    (lib.mkIf cfg.enable {
-      assertions = map (
-        {
-          hostname,
-          host,
-          laExtra,
-        }:
-        {
-          assertion = host.listenAddresses == laExtra;
-          message = ''
-            ${hostname}: listenAddress(6) and the new array-format listenAddresses cannot be mixed
-            Please exclusively use listenAddresses instead:
-              listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
-          '';
-        }
-      ) hostsWithLegacyListenOptions;
-
-      warnings = (
-        map (
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        assertions = map (
           {
             hostname,
             host,
             laExtra,
           }:
-          ''
-            ${hostname}: listenAddress and listenAddress6 are deprecated and will be removed in 25.05.
-            Please exclusively use listenAddresses instead:
-              listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
-          ''
-        ) hostsWithLegacyListenOptions
-      );
-
-      environment.etc = {
-        "local/nginx/README.txt".source = ./README.txt;
-
-        "local/nginx/fastcgi_params" = {
-          source = "${package}/conf/fastcgi_params";
-        };
-
-        "local/nginx/uwsgi_params" = {
-          source = "${package}/conf/uwsgi_params";
-        };
-
-        # file has moved; link back to the old location for compatibility reasons
-        "local/nginx/htpasswd_fcio_users" = {
-          source = "/etc/local/htpasswd_fcio_users.login";
-        };
-
-        "local/nginx/example-configuration".text = import ./example-plain-config.nix {
-          inherit config lib;
-        };
-
-        "local/nginx/modsecurity/README.txt".text = ''
-          Here are example configuration files for ModSecurity.
-
-          You need to adapt them to your needs *and* provide a ruleset. A common
-          ruleset is the OWASP ModSecurity Core Rule Set (CRS) (https://www.modsecurity.org/crs/).
-          You can get it via:
-
-            git clone https://github.com/SpiderLabs/owasp-modsecurity-crs.git
-
-          Save the adapted ruleset in a subdirectory here and adjust
-          modsecurity_includes.conf.
-        '';
-
-        "local/nginx/modsecurity/modsecurity.conf.example".source = ./modsecurity.conf;
-
-        "local/nginx/modsecurity/modsecurity_includes.conf.example".source = ./modsecurity_includes.conf;
-
-        "local/nginx/modsecurity/unicode.mapping".source = "${pkgs.libmodsecurity.src}/unicode.mapping";
-
-        "local/nixos/nginx.nix.example".source = ./example-nixos-module.nix;
-      };
-
-      flyingcircus.services.telegraf.inputs = {
-        nginx = [
           {
-            urls = [ "http://localhost:81/nginx_status" ];
+            assertion = host.listenAddresses == laExtra;
+            message = ''
+              ${hostname}: listenAddress(6) and the new array-format listenAddresses cannot be mixed
+              Please exclusively use listenAddresses instead:
+                listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
+            '';
+          }
+        ) hostsWithLegacyListenOptions;
+
+        warnings = (
+          map (
+            {
+              hostname,
+              host,
+              laExtra,
+            }:
+            ''
+              ${hostname}: listenAddress and listenAddress6 are deprecated and will be removed in 25.05.
+              Please exclusively use listenAddresses instead:
+                listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
+            ''
+          ) hostsWithLegacyListenOptions
+        );
+
+        environment.etc = {
+          "local/nginx/README.txt".source = ./README.txt;
+
+          "local/nginx/fastcgi_params" = {
+            source = "${package}/conf/fastcgi_params";
+          };
+
+          "local/nginx/uwsgi_params" = {
+            source = "${package}/conf/uwsgi_params";
+          };
+
+          # file has moved; link back to the old location for compatibility reasons
+          "local/nginx/htpasswd_fcio_users" = {
+            source = "/etc/local/htpasswd_fcio_users.login";
+          };
+
+          "local/nginx/example-configuration".text = import ./example-plain-config.nix {
+            inherit config lib;
+          };
+
+          "local/nginx/modsecurity/README.txt".text = ''
+            Here are example configuration files for ModSecurity.
+
+            You need to adapt them to your needs *and* provide a ruleset. A common
+            ruleset is the OWASP ModSecurity Core Rule Set (CRS) (https://www.modsecurity.org/crs/).
+            You can get it via:
+
+              git clone https://github.com/SpiderLabs/owasp-modsecurity-crs.git
+
+            Save the adapted ruleset in a subdirectory here and adjust
+            modsecurity_includes.conf.
+          '';
+
+          "local/nginx/modsecurity/modsecurity.conf.example".source = ./modsecurity.conf;
+
+          "local/nginx/modsecurity/modsecurity_includes.conf.example".source = ./modsecurity_includes.conf;
+
+          "local/nginx/modsecurity/unicode.mapping".source = "${pkgs.libmodsecurity.src}/unicode.mapping";
+
+          "local/nixos/nginx.nix.example".source = ./example-nixos-module.nix;
+        };
+
+        flyingcircus.services.telegraf.inputs = {
+          nginx = [
+            {
+              urls = [ "http://localhost:81/nginx_status" ];
+            }
+          ];
+        };
+
+        flyingcircus.services.sensu-client.checks =
+          {
+            nginx_config = {
+              notification = "Nginx configuration check problems";
+              command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config";
+              interval = 300;
+            };
+
+            nginx_status = {
+              notification = "nginx does not listen on port 80";
+              command = ''
+                ${pkgs.monitoring-plugins}/bin/check_http \
+                  -H localhost -u /nginx_status -p 81 -s server -c 5 -w 2
+              '';
+              interval = 60;
+            };
+
+            nginx_worker_age = {
+              notification = "Some nginx worker processes don't use the current config";
+              command = "${nginxCheckWorkerAge}";
+              interval = 60;
+            };
+          }
+          // (lib.mapAttrs' (
+            n: vhost:
+            let
+              host = if vhost.serverName != null then vhost.serverName else n;
+            in
+            lib.nameValuePair "nginx_https_${n}" {
+              notification = "HTTPS certificate check failed for vhost ${n}";
+              # We're using a timeout of 15 seconds because 10 seconds is the timeout
+              # that will trigger if DNS issues occur and giving the check a higher
+              # timeout allows us to see those. Otherwise they get hidden behind
+              # a generic timeout message.
+              # Note that we assume that the certificate is reachable via port 443.
+              # Other configurations might need overrides for the sensu check command.
+              command = "check_http -p 443 -S --sni -C 25,14 -H ${host} -t 15";
+              interval = 600;
+            }
+          ) acmeVhostsWithTLS);
+
+        networking.firewall.allowedTCPPorts = [
+          80
+          443
+        ];
+
+        security.acme.certs = fcioAcmeSettings;
+
+        flyingcircus.passwordlessSudoRules = [
+          {
+            commands = [ "/run/current-system/sw/bin/nginx-check-config" ];
+            groups = [ "sensuclient" ];
           }
         ];
-      };
 
-      flyingcircus.services.sensu-client.checks =
-        {
+        services.nginx = {
+          enable = true;
+          package = fclib.mkPlatform pkgs.nginxLegacyCrypt;
+          appendConfig = mainConfig;
+          appendHttpConfig = ''
+            ${baseHttpConfig}
 
-          nginx_config = {
-            notification = "Nginx configuration check problems";
-            command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config";
-            interval = 300;
-          };
+            # === User-provided config from ${localCfgDir}/*.conf ===
+            ${localHttpConfig}
 
-          nginx_status = {
-            notification = "nginx does not listen on port 80";
-            command = ''
-              ${pkgs.monitoring-plugins}/bin/check_http \
-                -H localhost -u /nginx_status -p 81 -s server -c 5 -w 2
-            '';
-            interval = 60;
-          };
+            # === Config from flyingcircus.services.nginx ===
+            ${cfg.httpConfig}
 
-          nginx_worker_age = {
-            notification = "Some nginx worker processes don't use the current config";
-            command = "${nginxCheckWorkerAge}";
-            interval = 60;
-          };
+            ${lib.optionalString (!cfg.disableDHEATMitigation) ''
+              # mitigate the D(HE)at Attack
+              # see https://dheatattack.gitlab.io/mitigations/
+              ssl_ecdh_curve x25519:secp256r1:x448;
+            ''}
+          '';
 
-        }
-        // (lib.mapAttrs' (
-          n: vhost:
-          let
-            host = if vhost.serverName != null then vhost.serverName else n;
-          in
-          lib.nameValuePair "nginx_https_${n}" {
-            notification = "HTTPS certificate check failed for vhost ${n}";
-            # We're using a timeout of 15 seconds because 10 seconds is the timeout
-            # that will trigger if DNS issues occur and giving the check a higher
-            # timeout allows us to see those. Otherwise they get hidden behind
-            # a generic timeout message.
-            # Note that we assume that the certificate is reachable via port 443.
-            # Other configurations might need overrides for the sensu check command.
-            command = "check_http -p 443 -S --sni -C 25,14 -H ${host} -t 15";
-            interval = 600;
-          }
-        ) acmeVhostsWithTLS);
-
-      networking.firewall.allowedTCPPorts = [
-        80
-        443
-      ];
-
-      security.acme.certs = fcioAcmeSettings;
-
-      flyingcircus.passwordlessSudoRules = [
-        {
-          commands = [ "/run/current-system/sw/bin/nginx-check-config" ];
-          groups = [ "sensuclient" ];
-        }
-      ];
-
-      services.nginx = {
-        enable = true;
-        package = fclib.mkPlatform pkgs.nginxLegacyCrypt;
-        appendConfig = mainConfig;
-        appendHttpConfig = ''
-          ${baseHttpConfig}
-
-          # === User-provided config from ${localCfgDir}/*.conf ===
-          ${localHttpConfig}
-
-          # === Config from flyingcircus.services.nginx ===
-          ${cfg.httpConfig}
-
-          ${lib.optionalString (!cfg.disableDHEATMitigation) ''
-            # mitigate the D(HE)at Attack
-            # see https://dheatattack.gitlab.io/mitigations/
-            ssl_ecdh_curve x25519:secp256r1:x448;
-          ''}
-        '';
-
-        eventsConfig = ''
-          worker_connections 4096;
-          multi_accept on;
-        '';
-        recommendedGzipSettings = true;
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-        serverNamesHashBucketSize = fclib.mkPlatform 64;
-        statusPage = true;
-        inherit virtualHosts;
-      };
-
-      services.logrotate.settings =
-        let
-          commonRotate = {
-            rotate = cfg.rotateLogs;
-            create = "0644 ${nginxCfg.user} nginx";
-            su = "${nginxCfg.user} nginx";
-          };
-        in
-        {
-          "/var/log/nginx/modsec_*.log" = {
-            # need higher prio, because more-specific match.
-            # Our platform header options use priority 900, we need to chose a
-            # higher number here for using them.
-            ignoreduplicates = true;
-            priority = 901;
-            copytruncate = true;
-          } // commonRotate;
-          "/var/log/nginx/*.log" = {
-            postrotate = ''
-              systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
-              chown ${nginxCfg.user}:nginx /var/log/nginx/*
-            '';
-          } // commonRotate;
+          eventsConfig = ''
+            worker_connections 4096;
+            multi_accept on;
+          '';
+          recommendedGzipSettings = true;
+          recommendedOptimisation = true;
+          recommendedProxySettings = true;
+          recommendedTlsSettings = true;
+          serverNamesHashBucketSize = fclib.mkPlatform 64;
+          statusPage = true;
+          inherit virtualHosts;
         };
 
-      # Z: Recursively change permissions if they already exist.
-      systemd.tmpfiles.rules =
-        [
-          "d /etc/local/nginx/modsecurity 2775 nginx service"
-          # Clean up whatever logrotate may have missed three days later.
-          "d /var/log/nginx 0755 ${nginxCfg.user} nginx ${toString (cfg.rotateLogs + 3)}d"
-          "Z /var/log/nginx/* - ${nginxCfg.user} nginx"
-        ]
-        # d: Create temp subdirs if they don't exist and clean up files after 10 days.
-        ++ map (subdir: ''
-          d /var/cache/nginx/${subdir} 0700 nginx nginx 10d
-          Z /var/cache/nginx/${subdir} 0700 nginx nginx
-        '') tempSubdirs;
+        services.logrotate.settings =
+          let
+            commonRotate = {
+              rotate = cfg.rotateLogs;
+              create = "0644 ${nginxCfg.user} nginx";
+              su = "${nginxCfg.user} nginx";
+            };
+          in
+          {
+            "/var/log/nginx/modsec_*.log" = {
+              # need higher prio, because more-specific match.
+              # Our platform header options use priority 900, we need to chose a
+              # higher number here for using them.
+              ignoreduplicates = true;
+              priority = 901;
+              copytruncate = true;
+            } // commonRotate;
+            "/var/log/nginx/*.log" = {
+              postrotate = ''
+                systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
+                chown ${nginxCfg.user}:nginx /var/log/nginx/*
+              '';
+            } // commonRotate;
+          };
 
-      flyingcircus.localConfigDirs.nginx = {
-        dir = "/etc/local/nginx";
-        user = "nginx";
-      };
+        # Z: Recursively change permissions if they already exist.
+        systemd.tmpfiles.rules =
+          [
+            "d /etc/local/nginx/modsecurity 2775 nginx service"
+            # Clean up whatever logrotate may have missed three days later.
+            "d /var/log/nginx 0755 ${nginxCfg.user} nginx ${toString (cfg.rotateLogs + 3)}d"
+            "Z /var/log/nginx/* - ${nginxCfg.user} nginx"
+          ]
+          # d: Create temp subdirs if they don't exist and clean up files after 10 days.
+          ++ map (subdir: ''
+            d /var/cache/nginx/${subdir} 0700 nginx nginx 10d
+            Z /var/cache/nginx/${subdir} 0700 nginx nginx
+          '') tempSubdirs;
 
-      environment.systemPackages = [
-        nginxShowConfig
-      ];
-    })
+        flyingcircus.localConfigDirs.nginx = {
+          dir = "/etc/local/nginx";
+          user = "nginx";
+        };
 
-    (lib.mkIf (!builtins.isNull lokiServer) {
-      systemd.services.alloy = lib.mkIf config.services.alloy.enable {
-        reloadTriggers = [ config.environment.etc."alloy/syslog_nginx.alloy".source ];
-        serviceConfig.SupplementaryGroups = [ "nginx" ];
-      };
+        environment.systemPackages = [
+          nginxShowConfig
+        ];
+      }
 
-      environment.etc."alloy/syslog_nginx.alloy".text = ''
-        loki.source.syslog "syslog_nginx" {
-          listener {
-            address = "127.0.0.1:51893"
+      (lib.mkIf (!builtins.isNull lokiServer) {
+        systemd.services.alloy = lib.mkIf config.services.alloy.enable {
+          reloadTriggers = [ config.environment.etc."alloy/syslog_nginx.alloy".source ];
+          serviceConfig.SupplementaryGroups = [ "nginx" ];
+        };
+
+        environment.etc."alloy/syslog_nginx.alloy".text = ''
+          loki.source.syslog "syslog_nginx" {
+            listener {
+              address = "127.0.0.1:51893"
+            }
+
+            forward_to = [loki.write.fcio_rg_loki.receiver]
           }
-
-          forward_to = [loki.write.fcio_rg_loki.receiver]
-        }
-      '';
-    })
-  ];
+        '';
+      })
+    ]
+  );
 }
