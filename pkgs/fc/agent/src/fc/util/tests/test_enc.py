@@ -91,7 +91,7 @@ def test_initialize_state_version_from_scratch(
     assert state_version_file.read_text().strip() == "24.11"
 
 
-def test_initialize_state_version_fixes_wrong_state_format(
+def test_initialize_state_version_fixes_wrong_state_format_of_2105(
     log, logger, tmp_path, os_release_file, monkeypatch
 ):
     state_version_file = tmp_path / "state_version"
@@ -99,9 +99,23 @@ def test_initialize_state_version_fixes_wrong_state_format(
     monkeypatch.setattr("shutil.chown", unittest.mock.Mock())
 
     initialize_state_version(logger, os_release_file, state_version_file)
-    assert log.has(
-        "initialize-state-version-format-fixup"
-    ), "Fixup logic not called"
+    assert log.has("initialize-state-version-format-fixup"), (
+        "Fixup logic not called"
+    )
+    assert state_version_file.read_text().strip() == "21.05"
+
+
+def test_initialize_state_version_fixes_wrong_state_format_pregit(
+    log, logger, tmp_path, os_release_file, monkeypatch
+):
+    state_version_file = tmp_path / "state_version"
+    state_version_file.write_text("21.05pre-git")
+    monkeypatch.setattr("shutil.chown", unittest.mock.Mock())
+
+    initialize_state_version(logger, os_release_file, state_version_file)
+    assert log.has("initialize-state-version-format-fixup"), (
+        "Fixup logic not called"
+    )
     assert state_version_file.read_text().strip() == "21.05"
 
 
@@ -112,9 +126,9 @@ def test_initialize_state_version_fixup_does_not_crash_on_wrong_format(
     state_version_file.write_text("24Elf")
 
     initialize_state_version(logger, os_release_file, state_version_file)
-    assert log.has(
-        "initialize-state-version-format-err"
-    ), "Format error not discovered"
+    assert log.has("initialize-state-version-format-err"), (
+        "Format error not discovered"
+    )
 
 
 @unittest.mock.patch("fc.util.enc.write_system_state")
