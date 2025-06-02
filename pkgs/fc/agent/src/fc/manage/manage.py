@@ -63,7 +63,10 @@ def check(log, enc, config: ConfigParser) -> CheckResult:
     if STATE_VERSION_FILE.exists():
         state_version = STATE_VERSION_FILE.read_text().strip()
         log.debug("check-state-version", state_version=state_version)
-        if re.match(r"\d\d\.\d\d", state_version):
+        # From NixOS 25.05 on this check becomes superfluous, as a malformed
+        # state version causes an evaluation error in the system build.
+        # Keeping this around for a transitory period.
+        if re.fullmatch(r"\d\d\.\d\d", state_version):
             ok_info.append(f"State version: {state_version}.")
         else:
             warnings.append(
