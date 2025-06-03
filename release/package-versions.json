@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-136.0.7103.113",
+    "name": "chromedriver-unwrapped-137.0.7151.55",
     "pname": "chromedriver-unwrapped",
-    "version": "136.0.7103.113"
+    "version": "137.0.7151.55"
   },
   "chromium": {
-    "name": "chromium-136.0.7103.113",
+    "name": "chromium-137.0.7151.55",
     "pname": "chromium",
-    "version": "136.0.7103.113"
+    "version": "137.0.7151.55"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-139.0",
+    "name": "firefox-139.0.1",
     "pname": "firefox",
-    "version": "139.0"
+    "version": "139.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -465,9 +465,9 @@
     "version": "6.6.92"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.30",
+    "name": "linux-6.12.31",
     "pname": "linux",
-    "version": "6.12.30"
+    "version": "6.12.31"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -525,9 +525,9 @@
     "version": "7.0.14"
   },
   "mongodb-6_0": {
-    "name": "mongodb-6.0.17",
+    "name": "mongodb-6.0.23",
     "pname": "mongodb",
-    "version": "6.0.17"
+    "version": "6.0.23"
   },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
