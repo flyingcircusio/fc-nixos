@@ -105,9 +105,9 @@
     "version": "1.9.9"
   },
   "containerd": {
-    "name": "containerd-2.1.0",
+    "name": "containerd-2.1.1",
     "pname": "containerd",
-    "version": "2.1.0"
+    "version": "2.1.1"
   },
   "coreutils": {
     "name": "coreutils-9.7",
@@ -135,9 +135,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-3.4.3",
+    "name": "discourse-3.4.4",
     "pname": "discourse",
-    "version": "3.4.3"
+    "version": "3.4.4"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.91",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-139.0",
+    "name": "firefox-139.0.1",
     "pname": "firefox",
-    "version": "139.0"
+    "version": "139.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-14.2.1.20250322",
@@ -370,29 +370,29 @@
     "version": "21.0.7+6"
   },
   "k3s": {
-    "name": "k3s-1.32.4+k3s1",
+    "name": "k3s-1.32.5+k3s1",
     "pname": "k3s",
-    "version": "1.32.4+k3s1"
+    "version": "1.32.5+k3s1"
   },
   "k3s_1_30": {
-    "name": "k3s-1.30.12+k3s1",
+    "name": "k3s-1.30.13+k3s1",
     "pname": "k3s",
-    "version": "1.30.12+k3s1"
+    "version": "1.30.13+k3s1"
   },
   "k3s_1_31": {
-    "name": "k3s-1.31.8+k3s1",
+    "name": "k3s-1.31.9+k3s1",
     "pname": "k3s",
-    "version": "1.31.8+k3s1"
+    "version": "1.31.9+k3s1"
   },
   "k3s_1_32": {
-    "name": "k3s-1.32.4+k3s1",
+    "name": "k3s-1.32.5+k3s1",
     "pname": "k3s",
-    "version": "1.32.4+k3s1"
+    "version": "1.32.5+k3s1"
   },
   "k3s_1_33": {
-    "name": "k3s-1.33.0+k3s1",
+    "name": "k3s-1.33.1+k3s1",
     "pname": "k3s",
-    "version": "1.33.0+k3s1"
+    "version": "1.33.1+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.1.4",
@@ -465,9 +465,9 @@
     "version": "6.6.92"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.30",
+    "name": "linux-6.12.31",
     "pname": "linux",
-    "version": "6.12.30"
+    "version": "6.12.31"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
