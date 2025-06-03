@@ -75,8 +75,8 @@ let
   enabledRolesCount = length (lib.attrNames enabledRoles);
   majorVersion = head (lib.attrNames enabledRoles);
   checkPkg =
-    if (lib.versionOlder majorVersion "3.6") then
-      getPkg /nix/store/c7i75mvqqg1mjk3w6zz1j9cysvch6328-fc-check-mongodb-1.0
+    if (lib.versionOlder majorVersion "4.0") then
+      pkgs.fc.check-mongodb.override { pymongo = pkgs.python3Packages.pymongo3; }
     else
       pkgs.fc.check-mongodb;
 

@@ -29,7 +29,7 @@ rec {
   check-haproxy = callPackage ./check-haproxy { };
   check-journal = callPackage ./check-journal.nix { };
   check-link-redundancy = callPackage ./check-link-redundancy { };
-  check-mongodb = callPackage ./check-mongodb { };
+  check-mongodb = pyPackages.callPackage ./check-mongodb { };
   check-postfix = callPackage ./check-postfix { };
   check-rib-integrity = callPackage ./check-rib-integrity { };
   check-xfs-broken = callPackage ./check-xfs-broken { };

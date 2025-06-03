@@ -1,10 +1,10 @@
-{ pkgs, python3Packages }:
+{ buildPythonApplication, pymongo }:
 
-python3Packages.buildPythonApplication rec {
+buildPythonApplication rec {
   name = "fc-check-mongodb-${version}";
   version = "1.0";
   src = ./.;
   propagatedBuildInputs = [
-    python3Packages.pymongo
+    pymongo
   ];
 }

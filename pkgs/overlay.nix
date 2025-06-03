@@ -128,6 +128,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
     (python-self: python-super: {
       pytest_patterns = python-self.callPackage ./python/pytest-patterns { };
+      pymongo3 = python-super.pymongo.overridePythonAttrs (old: {
+        version = "3.13.0";
+        src = python-self.fetchPypi {
+          inherit (old) pname;
+          version = "3.13.0";
+          hash = "sha256-4i1s9YAs0JtnTDB8yeA4cLjDfFA+vsPSW4byzoxTXcc=";
+        };
+      });
     })
   ];
 
