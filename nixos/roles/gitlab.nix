@@ -116,15 +116,7 @@ in
   config = lib.mkMerge [
 
     (lib.mkIf cfg.enable {
-
-      assertions = [
-        {
-          assertion = config.flyingcircus.roles.redis.enable;
-          message = ''
-            Please enable the 'Redis' role to enable the GitLab role!
-          '';
-        }
-      ];
+      flyingcircus.roles.redis.enable = true;
 
       environment.systemPackages = with pkgs; [
         (writeScriptBin "gitlab-show-config" ''sudo -u gitlab jq '.' /srv/gitlab/state/config/gitlab.yml'')
