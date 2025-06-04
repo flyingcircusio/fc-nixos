@@ -63,7 +63,7 @@ import ./make-test-python.nix (
         ];
 
         flyingcircus.services.ceph.extraSettings = {
-          "mon clock drift allowed" = 1;
+          "mon clock drift allowed" = 10;
           # Since luminous, pool creation fails if it causes the number of PGs to
           # exceed "mon max pg per osd". For the NixOS test that limit needs to be
           # raised, but for dev and prod the default should still be fine.
