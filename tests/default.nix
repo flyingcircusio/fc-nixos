@@ -49,8 +49,7 @@ in
   backyserver_volumes = callTest ./backy_volumes.nix { };
   channel = callTest ./channel.nix { };
   ceph-nautilus = callTest ./ceph-nautilus.nix { };
-  # FIXME: fix and re-enable
-  #coturn = callTest ./coturn.nix { };
+  coturn = callTest ./coturn.nix { };
   docker = callTest ./docker.nix { };
   fcagent = callTest ./fcagent.nix { };
   fde-tooling = callTest ./fde-tooling.nix { };
@@ -91,12 +90,11 @@ in
   mailstub = callTest ./mail/stub.nix { };
   matomo = callTest ./matomo.nix { };
   memcached = callTest ./memcached.nix { };
-  # FIXME: fix and re-enable
-  #mongodb32 = callTest ./mongodb.nix { version = "3.2"; };
-  #mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
-  #mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
-  #mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
-  #mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
+  mongodb32 = callTest ./mongodb.nix { version = "3.2"; };
+  mongodb34 = callTest ./mongodb.nix { version = "3.4"; };
+  mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
+  mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
+  mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
   mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network { };
   nfs = callSubTests ./nfs.nix { };
