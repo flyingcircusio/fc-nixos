@@ -41,25 +41,25 @@ let
 
   bind = bindAddrs: head (lib.splitString " " bindAddrs);
 
-  getRedisPassword =
-    name: fFile:
-    if enabledServers.${name}.requirePass != null then
-      enabledServers.${name}.requirePass
-    else if enabledServers.${name}.requirePassFile != null then
-      fFile enabledServers.${name}.requirePassFile
-    else
-      null;
-
   mkSensuCheck =
     name: connArgs:
     let
-      password = getRedisPassword name (file: ''"$(<${file})"'');
+      # If a Redis server requires password authentication (i.e. requirePass or requirePassFile
+      # is not `null`), then pass the raw password or the contents of requirePassFile
+      # to the `check-redis-ping` invocation.
+      passwordExpr =
+        if enabledServers.${name}.requirePass != null then
+          enabledServers.${name}.requirePass
+        else if enabledServers.${name}.requirePassFile != null then
+          ''"$(<${enabledServers.${name}.requirePassFile})"''
+        else
+          null;
     in
     lib.nameValuePair (redisServiceName name) {
       notification = "Redis" + lib.optionalString (name != "") " (instance ${name})" + " alive";
       command = ''
         ${pkgs.sensu-plugins-redis}/bin/check-redis-ping.rb \
-          ${lib.optionalString (password != null) "-P ${password}"} ${connArgs}
+          ${lib.optionalString (passwordExpr != null) "-P ${passwordExpr}"} ${connArgs}
       '';
     };
 
@@ -88,16 +88,29 @@ let
 
   telegrafInputs =
     let
-      mkPassword = name: getRedisPassword name (lib.const "\${REDIS_PASSWORD_${escape name}}");
+      # If a Redis server requires password authentication (i.e. requirePass or requirePassFile
+      # is not `null`), then the password must be passed to the telegraf config for gathering metrics.
+      # If requirePass is used, we inject the raw password into the Redis URL inside the config.
+      # If requirePassFile is used, we inject the password by substituting an environment
+      # variable, i.e. we write `${REDIS_PASSWORD_name}` into the telegraf config
+      # which gets replaced by the actual password when the service starts.
+      mkPasswordExpr =
+        name:
+        if enabledServers.${name}.requirePass != null then
+          enabledServers.${name}.requirePass
+        else if enabledServers.${name}.requirePassFile != null then
+          "\${REDIS_PASSWORD_${escape name}}"
+        else
+          null;
     in
     map (
       name:
       let
-        password = mkPassword name;
+        passwordExpr = mkPasswordExpr name;
       in
       {
         servers = [
-          "tcp://${lib.optionalString (password != null) ":${password}@"}${
+          "tcp://${lib.optionalString (passwordExpr != null) ":${passwordExpr}@"}${
             bind enabledServers.${name}.bind
           }:${toString enabledServers.${name}.port}"
         ];
@@ -107,7 +120,7 @@ let
     ++ map (
       name:
       let
-        password = mkPassword name;
+        passwordExpr = mkPasswordExpr name;
       in
       {
         servers = [
@@ -115,8 +128,8 @@ let
         ];
         fielddrop = telegrafFielddrop;
       }
-      // lib.optionalAttrs (password != null) {
-        inherit password;
+      // lib.optionalAttrs (passwordExpr != null) {
+        password = passwordExpr;
       }
     ) (serversByConnection.uds or [ ]);
 
