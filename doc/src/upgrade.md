@@ -157,6 +157,12 @@ The default docker version is updated from 24 to 27. Some of the major changes a
 (nixos-upgrade-gitlab)=
 ### Gitlab
 
+The future Gitlab version 18.0 will enable pseudonymised [tracking and reporting of events data](https://about.gitlab.com/blog/2025/03/26/more-granular-product-usage-insights-for-gitlab-self-managed-and-dedicated/). To prevent this, an **opt-out** can already be configured in the current Gitlab version:
+- Visit `<yourgitlabdomain>/admin/application_settings/metrics_and_profiling`
+- uncheck *Event tracking -> Enable event tracking*
+
+TODO runner registration tokens?
+
 ## Other notable changes
 
 TODO
