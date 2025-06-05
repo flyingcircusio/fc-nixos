@@ -62,7 +62,19 @@ let
     else
       f;
 
-  makeTestSkipLint = args: makeTest ({ skipLint = true; } // args);
+  makeTestSkipLint =
+    args:
+    runTest {
+      imports = [ args ];
+      skipLint = true;
+      interactive.sshBackdoor.enable = true;
+      defaults =
+        { lib, ... }:
+        {
+          # for interactive debugging
+          services.openssh.settings.PasswordAuthentication = lib.mkForce true;
+        };
+    };
 
 in
 if test ? testCases then

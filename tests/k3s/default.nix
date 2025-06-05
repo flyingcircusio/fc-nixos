@@ -131,6 +131,7 @@ import ../make-test-python.nix (
                 home_directory = "/home/test";
                 login_shell = "/bin/bash";
                 class = "human";
+                ssh_pubkey = [ ];
               }
             ];
 

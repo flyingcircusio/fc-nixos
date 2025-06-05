@@ -70,6 +70,7 @@ import ../make-test-python.nix (
               home_directory = "/srv/s-test";
               login_shell = "/bin/bash";
               class = "service";
+              ssh_pubkey = [ ];
             }
             {
               id = 1001;
@@ -82,6 +83,7 @@ import ../make-test-python.nix (
               home_directory = "/home/test";
               login_shell = "/bin/bash";
               class = "human";
+              ssh_pubkey = [ ];
             }
           ];
         };
