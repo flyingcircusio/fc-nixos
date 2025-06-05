@@ -17,19 +17,9 @@ let
       // args
     );
 
-  callTest = fn: args: hydraJob (importTest fn args system).test;
+  callTest = fn: args: importTest fn args system;
 
-  callSubTests =
-    fn: args:
-    let
-      discover =
-        attrs:
-        let
-          subTests = filterAttrs (const (hasAttr "test")) attrs;
-        in
-        mapAttrs (const (t: hydraJob t.test)) subTests;
-    in
-    discover (importTest fn args system);
+  callSubTests = callTest;
 
 in
 {
