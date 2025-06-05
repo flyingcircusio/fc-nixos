@@ -1,3 +1,20 @@
+# Release 2025_018
+
+## Impact
+
+- A bullet item for the Impact category.
+
+-
+
+
+## NixOS XX.XX platform
+
+- Invalid NixOS `state_version` files are automatically fixed to fit the expected YY.MM format. (PL-133559)
+
+- Add a new JSON-based log format to Nginx that is being used to ship access logs to a Loki instance automatically if one is present (PL-133702)
+
+
+
 # Release 2025_017
 
 
