@@ -134,7 +134,7 @@ import ./make-test-python.nix (
               "${pkgs.sudo}/bin/sudo -u gitlab -H gitlab-rake gitlab:check 1>&2"
           )
           gitlab.succeed(
-              "echo \"Authorization: Bearer \$(curl -X POST -H 'Content-Type: application/json' -d @${auth} http://gitlab/oauth/token | ${pkgs.jq}/bin/jq -r '.access_token')\" >/tmp/headers"
+              "echo \"Authorization: Bearer $(curl -X POST -H 'Content-Type: application/json' -d @${auth} http://gitlab/oauth/token | ${pkgs.jq}/bin/jq -r '.access_token')\" >/tmp/headers"
           )
           gitlab.succeed(
               "curl -X POST -H 'Content-Type: application/json' -H @/tmp/headers -d @${createProject} http://gitlab/api/v4/projects"
@@ -150,6 +150,9 @@ import ./make-test-python.nix (
           )
           gitlab.succeed("test -s /tmp/archive.tar.gz")
           gitlab.succeed("test -s /tmp/archive.tar.bz2")
+
+        with subtest("Test docker registry http is available"):
+          gitlab.succeed("curl -sSf http://docker.gitlab")
       '';
   }
 )
