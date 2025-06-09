@@ -285,9 +285,9 @@
     "version": "1.24.3"
   },
   "go_1_23": {
-    "name": "go-1.23.9",
+    "name": "go-1.23.10",
     "pname": "go",
-    "version": "1.23.9"
+    "version": "1.23.10"
   },
   "grafana": {
     "name": "grafana-12.0.0+security-01",
@@ -675,9 +675,9 @@
     "version": "8.0.42-33"
   },
   "percona-server": {
-    "name": "percona-server-8.4.4-4",
+    "name": "percona-server-8.4.5-5",
     "pname": "percona-server",
-    "version": "8.4.4-4"
+    "version": "8.4.5-5"
   },
   "percona-server_8_0": {
     "name": "percona-server-8.0.42-33",
