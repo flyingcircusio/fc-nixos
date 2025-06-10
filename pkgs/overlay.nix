@@ -218,6 +218,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   });
 
+  # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
   # Change this alias for trying out other kernel packages on non-production
