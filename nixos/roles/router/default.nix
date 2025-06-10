@@ -213,8 +213,10 @@ in
           ip6tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p icmpv6 -j ACCEPT
           # allow prometheus
           ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -p tcp --dport 9126 -j ACCEPT
-          # allow SSH from the sensu server in order to remotely monitor switches
-          iptables -A fc-router-forward -i ${fclib.network.fe.interface} -o ${fclib.network.mgm.interface} -s ${sensuSourceAddress} -p tcp --dport 22 -j ACCEPT
+          ${lib.optionalString (locationSensuServer != null) ''
+            # allow SSH from the sensu server in order to remotely monitor switches
+            iptables -A fc-router-forward -i ${fclib.network.fe.interface} -o ${fclib.network.mgm.interface} -s ${sensuSourceAddress} -p tcp --dport 22 -j ACCEPT
+          ''}
           ip46tables -A fc-router-forward -o ${fclib.network.mgm.interface} -j REJECT
 
           #############
