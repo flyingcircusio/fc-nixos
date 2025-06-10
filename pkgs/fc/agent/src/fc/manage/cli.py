@@ -121,6 +121,12 @@ def switch_cmd(
         "-c",
         help="Fetch nixpkgs channel before building the system.",
     ),
+    switch_with_reboot: bool = Option(
+        False,
+        "--activate-reboot",
+        "-R",
+        help="Reboot system immediately in order to activate new configuration.",
+    ),
     lazy: bool = Option(
         False,
         help="Skip the system activation script if system is unchanged.",
@@ -140,6 +146,10 @@ def switch_cmd(
     )
 
     if specialisation_name and to_base_configuration:
+        log.error("invalid-args")
+        raise Exit(1)
+
+    if specialisation_name and switch_with_reboot:
         log.error("invalid-args")
         raise Exit(1)
 
@@ -174,6 +184,7 @@ def switch_cmd(
                     lock_dir=context.lock_dir,
                     lazy=lazy,
                     show_trace=context.show_trace or show_trace,
+                    switch_reboot=switch_with_reboot,
                 )
             else:
                 keep_cmd_output |= fc.manage.manage.switch(
@@ -183,6 +194,7 @@ def switch_cmd(
                     lock_dir=context.lock_dir,
                     lazy=lazy,
                     show_trace=context.show_trace or show_trace,
+                    switch_reboot=switch_with_reboot,
                 )
         except nixos.ChannelException:
             raise Exit(2)
@@ -411,6 +423,7 @@ def fc_manage(
                     lock_dir=lock_dir,
                     lazy=False,
                     show_trace=show_trace,
+                    switch_reboot=False,
                 )
             elif switch:
                 keep_cmd_output |= fc.manage.manage.switch(
@@ -420,6 +433,7 @@ def fc_manage(
                     lock_dir=lock_dir,
                     lazy=False,
                     show_trace=show_trace,
+                    switch_reboot=False,
                 )
         except nixos.ChannelException:
             raise Exit(2)

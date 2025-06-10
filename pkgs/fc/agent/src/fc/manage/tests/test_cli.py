@@ -79,6 +79,7 @@ def test_invoke_switch(
         "lock_dir": tmpdir,
         "lazy": False,
         "show_trace": False,
+        "switch_reboot": False,
     }
     assert switch.call_args.kwargs == expected
 
@@ -121,6 +122,7 @@ def test_invoke_switch_with_channel_update(
         "lock_dir": tmpdir,
         "lazy": False,
         "show_trace": False,
+        "switch_reboot": False,
     }
     assert switch_with_update.call_args.kwargs == expected
 
