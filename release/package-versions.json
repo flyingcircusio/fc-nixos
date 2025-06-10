@@ -230,9 +230,9 @@
     "version": "17.11.3"
   },
   "github-runner": {
-    "name": "github-runner-2.323.0",
+    "name": "github-runner-2.324.0",
     "pname": "github-runner",
-    "version": "2.323.0"
+    "version": "2.324.0"
   },
   "gitlab": {
     "name": "gitlab-17.11.3",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.92",
+    "name": "linux-6.6.93",
     "pname": "linux",
-    "version": "6.6.92"
+    "version": "6.6.93"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.31",
+    "name": "linux-6.12.32",
     "pname": "linux",
-    "version": "6.12.31"
+    "version": "6.12.32"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -1030,9 +1030,9 @@
     "version": "1.8.0"
   },
   "roundcube": {
-    "name": "roundcube-1.6.9",
+    "name": "roundcube-1.6.11",
     "pname": "roundcube",
-    "version": "1.6.9"
+    "version": "1.6.11"
   },
   "rsync": {
     "name": "rsync-3.4.1",
