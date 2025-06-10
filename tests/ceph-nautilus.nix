@@ -192,9 +192,20 @@ import ./make-test-python.nix (
           h.start()
 
         def show(host, cmd):
-            result = host.execute(cmd)[1]
-            print(result)
-            return result
+          result = host.execute(cmd)[1]
+          print(result)
+          return result
+
+        def retry_attempts(host, cmd: str, tries: int=3):
+          """sometimes the assert_clean_cluster does not suffice, as the cluster temporarily acts up again.
+          Hacky workaround, the goal is to get rid of this again once re-architecting the test suite.
+          """
+          result = host.execute(cmd)
+          while result[0] and tries > 0:
+            tries -= 1
+            time.sleep(1)
+            result = host.execute(cmd)
+          return result[1]
 
         def assert_clean_cluster(host, mons, osds, mgrs, pgs):
           # `osds` can be either of the form `(num_up_osds, num_in_osds)` or a single
@@ -207,16 +218,16 @@ import ./make-test-python.nix (
             num_in_osds = osds
 
           global time_waiting
-          print(f"Waiting for clean cluster: mons={mons} osds={osds} mgsr={mgrs} pgs={pgs}")
+          print(f"Waiting for clean cluster: mons={mons} osds={osds} mgrs={mgrs} pgs={pgs}")
           start = time.time()
           # Allow HEALTH_WARN as we do not correctly cover clock skew
           # currently
           tries = 1
           while True:
-            status = json.loads(host.execute('ceph -f json-pretty -s')[1])
             # json status is too verbose, but still show the human-readable status
             show(host, 'ceph -s')
             show(host, 'ceph health detail | tail')
+            status = json.loads(host.execute('ceph -f json-pretty -s')[1])
 
             try:
               assert status["health"]["status"] in ['HEALTH_OK', 'HEALTH_WARN']
@@ -443,7 +454,7 @@ import ./make-test-python.nix (
         # from now on always default to allowing some reduced redundancy to save time
 
         with subtest("Rebuild all OSDs on host 2"):
-          host2.succeed('fc-ceph osd rebuild all > /dev/stderr')
+          retry_attempts(host2, 'fc-ceph osd rebuild all > /dev/stderr')
           show(host1, "lsblk")
           show(host1, "vgs")
           assert_clean_cluster(host3, 3, 3, 3, 320)
@@ -470,9 +481,6 @@ import ./make-test-python.nix (
 
         # Maintenance integration
         with subtest("Check maintenance integration"):
-          # TODO: This is a workaround for PL-133673, fc-agent interactive logs shall **not** go to the
-          # journal of `backdoor.service` only.
-          h.execute("unset JOURNAL_STREAM")
 
           host1.execute("rm /var/log/fc-agent.log")
           host1.execute('fc-maintenance -v request script "test" "ceph -s"')
