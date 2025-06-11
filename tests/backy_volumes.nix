@@ -74,9 +74,9 @@ import ./make-test-python.nix (
 
         def setupKeystore(machine):
             with subtest("Initialise keystore"):
-              machine.succeed("fc-luks keystore create /dev/vdg > /dev/kmsg 2>&1")
+              machine.succeed("fc-luks keystore create /dev/vdg > /dev/stderr")
               print(machine.succeed("lsblk"))
-              machine.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/kmsg 2>&1")
+              machine.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/stderr")
 
         def test_reboot_automount(machine):
           with subtest("automount of volume works at boot"):
@@ -87,7 +87,7 @@ import ./make-test-python.nix (
 
             # The target only pulls the mount unit in for activation, but does not imply a chronological ordering.
             # We still need to wait for the mount to happen.
-            machine.wait_until_succeeds("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/kmsg 2>&1")
+            machine.wait_until_succeeds("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/stderr")
             print(machine.succeed("lsblk"))
             print(machine.succeed('cat /etc/crypttab'))
             print(machine.succeed('cat /etc/fstab'))
@@ -98,26 +98,26 @@ import ./make-test-python.nix (
 
         print(legacyBacky.succeed("lsblk"))
         # preparing an unencrypted legacy RAID setup
-        legacyBacky.succeed(f"mdadm --create /dev/md/md0 --level=6 --raid-devices=4 /dev/vdb /dev/vdc /dev/vdd /dev/vde > /dev/kmsg 2>&1")
-        legacyBacky.succeed(f"mdadm --add /dev/md/md0 /dev/vdf > /dev/kmsg 2>&1")
+        legacyBacky.succeed(f"mdadm --create /dev/md/md0 --level=6 --raid-devices=4 /dev/vdb /dev/vdc /dev/vdd /dev/vde > /dev/stderr")
+        legacyBacky.succeed(f"mdadm --add /dev/md/md0 /dev/vdf > /dev/stderr")
 
         print(legacyBacky.succeed("ls -l /dev/disk/by-id/"))
 
-        legacyBacky.succeed(f"mkfs.xfs -L backy /dev/md/md0 > /dev/kmsg 2>&1")
+        legacyBacky.succeed(f"mkfs.xfs -L backy /dev/md/md0 > /dev/stderr")
         legacyBacky.execute("systemctl daemon-reload")
-        legacyBacky.succeed("systemctl start srv-backy.mount > /dev/kmsg 2>&1")
+        legacyBacky.succeed("systemctl start srv-backy.mount > /dev/stderr")
         print(legacyBacky.succeed("lsblk"))
 
         setupKeystore(legacyBacky)
 
         with subtest("manual reencryptioon of a legacy device:"):
-          legacyBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/kmsg 2>&1")
+          legacyBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/stderr")
           legacyBacky.execute("echo FOOTEST > /srv/backy/testfile")
           legacyBacky.succeed("${migrationScript}")
           legacyBacky.wait_for_unit("backy-reencrypt.service")
           print(legacyBacky.execute('systemctl status backy-reencrypt.service')[1])
-          legacyBacky.succeed('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore rekey --slot=admin backy > /dev/kmsg 2>&1')
-          legacyBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/kmsg 2>&1")
+          legacyBacky.succeed('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore rekey --slot=admin backy > /dev/stderr')
+          legacyBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/stderr")
           legacyBacky.succeed("grep FOOTEST /srv/backy/testfile")
 
         test_reboot_automount(legacyBacky)
@@ -129,13 +129,13 @@ import ./make-test-python.nix (
         setupKeystore(newBacky)
 
         with subtest("Creating new backy volume from scratch"):
-          newBacky.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-luks backup create /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf > /dev/kmsg 2>&1')
-          newBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/kmsg 2>&1")
+          newBacky.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-luks backup create /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf > /dev/stderr')
+          newBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/stderr")
 
         test_reboot_automount(newBacky)
 
         with subtest("Smoke test for LUKS metadata check"):
-          newBacky.succeed("(export PATH='${pkgs.sudo}/bin/'; ${check_luksParams} > /dev/kmsg 2>&1 )")
+          newBacky.succeed("(export PATH='${pkgs.sudo}/bin/'; ${check_luksParams} > /dev/stderr )")
       '';
   }
 )
