@@ -580,8 +580,7 @@ class GenericCephVolume:
 
 
 class XFSVolume(AutomountActivationMixin, GenericCephVolume):
-    # nrext64 is default but requires kernel 6.6+
-    MKFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048,nrext64=0", "-K"]
+    MKFS_OPTS = ["-m", "crc=1,finobt=1", "-i", "size=2048,nrext64=1", "-K"]
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
     FSTYPE = "xfs"
 
