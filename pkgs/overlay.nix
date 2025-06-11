@@ -206,18 +206,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     }
   );
 
-  keepalived = super.keepalived.overrideAttrs (_: {
-    version = "2.2.8-g9d4579";
-
-    src = super.fetchFromGitHub {
-      rev = "9d4579b706048d55da664cf0e09b8dfd409c0266";
-      owner = "acassen";
-      repo = "keepalived";
-      sha256 = "gUW8PQoqQJipShxu3l8hSgLVNGS/KCS7SpATNHWh7nI=";
-    };
-
-  });
-
   # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
