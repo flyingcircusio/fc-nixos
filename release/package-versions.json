@@ -680,9 +680,9 @@
     "version": "8.0.42-33"
   },
   "percona-server": {
-    "name": "percona-server-8.4.4-4",
+    "name": "percona-server-8.4.5-5",
     "pname": "percona-server",
-    "version": "8.4.4-4"
+    "version": "8.4.5-5"
   },
   "percona-server_8_0": {
     "name": "percona-server-8.0.42-33",
@@ -745,14 +745,14 @@
     "version": "8.2.28"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.21",
+    "name": "php-with-extensions-8.3.22",
     "pname": "php-with-extensions",
-    "version": "8.3.21"
+    "version": "8.3.22"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.7",
+    "name": "php-with-extensions-8.4.8",
     "pname": "php-with-extensions",
-    "version": "8.4.7"
+    "version": "8.4.8"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.5",
@@ -1165,9 +1165,9 @@
     "version": "9.1.1122"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.48.2+abi=4.0",
+    "name": "webkitgtk-2.48.3+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.48.2"
+    "version": "2.48.3"
   },
   "wget": {
     "name": "wget-1.25.0",
