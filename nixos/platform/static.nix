@@ -34,6 +34,10 @@ with lib;
           id = 4;
           site = "SaltLabs / ISP";
         };
+        "dev2" = {
+          id = 5;
+          site = "Halle";
+        };
       };
 
       ceph = {
@@ -121,6 +125,7 @@ with lib;
           "9.9.9.9"
           "8.8.8.8"
         ];
+        dev2 = [ "172.21.83.1" ];
       };
 
       nameservers6 = {
@@ -139,6 +144,7 @@ with lib;
           "2620:fe::fe"
           "2001:4860:4860::8888"
         ];
+        dev2 = [ "2a06:3a80:300:103::2" ];
       };
 
       directory = {
@@ -179,6 +185,7 @@ with lib;
         dev = [ "dev-router" ];
         whq = [ "whq-router" ];
         rzob = [ "rzob-router" ];
+        dev2 = [ "dev2-router" ];
       };
 
       minimumPortSpeeds = {
@@ -196,11 +203,13 @@ with lib;
           "tr-kamp-b"
         ];
         test = [ "tr" ];
+        dev2 = [ "tr2" ];
       };
 
       # VLANs on which we provide connectivity to the outside world to others
       routerDownlinkNetworks = {
         whq = [ "tr" ];
+        dev = [ "tr2" ];
       };
 
       # Derivation of router IDs for BGP.
@@ -211,6 +220,7 @@ with lib;
           dev = "tr";
           whq = "tr";
           test = "tr";
+          dev2 = "tr2";
         };
         # Or a per-host override
         host = {
@@ -244,6 +254,11 @@ with lib;
           "srv"
           "fe"
           "tr-kamp-dhp"
+        ];
+        dev2 = [
+          "mgm"
+          "srv"
+          "fe"
         ];
       };
 
