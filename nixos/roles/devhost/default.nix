@@ -20,15 +20,6 @@ in
 
       enable = lib.mkEnableOption "Enable our development host for slim virtual machines";
 
-      virtualisationType = lib.mkOption {
-        type = lib.types.enum [
-          "vm"
-          "container"
-        ];
-        # FIXME: Why is this still the default?
-        default = "container";
-      };
-
       publicAddress = lib.mkOption {
         description = "Name of the public address of this development server.";
         type = lib.types.str;
@@ -39,13 +30,6 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf cfg.enable {
-      assertions = [
-        {
-          assertion = cfg.virtualisationType != "container";
-          message = "Container-type virtualisation is deprecated. Only VM is supported now.";
-        }
-      ];
-
       flyingcircus.roles.webgateway.enable = true;
 
       boot.kernel.sysctl = {
