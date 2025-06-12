@@ -17,9 +17,6 @@ buildGoModule rec {
   };
   vendorHash = "sha256-NAaVz5AqhfaEiWqBAeQZVWwjMIwX9jEw0oycXq7uLNw=";
 
-  # # FIXME: megacli test fails
-  # doCheck = false;
-
   meta = with lib; {
     description = "Prometheus exporter for elasticsearch";
     homepage = "https://github.com/prometheus-community/elasticsearch_exporter";

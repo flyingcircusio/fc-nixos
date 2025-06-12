@@ -304,9 +304,6 @@ import ../make-test-python.nix (
         # the profile symlink for later access. In tests, the agent is not properly
         # run though. so let's simulate this.
 
-        # FIXME: the activation script in 24.11 has changed to not create /nix/var/nix/profiles anymore
-        # we're including the snippet removed in f0154409a199152522818e70f23a75b49fcdff5d
-        # here again. Let's see whether this breaks in non-test environments then.
         system.activationScripts.setupSystemProfile = ''
           install -m 0755 -d /nix/var/nix/{gcroots,profiles}/per-user
 
