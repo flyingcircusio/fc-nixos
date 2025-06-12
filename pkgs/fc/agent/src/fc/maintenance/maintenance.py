@@ -26,7 +26,6 @@ from fc.maintenance.state import State
 from fc.util import nixos
 
 QEMU_STATE_DIR = "/var/lib/qemu"
-KVM_SEED_DIR = "/tmp/fc-data"
 RUNTIME_DIR = "/run"
 
 
@@ -74,9 +73,6 @@ def request_reboot_for_kvm_environment(log) -> Optional[Request]:
 
     qemu_state_dir = Path(QEMU_STATE_DIR)
 
-    def cold_state_file(stem):
-        return Path(KVM_SEED_DIR) / f"qemu-{stem}-booted"
-
     def warm_state_file(stem):
         return qemu_state_dir / f"qemu-{stem}-booted"
 
@@ -85,21 +81,6 @@ def request_reboot_for_kvm_environment(log) -> Optional[Request]:
 
     if not qemu_state_dir.is_dir():
         qemu_state_dir.mkdir(parents=True)
-
-    # Newer versions of fc.qemu can signal multiple relevant guest
-    # properties in a single file. Older versions will only signal the
-    # boot-time qemu binary generation.
-    if cold_state_file("guest-properties").exists():
-        shutil.move(
-            cold_state_file("guest-properties"),
-            warm_state_file("guest-properties"),
-        )
-        cold_state_file("binary-generation").unlink(missing_ok=True)
-    elif cold_state_file("binary-generation").exists():
-        shutil.move(
-            cold_state_file("binary-generation"),
-            warm_state_file("binary-generation"),
-        )
 
     # Optimistically load combined guest properties files
     try:

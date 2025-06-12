@@ -41,8 +41,11 @@ in
       supportsContainers = fclib.mkDisableDevhostSupport;
       mkfsXfsFlags = lib.mkOption {
         type = with lib.types; nullOr str;
-        # XXX: set bigtime=1 once 15.09 and 20.09 are gone. See PL-130365.
-        # XXX: remove nrext=0 once all VMs are on kernel 6.6+
+        description = ''
+          Note that this should only enable a minimal set of features and that
+          each VM later enables the features it supports at boot time.
+          (See flyingcircus.initrd.formatXFS/upgradeXFS for more info.)
+        '';
         default = "-q -f -K -m crc=1,finobt=1 -i nrext64=0 -d su=4m,sw=1";
       };
       migrationBandwidth = lib.mkOption {

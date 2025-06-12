@@ -102,6 +102,16 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
         };
       };
 
+      # Not formatting tmp for now because I dont want to refer to it by
+      # the filesystem label and some machines use lvm and others dont.
+      flyingcircus.initrd.upgradeXFS = {
+        "/dev/disk/by-label/root" = [
+          "bigtime=1"
+          "inobtcount=1"
+          "nrext64=1"
+        ];
+      };
+
       networking = {
         domain = "fcio.net";
         hostName = fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
