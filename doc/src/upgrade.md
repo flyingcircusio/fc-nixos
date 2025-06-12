@@ -15,8 +15,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 
 ## Overview
 
-- New roles: {ref}`percona84 <nixos-upgrade-percona>`
-- Removed roles: {ref}`percona81 percona82 percona83 <nixos-upgrade-percona>`
+- Removed roles: {ref}`percona81 percona82 <nixos-upgrade-percona>`
 - Removed significant packages: `go_1_21`, `k3s_1_27`, `k3s_1_28`, `postgresql12`, `rabbitmq-server_3_8`
 - Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`docker <nixos-upgrade-docker>`, {ref}`webgateway <nixos-upgrade-webgateway>`, {ref}`postgresql12 <nixos-upgrade-postgresql>`
 
@@ -138,9 +137,9 @@ Consequentially, prefer using `services.nginx` options when migrating the JSON c
 ### Percona/ MySQL
 
 The release schema of Percona versions changed yet again. Percona will only create releases based on Oracle MySQL LTS releases anymore.
-Percona version 8.0 is still a supported LTS release and the one we recommend right now. The most current LTS release 8.4 is not supported from the start of the NixOS 24.11 release cycle, but will be introduced very soon in one of the regular releases.
+Percona version 8.0 is still a supported LTS release and the one we recommend right now.
 
-The versions *8.1*, *8.2*, and *8.3* have been removed in this platform release. Users relying on these versions must not downgrade to Percona 8.0, but can upgrade to Üercona 8.4 once that is available in our platform.
+The versions *8.1* and *8.2* have been removed in this platform release. Users relying on these versions must not downgrade to Percona 8.0, but can upgrade to *8.3*.
 
 (nixos-upgrade-postgresql)=
 ### Postgresql
