@@ -34,24 +34,34 @@ in
         "net.ipv4.conf.default.forwarding" = lib.mkOverride 71 true;
       };
 
-      networking.firewall.extraCommands = lib.mkOrder 1200 ''
-        # FC docker rules (1200)
-        # allow access to host from docker networks, we consider this identical
-        # to access from locally running processes.
-        # We grant the full RFC1918 172.16.0.0/12 range.
-        iptables -w -A nixos-fw -i br-+ -s 172.16.0.0/12 -j nixos-fw-accept
-        iptables -w -A nixos-fw -i docker+ -s 172.16.0.0/12 -j nixos-fw-accept
+      networking.firewall.extraCommands = lib.mkOrder 1200 (
+        ''
+          # FC docker rules (1200)
+          # allow access to host from docker networks, we consider this identical
+          # to access from locally running processes.
+          # We grant the full RFC1918 172.16.0.0/12 range.
+          iptables -w -A nixos-fw -i br-+ -s 172.16.0.0/12 -j nixos-fw-accept
+          iptables -w -A nixos-fw -i docker+ -s 172.16.0.0/12 -j nixos-fw-accept
 
-        ip46tables -N fc-docker 2>/dev/null || true
-        ip46tables -A fc-docker -m conntrack --ctstate RELATED,ESTABLISHED -j nixos-fw-accept
-        ip46tables -A fc-docker -i ${fclib.network.srv.interface} -j fc-resource-group
-        ip46tables -A fc-docker -i ${fclib.network.srv.interface} -j nixos-fw-refuse
-        ip46tables -A fc-docker -i ${fclib.network.fe.interface} -j nixos-fw-refuse
-
-        ip46tables -N DOCKER-USER 2>/dev/null || true
-        ip46tables -I DOCKER-USER 1 ! -i docker+ -o docker+ -j fc-docker
-        # End FC docker rules (1200)
-      '';
+          ip46tables -N fc-docker 2>/dev/null || true
+          ip46tables -A fc-docker -m conntrack --ctstate RELATED,ESTABLISHED -j nixos-fw-accept
+        ''
+        + (lib.optionalString (fclib.network ? srv)) ''
+          ip46tables -A fc-docker -i ${fclib.network.srv.interface} -j fc-resource-group
+          ip46tables -A fc-docker -i ${fclib.network.srv.interface} -j nixos-fw-refuse
+        ''
+        + (lib.optionalString (fclib.network ? fe)) ''
+          ip46tables -A fc-docker -i ${fclib.network.fe.interface} -j nixos-fw-refuse
+        ''
+        + (lib.optionalString (fclib.network ? pub)) ''
+          ip46tables -A fc-docker -i ${fclib.network.pub.interface} -j nixos-fw-refuse
+        ''
+        + ''
+          ip46tables -N DOCKER-USER 2>/dev/null || true
+          ip46tables -I DOCKER-USER 1 ! -i docker+ -o docker+ -j fc-docker
+          # End FC docker rules (1200)
+        ''
+      );
 
       networking.firewall.extraStopCommands = lib.mkOrder 1100 ''
         # FC docker rules (1100)
