@@ -455,7 +455,7 @@ def luks(args=sys.argv[1:]):
     parser_destroy.add_argument(
         "--overwrite",
         action=argparse.BooleanOptionalAction,
-        default=True,  # FIXME: at some point, decide to switch defaults
+        default=True,
         help="Fully overwrite the underlying physical disk with random data.",
     )
     parser_destroy.set_defaults(action="destroy")

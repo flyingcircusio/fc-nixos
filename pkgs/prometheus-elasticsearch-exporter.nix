@@ -6,19 +6,16 @@
 
 buildGoModule rec {
   name = "elasticsearch_exporter-${version}";
-  version = "1.8.0";
+  version = "1.9.0";
   rev = "v${version}";
 
   src = fetchFromGitHub {
     inherit rev;
     owner = "prometheus-community";
     repo = "elasticsearch_exporter";
-    sha256 = "sha256-8WPDBlp6ftBmY/lu0wuuvs3A9KAzEM/A6RqSvYYLm7w=";
+    sha256 = "sha256-v6Fi5O/87jhFI1h6qWyWb61X+dTjcqS3Fi9/MPQSr8Y=";
   };
-  vendorHash = "sha256-jbPFxwrXWwxPamMnbBxFvGBrt38YG7N5fTweAYULEYQ=";
-
-  # # FIXME: megacli test fails
-  # doCheck = false;
+  vendorHash = "sha256-NAaVz5AqhfaEiWqBAeQZVWwjMIwX9jEw0oycXq7uLNw=";
 
   meta = with lib; {
     description = "Prometheus exporter for elasticsearch";

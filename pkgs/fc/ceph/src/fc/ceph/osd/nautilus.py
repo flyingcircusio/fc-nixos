@@ -89,7 +89,6 @@ class OSDManager(object):
         print(f"OSDID={id_}")
 
         osd = BlueStoreOSD(id_)
-        # FIXME: for now just assume the presence of key files at default location
         osd.create(
             disk=device,
             encrypt=encrypt,
@@ -350,7 +349,7 @@ class WALVolume:
         self.name = f"ceph-osd-{self.osd_id}-wal"
         self.internal_vg = f"vgosd-{self.osd_id}"
         self.lv = GenericLogicalVolume(self.name)
-        # FIXME: the backup LV is conditional, do we really always want to create the object here?
+        # XXX: the backup LV is conditional, do we really always want to create the object here?
         self.backup_lv = GenericLogicalVolume(
             f"ceph-osd-{self.osd_id}-wal-backup"
         )

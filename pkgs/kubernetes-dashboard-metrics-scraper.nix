@@ -1,7 +1,6 @@
 {
   stdenv,
   fetchurl,
-  tree,
 }:
 
 stdenv.mkDerivation rec {

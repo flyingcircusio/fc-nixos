@@ -73,7 +73,7 @@ in
       cryptsetup
     ];
 
-    # FIXME: isolate fc-luks tooling into separate package
+    # TODO: isolate fc-luks tooling into separate package
     flyingcircus.services.ceph.fc-ceph.enable = true;
 
     flyingcircus.services.sensu-client.checks = {

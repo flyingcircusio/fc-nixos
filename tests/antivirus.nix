@@ -50,9 +50,9 @@ import ./make-test-python.nix (
       in
       ''
         with subtest("systemd services should be present"):
-          machine.succeed('systemctl cat clamav-daemon.service >/dev/kmsg 2>&1')
-          machine.succeed('systemctl cat clamav-freshclam.service >/dev/kmsg 2>&1')
-          machine.succeed('systemctl cat clamav-init-database.service >/dev/kmsg 2>&1')
+          machine.succeed('systemctl cat clamav-daemon.service >/dev/stderr')
+          machine.succeed('systemctl cat clamav-freshclam.service >/dev/stderr')
+          machine.succeed('systemctl cat clamav-init-database.service >/dev/stderr')
 
         with subtest("freshclam timer should be active"):
           machine.wait_for_unit('clamav-freshclam.timer')

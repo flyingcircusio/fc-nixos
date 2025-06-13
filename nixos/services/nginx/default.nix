@@ -310,7 +310,7 @@ in
       '';
     };
 
-    # FIXME: use upstream
+    # TODO: use upstream (PL-131381)
     virtualHosts = mkOption {
       type =
         let

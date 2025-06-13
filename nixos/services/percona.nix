@@ -90,7 +90,7 @@ in
         description = "Port of MySQL";
       };
 
-      # FIXME: this cannot be configurable for us, we hard-code the `mysql`
+      # XXX: this cannot be configurable for us, we hard-code the `mysql`
       # user home dir and its permissions later in the mysqlPreStart file
       user = mkOption {
         default = "mysql";

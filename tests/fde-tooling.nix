@@ -52,25 +52,25 @@ import ./make-test-python.nix (
 
         with subtest("Initialize keystore"):
           # check succeeds as "not needed" as long as /mnt/keys does not exist
-          host1.succeed("${check_key_file_cmd} > /dev/kmsg 2>&1")
-          host1.succeed("fc-luks keystore create /dev/vdb > /dev/kmsg 2>&1")
-          host1.succeed("${check_key_file_cmd} > /dev/kmsg 2>&1")
+          host1.succeed("${check_key_file_cmd} > /dev/stderr")
+          host1.succeed("fc-luks keystore create /dev/vdb > /dev/stderr")
+          host1.succeed("${check_key_file_cmd} > /dev/stderr")
 
         with subtest("Initialize backy volume"):
-          host1.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-luks backup create /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg > /dev/kmsg 2>&1')
+          host1.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-luks backup create /dev/vdc /dev/vdd /dev/vde /dev/vdf /dev/vdg > /dev/stderr')
           show(host1, "df -h")
           show(host1, "lsblk")
           show(host1, "mount")
           host1.succeed("mount /srv/backy")
 
         with subtest("Destroy and re-create the keystore, rekey all volumes"):
-          host1.succeed("${pkgs.lsof}/bin/lsof | grep keys >/dev/kmsg 2>&1 || true")
-          host1.succeed("fc-luks keystore destroy --no-overwrite > /dev/kmsg 2>&1")
+          host1.succeed("${pkgs.lsof}/bin/lsof | grep keys >/dev/stderr || true")
+          host1.succeed("fc-luks keystore destroy --no-overwrite > /dev/stderr")
           #breakpoint()
-          host1.succeed("fc-luks keystore create /dev/vdb > /dev/kmsg 2>&1")
-          host1.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-luks keystore rekey "*" > /dev/kmsg 2>&1')
-          host1.succeed('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore rekey --slot=admin "*" > /dev/kmsg 2>&1')
-          host1.succeed('echo -e "newphrase\n" | setsid -w fc-luks keystore rekey "*" > /dev/kmsg 2>&1')
+          host1.succeed("fc-luks keystore create /dev/vdb > /dev/stderr")
+          host1.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-luks keystore rekey "*" > /dev/stderr')
+          host1.succeed('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore rekey --slot=admin "*" > /dev/stderr')
+          host1.succeed('echo -e "newphrase\n" | setsid -w fc-luks keystore rekey "*" > /dev/stderr')
 
         with subtest("Verify keystore automount on boot"):
           host1.execute("systemctl poweroff --force")
@@ -83,28 +83,28 @@ import ./make-test-python.nix (
           show(host1, "systemctl status multi-user.target")
           show(host1, "lsblk")
           show(host1, "cat /etc/fstab")
-          host1.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/kmsg 2>&1")
+          host1.succeed("${pkgs.util-linux}/bin/findmnt /mnt/keys > /dev/stderr")
 
         with subtest("Verify all services are up after a reboot"):
           show(host1, "systemctl status -l backy.service")
           host1.wait_for_unit("backy.service")
 
         with subtest("`fc-luks keystore test-open` verifies that volumes can be unlocked"):
-          host1.succeed('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "*" > /dev/kmsg 2>&1')
+          host1.succeed('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "*" > /dev/stderr')
           # no volume matched
-          host1.fail('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "asdfhjkl" > /dev/kmsg 2>&1')
+          host1.fail('echo -e "newphrase\n" | setsid -w fc-luks keystore test-open "asdfhjkl" > /dev/stderr')
           # wrong admin passphrase (will also modify the fingerprint)
-          host1.fail('echo -e "wrongphrase\ny\n" | setsid -w fc-luks keystore test-open "*" > /dev/kmsg 2>&1')
+          host1.fail('echo -e "wrongphrase\ny\n" | setsid -w fc-luks keystore test-open "*" > /dev/stderr')
           # wrong local keyfile (will correct admin keyphrase fingerprint again)
           host1.execute("mv /mnt/keys/host1.key{,.bak}; echo garbage > /mnt/keys/host1.key")
-          host1.fail('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore test-open "*" > /dev/kmsg 2>&1')
+          host1.fail('echo -e "newphrase\ny\n" | setsid -w fc-luks keystore test-open "*" > /dev/stderr')
           host1.execute("mv /mnt/keys/host1.key{.bak,}")
 
         with subtest("The check discovers non-conforming host key conditions"):
           host1.execute('chmod o+rw /mnt/keys/*')
-          host1.fail("${check_key_file_cmd} > /dev/kmsg 2>&1")
+          host1.fail("${check_key_file_cmd} > /dev/stderr")
           host1.execute('rm /mnt/keys/*')
-          host1.fail("${check_key_file_cmd} > /dev/kmsg 2>&1")
+          host1.fail("${check_key_file_cmd} > /dev/stderr")
       '';
   }
 )

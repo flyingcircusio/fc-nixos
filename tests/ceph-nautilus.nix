@@ -272,7 +272,7 @@ import ./make-test-python.nix (
           # we cannot just wait for multi-user target, as it depends on the failing services
           print(f"Waiting for {serv}…")
           h.wait_until_succeeds(
-            f'systemctl show --property=ActiveState {serv}.service | tee /dev/kmsg | egrep "(ActiveState=active|ActiveState=activating|ActiveState=failed)"'
+            f'systemctl show --property=ActiveState {serv}.service | tee /dev/stderr | egrep "(ActiveState=active|ActiveState=activating|ActiveState=failed)"'
           )
           h.succeed(f"systemctl stop {serv}.service")
 

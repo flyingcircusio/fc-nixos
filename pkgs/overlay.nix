@@ -9,7 +9,7 @@ let
 
   nixpkgs-21_05-src = (import ../versions.nix { pkgs = super; }).nixpkgs-21_05;
   fc-nixos-21_05-src = (import ../versions.nix { pkgs = super; }).fc-nixos-21_05;
-  fc-nixos-21_05 = builtins.trace "using fc-nixos-21:05" (
+  fc-nixos-21_05 = builtins.trace "using fc-nixos-21.05" (
     import fc-nixos-21_05-src {
       inherit (self) config;
       nixpkgs = nixpkgs-21_05-src;
@@ -80,50 +80,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     {
       inherit (super) php83 php84;
     }
-# temporarily added to overlay to ensure it is built by hydra.
-# TODO: drop in 25.05
-# Use curl 8.4.0 for PHP
-# FC-40106, FC-40100
-// lib.listToAttrs (
-  map
-    (
-      v:
-      lib.nameValuePair "php${v}-FC-40106" (
-        super."php${v}".override {
-          packageOverrides = final: prev: {
-            extensions = prev.extensions // {
-              curl = prev.extensions.curl.overrideAttrs (
-                _:
-                let
-                  curl_8_4 = self.curl.overrideAttrs (_: {
-                    version = "8.4.0";
-                    patches = [ ];
-                    src = self.fetchurl {
-                      urls = [
-                        "https://curl.haxx.se/download/curl-8.4.0.tar.xz"
-                        "https://github.com/curl/curl/releases/download/curl-${
-                          builtins.replaceStrings [ "." ] [ "_" ] "8.4.0"
-                        }/curl-8.4.0.tar.xz"
-                      ];
-                      hash = "sha256-FsYqnErw9wPSi9pte783ukcFWtNBTXDexj4uYzbyqC0=";
-                    };
-                  });
-                in
-                {
-                  buildInputs = [ curl_8_4 ];
-                  configureFlags = [ "--with-curl=${curl_8_4.dev}" ];
-                }
-              );
-            };
-          };
-        }
-      )
-    )
-    [
-      "82"
-      "83"
-    ]
-)
 // {
   pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
     (python-self: python-super: {
@@ -199,7 +155,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
 
-  consul = builtins.trace "using 21_05 consul" (
+  consul = builtins.trace "using 21.05 consul" (
     fc-nixos-21_05.consul.overrideAttrs (old: {
       meta.mainProgram = "consul";
     })
@@ -250,18 +206,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     }
   );
 
-  keepalived = super.keepalived.overrideAttrs (_: {
-    version = "2.2.8-g9d4579";
-
-    src = super.fetchFromGitHub {
-      rev = "9d4579b706048d55da664cf0e09b8dfd409c0266";
-      owner = "acassen";
-      repo = "keepalived";
-      sha256 = "gUW8PQoqQJipShxu3l8hSgLVNGS/KCS7SpATNHWh7nI=";
-    };
-
-  });
-
+  # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
   # Change this alias for trying out other kernel packages on non-production
@@ -327,16 +272,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       ];
     }
   );
-
-  imagemagick7 =
-    assert lib.versions.major super.imagemagick.version == "7";
-    lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick;
-  imagemagick7Big =
-    assert lib.versions.major super.imagemagickBig.version == "7";
-    lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagickBig;
-  imagemagick7_light =
-    assert lib.versions.major super.imagemagick_light.version == "7";
-    lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick_light;
 
   graylogFrozen = (
     lib.toDerivation (getClosureFromStore /nix/store/yj365yr01p6yp2axj943b4l8ngzzxvkw-graylog-3.3.16)
@@ -469,7 +404,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     enableFB = false;
   };
 
-  lkl = super.lkl.overrideAttrs (_: rec {
+  lkl = super.lkl.overrideAttrs (_: {
     version = "2023-11-07";
     src = fetchFromGitHub {
       rev = "970883c348b61954a11c8c1ab9a2ab3ff0d89f08";
@@ -506,7 +441,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       );
       ping = "${self.unixtools.ping}/bin/ping";
     in
-    super.monitoring-plugins.overrideAttrs (_: rec {
+    super.monitoring-plugins.overrideAttrs (_: {
       # Taken from upstream postPatch, but with an absolute path for ping instead
       # of relying on PATH. Looks like PATH doesn't apply to check_ping (it's a C
       # program and not a script like other checks), so check_ping needs to
@@ -590,7 +525,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   };
 
   percona80 = self.percona-server_8_0;
-  # EOL, but we vendor it throughout the 24.11 release cycle
+  # EOL, but we vendor it until the 25.11 release to allow upgrades
   percona83 = self.callPackage ./percona/8.3.nix {
     inherit (self.darwin) cctools developer_cmds DarwinTools;
     inherit (self.darwin.apple_sdk.frameworks) CoreServices;
@@ -603,7 +538,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     boost = self.boost159;
     openssl = self.openssl_1_1;
   };
-  # EOL, but we vendor it throughout the 24.11 release cycle
+  # EOL, but we vendor it until the 25.11 release to allow upgrades
   percona-xtrabackup_8_3 = self.callPackage ./percona-xtrabackup/8_3/innovation.nix { };
 
   # Has been renamed upstream, backy-extract still wants to use it.
@@ -627,8 +562,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     ];
   });
 
-  python38 = builtins.trace "using 21_05 python38" (lib.dontRecurseIntoAttrs fc-nixos-21_05.python38);
-  python38Packages = builtins.trace "using 21_05 python38Packages" (
+  python38 = builtins.trace "using 21.05 python38" (lib.dontRecurseIntoAttrs fc-nixos-21_05.python38);
+  python38Packages = builtins.trace "using 21.05 python38Packages" (
     lib.dontRecurseIntoAttrs fc-nixos-21_05.python38Packages
   );
   py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
