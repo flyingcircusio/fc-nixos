@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-139.0.1",
+    "name": "firefox-139.0.4",
     "pname": "firefox",
-    "version": "139.0.1"
+    "version": "139.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -230,9 +230,9 @@
     "version": "17.11.3"
   },
   "github-runner": {
-    "name": "github-runner-2.324.0",
+    "name": "github-runner-2.325.0",
     "pname": "github-runner",
-    "version": "2.324.0"
+    "version": "2.325.0"
   },
   "gitlab": {
     "name": "gitlab-17.11.3",
@@ -465,9 +465,9 @@
     "version": "6.6.93"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.32",
+    "name": "linux-6.12.33",
     "pname": "linux",
-    "version": "6.12.32"
+    "version": "6.12.33"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
