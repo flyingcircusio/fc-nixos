@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-137.0.7151.68",
+    "name": "chromedriver-unwrapped-137.0.7151.103",
     "pname": "chromedriver-unwrapped",
-    "version": "137.0.7151.68"
+    "version": "137.0.7151.103"
   },
   "chromium": {
-    "name": "chromium-137.0.7151.68",
+    "name": "chromium-137.0.7151.103",
     "pname": "chromium",
-    "version": "137.0.7151.68"
+    "version": "137.0.7151.103"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-139.0.1",
+    "name": "firefox-139.0.4",
     "pname": "firefox",
-    "version": "139.0.1"
+    "version": "139.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-14.2.1.20250322",
@@ -230,9 +230,9 @@
     "version": "18.0.1"
   },
   "github-runner": {
-    "name": "github-runner-2.324.0",
+    "name": "github-runner-2.325.0",
     "pname": "github-runner",
-    "version": "2.324.0"
+    "version": "2.325.0"
   },
   "gitlab": {
     "name": "gitlab-18.0.1",
@@ -420,9 +420,9 @@
     "version": "3.0.4"
   },
   "libmodsecurity": {
-    "name": "libmodsecurity-3.0.13",
+    "name": "libmodsecurity-3.0.14",
     "pname": "libmodsecurity",
-    "version": "3.0.13"
+    "version": "3.0.14"
   },
   "libmysqlclient": {
     "name": "mariadb-connector-c-3.3.5",
@@ -465,9 +465,9 @@
     "version": "6.6.93"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.32",
+    "name": "linux-6.12.33",
     "pname": "linux",
-    "version": "6.12.32"
+    "version": "6.12.33"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -625,9 +625,9 @@
     "version": "2.19.2"
   },
   "opensearch-dashboards": {
-    "name": "opensearch-dashboards-2.17.1",
+    "name": "opensearch-dashboards-2.19.2",
     "pname": "opensearch-dashboards",
-    "version": "2.17.1"
+    "version": "2.19.2"
   },
   "openssh": {
     "name": "openssh-10.0p2",
@@ -880,9 +880,9 @@
     "version": "3.1.0"
   },
   "promtail": {
-    "name": "promtail-3.4.3",
+    "name": "promtail-3.4.4",
     "pname": "promtail",
-    "version": "3.4.3"
+    "version": "3.4.4"
   },
   "prosody": {
     "name": "prosody-0.12.4",
