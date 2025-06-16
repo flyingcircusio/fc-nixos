@@ -271,7 +271,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # stable kernel packages.
   linuxKernelVerify = self.linux_6_12;
 
-  linuxKernelStable = self.linux_6_6;
+  linuxKernelStable = self.linux_6_12;
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper =
