@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-137.0.7151.68",
+    "name": "chromedriver-unwrapped-137.0.7151.103",
     "pname": "chromedriver-unwrapped",
-    "version": "137.0.7151.68"
+    "version": "137.0.7151.103"
   },
   "chromium": {
-    "name": "chromium-137.0.7151.68",
+    "name": "chromium-137.0.7151.103",
     "pname": "chromium",
-    "version": "137.0.7151.68"
+    "version": "137.0.7151.103"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-139.0.1",
+    "name": "firefox-139.0.4",
     "pname": "firefox",
-    "version": "139.0.1"
+    "version": "139.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -225,34 +225,34 @@
     "version": "2.47.2"
   },
   "gitaly": {
-    "name": "gitaly-17.11.3",
+    "name": "gitaly-17.11.4",
     "pname": "gitaly",
-    "version": "17.11.3"
+    "version": "17.11.4"
   },
   "github-runner": {
-    "name": "github-runner-2.324.0",
+    "name": "github-runner-2.325.0",
     "pname": "github-runner",
-    "version": "2.324.0"
+    "version": "2.325.0"
   },
   "gitlab": {
-    "name": "gitlab-17.11.3",
+    "name": "gitlab-17.11.4",
     "pname": "gitlab",
-    "version": "17.11.3"
+    "version": "17.11.4"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.22.0",
+    "name": "gitlab-container-registry-4.23.1",
     "pname": "gitlab-container-registry",
-    "version": "4.22.0"
+    "version": "4.23.1"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.11.3",
+    "name": "gitlab-ee-17.11.4",
     "pname": "gitlab-ee",
-    "version": "17.11.3"
+    "version": "17.11.4"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.11.3",
+    "name": "gitlab-pages-17.11.4",
     "pname": "gitlab-pages",
-    "version": "17.11.3"
+    "version": "17.11.4"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.11.3",
+    "name": "gitlab-workhorse-17.11.4",
     "pname": "gitlab-workhorse",
-    "version": "17.11.3"
+    "version": "17.11.4"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -295,9 +295,9 @@
     "version": "1.23.8"
   },
   "grafana": {
-    "name": "grafana-11.3.7",
+    "name": "grafana-11.3.7+security-01",
     "pname": "grafana",
-    "version": "11.3.7"
+    "version": "11.3.7+security-01"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -465,9 +465,9 @@
     "version": "6.6.93"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.32",
+    "name": "linux-6.12.33",
     "pname": "linux",
-    "version": "6.12.32"
+    "version": "6.12.33"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.2.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.130.0",
+    "name": "matrix-synapse-wrapped-1.131.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.130.0"
+    "version": "1.131.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
