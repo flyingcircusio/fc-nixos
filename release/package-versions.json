@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-137.0.7151.68",
+    "name": "chromedriver-unwrapped-137.0.7151.103",
     "pname": "chromedriver-unwrapped",
-    "version": "137.0.7151.68"
+    "version": "137.0.7151.103"
   },
   "chromium": {
-    "name": "chromium-137.0.7151.68",
+    "name": "chromium-137.0.7151.103",
     "pname": "chromium",
-    "version": "137.0.7151.68"
+    "version": "137.0.7151.103"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.102",
+    "name": "element-web-1.11.103",
     "pname": "element-web",
-    "version": "1.11.102"
+    "version": "1.11.103"
   },
   "erlang": {
     "name": "erlang-27.3.4",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-139.0.1",
+    "name": "firefox-139.0.4",
     "pname": "firefox",
-    "version": "139.0.1"
+    "version": "139.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-14.2.1.20250322",
@@ -225,34 +225,34 @@
     "version": "2.49.0"
   },
   "gitaly": {
-    "name": "gitaly-18.0.1",
+    "name": "gitaly-18.0.2",
     "pname": "gitaly",
-    "version": "18.0.1"
+    "version": "18.0.2"
   },
   "github-runner": {
-    "name": "github-runner-2.324.0",
+    "name": "github-runner-2.325.0",
     "pname": "github-runner",
-    "version": "2.324.0"
+    "version": "2.325.0"
   },
   "gitlab": {
-    "name": "gitlab-18.0.1",
+    "name": "gitlab-18.0.2",
     "pname": "gitlab",
-    "version": "18.0.1"
+    "version": "18.0.2"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.22.0",
+    "name": "gitlab-container-registry-4.23.1",
     "pname": "gitlab-container-registry",
-    "version": "4.22.0"
+    "version": "4.23.1"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.0.1",
+    "name": "gitlab-ee-18.0.2",
     "pname": "gitlab-ee",
-    "version": "18.0.1"
+    "version": "18.0.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.0.1",
+    "name": "gitlab-pages-18.0.2",
     "pname": "gitlab-pages",
-    "version": "18.0.1"
+    "version": "18.0.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.11.0",
@@ -260,9 +260,9 @@
     "version": "17.11.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.0.1",
+    "name": "gitlab-workhorse-18.0.2",
     "pname": "gitlab-workhorse",
-    "version": "18.0.1"
+    "version": "18.0.2"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -290,9 +290,9 @@
     "version": "1.23.10"
   },
   "grafana": {
-    "name": "grafana-12.0.0+security-01",
+    "name": "grafana-12.0.1+security-01",
     "pname": "grafana",
-    "version": "12.0.0+security-01"
+    "version": "12.0.1+security-01"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -420,9 +420,9 @@
     "version": "3.0.4"
   },
   "libmodsecurity": {
-    "name": "libmodsecurity-3.0.13",
+    "name": "libmodsecurity-3.0.14",
     "pname": "libmodsecurity",
-    "version": "3.0.13"
+    "version": "3.0.14"
   },
   "libmysqlclient": {
     "name": "mariadb-connector-c-3.3.5",
@@ -465,9 +465,9 @@
     "version": "6.6.93"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.32",
+    "name": "linux-6.12.33",
     "pname": "linux",
-    "version": "6.12.32"
+    "version": "6.12.33"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -625,9 +625,9 @@
     "version": "2.19.2"
   },
   "opensearch-dashboards": {
-    "name": "opensearch-dashboards-2.17.1",
+    "name": "opensearch-dashboards-2.19.2",
     "pname": "opensearch-dashboards",
-    "version": "2.17.1"
+    "version": "2.19.2"
   },
   "openssh": {
     "name": "openssh-10.0p2",
@@ -880,9 +880,9 @@
     "version": "3.1.0"
   },
   "promtail": {
-    "name": "promtail-3.4.3",
+    "name": "promtail-3.4.4",
     "pname": "promtail",
-    "version": "3.4.3"
+    "version": "3.4.4"
   },
   "prosody": {
     "name": "prosody-0.12.4",
