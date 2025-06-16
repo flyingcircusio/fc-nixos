@@ -234,6 +234,33 @@ import ./make-test-python.nix (
           ''
         );
 
+        environment.etc."simplevm.cfg".text = ''
+          name: simplevm
+          consul-generation: 0
+          parameters:
+            cores: 1
+            disk: 2
+            id: 2345
+            interfaces:
+              fe:
+                mac: aa-bb-cc-00-ee-ff
+                networks:
+              srv:
+                mac: aa-bb-cc-dd-ee-ff
+                networks:
+            kvm_host: host1
+            memory: 256
+            location: test
+            name: simplevm
+            online: false
+            rbd_pool: rbd.ssd
+            resource_group: test
+            swap_size: 1073741824
+            tmp_size: 5368709120
+            environment: fc-21.05-dev
+            environment_class: NixOS
+            environment_class_type: nixos
+        '';
         environment.etc."nixos/enc.json".text = builtins.toJSON {
           name = "host${toString id}";
           roles = [
@@ -425,17 +452,23 @@ import ./make-test-python.nix (
         result = show(host1, "fc-qemu --help")
         assert result.startswith("usage: fc-qemu"), "Unexpected help output"
 
-        # host1.succeed("cp /etc/simplevm.cfg /etc/qemu/vm/")
-        # result = show(host1, "fc-qemu ls")
-        # assert "I simplevm              offline" in result, repr(result)
-
-        # result = show(host1, "fc-qemu check")
-        # assert result == "OK - 1 VMs - 0 MiB used - 0 MiB expected", result
+        host1.execute("rm -f /etc/qemu/vm/* /etc/qemu/vm/.*")
+        host1.execute("pkill -f qemu")
+        host1.execute("rm -rf /run/qemu.*")
+        host1.succeed("cp /etc/simplevm.cfg /etc/qemu/vm/")
+        host1.succeed("fc-qemu start simplevm")
+        result = show(host1, "fc-qemu ls")
+        assert "I simplevm              online                         cores=1 memory_booked='256'" in result, repr(result)
+        assert "memory_pss='" in result, repr(result)
+        assert "memory_swap='0'" in result, repr(result)
+        result = show(host1, "fc-qemu check")
+        assert "OK - 1 VMs - " in result, result
+        assert " MiB used - " in result, result
+        assert " MiB expected" in result, result
 
         result = show(host1, "fc-qemu report-supported-cpu-models")
         assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result, result
 
-        host1.execute("rm /etc/qemu/vm/simplepubvm* /etc/qemu/vm/.simplepubvm.*")
         result = show(host1, "fc-qemu-scrub")
         assert "I simplevm              running-ensure                 generation=0" in result, result
 
