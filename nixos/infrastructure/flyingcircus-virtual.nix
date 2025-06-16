@@ -36,6 +36,12 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
       "nosetmode"
     ];
 
+    kernel.sysctl = {
+      # Don't suppress hung task warnings in dmesg, as this hides
+      # useful debugging information.
+      "kernel.hung_task_warnings" = -1;
+    };
+
     loader.grub = {
       device = "/dev/disk/device-by-alias/root";
       fsIdentifier = "provided";
