@@ -655,6 +655,8 @@ in
           loki.source.syslog "syslog_nginx" {
             listener {
               address = "127.0.0.1:51893"
+              protocol = "udp"
+              syslog_format = "rfc3164"
             }
 
             forward_to = [loki.write.fcio_rg_loki.receiver]
