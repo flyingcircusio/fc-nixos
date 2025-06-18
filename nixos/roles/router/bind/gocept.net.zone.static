@@ -24,7 +24,7 @@ sensu.dev               CNAME   services12.fe.dev
 portage-bin-x86.dev     CNAME   services03.fe.dev
 portage-bin-amd64.dev   CNAME   lovejoy.fe.dev
 ; dev-router.fe
-ns.dev                  AAAA    2a02:238:f030:1c2::1
+ns.dev                  AAAA    2a06:3a80:300:2::1
 ns2.dev                 CNAME   ns.dev
 
 ; === WHQ ===
