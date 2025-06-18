@@ -138,7 +138,10 @@ with lib;
         # which is fixed in glibc 2.22 which is included in NixOS 16.03.
         dev = [ "2a02:238:f030:1c3::1" ];
         whq = [ "2a02:238:f030:103::1" ];
-        test = [ "2a02:238:f030:1c2::1" ];
+        test = [
+          "2620:fe::fe"
+          "2001:4860:4860::8888"
+        ];
         rzob = [ "2a02:248:101:63::1" ];
         standalone = [
           "2620:fe::fe"

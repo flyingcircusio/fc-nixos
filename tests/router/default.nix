@@ -173,7 +173,7 @@ import ../make-test-python.nix (
               name = "fe";
               subnet6 = [
                 {
-                  subnet = "2a02:238:f030:1c2::/64";
+                  subnet = "fdfc:c12:c05:2::/64";
                   id = 1;
                 }
               ];
@@ -197,11 +197,11 @@ import ../make-test-python.nix (
             bridged = false;
             networks = {
               "172.20.1.0/24" = [ "172.20.1.1${toString id}" ];
-              "2a02:238:f030:1c1::/64" = [ "2a02:238:f030:1c1::1${toString id}" ];
+              "fdfc:c12:c05:1::/64" = [ "fdfc:c12:c05:1::1${toString id}" ];
             };
             gateways = {
               "172.20.1.0/24" = "172.20.1.1";
-              "2a02:238:f030:1c1::/64" = "2a02:238:f030:1c1::1";
+              "fdfc:c12:c05:1::/64" = "fdfc:c12:c05:1::1";
             };
             nics = [
               {
@@ -215,11 +215,11 @@ import ../make-test-python.nix (
             bridged = false;
             networks = {
               "172.20.2.0/24" = [ "172.20.2.1${toString id}" ];
-              "2a02:238:f030:1c2::/64" = [ "2a02:238:f030:1c2::1${toString id}" ];
+              "fdfc:c12:c05:2::/64" = [ "fdfc:c12:c05:2::1${toString id}" ];
             };
             gateways = {
               "172.20.2.0/24" = "172.20.2.1";
-              "2a02:238:f030:1c2::/64" = "2a02:238:f030:1c2::1";
+              "fdfc:c12:c05:2::/64" = "fdfc:c12:c05:2::1";
             };
             nics = [
               {
@@ -234,11 +234,11 @@ import ../make-test-python.nix (
             networks = {
               "172.20.3.0/24" = [ "172.20.3.1${toString id}" ];
               "172.30.3.0/24" = [ "172.30.3.1${toString id}" ];
-              "2a02:238:f030:1c3::/64" = [ "2a02:238:f030:1c3::1${toString id}" ];
+              "fdfc:c12:c05:3::/64" = [ "fdfc:c12:c05:3::1${toString id}" ];
             };
             gateways = {
               "172.20.3.0/24" = "172.20.3.1";
-              "2a02:238:f030:1c3::/64" = "2a02:238:f030:1c3::1";
+              "fdfc:c12:c05:3::/64" = "fdfc:c12:c05:3::1";
             };
             nics = [
               {
@@ -252,11 +252,11 @@ import ../make-test-python.nix (
             bridged = false;
             networks = {
               "172.20.6.0/24" = [ "172.20.6.1${toString id}" ];
-              "2a02:238:f030:1c6::/124" = [ "2a02:238:f030:1c6::1${toString id}" ];
+              "fdfc:c12:c05:6::/124" = [ "fdfc:c12:c05:6::1${toString id}" ];
             };
             gateways = {
               "172.20.6.0/24" = "172.20.6.1";
-              "2a02:238:f030:1c6::/124" = "2a02:238:f030:1c6::1";
+              "fdfc:c12:c05:6::/124" = "fdfc:c12:c05:6::1";
             };
             nics = [
               {
