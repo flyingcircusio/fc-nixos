@@ -25,7 +25,7 @@ with lib;
       description = "List of addresses of machines in the neighbourhood.";
       example = [
         {
-          ip = "2a02:238:f030:1c3::104c/64";
+          ip = "2001:db8:0:3::104c/64";
           mac = "02:00:00:03:11:b1";
           name = "test03";
           rg = "test";
