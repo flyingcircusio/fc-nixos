@@ -136,9 +136,12 @@ with lib;
         #
         # This seems to be https://sourceware.org/bugzilla/show_bug.cgi?id=13028
         # which is fixed in glibc 2.22 which is included in NixOS 16.03.
-        dev = [ "2a02:238:f030:1c3::1" ];
+        dev = [ "2a06:3a80:300:3::1" ];
         whq = [ "2a02:238:f030:103::1" ];
-        test = [ "2a02:238:f030:1c2::1" ];
+        test = [
+          "2620:fe::fe"
+          "2001:4860:4860::8888"
+        ];
         rzob = [ "2a02:248:101:63::1" ];
         standalone = [
           "2620:fe::fe"

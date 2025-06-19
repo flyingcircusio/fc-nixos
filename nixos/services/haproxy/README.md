@@ -130,12 +130,12 @@ defaults
     balance leastconn
 
 listen headless-web-service-http
-    bind [2a02:238:f030:1c2::10b6]:80
+    bind [2001:db8:0:2::10b6]:80
     mode http
     server-template svc 3 headless-web-service.default.svc.cluster.local:80 check resolvers cluster init-addr none
 
 listen lb-web-service-http
-    bind [2a02:238:f030:1c2::10b6]:80
+    bind [2001:db8:0:2::10b6]:80
     mode http
     server-template pod 3 *.lb-web-service.default.svc.cluster.local:80 check resolvers cluster init-addr none
     # fallback
@@ -154,7 +154,7 @@ In nixos:
       "headless-web-service-http" = {
         mode = "http";
         binds = [
-          "[2a02:238:f030:1c2::10b6]:80"
+          "[2001:db8:0:2::10b6]:80"
         ];
         extraConfig = ''
           server-template svc 3 headless-web-service.default.svc.cluster.local:80 check resolvers cluster init-addr none
@@ -162,7 +162,7 @@ In nixos:
       };
       "lb-web-service-http" = {
         binds = [
-          "[2a02:238:f030:1c2::10b6]:80"
+          "[2001:db8:0:2::10b6]:80"
         ];
         mode = "http";
         extraConfig = ''
@@ -201,11 +201,11 @@ defaults
   balance leastconn
 listen headless-web-service-http
   mode http
-  bind [2a02:238:f030:1c2::10b6]:80
+  bind [2001:db8:0:2::10b6]:80
   server-template svc 3 headless-web-service.default.svc.cluster.local:80 check resolvers cluster init-addr none
 listen lb-web-service-http
   mode http
-  bind [2a02:238:f030:1c2::10b6]:80
+  bind [2001:db8:0:2::10b6]:80
   server-template pod 3 *.lb-web-service.default.svc.cluster.local:80 check resolvers cluster init-addr none
   # fallback
   server-template svc 1 lb-web-service.default.svc.cluster.local:80 check resolvers cluster init-addr none backup
