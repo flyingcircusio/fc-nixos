@@ -281,6 +281,7 @@ def switch(
     lock_dir: Path,
     lazy=False,
     show_trace=False,
+    switch_reboot=False,
 ):
     """Rebuild the system and switch to it.
     For regular operation, the current "nixos" channel is used for building the
@@ -331,7 +332,11 @@ def switch(
 
     if channel_to_build:
         return channel_to_build.switch(
-            specialisation, lock_dir, lazy, show_trace
+            specialisation,
+            lock_dir,
+            lazy,
+            show_trace,
+            switch_reboot,
         )
 
 
@@ -342,6 +347,7 @@ def switch_with_update(
     lock_dir: Path,
     lazy=False,
     show_trace=False,
+    switch_reboot=False,
 ):
     channel_url = enc.get("parameters", {}).get("environment_url")
     environment = enc.get("parameters", {}).get("environment")
@@ -379,7 +385,13 @@ def switch_with_update(
     if not channel:
         return
 
-    return channel.switch(specialisation, lock_dir, lazy, show_trace)
+    return channel.switch(
+        specialisation,
+        lock_dir,
+        lazy,
+        show_trace,
+        switch_reboot,
+    )
 
 
 def switch_to_configuration(
