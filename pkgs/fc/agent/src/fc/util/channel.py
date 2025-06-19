@@ -112,6 +112,7 @@ class Channel:
         lock_dir: Path,
         lazy=True,
         show_trace=False,
+        switch_reboot=False,
     ) -> bool:
         """
         Build system with this channel and switch to it.
@@ -128,7 +129,12 @@ class Channel:
         nixos.register_system_profile(self.system_path, self.log)
         # New system is registered, delete the temporary result link.
         os.unlink(out_link)
-        return self.switch_to_configuration(specialisation, lock_dir, lazy)
+        return self.switch_to_configuration(
+            specialisation,
+            lock_dir,
+            lazy,
+            switch_reboot,
+        )
 
     def build(self, out_link=None, show_trace=False):
         """
@@ -150,7 +156,11 @@ class Channel:
         self.system_path = system_path
 
     def switch_to_configuration(
-        self, specialisation: str | Specialisation, lock_dir: Path, lazy=True
+        self,
+        specialisation: str | Specialisation,
+        lock_dir: Path,
+        lazy=True,
+        switch_reboot=False,
     ) -> bool:
         switch_path = nixos.get_specialisation_path_for_system(
             Path(self.system_path), specialisation, self.log
@@ -159,13 +169,19 @@ class Channel:
         current_release = nixos.os_release()["VERSION_ID"]
         next_release = nixos.os_release(Path(switch_path))["VERSION_ID"]
 
-        if current_release != next_release:
+        if current_release != next_release or switch_reboot:
             reboot_delay = self.REBOOT_DELAY
-            self.log.warn(
-                "release-change-requires-reboot",
-                current_release=current_release,
-                next_release=next_release,
-            )
+            if current_release != next_release:
+                self.log.warn(
+                    "release-change-requires-reboot",
+                    current_release=current_release,
+                    next_release=next_release,
+                )
+            else:
+                self.log.warn(
+                    "activate-with-reboot",
+                    _replace_msg="Activating new system with reboot.",
+                )
             while reboot_delay:
                 self.log.warn(
                     "reboot-scheduled",
