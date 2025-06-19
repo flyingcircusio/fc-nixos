@@ -11,17 +11,6 @@ let
   cfg = config.flyingcircus.services.redis;
   fclib = config.fclib;
 
-  generatedPassword = lib.removeSuffix "\n" (
-    readFile (pkgs.runCommand "redis.password" { } "${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > $out")
-  );
-
-  password = lib.removeSuffix "\n" (
-    if cfg.password == null then
-      (fclib.configFromFile /etc/local/redis/password generatedPassword)
-    else
-      cfg.password
-  );
-
   extraConfig = fclib.configFromFile /etc/local/redis/custom.conf "";
 
   enabledServers = lib.filterAttrs (_: getAttr "enable") config.services.redis.servers;
@@ -52,25 +41,25 @@ let
 
   bind = bindAddrs: head (lib.splitString " " bindAddrs);
 
-  getRedisPassword =
-    name: fFile:
-    if enabledServers.${name}.requirePass != null then
-      enabledServers.${name}.requirePass
-    else if enabledServers.${name}.requirePassFile != null then
-      fFile enabledServers.${name}.requirePassFile
-    else
-      null;
-
   mkSensuCheck =
     name: connArgs:
     let
-      password = getRedisPassword name (file: ''"$(<${file})"'');
+      # If a Redis server requires password authentication (i.e. requirePass or requirePassFile
+      # is not `null`), then pass the raw password or the contents of requirePassFile
+      # to the `check-redis-ping` invocation.
+      passwordExpr =
+        if enabledServers.${name}.requirePass != null then
+          enabledServers.${name}.requirePass
+        else if enabledServers.${name}.requirePassFile != null then
+          ''"$(<${enabledServers.${name}.requirePassFile})"''
+        else
+          null;
     in
     lib.nameValuePair (redisServiceName name) {
       notification = "Redis" + lib.optionalString (name != "") " (instance ${name})" + " alive";
       command = ''
         ${pkgs.sensu-plugins-redis}/bin/check-redis-ping.rb \
-          ${lib.optionalString (password != null) "-P ${password}"} ${connArgs}
+          ${lib.optionalString (passwordExpr != null) "-P ${passwordExpr}"} ${connArgs}
       '';
     };
 
@@ -99,16 +88,29 @@ let
 
   telegrafInputs =
     let
-      mkPassword = name: getRedisPassword name (lib.const "\${REDIS_PASSWORD_${name}}");
+      # If a Redis server requires password authentication (i.e. requirePass or requirePassFile
+      # is not `null`), then the password must be passed to the telegraf config for gathering metrics.
+      # If requirePass is used, we inject the raw password into the Redis URL inside the config.
+      # If requirePassFile is used, we inject the password by substituting an environment
+      # variable, i.e. we write `${REDIS_PASSWORD_name}` into the telegraf config
+      # which gets replaced by the actual password when the service starts.
+      mkPasswordExpr =
+        name:
+        if enabledServers.${name}.requirePass != null then
+          enabledServers.${name}.requirePass
+        else if enabledServers.${name}.requirePassFile != null then
+          "\${REDIS_PASSWORD_${escape name}}"
+        else
+          null;
     in
     map (
       name:
       let
-        password = mkPassword name;
+        passwordExpr = mkPasswordExpr name;
       in
       {
         servers = [
-          "tcp://${lib.optionalString (password != null) ":${password}@"}${
+          "tcp://${lib.optionalString (passwordExpr != null) ":${passwordExpr}@"}${
             bind enabledServers.${name}.bind
           }:${toString enabledServers.${name}.port}"
         ];
@@ -118,7 +120,7 @@ let
     ++ map (
       name:
       let
-        password = mkPassword name;
+        passwordExpr = mkPasswordExpr name;
       in
       {
         servers = [
@@ -126,8 +128,8 @@ let
         ];
         fielddrop = telegrafFielddrop;
       }
-      // lib.optionalAttrs (password != null) {
-        inherit password;
+      // lib.optionalAttrs (passwordExpr != null) {
+        password = passwordExpr;
       }
     ) (serversByConnection.uds or [ ]);
 
@@ -137,6 +139,8 @@ let
   supplementaryGroups = map (name: config.services.redis.servers.${name}.group) (
     serversByConnection.uds or [ ]
   );
+
+  escape = builtins.replaceStrings [ "-" ] [ "__" ];
 
 in
 {
@@ -225,6 +229,38 @@ in
           Please use a NixOS module with the option services.redis.servers."".settings instead
         '';
       }
+      {
+        # This limitation is relevant for telegraf because we generate env
+        # vars from the server names (and `__` is used to escape dashes).
+        assertion = all (name: null != builtins.match "^[A-Za-z0-9_-]*$" name && !lib.hasInfix "__" name) (
+          attrNames enabledServers
+        );
+        message = ''
+          All Redis server names (keys of `services.redis.servers`) can only
+          contain alphanumeric chars, `-` and `_`, but no consecutive underscores.
+        '';
+      }
+      {
+        assertion =
+          config.services.redis.servers."".enable -> config.services.redis.servers."".requirePass == null;
+        message = ''
+          Setting a password for the default Redis server with requirePass
+          is not supported. Please use `flyingcircus.services.redis.password`
+          instead.
+        '';
+      }
+      {
+        # The default set by the platform is /etc/local/redis/password. If this is set
+        # to something else, we read the password from that value.
+        # The `null` case is undefined and thus rejected.
+        assertion =
+          config.services.redis.servers."".enable -> config.services.redis.servers."".requirePassFile != null;
+        message = ''
+          Value of `services.redis.servers."".requirePassFile`
+          (currently `${toString config.services.redis.servers."".requirePassFile}`)
+          must not be null.
+        '';
+      }
     ];
 
     # Ensure sensu client can talk to Redis via socket.
@@ -239,6 +275,41 @@ in
           serviceConfig.Restart = "always";
         }
       ) enabledServers)
+      {
+        redis.before = [ "telegraf.service" ];
+        redis.serviceConfig =
+          let
+            preStart = pkgs.writeShellScript "redis-prestart" (''
+              (
+                umask 077;
+                ${
+                  if cfg.password != null then
+                    ''
+                      echo ${lib.escapeShellArg cfg.password} > /etc/local/redis/password
+                    ''
+                  else if config.services.redis.servers."".requirePassFile != "/etc/local/redis/password" then
+                    ''
+                      cp ${config.services.redis.servers."".requirePassFile} /etc/local/redis/password
+                    ''
+                  else
+                    ''
+                      if [[ ! -e /etc/local/redis/password ]]; then
+                        ${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > /etc/local/redis/password
+                      fi
+                    ''
+                }
+              )
+              chmod 0660 /etc/local/redis/password
+              chown redis:service /etc/local/redis/password
+            '');
+          in
+          {
+            ExecStartPre = lib.mkBefore [
+              ("+" + preStart)
+            ];
+            Restart = "always";
+          };
+      }
     ];
 
     services.redis = {
@@ -249,7 +320,7 @@ in
         "" = {
           bind = concatStringsSep " " cfg.listenAddresses;
           enable = lib.mkDefault true;
-          requirePass = password;
+          requirePassFile = "/etc/local/redis/password";
           settings = lib.mkMerge [
             (lib.mkIf (cfg.maxmemory-policy != null) {
               inherit (cfg) maxmemory-policy;
@@ -261,16 +332,6 @@ in
         };
       };
     };
-
-    flyingcircus.activationScripts.redis = lib.stringAfter [ "fc-local-config" ] ''
-      if [[ ! -e /etc/local/redis/password ]]; then
-        ( umask 007;
-          echo ${lib.escapeShellArg password} > /etc/local/redis/password
-          chown redis:service /etc/local/redis/password
-        )
-      fi
-      chmod 0660 /etc/local/redis/password
-    '';
 
     flyingcircus.localConfigDirs.redis = {
       dir = "/etc/local/redis";
@@ -284,7 +345,7 @@ in
         name:
         { requirePassFile, ... }:
         lib.optionalAttrs (requirePassFile != null) {
-          "REDIS_PASSWORD_${name}" = requirePassFile;
+          "REDIS_PASSWORD_${escape name}" = requirePassFile;
         }
       ) enabledServers;
 
@@ -298,8 +359,8 @@ in
     environment.etc."local/redis/README.txt".text = ''
       Redis is running on this machine.
 
-      You can find the password for the redis in the `password`. You can also change
-      the redis password by changing the `password` file.
+      You can find the password for the redis in the `password` file.
+      You can also change the redis password by changing the `password` file.
 
       Changing the config via custom.conf is not supported anymore. Please use a NixOS module
       with the option `services.redis.servers."".settings` instead.
