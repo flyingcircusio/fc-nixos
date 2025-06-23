@@ -36,7 +36,7 @@ Example:
 }
 ```
 
-To activate the checks, run {command}`sudo fc-manage --build`.
+To activate the checks, run {command}`sudo fc-manage switch`.
 For further information about local configuration, also see {ref}`nixos-local`.
 
 The following packages are available in the sensu check PATH:

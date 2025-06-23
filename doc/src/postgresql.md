@@ -66,7 +66,7 @@ String values will automatically be enclosed in single quotes.
 Single quotes will be escaped with two single quotes.
 Booleans in Nix (true/false) are converted to on/off in the PostgreSQL config.
 
-Run {command}`sudo fc-manage -b` to activate the changes (**restarts PostgreSQL!**).
+Run {command}`sudo fc-manage switch` to activate the changes (**restarts PostgreSQL!**).
 
 See {ref}`nixos-custom-modules` for general information about writing NixOS
 modules.
@@ -77,7 +77,7 @@ Service users can use {command}`sudo -u postgres -i` to access the
 PostgreSQL superuser account to perform administrative commands like
 {command}`createdb` and {command}`createuser`.
 
-Service users may invoke {command}`sudo fc-manage --build`
+Service users may invoke {command}`sudo fc-manage switch`
 to apply configuration changes and restart the PostgreSQL
 server (if necessary).
 

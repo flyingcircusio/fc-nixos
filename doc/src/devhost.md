@@ -62,7 +62,7 @@ using slim VMs on a single powerful, physical machine on our public infrastructu
    i.e. set `*.dev.example.com CNAME mydev00.fe.rzob.fcio.net`.
 
 4) Add the `publicAddress` option to the NixOS configuration on the host,
-   e.g. in {file}`/etc/local/nixos/devhost.nix` and run {command}`fc-manage -b`:
+   e.g. in {file}`/etc/local/nixos/devhost.nix` and run {command}`fc-manage switch`:
 
    ```Nix
    { ... }:

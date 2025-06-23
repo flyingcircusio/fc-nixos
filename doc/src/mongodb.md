@@ -52,7 +52,7 @@ db.adminCommand( { setFeatureCompatibilityVersion: "4.2" } )
 To upgrade, disable the current role and enable the role for the next major version.
 MongoDB will be upgraded and restarted on the next management task run.
 This happens automatically after some time. You can trigger a rebuild with
-{code}`sudo fc-manage --build --directory` immediately.
+{code}`sudo fc-manage switch --update-enc` immediately.
 
 The restart will fail if the feature compatibility version is too old ("error 62").
 To fix this, go back to the last working role version, rebuild, and set the version.

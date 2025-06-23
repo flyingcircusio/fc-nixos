@@ -16,7 +16,7 @@ in
   # Example nginx configuration for the Flying Circus. Copy this file into
   # 'mydomain.conf' and edit. You'll certainly want to replace www.example.com
   # with something more specific. Please note that configuration files must end
-  # with '.conf' to be active. Reload with `sudo fc-manage --build`.
+  # with '.conf' to be active. Reload with `sudo fc-manage switch`.
 
   upstream @varnish {
       server localhost:8008;

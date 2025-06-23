@@ -20,7 +20,7 @@ may require a manual Nginx restart that drops connections.
 Using `reuseport` can avoid such situations (see below).
 
 
-After building it with `sudo fc-manage -b`, the final nginx config file
+After building it with `sudo fc-manage switch`, the final nginx config file
 can be shown with: `nginx-show-config`
 
 You can check if the config is valid with: `nginx-check-config`.

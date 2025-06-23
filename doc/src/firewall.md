@@ -24,7 +24,7 @@ that all lines are either:
 - invocations of an iptables command (iptables, ip6tables, ip46tables)
 
 After making changes to the firewall configuration, either wait for the
-agent to apply it or run `sudo fc-manage -b`.
+agent to apply it or run `sudo fc-manage switch`.
 
 :::{note}
 Use IP addresses in firewall rules. Using host names is not reliable and
@@ -113,7 +113,7 @@ ip6tables -L -nv   # show IPv6 firewall rules w/o DNS resolution
 ```
 
 If the intended rules do not show up, check the system journal for possible
-syntax errors in {file}`/etc/local/firewall` and re-run {command}`fc-manage -b`.
+syntax errors in {file}`/etc/local/firewall` and re-run {command}`fc-manage switch`.
 
 ## Fail2ban
 

@@ -343,7 +343,7 @@ in
         To see the final rendered config for Elasticsearch, use the
         `elasticsearch-show-config` command as service or sudo-srv user.
 
-        To activate config changes, run `sudo fc-manage --build`.
+        To activate config changes, run `sudo fc-manage switch`.
 
         ### NixOS Options
 
