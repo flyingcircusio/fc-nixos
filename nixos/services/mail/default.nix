@@ -270,18 +270,6 @@ in
                 specialUse = "Archive";
               };
             };
-            policydSPFExtraConfig =
-              let
-                skipped = [
-                  "127.0.0.0/8"
-                  "::ffff:127.0.0.0/104"
-                  "::/64"
-                ] ++ role.policydSPFExtraSkipAddresses;
-              in
-              ''
-                skip_addresses = ${concatStringsSep "," skipped}
-                HELO_Whitelist = ${fqdn},${role.mailHost}
-              '';
             vmailGroupName = "vmail";
             vmailUserName = "vmail";
           };
