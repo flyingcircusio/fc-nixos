@@ -14,13 +14,13 @@ and how you are used to configure, start, stop and maintain these packages.
   Since we use NixOS, configuration files have to be edited in
   {file}`/etc/local/nixos`, followed by a NixOS rebuild which copies them into
   the Nix store and activates the new configuration. To do so, run the command
-  {command}`sudo fc-manage --build`.
+  {command}`sudo fc-manage switch`.
 
 - **service control:**
 
   We use {command}`systemd` to control processes. You can use familiar commands
   like {command}`sudo systemctl restart varnish` to control services.
-  However, remember that invoking {command}`sudo fc-manage --build` is
+  However, remember that invoking {command}`sudo fc-manage switch` is
   necessary to put configuration changes into effect. A simple restart is not
   sufficient. For further information, also see {ref}`nixos-local`.
 

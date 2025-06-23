@@ -15,7 +15,7 @@ automatically upon the next run of our configuration agent (generally every
 10 minutes) but you can also explicitly trigger it by running:
 
 ```console
-$ sudo fc-manage --build
+$ sudo fc-manage switch
 ```
 
 This will update the machine's system configuration, which includes copying the
@@ -37,9 +37,7 @@ calls the underlying NixOS commands.
 The basic call to apply changed configuration is:
 
 ```console
-$ sudo fc-manage --build
-# Short form
-$ sudo fc-manage -b
+$ sudo fc-manage switch
 ```
 
 This will pick up locally changed configuration but will not perform general OS
@@ -51,17 +49,17 @@ The call to perform extensive updates including potential OS updates (the
 directory, "ENC") is:
 
 ```console
-$ sudo fc-manage --directory --channel
+$ sudo fc-manage switch --update-enc --channel
 # Short form:
-$ sudo fc-manage -ec
+$ sudo fc-manage switch -ec
 ```
 
 A mixed form (no OS updates but include changes from the CMDB) is:
 
 ```console
-$ sudo fc-manage --directory --build
+$ sudo fc-manage switch --update-enc
 # Short form:
-$ sudo fc-manage -eb
+$ sudo fc-manage switch -e
 ```
 
 (nixos-custom-modules)=
@@ -78,7 +76,7 @@ Care must be taken to avoid breaking the system.
 Overriding options already set by the platform can be dangerous.
 :::
 
-Run `sudo fc-manage -b` to activate the changes (**may restart services!**).
+Run `sudo fc-manage switch` to activate the changes (**may restart services!**).
 
 For more information about writing NixOS modules, refer to the
 [NixOS manual](https://nixos.org/nixos/manual/index.html#sec-writing-modules)

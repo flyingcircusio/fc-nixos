@@ -344,7 +344,7 @@ in
 
           Config files from this directory (/etc/local/mysql) are included in the
           mysql configuration. To set custom options, add a `local.cnf`
-          (or any other *.cnf) file here, and run `sudo fc-manage --build`.
+          (or any other *.cnf) file here, and run `sudo fc-manage switch`.
 
           ATTENTION: Changes to *.cnf files in this directory will restart MySQL
           to activate the new configuration.

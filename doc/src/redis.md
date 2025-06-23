@@ -115,7 +115,7 @@ Overriding the `password` to `foobarpass` looks like this:
 
 ## Interaction
 
-Service users may invoke {command}`sudo fc-manage --build` to apply
+Service users may invoke {command}`sudo fc-manage switch` to apply
 service configuration changes and trigger service restarts (if necessary).
 
 ## Monitoring

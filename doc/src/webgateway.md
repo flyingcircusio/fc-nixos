@@ -40,13 +40,13 @@ and how you are used to configure, start, stop and maintain these packages.
   Since we use NixOS, files have to be edited in {file}`/etc/local`, followed by a
   NixOS rebuild which copies them into the
   Nix store and activates the new configuration. To do so, run the command
-  {command}`sudo fc-manage -b`
+  {command}`sudo fc-manage switch`
 
 - **service control:**
 
   We use {command}`systemd` to control processes. You can use familiar commands
   like {command}`sudo systemctl restart nginx` to control services.
-  However, remember that invoking {command}`sudo fc-manage -b` is
+  However, remember that invoking {command}`sudo fc-manage switch` is
   necessary to put configuration changes into effect. A simple restart is not
   sufficient. For further information, see {ref}`nixos-local`.
 
@@ -112,7 +112,7 @@ Note that changes to listen directives that are incompatible with the running co
 may require a manual Nginx restart that drops connections.
 Using `reuseport` can avoid such situations (see below).
 
-After building it with {command}`sudo fc-manage -b`, the final nginx config file
+After building it with {command}`sudo fc-manage switch`, the final nginx config file
 can be shown with: {command}`nginx-show-config`
 
 You can check if the config is valid with: {command}`nginx-check-config`.

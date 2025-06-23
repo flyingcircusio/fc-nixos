@@ -268,7 +268,7 @@ No special interaction is required. Changes to the configuration need to be
 activated as usual using:
 
 ```console
-$ sudo fc-manage -b
+$ sudo fc-manage switch
 ```
 
 ## Network

@@ -21,14 +21,12 @@ fc-manage usage
 
 The main modes of operation are as follows:
 
-fc-manage --channel (-c)
-    Download the latest FC nixpkgs from our Hydra and update the system. This is
-    what the systemd timer usually does.
+fc-manage switch
+    Rebuild the system, but don't pull channel updates from Hydra.
+    This command has the options `--update-enc` (short `-e`) to update ENC
+    and `--update-channel` (short `-c`) to update the channel before switching the channel.
 
-fc-manage --build (-b)
-    Update the system, but don't pull channel updates from Hydra.
-
-fc-manage --directory (-e)
+fc-manage update-enc
     Updates various ENC dumps in `/etc/nixos` from the directory: environment,
     RAM/disk sizings, users, ...
 

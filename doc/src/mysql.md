@@ -32,7 +32,7 @@ The root user is authenticated by socket auth with the `mysql` and `root` system
 Custom config files in {file}`/etc/local/mysql` are included in the
 main mysql configuration file on the next system build.
 Add a {file}`local.cnf` (or any other `*.cnf`) file there, and run
-{command}`sudo fc-manage --build` to activate the new configuration.
+{command}`sudo fc-manage switch` to activate the new configuration.
 
 :::{note}
 Changes to \*.cnf files in this directory will restart MySQL
