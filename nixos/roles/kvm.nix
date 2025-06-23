@@ -71,6 +71,7 @@ in
       network = lib.mkOption {
         type = with lib.types; attrs; # an attrset from fclib.network.<xy>
         default = fclib.network.sto;
+        defaultText = "The `sto` network";
         description = "Network to use for migration";
       };
 

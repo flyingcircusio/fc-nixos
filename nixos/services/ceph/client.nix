@@ -208,6 +208,7 @@ in
               "${head (lib.splitString "." mon.address)}.${cfg.client.network.vlan}.${location}.ipv4.gocept.net"
             ) (fclib.findServices "ceph_mon-mon")
           );
+          defaultText = "The list of hostnames that are mons in this cluster";
           description = ''
             List of hostnames that are mons in this cluster.
           '';
@@ -216,6 +217,7 @@ in
         fsId = lib.mkOption {
           type = lib.types.str;
           default = static.fsids.${location}.${resource_group};
+          defaultText = "This resource group and location's static fsid";
           description = ''
             The Ceph fsid for this cluster.
           '';
@@ -224,6 +226,7 @@ in
         network = lib.mkOption {
           type = with lib.types; attrs; # an attrset from fclib.network.<xy>
           default = fclib.network.sto;
+          defaultText = "The `sto` network";
           description = ''
             The Ceph client network.
           '';

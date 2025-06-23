@@ -200,6 +200,95 @@ let
 
   doc = {
     roles = platformRoleDoc;
+
+    options =
+      let
+        imgArgs = {
+          nixpkgs = nixpkgs_;
+          version = "${version}${versionSuffix}";
+          channelSources = combinedSources;
+          configFile = ../nixos/etc_nixos_local.nix;
+          contents = initialVMContents;
+        };
+
+        fc_eval = import "${nixpkgs_}/nixos/lib/eval-config.nix" {
+          inherit system;
+          modules = [
+            "${nixpkgs_}/nixos/modules/virtualisation/qemu-vm.nix"
+
+            (import ./vm-image.nix imgArgs)
+            ../nixos
+            ../nixos/roles
+
+            {
+              networking.hostName = "options";
+              mailserver.fqdn = "test.fcio.net";
+            }
+          ];
+        };
+      in
+      lib.hydraJob (
+        (pkgs.nixosOptionsDoc {
+          inherit (fc_eval) options;
+          warningsAreErrors = false;
+        }).optionsJSON
+      );
+
+    packages =
+      let
+        isValid =
+          d:
+          let
+            r = builtins.tryEval (
+              lib.isDerivation d
+              && !(lib.attrByPath [ "meta" "broken" ] false d)
+              && builtins.seq d.name true
+              && d ? outputs
+            );
+          in
+          r.success && r.value;
+        validPkgs = lib.filterAttrs (_: v: isValid v);
+
+        readPackages =
+          system: drvs:
+          lib.mapAttrs (
+            attribute_name: drv:
+            (
+              {
+                entry_type = "package";
+                attribute_name = attribute_name;
+                system = system;
+                name = drv.name;
+                # TODO consider using `builtins.parseDrvName`
+                version = drv.version or "";
+                outputs = drv.outputs;
+                # paths = builtins.listToAttrs ( map (output: {name = output; value = drv.${output};}) drv.outputs );
+                default_output = drv.outputName;
+              }
+              // lib.optionalAttrs (drv ? meta.homepage) {
+                inherit (drv.meta) homepage;
+              }
+              // lib.optionalAttrs (drv ? meta.description) {
+                inherit (drv.meta) description;
+              }
+              // lib.optionalAttrs (drv ? meta.longDescription) {
+                inherit (drv.meta) longDescription;
+              }
+              // lib.optionalAttrs (drv ? meta.license) {
+                inherit (drv.meta) license;
+              }
+            )
+          ) (validPkgs drvs);
+        packages_json = builtins.toFile "fc-search-packages.json" (
+          builtins.toJSON (readPackages system pkgs)
+        );
+      in
+      lib.hydraJob (
+        pkgs.runCommand "fc-search-packages" { buildInputs = [ pkgs.jq ]; } ''
+          mkdir -p $out
+          cat ${packages_json} | jq > $out/packages.json
+        ''
+      );
   };
 
   jobs = {
