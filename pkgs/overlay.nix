@@ -273,6 +273,16 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     }
   );
 
+  imagemagick7 =
+    assert lib.versions.major super.imagemagick.version == "7";
+    lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick;
+  imagemagick7Big =
+    assert lib.versions.major super.imagemagickBig.version == "7";
+    lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagickBig;
+  imagemagick7_light =
+    assert lib.versions.major super.imagemagick_light.version == "7";
+    lib.warn "'imagemagick7' has been renamed to/replaced by 'imagemagick'" super.imagemagick_light;
+
   graylogFrozen = (
     lib.toDerivation (getClosureFromStore /nix/store/yj365yr01p6yp2axj943b4l8ngzzxvkw-graylog-3.3.16)
     // {
