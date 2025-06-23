@@ -278,8 +278,8 @@ class Manager:
 
             write_nix_file(self.nix_file, self.cfg)
 
-            self.data_dir.mkdir(exist_ok=True)
-            VM_BASE_IMAGE_DIR.mkdir(exist_ok=True)
+            self.data_dir.mkdir(parents=True, exist_ok=True)
+            VM_BASE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
             vm_has_image = os.path.isfile(self.image_file)
             if not vm_has_image:
                 image_url_hash = hashlib.sha256(
@@ -490,7 +490,7 @@ class Manager:
             run("fc-manage", "switch")
 
         print("Cleaning up old VM base images now.")
-        VM_BASE_IMAGE_DIR.mkdir(exist_ok=True)
+        VM_BASE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
         for stored_image in VM_BASE_IMAGE_DIR.glob("*"):
             age = time.time() - stored_image.stat().st_mtime
             if age < 3 * MONTH:
