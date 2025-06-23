@@ -291,7 +291,6 @@ in
           # See https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/issues/289
           systemd.services.postfix.restartTriggers = [ config.mailserver.localDnsResolver ];
           systemd.services.rspamd.restartTriggers = [ config.mailserver.localDnsResolver ];
-          systemd.services.opendkim.restartTriggers = [ config.mailserver.localDnsResolver ];
 
           services.dovecot2.extraConfig = ''
             passdb {
