@@ -88,6 +88,7 @@ any effect anymore.
 % hidden note as of 20240711: It is possible to re-trigger db initialisation by `touch /run/mysql_init`, but we have decided not to expose this as an official stable API.
 :::
 
+(nixos-mysql-password-hash-migration)=
 ## Migrate user password hash algorithm
 
 Before Percona (and generally MySQL) 8.4, `mysql_native_password` was the default authentication and password hash algorithm.

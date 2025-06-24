@@ -65,7 +65,7 @@ latest security fixes. NixOS re-uses packages if the wanted version is already
 in the Nix store, saving disk space and reducing installation time.
 
 The URL for the current release can be found in the [changelog](/platform/changes)
-for the 24.11 platform.
+for the 25.05 platform.
 
 If you want to try NixOS unstable with the newest packages, get the URL from the channel:
 
@@ -77,11 +77,7 @@ https://releases.nixos.org/nixos/unstable/nixos-25.05beta746337.3a228057f5b6/nix
 Note that the unstable channel may be broken and that upstream NixOS channels
 don't have some additional packages we provide on our platform.
 
-Older NixOS versions than 24.11 usually don't get security updates anymore.
-
-Links to all staging platform builds for 24.11 can be found here (no production channel, yet):
-
-<https://hydra.flyingcircus.io/job/flyingcircus/fc-24.11-staging/release>
+Older NixOS versions than 25.05 usually don't get security updates anymore.
 
 See <https://nixos.org/nixos/packages.html> for a list of packages.
 Use the *attribute name* from the list and include it in `paths`.

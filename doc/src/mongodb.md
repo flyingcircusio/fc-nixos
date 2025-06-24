@@ -3,9 +3,9 @@
 # MongoDB
 
 :::{warning}
-Platform support for MongoDB will be discontinued. The supported MongoDB
+The currently supported MongoDB
 versions are outdated and are only provided for the purpose of upgrading
-older machines to 24.11.
+older machines to 25.05.
 
 New projects should not use MongoDB. As a replacement, we offer a
 {ref}`FerretDB role <nixos-ferretdb>` which is currently in beta.
