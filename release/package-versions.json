@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.93",
+    "name": "linux-6.6.94",
     "pname": "linux",
-    "version": "6.6.93"
+    "version": "6.6.94"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.33",
+    "name": "linux-6.12.34",
     "pname": "linux",
-    "version": "6.12.33"
+    "version": "6.12.34"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.2.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.131.0",
+    "name": "matrix-synapse-wrapped-1.132.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.131.0"
+    "version": "1.132.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -1090,9 +1090,9 @@
     "version": "1.14.5"
   },
   "sudo": {
-    "name": "sudo-1.9.16p2",
+    "name": "sudo-1.9.17",
     "pname": "sudo",
-    "version": "1.9.16p2"
+    "version": "1.9.17"
   },
   "sysstat": {
     "name": "sysstat-12.7.4",
@@ -1120,14 +1120,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.41",
+    "name": "apache-tomcat-10.1.42",
     "pname": "apache-tomcat",
-    "version": "10.1.41"
+    "version": "10.1.42"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.105",
+    "name": "apache-tomcat-9.0.106",
     "pname": "apache-tomcat",
-    "version": "9.0.105"
+    "version": "9.0.106"
   },
   "unifi": {
     "name": "unifi-controller-8.5.6",
