@@ -17,7 +17,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 
 - New roles: {ref}`percona84 <nixos-upgrade-percona>`
 - Removed roles:
-- Removed significant packages: `dstat`, `latencytop`, `atop`
+- Removed significant packages: `dstat`, `latencytop`, `atop`, `go_1_22`, `k3s_1_29`, `nodejs_18`, `python39`
 - Roles affected by significant breaking changes: {ref}`gitlab <nixos-upgrade-gitlab>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`mailserver mailstub <nixos-upgrade-mail>`, {ref}`redis <nixos-upgrade-redis>`, {ref}`percona84 <nixos-upgrade-percona>`, {ref}`slurm-controller slurm-node <nixos-upgrade-slurm>`
 
 
@@ -190,10 +190,7 @@ Both `mailserver` and `mailstub` roles are affected by changes in the underlying
 
 ## Other notable changes
 
-TODO
-
 - Nix was upgraded to version 2.28
-
 - agent: the command `fc-manage switch` now has a `-R` option which
   will activate the new configuration by performing an immediate
   reboot, similar to the process used for upgrading between major
@@ -221,14 +218,53 @@ TODO
 - dstat: drop as it is unmaintained, replace with `dool`
   - `dstat` is now an alias for `dool`
 - `less` does not utilise external programs to improve rendering by default (lesspipe). To restore the previous behaviour, set `programs.less.lessopen` to `''|${lib.getExe' pkgs.lesspipe "lesspipe.sh"} %s''`.
+- linux kernel: we now follow the 6.12.x LTS series of linux for production environments.
 - For more details, see the
   [release notes of NixOS 25.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-25.05).
 
 
 ## Significant package updates
 
-- pkgs.nodejs is updated from version 20 to 22
+*as of 2025-06-24*
 
-TODO
-
-*as of 2025-01-31*
+- awscli: 1.34 -> 1.37
+- awscli2: 2.19 -> 2.27
+- binutils: 2.43 -> 2.44
+- calibre: 7.21 -> 8.4
+- containerd: 1.7 -> 2.1
+- coreutils: 9.5 -> 9.7
+- curl: 8.12 -> 8.13
+- discourse: 3.3 -> 3.4
+- docker-compose: 2.30 -> 2.36
+- erlang: 25.3 -> 27.3
+- gcc: 13.3 -> 14.2 (other versions available under alias)
+- git: 2.47 -> 2.49
+- gitlab: 17.11 -> 18.0
+- go: 1.23 -> 1.24 (other versions available under alias)
+- grafana: 11.3 -> 12.0
+- haproxy: 3.0 -> 3.1
+- k3s: 1.30 -> 1.32 (other versions available under alias)
+- kubernetes-helm: 3.16 -> 3.17
+- libwebp: 1.4 -> 1.5
+- linux: 6.6 -> 6.12
+- matomo: 5.2 -> 5.3
+- nginx: 1.26 -> 1.28
+- nodejs: 20 -> 22 (other versions available under alias)
+- opensearch: 2.17 -> 2.19
+- openssh: 9.9 -> 10.0
+- openssl: 3.3 -> 3.4
+- podman: 5.2 -> 5.4
+- poetry: 1.8 -> 2.1
+- postfix: 3.9 -> 3.10
+- prometheus: 2.55 -> 3.1
+- python3Packages.boto3: 1.35 -> 1.36
+- python3Packages.rich: 13.8 -> 14.0
+- rclone: 1.68 -> 1.69
+- re2c: 3.1 -> 4.1
+- slurm: 24.05 -> 24.11
+- systemd: 256 -> 257
+- telegraf: 1.32 -> 1.34
+- util-linux: 2.39 -> 2.41
+- uv: 0.4 -> 0.7
+- varnish: 7.5 -> 7.7
+- xz: 5.6 -> 5.8
