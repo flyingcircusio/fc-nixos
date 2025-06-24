@@ -37,6 +37,8 @@ EXISTING_SPECIALISATIONS = [
     for p in Path("/nix/var/nix/profiles/system/").glob("specialisation/*")
 ]
 
+# I'm a test change 👻
+
 
 @app.command()
 def check():
