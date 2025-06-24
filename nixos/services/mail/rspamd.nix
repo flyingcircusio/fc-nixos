@@ -80,6 +80,10 @@ in
         dynamic_conf = "/var/lib/rspamd/rspamd_dynamic";
         static_dir = "${pkgs.rspamd}/share/rspamd/www";
       '';
+
+      "spf.conf".text = ''
+        whitelist = [${concatStringsSep ", " (map (n: "\"${n}\"") role.spfSkipAddresses)}];
+      '';
     };
   };
 }

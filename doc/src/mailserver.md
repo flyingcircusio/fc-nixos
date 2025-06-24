@@ -19,9 +19,8 @@ The main ingredients of this role are [Postfix] for mail delivery, [Dovecot] as
 IMAP access server, and [Roundcube] as web frontend.
 {ref}`nixos-postgresql-server` is used as a database to store Roundcube settings.
 
-We rely mainly on [Rspamd] for spam protection. To get outgoing mails
-delivered, they are signed with[OpenDKIM] and a basic [SPF] and [SRS] setup
-is included.
+We rely mainly on [Rspamd] for spam protection and DKIM signing.
+A basic [SPF] and [SRS] setup is included as well.
 
 Additionally, a Thunderbird-compatible client [autoconfiguration] XML file is
 provided which helps many clients to configure themselves properly.
@@ -427,7 +426,6 @@ Monitoring checks/metrics created by this role:
 
 [autoconfiguration]: https://wiki.mozilla.org/Thunderbird:Autoconfiguration
 [dovecot]: https://dovecot.org/
-[opendkim]: http://www.opendkim.org/
 [postfix]: http://www.postfix.org/
 [relay_domains]: http://www.postfix.org/postconf.5.html#relay_domains
 [roundcube]: https://roundcube.net/

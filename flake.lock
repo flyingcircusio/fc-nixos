@@ -201,10 +201,58 @@
         "type": "github"
       }
     },
+    "git-hooks_2": {
+      "inputs": {
+        "flake-compat": [
+          "nixos-mailserver",
+          "flake-compat"
+        ],
+        "gitignore": "gitignore_2",
+        "nixpkgs": [
+          "nixos-mailserver",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1750684550,
+        "narHash": "sha256-uLtw0iF9mQ94L831NOlQLPX9wm0qzd5yim3rcwACEoM=",
+        "owner": "cachix",
+        "repo": "git-hooks.nix",
+        "rev": "fae816c55a75675f30d18c9cbdecc13b970d95d4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cachix",
+        "repo": "git-hooks.nix",
+        "type": "github"
+      }
+    },
     "gitignore": {
       "inputs": {
         "nixpkgs": [
           "devenv",
+          "git-hooks",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1709087332,
+        "narHash": "sha256-HG2cCnktfHsKV0s4XW83gU3F57gaTljL9KNSuG6bnQs=",
+        "owner": "hercules-ci",
+        "repo": "gitignore.nix",
+        "rev": "637db329424fd7e46cf4185293b9cc8c88c95394",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "gitignore.nix",
+        "type": "github"
+      }
+    },
+    "gitignore_2": {
+      "inputs": {
+        "nixpkgs": [
+          "nixos-mailserver",
           "git-hooks",
           "nixpkgs"
         ]
@@ -297,26 +345,27 @@
       "inputs": {
         "blobs": "blobs",
         "flake-compat": "flake-compat_2",
+        "git-hooks": "git-hooks_2",
         "nixpkgs": [
           "nixpkgs"
         ],
-        "nixpkgs-24_11": [
+        "nixpkgs-25_05": [
           "nixpkgs"
         ]
       },
       "locked": {
         "host": "gitlab.flyingcircus.io",
-        "lastModified": 1742898683,
-        "narHash": "sha256-zXLDkbXXD4S86H9s1FAtuXskdVXglS5F1DNSaOMLpzk=",
+        "lastModified": 1750693316,
+        "narHash": "sha256-dy2uEaf5Urv9ZgzilOtQxemtufi6Yn5iXlmEt00uNPc=",
         "owner": "flyingcircus",
         "repo": "nixos-mailserver",
-        "rev": "70dbce740c4d87627bb9b03b6551b69ca33d5b31",
+        "rev": "3b1ec3e110e6ce5c1bbf60d32f160b6cfc16d060",
         "type": "gitlab"
       },
       "original": {
         "host": "gitlab.flyingcircus.io",
         "owner": "flyingcircus",
-        "ref": "master",
+        "ref": "nixos-25.05",
         "repo": "nixos-mailserver",
         "type": "gitlab"
       }

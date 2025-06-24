@@ -45,12 +45,12 @@ let
       example = "mail.example.com";
     };
 
-    policydSPFExtraSkipAddresses = mkOption {
+    spfSkipAddresses = mkOption {
       type = with types; listOf str;
       description = ''
-        Extra addresses policyd should skip in SPF checks.
+        Extra addresses rspamd should skip in SPF checks.
         Local addresses are always skipped.
-        This extends the `skip_addresses` setting in policyd-spf.conf.
+        Format: IP address with optional CIDR notation (rspamd radix map)
       '';
       default =
         if hasFE then
@@ -118,9 +118,29 @@ let
 
 in
 {
-  imports = [
-    ../services/mail
-  ];
+  imports =
+    [
+      ../services/mail
+    ]
+    ++ builtins.map
+      (
+        rolePrefix:
+        (lib.mkRenamedOptionModule (rolePrefix ++ [ "policydSPFExtraSkipAddresses" ]) (
+          rolePrefix ++ [ "spfSkipAddresses" ]
+        ))
+      )
+      [
+        [
+          "flyingcircus"
+          "roles"
+          "mailserver"
+        ]
+        [
+          "flyingcircus"
+          "roles"
+          "mailstub"
+        ]
+      ];
 
   options = {
 
