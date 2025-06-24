@@ -82,4 +82,4 @@ For more information about writing NixOS modules, refer to the
 [NixOS manual](https://nixos.org/nixos/manual/index.html#sec-writing-modules)
 
 For looking up specific NixOS options of both the upstream NixOS and the Flying Circus platform, we provide <https://search.flyingcircus.io/search/options>. For upstream-only options there is also <https://search.nixos.org/options>, in case you prefer that layout.\
-In both cases, make sure to select the correct channel relevant for your platform version, in this case *24.11*.
+In both cases, make sure to select the correct channel relevant for your platform version, in this case *25.05*.

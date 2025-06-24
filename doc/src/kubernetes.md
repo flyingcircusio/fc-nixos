@@ -30,7 +30,7 @@ run in a process called the `k3s agent`. We will prefer to use the words
 `server` and `agent` through the remainder of this document.
 :::
 
-This platform release defaults to using k3s version 1.30.x.
+This platform release defaults to using k3s version 1.32.x.
 
 ## Reference architecture and minimal resource requirements
 

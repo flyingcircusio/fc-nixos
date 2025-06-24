@@ -37,6 +37,7 @@ devhost
 docker
 external_net
 ferretdb
+gitlab
 kubernetes
 lamp
 mailserver

@@ -89,7 +89,7 @@ update_method = rsync
 method = fc-nixos-dev-vm
 host = dev.example.com
 # URL to the release metadata file. See below for an explanation
-release = https://my.flyingcircus.io/releases/metadata/fc-24.05-staging
+release = https://my.flyingcircus.io/releases/metadata/fc-25.05-staging
 # Older batou versions (<=2.5.0) only support the hydra_eval attribute instead of `release`
 # hydra-eval = 309628
 

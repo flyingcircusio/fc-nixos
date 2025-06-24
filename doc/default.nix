@@ -8,7 +8,7 @@
   pkgs ?
     import (fetchTarball "https://hydra.flyingcircus.io/build/4347582/download/1/nixexprs.tar.xz")
       { },
-  branch ? "24.11",
+  branch ? "25.05",
   updated ? "1970-01-01 01:00",
   failOnWarnings ? false,
 }:

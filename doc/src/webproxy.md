@@ -2,7 +2,7 @@
 
 # Varnish (Webproxy)
 
-This role provides Varnish Cache, the high-performance HTTP accelerator, in the latest version provided by NixOS which is 7.5.x at the moment.
+This role provides Varnish Cache, the high-performance HTTP accelerator, in the latest version provided by NixOS which is 7.7.x at the moment.
 
 ## How we differ from what you are used to
 

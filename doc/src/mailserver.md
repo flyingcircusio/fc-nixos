@@ -51,11 +51,6 @@ may require that your mailserver has an imprint served at its hostname.
 For this you can either set `imprintUrl` to the location of your existing
 imprint, or use `imprintText` to specify an imprint in HTML format.
 
-:::{warning}
-Specifying `imprintUrl` without a protocol scheme is still supported, but
-deprecated and will give a warning on evaluation.
-:::
-
 Note that it is not possible to set both `imprintUrl` and `imprintText` at the
 same time and imprint cannot be used if you serve webmail under the
 `mailHost` (meaning `mailHost` and `webmailHost` cannot be the same).

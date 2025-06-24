@@ -6,11 +6,11 @@ This role installs the [Redis](https://redis.io) in-memory data structure store
 in the latest version provided by NixOS which is 7.2.x at the moment.
 
 :::{note}
-Version 7.2.x will be the last release of the Redis software from Redis Inc. supported in our platform.
-As the upcoming releases of Redis 7.3 and newer won't be Open Source software anymore, we
-intend to shift to one of the Redis-compatible forks which remain Open Source software.\
-The choice has not been made yet, we are evaluating the options [Valkey](https://valkey.io),
-[Redict](https://redict.io/), and [KeyDB](https://keydb.dev/).
+Redis Inc. has changed the license of more recent releases of the Redis software several times.
+While Redis 7.4.x is available under a (different) Free/ Open Source Software again, we have not
+yet decided which implementation is going to be used in the future.
+We are observing the ecosystem and are also considering to shift to one of the Redis-compatible forks
+like [Valkey](https://valkey.io) or [Redict](https://redict.io/).
 :::
 
 ## Components

@@ -214,8 +214,9 @@ Supported packages:
 - `pkgs.lamp_php74` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
 - `pkgs.lamp_php80` ([outdated](https://www.php.net/supported-versions.php) but provided for legacy applications)
 - `pkgs.lamp_php81`
-- `pkgs.lamp_php82` (default)
+- `pkgs.lamp_php82`
 - `pkgs.lamp_php83`
+- `pkgs.lamp_php84` (default)
 
 The `lamp_php_*` packages provided by our platform include commonly used
 PHP extensions, currently:

@@ -16,9 +16,9 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 ## Overview
 
 - New roles: {ref}`percona84 <nixos-upgrade-percona>`
-- Removed roles: {ref}`percona81 percona82 percona83 <nixos-upgrade-percona>`
-- Removed significant packages: `go_1_21`, `k3s_1_27`, `k3s_1_28`, `postgresql12`, `rabbitmq-server_3_8`
-- Roles affected by significant breaking changes: {ref}`matomo <nixos-matomo>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`docker <nixos-upgrade-docker>`, {ref}`webgateway <nixos-upgrade-webgateway>`, {ref}`postgresql12 <nixos-upgrade-postgresql>`
+- Removed roles:
+- Removed significant packages: `dstat`, `latencytop`, `atop`, `go_1_22`, `k3s_1_29`, `nodejs_18`, `python39`
+- Roles affected by significant breaking changes: {ref}`gitlab <nixos-upgrade-gitlab>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`mailserver mailstub <nixos-upgrade-mail>`, {ref}`redis <nixos-upgrade-redis>`, {ref}`percona84 <nixos-upgrade-percona>`, {ref}`slurm-controller slurm-node <nixos-upgrade-slurm>`
 
 
 ## Why upgrade? Security
@@ -31,7 +31,7 @@ We do back-ports for critical security issues but this may take longer in some
 cases and less important security fixes will not be back-ported most of the time.
 
 NixOS provides regular security updates for about one month after the release.
-Upstream support for 24.05 ended on **2024-12-31**.
+Upstream support for 24.11 ended on **2025-06-31**.
 
 New platform features are always developed for the current stable platform version
 and only critical bug fixes are back-ported to older versions.
@@ -39,7 +39,7 @@ and only critical bug fixes are back-ported to older versions.
 
 ## How to upgrade?
 
-To upgrade your machines, the *Environment* to one of the `fc-24.11-…`
+To upgrade your machines, the *Environment* to one of the `fc-25.05-…`
 values. \
 This can be done either via our customer portal, or by setting the platform
 version using the API.
@@ -73,7 +73,7 @@ also subscribe to updates.
 ### Upgrade to the next platform version
 
 We recommend upgrading platform versions one at a time without skipping
-versions. Here we assume that you are upgrading from the 24.05 platform.
+versions. Here we assume that you are upgrading from the 24.11 platform.
 
 Direct upgrades from older versions are possible in principle, but we cannot
 reliably test all combinations for all roles and custom configuration also
@@ -107,130 +107,167 @@ time-window.
 
 ## Significant breaking changes
 
-(2411-upgrade-matomo)=
-
-### Matomo
-
-This platform release removes support for version 4 of the Matomo web analytics
-tool. Existing installations will be upgraded to version 5.
-
-This update is irreversable without manual admin interventions. For more details
-and upgrade instructions when still on the 24.05 platform, consult
-{ref}`the upgrade documentation <nixos-matomo-upgrade>`.
-
-Installations that already upgraded to Matomo 5 during the 24.05 NixOS platform
-may remove `services.matomo.package = pkgs.matomo_5;` from their custom NixOS
-config after upgrading, this is the default now.
-
-(nixos-upgrade-webgateway)=
-### Webgateway (Nginx)
-
-The nginx main process is running as user *nginx* by default since NixOS 22.11. The option `services.nginx.masterUser` to still run the main process as *root* has been removed in this platform version.
-
-Configuring nginx via structured JSON config files in {file}`/etc/local/nginx/*.json` has been removed. Affected machines already showed a NixOS warning in platform version 24.05.
-Nginx vhost configuration needs to be migrated to *Structured Nix Configuration*. As JSON config supports the same options as Nix config, converting from JSON to
-Nix is basically just a syntax change. Consult the examples in the {ref}`role documentation <nixos-webgateway>` or the [option search](https://search.flyingcircus.io/search/options?q=flyingcircus.services.nginx) for details.
-
-In the next platform version, we plan to deprecate our custom option set `flyingcircus.services.nginx` in favour of the very similar NixOS upstream [`services.nginx`](https://search.flyingcircus.io/search/options?q=services.nginx) options. \
-Consequentially, prefer using `services.nginx` options when migrating the JSON config if possible.
-
 (nixos-upgrade-percona)=
 ### Percona/ MySQL
 
-The release schema of Percona versions changed yet again. Percona will only create releases based on Oracle MySQL LTS releases anymore.
-Percona version 8.0 is still a supported LTS release and the one we recommend right now. The most current LTS release 8.4 is not supported from the start of the NixOS 24.11 release cycle, but will be introduced very soon in one of the regular releases.
+Two versions of percona are actively supported: `percona80` and `percona84`. \
+Both are LTS releases still receiving bug and security fixes.
 
-The versions *8.1*, *8.2*, and *8.3* have been removed in this platform release. Users relying on these versions must not downgrade to Percona 8.0, but can upgrade to Üercona 8.4 once that is available in our platform.
+`percona83` is only included to allow upgrades towards `percona84`.
 
-(nixos-upgrade-postgresql)=
-### Postgresql
+Version 8.4 of percona (role `percona84`) changes the default authentication mechanism from `mysql_native_password` to `caching_sha2_password`. After upgrading the role to 8.4. *all passwords need to be migrated manually* to the new hash format.
 
-The `postgresql12` role has been dropped. The oldest supported PostgreSQL release is now 13.
-Upgrading PostgreSQL to at least version 13 needs to be done ahead of the platform upgrade, our {ref}`fc-postgresql <nixos-postgresql-major-upgrade>` tool can help with that.
+Please do the migration during this platform release cycle, our 25.11 platform with Percona 9.x will disable the deprecated hashing algorithm altogether.
 
-`postgresql.service` has enabled [several hardening options](https://nixos.org/manual/nixos/stable/#module-services-postgres-hardening) by default now. Our platform role was adapted to be able to deal with this, but if your application relies on direct access to postgresql data directories, hardening options might need to be adjusted.
+See {ref}`nixos-mysql-password-hash-migration` for detailed migration instructions.
 
 (nixos-upgrade-k3s)=
 ### K3S
 
-k3s-1.30.x is the default k3s version in this release.
+k3s-1.32.x is the default k3s version in this release.
 
-Clusters that were created on the NixOS 24.05 platform already use that version.
-Clusters created at an earlier release might still be using an older k3s version,
-please verify that they are upgraded to k3s-1.30.x before upgrading to NixOS 24.11.
+Please verify that existing clusters are upgraded to k3s-1.30.x **before** upgrading to NixOS 25.05.
 
-k3s nodes are only allowed to be updated ins steps of one minor version at a time.
+k3s nodes are only allowed to be updated in steps of one minor version at a time.
 The Kubernetes control plane with the `k3s-server` role needs to be updated before
 the cluster's worker nodes with the `k3s-agent` role are updated.
 
-Contact support of you need help with updating your k3s cluster, or if you still
+Contact [support](/platform/index.html#support) if you need help with updating your k3s cluster, or if you still
 need to use another specific k3s version for your cluster.
 
 (nixos-upgrade-slurm)=
 ### Slurm
 
-This release contains a major version upgrade of Slurm from 23.11.x.x (NixOS 24.05) to 24.05.x.x. Nodes of a cluster need to be upgraded in a particular order, please consult the [upgrade instructions of the role](#nixos-slurm-upgrade) for details.
+This release contains a major version upgrade of Slurm from 24.05.x.x (NixOS 24.11) to 24.11.x.x. Nodes of a cluster need to be upgraded in a particular order, please consult the [upgrade instructions of the role](#nixos-slurm-upgrade) for details.
 
-(nixos-upgrade-docker)=
-### Docker
 
-The default docker version is updated from 24 to 27. Some of the major changes are:
+(nixos-upgrade-gitlab)=
+### Gitlab
 
-- The `devicemapper` storage driver is not supported anymore. See {ref}`nixos-docker-storage-driver` for background information and instructions on how to migrate your existing containers before upgrading.
-- docker-27 finally supports IPv6 networking by default. While this enables more modern networking setups, please ensure that your service security does not rely on the implicit assumption that containers have no IPv6 networking.
-- Read-only bind mounts are **recursively read-only** by default [since docker-25](https://docs.docker.com/engine/release-notes/25.0/#2500).
+Gitlab version 18.0 will enable pseudonymised [tracking and reporting of events data](https://about.gitlab.com/blog/2025/03/26/more-granular-product-usage-insights-for-gitlab-self-managed-and-dedicated/). To prevent this, an **opt-out** can already be configured in the current Gitlab version:
+- Visit `<yourgitlabdomain>/admin/application_settings/metrics_and_profiling`
+- uncheck *Event tracking -> Enable event tracking*
+
+Postgresql>=16 is required, please upgrade your postgres role before updating.
+
+*Runner registration tokens* have been deprecated for several releases already and are not supported anymore in Gitlab 18.
+Our [support](/platform/index.html#support) staff will take care of migrating your managed Gitlab instance to the new *runner authentication token scheme* ahead of the update. For advanced use cases like interactions between Gitlab and external runners not part of the Flying Circus platform, please reach out to our support.
+
+(nixos-upgrade-mail)=
+### Mailserver, mailstub
+
+Both `mailserver` and `mailstub` roles are affected by changes in the underlying implementations:
+- DKIM signing and verification is now handled by rspamd instead of OpenDKIM. rspamd only supports `relaxed` canoncalisation.
+- `policyd-spf` was removed, SPF record verification of incoming mails is handled by rspamd.
+  - The `policydSPFExtraSkipAddresses` option has been renamed to `spfSkipAddresses`, reflecting that change.
+  - `mailserver.policydSPFExtraConfig` was removed.
+- `flyingcircus.roles.mailserver.imprintUrl` now requires a full URI starting with the `http://` or `https://` protocol. Protocol-less URIs had been deprecated in the 24.11 platform release.
+
+(nixos-upgrade-redis)=
+### Redis
+
+- redis: restructure internal password handling
+  The password file /etc/local/redis/password now gets written as systemd ExecStartPre. (PL-133653)
+
+  `services.redis.servers."".requirePass` must not be used anymore. There are three options to replace it with:
+    - `services.redis.servcers."".requirePassFile` to retrieve the password from an external file
+    - set `flyingcircus.services.redis.password`
+    - just remove the option, causing the password to be autogenerated and stored at `/etc/local/redis/password`.  \
+      Autogenerated passwords can not be read from the Nix config at evaluation time.
+- reading the Redis password at evaluation time from `config.flyingcircus.services.redis.password` is not supported anymore.
+
+### changes not affecting a specific role
+
+% does not affect our platform MongoDB roles but things set up by AppOps via the nixpkgs service
+- mongodb: The option `services.mongodb.initialRootPassword` was removed in favour of `services.mongodb.initialRootPasswordFile` to securely provide the initial root password.
+- postgresql: `pg_config` has been moved to a separate package `postgresql.pg_config` or `postgresql_<major version>.pg_config`. Packages and environment relying on the presence of that command need to explicitly specify that package as a dependency.
+  - Building other software against postgresql usually also requires libraries and headers as well, so in general the following dependencies need to be specified:
+    * `postgresql.pg_config.out`
+    * `postgresql.out`
+    * `postgresql.lib`
+    * `postgresql.dev`
+  - For deplyoments using a [batou_ext userenv](https://github.com/flyingcircusio/batou_ext/blob/98cba22c8fe4c8cf6273855704673161bf108336/src/batou_ext/nix.py#L110), only `postgresql.pg_config` and `postgresql` are required.
 
 ## Other notable changes
 
-- New supported PHP version: PHP 8.4
-- All Oracle JDKs and JREs were dropped due to being unmaintained and heavily insecure. OpenJDK provides compatible replacements for JDKs and JREs.
-- gradle_6 was removed due to being unsupported upstream
-- While `openssl` was updated from 3.0.x to 3.3.x, the `openssl_3` package name continues to point to the 3.0.x series
-- For more details, see the
-  [release notes of NixOS 24.11](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-24.11).
+- Nix was upgraded to version 2.28
+- agent: the command `fc-manage switch` now has a `-R` option which
+  will activate the new configuration by performing an immediate
+  reboot, similar to the process used for upgrading between major
+  versions. (PL-133308)
+- improvements in configuring the nixpkgs package set:
+  - Introduced option `flyingcircus.permittedInsecurePackages` to allow additional packages marked as insecure.
+  - Improved error message when trying to use a package marked as insecure or unfree showing FCIO-specific instructions.
+  - When importing the platform channel (`import <fc> …`), declarations of `config.allowUnfreePredicate` and
+  `config.permittedInsecurePackages` don't get discarded silently. In case of `allowUnfreePredicate`, at least
+  one of the platform-provided or user-supplied predicate must evaluate to `true` to allow the instantiation of
+  an unfree package.
+- docker: fix role not working on devhosts (PL-133607)
 
+  This change also prepares the role to work on machines without FE interface or PUB interface.
+- Add a mechanism to upgrade XFS flags over time. Initially this will cause
+  `bigtime`, `inobtcount` and `nrext64` flags to be set. With `bigtime` set VMs
+  from this release on will consistently support file times beyond 2038, even if
+  they were bootstrapped on older releases. (PL-133321, PL-130365)
+- Prepare VMs to read ENC data (the config management metadata) seeded from the
+  host from the separate `cidata` volume in the future. This allows disabling or
+  reconfiguring /tmp to use tmpfs without breaking our configuration management.
+  (PL-133311)
+- Invalid NixOS `state_version` files are automatically fixed to fit the expected YY.MM format. (PL-133559)
+- nginx: new JSON-based log format that is being used to ship access logs to a Loki instance automatically if one is present (PL-133702)
+- dstat: drop as it is unmaintained, replace with `dool`
+  - `dstat` is now an alias for `dool`
+- `less` does not utilise external programs to improve rendering by default (lesspipe). To restore the previous behaviour, set `programs.less.lessopen` to `''|${lib.getExe' pkgs.lesspipe "lesspipe.sh"} %s''`.
+- linux kernel: we now follow the 6.12.x LTS series of linux for production environments.
+- For more details, see the
+  [release notes of NixOS 25.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-25.05).
+
+## Known issues
+
+- mailserver: Incoming e-mails via IPv4 are treated as local e-mails by rspamd, skipping SPF, DKIM, and DMARC checks
 
 ## Significant package updates
 
-*as of 2025-01-31*
+*as of 2025-06-24*
 
-- awscli: 1.32 -> 1.34
-- awscli2: 2.15 -> 2.19
-- binutils: 2.41 -> 2.43
-- calibre: 7.10 -> 7.21
-- clamav: 1.3 -> 1.4
-- cmake: 3.29 -> 3.30
-- curl: 8.7 -> 8.11
-- docker: 24.0 -> 27.3 (other versions available under alias)
-- ffmpeg: 6.1 -> 7.1
-- gcc: 13.2 -> 13.3
-- git: 2.44 -> 2.47
-- gitlab: 17.6 -> 17.7
-- glibc: 2.39 -> 2.40
-- go: 1.22 -> 1.23 (other versions available under alias)
-- grafana: 10.4 -> 11.3
-- haproxy: 2.9 -> 3.0
-- k3s: see above
-- keycloak: 25.0 -> 26.1
-- libressl: 3.9 -> 4.0
-- libtiff: 4.6 -> 4.7
-- libxml2: 2.12 -> 2.13
-- linux: 5.15 -> 6.6
-- mastodon: 4.2 -> 4.3
-- mongodb: 6.0 -> 7.0 (not managed by platform role)
-- nix: 2.18 -> 2.24
-- opensearch: 2.14 -> 2.17
-- openssh: 9.7p1 -> 9.9p1
-- openssl: 3.0 -> 3.3
-- phpPackages.composer: 2.7 -> 2.8
-- podman: 5.0 -> 5.2
-- python3: 3.11 -> 3.12 (other versions available under alias)
-- python3Packages.boto3: 1.34 -> 1.35
-- python3Packages.pillow: 10.3 -> 11.0
-- rabbitmq-server: 3.12 -> 4.0
-- rclone: 1.66 -> 1.68
-- rsync: 3.3 -> 3.4
-- ruby: 3.1 -> 3.3 (other versions available under alias)
-- systemd: 255 -> 256
-- varnish: 7.4 -> 7.5
-- wget: 1.21 -> 1.25
+- awscli: 1.34 -> 1.37
+- awscli2: 2.19 -> 2.27
+- binutils: 2.43 -> 2.44
+- calibre: 7.21 -> 8.4
+- containerd: 1.7 -> 2.1
+- coreutils: 9.5 -> 9.7
+- curl: 8.12 -> 8.13
+- discourse: 3.3 -> 3.4
+- docker-compose: 2.30 -> 2.36
+- erlang: 25.3 -> 27.3
+- gcc: 13.3 -> 14.2 (other versions available under alias)
+- git: 2.47 -> 2.49
+- gitlab: 17.11 -> 18.0
+- go: 1.23 -> 1.24 (other versions available under alias)
+- grafana: 11.3 -> 12.0
+- haproxy: 3.0 -> 3.1
+- k3s: 1.30 -> 1.32 (other versions available under alias)
+- kubernetes-helm: 3.16 -> 3.17
+- libwebp: 1.4 -> 1.5
+- linux: 6.6 -> 6.12
+- matomo: 5.2 -> 5.3
+- nginx: 1.26 -> 1.28
+- nodejs: 20 -> 22 (other versions available under alias)
+- opensearch: 2.17 -> 2.19
+- openssh: 9.9 -> 10.0
+- openssl: 3.3 -> 3.4
+- podman: 5.2 -> 5.4
+- poetry: 1.8 -> 2.1
+- postfix: 3.9 -> 3.10
+- prometheus: 2.55 -> 3.1
+- python3Packages.boto3: 1.35 -> 1.36
+- python3Packages.rich: 13.8 -> 14.0
+- rclone: 1.68 -> 1.69
+- re2c: 3.1 -> 4.1
+- slurm: 24.05 -> 24.11
+- systemd: 256 -> 257
+- telegraf: 1.32 -> 1.34
+- util-linux: 2.39 -> 2.41
+- uv: 0.4 -> 0.7
+- varnish: 7.5 -> 7.7
+- xz: 5.6 -> 5.8
