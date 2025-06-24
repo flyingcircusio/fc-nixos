@@ -505,9 +505,9 @@
     "version": "5.3.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.131.0",
+    "name": "matrix-synapse-wrapped-1.132.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.131.0"
+    "version": "1.132.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -1111,14 +1111,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.41",
+    "name": "apache-tomcat-10.1.42",
     "pname": "apache-tomcat",
-    "version": "10.1.41"
+    "version": "10.1.42"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.105",
+    "name": "apache-tomcat-9.0.106",
     "pname": "apache-tomcat",
-    "version": "9.0.105"
+    "version": "9.0.106"
   },
   "unifi": {
     "name": "unifi-controller-9.1.120",
