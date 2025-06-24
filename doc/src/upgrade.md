@@ -222,6 +222,9 @@ Both `mailserver` and `mailstub` roles are affected by changes in the underlying
 - For more details, see the
   [release notes of NixOS 25.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-25.05).
 
+## Known issues
+
+- mailserver: Incoming e-mails via IPv4 are treated as local e-mails by rspamd, skipping SPF, DKIM, and DMARC checks
 
 ## Significant package updates
 
