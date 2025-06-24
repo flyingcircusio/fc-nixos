@@ -23,14 +23,21 @@ with builtins;
 let
   nixpkgsConfig = import ./nixpkgs-config.nix;
   getName = pkg: pkg.pname or (parseDrvName pkg.name);
+
+  inherit (import (nixpkgs + "/lib")) recursiveUpdate;
+
+  mergedNixpkgsConfig = recursiveUpdate config {
+    allowUnfreePredicate =
+      pkg:
+      elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames
+      || (config.allowUnfreePredicate or (_: false)) pkg;
+
+    permittedInsecurePackages =
+      nixpkgsConfig.permittedInsecurePackages ++ (config.permittedInsecurePackages or [ ]);
+  };
 in
 import nixpkgs {
   overlays = overlays ++ [ (import ./pkgs/overlay.nix) ];
-  config = config // {
-
-    inherit (nixpkgsConfig) permittedInsecurePackages;
-
-    allowUnfreePredicate = pkg: elem (getName pkg) nixpkgsConfig.allowedUnfreePackageNames;
-  };
+  config = mergedNixpkgsConfig;
 }
 // args

@@ -77,6 +77,17 @@ in
       type = types.attrsOf types.unspecified;
     };
 
+    flyingcircus.permittedInsecurePackages = mkOption {
+      type = listOf str;
+      description = ''
+        Allow installing packages that were marked as insecure
+        by the upstream distribution. Please note that these are not prebuilt by
+        a CI system and thus will be built locally.
+        e.g. `python3-3.7.0`.
+      '';
+      default = [ ];
+    };
+
     flyingcircus.allowedUnfreePackageNames = mkOption {
       type = listOf str;
       description = ''
@@ -340,7 +351,8 @@ in
     nixpkgs.config.allowUnfreePredicate =
       pkg: builtins.elem (lib.getName pkg) config.flyingcircus.allowedUnfreePackageNames;
 
-    nixpkgs.config.permittedInsecurePackages = nixpkgsConfig.permittedInsecurePackages;
+    nixpkgs.config.permittedInsecurePackages =
+      nixpkgsConfig.permittedInsecurePackages ++ config.flyingcircus.permittedInsecurePackages;
 
     environment.etc."local/nixos/README.txt".text = ''
       To add custom NixOS config, create *.nix files here.
