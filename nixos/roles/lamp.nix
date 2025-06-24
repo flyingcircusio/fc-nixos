@@ -58,7 +58,7 @@ in
 
       php = mkOption {
         type = types.package;
-        default = pkgs.lamp_php82;
+        default = pkgs.lamp_php84;
         description = ''
           The package to use.
         '';
