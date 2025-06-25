@@ -22,7 +22,7 @@
         },
         "generator": {
             "type": "git",
-            "value": "https://github.com/ctheune/hydra-github-jobsets-generator.git refname-http-urls",
+            "value": "https://github.com/flyingcircusio/hydra-github-jobsets-generator.git main",
             "emailresponsible": false
         },
         "nixpkgs": {
@@ -33,6 +33,11 @@
         "pull_requests": {
             "type": "githubpulls",
             "value": "flyingcircusio fc-nixos",
+            "emailresponsible": false
+        },
+        "ignore_prs_from_forks": {
+            "type": "boolean",
+            "value": "true",
             "emailresponsible": false
         }
     }
