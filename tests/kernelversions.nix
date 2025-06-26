@@ -221,7 +221,7 @@ import ./make-test-python.nix (
                 f"Expected: {expected}, found: {found}. uname -a: {uname_a}"
               )
 
-      assert "${stableVersion}".startswith("6.6."), "Expecting a 6.6.x kernel as stable kernel"
+      assert "${stableVersion}".startswith("6.12."), "Expecting a 6.6.x kernel as stable kernel"
       assert "${verifyVersion}".startswith("6.12."), "Expecting a 6.12.x kernel as verify kernel"
       assertKernelVersion(verifyKernel, "${verifyVersion}")
       assertKernelVersion(prodKernel, "${stableVersion}")
