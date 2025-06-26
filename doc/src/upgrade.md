@@ -115,6 +115,23 @@ Both are LTS releases still receiving bug and security fixes.
 
 `percona83` is only included to allow upgrades towards `percona84`.
 
+#### no password authentication for root user (all role versions)
+
+Access to the database `root` user was changed to authentication via socket.
+Password authentication is disabled for that user, please switch to the unix user `mysql` for database root operations.
+
+The platform used to provide the password for the database root user under `/etc/local/mysql/mysql.passwd`. That
+file does not exist anymore. Instead, invoke your mysql command via `sudo -u mysql`. \
+Example:
+
+```shell
+sudo -u mysql mysql myDb < someCommands.sql
+```
+
+Users of `batou.lib.mysql` can just [pass `USE_SUDO` as the `admin_password` argument](https://github.com/flyingcircusio/batou/commit/7efcb768613f1d68699defa453c0634a279b98be).
+
+#### changed authentication mechanism in percona84
+
 Version 8.4 of percona (role `percona84`) changes the default authentication mechanism from `mysql_native_password` to `caching_sha2_password`. After upgrading the role to 8.4. *all passwords need to be migrated manually* to the new hash format.
 
 Please do the migration during this platform release cycle, our 25.11 platform with Percona 9.x will disable the deprecated hashing algorithm altogether.
