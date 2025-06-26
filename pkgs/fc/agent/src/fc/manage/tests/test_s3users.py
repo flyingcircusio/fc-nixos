@@ -664,11 +664,11 @@ def test_user_manager(subprocess_run, caplog):
                     "keys": [
                         {
                             "access_key": "some-old-key",
-                            "secret_key": "...",
+                            "secret_key": "oldkeysecret",
                         },
                         {
                             "access_key": "some-other-old-key",
-                            "secret_key": "...",
+                            "secret_key": "otheroldkeysecret",
                         },
                     ],
                 }
@@ -703,14 +703,14 @@ def test_user_manager(subprocess_run, caplog):
                     "access_key": "dnDlid0jyRs1sK9vEOGV",
                     "location": "test",
                     "storage_resource_group": "services",
-                    "secret_key": None,
+                    "secret_key": "VqBfxCqupucBSjo7ksDcf4K6vhgsIdGKnL0ielLi",
                 },
                 "services:user1": {
                     "display_name": "user 1",
                     "access_key": "some-old-key",
                     "location": "test",
                     "storage_resource_group": "services",
-                    "secret_key": None,
+                    "secret_key": "oldkeysecret",
                 },
             }
         )

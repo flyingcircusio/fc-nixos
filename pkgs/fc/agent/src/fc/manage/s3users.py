@@ -323,7 +323,7 @@ class UserManager:
                     # as explicit values
                     "location": self.location,
                     "storage_resource_group": self.rg,
-                    "secret_key": None,
+                    "secret_key": user.rgw.secret_key,
                 }
                 for user in self.users.values()
                 if user.rgw.exists
@@ -342,7 +342,7 @@ class UserManager:
                 )
                 self.processing_errors = True
 
-        # report all users present with uid, display_name, access_key
+        # report all users present with uid, display_name, access_key, and secret_key
         self.report_local_users_to_directory()
 
 
