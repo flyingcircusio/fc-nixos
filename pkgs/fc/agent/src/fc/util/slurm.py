@@ -683,7 +683,7 @@ def check_controller(log, hostname):
         f"Running jobs: {stats['jobs_running']}.",
         f"Pending jobs: {stats['jobs_pending']}.",
         f"Total started jobs: {stats['jobs_started']}.",
-        f"Slurm version: {pyslurm.version()}",
+        f"Slurm version: {pyslurm.version.__version__}",
     ]
 
     return CheckResult(errors, warnings, info)

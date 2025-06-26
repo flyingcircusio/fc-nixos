@@ -22,7 +22,8 @@ pyslurm.statistics.return_value.get.return_value = {
     "jobs_pending": 2,
     "jobs_started": 3,
 }
-pyslurm.version = lambda: "22.5.0"
+pyslurm.version = type(sys)("pyslurm.version")
+pyslurm.version.__version__ = "24.11.0"
 sys.modules["pyslurm"] = pyslurm
 
 
@@ -168,7 +169,7 @@ def test_check_controller(logger):
         "Running jobs: 1.",
         "Pending jobs: 2.",
         "Total started jobs: 3.",
-        "Slurm version: 22.5.0",
+        "Slurm version: 24.11.0",
     ]
 
 
