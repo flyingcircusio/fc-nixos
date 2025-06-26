@@ -1,3 +1,37 @@
+# Release 2025_021
+
+## Impact
+
+- Machines will reboot to activate the changed kernel.
+
+
+## NixOS XX.XX platform
+
+- Linux kernel: use 6.12.x LTS series as default stable kernel (PL-133760)
+
+  Promote the 6.12.x LTS Linux kernel series as our default stable kernel.
+
+  This seems to help resolve some recent IO latency / stalling issues
+
+- Memory management: switch to smaller, fixed size dirty page buffers (PL-133760)
+
+  This also seems to be a factor in the recent IO latency / stalling issues:
+  The dirty page buffers were based on percentages of the installed RAM so far,
+  but can cause long periods of stalling when the kernel passes the hard
+  threshold to flush it.
+
+  We now provide much smaller and fixed sizes for dirty pages (16 MiB to start
+  flushing in the background and 64 MiB to enforce flushing).
+
+- nix: fix GHSA-g948-229j-48j3
+
+- agent: the command `fc-manage switch` now has a `-R` option which
+  will activate the new configuration by performing an immediate
+  reboot, similar to the process used for upgrading between major
+  versions. (PL-133308)
+
+
+
 # Release 2025_020
 
 
