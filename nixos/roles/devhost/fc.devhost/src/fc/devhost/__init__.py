@@ -104,7 +104,7 @@ def main():
         a.print_usage()
         sys.exit(1)
 
-    CONFIG_DIR.mkdir(exist_ok=True)
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
     name = getattr(args, "name", None)
     kwargs = dict(args._get_kwargs())
