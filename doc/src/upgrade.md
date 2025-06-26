@@ -235,7 +235,16 @@ Both `mailserver` and `mailstub` roles are affected by changes in the underlying
 - dstat: drop as it is unmaintained, replace with `dool`
   - `dstat` is now an alias for `dool`
 - `less` does not utilise external programs to improve rendering by default (lesspipe). To restore the previous behaviour, set `programs.less.lessopen` to `''|${lib.getExe' pkgs.lesspipe "lesspipe.sh"} %s''`.
-- linux kernel: we now follow the 6.12.x LTS series of linux for production environments.
+- linux kernel: we now follow the 6.12.x LTS series of linux for production environments. This seems to help resolve some recent IO latency / stalling issues.
+- Kernel memory management: switch to smaller, fixed size dirty page buffers (PL-133760)
+
+  This also seems to be a factor in the recent IO latency / stalling issues:
+  The dirty page buffers were based on percentages of the installed RAM so far,
+  but can cause long periods of stalling when the kernel passes the hard
+  threshold to flush it.
+
+  We now provide much smaller and fixed sizes for dirty pages (16 MiB to start
+  flushing in the background and 64 MiB to enforce flushing).
 - For more details, see the
   [release notes of NixOS 25.05](https://nixos.org/manual/nixos/stable/release-notes.html#sec-release-25.05).
 
