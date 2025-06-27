@@ -22,7 +22,7 @@ import ./make-test-python.nix (
 
         virtualisation.diskSize = 1024;
         virtualisation.memorySize = 2048;
-        virtualisation.useNixStoreImage = true; # PL-133821 - 6.12 crashes v9fs in some situations
+        # virtualisation.useNixStoreImage = true; # PL-133821 - 6.12 crashes v9fs in some situations
 
         networking.domain = "test";
 
