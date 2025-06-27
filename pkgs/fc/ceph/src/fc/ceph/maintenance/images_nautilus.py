@@ -2,7 +2,6 @@
 
 import base64
 import contextlib
-import fnmatch
 import hashlib
 import logging
 import os
@@ -13,10 +12,7 @@ import stat
 import subprocess
 import sys
 import tempfile
-import time
-import traceback
-import xmlrpc.client
-from typing import Iterable, Optional
+from typing import Iterable
 
 import requests
 from fc.ceph.util import directory, run
@@ -24,7 +20,7 @@ from fc.ceph.util import directory, run
 CEPH_CONF = "/etc/ceph/ceph.conf"
 CEPH_CLIENT = socket.gethostname()
 CEPH_POOL = "rbd.hdd"
-LOCK_COOKIE = "{}.{}".format(CEPH_CLIENT, os.getpid())
+LOCK_COOKIE = f"{CEPH_CLIENT}.updateimages"
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +150,20 @@ class BaseImage:
         # terminated
         signal.signal(signal.SIGTERM, self._handle_interrupt)
         logger.debug(f"Locking image {self.volume}")
+
+        # Check whether this image is still locked from a previous run.
+        # This is fine as concurrency is prevented by systemd.
+        # If it's not yet locked, lock it now.
+        try:
+            self._determine_image_locker()
+            if self.locker:
+                logger.debug(
+                    f"Image {self.volume} is already locked from a previous run by {self.locker}. Skipping locking."
+                )
+                return self
+        except KeyError:
+            pass
+
         try:
             run.rbd("lock", "add", self.volume, LOCK_COOKIE)
             self._determine_image_locker()
@@ -182,7 +192,7 @@ class BaseImage:
                 f"{CEPH_POOL}/{self.envname}", LOCK_COOKIE, self.locker,
             )  # fmt: skip
         except Exception:
-            logger.exception()
+            logger.exception(f"Removing image lock {self.volume} failed")
 
     def _handle_interrupt(self, _signum, _stack_frame):
         """Workaround for ensuring image unlocking when the process is terminated
