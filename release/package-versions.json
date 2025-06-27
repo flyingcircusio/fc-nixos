@@ -460,9 +460,9 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.94",
+    "name": "linux-6.12.34",
     "pname": "linux",
-    "version": "6.6.94"
+    "version": "6.12.34"
   },
   "linuxKernelVerify": {
     "name": "linux-6.12.34",
