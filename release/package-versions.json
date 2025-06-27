@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.103",
+    "name": "element-web-1.11.104",
     "pname": "element-web",
-    "version": "1.11.103"
+    "version": "1.11.104"
   },
   "erlang": {
     "name": "erlang-27.3.4.1",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-139.0.4",
+    "name": "firefox-140.0",
     "pname": "firefox",
-    "version": "139.0.4"
+    "version": "140.0"
   },
   "gcc": {
     "name": "gcc-wrapper-14.2.1.20250322",
@@ -225,9 +225,9 @@
     "version": "2.49.0"
   },
   "gitaly": {
-    "name": "gitaly-18.0.2",
+    "name": "gitaly-18.1.0",
     "pname": "gitaly",
-    "version": "18.0.2"
+    "version": "18.1.0"
   },
   "github-runner": {
     "name": "github-runner-2.325.0",
@@ -235,9 +235,9 @@
     "version": "2.325.0"
   },
   "gitlab": {
-    "name": "gitlab-18.0.2",
+    "name": "gitlab-18.1.0",
     "pname": "gitlab",
-    "version": "18.0.2"
+    "version": "18.1.0"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.23.1",
@@ -245,14 +245,14 @@
     "version": "4.23.1"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.0.2",
+    "name": "gitlab-ee-18.1.0",
     "pname": "gitlab-ee",
-    "version": "18.0.2"
+    "version": "18.1.0"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.0.2",
+    "name": "gitlab-pages-18.1.0",
     "pname": "gitlab-pages",
-    "version": "18.0.2"
+    "version": "18.1.0"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.11.0",
@@ -260,9 +260,9 @@
     "version": "17.11.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.0.2",
+    "name": "gitlab-workhorse-18.1.0",
     "pname": "gitlab-workhorse",
-    "version": "18.0.2"
+    "version": "18.1.0"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -460,9 +460,9 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.6.94",
+    "name": "linux-6.12.34",
     "pname": "linux",
-    "version": "6.6.94"
+    "version": "6.12.34"
   },
   "linuxKernelVerify": {
     "name": "linux-6.12.34",
@@ -595,9 +595,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.112",
+    "name": "nss-3.113",
     "pname": "nss",
-    "version": "3.112"
+    "version": "3.113"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.11",
@@ -1080,9 +1080,9 @@
     "version": "1.14.5"
   },
   "sudo": {
-    "name": "sudo-1.9.16p2",
+    "name": "sudo-1.9.17",
     "pname": "sudo",
-    "version": "1.9.16p2"
+    "version": "1.9.17"
   },
   "sysstat": {
     "name": "sysstat-12.7.4",
