@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-137.0.7151.119",
+    "name": "chromedriver-unwrapped-138.0.7204.49",
     "pname": "chromedriver-unwrapped",
-    "version": "137.0.7151.119"
+    "version": "138.0.7204.49"
   },
   "chromium": {
-    "name": "chromium-137.0.7151.119",
+    "name": "chromium-138.0.7204.49",
     "pname": "chromium",
-    "version": "137.0.7151.119"
+    "version": "138.0.7204.49"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -90,9 +90,9 @@
     "version": "7.3"
   },
   "clamav": {
-    "name": "clamav-1.4.2",
+    "name": "clamav-1.4.3",
     "pname": "clamav",
-    "version": "1.4.2"
+    "version": "1.4.3"
   },
   "cmake": {
     "name": "cmake-3.31.6",
@@ -105,9 +105,9 @@
     "version": "1.9.9"
   },
   "containerd": {
-    "name": "containerd-2.1.1",
+    "name": "containerd-2.1.3",
     "pname": "containerd",
-    "version": "2.1.1"
+    "version": "2.1.3"
   },
   "coreutils": {
     "name": "coreutils-9.7",
@@ -290,9 +290,9 @@
     "version": "1.23.10"
   },
   "grafana": {
-    "name": "grafana-12.0.1+security-01",
+    "name": "grafana-12.0.2",
     "pname": "grafana",
-    "version": "12.0.1+security-01"
+    "version": "12.0.2"
   },
   "grub2": {
     "name": "grub-2.12",
