@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-137.0.7151.119",
+    "name": "chromedriver-unwrapped-138.0.7204.49",
     "pname": "chromedriver-unwrapped",
-    "version": "137.0.7151.119"
+    "version": "138.0.7204.49"
   },
   "chromium": {
-    "name": "chromium-137.0.7151.119",
+    "name": "chromium-138.0.7204.49",
     "pname": "chromium",
-    "version": "137.0.7151.119"
+    "version": "138.0.7204.49"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-139.0.4",
+    "name": "firefox-140.0",
     "pname": "firefox",
-    "version": "139.0.4"
+    "version": "140.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -600,9 +600,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.112",
+    "name": "nss-3.113",
     "pname": "nss",
-    "version": "3.112"
+    "version": "3.113"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.10.2",
