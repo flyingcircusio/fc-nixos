@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-137.0.7151.119",
+    "name": "chromedriver-unwrapped-138.0.7204.49",
     "pname": "chromedriver-unwrapped",
-    "version": "137.0.7151.119"
+    "version": "138.0.7204.49"
   },
   "chromium": {
-    "name": "chromium-137.0.7151.119",
+    "name": "chromium-138.0.7204.49",
     "pname": "chromium",
-    "version": "137.0.7151.119"
+    "version": "138.0.7204.49"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.1",
@@ -90,9 +90,9 @@
     "version": "7.1"
   },
   "clamav": {
-    "name": "clamav-1.4.2",
+    "name": "clamav-1.4.3",
     "pname": "clamav",
-    "version": "1.4.2"
+    "version": "1.4.3"
   },
   "cmake": {
     "name": "cmake-3.30.5",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-139.0.4",
+    "name": "firefox-140.0",
     "pname": "firefox",
-    "version": "139.0.4"
+    "version": "140.0"
   },
   "gcc": {
     "name": "gcc-wrapper-13.3.0",
@@ -225,9 +225,9 @@
     "version": "2.47.2"
   },
   "gitaly": {
-    "name": "gitaly-17.11.4",
+    "name": "gitaly-17.11.5",
     "pname": "gitaly",
-    "version": "17.11.4"
+    "version": "17.11.5"
   },
   "github-runner": {
     "name": "github-runner-2.325.0",
@@ -235,9 +235,9 @@
     "version": "2.325.0"
   },
   "gitlab": {
-    "name": "gitlab-17.11.4",
+    "name": "gitlab-17.11.5",
     "pname": "gitlab",
-    "version": "17.11.4"
+    "version": "17.11.5"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.23.1",
@@ -245,14 +245,14 @@
     "version": "4.23.1"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-17.11.4",
+    "name": "gitlab-ee-17.11.5",
     "pname": "gitlab-ee",
-    "version": "17.11.4"
+    "version": "17.11.5"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-17.11.4",
+    "name": "gitlab-pages-17.11.5",
     "pname": "gitlab-pages",
-    "version": "17.11.4"
+    "version": "17.11.5"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-17.2.0",
@@ -260,9 +260,9 @@
     "version": "17.2.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-17.11.4",
+    "name": "gitlab-workhorse-17.11.5",
     "pname": "gitlab-workhorse",
-    "version": "17.11.4"
+    "version": "17.11.5"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -600,9 +600,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.112",
+    "name": "nss-3.113",
     "pname": "nss",
-    "version": "3.112"
+    "version": "3.113"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.10.2",
