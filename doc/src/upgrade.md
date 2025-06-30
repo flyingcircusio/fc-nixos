@@ -157,6 +157,8 @@ need to use another specific k3s version for your cluster.
 
 This release contains a major version upgrade of Slurm from 24.05.x.x (NixOS 24.11) to 24.11.x.x. Nodes of a cluster need to be upgraded in a particular order, please consult the [upgrade instructions of the role](#nixos-slurm-upgrade) for details.
 
+Regarding new features or changes in Slurm itself, consult [its release notes](https://github.com/SchedMD/slurm/blob/slurm-24-11-0-1/RELEASE_NOTES).
+
 
 (nixos-upgrade-gitlab)=
 ### Gitlab
