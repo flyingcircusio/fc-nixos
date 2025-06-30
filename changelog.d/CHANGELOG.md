@@ -1,3 +1,114 @@
+# Release 2025_022
+
+## Impact
+
+- Telegraf will be restarted.
+
+-
+
+- A bullet item for the Impact category.
+
+-
+
+- A bullet item for the Impact category.
+
+- The Redis cache of GitLab will be flushed.
+
+- GitLab will be restarted.
+
+- gitlab: postgresql>=16 is required, please upgrade your postgres role before updating
+
+- A bullet item for the Impact category.
+
+-
+
+
+## NixOS XX.XX platform
+
+- Improve convergence in internal S3 user management. Secrets are now also being reported back to our configuration
+  management. This reduces error potential in the future in the secret management (PL-133656)
+
+- gitlab: fix registry port. (PL-133568)
+
+- Additional Redis servers configured with `services.redis.servers` now
+  get Sensu checks and their metrics are scraped by Telegraf.
+
+  This is not possible if a server doesn't have a TCP listener and its UNIX socket isn't
+  readable & writable by its owning group. For each server like that, a warning
+  will be printed.
+
+- The option `services.telegraf.environmentVariablesFromFile` was introduced which allows
+  substituting variables inside the Telegraf config with the content of a file.
+
+- Fix an issue with the alloy service being assigned a nonexistent role when nginx is not enabled. (PL-133737)
+
+- redis: restructure internal password handling
+  The password file /etc/local/redis/password now gets written as systemd ExecStartPre. (PL-133653)
+
+  If you set `services.redis."".requirePassFile` in your NixOS config, please use
+  `flyingcircus.services.redis.password` instead. Also, reading the Redis password
+  at evaluation time from `config.flyingcircus.services.redis.password` is not supported anymore.
+
+- k3s: The default package has been updated to k3s-1.32
+
+- Introduced option `flyingcircus.permittedInsecurePackages` to allow additional packages marked as insecure.
+
+- Improved error message when trying to use a package marked as insecure or unfree showing FCIO-specific instructions.
+
+- When importing the platform channel (`import <fc> …`), declarations of `config.allowUnfreePredicate` and
+  `config.permittedInsecurePackages` don't get discarded silently. In case of `allowUnfreePredicate`, at least
+  one of the platform-provided or user-supplied predicate must evaluate to `true` to allow the instantiation of
+  an unfree package.
+
+- fix some configuration options for the loki role (PL-133581)
+
+- Automatically build a list of all options and packages for consumption by the option/package search (PL-133663)
+
+- pkgs.nodejs is updated from version 20 to 22
+
+- Improve our internal image update script to not fail on temporary DNS errors (PL-133726)
+
+- Small update of documentation strings on which type of configuration files
+  are used for generated haproxy.cfg (PL-133666)
+
+- Fix fs-check script by restoring old use of fc-directory cli (PL-133676)
+
+- nix: use nix-2.25 on all machines
+
+- dstat: drop as it is unmaintained, replace with `dool`
+  - `dstat` is now an alias for `dool`
+
+- latencytop: drop package, remove from default installation
+
+- docker: fix role not working on devhosts (PL-133607)
+
+  This change also prepares the role to work on machines without FE interface or PUB interface.
+
+- The GitLab role requires an active Redis role on the same machine.
+
+- Invalid NixOS `state_version` files are automatically fixed to fit the expected YY.MM format. (PL-133559)
+
+- Fix a part of the alloy configuration that receives syslog messages from nginx (PL-133746)
+
+- Add a new JSON-based log format to Nginx that is being used to ship access logs to a Loki instance automatically if one is present (PL-133702)
+
+- Add a mechanism to upgrade XFS flags over time. Initially this will cause
+  `bigtime`, `inobtcount` and `nrext64` flags to be set. With `bigtime` set VMs
+  from this release on will consistently support file times beyond 2038, even if
+  they were bootstrapped on older releases. (PL-133321, PL-130365)
+
+- Prepare VMs to read ENC data (the config management metadata) seeded from the
+  host from the separate `cidata` volume in the future. This allows disabling or
+  reconfiguring /tmp to use tmpfs without breaking our configuration management.
+  (PL-133311)
+
+- agent: the command `fc-manage switch` now has a `-R` option which
+  will activate the new configuration by performing an immediate
+  reboot, similar to the process used for upgrading between major
+  versions. (PL-133308)
+
+
+
 # Release 2025_016
 
 ## Impact
