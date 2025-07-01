@@ -137,7 +137,7 @@ with lib;
         # This seems to be https://sourceware.org/bugzilla/show_bug.cgi?id=13028
         # which is fixed in glibc 2.22 which is included in NixOS 16.03.
         dev = [ "2a06:3a80:300:3::1" ];
-        whq = [ "2a02:238:f030:103::1" ];
+        whq = [ "2a06:3a80:0:3::1" ];
         test = [
           "2620:fe::fe"
           "2001:4860:4860::8888"
@@ -169,8 +169,13 @@ with lib;
           "2a02:248:101:62::1187"
           "2a02:248:101:63::118f"
 
-          # vpn-whq.services.fcio.net
+          # vpn-whq.services.fcio.net (new addresses)
           "172.16.48.35"
+          "185.105.255.31"
+          "2a06:3a80:0:2::26"
+          "2a06:3a80:0:3::2f"
+
+          # vpn-whq.services.fcio.net (legacy addresses)
           "212.122.41.150"
           "2a02:238:f030:102::1043"
           "2a02:238:f030:103::1073"
