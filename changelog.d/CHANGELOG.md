@@ -1,3 +1,21 @@
+# Release 2025_023
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- Improve convergence in internal S3 user management. Secrets are now also being reported back to our configuration
+  management. This reduces error potential in the future in the secret management (PL-133656)
+
+- Improve our internal image update script to not fail on temporary DNS errors (PL-133726)
+
+- sudo: 1.9.17 -> 1.9.17p1 (CVE-2025-32462, CVE-2025-32463)
+
+
+
 # Release 2025_021
 
 ## Impact
