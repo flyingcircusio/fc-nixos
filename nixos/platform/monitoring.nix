@@ -65,7 +65,8 @@ let
     kernel = [ { } ];
     mem = [ { } ];
     netstat = [ { } ];
-    net = [ { } ];
+    net = [ { ignore_protocol_stats = false; } ]; # PL-133683
+    nstat = [ { } ]; # PL-133683
     processes = [ { } ];
     system = [ { } ];
     swap = [ { } ];
