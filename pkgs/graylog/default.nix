@@ -3,7 +3,7 @@
   stdenv,
   fetchurl,
   makeWrapper,
-  openjdk11_headless,
+  openjdk8_headless,
   nixosTests,
 }:
 
@@ -23,7 +23,7 @@ stdenv.mkDerivation rec {
   makeWrapperArgs = [
     "--set-default"
     "JAVA_HOME"
-    "${openjdk11_headless}"
+    "${openjdk8_headless}"
   ];
 
   passthru.tests = { inherit (nixosTests) graylog; };
