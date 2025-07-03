@@ -17,6 +17,7 @@ let
     "14" = pkgs.postgresql_14;
     "15" = pkgs.postgresql_15;
     "16" = pkgs.postgresql_16;
+    "17" = pkgs.postgresql_17;
   };
 
   oldestMajorVersion = head (lib.attrNames packages);
@@ -135,7 +136,7 @@ in
       majorVersion = mkOption {
         type = types.str;
         description = ''
-          The major version of PostgreSQL to use (10, 11, 12, 13, 14).
+          The major version of PostgreSQL to use (${lib.concatStringsSep ", " (builtins.attrNames packages)}).
         '';
       };
     };
