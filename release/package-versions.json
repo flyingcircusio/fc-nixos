@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.104",
+    "name": "element-web-1.11.105",
     "pname": "element-web",
-    "version": "1.11.104"
+    "version": "1.11.105"
   },
   "erlang": {
     "name": "erlang-27.3.4.1",
@@ -505,9 +505,9 @@
     "version": "5.3.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.132.0",
+    "name": "matrix-synapse-wrapped-1.133.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.132.0"
+    "version": "1.133.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -875,9 +875,9 @@
     "version": "4.9.5"
   },
   "prometheus": {
-    "name": "prometheus-3.1.0",
+    "name": "prometheus-3.4.2",
     "pname": "prometheus",
-    "version": "3.1.0"
+    "version": "3.4.2"
   },
   "promtail": {
     "name": "promtail-3.4.4",
@@ -1140,9 +1140,9 @@
     "version": "2.41"
   },
   "uv": {
-    "name": "uv-0.7.17",
+    "name": "uv-0.7.19",
     "pname": "uv",
-    "version": "0.7.17"
+    "version": "0.7.19"
   },
   "varnish": {
     "name": "varnish-7.7.1",
