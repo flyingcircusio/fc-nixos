@@ -2,12 +2,9 @@ import getpass
 import os
 import re
 import shutil
-import stat
-import tempfile
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
-from stat import S_IMODE as modebits
 from subprocess import CalledProcessError, run
 from typing import List
 
