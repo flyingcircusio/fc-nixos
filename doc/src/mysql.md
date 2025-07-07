@@ -94,8 +94,14 @@ any effect anymore.
 Before Percona (and generally MySQL) 8.4, `mysql_native_password` was the default authentication and password hash algorithm.
 This algorithm will be removed in our platform with NixOS 25.11.
 With 8.4 `caching_sha2_password` is the new default algorithm to use.
-Users need to  be manually migrated to the new algorithm with the following SQL statement (insert `username`, `host`, `password`):
+
+To get a list of users needing to be migrated, run the following SQL statement:
+```sql
+SELECT user,host,plugin FROM mysql.user WHERE plugin='mysql_native_password';
 ```
+
+These users need to be manually migrated to the new algorithm with the following SQL statement (insert `username`, `host`, `password`):
+```sql
 ALTER USER 'username'@'host' IDENTIFIED WITH 'caching_sha2_password' by 'password';
 ```
 This migration needs to be done before using Percona 9.0.
