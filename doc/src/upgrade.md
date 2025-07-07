@@ -15,10 +15,24 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 
 ## Overview
 
-- New roles: {ref}`percona84 <nixos-upgrade-percona>`
-- Removed roles:
-- Removed significant packages: `dstat`, `latencytop`, `atop`, `go_1_22`, `k3s_1_29`, `nodejs_18`, `python39`
-- Roles affected by significant breaking changes: {ref}`gitlab <nixos-upgrade-gitlab>`, {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`, {ref}`mailserver mailstub <nixos-upgrade-mail>`, {ref}`redis <nixos-upgrade-redis>`, {ref}`percona84 <nixos-upgrade-percona>`, {ref}`slurm-controller slurm-node <nixos-upgrade-slurm>`
+- New roles:
+  - {ref}`percona84 <nixos-upgrade-percona>`
+- Removed roles: none
+- Roles affected by significant breaking changes:
+  - {ref}`gitlab <nixos-upgrade-gitlab>`
+  - {ref}`k3s-agent k3s-server k3s-single-node <nixos-upgrade-k3s>`
+  - {ref}`mailserver mailstub <nixos-upgrade-mail>`
+  - {ref}`redis <nixos-upgrade-redis>`
+  - {ref}`percona84 <nixos-upgrade-percona>`
+  - {ref}`slurm-controller slurm-node <nixos-upgrade-slurm>`
+- Removed significant packages:
+  - `atop`
+  - `dstat`
+  - `go_1_22`
+  - `k3s_1_29`
+  - `latencytop`
+  - `nodejs_18`
+  - `python39`
 
 
 ## Why upgrade? Security
