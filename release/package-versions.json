@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.104",
+    "name": "element-web-1.11.105",
     "pname": "element-web",
-    "version": "1.11.104"
+    "version": "1.11.105"
   },
   "erlang": {
     "name": "erlang-27.3.4.1",
@@ -495,9 +495,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.8",
+    "name": "mastodon-4.3.9",
     "pname": "mastodon",
-    "version": "4.3.8"
+    "version": "4.3.9"
   },
   "matomo_5": {
     "name": "matomo-5.3.2",
@@ -505,9 +505,9 @@
     "version": "5.3.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.132.0",
+    "name": "matrix-synapse-wrapped-1.133.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.132.0"
+    "version": "1.133.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -730,24 +730,24 @@
     "version": "8.0.30"
   },
   "php81": {
-    "name": "php-with-extensions-8.1.32",
+    "name": "php-with-extensions-8.1.33",
     "pname": "php-with-extensions",
-    "version": "8.1.32"
+    "version": "8.1.33"
   },
   "php82": {
-    "name": "php-with-extensions-8.2.28",
+    "name": "php-with-extensions-8.2.29",
     "pname": "php-with-extensions",
-    "version": "8.2.28"
+    "version": "8.2.29"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.22",
+    "name": "php-with-extensions-8.3.23",
     "pname": "php-with-extensions",
-    "version": "8.3.22"
+    "version": "8.3.23"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.8",
+    "name": "php-with-extensions-8.4.10",
     "pname": "php-with-extensions",
-    "version": "8.4.8"
+    "version": "8.4.10"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.5",
@@ -875,9 +875,9 @@
     "version": "4.9.5"
   },
   "prometheus": {
-    "name": "prometheus-3.1.0",
+    "name": "prometheus-3.4.2",
     "pname": "prometheus",
-    "version": "3.1.0"
+    "version": "3.4.2"
   },
   "promtail": {
     "name": "promtail-3.4.4",
@@ -1010,9 +1010,9 @@
     "version": "4.1"
   },
   "redis": {
-    "name": "redis-7.2.7",
+    "name": "redis-7.2.9",
     "pname": "redis",
-    "version": "7.2.7"
+    "version": "7.2.9"
   },
   "rich-cli": {
     "name": "rich-cli-1.8.0",
@@ -1140,9 +1140,9 @@
     "version": "2.41"
   },
   "uv": {
-    "name": "uv-0.7.17",
+    "name": "uv-0.7.19",
     "pname": "uv",
-    "version": "0.7.17"
+    "version": "0.7.19"
   },
   "varnish": {
     "name": "varnish-7.7.1",
