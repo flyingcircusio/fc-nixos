@@ -39,6 +39,8 @@ let
       sha256 = "sha256-dt2hKcCtsGx5mtqyd83eTMhFRKjtqK/CcCGBy6ShNk8=";
     };
     doCheck = false; # tests require a running Consul via Docker
+    pyproject = true;
+    build-system = [ py.setuptools ];
     propagatedBuildInputs = [
       py.requests
     ];
@@ -114,6 +116,8 @@ py.buildPythonPackage rec {
         hash = "sha256-4kEqGSC9uOeQh4OyCz1X6drVkMw5qT6Flv/dSTtAPg4=";
       };
 
+      pyproject = true;
+      build-system = [ py.setuptools ];
       propagatedBuildInputs = [ py.pytest ];
 
       meta = with lib; {

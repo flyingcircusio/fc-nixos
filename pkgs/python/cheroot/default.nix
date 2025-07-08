@@ -15,6 +15,7 @@
   requests-toolbelt,
   requests-unixsocket,
   selectors2,
+  setuptools,
   setuptools-scm,
   setuptools-scm-git-archive,
   six,
@@ -30,6 +31,8 @@ buildPythonPackage rec {
     hash = "sha256-NmrfbnyslVVIbC0b5il5kwIu/2+MRlXBRDJozKPwjiU=";
   };
 
+  pyproject = true;
+  build-system = [ setuptools ];
   nativeBuildInputs = [
     setuptools-scm
     setuptools-scm-git-archive

@@ -14,6 +14,8 @@ let
       inherit pname version;
       hash = "sha256-cFHX3UlsplsUqKTFwcmS2q+d93O1gZ8Queatu9L1i0A=";
     };
+    pyproject = true;
+    build-system = [ py.setuptools ];
     propagatedBuildInputs = [ ];
     meta = with pkgs.lib; {
       description = "Python library for MegaCli";
@@ -29,6 +31,8 @@ let
       inherit pname version;
       hash = "sha256-um7KXLW6ArukyfT5ha+AxU7D3M+Uz80ZAVQ4YlXkdUM=";
     };
+    pyproject = true;
+    build-system = [ py.setuptools ];
     propagatedBuildInputs = [ ];
     meta = with pkgs.lib; {
       description = "Generate simple tables in terminals from a nested list of strings.";
