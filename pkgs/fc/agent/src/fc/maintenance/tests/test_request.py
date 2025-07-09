@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 
 import freezegun
 import pytest
-import pytz
 import structlog
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.estimate import Estimate
@@ -211,7 +210,7 @@ def test_update_state_resets_invalid():
 @freezegun.freeze_time("2023-01-01 2:00:00")
 def test_update_state_unchanged_when_not_due():
     r = Request(Activity())
-    r.next_due = datetime.datetime(2023, 1, 1, hour=3, tzinfo=pytz.UTC)
+    r.next_due = datetime.datetime(2023, 1, 1, hour=3, tzinfo=datetime.UTC)
     r.update_state()
     assert r.state == State.pending
 
@@ -219,7 +218,7 @@ def test_update_state_unchanged_when_not_due():
 @freezegun.freeze_time("2023-01-01 2:00:00")
 def test_update_state_from_pending_to_due():
     r = Request(Activity())
-    r.next_due = datetime.datetime(2023, 1, 1, hour=2, tzinfo=pytz.UTC)
+    r.next_due = datetime.datetime(2023, 1, 1, hour=2, tzinfo=datetime.UTC)
     r.update_state()
     assert r.state == State.due
 
