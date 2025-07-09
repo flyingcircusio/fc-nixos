@@ -59,13 +59,14 @@ buildPythonApplication rec {
     hash = "sha256-dp91sPzcoq4QF/odkWZ96a3y4ZctQoWQjgcVmaDcw5M=";
   };
 
+  pyproject = true;
+  build-system = [ setuptools ];
   checkInputs = [
     pytest
     pytest-cov
     pytest-timeout
   ];
   nativeBuildInputs = [
-    setuptools
     pip
   ];
   nativeCheckInputs = [

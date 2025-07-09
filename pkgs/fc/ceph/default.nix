@@ -11,6 +11,7 @@
   requests,
   pytest,
   pytest_patterns,
+  setuptools,
 }:
 
 buildPythonApplication rec {
@@ -18,6 +19,10 @@ buildPythonApplication rec {
   version = "2.1";
   src = ./.;
   dontStrip = true;
+
+  pyproject = true;
+  build-system = [ setuptools ];
+
   propagatedBuildInputs = [
     blockdev
     lz4

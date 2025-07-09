@@ -20,6 +20,10 @@ let
   pytest-structlog = pyPackages.buildPythonPackage rec {
     pname = "pytest-structlog";
     version = "0.6-cb82f00";
+    pyproject = true;
+    build-system = with pyPackages; [
+      setuptools
+    ];
 
     src = fetchFromGitHub {
       owner = "wimglenn";

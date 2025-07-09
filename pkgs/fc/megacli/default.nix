@@ -1,5 +1,6 @@
 {
   pkgs,
+  fetchFromGitHub,
   python3Packages,
   megacli,
 }:
@@ -14,6 +15,8 @@ let
       inherit pname version;
       hash = "sha256-cFHX3UlsplsUqKTFwcmS2q+d93O1gZ8Queatu9L1i0A=";
     };
+    pyproject = true;
+    build-system = [ py.setuptools ];
     propagatedBuildInputs = [ ];
     meta = with pkgs.lib; {
       description = "Python library for MegaCli";
@@ -25,11 +28,23 @@ let
   py_terminaltables = py.buildPythonPackage rec {
     pname = "terminaltables";
     version = "3.1.10";
-    src = py.fetchPypi {
-      inherit pname version;
-      hash = "sha256-um7KXLW6ArukyfT5ha+AxU7D3M+Uz80ZAVQ4YlXkdUM=";
+    src = fetchFromGitHub {
+      owner = "matthewdeanmartin";
+      repo = "terminaltables3";
+      rev = "v${version}";
+      hash = "sha256-bnnOiO26e3Bidrls82P/vc+DNAwKSpXhjClCdfXMoFE=";
     };
-    propagatedBuildInputs = [ ];
+
+    prePatch = ''
+      substituteInPlace pyproject.toml \
+        --replace-fail "poetry>=0.12" "poetry-core" \
+        --replace-fail "build-backend = \"poetry.masonry.api\"" "build-backend = \"poetry.core.masonry.api\""
+    '';
+
+    pyproject = true;
+
+    build-system = [ py.poetry-core ];
+
     meta = with pkgs.lib; {
       description = "Generate simple tables in terminals from a nested list of strings.";
       homepage = "https://github.com/Robpol86/terminaltables";

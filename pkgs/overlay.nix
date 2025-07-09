@@ -415,17 +415,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   };
 
   lkl = super.lkl.overrideAttrs (_: {
-    version = "2023-11-07";
-    src = fetchFromGitHub {
-      rev = "970883c348b61954a11c8c1ab9a2ab3ff0d89f08";
-      owner = "lkl";
-      repo = "linux";
-      hash = "sha256-MpvhYLH3toC5DaxeiQxKlYWjrPoFw+1eWkkX3XIiVQ0=";
-    };
-
     prePatch = ''
-      patchShebangs arch/lkl/scripts
-      patchShebangs scripts
       substituteInPlace tools/lkl/cptofs.c \
         --replace mem=100M mem=500M
     '';

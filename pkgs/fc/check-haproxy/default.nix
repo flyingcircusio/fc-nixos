@@ -13,6 +13,8 @@ py.buildPythonApplication rec {
   version = "1.0";
   src = ./.;
   dontStrip = true;
+  pyproject = true;
+  build-system = [ py.setuptools ];
   propagatedBuildInputs = [
     py.nagiosplugin
     py.numpy

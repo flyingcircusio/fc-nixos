@@ -76,7 +76,7 @@ let
   majorVersion = head (lib.attrNames enabledRoles);
   checkPkg =
     if (lib.versionOlder majorVersion "4.0") then
-      pkgs.fc.check-mongodb.override { pymongo = pkgs.python3Packages.pymongo3; }
+      pkgs.fc.check-mongodb.override { pymongo = pkgs.fc.check-mongodb.python.pkgs.pymongo3; }
     else
       pkgs.fc.check-mongodb;
 

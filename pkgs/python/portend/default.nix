@@ -3,6 +3,7 @@
   buildPythonPackage,
   fetchPypi,
   pytest,
+  setuptools,
   setuptools_scm,
   tempora,
   lib,
@@ -23,6 +24,8 @@ buildPythonPackage rec {
   postPatch = ''
     substituteInPlace pytest.ini --replace "--flake8 --black" ""
   '';
+  pyproject = true;
+  build-system = [ setuptools ];
 
   nativeBuildInputs = [ setuptools_scm ];
 
