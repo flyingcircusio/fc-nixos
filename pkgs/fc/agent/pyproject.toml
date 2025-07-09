@@ -27,7 +27,6 @@ dependencies = [
     "netaddr",
     "pendulum",
     "python-dateutil",
-    "pytz",
     "PyYAML>=6",
     "requests",
     "rich",
@@ -35,7 +34,6 @@ dependencies = [
     "stamina",
     "structlog",
     "typer",
-
 ]
 # NOTE: Please keep this sorted!
 
