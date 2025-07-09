@@ -153,9 +153,7 @@ import ./make-test-python.nix (
         start_all()
         turnserver.wait_for_unit("coturn.service")
         turnserver.wait_for_open_port(3478)
-        turnserver.wait_for_open_port(3479)
         turnserver.wait_for_open_port(5349)
-        turnserver.wait_for_open_port(5350)
 
         # -w1 specifies a timeout of one second for the connection.
         # Coturn should respond much faster that that. Also fixes a problem that
@@ -177,11 +175,11 @@ import ./make-test-python.nix (
         with subtest("service user should be able to write to local config dir"):
             turnserver.succeed('sudo -u turnserver touch /etc/local/coturn/config.json')
 
-        # look for coturn's 4 default ports. Order is:
-        # (listening-port, alt-listening-port, tls-listening-port, alt-tls-listening-port)
+        # look for coturn's 2 default ports. Order is:
+        # (listening-port, tls-listening-port)
 
         with subtest("coturn opens no unexpected ports"):
-            turnserver.fail("netstat -tlpn | grep turnserver | egrep -qv ':3478 |:3479 |:5349 |:5350 '")
+            turnserver.fail("netstat -tlpn | grep turnserver | egrep -qv ':3478 |:5349'")
 
         with subtest("coturn is able to bind to privileged ports"):
             turnserver.succeed(
