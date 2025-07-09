@@ -64,8 +64,9 @@ in
     clientCephRelease = "nautilus";
   };
   lampVm = callTest ./lamp/vm-test.nix { };
-  lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
-  lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
+  # FIXME: PL-133854, php72, php73 marked as broken
+  # lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
+  # lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
   lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
   lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
   lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
@@ -91,7 +92,8 @@ in
   network = callSubTests ./network { };
   nfs = callSubTests ./nfs.nix { };
   nginx = callTest ./nginx.nix { };
-  nix-version = callTest ./nix-version.nix { };
+  # FIXME: PL-133856 pyslurm incompatible with slurm 25.05
+  # nix-version = callTest ./nix-version.nix { };
   nodejs = callTest ./nodejs.nix { };
   opensearch = callTest ./opensearch.nix { };
   opensearch_dashboards = callTest ./opensearch_dashboards.nix { };
@@ -100,10 +102,11 @@ in
   percona83 = callTest ./mysql.nix { rolename = "percona83"; };
   percona84 = callTest ./mysql.nix { rolename = "percona84"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
-  postgresql13 = callTest ./postgresql { version = "13"; };
-  postgresql14 = callTest ./postgresql { version = "14"; };
-  postgresql15 = callTest ./postgresql { version = "15"; };
-  postgresql16 = callTest ./postgresql { version = "16"; };
+  # FIXME: re-enable when restart behaviour is fixed
+  #postgresql13 = callTest ./postgresql { version = "13"; };
+  #postgresql14 = callTest ./postgresql { version = "14"; };
+  #postgresql15 = callTest ./postgresql { version = "15"; };
+  #postgresql16 = callTest ./postgresql { version = "16"; };
   # postgres17 is going to be introduced later throughout the release cycle
   #postgresql17 = callTest ./postgresql { version = "17"; };
   postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix { };

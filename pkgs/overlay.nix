@@ -53,9 +53,21 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   #
 
   # Import old php versions from nix-phps.
+  php72 = phps.php72.overrideAttrs (oA: {
+    # FIXME: PL-133854
+    meta = oA.meta // {
+      broken = true;
+    };
+  });
+  php73 = phps.php73.overrideAttrs (oA: {
+    # FIXME: PL-133854
+    meta = oA.meta // {
+      broken = true;
+    };
+  });
   inherit (phps)
-    php72
-    php73
+    #php72
+    #php73
     php74
     php80
     ;
