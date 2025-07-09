@@ -13,8 +13,8 @@ let
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "backy";
-    rev = "2.5.3";
-    hash = "sha256-EAD8VtoEUOoJpvajo8fFZcaxkTwDkWGsnckt9BDTkT0=";
+    rev = "1286f7092334c7f0b846425e16304b0afd89d25d";
+    hash = "sha256-ZCQTrLYoiTrt+sZdjnvdWjl2Y+ZAREDRDjaFDeUsd6U=";
   };
 
   lib = import "${src}/lib.nix" inputs;
