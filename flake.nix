@@ -1,4 +1,4 @@
-# This flake is meant to be used with `nix develop --impure`
+# This flake is meant to be used with `nix develop`
 # to provide a dev shell for platform developers and release managers.
 
 # Platform dependencies are still read from
@@ -26,10 +26,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-25_05.follows = "nixpkgs";
     };
-    devenv = {
-      url = "github:cachix/devenv/fa5cbf91fb1f1614936997badbb6018a2fdef320";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     flake-parts.url = "github:hercules-ci/flake-parts";
     poetry2nix = {
       url = "github:nix-community/poetry2nix";
@@ -46,7 +42,6 @@
     inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
-        inputs.devenv.flakeModule
         ./release/flake-part-linux-only-packages.nix
       ];
       systems = [
@@ -163,7 +158,7 @@
             );
           };
 
-          devenv.shells.default =
+          devShells.default =
             let
               inherit (builtins) getEnv;
               upstreams = { inherit (inputs) nixpkgs nixos-mailserver; };
@@ -172,7 +167,7 @@
               );
               NIX_PATH = "fc=${getEnv "PWD"}:${nixPathUpstreams}:nixos-config=/etc/nixos/configuration.nix";
             in
-            {
+            pkgs.mkShell {
               name = "fc-nixos-dev";
               env = {
                 inherit NIX_PATH;
@@ -184,63 +179,70 @@
                   jq
                   nixfmt-rfc-style
                 ]
-                ++ (with self'.packages; [
-                  fcGetCurrentChannelUrl
-                  upNixPhps
-                ]);
+                ++ (
+                  with self'.packages;
+                  [
+                    fcGetCurrentChannelUrl
+                    upNixPhps
+                  ]
+                  ++ [
+                    (pkgs.writeShellApplication {
+                      name = "build_channels_dir";
+                      text =
+                        ''
+                          set -e
+                          mkdir -p channels
+                          if ! [[ -e channels/fc ]]; then
+                              ln -s .. channels/fc
+                          fi
+                        ''
+                        + (lib.concatStringsSep "\n" (
+                          lib.mapAttrsToList (name: flake: ''
+                            ln -sfT ${flake.outPath} channels/${name}
+                          '') upstreams
+                        ));
+                    })
+                    (pkgs.writeShellApplication {
+                      name = "cat_package_versions_json";
+                      runtimeInputs = [ nix ];
+                      text = ''
+                        jq < "$(nix build .#packageVersions --print-out-paths)"
+                      '';
+                    })
+                    (pkgs.writeShellApplication {
 
-              scripts = {
-                # This only works on Linux but I couldn't find an easy way to
-                # only build this script on Linux. It just produces an error
-                # message on Non-Linux because packageVersions is missing.
-                build_package_versions_json.exec = ''
-                  nix run .#buildPackageVersionsJson
-                '';
+                      name = "dev_setup";
+                      excludeShellChecks = [ "SC2154" ];
+                      bashOptions = [
+                        "errexit"
+                        "pipefail"
+                      ];
+                      text = ''
+                        build_channels_dir
 
-                build_versions_json.exec = ''
-                  nix run .#buildVersionsJson
-                '';
+                        # -s gives us the absolute path without resolving symlinks.
+                        NIX_PATH=$(realpath -s channels)
 
-                build_channels_dir.exec =
-                  ''
-                    set -e
-                    mkdir -p channels
-                    if ! [[ -e channels/fc ]]; then
-                        ln -s .. channels/fc
-                    fi
-                  ''
-                  + (lib.concatStringsSep "\n" (
-                    lib.mapAttrsToList (name: flake: ''
-                      ln -sfT ${flake.outPath} channels/${name}
-                    '') upstreams
-                  ));
+                        # preserve nixos-config
+                        config=$(nix-instantiate --find-file nixos-config 2>/dev/null) || true
 
-                cat_package_versions_json.exec = ''
-                  jq < $(nix build .#packageVersions --print-out-paths)
-                '';
+                        if [[ -n "$config" ]]; then
+                            NIX_PATH="$NIX_PATH:nixos-config=$config"
+                        else
+                            NIX_PATH="$NIX_PATH:nixos-config=$base/nixos"
+                        fi
 
-                dev_setup.exec = ''
-                  build_channels_dir
-
-                  # -s gives us the absolute path without resolving symlinks.
-                  NIX_PATH=`realpath -s channels`
-
-                  # preserve nixos-config
-                  config=$(nix-instantiate --find-file nixos-config 2>/dev/null) || true
-
-                  if [[ -n "$config" ]]; then
-                      NIX_PATH="$NIX_PATH:nixos-config=$config"
-                  else
-                      NIX_PATH="$NIX_PATH:nixos-config=$base/nixos"
-                  fi
-
-                  echo "export NIX_PATH=$NIX_PATH"
-                '';
-
-                nixos_repl.exec = ''
-                  sudo -E nix repl -f nixos/lib/nixos-repl.nix
-                '';
-              };
+                        echo "export NIX_PATH=$NIX_PATH"
+                      '';
+                    })
+                    (pkgs.writeShellApplication {
+                      name = "nixos_repl";
+                      text = ''
+                        sudo -E nix repl -f nixos/lib/nixos-repl.nix
+                      '';
+                    })
+                  ]
+                );
             };
         };
     }; # end mkFlake
