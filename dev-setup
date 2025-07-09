@@ -5,7 +5,7 @@ if [[ "$(nixos-version)" =~ ^"21" ]]; then
     ./dev-setup-from-21.05
 else
     # ensure PWD is the directory this script resides in (allows calls like ../dev-setup or $HOME/fc-nixos/dev-setup)
-    echo "You can also use 'nix develop --impure' to open the dev shell and run build_channels_dir from there." >&2
+    echo "You can also use 'nix develop' to open the dev shell and run build_channels_dir from there." >&2
     cd "$(dirname "$(readlink -f "$0")")"
-    nix develop --impure "$@" --command dev_setup
+    nix develop "$@" --command dev_setup
 fi
