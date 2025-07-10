@@ -17,6 +17,7 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 
 - New roles:
   - {ref}`percona84 <nixos-upgrade-percona>`
+  - {ref}`postgresql17 <nixos-upgrade-postgresql>`
 - Removed roles: none
 - Roles affected by significant breaking changes:
   - {ref}`gitlab <nixos-upgrade-gitlab>`
@@ -151,6 +152,17 @@ Version 8.4 of percona (role `percona84`) changes the default authentication mec
 Please do the migration during this platform release cycle, our 25.11 platform with Percona 9.x will disable the deprecated hashing algorithm altogether.
 
 See {ref}`nixos-mysql-password-hash-migration` for detailed migration instructions.
+
+(nixos-upgrade-postgresql)=
+### PostgreSQL
+
+PostgreSQL version 17 is available as a new `postgresql17` role.
+There are no breaking changes in the integration of PostgreSQL into the Flying Circus platform, but the database software itself includes some major changes listed [in its Release Notes](https://www.postgresql.org/docs/release/17.0/).
+Migrating between major versions of PostgreSQL requires migrating the data directory. See {ref}`nixos-postgresql-major-upgrade` for how out platform can help with that.
+
+All existing major versions of the postgresql role remain available.
+
+
 
 (nixos-upgrade-k3s)=
 ### K3S
