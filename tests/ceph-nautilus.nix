@@ -509,7 +509,7 @@ import ./make-test-python.nix (
 
         # commented out because this test sometimes succeeds, but often just hangs
         #with subtest("Integration test for check_snapshot_restore_fill"):
-        #  check_command = "${nodes.host1.config.flyingcircus.services.sensu-client.checks.ceph_snapshot_restore_fill.command}"
+        #  check_command = "${nodes.host1.flyingcircus.services.sensu-client.checks.ceph_snapshot_restore_fill.command}"
         #  print("Executing check command", check_command)
         #  snapfillcheck = host1.succeed('sudo -u sensuclient ' + check_command + ' > /dev/stderr')
         #  print(snapfillcheck)
