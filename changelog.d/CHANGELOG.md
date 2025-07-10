@@ -1,3 +1,26 @@
+# Release 2025_024
+
+## Impact
+
+- A bullet item for the Impact category.
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- loghost: fix Graylog LDAP login which has been broken since 24.11. Graylog is deprecated, the role is only provided to upgrade existing loghosts (PL-133759).
+
+- telegraf: enable [`nstat`](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/nstat) input to provide network protocol stats
+
+  In preparation of the [`net`](https://github.com/influxdata/telegraf/blob/2933b85c7dcdd816cc09584c7fca04ca7dfd55b2/plugins/inputs/net/README.md) input deprecating
+  the report of network protocol metrics, this provides a transitory period of both legacy and future metrics being available.  \
+  Deprecated metrics will be disabled in the next major Flying Circus 25.11 platform release.
+
+- statshost: now supports OpenID Connect login for Grafana, using our Keycloak instance. Disabled by default for now, OIDC will replace LDAP login in the near future. (PL-133429)
+
+
+
 # Release 2025_023
 
 
