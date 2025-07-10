@@ -85,7 +85,7 @@ class NixOS(Component):
                 "environment_url": "file:///home/developer/fc-nixos/channels",
                 "kvm_net_memory": "2000",
                 # This secret needs to be kept in sync with the
-                # ENC in the kvm_host_ceph.nix test suite.
+                # ENC in the ceph-nautilus.nix test suite.
                 "secret_salt": "salt-for-host-dhkasjy9",
                 "secrets": {
                     "ceph/admin_key": "AQBFJa9hAAAAABAAtdggM3mhVBAEYw3+Loehqw==",
@@ -125,4 +125,4 @@ class NixOS(Component):
         if Path("/home/developer/fc-nixos").exists():
             with self.chdir("/home/developer/fc-nixos"):
                 self.cmd("./dev-setup")
-        self.cmd("fc-manage --build")
+        self.cmd("fc-manage switch")

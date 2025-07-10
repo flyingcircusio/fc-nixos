@@ -18,6 +18,15 @@ dependencies = [
     "IPy",
 ]
 
+[dependency-groups]
+# NOTE: Please keep this sorted!
+dev = [
+    "pytest-cov",
+    "pytest-patterns",
+    "pytest-timeout",
+    "pytest",
+]
+
 [project.entry-points.console_scripts]
 fc-ceph="fc.ceph.main:ceph"
 fc-luks="fc.ceph.main:luks"
