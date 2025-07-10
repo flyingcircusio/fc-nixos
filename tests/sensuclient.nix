@@ -28,7 +28,7 @@ import ./make-test-python.nix (
   in
   {
     name = "sensuclient";
-    machine =
+    nodes.machine =
       { pkgs, config, ... }:
       {
         imports = [
