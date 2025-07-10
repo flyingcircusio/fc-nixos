@@ -6,7 +6,7 @@
 }:
 
 # This file needs to be kept (somewhat) in sync with our
-# `kvm_host_ceph-nautilus.nix` in the platform.
+# `ceph-nautilus.nix` in the platform.
 let
   fclib = config.fclib;
   testPackage = config.flyingcircus.services.ceph.fc-ceph.package;
@@ -15,7 +15,12 @@ in
 
   environment.systemPackages =
     let
-      testPackages = ([ testPackage ] ++ testPackage.propagatedBuildInputs ++ testPackage.checkInputs);
+      testPackages = (
+        [ testPackage ]
+        ++ testPackage.propagatedBuildInputs
+        ++ testPackage.checkInputs
+        ++ testPackage.nativeCheckInputs
+      );
       PYTHONPATH = testPackage.py.makePythonPath testPackages;
       PATH = lib.makeBinPath testPackages;
     in

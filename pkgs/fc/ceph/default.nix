@@ -11,6 +11,8 @@
   freezegun,
   pytest,
   pytest_patterns,
+  pytest-cov,
+  pytest-timeout,
   setuptools,
   nagiosplugin,
   rich,
@@ -43,7 +45,7 @@ buildPythonApplication rec {
   ];
 
   passthru = {
-    inherit checkInputs;
+    inherit checkInputs nativeCheckInputs;
     py = python.pkgs;
   };
 
@@ -51,6 +53,8 @@ buildPythonApplication rec {
     mock
     freezegun
     pytest_patterns
+    pytest-cov
+    pytest-timeout
   ];
 
   nativeCheckInputs = [
