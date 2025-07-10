@@ -30,9 +30,9 @@
     "version": "1.40.31"
   },
   "awscli2": {
-    "name": "awscli2-2.27.31",
+    "name": "awscli2-2.27.49",
     "pname": "awscli2",
-    "version": "2.27.31"
+    "version": "2.27.49"
   },
   "bash": {
     "name": "bash-interactive-5.2p37",
@@ -340,9 +340,9 @@
     "version": "21.0.6-b895.109"
   },
   "jetty": {
-    "name": "jetty-12.0.22",
+    "name": "jetty-12.0.23",
     "pname": "jetty",
-    "version": "12.0.22"
+    "version": "12.0.23"
   },
   "jicofo": {
     "name": "jicofo-1.0-1138",
@@ -395,9 +395,9 @@
     "version": "1.33.1+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.1.4",
+    "name": "keycloak-26.2.5",
     "pname": "keycloak",
-    "version": "26.1.4"
+    "version": "26.2.5"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.18.3",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.35",
+    "name": "linux-6.12.36",
     "pname": "linux",
-    "version": "6.12.35"
+    "version": "6.12.36"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.35",
+    "name": "linux-6.12.36",
     "pname": "linux",
-    "version": "6.12.35"
+    "version": "6.12.36"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -1010,9 +1010,9 @@
     "version": "4.2"
   },
   "redis": {
-    "name": "redis-8.0.2",
+    "name": "redis-8.0.3",
     "pname": "redis",
-    "version": "8.0.2"
+    "version": "8.0.3"
   },
   "rich-cli": {
     "name": "rich-cli-1.8.0",
