@@ -6,7 +6,7 @@
 }:
 
 # This file needs to be kept (somewhat) in sync with our
-# `kvm_host_ceph-nautilus.nix` in the platform.
+# `tests/ceph-nautilus.nix` in the platform.
 let
   fclib = config.fclib;
 in
@@ -20,7 +20,7 @@ in
     cephRelease = "nautilus";
   };
   flyingcircus.services.ceph.extraSettings = {
-    monClockDriftAllowed = 1;
+    monClockDriftAllowed = 10;
   };
   flyingcircus.services.ceph.client = {
     mons = [ "host1" ];
