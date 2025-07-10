@@ -305,7 +305,7 @@ import ../make-test-python.nix (
 
         with subtest("nginx only opens expected ports"):
           # look for ports that are not 80 (nginx default for status info) 9090 (metrics HTTP), 9443 (metrics HTTPS)
-          proxy.fail("netstat -tlpn | grep nginx | egrep -v ':80 |:9090 |:9443 '")
+          proxy.fail("ss -tlpn | grep nginx | egrep -v ':80 |:9090 |:9443 '")
       '';
   }
 )

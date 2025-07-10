@@ -76,7 +76,7 @@ import ../make-test-python.nix (
 
       with subtest("nginx only opens expected ports"):
         # Look for ports that are not 81 (nginx status page port) or 9090.
-        relay.fail("netstat -tlpn | grep nginx | egrep -v ':81 |:9090 '")
+        relay.fail("ss -tlpn | grep nginx | egrep -v ':81 |:9090 '")
 
       with subtest("logrotate should work"):
         relay.execute("echo test > /var/log/nginx/statshost-relay_error.log")

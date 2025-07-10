@@ -179,7 +179,7 @@ import ./make-test-python.nix (
         # (listening-port, tls-listening-port)
 
         with subtest("coturn opens no unexpected ports"):
-            turnserver.fail("netstat -tlpn | grep turnserver | egrep -qv ':3478 |:5349'")
+            turnserver.fail("ss -tlpn | grep turnserver | egrep -qv ':3478 |:5349'")
 
         with subtest("coturn is able to bind to privileged ports"):
             turnserver.succeed(

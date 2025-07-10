@@ -41,14 +41,14 @@ import ./make-test-python.nix (
         ]
 
         expected_sockets = [
-          "${ipv4}:9200",
-          "${ipv6}:9200",
-          "${ipv4}:9300",
-          "${ipv6}:9300",
+          "[::ffff:${ipv4}]:9200",
+          "[${ipv6}]:9200",
+          "[::ffff:${ipv4}]:9300",
+          "[${ipv6}]:9300",
         ]
 
         def assert_listen(machine, process_name, expected_sockets):
-          result = machine.succeed(f"netstat -tlpn | grep {process_name} | awk '{{ print $4 }}'")
+          result = machine.succeed(f"ss -tlpn | grep {process_name} | awk '{{ print $4 }}'")
           actual = set(result.splitlines())
           assert set(expected_sockets) == actual, f"expected sockets: {expected_sockets}, found: {actual}"
 

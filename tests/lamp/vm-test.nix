@@ -95,7 +95,7 @@ import ../make-test-python.nix (
         from packaging.version import Version
         import time
         def assert_listen(machine, process_name, expected_sockets):
-          result = machine.succeed(f"netstat -tlpn | grep {process_name} | awk '{{ print $4 }}'")
+          result = machine.succeed(f"ss -tlpn | grep {process_name} | awk '{{ print $4 }}'")
           actual = set(result.splitlines())
           assert expected_sockets == actual, f"expected sockets: {expected_sockets}, found: {actual}"
 
@@ -108,7 +108,7 @@ import ../make-test-python.nix (
         print("Detected PHP version:", php_version)
 
         with subtest("apache (httpd) opens expected ports"):
-          assert_listen(lamp, "httpd", {"127.0.0.1:7999", "::1:7999", ":::8000", ":::8001"})
+          assert_listen(lamp, "httpd", {"127.0.0.1:7999", "[::1]:7999", "*:8000", "*:8001"})
 
         print(lamp.execute("cat /etc/httpd/httpd.conf")[1])
         print(lamp.execute("cat $PHPRC")[1])
