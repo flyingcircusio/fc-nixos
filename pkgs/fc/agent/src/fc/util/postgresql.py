@@ -2,12 +2,9 @@ import getpass
 import os
 import re
 import shutil
-import stat
-import tempfile
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
-from stat import S_IMODE as modebits
 from subprocess import CalledProcessError, run
 from typing import List
 
@@ -35,12 +32,12 @@ Prepared as new data directory for a migration from {old_data_dir} by
 """
 
 
-class PGVersion(str, Enum):
+class PGVersion(StrEnum):
     PG13 = "13"
     PG14 = "14"
     PG15 = "15"
     PG16 = "16"
-    # PG17 = "17"
+    PG17 = "17"
 
 
 def run_as_postgres(cmd, **kwargs):
@@ -117,7 +114,11 @@ class MultipleOldDirsFound(Exception):
 
 
 def find_old_data_dir(log, pg_data_root: Path, new_version: PGVersion):
-    old_data_dirs = list(sorted(pg_data_root.glob("1[0-5]")))
+    old_data_dirs = sorted(
+        pg_data_root / major
+        for major in PGVersion
+        if (pg_data_root / major).exists()
+    )
     log.debug(
         "upgrade-old-data-dir-candidates",
         old_data_dirs=[str(d) for d in old_data_dirs],

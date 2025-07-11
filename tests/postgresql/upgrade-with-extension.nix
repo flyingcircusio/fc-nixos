@@ -114,6 +114,10 @@ import ../make-test-python.nix (
                   flyingcircus.roles.postgresql13.enable = false;
                   flyingcircus.roles.postgresql16.enable = true;
                 };
+                pg17.configuration = {
+                  flyingcircus.roles.postgresql13.enable = false;
+                  flyingcircus.roles.postgresql17.enable = true;
+                };
               };
 
               system.extraDependencies = with pkgs; [
@@ -124,10 +128,12 @@ import ../make-test-python.nix (
                 (postgresql_14.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_15.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_16.withPackages (ps: with ps; [ anonymizer ]))
+                (postgresql_17.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_13.withPackages (ps: [ ]))
                 (postgresql_14.withPackages (ps: [ ]))
                 (postgresql_15.withPackages (ps: [ ]))
                 (postgresql_16.withPackages (ps: [ ]))
+                (postgresql_17.withPackages (ps: [ ]))
               ];
             };
         };
@@ -187,6 +193,15 @@ import ../make-test-python.nix (
             machine.wait_for_unit("postgresql")
             print(machine.succeed("${fc-postgresql} list-versions"))
             check_anonymized_rows(get_player_table_contents())
+
+          with subtest("upgrade 16 -> 17 in one step"):
+            machine.succeed('${fc-postgresql} upgrade --expected anonymized --new-version 17 --stop --upgrade-now --extension-names anonymizer')
+            machine.succeed("stat /srv/postgresql/16/fcio_migrated_to")
+            machine.succeed("stat /srv/postgresql/17/fcio_migrated_from")
+            switch_to(machine, "pg17")
+            machine.wait_for_unit("postgresql")
+            print(machine.succeed("${fc-postgresql} list-versions"))
+            check_anonymized_rows(get_player_table_contents())
         '';
       };
       automatic = {
@@ -227,6 +242,10 @@ import ../make-test-python.nix (
                   flyingcircus.roles.postgresql13.enable = false;
                   flyingcircus.roles.postgresql16.enable = true;
                 };
+                pg17.configuration = {
+                  flyingcircus.roles.postgresql13.enable = false;
+                  flyingcircus.roles.postgresql17.enable = true;
+                };
               };
 
               system.extraDependencies = with pkgs; [
@@ -237,10 +256,12 @@ import ../make-test-python.nix (
                 (postgresql_14.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_15.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_16.withPackages (ps: with ps; [ anonymizer ]))
+                (postgresql_17.withPackages (ps: with ps; [ anonymizer ]))
                 (postgresql_13.withPackages (ps: [ ]))
                 (postgresql_14.withPackages (ps: [ ]))
                 (postgresql_15.withPackages (ps: [ ]))
                 (postgresql_16.withPackages (ps: [ ]))
+                (postgresql_17.withPackages (ps: [ ]))
               ];
             };
         };
@@ -289,6 +310,15 @@ import ../make-test-python.nix (
             machine.wait_for_unit("postgresql")
             machine.succeed("stat /srv/postgresql/15/fcio_migrated_to")
             machine.succeed("stat /srv/postgresql/16/fcio_migrated_from")
+            print(machine.succeed("${fc-postgresql} list-versions"))
+            check_anonymized_rows(get_player_table_contents())
+
+          with subtest("autoupgrade 16 -> 17"):
+            # move to new role and wait for postgresql to start
+            switch_to(machine, "pg17")
+            machine.wait_for_unit("postgresql")
+            machine.succeed("stat /srv/postgresql/16/fcio_migrated_to")
+            machine.succeed("stat /srv/postgresql/17/fcio_migrated_from")
             print(machine.succeed("${fc-postgresql} list-versions"))
             check_anonymized_rows(get_player_table_contents())
         '';

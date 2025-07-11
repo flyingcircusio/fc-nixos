@@ -107,7 +107,6 @@ in
   #postgresql14 = callTest ./postgresql { version = "14"; };
   #postgresql15 = callTest ./postgresql { version = "15"; };
   #postgresql16 = callTest ./postgresql { version = "16"; };
-  # postgres17 is going to be introduced later throughout the release cycle
   #postgresql17 = callTest ./postgresql { version = "17"; };
   postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix { };
   postgresql-autoupgrade-exts = callSubTests ./postgresql/upgrade-with-extension.nix { };
