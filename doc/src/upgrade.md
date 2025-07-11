@@ -254,6 +254,12 @@ Both `mailserver` and `mailstub` roles are affected by changes in the underlying
   `bigtime`, `inobtcount` and `nrext64` flags to be set. With `bigtime` set VMs
   from this release on will consistently support file times beyond 2038, even if
   they were bootstrapped on older releases. (PL-133321, PL-130365)
+  :::{warning}
+  With large disks or many files and inodes, this process can take several (tens of) minutes.
+  As this migration step is done during the early boot phase, the machine won't be available for that time at the first boot after upgrading.
+
+  If your machine has an especially large disk of >500GB, contact [support](/platform/index.html#support) and we might be able to speed up that process for you.
+  :::
 - Prepare VMs to read ENC data (the config management metadata) seeded from the
   host from the separate `cidata` volume in the future. This allows disabling or
   reconfiguring /tmp to use tmpfs without breaking our configuration management.

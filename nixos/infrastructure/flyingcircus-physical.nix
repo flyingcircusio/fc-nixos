@@ -104,6 +104,9 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
 
       # Not formatting tmp for now because I dont want to refer to it by
       # the filesystem label and some machines use lvm and others dont.
+
+      # WARN: do not modify these light-heartedly. Changing xfs parameters can
+      # take several (tens of) minutes at the next boot, depending on the number of inodes.
       flyingcircus.initrd.upgradeXFS = {
         "/dev/disk/by-label/root" = [
           "bigtime=1"

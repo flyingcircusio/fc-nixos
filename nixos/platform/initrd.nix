@@ -28,7 +28,13 @@ in
   options = with lib; {
     flyingcircus.initrd = {
       upgradeXFS = lib.mkOption {
-        description = "Call xfs_admin -O with the specified devices and features before mounting.";
+        description = ''
+          Call xfs_admin -O with the specified devices and features before mounting.
+          :::{.warning}
+          Do not modify these light-heartedly. Changing xfs parameters can
+          take several (tens of) minutes at the next boot, depending on the number of inodes.
+          :::
+        '';
         type = with lib.types; attrsOf (listOf (strMatching "[^=]+=[01]"));
         default = { };
         example = {
