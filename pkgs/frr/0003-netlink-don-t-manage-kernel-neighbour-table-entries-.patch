@@ -1,0 +1,36 @@
+From f871a5a7aff5d98e7d9fe186fa9bb9a69b6651f0 Mon Sep 17 00:00:00 2001
+From: Molly Miller <mm@flyingcircus.io>
+Date: Tue, 1 Jul 2025 16:11:41 +0200
+Subject: [PATCH 3/3] netlink: don't manage kernel neighbour table entries for
+ evpn
+
+From experience, zebra's tracking of MAC-IP mappings for SVI
+interfaces doesn't always stay in sync with the kernel, which can lead
+to it advertising stuck routes for IP addresses which are no longer
+locally assigned.
+
+To hedge against this on the receiving side, let's stop populating the
+neighbour table with mappings learned from EVPN, and let the kernel
+fall back to dynamic neighbour discovery.
+---
+ zebra/kernel_netlink.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/zebra/kernel_netlink.c b/zebra/kernel_netlink.c
+index f938193eb4..3466a644d1 100644
+--- a/zebra/kernel_netlink.c
++++ b/zebra/kernel_netlink.c
+@@ -1617,6 +1617,10 @@ static enum netlink_msg_status nl_put_msg(struct nl_batch *bth,
+ 	case DPLANE_OP_NEIGH_INSTALL:
+ 	case DPLANE_OP_NEIGH_UPDATE:
+ 	case DPLANE_OP_NEIGH_DELETE:
++		/* no-op: don't attempt to insert kernel neighbour
++		 * table entries for evpn */
++		return FRR_NETLINK_SUCCESS;
++
+ 	case DPLANE_OP_VTEP_ADD:
+ 	case DPLANE_OP_VTEP_DELETE:
+ 	case DPLANE_OP_NEIGH_DISCOVER:
+-- 
+2.39.5 (Apple Git-154)
+
