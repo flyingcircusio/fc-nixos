@@ -9,6 +9,12 @@
 # `tests/ceph-nautilus.nix` in the platform.
 let
   fclib = config.fclib;
+  testPackage = pkgs.fc.ceph.overrideAttrs (old: {
+    version = "dev";
+    # builtins.toPath (testPath + "/.")
+    # for tests:
+    src = /home/developer/fc-nixos/pkgs/fc/ceph/.;
+  });
 in
 {
   flyingcircus.roles.ceph_osd = {
@@ -25,9 +31,10 @@ in
   flyingcircus.services.ceph.client = {
     mons = [ "host1" ];
     network = fclib.network.srv;
-  };
+    fsId = "20cd8cd8-4854-469b-a9c0-daa8ce4c0dff";
 
-  flyingcircus.services.ceph.client.fsId = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
+  };
+  flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
 
   # Try to disable as many cronjobs as possible as they're really just in the
   # way in the test suite.
