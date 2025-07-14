@@ -49,9 +49,9 @@ import ./make-test-python.nix (
               # 8.0 binds to lo and srv with port 3306
               "${master4Srv}:3306"
               "127.0.0.1:3306"
-              ":::33060"
-              "${master6Srv}:3306"
-              "::1:3306"
+              "*:33060"
+              "[${master6Srv}]:3306"
+              "[::1]:3306"
             ]
           else
             [
@@ -63,6 +63,11 @@ import ./make-test-python.nix (
 
       in
       ''
+        def assert_listen(machine, process_name, expected_sockets):
+          result = machine.succeed(f"ss -tlpn | grep {process_name} | awk '{{ print $4 }}'")
+          actual = set(result.splitlines())
+          assert expected_sockets == actual, f"expected sockets: {expected_sockets}, found: {actual}"
+
         start_all()
         master.wait_for_unit("mysql")
 
@@ -81,11 +86,9 @@ import ./make-test-python.nix (
 
         with subtest("mysql only opens expected ports"):
             # check for expected ports
-            ${lib.concatMapStringsSep "\n    " (
-              a: ''master.succeed("netstat -tlpn | grep mysqld | grep '${a}'")''
-            ) expectedAddresses}
-            # check for unexpected ports
-            master.fail("netstat -tlpn | grep mysqld | egrep -v '${expectedAddressesExpr}'")
+            assert_listen(master, "mysqld", {${
+              lib.concatMapStringsSep ", " (x: "\"${x}\"") expectedAddresses
+            }})
 
         with subtest("after logrotate, mysql should write to the new slow log file"):
             master.execute("logrotate -v -f /etc/current-config/logrotate.conf")
