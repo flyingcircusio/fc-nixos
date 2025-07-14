@@ -27,6 +27,10 @@ in
 {
   options = with lib; {
     flyingcircus.initrd = {
+      enableXFSUpgrades = lib.mkEnableOption {
+        description = "Enable XFS upgrades during initrd.";
+        default = false;
+      };
       upgradeXFS = lib.mkOption {
         description = ''
           Call xfs_admin -O with the specified devices and features before mounting.
@@ -61,7 +65,7 @@ in
   };
 
   config = lib.mkMerge [
-    (lib.mkIf (cfg.upgradeXFS != { }) {
+    (lib.mkIf (cfg.enableXFSUpgrades && cfg.upgradeXFS != { }) {
       boot.initrd = {
         extraUtilsCommands = ''
           copy_bin_and_libs ${pkgs.xfsprogs}/bin/xfs_admin
