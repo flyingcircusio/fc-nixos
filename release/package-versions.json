@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-138.0.7204.92",
+    "name": "chromedriver-unwrapped-138.0.7204.100",
     "pname": "chromedriver-unwrapped",
-    "version": "138.0.7204.92"
+    "version": "138.0.7204.100"
   },
   "chromium": {
-    "name": "chromium-138.0.7204.92",
+    "name": "chromium-138.0.7204.100",
     "pname": "chromium",
-    "version": "138.0.7204.92"
+    "version": "138.0.7204.100"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-140.0.2",
+    "name": "firefox-140.0.4",
     "pname": "firefox",
-    "version": "140.0.2"
+    "version": "140.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-14.2.1.20250322",
@@ -225,9 +225,9 @@
     "version": "2.49.0"
   },
   "gitaly": {
-    "name": "gitaly-18.1.1",
+    "name": "gitaly-18.1.2",
     "pname": "gitaly",
-    "version": "18.1.1"
+    "version": "18.1.2"
   },
   "github-runner": {
     "name": "github-runner-2.325.0",
@@ -235,24 +235,24 @@
     "version": "2.325.0"
   },
   "gitlab": {
-    "name": "gitlab-18.1.1",
+    "name": "gitlab-18.1.2",
     "pname": "gitlab",
-    "version": "18.1.1"
+    "version": "18.1.2"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.23.1",
+    "name": "gitlab-container-registry-4.24.0",
     "pname": "gitlab-container-registry",
-    "version": "4.23.1"
+    "version": "4.24.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.1.1",
+    "name": "gitlab-ee-18.1.2",
     "pname": "gitlab-ee",
-    "version": "18.1.1"
+    "version": "18.1.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.1.1",
+    "name": "gitlab-pages-18.1.2",
     "pname": "gitlab-pages",
-    "version": "18.1.1"
+    "version": "18.1.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.1.0",
@@ -260,9 +260,9 @@
     "version": "18.1.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.1.1",
+    "name": "gitlab-workhorse-18.1.2",
     "pname": "gitlab-workhorse",
-    "version": "18.1.1"
+    "version": "18.1.2"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -285,9 +285,9 @@
     "version": "1.24.4"
   },
   "go_1_23": {
-    "name": "go-1.23.10",
+    "name": "go-1.23.11",
     "pname": "go",
-    "version": "1.23.10"
+    "version": "1.23.11"
   },
   "grafana": {
     "name": "grafana-12.0.2",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.36",
+    "name": "linux-6.12.37",
     "pname": "linux",
-    "version": "6.12.36"
+    "version": "6.12.37"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.36",
+    "name": "linux-6.12.37",
     "pname": "linux",
-    "version": "6.12.36"
+    "version": "6.12.37"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -785,9 +785,9 @@
     "version": "17.5"
   },
   "postgresql13Packages.postgis": {
-    "name": "postgis-3.5.2",
+    "name": "postgis-3.5.3",
     "pname": "postgis",
-    "version": "3.5.2"
+    "version": "3.5.3"
   },
   "postgresql13Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -795,9 +795,9 @@
     "version": "1.2.2"
   },
   "postgresql14Packages.postgis": {
-    "name": "postgis-3.5.2",
+    "name": "postgis-3.5.3",
     "pname": "postgis",
-    "version": "3.5.2"
+    "version": "3.5.3"
   },
   "postgresql14Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -805,9 +805,9 @@
     "version": "1.2.2"
   },
   "postgresql15Packages.postgis": {
-    "name": "postgis-3.5.2",
+    "name": "postgis-3.5.3",
     "pname": "postgis",
-    "version": "3.5.2"
+    "version": "3.5.3"
   },
   "postgresql15Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -815,9 +815,9 @@
     "version": "1.2.2"
   },
   "postgresql16Packages.postgis": {
-    "name": "postgis-3.5.2",
+    "name": "postgis-3.5.3",
     "pname": "postgis",
-    "version": "3.5.2"
+    "version": "3.5.3"
   },
   "postgresql16Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -825,9 +825,9 @@
     "version": "1.2.2"
   },
   "postgresql17Packages.postgis": {
-    "name": "postgis-3.5.2",
+    "name": "postgis-3.5.3",
     "pname": "postgis",
-    "version": "3.5.2"
+    "version": "3.5.3"
   },
   "postgresql17Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -835,9 +835,9 @@
     "version": "1.2.2"
   },
   "postgresqlPackages.postgis": {
-    "name": "postgis-3.5.2",
+    "name": "postgis-3.5.3",
     "pname": "postgis",
-    "version": "3.5.2"
+    "version": "3.5.3"
   },
   "postgresqlPackages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -880,9 +880,9 @@
     "version": "3.4.2"
   },
   "promtail": {
-    "name": "promtail-3.4.4",
+    "name": "promtail-3.4.5",
     "pname": "promtail",
-    "version": "3.4.4"
+    "version": "3.4.5"
   },
   "prosody": {
     "name": "prosody-0.12.4",
@@ -1010,9 +1010,9 @@
     "version": "4.1"
   },
   "redis": {
-    "name": "redis-7.2.9",
+    "name": "redis-7.2.10",
     "pname": "redis",
-    "version": "7.2.9"
+    "version": "7.2.10"
   },
   "rich-cli": {
     "name": "rich-cli-1.8.0",
@@ -1140,9 +1140,9 @@
     "version": "2.41"
   },
   "uv": {
-    "name": "uv-0.7.19",
+    "name": "uv-0.7.20",
     "pname": "uv",
-    "version": "0.7.19"
+    "version": "0.7.20"
   },
   "varnish": {
     "name": "varnish-7.7.1",
