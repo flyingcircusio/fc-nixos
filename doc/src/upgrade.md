@@ -250,16 +250,28 @@ Both `mailserver` and `mailstub` roles are affected by changes in the underlying
 - docker: fix role not working on devhosts (PL-133607)
 
   This change also prepares the role to work on machines without FE interface or PUB interface.
-- Add a mechanism to upgrade XFS flags over time. Initially this will cause
-  `bigtime`, `inobtcount` and `nrext64` flags to be set. With `bigtime` set VMs
-  from this release on will consistently support file times beyond 2038, even if
-  they were bootstrapped on older releases. (PL-133321, PL-130365)
-  :::{warning}
-  With large disks or many files and inodes, this process can take several (tens of) minutes.
-  As this migration step is done during the early boot phase, the machine won't be available for that time at the first boot after upgrading.
 
-  If your machine has an especially large disk of >500GB, contact [support](/platform/index.html#support) and we might be able to speed up that process for you.
+- We added a mechanism to upgrade XFS flags over time. This is disabled by default (see warning).
+
+  At the moment this will cause the `bigtime`, `inobtcount` and `nrext64` flags to be set.
+  With `bigtime` set VMs will consistently support file times beyond 2038, even if
+  they were bootstrapped on older releases. (PL-133321, PL-130365)
+
+  :::{warning}
+
+  With large disks or many files and inodes, this process can take several (tens
+  of) minutes. As this migration step is done during the early boot phase, the
+  machine won't be available for that time at the first boot after upgrading.
+
+  We are working on another implementation that will schedule separate maintenances
+  and predict downtimes more accurately and will speed up the process.
+
+  If you need to upgrades and your machine has an especially large disk of
+  >500GB, please contact [support](/platform/index.html#support) before enabling
+  the `flyingcircus.initrd.enableXFSUpgrades` option.
+
   :::
+
 - Prepare VMs to read ENC data (the config management metadata) seeded from the
   host from the separate `cidata` volume in the future. This allows disabling or
   reconfiguring /tmp to use tmpfs without breaking our configuration management.
