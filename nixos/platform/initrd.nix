@@ -27,10 +27,7 @@ in
 {
   options = with lib; {
     flyingcircus.initrd = {
-      enableXFSUpgrades = lib.mkEnableOption {
-        description = "Enable XFS upgrades during initrd.";
-        default = false;
-      };
+      enableXFSUpgrades = lib.mkEnableOption "XFS upgrades during initrd";
       upgradeXFS = lib.mkOption {
         description = ''
           Call xfs_admin -O with the specified devices and features before mounting.
