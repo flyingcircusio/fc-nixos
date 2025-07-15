@@ -155,8 +155,21 @@ in
         vm-expected-overhead = 512
 
         [qemu-throttle-by-pool]
+        ; compatibility section, can be thrown out once fc.qemu has been updated
         rbd.hdd = 250
         rbd.ssd = 10000
+
+        [block-throttle-rbd.hdd]
+        iops = 250
+        ; 250 mib/s
+        bps = 262144000
+        burst-factor = 10
+
+        [block-throttle-rbd.ssd]
+        iops = 10000
+        ; 500 mib/s
+        bps = 524288000
+        burst-factor = 2
 
         [network]
         tap-ifup-bridge = /etc/kvm/kvm-ifup
