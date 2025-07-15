@@ -551,11 +551,8 @@ import ./make-test-python.nix (
                   host1.wait_until_succeeds(f"bridge fdb show br br0 | grep -F extern_learn | grep -F {guest_mac}", timeout=10)
 
               with subtest("check remote TAP responder is reachable"):
-                  # if ping-on-tap sends its garp before the neighbour entry from the
-                  # remote host is withdrawn, then the remotely learned entry will take
-                  # precedence and a locally learned entry will not be created. we need to
-                  # reprime the local neighbour table to ensure that an entry is learned
-                  # which exported to the remote host.
+                  # ensure that dynamic neighbour learning functions correctly after
+                  # the migration
                   host2.succeed(f"ping -A -c5 {guest_ip}")
                   host1.succeed(f"ping -A -c5 {guest_ip}")
 
