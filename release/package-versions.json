@@ -255,9 +255,9 @@
     "version": "18.1.2"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.1.0",
+    "name": "gitlab-runner-18.1.1",
     "pname": "gitlab-runner",
-    "version": "18.1.0"
+    "version": "18.1.1"
   },
   "gitlab-workhorse": {
     "name": "gitlab-workhorse-18.1.2",
