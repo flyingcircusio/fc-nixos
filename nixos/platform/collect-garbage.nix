@@ -57,9 +57,6 @@ in
           # gives way to nearly everything else.
           CPUSchedulingPolicy = "idle";
           CPUWeight = 1;
-          IOSchedulingClass = "idle";
-          IOSchedulingPriority = 7;
-          IOWeight = 1;
           Nice = 19;
           # We expect our script to produce error codes from 0 to 3.
           # Ignore them as they are often temporary and the garbage collection
