@@ -158,14 +158,27 @@ in {
         externalInterface = null;
       };
     };
-    # Maybe switch to kea long-term, but it's not available in 21.05
-    services.dnsmasq = {
+    services.kea.dhcp4 = {
       enable = true;
-      resolveLocalQueries = false;
       settings = {
-        interface = "br-vm-srv";
-        dhcp-range="10.12.250.10,10.12.254.254,255.255.0.0,24h";
-        dhcp-option=[ "option:router,10.12.0.1" "option:dns-server,${lib.concatStringsSep "," config.networking.nameservers}"];
+        interfaces-config = { interfaces = [ "br-vm-srv" ]; };
+        subnet4 = [
+          {
+            id = 1;
+            subnet = "10.12.0.0/16";
+            pools = [{ pool = "10.12.250.10 - 10.12.254.254"; }];
+            option-data = [
+              {
+                name = "routers";
+                data = "10.12.0.1";
+              }
+              {
+                name = "domain-name-servers";
+                data = lib.concatStringsSep "," config.networking.nameservers;
+              }
+            ];
+          }
+        ];
       };
     };
     networking.firewall.interfaces."br-vm-srv".allowedUDPPorts = [ 67 ];
