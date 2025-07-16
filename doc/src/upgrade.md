@@ -86,10 +86,12 @@ also subscribe to updates.
 
 ### Upgrade to the next platform version
 
-We recommend upgrading platform versions one at a time without skipping
+We strongly advise upgrading platform versions one at a time without skipping
 versions. Here we assume that you are upgrading from the 24.11 platform.
+Please refrain from opening support cases for broken upgrade paths from older
+platform versions. The resolution is to upgrade one version at a time.
 
-Direct upgrades from older versions are possible in principle, but we cannot
+Direct upgrades from older versions are not tested since we cannot
 reliably test all combinations for all roles and custom configuration also
 plays a role here. Usually, problems that occur when skipping versions are
 only temporary, like service failures that go away with the next system
