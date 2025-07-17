@@ -1,3 +1,35 @@
+# Release 2025_025
+
+## NixOS XX.XX platform
+
+- Improve IO throttling on our hypervisors:
+
+  * HDD-class VMs can burst up to 2.500 IOPS for 60 seconds and
+    have an explicit bandwidth limit of 250 MiB/s.
+  * SSD-class VMs can burst up to 20.000 IOPS for 60 seconds
+    and have an explicit bandwidth limit of 500 MiB/s.
+  * Reads and writes are now throttled separately, so all VMs
+    can use their IOPS limit separately for reading and
+    writing at the same time.
+
+- devhost: switch to kea as dhcp server (PL-133857)
+
+  We had seen issues with DHCP packets having an invalid checksum. Kea handles this better and seems to resolve provisioning issues.
+  We continue to monitor the issues.
+
+- postgresql: add role `postgresql17` for newest major release. All existing versions of the postgresql role remain available.
+
+- Make XFS upgrades at boot-time optional and disable it by default.  (PL-133864)
+
+  We introduced the XFS upgrade code in the 25.05 cycle to allow long-living
+  filesystems enable features like "bigtime" which makes the filesystem
+  year 2038 compatible. The implementation chose robustness over performance
+  but the tradeoff ended up with boot times of tens of minutes even for
+  small or medium VMs. We're taking this feature back to the drawing board,
+  but provide a knob so it can be used in situations where it's really needed.
+
+
+
 # Release 2025_024
 
 ## Impact
