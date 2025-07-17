@@ -384,6 +384,9 @@ in
           Type = "oneshot";
           TimeoutSec = "2h";
           Nice = 18; # 19 is the lowest
+          IOSchedulingClass = "idle";
+          IOSchedulingPriority = 7; # lowest
+          IOWeight = 10; # 1-10000
           LimitMEMLOCK = nixBuildMEMLOCK;
         };
 
@@ -447,6 +450,9 @@ in
           Type = "oneshot";
           TimeoutSec = "2h";
           Nice = 18; # 19 is the lowest
+          IOSchedulingClass = "idle";
+          IOSchedulingPriority = 7; # lowest
+          IOWeight = 10; # 1-10000
           ExecStart =
             let
               verbose = lib.optionalString cfg.agent.verbose "--show-caller-info";
