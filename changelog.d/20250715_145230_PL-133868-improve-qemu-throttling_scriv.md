@@ -23,9 +23,3 @@ branches.
   * Reads and writes are now throttled separately, so all VMs
     can use their IOPS limit separately for reading and
     writing at the same time.
-
-- Agent units (fc-agent, fc-collect-garbage, fc-update-channel) now use
-  a more dynamic throttling mechanism (cgroup's `io.weight`) so that
-  the new burst mechanism and generally idle IOPS can be used without
-  hurting application load. Under stress those units can consume at
-  most 20% of all available IOPS.
