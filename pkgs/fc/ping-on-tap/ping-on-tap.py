@@ -56,7 +56,7 @@ class ArpIcmpMux_am(scapy.AnsweringMachine):
 
 def gratuitous_arp(args):
     return scapy.Ether(src=args.mac, dst="ff:ff:ff:ff:ff:ff") / scapy.ARP(
-        op="who-has", psrc=args.ip, pdst=args.ip
+        op="who-has", hwsrc=args.mac, psrc=args.ip, pdst=args.ip
     )
     pass
 
