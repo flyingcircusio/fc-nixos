@@ -28,11 +28,13 @@ let
     pidFile = "/run/ceph/radosgw.pid";
     adminSocket = "/run/ceph/radosgw.asok";
     rgwData = "/srv/ceph/radosgw/ceph-$id";
-    rgwEnableOpsLog = false;
+    rgwEnableOpsLog = true;
+    rgwOpsLogRados = true;
     rgwMimeTypesFile = "${pkgs.mailcap}/etc/mime.types";
     debugRados = "1 5";
     rgwFrontends = "beast port=80";
     debugRgw = "1 5";
+    rgwLogHttpHeaders = "http_x_forwarded_for,http_x_real_ip";
   };
 in
 {
@@ -77,6 +79,14 @@ in
 
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used for the the rgw package.";
+      };
+
+      enableAccounting = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Whether or not to enable traffic accounting.
+        '';
       };
     };
   };

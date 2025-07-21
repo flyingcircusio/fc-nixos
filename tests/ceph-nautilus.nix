@@ -42,10 +42,22 @@ import ./make-test-python.nix (
             service = "ceph_mon-mon";
           }
           {
+            address = "host1.fcio.net";
+            ips = [ (getIPForVLAN 3 1) ];
+            location = "test";
+            service = "ceph_rgw-server";
+          }
+          {
             address = "host2.fcio.net";
             ips = [ (getIPForVLAN 4 2) ];
             location = "test";
             service = "ceph_mon-mon";
+          }
+          {
+            address = "host2.fcio.net";
+            ips = [ (getIPForVLAN 3 2) ];
+            location = "test";
+            service = "ceph_rgw-server";
           }
           {
             address = "host3.fcio.net";
@@ -59,7 +71,6 @@ import ./make-test-python.nix (
             location = "test";
             service = "ceph_mon-mon";
           }
-
         ];
 
         flyingcircus.services.ceph.extraSettings = {
@@ -184,16 +195,26 @@ import ./make-test-python.nix (
             ../nixos/roles
           ];
           virtualisation.vlans = with config.flyingcircus.static.vlanIds; [
+            fe
             srv
           ];
           environment.systemPackages = [ pkgs.awscli ];
           networking.extraHosts = ''
             ${getIPForVLAN 3 1} s3.host1.fcio.net
+            ${getIPForVLAN 2 7} objects.test.test.fcio.net
             ::1 s3.node.fcio.net
           '';
           flyingcircus.enc.parameters = {
             location = "test";
             resource_group = "test";
+            interfaces.fe = {
+              mac = "52:54:00:12:02:0${toString 5}";
+              bridged = false;
+              networks = {
+                "192.168.2.0/24" = [ (getIPForVLAN 2 5) ];
+              };
+              gateways = { };
+            };
             interfaces.srv = {
               mac = "52:54:00:12:03:0${toString 5}";
               bridged = false;
@@ -217,6 +238,56 @@ import ./make-test-python.nix (
               "s3-host1 s3.host1.fcio.net:7480 check inter 10s rise 2 fall 1 maxconn 1000"
             ];
           };
+        };
+
+      rgwproxy =
+        { config, lib, ... }:
+        {
+          imports = [
+            ../nixos
+            ../nixos/roles
+          ];
+
+          virtualisation.vlans = with config.flyingcircus.static.vlanIds; [
+            fe
+            srv
+          ];
+          flyingcircus.roles.rgw-location-proxy.enable = true;
+          flyingcircus.enc.parameters = {
+            location = "test";
+            resource_group = "test";
+            interfaces.fe = {
+              mac = "52:54:00:12:02:0${toString 7}";
+              bridged = false;
+              networks = {
+                "192.168.2.0/24" = [ (getIPForVLAN 2 7) ];
+              };
+              gateways = { };
+            };
+            interfaces.srv = {
+              mac = "52:54:00:12:03:0${toString 7}";
+              bridged = false;
+              networks = {
+                "192.168.3.0/24" = [ (getIPForVLAN 3 7) ];
+              };
+              gateways = { };
+            };
+          };
+          flyingcircus.encServices = [
+            {
+              address = "host1.fcio.net";
+              ips = [ (getIPForVLAN 3 1) ];
+              location = "test";
+              service = "ceph_rgw-server";
+            }
+            {
+              address = "host2.fcio.net";
+              ips = [ (getIPForVLAN 3 2) ];
+              location = "test";
+              service = "ceph_rgw-server";
+            }
+          ];
+          services.nginx.virtualHosts."objects.test.test.fcio.net".forceSSL = lib.mkForce false;
         };
     };
 
@@ -449,7 +520,7 @@ import ./make-test-python.nix (
           aws_cfg = configparser.ConfigParser()
           endpoints = {
             "default": 'http://s3.host1.fcio.net:7480',
-            "port_80": 'http://s3.host1.fcio.net',
+            "port_80": 'http://objects.test.test.fcio.net',
             "customer_gw": 'http://s3.node.fcio.net',
           }
 
@@ -464,10 +535,19 @@ import ./make-test-python.nix (
 
           node.copy_from_host("awscfg", "/root/.aws/credentials")
 
-          node.succeed("aws s3 mb s3://test/")
+          node.wait_until_succeeds("curl -f http://s3.host1.fcio.net:7480")
+          node.wait_until_succeeds("aws s3 mb s3://test/")
           node.succeed("dd if=/dev/urandom of=testdata bs=1k count=2")
           hash_original = node.succeed("nix-hash testdata")
+          rgwproxy.start()
           node.succeed("aws s3 cp testdata s3://test/testdata")
+
+          # For the healthcheck of haproxy
+          node.succeed("aws s3 mb s3://rgw-monitoring")
+          node.succeed("touch foo && aws s3 cp foo s3://rgw-monitoring/probe")
+          node.succeed("aws s3api put-object-acl --bucket rgw-monitoring --acl public-read --key probe")
+          # HAProxy is still giving a 503 because of the failing healthcheck, so let's wait.
+          node.wait_until_succeeds("curl -f http://objects.test.test.fcio.net")
 
           for profile in endpoints.keys():
             node.succeed(f"aws --profile {profile} s3 cp s3://test/testdata download_{profile}")
