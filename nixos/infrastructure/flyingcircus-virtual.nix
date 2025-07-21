@@ -16,6 +16,10 @@ let
     else
       "bfq";
   maxIops = attrByPath [ "parameters" "iops" ] 250 cfg.enc;
+  agentThrottling = weight: {
+    # device-specific override for the default `IOWeight`
+    IODeviceWeight = "/dev/vda ${toString weight}";
+  };
 
 in
 mkIf (cfg.infrastructureModule == "flyingcircus") {
@@ -163,10 +167,17 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
           # could get requests that are over the VM limit.
           vdaIopsMax = "/dev/vda ${toString (maxIops - maxIops / 4)}";
         in
-        {
-          IOReadIOPSMax = vdaIopsMax;
-          IOWriteIOPSMax = vdaIopsMax;
-        };
+        # PL-133877
+        if ioScheduler == "none" then
+          {
+            IOReadIOPSMax = vdaIopsMax;
+            IOWriteIOPSMax = vdaIopsMax;
+            IOSchedulingClass = "idle";
+            IOSchedulingPriority = 7; # lowest
+            IOWeight = 10; # 1-10000
+          }
+        else
+          agentThrottling 20; # 1/5th performance compared to a single user service process
 
       fc-collect-garbage.serviceConfig =
         let
@@ -174,10 +185,34 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
           # We don't have a problem with this taking really long.
           vdaIopsMax = "/dev/vda ${toString (maxIops / 8)}";
         in
-        {
-          IOReadIOPSMax = vdaIopsMax;
-          IOWriteIOPSMax = vdaIopsMax;
-        };
+        # PL-133877
+        if ioScheduler == "none" then
+          {
+            IOReadIOPSMax = vdaIopsMax;
+            IOWriteIOPSMax = vdaIopsMax;
+            IOSchedulingClass = "idle";
+            IOSchedulingPriority = 7; # lowest
+          }
+        else
+          agentThrottling 10; # 1/10th performance compared to a single user service process
+
+      fc-update-channel.serviceConfig =
+        let
+          # Must not consume more than 12.5% of available IOPS.
+          # We don't have a problem with this taking really long.
+          vdaIopsMax = "/dev/vda ${toString (maxIops / 8)}";
+        in
+        # PL-133877
+        if ioScheduler == "none" then
+          {
+            IOReadIOPSMax = vdaIopsMax;
+            IOWriteIOPSMax = vdaIopsMax;
+            IOSchedulingClass = "idle";
+            IOSchedulingPriority = 7; # lowest
+            IOWeight = 10; # 1-10000
+          }
+        else
+          agentThrottling 10; # 1/10th performance compared to a single user service process
     };
   };
 
