@@ -172,9 +172,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
           {
             IOReadIOPSMax = vdaIopsMax;
             IOWriteIOPSMax = vdaIopsMax;
-            IOSchedulingClass = "idle";
-            IOSchedulingPriority = 7; # lowest
-            IOWeight = 10; # 1-10000
           }
         else
           agentThrottling 20; # 1/5th performance compared to a single user service process
@@ -190,8 +187,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
           {
             IOReadIOPSMax = vdaIopsMax;
             IOWriteIOPSMax = vdaIopsMax;
-            IOSchedulingClass = "idle";
-            IOSchedulingPriority = 7; # lowest
           }
         else
           agentThrottling 10; # 1/10th performance compared to a single user service process
@@ -207,9 +202,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
           {
             IOReadIOPSMax = vdaIopsMax;
             IOWriteIOPSMax = vdaIopsMax;
-            IOSchedulingClass = "idle";
-            IOSchedulingPriority = 7; # lowest
-            IOWeight = 10; # 1-10000
           }
         else
           agentThrottling 10; # 1/10th performance compared to a single user service process
