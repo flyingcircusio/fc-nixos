@@ -21,6 +21,9 @@ let
 
   cephPkgs = fclib.ceph.mkPkgs role.cephRelease;
 
+  radosListenPort = toString 7480;
+  haproxyPort = toString 7475;
+
   defaultRgwSettings = {
     host = config.networking.hostName;
     keyring = "/etc/ceph/ceph.${username}.keyring";
@@ -28,11 +31,13 @@ let
     pidFile = "/run/ceph/radosgw.pid";
     adminSocket = "/run/ceph/radosgw.asok";
     rgwData = "/srv/ceph/radosgw/ceph-$id";
-    rgwEnableOpsLog = false;
+    rgwEnableOpsLog = true;
+    rgwOpsLogRados = true;
     rgwMimeTypesFile = "${pkgs.mime-types}/etc/mime.types";
     debugRados = "1 5";
-    rgwFrontends = "beast port=80";
+    rgwFrontends = "beast port=${radosListenPort}";
     debugRgw = "1 5";
+    rgwLogHttpHeaders = "http_x_forwarded_for,http_x_real_ip";
   };
 in
 {
@@ -67,16 +72,51 @@ in
             bool
           ]);
         default = { }; # defaults are provided in the config section with a lower priority
-        description = ''
-          config section of the Ceph config file of the radosgw client user.
-          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
-        + ''
-          can alternatively be written in camelCase as `monOsdFullRatio`.
-        '';
+        description =
+          ''
+            config section of the Ceph config file of the radosgw client user.
+            Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+          + ''
+            can alternatively be written in camelCase as `monOsdFullRatio`.
+          '';
       };
 
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used for the the rgw package.";
+      };
+
+      domain = lib.mkOption {
+        type = lib.types.str;
+        default = lib.concatStringsSep "." (
+          [
+            "objects"
+            config.flyingcircus.location
+          ]
+          ++ lib.optionals (config.flyingcircus.enc.parameters.resource_group != "services") [
+            config.flyingcircus.enc.parameters.resource_group
+          ]
+          ++ [ "fcio.net" ]
+        );
+        defaultText = "objects.<location>.<resource_group>.fcio.net";
+        description = ''
+          Domain where the object gateway is publicly exposed.
+        '';
+      };
+
+      dns01CredFile = lib.mkOption {
+        type = lib.types.pathWith {
+          absolute = true;
+          inStore = false;
+        };
+        default = "/etc/local/nixos/rgw-dns01.env";
+        description = ''
+          Path to the file containing credentials for the DNS01 challenge. Must have the format
+          ```
+          PDNS_API_KEY=<api-key>
+          PDNS_API_URL=https://dns.flyingcircus.io/
+          PDNS_PROPAGATION_TIMEOUT=3610
+          ```
+        '';
       };
     };
   };
@@ -102,6 +142,56 @@ in
         enable = true;
         cephRelease = role.cephRelease;
         # no fc-ceph settings necessary so far
+      };
+
+      flyingcircus.services.nginx = {
+        enable = true;
+        virtualHosts.${role.domain} = lib.mkMerge [
+          {
+            locations."/".proxyPass = "http://[::1]:${haproxyPort}";
+            forceSSL = true;
+            enableACME = false;
+            useACMEHost = role.domain;
+          }
+        ];
+      };
+
+      security.acme.certs.${role.domain} = {
+        dnsProvider = "pdns";
+        credentialsFile = role.dns01CredFile;
+        webroot = lib.mkForce null;
+        group = "nginx";
+      };
+
+      flyingcircus.services.haproxy = {
+        enable = true;
+        enableStructuredConfig = true;
+
+        frontend = {
+          http-in = {
+            binds = [ "[::1]:${haproxyPort}" ];
+            default_backend = "s3";
+          };
+        };
+
+        backend = {
+          s3 = {
+            servers = map (
+              service:
+              let
+                name = head (lib.splitString "." service.address);
+                address = head (filter fclib.isIp4 service.ips);
+                isBackup = lib.optionalString (
+                  !builtins.elem (head fclib.network.srv.v4.addresses) service.ips
+                ) "backup";
+              in
+              "s3-${name} ${address}:${radosListenPort} check inter 10s rise 2 fall 1 maxconn 1000 ${isBackup}"
+            ) (fclib.findServices "ceph_rgw-server");
+            extraConfig = ''
+              option httpchk GET /rgw-monitoring/probe
+            '';
+          };
+        };
       };
 
       systemd.tmpfiles.rules = [
@@ -144,37 +234,22 @@ in
       networking.firewall.extraCommands =
         let
           srv = fclib.network.srv;
-          sto = fclib.network.sto;
         in
-        lib.mkMerge [
-          (lib.mkOrder 700 ''
-            # Ensure that conntrack is enabled for RGW connections using port redirects
-            ip46tables -w -t raw -A fc-raw-prerouting -i ${sto.interface} -p tcp --dport 7480 -j RETURN
-            ip46tables -w -t raw -A fc-raw-output -o ${sto.interface} -p tcp --sport 80 -j RETURN
-          '')
-          (
-            ''
-              set -x
-              # Accept traffic from S3 gateways from within the SRV network.
-              ip46tables -w -t nat -N fc-nat-pre
+        (
+          ''
+            set -x
+            # Accept traffic from S3 gateways from within the SRV network.
+          ''
+          + (lib.concatMapStringsSep "\n" (
+            net: "iptables -A nixos-fw -i ${srv.interface} -s ${net} -p tcp --dport 7480 -j ACCEPT"
+          ) srv.v4.networks)
+          + "\n"
+          + (lib.concatMapStringsSep "\n" (
+            net: "ip6tables -A nixos-fw -i ${srv.interface} -s ${net} -p tcp --dport 7480 -j ACCEPT"
+          ) srv.v6.networks)
+        );
 
-            ''
-            + (lib.concatMapStringsSep "\n" (net: ''
-              iptables -A nixos-fw -i ${srv.interface} -s ${net} -p tcp --dport 80 -j ACCEPT
-              # PL-130368 Fix S3 presigned URLs
-              iptables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
-            '') srv.v4.networks)
-            + "\n"
-            + (lib.concatMapStringsSep "\n" (net: ''
-              ip6tables -A nixos-fw -i ${srv.interface} -s ${net} -p tcp --dport 80 -j ACCEPT
-              # PL-130368 Fix S3 presigned URLs
-              ip6tables -t nat -A fc-nat-pre -p tcp --dport 7480 -j REDIRECT --to-port 80
-            '') srv.v6.networks)
-            + ''
-              ip46tables -t nat -A PREROUTING -j fc-nat-pre
-            ''
-          )
-        ];
+      networking.firewall.allowedTCPPorts = [ 80 ];
 
       systemd.services.fc-ceph-rgw-update-stats = rec {
         description = "Update RGW stats";

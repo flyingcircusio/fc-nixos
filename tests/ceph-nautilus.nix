@@ -30,6 +30,13 @@ import ./make-test-python.nix (
           ../nixos/roles
         ];
 
+        # NOTE: for simplicity we're testing the gateway via srv and no TLS termination.
+        # This overrides the module defaults, i.e. on actual deployments
+        # of rgw this is exposed with fe addresses.
+        flyingcircus.services.nginx.defaultListenAddresses =
+          config.fclib.network.srv.dualstack.addressesQuoted;
+        services.nginx.virtualHosts."objects.test.test.fcio.net".forceSSL = lib.mkForce false;
+
         flyingcircus.infrastructure.fullDiskEncryption.enable = true;
         flyingcircus.static.mtus.sto = 1500;
         flyingcircus.static.mtus.stb = 1500;
@@ -40,6 +47,12 @@ import ./make-test-python.nix (
             ips = [ (getIPForVLAN 4 1) ];
             location = "test";
             service = "ceph_mon-mon";
+          }
+          {
+            address = "host1.fcio.net";
+            ips = [ (getIPForVLAN 3 1) ];
+            location = "test";
+            service = "ceph_rgw-server";
           }
           {
             address = "host2.fcio.net";
@@ -189,6 +202,7 @@ import ./make-test-python.nix (
           environment.systemPackages = [ pkgs.awscli ];
           networking.extraHosts = ''
             ${getIPForVLAN 3 1} s3.host1.fcio.net
+            ${getIPForVLAN 3 1} objects.test.test.fcio.net
             ::1 s3.node.fcio.net
           '';
           flyingcircus.enc.parameters = {
@@ -449,7 +463,7 @@ import ./make-test-python.nix (
           aws_cfg = configparser.ConfigParser()
           endpoints = {
             "default": 'http://s3.host1.fcio.net:7480',
-            "port_80": 'http://s3.host1.fcio.net',
+            "port_80": 'http://objects.test.test.fcio.net',
             "customer_gw": 'http://s3.node.fcio.net',
           }
 
@@ -468,6 +482,13 @@ import ./make-test-python.nix (
           node.succeed("dd if=/dev/urandom of=testdata bs=1k count=2")
           hash_original = node.succeed("nix-hash testdata")
           node.succeed("aws s3 cp testdata s3://test/testdata")
+
+          # For the healthcheck of haproxy
+          node.succeed("aws s3 mb s3://rgw-monitoring")
+          node.succeed("touch foo && aws s3 cp foo s3://rgw-monitoring/probe")
+          node.succeed("aws s3api put-object-acl --bucket rgw-monitoring --acl public-read --key probe")
+          # HAProxy is still giving a 503 because of the failing healthcheck, so let's wait.
+          node.wait_until_succeeds("curl -f http://objects.test.test.fcio.net")
 
           for profile in endpoints.keys():
             node.succeed(f"aws --profile {profile} s3 cp s3://test/testdata download_{profile}")
