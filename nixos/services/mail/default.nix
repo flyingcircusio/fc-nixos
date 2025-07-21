@@ -240,7 +240,7 @@ in
             fqdn = role.mailHost;
             loginAccounts = fclib.jsonFromFile "/etc/local/mail/users.json" "{}";
             extraVirtualAliases = fclib.jsonFromFile "/etc/local/mail/local_valiases.json" "{}";
-            certificateScheme = 3;
+            certificateScheme = "acme-nginx";
             enableImapSsl = true;
             enableManageSieve = true;
             # FC-38677 - we have a properly configured local resolver in our

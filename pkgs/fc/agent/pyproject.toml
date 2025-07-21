@@ -8,12 +8,12 @@ authors = [
   {name = "Flying Circus IO GmbH <mail@flyingcircus.io>", email = "mail@flyingcircus.io" }
 ]
 
-license = { text = "ZPL-2.1" }
+license = "ZPL-2.1"
 
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
     "Topic :: System :: Systems Administration",
 ]
 
@@ -27,7 +27,6 @@ dependencies = [
     "netaddr",
     "pendulum",
     "python-dateutil",
-    "pytz",
     "PyYAML>=6",
     "requests",
     "rich",
@@ -35,7 +34,6 @@ dependencies = [
     "stamina",
     "structlog",
     "typer",
-
 ]
 # NOTE: Please keep this sorted!
 
