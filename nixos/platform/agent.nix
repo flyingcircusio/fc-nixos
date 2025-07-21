@@ -386,6 +386,7 @@ in
           Nice = 18; # 19 is the lowest
           IOSchedulingClass = "idle";
           IOSchedulingPriority = 7; # lowest
+          # default weight, may get disk-specific overrides
           IOWeight = 10; # 1-10000
           LimitMEMLOCK = nixBuildMEMLOCK;
         };
@@ -452,6 +453,7 @@ in
           Nice = 18; # 19 is the lowest
           IOSchedulingClass = "idle";
           IOSchedulingPriority = 7; # lowest
+          # default weight, may get disk-specific overrides
           IOWeight = 10; # 1-10000
           ExecStart =
             let
