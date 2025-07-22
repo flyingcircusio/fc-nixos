@@ -25,8 +25,7 @@ in
           "vm"
           "container"
         ];
-        # FIXME: Why is this still the default?
-        default = "container";
+        default = "vm";
       };
 
       publicAddress = lib.mkOption {
