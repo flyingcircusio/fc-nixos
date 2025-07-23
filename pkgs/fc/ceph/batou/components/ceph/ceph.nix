@@ -57,19 +57,8 @@ in
   systemd.services."fc-ceph-osd@".wants = lib.mkForce [ fclib.network.srv.addressUnit ];
   systemd.services."fc-ceph-osd@".after = lib.mkForce [ fclib.network.srv.addressUnit ];
 
-  environment.systemPackages = [
-    (pkgs.writeShellScriptBin "cleanup-ceph" ''
-      systemctl stop fc-ceph-mon
-      systemctl stop fc-ceph-mgr
-      systemctl stop fc-ceph-osd@0.service
-      umount /srv/ceph/mgr/ceph-host1
-      umount /srv/ceph/mon/ceph-host1
-      umount /srv/ceph/osd/ceph-0
-      vgremove vgjnl00 -y
-      vgremove vgosd-0 -y
-      losetup -D
-      rm -rf /ceph
-    '')
-  ];
+  environment.shellAliases = {
+    "init_cluster" = "/root/deployment/work/ceph/init_cluster.py";
+  };
 
 }
