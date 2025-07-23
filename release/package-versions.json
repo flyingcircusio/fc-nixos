@@ -290,9 +290,9 @@
     "version": "1.23.11"
   },
   "grafana": {
-    "name": "grafana-12.0.2",
+    "name": "grafana-12.0.2+security-01",
     "pname": "grafana",
-    "version": "12.0.2"
+    "version": "12.0.2+security-01"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -505,9 +505,9 @@
     "version": "5.3.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.133.0",
+    "name": "matrix-synapse-wrapped-1.134.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.133.0"
+    "version": "1.134.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -1140,9 +1140,9 @@
     "version": "2.41"
   },
   "uv": {
-    "name": "uv-0.7.21",
+    "name": "uv-0.7.22",
     "pname": "uv",
-    "version": "0.7.21"
+    "version": "0.7.22"
   },
   "varnish": {
     "name": "varnish-7.7.1",
