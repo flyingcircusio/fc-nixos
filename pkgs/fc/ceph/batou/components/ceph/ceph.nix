@@ -27,6 +27,7 @@ in
   };
   flyingcircus.services.ceph.extraSettings = {
     monClockDriftAllowed = 10;
+    osd_pool_default_size = 1;
   };
   flyingcircus.services.ceph.client = {
     mons = [ "host1" ];
