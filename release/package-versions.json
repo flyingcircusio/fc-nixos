@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-138.0.7204.157",
+    "name": "chromedriver-unwrapped-138.0.7204.168",
     "pname": "chromedriver-unwrapped",
-    "version": "138.0.7204.157"
+    "version": "138.0.7204.168"
   },
   "chromium": {
-    "name": "chromium-138.0.7204.157",
+    "name": "chromium-138.0.7204.168",
     "pname": "chromium",
-    "version": "138.0.7204.157"
+    "version": "138.0.7204.168"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.105",
+    "name": "element-web-1.11.106",
     "pname": "element-web",
-    "version": "1.11.105"
+    "version": "1.11.106"
   },
   "erlang": {
     "name": "erlang-27.3.4.2",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-140.0.4",
+    "name": "firefox-141.0",
     "pname": "firefox",
-    "version": "140.0.4"
+    "version": "141.0"
   },
   "gcc": {
     "name": "gcc-wrapper-14.2.1.20250322",
@@ -225,9 +225,9 @@
     "version": "2.49.0"
   },
   "gitaly": {
-    "name": "gitaly-18.1.2",
+    "name": "gitaly-18.2.1",
     "pname": "gitaly",
-    "version": "18.1.2"
+    "version": "18.2.1"
   },
   "github-runner": {
     "name": "github-runner-2.326.0",
@@ -235,24 +235,24 @@
     "version": "2.326.0"
   },
   "gitlab": {
-    "name": "gitlab-18.1.2",
+    "name": "gitlab-18.2.1",
     "pname": "gitlab",
-    "version": "18.1.2"
+    "version": "18.2.1"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.24.0",
+    "name": "gitlab-container-registry-4.25.0",
     "pname": "gitlab-container-registry",
-    "version": "4.24.0"
+    "version": "4.25.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.1.2",
+    "name": "gitlab-ee-18.2.1",
     "pname": "gitlab-ee",
-    "version": "18.1.2"
+    "version": "18.2.1"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.1.2",
+    "name": "gitlab-pages-18.2.1",
     "pname": "gitlab-pages",
-    "version": "18.1.2"
+    "version": "18.2.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.1.1",
@@ -260,9 +260,9 @@
     "version": "18.1.1"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.1.2",
+    "name": "gitlab-workhorse-18.2.1",
     "pname": "gitlab-workhorse",
-    "version": "18.1.2"
+    "version": "18.2.1"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -495,9 +495,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.9",
+    "name": "mastodon-4.3.10",
     "pname": "mastodon",
-    "version": "4.3.9"
+    "version": "4.3.10"
   },
   "matomo_5": {
     "name": "matomo-5.3.2",
@@ -580,9 +580,9 @@
     "version": "22.16.0"
   },
   "nodejs_20": {
-    "name": "nodejs-20.19.3",
+    "name": "nodejs-20.19.4",
     "pname": "nodejs",
-    "version": "20.19.3"
+    "version": "20.19.4"
   },
   "nodejs_22": {
     "name": "nodejs-22.16.0",
@@ -595,9 +595,9 @@
     "version": "4.36"
   },
   "nss_latest": {
-    "name": "nss-3.113",
+    "name": "nss-3.114",
     "pname": "nss",
-    "version": "3.113"
+    "version": "3.114"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.11",
@@ -775,9 +775,9 @@
     "version": "126"
   },
   "postfix": {
-    "name": "postfix-3.10.2",
+    "name": "postfix-3.10.3",
     "pname": "postfix",
-    "version": "3.10.2"
+    "version": "3.10.3"
   },
   "postgresql": {
     "name": "postgresql-17.5",
