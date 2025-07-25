@@ -9,7 +9,7 @@
   pkg-config,
   which,
   git,
-  boost175,
+  boost173,
   xz,
   libxml2,
   zlib,
@@ -36,7 +36,7 @@
   doxygen,
   graphviz,
   fmt,
-  python39,
+  python310,
 
   # Optional Dependencies
   yasm ? null,
@@ -149,6 +149,8 @@ let
     inherit src version;
 
     sourceRoot = "ceph-${version}/src/python-common";
+    pyproject = true;
+    build-system = [ python.pkgs.setuptools ];
 
     nativeCheckInputs = [ python.pkgs.pytest ];
     propagatedBuildInputs = with python.pkgs; [
@@ -159,8 +161,7 @@ let
     meta = getMeta "Ceph common module for code shared by manager modules";
   };
 
-  # Boost 1.75 is not compatible with Python 3.10
-  python = python39.override {
+  python = python310.override {
     packageOverrides = self: super: {
       sqlalchemy = super.sqlalchemy.overridePythonAttrs (oldAttrs: rec {
         version = "1.4.46";
@@ -182,7 +183,7 @@ let
     };
   };
 
-  boost = boost175.override {
+  boost = boost173.override {
     enablePython = true;
     inherit python;
   };
@@ -215,10 +216,10 @@ let
   ]);
   sitePackages = ceph-python-env.python.sitePackages;
 
-  version = "16.2.10";
+  version = "16.2.15";
   src = fetchurl {
     url = "http://download.ceph.com/tarballs/ceph-${version}.tar.gz";
-    sha256 = "sha256-342+nUV3mCX7QJfZSnKEfnQFCJwJmVQeYnefJwW/AtU=";
+    hash = "sha256-342+nUV30CX7QJfZS0KEfnQFCJwJmVQeYnefJwW/AtU=";
   };
 in
 rec {
