@@ -68,7 +68,7 @@ def create_cluster():
             "mon-update-single-client",
             "host1",
             "ceph_osd,ceph_mon,ceph_rgw",
-            "salt-for-host-1-dhkasjy9",
+            "salt-for-host1-dhkasjy9",
         ]
     )
 
