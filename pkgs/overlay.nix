@@ -166,6 +166,19 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
+  ceph-pacific = rec {
+    inherit
+      (super.callPackages ./ceph/pacific {
+        boost = super.boost16x.override {
+          enablePython = true;
+          python = self.python3;
+        };
+      })
+      ceph
+      ceph-client
+      ;
+    libceph = ceph.lib;
+  };
 
   consul = builtins.trace "using 21.05 consul" (
     fc-nixos-21_05.consul.overrideAttrs (old: {
