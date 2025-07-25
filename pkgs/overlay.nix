@@ -152,7 +152,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  inherit (super.callPackage ./boost { }) boost159;
+  inherit (super.callPackage ./boost/1.59 { }) boost159;
+  inherit (super.callPackage ./boost/1.73 { }) boost173;
 
   busybox = super.busybox.overrideAttrs (oldAttrs: {
     meta.priority = 10;
