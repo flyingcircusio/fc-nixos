@@ -125,7 +125,7 @@ import ./make-test-python.nix (
             directory_ring = 0;
             location = "test";
             resource_group = "services";
-            secret_salt = "salt-for-host-${toString id}-dhkasjy9";
+            secret_salt = "salt-for-host${toString id}-dhkasjy9";
             secrets = {
               "ceph/admin_key" = "AQBFJa9hAAAAABAAtdggM3mhVBAEYw3+Loehqw==";
             };
@@ -484,9 +484,9 @@ import ./make-test-python.nix (
 
           host1.succeed('ceph -s > /dev/stderr')
 
-          host1.succeed('fc-ceph keys mon-update-single-client host1 ceph_osd,ceph_mon,ceph_rgw salt-for-host-1-dhkasjy9')
-          host1.succeed('fc-ceph keys mon-update-single-client host2 ceph_osd,ceph_mon salt-for-host-2-dhkasjy9')
-          host1.succeed('fc-ceph keys mon-update-single-client host3 ceph_osd,ceph_mon salt-for-host-3-dhkasjy9')
+          host1.succeed('fc-ceph keys mon-update-single-client host1 ceph_osd,ceph_mon,ceph_rgw salt-for-host1-dhkasjy9')
+          host1.succeed('fc-ceph keys mon-update-single-client host2 ceph_osd,ceph_mon salt-for-host2-dhkasjy9')
+          host1.succeed('fc-ceph keys mon-update-single-client host3 ceph_osd,ceph_mon salt-for-host3-dhkasjy9')
 
           # fix default warnings by enabling new backwards-incompatible client auth behaviour
           host1.succeed('ceph config set mon auth_allow_insecure_global_id_reclaim false > /dev/stderr')
