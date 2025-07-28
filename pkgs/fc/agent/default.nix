@@ -89,7 +89,6 @@ pyPackages.buildPythonPackage rec {
       pyPackages.iso8601
       pyPackages.netaddr
       pyPackages.pendulum
-      pyPackages.pytz
       pyPackages.requests
       pyPackages.rich
       pyPackages.setuptools

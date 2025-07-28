@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, Mock, call
 
 import freezegun
 import pytest
-import pytz
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.estimate import Estimate
 from fc.maintenance.reqmanager import (
@@ -120,9 +119,7 @@ def test_add_dont_add_none(log, reqmanager):
 
 @pytest.mark.parametrize("significant", [False, True])
 @unittest.mock.patch("fc.util.directory.connect")
-def test_add_do_merge_compatible_request(
-    connect, significant, log, reqmanager
-):
+def test_add_do_merge_compatible_request(connect, significant, log, reqmanager):
     with reqmanager as rm:
         first_activity = MergeableActivity("first")
         second_activity = MergeableActivity("second", significant)
@@ -191,7 +188,7 @@ def test_schedule_requests(connect, reqmanager):
         {req.id: {"estimate": 900, "comment": "schedule"}}
     )
     assert req.next_due == datetime.datetime(
-        2016, 4, 20, 15, 12, 40, 900000, tzinfo=pytz.UTC
+        2016, 4, 20, 15, 12, 40, 900000, tzinfo=datetime.UTC
     )
 
 
@@ -441,16 +438,16 @@ def test_update_states_continuous_requests(request_population):
         reqs[3].state = State.pending
         # The times are not ordered on purpose, update_states should sort it.
         reqs[0].next_due = datetime.datetime(
-            2016, 4, 20, 12, 00, tzinfo=pytz.UTC
+            2016, 4, 20, 12, 00, tzinfo=datetime.UTC
         )
         reqs[2].next_due = datetime.datetime(
-            2016, 4, 20, 12, 20, tzinfo=pytz.UTC
+            2016, 4, 20, 12, 20, tzinfo=datetime.UTC
         )
         reqs[1].next_due = datetime.datetime(
-            2016, 4, 20, 12, 35, tzinfo=pytz.UTC
+            2016, 4, 20, 12, 35, tzinfo=datetime.UTC
         )
         reqs[3].next_due = datetime.datetime(
-            2016, 4, 20, 12, 52, tzinfo=pytz.UTC
+            2016, 4, 20, 12, 52, tzinfo=datetime.UTC
         )
         rm.update_states()
 
@@ -471,16 +468,16 @@ def test_execute_all_due(connect, request_population):
         reqs[0].state = State.due
         reqs[1].state = State.due
         reqs[0].next_due = datetime.datetime(
-            2016, 4, 20, 11, 50, tzinfo=pytz.UTC
+            2016, 4, 20, 11, 50, tzinfo=datetime.UTC
         )
         reqs[1].next_due = datetime.datetime(
-            2016, 4, 20, 11, 55, tzinfo=pytz.UTC
+            2016, 4, 20, 11, 55, tzinfo=datetime.UTC
         )
         rm.execute()
         for r in reqs:
-            assert (
-                len(r.attempts) == 1
-            ), f"Wrong number of attempts for request {r.id}, expected exactly one"
+            assert len(r.attempts) == 1, (
+                f"Wrong number of attempts for request {r.id}, expected exactly one"
+            )
 
 
 @unittest.mock.patch("fc.util.directory.connect")
@@ -489,7 +486,9 @@ def test_execute_not_due(connect, request_population):
     with request_population(3) as (rm, reqs):
         reqs[0].state = State.error
         reqs[1].state = State.postpone
-        reqs[2].next_due = datetime.datetime(2016, 4, 20, 13, tzinfo=pytz.UTC)
+        reqs[2].next_due = datetime.datetime(
+            2016, 4, 20, 13, tzinfo=datetime.UTC
+        )
         rm.execute()
         for r in reqs:
             assert len(r.attempts) == 0
@@ -601,11 +600,11 @@ def test_list(reqmanager):
     reqmanager.add(r1)
     r2 = Request(Activity(), "2h", "due request")
     r2.state = State.due
-    r2.next_due = datetime.datetime(2016, 4, 20, 12, tzinfo=pytz.UTC)
+    r2.next_due = datetime.datetime(2016, 4, 20, 12, tzinfo=datetime.UTC)
     reqmanager.add(r2)
     r3 = Request(Activity(), "1m 30s", "error request")
     r3.state = State.error
-    r3.next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+    r3.next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=datetime.UTC)
     att = Attempt()
     att.duration = datetime.timedelta(seconds=75)
     att.returncode = 1
@@ -625,9 +624,13 @@ def test_list(reqmanager):
 @freezegun.freeze_time("2016-04-20 11:00:00")
 def test_overdue(request_population):
     with request_population(2) as (rm, reqs):
-        reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].next_due = datetime.datetime(
+            2016, 4, 20, 11, tzinfo=datetime.UTC
+        )
         reqs[0].state = State.due
-        reqs[1].next_due = datetime.datetime(2016, 4, 20, 10, tzinfo=pytz.UTC)
+        reqs[1].next_due = datetime.datetime(
+            2016, 4, 20, 10, tzinfo=datetime.UTC
+        )
         reqs[1].state = State.due
         rm.update_states()
 
@@ -648,11 +651,13 @@ def test_check_scheduled_requests_should_show_count_and_time(
     request_population,
 ):
     with request_population(2) as (rm, reqs):
-        reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].next_due = datetime.datetime(
+            2016, 4, 20, 11, tzinfo=datetime.UTC
+        )
         reqs[0].state = State.due
         reqs[0].save()
         reqs[1].next_due = datetime.datetime(
-            2016, 4, 20, 11, 10, tzinfo=pytz.UTC
+            2016, 4, 20, 11, 10, tzinfo=datetime.UTC
         )
         reqs[1].state = State.due
         reqs[1].save()
@@ -677,7 +682,9 @@ def test_check_waiting_and_scheduled_requests(
 ):
     with request_population(2) as (rm, reqs):
         reqs[0].state = State.pending
-        reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].next_due = datetime.datetime(
+            2016, 4, 20, 11, tzinfo=datetime.UTC
+        )
         reqs[0].save()
         reqs[1].state = State.pending
         reqs[1].save()
@@ -694,7 +701,9 @@ def test_check_recent_maintenance_running_should_be_ok(request_population):
         rm.maintenance_marker_path.write_text(
             (utcnow() - datetime.timedelta(minutes=10)).isoformat()
         )
-        reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].next_due = datetime.datetime(
+            2016, 4, 20, 11, tzinfo=datetime.UTC
+        )
         reqs[0].state = State.running
         att = Attempt()
         att.started -= datetime.timedelta(minutes=1)
@@ -717,7 +726,9 @@ def test_check_long_maintenance_should_be_critical(request_population):
         rm.maintenance_marker_path.write_text(
             (utcnow() - datetime.timedelta(minutes=60, seconds=1)).isoformat()
         )
-        reqs[0].next_due = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].next_due = datetime.datetime(
+            2016, 4, 20, 11, tzinfo=datetime.UTC
+        )
         reqs[0].state = State.running
         att = Attempt()
         att.started -= datetime.timedelta(minutes=50)
@@ -734,7 +745,9 @@ def test_check_long_maintenance_should_be_critical(request_population):
 @freezegun.freeze_time("2016-04-27 11:00:01")
 def test_check_request_stuck_in_queue_should_warn(request_population):
     with request_population(1) as (rm, reqs):
-        reqs[0].added_at = datetime.datetime(2016, 4, 20, 11, tzinfo=pytz.UTC)
+        reqs[0].added_at = datetime.datetime(
+            2016, 4, 20, 11, tzinfo=datetime.UTC
+        )
         reqs[0].state = State.pending
         reqs[0].save()
 
