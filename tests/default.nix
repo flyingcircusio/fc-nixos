@@ -64,9 +64,8 @@ in
     clientCephRelease = "nautilus";
   };
   lampVm = callTest ./lamp/vm-test.nix { };
-  # FIXME: PL-133854, php72, php73 marked as broken
-  # lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
-  # lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
+  lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
+  lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
   lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
   lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
   lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
