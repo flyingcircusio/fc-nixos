@@ -509,46 +509,45 @@ in
           ];
         };
 
-        flyingcircus.services.sensu-client.checks =
-          {
-            nginx_config = {
-              notification = "Nginx configuration check problems";
-              command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config";
-              interval = 300;
-            };
+        flyingcircus.services.sensu-client.checks = {
+          nginx_config = {
+            notification = "Nginx configuration check problems";
+            command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config";
+            interval = 300;
+          };
 
-            nginx_status = {
-              notification = "nginx does not listen on port 80";
-              command = ''
-                ${pkgs.monitoring-plugins}/bin/check_http \
-                  -H localhost -u /nginx_status -p 81 -s server -c 5 -w 2
-              '';
-              interval = 60;
-            };
+          nginx_status = {
+            notification = "nginx does not listen on port 80";
+            command = ''
+              ${pkgs.monitoring-plugins}/bin/check_http \
+                -H localhost -u /nginx_status -p 81 -s server -c 5 -w 2
+            '';
+            interval = 60;
+          };
 
-            nginx_worker_age = {
-              notification = "Some nginx worker processes don't use the current config";
-              command = "${nginxCheckWorkerAge}";
-              interval = 60;
-            };
+          nginx_worker_age = {
+            notification = "Some nginx worker processes don't use the current config";
+            command = "${nginxCheckWorkerAge}";
+            interval = 60;
+          };
+        }
+        // (lib.mapAttrs' (
+          n: vhost:
+          let
+            host = if vhost.serverName != null then vhost.serverName else n;
+          in
+          lib.nameValuePair "nginx_https_${n}" {
+            notification = "HTTPS certificate check failed for vhost ${n}";
+            # We're using a timeout of 15 seconds because 10 seconds is the timeout
+            # that will trigger if DNS issues occur and giving the check a higher
+            # timeout allows us to see those. Otherwise they get hidden behind
+            # a generic timeout message.
+            # Note that we assume that the certificate is reachable via port 443.
+            # Other configurations might need overrides for the sensu check command.
+            command = "check_http -p 443 -S --sni -C 25,14 -H ${host} -t 15";
+            interval = 600;
           }
-          // (lib.mapAttrs' (
-            n: vhost:
-            let
-              host = if vhost.serverName != null then vhost.serverName else n;
-            in
-            lib.nameValuePair "nginx_https_${n}" {
-              notification = "HTTPS certificate check failed for vhost ${n}";
-              # We're using a timeout of 15 seconds because 10 seconds is the timeout
-              # that will trigger if DNS issues occur and giving the check a higher
-              # timeout allows us to see those. Otherwise they get hidden behind
-              # a generic timeout message.
-              # Note that we assume that the certificate is reachable via port 443.
-              # Other configurations might need overrides for the sensu check command.
-              command = "check_http -p 443 -S --sni -C 25,14 -H ${host} -t 15";
-              interval = 600;
-            }
-          ) acmeVhostsWithTLS);
+        ) acmeVhostsWithTLS);
 
         networking.firewall.allowedTCPPorts = [
           80
@@ -613,28 +612,29 @@ in
               ignoreduplicates = true;
               priority = 901;
               copytruncate = true;
-            } // commonRotate;
+            }
+            // commonRotate;
             "/var/log/nginx/*.log" = {
               postrotate = ''
                 systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
                 chown ${nginxCfg.user}:nginx /var/log/nginx/*
               '';
-            } // commonRotate;
+            }
+            // commonRotate;
           };
 
         # Z: Recursively change permissions if they already exist.
-        systemd.tmpfiles.rules =
-          [
-            "d /etc/local/nginx/modsecurity 2775 nginx service"
-            # Clean up whatever logrotate may have missed three days later.
-            "d /var/log/nginx 0755 ${nginxCfg.user} nginx ${toString (cfg.rotateLogs + 3)}d"
-            "Z /var/log/nginx/* - ${nginxCfg.user} nginx"
-          ]
-          # d: Create temp subdirs if they don't exist and clean up files after 10 days.
-          ++ map (subdir: ''
-            d /var/cache/nginx/${subdir} 0700 nginx nginx 10d
-            Z /var/cache/nginx/${subdir} 0700 nginx nginx
-          '') tempSubdirs;
+        systemd.tmpfiles.rules = [
+          "d /etc/local/nginx/modsecurity 2775 nginx service"
+          # Clean up whatever logrotate may have missed three days later.
+          "d /var/log/nginx 0755 ${nginxCfg.user} nginx ${toString (cfg.rotateLogs + 3)}d"
+          "Z /var/log/nginx/* - ${nginxCfg.user} nginx"
+        ]
+        # d: Create temp subdirs if they don't exist and clean up files after 10 days.
+        ++ map (subdir: ''
+          d /var/cache/nginx/${subdir} 0700 nginx nginx 10d
+          Z /var/cache/nginx/${subdir} 0700 nginx nginx
+        '') tempSubdirs;
 
         flyingcircus.localConfigDirs.nginx = {
           dir = "/etc/local/nginx";

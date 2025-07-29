@@ -54,7 +54,8 @@ let
     monOsdAllowPrimaryAffinity = true;
 
     mgrData = "/srv/ceph/mgr/$cluster-$id";
-  } // lib.optionalAttrs (cfg.cluster_network != null) { clusterNetwork = cfg.cluster_network; };
+  }
+  // lib.optionalAttrs (cfg.cluster_network != null) { clusterNetwork = cfg.cluster_network; };
 
   defaultClientSettings = {
     logFile = "/var/log/ceph/client.log";
@@ -95,14 +96,13 @@ in
             bool
           ]);
         default = { }; # defaults are provided in the config section with a lower priority
-        description =
-          ''
-            Global config of the Ceph config file. Will be used
-            for all Ceph daemons and binaries.
-            Can override existing default setting values. Configuration keys like `mon osd full ratio`''
-          + ''
-            can alternatively be written in camelCase as `monOsdFullRatio`.
-          '';
+        description = ''
+          Global config of the Ceph config file. Will be used
+          for all Ceph daemons and binaries.
+          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+        + ''
+          can alternatively be written in camelCase as `monOsdFullRatio`.
+        '';
       };
       extraSettingsSections = lib.mkOption {
         # serves as interface for other Ceph roles and services, these can then add additional INI sections to ceph.conf

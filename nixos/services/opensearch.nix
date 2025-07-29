@@ -114,18 +114,17 @@ in
       services.opensearch = {
         enable = true;
 
-        settings =
-          {
-            "bootstrap.memory_lock" = true;
-            "cluster.name" = cfg.clusterName;
-            "discovery.seed_hosts" = cfg.nodes;
-            "discovery.type" = if lib.length cfg.nodes == 1 then "single-node" else "";
-            "network.host" = thisNode;
-            "node.name" = cfg.nodeName;
-          }
-          // lib.optionalAttrs (cfg.initialMasterNodes != [ ]) {
-            "cluster.initial_master_nodes" = cfg.initialMasterNodes;
-          };
+        settings = {
+          "bootstrap.memory_lock" = true;
+          "cluster.name" = cfg.clusterName;
+          "discovery.seed_hosts" = cfg.nodes;
+          "discovery.type" = if lib.length cfg.nodes == 1 then "single-node" else "";
+          "network.host" = thisNode;
+          "node.name" = cfg.nodeName;
+        }
+        // lib.optionalAttrs (cfg.initialMasterNodes != [ ]) {
+          "cluster.initial_master_nodes" = cfg.initialMasterNodes;
+        };
 
         extraJavaOptions = [
           "-Des.path.scripts=${cfgUpstream.dataDir}/scripts"

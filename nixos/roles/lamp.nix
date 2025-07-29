@@ -164,7 +164,8 @@ in
       environment.systemPackages = [
         role.php
         role.php.packages.composer
-      ] ++ phpWrappers;
+      ]
+      ++ phpWrappers;
 
       # Provide a similar PHP config for the PHP CLI as for Apache (httpd).
       # The file referenced by PHPRC is loaded together with the php.ini
@@ -179,65 +180,64 @@ in
         "status"
         "proxy_fcgi"
       ];
-      services.httpd.extraConfig =
-        ''
-          # Those options are chosen for prefork
-          # StartServers 2 (default)
-          # MinSpareServers 5 (default)
-          # MaxSpareServers 10 (Default)
+      services.httpd.extraConfig = ''
+        # Those options are chosen for prefork
+        # StartServers 2 (default)
+        # MinSpareServers 5 (default)
+        # MaxSpareServers 10 (Default)
 
-          # MaxRequestWorkers default: 256, limit to lower number
-          # to avoid starvation/thrashing
-          MaxRequestWorkers 150
+        # MaxRequestWorkers default: 256, limit to lower number
+        # to avoid starvation/thrashing
+        MaxRequestWorkers 150
 
-          # Determine lifetime of processes
-          # MaxConnectionsPerChild default: 0, set limit to
-          # avoid potential memory leaks
-          MaxConnectionsPerChild     10000
+        # Determine lifetime of processes
+        # MaxConnectionsPerChild default: 0, set limit to
+        # avoid potential memory leaks
+        MaxConnectionsPerChild     10000
 
-          Listen localhost:7999
-          <VirtualHost localhost:7999>
-          <Location "/server-status">
-              SetHandler server-status
-          </Location>
-          </VirtualHost>
+        Listen localhost:7999
+        <VirtualHost localhost:7999>
+        <Location "/server-status">
+            SetHandler server-status
+        </Location>
+        </VirtualHost>
 
-          # reuse _must_ be disable or apache will confuse different
-          # FPM pools and also screw up with keepalives consuming backend
-          # connections.
-          <Proxy "fcgi://localhost/" enablereuse=off>
-          </Proxy>
+        # reuse _must_ be disable or apache will confuse different
+        # FPM pools and also screw up with keepalives consuming backend
+        # connections.
+        <Proxy "fcgi://localhost/" enablereuse=off>
+        </Proxy>
 
-        ''
-        +
-          # * vhost configs
-          (lib.concatMapStrings (
-            vhost:
-            let
-              port = toString vhost.port;
-            in
-            ''
+      ''
+      +
+        # * vhost configs
+        (lib.concatMapStrings (
+          vhost:
+          let
+            port = toString vhost.port;
+          in
+          ''
 
-              Listen *:${port}
-              <VirtualHost *:${port}>
-                  ServerName "${config.networking.hostName}"
-                  DocumentRoot "${vhost.docroot}"
-                  <Directory "${vhost.docroot}">
-                      AllowOverride all
-                      Require all granted
-                      Options FollowSymlinks
-                      DirectoryIndex index.html index.php
-                  </Directory>
-                  <FilesMatch "\.php$">
-                      SetHandler "proxy:unix:${
-                        config.services.phpfpm.pools."${vhost.name}".socket
-                      }|fcgi://localhost/"
-                  </FilesMatch>
-                  ${vhost.apacheExtraConfig}
-              </VirtualHost>
-            ''
-          ) role.vhosts)
-        + role.apache_conf;
+            Listen *:${port}
+            <VirtualHost *:${port}>
+                ServerName "${config.networking.hostName}"
+                DocumentRoot "${vhost.docroot}"
+                <Directory "${vhost.docroot}">
+                    AllowOverride all
+                    Require all granted
+                    Options FollowSymlinks
+                    DirectoryIndex index.html index.php
+                </Directory>
+                <FilesMatch "\.php$">
+                    SetHandler "proxy:unix:${
+                      config.services.phpfpm.pools."${vhost.name}".socket
+                    }|fcgi://localhost/"
+                </FilesMatch>
+                ${vhost.apacheExtraConfig}
+            </VirtualHost>
+          ''
+        ) role.vhosts)
+      + role.apache_conf;
 
       # The upstream module has a default that makes Apache listen on port 80
       # which conflicts with our webgateway role.

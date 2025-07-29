@@ -431,55 +431,54 @@ in
         enable = true;
         extraFlags = promFlags;
         listenAddress = prometheusListenAddress;
-        scrapeConfigs =
-          [
-            {
-              job_name = "prometheus";
-              scrape_interval = "5s";
-              static_configs = [
-                {
-                  targets = [ prometheusListenAddress ];
-                  labels = {
-                    host = config.networking.hostName;
-                  };
-                }
-              ];
-            }
-            rec {
-              job_name = config.flyingcircus.enc.parameters.resource_group;
-              scrape_interval = cfgStats.prometheusScrapeInterval;
-              # We use a file sd here. Static config would restart prometheus
-              # for each change. This way prometheus picks up the change
-              # automatically and without restart.
-              file_sd_configs = [
-                {
-                  files = [ "${localDir}/scrape-*.json" ];
-                  refresh_interval = "10m";
-                }
-              ];
-              metric_relabel_configs =
-                prometheusMetricRelabel ++ (relabelConfiguration "${localDir}/metric-relabel.${job_name}.yaml");
-            }
-            {
-              job_name = "federate";
-              scrape_interval = cfgStats.prometheusScrapeInterval;
-              metrics_path = "/federate";
-              honor_labels = true;
-              params = {
-                "match[]" = [ "{job=~\"static|prometheus\"}" ];
-              };
-              file_sd_configs = [
-                {
-                  files = [ "${localDir}/federate-*.json" ];
-                  refresh_interval = "10m";
-                }
-              ];
-              metric_relabel_configs = prometheusMetricRelabel;
-            }
+        scrapeConfigs = [
+          {
+            job_name = "prometheus";
+            scrape_interval = "5s";
+            static_configs = [
+              {
+                targets = [ prometheusListenAddress ];
+                labels = {
+                  host = config.networking.hostName;
+                };
+              }
+            ];
+          }
+          rec {
+            job_name = config.flyingcircus.enc.parameters.resource_group;
+            scrape_interval = cfgStats.prometheusScrapeInterval;
+            # We use a file sd here. Static config would restart prometheus
+            # for each change. This way prometheus picks up the change
+            # automatically and without restart.
+            file_sd_configs = [
+              {
+                files = [ "${localDir}/scrape-*.json" ];
+                refresh_interval = "10m";
+              }
+            ];
+            metric_relabel_configs =
+              prometheusMetricRelabel ++ (relabelConfiguration "${localDir}/metric-relabel.${job_name}.yaml");
+          }
+          {
+            job_name = "federate";
+            scrape_interval = cfgStats.prometheusScrapeInterval;
+            metrics_path = "/federate";
+            honor_labels = true;
+            params = {
+              "match[]" = [ "{job=~\"static|prometheus\"}" ];
+            };
+            file_sd_configs = [
+              {
+                files = [ "${localDir}/federate-*.json" ];
+                refresh_interval = "10m";
+              }
+            ];
+            metric_relabel_configs = prometheusMetricRelabel;
+          }
 
-          ]
-          ++ relayRGConfig
-          ++ relayLocationConfig;
+        ]
+        ++ relayRGConfig
+        ++ relayLocationConfig;
       };
 
       flyingcircus.localConfigDirs.statshost = {

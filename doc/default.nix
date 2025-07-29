@@ -35,12 +35,13 @@ pkgs.stdenv.mkDerivation rec {
   inherit branch updated;
 
   configurePhase = ":";
-  buildInputs =
-    [ buildEnv ]
-    ++ (with pkgs; [
-      python3
-      git
-    ]);
+  buildInputs = [
+    buildEnv
+  ]
+  ++ (with pkgs; [
+    python3
+    git
+  ]);
   buildPhase = "sphinx-build -j 10 -a -b html src $out |& tee -a build.log";
 
   installPhase = ":";
