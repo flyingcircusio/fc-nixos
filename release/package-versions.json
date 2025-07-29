@@ -255,9 +255,9 @@
     "version": "18.2.1"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.1.1",
+    "name": "gitlab-runner-18.1.2",
     "pname": "gitlab-runner",
-    "version": "18.1.1"
+    "version": "18.1.2"
   },
   "gitlab-workhorse": {
     "name": "gitlab-workhorse-18.2.1",
@@ -375,9 +375,9 @@
     "version": "1.32.6+k3s1"
   },
   "k3s_1_30": {
-    "name": "k3s-1.30.13+k3s1",
+    "name": "k3s-1.30.14+k3s1",
     "pname": "k3s",
-    "version": "1.30.13+k3s1"
+    "version": "1.30.14+k3s1"
   },
   "k3s_1_31": {
     "name": "k3s-1.31.10+k3s1",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.39",
+    "name": "linux-6.12.40",
     "pname": "linux",
-    "version": "6.12.39"
+    "version": "6.12.40"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.39",
+    "name": "linux-6.12.40",
     "pname": "linux",
-    "version": "6.12.39"
+    "version": "6.12.40"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -1110,14 +1110,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.42",
+    "name": "apache-tomcat-10.1.43",
     "pname": "apache-tomcat",
-    "version": "10.1.42"
+    "version": "10.1.43"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.106",
+    "name": "apache-tomcat-9.0.107",
     "pname": "apache-tomcat",
-    "version": "9.0.106"
+    "version": "9.0.107"
   },
   "unifi": {
     "name": "unifi-controller-9.1.120",
