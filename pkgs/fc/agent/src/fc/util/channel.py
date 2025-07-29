@@ -151,7 +151,10 @@ class Channel:
         if self.is_local:
             self.check_local_channel()
         system_path = nixos.build_system(
-            self.resolved_url, build_options, out_link, self.log
+            channel_url=self.resolved_url,
+            build_options=build_options,
+            out_link=out_link,
+            log=self.log,
         )
         self.system_path = system_path
 
