@@ -30,7 +30,8 @@ import ./make-test-python.nix (
         flyingcircus.infrastructure.fullDiskEncryption.enable = true;
         flyingcircus.roles.backyserver = {
           enable = true;
-        } // backyserverRoleConfig;
+        }
+        // backyserverRoleConfig;
         flyingcircus.services.ceph.client.enable = lib.mkForce false;
         flyingcircus.services.consul.enable = lib.mkForce false;
         flyingcircus.enc.name = "machine";

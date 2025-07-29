@@ -86,15 +86,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    services.coturn =
-      {
-        enable = true;
-        cert = "/var/lib/acme/${hostname}/fullchain.pem";
-        pkey = "/var/lib/acme/${hostname}/key.pem";
-        extraConfig = lib.concatStringsSep "\n" jsonConfig.extraConfig or [ ];
-      }
-      // (mapAttrs (name: value: lib.mkDefault value) (removeAttrs cfg.config ourSettings))
-      // (removeAttrs jsonConfig ourSettings);
+    services.coturn = {
+      enable = true;
+      cert = "/var/lib/acme/${hostname}/fullchain.pem";
+      pkey = "/var/lib/acme/${hostname}/key.pem";
+      extraConfig = lib.concatStringsSep "\n" jsonConfig.extraConfig or [ ];
+    }
+    // (mapAttrs (name: value: lib.mkDefault value) (removeAttrs cfg.config ourSettings))
+    // (removeAttrs jsonConfig ourSettings);
 
     networking.firewall.allowedTCPPorts = [ 80 ];
 
@@ -110,11 +109,10 @@ in
     systemd.services.coturn = rec {
       requires = [ "acme-selfsigned-${hostname}.service" ];
       after = requires;
-      serviceConfig =
-        {
-          Restart = lib.mkForce "always";
-        }
-        //
+      serviceConfig = {
+        Restart = lib.mkForce "always";
+      }
+      //
         # Disable sandboxing which prevents binding on privileged ports
         # when these are explicitly requested in the configuration
         (lib.optionalAttrs

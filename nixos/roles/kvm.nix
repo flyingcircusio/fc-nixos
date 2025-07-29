@@ -486,41 +486,40 @@ in
       };
     };
 
-    boot.kernel.sysctl =
-      {
-        # Agressively try to reclaim memory on the local NUMA node if a slub cache runs
-        # empty. Note that we still don't allow disk I/O to happen to satisfy kernel
-        # memory allocations.
-        "vm.zone_reclaim_mode" = "1";
+    boot.kernel.sysctl = {
+      # Agressively try to reclaim memory on the local NUMA node if a slub cache runs
+      # empty. Note that we still don't allow disk I/O to happen to satisfy kernel
+      # memory allocations.
+      "vm.zone_reclaim_mode" = "1";
 
-        # Qemu hosts tend to cycle PIDs pretty fast
-        "kernel.pid_max" = lib.mkForce "999999"; # mkForce to avoid conflict with ceph role
-      }
-      // (lib.optionalAttrs (vrfInterfaces != { }) {
-        # When we have guests which are attached to layer 3 routed VRFs,
-        # we need to enable forwarding for traffic from the guest tap
-        # interfaces and the bridge interface for the associated
-        # L3VNI.
-        #
-        # For IPv4 this is easy, as the kernel provides per-interface
-        # sysctls which control whether packets received on specific
-        # interfaces should be forwarded or not.
-        #
-        # Under IPv6 however, the per-interface sysctls named
-        # "forwarding" don't actually have any control over whether
-        # packets received on specific interfaces are forwarded or
-        # not. Instead, there is a single *global* sysctl which controls
-        # forwarding for *all* interfaces, and the administrator is
-        # expected to use a firewall to enforce forwarding policy.
-        #
-        # In the interests of keeping IPv4 and IPv6 configuration
-        # reasonably symmetric, we'll turn on global forwarding and set
-        # a firewall for both protocols here.
-        "net.ipv4.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
-        "net.ipv4.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
-        "net.ipv6.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
-        "net.ipv6.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
-      });
+      # Qemu hosts tend to cycle PIDs pretty fast
+      "kernel.pid_max" = lib.mkForce "999999"; # mkForce to avoid conflict with ceph role
+    }
+    // (lib.optionalAttrs (vrfInterfaces != { }) {
+      # When we have guests which are attached to layer 3 routed VRFs,
+      # we need to enable forwarding for traffic from the guest tap
+      # interfaces and the bridge interface for the associated
+      # L3VNI.
+      #
+      # For IPv4 this is easy, as the kernel provides per-interface
+      # sysctls which control whether packets received on specific
+      # interfaces should be forwarded or not.
+      #
+      # Under IPv6 however, the per-interface sysctls named
+      # "forwarding" don't actually have any control over whether
+      # packets received on specific interfaces are forwarded or
+      # not. Instead, there is a single *global* sysctl which controls
+      # forwarding for *all* interfaces, and the administrator is
+      # expected to use a firewall to enforce forwarding policy.
+      #
+      # In the interests of keeping IPv4 and IPv6 configuration
+      # reasonably symmetric, we'll turn on global forwarding and set
+      # a firewall for both protocols here.
+      "net.ipv4.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv4.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv6.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv6.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+    });
 
     # Run a proxy to give VMs running on this host fast access to radosgw.
 

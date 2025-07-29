@@ -27,118 +27,117 @@ let
   sourceNetworks = config.flyingcircus.static.floatingGatewayNetworks."${location}";
   sourceInterfaces = map (net: fclib.network."${net}".interface) sourceNetworks;
 
-  configText =
-    ''
-      log stderr all;
+  configText = ''
+    log stderr all;
 
-      ipv4 table master4;
-      ipv6 table master6;
+    ipv4 table master4;
+    ipv6 table master6;
 
-      define RTPROT_BIRD = 12;
-      define PRIMARY = ${if role.isPrimary then "true" else "false"};
+    define RTPROT_BIRD = 12;
+    define PRIMARY = ${if role.isPrimary then "true" else "false"};
 
-      protocol device {
-        scan time 60;
-      }
+    protocol device {
+      scan time 60;
+    }
 
-    ''
-    # As well as copying the default route from the main routing
-    # table, we also copy over routes managed by the main Bird
-    # instance. This handles cases like WHQ where keepalived manages
-    # the active default route instead of Bird and Bird manages routes
-    # to DEV.
-    + ''
-      protocol kernel kernel_host_v4 {
-        ipv4 {
-          table master4;
-          export none;
-          import where net = 0.0.0.0/0 || krt_source = RTPROT_BIRD;
-        };
-        learn on;
-      }
-      protocol kernel kernel_host_v6 {
-        ipv6 {
-          table master6;
-          export none;
-          import where net = ::/0 || krt_source = RTPROT_BIRD;
-        };
-        learn on;
-      }
+  ''
+  # As well as copying the default route from the main routing
+  # table, we also copy over routes managed by the main Bird
+  # instance. This handles cases like WHQ where keepalived manages
+  # the active default route instead of Bird and Bird manages routes
+  # to DEV.
+  + ''
+    protocol kernel kernel_host_v4 {
+      ipv4 {
+        table master4;
+        export none;
+        import where net = 0.0.0.0/0 || krt_source = RTPROT_BIRD;
+      };
+      learn on;
+    }
+    protocol kernel kernel_host_v6 {
+      ipv6 {
+        table master6;
+        export none;
+        import where net = ::/0 || krt_source = RTPROT_BIRD;
+      };
+      learn on;
+    }
 
-      protocol direct iface_routes {
-        ipv4 {
-          table master4;
-          export none;
-          import all;
-        };
-        ipv6 {
-          table master6;
-          export none;
-          import all;
-        };
+    protocol direct iface_routes {
+      ipv4 {
+        table master4;
+        export none;
+        import all;
+      };
+      ipv6 {
+        table master6;
+        export none;
+        import all;
+      };
 
-        interface ${lib.concatMapStringsSep ", " (name: "\"${name}\"") sourceInterfaces};
-      }
+      interface ${lib.concatMapStringsSep ", " (name: "\"${name}\"") sourceInterfaces};
+    }
 
-    ''
-    # Bird does not pick up routes pointing to VRF interfaces from the
-    # kernel, so we need to teach it about them ourselves. This means
-    # that if we terminate more than one VRF on a router then we
-    # *should* automatically get inter-VRF routing.
-    + (lib.concatMapStringsSep "\n" (net: ''
-      ipv4 table tbl_${net.vrfInterface}_v4;
-      ipv6 table tbl_${net.vrfInterface}_v6;
+  ''
+  # Bird does not pick up routes pointing to VRF interfaces from the
+  # kernel, so we need to teach it about them ourselves. This means
+  # that if we terminate more than one VRF on a router then we
+  # *should* automatically get inter-VRF routing.
+  + (lib.concatMapStringsSep "\n" (net: ''
+    ipv4 table tbl_${net.vrfInterface}_v4;
+    ipv6 table tbl_${net.vrfInterface}_v6;
 
-      protocol static static_${net.vrfInterface}_v4 {
-        ipv4 {
-          table master4;
-          import all;
-          export none;
-        };
-      ${lib.concatMapStringsSep "\n" (pfx: "  route ${pfx} via \"${net.vrfInterface}\";") net.v4.networks}
-      }
-      protocol static static_${net.vrfInterface}_v6 {
-        ipv6 {
-          table master6;
-          import all;
-          export none;
-        };
-      ${lib.concatMapStringsSep "\n" (pfx: "  route ${pfx} via \"${net.vrfInterface}\";") net.v6.networks}
-      }
+    protocol static static_${net.vrfInterface}_v4 {
+      ipv4 {
+        table master4;
+        import all;
+        export none;
+      };
+    ${lib.concatMapStringsSep "\n" (pfx: "  route ${pfx} via \"${net.vrfInterface}\";") net.v4.networks}
+    }
+    protocol static static_${net.vrfInterface}_v6 {
+      ipv6 {
+        table master6;
+        import all;
+        export none;
+      };
+    ${lib.concatMapStringsSep "\n" (pfx: "  route ${pfx} via \"${net.vrfInterface}\";") net.v6.networks}
+    }
 
-      protocol pipe pipe_${net.vrfInterface}_v4 {
+    protocol pipe pipe_${net.vrfInterface}_v4 {
+      table tbl_${net.vrfInterface}_v4;
+      peer table master4;
+      import where PRIMARY && proto != "static_${net.vrfInterface}_v4";
+      export none;
+    }
+    protocol pipe pipe_${net.vrfInterface}_v6 {
+      table tbl_${net.vrfInterface}_v6;
+      peer table master6;
+      import where PRIMARY && proto != "static_${net.vrfInterface}_v6";
+      export none;
+    }
+
+    protocol kernel ktable_${net.vrfInterface}_v4 {
+      ipv4 {
         table tbl_${net.vrfInterface}_v4;
-        peer table master4;
-        import where PRIMARY && proto != "static_${net.vrfInterface}_v4";
-        export none;
-      }
-      protocol pipe pipe_${net.vrfInterface}_v6 {
+        import none;
+        export all;
+      };
+
+      kernel table ${toString net.vrfTable};
+    }
+    protocol kernel ktable_${net.vrfInterface}_v6 {
+      ipv6 {
         table tbl_${net.vrfInterface}_v6;
-        peer table master6;
-        import where PRIMARY && proto != "static_${net.vrfInterface}_v6";
-        export none;
-      }
+        import none;
+        export all;
+      };
 
-      protocol kernel ktable_${net.vrfInterface}_v4 {
-        ipv4 {
-          table tbl_${net.vrfInterface}_v4;
-          import none;
-          export all;
-        };
+      kernel table ${toString net.vrfTable};
+    }
 
-        kernel table ${toString net.vrfTable};
-      }
-      protocol kernel ktable_${net.vrfInterface}_v6 {
-        ipv6 {
-          table tbl_${net.vrfInterface}_v6;
-          import none;
-          export all;
-        };
-
-        kernel table ${toString net.vrfTable};
-      }
-
-    '') (filter (n: n.routed or false) (attrValues fclib.network)));
+  '') (filter (n: n.routed or false) (attrValues fclib.network)));
 
 in
 {

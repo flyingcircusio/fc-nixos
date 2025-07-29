@@ -78,38 +78,37 @@ pyPackages.buildPythonPackage rec {
   nativeCheckInputs = [
     pyPackages.pytestCheckHook
   ];
-  propagatedBuildInputs =
-    [
-      gitMinimal
-      nix
-      pyPackages.click
-      pyPackages.colorama
-      pyPackages.configobj
-      pyPackages.python-dateutil
-      pyPackages.iso8601
-      pyPackages.netaddr
-      pyPackages.pendulum
-      pyPackages.requests
-      pyPackages.rich
-      pyPackages.setuptools
-      pyPackages.shortuuid
-      pyPackages.structlog
-      pyPackages.typer
-      pyPackages.pyyaml
-      stamina
-      util-linux
-    ]
-    ++ lib.optionals stdenv.isLinux [
-      dmidecode
-      gptfdisk
-      multipath-tools
-      pyPackages.pystemd
-      pyPackages.systemd
-      xfsprogs
-    ]
-    ++ lib.optionals enableSlurm [
-      pyPackages.pyslurm
-    ];
+  propagatedBuildInputs = [
+    gitMinimal
+    nix
+    pyPackages.click
+    pyPackages.colorama
+    pyPackages.configobj
+    pyPackages.python-dateutil
+    pyPackages.iso8601
+    pyPackages.netaddr
+    pyPackages.pendulum
+    pyPackages.requests
+    pyPackages.rich
+    pyPackages.setuptools
+    pyPackages.shortuuid
+    pyPackages.structlog
+    pyPackages.typer
+    pyPackages.pyyaml
+    stamina
+    util-linux
+  ]
+  ++ lib.optionals stdenv.isLinux [
+    dmidecode
+    gptfdisk
+    multipath-tools
+    pyPackages.pystemd
+    pyPackages.systemd
+    xfsprogs
+  ]
+  ++ lib.optionals enableSlurm [
+    pyPackages.pyslurm
+  ];
   dontStrip = true;
   doCheck = true;
   checkPhase = ''

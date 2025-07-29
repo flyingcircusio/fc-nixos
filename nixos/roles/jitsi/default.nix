@@ -238,53 +238,52 @@ in
         videobridge.enable = true;
         prosody.enable = true;
 
-        config =
-          {
-            channelLastN = cfg.maxVideoSenders;
-            constraints = {
-              video = {
-                height = {
-                  ideal = cfg.resolution;
-                  max = cfg.resolution;
-                  min = 144;
-                };
+        config = {
+          channelLastN = cfg.maxVideoSenders;
+          constraints = {
+            video = {
+              height = {
+                ideal = cfg.resolution;
+                max = cfg.resolution;
+                min = 144;
               };
             };
-            enableTcc = true;
-            enableRemb = true;
-            minHDHeight = 540;
-            startBitrate = "800";
-            disableSimulcast = false;
-            defaultLanguage = cfg.defaultLanguage;
-            enableLipSync = false;
-            enableAutomaticUrlCopy = true;
-            enableLayerSuspension = true;
-            openBridgeChannel = "websocket";
-            prejoinPageEnabled = cfg.enablePrejoinPage;
-            useNewBandwidthAllocationStrategy = true;
-            desktopSharingFrameRate = {
-              min = 5;
-              max = 10;
-            };
-            videoQuality = {
-              preferredCodec = "VP9";
-            };
-            p2p.enabled = false;
-            inherit (cfg) resolution;
-            startVideoMuted = 8;
-            stunServers = [ ];
-            fileRecordingsEnabled = cfg.enableRecording;
-            liveStreamingEnabled = cfg.enableLivestreaming;
-          }
-          // lib.optionalAttrs cfg.enableRoomAuthentication {
-            hosts.anonymousdomain = "guest.${cfg.hostName}";
-          }
-          // lib.optionalAttrs enableJibri {
-            hiddenDomain = "recorder.${cfg.hostName}";
-          }
-          // lib.optionalAttrs cfg.enableXMPPWebsockets {
-            websocket = "wss://${cfg.hostName}/xmpp-websocket";
           };
+          enableTcc = true;
+          enableRemb = true;
+          minHDHeight = 540;
+          startBitrate = "800";
+          disableSimulcast = false;
+          defaultLanguage = cfg.defaultLanguage;
+          enableLipSync = false;
+          enableAutomaticUrlCopy = true;
+          enableLayerSuspension = true;
+          openBridgeChannel = "websocket";
+          prejoinPageEnabled = cfg.enablePrejoinPage;
+          useNewBandwidthAllocationStrategy = true;
+          desktopSharingFrameRate = {
+            min = 5;
+            max = 10;
+          };
+          videoQuality = {
+            preferredCodec = "VP9";
+          };
+          p2p.enabled = false;
+          inherit (cfg) resolution;
+          startVideoMuted = 8;
+          stunServers = [ ];
+          fileRecordingsEnabled = cfg.enableRecording;
+          liveStreamingEnabled = cfg.enableLivestreaming;
+        }
+        // lib.optionalAttrs cfg.enableRoomAuthentication {
+          hosts.anonymousdomain = "guest.${cfg.hostName}";
+        }
+        // lib.optionalAttrs enableJibri {
+          hiddenDomain = "recorder.${cfg.hostName}";
+        }
+        // lib.optionalAttrs cfg.enableXMPPWebsockets {
+          websocket = "wss://${cfg.hostName}/xmpp-websocket";
+        };
 
         hostName = cfg.hostName;
 
@@ -305,37 +304,36 @@ in
             (fclib.quoteIPv6Address cfg.listenAddress6)
           ];
 
-          locations =
-            {
-              "= /xmpp-websocket" = {
-                proxyPass = "http://127.0.0.1:5280/xmpp-websocket";
-                extraConfig = ''
-                  proxy_buffer_size 128k;
-                  proxy_buffers 4 256k;
-                  proxy_busy_buffers_size  256k;
-                  proxy_http_version 1.1;
-                  proxy_set_header Connection "upgrade";
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Forwarded-For $remote_addr;
-                  tcp_nodelay on;
-                '';
-              };
-
-              "~ ^/colibri-ws/jvb1/(.*)" = {
-                proxyPass = "http://127.0.0.1:9090/colibri-ws/jvb1/$1$is_args$args";
-                extraConfig = ''
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                  tcp_nodelay on;
-                '';
-              };
-            }
-            // lib.optionalAttrs (pathExists /etc/local/jitsi/welcomePageAdditionalContent.html) {
-              "= /static/welcomePageAdditionalContent.html" = {
-                alias = "${/etc/local/jitsi/welcomePageAdditionalContent.html}";
-              };
+          locations = {
+            "= /xmpp-websocket" = {
+              proxyPass = "http://127.0.0.1:5280/xmpp-websocket";
+              extraConfig = ''
+                proxy_buffer_size 128k;
+                proxy_buffers 4 256k;
+                proxy_busy_buffers_size  256k;
+                proxy_http_version 1.1;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-For $remote_addr;
+                tcp_nodelay on;
+              '';
             };
+
+            "~ ^/colibri-ws/jvb1/(.*)" = {
+              proxyPass = "http://127.0.0.1:9090/colibri-ws/jvb1/$1$is_args$args";
+              extraConfig = ''
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                tcp_nodelay on;
+              '';
+            };
+          }
+          // lib.optionalAttrs (pathExists /etc/local/jitsi/welcomePageAdditionalContent.html) {
+            "= /static/welcomePageAdditionalContent.html" = {
+              alias = "${/etc/local/jitsi/welcomePageAdditionalContent.html}";
+            };
+          };
         };
       };
 

@@ -356,44 +356,42 @@ in
               "localhost"
             ];
 
-            config =
-              {
-                empty_address_recipient = "postmaster";
-                enable_long_queue_ids = true;
-                local_header_rewrite_clients = [
-                  "permit_mynetworks"
-                  "permit_sasl_authenticated"
-                ];
-                # --- postsrsd integration ---
-                recipient_canonical_maps = "socketmap:unix:${config.services.postsrsd.socketPath}:reverse";
-                recipient_canonical_classes = [
-                  "envelope_recipient"
-                  "header_recipient"
-                ];
-                sender_canonical_maps = "socketmap:unix:${config.services.postsrsd.socketPath}:forward";
-                sender_canonical_classes = "envelope_sender";
-                # ------
-                smtpd_client_restrictions =
-                  [
-                    "permit_mynetworks"
-                  ]
-                  ++ lib.map (e: "reject_rbl_client ${e}") role.ipDNSBLs
-                  ++ [
-                    "reject_unknown_client_hostname"
-                  ];
-                smtpd_data_restrictions = "reject_unauth_pipelining";
-                smtpd_helo_restrictions = [
-                  "permit_sasl_authenticated"
-                  "reject_unknown_helo_hostname"
-                ];
-              }
-              // (lib.optionalAttrs role.explicitSmtpBind {
-                smtp_bind_address = role.smtpBind4;
-                smtp_bind_address6 = role.smtpBind6;
-              })
-              // (lib.mapAttrs (
-                _mainCfParam: paths: (map (p: "hash:/var/lib/postfix/conf/${dynamicMapHash p}") paths)
-              ) role.dynamicMaps);
+            config = {
+              empty_address_recipient = "postmaster";
+              enable_long_queue_ids = true;
+              local_header_rewrite_clients = [
+                "permit_mynetworks"
+                "permit_sasl_authenticated"
+              ];
+              # --- postsrsd integration ---
+              recipient_canonical_maps = "socketmap:unix:${config.services.postsrsd.socketPath}:reverse";
+              recipient_canonical_classes = [
+                "envelope_recipient"
+                "header_recipient"
+              ];
+              sender_canonical_maps = "socketmap:unix:${config.services.postsrsd.socketPath}:forward";
+              sender_canonical_classes = "envelope_sender";
+              # ------
+              smtpd_client_restrictions = [
+                "permit_mynetworks"
+              ]
+              ++ lib.map (e: "reject_rbl_client ${e}") role.ipDNSBLs
+              ++ [
+                "reject_unknown_client_hostname"
+              ];
+              smtpd_data_restrictions = "reject_unauth_pipelining";
+              smtpd_helo_restrictions = [
+                "permit_sasl_authenticated"
+                "reject_unknown_helo_hostname"
+              ];
+            }
+            // (lib.optionalAttrs role.explicitSmtpBind {
+              smtp_bind_address = role.smtpBind4;
+              smtp_bind_address6 = role.smtpBind6;
+            })
+            // (lib.mapAttrs (
+              _mainCfParam: paths: (map (p: "hash:/var/lib/postfix/conf/${dynamicMapHash p}") paths)
+            ) role.dynamicMaps);
 
             mapFiles = listToAttrs (
               map (path: {
@@ -409,13 +407,12 @@ in
               ${fclib.configFromFile "/etc/local/mail/main.cf" ""}
             '';
 
-            extraAliases =
-              ''
-                abuse: root
-                devnull: /dev/null
-                mail: root
-              ''
-              + userAliases;
+            extraAliases = ''
+              abuse: root
+              devnull: /dev/null
+              mail: root
+            ''
+            + userAliases;
 
             inherit (role) rootAlias;
             virtual = lib.mkDefault fallbackGenericVirtual;
@@ -423,15 +420,16 @@ in
 
           services.postsrsd = {
             enable = true;
-            domains =
-              [ primaryDomain ]
-              ++ optionals (domains != [ ]) (
-                domains
-                ++ [
-                  role.mailHost
-                  fqdn
-                ]
-              );
+            domains = [
+              primaryDomain
+            ]
+            ++ optionals (domains != [ ]) (
+              domains
+              ++ [
+                role.mailHost
+                fqdn
+              ]
+            );
           };
 
           system.activationScripts.postfix-dynamicMaps-permissions = lib.stringAfter [ ] (

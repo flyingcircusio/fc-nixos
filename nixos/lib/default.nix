@@ -37,32 +37,31 @@ in
   };
 
   config = {
-    fclib =
-      {
-        inherit
-          attrsets
-          builders
-          ceph
-          doc
-          files
-          math
-          modules
-          network
-          system
-          utils
-          lists
-          ;
-      }
-      // attrsets
-      // builders
-      // ceph
-      // doc
-      // files
-      // math
-      // modules
-      // network
-      // system
-      // utils
-      // lists;
+    fclib = {
+      inherit
+        attrsets
+        builders
+        ceph
+        doc
+        files
+        math
+        modules
+        network
+        system
+        utils
+        lists
+        ;
+    }
+    // attrsets
+    // builders
+    // ceph
+    // doc
+    // files
+    // math
+    // modules
+    // network
+    // system
+    // utils
+    // lists;
   };
 }

@@ -57,14 +57,13 @@ in
         in
         {
           deps = [ "users" ];
-          text =
-            ''
-              # Note: journald seems to change some permissions and the group if they
-              # differ from its expectations for /var/log/journal.
-              # Changing permissions via ACL like here is supported by journald.
-              install -d -g systemd-journal /var/log/journal
-            ''
-            + lib.concatMapStringsSep "\n" mkSetfaclCmd cfg.journalReadGroups;
+          text = ''
+            # Note: journald seems to change some permissions and the group if they
+            # differ from its expectations for /var/log/journal.
+            # Changing permissions via ACL like here is supported by journald.
+            install -d -g systemd-journal /var/log/journal
+          ''
+          + lib.concatMapStringsSep "\n" mkSetfaclCmd cfg.journalReadGroups;
         };
     };
 

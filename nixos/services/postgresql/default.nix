@@ -189,23 +189,21 @@ in
           fi
         '';
 
-        systemd.services.postgresql.postStart =
-          ''
-            ln -sfT ${config.services.postgresql.package.withPackages config.services.postgresql.extensions} ${upstreamCfg.dataDir}/package
-            ln -sfT ${upstreamCfg.dataDir}/package /nix/var/nix/gcroots/per-user/postgres/package_${cfg.majorVersion}
-          ''
-          + (lib.optionalString (lib.versionAtLeast cfg.majorVersion "15") ''
-            ${collationVerifierScript}/bin/verify-collations ${upstreamCfg.dataDir}
-          '');
+        systemd.services.postgresql.postStart = ''
+          ln -sfT ${config.services.postgresql.package.withPackages config.services.postgresql.extensions} ${upstreamCfg.dataDir}/package
+          ln -sfT ${upstreamCfg.dataDir}/package /nix/var/nix/gcroots/per-user/postgres/package_${cfg.majorVersion}
+        ''
+        + (lib.optionalString (lib.versionAtLeast cfg.majorVersion "15") ''
+          ${collationVerifierScript}/bin/verify-collations ${upstreamCfg.dataDir}
+        '');
 
-        systemd.services.postgresql.serviceConfig =
-          {
-            Restart = "always";
-            ReadWritePaths = [ "/nix/var/nix/gcroots/per-user/postgres" ];
-          }
-          // lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "12") {
-            RuntimeDirectory = "postgresql";
-          };
+        systemd.services.postgresql.serviceConfig = {
+          Restart = "always";
+          ReadWritePaths = [ "/nix/var/nix/gcroots/per-user/postgres" ];
+        }
+        // lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "12") {
+          RuntimeDirectory = "postgresql";
+        };
 
         users.users.postgres = {
           shell = "/run/current-system/sw/bin/bash";
@@ -385,7 +383,8 @@ in
             lc_monetary = "en_US.utf8";
             lc_numeric = "en_US.utf8";
             lc_time = "en_US.utf8";
-          } // localConfig;
+          }
+          // localConfig;
 
         };
 
@@ -402,47 +401,46 @@ in
             postgresqlPkg
           ];
 
-          sensu-client.checks =
-            {
-              postgresql-alive = {
-                notification = "PostgreSQL not reachable via UNIX socket in /run/postgresql";
-                command = ''
-                  ${pkgs.sensu-plugins-postgres}/bin/check-postgres-alive.rb \
-                    -u fcio_monitoring -d fcio_monitoring -h /run/postgresql -T 10
-                '';
-                interval = 30;
-              };
-            }
-            // lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "15") {
-              postgresql-collation-warnings = {
-                notification = "PostgreSQL is reporting collation warnings with affected objects. Check /run/postgresql-collation-warnings and PL-131544.";
-                command = "sudo -u postgres check_file_age -i -c 10 -w 5 ${upstreamCfg.dataDir}/postgresql-collation-warnings";
-                interval = 600;
-              };
-            }
-            // lib.optionalAttrs (cfg.autoUpgrade.enable && cfg.autoUpgrade.checkExpectedDatabases) {
-              postgresql-autoupgrade-possible = {
-                notification = "Unexpected PostgreSQL databases present, autoupgrade will fail!";
-                command = "sudo -u postgres ${config.flyingcircus.agent.package}/bin/fc-postgresql check-autoupgrade-unexpected-dbs";
-                interval = 600;
-              };
-            }
-            // (lib.listToAttrs (
-              map (
-                host:
-                let
-                  saneHost = replaceStrings [ ":" ] [ "_" ] host;
-                in
-                {
-                  name = "postgresql-listen-${saneHost}-5432";
-                  value = {
-                    notification = "PostgreSQL not reachable on ${host}:5432";
-                    command = "${pkgs.monitoring-plugins}/bin/check_tcp -H ${host} -p 5432";
-                    interval = 60;
-                  };
-                }
-              ) listenAddresses
-            ));
+          sensu-client.checks = {
+            postgresql-alive = {
+              notification = "PostgreSQL not reachable via UNIX socket in /run/postgresql";
+              command = ''
+                ${pkgs.sensu-plugins-postgres}/bin/check-postgres-alive.rb \
+                  -u fcio_monitoring -d fcio_monitoring -h /run/postgresql -T 10
+              '';
+              interval = 30;
+            };
+          }
+          // lib.optionalAttrs (lib.versionAtLeast cfg.majorVersion "15") {
+            postgresql-collation-warnings = {
+              notification = "PostgreSQL is reporting collation warnings with affected objects. Check /run/postgresql-collation-warnings and PL-131544.";
+              command = "sudo -u postgres check_file_age -i -c 10 -w 5 ${upstreamCfg.dataDir}/postgresql-collation-warnings";
+              interval = 600;
+            };
+          }
+          // lib.optionalAttrs (cfg.autoUpgrade.enable && cfg.autoUpgrade.checkExpectedDatabases) {
+            postgresql-autoupgrade-possible = {
+              notification = "Unexpected PostgreSQL databases present, autoupgrade will fail!";
+              command = "sudo -u postgres ${config.flyingcircus.agent.package}/bin/fc-postgresql check-autoupgrade-unexpected-dbs";
+              interval = 600;
+            };
+          }
+          // (lib.listToAttrs (
+            map (
+              host:
+              let
+                saneHost = replaceStrings [ ":" ] [ "_" ] host;
+              in
+              {
+                name = "postgresql-listen-${saneHost}-5432";
+                value = {
+                  notification = "PostgreSQL not reachable on ${host}:5432";
+                  command = "${pkgs.monitoring-plugins}/bin/check_tcp -H ${host} -p 5432";
+                  interval = 60;
+                };
+              }
+            ) listenAddresses
+          ));
 
           telegraf.inputs = {
             postgresql = [
@@ -480,24 +478,23 @@ in
             expectedDatabaseStr = lib.concatMapStringsSep " " (
               d: "--expected ${d}"
             ) cfg.autoUpgrade.expectedDatabases;
-            upgradeCmd =
-              [
-                "${config.flyingcircus.agent.package}/bin/fc-postgresql upgrade"
-                "--new-version ${cfg.majorVersion}"
-                "--new-data-dir ${upstreamCfg.dataDir}"
-                "--new-bin-dir ${
-                  upstreamCfg.package.withPackages (
-                    ps: attrValues (lib.getAttrs (mkExtensionNamesForAutoUpgrade cfg.majorVersion) ps)
-                  )
-                }/bin"
-                "--no-stop"
-                "--nothing-to-do-is-ok"
-                "--upgrade-now"
-              ]
-              ++ lib.optionals cfg.autoUpgrade.checkExpectedDatabases [
-                "--existing-db-check ${expectedDatabaseStr}"
-              ]
-              ++ map (extName: "--extension-names ${extName}") (mkExtensionNamesForAutoUpgrade cfg.majorVersion);
+            upgradeCmd = [
+              "${config.flyingcircus.agent.package}/bin/fc-postgresql upgrade"
+              "--new-version ${cfg.majorVersion}"
+              "--new-data-dir ${upstreamCfg.dataDir}"
+              "--new-bin-dir ${
+                upstreamCfg.package.withPackages (
+                  ps: attrValues (lib.getAttrs (mkExtensionNamesForAutoUpgrade cfg.majorVersion) ps)
+                )
+              }/bin"
+              "--no-stop"
+              "--nothing-to-do-is-ok"
+              "--upgrade-now"
+            ]
+            ++ lib.optionals cfg.autoUpgrade.checkExpectedDatabases [
+              "--existing-db-check ${expectedDatabaseStr}"
+            ]
+            ++ map (extName: "--extension-names ${extName}") (mkExtensionNamesForAutoUpgrade cfg.majorVersion);
           in
           concatStringsSep " \\\n  " upgradeCmd;
 

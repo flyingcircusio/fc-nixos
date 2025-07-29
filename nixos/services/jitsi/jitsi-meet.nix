@@ -251,7 +251,8 @@ in
       before = [
         "jicofo.service"
         "jitsi-videobridge2.service"
-      ] ++ (optional cfg.prosody.enable "prosody.service");
+      ]
+      ++ (optional cfg.prosody.enable "prosody.service");
       serviceConfig = {
         Type = "oneshot";
       };
@@ -260,13 +261,14 @@ in
 
       script =
         let
-          secrets =
-            [ "jicofo-user-secret" ]
-            ++ (optional (cfg.videobridge.passwordFile == null) "videobridge-secret")
-            ++ (optionals (cfg.jibri.enable) [
-              "jibri-user-secret"
-              "jibri-recorder-secret"
-            ]);
+          secrets = [
+            "jicofo-user-secret"
+          ]
+          ++ (optional (cfg.videobridge.passwordFile == null) "videobridge-secret")
+          ++ (optionals (cfg.jibri.enable) [
+            "jibri-user-secret"
+            "jibri-recorder-secret"
+          ]);
           videobridgeSecret =
             if cfg.videobridge.passwordFile != null then
               cfg.videobridge.passwordFile

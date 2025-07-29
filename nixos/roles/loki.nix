@@ -124,24 +124,23 @@ in
           cfg.storageSchedule.default ++ cfg.storageSchedule.extra
         );
 
-        storage_config =
-          {
-            # index file management
-            tsdb_shipper = {
-              active_index_directory = "/var/lib/loki/tsdb-shipper-index";
-              cache_location = "/var/lib/loki/tsdb-shipper-cache";
-            };
-            # log data configuration
-            filesystem.directory = "/var/lib/loki/chunk-store";
-          }
-          // lib.optionalAttrs (cfg.s3.enable) {
-            aws = {
-              # authentication configured separately
-              endpoint = cfg.s3.endpoint;
-              bucketNames = cfg.s3.bucketName;
-              s3forcepathstyle = true;
-            };
+        storage_config = {
+          # index file management
+          tsdb_shipper = {
+            active_index_directory = "/var/lib/loki/tsdb-shipper-index";
+            cache_location = "/var/lib/loki/tsdb-shipper-cache";
           };
+          # log data configuration
+          filesystem.directory = "/var/lib/loki/chunk-store";
+        }
+        // lib.optionalAttrs (cfg.s3.enable) {
+          aws = {
+            # authentication configured separately
+            endpoint = cfg.s3.endpoint;
+            bucketNames = cfg.s3.bucketName;
+            s3forcepathstyle = true;
+          };
+        };
 
         compactor = {
           working_directory = "/var/lib/loki/compactor-workdir";

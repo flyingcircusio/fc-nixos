@@ -38,7 +38,8 @@ stdenv.mkDerivation rec {
     bison
     cmake
     pkg-config
-  ] ++ lib.optionals (!stdenv.isDarwin) [ rpcsvc-proto ];
+  ]
+  ++ lib.optionals (!stdenv.isDarwin) [ rpcsvc-proto ];
 
   buildInputs = [
     curl
@@ -49,7 +50,8 @@ stdenv.mkDerivation rec {
     boost
     libaio
     libtirpc
-  ] ++ lib.optional stdenv.isDarwin perl;
+  ]
+  ++ lib.optional stdenv.isDarwin perl;
 
   enableParallelBuilding = true;
 

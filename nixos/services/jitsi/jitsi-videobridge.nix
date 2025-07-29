@@ -234,7 +234,8 @@ in
           "-Dnet.java.sip.communicator.SC_HOME_DIR_NAME" = "videobridge";
           "-Djava.util.logging.config.file" = "/etc/jitsi/videobridge/logging.properties";
           "-Dconfig.file" = pkgs.writeText "jvb.conf" (toHOCON jvbConfig);
-        } // (mapAttrs' (k: v: nameValuePair "-D${k}" v) cfg.extraProperties);
+        }
+        // (mapAttrs' (k: v: nameValuePair "-D${k}" v) cfg.extraProperties);
       in
       {
         aliases = [ "jitsi-videobridge.service" ];

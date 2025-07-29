@@ -255,7 +255,8 @@ import ./make-test-python.nix (
           })
           (vxlanLink bridgeMac underlayAddr)
           (bridgeLink bridgeMac (makeOverlayHostAddress idx) ([ "vxlan0" ] ++ (builtins.attrNames tapByName)))
-        ] ++ (builtins.map (n: tapLink n) (builtins.attrNames tapByName));
+        ]
+        ++ (builtins.map (n: tapLink n) (builtins.attrNames tapByName));
 
         environment.systemPackages = [ pkgs.fc.check-rib-integrity ];
 

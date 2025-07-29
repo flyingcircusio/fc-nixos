@@ -14,7 +14,8 @@ let
   localNets = [
     "127.0.0.0/8"
     "::/64"
-  ] ++ (lib.flatten (lib.mapAttrsToList (_: iface: lib.attrNames iface.networks) interfaces));
+  ]
+  ++ (lib.flatten (lib.mapAttrsToList (_: iface: lib.attrNames iface.networks) interfaces));
 
   # see also genericVirtual in default.nix
   spamtrapMap = builtins.toFile "spamtrap.map" ''

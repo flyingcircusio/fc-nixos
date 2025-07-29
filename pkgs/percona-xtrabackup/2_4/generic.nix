@@ -52,31 +52,30 @@ stdenv.mkDerivation rec {
     pkg-config
   ];
 
-  buildInputs =
-    [
-      (curl.override { inherit openssl; })
-      cyrus_sasl
-      libaio
-      libedit
-      libevent
-      libev
-      libgcrypt
-      libgpg-error
-      lz4
-      ncurses
-      numactl
-      openssl
-      procps
-      protobuf
-      valgrind
-      xxd
-      zlib
-    ]
-    ++ (with perlPackages; [
-      perl
-      DBI
-      DBDmysql
-    ]);
+  buildInputs = [
+    (curl.override { inherit openssl; })
+    cyrus_sasl
+    libaio
+    libedit
+    libevent
+    libev
+    libgcrypt
+    libgpg-error
+    lz4
+    ncurses
+    numactl
+    openssl
+    procps
+    protobuf
+    valgrind
+    xxd
+    zlib
+  ]
+  ++ (with perlPackages; [
+    perl
+    DBI
+    DBDmysql
+  ]);
 
   patches = extraPatches;
 
@@ -97,12 +96,11 @@ stdenv.mkDerivation rec {
     "-DWITH_MAN_PAGES=OFF"
   ];
 
-  postInstall =
-    ''
-      wrapProgram "$out"/bin/xtrabackup --prefix PERL5LIB : $PERL5LIB
-      rm -r "$out"/lib/plugin/debug
-    ''
-    + extraPostInstall;
+  postInstall = ''
+    wrapProgram "$out"/bin/xtrabackup --prefix PERL5LIB : $PERL5LIB
+    rm -r "$out"/lib/plugin/debug
+  ''
+  + extraPostInstall;
 
   meta = with lib; {
     description = "Non-blocking backup tool for MySQL";
