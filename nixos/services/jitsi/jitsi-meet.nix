@@ -255,6 +255,7 @@ in
       ++ (optional cfg.prosody.enable "prosody.service");
       serviceConfig = {
         Type = "oneshot";
+        inherit (config.systemd.services.prosody.serviceConfig) LoadCredential;
       };
 
       path = [ config.services.prosody.package ];

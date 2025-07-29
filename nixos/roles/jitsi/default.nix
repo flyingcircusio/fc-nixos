@@ -12,12 +12,7 @@ let
   fclib = config.fclib;
   cfg = config.flyingcircus.roles.jitsi;
 
-  generatedTurnSecret = readFile (
-    pkgs.runCommand "jitsi-turn-secret" { } "${pkgs.apg}/bin/apg -a 1 -M lnc -n 1 -m 32 > $out"
-  );
-  turnSecret = lib.removeSuffix "\n" (
-    fclib.configFromFile /etc/local/jitsi/turn-secret generatedTurnSecret
-  );
+  turnSecretFile = "/etc/local/jitsi/turn-secret";
   turnHostName = if cfg.coturn.enable then cfg.coturn.hostName else cfg.turnHostName;
 
   # Does the same on the backend side but UI buttons can be turned on/off seperately.
@@ -337,6 +332,36 @@ in
         };
       };
 
+      systemd.services.prosody-coturn-setup-secret = {
+        before = [
+          "prosody.service"
+          "jitsi-meet-init-secrets.service"
+        ];
+        wantedBy = [
+          "prosody.service"
+          "jitsi-meet-init-secrets.service"
+        ];
+        path = [ pkgs.apg ];
+        unitConfig.ConditionFileNotEmpty = "!${turnSecretFile}";
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          UMask = "0077";
+          ProtectSystem = "strict";
+          ReadWritePaths = [ "/etc/local/jitsi" ];
+          WorkingDirectory = "/etc/local/jitsi";
+          ExecStart = "${pkgs.writeShellScript "generate-turn-secret" ''
+            apg -a 1 -M lnc -n 1 -m 32 > turn-secret
+          ''}";
+        };
+      };
+
+      systemd.services.prosody = {
+        serviceConfig = {
+          LoadCredential = [ "turncredentials_secret:${turnSecretFile}" ];
+        };
+      };
+
       services.prosody = {
 
         modules = {
@@ -354,8 +379,12 @@ in
           cross_domain_websocket = true;
           consider_websocket_secure = true;
 
-
-          turncredentials_secret = "${turnSecret}";
+          -- FIXME when prosody is updated to v13, use
+          --   turncredentials_secret = Credential("turncredentials_secret")
+          local credentials_directory = os.getenv("CREDENTIALS_DIRECTORY")
+          local secret = assert(io.open(credentials_directory .. "/turncredentials_secret", "r"))
+          turncredentials_secret = secret:read("*a"):gsub("\n*$", "")
+          secret:close()
           turncredentials = {
             { type = "turn",
               host = "${turnHostName}",
@@ -465,13 +494,22 @@ in
         hostName = cfg.coturn.hostName;
       };
 
+      systemd.services.prosody-coturn-setup-secret = {
+        before = [ "coturn.service" ];
+        wantedBy = [ "coturn.service" ];
+      };
+
+      systemd.services.coturn.serviceConfig.LoadCredential = [
+        "static-auth-secret:${turnSecretFile}"
+      ];
+
       services.coturn = {
         listening-ips = [
           cfg.coturn.listenAddress
           cfg.coturn.listenAddress6
         ];
         no-tcp = false;
-        static-auth-secret = turnSecret;
+        static-auth-secret-file = "/run/credentials/coturn.service/static-auth-secret";
         tls-listening-port = 443;
         extraConfig = ''
           no-stun
