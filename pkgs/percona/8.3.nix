@@ -57,7 +57,8 @@ stdenv.mkDerivation (finalAttrs: {
     bison
     cmake
     pkg-config
-  ] ++ lib.optionals (!stdenv.isDarwin) [ rpcsvc-proto ];
+  ]
+  ++ lib.optionals (!stdenv.isDarwin) [ rpcsvc-proto ];
 
   patches = [
     ./no-force-outline-atomics.patch # Do not force compilers to turn on -moutline-atomics switch
@@ -79,78 +80,76 @@ stdenv.mkDerivation (finalAttrs: {
     substituteInPlace storage/rocksdb/get_rocksdb_files.sh --replace "make --" "${gnumake}/bin/make --"
   '';
 
-  buildInputs =
-    [
-      boost
-      (curl.override { inherit openssl; })
-      icu
-      libedit
-      libevent
-      lz4
-      ncurses
-      openssl
-      protobuf
-      re2
-      readline
-      zlib
-      zstd
-      libfido2
-      openldap
-      perl
-      cyrus_sasl
-    ]
-    ++ lib.optionals stdenv.isLinux [
-      numactl
-      libtirpc
-      systemd
-    ]
-    ++ lib.optionals stdenv.isDarwin [
-      cctools
-      CoreServices
-      developer_cmds
-      DarwinTools
-    ]
-    ++ lib.optional (stdenv.isLinux && withJemalloc) jemalloc
-    ++ lib.optional (stdenv.isLinux && withTcmalloc) gperftools;
+  buildInputs = [
+    boost
+    (curl.override { inherit openssl; })
+    icu
+    libedit
+    libevent
+    lz4
+    ncurses
+    openssl
+    protobuf
+    re2
+    readline
+    zlib
+    zstd
+    libfido2
+    openldap
+    perl
+    cyrus_sasl
+  ]
+  ++ lib.optionals stdenv.isLinux [
+    numactl
+    libtirpc
+    systemd
+  ]
+  ++ lib.optionals stdenv.isDarwin [
+    cctools
+    CoreServices
+    developer_cmds
+    DarwinTools
+  ]
+  ++ lib.optional (stdenv.isLinux && withJemalloc) jemalloc
+  ++ lib.optional (stdenv.isLinux && withTcmalloc) gperftools;
 
   outputs = [
     "out"
     "static"
   ];
 
-  cmakeFlags =
-    [
-      # Percona-specific flags.
-      "-DPORTABLE=1"
-      "-DWITH_LDAP=system"
-      "-DROCKSDB_DISABLE_AVX2=1"
-      "-DROCKSDB_DISABLE_MARCH_NATIVE=1"
+  cmakeFlags = [
+    # Percona-specific flags.
+    "-DPORTABLE=1"
+    "-DWITH_LDAP=system"
+    "-DROCKSDB_DISABLE_AVX2=1"
+    "-DROCKSDB_DISABLE_MARCH_NATIVE=1"
 
-      # Flags taken from mysql package.
-      "-DFORCE_UNSUPPORTED_COMPILER=1" # To configure on Darwin.
-      "-DWITH_ROUTER=OFF" # It may be packaged separately.
-      "-DWITH_SYSTEM_LIBS=ON"
-      "-DWITH_UNIT_TESTS=OFF"
-      "-DMYSQL_UNIX_ADDR=/run/mysqld/mysqld.sock"
-      "-DMYSQL_DATADIR=/var/lib/mysql"
-      "-DINSTALL_INFODIR=share/mysql/docs"
-      "-DINSTALL_MANDIR=share/man"
-      "-DINSTALL_PLUGINDIR=lib/mysql/plugin"
-      "-DINSTALL_INCLUDEDIR=include/mysql"
-      "-DINSTALL_DOCREADMEDIR=share/mysql"
-      "-DINSTALL_SUPPORTFILESDIR=share/mysql"
-      "-DINSTALL_MYSQLSHAREDIR=share/mysql"
-      "-DINSTALL_MYSQLTESTDIR="
-      "-DINSTALL_DOCDIR=share/mysql/docs"
-      "-DINSTALL_SHAREDIR=share/mysql"
+    # Flags taken from mysql package.
+    "-DFORCE_UNSUPPORTED_COMPILER=1" # To configure on Darwin.
+    "-DWITH_ROUTER=OFF" # It may be packaged separately.
+    "-DWITH_SYSTEM_LIBS=ON"
+    "-DWITH_UNIT_TESTS=OFF"
+    "-DMYSQL_UNIX_ADDR=/run/mysqld/mysqld.sock"
+    "-DMYSQL_DATADIR=/var/lib/mysql"
+    "-DINSTALL_INFODIR=share/mysql/docs"
+    "-DINSTALL_MANDIR=share/man"
+    "-DINSTALL_PLUGINDIR=lib/mysql/plugin"
+    "-DINSTALL_INCLUDEDIR=include/mysql"
+    "-DINSTALL_DOCREADMEDIR=share/mysql"
+    "-DINSTALL_SUPPORTFILESDIR=share/mysql"
+    "-DINSTALL_MYSQLSHAREDIR=share/mysql"
+    "-DINSTALL_MYSQLTESTDIR="
+    "-DINSTALL_DOCDIR=share/mysql/docs"
+    "-DINSTALL_SHAREDIR=share/mysql"
 
-    ]
-    ++ lib.optionals stdenv.isLinux [
-      "-DWITH_SYSTEMD=1"
-      "-DWITH_SYSTEMD_DEBUG=1"
-    ]
-    ++ lib.optional (stdenv.isLinux && withJemalloc) "-DWITH_JEMALLOC=1"
-    ++ lib.optional (stdenv.isLinux && withTcmalloc) "-DWITH_TCMALLOC=1";
+  ]
+  ++ lib.optionals stdenv.isLinux [
+    "-DWITH_SYSTEMD=1"
+    "-DWITH_SYSTEMD_DEBUG=1"
+  ]
+  ++ lib.optional (stdenv.isLinux && withJemalloc) "-DWITH_JEMALLOC=1"
+  ++ lib.optional (stdenv.isLinux && withTcmalloc) "-DWITH_TCMALLOC=1";
 
   postInstall = ''
     moveToOutput "lib/*.a" $static

@@ -459,12 +459,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
       # These checks are not included by default.
       # Our platform doesn't use them, maybe some customer?
-      postInstall =
-        (super.monitoring-plugins.postInstall or "")
-        + ''
-          cp plugins-root/check_dhcp $out/bin
-          cp plugins-root/check_icmp $out/bin
-        '';
+      postInstall = (super.monitoring-plugins.postInstall or "") + ''
+        cp plugins-root/check_dhcp $out/bin
+        cp plugins-root/check_icmp $out/bin
+      '';
     });
 
   # This is our default version.
@@ -515,11 +513,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
     # This doesn't work. Looks like a bug in Nixpkgs.
     # Replacing the interpreter path before the Perl builder touches it fixes this.
-    postPatch =
-      oldAttrs.postPatch
-      + ''
-        patchShebangs .
-      '';
+    postPatch = oldAttrs.postPatch + ''
+      patchShebangs .
+    '';
   });
 
   percona57 = super.callPackage ./percona/5.7.nix {

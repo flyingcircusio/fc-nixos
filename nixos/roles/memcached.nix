@@ -68,7 +68,8 @@ in
       services.memcached = {
         enable = true;
         listen = concatStringsSep "," cfg.listenAddresses;
-      } // localConfig;
+      }
+      // localConfig;
 
       flyingcircus.services = {
         sensu-client.checks.memcached =

@@ -118,11 +118,11 @@ let
 
 in
 {
-  imports =
-    [
-      ../services/mail
-    ]
-    ++ builtins.map
+  imports = [
+    ../services/mail
+  ]
+  ++
+    builtins.map
       (
         rolePrefix:
         (lib.mkRenamedOptionModule (rolePrefix ++ [ "policydSPFExtraSkipAddresses" ]) (

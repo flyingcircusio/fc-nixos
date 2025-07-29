@@ -20,8 +20,7 @@ let
   restListenUri = "${webListenUri}/api";
 
   glNodes =
-    fclib.listServiceAddresses "loghost-server"
-    ++ fclib.listServiceAddresses "graylog-server";
+    fclib.listServiceAddresses "loghost-server" ++ fclib.listServiceAddresses "graylog-server";
 
   glPlugins = pkgs.buildEnv {
     name = "graylog-plugins";

@@ -118,47 +118,46 @@ in
     flyingcircus.networking.enableInterfaceDefaultRoutes = false;
     flyingcircus.networking.assignVrfRoutes = routedVrfsEnabled;
 
-    boot.kernel.sysctl =
-      {
-        # It's a router: we want forwarding, obviously
-        "net.ipv4.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
-        "net.ipv4.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
-        "net.ipv4.ip_forward" = fclib.mkOverridePlatformModule 1;
-        "net.ipv6.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
-        "net.ipv6.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+    boot.kernel.sysctl = {
+      # It's a router: we want forwarding, obviously
+      "net.ipv4.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv4.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv4.ip_forward" = fclib.mkOverridePlatformModule 1;
+      "net.ipv6.conf.all.forwarding" = fclib.mkOverridePlatformModule 1;
+      "net.ipv6.conf.default.forwarding" = fclib.mkOverridePlatformModule 1;
 
-        # Avoid neighbour discovery table overflow on our relatively large segments
-        "net.ipv4.neigh.default.gc_thresh1" = lib.mkOverride 90 4096;
-        "net.ipv4.neigh.default.gc_thresh2" = lib.mkOverride 90 16384;
-        "net.ipv4.neigh.default.gc_thresh3" = lib.mkOverride 90 32768;
-        "net.ipv6.neigh.default.gc_thresh1" = lib.mkOverride 90 4096;
-        "net.ipv6.neigh.default.gc_thresh2" = lib.mkOverride 90 16384;
-        "net.ipv6.neigh.default.gc_thresh3" = lib.mkOverride 90 32768;
+      # Avoid neighbour discovery table overflow on our relatively large segments
+      "net.ipv4.neigh.default.gc_thresh1" = lib.mkOverride 90 4096;
+      "net.ipv4.neigh.default.gc_thresh2" = lib.mkOverride 90 16384;
+      "net.ipv4.neigh.default.gc_thresh3" = lib.mkOverride 90 32768;
+      "net.ipv6.neigh.default.gc_thresh1" = lib.mkOverride 90 4096;
+      "net.ipv6.neigh.default.gc_thresh2" = lib.mkOverride 90 16384;
+      "net.ipv6.neigh.default.gc_thresh3" = lib.mkOverride 90 32768;
 
-        # fair queuing + codel to avoid buffer bloat in WAN
-        "net.core.default_qdisc" = "fq_codel";
+      # fair queuing + codel to avoid buffer bloat in WAN
+      "net.core.default_qdisc" = "fq_codel";
 
-        # Ensure proper conntracking configuration: if we run out of entries then
-        # packets will get dropped.
-        #
-        # TODO wrong URL
-        # See https://stats.flyingcircus.io/grafana/dashboard/db/kenny01-conntrack
-        # for current usage statistics
-        #
-        # This should use about 300-500 MiB with ~32 entries in each bucket
-        # https://johnleach.co.uk/words/372/netfilter-conntrack-memory-usage
-        "net.netfilter.nf_conntrack_max" = lib.mkOverride 90 1048576;
-        "net.netfilter.nf_conntrack_buckets" = 32768;
-      }
-      // lib.optionalAttrs routedVrfsEnabled {
-        # Accept incoming connections received in VRFs (i.e. not in the
-        # default routing table). This means that e.g. DNS requests to
-        # the resolver received from hosts connected through a VRF
-        # network will be accepted instead of being rejected as if the
-        # port were unreachable.
-        "net.ipv4.tcp_l3mdev_accept" = true;
-        "net.ipv4.udp_l3mdev_accept" = true;
-      };
+      # Ensure proper conntracking configuration: if we run out of entries then
+      # packets will get dropped.
+      #
+      # TODO wrong URL
+      # See https://stats.flyingcircus.io/grafana/dashboard/db/kenny01-conntrack
+      # for current usage statistics
+      #
+      # This should use about 300-500 MiB with ~32 entries in each bucket
+      # https://johnleach.co.uk/words/372/netfilter-conntrack-memory-usage
+      "net.netfilter.nf_conntrack_max" = lib.mkOverride 90 1048576;
+      "net.netfilter.nf_conntrack_buckets" = 32768;
+    }
+    // lib.optionalAttrs routedVrfsEnabled {
+      # Accept incoming connections received in VRFs (i.e. not in the
+      # default routing table). This means that e.g. DNS requests to
+      # the resolver received from hosts connected through a VRF
+      # network will be accepted instead of being rejected as if the
+      # port were unreachable.
+      "net.ipv4.tcp_l3mdev_accept" = true;
+      "net.ipv4.udp_l3mdev_accept" = true;
+    };
 
     services.openssh.extraConfig = ''
       # Protect routers more aggressively against DOS on the MaxStartup settings.
@@ -299,26 +298,25 @@ in
     ];
 
     flyingcircus.services.sensu-client = {
-      checks =
-        {
-          neighbour_cache = {
-            notification = "Kernel neighbour cache is too full";
-            # Poll frequently in order to try to detect problems which
-            # occur suddenly before they wipe the router out.
-            interval = 60;
-            command = "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor sensu-check -s /run/sensuclient/neighbour_cache_state.json";
-          };
-        }
-        // (listToAttrs (
-          lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces) (
-            iface:
-            lib.nameValuePair "flood_suppression_iface_${iface.link}" {
-              notification = "Flood suppression is erroneously enabled";
-              interval = 300;
-              command = "${checkFloodSuppression} ${iface.link}";
-            }
-          )
-        ));
+      checks = {
+        neighbour_cache = {
+          notification = "Kernel neighbour cache is too full";
+          # Poll frequently in order to try to detect problems which
+          # occur suddenly before they wipe the router out.
+          interval = 60;
+          command = "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor sensu-check -s /run/sensuclient/neighbour_cache_state.json";
+        };
+      }
+      // (listToAttrs (
+        lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces) (
+          iface:
+          lib.nameValuePair "flood_suppression_iface_${iface.link}" {
+            notification = "Flood suppression is erroneously enabled";
+            interval = 300;
+            command = "${checkFloodSuppression} ${iface.link}";
+          }
+        )
+      ));
 
       expectedConnections = {
         warning = 18000;

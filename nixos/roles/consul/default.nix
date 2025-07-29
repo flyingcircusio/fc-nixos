@@ -85,20 +85,19 @@ in
         addSSL = true;
         locations."/" = {
           proxyPass = "http://localhost:8500";
-          extraConfig =
-            ''
-              # Workaround for nginx bug
-              # https://yt.flyingcircus.io/issue/PL-130533
-              #
-              keepalive_requests 0;
-              # Consul server access
-            ''
-            + (lib.concatMapStrings (net: ''
-              allow ${net};
-            '') fclib.networks.all)
-            + ''
-              deny all;
-            '';
+          extraConfig = ''
+            # Workaround for nginx bug
+            # https://yt.flyingcircus.io/issue/PL-130533
+            #
+            keepalive_requests 0;
+            # Consul server access
+          ''
+          + (lib.concatMapStrings (net: ''
+            allow ${net};
+          '') fclib.networks.all)
+          + ''
+            deny all;
+          '';
         };
 
       };

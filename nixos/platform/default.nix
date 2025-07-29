@@ -24,41 +24,40 @@ let
 
 in
 {
-  imports =
-    [
-      ./acme.nix
-      ./agent.nix
-      ./alloy.nix
-      ./audit.nix
-      ./auditbeat.nix
-      ./go-audit.nix
-      ./beats.nix
-      ./filebeat.nix
-      ./enc.nix
-      ./firewall.nix
-      ./full-disk-encryption.nix
-      ./initrd.nix
-      ./journalbeat.nix
-      ./collect-garbage.nix
-      ./ipmi.nix
-      ./kernel.nix
-      ./mailutils.nix
-      ./monitoring.nix
-      ./network.nix
-      ./nix.nix
-      ./packages.nix
-      ./shell.nix
-      ./static.nix
-      ./syslog.nix
-      ./systemd.nix
-      ./upgrade.nix
-      ./users.nix
-    ]
-    ++ (additionalModules "/etc/nixos/enc-configs")
-    ++ (additionalModules "/etc/local/nixos")
-    ++
-      ### XXX: Think about the directory name, also imported even when devhost not activated
-      (additionalModules "/etc/devhost/vm-configs");
+  imports = [
+    ./acme.nix
+    ./agent.nix
+    ./alloy.nix
+    ./audit.nix
+    ./auditbeat.nix
+    ./go-audit.nix
+    ./beats.nix
+    ./filebeat.nix
+    ./enc.nix
+    ./firewall.nix
+    ./full-disk-encryption.nix
+    ./initrd.nix
+    ./journalbeat.nix
+    ./collect-garbage.nix
+    ./ipmi.nix
+    ./kernel.nix
+    ./mailutils.nix
+    ./monitoring.nix
+    ./network.nix
+    ./nix.nix
+    ./packages.nix
+    ./shell.nix
+    ./static.nix
+    ./syslog.nix
+    ./systemd.nix
+    ./upgrade.nix
+    ./users.nix
+  ]
+  ++ (additionalModules "/etc/nixos/enc-configs")
+  ++ (additionalModules "/etc/local/nixos")
+  ++
+    ### XXX: Think about the directory name, also imported even when devhost not activated
+    (additionalModules "/etc/devhost/vm-configs");
 
   options = with lib.types; {
 
@@ -428,23 +427,22 @@ in
         enable = fclib.mkPlatform true;
         maxretry = fclib.mkPlatform 5;
         jails.sshd.settings.mode = fclib.mkPlatform "ddos";
-        ignoreIP =
-          [
-            # loopback
-            "127.0.0.1/8"
-            "::1"
+        ignoreIP = [
+          # loopback
+          "127.0.0.1/8"
+          "::1"
 
-            # rfc1918 addresses
-            "10.0.0.0/8"
-            "172.16.0.0/12"
-            "192.168.0.0/16"
-          ]
-          ++ cfg.static.firewall.trusted
-          ++ (flatten (
-            builtins.map (v: builtins.attrNames v.networks) (
-              builtins.attrValues (attrByPath [ "parameters" "interfaces" ] { } cfg.enc)
-            )
-          ));
+          # rfc1918 addresses
+          "10.0.0.0/8"
+          "172.16.0.0/12"
+          "192.168.0.0/16"
+        ]
+        ++ cfg.static.firewall.trusted
+        ++ (flatten (
+          builtins.map (v: builtins.attrNames v.networks) (
+            builtins.attrValues (attrByPath [ "parameters" "interfaces" ] { } cfg.enc)
+          )
+        ));
       };
 
       nscd.enable = true;

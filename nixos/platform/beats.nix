@@ -12,8 +12,7 @@ let
   cfg = config.flyingcircus.beats;
 
   resourceGroupLoghosts =
-    fclib.listServiceAddresses "graylog-server"
-    ++ fclib.listServiceAddresses "loghost-server";
+    fclib.listServiceAddresses "graylog-server" ++ fclib.listServiceAddresses "loghost-server";
 
   loghostsToUse = lib.unique (
     # Pick one of the resource group loghosts or a graylog from the cluster...

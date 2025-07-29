@@ -43,21 +43,20 @@ in
       inherit name;
       executable = true;
       destination = "/bin/${name}";
-      text =
-        ''
-          #!${pkgs.runtimeShell}
-          set -o errexit
-          set -o nounset
-          set -o pipefail
-        ''
-        + lib.optionalString (runtimeInputs != [ ]) ''
+      text = ''
+        #!${pkgs.runtimeShell}
+        set -o errexit
+        set -o nounset
+        set -o pipefail
+      ''
+      + lib.optionalString (runtimeInputs != [ ]) ''
 
-          export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
-        ''
-        + ''
+        export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
+      ''
+      + ''
 
-          ${text}
-        '';
+        ${text}
+      '';
 
       checkPhase =
         let

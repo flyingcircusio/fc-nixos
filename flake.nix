@@ -188,19 +188,18 @@
                   ++ [
                     (pkgs.writeShellApplication {
                       name = "build_channels_dir";
-                      text =
-                        ''
-                          set -e
-                          mkdir -p channels
-                          if ! [[ -e channels/fc ]]; then
-                              ln -s .. channels/fc
-                          fi
-                        ''
-                        + (lib.concatStringsSep "\n" (
-                          lib.mapAttrsToList (name: flake: ''
-                            ln -sfT ${flake.outPath} channels/${name}
-                          '') upstreams
-                        ));
+                      text = ''
+                        set -e
+                        mkdir -p channels
+                        if ! [[ -e channels/fc ]]; then
+                            ln -s .. channels/fc
+                        fi
+                      ''
+                      + (lib.concatStringsSep "\n" (
+                        lib.mapAttrsToList (name: flake: ''
+                          ln -sfT ${flake.outPath} channels/${name}
+                        '') upstreams
+                      ));
                     })
                     (pkgs.writeShellApplication {
                       name = "cat_package_versions_json";

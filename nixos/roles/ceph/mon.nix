@@ -88,13 +88,12 @@ in
             bool
           ]);
         default = { }; # defaults are provided in the config section with a lower priority
-        description =
-          ''
-            mon config of the Ceph config file.
-            Can override existing default setting values. Configuration keys like `mon osd full ratio`''
-          + ''
-            can alternatively be written in camelCase as `monOsdFullRatio`.
-          '';
+        description = ''
+          mon config of the Ceph config file.
+          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+        + ''
+          can alternatively be written in camelCase as `monOsdFullRatio`.
+        '';
       };
 
       cephRelease = fclib.ceph.releaseOption // {

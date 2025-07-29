@@ -31,70 +31,67 @@ in
     in
     {
 
-      flyingcircus.roles =
-        {
+      flyingcircus.roles = {
 
-          mysql = {
+        mysql = {
 
-            # This is a placeholder role and should not be enabled
-            # by itself and can't directly run on containers either.
-            supportsContainers = fclib.mkDisableDevhostSupport;
+          # This is a placeholder role and should not be enabled
+          # by itself and can't directly run on containers either.
+          supportsContainers = fclib.mkDisableDevhostSupport;
 
-            binlogExpireDays = mkOption {
-              type = types.ints.positive;
-              default = 3;
-              description = ''
-                Expire binlog after 3 days by default.
-                The MySQL/Percona default of 30 days is way too long for typical use cases.
-              '';
-            };
-
-            listenAddresses = lib.mkOption {
-              type = lib.types.listOf lib.types.str;
-              default = fclib.network.lo.dualstack.addresses ++ fclib.network.srv.dualstack.addresses;
-              defaultText = "the addresses of the networks `lo` and `srv` (IPv4 & IPv6)";
-            };
-
-            extraConfig = mkOption {
-              type = types.lines;
-              default = "";
-              description = ''
-                Extra MySQL configuration to append at the end of the
-                configuration file. Do not assume this to be located
-                in any specific section.
-              '';
-            };
+          binlogExpireDays = mkOption {
+            type = types.ints.positive;
+            default = 3;
+            description = ''
+              Expire binlog after 3 days by default.
+              The MySQL/Percona default of 30 days is way too long for typical use cases.
+            '';
           };
 
-          mysql57 = mkRole "5.7";
-        }
-        // lib.listToAttrs (
-          builtins.map (
-            ver: lib.nameValuePair "percona${removeDot ver}" (mkRole ver)
-          ) supportedPerconaVersions
-        );
+          listenAddresses = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = fclib.network.lo.dualstack.addresses ++ fclib.network.srv.dualstack.addresses;
+            defaultText = "the addresses of the networks `lo` and `srv` (IPv4 & IPv6)";
+          };
+
+          extraConfig = mkOption {
+            type = types.lines;
+            default = "";
+            description = ''
+              Extra MySQL configuration to append at the end of the
+              configuration file. Do not assume this to be located
+              in any specific section.
+            '';
+          };
+        };
+
+        mysql57 = mkRole "5.7";
+      }
+      // lib.listToAttrs (
+        builtins.map (
+          ver: lib.nameValuePair "percona${removeDot ver}" (mkRole ver)
+        ) supportedPerconaVersions
+      );
 
     };
 
   config =
     let
-      mysqlRoles =
-        {
-          "5.7" = config.flyingcircus.roles.mysql57.enable;
-        }
-        // lib.listToAttrs (
-          builtins.map (
-            ver: lib.nameValuePair ver config.flyingcircus.roles."percona${removeDot ver}".enable
-          ) supportedPerconaVersions
-        );
+      mysqlRoles = {
+        "5.7" = config.flyingcircus.roles.mysql57.enable;
+      }
+      // lib.listToAttrs (
+        builtins.map (
+          ver: lib.nameValuePair ver config.flyingcircus.roles."percona${removeDot ver}".enable
+        ) supportedPerconaVersions
+      );
 
-      mysqlPackages =
-        {
-          "5.7" = pkgs.percona57;
-        }
-        // lib.listToAttrs (
-          builtins.map (ver: lib.nameValuePair ver pkgs."percona${removeDot ver}") supportedPerconaVersions
-        );
+      mysqlPackages = {
+        "5.7" = pkgs.percona57;
+      }
+      // lib.listToAttrs (
+        builtins.map (ver: lib.nameValuePair ver pkgs."percona${removeDot ver}") supportedPerconaVersions
+      );
 
       xtrabackupPackages =
         with pkgs;

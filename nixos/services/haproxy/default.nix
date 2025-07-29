@@ -181,7 +181,8 @@ in
     {
       flyingcircus.services.haproxy = {
         enable = mkEnableOption "FC-customized HAproxy";
-      } // (import ./config-options.nix { inherit lib; });
+      }
+      // (import ./config-options.nix { inherit lib; });
     };
 
   config = lib.mkMerge [

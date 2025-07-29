@@ -333,46 +333,45 @@ in
           "${nodeStr} State=UNKNOWN CPUs=${toString cfg.cpus} RealMemory=${toString cfg.realMemory}"
         ];
         partitionName = [ "${cfg.partitionName} Nodes=${nodeStr} Default=YES MaxTime=INFINITE State=UP" ];
-        extraConfig =
-          ''
-            # FCIO extra config
-            # XXX: Some settings probably be separate options later.
+        extraConfig = ''
+          # FCIO extra config
+          # XXX: Some settings probably be separate options later.
 
-            MailProg = ${pkgs.mailutils}/bin/mail
+          MailProg = ${pkgs.mailutils}/bin/mail
 
-            # JOB PRIORITY
-            PriorityType = priority/multifactor
-            PriorityWeightQOS = 2000
+          # JOB PRIORITY
+          PriorityType = priority/multifactor
+          PriorityWeightQOS = 2000
 
-            # SCHEDULING
-            # Allocate individual processors and memory
-            SelectTypeParameters = CR_CPU_Memory
+          # SCHEDULING
+          # Allocate individual processors and memory
+          SelectTypeParameters = CR_CPU_Memory
 
-            # Upon registration with a valid configuration only if it was set
-            # DOWN due to being non-responsive.
+          # Upon registration with a valid configuration only if it was set
+          # DOWN due to being non-responsive.
 
-            ReturnToService = 2
+          ReturnToService = 2
 
-            SlurmctldDebug = info
-            SlurmdDebug = info
+          SlurmctldDebug = info
+          SlurmdDebug = info
 
-            # Enables resource containment using sched_setaffinity(). This
-            # enables the --cpu-bind and/or --mem-bind srun options.
-            TaskPlugin = task/cgroup,task/affinity
+          # Enables resource containment using sched_setaffinity(). This
+          # enables the --cpu-bind and/or --mem-bind srun options.
+          TaskPlugin = task/cgroup,task/affinity
 
-          ''
-          + (lib.optionalString (dbdserverService != null) ''
-            AccountingStorageType = accounting_storage/slurmdbd
+        ''
+        + (lib.optionalString (dbdserverService != null) ''
+          AccountingStorageType = accounting_storage/slurmdbd
 
-            ${lib.optionalString (
-              cfg.accountingStorageEnforce != null
-            ) "AccountingStorageEnforce = ${cfg.accountingStorageEnforce}"}
+          ${lib.optionalString (
+            cfg.accountingStorageEnforce != null
+          ) "AccountingStorageEnforce = ${cfg.accountingStorageEnforce}"}
 
-            # Include the job's comment field in the job complete message sent
-            # to the Accounting Storage database.
-            AccountingStoreFlags = job_comment
-            JobAcctGatherType = jobacct_gather/linux
-          '');
+          # Include the job's comment field in the job complete message sent
+          # to the Accounting Storage database.
+          AccountingStoreFlags = job_comment
+          JobAcctGatherType = jobacct_gather/linux
+        '');
       };
 
       systemd.services.fc-set-munge-key = {

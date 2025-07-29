@@ -1,5 +1,9 @@
-{ config, lib, pkgs, ... }:
-
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.flyingcircus.roles.devhost;
@@ -30,7 +34,7 @@ let
       aliases = mkOption {
         description = "Aliases set in the nginx proxy, forwarding to the VM";
         type = types.listOf types.str;
-        default = [];
+        default = [ ];
       };
       srvIp = mkOption {
         description = "IP of the VM on the SRV interface";
@@ -56,40 +60,58 @@ let
 
   defaultService = {
     description = "FC dev Virtual Machine '%i'";
-    path = [ pkgs.qemu_kvm manage_script ];
+    path = [
+      pkgs.qemu_kvm
+      manage_script
+    ];
     serviceConfig.ExecStart = "${pkgs.coreutils}/bin/true";
   };
-  mkService = name: vmCfg: lib.nameValuePair "fc-devhost-vm@${name}" (lib.recursiveUpdate defaultService {
-    enable = vmCfg.enable;
-    wantedBy = [ "machines.target" ];
+  mkService =
+    name: vmCfg:
+    lib.nameValuePair "fc-devhost-vm@${name}" (
+      lib.recursiveUpdate defaultService {
+        enable = vmCfg.enable;
+        wantedBy = [ "machines.target" ];
 
-    serviceConfig = {
-      ExecStart = (lib.escapeShellArgs
-        [
-          "${pkgs.qemu_kvm}/bin/qemu-system-x86_64"
-          "-name" name
-          "-enable-kvm"
-          "-cpu" "host"
-          "-smp" vmCfg.cpu
-          "-m" vmCfg.memory
-          "-nodefaults"
-          "-no-user-config"
-          "-nographic"
-          "-drive" "id=root,format=qcow2,file=/var/lib/devhost/vms/${name}/rootfs.qcow2,if=virtio,aio=threads"
-          "-netdev" "tap,id=ethsrv-${name},ifname=vm-srv-${name},script=${ifaceUpScript},downscript=${ifaceDownScript}"
-          "-device" "virtio-net,netdev=ethsrv-${name},mac=${vmCfg.srvMac}"
-          "-serial" "file:/var/lib/devhost/vms/${name}/log"
-          "-qmp" "unix:/var/lib/devhost/vms/${name}/qmp.sock,server,nowait"
-          "-pidfile" "/var/lib/devhost/vms/${name}/pid"
-        ]);
-      ExecStop = pkgs.writeShellScript "shutdown-devhost-vm" ''
-        fc-devhost shutdown ${name}
-      '';
-      TimeoutStopSec = 180;
-     };
-  });
+        serviceConfig = {
+          ExecStart = (
+            lib.escapeShellArgs [
+              "${pkgs.qemu_kvm}/bin/qemu-system-x86_64"
+              "-name"
+              name
+              "-enable-kvm"
+              "-cpu"
+              "host"
+              "-smp"
+              vmCfg.cpu
+              "-m"
+              vmCfg.memory
+              "-nodefaults"
+              "-no-user-config"
+              "-nographic"
+              "-drive"
+              "id=root,format=qcow2,file=/var/lib/devhost/vms/${name}/rootfs.qcow2,if=virtio,aio=threads"
+              "-netdev"
+              "tap,id=ethsrv-${name},ifname=vm-srv-${name},script=${ifaceUpScript},downscript=${ifaceDownScript}"
+              "-device"
+              "virtio-net,netdev=ethsrv-${name},mac=${vmCfg.srvMac}"
+              "-serial"
+              "file:/var/lib/devhost/vms/${name}/log"
+              "-qmp"
+              "unix:/var/lib/devhost/vms/${name}/qmp.sock,server,nowait"
+              "-pidfile"
+              "/var/lib/devhost/vms/${name}/pid"
+            ]
+          );
+          ExecStop = pkgs.writeShellScript "shutdown-devhost-vm" ''
+            fc-devhost shutdown ${name}
+          '';
+          TimeoutStopSec = 180;
+        };
+      }
+    );
 
-  fc_devhost = pkgs.callPackage ./fc.devhost {};
+  fc_devhost = pkgs.callPackage ./fc.devhost { };
 
   # We unfortunately cannot use writePython3Bin as that only supports
   # python libs in path, and not other applications.
@@ -97,23 +119,24 @@ let
     name = "fc-devhost";
     text = ''
 
-    if [[ ! -f "/var/lib/devhost/ssh_bootstrap_key" ]]; then
-       cat > /var/lib/devhost/ssh_bootstrap_key <<EOF
-    -----BEGIN OPENSSH PRIVATE KEY-----
-    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-    QyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLAAAAJjYNRR+2DUU
-    fgAAAAtzc2gtZWQyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLA
-    AAAEDKN3GvoFkLLQdFN+Blk3y/+HQ5rvt7/GALRAWofc/LFGc7V2c2zFPRMl8/gmBv1/ME
-    ldEuJau8jHjhx+2qziYsAAAAEHJvb3RAY3QtZGlyLWRldjIBAgMEBQ==
-    -----END OPENSSH PRIVATE KEY-----
-    EOF
-      chmod 600 /var/lib/devhost/ssh_bootstrap_key
-    fi
+      if [[ ! -f "/var/lib/devhost/ssh_bootstrap_key" ]]; then
+         cat > /var/lib/devhost/ssh_bootstrap_key <<EOF
+      -----BEGIN OPENSSH PRIVATE KEY-----
+      b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+      QyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLAAAAJjYNRR+2DUU
+      fgAAAAtzc2gtZWQyNTUxOQAAACBnO1dnNsxT0TJfP4Jgb9fzBJXRLiWrvIx44cftqs4mLA
+      AAAEDKN3GvoFkLLQdFN+Blk3y/+HQ5rvt7/GALRAWofc/LFGc7V2c2zFPRMl8/gmBv1/ME
+      ldEuJau8jHjhx+2qziYsAAAAEHJvb3RAY3QtZGlyLWRldjIBAgMEBQ==
+      -----END OPENSSH PRIVATE KEY-----
+      EOF
+        chmod 600 /var/lib/devhost/ssh_bootstrap_key
+      fi
 
-    ${lib.getExe fc_devhost} "$@" --location ${location}
+      ${lib.getExe fc_devhost} "$@" --location ${location}
     '';
   };
-in {
+in
+{
   options = with lib; {
     flyingcircus.roles.devhost = {
       virtualMachines = mkOption {
@@ -121,7 +144,7 @@ in {
           Description of devhost virtual machines. This config will be auto-generated by batou.
         '';
         type = types.attrsOf (types.submodule vmOptions);
-        default = {};
+        default = { };
       };
     };
   };
@@ -136,17 +159,23 @@ in {
       {
         commands = [ "bin/fc-devhost" ];
         package = manage_script;
-        groups = [ "service" "users" ];
+        groups = [
+          "service"
+          "users"
+        ];
       }
     ];
     networking = {
       bridges."br-vm-srv" = {
-        interfaces = [];
+        interfaces = [ ];
       };
       interfaces = {
         "br-vm-srv" = {
           ipv4.addresses = [
-            { address = "10.12.0.1"; prefixLength = 16; }
+            {
+              address = "10.12.0.1";
+              prefixLength = 16;
+            }
           ];
         };
       };
@@ -161,12 +190,14 @@ in {
     services.kea.dhcp4 = {
       enable = true;
       settings = {
-        interfaces-config = { interfaces = [ "br-vm-srv" ]; };
+        interfaces-config = {
+          interfaces = [ "br-vm-srv" ];
+        };
         subnet4 = [
           {
             id = 1;
             subnet = "10.12.0.0/16";
-            pools = [{ pool = "10.12.250.10 - 10.12.254.254"; }];
+            pools = [ { pool = "10.12.250.10 - 10.12.254.254"; } ];
             option-data = [
               {
                 name = "routers";
@@ -185,7 +216,9 @@ in {
     networking.firewall.interfaces."vm-srv+".allowedUDPPorts = [ 67 ];
     systemd.services = {
       "fc-devhost-vm@" = defaultService;
-    } // lib.mapAttrs' mkService cfg.virtualMachines // {
+    }
+    // lib.mapAttrs' mkService cfg.virtualMachines
+    // {
       "fc-devhost-vm-cleanup" = {
         inherit (config.systemd.services.fc-agent) path;
         # duplicated from fc-agent.service
@@ -210,43 +243,51 @@ in {
       };
     };
 
-    services.nginx = let
-      suffix = cfg.publicAddress;
-      vms =
-        lib.filterAttrs (name: vmCfg: vmCfg.aliases != [ ]) cfg.virtualMachines;
-      httpUpstreams = (lib.concatStringsSep "\n" (lib.mapAttrsToList (vmName: vmCfg:
-        ".${vmName}.${suffix} http://${vmCfg.srvIp};"
-      ) vms));
-      httpsUpstreams = (lib.concatStringsSep "\n" (lib.mapAttrsToList (vmName: vmCfg:
-        ".${vmName}.${suffix} ${vmCfg.srvIp}:443;" 
-      ) vms));
-    in {
-      appendHttpConfig = ''
-        map $http_host $dev_vms_http_upstream {
-          hostnames;
-          ${httpUpstreams}
-        }
-      '';
-      virtualHosts."dev-vms-http" = {
-        locations."/".proxyPass = "$dev_vms_http_upstream";
-        serverName = "_";
+    services.nginx =
+      let
+        suffix = cfg.publicAddress;
+        vms = lib.filterAttrs (name: vmCfg: vmCfg.aliases != [ ]) cfg.virtualMachines;
+        httpUpstreams = (
+          lib.concatStringsSep "\n" (
+            lib.mapAttrsToList (vmName: vmCfg: ".${vmName}.${suffix} http://${vmCfg.srvIp};") vms
+          )
+        );
+        httpsUpstreams = (
+          lib.concatStringsSep "\n" (
+            lib.mapAttrsToList (vmName: vmCfg: ".${vmName}.${suffix} ${vmCfg.srvIp}:443;") vms
+          )
+        );
+      in
+      {
+        appendHttpConfig = ''
+          map $http_host $dev_vms_http_upstream {
+            hostnames;
+            ${httpUpstreams}
+          }
+        '';
+        virtualHosts."dev-vms-http" = {
+          locations."/".proxyPass = "$dev_vms_http_upstream";
+          serverName = "_";
+        };
+        streamConfig = ''
+          map $ssl_preread_server_name $dev_vms_https_upstream {
+            hostnames;
+            ${httpsUpstreams}
+          }
+          server {
+            listen 0.0.0.0:443;
+            listen [::]:443;
+            ssl_preread on;
+            proxy_pass $dev_vms_https_upstream;
+          }
+        '';
       };
-      streamConfig = ''
-        map $ssl_preread_server_name $dev_vms_https_upstream {
-          hostnames;
-          ${httpsUpstreams}
-        }
-        server {
-          listen 0.0.0.0:443;
-          listen [::]:443;
-          ssl_preread on;
-          proxy_pass $dev_vms_https_upstream;
-        }
-      '';
-    };
     networking.extraHosts = ''
       # static entries for devhost vms to avoid nginx issues
       # if containers are not running and to use the existing batou ssh configs.
-    '' + (lib.concatStringsSep "\n" (lib.mapAttrsToList (vmName: vmCfg: "${vmCfg.srvIp} ${vmName}") cfg.virtualMachines));
+    ''
+    + (lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (vmName: vmCfg: "${vmCfg.srvIp} ${vmName}") cfg.virtualMachines
+    ));
   };
 }

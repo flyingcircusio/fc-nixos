@@ -292,7 +292,8 @@ in
             stats admin if LOCALHOST
           '';
         };
-      } // serviceListenConfigs;
+      }
+      // serviceListenConfigs;
       extraConfig = ''
         resolvers cluster
           nameserver coredns ${netCfg.clusterDns}:53
