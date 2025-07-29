@@ -324,6 +324,32 @@ def update_system_channel(channel_url, log=_log):
         raise ChannelUpdateFailed(stdout=stdout, stderr=stderr)
 
 
+def find_nix_eval_warnings(stderr: str) -> list[str]:
+    """Returns the evaluation warnings raised by either `builtins.warn` or the
+    NixOS module warning system `config.warnings`.
+    Evaluation warnings raised in e.g. package definitions are not accessible via
+    the `config.warnings` module endpoint, hence need to be grabbed from stderr.
+    """
+
+    WARNINGS_MARKER = "evaluation warning: "
+    # As long as lix lacks a `builtins.warn`, the `lib.warn` NixOS code falls
+    # back to traces
+    WARNINGS_MARKER_LEGACY = "trace: evaluation warning: "
+    lines = filter(
+        lambda line: line.startswith(WARNINGS_MARKER)
+        or line.startswith(WARNINGS_MARKER_LEGACY),
+        stderr.splitlines(),
+    )
+    return list(
+        map(
+            lambda line: line.removeprefix(WARNINGS_MARKER).removeprefix(
+                WARNINGS_MARKER_LEGACY
+            ),
+            lines,
+        )
+    )
+
+
 def find_nix_build_error(stderr: str, log=_log):
     """Returns the (hopefully) interesting part of the error message from Nix
     build output or a generic message if nothing is found.
@@ -437,7 +463,11 @@ def _increase_soft_fd_limit():
 
 
 def build_system(
-    channel_url=None, build_options=None, out_link=None, log=_log
+    channel_url=None,
+    build_options=None,
+    out_link=None,
+    log=_log,
+    eval_warnings_file=Path("/etc/fcio_nix_eval_warnings"),
 ) -> str:
     """
     Build system with this channel. Works like nixos-rebuild build.
@@ -492,6 +522,11 @@ def build_system(
 
     if stderr:
         changed = True
+        # Write NixOS and nix eval warnings to a file, separated by two newlines.
+        # We use that for `fc-manage check` to display (deprecation) warnings.
+        eval_warnings = find_nix_eval_warnings(stderr)
+        # TODO: make out path parameterisable
+        eval_warnings_file.write_text("\n\n".join(eval_warnings))
     else:
         stderr = None
         changed = False

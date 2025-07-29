@@ -126,7 +126,7 @@ def check(log, enc, config: ConfigParser) -> CheckResult:
     else:
         errors.append("`nixos` channel not set.")
 
-    nixos_warnings_file = Path("/etc/fcio_nixos_warnings")
+    nixos_warnings_file = Path("/etc/fcio_nix_eval_warnings")
 
     if nixos_warnings_file.exists():
         nixos_warnings_content = nixos_warnings_file.read_text()
