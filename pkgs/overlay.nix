@@ -469,12 +469,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
       # These checks are not included by default.
       # Our platform doesn't use them, maybe some customer?
-      postInstall =
-        (super.monitoring-plugins.postInstall or "")
-        + ''
-          cp plugins-root/check_dhcp $out/bin
-          cp plugins-root/check_icmp $out/bin
-        '';
+      postInstall = (super.monitoring-plugins.postInstall or "") + ''
+        cp plugins-root/check_dhcp $out/bin
+        cp plugins-root/check_icmp $out/bin
+      '';
     });
 
   # This is our default version.

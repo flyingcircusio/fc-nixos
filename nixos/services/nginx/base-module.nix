@@ -1570,129 +1570,129 @@ in
         '';
       };
     };
-    systemd.services =
-      {
-        nginx =
-          let
-            preStartScript = pkgs.writeScript "nginx-pre-start" ''
-              #!${pkgs.runtimeShell} -e
-              ln -sfT $(readlink -f ${wantedPackagePath}) ${runningPackagePath}
-              chown ${cfg.user}:${cfg.group} -R /var/log/nginx
-            '';
-          in
-          {
-            description = "Nginx Web Server";
-            after = [ "network.target" ];
-            wantedBy = [ "multi-user.target" ];
-            stopIfChanged = false;
-            startLimitIntervalSec = 60;
-            serviceConfig = {
-              Type = "forking";
-              PIDFile = "/run/nginx/nginx.pid";
-              ExecStartPre = [
-                "+${preStartScript}"
-              ];
-              ExecStart = "${runningPackagePath}/bin/nginx -c ${configPath}";
-              ExecReload = "+${nginxReloadConfig}/bin/nginx-reload";
-              Restart = "always";
-              RestartSec = "10s";
-              # User and group
-              User = cfg.user;
-              Group = cfg.group;
-              # Runtime directory and mode
-              RuntimeDirectory = "nginx";
-              RuntimeDirectoryMode = "0750";
-              # Cache directory and mode
-              CacheDirectory = "nginx";
-              CacheDirectoryMode = "0750";
-              # Logs directory and mode
-              LogsDirectory = "nginx";
-              LogsDirectoryMode = "0755";
-              # Proc filesystem
-              ProcSubset = "pid";
-              ProtectProc = "invisible";
-              # Capabilities
-              AmbientCapabilities =
-                [
-                  "CAP_NET_BIND_SERVICE"
-                  "CAP_SYS_RESOURCE"
-                ]
-                ++ optionals cfg.enableQuicBPF [
-                  "CAP_SYS_ADMIN"
-                  "CAP_NET_ADMIN"
-                ];
-              CapabilityBoundingSet =
-                [
-                  "CAP_NET_BIND_SERVICE"
-                  "CAP_SYS_RESOURCE"
-                ]
-                ++ optionals cfg.enableQuicBPF [
-                  "CAP_SYS_ADMIN"
-                  "CAP_NET_ADMIN"
-                ];
-              # Security
-              NoNewPrivileges = true;
-              # Sandboxing (sorted by occurrence in https://www.freedesktop.org/software/systemd/man/systemd.exec.html)
-              ProtectSystem = "strict";
-              ProtectHome = mkDefault true;
-              PrivateTmp = true;
-              PrivateDevices = true;
-              ProtectHostname = true;
-              ProtectClock = true;
-              ProtectKernelTunables = true;
-              ProtectKernelModules = true;
-              ProtectKernelLogs = true;
-              ProtectControlGroups = true;
-              RestrictAddressFamilies = [
-                "AF_UNIX"
-                "AF_INET"
-                "AF_INET6"
-              ];
-              RestrictNamespaces = true;
-              LockPersonality = true;
-              MemoryDenyWriteExecute =
-                !(
-                  (builtins.any (mod: (mod.allowMemoryWriteExecute or false)) cfg.package.modules)
-                  || (cfg.package == pkgs.openresty)
-                );
-              RestrictRealtime = true;
-              RestrictSUIDSGID = true;
-              RemoveIPC = true;
-              PrivateMounts = true;
-              # System Call Filtering
-              SystemCallArchitectures = "native";
-              SystemCallFilter = [
-                "~@cpu-emulation @debug @keyring @mount @obsolete @privileged @setuid"
-              ] ++ optional cfg.enableQuicBPF [ "bpf" ];
-            };
+    systemd.services = {
+      nginx =
+        let
+          preStartScript = pkgs.writeScript "nginx-pre-start" ''
+            #!${pkgs.runtimeShell} -e
+            ln -sfT $(readlink -f ${wantedPackagePath}) ${runningPackagePath}
+            chown ${cfg.user}:${cfg.group} -R /var/log/nginx
+          '';
+        in
+        {
+          description = "Nginx Web Server";
+          after = [ "network.target" ];
+          wantedBy = [ "multi-user.target" ];
+          stopIfChanged = false;
+          startLimitIntervalSec = 60;
+          serviceConfig = {
+            Type = "forking";
+            PIDFile = "/run/nginx/nginx.pid";
+            ExecStartPre = [
+              "+${preStartScript}"
+            ];
+            ExecStart = "${runningPackagePath}/bin/nginx -c ${configPath}";
+            ExecReload = "+${nginxReloadConfig}/bin/nginx-reload";
+            Restart = "always";
+            RestartSec = "10s";
+            # User and group
+            User = cfg.user;
+            Group = cfg.group;
+            # Runtime directory and mode
+            RuntimeDirectory = "nginx";
+            RuntimeDirectoryMode = "0750";
+            # Cache directory and mode
+            CacheDirectory = "nginx";
+            CacheDirectoryMode = "0750";
+            # Logs directory and mode
+            LogsDirectory = "nginx";
+            LogsDirectoryMode = "0755";
+            # Proc filesystem
+            ProcSubset = "pid";
+            ProtectProc = "invisible";
+            # Capabilities
+            AmbientCapabilities = [
+              "CAP_NET_BIND_SERVICE"
+              "CAP_SYS_RESOURCE"
+            ]
+            ++ optionals cfg.enableQuicBPF [
+              "CAP_SYS_ADMIN"
+              "CAP_NET_ADMIN"
+            ];
+            CapabilityBoundingSet = [
+              "CAP_NET_BIND_SERVICE"
+              "CAP_SYS_RESOURCE"
+            ]
+            ++ optionals cfg.enableQuicBPF [
+              "CAP_SYS_ADMIN"
+              "CAP_NET_ADMIN"
+            ];
+            # Security
+            NoNewPrivileges = true;
+            # Sandboxing (sorted by occurrence in https://www.freedesktop.org/software/systemd/man/systemd.exec.html)
+            ProtectSystem = "strict";
+            ProtectHome = mkDefault true;
+            PrivateTmp = true;
+            PrivateDevices = true;
+            ProtectHostname = true;
+            ProtectClock = true;
+            ProtectKernelTunables = true;
+            ProtectKernelModules = true;
+            ProtectKernelLogs = true;
+            ProtectControlGroups = true;
+            RestrictAddressFamilies = [
+              "AF_UNIX"
+              "AF_INET"
+              "AF_INET6"
+            ];
+            RestrictNamespaces = true;
+            LockPersonality = true;
+            MemoryDenyWriteExecute =
+              !(
+                (builtins.any (mod: (mod.allowMemoryWriteExecute or false)) cfg.package.modules)
+                || (cfg.package == pkgs.openresty)
+              );
+            RestrictRealtime = true;
+            RestrictSUIDSGID = true;
+            RemoveIPC = true;
+            PrivateMounts = true;
+            # System Call Filtering
+            SystemCallArchitectures = "native";
+            SystemCallFilter = [
+              "~@cpu-emulation @debug @keyring @mount @obsolete @privileged @setuid"
+            ]
+            ++ optional cfg.enableQuicBPF [ "bpf" ];
           };
-        # reload config before acme renewals, to ensure new vhosts are actually activated from the config file
-        nginx-config-reload-pre-renew = {
-          before = sslServices;
-          after = sslSelfSignedServices;
-        } // nginxReloadCommon;
-        # postRun hooks on cert renew can't be used to restart Nginx since renewal
-        # runs as the unprivileged acme user. sslTargets are added to wantedBy + before
-        # which allows the acme-finished-$cert.target to signify the successful updating
-        # of certs end-to-end.
-        nginx-config-reload-post-renew = {
-          # Before the finished targets, after the renew services.
-          # This service might be needed for HTTP-01 challenges, but we only want to confirm
-          # certs are updated _after_ config has been reloaded.
-          before = sslTargets;
-          after = sslServices;
-        } // nginxReloadCommon;
+        };
+      # reload config before acme renewals, to ensure new vhosts are actually activated from the config file
+      nginx-config-reload-pre-renew = {
+        before = sslServices;
+        after = sslSelfSignedServices;
       }
-      //
-        # Nginx needs to be started in order to be able to request certificates
-        # (it's hosting the acme challenge after all)
-        # This fixes https://github.com/NixOS/nixpkgs/issues/81842
-        lib.listToAttrs (
-          map (name: lib.nameValuePair name { after = [ "nginx.service" ]; }) sslServiceNames
-        )
-      // lib.listToAttrs (
-        map (name: lib.nameValuePair name { before = [ "nginx.service" ]; }) sslSelfSignedServiceNames
-      );
+      // nginxReloadCommon;
+      # postRun hooks on cert renew can't be used to restart Nginx since renewal
+      # runs as the unprivileged acme user. sslTargets are added to wantedBy + before
+      # which allows the acme-finished-$cert.target to signify the successful updating
+      # of certs end-to-end.
+      nginx-config-reload-post-renew = {
+        # Before the finished targets, after the renew services.
+        # This service might be needed for HTTP-01 challenges, but we only want to confirm
+        # certs are updated _after_ config has been reloaded.
+        before = sslTargets;
+        after = sslServices;
+      }
+      // nginxReloadCommon;
+    }
+    //
+      # Nginx needs to be started in order to be able to request certificates
+      # (it's hosting the acme challenge after all)
+      # This fixes https://github.com/NixOS/nixpkgs/issues/81842
+      lib.listToAttrs (
+        map (name: lib.nameValuePair name { after = [ "nginx.service" ]; }) sslServiceNames
+      )
+    // lib.listToAttrs (
+      map (name: lib.nameValuePair name { before = [ "nginx.service" ]; }) sslSelfSignedServiceNames
+    );
 
     systemd.targets = lib.listToAttrs (
       map (name: lib.nameValuePair name { wantedBy = [ "nginx.service" ]; }) sslTargetNames

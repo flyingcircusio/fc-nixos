@@ -179,7 +179,8 @@ in
 
       environment = {
         CEPH_ARGS = "--id ${enc.name}";
-      } // backyRbdVersioned;
+      }
+      // backyRbdVersioned;
 
       serviceConfig = {
         ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";

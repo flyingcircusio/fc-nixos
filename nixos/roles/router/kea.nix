@@ -18,7 +18,8 @@ let
     "mgm"
     "srv"
     "fe"
-  ] ++ (config.flyingcircus.static.additionalDhcpNetworks."${location}" or [ ]);
+  ]
+  ++ (config.flyingcircus.static.additionalDhcpNetworks."${location}" or [ ]);
 
   dhcpNetworks = [ "ipmi" ] ++ dhcpNetworks';
   dhcpInterfaces = map (net: fclib.network."${net}".interface) dhcpNetworks';

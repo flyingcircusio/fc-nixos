@@ -211,27 +211,26 @@ in
 
         single_node = lib.length cfg.esNodes == 1;
 
-        extraConf =
+        extraConf = ''
+          node.name: ${cfg.nodeName}
+          bootstrap.memory_lock: true
+        ''
+        + (lib.optionalString (lib.versionOlder esVersion "7") ''
+          discovery.zen.minimum_master_nodes: ${toString masterQuorum}
+          discovery.zen.ping.unicast.hosts: ${toJSON cfg.esNodes}
+        '')
+        + (lib.optionalString (lib.versionAtLeast esVersion "7") ''
+          discovery.seed_hosts: ${toJSON cfg.esNodes}
+        '')
+        + (lib.optionalString (lib.versionAtLeast esVersion "7" && cfg.initialMasterNodes != [ ]) ''
+          cluster.initial_master_nodes: ${toJSON cfg.initialMasterNodes}
+        '')
+        + (
+          lib.optionalString (cfg.extraConfig != "") ''
+            # flyingcircus.roles.elasticsearch.extraConfig
           ''
-            node.name: ${cfg.nodeName}
-            bootstrap.memory_lock: true
-          ''
-          + (lib.optionalString (lib.versionOlder esVersion "7") ''
-            discovery.zen.minimum_master_nodes: ${toString masterQuorum}
-            discovery.zen.ping.unicast.hosts: ${toJSON cfg.esNodes}
-          '')
-          + (lib.optionalString (lib.versionAtLeast esVersion "7") ''
-            discovery.seed_hosts: ${toJSON cfg.esNodes}
-          '')
-          + (lib.optionalString (lib.versionAtLeast esVersion "7" && cfg.initialMasterNodes != [ ]) ''
-            cluster.initial_master_nodes: ${toJSON cfg.initialMasterNodes}
-          '')
-          + (
-            lib.optionalString (cfg.extraConfig != "") ''
-              # flyingcircus.roles.elasticsearch.extraConfig
-            ''
-            + cfg.extraConfig
-          );
+          + cfg.extraConfig
+        );
       };
 
       # Allow sudo-srv and service users to run commands as elasticsearch.

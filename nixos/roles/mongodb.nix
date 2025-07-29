@@ -211,25 +211,24 @@ in
 
       flyingcircus.services = {
 
-        sensu-client.checks =
-          {
-            mongodb = {
-              notification = "MongoDB alive";
-              command = ''
-                /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb ${extraCheckArgs}
-              '';
-            };
-          }
-          // lib.optionalAttrs (majorVersion != "3.2") {
-            # There's no feature compatibility version in 3.2 so we can't check it.
-            mongodb_feature_compat_version = {
-              notification = "MongoDB is running on an outdated feature compatibility version";
-              command = ''
-                /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb -A feature_compat_version ${extraCheckArgs}
-              '';
-              interval = 600;
-            };
+        sensu-client.checks = {
+          mongodb = {
+            notification = "MongoDB alive";
+            command = ''
+              /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb ${extraCheckArgs}
+            '';
           };
+        }
+        // lib.optionalAttrs (majorVersion != "3.2") {
+          # There's no feature compatibility version in 3.2 so we can't check it.
+          mongodb_feature_compat_version = {
+            notification = "MongoDB is running on an outdated feature compatibility version";
+            command = ''
+              /run/wrappers/bin/sudo -u mongodb -- ${checkMongoCmd} -d mongodb -A feature_compat_version ${extraCheckArgs}
+            '';
+            interval = 600;
+          };
+        };
 
         sensu-client.expectedConnections = {
           warning = 60000;

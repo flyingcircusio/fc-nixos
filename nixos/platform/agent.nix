@@ -357,22 +357,21 @@ in
         }
       ];
 
-      environment.etc."fc-agent.conf".text =
-        ''
-          [limits]
-          disk_keep_free = ${toString cfg.agent.diskKeepFree}
+      environment.etc."fc-agent.conf".text = ''
+        [limits]
+        disk_keep_free = ${toString cfg.agent.diskKeepFree}
 
-          [maintenance]
-          preparation_seconds = ${toString cfg.agent.maintenancePreparationSeconds}
-          request_runnable_for_seconds = ${toString cfg.agent.maintenanceRequestRunnableFor}
+        [maintenance]
+        preparation_seconds = ${toString cfg.agent.maintenancePreparationSeconds}
+        request_runnable_for_seconds = ${toString cfg.agent.maintenanceRequestRunnableFor}
 
-          [maintenance-enter]
-          ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.enter}") cfg.agent.maintenance)}
+        [maintenance-enter]
+        ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.enter}") cfg.agent.maintenance)}
 
-          [maintenance-leave]
-          ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.leave}") cfg.agent.maintenance)}
-        ''
-        + lib.generators.toINI { } cfg.agent.extraSettings;
+        [maintenance-leave]
+        ${concatStringsSep "\n" (mapAttrsToList (k: v: "${k} = ${v.leave}") cfg.agent.maintenance)}
+      ''
+      + lib.generators.toINI { } cfg.agent.extraSettings;
 
       systemd.services.fc-agent = rec {
         description = "Flying Circus Management Task";

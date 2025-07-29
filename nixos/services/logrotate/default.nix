@@ -128,52 +128,51 @@ in
         allowNetworking = true;
       };
 
-      systemd.services =
-        {
-          # XXX logrotate does not allow setting options and I need to rebuild the
-          # command line here so we can get decent debugging output.
-          logrotate =
-            { ... }:
-            {
-              options = {
-                script = lib.mkOption {
-                  apply = v: lib.replaceStrings [ "sbin/logrotate /nix" ] [ "sbin/logrotate -v /nix" ] v;
-                };
-              };
-              config = {
-                # Upstream puts logrotate in multi-user.target which triggers unwanted
-                # service starts on fc-manage. It should only be activated by the timer.
-                wantedBy = lib.mkForce [ ];
-
-                # The upstream service is a bit too hardened for what we want to do in
-                # the platform. Only necessary for the system logrotate, the user units
-                # are not hardened yet as they are not running as privileged users.
-                serviceConfig = with config.fclib; {
-                  # our MySQL logic relies on config files in the home directory
-                  ProtectHome = mkOverrideUpstreamModule false;
-                };
+      systemd.services = {
+        # XXX logrotate does not allow setting options and I need to rebuild the
+        # command line here so we can get decent debugging output.
+        logrotate =
+          { ... }:
+          {
+            options = {
+              script = lib.mkOption {
+                apply = v: lib.replaceStrings [ "sbin/logrotate /nix" ] [ "sbin/logrotate -v /nix" ] v;
               };
             };
-        }
-        // listToAttrs (
-          map (
-            u:
-            nameValuePair "user-logrotate-${u.name}" {
-              description = "logrotate for ${u.name}";
-              path = with pkgs; [
-                bash
-                logrotate
-              ];
-              restartIfChanged = false;
-              script = "${./user-logrotate.sh} ${localDir}/${u.name}";
-              serviceConfig = {
-                User = u.name;
-                Type = "oneshot";
+            config = {
+              # Upstream puts logrotate in multi-user.target which triggers unwanted
+              # service starts on fc-manage. It should only be activated by the timer.
+              wantedBy = lib.mkForce [ ];
+
+              # The upstream service is a bit too hardened for what we want to do in
+              # the platform. Only necessary for the system logrotate, the user units
+              # are not hardened yet as they are not running as privileged users.
+              serviceConfig = with config.fclib; {
+                # our MySQL logic relies on config files in the home directory
+                ProtectHome = mkOverrideUpstreamModule false;
               };
-              stopIfChanged = false;
-            }
-          ) serviceUsers
-        );
+            };
+          };
+      }
+      // listToAttrs (
+        map (
+          u:
+          nameValuePair "user-logrotate-${u.name}" {
+            description = "logrotate for ${u.name}";
+            path = with pkgs; [
+              bash
+              logrotate
+            ];
+            restartIfChanged = false;
+            script = "${./user-logrotate.sh} ${localDir}/${u.name}";
+            serviceConfig = {
+              User = u.name;
+              Type = "oneshot";
+            };
+            stopIfChanged = false;
+          }
+        ) serviceUsers
+      );
 
       # We create one directory for each service user. I decided not to remove
       # old directories as this may be manually placed data that I don't want

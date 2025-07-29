@@ -346,24 +346,23 @@ in
           !isNull fclib.underlay && cfgNet.physicalHostNetworking
         ) (map (l: l.link) fclib.underlay.links or [ ]);
 
-        firewall.extraCommands =
-          ''
-            # Well-known space needed for IPV6 to function.
-            ip6tables -A nixos-fw -s ff0::/12 -j ACCEPT
-            # Ignore all other multi-cast traffic.
-            ip6tables -A nixos-fw -s ff::/8 -j DROP
-            ip6tables -A nixos-fw -d ff::/8 -j DROP
-            iptables -A nixos-fw -s 224.0.0.0/4 -j DROP
-            iptables -A nixos-fw -d 224.0.0.0/4 -j DROP
-          ''
-          +
-            # Do not conntrack the VXLAN underlay packets
-            lib.optionalString (fclib.underlay != null) (
-              lib.concatMapStrings (address: ''
-                iptables -t raw -A fc-raw-prerouting -d ${address} -j CT --notrack
-                iptables -t raw -A fc-raw-output -s ${address} -j CT --notrack
-              '') fclib.network.ul.v4.addresses
-            );
+        firewall.extraCommands = ''
+          # Well-known space needed for IPV6 to function.
+          ip6tables -A nixos-fw -s ff0::/12 -j ACCEPT
+          # Ignore all other multi-cast traffic.
+          ip6tables -A nixos-fw -s ff::/8 -j DROP
+          ip6tables -A nixos-fw -d ff::/8 -j DROP
+          iptables -A nixos-fw -s 224.0.0.0/4 -j DROP
+          iptables -A nixos-fw -d 224.0.0.0/4 -j DROP
+        ''
+        +
+          # Do not conntrack the VXLAN underlay packets
+          lib.optionalString (fclib.underlay != null) (
+            lib.concatMapStrings (address: ''
+              iptables -t raw -A fc-raw-prerouting -d ${address} -j CT --notrack
+              iptables -t raw -A fc-raw-output -s ${address} -j CT --notrack
+            '') fclib.network.ul.v4.addresses
+          );
       };
 
       flyingcircus.activationScripts = {
@@ -521,16 +520,15 @@ in
       # module is loaded.
       boot.extraModprobeConfig = "options dummy numdummies=0";
 
-      systemd.services =
-        {
-          nscd.restartTriggers = [
-            config.environment.etc."host.conf".source
-          ];
-          systemd-sysctl.restartTriggers = lib.mkIf (!isNull fclib.underlay) [
-            config.environment.etc."sysctl.d/70-fcio-underlay.conf".source
-          ];
-        }
-        //
+      systemd.services = {
+        nscd.restartTriggers = [
+          config.environment.etc."host.conf".source
+        ];
+        systemd-sysctl.restartTriggers = lib.mkIf (!isNull fclib.underlay) [
+          config.environment.etc."sysctl.d/70-fcio-underlay.conf".source
+        ];
+      }
+      //
 
         # These units performing network interface setup must be
         # explicitly wanted by the multi-user target, otherwise they
@@ -557,101 +555,100 @@ in
                 pkgs.util-linux
               ];
               stopIfChanged = false;
-              script =
-                ''
-                  set -e
+              script = ''
+                set -e
 
-                  touch /var/lock/interface-rename.lock
-                  exec 4</var/lock/interface-rename.lock
+                touch /var/lock/interface-rename.lock
+                exec 4</var/lock/interface-rename.lock
 
-                  echo "Ensuring interface name '${iface.link}' ..."
+                echo "Ensuring interface name '${iface.link}' ..."
 
-                  echo "Acquiring interface renaming lock ..."
-                  flock -x -w 60 4 || exit 1
-                  echo "Got interface renaming lock ..."
+                echo "Acquiring interface renaming lock ..."
+                flock -x -w 60 4 || exit 1
+                echo "Got interface renaming lock ..."
 
-                  # Look up the desired interface's current name by mac address
-                  interface="$(ip -j -d link show | jq -r '.[] | select(.linkinfo?.info_kind? == null) | select(.address == "${iface.mac}") | .ifname')"
+                # Look up the desired interface's current name by mac address
+                interface="$(ip -j -d link show | jq -r '.[] | select(.linkinfo?.info_kind? == null) | select(.address == "${iface.mac}") | .ifname')"
 
-                  if [[ "$interface" == "" ]]; then
-                    echo "ERROR: Missing interface with MAC address '${iface.mac}'."
-                    echo "Found interfaces:"
-                    ip link show
-                    exit 1
-                  fi
+                if [[ "$interface" == "" ]]; then
+                  echo "ERROR: Missing interface with MAC address '${iface.mac}'."
+                  echo "Found interfaces:"
+                  ip link show
+                  exit 1
+                fi
 
-                  if [[ "$interface" != "${iface.link}" ]]; then
-                    echo "Interface is currently known as \`$interface\` ..."
+                if [[ "$interface" != "${iface.link}" ]]; then
+                  echo "Interface is currently known as \`$interface\` ..."
 
-                    # Check whether our desired name is also already in use,
-                    # rename that one to a unique name.
-                    counter=0
-                    while ip l show dev ${iface.link} > /dev/null; do
-                      echo "'${iface.link}' is still being used, trying to clean up."
-                      # Down the other interface and rename it
-                      ip l set ${iface.link} down
-                      # Try, don't care if it fails. We check the success on the
-                      # next loop.
-                      ip l set ${iface.link} name eth$counter || true
-                      # The interface's name might not have been it's primary name
-                      # but an altname, try to delete that as well.
-                      # This looks funny, but we can use the altname to look up the
-                      # link to remove the altname ...
-                      # don't do this if the name is already gone
-                      ip l property del altname ${iface.link} dev ${iface.link} || true
-                      counter=$((counter+1))
-                    done
+                  # Check whether our desired name is also already in use,
+                  # rename that one to a unique name.
+                  counter=0
+                  while ip l show dev ${iface.link} > /dev/null; do
+                    echo "'${iface.link}' is still being used, trying to clean up."
+                    # Down the other interface and rename it
+                    ip l set ${iface.link} down
+                    # Try, don't care if it fails. We check the success on the
+                    # next loop.
+                    ip l set ${iface.link} name eth$counter || true
+                    # The interface's name might not have been it's primary name
+                    # but an altname, try to delete that as well.
+                    # This looks funny, but we can use the altname to look up the
+                    # link to remove the altname ...
+                    # don't do this if the name is already gone
+                    ip l property del altname ${iface.link} dev ${iface.link} || true
+                    counter=$((counter+1))
+                  done
 
-                    echo "Performing rename from '$interface' to '${iface.link}'"
-                    ip l set $interface down
-                    ip l set $interface name ${iface.link}
-                  fi
+                  echo "Performing rename from '$interface' to '${iface.link}'"
+                  ip l set $interface down
+                  ip l set $interface name ${iface.link}
+                fi
 
-                  LINK_DRIVER=$(ethtool -i ${iface.link} | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
-                  case $LINK_DRIVER in
-                      e1000|e1000e|igb|ixgbe|i40e)
-                          # Set adaptive interrupt moderation. This does increase
-                          # latency.
-                          echo "Enabling adaptive interrupt moderation ..."
-                          ethtool -C "${iface.link}" rx-usecs 1 || true
-                          # Larger buffers.
-                          echo "Setting ring buffer ..."
-                          ethtool -G "${iface.link}" rx 4096 tx 4096 || true
-                          # Large receive offload to reduce small packet CPU/interrupt impact.
-                          echo "Enabling large receive offload ..."
-                          ethtool -K "${iface.link}" lro on || true
-                          ;;
-                  esac
+                LINK_DRIVER=$(ethtool -i ${iface.link} | grep "driver: " | cut -d ':' -f 2 | sed -e 's/ //')
+                case $LINK_DRIVER in
+                    e1000|e1000e|igb|ixgbe|i40e)
+                        # Set adaptive interrupt moderation. This does increase
+                        # latency.
+                        echo "Enabling adaptive interrupt moderation ..."
+                        ethtool -C "${iface.link}" rx-usecs 1 || true
+                        # Larger buffers.
+                        echo "Setting ring buffer ..."
+                        ethtool -G "${iface.link}" rx 4096 tx 4096 || true
+                        # Large receive offload to reduce small packet CPU/interrupt impact.
+                        echo "Enabling large receive offload ..."
+                        ethtool -K "${iface.link}" lro on || true
+                        ;;
+                esac
 
-                  # TODO: it'd be preferrable to manage this on a by-interface base
-                  # and distinguish whether an interface is physical.
-                  # Can this be done based on `config.flyingcircus.enc.parameters.interfaces.fe.policy`?
-                  ${lib.optionalString (config.flyingcircus.networking.physicalHostNetworking) ''
-                    echo "Disabling flow control"
-                    ethtool -A ${iface.link} autoneg off rx off tx off || true
-                  ''}
+                # TODO: it'd be preferrable to manage this on a by-interface base
+                # and distinguish whether an interface is physical.
+                # Can this be done based on `config.flyingcircus.enc.parameters.interfaces.fe.policy`?
+                ${lib.optionalString (config.flyingcircus.networking.physicalHostNetworking) ''
+                  echo "Disabling flow control"
+                  ethtool -A ${iface.link} autoneg off rx off tx off || true
+                ''}
 
-                  # Ensure MTU
-                  ip l set ${iface.link} mtu ${toString iface.mtu}
+                # Ensure MTU
+                ip l set ${iface.link} mtu ${toString iface.mtu}
 
-                ''
+              ''
 
-                + (lib.optionalString (iface.externalLabel != null) ''
-                  # Add long alternative names according to the external label
-                  if ip l show dev ${quoteLabel iface.externalLabel} > /dev/null; then
-                    # XXX There is an edge case we don't cover here:
-                    # if the desired altname is already the primary name of an interface
-                    # the altname del will fail and this unit will not come up properly
-                    # but that means we notice it and will fix it then.
-                    ip l property del altname ${quoteLabel iface.externalLabel} dev ${quoteLabel iface.externalLabel}
-                  fi
-                  ip l property add altname ${quoteLabel iface.externalLabel} dev ${iface.link}
+              + (lib.optionalString (iface.externalLabel != null) ''
+                # Add long alternative names according to the external label
+                if ip l show dev ${quoteLabel iface.externalLabel} > /dev/null; then
+                  # XXX There is an edge case we don't cover here:
+                  # if the desired altname is already the primary name of an interface
+                  # the altname del will fail and this unit will not come up properly
+                  # but that means we notice it and will fix it then.
+                  ip l property del altname ${quoteLabel iface.externalLabel} dev ${quoteLabel iface.externalLabel}
+                fi
+                ip l property add altname ${quoteLabel iface.externalLabel} dev ${iface.link}
 
-                '')
-                + ''
-                  echo "Releasing lock"
-                  exec 4>&-
-                '';
+              '')
+              + ''
+                echo "Releasing lock"
+                exec 4>&-
+              '';
               preStop = ''
                 set -e
 

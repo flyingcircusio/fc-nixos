@@ -162,13 +162,12 @@ in
             bool
           ]);
         default = { }; # defaults are provided in the config section with a lower priority
-        description =
-          ''
-            osd config section of the Ceph config file.
-            Can override existing default setting values. Configuration keys like `mon osd full ratio`''
-          + ''
-            can alternatively be written in camelCase as `monOsdFullRatio`.
-          '';
+        description = ''
+          osd config section of the Ceph config file.
+          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+        + ''
+          can alternatively be written in camelCase as `monOsdFullRatio`.
+        '';
       };
 
       cephRelease = fclib.ceph.releaseOption // {
@@ -271,7 +270,8 @@ in
           Type = "oneshot";
           RemainAfterExit = true;
         };
-      } // osdServiceDeps;
+      }
+      // osdServiceDeps;
 
       systemd.services."fc-ceph-osd@" = rec {
         enable = !config.flyingcircus.services.ceph.server.passive;
@@ -300,7 +300,8 @@ in
           TimeoutSec = "15m";
         };
 
-      } // osdServiceDeps;
+      }
+      // osdServiceDeps;
 
     })
     (lib.mkIf (cfg.enable && cfg.config == "") {

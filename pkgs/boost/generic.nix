@@ -258,36 +258,35 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     which
     boost-build
-  ] ++ optional stdenv.hostPlatform.isDarwin fixDarwinDylibNames;
-  buildInputs =
-    [
-      expat
-      zlib
-      bzip2
-      libiconv
-    ]
-    ++ optional (stdenv.hostPlatform == stdenv.buildPlatform) icu
-    ++ optionals enablePython [
-      libxcrypt
-      python
-    ]
-    ++ optional enableNumpy python.pkgs.numpy;
+  ]
+  ++ optional stdenv.hostPlatform.isDarwin fixDarwinDylibNames;
+  buildInputs = [
+    expat
+    zlib
+    bzip2
+    libiconv
+  ]
+  ++ optional (stdenv.hostPlatform == stdenv.buildPlatform) icu
+  ++ optionals enablePython [
+    libxcrypt
+    python
+  ]
+  ++ optional enableNumpy python.pkgs.numpy;
 
   configureScript = "./bootstrap.sh";
   configurePlatforms = [ ];
   dontDisableStatic = true;
   dontAddStaticConfigureFlags = true;
-  configureFlags =
-    [
-      "--includedir=$(dev)/include"
-      "--libdir=$(out)/lib"
-      "--with-bjam=b2" # prevent bootstrapping b2 in configurePhase
-    ]
-    ++ optional enablePython "--with-python=${python.interpreter}"
-    ++ optional (toolset != null) "--with-toolset=${toolset}"
-    ++ [
-      (if stdenv.hostPlatform == stdenv.buildPlatform then "--with-icu=${icu.dev}" else "--without-icu")
-    ];
+  configureFlags = [
+    "--includedir=$(dev)/include"
+    "--libdir=$(out)/lib"
+    "--with-bjam=b2" # prevent bootstrapping b2 in configurePhase
+  ]
+  ++ optional enablePython "--with-python=${python.interpreter}"
+  ++ optional (toolset != null) "--with-toolset=${toolset}"
+  ++ [
+    (if stdenv.hostPlatform == stdenv.buildPlatform then "--with-icu=${icu.dev}" else "--without-icu")
+  ];
 
   buildPhase = ''
     runHook preBuild
@@ -308,15 +307,14 @@ stdenv.mkDerivation {
     runHook postInstall
   '';
 
-  postFixup =
-    ''
-      # Make boost header paths relative so that they are not runtime dependencies
-      cd "$dev" && find include \( -name '*.hpp' -or -name '*.h' -or -name '*.ipp' \) \
-        -exec sed '1s/^\xef\xbb\xbf//;1i#line 1 "{}"' -i '{}' \;
-    ''
-    + optionalString (stdenv.hostPlatform.libc == "msvcrt") ''
-      $RANLIB "$out/lib/"*.a
-    '';
+  postFixup = ''
+    # Make boost header paths relative so that they are not runtime dependencies
+    cd "$dev" && find include \( -name '*.hpp' -or -name '*.h' -or -name '*.ipp' \) \
+      -exec sed '1s/^\xef\xbb\xbf//;1i#line 1 "{}"' -i '{}' \;
+  ''
+  + optionalString (stdenv.hostPlatform.libc == "msvcrt") ''
+    $RANLIB "$out/lib/"*.a
+  '';
 
   outputs = [
     "out"

@@ -22,7 +22,8 @@ buildPythonPackage rec {
   nativeBuildInputs = [ setuptools_scm ];
   propagatedBuildInputs = [
     jaraco_functools
-  ] ++ lib.optional (pythonOlder "3.7") [ importlib-resources ];
+  ]
+  ++ lib.optional (pythonOlder "3.7") [ importlib-resources ];
 
   # no tests in pypi package
   doCheck = false;

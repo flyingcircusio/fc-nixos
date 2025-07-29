@@ -67,13 +67,12 @@ in
             bool
           ]);
         default = { }; # defaults are provided in the config section with a lower priority
-        description =
-          ''
-            config section of the Ceph config file of the radosgw client user.
-            Can override existing default setting values. Configuration keys like `mon osd full ratio`''
-          + ''
-            can alternatively be written in camelCase as `monOsdFullRatio`.
-          '';
+        description = ''
+          config section of the Ceph config file of the radosgw client user.
+          Can override existing default setting values. Configuration keys like `mon osd full ratio`''
+        + ''
+          can alternatively be written in camelCase as `monOsdFullRatio`.
+        '';
       };
 
       cephRelease = fclib.ceph.releaseOption // {

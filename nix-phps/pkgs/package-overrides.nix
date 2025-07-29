@@ -655,12 +655,12 @@ in
     opcache = prev.extensions.opcache.overrideAttrs (attrs: {
       patches =
         attrs.patches or [ ]
-        ++ lib.optionals
-          (lib.versionAtLeast prev.php.version "7.0" && lib.versionOlder prev.php.version "7.4")
-          [
-            # Introduced in https://github.com/NixOS/nixpkgs/commit/2e0d4a8b39a03a0db0c6c3622473d333a44d1ec1
-            ./patches/zend_file_cache_config.patch
-          ];
+        ++
+          lib.optionals (lib.versionAtLeast prev.php.version "7.0" && lib.versionOlder prev.php.version "7.4")
+            [
+              # Introduced in https://github.com/NixOS/nixpkgs/commit/2e0d4a8b39a03a0db0c6c3622473d333a44d1ec1
+              ./patches/zend_file_cache_config.patch
+            ];
 
       doCheck = lib.versionAtLeast prev.php.version "7.4";
 
@@ -1036,14 +1036,13 @@ in
             pkgs.libxml2
             pkgs.libiconv
           ];
-          configureFlags =
-            [
-              "--with-xmlrpc"
-            ]
-            ++ lib.optionals (lib.versionOlder prev.php.version "7.4") [
-              # Required to build on darwin.
-              "--with-libxml-dir=${pkgs.libxml2.dev}"
-            ];
+          configureFlags = [
+            "--with-xmlrpc"
+          ]
+          ++ lib.optionals (lib.versionOlder prev.php.version "7.4") [
+            # Required to build on darwin.
+            "--with-libxml-dir=${pkgs.libxml2.dev}"
+          ];
         }
       else
         throw "php.extensions.xmlrpc is no longer available in PHP version >= 8.0.";
@@ -1075,14 +1074,14 @@ in
     zlib = prev.extensions.zlib.overrideAttrs (attrs: {
       patches =
         attrs.patches or [ ]
-        ++ lib.optionals
-          (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.4")
-          [
-            # Fix Darwin build
-            # Introduced in https://github.com/NixOS/nixpkgs/commit/af064a0e12ad8e5a8a2e8d8ad25fc0baf3f8ef54
-            # Derived from https://github.com/php/php-src/commit/f16b012116d6c015632741a3caada5b30ef8a699
-            ./patches/zlib-darwin-tests.patch
-          ];
+        ++
+          lib.optionals (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.4")
+            [
+              # Fix Darwin build
+              # Introduced in https://github.com/NixOS/nixpkgs/commit/af064a0e12ad8e5a8a2e8d8ad25fc0baf3f8ef54
+              # Derived from https://github.com/php/php-src/commit/f16b012116d6c015632741a3caada5b30ef8a699
+              ./patches/zlib-darwin-tests.patch
+            ];
 
       configureFlags =
         attrs.configureFlags or [ ]
