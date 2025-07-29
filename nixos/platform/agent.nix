@@ -471,6 +471,7 @@ in
         "d /root 0711"
         "d /var/log/fc-agent - - - ${toString logDaysKeep}d"
         "d /var/spool/maintenance/archive - - - ${toString logDaysKeep}d"
+        "d /var/lib/fc-agent 0755 - - -"
         # Remove various obsolete files and directories
         # The next 2 entries can be removed when all VMs with versions before 22.05 are gone.
         "r /var/log/fc-agent/fc-maintenance-command-output.log"
