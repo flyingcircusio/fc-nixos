@@ -30,6 +30,8 @@ RE_FC_CHANNEL = re.compile(
 )
 RE_NUMERIC_VERSION = re.compile(r"\D*([\d.]+)[^\d.]?.*")
 
+NIX_EVAL_WARNINGS_FILE = Path("/var/lib/fc-agent/fcio_nix_eval_warnings")
+
 
 UnitChanges = dict[str, list[str]]
 
@@ -467,7 +469,7 @@ def build_system(
     build_options=None,
     out_link=None,
     log=_log,
-    eval_warnings_file=Path("/etc/fcio_nix_eval_warnings"),
+    eval_warnings_file=NIX_EVAL_WARNINGS_FILE,
 ) -> str:
     """
     Build system with this channel. Works like nixos-rebuild build.
