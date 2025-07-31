@@ -67,7 +67,7 @@
           }
         ];
 
-        services.k3s.package = pkgs.k3s_1_32;
+        services.k3s.package = config.fclib.mkPlatform pkgs.k3s_1_32;
 
       }
 
