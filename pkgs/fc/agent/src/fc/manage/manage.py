@@ -12,7 +12,7 @@ from fc.util.channel import Channel
 from fc.util.checks import CheckResult
 from fc.util.enc import STATE_VERSION_FILE
 from fc.util.lock import locked
-from fc.util.nixos import Specialisation
+from fc.util.nixos import NIX_EVAL_WARNINGS_FILE, Specialisation
 
 # Other platform code can also check the presence of this marker file to
 # change behaviour before/during the first agent run.
@@ -43,7 +43,9 @@ class SwitchFailed(Exception):
     pass
 
 
-def check(log, enc, config: ConfigParser) -> CheckResult:
+def check(
+    log, enc, config: ConfigParser, eval_warnings_file=NIX_EVAL_WARNINGS_FILE
+) -> CheckResult:
     errors = []
     warnings = []
     ok_info = []
@@ -126,10 +128,8 @@ def check(log, enc, config: ConfigParser) -> CheckResult:
     else:
         errors.append("`nixos` channel not set.")
 
-    nixos_warnings_file = Path("/etc/fcio_nixos_warnings")
-
-    if nixos_warnings_file.exists():
-        nixos_warnings_content = nixos_warnings_file.read_text()
+    if eval_warnings_file.exists():
+        nixos_warnings_content = eval_warnings_file.read_text()
         if nixos_warnings_content:
             nixos_warnings = [
                 warning

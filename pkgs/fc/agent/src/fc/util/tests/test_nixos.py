@@ -11,7 +11,9 @@ from fc.util.tests import PollingFakePopen
 
 structlog.configure(wrapper_class=structlog.BoundLogger)
 
-FC_CHANNEL = "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
+FC_CHANNEL = (
+    "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
+)
 
 
 def test_get_fc_channel_build(log):
@@ -26,8 +28,10 @@ def test_get_fc_channel_build_should_warn_for_non_fc_channel(log):
     assert log.has("no-fc-channel-url", channel_url=invalid_channel)
 
 
-def test_build_system_with_changes(log, monkeypatch):
-    channel = "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+def test_build_system_with_changes(log, monkeypatch, tmp_path):
+    channel = (
+        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+    )
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     build_output = textwrap.dedent(
         """
@@ -49,10 +53,16 @@ def test_build_system_with_changes(log, monkeypatch):
 
     popen_mock = mock.Mock(return_value=nix_build_fake)
     monkeypatch.setattr("subprocess.Popen", popen_mock)
-    monkeypatch.setattr("fc.util.nixos.system_closure_size", lambda *args: 2_000_000)
+    monkeypatch.setattr(
+        "fc.util.nixos.system_closure_size", lambda *args: 2_000_000
+    )
 
+    eval_warnings_file = tmp_path / "fcio_nix_eval_warnings"
     built_system_path = nixos.build_system(
-        channel, build_options=["-v"], out_link="/run/fc-agent-test"
+        channel,
+        build_options=["-v"],
+        out_link="/run/fc-agent-test",
+        eval_warnings_file=eval_warnings_file,
     )
 
     popen_mock.assert_called_once_with(
@@ -68,10 +78,13 @@ def test_build_system_with_changes(log, monkeypatch):
         changed=True,
         build_output=build_output.strip(),
     )
+    assert eval_warnings_file.exists()
 
 
 def test_build_system_unchanged(log, monkeypatch):
-    channel = "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+    channel = (
+        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+    )
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     build_output = "\n"
 
@@ -85,9 +98,13 @@ def test_build_system_unchanged(log, monkeypatch):
 
     popen_mock = mock.Mock(return_value=nix_build_fake)
     monkeypatch.setattr("subprocess.Popen", popen_mock)
-    monkeypatch.setattr("fc.util.nixos.system_closure_size", lambda *args: 2_000_000)
+    monkeypatch.setattr(
+        "fc.util.nixos.system_closure_size", lambda *args: 2_000_000
+    )
 
-    built_system_path = nixos.build_system(channel)
+    built_system_path = nixos.build_system(
+        channel, eval_warnings_file=Path("/dev/null")
+    )
 
     assert built_system_path == system_path
     popen_mock.assert_called_once_with(
@@ -101,7 +118,9 @@ def test_build_system_unchanged(log, monkeypatch):
 
 
 def test_build_system_fail(log, monkeypatch):
-    channel = "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+    channel = (
+        "https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"
+    )
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     build_output = textwrap.dedent(
         """
@@ -127,7 +146,7 @@ def test_build_system_fail(log, monkeypatch):
     monkeypatch.setattr("subprocess.Popen", popen_mock)
 
     with pytest.raises(nixos.BuildFailed):
-        nixos.build_system(channel)
+        nixos.build_system(channel, eval_warnings_file=Path("/dev/null"))
 
     assert log.has("system-build-failed", stderr=build_output.strip())
 
@@ -161,7 +180,9 @@ def test_switch_to_system(log, monkeypatch):
         lambda p: system_path if p == system_path else "other",
     )
 
-    changed = nixos.switch_to_system(system_path, lazy=True, switch_type="switch")
+    changed = nixos.switch_to_system(
+        system_path, lazy=True, switch_type="switch"
+    )
     assert changed
 
 
@@ -169,7 +190,9 @@ def test_switch_to_system_lazy_unchanged(log, monkeypatch):
     system_path = "/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-21.05.1367.817a5b0"
     monkeypatch.setattr("pathlib.Path.resolve", lambda p: system_path)
 
-    changed = nixos.switch_to_system(system_path, lazy=True, switch_type="switch")
+    changed = nixos.switch_to_system(
+        system_path, lazy=True, switch_type="switch"
+    )
     assert not changed
     assert log.has("system-switch-skip")
 
@@ -201,6 +224,25 @@ def test_update_system_channel(log, monkeypatch):
         next_channel,
         "nixos",
     ]
+
+
+def test_find_nix_eval_warnings():
+    stderr = textwrap.dedent("""\
+        trace: Obsolete option `flyingcircus.roles.statshost.enable' is used. It was renamed to `flyingcircus.roles.statshost-global.enable'.
+        trace: evaluation warning: 1 NixOS module system warning
+        evaluation warning: 'imagemagick7' has been renamed to/replaced by 'imagemagick'
+        The option `services.nginx.virtualHosts."test66.fe.rzob.fcio.net".forcSSL' does not exist. Definition values:
+        - In `/etc/local/nixos/dev_vm.nix': true
+        """)
+    warnings = nixos.find_nix_eval_warnings(stderr)
+    assert len(warnings) == 2
+    assert "1 NixOS module system warning" in warnings
+    assert (
+        "'imagemagick7' has been renamed to/replaced by 'imagemagick'"
+        in warnings
+    )
+
+    assert nixos.find_nix_eval_warnings("") == []
 
 
 def test_find_nix_build_error_missing_option():
