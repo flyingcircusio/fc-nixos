@@ -268,13 +268,6 @@ in
   };
 
   config = mkMerge [
-    {
-      # Write NixOS warnings to a file, separated by two newlines.
-      # We use that for `fc-manage check` to display (deprecation) warnings.
-      environment.etc."fcio_nixos_warnings".text = lib.optionalString (config.warnings != [ ]) (
-        (lib.concatStringsSep "\n\n" config.warnings) + "\n"
-      );
-    }
 
     (mkIf cfg.agent.install {
       environment.systemPackages = [
@@ -478,6 +471,7 @@ in
         "d /root 0711"
         "d /var/log/fc-agent - - - ${toString logDaysKeep}d"
         "d /var/spool/maintenance/archive - - - ${toString logDaysKeep}d"
+        "d /var/lib/fc-agent 0755 - - -"
         # Remove various obsolete files and directories
         # The next 2 entries can be removed when all VMs with versions before 22.05 are gone.
         "r /var/log/fc-agent/fc-maintenance-command-output.log"
