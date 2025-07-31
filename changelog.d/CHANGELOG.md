@@ -1,3 +1,19 @@
+# Release 2025_027
+
+## Impact
+
+- Restart of `coturn.service` & `prosody.service`.
+
+
+## NixOS XX.XX platform
+
+- The secret for the communication between `coturn` & `prosody` is no longer generated at eval-time (PL-133672).
+
+  This fixes issues where the secret's store-path is garbage-collected and a new secret is enrolled
+  on an agent run which lead to a subsequent restart of Jitsi mid-day in rare cases.
+
+
+
 # Release 2025_026
 
 ## NixOS XX.XX platform
