@@ -103,13 +103,13 @@ def connect(enc=None, ring=1):
 
 
 @contextlib.contextmanager
-def directory_connection(enc_path):
+def directory_connection(enc_path, ring=1):
     """Execute the associated block with a directory connection."""
     enc = None
     if enc_path:
         with open(enc_path) as f:
             enc = json.load(f)
-    yield connect(enc)
+    yield connect(enc, ring=ring)
 
 
 def directory_cli():
