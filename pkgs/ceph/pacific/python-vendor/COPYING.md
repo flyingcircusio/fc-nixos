@@ -1,0 +1,3 @@
+The file `sphinx-hook.sh` in this directory is based on [MIT-licensed](https://github.com/flyingcircusio/nixpkgs/blob/042ebad29d81745717878cbe018420c33f04e65e/COPYING) work done by other Nixpkgs/NixOS contributors, taken from revision 042ebad29d81745717878cbe018420c33f04e65e in the [nixpkgs](https://github.com/flyingcircusio/nixpkgs/) repository under the path [pkgs/development/interpreters/python/hooks/sphinx-hook.sh](https://github.com/flyingcircusio/nixpkgs/blob/042ebad29d81745717878cbe018420c33f04e65e/pkgs/development/interpreters/python/hooks/sphinx-hook.sh).
+
+The modifications made are licensed under the MIT License as well.

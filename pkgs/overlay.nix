@@ -170,10 +170,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   ceph-pacific = rec {
     inherit
       (super.callPackages ./ceph/pacific {
-        boost = super.boost16x.override {
-          enablePython = true;
-          python = self.python3;
-        };
       })
       ceph
       ceph-client

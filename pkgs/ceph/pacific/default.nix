@@ -175,11 +175,45 @@ let
           ++ (with super; [
             pytest-xdist
           ]);
-        disabledTestPaths = (oldAttrs.disabledTestPaths or [ ]) ++ [
+        disabledTestPaths = [
           "test/aaa_profiling"
           "test/ext/mypy"
         ];
       });
+    sphinx = self.callPackage ./python-vendor/sphinx {
+      alabaster = self.alabaster_0_7;
+      docutils = self.docutils_0_19;
+    };
+    sphinx-rtd-theme = self.callPackage ./python-vendor/sphinx-rtd-theme { docutils = self.docutils_0_19;};
+    sphinxHook = self.callPackage (
+        { makePythonHook, installShellFiles }:
+        makePythonHook {
+          name = "python${python.pythonVersion}-sphinx-hook";
+          propagatedBuildInputs = [
+            self.sphinx
+            installShellFiles
+          ];
+          substitutions = {
+            sphinxBuild = "${self.sphinx}/bin/sphinx-build";
+          };
+        } ./python-vendor/sphinx-hook.sh
+      ) { };
+    typeguard = (super.typeguard.override {sphinxHook = self.sphinxHook;}).overridePythonAttrs (old: {
+      # docs build fails due to fetching intersphinx references
+      outputs = lib.lists.remove "doc" old.outputs;
+      build-system = lib.lists.remove self.sphinxHook old.build-system;
+      });
+    pyopenssl = super.pyopenssl.override {sphinxHook = self.sphinxHook;};
+    pyjwt = super.pyjwt.override {sphinxHook = self.sphinxHook;};
+    beautifulsoup4 = super.beautifulsoup4.override {sphinxHook = self.sphinxHook;};
+    numpy = self.callPackage ./python-vendor/numpy { cython = self.cython_0_29; setuptools = self.setuptools_67;};
+    scipy = self.callPackage ./python-vendor/scipy {};
+    cython_0_29 = self.callPackage ./python-vendor/Cython {};
+    setuptools_67 = self.callPackage ./python-vendor/setuptools { bootstrapped-pip = self.pip; };
+    docutils_0_19 = self.callPackage ./python-vendor/docutils {};
+    alabaster_0_7 = self.callPackage ./python-vendor/alabaster {};
+    # python310 support has been dropped in iPython 9
+    ipython = self.callPackage ./python-vendor/ipython {};
     };
   };
 
@@ -193,7 +227,7 @@ let
     ps.sphinx
     ps.flask
     ps.routes
-    ps.cython
+    ps.cython_0_29
     ps.setuptools
     ps.virtualenv
     # Libraries needed by the python tools
@@ -219,7 +253,7 @@ let
   version = "16.2.15";
   src = fetchurl {
     url = "http://download.ceph.com/tarballs/ceph-${version}.tar.gz";
-    hash = "sha256-342+nUV30CX7QJfZS0KEfnQFCJwJmVQeYnefJwW/AtU=";
+    hash = "sha256-jEgOy66bgjHeSr9JsU+sTE9ydFnFMDTFaC/mElaApMw=";
   };
 in
 rec {
