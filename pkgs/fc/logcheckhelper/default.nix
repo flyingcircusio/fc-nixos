@@ -9,7 +9,7 @@ buildRustPackage rec {
   name = "logcheck-helper-${version}";
   version = "1.0.1";
   src = ./logcheck-helper;
-  useFetchCargoVendor = true;
+
   cargoHash = "sha256-Ys/SI7ESjj3GFmR8WQUDNuvtNGC/e2Vwsn5GGd4BdmQ=";
   doCheck = false;
 
