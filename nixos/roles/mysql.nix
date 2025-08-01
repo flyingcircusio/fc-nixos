@@ -54,6 +54,15 @@ in
             defaultText = "the addresses of the networks `lo` and `srv` (IPv4 & IPv6)";
           };
 
+          bufferMemoryPercentage = lib.mkOption {
+            type = lib.types.ints.between 0 100;
+            default = 70;
+            description = ''
+              Percentage of the host's memory used by InnoDB for buffering.
+              This is the primary memory use source of MySQL/Percona.
+            '';
+          };
+
           extraConfig = mkOption {
             type = types.lines;
             default = "";
@@ -293,7 +302,7 @@ in
               }
 
               # * InnoDB
-              innodb_buffer_pool_size         = ${toString (current_memory * 70 / 100)}M
+              innodb_buffer_pool_size         = ${toString (current_memory * cfg.bufferMemoryPercentage / 100)}M
               innodb_log_buffer_size          = 64M
               innodb_file_per_table           = 1
               innodb_read_io_threads          = ${toString (cores * 4)}
