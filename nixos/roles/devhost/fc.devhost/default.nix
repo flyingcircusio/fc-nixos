@@ -1,4 +1,5 @@
 {
+  lib,
   python3,
   qemu,
   xfsprogs,
@@ -21,4 +22,8 @@ python3.pkgs.buildPythonApplication {
     qemu
     xfsprogs
   ];
+  meta = {
+    mainProgram = "fc-devhost";
+    license = lib.licenses.mit;
+  };
 }
