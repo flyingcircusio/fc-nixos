@@ -524,21 +524,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   };
 
   percona80 = self.percona-server_8_0;
-  # EOL, but we vendor it until the 25.11 release to allow upgrades
-  percona83 = self.callPackage ./percona/8.3.nix {
-    inherit (self.darwin) cctools developer_cmds DarwinTools;
-    inherit (self.darwin.apple_sdk.frameworks) CoreServices;
-    # newer versions cause linking failures against `libabsl_spinlock_wait`
-    protobuf = self.protobuf_21;
-  };
   percona84 = self.percona-server_8_4;
 
   percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4/2_4.nix {
     boost = self.boost159;
     openssl = self.openssl_1_1;
   };
-  # EOL, but we vendor it until the 25.11 release to allow upgrades
-  percona-xtrabackup_8_3 = self.callPackage ./percona-xtrabackup/8_3/innovation.nix { };
 
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;
