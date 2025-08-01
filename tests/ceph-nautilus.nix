@@ -273,15 +273,16 @@ import ./make-test-python.nix (
             status = json.loads(host.execute('ceph -f json-pretty -s')[1])
 
             try:
-              assert status["health"]["status"] in ['HEALTH_OK', 'HEALTH_WARN']
-              assert int(status["monmap"]["num_mons"]) == mons
+              t.assertIn(status["health"]["status"], ['HEALTH_OK', 'HEALTH_WARN'])
+              t.assertEqual(int(status["monmap"]["num_mons"]), mons)
               osdmap_stat = status["osdmap"]["osdmap"]
-              assert osdmap_stat["num_up_osds"] == num_up_osds and \
-                  osdmap_stat["num_in_osds"] == num_in_osds
+              t.assertEqual(osdmap_stat["num_up_osds"], num_up_osds)
+              t.assertEqual(osdmap_stat["num_in_osds"], num_in_osds)
               pgstate0 = status["pgmap"]["pgs_by_state"][0]
-              assert pgstate0["count"] == pgs and pgstate0["state_name"] == "active+clean"
-              assert status["mgrmap"]["available"] and \
-                  len(status["mgrmap"]["standbys"]) == mgrs-1
+              t.assertEqual(pgstate0["count"], pgs)
+              t.assertEqual(pgstate0["state_name"], "active+clean")
+              t.assertTrue(status["mgrmap"]["available"])
+              t.assertEqual(len(status["mgrmap"]["standbys"]), mgrs-1)
               break
             except AssertionError as e:
               if time.time() - start < 120:
