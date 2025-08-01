@@ -56,9 +56,9 @@ in
     boot.blacklistedKernelModules = [ "wdat_wdt" ];
     boot.kernelModules = [ "ipmi_watchdog" ];
 
-    systemd.extraConfig = ''
-      RuntimeWatchdogSec=${toString cfg.ipmi.watchdogTimeout}
-    '';
+    systemd.settings.Manager = {
+      RuntimeWatchdogSec = toString cfg.ipmi.watchdogTimeout;
+    };
 
     services.udev.extraRules = ''
       KERNEL=="ipmi[0-9]", GROUP="adm", MODE="0660"

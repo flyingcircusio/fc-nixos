@@ -117,11 +117,11 @@ in
       more = "less -e";
     };
 
-    systemd.extraConfig = ''
-      DefaultLimitNOFILE=64000
-      DefaultLimitNPROC=64173
-      DefaultLimitSIGPENDING=64173
-    '';
+    systemd.settings.Manager = {
+      DefaultLimitNOFILE = 64000;
+      DefaultLimitNPROC = 64173;
+      DefaultLimitSIGPENDING = 64173;
+    };
 
     # Don't allow SSH access from everywhere. Set custom iptables rules.
     services.openssh.openFirewall = lib.mkForce false;

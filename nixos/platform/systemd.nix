@@ -71,11 +71,11 @@ in
       dir = "/etc/local/systemd";
     };
 
-    systemd.extraConfig = ''
-      DefaultRestartSec=3
-      DefaultStartLimitInterval=60
-      DefaultStartLimitBurst=5
-    '';
+    systemd.settings.Manager = {
+      DefaultRestartSec = 3;
+      DefaultStartLimitInterval = 60;
+      DefaultStartLimitBurst = 5;
+    };
 
     systemd.units =
       let
