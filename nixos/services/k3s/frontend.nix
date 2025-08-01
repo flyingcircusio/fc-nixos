@@ -214,7 +214,7 @@ in
             };
 
             serviceName = mkOption {
-              type = nullOr string;
+              type = nullOr str;
               default = null;
               description = ''
                 Name of the Kubernetes service we want to proxy.
