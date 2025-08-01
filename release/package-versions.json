@@ -30,9 +30,9 @@
     "version": "1.40.31"
   },
   "awscli2": {
-    "name": "awscli2-2.27.50",
+    "name": "awscli2-2.27.61",
     "pname": "awscli2",
-    "version": "2.27.50"
+    "version": "2.27.61"
   },
   "bash": {
     "name": "bash-interactive-5.3p0",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-138.0.7204.168",
+    "name": "chromedriver-unwrapped-138.0.7204.183",
     "pname": "chromedriver-unwrapped",
-    "version": "138.0.7204.168"
+    "version": "138.0.7204.183"
   },
   "chromium": {
-    "name": "chromium-138.0.7204.168",
+    "name": "chromium-138.0.7204.183",
     "pname": "chromium",
-    "version": "138.0.7204.168"
+    "version": "138.0.7204.183"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -320,9 +320,9 @@
     "version": "2.6"
   },
   "iperf3": {
-    "name": "iperf-3.19",
+    "name": "iperf-3.19.1",
     "pname": "iperf",
-    "version": "3.19"
+    "version": "3.19.1"
   },
   "irqbalance": {
     "name": "irqbalance-1.9.4",
@@ -1080,9 +1080,9 @@
     "version": "1.14.5"
   },
   "sudo": {
-    "name": "sudo-1.9.17p1",
+    "name": "sudo-1.9.17p2",
     "pname": "sudo",
-    "version": "1.9.17p1"
+    "version": "1.9.17p2"
   },
   "sysstat": {
     "name": "sysstat-12.7.7",
@@ -1100,9 +1100,9 @@
     "version": "4.99.5"
   },
   "telegraf": {
-    "name": "telegraf-1.35.2",
+    "name": "telegraf-1.35.3",
     "pname": "telegraf",
-    "version": "1.35.2"
+    "version": "1.35.3"
   },
   "tmux": {
     "name": "tmux-3.5a",
