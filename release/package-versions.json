@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-138.0.7204.168",
+    "name": "chromedriver-unwrapped-138.0.7204.183",
     "pname": "chromedriver-unwrapped",
-    "version": "138.0.7204.168"
+    "version": "138.0.7204.183"
   },
   "chromium": {
-    "name": "chromium-138.0.7204.168",
+    "name": "chromium-138.0.7204.183",
     "pname": "chromium",
-    "version": "138.0.7204.168"
+    "version": "138.0.7204.183"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -320,9 +320,9 @@
     "version": "2.6"
   },
   "iperf3": {
-    "name": "iperf-3.19",
+    "name": "iperf-3.19.1",
     "pname": "iperf",
-    "version": "3.19"
+    "version": "3.19.1"
   },
   "irqbalance": {
     "name": "irqbalance-1.9.4",
@@ -885,9 +885,9 @@
     "version": "3.4.5"
   },
   "prosody": {
-    "name": "prosody-0.12.4",
+    "name": "prosody-0.12.5",
     "pname": "prosody",
-    "version": "0.12.4"
+    "version": "0.12.5"
   },
   "python3": {
     "name": "python3-3.12.11",
@@ -1080,9 +1080,9 @@
     "version": "1.14.5"
   },
   "sudo": {
-    "name": "sudo-1.9.17p1",
+    "name": "sudo-1.9.17p2",
     "pname": "sudo",
-    "version": "1.9.17p1"
+    "version": "1.9.17p2"
   },
   "sysstat": {
     "name": "sysstat-12.7.4",
