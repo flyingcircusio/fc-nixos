@@ -885,9 +885,9 @@
     "version": "3.5.3"
   },
   "prosody": {
-    "name": "prosody-0.12.4",
+    "name": "prosody-0.12.5",
     "pname": "prosody",
-    "version": "0.12.4"
+    "version": "0.12.5"
   },
   "python3": {
     "name": "python3-3.13.5",
