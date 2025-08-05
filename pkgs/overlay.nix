@@ -550,8 +550,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     cyrus_sasl = self.cyrus_sasl-legacyCrypt;
   };
 
-  prometheus-elasticsearch-exporter = super.callPackage ./prometheus-elasticsearch-exporter.nix { };
-
   python27 = super.python27.overrideAttrs (prev: {
     buildInputs = prev.buildInputs ++ [ super.libxcrypt-legacy ];
     NIX_LDFLAGS = "-lcrypt";
