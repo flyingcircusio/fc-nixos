@@ -104,6 +104,14 @@ time-window.
 
 ## Significant breaking changes
 
+### Percona / MySQL
+
+Two versions of percona are actively supported: `percona80` and `percona84`.
+Both are LTS releases still receiving bug and security fixes.
+
+`percona83` has been removed, as announced in the 25.05 release.
+Please upgrade to `percona84` before upgrading.
+
 ## Other notable changes
 
 ## Known issues

@@ -15,7 +15,6 @@ There's a role for each supported version, currently:
 
 - mysql57: Percona 5.7.x (End-of-life)
 - percona80: Percona 8.0.x (*LTS* release)
-- percona83: Percona 8.3.x (End-of-life)
 - percona84: Percona 8.4.x
 
 We recommend the use of `percona84`, as this is the most up to date LTS release.

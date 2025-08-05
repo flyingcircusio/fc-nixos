@@ -98,7 +98,6 @@ in
   opensearch_dashboards = callTest ./opensearch_dashboards.nix { };
   openvpn = callTest ./openvpn.nix { };
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
-  percona83 = callTest ./mysql.nix { rolename = "percona83"; };
   percona84 = callTest ./mysql.nix { rolename = "percona84"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
   # FIXME: re-enable when restart behaviour is fixed
