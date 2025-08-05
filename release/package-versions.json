@@ -10,9 +10,9 @@
     "version": "2.4.62"
   },
   "asterisk": {
-    "name": "asterisk-20.11.1",
+    "name": "asterisk-20.15.0",
     "pname": "asterisk",
-    "version": "20.11.1"
+    "version": "20.15.0"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.27",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.106",
+    "name": "element-web-1.11.108",
     "pname": "element-web",
-    "version": "1.11.106"
+    "version": "1.11.108"
   },
   "erlang": {
     "name": "erlang-27.3.4.2",
@@ -290,9 +290,9 @@
     "version": "1.23.11"
   },
   "grafana": {
-    "name": "grafana-12.0.2+security-01",
+    "name": "grafana-12.0.3",
     "pname": "grafana",
-    "version": "12.0.2+security-01"
+    "version": "12.0.3"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.40",
+    "name": "linux-6.12.41",
     "pname": "linux",
-    "version": "6.12.40"
+    "version": "6.12.41"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.40",
+    "name": "linux-6.12.41",
     "pname": "linux",
-    "version": "6.12.40"
+    "version": "6.12.41"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -740,14 +740,14 @@
     "version": "8.2.29"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.23",
+    "name": "php-with-extensions-8.3.24",
     "pname": "php-with-extensions",
-    "version": "8.3.23"
+    "version": "8.3.24"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.10",
+    "name": "php-with-extensions-8.4.11",
     "pname": "php-with-extensions",
-    "version": "8.4.10"
+    "version": "8.4.11"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.5",
@@ -1155,9 +1155,9 @@
     "version": "9.1.1336"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.48.3+abi=4.0",
+    "name": "webkitgtk-2.48.5+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.48.3"
+    "version": "2.48.5"
   },
   "wget": {
     "name": "wget-1.25.0",
