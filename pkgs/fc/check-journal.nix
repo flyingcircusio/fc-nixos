@@ -20,7 +20,6 @@ buildRustPackage rec {
     sha256 = "1p4l1j1qh7chsrikkvhv86w6a5nxpqifhl55jmga8w30rv11x645";
   };
 
-  useFetchCargoVendor = true;
   cargoHash = "sha256-8vvDH7Jvwg8jAaZ3ZleZGCVuRPpd0BpFPh1lryEQE2M=";
 
   # used in src/main.rs to set default path for journalctl
