@@ -1,16 +1,17 @@
 {
   lib,
-  fetchgit,
+  fetchFromGitHub,
   perlPackages,
 }:
 
 perlPackages.buildPerlPackage rec {
   pname = "innotop";
-  version = "1.12.0";
-  src = fetchgit {
-    url = "https://github.com/innotop/innotop.git";
-    rev = "2fa43e316893b208ff5ce0375e5c2d62287ec4d5";
-    sha256 = "0l284mmjzkadb17yrj9avyhbh5dqgdx3f5kj0yldlid28n1mx0kd";
+  version = "1.15.0";
+  src = fetchFromGitHub {
+    owner = "innotop";
+    repo = "innotop";
+    tag = "v1.15.0";
+    hash = "sha256-zzMOFvOC/QdsVnU+hWOpUgxNjojiaccL1l/bq87Shbk=";
   };
 
   patches = [ ./innotop.patch ];
