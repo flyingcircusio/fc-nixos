@@ -247,22 +247,22 @@ import ../make-test-python.nix (
         client.succeed('echo | mail -s testmail6 user1+detail@example.local')
         mail.succeed('echo | mail -s testmail5 root')
         mail.wait_until_succeeds(
-          'test `ls /srv/mail/example.local/user1/new/* | wc -l` == 3')
+          'test `ls /srv/mail/example.local/user1/mail/new/* | wc -l` == 3')
         # check simple delivery
-        mail.succeed('grep testmail1 /srv/mail/example.local/user1/new/*')
+        mail.succeed('grep testmail1 /srv/mail/example.local/user1/mail/new/*')
         # check alias
-        mail.succeed('grep testmail3 /srv/mail/example.local/user1/new/*')
+        mail.succeed('grep testmail3 /srv/mail/example.local/user1/mail/new/*')
         # check address detail
-        mail.succeed('grep testmail6 /srv/mail/example.local/user1/new/*')
-        mail.succeed('fgrep "Delivered-To: user1+detail@" /srv/mail/example.local/user1/new/*')
+        mail.succeed('grep testmail6 /srv/mail/example.local/user1/mail/new/*')
+        mail.succeed('fgrep "Delivered-To: user1+detail@" /srv/mail/example.local/user1/mail/new/*')
         mail.wait_until_succeeds(
-          'test `ls /srv/mail/example.local/user2/new/* | wc -l` == 3')
+          'test `ls /srv/mail/example.local/user2/mail/new/* | wc -l` == 3')
         # check simple delivery
-        mail.succeed('grep testmail2 /srv/mail/example.local/user2/new/*')
+        mail.succeed('grep testmail2 /srv/mail/example.local/user2/mail/new/*')
         # check root alias
-        mail.succeed('grep testmail4 /srv/mail/example.local/user2/new/*')
+        mail.succeed('grep testmail4 /srv/mail/example.local/user2/mail/new/*')
         # check root delivery on mail server
-        mail.succeed('grep testmail5 /srv/mail/example.local/user2/new/*')
+        mail.succeed('grep testmail5 /srv/mail/example.local/user2/mail/new/*')
 
         print("### IMAP ###\n")
         mail.wait_for_open_port(143)
