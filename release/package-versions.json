@@ -10,9 +10,9 @@
     "version": "2.4.62"
   },
   "asterisk": {
-    "name": "asterisk-20.11.1",
+    "name": "asterisk-20.15.0",
     "pname": "asterisk",
-    "version": "20.11.1"
+    "version": "20.15.0"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.27",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.106",
+    "name": "element-web-1.11.108",
     "pname": "element-web",
-    "version": "1.11.106"
+    "version": "1.11.108"
   },
   "erlang": {
     "name": "erlang-27.3.4.2",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.40",
+    "name": "linux-6.12.41",
     "pname": "linux",
-    "version": "6.12.40"
+    "version": "6.12.41"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.40",
+    "name": "linux-6.12.41",
     "pname": "linux",
-    "version": "6.12.40"
+    "version": "6.12.41"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -875,9 +875,9 @@
     "version": "3.5.3"
   },
   "prosody": {
-    "name": "prosody-0.12.4",
+    "name": "prosody-0.12.5",
     "pname": "prosody",
-    "version": "0.12.4"
+    "version": "0.12.5"
   },
   "python3": {
     "name": "python3-3.13.5",
@@ -1110,9 +1110,9 @@
     "version": "9.0.107"
   },
   "unifi": {
-    "name": "unifi-controller-9.3.43",
+    "name": "unifi-controller-9.3.45",
     "pname": "unifi-controller",
-    "version": "9.3.43"
+    "version": "9.3.45"
   },
   "unzip": {
     "name": "unzip-6.0",
