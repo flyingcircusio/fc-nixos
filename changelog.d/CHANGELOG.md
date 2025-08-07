@@ -1,3 +1,13 @@
+# Release 2025_028
+
+## NixOS XX.XX platform
+
+- k3s: Overriding the used package version `services.k3s.package` does not require an `mkForce` anymore.
+
+- `fc-manage check` now displays all evaluation warnings of the system configuration, including package deprecations. (PL-133786)
+
+
+
 # Release 2025_027
 
 ## Impact
