@@ -204,6 +204,25 @@ in
         '';
       };
 
+      systemd.services.fc-ceph-account-s3-traffic = {
+        description = "accounting for S3 traffic";
+        serviceConfig = {
+          Type = "oneshot";
+          StateDirectory = "fc-ceph-s3-accounting";
+          ExecStart = "${cephPkgs.fc-ceph}/bin/fc-ceph logs account-s3-traffic -s %S/fc-ceph-s3-accounting/s3-accounting-state";
+        };
+      };
+
+      systemd.services.fc-ceph-gc-s3-traffic-data = {
+        description = "accounting for S3 traffic";
+        after = [ "fc-ceph-account-s3-traffic.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          StateDirectory = "fc-ceph-s3-accounting";
+          ExecStart = "${cephPkgs.fc-ceph}/bin/fc-ceph logs gc-s3-traffic-data -s %S/fc-ceph-s3-accounting/s3-accounting-state";
+        };
+      };
+
       systemd.services.fc-ceph-rgw-users = rec {
         description = "Sync S3 users and accounting with directory";
         path = [ cephPkgs.ceph ];
@@ -247,6 +266,26 @@ in
     })
 
     (lib.mkIf (role.enable && role.primary) {
+
+      systemd.timers.fc-ceph-account-s3-traffic = {
+        enable = !config.flyingcircus.services.ceph.server.passive && role.enableAccounting;
+
+        description = "Timer for accounting S3/object-store traffic";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "*-*-* *:05:00";
+        };
+      };
+
+      systemd.timers.fc-ceph-gc-s3-traffic-data = {
+        enable = !config.flyingcircus.services.ceph.server.passive && role.enableAccounting;
+
+        description = "Timer for GCing old object-store log data";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "*-*-* 14:00:00";
+        };
+      };
 
       systemd.timers.fc-ceph-rgw-update-stats = {
         enable = !config.flyingcircus.services.ceph.server.passive;
