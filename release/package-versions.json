@@ -10,9 +10,9 @@
     "version": "2.4.62"
   },
   "asterisk": {
-    "name": "asterisk-20.15.0",
+    "name": "asterisk-20.15.1",
     "pname": "asterisk",
-    "version": "20.15.0"
+    "version": "20.15.1"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.27",
@@ -60,9 +60,9 @@
     "version": "2.6.6"
   },
   "cacert": {
-    "name": "nss-cacert-3.111",
+    "name": "nss-cacert-3.113.1",
     "pname": "nss-cacert",
-    "version": "3.111"
+    "version": "3.113.1"
   },
   "calibre": {
     "name": "calibre-8.4.0",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-138.0.7204.183",
+    "name": "chromedriver-unwrapped-139.0.7258.66",
     "pname": "chromedriver-unwrapped",
-    "version": "138.0.7204.183"
+    "version": "139.0.7258.66"
   },
   "chromium": {
-    "name": "chromium-138.0.7204.183",
+    "name": "chromium-139.0.7258.66",
     "pname": "chromium",
-    "version": "138.0.7204.183"
+    "version": "139.0.7258.66"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -105,9 +105,9 @@
     "version": "1.9.9"
   },
   "containerd": {
-    "name": "containerd-2.1.3",
+    "name": "containerd-2.1.4",
     "pname": "containerd",
-    "version": "2.1.3"
+    "version": "2.1.4"
   },
   "coreutils": {
     "name": "coreutils-9.7",
@@ -135,9 +135,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-3.4.4",
+    "name": "discourse-3.4.7",
     "pname": "discourse",
-    "version": "3.4.4"
+    "version": "3.4.7"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.91",
@@ -195,14 +195,14 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-141.0",
+    "name": "firefox-141.0.2",
     "pname": "firefox",
-    "version": "141.0"
+    "version": "141.0.2"
   },
   "gcc": {
-    "name": "gcc-wrapper-14.2.1.20250322",
+    "name": "gcc-wrapper-14.3.0",
     "pname": "gcc-wrapper",
-    "version": "14.2.1.20250322"
+    "version": "14.3.0"
   },
   "gcc12": {
     "name": "gcc-wrapper-12.4.0",
@@ -220,9 +220,9 @@
     "version": "10.05.1"
   },
   "git": {
-    "name": "git-2.49.0",
+    "name": "git-2.50.1",
     "pname": "git",
-    "version": "2.49.0"
+    "version": "2.50.1"
   },
   "gitaly": {
     "name": "gitaly-18.2.1",
@@ -275,14 +275,14 @@
     "version": "4.4.1"
   },
   "gnupg": {
-    "name": "gnupg-2.4.7",
+    "name": "gnupg-2.4.8",
     "pname": "gnupg",
-    "version": "2.4.7"
+    "version": "2.4.8"
   },
   "go": {
-    "name": "go-1.24.4",
+    "name": "go-1.24.5",
     "pname": "go",
-    "version": "1.24.4"
+    "version": "1.24.5"
   },
   "go_1_23": {
     "name": "go-1.23.11",
@@ -370,29 +370,29 @@
     "version": "21.0.7+6"
   },
   "k3s": {
-    "name": "k3s-1.32.6+k3s1",
+    "name": "k3s-1.32.7+k3s1",
     "pname": "k3s",
-    "version": "1.32.6+k3s1"
+    "version": "1.32.7+k3s1"
   },
   "k3s_1_30": {
-    "name": "k3s-1.30.14+k3s1",
+    "name": "k3s-1.30.14+k3s2",
     "pname": "k3s",
-    "version": "1.30.14+k3s1"
+    "version": "1.30.14+k3s2"
   },
   "k3s_1_31": {
-    "name": "k3s-1.31.10+k3s1",
+    "name": "k3s-1.31.11+k3s1",
     "pname": "k3s",
-    "version": "1.31.10+k3s1"
+    "version": "1.31.11+k3s1"
   },
   "k3s_1_32": {
-    "name": "k3s-1.32.6+k3s1",
+    "name": "k3s-1.32.7+k3s1",
     "pname": "k3s",
-    "version": "1.32.6+k3s1"
+    "version": "1.32.7+k3s1"
   },
   "k3s_1_33": {
-    "name": "k3s-1.33.2+k3s1",
+    "name": "k3s-1.33.3+k3s1",
     "pname": "k3s",
-    "version": "1.33.2+k3s1"
+    "version": "1.33.3+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.2.5",
@@ -505,9 +505,9 @@
     "version": "5.3.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.134.0",
+    "name": "matrix-synapse-wrapped-1.135.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.134.0"
+    "version": "1.135.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -575,9 +575,9 @@
     "version": "2.28.4"
   },
   "nodejs": {
-    "name": "nodejs-22.16.0",
+    "name": "nodejs-22.17.1",
     "pname": "nodejs",
-    "version": "22.16.0"
+    "version": "22.17.1"
   },
   "nodejs_20": {
     "name": "nodejs-20.19.4",
@@ -585,14 +585,14 @@
     "version": "20.19.4"
   },
   "nodejs_22": {
-    "name": "nodejs-22.16.0",
+    "name": "nodejs-22.17.1",
     "pname": "nodejs",
-    "version": "22.16.0"
+    "version": "22.17.1"
   },
   "nspr": {
-    "name": "nspr-4.36",
+    "name": "nspr-4.37",
     "pname": "nspr",
-    "version": "4.36"
+    "version": "4.37"
   },
   "nss_latest": {
     "name": "nss-3.114",
@@ -635,9 +635,9 @@
     "version": "10.0p2"
   },
   "openssl": {
-    "name": "openssl-3.4.1",
+    "name": "openssl-3.4.2",
     "pname": "openssl",
-    "version": "3.4.1"
+    "version": "3.4.2"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -645,9 +645,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.16",
+    "name": "openssl-3.0.17",
     "pname": "openssl",
-    "version": "3.0.16"
+    "version": "3.0.17"
   },
   "openvpn": {
     "name": "openvpn-2.6.14",
@@ -1090,9 +1090,9 @@
     "version": "12.7.4"
   },
   "systemd": {
-    "name": "systemd-257.6",
+    "name": "systemd-257.7",
     "pname": "systemd",
-    "version": "257.6"
+    "version": "257.7"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.5",
@@ -1135,9 +1135,9 @@
     "version": "018"
   },
   "util-linux": {
-    "name": "util-linux-2.41",
+    "name": "util-linux-2.41.1",
     "pname": "util-linux",
-    "version": "2.41"
+    "version": "2.41.1"
   },
   "uv": {
     "name": "uv-0.7.22",
@@ -1150,9 +1150,9 @@
     "version": "7.7.1"
   },
   "vim": {
-    "name": "vim-9.1.1336",
+    "name": "vim-9.1.1566",
     "pname": "vim",
-    "version": "9.1.1336"
+    "version": "9.1.1566"
   },
   "webkitgtk": {
     "name": "webkitgtk-2.48.5+abi=4.0",
