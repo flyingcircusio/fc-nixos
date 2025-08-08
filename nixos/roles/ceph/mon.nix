@@ -10,6 +10,7 @@ with builtins;
 let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_mon;
+  rgw = config.flyingcircus.roles.ceph_rgw;
   enc = config.flyingcircus.enc;
   inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
 
@@ -200,6 +201,25 @@ in
 
       environment.systemPackages = [ cephPkgs.fc-check-ceph ];
 
+      systemd.services.fc-ceph-account-s3-traffic = {
+        description = "accounting for S3 traffic";
+        serviceConfig = {
+          Type = "oneshot";
+          StateDirectory = "fc-ceph-s3-accounting";
+          ExecStart = "${cephPkgs.fc-ceph}/bin/fc-ceph logs account-s3-traffic -s %S/fc-ceph-s3-accounting/s3-accounting-state";
+        };
+      };
+
+      systemd.services.fc-ceph-gc-s3-traffic-data = {
+        description = "accounting for S3 traffic";
+        after = [ "fc-ceph-account-s3-traffic.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          StateDirectory = "fc-ceph-s3-accounting";
+          ExecStart = "${cephPkgs.fc-ceph}/bin/fc-ceph logs gc-s3-traffic-data -s %S/fc-ceph-s3-accounting/s3-accounting-state";
+        };
+      };
+
       systemd.services.fc-ceph-load-vm-images = {
         description = "Load new VM base images";
         serviceConfig.Type = "oneshot";
@@ -322,6 +342,26 @@ in
       environment.etc."ceph/ceph.conf".text = lib.mkAfter role.config;
     })
     (lib.mkIf (role.enable && role.primary) {
+
+      systemd.timers.fc-ceph-account-s3-traffic = {
+        enable = !config.flyingcircus.services.ceph.server.passive && rgw.enableAccounting;
+
+        description = "Timer for accounting S3/object-store traffic";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "*-*-* *:45:00";
+        };
+      };
+
+      systemd.timers.fc-ceph-gc-s3-traffic-data = {
+        enable = !config.flyingcircus.services.ceph.server.passive && rgw.enableAccounting;
+
+        description = "Timer for GCing old object-store log data";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "*-*-* 14:00:00";
+        };
+      };
 
       systemd.timers.fc-ceph-load-vm-images = {
         enable = !config.flyingcircus.services.ceph.server.passive;
