@@ -55,7 +55,6 @@ import ../make-test-python.nix (
 
           virtualisation.memorySize = 2000;
           virtualisation.diskSize = lib.mkForce 3000;
-          virtualisation.useNixStoreImage = true; # PL-133821 - 6.12 crashes v9fs in some situations
 
           virtualisation.vlans = [
             1
