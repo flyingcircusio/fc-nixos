@@ -56,6 +56,10 @@ in
     flyingcircus.services.mail.enable = lib.mkEnableOption ''
       Mail server (SNM) with Postfix, Dovecot, Rspamd, DKIM & SPF
     '';
+    flyingcircus.services.mail.stateVersionFile = mkOption {
+      type = types.path;
+      default = "/etc/local/nixos/mailserver_state_version";
+    };
   };
 
   config =
@@ -236,6 +240,11 @@ in
           # https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/blob/master/default.nix
           mailserver = {
             enable = true;
+            stateVersion =
+              if pathExists svc.stateVersionFile then
+                lib.toInt (lib.fileContents svc.stateVersionFile)
+              else
+                (if lib.versionOlder config.system.stateVersion "25.11" then 1 else 3);
             inherit domains;
             fqdn = role.mailHost;
             loginAccounts = fclib.jsonFromFile "/etc/local/mail/users.json" "{}";
@@ -364,12 +373,10 @@ in
                 "permit_sasl_authenticated"
               ];
               # --- postsrsd integration ---
-              recipient_canonical_maps = "socketmap:unix:${config.services.postsrsd.socketPath}:reverse";
               recipient_canonical_classes = [
                 "envelope_recipient"
                 "header_recipient"
               ];
-              sender_canonical_maps = "socketmap:unix:${config.services.postsrsd.socketPath}:forward";
               sender_canonical_classes = "envelope_sender";
               # ------
               smtpd_client_restrictions = [
@@ -420,7 +427,7 @@ in
 
           services.postsrsd = {
             enable = true;
-            domains = [
+            settings.domains = [
               primaryDomain
             ]
             ++ optionals (domains != [ ]) (
@@ -473,6 +480,27 @@ in
             "f /etc/local/mail/main.cf 0664 postfix service"
           ];
 
+          systemd.services.mailserver-update-stateversion = lib.mkIf (config.mailserver.stateVersion < 3) {
+            before = [ "dovecot2.service" ];
+            requiredBy = [ "dovecot2.service" ];
+            wantedBy = [ "dovecot2.service" ];
+            path = with pkgs; [
+              fc.agent
+              python3
+              sudo
+            ];
+            enableStrictShellChecks = true;
+            script = ''
+              sudo -u vmail python ${./update-mailserver-to-stateversion-3.py} --layout ${
+                if config.mailserver.useFsLayout then "folder" else "default"
+              } ${config.mailserver.mailDirectory}
+              echo 3 > ${svc.stateVersionFile}
+            '';
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+            };
+          };
         }
       ))
 

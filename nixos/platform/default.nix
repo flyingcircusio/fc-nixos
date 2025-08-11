@@ -20,7 +20,7 @@ let
       )
     else
       [ ];
-  currentPlatform = "24.11";
+  currentPlatform = "25.11";
 
 in
 {

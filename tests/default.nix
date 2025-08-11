@@ -77,8 +77,7 @@ in
   loghost = callTest ./loghost.nix { };
   login = callTest ./login.nix { };
   logrotate = callTest ./logrotate.nix { };
-  # Known broken, requires update of simple-nixos-mailserver (PL-133851)
-  #mail = callTest ./mail { };
+  mail = callTest ./mail { };
   mailstub = callTest ./mail/stub.nix { };
   matomo = callTest ./matomo.nix { };
   memcached = callTest ./memcached.nix { };

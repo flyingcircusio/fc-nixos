@@ -114,6 +114,14 @@ Please upgrade to `percona84` before upgrading.
 
 ## Other notable changes
 
+### Mail server
+
+Upstream NixOS mailserver introduced a `stateVersion` construct that requires migrations when updating to 25.11.
+We run these migrations automatically, so you should not be required to take any action.
+A downgrade back to 25.05 is no longer possible.
+Read the [upstream release notes](https://nixos-mailserver.readthedocs.io/en/latest/release-notes.html#nixos-25-11) and
+[migration guide](https://nixos-mailserver.readthedocs.io/en/latest/migrations.html#nixos-25-11) for more informations.
+
 ## Known issues
 
 ## Significant package updates
