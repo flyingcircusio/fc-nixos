@@ -17,6 +17,8 @@ let
   srvFQDN = "${config.networking.hostName}.fcio.net";
   nodeAddress = head fclib.network.srv.v4.addresses;
 
+  lokiServer = fclib.findOneService "loki-collector";
+
   # We allow frontend access to the dashboard at the moment
   # via Nginx. The dashboard can be accessed by multiple names.
   # Unlike with the old kubernetes roles, the API is not public here.
@@ -365,326 +367,356 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-
-    environment.variables.KUBECONFIG = defaultKubeconfig;
-
-    environment.systemPackages = with pkgs; [
-      kubernetes-helm
-      kubectl
-      stern
-      config.services.k3s.package
-      kubernetesMakeKubeconfig
-    ];
-
-    flyingcircus.activationScripts.k3s-apitoken = lib.stringAfter [ "users" ] ''
-      mkdir -p /var/lib/k3s
-      umask 077
-      token=/var/lib/k3s/secret_token
-      echo ${server.password} | sha256sum | head -c64 > $token
-      chmod 400 $token
-    '';
-
-    flyingcircus.services.postgresql = {
-      enable = true;
-      majorVersion = "13";
-    };
-
-    services.postgresql = {
-      ensureDatabases = [ "kubernetes" ];
-      ensureUsers = [
-        {
-          name = "root";
-        }
-      ];
-    };
-
-    systemd.services.fc-k3s-ensure-db-permissions = {
-      description = "Ensure the root user has all permissions on kubernetes db";
-      wantedBy = [ "k3s.service" ];
-      before = [ "k3s.service" ];
-      requires = [ "postgresql.service" ];
-      script = ''
-        PSQL="${config.services.postgresql.package}/bin/psql --port=${toString config.services.postgresql.settings.port}"
-        for i in {1..10}; do
-          $PSQL -d postgres -c "" 2> /dev/null && break
-          sleep 0.5
-
-          if [[ $i -eq 10 ]];then
-            echo "couldn't establish connection to postgres"
-            exit 1
-        fi
-        done
-          $PSQL -tAc 'GRANT ALL PRIVILEGES ON DATABASE kubernetes TO "root"'
-          $PSQL kubernetes -tAc 'GRANT CREATE ON SCHEMA public TO "root"'
-      '';
-      serviceConfig = {
-        type = "oneshot";
-      };
-    };
-
-    flyingcircus.services.sensu-client = {
-      checks = {
-        cluster-dns = {
-          notification = "Cluster DNS (CoreDNS) is not healthy";
-          command = ''
-            ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H ${netCfg.clusterDns} -p 9153 -u /metrics
-          '';
-        };
-
-        kube-apiserver = {
-          notification = "Kubernetes API server is not working";
-          command = ''
-            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 6443 -S -u /healthz
-          '';
-        };
-
-        kube-scheduler = {
-          notification = "Kubernetes scheduler is not working";
-          command = ''
-            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10259 -S -u /healthz
-          '';
-        };
-
-        kube-controller-manager = {
-          notification = "Kubernetes controller manager is not working";
-          command = ''
-            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10257 -S -u /healthz
-          '';
-        };
-
-        kube-dashboard-metrics-scraper = {
-          notification = "Kubernetes dashboard metrics scraper sidecar is not working";
-          command = ''
-            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 8000 -u /healthz
-          '';
-        };
-
-        kube-dashboard = {
-          notification = "Kubernetes dashboard backend is not working";
-          # No access without kubeconfig, so 401 is expected here.
-          command = ''
-            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 11000 -u /api/v1/namespace -e "HTTP/1.1 401"
-          '';
-        };
-
-        kube-nodes-ready = {
-          notification = "Kubernetes nodes are not in Ready state";
-          command = ''
-            ${pkgs.sensu-plugins-kubernetes}/bin/check-kube-nodes-ready.rb --token-file /var/lib/k3s/tokens/sensuclient -s https://localhost:6443
-          '';
-        };
-
-        kube-pods-pending = {
-          notification = "Pods have been in pending state for longer than 10 minutes";
-          command = "${podPendingScript}/bin/check-kube-pending-pods";
-        };
-      };
-
-      systemdUnitChecks = {
-        "k3s.service" = { };
-        "kube-dashboard.service" = { };
-        "kube-dashboard-metrics-scraper.service" = { };
-      };
-    };
-
-    flyingcircus.services.telegraf.inputs = {
-      kube_inventory = [
-        {
-          url = "https://localhost:6443";
-          bearer_token = "/var/lib/k3s/tokens/telegraf";
-          insecure_skip_verify = true;
-          namespace = "";
-          resource_exclude = [
-            "persistentvolumes"
-            "persistentvolumeclaims"
-            "endpoints"
-            "ingress"
-          ];
-        }
-      ];
-    };
-
-    networking.nameservers = lib.mkOverride 90 (lib.take 3 ([ netCfg.clusterDns ] ++ fcNameservers));
-
-    services.k3s =
-      let
-        k3sFlags = [
-          "--cluster-cidr=${netCfg.podCidr}"
-          "--service-cidr=${netCfg.serviceCidr}"
-          "--cluster-dns=${netCfg.clusterDns}"
-          "--node-ip=${nodeAddress}"
-          "--write-kubeconfig=${defaultKubeconfig}"
-          "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
-          "--flannel-backend=host-gw"
-          "--flannel-iface=${fclib.network.srv.interface}"
-          "--datastore-endpoint=postgres:///kubernetes?host=/run/postgresql"
-          "--token-file=/var/lib/k3s/secret_token"
-          "--data-dir=/var/lib/k3s"
-          "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
-          # required for anonymous access to apiserver health port
-          "--kube-apiserver-arg anonymous-auth=true"
-        ];
-      in
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
       {
-        enable = true;
-        role = "server";
-        extraFlags = lib.concatStringsSep " " k3sFlags;
-      };
 
-    systemd.services.fc-set-k3s-config-permissions = {
-      requires = [ "k3s.service" ];
-      partOf = [ "k3s.service" ];
-      wantedBy = [ "k3s.service" ];
-      after = [ "k3s.service" ];
-      path = [ pkgs.acl ];
-      script = ''
-        echo "Grant sudo-srv access to k3s config file..."
-        setfacl -m g:sudo-srv:r ${defaultKubeconfig}
-        echo "Grant kubernetes user access to k3s config file..."
-        setfacl -m u:kubernetes:r ${defaultKubeconfig}
-      '';
-      serviceConfig = {
-        RemainAfterExit = true;
-        Type = "oneshot";
-      };
-    };
+        environment.variables.KUBECONFIG = defaultKubeconfig;
 
-    systemd.services.fc-k3s-load-manifests = {
-      wantedBy = [ "multi-user.target" ];
-      requires = [ "k3s.service" ];
-      after = [ "k3s.service" ];
-      serviceConfig = {
-        RemainAfterExit = true;
-        Type = "oneshot";
-      };
-      path = [ pkgs.rsync ];
-      restartTriggers = [ additionalManifests ];
-      script = ''
-        # copy additional vendor manifests into k3s's manifest
-        # directory.
-        set -x
+        environment.systemPackages = with pkgs; [
+          kubernetes-helm
+          kubectl
+          stern
+          config.services.k3s.package
+          kubernetesMakeKubeconfig
+        ];
 
-        # this service may race with k3s creating its data
-        # directory in the filesystem post-startup, so we give k3s
-        # some grace time to complete this startup step.
+        flyingcircus.activationScripts.k3s-apitoken = lib.stringAfter [ "users" ] ''
+          mkdir -p /var/lib/k3s
+          umask 077
+          token=/var/lib/k3s/secret_token
+          echo ${server.password} | sha256sum | head -c64 > $token
+          chmod 400 $token
+        '';
 
-        for i in 1 2 3 4 5; do
-            if [ ! -d /var/lib/k3s/server/manifests ]; then
-                sleep 0.5s
-            else
-                rsync --delete -rL ${additionalManifests}/ /var/lib/k3s/server/manifests/flyingcircus
-                exit $?
+        flyingcircus.services.postgresql = {
+          enable = true;
+          majorVersion = "13";
+        };
+
+        services.postgresql = {
+          ensureDatabases = [ "kubernetes" ];
+          ensureUsers = [
+            {
+              name = "root";
+            }
+          ];
+        };
+
+        systemd.services.fc-k3s-ensure-db-permissions = {
+          description = "Ensure the root user has all permissions on kubernetes db";
+          wantedBy = [ "k3s.service" ];
+          before = [ "k3s.service" ];
+          requires = [ "postgresql.service" ];
+          script = ''
+            PSQL="${config.services.postgresql.package}/bin/psql --port=${toString config.services.postgresql.settings.port}"
+            for i in {1..10}; do
+              $PSQL -d postgres -c "" 2> /dev/null && break
+              sleep 0.5
+
+              if [[ $i -eq 10 ]];then
+                echo "couldn't establish connection to postgres"
+                exit 1
             fi
-        done
-
-        exit 1
-      '';
-    };
-
-    systemd.services.fc-k3s-token-telegraf = makeAuthTokenService "telegraf" "io.flyingcircus.service-token.telegraf";
-    systemd.services.fc-k3s-token-sensuclient = makeAuthTokenService "sensuclient" "io.flyingcircus.service-token.sensu-client";
-    systemd.services.telegraf.after = [ "fc-k3s-token-telegraf.service" ];
-    systemd.services.sensu-client.after = [ "fc-k3s-token-sensuclient.service" ];
-
-    ### Dashboard
-    flyingcircus.services.nginx.enable = true;
-
-    services.nginx.virtualHosts = {
-      "${head fqdns}" = {
-        enableACME = true;
-        serverAliases = tail fqdns;
-        forceSSL = true;
-        locations = {
-          "/" = {
-            root = "${pkgs.kubernetes-dashboard}/public/en";
-          };
-
-          # This is the dashboard API, not the Kubernetes API!
-          "/api" = {
-            proxyPass = "http://localhost:11000/api";
-          };
-
-          "/config" = {
-            proxyPass = "http://localhost:11000/config";
+            done
+              $PSQL -tAc 'GRANT ALL PRIVILEGES ON DATABASE kubernetes TO "root"'
+              $PSQL kubernetes -tAc 'GRANT CREATE ON SCHEMA public TO "root"'
+          '';
+          serviceConfig = {
+            type = "oneshot";
           };
         };
-      };
-    };
 
-    systemd.services.kube-dashboard = rec {
-      requires = [ "k3s.service" ];
-      wants = [ "kube-dashboard-metrics-scraper.service" ];
-      wantedBy = [ "multi-user.target" ];
-      after = requires ++ wants;
-      description = "Backend for Kubernetes Dashboard";
-      script = ''
-        ${pkgs.kubernetes-dashboard}/dashboard \
-          --insecure-port 11000 \
-          --kubeconfig ${defaultKubeconfig} \
-          --authentication-mode token \
-          --enable-insecure-login \
-          --sidecar-host http://localhost:8000
-      '';
+        flyingcircus.services.sensu-client =
+          let
+            kc = "${pkgs.k3s}/bin/k3s kubectl";
+          in
+          {
+            checks = {
+              kube-events-warning = {
+                notification = "Events of type 'Warning' occured in the Kubernetes cluster!";
+                command = ''
+                  export K3S_DATA_DIR=/var/tmp/sensu/k3s_data_dir
+                  if test $(${kc} events --types=Warning --no-headers 2>/dev/null | wc -l) -ne 0; then
+                    ${kc} events --types=Warning
+                    exit 2
+                  fi
+                '';
+              };
 
-      serviceConfig = {
-        Restart = "always";
-        User = "kubernetes";
-      };
-    };
+              cluster-dns = {
+                notification = "Cluster DNS (CoreDNS) is not healthy";
+                command = ''
+                  ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H ${netCfg.clusterDns} -p 9153 -u /metrics
+                '';
+              };
 
-    systemd.services.kube-dashboard-metrics-scraper = rec {
-      requires = [ "k3s.service" ];
-      wantedBy = [ "multi-user.target" ];
-      after = requires;
-      description = "Metrics scraper sidecar for Kubernetes Dashboard";
-      script = ''
-        ${pkgs.kubernetes-dashboard-metrics-scraper}/metrics-sidecar \
-          --kubeconfig ${defaultKubeconfig} \
-          --db-file /var/lib/kube-dashboard/metrics.db
-      '';
+              kube-apiserver = {
+                notification = "Kubernetes API server is not working";
+                command = ''
+                  ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 6443 -S -u /healthz
+                '';
+              };
 
-      serviceConfig = {
-        Restart = "always";
-        User = "kubernetes";
-        StateDirectory = "kube-dashboard";
-      };
-    };
+              kube-scheduler = {
+                notification = "Kubernetes scheduler is not working";
+                command = ''
+                  ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10259 -S -u /healthz
+                '';
+              };
 
-    users.groups.kubernetes.gid = config.ids.gids.kubernetes;
+              kube-controller-manager = {
+                notification = "Kubernetes controller manager is not working";
+                command = ''
+                  ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10257 -S -u /healthz
+                '';
+              };
 
-    users.users = {
-      kubernetes = {
-        isSystemUser = true;
-        home = "/var/empty";
-        extraGroups = [ "service" ];
-        uid = config.ids.uids.kubernetes;
-        group = "kubernetes";
-      };
-    };
+              kube-dashboard-metrics-scraper = {
+                notification = "Kubernetes dashboard metrics scraper sidecar is not working";
+                command = ''
+                  ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 8000 -u /healthz
+                '';
+              };
 
-    ### Fixes for upstream issues
+              kube-dashboard = {
+                notification = "Kubernetes dashboard backend is not working";
+                # No access without kubeconfig, so 401 is expected here.
+                command = ''
+                  ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 11000 -u /api/v1/namespace -e "HTTP/1.1 401"
+                '';
+              };
 
-    # https://github.com/NixOS/nixpkgs/issues/103158
-    systemd.services.k3s.after = [
-      "network-online.service"
-      "firewall.service"
-      "postgresql.service"
-    ];
-    systemd.services.k3s.requires = [
-      "firewall.service"
-      "postgresql.service"
-    ];
-    systemd.services.k3s.serviceConfig.KillMode = lib.mkForce "control-group";
+              kube-nodes-ready = {
+                notification = "Kubernetes nodes are not in Ready state";
+                command = ''
+                  ${pkgs.sensu-plugins-kubernetes}/bin/check-kube-nodes-ready.rb --token-file /var/lib/k3s/tokens/sensuclient -s https://localhost:6443
+                '';
+              };
 
-    # https://github.com/NixOS/nixpkgs/issues/98766
-    boot.kernelModules = [
-      "ip_conntrack"
-      "ip_vs"
-      "ip_vs_rr"
-      "ip_vs_wrr"
-      "ip_vs_sh"
-    ];
-  };
+              kube-pods-pending = {
+                notification = "Pods have been in pending state for longer than 10 minutes";
+                command = "${podPendingScript}/bin/check-kube-pending-pods";
+              };
+            };
 
+            systemdUnitChecks = {
+              "k3s.service" = { };
+              "kube-dashboard.service" = { };
+              "kube-dashboard-metrics-scraper.service" = { };
+            };
+          };
+
+        flyingcircus.services.telegraf.inputs = {
+          kube_inventory = [
+            {
+              url = "https://localhost:6443";
+              bearer_token = "/var/lib/k3s/tokens/telegraf";
+              insecure_skip_verify = true;
+              namespace = "";
+              resource_exclude = [
+                "persistentvolumes"
+                "persistentvolumeclaims"
+                "endpoints"
+                "ingress"
+              ];
+            }
+          ];
+        };
+
+        networking.nameservers = lib.mkOverride 90 (lib.take 3 ([ netCfg.clusterDns ] ++ fcNameservers));
+
+        services.k3s =
+          let
+            k3sFlags = [
+              "--cluster-cidr=${netCfg.podCidr}"
+              "--service-cidr=${netCfg.serviceCidr}"
+              "--cluster-dns=${netCfg.clusterDns}"
+              "--node-ip=${nodeAddress}"
+              "--write-kubeconfig=${defaultKubeconfig}"
+              "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
+              "--flannel-backend=host-gw"
+              "--flannel-iface=${fclib.network.srv.interface}"
+              "--datastore-endpoint=postgres:///kubernetes?host=/run/postgresql"
+              "--token-file=/var/lib/k3s/secret_token"
+              "--data-dir=/var/lib/k3s"
+              "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
+              # required for anonymous access to apiserver health port
+              "--kube-apiserver-arg anonymous-auth=true"
+            ];
+          in
+          {
+            enable = true;
+            role = "server";
+            extraFlags = lib.concatStringsSep " " k3sFlags;
+          };
+
+        systemd.services.fc-set-k3s-config-permissions = {
+          requires = [ "k3s.service" ];
+          partOf = [ "k3s.service" ];
+          wantedBy = [ "k3s.service" ];
+          after = [ "k3s.service" ];
+          path = [ pkgs.acl ];
+          script = ''
+            echo "Grant sudo-srv access to k3s config file..."
+            setfacl -m g:sudo-srv:r ${defaultKubeconfig}
+            echo "Grant kubernetes user access to k3s config file..."
+            setfacl -m u:kubernetes:r ${defaultKubeconfig}
+          '';
+          serviceConfig = {
+            RemainAfterExit = true;
+            Type = "oneshot";
+          };
+        };
+
+        systemd.services.fc-k3s-load-manifests = {
+          wantedBy = [ "multi-user.target" ];
+          requires = [ "k3s.service" ];
+          after = [ "k3s.service" ];
+          serviceConfig = {
+            RemainAfterExit = true;
+            Type = "oneshot";
+          };
+          path = [ pkgs.rsync ];
+          restartTriggers = [ additionalManifests ];
+          script = ''
+            # copy additional vendor manifests into k3s's manifest
+            # directory.
+            set -x
+
+            # this service may race with k3s creating its data
+            # directory in the filesystem post-startup, so we give k3s
+            # some grace time to complete this startup step.
+
+            for i in 1 2 3 4 5; do
+                if [ ! -d /var/lib/k3s/server/manifests ]; then
+                    sleep 0.5s
+                else
+                    rsync --delete -rL ${additionalManifests}/ /var/lib/k3s/server/manifests/flyingcircus
+                    exit $?
+                fi
+            done
+
+            exit 1
+          '';
+        };
+
+        systemd.services.fc-k3s-token-telegraf = makeAuthTokenService "telegraf" "io.flyingcircus.service-token.telegraf";
+        systemd.services.fc-k3s-token-sensuclient = makeAuthTokenService "sensuclient" "io.flyingcircus.service-token.sensu-client";
+        systemd.services.telegraf.after = [ "fc-k3s-token-telegraf.service" ];
+        systemd.services.sensu-client.after = [ "fc-k3s-token-sensuclient.service" ];
+
+        ### Dashboard
+        flyingcircus.services.nginx.enable = true;
+
+        services.nginx.virtualHosts = {
+          "${head fqdns}" = {
+            enableACME = true;
+            serverAliases = tail fqdns;
+            forceSSL = true;
+            locations = {
+              "/" = {
+                root = "${pkgs.kubernetes-dashboard}/public/en";
+              };
+
+              # This is the dashboard API, not the Kubernetes API!
+              "/api" = {
+                proxyPass = "http://localhost:11000/api";
+              };
+
+              "/config" = {
+                proxyPass = "http://localhost:11000/config";
+              };
+            };
+          };
+        };
+
+        systemd.services.kube-dashboard = rec {
+          requires = [ "k3s.service" ];
+          wants = [ "kube-dashboard-metrics-scraper.service" ];
+          wantedBy = [ "multi-user.target" ];
+          after = requires ++ wants;
+          description = "Backend for Kubernetes Dashboard";
+          script = ''
+            ${pkgs.kubernetes-dashboard}/dashboard \
+              --insecure-port 11000 \
+              --kubeconfig ${defaultKubeconfig} \
+              --authentication-mode token \
+              --enable-insecure-login \
+              --sidecar-host http://localhost:8000
+          '';
+
+          serviceConfig = {
+            Restart = "always";
+            User = "kubernetes";
+          };
+        };
+
+        systemd.services.kube-dashboard-metrics-scraper = rec {
+          requires = [ "k3s.service" ];
+          wantedBy = [ "multi-user.target" ];
+          after = requires;
+          description = "Metrics scraper sidecar for Kubernetes Dashboard";
+          script = ''
+            ${pkgs.kubernetes-dashboard-metrics-scraper}/metrics-sidecar \
+              --kubeconfig ${defaultKubeconfig} \
+              --db-file /var/lib/kube-dashboard/metrics.db
+          '';
+
+          serviceConfig = {
+            Restart = "always";
+            User = "kubernetes";
+            StateDirectory = "kube-dashboard";
+          };
+        };
+
+        users.groups.kubernetes.gid = config.ids.gids.kubernetes;
+
+        users.users = {
+          kubernetes = {
+            isSystemUser = true;
+            home = "/var/empty";
+            extraGroups = [ "service" ];
+            uid = config.ids.uids.kubernetes;
+            group = "kubernetes";
+          };
+        };
+
+        ### Fixes for upstream issues
+
+        # https://github.com/NixOS/nixpkgs/issues/103158
+        systemd.services.k3s.after = [
+          "network-online.service"
+          "firewall.service"
+          "postgresql.service"
+        ];
+        systemd.services.k3s.requires = [
+          "firewall.service"
+          "postgresql.service"
+        ];
+        systemd.services.k3s.serviceConfig.KillMode = lib.mkForce "control-group";
+
+        # https://github.com/NixOS/nixpkgs/issues/98766
+        boot.kernelModules = [
+          "ip_conntrack"
+          "ip_vs"
+          "ip_vs_rr"
+          "ip_vs_wrr"
+          "ip_vs_sh"
+        ];
+      }
+
+      (lib.mkIf (!builtins.isNull lokiServer) {
+        systemd.services.alloy = lib.mkIf config.services.alloy.enable {
+          reloadTriggers = [ config.environment.etc."alloy/k3s_events.alloy".source ];
+        };
+
+        environment.etc."alloy/k3s_events.alloy".text = ''
+          loki.source.kubernetes_events "k3s_events" {
+            forward_to = [loki.write.fcio_rg_loki.receiver]
+          }
+        '';
+      })
+    ]
+  );
 }
