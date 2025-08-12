@@ -14,7 +14,6 @@ import ./make-test-python.nix (
       }:
       { config, lib, ... }:
       {
-
         virtualisation.memorySize = 4000;
         virtualisation.cores = 2;
         virtualisation.vlans =
@@ -121,6 +120,9 @@ import ./make-test-python.nix (
             "ceph_rgw"
           ];
           parameters = {
+            directory_password = "password-for-fake-directory";
+            directory_url = "http://directory.fcio.net";
+            directory_ring = 0;
             location = "test";
             resource_group = "services";
             secret_salt = "salt-for-host-${toString id}-dhkasjy9";
@@ -135,6 +137,7 @@ import ./make-test-python.nix (
           ${getIPForVLAN 4 2} host2.sto.test.ipv4.gocept.net
           ${getIPForVLAN 4 3} host3.sto.test.ipv4.gocept.net
           ${getIPForVLAN 4 4} host4.sto.test.ipv4.gocept.net
+          ${getIPForVLAN 3 6} directory.fcio.net
         '';
 
         flyingcircus.enc.parameters = {
@@ -240,6 +243,47 @@ import ./make-test-python.nix (
           };
         };
 
+      node_directory =
+        { config, pkgs, ... }:
+        {
+          flyingcircus.enc.parameters = {
+            location = "test";
+            resource_group = "test";
+            interfaces.srv = {
+              mac = "52:54:00:12:03:0${toString 6}";
+              bridged = false;
+              networks = {
+                "192.168.3.0/24" = [ (getIPForVLAN 3 6) ];
+              };
+              gateways = { };
+            };
+          };
+          imports = [
+            ../nixos
+            ../nixos/roles
+          ];
+          virtualisation.vlans = with config.flyingcircus.static.vlanIds; [
+            srv
+          ];
+          networking.firewall.allowedTCPPorts = [ 80 ];
+          systemd.services.fake-directory = rec {
+            description = "A fake directory";
+            wantedBy = [ "multi-user.target" ];
+            wants = [ "network.target" ];
+            after = wants;
+
+            environment = {
+              PYTHONUNBUFFERED = "1";
+            };
+
+            serviceConfig = {
+              Type = "simple";
+              Restart = "always";
+              ExecStart = "${pkgs.python3}/bin/python ${./fakedirectory.py}";
+            };
+          };
+        };
+
       rgwproxy =
         { config, lib, ... }:
         {
@@ -289,6 +333,7 @@ import ./make-test-python.nix (
           ];
           services.nginx.virtualHosts."objects.test.test.fcio.net".forceSSL = lib.mkForce false;
         };
+
     };
 
     testScript =
@@ -416,6 +461,7 @@ import ./make-test-python.nix (
         show(host2, 'ceph --version')
         show(host3, 'ceph --version')
 
+        node_directory.start()
 
         with subtest("Initialize keystore on host 1"):
           # check succeeds as "not needed" as long as /mnt/keys does not exist
@@ -562,6 +608,25 @@ import ./make-test-python.nix (
             hash_presigned_download = node.succeed(f"nix-hash output_from_presigned_{profile}")
 
             t.assertEqual(hash_original, hash_presigned_download)
+
+        with subtest("Traffic accounting"):
+          # Logs exist
+          host1.succeed("radosgw-admin log list | jq '.[]' -r | sort | grep rgw-monitoring")
+          log_entry = host1.succeed("radosgw-admin log list | jq '.[]' -r | sort | grep test").rstrip()
+
+          # We do get reasonable data out of it
+          logs = json.loads(host1.succeed(f"radosgw-admin log show --object={log_entry}"))
+          t.assertLess(0, len(logs.get("log_entries", [])))
+          t.assertLess(0, sum(ent["bytes_sent"] for ent in logs["log_entries"]))
+          t.assertLess(0, sum(ent["bytes_received"] for ent in logs["log_entries"]))
+
+          # We can run accounting over it
+          host1.succeed("systemctl start fc-ceph-account-s3-traffic")
+          host1.succeed("test -f /var/lib/fc-ceph-s3-accounting/s3-accounting-state")
+
+          accounting_data = json.loads(host1.succeed("cat /var/lib/fc-ceph-s3-accounting/s3-accounting-state"))
+          t.assertIn("last_processed_datetime", accounting_data)
+          t.assertIn("last_gced_day", accounting_data)
 
         with subtest("Destroy and re-create first mon"):
           host1.succeed('fc-ceph mon destroy')
