@@ -175,6 +175,49 @@ import ./make-test-python.nix (
         id = 4;
         monOnly = true;
       };
+
+      node =
+        { config, pkgs, ... }:
+        {
+          imports = [
+            ../nixos
+            ../nixos/roles
+          ];
+          virtualisation.vlans = with config.flyingcircus.static.vlanIds; [
+            srv
+          ];
+          environment.systemPackages = [ pkgs.awscli ];
+          networking.extraHosts = ''
+            ${getIPForVLAN 3 1} s3.host1.fcio.net
+            ::1 s3.node.fcio.net
+          '';
+          flyingcircus.enc.parameters = {
+            location = "test";
+            resource_group = "test";
+            interfaces.srv = {
+              mac = "52:54:00:12:03:0${toString 5}";
+              bridged = false;
+              networks = {
+                "192.168.3.0/24" = [ (getIPForVLAN 3 5) ];
+              };
+              gateways = { };
+            };
+          };
+
+          flyingcircus.services.haproxy = {
+            enable = true;
+            enableStructuredConfig = true;
+            frontend = {
+              http-in = {
+                binds = [ "[::1]:80" ];
+                default_backend = "s3";
+              };
+            };
+            backend.s3.servers = [
+              "s3-host1 s3.host1.fcio.net:7480 check inter 10s rise 2 fall 1 maxconn 1000"
+            ];
+          };
+        };
     };
 
     testScript =
@@ -230,15 +273,16 @@ import ./make-test-python.nix (
             status = json.loads(host.execute('ceph -f json-pretty -s')[1])
 
             try:
-              assert status["health"]["status"] in ['HEALTH_OK', 'HEALTH_WARN']
-              assert int(status["monmap"]["num_mons"]) == mons
+              t.assertIn(status["health"]["status"], ['HEALTH_OK', 'HEALTH_WARN'])
+              t.assertEqual(int(status["monmap"]["num_mons"]), mons)
               osdmap_stat = status["osdmap"]["osdmap"]
-              assert osdmap_stat["num_up_osds"] == num_up_osds and \
-                  osdmap_stat["num_in_osds"] == num_in_osds
+              t.assertEqual(osdmap_stat["num_up_osds"], num_up_osds)
+              t.assertEqual(osdmap_stat["num_in_osds"], num_in_osds)
               pgstate0 = status["pgmap"]["pgs_by_state"][0]
-              assert pgstate0["count"] == pgs and pgstate0["state_name"] == "active+clean"
-              assert status["mgrmap"]["available"] and \
-                  len(status["mgrmap"]["standbys"]) == mgrs-1
+              t.assertEqual(pgstate0["count"], pgs)
+              t.assertEqual(pgstate0["state_name"], "active+clean")
+              t.assertTrue(status["mgrmap"]["available"])
+              t.assertEqual(len(status["mgrmap"]["standbys"]), mgrs-1)
               break
             except AssertionError as e:
               if time.time() - start < 120:
@@ -394,13 +438,58 @@ import ./make-test-python.nix (
           show(host2, 'ceph osd lspools')
           assert_clean_cluster(host2, 3, 3, 3, 320)
 
+        with subtest("S3 works"):
+          import configparser
+
+          user_data = json.loads(host1.succeed("radosgw-admin user info --uid=user"))
+          t.assertTrue(user_data['keys'])
+          access_key, secret_key = user_data['keys'][0]['access_key'], user_data['keys'][0]['secret_key']
+          host4.succeed("mkdir -p /root/.aws")
+
+          aws_cfg = configparser.ConfigParser()
+          endpoints = {
+            "default": 'http://s3.host1.fcio.net:7480',
+            "port_80": 'http://s3.host1.fcio.net',
+            "customer_gw": 'http://s3.node.fcio.net',
+          }
+
+          for profile, url in endpoints.items():
+            aws_cfg.add_section(profile)
+            aws_cfg.set(profile, 'endpoint_url', url)
+            aws_cfg.set(profile, 'aws_access_key_id', access_key)
+            aws_cfg.set(profile, 'aws_secret_access_key', secret_key)
+
+          with open("awscfg", "w") as f:
+              aws_cfg.write(f)
+
+          node.copy_from_host("awscfg", "/root/.aws/credentials")
+
+          node.succeed("aws s3 mb s3://test/")
+          node.succeed("dd if=/dev/urandom of=testdata bs=1k count=2")
+          hash_original = node.succeed("nix-hash testdata")
+          node.succeed("aws s3 cp testdata s3://test/testdata")
+
+          for profile in endpoints.keys():
+            node.succeed(f"aws --profile {profile} s3 cp s3://test/testdata download_{profile}")
+            hash_download = node.succeed(f"nix-hash download_{profile}")
+            t.assertEqual(hash_original, hash_download)
+
+        with subtest("S3 presigned URLs (PL-130368)"):
+          for profile, url in endpoints.items():
+            presigned_url = node.succeed(f"aws --profile {profile} s3 presign s3://test/testdata").strip()
+            t.assertIn(url, presigned_url)
+            node.succeed(f"curl '{presigned_url}' -o output_from_presigned_{profile}")
+            hash_presigned_download = node.succeed(f"nix-hash output_from_presigned_{profile}")
+
+            t.assertEqual(hash_original, hash_presigned_download)
+
         with subtest("Destroy and re-create first mon"):
           host1.succeed('fc-ceph mon destroy')
           host1.succeed('fc-ceph mgr destroy')
           show(host1, 'rm /var/log/ceph/*mon*')
           show(host1, 'lsblk')
 
-          assert_clean_cluster(host2, 2, 3, 2, 320)
+          assert_clean_cluster(host2, 2, 3, 2, 448)
 
           host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph mon create --size 500m > /dev/stderr')
           host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph mgr create --size 500m > /dev/stderr')
@@ -408,11 +497,11 @@ import ./make-test-python.nix (
           show(host1, 'tail -n 500 /var/log/ceph/*mon*')
           show(host1, 'tail -n 500 /var/log/ceph/*mgr*')
 
-          assert_clean_cluster(host2, 3, 3, 3, 320)
+          assert_clean_cluster(host2, 3, 3, 3, 448)
 
         with subtest("Reactivate all OSDs on host1"):
           host1.succeed('fc-ceph osd reactivate all')
-          assert_clean_cluster(host2, 3, 3, 3, 320)
+          assert_clean_cluster(host2, 3, 3, 3, 448)
 
         with subtest("Test strict safety check of destroy and rebuild"):
           host1.fail("fc-ceph osd destroy --strict-safety-check all > /dev/stderr")
@@ -420,13 +509,13 @@ import ./make-test-python.nix (
 
         with subtest("Initialize extra OSD to enable safe rebuilding (bluestore)"):
           host1.execute('fc-ceph osd create-bluestore --no-encrypt /dev/vdd > /dev/stderr')
-          assert_clean_cluster(host2, 3, 4, 3, 320)
+          assert_clean_cluster(host2, 3, 4, 3, 448)
 
         with subtest("Rebuild the 2nd OSD on host 1 from bluestore to bluestore and disable encryption without redundancy loss"):
           # set OSDs out and wait for cluster to rebalance
           host1.execute('ceph osd out 3')
           host1.sleep(5)
-          assert_clean_cluster(host2, 3, (4, 3), 3, 320)
+          assert_clean_cluster(host2, 3, (4, 3), 3, 448)
           # then rebuild
           host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --no-encrypt --strict-safety-check 3 > /dev/stderr')
           # and set the osds in again
@@ -434,22 +523,22 @@ import ./make-test-python.nix (
           show(host1, "lsblk")
           show(host1, "vgs")
           host1.sleep(5)
-          assert_clean_cluster(host2, 3, 4, 3, 320)
+          assert_clean_cluster(host2, 3, 4, 3, 448)
 
         with subtest("Rebuild all OSDs on host 1 and ensure encryption is enabled"):
           host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --encrypt --no-safety-check all > /dev/stderr')
-          assert_clean_cluster(host2, 3, 4, 3, 320)
+          assert_clean_cluster(host2, 3, 4, 3, 448)
 
         with subtest("Destroy the 2nd OSD on host 1 without redundancy loss"):
           # set OSDs out and wait for cluster to rebalance
           host1.execute('ceph osd out 3')
           host1.sleep(5)
-          assert_clean_cluster(host2, 3, (4, 3), 3, 320)
+          assert_clean_cluster(host2, 3, (4, 3), 3, 448)
           # then destroy
           host1.succeed('fc-ceph osd destroy --strict-safety-check 3 > /dev/stderr')
           show(host1, "lsblk")
           show(host1, "vgs")
-          assert_clean_cluster(host2, 3, 3, 3, 320)
+          assert_clean_cluster(host2, 3, 3, 3, 448)
 
         # from now on always default to allowing some reduced redundancy to save time
 
@@ -457,14 +546,14 @@ import ./make-test-python.nix (
           retry_attempts(host2, 'fc-ceph osd rebuild all > /dev/stderr')
           show(host1, "lsblk")
           show(host1, "vgs")
-          assert_clean_cluster(host3, 3, 3, 3, 320)
+          assert_clean_cluster(host3, 3, 3, 3, 448)
 
         with subtest("Deactivate and activate single OSD on host 1"):
           host1.fail('fc-ceph osd deactivate --strict-safety-check 0')
           host1.succeed('fc-ceph osd deactivate 0')
           host1.succeed('fc-ceph osd activate 0')
           status = show(host2, 'ceph -s')
-          assert_clean_cluster(host2, 3, 3, 3, 320)
+          assert_clean_cluster(host2, 3, 3, 3, 448)
 
         with subtest("Test destroy safety check and its override, destroy, recreate, recover OSDs"):
           host2.succeed('fc-ceph osd destroy all > /dev/stderr')
@@ -477,7 +566,7 @@ import ./make-test-python.nix (
           # re-provision the 2 OSDs and allow the cluster to recover
           host2.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=internal /dev/vdc > /dev/stderr')
           host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/stderr')
-          assert_clean_cluster(host2, 3, 3, 3, 320)
+          assert_clean_cluster(host2, 3, 3, 3, 448)
 
         # Maintenance integration
         with subtest("Check maintenance integration"):
@@ -503,7 +592,7 @@ import ./make-test-python.nix (
           assert "systemctl start fc-ceph-rgw" in result, "rgw not started"
           assert "fc-ceph maintenance leave" in result, "maintenance not left"
 
-          assert_clean_cluster(host2, 3, 3, 3, 320)
+          assert_clean_cluster(host2, 3, 3, 3, 448)
 
         # TODO: include test for rbd map rbdnamer udev rule functionality, after having rebased onto PL-130691
 
