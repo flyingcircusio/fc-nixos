@@ -290,9 +290,13 @@ in
       };
 
       flyingcircus.services.sensu-client.checks = {
-        radosgw_probe_object = {
+        radosgw_probe_object_direct = {
           notification = "Probe object (/rgw-monitoring/probe) not OK.";
-          command = "check_http -u /rgw-monitoring/probe -H localhost -m 1000000:1500000 -w 5 -c 10";
+          command = "check_http -u /rgw-monitoring/probe -H localhost:7480 -m 1000000:1500000 -w 5 -c 10";
+        };
+        radosgw_probe_object_via_nginx = {
+          notification = "Probe object (/rgw-monitoring/probe) not OK.";
+          command = "check_http -u /rgw-monitoring/probe -H ${role.domain} -m 1000000:1500000 -w 5 -c 10 -f follow";
         };
       };
 
@@ -352,6 +356,32 @@ in
             "${pkgs.monitoring-plugins}/bin/check_file_age"
             + " -f /var/log/fc-ceph-rgw-users-stamp.log -w 1500 -c 2700";
           interval = 300;
+        };
+
+        checks.fc-ceph-rgw-accounting = {
+          notification = "Missing S3 traffic accounting";
+          interval = 60;
+          command = "${lib.getExe pkgs.python3} ${pkgs.writeText "check-s3-accounting" ''
+            import json
+            import sys
+            from datetime import datetime, timedelta
+
+            with open("/var/lib/fc-ceph-s3-accounting/s3-accounting-state", "r") as f:
+                data = json.load(f)
+
+            THRESH_WARN = timedelta(hours=6)
+            THRESH_ERR = timedelta(hours=12)
+
+            last_processed = datetime.strptime(data["last_processed_datetime"], "%Y-%m-%dT%H")
+            now = datetime.now()
+
+            if now - THRESH_ERR >= last_processed:
+                print(f"Last time S3 logs were processed ({last_processed}) is >{THRESH_ERR} ago")
+                sys.exit(2)
+            elif now - THRESH_WARN >= last_processed:
+                print(f"Last time S3 logs were processed ({last_processed}) is >{THRESH_WARN} ago")
+                sys.exit(1)
+          ''}";
         };
       };
 
