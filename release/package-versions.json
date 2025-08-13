@@ -5,9 +5,9 @@
     "version": "1.6.1"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.62",
+    "name": "apache-httpd-2.4.65",
     "pname": "apache-httpd",
-    "version": "2.4.62"
+    "version": "2.4.65"
   },
   "asterisk": {
     "name": "asterisk-20.15.1",
