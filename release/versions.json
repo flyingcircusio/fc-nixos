@@ -1,10 +1,4 @@
 {
-  "fc-nixos-21_05": {
-    "hash": "sha256-jXN15QR0e7JpXLpC9I4w6Arw2h0KUjgZMvSjv/aesms=",
-    "owner": "flyingcircusio",
-    "repo": "fc-nixos",
-    "rev": "cb34a33a284401eb8ae87ec5e90d8b9226d4cff2"
-  },
   "nixos-mailserver": {
     "deepClone": false,
     "fetchSubmodules": false,
@@ -18,12 +12,6 @@
     "owner": "flyingcircusio",
     "repo": "nixpkgs",
     "rev": "e6dbe6794e06cd2749cafe464c6b2256a748307f"
-  },
-  "nixpkgs-21_05": {
-    "hash": "sha256-5ufC/t0sUFS/LspiEwU8DW5+uVYM3diZ1IC7KjX9ek4=",
-    "owner": "flyingcircusio",
-    "repo": "nixpkgs",
-    "rev": "a467063b4abb8bd7636d9bb2475edbd2f0e6c6b6"
   },
   "poetry2nix": {
     "hash": "sha256-nzgO/ZCSBzWjbMkYDxG+yl9Z2eGbCgQu06Oku3ir5D4=",
