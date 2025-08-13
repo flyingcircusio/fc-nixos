@@ -77,9 +77,8 @@ in
   loghost = callTest ./loghost.nix { };
   login = callTest ./login.nix { };
   logrotate = callTest ./logrotate.nix { };
-  # FIXME: broken with `services.postfix.settings` migration (PL-133946)
-  # mail = callTest ./mail { };
-  # mailstub = callTest ./mail/stub.nix { };
+  mail = callTest ./mail { };
+  mailstub = callTest ./mail/stub.nix { };
   matomo = callTest ./matomo.nix { };
   memcached = callTest ./memcached.nix { };
   mongodb32 = callTest ./mongodb.nix { version = "3.2"; };

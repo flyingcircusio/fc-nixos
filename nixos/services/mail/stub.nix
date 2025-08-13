@@ -13,15 +13,6 @@ let
 
   interfaces = lib.attrByPath [ "parameters" "interfaces" ] { } config.flyingcircus.enc;
 
-  mainCf =
-    lib.optionals role.explicitSmtpBind [
-      "smtp_bind_address=${role.smtpBind4}"
-      "smtp_bind_address6=${role.smtpBind6}"
-    ]
-    ++ [ (fclib.configFromFile "/etc/local/postfix/main.cf" "") ];
-
-  masterCf = [ (fclib.configFromFile "/etc/local/postfix/master.cf" "") ];
-
   recipientCanonical = toFile "generic.pcre" ''
     /.*@.*\.fcio\.net$/ ${role.rootAlias}
   '';
@@ -58,24 +49,41 @@ in
 
   config = (
     lib.mkIf config.flyingcircus.services.postfix.enable {
+      warnings = lib.optionals (builtins.pathExists "/etc/local/postfix/main.cf") [
+        ''
+          Configuring postfix via /etc/local/postfix/main.cf is deprecated.
+          Please migrate to structured config with services.postfix.settings.main.
+          This option of configuring will be removed with fc-nixos 26.05.
+        ''
+      ];
       services.postfix = {
         enable = true;
         enableSubmission = true;
-        hostname = role.mailHost;
-        extraConfig = lib.concatStringsSep "\n" mainCf;
-        extraMasterConf = lib.concatStringsSep "\n" masterCf;
-        config.recipient_canonical_maps = lib.mkDefault "pcre:${recipientCanonical}";
-        # Trust all networks on the SRV interface.
-        networks = lib.mkDefault (
-          map fclib.quoteIPv6Address (attrNames (lib.attrByPath [ "srv" "networks" ] { } interfaces))
+        extraConfig = lib.mkIf (builtins.pathExists "/etc/local/postfix/main.cf") (
+          fclib.configFromFile "/etc/local/postfix/main.cf" ""
         );
-        destination = lib.mkDefault [
-          "localhost"
-          role.mailHost
-          config.networking.hostName
-          "${config.networking.hostName}.fcio.net"
-          "${config.networking.hostName}.gocept.net"
-        ];
+        extraMasterConf = lib.mkIf (builtins.pathExists "/etc/local/postfix/master.cf") (
+          fclib.configFromFile "/etc/local/postfix/master.cf" ""
+        );
+        settings.main = {
+          hostname = role.mailHost;
+          recipient_canonical_maps = lib.mkDefault "pcre:${recipientCanonical}";
+          # Trust all networks on the SRV interface.
+          mynetworks = lib.mkDefault (
+            map fclib.quoteIPv6Address (attrNames (lib.attrByPath [ "srv" "networks" ] { } interfaces))
+          );
+          mydestination = lib.mkDefault [
+            "localhost"
+            role.mailHost
+            config.networking.hostName
+            "${config.networking.hostName}.fcio.net"
+            "${config.networking.hostName}.gocept.net"
+          ];
+        }
+        // lib.optionalAttrs role.explicitSmtpBind {
+          smtp_bind_address = role.smtpBind4;
+          smtp_bind_address6 = role.smtpBind6;
+        };
         rootAlias = role.rootAlias;
       };
 
