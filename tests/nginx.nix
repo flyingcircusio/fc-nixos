@@ -162,6 +162,9 @@ import ./make-test-python.nix (
             ];
             addSSL = true;
             locations."/".return = "200 'TESTOK'";
+            extraConfig = ''
+              access_log /var/log/nginx/perf.log performance;
+            '';
           };
         };
       };
