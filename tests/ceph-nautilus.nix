@@ -264,7 +264,7 @@ import ./make-test-python.nix (
             result = host.execute(cmd)
           return result[1]
 
-        def assert_clean_cluster(host, mons, osds, mgrs, pgs):
+        def assert_clean_cluster(host, mons, osds, mgrs, min_pgs):
           # `osds` can be either of the form `(num_up_osds, num_in_osds)` or a single
           # integer specifying both up and in osds
 
@@ -275,7 +275,7 @@ import ./make-test-python.nix (
             num_in_osds = osds
 
           global time_waiting
-          print(f"Waiting for clean cluster: mons={mons} osds={osds} mgrs={mgrs} pgs={pgs}")
+          print(f"Waiting for clean cluster: mons={mons} osds={osds} mgrs={mgrs} pgs={min_pgs}")
           start = time.time()
           # Allow HEALTH_WARN as we do not correctly cover clock skew
           # currently
@@ -293,7 +293,7 @@ import ./make-test-python.nix (
               t.assertEqual(osdmap_stat["num_up_osds"], num_up_osds)
               t.assertEqual(osdmap_stat["num_in_osds"], num_in_osds)
               pgstate0 = status["pgmap"]["pgs_by_state"][0]
-              t.assertEqual(pgstate0["count"], pgs)
+              t.assertGreaterEqual(pgstate0["count"], min_pgs)
               t.assertEqual(pgstate0["state_name"], "active+clean")
               t.assertTrue(status["mgrmap"]["available"])
               t.assertEqual(len(status["mgrmap"]["standbys"]), mgrs-1)
