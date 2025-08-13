@@ -6,7 +6,10 @@ let
   # supported ceph release codenames, from newest to oldest
   # TODO: Once all ceph packages have a similar structure, those can be
   # generated from this list (let's wait for pacific to see if the structure holds)
-  releaseOrder = [ "nautilus" ];
+  releaseOrder = [
+    "nautilus"
+    "pacific"
+  ];
   cephReleaseType = types.enum releaseOrder;
   defaultRelease = "nautilus";
 in
