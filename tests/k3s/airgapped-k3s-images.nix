@@ -3,10 +3,10 @@
 [
   {
     imageName = "docker.io/rancher/klipper-helm";
-    imageDigest = "sha256:673daf0b4a7da8d38af3e9da4c654e11189cacfa10901f2f1325ecffdd921a46";
-    hash = "sha256-ZZW8wXSesO1n4Ixd76XpUMLfegLSQvYFcFzvoeucyQc=";
+    imageDigest = "sha256:5e2e5ab00d5f2652bfea2bc5554d07b57a015fe574434b275a2cb11c2d135c04";
+    hash = "sha256-PoTSj4QE6uNVdZ6GozT1SPcV6nZGb0l/bKI4Mxflghg=";
     finalImageName = "docker.io/rancher/klipper-helm";
-    finalImageTag = "v0.9.7-build20250616";
+    finalImageTag = "v0.9.8-build20250709";
   }
   {
     imageName = "docker.io/rancher/klipper-lb";
