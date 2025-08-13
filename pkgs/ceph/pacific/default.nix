@@ -209,7 +209,7 @@ let
     numpy = self.callPackage ./python-vendor/numpy { cython = self.cython_0_29; setuptools = self.setuptools_67;};
     scipy = self.callPackage ./python-vendor/scipy {};
     cython_0_29 = self.callPackage ./python-vendor/Cython {};
-    setuptools_67 = self.callPackage ./python-vendor/setuptools { bootstrapped-pip = self.pip; };
+    setuptools_67 = self.callPackage ./python-vendor/setuptools { };
     docutils_0_19 = self.callPackage ./python-vendor/docutils {};
     alabaster_0_7 = self.callPackage ./python-vendor/alabaster {};
     # python310 support has been dropped in iPython 9
