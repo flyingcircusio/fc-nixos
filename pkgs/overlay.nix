@@ -7,8 +7,19 @@ let
   # then use release-set as pkgs
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps) { } super;
 
-  nixpkgs-21_05-src = (import ../versions.nix { pkgs = super; }).nixpkgs-21_05;
-  fc-nixos-21_05-src = (import ../versions.nix { pkgs = super; }).fc-nixos-21_05;
+  nixpkgs-21_05-src = fetchFromGitHub {
+    hash = "sha256-5ufC/t0sUFS/LspiEwU8DW5+uVYM3diZ1IC7KjX9ek4=";
+    owner = "flyingcircusio";
+    repo = "nixpkgs";
+    rev = "a467063b4abb8bd7636d9bb2475edbd2f0e6c6b6";
+  };
+
+  fc-nixos-21_05-src = fetchFromGitHub {
+    hash = "sha256-jXN15QR0e7JpXLpC9I4w6Arw2h0KUjgZMvSjv/aesms=";
+    owner = "flyingcircusio";
+    repo = "fc-nixos";
+    rev = "cb34a33a284401eb8ae87ec5e90d8b9226d4cff2";
+  };
   fc-nixos-21_05 = builtins.trace "using fc-nixos-21.05" (
     import fc-nixos-21_05-src {
       inherit (self) config;
