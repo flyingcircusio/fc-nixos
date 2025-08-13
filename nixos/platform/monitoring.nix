@@ -94,8 +94,8 @@ in
     (mkIf (sensuServer != null) {
       flyingcircus.services.sensu-client = {
         enable = true;
-        server = sensuServer.address;
-        password = sensuServer.password;
+        #url = "wss://${sensuServer.address}/aramaki";
+        #secret = sensuServer.password;
       };
     })
 

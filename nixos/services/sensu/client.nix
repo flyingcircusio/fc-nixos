@@ -42,17 +42,10 @@ let
         "This is a comment to help restarting sensu when necessary.",
         "Active Groups: ${toString config.users.users.sensuclient.extraGroups}"
       ],
-      "client": {
+      "aramaki": {
         "name": "${config.networking.hostName}",
-        "address": "${config.networking.hostName}",
-        "subscriptions": ["default"],
-        "signature": "${cfg.password}"
-      },
-      "rabbitmq": {
-        "host": "${cfg.server}",
-        "user": "${config.networking.hostName}.gocept.net",
-        "password": "${cfg.password}",
-        "vhost": "/sensu"
+        "url": "${cfg.url}",
+        "secret": "${cfg.secret}"
       },
       "checks": ${
         builtins.toJSON (
@@ -133,10 +126,18 @@ in
     flyingcircus.services.sensu-client = {
       enable = mkEnableOption "Sensu monitoring client daemon";
 
-      server = mkOption {
+      url = mkOption {
         type = types.str;
+        default = "wss://directory.fcio.net/aramaki";
         description = ''
-          The address of the server (RabbitMQ) to connect to.
+          Websocket URL of the Aramaki server to connect to.
+        '';
+      };
+      secret = mkOption {
+        type = types.str;
+        default = config.flyingcircus.enc.parameters.secret_salt or null;
+        description = ''
+          Shared secret for the Aramaki connection.
         '';
       };
       loglevel = mkOption {
@@ -144,12 +145,6 @@ in
         default = "warn";
         description = ''
           The level of logging.
-        '';
-      };
-      password = mkOption {
-        type = types.str;
-        description = ''
-          The password to connect with to server (RabbitMQ).
         '';
       };
       config = mkOption {
@@ -381,7 +376,7 @@ in
             confDir="-d ${localSensuConf}"
           fi
           # omit localSensuConf dir if syntax errors have been detected
-          exec sensu-client -L ${cfg.loglevel} \
+          exec aramaki-monitoring -L ${cfg.loglevel} \
             -c ${sensuClientConfigFile} $confDir \
             ${concatStringsSep " " cfg.extraOpts}
         '';
@@ -393,8 +388,6 @@ in
         };
         environment = {
           LANG = "en_US.utf8";
-          # Hide annoying warnings, old Sensu is not developed anymore.
-          RUBYOPT = "-W0";
         };
       };
 
@@ -618,7 +611,7 @@ in
         openssl
         procps
         python3
-        sensu
+        aramaki-monitoring
         sensu-plugins-disk-checks
         sensu-plugins-http
         sensu-plugins-logs

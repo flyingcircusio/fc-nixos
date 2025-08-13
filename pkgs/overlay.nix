@@ -107,8 +107,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     }
   );
 
-  backy = self.callPackage ./backy { };
-
   #
   # imports from other nixpkgs versions or local definitions
   #
@@ -116,6 +114,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   apacheHttpdLegacyCrypt = self.apacheHttpd.override {
     aprutil = self.aprutil.override { libxcrypt = self.libxcrypt-legacy; };
   };
+
+  aramaki-monitoring = super.callPackage ./aramaki-monitoring { };
+
+  backy = self.callPackage ./backy { };
 
   # Sidecar bird for managing VRF routes on routers
   bird2-vrf = self.bird2.overrideAttrs (old: {
@@ -560,8 +562,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # Ruby 2.7 is EOL but we still need it for Sensu until Aramaki takes over ;)
   #ruby_2_7 = getClosureFromStore /nix/store/qqc6v89xn0g2w123wx85blkpc4pz2ags-ruby-2.7.8;
-
-  sensu = getClosureFromStore /nix/store/3ya2sq1nl4i616mc40kpmag9ndhzj5fy-sensu-1.9.0;
 
   sensu-plugins-elasticsearch = getClosureFromStore /nix/store/dawyv3kzr69qj2lq8cfm0j941i2hjnfb-sensu-plugins-elasticsearch-4.2.2;
   sensu-plugins-kubernetes = getClosureFromStore /nix/store/cndsgrdmqlgdwc6hnvvrji17jlr7z15k-sensu-plugins-kubernetes-4.0.0;
