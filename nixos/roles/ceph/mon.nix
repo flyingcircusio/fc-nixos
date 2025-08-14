@@ -26,9 +26,18 @@ let
       "telemetry"
       "iostat"
     ];
+        # FIXME: adjust, this is just copy-pasted for now
+        pacific = [
+      "telemetry"
+      "iostat"
+    ];
   };
   mgrDisabledModules = {
     nautilus = [
+      "restful"
+    ];
+        # FIXME: adjust, this is just copy-pasted for now
+    pacific = [
       "restful"
     ];
   };
