@@ -186,6 +186,11 @@ let
       '}';
 
       access_log syslog:server=127.0.0.1:51893 json_analytics;
+
+      ## Proxy defaults: buffer, but only to RAM.
+      proxy_buffering                 on;
+      proxy_request_buffering         on;
+      proxy_max_temp_file_size        0;
     ''}
 
     # === Buffers and timeouts ===
