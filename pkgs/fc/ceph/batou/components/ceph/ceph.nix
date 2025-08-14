@@ -19,11 +19,11 @@ in
 {
   flyingcircus.roles.ceph_osd = {
     enable = true;
-    cephRelease = "nautilus";
+    cephRelease = "pacific";
   };
   flyingcircus.roles.ceph_mon = {
     enable = true;
-    cephRelease = "nautilus";
+    cephRelease = "pacific";
   };
   flyingcircus.services.ceph.extraSettings = {
     monClockDriftAllowed = 10;
