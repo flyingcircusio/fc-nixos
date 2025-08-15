@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.108",
+    "name": "element-web-1.11.109",
     "pname": "element-web",
-    "version": "1.11.108"
+    "version": "1.11.109"
   },
   "erlang": {
     "name": "erlang-27.3.4.2",
@@ -505,9 +505,9 @@
     "version": "5.3.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.135.0",
+    "name": "matrix-synapse-wrapped-1.135.2",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.135.0"
+    "version": "1.135.2"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
