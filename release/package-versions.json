@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-139.0.7258.66",
+    "name": "chromedriver-unwrapped-139.0.7258.127",
     "pname": "chromedriver-unwrapped",
-    "version": "139.0.7258.66"
+    "version": "139.0.7258.127"
   },
   "chromium": {
-    "name": "chromium-139.0.7258.66",
+    "name": "chromium-139.0.7258.127",
     "pname": "chromium",
-    "version": "139.0.7258.66"
+    "version": "139.0.7258.127"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -225,9 +225,9 @@
     "version": "2.50.1"
   },
   "gitaly": {
-    "name": "gitaly-18.2.1",
+    "name": "gitaly-18.2.2",
     "pname": "gitaly",
-    "version": "18.2.1"
+    "version": "18.2.2"
   },
   "github-runner": {
     "name": "github-runner-2.326.0",
@@ -235,24 +235,24 @@
     "version": "2.326.0"
   },
   "gitlab": {
-    "name": "gitlab-18.2.1",
+    "name": "gitlab-18.2.2",
     "pname": "gitlab",
-    "version": "18.2.1"
+    "version": "18.2.2"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.25.0",
+    "name": "gitlab-container-registry-4.26.0",
     "pname": "gitlab-container-registry",
-    "version": "4.25.0"
+    "version": "4.26.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.2.1",
+    "name": "gitlab-ee-18.2.2",
     "pname": "gitlab-ee",
-    "version": "18.2.1"
+    "version": "18.2.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.2.1",
+    "name": "gitlab-pages-18.2.2",
     "pname": "gitlab-pages",
-    "version": "18.2.1"
+    "version": "18.2.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.1.2",
@@ -260,9 +260,9 @@
     "version": "18.1.2"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.2.1",
+    "name": "gitlab-workhorse-18.2.2",
     "pname": "gitlab-workhorse",
-    "version": "18.2.1"
+    "version": "18.2.2"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -305,9 +305,9 @@
     "version": "3.1.7"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.1-47",
+    "name": "imagemagick-7.1.2-0",
     "pname": "imagemagick",
-    "version": "7.1.1-47"
+    "version": "7.1.2-0"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -560,9 +560,9 @@
     "version": "1.28.0"
   },
   "nginxMainline": {
-    "name": "nginx-1.27.5",
+    "name": "nginx-1.29.1",
     "pname": "nginx",
-    "version": "1.27.5"
+    "version": "1.29.1"
   },
   "nginxStable": {
     "name": "nginx-1.28.0",
@@ -780,9 +780,9 @@
     "version": "3.10.3"
   },
   "postgresql": {
-    "name": "postgresql-17.5",
+    "name": "postgresql-17.6",
     "pname": "postgresql",
-    "version": "17.5"
+    "version": "17.6"
   },
   "postgresql13Packages.postgis": {
     "name": "postgis-3.5.3",
@@ -845,29 +845,29 @@
     "version": "1.2.2"
   },
   "postgresql_13": {
-    "name": "postgresql-13.21",
+    "name": "postgresql-13.22",
     "pname": "postgresql",
-    "version": "13.21"
+    "version": "13.22"
   },
   "postgresql_14": {
-    "name": "postgresql-14.18",
+    "name": "postgresql-14.19",
     "pname": "postgresql",
-    "version": "14.18"
+    "version": "14.19"
   },
   "postgresql_15": {
-    "name": "postgresql-15.13",
+    "name": "postgresql-15.14",
     "pname": "postgresql",
-    "version": "15.13"
+    "version": "15.14"
   },
   "postgresql_16": {
-    "name": "postgresql-16.9",
+    "name": "postgresql-16.10",
     "pname": "postgresql",
-    "version": "16.9"
+    "version": "16.10"
   },
   "postgresql_17": {
-    "name": "postgresql-17.5",
+    "name": "postgresql-17.6",
     "pname": "postgresql",
-    "version": "17.5"
+    "version": "17.6"
   },
   "powerdns": {
     "name": "pdns-4.9.5",
@@ -1110,14 +1110,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.43",
+    "name": "apache-tomcat-10.1.44",
     "pname": "apache-tomcat",
-    "version": "10.1.43"
+    "version": "10.1.44"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.107",
+    "name": "apache-tomcat-9.0.108",
     "pname": "apache-tomcat",
-    "version": "9.0.107"
+    "version": "9.0.108"
   },
   "unifi": {
     "name": "unifi-controller-9.1.120",
