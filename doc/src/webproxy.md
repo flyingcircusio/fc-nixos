@@ -35,8 +35,6 @@ As with all NixOS modules, put your configuration into an appropriately named fi
 in the {file}`/etc/local/nixos` directory, e.g. {file}`/etc/local/nixos/varnish.nix`.
 
 You can also put your verbatim Varnish configuration into {file}`/etc/local/varnish/default.vcl`.
-Please note that this way of configuring Varnish is deprecated and will likely
-be removed in the future.
 
 The role passes a handful of command line arguments to Varnish to
 ensure reasonable default behaviour. If you wish to pass extra command
