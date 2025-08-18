@@ -153,12 +153,22 @@ in
         ""
     );
 
-    boot.kernelPatches = lib.mkIf (config.flyingcircus.kernelOptions != null) [
-      {
-        name = "fcio-kernel-options";
-        patch = null;
-        extraConfig = config.flyingcircus.kernelOptions;
-      }
-    ];
+    boot.kernelPatches =
+      lib.optionals (config.flyingcircus.kernelOptions != null) [
+        {
+          name = "fcio-kernel-options";
+          patch = null;
+          extraConfig = config.flyingcircus.kernelOptions;
+        }
+      ]
+      ++ [
+        {
+          name = "9pfs-fixes";
+          patch = pkgs.fetchurl {
+            url = "https://lore.kernel.org/linux-fsdevel/20250811-iot_iter_folio-v1-0-d9c223adf93c@codewreck.org/t.mbox.gz";
+            hash = "sha256-lgcoaBDd9FkFTb/hi9a+knfC0T7ZAAh410SxUFBIM1k=";
+          };
+        }
+      ];
   };
 }
