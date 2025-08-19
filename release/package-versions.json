@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.41",
+    "name": "linux-6.12.42",
     "pname": "linux",
-    "version": "6.12.41"
+    "version": "6.12.42"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.41",
+    "name": "linux-6.12.42",
     "pname": "linux",
-    "version": "6.12.41"
+    "version": "6.12.42"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.3.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.135.2",
+    "name": "matrix-synapse-wrapped-1.136.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.135.2"
+    "version": "1.136.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -1145,9 +1145,9 @@
     "version": "0.7.22"
   },
   "varnish": {
-    "name": "varnish-7.7.1",
+    "name": "varnish-7.7.2",
     "pname": "varnish",
-    "version": "7.7.1"
+    "version": "7.7.2"
   },
   "vim": {
     "name": "vim-9.1.1566",
