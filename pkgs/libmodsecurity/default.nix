@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchpatch,
   autoreconfHook,
   bison,
   flex,
@@ -29,6 +30,13 @@ stdenv.mkDerivation rec {
     hash = "sha256-SaeBO3+WvPhHiJoiOmijB0G3/QYxjAdxgeCVqESS+4U=";
     fetchSubmodules = true;
   };
+
+  patches = [
+    (fetchpatch {
+      url = "https://github.com/owasp-modsecurity/ModSecurity/commit/1a2b13967f435a4c0837c3d181f7471f6c0c03ac.patch";
+      hash = "sha256-WbyQ8lahL8v7hThMrGX4vxNO+rt5wEv6fs9ZxrAFhuo=";
+    })
+  ];
 
   nativeBuildInputs = [
     autoreconfHook
