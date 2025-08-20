@@ -18,4 +18,4 @@ branches.
 
 ### NixOS XX.XX platform
 
-- Adjust the nginx configuration by moving general configuration like log formats up above the server configuration blocks (PL-133945)
+- nginx: platform-defined general configuration directives like log formats have been moved up above the server configuration blocks, allowing their re-use in virtual host config (PL-133945)
