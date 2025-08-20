@@ -572,7 +572,7 @@ in
           enable = true;
           package = fclib.mkPlatform pkgs.nginxLegacyCrypt;
           appendConfig = mainConfig;
-          appendHttpConfig = ''
+          commonHttpConfig = ''
             ${baseHttpConfig}
 
             # === User-provided config from ${localCfgDir}/*.conf ===
