@@ -446,6 +446,10 @@ import ./make-test-python.nix (
           assert int(errors[1]) == 0
           assert int(errors[2]) > 900
           assert int(errors[3]) == 0
+
+        with subtest("Check that no coredumps happened"):
+          for machine in machines:
+            machine.succeed("(coredumpctl --json=short 2>&1 || true) | grep 'No coredumps found'")
       '';
   }
 )
