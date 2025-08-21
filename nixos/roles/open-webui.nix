@@ -23,7 +23,8 @@ in
   options.flyingcircus.roles.open-webui = {
     enable = mkEnableOption "Enable the Flying Circus Open WebUI role";
     hostName = mkOption {
-      default = fclib.fqdn { vlan = "fe"; };
+      default = "ai-chat.${config.flyingcircus.enc.parameters.resource_group}.fcio.net";
+      defaultText = "ai-chat.<resource group>.fcio.net";
       type = types.str;
       description = ''
         Host name for the Open WebUI frontend.
@@ -57,13 +58,17 @@ in
       enable = true;
       host = head fclib.network.srv.v4.addresses;
       environment = {
-        #ENABLE_SIGNUP = "false";
-        #ENABLE_LOGIN_FORM = "false";
-        #ENABLE_OAUTH_SIGNUP = "true";
-        #OAUTH_CLIENT_ID = "fc-ai-chat-FIXME";
-        #OPENID_PROVIDER_URL = "https://auth.flyingcircus.io/realms/fcio/.well-known/openid-configuration";
-        #OAUTH_PROVIDER_NAME = "FCIO";
-        #OAUTH_MERGE_ACCOUNTS_BY_EMAIL = "true";
+        ENABLE_SIGNUP = "false";
+        ENABLE_LOGIN_FORM = "false";
+        ENABLE_OAUTH_SIGNUP = "true";
+        OAUTH_CLIENT_ID = "${config.networking.hostName}_open-webui";
+        OPENID_PROVIDER_URL = "https://auth.flyingcircus.io/realms/fcio/.well-known/openid-configuration";
+        OAUTH_PROVIDER_NAME = "FCIO";
+        OAUTH_MERGE_ACCOUNTS_BY_EMAIL = "true";
+        # do not require admin approval of new users from OIDC
+        DEFAULT_USER_ROLE = "user";
+        # XXX this gets written into the nix store – acceptable?
+        OAUTH_CLIENT_SECRET = fclib.derivePasswordForHost "oidc_open-webui";
 
         OPENAI_API_BASE_URLS = cfg.llmApiUrl;
 
@@ -74,10 +79,11 @@ in
         ENABLE_PERSISTENT_CONFIG = "False";
       };
       # FIXME: populate OAUTH secrets automatically
-      # XXX: We assume for now that the API key is written into the secrets file
-      # as an `OPENAI_API_KEY`.
       # Having a dedicated file only containing that secret would be neat though.
       environmentFile = cfg.environmentFile;
+    };
+    flyingcircus.localConfigDirs.open-webui = {
+      dir = "/etc/local/open-webui";
     };
 
     systemd.services.open-webui.serviceConfig = {
