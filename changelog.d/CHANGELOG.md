@@ -1,3 +1,28 @@
+# Release 2025_030
+
+## Impact
+
+-
+
+
+## NixOS XX.XX platform
+
+- Added a patch to libmodsecurity to fix a problem that caused nginx installations with modsecurity to segfault on reloads (PL-133894)
+
+- Switch Ceph monitor connection config to IP addresses. (PL-133752)
+
+  After a refactoring of our Ceph client library bindings, switching from
+  C-based bindings to CLI calls we are now more prone to any DNS issues
+  causing problems when instrumenting live migrations. We now connect to
+  mons directly using their IP addresses which takes DNS out of the loop
+  as a potential failure point.
+
+- Kubernetes events are now shipped to both our custom monitoring platform as well as RG-specific loki instances to be used in grafana dashboards etc. (PL-133636)
+
+- nginx: re-enable proxy buffering, but only in memory. (FC-47149)
+
+
+
 # Release 2025_029
 
 
