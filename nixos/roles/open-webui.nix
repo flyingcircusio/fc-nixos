@@ -10,7 +10,14 @@ let
   scfg = config.services.open-webui;
   fclib = config.fclib;
   inherit (builtins) head;
-  inherit (lib) mkOption mkEnableOption types;
+  inherit (lib)
+    mkOption
+    mkEnableOption
+    mkOverride
+    types
+    optional
+    optionalString
+    ;
 in
 {
   options.flyingcircus.roles.open-webui = {
@@ -35,6 +42,13 @@ in
     };
     # expose through role config for better visibility
     environmentFile = options.services.open-webui.environmentFile;
+    llmApiSecretFile = mkOption {
+      example = "/etc/local/open-webui/secret";
+      default = null;
+      type = types.nullOr types.str;
+      description = "A file containing the authentication secret for the Flying
+      Circus AI Provider.";
+    };
   };
 
   # TODO: role shall also configure an nginx with TLS (or webgateway?)
@@ -66,10 +80,29 @@ in
       environmentFile = cfg.environmentFile;
     };
 
+    systemd.services.open-webui.serviceConfig = {
+      LoadCredential = optional (cfg.llmApiSecretFile != null) "OPENAI_API_KEYS:${cfg.llmApiSecretFile}";
+      ExecStart =
+        let
+          execStart = pkgs.writeShellScriptBin "open-webui-start" ''
+            ${optionalString (
+              cfg.llmApiSecretFile != null
+            ) "export OPENAI_API_KEYS=$(<$CREDENTIALS_DIRECTORY/OPENAI_API_KEYS)"}
+            exec ${lib.getExe scfg.package} serve --host "${scfg.host}" --port ${toString scfg.port}
+          '';
+        in
+        mkOverride 90 "${execStart}/bin/open-webui-start";
+    };
+
+    flyingcircus.localConfigDirs.open-webui = {
+      dir = "/etc/local/open-webui";
+    };
+
     networking.firewall.allowedTCPPorts = [
       80
       443
     ];
+
     services.nginx = {
       enable = true;
       recommendedGzipSettings = true;
@@ -98,7 +131,6 @@ in
         };
       };
     };
-
   };
 
 }
