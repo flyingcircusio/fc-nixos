@@ -58,36 +58,42 @@ class LogTasks(object):
 
     def account_s3_traffic(self, state_file: Path, enc_file: Path):
         final_stats = []
-        ops_log = OpsLog(state_file)
-        location = os.getenv("FCIO_LOCATION")
-        with ops_log.get_pending_stats_by_day() as logs:
-            for day, objs in logs.items():
-                traffic_by_owner = {}
-                for obj in objs:
-                    usage_log = ops_log.get_object(obj)
-                    if not usage_log.get("bucket_owner"):
-                        continue
+        with directory.directory_connection(enc_file, ring=0) as d:
+            location = os.getenv("FCIO_LOCATION")
+            internal_networks = {}
+            for vlan, nets in d.lookup_networks(location).items():
+                for network in nets:
+                    internal_networks.append(IPy.IP(network))
 
-                    stats = traffic_by_owner.setdefault(
-                        usage_log["bucket_owner"], [0, 0]
-                    )
-                    for entry in usage_log["log_entries"]:
-                        stats[0] += entry["bytes_sent"]
-                        stats[1] += entry["bytes_received"]
+            ops_log = OpsLog(state_file, internal_networks)
 
-                for user, (sent, recv) in traffic_by_owner.items():
-                    final_stats.append(
-                        [
-                            day.strftime("%Y-%m-%d"),
-                            recv,
-                            sent,
-                            user,
-                        ]
-                    )
+            with ops_log.get_pending_stats_by_day() as logs:
+                for day, objs in logs.items():
+                    traffic_by_owner = {}
+                    for obj in objs:
+                        usage_log = ops_log.get_object(obj)
+                        if not usage_log.get("bucket_owner"):
+                            continue
 
-            # persist data (atomic)
-            print(f"Gathered {len(final_stats)} samples to account")
-            with directory.directory_connection(enc_file, ring=0) as d:
+                        stats = traffic_by_owner.setdefault(
+                            usage_log["bucket_owner"], [0, 0]
+                        )
+                        for entry in usage_log["log_entries"]:
+                            stats[0] += entry["bytes_sent"]
+                            stats[1] += entry["bytes_received"]
+
+                    for user, (sent, recv) in traffic_by_owner.items():
+                        final_stats.append(
+                            [
+                                day.strftime("%Y-%m-%d"),
+                                recv,
+                                sent,
+                                user,
+                            ]
+                        )
+
+                # persist data (atomic)
+                print(f"Gathered {len(final_stats)} samples to account")
                 d.store_s3_traffic(final_stats)
 
     def gc_s3_traffic(self, state_file: Path):
