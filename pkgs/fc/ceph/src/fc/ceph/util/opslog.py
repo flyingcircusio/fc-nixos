@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+import IPy
 from fc.ceph.util import run
 
 
@@ -39,11 +40,13 @@ class OpsLogState:
 
 
 class OpsLog:
-    def __init__(self, state_file: Path):
+    def __init__(self, state_file: Path, internal_networks: list[IPy.IP]):
         self.state_file = state_file
+        self.internal_networks = internal_networks
         self.opslog_ptrn = re.compile(
             r"^[\d]{4}-[\d]{2}-[\d]{2}-[\d]{2}-[A-Za-z0-9.-]+$"
         )
+        self._local_ips = {}
 
         if not self.state_file.exists():
             self.opslog_state = OpsLogState(
@@ -127,4 +130,38 @@ class OpsLog:
             day += timedelta(days=1)
 
     def get_object(self, name: str):
-        return run.json.radosgw_admin("log", "show", f"--object={name}")
+        result = run.json.radosgw_admin("log", "show", f"--object={name}")
+
+        # We filter out internal traffic, so the log_sum is wrong. Hence, delete it to
+        # not use it by accident further down.
+        del result["log_sum"]
+
+        result["log_entries"] = [
+            entry
+            for entry in result["log_entries"]
+            if not self._is_local_ip(self._ip_from_log_entry(entry))
+        ]
+
+        return result
+
+    def _is_local_ip(self, ip: IPy.IP) -> bool:
+        if ip not in self._local_ips:
+            self._local_ips[ip] = False
+            for net in self.internal_networks:
+                if ip in net:
+                    self._local_ips[ip] = True
+                    break
+        return self._local_ips[ip]
+
+    def _ip_from_log_entry(self, log_entry) -> IPy.IP:
+        # The list is of the format
+        #
+        # [
+        #  { "HTTP_X_HEADER": "value" },
+        #  { "HTTP_X_OTHER": "othervalue" }
+        # ]
+        for header in log_entry.get("http_x_headers", []):
+            name = next(iter(header.keys()), None)
+            if name == "HTTP_X_REAL_IP":
+                return IPy.IP(header[name])
+        return IPy.IP(log_entry["remote_addr"])

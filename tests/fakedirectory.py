@@ -31,6 +31,9 @@ class Directory(object):
         # log objects isn't really a thing in radosgw).
         return []
 
+    def lookup_networks(self, location):
+        return {}
+
 # Create server
 with SimpleXMLRPCServer(
     ("0.0.0.0", 80), requestHandler=RequestHandler
