@@ -1,5 +1,6 @@
 import json
 import pytest
+import IPy
 
 import freezegun
 
@@ -73,7 +74,7 @@ def rados_log_objects(monkeypatch):
 
 @freezegun.freeze_time("2025-01-03 04:00")
 def test_opslog_entries_by_day(state_file, rados_log_objects):
-    opslog = OpsLog(state_file)
+    opslog = OpsLog(state_file, [])
 
     with opslog.get_pending_stats_by_day() as log_objects:
         assert len(log_objects.keys()) == 3
@@ -99,7 +100,7 @@ def test_opslog_entries_by_day(state_file, rados_log_objects):
 
 @freezegun.freeze_time("2025-01-01 04:00")
 def test_start_end_same_day(state_file, rados_log_objects):
-    opslog = OpsLog(state_file)
+    opslog = OpsLog(state_file, [])
 
     with opslog.get_pending_stats_by_day() as log_objects:
         assert len(log_objects.keys()) == 1
@@ -121,7 +122,7 @@ def test_start_end_same_day(state_file, rados_log_objects):
 
 @freezegun.freeze_time("2025-01-03 04:00")
 def test_opslog_entries_error_handling(state_file, rados_log_objects):
-    opslog = OpsLog(state_file)
+    opslog = OpsLog(state_file, [])
 
     class SpecialException(Exception):
         pass
@@ -137,3 +138,129 @@ def test_opslog_entries_error_handling(state_file, rados_log_objects):
     with state_file.open() as f:
         data = json.loads(f.read())
         assert data["last_processed_datetime"] == "2025-01-01T01"
+
+
+@pytest.fixture
+def get_object_mock(monkeypatch):
+    internal_networks = list(map(IPy.IP, [
+        "10.0.0.0/8",
+        "fd42:23::/48",
+    ]))
+    mock = MagicMock(side_effect=[
+        {
+            "bucket_id": "12345",
+            "bucket_owner": "test",
+            "bucket": "test",
+            "log_entries": [
+                # internal traffic gets filtered out
+                {
+                    "remote_addr": "fd42:23::abc",
+                    "bucket": "test",
+                    "bytes_sent": 23,
+                    "bytes_received": 42,
+                },
+
+                # external traffic is kept
+                {
+                    "remote_addr": "192.168.0.1",
+                    "bucket": "test",
+                    "bytes_sent": 23,
+                    "bytes_received": 42,
+                },
+
+                # X-Real-IP always takes precedence
+                {
+                    "remote_addr": "192.168.0.1",
+                    "bucket": "test",
+                    "bytes_sent": 23,
+                    "bytes_received": 42,
+                    "http_x_headers": [
+                        {
+                            "HTTP_X_REAL_IP": "10.0.1.2"
+                        }
+                    ]
+                },
+                {
+                    "remote_addr": "10.0.1.2",
+                    "bucket": "test",
+                    "bytes_sent": 23,
+                    "bytes_received": 42,
+                    "http_x_headers": [
+                        {
+                            "HTTP_X_REAL_IP": "10.0.1.3"
+                        }
+                    ]
+                },
+                {
+                    "remote_addr": "10.0.1.2",
+                    "bucket": "test",
+                    "bytes_sent": 23,
+                    "bytes_received": 42,
+                    "http_x_headers": [
+                        {
+                            "HTTP_X_REAL_IP": "192.168.0.1"
+                        }
+                    ]
+                },
+
+                # Same for IPv6
+                {
+                    "remote_addr": "fd42:23::1",
+                    "bucket": "test",
+                    "bytes_sent": 23,
+                    "bytes_received": 42,
+                    "http_x_headers": [
+                        {
+                            "HTTP_X_REAL_IP": "2a01:4f8:f00::1"
+                        }
+                    ]
+                },
+                {
+                    "remote_addr": "fd42:23::1",
+                    "bucket": "test",
+                    "bytes_sent": 23,
+                    "bytes_received": 42,
+                    "http_x_headers": [
+                        {
+                            "HTTP_X_REAL_IP": "fd42:23::1"
+                        }
+                    ]
+                },
+            ],
+            "log_sum": {
+                "something": "in here"
+            }
+        }
+    ])
+    monkeypatch.setattr(
+        "fc.ceph.util.run.json.radosgw_admin", mock
+    )
+
+    return mock, internal_networks
+
+
+def test_opslog_object_with_filtered_ips(get_object_mock, state_file):
+    mock, internal_networks = get_object_mock
+    opslog = OpsLog(state_file, internal_networks)
+
+    result = opslog.get_object("foo")
+    mock.assert_has_calls([
+        call("log", "show", "--object=foo"),
+    ])
+
+    assert "log_sum" not in result
+    assert all(x in result for x in [
+        "bucket_id",
+        "bucket_owner",
+        "bucket",
+        "log_entries",
+    ])
+
+    entries = result["log_entries"]
+    assert len(entries) == 3
+
+    assert entries[0]["remote_addr"] == "192.168.0.1"
+    assert entries[1]["remote_addr"] == "10.0.1.2"
+    assert entries[1]["http_x_headers"][0]["HTTP_X_REAL_IP"] == "192.168.0.1"
+    assert entries[2]["remote_addr"] == "fd42:23::1"
+    assert entries[2]["http_x_headers"][0]["HTTP_X_REAL_IP"] == "2a01:4f8:f00::1"

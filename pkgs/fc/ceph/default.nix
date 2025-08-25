@@ -11,6 +11,7 @@
   requests,
   pytest,
   pytest_patterns,
+  ipy,
 }:
 
 buildPythonApplication rec {
@@ -25,6 +26,7 @@ buildPythonApplication rec {
     requests
     cryptsetup
     parted
+    ipy
   ];
 
   checkInputs = [
