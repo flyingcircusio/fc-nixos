@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-139.0.7258.127",
+    "name": "chromedriver-unwrapped-139.0.7258.138",
     "pname": "chromedriver-unwrapped",
-    "version": "139.0.7258.127"
+    "version": "139.0.7258.138"
   },
   "chromium": {
-    "name": "chromium-139.0.7258.127",
+    "name": "chromium-139.0.7258.138",
     "pname": "chromium",
-    "version": "139.0.7258.127"
+    "version": "139.0.7258.138"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-141.0.3",
+    "name": "firefox-142.0",
     "pname": "firefox",
-    "version": "141.0.3"
+    "version": "142.0"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -230,9 +230,9 @@
     "version": "18.2.2"
   },
   "github-runner": {
-    "name": "github-runner-2.326.0",
+    "name": "github-runner-2.327.1",
     "pname": "github-runner",
-    "version": "2.326.0"
+    "version": "2.327.1"
   },
   "gitlab": {
     "name": "gitlab-18.2.2",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.42",
+    "name": "linux-6.12.43",
     "pname": "linux",
-    "version": "6.12.42"
+    "version": "6.12.43"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.42",
+    "name": "linux-6.12.43",
     "pname": "linux",
-    "version": "6.12.42"
+    "version": "6.12.43"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -1035,9 +1035,9 @@
     "version": "3.3.8"
   },
   "ruby_3_2": {
-    "name": "ruby-3.2.8",
+    "name": "ruby-3.2.9",
     "pname": "ruby",
-    "version": "3.2.8"
+    "version": "3.2.9"
   },
   "runc": {
     "name": "runc-1.1.15",
