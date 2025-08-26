@@ -34,8 +34,8 @@ monitor.whq             CNAME   services09.fe.whq
 sensu.whq               CNAME   services13.fe.whq
 portage-bin-x86.whq     CNAME   services00.fe.whq
 ; whq-router.fe
-ns.whq                  A       212.122.41.129
-                        AAAA    2a02:238:f030:102::1
+ns.whq                  A       185.105.255.1
+                        AAAA    2a06:3a80:0:2::1
 ns2.whq                 CNAME   ns.whq
 
 ; === RZOB ===
