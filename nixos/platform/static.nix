@@ -169,16 +169,11 @@ with lib;
           "2a02:248:101:62::1187"
           "2a02:248:101:63::118f"
 
-          # vpn-whq.services.fcio.net (new addresses)
+          # vpn-whq.services.fcio.net
           "172.16.48.35"
           "185.105.255.31"
           "2a06:3a80:0:2::26"
           "2a06:3a80:0:3::2f"
-
-          # vpn-whq.services.fcio.net (legacy addresses)
-          "212.122.41.150"
-          "2a02:238:f030:102::1043"
-          "2a02:238:f030:103::1073"
 
           # Office
           "213.187.89.32/29"
