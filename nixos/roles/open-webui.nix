@@ -82,9 +82,6 @@ in
       # Having a dedicated file only containing that secret would be neat though.
       environmentFile = cfg.environmentFile;
     };
-    flyingcircus.localConfigDirs.open-webui = {
-      dir = "/etc/local/open-webui";
-    };
 
     systemd.services.open-webui.serviceConfig = {
       LoadCredential = optional (cfg.llmApiSecretFile != null) "OPENAI_API_KEYS:${cfg.llmApiSecretFile}";
