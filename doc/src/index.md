@@ -48,6 +48,7 @@ mongodb
 mysql
 nfs
 opensearch
+open-webui
 postgresql
 rabbitmq
 redis
