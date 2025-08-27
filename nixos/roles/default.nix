@@ -8,6 +8,7 @@ in
 {
   imports = with lib; [
     ./ai-model-server.nix
+    ./ai-api-gateway.nix
     ./antivirus.nix
     ./backyserver.nix
     ./coturn.nix

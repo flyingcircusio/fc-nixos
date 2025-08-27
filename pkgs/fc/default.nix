@@ -83,6 +83,7 @@ rec {
   secure-erase = callPackage ./secure-erase { };
   sensuplugins = callPackage ./sensuplugins { };
   sensusyntax = callPackage ./sensusyntax { };
+  skvaider = callPackage ./skvaider { };
   telegraf-collect-psi = callPackage ./telegraf-collect-psi { };
   telegraf-routes-summary = callPackage ./telegraf-routes-summary { };
   trafficclient = pyPackages.callPackage ./trafficclient.nix { };
