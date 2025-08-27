@@ -106,6 +106,40 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     })
   ];
 
+  pyproject-nix =
+    import
+      (super.fetchFromGitHub {
+        owner = "pyproject-nix";
+        repo = "pyproject.nix";
+        rev = "8d77f342d66ad1601cdb9d97e9388b69f64d4c8e";
+        hash = "sha256-6pNlGhwOIMfhe/RLjHdpXveKS4FyLHvlGe+KtjDild4=";
+      })
+      {
+        inherit (self) lib;
+      };
+  uv2nix =
+    import
+      (super.fetchFromGitHub {
+        owner = "pyproject-nix";
+        repo = "uv2nix";
+        rev = "64298e806f4a5f63a51c625edc100348138491aa";
+        hash = "sha256-9JcKAA7T9J98LWdcxbXvmf+amQG3ZErxqQnBjEJI04I=";
+      })
+      {
+        inherit (self) lib pyproject-nix;
+      };
+  pyproject-build-systems =
+    import
+      (super.fetchFromGitHub {
+        owner = "pyproject-nix";
+        repo = "build-system-pkgs";
+        rev = "5b8e37fe0077db5c1df3a5ee90a651345f085d38";
+        hash = "sha256-6nzSZl28IwH2Vx8YSmd3t6TREHpDbKlDPK+dq1LKIZQ=";
+      })
+      {
+        inherit (self) lib uv2nix pyproject-nix;
+      };
+
   #
   # == our own stuff
   #
