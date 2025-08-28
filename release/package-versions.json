@@ -1145,9 +1145,9 @@
     "version": "0.7.22"
   },
   "varnish": {
-    "name": "varnish-7.7.2",
+    "name": "varnish-7.7.3",
     "pname": "varnish",
-    "version": "7.7.2"
+    "version": "7.7.3"
   },
   "vim": {
     "name": "vim-9.1.1566",
