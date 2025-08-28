@@ -43,7 +43,7 @@ in
     };
     usersNeedApproval = mkOption {
       default = false;
-      type = types.boolean;
+      type = types.bool;
       description = ''
         Configure whether new users require admin approval after
         their initial successful login. This approval can be given in the
@@ -55,8 +55,10 @@ in
       example = "/etc/local/open-webui/secret";
       default = null;
       type = types.nullOr types.str;
-      description = "A file containing the authentication secret for the Flying
-      Circus AI Provider.";
+      description = ''
+        A file containing the authentication secret for the Flying
+        Circus AI Provider.
+      '';
     };
   };
 
@@ -100,7 +102,7 @@ in
             exec ${lib.getExe scfg.package} serve --host "${scfg.host}" --port ${toString scfg.port}
           '';
         in
-        mkOverride 90 "${execStart}/bin/open-webui-start";
+        mkOverride 90 (lib.getExe execStart);
     };
 
     flyingcircus.localConfigDirs.open-webui = {
