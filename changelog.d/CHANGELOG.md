@@ -1,3 +1,11 @@
+# Release 2025_031
+
+## NixOS XX.XX platform
+
+- Remove warning that file-based VCL configuration for varnish would be deprecated. (PL-133914)
+
+
+
 # Release 2025_030
 
 ## Impact
