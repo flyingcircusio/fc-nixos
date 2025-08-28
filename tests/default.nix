@@ -96,7 +96,7 @@ in
   opensearch = callTest ./opensearch.nix { };
   opensearch_dashboards = callTest ./opensearch_dashboards.nix { };
   openvpn = callTest ./openvpn.nix { };
-  open-webui = callTest ./open-webui { };
+  open-webui = callTest ./open-webui.nix { };
   percona80 = callTest ./mysql.nix { rolename = "percona80"; };
   percona84 = callTest ./mysql.nix { rolename = "percona84"; };
   physical-installer = callTest ./physical-installer.nix { inherit nixpkgs; };
