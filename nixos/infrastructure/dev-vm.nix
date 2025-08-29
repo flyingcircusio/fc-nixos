@@ -85,9 +85,6 @@ in
 
       systemd.services.postgresql.bindsTo = lib.mkForce [ ];
       services.postgresql.settings.listen_addresses = lib.mkOverride 20 "0.0.0.0,::";
-      services.postgresql.settings.fsync = "off";
-      services.postgresql.settings.full_page_writes = "off";
-      services.postgresql.settings.synchronous_commit = "off";
 
       flyingcircus.roles.antivirus.listenAddresses = [ "::" ];
 
