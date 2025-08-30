@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-139.0.7258.138",
+    "name": "chromedriver-unwrapped-139.0.7258.154",
     "pname": "chromedriver-unwrapped",
-    "version": "139.0.7258.138"
+    "version": "139.0.7258.154"
   },
   "chromium": {
-    "name": "chromium-139.0.7258.138",
+    "name": "chromium-139.0.7258.154",
     "pname": "chromium",
-    "version": "139.0.7258.138"
+    "version": "139.0.7258.154"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -230,9 +230,9 @@
     "version": "18.2.2"
   },
   "github-runner": {
-    "name": "github-runner-2.327.1",
+    "name": "github-runner-2.328.0",
     "pname": "github-runner",
-    "version": "2.327.1"
+    "version": "2.328.0"
   },
   "gitlab": {
     "name": "gitlab-18.2.2",
@@ -305,9 +305,9 @@
     "version": "3.1.7"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-1",
+    "name": "imagemagick-7.1.2-2",
     "pname": "imagemagick",
-    "version": "7.1.2-1"
+    "version": "7.1.2-2"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -505,9 +505,9 @@
     "version": "5.3.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.136.0",
+    "name": "matrix-synapse-wrapped-1.137.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.136.0"
+    "version": "1.137.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -775,9 +775,9 @@
     "version": "126"
   },
   "postfix": {
-    "name": "postfix-3.10.3",
+    "name": "postfix-3.10.4",
     "pname": "postfix",
-    "version": "3.10.3"
+    "version": "3.10.4"
   },
   "postgresql": {
     "name": "postgresql-17.6",
