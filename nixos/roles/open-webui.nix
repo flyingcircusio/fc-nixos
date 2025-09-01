@@ -109,34 +109,18 @@ in
       dir = "/etc/local/open-webui";
     };
 
-    networking.firewall.allowedTCPPorts = [
-      80
-      443
-    ];
-
-    services.nginx = {
+    flyingcircus.services.nginx = {
       enable = true;
-      recommendedGzipSettings = true;
-      recommendedOptimisation = true;
-      recommendedProxySettings = true;
-      recommendedTlsSettings = true;
       virtualHosts.${cfg.hostName} = {
         enableACME = true;
         forceSSL = true;
         locations = {
           "/" = {
             proxyPass = "http://${scfg.host}:${toString scfg.port}";
+            proxyWebsockets = true;
             extraConfig = ''
               proxy_read_timeout 1200s;
               proxy_buffering off;
-            '';
-          };
-          "/ws/" = {
-            proxyPass = "http://${scfg.host}:${toString scfg.port}";
-            extraConfig = ''
-              proxy_http_version 1.1;
-              proxy_set_header Upgrade $http_upgrade;
-              proxy_set_header Connection "upgrade";
             '';
           };
         };
