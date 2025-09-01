@@ -40,9 +40,9 @@
     "version": "5.2p37"
   },
   "bind": {
-    "name": "bind-9.20.9",
+    "name": "bind-9.20.11",
     "pname": "bind",
-    "version": "9.20.9"
+    "version": "9.20.11"
   },
   "binutils": {
     "name": "binutils-wrapper-2.44",
@@ -60,9 +60,9 @@
     "version": "2.6.6"
   },
   "cacert": {
-    "name": "nss-cacert-3.113.1",
+    "name": "nss-cacert-3.115",
     "pname": "nss-cacert",
-    "version": "3.113.1"
+    "version": "3.115"
   },
   "calibre": {
     "name": "calibre-8.4.0",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-139.0.7258.138",
+    "name": "chromedriver-unwrapped-139.0.7258.154",
     "pname": "chromedriver-unwrapped",
-    "version": "139.0.7258.138"
+    "version": "139.0.7258.154"
   },
   "chromium": {
-    "name": "chromium-139.0.7258.138",
+    "name": "chromium-139.0.7258.154",
     "pname": "chromium",
-    "version": "139.0.7258.138"
+    "version": "139.0.7258.154"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -225,34 +225,34 @@
     "version": "2.50.1"
   },
   "gitaly": {
-    "name": "gitaly-18.2.2",
+    "name": "gitaly-18.2.5",
     "pname": "gitaly",
-    "version": "18.2.2"
+    "version": "18.2.5"
   },
   "github-runner": {
-    "name": "github-runner-2.327.1",
+    "name": "github-runner-2.328.0",
     "pname": "github-runner",
-    "version": "2.327.1"
+    "version": "2.328.0"
   },
   "gitlab": {
-    "name": "gitlab-18.2.2",
+    "name": "gitlab-18.2.5",
     "pname": "gitlab",
-    "version": "18.2.2"
+    "version": "18.2.5"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.26.0",
+    "name": "gitlab-container-registry-4.27.0",
     "pname": "gitlab-container-registry",
-    "version": "4.26.0"
+    "version": "4.27.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.2.2",
+    "name": "gitlab-ee-18.2.5",
     "pname": "gitlab-ee",
-    "version": "18.2.2"
+    "version": "18.2.5"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.2.2",
+    "name": "gitlab-pages-18.2.5",
     "pname": "gitlab-pages",
-    "version": "18.2.2"
+    "version": "18.2.5"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.1.2",
@@ -260,9 +260,9 @@
     "version": "18.1.2"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.2.2",
+    "name": "gitlab-workhorse-18.2.5",
     "pname": "gitlab-workhorse",
-    "version": "18.2.2"
+    "version": "18.2.5"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -280,9 +280,9 @@
     "version": "2.4.8"
   },
   "go": {
-    "name": "go-1.24.5",
+    "name": "go-1.24.6",
     "pname": "go",
-    "version": "1.24.5"
+    "version": "1.24.6"
   },
   "go_1_23": {
     "name": "go-1.23.12",
@@ -290,9 +290,9 @@
     "version": "1.23.12"
   },
   "grafana": {
-    "name": "grafana-12.0.3",
+    "name": "grafana-12.0.4",
     "pname": "grafana",
-    "version": "12.0.3"
+    "version": "12.0.4"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -305,9 +305,9 @@
     "version": "3.1.7"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-1",
+    "name": "imagemagick-7.1.2-2",
     "pname": "imagemagick",
-    "version": "7.1.2-1"
+    "version": "7.1.2-2"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -330,9 +330,9 @@
     "version": "1.9.4"
   },
   "jdk": {
-    "name": "openjdk-21.0.7+6",
+    "name": "openjdk-21.0.8+9",
     "pname": "openjdk",
-    "version": "21.0.7+6"
+    "version": "21.0.8+9"
   },
   "jetbrains.jdk": {
     "name": "jetbrains-jdk-jcef-21.0.6-b895.109",
@@ -365,9 +365,9 @@
     "version": "1.7.1"
   },
   "jre": {
-    "name": "openjdk-21.0.7+6",
+    "name": "openjdk-21.0.8+9",
     "pname": "openjdk",
-    "version": "21.0.7+6"
+    "version": "21.0.8+9"
   },
   "k3s": {
     "name": "k3s-1.32.7+k3s1",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.43",
+    "name": "linux-6.12.44",
     "pname": "linux",
-    "version": "6.12.43"
+    "version": "6.12.44"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.43",
+    "name": "linux-6.12.44",
     "pname": "linux",
-    "version": "6.12.43"
+    "version": "6.12.44"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.3.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.136.0",
+    "name": "matrix-synapse-wrapped-1.137.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.136.0"
+    "version": "1.137.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
@@ -575,9 +575,9 @@
     "version": "2.28.4"
   },
   "nodejs": {
-    "name": "nodejs-22.17.1",
+    "name": "nodejs-22.18.0",
     "pname": "nodejs",
-    "version": "22.17.1"
+    "version": "22.18.0"
   },
   "nodejs_20": {
     "name": "nodejs-20.19.4",
@@ -585,9 +585,9 @@
     "version": "20.19.4"
   },
   "nodejs_22": {
-    "name": "nodejs-22.17.1",
+    "name": "nodejs-22.18.0",
     "pname": "nodejs",
-    "version": "22.17.1"
+    "version": "22.18.0"
   },
   "nspr": {
     "name": "nspr-4.37",
@@ -595,9 +595,9 @@
     "version": "4.37"
   },
   "nss_latest": {
-    "name": "nss-3.114",
+    "name": "nss-3.115",
     "pname": "nss",
-    "version": "3.114"
+    "version": "3.115"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.11",
@@ -605,9 +605,9 @@
     "version": "2.11"
   },
   "openjdk": {
-    "name": "openjdk-21.0.7+6",
+    "name": "openjdk-21.0.8+9",
     "pname": "openjdk",
-    "version": "21.0.7+6"
+    "version": "21.0.8+9"
   },
   "openjpeg": {
     "name": "openjpeg-2.5.2",
@@ -750,9 +750,9 @@
     "version": "8.4.11"
   },
   "phpPackages.composer": {
-    "name": "composer-2.8.5",
+    "name": "composer-2.8.11",
     "pname": "composer",
-    "version": "2.8.5"
+    "version": "2.8.11"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -775,9 +775,9 @@
     "version": "126"
   },
   "postfix": {
-    "name": "postfix-3.10.3",
+    "name": "postfix-3.10.4",
     "pname": "postfix",
-    "version": "3.10.3"
+    "version": "3.10.4"
   },
   "postgresql": {
     "name": "postgresql-17.6",
@@ -1030,9 +1030,9 @@
     "version": "3.4.1"
   },
   "ruby": {
-    "name": "ruby-3.3.8",
+    "name": "ruby-3.3.9",
     "pname": "ruby",
-    "version": "3.3.8"
+    "version": "3.3.9"
   },
   "ruby_3_2": {
     "name": "ruby-3.2.9",
@@ -1065,9 +1065,9 @@
     "version": "8.11.4"
   },
   "strace": {
-    "name": "strace-6.15",
+    "name": "strace-6.16",
     "pname": "strace",
-    "version": "6.15"
+    "version": "6.16"
   },
   "strongswan": {
     "name": "strongswan-5.9.14",
@@ -1090,9 +1090,9 @@
     "version": "12.7.4"
   },
   "systemd": {
-    "name": "systemd-257.7",
+    "name": "systemd-257.8",
     "pname": "systemd",
-    "version": "257.7"
+    "version": "257.8"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.5",
