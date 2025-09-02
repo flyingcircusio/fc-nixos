@@ -26,6 +26,13 @@ let
 
     	listen-on-v6 { any; };
 
+      ${lib.optionalString (
+        role.sourceAddressV4 != null
+      ) "query-source address ${role.sourceAddressV4};"}
+      ${lib.optionalString (
+        role.sourceAddressV6 != null
+      ) "query-source-v6 address ${role.sourceAddressV6};"}
+
     	allow-query {
     		any;
     	};
