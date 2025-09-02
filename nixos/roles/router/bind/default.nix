@@ -16,6 +16,130 @@ let
     "ns.rzob.gocept.net"
   ];
   bindUser = config.systemd.services.bind.serviceConfig.User;
+
+  namedConfig = pkgs.writeText "named.conf" ''
+    include "/etc/bind/acl.conf";
+
+    options {
+    	directory "/var/cache/named";
+    	pid-file "/run/named/named.pid";
+
+    	listen-on-v6 { any; };
+
+    	allow-query {
+    		any;
+    	};
+
+    	allow-query-cache {
+    		/* Use the cache for the "trusted" ACL. */
+    		"gocept.net";
+    		"hetzner";
+    	};
+
+    	allow-recursion {
+    		/* Only trusted addresses are allowed to use recursion. */
+    		"gocept.net";
+    	};
+
+    	allow-transfer {
+    		"gocept.net";
+    		"hetzner";
+    	};
+
+    	allow-update {
+    		/* Don't allow updates, e.g. via nsupdate. */
+    		none;
+    	};
+
+    	/*
+    	 * As of bind 9.8.0:
+    	 * "If the root key provided has expired,
+    	 * named will log the expiration and validation will not work."
+    	 */
+    	dnssec-validation auto;
+
+    	forwarders {
+    		9.9.9.9;
+    		149.112.112.112;
+    		2620:fe::fe;
+    		2620:fe::9;
+    	};
+    	/* We originally used "forward only" but Quad9 sometimes does have issues
+    	   and then we immediately failed. "forward first" allows us to use quad9
+    	   wherever possible and if they return SERVFAIL or similar we go back
+    	   to the root nameservers. I _think_ this does circumvent the security
+    	   blocks which we aren't too happy about anyway.
+    	 */
+    	forward first;
+
+    	/* if you have problems and are behind a firewall: */
+    	//query-source address * port 53;
+    };
+
+
+    /* You can enable/disable detailed debug logging using:
+
+       $ rndc  -k /etc/bind/rndc.key notrace
+       $ rndc  -k /etc/bind/rndc.key trace
+       $ rndc  -k /etc/bind/rndc.key trace 5
+
+    */
+
+    logging {
+    	category cname { debug_log; };
+    	category database { debug_log; };
+    	category edns-disabled { debug_log; };
+    	category lame-servers { debug_log; };
+    	category query-errors { debug_log; };
+    	category rate-limit { debug_log; };
+    	category resolver { debug_log; };
+    	category spill { debug_log; };
+    	category default { debug_log; };
+    	category config { debug_log; };
+    	category dispatch { debug_log; };
+    	category network { debug_log; };
+    	category general { debug_log; };
+
+    	channel debug_log {
+    		file "/var/log/bind/debug.log" versions 50 size 200m suffix timestamp;
+    		print-time yes;
+    		print-category yes;
+    		print-severity yes;
+    		severity dynamic;
+    	};
+    };
+
+    include "/etc/bind/rndc.key";
+    controls {
+    	inet 127.0.0.1 port 953 allow { 127.0.0.1/32; ::1/128; } keys { "rndc-key"; };
+    };
+
+    view "internal" {
+    	match-clients { "gocept.net"; };
+
+    	zone "localhost" IN {
+    		type master;
+    		file "/etc/bind/pri/localhost.zone";
+    		allow-update { none; };
+    		notify no;
+    	};
+
+    	zone "127.in-addr.arpa" IN {
+    		type master;
+    		file "/etc/bind/pri/127.zone";
+    		notify no;
+    	};
+
+    	include "/etc/bind/internal-zones.conf";
+
+    };
+
+    view "external" {
+    	match-clients { any; };
+
+    	include "/etc/bind/external-zones.conf";
+    };
+  '';
 in
 lib.mkIf role.enable {
   environment.etc =
@@ -137,7 +261,7 @@ lib.mkIf role.enable {
   services.bind = {
     enable = true;
     directory = "/var/cache/named";
-    configFile = ./named.conf;
+    configFile = namedConfig;
   };
 
   systemd.services.bind = {
