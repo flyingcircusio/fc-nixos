@@ -379,12 +379,19 @@ in
           cross_domain_websocket = true;
           consider_websocket_secure = true;
 
-          -- FIXME when prosody is updated to v13, use
-          --   turncredentials_secret = Credential("turncredentials_secret")
+          -- `prosodyctl` also reads and executes this config file, but has no
+          -- access to systemd credentials when running outside the service
+          -- context. But it does not require that secret anyways.
           local credentials_directory = os.getenv("CREDENTIALS_DIRECTORY")
-          local secret = assert(io.open(credentials_directory .. "/turncredentials_secret", "r"))
-          turncredentials_secret = secret:read("*a"):gsub("\n*$", "")
-          secret:close()
+          if credentials_directory then
+            -- FIXME when prosody is updated to v13, use
+            --   turncredentials_secret = Credential("turncredentials_secret")
+            local secret = assert(io.open(credentials_directory .. "/turncredentials_secret", "r"))
+            turncredentials_secret = secret:read("*a"):gsub("\n*$", "")
+            secret:close()
+          else
+            print("Warning: Running outside of systemd service context, `turncredentials_secret` will not be set")
+          end
           turncredentials = {
             { type = "turn",
               host = "${turnHostName}",
