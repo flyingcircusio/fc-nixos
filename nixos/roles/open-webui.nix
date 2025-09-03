@@ -86,6 +86,9 @@ in
         # We do *not* want that and assume convergent configuration behaviour, so
         # let's disable this.
         ENABLE_PERSISTENT_CONFIG = "False";
+
+        ENABLE_VERSION_UPDATE_CHECK = "False";
+        CORS_ALLOW_ORIGIN = "https://${cfg.hostName}";
       };
       # Having a dedicated file only containing that secret would be neat though.
       environmentFile = cfg.environmentFile;
