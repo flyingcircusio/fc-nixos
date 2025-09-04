@@ -22,7 +22,6 @@ import ./make-test-python.nix (
         networking.domain = "test";
         virtualisation.memorySize = 3072;
         virtualisation.diskSize = lib.mkForce 2000;
-        virtualisation.useNixStoreImage = true; # PL-133821 - 6.12 crashes v9fs in some situations
         virtualisation.qemu.options = [ "-smp 2" ];
         flyingcircus.roles.opensearch.enable = true;
         flyingcircus.roles.opensearch.nodes = [ "machine" ];
