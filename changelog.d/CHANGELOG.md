@@ -1,3 +1,28 @@
+# Release 2025_032
+
+## Impact
+
+-
+
+- prosody.service will be restarted, potentially interrupting Jitsi sessions.
+
+
+## NixOS XX.XX platform
+
+- Remove a misconfigured alias in the automatically generated Nginx configuration for the Grafana service that is enabled as part of the statshost role.
+  This lead to plugins not loading for example due to a change in how Grafana routes to them interally. (PL-134006)
+
+- devhost: remove insecure performance improvement options for PostgreSQL. (PL-133628)
+
+  We saw multiple PostgreSQL instances not starting correctly after an unclean shutdown of
+  the instance. In performance testing we saw a negligible benefit only.
+
+  Note that this only affected customers on devhosts.
+
+- jitsi: fix interactive invocations of `prosodyctl` management command, it needs no access to the turncredentials_secret. (PL-133672)
+
+
+
 # Release 2025_031
 
 ## NixOS XX.XX platform
