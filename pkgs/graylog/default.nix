@@ -3,7 +3,7 @@
   stdenv,
   fetchurl,
   makeWrapper,
-  openjdk8_headless,
+  jre,
   nixosTests,
 }:
 
@@ -23,10 +23,13 @@ stdenv.mkDerivation rec {
   makeWrapperArgs = [
     "--set-default"
     "JAVA_HOME"
-    "${openjdk8_headless}"
+    "${jre}"
   ];
 
-  passthru.tests = { inherit (nixosTests) graylog; };
+  passthru = {
+    tests = { inherit (nixosTests) graylog; };
+    inherit jre;
+  };
 
   installPhase = ''
     mkdir -p $out
