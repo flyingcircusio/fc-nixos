@@ -1,3 +1,16 @@
+# Release 2025_032
+
+## NixOS XX.XX platform
+
+- devhost: remove insecure performance improvement options for PostgreSQL. (PL-133628)
+
+  We saw multiple PostgreSQL instances not starting correctly after an unclean shutdown of
+  the instance. In performance testing we saw a negligible benefit only.
+
+  Note that this only affected customers on devhosts.
+
+
+
 # Release 2025_026
 
 ## NixOS XX.XX platform
