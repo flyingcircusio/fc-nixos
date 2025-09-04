@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.109",
+    "name": "element-web-1.11.110",
     "pname": "element-web",
-    "version": "1.11.109"
+    "version": "1.11.110"
   },
   "erlang": {
     "name": "erlang-27.3.4.2",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-142.0",
+    "name": "firefox-142.0.1",
     "pname": "firefox",
-    "version": "142.0"
+    "version": "142.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -740,9 +740,9 @@
     "version": "8.2.29"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.24",
+    "name": "php-with-extensions-8.3.25",
     "pname": "php-with-extensions",
-    "version": "8.3.24"
+    "version": "8.3.25"
   },
   "php84": {
     "name": "php-with-extensions-8.4.11",
