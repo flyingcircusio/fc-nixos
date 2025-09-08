@@ -10,6 +10,7 @@ with builtins;
 let
   fclib = config.fclib;
   cfg = config.flyingcircus.roles.ai-model-server;
+  scfg = config.services.ollama;
 
 in
 {
@@ -110,19 +111,14 @@ in
       pkgs.nvtopPackages.amd
     ];
 
+    environment.variables.OLLAMA_HOST = "${cfg.hostAddress}:${toString scfg.port}";
+
     # Ollama service configuration
     services.ollama = {
       enable = true;
       acceleration = "rocm";
       models = cfg.modelsPath;
       host = cfg.hostAddress;
-    };
-
-    # Firewall configuration for model access
-    networking.firewall = {
-      allowedTCPPorts = [
-        11434 # Ollama default port
-      ];
     };
 
     # Model pre-loading service (optional)
@@ -140,7 +136,7 @@ in
           enabledModels = lib.filterAttrs (n: v: v.enable) cfg.models;
           preloadCommands = lib.mapAttrsToList (
             name: model:
-            "${pkgs.curl}/bin/curl -X POST http://${cfg.hostAddress}:11434/api/pull -d '{\"name\": \"${model.name}\"}'"
+            "${pkgs.curl}/bin/curl -X POST http://${cfg.hostAddress}:${toString scfg.port}/api/pull -d '{\"name\": \"${model.name}\"}'"
           ) enabledModels;
         in
         lib.concatStringsSep "\n" (
@@ -159,7 +155,7 @@ in
     flyingcircus.services.sensu-client.checks = {
       ollama_health = {
         notification = "Ollama service health check";
-        command = "${pkgs.curl}/bin/curl -f http://${cfg.hostAddress}:11434/api/tags || exit 2";
+        command = "${pkgs.curl}/bin/curl -f http://${cfg.hostAddress}:${toString scfg.port}/api/tags || exit 2";
         interval = 300;
       };
     };
