@@ -219,6 +219,25 @@ in
     }
     // lib.mapAttrs' mkService cfg.virtualMachines
     // {
+      "fc-devhost-reattach-taps" = {
+        description = "Reattach all VM taps if needed";
+        wantedBy = [ "multi-user.target" ];
+        bindsTo = [ "br-vm-srv-netdev.service" ];
+        after = [ "br-vm-srv-netdev.service" ];
+
+        path = [ pkgs.jq pkgs.iproute2 ];
+        script = ''
+          for interface in $(ip -j link show | jq '.[] | .ifname' -r | egrep '^vm-srv-'); do
+            echo "Ensuring attachment of $interface"
+            ip link set $interface master br-vm-srv || true
+          done
+        '';
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+      };
       "fc-devhost-vm-cleanup" = {
         inherit (config.systemd.services.fc-agent) path;
         # duplicated from fc-agent.service
