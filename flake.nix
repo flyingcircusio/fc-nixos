@@ -137,18 +137,6 @@
                   owner = "nix-community";
                   repo = "poetry2nix";
                 };
-                nixpkgs-21_05 = with inputs.nixpkgs-21_05; {
-                  inherit rev;
-                  hash = narHash;
-                  owner = "flyingcircusio";
-                  repo = "nixpkgs";
-                };
-                fc-nixos-21_05 = with inputs.fc-nixos-21_05; {
-                  inherit rev;
-                  hash = narHash;
-                  owner = "flyingcircusio";
-                  repo = "fc-nixos";
-                };
               }
             );
           };
