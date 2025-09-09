@@ -10,9 +10,9 @@
     "version": "2.4.65"
   },
   "asterisk": {
-    "name": "asterisk-20.15.1",
+    "name": "asterisk-20.15.2",
     "pname": "asterisk",
-    "version": "20.15.1"
+    "version": "20.15.2"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.27",
@@ -40,9 +40,9 @@
     "version": "5.2p37"
   },
   "bind": {
-    "name": "bind-9.20.11",
+    "name": "bind-9.20.12",
     "pname": "bind",
-    "version": "9.20.11"
+    "version": "9.20.12"
   },
   "binutils": {
     "name": "binutils-wrapper-2.44",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-139.0.7258.154",
+    "name": "chromedriver-unwrapped-140.0.7339.80",
     "pname": "chromedriver-unwrapped",
-    "version": "139.0.7258.154"
+    "version": "140.0.7339.80"
   },
   "chromium": {
-    "name": "chromium-139.0.7258.154",
+    "name": "chromium-140.0.7339.80",
     "pname": "chromium",
-    "version": "139.0.7258.154"
+    "version": "140.0.7339.80"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -305,9 +305,9 @@
     "version": "3.1.7"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-2",
+    "name": "imagemagick-7.1.2-3",
     "pname": "imagemagick",
-    "version": "7.1.2-2"
+    "version": "7.1.2-3"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -340,9 +340,9 @@
     "version": "21.0.6-b895.109"
   },
   "jetty": {
-    "name": "jetty-12.0.21",
+    "name": "jetty-12.1.0",
     "pname": "jetty",
-    "version": "12.0.21"
+    "version": "12.1.0"
   },
   "jicofo": {
     "name": "jicofo-1.0-1128",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.44",
+    "name": "linux-6.12.45",
     "pname": "linux",
-    "version": "6.12.44"
+    "version": "6.12.45"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.44",
+    "name": "linux-6.12.45",
     "pname": "linux",
-    "version": "6.12.44"
+    "version": "6.12.45"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -500,9 +500,9 @@
     "version": "4.3.11"
   },
   "matomo_5": {
-    "name": "matomo-5.3.2",
+    "name": "matomo-5.4.0",
     "pname": "matomo",
-    "version": "5.3.2"
+    "version": "5.4.0"
   },
   "matrix-synapse": {
     "name": "matrix-synapse-wrapped-1.137.0",
@@ -570,9 +570,9 @@
     "version": "1.28.0"
   },
   "nix": {
-    "name": "nix-2.28.4",
+    "name": "nix-2.28.5",
     "pname": "nix",
-    "version": "2.28.4"
+    "version": "2.28.5"
   },
   "nodejs": {
     "name": "nodejs-22.18.0",
@@ -595,9 +595,9 @@
     "version": "4.37"
   },
   "nss_latest": {
-    "name": "nss-3.115",
+    "name": "nss-3.115.1",
     "pname": "nss",
-    "version": "3.115"
+    "version": "3.115.1"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.11",
@@ -745,9 +745,9 @@
     "version": "8.3.25"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.11",
+    "name": "php-with-extensions-8.4.12",
     "pname": "php-with-extensions",
-    "version": "8.4.11"
+    "version": "8.4.12"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.11",
@@ -1155,9 +1155,9 @@
     "version": "9.1.1566"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.48.5+abi=4.0",
+    "name": "webkitgtk-2.48.6+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.48.5"
+    "version": "2.48.6"
   },
   "wget": {
     "name": "wget-1.25.0",
