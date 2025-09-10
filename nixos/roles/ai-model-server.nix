@@ -140,6 +140,17 @@ in
           # Pin to gfx1101 LLVM target for Radeon PRO W7900 GPUs
           rocmOverrideGfx = "11.0.1";
         };
+
+        services.telegraf.extraConfig.inputs.amd_rocm_smi = [
+          {
+            # Exclude the GPU uuid to avoid excess label cardinality
+            taginclude = [
+              "host"
+              "name"
+            ];
+          }
+        ];
+        systemd.services.telegraf.path = [ pkgs.rocmPackages.rocm-smi ];
       })
     ]
   );
