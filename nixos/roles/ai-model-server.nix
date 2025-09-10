@@ -80,35 +80,11 @@ in
             OLLAMA_NEW_ESTIMATES = "1";
             OLLAMA_KEEP_ALIVE = "-1"; # infinite, expire if needed
           };
-        };
-
-        # Model preloading
-        systemd.services.ollama-model-preload = {
-          description = "Pre-load configured AI models";
-          wantedBy = [ "multi-user.target" ];
-          after = [ "ollama.service" ];
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-          };
-          script =
+          loadModels =
             let
               enabledModels = lib.filterAttrs (n: v: v.enable) cfg.models;
-              preloadCommands = lib.mapAttrsToList (name: model: ''
-                # Preload model ${name}
-                ${lib.getExe' pkgs.curl "curl"} -X POST http://${scfg.host}:${toString scfg.port}/api/pull -d '{\"name\": \"${model.name}\"}'
-              '') enabledModels;
             in
-            lib.concatStringsSep "\n" (
-              [
-                "echo 'Pre-loading AI models...'"
-                "sleep 10  # Wait for ollama to become ready"
-              ]
-              ++ preloadCommands
-              ++ [
-                "echo 'Model pre-loading completed'"
-              ]
-            );
+            lib.mapAttrsToList (n: v: v.name) enabledModels;
         };
 
         flyingcircus.services.sensu-client.checks = {
