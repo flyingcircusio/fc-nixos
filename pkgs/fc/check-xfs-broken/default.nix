@@ -1,8 +1,8 @@
 {
-  pkgs ? import <nixpkgs> { },
+  pkgs,
   ...
 }:
-pkgs.writeScript "check-xfs-broken.sh" ''
+pkgs.writeShellScriptBin "check-xfs-broken" ''
   # script to check if xfs is broken
   # does so by checking if '"echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.'
   # is in `dmesg`
