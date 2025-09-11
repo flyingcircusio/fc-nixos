@@ -1,3 +1,15 @@
+# Release 2025_033
+
+## NixOS XX.XX platform
+
+- devhost: guest VM interfaces will now be correctly reattached to the
+  bridge on the host if the host bridge interface is restarted.
+  (PL-133436)
+
+- Reduce size of fc-nixos release tarballs. Pinned old nixpkgs channels are only pulled in on-demand, not occupying space on most machines.
+
+
+
 # Release 2025_032
 
 ## Impact
