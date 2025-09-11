@@ -34,7 +34,7 @@ in
       example = "chat.example.com";
     };
     upstreamUrl = mkOption {
-      default = "https://ai.${location}.fcio.net";
+      default = "https://ai.${location}.fcio.net/openai/v1";
       type = types.str;
       description = ''
         Endpoint of the (OpenAI-style) LLM API used as main upstream AI provider.
