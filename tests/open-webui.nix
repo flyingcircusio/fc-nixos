@@ -13,6 +13,11 @@ import ./make-test-python.nix (
       }:
       {
         imports = [ (testlib.fcConfig { id = 1; }) ];
+        networking.domain = "fcio.net";
+        networking.extraHosts = ''
+          ${builtins.head config.fclib.network.srv.v4.addresses} machine
+          ${builtins.head config.fclib.network.srv.v6.addresses} machine
+        '';
 
         flyingcircus.roles.open-webui.enable = true;
 
