@@ -65,19 +65,34 @@ let
     	 */
     	dnssec-validation auto;
 
-    	forwarders {
-    		9.9.9.9;
-    		149.112.112.112;
-    		2620:fe::fe;
-    		2620:fe::9;
-    	};
-    	/* We originally used "forward only" but Quad9 sometimes does have issues
-    	   and then we immediately failed. "forward first" allows us to use quad9
-    	   wherever possible and if they return SERVFAIL or similar we go back
-    	   to the root nameservers. I _think_ this does circumvent the security
-    	   blocks which we aren't too happy about anyway.
-    	 */
-    	forward first;
+      /*
+       * Operator's note: control forwarders by setting
+       *
+       *    flyingcircus.roles.router.dnsForwarders = lib.mkForce [ ... ];
+       *
+       * in the NixOS configuration. Leave the list empty to disable
+       * forwarding entirely.
+       */
+
+    ${lib.optionalString (role.dnsForwarders != [ ]) (
+      # align the indentation with the rest of the file
+      let
+        text = ''
+          forwarders {
+            ${lib.concatMapStringsSep "\n  " (a: "${a};") role.dnsForwarders}
+          };
+          /* We originally used "forward only" but Quad9 sometimes does have issues
+             and then we immediately failed. "forward first" allows us to use quad9
+             wherever possible and if they return SERVFAIL or similar we go back
+             to the root nameservers. I _think_ this does circumvent the security
+             blocks which we aren't too happy about anyway.
+           */
+          forward first;
+        '';
+        lines = lib.splitString "\n" text;
+      in
+      lib.concatMapStringsSep "\n" (a: "  ${a}") lines
+    )}
 
     	/* if you have problems and are behind a firewall: */
     	//query-source address * port 53;
