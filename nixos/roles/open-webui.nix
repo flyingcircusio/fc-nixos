@@ -9,14 +9,14 @@ let
   cfg = config.flyingcircus.roles.open-webui;
   scfg = config.services.open-webui;
   fclib = config.fclib;
+  inherit (config.flyingcircus) location;
   inherit (builtins) head;
   inherit (lib)
     mkOption
     mkEnableOption
     mkOverride
     types
-    optional
-    optionalString
+    optionalAttrs
     ;
 in
 {
@@ -33,8 +33,8 @@ in
       '';
       example = "chat.example.com";
     };
-    llmApiUrl = mkOption {
-      default = "https://api.ai.flyingcircus.io";
+    upstreamUrl = mkOption {
+      default = "https://ai.${location}.fcio.net";
       type = types.str;
       description = ''
         Endpoint of the (OpenAI-style) LLM API used as main upstream AI provider.
@@ -49,9 +49,7 @@ in
         their initial successful login. This approval can be given in the
         admin settings.'';
     };
-    # expose through role config for better visibility
-    environmentFile = options.services.open-webui.environmentFile;
-    llmApiSecretFile = mkOption {
+    secretFile = mkOption {
       example = "/etc/local/open-webui/secret";
       default = null;
       type = types.nullOr types.str;
@@ -65,7 +63,7 @@ in
   config = lib.mkIf cfg.enable {
     services.open-webui = {
       enable = true;
-      host = head fclib.network.srv.v4.addresses;
+      host = fclib.mkPlatform config.networking.hostName;
       environment = {
         ENABLE_SIGNUP = "false";
         ENABLE_LOGIN_FORM = "false";
@@ -76,10 +74,10 @@ in
         OAUTH_MERGE_ACCOUNTS_BY_EMAIL = "true";
         # manage admin approval of new users from OIDC
         DEFAULT_USER_ROLE = if cfg.usersNeedApproval then "pending" else "user";
-        # XXX this gets written into the nix store – acceptable?
+        # XXX this gets written into the nix store
         OAUTH_CLIENT_SECRET = fclib.derivePasswordForHost "oidc_open-webui";
 
-        OPENAI_API_BASE_URLS = cfg.llmApiUrl;
+        OPENAI_API_BASE_URLS = cfg.upstreamUrl;
 
         # Normally, openwebui would persist certain credentials, like OPENAI_API_KEY,
         # into the database, never updating it again on changes.
@@ -90,18 +88,14 @@ in
         ENABLE_VERSION_UPDATE_CHECK = "False";
         CORS_ALLOW_ORIGIN = "https://${cfg.hostName}";
       };
-      # Having a dedicated file only containing that secret would be neat though.
-      environmentFile = cfg.environmentFile;
     };
 
-    systemd.services.open-webui.serviceConfig = {
-      LoadCredential = optional (cfg.llmApiSecretFile != null) "OPENAI_API_KEYS:${cfg.llmApiSecretFile}";
+    systemd.services.open-webui.serviceConfig = optionalAttrs (cfg.secretFile != null) {
+      LoadCredential = "OPENAI_API_KEYS:${cfg.secretFile}";
       ExecStart =
         let
           execStart = pkgs.writeShellScriptBin "open-webui-start" ''
-            ${optionalString (
-              cfg.llmApiSecretFile != null
-            ) "export OPENAI_API_KEYS=$(<$CREDENTIALS_DIRECTORY/OPENAI_API_KEYS)"}
+            export OPENAI_API_KEYS=$(<$CREDENTIALS_DIRECTORY/OPENAI_API_KEYS)
             exec ${lib.getExe scfg.package} serve --host "${scfg.host}" --port ${toString scfg.port}
           '';
         in
