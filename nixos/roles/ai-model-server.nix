@@ -55,6 +55,15 @@ in
           mistral-small = {
             name = "mistral-small3.2:latest";
           };
+          bge-m3 = {
+            name = "bge-m3:567m";
+          };
+          embeddinggemma = {
+            name = "embeddinggemma:300m";
+          };
+          nomic-embed-text = {
+            name = "Nomic-embed-text:v1.5";
+          };
         };
         description = "Predefined models to make available";
       };
@@ -86,6 +95,8 @@ in
             in
             lib.mapAttrsToList (n: v: v.name) enabledModels;
         };
+
+        systemd.services.ollama.serviceConfig.Restart = "always";
 
         flyingcircus.services.sensu-client.checks = {
           ollama_health = {
@@ -137,8 +148,8 @@ in
         services.ollama = {
           package = pkgs.ollama-rocm;
           acceleration = "rocm";
-          # Pin to gfx1101 LLVM target for Radeon PRO W7900 GPUs
-          rocmOverrideGfx = "11.0.1";
+          # Pin to gfx1100 LLVM target for Radeon PRO W7900 GPUs
+          rocmOverrideGfx = "11.0.0";
         };
 
         services.telegraf.extraConfig.inputs.amd_rocm_smi = [
