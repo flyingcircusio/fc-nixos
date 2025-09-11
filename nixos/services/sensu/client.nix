@@ -341,6 +341,11 @@ in
           package = pkgs.fc.sensuplugins;
           groups = [ "sensuclient" ];
         }
+        {
+          commands = [ "bin/check-xfs-broken" ];
+          package = pkgs.fc.check-xfs-broken;
+          groups = [ "sensuclient" ];
+        }
       ];
 
       flyingcircus.passwordlessSudoRules = [
@@ -560,7 +565,7 @@ in
             notification = ''
               XFS filesystem has entered a broken state
             '';
-            command = "${fc.check-xfs-broken}";
+            command = "${sudo} ${fc.check-xfs-broken}/bin/check-xfs-broken";
             interval = 300;
           };
         }
