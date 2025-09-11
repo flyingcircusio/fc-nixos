@@ -38,6 +38,7 @@ in
     ./nginx.nix
     ./opensearch.nix
     ./opensearch_dashboards.nix
+    ./open-webui.nix
     ./postgresql.nix
     ./rabbitmq.nix
     ./redis.nix
