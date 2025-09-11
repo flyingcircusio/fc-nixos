@@ -1,0 +1,1 @@
+- Add new `ai-model-server` role for AI model inference capabilities using Ollama

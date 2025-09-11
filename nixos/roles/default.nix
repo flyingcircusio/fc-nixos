@@ -7,6 +7,7 @@ let
 in
 {
   imports = with lib; [
+    ./ai-model-server.nix
     ./antivirus.nix
     ./backyserver.nix
     ./coturn.nix
