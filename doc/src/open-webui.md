@@ -10,9 +10,9 @@ Managed instance of the [Open WebUI](https://openwebui.com/) LLM interface. It a
 
 % TODO: link to subscription, verify subscription naming
 
-A *Flying Circus AI Services* subscription is required for this role.
+A *Flying Circus AI Services* subscription is required for this role. An access token must be created in the customer portal to allow the Open WebUI instance to access our central AI gateway.
 
-Enabling the `open-webui` role automatically sets up Open WebUI available under `https://ai-chat.<resource group name>.fcio.net`. As the first account accessing the application after installation automatically gains administrator privileges, we recommend that a designated admininstrator logs in immediately after setting up the role.
+Enabling the `open-webui` role automatically sets up Open WebUI available under `https://ai-chat.<resource group>.fcio.net`. The access token from the customer portal must then be copied into the file `/etc/local/open-webui/secret` on the VM with the role assigned. As the first account accessing the application after installation automatically gains administrator privileges, we recommend that a designated administrator logs in immediately after the role is assigned and configured.
 
 ## User Management
 

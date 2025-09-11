@@ -70,7 +70,7 @@ in
         ENABLE_OAUTH_SIGNUP = "true";
         OAUTH_CLIENT_ID = "${config.networking.hostName}_open-webui";
         OPENID_PROVIDER_URL = "https://auth.flyingcircus.io/realms/fcio/.well-known/openid-configuration";
-        OAUTH_PROVIDER_NAME = "FCIO";
+        OAUTH_PROVIDER_NAME = "Flying Circus";
         OAUTH_MERGE_ACCOUNTS_BY_EMAIL = "true";
         # manage admin approval of new users from OIDC
         DEFAULT_USER_ROLE = if cfg.usersNeedApproval then "pending" else "user";
