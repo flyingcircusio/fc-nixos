@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-140.0.7339.80",
+    "name": "chromedriver-unwrapped-140.0.7339.127",
     "pname": "chromedriver-unwrapped",
-    "version": "140.0.7339.80"
+    "version": "140.0.7339.127"
   },
   "chromium": {
-    "name": "chromium-140.0.7339.80",
+    "name": "chromium-140.0.7339.127",
     "pname": "chromium",
-    "version": "140.0.7339.80"
+    "version": "140.0.7339.127"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -225,9 +225,9 @@
     "version": "2.50.1"
   },
   "gitaly": {
-    "name": "gitaly-18.2.5",
+    "name": "gitaly-18.3.2",
     "pname": "gitaly",
-    "version": "18.2.5"
+    "version": "18.3.2"
   },
   "github-runner": {
     "name": "github-runner-2.328.0",
@@ -235,9 +235,9 @@
     "version": "2.328.0"
   },
   "gitlab": {
-    "name": "gitlab-18.2.5",
+    "name": "gitlab-18.3.2",
     "pname": "gitlab",
-    "version": "18.2.5"
+    "version": "18.3.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.27.0",
@@ -245,24 +245,24 @@
     "version": "4.27.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.2.5",
+    "name": "gitlab-ee-18.3.2",
     "pname": "gitlab-ee",
-    "version": "18.2.5"
+    "version": "18.3.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.2.5",
+    "name": "gitlab-pages-18.3.2",
     "pname": "gitlab-pages",
-    "version": "18.2.5"
+    "version": "18.3.2"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.1.2",
+    "name": "gitlab-runner-18.3.1",
     "pname": "gitlab-runner",
-    "version": "18.1.2"
+    "version": "18.3.1"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.2.5",
+    "name": "gitlab-workhorse-18.3.2",
     "pname": "gitlab-workhorse",
-    "version": "18.2.5"
+    "version": "18.3.2"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.45",
+    "name": "linux-6.12.46",
     "pname": "linux",
-    "version": "6.12.45"
+    "version": "6.12.46"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.45",
+    "name": "linux-6.12.46",
     "pname": "linux",
-    "version": "6.12.45"
+    "version": "6.12.46"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "5.4.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.137.0",
+    "name": "matrix-synapse-wrapped-1.138.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.137.0"
+    "version": "1.138.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
