@@ -160,14 +160,14 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.110",
+    "name": "element-web-1.11.111",
     "pname": "element-web",
-    "version": "1.11.110"
+    "version": "1.11.111"
   },
   "erlang": {
-    "name": "erlang-27.3.4.2",
+    "name": "erlang-27.3.4.3",
     "pname": "erlang",
-    "version": "27.3.4.2"
+    "version": "27.3.4.3"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.46",
+    "name": "linux-6.12.47",
     "pname": "linux",
-    "version": "6.12.46"
+    "version": "6.12.47"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.46",
+    "name": "linux-6.12.47",
     "pname": "linux",
-    "version": "6.12.46"
+    "version": "6.12.47"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
