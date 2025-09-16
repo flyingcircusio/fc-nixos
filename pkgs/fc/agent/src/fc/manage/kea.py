@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import socket
 import sys
 from pathlib import Path
 
@@ -306,6 +307,9 @@ present, return 2 to signal the output file has been changed.
             file=sys.stderr,
         )
         return
+
+    if not socket.getdefaulttimeout():
+        socket.setdefaulttimeout(60)
 
     kea = Kea(args)
     kea.query_directory()

@@ -2,6 +2,7 @@ import argparse
 import collections
 import os.path as p
 import re
+import socket
 import subprocess
 import sys
 
@@ -457,6 +458,8 @@ def update():
         default="/etc/local/configure-zones.cfg",
         help="path to configuration file (default: %(default)s)",
     )
+    if not socket.getdefaulttimeout():
+        socket.setdefaulttimeout(60)
     args = a.parse_args()
     config = configobj.ConfigObj(args.config)
     zones = Zones(config)
