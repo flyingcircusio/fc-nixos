@@ -114,7 +114,6 @@ current_os_release:
   BUILD_ID: 21.05.1233.a9cc58d
   VERSION_ID: '21.05'
 current_release: '{CURRENT_RELEASE}'
-current_system: {CURRENT_SYSTEM_PATH}
 current_version: 21.05.1233.a9cc58d
 next_channel_url: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz
 next_environment: fc-21.05-production
@@ -481,7 +480,8 @@ def test_update_activity_run(log, nixos_mock, activity, logger):
 
 
 def test_update_activity_run_unchanged(log, nixos_mock, activity):
-    activity.current_system = activity.next_system
+    # Mock nixos.current_system() to return the same as next_system
+    nixos_mock.current_system.return_value = activity.next_system
 
     activity.run()
 
