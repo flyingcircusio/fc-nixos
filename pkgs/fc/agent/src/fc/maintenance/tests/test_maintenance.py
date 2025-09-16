@@ -518,7 +518,6 @@ def test_release_path(tmp_path, logger, log, monkeypatch):
 
     class PathAwareFakeUpdateActivity(FakeUpdateActivity):
         def _detect_current_state(self):
-            self.current_system = fc.util.nixos.current_system()
             # usually acquired through `nixos.build_system`, which returns a str
             self.next_system = str(next_d)
 
