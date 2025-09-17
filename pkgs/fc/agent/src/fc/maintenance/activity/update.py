@@ -43,11 +43,8 @@ class UpdateActivity(Activity):
         super().__init__()
         self.next_environment = next_environment
         self.next_channel_url = next_channel_url
-        self.changelog_url = None
         self.next_system = None
         self.current_channel_url = None
-        self.current_release = None
-        self.next_release = None
         self.current_version = None
         self.next_version = None
         self.current_environment = None
@@ -129,12 +126,8 @@ class UpdateActivity(Activity):
     def load(self):
         # Add attributes after deserialization if needed to stay compatible
         # with older persisted instances of UpdateActivity.
-        if not hasattr(self, "current_release"):
-            self.current_release = None
-        if not hasattr(self, "next_release"):
-            self.next_release = None
-        if not hasattr(self, "changelog_url"):
-            self.changelog_url = None
+        pass
+        # there are currently no old pieces of activity data we need to stay compatible with
 
     def prepare(self, dry_run=False):
         self.log.debug(
@@ -271,7 +264,6 @@ class UpdateActivity(Activity):
             next_system=self.next_system,
             next_version=self.next_version,
             next_environment=self.next_environment,
-            next_release=self.next_release,
         )
 
     def resume(self):
@@ -353,13 +345,6 @@ class UpdateActivity(Activity):
         if unit_change_lines:
             msg.extend(unit_change_lines)
             msg.append("")
-
-        if self.next_release:
-            msg.append(
-                f"Release: {self.current_release} -> {self.next_release}"
-            )
-        if self.changelog_url:
-            msg.append(f"ChangeLog: {self.changelog_url}")
 
         if self.current_environment != self.next_environment:
             msg.append(
