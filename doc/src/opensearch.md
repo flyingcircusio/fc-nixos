@@ -4,7 +4,6 @@
 
 Managed instance of [OpenSearch](https://opensearch.org) in version 2.17.x.
 
-
 ## Interaction
 
 Run `opensearch-readme` to show a dynamic README file which shows information
@@ -117,7 +116,7 @@ all nodes.
 **flyingcircus.roles.opensearch.heapPercentage**
 
 Percentage of memory to use for OpenSearch heap. Defaults to 50 % of
-available RAM: *systemMemory * heapPercentage / 100*
+available RAM: _systemMemory _ heapPercentage / 100\*
 
 ### Upstream NixOS Options
 
@@ -132,7 +131,6 @@ OpenSearch settings are specified as flat key value pairs like
 
 Note that the key must be quoted to stop Nix from interpreting the name
 of the setting as a path to a nested attribute.
-
 
 ## Migrate from Elasticsearch
 
@@ -166,3 +164,156 @@ maintenance at the same time. Additionally, before running maintenance
 activities on hosts which are members of a multi-node cluster, the
 cluster state must be green. The check will wait for up to 60 seconds
 for the cluster to become green.
+
+## Generate vector embddings using FC AI
+
+To support semantic search OpenSearch allows to generate and store vector embeddings. This is mostly covered in the [official documentation](https://docs.opensearch.org/latest/vector-search/getting-started/auto-generated-embeddings/). Here we cover the specialities to connect OpenSearch to the FC AI.
+
+Preparing the cluster:
+
+- Unlike some examples we are offloading the ML tasks to an external API instead of running them locally. To enable this, set [`plugins.ml_commons.only_run_on_ml_node`](https://docs.opensearch.org/latest/ml-commons-plugin/cluster-settings/#run-tasks-and-models-on-ml-nodes-only) to `false`.
+- You need to enable the API endpoint via setting [`plugins.ml_commons.trusted_connector_endpoints_regex`](https://docs.opensearch.org/latest/ml-commons-plugin/remote-models/index/#adding-trusted-endpoints) to e.g. `^https://ai\\.rzob\\.fcio\\.net/.*$`.
+- The ML response needs to be post-processed, see example below.
+
+A complete example in Python might look like this:
+
+```python
+import time
+from opensearchpy import OpenSearch, RequestError
+
+AI_KEY = "your ai access key"
+OS_HOST = "..."
+OS_PORT = 9200
+
+os = OpenSearch(
+    hosts=[{"host": OS_HOST, "port": OS_PORT}],
+    http_compress=True,  # enables gzip compression for request bodies
+    use_ssl=False,
+)
+
+
+POST_PROCESS = """
+    def json = "{\\"name\\": \\"sentence_embedding\\", \
+         \\"data_type\\": \\"FLOAT32\\", \
+         \\"shape\\": [" + params.data[0].embedding.length + "], \
+         \\"data\\": " + params.data[0].embedding + "}";
+    return json;
+"""
+
+os.cluster.put_settings(
+    body={
+        "persistent": {
+            "plugins.ml_commons.only_run_on_ml_node": "false",
+            "plugins.ml_commons.native_memory_threshold": "99",
+            "plugins.ml_commons.trusted_connector_endpoints_regex": [
+                "^https://ai\\.rzob\\.fcio\\.net/.*$",
+            ],
+        }
+    }
+)
+
+# Model Group
+response = os.plugins.ml.register_model_group(
+    body={
+        "name": "remote_fc_ai",
+        "description": "A model group for external models hosted by FC",
+    }
+)
+model_group = response["model_group_id"]
+print("Model group", model_group)
+
+response = os.plugins.ml.create_connector(
+    body={
+        "name": "embeddinggemma:300m connector",
+        "description": "Connect to FC embeddinggemma:300m",
+        "version": 1,
+        "protocol": "http",
+        "parameters": {
+            "endpoint": "ai.rzob.fcio.net",
+            "model": "embeddinggemma:300m",
+        },
+        "credential": {
+            "openAI_key": AI_KEY,
+        },
+        "actions": [
+            {
+                "action_type": "predict",
+                "method": "POST",
+                "url": "https://${parameters.endpoint}/openai/v1/embeddings",
+                "headers": {
+                    "Authorization": "Bearer ${credential.openAI_key}"
+                },
+                "request_body": '{ "model": "${parameters.model}", "input": ${parameters.input} }',
+                "post_process_function": POST_PROCESS,
+            }
+        ],
+    }
+)
+connector_id = response["connector_id"]
+print("Connector id", connector_id)
+
+response = os.plugins.ml.register_model(
+    body={
+        "name": "embeddinggemma:300m",
+        "function_name": "remote",
+        "model_group_id": model_group,
+        "description": "Embedding Model",
+        "connector_id": connector_id,
+    },
+)
+
+assert response["status"] == "CREATED"
+task_id = response["task_id"]
+
+state = None
+while True:
+    response = os.plugins.ml.get_task(task_id=task_id)
+    state = response["state"]
+    print(f"Waiting for model import, current state: {state}")
+    if state == "COMPLETED":
+        break
+    time.sleep(1)
+model_id = response["model_id"]
+print("Model id:", model_id)
+
+response = os.ingest.put_pipeline(
+    id="document-ingest",
+    body={
+        "description": "Pipeline to ingest documents",
+        "processors": [
+            {
+                "text_embedding": {
+                    "model_id": model_id,
+                    "field_map": {"body": "passage_embedding"},
+                }
+            }
+        ],
+    },
+)
+print(response)
+
+response = os.indices.create(
+    index=self.INDEX,
+    body={
+        "settings": {
+            "index.knn": True,
+            "index.number_of_shards": 2,
+            "default_pipeline": "document-ingest",
+        },
+        "mappings": {
+            "properties": {
+                "docid": {"type": "keyword"},
+                "passage_embedding": {
+                    "type": "knn_vector",
+                    "dimension": 768,  # Must match the ML output vector
+                    "space_type": "l2",
+                },
+                "body": {"type": "text"},
+                # Add more fields as required
+            }
+        },
+    },
+)
+print(response)
+
+```
