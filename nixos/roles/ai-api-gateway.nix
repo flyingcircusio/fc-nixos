@@ -9,36 +9,11 @@ let
   fclib = config.fclib;
   enc = config.flyingcircus.enc;
   settingsFormat = pkgs.formats.toml { };
-  baseConfigFile = settingsFormat.generate "skvaider-config.toml" {
-    aramaki = {
-      url = cfg.aramakiUrl;
-      state_directory = "/var/lib/skvaider/aramaki";
-      secret_salt = "@secret_salt@";
-      principal = enc.name;
-    };
-    backend = builtins.map (val: {
-      type = "openai";
-      url = "http://${val.address}:11434";
-    }) (builtins.filter (s: s.service == "ai-model-server-server") config.flyingcircus.encServices);
-    logging = {
-      access_log_path = "/var/log/skvaider/access.log";
-      log_level = cfg.logLevel;
-    };
-  };
+  baseConfigFile = settingsFormat.generate "skvaider-config.toml" cfg.settings;
 in
 {
   options.flyingcircus.roles.ai-api-gateway = {
     enable = lib.mkEnableOption "AI gateway (skvaider)";
-    aramakiUrl = lib.mkOption {
-      type = lib.types.str;
-      default = "wss://directory.fcio.net/aramaki";
-      internal = true;
-    };
-    logLevel = lib.mkOption {
-      type = lib.types.str;
-      default = "INFO";
-      description = "skvaider log level";
-    };
     port = lib.mkOption {
       type = lib.types.port;
       default = 23211;
@@ -49,6 +24,64 @@ in
       default = "ai.${enc.parameters.location}.fcio.net";
       defaultText = "ai.<location>.fcio.net";
       description = "hostname configured in nginx";
+    };
+    settings = lib.mkOption {
+      description = "skvaider config";
+      default = { };
+      type = lib.types.submodule {
+        freeformType = settingsFormat.type;
+        options = {
+          aramaki.url = lib.mkOption {
+            default = "wss://directory.fcio.net/aramaki";
+            internal = true;
+          };
+          aramaki.state_directory = lib.mkOption {
+            default = "/var/lib/skvaider/aramaki";
+            internal = true;
+          };
+          aramaki.secret_salt = lib.mkOption {
+            default = "@secret_salt@";
+            internal = true;
+          };
+          aramaki.principal = lib.mkOption {
+            default = enc.name;
+            internal = true;
+          };
+          backend = lib.mkOption {
+            description = "Backends configured in skvaider";
+            type = with lib.types; listOf (attrsOf str);
+            internal = true;
+            default = builtins.map (val: {
+              type = "openai";
+              url = "http://${val.address}:11434";
+            }) (builtins.filter (s: s.service == "ai-model-server-server") config.flyingcircus.encServices);
+          };
+          openai.models = lib.mkOption {
+            description = "model config";
+            type = with lib.types; attrsOf anything;
+            default = {
+              "gpt-oss:20b" = {
+                num_ctx = 131072;
+              };
+              "gpt-oss:120b" = {
+                num_ctx = 131072;
+              };
+              "mistral-small3.2:latest" = {
+                num_ctx = 65536;
+              };
+            };
+          };
+          logging.access_log_path = lib.mkOption {
+            default = "/var/log/skvaider/access.log";
+            type = lib.types.str;
+            internal = true;
+          };
+          logging.log_level = lib.mkOption {
+            type = lib.types.str;
+            default = "INFO";
+          };
+        };
+      };
     };
   };
 
