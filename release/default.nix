@@ -333,7 +333,7 @@ let
 in
 
 jobs // {
-  inherit channels tested images doc;
+  inherit channels tested images;# doc; docs fail to build as we stopped using intersphinx on the Hydra side
 
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";
