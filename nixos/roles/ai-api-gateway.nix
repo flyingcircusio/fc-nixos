@@ -20,6 +20,17 @@ let
       type = "openai";
       url = "http://${val.address}:11434";
     }) (builtins.filter (s: s.service == "ai-model-server-server") config.flyingcircus.encServices);
+    openai.models = {
+      "gpt-oss:20b" = {
+        num_ctx = 131072;
+      };
+      "gpt-oss:120b" = {
+        num_ctx = 131072;
+      };
+      "mistral-small3.2:latest" = {
+        num_ctx = 65536;
+      };
+    };
     logging = {
       access_log_path = "/var/log/skvaider/access.log";
       log_level = cfg.logLevel;
