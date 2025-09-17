@@ -22,9 +22,6 @@ CURRENT_BUILD = 93111
 NEXT_BUILD = 93222
 NEXT_NEXT_BUILD = 93333
 
-CURRENT_RELEASE = "2021_002"
-NEXT_RELEASE = "2021_003"
-
 CHANGELOG_URL = "https://doc.flyingcircus.io/platform/changes/2021/r003.html"
 
 CURRENT_CHANNEL_URL = f"https://hydra.flyingcircus.io/build/{CURRENT_BUILD}/download/1/nixexprs.tar.xz"
@@ -60,8 +57,6 @@ SUMMARY = textwrap.dedent(
     Restart: telegraf
     Reload: nginx
 
-    Release: {CURRENT_RELEASE} -> {NEXT_RELEASE}
-    ChangeLog: {CHANGELOG_URL}
     Environment: {ENVIRONMENT} (unchanged)
     Build number: {CURRENT_BUILD} -> {NEXT_BUILD}
     Channel URL: {NEXT_CHANNEL_URL}"""
@@ -106,19 +101,16 @@ updated_at: null
 
 SERIALIZED_ACTIVITY = f"""\
 !!python/object:fc.maintenance.activity.update.UpdateActivity
-changelog_url: {CHANGELOG_URL}
 current_channel_url: https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz
 current_environment: fc-21.05-production
 current_kernel: 5.10.45
 current_os_release:
   BUILD_ID: 21.05.1233.a9cc58d
   VERSION_ID: '21.05'
-current_release: '{CURRENT_RELEASE}'
 current_version: 21.05.1233.a9cc58d
 next_channel_url: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz
 next_environment: fc-21.05-production
 next_kernel: 5.10.50
-next_release: '{NEXT_RELEASE}'
 next_system: {NEXT_SYSTEM_PATH}
 next_version: 21.05.1235.bacc11d
 reboot_needed: !!python/object/apply:fc.maintenance.activity.RebootType
@@ -139,15 +131,12 @@ unit_changes:
 def activity(logger, nixos_mock, tmp_path):
     activity = UpdateActivity(next_channel_url=NEXT_CHANNEL_URL, log=logger)
     activity.current_channel_url = CURRENT_CHANNEL_URL
-    activity.changelog_url = CHANGELOG_URL
     activity.current_environment = ENVIRONMENT
-    activity.current_release = CURRENT_RELEASE
     activity.current_version = CURRENT_BUILD_ID
     activity.current_kernel = CURRENT_KERNEL_VERSION
     activity.next_channel_url = NEXT_CHANNEL_URL
     activity.next_environment = ENVIRONMENT
     activity.next_kernel = NEXT_KERNEL_VERSION
-    activity.next_release = NEXT_RELEASE
     activity.next_system = NEXT_SYSTEM_PATH
     activity.next_version = NEXT_BUILD_ID
     activity.reboot_needed = RebootType.WARM
@@ -318,9 +307,6 @@ def test_update_activity_loading_outdated_serialization_should_work(
     request_path.write_text(OUTDATED_SERIALIZED_REQUEST)
     request = Request.load(tmp_path, agent_configparser, logger, 1800)
     activity = request.activity
-    assert activity.changelog_url is None
-    assert activity.current_release is None
-    assert activity.next_release is None
     assert activity.summary
     assert activity.__rich__()
 
@@ -388,8 +374,6 @@ def test_update_nfs_reboot_required(
 
         Restart: mnt-nfs-shared.mount
 
-        Release: 2021_002 -> 2021_003
-        ChangeLog: https://doc.flyingcircus.io/platform/changes/2021/r003.html
         Environment: fc-21.05-production (unchanged)
         Build number: 93111 -> 93222
         Channel URL: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"""
@@ -447,8 +431,6 @@ def test_update_release_change_reboot_required(
         Restart: telegraf
         Reload: nginx
         
-        Release: 2021_002 -> 2021_003
-        ChangeLog: https://doc.flyingcircus.io/platform/changes/2021/r003.html
         Environment: fc-21.05-production (unchanged)
         Build number: 93111 -> 93222
         Channel URL: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"""
