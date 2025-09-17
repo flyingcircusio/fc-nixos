@@ -360,7 +360,7 @@ let
 in
 
 jobs // {
-  inherit channels tested images doc;
+  inherit channels tested images;# doc; docs fail to build as we stopped using intersphinx on the Hydra side
   # Helpful for debugging with nix repl -f release/default.nix but should not included as Hydra jobs.
   # inherit excludedPkgNames overlayPkgNames importantPkgNames overlayPkgNamesToTest importantPkgNamesToTest;
 
