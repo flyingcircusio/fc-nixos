@@ -101,13 +101,6 @@ updated_at: null
 
 SERIALIZED_ACTIVITY = f"""\
 !!python/object:fc.maintenance.activity.update.UpdateActivity
-current_channel_url: https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz
-current_environment: fc-21.05-production
-current_kernel: 5.10.45
-current_os_release:
-  BUILD_ID: 21.05.1233.a9cc58d
-  VERSION_ID: '21.05'
-current_version: 21.05.1233.a9cc58d
 next_channel_url: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz
 next_environment: fc-21.05-production
 next_kernel: 5.10.50
@@ -130,10 +123,6 @@ unit_changes:
 @fixture
 def activity(logger, nixos_mock, tmp_path):
     activity = UpdateActivity(next_channel_url=NEXT_CHANNEL_URL, log=logger)
-    activity.current_channel_url = CURRENT_CHANNEL_URL
-    activity.current_environment = ENVIRONMENT
-    activity.current_version = CURRENT_BUILD_ID
-    activity.current_kernel = CURRENT_KERNEL_VERSION
     activity.next_channel_url = NEXT_CHANNEL_URL
     activity.next_environment = ENVIRONMENT
     activity.next_kernel = NEXT_KERNEL_VERSION
@@ -301,7 +290,7 @@ def test_update_activity_deserialize(activity, logger):
 
 
 def test_update_activity_loading_outdated_serialization_should_work(
-    logger, tmp_path, agent_configparser
+    logger, tmp_path, agent_configparser, nixos_mock
 ):
     request_path = tmp_path / "request.yaml"
     request_path.write_text(OUTDATED_SERIALIZED_REQUEST)
@@ -402,7 +391,7 @@ def test_update_release_change_reboot_required(
     activity.reboot_needed = None
     nixos_mock.CURRENT_VERSION_ID = "24.11"
     nixos_mock.NEXT_VERSION_ID = "24.11"
-    activity._detect_current_state()
+    activity._log_current_state()
     activity._detect_next_version()
     assert activity.release_path() == ["24.11"]
     activity._register_reboot_for_release_change()
@@ -415,7 +404,7 @@ def test_update_release_change_reboot_required(
     nixos_mock.NEXT_VERSION_ID = "25.05"
     nixos_mock.CURRENT_BUILD_ID = "24.11.abcde.12345"
     nixos_mock.NEXT_BUILD_ID = "25.05.edcba.54321"
-    activity._detect_current_state()
+    activity._log_current_state()
     activity._detect_next_version()
     assert activity.release_path() == ["24.11", "25.05"]
     activity._register_reboot_for_release_change()
@@ -522,7 +511,10 @@ def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
 
 
 def test_update_activity_switch_if_no_release_change(log, nixos_mock, activity):
-    activity.current_version = "24.11.1111"
+    nixos_mock.os_release.return_value = {
+        "BUILD_ID": "24.11.1111",
+        "VERSION_ID": "24.11",
+    }
     activity.next_version = "24.11.9999"
     activity.run()
 
@@ -540,7 +532,7 @@ def test_update_activity_boot_if_release_change(log, nixos_mock, activity):
     nixos_mock.CURRENT_BUILD_ID = "24.11.abcde.12345"
     nixos_mock.NEXT_BUILD_ID = "25.05.edcba.54321"
 
-    activity._detect_current_state()
+    activity._log_current_state()
     activity._detect_next_version()
     activity.run()
 
@@ -585,6 +577,43 @@ def test_update_activity_from_enc(
     )
     activity = UpdateActivity.from_enc(logger, enc)
     assert activity
+
+
+def test_current_properties_return_expected_values(nixos_mock, activity):
+    """Test that current_* properties return values from nixos functions."""
+
+    # Mock the nixos functions to return specific values
+    nixos_mock.current_nixos_channel_url.return_value = (
+        "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
+    )
+    nixos_mock.current_fc_environment_name.return_value = "fc-21.05-production"
+    nixos_mock.os_release.return_value = {
+        "BUILD_ID": "21.05.1233.a9cc58d",
+        "VERSION_ID": "21.05",
+    }
+    nixos_mock.kernel_version.return_value = "5.10.45"
+
+    # Test that properties return the mocked values
+    assert (
+        activity.current_channel_url
+        == "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
+    )
+    assert activity.current_environment == "fc-21.05-production"
+    assert activity.current_version == "21.05.1233.a9cc58d"
+    assert activity.current_kernel == "5.10.45"
+
+
+def test_current_properties_not_serialized(activity):
+    """Test that current_* properties are not included in serialized state."""
+    state = activity.__getstate__()
+
+    # None of the current_* properties should be in the serialized state,
+    # they're supposed to be read from the live system
+    assert "current_channel_url" not in state
+    assert "current_environment" not in state
+    assert "current_version" not in state
+    assert "current_kernel" not in state
+    assert "current_os_release" not in state
 
 
 def test_update_from_enc_no_enc(log, logger):
