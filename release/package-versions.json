@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.11.111",
+    "name": "element-web-1.11.112",
     "pname": "element-web",
-    "version": "1.11.111"
+    "version": "1.11.112"
   },
   "erlang": {
     "name": "erlang-27.3.4.3",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-142.0.1",
+    "name": "firefox-143.0",
     "pname": "firefox",
-    "version": "142.0.1"
+    "version": "143.0"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -495,9 +495,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.11",
+    "name": "mastodon-4.3.12",
     "pname": "mastodon",
-    "version": "4.3.11"
+    "version": "4.3.12"
   },
   "matomo_5": {
     "name": "matomo-5.4.0",
@@ -595,9 +595,9 @@
     "version": "4.37"
   },
   "nss_latest": {
-    "name": "nss-3.115.1",
+    "name": "nss-3.116",
     "pname": "nss",
-    "version": "3.115.1"
+    "version": "3.116"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.11",
@@ -675,9 +675,9 @@
     "version": "8.0.42-33"
   },
   "percona-server": {
-    "name": "percona-server-8.4.5-5",
+    "name": "percona-server-8.4.6-6",
     "pname": "percona-server",
-    "version": "8.4.5-5"
+    "version": "8.4.6-6"
   },
   "percona-server_8_0": {
     "name": "percona-server-8.0.42-33",
