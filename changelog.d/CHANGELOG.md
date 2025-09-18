@@ -1,3 +1,19 @@
+# Release 2025_034
+
+- Add new `ai-model-server` role for AI model inference capabilities using Ollama
+
+
+## NixOS XX.XX platform
+
+- Introduce ai-api-gateway role (PL-133948)
+
+- Fix sensu check which reads the kernel message buffer to detect
+  potentially broken XFS filesystems. (PL-133973)
+
+- open-webui: add as new role that automatically integrates with the Flying Circus AI services.
+
+
+
 # Release 2025_033
 
 ## NixOS XX.XX platform
