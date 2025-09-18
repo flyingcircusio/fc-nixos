@@ -21,6 +21,8 @@ import ./make-test-python.nix (
 
         flyingcircus.roles.open-webui.enable = true;
 
+        environment.etc."local/open-webui/secret".text = "imasecret";
+
         # cannot download sentence transformers model without network
         # connection.
         services.open-webui.environment.RAG_EMBEDDING_MODEL = "";

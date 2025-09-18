@@ -50,12 +50,12 @@ in
         admin settings.'';
     };
     secretFile = mkOption {
-      example = "/etc/local/open-webui/secret";
-      default = null;
+      default = "/etc/local/open-webui/secret";
       type = types.nullOr types.str;
       description = ''
         A file containing the authentication secret for the Flying
         Circus AI Provider.
+        Can be null if no secret is required.
       '';
     };
   };
