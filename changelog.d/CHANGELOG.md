@@ -1,3 +1,11 @@
+# Release 2025_034
+
+## NixOS XX.XX platform
+
+- Rotate zagy's root ssh key (PL-133335)
+
+
+
 # Release 2025_013
 
 ## NixOS XX.XX platform
