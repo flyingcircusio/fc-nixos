@@ -169,6 +169,8 @@ for the cluster to become green.
 
 To support semantic search OpenSearch allows to generate and store vector embeddings. This is mostly covered in the [official documentation](https://docs.opensearch.org/latest/vector-search/getting-started/auto-generated-embeddings/). Here we cover the specialities to connect OpenSearch to the FC AI.
 
+For more informations about our AI API product, please visit https://flyingcircus.io/en/ai and https://doc.flyingcircus.io/platform/infrastructure/ai.html.
+
 Preparing the cluster:
 
 - Unlike some examples we are offloading the ML tasks to an external API instead of running them locally. To enable this, set [`plugins.ml_commons.only_run_on_ml_node`](https://docs.opensearch.org/latest/ml-commons-plugin/cluster-settings/#run-tasks-and-models-on-ml-nodes-only) to `false`.
