@@ -166,7 +166,7 @@ in
           name = "9pfs-fixes";
           patch = pkgs.fetchurl {
             url = "https://lore.kernel.org/linux-fsdevel/20250811-iot_iter_folio-v1-0-d9c223adf93c@codewreck.org/t.mbox.gz";
-            hash = "sha256-lgcoaBDd9FkFTb/hi9a+knfC0T7ZAAh410SxUFBIM1k=";
+            hash = "sha256-36ssMPha5R31f0wQ+GsLrB78X8uOLM19T+eHETm5KBY=";
           };
         }
       ];
