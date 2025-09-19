@@ -46,34 +46,6 @@ lib.mkMerge [
       }
     ) config.security.acme.certs;
 
-    systemd.services =
-      let
-        # Retry certificate renewal 30s after a failure.
-        serviceConfig = {
-          Restart = "on-failure";
-          RestartSec = fclib.mkPlatformOverride 30;
-        };
-
-        # Allow 3 retries/starts per hour to not hit the rate limit
-        # of 5 per hour so we have two left to try manually.
-        unitConfig = {
-          StartLimitIntervalSec = "1h";
-          StartLimitBurst = 3;
-        };
-      in
-      lib.listToAttrs (
-        map (
-          n:
-          lib.nameValuePair "acme-${n}" {
-            inherit serviceConfig unitConfig;
-            # Upstream added the renewal service to multi-user.target which means that
-            # every fc-manage run triggers a renewal. We want that the renewal is
-            # only triggered by the timer.
-            wantedBy = lib.mkForce [ ];
-          }
-        ) (lib.attrNames config.security.acme.certs)
-      );
-
     # fallback ACME settings
     security.acme.acceptTerms = true;
     security.acme.defaults.email = "admin@flyingcircus.io";
