@@ -106,9 +106,9 @@ in
       };
     };
 
-    systemd.services.coturn = rec {
-      requires = [ "acme-selfsigned-${hostname}.service" ];
-      after = requires;
+    systemd.services.coturn = {
+      wants = [ "acme-${hostname}.service" ];
+      after = [ "acme-${hostname}.service" ];
       serviceConfig = {
         Restart = lib.mkForce "always";
       }
