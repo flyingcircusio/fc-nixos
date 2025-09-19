@@ -327,7 +327,7 @@ let
 in
 
 jobs // {
-  inherit channels tested images doc;
+  inherit channels tested images; # doc;
 
   release = with lib; pkgs.releaseTools.channel rec {
     name = "release-${version}${versionSuffix}";
