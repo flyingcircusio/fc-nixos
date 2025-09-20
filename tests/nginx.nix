@@ -292,7 +292,7 @@ import ./make-test-python.nix (
           server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload-post-renew.service")
 
         with subtest("acme script should have lego calls with custom key-type and required default settings"):
-          lego_calls = server1.succeed("grep lego $(systemctl cat acme-server | awk -F '=' '/ExecStart=/ {print $2}')")
+          lego_calls = server1.succeed("grep lego $(systemctl cat acme-order-renew-server | awk -F '=' '/ExecStart=/ {print $2}')")
           print("lego calls emitted:")
           print("*" * 20)
           print(lego_calls)

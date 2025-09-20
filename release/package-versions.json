@@ -524,11 +524,6 @@
     "pname": "mongodb",
     "version": "7.0.22"
   },
-  "mongodb-6_0": {
-    "name": "mongodb-6.0.24",
-    "pname": "mongodb",
-    "version": "6.0.24"
-  },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
     "pname": "monitoring-plugins",

@@ -61,6 +61,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # The way we use open-webui is allowed by the license.
+    flyingcircus.allowedUnfreePackageNames = [ "open-webui" ];
     services.open-webui = {
       enable = true;
       host = fclib.mkPlatform config.networking.hostName;
