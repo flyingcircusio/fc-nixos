@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-140.0.7339.127",
+    "name": "chromedriver-unwrapped-140.0.7339.185",
     "pname": "chromedriver-unwrapped",
-    "version": "140.0.7339.127"
+    "version": "140.0.7339.185"
   },
   "chromium": {
-    "name": "chromium-140.0.7339.127",
+    "name": "chromium-140.0.7339.185",
     "pname": "chromium",
-    "version": "140.0.7339.127"
+    "version": "140.0.7339.185"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.47",
+    "name": "linux-6.12.48",
     "pname": "linux",
-    "version": "6.12.47"
+    "version": "6.12.48"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.47",
+    "name": "linux-6.12.48",
     "pname": "linux",
-    "version": "6.12.47"
+    "version": "6.12.48"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -575,9 +575,9 @@
     "version": "2.28.5"
   },
   "nodejs": {
-    "name": "nodejs-22.18.0",
+    "name": "nodejs-22.19.0",
     "pname": "nodejs",
-    "version": "22.18.0"
+    "version": "22.19.0"
   },
   "nodejs_20": {
     "name": "nodejs-20.19.5",
@@ -585,9 +585,9 @@
     "version": "20.19.5"
   },
   "nodejs_22": {
-    "name": "nodejs-22.18.0",
+    "name": "nodejs-22.19.0",
     "pname": "nodejs",
-    "version": "22.18.0"
+    "version": "22.19.0"
   },
   "nspr": {
     "name": "nspr-4.37",
@@ -1090,9 +1090,9 @@
     "version": "12.7.4"
   },
   "systemd": {
-    "name": "systemd-257.8",
+    "name": "systemd-257.9",
     "pname": "systemd",
-    "version": "257.8"
+    "version": "257.9"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.5",
