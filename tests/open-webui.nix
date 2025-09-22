@@ -26,6 +26,11 @@ import ./make-test-python.nix (
         # cannot download sentence transformers model without network
         # connection.
         services.open-webui.environment.RAG_EMBEDDING_MODEL = "";
+
+        services.nginx.virtualHosts."ai-chat.test.fcio.net" = {
+          enableACME = lib.mkForce false;
+          forceSSL = lib.mkForce false;
+        };
       };
     testScript = ''
       machine.wait_for_unit("multi-user.target")
