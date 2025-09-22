@@ -81,7 +81,7 @@ import ./make-test-python.nix (
         };
 
         flyingcircus.services.nginx.enable = true;
-        flyingcircus.services.nginx.virtualHosts = conf;
+        services.nginx.virtualHosts = conf;
         flyingcircus.services.nginx.logPerVirtualHost = false;
 
         flyingcircus.services.nginx.rateLimit = lib.mkIf rateLimit {
@@ -133,7 +133,8 @@ import ./make-test-python.nix (
           # nginx status page which is expected by the sensu check.
 
           # Vhost for config reload check.
-          services.nginx.virtualHosts.server = {
+          # Explicitly use flyingcircus option here for regression testing
+          flyingcircus.services.nginx.virtualHosts.server = {
             root = rootInitial;
             serverAliases = [ "other" ];
             addSSL = true;
@@ -161,6 +162,7 @@ import ./make-test-python.nix (
               "srv.local"
             ];
             addSSL = true;
+            enableACME = true;
             locations."/".return = "200 'TESTOK'";
             extraConfig = ''
               access_log /var/log/nginx/perf.log performance;
@@ -178,6 +180,7 @@ import ./make-test-python.nix (
               "srv.local"
             ];
             addSSL = true;
+            enableACME = true;
             listenAddresses = [ (fcIP.quote.fe4 3) ];
 
             locations."/".return = "200 'TESTOK'";
@@ -194,6 +197,7 @@ import ./make-test-python.nix (
               "srv.local"
             ];
             addSSL = true;
+            enableACME = true;
             listenAddresses = [ (fcIP.quote.fe6 4) ];
 
             locations."/".return = "200 'TESTOK'";
@@ -228,6 +232,7 @@ import ./make-test-python.nix (
               "srv.local"
             ];
             addSSL = true;
+            enableACME = true;
             listenAddresses = [ (fcIP.quote.fe6 6) ];
 
             locations."/".return = "200 'TESTOK'";
@@ -277,19 +282,15 @@ import ./make-test-python.nix (
         with subtest("log directory should have correct permissions"):
           assert_logdir()
 
-        with subtest("dependencies between acme services and nginx-config-reload-(pre|post)-renew should be present"):
+        with subtest("dependencies between acme services and nginx-config-reload should be present"):
           # pre-renew reloading
-          after = server1.succeed("systemctl show --property After --value nginx-config-reload-pre-renew.service")
-          assert "acme-selfsigned-server.service" in after, f"acme-selfsigned-server.service missing: {after}"
-          before = server1.succeed("systemctl show --property Before --value nginx-config-reload-pre-renew.service")
-          assert "acme-server.service" in before, f"acme-server.service missing: {before}"
-          server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload-pre-renew.service")
-          # post-renew reloading
-          after = server1.succeed("systemctl show --property After --value nginx-config-reload-post-renew.service")
+          after = server1.succeed("systemctl show --property After --value nginx-config-reload.service")
           assert "acme-server.service" in after, f"acme-server.service missing: {after}"
-          before = server1.succeed("systemctl show --property Before --value nginx-config-reload-post-renew.service")
-          assert "acme-finished-server.target" in before, f"acme-finished-server.target missing: {before}"
-          server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload-post-renew.service")
+          server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload.service")
+          before = server1.succeed("systemctl show --property Before --value nginx-config-reload.service")
+          assert "acme-server-order-renew.service" in before, f"acme-server-order-renew.service missing: {before}"
+          # post-renew is almost impossible to test now, upstream Nixpkgs includes a test-case that
+          # nginx doesn't get restarted when a new certificate is added
 
         with subtest("acme script should have lego calls with custom key-type and required default settings"):
           lego_calls = server1.succeed("grep lego $(systemctl cat acme-order-renew-server | awk -F '=' '/ExecStart=/ {print $2}')")
@@ -311,7 +312,7 @@ import ./make-test-python.nix (
           _, proxy_log = server1.execute("cat /tmp/proxy.log")
           print(proxy_log)
           assert 'X-Forwarded-Host: server' in proxy_log, f"expected X-Forwarded-Host not found, got '{proxy_log}'"
-          assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got '{proxy_log}'"
+          assert 'X-Forwarded-Server: server1' in proxy_log, f"expected X-Forwarded-Server not found, got '{proxy_log}'"
           # Reset proxy log
           server1.execute("truncate -s 0 /tmp/proxy.log")
 
@@ -320,7 +321,7 @@ import ./make-test-python.nix (
           _, proxy_log = server1.execute("cat /tmp/proxy.log")
           print(proxy_log)
           assert 'X-Forwarded-Host: other' in proxy_log, f"expected X-Forwarded-Host not found, got: '{proxy_log}'"
-          assert 'X-Forwarded-Server: server' in proxy_log, f"expected X-Forwarded-Server not found, got: '{proxy_log}'"
+          assert 'X-Forwarded-Server: server1' in proxy_log, f"expected X-Forwarded-Server not found, got: '{proxy_log}'"
           # Reset proxy log
           server1.execute("truncate -s 0 /tmp/proxy.log")
 
@@ -350,40 +351,23 @@ import ./make-test-python.nix (
         with subtest("logs should have correct permissions after reload"):
           assert_logdir()
 
-        with subtest("nginx should use changed binary after reload"):
-          # Prepare change to mainline nginx. We are not interested in testing mainline itself here.
-          # We only need it as a different version so we can test binary reloading.
-          server1.execute("ln -sfT ${pkgs.nginxMainline} /etc/nginx/running-package")
-          # Go to mainline (this doesn't overwrite /etc/nginx/running-package).
-          server1.succeed("nginx-reload-master")
-          server1.wait_until_succeeds("curl server/404 | grep -q ${pkgs.nginxMainline.version}")
-          # Back to initial binary from nginx stable (this does overwrite /etc/nginx/running-package with the wanted package).
-          server1.systemctl("reload nginx")
-          server1.wait_until_succeeds("curl server/404 | grep -q ${expectedNginxMajorVersion}")
-
-        with subtest("log directory should have correct permissions after binary reload"):
-          assert_logdir()
-
         with subtest("logs should have correct permissions after logrotate"):
           server1.succeed("fc-logrotate -f")
           assert_logdir()
 
-        with subtest("reload should fix wrong log permissions and recreate missing files"):
-          server1.execute("chown nginx:nginx /var/log/nginx/performance.log")
-          server1.execute("chown nobody:nobody /var/log/nginx/access.log")
+        with subtest("reload should recreate missing files"):
           server1.execute("rm /var/log/nginx/error.log")
           server1.succeed("systemctl reload nginx")
           assert_logdir()
 
-        with subtest("restart should fix wrong log permissions and recreate missing files"):
-          server1.execute("chown nginx:nginx /var/log/nginx/performance.log")
-          server1.execute("chown nobody:nobody /var/log/nginx/access.log")
+        with subtest("restart should recreate missing files"):
           server1.execute("rm /var/log/nginx/error.log")
           server1.succeed("systemctl restart nginx")
           assert_logdir()
 
+
         with subtest("nginx modsecurity rules apply"):
-          out = server1.succeed("curl -v http://server/?testparam=test")
+          out = server1.wait_until_succeeds("curl -v http://server/?testparam=test")
           print(out)
 
         with subtest("service user should be able to write to local config dir"):

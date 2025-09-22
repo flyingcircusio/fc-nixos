@@ -1,14 +1,16 @@
 { ... }:
 {
-  flyingcircus.services.nginx.virtualHosts = {
+  services.nginx.virtualHosts = {
     "www.example.com" = {
       serverAliases = [ "example.com" ];
       default = true;
+      enableACME = true;
       forceSSL = true;
       root = "/srv/webroot";
     };
 
     "subdomain.example.com" = {
+      enableACME = true;
       forceSSL = true;
       extraConfig = ''
         add_header Strict-Transport-Security max-age=31536000;
