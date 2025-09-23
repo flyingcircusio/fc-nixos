@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  python312Full,
+  python312,
   megacli,
   lvm2,
   makeWrapper,
@@ -16,7 +16,7 @@ stdenv.mkDerivation rec {
   dontBuild = true;
   dontConfigure = true;
 
-  buildInputs = [ python312Full ];
+  buildInputs = [ python312 ];
 
   installPhase = ''
     mkdir -p $out/bin

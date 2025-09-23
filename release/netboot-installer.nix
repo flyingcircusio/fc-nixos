@@ -32,7 +32,7 @@ let
   '';
 
   show_interfaces = pkgs.writeScriptBin "show-interfaces" ''
-    #! ${pkgs.python3Full}/bin/python
+    #! ${pkgs.python3}/bin/python
     import json
     import subprocess
 
@@ -135,7 +135,7 @@ in
     services.lldpd.enable = true;
 
     environment.systemPackages = with pkgs; [
-      python3Full
+      python3
       ntp
       megacli
       mdadm
