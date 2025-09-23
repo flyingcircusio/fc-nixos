@@ -103,6 +103,24 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
           hash = "sha256-4i1s9YAs0JtnTDB8yeA4cLjDfFA+vsPSW4byzoxTXcc=";
         };
       });
+      # Remove with next nixpkgs update
+      tkinter = python-super.tkinter.overridePythonAttrs (
+        oA:
+        {
+          buildInputs =
+            oA.buildInputs
+            ++ self.lib.optionals (python-self.pythonOlder "3.12") [
+              self.libtommath
+            ];
+        }
+        // self.lib.optionalAttrs (python-self.pythonOlder "3.12") {
+          env.NIX_CFLAGS_COMPILE = (
+            toString [
+              "-Wno-error=incompatible-pointer-types"
+            ]
+          );
+        }
+      );
     })
   ];
 
