@@ -282,7 +282,7 @@ let
               }
             )
           ) (validPkgs drvs);
-        packages_json = builtins.toFile "fc-search-packages.json" (
+        packages_json = pkgs.writeText "fc-search-packages.json" (
           builtins.toJSON (readPackages system pkgs)
         );
       in
