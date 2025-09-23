@@ -361,6 +361,12 @@ in
                     Defaults to none.
                   '';
                   default = null;
+                  apply =
+                    x:
+                    lib.warnIf (x != null) ''
+                      flyingcircus.services.nginx.virtualHosts.<vhost>.emailACME is deprecated.
+                      This option will be removed with fc-nixos 25.11. Please use security.acme.certs.<name>.email.
+                    '' x;
                 };
 
                 enableACME = vhost.options.enableACME // {
