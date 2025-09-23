@@ -73,6 +73,19 @@ in
         description = "Codename of the Ceph release series used as external backy tooling.";
       };
 
+      increaseVfsCacheWeight = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Increase the relative weight of the kernel VFS cache to prevent/defer eviction of filesystem
+          objects from working memory.
+
+          Setting this option can improve performance on systems with HDD-backed filesystems where
+          the default cache eviction behaviour is too eager for regular scans of filesystems with
+          a large number of small files.
+        '';
+      };
+
       # this indirection is required by the tests as a config input
       fsOptions = lib.mkOption {
         type = lib.types.attrs;
@@ -128,9 +141,11 @@ in
     ];
 
     boot = {
-      # Extracted to flyingcircus-physical.nix
-      # kernel.sysctl."vm.vfs_cache_pressure" = 10;
       kernelModules = [ "mq_deadline" ];
+      kernel.sysctl = lib.optionalAttrs role.increaseVfsCacheWeight {
+        # default is 100. higher values increase eviction eagerness.
+        "vm.vfs_cache_pressure" = 10;
+      };
     };
 
     environment.etc."backy.global.conf".text = ''
