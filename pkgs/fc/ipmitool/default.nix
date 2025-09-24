@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  python3Full,
+  python3,
   ipmitool,
   makeWrapper,
 }:
@@ -16,7 +16,7 @@ stdenv.mkDerivation rec {
   dontConfigure = true;
 
   nativeBuildInputs = [ makeWrapper ];
-  buildInputs = [ python3Full ];
+  buildInputs = [ python3 ];
 
   installPhase = ''
     mkdir -p $out/bin

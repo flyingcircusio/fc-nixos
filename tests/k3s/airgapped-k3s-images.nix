@@ -24,10 +24,10 @@
   }
   {
     imageName = "docker.io/rancher/mirrored-coredns-coredns";
-    imageDigest = "sha256:9eb4929fd181541e7743959884000f010bcc8b1ebf8715ff0965be04509882e5";
-    hash = "sha256-q1+vcV5eHe7xdrDRnZKsbFsf1kdY/kDN94wCriPtxGQ=";
+    imageDigest = "sha256:1391544c978029fcddc65068f6ad67f396e55585b664ecccd7fefba029b9b706";
+    hash = "sha256-S8P1QtRJIFrveJV19W5N42vDy2TgaExxwBOXQa+/XdI=";
     finalImageName = "docker.io/rancher/mirrored-coredns-coredns";
-    finalImageTag = "1.12.1";
+    finalImageTag = "1.12.3";
   }
   {
     imageName = "docker.io/rancher/mirrored-library-busybox";
@@ -45,10 +45,10 @@
   }
   {
     imageName = "docker.io/rancher/mirrored-metrics-server";
-    imageDigest = "sha256:dccf8474fb910fef261d31d9483d7e4c1df7b86cf4d638fb6a7d7c88bd51600a";
-    hash = "sha256-ZkjtzYLuNuCc1BpYivauK7O1tZjrmEuJhnxF2I6O5GA=";
+    imageDigest = "sha256:89258156d0e9af60403eafd44da9676fd66f600c7934d468ccc17e42b199aee2";
+    hash = "sha256-TfprpvRZ+3ks9RsjqMVAsxNjdTz0FfwfwOmujwXXZGs=";
     finalImageName = "docker.io/rancher/mirrored-metrics-server";
-    finalImageTag = "v0.7.2";
+    finalImageTag = "v0.8.0";
   }
   {
     imageName = "docker.io/rancher/mirrored-pause";
