@@ -65,9 +65,9 @@
     "version": "3.115"
   },
   "calibre": {
-    "name": "calibre-8.7.0",
+    "name": "calibre-8.10.0",
     "pname": "calibre",
-    "version": "8.7.0"
+    "version": "8.10.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -330,9 +330,9 @@
     "version": "21.0.7-b1038.58"
   },
   "jetty": {
-    "name": "jetty-12.1.0",
+    "name": "jetty-12.1.1",
     "pname": "jetty",
-    "version": "12.1.0"
+    "version": "12.1.1"
   },
   "jicofo": {
     "name": "jicofo-1.0-1153",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.47",
+    "name": "linux-6.12.48",
     "pname": "linux",
-    "version": "6.12.47"
+    "version": "6.12.48"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.47",
+    "name": "linux-6.12.48",
     "pname": "linux",
-    "version": "6.12.47"
+    "version": "6.12.48"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -1070,9 +1070,9 @@
     "version": "4.99.5"
   },
   "telegraf": {
-    "name": "telegraf-1.35.4",
+    "name": "telegraf-1.36.1",
     "pname": "telegraf",
-    "version": "1.35.4"
+    "version": "1.36.1"
   },
   "tmux": {
     "name": "tmux-3.5a",
@@ -1080,9 +1080,9 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.44",
+    "name": "apache-tomcat-10.1.46",
     "pname": "apache-tomcat",
-    "version": "10.1.44"
+    "version": "10.1.46"
   },
   "tomcat9": {
     "name": "apache-tomcat-9.0.108",
