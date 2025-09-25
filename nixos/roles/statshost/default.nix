@@ -530,6 +530,7 @@ in
               http_addr = "127.0.0.1";
               root_url = "https://${cfgStats.hostName}/grafana/";
             };
+            security.disable_initial_admin_creation = true;
           }
 
           (lib.mkIf cfgStats.ldap.enable {

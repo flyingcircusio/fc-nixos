@@ -203,7 +203,9 @@ import ../make-test-python.nix (
           };
           virtualisation.memorySize = 3000;
           virtualisation.diskSize = 1000;
-
+          environment.systemPackages = [
+            pkgs.sqlite
+          ];
         };
 
       statssource = {
@@ -264,6 +266,13 @@ import ../make-test-python.nix (
         statshost.execute("systemctl stop acme-statshost.fe.loc.fcio.net.service")
         statshost.wait_for_unit("prometheus.service")
         statshost.wait_for_unit("grafana.service")
+        statshost.wait_for_open_port(3001)
+
+        with subtest("Grafana should not have insecure admin user"):
+          statshost.wait_for_file("/var/lib/grafana/data/grafana.db")
+          admin_user_rc, admin_user_q = statshost.execute("sqlite3 /var/lib/grafana/data/grafana.db \"select 1 from user where login='admin'\"")
+          assert admin_user_rc == 0
+          assert admin_user_q.strip() == ""
 
         statssource.wait_for_unit("telegraf.service")
         statssource.wait_for_file("/run/telegraf/influx.sock")
