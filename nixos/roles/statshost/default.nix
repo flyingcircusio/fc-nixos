@@ -166,10 +166,7 @@ in
       };
 
       ldap = {
-        enable = mkOption {
-          type = types.bool;
-          default = true;
-        };
+        enable = mkEnableOption "Enable LDAP for Grafana";
 
         memberOf = mkOption {
           default = config.flyingcircus.enc.parameters.resource_group;
@@ -191,7 +188,12 @@ in
       };
 
       oidc = {
-        enable = mkEnableOption "Enable OIDC for Grafana";
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Enable OIDC for Grafana";
+        };
+
         realm = mkOption {
           type = types.str;
           default = "fcio";
