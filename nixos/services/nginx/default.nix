@@ -325,7 +325,7 @@ in
         in
         types.attrsOf (
           types.submodule (
-            { config, ... }:
+            { name, config, ... }:
             {
               options = vhost.options // {
                 listenAddress = mkOption {
@@ -369,13 +369,23 @@ in
                     '' x;
                 };
 
-                enableACME = vhost.options.enableACME // {
-                  default =
-                    config.onlySSL or false
-                    || config.enableSSL or false
-                    || config.addSSL or false
-                    || config.forceSSL or false;
-                };
+                enableACME =
+                  let
+                    default =
+                      config.onlySSL or false
+                      || config.enableSSL or false
+                      || config.addSSL or false
+                      || config.forceSSL or false;
+                  in
+                  vhost.options.enableACME
+                  // {
+                    # This attribute is only evaluated when no explicit value is set.
+                    # So, when `default = true`, it's set via the above expression.
+                    default = lib.warnIf default ''
+                      flyingcircus.services.nginx.virtualHosts."${name}".enableACME is implicitly set to true.
+                      This behavior is deprecated and will be removed with fc-nixos 25.11. Please set the option explicitly.
+                    '' default;
+                  };
 
                 listenAddresses = vhost.options.listenAddresses // {
                   defaultText = "The default listen addresses configured in `flyingcircus.services.nginx.defaultListenAddresses`";
