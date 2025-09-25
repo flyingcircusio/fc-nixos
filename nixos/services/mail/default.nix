@@ -325,7 +325,7 @@ in
             }
           '';
 
-          flyingcircus.services.nginx.virtualHosts =
+          services.nginx.virtualHosts =
             let
               cfgForDomain =
                 domain:

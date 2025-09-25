@@ -225,7 +225,7 @@ in
         }
       '';
 
-      flyingcircus.services.nginx.virtualHosts = {
+      services.nginx.virtualHosts = {
 
         "${cfg.hostName}" = {
           default = cfg.isDefaultVhost;
@@ -244,6 +244,7 @@ in
               access_log /var/log/nginx/gitlab_access.log gitlab_access;
               add_header Strict-Transport-Security "${hstsOpts}" always;
             '';
+          enableACME = true;
           forceSSL = true;
           locations = {
             "/" = {
@@ -335,9 +336,10 @@ in
         externalPort = 443;
       };
 
-      flyingcircus.services.nginx.virtualHosts = {
+      services.nginx.virtualHosts = {
 
         "${cfg.dockerHostName}" = {
+          enableACME = true;
           forceSSL = true;
           locations."/" = {
             proxyPass = "http://127.0.0.1:${toString config.services.gitlab.registry.port}";

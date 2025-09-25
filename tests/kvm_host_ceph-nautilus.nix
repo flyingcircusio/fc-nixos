@@ -227,12 +227,10 @@ import ./make-test-python.nix (
           sslCertificateKey = "/var/run/nginx/self-signed.key";
           sslCertificate = "/var/run/nginx/self-signed.crt";
         };
-        systemd.services.nginx.serviceConfig.ExecStartPre = (
-          pkgs.writeShellScript "setup-private-key" ''
-            set -ex
-            ${pkgs.openssl}/bin/openssl req -nodes -x509 -newkey rsa:4096 -keyout /var/run/nginx/self-signed.key -out /var/run/nginx/self-signed.crt -sha256 -days 365 -subj '/CN=host${toString id}'
-          ''
-        );
+        systemd.services.nginx.preStart = lib.mkBefore ''
+          set -ex
+          ${pkgs.openssl}/bin/openssl req -nodes -x509 -newkey rsa:4096 -keyout /var/run/nginx/self-signed.key -out /var/run/nginx/self-signed.crt -sha256 -days 365 -subj '/CN=host${toString id}'
+        '';
 
         environment.etc."simplevm.cfg".text = ''
           name: simplevm

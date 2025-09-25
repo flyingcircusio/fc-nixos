@@ -9,6 +9,7 @@ with lib;
 let
   cfg = config.services.matomo;
   fpm = config.services.phpfpm.pools.${pool};
+  nixpkgs = (import ../../../release/versions.nix { }).nixpkgs;
 
   user = "matomo";
 
@@ -211,12 +212,16 @@ in
       nginx = mkOption {
         type = types.nullOr (
           types.submodule (
-            recursiveUpdate (import ../nginx/vhost-options.nix { inherit config lib; }) {
-              # enable encryption by default,
-              # as sensitive login and Matomo data should not be transmitted in clear text.
-              options.forceSSL.default = true;
-              options.enableACME.default = true;
-            }
+            recursiveUpdate
+              (import "${nixpkgs}/nixos/modules/services/web-servers/nginx/vhost-options.nix" {
+                inherit config lib;
+              })
+              {
+                # enable encryption by default,
+                # as sensitive login and Matomo data should not be transmitted in clear text.
+                options.forceSSL.default = true;
+                options.enableACME.default = true;
+              }
           )
         );
         default = null;

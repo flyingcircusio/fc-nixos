@@ -257,7 +257,8 @@ integration between the `myapp` service and HAProxy:
 { ... }:
 {
 
-  flyingcircus.services.nginx.virtualHosts."myapp.example.com"  = {
+  services.nginx.virtualHosts."myapp.example.com"  = {
+    enableACME = true;
     forceSSL = true;
     locations."/".proxyPass = "http://127.0.0.1:8000";
   };

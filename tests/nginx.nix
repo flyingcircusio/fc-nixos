@@ -288,7 +288,7 @@ import ./make-test-python.nix (
           assert "acme-server.service" in after, f"acme-server.service missing: {after}"
           server1.succeed("stat /etc/systemd/system/acme-server.service.wants/nginx-config-reload.service")
           before = server1.succeed("systemctl show --property Before --value nginx-config-reload.service")
-          assert "acme-server-order-renew.service" in before, f"acme-server-order-renew.service missing: {before}"
+          assert "acme-order-renew-server.service" in before, f"acme-order-renew-server.service missing: {before}"
           # post-renew is almost impossible to test now, upstream Nixpkgs includes a test-case that
           # nginx doesn't get restarted when a new certificate is added
 

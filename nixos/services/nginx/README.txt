@@ -46,7 +46,7 @@ certificate from Let's Encrypt:
 
 { ... }:
 {
-  flyingcircus.services.nginx.virtualHosts = {
+  services.nginx.virtualHosts = {
     "www.example.com"  = {
       serverAliases = ["a.example.com"];
       default =  true;
