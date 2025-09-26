@@ -4,6 +4,7 @@ from unittest.mock import Mock, create_autospec
 
 import responses
 import yaml
+import fc.util.nixos
 from fc.maintenance import Request, state
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.activity.update import UpdateActivity
@@ -577,6 +578,23 @@ def test_update_activity_from_enc(
     )
     activity = UpdateActivity.from_enc(logger, enc)
     assert activity
+
+
+def test_update_activity_with_nullable_nixos_properties(nixos_mock, activity):
+    """Set all potentially nullable mocked properties to None and ensure this does not
+    cause crashes"""
+    nixos_mock.current_fc_environment_name.return_value = None
+    nixos_mock.get_fc_channel_build = (
+        fc.util.nixos.get_fc_channel_build
+    )  # un-mock, this function has no side effects
+    nixos_mock.os_release.return_value = {}
+    nixos_mock.current_nixos_channel_url.return_value = None
+    nixos_mock.current_system.return_value = None
+
+    activity._log_current_state()
+    activity._detect_next_version()
+    activity.summary
+    activity.run()
 
 
 def test_current_properties_return_expected_values(nixos_mock, activity):
