@@ -338,7 +338,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   graylog = self.graylog-3_3;
 
-  graylog-3_3 = super.callPackage ./graylog { };
+  graylog-3_3 = super.callPackage ./graylog {
+    jre = getClosureFromStore "/nix/store/5i1mf8784vx7dzh030ixggrx93j3fs9j-openjdk-headless-8u322-ga";
+  };
 
   graylogPlugins = lib.recurseIntoAttrs (
     super.callPackage ./graylog/plugins.nix {

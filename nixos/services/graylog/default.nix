@@ -123,6 +123,12 @@ in
         description = "Graylog package to use. Only works with Graylog 3.3";
       };
 
+      javaPackage = mkOption {
+        type = types.either types.path types.package;
+        default = cfg.package.jre;
+        description = "Java package override for JAVA_HOME and PATH. Uses the same JRE as the graylog package by default";
+      };
+
       user = mkOption {
         type = types.str;
         default = "graylog";
@@ -262,13 +268,13 @@ in
 
         in
         {
-          JAVA_HOME = pkgs.jdk8_headless;
+          JAVA_HOME = cfg.javaPackage;
           GRAYLOG_CONF = graylogConfPath;
           JAVA_OPTS = lib.concatStringsSep " " javaOpts;
         };
 
       path = [
-        pkgs.jdk8_headless
+        cfg.javaPackage
         pkgs.which
         pkgs.procps
       ];
