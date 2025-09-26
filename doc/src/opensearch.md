@@ -56,10 +56,10 @@ Example:
 {
   flyingcircus.roles.opensearch = {
     clusterName = "example";
-    nodes = [ "example00", "example02" ];
+    nodes = [ "example00" "example02" ];
     heapPercentage = 50;
 
-    #Only for initialization of new multi-node clusters!
+    # Only for initialization of new multi-node clusters!
     initialMasterNodes = [ "example00" ];
   };
   services.opensearch.settings = {
