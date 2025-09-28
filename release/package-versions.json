@@ -30,9 +30,9 @@
     "version": "1.42.4"
   },
   "awscli2": {
-    "name": "awscli2-2.28.1",
+    "name": "awscli2-2.30.6",
     "pname": "awscli2",
-    "version": "2.28.1"
+    "version": "2.30.6"
   },
   "bash": {
     "name": "bash-interactive-5.3p3",
@@ -65,9 +65,9 @@
     "version": "3.115"
   },
   "calibre": {
-    "name": "calibre-8.7.0",
+    "name": "calibre-8.10.0",
     "pname": "calibre",
-    "version": "8.7.0"
+    "version": "8.10.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-140.0.7339.185",
+    "name": "chromedriver-unwrapped-140.0.7339.207",
     "pname": "chromedriver-unwrapped",
-    "version": "140.0.7339.185"
+    "version": "140.0.7339.207"
   },
   "chromium": {
-    "name": "chromium-140.0.7339.185",
+    "name": "chromium-140.0.7339.207",
     "pname": "chromium",
-    "version": "140.0.7339.185"
+    "version": "140.0.7339.207"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -145,9 +145,9 @@
     "version": "2.91"
   },
   "docker": {
-    "name": "docker-28.3.3",
+    "name": "docker-28.4.0",
     "pname": "docker",
-    "version": "28.3.3"
+    "version": "28.4.0"
   },
   "docker-compose": {
     "name": "docker-compose-2.39.1",
@@ -220,9 +220,9 @@
     "version": "2.51.0"
   },
   "gitaly": {
-    "name": "gitaly-18.3.2",
+    "name": "gitaly-18.4.0",
     "pname": "gitaly",
-    "version": "18.3.2"
+    "version": "18.4.0"
   },
   "github-runner": {
     "name": "github-runner-2.328.0",
@@ -230,9 +230,9 @@
     "version": "2.328.0"
   },
   "gitlab": {
-    "name": "gitlab-18.3.2",
+    "name": "gitlab-18.4.0",
     "pname": "gitlab",
-    "version": "18.3.2"
+    "version": "18.4.0"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.27.0",
@@ -240,14 +240,14 @@
     "version": "4.27.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.3.2",
+    "name": "gitlab-ee-18.4.0",
     "pname": "gitlab-ee",
-    "version": "18.3.2"
+    "version": "18.4.0"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.3.2",
+    "name": "gitlab-pages-18.4.0",
     "pname": "gitlab-pages",
-    "version": "18.3.2"
+    "version": "18.4.0"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.3.1",
@@ -255,9 +255,9 @@
     "version": "18.3.1"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.3.2",
+    "name": "gitlab-workhorse-18.4.0",
     "pname": "gitlab-workhorse",
-    "version": "18.3.2"
+    "version": "18.4.0"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -330,9 +330,9 @@
     "version": "21.0.7-b1038.58"
   },
   "jetty": {
-    "name": "jetty-12.1.0",
+    "name": "jetty-12.1.1",
     "pname": "jetty",
-    "version": "12.1.0"
+    "version": "12.1.1"
   },
   "jicofo": {
     "name": "jicofo-1.0-1153",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.47",
+    "name": "linux-6.12.48",
     "pname": "linux",
-    "version": "6.12.47"
+    "version": "6.12.48"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.47",
+    "name": "linux-6.12.48",
     "pname": "linux",
-    "version": "6.12.47"
+    "version": "6.12.48"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -480,9 +480,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.4.4",
+    "name": "mastodon-4.4.5",
     "pname": "mastodon",
-    "version": "4.4.4"
+    "version": "4.4.5"
   },
   "matomo_5": {
     "name": "matomo-5.4.0",
@@ -720,9 +720,9 @@
     "version": "8.4.12"
   },
   "phpPackages.composer": {
-    "name": "composer-2.8.11",
+    "name": "composer-2.8.12",
     "pname": "composer",
-    "version": "2.8.11"
+    "version": "2.8.12"
   },
   "pkg-config": {
     "name": "pkg-config-wrapper-0.29.2",
@@ -735,9 +735,9 @@
     "version": "5.6.1"
   },
   "poetry": {
-    "name": "poetry-2.1.4",
+    "name": "poetry-2.2.0",
     "pname": "poetry",
-    "version": "2.1.4"
+    "version": "2.2.0"
   },
   "polkit": {
     "name": "polkit-126",
@@ -845,9 +845,9 @@
     "version": "4.9.8"
   },
   "prometheus": {
-    "name": "prometheus-3.5.0",
+    "name": "prometheus-3.6.0",
     "pname": "prometheus",
-    "version": "3.5.0"
+    "version": "3.6.0"
   },
   "promtail": {
     "name": "promtail-3.5.5",
@@ -1070,9 +1070,9 @@
     "version": "4.99.5"
   },
   "telegraf": {
-    "name": "telegraf-1.35.4",
+    "name": "telegraf-1.36.1",
     "pname": "telegraf",
-    "version": "1.35.4"
+    "version": "1.36.1"
   },
   "tmux": {
     "name": "tmux-3.5a",
@@ -1080,14 +1080,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.44",
+    "name": "apache-tomcat-10.1.46",
     "pname": "apache-tomcat",
-    "version": "10.1.44"
+    "version": "10.1.46"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.108",
+    "name": "apache-tomcat-9.0.109",
     "pname": "apache-tomcat",
-    "version": "9.0.108"
+    "version": "9.0.109"
   },
   "unifi": {
     "name": "unifi-controller-9.4.19",
