@@ -79,7 +79,7 @@ class Specialisation(Enum):
     BASE_CONFIG = 2
 
 
-def kernel_version(kernel):
+def kernel_version(kernel) -> str:
     """Guesses kernel version from /run/*-system/kernel.
 
     Theory of operation: A link like `/run/current-system/kernel` points
@@ -99,7 +99,7 @@ def kernel_version(kernel):
     return moddir[0]
 
 
-def current_fc_environment_name(log=_log):
+def current_fc_environment_name(log=_log) -> Optional[str]:
     env_path = Path(FC_ENV_FILE)
     if env_path.exists():
         environment = env_path.read_text()
@@ -107,9 +107,10 @@ def current_fc_environment_name(log=_log):
         return environment
     else:
         log.debug("fc-environment-env-file-missing", filename=FC_ENV_FILE)
+        return None
 
 
-def channel_version(channel_url, log=_log):
+def channel_version(channel_url, log=_log) -> str:
     try:
         nixpkgs_path = subprocess.run(
             ["nix-instantiate", "-I", channel_url, "--find-file", "."],
@@ -144,6 +145,7 @@ def get_fc_channel_build(channel_url: str, log=_log) -> Optional[str]:
             ),
             channel_url=channel_url,
         )
+        return None
 
 
 CURRENT_SYSTEM = Path("/run/current-system")
@@ -175,7 +177,7 @@ def os_release(system: Path | None = None):
     return result
 
 
-def current_nixos_channel_version():
+def current_nixos_channel_version() -> str:
     is_local = False
     if is_local:
         return "local-checkout"
@@ -194,7 +196,7 @@ def current_nixos_channel_url(log=_log) -> Optional[str]:
             "nix-channel-file-missing",
             _replace_msg="/root/.nix-channels does not exist, doing nothing",
         )
-        return
+        return None
     try:
         with open("/root/.nix-channels") as f:
             for line in f.readlines():
@@ -208,9 +210,10 @@ def current_nixos_channel_url(log=_log) -> Optional[str]:
             "Failed to read .nix-channels. See exception for details.",
             exc_info=True,
         )
+    return None
 
 
-def current_system(log=_log):
+def current_system(log=_log) -> Optional[str]:
     if not p.exists(CURRENT_SYSTEM):
         log.warn("current-system-missing")
         return None
@@ -352,7 +355,7 @@ def find_nix_eval_warnings(stderr: str) -> list[str]:
     )
 
 
-def find_nix_build_error(stderr: str, log=_log):
+def find_nix_build_error(stderr: str, log=_log) -> str:
     """Returns the (hopefully) interesting part of the error message from Nix
     build output or a generic message if nothing is found.
     """
@@ -364,7 +367,7 @@ def find_nix_build_error(stderr: str, log=_log):
     try:
         lines = stderr.splitlines()
         num_lines = len(lines)
-        error_lines = []
+        error_lines: list[str] = []
 
         lines = list(
             itertools.dropwhile(
