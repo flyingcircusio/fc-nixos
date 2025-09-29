@@ -115,18 +115,24 @@ in
       dnsForwarders = mkOption {
         type = types.listOf types.str;
         default = [
+          # quad9
           "9.9.9.9"
-          "149.112.112.112"
           "2620:fe::fe"
-          "2620:fe::9"
+          # cloudflare
+          "1.1.1.1"
+          "2606:4700:4700::1111"
+          # google
+          "8.8.8.8"
+          "2001:4860:4860::8888"
         ];
-        description = "IP addresses to be used as upstream DNS resolvers (default Quad9)";
+        description = "IP addresses to be used as upstream DNS resolvers (default: quad9, cloudflare, and google)";
       };
     };
   };
 
   imports = [
     ./bind
+    ./kresd
     ./bird2
     ./keepalived
     ./bird2-vrf-bridge.nix
