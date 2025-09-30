@@ -70,8 +70,12 @@ import ./make-test-python.nix (
         graylogCheck = testlib.sensuCheckCmd nodes.machine "graylog_ui";
         graylogApi = "${pkgs.fc.agent}/bin/fc-graylog --api http://${host}:9001/api get -l";
         esConfigFile = "/srv/elasticsearch/config/elasticsearch.yml";
+        expectedJava = "/nix/store/5i1mf8784vx7dzh030ixggrx93j3fs9j-openjdk-headless-8u322-ga";
       in
       ''
+        graylog_unit = machine.systemctl("cat graylog.service")[1]
+        assert 'Environment="JAVA_HOME=${expectedJava}"' in graylog_unit, "Expected pinned Java version not found!"
+
         machine.wait_for_unit("elasticsearch.service")
 
         with subtest("elasticsearch config should be set-up for single-node mode"):
