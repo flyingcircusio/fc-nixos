@@ -59,8 +59,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
           "net.ipv4.tcp_l3mdev_accept" = fclib.mkPlatform false;
           "net.ipv4.udp_l3mdev_accept" = fclib.mkPlatform false;
           "vm.swappiness" = fclib.mkPlatform 0;
-          # Wanted by backy and Ceph servers
-          "vm.vfs_cache_pressure" = 10;
         };
       };
 
