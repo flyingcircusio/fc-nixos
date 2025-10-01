@@ -7,6 +7,15 @@
 let
   fclib = config.fclib;
   role = config.flyingcircus.roles.router;
+
+  # make additional lua packages available at runtime
+  knotPackage =
+    let
+      wrapped = pkgs.knot-resolver.override { extraFeatures = true; };
+    in
+    wrapped.overrideAttrs (old: {
+      buildInputs = old.buildInputs ++ (with pkgs.luajitPackages; [ luaposix ]);
+    });
 in
 lib.mkIf role.enable {
   # set by upstream kresd module
@@ -14,7 +23,7 @@ lib.mkIf role.enable {
 
   services.kresd = {
     enable = true;
-    package = pkgs.knot-resolver.override { extraFeatures = true; };
+    package = knotPackage;
     listenPlain = [
       "0.0.0.0:53"
       "[::]:53"
@@ -80,9 +89,27 @@ lib.mkIf role.enable {
       -- order to synthesise PTR records for reverse dns. don't synthesise
       -- nodata responses for queries with mismatching address type (i.e.
       -- resolve AAAA records using public dns for names which only have an
-      -- ipv4 address in the hosts file).
-      hints.add_hosts('/etc/nixos/rfc1918-hosts')
-      hints.use_nodata(false)
+      -- ipv4 address in the hosts file). this is all wrapped in some logic to
+      -- ensure that the hosts file can be reloaded by sighup at runtime.
+
+      local function load_private_hosts()
+          hints.add_hosts('/etc/nixos/rfc1918-hosts')
+          hints.use_nodata(false)
+      end
+
+      load_private_hosts()
+
+      local host_reload_due = false
+      event.recurrent(10 * sec, function (ev)
+          if host_reload_due then
+               load_private_hosts()
+               host_reload_due = false
+          end
+      end)
+
+      local signal = require('posix.signal')
+      signal.signal(signal.SIGHUP, function (sig) host_reload_due = true end)
+
 
       --[[
         Operator's note: control forwarders by setting
