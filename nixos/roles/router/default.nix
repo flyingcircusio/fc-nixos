@@ -131,7 +131,7 @@ in
   };
 
   imports = [
-    ./bind
+    ./kresd
     ./bird2
     ./keepalived
     ./bird2-vrf-bridge.nix
@@ -365,8 +365,9 @@ in
 
     flyingcircus.agent = {
       extraPreCommands = ''
-        # Updates files in /etc/bind and /etc/bind/pri where also Nix-generated config exists.
-        fc-zones
+        # Update hosts file with assignments of private ip space which doesn't
+        # have public rDNS
+        fc-kresd-rfc1918 -o /etc/nixos/rfc1918-hosts
       '';
 
       maintenance.router = {
