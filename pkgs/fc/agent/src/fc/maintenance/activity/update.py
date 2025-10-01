@@ -321,7 +321,7 @@ class UpdateActivity(Activity):
         self.returncode = 0
 
     @property
-    def summary(self) -> str:
+    def summary(self):
         """
         A human-readable summary of what will be changed by this update.
         Includes possible reboots, significant unit state changes (start, stop,
@@ -350,11 +350,9 @@ class UpdateActivity(Activity):
         elif self.current_environment is not None:
             msg.append(f"Environment: {self.current_environment} (unchanged)")
 
-        current_build = None
-        if self.current_channel_url:
-            current_build = nixos.get_fc_channel_build(
-                self.current_channel_url, self.log
-            )
+        current_build = nixos.get_fc_channel_build(
+            self.current_channel_url, self.log
+        )
         if current_build:
             next_build = nixos.get_fc_channel_build(
                 self.next_channel_url, self.log
