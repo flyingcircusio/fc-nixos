@@ -367,7 +367,7 @@ in
       extraPreCommands = ''
         # Update hosts file with assignments of private ip space which doesn't
         # have public rDNS
-        fc-kresd-rfc1918 -o /etc/nixos/rfc1918-hosts
+        fc-kresd-rfc1918 -o /etc/nixos/rfc1918-hosts -r
       '';
 
       maintenance.router = {

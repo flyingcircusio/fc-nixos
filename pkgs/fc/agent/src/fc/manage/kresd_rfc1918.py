@@ -1,6 +1,7 @@
 import argparse
 import ipaddress
 import socket
+import subprocess
 import sys
 
 import fc.util.configfile
@@ -25,6 +26,13 @@ def main():
         metavar="ZONE",
         default="gocept.net",
         help="Use ZONE as the domain name suffix",
+    )
+    parser.add_argument(
+        "-r",
+        "--reload-kresd",
+        action="store_true",
+        default=False,
+        help="Send SIGHUP to all running kresd instances to reload the hosts file",
     )
 
     if not socket.getdefaulttimeout():
@@ -79,7 +87,21 @@ def main():
         print(f"{addr} {fqdn}", file=handle)
 
     if args.output:
-        handle.commit()
+        changed = handle.commit()
+        if changed and args.reload_kresd:
+            print(
+                "info: reloading kresd instances after hosts file changed",
+                file=sys.stderr,
+            )
+            proc = subprocess.run(
+                ["systemctl", "kill", "--signal=SIGHUP", "kresd@*"]
+            )
+            if proc.returncode != 0:
+                print(
+                    "error: could not reload kresd instances using systemd",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
 
 
 if __name__ == "__main__":
