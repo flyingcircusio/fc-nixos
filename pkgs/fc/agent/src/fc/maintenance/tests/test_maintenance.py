@@ -402,7 +402,7 @@ def test_request_update_unchanged_system_and_no_other_requests_skips_request(
 
 
 class FakeUpdateActivity(UpdateActivity):
-    def _log_current_state(self):
+    def _detect_current_state(self):
         pass
 
     def _detect_next_version(self):
@@ -517,7 +517,8 @@ def test_release_path(tmp_path, logger, log, monkeypatch):
     monkeypatch.setattr("fc.util.nixos.CURRENT_SYSTEM", current_d)
 
     class PathAwareFakeUpdateActivity(FakeUpdateActivity):
-        def _log_current_state(self):
+        def _detect_current_state(self):
+            self.current_system = fc.util.nixos.current_system()
             # usually acquired through `nixos.build_system`, which returns a str
             self.next_system = str(next_d)
 

@@ -43,13 +43,21 @@ class UpdateActivity(Activity):
         super().__init__()
         self.next_environment = next_environment
         self.next_channel_url = next_channel_url
+        self.changelog_url = None
+        self.current_system = None
         self.next_system = None
+        self.current_channel_url = None
+        self.current_release = None
+        self.next_release = None
+        self.current_version = None
         self.next_version = None
+        self.current_environment = None
         self.unit_changes: UnitChanges = {}
+        self.current_kernel = None
         self.next_kernel = None
         self.reboot_needed = None
         self.set_up_logging(log)
-        self._log_current_state()
+        self._detect_current_state()
         self._detect_next_version()
         self.log.debug(
             "update-init",
@@ -115,15 +123,19 @@ class UpdateActivity(Activity):
         """
         if self.next_channel_url == self.current_channel_url:
             return False
-        if nixos.current_system() == self.next_system:
+        if self.current_system == self.next_system:
             return False
         return True
 
     def load(self):
         # Add attributes after deserialization if needed to stay compatible
         # with older persisted instances of UpdateActivity.
-        pass
-        # there are currently no old pieces of activity data we need to stay compatible with
+        if not hasattr(self, "current_release"):
+            self.current_release = None
+        if not hasattr(self, "next_release"):
+            self.next_release = None
+        if not hasattr(self, "changelog_url"):
+            self.changelog_url = None
 
     def prepare(self, dry_run=False):
         self.log.debug(
@@ -157,7 +169,6 @@ class UpdateActivity(Activity):
             )
             raise
 
-        # Note: These information might be stale in case the current_system has changed in the background between time of *prepare* and actual execution.
         self.unit_changes = nixos.dry_activate_system(
             self.next_system, self.log
         )
@@ -197,7 +208,7 @@ class UpdateActivity(Activity):
 
     @property
     def identical_to_current_system(self) -> bool:
-        if nixos.current_system() == self.next_system:
+        if self.current_system == self.next_system:
             self.log.info(
                 "update-identical-system",
                 version=self.next_version,
@@ -255,12 +266,13 @@ class UpdateActivity(Activity):
             returncode=self.returncode,
             current_version=self.current_version,
             current_channel_url=self.current_channel_url,
-            current_system=nixos.current_system(),
+            current_system=self.current_system,
             current_environment=self.current_environment,
             next_channel=self.next_channel_url,
             next_system=self.next_system,
             next_version=self.next_version,
             next_environment=self.next_environment,
+            next_release=self.next_release,
         )
 
     def resume(self):
@@ -342,6 +354,13 @@ class UpdateActivity(Activity):
         if unit_change_lines:
             msg.extend(unit_change_lines)
             msg.append("")
+
+        if self.next_release:
+            msg.append(
+                f"Release: {self.current_release} -> {self.next_release}"
+            )
+        if self.changelog_url:
+            msg.append(f"ChangeLog: {self.changelog_url}")
 
         if self.current_environment != self.next_environment:
             msg.append(
@@ -439,7 +458,7 @@ class UpdateActivity(Activity):
         or more than one if there is a downgrade happening. e.g. ["24.05", "24.11"]
         The order reflects the before -> after progression.
         """
-        result = [nixos.os_release(nixos.current_system())["VERSION_ID"]]
+        result = [nixos.os_release(self.current_system)["VERSION_ID"]]
         next_release = nixos.os_release(self.next_system)["VERSION_ID"]
         if next_release not in result:
             result.append(next_release)
@@ -466,44 +485,37 @@ class UpdateActivity(Activity):
             self.reboot_needed = RebootType.WARM
 
     def _register_reboot_for_kernel(self):
+        current_kernel = nixos.kernel_version(
+            p.join(self.current_system, "kernel")
+        )
         next_kernel = nixos.kernel_version(p.join(self.next_system, "kernel"))
 
-        if self.current_kernel == next_kernel:
+        if current_kernel == next_kernel:
             self.log.debug("update-kernel-unchanged")
         else:
             self.log.info(
                 "update-kernel-changed",
-                current_kernel=self.current_kernel,
+                current_kernel=current_kernel,
                 next_kernel=next_kernel,
             )
             self.reboot_needed = RebootType.WARM
 
+        self.current_kernel = current_kernel
         self.next_kernel = next_kernel
 
-    def _log_current_state(self):
+    def _detect_current_state(self):
+        self.current_os_release = nixos.os_release()
+        self.current_version = self.current_os_release["BUILD_ID"]
+        self.current_channel_url = nixos.current_nixos_channel_url()
+        self.current_environment = nixos.current_fc_environment_name()
+        self.current_system = nixos.current_system()
         self.log.debug(
             "update-activity-current-state",
-            current_version=nixos.os_release()["BUILD_ID"],
-            current_channel_url=nixos.current_nixos_channel_url(),
-            current_environment=nixos.current_fc_environment_name(),
-            current_system=nixos.current_system(),
+            current_version=self.current_version,
+            current_channel_url=self.current_channel_url,
+            current_environment=self.current_environment,
+            current_system=self.current_system,
         )
-
-    @property
-    def current_channel_url(self):
-        return nixos.current_nixos_channel_url()
-
-    @property
-    def current_environment(self):
-        return nixos.current_fc_environment_name()
-
-    @property
-    def current_version(self):
-        return nixos.os_release()["BUILD_ID"]
-
-    @property
-    def current_kernel(self):
-        return nixos.kernel_version(p.join(nixos.current_system(), "kernel"))
 
     def _detect_next_version(self):
         self.next_version = nixos.channel_version(self.next_channel_url)
