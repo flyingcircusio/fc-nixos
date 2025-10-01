@@ -233,7 +233,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
         inherit (nixpkgs-ceph-pacific) ceph ceph-client;
       };
     in
-    lib.dontRecurseIntoAttrs rec {
+    rec {
       inherit (patchedCeph) ceph ceph-client;
       libceph = ceph.lib;
     };
