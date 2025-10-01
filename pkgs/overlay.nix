@@ -17,10 +17,10 @@ let
   nixpkgs-ceph-pacific =
     import
       (fetchFromGitHub {
-        hash = "sha256-GSPF/tcmmdUBbcb3QxygDW9dEkRjfZ6/uLJVLmunZrA=";
+        hash = "sha256-Txv+E2nXjoNS01PNT4zlACoWyYBV5wAJ+vnLSnpKIXM=";
         owner = "flyingcircusio";
         repo = "nixpkgs";
-        rev = "a1cfe69008b17285f9f2f841f673dcb0903997c1";
+        rev = "0c51dd2b747fb4923902f32402abf443d82dafdd";
         # branch = "fc-ceph-pacific"
       })
       {
