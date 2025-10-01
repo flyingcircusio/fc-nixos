@@ -222,10 +222,21 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   inherit (self.ceph-nautilus) ceph ceph-client libceph;
   # upstream ceph packaging switched to offering a reduced client tooling set, let's see how that works
   ceph-nautilus = lib.dontRecurseIntoAttrs fc-nixos-21_05.ceph-nautilus;
-  ceph-pacific = lib.dontRecurseIntoAttrs rec {
-    inherit (nixpkgs-ceph-pacific) ceph ceph-client;
-    libceph = ceph.lib;
-  };
+  ceph-pacific =
+    let
+      applyBaselinePatches =
+        cephPkg:
+        cephPkg.overrideAttrs (oldAttrs: {
+          patches = (oldAttrs.patches or [ ]) ++ [ ./ceph/pacific/rgw-reduce-log-verbosity.patch ];
+        });
+      patchedCeph = builtins.mapAttrs (_: applyBaselinePatches) {
+        inherit (nixpkgs-ceph-pacific) ceph ceph-client;
+      };
+    in
+    lib.dontRecurseIntoAttrs rec {
+      inherit (patchedCeph) ceph ceph-client;
+      libceph = ceph.lib;
+    };
 
   consul = builtins.trace "using 21.05 consul" (
     fc-nixos-21_05.consul.overrideAttrs (old: {

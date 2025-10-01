@@ -1,0 +1,106 @@
+From 92447f550870ba45fe7dce01d494a0a48c0af564 Mon Sep 17 00:00:00 2001
+From: Oliver Schmidt <os@flyingcircus.io>
+Date: Mon, 29 Sep 2025 14:39:56 +0200
+Subject: [PATCH] rgw: demote some log levels to achieve readable RGW access
+ log
+
+---
+ src/cls/rgw/cls_rgw.cc | 16 ++++++++--------
+ src/rgw/rgw_process.cc |  4 ++--
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/src/cls/rgw/cls_rgw.cc b/src/cls/rgw/cls_rgw.cc
+index 04e4b53c2fa..2e8b37e4a90 100644
+--- a/src/cls/rgw/cls_rgw.cc
++++ b/src/cls/rgw/cls_rgw.cc
+@@ -783,7 +783,7 @@ int rgw_bucket_prepare_op(cls_method_context_t hctx, bufferlist *in, bufferlist
+     return -EINVAL;
+   }
+ 
+-  CLS_LOG(1, "rgw_bucket_prepare_op(): request: op=%d name=%s instance=%s tag=%s",
++  CLS_LOG(2, "rgw_bucket_prepare_op(): request: op=%d name=%s instance=%s tag=%s",
+           op.op, op.key.name.c_str(), op.key.instance.c_str(), op.tag.c_str());
+ 
+   // get on-disk state
+@@ -833,14 +833,14 @@ static void unaccount_entry(rgw_bucket_dir_header& header,
+ 
+ static void log_entry(const char *func, const char *str, rgw_bucket_dir_entry *entry)
+ {
+-  CLS_LOG(1, "%s: %s: ver=%ld:%llu name=%s instance=%s locator=%s", func, str,
++  CLS_LOG(2, "%s: %s: ver=%ld:%llu name=%s instance=%s locator=%s", func, str,
+           (long)entry->ver.pool, (unsigned long long)entry->ver.epoch,
+           entry->key.name.c_str(), entry->key.instance.c_str(), entry->locator.c_str());
+ }
+ 
+ static void log_entry(const char *func, const char *str, rgw_bucket_olh_entry *entry)
+ {
+-  CLS_LOG(1, "%s: %s: epoch=%llu name=%s instance=%s tag=%s", func, str,
++  CLS_LOG(2, "%s: %s: epoch=%llu name=%s instance=%s tag=%s", func, str,
+           (unsigned long long)entry->epoch, entry->key.name.c_str(), entry->key.instance.c_str(),
+           entry->tag.c_str());
+ }
+@@ -962,7 +962,7 @@ int rgw_bucket_complete_op(cls_method_context_t hctx, bufferlist *in, bufferlist
+     return -EINVAL;
+   }
+ 
+-  CLS_LOG(1, "rgw_bucket_complete_op(): request: op=%d name=%s instance=%s ver=%lu:%llu tag=%s",
++  CLS_LOG(2, "rgw_bucket_complete_op(): request: op=%d name=%s instance=%s ver=%lu:%llu tag=%s",
+           op.op, op.key.name.c_str(), op.key.instance.c_str(),
+           (unsigned long)op.ver.pool, (unsigned long long)op.ver.epoch,
+           op.tag.c_str());
+@@ -1004,10 +1004,10 @@ int rgw_bucket_complete_op(cls_method_context_t hctx, bufferlist *in, bufferlist
+   }
+ 
+   if (op.tag.size() && op.op == CLS_RGW_OP_CANCEL) {
+-    CLS_LOG(1, "rgw_bucket_complete_op(): cancel requested\n");
++    CLS_LOG(2, "rgw_bucket_complete_op(): cancel requested\n");
+   } else if (op.ver.pool == entry.ver.pool &&
+              op.ver.epoch && op.ver.epoch <= entry.ver.epoch) {
+-    CLS_LOG(1, "rgw_bucket_complete_op(): skipping request, old epoch\n");
++    CLS_LOG(2, "rgw_bucket_complete_op(): skipping request, old epoch\n");
+     op.op = CLS_RGW_OP_CANCEL;
+   }
+ 
+@@ -2092,7 +2092,7 @@ static int rgw_bucket_clear_olh(cls_method_context_t hctx, bufferlist *in, buffe
+ int rgw_dir_suggest_changes(cls_method_context_t hctx,
+ 			    bufferlist *in, bufferlist *out)
+ {
+-  CLS_LOG(1, "entered %s()\n", __func__);
++  CLS_LOG(2, "entered %s()\n", __func__);
+ 
+   bufferlist header_bl;
+   rgw_bucket_dir_header header;
+@@ -4411,7 +4411,7 @@ static int rgw_get_bucket_resharding(cls_method_context_t hctx,
+ 
+ CLS_INIT(rgw)
+ {
+-  CLS_LOG(1, "Loaded rgw class!");
++  CLS_LOG(2, "Loaded rgw class!");
+ 
+   cls_handle_t h_class;
+   cls_method_handle_t h_rgw_bucket_init_index;
+diff --git a/src/rgw/rgw_process.cc b/src/rgw/rgw_process.cc
+index 67d0a67f9ec..0516630a69f 100644
+--- a/src/rgw/rgw_process.cc
++++ b/src/rgw/rgw_process.cc
+@@ -187,7 +187,7 @@ int process_request(rgw::sal::RGWRadosStore* const store,
+ {
+   int ret = client_io->init(g_ceph_context);
+ 
+-  dout(1) << "====== starting new request req=" << hex << req << dec
++  dout(2) << "====== starting new request req=" << hex << req << dec
+ 	  << " =====" << dendl;
+   perfcounter->inc(l_rgw_req);
+ 
+@@ -361,7 +361,7 @@ done:
+     *latency = lat;
+   }
+ 
+-  dout(1) << "====== req done req=" << hex << req << dec
++  dout(2) << "====== req done req=" << hex << req << dec
+ 	  << " op status=" << op_ret
+ 	  << " http_status=" << s->err.http_ret
+ 	  << " latency=" << lat
+-- 
+2.50.1
+
