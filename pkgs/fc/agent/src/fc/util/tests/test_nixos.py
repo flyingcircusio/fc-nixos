@@ -492,33 +492,46 @@ def test_find_nix_build_error_oneline():
 
 
 @pytest.fixture
-def dirsetup(tmpdir):
-    drv = tmpdir.mkdir("abcdef-linux-4.4.27")
-    current = tmpdir.mkdir("current")
-    bzImage = drv.ensure("bzImage")
-    (current / "kernel").mksymlinkto(bzImage)
-    mod = drv.mkdir("lib").mkdir("modules")
-    return current / "kernel", mod
+def dirsetup(tmp_path):
+    drv = tmp_path / "abcdef-linux-4.4.27"
+    drv.mkdir()
+    current = tmp_path / "current"
+    current.mkdir()
+    (current / "kernel").symlink_to(drv)
+    return current
 
 
 def test_kernel_versions_equal(dirsetup, tmpdir):
-    kernel, mod = dirsetup
-    mod.mkdir("4.4.27")
-    assert "4.4.27" == nixos.kernel_version(str(kernel))
+    system = dirsetup
+    assert nixos.system_kernel(system) == nixos.system_kernel(system)
+    assert not nixos.system_kernel(system) != nixos.system_kernel(system)
+    assert nixos.system_kernel(system) == nixos.kernel_package(
+        Path("/nix/store") / "abcdef-linux-4.4.27"
+    )
+    assert nixos.system_kernel(system) == nixos.KernelIdentifier(
+        "abcdef-linux-4.4.27"
+    )
 
 
 def test_kernel_version_empty(dirsetup, tmpdir):
-    kernel, mod = dirsetup
+    (dirsetup / "kernel").unlink()
     with pytest.raises(RuntimeError):
-        nixos.kernel_version(str(kernel))
+        nixos.system_kernel(dirsetup)
 
 
-def test_multiple_kernel_versions(dirsetup, tmpdir):
-    kernel, mod = dirsetup
-    mod.mkdir("4.4.27")
-    mod.mkdir("4.4.28")
-    with pytest.raises(RuntimeError):
-        nixos.kernel_version(str(kernel))
+def test_KernelIdentifier():
+    id_regular = nixos.KernelIdentifier("abcdef-linux-4.4.27")
+    id_regular_rebuild = nixos.KernelIdentifier("asdfgh-linux-4.4.27")
+    id_patched = nixos.KernelIdentifier("abcdef-linuxPatched-4.4.27")
+    id_bogus = nixos.KernelIdentifier("somebogusString")
+
+    assert id_regular != id_regular_rebuild
+    assert id_regular != id_patched
+    assert str(id_regular) == str(id_regular_rebuild)
+    assert str(id_regular) != str(id_patched)
+    assert str(id_regular) == "<Kernel: linux v4.4.27>"
+    assert str(id_patched) == "<Kernel: linuxPatched v4.4.27>"
+    assert str(id_bogus) == "<Kernel: somebogusString>"
 
 
 def test_os_release_parser(tmp_path):

@@ -9,6 +9,7 @@ from fc.maintenance.activity import RebootType
 from fc.maintenance.activity.reboot import RebootActivity
 from fc.maintenance.activity.update import UpdateActivity
 from fc.maintenance.activity.vm_change import VMChangeActivity
+from fc.util.nixos import KernelIdentifier
 from pytest import fixture
 
 ENC = {
@@ -304,19 +305,22 @@ def test_do_not_request_for_unchanged_guest_properties(
 
 def test_request_reboot_for_kernel_change(logger):
     def fake_changed_kernel_version(path):
-        if path == "/run/booted-system/kernel":
-            return "5.10.45"
-        elif path == "/run/current-system/kernel":
-            return "5.10.50"
+        if path == Path("/run/booted-system/"):
+            return KernelIdentifier("asdf-linux-5.10.45")
+        elif path == Path("/run/current-system/"):
+            return KernelIdentifier("hjkl-linux-5.10.50")
 
     with unittest.mock.patch(
-        "fc.util.nixos.kernel_version", fake_changed_kernel_version
+        "fc.util.nixos.system_kernel", fake_changed_kernel_version
     ):
         request = fc.maintenance.maintenance.request_reboot_for_kernel(
             logger, []
         )
 
-    assert "kernel (5.10.45 to 5.10.50)" in request.comment
+    assert (
+        "kernel (<Kernel: linux v5.10.45> to <Kernel: linux v5.10.50>)"
+        in request.comment
+    )
     activity = request.activity
     assert isinstance(activity, RebootActivity)
     assert activity.reboot_needed == RebootType.WARM
@@ -324,13 +328,13 @@ def test_request_reboot_for_kernel_change(logger):
 
 def test_do_not_request_reboot_for_unchanged_kernel(logger):
     def fake_changed_kernel_version(path):
-        if path == "/run/booted-system/kernel":
-            return "5.10.50"
-        elif path == "/run/current-system/kernel":
-            return "5.10.50"
+        if path == Path("/run/booted-system"):
+            return KernelIdentifier("hjkl-linux-5.10.50")
+        elif path == Path("/run/current-system"):
+            return KernelIdentifier("hjkl-linux-5.10.50")
 
     with unittest.mock.patch(
-        "fc.util.nixos.kernel_version", fake_changed_kernel_version
+        "fc.util.nixos.system_kernel", fake_changed_kernel_version
     ):
         request = fc.maintenance.maintenance.request_reboot_for_kernel(
             logger, []
@@ -490,7 +494,7 @@ def test_request_update_skip_when_free_disk_low(
 def test_do_not_request_reboot_when_tempfail_update_present(
     logger, log, monkeypatch
 ):
-    with unittest.mock.patch("fc.util.nixos.kernel_version") as mock:
+    with unittest.mock.patch("fc.util.nixos.system_kernel") as mock:
         activity = FakeUpdateActivity("https://fake")
         activity.reboot_needed = RebootType.WARM
         request = Request(activity)

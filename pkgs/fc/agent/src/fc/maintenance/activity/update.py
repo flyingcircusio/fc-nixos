@@ -4,6 +4,7 @@ This activity does nothing if the machine already uses the new version.
 """
 
 import os.path as p
+from pathlib import Path
 from typing import Optional
 
 import structlog
@@ -468,7 +469,7 @@ class UpdateActivity(Activity):
             self.reboot_needed = RebootType.WARM
 
     def _register_reboot_for_kernel(self):
-        next_kernel = nixos.kernel_version(p.join(self.next_system, "kernel"))
+        next_kernel = nixos.system_kernel(Path(self.next_system))
 
         if self.current_kernel == next_kernel:
             self.log.debug("update-kernel-unchanged")
@@ -504,8 +505,10 @@ class UpdateActivity(Activity):
         return nixos.os_release()["BUILD_ID"]
 
     @property
-    def current_kernel(self):
-        return nixos.kernel_version(p.join(nixos.current_system(), "kernel"))
+    def current_kernel(self) -> nixos.KernelIdentifier:
+        system = nixos.current_system()
+        assert system, "No current system path"
+        return nixos.system_kernel(Path(system))
 
     def _detect_next_version(self):
         self.next_version = nixos.channel_version(self.next_channel_url)

@@ -1,6 +1,7 @@
 import textwrap
 from io import StringIO
 from unittest.mock import Mock, create_autospec
+from pathlib import Path
 
 import responses
 import yaml
@@ -15,6 +16,7 @@ from fc.util.nixos import (
     ChannelUpdateFailed,
     RegisterFailed,
     SwitchFailed,
+    KernelIdentifier,
 )
 from pytest import fixture
 from rich.console import Console
@@ -38,8 +40,8 @@ NEXT_VERSION_ID = "21.05"
 CURRENT_SYSTEM_PATH = f"/nix/store/zbx8i9v4j8dzlwp83qvrzjgvj7d0qm0d-nixos-system-test-{NEXT_BUILD_ID}"
 NEXT_SYSTEM_PATH = f"/nix/store/v49jzgwblcn9vkrmpz92kzw5pkbsn0vz-nixos-system-test-{NEXT_BUILD_ID}"
 
-CURRENT_KERNEL_VERSION = "5.10.45"
-NEXT_KERNEL_VERSION = "5.10.50"
+CURRENT_KERNEL_VERSION = KernelIdentifier("asdfgh-linux-5.10.45")
+NEXT_KERNEL_VERSION = KernelIdentifier("qwertz-linux-5.10.50")
 
 UNIT_CHANGES = {
     "reload": ["nginx.service"],
@@ -77,7 +79,8 @@ activity: !!python/object:fc.maintenance.activity.update.UpdateActivity
   current_version: 21.05.1233.a9cc58d
   next_channel_url: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz
   next_environment: fc-21.05-production
-  next_kernel: 5.10.50
+  next_kernel: !!python/object:fc.util.nixos.KernelIdentifier
+    store_name: qwertz-linux-5.10.50
   next_system: {NEXT_SYSTEM_PATH}
   next_version: 21.05.1235.bacc11d
   reboot_needed: !!python/object/apply:fc.maintenance.activity.RebootType
@@ -104,7 +107,8 @@ SERIALIZED_ACTIVITY = f"""\
 !!python/object:fc.maintenance.activity.update.UpdateActivity
 next_channel_url: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz
 next_environment: fc-21.05-production
-next_kernel: 5.10.50
+next_kernel: !!python/object:fc.util.nixos.KernelIdentifier
+  store_name: qwertz-linux-5.10.50
 next_system: {NEXT_SYSTEM_PATH}
 next_version: 21.05.1235.bacc11d
 reboot_needed: !!python/object/apply:fc.maintenance.activity.RebootType
@@ -219,10 +223,10 @@ def nixos_mock(monkeypatch):
         elif channel_url == NEXT_CHANNEL_URL:
             return mocked.NEXT_BUILD_ID
 
-    def fake_changed_kernel_version(path):
-        if path == CURRENT_SYSTEM_PATH + "/kernel":
+    def fake_changed_system_kernel(path):
+        if path == Path(CURRENT_SYSTEM_PATH):
             return CURRENT_KERNEL_VERSION
-        elif path == NEXT_SYSTEM_PATH + "/kernel":
+        elif path == Path(NEXT_SYSTEM_PATH):
             return NEXT_KERNEL_VERSION
 
     def fake_os_release(path=None):
@@ -256,7 +260,7 @@ def nixos_mock(monkeypatch):
     mocked.format_unit_change_lines = fc.util.nixos.format_unit_change_lines
     mocked.get_fc_channel_build = fake_get_fc_channel_build
     mocked.channel_version = fake_channel_version
-    mocked.kernel_version = fake_changed_kernel_version
+    mocked.system_kernel = fake_changed_system_kernel
     mocked.resolve_url_redirects = lambda url: url
     mocked.os_release = fake_os_release
     mocked.build_system.return_value = NEXT_SYSTEM_PATH
@@ -609,7 +613,10 @@ def test_current_properties_return_expected_values(nixos_mock, activity):
         "BUILD_ID": "21.05.1233.a9cc58d",
         "VERSION_ID": "21.05",
     }
-    nixos_mock.kernel_version.return_value = "5.10.45"
+    nixos_mock.system_kernel = Mock()
+    nixos_mock.system_kernel.return_value = KernelIdentifier(
+        "yshd-mocktest-5.10.42"
+    )
 
     # Test that properties return the mocked values
     assert (
@@ -618,7 +625,7 @@ def test_current_properties_return_expected_values(nixos_mock, activity):
     )
     assert activity.current_environment == "fc-21.05-production"
     assert activity.current_version == "21.05.1233.a9cc58d"
-    assert activity.current_kernel == "5.10.45"
+    assert str(activity.current_kernel) == "<Kernel: mocktest v5.10.42>"
 
 
 def test_current_properties_not_serialized(activity):

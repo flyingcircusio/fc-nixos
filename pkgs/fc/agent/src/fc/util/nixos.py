@@ -6,6 +6,7 @@ import os.path as p
 import re
 import resource
 import subprocess
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from subprocess import PIPE, STDOUT
@@ -79,24 +80,47 @@ class Specialisation(Enum):
     BASE_CONFIG = 2
 
 
-def kernel_version(kernel) -> str:
-    """Guesses kernel version from /run/*-system/kernel.
+@dataclass(eq=True, repr=False)
+class KernelIdentifier:
+    store_name: str
 
-    Theory of operation: A link like `/run/current-system/kernel` points
-    to a bzImage like `/nix/store/abc...-linux-4.4.27/bzImage`. The
-    directory also contains a `lib/modules` dir which should have the
-    kernel version as sole subdir, e.g.
-    `/nix/store/abc...-linux-4.4.27/lib/modules/4.4.27`. This function
-    returns that version number or bails out if the assumptions laid down here
-    do not hold.
+    def __repr__(self):
+        """attempts to print the kernel version, falls back to printing the
+        full name.
+        Equality is always tested against the full name though.
+        """
+        try:
+            name_parts = self.store_name.split("-")
+            package_name = name_parts[-2]
+            package_version = name_parts[-1]
+            return f"<Kernel: {package_name} v{package_version}>"
+        except IndexError:
+            return f"<Kernel: {self.store_name}>"
+
+
+def system_kernel(system_top_level: Path) -> KernelIdentifier:
+    """Return the kernel package name of a given system."""
+    # a system holds a reference to its kernel as a symlink
+    try:
+        kernel_package_path = (system_top_level / "kernel").readlink()
+    except FileNotFoundError:
+        raise RuntimeError(f"{system_top_level} references no kernel.")
+    return kernel_package(kernel_package_path)
+
+
+def kernel_package(kernel_store_path: Path) -> KernelIdentifier:
+    """Return an identifier describing a kernel package.
+    Essentially, this identifier is the name of the nix store path, plus some
+    convenient representation.
+
+    The returned kernel name is **not** the kernel version, but the store path
+    name of the kernel package. When checking the necessity of a reboot, we only
+    care about a *difference* in kernel packages, not exact version number
+    differences. E.g. we still want to reboot when recompiling the same kernel
+    release with different options, resulting in a different store path.
     """
-    bzImage = os.readlink(kernel)
-    moddir = os.listdir(p.join(p.dirname(bzImage), "lib", "modules"))
-    if len(moddir) != 1:
-        raise RuntimeError(
-            "modules subdir does not contain exactly one item", moddir
-        )
-    return moddir[0]
+
+    return KernelIdentifier(kernel_store_path.name)
 
 
 def current_fc_environment_name(log=_log) -> Optional[str]:
