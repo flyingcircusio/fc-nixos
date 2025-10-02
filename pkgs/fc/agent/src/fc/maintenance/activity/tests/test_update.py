@@ -4,6 +4,7 @@ from unittest.mock import Mock, create_autospec
 
 import responses
 import yaml
+import fc.util.nixos
 from fc.maintenance import Request, state
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.activity.update import UpdateActivity
@@ -21,9 +22,6 @@ from rich.console import Console
 CURRENT_BUILD = 93111
 NEXT_BUILD = 93222
 NEXT_NEXT_BUILD = 93333
-
-CURRENT_RELEASE = "2021_002"
-NEXT_RELEASE = "2021_003"
 
 CHANGELOG_URL = "https://doc.flyingcircus.io/platform/changes/2021/r003.html"
 
@@ -60,8 +58,6 @@ SUMMARY = textwrap.dedent(
     Restart: telegraf
     Reload: nginx
 
-    Release: {CURRENT_RELEASE} -> {NEXT_RELEASE}
-    ChangeLog: {CHANGELOG_URL}
     Environment: {ENVIRONMENT} (unchanged)
     Build number: {CURRENT_BUILD} -> {NEXT_BUILD}
     Channel URL: {NEXT_CHANNEL_URL}"""
@@ -106,20 +102,9 @@ updated_at: null
 
 SERIALIZED_ACTIVITY = f"""\
 !!python/object:fc.maintenance.activity.update.UpdateActivity
-changelog_url: {CHANGELOG_URL}
-current_channel_url: https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz
-current_environment: fc-21.05-production
-current_kernel: 5.10.45
-current_os_release:
-  BUILD_ID: 21.05.1233.a9cc58d
-  VERSION_ID: '21.05'
-current_release: '{CURRENT_RELEASE}'
-current_system: {CURRENT_SYSTEM_PATH}
-current_version: 21.05.1233.a9cc58d
 next_channel_url: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz
 next_environment: fc-21.05-production
 next_kernel: 5.10.50
-next_release: '{NEXT_RELEASE}'
 next_system: {NEXT_SYSTEM_PATH}
 next_version: 21.05.1235.bacc11d
 reboot_needed: !!python/object/apply:fc.maintenance.activity.RebootType
@@ -139,16 +124,9 @@ unit_changes:
 @fixture
 def activity(logger, nixos_mock, tmp_path):
     activity = UpdateActivity(next_channel_url=NEXT_CHANNEL_URL, log=logger)
-    activity.current_channel_url = CURRENT_CHANNEL_URL
-    activity.changelog_url = CHANGELOG_URL
-    activity.current_environment = ENVIRONMENT
-    activity.current_release = CURRENT_RELEASE
-    activity.current_version = CURRENT_BUILD_ID
-    activity.current_kernel = CURRENT_KERNEL_VERSION
     activity.next_channel_url = NEXT_CHANNEL_URL
     activity.next_environment = ENVIRONMENT
     activity.next_kernel = NEXT_KERNEL_VERSION
-    activity.next_release = NEXT_RELEASE
     activity.next_system = NEXT_SYSTEM_PATH
     activity.next_version = NEXT_BUILD_ID
     activity.reboot_needed = RebootType.WARM
@@ -313,15 +291,12 @@ def test_update_activity_deserialize(activity, logger):
 
 
 def test_update_activity_loading_outdated_serialization_should_work(
-    logger, tmp_path, agent_configparser
+    logger, tmp_path, agent_configparser, nixos_mock
 ):
     request_path = tmp_path / "request.yaml"
     request_path.write_text(OUTDATED_SERIALIZED_REQUEST)
     request = Request.load(tmp_path, agent_configparser, logger, 1800)
     activity = request.activity
-    assert activity.changelog_url is None
-    assert activity.current_release is None
-    assert activity.next_release is None
     assert activity.summary
     assert activity.__rich__()
 
@@ -389,8 +364,6 @@ def test_update_nfs_reboot_required(
 
         Restart: mnt-nfs-shared.mount
 
-        Release: 2021_002 -> 2021_003
-        ChangeLog: https://doc.flyingcircus.io/platform/changes/2021/r003.html
         Environment: fc-21.05-production (unchanged)
         Build number: 93111 -> 93222
         Channel URL: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"""
@@ -419,7 +392,7 @@ def test_update_release_change_reboot_required(
     activity.reboot_needed = None
     nixos_mock.CURRENT_VERSION_ID = "24.11"
     nixos_mock.NEXT_VERSION_ID = "24.11"
-    activity._detect_current_state()
+    activity._log_current_state()
     activity._detect_next_version()
     assert activity.release_path() == ["24.11"]
     activity._register_reboot_for_release_change()
@@ -432,7 +405,7 @@ def test_update_release_change_reboot_required(
     nixos_mock.NEXT_VERSION_ID = "25.05"
     nixos_mock.CURRENT_BUILD_ID = "24.11.abcde.12345"
     nixos_mock.NEXT_BUILD_ID = "25.05.edcba.54321"
-    activity._detect_current_state()
+    activity._log_current_state()
     activity._detect_next_version()
     assert activity.release_path() == ["24.11", "25.05"]
     activity._register_reboot_for_release_change()
@@ -448,8 +421,6 @@ def test_update_release_change_reboot_required(
         Restart: telegraf
         Reload: nginx
         
-        Release: 2021_002 -> 2021_003
-        ChangeLog: https://doc.flyingcircus.io/platform/changes/2021/r003.html
         Environment: fc-21.05-production (unchanged)
         Build number: 93111 -> 93222
         Channel URL: https://hydra.flyingcircus.io/build/93222/download/1/nixexprs.tar.xz"""
@@ -481,7 +452,8 @@ def test_update_activity_run(log, nixos_mock, activity, logger):
 
 
 def test_update_activity_run_unchanged(log, nixos_mock, activity):
-    activity.current_system = activity.next_system
+    # Mock nixos.current_system() to return the same as next_system
+    nixos_mock.current_system.return_value = activity.next_system
 
     activity.run()
 
@@ -540,7 +512,10 @@ def test_update_activity_switch_to_system_fails(log, nixos_mock, activity):
 
 
 def test_update_activity_switch_if_no_release_change(log, nixos_mock, activity):
-    activity.current_version = "24.11.1111"
+    nixos_mock.os_release.return_value = {
+        "BUILD_ID": "24.11.1111",
+        "VERSION_ID": "24.11",
+    }
     activity.next_version = "24.11.9999"
     activity.run()
 
@@ -558,7 +533,7 @@ def test_update_activity_boot_if_release_change(log, nixos_mock, activity):
     nixos_mock.CURRENT_BUILD_ID = "24.11.abcde.12345"
     nixos_mock.NEXT_BUILD_ID = "25.05.edcba.54321"
 
-    activity._detect_current_state()
+    activity._log_current_state()
     activity._detect_next_version()
     activity.run()
 
@@ -603,6 +578,60 @@ def test_update_activity_from_enc(
     )
     activity = UpdateActivity.from_enc(logger, enc)
     assert activity
+
+
+def test_update_activity_with_nullable_nixos_properties(nixos_mock, activity):
+    """Set all potentially nullable mocked properties to None and ensure this does not
+    cause crashes"""
+    nixos_mock.current_fc_environment_name.return_value = None
+    nixos_mock.get_fc_channel_build = (
+        fc.util.nixos.get_fc_channel_build
+    )  # un-mock, this function has no side effects
+    nixos_mock.os_release.return_value = {}
+    nixos_mock.current_nixos_channel_url.return_value = None
+    nixos_mock.current_system.return_value = None
+
+    activity._log_current_state()
+    activity._detect_next_version()
+    activity.summary
+    activity.run()
+
+
+def test_current_properties_return_expected_values(nixos_mock, activity):
+    """Test that current_* properties return values from nixos functions."""
+
+    # Mock the nixos functions to return specific values
+    nixos_mock.current_nixos_channel_url.return_value = (
+        "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
+    )
+    nixos_mock.current_fc_environment_name.return_value = "fc-21.05-production"
+    nixos_mock.os_release.return_value = {
+        "BUILD_ID": "21.05.1233.a9cc58d",
+        "VERSION_ID": "21.05",
+    }
+    nixos_mock.kernel_version.return_value = "5.10.45"
+
+    # Test that properties return the mocked values
+    assert (
+        activity.current_channel_url
+        == "https://hydra.flyingcircus.io/build/93111/download/1/nixexprs.tar.xz"
+    )
+    assert activity.current_environment == "fc-21.05-production"
+    assert activity.current_version == "21.05.1233.a9cc58d"
+    assert activity.current_kernel == "5.10.45"
+
+
+def test_current_properties_not_serialized(activity):
+    """Test that current_* properties are not included in serialized state."""
+    state = activity.__getstate__()
+
+    # None of the current_* properties should be in the serialized state,
+    # they're supposed to be read from the live system
+    assert "current_channel_url" not in state
+    assert "current_environment" not in state
+    assert "current_version" not in state
+    assert "current_kernel" not in state
+    assert "current_os_release" not in state
 
 
 def test_update_from_enc_no_enc(log, logger):
