@@ -1,3 +1,33 @@
+# Release 2025_036
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- loghost/graylog: Fix LDAP by pinning Java to a known good version. (PL-133980)
+
+- hardware: remove settings for aggressive filesystem caching which
+  are no longer appropriate with widespread adoption of SSD-backed
+  storage from the default hardware profile.
+
+  Add a NixOS option `increaseVfsCacheWeight` in the backyserver role
+  to allow enabling the previous behaviour on old HDD-based backup
+  servers which may still benefit from increased caching. (PL-133712)
+
+- nixos/nginx: add deprecation warning for `virtualHosts.<name>.emailACME` as this option is deprecated and will be removed with fc-nixos 25.11 (PL-131381)
+
+- nixos/statshost: Disable default insecure admin user (PL-134036)
+
+  Currently, we have an insecure default admin activated, as this is the grafana default.
+  With this change, this user is disabled on new installations and our AppOps team will disable the user on existing instances.
+
+- nixos/nginx: Add warning for implicitly enabled `flyingcircus.services.nginx.virtualHosts.<name>.enableACME` as this behavior is deprecated and will be removed with fc-nixos 25.11 (PL-131381)
+
+
+
 # Release 2025_035
 
 
