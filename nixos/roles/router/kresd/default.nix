@@ -93,7 +93,7 @@ lib.mkIf role.enable {
       -- ensure that the hosts file can be reloaded by sighup at runtime.
 
       local function load_private_hosts()
-          hints.add_hosts('/etc/nixos/rfc1918-hosts')
+          hints.config('/etc/nixos/rfc1918-hosts')
           hints.use_nodata(false)
       end
 
