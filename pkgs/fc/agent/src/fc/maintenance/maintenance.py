@@ -206,10 +206,10 @@ def request_reboot_for_kernel(
                 "trigger a reboot when it succeeds."
             ),
         )
-        return
+        return None
 
-    booted = fc.util.nixos.kernel_version("/run/booted-system/kernel")
-    current = fc.util.nixos.kernel_version("/run/current-system/kernel")
+    booted = fc.util.nixos.system_kernel(Path("/run/booted-system"))
+    current = fc.util.nixos.system_kernel(Path("/run/current-system"))
     log.debug("check-kernel-reboot", booted=booted, current=current)
     if booted != current:
         log.info(
@@ -224,6 +224,8 @@ def request_reboot_for_kernel(
             RebootActivity("reboot"),
             comment=f"Reboot to activate changed kernel ({booted} to {current})",
         )
+    else:
+        return None
 
 
 def request_update(
