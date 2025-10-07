@@ -14,7 +14,7 @@ class VersionedSubsystem(object):
     1. be named properly after the subsystem they implement
        (to properly support config file entries)
 
-    2. provide attributes based on the jewel releases they support
+    2. provide attributes based on the Ceph releases they support
 
     """
 
