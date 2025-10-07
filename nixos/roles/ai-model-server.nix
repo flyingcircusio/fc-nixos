@@ -152,15 +152,6 @@ in
           rocmOverrideGfx = "11.0.0";
         };
 
-        services.telegraf.extraConfig.inputs.amd_rocm_smi = [
-          {
-            # Exclude the GPU uuid to avoid excess label cardinality
-            taginclude = [
-              "host"
-              "name"
-            ];
-          }
-        ];
         systemd.services.telegraf.path = [ pkgs.rocmPackages.rocm-smi ];
       })
     ]
