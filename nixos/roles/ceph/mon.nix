@@ -26,8 +26,8 @@ let
       "telemetry"
       "iostat"
     ];
-        # FIXME: adjust, this is just copy-pasted for now
-        pacific = [
+    # FIXME: adjust, this is just copy-pasted for now
+    pacific = [
       "telemetry"
       "iostat"
     ];
@@ -36,7 +36,7 @@ let
     nautilus = [
       "restful"
     ];
-        # FIXME: adjust, this is just copy-pasted for now
+    # FIXME: adjust, this is just copy-pasted for now
     pacific = [
       "restful"
     ];
