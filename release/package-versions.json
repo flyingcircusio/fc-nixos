@@ -175,9 +175,9 @@
     "version": "0.6.22"
   },
   "fetchmail": {
-    "name": "fetchmail-6.5.1",
+    "name": "fetchmail-6.5.6",
     "pname": "fetchmail",
-    "version": "6.5.1"
+    "version": "6.5.6"
   },
   "ffmpeg": {
     "name": "ffmpeg-7.1.1",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-143.0.3",
+    "name": "firefox-143.0.4",
     "pname": "firefox",
-    "version": "143.0.3"
+    "version": "143.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -1010,9 +1010,9 @@
     "version": "4.1"
   },
   "redis": {
-    "name": "redis-7.2.10",
+    "name": "redis-7.2.11",
     "pname": "redis",
-    "version": "7.2.10"
+    "version": "7.2.11"
   },
   "rich-cli": {
     "name": "rich-cli-1.8.0",
