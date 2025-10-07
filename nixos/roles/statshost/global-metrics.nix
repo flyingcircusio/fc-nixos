@@ -26,6 +26,7 @@ let
     "net"
     "netstat"
     "nginx"
+    "nstat"
     "postfix"
     "postgresql"
     "powerdns"
