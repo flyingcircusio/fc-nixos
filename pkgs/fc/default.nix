@@ -74,11 +74,11 @@ rec {
       hash = "sha256-6kRGa5PFlWro464EgzFXGMV5CaRDTI1e+9Hmfg6RVLo=";
     };
     fc-ceph = ceph;
+    # FIXME: still broken
     qemu_ceph = pkgs.qemu-ceph-pacific;
     ceph_client = pkgs.ceph-pacific.ceph-client;
     python3Packages = pkgs.python311Packages;
   };
-
 
   # Enable this temporarily during development, but DO NOT commit this as
   # it will break hydra and we can't cleanly filter it out of the automatic
