@@ -11,7 +11,7 @@ let
 
 in
 py.buildPythonApplication rec {
-  name = "fc-check-ceph-nautilus-${version}";
+  name = "fc-check-ceph-${ceph-client.codename}-${version}";
   version = "1.0";
   src = ./.;
   dontStrip = true;

@@ -31,10 +31,14 @@ rec {
     inherit (pkgs.ceph-nautilus) ceph-client;
     python3Packages = pkgs.python38Packages;
   };
-  check-ceph-pacific = callPackage ./check-ceph/nautilus {
-    inherit (pkgs.ceph-pacific) ceph-client;
-    python3Packages = pkgs.python38Packages;
-  };
+  # FIXME: remove librados dep
+  #check-ceph-pacific = callPackage ./check-ceph/nautilus {
+  #  inherit (pkgs.ceph-pacific) ceph-client;
+  #};
+  check-ceph-pacific = pkgs.writeShellScriptBin "check-ceph-placeholder" ''
+    echo "placeholder until check-ceph-pacific is fixed"
+  '';
+
   check-haproxy = callPackage ./check-haproxy { };
   check-journal = callPackage ./check-journal.nix { };
   check-link-redundancy = callPackage ./check-link-redundancy { };
@@ -82,11 +86,11 @@ rec {
       hash = "sha256-6kRGa5PFlWro464EgzFXGMV5CaRDTI1e+9Hmfg6RVLo=";
     };
     fc-ceph = ceph;
+    # FIXME: still broken
     qemu_ceph = pkgs.qemu-ceph-pacific;
     ceph_client = pkgs.ceph-pacific.ceph-client;
     python3Packages = pkgs.python311Packages;
   };
-
 
   # Enable this temporarily during development, but DO NOT commit this as
   # it will break hydra and we can't cleanly filter it out of the automatic

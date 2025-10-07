@@ -43,6 +43,7 @@ rec {
       pkgs.parted # partprobe
     ];
 
+    # FIXME: remove librados dependency, replace with fake librados
     fc-check-ceph = pkgs.fc."check-ceph-${release}";
 
     fc-qemu = pkgs.fc."qemu-${release}";
