@@ -505,9 +505,9 @@
     "version": "5.4.0"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.139.0",
+    "name": "matrix-synapse-wrapped-1.139.2",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.139.0"
+    "version": "1.139.2"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.1",
