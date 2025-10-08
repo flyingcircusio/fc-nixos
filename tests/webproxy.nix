@@ -15,6 +15,46 @@ import ./make-test-python.nix (
   {
     name = "webproxy";
     nodes = {
+      webproxy_mixed_config =
+        { lib, ... }:
+        let
+          serverport = 8080;
+        in
+        {
+          imports = [ (testlib.fcConfig { id = 3; }) ];
+
+          flyingcircus.roles.webproxy.enable = true;
+
+          environment.etc."local/varnish/default.vcl".text = ''
+            vcl 4.0;
+
+            backend test {
+              .host = "127.0.0.1";
+              .port = "${builtins.toString serverport}";
+            }
+          '';
+
+          flyingcircus.services.varnish.virtualHosts.foo = {
+            condition = "req.http.Host == \"Test\"";
+            config = ''
+              vcl 4.0;
+
+              backend test {
+                .host = "127.0.0.1";
+                .port = "666";
+              }
+            '';
+          };
+
+          systemd.services.helloserver = {
+            wantedBy = [ "multi-user.target" ];
+            script = ''
+              echo 'Hello World!' > hello.txt
+              ${pkgs.python3.interpreter} -m http.server ${builtins.toString serverport} >&2
+            '';
+          };
+        };
+
       webproxy_old_varnish =
         { lib, ... }:
         let
@@ -115,6 +155,8 @@ import ./make-test-python.nix (
     };
 
     testScript = ''
+      start_all()
+
       webproxy.wait_for_unit("varnish.service")
       webproxy.wait_for_unit("varnishncsa.service")
       webproxy.wait_for_unit("helloserver.service")
@@ -168,6 +210,17 @@ import ./make-test-python.nix (
         webproxy.start()
         webproxy.wait_for_unit("varnish.service")
         webproxy.fail("/run/current-system/specialisation/varnish-broken-config-test/bin/switch-to-configuration switch")
+
+      with subtest("fallback configuration for varnish works if the other conditions don't match"):
+        # verify that requests with the "Test" host header are being handled by the explicitly defined varnish backend
+        # while others are handled by the fallback backend
+        # the fallback configuration points at a working http server that serves a hello.txt while the other
+        # (explicitly configured) backend which is selected when adding the "Test" host header doesn't serve anything
+        webproxy_mixed_config.wait_for_unit("varnish.service")
+        webproxy_mixed_config.succeed("varnishadm vcl.list | grep \"localhost\"")
+        webproxy_mixed_config.succeed("varnishadm vcl.show")
+        webproxy_mixed_config.fail(f"curl --fail -H 'Host: Test' 127.0.0.1:8008/hello.txt")
+        webproxy_mixed_config.succeed(f"curl --fail 127.0.0.1:8008/hello.txt")
     '';
   }
 )
