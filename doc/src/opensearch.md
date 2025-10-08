@@ -165,16 +165,28 @@ activities on hosts which are members of a multi-node cluster, the
 cluster state must be green. The check will wait for up to 60 seconds
 for the cluster to become green.
 
-## Generate vector embddings using FC AI
+## Generate vector embeddings using FC AI
 
-To support semantic search OpenSearch allows to generate and store vector embeddings. This is mostly covered in the [official documentation](https://docs.opensearch.org/latest/vector-search/getting-started/auto-generated-embeddings/). Here we cover the specialities to connect OpenSearch to the FC AI.
+To support semantic search OpenSearch allows to generate and store vector
+embeddings. This is mostly covered in the [official
+documentation](https://docs.opensearch.org/latest/vector-search/getting-started/auto-generated-embeddings/).
+Here we cover the specifics to connect OpenSearch to the FC AI.
 
-For more informations about our AI API product, please visit https://flyingcircus.io/en/ai and https://doc.flyingcircus.io/platform/infrastructure/ai.html.
+For more informations about our AI API product, please visit
+https://flyingcircus.io/en/ai and
+https://doc.flyingcircus.io/platform/infrastructure/ai.html.
 
 Preparing the cluster:
 
-- Unlike some examples we are offloading the ML tasks to an external API instead of running them locally. To enable this, set [`plugins.ml_commons.only_run_on_ml_node`](https://docs.opensearch.org/latest/ml-commons-plugin/cluster-settings/#run-tasks-and-models-on-ml-nodes-only) to `false`.
-- You need to enable the API endpoint via setting [`plugins.ml_commons.trusted_connector_endpoints_regex`](https://docs.opensearch.org/latest/ml-commons-plugin/remote-models/index/#adding-trusted-endpoints) to e.g. `^https://ai\\.rzob\\.fcio\\.net/.*$`.
+- Unlike some examples we are offloading the ML tasks to an external API instead
+  of running them locally. To enable this, set
+  [`plugins.ml_commons.only_run_on_ml_node`](https://docs.opensearch.org/latest/ml-commons-plugin/cluster-settings/#run-tasks-and-models-on-ml-nodes-only)
+  to `false`.
+
+- You need to enable the API endpoint via setting
+  [`plugins.ml_commons.trusted_connector_endpoints_regex`](https://docs.opensearch.org/latest/ml-commons-plugin/remote-models/index/#adding-trusted-endpoints)
+  to e.g. `^https://ai\\.rzob\\.fcio\\.net/.*$`.
+
 - The ML response needs to be post-processed, see example below.
 
 A complete example in Python might look like this:
