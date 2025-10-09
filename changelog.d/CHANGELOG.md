@@ -1,3 +1,35 @@
+# Release 2025_037
+
+## NixOS XX.XX platform
+
+- statshost-global: The Flying Circus infrastructure-wide statshost now stores metrics of the `nstat` telegraf output (PL-133683)
+
+- fc-maintenance: detect need for reboot based on kernel package, not only version number (PL-134082)
+
+  This makes the parsing of a system's used kernel more robust, and introduces reboots for changed kernels within the same version number.
+
+- fc-agent: Fix automatic maintenance updates that referred to already garbage-collected system paths (PL-133993)
+
+  This avoids breakage of updates even when they have been pending for a while and the current system state already changed, e.g. due to modified configuration.
+
+- Increase DNS resolver timeouts. (PL-129951)
+
+  We've seen sporadic but annoying DNS resolution issues which are likely
+  caused by somewhat laggy DNS authoritatives or forwarders. One aspect
+  of our previous combination of low timeouts and high retry count meant
+  that clients a) might not be retrying correctly and b) resolvers might
+  be retrying with different upstream servers that all exhibit the same
+  sluggishness and thus then fail over and over and over.
+
+  Increasing the timeouts will reduce fragility and reducing the number
+  of retries means applications don't get stuck too long in case resolvers
+  aren't responding
+
+  Note: we're also adjusting our resolver setup in the next releases
+  for further reliability improvements that integrate with this change.
+
+
+
 # Release 2025_036
 
 ## Impact
