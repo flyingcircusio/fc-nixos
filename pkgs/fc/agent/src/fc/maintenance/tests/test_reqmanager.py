@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, Mock, call
 
 import freezegun
 import pytest
+from rich.console import Console
+
 from fc.maintenance.activity import Activity, RebootType
 from fc.maintenance.estimate import Estimate
 from fc.maintenance.reqmanager import (
@@ -20,7 +22,6 @@ from fc.maintenance.request import Attempt, Request
 from fc.maintenance.state import ARCHIVE, EXIT_POSTPONE, State
 from fc.maintenance.tests import MergeableActivity
 from fc.util.time_date import utcnow
-from rich.console import Console
 
 
 @pytest.fixture
@@ -218,6 +219,7 @@ def test_explicitly_deleted(connect, reqmanager):
                 "result": "deleted",
                 "comment": req.comment,
                 "estimate": 900,
+                "output": "<no attempts recorded>",
             }
         }
     )
@@ -230,7 +232,7 @@ def test_enter_maintenance(log, reqmanager, monkeypatch):
     )
     monkeypatch.setattr("socket.gethostname", lambda: "host")
 
-    reqmanager._enter_maintenance()
+    reqmanager._enter_maintenance(True, 10)
 
     assert log.has("enter-maintenance")
     assert log.has(
@@ -239,7 +241,9 @@ def test_enter_maintenance(log, reqmanager, monkeypatch):
         command='echo "entering demo"',
     )
     assert log.has("enter-maintenance-cmd-success", subsystem="demo")
-    connect_mock().mark_node_service_status.assert_called_with("host", False)
+    connect_mock().mark_node_service_status.assert_called_with(
+        "host", False, 10
+    )
     maintenance_entered_at = reqmanager.maintenance_marker_path.read_text()
     assert maintenance_entered_at == "2016-04-20T11:00:00+00:00"
 
@@ -256,7 +260,7 @@ def test_enter_maintenance_postpone(log, reqmanager, monkeypatch):
     reqmanager.config["maintenance-enter"]["postpone"] = "exit 69"
 
     with pytest.raises(PostponeMaintenance):
-        reqmanager._enter_maintenance()
+        reqmanager._enter_maintenance(True, 10)
 
     assert reqmanager.maintenance_marker_path.exists()
 
@@ -269,7 +273,7 @@ def test_enter_maintenance_tempfail(log, reqmanager, monkeypatch):
     reqmanager.config["maintenance-enter"]["tempfail"] = "exit 75"
 
     with pytest.raises(TempfailMaintenance):
-        reqmanager._enter_maintenance()
+        reqmanager._enter_maintenance(True, 10)
 
     assert reqmanager.maintenance_marker_path.exists()
 
@@ -279,7 +283,7 @@ def test_execute_postpone(log, reqmanager):
     req.state = State.due
     req.execute = Mock()
 
-    def enter_maintenance_postpone(online: bool = True):
+    def enter_maintenance_postpone(online: bool, timeout: int):
         raise PostponeMaintenance()
 
     reqmanager._runnable = lambda run_all_now, force_run: [req]
@@ -298,7 +302,7 @@ def test_execute_tempfail(log, reqmanager):
     req.state = State.due
     req.execute = Mock()
 
-    def enter_maintenance_tempfail():
+    def enter_maintenance_tempfail(online: bool, timeout: int):
         raise TempfailMaintenance()
 
     reqmanager._runnable = lambda run_all_now, force_run: [req]
@@ -419,6 +423,7 @@ def test_schedule_run_end_to_end(connect, request_population):
                         "result": "success",
                         "comment": "0",
                         "estimate": 900,
+                        "output": "[stdout]\n<no output>\n\n[stderr]<no output>",
                     }
                 }
             ),
@@ -511,8 +516,8 @@ def test_execute_marks_service_status(connect, reqmanager):
     req = reqmanager.add(Request(Activity(), 1))
     reqmanager.execute(run_all_now=True)
     assert [
-        unittest.mock.call(unittest.mock.ANY, False),
-        unittest.mock.call(unittest.mock.ANY, True),
+        unittest.mock.call("localhost", False, 661),
+        unittest.mock.call("localhost", True, 0),
     ] == connect().mark_node_service_status.call_args_list
 
 
@@ -549,6 +554,8 @@ def test_archive(connect, request_population):
             req._reqid = str(state)
             att = Attempt()
             att.duration = 5
+            att.stderr = "stderr output"
+            att.stdout = "stdout output"
             req.attempts = [att]
             req.save()
         rm.archive()
@@ -559,18 +566,21 @@ def test_archive(connect, request_population):
                     "result": "deleted",
                     "comment": "0",
                     "estimate": 900,
+                    "output": "[stdout]\nstdout output\n\n[stderr]stderr output",
                 },
                 "error": {
                     "duration": 5,
                     "result": "error",
                     "comment": "1",
                     "estimate": 900,
+                    "output": "[stdout]\nstdout output\n\n[stderr]stderr output",
                 },
                 "success": {
                     "duration": 5,
                     "result": "success",
                     "comment": "2",
                     "estimate": 900,
+                    "output": "[stdout]\nstdout output\n\n[stderr]stderr output",
                 },
             }
         )
