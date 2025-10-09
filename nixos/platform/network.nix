@@ -321,8 +321,8 @@ in
 
         resolvconf.extraOptions = [
           "ndots:1"
-          "timeout:1"
-          "attempts:6"
+          "timeout:5" # kresd will be serving stale after 3 seconds with 2s granularity
+          "attempts:3" # give up after 15 seconds to avoid applications getting stuck for too long
         ];
 
         search = lib.optionals (location != "" && config.networking.domain != null) [
