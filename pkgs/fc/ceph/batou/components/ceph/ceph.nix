@@ -62,23 +62,4 @@ in
     "init_cluster" = "/root/deployment/work/ceph/init_cluster.py";
   };
 
-  # keep constants in sync with init_cluster.py
-
-  environment.etc."nixos/enc.json".text = builtins.toJSON {
-    name = config.networking.hostName;
-    roles = [
-      "ceph_mon"
-      "ceph_osd"
-      #"ceph_rgw"
-    ];
-    parameters = {
-      location = "test";
-      resource_group = "services";
-      secret_salt = "salt-for-${config.networking.hostName}-dhkasjy9";
-      secrets = {
-        "ceph/admin_key" = "AQBFJa9hAAAAABAAtdggM3mhVBAEYw3+Loehqw==";
-      };
-    };
-  };
-
 }
