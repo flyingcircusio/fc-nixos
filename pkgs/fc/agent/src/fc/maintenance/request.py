@@ -239,11 +239,11 @@ class Request:
         lock_dir: Path | None = None,
     ):
         # need imports because such objects may be loaded via YAML
-        import fc.maintenance.activity.reboot
-        import fc.maintenance.activity.update
-        import fc.maintenance.activity.vm_change
-        import fc.maintenance.lib.reboot
-        import fc.maintenance.lib.shellscript
+        import fc.maintenance.activity.reboot  # noqa: F401
+        import fc.maintenance.activity.update  # noqa: F401
+        import fc.maintenance.activity.vm_change  # noqa: F401
+        import fc.maintenance.lib.reboot  # noqa: F401
+        import fc.maintenance.lib.shellscript  # noqa: F401
 
         with open(p.join(dir, "request.yaml")) as f:
             instance = yaml.load(f, Loader=yaml.UnsafeLoader)

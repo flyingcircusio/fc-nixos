@@ -110,7 +110,7 @@ profile = "black"
 line_length = 80
 
 [tool.pytest.ini_options]
-addopts = "-vv --showlocals --strict-markers --cov=src/fc --cov-report=html"
+addopts = "-vv --tb=native --strict-markers --cov=src/fc --cov-report=html"
 markers = [
   "needs_nix: marks test that need a working Nix environment to download and build things"
 ]
