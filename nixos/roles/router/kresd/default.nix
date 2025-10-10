@@ -21,8 +21,15 @@ lib.mkIf role.enable {
   # set by upstream kresd module
   networking.resolvconf.useLocalResolver = fclib.mkPlatform false;
 
+  systemd.services."kresd@" = {
+    serviceConfig = {
+      Restart = "always";
+      ExecStop = "${pkgs.coreutils}/bin/sleep %i";
+    };
+  };
   services.kresd = {
     enable = true;
+    instances = 4;
     package = knotPackage;
     listenPlain = [
       "0.0.0.0:53"
