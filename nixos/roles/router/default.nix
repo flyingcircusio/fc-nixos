@@ -335,6 +335,12 @@ in
           interval = 60;
           command = "${pkgs.fc.neighbour-cache-monitor}/bin/neighbour-cache-monitor sensu-check -s /run/sensuclient/neighbour_cache_state.json";
         };
+
+        resolver_stale = {
+          notification = "Resolver shows stale responses";
+          interval = 60;
+          command = "${pkgs.fc.sensuplugins}/bin/check_resolver_stale";
+        };
       }
       // (listToAttrs (
         lib.forEach (filter (iface: iface.policy == "vxlan") gatewayInterfaces) (
