@@ -66,7 +66,9 @@ lib.mkIf role.enable {
       -- long enough to trigger the stale serving behaviour. we match the
       -- rfc for the stale serving timeout though so we get the benefits
       -- if the granularity changes in the future.
-      serve_stale.timeout = 1800
+      -- overall, we're currently setting clients to 5s, so that 2 KR_CONN_RTT_MAX
+      -- will cause a stale serve within that time limit.
+      serve_stale.timeout = 3000
 
       -- if a backend is detected as down, let it stay down for a minute so we
       -- can immediately respond to requests. however, this also means backends
