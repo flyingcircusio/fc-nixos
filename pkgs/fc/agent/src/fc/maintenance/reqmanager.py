@@ -28,7 +28,7 @@ from fc.util.time_date import format_datetime, utcnow
 
 from . import state
 from .request import Request, RequestMergeResult
-from .state import ARCHIVE, EXIT_POSTPONE, EXIT_TEMPFAIL, State
+from .state import ARCHIVE, State
 
 DEFAULT_SPOOLDIR = "/var/spool/maintenance"
 DEFAULT_CONFIG_FILE = "/etc/fc-agent.conf"
@@ -553,7 +553,7 @@ class ReqManager:
                 )
                 due_dt = max(utcnow(), request.next_due + delta)
 
-    def _enter_maintenance(self, online: bool = True):
+    def _enter_maintenance(self, online: bool, timeout: int):
         """Enters maintenance mode which tells the directory to mark the machine
         as 'not in service'. The main reason is to avoid false alarms during expected
         service interruptions as the machine reboots or services are restarted.
@@ -561,7 +561,7 @@ class ReqManager:
         self.log.debug("enter-maintenance")
         self.log.debug("mark-node-out-of-service")
         if online:
-            self._mark_directory_service_status(False)
+            self._mark_directory_service_status(False, timeout)
 
         if self.maintenance_marker_path.exists():
             previous_maintenance_entered_at = (
@@ -651,8 +651,18 @@ class ReqManager:
             raise TempfailMaintenance()
 
     @require_directory
-    def _mark_directory_service_status(self, status: bool):
-        self.directory.mark_node_service_status(socket.gethostname(), status)
+    def _mark_directory_service_status(
+        self, status: bool, timeout: int | None = None
+    ):
+        if not status and timeout is None:
+            raise ValueError(
+                "timeout must be specified if VM is set to maintenance"
+            )
+        if timeout is None:
+            timeout = 0
+        self.directory.mark_node_service_status(
+            socket.gethostname(), status, timeout
+        )
 
     def _leave_maintenance(self, online: bool = True):
         """
@@ -918,9 +928,14 @@ class ReqManager:
             self._write_stats_for_execute()
             return
 
+        timeout = sum(int(x.estimate) for x in runnable_requests if x.estimate)
+        # add a 10 min cycle for the agent after potential reboots and 10%
+        # wiggle room.
+        timeout = int((timeout + 10 * 60) * 1.1)
+
         prepare_dt = utcnow()
         try:
-            self._enter_maintenance(online)
+            self._enter_maintenance(online, timeout)
         except PostponeMaintenance:
             res = self._handle_enter_postpone(run_all_now, force_run)
             if res.postpone:
@@ -1016,12 +1031,21 @@ class ReqManager:
         archived = [r for r in self.requests.values() if r.state in ARCHIVE]
         if not archived:
             return
+
+        def output(req):
+            output = "<no attempts recorded>"
+            if req.attempts:
+                attempt = req.attempts[-1]
+                output = f"[stdout]\n{attempt.stdout or '<no output>'}\n\n[stderr]{attempt.stderr or '<no output>'}"
+            return output
+
         end_maintenance = {
             req.id: {
                 "duration": req.duration,
                 "result": str(req.state),
                 "comment": req.comment,
                 "estimate": self._estimated_request_duration(req),
+                "output": output(req),
             }
             for req in archived
         }
