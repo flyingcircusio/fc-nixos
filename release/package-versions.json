@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-141.0.7390.54",
+    "name": "chromedriver-unwrapped-141.0.7390.65",
     "pname": "chromedriver-unwrapped",
-    "version": "141.0.7390.54"
+    "version": "141.0.7390.65"
   },
   "chromium": {
-    "name": "chromium-141.0.7390.54",
+    "name": "chromium-141.0.7390.65",
     "pname": "chromium",
-    "version": "141.0.7390.54"
+    "version": "141.0.7390.65"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -305,9 +305,9 @@
     "version": "3.1.7"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-3",
+    "name": "imagemagick-7.1.2-5",
     "pname": "imagemagick",
-    "version": "7.1.2-3"
+    "version": "7.1.2-5"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.50",
+    "name": "linux-6.12.51",
     "pname": "linux",
-    "version": "6.12.50"
+    "version": "6.12.51"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.50",
+    "name": "linux-6.12.51",
     "pname": "linux",
-    "version": "6.12.50"
+    "version": "6.12.51"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
