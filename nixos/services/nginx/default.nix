@@ -363,10 +363,10 @@ in
                   default = null;
                   apply =
                     x:
-                    lib.warnIf (x != null) ''
-                      flyingcircus.services.nginx.virtualHosts.<vhost>.emailACME is deprecated.
-                      This option will be removed with fc-nixos 25.11. Please use security.acme.certs.<name>.email.
-                    '' x;
+                    lib.warnIf (x != null) (
+                      "flyingcircus.services.nginx.virtualHosts.<vhost>.emailACME is deprecated. "
+                      + "This option will be removed with fc-nixos 25.11. Please use security.acme.certs.<name>.email."
+                    ) x;
                 };
 
                 enableACME =
@@ -381,10 +381,10 @@ in
                   // {
                     # This attribute is only evaluated when no explicit value is set.
                     # So, when `default = true`, it's set via the above expression.
-                    default = lib.warnIf default ''
-                      flyingcircus.services.nginx.virtualHosts."${name}".enableACME is implicitly set to true.
-                      This behavior is deprecated and will be removed with fc-nixos 25.11. Please set the option explicitly.
-                    '' default;
+                    default = lib.warnIf default (
+                      "flyingcircus.services.nginx.virtualHosts.\"${name}\".enableACME is implicitly set to true. "
+                      + "This behavior is deprecated and will be removed with fc-nixos 25.11. Please set the option explicitly."
+                    ) default;
                   };
 
                 listenAddresses = vhost.options.listenAddresses // {
