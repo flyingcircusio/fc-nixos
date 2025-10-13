@@ -114,17 +114,16 @@ in
 
       dnsForwarders = mkOption {
         type = types.listOf types.str;
-        default = [
-          # quad9
-          "9.9.9.9"
-          "2620:fe::fe"
-          # cloudflare
-          "1.1.1.1"
-          "2606:4700:4700::1111"
-          # google
-          "8.8.8.8"
-          "2001:4860:4860::8888"
-        ];
+        default = [ ];
+        # # quad9
+        # "9.9.9.9"
+        # "2620:fe::fe"
+        # # cloudflare
+        # "1.1.1.1"
+        # "2606:4700:4700::1111"
+        # # google
+        # "8.8.8.8"
+        # "2001:4860:4860::8888"
         description = "IP addresses to be used as upstream DNS resolvers (default: quad9, cloudflare, and google)";
       };
     };
@@ -256,6 +255,11 @@ in
           # Control FE and TR traffic
           # We generally allow all traffic on FE
           ip46tables -A fc-router-forward -o ${fclib.network.fe.interface} -j ACCEPT
+
+          #############
+          # DNS resolver access: internal networks only
+          ip46tables -A nixos-fw -i ethtr+ -p udp --dport 53 -j DROP
+          ip46tables -A nixos-fw -p udp --dport 53 -j ACCEPT
 
           # XXX we don't want accidents but need to allow traffic to the outside
           # but don't generally know which transfer interfaces are active.
