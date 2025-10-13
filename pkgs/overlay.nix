@@ -293,7 +293,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       });
 
   elasticsearch6-oss = (
-    lib.toDerivation (getClosureFromStore /nix/store/gkw63x51dmnyr7v66vf713ni7b8i3z37-elasticsearch-oss-6.8.21)
+    lib.toDerivation (
+      getClosureFromStore /nix/store/gkw63x51dmnyr7v66vf713ni7b8i3z37-elasticsearch-oss-6.8.21
+    )
     // {
       version = "6.8.21";
     }
