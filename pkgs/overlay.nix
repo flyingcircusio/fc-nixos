@@ -203,8 +203,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  inherit (super.callPackage ./boost { }) boost159;
-
   busybox = super.busybox.overrideAttrs (oldAttrs: {
     meta.priority = 10;
   });
@@ -311,7 +309,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       });
 
   elasticsearch6-oss = (
-    lib.toDerivation (getClosureFromStore /nix/store/gkw63x51dmnyr7v66vf713ni7b8i3z37-elasticsearch-oss-6.8.21)
+    lib.toDerivation (
+      getClosureFromStore /nix/store/gkw63x51dmnyr7v66vf713ni7b8i3z37-elasticsearch-oss-6.8.21
+    )
     // {
       version = "6.8.21";
     }
@@ -573,7 +573,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   opensearch-dashboards = super.callPackage ./opensearch-dashboards { };
 
-  percona = self.percona80;
+  percona = self.percona84;
   percona-toolkit = super.perlPackages.PerconaToolkit.overrideAttrs (oldAttrs: {
     # The script uses usr/bin/env perl and the Perl builder adds PERL5LIB to it.
     # This doesn't work. Looks like a bug in Nixpkgs.
@@ -583,18 +583,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  percona57 = super.callPackage ./percona/5.7.nix {
-    boost = self.boost159;
-    openssl = self.openssl_1_1;
-  };
-
   percona80 = self.percona-server_8_0;
   percona84 = self.percona-server_8_4;
-
-  percona-xtrabackup_2_4 = super.callPackage ./percona-xtrabackup/2_4/2_4.nix {
-    boost = self.boost159;
-    openssl = self.openssl_1_1;
-  };
 
   # Has been renamed upstream, backy-extract still wants to use it.
   pkgconfig = super.pkg-config;

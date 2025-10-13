@@ -73,8 +73,6 @@ in
             '';
           };
         };
-
-        mysql57 = mkRole "5.7";
       }
       // lib.listToAttrs (
         builtins.map (
@@ -86,32 +84,21 @@ in
 
   config =
     let
-      mysqlRoles = {
-        "5.7" = config.flyingcircus.roles.mysql57.enable;
-      }
-      // lib.listToAttrs (
+      mysqlRoles = lib.listToAttrs (
         builtins.map (
           ver: lib.nameValuePair ver config.flyingcircus.roles."percona${removeDot ver}".enable
         ) supportedPerconaVersions
       );
 
-      mysqlPackages = {
-        "5.7" = pkgs.percona57;
-      }
-      // lib.listToAttrs (
+      mysqlPackages = lib.listToAttrs (
         builtins.map (ver: lib.nameValuePair ver pkgs."percona${removeDot ver}") supportedPerconaVersions
       );
 
-      xtrabackupPackages =
-        with pkgs;
-        {
-          "5.7" = percona-xtrabackup_2_4;
-        }
-        // lib.listToAttrs (
-          builtins.map (
-            ver: lib.nameValuePair ver pkgs."percona-xtrabackup_${builtins.replaceStrings [ "." ] [ "_" ] ver}"
-          ) supportedPerconaVersions
-        );
+      xtrabackupPackages = lib.listToAttrs (
+        builtins.map (
+          ver: lib.nameValuePair ver pkgs."percona-xtrabackup_${builtins.replaceStrings [ "." ] [ "_" ] ver}"
+        ) supportedPerconaVersions
+      );
 
       cfg = config.flyingcircus.roles.mysql;
       fclib = config.fclib;
@@ -206,9 +193,8 @@ in
           dataDir = "/srv/mysql";
           extraOptions =
             let
-              charset = if (lib.versionAtLeast package.version "8.0") then "utf8mb4" else "utf8";
-              collation =
-                if (lib.versionAtLeast package.version "8.0") then "utf8mb4_unicode_ci" else "utf8_unicode_ci";
+              charset = "utf8mb4";
+              collation = "utf8mb4_unicode_ci";
             in
             ''
               [mysqld]
@@ -228,12 +214,8 @@ in
               sysdate-is-now             = ON
               sql_mode                   = NO_ENGINE_SUBSTITUTION
 
-              ${
-                if (lib.versionAtLeast package.version "8.0") then
-                  "binlog_expire_logs_seconds = ${toString (cfg.binlogExpireDays * 24 * 60 * 60)}"
-                else
-                  "expire_logs_days = ${toString cfg.binlogExpireDays}"
-              }
+              binlog_expire_logs_seconds = ${toString (cfg.binlogExpireDays * 24 * 60 * 60)}
+
               log_slow_verbosity = 'full'
               slow_query_log = ON
               long_query_time = 0.1
@@ -253,14 +235,8 @@ in
               wait_timeout               = 28800
               connect_timeout            = 10
 
-              ${
-                # versions before 8.0.13 don't support binding to multiple IPs
-                # so we must bind to 0.0.0.0
-                if (lib.versionAtLeast package.version "8.0") then
-                  "bind-address               = ${lib.concatStringsSep "," cfg.listenAddresses}"
-                else
-                  "bind-address               = 0.0.0.0"
-              }
+              bind-address               = ${lib.concatStringsSep "," cfg.listenAddresses}
+
               max_connections            = 1000
               thread_cache_size          = 128
               myisam-recover-options     = FORCE
@@ -286,16 +262,6 @@ in
                     default_authentication_plugin = mysql_native_password
                     log_error_suppression_list = MY-013360
                   ''
-              }
-
-              ${
-                # Query cache is gone in 8.0
-                # https://mysqlserverteam.com/mysql-8-0-retiring-support-for-the-query-cache/
-                lib.optionalString (lib.versionOlder package.version "8.0") ''
-                  query_cache_type           = 1
-                  query_cache_min_res_unit   = 2k
-                  query_cache_size           = 80M
-                ''
               }
 
               # * InnoDB
@@ -372,20 +338,12 @@ in
 
           script =
             let
-              ensureUserAndDatabase =
-                dbUser: systemUser:
-                if (lib.versionAtLeast version "8.0") then
-                  ''
-                    CREATE USER IF NOT EXISTS ${dbUser}@localhost IDENTIFIED WITH auth_socket AS '${systemUser}';
-                    ALTER USER ${dbUser}@localhost IDENTIFIED WITH auth_socket AS '${systemUser}';
-                    CREATE DATABASE IF NOT EXISTS ${dbUser};
-                    GRANT SELECT ON ${dbUser}.* TO ${dbUser}@localhost;
-                  ''
-                else
-                  ''
-                    CREATE DATABASE IF NOT EXISTS ${dbUser};
-                    GRANT SELECT ON ${dbUser}.* TO ${dbUser}@localhost IDENTIFIED WITH auth_socket AS '${systemUser}';
-                  '';
+              ensureUserAndDatabase = dbUser: systemUser: ''
+                CREATE USER IF NOT EXISTS ${dbUser}@localhost IDENTIFIED WITH auth_socket AS '${systemUser}';
+                ALTER USER ${dbUser}@localhost IDENTIFIED WITH auth_socket AS '${systemUser}';
+                CREATE DATABASE IF NOT EXISTS ${dbUser};
+                GRANT SELECT ON ${dbUser}.* TO ${dbUser}@localhost;
+              '';
               mysqlCmd = sql: ''mysql -e "${sql}"'';
             in
             ''
