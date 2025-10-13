@@ -31,10 +31,19 @@ lib.mkIf role.enable {
     enable = true;
     instances = 4;
     package = knotPackage;
-    listenPlain = [
-      "0.0.0.0:53"
-      "[::]:53"
-    ];
+    listenPlain =
+      let
+        # Listen to specific addresses - kresd warns using wildcards as the outgoing
+        # addresses likely won't match (and they actually don't)
+        # Stick to providing the service on the addresses we advertise to clients.
+        inherit (config.flyingcircus) location;
+        v4 = builtins.head config.flyingcircus.static.nameservers."${location}";
+        v6 = builtins.head config.flyingcircus.static.nameservers6."${location}";
+      in
+      [
+        "${v4}:53"
+        "[${v6}]:53"
+      ];
     extraConfig = ''
       -- basic config
 
