@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-141.0.7390.54",
+    "name": "chromedriver-unwrapped-141.0.7390.76",
     "pname": "chromedriver-unwrapped",
-    "version": "141.0.7390.54"
+    "version": "141.0.7390.76"
   },
   "chromium": {
-    "name": "chromium-141.0.7390.54",
+    "name": "chromium-141.0.7390.76",
     "pname": "chromium",
-    "version": "141.0.7390.54"
+    "version": "141.0.7390.76"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.12.0",
+    "name": "element-web-1.12.1",
     "pname": "element-web",
-    "version": "1.12.0"
+    "version": "1.12.1"
   },
   "erlang": {
     "name": "erlang-27.3.4.3",
@@ -225,9 +225,9 @@
     "version": "2.50.1"
   },
   "gitaly": {
-    "name": "gitaly-18.4.1",
+    "name": "gitaly-18.4.2",
     "pname": "gitaly",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "github-runner": {
     "name": "github-runner-2.328.0",
@@ -235,9 +235,9 @@
     "version": "2.328.0"
   },
   "gitlab": {
-    "name": "gitlab-18.4.1",
+    "name": "gitlab-18.4.2",
     "pname": "gitlab",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.28.0",
@@ -245,24 +245,24 @@
     "version": "4.28.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.4.1",
+    "name": "gitlab-ee-18.4.2",
     "pname": "gitlab-ee",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.4.1",
+    "name": "gitlab-pages-18.4.2",
     "pname": "gitlab-pages",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.3.1",
+    "name": "gitlab-runner-18.4.0",
     "pname": "gitlab-runner",
-    "version": "18.3.1"
+    "version": "18.4.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.4.1",
+    "name": "gitlab-workhorse-18.4.2",
     "pname": "gitlab-workhorse",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -305,9 +305,9 @@
     "version": "3.1.7"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-3",
+    "name": "imagemagick-7.1.2-5",
     "pname": "imagemagick",
-    "version": "7.1.2-3"
+    "version": "7.1.2-5"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -340,9 +340,9 @@
     "version": "21.0.6-b895.109"
   },
   "jetty": {
-    "name": "jetty-12.1.1",
+    "name": "jetty-12.1.2",
     "pname": "jetty",
-    "version": "12.1.1"
+    "version": "12.1.2"
   },
   "jicofo": {
     "name": "jicofo-1.0-1128",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.50",
+    "name": "linux-6.12.51",
     "pname": "linux",
-    "version": "6.12.50"
+    "version": "6.12.51"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.50",
+    "name": "linux-6.12.51",
     "pname": "linux",
-    "version": "6.12.50"
+    "version": "6.12.51"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -560,9 +560,9 @@
     "version": "1.28.0"
   },
   "nginxMainline": {
-    "name": "nginx-1.29.1",
+    "name": "nginx-1.29.2",
     "pname": "nginx",
-    "version": "1.29.1"
+    "version": "1.29.2"
   },
   "nginxStable": {
     "name": "nginx-1.28.0",
@@ -895,14 +895,14 @@
     "version": "3.12.11"
   },
   "python310": {
-    "name": "python3-3.10.18",
+    "name": "python3-3.10.19",
     "pname": "python3",
-    "version": "3.10.18"
+    "version": "3.10.19"
   },
   "python311": {
-    "name": "python3-3.11.13",
+    "name": "python3-3.11.14",
     "pname": "python3",
-    "version": "3.11.13"
+    "version": "3.11.14"
   },
   "python312": {
     "name": "python3-3.12.11",
@@ -1110,14 +1110,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.46",
+    "name": "apache-tomcat-10.1.47",
     "pname": "apache-tomcat",
-    "version": "10.1.46"
+    "version": "10.1.47"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.109",
+    "name": "apache-tomcat-9.0.110",
     "pname": "apache-tomcat",
-    "version": "9.0.109"
+    "version": "9.0.110"
   },
   "unifi": {
     "name": "unifi-controller-9.1.120",
