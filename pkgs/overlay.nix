@@ -69,10 +69,11 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     php73
     php74
     php80
+    # FIXME: reintroduce when nix-phps introduces php81
+    # php81
     ;
   # Import NixOS upstream PHPs.
   inherit (super)
-    php81
     php82
     php83
     php84
@@ -420,16 +421,17 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # PHP versions from nixpkgs
 
-  lamp_php81 = self.php81.withExtensions (
-    { enabled, all }:
-    enabled
-    ++ [
-      all.bcmath
-      all.imagick
-      all.memcached
-      all.redis
-    ]
-  );
+  # FIXME: when php81 is reintroduces in nix-phps
+  # lamp_php81 = self.php81.withExtensions (
+  #   { enabled, all }:
+  #   enabled
+  #   ++ [
+  #     all.bcmath
+  #     all.imagick
+  #     all.memcached
+  #     all.redis
+  #   ]
+  # );
 
   lamp_php82 = self.php82.withExtensions (
     { enabled, all }:
