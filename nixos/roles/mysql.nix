@@ -137,6 +137,9 @@ in
             message = "MySQL / Percona roles are mutually exclusive. Only one may be enabled.";
           }
         ];
+        warnings = lib.optionals (config.flyingcircus.roles.mysql57.enable) [
+          "The mysql57 role is deprecated and will be removed with fc-nixos 25.11, as MySQL 5.7 is end-of-life."
+        ];
 
         users.users.mysql = {
           shell = "/run/current-system/sw/bin/bash";
