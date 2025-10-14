@@ -87,7 +87,6 @@ in
   mongodb36 = callTest ./mongodb.nix { version = "3.6"; };
   mongodb40 = callTest ./mongodb.nix { version = "4.0"; };
   mongodb42 = callTest ./mongodb.nix { version = "4.2"; };
-  mysql57 = callTest ./mysql.nix { rolename = "mysql57"; };
   network = callSubTests ./network { };
   nfs = callSubTests ./nfs.nix { };
   nginx = callTest ./nginx.nix { };

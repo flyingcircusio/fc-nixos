@@ -13,7 +13,6 @@ which provides useful improvements over the standard Oracle MySQL/MariaDB implem
 
 There's a role for each supported version, currently:
 
-- mysql57: Percona 5.7.x (End-of-life)
 - percona80: Percona 8.0.x (*LTS* release)
 - percona84: Percona 8.4.x
 
@@ -88,6 +87,7 @@ any effect anymore.
 :::
 
 (nixos-mysql-password-hash-migration)=
+
 ## Migrate user password hash algorithm
 
 Before Percona (and generally MySQL) 8.4, `mysql_native_password` was the default authentication and password hash algorithm.
@@ -95,6 +95,7 @@ This algorithm will be removed in our platform with NixOS 25.11.
 With 8.4 `caching_sha2_password` is the new default algorithm to use.
 
 To get a list of users needing to be migrated, run the following SQL statement:
+
 ```sql
 SELECT user,host,plugin FROM mysql.user WHERE plugin='mysql_native_password';
 ```

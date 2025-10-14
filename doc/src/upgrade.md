@@ -15,7 +15,6 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 
 ## Overview
 
-
 ## Why upgrade? Security
 
 Upgrading to the latest platform version as soon as possible is important to
@@ -31,14 +30,12 @@ Upstream support for 25.05 ends on **2025-12-31**.
 New platform features are always developed for the current stable platform version
 and only critical bug fixes are back-ported to older versions.
 
-
 ## How to upgrade?
 
 To upgrade your machines, the *Environment* to one of the `fc-25.11-…`
 values. \
 This can be done either via our customer portal, or by setting the platform
 version using the API.
-
 
 (nixos-upgrade-general)=
 
@@ -111,6 +108,9 @@ Both are LTS releases still receiving bug and security fixes.
 
 `percona83` has been removed, as announced in the 25.05 release.
 Please upgrade to `percona84` before upgrading.
+
+`mysql57` has also been removed, as it's end-of-life for 2 years.
+Please upgrade to `percona80` or `percona84` before upgrading.
 
 ## Other notable changes
 
