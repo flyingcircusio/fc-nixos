@@ -92,6 +92,7 @@ host = dev.example.com
 release = https://my.flyingcircus.io/releases/metadata/fc-25.05-staging
 # Older batou versions (<=2.5.0) only support the hydra_eval attribute instead of `release`
 # hydra-eval = 309628
+disk_size = 50G
 
 [host:myvm]
 provision-dynamic-hostname = True
@@ -150,6 +151,10 @@ through access to the UI of your applications and act similar to port forwards
 for port 443 -> 443. You should use self-signed certificates within the
 vms. (`batou_ext.ssl.Certificate` already allows switching between
 custom certificates).
+
+Using `provision-disk-size` allows you to specify the disk size for the VM
+(e.g., `25G`, `50G`, `100G`). If not specified, VMs default to 25G. The VM's
+filesystem will be automatically expanded to use the full disk space on boot.
 
 As the development VMs are not managed by our inventory you need to place relevant
 information about roles in a Nix expression file. You can then use a
