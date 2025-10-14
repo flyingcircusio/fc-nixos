@@ -209,6 +209,7 @@ class Manager:
         memory,
         aliases,
         location,
+        disk_size=None,
         hydra_eval=None,
         image_url=None,
         channel_url=None,
@@ -263,6 +264,9 @@ class Manager:
         self.cfg["memory"] = memory
         self.cfg["aliases"] = aliases
         self.cfg["location"] = location
+        self.cfg["disk_size"] = (
+            disk_size or "25G"
+        )  # Default to 25G if not specified
         self.cfg["image_url"] = image_url
         self.cfg["channel_url"] = image_url
         self.cfg["last_deploy_date"] = datetime.datetime.now(
