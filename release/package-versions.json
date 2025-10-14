@@ -30,9 +30,9 @@
     "version": "1.42.18"
   },
   "awscli2": {
-    "name": "awscli2-2.30.6",
+    "name": "awscli2-2.31.11",
     "pname": "awscli2",
-    "version": "2.30.6"
+    "version": "2.31.11"
   },
   "bash": {
     "name": "bash-interactive-5.3p3",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-141.0.7390.65",
+    "name": "chromedriver-unwrapped-141.0.7390.76",
     "pname": "chromedriver-unwrapped",
-    "version": "141.0.7390.65"
+    "version": "141.0.7390.76"
   },
   "chromium": {
-    "name": "chromium-141.0.7390.65",
+    "name": "chromium-141.0.7390.76",
     "pname": "chromium",
-    "version": "141.0.7390.65"
+    "version": "141.0.7390.76"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -220,9 +220,9 @@
     "version": "2.51.0"
   },
   "gitaly": {
-    "name": "gitaly-18.4.1",
+    "name": "gitaly-18.4.2",
     "pname": "gitaly",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "github-runner": {
     "name": "github-runner-2.328.0",
@@ -230,9 +230,9 @@
     "version": "2.328.0"
   },
   "gitlab": {
-    "name": "gitlab-18.4.1",
+    "name": "gitlab-18.4.2",
     "pname": "gitlab",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.28.0",
@@ -240,24 +240,24 @@
     "version": "4.28.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.4.1",
+    "name": "gitlab-ee-18.4.2",
     "pname": "gitlab-ee",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.4.1",
+    "name": "gitlab-pages-18.4.2",
     "pname": "gitlab-pages",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.3.1",
+    "name": "gitlab-runner-18.4.0",
     "pname": "gitlab-runner",
-    "version": "18.3.1"
+    "version": "18.4.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.4.1",
+    "name": "gitlab-workhorse-18.4.2",
     "pname": "gitlab-workhorse",
-    "version": "18.4.1"
+    "version": "18.4.2"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -380,9 +380,9 @@
     "version": "1.33.5+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.3.5",
+    "name": "keycloak-26.4.0",
     "pname": "keycloak",
-    "version": "26.3.5"
+    "version": "26.4.0"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.0",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.51",
+    "name": "linux-6.12.52",
     "pname": "linux",
-    "version": "6.12.51"
+    "version": "6.12.52"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.51",
+    "name": "linux-6.12.52",
     "pname": "linux",
-    "version": "6.12.51"
+    "version": "6.12.52"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -650,9 +650,9 @@
     "version": "10.46"
   },
   "percona": {
-    "name": "percona-server-8.0.42-33",
+    "name": "percona-server-8.4.6-6",
     "pname": "percona-server",
-    "version": "8.0.42-33"
+    "version": "8.4.6-6"
   },
   "percona-server": {
     "name": "percona-server-8.4.6-6",
@@ -669,11 +669,7 @@
     "pname": "percona-xtrabackup",
     "version": "8.0.35-32"
   },
-  "percona57": {
-    "name": "percona-5.7.42-45",
-    "pname": "percona",
-    "version": "5.7.42-45"
-  },
+  "percona57": {},
   "percona80": {
     "name": "percona-server-8.0.42-33",
     "pname": "percona-server",
@@ -845,9 +841,9 @@
     "version": "3.6.0"
   },
   "promtail": {
-    "name": "promtail-3.5.5",
+    "name": "promtail-3.5.6",
     "pname": "promtail",
-    "version": "3.5.5"
+    "version": "3.5.6"
   },
   "prosody": {
     "name": "prosody-13.0.2",
@@ -860,14 +856,14 @@
     "version": "3.13.7"
   },
   "python310": {
-    "name": "python3-3.10.18",
+    "name": "python3-3.10.19",
     "pname": "python3",
-    "version": "3.10.18"
+    "version": "3.10.19"
   },
   "python311": {
-    "name": "python3-3.11.13",
+    "name": "python3-3.11.14",
     "pname": "python3",
-    "version": "3.11.13"
+    "version": "3.11.14"
   },
   "python312": {
     "name": "python3-3.12.11",
@@ -1075,9 +1071,9 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.46",
+    "name": "apache-tomcat-10.1.47",
     "pname": "apache-tomcat",
-    "version": "10.1.46"
+    "version": "10.1.47"
   },
   "tomcat9": {
     "name": "apache-tomcat-9.0.110",
