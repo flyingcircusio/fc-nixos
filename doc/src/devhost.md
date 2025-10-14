@@ -148,8 +148,8 @@ become available as `<alias>.<vm>.dev.example.com` and are protected
 with Let's Encrypt certificates automatically. They are intended to pass
 through access to the UI of your applications and act similar to port forwards
 for port 443 -> 443. You should use self-signed certificates within the
-vms. (`batou_ext.ssl.Certifiate` already allows switching between
-custom )
+vms. (`batou_ext.ssl.Certificate` already allows switching between
+custom certificates).
 
 As the development VMs are not managed by our inventory you need to place relevant
 information about roles in a Nix expression file. You can then use a
