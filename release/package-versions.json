@@ -665,9 +665,14 @@
     "version": "8.0.42-33"
   },
   "percona-xtrabackup_8_0": {
-    "name": "percona-xtrabackup-8.0.35-32",
+    "name": "percona-xtrabackup-8.0.35-34",
     "pname": "percona-xtrabackup",
-    "version": "8.0.35-32"
+    "version": "8.0.35-34"
+  },
+  "percona-xtrabackup_8_4": {
+    "name": "percona-xtrabackup-8.4.0-4",
+    "pname": "percona-xtrabackup",
+    "version": "8.4.0-4"
   },
   "percona57": {},
   "percona80": {
