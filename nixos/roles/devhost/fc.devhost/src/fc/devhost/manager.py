@@ -29,6 +29,41 @@ LOCKFILE_PATH = "/run/fc-devhost-vm"
 MONTH = 60 * 60 * 24 * 30
 
 
+def parse_disk_size(size_str):
+    """Parse disk size string (e.g., '25G', '1024M') and return size in bytes."""
+    if not size_str:
+        raise ValueError("Disk size cannot be empty")
+
+    size_str = size_str.strip().upper()
+
+    # Handle different size units
+    multipliers = {
+        "B": 1,
+        "K": 1024,
+        "M": 1024**2,
+        "G": 1024**3,
+        "T": 1024**4,
+    }
+
+    # Extract number and unit
+    if size_str[-1] in multipliers:
+        unit = size_str[-1]
+        number_str = size_str[:-1]
+    else:
+        # Assume bytes if no unit specified
+        unit = "B"
+        number_str = size_str
+
+    try:
+        number = float(number_str)
+        if number < 0:
+            raise ValueError(f"Disk size cannot be negative: {size_str}")
+    except ValueError as e:
+        raise ValueError(f"Invalid disk size format: {size_str}") from e
+
+    return int(number * multipliers[unit])
+
+
 def run(*args, **kwargs):
     kwargs["check"] = True
     return subprocess.run(args, **kwargs)
@@ -281,6 +316,35 @@ class Manager:
             self.data_dir.mkdir(parents=True, exist_ok=True)
             VM_BASE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
             vm_has_image = os.path.isfile(self.image_file)
+
+            # Check if we need to resize an existing image
+            needs_resize = False
+            if vm_has_image:
+                # For existing VMs, check if disk size has changed by loading the old config
+                try:
+                    with open(self.config_file, "r") as f:
+                        current_file_content = f.read()
+                    old_config = json.loads(current_file_content)
+                    old_disk_size = old_config.get("disk_size", "25G")
+                    if old_disk_size != self.cfg["disk_size"]:
+                        old_size_bytes = parse_disk_size(old_disk_size)
+                        new_size_bytes = parse_disk_size(self.cfg["disk_size"])
+
+                        if new_size_bytes < old_size_bytes:
+                            raise ValueError(
+                                f"Cannot downsize VM disk from {old_disk_size} to {self.cfg['disk_size']}. "
+                                "XFS filesystem does not support shrinking. "
+                                "Only disk expansion (upsizing) is supported."
+                            )
+                        elif new_size_bytes > old_size_bytes:
+                            print(
+                                f"Disk size changed from {old_disk_size} to {self.cfg['disk_size']}, will resize..."
+                            )
+                            needs_resize = True
+                        # If sizes are equal, no resize needed
+                except (json.JSONDecodeError, FileNotFoundError):
+                    pass
+
             if not vm_has_image:
                 image_url_hash = hashlib.sha256(
                     image_url.encode("utf-8")
