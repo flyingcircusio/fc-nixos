@@ -395,9 +395,9 @@
     "version": "1.33.3+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.2.5",
+    "name": "keycloak-26.3.5",
     "pname": "keycloak",
-    "version": "26.2.5"
+    "version": "26.3.5"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.17.3",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.51",
+    "name": "linux-6.12.52",
     "pname": "linux",
-    "version": "6.12.51"
+    "version": "6.12.52"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.51",
+    "name": "linux-6.12.52",
     "pname": "linux",
-    "version": "6.12.51"
+    "version": "6.12.52"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -495,9 +495,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.13",
+    "name": "mastodon-4.3.14",
     "pname": "mastodon",
-    "version": "4.3.13"
+    "version": "4.3.14"
   },
   "matomo_5": {
     "name": "matomo-5.4.0",
