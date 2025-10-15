@@ -119,8 +119,6 @@ in
       iptables -I nixos-fw 1 -i cni+ -j ACCEPT
     '';
 
-    networking.nameservers = lib.mkOverride 90 (lib.take 3 ([ netCfg.clusterDns ] ++ fcNameservers));
-
     services.k3s =
       let
         k3sFlags = [
