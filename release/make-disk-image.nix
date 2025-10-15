@@ -98,8 +98,8 @@ let
         gptfdisk
         xfsprogs
         lkl
-        config.system.build.nixos-install
-        config.system.build.nixos-enter
+        nixos-install
+        nixos-enter
         nix
       ]
       ++ stdenv.initialPath
