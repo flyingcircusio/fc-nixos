@@ -1,5 +1,8 @@
 # Release 2025_038
 
+
+# Release 2025_038
+
 ## NixOS XX.XX platform
 
 - fc-maintenance: fix detection whether a reboot is needed based on the kernel package (PL-134119)
@@ -22,7 +25,7 @@
 
   (PL-134087)
 
-
+- fc-maintenance: fix detection whether a reboot is needed based on the kernel package (PL-134119)
 
 # Release 2025_037
 
