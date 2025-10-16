@@ -2,6 +2,14 @@
 
 ## NixOS XX.XX platform
 
+- fc-maintenance: fix detection whether a reboot is needed based on the kernel package (PL-134119)
+
+
+
+# Release 2025_038
+
+## NixOS XX.XX platform
+
 - Improvements to machine maintenance management:
 
   1. Maintenances now automatically time out after the predicted
