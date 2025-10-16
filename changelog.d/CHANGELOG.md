@@ -1,5 +1,8 @@
 # Release 2025_038
 
+
+# Release 2025_038
+
 ## NixOS XX.XX platform
 
 - Improvements to machine maintenance management:
