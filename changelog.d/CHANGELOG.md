@@ -1,3 +1,21 @@
+# Release 2025_038
+
+## NixOS XX.XX platform
+
+- Improvements to machine maintenance management:
+
+  1. Maintenances now automatically time out after the predicted
+     time with some additional buffer. This reduces the risk of
+     maintenances getting stuck without us noticing.
+
+  2. Failed maintenances now communicate their stdout/stderr so that
+     those can be quickly looked centrally and are noted in the relevant
+     tickets for supporters to quickly diagnose.
+
+  (PL-134087)
+
+
+
 # Release 2025_037
 
 ## NixOS XX.XX platform
