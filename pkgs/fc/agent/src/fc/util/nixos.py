@@ -113,6 +113,9 @@ def kernel_package(kernel_store_path: Path) -> KernelIdentifier:
     Essentially, this identifier is the name of the nix store path, plus some
     convenient representation.
 
+    The kernel store path is /nix/store/xyz-linux-6.12.51/bzImage on a live system.
+    We want xyz-linux-6.12.51, which is the parent of bzImage.
+
     The returned kernel name is **not** the kernel version, but the store path
     name of the kernel package. When checking the necessity of a reboot, we only
     care about a *difference* in kernel packages, not exact version number
@@ -120,7 +123,7 @@ def kernel_package(kernel_store_path: Path) -> KernelIdentifier:
     release with different options, resulting in a different store path.
     """
 
-    return KernelIdentifier(kernel_store_path.name)
+    return KernelIdentifier(kernel_store_path.parent.name)
 
 
 def current_fc_environment_name(log=_log) -> Optional[str]:
