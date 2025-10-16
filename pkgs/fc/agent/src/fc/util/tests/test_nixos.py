@@ -495,9 +495,11 @@ def test_find_nix_build_error_oneline():
 def dirsetup(tmp_path):
     drv = tmp_path / "abcdef-linux-4.4.27"
     drv.mkdir()
+    bzImage = (drv / "bzImage")
+    bzImage.touch()
     current = tmp_path / "current"
     current.mkdir()
-    (current / "kernel").symlink_to(drv)
+    (current / "kernel").symlink_to(bzImage)
     return current
 
 
@@ -506,7 +508,7 @@ def test_kernel_versions_equal(dirsetup, tmpdir):
     assert nixos.system_kernel(system) == nixos.system_kernel(system)
     assert not nixos.system_kernel(system) != nixos.system_kernel(system)
     assert nixos.system_kernel(system) == nixos.kernel_package(
-        Path("/nix/store") / "abcdef-linux-4.4.27"
+        Path("/nix/store") / "abcdef-linux-4.4.27" / "bzImage"
     )
     assert nixos.system_kernel(system) == nixos.KernelIdentifier(
         "abcdef-linux-4.4.27"
