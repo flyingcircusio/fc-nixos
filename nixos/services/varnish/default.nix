@@ -5,6 +5,7 @@
   ...
 }:
 let
+  inherit (config) fclib;
   cfg = config.flyingcircus.services.varnish;
   vcfg = config.services.varnish;
   vadm = "${vcfg.package}/bin/varnishadm";
@@ -68,8 +69,17 @@ let
     }
   '';
 
-  vhosts = map mkHostSelection (builtins.attrValues cfg.virtualHosts);
-  virtualHostSelection = lib.concatStringsSep "else" (builtins.catAttrs "config" vhosts);
+  vhosts = map mkHostSelection (
+    (builtins.attrValues cfg.virtualHosts)
+    ++ (lib.optionals (cfg.fallbackConfig != "") [
+      {
+        config = cfg.fallbackConfig;
+        host = "localhost";
+        condition = "true";
+      }
+    ])
+  );
+  virtualHostSelection = (lib.concatStringsSep "else" (builtins.catAttrs "config" vhosts));
 
   startupscript =
     let
@@ -128,6 +138,25 @@ in
     extraCommandLine = mkOption {
       type = types.separatedString " ";
       default = "";
+    };
+    # cfg.fallbackConfig is defined seperately to ensure proper ordering when assembling the final configuration.
+    # Unlike lists dictionaries do not have a defined ordering, which is why the fallback config is defined seperately.
+    # This ensures that it comes last in the finished varnish configuration - just as the name implies
+    fallbackConfig = mkOption {
+      type = types.lines;
+      default = ''
+        vcl 4.0;
+        import std;
+
+        backend default {
+          .host = "0.0.0.0";
+          .port = "80";
+        }
+
+        sub vcl_recv {
+          return (synth(503, "Internal Error"));
+        }
+      '';
     };
     http_address = mkOption {
       type = types.str;

@@ -46,17 +46,6 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf fccfg.enable {
-      assertions = [
-        {
-          assertion =
-            builtins.length (builtins.attrNames config.flyingcircus.services.varnish.virtualHosts) <= 1
-            || builtins.isNull varnishCfg;
-          message = ''
-            Please remove the file `/etc/local/varnish/default.vcl` if you want to specify your Varnish configuration in Nix code.
-          '';
-        }
-      ];
-
       environment.etc = {
         "local/varnish/README.txt".text = ''
           Varnish is enabled on this machine.
@@ -111,12 +100,7 @@ in
         http_address = lib.concatMapStringsSep " -a " (addr: "${addr}:8008") (
           lib.unique fccfg.listenAddresses
         );
-        virtualHosts = lib.optionalAttrs (varnishCfg != null) {
-          "default-vcl" = {
-            condition = "true";
-            config = varnishCfg;
-          };
-        };
+        fallbackConfig = lib.mkIf (varnishCfg != null) varnishCfg;
       };
 
       systemd.services = {
