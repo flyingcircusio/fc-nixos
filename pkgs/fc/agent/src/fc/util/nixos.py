@@ -607,7 +607,9 @@ def build_system(
     return system_path
 
 
-def switch_to_system(system_path: str | Path, lazy, switch_type: str, log=_log):
+def switch_to_system(
+    system_path: str | Path, lazy, switch_type: str, log=_log
+) -> bool:
     system_path = Path(system_path).resolve()
     if lazy and Path("/run/current-system").resolve() == system_path:
         log.info(

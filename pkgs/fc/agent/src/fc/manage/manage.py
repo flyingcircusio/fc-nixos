@@ -185,7 +185,7 @@ def dry_activate(log, channel_url, show_trace=False):
     return channel.dry_activate()
 
 
-def initial_switch_if_needed(log, enc, lock_dir):
+def initial_switch_if_needed(log, enc, lock_dir) -> bool:
     if not INITIAL_RUN_MARKER.exists():
         return False
 
@@ -282,7 +282,7 @@ def switch(
     lazy=False,
     show_trace=False,
     switch_reboot=False,
-):
+) -> bool:
     """Rebuild the system and switch to it.
     For regular operation, the current "nixos" channel is used for building the
     system. ENC data can specify a different channel URL.
@@ -338,6 +338,7 @@ def switch(
             show_trace,
             switch_reboot,
         )
+    return False
 
 
 def switch_with_update(
@@ -348,7 +349,7 @@ def switch_with_update(
     lazy=False,
     show_trace=False,
     switch_reboot=False,
-):
+) -> bool:
     channel_url = enc.get("parameters", {}).get("environment_url")
     environment = enc.get("parameters", {}).get("environment")
 
@@ -383,7 +384,7 @@ def switch_with_update(
         channel = Channel.current(log, "nixos")
 
     if not channel:
-        return
+        return False
 
     return channel.switch(
         specialisation,
@@ -399,7 +400,7 @@ def switch_to_configuration(
     specialisation: str | Specialisation,
     lock_dir: Path,
     lazy=False,
-):
+) -> None:
     """Switch to an already existing system, by default the current system.
     This can be used to switch to a different specialisation, switch back from a
     specialisation to the base system or just run the system activation again for
