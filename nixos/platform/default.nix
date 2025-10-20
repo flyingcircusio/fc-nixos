@@ -347,7 +347,7 @@ in
           "flyingcircus.io-1:Rr9CwiPv8cdVf3EQu633IOTb6iJKnWbVfCC8x8gVz2o="
         ];
 
-        connect-timeout = 1;
+        connect-timeout = 5;
       };
     };
 
