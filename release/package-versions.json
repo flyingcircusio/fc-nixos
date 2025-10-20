@@ -65,9 +65,9 @@
     "version": "3.115"
   },
   "calibre": {
-    "name": "calibre-8.10.0",
+    "name": "calibre-8.12.0",
     "pname": "calibre",
-    "version": "8.10.0"
+    "version": "8.12.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-141.0.7390.76",
+    "name": "chromedriver-unwrapped-141.0.7390.107",
     "pname": "chromedriver-unwrapped",
-    "version": "141.0.7390.76"
+    "version": "141.0.7390.107"
   },
   "chromium": {
-    "name": "chromium-141.0.7390.76",
+    "name": "chromium-141.0.7390.107",
     "pname": "chromium",
-    "version": "141.0.7390.76"
+    "version": "141.0.7390.107"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -145,9 +145,9 @@
     "version": "2.91"
   },
   "docker": {
-    "name": "docker-28.4.0",
+    "name": "docker-28.5.1",
     "pname": "docker",
-    "version": "28.4.0"
+    "version": "28.5.1"
   },
   "docker-compose": {
     "name": "docker-compose-2.39.4",
@@ -175,9 +175,9 @@
     "version": "0.6.22"
   },
   "fetchmail": {
-    "name": "fetchmail-6.5.6",
+    "name": "fetchmail-6.5.7",
     "pname": "fetchmail",
-    "version": "6.5.6"
+    "version": "6.5.7"
   },
   "ffmpeg": {
     "name": "ffmpeg-7.1.1",
@@ -295,9 +295,9 @@
     "version": "3.2.6"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-6",
+    "name": "imagemagick-7.1.2-7",
     "pname": "imagemagick",
-    "version": "7.1.2-6"
+    "version": "7.1.2-7"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -325,9 +325,9 @@
     "version": "21.0.8+9"
   },
   "jetbrains.jdk": {
-    "name": "jetbrains-jdk-jcef-21.0.8-b1140.54",
+    "name": "jetbrains-jdk-jcef-21.0.8-b1148.57",
     "pname": "jetbrains-jdk-jcef",
-    "version": "21.0.8-b1140.54"
+    "version": "21.0.8-b1148.57"
   },
   "jetty": {
     "name": "jetty-12.1.2",
@@ -380,9 +380,9 @@
     "version": "1.33.5+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.4.0",
+    "name": "keycloak-26.4.1",
     "pname": "keycloak",
-    "version": "26.4.0"
+    "version": "26.4.1"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.0",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.52",
+    "name": "linux-6.12.53",
     "pname": "linux",
-    "version": "6.12.52"
+    "version": "6.12.53"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.52",
+    "name": "linux-6.12.53",
     "pname": "linux",
-    "version": "6.12.52"
+    "version": "6.12.53"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -480,9 +480,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.4.6",
+    "name": "mastodon-4.4.7",
     "pname": "mastodon",
-    "version": "4.4.6"
+    "version": "4.4.7"
   },
   "matomo_5": {
     "name": "matomo-5.4.0",
@@ -841,14 +841,14 @@
     "version": "4.9.8"
   },
   "prometheus": {
-    "name": "prometheus-3.6.0",
+    "name": "prometheus-3.7.1",
     "pname": "prometheus",
-    "version": "3.6.0"
+    "version": "3.7.1"
   },
   "promtail": {
-    "name": "promtail-3.5.6",
+    "name": "promtail-3.5.7",
     "pname": "promtail",
-    "version": "3.5.6"
+    "version": "3.5.7"
   },
   "prosody": {
     "name": "prosody-13.0.2",
@@ -1071,14 +1071,14 @@
     "version": "3.5a"
   },
   "tomcat10": {
-    "name": "apache-tomcat-10.1.47",
+    "name": "apache-tomcat-10.1.48",
     "pname": "apache-tomcat",
-    "version": "10.1.47"
+    "version": "10.1.48"
   },
   "tomcat9": {
-    "name": "apache-tomcat-9.0.110",
+    "name": "apache-tomcat-9.0.111",
     "pname": "apache-tomcat",
-    "version": "9.0.110"
+    "version": "9.0.111"
   },
   "unifi": {
     "name": "unifi-controller-9.5.21",
