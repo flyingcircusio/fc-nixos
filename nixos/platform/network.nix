@@ -1108,6 +1108,21 @@ in
             in
             "sudo -g frrvty ${pkgs.fc.check-bgp-sessions}/bin/check_bgp_sessions ${links}";
         };
+
+        # PL-134114: the underlay interfaces operating at the wrong
+        # speed can be very disruptive, e.g. to vm live
+        # migration. This is a duplicate of the standard "interfaces"
+        # check which only monitors the underlay interfaces, which can
+        # then be included in status page alerting rules.
+        critical_interfaces = {
+          notification = "Critical network interfaces are healthy";
+          interval = 60;
+          command =
+            "sudo ${pkgs.fc.sensuplugins}/bin/check_interfaces "
+            + (lib.concatMapStringsSep " " (
+              link: "-i ${link.link},${toString link.minimumPortSpeed}:"
+            ) fclib.underlay.links);
+        };
       };
 
       flyingcircus.passwordlessSudoRules = lib.optionals (!isNull fclib.underlay) [
