@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  options,
   ...
 }:
 let
@@ -159,14 +160,28 @@ in
       '';
     };
     http_address = mkOption {
-      type = types.str;
-      default = "*:8008";
+      type = types.nullOr types.str;
+      default = null;
       description = ''
         The http address for the varnish service to listen on.
         Unix sockets can technically be used for varnish, but are not currently supported on the FCIO platform due to monitoring constraints.
         Multiple addressess can be specified in a comma-separated fashion in the form of `address[:port][,address[:port][...]`.
         See `varnishd(1)` for details.
       '';
+      visible = false;
+    };
+    listen = mkOption {
+      type = options.services.varnish.listen.type;
+      description = ''
+        Addresses varnish should listen on.
+        Unix sockets can technically be used for varnish, but are not currently supported on the FCIO platform due to monitoring constraints.
+      '';
+      default = [
+        {
+          address = "*";
+          port = 8008;
+        }
+      ];
     };
     virtualHosts = mkOption {
       type = types.attrsOf (
@@ -196,8 +211,16 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    warnings = lib.optionals (cfg.http_address != null) [
+      "The option `flyingcircus.services.varnish.http_address` is deprecated. Use `flyingcircus.services.varnish.listen` instead."
+    ];
     services.varnish = {
-      inherit (cfg) enable extraCommandLine http_address;
+      inherit (cfg)
+        enable
+        extraCommandLine
+        http_address
+        listen
+        ;
 
       enableConfigCheck = false;
       config = ''
