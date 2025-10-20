@@ -41,8 +41,9 @@ import ../make-test-python.nix (
           networking.domain = "fcio.net";
           networking.hostName = lib.mkForce "k3sserver";
 
-          services.nginx.virtualHosts."acme.kubernetes.test.fcio.net" = {
+          services.nginx.virtualHosts."kubernetes.test.fcio.net" = {
             enableACME = false;
+            forceSSL = false;
           };
 
           services.telegraf.enable = true;
