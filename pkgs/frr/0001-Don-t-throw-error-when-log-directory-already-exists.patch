@@ -22,5 +22,5 @@ index ea0ce6fc9c..37bdff4b59 100755
          logging.basicConfig(
              filename="/var/log/frr/frr-reload.log",
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 
