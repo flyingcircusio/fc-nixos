@@ -1155,9 +1155,9 @@
     "version": "9.1.1566"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.50.0+abi=4.0",
+    "name": "webkitgtk-2.50.1+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.50.0"
+    "version": "2.50.1"
   },
   "wget": {
     "name": "wget-1.25.0",
