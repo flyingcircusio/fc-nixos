@@ -74,8 +74,12 @@ import ../make-test-python.nix (
         k3sserver.wait_for_unit("k3s.service")
         k3sserver.wait_until_succeeds('k3s kubectl cluster-info | grep -q https://127.0.0.1:6443')
 
+        # telegraf.service fails to start when the token file doesn't exist. Explicitly restart after k3s created it
+        k3sserver.wait_for_file("/var/lib/k3s/tokens/telegraf")
+        k3sserver.systemctl("start telegraf")
+
         with subtest("sensu should be able to access the API server endpoint"):
-          k3sserver.wait_until_succeeds("stat /var/lib/k3s/tokens/sensuclient")
+          k3sserver.wait_for_file("/var/lib/k3s/tokens/sensuclient")
           k3sserver.wait_until_succeeds("${masterSensuCheck "kube-apiserver"}")
           k3sserver.wait_until_succeeds("${masterSensuCheck "kube-nodes-ready"}")
 
