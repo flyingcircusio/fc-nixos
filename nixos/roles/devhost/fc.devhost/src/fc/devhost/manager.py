@@ -612,7 +612,8 @@ class Manager:
                 # pid file may contain trailing lines with garbage
                 for line in p:
                     proc = psutil.Process(int(line))
-                    marker = "{name},process=kvm.{name}".format(name=self.name)
+                    # marker = "{name},process=kvm.{name}".format(name=self.name)
+                    marker = self.name  # i was unable to find the marker above in the cmdline of the qemu process
                     # Do not use proc.name() here - it's only 16 bytes ...
                     if marker not in proc.cmdline():
                         break
