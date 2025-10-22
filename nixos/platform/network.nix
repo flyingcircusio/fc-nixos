@@ -1099,6 +1099,15 @@ in
             in
             "sudo -g frrvty ${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity check-evpn-rib ${args}";
         };
+        underlay_bgp_sessions = {
+          notification = "Underlay BGP sessions";
+          interval = 60;
+          command =
+            let
+              links = lib.concatMapStringsSep " " (link: "-i ${link.link}") fclib.underlay.links;
+            in
+            "sudo -g frrvty ${pkgs.fc.check-bgp-sessions}/bin/check_bgp_sessions ${links}";
+        };
       };
 
       flyingcircus.passwordlessSudoRules = lib.optionals (!isNull fclib.underlay) [
@@ -1108,6 +1117,11 @@ in
         }
         {
           commands = [ "${pkgs.fc.check-rib-integrity}/bin/check_rib_integrity" ];
+          groups = [ "sensuclient" ];
+          runAs = ":frrvty";
+        }
+        {
+          commands = [ "${pkgs.fc.check-bgp-sessions}/bin/check_bgp_sessions" ];
           groups = [ "sensuclient" ];
           runAs = ":frrvty";
         }
