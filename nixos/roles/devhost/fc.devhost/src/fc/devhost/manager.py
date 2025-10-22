@@ -691,7 +691,7 @@ class Manager:
         self.qmp.command("system_powerdown")
 
     def shutdown(self, location=None):
-        timeout = TimeOut(5, interval=3)
+        timeout = TimeOut(15, interval=3)
         try:
             self.graceful_shutdown()
         except (socket.error, RuntimeError):
