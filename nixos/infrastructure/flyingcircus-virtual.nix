@@ -122,8 +122,6 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
   };
 
-  swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
-
   services = {
     qemuGuest.enable = true;
 

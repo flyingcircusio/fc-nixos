@@ -114,6 +114,15 @@ Please upgrade to `percona80` or `percona84` before upgrading.
 
 ## Other notable changes
 
+### swap
+
+We had a couple of incidents related to changed memory usage patterns that resulted in subsequent problems related to
+swapping.
+In our experience, swap doesn't help much for VMs: it should almost always be unused and when it gets used, the system
+gets a significant lower performance when it needs to swap contents in.
+
+We decided to disable swap on our hardware nodes and virtual machines.
+
 ### Mail server
 
 Upstream NixOS mailserver introduced a `stateVersion` construct that requires migrations when updating to 25.11.
