@@ -1,36 +1,48 @@
-From f871a5a7aff5d98e7d9fe186fa9bb9a69b6651f0 Mon Sep 17 00:00:00 2001
+From 35a2e872869405af5443558ab73ecdb0f9411566 Mon Sep 17 00:00:00 2001
 From: Molly Miller <mm@flyingcircus.io>
 Date: Tue, 1 Jul 2025 16:11:41 +0200
 Subject: [PATCH 3/3] netlink: don't manage kernel neighbour table entries for
- evpn
+ L2-VNI
 
 From experience, zebra's tracking of MAC-IP mappings for SVI
-interfaces doesn't always stay in sync with the kernel, which can lead
-to it advertising stuck routes for IP addresses which are no longer
-locally assigned.
+interfaces in L2 VPNs doesn't always stay in sync with the kernel,
+which can lead to it advertising stuck type-2 routes with mappings for
+IP addresses which are no longer locally assigned.
 
 To hedge against this on the receiving side, let's stop populating the
-neighbour table with mappings learned from EVPN, and let the kernel
-fall back to dynamic neighbour discovery.
----
- zebra/kernel_netlink.c | 4 ++++
- 1 file changed, 4 insertions(+)
+neighbour table with mappings learned from EVPN -- but only for L2
+VPNs. For L3 VPNs, the neighbour table is used for resolving the
+nexthop MAC address for IP routes inside the VPN, so we can't stub out
+neighbour table management on the data plane side entirely.
 
-diff --git a/zebra/kernel_netlink.c b/zebra/kernel_netlink.c
-index f938193eb4..3466a644d1 100644
---- a/zebra/kernel_netlink.c
-+++ b/zebra/kernel_netlink.c
-@@ -1617,6 +1617,10 @@ static enum netlink_msg_status nl_put_msg(struct nl_batch *bth,
- 	case DPLANE_OP_NEIGH_INSTALL:
- 	case DPLANE_OP_NEIGH_UPDATE:
- 	case DPLANE_OP_NEIGH_DELETE:
-+		/* no-op: don't attempt to insert kernel neighbour
-+		 * table entries for evpn */
-+		return FRR_NETLINK_SUCCESS;
-+
- 	case DPLANE_OP_VTEP_ADD:
- 	case DPLANE_OP_VTEP_DELETE:
- 	case DPLANE_OP_NEIGH_DISCOVER:
+In L2 VPNs, the kernel will fall back to dynamic neighbour discovery
+with ARP and NDP.
+---
+ zebra/zebra_evpn_neigh.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/zebra/zebra_evpn_neigh.c b/zebra/zebra_evpn_neigh.c
+index 81705d4e85..28df725f87 100644
+--- a/zebra/zebra_evpn_neigh.c
++++ b/zebra/zebra_evpn_neigh.c
+@@ -159,7 +159,7 @@ int zebra_evpn_rem_neigh_install(struct zebra_evpn *zevpn,
+ 		flags |= DPLANE_NTF_ROUTER;
+ 	ZEBRA_NEIGH_SET_ACTIVE(n);
+ 
+-	dplane_rem_neigh_add(vlan_if, &n->ip, &n->emac, flags, was_static);
++	/* dplane_rem_neigh_add(vlan_if, &n->ip, &n->emac, flags, was_static); */
+ 
+ 	return ret;
+ }
+@@ -824,7 +824,7 @@ static int zebra_evpn_neigh_uninstall(struct zebra_evpn *zevpn,
+ 	ZEBRA_NEIGH_SET_INACTIVE(n);
+ 	n->loc_seq = 0;
+ 
+-	dplane_rem_neigh_delete(vlan_if, &n->ip);
++	/* dplane_rem_neigh_delete(vlan_if, &n->ip); */
+ 
+ 	return 0;
+ }
 -- 
-2.39.5 (Apple Git-154)
+2.50.1 (Apple Git-155)
 
