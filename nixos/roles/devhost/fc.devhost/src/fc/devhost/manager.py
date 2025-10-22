@@ -445,6 +445,25 @@ class Manager:
                             )
                 os.rename(self.image_file_tmp, self.image_file)
 
+            # Resize disk image if this is a new VM or if disk size has changed
+            # The VM's fc-resize-disk will handle partition/filesystem expansion on boot
+            if not vm_has_image or needs_resize:
+                # For existing VMs that need resizing, check if VM is running and shut it down
+                if needs_resize and self.is_running():
+                    print(
+                        "VM is running and needs disk resize. Shutting down VM..."
+                    )
+                    self.shutdown()
+                    print("VM shutdown completed.")
+
+                print(f"Resizing VM disk image to {self.cfg['disk_size']} ...")
+                run(
+                    "qemu-img",
+                    "resize",
+                    str(self.image_file),
+                    self.cfg["disk_size"],
+                )
+
             # Make sure the VM is now online, even if was previously offline
             run("fc-manage", "switch")
 
