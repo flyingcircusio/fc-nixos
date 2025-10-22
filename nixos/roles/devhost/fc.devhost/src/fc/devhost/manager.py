@@ -481,6 +481,18 @@ class Manager:
                 else:
                     time.sleep(0.5)
 
+            # wait for port 22 to accept connections
+            print("Waiting for SSH to become available ...")
+            while True:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(5)
+                result = sock.connect_ex((self.cfg["srv-ip"], 22))
+                sock.close()
+                if result == 0:
+                    break
+                else:
+                    time.sleep(0.5)
+
             if vm_has_image:
                 print("Syncing VM enc data into running VM ...")
                 with tempfile.NamedTemporaryFile(mode="w") as f:
