@@ -42,6 +42,7 @@ in
     ./ipmi.nix
     ./kernel.nix
     ./mailutils.nix
+    ./modsecurity
     ./monitoring.nix
     ./network.nix
     ./nix.nix
