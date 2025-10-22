@@ -307,6 +307,16 @@ class Manager:
                 raise RuntimeError("Could not find free SRV IP address.")
 
         vm_nix_file_existed = os.path.isfile(self.nix_file)
+
+        # Read old config before writing new one to detect disk size changes
+        old_config = None
+        if os.path.isfile(self.config_file):
+            try:
+                with open(self.config_file, "r") as f:
+                    old_config = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                pass
+
         try:
             with open(self.config_file, mode="w") as f:
                 f.write(json.dumps(self.cfg))
@@ -319,31 +329,25 @@ class Manager:
 
             # Check if we need to resize an existing image
             needs_resize = False
-            if vm_has_image:
-                # For existing VMs, check if disk size has changed by loading the old config
-                try:
-                    with open(self.config_file, "r") as f:
-                        current_file_content = f.read()
-                    old_config = json.loads(current_file_content)
-                    old_disk_size = old_config.get("disk_size", "25G")
-                    if old_disk_size != self.cfg["disk_size"]:
-                        old_size_bytes = parse_disk_size(old_disk_size)
-                        new_size_bytes = parse_disk_size(self.cfg["disk_size"])
+            if vm_has_image and old_config:
+                # For existing VMs, check if disk size has changed
+                old_disk_size = old_config.get("disk_size", "25G")
+                if old_disk_size != self.cfg["disk_size"]:
+                    old_size_bytes = parse_disk_size(old_disk_size)
+                    new_size_bytes = parse_disk_size(self.cfg["disk_size"])
 
-                        if new_size_bytes < old_size_bytes:
-                            raise ValueError(
-                                f"Cannot downsize VM disk from {old_disk_size} to {self.cfg['disk_size']}. "
-                                "XFS filesystem does not support shrinking. "
-                                "Only disk expansion (upsizing) is supported."
-                            )
-                        elif new_size_bytes > old_size_bytes:
-                            print(
-                                f"Disk size changed from {old_disk_size} to {self.cfg['disk_size']}, will resize..."
-                            )
-                            needs_resize = True
-                        # If sizes are equal, no resize needed
-                except (json.JSONDecodeError, FileNotFoundError):
-                    pass
+                    if new_size_bytes < old_size_bytes:
+                        raise ValueError(
+                            f"Cannot downsize VM disk from {old_disk_size} to {self.cfg['disk_size']}. "
+                            "XFS filesystem does not support shrinking. "
+                            "Only disk expansion (upsizing) is supported."
+                        )
+                    elif new_size_bytes > old_size_bytes:
+                        print(
+                            f"Disk size changed from {old_disk_size} to {self.cfg['disk_size']}, will resize..."
+                        )
+                        needs_resize = True
+                    # If sizes are equal, no resize needed
 
             if not vm_has_image:
                 image_url_hash = hashlib.sha256(
