@@ -47,13 +47,19 @@ in
   config = lib.mkMerge [
     (lib.mkIf fccfg.enable {
       environment.etc = {
-        "local/varnish/README.txt".text = ''
-          Varnish is enabled on this machine.
+        "local/varnish/README.txt".text =
+          let
+            listen_str = lib.concatMapStringsSep ", " (
+              listenCfg: ''${listenCfg.proto} ${listenCfg.address}:${toString (listenCfg.port or "n/a")}''
+            ) config.services.varnish.listen;
+          in
+          ''
+            Varnish is enabled on this machine.
 
-          Varnish is listening on: ${cfg.http_address}
+            Varnish is listening on: ${listen_str}
 
-          Configure varnish via Nix or put your configuration into `default.vcl` (deprecated, please transition to a Nix config).
-        '';
+            Configure varnish via Nix or put your configuration into `default.vcl` (deprecated, please transition to a Nix config).
+          '';
       };
 
       flyingcircus.services.sensu-client.checks = {
@@ -97,9 +103,10 @@ in
       flyingcircus.services.varnish = {
         enable = true;
         extraCommandLine = "-s malloc,${toString cacheMemory}M";
-        http_address = lib.concatMapStringsSep " -a " (addr: "${addr}:8008") (
-          lib.unique fccfg.listenAddresses
-        );
+        listen = lib.map (addr: {
+          address = addr;
+          port = 8008;
+        }) (lib.unique fccfg.listenAddresses);
         fallbackConfig = lib.mkIf (varnishCfg != null) varnishCfg;
       };
 
