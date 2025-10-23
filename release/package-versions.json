@@ -10,9 +10,9 @@
     "version": "2.4.65"
   },
   "asterisk": {
-    "name": "asterisk-20.15.2",
+    "name": "asterisk-20.16.0",
     "pname": "asterisk",
-    "version": "20.15.2"
+    "version": "20.16.0"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.27",
@@ -395,9 +395,9 @@
     "version": "1.33.3+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.3.5",
+    "name": "keycloak-26.4.0",
     "pname": "keycloak",
-    "version": "26.3.5"
+    "version": "26.4.0"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.17.3",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.53",
+    "name": "linux-6.12.54",
     "pname": "linux",
-    "version": "6.12.53"
+    "version": "6.12.54"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.53",
+    "name": "linux-6.12.54",
     "pname": "linux",
-    "version": "6.12.53"
+    "version": "6.12.54"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
