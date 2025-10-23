@@ -1,3 +1,44 @@
+# Release 2025_039
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- nixos/mysql57: add deprecation warning if `mysql57` role is activated, as MySQL 5.7 is end-of-life for 2 years (PL-134105)
+
+- fc.qemu: fix Ceph lock cleanups under some race conditions when shutting
+  down VMs internally (FC-48755)
+
+- nixos/mysql: Add new option bufferMemoryPercentage to allow adjusting mem usage (PL-133850)
+
+  Currently, the memory percentage is fixed to 70%. This is too much when there is another service on the host.
+  This option allows to customize this
+
+- hardware: introduce a separate sensu check for the underlay network
+  interfaces, to allow problems with these interfaces to be monitored
+  and alerted upon separately. (PL-134114)
+
+- hardware: fix networking for VMs with routed PUB interfaces. This
+  was silently broken due to a previous fix for improving network
+  stability. (PL-134136)
+
+- hardware: monitor BGP sessions on underlay links, to allow detection
+  of and alerting on conditions which would otherwise cause them to
+  fail silently. (PL-133897)
+
+- fc.qemu: add diagnostics for race condition on missing partition devices (PL-134011)
+
+- fc.qemu: add retry logic for migration keepalive pings (PL-134121)
+
+- Increase timeout for nix network connections from 1s to 5s. We used to run with a very low timeout
+  to assist with automatic failovers for S3 reachability but are noticing that this
+  is too twitchy in real world network scenarios too often and causes noise and alert fatigue.
+
+
+
 # Release 2025_038
 
 
