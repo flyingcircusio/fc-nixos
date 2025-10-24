@@ -563,7 +563,7 @@ in
                 name_attribute_path = "full_name";
                 auth_url = "${realmUrl}/protocol/openid-connect/auth";
                 token_url = "${realmUrl}/protocol/openid-connect/token";
-                role_attribute_path = "'Admin'";
+                role_attribute_path = "\"'Admin'\"";
               };
           })
         ];
