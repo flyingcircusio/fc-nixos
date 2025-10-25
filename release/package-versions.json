@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-141.0.7390.107",
+    "name": "chromedriver-unwrapped-141.0.7390.122",
     "pname": "chromedriver-unwrapped",
-    "version": "141.0.7390.107"
+    "version": "141.0.7390.122"
   },
   "chromium": {
-    "name": "chromium-141.0.7390.107",
+    "name": "chromium-141.0.7390.122",
     "pname": "chromium",
-    "version": "141.0.7390.107"
+    "version": "141.0.7390.122"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -225,9 +225,9 @@
     "version": "2.50.1"
   },
   "gitaly": {
-    "name": "gitaly-18.4.2",
+    "name": "gitaly-18.5.0",
     "pname": "gitaly",
-    "version": "18.4.2"
+    "version": "18.5.0"
   },
   "github-runner": {
     "name": "github-runner-2.328.0",
@@ -235,34 +235,34 @@
     "version": "2.328.0"
   },
   "gitlab": {
-    "name": "gitlab-18.4.2",
+    "name": "gitlab-18.5.0",
     "pname": "gitlab",
-    "version": "18.4.2"
+    "version": "18.5.0"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.28.0",
+    "name": "gitlab-container-registry-4.29.0",
     "pname": "gitlab-container-registry",
-    "version": "4.28.0"
+    "version": "4.29.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.4.2",
+    "name": "gitlab-ee-18.5.0",
     "pname": "gitlab-ee",
-    "version": "18.4.2"
+    "version": "18.5.0"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.4.2",
+    "name": "gitlab-pages-18.5.0",
     "pname": "gitlab-pages",
-    "version": "18.4.2"
+    "version": "18.5.0"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.4.0",
+    "name": "gitlab-runner-18.5.0",
     "pname": "gitlab-runner",
-    "version": "18.4.0"
+    "version": "18.5.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.4.2",
+    "name": "gitlab-workhorse-18.5.0",
     "pname": "gitlab-workhorse",
-    "version": "18.4.2"
+    "version": "18.5.0"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -670,9 +670,9 @@
     "version": "10.44"
   },
   "percona": {
-    "name": "percona-server-8.0.42-33",
+    "name": "percona-server-8.0.43-34",
     "pname": "percona-server",
-    "version": "8.0.42-33"
+    "version": "8.0.43-34"
   },
   "percona-server": {
     "name": "percona-server-8.4.6-6",
@@ -680,9 +680,9 @@
     "version": "8.4.6-6"
   },
   "percona-server_8_0": {
-    "name": "percona-server-8.0.42-33",
+    "name": "percona-server-8.0.43-34",
     "pname": "percona-server",
-    "version": "8.0.42-33"
+    "version": "8.0.43-34"
   },
   "percona-xtrabackup_8_0": {
     "name": "percona-xtrabackup-8.0.35-32",
@@ -700,9 +700,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-server-8.0.42-33",
+    "name": "percona-server-8.0.43-34",
     "pname": "percona-server",
-    "version": "8.0.42-33"
+    "version": "8.0.43-34"
   },
   "percona83": {
     "name": "percona-server_innovation-8.3.0-1",
