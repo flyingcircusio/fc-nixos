@@ -572,6 +572,9 @@ def luks(args=sys.argv[1:]):
         action()
         sys.exit(1)
 
+    if args.get("encrypt"):
+        fc.ceph.luks.KEYSTORE.admin_key_for_input()
+
     environment = Environment(CONFIG_FILE_PATH)
     subsystem = environment.prepare(subsystem_factory)
     action = getattr(subsystem, action)

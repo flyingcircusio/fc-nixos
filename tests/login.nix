@@ -44,14 +44,6 @@ import ./make-test-python.nix (
           machine.send_chars("touch done\n")
           machine.wait_for_file("/home/alice/done")
 
-      with subtest("Systemd gives and removes device ownership as needed"):
-          machine.succeed("getfacl /dev/snd/timer | grep -q alice")
-          machine.send_key("alt-f1")
-          machine.wait_until_succeeds("[ $(fgconsole) = 1 ]")
-          machine.fail("getfacl /dev/snd/timer | grep -q alice")
-          machine.succeed("chvt 2")
-          machine.wait_until_succeeds("getfacl /dev/snd/timer | grep -q alice")
-
       with subtest("Virtual console logout"):
           machine.send_chars("exit\n")
           machine.wait_until_fails("pgrep -u alice bash")

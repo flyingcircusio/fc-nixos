@@ -140,7 +140,7 @@ import ./make-test-python.nix (
           assert_no_password_required("u1002", "systemctl --no-pager")
 
       with subtest("sudo-srv should be able to run fc-manage without password"):
-          assert_no_password_required("u1002", "fc-manage")
+          assert_no_password_required("u1002", "fc-manage --help")
 
       with subtest("sudo-srv user should be able to run iotop without password"):
           assert_no_password_required("u1002", "iotop -n1")
@@ -158,7 +158,7 @@ import ./make-test-python.nix (
           assert_no_password_required("s-service", "systemctl --no-pager")
 
       with subtest("service user should be able to run fc-manage without password"):
-          assert_no_password_required("s-service", "fc-manage")
+          assert_no_password_required("s-service", "fc-manage --help")
 
       with subtest("service user should be able to run iotop without password"):
           assert_no_password_required("s-service", "iotop -n1")

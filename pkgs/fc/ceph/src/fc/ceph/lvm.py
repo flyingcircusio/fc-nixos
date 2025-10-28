@@ -3,7 +3,6 @@ import os
 import os.path
 import re
 import time
-from socket import gethostname
 from subprocess import CalledProcessError
 from typing import Optional
 
@@ -73,6 +72,7 @@ class MdraidDevice(GenericBlockDevice):
             f"/dev/md/{obj.name}",
             "--level=6",
             "--name=backy",
+            "--bitmap=internal",
             f"--raid-devices={len(main_disks)}",
             *main_disks,
         )

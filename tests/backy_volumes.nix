@@ -99,7 +99,7 @@ import ./make-test-python.nix (
 
         print(legacyBacky.succeed("lsblk"))
         # preparing an unencrypted legacy RAID setup
-        legacyBacky.succeed(f"mdadm --create /dev/md/md0 --level=6 --raid-devices=4 /dev/vdb /dev/vdc /dev/vdd /dev/vde > /dev/stderr")
+        legacyBacky.succeed(f"mdadm --create /dev/md/md0 --level=6 --bitmap=internal --raid-devices=4 /dev/vdb /dev/vdc /dev/vdd /dev/vde > /dev/stderr")
         legacyBacky.succeed(f"mdadm --add /dev/md/md0 /dev/vdf > /dev/stderr")
 
         print(legacyBacky.succeed("ls -l /dev/disk/by-id/"))
