@@ -84,6 +84,9 @@ let
     "rdb_last_bgsave_status"
     "used_memory_dataset_perc"
     "used_memory_peak_perc"
+    "io_thread_0"
+    "module"
+    "redis_version"
   ];
 
   telegrafInputs =
