@@ -310,15 +310,6 @@ class Manager:
 
         vm_nix_file_existed = os.path.isfile(self.nix_file)
 
-        # Read old config before writing new one to detect disk size changes
-        old_config = None
-        if os.path.isfile(self.config_file):
-            try:
-                with open(self.config_file, "r") as f:
-                    old_config = json.load(f)
-            except (json.JSONDecodeError, IOError):
-                pass
-
         try:
             with open(self.config_file, mode="w") as f:
                 f.write(json.dumps(self.cfg))
@@ -328,28 +319,6 @@ class Manager:
             self.data_dir.mkdir(parents=True, exist_ok=True)
             VM_BASE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
             vm_has_image = os.path.isfile(self.image_file)
-
-            # Check if we need to resize an existing image
-            needs_resize = False
-            if vm_has_image and old_config:
-                # For existing VMs, check if disk size has changed
-                old_disk_size = old_config.get("disk_size", "25G")
-                if old_disk_size != self.cfg["disk_size"]:
-                    old_size_bytes = parse_disk_size(old_disk_size)
-                    new_size_bytes = parse_disk_size(self.cfg["disk_size"])
-
-                    if new_size_bytes < old_size_bytes:
-                        raise ValueError(
-                            f"Cannot downsize VM disk from {old_disk_size} to {self.cfg['disk_size']}. "
-                            "XFS filesystem does not support shrinking. "
-                            "Only disk expansion (upsizing) is supported."
-                        )
-                    elif new_size_bytes > old_size_bytes:
-                        print(
-                            f"Disk size changed from {old_disk_size} to {self.cfg['disk_size']}, will resize..."
-                        )
-                        needs_resize = True
-                    # If sizes are equal, no resize needed
 
             if not vm_has_image:
                 image_url_hash = hashlib.sha256(
@@ -451,25 +420,6 @@ class Manager:
                             )
                 os.rename(self.image_file_tmp, self.image_file)
 
-            # Resize disk image if this is a new VM or if disk size has changed
-            # The VM's fc-resize-disk will handle partition/filesystem expansion on boot
-            if not vm_has_image or needs_resize:
-                # For existing VMs that need resizing, check if VM is running and shut it down
-                if needs_resize and self.is_running():
-                    print(
-                        "VM is running and needs disk resize. Shutting down VM..."
-                    )
-                    self.shutdown()
-                    print("VM shutdown completed.")
-
-                print(f"Resizing VM disk image to {self.cfg['disk_size']} ...")
-                run(
-                    "qemu-img",
-                    "resize",
-                    str(self.image_file),
-                    self.cfg["disk_size"],
-                )
-
             # Make sure the VM is now online, even if was previously offline
             run("fc-manage", "switch")
 
@@ -494,6 +444,39 @@ class Manager:
                     break
                 else:
                     time.sleep(0.5)
+
+            # Check if disk resize is needed by querying current disk size via QMP
+            block_info = self.qmp.command("query-block")
+            current_size = None
+            for device in block_info:
+                if device.get("device") == "virtio0":
+                    current_size = (
+                        device.get("inserted", {})
+                        .get("image", {})
+                        .get("virtual-size")
+                    )
+                    break
+
+            if current_size is not None:
+                new_size_bytes = parse_disk_size(self.cfg["disk_size"])
+                if new_size_bytes < current_size:
+                    raise ValueError(
+                        f"Cannot downsize VM disk from {current_size} bytes to {self.cfg['disk_size']}. "
+                        "XFS filesystem does not support shrinking. "
+                        "Only disk expansion (upsizing) is supported."
+                    )
+                elif new_size_bytes > current_size:
+                    print(
+                        f"Disk size changed from {current_size} bytes to {self.cfg['disk_size']}, resizing..."
+                    )
+                    self.qmp.command(
+                        "block_resize", device="virtio0", size=new_size_bytes
+                    )
+                    print("Disk resize completed successfully.")
+                else:
+                    print(
+                        f"Disk size already at {self.cfg['disk_size']}, no resize needed."
+                    )
 
             if vm_has_image:
                 print("Syncing VM enc data into running VM ...")
