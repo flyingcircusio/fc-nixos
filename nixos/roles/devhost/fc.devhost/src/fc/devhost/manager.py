@@ -472,6 +472,16 @@ class Manager:
                     self.qmp.command(
                         "block_resize", device="virtio0", size=new_size_bytes
                     )
+                    # now, ssh into the VM and resize the filesystem using sudo fc-resize-disk
+                    run(
+                        "ssh",
+                        "-o",
+                        "StrictHostKeyChecking=no",
+                        "-i",
+                        "/var/lib/devhost/ssh_bootstrap_key",
+                        f"developer@{self.name}",
+                        "sudo fc-resize-disk",
+                    )
                     print("Disk resize completed successfully.")
                 else:
                     print(
