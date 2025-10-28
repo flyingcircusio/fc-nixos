@@ -178,6 +178,21 @@ With the transition to the NixOS upstream module, we removed two minor functiona
 - Modifying the owner of log files with every reload and restart of nginx: All process involved in processing the log
   files already set the correct owner and permissions
 
+
+### Network Protocol Metrics
+
+Protocol-specific networking metrics have changed their name. Metrics of the scheme `net_$someProtocol_…` have been deprecated and are replaced with an equivalent metric from the `nstat_$SomeProtocol…` name space. This reflects a change in the Telegraf metrics collector used by our platform. \
+For example: \
+`net_udp_indatagrams` -> `nstat_UDP_InDatagrams`
+
+#### What needs to be done
+
+1. **Update dashboards** and other metrics consumers: modify your Grafana panels to query `nstat_*` metrics in addition.
+2. **Keep legacy metrics temporarily**: Flying Circus NixOS ≥ 25.05 will emit both `net_` and `nstat_` metrics side‑by‑side for an overlap period.
+3. **Remove legacy metrics**: once all hosts are running *Flying Circus NixOS ≥ 25.05* and the history of `nstat_*` metrics is at least a few months old, you can drop references to `net_*`. *Flying Circus NixOS 25.11* stops emitting the legacy `net_$someProtocol` metrics.
+
+`nstat_*` metrics have similar names to their legacy equivalent and are easy to discover via Grafana’s **Explore** page. Additionally, the [Telegraf nstat plugin documentation](https://github.com/influxdata/telegraf/blob/v1.36.3/plugins/inputs/nstat/README.md#metrics) lists all available metric names.
+
 ## Known issues
 
 ## Significant package updates
