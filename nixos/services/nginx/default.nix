@@ -72,8 +72,7 @@ let
     lib.filterAttrs (
       _: vhost:
       let
-        onlySSL = vhost.onlySSL || vhost.enableSSL;
-        hasSSL = onlySSL || vhost.addSSL || vhost.forceSSL;
+        hasSSL = vhost.onlySSL || vhost.addSSL || vhost.forceSSL;
       in
       vhost.enableACME && hasSSL
     ) nginxCfg.virtualHosts
