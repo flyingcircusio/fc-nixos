@@ -487,6 +487,10 @@ class Manager:
                     print(
                         f"Disk size already at {self.cfg['disk_size']}, no resize needed."
                     )
+            else:
+                print(
+                    f"No disk size specified or current size unknown: current_size={current_size} self.cfg.get('disk_size')={self.cfg.get('disk_size')}"
+                )
 
             if vm_has_image:
                 print("Syncing VM enc data into running VM ...")
