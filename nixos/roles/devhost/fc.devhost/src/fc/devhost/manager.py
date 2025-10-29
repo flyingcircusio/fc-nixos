@@ -457,7 +457,7 @@ class Manager:
                     )
                     break
 
-            if current_size is not None:
+            if current_size is not None and self.cfg.get("disk_size"):
                 new_size_bytes = parse_disk_size(self.cfg["disk_size"])
                 if new_size_bytes < current_size:
                     raise ValueError(
