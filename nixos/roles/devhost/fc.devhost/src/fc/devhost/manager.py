@@ -449,7 +449,7 @@ class Manager:
             block_info = self.qmp.command("query-block")
             current_size = None
             for device in block_info:
-                if device.get("device") == "virtio0":
+                if device.get("device") == "root":
                     current_size = (
                         device.get("inserted", {})
                         .get("image", {})
