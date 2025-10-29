@@ -470,7 +470,7 @@ class Manager:
                         f"Disk size changed from {current_size} bytes to {self.cfg['disk_size']}, resizing..."
                     )
                     self.qmp.command(
-                        "block_resize", device="virtio0", size=new_size_bytes
+                        "block_resize", device="root", size=new_size_bytes
                     )
                     # now, ssh into the VM and resize the filesystem using sudo fc-resize-disk
                     run(
