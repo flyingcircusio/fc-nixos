@@ -426,7 +426,8 @@ class Manager:
             fcntl.flock(self.lockfile, fcntl.LOCK_UN)
             # Wait for the VM to get online
             print("Waiting for VM to become pingable ...")
-            while True:
+            ping_timeout = TimeOut(60)
+            while ping_timeout.tick():
                 response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
                 if response == 0:
                     break
@@ -435,7 +436,8 @@ class Manager:
 
             # wait for port 22 to accept connections
             print("Waiting for SSH to become available ...")
-            while True:
+            ssh_timeout = TimeOut(60)
+            while ssh_timeout.tick():
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.settimeout(5)
                 result = sock.connect_ex((self.cfg["srv-ip"], 22))
