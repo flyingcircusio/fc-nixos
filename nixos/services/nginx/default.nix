@@ -446,7 +446,7 @@ in
 
         flyingcircus.passwordlessSudoRules = [
           {
-            commands = [ "/run/current-system/sw/bin/nginx-check-config" ];
+            commands = [ (lib.getExe nginxCheckConfig) ];
             groups = [ "sensuclient" ];
           }
         ];
