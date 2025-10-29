@@ -8,7 +8,7 @@ failover support.
 
 ## Versions
 
-- HAProxy: 3.1.x
+- HAProxy: 3.2.x
 - Nginx: 1.28.x
 
 ## Role architecture
@@ -125,11 +125,13 @@ Support for structured JSON config was removed in platform version 24.11.
 ### Structured Nix Configuration (recommended)
 
 :::{note}
-We plan to deprecate our custom-prefix `flyingcircus.services.nginx` options in favour of the very similar NixOS upstream `services.nginx` options. \
-When migrating from JSON-config or starting from scratch, consider already using `services.nginx` for your configuration.
+We plan to deprecate our custom-prefix `flyingcircus.services.nginx` options in favour of the very similar NixOS
+upstream `services.nginx` options. \
+When migrating from JSON-config or starting from scratch, consider already using `services.nginx` for your
+configuration.
 :::
 
-Define Nginx virtual hosts with the NixOS option `flyingcircus.services.nginx.virtualHosts`.
+Define Nginx virtual hosts with the NixOS option `services.nginx.virtualHosts`.
 
 See {ref}`nixos-custom-modules` for general information about writing custom NixOS
 modules in {file}`/etc/local/nixos`.
@@ -144,15 +146,17 @@ users file automatically created for users with the login permission:
 # /etc/local/nixos/nginx.nix
 { ... }:
 {
-  flyingcircus.services.nginx.virtualHosts = {
+  services.nginx.virtualHosts = {
     "www.example.com"  = {
       serverAliases = [ "example.com" ];
       default = true;
+      enableACME = true;
       forceSSL = true;
       root = "/srv/webroot";
     };
 
-    "subdomain.example.com"  = {
+    "subdomain.example.com" = {
+      enableACME = true;
       forceSSL = true;
       extraConfig = ''
         add_header Strict-Transport-Security max-age=31536000;
@@ -179,17 +183,9 @@ users file automatically created for users with the login permission:
 You can also find this example at {file}`/etc/local/nixos/nginx.nix.example`
 if the webgateway role is enabled.
 
-Our `flyingcircus.services.nginx.virtualHosts` option supports all settings of the upstream NixOS option
-[services.nginx.virtualHosts](https://search.nixos.org/options?query=services.nginx.virtualHosts.&from=0&size=50&sort=relevance)
-with the difference that we bind to all frontend IPs by default instead of all interfaces.
-
-`flyingcircus.services.nginx.virtualHosts` has the following custom settings:
-
-- `emailACME`: set the contact address for Let's Encrypt (certificate expiry, policy changes), defaults to none.
-- `listenAddresses`: List of IPv4 and quoted IPv6 addresses to bind to (default: frontend IPs).
-
-The `listen` option overrides our defaults: the `listenAddresses` options has
-no effect and no IP is used automatically in this case.
+In our configuration, nginx binds to all frontend IPs instead of all IPs.
+This behavior can be changed with the `services.nginx.defaultListenAddresses` or `services.nginx.defaultListen`
+options.
 
 One vhost definition should set the `default` option.
 Without that, the first vhost entry will be the default one.
@@ -201,17 +197,6 @@ The option only has an effect on the default vhost and is ignored on others.
 The effect is that Nginx will start a separate socket listener for each worker.
 This helps performance and allows changing listen IPs on config reload
 without the need to restart Nginx.
-
-Deprecated options:
-
-- `listenAddress`: Single IPv4 address
-- `listenAddress6`: Single IPv6 address
-
-`listenAddresses` should be used instead.
-
-If only one of the listenAddress\* options is given, the vhost listens only on IPv4 or IPv6.
-If none of the `listenAddress*` options is given, all frontend IPs are used.
-Using `listenAddresses` at the same time overrides the deprecated options.
 
 #### HTTPS and Let's Encrypt
 

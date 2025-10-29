@@ -112,6 +112,36 @@ Please upgrade to `percona84` before upgrading.
 `mysql57` has also been removed, as it's end-of-life for 2 years.
 Please upgrade to `percona80` or `percona84` before upgrading.
 
+### Webgateway: nginx
+
+In this release, we further do the migration from `flyingcircus.services.nginx`
+to the upstream NixOS `services.nginx`.
+For this release, we still provide the option `flyingcircus.services.virtualHosts`
+with the same options available as with `services.nginx.virtualHosts` to provide you
+with a simpler migration path.
+This option will be removed, so please migrate to `services.nginx.virtualHosts` by then.
+
+We have removed and changed a few custom options in this process:
+
+- flyingcircus.services.nginx.disableDHEATMitigation: The DHEAT mitigation is now part of
+  services.nginx.recommendedTlsSettings. Please override the nginx option `ssl_prefer_server_ciphers` manually if you
+  explicitly want to disable this behavior.
+- `flyingcircus.nginx.virtualHosts.<vhost>.listenAddress`: Use `services.nginx.virtualHosts.<vhost>.listenAddresses`
+- `flyingcircus.nginx.virtualHosts.<vhost>.listenAddress6`: Use `services.nginx.virtualHosts.<vhost>.listenAddresses`
+- `flyingcircus.nginx.virtualHosts.<vhost>.emailACME`: Use `security.acme.certs.<name>.email`
+- `flyingcircus.nginx.virtualHosts.<vhost>.enableACME` is no longer implicitly enabled when `.onlySSL`, `.enableSSL`,
+  `.addSSL` or `.forceSSL` is enabled.
+  Please explicitly set `.enableACME = true` in that case
+
+We expect the affected hosts to be minimal. We issue evaluation warnings in fc-nixos 25.05 for any of these cases.
+If you are a guided or hosted customer, please check these warnings with `fc-manage check` on the VM with the
+`webserver` role or contact our support.
+If no warnings show up with this command, you are not affected by these changes.
+
+We also adapted virtual hosts configured with `services.nginx.virtualHosts` to listen on the FE network interface per
+default instead of on any interface.
+This is also the behavior of `flyingcircus.services.nginx.virtualHosts` had in fc-nixos 25.05 and before.
+
 ## Other notable changes
 
 ### swap
@@ -130,6 +160,15 @@ We run these migrations automatically, so you should not be required to take any
 A downgrade back to 25.05 is no longer possible.
 Read the [upstream release notes](https://nixos-mailserver.readthedocs.io/en/latest/release-notes.html#nixos-25-11) and
 [migration guide](https://nixos-mailserver.readthedocs.io/en/latest/migrations.html#nixos-25-11) for more informations.
+
+### Webgateway: nginx
+
+With the transition to the NixOS upstream module, we removed two minor functionalities:
+
+- Binary reload of nginx: We only update the nginx package during maintenance, and the benefits don't
+  outweigh the additional complexity.
+- Modifying the owner of log files with every reload and restart of nginx: All process involved in processing the log
+  files already set the correct owner and permissions
 
 ## Known issues
 

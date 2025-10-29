@@ -13,6 +13,7 @@ with builtins;
 with lib;
 
 let
+  nixpkgs = (import ../../../release/versions.nix { }).nixpkgs;
   cfg = config.flyingcircus.services.nginx;
   nginxCfg = config.services.nginx;
   fclib = config.fclib;
@@ -21,6 +22,14 @@ let
 
   nginxShowConfig = pkgs.writeScriptBin "nginx-show-config" ''
     cat /etc/nginx/nginx.conf
+  '';
+
+  nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
+    #!${pkgs.runtimeShell}
+    echo "Running built-in Nginx config validation (must pass in order to activate a config)..."
+    ${lib.getExe nginxCfg.package} -t || exit 2
+    echo "Running gixy security checker (just informational)..."
+    ${pkgs.gixy}/bin/gixy /etc/nginx/nginx.conf || exit 1
   '';
 
   nginxCheckWorkerAge = pkgs.writeScript "nginx-check-worker-age" ''
@@ -59,38 +68,11 @@ let
   package = config.services.nginx.package;
   localCfgDir = config.flyingcircus.localConfigPath + "/nginx";
 
-  mkVanillaVhostFromFCVhost =
-    name: vhost:
-    let
-      servername = if vhost.serverName != null then vhost.serverName else name;
-    in
-    (removeAttrs vhost [
-      "emailACME"
-      "listenAddress"
-      "listenAddress6"
-    ])
-    // {
-      extraConfig =
-        vhost.extraConfig
-        + (lib.optionalString cfg.logPerVirtualHost ''
-          access_log /var/log/nginx/access-${servername}.log;
-          error_log /var/log/nginx/error-${servername}.log;
-        '');
-    };
-
-  virtualHosts = lib.mapAttrs mkVanillaVhostFromFCVhost cfg.virtualHosts;
-
-  # only email setting supported at the moment
-  fcioAcmeSettings = lib.mapAttrs (name: val: { email = val.emailACME; }) (
-    lib.filterAttrs (_: val: val ? emailACME && val.emailACME != null) cfg.virtualHosts
-  );
-
   acmeVhostsWithTLS = (
     lib.filterAttrs (
       _: vhost:
       let
-        onlySSL = vhost.onlySSL || vhost.enableSSL;
-        hasSSL = onlySSL || vhost.addSSL || vhost.forceSSL;
+        hasSSL = vhost.onlySSL || vhost.addSSL || vhost.forceSSL;
       in
       vhost.enableACME && hasSSL
     ) nginxCfg.virtualHosts
@@ -226,37 +208,19 @@ let
 
   plainConfigFiles = filter (p: lib.hasSuffix ".conf" p) (fclib.files localCfgDir);
   localHttpConfig = concatStringsSep "\n" (map readFile plainConfigFiles);
-
-  hostsWithLegacyListenOptions = filter (x: x.laExtra != [ ]) (
-    mapAttrsToList (
-      hostname: host:
-      let
-        laExtra = filter (x: x != null) [
-          host.listenAddress
-          host.listenAddress6
-        ];
-      in
-      {
-        inherit hostname host laExtra;
-      }
-    ) cfg.virtualHosts
-  );
-
 in
 {
-
-  imports = [ ./base-module.nix ];
+  imports = [
+    (mkRemovedOptionModule [
+      "flyingcircus"
+      "services"
+      "nginx"
+      "disableDHEATMitigation"
+    ] "The DHEAT mitigiation is now part of services.nginx.recommendedTlsSettings")
+  ];
 
   options.flyingcircus.services.nginx = with lib; {
     enable = mkEnableOption "FC-customized nginx";
-
-    disableDHEATMitigation = lib.mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
-        Disable the suggested mitigations against the D(HE)at Attack
-      '';
-    };
 
     defaultListenAddresses = lib.mkOption {
       type = lib.types.listOf lib.types.str;
@@ -315,89 +279,16 @@ in
       '';
     };
 
-    # TODO: use upstream (PL-131381)
     virtualHosts = mkOption {
-      type =
-        let
-          vhost = import ./vhost-options.nix {
+      type = types.attrsOf (
+        types.submodule (
+          import "${nixpkgs}/nixos/modules/services/web-servers/nginx/vhost-options.nix" {
             inherit config lib;
-          };
-        in
-        types.attrsOf (
-          types.submodule (
-            { config, ... }:
-            {
-              options = vhost.options // {
-                listenAddress = mkOption {
-                  type = types.nullOr types.str;
-                  description = ''
-                    IPv4 address to listen on.
-                    If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
-                    the service listens on the frontend addresses.
-
-                    If you need more options, use <option>listen</option>.
-                    If you want to configure any number of IPs use <literal>listenAddresses</literal>.
-                  '';
-                  default = null;
-                };
-
-                listenAddress6 = mkOption {
-                  type = types.nullOr types.str;
-                  description = ''
-                    IPv6 address to listen on.
-                    If neither <option>listenAddress</option> nor <option>listenAddress6</option> is set,
-                    the service listens on the frontend addresses.
-
-                    If you need more options, use <option>listen</option>.
-                    If you want to configure any number of IPs use <literal>listenAddresses</literal>.
-                  '';
-                  default = null;
-                };
-
-                emailACME = mkOption {
-                  type = types.nullOr types.str;
-                  description = ''
-                    Set the contact address for Let's Encrypt (certificate expiry, policy changes).
-                    Defaults to none.
-                  '';
-                  default = null;
-                };
-
-                enableACME = vhost.options.enableACME // {
-                  default =
-                    config.onlySSL or false
-                    || config.enableSSL or false
-                    || config.addSSL or false
-                    || config.forceSSL or false;
-                };
-
-                listenAddresses = vhost.options.listenAddresses // {
-                  defaultText = "The default listen addresses configured in `flyingcircus.services.nginx.defaultListenAddresses`";
-                  default =
-                    if (config.listenAddress != null || config.listenAddress6 != null) then
-                      filter (x: x != null) [
-                        config.listenAddress
-                        config.listenAddress6
-                      ]
-                    else
-                      cfg.defaultListenAddresses;
-                };
-              };
-            }
-          )
-        );
+          }
+        )
+      );
       default = { };
-      example = literalExpression ''
-        {
-          "hydra.example.com" = {
-            forceSSL = true;
-            enableACME = true;
-            locations."/" = {
-              proxyPass = "http://localhost:3000";
-            };
-          };
-        };
-      '';
+      visible = false;
       description = "Declarative vhost config";
     };
 
@@ -430,40 +321,34 @@ in
     };
   };
 
+  # Inject our custom access/error logging to every vHosts' extraConfig
+  options.services.nginx.virtualHosts = lib.mkOption {
+    type = lib.types.attrsOf (
+      lib.types.submodule (
+        { name, config, ... }:
+        let
+          servername = if config.serverName != null then config.serverName else name;
+        in
+        {
+          options = {
+            extraConfig = lib.mkOption {
+              apply =
+                orig:
+                orig
+                + lib.optionalString (cfg.logPerVirtualHost) ''
+                  access_log /var/log/nginx/access-${servername}.log;
+                  error_log /var/log/nginx/error-${servername}.log;
+                '';
+            };
+          };
+        }
+      )
+    );
+  };
+
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
-        assertions = map (
-          {
-            hostname,
-            host,
-            laExtra,
-          }:
-          {
-            assertion = host.listenAddresses == laExtra;
-            message = ''
-              ${hostname}: listenAddress(6) and the new array-format listenAddresses cannot be mixed
-              Please exclusively use listenAddresses instead:
-                listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
-            '';
-          }
-        ) hostsWithLegacyListenOptions;
-
-        warnings = (
-          map (
-            {
-              hostname,
-              host,
-              laExtra,
-            }:
-            ''
-              ${hostname}: listenAddress and listenAddress6 are deprecated and will be removed in 25.05.
-              Please exclusively use listenAddresses instead:
-                listenAddresses = [ ${escapeShellArgs host.listenAddresses} ];
-            ''
-          ) hostsWithLegacyListenOptions
-        );
-
         environment.etc = {
           "local/nginx/README.txt".source = ./README.txt;
 
@@ -517,7 +402,7 @@ in
         flyingcircus.services.sensu-client.checks = {
           nginx_config = {
             notification = "Nginx configuration check problems";
-            command = "/run/wrappers/bin/sudo /run/current-system/sw/bin/nginx-check-config";
+            command = "/run/wrappers/bin/sudo ${lib.getExe nginxCheckConfig}";
             interval = 300;
           };
 
@@ -559,8 +444,6 @@ in
           443
         ];
 
-        security.acme.certs = fcioAcmeSettings;
-
         flyingcircus.passwordlessSudoRules = [
           {
             commands = [ "/run/current-system/sw/bin/nginx-check-config" ];
@@ -568,45 +451,67 @@ in
           }
         ];
 
-        services.nginx = {
-          enable = true;
-          package = fclib.mkPlatform pkgs.nginxLegacyCrypt;
-          appendConfig = mainConfig;
-          commonHttpConfig = ''
-            ${baseHttpConfig}
+        services.nginx =
+          let
+            effectiveVirtualHosts = lib.recursiveUpdate {
+              # Set our listen ports for the nginx internal status page
+              localhost.listen = fclib.mkPlatform (
+                [
+                  {
+                    addr = "127.0.0.1";
+                    port = 81;
+                  }
+                ]
+                ++ lib.optionals config.networking.enableIPv6 [
+                  {
+                    addr = "[::1]";
+                    port = 81;
+                  }
+                ]
+              );
+            } cfg.virtualHosts;
+          in
+          {
+            enable = true;
+            package = fclib.mkPlatform pkgs.nginxLegacyCrypt;
+            appendConfig = mainConfig;
+            # We run gixy as sensu check
+            validateConfigFile = false;
+            enableReload = true;
+            commonHttpConfig = ''
+              ${baseHttpConfig}
 
-            # === User-provided config from ${localCfgDir}/*.conf ===
-            ${localHttpConfig}
+              # === User-provided config from ${localCfgDir}/*.conf ===
+              ${localHttpConfig}
 
-            # === Config from flyingcircus.services.nginx ===
-            ${cfg.httpConfig}
+              # === Config from flyingcircus.services.nginx ===
+              ${cfg.httpConfig}
+            '';
 
-            ${lib.optionalString (!cfg.disableDHEATMitigation) ''
-              # mitigate the D(HE)at Attack
-              # see https://dheatattack.gitlab.io/mitigations/
-              ssl_ecdh_curve x25519:secp256r1:x448;
-            ''}
-          '';
+            eventsConfig = ''
+              worker_connections 4096;
+              multi_accept on;
+            '';
+            recommendedGzipSettings = true;
+            recommendedOptimisation = true;
+            recommendedProxySettings = true;
+            recommendedTlsSettings = true;
+            serverNamesHashBucketSize = fclib.mkPlatform 64;
+            statusPage = true;
+            virtualHosts = effectiveVirtualHosts;
+            defaultListenAddresses = fclib.mkPlatform cfg.defaultListenAddresses;
+          };
 
-          eventsConfig = ''
-            worker_connections 4096;
-            multi_accept on;
-          '';
-          recommendedGzipSettings = true;
-          recommendedOptimisation = true;
-          recommendedProxySettings = true;
-          recommendedTlsSettings = true;
-          serverNamesHashBucketSize = fclib.mkPlatform 64;
-          statusPage = true;
-          inherit virtualHosts;
-        };
+        # We want logs readable for anyone
+        systemd.services.nginx.serviceConfig.LogsDirectoryMode = fclib.mkOverrideUpstreamModule "0755";
+        systemd.services.nginx.serviceConfig.UMask = fclib.mkOverrideUpstreamModule "0022";
 
         services.logrotate.settings =
           let
             commonRotate = {
               rotate = cfg.rotateLogs;
-              create = "0644 ${nginxCfg.user} nginx";
-              su = "${nginxCfg.user} nginx";
+              create = "0644 nginx nginx";
+              su = "nginx nginx";
             };
           in
           {
@@ -619,13 +524,7 @@ in
               copytruncate = true;
             }
             // commonRotate;
-            "/var/log/nginx/*.log" = {
-              postrotate = ''
-                systemctl kill nginx -s USR1 --kill-who=main || systemctl reload nginx
-                chown ${nginxCfg.user}:nginx /var/log/nginx/*
-              '';
-            }
-            // commonRotate;
+            "nginx" = commonRotate;
           };
 
         # Z: Recursively change permissions if they already exist.
@@ -648,6 +547,7 @@ in
 
         environment.systemPackages = [
           nginxShowConfig
+          nginxCheckConfig
         ];
       }
 

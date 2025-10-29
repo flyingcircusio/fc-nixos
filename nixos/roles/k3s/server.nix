@@ -611,9 +611,12 @@ in
 
         services.nginx.virtualHosts = {
           "${head fqdns}" = {
-            enableACME = true;
+            enableACME = fclib.mkPlatform true;
+            forceSSL = fclib.mkPlatform true;
             serverAliases = tail fqdns;
-            forceSSL = true;
+            # Listen on SRV + FE, as a SRV address is set as serverAlias
+            listenAddresses =
+              fclib.network.fe.dualstack.addressesQuoted ++ fclib.network.srv.dualstack.addressesQuoted;
             locations = {
               "/" = {
                 root = "${pkgs.kubernetes-dashboard}/public/en";

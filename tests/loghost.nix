@@ -6,10 +6,13 @@ import ./make-test-python.nix (
     ...
   }:
   let
-    ipv4 = testlib.fcIP.srv4 1;
-    ipv6 = testlib.fcIP.srv6 1;
+    srvIpv4 = testlib.fcIP.srv4 1;
+    srvIpv6 = testlib.fcIP.srv6 1;
+    feIpv4 = testlib.fcIP.fe4 1;
+    feIpv6 = testlib.fcIP.fe6 1;
     domain = "fcio.net";
     host = "machine.${domain}";
+    feHost = "machine.fe.${domain}";
   in
   {
     name = "loghost";
@@ -42,15 +45,17 @@ import ./make-test-python.nix (
             service = "loghost-server";
             address = host;
             ips = [
-              ipv4
-              ipv6
+              srvIpv4
+              srvIpv6
             ];
           }
         ];
         environment.etc.hosts.source = lib.mkForce (
           pkgs.writeText "hosts" ''
-            ${ipv4} ${host}
-            ${ipv6} ${host}
+            ${srvIpv4} ${host}
+            ${srvIpv6} ${host}
+            ${feIpv4} ${feHost}
+            ${feIpv6} ${feHost}
           ''
         );
 
@@ -101,7 +106,7 @@ import ./make-test-python.nix (
           machine.succeed("${graylogApi} /users | grep -q telegraf-machine")
 
         with subtest("public HTTPS should serve graylog dashboard"):
-          machine.wait_until_succeeds("curl -k https://${host} | grep -q 'Graylog Web Interface'")
+          machine.wait_until_succeeds("curl -k https://${feHost} | grep -q 'Graylog Web Interface'")
 
         with subtest("sensu check should be green"):
           machine.succeed("${graylogCheck}")

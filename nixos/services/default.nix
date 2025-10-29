@@ -9,7 +9,6 @@ let
     "services/networking/prosody.nix"
     "services/web-apps/jitsi-meet.nix"
     "services/web-apps/matomo.nix"
-    "services/web-servers/nginx/default.nix"
   ];
 
 in

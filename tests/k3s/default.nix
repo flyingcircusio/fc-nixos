@@ -106,8 +106,9 @@ import ../make-test-python.nix (
             ];
             networking.firewall.allowedUDPPorts = [ 53 ];
 
-            services.nginx.virtualHosts."acme.kubernetes.test.fcio.net" = {
+            services.nginx.virtualHosts."kubernetes.test.fcio.net" = {
               enableACME = false;
+              forceSSL = false;
             };
 
             users.groups = {
@@ -308,7 +309,7 @@ import ../make-test-python.nix (
         frontend.start()
 
         with subtest("frontend vm should reach the dashboard"):
-          frontend.wait_until_succeeds('curl -k https://k3sserver.fcio.net')
+          frontend.wait_until_succeeds('curl -k http://k3sserver.fcio.net')
 
         with subtest("creating a deployment should work"):
           k3sserver.wait_until_succeeds("zcat ${redis.image} | k3s ctr images import -")
