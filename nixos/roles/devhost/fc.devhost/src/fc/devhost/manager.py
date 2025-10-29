@@ -433,6 +433,8 @@ class Manager:
                     break
                 else:
                     time.sleep(0.5)
+            else:
+                raise RuntimeError("VM did not become pingable in time.")
 
             # wait for port 22 to accept connections
             print("Waiting for SSH to become available ...")
@@ -446,6 +448,8 @@ class Manager:
                     break
                 else:
                     time.sleep(0.5)
+            else:
+                raise RuntimeError("SSH did not become available in time.")
 
             # Check if disk resize is needed by querying current disk size via QMP
             block_info = self.qmp.command("query-block")
