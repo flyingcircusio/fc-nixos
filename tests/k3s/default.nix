@@ -322,9 +322,9 @@ import ../make-test-python.nix (
         with subtest("test user should be able to use kubectl with generated kubeconfig"):
           k3sserver.succeed("KUBECONFIG=/home/test/kubeconfig k3s kubectl cluster-info")
 
-        with subtest("master should be able to use cluster DNS"):
+        with subtest("master should be able to reach cluster DNS"):
           k3sserver.wait_until_succeeds('k3s kubectl -n kube-system get pods | grep coredns | grep -v ContainerCreating | grep Running')
-          k3sserver.wait_until_succeeds('dig redis.default.svc.cluster.local | grep -q 10.43')
+          k3sserver.wait_until_succeeds('dig redis.default.svc.cluster.local @10.43.0.10 | grep NOERROR')
 
         k3snodeB.start()
         time.sleep(5)
