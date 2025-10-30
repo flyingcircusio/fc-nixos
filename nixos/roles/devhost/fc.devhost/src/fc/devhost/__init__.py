@@ -20,6 +20,7 @@ def main():
     p.set_defaults(func="ensure")
     p.add_argument("--cpu", type=int, help="number of cores")
     p.add_argument("--memory", type=int, help="amount of memory")
+    p.add_argument("--disk-size", type=str, help="disk size (e.g., 25G, 50G)")
     p.add_argument("--location", help="location the VMs live in")
     p.add_argument("--image-url", type=str, help="url to an image for the vm")
     p.add_argument(

@@ -29,6 +29,41 @@ LOCKFILE_PATH = "/run/fc-devhost-vm"
 MONTH = 60 * 60 * 24 * 30
 
 
+def parse_disk_size(size_str):
+    """Parse disk size string (e.g., '25G', '1024M') and return size in bytes."""
+    if not size_str:
+        raise ValueError("Disk size cannot be empty")
+
+    size_str = size_str.strip().upper()
+
+    # Handle different size units
+    multipliers = {
+        "B": 1,
+        "K": 1024,
+        "M": 1024**2,
+        "G": 1024**3,
+        "T": 1024**4,
+    }
+
+    # Extract number and unit
+    if size_str[-1] in multipliers:
+        unit = size_str[-1]
+        number_str = size_str[:-1]
+    else:
+        # Assume bytes if no unit specified
+        unit = "B"
+        number_str = size_str
+
+    try:
+        number = float(number_str)
+        if number < 0:
+            raise ValueError(f"Disk size cannot be negative: {size_str}")
+    except ValueError as e:
+        raise ValueError(f"Invalid disk size format: {size_str}") from e
+
+    return int(number * multipliers[unit])
+
+
 def run(*args, **kwargs):
     kwargs["check"] = True
     return subprocess.run(args, **kwargs)
@@ -177,6 +212,7 @@ class Manager:
         hydra_eval=None,
         image_url=None,
         channel_url=None,
+        disk_size=None,
     ):
         print("Assuming devhost lock ...")
         fcntl.flock(self.lockfile, fcntl.LOCK_EX)
@@ -228,6 +264,7 @@ class Manager:
         self.cfg["memory"] = memory
         self.cfg["aliases"] = aliases
         self.cfg["location"] = location
+        self.cfg["disk_size"] = disk_size
         self.cfg["image_url"] = image_url
         self.cfg["channel_url"] = image_url
         self.cfg["last_deploy_date"] = datetime.datetime.now(
@@ -272,6 +309,7 @@ class Manager:
                 raise RuntimeError("Could not find free SRV IP address.")
 
         vm_nix_file_existed = os.path.isfile(self.nix_file)
+
         try:
             with open(self.config_file, mode="w") as f:
                 f.write(json.dumps(self.cfg))
@@ -281,6 +319,7 @@ class Manager:
             self.data_dir.mkdir(parents=True, exist_ok=True)
             VM_BASE_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
             vm_has_image = os.path.isfile(self.image_file)
+
             if not vm_has_image:
                 image_url_hash = hashlib.sha256(
                     image_url.encode("utf-8")
@@ -387,12 +426,77 @@ class Manager:
             fcntl.flock(self.lockfile, fcntl.LOCK_UN)
             # Wait for the VM to get online
             print("Waiting for VM to become pingable ...")
-            while True:
+            ping_timeout = TimeOut(60)
+            while ping_timeout.tick():
                 response = os.system(f"ping -c 1 {self.cfg['srv-ip']}")
                 if response == 0:
                     break
                 else:
                     time.sleep(0.5)
+            else:
+                raise RuntimeError("VM did not become pingable in time.")
+
+            # wait for port 22 to accept connections
+            print("Waiting for SSH to become available ...")
+            ssh_timeout = TimeOut(60)
+            while ssh_timeout.tick():
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(5)
+                result = sock.connect_ex((self.cfg["srv-ip"], 22))
+                sock.close()
+                if result == 0:
+                    break
+                else:
+                    time.sleep(0.5)
+            else:
+                raise RuntimeError("SSH did not become available in time.")
+
+            # Check if disk resize is needed by querying current disk size via QMP
+            block_info = self.qmp.command("query-block")
+            current_size = None
+            for device in block_info:
+                if device.get("device") == "root":
+                    current_size = (
+                        device.get("inserted", {})
+                        .get("image", {})
+                        .get("virtual-size")
+                    )
+                    break
+
+            if current_size is not None and self.cfg.get("disk_size"):
+                new_size_bytes = parse_disk_size(self.cfg["disk_size"])
+                if new_size_bytes < current_size:
+                    raise ValueError(
+                        f"Cannot downsize VM disk from {current_size} bytes to {self.cfg['disk_size']}. "
+                        "XFS filesystem does not support shrinking. "
+                        "Only disk expansion (upsizing) is supported."
+                    )
+                elif new_size_bytes > current_size:
+                    print(
+                        f"Disk size changed from {current_size} bytes to {self.cfg['disk_size']}, resizing..."
+                    )
+                    self.qmp.command(
+                        "block_resize", device="root", size=new_size_bytes
+                    )
+                    # now, ssh into the VM and resize the filesystem using sudo fc-resize-disk
+                    run(
+                        "ssh",
+                        "-o",
+                        "StrictHostKeyChecking=no",
+                        "-i",
+                        "/var/lib/devhost/ssh_bootstrap_key",
+                        f"developer@{self.name}",
+                        "sudo fc-resize-disk",
+                    )
+                    print("Disk resize completed successfully.")
+                else:
+                    print(
+                        f"Disk size already at {self.cfg['disk_size']}, no resize needed."
+                    )
+            else:
+                print(
+                    f"No disk size specified or current size unknown: current_size={current_size} self.cfg.get('disk_size')={self.cfg.get('disk_size')}"
+                )
 
             if vm_has_image:
                 print("Syncing VM enc data into running VM ...")
@@ -525,9 +629,9 @@ class Manager:
                 # pid file may contain trailing lines with garbage
                 for line in p:
                     proc = psutil.Process(int(line))
-                    marker = "{name},process=kvm.{name}".format(name=self.name)
+                    marker = f" -name {self.name} "
                     # Do not use proc.name() here - it's only 16 bytes ...
-                    if marker not in proc.cmdline():
+                    if marker not in " ".join(proc.cmdline()):
                         break
                     return proc
         except (IOError, OSError, ValueError, psutil.NoSuchProcess):
@@ -603,7 +707,7 @@ class Manager:
         self.qmp.command("system_powerdown")
 
     def shutdown(self, location=None):
-        timeout = TimeOut(5, interval=3)
+        timeout = TimeOut(30, interval=5)
         try:
             self.graceful_shutdown()
         except (socket.error, RuntimeError):
