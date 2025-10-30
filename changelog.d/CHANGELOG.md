@@ -1,3 +1,13 @@
+# Release 2025_040
+
+## NixOS XX.XX platform
+
+- agent: fix several bugs related to invalid types (PL-133762)
+
+- Update skvaider (our AI proxy) with improved logging. (PL-134061)
+
+
+
 # Release 2025_039
 
 ## Impact
