@@ -305,9 +305,9 @@
     "version": "3.1.7"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-7",
+    "name": "imagemagick-7.1.2-8",
     "pname": "imagemagick",
-    "version": "7.1.2-7"
+    "version": "7.1.2-8"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
@@ -775,9 +775,9 @@
     "version": "126"
   },
   "postfix": {
-    "name": "postfix-3.10.4",
+    "name": "postfix-3.10.5",
     "pname": "postfix",
-    "version": "3.10.4"
+    "version": "3.10.5"
   },
   "postgresql": {
     "name": "postgresql-17.6",
