@@ -13,6 +13,12 @@
     "repo": "nixpkgs",
     "rev": "de4ed5d01530db05b4dde51ad375449818e6acef"
   },
+  "nixpkgs-25.11": {
+    "hash": "sha256-DqqL6a4e8XlvCccXh8QZZenRfOLMMgJbxtxrHz3Gvio=",
+    "owner": "flyingcircusio",
+    "repo": "nixpkgs",
+    "rev": "a729cdb2e3fcad2f08b4a50a6070940e5b88b8e1"
+  },
   "poetry2nix": {
     "hash": "sha256-nzgO/ZCSBzWjbMkYDxG+yl9Z2eGbCgQu06Oku3ir5D4=",
     "owner": "nix-community",
