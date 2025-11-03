@@ -43,6 +43,8 @@ in
       };
     };
 
+    # disable the upstream local_addrs
+    services.rspamd.overrides."options.inc".enable = false;
     services.rspamd.locals = {
       "options.inc".text = ''
         local_addrs = [${concatStringsSep ", " (map (n: "\"${n}\"") localNets)}]

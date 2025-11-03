@@ -265,7 +265,7 @@ import ../make-test-python.nix (
         mail.succeed('grep testmail5 /srv/mail/example.local/user2/mail/new/*')
 
         print("### IMAP ###\n")
-        mail.wait_for_open_port(143)
+        mail.wait_for_open_port(993)
         client.succeed('python3 ${./test_imap.py}')
 
         print("### SMTP outgoing ###\n")
