@@ -1,16 +1,20 @@
-{ callPackage, fetchpatch, ... }@_args:
+{
+  prev,
+  mkPhp,
+}:
 
 let
-  base = callPackage ./generic.nix (
-    (removeAttrs _args [ "fetchpatch" ])
-    // {
-      version = "8.1.33";
-      hash = "sha256-tlU0UYQcGlaYZdf9yDAkYh7kQ0zY+/6woxWIrJxwaF8=";
-    }
-  );
+  base = mkPhp {
+    version = "8.1.33";
+    hash = "sha256-tlU0UYQcGlaYZdf9yDAkYh7kQ0zY+/6woxWIrJxwaF8=";
+  };
 in
 base.withExtensions (
-  { all, ... }:
+  {
+    all,
+    ...
+  }:
+
   with all;
   ([
     bcmath
