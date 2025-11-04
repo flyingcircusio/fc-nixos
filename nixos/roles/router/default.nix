@@ -37,9 +37,9 @@ let
       fi
     '';
 
-  uplinkInterfaces = map (
-    network: fclib.network."${network}".interface
-  ) static.routerUplinkNetworks."${location}";
+  uplinkInterfaces = map (network: fclib.network."${network}".interface) (
+    fclib.filterConfiguredNetworks static.routerUplinkNetworks."${location}"
+  );
 
   gatewayInterfaces =
     map (network: fclib.network."${network}")
