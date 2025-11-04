@@ -151,11 +151,11 @@
       },
       "locked": {
         "host": "gitlab.flyingcircus.io",
-        "lastModified": 1754470053,
-        "narHash": "sha256-TcCthL6TAxWZ15o1E4DCIeXy5cLff5ZOM0Qyo60DPWY=",
+        "lastModified": 1762162044,
+        "narHash": "sha256-ADLR4Z8PfhIhDB71IB2OBFvAODNRf0FnPe7bK8Cbnpw=",
         "owner": "flyingcircus",
         "repo": "nixos-mailserver",
-        "rev": "196691d7b29f104893ac565ffc0117ec497168b7",
+        "rev": "68df045964291c14e7bd12864fa36b58e20000e5",
         "type": "gitlab"
       },
       "original": {

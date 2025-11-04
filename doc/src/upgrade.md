@@ -142,6 +142,14 @@ We also adapted virtual hosts configured with `services.nginx.virtualHosts` to l
 default instead of on any interface.
 This is also the behavior of `flyingcircus.services.nginx.virtualHosts` had in fc-nixos 25.05 and before.
 
+### Mail server
+
+IMAP over STARTTLS (port 143) and POP over STARTTLS (port 110) have been disabled as these ports are deprecated by
+RFC8314 4.1.
+Currently, you can still enable these ports with `mailserver.enableImap = true` and `mailserver.enablePop3 = true`
+respectively.
+These options will be removed with fc-nixos 26.05. Please migrate your client or application to IMAP or POP with TLS.
+
 ## Other notable changes
 
 ### swap

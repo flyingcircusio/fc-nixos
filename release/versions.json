@@ -2,9 +2,9 @@
   "nixos-mailserver": {
     "deepClone": false,
     "fetchSubmodules": false,
-    "hash": "sha256-TcCthL6TAxWZ15o1E4DCIeXy5cLff5ZOM0Qyo60DPWY=",
+    "hash": "sha256-ADLR4Z8PfhIhDB71IB2OBFvAODNRf0FnPe7bK8Cbnpw=",
     "leaveDotGit": false,
-    "rev": "196691d7b29f104893ac565ffc0117ec497168b7",
+    "rev": "68df045964291c14e7bd12864fa36b58e20000e5",
     "url": "https://gitlab.flyingcircus.io/flyingcircus/nixos-mailserver.git/"
   },
   "nixpkgs": {

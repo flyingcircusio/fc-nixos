@@ -5,8 +5,7 @@ import imaplib
 
 def verify(user, password, exp_subjects):
     exp_subjects.sort()
-    with imaplib.IMAP4("mail.example.local") as m:
-        m.starttls()
+    with imaplib.IMAP4_SSL("mail.example.local") as m:
         m.login(user, password)
         m.select()
         msgs = m.sort("(SUBJECT)", "UTF-8", "ALL")[1][0].decode()
