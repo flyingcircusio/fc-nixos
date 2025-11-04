@@ -253,11 +253,6 @@ in
         default = 100;
         description = "How long to keep data in *days*.";
       };
-
-      enableInfluxDB = fclib.mkObsoleteOption "InfluxDB is not supported anymore for statshost.";
-      readFromInfluxDB = fclib.mkObsoleteOption "InfluxDB is not supported anymore for statshost.";
-      writeToInfluxDB = fclib.mkObsoleteOption "InfluxDB is not supported anymore for statshost.";
-      influxdbRetention = fclib.mkObsoleteOption "InfluxDB is not supported anymore for statshost.";
     };
 
     # FC infrastructure global stats host
@@ -299,28 +294,6 @@ in
   };
 
   config = mkMerge [
-
-    {
-      warnings =
-        let
-          obsoleteOptions = [
-            "enableInfluxDB"
-            "readFromInfluxDB"
-            "writeToInfluxDB"
-            "influxdbRetention"
-          ];
-          mkObsoleteWarning =
-            opt:
-            (fclib.obsoleteOptionWarning options [
-              "flyingcircus"
-              "roles"
-              "statshost"
-              opt
-            ] "InfluxDB is not supported anymore for statshost.");
-        in
-        lib.mkMerge (lib.flatten (map mkObsoleteWarning obsoleteOptions));
-    }
-
     # Global stats host.
     (mkIf cfgStatsGlobal.enable {
       boot.kernel.sysctl."net.core.rmem_max" = mkOverride 90 25165824;

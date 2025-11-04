@@ -39,8 +39,6 @@ in
       enable = mkEnableOption "Flying Circus LAMP stack";
       supportsContainers = fclib.mkEnableDevhostSupport;
 
-      useFPM = fclib.mkObsoleteOption "FPM is always used now.";
-
       fpmMaxChildren = mkOption {
         type = types.int;
         default = 25;
@@ -147,13 +145,6 @@ in
       phpMajor = builtins.head (builtins.splitVersion role.php.version);
     in
     lib.mkIf role.enable {
-      warnings = fclib.obsoleteOptionWarning options [
-        "flyingcircus"
-        "roles"
-        "lamp"
-        "useFPM"
-      ] "FPM is always used now.";
-
       services.httpd.enable = true;
       services.httpd.adminAddr = "admin@flyingcircus.io";
       services.httpd.mpm = "event";
