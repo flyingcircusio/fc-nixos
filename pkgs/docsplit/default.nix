@@ -5,7 +5,7 @@
   libreoffice,
   file,
   graphicsmagick,
-  poppler_utils,
+  poppler-utils,
   pdftk,
   jre,
   makeWrapper,
@@ -27,7 +27,7 @@ bundlerApp {
         lib.makeBinPath [
           file
           graphicsmagick
-          poppler_utils
+          poppler-utils
           pdftk
           jre
         ]
