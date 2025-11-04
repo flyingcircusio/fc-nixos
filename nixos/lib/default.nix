@@ -24,7 +24,6 @@ let
   utils = import ./utils.nix { inherit config pkgs lib; };
   lists = import ./lists.nix { inherit config pkgs lib; };
   ceph = import ./ceph-common.nix { inherit lib pkgs; };
-  builders = import ./builders.nix { inherit lib pkgs; };
 
 in
 {
@@ -40,7 +39,6 @@ in
     fclib = {
       inherit
         attrsets
-        builders
         ceph
         doc
         files
@@ -53,7 +51,6 @@ in
         ;
     }
     // attrsets
-    // builders
     // ceph
     // doc
     // files
