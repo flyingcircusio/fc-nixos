@@ -20,7 +20,7 @@ let
       myst-docutils
       sphinx
       sphinx-copybutton
-      sphinx_rtd_theme
+      sphinx-rtd-theme
       furo
     ]
   );
