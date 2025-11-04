@@ -25,7 +25,7 @@ py.buildPythonApplication rec {
     megacli
     py.nagiosplugin
     py.requests
-    py.requests_toolbelt
+    py.requests-toolbelt
     py.psutil
     py.pyyaml
   ];
