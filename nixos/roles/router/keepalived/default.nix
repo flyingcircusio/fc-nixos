@@ -15,7 +15,7 @@ let
   locationConfig = readFile (./. + "/${location}.conf");
   routerId = "${hostName}.gocept.net";
 
-  checkDefaultRoute4 = fclib.writeShellApplication {
+  checkDefaultRoute4 = pkgs.writeShellApplication {
     name = "check-default-route-v4";
     runtimeInputs = with pkgs; [ iproute2 ];
     text = ''
@@ -23,7 +23,7 @@ let
     '';
   };
 
-  checkDefaultRoute6 = fclib.writeShellApplication {
+  checkDefaultRoute6 = pkgs.writeShellApplication {
     name = "check-default-route-v6";
     runtimeInputs = with pkgs; [ iproute2 ];
     text = ''
@@ -31,7 +31,7 @@ let
     '';
   };
 
-  checkZebraLiveness = fclib.writeShellApplication {
+  checkZebraLiveness = pkgs.writeShellApplication {
     name = "check-zebra-liveness";
     runtimeInputs = with pkgs; [ frr ];
     text = ''

@@ -14,7 +14,7 @@ let
   routers = fclib.findServices "router-router";
   routerNames = map (service: head (lib.splitString "." service.address)) routers;
   otherRouterNames = filter (m: m != config.networking.hostName) routerNames;
-  kickInterfaces = fclib.writeShellApplication {
+  kickInterfaces = pkgs.writeShellApplication {
     name = "kick-interfaces";
     runtimeInputs = with pkgs; [ ethtool ];
     text = lib.readFile ./kick-interfaces.sh;
