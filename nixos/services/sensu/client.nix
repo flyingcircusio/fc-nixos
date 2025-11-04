@@ -489,7 +489,7 @@ in
           # cause an alarm, but have it visible for context.
           uptime = {
             notification = "Host was down";
-            command = "${check-uptime}/bin/check_uptime -c @:30 -w @:1440";
+            command = "${nagiosPlugins.check_uptime}/bin/check_uptime -c @:30 -w @:1440";
             interval = 300;
           };
           systemd_units_non_critical = {

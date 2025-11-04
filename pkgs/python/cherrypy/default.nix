@@ -15,7 +15,7 @@
   pytest,
   pytestcov,
   backports_functools_lru_cache,
-  requests_toolbelt,
+  requests-toolbelt,
 }:
 
 buildPythonPackage rec {
@@ -45,7 +45,7 @@ buildPythonPackage rec {
     pytest
     pytestcov
     backports_functools_lru_cache
-    requests_toolbelt
+    requests-toolbelt
   ];
   # import problems of zc.lockfile
   doCheck = false;
