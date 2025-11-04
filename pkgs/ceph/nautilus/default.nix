@@ -48,7 +48,7 @@
 
   # Linux Only Dependencies
   linuxHeaders,
-  utillinux,
+  util-linux,
   libuuid,
   udev,
   keyutils,
@@ -203,7 +203,7 @@ rec {
       ]
       ++ optionals stdenv.isLinux [
         linuxHeaders
-        utillinux
+        util-linux
         libuuid
         udev
         keyutils
@@ -336,7 +336,7 @@ rec {
         let
           scriptDependencies = [
             bash
-            utillinux
+            util-linux
             udev
             coreutils
             xfsprogs

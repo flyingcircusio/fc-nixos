@@ -20,7 +20,7 @@
   stdenv,
   strace,
   systemd,
-  utillinux,
+  util-linux,
   xfsprogs,
 }:
 
@@ -74,7 +74,7 @@ py.buildPythonPackage rec {
     procps
     qemu_ceph
     systemd
-    utillinux
+    util-linux
     xfsprogs
     py.requests
     py.future
