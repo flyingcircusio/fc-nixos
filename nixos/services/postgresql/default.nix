@@ -83,7 +83,9 @@ let
   mkExtensionNamesForAutoUpgrade =
     postgresqlMajor:
     let
-      pgSubpackages = fclib.attrsets.filterSuccessfulEval (packages."${toString postgresqlMajor}".pkgs);
+      pgSubpackages = fclib.attrsets.filterSuccessfulEval (
+        lib.filterAttrs (n: v: n != "callPackage") packages."${toString postgresqlMajor}".pkgs
+      );
       availableExtensions = lib.mapAttrs' (
         attrName: package: lib.nameValuePair (lib.getName package) attrName
       ) pgSubpackages;
