@@ -199,7 +199,10 @@ with lib;
       # VLANs on which we accept connectivity to the outside world
       routerUplinkNetworks = {
         dev = [ "tr" ];
-        whq = [ "tr-whq-sl" ];
+        whq = [
+          "tr-up-a"
+          "tr-up-b"
+        ];
         rzob = [
           "tr-kamp-a"
           "tr-kamp-b"
@@ -247,7 +250,6 @@ with lib;
           "mgm"
           "srv"
           "fe"
-          "tr-whq-sl"
           "video"
           "access"
         ];
