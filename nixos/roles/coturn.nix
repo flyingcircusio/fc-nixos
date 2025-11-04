@@ -183,6 +183,6 @@ in
     '';
 
     environment.etc."local/coturn/config.json.example".source =
-      fclib.writePrettyJSON "config.json.example" cfg.config;
+      pkgs.writers.writeJSON "config.json.example" cfg.config;
   };
 }

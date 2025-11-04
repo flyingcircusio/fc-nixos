@@ -36,10 +36,10 @@ import ../make-test-python.nix (
 
         flyingcircus.roles.router.enable = true;
 
-        environment.etc."networks/tr".source = fclib.writePrettyJSON "tr" fclib.network.tr.dualstack;
-        environment.etc."networks/srv".source = fclib.writePrettyJSON "srv" fclib.network.tr.dualstack;
-        environment.etc."networks/mgm".source = fclib.writePrettyJSON "mgm" fclib.network.tr.dualstack;
-        environment.etc."networks/fe".source = fclib.writePrettyJSON "fe" fclib.network.tr.dualstack;
+        environment.etc."networks/tr".source = pkgs.writers.writeJSON "tr" fclib.network.tr.dualstack;
+        environment.etc."networks/srv".source = pkgs.writers.writeJSON "srv" fclib.network.tr.dualstack;
+        environment.etc."networks/mgm".source = pkgs.writers.writeJSON "mgm" fclib.network.tr.dualstack;
+        environment.etc."networks/fe".source = pkgs.writers.writeJSON "fe" fclib.network.tr.dualstack;
 
         environment.etc."bind/pri/1.0.0.0.8.3.2.0.2.0.a.2.ip6.arpa.zone".text = ''
           $TTL 86400

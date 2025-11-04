@@ -27,13 +27,6 @@ let
         promtool ${what} $out
       '';
 
-  # Pretty-print JSON to a file
-  writePrettyJSON =
-    name: x:
-    pkgs.runCommand name { preferLocalBuild = true; } ''
-      echo '${builtins.toJSON x}' | ${pkgs.jq}/bin/jq . > $out
-    '';
-
   promConfig = {
     global = filterValidPrometheus cfg.globalConfig;
     rule_files = map (promtoolCheck "check rules" "rules") (
@@ -46,7 +39,7 @@ let
     inherit (cfg) remote_write remote_read;
   };
 
-  generatedPrometheusYml = writePrettyJSON "prometheus.yml" promConfig;
+  generatedPrometheusYml = pkgs.writers.writeJSON "prometheus.yml" promConfig;
 
   prometheusYml =
     let
