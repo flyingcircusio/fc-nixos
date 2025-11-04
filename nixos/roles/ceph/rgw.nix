@@ -29,7 +29,7 @@ let
     adminSocket = "/run/ceph/radosgw.asok";
     rgwData = "/srv/ceph/radosgw/ceph-$id";
     rgwEnableOpsLog = false;
-    rgwMimeTypesFile = "${pkgs.mime-types}/etc/mime.types";
+    rgwMimeTypesFile = "${pkgs.mailcap}/etc/mime.types";
     debugRados = "1 5";
     rgwFrontends = "beast port=80";
     debugRgw = "1 5";
