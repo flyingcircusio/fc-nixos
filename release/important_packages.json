@@ -205,6 +205,8 @@
   "ruby",
   "runc",
   "screen",
+  "shellcheck",
+  "shellcheck-minimal",
   "slurm",
   "smartmontools",
   "solr",

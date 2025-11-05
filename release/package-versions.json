@@ -1010,6 +1010,16 @@
     "pname": "screen",
     "version": "5.0.1"
   },
+  "shellcheck": {
+    "name": "shellcheck-0.11.0",
+    "pname": "ShellCheck",
+    "version": "0.11.0"
+  },
+  "shellcheck-minimal": {
+    "name": "ShellCheck-0.11.0",
+    "pname": "ShellCheck",
+    "version": "0.11.0"
+  },
   "slurm": {
     "name": "slurm-25.05.3.1",
     "pname": "slurm",
