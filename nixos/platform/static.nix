@@ -89,8 +89,6 @@ with lib;
         "ul" = 20;
         # routed frontend: frontend network using routed layer 3 transport
         "pub" = 21;
-        # video surveillance
-        "video" = 23;
         # access network for unmanaged hosts
         "access" = 41;
         # uplink vlans for kamp in rzob
@@ -250,7 +248,6 @@ with lib;
           "mgm"
           "srv"
           "fe"
-          "video"
           "access"
         ];
         rzob = [
@@ -269,7 +266,6 @@ with lib;
       # Additional networks for which the routers provide DHCP service
       additionalDhcpNetworks = {
         whq = [
-          "video"
           "access"
         ];
       };
