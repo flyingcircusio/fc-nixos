@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.56",
+    "name": "linux-6.12.57",
     "pname": "linux",
-    "version": "6.12.56"
+    "version": "6.12.57"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.56",
+    "name": "linux-6.12.57",
     "pname": "linux",
-    "version": "6.12.56"
+    "version": "6.12.57"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -740,9 +740,9 @@
     "version": "8.2.29"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.26",
+    "name": "php-with-extensions-8.3.27",
     "pname": "php-with-extensions",
-    "version": "8.3.26"
+    "version": "8.3.27"
   },
   "php84": {
     "name": "php-with-extensions-8.4.13",
