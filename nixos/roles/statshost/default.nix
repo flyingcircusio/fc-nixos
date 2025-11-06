@@ -102,33 +102,6 @@ let
     s: s.service == "statshost-collector"
   ) null config.flyingcircus.encServices;
 
-  grafanaLdapConfig = pkgs.writeText "ldap.toml" ''
-    verbose_logging = true
-
-    [[servers]]
-    host = "${cfgStats.ldap.server}"
-    port = 636
-    start_tls = false
-    use_ssl = true
-    bind_dn = "uid=%s,ou=People,dc=gocept,dc=com"
-    search_base_dns = ["ou=People,dc=gocept,dc=com"]
-    search_filter = "(&(&(objectClass=inetOrgPerson)(uid=%s))(memberOf=cn=${cfgStats.ldap.memberOf},ou=GroupOfNames,dc=gocept,dc=com))"
-    group_search_base_dns = ["ou=Group,dc=gocept,dc=com"]
-    group_search_filter = "(&(objectClass=posixGroup)(memberUid=%s))"
-
-    [servers.attributes]
-    name = "cn"
-    surname = "displaname"
-    username = "uid"
-    member_of = "cn"
-    email = "mail"
-
-    [[servers.group_mappings]]
-    group_dn = "${config.flyingcircus.enc.parameters.resource_group}"
-    org_role = "Admin"
-
-  '';
-
   grafanaJsonDashboardPath = "${config.services.grafana.dataDir}/dashboards";
   grafanaProvisioningPath = "${config.services.grafana.dataDir}/provisioning";
 
@@ -166,10 +139,7 @@ in
       };
 
       ldap = {
-        enable = mkOption {
-          type = types.bool;
-          default = true;
-        };
+        enable = mkEnableOption "Enable LDAP for Grafana";
 
         memberOf = mkOption {
           default = config.flyingcircus.enc.parameters.resource_group;
@@ -191,7 +161,12 @@ in
       };
 
       oidc = {
-        enable = mkEnableOption "Enable OIDC for Grafana";
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Enable OIDC for Grafana";
+        };
+
         realm = mkOption {
           type = types.str;
           default = "fcio";
@@ -514,59 +489,27 @@ in
 
       services.grafana = {
         enable = true;
+        settings = {
+          auth = {
+            login_cookie_name = "grafana9_session";
+          };
 
-        settings = mkMerge [
-          {
-            auth = {
-              login_cookie_name = "grafana9_session";
-            };
+          # We only support LDAP and OIDC, no local login.
+          "auth.basic" = {
+            enabled = false;
+          };
 
-            paths = {
-              provisioning = grafanaProvisioningPath;
-            };
+          paths = {
+            provisioning = grafanaProvisioningPath;
+          };
 
-            server = {
-              http_port = 3001;
-              http_addr = "127.0.0.1";
-              root_url = "https://${cfgStats.hostName}/grafana/";
-            };
-            security.disable_initial_admin_creation = true;
-          }
-
-          (lib.mkIf cfgStats.ldap.enable {
-            "auth.ldap" = {
-              enabled = true;
-              config_file = toString grafanaLdapConfig;
-            };
-          })
-
-          (lib.mkIf cfgStats.oidc.enable {
-
-            auth = {
-              oauth_allow_insecure_email_lookup = true;
-            };
-
-            "auth.generic_oauth" =
-              let
-                realmUrl = "${cfgStats.oidc.server}/realms/${cfgStats.oidc.realm}";
-              in
-              {
-                enabled = true;
-                auto_login = true;
-                name = "FCIO oidc";
-                allow_sign_up = true;
-                client_id = "${config.networking.hostName}_statshost-master";
-                client_secret = fclib.derivePasswordForHost "oidc_statshost-master";
-                scopes = "openid email profile offline_access roles";
-                email_attribute_path = "email";
-                login_attribute_path = "preferred_username";
-                name_attribute_path = "full_name";
-                auth_url = "${realmUrl}/protocol/openid-connect/auth";
-                token_url = "${realmUrl}/protocol/openid-connect/token";
-                role_attribute_path = "'Admin'";
-              };
-          })
-        ];
+          server = {
+            http_port = 3001;
+            http_addr = "127.0.0.1";
+            root_url = "https://${cfgStats.hostName}/grafana/";
+          };
+          security.disable_initial_admin_creation = true;
+        };
       };
 
       services.nginx = {
@@ -692,6 +635,74 @@ in
 
     })
 
+    # SSO for statshost-master. LDAP and OIDC (default) are supported.
+    # Not affected: statshost-global (uses local SSO config).
+
+    (lib.mkIf (cfgStatsRG.enable && cfgStats.ldap.enable) {
+      services.grafana.settings."auth.ldap" = {
+        enabled = true;
+        config_file = toString (
+          pkgs.writeText "ldap.toml" ''
+            verbose_logging = true
+
+            [[servers]]
+            host = "${cfgStats.ldap.server}"
+            port = 636
+            start_tls = false
+            use_ssl = true
+            bind_dn = "uid=%s,ou=People,dc=gocept,dc=com"
+            search_base_dns = ["ou=People,dc=gocept,dc=com"]
+            search_filter = "(&(&(objectClass=inetOrgPerson)(uid=%s))(memberOf=cn=${cfgStats.ldap.memberOf},ou=GroupOfNames,dc=gocept,dc=com))"
+            group_search_base_dns = ["ou=Group,dc=gocept,dc=com"]
+            group_search_filter = "(&(objectClass=posixGroup)(memberUid=%s))"
+
+            [servers.attributes]
+            name = "cn"
+            surname = "displaname"
+            username = "uid"
+            member_of = "cn"
+            email = "mail"
+
+            [[servers.group_mappings]]
+            group_dn = "${config.flyingcircus.enc.parameters.resource_group}"
+            org_role = "Admin"
+          ''
+        );
+      };
+    })
+
+    (lib.mkIf (cfgStatsRG.enable && cfgStats.oidc.enable) {
+      services.grafana.settings = {
+        auth = {
+          disable_login_form = true;
+          oauth_allow_insecure_email_lookup = true;
+        };
+
+        # We expect that we are talking to our default Keycloak and that a OIDC
+        # client has been set up automatically by the directory when activating
+        # statshost-master role.
+        "auth.generic_oauth" =
+          let
+            realmUrl = "${cfgStats.oidc.server}/realms/${cfgStats.oidc.realm}";
+          in
+          {
+            enabled = true;
+            auto_login = true;
+            name = "FCIO oidc";
+            allow_sign_up = true;
+            client_id = "${config.networking.hostName}_statshost-master";
+            client_secret = fclib.derivePasswordForHost "oidc_statshost-master";
+            scopes = "openid email profile";
+            email_attribute_path = "email";
+            login_attribute_path = "preferred_username";
+            name_attribute_path = "full_name";
+            # Everybody becomes admin, ignoring user roles from OIDC.
+            role_attribute_path = "\"'Admin'\"";
+            auth_url = "${realmUrl}/protocol/openid-connect/auth";
+            token_url = "${realmUrl}/protocol/openid-connect/token";
+          };
+      };
+    })
   ];
 }
 
