@@ -1,3 +1,28 @@
+# Release 2025_041
+
+## Impact
+
+- DevHost VMs can now have configurable disk sizes, allowing for larger development environments when needed.
+
+
+## NixOS XX.XX platform
+
+- DevHost: Added support for setting custom disk sizes for VMs via the `--disk-size` parameter and `disk-size` batou configuration option. VMs default to 25G if not specified. The filesystem automatically expands to use the full disk space on boot using existing fc-resize-disk functionality. (FC-48241)
+
+- nixos/k3s: don't set cluster DNS in hosts resolv.conf (PL-134112)
+
+  The hosts' resolv.conf is passed to the k3s cluster coredns, which leads
+  to coredns trying to _sometimes_ resolve requests to itself.
+  This leads to timeouts and otherwise failing DNS request.
+
+  This change also modifies the behavior of DNS resolving on the host
+  directly. Especially HAProxy now requires to especially set the CoreDNS
+  as resolver. We checked that this won't affect customers currently.
+
+- mailman: fix role throwing evaluation error on NixOS 25.05 (PL-133981)
+
+
+
 # Release 2025_040
 
 ## NixOS XX.XX platform
