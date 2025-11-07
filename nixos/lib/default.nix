@@ -18,13 +18,11 @@ let
   };
   files = import ./files.nix { inherit config pkgs lib; };
   math = import ./math.nix { inherit pkgs lib; };
-  modules = import ./modules.nix { inherit pkgs lib; };
   network = import ./network.nix { inherit config pkgs lib; };
   system = import ./system.nix { inherit config pkgs lib; };
   utils = import ./utils.nix { inherit config pkgs lib; };
   lists = import ./lists.nix { inherit config pkgs lib; };
   ceph = import ./ceph-common.nix { inherit lib pkgs; };
-  builders = import ./builders.nix { inherit lib pkgs; };
 
 in
 {
@@ -40,12 +38,10 @@ in
     fclib = {
       inherit
         attrsets
-        builders
         ceph
         doc
         files
         math
-        modules
         network
         system
         utils
@@ -53,12 +49,10 @@ in
         ;
     }
     // attrsets
-    // builders
     // ceph
     // doc
     // files
     // math
-    // modules
     // network
     // system
     // utils

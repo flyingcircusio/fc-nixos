@@ -4,10 +4,6 @@
 with builtins;
 
 rec {
-
-  # funny that the modulo function seems not to be defined anywhere
-  mod = x: n: x - (div x n) * n;
-
   # convert value [0..15] into a single hex digit
   hexDigit = x: elemAt (lib.stringToCharacters "0123456789abcdef") x;
 
@@ -16,11 +12,11 @@ rec {
     x:
     lib.concatStrings [
       (hexDigit (div x 16))
-      (hexDigit (mod x 16))
+      (hexDigit (lib.mod x 16))
     ];
 
   # convert *positive* integer into hex string
-  toHex' = i: if i == 0 then "" else (toHex' (div i 16)) + (hexDigit (mod i 16));
+  toHex' = i: if i == 0 then "" else (toHex' (div i 16)) + (hexDigit (lib.mod i 16));
 
   # convert arbitrary int into hex string
   toHex =

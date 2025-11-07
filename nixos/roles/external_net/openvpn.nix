@@ -17,7 +17,7 @@ let
   location = lib.attrByPath [ "location" ] null parameters;
   resource_group = lib.attrByPath [ "resource_group" ] null parameters;
   domain = config.networking.domain;
-  id16bit = fclib.mod (lib.attrByPath [ "id" ] 0 parameters) 65536;
+  id16bit = lib.mod (lib.attrByPath [ "id" ] 0 parameters) 65536;
 
   defaultAccessNets = ''
     {

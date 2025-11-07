@@ -165,17 +165,6 @@ rec {
       filter (u: any (g: g == group) (getAttr currentRG u.permissions)) config.flyingcircus.users.userData
     );
 
-  # TODO: consider moving writers like this to overlay, such that they are
-  # accessible as a package, not just via `fclib`
-  writePrettyJSON =
-    name: x:
-    let
-      json = pkgs.writeText "write-pretty-json-input" (toJSON x);
-    in
-    pkgs.runCommand name { preferLocalBuild = true; } ''
-      ${pkgs.jq}/bin/jq . < ${json} > $out
-    '';
-
   /**
      python3BinFromFile takes a path to a python file and an attributeset with some further options.
      It outputs a directory with `bin/basename_of_python_file`.
