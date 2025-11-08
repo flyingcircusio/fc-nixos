@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-142.0.7444.59",
+    "name": "chromedriver-unwrapped-142.0.7444.134",
     "pname": "chromedriver-unwrapped",
-    "version": "142.0.7444.59"
+    "version": "142.0.7444.134"
   },
   "chromium": {
-    "name": "chromium-142.0.7444.59",
+    "name": "chromium-142.0.7444.134",
     "pname": "chromium",
-    "version": "142.0.7444.59"
+    "version": "142.0.7444.134"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -745,9 +745,9 @@
     "version": "8.3.27"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.13",
+    "name": "php-with-extensions-8.4.14",
     "pname": "php-with-extensions",
-    "version": "8.4.13"
+    "version": "8.4.14"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.12",
