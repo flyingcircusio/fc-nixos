@@ -65,8 +65,8 @@ let
     kernel = [ { } ];
     mem = [ { } ];
     netstat = [ { } ];
-    net = [ { ignore_protocol_stats = true; } ]; # basic network metrics
-    nstat = [ { } ]; # protocol-specific network metrics
+    net = [ { ignore_protocol_stats = true; } ]; # general network metrics
+    nstat = [ { } ]; # network protocol-specific metrics
     processes = [ { } ];
     system = [ { } ];
     swap = [ { } ];
