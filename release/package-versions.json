@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-142.0.7444.59",
+    "name": "chromedriver-unwrapped-142.0.7444.134",
     "pname": "chromedriver-unwrapped",
-    "version": "142.0.7444.59"
+    "version": "142.0.7444.134"
   },
   "chromium": {
-    "name": "chromium-142.0.7444.59",
+    "name": "chromium-142.0.7444.134",
     "pname": "chromium",
-    "version": "142.0.7444.59"
+    "version": "142.0.7444.134"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.12.1",
+    "name": "element-web-1.12.3",
     "pname": "element-web",
-    "version": "1.12.1"
+    "version": "1.12.3"
   },
   "erlang": {
     "name": "erlang-28.1.1",
@@ -480,9 +480,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.4.8",
+    "name": "mastodon-4.5.0",
     "pname": "mastodon",
-    "version": "4.4.8"
+    "version": "4.5.0"
   },
   "matomo": {
     "name": "matomo-5.5.1",
@@ -846,9 +846,9 @@
     "version": "3.7.2"
   },
   "promtail": {
-    "name": "promtail-3.5.7",
+    "name": "promtail-3.5.8",
     "pname": "promtail",
-    "version": "3.5.7"
+    "version": "3.5.8"
   },
   "prosody": {
     "name": "prosody-13.0.2",
@@ -906,9 +906,9 @@
     "version": "25.0.1"
   },
   "python3Packages.pyslurm": {
-    "name": "python3.13-pyslurm-24.11.0",
+    "name": "python3.13-pyslurm-25.5.0",
     "pname": "pyslurm",
-    "version": "24.11.0"
+    "version": "25.5.0"
   },
   "python3Packages.pystemd": {
     "name": "python3.13-pystemd-0.13.4",
