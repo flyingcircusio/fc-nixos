@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.12.1",
+    "name": "element-web-1.12.3",
     "pname": "element-web",
-    "version": "1.12.1"
+    "version": "1.12.3"
   },
   "erlang": {
     "name": "erlang-27.3.4.4",
@@ -520,9 +520,9 @@
     "version": "1.6.37"
   },
   "mongodb": {
-    "name": "mongodb-7.0.21",
+    "name": "mongodb-7.0.25",
     "pname": "mongodb",
-    "version": "7.0.21"
+    "version": "7.0.25"
   },
   "mongodb-6_0": {
     "name": "mongodb-6.0.23",
