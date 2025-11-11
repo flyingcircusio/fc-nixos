@@ -152,14 +152,21 @@ These options will be removed with fc-nixos 26.05. Please migrate your client or
 
 ## Other notable changes
 
-### swap
+### Handling of out-of-memory situations (virtual machines only)
 
-We had a couple of incidents related to changed memory usage patterns that resulted in subsequent problems related to
-swapping.
-In our experience, swap doesn't help much for VMs: it should almost always be unused and when it gets used, the system
-gets a significant lower performance when it needs to swap contents in.
+We have evolved the handling of situations where systems run out of memory. This
+has resulted in a more proactive monitoring of memory conditions with the goal
+to avoid kernel stalls and long periods of lockup on virtual machines.
 
-We decided to disable swap on our hardware nodes and virtual machines.
+`systemd-oomd` is now actively being used and configured to start killing (and
+restarting) suspect services if a system starts using more than 50% of the
+available swap. Our tests have shown that this results in faster automated
+recoveries with only very short periods of downtime in cases of extreme and
+sudden memory pressure. If this happens we receive automatic tickets to follow
+up on this event during regular office hours.
+
+Some low-level services (like `sshd`, `dbus` and a few others) are never swapped
+and will never be killed by `systemd-oomd`.
 
 ### Mail server
 

@@ -21,6 +21,11 @@ in
         type = types.listOf types.str;
       };
 
+      protectedServices = mkOption {
+        description = "Names of services that should be protected from OOM conditions.";
+        type = types.listOf types.str;
+      };
+
     };
   };
 
@@ -76,6 +81,21 @@ in
       DefaultStartLimitInterval = 60;
       DefaultStartLimitBurst = 5;
     };
+
+    flyingcircus.systemd.protectedServices = [
+      "sshd"
+      "telegraf"
+      "nscd"
+      "dbus"
+    ]; # make it so that this isn't a default that gets immediately overwritten but extended
+
+    systemd.services = lib.genAttrs cfg.protectedServices (svc: {
+      serviceConfig = {
+        ManagedOOMPreference = "omit";
+        MemorySwapMax = 0;
+        OOMScoreAdjust = -1000;
+      };
+    });
 
     systemd.units =
       let

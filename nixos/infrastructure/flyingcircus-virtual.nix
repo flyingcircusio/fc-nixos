@@ -99,6 +99,22 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     };
   };
 
+  swapDevices = [ { device = "/dev/disk/by-label/swap"; } ];
+
+  systemd.oomd = {
+    enableSystemSlice = true;
+    enableUserSlices = true;
+
+    extraConfig = {
+      SwapUsedLimit = "50%";
+      DefaultMemoryPressureDurationSec = "20s";
+    };
+  };
+
+  systemd.slices."-".sliceConfig = {
+    ManagedOOMSwap = "kill";
+  };
+
   flyingcircus.initrd = {
     upgradeXFS = {
       "/dev/disk/by-label/root" = [
@@ -121,6 +137,8 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     '';
     hostName = config.fclib.mkPlatform (attrByPath [ "name" ] "default" cfg.enc);
   };
+
+  flyingcircus.systemd.protectedServices = [ "qemu-guest-agent" ];
 
   services = {
     qemuGuest.enable = true;

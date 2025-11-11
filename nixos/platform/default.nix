@@ -297,7 +297,7 @@ in
       ];
 
       kernel.sysctl = {
-        "vm.swappiness" = mkDefault 1;
+        "vm.swappiness" = mkDefault 100;
         "vm.dirty_background_bytes" = fclib.mkPlatform 16777216; # 16 mib, or hopefully at most 15s of flushing time
         "vm.dirty_bytes" = fclib.mkPlatform 67108864; # 64 mib
       };
