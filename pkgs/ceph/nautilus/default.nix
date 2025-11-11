@@ -153,6 +153,7 @@ rec {
       ./0000-fix-SPDK-build-env.patch
       ./0001-fix-iterator.patch
       ./rgw-reduce-log-verbosity.patch
+      ./0001-msg-fix-deadlock-when-handling-existing-but-closed-v.patch
     ]
     ++ (
       if tmp-patches then
