@@ -33,6 +33,8 @@ let
       head fclib.network."${network}".v4.addresses
     );
 
+  hostConfig = role.extraBirdConfig;
+
   commonConfig = ''
     log syslog all;
 
@@ -50,6 +52,10 @@ in
     type = lib.types.ints.unsigned;
     default = 0;
   };
+  options.flyingcircus.roles.router.extraBirdConfig = lib.mkOption {
+    type = lib.types.lines;
+    default = "";
+  };
 
   config = lib.mkIf role.enable {
     services.bird = {
@@ -57,6 +63,7 @@ in
       package = pkgs.bird2;
       config = lib.concatStringsSep "\n\n" [
         (if role.isPrimary then primaryConfig else secondaryConfig)
+        hostConfig
         commonConfig
         locationConfig
       ];
@@ -65,7 +72,8 @@ in
     networking.firewall.extraCommands =
       let
         bgpNetworks =
-          static.routerUplinkNetworks."${location}" ++ (static.routerDownlinkNetworks."${location}" or [ ]);
+          (fclib.filterConfiguredNetworks static.routerUplinkNetworks."${location}")
+          ++ (static.routerDownlinkNetworks."${location}" or [ ]);
         bgpInterfaces = map (network: fclib.network."${network}".interface) bgpNetworks;
       in
       ''

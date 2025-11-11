@@ -198,6 +198,12 @@ rec {
       ''
     );
 
+  # Given a list of networks (such as router uplink networks), return
+  # the subset of those networks which are actually present in this
+  # host's configuration
+  filterConfiguredNetworks =
+    nets: map (n: n.vlan) (filter (v: v != null) (map (net: fclib.network."${net}" or null) nets));
+
   # Adapted 'ip' command which says what it is doing and ignores errno 2 (file
   # exists) to make it idempotent.
   relaxedIp = pkgs.writeScriptBin "ip" ''
