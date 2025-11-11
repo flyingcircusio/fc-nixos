@@ -90,8 +90,7 @@ in
   network = callSubTests ./network { };
   nfs = callSubTests ./nfs.nix { };
   nginx = callTest ./nginx.nix { };
-  # FIXME: PL-133856 pyslurm incompatible with slurm 25.05
-  # nix-version = callTest ./nix-version.nix { };
+  nix-version = callTest ./nix-version.nix { };
   nodejs = callTest ./nodejs.nix { };
   opensearch = callTest ./opensearch.nix { };
   opensearch_dashboards = callTest ./opensearch_dashboards.nix { };

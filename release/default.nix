@@ -155,9 +155,6 @@ let
     "elasticsearch6-oss"
     "graylogFrozen"
     "mc"
-    # FIXME: PL-133856 pyslurm incompatible with slurm 25.05
-    "python3Packages.pyslurm"
-    "fc.agentWithSlurm"
   ];
 
   overlay = import ../pkgs/overlay.nix pkgs pkgs;
