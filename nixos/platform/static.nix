@@ -83,15 +83,12 @@ with lib;
         "srv2" = 17;
         # transfer 3 (blue): tertiary router-router connection
         "tr3" = 18;
-        "tr-whq-sl" = 18;
         # dynamic hardware pool: local endpoints for Kamp DHP tunnels
         "dhp" = 19;
         # underlay: EVPN-VXLAN network virtualisation underlay
         "ul" = 20;
         # routed frontend: frontend network using routed layer 3 transport
         "pub" = 21;
-        # video surveillance
-        "video" = 23;
         # access network for unmanaged hosts
         "access" = 41;
         # uplink vlans for kamp in rzob
@@ -200,7 +197,10 @@ with lib;
       # VLANs on which we accept connectivity to the outside world
       routerUplinkNetworks = {
         dev = [ "tr" ];
-        whq = [ "tr-whq-sl" ];
+        whq = [
+          "tr-up-a"
+          "tr-up-b"
+        ];
         rzob = [
           "tr-kamp-a"
           "tr-kamp-b"
@@ -248,8 +248,6 @@ with lib;
           "mgm"
           "srv"
           "fe"
-          "tr-whq-sl"
-          "video"
           "access"
         ];
         rzob = [
@@ -268,7 +266,6 @@ with lib;
       # Additional networks for which the routers provide DHCP service
       additionalDhcpNetworks = {
         whq = [
-          "video"
           "access"
         ];
       };
