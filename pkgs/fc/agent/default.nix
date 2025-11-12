@@ -103,7 +103,7 @@ pyPackages.buildPythonPackage rec {
     gptfdisk
     multipath-tools
     pyPackages.pystemd
-    pyPackages.systemd
+    pyPackages.systemd-python
     xfsprogs
   ]
   ++ lib.optionals enableSlurm [
