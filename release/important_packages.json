@@ -192,7 +192,7 @@
   "python3Packages.rich-rst",
   "python3Packages.structlog",
   "python3Packages.supervisor",
-  "python3Packages.systemd",
+  "python3Packages.systemd-python",
   "python3Packages.urllib3",
   "qemu-ceph-nautilus",
   "rabbitmq-server",
