@@ -323,6 +323,12 @@ in
 
     flyingcircus.services.sensu-client = {
       checks = {
+        vrfpub_default_route = {
+          notification = "PUB vrf has default routes";
+          interval = 600;
+          command = "${pkgs.fc.check-vrf-pub-default-routes}/bin/check_vrf_pub_default_routes";
+        };
+
         neighbour_cache = {
           notification = "Kernel neighbour cache is too full";
           # Poll frequently in order to try to detect problems which
