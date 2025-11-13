@@ -1,3 +1,11 @@
+# Release 2025_042
+
+## NixOS XX.XX platform
+
+- statshost: fix Admin role mapping for OIDC. Note that OIDC is not enabled by default, yet, so instances with default configuration haven't been affected by this issue. (PL-134142)
+
+
+
 # Release 2025_041
 
 ## Impact
