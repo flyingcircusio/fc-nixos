@@ -34,6 +34,7 @@ rec {
   check-postfix = callPackage ./check-postfix { };
   check-rib-integrity = callPackage ./check-rib-integrity { };
   check-skvaider = callPackage ./check-skvaider { };
+  check-vrf-pub-default-routes = callPackage ./check-vrf-pub-default-routes { };
   check-xfs-broken = callPackage ./check-xfs-broken { };
 
   fix-so-rpath = callPackage ./fix-so-rpath { };
