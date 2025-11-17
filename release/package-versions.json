@@ -805,6 +805,16 @@
     "pname": "temporal_tables",
     "version": "1.2.2"
   },
+  "postgresql18Packages.postgis": {
+    "name": "postgis-3.6.0",
+    "pname": "postgis",
+    "version": "3.6.0"
+  },
+  "postgresql18Packages.temporal_tables": {
+    "name": "temporal_tables-1.2.2",
+    "pname": "temporal_tables",
+    "version": "1.2.2"
+  },
   "postgresqlPackages.postgis": {
     "name": "postgis-3.6.0",
     "pname": "postgis",
@@ -839,6 +849,11 @@
     "name": "postgresql-17.6",
     "pname": "postgresql",
     "version": "17.6"
+  },
+  "postgresql_18": {
+    "name": "postgresql-18.0",
+    "pname": "postgresql",
+    "version": "18.0"
   },
   "prometheus": {
     "name": "prometheus-3.7.2",

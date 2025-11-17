@@ -38,6 +38,7 @@ class PGVersion(StrEnum):
     PG15 = "15"
     PG16 = "16"
     PG17 = "17"
+    PG18 = "18"
 
 
 def run_as_postgres(cmd, **kwargs):
