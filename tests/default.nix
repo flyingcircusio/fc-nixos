@@ -103,6 +103,7 @@ in
   postgresql15 = callTest ./postgresql { version = "15"; };
   postgresql16 = callTest ./postgresql { version = "16"; };
   postgresql17 = callTest ./postgresql { version = "17"; };
+  postgresql18 = callTest ./postgresql { version = "18"; };
   postgresql-autoupgrade = callSubTests ./postgresql/upgrade.nix { };
   postgresql-autoupgrade-exts = callSubTests ./postgresql/upgrade-with-extension.nix { };
   prometheus = callTest ./prometheus.nix { };

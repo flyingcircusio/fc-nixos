@@ -16,6 +16,7 @@ let
     "15" = pkgs.postgresql_15;
     "16" = pkgs.postgresql_16;
     "17" = pkgs.postgresql_17;
+    "18" = pkgs.postgresql_18;
   };
 
   listenAddresses = fclib.network.lo.dualstack.addresses ++ fclib.network.srv.dualstack.addresses;

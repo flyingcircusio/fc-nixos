@@ -6,7 +6,7 @@ Managed instance of the [PostgreSQL](http://postgresql.org) database server.
 
 ## Components
 
-- PostgreSQL server (versions 14, 15, 16, 17)
+- PostgreSQL server (versions 14, 15, 16, 17, 18)
 
 :::{warning}
 
