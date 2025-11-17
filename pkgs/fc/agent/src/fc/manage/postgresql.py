@@ -174,8 +174,8 @@ def upgrade(
             )
             raise Exit(2)
 
-        new_bin_dir = fc.util.postgresql.build_new_bin_dir(
-            log, context.pg_data_root, new_version, extension_names
+        new_bin_dir = fc.util.postgresql.build_pg_bin_dir(
+            log, context.pg_data_root, new_version, False, extension_names
         )
         new_data_dir = context.pg_data_root / new_version.value
 
@@ -232,6 +232,18 @@ def upgrade(
 
     if upgrade_now:
         stop_pg(log, old_data_dir, stop)
+
+        # PostgreSQL 18 requires checksums to be enabled.
+        if int(new_version) >= 18:
+            old_version = fc.util.postgresql.get_pg_version_from_data_dir(
+                log, old_data_dir
+            )
+            old_bin_dir = fc.util.postgresql.build_pg_bin_dir(
+                log, context.pg_data_root, old_version, False, extension_names
+            )
+            fc.util.postgresql.run_pg_checksums_enable(
+                log, old_bin_dir, old_data_dir
+            )
 
         fc.util.postgresql.run_pg_upgrade(
             log,
@@ -366,8 +378,8 @@ def prepare_autoupgrade(
 
     log = structlog.get_logger()
 
-    new_bin_dir = fc.util.postgresql.build_new_bin_dir(
-        log, context.pg_data_root, new_version, extension_names
+    new_bin_dir = fc.util.postgresql.build_pg_bin_dir(
+        log, context.pg_data_root, new_version, True, extension_names
     )
     new_data_dir = context.pg_data_root / new_version.value
 

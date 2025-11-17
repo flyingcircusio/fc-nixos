@@ -497,6 +497,8 @@ in
           in
           concatStringsSep " \\\n  " upgradeCmd;
 
+        environment.NIX_PATH = concatStringsSep ":" config.nix.nixPath;
+
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;

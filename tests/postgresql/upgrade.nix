@@ -73,6 +73,7 @@ import ../make-test-python.nix (
               flyingcircus.roles.postgresql14.enable = lib.mkDefault true;
 
               specialisation = {
+                pg14.configuration = { };
                 pg15.configuration = {
                   flyingcircus.roles.postgresql14.enable = false;
                   flyingcircus.roles.postgresql15.enable = true;

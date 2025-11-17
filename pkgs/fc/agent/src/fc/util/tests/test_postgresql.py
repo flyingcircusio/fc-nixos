@@ -1,4 +1,3 @@
-import json
 import os
 from unittest.mock import Mock
 
@@ -7,7 +6,7 @@ import fc.util.postgresql
 import pytest
 from fc.util.postgresql import (
     PGVersion,
-    build_new_bin_dir,
+    build_pg_bin_dir,
     get_existing_dbs,
     run_pg_upgrade,
 )
@@ -28,8 +27,8 @@ def old_data_dir(log, tmp_path, monkeypatch):
 
 
 @pytest.mark.needs_nix
-def test_build_new_bin_dir(logger, tmp_path):
-    new_bin_dir = build_new_bin_dir(logger, tmp_path, PGVersion.PG15)
+def test_build_pg_bin_dir(logger, tmp_path):
+    new_bin_dir = build_pg_bin_dir(logger, tmp_path, PGVersion.PG15)
     assert (new_bin_dir / "pg_upgrade").exists()
 
 

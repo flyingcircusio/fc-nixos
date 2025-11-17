@@ -79,24 +79,25 @@ def is_service_running():
     return proc.returncode == 0
 
 
-def build_new_bin_dir(
+def build_pg_bin_dir(
     log,
     pg_data_root: Path,
-    new_version: PGVersion,
+    version: PGVersion,
+    link: bool = False,
     extension_names: List[str] = [],
 ):
     extension_names_str = " ".join(extension_names)
-    nix_build_new_pg_cmd = [
+    nix_build_pg_cmd = [
         "nix-build",
         "-E",
-        f"with import <fc> {{}}; postgresql_{new_version.value}.withPackages (ps: with ps; [ {extension_names_str} ])",
-        "--out-link",
-        pg_data_root / "pg_upgrade-package",
+        f"with import <fc> {{}}; postgresql_{version.value}.withPackages (ps: with ps; [ {extension_names_str} ])",
     ]
+    if link:
+        nix_build_pg_cmd += ["--out-link", pg_data_root / "pg_upgrade-package"]
+    else:
+        nix_build_pg_cmd += ["--no-out-link"]
     try:
-        proc = run(
-            nix_build_new_pg_cmd, check=True, text=True, capture_output=True
-        )
+        proc = run(nix_build_pg_cmd, check=True, text=True, capture_output=True)
     except CalledProcessError as e:
         log.error(
             "upgrade-build-postgresql-failed",
@@ -104,8 +105,8 @@ def build_new_bin_dir(
             stderr=e.stderr,
         )
         raise
-    new_bin_dir = Path(proc.stdout.strip()) / "bin"
-    return new_bin_dir
+    bin_dir = Path(proc.stdout.strip()) / "bin"
+    return bin_dir
 
 
 class MultipleOldDirsFound(Exception):
@@ -518,6 +519,39 @@ def retrieve_shared_preload_libraries_setting(
             for line in f.readlines():
                 if line.startswith("shared_preload_libraries"):
                     return line.split("=")[1].strip()
+
+
+def check_if_checksums_need_to_be_enabled(
+    log, old_bin_dir: Path, old_data_dir: Path
+) -> bool:
+    log.info("check-checksums")
+    cmd = run_as_postgres(
+        [old_bin_dir / "pg_checksums", "-D", old_data_dir, "--check"],
+        capture_output=True,
+    )
+    if cmd.returncode == 0:
+        return False
+    if "data checksums are not enabled in cluster" in cmd.stderr:
+        return True
+    log.error("check-checksums-failed", stdout=cmd.stdout, stderr=cmd.stderr)
+    raise RuntimeError("check-checksums: unclear state")
+
+
+def run_pg_checksums_enable(log, old_bin_dir: Path, old_data_dir: Path):
+    if not check_if_checksums_need_to_be_enabled(
+        log, old_bin_dir, old_data_dir
+    ):
+        log.debug("enable-checksums-skipped")
+        return
+    log.info("enable-checksums")
+    try:
+        run_as_postgres(
+            [old_bin_dir / "pg_checksums", "-D", old_data_dir, "--enable"],
+            check=True,
+        )
+    except CalledProcessError as e:
+        log.error("enable-checksums-failed", stdout=e.stdout, stderr=e.stderr)
+        raise
 
 
 def run_pg_upgrade(
