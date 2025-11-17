@@ -1160,11 +1160,6 @@
     "pname": "zlib",
     "version": "1.3.1"
   },
-  "zoneminder": {
-    "name": "zoneminder-1.36.35",
-    "pname": "zoneminder",
-    "version": "1.36.35"
-  },
   "zsh": {
     "name": "zsh-5.9",
     "pname": "zsh",
