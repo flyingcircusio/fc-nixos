@@ -1239,8 +1239,51 @@ in
           iface: "-net.ipv4.conf.${iface.link}.rp_filter"
         ) fclib.underlay.links;
       };
-
     }
+    (lib.mkIf config.services.frr.bgpd.enable {
+      assertions = [
+        {
+          assertion = config.flyingcircus.infrastructureModule != "flyingcircus";
+          message = ''
+            For now we do not utilise frr in VMs, no BGP routes are
+                        learned and no need to delay network-online.target'';
+        }
+      ];
+      # XXX: I'd have preferred to put this into the block above, conditional on
+      # `(!isNull fclib.underlay)` like the rest of the VXLan code.
+      # Unfortunately, the tests/frr.nix does **not** enable frr
+      # via that condition (based on enc data extracted with fclib), but builds
+      # network interface mocks itself via NixOS config in the test.
+      # This causes lots of code duplication that might be prone to be
+      # forgotten to be updated at changes.
+      # When we switch to a different routing daemon (bird), we might want to
+      # revisit that testing decision. Then this service should be guarded by
+      # the same condition as the rest of the VXLan enabling.
+      systemd.services.frr-wait-online = {
+        # availability of *some* bgp-learned routes is a heuristic for frr being
+        # up and running for (some) segments.
+        script = ''
+          count=0
+          until ip -j route | jq -e 'any(.[]; .protocol == "bgp")' > /dev/null;
+          do
+            echo "Waiting for $count seconds for learned bgp routes to appear…"
+            count=$((count+1))
+            sleep 1
+          done
+        '';
+        wantedBy = [ "network-online.target" ];
+        before = [ "network-online.target" ];
+        after = [ "frr.service" ];
+        path = with pkgs; [
+          iproute2
+          jq
+        ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+      };
+    })
     (lib.mkIf (cfg.infrastructureModule == "flyingcircus") {
       # This check is here to identify abysmal but otherwise subtle network speed
       # issues *in VMs* as we have seen in PL-132971. If downloading a 1MiB test
