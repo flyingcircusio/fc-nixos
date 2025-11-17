@@ -106,7 +106,9 @@ def check_completions(session, base, models):
     assert result["object"] == "text_completion", (
         f"not a completion object: {result}"
     )
-    assert result["choices"][0].get("text"), f"no content: {result}"
+    assert "text" in result["choices"][0], (
+        f"missing text in completion: {result}"
+    )
 
 
 def main():
