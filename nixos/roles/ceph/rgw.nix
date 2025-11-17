@@ -114,7 +114,8 @@ in
         description = "Start/stop local Ceph Rados Gateway";
         wantedBy = [ "multi-user.target" ];
         wants = [ fclib.network.sto.addressUnit ];
-        after = wants;
+        requires = [ "network-online.target" ]; # PL-133952
+        after = wants ++ requires;
 
         environment = {
           PYTHONUNBUFFERED = "1";

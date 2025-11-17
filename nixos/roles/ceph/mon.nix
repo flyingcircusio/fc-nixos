@@ -165,7 +165,8 @@ in
         description = "Local Ceph Mon (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
         wants = [ fclib.network.sto.addressUnit ];
-        after = wants;
+        requires = [ "network-online.target" ]; # PL-133952
+        after = wants ++ requires;
 
         restartTriggers = [
           config.environment.etc."ceph/ceph.conf".source
@@ -242,7 +243,8 @@ in
         description = "Local Ceph MGR (via fc-ceph)";
         wantedBy = [ "multi-user.target" ];
         wants = [ fclib.network.sto.addressUnit ];
-        after = wants;
+        requires = [ "network-online.target" ]; # PL-133952
+        after = wants ++ requires;
 
         restartTriggers = [
           config.environment.etc."ceph/ceph.conf".source
