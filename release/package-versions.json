@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-142.0.7444.134",
+    "name": "chromedriver-unwrapped-142.0.7444.162",
     "pname": "chromedriver-unwrapped",
-    "version": "142.0.7444.134"
+    "version": "142.0.7444.162"
   },
   "chromium": {
-    "name": "chromium-142.0.7444.134",
+    "name": "chromium-142.0.7444.162",
     "pname": "chromium",
-    "version": "142.0.7444.134"
+    "version": "142.0.7444.162"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-144.0.2",
+    "name": "firefox-145.0",
     "pname": "firefox",
-    "version": "144.0.2"
+    "version": "145.0"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -225,9 +225,9 @@
     "version": "2.50.1"
   },
   "gitaly": {
-    "name": "gitaly-18.5.1",
+    "name": "gitaly-18.5.2",
     "pname": "gitaly",
-    "version": "18.5.1"
+    "version": "18.5.2"
   },
   "github-runner": {
     "name": "github-runner-2.329.0",
@@ -235,24 +235,24 @@
     "version": "2.329.0"
   },
   "gitlab": {
-    "name": "gitlab-18.5.1",
+    "name": "gitlab-18.5.2",
     "pname": "gitlab",
-    "version": "18.5.1"
+    "version": "18.5.2"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.29.0",
+    "name": "gitlab-container-registry-4.31.0",
     "pname": "gitlab-container-registry",
-    "version": "4.29.0"
+    "version": "4.31.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.5.1",
+    "name": "gitlab-ee-18.5.2",
     "pname": "gitlab-ee",
-    "version": "18.5.1"
+    "version": "18.5.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.5.1",
+    "name": "gitlab-pages-18.5.2",
     "pname": "gitlab-pages",
-    "version": "18.5.1"
+    "version": "18.5.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.5.0",
@@ -260,9 +260,9 @@
     "version": "18.5.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.5.1",
+    "name": "gitlab-workhorse-18.5.2",
     "pname": "gitlab-workhorse",
-    "version": "18.5.1"
+    "version": "18.5.2"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -395,9 +395,9 @@
     "version": "1.33.3+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.4.1",
+    "name": "keycloak-26.4.5",
     "pname": "keycloak",
-    "version": "26.4.1"
+    "version": "26.4.5"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.17.3",
@@ -595,9 +595,9 @@
     "version": "4.37"
   },
   "nss_latest": {
-    "name": "nss-3.116",
+    "name": "nss-3.117",
     "pname": "nss",
-    "version": "3.116"
+    "version": "3.117"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.11",
