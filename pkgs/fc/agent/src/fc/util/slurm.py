@@ -1,4 +1,3 @@
-import socket
 import subprocess
 import time
 from collections import Counter
@@ -10,7 +9,7 @@ from typing import NamedTuple, Optional
 import pyslurm
 
 from fc.util.checks import CheckResult
-from fc.util.directory import directory_connection, is_node_in_service
+from fc.util.directory import is_node_in_service
 
 
 class NodeStateError(Exception):
@@ -37,56 +36,56 @@ class DrainPreCheckResult(NamedTuple):
 
 
 def get_node_info(node_name):
-    return pyslurm.node().get_node(node_name)[node_name]
+    return pyslurm.Nodes.load().get(node_name)
 
 
 def is_node_in_error(node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     return state == "ERROR"
 
 
 def is_node_state_mixed(node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     return state == "MIXED"
 
 
 def is_node_failed(node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     return state == "FAILED"
 
 
 def is_node_idle(node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     return state == "IDLE"
 
 
 def is_node_down(node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     return state == "DOWN"
 
 
 def is_node_draining(node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     return "DRAIN" in flags
 
 
 def is_node_completing(node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     return state == "COMPLETING"
 
 
 def is_node_allocated(node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     return state == "ALLOCATED"
 
 
 def is_node_drained(log, node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     drained = state in ("IDLE", "IDLE*", "DOWN", "DOWN*") and "DRAIN" in flags
     log.debug(
         "is-node-drained",
         drained=drained,
-        node=node_info["name"],
+        node=node_info.name,
         state=state,
         flags=flags,
     )
@@ -94,23 +93,23 @@ def is_node_drained(log, node_info):
 
 
 def is_node_ready(node_info):
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     return "DRAIN" not in flags and state not in ("DOWN", "DOWN*")
 
 
-def get_all_node_names():
-    return pyslurm.node().get().keys()
+def get_all_nodes():
+    return pyslurm.Nodes.load()
 
 
-def update_nodes(state_change: dict):
-    return pyslurm.node().update(state_change)
+def modify_node(node_name: str, change: pyslurm.Node):
+    pyslurm.Node.load(node_name).modify(change)
 
 
 def run_drain_pre_checks(log, node_name, strict_state_check):
     log = log.bind(node=node_name)
 
     node_info = get_node_info(node_name)
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
 
     if is_node_drained(log.bind(op="pre-check"), node_info):
         if strict_state_check:
@@ -181,13 +180,8 @@ def drain(
         case DrainingAction.WAIT:
             pass
         case DrainingAction.DRAIN:
-            state_change_drain = {
-                "node_names": node_name,
-                "node_state": pyslurm.NODE_STATE_DRAIN,
-                "reason": reason,
-            }
-            result = update_nodes(state_change_drain)
-            log.debug("node-update-result", result=result)
+            change = pyslurm.Node(state="DRAIN", reason=reason)
+            modify_node(node_name, change)
 
     start_time = time.time()
     elapsed = 0.0
@@ -204,7 +198,7 @@ def drain(
                 "drain-finished",
                 elapsed=int(elapsed),
                 node=node_name,
-                state=node_info["state"],
+                state=node_info.state,
             )
             return
 
@@ -214,7 +208,7 @@ def drain(
         ii += 1
         elapsed = time.time() - start_time
 
-    state_str = get_node_info(node_name)["state"]
+    state_str = get_node_info(node_name).state
     state, *flags = state_str.split("+")
     log.error(
         "drain-timeout",
@@ -261,13 +255,9 @@ def drain_many(
         return
 
     if nodes_to_drain:
-        state_change_drain = {
-            "node_names": ",".join(nodes_to_drain),
-            "node_state": pyslurm.NODE_STATE_DRAIN,
-            "reason": reason,
-        }
-        result = update_nodes(state_change_drain)
-        log.debug("node-update-result", result=result)
+        for node in nodes_to_drain:
+            change = pyslurm.Node(state="DRAIN", reason=reason)
+            modify_node(node, change)
 
     log.info(
         "drain-many-waiting",
@@ -324,7 +314,7 @@ def drain_many(
     # Loop finished => time limit reached
 
     remaining_node_states = {
-        o: get_node_info(o)["state"] for o in nodes_to_wait_for
+        o: get_node_info(o).state for o in nodes_to_wait_for
     }
 
     log.error(
@@ -345,7 +335,7 @@ def down(log, node_name, reason: str, strict_state_check: bool = False):
     log.debug("down-start")
 
     node_info = get_node_info(node_name)
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     log.debug("down-state-pre", state=state, flags=flags)
 
     if state in ("DOWN", "DOWN*"):
@@ -360,13 +350,8 @@ def down(log, node_name, reason: str, strict_state_check: bool = False):
             )
             return
 
-    state_change_down = {
-        "node_names": node_name,
-        "node_state": pyslurm.NODE_STATE_DOWN,
-        "reason": reason,
-    }
-    result = update_nodes(state_change_down)
-    log.debug("node-update-result", result=result)
+    change = pyslurm.Node(state="DOWN", reason=reason)
+    modify_node(node_name, change)
     log.info(
         "down-finished",
         _replace_msg="{node} is set to DOWN.",
@@ -389,7 +374,7 @@ def run_ready_pre_checks(
 ):
     log = log.bind(node=node_name)
     node_info = get_node_info(node_name)
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
     log.debug("ready-pre-node-state", state=state, flags=flags)
 
     if state in ("ALLOCATED", "IDLE", "MIXED") and "DRAIN" not in flags:
@@ -421,7 +406,7 @@ def run_ready_pre_checks(
             )
             return ReadyPreCheckResult(state, flags, action=False)
 
-    if reason_must_match and reason_must_match not in node_info["reason"]:
+    if reason_must_match and reason_must_match not in node_info.reason:
         log.info(
             "ready-pre-reason-not-matched",
             _replace_msg=(
@@ -429,7 +414,7 @@ def run_ready_pre_checks(
                 "does not contain the expected string '{expected}'"
             ),
             expected=reason_must_match,
-            reason=node_info["reason"],
+            reason=node_info.reason,
         )
         return ReadyPreCheckResult(state, flags, action=False)
 
@@ -484,12 +469,8 @@ def ready(
     if not result.action:
         return
 
-    state_change_ready = {
-        "node_names": node_name,
-        "node_state": pyslurm.NODE_RESUME,
-    }
-    result = update_nodes(state_change_ready)
-    log.debug("node-update-result", result=result)
+    change = pyslurm.Node(state="RESUME")
+    modify_node(node_name, change)
 
     log.info(
         "ready-finished",
@@ -529,12 +510,10 @@ def ready_many(
         )
         return
 
-    state_change_ready = {
-        "node_names": ",".join(nodes_to_wait_for),
-        "node_state": pyslurm.NODE_RESUME,
-    }
-    result = update_nodes(state_change_ready)
-    log.debug("node-update-result", result=result)
+    for node_name in nodes_to_wait_for:
+        log.info("resuming-node", node=node_name)
+        change = pyslurm.Node(state="RESUME")
+        modify_node(node_name, change)
 
     log.info(
         "ready-many-waiting",
@@ -587,7 +566,7 @@ def ready_many(
     # Loop finished => time limit reached
 
     remaining_node_states = {
-        o: get_node_info(o)["state"] for o in nodes_to_wait_for
+        o: get_node_info(o).state for o in nodes_to_wait_for
     }
 
     log.error(
@@ -613,7 +592,7 @@ def check_controller(log, hostname):
         log.error("slurm-controller-ping-failed", exc_info=True)
         errors.append(f"Failed - {e.args[0]}")
 
-    all_nodes_info = pyslurm.node().get().items()
+    all_nodes_info = pyslurm.Nodes.load().items()
 
     if not all_nodes_info:
         errors.append("No nodes configured")
@@ -627,7 +606,7 @@ def check_controller(log, hostname):
     num_nodes = len(all_nodes_info)
 
     for name, info in all_nodes_info:
-        state_parts = info["state"].split("+")
+        state_parts = info.state.split("+")
         match state_parts:
             case [
                 ("IDLE*" | "DOWN*" | "ALLOCATED*" | "MIXED*" | "COMPLETING*"),
@@ -657,7 +636,7 @@ def check_controller(log, hostname):
 
     if not nodes_in:
         nodes_with_state = [
-            f'{n} ({o["state"]}, "{o["reason"]}")' for n, o in nodes_out.items()
+            f'{n} ({o.state}, "{o.reason}")' for n, o in nodes_out.items()
         ] + [f"{n} (not responding)" for n in nodes_offline]
 
         node_state_str = ", ".join(nodes_with_state)
@@ -665,7 +644,7 @@ def check_controller(log, hostname):
 
     elif nodes_out or nodes_offline:
         nodes_with_state = [
-            f'{n} ({o["state"]}, "{o["reason"]}")' for n, o in nodes_out.items()
+            f'{n} ({o.state}, "{o.reason}")' for n, o in nodes_out.items()
         ] + [f"{n} (not responding)" for n in nodes_offline]
 
         node_state_str = ", ".join(nodes_with_state)
@@ -716,7 +695,7 @@ def check_node(log, hostname):
         errors.append(f"Cannot get node info from API: {e}")
         return CheckResult(errors)
 
-    state, *flags = node_info["state"].split("+")
+    state, *flags = node_info.state.split("+")
 
     if state == "DOWN":
         warnings.append("Node is marked as DOWN, no jobs will be run.")
@@ -733,7 +712,7 @@ def check(log, hostname) -> CheckResult:
 
     try:
         controller_names = pyslurm.get_controllers()
-        slurm_nodes = pyslurm.node().get()
+        slurm_nodes = pyslurm.Nodes.load().keys()
     except ValueError as e:
         return CheckResult(errors=[e.args[0]], warnings=[])
 
@@ -818,8 +797,8 @@ def get_accounts_metrics(log, jobs) -> list[dict]:
 def get_cpu_metrics(nodes) -> dict:
     return {
         "name": "slurm_cpus",
-        "total": sum(o["cpus"] for o in nodes),
-        "alloc": sum(o["alloc_cpus"] for o in nodes),
+        "total": sum(o.total_cpus for o in nodes),
+        "alloc": sum(o.allocated_cpus for o in nodes),
     }
 
 
@@ -872,7 +851,7 @@ def get_scheduler_metrics(stats) -> dict:
 
 def get_metrics(log) -> list[dict]:
     stats = pyslurm.statistics().get()
-    nodes = pyslurm.node().get().values()
+    nodes = pyslurm.Nodes.load().values()
     jobs = pyslurm.job().get().values()
 
     return [

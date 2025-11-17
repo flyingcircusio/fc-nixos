@@ -1,7 +1,6 @@
 import json
 import os
 import socket
-import time
 import traceback
 from pathlib import Path
 from typing import NamedTuple, Optional
@@ -167,16 +166,17 @@ def drain_and_down_all(
     log = structlog.get_logger()
     # This drains all nodes in parallel.
     log.info("drain-all", _replace_msg="Draining all nodes in the cluster.")
+    nodes = fc.util.slurm.get_all_nodes().keys()
     fc.util.slurm.drain_many(
         log,
-        fc.util.slurm.get_all_node_names(),
+        nodes,
         timeout,
         reason,
         strict_state_check,
     )
     # Setting the state is fast, we can do it sequentially.
     log.info("down-all", _replace_msg="Setting all nodes to down.")
-    for node_name in fc.util.slurm.get_all_node_names():
+    for node_name in nodes:
         fc.util.slurm.down(log, node_name, reason, strict_state_check)
 
 
@@ -207,7 +207,7 @@ def ready_all(
     ),
 ):
     log = structlog.get_logger()
-    node_names = fc.util.slurm.get_all_node_names()
+    node_names = fc.util.slurm.get_all_nodes().keys()
     if required_in_service:
         # We have to check maintenance (or in-service) state against the
         # directory for some machines before we can start action.
@@ -246,11 +246,7 @@ def ready_all(
 
 
 @all_nodes_app.command()
-def state(as_json: bool = True):
-    node_names = fc.util.slurm.get_all_node_names()
-    node_info = [fc.util.slurm.get_node_info(name) for name in node_names]
-    if as_json:
-        output = json.dumps(node_info, indent=2)
-    else:
-        output = node_info
+def state():
+    nodes = fc.util.slurm.get_all_nodes()
+    output = json.dumps(nodes.to_dict(), indent=2)
     rich.print(output)
