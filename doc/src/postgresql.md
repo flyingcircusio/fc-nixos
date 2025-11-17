@@ -6,7 +6,7 @@ Managed instance of the [PostgreSQL](http://postgresql.org) database server.
 
 ## Components
 
-- PostgreSQL server (versions 13, 14, 15, 16, 17)
+- PostgreSQL server (versions 14, 15, 16, 17)
 
 :::{warning}
 
@@ -106,9 +106,9 @@ not used anymore.
 
 ## Major Version Upgrades
 
-Upgrading to a new major version, for example from 13.x to 14.x, requires a
-migration of the old database cluster living in {file}`/srv/postgresql/13` to
-a new data directory at {file}`/srv/postgresql/14`. A common way to do this
+Upgrading to a new major version, for example from 14.x to 15.x, requires a
+migration of the old database cluster living in {file}`/srv/postgresql/14` to
+a new data directory at {file}`/srv/postgresql/15`. A common way to do this
 is to use {command}`pg_upgrade` bundled with PostgreSQL. This works on our
 platform but doing it properly is not trivial.
 
@@ -141,11 +141,11 @@ are always accepted and don't have to be specified.
 If you have two databases, `mydb` and `otherdb`, for example, specify both on
 the command line.
 
-To prepare an upgrade, when you use the `postgresql13` role at the moment, and
-you want to change to `postgresql14`, run:
+To prepare an upgrade, when you use the `postgresql14` role at the moment, and
+you want to change to `postgresql15`, run:
 
 ```sh
-sudo -u postgres fc-postgresql upgrade --new-version 14 --expected mydb --expected otherdb
+sudo -u postgres fc-postgresql upgrade --new-version 15 --expected mydb --expected otherdb
 ```
 
 Note that this is done while the old role is still active. It's safe to run
@@ -164,11 +164,11 @@ to add those to the `fc-postgresql` invocation. I.e. for
 you'll need
 
 ```
-sudo -u postgres fc-postgresql upgrade --new-version 14 --expected mydb --expected otherdb --extension-names anonymizer --extension-names pgvector
+sudo -u postgres fc-postgresql upgrade --new-version 15 --expected mydb --expected otherdb --extension-names anonymizer --extension-names pgvector
 ```
 
-The command should automatically find the old data directory for 13, create
-the new data directory for 14, set it up, and succeed if no problems with the
+The command should automatically find the old data directory for 14, create
+the new data directory for 15, set it up, and succeed if no problems with the
 old cluster were found. Problems may occur if the old cluster has been
 created with non-standard settings which are not compatible with the new
 cluster, the old directory has an invalid structure or multiple old data
@@ -182,7 +182,7 @@ some time. PostgreSQL will not be available during the upgrade!
 To actually run the upgrade, use:
 
 ```sh
-sudo -u postgres fc-postgresql upgrade --new-version 14 --expected mydb --expected otherdb --upgrade-now
+sudo -u postgres fc-postgresql upgrade --new-version 15 --expected mydb --expected otherdb --upgrade-now
 ```
 
 Please note that you'll also need the `--extension-names` parameters as described
@@ -197,7 +197,7 @@ status of the old and new data dir has changed.
 
 After the migration, postgresql is still stopped. You have to change your
 configuration to the new major version to start postgresql again, for example
-by disabling the `postgresql13` role and enabling the `postgresql14` role, in
+by disabling the `postgresql14` role and enabling the `postgresql15` role, in
 one step. Run `sudo fc-manage switch -e` to activate the role change on the
 VM. The postgresql service starts automatically after the switch.
 

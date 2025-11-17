@@ -755,16 +755,6 @@
     "pname": "postgresql",
     "version": "17.7"
   },
-  "postgresql13Packages.postgis": {
-    "name": "postgis-3.6.0",
-    "pname": "postgis",
-    "version": "3.6.0"
-  },
-  "postgresql13Packages.temporal_tables": {
-    "name": "temporal_tables-1.2.2",
-    "pname": "temporal_tables",
-    "version": "1.2.2"
-  },
   "postgresql14Packages.postgis": {
     "name": "postgis-3.6.0",
     "pname": "postgis",
@@ -814,11 +804,6 @@
     "name": "temporal_tables-1.2.2",
     "pname": "temporal_tables",
     "version": "1.2.2"
-  },
-  "postgresql_13": {
-    "name": "postgresql-13.23",
-    "pname": "postgresql",
-    "version": "13.23"
   },
   "postgresql_14": {
     "name": "postgresql-14.20",
