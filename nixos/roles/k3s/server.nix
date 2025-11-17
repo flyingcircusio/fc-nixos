@@ -391,7 +391,7 @@ in
 
         flyingcircus.services.postgresql = {
           enable = true;
-          majorVersion = "13";
+          majorVersion = "14";
         };
 
         services.postgresql = {

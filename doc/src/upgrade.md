@@ -219,6 +219,10 @@ up on this event during regular office hours.
 Some low-level services (like `sshd`, `dbus` and a few others) are never swapped
 and will never be killed by `systemd-oomd`.
 
+### k3s-server
+
+The internal PostgreSQL database of k3s was updated to version 14. Also, auto-update was enabled for this internal database.
+
 ### Mail server
 
 Upstream NixOS mailserver introduced a `stateVersion` construct that requires migrations when updating to 25.11.
