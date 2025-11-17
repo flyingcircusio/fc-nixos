@@ -33,6 +33,7 @@ rec {
   check-mongodb = pyPackages.callPackage ./check-mongodb { };
   check-postfix = callPackage ./check-postfix { };
   check-rib-integrity = callPackage ./check-rib-integrity { };
+  check-skvaider = callPackage ./check-skvaider { };
   check-xfs-broken = callPackage ./check-xfs-broken { };
 
   fix-so-rpath = callPackage ./fix-so-rpath { };
