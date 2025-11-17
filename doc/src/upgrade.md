@@ -15,6 +15,27 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
 
 ## Overview
 
+- New roles:
+    - {ref}`postgresql18 <nixos-upgrade-postgresql>`
+- Removed roles:
+    - {ref}`mysql57 <nixos-upgrade-percona>`
+    - {ref}`percona83 <nixos-upgrade-percona>`
+    - {ref}`postgresql13 <nixos-upgrade-postgresql>`
+- Roles affected by significant breaking changes:
+    - {ref}`webgateway <nixos-upgrade-webgateway>`
+    - {ref}`mailserver <nixos-upgrade-mail>`
+    - {ref}`slurm-controller slurm-node <nixos-upgrade-slurm>`
+- Removed significant packages:
+    - `gcc12`
+    - `go_1_23`
+    - `k3s_1_30`
+    - `netstat`
+    - `mongodb-6-0`
+    - `percona-server_8_3`
+    - `percona-xtrabackup_8_3`
+    - `ruby_3_2`
+    - `webkitgtk`
+
 ## Why upgrade? Security
 
 Upgrading to the latest platform version as soon as possible is important to
@@ -101,16 +122,7 @@ time-window.
 
 ## Significant breaking changes
 
-### Percona / MySQL
-
-Two versions of percona are actively supported: `percona80` and `percona84`.
-Both are LTS releases still receiving bug and security fixes.
-
-`percona83` has been removed, as announced in the 25.05 release.
-Please upgrade to `percona84` before upgrading.
-
-`mysql57` has also been removed, as it's end-of-life for 2 years.
-Please upgrade to `percona80` or `percona84` before upgrading.
+(nixos-upgrade-webgateway)=
 
 ### Webgateway: nginx
 
@@ -141,6 +153,45 @@ If no warnings show up with this command, you are not affected by these changes.
 We also adapted virtual hosts configured with `services.nginx.virtualHosts` to listen on the FE network interface per
 default instead of on any interface.
 This is also the behavior of `flyingcircus.services.nginx.virtualHosts` had in fc-nixos 25.05 and before.
+
+(nixos-upgrade-percona)=
+
+### Percona / MySQL
+
+Two versions of percona are actively supported: `percona80` and `percona84`.
+Both are LTS releases still receiving bug and security fixes.
+
+`percona83` has been removed, as announced in the 25.05 release.
+Please upgrade to `percona84` before upgrading.
+
+`mysql57` has also been removed, as it's end-of-life for 2 years.
+Please upgrade to `percona80` or `percona84` before upgrading.
+
+(nixos-upgrade-postgresql)=
+
+### PostgreSQL
+
+PostgreSQL version 18 is available as a new `postgresql18` role.
+There are no breaking changes in the integration of PostgreSQL into the Flying Circus platform, but the database
+software itself includes some major changes
+listed [in its Release Notes](https://www.postgresql.org/docs/release/18.0/).
+Migrating between major versions of PostgreSQL requires migrating the data directory. See {ref}
+`nixos-postgresql-major-upgrade` for how out platform can help with that.
+
+`postgresql13` has been removed, as it's end-of-life. Please update to `postgresql14` or newer.
+
+(nixos-upgrade-slurm)=
+
+### Slurm
+
+This release contains a major version upgrade of Slurm from 24.11.x.x (NixOS 25.05) to 25.05.x.x. Nodes of a cluster
+need to be upgraded in a particular order, please consult the [upgrade instructions of the role](#nixos-slurm-upgrade)
+for details.
+
+Regarding new features or changes in Slurm itself,
+consult [its release notes](https://github.com/SchedMD/slurm/blob/slurm-25-05-0-1/RELEASE_NOTES.md).
+
+(nixos-upgrade-mail)=
 
 ### Mail server
 
@@ -176,6 +227,11 @@ A downgrade back to 25.05 is no longer possible.
 Read the [upstream release notes](https://nixos-mailserver.readthedocs.io/en/latest/release-notes.html#nixos-25-11) and
 [migration guide](https://nixos-mailserver.readthedocs.io/en/latest/migrations.html#nixos-25-11) for more informations.
 
+### Statshost
+
+We migrated the login to the Grafana instance on statshosts from LDAP to OpenID Connect via auth.flyingcircus.io.
+You can still use your credentials as normal on the new login page.
+
 ### Webgateway: nginx
 
 With the transition to the NixOS upstream module, we removed two minor functionalities:
@@ -185,21 +241,41 @@ With the transition to the NixOS upstream module, we removed two minor functiona
 - Modifying the owner of log files with every reload and restart of nginx: All process involved in processing the log
   files already set the correct owner and permissions
 
+We improved the scalability of the NixOS ACME service (available with `security.acme`).
+Adding a new certificate to a VM doesn't cause all other ACME services to be triggered.
+This leads to much faster deployment cycles for this case.
+
+### Webproxy: Varnish
+
+We now support configuring varnish listen addresses as structured config with the option
+`services.varnish.listen`. The older option `services.varnish.http_address` is still available within the 25.11
+release.`
+For further information, please read the `services.varnish.listen` documentation.
 
 ### Network Protocol Metrics
 
-Protocol-specific networking metrics have changed their name. Metrics of the scheme `net_$someProtocol_…` have been deprecated and are replaced with an equivalent metric from the `nstat_$SomeProtocol…` name space. This reflects a change in the Telegraf metrics collector used by our platform. \
+Protocol-specific networking metrics have changed their name. Metrics of the scheme `net_$someProtocol_…` have been
+deprecated and are replaced with an equivalent metric from the `nstat_$SomeProtocol…` name space. This reflects a change
+in the Telegraf metrics collector used by our platform. \
 For example: \
 `net_udp_indatagrams` -> `nstat_UDP_InDatagrams`
 
 #### What needs to be done
 
 1. **Update dashboards** and other metrics consumers: modify your Grafana panels to query `nstat_*` metrics in addition.
-2. **Keep legacy metrics temporarily**: Flying Circus NixOS ≥ 25.05 will emit both `net_` and `nstat_` metrics side‑by‑side for an overlap period.
-3. **Remove legacy metrics**: once all hosts are running *Flying Circus NixOS ≥ 25.05* and the history of `nstat_*` metrics is at least a few months old, you can drop references to `net_*`. *Flying Circus NixOS 25.11* stops emitting the legacy `net_$someProtocol` metrics.
+2. **Keep legacy metrics temporarily**: Flying Circus NixOS ≥ 25.05 will emit both `net_` and `nstat_` metrics
+   side‑by‑side for an overlap period.
+3. **Remove legacy metrics**: once all hosts are running *Flying Circus NixOS ≥ 25.05* and the history of `nstat_*`
+   metrics is at least a few months old, you can drop references to `net_*`. *Flying Circus NixOS 25.11* stops emitting
+   the legacy `net_$someProtocol` metrics.
 
-`nstat_*` metrics have similar names to their legacy equivalent and are easy to discover via Grafana’s **Explore** page. Additionally, the [Telegraf nstat plugin documentation](https://github.com/influxdata/telegraf/blob/v1.36.3/plugins/inputs/nstat/README.md#metrics) lists all available metric names.
+`nstat_*` metrics have similar names to their legacy equivalent and are easy to discover via Grafana’s **Explore** page.
+Additionally,
+the [Telegraf nstat plugin documentation](https://github.com/influxdata/telegraf/blob/v1.36.3/plugins/inputs/nstat/README.md#metrics)
+lists all available metric names.
 
 ## Known issues
+
+None.
 
 ## Significant package updates
