@@ -1,0 +1,63 @@
+From 61dfb4f7ae1e88e0b0037b055eedb5bb15c3b7eb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rados=C5=82aw=20Zarzy=C5=84ski?= <rzarzyns@redhat.com>
+Date: Fri, 17 Jun 2022 14:17:25 +0200
+Subject: [PATCH] msg: fix deadlock when handling existing but closed v2
+ connection
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The deadlock is illustrated best by the following snippet
+provided by jianwei zhang who also made the problem analysis
+(many thanks!).
+
+```
+thread-35
+AsyncMessenger::shutdown_connections         hold             AsyncMessenger::lock            std::lock_guard l{lock}
+AsyncConnection::stop                         wait                AsyncConnection::lock            lock.lock()
+
+thread-3
+ProtocolV2::handle_existing_connection        hold                AsyncConnection::lock            std::lock_guard<std::mutex> l(existing->lock)
+AsyncMessenger::accept_conn                wait                AsyncMessenger::lock            std::lock_guard l{lock}
+```
+
+Fixes: https://tracker.ceph.com/issues/55355
+Signed-off-by: Radosław Zarzyński <rzarzyns@redhat.com>
+(cherry picked from commit a6fcb1ccbc44e60416eb5f4e2c7291afe3a9d44d)
+(cherry picked from commit 244b6a161ce62fc05431f772ee71c3386b791667)
+---
+ src/msg/async/ProtocolV2.cc | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/msg/async/ProtocolV2.cc b/src/msg/async/ProtocolV2.cc
+index b8a805e91c7..15f78b43b59 100644
+--- a/src/msg/async/ProtocolV2.cc
++++ b/src/msg/async/ProtocolV2.cc
+@@ -2500,7 +2500,7 @@ CtPtr ProtocolV2::handle_reconnect(ceph::bufferlist &payload)
+ CtPtr ProtocolV2::handle_existing_connection(AsyncConnectionRef existing) {
+   ldout(cct, 20) << __func__ << " existing=" << existing << dendl;
+ 
+-  std::lock_guard<std::mutex> l(existing->lock);
++  std::unique_lock<std::mutex> l(existing->lock);
+ 
+   ProtocolV2 *exproto = dynamic_cast<ProtocolV2 *>(existing->protocol.get());
+   if (!exproto) {
+@@ -2511,6 +2511,7 @@ CtPtr ProtocolV2::handle_existing_connection(AsyncConnectionRef existing) {
+   if (exproto->state == CLOSED) {
+     ldout(cct, 1) << __func__ << " existing " << existing << " already closed."
+                   << dendl;
++    l.unlock();
+     return send_server_ident();
+   }
+ 
+@@ -2540,6 +2541,7 @@ CtPtr ProtocolV2::handle_existing_connection(AsyncConnectionRef existing) {
+         << dendl;
+     existing->protocol->stop();
+     existing->dispatch_queue->queue_reset(existing.get());
++    l.unlock();
+     return send_server_ident();
+   }
+ 
+-- 
+2.50.1 (Apple Git-155)
+
