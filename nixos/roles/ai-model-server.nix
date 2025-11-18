@@ -154,10 +154,10 @@ in
 
         services.telegraf.extraConfig.inputs.amd_rocm_smi = [
           {
+            # Exclude the GPU uuid to avoid excess label cardinality
             taginclude = [
               "host"
               "name"
-              "gpu_unique_id"
             ];
             # see https://docs.influxdata.com/telegraf/v1/input-plugins/amd_rocm_smi/ for fields
           }
