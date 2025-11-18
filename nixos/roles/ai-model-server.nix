@@ -161,7 +161,7 @@ in
             ];
           }
         ];
-        services.telegraf.extraConfig.always_include_global_tags = true;
+        services.telegraf.extraConfig.agent.always_include_global_tags = true;
         systemd.services.telegraf.path = [ pkgs.rocmPackages.rocm-smi ];
       })
     ]
