@@ -154,11 +154,12 @@ in
 
         services.telegraf.extraConfig.inputs.amd_rocm_smi = [
           {
-            # Exclude the GPU uuid to avoid excess label cardinality
-            # taginclude = [
-            #   "host"
-            #   "name"
-            # ];
+            taginclude = [
+              "host"
+              "name"
+              "gpu_unique_id"
+            ];
+            always_include_global_tags = true;
           }
         ];
         systemd.services.telegraf.path = [ pkgs.rocmPackages.rocm-smi ];
