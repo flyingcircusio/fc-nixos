@@ -159,11 +159,7 @@ in
               "name"
               "gpu_unique_id"
             ];
-            # fieldinclude = [
-            #   "card_model"
-            #   "card_series"
-            #   "card_vendor"
-            # ];
+            # see https://docs.influxdata.com/telegraf/v1/input-plugins/amd_rocm_smi/ for fields
           }
         ];
         services.telegraf.extraConfig.agent.always_include_global_tags = true;
