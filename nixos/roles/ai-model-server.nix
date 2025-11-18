@@ -155,6 +155,7 @@ in
         services.telegraf.extraConfig.inputs.amd_rocm_smi = [
           {
             taginclude = [
+              "host"
               "name"
               "gpu_unique_id"
             ];
