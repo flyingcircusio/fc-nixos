@@ -24,20 +24,25 @@
       network = {
 
         clusterDns = mkOption {
-          type = types.str;
-          default = "10.43.0.10";
+          type = types.listOf types.str;
+          default = [ "10.43.0.10" ];
           description = "Cluster IP that should be used for CoreDNS.";
         };
 
+        # These network specifications are supposed to hold at most one network
+        # per IP family. Once platform-level IPv6 support for k3s arrives, it
+        # makes sense to restructure this to single options of
+        # kubernetes.network.ipv4 = { serviceCidr…; podCidr…;};
+        # kubernetes.network.ipv6 = { serviceCidr…; podCidr…;};
         serviceCidr = mkOption {
-          type = types.str;
-          default = "10.43.0.0/16";
+          type = types.listOf types.str;
+          default = [ "10.43.0.0/16" ];
           description = "Cluster IPs are assigned to services from the subnet specified here.";
         };
 
         podCidr = mkOption {
-          type = types.str;
-          default = "10.42.0.0/16";
+          type = types.listOf types.str;
+          default = [ "10.42.0.0/16" ];
           description = "Kubernetes nodes get a /24 subnet for their pods from the given subnet.";
         };
       };

@@ -433,9 +433,18 @@ in
         flyingcircus.services.sensu-client =
           let
             kc = "${pkgs.k3s}/bin/k3s kubectl";
+
+            mkDnsCheck =
+              idx: host:
+              lib.nameValuePair "cluster-dns-${toString idx}" {
+                notification = "Cluster DNS (CoreDNS) at ${host} is not healthy";
+                command = ''
+                  ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H '${host}' -p 9153 -u /metrics
+                '';
+              };
           in
           {
-            checks = {
+            checks = lib.listToAttrs (lib.imap0 mkDnsCheck netCfg.clusterDns) // {
               kube-events-warning = {
                 notification = "Events of type 'Warning' occured in the Kubernetes cluster!";
                 command = ''
@@ -444,13 +453,6 @@ in
                     ${kc} events --types=Warning
                     exit 2
                   fi
-                '';
-              };
-
-              cluster-dns = {
-                notification = "Cluster DNS (CoreDNS) is not healthy";
-                command = ''
-                  ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H ${netCfg.clusterDns} -p 9153 -u /metrics
                 '';
               };
 
@@ -529,10 +531,11 @@ in
 
         services.k3s =
           let
+            inherit (builtins) concatStringsSep;
             k3sFlags = [
-              "--cluster-cidr=${netCfg.podCidr}"
-              "--service-cidr=${netCfg.serviceCidr}"
-              "--cluster-dns=${netCfg.clusterDns}"
+              "--cluster-cidr='${concatStringsSep "," netCfg.podCidr}'"
+              "--service-cidr='${concatStringsSep "," netCfg.serviceCidr}'"
+              "--cluster-dns='${concatStringsSep "," netCfg.clusterDns}'"
               "--node-ip=${nodeAddress}"
               "--write-kubeconfig=${defaultKubeconfig}"
               "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
