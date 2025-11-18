@@ -159,11 +159,11 @@ in
               "name"
               "gpu_unique_id"
             ];
-            fieldinclude = [
-              "card_model"
-              "card_series"
-              "card_vendor"
-            ];
+            # fieldinclude = [
+            #   "card_model"
+            #   "card_series"
+            #   "card_vendor"
+            # ];
           }
         ];
         services.telegraf.extraConfig.agent.always_include_global_tags = true;
