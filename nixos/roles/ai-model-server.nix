@@ -159,9 +159,9 @@ in
               "name"
               "gpu_unique_id"
             ];
-            always_include_global_tags = true;
           }
         ];
+        services.telegraf.extraConfig.always_include_global_tags = true;
         systemd.services.telegraf.path = [ pkgs.rocmPackages.rocm-smi ];
       })
     ]
