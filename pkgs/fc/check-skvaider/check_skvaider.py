@@ -77,7 +77,8 @@ def check_chat_completions(session, base, models):
             "model": COMPLETION_MODEL,
             "messages": [{"role": "user", "content": "Hello"}],
             "stream": False,
-            "max_tokens": 100,
+            # it's a thinking model, it requires a good amount of tokens to ensure a response.
+            "max_tokens": 1000,
         },
     )
     response.raise_for_status()
@@ -96,7 +97,8 @@ def check_completions(session, base, models):
             "model": COMPLETION_MODEL,
             "prompt": "say hello",
             "stream": False,
-            "max_tokens": 100,
+            # it's a thinking model, it requires a good amount of tokens to ensure a response.
+            "max_tokens": 1000,
         },
     )
     response.raise_for_status()
