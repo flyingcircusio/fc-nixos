@@ -160,7 +160,7 @@ in
         "ip_vs_sh"
       ];
       networking.firewall.extraCommands = ''
-        iptables -A INPUT -i cni+ -j ACCEPT
+        ip46tables -A INPUT -i cni+ -j ACCEPT
       '';
     })
 

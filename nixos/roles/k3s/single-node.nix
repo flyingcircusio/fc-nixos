@@ -116,7 +116,7 @@ in
     };
 
     networking.firewall.extraCommands = ''
-      iptables -I nixos-fw 1 -i cni+ -j ACCEPT
+      ip46tables -I nixos-fw 1 -i cni+ -j ACCEPT
     '';
 
     services.k3s =
