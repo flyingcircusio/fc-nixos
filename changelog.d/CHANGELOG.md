@@ -1,3 +1,18 @@
+# Release 2025_043
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- Multiple bugfixes in fc.qemu for edge cases improving resiliency.
+
+- Fix k3s firewall integration for IPv6 enabled k3s clusters. (PL-133889)
+
+
+
 # Release 2025_042
 
 ## NixOS XX.XX platform
