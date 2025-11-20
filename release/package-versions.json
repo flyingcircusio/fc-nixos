@@ -105,9 +105,9 @@
     "version": "1.9.9"
   },
   "containerd": {
-    "name": "containerd-2.1.4",
+    "name": "containerd-2.1.5",
     "pname": "containerd",
-    "version": "2.1.4"
+    "version": "2.1.5"
   },
   "coreutils": {
     "name": "coreutils-9.7",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.57",
+    "name": "linux-6.12.58",
     "pname": "linux",
-    "version": "6.12.57"
+    "version": "6.12.58"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.57",
+    "name": "linux-6.12.58",
     "pname": "linux",
-    "version": "6.12.57"
+    "version": "6.12.58"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
