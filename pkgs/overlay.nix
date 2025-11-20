@@ -26,6 +26,13 @@ let
       nixpkgs = nixpkgs-21_05-src;
     }
   );
+  nixpkgs-25_11-src = fetchFromGitHub {
+    hash = "sha256-DqqL6a4e8XlvCccXh8QZZenRfOLMMgJbxtxrHz3Gvio=";
+    owner = "flyingcircusio";
+    repo = "nixpkgs";
+    rev = "a729cdb2e3fcad2f08b4a50a6070940e5b88b8e1";
+  };
+  nixpkgs-25_11 = import nixpkgs-25_11-src { };
 
   inherit (super)
     fetchpatch
@@ -157,6 +164,11 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   #
   # imports from other nixpkgs versions or local definitions
   #
+
+  pkgs2511 = {
+    recurseForDerivations = true;
+    ollama-rocm = nixpkgs-25_11.ollama;
+  };
 
   apacheHttpdLegacyCrypt = self.apacheHttpd.override {
     aprutil = self.aprutil.override { libxcrypt = self.libxcrypt-legacy; };

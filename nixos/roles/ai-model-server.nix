@@ -11,9 +11,6 @@ let
   fclib = config.fclib;
   cfg = config.flyingcircus.roles.ai-model-server;
   scfg = config.services.ollama;
-
-  pkgs2511Src = (import ../../versions.nix { pkgs = pkgs; }).nixpkgs-25_11;
-  pkgs2511 = import pkgs2511Src { };
 in
 {
   options = {
@@ -148,7 +145,7 @@ in
 
         # AMD specific ollama setup
         services.ollama = {
-          package = pkgs2511.ollama-rocm;
+          package = pkgs.pkgs2511.ollama-rocm;
           acceleration = "rocm";
           # Pin to gfx1100 LLVM target for Radeon PRO W7900 GPUs
           rocmOverrideGfx = "11.0.0";
