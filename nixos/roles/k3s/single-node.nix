@@ -20,10 +20,7 @@ let
   netCfg = config.flyingcircus.kubernetes.network;
   fclib = config.fclib;
 
-  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
   nodeAddress = head fclib.network.srv.v4.addresses;
-
-  fcNameservers = config.flyingcircus.static.nameservers.${location} or [ ];
 
   # Use the same location as NixOS k8s.
   defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
