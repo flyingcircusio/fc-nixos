@@ -262,11 +262,11 @@ import ./make-test-python.nix (
           assert_file_permissions("644:nginx:nginx", "/var/log/nginx/error.log")
           assert_file_permissions("644:nginx:nginx", "/var/log/nginx/access.log")
 
-        def assert_reachable(server, intf):
-          server.succeed("curl -k https://" + intf + " | grep TESTOK")
+        def assert_reachable(server, intf, options = ""):
+          server.succeed(f"curl -k https://{intf}.local --interface eth{intf} {options} | grep TESTOK")
 
-        def assert_unreachable(server, intf):
-          server.fail("curl -k https://" + intf + " | grep TESTOK")
+        def assert_unreachable(server, intf, options = ""):
+          server.fail(f"curl -k https://{intf}.local --interface eth{intf} {options} | grep TESTOK")
 
         # Prep all servers to avoid hard to read output.
         prep(server1)
@@ -388,24 +388,24 @@ import ./make-test-python.nix (
 
         with subtest("[2] fc nginx should listen on fc by default"):
           prep(server2)
-          assert_reachable(server2, "fe.local")
-          assert_unreachable(server2, "srv.local")
+          assert_reachable(server2, "fe")
+          assert_unreachable(server2, "srv")
 
         with subtest("[3] fc nginx with fe4 specified as listen should only listen on fe4"):
           prep(server3)
-          assert_reachable(server3, "fe.local")
-          assert_reachable(server3, "fe.local -4")
-          assert_unreachable(server3, "fe.local -6")
-          assert_unreachable(server3, "srv.local")
+          assert_reachable(server3, "fe")
+          assert_reachable(server3, "fe", "-4")
+          assert_unreachable(server3, "fe", "-6")
+          assert_unreachable(server3, "srv")
 
         with subtest("[4] fc nginx with fe6 specified as listen should only listen on fe6"):
           out = server4.succeed("journalctl -xeu nginx")
           print(out)
           prep(server4)
-          assert_reachable(server4, "fe.local")
-          assert_reachable(server4, "fe.local -6")
-          assert_unreachable(server4, "fe.local -4")
-          assert_unreachable(server4, "srv.local")
+          assert_reachable(server4, "fe")
+          assert_reachable(server4, "fe", "-6")
+          assert_unreachable(server4, "fe" "-4")
+          assert_unreachable(server4, "srv")
 
         with subtest("[5] not rate limiting connections"):
           import re
