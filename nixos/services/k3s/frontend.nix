@@ -21,11 +21,6 @@ let
   serverAddress = lib.replaceStrings [ "gocept.net" ] [ "fcio.net" ] server.address or "";
   tokenFile = "/var/lib/k3s/secret_token";
 
-  serverRoleEnabled = config.flyingcircus.roles.k3s-server.enable;
-  agentRoleEnabled = config.flyingcircus.roles.k3s-agent.enable;
-  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
-  fcNameservers = config.flyingcircus.static.nameservers.${location} or [ ];
-
   serviceListenConfigs = lib.mapAttrs (
     name: conf:
     let

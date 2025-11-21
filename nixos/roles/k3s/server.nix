@@ -33,7 +33,6 @@ let
     srvFQDN
   ];
 
-  fcNameservers = config.flyingcircus.static.nameservers.${location} or [ ];
   kubectlBin = lib.getExe pkgs.kubectl;
   jqBin = lib.getExe pkgs.jq;
 
