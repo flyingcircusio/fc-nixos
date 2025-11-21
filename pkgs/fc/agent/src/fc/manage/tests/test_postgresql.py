@@ -1,12 +1,12 @@
 import json
 import traceback
-from typing import List
 from unittest.mock import Mock, patch
 
 import pytest
 import typer.testing
 
 import fc.manage.postgresql
+from fc.util.postgresql import PGVersion
 
 
 @pytest.fixture
@@ -67,16 +67,16 @@ def test_invoke_list_versions(invoke_app, monkeypatch, tmp_path):
 @patch("fc.util.postgresql.run_pg_upgrade")
 @patch("fc.util.postgresql.run_pg_upgrade_check")
 @patch("fc.util.postgresql.prepare_upgrade")
-@patch("fc.util.postgresql.build_new_bin_dir")
+@patch("fc.util.postgresql.build_pg_bin_dir")
 def test_invoke_upgrade(
-    build_new_bin_dir: Mock,
+    build_pg_bin_dir: Mock,
     prepare_upgrade: Mock,
     run_pg_upgrade_check: Mock,
     run_pg_upgrade: Mock,
     invoke_app,
 ):
     invoke_app("upgrade", "--new-version", "15")
-    build_new_bin_dir.assert_called()
+    build_pg_bin_dir.assert_called()
     prepare_upgrade.assert_called()
     run_pg_upgrade_check.assert_called()
     # Make sure we don't run destructive things by default.
@@ -85,21 +85,49 @@ def test_invoke_upgrade(
 
 @patch("fc.util.postgresql.get_current_pgdata_from_service")
 @patch("fc.util.postgresql.run_pg_upgrade")
+@patch("fc.util.postgresql.run_pg_checksums_enable")
 @patch("fc.manage.postgresql.stop_pg")
 @patch("fc.util.postgresql.prepare_upgrade")
-@patch("fc.util.postgresql.build_new_bin_dir")
+@patch("fc.util.postgresql.build_pg_bin_dir")
 def test_invoke_upgrade_now(
-    build_new_bin_dir: Mock,
+    build_pg_bin_dir: Mock,
     prepare_upgrade: Mock,
     stop_pg,
+    run_pg_checksums_enable: Mock,
     run_pg_upgrade: Mock,
     get_current_pg_data_from_service,
     invoke_app,
 ):
     invoke_app("upgrade", "--new-version", "15", "--upgrade-now")
-    build_new_bin_dir.assert_called()
+    build_pg_bin_dir.assert_called()
     prepare_upgrade.assert_called()
     run_pg_upgrade.assert_called()
+    run_pg_checksums_enable.assert_not_called()
+
+
+@patch("fc.util.postgresql.get_current_pgdata_from_service")
+@patch("fc.util.postgresql.run_pg_upgrade")
+@patch("fc.util.postgresql.run_pg_checksums_enable")
+@patch("fc.util.postgresql.get_pg_version_from_data_dir")
+@patch("fc.manage.postgresql.stop_pg")
+@patch("fc.util.postgresql.prepare_upgrade")
+@patch("fc.util.postgresql.build_pg_bin_dir")
+def test_invoke_upgrade_now_18(
+    build_pg_bin_dir: Mock,
+    prepare_upgrade: Mock,
+    stop_pg,
+    get_pg_version_from_data_dir: Mock,
+    run_pg_checksums_enable: Mock,
+    run_pg_upgrade: Mock,
+    get_current_pg_data_from_service,
+    invoke_app,
+):
+    get_pg_version_from_data_dir.return_value = PGVersion.PG15
+    invoke_app("upgrade", "--new-version", "18", "--upgrade-now")
+    build_pg_bin_dir.assert_called()
+    prepare_upgrade.assert_called()
+    run_pg_upgrade.assert_called()
+    run_pg_checksums_enable.assert_called()
 
 
 @patch("fc.util.postgresql.run_pg_upgrade")
@@ -107,9 +135,9 @@ def test_invoke_upgrade_now(
 @patch("fc.util.postgresql.prepare_upgrade")
 @patch("fc.util.postgresql.get_current_pgdata_from_service")
 @patch("fc.util.postgresql.get_pg_version_from_data_dir")
-@patch("fc.util.postgresql.build_new_bin_dir")
+@patch("fc.util.postgresql.build_pg_bin_dir")
 def test_invoke_prepare_autoupgrade(
-    build_new_bin_dir: Mock,
+    build_pg_bin_dir: Mock,
     get_pg_version_from_data_dir: Mock,
     get_current_pgdata_from_service: Mock,
     prepare_upgrade: Mock,
@@ -124,7 +152,7 @@ def test_invoke_prepare_autoupgrade(
     config.write_text(json.dumps(conf), encoding="utf8")
     monkeypatch.setattr("fc.util.postgresql.is_service_running", (lambda: True))
     invoke_app("prepare-autoupgrade", "--config", config, "--new-version", "15")
-    build_new_bin_dir.assert_called()
+    build_pg_bin_dir.assert_called()
     prepare_upgrade.assert_called()
     run_pg_upgrade_check.assert_called()
     # Make sure we don't run destructive things by default.

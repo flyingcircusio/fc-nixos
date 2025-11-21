@@ -391,7 +391,11 @@ in
 
         flyingcircus.services.postgresql = {
           enable = true;
-          majorVersion = "13";
+          majorVersion = "14";
+          autoUpgrade = {
+            enable = true;
+            expectedDatabases = [ "kubernetes" ];
+          };
         };
 
         services.postgresql = {

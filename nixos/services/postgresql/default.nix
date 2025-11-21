@@ -12,15 +12,12 @@ let
   upstreamCfg = config.services.postgresql;
   fclib = config.fclib;
   packages = {
-    "12" = pkgs.postgresql_12;
-    "13" = pkgs.postgresql_13;
     "14" = pkgs.postgresql_14;
     "15" = pkgs.postgresql_15;
     "16" = pkgs.postgresql_16;
     "17" = pkgs.postgresql_17;
+    "18" = pkgs.postgresql_18;
   };
-
-  oldestMajorVersion = head (lib.attrNames packages);
 
   listenAddresses = fclib.network.lo.dualstack.addresses ++ fclib.network.srv.dualstack.addresses;
 
@@ -499,6 +496,8 @@ in
             ++ map (extName: "--extension-names ${extName}") (mkExtensionNamesForAutoUpgrade cfg.majorVersion);
           in
           concatStringsSep " \\\n  " upgradeCmd;
+
+        environment.NIX_PATH = concatStringsSep ":" config.nix.nixPath;
 
         serviceConfig = {
           Type = "oneshot";
