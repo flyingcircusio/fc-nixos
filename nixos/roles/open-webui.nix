@@ -87,6 +87,8 @@ in
 
         ENABLE_VERSION_UPDATE_CHECK = "False";
         CORS_ALLOW_ORIGIN = "https://${cfg.hostName}";
+        WEBUI_URL = "https://${cfg.hostName}";
+
         ENABLE_EVALUATION_ARENA_MODELS = "False";
       };
     };
