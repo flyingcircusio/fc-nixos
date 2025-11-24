@@ -25,7 +25,7 @@ in
     ./graylog.nix
     ./jitsi
     ./k3s
-    ./kvm.nix
+    ./kvm
     ./lamp.nix
     ./loki.nix
     ./loghost.nix
