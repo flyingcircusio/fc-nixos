@@ -138,7 +138,7 @@ in
       in
       {
         enable = true;
-        extraFlags = lib.concatStringsSep " " k3sFlags;
+        extraFlags = k3sFlags;
       };
 
     systemd.services.fc-set-k3s-config-permissions = {
