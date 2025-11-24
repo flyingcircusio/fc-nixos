@@ -156,7 +156,6 @@ in
           {
             # Exclude the GPU uuid to avoid excess label cardinality
             taginclude = [
-              "host"
               "name"
             ];
             # see https://docs.influxdata.com/telegraf/v1/input-plugins/amd_rocm_smi/ for fields
