@@ -240,6 +240,31 @@ import ./make-test-python.nix (
         };
       };
 
+      server7 =
+        { lib, pkgs, ... }:
+        {
+          imports = [
+            (testlib.fcConfig { id = 7; })
+          ];
+
+          flyingcircus.roles.loki.enable = true;
+          flyingcircus.roles.webgateway.enable = true;
+          flyingcircus.services.nginx = {
+            virtualHosts.server = {
+              serverName = "_";
+              listenAddresses = [ "127.0.0.1" ];
+              locations."/".return = "204";
+            };
+          };
+
+          networking.domain = "gocept.net";
+          flyingcircus.encServices = [
+            {
+              address = "127.0.0.1";
+              service = "loki-collector";
+            }
+          ];
+        };
     };
 
     testScript =
@@ -275,6 +300,7 @@ import ./make-test-python.nix (
         prep(server4)
         prep(server5)
         prep(server6)
+        prep(server7)
 
         with subtest("proxy cache directory should be accessible only for nginx"):
           assert_file_permissions("700:nginx:nginx", "/var/cache/nginx/proxy")
@@ -434,7 +460,31 @@ import ./make-test-python.nix (
           assert int(errors[2]) > 900
           assert int(errors[3]) == 0
 
-        with subtest("Check that no coredumps happened"):
+        with subtest("[7] syslog connection to loki"):
+          server7.wait_for_unit('nginx.service')
+          server7.wait_for_unit('alloy.service')
+          server7.wait_for_unit('loki.service')
+
+          # We are fishing for a message here that implies that Nginx could not pass the the JSON-formatted log lines to Alloy via the syslog procotol.
+          # Both the default transport protocol and the default syslog format for listening to incoming syslog messages on Alloy's end do not match
+          # the transport protocol and syslog format that Nginx employs.
+          # Since a misconfiguration of either end causes Nginx to log errors, this test was added to verify the absence of syslog-related errors in Nginx's journal output
+          # which implies that proper configuration was applied.
+          # When trying to intentionally fail the test we found that a single curl (or potentially the first ones after a fresh startup) does not trigger the error message.
+          # This is probably due to some sort of caching / attempt at batching similar log lines.
+          # That's why instead of just once we call out to curl a few additional times and then wait for a second to give Nginx enough time to register and report the error.
+
+          server7.execute("curl -v -X POST http://127.0.0.1:80/")
+          server7.execute("curl -v -X POST http://127.0.0.1:80/")
+          server7.execute("curl -v -X POST http://127.0.0.1:80/")
+          server7.execute("curl -v -X POST http://127.0.0.1:80/")
+
+          import time
+          time.sleep(1)
+
+          server7.fail('journalctl -b -u nginx --grep "failed .* while logging to syslog"')
+
+        with subtest("[8] Check that no coredumps happened"):
           for machine in machines:
             machine.succeed("(coredumpctl --json=short 2>&1 || true) | grep 'No coredumps found'")
       '';
