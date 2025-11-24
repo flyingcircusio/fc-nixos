@@ -15,7 +15,6 @@ let
 
   location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
   srvFQDN = "${config.networking.hostName}.fcio.net";
-  nodeAddress = head fclib.network.srv.v4.addresses;
 
   lokiServer = fclib.findOneService "loki-collector";
 
@@ -539,7 +538,7 @@ in
               "--cluster-cidr='${concatStringsSep "," netCfg.podCidr}'"
               "--service-cidr='${concatStringsSep "," netCfg.serviceCidr}'"
               "--cluster-dns='${concatStringsSep "," netCfg.clusterDns}'"
-              "--node-ip=${nodeAddress}"
+              "--node-ip='${concatStringsSep "," netCfg.nodeIps}'"
               "--write-kubeconfig=${defaultKubeconfig}"
               "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
               "--flannel-backend=host-gw"
