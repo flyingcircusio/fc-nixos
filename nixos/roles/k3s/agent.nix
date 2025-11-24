@@ -123,7 +123,7 @@ in
         role = "agent";
         serverAddr = "https://${serverAddress}:6443";
         inherit tokenFile;
-        extraFlags = lib.concatStringsSep " " k3sFlags;
+        extraFlags = k3sFlags;
       };
 
       users.groups.kubernetes.gid = config.ids.gids.kubernetes;

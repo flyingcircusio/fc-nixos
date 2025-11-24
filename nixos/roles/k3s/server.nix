@@ -555,7 +555,7 @@ in
           {
             enable = true;
             role = "server";
-            extraFlags = lib.concatStringsSep " " k3sFlags;
+            extraFlags = k3sFlags;
           };
 
         systemd.services.fc-set-k3s-config-permissions = {
