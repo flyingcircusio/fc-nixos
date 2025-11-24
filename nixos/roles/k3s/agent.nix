@@ -84,9 +84,8 @@ in
           {
             # Works without auth on localhost.
             url = "http://localhost:10255";
-            # If the string isn't defined, the kubernetes plugin uses a default location
-            # for the bearer token which we don't use.
-            bearer_token_string = "doesntmatter";
+            # The bearer token file must be set.
+            bearer_token = pkgs.writeText "telegraf-kube-bearer-token" "";
           }
         ];
       };
