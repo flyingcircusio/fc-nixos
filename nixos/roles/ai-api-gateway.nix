@@ -59,17 +59,7 @@ in
           openai.models = lib.mkOption {
             description = "model config";
             type = with lib.types; attrsOf anything;
-            default = {
-              "gpt-oss:20b" = {
-                num_ctx = 131072;
-              };
-              "gpt-oss:120b" = {
-                num_ctx = 131072;
-              };
-              "mistral-small3.2:latest" = {
-                num_ctx = 65536;
-              };
-            };
+            default = { };
           };
           logging.access_log_path = lib.mkOption {
             default = "/var/log/skvaider/access.log";
@@ -168,5 +158,15 @@ in
         '';
       };
     };
+
+    flyingcircus.services.sensu-client.checks = {
+      skvaider = {
+        notification = "Skvaider provides appropriate responses";
+        interval = 300;
+        timeout = 60;
+        command = "${pkgs.fc.check-skvaider}/bin/check_skvaider https://${cfg.hostname} /etc/local/sensu-client/skvaider.key";
+      };
+    };
+
   };
 }
