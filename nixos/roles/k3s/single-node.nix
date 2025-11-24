@@ -20,8 +20,6 @@ let
   netCfg = config.flyingcircus.kubernetes.network;
   fclib = config.fclib;
 
-  nodeAddress = head fclib.network.srv.v4.addresses;
-
   # Use the same location as NixOS k8s.
   defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
 
@@ -127,7 +125,7 @@ in
           "--cluster-cidr='${concatStringsSep "," netCfg.podCidr}'"
           "--service-cidr='${concatStringsSep "," netCfg.serviceCidr}'"
           "--cluster-dns='${concatStringsSep "," netCfg.clusterDns}'"
-          "--node-ip=${nodeAddress}"
+          "--node-ip='${concatStringsSep "," netCfg.nodeIps}'"
           "--write-kubeconfig=${defaultKubeconfig}"
           "--flannel-backend=host-gw"
           "--flannel-iface=ethsrv"

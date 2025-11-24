@@ -45,6 +45,11 @@
           default = [ "10.42.0.0/16" ];
           description = "Kubernetes nodes get a /24 subnet for their pods from the given subnet.";
         };
+        nodeIps = mkOption {
+          type = with types; listOf str;
+          internal = true; # should be managed by a global IPv6 switch instead PL-133774
+          default = [ (head config.fclib.network.srv.v4.addresses) ];
+        };
       };
     };
   };
