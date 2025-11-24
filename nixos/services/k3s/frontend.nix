@@ -50,11 +50,11 @@ let
         n:
         "${
           lib.replaceStrings [ ".gocept.net" ] [ "" ] n.address
-        } ${head n.ips}:${toString conf.lbServicePort} check"
+        } ${head n.ips}:${toString conf.lbServicePort} check resolvers cluster"
         + (lib.optionalString conf.sslBackend " ssl verify none");
 
       svcServer =
-        "service ${serviceFqdn}:${toString conf.servicePort} check"
+        "service ${serviceFqdn}:${toString conf.servicePort} check resolvers cluster"
         + (lib.optionalString conf.sslBackend " ssl verify none");
 
       podOptions = lib.concatStringsSep " " [
@@ -300,8 +300,6 @@ in
           accepted_payload_size 8192 # allow larger DNS payloads
       '';
     };
-
-    networking.nameservers = lib.mkOverride 90 (lib.take 3 ([ netCfg.clusterDns ] ++ fcNameservers));
 
     services.k3s =
       let
