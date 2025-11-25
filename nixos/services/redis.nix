@@ -364,6 +364,9 @@ in
 
       You can find the password for the redis in the `password` file.
       You can also change the redis password by changing the `password` file.
+      After changing the password, please restart the systemd services that use it:
+        systemctl restart redis
+        systemctl restart telegraf
 
       Changing the config via custom.conf is not supported anymore. Please use a NixOS module
       with the option `services.redis.servers."".settings` instead.
