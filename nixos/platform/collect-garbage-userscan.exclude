@@ -11,6 +11,7 @@
 **/lucene/
 **/.lnav/
 **/solr/data/
+**/.appenv/
 # Very big, has misleading store paths which shouldn't be registered.
 **/nixpkgs*/
 **/fc-nixos/
