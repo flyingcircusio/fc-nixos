@@ -37,6 +37,8 @@ in
       systemd.tmpfiles.rules = [
         "f ${log}"
       ];
+
+      nix.settings.auto-optimise-store = true;
     }
 
     (lib.mkIf cfg.agent.collect-garbage {
