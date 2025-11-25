@@ -337,7 +337,7 @@ let
 
     ret=0
 
-    ${kubectlBin} get \
+    output=$(${kubectlBin} get \
       --kubeconfig /var/lib/k3s/tokens/sensuclient.cfg \
       pods -A -o json | \
       ${jqBin} -e '.items[] |
@@ -349,13 +349,14 @@ let
             "ns": .metadata.namespace,
             "phase": .status.phase,
             "since": .status.conditions[].lastTransitionTime,
-            "message": .status.conditions[].message}' || ret=$?
+            "message": .status.conditions[].message}') || ret=$?
 
     if [ "$ret" -eq "4" ]; then
         # no output, good.
         exit 0
     elif [ "$ret" -eq "0" ]; then
         # critical
+        echo "$output"
         exit 2
     fi
   '';
