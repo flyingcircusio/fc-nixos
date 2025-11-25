@@ -66,7 +66,12 @@ in
           "/var/lib/clamav/daily.{c[vl]d,inc}"
         ];
       };
+      # Disable systemd socket activation as this limits two max. 2 listen addresses
+      requires = lib.mkForce [ ];
     };
+
+    # Disable systemd socket activation as this limits two max. 2 listen addresses
+    systemd.sockets.clamav-daemon = fclib.mkPlatform { };
 
     systemd.services.clamav-init-database = {
       # Shouldn't have a dependency on clamav-freshclam to avoid unneccessary
