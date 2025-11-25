@@ -26,9 +26,8 @@ branches.
 
 ### NixOS XX.XX platform
 
-- userscan: correctly pick up user-owned exclude files from ~/.userscan-ignore (PL-133341)
+- userscan: multiple fixes
 
-- userscan: add more global ignores (PL-134062)
-
-  * lnav directory
-  * fc-nixos checkouts
+  * ignore missing files that may be encountered in race conditions (PL-132943)
+  * correctly pick up user-owned exclude files from ~/.userscan-ignore (PL-133341)
+  * extend global ignores: fc-nixos checkouts, lnav, appenv  (PL-134062)
