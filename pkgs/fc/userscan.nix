@@ -8,17 +8,17 @@
 
 rustPlatform.buildRustPackage rec {
   name = "fc-userscan-${version}";
-  version = "0.4.8";
+  version = "0.4.9";
 
   src = fetchFromGitHub {
     name = "fc-userscan-src-${version}";
     owner = "flyingcircusio";
     repo = "userscan";
     rev = version;
-    sha256 = "095m0f05m5kfpnnvz2bllvfbb8kfabhcxanva4cl9b1i0z8ckvnn";
+    sha256 = "sha256-slMf9OZpxNiThgK9e5L+Dc7haLe9uMva9+S+Zg0WK3E=";
   };
 
-  cargoHash = "sha256-B0kqAWnMmXFc/tQD0Nt+KDbeQa7385BBqnF0FyoGOOg=";
+  cargoHash = "sha256-nPHJU2wuqiFN2LumSrPS7vOUk3MqC64MDLempNmJHc8=";
   nativeBuildInputs = [ docutils ];
   propagatedBuildInputs = [ lzo ];
 
