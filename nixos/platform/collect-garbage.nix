@@ -37,6 +37,8 @@ in
       systemd.tmpfiles.rules = [
         "f ${log}"
       ];
+
+      nix.settings.auto-optimise-store = true;
     }
 
     (lib.mkIf cfg.agent.collect-garbage {
@@ -76,23 +78,46 @@ in
         path = with pkgs; [
           fc.userscan
           glibc
+          nix
           util-linux
         ];
         environment = {
           LANG = "en_US.utf8";
           PYTHONUNBUFFERED = "1";
         };
-        script = "${config.flyingcircus.agent.package}/bin/fc-collect-garbage";
+        script = ''
+          ${config.flyingcircus.agent.package}/bin/fc-collect-garbage
+          echo "Optimizing nix store"
+          nix-store --optimise
+        '';
       };
 
-      systemd.timers.fc-collect-garbage = {
-        description = "Timer for fc-collect-garbage";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "00:00:00";
-          RandomizedDelaySec = "24h";
+      systemd.timers.fc-collect-garbage =
+        let
+          start =
+            if lib.hasAttrByPath [ "parameters" "maintenance_allowed_start" ] cfg.enc then
+              cfg.enc.parameters.maintenance_allowed_start
+            else
+              22;
+          end =
+            if lib.hasAttrByPath [ "parameters" "maintenance_allowed_end" ] cfg.enc then
+              cfg.enc.parameters.maintenance_allowed_end
+            else
+              5;
+          maintenanceDuration = if end < start then (end + 24) - start else end - start;
+          offsetDuration = fclib.min [
+            1
+            maintenanceDuration
+          ];
+        in
+        {
+          description = "Timer for fc-collect-garbage";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = "*-*-* ${toString start}:00:00";
+            RandomizedOffsetSec = "${toString offsetDuration}h";
+          };
         };
-      };
 
     })
   ];
