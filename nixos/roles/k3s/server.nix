@@ -34,13 +34,15 @@ let
   ];
 
   fcNameservers = config.flyingcircus.static.nameservers.${location} or [ ];
+  kubectlBin = lib.getExe pkgs.kubectl;
+  jqBin = lib.getExe pkgs.jq;
 
   # Use the same location as NixOS k8s.
   defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
 
   kubernetesMakeKubeconfig =
     let
-      kc = "${pkgs.kubectl}/bin/kubectl";
+      kc = kubectlBin;
       remarshal = "${pkgs.remarshal}/bin/remarshal";
     in
     pkgs.writeScriptBin "kubernetes-make-kubeconfig" ''
@@ -335,10 +337,10 @@ let
 
     ret=0
 
-    kubectl get \
+    ${kubectlBin} get \
       --kubeconfig /var/lib/k3s/tokens/sensuclient.cfg \
       pods -A -o json | \
-      jq -e '.items[] |
+      ${jqBin} -e '.items[] |
         select(.status.phase != "Running") |
         select(.status.phase != "Succeeded") |
         select(.status.conditions | map(.lastTransitionTime | fromdateiso8601 | ((now - .) > 600)) | any) |
