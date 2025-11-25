@@ -221,7 +221,8 @@ and will never be killed by `systemd-oomd`.
 
 ### k3s-server
 
-The internal PostgreSQL database of k3s was updated to version 14. Auto-upgrade is enabled from now on, the data automatically migrates to the new PostgreSQL major release.
+The internal PostgreSQL database of k3s was updated to version 14. Auto-upgrade is enabled from now on, the data
+automatically migrates to the new PostgreSQL major release.
 
 ### Mail server
 
@@ -283,3 +284,134 @@ lists all available metric names.
 None.
 
 ## Significant package updates
+
+(as of 2025-11-24)
+
+- asterisk: 20.16.0 -> 22.6.0
+- automake: 1.16.5 -> 1.18.1
+- awscli: 1.37.21 -> 1.42.18
+- awscli2: 2.27.2 -> 2.31.11
+- bash: 5.2p37 -> 5.3p3
+- buildbot: 4.2.1 -> 4.3.0
+- bundler: 2.6.6 -> 2.7.2
+- calibre: 8.4.0 -> 8.14.0
+- cifs-utils: 7.3 -> 7.4
+- cmake: 3.31.6 -> 4.1.2
+- containerd: 2.1.5 -> 2.2.0
+- coreutils: 9.7 -> 9.8
+- coturn: 4.6.3 -> 4.7.0
+- curl: 8.14.1 -> 8.17.0
+- discourse: 3.4.7 -> 3.5.2
+- docker: 27.5.1 -> 28.5.1
+- docker-compose: 2.36.0 -> 2.39.4
+- erlang: 27.3.4.4 -> 28.1.1
+- fetchmail: 6.5.6 -> 6.6.1
+- ffmpeg: 7.1.1 -> 8.0
+- ghostscript: 10.05.1 -> 10.06.0
+- git: 2.50.1 -> 2.51.2
+- gitaly: 18.5.2 -> 18.6.0
+- gitlab: 18.5.2 -> 18.6.0
+- gitlab-ee: 18.5.2 -> 18.6.0
+- gitlab-pages: 18.5.2 -> 18.6.0
+- gitlab-runner: 18.5.0 -> 18.6.0
+- gitlab-workhorse: 18.5.2 -> 18.6.0
+- go: 1.24.9 -> 1.25.4
+- grafana: 12.0.6 -> 12.3.0
+- haproxy: 3.1.7 -> 3.2.8
+- irqbalance: 1.9.4 -> 1.9.4-unstable-2025-06-10
+- jdk: 21.0.9+8 -> 21.0.9+10
+- jetbrains.jdk: 21.0.6-b895.109 -> 21.0.8-b1148.57
+- jetty: 12.1.2 -> 12.1.4
+- jicofo: 1.0-1128 -> 1.0-1153
+- jitsi-meet: 1.0.8043 -> 1.0.8792
+- jitsi-videobridge: 2.3-220-g7cda0a66 -> 2.3-249-g9a2123ad4
+- jq: 1.7.1 -> 1.8.1
+- jre: 21.0.9+8 -> 21.0.9+10
+- k3s: 1.32.7+k3s1 -> 1.34.1+k3s1
+- k3s_1_31: 1.31.11+k3s1 -> 1.31.13+k3s1
+- k3s_1_32: 1.32.7+k3s1 -> 1.32.9+k3s1
+- k3s_1_33: 1.33.3+k3s1 -> 1.33.5+k3s1
+- kubernetes-helm: 3.17.3 -> 3.19.1
+- libffi: 3.4.8 -> 3.5.2
+- libgcrypt: 1.10.3 -> 1.11.2
+- libjpeg: 3.0.4 -> 3.1.2
+- libressl: 4.1.1 -> 4.2.1
+- libtiff: 4.7.0 -> 4.7.1
+- libwebp: 1.5.0 -> 1.6.0
+- libxml2: 2.13.8 -> 2.15.1
+- mailutils: 3.18 -> 3.19
+- mariadb: 10.11.13 -> 11.4.8
+- mastodon: 4.3.14 -> 4.5.2
+- matomo: initialized at 5.5.2 (renamed from `matomo_5`)
+- matrix-synapse: 1.141.0 -> 1.142.1
+- mcpp: 2.7.2.1 -> 2.7.2.2
+- memcached: 1.6.37 -> 1.6.39
+- mongodb: 7.0.25 -> 7.0.26
+- mstflint: 4.31.0-1 -> 4.34.0-1
+- mysql: 10.11.13 -> 11.4.8
+- nix: 2.28.5 -> 2.31.2
+- nodejs: 22.20.0 -> 22.21.1
+- nodejs_22: 22.20.0 -> 22.21.1
+- nspr: 4.37 -> 4.38.2
+- nvme-cli: 2.11 -> 2.15
+- openjdk: 21.0.9+8 -> 21.0.9+10
+- openjpeg: 2.5.2 -> 2.5.4
+- openssh: 10.0p2 -> 10.2p1
+- openssl: 3.4.3 -> 3.6.0
+- pciutils: 3.13.0 -> 3.14.0
+- pcre2: 10.44 -> 10.46
+- pdns: initialized at 4.9.8 (renamed from `powerdns`)
+- percona: 8.0.43-34 -> 8.4.6-6
+- percona-xtrabackup_8_0: 8.0.35-32 -> 8.0.35-34
+- percona-xtrabackup_8_4: initialized at 8.4.0-4 (new)
+- podman: 5.4.1 -> 5.7.0
+- poetry: 2.1.3 -> 2.2.1
+- postgresql: 17.6 -> 17.7
+- postgresql14Packages.postgis: 3.5.3 -> 3.6.1
+- postgresql15Packages.postgis: 3.5.3 -> 3.6.1
+- postgresql16Packages.postgis: 3.5.3 -> 3.6.1
+- postgresql17Packages.postgis: 3.5.3 -> 3.6.1
+- postgresql18Packages.postgis: initialized at 3.6.1 (new)
+- postgresql18Packages.temporal_tables: initialized at 1.2.2 (new)
+- postgresqlPackages.postgis: 3.5.3 -> 3.6.1
+- postgresql_14: 14.19 -> 14.20
+- postgresql_15: 15.14 -> 15.15
+- postgresql_16: 16.10 -> 16.11
+- postgresql_17: 17.6 -> 17.7
+- postgresql_18: initialized at 18.1 (new)
+- prometheus: 3.5.0 -> 3.7.2
+- promtail: 3.4.5 -> 3.5.8
+- prosody: 0.12.5 -> 13.0.2
+- python3: 3.12.12 -> 3.13.9
+- python3Packages.boto3: 1.36.21 -> 1.40.18
+- python3Packages.click: 8.1.8 -> 8.2.1
+- python3Packages.lxml: 5.3.1 -> 6.0.2
+- python3Packages.pillow: 11.2.1 -> 12.0.0
+- python3Packages.pyslurm: 24.11.0 -> 25.5.0
+- python3Packages.pystemd: 0.13.2 -> 0.13.4
+- python3Packages.pyyaml: 6.0.2 -> 6.0.3
+- python3Packages.requests: 2.32.3 -> 2.32.5
+- python3Packages.rich: 14.0.0 -> 14.1.0
+- python3Packages.structlog: 25.4.0 -> 25.5.0
+- python3Packages.supervisor: 4.2.5 -> 4.3.0
+- python3Packages.systemd-python: initialized at 235 (renamed from `python3Packages.systemd`)
+- python3Packages.urllib3: 2.3.0 -> 2.5.0
+- rabbitmq-server: 4.0.9 -> 4.2.1
+- rclone: 1.69.1 -> 1.71.2
+- re2c: 4.1 -> 4.3
+- redis: 7.2.11 -> 8.2.2
+- ruby: 3.3.9 -> 3.3.10
+- runc: 1.1.15 -> 1.3.3
+- shellcheck: initialized at 0.11.0 (new)
+- shellcheck-minimal: initialized at 0.11.0 (new)
+- slurm: 24.11.5.1 -> 25.05.3.1
+- strongswan: 5.9.14 -> 6.0.3
+- sysstat: 12.7.4 -> 12.7.7
+- systemd: 257.10 -> 258.2
+- telegraf: 1.34.3 -> 1.36.4
+- unifi: 9.1.120 -> 9.5.21
+- util-linux: 2.41.1 -> 2.41.2
+- uv: 0.7.22 -> 0.9.9
+- vim: 9.1.1566 -> 9.1.1869
+- wireguard-tools: 1.0.20210914 -> 1.0.20250521
+- xfsprogs: 6.13.0 -> 6.17.0
