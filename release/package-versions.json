@@ -10,9 +10,9 @@
     "version": "2.4.65"
   },
   "asterisk": {
-    "name": "asterisk-22.6.0",
+    "name": "asterisk-22.7.0",
     "pname": "asterisk",
-    "version": "22.6.0"
+    "version": "22.7.0"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.27",
@@ -30,9 +30,9 @@
     "version": "1.42.18"
   },
   "awscli2": {
-    "name": "awscli2-2.31.11",
+    "name": "awscli2-2.31.39",
     "pname": "awscli2",
-    "version": "2.31.11"
+    "version": "2.31.39"
   },
   "bash": {
     "name": "bash-interactive-5.3p3",
@@ -290,9 +290,9 @@
     "version": "2.12"
   },
   "haproxy": {
-    "name": "haproxy-3.2.8",
+    "name": "haproxy-3.2.9",
     "pname": "haproxy",
-    "version": "3.2.8"
+    "version": "3.2.9"
   },
   "imagemagick": {
     "name": "imagemagick-7.1.2-8",
@@ -711,14 +711,14 @@
     "version": "8.2.29"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.27",
+    "name": "php-with-extensions-8.3.28",
     "pname": "php-with-extensions",
-    "version": "8.3.27"
+    "version": "8.3.28"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.14",
+    "name": "php-with-extensions-8.4.15",
     "pname": "php-with-extensions",
-    "version": "8.4.14"
+    "version": "8.4.15"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.12",
