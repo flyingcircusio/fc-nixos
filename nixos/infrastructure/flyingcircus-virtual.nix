@@ -106,7 +106,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     enableUserSlices = true;
 
     settings.OOM = {
-      SwapUsedLimit = "50%";
+      SwapUsedLimit = "90%";
       DefaultMemoryPressureDurationSec = "20s";
     };
   };
