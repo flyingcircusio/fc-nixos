@@ -219,6 +219,16 @@ up on this event during regular office hours.
 Some low-level services (like `sshd`, `dbus` and a few others) are never swapped
 and will never be killed by `systemd-oomd`.
 
+### Handling of garbage collection
+
+We have fixed multiple things regarding our garbage collection.
+fc-userscan now correctly detects exclude files from ~/.userscan-ignore.
+Additionally global ignores were extended.
+
+Also, Optimization of the Nix Store was enabled. This feature enables automatic
+hard-linking of store paths, leading to lower storage use, while only a minimal time impact when a new store path
+gets written.
+
 ### k3s-server
 
 The internal PostgreSQL database of k3s was updated to version 14. Auto-upgrade is enabled from now on, the data
