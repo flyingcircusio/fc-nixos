@@ -6,7 +6,7 @@ set menu-timeout 30000
 
 iseq ${platform} efi && set menu-default local_efi || set menu-default local_bios
 
-set installer_url https://hydra.flyingcircus.io/job/flyingcircus/fc-24.11-production/images.netboot/latest/download/netboot.ipxe
+set installer_url https://hydra.flyingcircus.io/job/flyingcircus/fc-25.05-production/images.netboot/latest/download/netboot.ipxe
 
 # Lets assume network has already been initialized from our ipxe bootstrap script and we'd like to save time here.
 # dhcp || error
@@ -23,7 +23,8 @@ item local_efi              Boot machine from local disk (EFI)
 item netboot                Launch netboot.xyz (various live images and tools)
 item --gap --               --- Install ---
 item --gap --               Installer: ${installer_url}
-item install_nixos_24_11    Set installer to NixOS 24.11 install image
+item install_nixos_25_11    Set installer to NixOS 25.11 install image
+item install_nixos_25_05    Set installer to NixOS 25.05 install image
 item install_nixos_dev      Set installer to NixOS development install image
 item install_edit_url       Manually edit installer URL
 item install_start          Boot selected installer
@@ -35,8 +36,12 @@ choose --timeout ${menu-timeout} --default ${menu-default} selected || goto canc
 set menu-timeout 0
 goto ${selected}
 
-:install_nixos_24_11
-set installer_url https://hydra.flyingcircus.io/job/flyingcircus/fc-24.11-production/images.netboot/latest/download/netboot.ipxe
+:install_nixos_25_11
+set installer_url https://hydra.flyingcircus.io/job/flyingcircus/fc-25.11-production/images.netboot/latest/download/netboot.ipxe
+goto start
+
+:install_nixos_25_05
+set installer_url https://hydra.flyingcircus.io/job/flyingcircus/fc-25.05-production/images.netboot/latest/download/netboot.ipxe
 goto start
 
 :install_nixos_dev
