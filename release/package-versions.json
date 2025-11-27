@@ -225,9 +225,9 @@
     "version": "2.50.1"
   },
   "gitaly": {
-    "name": "gitaly-18.5.2",
+    "name": "gitaly-18.6.0",
     "pname": "gitaly",
-    "version": "18.5.2"
+    "version": "18.6.0"
   },
   "github-runner": {
     "name": "github-runner-2.329.0",
@@ -235,9 +235,9 @@
     "version": "2.329.0"
   },
   "gitlab": {
-    "name": "gitlab-18.5.2",
+    "name": "gitlab-18.6.0",
     "pname": "gitlab",
-    "version": "18.5.2"
+    "version": "18.6.0"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.31.0",
@@ -245,24 +245,24 @@
     "version": "4.31.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.5.2",
+    "name": "gitlab-ee-18.6.0",
     "pname": "gitlab-ee",
-    "version": "18.5.2"
+    "version": "18.6.0"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.5.2",
+    "name": "gitlab-pages-18.6.0",
     "pname": "gitlab-pages",
-    "version": "18.5.2"
+    "version": "18.6.0"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.5.0",
+    "name": "gitlab-runner-18.6.0",
     "pname": "gitlab-runner",
-    "version": "18.5.0"
+    "version": "18.6.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.5.2",
+    "name": "gitlab-workhorse-18.6.0",
     "pname": "gitlab-workhorse",
-    "version": "18.5.2"
+    "version": "18.6.0"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -290,9 +290,9 @@
     "version": "1.23.12"
   },
   "grafana": {
-    "name": "grafana-12.0.6",
+    "name": "grafana-12.0.7",
     "pname": "grafana",
-    "version": "12.0.6"
+    "version": "12.0.7"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -495,9 +495,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.3.14",
+    "name": "mastodon-4.3.15",
     "pname": "mastodon",
-    "version": "4.3.14"
+    "version": "4.3.15"
   },
   "matomo_5": {
     "name": "matomo-5.4.0",
@@ -740,14 +740,14 @@
     "version": "8.2.29"
   },
   "php83": {
-    "name": "php-with-extensions-8.3.27",
+    "name": "php-with-extensions-8.3.28",
     "pname": "php-with-extensions",
-    "version": "8.3.27"
+    "version": "8.3.28"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.14",
+    "name": "php-with-extensions-8.4.15",
     "pname": "php-with-extensions",
-    "version": "8.4.14"
+    "version": "8.4.15"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.12",
