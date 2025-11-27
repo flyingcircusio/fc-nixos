@@ -239,6 +239,9 @@ pkgs.vmTools.runInLinuxVM (
       echo "configuring core system link, GRUB, etc..."
       NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
 
+      echo "Ensuring initial system store optimisation ..."
+      nixos-enter --root /mnt -- nix-store --optimise
+
       # The above scripts will generate a random machine-id and we don't want to bake a single ID into all our images
       rm -f /mnt/etc/machine-id
 

@@ -3,7 +3,6 @@ import os
 import pwd
 import subprocess
 from pathlib import Path
-from typing import List, Optional
 
 import structlog
 from typer import Exit, Option, Typer
@@ -97,6 +96,12 @@ def collect_garbage(
             name=user.pw_name,
         )
 
+        user_exclude_file = Path(user.pw_dir) / ".userscan-ignore"
+        if user_exclude_file.exists():
+            user_exclude_args = ["--excludefrom", user_exclude_file]
+        else:
+            user_exclude_args = []
+
         p = subprocess.Popen(
             [
                 "fc-userscan",
@@ -108,6 +113,7 @@ def collect_garbage(
                 "--unzip=*.egg",
                 "--excludefrom",
                 exclude_file,
+                *user_exclude_args,
                 user.pw_dir,
             ],
             stdin=subprocess.DEVNULL,
