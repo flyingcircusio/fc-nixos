@@ -25,7 +25,12 @@ let
       cfg.network.addressUnit
       "fc-blockdev.service"
     ];
-    after = wants;
+    # PL-133952 safety belt. In theory, ceph as a server software should be able
+    # to bind to interfaces before external connectivity exists. But as we have
+    # not been able to figure out the actual cause, we delay the start of Ceph
+    # daemons until external connectivity is available.
+    requires = [ "network-online.target" ];
+    after = wants ++ requires;
   };
 
   defaultOsdSettings = {

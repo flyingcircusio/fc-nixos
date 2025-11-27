@@ -15,10 +15,10 @@ let
   };
 
   fc-nixos-21_05-src = fetchFromGitHub {
-    hash = "sha256-jXN15QR0e7JpXLpC9I4w6Arw2h0KUjgZMvSjv/aesms=";
+    hash = "sha256-U1ZpdP31bpWCParWr79YWVpA+oIU12cRkI2gf2l+IBM=";
     owner = "flyingcircusio";
     repo = "fc-nixos";
-    rev = "cb34a33a284401eb8ae87ec5e90d8b9226d4cff2";
+    rev = "407b9df6395bd7098aa4e1b4e3f70ee94e41948e";
   };
   fc-nixos-21_05 = builtins.trace "using fc-nixos-21.05" (
     import fc-nixos-21_05-src {

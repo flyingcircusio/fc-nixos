@@ -275,7 +275,27 @@ import ./make-test-python.nix (
             idx = 2;
             redistribute = true;
           };
-          host2 = makeFrrHost { idx = 3; };
+          host2 =
+            { ... }:
+            {
+              imports = [
+                (makeFrrHost { idx = 3; })
+                {
+                  systemd.services.waitOnlineDependentStub = {
+                    # network-online.target is only dynamically pulled in when there
+                    # are services depending on it.
+                    requires = [ "network-online.target" ];
+                    after = [ "network-online.target" ];
+                    wantedBy = [ "default.target" ];
+                    script = "echo success";
+                    serviceConfig = {
+                      Type = "oneshot";
+                      RemainAfterExit = true;
+                    };
+                  };
+                }
+              ];
+            };
           switch2 = makeFrrHost {
             idx = 4;
             redistribute = true;
@@ -305,6 +325,12 @@ import ./make-test-python.nix (
           with subtest("check basic network reachability"):
               host1.succeed("ping -c1 192.168.42.3")
               host2.succeed("ping -c1 192.168.42.1")
+
+          with subtest("basic smoketest for network-online.target"):
+            print(host2.systemctl("status frr-wait-online.service"))
+            host2.wait_for_unit("frr-wait-online.service", timeout=1)
+            host2.wait_for_unit("network-online.target", timeout=1)
+            host2.wait_for_unit("waitOnlineDependentStub.service", timeout=1)
 
           with subtest("check nexthop group sync for indirect routes after link loss"):
               # bug in (at least) 8.5.4: when a link goes down, nexthops pointing
