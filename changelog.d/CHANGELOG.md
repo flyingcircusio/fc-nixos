@@ -1,3 +1,35 @@
+# Release 2025_044
+
+## Impact
+
+- A bullet item for the Impact category.
+
+- A bullet item for the Impact category.
+
+- Our AI service gateways will be restarted potentially being unreachable for a few seconds.
+
+
+## NixOS XX.XX platform
+
+- fc.qemu: fix a race condition between inner and outer shutdown (PL-134195)
+
+- gitlab: fix false-positive nginx enableACME warning (PL-131381)
+
+- nix: enable opportunistic nix store auto-optimisation (PL-134223)
+
+  This is a preparatory step and will reduce storage needs for the
+  nix store in the future with more aggressive changes coming up
+  in the 25.11 release. Enabling opportunistic optimisation here
+  will reduce the required effort to scan the store when upgrading.
+
+- open-webui role: login flow redirects to correct host (FC-134218)
+
+- Upgrade Ollama to the most current 0.12 release to support upgraded models.
+
+- Upgrade our AI service gateway (skvaider) to improve logging, fix a few stability issues and increase monitoring depth. (PL-134061)
+
+
+
 # Release 2025_043
 
 ## Impact
