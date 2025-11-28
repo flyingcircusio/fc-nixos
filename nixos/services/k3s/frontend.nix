@@ -21,11 +21,6 @@ let
   serverAddress = lib.replaceStrings [ "gocept.net" ] [ "fcio.net" ] server.address or "";
   tokenFile = "/var/lib/k3s/secret_token";
 
-  serverRoleEnabled = config.flyingcircus.roles.k3s-server.enable;
-  agentRoleEnabled = config.flyingcircus.roles.k3s-agent.enable;
-  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
-  fcNameservers = config.flyingcircus.static.nameservers.${location} or [ ];
-
   serviceListenConfigs = lib.mapAttrs (
     name: conf:
     let
@@ -296,17 +291,18 @@ in
       // serviceListenConfigs;
       extraConfig = ''
         resolvers cluster
-          nameserver coredns ${netCfg.clusterDns}:53
+        ${lib.strings.concatImapStringsSep "\n" (
+          i: host: "  nameserver coredns${toString i} ${host}:53"
+        ) netCfg.clusterDns}
           accepted_payload_size 8192 # allow larger DNS payloads
       '';
     };
 
     services.k3s =
       let
-        nodeAddress = head fclib.network.srv.v4.addresses;
         k3sFlags = [
           "--flannel-iface=${fclib.network.srv.interface}"
-          "--node-ip=${nodeAddress}"
+          "--node-ip='${concatStringsSep "," netCfg.nodeIps}'"
           "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
           "--data-dir=/var/lib/k3s"
         ];
@@ -317,7 +313,7 @@ in
         role = "agent";
         serverAddr = "https://${serverAddress}:6443";
         inherit tokenFile;
-        extraFlags = lib.concatStringsSep " " k3sFlags;
+        extraFlags = k3sFlags;
       };
 
     ### Fixes for upstream issues
