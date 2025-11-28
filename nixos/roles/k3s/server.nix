@@ -34,13 +34,15 @@ let
   ];
 
   fcNameservers = config.flyingcircus.static.nameservers.${location} or [ ];
+  kubectlBin = lib.getExe pkgs.kubectl;
+  jqBin = lib.getExe pkgs.jq;
 
   # Use the same location as NixOS k8s.
   defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
 
   kubernetesMakeKubeconfig =
     let
-      kc = "${pkgs.kubectl}/bin/kubectl";
+      kc = kubectlBin;
       remarshal = "${pkgs.remarshal}/bin/remarshal";
     in
     pkgs.writeScriptBin "kubernetes-make-kubeconfig" ''
@@ -242,7 +244,7 @@ let
     set -o pipefail
 
     user="$1"
-    secret="$2"
+    secretname="$2"
 
     tokendir=/var/lib/k3s/tokens
     kubectl="${pkgs.kubectl}/bin/kubectl"
@@ -250,7 +252,7 @@ let
     jq="${pkgs.jq}/bin/jq"
     export KUBECONFIG=${defaultKubeconfig}
 
-    if [ -z "$secret" ]; then
+    if [ -z "$secretname" ]; then
       echo 'missing kubernetes secret name' 2>&1
       exit 1
     fi
@@ -274,7 +276,7 @@ let
     rc=0
     for i in 1 2 3 4 5; do
       "$kubectl" get -n kube-system -o jsonpath='{.data.token}' \
-        secret "$secret" > "$tokendir/$user.b64" && \
+        secret "$secretname" > "$tokendir/$user.b64" && \
         test -s "$tokendir/$user.b64"
       rc="$?"
 
@@ -306,6 +308,7 @@ let
 
     mv "$tokendir/$user.tmp" "$tokendir/$user"
     mv "$tokendir/$user.cfg.tmp" "$tokendir/$user.cfg"
+    echo "Successfully initialised token for secret \"$secretname\" for user \"$user\"."
     rm -f "$tokendir/$user.b64"
   '';
 
@@ -326,7 +329,6 @@ let
       Restart = "on-failure";
       RestartSec = 10;
       ExecStart = "${authTokenScript}/bin/kubernetes-write-auth-token ${user} ${secret}";
-      ExecCondition = "${pkgs.coreutils}/bin/test ! -s /var/lib/k3s/tokens/${user} -o ! -s /var/lib/k3s/tokens/${user}.cfg";
     };
   };
 
@@ -335,10 +337,10 @@ let
 
     ret=0
 
-    kubectl get \
+    output=$(${kubectlBin} get \
       --kubeconfig /var/lib/k3s/tokens/sensuclient.cfg \
       pods -A -o json | \
-      jq -e '.items[] |
+      ${jqBin} -e '.items[] |
         select(.status.phase != "Running") |
         select(.status.phase != "Succeeded") |
         select(.status.conditions | map(.lastTransitionTime | fromdateiso8601 | ((now - .) > 600)) | any) |
@@ -347,13 +349,14 @@ let
             "ns": .metadata.namespace,
             "phase": .status.phase,
             "since": .status.conditions[].lastTransitionTime,
-            "message": .status.conditions[].message}' || ret=$?
+            "message": .status.conditions[].message}') || ret=$?
 
     if [ "$ret" -eq "4" ]; then
         # no output, good.
         exit 0
     elif [ "$ret" -eq "0" ]; then
         # critical
+        echo "$output"
         exit 2
     fi
   '';
