@@ -156,11 +156,12 @@ in
           {
             # Exclude the GPU uuid to avoid excess label cardinality
             taginclude = [
-              "host"
               "name"
             ];
+            # see https://docs.influxdata.com/telegraf/v1/input-plugins/amd_rocm_smi/ for fields
           }
         ];
+        services.telegraf.extraConfig.agent.always_include_global_tags = true;
         systemd.services.telegraf.path = [ pkgs.rocmPackages.rocm-smi ];
       })
     ]
