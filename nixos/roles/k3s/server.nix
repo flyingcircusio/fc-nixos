@@ -15,7 +15,6 @@ let
 
   location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
   srvFQDN = "${config.networking.hostName}.fcio.net";
-  nodeAddress = head fclib.network.srv.v4.addresses;
 
   lokiServer = fclib.findOneService "loki-collector";
 
@@ -33,7 +32,6 @@ let
     srvFQDN
   ];
 
-  fcNameservers = config.flyingcircus.static.nameservers.${location} or [ ];
   kubectlBin = lib.getExe pkgs.kubectl;
   jqBin = lib.getExe pkgs.jq;
 
@@ -437,9 +435,18 @@ in
         flyingcircus.services.sensu-client =
           let
             kc = "${pkgs.k3s}/bin/k3s kubectl";
+
+            mkDnsCheck =
+              idx: host:
+              lib.nameValuePair "cluster-dns-${toString idx}" {
+                notification = "Cluster DNS (CoreDNS) at ${host} is not healthy";
+                command = ''
+                  ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H '${host}' -p 9153 -u /metrics
+                '';
+              };
           in
           {
-            checks = {
+            checks = lib.listToAttrs (lib.imap0 mkDnsCheck netCfg.clusterDns) // {
               kube-events-warning = {
                 notification = "Events of type 'Warning' occured in the Kubernetes cluster!";
                 command = ''
@@ -448,13 +455,6 @@ in
                     ${kc} events --types=Warning
                     exit 2
                   fi
-                '';
-              };
-
-              cluster-dns = {
-                notification = "Cluster DNS (CoreDNS) is not healthy";
-                command = ''
-                  ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H ${netCfg.clusterDns} -p 9153 -u /metrics
                 '';
               };
 
@@ -533,11 +533,12 @@ in
 
         services.k3s =
           let
+            inherit (builtins) concatStringsSep;
             k3sFlags = [
-              "--cluster-cidr=${netCfg.podCidr}"
-              "--service-cidr=${netCfg.serviceCidr}"
-              "--cluster-dns=${netCfg.clusterDns}"
-              "--node-ip=${nodeAddress}"
+              "--cluster-cidr='${concatStringsSep "," netCfg.podCidr}'"
+              "--service-cidr='${concatStringsSep "," netCfg.serviceCidr}'"
+              "--cluster-dns='${concatStringsSep "," netCfg.clusterDns}'"
+              "--node-ip='${concatStringsSep "," netCfg.nodeIps}'"
               "--write-kubeconfig=${defaultKubeconfig}"
               "--node-taint=node-role.kubernetes.io/server=true:NoSchedule"
               "--flannel-backend=host-gw"
@@ -553,7 +554,7 @@ in
           {
             enable = true;
             role = "server";
-            extraFlags = lib.concatStringsSep " " k3sFlags;
+            extraFlags = k3sFlags;
           };
 
         systemd.services.fc-set-k3s-config-permissions = {

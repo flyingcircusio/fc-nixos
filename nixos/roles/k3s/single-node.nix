@@ -20,11 +20,6 @@ let
   netCfg = config.flyingcircus.kubernetes.network;
   fclib = config.fclib;
 
-  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
-  nodeAddress = head fclib.network.srv.v4.addresses;
-
-  fcNameservers = config.flyingcircus.static.nameservers.${location} or [ ];
-
   # Use the same location as NixOS k8s.
   defaultKubeconfig = "/etc/kubernetes/cluster-admin.kubeconfig";
 
@@ -90,30 +85,34 @@ in
       bridge-utils
     ];
 
-    flyingcircus.services.sensu-client.checks = {
+    flyingcircus.services.sensu-client.checks =
+      let
+        mkDnsCheck =
+          idx: host:
+          lib.nameValuePair "cluster-dns-${toString idx}" {
+            notification = "Cluster DNS (CoreDNS) at ${host} is not healthy";
+            command = ''
+              ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H '${host}' -p 9153 -u /metrics
+            '';
+          };
+      in
+      lib.listToAttrs (lib.imap0 mkDnsCheck netCfg.clusterDns)
+      // {
+        k3s-kubelet = {
+          notification = "K3s kubelet is not working";
+          command = ''
+            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10248 -u /healthz
+          '';
+        };
 
-      cluster-dns = {
-        notification = "Cluster DNS (CoreDNS) is not healthy";
-        command = ''
-          ${pkgs.monitoring-plugins}/bin/check_http -j HEAD -H ${netCfg.clusterDns} -p 9153 -u /metrics
-        '';
+        k3s-proxy = {
+          notification = "K3s proxy is not working";
+          command = ''
+            ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10256 -u /healthz
+          '';
+        };
+
       };
-
-      k3s-kubelet = {
-        notification = "K3s kubelet is not working";
-        command = ''
-          ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10248 -u /healthz
-        '';
-      };
-
-      k3s-proxy = {
-        notification = "K3s proxy is not working";
-        command = ''
-          ${pkgs.monitoring-plugins}/bin/check_http -H localhost -p 10256 -u /healthz
-        '';
-      };
-
-    };
 
     networking.firewall.extraCommands = ''
       ip46tables -I nixos-fw 1 -i cni+ -j ACCEPT
@@ -121,11 +120,12 @@ in
 
     services.k3s =
       let
+        inherit (builtins) concatStringsSep;
         k3sFlags = [
-          "--cluster-cidr=${netCfg.podCidr}"
-          "--service-cidr=${netCfg.serviceCidr}"
-          "--cluster-dns=${netCfg.clusterDns}"
-          "--node-ip=${nodeAddress}"
+          "--cluster-cidr='${concatStringsSep "," netCfg.podCidr}'"
+          "--service-cidr='${concatStringsSep "," netCfg.serviceCidr}'"
+          "--cluster-dns='${concatStringsSep "," netCfg.clusterDns}'"
+          "--node-ip='${concatStringsSep "," netCfg.nodeIps}'"
           "--write-kubeconfig=${defaultKubeconfig}"
           "--flannel-backend=host-gw"
           "--flannel-iface=ethsrv"
@@ -136,7 +136,7 @@ in
       in
       {
         enable = true;
-        extraFlags = lib.concatStringsSep " " k3sFlags;
+        extraFlags = k3sFlags;
       };
 
     systemd.services.fc-set-k3s-config-permissions = {

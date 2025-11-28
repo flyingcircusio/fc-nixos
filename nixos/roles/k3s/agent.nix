@@ -9,17 +9,17 @@ with builtins;
 
 let
   cfg = config.flyingcircus.roles.k3s-agent;
+  netCfg = config.flyingcircus.kubernetes.network;
   fclib = config.fclib;
   server = fclib.findOneService "k3s-server-server";
   agents = fclib.findServices "k3s-agent-agent";
   agentNames = map (service: head (lib.splitString "." service.address)) agents;
   otherAgentNames = filter (m: m != config.networking.hostName) agentNames;
   serverAddress = lib.replaceStrings [ "gocept.net" ] [ "fcio.net" ] server.address or "";
-  agentAddress = head fclib.network.srv.v4.addresses;
   tokenFile = "/var/lib/k3s/secret_token";
   k3sFlags = [
     "--flannel-iface=${fclib.network.srv.interface}"
-    "--node-ip=${agentAddress}"
+    "--node-ip='${concatStringsSep "," netCfg.nodeIps}'"
     "--data-dir=/var/lib/k3s"
     # k3s disables this port by default, we re-enable it to conform to
     # standard k8s behaviour.
@@ -123,7 +123,7 @@ in
         role = "agent";
         serverAddr = "https://${serverAddress}:6443";
         inherit tokenFile;
-        extraFlags = lib.concatStringsSep " " k3sFlags;
+        extraFlags = k3sFlags;
       };
 
       users.groups.kubernetes.gid = config.ids.gids.kubernetes;
