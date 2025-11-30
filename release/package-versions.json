@@ -220,9 +220,9 @@
     "version": "2.51.2"
   },
   "gitaly": {
-    "name": "gitaly-18.6.0",
+    "name": "gitaly-18.6.1",
     "pname": "gitaly",
-    "version": "18.6.0"
+    "version": "18.6.1"
   },
   "github-runner": {
     "name": "github-runner-2.329.0",
@@ -230,34 +230,34 @@
     "version": "2.329.0"
   },
   "gitlab": {
-    "name": "gitlab-18.6.0",
+    "name": "gitlab-18.6.1",
     "pname": "gitlab",
-    "version": "18.6.0"
+    "version": "18.6.1"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.31.0",
+    "name": "gitlab-container-registry-4.32.0",
     "pname": "gitlab-container-registry",
-    "version": "4.31.0"
+    "version": "4.32.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.6.0",
+    "name": "gitlab-ee-18.6.1",
     "pname": "gitlab-ee",
-    "version": "18.6.0"
+    "version": "18.6.1"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.6.0",
+    "name": "gitlab-pages-18.6.1",
     "pname": "gitlab-pages",
-    "version": "18.6.0"
+    "version": "18.6.1"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.6.0",
+    "name": "gitlab-runner-18.5.0",
     "pname": "gitlab-runner",
-    "version": "18.6.0"
+    "version": "18.5.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.6.0",
+    "name": "gitlab-workhorse-18.6.1",
     "pname": "gitlab-workhorse",
-    "version": "18.6.0"
+    "version": "18.6.1"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -746,9 +746,9 @@
     "version": "126"
   },
   "postfix": {
-    "name": "postfix-3.10.5",
+    "name": "postfix-3.10.6",
     "pname": "postfix",
-    "version": "3.10.5"
+    "version": "3.10.6"
   },
   "postgresql": {
     "name": "postgresql-17.7",
@@ -1111,9 +1111,9 @@
     "version": "2.41.2"
   },
   "uv": {
-    "name": "uv-0.9.9",
+    "name": "uv-0.9.13",
     "pname": "uv",
-    "version": "0.9.9"
+    "version": "0.9.13"
   },
   "varnish": {
     "name": "varnish-7.7.3",
