@@ -3,10 +3,10 @@
 [
   {
     imageName = "docker.io/rancher/klipper-helm";
-    imageDigest = "sha256:5e2e5ab00d5f2652bfea2bc5554d07b57a015fe574434b275a2cb11c2d135c04";
-    hash = "sha256-PoTSj4QE6uNVdZ6GozT1SPcV6nZGb0l/bKI4Mxflghg=";
+    imageDigest = "sha256:251a6a3983934f1026c34f4337fc5a87e093a142438c7d16f7b31c179162176e";
+    hash = "sha256-73LrDUTjjlIWj3CAPMY184Rmb/8V/HzlbejEa5b9HKw=";
     finalImageName = "docker.io/rancher/klipper-helm";
-    finalImageTag = "v0.9.8-build20250709";
+    finalImageTag = "v0.9.10-build20251111";
   }
   {
     imageName = "docker.io/rancher/klipper-lb";
@@ -17,17 +17,17 @@
   }
   {
     imageName = "docker.io/rancher/local-path-provisioner";
-    imageDigest = "sha256:80496fdeb307541007621959aa13aed41d31db9cd2dc4167c19833e0bfa3878c";
-    hash = "sha256-NoiVft/eO+mCWb9esUgyPTP7C2ZV9wG89VPS7mHYRWA=";
+    imageDigest = "sha256:9289da488b07912cb4128eb96928a331a5f3e60c28c5cfc5790f354a4ad0cc68";
+    hash = "sha256-dRczkX+UmwSaKND50M9xuUSG9bi5G6R/w7ZEAqLYw/0=";
     finalImageName = "docker.io/rancher/local-path-provisioner";
-    finalImageTag = "v0.0.31";
+    finalImageTag = "v0.0.32";
   }
   {
     imageName = "docker.io/rancher/mirrored-coredns-coredns";
-    imageDigest = "sha256:1391544c978029fcddc65068f6ad67f396e55585b664ecccd7fefba029b9b706";
-    hash = "sha256-S8P1QtRJIFrveJV19W5N42vDy2TgaExxwBOXQa+/XdI=";
+    imageDigest = "sha256:9b9128672209474da07c91439bf15ed704ae05ad918dd6454e5b6ae14e35fee6";
+    hash = "sha256-ZZIGTFi0bKgrWNc0SbiFCi+0pammSHxe9mzuRYAlB4U=";
     finalImageName = "docker.io/rancher/mirrored-coredns-coredns";
-    finalImageTag = "1.12.3";
+    finalImageTag = "1.13.1";
   }
   {
     imageName = "docker.io/rancher/mirrored-library-busybox";
@@ -38,10 +38,10 @@
   }
   {
     imageName = "docker.io/rancher/mirrored-library-traefik";
-    imageDigest = "sha256:9595fc80fa8ed6c5f3876416332ca7c88e8f255daaf265cff6b857b8d0f44503";
-    hash = "sha256-wjLZg3IaKyTwmxa9Br8Ttzt8zrLxOqzmesONtk3aLMI=";
+    imageDigest = "sha256:c56901603318ee375477ee5c3f50d175d3ec42dc102efc2f1158f0756ba4dffa";
+    hash = "sha256-03dNEZ7OH3Hc/lBDHokyV2aVDF1/Y+Qy7ZefvCyf8t4=";
     finalImageName = "docker.io/rancher/mirrored-library-traefik";
-    finalImageTag = "3.3.6";
+    finalImageTag = "3.5.1";
   }
   {
     imageName = "docker.io/rancher/mirrored-metrics-server";

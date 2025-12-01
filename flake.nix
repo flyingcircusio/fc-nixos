@@ -20,7 +20,7 @@
   description = "Flying Circus NixOS platform (dev/release tooling)";
 
   inputs = {
-    nixpkgs.url = "github:flyingcircusio/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:flyingcircusio/nixpkgs/nixos-26.05";
     nixos-mailserver = {
       url = "gitlab:flyingcircus/nixos-mailserver/nixos-25.11?host=gitlab.flyingcircus.io";
       inputs.nixpkgs.follows = "nixpkgs";
