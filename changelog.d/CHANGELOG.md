@@ -1,3 +1,65 @@
+# Release 2025_045
+
+## Impact
+
+- A bullet item for the Impact category.
+
+- k3s clusters with custom `clusterDNS`, `podCidr`, `serviceCidr` will fail to evaluate until adapted. See the change description below for details.
+
+- A bullet item for the Impact category.
+
+- A bullet item for the Impact category.
+
+- A bullet item for the Impact category.
+
+- Our AI service gateways will be restarted potentially being unreachable for a few seconds.
+
+
+## NixOS XX.XX platform
+
+- fc.qemu: fix a race condition between inner and outer shutdown (PL-134195)
+
+- k3s clusters: options `clusterDns`, `podCidr`, `serviceCidr` are now a list
+
+  affected roles: `k3s-agent`, `k3s-server`, `k3s-single-node`, `webgateway` when in a resource group with k3s nodes (PL-133889)
+
+  The options `clusterDns`, `podCidr`, `serviceCidr` in the namespace `flyingcircus.kubernetes.network` have changed
+  from option type *string* to a *list of strings*. This better reflects the ability to specify multiple IP
+  address entries and process them at other parts of the configuration. \
+  Deployments deviating from the default option value require manual adjustment of the option. The new system
+  will fail to evaluate, preventing this release from bein installed automatically until the configuration
+  value has been adjusted.
+
+- Provide a helper to update Ubuntu base images. (PL-133325)
+
+- ai-model-server: GPU monitoring amd_rocm_smi plugin: ensure all global tags are included but only include rocm specific tags that do not endanger label cardinality. Note: we include all fields, some are converted to tags but those are fine
+
+- nixos/k3s: Fix resolving of cluster-internal hostnames in our frontend module (PL-134217)
+
+- userscan: multiple fixes
+
+  * ignore missing files that may be encountered in race conditions (PL-132943)
+  * correctly pick up user-owned exclude files from ~/.userscan-ignore (PL-133341)
+  * extend global ignores: fc-nixos checkouts, lnav, appenv  (PL-134062)
+
+- add a regression test to ensure that nginx can connect to alloy's syslog interface (PL-133746)
+
+- Increase memory/swap limits before triggering the userspace OOM daemon.
+
+  This decreases sensitivity and allows for higher usage of swap but is
+  still sufficiently responsive to suppress negative effects of aggressive
+  memory leaks. On the other hand it makes systems with tight memory
+  constraints (specifically staging systems) less prone to constant OOMing
+  causing noise and alert fatigue. (PL-134222)
+
+- open-webui role: login flow redirects to correct host (FC-134218)
+
+- Upgrade our AI service gateway (skvaider) to improve logging, fix a few stability issues and increase monitoring depth. (PL-134061)
+
+- Fix k3s firewall integration for IPv6 enabled k3s clusters. (PL-133889)
+
+
+
 # Release 2025_023
 
 
