@@ -106,8 +106,13 @@ time-window.
 
 ## Significant breaking changes
 
-## Other notable changes
+### Mailserver / Mailstub
 
+Configuring postfix via `services.postfix.extraConfig` or `/etc/local/postfix/main.cf`
+is not allowed anymore.
+Please migrate to structured config with `services.postfix.settings.main`.
+
+## Other notable changes
 
 ## Known issues
 

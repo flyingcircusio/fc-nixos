@@ -159,27 +159,6 @@ in
             }
           ];
 
-          warnings =
-            lib.optionals
-              (config.services.postfix.extraConfig != null && builtins.pathExists "/etc/local/mail/main.cf")
-              [
-                ''
-                  Configuring postfix via /etc/local/mail/main.cf is deprecated.
-                  Please migrate to structured config with services.postfix.settings.main.
-                  This option of configuring will be removed with fc-nixos 26.05.
-                ''
-              ]
-            ++
-              lib.optionals
-                (config.services.postfix.extraConfig != null && (!builtins.pathExists "/etc/local/mail/main.cf"))
-                [
-                  ''
-                    services.postfix.extraConfig is deprecated.
-                    Please migrate to structured config with services.postfix.settings.main.
-                    This option of configuring will be removed with fc-nixos 26.05.
-                  ''
-                ];
-
           environment = {
             etc = {
               "local/mail/dns.zone".text = import ./zone.nix { inherit config lib; };
@@ -429,11 +408,6 @@ in
                 value = copyToStore path;
               }) dynamicMapFiles
             );
-
-            extraConfig = lib.mkIf (builtins.pathExists "/etc/local/mail/main.cf") ''
-              # included from /etc/local/mail/main.cf
-              ${fclib.configFromFile "/etc/local/mail/main.cf" ""}
-            '';
 
             extraAliases = ''
               abuse: root
