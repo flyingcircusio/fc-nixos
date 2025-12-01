@@ -36,6 +36,10 @@ Contact our [support](/platform/index.html#support) for upgrade assistance.
     - `ruby_3_2`
     - `webkitgtk`
 
+NixOS upstream release notes:
+  - [NixOS release notes](https://nixos.org/manual/nixos/stable/release-notes#sec-release-25.11)
+  - [Nixpkgs release notes](https://nixos.org/manual/nixpkgs/stable/release-notes#sec-nixpkgs-release-25.11)
+
 ## Why upgrade? Security
 
 Upgrading to the latest platform version as soon as possible is important to
