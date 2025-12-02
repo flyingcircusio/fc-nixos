@@ -53,7 +53,7 @@ rec {
         You can also look at the suffix of eth1' MAC using
         server.execute("ip a >&2") to get the ID)
 
-      net.(sto|stb|fe)
+      net.(sto|stb|fe|srv)
 
         Boolean flag to enable/disable this particular interface. Default fe/srv=true, rest false
 
@@ -166,6 +166,7 @@ rec {
         in
         lib.foldlAttrs go [ ] nodes;
 
+      # XXX: srv interfaces are missing (PL-134248)
       extraHosts = lib.concatStringsSep "\n" hostEntries;
     in
     {
