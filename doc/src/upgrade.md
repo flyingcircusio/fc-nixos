@@ -135,7 +135,7 @@ This option will be removed, so please migrate to `services.nginx.virtualHosts` 
 
 We have removed and changed a few custom options in this process:
 
-- flyingcircus.services.nginx.disableDHEATMitigation: The DHEAT mitigation is now part of
+- `flyingcircus.services.nginx.disableDHEATMitigation`: The DHEAT mitigation is now part of
   services.nginx.recommendedTlsSettings. Please override the nginx option `ssl_prefer_server_ciphers` manually if you
   explicitly want to disable this behavior.
 - `flyingcircus.nginx.virtualHosts.<vhost>.listenAddress`: Use `services.nginx.virtualHosts.<vhost>.listenAddresses`
@@ -175,8 +175,8 @@ PostgreSQL version 18 is available as a new `postgresql18` role.
 There are no breaking changes in the integration of PostgreSQL into the Flying Circus platform, but the database
 software itself includes some major changes
 listed [in its Release Notes](https://www.postgresql.org/docs/release/18.0/).
-Migrating between major versions of PostgreSQL requires migrating the data directory. See {ref}
-`nixos-postgresql-major-upgrade` for how out platform can help with that.
+Migrating between major versions of PostgreSQL requires migrating the data directory. See
+{ref}`nixos-postgresql-major-upgrade` for how our platform can help with that.
 
 `postgresql13` has been removed, as it's end-of-life. Please update to `postgresql14` or newer.
 
@@ -222,7 +222,7 @@ and will never be killed by `systemd-oomd`.
 ### Handling of garbage collection
 
 We have fixed multiple things regarding our garbage collection.
-fc-userscan now correctly detects exclude files from ~/.userscan-ignore.
+fc-userscan now correctly detects exclude files from `~/.userscan-ignore`.
 Additionally global ignores were extended.
 
 Also, Optimization of the Nix Store was enabled. This feature enables automatic
