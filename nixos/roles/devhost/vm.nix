@@ -72,6 +72,7 @@ let
       lib.recursiveUpdate defaultService {
         enable = vmCfg.enable;
         wantedBy = [ "machines.target" ];
+        after = [ "network-setup.service" ];
 
         serviceConfig = {
           ExecStart = (
