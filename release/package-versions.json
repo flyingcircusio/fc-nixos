@@ -670,9 +670,9 @@
     "version": "10.44"
   },
   "percona": {
-    "name": "percona-server-8.0.43-34",
+    "name": "percona-server-8.0.44-35",
     "pname": "percona-server",
-    "version": "8.0.43-34"
+    "version": "8.0.44-35"
   },
   "percona-server": {
     "name": "percona-server-8.4.6-6",
@@ -680,9 +680,9 @@
     "version": "8.4.6-6"
   },
   "percona-server_8_0": {
-    "name": "percona-server-8.0.43-34",
+    "name": "percona-server-8.0.44-35",
     "pname": "percona-server",
-    "version": "8.0.43-34"
+    "version": "8.0.44-35"
   },
   "percona-xtrabackup_8_0": {
     "name": "percona-xtrabackup-8.0.35-32",
@@ -700,9 +700,9 @@
     "version": "5.7.42-45"
   },
   "percona80": {
-    "name": "percona-server-8.0.43-34",
+    "name": "percona-server-8.0.44-35",
     "pname": "percona-server",
-    "version": "8.0.43-34"
+    "version": "8.0.44-35"
   },
   "percona83": {
     "name": "percona-server_innovation-8.3.0-1",
