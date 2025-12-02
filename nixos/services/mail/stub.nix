@@ -49,19 +49,9 @@ in
 
   config = (
     lib.mkIf config.flyingcircus.services.postfix.enable {
-      warnings = lib.optionals (builtins.pathExists "/etc/local/postfix/main.cf") [
-        ''
-          Configuring postfix via /etc/local/postfix/main.cf is deprecated.
-          Please migrate to structured config with services.postfix.settings.main.
-          This option of configuring will be removed with fc-nixos 26.05.
-        ''
-      ];
       services.postfix = {
         enable = true;
         enableSubmission = true;
-        extraConfig = lib.mkIf (builtins.pathExists "/etc/local/postfix/main.cf") (
-          fclib.configFromFile "/etc/local/postfix/main.cf" ""
-        );
         extraMasterConf = lib.mkIf (builtins.pathExists "/etc/local/postfix/master.cf") (
           fclib.configFromFile "/etc/local/postfix/master.cf" ""
         );
