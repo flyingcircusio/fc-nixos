@@ -36,7 +36,7 @@ rec {
         filter (filename: hasSuffix "json" filename) (files path)
       );
 
-      mergedObject = fold (obj: acc: acc // obj) { } objects;
+      mergedObject = foldr (obj: acc: acc // obj) { } objects;
 
       duplicates = fclib.duplicateAttrNames objects;
     in
