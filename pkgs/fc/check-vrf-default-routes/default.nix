@@ -8,7 +8,7 @@
 
 stdenv.mkDerivation rec {
   version = "1";
-  pname = "check-vrf-pub-default-routes";
+  pname = "check-vrf-default-routes";
 
   src = ./.;
   unpackPhase = ":";
@@ -23,8 +23,8 @@ stdenv.mkDerivation rec {
   installPhase = ''
     mkdir -p $out/bin
     cd $src
-    install check_vrf_pub_default_routes.py $out/bin/check_vrf_pub_default_routes
-    wrapProgram $out/bin/check_vrf_pub_default_routes --prefix PATH : \
+    install check_vrf_default_routes.py $out/bin/check_vrf_default_routes
+    wrapProgram $out/bin/check_vrf_default_routes --prefix PATH : \
       ${lib.makeBinPath propagatedBuildInputs}
   '';
 
