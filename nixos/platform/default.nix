@@ -485,7 +485,7 @@ in
         '';
 
         # concat script snippets for all local config dirs
-        cfgScript = lib.fold (name: acc: acc + "\n" + (snippet name)) "" (lib.attrNames cfgDirs);
+        cfgScript = lib.foldr (name: acc: acc + "\n" + (snippet name)) "" (lib.attrNames cfgDirs);
 
         fromCfgDirs = {
           fc-local-config = lib.stringAfter [ "users" "groups" ] cfgScript;
