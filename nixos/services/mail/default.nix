@@ -222,7 +222,7 @@ in
                 notification = "Postfix listening on submission port 587";
                 command = "${plug}/check_smtp -H ${role.mailHost} -p 587 -S " + "-F ${fqdn} -w 5 -c 30";
               };
-              dovecot_imap = {
+              dovecot_imap = lib.mkIf (config.mailserver.enableImap) {
                 notification = "Dovecot listening on IMAP port 143";
                 command = "${plug}/check_imap -H ${role.mailHost} -w 5 -c 30";
               };
