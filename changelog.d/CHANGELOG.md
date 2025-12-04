@@ -1,3 +1,13 @@
+# Release 2025_046
+
+## NixOS XX.XX platform
+
+- KVM hosts: fix a regression in maintenance handling (PL-134247)
+  fc.qemu accidentally scrapped return codes set via sys.exit and replaced them with a 0, rendering maintenance guards ineffective. \
+  Has been released as a hotfix to affected hosts ahead of schedule.
+
+
+
 # Release 2025_045
 
 ## Impact
