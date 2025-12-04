@@ -225,9 +225,9 @@
     "version": "18.6.1"
   },
   "github-runner": {
-    "name": "github-runner-2.329.0",
+    "name": "github-runner-2.330.0",
     "pname": "github-runner",
-    "version": "2.329.0"
+    "version": "2.330.0"
   },
   "gitlab": {
     "name": "gitlab-18.6.1",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.59",
+    "name": "linux-6.12.60",
     "pname": "linux",
-    "version": "6.12.59"
+    "version": "6.12.60"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.59",
+    "name": "linux-6.12.60",
     "pname": "linux",
-    "version": "6.12.59"
+    "version": "6.12.60"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -1111,9 +1111,9 @@
     "version": "2.41.2"
   },
   "uv": {
-    "name": "uv-0.9.13",
+    "name": "uv-0.9.14",
     "pname": "uv",
-    "version": "0.9.13"
+    "version": "0.9.14"
   },
   "varnish": {
     "name": "varnish-7.7.3",
