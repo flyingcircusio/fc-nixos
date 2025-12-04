@@ -9,6 +9,9 @@ import textwrap
 import urllib.request
 from pathlib import Path
 
+warnings = []
+notes = []
+
 
 def run(*args, check=True, **kw):
     print("    cmd> $ " + shlex.join(args))
@@ -58,6 +61,7 @@ def has_ipmi():
 def configure_ipmi():
     if not has_ipmi():
         print("No IPMI controller detected. Skipping IPMI configuration.")
+        notes.append("No IPMI controller detected.")
         return
 
     while True:
@@ -82,6 +86,7 @@ def configure_ipmi():
             run("ipmitool", "user", "set", "password", "2", ipmi_password)
             break
         except Exception:
+            warnings.append("Setting the IPMI password failed.")
             print(
                 f"""
 Setting the IPMI password failed.
@@ -102,7 +107,10 @@ Enter "<skip>" if you want to skip this step.
 
 """
             )
-    run("ipmitool", "user", "set", "name", "2", "ADMIN")
+    try:
+        run("ipmitool", "user", "set", "name", "2", "ADMIN")
+    except Exception:
+        warnings.append("Setting the IPMI admin user failed.")
 
 
 def main():
@@ -148,6 +156,7 @@ def main():
         boot_style_default = "bios"
 
     boot_style = prompt("Boot style", boot_style_default, ["efi", "bios"])
+    notes.append(f"Boot style: {boot_style}")
 
     # Variables for BIOS/EFI boot styles
     if boot_style == "efi":
@@ -410,7 +419,23 @@ def main():
     os.chdir("/")
     run("umount", "-R", "/mnt")
 
-    print("=== Done - reboot at your convenience ===")
+    print()
+    print("=== Installation finished ===")
+    print()
+
+    if notes:
+        print("Notes:")
+        for note in notes:
+            print(f"    * {note}")
+        print()
+
+    if warnings:
+        print("Warnings:")
+        for warning in warnings:
+            print(f"    * {warning}")
+        print()
+
+    print("You can now reboot at your convenience.")
 
 
 if __name__ == "__main__":
