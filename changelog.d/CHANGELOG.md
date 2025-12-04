@@ -1,3 +1,35 @@
+# Release 2025_046
+
+## Impact
+
+- k3s clusters with custom `clusterDNS`, `podCidr`, `serviceCidr` will fail to evaluate until adapted. See the change description below for details.
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- k3s clusters: options `clusterDns`, `podCidr`, `serviceCidr` are now a list
+
+  affected roles: `k3s-agent`, `k3s-server`, `k3s-single-node`, `webgateway` when in a resource group with k3s nodes (PL-133889)
+
+  The options `clusterDns`, `podCidr`, `serviceCidr` in the namespace `flyingcircus.kubernetes.network` have changed
+  from option type *string* to a *list of strings*. This better reflects the ability to specify multiple IP
+  address entries and process them at other parts of the configuration. \
+  Deployments deviating from the default option value require manual adjustment of the option. The new system
+  will fail to evaluate, preventing this release from bein installed automatically until the configuration
+  value has been adjusted.
+
+- ai-model-server: GPU monitoring amd_rocm_smi plugin: ensure all global tags are included but only include rocm specific tags that do not endanger label cardinality. Note: we include all fields, some are converted to tags but those are fine
+
+- nixos/k3s: Fix resolving of cluster-internal hostnames in our frontend module (PL-134217)
+
+- KVM hosts: fix a regression in maintenance handling (PL-134247)
+  fc.qemu accidentally scrapped return codes set via sys.exit and replaced them with a 0, rendering maintenance guards ineffective. \
+  Has been released as a hotfix to affected hosts ahead of schedule.
+
+
+
 # Release 2025_044
 
 ## Impact
