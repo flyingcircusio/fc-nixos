@@ -8,7 +8,7 @@ let
   readDKIM =
     domain:
     let
-      path = "/var/dkim/${domain}.mail.txt";
+      path = "/var/dkim/${domain}.${config.mailserver.dkimSelector}.txt";
     in
     lib.optionalString (pathExists path) (readFile path);
 in
@@ -33,7 +33,11 @@ in
         autoconfig.${d}. CNAME ${mailHost}.
         _dmarc.${d}. TXT "v=DMARC1; p=none"
       ''
-      + replaceStrings [ "mail._domainkey" ] [ "mail._domainkey.${d}." ] (readDKIM d)
+      +
+        replaceStrings
+          [ "${config.mailserver.dkimSelector}._domainkey" ]
+          [ "${config.mailserver.dkimSelector}._domainkey.${d}." ]
+          (readDKIM d)
     )
   ) (attrNames (filterAttrs (domain: config: config.enable) domains))
 ))
