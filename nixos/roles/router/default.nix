@@ -340,7 +340,20 @@ in
             command = "${checkFloodSuppression} ${iface.link}";
           }
         )
-      ));
+      ))
+      // (lib.optionalAttrs routedVrfsEnabled {
+        vrf_default_route = {
+          notification = "VRFs have default routes";
+          interval = 600;
+          command =
+            let
+              nets = filter (n: n.routed or false) (attrValues fclib.network);
+            in
+            "${pkgs.fc.check-vrf-default-routes}/bin/check_vrf_default_routes ${
+              lib.concatMapStringsSep " " (n: n.vrfInterface) nets
+            }";
+        };
+      });
 
       expectedConnections = {
         warning = 18000;
