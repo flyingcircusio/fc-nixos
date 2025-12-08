@@ -283,6 +283,11 @@ in
         rabbitmqctl list_users | grep guest && \
           rabbitmqctl delete_user guest
 
+        # Delete fc-telegraf user that might be left over from previous releases
+        # XXX: may be removed in the 26.11 release cycle
+        rabbitmqctl list_users | grep fc-telegraf && \
+          rabbitmqctl delete_user fc-telegraf
+
         # Create user for sensu, if it does not exist and make sure that the password is set
         rabbitmqctl list_users | grep fc-sensu || \
           rabbitmqctl add_user fc-sensu ${sensuPassword}

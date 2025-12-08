@@ -83,6 +83,13 @@ import ./make-test-python.nix (
         with subtest("settings script must delete default guest user"):
           machine.fail("${cli} list_users | grep guest");
 
+        # XXX: may be removed in the 26.11 release cycle
+        with subtest("settings script must delete fc-telegraf user from previous releases"):
+          # manually creating the old-release user
+          machine.succeed("${cli} add_user fc-telegraf foobarpass")
+          machine.systemctl("restart fc-rabbitmq-settings.service")
+          machine.fail("${cli} list_users | grep fc-telegraf");
+
         with subtest("metrics exported via prometheus exporter and re-exported by telegraf"):
           machine.wait_until_succeeds("${lib.getExe pkgs.curl} ${machineGlobalPrometheusAddr} | grep 'rabbitmq_' | grep ':${toString rabbitmqExporterPort}'", timeout=30)
 
