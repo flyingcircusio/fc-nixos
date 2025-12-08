@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-142.0.7444.175",
+    "name": "chromedriver-unwrapped-143.0.7499.40",
     "pname": "chromedriver-unwrapped",
-    "version": "142.0.7444.175"
+    "version": "143.0.7499.40"
   },
   "chromium": {
-    "name": "chromium-142.0.7444.175",
+    "name": "chromium-143.0.7499.40",
     "pname": "chromium",
-    "version": "142.0.7444.175"
+    "version": "143.0.7499.40"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.12.3",
+    "name": "element-web-1.12.6",
     "pname": "element-web",
-    "version": "1.12.3"
+    "version": "1.12.6"
   },
   "erlang": {
     "name": "erlang-28.2",
@@ -290,9 +290,9 @@
     "version": "2.12"
   },
   "haproxy": {
-    "name": "haproxy-3.2.9",
+    "name": "haproxy-3.3.0",
     "pname": "haproxy",
-    "version": "3.2.9"
+    "version": "3.3.0"
   },
   "imagemagick": {
     "name": "imagemagick-7.1.2-8",
@@ -380,9 +380,9 @@
     "version": "1.33.6+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.4.6",
+    "name": "keycloak-26.4.7",
     "pname": "keycloak",
-    "version": "26.4.6"
+    "version": "26.4.7"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -540,9 +540,9 @@
     "version": "1.28.0"
   },
   "nginxMainline": {
-    "name": "nginx-1.29.2",
+    "name": "nginx-1.29.3",
     "pname": "nginx",
-    "version": "1.29.2"
+    "version": "1.29.3"
   },
   "nginxStable": {
     "name": "nginx-1.28.0",
@@ -841,14 +841,14 @@
     "version": "18.1"
   },
   "prometheus": {
-    "name": "prometheus-3.7.2",
+    "name": "prometheus-3.8.0",
     "pname": "prometheus",
-    "version": "3.7.2"
+    "version": "3.8.0"
   },
   "promtail": {
-    "name": "promtail-3.5.8",
+    "name": "promtail-3.6.2",
     "pname": "promtail",
-    "version": "3.5.8"
+    "version": "3.6.2"
   },
   "prosody": {
     "name": "prosody-13.0.2",
@@ -1111,9 +1111,9 @@
     "version": "2.41.2"
   },
   "uv": {
-    "name": "uv-0.9.14",
+    "name": "uv-0.9.15",
     "pname": "uv",
-    "version": "0.9.14"
+    "version": "0.9.15"
   },
   "varnish": {
     "name": "varnish-7.7.3",
