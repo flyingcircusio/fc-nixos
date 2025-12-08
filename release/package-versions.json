@@ -60,9 +60,9 @@
     "version": "2.6.6"
   },
   "cacert": {
-    "name": "nss-cacert-3.115",
+    "name": "nss-cacert-3.117",
     "pname": "nss-cacert",
-    "version": "3.115"
+    "version": "3.117"
   },
   "calibre": {
     "name": "calibre-8.4.0",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-142.0.7444.175",
+    "name": "chromedriver-unwrapped-143.0.7499.40",
     "pname": "chromedriver-unwrapped",
-    "version": "142.0.7444.175"
+    "version": "143.0.7499.40"
   },
   "chromium": {
-    "name": "chromium-142.0.7444.175",
+    "name": "chromium-143.0.7499.40",
     "pname": "chromium",
-    "version": "142.0.7444.175"
+    "version": "143.0.7499.40"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -230,9 +230,9 @@
     "version": "18.6.1"
   },
   "github-runner": {
-    "name": "github-runner-2.329.0",
+    "name": "github-runner-2.330.0",
     "pname": "github-runner",
-    "version": "2.329.0"
+    "version": "2.330.0"
   },
   "gitlab": {
     "name": "gitlab-18.6.1",
@@ -280,9 +280,9 @@
     "version": "2.4.8"
   },
   "go": {
-    "name": "go-1.24.9",
+    "name": "go-1.24.10",
     "pname": "go",
-    "version": "1.24.9"
+    "version": "1.24.10"
   },
   "go_1_23": {
     "name": "go-1.23.12",
@@ -330,9 +330,9 @@
     "version": "1.9.4"
   },
   "jdk": {
-    "name": "openjdk-21.0.9+8",
+    "name": "openjdk-21.0.9+10",
     "pname": "openjdk",
-    "version": "21.0.9+8"
+    "version": "21.0.9+10"
   },
   "jetbrains.jdk": {
     "name": "jetbrains-jdk-jcef-21.0.6-b895.109",
@@ -365,9 +365,9 @@
     "version": "1.7.1"
   },
   "jre": {
-    "name": "openjdk-21.0.9+8",
+    "name": "openjdk-21.0.9+10",
     "pname": "openjdk",
-    "version": "21.0.9+8"
+    "version": "21.0.9+10"
   },
   "k3s": {
     "name": "k3s-1.32.7+k3s1",
@@ -395,9 +395,9 @@
     "version": "1.33.3+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.4.5",
+    "name": "keycloak-26.4.7",
     "pname": "keycloak",
-    "version": "26.4.5"
+    "version": "26.4.7"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.17.3",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.59",
+    "name": "linux-6.12.60",
     "pname": "linux",
-    "version": "6.12.59"
+    "version": "6.12.60"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.59",
+    "name": "linux-6.12.60",
     "pname": "linux",
-    "version": "6.12.59"
+    "version": "6.12.60"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -560,9 +560,9 @@
     "version": "1.28.0"
   },
   "nginxMainline": {
-    "name": "nginx-1.29.2",
+    "name": "nginx-1.29.3",
     "pname": "nginx",
-    "version": "1.29.2"
+    "version": "1.29.3"
   },
   "nginxStable": {
     "name": "nginx-1.28.0",
@@ -580,9 +580,9 @@
     "version": "22.20.0"
   },
   "nodejs_20": {
-    "name": "nodejs-20.19.5",
+    "name": "nodejs-20.19.6",
     "pname": "nodejs",
-    "version": "20.19.5"
+    "version": "20.19.6"
   },
   "nodejs_22": {
     "name": "nodejs-22.20.0",
@@ -590,9 +590,9 @@
     "version": "22.20.0"
   },
   "nspr": {
-    "name": "nspr-4.37",
+    "name": "nspr-4.38",
     "pname": "nspr",
-    "version": "4.37"
+    "version": "4.38"
   },
   "nss_latest": {
     "name": "nss-3.118.1",
@@ -605,9 +605,9 @@
     "version": "2.11"
   },
   "openjdk": {
-    "name": "openjdk-21.0.9+8",
+    "name": "openjdk-21.0.9+10",
     "pname": "openjdk",
-    "version": "21.0.9+8"
+    "version": "21.0.9+10"
   },
   "openjpeg": {
     "name": "openjpeg-2.5.2",
