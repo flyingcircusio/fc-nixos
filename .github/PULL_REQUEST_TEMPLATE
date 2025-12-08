@@ -2,7 +2,16 @@
 
 ## Release process
 
+This change should be backported:
+
 - [ ] Created changelog entry using `./changelog.sh`
+- [ ] Add `backport release-25.11` label
+
+This change should only reach this branch:
+
+- [ ] Created changelog entry using `./changelog.sh`
+or
+- [ ] Add a upgrade node in `doc/upgrade.md`
 
 ## PR release workflow (internal)
 
@@ -12,9 +21,10 @@
 - [ ] ticket is on Platform agile board
 - [ ] ticket state set to *Pull request ready*
 - [ ] if ticket is more urgent than within the next few days, directly contact a member of the Platform team
-<!---->
+<!--
 - [ ] set urgency and risk labels
 - [ ] ensure the merge bot has determined a merge date
+-->
 - [ ] ensure all checks are green
 - [ ] get a review from a colleague
 
@@ -22,6 +32,7 @@
 
 - [ ] Provide a feature toggle if the change might need to be adjusted/reverted quickly depending on context. Consider whether the default should be `on` or `off`. Example: rate limiting.
 - [ ] All customer-facing features and (NixOS) options need to be discoverable from documentation. Add or update relevant documentation such that hosted and guided customers can understand it as well.
+- [ ] Provide warnings in previous platform version and upgrade notes when introducing a breaking change
 
 ## Security implications
 
