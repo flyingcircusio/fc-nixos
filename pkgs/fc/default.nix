@@ -29,6 +29,7 @@ rec {
   };
   check-haproxy = callPackage ./check-haproxy { };
   check-journal = callPackage ./check-journal.nix { };
+  check-kvm-vrf-integrity = callPackage ./check-kvm-vrf-integrity { };
   check-link-redundancy = callPackage ./check-link-redundancy { };
   check-mongodb = pyPackages.callPackage ./check-mongodb { };
   check-postfix = callPackage ./check-postfix { };
