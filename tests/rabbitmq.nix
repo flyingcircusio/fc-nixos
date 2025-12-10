@@ -32,6 +32,7 @@ import ./make-test-python.nix (
             nodeDefaults
             (testlib.fcConfig { id = 1; })
           ];
+          services.telegraf.enable = lib.mkForce true;
         };
       multiNode =
         { ... }:
@@ -60,6 +61,10 @@ import ./make-test-python.nix (
         amqpAliveCheck = "${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-amqp-alive.rb ${sensuOpts}";
         nodeHealthCheck = "${pkgs.sensu-plugins-rabbitmq}/bin/check-rabbitmq-node-health.rb ${sensuOpts}";
         featureFlagCheck = testlib.sensuCheckCmd nodes.machine "rabbitmq-feature-flags-enabled";
+        rabbitmqExporterPort = nodes.machine.flyingcircus.services.rabbitmq.prometheusPort;
+        globalPrometheusPort = 9126; # port is hard-coded in nixos/platform/monitoring.nix
+        # XXX srv address not added to /etc/hosts (PL-134248)
+        machineGlobalPrometheusAddr = "http://${builtins.head nodes.machine.fclib.network.srv.v4.addresses}:${toString globalPrometheusPort}/metrics";
       in
       ''
         start_all()
@@ -72,11 +77,21 @@ import ./make-test-python.nix (
         machine.succeed("systemctl start fc-rabbitmq-settings");
 
         with subtest("settings script must create monitoring users and set their monitoring tag"):
-          machine.succeed("${cli} list_users | grep fc-telegraf | grep monitoring")
+          machine.succeed("${cli} list_users | grep fc-sensu | grep monitoring")
 
 
         with subtest("settings script must delete default guest user"):
           machine.fail("${cli} list_users | grep guest");
+
+        # XXX: may be removed in the 26.11 release cycle
+        with subtest("settings script must delete fc-telegraf user from previous releases"):
+          # manually creating the old-release user
+          machine.succeed("${cli} add_user fc-telegraf foobarpass")
+          machine.systemctl("restart fc-rabbitmq-settings.service")
+          machine.fail("${cli} list_users | grep fc-telegraf");
+
+        with subtest("metrics exported via prometheus exporter and re-exported by telegraf"):
+          machine.wait_until_succeeds("${lib.getExe pkgs.curl} ${machineGlobalPrometheusAddr} | grep 'rabbitmq_' | grep ':${toString rabbitmqExporterPort}'", timeout=30)
 
         with subtest("single-node cluster must auto-activate all feature flags"):
           machine.succeed("journalctl -g 'Enabling all feature flags'")

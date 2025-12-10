@@ -13,7 +13,6 @@ let
 
   inherit (builtins) concatStringsSep;
 
-  telegrafPassword = fclib.derivePasswordForHost "telegraf";
   sensuPassword = fclib.derivePasswordForHost "sensu";
 
   config_file_content = lib.generators.toKeyValue { } cfg.configItems;
@@ -284,12 +283,10 @@ in
         rabbitmqctl list_users | grep guest && \
           rabbitmqctl delete_user guest
 
-        # TODO: We can remove the fc-telegraf user when having migrated to prometheus only (PL-133391)
-        # Create user for telegraf, if it does not exist and make sure that the password is set
-        rabbitmqctl list_users | grep fc-telegraf || \
-          rabbitmqctl add_user fc-telegraf ${telegrafPassword}
-
-        rabbitmqctl change_password fc-telegraf ${telegrafPassword}
+        # Delete fc-telegraf user that might be left over from previous releases
+        # XXX: may be removed in the 26.11 release cycle
+        rabbitmqctl list_users | grep fc-telegraf && \
+          rabbitmqctl delete_user fc-telegraf
 
         # Create user for sensu, if it does not exist and make sure that the password is set
         rabbitmqctl list_users | grep fc-sensu || \
@@ -297,12 +294,7 @@ in
 
         rabbitmqctl change_password fc-sensu ${sensuPassword}
 
-        rabbitmqctl set_user_tags fc-telegraf monitoring || true
         rabbitmqctl set_user_tags fc-sensu monitoring || true
-
-        for vhost in $(rabbitmqctl list_vhosts -s); do
-          rabbitmqctl set_permissions fc-telegraf -p "$vhost" "" "" ".*"
-        done
 
         rabbitmqctl set_permissions fc-sensu "^aliveness-test$" "^amq\.default$" "^(amq\.default|aliveness-test)$"
       '';
@@ -349,23 +341,8 @@ in
       telegraf.inputs = {
         prometheus = [
           {
-            urls = [ "http://${config.networking.hostName}:${cfg.prometheusPort}" ];
-          }
-        ];
-        # TODO: remove once we have a new dashboard ready
-        rabbitmq = [
-          {
-            client_timeout = "10s";
-            header_timeout = "10s";
-            url = "http://${config.networking.hostName}:15672";
-            username = "fc-telegraf";
-            password = telegrafPassword;
-            nodes = [ "rabbit@${config.networking.hostName}" ];
-            # Drop string fields. They are converted to labels in Prometheus
-            # which blows up the number of metrics.
-            fielddrop = [ "idle_since" ];
-            # The federation plugin is optional and causing spurious logging.
-            metric_exclude = [ "federation" ];
+            # using IP here instead of hostname due to PL-134248
+            urls = [ "http://${head fclib.network.srv.dualstack.addresses}:${cfg.prometheusPort}" ];
           }
         ];
       };

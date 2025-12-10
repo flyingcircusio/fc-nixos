@@ -80,8 +80,11 @@ in
   config = mkMerge [
     (mkIf upstreamCfg.enable {
 
-      # merge in our platform configs
-      services.telegraf.extraConfig.inputs = config.flyingcircus.services.telegraf.inputs;
+      # merge in our platform configs…
+      # …except for prometheus inputs, which get some further pre-processing further down this file
+      services.telegraf.extraConfig.inputs =
+        lib.removeAttrs config.flyingcircus.services.telegraf.inputs
+          [ "prometheus" ];
 
       environment.systemPackages = [
         telegrafShowConfig
