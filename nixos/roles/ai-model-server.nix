@@ -12,6 +12,37 @@ let
   cfg = config.flyingcircus.roles.ai-model-server;
   scfg = config.services.ollama;
 
+  checkOllamaCpuOffload = pkgs.writeShellApplication {
+    name = "check_ollama_cpu_offload";
+    runtimeInputs = [
+      pkgs.curl
+      pkgs.jq
+    ];
+    text = ''
+      url="http://${scfg.host}:${toString scfg.port}/api/ps"
+
+      if ! response=$(curl -s --fail "$url"); then
+        echo "CRITICAL: Failed to connect to Ollama at $url"
+        exit 2
+      fi
+
+      # Check for models loaded into CPU
+      # We look for models where size > size_vram
+      # We output the names of such models
+
+      offloaded_models=$(echo "$response" | jq -r '.models[] | select(.size > .size_vram) | "\(.name) (size: \(.size), vram: \(.size_vram))"')
+
+      if [ -n "$offloaded_models" ]; then
+        echo "WARNING: Some models are partially or fully loaded into CPU:"
+        echo "$offloaded_models"
+        exit 1
+      else
+        echo "OK: All models are fully loaded into GPU"
+        exit 0
+      fi
+    '';
+  };
+
 in
 {
   options = {
@@ -102,6 +133,12 @@ in
           ollama_health = {
             notification = "Ollama service health check";
             command = "check_http -H ${scfg.host} -p ${toString scfg.port} -u /api/tags";
+            interval = 300;
+          };
+
+          ollama_cpu_offload = {
+            notification = "Ollama CPU offload check";
+            command = "${checkOllamaCpuOffload}/bin/check_ollama_cpu_offload";
             interval = 300;
           };
         };
