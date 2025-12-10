@@ -5,9 +5,9 @@
     "version": "1.6.1"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.65",
+    "name": "apache-httpd-2.4.66",
     "pname": "apache-httpd",
-    "version": "2.4.65"
+    "version": "2.4.66"
   },
   "asterisk": {
     "name": "asterisk-22.7.0",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.60",
+    "name": "linux-6.12.61",
     "pname": "linux",
-    "version": "6.12.60"
+    "version": "6.12.61"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.60",
+    "name": "linux-6.12.61",
     "pname": "linux",
-    "version": "6.12.60"
+    "version": "6.12.61"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -550,9 +550,9 @@
     "version": "1.28.0"
   },
   "nix": {
-    "name": "nix-2.31.2",
+    "name": "nix-2.31.2+1",
     "pname": "nix",
-    "version": "2.31.2"
+    "version": "2.31.2+1"
   },
   "nodejs": {
     "name": "nodejs-22.21.1",
@@ -575,9 +575,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.118.1",
+    "name": "nss-3.119",
     "pname": "nss",
-    "version": "3.118.1"
+    "version": "3.119"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
@@ -746,9 +746,9 @@
     "version": "126"
   },
   "postfix": {
-    "name": "postfix-3.10.6",
+    "name": "postfix-3.10.7",
     "pname": "postfix",
-    "version": "3.10.6"
+    "version": "3.10.7"
   },
   "postgresql": {
     "name": "postgresql-17.7",
@@ -1076,9 +1076,9 @@
     "version": "1.36.4"
   },
   "tmux": {
-    "name": "tmux-3.6",
+    "name": "tmux-3.6a",
     "pname": "tmux",
-    "version": "3.6"
+    "version": "3.6a"
   },
   "tomcat10": {
     "name": "apache-tomcat-10.1.48",
@@ -1091,9 +1091,9 @@
     "version": "9.0.111"
   },
   "unifi": {
-    "name": "unifi-controller-10.0.156",
+    "name": "unifi-controller-10.0.161",
     "pname": "unifi-controller",
-    "version": "10.0.156"
+    "version": "10.0.161"
   },
   "unzip": {
     "name": "unzip-6.0",
