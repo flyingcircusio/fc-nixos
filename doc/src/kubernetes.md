@@ -162,8 +162,7 @@ $ kubectl get nodes
 ## Networking
 
 Our Kubernetes cluster uses `flannel` with the `host-gw` backend. Nodes interact
-with each other on the [SRV network]
-(/platform/infrastructure/networking/networking.html#logical-networks) and
+with each other on the [SRV network](/platform/infrastructure/networking/networking.html#logical-networks) and
 create an overlay network automatically. VMs with specialized roles
 (`k3s-server`, `k3s-agent` and the `webgateway`) have full access to the
 overlay network.
