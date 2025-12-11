@@ -1,3 +1,31 @@
+# Release 2025_047
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- s3users: eliminate "--gen-secret" invocation. This further reduces failure potential in our internal S3 user handling (PL-133656)
+
+- nixos/mail: correct dns.zone file with a non-default dkimSelector (PL-134262)
+
+- devhost: start VMs only after network setup ran (PL-134208)
+
+- installer: ignore failures when setting IPMI usernames
+
+- KVM hosts: fix a regression in maintenance handling (PL-134247)
+  fc.qemu accidentally scrapped return codes set via sys.exit and replaced them with a 0, rendering maintenance guards ineffective. \
+  Has been released as a hotfix to affected hosts ahead of schedule.
+
+- mail: fix roundcube with STARTTLS deprecation (PL-134260)
+
+  Roundcube instances on 25.11 had problems with connecting to the mail server.
+  This change fixes this.
+
+
+
 # Release 2025_046
 
 ## NixOS XX.XX platform
