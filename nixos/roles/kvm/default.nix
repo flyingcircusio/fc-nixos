@@ -301,7 +301,14 @@ in
         commands = [ "${cfg.package}/bin/fc-qemu check" ];
         groups = [ "sensuclient" ];
       }
-    ];
+    ]
+    ++ (lib.optionals (vrfInterfaces != { }) [
+      {
+        commands = [ "${pkgs.fc.check-kvm-vrf-integrity}/bin/check_kvm_vrf_integrity" ];
+        groups = [ "sensuclient" ];
+        runAs = ":frrvty";
+      }
+    ]);
 
     systemd.services.fc-qemu-reattach-taps = {
       description = "Reattach all VM taps if needed.";
@@ -444,7 +451,19 @@ in
           notification = "Qemu health check";
           command = "sudo ${cfg.package}/bin/fc-qemu check";
         };
-      };
+      }
+      // (lib.optionalAttrs (vrfInterfaces != { }) {
+        kvm_vrf_integrity = {
+          notification = "VRF routing does not match kernel network state";
+          interval = 300;
+          command =
+            let
+              tables = lib.concatMapStringsSep " " (i: toString i.vrfTable) (attrValues vrfInterfaces);
+            in
+            "sudo -g frrvty ${pkgs.fc.check-kvm-vrf-integrity}/bin/check_kvm_vrf_integrity ${tables}";
+        };
+      });
+
       # each qemu process connects directly to multiple OSD's in the
       # ceph cluster for at least 3-4 volumes. let's
       expectedConnections =
