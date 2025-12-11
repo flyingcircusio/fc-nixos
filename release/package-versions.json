@@ -5,9 +5,9 @@
     "version": "1.6.1"
   },
   "apacheHttpd": {
-    "name": "apache-httpd-2.4.65",
+    "name": "apache-httpd-2.4.66",
     "pname": "apache-httpd",
-    "version": "2.4.65"
+    "version": "2.4.66"
   },
   "asterisk": {
     "name": "asterisk-22.7.0",
@@ -145,9 +145,9 @@
     "version": "2.91"
   },
   "docker": {
-    "name": "docker-28.5.1",
+    "name": "docker-28.5.2",
     "pname": "docker",
-    "version": "28.5.1"
+    "version": "28.5.2"
   },
   "docker-compose": {
     "name": "docker-compose-2.39.4",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-145.0.2",
+    "name": "firefox-146.0",
     "pname": "firefox",
-    "version": "145.0.2"
+    "version": "146.0"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.60",
+    "name": "linux-6.12.61",
     "pname": "linux",
-    "version": "6.12.60"
+    "version": "6.12.61"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.60",
+    "name": "linux-6.12.61",
     "pname": "linux",
-    "version": "6.12.60"
+    "version": "6.12.61"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -575,9 +575,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.118.1",
+    "name": "nss-3.119",
     "pname": "nss",
-    "version": "3.118.1"
+    "version": "3.119"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
@@ -1111,9 +1111,9 @@
     "version": "2.41.2"
   },
   "uv": {
-    "name": "uv-0.9.15",
+    "name": "uv-0.9.16",
     "pname": "uv",
-    "version": "0.9.15"
+    "version": "0.9.16"
   },
   "varnish": {
     "name": "varnish-7.7.3",
