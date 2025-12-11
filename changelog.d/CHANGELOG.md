@@ -1,3 +1,20 @@
+# Release 2025_047
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- nixos/mail: correct dns.zone file with a non-default dkimSelector (PL-134262)
+
+- devhost: start VMs only after network setup ran (PL-134208)
+
+- installer: ignore failures when setting IPMI usernames
+
+
+
 # Release 2025_046
 
 ## Impact
