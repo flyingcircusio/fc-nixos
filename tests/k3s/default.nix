@@ -9,8 +9,6 @@ import ../make-test-python.nix (
 
   let
 
-    images = map pkgs.dockerTools.pullImage (import ./airgapped-k3s-images.nix);
-
     net4Srv = "10.0.1";
     frontendSrv = net4Srv + ".1";
     masterSrv = net4Srv + ".2";
@@ -273,7 +271,6 @@ import ../make-test-python.nix (
       in
       ''
         import time
-        images = [${lib.concatStringsSep "," (map (val: "\"${val}\"") images)}]
 
         with subtest("k3s server should work"):
           k3sserver.wait_for_unit("k3s.service")
@@ -287,8 +284,10 @@ import ../make-test-python.nix (
           # Give k3s more time to settle without getting into IO stress when loading images.
           time.sleep(10)
 
-          for image in images:
-            k3snodeA.wait_until_succeeds(f"k3s ctr images import {image}")
+          # XXX: for some reason *implicit* image import via
+          # `services.k3s.images = [ config.services.k3s.package.airgap-images ];` does not work.
+          # Doing a manual import instead.
+          k3snodeA.wait_until_succeeds("echo 'try import' >2; k3s ctr images import ${nodes.nodeA.services.k3s.package.airgap-images} >2")
           k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodea | grep -vq NotReady")
 
         with subtest("all kube-system images pulled successfully"):
@@ -297,8 +296,8 @@ import ../make-test-python.nix (
           k3sserver.wait_until_succeeds("k3s kubectl -n kube-system get pods | grep -zvq ContainerCreating")
           if k3sserver.execute("k3s kubectl -n kube-system get pods | grep -zvq ErrImagePull")[0]:
             print(k3sserver.execute("k3s kubectl -n kube-system get pods")[1])
-            raise AssertionError("Error pulling some images. If k3s was just recently updated, "
-              "consider updating the airgapped-k3s-images.nix hashes.")
+            raise AssertionError("Error pulling some images. Make sure that the "
+              "airgapped-images are up to date and matching your package.")
 
         with subtest("dashboard sensu check should be green"):
           k3sserver.wait_for_unit("kube-dashboard")
@@ -331,8 +330,8 @@ import ../make-test-python.nix (
         time.sleep(5)
 
         with subtest("adding a second node should work"):
-          for image in images:
-            k3snodeB.wait_until_succeeds(f"k3s ctr images import {image}")
+
+          k3snodeB.wait_until_succeeds("k3s ctr images import ${nodes.nodeA.services.k3s.package.airgap-images} >2")
           k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodeb | grep -vq NotReady")
 
         with subtest("scaling the deployment should start 4 pods"):
