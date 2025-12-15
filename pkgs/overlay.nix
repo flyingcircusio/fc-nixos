@@ -262,6 +262,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   linuxKernelStable = self.linux_6_12;
 
+  k3s_1_31 = lib.warn "EOL, only use for upgrading" super.k3s_1_31;
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper =
     super.callPackage ./kubernetes-dashboard-metrics-scraper.nix
