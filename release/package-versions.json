@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-143.0.7499.40",
+    "name": "chromedriver-unwrapped-143.0.7499.109",
     "pname": "chromedriver-unwrapped",
-    "version": "143.0.7499.40"
+    "version": "143.0.7499.109"
   },
   "chromium": {
-    "name": "chromium-143.0.7499.40",
+    "name": "chromium-143.0.7499.109",
     "pname": "chromium",
-    "version": "143.0.7499.40"
+    "version": "143.0.7499.109"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -165,9 +165,9 @@
     "version": "1.12.6"
   },
   "erlang": {
-    "name": "erlang-28.2",
+    "name": "erlang-28.3",
     "pname": "erlang",
-    "version": "28.2"
+    "version": "28.3"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -220,9 +220,9 @@
     "version": "2.51.2"
   },
   "gitaly": {
-    "name": "gitaly-18.6.1",
+    "name": "gitaly-18.6.2",
     "pname": "gitaly",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "github-runner": {
     "name": "github-runner-2.330.0",
@@ -230,9 +230,9 @@
     "version": "2.330.0"
   },
   "gitlab": {
-    "name": "gitlab-18.6.1",
+    "name": "gitlab-18.6.2",
     "pname": "gitlab",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.32.0",
@@ -240,14 +240,14 @@
     "version": "4.32.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.6.1",
+    "name": "gitlab-ee-18.6.2",
     "pname": "gitlab-ee",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.6.1",
+    "name": "gitlab-pages-18.6.2",
     "pname": "gitlab-pages",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.5.0",
@@ -255,9 +255,9 @@
     "version": "18.5.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.6.1",
+    "name": "gitlab-workhorse-18.6.2",
     "pname": "gitlab-workhorse",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -325,9 +325,9 @@
     "version": "21.0.9+10"
   },
   "jetbrains.jdk": {
-    "name": "jetbrains-jdk-jcef-21.0.8-b1148.57",
+    "name": "jetbrains-jdk-jcef-21.0.9-b1163.86",
     "pname": "jetbrains-jdk-jcef",
-    "version": "21.0.8-b1148.57"
+    "version": "21.0.9-b1163.86"
   },
   "jetty": {
     "name": "jetty-12.1.4",
@@ -360,24 +360,24 @@
     "version": "21.0.9+10"
   },
   "k3s": {
-    "name": "k3s-1.34.1+k3s1",
+    "name": "k3s-1.34.2+k3s1",
     "pname": "k3s",
-    "version": "1.34.1+k3s1"
+    "version": "1.34.2+k3s1"
   },
   "k3s_1_31": {
-    "name": "k3s-1.31.13+k3s1",
+    "name": "k3s-1.31.14+k3s1",
     "pname": "k3s",
-    "version": "1.31.13+k3s1"
+    "version": "1.31.14+k3s1"
   },
   "k3s_1_32": {
-    "name": "k3s-1.32.9+k3s1",
+    "name": "k3s-1.32.10+k3s1",
     "pname": "k3s",
-    "version": "1.32.9+k3s1"
+    "version": "1.32.10+k3s1"
   },
   "k3s_1_33": {
-    "name": "k3s-1.33.5+k3s1",
+    "name": "k3s-1.33.6+k3s1",
     "pname": "k3s",
-    "version": "1.33.5+k3s1"
+    "version": "1.33.6+k3s1"
   },
   "keycloak": {
     "name": "keycloak-26.4.7",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.61",
+    "name": "linux-6.12.62",
     "pname": "linux",
-    "version": "6.12.61"
+    "version": "6.12.62"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.61",
+    "name": "linux-6.12.62",
     "pname": "linux",
-    "version": "6.12.61"
+    "version": "6.12.62"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -480,9 +480,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.5.2",
+    "name": "mastodon-4.5.3",
     "pname": "mastodon",
-    "version": "4.5.2"
+    "version": "4.5.3"
   },
   "matomo": {
     "name": "matomo-5.5.2",
@@ -575,9 +575,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.119",
+    "name": "nss-3.119.1",
     "pname": "nss",
-    "version": "3.119"
+    "version": "3.119.1"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
@@ -751,9 +751,9 @@
     "version": "126"
   },
   "postfix": {
-    "name": "postfix-3.10.6",
+    "name": "postfix-3.10.7",
     "pname": "postfix",
-    "version": "3.10.6"
+    "version": "3.10.7"
   },
   "postgresql": {
     "name": "postgresql-17.7",
@@ -971,9 +971,9 @@
     "version": "4.2.1"
   },
   "rclone": {
-    "name": "rclone-1.72.0",
+    "name": "rclone-1.72.1",
     "pname": "rclone",
-    "version": "1.72.0"
+    "version": "1.72.1"
   },
   "re2c": {
     "name": "re2c-4.3",
@@ -1041,9 +1041,9 @@
     "version": "8.11.4"
   },
   "strace": {
-    "name": "strace-6.17",
+    "name": "strace-6.18",
     "pname": "strace",
-    "version": "6.17"
+    "version": "6.18"
   },
   "strongswan": {
     "name": "strongswan-6.0.3",
@@ -1116,9 +1116,9 @@
     "version": "2.41.2"
   },
   "uv": {
-    "name": "uv-0.9.16",
+    "name": "uv-0.9.17",
     "pname": "uv",
-    "version": "0.9.16"
+    "version": "0.9.17"
   },
   "varnish": {
     "name": "varnish-7.7.3",
