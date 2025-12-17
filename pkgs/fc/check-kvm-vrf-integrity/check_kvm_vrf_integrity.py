@@ -73,17 +73,16 @@ def main():
         rd = vni["rd"]
         frr_routes = vtysh_routes(rd)
 
-        if rd not in frr_routes:
-            errors.add(f"table {table}: could not find FRR routes for RD {rd}")
-            continue
-
-        frr_routes = frr_routes[rd]
-        frr_routes = {
-            path["ip"]
-            for route in frr_routes.values()
-            if isinstance(route, dict)
-            for path in route["paths"]
-        }
+        if rd in frr_routes:
+            frr_routes = frr_routes[rd]
+            frr_routes = {
+                path["ip"]
+                for route in frr_routes.values()
+                if isinstance(route, dict)
+                for path in route["paths"]
+            }
+        else:
+            frr_routes = set()
 
         if kernel_routes.difference(frr_routes):
             errors.add(
