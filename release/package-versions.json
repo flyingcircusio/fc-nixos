@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-143.0.7499.40",
+    "name": "chromedriver-unwrapped-143.0.7499.109",
     "pname": "chromedriver-unwrapped",
-    "version": "143.0.7499.40"
+    "version": "143.0.7499.109"
   },
   "chromium": {
-    "name": "chromium-143.0.7499.40",
+    "name": "chromium-143.0.7499.109",
     "pname": "chromium",
-    "version": "143.0.7499.40"
+    "version": "143.0.7499.109"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -225,9 +225,9 @@
     "version": "2.50.1"
   },
   "gitaly": {
-    "name": "gitaly-18.6.1",
+    "name": "gitaly-18.6.2",
     "pname": "gitaly",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "github-runner": {
     "name": "github-runner-2.330.0",
@@ -235,9 +235,9 @@
     "version": "2.330.0"
   },
   "gitlab": {
-    "name": "gitlab-18.6.1",
+    "name": "gitlab-18.6.2",
     "pname": "gitlab",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.32.0",
@@ -245,14 +245,14 @@
     "version": "4.32.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.6.1",
+    "name": "gitlab-ee-18.6.2",
     "pname": "gitlab-ee",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.6.1",
+    "name": "gitlab-pages-18.6.2",
     "pname": "gitlab-pages",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.5.0",
@@ -260,9 +260,9 @@
     "version": "18.5.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.6.1",
+    "name": "gitlab-workhorse-18.6.2",
     "pname": "gitlab-workhorse",
-    "version": "18.6.1"
+    "version": "18.6.2"
   },
   "glibc": {
     "name": "glibc-2.40-66",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.61",
+    "name": "linux-6.12.62",
     "pname": "linux",
-    "version": "6.12.61"
+    "version": "6.12.62"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.61",
+    "name": "linux-6.12.62",
     "pname": "linux",
-    "version": "6.12.61"
+    "version": "6.12.62"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -595,9 +595,9 @@
     "version": "4.38"
   },
   "nss_latest": {
-    "name": "nss-3.119",
+    "name": "nss-3.119.1",
     "pname": "nss",
-    "version": "3.119"
+    "version": "3.119.1"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.11",
