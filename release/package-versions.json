@@ -60,9 +60,9 @@
     "version": "2.7.2"
   },
   "cacert": {
-    "name": "nss-cacert-3.115",
+    "name": "nss-cacert-3.117",
     "pname": "nss-cacert",
-    "version": "3.115"
+    "version": "3.117"
   },
   "calibre": {
     "name": "calibre-8.14.0",
@@ -275,9 +275,9 @@
     "version": "2.4.8"
   },
   "go": {
-    "name": "go-1.25.4",
+    "name": "go-1.25.5",
     "pname": "go",
-    "version": "1.25.4"
+    "version": "1.25.5"
   },
   "grafana": {
     "name": "grafana-12.3.0",
@@ -295,9 +295,9 @@
     "version": "3.2.9"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-8",
+    "name": "imagemagick-7.1.2-9",
     "pname": "imagemagick",
-    "version": "7.1.2-8"
+    "version": "7.1.2-9"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-10",
