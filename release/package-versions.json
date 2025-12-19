@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-143.0.7499.109",
+    "name": "chromedriver-unwrapped-143.0.7499.146",
     "pname": "chromedriver-unwrapped",
-    "version": "143.0.7499.109"
+    "version": "143.0.7499.146"
   },
   "chromium": {
-    "name": "chromium-143.0.7499.109",
+    "name": "chromium-143.0.7499.146",
     "pname": "chromium",
-    "version": "143.0.7499.109"
+    "version": "143.0.7499.146"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -165,9 +165,9 @@
     "version": "1.12.3"
   },
   "erlang": {
-    "name": "erlang-27.3.4.4",
+    "name": "erlang-27.3.4.6",
     "pname": "erlang",
-    "version": "27.3.4.4"
+    "version": "27.3.4.6"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -1020,9 +1020,9 @@
     "version": "1.8.0"
   },
   "roundcube": {
-    "name": "roundcube-1.6.11",
+    "name": "roundcube-1.6.12",
     "pname": "roundcube",
-    "version": "1.6.11"
+    "version": "1.6.12"
   },
   "rsync": {
     "name": "rsync-3.4.1",
