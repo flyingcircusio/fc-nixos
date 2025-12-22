@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-143.0.7499.109",
+    "name": "chromedriver-unwrapped-143.0.7499.169",
     "pname": "chromedriver-unwrapped",
-    "version": "143.0.7499.109"
+    "version": "143.0.7499.169"
   },
   "chromium": {
-    "name": "chromium-143.0.7499.109",
+    "name": "chromium-143.0.7499.169",
     "pname": "chromium",
-    "version": "143.0.7499.109"
+    "version": "143.0.7499.169"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-146.0",
+    "name": "firefox-146.0.1",
     "pname": "firefox",
-    "version": "146.0"
+    "version": "146.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -280,9 +280,9 @@
     "version": "1.25.5"
   },
   "grafana": {
-    "name": "grafana-12.3.0",
+    "name": "grafana-12.3.1",
     "pname": "grafana",
-    "version": "12.3.0"
+    "version": "12.3.1"
   },
   "grub2": {
     "name": "grub-2.12",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.62",
+    "name": "linux-6.12.63",
     "pname": "linux",
-    "version": "6.12.62"
+    "version": "6.12.63"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.62",
+    "name": "linux-6.12.63",
     "pname": "linux",
-    "version": "6.12.62"
+    "version": "6.12.63"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -490,9 +490,9 @@
     "version": "5.5.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.143.0",
+    "name": "matrix-synapse-wrapped-1.144.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.143.0"
+    "version": "1.144.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.2",
@@ -851,9 +851,9 @@
     "version": "3.7.2"
   },
   "promtail": {
-    "name": "promtail-3.6.2",
+    "name": "promtail-3.6.3",
     "pname": "promtail",
-    "version": "3.6.2"
+    "version": "3.6.3"
   },
   "prosody": {
     "name": "prosody-13.0.2",
@@ -991,9 +991,9 @@
     "version": "1.8.0"
   },
   "roundcube": {
-    "name": "roundcube-1.6.11",
+    "name": "roundcube-1.6.12",
     "pname": "roundcube",
-    "version": "1.6.11"
+    "version": "1.6.12"
   },
   "rsync": {
     "name": "rsync-3.4.1",
@@ -1046,9 +1046,9 @@
     "version": "6.18"
   },
   "strongswan": {
-    "name": "strongswan-6.0.3",
+    "name": "strongswan-6.0.4",
     "pname": "strongswan",
-    "version": "6.0.3"
+    "version": "6.0.4"
   },
   "subversion": {
     "name": "subversion-1.14.5",
@@ -1116,9 +1116,9 @@
     "version": "2.41.2"
   },
   "uv": {
-    "name": "uv-0.9.17",
+    "name": "uv-0.9.18",
     "pname": "uv",
-    "version": "0.9.17"
+    "version": "0.9.18"
   },
   "varnish": {
     "name": "varnish-7.7.3",
