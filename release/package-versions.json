@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-143.0.7499.146",
+    "name": "chromedriver-unwrapped-143.0.7499.169",
     "pname": "chromedriver-unwrapped",
-    "version": "143.0.7499.146"
+    "version": "143.0.7499.169"
   },
   "chromium": {
-    "name": "chromium-143.0.7499.146",
+    "name": "chromium-143.0.7499.169",
     "pname": "chromium",
-    "version": "143.0.7499.146"
+    "version": "143.0.7499.169"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.3",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-146.0",
+    "name": "firefox-146.0.1",
     "pname": "firefox",
-    "version": "146.0"
+    "version": "146.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -460,14 +460,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.62",
+    "name": "linux-6.12.63",
     "pname": "linux",
-    "version": "6.12.62"
+    "version": "6.12.63"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.62",
+    "name": "linux-6.12.63",
     "pname": "linux",
-    "version": "6.12.62"
+    "version": "6.12.63"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -560,9 +560,9 @@
     "version": "1.28.0"
   },
   "nginxMainline": {
-    "name": "nginx-1.29.3",
+    "name": "nginx-1.29.4",
     "pname": "nginx",
-    "version": "1.29.3"
+    "version": "1.29.4"
   },
   "nginxStable": {
     "name": "nginx-1.28.0",
@@ -1155,9 +1155,9 @@
     "version": "9.1.1566"
   },
   "webkitgtk": {
-    "name": "webkitgtk-2.50.3+abi=4.0",
+    "name": "webkitgtk-2.50.4+abi=4.0",
     "pname": "webkitgtk",
-    "version": "2.50.3"
+    "version": "2.50.4"
   },
   "wget": {
     "name": "wget-1.25.0",
