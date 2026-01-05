@@ -19,11 +19,11 @@
     "flake-compat": {
       "flake": false,
       "locked": {
-        "lastModified": 1747046372,
-        "narHash": "sha256-CIVLLkVgvHYbgI2UpXvIIBJ12HWgX+fjA8Xf8PUmqCY=",
+        "lastModified": 1761588595,
+        "narHash": "sha256-XKUZz9zewJNUj46b4AJdiRZJAvSZ0Dqj2BNfXvFlJC4=",
         "owner": "edolstra",
         "repo": "flake-compat",
-        "rev": "9100a0f413b0c601e0533d1d94ffd501ce2e7885",
+        "rev": "f387cd2afec9419c8ee37694406ca490c3f34ee5",
         "type": "github"
       },
       "original": {
@@ -81,11 +81,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1750779888,
-        "narHash": "sha256-wibppH3g/E2lxU43ZQHC5yA/7kIKLGxVEnsnVK1BtRg=",
+        "lastModified": 1763988335,
+        "narHash": "sha256-QlcnByMc8KBjpU37rbq5iP7Cp97HvjRP0ucfdh+M4Qc=",
         "owner": "cachix",
         "repo": "git-hooks.nix",
-        "rev": "16ec914f6fb6f599ce988427d9d94efddf25fe6d",
+        "rev": "50b9238891e388c9fdc6a5c49e49c42533a1b5ce",
         "type": "github"
       },
       "original": {
@@ -144,24 +144,21 @@
         "git-hooks": "git-hooks",
         "nixpkgs": [
           "nixpkgs"
-        ],
-        "nixpkgs-25_05": [
-          "nixpkgs"
         ]
       },
       "locked": {
         "host": "gitlab.flyingcircus.io",
-        "lastModified": 1762162044,
-        "narHash": "sha256-ADLR4Z8PfhIhDB71IB2OBFvAODNRf0FnPe7bK8Cbnpw=",
+        "lastModified": 1767606190,
+        "narHash": "sha256-tw6wVaRNWeWc3QFAtzYVrBxAnXrua0grlnm0OuxKYM4=",
         "owner": "flyingcircus",
         "repo": "nixos-mailserver",
-        "rev": "68df045964291c14e7bd12864fa36b58e20000e5",
+        "rev": "d726984b1afa660feb3404908aa74f10c4f2ca58",
         "type": "gitlab"
       },
       "original": {
         "host": "gitlab.flyingcircus.io",
         "owner": "flyingcircus",
-        "ref": "nixos-25.11",
+        "ref": "master",
         "repo": "nixos-mailserver",
         "type": "gitlab"
       }

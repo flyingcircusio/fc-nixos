@@ -26,10 +26,9 @@ Test
         pass
 
 # Mail server is expected to forward mail
-with smtplib.SMTP("mail.example.local", 587) as m:
+with smtplib.SMTP_SSL("mail.example.local", 465) as m:
     m.set_debuglevel(1)
     m.ehlo()
-    m.starttls()
     m.login("user1@example.local", "User1User1")
     m.sendmail(
         "user1@example.local",

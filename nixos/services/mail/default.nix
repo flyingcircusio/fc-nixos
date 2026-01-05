@@ -197,14 +197,6 @@ in
                 notification = "Postfix listening on SMTP port 25";
                 command = "${plug}/check_smtp -H ${role.mailHost} -S -F ${fqdn} " + "-w 5 -c 30";
               };
-              postfix_submission = {
-                notification = "Postfix listening on submission port 587";
-                command = "${plug}/check_smtp -H ${role.mailHost} -p 587 -S " + "-F ${fqdn} -w 5 -c 30";
-              };
-              dovecot_imap = {
-                notification = "Dovecot listening on IMAP port 143";
-                command = "${plug}/check_imap -H ${role.mailHost} -w 5 -c 30";
-              };
               dovecot_imaps = {
                 notification = "Dovecot listening on IMAPs port 993";
                 command = "${plug}/check_imap -H ${role.mailHost} -p 993 -S -w 5 -c 30";
@@ -249,7 +241,7 @@ in
             fqdn = role.mailHost;
             loginAccounts = fclib.jsonFromFile "/etc/local/mail/users.json" "{}";
             extraVirtualAliases = fclib.jsonFromFile "/etc/local/mail/local_valiases.json" "{}";
-            certificateScheme = "acme-nginx";
+            x509.useACMEHost = role.mailHost;
             enableImapSsl = true;
             enableManageSieve = true;
             # FC-38677 - we have a properly configured local resolver in our
@@ -281,6 +273,7 @@ in
             };
             vmailGroupName = "vmail";
             vmailUserName = "vmail";
+            srs.enable = true;
           };
 
           flyingcircus.agent.userscan-ignore-users = [ "vmail" ];
@@ -320,11 +313,8 @@ in
                 };
             in
             listToAttrs (
-              (map cfgForDomain (
-                attrNames (filterAttrs (domain: config: config.enable && config.autoconfig) role.domains)
-              ))
-              ++ (optional (role.imprintUrl != null || role.imprintText != null) (
-                lib.nameValuePair role.mailHost (
+              [
+                (lib.nameValuePair role.mailHost (
                   lib.mkMerge [
                     {
                       serverName = role.mailHost;
@@ -337,35 +327,33 @@ in
                     (lib.mkIf (role.imprintText != null) {
                       root = with pkgs; writeTextDir "index.html" role.imprintText;
                     })
+                    (lib.mkIf
+                      (
+                        role.imprintUrl == null
+                        && role.imprintText == null
+                        && role.webmailHost != null
+                        && role.webmailHost != role.mailHost
+                      )
+                      {
+                        locations."/".return = "302 https://${role.webmailHost}";
+                      }
+                    )
                   ]
-                )
+                ))
+              ]
+              ++ (map cfgForDomain (
+                attrNames (filterAttrs (domain: config: config.enable && config.autoconfig) role.domains)
               ))
-              ++ (optional
-                (
-                  role.imprintUrl == null
-                  && role.imprintText == null
-                  && role.webmailHost != null
-                  && role.webmailHost != role.mailHost
-                )
-                (
-                  lib.nameValuePair role.mailHost {
-                    forceSSL = true;
-                    enableACME = true;
-                    locations."/".return = "302 https://${role.webmailHost}";
-                  }
-                )
-              )
             );
 
           services.postfix = {
-            destination = [
-              role.mailHost
-              config.networking.hostName
-              fqdn
-              "localhost"
-            ];
-
             settings.main = {
+              mydestination = [
+                role.mailHost
+                config.networking.hostName
+                fqdn
+                "localhost"
+              ];
               empty_address_recipient = "postmaster";
               enable_long_queue_ids = true;
               local_header_rewrite_clients = [
@@ -420,20 +408,6 @@ in
             virtual = lib.mkDefault fallbackGenericVirtual;
           };
 
-          services.postsrsd = {
-            enable = true;
-            settings.domains = [
-              primaryDomain
-            ]
-            ++ optionals (domains != [ ]) (
-              domains
-              ++ [
-                role.mailHost
-                fqdn
-              ]
-            );
-          };
-
           system.activationScripts.postfix-dynamicMaps-permissions = lib.stringAfter [ ] (
             lib.concatStrings (
               map (file: ''
@@ -476,9 +450,9 @@ in
           ];
 
           systemd.services.mailserver-update-stateversion = lib.mkIf (config.mailserver.stateVersion < 3) {
-            before = [ "dovecot2.service" ];
-            requiredBy = [ "dovecot2.service" ];
-            wantedBy = [ "dovecot2.service" ];
+            before = [ "dovecot.service" ];
+            requiredBy = [ "dovecot.service" ];
+            wantedBy = [ "dovecot.service" ];
             path = with pkgs; [
               fc.agent
               python3
