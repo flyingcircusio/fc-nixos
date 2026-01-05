@@ -18,5 +18,7 @@
     "jitsi-meet-1.0.8043" # insecure libolm but this only affects optional e2ee which we don't really support.
     "discourse-3.2.5" # currently not regularly updated in nixpkgs as upstream keeps changing build system in minor versions
     "k3s-1.29.15+k3s1" # EOL 20250-02-28, but we rarely throw out packages within a release
+    "mongodb-6.0.23"
+    "mongodb-7.0.25"
   ];
 }
