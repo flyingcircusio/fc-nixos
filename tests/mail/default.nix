@@ -64,7 +64,11 @@ import ../make-test-python.nix (
 
               flyingcircus.roles.postgresql14.enable = true;
 
-              mailserver.certificateScheme = lib.mkOverride 50 "selfsigned";
+              mailserver.x509 = {
+                useACMEHost = lib.mkForce null;
+                certificateFile = "/var/keys/certs/mail-cert.pem";
+                privateKeyFile = "/var/keys/certs/mail-key.pem";
+              };
               mailserver.loginAccounts = lib.mkForce {
                 "user1@example.local" = {
                   # User1User1
@@ -92,6 +96,31 @@ import ../make-test-python.nix (
                 _EOT_
               '';
 
+              systemd.services.mailserver-selfsigned-certificate = {
+                after = [ "local-fs.target" ];
+                wantedBy = [ "multi-user.target" ];
+                before = [
+                  "dovecot.service"
+                  "postfix.service"
+                ];
+                script = ''
+                  # Create certificates if they do not exist yet
+                  key="/var/keys/certs/mail-key.pem";
+                  cert="/var/keys/certs/mail-cert.pem";
+
+                  if [[ ! -f $key || ! -f $cert ]]; then
+                      mkdir -p "/var/keys/certs"
+                      (umask 077; "${pkgs.openssl}/bin/openssl" genrsa -out "$key" 4096) &&
+                          "${pkgs.openssl}/bin/openssl" req -new -key "$key" -x509 -subj "/CN=${config.flyingcircus.roles.mailserver.mailHost}" \
+                                  -days 365 -out "$cert"
+                  fi
+                '';
+                serviceConfig = {
+                  Type = "oneshot";
+                  PrivateTmp = true;
+                };
+              };
+
               # conflicts with dnsmasq
               services.kresd.enable = lib.mkForce false;
 
@@ -101,6 +130,10 @@ import ../make-test-python.nix (
                 enableACME = lib.mkForce false;
               };
               services.nginx.virtualHosts.${config.flyingcircus.roles.mailserver.mailHost} = {
+                forceSSL = lib.mkForce false;
+                enableACME = lib.mkForce false;
+              };
+              services.nginx.virtualHosts.${config.flyingcircus.roles.mailserver.webmailHost} = {
                 forceSSL = lib.mkForce false;
                 enableACME = lib.mkForce false;
               };
