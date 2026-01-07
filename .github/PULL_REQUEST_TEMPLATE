@@ -19,7 +19,6 @@ or
 - [ ] internal issue ID (PL-…) part of branch name
 - [ ] internal issue ID mentioned in PR description text
 - [ ] ticket is on Platform agile board
-- [ ] ticket state set to *Pull request ready*
 - [ ] if ticket is more urgent than within the next few days, directly contact a member of the Platform team
 <!--
 - [ ] set urgency and risk labels
