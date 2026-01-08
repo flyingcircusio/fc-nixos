@@ -41,6 +41,10 @@ let
     fclib.filterConfiguredNetworks static.routerUplinkNetworks."${location}"
   );
 
+  downlinkInterfaces = map (network: fclib.network."${network}".interface) (
+    fclib.filterConfiguredNetworks (static.routerDownlinkNetworks."${location}" or [ ])
+  );
+
   gatewayInterfaces =
     map (network: fclib.network."${network}")
       static.floatingGatewayNetworks."${location}";
@@ -52,7 +56,7 @@ let
       network:
       lib.concatMapStringsSep "\n" (
         iface: "${fclib.iptables network} -A nixos-fw -i ${iface} -s ${network} -j DROP"
-      ) uplinkInterfaces
+      ) (uplinkInterfaces ++ downlinkInterfaces)
     ) martianNetworks
   );
 
@@ -62,7 +66,7 @@ let
         network:
         lib.concatMapStringsSep "\n" (
           iface: "${fclib.iptables network} -A fc-router-forward -i ${iface} -s ${network} -j DROP"
-        ) uplinkInterfaces
+        ) (uplinkInterfaces ++ downlinkInterfaces)
       )
       # Also drop link-local addresses here.
       (martianNetworks ++ [ "fe80::/10" ])
@@ -73,7 +77,7 @@ let
       network:
       lib.concatMapStringsSep "\n" (
         iface: "${fclib.iptables network} -A fc-router-forward -o ${iface} -d ${network} -j REJECT"
-      ) uplinkInterfaces
+      ) (uplinkInterfaces ++ downlinkInterfaces)
     ) (martianNetworks ++ [ "fe80::/10" ])
   );
 
