@@ -1116,9 +1116,9 @@
     "version": "2.41.2"
   },
   "uv": {
-    "name": "uv-0.9.21",
+    "name": "uv-0.9.22",
     "pname": "uv",
-    "version": "0.9.21"
+    "version": "0.9.22"
   },
   "varnish": {
     "name": "varnish-7.7.3",
