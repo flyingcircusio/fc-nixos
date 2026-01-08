@@ -1,3 +1,22 @@
+# Release 2026_001
+
+## Impact
+
+- stashost-master, statshost-global: if you are using the default URL of `<hostname>.fe.<location>.fcio.net/grafana`, you need to change `flyingcircus.roles.statshost.hostName` to the URL you use.
+
+  Almost all instances already use the new URL `grafana.<resource group>.fcio.net`, so likely you don't need to change anything.
+
+
+## NixOS XX.XX platform
+
+- statshost-master: change default URL to `grafana.<resource group>.fcio.net` (PL-134242)
+
+- add a simple NixOS tests that verifies that loki is running and accepting the syslog
+
+- Adds a sensu check to check for ollama loading models into CPU memory which degrades performance. (PL-134226)
+
+
+
 # Release 2025_047
 
 ## Impact
