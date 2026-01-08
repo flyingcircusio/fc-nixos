@@ -1,4 +1,4 @@
-From 35a2e872869405af5443558ab73ecdb0f9411566 Mon Sep 17 00:00:00 2001
+From 82e37721b57cf96efe812a6aa831316f75632e38 Mon Sep 17 00:00:00 2001
 From: Molly Miller <mm@flyingcircus.io>
 Date: Tue, 1 Jul 2025 16:11:41 +0200
 Subject: [PATCH 3/3] netlink: don't manage kernel neighbour table entries for
@@ -22,7 +22,7 @@ with ARP and NDP.
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/zebra/zebra_evpn_neigh.c b/zebra/zebra_evpn_neigh.c
-index 81705d4e85..28df725f87 100644
+index a2fcd77fe0..439f94c690 100644
 --- a/zebra/zebra_evpn_neigh.c
 +++ b/zebra/zebra_evpn_neigh.c
 @@ -159,7 +159,7 @@ int zebra_evpn_rem_neigh_install(struct zebra_evpn *zevpn,

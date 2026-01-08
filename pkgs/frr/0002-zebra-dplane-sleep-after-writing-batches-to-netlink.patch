@@ -1,4 +1,4 @@
-From 4e5a945339b4157cfd236758c30600cc4990241d Mon Sep 17 00:00:00 2001
+From f5a9f37c6ebeaff916b708401e7c190a7ecb33e7 Mon Sep 17 00:00:00 2001
 From: Molly Miller <mm@flyingcircus.io>
 Date: Tue, 29 Apr 2025 16:12:01 +0200
 Subject: [PATCH 2/3] zebra-dplane: sleep after writing batches to netlink
@@ -20,7 +20,7 @@ and resize the hashtables in the background.
  1 file changed, 8 insertions(+)
 
 diff --git a/zebra/kernel_netlink.c b/zebra/kernel_netlink.c
-index 561f16609f..f938193eb4 100644
+index 4c239f0a4f..2ad9138249 100644
 --- a/zebra/kernel_netlink.c
 +++ b/zebra/kernel_netlink.c
 @@ -5,6 +5,7 @@
@@ -31,7 +31,7 @@ index 561f16609f..f938193eb4 100644
  
  #ifdef HAVE_NETLINK
  #include <linux/netlink.h>
-@@ -1482,6 +1483,7 @@ static void nl_batch_init(struct nl_batch *bth,
+@@ -1467,6 +1468,7 @@ static void nl_batch_init(struct nl_batch *bth,
  static void nl_batch_send(struct nl_batch *bth)
  {
  	struct zebra_dplane_ctx *ctx;
@@ -39,7 +39,7 @@ index 561f16609f..f938193eb4 100644
  	bool err = false;
  
  	if (bth->curlen != 0 && bth->zns != NULL) {
-@@ -1516,6 +1518,12 @@ static void nl_batch_send(struct nl_batch *bth)
+@@ -1501,6 +1503,12 @@ static void nl_batch_send(struct nl_batch *bth)
  	}
  
  	nl_batch_reset(bth);
