@@ -211,12 +211,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   });
 
   frr = super.frr.overrideAttrs (old: rec {
-    version = "10.1.4";
+    version = "10.4.1";
     src = super.fetchFromGitHub {
       owner = "FRRouting";
       repo = old.pname;
       rev = "${old.pname}-${version}";
-      hash = "sha256-rH/MuOrCKrWepZH8w/FQBuwx0OkKL9+o6JkhWtzffvo=";
+      hash = "sha256-pEnMOy1/gIs8a/XCGixF3ZkSwUZ1PPuaSFBminY86DA=";
     };
 
     patches = [
