@@ -81,6 +81,16 @@ in
         description = "Network to use for migration";
       };
 
+      maintenanceEvacuationTimeout = lib.mkOption {
+        type = lib.types.ints.positive;
+        # in dev, we deliberately provide insufficient time to test the postpone and retry paths
+        default = if (location == "dev") then 60 else 300;
+        defaultText = "60s for dev, everywhere else 300s";
+        description = ''
+          Evacuation timeout in seconds for the maintenance enter guard.
+                    If VMs are remaining after this time, the maintenance fails temporarily.'';
+      };
+
     };
   };
 
@@ -152,6 +162,7 @@ in
         ; VNC ACL because it gets mixed up with ::1.
         vnc = 127.0.0.1:{id}
         timeout-graceful = 120
+        maintenance-evacuation-timeout = ${toString cfg.maintenanceEvacuationTimeout}
         migration-address = tcp:${migration_address}:{id}
         migration-ctl-address = ${migration_ctl_address}:0
         migration-bandwidth = ${toString cfg.migrationBandwidth}
