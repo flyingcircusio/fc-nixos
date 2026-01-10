@@ -65,9 +65,9 @@
     "version": "3.117"
   },
   "calibre": {
-    "name": "calibre-8.14.0",
+    "name": "calibre-8.15.0",
     "pname": "calibre",
-    "version": "8.14.0"
+    "version": "8.15.0"
   },
   "ceph": {
     "name": "ceph-14.2.22",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-143.0.7499.169",
+    "name": "chromedriver-unwrapped-143.0.7499.192",
     "pname": "chromedriver-unwrapped",
-    "version": "143.0.7499.169"
+    "version": "143.0.7499.192"
   },
   "chromium": {
-    "name": "chromium-143.0.7499.169",
+    "name": "chromium-143.0.7499.192",
     "pname": "chromium",
-    "version": "143.0.7499.169"
+    "version": "143.0.7499.192"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -150,9 +150,9 @@
     "version": "29.1.3"
   },
   "docker-compose": {
-    "name": "docker-compose-5.0.0",
+    "name": "docker-compose-5.0.1",
     "pname": "docker-compose",
-    "version": "5.0.0"
+    "version": "5.0.1"
   },
   "dovecot": {
     "name": "dovecot-2.3.21.1",
@@ -160,9 +160,9 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.12.6",
+    "name": "element-web-1.12.7",
     "pname": "element-web",
-    "version": "1.12.6"
+    "version": "1.12.7"
   },
   "erlang": {
     "name": "erlang-28.3",
@@ -375,9 +375,9 @@
     "version": "1.33.7+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.4.7",
+    "name": "keycloak-26.5.0",
     "pname": "keycloak",
-    "version": "26.4.7"
+    "version": "26.5.0"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -440,14 +440,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.63",
+    "name": "linux-6.12.64",
     "pname": "linux",
-    "version": "6.12.63"
+    "version": "6.12.64"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.63",
+    "name": "linux-6.12.64",
     "pname": "linux",
-    "version": "6.12.63"
+    "version": "6.12.64"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -475,9 +475,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.5.3",
+    "name": "mastodon-4.5.4",
     "pname": "mastodon",
-    "version": "4.5.3"
+    "version": "4.5.4"
   },
   "matomo": {
     "name": "matomo-5.5.2",
@@ -846,9 +846,9 @@
     "version": "3.6.3"
   },
   "prosody": {
-    "name": "prosody-13.0.2",
+    "name": "prosody-13.0.3",
     "pname": "prosody",
-    "version": "13.0.2"
+    "version": "13.0.3"
   },
   "python3": {
     "name": "python3-3.13.11",
@@ -1106,9 +1106,9 @@
     "version": "2.41.2"
   },
   "uv": {
-    "name": "uv-0.9.21",
+    "name": "uv-0.9.22",
     "pname": "uv",
-    "version": "0.9.21"
+    "version": "0.9.22"
   },
   "varnish": {
     "name": "varnish-7.7.3",
