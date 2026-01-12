@@ -4,7 +4,6 @@ Please consider that this is not a guarantee for not getting `OSD_NEARFULL` warn
 as individual fill levels of OSDs below a cluster root is not perfectly balanced.
 """
 
-import contextlib
 import json
 import sys
 from collections import namedtuple
@@ -16,7 +15,7 @@ from typing import Dict, Iterable, Iterator, List, Tuple
 
 import rados
 import rbd
-import toml  # replace this with tomllib when on python-3.11+
+import tomllib
 
 # defining global helper constants
 
@@ -248,12 +247,12 @@ def parse_config(argv) -> Tuple[Thresholds, dict]:
         sys.exit(SensuStatus.CRITICAL)
 
     try:
-        with open(argv[1], "rt") as configtoml:
-            config = toml.load(configtoml)
+        with open(argv[1], "rb") as configtoml:
+            config = tomllib.load(configtoml)
     except (FileNotFoundError, PermissionError):
         print(f"Error: Unable to open file {argv[1]}.")
         sys.exit(SensuStatus.CRITICAL)
-    except toml.TomlDecodeError:
+    except tomllib.TOMLDecodeError:
         print(f"Error: {argv[1]} is not a valid TOML file.")
         sys.exit(SensuStatus.CRITICAL)
 

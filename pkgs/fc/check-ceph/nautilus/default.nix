@@ -1,30 +1,36 @@
 {
-  pkgs,
-  libyaml,
-  python3Packages,
+  lib,
   ceph-client,
-  libceph,
+  buildPythonApplication,
+  setuptools,
+  nagiosplugin,
+  pytestCheckHook,
 }:
 
-let
-  py = python3Packages;
-
-in
-py.buildPythonApplication rec {
+buildPythonApplication rec {
   name = "fc-check-ceph-nautilus-${version}";
   version = "1.0";
   src = ./.;
   dontStrip = true;
-  propagatedBuildInputs = [
-    py.nagiosplugin
-    (py.toPythonModule ceph-client)
-    py.toml
-  ];
-  checkInputs = [
-    py.pytest
+  pyproject = true;
+  __structuredAttrs = true;
+
+  build-system = [
+    setuptools
   ];
 
-  checkPhase = ''
-    pytest .
-  '';
+  makeWrapperArgs = [
+    "--prefix"
+    "PATH"
+    ":"
+    "${lib.makeBinPath [ ceph-client ]}"
+  ];
+
+  dependencies = [
+    nagiosplugin
+  ];
+
+  nativeCheckInputs = [
+    pytestCheckHook
+  ];
 }
