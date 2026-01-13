@@ -132,7 +132,8 @@ in
           "--data-dir=/var/lib/k3s"
           "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
           "--disable traefik"
-        ];
+        ]
+        ++ (lib.optional netCfg.enableIPv6 "--flannel-ipv6-masq");
       in
       {
         enable = true;
