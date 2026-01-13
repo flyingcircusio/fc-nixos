@@ -11,6 +11,7 @@ from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
+from traceback import print_exc
 from typing import Dict, Iterable, Iterator, List, Self, Tuple
 
 import tomllib
@@ -39,6 +40,7 @@ class SensuStatus(IntEnum):
         """Returns the highest-priority exit code of the given two. Also checks for
         unknown exit code values, falling back to UNKNOWN"""
         for code in cls:
+            # relies on the definition order of the enum
             if code in (new, previous):
                 return code
         else:
@@ -179,6 +181,10 @@ def parse_pools(
             # we're not interested in that crush root
             continue
 
+        if root_data["kb"] == 0:
+            print(f"INFO: Pool {root_data['name']} has no capacity, ignoring.")
+            continue
+
         root_obj = CrushRoot(
             name=crush_name,
             size=root_data["kb"] * KiB,
@@ -190,7 +196,8 @@ def parse_pools(
             pools.append(Pool(pool_name, root_obj))
 
     if remaining_crush_roots:
-        status_code = SensuStatus.UNKNOWN  # XXX
+        # It is desired to allow removing default pools without having to adjust
+        # the check config. (PL-134230)
         print(
             "INFO: Unable to retrieve fill stats for some crush roots:",
             remaining_crush_roots,
@@ -324,19 +331,27 @@ def eval_report(
 
 
 def main():
-    # can cause the program to exit with non-working config
-    (thresholds, pool_roots) = parse_config(sys.argv)
-    # phase 1: data collection
-    # retrieve cluster root fill stats
-    # retrieve list of images and snaps
-    (status_code, pools) = parse_pools(
-        _ceph_osd_df_tree_roots(), pool_roots, thresholds
-    )
-    all_snaps = query_snaps(pools)
-    # phase 2: evaluation: filter and sort snapshots into warn categories
-    reporting_snap_categories = categorise_snaps(all_snaps)
+    eval_status = SensuStatus.OK
+    status_code = SensuStatus.OK
+    try:
+        # can cause the program to exit with non-working config
+        (thresholds, pool_roots) = parse_config(sys.argv)
+        # phase 1: data collection
+        # retrieve cluster root fill stats
+        # retrieve list of images and snaps
+        (status_code, pools) = parse_pools(
+            _ceph_osd_df_tree_roots(), pool_roots, thresholds
+        )
+        all_snaps = query_snaps(pools)
+        # phase 2: evaluation: filter and sort snapshots into warn categories
+        reporting_snap_categories = categorise_snaps(all_snaps)
 
-    # phase 3: reporting
-    (eval_status, report_str) = eval_report(reporting_snap_categories)
-    print(report_str)
+        # phase 3: reporting
+        (eval_status, report_str) = eval_report(reporting_snap_categories)
+        print(report_str)
+    except Exception:
+        # all uncaught exceptions count as "unknown"
+        print_exc()
+        status_code = SensuStatus.UNKNOWN.merge(status_code)
+
     sys.exit(status_code.merge(eval_status))
