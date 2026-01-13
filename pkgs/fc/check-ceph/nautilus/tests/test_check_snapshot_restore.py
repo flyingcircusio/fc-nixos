@@ -91,14 +91,17 @@ def test_snapshot_critical(snap_critical):
     assert snap_critical.restore_impact[0] == snapcheck.SensuStatus.CRITICAL
 
 
-def test_snapshot_oddities(snapshot):
+def test_snapshot_zerosize(snapshot):
     snapshot.pool.root.size = 1000000
     snapshot.pool.root.used = 0
     snapshot.size = 0
 
     assert snapshot.restore_impact[0] == snapcheck.SensuStatus.OK
 
+
+def test_snapshot_uses_correct_thresholds(snapshot):
     # check that passed thresholds are used
+    snapshot.pool.root.size = 1000000
     snapshot.pool.root.thresholds = snapcheck.Thresholds(1.0, 1.0)
     snapshot.size = snapshot.pool.root.size - 1
     assert snapshot.restore_impact[0] == snapcheck.SensuStatus.OK
@@ -194,12 +197,39 @@ def test_parse_pools(
     assert parsed_pools[1].root.used == 65970697666560
 
 
+def test_ignore_empty_pools(
+    parsed_raw_cluster_fillstats, example_thresholds, default_pool_roots
+):
+    """Special case: Empty pools with a size of 0 can be ignored. (PL-134230)"""
+    fillstat_info = list(parsed_raw_cluster_fillstats)
+    for nullkey in [
+        "kb",
+        "kb_used",
+        "kb_used_data",
+        "kb_used_omap",
+        "kb_used_meta",
+        "kb_avail",
+        "utilization",
+        "var",
+        "pgs",
+    ]:
+        fillstat_info[1][nullkey] = 0
+
+    (parse_status, parsed_pools) = snapcheck.parse_pools(
+        iter(fillstat_info), default_pool_roots, example_thresholds
+    )
+
+    assert len(parsed_pools) == 1
+    assert parse_status == snapcheck.SensuStatus.OK
+
+
 def test_parse_pools_no_stats_available(example_thresholds, default_pool_roots):
+    """don't warn for roots that do not exist (PL-134230)"""
     (parse_status, parsed_pools) = snapcheck.parse_pools(
         iter([]), default_pool_roots, example_thresholds
     )
 
-    assert parse_status == snapcheck.SensuStatus.UNKNOWN
+    assert parse_status == snapcheck.SensuStatus.OK
     assert not parsed_pools
 
 
@@ -324,3 +354,12 @@ def test_eval_report_all_okay():
 
     assert overall_status == snapcheck.SensuStatus.OK
     assert "Total status: OK" in report
+
+
+@mock.patch("fc.check_ceph.check_snapshot_restore.parse_config")
+def test_uncaught_exceptions_unknown_status(call_mock):
+    call_mock.side_effect = [Exception("foo")]
+    with pytest.raises(SystemExit) as e:
+        snapcheck.main()
+
+    assert e.value.code == snapcheck.SensuStatus.UNKNOWN
