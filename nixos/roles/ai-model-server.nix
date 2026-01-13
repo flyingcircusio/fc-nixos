@@ -98,6 +98,30 @@ in
         };
         description = "Predefined models to make available";
       };
+
+      skvaider-inference = lib.mkOption {
+        type = lib.types.submodule {
+          options = {
+            enable = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Enable Skvaider inference service";
+            };
+
+            port = lib.mkOption {
+              type = lib.types.int;
+              default = 8000;
+              description = "Port for Skvaider inference service";
+            };
+
+            modelPath = lib.mkOption {
+              type = lib.types.str;
+              default = "/var/lib/skvaider/model";
+              description = "Path to the Skvaider model directory";
+            };
+          };
+        };
+      };
     };
   };
 
@@ -125,6 +149,32 @@ in
               enabledModels = lib.filterAttrs (n: v: v.enable) cfg.models;
             in
             lib.mapAttrsToList (n: v: v.name) enabledModels;
+        };
+
+        systemd.services.skvaider-inference = lib.mkIf cfg.skvaider-inference.enable {
+          description = "Skvaider inference service";
+          wantedBy = [ "multi-user.target" ];
+          environment = {
+            PORT = toString cfg.skvaider-inference.port;
+            MODELS_DIR = "${cfg.skvaider-inference.modelPath}";
+          };
+          serviceConfig = {
+            ExecStart = "${pkgs.fc.skvaider}/bin/inference";
+            WorkingDirectory = "${cfg.skvaider-inference.modelPath}";
+            StateDirectory = "skvaider";
+            DynamicUser = true;
+            CapabilityBoundingSet = [ "" ];
+            DeviceAllow = [
+              # ROCm
+              "char-drm"
+              "char-fb"
+              "char-kfd"
+            ];
+            PrivateDevices = false; # hides acceleration devices
+            SupplementaryGroups = [
+              "render"
+            ];
+          };
         };
 
         systemd.services.ollama.serviceConfig.Restart = "always";
