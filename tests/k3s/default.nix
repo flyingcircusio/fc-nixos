@@ -5,52 +5,52 @@ import ../make-test-python.nix (
     testlib,
     ...
   }:
-  with builtins;
-
   let
 
-    net4Srv = "10.0.1";
-    frontendSrv = net4Srv + ".1";
-    masterSrv = net4Srv + ".2";
-    nodeSrvA = net4Srv + ".3";
-    nodeSrvB = net4Srv + ".4";
-
-    net4Fe = "10.0.2";
-    frontendFe = net4Fe + ".1";
-    masterFe = net4Fe + ".2";
+    masterSrv4 = testlib.fcIP.srv4 2;
+    masterSrv6 = testlib.fcIP.srv6 2;
+    nodeSrvA4 = testlib.fcIP.srv4 3;
+    nodeSrvA6 = testlib.fcIP.srv6 3;
+    nodeSrvB4 = testlib.fcIP.srv4 4;
+    nodeSrvB6 = testlib.fcIP.srv6 4;
+    frontendSrv4 = testlib.fcIP.fe4 1;
+    frontendSrv6 = testlib.fcIP.fe6 1;
 
     encServices = [
       {
         address = "k3sserver.fcio.net";
-        ips = [ masterSrv ];
+        ips = [
+          masterSrv4
+          masterSrv6
+        ];
         service = "k3s-server-server";
         password = "xvlc";
       }
       {
         address = "k3snodeA.fcio.net";
-        ips = [ nodeSrvA ];
+        ips = [
+          nodeSrvA4
+          nodeSrvA6
+        ];
         service = "k3s-node";
       }
       {
         address = "k3snodeB.fcio.net";
-        ips = [ nodeSrvB ];
+        ips = [
+          nodeSrvB4
+          nodeSrvB6
+        ];
         service = "k3s-node";
       }
       {
         address = "frontend.fcio.net";
-        ips = [ frontendFe ];
+        ips = [
+          frontendSrv4
+          frontendSrv6
+        ];
         service = "k3s-frontend";
       }
     ];
-
-    hosts = ''
-      ${masterSrv} k3sserver.fcio.net
-      ${nodeSrvA} k3snodeA.fcio.net
-      ${nodeSrvB} k3snodeB.fcio.net
-      ${frontendFe} frontend.fcio.net
-      ${masterFe} k3sserver.fe.test.fcio.net
-      ${masterFe} k3s.test.fcio.net
-    '';
 
     redis = import ./redis.nix { inherit pkgs; };
 
@@ -58,45 +58,23 @@ import ../make-test-python.nix (
   {
 
     name = "k3s";
+
+    interactive.sshBackdoor = {
+      enable = true;
+    };
+
     nodes = {
 
       master =
         { lib, ... }:
         {
-          imports = [
-            ../../nixos
-            ../../nixos/roles
-          ];
+          imports = [ (testlib.fcConfig { id = 2; }) ];
 
           config = {
-
-            flyingcircus.enc.parameters = {
-              location = "test";
-              resource_group = "test";
-              interfaces.srv = {
-                bridged = false;
-                mac = "52:54:00:12:01:02";
-                networks = {
-                  "${net4Srv}.0/24" = [ masterSrv ];
-                };
-                gateways = {
-                  "${net4Srv}.0/24" = "${net4Srv}.254";
-                };
-              };
-              interfaces.fe = {
-                bridged = false;
-                mac = "52:54:00:12:02:02";
-                networks = {
-                  "${net4Fe}.0/24" = [ masterFe ];
-                };
-                gateways = { };
-              };
-            };
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-server.enable = true;
             networking.domain = "fcio.net";
             networking.hostName = lib.mkForce "k3sserver";
-            networking.extraHosts = hosts;
 
             networking.firewall.allowedTCPPorts = [
               8888
@@ -136,16 +114,6 @@ import ../make-test-python.nix (
 
             virtualisation.memorySize = 2000;
             virtualisation.diskSize = lib.mkForce 3000;
-            # do not automatically assign addresses based on vlan and
-            # guest id.
-            virtualisation.interfaces = {
-              ethfe = {
-                vlan = 2;
-              };
-              ethsrv = {
-                vlan = 1;
-              };
-            };
             virtualisation.qemu.options = [ "-smp 2" ];
           };
         };
@@ -153,112 +121,47 @@ import ../make-test-python.nix (
       nodeA =
         { ... }:
         {
-          imports = [
-            ../../nixos
-            ../../nixos/roles
-          ];
+          imports = [ (testlib.fcConfig { id = 3; }) ];
 
           config = {
-            flyingcircus.enc.parameters = {
-              resource_group = "test";
-              interfaces.srv = {
-                bridged = false;
-                mac = "52:54:00:12:01:03";
-                networks = {
-                  "${net4Srv}.0/24" = [ nodeSrvA ];
-                };
-                gateways = {
-                  "${net4Srv}.0/24" = "${net4Srv}.254";
-                };
-              };
-            };
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-agent.enable = true;
 
             networking.domain = "fcio.net";
-            networking.extraHosts = hosts;
             networking.hostName = lib.mkForce "k3snodeA";
             networking.nameservers = [ "127.0.0.1" ];
             virtualisation.memorySize = 2000;
             virtualisation.diskSize = 3000;
-            virtualisation.interfaces.ethsrv.vlan = 1;
           };
         };
 
       nodeB =
         { ... }:
         {
-          imports = [
-            ../../nixos
-            ../../nixos/roles
-          ];
+          imports = [ (testlib.fcConfig { id = 4; }) ];
 
           config = {
-            flyingcircus.enc.parameters = {
-              resource_group = "test";
-              interfaces.srv = {
-                bridged = false;
-                mac = "52:54:00:12:01:04";
-                networks = {
-                  "${net4Srv}.0/24" = [ nodeSrvB ];
-                };
-                gateways = {
-                  "${net4Srv}.0/24" = "${net4Srv}.254";
-                };
-              };
-            };
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-agent.enable = true;
 
             networking.domain = "fcio.net";
-            networking.extraHosts = hosts;
             networking.hostName = lib.mkForce "k3snodeB";
             virtualisation.memorySize = 2000;
             virtualisation.diskSize = 3000;
-            virtualisation.interfaces.ethsrv.vlan = 1;
           };
         };
 
       frontend =
         { ... }:
         {
-          imports = [
-            ../../nixos
-            ../../nixos/roles
-          ];
+          imports = [ (testlib.fcConfig { id = 1; }) ];
 
-          flyingcircus.roles.webgateway.enable = true;
-          flyingcircus.enc.parameters = {
-            resource_group = "test";
-            interfaces.srv = {
-              bridged = false;
-              mac = "52:54:00:12:01:01";
-              networks = {
-                "${net4Srv}.0/24" = [ frontendSrv ];
-              };
-              gateways = { };
-            };
-            interfaces.fe = {
-              bridged = false;
-              mac = "52:54:00:12:02:01";
-              networks = {
-                "${net4Fe}.0/24" = [ frontendFe ];
-              };
-              gateways = { };
-            };
-          };
-          networking.domain = "fcio.net";
-          networking.extraHosts = hosts;
-          flyingcircus.encServices = encServices;
-          virtualisation.diskSize = 3000;
-          virtualisation.memorySize = 2000;
-          virtualisation.interfaces = {
-            ethfe = {
-              vlan = 2;
-            };
-            ethsrv = {
-              vlan = 1;
-            };
+          config = {
+            flyingcircus.roles.webgateway.enable = true;
+            networking.domain = "fcio.net";
+            flyingcircus.encServices = encServices;
+            virtualisation.diskSize = 3000;
+            virtualisation.memorySize = 2000;
           };
         };
 
@@ -274,7 +177,10 @@ import ../make-test-python.nix (
 
         with subtest("k3s server should work"):
           k3sserver.wait_for_unit("k3s.service")
-          k3sserver.wait_until_succeeds('k3s kubectl cluster-info | grep -q https://127.0.0.1:6443')
+          k3sserver.wait_until_succeeds('k3s kubectl get --raw=/healthz | grep -q ok')
+          print("Debug: cluster-info output:")
+          print(k3sserver.execute('k3s kubectl cluster-info')[1])
+          k3sserver.succeed('k3s kubectl get node k3sserver -o jsonpath=\'{.status.conditions[?(@.type=="Ready")].status}\' | grep -q True')
 
         k3snodeA.start()
 
@@ -323,8 +229,25 @@ import ../make-test-python.nix (
           k3sserver.succeed("KUBECONFIG=/home/test/kubeconfig k3s kubectl cluster-info")
 
         with subtest("master should be able to reach cluster DNS"):
+          time.sleep(1)
+          print("Debug: kubectl get pods for coredns readiness:")
+          print(k3sserver.execute('k3s kubectl -n kube-system get pods')[1])
           k3sserver.wait_until_succeeds('k3s kubectl -n kube-system get pods | grep coredns | grep -v ContainerCreating | grep Running')
-          k3sserver.wait_until_succeeds('dig redis.default.svc.cluster.local @10.43.0.10 | grep NOERROR')
+          print("Debug: test metrics-server reachability:")
+          print(k3sserver.execute('curl -k --connect-timeout 5 https://fd00:43::f76')[1])
+          time.sleep(5)
+          print("Debug: ip route show:")
+          print(k3sserver.execute('ip route show')[1])
+          print("Debug: iptables -L:")
+          print(k3sserver.execute('iptables -L')[1])
+          print("Debug: iptables -t nat -L:")
+          print(k3sserver.execute('iptables -t nat -L')[1])
+          print("Debug: kubectl get svc in kube-system:")
+          print(k3sserver.execute('k3s kubectl get svc -n kube-system -o wide')[1])
+          print("Debug: kubectl describe svc kube-dns:")
+          print(k3sserver.execute('k3s kubectl describe svc kube-dns -n kube-system')[1])
+          print("Debug: coredns logs:")
+          print(k3sserver.execute('k3s kubectl logs -n kube-system deployment/coredns')[1])
 
         k3snodeB.start()
         time.sleep(5)

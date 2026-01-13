@@ -9,6 +9,9 @@
   pkgs,
   ...
 }:
+let
+  inherit (config.flyingcircus.kubernetes.network) enableIPv6;
+in
 {
   imports = with lib; [
     ./nfs.nix
@@ -18,15 +21,30 @@
   ];
 
   options = with lib; {
-
     flyingcircus.kubernetes = {
 
       network = {
+        enableIPv6 = mkOption {
+          type = types.bool;
+          default = lib.versionAtLeast config.system.stateVersion "25.11";
+          description = ''
+            Enable IPv6 support for k3s clusters. When enabled, clusters will use
+            dual-stack networking with both IPv4 and IPv6. This option is automatically
+            enabled for clusters with state version >= 25.11, but can be overridden.
+          '';
+        };
 
         clusterDns = mkOption {
           type = types.listOf types.str;
-          default = [ "10.43.0.10" ];
-          description = "Cluster IP that should be used for CoreDNS.";
+          default =
+            if enableIPv6 then
+              [
+                "fd00:43::a"
+                "10.43.0.10"
+              ]
+            else
+              [ "10.43.0.10" ];
+          description = "Cluster IPs that should be used for CoreDNS.";
         };
 
         # These network specifications are supposed to hold at most one network
@@ -36,19 +54,40 @@
         # kubernetes.network.ipv6 = { serviceCidr…; podCidr…;};
         serviceCidr = mkOption {
           type = types.listOf types.str;
-          default = [ "10.43.0.0/16" ];
-          description = "Cluster IPs are assigned to services from the subnet specified here.";
+          default =
+            if enableIPv6 then
+              [
+                "fd00:43::/112"
+                "10.43.0.0/16"
+              ]
+            else
+              [ "10.43.0.0/16" ];
+          description = "IPs are assigned to services from the subnet specified here.";
         };
 
         podCidr = mkOption {
           type = types.listOf types.str;
-          default = [ "10.42.0.0/16" ];
+          default =
+            if enableIPv6 then
+              [
+                "fd00:42::/56"
+                "10.42.0.0/16"
+              ]
+            else
+              [ "10.42.0.0/16" ];
           description = "Kubernetes nodes get a /24 subnet for their pods from the given subnet.";
         };
+
         nodeIps = mkOption {
           type = with types; listOf str;
-          internal = true; # should be managed by a global IPv6 switch instead PL-133774
-          default = [ (head config.fclib.network.srv.v4.addresses) ];
+          internal = true;
+          default = 
+            let
+              v6Addrs = config.fclib.network.srv.v6.addresses or [];
+              v4Addrs = config.fclib.network.srv.v4.addresses or [];
+            in
+            lib.optional (enableIPv6 && v6Addrs != []) (head v6Addrs) ++
+            lib.optional (v4Addrs != []) (head v4Addrs);
         };
       };
     };
