@@ -73,7 +73,7 @@ in
         isStableRelease = release != { };
       in
       ''
-        Welcome to the Flying Circus!
+        Welcome to the Flying moving Circus!
 
         Status:     https://status.flyingcircus.io/
         Docs:       https://doc.flyingcircus.io/
