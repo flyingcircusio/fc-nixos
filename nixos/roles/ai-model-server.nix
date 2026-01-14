@@ -102,11 +102,7 @@ in
       skvaider-inference = lib.mkOption {
         type = lib.types.submodule {
           options = {
-            enable = lib.mkOption {
-              type = lib.types.bool;
-              default = false;
-              description = "Enable Skvaider inference service";
-            };
+            enable = lib.mkEnableOption "Enable Skvaider inference service";
 
             port = lib.mkOption {
               type = lib.types.int;
@@ -160,7 +156,6 @@ in
           };
           serviceConfig = {
             ExecStart = "${pkgs.fc.skvaider}/bin/inference";
-            WorkingDirectory = "${cfg.skvaider-inference.modelPath}";
             StateDirectory = "skvaider";
             DynamicUser = true;
             CapabilityBoundingSet = [ "" ];
