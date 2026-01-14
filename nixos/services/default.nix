@@ -3,11 +3,6 @@ let
   modulesFromHere = [
     "services/monitoring/prometheus.nix"
     "services/monitoring/prometheus/default.nix"
-    "services/networking/jibri/default.nix"
-    "services/networking/jicofo.nix"
-    "services/networking/jitsi-videobridge.nix"
-    "services/networking/prosody.nix"
-    "services/web-apps/jitsi-meet.nix"
     "services/web-apps/matomo.nix"
   ];
 
@@ -22,11 +17,6 @@ in
     ./ferretdb.nix
     ./graylog
     ./haproxy
-    ./jitsi/jibri.nix
-    ./jitsi/jicofo.nix
-    ./jitsi/jitsi-meet.nix
-    ./jitsi/jitsi-videobridge.nix
-    ./jitsi/prosody.nix
     ./k3s/frontend.nix
     ./logrotate
     ./matomo
