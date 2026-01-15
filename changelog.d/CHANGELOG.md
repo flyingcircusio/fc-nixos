@@ -1,3 +1,13 @@
+# Release 2026_002
+
+## NixOS XX.XX platform
+
+- kvm_host: make evacuation timeout configurable via platform config (PL-134247)
+
+  This allows us to set shorter evacuation timeouts in our dev environment, to properly trigger QA for retry behaviour.
+
+
+
 # Release 2026_001
 
 ## Impact
