@@ -65,10 +65,11 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # Import old php versions from nix-phps.
   inherit (phps)
-    php72
-    php73
-    php74
-    php80
+    # FIXME: PL-135089
+    # php72
+    # php73
+    # php74
+    # php80
     php81
     ;
   # Import NixOS upstream PHPs.
@@ -342,55 +343,54 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   # PHP versions from vendored nix-phps
 
-  lamp_php72 = self.php72.withExtensions (
-    { enabled, all }:
-    enabled
-    ++ [
-      all.bcmath
-      all.imagick
-      all.memcached
-      all.redis
-    ]
-  );
+  # FIXME: PL-135089
+  # lamp_php72 = self.php72.withExtensions (
+  #   { enabled, all }:
+  #   enabled
+  #   ++ [
+  #     all.bcmath
+  #     all.imagick
+  #     all.memcached
+  #     all.redis
+  #   ]
+  # );
 
-  lamp_php73 = self.php73.withExtensions (
-    { enabled, all }:
-    enabled
-    ++ [
-      all.bcmath
-      all.imagick
-      all.memcached
-      all.redis
-    ]
-  );
+  # lamp_php73 = self.php73.withExtensions (
+  #   { enabled, all }:
+  #   enabled
+  #   ++ [
+  #     all.bcmath
+  #     all.imagick
+  #     all.memcached
+  #     all.redis
+  #   ]
+  # );
 
-  lamp_php74 = (
-    self.php74.withExtensions (
-      { enabled, all }:
-      enabled
-      ++ [
-        all.bcmath
-        all.imagick
-        all.memcached
-        all.redis
-      ]
-    )
-  );
+  # lamp_php74 = (
+  #   self.php74.withExtensions (
+  #     { enabled, all }:
+  #     enabled
+  #     ++ [
+  #       all.bcmath
+  #       all.imagick
+  #       all.memcached
+  #       all.redis
+  #     ]
+  #   )
+  # );
 
-  lamp_php80 = (
-    self.php80.withExtensions (
-      { enabled, all }:
-      enabled
-      ++ [
-        all.bcmath
-        all.imagick
-        all.memcached
-        all.redis
-      ]
-    )
-  );
-
-  # PHP versions from nixpkgs
+  # lamp_php80 = (
+  #   self.php80.withExtensions (
+  #     { enabled, all }:
+  #     enabled
+  #     ++ [
+  #       all.bcmath
+  #       all.imagick
+  #       all.memcached
+  #       all.redis
+  #     ]
+  #   )
+  # );
 
   lamp_php81 = self.php81.withExtensions (
     { enabled, all }:
@@ -402,6 +402,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       all.redis
     ]
   );
+
+  # PHP versions from nixpkgs
 
   lamp_php82 = self.php82.withExtensions (
     { enabled, all }:
