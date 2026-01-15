@@ -183,7 +183,6 @@
   "python3Packages.lxml",
   "python3Packages.pillow",
   "python3Packages.pip",
-  "python3Packages.pyslurm",
   "python3Packages.pystemd",
   "python3Packages.pyyaml",
   "python3Packages.requests",
