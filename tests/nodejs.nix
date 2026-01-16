@@ -18,10 +18,10 @@ import ./make-test-python.nix (
       package_versions = {
         "${nodejs-slim_20}": "20",
         "${nodejs-slim_22}": "22",
-        "${nodejs-slim}": "22",
+        "${nodejs-slim}": "24",
         "${nodejs_20}": "20",
         "${nodejs_22}": "22",
-        "${nodejs}": "22",
+        "${nodejs}": "24",
       }
 
       for package, version in package_versions.items():

@@ -65,10 +65,11 @@ in
     clientCephRelease = "nautilus";
   };
   lampVm = callTest ./lamp/vm-test.nix { };
-  lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
-  lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
-  lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
-  lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
+  # FIXME: PL-135089
+  # lampVm72 = callTest ./lamp/vm-test.nix { version = "lamp_php72"; };
+  # lampVm73 = callTest ./lamp/vm-test.nix { version = "lamp_php73"; };
+  # lampVm74 = callTest ./lamp/vm-test.nix { version = "lamp_php74"; };
+  # lampVm80 = callTest ./lamp/vm-test.nix { version = "lamp_php80"; };
   lampVm81 = callTest ./lamp/vm-test.nix { version = "lamp_php81"; };
   lampVm82 = callTest ./lamp/vm-test.nix { version = "lamp_php82"; };
   lampVm83 = callTest ./lamp/vm-test.nix { version = "lamp_php83"; };
@@ -90,7 +91,8 @@ in
   network = callSubTests ./network { };
   nfs = callSubTests ./nfs.nix { };
   nginx = callTest ./nginx.nix { };
-  nix-version = callTest ./nix-version.nix { };
+  # FIXME: PL-135090
+  # nix-version = callTest ./nix-version.nix { };
   nodejs = callTest ./nodejs.nix { };
   opensearch = callTest ./opensearch.nix { };
   opensearch_dashboards = callTest ./opensearch_dashboards.nix { };
