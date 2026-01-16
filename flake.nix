@@ -159,7 +159,7 @@
                 with pkgs;
                 [
                   jq
-                  nixfmt-rfc-style
+                  nixfmt
                 ]
                 ++ (
                   with self'.packages;

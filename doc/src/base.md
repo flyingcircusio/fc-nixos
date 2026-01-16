@@ -59,7 +59,7 @@ You can look up packages and their descriptions via:
 - netcat
 - ngrep
 - nix-top
-- nixfmt-rfc-style
+- nixfmt
 - nmap
 - nvd
 - openssl
