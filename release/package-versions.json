@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-143.0.7499.192",
+    "name": "chromedriver-unwrapped-144.0.7559.59",
     "pname": "chromedriver-unwrapped",
-    "version": "143.0.7499.192"
+    "version": "144.0.7559.59"
   },
   "chromium": {
-    "name": "chromium-143.0.7499.192",
+    "name": "chromium-144.0.7559.59",
     "pname": "chromium",
-    "version": "143.0.7499.192"
+    "version": "144.0.7559.59"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -165,9 +165,9 @@
     "version": "1.12.7"
   },
   "erlang": {
-    "name": "erlang-28.3",
+    "name": "erlang-28.3.1",
     "pname": "erlang",
-    "version": "28.3"
+    "version": "28.3.1"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -560,9 +560,9 @@
     "version": "22.21.1"
   },
   "nodejs_20": {
-    "name": "nodejs-20.19.6",
+    "name": "nodejs-20.20.0",
     "pname": "nodejs",
-    "version": "20.19.6"
+    "version": "20.20.0"
   },
   "nodejs_22": {
     "name": "nodejs-22.21.1",
@@ -1116,9 +1116,9 @@
     "version": "2.41.3"
   },
   "uv": {
-    "name": "uv-0.9.24",
+    "name": "uv-0.9.25",
     "pname": "uv",
-    "version": "0.9.24"
+    "version": "0.9.25"
   },
   "varnish": {
     "name": "varnish-7.7.3",
