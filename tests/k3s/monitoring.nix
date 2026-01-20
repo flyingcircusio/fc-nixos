@@ -73,7 +73,8 @@ import ../make-test-python.nix (
       ''
 
         k3sserver.wait_for_unit("k3s.service")
-        k3sserver.wait_until_succeeds('k3s kubectl cluster-info | grep -q https://127.0.0.1:6443')
+        k3sserver.wait_until_succeeds('k3s kubectl get --raw=/healthz | grep -q ok')
+        k3sserver.succeed('k3s kubectl get node k3sserver -o jsonpath=\'{.status.conditions[?(@.type=="Ready")].status}\' | grep -q True')
 
         # telegraf.service fails to start when the token file doesn't exist. Explicitly restart after k3s created it
         k3sserver.wait_for_file("/var/lib/k3s/tokens/telegraf")
