@@ -74,6 +74,11 @@ rec {
               image = "redis";
               imagePullPolicy = "Never";
               ports = [ { containerPort = 6379; } ];
+              command = [ "/bin/redis-server" ];
+              args = [
+                "--protected-mode"
+                "no"
+              ];
             }
           ];
         };

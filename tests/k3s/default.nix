@@ -195,7 +195,7 @@ import ../make-test-python.nix (
         };
 
       frontend =
-        { ... }:
+        { pkgs, ... }:
         {
           imports = [
             (testlib.fcConfig {
@@ -206,11 +206,17 @@ import ../make-test-python.nix (
 
           config = {
             flyingcircus.roles.webgateway.enable = true;
-            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
             networking.domain = "fcio.net";
             flyingcircus.encServices = encServices;
             virtualisation.diskSize = 3000;
             virtualisation.memorySize = 2000;
+            environment.systemPackages = [ pkgs.redis ];
+            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
+            flyingcircus.kubernetes.frontend.redis = {
+              binds = [ "127.0.0.1:6379" ];
+              servicePort = 6379;
+              mode = "tcp";
+            };
           };
         };
 
@@ -260,8 +266,7 @@ import ../make-test-python.nix (
           frontend.wait_until_succeeds('curl -k http://k3sserver.fcio.net')
 
         with subtest("creating a deployment should work"):
-          k3sserver.wait_until_succeeds("zcat ${redis.image} | k3s ctr images import -")
-          k3snodeA.wait_until_succeeds("zcat ${redis.image} | k3s ctr images import -")
+          k3snodeA.succeed("k3s ctr images import ${redis.image}")
           k3sserver.succeed("k3s kubectl apply -f ${redis.deployment}")
           k3sserver.succeed("k3s kubectl apply -f ${redis.service}")
 
@@ -282,7 +287,7 @@ import ../make-test-python.nix (
           k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodeb | grep -vq NotReady")
 
         with subtest("scaling the deployment should start 4 pods"):
-          k3snodeB.wait_until_succeeds("zcat ${redis.image} | k3s ctr images import -")
+          k3snodeB.succeed("k3s ctr images import ${redis.image}")
           k3sserver.succeed("k3s kubectl scale deployment redis --replicas=4")
           k3sserver.wait_until_succeeds("k3s kubectl get deployment redis | grep -q 4/4")
 
@@ -290,12 +295,8 @@ import ../make-test-python.nix (
           k3sserver.wait_until_succeeds("k3s kubectl get pods -o wide | grep redis | grep Running | grep -q k3snodea")
           k3sserver.wait_until_succeeds("k3s kubectl get pods -o wide | grep redis | grep Running | grep -q k3snodeb")
 
-        # with subtest("frontend should be able to ping redis pods"):
-        #   print(frontend.execute("iptables -L -v --line-numbers")[1])
-        #   print(k3sserver.execute("k3s kubectl -n kube-system get svc -l k8s-app=kube-dns")[1])
-        #   print(k3sserver.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
-        #   print(k3snodeB.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
-        #   # print(frontend.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
+        with subtest("frontend should be able to ping redis pods"):
+          frontend.wait_until_succeeds("redis-cli ping | grep PONG")
 
         with subtest("dashboard sensu check should be red after shutting down dashboard"):
           k3sserver.systemctl("stop kube-dashboard")
