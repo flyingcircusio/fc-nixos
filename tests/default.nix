@@ -58,6 +58,7 @@ in
   journal = callTest ./journal.nix { };
   journalbeat = callTest ./journalbeat.nix { };
   k3s = callTest ./k3s { };
+  k3s_ipv6 = callTest ./k3s { enableIPv6 = true; };
   k3s_monitoring = callTest ./k3s/monitoring.nix { };
   kernelconfig = callTest ./kernelconfig.nix { };
   kernelversions = callTest ./kernelversions.nix { };
