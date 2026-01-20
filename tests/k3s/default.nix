@@ -3,6 +3,7 @@ import ../make-test-python.nix (
     lib,
     pkgs,
     testlib,
+    enableIPv6 ? false,
     ...
   }:
   let
@@ -69,6 +70,7 @@ import ../make-test-python.nix (
           config = {
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-server.enable = true;
+            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
             networking.domain = "fcio.net";
             networking.hostName = lib.mkForce "k3sserver";
 
@@ -122,6 +124,7 @@ import ../make-test-python.nix (
           config = {
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-agent.enable = true;
+            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
 
             networking.domain = "fcio.net";
             networking.hostName = lib.mkForce "k3snodeA";
@@ -139,6 +142,7 @@ import ../make-test-python.nix (
           config = {
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-agent.enable = true;
+            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
 
             networking.domain = "fcio.net";
             networking.hostName = lib.mkForce "k3snodeB";
@@ -154,6 +158,7 @@ import ../make-test-python.nix (
 
           config = {
             flyingcircus.roles.webgateway.enable = true;
+            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
             networking.domain = "fcio.net";
             flyingcircus.encServices = encServices;
             virtualisation.diskSize = 3000;
