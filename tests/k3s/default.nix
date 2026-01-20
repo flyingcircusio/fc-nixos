@@ -132,7 +132,7 @@ import ../make-test-python.nix (
         };
 
       nodeA =
-        { ... }:
+        { config, ... }:
         {
           imports = [
             (testlib.fcConfig {
@@ -151,11 +151,21 @@ import ../make-test-python.nix (
             networking.nameservers = [ "127.0.0.1" ];
             virtualisation.memorySize = 2000;
             virtualisation.diskSize = 3000;
+
+            # we can't use services.k3s.images here because we run k3s
+            # with a different data directory than the default.
+            systemd.tmpfiles.rules =
+              let
+                images = config.services.k3s.package.airgap-images;
+              in
+              [
+                "L+ /var/lib/k3s/agent/images/airgap-images.tar.zst - - - - ${images}"
+              ];
           };
         };
 
       nodeB =
-        { ... }:
+        { config, ... }:
         {
           imports = [
             (testlib.fcConfig {
@@ -173,6 +183,14 @@ import ../make-test-python.nix (
             networking.hostName = lib.mkForce "k3snodeB";
             virtualisation.memorySize = 2000;
             virtualisation.diskSize = 3000;
+
+            systemd.tmpfiles.rules =
+              let
+                images = config.services.k3s.package.airgap-images;
+              in
+              [
+                "L+ /var/lib/k3s/agent/images/airgap-images.tar.zst - - - - ${images}"
+              ];
           };
         };
 
@@ -219,10 +237,6 @@ import ../make-test-python.nix (
           # Give k3s more time to settle without getting into IO stress when loading images.
           time.sleep(10)
 
-          # XXX: for some reason *implicit* image import via
-          # `services.k3s.images = [ config.services.k3s.package.airgap-images ];` does not work.
-          # Doing a manual import instead.
-          k3snodeA.wait_until_succeeds("echo 'try import' >2; k3s ctr images import ${nodes.nodeA.services.k3s.package.airgap-images} >2")
           k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodea | grep -vq NotReady")
 
         with subtest("all kube-system images pulled successfully"):
@@ -265,8 +279,6 @@ import ../make-test-python.nix (
         time.sleep(5)
 
         with subtest("adding a second node should work"):
-
-          k3snodeB.wait_until_succeeds("k3s ctr images import ${nodes.nodeA.services.k3s.package.airgap-images} >2")
           k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodeb | grep -vq NotReady")
 
         with subtest("scaling the deployment should start 4 pods"):
