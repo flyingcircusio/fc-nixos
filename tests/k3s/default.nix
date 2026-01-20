@@ -53,6 +53,16 @@ import ../make-test-python.nix (
       }
     ];
 
+    # synthetic default routes are required so that connections to the
+    # k3s-managed virtual service ips get routed, otherwise the
+    # firewall rules won't trigger.
+    extraEncParameters = {
+      interfaces.srv.gateways = {
+        "${testlib.fcIP.srv4 0}/24" = testlib.fcIP.srv4 254;
+        "${testlib.fcIPMap.srv6.prefix}/64" = testlib.fcIP.srv6 254;
+      };
+    };
+
     redis = import ./redis.nix { inherit pkgs; };
 
   in
@@ -65,7 +75,12 @@ import ../make-test-python.nix (
       master =
         { lib, ... }:
         {
-          imports = [ (testlib.fcConfig { id = 2; }) ];
+          imports = [
+            (testlib.fcConfig {
+              id = 2;
+              inherit extraEncParameters;
+            })
+          ];
 
           config = {
             flyingcircus.encServices = encServices;
@@ -119,7 +134,12 @@ import ../make-test-python.nix (
       nodeA =
         { ... }:
         {
-          imports = [ (testlib.fcConfig { id = 3; }) ];
+          imports = [
+            (testlib.fcConfig {
+              id = 3;
+              inherit extraEncParameters;
+            })
+          ];
 
           config = {
             flyingcircus.encServices = encServices;
@@ -137,7 +157,12 @@ import ../make-test-python.nix (
       nodeB =
         { ... }:
         {
-          imports = [ (testlib.fcConfig { id = 4; }) ];
+          imports = [
+            (testlib.fcConfig {
+              id = 4;
+              inherit extraEncParameters;
+            })
+          ];
 
           config = {
             flyingcircus.encServices = encServices;
@@ -154,7 +179,12 @@ import ../make-test-python.nix (
       frontend =
         { ... }:
         {
-          imports = [ (testlib.fcConfig { id = 1; }) ];
+          imports = [
+            (testlib.fcConfig {
+              id = 1;
+              inherit extraEncParameters;
+            })
+          ];
 
           config = {
             flyingcircus.roles.webgateway.enable = true;
