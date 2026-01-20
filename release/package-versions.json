@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-147.0",
+    "name": "firefox-147.0.1",
     "pname": "firefox",
-    "version": "147.0"
+    "version": "147.0.1"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -380,9 +380,9 @@
     "version": "1.33.6+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.4.7",
+    "name": "keycloak-26.5.1",
     "pname": "keycloak",
-    "version": "26.4.7"
+    "version": "26.5.1"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.65",
+    "name": "linux-6.12.66",
     "pname": "linux",
-    "version": "6.12.65"
+    "version": "6.12.66"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.65",
+    "name": "linux-6.12.66",
     "pname": "linux",
-    "version": "6.12.65"
+    "version": "6.12.66"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -490,9 +490,9 @@
     "version": "5.5.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.144.0",
+    "name": "matrix-synapse-wrapped-1.145.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.144.0"
+    "version": "1.145.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.2",
@@ -1116,9 +1116,9 @@
     "version": "2.41.3"
   },
   "uv": {
-    "name": "uv-0.9.25",
+    "name": "uv-0.9.26",
     "pname": "uv",
-    "version": "0.9.25"
+    "version": "0.9.26"
   },
   "varnish": {
     "name": "varnish-7.7.3",
