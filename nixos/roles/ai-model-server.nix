@@ -157,7 +157,8 @@ in
           serviceConfig = {
             ExecStart = "${pkgs.fc.skvaider}/bin/inference";
             StateDirectory = "skvaider";
-            DynamicUser = true;
+            User = "skvaider";
+            StateDirectoryMode = "0750";
             CapabilityBoundingSet = [ "" ];
             DeviceAllow = [
               # ROCm
@@ -169,6 +170,13 @@ in
             SupplementaryGroups = [
               "render"
             ];
+          };
+        };
+        users = {
+          users.skvaider = {
+            description = "Skvaider user";
+            group = "service";
+            isSystemUser = true;
           };
         };
 
