@@ -167,7 +167,7 @@ in
                 cfg.skvaider-inference.settings;
           };
           script = ''
-            ${lib.getExe' pkgs.fc.skvaider "gunicorn"} -b "127.0.0.1:${toString cfg.skvaider-inference.port}" "skvaider.inference:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
+            ${lib.getExe' pkgs.fc.skvaider "gunicorn"} "skvaider.inference:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
           '';
 
           serviceConfig = {
