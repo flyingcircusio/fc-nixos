@@ -566,6 +566,8 @@ in
           script = ''
             echo "Grant sudo-srv access to k3s config file..."
             setfacl -m g:sudo-srv:r ${defaultKubeconfig}
+            echo "Grant service access to k3s config file..."
+            setfacl -m g:service:r ${defaultKubeconfig}
             echo "Grant kubernetes user access to k3s config file..."
             setfacl -m u:kubernetes:r ${defaultKubeconfig}
           '';
