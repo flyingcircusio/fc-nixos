@@ -52,8 +52,8 @@ in
             type = with lib.types; listOf (attrsOf str);
             internal = true;
             default = builtins.map (val: {
-              type = "openai";
-              url = "http://${val.address}:11434";
+              type = "skvaider";
+              url = "http://${val.address}:8000";
             }) (builtins.filter (s: s.service == "ai-model-server-server") config.flyingcircus.encServices);
           };
           openai.models = lib.mkOption {

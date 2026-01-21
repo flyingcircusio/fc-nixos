@@ -115,6 +115,12 @@ in
               default = "/var/lib/skvaider/model";
               description = "Path to the Skvaider model directory";
             };
+
+            settings = lib.mkOption {
+              type = lib.types.attrsOf lib.types.anything;
+              default = { };
+              description = "Additional Skvaider inference settings";
+            };
           };
         };
       };
@@ -153,6 +159,9 @@ in
           environment = {
             PORT = toString cfg.skvaider-inference.port;
             MODELS_DIR = "${cfg.skvaider-inference.modelPath}";
+            SKVAIDER_CONFIG_FILE = pkgs.writeText "skvaider_inference_settings.toml" (
+              (pkgs.formats.toml { }).generate cfg.skvaider-inference.settings
+            );
           };
           serviceConfig = {
             ExecStart = "${pkgs.fc.skvaider}/bin/inference";
