@@ -167,7 +167,8 @@ in
             ExecStart = "${pkgs.fc.skvaider}/bin/inference";
             StateDirectory = "skvaider";
             User = "skvaider";
-            StateDirectoryMode = "0750";
+            Group = "service";
+            StateDirectoryMode = "0755";
             CapabilityBoundingSet = [ "" ];
             DeviceAllow = [
               # ROCm
@@ -175,7 +176,7 @@ in
               "char-fb"
               "char-kfd"
             ];
-            PrivateDevices = false; # hides acceleration devices
+            PrivateDevices = false; # unhides acceleration devices
             SupplementaryGroups = [
               "render"
             ];
