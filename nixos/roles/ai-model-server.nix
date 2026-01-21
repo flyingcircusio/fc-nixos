@@ -110,6 +110,12 @@ in
               description = "Port for Skvaider inference service";
             };
 
+            host = lib.mkOption {
+              type = lib.types.str;
+              default = "0.0.0.0";
+              description = "Host for Skvaider inference service";
+            };
+
             settings = lib.mkOption {
               type = lib.types.attrsOf lib.types.anything;
               default = {
@@ -154,6 +160,7 @@ in
           wantedBy = [ "multi-user.target" ];
           environment = {
             PORT = toString cfg.skvaider-inference.port;
+            HOST = cfg.skvaider-inference.host;
             MODELS_DIR = "${cfg.skvaider-inference.settings.models_dir}";
             SKVAIDER_CONFIG_FILE =
               (pkgs.formats.toml { }).generate "skvaider_inference_settings.toml"
