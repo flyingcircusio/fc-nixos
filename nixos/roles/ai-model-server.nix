@@ -159,9 +159,9 @@ in
           environment = {
             PORT = toString cfg.skvaider-inference.port;
             MODELS_DIR = "${cfg.skvaider-inference.modelPath}";
-            SKVAIDER_CONFIG_FILE = pkgs.writeText "skvaider_inference_settings.toml" (
-              (pkgs.formats.toml { }).generate cfg.skvaider-inference.settings
-            );
+            SKVAIDER_CONFIG_FILE =
+              (pkgs.formats.toml { }).generate "skvaider_inference_settings.toml"
+                cfg.skvaider-inference.settings;
           };
           serviceConfig = {
             ExecStart = "${pkgs.fc.skvaider}/bin/inference";
