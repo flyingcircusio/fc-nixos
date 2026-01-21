@@ -163,8 +163,11 @@ in
               (pkgs.formats.toml { }).generate "skvaider_inference_settings.toml"
                 cfg.skvaider-inference.settings;
           };
+          script = ''
+            ${lib.getExe' pkgs.fc.skvaider "gunicorn"} -b "127.0.0.1:${toString cfg.port}" "skvaider.inference:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
+          '';
+
           serviceConfig = {
-            ExecStart = "${pkgs.fc.skvaider}/bin/inference";
             StateDirectory = "skvaider";
             User = "skvaider";
             Group = "service";
