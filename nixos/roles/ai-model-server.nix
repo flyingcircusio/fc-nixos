@@ -166,6 +166,7 @@ in
               (pkgs.formats.toml { }).generate "skvaider_inference_settings.toml"
                 cfg.skvaider-inference.settings;
           };
+          path = [ pkgs.llama-cpp-vulkan ];
           script = ''
             ${lib.getExe' pkgs.fc.skvaider "gunicorn"} "skvaider.inference:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
           '';
