@@ -110,15 +110,11 @@ in
               description = "Port for Skvaider inference service";
             };
 
-            modelPath = lib.mkOption {
-              type = lib.types.str;
-              default = "/var/lib/skvaider/model";
-              description = "Path to the Skvaider model directory";
-            };
-
             settings = lib.mkOption {
               type = lib.types.attrsOf lib.types.anything;
-              default = { };
+              default = {
+                models_dir = "/var/lib/skvaider/model";
+              };
               description = "Additional Skvaider inference settings";
             };
           };
@@ -158,7 +154,7 @@ in
           wantedBy = [ "multi-user.target" ];
           environment = {
             PORT = toString cfg.skvaider-inference.port;
-            MODELS_DIR = "${cfg.skvaider-inference.modelPath}";
+            MODELS_DIR = "${cfg.skvaider-inference.settings.models_dir}";
             SKVAIDER_CONFIG_FILE =
               (pkgs.formats.toml { }).generate "skvaider_inference_settings.toml"
                 cfg.skvaider-inference.settings;
@@ -195,7 +191,7 @@ in
         systemd.tmpfiles.rules = [
           "d /var/lib/skvaider 0755 skvaider service -"
           "d /var/lib/skvaider/model 0755 skvaider service -"
-          "d ${cfg.skvaider-inference.modelPath} 0755 skvaider service -"
+          "d ${cfg.skvaider-inference.settings.models_dir} 0755 skvaider service -"
         ];
 
         systemd.services.ollama.serviceConfig.Restart = "always";
