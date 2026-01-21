@@ -190,8 +190,9 @@ in
           };
         };
         systemd.tmpfiles.rules = [
-          "d /var/lib/skvaider 0750 skvaider service -"
-          "d /var/lib/skvaider/model 0750 skvaider service -"
+          "d /var/lib/skvaider 0755 skvaider service -"
+          "d /var/lib/skvaider/model 0755 skvaider service -"
+          "d ${cfg.skvaider-inference.modelPath} 0755 skvaider service -"
         ];
 
         systemd.services.ollama.serviceConfig.Restart = "always";
