@@ -362,117 +362,121 @@ import ./make-test-python.nix (
       host2 = makeHostConfig { id = 2; };
     };
 
-    testScript = ''
-      import textwrap
-      import time
-      import json
+    testScript =
+      { nodes, ... }:
+      ''
+        import textwrap
+        import time
+        import json
 
-      time_waiting = 0
-      start_all()
+        time_waiting = 0
+        start_all()
 
-      def show(host, cmd):
-        print(cmd)
-        code, output = host.execute(cmd)
-        print(output)
-        if code:
-          raise RuntimeError(
-            f"Command `cmd` failed with exit code {code}")
-        return output.strip()
+        def show(host, cmd):
+          print(cmd)
+          code, output = host.execute(cmd)
+          print(output)
+          if code:
+            raise RuntimeError(
+              f"Command `cmd` failed with exit code {code}")
+          return output.strip()
 
-      def wait(fun, *args, **kw):
-        global time_waiting
-        print(f"Waiting for `{fun.__name__}(*{args}, **{kw})` ...")
-        start = time.time()
-        tries = 1
-        while True:
-          try:
-            return fun(*args, **kw)
-          except Exception:
-            if time.time() - start < 60:
-              time_waiting += tries*2
-              time.sleep(tries*2)
-            else:
-              raise
+        def wait(fun, *args, **kw):
+          global time_waiting
+          print(f"Waiting for `{fun.__name__}(*{args}, **{kw})` ...")
+          start = time.time()
+          tries = 1
+          while True:
+            try:
+              return fun(*args, **kw)
+            except Exception:
+              if time.time() - start < 60:
+                time_waiting += tries*2
+                time.sleep(tries*2)
+              else:
+                raise
 
-      show(host1, "for x in /etc/ceph/*; do echo $x ; cat $x; echo '========='; done")
-      host1.execute("systemctl stop fc-ceph-mon")
-      host1.execute("systemctl stop fc-ceph-mgr")
+        show(host1, "for x in /etc/ceph/*; do echo $x ; cat $x; echo '========='; done")
+        host1.execute("systemctl stop fc-ceph-mon")
+        host1.execute("systemctl stop fc-ceph-mgr")
 
-      with subtest("fc-qemu-scrub timer is correctly activated"):
-        _, output = host1.execute("systemctl list-timers | grep fc-qemu-scrub")
-        print(output)
-        assert "fc-qemu-scrub" in output
-        assert "min left "
-        assert not output.startswith("n/a")
-        assert output.count("n/a") <= 2
+        with subtest("fc-qemu-scrub timer is correctly activated"):
+          _, output = host1.execute("systemctl list-timers | grep fc-qemu-scrub")
+          print(output)
+          assert "fc-qemu-scrub" in output
+          assert "min left "
+          assert not output.startswith("n/a")
+          assert output.count("n/a") <= 2
 
-      host1.execute("systemctl stop fc-qemu-scrub.timer")
-      host2.execute("systemctl stop fc-qemu-scrub.timer")
+        host1.execute("systemctl stop fc-qemu-scrub.timer")
+        host2.execute("systemctl stop fc-qemu-scrub.timer")
 
-      host1.wait_for_unit("consul")
-      host2.wait_for_unit("consul")
+        host1.wait_for_unit("consul")
+        host2.wait_for_unit("consul")
 
-      wait(show, host1, "consul members")
-      wait(show, host2, "consul members")
+        wait(show, host1, "consul members")
+        wait(show, host2, "consul members")
 
-      host1.wait_for_unit("nginx", timeout=10)
+        host1.wait_for_unit("nginx", timeout=10)
 
-      with subtest("Run tests"):
-        host1.succeed("run-tests ${testOpts}", timeout=30*60)
+        with subtest("Run tests"):
+          host1.succeed("run-tests ${testOpts}", timeout=30*60)
 
-      # XXX the following tests should be migrated to fc.qemu at some point
-      show(host1, "rbd rm rbd/.fc-qemu.maintenance || true")
+        # XXX the following tests should be migrated to fc.qemu at some point
+        show(host1, "rbd rm rbd/.fc-qemu.maintenance || true")
 
-      with subtest("Check maintenance enter/exit works"):
-        result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
-        assert "D enter-maintenance" in result
-        assert "D ensure-maintenance-volume" in result
-        assert "D creating maintenance volume" in result
-        assert "D acquire-maintenance-lock" in result
-        assert "I request-evacuation" in result
-        assert "I evacuation-pending" in result
-        assert "I evacuation-running" in result
-        assert "I evacuation-success" in result
+        with subtest("Check maintenance enter/exit works"):
+          result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
+          assert "D enter-maintenance" in result
+          assert "D ensure-maintenance-volume" in result
+          assert "D creating maintenance volume" in result
+          assert "D acquire-maintenance-lock" in result
+          assert "I request-evacuation" in result
+          assert "maintenance_evacuation_timeout=${toString nodes.host1.flyingcircus.roles.kvm_host.maintenanceEvacuationTimeout}" in result, \
+              "maintenance_evacuation_timeout not overridden correctly"
+          assert "I evacuation-pending" in result
+          assert "I evacuation-running" in result
+          assert "I evacuation-success" in result
 
-        result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance leave")
+          result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance leave")
 
-        result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
-        assert "D enter-maintenance" in result
-        assert "D ensure-maintenance-volume" in result
-        assert "D creating maintenance volume" not in result
-        assert "D acquire-maintenance-lock" in result
-        assert "I request-evacuation" in result
-        assert "I evacuation-pending" in result
-        assert "I evacuation-running" in result
-        assert "I evacuation-success" in result
+          result = show(host1, "/run/current-system/sw/bin/fc-qemu --verbose maintenance enter")
+          assert "D enter-maintenance" in result
+          assert "D ensure-maintenance-volume" in result
+          assert "D creating maintenance volume" not in result
+          assert "D acquire-maintenance-lock" in result
+          assert "I request-evacuation" in result
+          assert "I evacuation-pending" in result
+          assert "I evacuation-running" in result
+          assert "I evacuation-success" in result
 
-      with subtest("Exercise standalone fc-qemu features"):
-        result = show(host1, "fc-qemu --help")
-        assert result.startswith("usage: fc-qemu"), "Unexpected help output"
+        with subtest("Exercise standalone fc-qemu features"):
+          result = show(host1, "fc-qemu --help")
+          assert result.startswith("usage: fc-qemu"), "Unexpected help output"
 
-        host1.execute("rm -f /etc/qemu/vm/* /etc/qemu/vm/.*")
-        host1.execute("pkill -f qemu")
-        host1.execute("rm -rf /run/qemu.*")
-        host1.succeed("cp /etc/simplevm.cfg /etc/qemu/vm/")
-        host1.succeed("fc-qemu start simplevm")
-        result = show(host1, "fc-qemu ls")
-        assert "I simplevm              online                         cores=1 memory_booked='256'" in result, repr(result)
-        assert "memory_pss='" in result, repr(result)
-        assert "memory_swap='0'" in result, repr(result)
-        result = show(host1, "fc-qemu check")
-        assert "OK - 1 VMs - " in result, result
-        assert " MiB used - " in result, result
-        assert " MiB expected" in result, result
+          host1.execute("rm -f /etc/qemu/vm/* /etc/qemu/vm/.*")
+          host1.execute("pkill -f qemu")
+          host1.execute("rm -rf /run/qemu.*")
+          host1.succeed("cp /etc/simplevm.cfg /etc/qemu/vm/")
+          host1.succeed("fc-qemu start simplevm")
+          result = show(host1, "fc-qemu ls")
+          assert "I simplevm              online                         cores=1 memory_booked='256'" in result, repr(result)
+          assert "memory_pss='" in result, repr(result)
+          assert "memory_swap='0'" in result, repr(result)
+          result = show(host1, "fc-qemu check")
+          assert "OK - 1 VMs - " in result, result
+          assert " MiB used - " in result, result
+          assert " MiB expected" in result, result
 
-        result = show(host1, "fc-qemu report-supported-cpu-models")
-        assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result, result
+          result = show(host1, "fc-qemu report-supported-cpu-models")
+          assert "I supported-cpu-model            architecture='x86' description=''' id='qemu64-v1'" in result, result
 
-        result = show(host1, "fc-qemu-scrub")
-        assert "I simplevm              running-ensure                 generation=0" in result, result
+          result = show(host1, "fc-qemu-scrub")
+          assert "I simplevm              running-ensure                 generation=0" in result, result
 
-      host1.copy_from_vm('/tmp/coverage', './')
-      host1.copy_from_vm('/tmp/fc.qemu-report.xml', './')
+        host1.copy_from_vm('/tmp/coverage', './')
+        host1.copy_from_vm('/tmp/fc.qemu-report.xml', './')
 
-    '';
+      '';
   }
 )
