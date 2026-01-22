@@ -492,7 +492,7 @@ buildGoModule (finalAttrs: {
   '';
 
   doInstallCheck = true;
-  nativeInstallCheckInputs = [ versionCheckHook ];
+  nativeInstallCheckInputs = [ ];
   versionCheckProgramArg = "--version";
 
   passthru = {
