@@ -1,3 +1,21 @@
+# Release 2026_003
+
+## Impact
+
+- restart of the postfix service due to configuration changes if the mailstub role is active
+
+
+## NixOS XX.XX platform
+
+- fix an issue with the Postfix configuration when using the mailstub service that would lead to an unintended hostname in SMTP HELO and EHLO commands
+
+- nginx: run logrotate daily (PL-135102)
+
+  This regressed with our 25.11 overhaul of the NGINX module.
+  Reverting to our previous behavior.
+
+
+
 # Release 2026_002
 
 ## NixOS XX.XX platform
