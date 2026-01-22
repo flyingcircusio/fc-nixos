@@ -6,7 +6,6 @@ as individual fill levels of OSDs below a cluster root is not perfectly balanced
 
 import json
 import subprocess
-import sys
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntEnum
@@ -241,20 +240,16 @@ def query_snaps(pools: List[Pool]) -> List[Snapshot]:
     return all_snaps
 
 
-def parse_config(argv) -> Tuple[Thresholds, dict]:
-    if not len(argv) == 2:
-        print(f"Usage: {argv[0]} <config.toml>")
-        sys.exit(SensuStatus.CRITICAL)
-
+def parse_config(config_file: str) -> Tuple[Thresholds, dict]:
     try:
-        with open(argv[1], "rb") as configtoml:
+        with open(config_file, "rb") as configtoml:
             config = tomllib.load(configtoml)
     except (FileNotFoundError, PermissionError):
-        print(f"Error: Unable to open file {argv[1]}.")
-        sys.exit(SensuStatus.CRITICAL)
+        print(f"Error: Unable to open file {config_file}.")
+        raise
     except tomllib.TOMLDecodeError:
-        print(f"Error: {argv[1]} is not a valid TOML file.")
-        sys.exit(SensuStatus.CRITICAL)
+        print(f"Error: {config_file} is not a valid TOML file.")
+        raise
 
     # repacking the required values serves as an implicit schema validation
     try:
@@ -273,10 +268,10 @@ def parse_config(argv) -> Tuple[Thresholds, dict]:
                 )
     except (KeyError, ValueError, AssertionError) as ex:
         print(
-            f"Error loading config file {argv[1]}: Values missing or of wrong type.\n"
+            f"Error loading config file {config_file}: Values missing or of wrong type.\n"
             "details:", repr(ex)
         )  # fmt: skip
-        sys.exit(SensuStatus.CRITICAL)
+        raise
 
     return (thresholds, pool_roots)
 
@@ -330,28 +325,29 @@ def eval_report(
     return (status_code, report_str)
 
 
-def main():
-    eval_status = SensuStatus.OK
-    status_code = SensuStatus.OK
-    try:
-        # can cause the program to exit with non-working config
-        (thresholds, pool_roots) = parse_config(sys.argv)
-        # phase 1: data collection
-        # retrieve cluster root fill stats
-        # retrieve list of images and snaps
-        (status_code, pools) = parse_pools(
-            _ceph_osd_df_tree_roots(), pool_roots, thresholds
-        )
-        all_snaps = query_snaps(pools)
-        # phase 2: evaluation: filter and sort snapshots into warn categories
-        reporting_snap_categories = categorise_snaps(all_snaps)
+class CheckSnapshotRestore:
+    def main(self, config_file) -> int:
+        eval_status = SensuStatus.OK
+        status_code = SensuStatus.OK
+        try:
+            # can cause the program to exit with non-working config
+            (thresholds, pool_roots) = parse_config(config_file)
+            # phase 1: data collection
+            # retrieve cluster root fill stats
+            # retrieve list of images and snaps
+            (status_code, pools) = parse_pools(
+                _ceph_osd_df_tree_roots(), pool_roots, thresholds
+            )
+            all_snaps = query_snaps(pools)
+            # phase 2: evaluation: filter and sort snapshots into warn categories
+            reporting_snap_categories = categorise_snaps(all_snaps)
 
-        # phase 3: reporting
-        (eval_status, report_str) = eval_report(reporting_snap_categories)
-        print(report_str)
-    except Exception:
-        # all uncaught exceptions count as "unknown"
-        print_exc()
-        status_code = SensuStatus.UNKNOWN.merge(status_code)
+            # phase 3: reporting
+            (eval_status, report_str) = eval_report(reporting_snap_categories)
+            print(report_str)
+        except Exception:
+            # all uncaught exceptions count as "unknown"
+            print_exc()
+            status_code = SensuStatus.UNKNOWN.merge(status_code)
 
-    sys.exit(status_code.merge(eval_status))
+        return status_code.merge(eval_status)

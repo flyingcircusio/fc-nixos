@@ -4,7 +4,7 @@ import subprocess
 from textwrap import dedent
 from unittest import mock
 
-import fc.check_ceph.check_snapshot_restore as snapcheck
+import fc.ceph.check.check_snapshot_restore as snapcheck
 import pytest
 
 # fixtures and mocks are in conftest.py
@@ -109,38 +109,39 @@ def test_snapshot_uses_correct_thresholds(snapshot):
 
 def test_parse_config():
     (thresholds, pool_roots) = snapcheck.parse_config(
-        ["progname", "./tests/config.toml"]
+        "./src/fc/ceph/tests/check/config.toml"
     )
     assert thresholds.nearfull == 0.85
     assert thresholds.full == 0.95
     assert pool_roots == {"default": ["rbd.hdd"], "ssd": ["rbd.ssd"]}
 
 
-def test_parse_config_no_file():
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
-
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", "multitrack", "drifting"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
-
-
 def test_parse_config_file_problems(tmp_path):
+    config_nonexist = tmp_path / "nonexisting.toml"
     # TODO: possibly match output for particular error messages
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", tmp_path / "nonexisting.toml"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
+    with pytest.raises(FileNotFoundError):
+        snapcheck.parse_config(config_nonexist)
+    assert (
+        snapcheck.CheckSnapshotRestore().main(config_nonexist)
+        == snapcheck.SensuStatus.UNKNOWN.value
+    )
 
     # permission issues
-    shutil.copy("./tests/config.toml", tmp_path / "permission.toml")
-    os.chmod(tmp_path / "permission.toml", 0)
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", tmp_path / "permission.toml"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
+    config_noperm = tmp_path / "permission.toml"
+    shutil.copy("./src/fc/ceph/tests/check/config.toml", config_noperm)
+    os.chmod(config_noperm, 0)
+    with pytest.raises(PermissionError):
+        snapcheck.parse_config(config_noperm)
+    assert (
+        snapcheck.CheckSnapshotRestore().main(config_noperm)
+        == snapcheck.SensuStatus.UNKNOWN.value
+    )
 
     # broken toml file
-    with open(tmp_path / "broken.toml", "wt") as brokentoml:
+    from tomllib import TOMLDecodeError
+
+    config_broken = tmp_path / "broken.toml"
+    with open(config_broken, "wt") as brokentoml:
         print(
             dedent(
                 """\
@@ -151,13 +152,17 @@ def test_parse_config_file_problems(tmp_path):
             ),
             file=brokentoml,
         )
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", tmp_path / "broken.toml"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
+    with pytest.raises(TOMLDecodeError):
+        snapcheck.parse_config(config_broken)
+    assert (
+        snapcheck.CheckSnapshotRestore().main(config_broken)
+        == snapcheck.SensuStatus.UNKNOWN.value
+    )
 
     # wrong or missing values
     # yes, this could be done with a TextIO as well, but I'm using tmp_path already anyways
-    with open(tmp_path / "missing.toml", "wt") as missingtoml:
+    config_missing_val = tmp_path / "missing.toml"
+    with open(config_missing_val, "wt") as missingtoml:
         print(
             dedent(
                 """\
@@ -167,12 +172,15 @@ def test_parse_config_file_problems(tmp_path):
             ),
             file=missingtoml,
         )
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", tmp_path / "missing.toml"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
+    with pytest.raises(KeyError):
+        snapcheck.parse_config(config_missing_val)
+    assert (
+        snapcheck.CheckSnapshotRestore().main(config_missing_val)
+        == snapcheck.SensuStatus.UNKNOWN.value
+    )
 
 
-@mock.patch("fc.check_ceph.check_snapshot_restore.subprocess.run")
+@mock.patch("subprocess.run")
 def test_raw_cluster_stats_parsing(mock_subprocess_run, ceph_osd_df_tree_json):
     mock_result = mock.Mock()
     mock_result.stdout = ceph_osd_df_tree_json
@@ -246,7 +254,7 @@ def test_parse_pools_drop_non_relevant_pools(
     assert parse_status == snapcheck.SensuStatus.OK
 
 
-@mock.patch("fc.check_ceph.check_snapshot_restore._rbd")
+@mock.patch("fc.ceph.check.check_snapshot_restore._rbd")
 def test_query_snaps(mock_rbd, rbd_pool_images, rbd_snapshot_data):
     # simple mock: just a sequence of expected return values of our rbd wrapper
     mock_rbd.side_effect = [
@@ -294,7 +302,7 @@ def test_query_snaps_nopools():
     assert not snaps
 
 
-@mock.patch("fc.check_ceph.check_snapshot_restore._rbd")
+@mock.patch("fc.ceph.check.check_snapshot_restore._rbd")
 def test_query_snaps_empty_cluster(mock_rbd, rbd_pool_images):
     # situation after bootstrapping: no rbd images, no snapshots
     mock_rbd.side_effect = [
@@ -356,10 +364,11 @@ def test_eval_report_all_okay():
     assert "Total status: OK" in report
 
 
-@mock.patch("fc.check_ceph.check_snapshot_restore.parse_config")
+@mock.patch("fc.ceph.check.check_snapshot_restore.parse_config")
 def test_uncaught_exceptions_unknown_status(call_mock):
     call_mock.side_effect = [Exception("foo")]
-    with pytest.raises(SystemExit) as e:
-        snapcheck.main()
 
-    assert e.value.code == snapcheck.SensuStatus.UNKNOWN
+    assert (
+        snapcheck.CheckSnapshotRestore().main("is_not_read_anyways")
+        == snapcheck.SensuStatus.UNKNOWN
+    )

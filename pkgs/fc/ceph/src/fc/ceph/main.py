@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import fc.ceph.backup
+import fc.ceph.check
 import fc.ceph.keys
 import fc.ceph.logs
 import fc.ceph.luks.manage
@@ -388,6 +389,113 @@ requests. Useful for identifying slacky OSDs.""",
 
     parser_leave = maint_sub.add_parser("leave", help="Leave maintenance mode.")
     parser_leave.set_defaults(action="leave")
+
+    check = subparsers.add_parser("check", help="Cluster checks")
+    check.set_defaults(action=check.print_usage)
+    check_sub = check.add_subparsers()
+
+    parser_check_ceph = check_sub.add_parser(
+        "cluster", help="Check whole Ceph cluster status."
+    )
+    parser_check_ceph.add_argument(
+        "-w",
+        "--warn-usage",
+        metavar="RANGE",
+        default="0.8",
+        help="warn if cluster usage ratio is outside RANGE",
+    )
+    parser_check_ceph.add_argument(
+        "-c",
+        "--crit-usage",
+        metavar="RANGE",
+        default="0.9",
+        help="crit if cluster usage ratio is outside RANGE",
+    )
+    parser_check_ceph.add_argument(
+        "-k",
+        "--command",
+        default="ceph status --format=json",
+        help="execute command to retrieve cluster status "
+        '(default: "%(default)s")',
+    )
+    parser_check_ceph.add_argument(
+        "-l",
+        "--log",
+        metavar="PATH",
+        default="/var/log/ceph/ceph.log",
+        help="scan log file for slow requests (default: %(default)s)",
+    )
+    parser_check_ceph.add_argument(
+        "-r",
+        "--warn-requests",
+        metavar="RANGE",
+        default=1,
+        help="warn if number of blocked requests exceeds range "
+        "(default: %(default)s)",
+    )
+    parser_check_ceph.add_argument(
+        "-R",
+        "--crit-requests",
+        metavar="RANGE",
+        default=50,
+        help="crit if number of blocked requests exceeds range "
+        "(default: %(default)s)",
+    )
+    parser_check_ceph.add_argument(
+        "-a",
+        "--warn-blocked-age",
+        metavar="RANGE",
+        default=30,
+        help="warn if age of oldest blocked request is outside "
+        "range (default: %(default)s)",
+    )
+    parser_check_ceph.add_argument(
+        "-A",
+        "--crit-blocked-age",
+        metavar="RANGE",
+        default=90,
+        help="crit if age of oldest blocked request is outside "
+        "range (default: %(default)s)",
+    )
+    parser_check_ceph.add_argument(
+        "-s",
+        "--state",
+        metavar="PATH",
+        default="/var/lib/check_ceph_health.state",
+        help="state file for logtail (default: %(default)s)",
+    )
+    parser_check_ceph.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="increase output level",
+    )
+    parser_check_ceph.add_argument(
+        "-t",
+        "--timeout",
+        default=30,
+        metavar="SEC",
+        help="abort execution after SEC seconds",
+    )
+    parser_check_ceph.set_defaults(
+        subsystem=fc.ceph.check.CheckCeph, action="main"
+    )
+
+    parser_check_snapshot_restore = check_sub.add_parser(
+        "snapshot-restore",
+        help="Check the restore impact of individual rbd snapshots.",
+    )
+    # XXX: at some point, we may want to use the existing fc-ceph.conf for
+    # configuring this check
+    parser_check_snapshot_restore.add_argument(
+        "config_file",
+        help="Path to TOML configuration file",
+    )
+    parser_check_snapshot_restore.set_defaults(
+        subsystem=fc.ceph.check.CheckSnapshotRestore,
+        action="main",
+    )
 
     # extract parsed arguments from object into a dict
     args = vars(parser.parse_args(args))

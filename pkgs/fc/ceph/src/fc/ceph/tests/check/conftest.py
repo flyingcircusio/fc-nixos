@@ -2,7 +2,7 @@ import json
 from copy import deepcopy
 from unittest import mock
 
-import fc.check_ceph.check_snapshot_restore as snapcheck
+import fc.ceph.check.check_snapshot_restore as snapcheck
 import pytest
 
 
@@ -154,7 +154,7 @@ def parsed_raw_cluster_fillstats(ceph_osd_df_tree_json, monkeypatch):
     mock_result = mock.Mock()
     mock_result.stdout = ceph_osd_df_tree_json
     monkeypatch.setattr(
-        "fc.check_ceph.check_snapshot_restore.subprocess.run",
+        "fc.ceph.check.check_snapshot_restore.subprocess.run",
         mock.Mock(return_value=mock_result),
     )
     return snapcheck._ceph_osd_df_tree_roots()

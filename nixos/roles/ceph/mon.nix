@@ -188,19 +188,6 @@ in
         };
       };
 
-      flyingcircus.passwordlessSudoPackages = [
-        {
-          commands = [
-            "bin/check_ceph"
-            "bin/check_snapshot_restore_fill"
-          ];
-          package = cephPkgs.fc-check-ceph;
-          groups = [ "sensuclient" ];
-        }
-      ];
-
-      environment.systemPackages = [ cephPkgs.fc-check-ceph ];
-
       systemd.services.fc-ceph-load-vm-images = {
         description = "Load new VM base images";
         serviceConfig.Type = "oneshot";
@@ -276,34 +263,50 @@ in
         };
       };
 
-      flyingcircus.services.sensu-client.checks =
-        let
-          # check config generated directly from our platform settings
-          configtoml = (pkgs.formats.toml { }).generate "config.toml" {
-            thresholds = {
-              # use canonical, non-camelCase form of ceph settings
-              nearfull = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd nearfull ratio";
-              full = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd full ratio";
-            };
-            ceph_roots = config.flyingcircus.services.ceph.server.crushroot_to_rbdpool_mapping;
+    })
+    (lib.mkIf role.enable (
+      let
+        checkSnapshotCmd = "fc-ceph check snapshot-restore ${configtoml}";
+        checkClusterCmd = "fc-ceph check cluster -v -R 200 -A 300";
+
+        # check config generated directly from our platform settings
+        configtoml = (pkgs.formats.toml { }).generate "config.toml" {
+          thresholds = {
+            # use canonical, non-camelCase form of ceph settings
+            nearfull = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd nearfull ratio";
+            full = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd full ratio";
           };
-        in
-        {
+          ceph_roots = config.flyingcircus.services.ceph.server.crushroot_to_rbdpool_mapping;
+        };
+      in
+      {
+        flyingcircus.passwordlessSudoPackages = [
+          {
+            commands = [
+              "bin/${checkClusterCmd}"
+              "bin/${checkSnapshotCmd}"
+            ];
+            package = cephPkgs.fc-ceph;
+            groups = [ "sensuclient" ];
+          }
+        ];
+
+        flyingcircus.services.sensu-client.checks = {
           ceph_snapshot_restore_fill = {
             notification =
               "The Ceph cluster might not have enough space for restoring "
               + "the largest RBD snapshot. (does not consider sparse allocation)";
-            command = "sudo ${cephPkgs.fc-check-ceph}/bin/check_snapshot_restore_fill ${configtoml}";
+            command = "sudo ${cephPkgs.fc-ceph}/bin/${checkSnapshotCmd}";
             interval = 600;
           };
           ceph = {
             notification = "Ceph cluster is unhealthy";
-            command = "sudo ${cephPkgs.fc-check-ceph}/bin/check_ceph -v -R 200 -A 300";
+            command = "sudo ${cephPkgs.fc-ceph}/bin/${checkClusterCmd}";
             interval = 60;
           };
         };
-
-    })
+      }
+    ))
     (lib.mkIf (role.enable && role.config == "") {
       flyingcircus.services.ceph.extraSettingsSections =
         lib.recursiveUpdate { mon = expandCamelCaseAttrs defaultMonSettings; }

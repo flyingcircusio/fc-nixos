@@ -12,6 +12,7 @@ authors = [
   { name = "Flying Circus Internet Operations GmbH", email = "mail@flyingcircus.io" },
 ]
 dependencies = [
+    "nagiosplugin",
     "requests",
     "rich",
 ]
