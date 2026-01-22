@@ -323,14 +323,26 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
 
+  llama-cpp-rocm-force-mmq = self.llama-cpp-rocm.overrideAttrs (
+    a:
+    a
+    // {
+      cmakeFlags = a.cmakeFlags ++ [
+        (lib.cmakeBool "GGML_CUDA_FORCE_MMQ" true)
+      ];
+    }
+  );
+
   # Change this alias for trying out other kernel packages on non-production
   # machines.
   # The logic for enabling different kernels on prod and non-prod remains active
   # the whole time. But in the normal case, both kernels point to the same
   # stable kernel packages.
-  linuxKernelVerify = self.linux_6_12;
+  linuxKernelVerify = self.linux_6_18.override {
+    ignoreConfigErrors = true;
+  };
 
-  linuxKernelStable = self.linux_6_12;
+  linuxKernelStable = self.linux_6_18;
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper =
