@@ -3,8 +3,9 @@
 # Kubernetes Cluster (k3s)
 
 :::{note}
-Kubernetes/k3s is complex. Feel free to use it but we suggest contacting
-our support before putting anything into production.
+Kubernetes/k3s is complex and our Kubernetes support should currently be
+considered beta-quality. Feel free to use it but we suggest contacting our support
+before putting anything into production.
 :::
 
 [Kubernetes](https://kubernetes.io) is an open-source system for automating
