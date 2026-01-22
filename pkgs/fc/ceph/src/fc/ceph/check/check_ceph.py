@@ -4,7 +4,6 @@ This check parses `ceph status` output and generates various metrics. It is
 intended to be run on all Ceph mons.
 """
 
-import argparse
 import json
 import logging
 import re
@@ -236,107 +235,40 @@ class UsageSummary(nagiosplugin.Summary):
         )
 
 
-@nagiosplugin.guarded
-def main():
-    argp = argparse.ArgumentParser()
-    argp.add_argument(
-        "-w",
-        "--warn-usage",
-        metavar="RANGE",
-        default="0.8",
-        help="warn if cluster usage ratio is outside RANGE",
-    )
-    argp.add_argument(
-        "-c",
-        "--crit-usage",
-        metavar="RANGE",
-        default="0.9",
-        help="crit if cluster usage ratio is outside RANGE",
-    )
-    argp.add_argument(
-        "-k",
-        "--command",
-        default="ceph status --format=json",
-        help="execute command to retrieve cluster status "
-        '(default: "%(default)s")',
-    )
-    argp.add_argument(
-        "-l",
-        "--log",
-        metavar="PATH",
-        default=DEFAULT_LOGFILE,
-        help="scan log file for slow requests (default: %(default)s)",
-    )
-    argp.add_argument(
-        "-r",
-        "--warn-requests",
-        metavar="RANGE",
-        default=1,
-        help="warn if number of blocked requests exceeds range "
-        "(default: %(default)s)",
-    )
-    argp.add_argument(
-        "-R",
-        "--crit-requests",
-        metavar="RANGE",
-        default=50,
-        help="crit if number of blocked requests exceeds range "
-        "(default: %(default)s)",
-    )
-    argp.add_argument(
-        "-a",
-        "--warn-blocked-age",
-        metavar="RANGE",
-        default=30,
-        help="warn if age of oldest blocked request is outside "
-        "range (default: %(default)s)",
-    )
-    argp.add_argument(
-        "-A",
-        "--crit-blocked-age",
-        metavar="RANGE",
-        default=90,
-        help="crit if age of oldest blocked request is outside "
-        "range (default: %(default)s)",
-    )
-    argp.add_argument(
-        "-s",
-        "--state",
-        metavar="PATH",
-        default="/var/lib/check_ceph_health.state",
-        help="state file for logteil (default: %(default)s)",
-    )
-    argp.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help="increase output level",
-    )
-    argp.add_argument(
-        "-t",
-        "--timeout",
-        default=30,
-        metavar="SEC",
-        help="abort execution after SEC seconds",
-    )
-    args = argp.parse_args()
-    check = nagiosplugin.Check(
-        Ceph(CephStatus(args.command)),
-        HealthContext("health"),
-        nagiosplugin.ScalarContext(
-            "nearfull", critical="0:0", fmt_metric="{value} near full osd(s)"
-        ),
-        UsageSummary(),
-    )
-    if args.log:
-        check.add(
-            CephLog(args.log, args.state),
+class CheckCeph:
+    @nagiosplugin.guarded
+    def main(
+        self,
+        warn_usage,
+        crit_usage,
+        command,
+        log,
+        warn_requests,
+        crit_requests,
+        warn_blocked_age,
+        crit_blocked_age,
+        state,
+        verbose,
+        timeout,
+    ) -> int:
+        check = nagiosplugin.Check(
+            Ceph(CephStatus(command)),
+            HealthContext("health"),
             nagiosplugin.ScalarContext(
-                "req_blocked", args.warn_requests, args.crit_requests
+                "nearfull",
+                critical="0:0",
+                fmt_metric="{value} near full osd(s)",
             ),
-            nagiosplugin.ScalarContext(
-                "req_blocked_age", args.warn_blocked_age, args.crit_blocked_age
-            ),
+            UsageSummary(),
         )
-    check.main(args.verbose, args.timeout)
+        if log:
+            check.add(
+                CephLog(log, state),
+                nagiosplugin.ScalarContext(
+                    "req_blocked", warn_requests, crit_requests
+                ),
+                nagiosplugin.ScalarContext(
+                    "req_blocked_age", warn_blocked_age, crit_blocked_age
+                ),
+            )
+        return check.main(verbose, timeout)

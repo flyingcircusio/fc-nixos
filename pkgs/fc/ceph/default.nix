@@ -8,10 +8,12 @@
   agent,
   mock,
   freezegun,
-  requests,
   pytest,
   pytest_patterns,
   setuptools,
+  nagiosplugin,
+  rich,
+  requests,
 }:
 
 buildPythonApplication rec {
@@ -23,11 +25,16 @@ buildPythonApplication rec {
   pyproject = true;
   build-system = [ setuptools ];
 
+  dependencies = [
+    nagiosplugin
+    rich
+    requests
+  ];
+
   propagatedBuildInputs = [
     blockdev
     lz4
     agent
-    requests
     cryptsetup
     parted
   ];

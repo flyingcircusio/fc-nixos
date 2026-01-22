@@ -24,9 +24,6 @@ rec {
 
   check-age = callPackage ./check-age { };
   check-bgp-sessions = callPackage ./check-bgp-sessions { };
-  check-ceph-nautilus = pyPackages.callPackage ./check-ceph/nautilus {
-    inherit (pkgs.ceph-nautilus) ceph-client;
-  };
   check-haproxy = callPackage ./check-haproxy { };
   check-journal = callPackage ./check-journal.nix { };
   check-kvm-vrf-integrity = callPackage ./check-kvm-vrf-integrity { };
