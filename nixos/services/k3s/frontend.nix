@@ -270,13 +270,6 @@ in
     flyingcircus.services.haproxy = {
       enable = true;
       enableStructuredConfig = true;
-      defaults = {
-        mode = "tcp";
-        options = [
-          "tcplog"
-          "dontlognull"
-        ];
-      };
       listen = {
         "_stats" = {
           mode = "http";
