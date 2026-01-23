@@ -4,19 +4,16 @@ Please consider that this is not a guarantee for not getting `OSD_NEARFULL` warn
 as individual fill levels of OSDs below a cluster root is not perfectly balanced.
 """
 
-import contextlib
 import json
-import sys
+import subprocess
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntEnum
 from itertools import chain
-from time import sleep
-from typing import Dict, Iterable, Iterator, List, Tuple
+from traceback import print_exc
+from typing import Dict, Iterable, Iterator, List, Self, Tuple
 
-import rados
-import rbd
-import toml  # replace this with tomllib when on python-3.11+
+import tomllib
 
 # defining global helper constants
 
@@ -35,21 +32,21 @@ class SensuStatus(IntEnum):
 
     @classmethod
     def highest_status(
-        # from Python 3.11 on, previous and new can be annotated as `Self`
-        cls,
-        previous,
+        cls: Self,
+        previous: Self,
         new,
-    ):  # -> SensuStatus:
+    ) -> "SensuStatus":
         """Returns the highest-priority exit code of the given two. Also checks for
         unknown exit code values, falling back to UNKNOWN"""
         for code in cls:
+            # relies on the definition order of the enum
             if code in (new, previous):
                 return code
         else:
             print(f"WARN: Encountered an unknown exit code of {new}.")
             return cls.UNKNOWN
 
-    def merge(self, new_status):  # -> SensuStatus:
+    def merge(self, new_status) -> "SensuStatus":
         return self.__class__.highest_status(self, new_status)
 
 
@@ -117,7 +114,6 @@ class Snapshot:
                 f"ratio of {fill_ratio_after_restore * 100:.2f}%, "
                 f"exceeding the FULL threshold in cluster root {self.pool.root.name}."
             )
-        # exit_code = max_exitcode(exit_code, EXIT_CRITICAL)
         elif status_code == SensuStatus.WARN:
             return (
                 f"WARN: Restoring the snapshot "
@@ -126,7 +122,6 @@ class Snapshot:
                 f"ratio of {fill_ratio_after_restore * 100:.2f}%, "
                 f"exceeding the NEAR_FULL threshold in cluster root {self.pool.root.name}."
             )
-        # exit_code = max_exitcode(exit_code, EXIT_WARN)
         # NOTE: currently not printed anywhere, but we may want to add a verbose mode later
         elif status_code == SensuStatus.OK:
             return (
@@ -143,33 +138,29 @@ class Snapshot:
             )
 
 
-@contextlib.contextmanager
-def cluster_connection():
-    cluster = rados.Rados(conffile="/etc/ceph/ceph.conf")
-    try:
-        cluster.connect()
-        yield cluster
-    finally:
-        cluster.shutdown()
-
-
-def _ceph_osd_df_tree_roots(connection: rados.Rados) -> Iterator[dict]:
+def _ceph_osd_df_tree_roots() -> Iterator[dict]:
     df_tree_nodes = json.loads(
-        # we need to re-use the same interface as `ceph` CLI subcommands use.
-        # The JSON command structure has been obtained via
-        # `ceph --verbose <desired subcommand>`
-        connection.mon_command(
-            json.dumps(
-                {
-                    "prefix": "osd df",
-                    "output_method": "tree",
-                    "format": "json",
-                }
-            ),
-            b"",
-        )[1]
+        subprocess.run(
+            ["ceph", "--format", "json", "osd", "df", "tree"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
     )["nodes"]
     return filter(lambda node: node["type"] == "root", df_tree_nodes)
+
+
+def _rbd(*args: str) -> dict | list:
+    """Convenience wrapper for better mocking
+    consumers need to handle CalledProcessErrors themselfs"""
+    return json.loads(
+        subprocess.run(
+            ("rbd", "--format", "json", *args),
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    )
 
 
 def parse_pools(
@@ -189,6 +180,10 @@ def parse_pools(
             # we're not interested in that crush root
             continue
 
+        if root_data["kb"] == 0:
+            print(f"INFO: Pool {root_data['name']} has no capacity, ignoring.")
+            continue
+
         root_obj = CrushRoot(
             name=crush_name,
             size=root_data["kb"] * KiB,
@@ -200,7 +195,8 @@ def parse_pools(
             pools.append(Pool(pool_name, root_obj))
 
     if remaining_crush_roots:
-        status_code = SensuStatus.UNKNOWN
+        # It is desired to allow removing default pools without having to adjust
+        # the check config. (PL-134230)
         print(
             "INFO: Unable to retrieve fill stats for some crush roots:",
             remaining_crush_roots,
@@ -209,27 +205,27 @@ def parse_pools(
     return (status_code, pools)
 
 
-def query_snaps(connection: rados.Rados, pools: List[Pool]) -> List[Snapshot]:
+def query_snaps(pools: List[Pool]) -> List[Snapshot]:
     all_snaps = []
     for pool in pools:
-        with contextlib.closing(connection.open_ioctx(pool.name)) as poolio:
-            # in principle, only the ioctx determines the pool used. But for cleanliness always
-            # instantiate a new RBD per pool
-            rbdpool = rbd.RBD()
-            for imgname in rbdpool.list(poolio):
-                # we need an img object to query snapshots and their size
-                try:
-                    snaps = rbd.Image(poolio, imgname).list_snaps()
-                    for snap in snaps:
-                        all_snaps.append(
-                            Snapshot(
-                                pool=pool,
-                                image=imgname,
-                                snapname=snap["name"],
-                                size=snap["size"],
-                            )
+        for imgname in _rbd("ls", pool.name):
+            # we need an img object to query snapshots and their size
+            try:
+                snaps = _rbd("snap", "ls", f"{pool.name}/{imgname}")
+                for snap in snaps:
+                    all_snaps.append(
+                        Snapshot(
+                            pool=pool,
+                            image=imgname,
+                            snapname=snap["name"],
+                            size=snap["size"],
                         )
-                except rbd.ImageNotFound:
+                    )
+            except subprocess.CalledProcessError as e:
+                if (
+                    e.stderr
+                    == f"rbd: error opening image {imgname}: (2) No such file or directory\n"
+                ):
                     # as listing images and then accessing the images is not atomic, it is
                     # possible for the image to already be deleted. Ignore this, the changes
                     # will be considered at the next check run.
@@ -238,24 +234,22 @@ def query_snaps(connection: rados.Rados, pools: List[Pool]) -> List[Snapshot]:
                         "deleted during the check run"
                     )
                     continue
+                else:
+                    raise
 
     return all_snaps
 
 
-def parse_config(argv) -> Tuple[Thresholds, dict]:
-    if not len(argv) == 2:
-        print(f"Usage: {argv[0]} <config.toml>")
-        sys.exit(SensuStatus.CRITICAL)
-
+def parse_config(config_file: str) -> Tuple[Thresholds, dict]:
     try:
-        with open(argv[1], "rt") as configtoml:
-            config = toml.load(configtoml)
+        with open(config_file, "rb") as configtoml:
+            config = tomllib.load(configtoml)
     except (FileNotFoundError, PermissionError):
-        print(f"Error: Unable to open file {argv[1]}.")
-        sys.exit(SensuStatus.CRITICAL)
-    except toml.TomlDecodeError:
-        print(f"Error: {argv[1]} is not a valid TOML file.")
-        sys.exit(SensuStatus.CRITICAL)
+        print(f"Error: Unable to open file {config_file}.")
+        raise
+    except tomllib.TOMLDecodeError:
+        print(f"Error: {config_file} is not a valid TOML file.")
+        raise
 
     # repacking the required values serves as an implicit schema validation
     try:
@@ -274,10 +268,10 @@ def parse_config(argv) -> Tuple[Thresholds, dict]:
                 )
     except (KeyError, ValueError, AssertionError) as ex:
         print(
-            f"Error loading config file {argv[1]}: Values missing or of wrong type.\n"
+            f"Error loading config file {config_file}: Values missing or of wrong type.\n"
             "details:", repr(ex)
         )  # fmt: skip
-        sys.exit(SensuStatus.CRITICAL)
+        raise
 
     return (thresholds, pool_roots)
 
@@ -331,21 +325,29 @@ def eval_report(
     return (status_code, report_str)
 
 
-def main():
-    # can cause the program to exit with non-working config
-    (thresholds, pool_roots) = parse_config(sys.argv)
-    # phase 1: data collection
-    # retrieve cluster root fill stats
-    # retrieve list of images and snaps
-    with cluster_connection() as cluster:
-        (status_code, pools) = parse_pools(
-            _ceph_osd_df_tree_roots(cluster), pool_roots, thresholds
-        )
-        all_snaps = query_snaps(cluster, pools)
-    # phase 2: evaluation: filter and sort snapshots into warn categories
-    reporting_snap_categories = categorise_snaps(all_snaps)
+class CheckSnapshotRestore:
+    def main(self, config_file) -> int:
+        eval_status = SensuStatus.OK
+        status_code = SensuStatus.OK
+        try:
+            # can cause the program to exit with non-working config
+            (thresholds, pool_roots) = parse_config(config_file)
+            # phase 1: data collection
+            # retrieve cluster root fill stats
+            # retrieve list of images and snaps
+            (status_code, pools) = parse_pools(
+                _ceph_osd_df_tree_roots(), pool_roots, thresholds
+            )
+            all_snaps = query_snaps(pools)
+            # phase 2: evaluation: filter and sort snapshots into warn categories
+            reporting_snap_categories = categorise_snaps(all_snaps)
 
-    # phase 3: reporting
-    (eval_status, report_str) = eval_report(reporting_snap_categories)
-    print(report_str)
-    sys.exit(status_code.merge(eval_status))
+            # phase 3: reporting
+            (eval_status, report_str) = eval_report(reporting_snap_categories)
+            print(report_str)
+        except Exception:
+            # all uncaught exceptions count as "unknown"
+            print_exc()
+            status_code = SensuStatus.UNKNOWN.merge(status_code)
+
+        return status_code.merge(eval_status)
