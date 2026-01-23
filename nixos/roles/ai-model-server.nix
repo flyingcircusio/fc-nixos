@@ -199,7 +199,6 @@ in
         };
         systemd.tmpfiles.rules = [
           "d /var/lib/skvaider 0755 skvaider service -"
-          "d /var/lib/skvaider/model 0755 skvaider service -"
           "d ${cfg.skvaider-inference.settings.models_dir} 0755 skvaider service -"
         ];
 
