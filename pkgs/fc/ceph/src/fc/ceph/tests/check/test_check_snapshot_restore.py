@@ -1,12 +1,10 @@
-import json
 import os
 import shutil
-from collections import namedtuple
-from copy import deepcopy
+import subprocess
 from textwrap import dedent
 from unittest import mock
 
-import fc.check_ceph.check_snapshot_restore as snapcheck
+import fc.ceph.check.check_snapshot_restore as snapcheck
 import pytest
 
 # fixtures and mocks are in conftest.py
@@ -93,14 +91,17 @@ def test_snapshot_critical(snap_critical):
     assert snap_critical.restore_impact[0] == snapcheck.SensuStatus.CRITICAL
 
 
-def test_snapshot_oddities(snapshot):
+def test_snapshot_zerosize(snapshot):
     snapshot.pool.root.size = 1000000
-    snapshot.pool.root.usage = 0
+    snapshot.pool.root.used = 0
     snapshot.size = 0
 
     assert snapshot.restore_impact[0] == snapcheck.SensuStatus.OK
 
+
+def test_snapshot_uses_correct_thresholds(snapshot):
     # check that passed thresholds are used
+    snapshot.pool.root.size = 1000000
     snapshot.pool.root.thresholds = snapcheck.Thresholds(1.0, 1.0)
     snapshot.size = snapshot.pool.root.size - 1
     assert snapshot.restore_impact[0] == snapcheck.SensuStatus.OK
@@ -108,38 +109,39 @@ def test_snapshot_oddities(snapshot):
 
 def test_parse_config():
     (thresholds, pool_roots) = snapcheck.parse_config(
-        ["progname", "./tests/config.toml"]
+        "./src/fc/ceph/tests/check/config.toml"
     )
     assert thresholds.nearfull == 0.85
     assert thresholds.full == 0.95
     assert pool_roots == {"default": ["rbd.hdd"], "ssd": ["rbd.ssd"]}
 
 
-def test_parse_config_no_file():
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
-
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", "multitrack", "drifting"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
-
-
 def test_parse_config_file_problems(tmp_path):
+    config_nonexist = tmp_path / "nonexisting.toml"
     # TODO: possibly match output for particular error messages
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", tmp_path / "nonexisting.toml"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
+    with pytest.raises(FileNotFoundError):
+        snapcheck.parse_config(config_nonexist)
+    assert (
+        snapcheck.CheckSnapshotRestore().main(config_nonexist)
+        == snapcheck.SensuStatus.UNKNOWN.value
+    )
 
     # permission issues
-    shutil.copy("./tests/config.toml", tmp_path / "permission.toml")
-    os.chmod(tmp_path / "permission.toml", 0)
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", tmp_path / "permission.toml"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
+    config_noperm = tmp_path / "permission.toml"
+    shutil.copy("./src/fc/ceph/tests/check/config.toml", config_noperm)
+    os.chmod(config_noperm, 0)
+    with pytest.raises(PermissionError):
+        snapcheck.parse_config(config_noperm)
+    assert (
+        snapcheck.CheckSnapshotRestore().main(config_noperm)
+        == snapcheck.SensuStatus.UNKNOWN.value
+    )
 
     # broken toml file
-    with open(tmp_path / "broken.toml", "wt") as brokentoml:
+    from tomllib import TOMLDecodeError
+
+    config_broken = tmp_path / "broken.toml"
+    with open(config_broken, "wt") as brokentoml:
         print(
             dedent(
                 """\
@@ -150,13 +152,17 @@ def test_parse_config_file_problems(tmp_path):
             ),
             file=brokentoml,
         )
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", tmp_path / "broken.toml"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
+    with pytest.raises(TOMLDecodeError):
+        snapcheck.parse_config(config_broken)
+    assert (
+        snapcheck.CheckSnapshotRestore().main(config_broken)
+        == snapcheck.SensuStatus.UNKNOWN.value
+    )
 
     # wrong or missing values
     # yes, this could be done with a TextIO as well, but I'm using tmp_path already anyways
-    with open(tmp_path / "missing.toml", "wt") as missingtoml:
+    config_missing_val = tmp_path / "missing.toml"
+    with open(config_missing_val, "wt") as missingtoml:
         print(
             dedent(
                 """\
@@ -166,13 +172,21 @@ def test_parse_config_file_problems(tmp_path):
             ),
             file=missingtoml,
         )
-    with pytest.raises(SystemExit) as ex:
-        snapcheck.parse_config(["progname", tmp_path / "missing.toml"])
-    assert ex.value.code == snapcheck.SensuStatus.CRITICAL.value
+    with pytest.raises(KeyError):
+        snapcheck.parse_config(config_missing_val)
+    assert (
+        snapcheck.CheckSnapshotRestore().main(config_missing_val)
+        == snapcheck.SensuStatus.UNKNOWN.value
+    )
 
 
-def test_raw_cluster_stats_parsing(raw_cluster_stats_conn):
-    result = list(snapcheck._ceph_osd_df_tree_roots(raw_cluster_stats_conn))
+@mock.patch("subprocess.run")
+def test_raw_cluster_stats_parsing(mock_subprocess_run, ceph_osd_df_tree_json):
+    mock_result = mock.Mock()
+    mock_result.stdout = ceph_osd_df_tree_json
+    mock_subprocess_run.return_value = mock_result
+
+    result = list(snapcheck._ceph_osd_df_tree_roots())
 
     assert len(result) == 2
 
@@ -191,21 +205,46 @@ def test_parse_pools(
     assert parsed_pools[1].root.used == 65970697666560
 
 
-def test_parse_pools_no_stats_available(
-    example_thresholds, default_pool_roots
+def test_ignore_empty_pools(
+    parsed_raw_cluster_fillstats, example_thresholds, default_pool_roots
 ):
+    """Special case: Empty pools with a size of 0 can be ignored. (PL-134230)"""
+    fillstat_info = list(parsed_raw_cluster_fillstats)
+    for nullkey in [
+        "kb",
+        "kb_used",
+        "kb_used_data",
+        "kb_used_omap",
+        "kb_used_meta",
+        "kb_avail",
+        "utilization",
+        "var",
+        "pgs",
+    ]:
+        fillstat_info[1][nullkey] = 0
+
+    (parse_status, parsed_pools) = snapcheck.parse_pools(
+        iter(fillstat_info), default_pool_roots, example_thresholds
+    )
+
+    assert len(parsed_pools) == 1
+    assert parse_status == snapcheck.SensuStatus.OK
+
+
+def test_parse_pools_no_stats_available(example_thresholds, default_pool_roots):
+    """don't warn for roots that do not exist (PL-134230)"""
     (parse_status, parsed_pools) = snapcheck.parse_pools(
         iter([]), default_pool_roots, example_thresholds
     )
 
-    assert parse_status == snapcheck.SensuStatus.UNKNOWN
+    assert parse_status == snapcheck.SensuStatus.OK
     assert not parsed_pools
 
 
 def test_parse_pools_drop_non_relevant_pools(
     parsed_raw_cluster_fillstats, default_pool_roots, example_thresholds
 ):
-    default_pool_roots["ssd"] = []
+    default_pool_roots["ssd"] = []  # the default (rbd.hdd) root remains
     (parse_status, parsed_pools) = snapcheck.parse_pools(
         parsed_raw_cluster_fillstats, default_pool_roots, example_thresholds
     )
@@ -215,10 +254,31 @@ def test_parse_pools_drop_non_relevant_pools(
     assert parse_status == snapcheck.SensuStatus.OK
 
 
-def test_query_snaps(poolio_connection_mock):
+@mock.patch("fc.ceph.check.check_snapshot_restore._rbd")
+def test_query_snaps(mock_rbd, rbd_pool_images, rbd_snapshot_data):
+    # simple mock: just a sequence of expected return values of our rbd wrapper
+    mock_rbd.side_effect = [
+        rbd_pool_images["rbd.ssd"],  # _rbd("ls", "rbd.ssd")
+        rbd_snapshot_data[
+            "rbd.ssd/test03"
+        ],  # _rbd("snap", "ls", "rbd.ssd/test03")
+        rbd_pool_images["rbd.hdd"],  # _rbd("ls", "rbd.hdd")
+        rbd_snapshot_data[
+            "rbd.hdd/test01"
+        ],  # _rbd("snap", "ls", "rbd.hdd/test01")
+        subprocess.CalledProcessError(
+            returncode=2,
+            cmd=["rbd", "--format json", "snap", "ls", "rbd.hdd/testdeleted"],
+            stderr="rbd: error opening image testdeleted: (2) No such file or directory\n",
+        ),  # _rbd("snap", "ls", "rbd.hdd/testdeleted") - should be caught
+        rbd_snapshot_data[
+            "rbd.hdd/test02"
+        ],  # _rbd("snap", "ls", "rbd.hdd/test02")
+    ]
+
     rbd_ssd = snapcheck.Pool("rbd.ssd", None)
     rbd_hdd = snapcheck.Pool("rbd.hdd", None)
-    snaps = snapcheck.query_snaps(poolio_connection_mock, [rbd_ssd, rbd_hdd])
+    snaps = snapcheck.query_snaps([rbd_ssd, rbd_hdd])
 
     assert len(snaps) == 3
 
@@ -236,17 +296,20 @@ def test_query_snaps(poolio_connection_mock):
     assert firstsnap.size == 1024
 
 
-def test_query_snaps_nopools(poolio_connection_mock):
-    snaps = snapcheck.query_snaps(poolio_connection_mock, [])
+def test_query_snaps_nopools():
+    snaps = snapcheck.query_snaps([])
 
     assert not snaps
 
 
-def test_query_snaps_empty_cluster(poolio_connection_mock):
+@mock.patch("fc.ceph.check.check_snapshot_restore._rbd")
+def test_query_snaps_empty_cluster(mock_rbd, rbd_pool_images):
     # situation after bootstrapping: no rbd images, no snapshots
-    snaps = snapcheck.query_snaps(
-        poolio_connection_mock, [snapcheck.Pool("emptypool", None)]
-    )
+    mock_rbd.side_effect = [
+        rbd_pool_images["emptypool"],  # _rbd("ls", "emptypool") returns []
+    ]
+
+    snaps = snapcheck.query_snaps([snapcheck.Pool("emptypool", None)])
 
     assert not snaps
 
@@ -299,3 +362,13 @@ def test_eval_report_all_okay():
 
     assert overall_status == snapcheck.SensuStatus.OK
     assert "Total status: OK" in report
+
+
+@mock.patch("fc.ceph.check.check_snapshot_restore.parse_config")
+def test_uncaught_exceptions_unknown_status(call_mock):
+    call_mock.side_effect = [Exception("foo")]
+
+    assert (
+        snapcheck.CheckSnapshotRestore().main("is_not_read_anyways")
+        == snapcheck.SensuStatus.UNKNOWN
+    )
