@@ -169,6 +169,7 @@ in
           script = ''
             ${lib.getExe' pkgs.fc.skvaider "gunicorn"} "skvaider.inference:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
           '';
+          path = [ pkgs.llama-cpp-rocm ];
 
           requires = [ "network-online.target" ];
           serviceConfig = {
