@@ -170,6 +170,7 @@ in
             ${lib.getExe' pkgs.fc.skvaider "gunicorn"} "skvaider.inference:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
           '';
 
+          requires = [ "network-online.target" ];
           serviceConfig = {
             StateDirectory = "skvaider";
             User = "skvaider";
@@ -186,6 +187,7 @@ in
             SupplementaryGroups = [
               "render"
             ];
+            Restart = "always";
           };
         };
         users = {
