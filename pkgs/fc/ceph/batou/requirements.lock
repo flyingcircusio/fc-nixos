@@ -1,19 +1,19 @@
-# appenv-requirements-hash: 4b3c3741cc13febf4d13f3783ae288b17cd60dd81bdcb3cb8a3f67a0de9882bc
+# appenv-requirements-hash: 7dbd9dbba98d08cf4804d89ef5db2a0f1d2e1ce7f61be6cf166c103e5fe1d173
 ConfigUpdater==3.2
 Jinja2==3.1.6
-MarkupSafe==3.0.2
-PyYAML==6.0.2
-batou @ https://github.com/flyingcircusio/batou/archive/f99d8dd9604edc336f7ae4424f751373c2db2ce9.zip#sha256=c5c1855c9ea96d82e1bb0275152077cfe2d47be32d159205de768bb4e007827b
+MarkupSafe==3.0.3
+PyYAML==6.0.3
+batou @ https://github.com/flyingcircusio/batou/archive/eed3dc5274457cc2828cb5e6334f5c31ae1e719a.zip#sha256=29c18f5b963064ee8e2f0a69fbc4ff750b29d80882f9277fc713305a0d66d3ea
 
-certifi==2025.7.14
-charset-normalizer==3.4.2
-execnet==2.1.1
-idna==3.10
-importlib_metadata==8.7.0
+certifi==2026.2.25
+charset-normalizer==3.4.4
+execnet==2.1.2
+idna==3.11
+importlib_metadata==8.7.1
 importlib_resources==6.5.2
 py==1.11.0
 remote-pdb==2.1.0
-requests==2.32.4
-setuptools==80.9.0
-urllib3==2.5.0
+requests==2.32.5
+setuptools==82.0.0
+urllib3==2.6.3
 zipp==3.23.0
