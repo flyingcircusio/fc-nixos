@@ -285,7 +285,7 @@ in
       extraConfig = ''
         resolvers cluster
         ${lib.strings.concatImapStringsSep "\n" (
-          i: host: "  nameserver coredns${toString i} ${host}:53"
+          i: host: "  nameserver coredns${toString i} ${fclib.quoteIPv6Address host}:53"
         ) netCfg.clusterDns}
           accepted_payload_size 8192 # allow larger DNS payloads
       '';

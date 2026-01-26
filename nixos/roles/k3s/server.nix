@@ -549,7 +549,8 @@ in
               "--kube-apiserver-arg enable-admission-plugins=PodNodeSelector"
               # required for anonymous access to apiserver health port
               "--kube-apiserver-arg anonymous-auth=true"
-            ];
+            ]
+            ++ (lib.optional netCfg.enableIPv6 "--flannel-ipv6-masq");
           in
           {
             enable = true;

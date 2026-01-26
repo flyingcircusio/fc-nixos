@@ -3,54 +3,65 @@ import ../make-test-python.nix (
     lib,
     pkgs,
     testlib,
+    enableIPv6 ? false,
     ...
   }:
-  with builtins;
-
   let
 
-    net4Srv = "10.0.1";
-    frontendSrv = net4Srv + ".1";
-    masterSrv = net4Srv + ".2";
-    nodeSrvA = net4Srv + ".3";
-    nodeSrvB = net4Srv + ".4";
-
-    net4Fe = "10.0.2";
-    frontendFe = net4Fe + ".1";
-    masterFe = net4Fe + ".2";
+    masterSrv4 = testlib.fcIP.srv4 2;
+    masterSrv6 = testlib.fcIP.srv6 2;
+    nodeSrvA4 = testlib.fcIP.srv4 3;
+    nodeSrvA6 = testlib.fcIP.srv6 3;
+    nodeSrvB4 = testlib.fcIP.srv4 4;
+    nodeSrvB6 = testlib.fcIP.srv6 4;
+    frontendSrv4 = testlib.fcIP.fe4 1;
+    frontendSrv6 = testlib.fcIP.fe6 1;
 
     encServices = [
       {
         address = "k3sserver.fcio.net";
-        ips = [ masterSrv ];
+        ips = [
+          masterSrv4
+          masterSrv6
+        ];
         service = "k3s-server-server";
         password = "xvlc";
       }
       {
         address = "k3snodeA.fcio.net";
-        ips = [ nodeSrvA ];
+        ips = [
+          nodeSrvA4
+          nodeSrvA6
+        ];
         service = "k3s-node";
       }
       {
         address = "k3snodeB.fcio.net";
-        ips = [ nodeSrvB ];
+        ips = [
+          nodeSrvB4
+          nodeSrvB6
+        ];
         service = "k3s-node";
       }
       {
         address = "frontend.fcio.net";
-        ips = [ frontendFe ];
+        ips = [
+          frontendSrv4
+          frontendSrv6
+        ];
         service = "k3s-frontend";
       }
     ];
 
-    hosts = ''
-      ${masterSrv} k3sserver.fcio.net
-      ${nodeSrvA} k3snodeA.fcio.net
-      ${nodeSrvB} k3snodeB.fcio.net
-      ${frontendFe} frontend.fcio.net
-      ${masterFe} k3sserver.fe.test.fcio.net
-      ${masterFe} k3s.test.fcio.net
-    '';
+    # synthetic default routes are required so that connections to the
+    # k3s-managed virtual service ips get routed, otherwise the
+    # firewall rules won't trigger.
+    extraEncParameters = {
+      interfaces.srv.gateways = {
+        "${testlib.fcIP.srv4 0}/24" = testlib.fcIP.srv4 254;
+        "${testlib.fcIPMap.srv6.prefix}/64" = testlib.fcIP.srv6 254;
+      };
+    };
 
     redis = import ./redis.nix { inherit pkgs; };
 
@@ -58,45 +69,25 @@ import ../make-test-python.nix (
   {
 
     name = "k3s";
+
     nodes = {
 
       master =
         { lib, ... }:
         {
           imports = [
-            ../../nixos
-            ../../nixos/roles
+            (testlib.fcConfig {
+              id = 2;
+              inherit extraEncParameters;
+            })
           ];
 
           config = {
-
-            flyingcircus.enc.parameters = {
-              location = "test";
-              resource_group = "test";
-              interfaces.srv = {
-                bridged = false;
-                mac = "52:54:00:12:01:02";
-                networks = {
-                  "${net4Srv}.0/24" = [ masterSrv ];
-                };
-                gateways = {
-                  "${net4Srv}.0/24" = "${net4Srv}.254";
-                };
-              };
-              interfaces.fe = {
-                bridged = false;
-                mac = "52:54:00:12:02:02";
-                networks = {
-                  "${net4Fe}.0/24" = [ masterFe ];
-                };
-                gateways = { };
-              };
-            };
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-server.enable = true;
+            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
             networking.domain = "fcio.net";
             networking.hostName = lib.mkForce "k3sserver";
-            networking.extraHosts = hosts;
 
             networking.firewall.allowedTCPPorts = [
               8888
@@ -136,128 +127,95 @@ import ../make-test-python.nix (
 
             virtualisation.memorySize = 2000;
             virtualisation.diskSize = lib.mkForce 3000;
-            # do not automatically assign addresses based on vlan and
-            # guest id.
-            virtualisation.interfaces = {
-              ethfe = {
-                vlan = 2;
-              };
-              ethsrv = {
-                vlan = 1;
-              };
-            };
             virtualisation.qemu.options = [ "-smp 2" ];
           };
         };
 
       nodeA =
-        { ... }:
+        { config, ... }:
         {
           imports = [
-            ../../nixos
-            ../../nixos/roles
+            (testlib.fcConfig {
+              id = 3;
+              inherit extraEncParameters;
+            })
           ];
 
           config = {
-            flyingcircus.enc.parameters = {
-              resource_group = "test";
-              interfaces.srv = {
-                bridged = false;
-                mac = "52:54:00:12:01:03";
-                networks = {
-                  "${net4Srv}.0/24" = [ nodeSrvA ];
-                };
-                gateways = {
-                  "${net4Srv}.0/24" = "${net4Srv}.254";
-                };
-              };
-            };
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-agent.enable = true;
+            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
 
             networking.domain = "fcio.net";
-            networking.extraHosts = hosts;
             networking.hostName = lib.mkForce "k3snodeA";
             networking.nameservers = [ "127.0.0.1" ];
             virtualisation.memorySize = 2000;
             virtualisation.diskSize = 3000;
-            virtualisation.interfaces.ethsrv.vlan = 1;
+
+            # we can't use services.k3s.images here because we run k3s
+            # with a different data directory than the default.
+            systemd.tmpfiles.rules =
+              let
+                images = config.services.k3s.package.airgap-images;
+              in
+              [
+                "L+ /var/lib/k3s/agent/images/airgap-images.tar.zst - - - - ${images}"
+              ];
           };
         };
 
       nodeB =
-        { ... }:
+        { config, ... }:
         {
           imports = [
-            ../../nixos
-            ../../nixos/roles
+            (testlib.fcConfig {
+              id = 4;
+              inherit extraEncParameters;
+            })
           ];
 
           config = {
-            flyingcircus.enc.parameters = {
-              resource_group = "test";
-              interfaces.srv = {
-                bridged = false;
-                mac = "52:54:00:12:01:04";
-                networks = {
-                  "${net4Srv}.0/24" = [ nodeSrvB ];
-                };
-                gateways = {
-                  "${net4Srv}.0/24" = "${net4Srv}.254";
-                };
-              };
-            };
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-agent.enable = true;
+            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
 
             networking.domain = "fcio.net";
-            networking.extraHosts = hosts;
             networking.hostName = lib.mkForce "k3snodeB";
             virtualisation.memorySize = 2000;
             virtualisation.diskSize = 3000;
-            virtualisation.interfaces.ethsrv.vlan = 1;
+
+            systemd.tmpfiles.rules =
+              let
+                images = config.services.k3s.package.airgap-images;
+              in
+              [
+                "L+ /var/lib/k3s/agent/images/airgap-images.tar.zst - - - - ${images}"
+              ];
           };
         };
 
       frontend =
-        { ... }:
+        { pkgs, ... }:
         {
           imports = [
-            ../../nixos
-            ../../nixos/roles
+            (testlib.fcConfig {
+              id = 1;
+              inherit extraEncParameters;
+            })
           ];
 
-          flyingcircus.roles.webgateway.enable = true;
-          flyingcircus.enc.parameters = {
-            resource_group = "test";
-            interfaces.srv = {
-              bridged = false;
-              mac = "52:54:00:12:01:01";
-              networks = {
-                "${net4Srv}.0/24" = [ frontendSrv ];
-              };
-              gateways = { };
-            };
-            interfaces.fe = {
-              bridged = false;
-              mac = "52:54:00:12:02:01";
-              networks = {
-                "${net4Fe}.0/24" = [ frontendFe ];
-              };
-              gateways = { };
-            };
-          };
-          networking.domain = "fcio.net";
-          networking.extraHosts = hosts;
-          flyingcircus.encServices = encServices;
-          virtualisation.diskSize = 3000;
-          virtualisation.memorySize = 2000;
-          virtualisation.interfaces = {
-            ethfe = {
-              vlan = 2;
-            };
-            ethsrv = {
-              vlan = 1;
+          config = {
+            flyingcircus.roles.webgateway.enable = true;
+            networking.domain = "fcio.net";
+            flyingcircus.encServices = encServices;
+            virtualisation.diskSize = 3000;
+            virtualisation.memorySize = 2000;
+            environment.systemPackages = [ pkgs.redis ];
+            flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
+            flyingcircus.kubernetes.frontend.redis = {
+              binds = [ "127.0.0.1:6379" ];
+              servicePort = 6379;
+              mode = "tcp";
             };
           };
         };
@@ -274,7 +232,8 @@ import ../make-test-python.nix (
 
         with subtest("k3s server should work"):
           k3sserver.wait_for_unit("k3s.service")
-          k3sserver.wait_until_succeeds('k3s kubectl cluster-info | grep -q https://127.0.0.1:6443')
+          k3sserver.wait_until_succeeds('k3s kubectl get --raw=/healthz | grep -q ok')
+          k3sserver.succeed('k3s kubectl get node k3sserver -o jsonpath=\'{.status.conditions[?(@.type=="Ready")].status}\' | grep -q True')
 
         k3snodeA.start()
 
@@ -284,10 +243,6 @@ import ../make-test-python.nix (
           # Give k3s more time to settle without getting into IO stress when loading images.
           time.sleep(10)
 
-          # XXX: for some reason *implicit* image import via
-          # `services.k3s.images = [ config.services.k3s.package.airgap-images ];` does not work.
-          # Doing a manual import instead.
-          k3snodeA.wait_until_succeeds("echo 'try import' >2; k3s ctr images import ${nodes.nodeA.services.k3s.package.airgap-images} >2")
           k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodea | grep -vq NotReady")
 
         with subtest("all kube-system images pulled successfully"):
@@ -311,8 +266,7 @@ import ../make-test-python.nix (
           frontend.wait_until_succeeds('curl -k http://k3sserver.fcio.net')
 
         with subtest("creating a deployment should work"):
-          k3sserver.wait_until_succeeds("zcat ${redis.image} | k3s ctr images import -")
-          k3snodeA.wait_until_succeeds("zcat ${redis.image} | k3s ctr images import -")
+          k3snodeA.succeed("k3s ctr images import ${redis.image}")
           k3sserver.succeed("k3s kubectl apply -f ${redis.deployment}")
           k3sserver.succeed("k3s kubectl apply -f ${redis.service}")
 
@@ -323,19 +277,17 @@ import ../make-test-python.nix (
           k3sserver.succeed("KUBECONFIG=/home/test/kubeconfig k3s kubectl cluster-info")
 
         with subtest("master should be able to reach cluster DNS"):
+          time.sleep(1)
           k3sserver.wait_until_succeeds('k3s kubectl -n kube-system get pods | grep coredns | grep -v ContainerCreating | grep Running')
-          k3sserver.wait_until_succeeds('dig redis.default.svc.cluster.local @10.43.0.10 | grep NOERROR')
 
         k3snodeB.start()
         time.sleep(5)
 
         with subtest("adding a second node should work"):
-
-          k3snodeB.wait_until_succeeds("k3s ctr images import ${nodes.nodeA.services.k3s.package.airgap-images} >2")
           k3sserver.wait_until_succeeds("k3s kubectl get nodes | grep k3snodeb | grep -vq NotReady")
 
         with subtest("scaling the deployment should start 4 pods"):
-          k3snodeB.wait_until_succeeds("zcat ${redis.image} | k3s ctr images import -")
+          k3snodeB.succeed("k3s ctr images import ${redis.image}")
           k3sserver.succeed("k3s kubectl scale deployment redis --replicas=4")
           k3sserver.wait_until_succeeds("k3s kubectl get deployment redis | grep -q 4/4")
 
@@ -343,12 +295,8 @@ import ../make-test-python.nix (
           k3sserver.wait_until_succeeds("k3s kubectl get pods -o wide | grep redis | grep Running | grep -q k3snodea")
           k3sserver.wait_until_succeeds("k3s kubectl get pods -o wide | grep redis | grep Running | grep -q k3snodeb")
 
-        # with subtest("frontend should be able to ping redis pods"):
-        #   print(frontend.execute("iptables -L -v --line-numbers")[1])
-        #   print(k3sserver.execute("k3s kubectl -n kube-system get svc -l k8s-app=kube-dns")[1])
-        #   print(k3sserver.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
-        #   print(k3snodeB.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
-        #   # print(frontend.succeed("dig @10.43.0.10 +short \*.redis.default.svc.cluster.local | xargs ${pkgs.fc.multiping}/bin/multiping"))
+        with subtest("frontend should be able to ping redis pods"):
+          frontend.wait_until_succeeds("redis-cli ping | grep PONG")
 
         with subtest("dashboard sensu check should be red after shutting down dashboard"):
           k3sserver.systemctl("stop kube-dashboard")

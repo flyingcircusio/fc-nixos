@@ -423,6 +423,30 @@ on your requirements there are a few more options available:
 }
 ```
 
+### IPv6 support
+
+By default, Kubernetes clusters in our environment are configured with
+single-stack IPv4-only networking. This means that pods are only assigned a single
+IPv4 address, and cannot access external IPv6-only hosts.
+
+However, we provide the option to enable dual-stack networking when the cluster is
+first created, so that pods can be assigned both IPv4 and IPv6
+addresses. Dual-stack networking can be enabled by setting the
+`flyingcircus.kubernetes.network.enableIPv6` NixOS option to `true` in the host
+configuration on each node in the cluster, **before** any k3s roles are added to
+the node.
+
+:::{warning}
+It is not possible to change the value of the
+`flyingcircus.kubernetes.network.enableIPv6` option after the cluster is
+created. Changing this value after cluster creation (after the k3s daemon has been
+started for the first time) has the potential to irrecoverably break the cluster,
+and is explicitly not supported.
+
+Migrating an existing cluster with single-stack networking to dual-stack
+networking requires the cluster to be destroyed and recreated.
+:::
+
 ## Storage
 
 Our Kubernetes environment supports two persistent volume types by default:
