@@ -10,7 +10,7 @@
   ];
 
   permittedInsecurePackages = [
-    "imagemagick-6.9.13-10" # Legacy, but gets updates. Customer still needs it.
+    "imagemagick-6.9.13-38" # Legacy, but gets updates. Customer still needs it.
     "openssl-1.1.1w" # EOL 2023-09-11, needed for Percona and older PHP versions.
     "python-2.7.18.12" # Needed for some legacy customer applications.
     "ruby-2.7.8" # EOL 2023-03-31, needed for Sensu checks
