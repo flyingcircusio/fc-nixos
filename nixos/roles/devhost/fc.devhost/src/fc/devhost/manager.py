@@ -11,6 +11,7 @@ import tempfile
 import textwrap
 import time
 from pathlib import Path
+from typing import Any, cast
 
 import psutil
 import requests
@@ -27,6 +28,28 @@ VM_DATA_DIR = Path("/var/lib/devhost/vms")
 LOCKFILE_PATH = "/run/fc-devhost-vm"
 
 MONTH = 60 * 60 * 24 * 30
+
+
+def merge_dicts(
+    current: dict[Any, Any],
+    update: dict[Any, Any],
+) -> dict[Any, Any]:
+    """Recursively merge update into current dict.
+
+    Keys from update replace keys in current. Container values (lists, sets,
+    etc.) are replaced entirely, not merged. Only dicts are merged recursively.
+    """
+    result = current.copy()
+    for key, value in update.items():
+        if (
+            key in result
+            and isinstance(result[key], dict)
+            and isinstance(value, dict)
+        ):
+            result[key] = merge_dicts(result[key], cast(dict[Any, Any], value))
+        else:
+            result[key] = value
+    return result
 
 
 def parse_disk_size(size_str):
@@ -106,37 +129,35 @@ def write_nix_file(nix_file_path, cfg):
         )
 
 
-def generate_enc_json(cfg, channel_url):
-    return json.dumps(
-        {
-            "name": cfg["name"],
-            "parameters": {
-                "cores": cfg["cpu"],
-                "environment_url": channel_url,
-                "environment": "dev-vm",
-                "interfaces": {
-                    "srv": {
-                        "bridged": False,
-                        "gateways": {
-                            NETWORK.exploded: NETWORK[1].exploded,
-                        },
-                        "mac": cfg["srv-mac"],
-                        "networks": {
-                            NETWORK.exploded: [cfg["srv-ip"]],
-                        },
-                    }
-                },
-                "location": cfg["location"],
-                "memory": cfg["memory"],
+def generate_enc(cfg: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "name": cfg["name"],
+        "parameters": {
+            "cores": cfg["cpu"],
+            "environment": "dev-vm",
+            "interfaces": {
+                "srv": {
+                    "bridged": False,
+                    "gateways": {
+                        NETWORK.exploded: NETWORK[1].exploded,
+                    },
+                    "mac": cfg["srv-mac"],
+                    "networks": {
+                        NETWORK.exploded: [cfg["srv-ip"]],
+                    },
+                }
             },
-        }
-    )
+            "location": cfg["location"],
+            "memory": cfg["memory"],
+        },
+    }
 
 
 class Manager:
     name: str  # Name of the managed VM
+    cfg: dict[str, Any]
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
         self.cfg = {}
 
@@ -211,7 +232,8 @@ class Manager:
         location,
         hydra_eval=None,
         image_url=None,
-        channel_url=None,
+        channel_url: str = "",
+        update_channel: bool = True,
         disk_size=None,
     ):
         print("Assuming devhost lock ...")
@@ -391,11 +413,12 @@ class Manager:
                             image_mount_directory,
                         )
 
-                        enc_file_path = (
+                        enc_file = (
                             Path(image_mount_directory) / "etc/nixos/enc.json"
                         )
-                        with open(enc_file_path, mode="w") as f:
-                            f.write(generate_enc_json(self.cfg, channel_url))
+                        enc = generate_enc(self.cfg)
+                        enc["parameters"]["environment_url"] = channel_url
+                        enc_file.write_text(json.dumps(enc), encoding="utf-8")
                     finally:
                         # even for partially successful operations (e.g. successful
                         # nbd map, but failing mount) try to clean everything up
@@ -500,15 +523,30 @@ class Manager:
 
             if vm_has_image:
                 print("Syncing VM enc data into running VM ...")
-                with tempfile.NamedTemporaryFile(mode="w") as f:
-                    f.write(generate_enc_json(self.cfg, channel_url))
-                    f.flush()
+                # We need to support a deviating channel as the developer might be using
+                # a checkout or version of fc-nixos that isn't available from a URL
+                # for bootstrapping.
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    enc_file = Path(tmpdir) / "enc.json"
                     run(
                         "rsync",
                         "-e",
                         "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /var/lib/devhost/ssh_bootstrap_key",
                         "--rsync-path=sudo rsync",
-                        f.name,
+                        f"developer@{self.name}:/etc/nixos/enc.json",
+                        str(enc_file),
+                    )
+                    enc = json.loads(enc_file.read_text(encoding="utf-8"))
+                    enc = merge_dicts(enc, generate_enc(self.cfg))
+                    if update_channel:
+                        enc["parameters"]["environment_url"] = channel_url
+                    enc_file.write_text(json.dumps(enc), encoding="utf-8")
+                    run(
+                        "rsync",
+                        "-e",
+                        "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /var/lib/devhost/ssh_bootstrap_key",
+                        "--rsync-path=sudo rsync",
+                        str(enc_file),
                         f"developer@{self.name}:/etc/nixos/enc.json",
                     )
 
