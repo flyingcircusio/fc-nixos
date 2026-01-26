@@ -1,6 +1,7 @@
 """Configure pools on Ceph storage servers according to the directory."""
 
 import json
+import re
 import socket
 import subprocess
 import sys
@@ -13,7 +14,7 @@ from fc.ceph.api.cluster import CephCmdError
 from fc.ceph.maintenance.images_nautilus import (
     load_vm_images as load_vm_images_task,
 )
-from fc.ceph.util import kill, mount_status, run
+from fc.ceph.util import run
 
 
 class ResourcegroupPoolEquivalence(object):
@@ -132,6 +133,23 @@ def get_host_crush_buckets() -> tuple[set[str], set[str]]:
     return host_map_entries, osds
 
 
+def filter_noup_osds(osd_ids: set[str]) -> set[str]:
+    """Filters the input set of OSD IDs to return only the OSDs that currently
+    have a NOUP flag."""
+    matched_noup_osds = set()
+    ceph_health = run.json.ceph("health", "detail")
+
+    match_fmt = re.compile(r"^osd.(?P<osdid>\d+) has flags noup$")
+    try:
+        for detail in ceph_health["checks"]["OSD_FLAGS"]["detail"]:
+            if match_result := match_fmt.match(detail["message"]):
+                matched_noup_osds.add(match_result.group("osdid"))
+    except KeyError:
+        # no such health warning issued
+        pass
+    return matched_noup_osds & osd_ids
+
+
 class MaintenanceTasks(object):
     """Controller that holds a number of maintenance-related methods."""
 
@@ -246,9 +264,8 @@ class MaintenanceTasks(object):
         # not automatically return.
         try:
             host_buckets, osd_ids = get_host_crush_buckets()
-            if host_buckets:
-                run.ceph("osd", "set-group", "noup", *sorted(host_buckets))
             if osd_ids:
+                run.ceph("osd", "set-group", "noup", *sorted(osd_ids))
                 run.ceph("osd", "down", *sorted(osd_ids))
         except Exception:
             self.leave()
@@ -257,7 +274,14 @@ class MaintenanceTasks(object):
     def leave(self):
         host_buckets, osd_ids = get_host_crush_buckets()
         if host_buckets:
+            # PL-133952: still needed for getting hosts upgrading from the
+            # previous mechanism out of maintenance. Remove later.
             run.ceph("osd", "unset-group", "noup", *sorted(host_buckets))
+
+        for osd_id in sorted(filter_noup_osds(osd_ids)):
+            # remove noup flags in a staggered fashion, to reduce peering storm
+            run.ceph("osd", "unset-group", "noup", str(osd_id))
+            time.sleep(15)
 
         last_exc = None
         for _ in range(self.UNLOCK_MAX_RETRIES):
