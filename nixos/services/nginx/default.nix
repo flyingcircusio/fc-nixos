@@ -18,6 +18,8 @@ let
   nginxCfg = config.services.nginx;
   fclib = config.fclib;
 
+  checkCert = "${pkgs.fc.check-tls-cert}/bin/check_tls_cert";
+
   lokiServer = fclib.findOneService "loki-collector";
 
   nginxShowConfig = pkgs.writeScriptBin "nginx-show-config" ''
@@ -68,15 +70,14 @@ let
   package = config.services.nginx.package;
   localCfgDir = config.flyingcircus.localConfigPath + "/nginx";
 
-  acmeVhostsWithTLS = (
-    lib.filterAttrs (
-      _: vhost:
-      let
-        hasSSL = vhost.onlySSL || vhost.addSSL || vhost.forceSSL;
-      in
-      vhost.enableACME && hasSSL
-    ) nginxCfg.virtualHosts
-  );
+  vhostsWithTLS = lib.filterAttrs (
+    _: vhost: vhost.onlySSL || vhost.addSSL || vhost.forceSSL
+  ) nginxCfg.virtualHosts;
+
+  # Split TLS vhosts in ACME and non-ACME vhosts
+  acmeVhostsWithTLS = lib.filterAttrs (_: vhost: vhost.enableACME) vhostsWithTLS;
+
+  nonAcmeVhostsWithTLS = lib.filterAttrs (_: vhost: !vhost.enableACME) vhostsWithTLS;
 
   mainConfig = ''
     worker_processes ${toString cfg.workerProcesses};
@@ -437,7 +438,20 @@ in
             command = "check_http -p 443 -S --sni -C 25,14 -H ${host} -t 15";
             interval = 600;
           }
-        ) acmeVhostsWithTLS);
+        ) vhostsWithTLS)
+        # Add certificate file checks for non-ACME hosts specified in nginx config.
+        # ACME certificates in general (nginx enableACME or others) are covered in platform/acme.nix.
+        // (lib.mapAttrs' (
+          n: vhost:
+          let
+            host = if vhost.serverName != null then vhost.serverName else n;
+          in
+          lib.nameValuePair "ssl_cert_nginx_${n}" {
+            notification = "SSL certificate for non-ACME nginx vhost ${n} is invalid or will expire soon";
+            command = "sudo ${checkCert} ${vhost.sslCertificate} ${host}";
+            interval = 3600;
+          }
+        ) nonAcmeVhostsWithTLS);
 
         networking.firewall.allowedTCPPorts = [
           80
@@ -449,6 +463,8 @@ in
             commands = [ (lib.getExe nginxCheckConfig) ];
             groups = [ "sensuclient" ];
           }
+          # sensuclient also needs check-tls-cert but that rule already defined in
+          # nixos/platform/acme.nix.
         ];
 
         services.nginx =
