@@ -8,10 +8,11 @@ requests. Useful for identifying slacky OSDs.
 
 import collections
 import gzip
-import os
+import json
 import re
 from pathlib import Path
 
+import IPy
 from fc.ceph.util import directory, run
 from fc.ceph.util.opslog import OpsLog, OpsLogState
 
@@ -59,8 +60,10 @@ class LogTasks(object):
     def account_s3_traffic(self, state_file: Path, enc_file: Path):
         final_stats = []
         with directory.directory_connection(enc_file, ring=0) as d:
-            location = os.getenv("FCIO_LOCATION")
-            internal_networks = {}
+            with open(enc_file) as f:
+                enc = json.load(f)
+                location = enc["parameters"]["location"]
+            internal_networks = []
             for vlan, nets in d.lookup_networks(location).items():
                 for network in nets:
                     internal_networks.append(IPy.IP(network))
@@ -86,8 +89,8 @@ class LogTasks(object):
                         final_stats.append(
                             [
                                 day.strftime("%Y-%m-%d"),
-                                recv,
-                                sent,
+                                str(recv),
+                                str(sent),
                                 user,
                             ]
                         )
