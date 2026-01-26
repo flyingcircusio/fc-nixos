@@ -32,6 +32,8 @@ rec {
   check-postfix = callPackage ./check-postfix { };
   check-rib-integrity = callPackage ./check-rib-integrity { };
   check-skvaider = callPackage ./check-skvaider { };
+  check-tls-cert = pyPackages.callPackage ./check-tls-cert { };
+  check-vrf-default-routes = callPackage ./check-vrf-default-routes { };
   check-xfs-broken = callPackage ./check-xfs-broken { };
 
   fix-so-rpath = callPackage ./fix-so-rpath { };

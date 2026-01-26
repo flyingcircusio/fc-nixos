@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "check-tls-cert"
+version = "1.0.0"
+description = "TLS certificate checker for monitoring"
+requires-python = ">=3.13"
+dependencies = [
+    "pytest"
+]
+
+[project.scripts]
+check_tls_cert = "check_tls_cert:main"
+
+[tool.setuptools]
+py-modules = ["check_tls_cert"]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+addopts = "-v"
