@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-144.0.7559.59",
+    "name": "chromedriver-unwrapped-144.0.7559.96",
     "pname": "chromedriver-unwrapped",
-    "version": "144.0.7559.59"
+    "version": "144.0.7559.96"
   },
   "chromium": {
-    "name": "chromium-144.0.7559.59",
+    "name": "chromium-144.0.7559.96",
     "pname": "chromium",
-    "version": "144.0.7559.59"
+    "version": "144.0.7559.96"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -300,9 +300,9 @@
     "version": "7.1.2-10"
   },
   "imagemagick6": {
-    "name": "imagemagick-6.9.13-10",
+    "name": "imagemagick-6.9.13-38",
     "pname": "imagemagick",
-    "version": "6.9.13-10"
+    "version": "6.9.13-38"
   },
   "inetutils": {
     "name": "inetutils-2.6",
@@ -480,9 +480,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.5.4",
+    "name": "mastodon-4.5.5",
     "pname": "mastodon",
-    "version": "4.5.4"
+    "version": "4.5.5"
   },
   "matomo": {
     "name": "matomo-5.5.2",
