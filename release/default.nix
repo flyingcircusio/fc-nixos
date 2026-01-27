@@ -2,7 +2,7 @@
 {
   system ? builtins.currentSystem,
   bootstrap ? <nixpkgs>,
-  nixpkgs_ ? (import ../versions.nix { pkgs = import bootstrap { }; }).nixpkgs,
+  nixpkgs_ ? (import ./versions.nix { pkgs = import bootstrap { }; }).nixpkgs,
   branch ? null, # e.g. "fc-24.11-dev"
   stableBranch ? false,
   supportedSystems ? [ "x86_64-linux" ],
