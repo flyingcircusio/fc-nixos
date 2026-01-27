@@ -1,6 +1,6 @@
 self: super:
 let
-  poetry2nixSrc = (import ../versions.nix { pkgs = super; }).poetry2nix;
+  poetry2nixSrc = (import ../release/versions.nix { pkgs = super; }).poetry2nix;
   poetry2nix = import poetry2nixSrc { pkgs = self; };
 
   # import fossar/nix-phps overlay with nixpkgs-unstable's generic.nix copied in
