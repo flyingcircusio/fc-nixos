@@ -170,6 +170,11 @@ let
                 "list"
               ];
             }
+            {
+              apiGroups = [ "" ];
+              resources = [ "secrets" ];
+              verbs = [ "list" ];
+            }
           ];
         })
         (clusterRole {
@@ -203,6 +208,11 @@ let
             {
               apiGroups = [ "apps" ];
               resources = [ "daemonsets" ];
+              verbs = [ "get" ];
+            }
+            {
+              apiGroups = [ "" ];
+              resources = [ "pods" ];
               verbs = [ "get" ];
             }
           ];
