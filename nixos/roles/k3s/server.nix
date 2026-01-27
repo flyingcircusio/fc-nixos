@@ -245,9 +245,6 @@ let
     secretname="$2"
 
     tokendir=/var/lib/k3s/tokens
-    kubectl="${pkgs.kubectl}/bin/kubectl"
-    remarshal="${pkgs.remarshal}/bin/remarshal"
-    jq="${pkgs.jq}/bin/jq"
     export KUBECONFIG=${defaultKubeconfig}
 
     if [ -z "$secretname" ]; then
@@ -272,8 +269,8 @@ let
     # attempting to load this authentication token.
 
     rc=0
-    for i in 1 2 3 4 5; do
-      "$kubectl" get -n kube-system -o jsonpath='{.data.token}' \
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+      kubectl get -n kube-system -o jsonpath='{.data.token}' \
         secret "$secretname" > "$tokendir/$user.b64" && \
         test -s "$tokendir/$user.b64"
       rc="$?"
@@ -295,8 +292,8 @@ let
       exit 1
     fi
 
-    "$remarshal" "$KUBECONFIG" -if yaml -of json | \
-      "$jq" --rawfile token "$tokendir/$user.tmp" \
+    remarshal "$KUBECONFIG" -if yaml -of json | \
+      jq --rawfile token "$tokendir/$user.tmp" \
       '.users[0].user |= (del(."client-key-data", ."client-certificate-data") | .token = $token)' \
       > "$tokendir/$user.cfg.tmp"
     if [ "$?" != 0 ]; then
@@ -314,13 +311,16 @@ let
     wantedBy = [ "multi-user.target" ];
     requires = [
       "k3s.service"
-      "fc-k3s-load-manifests.service"
     ];
     after = [
       "k3s.service"
-      "fc-k3s-load-manifests.service"
     ];
-    path = [ pkgs.coreutils ];
+    path = with pkgs; [
+      coreutils
+      kubectl
+      remarshal
+      jq
+    ];
     serviceConfig = {
       RemainAfterExit = true;
       Type = "oneshot";
@@ -571,37 +571,13 @@ in
           };
         };
 
-        systemd.services.fc-k3s-load-manifests = {
-          wantedBy = [ "multi-user.target" ];
-          requires = [ "k3s.service" ];
-          after = [ "k3s.service" ];
-          serviceConfig = {
-            RemainAfterExit = true;
-            Type = "oneshot";
-          };
-          path = [ pkgs.rsync ];
-          restartTriggers = [ additionalManifests ];
-          script = ''
-            # copy additional vendor manifests into k3s's manifest
-            # directory.
-            set -x
-
-            # this service may race with k3s creating its data
-            # directory in the filesystem post-startup, so we give k3s
-            # some grace time to complete this startup step.
-
-            for i in 1 2 3 4 5; do
-                if [ ! -d /var/lib/k3s/server/manifests ]; then
-                    sleep 0.5s
-                else
-                    rsync --delete -rL ${additionalManifests}/ /var/lib/k3s/server/manifests/flyingcircus
-                    exit $?
-                fi
-            done
-
-            exit 1
-          '';
-        };
+        # upstream provides the option services.k3s.manifests which
+        # also uses tmpfiles rules for managing external manifests,
+        # however we can't use this option as we use a different data
+        # directory from the default.
+        systemd.tmpfiles.rules = [
+          "L+ /var/lib/k3s/server/manifests/flyingcircus/flyingcircus.yaml - - - - ${additionalManifests}/flyingcircus.yaml"
+        ];
 
         systemd.services.fc-k3s-token-telegraf = makeAuthTokenService "telegraf" "io.flyingcircus.service-token.telegraf";
         systemd.services.fc-k3s-token-sensuclient = makeAuthTokenService "sensuclient" "io.flyingcircus.service-token.sensu-client";
