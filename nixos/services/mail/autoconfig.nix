@@ -19,15 +19,15 @@ pkgs.writeTextFile {
         <displayShortName>${head (lib.splitString "." domain)}</displayShortName>
         <incomingServer type="imap">
           <hostname>${mailHost}</hostname>
-          <port>143</port>
-          <socketType>STARTTLS</socketType>
+          <port>993</port>
+          <socketType>SSL</socketType>
           <authentication>password-cleartext</authentication>
           <username>%EMAILADDRESS%</username>
         </incomingServer>
         <outgoingServer type="smtp">
           <hostname>${mailHost}</hostname>
-          <port>587</port>
-          <socketType>STARTTLS</socketType>
+          <port>465</port>
+          <socketType>SSL</socketType>
           <authentication>password-cleartext</authentication>
           <username>%EMAILADDRESS%</username>
         </outgoingServer>
