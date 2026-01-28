@@ -86,7 +86,7 @@ class NixOS(Component):
                 "kvm_net_memory": "2000",
                 # This secret needs to be kept in sync with the
                 # ENC in the ceph-nautilus.nix test suite.
-                "secret_salt": "salt-for-host-dhkasjy9",
+                "secret_salt": f"salt-for-{self.host._name}-dhkasjy9",
                 "secrets": {
                     "ceph/admin_key": "AQBFJa9hAAAAABAAtdggM3mhVBAEYw3+Loehqw==",
                 },
