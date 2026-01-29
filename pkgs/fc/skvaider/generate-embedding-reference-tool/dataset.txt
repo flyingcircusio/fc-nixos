@@ -1,0 +1,6 @@
+This file is a simple text file used to store some text snippets to be used in testing.
+Any line of text in this file will be embedded and the generated embeddings compared against expected values.
+For qualitative testing, this is not a good dataset, however this serves as a simple sanity check for the embedding generation functionality.
+And for continuous testing of numerical stability of the embedding generation process.
+You should not use this file to benchmark embedding quality.
+Since the file is small, the embeddings may not be representative of real world usage.
