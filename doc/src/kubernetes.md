@@ -74,6 +74,10 @@ the following roles:
   Nodes never receive public IP addresses. All traffic from outside the
   resource group must pass through the webgateway.
 
+  Nodes are automatically drained before running maintenance and uncordoned
+  afterwards. Only one node in the cluster will perform maintenance at a time, to
+  avoid excess load on the rest of the cluster due to pods being rescheduled.
+
 - **Persistent volume storage (NFS subdir, optional)**
 
   Minimal resource requirements: 1 CPU, 8 GiB RAM, 50 GiB SSD
@@ -479,5 +483,3 @@ data.
 - By default our setup uses a cluster network that allows 253 nodes and 253
   ports per node. This can be adjusted but may require larger interventions
   with downtime if done in a production system.
-- We currently do not drain/uncordon nodes when performing service or VM
-  restarts in scheduled maintenance windows.
