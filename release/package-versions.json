@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-144.0.7559.96",
+    "name": "chromedriver-unwrapped-144.0.7559.109",
     "pname": "chromedriver-unwrapped",
-    "version": "144.0.7559.96"
+    "version": "144.0.7559.109"
   },
   "chromium": {
-    "name": "chromium-144.0.7559.96",
+    "name": "chromium-144.0.7559.109",
     "pname": "chromium",
-    "version": "144.0.7559.96"
+    "version": "144.0.7559.109"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-147.0.1",
+    "name": "firefox-147.0.2",
     "pname": "firefox",
-    "version": "147.0.1"
+    "version": "147.0.2"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -380,9 +380,9 @@
     "version": "1.33.7+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.5.1",
+    "name": "keycloak-26.5.2",
     "pname": "keycloak",
-    "version": "26.5.1"
+    "version": "26.5.2"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -630,9 +630,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.18",
+    "name": "openssl-3.0.19",
     "pname": "openssl",
-    "version": "3.0.18"
+    "version": "3.0.19"
   },
   "openvpn": {
     "name": "openvpn-2.6.14",
