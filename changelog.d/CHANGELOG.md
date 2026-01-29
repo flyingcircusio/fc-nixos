@@ -1,3 +1,32 @@
+# Release 2026_004
+
+## NixOS XX.XX platform
+
+- fc.check-ceph: check_snapshot_restore_fill ignores certain edge cases about empty pools or missing fill stats (PL-134230)
+
+- fc.check-ceph: check_snapshot_restore_fill refactoring away from librados python bindings (PL-131408)
+
+- k3s: allow service users to access the default Kubernetes config
+  file and interact with the cluster. (PL-134284)
+
+- ceph: stagger unset of "noup" flag at maintenance leave to reduce peering storm impact (PL-133952)
+
+- k3s: ensure that the frontend role does not set conflicting global
+  mode options in the haproxy configuration. This should avoid issues
+  when enabling the k3s roles in resource groups with existing haproxy
+  configuration. (PL-135086)
+
+- nginx/webgateway: all TLS certificates are monitored for expiration now, by connecting to the HTTPS endpoint (check names `nginx_https_*`) and checking the certificate file directly: `ssl_cert_acme_*` (as before) or `ssl_cert_nginx_*` (added for non-ACME certs). Before, we only generated monitoring checks for ACME certs. (PL-134018)
+
+- k3s: introduce a new NixOS option
+  `flyingcircus.kubernetes.network.enableIPv6` for creating Kubernetes
+  clusters with IPv6 and dual-stack networking enabled. Note that this
+  option should only be set when creating new clusters, and should not
+  be set for existing clusters. For further information, please see
+  the role documentation. (PL-133774)
+
+
+
 # Release 2026_003
 
 ## Impact
