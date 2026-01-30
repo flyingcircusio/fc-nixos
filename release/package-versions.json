@@ -575,19 +575,19 @@
     "version": "2.28.5"
   },
   "nodejs": {
-    "name": "nodejs-22.21.1",
+    "name": "nodejs-22.20.0",
     "pname": "nodejs",
-    "version": "22.21.1"
+    "version": "22.20.0"
   },
   "nodejs_20": {
-    "name": "nodejs-20.20.0",
+    "name": "nodejs-20.19.6",
     "pname": "nodejs",
-    "version": "20.20.0"
+    "version": "20.19.6"
   },
   "nodejs_22": {
-    "name": "nodejs-22.21.1",
+    "name": "nodejs-22.20.0",
     "pname": "nodejs",
-    "version": "22.21.1"
+    "version": "22.20.0"
   },
   "nspr": {
     "name": "nspr-4.38",
@@ -635,9 +635,9 @@
     "version": "10.0p2"
   },
   "openssl": {
-    "name": "openssl-3.4.4",
+    "name": "openssl-3.4.3",
     "pname": "openssl",
-    "version": "3.4.4"
+    "version": "3.4.3"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -645,9 +645,9 @@
     "version": "1.1.1w"
   },
   "openssl_3": {
-    "name": "openssl-3.0.19",
+    "name": "openssl-3.0.18",
     "pname": "openssl",
-    "version": "3.0.19"
+    "version": "3.0.18"
   },
   "openvpn": {
     "name": "openvpn-2.6.14",
