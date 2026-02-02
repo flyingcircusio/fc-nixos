@@ -50,7 +50,12 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     loader.grub = {
       device = "/dev/disk/device-by-alias/root";
       fsIdentifier = "provided";
-      gfxmodeBios = lib.mkForce "text";
+      extraConfig = ''
+        # output goes to serial such that qemu can log it
+        terminal_output serial_com0
+        # keep console input though to be able to control grub via keypresses passed in via VNC
+        terminal_input console
+      '';
     };
   };
 
