@@ -136,7 +136,7 @@ in
         environment.variables.OLLAMA_HOST = "${scfg.host}:${toString scfg.port}";
 
         services.ollama = {
-          enable = true;
+          enable = false;
           host = fclib.mkPlatform config.networking.hostName;
           environmentVariables = {
             OLLAMA_DEBUG = "1";
@@ -169,7 +169,10 @@ in
           script = ''
             ${lib.getExe' pkgs.fc.skvaider "gunicorn"} "skvaider.inference:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
           '';
-          path = [ pkgs.llama-cpp-rocm ];
+          path = [
+            pkgs.llama-cpp-rocm
+            pkgs.rocmPackages.rocm-smi
+          ];
 
           requires = [ "network-online.target" ];
           serviceConfig = {
