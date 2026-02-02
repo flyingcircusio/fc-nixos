@@ -153,6 +153,7 @@ import ./make-test-python.nix (
       VHOST_NET m
       VLAN_8021Q m
       VXLAN m
+      WARN_ALL_UNSEEDED_RANDOM n
       X86_ACPI_CPUFREQ m
 
       X86_PCC_CPUFREQ m
