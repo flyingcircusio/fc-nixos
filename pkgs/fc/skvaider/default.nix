@@ -45,4 +45,5 @@ in
     "*"
   ];
   passthru.src = src;
+  passthru.embeddings-reference-json = ./generate-embedding-reference-tool/embeddings-skvaider-llama-cpp.json;
 })

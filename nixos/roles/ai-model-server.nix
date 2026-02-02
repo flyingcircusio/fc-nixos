@@ -155,6 +155,9 @@ in
             lib.mapAttrsToList (n: v: v.name) enabledModels;
         };
 
+        flyingcircus.services.ai-model-server.skvaider.settings.embedding_verification_file =
+          lib.mkDefault pkgs.fc.skvaider.embeddings-reference-json;
+
         systemd.services.skvaider-inference = lib.mkIf cfg.skvaider-inference.enable {
           description = "Skvaider inference service";
           wantedBy = [ "multi-user.target" ];
