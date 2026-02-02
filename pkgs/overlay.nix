@@ -35,6 +35,10 @@ let
     repo = "nixpkgs";
     rev = "cb8a544767bd4150f622829f16ee368ab0d60ca7"; # nixos-unstable from 2026-02-02 for newer llama-cpp versions
   };
+  nixpkgs-nixos-unstable = import nixpkgs-nixos-unstable-src {
+    inherit (self) config;
+    nixpkgs = nixpkgs-nixos-unstable-src;
+  };
 
   fc-nixos-21_05-src = fetchFromGitHub {
     hash = "sha256-U1ZpdP31bpWCParWr79YWVpA+oIU12cRkI2gf2l+IBM=";
@@ -559,9 +563,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  llama-cpp = nixpkgs-nixos-unstable-src.pkgs.llama-cpp;
-  llama-cpp-rocm = nixpkgs-nixos-unstable-src.pkgs.llama-cpp-rocm;
-  llama-cpp-vulkan = nixpkgs-nixos-unstable-src.pkgs.llama-cpp-vulkan;
+  llama-cpp = nixpkgs-nixos-unstable.llama-cpp;
+  llama-cpp-rocm = nixpkgs-nixos-unstable.llama-cpp-rocm;
+  llama-cpp-vulkan = nixpkgs-nixos-unstable.llama-cpp-vulkan;
 
   mysql = super.mariadb;
 
