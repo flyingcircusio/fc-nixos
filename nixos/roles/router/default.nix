@@ -277,9 +277,10 @@ in
     networking.nat.extraCommands = ''
       #############
       # Masquerading rules for the uplink interfaces
-      ${lib.concatMapStringsSep "\n" (
-        iface: "iptables -t nat -A nixos-nat-post -o ${iface} -s 172.16.0.0/12 -j MASQUERADE"
-      ) uplinkInterfaces}
+      ${lib.concatMapStringsSep "\n" (iface: ''
+        iptables -t nat -A nixos-nat-post -o ${iface} -s 172.16.0.0/12 -j MASQUERADE
+        iptables -t nat -A nixos-nat-post -o ${iface} -s 10.0.0.0/8 -j MASQUERADE
+      '') uplinkInterfaces}
     '';
 
     networking.firewall.extraStopCommands = ''
