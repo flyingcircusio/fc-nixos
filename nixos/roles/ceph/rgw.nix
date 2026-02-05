@@ -89,6 +89,11 @@ in
           Whether or not to enable traffic accounting.
         '';
       };
+      rgwInterface = lib.mkOption {
+        internal = true; # only for customising that interface for development
+        default = "sto";
+        type = lib.types.str;
+      };
     };
   };
 
@@ -124,7 +129,7 @@ in
 
         description = "Start/stop local Ceph Rados Gateway";
         wantedBy = [ "multi-user.target" ];
-        wants = [ fclib.network.sto.addressUnit ];
+        wants = [ fclib.network."${role.rgwInterface}".addressUnit ];
         requires = [ "network-online.target" ]; # PL-133952
         after = wants ++ requires;
 
@@ -156,7 +161,7 @@ in
       networking.firewall.extraCommands =
         let
           srv = fclib.network.srv;
-          sto = fclib.network.sto;
+          sto = fclib.network."${role.rgwInterface}";
         in
         lib.mkMerge [
           (lib.mkOrder 700 ''
@@ -195,7 +200,7 @@ in
           cephPkgs.ceph
           pkgs.jq
         ];
-        wants = [ fclib.network.sto.addressUnit ];
+        wants = [ fclib.network."${role.rgwInterface}".addressUnit ];
         after = wants;
         script = ''
           for uid in $(radosgw-admin metadata list user | jq -r '.[]'); do
@@ -233,7 +238,7 @@ in
           # This protects against not terminating radosgw-admin calls.
           TimeoutStartSec = 9 * 60;
         };
-        wants = [ fclib.network.sto.addressUnit ];
+        wants = [ fclib.network."${role.rgwInterface}".addressUnit ];
         after = wants;
         script = "${pkgs.fc.agent}/bin/fc-s3users --enc ${config.flyingcircus.encPath}";
       };
