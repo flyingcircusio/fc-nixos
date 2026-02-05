@@ -1,3 +1,21 @@
+# Release 2026_005
+
+## NixOS XX.XX platform
+
+- Adjust the Thunderbird auto-configuration XML after the default ports for IMAP and SMTP were adjusted in accordance with RFC8314 4.1
+
+- devhost: allow deployments to skip channel updates.
+
+  (companion to https://github.com/flyingcircusio/batou/issues/525)
+
+- k3s: document maintenance integration. Agent nodes will be
+  gracefully drained of workloads before entering
+  maintenance. (PL-135128)
+
+- Improve logging and instrospection of kernel messages in early boot (PL-135139)
+
+
+
 # Release 2026_004
 
 ## NixOS XX.XX platform
