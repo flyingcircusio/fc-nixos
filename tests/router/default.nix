@@ -617,11 +617,18 @@ import ../make-test-python.nix (
             router1.r.wait_until_is_primary()
             router2.r.wait_until_is_secondary()
 
-          with subtest("router1: pull mgm, should switch to router2"):
+          with subtest("router1: pull mgm, should NOT switch to router2"):
             router1.send_monitor_command("set_link virtio-net-pci.1 off")
-            router1.r.wait_until_is_secondary()
-            router2.r.wait_until_is_primary()
+            router1.sleep(3)
+            router2.r.wait_until_is_secondary()
+            router1.r.wait_until_is_primary()
             router1.send_monitor_command("set_link virtio-net-pci.1 on")
+
+          with subtest("router1: write stopper file, should switch to router2"):
+            router1.succeed("sed -i 'c 1' /etc/keepalived/stop")
+            router2.r.wait_until_is_primary()
+            router1.r.wait_until_is_secondary()
+            router1.succeed("sed -i 'c 0' /etc/keepalived/stop")
 
           with subtest("router2: pull fe, should switch to router1"):
             router2.send_monitor_command("set_link virtio-net-pci.2 off")
@@ -634,12 +641,6 @@ import ../make-test-python.nix (
             router1.r.wait_until_is_secondary()
             router2.r.wait_until_is_primary()
             router1.send_monitor_command("set_link virtio-net-pci.3 on")
-
-          with subtest("router2: write stopper file, should switch to router1"):
-            router2.succeed("sed -i 'c 1' /etc/keepalived/stop")
-            router1.r.wait_until_is_primary()
-            router2.r.wait_until_is_secondary()
-            router2.succeed("sed -i 'c 0' /etc/keepalived/stop")
 
           print(router1.succeed("journalctl -xb -u keepalived"))
           print(router2.succeed("journalctl -xb -u keepalived"))
