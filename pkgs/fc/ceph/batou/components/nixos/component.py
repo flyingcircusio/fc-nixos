@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Any, Callable
 
 from batou.component import Attribute, Component
 from batou.lib.file import File
@@ -25,6 +26,7 @@ def update_merge(d1, d2):
 class JSONUpdate(Component):
     namevar = "path"
     updates: list[dict] = Attribute()
+    post_process: list[Callable[[dict[Any, Any]], None]] = Attribute()
 
     def configure(self):
         self._path = self.path
@@ -35,6 +37,8 @@ class JSONUpdate(Component):
         self.new_data = {}
         for update in self.updates:
             self.new_data = update_merge(self.new_data, update)
+        for processor in self.post_process:
+            processor(self.new_data)
 
         p = Path(self.path)
         assert p.exists()
@@ -95,11 +99,16 @@ class NixOS(Component):
 
         # Our dependencies are reversed: we first need to configure the
         # NixOS environment and then the individual parts can do their work
+        #
+        def filter_roles(enc: dict[Any, Any]):
+            enc["roles"] = list(sorted(set(enc["roles"])))
+
         self += (
             enc := JSONUpdate(
                 "/etc/nixos/enc.json",
                 updates=[enc]
                 + list(self.require("enc", host=self.host, reverse=True)),
+                post_process=[filter_roles],
             )
         )
 
