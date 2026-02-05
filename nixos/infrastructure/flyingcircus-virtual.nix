@@ -38,6 +38,7 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     kernelParams = [
       "console=ttyS0"
       "nosetmode"
+      "log_buf_len=8388608" # 8MiB kernel ring buffer for bootup messages
     ];
 
     kernel.sysctl = {
@@ -49,7 +50,12 @@ mkIf (cfg.infrastructureModule == "flyingcircus") {
     loader.grub = {
       device = "/dev/disk/device-by-alias/root";
       fsIdentifier = "provided";
-      gfxmodeBios = lib.mkForce "text";
+      extraConfig = ''
+        # output goes to serial such that qemu can log it
+        terminal_output serial_com0
+        # keep console input though to be able to control grub via keypresses passed in via VNC
+        terminal_input console
+      '';
     };
   };
 
