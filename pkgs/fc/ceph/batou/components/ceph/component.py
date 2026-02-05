@@ -9,7 +9,7 @@ class Ceph(Component):
         self.provide(
             "enc",
             {
-                "roles": ["ceph_mon", "ceph_osd"],
+                "roles": ["ceph_mon", "ceph_osd", "ceph_rgw"],
                 "parameters": {
                     "location": "test",
                     "resource_group": "services",

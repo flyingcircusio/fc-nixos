@@ -25,6 +25,10 @@ in
     enable = true;
     cephRelease = "pacific";
   };
+  flyingcircus.roles.ceph_rgw = {
+    rgwInterface = "srv";
+    cephRelease = "pacific";
+  };
   flyingcircus.services.ceph.extraSettings = {
     monClockDriftAllowed = 10;
     osd_pool_default_size = 1;
@@ -43,9 +47,11 @@ in
   systemd.timers.fc-ceph-mon-update-client-keys.enable = lib.mkForce false;
   systemd.timers.fc-ceph-clean-deleted-vms.enable = lib.mkForce false;
   systemd.timers.fc-ceph-purge-old-snapshots.enable = lib.mkForce false;
+  systemd.timers.fc-ceph-rgw-users.enable = lib.mkForce false;
 
   flyingcircus.roles.ceph_osd.network = fclib.network.srv;
 
+  # get rid of dependencies on sto/ stb network, the devhost does not have such interfaces
   systemd.services.fc-ceph-mon.wantedBy = lib.mkForce [ ];
   systemd.services.fc-ceph-mgr.wantedBy = lib.mkForce [ ];
 
