@@ -32,12 +32,13 @@ in
   flyingcircus.services.ceph.extraSettings = {
     monClockDriftAllowed = 10;
     osd_pool_default_size = 1;
+    osd_pool_default_min_size = 1;
+    mon_allow_pool_size_one = true;
   };
   flyingcircus.services.ceph.client = {
     mons = [ "host1" ];
     network = fclib.network.srv;
     fsId = "20cd8cd8-4854-469b-a9c0-daa8ce4c0dff";
-
   };
   flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
 

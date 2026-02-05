@@ -2,6 +2,7 @@
 import os
 import sys
 from pathlib import Path
+from socket import gethostname
 from subprocess import run
 
 CEPH_DIR = Path("/ceph/")
@@ -94,6 +95,38 @@ def create_cluster():
         ],
         check=True,
     )  # fmt: skip
+
+    run(
+        ["ceph", "osd", "crush", "move", gethostname(), "root=default"],
+        check=True,
+    )
+
+    # create rbd pools and some test images
+    # rbd pool is not created by default anymore
+    run(
+        ["ceph", "osd", "pool", "create", "rbd", "64", "--size", "1"],
+        check=True,
+    )
+    run(["rbd", "pool", "init"], check=True)
+    for img in ("test1", "test2"):
+        run(["rbd", "create", "--size=20M", img])
+
+    # for now, it is a single-host cluster
+    for poolname in ("device_health_metrics", "rbd"):
+        run(
+            [
+                "ceph",
+                "osd",
+                "pool",
+                "set",
+                poolname,
+                "size",
+                "1",
+                "--yes-i-really-mean-it",
+            ]
+        )
+        run(["ceph", "osd", "pool", "set", poolname, "min_size", "1"])
+        # XXX: ensure presence of rbd pools and also consider those
 
 
 def destroy_cluster():
