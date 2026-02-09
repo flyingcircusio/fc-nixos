@@ -391,6 +391,12 @@ rabbitmq_unreachable_cluster_peers_count
 ```
 </details>
 
+### fc-userscan
+
+fc-userscan no longer scans for nix store references in human users and all
+existing garbage collection roots will be removed. Service users are not
+affected. You can still add gcroots manually (e.g. via `nix-store --add-root`).
+
 ## Other notable changes
 
 ## Known issues

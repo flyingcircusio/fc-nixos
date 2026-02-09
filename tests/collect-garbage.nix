@@ -2,7 +2,7 @@ import ./make-test-python.nix (
   { pkgs, ... }:
 
   let
-    home = "/home/u0";
+    home = "/srv/s-service";
     userscan = "${pkgs.fc.userscan}/bin/fc-userscan";
     py = pkgs.python3.interpreter;
     pypkg = pkgs.python3;
@@ -31,10 +31,28 @@ import ./make-test-python.nix (
             gateways = { };
           };
 
-          users.users.u0 = {
-            isNormalUser = true;
-            inherit home;
-          };
+          flyingcircus.users.userData = [
+            {
+              uid = "s-service";
+              name = "s-service";
+              class = "service";
+              password = "";
+              home_directory = home;
+              ssh_pubkey = [ ];
+              login_shell = "/bin/bash";
+              id = 1000;
+            }
+            {
+              uid = "u0";
+              name = "u0";
+              class = "human";
+              password = "";
+              home_directory = "/home/u0";
+              ssh_pubkey = [ ];
+              login_shell = "/bin/bash";
+              id = 1001;
+            }
+          ];
         };
       };
 
@@ -47,17 +65,19 @@ import ./make-test-python.nix (
       # fc-collect-garbage again
       print(machine.succeed("""
          set -e
-         install -d -o u0 /nix/var/nix/gcroots/per-user/u0
+         install -d -o s-service /nix/var/nix/gcroots/per-user/s-service
          echo -e "#!${py}\nprint('hello world')" > ${home}/script.py
          chmod +x ${home}/script.py
          grep -r /nix/store/ ${home}
       """))
+      machine.succeed("mkdir -p /nix/var/nix/gcroots/per-user/u0/home/u0")
       machine.start_job("fc-collect-garbage")
       machine.wait_for_file("${home}/.cache/fc-userscan.cache")
 
       # check that a GC root has been registered
-      machine.succeed("ls -lR /nix/var/nix/gcroots/per-user/u0${home} | grep ${pypkg}")
-      machine.succeed("test `find /nix/var/nix/gcroots/per-user/u0${home} -type l | wc -l` = 1")
+      machine.succeed("ls -lR /nix/var/nix/gcroots/per-user/s-service${home} | grep ${pypkg}")
+      machine.succeed("test `find /nix/var/nix/gcroots/per-user/s-service${home} -type l | wc -l` = 1")
+      machine.fail("ls /nix/var/nix/gcroots/per-user/u0/home/u0")
       machine.fail("systemctl is-failed fc-collect-garbage.service")
     '';
   }

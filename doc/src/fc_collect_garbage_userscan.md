@@ -32,22 +32,22 @@ stop working properly.
 ## How does fc-userscan work?
 
 To avoid that, [fc-userscan](https://github.com/flyingcircusio/userscan)
-searches files for references to Nix store paths in home directories and
+searches files for references to Nix store paths in service user home directories and
 ensures that these packages are not garbage collected by creating *garbage
 collector roots* for the files that reference these packages. Nix store paths
 are then only cleaned up when the referring files had been deleted from all
-home directories and a later *fc-userscan* run has removed the garbage
+service user home directories and a later *fc-userscan* run has removed the garbage
 collector roots for them.
 
 Also see {command}`man fc-userscan` for more information about the tool.
 
 ## When and how does garbage collection happen?
 
-Our daily platform task *fc-collect-garbage.timer* runs *fc-userscan* first
-, which searches all home directories of human and service users to protect
+Our daily platform task *fc-collect-garbage.timer* runs *fc-userscan* first,
+which searches all home directories of service users to protect
 them in the following garbage collection step. Garbage collection is run
 with limited disk IO speed to not affect running applications. Store paths
-that are not used anymore may are not deleted immediately when they are
+that are not used anymore are not deleted immediately when they are
 referenced by a system generation that was in use in the last three days.
 
 You can also run {command}`sudo fc-collect-garbage` (available for *service*
@@ -95,9 +95,12 @@ Currently, the following paths are ignored:
 **/influxdb/data/
 **/journal/
 **/lucene/
+**/.lnav/
 **/solr/data/
+**/.appenv/
 # Very big, has misleading store paths which shouldn't be registered.
 **/nixpkgs*/
+**/fc-nixos/
 # If we missed a nixpkgs directory: test files from this directory trip
 # userscan over as they contain store paths which are too long on purpose.
 **/pkgs/test/make-binary-wrapper/*

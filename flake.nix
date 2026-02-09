@@ -179,7 +179,7 @@
                       ''
                       + (lib.concatStringsSep "\n" (
                         lib.mapAttrsToList (name: flake: ''
-                          ln -sfT ${flake.outPath} channels/${name}
+                          nix-store --add-root channels/${name} -r ${flake.outPath}
                         '') upstreams
                       ));
                     })

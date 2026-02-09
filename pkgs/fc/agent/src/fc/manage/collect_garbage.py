@@ -1,7 +1,10 @@
 import datetime
+import grp
 import os
 import pwd
+import shutil
 import subprocess
+from collections import defaultdict
 from pathlib import Path
 
 import structlog
@@ -25,6 +28,8 @@ This runs in two phases:
 If something goes wrong in step 1, garbage collection will not run to protect
 Nix store paths that may be still referenced from home dirs.
 """
+
+GCROOTS = Path("/nix/var/nix/gcroots/per-user/")
 
 
 @app.command(help=HELP)
@@ -73,15 +78,41 @@ def collect_garbage(
 
     return_codes = []
 
+    users_gid = grp.getgrnam("users").gr_gid
+    human_users = {user for user in pwd.getpwall() if user.pw_gid == users_gid}
+    known_usernames = {u.pw_name for u in pwd.getpwall()}
+    unknown_usernames = {p.name for p in GCROOTS.glob("*")} - known_usernames
+
+    gcpaths = [
+        (
+            user.pw_name,
+            "human",
+            GCROOTS / user.pw_name / user.pw_dir.removeprefix("/"),
+        )
+        for user in human_users
+    ] + [(name, "unknown", GCROOTS / name) for name in unknown_usernames]
+    for username, type_, gcpath in gcpaths:
+        if not gcpath.exists():
+            continue
+        shutil.rmtree(gcpath, ignore_errors=True)
+        log.info(
+            "gcroots-deleted",
+            _replace_msg="Deleted gcroots at {path} for {type} user {user}",
+            user=username,
+            path=str(gcpath),
+            type=type_,
+        )
+
     with ignore_users_file.open("r") as f:
         ignore_users = set([x.strip() for x in f])
-    users_to_scan = [
+    users_to_scan = {
         user
         for user in pwd.getpwall()
         if user.pw_uid >= 1000
         and user.pw_dir != "/var/empty"
         and user.pw_name not in ignore_users
-    ]
+        and user not in human_users
+    }
     log.info(
         "userscan-start",
         _replace_msg="Running fc-userscan for {user_count} users",
@@ -123,7 +154,7 @@ def collect_garbage(
         log.debug("userscan-result", rc=rc)
         return_codes.append(rc)
 
-    status = max(return_codes)
+    status = max(return_codes, default=0)
     log.debug(
         "userscan-max-status",
         status=status,
