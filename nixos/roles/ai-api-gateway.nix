@@ -159,6 +159,12 @@ in
       };
     };
 
+    flyingcircus.services.telegraf.inputs.prometheus = [
+      {
+        urls = [ "http://127.0.0.1:${toString cfg.port}/metrics" ];
+      }
+    ];
+
     flyingcircus.services.sensu-client.checks = {
       skvaider = {
         notification = "Skvaider provides appropriate responses";

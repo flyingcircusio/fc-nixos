@@ -43,6 +43,7 @@ let
     "rabbitmq"
     "redis"
     "routes"
+    "skvaider"
     "socket_listener"
     "swap"
     "system"
