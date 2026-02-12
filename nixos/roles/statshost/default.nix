@@ -502,7 +502,10 @@ in
               auth_basic_user_file "/etc/local/htpasswd_fcio_users";
               proxy_pass http://${prometheusListenAddress};
             '';
-            "/grafana/".proxyPass = "http://127.0.0.1:3001/";
+            "/grafana/" = {
+              proxyPass = "http://127.0.0.1:3001/";
+              proxyWebsockets = true;
+            };
           };
         };
       };
