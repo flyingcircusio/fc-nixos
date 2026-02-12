@@ -542,20 +542,71 @@ in
             '';
           };
 
-          # support loki running on the same host as grafana in
+          # support loki/tempo running on the same host as grafana in
           # single-RG mode.
           lokiDatasource = pkgs.writeTextFile {
             name = "loki.yaml";
             text = ''
               apiVersion: 1
-              datasources:
+              deleteDatasources:
               - name: Loki
+                orgId: 1
+              datasources:
+              - name: FCIO Loki
                 type: loki
+                uid: fcioloki
                 access: proxy
                 orgId: 1
                 url: http://localhost:3100
                 editable: false
                 isDefault: false
+            '';
+          };
+          tempoDatasource = pkgs.writeTextFile {
+            name = "tempo.yaml";
+            text = ''
+              apiVersion: 1
+              deleteDatasources:
+              - name: tempo
+                orgId: 1
+              datasources:
+              - name: FCIO Tempo
+                type: tempo
+                uid: fciotempo
+                access: proxy
+                orgId: 1
+                url: http://localhost:3200
+                editable: false
+                isDefault: false
+                basicAuth: false
+                jsonData:
+                   tracesToLogsV2:
+                     # Field with an internal link pointing to a logs data source in Grafana.
+                     # datasourceUid value must match the uid value of the logs data source.
+                     datasourceUid: 'fcioloki'
+                     spanStartTimeShift: '-1h'
+                     spanEndTimeShift: '1h'
+                     tags: []
+                     filterByTraceID: false
+                     filterBySpanID: false
+                     customQuery: false
+                   tracesToMetrics:
+                     datasourceUid: 'fcioprometheus'
+                     spanStartTimeShift: '-1h'
+                     spanEndTimeShift: '1h'
+                     tags: []
+                     queries: []
+                   nodeGraph:
+                     enabled: true
+                   search:
+                     hide: false
+                   traceQuery:
+                     timeShiftEnabled: true
+                     spanStartTimeShift: '-1h'
+                     spanEndTimeShift: '1h'
+                   streamingEnabled:
+                     search: true
+                     metrics: true
             '';
           };
         in
@@ -567,6 +618,9 @@ in
         ''
         + optionalString (cfgStatsRG.enable && cfgLokiRG.enable) ''
           ln -fs ${lokiDatasource} ${grafanaProvisioningPath}/datasources/loki.yaml
+        ''
+        + optionalString (cfgStatsRG.enable && cfgLokiRG.enable) ''
+          ln -fs ${tempoDatasource} ${grafanaProvisioningPath}/datasources/tempo.yaml
         '';
 
       # Provide FC dashboards, and update them automatically.

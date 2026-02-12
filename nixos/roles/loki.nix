@@ -46,7 +46,7 @@ in
 {
   options = with lib; {
     flyingcircus.roles.loki = {
-      enable = mkEnableOption "Flying Circus Grafana Loki server";
+      enable = mkEnableOption "the Flying Circus Grafana Loki server";
       supportsContainers = fclib.mkEnableDevhostSupport;
 
       logRetentionPeriod = mkOption {
@@ -60,20 +60,19 @@ in
         default = { };
         type = types.submodule {
           options = {
-            enable = mkEnableOption "store log data in S3";
-            endpoint = mkOption {
-              description = "HTTP(S) endpoint of S3 storage server";
-              type = types.str;
-              default = "http://rgw.local:7840";
+            enable = mkEnableOption "storing the logs in object storage" // {
+              default = config.flyingcircus.enc ? role_configuration.loki;
             };
-            bucketName = mkOption {
+            endpoint = mkOption {
+              description = "HTTP(S) endpoint of the object store";
+              type = types.str;
+              default = "http://rgw.local:7480";
+              defaultText = "<local rgw address>";
+            };
+            bucketName = fclib.mkRoleOption "loki" {
               description = "S3 bucket name";
               type = types.str;
-            };
-            credentialFile = mkOption {
-              description = "Path to file containing credentials used for authenticating to the S3 server (must be readable by the loki user)";
-              type = types.path;
-              default = "/etc/local/loki/s3.cfg";
+              default = c: c.object_store_bucket;
             };
           };
         };
@@ -108,104 +107,128 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    environment.etc."local/loki/README.txt".text = ''
-      This is a stub README for the Loki role.
-    '';
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        environment.etc."local/loki/README.txt".text = ''
+          This is a stub README for the Loki role.
+        '';
 
-    services.loki = {
-      enable = true;
-      configuration = {
-        server.http_listen_address = "127.0.0.1";
+        services.loki = {
+          enable = true;
+          configuration = {
+            server.http_listen_address = "127.0.0.1";
 
-        auth_enabled = false;
+            auth_enabled = false;
 
-        schema_config.configs = map renderStorageSchema (
-          cfg.storageSchedule.default ++ cfg.storageSchedule.extra
-        );
+            schema_config.configs = map renderStorageSchema (
+              cfg.storageSchedule.default ++ cfg.storageSchedule.extra
+            );
 
-        storage_config = {
-          # index file management
-          tsdb_shipper = {
-            active_index_directory = "/var/lib/loki/tsdb-shipper-index";
-            cache_location = "/var/lib/loki/tsdb-shipper-cache";
-          };
-          # log data configuration
-          filesystem.directory = "/var/lib/loki/chunk-store";
-        }
-        // lib.optionalAttrs (cfg.s3.enable) {
-          aws = {
-            # authentication configured separately
-            endpoint = cfg.s3.endpoint;
-            bucketNames = cfg.s3.bucketName;
-            s3forcepathstyle = true;
-          };
-        };
-
-        compactor = {
-          working_directory = "/var/lib/loki/compactor-workdir";
-          retention_enabled = true;
-          delete_request_store = "filesystem";
-        };
-
-        limits_config = {
-          retention_period = (toString cfg.logRetentionPeriod) + "d";
-        };
-
-        # configuration stubs for multi-process management plane
-        common = {
-          replication_factor = 1;
-          ring.kvstore.store = "inmemory";
-        };
-      };
-    };
-
-    systemd.services.loki.serviceConfig = lib.mkIf (cfg.s3.enable) {
-      Environment = "AWS_SHARED_CREDENTIALS_FILE=${cfg.s3.credentialFile}";
-    };
-
-    flyingcircus.services.nginx = {
-      enable = true;
-      virtualHosts."${config.networking.hostName}" = {
-        serverAliases = [
-          (fclib.fqdn { vlan = "srv"; })
-          "${config.networking.hostName}.${config.networking.domain}"
-        ];
-        listen = builtins.map (addr: {
-          inherit addr;
-          port = 3100;
-        }) fclib.network.srv.dualstack.addressesQuoted;
-        locations =
-          with builtins;
-          with lib;
-          let
-            proxyConfig = {
-              proxyPass = "http://127.0.0.1:3100";
+            storage_config = {
+              # index file management
+              tsdb_shipper = {
+                active_index_directory = "/var/lib/loki/tsdb-shipper-index";
+                cache_location = "/var/lib/loki/tsdb-shipper-cache";
+              };
+              # log data configuration
+              filesystem.directory = "/var/lib/loki/chunk-store";
             };
-          in
-          listToAttrs (
-            [ (nameValuePair "/" { extraConfig = "return 403;"; }) ]
-            ++ (map (path: nameValuePair path proxyConfig) [
-              # https://grafana.com/docs/loki/latest/reference/loki-http-api/
+            compactor = {
+              working_directory = "/var/lib/loki/compactor-workdir";
+              retention_enabled = true;
+              delete_request_store = "filesystem";
+            };
 
-              # ingestion endpoints
-              "/loki/api/v1/push"
-              "/otlp/v1/logs"
+            limits_config = {
+              retention_period = (toString cfg.logRetentionPeriod) + "d";
+            };
 
-              # query endpoints
-              "/loki/api/v1/query"
-              "/loki/api/v1/query_range"
-              "/loki/api/v1/labels"
-              "/loki/api/v1/label"
-              "/loki/api/v1/series"
-              "/loki/api/v1/index/stats"
-              "/loki/api/v1/index/volume"
-              "/loki/api/v1/index/volume_range"
-              "/loki/api/v1/patterns"
-              "/loki/api/v1/tail"
-            ])
-          );
-      };
-    };
-  };
+            # configuration stubs for multi-process management plane
+            common = {
+              replication_factor = 1;
+              ring.kvstore.store = "inmemory";
+            };
+          };
+        };
+
+        flyingcircus.services.nginx = {
+          enable = true;
+          virtualHosts.loki = {
+            serverName = config.networking.hostName;
+            serverAliases = [
+              (fclib.fqdn { vlan = "srv"; })
+              "${config.networking.hostName}.${config.networking.domain}"
+            ];
+            listen = builtins.map (addr: {
+              inherit addr;
+              port = 3100;
+            }) fclib.network.srv.dualstack.addressesQuoted;
+            locations."/" = {
+              proxyPass = "http://127.0.0.1:3100";
+              proxyWebsockets = true;
+            };
+          };
+        };
+      }
+
+      (lib.mkIf cfg.s3.enable (
+        let
+          credentialFile = "/run/loki/s3-env";
+        in
+        {
+          services.loki.configuration.storage_config = {
+            aws = {
+              # authentication configured separately
+              endpoint = cfg.s3.endpoint;
+              bucketnames = cfg.s3.bucketName;
+              s3forcepathstyle = true;
+            };
+          };
+
+          users.groups.lokienv = { };
+
+          systemd.tmpfiles.rules = [
+            "d '/run/loki' 0750 root lokienv - -"
+            "Z '/run/loki' 0750 root lokienv - -"
+          ];
+
+          systemd.services.loki = {
+            environment."AWS_SHARED_CREDENTIALS_FILE" = credentialFile;
+            serviceConfig.SupplementaryGroups = [ "lokienv" ];
+          };
+
+          systemd.services.loki-s3-setup = {
+            wantedBy = [ "loki.service" ];
+            before = [ "loki.service" ];
+
+            script = ''
+              if [ -z $AWS_ACCESS_KEY_ID ]; then
+                AWS_ACCESS_KEY_ID=$(cat ${config.flyingcircus.encPath} | ${lib.getExe pkgs.jq} '.role_configuration.loki.object_store_access_key')
+              fi
+              if [ -z $AWS_SECRET_ACCESS_KEY ]; then
+                AWS_SECRET_ACCESS_KEY=$(cat ${config.flyingcircus.encPath} | ${lib.getExe pkgs.jq} '.role_configuration.loki.object_store_secret_key')
+              fi
+
+              export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+              ${pkgs.awscli2}/bin/aws s3 --endpoint-url ${cfg.s3.endpoint} mb s3://${cfg.s3.bucketName} --region ""
+
+              # https://github.com/grafana/loki/blob/main/operator/internal/manifests/storage/var.go#L5
+              cat >${credentialFile} <<EOF
+              AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+              EOF
+
+              chown :lokienv ${credentialFile}
+            '';
+
+            serviceConfig = {
+              Type = "oneshot";
+              User = "root";
+            };
+          };
+        }
+      ))
+    ]
+  );
 }
