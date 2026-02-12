@@ -283,6 +283,14 @@ in
         services.telegraf.extraConfig.agent.always_include_global_tags = true;
         systemd.services.telegraf.path = [ pkgs.rocmPackages.rocm-smi ];
       })
+
+      {
+        flyingcircus.services.telegraf.inputs.prometheus = lib.mkIf cfg.skvaider-inference.enable [
+          {
+            urls = [ "http://127.0.0.1:${toString cfg.skvaider-inference.port}/metrics" ];
+          }
+        ];
+      }
     ]
   );
 }
