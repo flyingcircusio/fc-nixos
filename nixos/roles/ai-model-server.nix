@@ -135,6 +135,8 @@ in
       {
         environment.variables.OLLAMA_HOST = "${scfg.host}:${toString scfg.port}";
 
+        boot.kernelPackages = lib.mkForce pkgs.linuxKernelGPU;
+
         services.ollama = {
           enable = false;
           host = fclib.mkPlatform config.networking.hostName;
