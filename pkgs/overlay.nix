@@ -344,16 +344,18 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     }
   );
 
+  linuxKernelGPU = self.linux_6_18.override {
+    ignoreConfigErrors = true;
+  };
+
   # Change this alias for trying out other kernel packages on non-production
   # machines.
   # The logic for enabling different kernels on prod and non-prod remains active
   # the whole time. But in the normal case, both kernels point to the same
   # stable kernel packages.
-  linuxKernelVerify = self.linux_6_18.override {
-    ignoreConfigErrors = true;
-  };
+  linuxKernelVerify = self.linux_6_12;
 
-  linuxKernelStable = self.linux_6_18;
+  linuxKernelStable = self.linux_6_12;
 
   kubernetes-dashboard = super.callPackage ./kubernetes-dashboard.nix { };
   kubernetes-dashboard-metrics-scraper =

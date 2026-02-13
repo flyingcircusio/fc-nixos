@@ -13,8 +13,8 @@ let
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "skvaider";
-    rev = "cda3731be8cba119aa4fb69e220713c88222e01a";
-    hash = "sha256-paBA5/KSBPwD6fss9fsGIyVtCl5PKG5OEOHXpPcXDWs=";
+    rev = "bb285e0190413baf2c126a1be5b011b9ebdb2108";
+    hash = "sha256-enQqlvuSwKl0OiDN8i5NMF4H6XD5nQm3OjaBapzi8Cg=";
   };
 
   # Load a uv workspace from a workspace root.
@@ -36,8 +36,6 @@ let
           overlay
         ]
       );
-
-  util = callPackages pyproject-nix.build.util { };
 
 in
 (pythonSet.mkVirtualEnv "skvaider-env" workspace.deps.default).overrideAttrs (old: {
