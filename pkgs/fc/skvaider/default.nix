@@ -13,8 +13,8 @@ let
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "skvaider";
-    rev = "52af2505874793fb1e7295e5e82fdb937171e89a";
-    hash = "sha256-pn+ymn9UyF2UQznmDInJe5Xrl44VBvDaFd3zoC2TwlQ=";
+    rev = "cda3731be8cba119aa4fb69e220713c88222e01a";
+    hash = "sha256-paBA5/KSBPwD6fss9fsGIyVtCl5PKG5OEOHXpPcXDWs=";
   };
 
   # Load a uv workspace from a workspace root.
