@@ -10,9 +10,9 @@
     "version": "2.4.66"
   },
   "asterisk": {
-    "name": "asterisk-22.8.1",
+    "name": "asterisk-22.8.2",
     "pname": "asterisk",
-    "version": "22.8.1"
+    "version": "22.8.2"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.27",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-144.0.7559.132",
+    "name": "chromedriver-unwrapped-145.0.7632.75",
     "pname": "chromedriver-unwrapped",
-    "version": "144.0.7559.132"
+    "version": "145.0.7632.75"
   },
   "chromium": {
-    "name": "chromium-144.0.7559.132",
+    "name": "chromium-145.0.7632.75",
     "pname": "chromium",
-    "version": "144.0.7559.132"
+    "version": "145.0.7632.75"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -150,9 +150,9 @@
     "version": "28.5.2"
   },
   "docker-compose": {
-    "name": "docker-compose-2.39.4",
+    "name": "docker-compose-2.40.3",
     "pname": "docker-compose",
-    "version": "2.39.4"
+    "version": "2.40.3"
   },
   "dovecot": {
     "name": "dovecot-2.3.21.1",
@@ -250,9 +250,9 @@
     "version": "18.8.3"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.5.0",
+    "name": "gitlab-runner-18.8.0",
     "pname": "gitlab-runner",
-    "version": "18.5.0"
+    "version": "18.8.0"
   },
   "gitlab-workhorse": {
     "name": "gitlab-workhorse-18.8.3",
@@ -380,9 +380,9 @@
     "version": "1.33.7+k3s3"
   },
   "keycloak": {
-    "name": "keycloak-26.5.2",
+    "name": "keycloak-26.5.3",
     "pname": "keycloak",
-    "version": "26.5.2"
+    "version": "26.5.3"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.69",
+    "name": "linux-6.12.70",
     "pname": "linux",
-    "version": "6.12.69"
+    "version": "6.12.70"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.69",
+    "name": "linux-6.12.70",
     "pname": "linux",
-    "version": "6.12.69"
+    "version": "6.12.70"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -535,19 +535,19 @@
     "version": "2.7.1"
   },
   "nginx": {
-    "name": "nginx-1.28.0",
+    "name": "nginx-1.28.2",
     "pname": "nginx",
-    "version": "1.28.0"
+    "version": "1.28.2"
   },
   "nginxMainline": {
-    "name": "nginx-1.29.4",
+    "name": "nginx-1.29.5",
     "pname": "nginx",
-    "version": "1.29.4"
+    "version": "1.29.5"
   },
   "nginxStable": {
-    "name": "nginx-1.28.0",
+    "name": "nginx-1.28.2",
     "pname": "nginx",
-    "version": "1.28.0"
+    "version": "1.28.2"
   },
   "nix": {
     "name": "nix-2.31.2",
@@ -575,9 +575,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.120",
+    "name": "nss-3.120.1",
     "pname": "nss",
-    "version": "3.120"
+    "version": "3.120.1"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
@@ -721,9 +721,9 @@
     "version": "8.3.30"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.17",
+    "name": "php-with-extensions-8.4.18",
     "pname": "php-with-extensions",
-    "version": "8.4.17"
+    "version": "8.4.18"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.12",
@@ -756,9 +756,9 @@
     "version": "3.10.7"
   },
   "postgresql": {
-    "name": "postgresql-17.7",
+    "name": "postgresql-17.8",
     "pname": "postgresql",
-    "version": "17.7"
+    "version": "17.8"
   },
   "postgresql14Packages.postgis": {
     "name": "postgis-3.6.1",
@@ -821,29 +821,29 @@
     "version": "1.2.2"
   },
   "postgresql_14": {
-    "name": "postgresql-14.20",
+    "name": "postgresql-14.21",
     "pname": "postgresql",
-    "version": "14.20"
+    "version": "14.21"
   },
   "postgresql_15": {
-    "name": "postgresql-15.15",
+    "name": "postgresql-15.16",
     "pname": "postgresql",
-    "version": "15.15"
+    "version": "15.16"
   },
   "postgresql_16": {
-    "name": "postgresql-16.11",
+    "name": "postgresql-16.12",
     "pname": "postgresql",
-    "version": "16.11"
+    "version": "16.12"
   },
   "postgresql_17": {
-    "name": "postgresql-17.7",
+    "name": "postgresql-17.8",
     "pname": "postgresql",
-    "version": "17.7"
+    "version": "17.8"
   },
   "postgresql_18": {
-    "name": "postgresql-18.1",
+    "name": "postgresql-18.2",
     "pname": "postgresql",
-    "version": "18.1"
+    "version": "18.2"
   },
   "prometheus": {
     "name": "prometheus-3.7.2",
