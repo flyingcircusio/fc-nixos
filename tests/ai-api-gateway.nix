@@ -33,25 +33,14 @@ import ./make-test-python.nix (
           }
         ];
         environment.etc."nixos/enc.json".text = builtins.toJSON config.flyingcircus.enc;
-
-        environment.systemPackages = [
-          (pkgs.writers.writePython3Bin "check-skavider-config" { } ''
-            import tomllib
-            with open("/var/lib/skvaider/config.toml", "rb") as f:
-                data = tomllib.load(f)
-            assert data['backend'] == [{
-                "type": "openai",
-                "url": "http://host1.fcio.net:11434"
-            }]
-            assert data['aramaki']['secret_salt'] == "mysecretpepper"
-          '')
-        ];
       };
     testScript = ''
       import tomllib
       machine.wait_for_unit("skvaider-config.service")
       machine.wait_for_file("/var/lib/skvaider/config.toml")
-      machine.succeed("check-skavider-config")
+      machine.succeed(
+          "${pkgs.lib.getExe' pkgs.fc.skvaider "check-skvaider-config"} /var/lib/skvaider/config.toml"
+      )
     '';
   }
 )
