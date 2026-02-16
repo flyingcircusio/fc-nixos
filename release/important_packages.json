@@ -93,6 +93,7 @@
   "libxml2",
   "libxslt",
   "libyaml",
+  "linuxKernelGPU",
   "linuxKernelStable",
   "linuxKernelVerify",
   "logrotate",
