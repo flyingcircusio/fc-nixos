@@ -56,10 +56,10 @@ in
               url = "http://${val.address}:8000";
             }) (builtins.filter (s: s.service == "ai-model-server-server") config.flyingcircus.encServices);
           };
-          openai.models = lib.mkOption {
+          models = lib.mkOption {
             description = "model config";
-            type = with lib.types; attrsOf anything;
-            default = { };
+            type = with lib.types; listOf anything;
+            default = [ ];
           };
           logging.access_log_path = lib.mkOption {
             default = "/var/log/skvaider/access.log";
