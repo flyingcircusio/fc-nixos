@@ -250,6 +250,16 @@ in
           pkgs.nvtopPackages.amd
         ];
 
+        systemd.services.rocm-runtime-config = {
+          description = "Perform rocm runtime configuration";
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig.Type = "oneshot";
+          script = ''
+            ${pkgs.rocmPackages.rocm-smi}/bin/rocm-smi --setprofile 4  # compute optimized
+            ${pkgs.rocmPackages.rocm-smi}/bin/rocm-smi --showprofile   # record the updated settings in the log file
+          '';
+        };
+
         systemd.tmpfiles.rules =
           let
             rocmEnv = pkgs.symlinkJoin {
