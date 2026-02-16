@@ -8,10 +8,10 @@ let
   phps = (import ../nix-phps/pkgs/phps.nix) (../nix-phps) { } super;
 
   nixpkgs-21_05-src = fetchFromGitHub {
-    hash = "sha256-5ufC/t0sUFS/LspiEwU8DW5+uVYM3diZ1IC7KjX9ek4=";
+    hash = "sha256-useJKcX1iIrhJFP6zMUx8ALS1HxJRYgk/tkKhLHkL5E=";
     owner = "flyingcircusio";
     repo = "nixpkgs";
-    rev = "a467063b4abb8bd7636d9bb2475edbd2f0e6c6b6";
+    rev = "1710b09739d84b3038f92897ad5f7c117114c71d";
   };
 
   fc-nixos-21_05-src = fetchFromGitHub {
