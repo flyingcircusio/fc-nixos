@@ -135,7 +135,7 @@ in
       {
         environment.variables.OLLAMA_HOST = "${scfg.host}:${toString scfg.port}";
 
-        boot.kernelPackages = lib.mkForce pkgs.linuxKernelGPU;
+        boot.kernelPackages = lib.mkForce (pkgs.linuxPackagesFor pkgs.linuxKernelGPU);
 
         services.ollama = {
           enable = false;
