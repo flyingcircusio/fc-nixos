@@ -87,6 +87,7 @@ let
     "io_thread_0"
     "module"
     "redis_version"
+    "db*_distrib_*"
   ];
 
   telegrafInputs =
