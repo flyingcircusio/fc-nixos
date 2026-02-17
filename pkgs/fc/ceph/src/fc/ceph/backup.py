@@ -17,22 +17,32 @@ class BackupManager:
         disks: list[str],
         encrypt: bool,
         mountpoint: str,
+        automount: bool,
     ):
         console.print(
             f"Creating new backup volume {vgname}/{name} on disks {', '.join(disks)}…"
         )
-        vol = BackyVolume(name, mountpoint)
+        vol = BackyVolume(name, mountpoint, automount)
         vol.create(disks, vgname, encrypt)
 
 
-class BackyVolume:
+# XXX: Once the external crypt header logic is obsolete, we might be able to
+# adopt XFSVolume for this directly.
+class BackyVolume(AutomountActivationMixin):
     # nrext64 is default but requires kernel 6.6+
     MKFS_OPTS = ["-K", "-i", "nrext64=0"]
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime"
+    FSTYPE = "xfs"
 
-    def __init__(self, name: str, mountpoint: str):
+    def __init__(
+        self,
+        name: str,
+        mountpoint: str,
+        automount=True,  # generally, this is created on backy servers that already have the mountpoint configured
+    ):
         self.name = name
         self.mountpoint = mountpoint
+        self.automount = automount
         self.lv = GenericLogicalVolume(self.name)
 
     def create(
@@ -65,6 +75,7 @@ class BackyVolume:
 
     def activate(self):
         self.lv.activate()
+        super().activate()
         # for the mdraid, we rely on the OS for automatically assembling it
 
     @property
