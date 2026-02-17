@@ -16,6 +16,5 @@
     "ruby-2.7.8" # EOL 2023-03-31, needed for Sensu checks
     "docker-24.0.9" # Old installs still use storage driver removed in 25.x.
     "jitsi-meet-1.0.8792" # insecure libolm but this only affects optional e2ee which we don't really support.
-    "k3s-1.31.14+k3s1" # EOL, but we want to keep it
   ];
 }
