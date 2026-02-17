@@ -213,7 +213,7 @@ in
 
         systemd.services.ollama.serviceConfig.Restart = "always";
 
-        flyingcircus.services.sensu-client.checks = {
+        flyingcircus.services.sensu-client.checks = lib.mkIf scfg.enable {
           ollama_health = {
             notification = "Ollama service health check";
             command = "check_http -H ${scfg.host} -p ${toString scfg.port} -u /api/tags";
