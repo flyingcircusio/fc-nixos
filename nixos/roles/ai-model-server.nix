@@ -133,6 +133,16 @@ in
     lib.mkMerge [
       # Fixed shared config for CPU and AMD
       {
+        environment.systemPackages = [
+          (pkgs.writeShellScriptBin "nvtop-nvidia" ''
+            exec ${pkgs.nvtopPackages.nvidia}/bin/nvtop "$@"
+          '')
+          (pkgs.writeShellScriptBin "nvtop-full" ''
+            exec ${pkgs.nvtopPackages.full}/bin/nvtop "$@"
+          '')
+          pkgs.nvtopPackages.full
+        ];
+
         environment.variables.OLLAMA_HOST = "${scfg.host}:${toString scfg.port}";
 
         boot.kernelPackages = lib.mkForce (pkgs.linuxPackagesFor pkgs.linuxKernelGPU);
@@ -250,13 +260,6 @@ in
           (pkgs.writeShellScriptBin "nvtop-amd" ''
             exec ${pkgs.nvtopPackages.amd}/bin/nvtop "$@"
           '')
-          (pkgs.writeShellScriptBin "nvtop-nvidia" ''
-            exec ${pkgs.nvtopPackages.nvidia}/bin/nvtop "$@"
-          '')
-          (pkgs.writeShellScriptBin "nvtop-full" ''
-            exec ${pkgs.nvtopPackages.full}/bin/nvtop "$@"
-          '')
-          pkgs.nvtopPackages.full
         ];
 
         systemd.services.rocm-runtime-config = {
