@@ -29,8 +29,7 @@ class BackupManager:
 # XXX: Once the external crypt header logic is obsolete, we might be able to
 # adopt XFSVolume for this directly.
 class BackyVolume(AutomountActivationMixin):
-    # nrext64 is default but requires kernel 6.6+
-    MKFS_OPTS = ["-K", "-i", "nrext64=0"]
+    MKFS_OPTS = ["-K"]
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime"
     FSTYPE = "xfs"
 
