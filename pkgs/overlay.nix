@@ -660,7 +660,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   py38_pytest_patterns = fc-nixos-21_05.py_pytest_patterns;
 
   qemu-ceph-nautilus = fc-nixos-21_05.qemu-ceph-nautilus;
-  qemu-ceph-pacific = fc-nixos-21_05.qemu.override {
+  # pacific: let's also try a qemu version update from 6.0 to 10.1, because
+  # pacific does not compile against old qemu
+  qemu-ceph-pacific = super.qemu.override {
     cephSupport = true;
     ceph = self.ceph-pacific.ceph;
   };
