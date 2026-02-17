@@ -148,8 +148,8 @@ and the password must be hashed via {command}`mkpasswd -m yescrypt {PASSWORD}`.
 ## How do mail users log into the mail server?
 
 - Username: full e-mail address
-- Incoming: IMAP with STARTTLS, mailHost port 143
-- Outgoing: SMTP with STARTTLS, mailHost port 587.
+- Incoming: IMAP with SSL/TLS, mailHost port 993
+- Outgoing: SMTP with SSL/TLS, mailHost port 465.
 
 If the *webmailHost* option is defined, users can log into the web frontend with
 their full e-mail address and password.
