@@ -664,6 +664,12 @@ def luks(args=sys.argv[1:]):
         help="Initial mountpoint after creation.\n"
         "Note: Subsequent mounts might use another automatic mountpoint.",
     )
+    parser_create.add_argument(
+        "--automount",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Rely on the system automatically mounting the resulting volume.",
+    )
     parser_create.set_defaults(action="create")
 
     # extract parsed arguments from object into a dict
