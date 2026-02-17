@@ -205,6 +205,8 @@ in
             PrivateDevices = false; # unhides acceleration devices
             SupplementaryGroups = [
               "render"
+              # CUDA
+              "video"
             ];
             Restart = "always";
           };
