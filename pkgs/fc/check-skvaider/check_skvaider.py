@@ -86,7 +86,10 @@ def check_chat_completions(session, base, models):
     result = response.json()
     assert result["object"] == "chat.completion", "not a completion object"
     assert "content" in result["choices"][0]["message"], "no content"
-    assert "reasoning" in result["choices"][0]["message"], "no reasoning"
+    assert (
+        "reasoning_content" in result["choices"][0]["message"]
+        or "reasoning" in result["choices"][0]["message"]
+    ), "no reasoning content"
     assert "role" in result["choices"][0]["message"], "no role"
 
 
