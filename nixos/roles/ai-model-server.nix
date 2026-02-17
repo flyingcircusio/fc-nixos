@@ -197,6 +197,13 @@ in
             StateDirectoryMode = "0755";
             CapabilityBoundingSet = [ "" ];
             DeviceAllow = [
+              # CUDA
+              # https://docs.nvidia.com/dgx/pdf/dgx-os-5-user-guide.pdf
+              # https://github.com/NixOS/nixpkgs/blob/fa56d7d6de78f5a7f997b0ea2bc6efd5868ad9e8/nixos/modules/services/misc/ollama.nix#L267C45-L267C70
+              "char-nvidiactl"
+              "char-nvidia-caps"
+              "char-nvidia-frontend"
+              "char-nvidia-uvm"
               # ROCm
               "char-drm"
               "char-fb"
