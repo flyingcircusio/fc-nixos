@@ -247,13 +247,13 @@ in
         environment.systemPackages = [
           pkgs.rocmPackages.rocminfo
           pkgs.rocmPackages.rocm-smi
-          (pkgs.writeShellScript "nvtop-amd" ''
+          (pkgs.writeShellScriptBin "nvtop-amd" ''
             exec ${pkgs.nvtopPackages.amd}/bin/nvtop "$@"
           '')
-          (pkgs.writeShellScript "nvtop-nvidia" ''
+          (pkgs.writeShellScriptBin "nvtop-nvidia" ''
             exec ${pkgs.nvtopPackages.nvidia}/bin/nvtop "$@"
           '')
-          (pkgs.writeShellScript "nvtop-full" ''
+          (pkgs.writeShellScriptBin "nvtop-full" ''
             exec ${pkgs.nvtopPackages.full}/bin/nvtop "$@"
           '')
           pkgs.nvtopPackages.full
