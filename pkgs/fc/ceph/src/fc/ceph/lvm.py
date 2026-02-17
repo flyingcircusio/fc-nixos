@@ -69,7 +69,7 @@ class MdraidDevice(GenericBlockDevice):
         obj = cls(name)
         run.mdadm(
             "--create",
-            f"/dev/md/{obj.name}",
+            obj.name,
             "--level=6",
             "--name=backy",
             "--bitmap=internal",
