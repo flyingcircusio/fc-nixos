@@ -584,6 +584,31 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
     FSTYPE = "xfs"
 
+    @staticmethod
+    def mkfs(device: str, label: str, opts: list[str], retries: int = 5):
+        """Create XFS filesystem with retry on 'Device or resource busy' errors."""
+        for attempt in range(retries):
+            try:
+                run.mkfs_xfs("-f", "-L", label, *opts, device)
+                run.sync()
+                return
+            except CalledProcessError as e:
+                stderr = (
+                    e.stderr.decode("ascii", errors="replace")
+                    if e.stderr
+                    else ""
+                )
+                if "Device or resource busy" in stderr:
+                    if attempt < retries - 1:
+                        console.print(
+                            f"Device {device} busy, retrying...",
+                            style="yellow",
+                        )
+                        run.udevadm("settle")
+                        time.sleep(1)
+                        continue
+                raise
+
     def __init__(self, name: str, mountpoint: str, automount=False):
         self.name = name
         self.mountpoint = mountpoint
@@ -619,13 +644,7 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
             size=size,
         )
         # Create OSD filesystem
-        run.mkfs_xfs(
-            "-f",
-            "-L", self.name,
-            *self.MKFS_OPTS,
-            self.device,
-        )  # fmt: skip
-        run.sync()
+        self.mkfs(self.device, self.name, self.MKFS_OPTS)
         self.activate()
 
     def activate(self):

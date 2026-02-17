@@ -4,8 +4,9 @@ from fc.ceph.lvm import (
     AutomountActivationMixin,
     GenericLogicalVolume,
     MdraidDevice,
+    XFSVolume,
 )
-from fc.ceph.util import console, run
+from fc.ceph.util import console
 
 
 class BackupManager:
@@ -43,8 +44,7 @@ class BackyVolume:
         self.lv = GenericLogicalVolume.create(
             self.name, vgname, raid, encrypt, size="100%vg"
         )
-        run.mkfs_xfs("-f", "-L", self.name, *self.MKFS_OPTS, self.device)
-        run.sync()
+        XFSVolume.mkfs(self.device, self.name, self.MKFS_OPTS)
 
         if os.path.exists(ext_header := f"{self.mountpoint}.luks"):
             console.print(
