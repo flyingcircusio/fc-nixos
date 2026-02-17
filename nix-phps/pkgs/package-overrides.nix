@@ -20,7 +20,7 @@ let
 
   inherit (pkgs.stdenv.cc) isClang;
 
-  inherit (import ./lib.nix { inherit lib; }) mergeEnv removeLines;
+  inherit (import ./lib.nix { inherit lib; }) appendStrings mergeEnv removeLines;
 in
 {
   buildPecl =
@@ -194,31 +194,26 @@ in
       # Tests fail on Darwin for some reason.
       doCheck = lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux;
 
-      postPatch = lib.concatStringsSep "\n" [
-        (attrs.postPatch or "")
-
-        (lib.optionalString
-          (lib.versionAtLeast prev.php.version "7.3" && lib.versionOlder prev.php.version "7.4")
+      postPatch = appendStrings attrs "postPatch" (
+        lib.optional (lib.versionAtLeast prev.php.version "7.3" && lib.versionOlder prev.php.version "7.4")
           ''
             # 4cc261aa6afca2190b1b74de39c3caa462ec6f0b deletes this file but fetchpatch does not support deletions.
             rm ext/dom/tests/bug80268.phpt
           ''
-        )
 
-        (lib.optionalString (lib.versionOlder prev.php.version "7.4") ''
+        ++ lib.optional (lib.versionOlder prev.php.version "7.4") ''
           # 4cc261aa6afca2190b1b74de39c3caa462ec6f0b deletes this file but fetchpatch does not support deletions.
           rm ext/dom/tests/bug43364.phpt
-        '')
+        ''
 
-        (lib.optionalString
-          (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "8.1")
-          ''
-            # Removing tests failing with libxml2 (2.11.4) > 2.10.4
-            rm ext/dom/tests/DOMDocument_loadXML_error2.phpt
-            rm ext/dom/tests/DOMDocument_load_error2.phpt
-          ''
-        )
-      ];
+        ++
+          lib.optional (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "8.1")
+            ''
+              # Removing tests failing with libxml2 (2.11.4) > 2.10.4
+              rm ext/dom/tests/DOMDocument_loadXML_error2.phpt
+              rm ext/dom/tests/DOMDocument_load_error2.phpt
+            ''
+      );
 
       env = mergeEnv attrs {
         NIX_CFLAGS_COMPILE = lib.optionals (lib.versionOlder prev.php.version "7.1") [
@@ -278,6 +273,21 @@ in
         prev.mkExtension {
           name = "gd";
 
+          patches = [
+            # Fix build with gcc 15
+            # https://github.com/php/php-src/commit/f566cba0bb6bd53b1d44d5097e68201412b00f7a
+            (
+              if lib.versionOlder prev.php.version "7.0" then
+                ./patches/php56-gd-strict-prototypes.patch
+              else if lib.versionOlder prev.php.version "7.2" then
+                ./patches/php70-gd-strict-prototypes.patch
+              else if lib.versionOlder prev.php.version "7.3" then
+                ./patches/php72-gd-strict-prototypes.patch
+              else
+                ./patches/php73-gd-strict-prototypes.patch
+            )
+          ];
+
           buildInputs = [
             pkgs.gd
             pkgs.xorg.libXpm
@@ -301,7 +311,24 @@ in
           doCheck = false;
         }
       else
-        prev.extensions.gd;
+        prev.extensions.gd.overrideAttrs (attrs: {
+          patches =
+            let
+              upstreamPatches = attrs.patches or [ ];
+
+              ourPatches = lib.optionals (lib.versionOlder prev.php.version "8.1") [
+                # Fix build with gcc 15
+                # https://github.com/php/php-src/commit/f566cba0bb6bd53b1d44d5097e68201412b00f7a
+                (
+                  if lib.versionOlder prev.php.version "8.0" then
+                    ./patches/php74-gd-strict-prototypes.patch
+                  else
+                    ./patches/php80-gd-strict-prototypes.patch
+                )
+              ];
+            in
+            ourPatches ++ upstreamPatches;
+        });
 
     gettext = prev.extensions.gettext.overrideAttrs (attrs: {
       patches =
@@ -335,20 +362,20 @@ in
               })
             ];
 
-      postPatch =
-        attrs.postPatch or ""
-        +
-          lib.optionalString
-            (
-              lib.versionAtLeast prev.php.version "7.1"
-              && lib.versionOlder prev.php.version "8.0"
-              && pkgs.stdenv.isDarwin
-            )
-            ''
-              # Disable test failing on Darwin (see 9999a0cb757344974889a6f548727de6f2c3c10d above)
-              # We do not apply the fix because passing category to `dcgettext`/`dcngettext` functions should be rare.
-              rm ext/gettext/tests/dcngettext.phpt
-            '';
+      postPatch = appendStrings attrs "postPatch" (
+        lib.optional
+          (
+            lib.versionAtLeast prev.php.version "7.1"
+            && lib.versionOlder prev.php.version "8.0"
+            && pkgs.stdenv.isDarwin
+          )
+          ''
+            # Disable test failing on Darwin (see 9999a0cb757344974889a6f548727de6f2c3c10d above)
+            # We do not apply the fix because passing category to `dcgettext`/`dcngettext` functions should be rare.
+            rm ext/gettext/tests/dcngettext.phpt
+          ''
+
+      );
     });
 
     grpc =
@@ -498,12 +525,62 @@ in
         prev.extensions.maxminddb;
 
     mbstring = prev.extensions.mbstring.overrideAttrs (attrs: {
+      patches =
+        let
+          upstreamPatches = attrs.patches or [ ];
+
+          ourPatches =
+            lib.optionals (lib.versionOlder prev.php.version "7.2") [
+              # Upgrade to oniguruma 6 file layout.
+              (pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/2a76d2282ad26c757d42b5ce2d079dcff07ae9de.patch";
+                hash = "sha256-kq8VbPp6/urwo+m9yoRONoeASnWHWeQRvxdrdWUld84=";
+                includes = [ "ext/mbstring/config.m4" ];
+              })
+            ]
+            ++ lib.optionals (lib.versionOlder prev.php.version "7.1") [
+              # Fix build with oniguruma 6.8.1.
+              (
+                if lib.versionOlder prev.php.version "7.0" then
+                  ./patches/php56-mbstring-oniguruma-6.8.1.patch
+                else
+                  pkgs.fetchpatch {
+                    url = "https://github.com/php/php-src/commit/4072b2787074ee8e247a6639585b49e10c5a55fe.patch";
+                    hash = "sha256-nKlFJRA2l9Indp2cgOwyZ1SD+Li/z45b07aJzn6LWGI=";
+                    excludes = [ "NEWS" ];
+                  }
+              )
+            ];
+        in
+        ourPatches ++ upstreamPatches;
+
+      postPatch = appendStrings attrs "postPatch" (
+        lib.optional (lib.versionOlder prev.php.version "7.4") (
+          let
+            oniguruma = pkgs.fetchFromGitHub {
+              owner = "kkos";
+              repo = "oniguruma";
+              tag = "v6.9.10";
+              sha256 = "sha256-+vfVdBwNR432cYhYAciMNeNNH809axvulxEQP0WP5VI=";
+            };
+          in
+          ''
+            # Replace oniguruma with newer version.
+            # Fixes build with gcc 15.
+            rm -rf ext/mbstring/oniguruma
+            cp -r ${oniguruma} ext/mbstring/oniguruma
+            chmod -R +w ext/mbstring/oniguruma
+          ''
+        )
+
+      );
+
       env = mergeEnv attrs {
         NIX_CFLAGS_COMPILE =
           lib.optionals (lib.versionOlder prev.php.version "7.0") [
             "-Wno-implicit-function-declaration"
           ]
-          ++ lib.optionals (lib.versionOlder prev.php.version "7.0" && !isClang) [
+          ++ lib.optionals (lib.versionOlder prev.php.version "7.4" && !isClang) [
             "-Wno-incompatible-pointer-types"
           ];
       };
@@ -617,20 +694,21 @@ in
           ./patches/mysqlnd_fix_compression.patch
         ];
 
-      postPatch =
-        attrs.postPatch or ""
-        + lib.optionalString (lib.versionOlder prev.php.version "7.1") ''
+      postPatch = appendStrings attrs "postPatch" (
+        lib.optional (lib.versionOlder prev.php.version "7.1") ''
           # Fix mysqlnd not being able to find headers.
           ln -s $PWD/ext/ ext/mysqlnd
-        '';
+        ''
 
-      preConfigure =
-        attrs.preConfigure or ""
-        + lib.optionalString (lib.versionOlder prev.php.version "7.4") ''
+      );
+
+      preConfigure = appendStrings attrs "preConfigure" (
+        lib.optional (lib.versionOlder prev.php.version "7.4") ''
           substituteInPlace configure \
-            --replace '$OPENSSL_LIBDIR' '${pkgs.openssl}/lib' \
-            --replace '$OPENSSL_INCDIR' '${pkgs.openssl.dev}/include'
-        '';
+            --replace-fail '$OPENSSL_LIBDIR' '${pkgs.openssl}/lib' \
+            --replace-fail '$OPENSSL_INCDIR' '${pkgs.openssl.dev}/include'
+        ''
+      );
     });
 
     oci8 =
@@ -718,6 +796,34 @@ in
         })
       else
         prev.extensions.openswoole;
+
+    pcntl = prev.extensions.pcntl.overrideAttrs (attrs: {
+      patches =
+        let
+          upstreamPatches = attrs.patches or [ ];
+
+          ourPatches = lib.optionals (lib.versionOlder prev.php.version "8.1") [
+            # Fix compatibility with gcc 15
+            # https://github.com/php/php-src/commit/2068d230d981d7b06b41b87ebc37ab2581b79852
+            (
+              if lib.versionOlder prev.php.version "7.0" then
+                ./patches/php56-pcntl-strict-prototypes.patch
+              else if lib.versionOlder prev.php.version "7.1" then
+                ./patches/php70-pcntl-strict-prototypes.patch
+              else if lib.versionOlder prev.php.version "7.4" then
+                ./patches/php71-pcntl-strict-prototypes.patch
+              else if lib.versionOlder prev.php.version "8.0" then
+                ./patches/php74-pcntl-strict-prototypes.patch
+              else
+                (pkgs.fetchpatch {
+                  url = "https://github.com/php/php-src/commit/2068d230d981d7b06b41b87ebc37ab2581b79852.patch";
+                  hash = "sha256-lRXWNugOtP7fFpdS1bTBx0IFsgwnJQNoljyp//aqT+Y=";
+                })
+            )
+          ];
+        in
+        ourPatches ++ upstreamPatches;
+    });
 
     pcov =
       if lib.versionAtLeast prev.php.version "7.1" then
@@ -886,20 +992,18 @@ in
       # Tests fail on Darwin with older PHP versions for some reason.
       doCheck = attrs.doCheck or true && (lib.versionOlder prev.php.version "7.4" -> pkgs.stdenv.isLinux);
 
-      postPatch =
-        attrs.postPatch or ""
-        +
-          lib.optionalString
-            (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.4")
-            ''
-              rm ext/soap/tests/bugs/bug66112.phpt
-            ''
-        +
-          lib.optionalString
-            (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.2")
+      postPatch = appendStrings attrs "postPatch" (
+        lib.optional (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.4")
+          ''
+            rm ext/soap/tests/bugs/bug66112.phpt
+          ''
+
+        ++
+          lib.optional (lib.versionAtLeast prev.php.version "7.1" && lib.versionOlder prev.php.version "7.2")
             ''
               rm ext/soap/tests/bugs/bug76348.phpt
-            '';
+            ''
+      );
     });
 
     sqlite3 = prev.extensions.sqlite3.overrideAttrs (attrs: {
@@ -978,10 +1082,19 @@ in
         prev.extensions.xdebug.overrideAttrs (attrs: {
           name = "xdebug-3.1.6";
           version = "3.1.6";
+
           src = pkgs.fetchurl {
             url = "http://pecl.php.net/get/xdebug-3.1.6.tgz";
             sha256 = "1lnmrb5kgq8lbhjs48j3wwhqgk44pnqb1yjq4b5r6ysv9l5wlkjm";
           };
+
+          patches = [
+            # Fix build with gcc 15.
+            (pkgs.fetchpatch {
+              url = "https://github.com/xdebug/xdebug/commit/eae1b06aeb67cd609883e0e56499c7b6f8aa2b36.patch";
+              hash = "sha256-PsGKuvVXaJnGhOinCiBZro/nIcBMjNYD4xWouV6NJus=";
+            })
+          ];
         })
       else if lib.versionAtLeast prev.php.version "7.1" then
         prev.extensions.xdebug.overrideAttrs (attrs: {
