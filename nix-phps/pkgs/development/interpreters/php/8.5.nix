@@ -4,8 +4,8 @@ let
   base = callPackage ./generic.nix (
     _args
     // {
-      version = "8.4.17";
-      hash = "sha256-6mfYPXLdbzq6rq5/Uy94/RIZKGHZarqOnso7LdreQtI=";
+      version = "8.5.2";
+      hash = "sha256-9+/ezMOoELGJIGkjBlNrmaO6hmENvQeVopbPd9P7OgY=";
     }
   );
 in
@@ -31,7 +31,6 @@ base.withExtensions (
     mbstring
     mysqli
     mysqlnd
-    opcache
     openssl
     pcntl
     pdo

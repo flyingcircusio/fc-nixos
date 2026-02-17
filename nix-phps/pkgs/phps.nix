@@ -11,7 +11,7 @@ let
 
   inherit (prev) lib;
 
-  inherit (import ./lib.nix { inherit lib; }) mergeEnv;
+  inherit (import ./lib.nix { inherit lib; }) appendStrings mergeEnv;
 
   inherit (prev.stdenv.cc) isClang;
 
@@ -58,6 +58,23 @@ let
                   "build/libtool.m4"
                 ];
               })
+            ]
+            ++ lib.optionals (lib.versionOlder args.version "8.1") [
+              # Fix build with gcc 15
+              # https://github.com/php/php-src/commit/b7356692f69f4ac0a07ea54e83debdd04b426dcb
+              (prev.pkgs.fetchpatch {
+                url = "https://github.com/php/php-src/commit/b7356692f69f4ac0a07ea54e83debdd04b426dcb.patch";
+                hash =
+                  if lib.versionOlder args.version "7.0" then
+                    "sha256-purcnjRI1Tc0PeCsAwyWgaa4qBSBXAHDCIckavuhiYg="
+                  else
+                    "sha256-k1Gao8+zwwydyFQDBtg2SJ/ORsyilSHkb8JhvKiFF8Q=";
+                decode =
+                  if lib.versionOlder args.version "7.0" then
+                    "sed 's/zend_long/long/;s/ZEND_STRTOL_PTR/strtol/;s/ZEND_STRTOUL_PTR/strtoul/'"
+                  else
+                    "cat";
+              })
             ];
 
           configureFlags =
@@ -95,10 +112,18 @@ let
               # https://github.com/NixOS/nixpkgs/pull/90249
               for i in $(find . -type f -name "*.m4"); do
                 substituteInPlace $i \
-                  --replace 'test -x "$PKG_CONFIG"' 'type -P "$PKG_CONFIG" >/dev/null'
+                  --replace-quiet 'test -x "$PKG_CONFIG"' 'type -P "$PKG_CONFIG" >/dev/null'
               done
             ''
             + attrs.preConfigure;
+
+          postPatch = appendStrings attrs "postPatch" (
+            lib.optional (lib.versionAtLeast args.version "7.3" && lib.versionOlder args.version "7.4") ''
+              # Fix “too many arguments to function” error with gcc 15
+              substituteInPlace ext/date/php_date.c \
+                --replace-fail 'php_time(NULL)' 'php_time()'
+            ''
+          );
 
           env = mergeEnv attrs {
             NIX_CFLAGS_COMPILE =
@@ -171,6 +196,10 @@ in
   };
 
   php84 = prev.php84.override {
+    inherit packageOverrides;
+  };
+
+  php85 = prev.php85.override {
     inherit packageOverrides;
   };
 }
