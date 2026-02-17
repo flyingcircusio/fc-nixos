@@ -76,6 +76,7 @@ class MdraidDevice(GenericBlockDevice):
             f"--raid-devices={len(main_disks)}",
             *main_disks,
         )
+        run.udevadm("settle")
         # add spare disk
         run.mdadm("--add", obj.blockdevice, spare_disk)
         return obj
@@ -379,6 +380,7 @@ class LogicalVolume(GenericLogicalVolume):
             size, f"-n{self.name}",
             vg_name,
         )  # fmt: skip
+        run.udevadm("settle")
 
     @staticmethod
     def ensure_vg(vg_name: str, base_device: Optional[GenericBlockDevice]):
@@ -394,6 +396,7 @@ class LogicalVolume(GenericLogicalVolume):
         run.pvcreate(blockdevice_underlay)
         run.vgcreate(vg_name, blockdevice_underlay)
         base_device.ensure_partition_type("8e00")
+        run.udevadm("settle")
 
     def purge(self, lv_only=False):
         # Delete LVs
@@ -518,6 +521,7 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
                 self.underlay.device,
                 self.name,
             )  # fmt: skip
+            run.udevadm("settle")
         self._ready = True
 
     def deactivate(self):
