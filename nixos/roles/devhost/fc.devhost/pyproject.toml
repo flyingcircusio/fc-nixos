@@ -25,3 +25,8 @@ dependencies = [
 
 [project.scripts]
 fc-devhost = "fc.devhost:main"
+
+[tool.basedpyright]
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"

@@ -108,8 +108,9 @@ def test_ensure_exists_creates_user(subprocess_run, caplog, capfd):
     )
 
     subprocess_run.side_effect = [
+        # user create
         Mock(stdout=""),
-        Mock(stdout=""),
+        # user info
         Mock(
             stdout=json.dumps(
                 {
@@ -140,16 +141,6 @@ def test_ensure_exists_creates_user(subprocess_run, caplog, capfd):
                 "--uid", "services:sometest",
                 "--display-name", "test test",
                 "--access-key", "dnDlid0jyRs1sK9vEOGV",
-                "--gen-secret"
-            ],
-            check=True, stdout=-1, stderr=-1,
-        ),
-        call(
-            [
-                "radosgw-admin", "user", "modify",
-                "--uid", "services:sometest",
-                "--display-name", "test test",
-                "--access-key", "dnDlid0jyRs1sK9vEOGV",
                 "--secret-key", "directory-provided-secret-key",
             ],
             check=True, stdout=-1, stderr=-1,
@@ -171,7 +162,7 @@ def test_ensure_exists_creates_user(subprocess_run, caplog, capfd):
     assert "<REDACTED>" in captured.out
 
 
-def test_ensure_exists_creates_user_no_secret_provided(subprocess_run, caplog):
+def test_ensure_exists_creates_user_no_secret_provided_fails(subprocess_run, caplog):
     import logging
 
     caplog.set_level(logging.INFO)
@@ -187,8 +178,9 @@ def test_ensure_exists_creates_user_no_secret_provided(subprocess_run, caplog):
     )
 
     subprocess_run.side_effect = [
+        # user create
         Mock(stdout=""),
-        Mock(stdout=""),
+        # user info
         Mock(
             stdout=json.dumps(
                 {
@@ -205,43 +197,10 @@ def test_ensure_exists_creates_user_no_secret_provided(subprocess_run, caplog):
     ]
 
     assert not user.rgw.exists
-    user.ensure()
-    assert user.rgw.exists
-    assert user.rgw.display_name == "test test"
-    assert user.rgw.access_key == "dnDlid0jyRs1sK9vEOGV"
-    assert user.rgw.secret_key == "randomsecretkey"
-    assert user.rgw.key_count == 1
+    with pytest.raises(RuntimeError):
+        user.ensure()
 
-    assert subprocess_run.call_args_list == [
-        call(
-            [
-                "radosgw-admin", "user", "create",
-                "--uid", "services:sometest",
-                "--display-name", "test test",
-                "--access-key", "dnDlid0jyRs1sK9vEOGV",
-                "--gen-secret"
-            ],
-            check=True, stdout=-1, stderr=-1,
-        ),
-        call(
-            [
-                "radosgw-admin", "user", "modify",
-                "--uid", "services:sometest",
-                "--display-name", "test test",
-            ],
-            check=True, stdout=-1, stderr=-1,
-        ),
-        call(
-            [
-                "radosgw-admin", "--format", "json",
-                "user", "info",
-                "--uid", "services:sometest",
-            ],
-            check=True, stdout=-1, stderr=-1,
-        ),
-    ]  # fmt: skip
-
-    assert "no secret key provided" in caplog.text
+    assert subprocess_run.call_args_list == []  # fmt: skip
 
 
 def test_ensure_updates_users(subprocess_run):
@@ -383,14 +342,15 @@ def test_users_pending_soft_deletion_still_added(subprocess_run, caplog):
         {
             "display_name": "test test",
             "access_key": "dnDlid0jyRs1sK9vEOGV",
-            "secret_key": None,
+            "secret_key": "some-secret-key",
             "deletion": {"stages": ["soft"]},
         }
     )
 
     subprocess_run.side_effect = [
+        # user create
         Mock(stdout=""),
-        Mock(stdout=""),
+        # user info
         Mock(
             stdout=json.dumps(
                 {
@@ -398,12 +358,13 @@ def test_users_pending_soft_deletion_still_added(subprocess_run, caplog):
                     "keys": [
                         {
                             "access_key": "dnDlid0jyRs1sK9vEOGV",
-                            "secret_key": "random-key",
+                            "secret_key": "some-secret-key",
                         },
                     ],
                 }
             )
         ),
+        # user info [keys]
         Mock(
             stdout=json.dumps(
                 {
@@ -421,8 +382,11 @@ def test_users_pending_soft_deletion_still_added(subprocess_run, caplog):
                 }
             )
         ),
+        # key rm (1)
         Mock(stdout=""),
+        # key rm (2)
         Mock(stdout=""),
+        # user info
         Mock(
             stdout=json.dumps(
                 {
@@ -448,15 +412,7 @@ def test_users_pending_soft_deletion_still_added(subprocess_run, caplog):
                 "--uid", "services:sometest",
                 "--display-name", "test test",
                 "--access-key", "dnDlid0jyRs1sK9vEOGV",
-                "--gen-secret"
-            ],
-            check=True, stdout=-1, stderr=-1,
-        ),
-        call(
-            [
-                "radosgw-admin", "user", "modify",
-                "--uid", "services:sometest",
-                "--display-name", "test test",
+                "--secret-key", "some-secret-key",
             ],
             check=True, stdout=-1, stderr=-1,
         ),
@@ -546,8 +502,9 @@ def test_ensure_hard_state_deletes_users(subprocess_run):
     )
 
     subprocess_run.side_effect = [
+        # user create
         Mock(stdout=""),
-        Mock(stdout=""),
+        # user info
         Mock(
             stdout=json.dumps(
                 {
@@ -656,7 +613,9 @@ def test_user_manager(subprocess_run, caplog):
     }
 
     subprocess_run.side_effect = [
+        # user list
         Mock(stdout=json.dumps(["services:user1"])),
+        # user info
         Mock(
             stdout=json.dumps(
                 {
@@ -675,7 +634,7 @@ def test_user_manager(subprocess_run, caplog):
             )
         ),
         Mock(stdout=""),  # user create
-        Mock(stdout=""),  # user update
+        # user info
         Mock(
             stdout=json.dumps(
                 {

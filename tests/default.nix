@@ -77,6 +77,7 @@ in
   lampVm84 = callTest ./lamp/vm-test.nix { version = "lamp_php84"; };
 
   locale = callTest ./locale.nix { };
+  loki = callTest ./loki.nix { };
   loghost = callTest ./loghost.nix { };
   login = callTest ./login.nix { };
   logrotate = callTest ./logrotate.nix { };

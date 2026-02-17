@@ -584,6 +584,11 @@
     "pname": "nvme-cli",
     "version": "2.15"
   },
+  "ollama-rocm": {
+    "name": "ollama-0.15.6",
+    "pname": "ollama",
+    "version": "0.15.6"
+  },
   "openjdk": {
     "name": "openjdk-21.0.9+10",
     "pname": "openjdk",

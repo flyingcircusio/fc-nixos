@@ -27,6 +27,12 @@ def main():
         "--channel-url", type=str, help="url to the nix channel for the vm"
     )
     p.add_argument(
+        "--update-channel",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="keep the channel updated on every provision run? (default: yes)",
+    )
+    p.add_argument(
         "--hydra-eval",
         type=int,
         help="hydra eval to use for base image (deprecated, use --image-url and --channel-url)",

@@ -251,6 +251,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     }
   );
 
+  k3s_1_31 = (self.callPackage ./k3s { }).k3s_1_31;
+
   # TODO: re-evaluate whether this still needs to be vendored without lmdb support (#PL-130446)
   libmodsecurity = super.callPackage ./libmodsecurity { };
 

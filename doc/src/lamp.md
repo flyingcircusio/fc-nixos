@@ -1,6 +1,6 @@
 (nixos-lamp)=
 
-# LAMP (Apache/mod_php)
+# LAMP (Apache/php-fpm)
 
 The LAMP role starts a managed instance of Apache with `php-fpm` that can be
 used to easily run a production-ready PHP application server.
