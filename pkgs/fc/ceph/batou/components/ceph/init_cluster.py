@@ -111,31 +111,18 @@ def create_cluster():
     for img in ("test1", "test2"):
         run(["rbd", "create", "--size=20M", img])
 
-    # for now, it is a single-host cluster
-    for poolname in ("device_health_metrics", "rbd"):
-        run(
-            [
-                "ceph",
-                "osd",
-                "pool",
-                "set",
-                poolname,
-                "size",
-                "1",
-                "--yes-i-really-mean-it",
-            ]
-        )
-        run(["ceph", "osd", "pool", "set", poolname, "min_size", "1"])
-        # XXX: ensure presence of rbd pools and also consider those
+    run(["systemctl", "restart", "-v", "fc-ceph-rgw.service"], check=True)
 
 
 def destroy_cluster():
+    run(["systemctl", "stop", "fc-ceph-rgw"])
     run(["systemctl", "stop", "fc-ceph-mon"])
     run(["systemctl", "stop", "fc-ceph-mgr"])
     run(["systemctl", "stop", "fc-ceph-osd@0.service"])
     run(["umount", "/srv/ceph/mgr/ceph-host1"])
     run(["umount", "/srv/ceph/mon/ceph-host1"])
     run(["umount", "/srv/ceph/osd/ceph-0"])
+    run(["umount", "/dev/mapper/vgjnl00-ceph--mon"])
     run(["vgremove", "vgjnl00", "-y"])
     run(["vgremove", "vgosd-0", "-y"])
     run(["losetup", "-D"])

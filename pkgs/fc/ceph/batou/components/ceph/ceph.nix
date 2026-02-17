@@ -34,6 +34,7 @@ in
     osd_pool_default_size = 1;
     osd_pool_default_min_size = 1;
     mon_allow_pool_size_one = true;
+    mon_warn_on_pool_no_redundancy = false;
   };
   flyingcircus.services.ceph.client = {
     mons = [ "host1" ];
