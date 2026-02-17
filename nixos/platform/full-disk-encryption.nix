@@ -52,7 +52,7 @@ in
         readOnly = true;
         internal = true;
         default = {
-          device = "/dev/vgkeys/keys";
+          device = "/dev/disk/by-label/keys";
           fsType = "xfs";
           options = [
             "nofail"
