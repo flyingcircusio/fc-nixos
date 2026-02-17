@@ -10,9 +10,9 @@
     "version": "2.4.66"
   },
   "asterisk": {
-    "name": "asterisk-22.8.1",
+    "name": "asterisk-22.8.2",
     "pname": "asterisk",
-    "version": "22.8.1"
+    "version": "22.8.2"
   },
   "auditbeat7-oss": {
     "name": "auditbeat-oss-7.17.27",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-144.0.7559.132",
+    "name": "chromedriver-unwrapped-145.0.7632.67",
     "pname": "chromedriver-unwrapped",
-    "version": "144.0.7559.132"
+    "version": "145.0.7632.67"
   },
   "chromium": {
-    "name": "chromium-144.0.7559.132",
+    "name": "chromium-145.0.7632.67",
     "pname": "chromium",
-    "version": "144.0.7559.132"
+    "version": "145.0.7632.67"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -220,9 +220,9 @@
     "version": "2.52.0"
   },
   "gitaly": {
-    "name": "gitaly-18.8.3",
+    "name": "gitaly-18.8.4",
     "pname": "gitaly",
-    "version": "18.8.3"
+    "version": "18.8.4"
   },
   "github-runner": {
     "name": "github-runner-2.331.0",
@@ -230,9 +230,9 @@
     "version": "2.331.0"
   },
   "gitlab": {
-    "name": "gitlab-18.8.3",
+    "name": "gitlab-18.8.4",
     "pname": "gitlab",
-    "version": "18.8.3"
+    "version": "18.8.4"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.36.0",
@@ -240,14 +240,14 @@
     "version": "4.36.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.8.3",
+    "name": "gitlab-ee-18.8.4",
     "pname": "gitlab-ee",
-    "version": "18.8.3"
+    "version": "18.8.4"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.8.3",
+    "name": "gitlab-pages-18.8.4",
     "pname": "gitlab-pages",
-    "version": "18.8.3"
+    "version": "18.8.4"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.8.0",
@@ -255,9 +255,9 @@
     "version": "18.8.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.8.3",
+    "name": "gitlab-workhorse-18.8.4",
     "pname": "gitlab-workhorse",
-    "version": "18.8.3"
+    "version": "18.8.4"
   },
   "glibc": {
     "name": "glibc-2.42-47",
@@ -290,9 +290,9 @@
     "version": "2.12.1"
   },
   "haproxy": {
-    "name": "haproxy-3.3.2",
+    "name": "haproxy-3.3.3",
     "pname": "haproxy",
-    "version": "3.3.2"
+    "version": "3.3.3"
   },
   "imagemagick": {
     "name": "imagemagick-7.1.2-12",
@@ -375,9 +375,9 @@
     "version": "1.33.7+k3s3"
   },
   "keycloak": {
-    "name": "keycloak-26.5.2",
+    "name": "keycloak-26.5.3",
     "pname": "keycloak",
-    "version": "26.5.2"
+    "version": "26.5.3"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.69",
+    "name": "linux-6.12.70",
     "pname": "linux",
-    "version": "6.12.69"
+    "version": "6.12.70"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.69",
+    "name": "linux-6.12.70",
     "pname": "linux",
-    "version": "6.12.69"
+    "version": "6.12.70"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -490,9 +490,9 @@
     "version": "5.5.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.146.0",
+    "name": "matrix-synapse-wrapped-1.147.1",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.146.0"
+    "version": "1.147.1"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.3",
@@ -505,9 +505,9 @@
     "version": "1.6.40"
   },
   "mongodb": {
-    "name": "mongodb-7.0.28",
+    "name": "mongodb-7.0.30",
     "pname": "mongodb",
-    "version": "7.0.28"
+    "version": "7.0.30"
   },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
@@ -535,19 +535,19 @@
     "version": "2.8.5"
   },
   "nginx": {
-    "name": "nginx-1.28.0",
+    "name": "nginx-1.28.2",
     "pname": "nginx",
-    "version": "1.28.0"
+    "version": "1.28.2"
   },
   "nginxMainline": {
-    "name": "nginx-1.29.4",
+    "name": "nginx-1.29.5",
     "pname": "nginx",
-    "version": "1.29.4"
+    "version": "1.29.5"
   },
   "nginxStable": {
-    "name": "nginx-1.28.0",
+    "name": "nginx-1.28.2",
     "pname": "nginx",
-    "version": "1.28.0"
+    "version": "1.28.2"
   },
   "nix": {
     "name": "nix-2.31.3",
@@ -575,9 +575,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.120",
+    "name": "nss-3.120.1",
     "pname": "nss",
-    "version": "3.120"
+    "version": "3.120.1"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
@@ -700,9 +700,9 @@
     "version": "8.3.30"
   },
   "php84": {
-    "name": "php-with-extensions-8.4.17",
+    "name": "php-with-extensions-8.4.18",
     "pname": "php-with-extensions",
-    "version": "8.4.17"
+    "version": "8.4.18"
   },
   "phpPackages.composer": {
     "name": "composer-2.9.5",
@@ -735,9 +735,9 @@
     "version": "3.10.7"
   },
   "postgresql": {
-    "name": "postgresql-17.7",
+    "name": "postgresql-17.8",
     "pname": "postgresql",
-    "version": "17.7"
+    "version": "17.8"
   },
   "postgresql14Packages.postgis": {
     "name": "postgis-3.6.1",
@@ -800,29 +800,29 @@
     "version": "1.2.2"
   },
   "postgresql_14": {
-    "name": "postgresql-14.20",
+    "name": "postgresql-14.21",
     "pname": "postgresql",
-    "version": "14.20"
+    "version": "14.21"
   },
   "postgresql_15": {
-    "name": "postgresql-15.15",
+    "name": "postgresql-15.16",
     "pname": "postgresql",
-    "version": "15.15"
+    "version": "15.16"
   },
   "postgresql_16": {
-    "name": "postgresql-16.11",
+    "name": "postgresql-16.12",
     "pname": "postgresql",
-    "version": "16.11"
+    "version": "16.12"
   },
   "postgresql_17": {
-    "name": "postgresql-17.7",
+    "name": "postgresql-17.8",
     "pname": "postgresql",
-    "version": "17.7"
+    "version": "17.8"
   },
   "postgresql_18": {
-    "name": "postgresql-18.1",
+    "name": "postgresql-18.2",
     "pname": "postgresql",
-    "version": "18.1"
+    "version": "18.2"
   },
   "prometheus": {
     "name": "prometheus-3.9.1",
@@ -1070,9 +1070,9 @@
     "version": "9.0.115"
   },
   "unifi": {
-    "name": "unifi-controller-10.0.162",
+    "name": "unifi-controller-10.1.84",
     "pname": "unifi-controller",
-    "version": "10.0.162"
+    "version": "10.1.84"
   },
   "unzip": {
     "name": "unzip-6.0",
@@ -1090,9 +1090,9 @@
     "version": "2.41.3"
   },
   "uv": {
-    "name": "uv-0.10.0",
+    "name": "uv-0.10.2",
     "pname": "uv",
-    "version": "0.10.0"
+    "version": "0.10.2"
   },
   "varnish": {
     "name": "varnish-7.7.3",
