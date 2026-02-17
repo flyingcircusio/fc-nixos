@@ -128,7 +128,8 @@ in
       supportsContainers = fclib.mkDisableDevhostSupport;
 
       hostName = mkOption {
-        default = fclib.fqdn { vlan = "fe"; };
+        default = "grafana.${config.flyingcircus.enc.parameters.resource_group}.fcio.net";
+        defaultText = "grafana.<resource group>.fcio.net";
         type = types.str;
         description = ''
           Host name for the Grafana frontend.

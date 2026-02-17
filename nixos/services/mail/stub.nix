@@ -56,7 +56,7 @@ in
           fclib.configFromFile "/etc/local/postfix/master.cf" ""
         );
         settings.main = {
-          hostname = role.mailHost;
+          myhostname = role.mailHost;
           recipient_canonical_maps = lib.mkDefault "pcre:${recipientCanonical}";
           # Trust all networks on the SRV interface.
           mynetworks = lib.mkDefault (

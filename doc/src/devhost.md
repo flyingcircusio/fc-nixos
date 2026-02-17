@@ -135,7 +135,10 @@ $ ./batou deploy --provision-rebuild dev
 The URL for the release metadata file can be looked up in our changelog.
 The general format of these URLs is `https://my.flyingcircus.io/releases/metadata/<environment_name>/<release_name>`.
 `release_name` is optional, and if not specified the latest version of the environment will be deployed with each batou deployment.
-This is probably what you want.
+This is probably what you want.  \
+By default, batou will continue to update the environment of the target VM according to your metadata even after the initial bootstrap.
+This enables updating existing devhost deployments just by adjusting metadata. To disable this behaviour,
+set `update_channel = False` in the `provisioner` config section.  \
 Only platform releases starting from 23.11 are supported for development VMs.
 
 Using the `provision-dynamic-hostname` switch will result in development VMs

@@ -1,3 +1,135 @@
+# Release 2026_005
+
+## NixOS XX.XX platform
+
+- Adjust the Thunderbird auto-configuration XML after the default ports for IMAP and SMTP were adjusted in accordance with RFC8314 4.1
+
+- devhost: allow deployments to skip channel updates.
+
+  (companion to https://github.com/flyingcircusio/batou/issues/525)
+
+- k3s: document maintenance integration. Agent nodes will be
+  gracefully drained of workloads before entering
+  maintenance. (PL-135128)
+
+- Improve logging and instrospection of kernel messages in early boot (PL-135139)
+
+
+
+# Release 2026_004
+
+## NixOS XX.XX platform
+
+- fc.check-ceph: check_snapshot_restore_fill ignores certain edge cases about empty pools or missing fill stats (PL-134230)
+
+- fc.check-ceph: check_snapshot_restore_fill refactoring away from librados python bindings (PL-131408)
+
+- k3s: allow service users to access the default Kubernetes config
+  file and interact with the cluster. (PL-134284)
+
+- ceph: stagger unset of "noup" flag at maintenance leave to reduce peering storm impact (PL-133952)
+
+- k3s: ensure that the frontend role does not set conflicting global
+  mode options in the haproxy configuration. This should avoid issues
+  when enabling the k3s roles in resource groups with existing haproxy
+  configuration. (PL-135086)
+
+- nginx/webgateway: all TLS certificates are monitored for expiration now, by connecting to the HTTPS endpoint (check names `nginx_https_*`) and checking the certificate file directly: `ssl_cert_acme_*` (as before) or `ssl_cert_nginx_*` (added for non-ACME certs). Before, we only generated monitoring checks for ACME certs. (PL-134018)
+
+- k3s: introduce a new NixOS option
+  `flyingcircus.kubernetes.network.enableIPv6` for creating Kubernetes
+  clusters with IPv6 and dual-stack networking enabled. Note that this
+  option should only be set when creating new clusters, and should not
+  be set for existing clusters. For further information, please see
+  the role documentation. (PL-133774)
+
+
+
+# Release 2026_003
+
+## Impact
+
+- restart of the postfix service due to configuration changes if the mailstub role is active
+
+
+## NixOS XX.XX platform
+
+- fix an issue with the Postfix configuration when using the mailstub service that would lead to an unintended hostname in SMTP HELO and EHLO commands
+
+- nginx: run logrotate daily (PL-135102)
+
+  This regressed with our 25.11 overhaul of the NGINX module.
+  Reverting to our previous behavior.
+
+
+
+# Release 2026_002
+
+## NixOS XX.XX platform
+
+- kvm_host: make evacuation timeout configurable via platform config (PL-134247)
+
+  This allows us to set shorter evacuation timeouts in our dev environment, to properly trigger QA for retry behaviour.
+
+
+
+# Release 2026_001
+
+## Impact
+
+- stashost-master, statshost-global: if you are using the default URL of `<hostname>.fe.<location>.fcio.net/grafana`, you need to change `flyingcircus.roles.statshost.hostName` to the URL you use.
+
+  Almost all instances already use the new URL `grafana.<resource group>.fcio.net`, so likely you don't need to change anything.
+
+
+## NixOS XX.XX platform
+
+- statshost-master: change default URL to `grafana.<resource group>.fcio.net` (PL-134242)
+
+- add a simple NixOS tests that verifies that loki is running and accepting the syslog
+
+- Adds a sensu check to check for ollama loading models into CPU memory which degrades performance. (PL-134226)
+
+
+
+# Release 2025_047
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- s3users: eliminate "--gen-secret" invocation. This further reduces failure potential in our internal S3 user handling (PL-133656)
+
+- nixos/mail: correct dns.zone file with a non-default dkimSelector (PL-134262)
+
+- devhost: start VMs only after network setup ran (PL-134208)
+
+- installer: ignore failures when setting IPMI usernames
+
+- KVM hosts: fix a regression in maintenance handling (PL-134247)
+  fc.qemu accidentally scrapped return codes set via sys.exit and replaced them with a 0, rendering maintenance guards ineffective. \
+  Has been released as a hotfix to affected hosts ahead of schedule.
+
+- mail: fix roundcube with STARTTLS deprecation (PL-134260)
+
+  Roundcube instances on 25.11 had problems with connecting to the mail server.
+  This change fixes this.
+
+
+
+# Release 2025_046
+
+## NixOS XX.XX platform
+
+- KVM hosts: fix a regression in maintenance handling (PL-134247)
+  fc.qemu accidentally scrapped return codes set via sys.exit and replaced them with a 0, rendering maintenance guards ineffective. \
+  Has been released as a hotfix to affected hosts ahead of schedule.
+
+
+
 # Release 2025_045
 
 ## Impact

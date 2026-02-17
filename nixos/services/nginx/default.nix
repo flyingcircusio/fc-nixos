@@ -528,6 +528,7 @@ in
               rotate = cfg.rotateLogs;
               create = "0644 nginx nginx";
               su = "nginx nginx";
+              frequency = "daily";
             };
           in
           {
