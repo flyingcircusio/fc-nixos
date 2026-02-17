@@ -247,7 +247,16 @@ in
         environment.systemPackages = [
           pkgs.rocmPackages.rocminfo
           pkgs.rocmPackages.rocm-smi
-          pkgs.nvtopPackages.amd
+          (pkgs.writeShellScript "nvtop-amd" ''
+            exec ${pkgs.nvtopPackages.amd}/bin/nvtop "$@"
+          '')
+          (pkgs.writeShellScript "nvtop-nvidia" ''
+            exec ${pkgs.nvtopPackages.nvidia}/bin/nvtop "$@"
+          '')
+          (pkgs.writeShellScript "nvtop-full" ''
+            exec ${pkgs.nvtopPackages.full}/bin/nvtop "$@"
+          '')
+          pkgs.nvtopPackages.full
         ];
 
         systemd.services.rocm-runtime-config = {
