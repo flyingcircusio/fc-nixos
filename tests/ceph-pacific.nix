@@ -228,6 +228,7 @@ import ./make-test-python.nix (
       ''
         import time
         import json
+        from pprint import pprint
 
         time_waiting = 0
         TEST_HOSTS = (host1, host2, host3)
@@ -275,15 +276,19 @@ import ./make-test-python.nix (
             try:
               t.assertIn(status["health"]["status"], ['HEALTH_OK', 'HEALTH_WARN'])
               t.assertEqual(int(status["monmap"]["num_mons"]), mons)
-              osdmap_stat = status["osdmap"]["osdmap"]
+              osdmap_stat = status["osdmap"]
               t.assertEqual(osdmap_stat["num_up_osds"], num_up_osds)
               t.assertEqual(osdmap_stat["num_in_osds"], num_in_osds)
               pgstate0 = status["pgmap"]["pgs_by_state"][0]
               t.assertEqual(pgstate0["count"], pgs)
               t.assertEqual(pgstate0["state_name"], "active+clean")
               t.assertTrue(status["mgrmap"]["available"])
-              t.assertEqual(len(status["mgrmap"]["standbys"]), mgrs-1)
+              t.assertEqual(status["mgrmap"]["num_standbys"], mgrs-1)
               break
+            except KeyError:
+              # aid debugging by printing the status:
+              pprint(status)
+              raise
             except AssertionError as e:
               if time.time() - start < 120:
                 time_waiting += tries*2
@@ -416,6 +421,7 @@ import ./make-test-python.nix (
           show(host2, 'ceph -s')
 
           show(host3, 'ceph -s')
+          show(host1, 'ceph mon dump')
           # this command may block on an unhealthy cluster with mon issues
           show(host1, 'ceph osd df tree')
           show(host1, "ps aux | grep ceph-mgr")
