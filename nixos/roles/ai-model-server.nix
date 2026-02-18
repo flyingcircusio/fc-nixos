@@ -187,6 +187,7 @@ in
           path = [
             pkgs.llama-cpp-rocm
             pkgs.rocmPackages.rocm-smi
+            "/run/current-system/sw" # for nvidia-x11 giving us nvidia-smi, which is used for GPU monitoring in Skvaider
           ];
 
           requires = [ "network-online.target" ];
