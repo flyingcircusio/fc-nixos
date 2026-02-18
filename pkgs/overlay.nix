@@ -15,12 +15,14 @@ let
   };
 
   nixpkgs-ceph-pacific =
+    # we build ceph pacific from a nixpkgs-23.11 branch which also holds
+    # a few additional modifications and updates to the original upstream packaging
     import
       (fetchFromGitHub {
-        hash = "sha256-qjsOsDo/PgjYfXPHydK2xowz6RZY7nxTnYSQV/cdO2Q=";
+        hash = "sha256-+LDp5xGdQlxu0xA7PgO7imZ+TKh2Eu/sSi7eRmAVizM=";
         owner = "flyingcircusio";
         repo = "nixpkgs";
-        rev = "5e14c144301d30eaef31249c04ad597ae1744855";
+        rev = "db221fbbc6089ae73024ec29b3cd4748c3b52923";
         # branch = "fc-ceph-pacific"
       })
       {
@@ -243,6 +245,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     in
     rec {
       inherit (patchedCeph) ceph ceph-client;
+      # XXX: ceph-client for now also contains *our* rbd-locktool executable.
+      # We should reconsider this once we are able to use ceph from the current nixpkgs.
       libceph = ceph.lib;
     };
 
