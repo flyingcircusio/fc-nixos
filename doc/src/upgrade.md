@@ -393,6 +393,8 @@ rabbitmq_unreachable_cluster_peers_count
 
 ## Other notable changes
 
+- The `imagemagick6` family of packages has known vulnerabilities and is not permitted by default anymore. Update your applications to work with a current version of imagemagick, or add this to `flyingcircus.permittedInsecurePackages`.
+
 ## Known issues
 
 None.
