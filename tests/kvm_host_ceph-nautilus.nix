@@ -9,6 +9,7 @@ import ./make-test-python.nix (
     # "--flake-finder --flake-runs=500 -x --no-cov"
     # "--show-setup"  # shows which fixtures have been set up / torn down
     clientCephRelease ? "nautilus",
+    serverCephRelease ? "nautilus",
     ...
   }:
   with testlib;
@@ -25,7 +26,11 @@ import ./make-test-python.nix (
         ...
       }:
       let
-        testPackage = if useCheckout then pkgs.fc.qemu-dev-nautilus else pkgs.fc.qemu-nautilus;
+        testPackage =
+          if useCheckout then
+            pkgs.fc."qemu-dev-${clientCephRelease}"
+          else
+            pkgs.fc."qemu-${clientCephRelease}";
       in
       {
 
@@ -190,11 +195,11 @@ import ./make-test-python.nix (
 
         flyingcircus.roles.ceph_osd = {
           enable = true;
-          cephRelease = "nautilus";
+          cephRelease = serverCephRelease;
         };
         flyingcircus.roles.ceph_mon = {
           enable = if id == 1 then true else false;
-          cephRelease = "nautilus";
+          cephRelease = serverCephRelease;
         };
         flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
         flyingcircus.services.ceph.extraSettings = {
