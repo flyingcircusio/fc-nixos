@@ -690,10 +690,26 @@
     "pname": "percona-server",
     "version": "8.0.44-35"
   },
-  "php72": {},
-  "php73": {},
-  "php74": {},
-  "php80": {},
+  "php72": {
+    "name": "php-with-extensions-7.2.34",
+    "pname": "php-with-extensions",
+    "version": "7.2.34"
+  },
+  "php73": {
+    "name": "php-with-extensions-7.3.33",
+    "pname": "php-with-extensions",
+    "version": "7.3.33"
+  },
+  "php74": {
+    "name": "php-with-extensions-7.4.33",
+    "pname": "php-with-extensions",
+    "version": "7.4.33"
+  },
+  "php80": {
+    "name": "php-with-extensions-8.0.30",
+    "pname": "php-with-extensions",
+    "version": "8.0.30"
+  },
   "php82": {
     "name": "php-with-extensions-8.2.30",
     "pname": "php-with-extensions",
