@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from typing import Generator
 
 import IPy
 from fc.ceph.util import run
@@ -58,7 +59,9 @@ class OpsLog:
             self.opslog_state = OpsLogState.read_from(self.state_file)
 
     @contextmanager
-    def get_pending_stats_by_day(self):
+    def get_pending_stats_by_day(
+        self,
+    ) -> Generator[dict[date, list[str]], None, None]:
         """
         Provide pending log objects from the timespan between the last processed hour and
         now. The current hour is left out because this is only running once a day once all stats
@@ -72,14 +75,14 @@ class OpsLog:
         max_date = datetime.now().replace(microsecond=0, second=0, minute=0)
         start = self.opslog_state.last_processed_datetime + timedelta(hours=1)
 
-        stats_by_day = {}
+        stats_by_day: dict[date, list[str]] = {}
 
         start_day = start.date()
         end_day = max_date.date()
 
         day = start_day
         while day <= end_day:
-            logs_by_hour = [[] for _ in range(0, 24)]
+            logs_by_hour: list[list[str]] = [[] for _ in range(0, 24)]
             for entry in run.json.radosgw_admin(
                 "log", "list", f"--date={day.strftime('%Y-%m-%d')}"
             ):
@@ -110,9 +113,9 @@ class OpsLog:
         self.opslog_state.write_to(self.state_file)
 
     def gc_log_objects(self):
-        last_day = opslog_state.last_processed_datetime.date()
+        last_date = self.opslog_state.last_processed_datetime.date()
         assert date.today() >= last_date, (
-            f"last_processed_datetime ({self.last_processed_datetime} must not be in the future)"
+            f"last_processed_datetime ({self.opslog_state.last_processed_datetime} must not be in the future)"
         )
 
         day = self.opslog_state.last_gced_day + timedelta(days=1)
