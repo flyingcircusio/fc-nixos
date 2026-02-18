@@ -70,11 +70,10 @@ rec {
       repo = "fc.qemu";
       # The release tooling didn't upgrade properly so we had to pick a specific
       # commit instead.
-      rev = "5ce500974496a2bbf18295f990ee1a2c7f2a915d";
-      hash = "sha256-6kRGa5PFlWro464EgzFXGMV5CaRDTI1e+9Hmfg6RVLo=";
+      rev = "e41af01c80eea0d78e65de45744eda280db312dd";
+      hash = "sha256-hhd0NC59UAtiC0gsTrNihnv+oT+nkCafk62tXJSnhU4=";
     };
     fc-ceph = ceph;
-    # FIXME: still broken
     qemu_ceph = pkgs.qemu-ceph-pacific;
     ceph_client = pkgs.ceph-pacific.ceph-client;
     python3Packages = pkgs.python311Packages;
@@ -84,10 +83,10 @@ rec {
   # it will break hydra and we can't cleanly filter it out of the automatic
   # test discovery at the moment.
   #
-  # qemu-dev-nautilus = qemu-nautilus.overrideAttrs (old: {
+  # qemu-dev-pacific = qemu-pacific.overrideAttrs (old: {
   #   # for tests and development checkouts on kvm hosts:
   #   src = ../../../../../fc.qemu/.;
-  #   # for nix-shell . -A fc.qemu-dev-nautilus
+  #   # for nix-shell . -A fc.qemu-dev-pacific
   #   # src = ../../../fc.qemu/.;
   # });
 
