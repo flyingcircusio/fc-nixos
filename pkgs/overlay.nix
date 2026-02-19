@@ -345,6 +345,13 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   );
 
   linuxKernelGPU = self.linux_6_18.override {
+    argsOverride = rec {
+      src = super.fetchurl {
+        url = "mirror://kernel/linux/kernel/v6.x/linux-${version}.tar.xz";
+        sha256 = "0ibayrvrnw2ls7si78vdqnr20mm1d3z0g6a0ykndvsn5vdax5x9a";
+      };
+      version = "6.18.13";
+    };
     ignoreConfigErrors = true;
   };
 
