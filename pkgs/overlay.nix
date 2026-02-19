@@ -348,7 +348,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     argsOverride = rec {
       src = super.fetchurl {
         url = "mirror://kernel/linux/kernel/v6.x/linux-${version}.tar.xz";
-        sha256 = "0ibayrvrnw2ls7si78vdqnr20mm1d3z0g6a0ykndvsn5vdax5x9a";
+        hash = "sha256-7Sw8Vf045oNsCU/ONW8lZ/lRYTC3M1SimFeWA2jFaH8=";
       };
       version = "6.18.13";
     };
