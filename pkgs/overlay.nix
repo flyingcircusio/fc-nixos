@@ -618,3 +618,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
 
   xtrabackup = lib.warn "The `xtrabackup` package has been renamed to `percona-xtrabackup`." self.percona-xtrabackup;
 }
+// lib.genAttrs [ "imagemagick6" "imagemagick6Big" "imagemagick6_light" ] (
+  pkgname:
+  lib.warn
+    "${pkgname}: imagemagick6 has known vulnerabilites. From platform 26.05 on this package is not permitted by default anymore. Update your applications to work with a current version of imagemagick, or add this to `flyingcircus.permittedInsecurePackages`."
+    super."${pkgname}"
+)
