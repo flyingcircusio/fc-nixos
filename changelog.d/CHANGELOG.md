@@ -1,3 +1,15 @@
+# Release 2026_006
+
+## NixOS XX.XX platform
+
+- Enable Websocket connections between the Grafana frontend and backend for more efficient live updates (PL-134309)
+
+- redis: fix high entropy in metrics labels (dbN_distrib_*) (PL-135178)
+
+- Update port-releated documentation for the mailserver role (PL-135101)
+
+
+
 # Release 2026_005
 
 ## NixOS XX.XX platform
