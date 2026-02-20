@@ -351,6 +351,7 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
         hash = "sha256-7Sw8Vf045oNsCU/ONW8lZ/lRYTC3M1SimFeWA2jFaH8=";
       };
       version = "6.18.13";
+      modDirVersion = version;
     };
     ignoreConfigErrors = true;
   };
