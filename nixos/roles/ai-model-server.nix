@@ -147,6 +147,8 @@ in
 
         boot.kernelPackages = lib.mkForce (pkgs.linuxPackagesFor pkgs.linuxKernelGPU);
 
+        boot.kernelModules = [ "amdgpu" ];
+
         services.ollama = {
           enable = false;
           host = fclib.mkPlatform config.networking.hostName;
