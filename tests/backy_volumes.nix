@@ -7,13 +7,11 @@ import ./make-test-python.nix (
   }:
   let
     migrationScript = pkgs.writeShellScript "backy-reencrypter" ''
-      PLAIN_DEVICE="/dev/disk/by-id/md-name-legacyBacky:md0"
-      systemctl stop backy.service
+      PLAIN_DEVICE="/dev/disk/by-id/md-name-legacyBacky:backyPlain"
       umount /srv/backy
-      systemd-run --property=Type=oneshot -r -u backy-reencrypt cryptsetup -q reencrypt --encrypt  --header /srv/backy.luks --pbkdf=argon2id -d /mnt/keys/$(hostname).key --resilience=journal $PLAIN_DEVICE backy
-      sleep 30
+      systemd-run --property=Type=oneshot -r -u backy-reencrypt cryptsetup -q reencrypt --encrypt  --header /srv/backy.luks --pbkdf=argon2id -d /mnt/keys/$(hostname).key --resilience=journal "$PLAIN_DEVICE" backy
+      udevadm settle
       mount /dev/mapper/backy /srv/backy
-      systemctl start backy.service
       # create an early header backup
       cp /srv/backy.luks /mnt/keys/
     '';
@@ -35,6 +33,9 @@ import ./make-test-python.nix (
         flyingcircus.services.ceph.client.enable = lib.mkForce false;
         flyingcircus.services.consul.enable = lib.mkForce false;
         flyingcircus.enc.name = "machine";
+        # backy fails to start anyways due to missing enc data, and we do not
+        # actually require the daemon here
+        systemd.services.backy.enable = lib.mkForce false;
 
         virtualisation.emptyDiskImages = [
           1000
@@ -48,7 +49,7 @@ import ./make-test-python.nix (
         virtualisation.fileSystems."/mnt/keys" =
           config.flyingcircus.infrastructure.fullDiskEncryption.fsOptions;
         virtualisation.fileSystems."/srv/backy" = config.flyingcircus.roles.backyserver.fsOptions;
-        # Cotherwise fc-luks OOMs
+        # otherwise fc-luks OOMs
         virtualisation.memorySize = 1200;
       };
 
@@ -58,8 +59,9 @@ import ./make-test-python.nix (
 
     nodes = {
       # as specialisations do not persist reboots, just sequentially use 2 different machines with slightly adjusted config
+      # XXX: Once all re-encrypted backup hosts are gone, this shall be removed
       legacyBacky = mkMachine {
-        blockDevice = "/dev/disk/by-id/md-name-legacyBacky:md0";
+        blockDevice = "/dev/disk/by-id/md-name-legacyBacky:backyPlain";
         externalCryptHeader = true;
       };
       newBacky = mkMachine { };
@@ -99,19 +101,20 @@ import ./make-test-python.nix (
 
         print(legacyBacky.succeed("lsblk"))
         # preparing an unencrypted legacy RAID setup
-        legacyBacky.succeed(f"mdadm --create /dev/md/md0 --level=6 --bitmap=internal --raid-devices=4 /dev/vdb /dev/vdc /dev/vdd /dev/vde > /dev/stderr")
-        legacyBacky.succeed(f"mdadm --add /dev/md/md0 /dev/vdf > /dev/stderr")
+        legacyBacky.succeed(f"mdadm --create backyPlain --level=6 --bitmap=internal --raid-devices=4 /dev/vdb /dev/vdc /dev/vdd /dev/vde > /dev/stderr")
+        legacyBacky.wait_until_succeeds("stat /dev/md/backyPlain")
+        legacyBacky.succeed(f"mdadm --add /dev/md/backyPlain /dev/vdf > /dev/stderr")
 
         print(legacyBacky.succeed("ls -l /dev/disk/by-id/"))
 
-        legacyBacky.succeed(f"mkfs.xfs -L backy /dev/md/md0 > /dev/stderr")
+        legacyBacky.succeed(f"mkfs.xfs -L backy /dev/md/backyPlain > /dev/stderr")
         legacyBacky.execute("systemctl daemon-reload")
         legacyBacky.succeed("systemctl start srv-backy.mount > /dev/stderr")
         print(legacyBacky.succeed("lsblk"))
 
         setupKeystore(legacyBacky)
 
-        with subtest("manual reencryptioon of a legacy device:"):
+        with subtest("manual reencryption of a legacy device:"):
           legacyBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/stderr")
           legacyBacky.execute("echo FOOTEST > /srv/backy/testfile")
           legacyBacky.succeed("${migrationScript}")
@@ -131,7 +134,8 @@ import ./make-test-python.nix (
 
         with subtest("Creating new backy volume from scratch"):
           newBacky.succeed('echo -e "adminphrase\ny\n" | setsid -w fc-luks backup create /dev/vdb /dev/vdc /dev/vdd /dev/vde /dev/vdf > /dev/stderr')
-          newBacky.succeed("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/stderr")
+          newBacky.execute("udevadm settle")
+          newBacky.wait_until_succeeds("${pkgs.util-linux}/bin/findmnt /srv/backy > /dev/stderr", timeout=30) # allow retries, as there might be delays due to things like fs checks
 
         test_reboot_automount(newBacky)
 
