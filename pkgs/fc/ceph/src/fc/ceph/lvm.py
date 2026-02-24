@@ -69,13 +69,14 @@ class MdraidDevice(GenericBlockDevice):
         obj = cls(name)
         run.mdadm(
             "--create",
-            f"/dev/md/{obj.name}",
+            obj.name,
             "--level=6",
             "--name=backy",
             "--bitmap=internal",
             f"--raid-devices={len(main_disks)}",
             *main_disks,
         )
+        run.udevadm("settle")
         # add spare disk
         run.mdadm("--add", obj.blockdevice, spare_disk)
         return obj
@@ -379,6 +380,7 @@ class LogicalVolume(GenericLogicalVolume):
             size, f"-n{self.name}",
             vg_name,
         )  # fmt: skip
+        run.udevadm("settle")
 
     @staticmethod
     def ensure_vg(vg_name: str, base_device: Optional[GenericBlockDevice]):
@@ -394,6 +396,7 @@ class LogicalVolume(GenericLogicalVolume):
         run.pvcreate(blockdevice_underlay)
         run.vgcreate(vg_name, blockdevice_underlay)
         base_device.ensure_partition_type("8e00")
+        run.udevadm("settle")
 
     def purge(self, lv_only=False):
         # Delete LVs
@@ -518,6 +521,7 @@ class EncryptedLogicalVolume(GenericLogicalVolume):
                 self.underlay.device,
                 self.name,
             )  # fmt: skip
+            run.udevadm("settle")
         self._ready = True
 
     def deactivate(self):
@@ -584,6 +588,31 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
     MOUNT_OPTS = "nodev,nosuid,noatime,nodiratime,logbsize=256k"
     FSTYPE = "xfs"
 
+    @staticmethod
+    def mkfs(device: str, label: str, opts: list[str], retries: int = 5):
+        """Create XFS filesystem with retry on 'Device or resource busy' errors."""
+        for attempt in range(retries):
+            try:
+                run.mkfs_xfs("-f", "-L", label, *opts, device)
+                run.sync()
+                return
+            except CalledProcessError as e:
+                stderr = (
+                    e.stderr.decode("ascii", errors="replace")
+                    if e.stderr
+                    else ""
+                )
+                if "Device or resource busy" in stderr:
+                    if attempt < retries - 1:
+                        console.print(
+                            f"Device {device} busy, retrying...",
+                            style="yellow",
+                        )
+                        run.udevadm("settle")
+                        time.sleep(1)
+                        continue
+                raise
+
     def __init__(self, name: str, mountpoint: str, automount=False):
         self.name = name
         self.mountpoint = mountpoint
@@ -619,13 +648,7 @@ class XFSVolume(AutomountActivationMixin, GenericCephVolume):
             size=size,
         )
         # Create OSD filesystem
-        run.mkfs_xfs(
-            "-f",
-            "-L", self.name,
-            *self.MKFS_OPTS,
-            self.device,
-        )  # fmt: skip
-        run.sync()
+        self.mkfs(self.device, self.name, self.MKFS_OPTS)
         self.activate()
 
     def activate(self):
