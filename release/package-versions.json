@@ -165,9 +165,9 @@
     "version": "1.12.10"
   },
   "erlang": {
-    "name": "erlang-28.3.1",
+    "name": "erlang-28.3.2",
     "pname": "erlang",
-    "version": "28.3.1"
+    "version": "28.3.2"
   },
   "exif": {
     "name": "exif-0.6.22",
