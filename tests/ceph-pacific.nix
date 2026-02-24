@@ -425,9 +425,9 @@ import ./make-test-python.nix (
           # this command may block on an unhealthy cluster with mon issues
           show(host1, 'ceph osd df tree')
           show(host1, "ps aux | grep ceph-mgr")
-          assert_clean_cluster(host1, 3, 3, 3, 64)
-          assert_clean_cluster(host2, 3, 3, 3, 64)
-          assert_clean_cluster(host3, 3, 3, 3, 64)
+          assert_clean_cluster(host1, 3, 3, 3, 65)
+          assert_clean_cluster(host2, 3, 3, 3, 65)
+          assert_clean_cluster(host3, 3, 3, 3, 65)
 
         # Now that we have a working cluster, lets exercise:
 
@@ -442,7 +442,7 @@ import ./make-test-python.nix (
           assert '"user"' in result
           # New pools = more PGs
           show(host2, 'ceph osd lspools')
-          assert_clean_cluster(host2, 3, 3, 3, 320)
+          assert_clean_cluster(host2, 3, 3, 3, 321)
 
         with subtest("S3 works"):
           import configparser
@@ -495,7 +495,7 @@ import ./make-test-python.nix (
           show(host1, 'rm /var/log/ceph/*mon*')
           show(host1, 'lsblk')
 
-          assert_clean_cluster(host2, 2, 3, 2, 448)
+          assert_clean_cluster(host2, 2, 3, 2, 449)
 
           host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph mon create --size 500m > /dev/stderr')
           host1.execute('echo -e "adminphrase\n" | setsid -w fc-ceph mgr create --size 500m > /dev/stderr')
@@ -503,11 +503,11 @@ import ./make-test-python.nix (
           show(host1, 'tail -n 500 /var/log/ceph/*mon*')
           show(host1, 'tail -n 500 /var/log/ceph/*mgr*')
 
-          assert_clean_cluster(host2, 3, 3, 3, 448)
+          assert_clean_cluster(host2, 3, 3, 3, 449)
 
         with subtest("Reactivate all OSDs on host1"):
           host1.succeed('fc-ceph osd reactivate all')
-          assert_clean_cluster(host2, 3, 3, 3, 448)
+          assert_clean_cluster(host2, 3, 3, 3, 449)
 
         with subtest("Test strict safety check of destroy and rebuild"):
           host1.fail("fc-ceph osd destroy --strict-safety-check all > /dev/stderr")
@@ -515,13 +515,13 @@ import ./make-test-python.nix (
 
         with subtest("Initialize extra OSD to enable safe rebuilding (bluestore)"):
           host1.execute('fc-ceph osd create-bluestore --no-encrypt /dev/vdd > /dev/stderr')
-          assert_clean_cluster(host2, 3, 4, 3, 448)
+          assert_clean_cluster(host2, 3, 4, 3, 449)
 
         with subtest("Rebuild the 2nd OSD on host 1 from bluestore to bluestore and disable encryption without redundancy loss"):
           # set OSDs out and wait for cluster to rebalance
           host1.execute('ceph osd out 3')
           host1.sleep(5)
-          assert_clean_cluster(host2, 3, (4, 3), 3, 448)
+          assert_clean_cluster(host2, 3, (4, 3), 3, 449)
           # then rebuild
           host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --no-encrypt --strict-safety-check 3 > /dev/stderr')
           # and set the osds in again
@@ -529,22 +529,22 @@ import ./make-test-python.nix (
           show(host1, "lsblk")
           show(host1, "vgs")
           host1.sleep(5)
-          assert_clean_cluster(host2, 3, 4, 3, 448)
+          assert_clean_cluster(host2, 3, 4, 3, 449)
 
         with subtest("Rebuild all OSDs on host 1 and ensure encryption is enabled"):
           host1.succeed('echo -e "adminphrase\n" | setsid -w fc-ceph osd rebuild --encrypt --no-safety-check all > /dev/stderr')
-          assert_clean_cluster(host2, 3, 4, 3, 448)
+          assert_clean_cluster(host2, 3, 4, 3, 449)
 
         with subtest("Destroy the 2nd OSD on host 1 without redundancy loss"):
           # set OSDs out and wait for cluster to rebalance
           host1.execute('ceph osd out 3')
           host1.sleep(5)
-          assert_clean_cluster(host2, 3, (4, 3), 3, 448)
+          assert_clean_cluster(host2, 3, (4, 3), 3, 449)
           # then destroy
           host1.succeed('fc-ceph osd destroy --strict-safety-check 3 > /dev/stderr')
           show(host1, "lsblk")
           show(host1, "vgs")
-          assert_clean_cluster(host2, 3, 3, 3, 448)
+          assert_clean_cluster(host2, 3, 3, 3, 449)
 
         # from now on always default to allowing some reduced redundancy to save time
 
@@ -552,14 +552,14 @@ import ./make-test-python.nix (
           retry_attempts(host2, 'fc-ceph osd rebuild all > /dev/stderr')
           show(host1, "lsblk")
           show(host1, "vgs")
-          assert_clean_cluster(host3, 3, 3, 3, 448)
+          assert_clean_cluster(host3, 3, 3, 3, 449)
 
         with subtest("Deactivate and activate single OSD on host 1"):
           host1.fail('fc-ceph osd deactivate --strict-safety-check 0')
           host1.succeed('fc-ceph osd deactivate 0')
           host1.succeed('fc-ceph osd activate 0')
           status = show(host2, 'ceph -s')
-          assert_clean_cluster(host2, 3, 3, 3, 448)
+          assert_clean_cluster(host2, 3, 3, 3, 449)
 
         with subtest("Test destroy safety check and its override, destroy, recreate, recover OSDs"):
           host2.succeed('fc-ceph osd destroy all > /dev/stderr')
@@ -572,7 +572,7 @@ import ./make-test-python.nix (
           # re-provision the 2 OSDs and allow the cluster to recover
           host2.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=internal /dev/vdc > /dev/stderr')
           host3.succeed('fc-ceph osd create-bluestore --no-encrypt --wal=external /dev/vdc > /dev/stderr')
-          assert_clean_cluster(host2, 3, 3, 3, 448)
+          assert_clean_cluster(host2, 3, 3, 3, 449)
 
         # Maintenance integration
         with subtest("Check maintenance integration"):
@@ -598,7 +598,7 @@ import ./make-test-python.nix (
           assert "systemctl start fc-ceph-rgw" in result, "rgw not started"
           assert "fc-ceph maintenance leave" in result, "maintenance not left"
 
-          assert_clean_cluster(host2, 3, 3, 3, 448)
+          assert_clean_cluster(host2, 3, 3, 3, 449)
 
         # TODO: include test for rbd map rbdnamer udev rule functionality, after having rebased onto PL-130691
 
