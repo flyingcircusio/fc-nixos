@@ -30,6 +30,7 @@ let
     rgwData = "/srv/ceph/radosgw/ceph-$id";
     rgwEnableOpsLog = true;
     rgwOpsLogRados = true;
+    rgwLogObjectNameUtc = true;
     rgwMimeTypesFile = "${pkgs.mailcap}/etc/mime.types";
     debugRados = "1 5";
     rgwFrontends = "beast port=80";

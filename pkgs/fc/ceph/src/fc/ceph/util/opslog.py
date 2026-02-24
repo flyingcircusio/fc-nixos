@@ -2,7 +2,7 @@ import json
 import re
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Generator
 
@@ -72,7 +72,9 @@ class OpsLog:
         """
 
         # Logs are recorded by hour
-        max_date = datetime.now().replace(microsecond=0, second=0, minute=0)
+        max_date = datetime.now(tz=UTC).replace(
+            microsecond=0, second=0, minute=0
+        )
         start = self.opslog_state.last_processed_datetime + timedelta(hours=1)
 
         stats_by_day: dict[date, list[str]] = {}
