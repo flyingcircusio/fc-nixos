@@ -56,7 +56,6 @@ let
   inherit (super)
     fetchpatch
     fetchFromGitHub
-    fetchurl
     lib
     ;
   inherit (builtins) hasAttr storePath;
@@ -352,6 +351,12 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       };
       version = "6.18.13";
       modDirVersion = version;
+      kernelPatches = self.linux_6_18.kernelPatches ++ [
+        {
+          name = "amd-w7900-crash-preview";
+          patch = ./linux-amd-w7900-crash-preview.patch;
+        }
+      ];
     };
     ignoreConfigErrors = true;
   };
