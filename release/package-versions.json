@@ -25,9 +25,9 @@
     "version": "1.18.1"
   },
   "awscli": {
-    "name": "awscli-1.42.18",
+    "name": "awscli-1.44.21",
     "pname": "awscli",
-    "version": "1.42.18"
+    "version": "1.44.21"
   },
   "awscli2": {
     "name": "awscli2-2.33.2",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-145.0.7632.67",
+    "name": "chromedriver-unwrapped-145.0.7632.109",
     "pname": "chromedriver-unwrapped",
-    "version": "145.0.7632.67"
+    "version": "145.0.7632.109"
   },
   "chromium": {
-    "name": "chromium-145.0.7632.67",
+    "name": "chromium-145.0.7632.109",
     "pname": "chromium",
-    "version": "145.0.7632.67"
+    "version": "145.0.7632.109"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.5",
@@ -110,9 +110,9 @@
     "version": "2.2.1"
   },
   "coreutils": {
-    "name": "coreutils-9.9",
+    "name": "coreutils-9.10",
     "pname": "coreutils",
-    "version": "9.9"
+    "version": "9.10"
   },
   "coturn": {
     "name": "coturn-4.8.0",
@@ -120,9 +120,9 @@
     "version": "4.8.0"
   },
   "curl": {
-    "name": "curl-8.17.0",
+    "name": "curl-8.18.0",
     "pname": "curl",
-    "version": "8.17.0"
+    "version": "8.18.0"
   },
   "cyrus_sasl": {
     "name": "cyrus-sasl-2.1.28",
@@ -145,9 +145,9 @@
     "version": "2.92"
   },
   "docker": {
-    "name": "docker-29.2.0",
+    "name": "docker-29.2.1",
     "pname": "docker",
-    "version": "29.2.0"
+    "version": "29.2.1"
   },
   "docker-compose": {
     "name": "docker-compose-5.0.2",
@@ -160,14 +160,14 @@
     "version": "2.3.21.1"
   },
   "element-web": {
-    "name": "element-web-1.12.9",
+    "name": "element-web-1.12.10",
     "pname": "element-web",
-    "version": "1.12.9"
+    "version": "1.12.10"
   },
   "erlang": {
-    "name": "erlang-28.3.1",
+    "name": "erlang-28.3.2",
     "pname": "erlang",
-    "version": "28.3.1"
+    "version": "28.3.2"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-147.0.3",
+    "name": "firefox-147.0.4",
     "pname": "firefox",
-    "version": "147.0.3"
+    "version": "147.0.4"
   },
   "gcc": {
     "name": "gcc-wrapper-15.2.0",
@@ -215,9 +215,9 @@
     "version": "10.06.0"
   },
   "git": {
-    "name": "git-2.52.0",
+    "name": "git-2.53.0",
     "pname": "git",
-    "version": "2.52.0"
+    "version": "2.53.0"
   },
   "gitaly": {
     "name": "gitaly-18.8.4",
@@ -260,7 +260,7 @@
     "version": "18.8.4"
   },
   "glibc": {
-    "name": "glibc-2.42-47",
+    "name": "glibc-2.42-51",
     "pname": "glibc",
     "version": "2.42"
   },
@@ -270,19 +270,19 @@
     "version": "4.4.1"
   },
   "gnupg": {
-    "name": "gnupg-2.4.8",
+    "name": "gnupg-2.4.9",
     "pname": "gnupg",
-    "version": "2.4.8"
+    "version": "2.4.9"
   },
   "go": {
-    "name": "go-1.25.5",
+    "name": "go-1.25.7",
     "pname": "go",
-    "version": "1.25.5"
+    "version": "1.25.7"
   },
   "grafana": {
-    "name": "grafana-12.3.2",
+    "name": "grafana-12.3.3",
     "pname": "grafana",
-    "version": "12.3.2"
+    "version": "12.3.3"
   },
   "grub2": {
     "name": "grub-2.12.1",
@@ -290,24 +290,19 @@
     "version": "2.12.1"
   },
   "haproxy": {
-    "name": "haproxy-3.3.3",
+    "name": "haproxy-3.3.4",
     "pname": "haproxy",
-    "version": "3.3.3"
+    "version": "3.3.4"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-12",
+    "name": "imagemagick-7.1.2-13",
     "pname": "imagemagick",
-    "version": "7.1.2-12"
-  },
-  "imagemagick6": {
-    "name": "imagemagick-6.9.13-38",
-    "pname": "imagemagick",
-    "version": "6.9.13-38"
+    "version": "7.1.2-13"
   },
   "inetutils": {
-    "name": "inetutils-2.6",
+    "name": "inetutils-2.7",
     "pname": "inetutils",
-    "version": "2.6"
+    "version": "2.7"
   },
   "iperf3": {
     "name": "iperf-3.20",
@@ -320,9 +315,9 @@
     "version": "1.9.4-unstable-2025-06-10"
   },
   "jdk": {
-    "name": "openjdk-21.0.9+10",
+    "name": "openjdk-21.0.10+7",
     "pname": "openjdk",
-    "version": "21.0.9+10"
+    "version": "21.0.10+7"
   },
   "jetbrains.jdk": {
     "name": "jetbrains-jdk-jcef-21.0.9-b1163.86",
@@ -355,29 +350,29 @@
     "version": "1.8.1"
   },
   "jre": {
-    "name": "openjdk-21.0.9+10",
+    "name": "openjdk-21.0.10+7",
     "pname": "openjdk",
-    "version": "21.0.9+10"
+    "version": "21.0.10+7"
   },
   "k3s": {
-    "name": "k3s-1.34.3+k3s3",
+    "name": "k3s-1.34.4+k3s1",
     "pname": "k3s",
-    "version": "1.34.3+k3s3"
+    "version": "1.34.4+k3s1"
   },
   "k3s_1_32": {
-    "name": "k3s-1.32.11+k3s3",
+    "name": "k3s-1.32.12+k3s1",
     "pname": "k3s",
-    "version": "1.32.11+k3s3"
+    "version": "1.32.12+k3s1"
   },
   "k3s_1_33": {
-    "name": "k3s-1.33.7+k3s3",
+    "name": "k3s-1.33.8+k3s1",
     "pname": "k3s",
-    "version": "1.33.7+k3s3"
+    "version": "1.33.8+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.5.3",
+    "name": "keycloak-26.5.4",
     "pname": "keycloak",
-    "version": "26.5.3"
+    "version": "26.5.4"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -445,14 +440,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.70",
+    "name": "linux-6.12.74",
     "pname": "linux",
-    "version": "6.12.70"
+    "version": "6.12.74"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.70",
+    "name": "linux-6.12.74",
     "pname": "linux",
-    "version": "6.12.70"
+    "version": "6.12.74"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -490,8 +485,8 @@
     "version": "5.5.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.147.1",
-    "pname": "matrix-synapse-wrapped",
+    "name": "matrix-synapse-1.147.1",
+    "pname": "matrix-synapse",
     "version": "1.147.1"
   },
   "mcpp": {
@@ -515,9 +510,9 @@
     "version": "2.4.0"
   },
   "mstflint": {
-    "name": "mstflint-4.34.1-2",
+    "name": "mstflint-4.34.1-4",
     "pname": "mstflint",
-    "version": "4.34.1-2"
+    "version": "4.34.1-4"
   },
   "mysql": {
     "name": "mariadb-server-11.4.9",
@@ -575,14 +570,14 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.120.1",
+    "name": "nss-3.121",
     "pname": "nss",
-    "version": "3.120.1"
+    "version": "3.121"
   },
   "nvme-cli": {
-    "name": "nvme-cli-2.15",
+    "name": "nvme-cli-2.16",
     "pname": "nvme-cli",
-    "version": "2.15"
+    "version": "2.16"
   },
   "ollama-rocm": {
     "name": "ollama-0.15.6",
@@ -590,9 +585,9 @@
     "version": "0.15.6"
   },
   "openjdk": {
-    "name": "openjdk-21.0.9+10",
+    "name": "openjdk-21.0.10+7",
     "pname": "openjdk",
-    "version": "21.0.9+10"
+    "version": "21.0.10+7"
   },
   "openjpeg": {
     "name": "openjpeg-2.5.4",
@@ -620,9 +615,9 @@
     "version": "10.2p1"
   },
   "openssl": {
-    "name": "openssl-3.6.0",
+    "name": "openssl-3.6.1",
     "pname": "openssl",
-    "version": "3.6.0"
+    "version": "3.6.1"
   },
   "openssl_1_1": {
     "name": "openssl-1.1.1w",
@@ -736,14 +731,14 @@
     "version": "0.29.2"
   },
   "podman": {
-    "name": "podman-5.7.1",
+    "name": "podman-5.8.0",
     "pname": "podman",
-    "version": "5.7.1"
+    "version": "5.8.0"
   },
   "poetry": {
-    "name": "poetry-2.2.1",
+    "name": "poetry-2.3.1",
     "pname": "poetry",
-    "version": "2.2.1"
+    "version": "2.3.1"
   },
   "polkit": {
     "name": "polkit-127",
@@ -751,9 +746,9 @@
     "version": "127"
   },
   "postfix": {
-    "name": "postfix-3.10.7",
+    "name": "postfix-3.10.8",
     "pname": "postfix",
-    "version": "3.10.7"
+    "version": "3.10.8"
   },
   "postgresql": {
     "name": "postgresql-17.8",
@@ -761,9 +756,9 @@
     "version": "17.8"
   },
   "postgresql14Packages.postgis": {
-    "name": "postgis-3.6.1",
+    "name": "postgis-3.6.2",
     "pname": "postgis",
-    "version": "3.6.1"
+    "version": "3.6.2"
   },
   "postgresql14Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -771,9 +766,9 @@
     "version": "1.2.2"
   },
   "postgresql15Packages.postgis": {
-    "name": "postgis-3.6.1",
+    "name": "postgis-3.6.2",
     "pname": "postgis",
-    "version": "3.6.1"
+    "version": "3.6.2"
   },
   "postgresql15Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -781,9 +776,9 @@
     "version": "1.2.2"
   },
   "postgresql16Packages.postgis": {
-    "name": "postgis-3.6.1",
+    "name": "postgis-3.6.2",
     "pname": "postgis",
-    "version": "3.6.1"
+    "version": "3.6.2"
   },
   "postgresql16Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -791,9 +786,9 @@
     "version": "1.2.2"
   },
   "postgresql17Packages.postgis": {
-    "name": "postgis-3.6.1",
+    "name": "postgis-3.6.2",
     "pname": "postgis",
-    "version": "3.6.1"
+    "version": "3.6.2"
   },
   "postgresql17Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -801,9 +796,9 @@
     "version": "1.2.2"
   },
   "postgresql18Packages.postgis": {
-    "name": "postgis-3.6.1",
+    "name": "postgis-3.6.2",
     "pname": "postgis",
-    "version": "3.6.1"
+    "version": "3.6.2"
   },
   "postgresql18Packages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -811,9 +806,9 @@
     "version": "1.2.2"
   },
   "postgresqlPackages.postgis": {
-    "name": "postgis-3.6.1",
+    "name": "postgis-3.6.2",
     "pname": "postgis",
-    "version": "3.6.1"
+    "version": "3.6.2"
   },
   "postgresqlPackages.temporal_tables": {
     "name": "temporal_tables-1.2.2",
@@ -851,9 +846,9 @@
     "version": "3.9.1"
   },
   "promtail": {
-    "name": "promtail-3.6.5",
+    "name": "promtail-3.6.6",
     "pname": "promtail",
-    "version": "3.6.5"
+    "version": "3.6.6"
   },
   "prosody": {
     "name": "prosody-13.0.3",
@@ -861,15 +856,11 @@
     "version": "13.0.3"
   },
   "python3": {
-    "name": "python3-3.13.11",
+    "name": "python3-3.13.12",
     "pname": "python3",
-    "version": "3.13.11"
+    "version": "3.13.12"
   },
-  "python310": {
-    "name": "python3-3.10.19",
-    "pname": "python3",
-    "version": "3.10.19"
-  },
+  "python310": {},
   "python311": {
     "name": "python3-3.11.14",
     "pname": "python3",
@@ -886,9 +877,9 @@
     "version": "3.8.11"
   },
   "python3Packages.boto3": {
-    "name": "python3.13-boto3-1.40.18",
+    "name": "python3.13-boto3-1.42.31",
     "pname": "boto3",
-    "version": "1.40.18"
+    "version": "1.42.31"
   },
   "python3Packages.click": {
     "name": "python3.13-click-8.3.1",
@@ -911,9 +902,9 @@
     "version": "25.3"
   },
   "python3Packages.pystemd": {
-    "name": "python3.13-pystemd-0.13.4",
+    "name": "python3.13-pystemd-0.15.3",
     "pname": "pystemd",
-    "version": "0.13.4"
+    "version": "0.15.3"
   },
   "python3Packages.pyyaml": {
     "name": "python3.13-pyyaml-6.0.3",
@@ -931,9 +922,9 @@
     "version": "14.2.0"
   },
   "python3Packages.rich-rst": {
-    "name": "python3.13-rich-rst-1.3.1",
+    "name": "python3.13-rich-rst-1.3.2",
     "pname": "rich-rst",
-    "version": "1.3.1"
+    "version": "1.3.2"
   },
   "python3Packages.structlog": {
     "name": "python3.13-structlog-25.5.0",
@@ -951,9 +942,9 @@
     "version": "235"
   },
   "python3Packages.urllib3": {
-    "name": "python3.13-urllib3-2.6.0",
+    "name": "python3.13-urllib3-2.6.3",
     "pname": "urllib3",
-    "version": "2.6.0"
+    "version": "2.6.3"
   },
   "qemu-ceph-nautilus": {
     "name": "qemu-6.0.0",
@@ -961,14 +952,14 @@
     "version": "6.0.0"
   },
   "rabbitmq-server": {
-    "name": "rabbitmq-server-4.2.3",
+    "name": "rabbitmq-server-4.2.4",
     "pname": "rabbitmq-server",
-    "version": "4.2.3"
+    "version": "4.2.4"
   },
   "rclone": {
-    "name": "rclone-1.73.0",
+    "name": "rclone-1.73.1",
     "pname": "rclone",
-    "version": "1.73.0"
+    "version": "1.73.1"
   },
   "re2c": {
     "name": "re2c-4.4",
@@ -996,9 +987,9 @@
     "version": "3.4.1"
   },
   "ruby": {
-    "name": "ruby-3.3.10",
+    "name": "ruby-3.4.8",
     "pname": "ruby",
-    "version": "3.3.10"
+    "version": "3.4.8"
   },
   "runc": {
     "name": "runc-1.4.0",
@@ -1036,9 +1027,9 @@
     "version": "8.11.4"
   },
   "strace": {
-    "name": "strace-6.18",
+    "name": "strace-6.19",
     "pname": "strace",
-    "version": "6.18"
+    "version": "6.19"
   },
   "strongswan": {
     "name": "strongswan-6.0.4",
@@ -1061,9 +1052,9 @@
     "version": "12.7.7"
   },
   "systemd": {
-    "name": "systemd-258.3",
+    "name": "systemd-259",
     "pname": "systemd",
-    "version": "258.3"
+    "version": "259"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.6",
@@ -1091,9 +1082,9 @@
     "version": "9.0.115"
   },
   "unifi": {
-    "name": "unifi-controller-10.1.84",
+    "name": "unifi-controller-10.1.85",
     "pname": "unifi-controller",
-    "version": "10.1.84"
+    "version": "10.1.85"
   },
   "unzip": {
     "name": "unzip-6.0",
@@ -1101,9 +1092,9 @@
     "version": "6.0"
   },
   "usbutils": {
-    "name": "usbutils-018",
+    "name": "usbutils-019",
     "pname": "usbutils",
-    "version": "018"
+    "version": "019"
   },
   "util-linux": {
     "name": "util-linux-2.41.3",
@@ -1111,9 +1102,9 @@
     "version": "2.41.3"
   },
   "uv": {
-    "name": "uv-0.10.2",
+    "name": "uv-0.10.4",
     "pname": "uv",
-    "version": "0.10.2"
+    "version": "0.10.4"
   },
   "varnish": {
     "name": "varnish-7.7.3",
@@ -1121,9 +1112,9 @@
     "version": "7.7.3"
   },
   "vim": {
-    "name": "vim-9.1.2035",
+    "name": "vim-9.1.2109",
     "pname": "vim",
-    "version": "9.1.2035"
+    "version": "9.1.2109"
   },
   "wget": {
     "name": "wget-1.25.0",
