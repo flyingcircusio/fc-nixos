@@ -74,6 +74,7 @@ in
   lampVm82 = callTest ./lamp/vm-test.nix { version = "lamp_php82"; };
   lampVm83 = callTest ./lamp/vm-test.nix { version = "lamp_php83"; };
   lampVm84 = callTest ./lamp/vm-test.nix { version = "lamp_php84"; };
+  lampVm85 = callTest ./lamp/vm-test.nix { version = "lamp_php85"; };
 
   locale = callTest ./locale.nix { };
   loki = callTest ./loki.nix { };
