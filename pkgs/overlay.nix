@@ -91,6 +91,18 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     {
       inherit (super) php83 php84;
     }
+//
+  builtins.mapAttrs
+    (
+      _:
+      patchPhps (fetchpatch {
+        url = "https://github.com/flyingcircusio/php-src/commit/7f5f62ff1bedc46df43d048920a3bc80bef22500.diff?full_index=1";
+        hash = "sha256-yInMJrzlNZsqnePv7aesDdZYOynCWs+d7FrYNQ5Teug=";
+      })
+    )
+    {
+      inherit (super) php85;
+    }
 // {
   pythonPackagesExtensions = super.pythonPackagesExtensions ++ [
     (python-self: python-super: {
@@ -441,6 +453,17 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
   );
 
   lamp_php84 = self.php84.withExtensions (
+    { enabled, all }:
+    enabled
+    ++ [
+      all.bcmath
+      all.imagick
+      all.memcached
+      all.redis
+    ]
+  );
+
+  lamp_php85 = self.php85.withExtensions (
     { enabled, all }:
     enabled
     ++ [
