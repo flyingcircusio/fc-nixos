@@ -326,6 +326,37 @@ def ceph(args=sys.argv[1:]):
     logs.set_defaults(subsystem=fc.ceph.logs.LogTasks, action=logs.print_usage)
     logs_sub = logs.add_subparsers()
 
+    account_s3_traffic = logs_sub.add_parser(
+        "account-s3-traffic",
+        help="Extract traffic logs from RADOS and forward those to the directory",
+    )
+    account_s3_traffic.add_argument(
+        "-s",
+        "--state-file",
+        help="File which contains the state of the S3 traffic accounting (i.e. last accounted days)",
+        type=Path,
+    )
+    account_s3_traffic.add_argument(
+        "-e",
+        "--enc-file",
+        help="Path to the enc.json",
+        type=Path,
+        default=Path("/etc/nixos/enc.json"),
+    )
+    account_s3_traffic.set_defaults(action="account_s3_traffic")
+
+    gc_s3_traffic = logs_sub.add_parser(
+        "gc-s3-traffic-data",
+        help="Delete S3 traffic log objects that were already processed",
+    )
+    gc_s3_traffic.set_defaults(action="gc_s3_traffic")
+    gc_s3_traffic.add_argument(
+        "-s",
+        "--state-file",
+        help="File which contains the state of the S3 traffic accounting (i.e. last accounted days)",
+        type=Path,
+    )
+
     slowreq_histogram = logs_sub.add_parser(
         "slowreq-histogram",
         help="""Slow requests histogram tool.

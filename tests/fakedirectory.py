@@ -22,6 +22,17 @@ class Directory(object):
     def list_resource_groups(self):
         return []
 
+    def store_s3_traffic(self, measured_values):
+        # We cannot really test this since the sync only
+        # reads in past hours, not the current hour. This is to make
+        # sure that we don't account people twice.
+        # However, this also means that we'd have to wait 60min
+        # to check for S3 data (and apparently moving around dates of
+        # log objects isn't really a thing in radosgw).
+        return []
+
+    def lookup_networks(self, location):
+        return {}
 
 # Create server
 with SimpleXMLRPCServer(

@@ -15,6 +15,7 @@ dependencies = [
     "nagiosplugin",
     "requests",
     "rich",
+    "IPy",
 ]
 
 [project.entry-points.console_scripts]

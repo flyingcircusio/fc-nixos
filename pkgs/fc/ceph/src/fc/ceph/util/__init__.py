@@ -60,6 +60,9 @@ class JSONRunner(object):
     def lsblk(self, *args, **kw):
         return self.__run__("lsblk", "-J", *args, **kw)["blockdevices"]
 
+    def radosgw_admin(self, *args, **kw):
+        return self.__run__("radosgw-admin", "--format", "json", *args, **kw)
+
     def lsblk_linear(self, *args, **kw):
         """Return a linearized version of the nested lsblk structure.
 
@@ -133,6 +136,7 @@ run = Runner(
         "ceph_authtool": "ceph-authtool",
         "mkfs_xfs": "mkfs.xfs",
         "rbd_locktool": "rbd-locktool",
+        "radosgw_admin": "radosgw-admin",
     }
 )
 

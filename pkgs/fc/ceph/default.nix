@@ -14,6 +14,7 @@
   nagiosplugin,
   rich,
   requests,
+  ipy,
 }:
 
 buildPythonApplication rec {
@@ -29,6 +30,7 @@ buildPythonApplication rec {
     nagiosplugin
     rich
     requests
+    ipy
   ];
 
   propagatedBuildInputs = [
