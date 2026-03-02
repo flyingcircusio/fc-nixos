@@ -28,11 +28,14 @@ let
     pidFile = "/run/ceph/radosgw.pid";
     adminSocket = "/run/ceph/radosgw.asok";
     rgwData = "/srv/ceph/radosgw/ceph-$id";
-    rgwEnableOpsLog = false;
+    rgwEnableOpsLog = true;
+    rgwOpsLogRados = true;
+    rgwLogObjectNameUtc = true;
     rgwMimeTypesFile = "${pkgs.mailcap}/etc/mime.types";
     debugRados = "1 5";
     rgwFrontends = "beast port=80";
     debugRgw = "1 5";
+    rgwLogHttpHeaders = "http_x_forwarded_for,http_x_real_ip";
   };
 in
 {
@@ -77,6 +80,14 @@ in
 
       cephRelease = fclib.ceph.releaseOption // {
         description = "Codename of the Ceph release series used for the the rgw package.";
+      };
+
+      enableAccounting = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Whether or not to enable traffic accounting.
+        '';
       };
     };
   };
@@ -194,6 +205,25 @@ in
         '';
       };
 
+      systemd.services.fc-ceph-account-s3-traffic = {
+        description = "accounting for S3 traffic";
+        serviceConfig = {
+          Type = "oneshot";
+          StateDirectory = "fc-ceph-s3-accounting";
+          ExecStart = "${cephPkgs.fc-ceph}/bin/fc-ceph logs account-s3-traffic -s %S/fc-ceph-s3-accounting/s3-accounting-state";
+        };
+      };
+
+      systemd.services.fc-ceph-gc-s3-traffic-data = {
+        description = "accounting for S3 traffic";
+        after = [ "fc-ceph-account-s3-traffic.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          StateDirectory = "fc-ceph-s3-accounting";
+          ExecStart = "${cephPkgs.fc-ceph}/bin/fc-ceph logs gc-s3-traffic-data -s %S/fc-ceph-s3-accounting/s3-accounting-state";
+        };
+      };
+
       systemd.services.fc-ceph-rgw-users = rec {
         description = "Sync S3 users and accounting with directory";
         path = [ cephPkgs.ceph ];
@@ -238,6 +268,26 @@ in
 
     (lib.mkIf (role.enable && role.primary) {
 
+      systemd.timers.fc-ceph-account-s3-traffic = {
+        enable = !config.flyingcircus.services.ceph.server.passive && role.enableAccounting;
+
+        description = "Timer for accounting S3/object-store traffic";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "*-*-* *:05:00";
+        };
+      };
+
+      systemd.timers.fc-ceph-gc-s3-traffic-data = {
+        enable = !config.flyingcircus.services.ceph.server.passive && role.enableAccounting;
+
+        description = "Timer for GCing old object-store log data";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "*-*-* 14:00:00";
+        };
+      };
+
       systemd.timers.fc-ceph-rgw-update-stats = {
         enable = !config.flyingcircus.services.ceph.server.passive;
 
@@ -271,6 +321,32 @@ in
             "${pkgs.monitoring-plugins}/bin/check_file_age"
             + " -f /var/log/fc-ceph-rgw-users-stamp.log -w 1500 -c 2700";
           interval = 300;
+        };
+
+        checks.fc-ceph-rgw-accounting = {
+          notification = "Missing S3 traffic accounting";
+          interval = 60;
+          command = "${lib.getExe pkgs.python3} ${pkgs.writeText "check-s3-accounting" ''
+            import json
+            import sys
+            from datetime import datetime, timedelta
+
+            with open("/var/lib/fc-ceph-s3-accounting/s3-accounting-state", "r") as f:
+                data = json.load(f)
+
+            THRESH_WARN = timedelta(hours=6)
+            THRESH_ERR = timedelta(hours=12)
+
+            last_processed = datetime.strptime(data["last_processed_datetime"], "%Y-%m-%dT%H")
+            now = datetime.now()
+
+            if now - THRESH_ERR >= last_processed:
+                print(f"Last time S3 logs were processed ({last_processed}) is >{THRESH_ERR} ago")
+                sys.exit(2)
+            elif now - THRESH_WARN >= last_processed:
+                print(f"Last time S3 logs were processed ({last_processed}) is >{THRESH_WARN} ago")
+                sys.exit(1)
+          ''}";
         };
       };
 

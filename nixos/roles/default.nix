@@ -43,6 +43,7 @@ in
     ./postgresql.nix
     ./rabbitmq.nix
     ./redis.nix
+    ./rgw-location-proxy.nix
     ./router
     ./servicecheck.nix
     ./slurm
