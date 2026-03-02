@@ -284,7 +284,7 @@ in
         description = "Timer for GCing old object-store log data";
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnCalendar = "*-*-* 14:00:00";
+          OnCalendar = "*-*-* 14:30:00";
         };
       };
 
