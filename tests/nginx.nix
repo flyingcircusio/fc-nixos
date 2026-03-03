@@ -151,6 +151,13 @@ import ./make-test-python.nix (
           services.nginx.serverTokens = true;
 
           security.acme.certs.server.keyType = "rsa4096";
+
+          # To test that sensu rules successfully eval
+          flyingcircus.services.sensu-client = {
+            enable = true;
+            server = "1.2.3.4";
+            password = "foo";
+          };
         };
 
       server2 = mkFCServer {
@@ -264,6 +271,35 @@ import ./make-test-python.nix (
               service = "loki-collector";
             }
           ];
+        };
+
+      # Eval only server. Should test that a vhost with useACMEHost successfully evals.
+      server8 =
+        { lib, pkgs, ... }:
+        {
+          imports = [
+            (testlib.fcConfig { id = 8; })
+          ];
+
+          flyingcircus.services.sensu-client = {
+            enable = true;
+            server = "1.2.3.4";
+            password = "foo";
+          };
+
+          flyingcircus.roles.webgateway.enable = true;
+          flyingcircus.services.nginx = {
+            virtualHosts.server = {
+              useACMEHost = "server";
+              forceSSL = true;
+              enableACME = false;
+            };
+          };
+          security.acme.certs.server = {
+            dnsProvider = "pdns";
+            credentialsFile = pkgs.writeText "pdns-cred" "";
+            group = "nginx";
+          };
         };
     };
 

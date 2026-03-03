@@ -74,10 +74,9 @@ let
     _: vhost: vhost.onlySSL || vhost.addSSL || vhost.forceSSL
   ) nginxCfg.virtualHosts;
 
-  # Split TLS vhosts in ACME and non-ACME vhosts
-  acmeVhostsWithTLS = lib.filterAttrs (_: vhost: vhost.enableACME) vhostsWithTLS;
-
-  nonAcmeVhostsWithTLS = lib.filterAttrs (_: vhost: !vhost.enableACME) vhostsWithTLS;
+  nonAcmeVhostsWithTLS = lib.filterAttrs (
+    _: vhost: (!vhost.enableACME && vhost.useACMEHost == null)
+  ) vhostsWithTLS;
 
   mainConfig = ''
     worker_processes ${toString cfg.workerProcesses};
