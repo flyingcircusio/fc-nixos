@@ -53,10 +53,15 @@ in
         enable = true;
         virtualHosts.${cfg.domain} = lib.mkMerge [
           {
-            locations."/".proxyPass = "http://[::1]:${haproxyPort}";
             forceSSL = true;
             enableACME = false;
             useACMEHost = cfg.domain;
+            locations."/".proxyPass = "http://[::1]:${haproxyPort}";
+            extraConfig = ''
+              proxy_max_temp_file_size 0;
+              client_max_body_size 1000m;
+              proxy_request_buffering off;
+            '';
           }
         ];
       };
