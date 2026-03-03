@@ -103,7 +103,7 @@ class Monitor(object):
         run.monmaptool(
             "--add",
             self.id,
-            config[f"mon.{self.id}"]["public addr"],
+            config[f"mon.{self.id}"]["public_addr"],
             f"{tmpdir}/monmap",
         )
         # Create mon on disk structures

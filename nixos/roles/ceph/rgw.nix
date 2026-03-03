@@ -11,7 +11,7 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_rgw;
   enc = config.flyingcircus.enc;
-  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection releaseAtLeast;
+  inherit (fclib.ceph) normaliseCephOptionAttrs normaliseCephOptionSection releaseAtLeast;
 
   username = "client.radosgw.${config.networking.hostName}";
 
@@ -262,8 +262,8 @@ in
 
     (lib.mkIf (role.enable && role.config == "") {
       flyingcircus.services.ceph.extraSettingsSections.${username} =
-        lib.recursiveUpdate (expandCamelCaseAttrs defaultRgwSettings) (
-          expandCamelCaseAttrs role.extraSettings
+        lib.recursiveUpdate (normaliseCephOptionAttrs defaultRgwSettings) (
+          normaliseCephOptionAttrs role.extraSettings
         );
     })
 

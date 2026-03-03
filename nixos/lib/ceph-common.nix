@@ -93,10 +93,30 @@ rec {
     in
     _releaseRecurser (lib.reverseList releaseOrder) false;
 
+  # Ceph option names, quoting https://docs.ceph.com/en/latest/rados/configuration/ceph-conf/
+  # For the sake of clarity and convenience, we suggest that you consistently use underscores […]
+  # When option names are specified on the command line or in persisted configuration, underscore (_) and dash (-) characters can be used interchangeably […]
+  # When option names appear in configuration files, spaces can also be used in place of underscores or dashes.
+
   # function that translates "camelCaseOptions" to "camel case options", credits to tilpner in #nixos@freenode
-  expandCamelCase = lib.replaceStrings lib.upperChars (map (s: " ${s}") lib.lowerChars);
-  expandCamelCaseAttrs = lib.mapAttrs' (name: value: lib.nameValuePair (expandCamelCase name) value);
-  expandCamelCaseSection = lib.mapAttrs' (
-    sectName: sectSettings: lib.nameValuePair sectName (expandCamelCaseAttrs sectSettings)
+  normaliseCephOptionName =
+    let
+      camelCaseIn = lib.upperChars;
+      camelCaseOut = (map (s: "_${s}") lib.lowerChars);
+      dashesIn = [ "-" ];
+      spacesIn = [ " " ];
+    in
+    builtins.replaceStrings (camelCaseIn ++ dashesIn ++ spacesIn) (
+      camelCaseOut
+      ++ [
+        "_"
+        "_"
+      ]
+    );
+  normaliseCephOptionAttrs = lib.mapAttrs' (
+    name: value: lib.nameValuePair (normaliseCephOptionName name) value
+  );
+  normaliseCephOptionSection = lib.mapAttrs' (
+    sectName: sectSettings: lib.nameValuePair sectName (normaliseCephOptionAttrs sectSettings)
   );
 }

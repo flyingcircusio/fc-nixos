@@ -39,8 +39,8 @@ class Cluster(object):
         if not self.config:
             self.parse_config()
         return (
-            self.config.getint("global", "osd pool default size"),
-            self.config.getint("global", "osd pool default min size"),
+            self.config.getint("global", "osd_pool_default_size"),
+            self.config.getint("global", "osd_pool_default_min_size"),
         )
 
     def default_pg_num(self):
@@ -48,7 +48,7 @@ class Cluster(object):
         if not self.config:
             self.parse_config()
         try:
-            return self.config.getint("global", "osd pool default pg num")
+            return self.config.getint("global", "osd_pool_default_pg_num")
         except configparser.NoOptionError:
             # ceph default value
             return 8
