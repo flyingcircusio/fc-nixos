@@ -16,7 +16,7 @@ let
   location = config.flyingcircus.enc.parameters.location;
   resource_group = config.flyingcircus.enc.parameters.resource_group;
   mons = (lib.concatStringsSep "," cfg.client.mons);
-  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
+  inherit (fclib.ceph) normaliseCephOptionAttrs normaliseCephOptionSection;
 
   cephPkgs = fclib.ceph.mkPkgs cfg.client.cephRelease;
 
@@ -270,18 +270,18 @@ in
       };
 
       flyingcircus.services.ceph.allMergedSettings = (
-        lib.recursiveUpdate (expandCamelCaseSection cfg.extraSettingsSections)
+        lib.recursiveUpdate (normaliseCephOptionSection cfg.extraSettingsSections)
           # make these global settings take precedence over those provided by extraSettingsSections.
-          # camelCase names need to be expanded *before* merging, to ensure that keys are in equal formats.
+          # option names need to be normalised *before* merging, to ensure that keys are in equal formats.
           (
             {
-              global = lib.recursiveUpdate (expandCamelCaseAttrs defaultGlobalSettings) (
-                expandCamelCaseAttrs cfg.extraSettings
+              global = lib.recursiveUpdate (normaliseCephOptionAttrs defaultGlobalSettings) (
+                normaliseCephOptionAttrs cfg.extraSettings
               );
             }
             // {
-              client = lib.recursiveUpdate (expandCamelCaseAttrs defaultClientSettings) (
-                expandCamelCaseAttrs cfg.client.extraSettings
+              client = lib.recursiveUpdate (normaliseCephOptionAttrs defaultClientSettings) (
+                normaliseCephOptionAttrs cfg.client.extraSettings
               );
             }
           )

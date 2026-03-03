@@ -11,7 +11,7 @@ let
   fclib = config.fclib;
   role = config.flyingcircus.roles.ceph_mon;
   enc = config.flyingcircus.enc;
-  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
+  inherit (fclib.ceph) normaliseCephOptionAttrs normaliseCephOptionSection;
 
   mons = (sort lessThan (map (service: service.address) (fclib.findServices "ceph_mon-mon")));
   # We do not have service data during bootstrapping.
@@ -282,8 +282,8 @@ in
         configtoml = (pkgs.formats.toml { }).generate "config.toml" {
           thresholds = {
             # use canonical, non-camelCase form of ceph settings
-            nearfull = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd nearfull ratio";
-            full = config.flyingcircus.services.ceph.allMergedSettings.mon."mon osd full ratio";
+            nearfull = config.flyingcircus.services.ceph.allMergedSettings.mon."mon_osd_nearfull_ratio";
+            full = config.flyingcircus.services.ceph.allMergedSettings.mon."mon_osd_full_ratio";
           };
           ceph_roots = config.flyingcircus.services.ceph.server.crushroot_to_rbdpool_mapping;
         };
@@ -318,15 +318,15 @@ in
     ))
     (lib.mkIf (role.enable && role.config == "") {
       flyingcircus.services.ceph.extraSettingsSections =
-        lib.recursiveUpdate { mon = expandCamelCaseAttrs defaultMonSettings; }
+        lib.recursiveUpdate { mon = normaliseCephOptionAttrs defaultMonSettings; }
           (
             lib.recursiveUpdate
-              (expandCamelCaseSection (
+              (normaliseCephOptionSection (
                 lib.foldr (attr: acc: acc // attr) { } (map perMonSettings (fclib.findServices "ceph_mon-mon"))
               ))
               (
-                lib.recursiveUpdate { mon = expandCamelCaseAttrs role.extraSettings; } {
-                  mon = expandCamelCaseAttrs defaultMgrSettings;
+                lib.recursiveUpdate { mon = normaliseCephOptionAttrs role.extraSettings; } {
+                  mon = normaliseCephOptionAttrs defaultMgrSettings;
                 }
               )
           );

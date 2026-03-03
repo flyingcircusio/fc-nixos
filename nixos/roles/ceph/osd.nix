@@ -13,7 +13,7 @@ let
   clientConfig = config.flyingcircus.services.ceph.client;
   enc = config.flyingcircus.enc;
 
-  inherit (fclib.ceph) expandCamelCaseAttrs expandCamelCaseSection;
+  inherit (fclib.ceph) normaliseCephOptionAttrs normaliseCephOptionSection;
 
   cephPkgs = fclib.ceph.mkPkgs cfg.cephRelease;
 
@@ -311,8 +311,8 @@ in
     })
     (lib.mkIf (cfg.enable && cfg.config == "") {
       flyingcircus.services.ceph.extraSettingsSections.osd =
-        lib.recursiveUpdate (expandCamelCaseAttrs defaultOsdSettings) (
-          expandCamelCaseAttrs cfg.extraSettings
+        lib.recursiveUpdate (normaliseCephOptionAttrs defaultOsdSettings) (
+          normaliseCephOptionAttrs cfg.extraSettings
         );
     })
     (lib.mkIf (cfg.enable && cfg.config != "") {
