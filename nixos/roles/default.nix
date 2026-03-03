@@ -7,19 +7,20 @@ let
 in
 {
   imports = with lib; [
-    ./ai-model-server.nix
     ./ai-api-gateway.nix
+    ./ai-model-server.nix
     ./antivirus.nix
     ./backyserver.nix
-    ./coturn.nix
-    ./consul
-    ./docker.nix
     ./ceph/mon.nix
     ./ceph/osd.nix
     ./ceph/rgw.nix
+    ./consul
+    ./coturn.nix
     ./devhost
+    ./docker.nix
     ./elasticsearch.nix
     ./external_net
+    ./faro_frontend.nix
     ./ferretdb.nix
     ./gitlab.nix
     ./graylog.nix
@@ -27,8 +28,8 @@ in
     ./k3s
     ./kvm
     ./lamp.nix
-    ./loki.nix
     ./loghost.nix
+    ./loki.nix
     ./mailout.nix
     ./mailserver.nix
     ./matomo.nix
@@ -37,9 +38,9 @@ in
     ./mysql.nix
     ./nfs.nix
     ./nginx.nix
+    ./open-webui.nix
     ./opensearch.nix
     ./opensearch_dashboards.nix
-    ./open-webui.nix
     ./postgresql.nix
     ./rabbitmq.nix
     ./redis.nix
@@ -48,6 +49,7 @@ in
     ./servicecheck.nix
     ./slurm
     ./statshost
+    ./tempo.nix
     ./webdata_blackbee.nix
     ./webgateway.nix
     ./webproxy.nix
