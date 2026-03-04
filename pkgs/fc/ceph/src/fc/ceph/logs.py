@@ -57,18 +57,33 @@ class LogTasks(object):
                 break
             n += 1
 
-    def account_s3_traffic(self, state_file: Path, enc_file: Path):
+    def account_s3_traffic(
+        self,
+        state_file: Path,
+        enc_file: Path,
+        enc_services_file: Path = Path("/etc/nixos/services.json"),
+    ):
         final_stats = []
         with directory.directory_connection(enc_file, ring="max") as d:
             with open(enc_file) as f:
                 enc = json.load(f)
                 location = enc["parameters"]["location"]
+            with open(file=enc_services_file) as f:
+                services = json.load(f)
+            rgw_location_proxy_ips = [
+                IPy.IP(ip)
+                for e in services
+                if e["service"] == "rgw-location-proxy-rgw-location-proxy"
+                for ip in e["ips"]
+            ]
             internal_networks = []
             for vlan, nets in d.lookup_networks(location).items():
                 for network in nets:
                     internal_networks.append(IPy.IP(network))
 
-            ops_log = OpsLog(state_file, internal_networks)
+            ops_log = OpsLog(
+                state_file, internal_networks, rgw_location_proxy_ips
+            )
 
             with ops_log.get_pending_stats_by_day() as logs:
                 for day, objs in logs.items():
