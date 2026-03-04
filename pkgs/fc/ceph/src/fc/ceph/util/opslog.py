@@ -42,10 +42,14 @@ class OpsLogState:
 
 class OpsLog:
     def __init__(
-        self, state_file: Path, internal_networks: list[IPy.IP] | None = None
+        self,
+        state_file: Path,
+        internal_networks: list[IPy.IP] | None = None,
+        rgw_location_proxy_ips: list[IPy.IP] | None = None,
     ):
         self.state_file = state_file
         self.internal_networks = internal_networks
+        self.rgw_location_proxy_ips = rgw_location_proxy_ips
         self.opslog_ptrn = re.compile(
             r"^[\d]{4}-[\d]{2}-[\d]{2}-[\d]{2}-[A-Za-z0-9.-]+$"
         )
@@ -149,6 +153,7 @@ class OpsLog:
             entry
             for entry in result["log_entries"]
             if not self._is_local_ip(self._ip_from_log_entry(entry))
+            and self._is_from_rgw_location_proxy(entry)
         ]
 
         return result
@@ -174,3 +179,11 @@ class OpsLog:
             if name == "HTTP_X_REAL_IP":
                 return IPy.IP(header[name])
         return IPy.IP(log_entry["remote_addr"])
+
+    # This is temporarily required until we migrated all cross DC loads to our rgw-location-proxies
+    # e.g. for an s3 user in whq, traffic rzob -> whq customer gateway -> ceph
+    # would otherwise be accounted as it's the X_REAL_IP header shows the rzob ip
+    def _is_from_rgw_location_proxy(self, log_entry) -> bool:
+        assert self.rgw_location_proxy_ips is not None
+        remote_addr = IPy.IP(log_entry["remote_addr"])
+        return remote_addr in self.rgw_location_proxy_ips

@@ -82,7 +82,7 @@ def rados_log_objects(monkeypatch):
 
 @freezegun.freeze_time("2025-01-03 04:00")
 def test_opslog_entries_by_day(state_file, rados_log_objects):
-    opslog = OpsLog(state_file, [])
+    opslog = OpsLog(state_file, [], [])
 
     with opslog.get_pending_stats_by_day() as log_objects:
         assert len(log_objects.keys()) == 3
@@ -119,7 +119,7 @@ def test_opslog_entries_by_day(state_file, rados_log_objects):
 
 @freezegun.freeze_time("2025-01-01 04:00")
 def test_start_end_same_day(state_file, rados_log_objects):
-    opslog = OpsLog(state_file, [])
+    opslog = OpsLog(state_file, [], [])
 
     with opslog.get_pending_stats_by_day() as log_objects:
         assert len(log_objects.keys()) == 1
@@ -177,7 +177,7 @@ def rados_log_objects_day_wrap(monkeypatch):
 
 def test_opslog_day_wrap(state_file, rados_log_objects_day_wrap):
     rados_log_objects = rados_log_objects_day_wrap
-    opslog = OpsLog(state_file, [])
+    opslog = OpsLog(state_file, [], [])
 
     def test_log_objects(
         expected_processed_day: str, expected_processed_hour: str
@@ -261,7 +261,7 @@ def rados_log_objects_multiday(monkeypatch):
 
 def test_opslog_multiday(state_file_multiday, rados_log_objects_multiday):
     state_file = state_file_multiday
-    opslog = OpsLog(state_file, [])
+    opslog = OpsLog(state_file, [], [])
     rados_log_objects = rados_log_objects_multiday
 
     def test_log_objects(expected_date: datetime):
@@ -323,7 +323,7 @@ def test_opslog_multiday(state_file_multiday, rados_log_objects_multiday):
 
 @freezegun.freeze_time("2025-01-03 04:00")
 def test_opslog_entries_error_handling(state_file, rados_log_objects):
-    opslog = OpsLog(state_file, [])
+    opslog = OpsLog(state_file, [], [])
 
     class SpecialException(Exception):
         pass
@@ -351,6 +351,17 @@ def get_object_mock(monkeypatch):
             [
                 "10.0.0.0/8",
                 "fd42:23::/48",
+            ],
+        )
+    )
+    rgw_location_proxy_ips = list(
+        map(
+            IPy.IP,
+            [
+                "fd42:23::abc",
+                "192.168.0.1",
+                "10.0.1.2",
+                "fd42:23::1"
             ],
         )
     )
@@ -421,12 +432,12 @@ def get_object_mock(monkeypatch):
     )
     monkeypatch.setattr("fc.ceph.util.run.json.radosgw_admin", mock)
 
-    return mock, internal_networks
+    return mock, internal_networks, rgw_location_proxy_ips
 
 
 def test_opslog_object_with_filtered_ips(get_object_mock, state_file):
-    mock, internal_networks = get_object_mock
-    opslog = OpsLog(state_file, internal_networks)
+    mock, internal_networks, rgw_location_proxy_ips = get_object_mock
+    opslog = OpsLog(state_file, internal_networks, rgw_location_proxy_ips)
 
     result = opslog.get_object("foo")
     mock.assert_has_calls(
@@ -456,3 +467,35 @@ def test_opslog_object_with_filtered_ips(get_object_mock, state_file):
     assert (
         entries[2]["http_x_headers"][0]["HTTP_X_REAL_IP"] == "2a01:4f8:f00::1"
     )
+
+def test_opslog_object_with_filtered_rgw_location_proxy(get_object_mock, state_file):
+    mock, _, _ = get_object_mock
+    internal_networks = []
+    rgw_location_proxy_ips = [
+        IPy.IP("10.0.1.2"),
+        IPy.IP("fd42:23::abc")
+    ]
+    opslog = OpsLog(state_file, internal_networks, rgw_location_proxy_ips)
+
+    result = opslog.get_object("foo")
+    mock.assert_has_calls(
+        [
+            call("log", "show", "--object=foo"),
+        ]
+    )
+
+    assert "log_sum" not in result
+    assert all(
+        x in result
+        for x in [
+            "bucket_id",
+            "bucket_owner",
+            "bucket",
+            "log_entries",
+        ]
+    )
+
+    entries = result["log_entries"]
+    assert len(entries) == 3
+    for entry in entries:
+        assert IPy.IP(entry["remote_addr"]) in rgw_location_proxy_ips
