@@ -204,10 +204,10 @@ in
 
             script = ''
               if [ -z $AWS_ACCESS_KEY_ID ]; then
-                AWS_ACCESS_KEY_ID=$(cat ${config.flyingcircus.encPath} | ${lib.getExe pkgs.jq} '.role_configuration.loki.object_store_access_key')
+                AWS_ACCESS_KEY_ID=$(cat ${config.flyingcircus.encPath} | ${lib.getExe pkgs.jq} -r '.role_configuration.loki.object_store_access_key')
               fi
               if [ -z $AWS_SECRET_ACCESS_KEY ]; then
-                AWS_SECRET_ACCESS_KEY=$(cat ${config.flyingcircus.encPath} | ${lib.getExe pkgs.jq} '.role_configuration.loki.object_store_secret_key')
+                AWS_SECRET_ACCESS_KEY=$(cat ${config.flyingcircus.encPath} | ${lib.getExe pkgs.jq} -r '.role_configuration.loki.object_store_secret_key')
               fi
 
               export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
