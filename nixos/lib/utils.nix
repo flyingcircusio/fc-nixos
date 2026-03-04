@@ -78,6 +78,23 @@ rec {
   # that match the given name or an empty list, if nothing matches.
   findServices = name: filter (s: s.service == name) config.flyingcircus.encServices;
 
+  # define an option with a default that is conditionally enabled if there is role configuration for that role
+  # the default that is passed in here should be a function that takes the role-specific role configuration as it's argument
+  # e.g.
+  # mkRoleOption "example-role" {
+  #   description = "just an example";
+  #   type = types.str;
+  #   default = c: c.foobar;
+  # }
+  # in this case, c is `config.flyingcircus.enc.role_configuration."example-role"`
+  # and the resulting option has no default if there's no role configuration for "example-role"
+  mkRoleOption =
+    role: cfg:
+    lib.mkOption (builtins.removeAttrs cfg [ "default" ])
+    // lib.optionalAttrs (config.flyingcircus.enc ? role_configuration.${role}) {
+      default = cfg.default config.flyingcircus.enc.role_configuration.${role};
+    };
+
   installDirWithPermissions =
     {
       user,
