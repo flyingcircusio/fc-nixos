@@ -41,7 +41,9 @@ class OpsLogState:
 
 
 class OpsLog:
-    def __init__(self, state_file: Path, internal_networks: list[IPy.IP]):
+    def __init__(
+        self, state_file: Path, internal_networks: list[IPy.IP] | None = None
+    ):
         self.state_file = state_file
         self.internal_networks = internal_networks
         self.opslog_ptrn = re.compile(
@@ -135,6 +137,8 @@ class OpsLog:
             day += timedelta(days=1)
 
     def get_object(self, name: str):
+        assert self.internal_networks is not None
+
         result = run.json.radosgw_admin("log", "show", f"--object={name}")
 
         # We filter out internal traffic, so the log_sum is wrong. Hence, delete it to

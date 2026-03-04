@@ -13,8 +13,8 @@ import re
 from pathlib import Path
 
 import IPy
-from fc.ceph.util import directory, run
-from fc.ceph.util.opslog import OpsLog, OpsLogState
+from fc.ceph.util import directory
+from fc.ceph.util.opslog import OpsLog
 
 R_OSD = re.compile(r"osd\.[0-9]+")
 
@@ -59,7 +59,7 @@ class LogTasks(object):
 
     def account_s3_traffic(self, state_file: Path, enc_file: Path):
         final_stats = []
-        with directory.directory_connection(enc_file, ring=0) as d:
+        with directory.directory_connection(enc_file, ring="max") as d:
             with open(enc_file) as f:
                 enc = json.load(f)
                 location = enc["parameters"]["location"]

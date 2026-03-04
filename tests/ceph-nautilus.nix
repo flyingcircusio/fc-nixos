@@ -342,6 +342,7 @@ import ./make-test-python.nix (
         check_key_file_cmd = testlib.sensuCheckCmd nodes.host1 "keystickMounted";
       in
       ''
+        import datetime
         import time
         import json
 
@@ -627,6 +628,13 @@ import ./make-test-python.nix (
           accounting_data = json.loads(host1.succeed("cat /var/lib/fc-ceph-s3-accounting/s3-accounting-state"))
           t.assertIn("last_processed_datetime", accounting_data)
           t.assertIn("last_gced_day", accounting_data)
+
+          # GC works
+          accounting_data["last_gced_day"] = (datetime.date.today() - datetime.timedelta(days=5)).isoformat()
+          host1.succeed(f"echo '{json.dumps(accounting_data)}' > /var/lib/fc-ceph-s3-accounting/s3-accounting-state")
+          host1.succeed("systemctl start fc-ceph-gc-s3-traffic-data")
+          accounting_data = json.loads(host1.succeed("cat /var/lib/fc-ceph-s3-accounting/s3-accounting-state"))
+          t.assertEqual(accounting_data["last_gced_day"], (datetime.date.today() - datetime.timedelta(days=2)).isoformat())
 
         with subtest("Destroy and re-create first mon"):
           host1.succeed('fc-ceph mon destroy')
