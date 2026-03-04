@@ -115,9 +115,9 @@
     "version": "9.8"
   },
   "coturn": {
-    "name": "coturn-4.7.0",
+    "name": "coturn-4.9.0",
     "pname": "coturn",
-    "version": "4.7.0"
+    "version": "4.9.0"
   },
   "curl": {
     "name": "curl-8.18.0",
@@ -165,9 +165,9 @@
     "version": "1.12.10"
   },
   "erlang": {
-    "name": "erlang-28.3.2",
+    "name": "erlang-28.3.3",
     "pname": "erlang",
-    "version": "28.3.2"
+    "version": "28.3.3"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -220,9 +220,9 @@
     "version": "2.51.2"
   },
   "gitaly": {
-    "name": "gitaly-18.8.4",
+    "name": "gitaly-18.8.5",
     "pname": "gitaly",
-    "version": "18.8.4"
+    "version": "18.8.5"
   },
   "github-runner": {
     "name": "github-runner-2.331.0",
@@ -230,24 +230,24 @@
     "version": "2.331.0"
   },
   "gitlab": {
-    "name": "gitlab-18.8.4",
+    "name": "gitlab-18.8.5",
     "pname": "gitlab",
-    "version": "18.8.4"
+    "version": "18.8.5"
   },
   "gitlab-container-registry": {
-    "name": "gitlab-container-registry-4.36.0",
+    "name": "gitlab-container-registry-4.37.0",
     "pname": "gitlab-container-registry",
-    "version": "4.36.0"
+    "version": "4.37.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.8.4",
+    "name": "gitlab-ee-18.8.5",
     "pname": "gitlab-ee",
-    "version": "18.8.4"
+    "version": "18.8.5"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.8.4",
+    "name": "gitlab-pages-18.8.5",
     "pname": "gitlab-pages",
-    "version": "18.8.4"
+    "version": "18.8.5"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.8.0",
@@ -255,9 +255,9 @@
     "version": "18.8.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.8.4",
+    "name": "gitlab-workhorse-18.8.5",
     "pname": "gitlab-workhorse",
-    "version": "18.8.4"
+    "version": "18.8.5"
   },
   "glibc": {
     "name": "glibc-2.40-218",
@@ -480,9 +480,9 @@
     "version": "3.3.5"
   },
   "mastodon": {
-    "name": "mastodon-4.5.6",
+    "name": "mastodon-4.5.7",
     "pname": "mastodon",
-    "version": "4.5.6"
+    "version": "4.5.7"
   },
   "matomo": {
     "name": "matomo-5.5.2",
@@ -490,9 +490,9 @@
     "version": "5.5.2"
   },
   "matrix-synapse": {
-    "name": "matrix-synapse-wrapped-1.147.1",
+    "name": "matrix-synapse-wrapped-1.148.0",
     "pname": "matrix-synapse-wrapped",
-    "version": "1.147.1"
+    "version": "1.148.0"
   },
   "mcpp": {
     "name": "mcpp-2.7.2.2",
@@ -660,19 +660,19 @@
     "version": "4.9.8"
   },
   "percona": {
-    "name": "percona-server-8.4.6-6",
+    "name": "percona-server-8.4.7-7",
     "pname": "percona-server",
-    "version": "8.4.6-6"
+    "version": "8.4.7-7"
   },
   "percona-server": {
-    "name": "percona-server-8.4.6-6",
+    "name": "percona-server-8.4.7-7",
     "pname": "percona-server",
-    "version": "8.4.6-6"
+    "version": "8.4.7-7"
   },
   "percona-server_8_0": {
-    "name": "percona-server-8.0.44-35",
+    "name": "percona-server-8.0.45-36",
     "pname": "percona-server",
-    "version": "8.0.44-35"
+    "version": "8.0.45-36"
   },
   "percona-xtrabackup_8_0": {
     "name": "percona-xtrabackup-8.0.35-34",
@@ -686,9 +686,9 @@
   },
   "percona57": {},
   "percona80": {
-    "name": "percona-server-8.0.44-35",
+    "name": "percona-server-8.0.45-36",
     "pname": "percona-server",
-    "version": "8.0.44-35"
+    "version": "8.0.45-36"
   },
   "php72": {
     "name": "php-with-extensions-7.2.34",
@@ -1126,9 +1126,9 @@
     "version": "7.7.3"
   },
   "vim": {
-    "name": "vim-9.1.1869",
+    "name": "vim-9.1.2148",
     "pname": "vim",
-    "version": "9.1.1869"
+    "version": "9.1.2148"
   },
   "wget": {
     "name": "wget-1.25.0",
