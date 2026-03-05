@@ -1,3 +1,17 @@
+# Release 2026_008
+
+## NixOS XX.XX platform
+
+- webgateway: fix regression that virtual hosts with `useACMEHost` don't eval
+
+- Add role configuration to the loki and tempo roles and introduce an experimental faro frontend role (PL-135168)
+
+- rgw-location-proxy: initalize role (PL-128135)
+
+- rgw-location-proxy: improved nginx config for larger files (PL-128135)
+
+
+
 # Release 2026_007
 
 
