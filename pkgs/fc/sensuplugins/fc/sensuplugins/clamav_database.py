@@ -25,9 +25,9 @@ def main():
     check_age_cmd = [
         "check_file_age",
         "-w",
-        "93600",
+        "180000",  # 50h
         "-c",
-        "172800",
+        "345600",  # 4d
     ]
 
     max_returncode = 0
