@@ -60,9 +60,9 @@
     "version": "2.7.2"
   },
   "cacert": {
-    "name": "nss-cacert-3.117",
+    "name": "nss-cacert-3.121",
     "pname": "nss-cacert",
-    "version": "3.117"
+    "version": "3.121"
   },
   "calibre": {
     "name": "calibre-8.14.0",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-145.0.7632.116",
+    "name": "chromedriver-unwrapped-145.0.7632.159",
     "pname": "chromedriver-unwrapped",
-    "version": "145.0.7632.116"
+    "version": "145.0.7632.159"
   },
   "chromium": {
-    "name": "chromium-145.0.7632.116",
+    "name": "chromium-145.0.7632.159",
     "pname": "chromium",
-    "version": "145.0.7632.116"
+    "version": "145.0.7632.159"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -220,19 +220,19 @@
     "version": "2.51.2"
   },
   "gitaly": {
-    "name": "gitaly-18.8.5",
+    "name": "gitaly-18.9.1",
     "pname": "gitaly",
-    "version": "18.8.5"
+    "version": "18.9.1"
   },
   "github-runner": {
-    "name": "github-runner-2.331.0",
+    "name": "github-runner-2.332.0",
     "pname": "github-runner",
-    "version": "2.331.0"
+    "version": "2.332.0"
   },
   "gitlab": {
-    "name": "gitlab-18.8.5",
+    "name": "gitlab-18.9.1",
     "pname": "gitlab",
-    "version": "18.8.5"
+    "version": "18.9.1"
   },
   "gitlab-container-registry": {
     "name": "gitlab-container-registry-4.37.0",
@@ -240,14 +240,14 @@
     "version": "4.37.0"
   },
   "gitlab-ee": {
-    "name": "gitlab-ee-18.8.5",
+    "name": "gitlab-ee-18.9.1",
     "pname": "gitlab-ee",
-    "version": "18.8.5"
+    "version": "18.9.1"
   },
   "gitlab-pages": {
-    "name": "gitlab-pages-18.8.5",
+    "name": "gitlab-pages-18.9.1",
     "pname": "gitlab-pages",
-    "version": "18.8.5"
+    "version": "18.9.1"
   },
   "gitlab-runner": {
     "name": "gitlab-runner-18.8.0",
@@ -255,9 +255,9 @@
     "version": "18.8.0"
   },
   "gitlab-workhorse": {
-    "name": "gitlab-workhorse-18.8.5",
+    "name": "gitlab-workhorse-18.9.1",
     "pname": "gitlab-workhorse",
-    "version": "18.8.5"
+    "version": "18.9.1"
   },
   "glibc": {
     "name": "glibc-2.40-218",
@@ -270,19 +270,19 @@
     "version": "4.4.1"
   },
   "gnupg": {
-    "name": "gnupg-2.4.8",
+    "name": "gnupg-2.4.9",
     "pname": "gnupg",
-    "version": "2.4.8"
+    "version": "2.4.9"
   },
   "go": {
-    "name": "go-1.25.6",
+    "name": "go-1.25.7",
     "pname": "go",
-    "version": "1.25.6"
+    "version": "1.25.7"
   },
   "grafana": {
-    "name": "grafana-12.3.3",
+    "name": "grafana-12.3.4",
     "pname": "grafana",
-    "version": "12.3.3"
+    "version": "12.3.4"
   },
   "grub2": {
     "name": "grub-2.12.1",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.74",
+    "name": "linux-6.12.75",
     "pname": "linux",
-    "version": "6.12.74"
+    "version": "6.12.75"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.74",
+    "name": "linux-6.12.75",
     "pname": "linux",
-    "version": "6.12.74"
+    "version": "6.12.75"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -756,9 +756,9 @@
     "version": "3.10.7"
   },
   "postgresql": {
-    "name": "postgresql-17.8",
+    "name": "postgresql-17.9",
     "pname": "postgresql",
-    "version": "17.8"
+    "version": "17.9"
   },
   "postgresql14Packages.postgis": {
     "name": "postgis-3.6.1",
@@ -821,29 +821,29 @@
     "version": "1.2.2"
   },
   "postgresql_14": {
-    "name": "postgresql-14.21",
+    "name": "postgresql-14.22",
     "pname": "postgresql",
-    "version": "14.21"
+    "version": "14.22"
   },
   "postgresql_15": {
-    "name": "postgresql-15.16",
+    "name": "postgresql-15.17",
     "pname": "postgresql",
-    "version": "15.16"
+    "version": "15.17"
   },
   "postgresql_16": {
-    "name": "postgresql-16.12",
+    "name": "postgresql-16.13",
     "pname": "postgresql",
-    "version": "16.12"
+    "version": "16.13"
   },
   "postgresql_17": {
-    "name": "postgresql-17.8",
+    "name": "postgresql-17.9",
     "pname": "postgresql",
-    "version": "17.8"
+    "version": "17.9"
   },
   "postgresql_18": {
-    "name": "postgresql-18.2",
+    "name": "postgresql-18.3",
     "pname": "postgresql",
-    "version": "18.2"
+    "version": "18.3"
   },
   "prometheus": {
     "name": "prometheus-3.7.2",
@@ -861,9 +861,9 @@
     "version": "13.0.3"
   },
   "python3": {
-    "name": "python3-3.13.11",
+    "name": "python3-3.13.12",
     "pname": "python3",
-    "version": "3.13.11"
+    "version": "3.13.12"
   },
   "python310": {
     "name": "python3-3.10.19",
@@ -901,9 +901,9 @@
     "version": "6.0.2"
   },
   "python3Packages.pillow": {
-    "name": "python3.13-pillow-12.1.0",
+    "name": "python3.13-pillow-12.1.1",
     "pname": "pillow",
-    "version": "12.1.0"
+    "version": "12.1.1"
   },
   "python3Packages.pip": {
     "name": "python3.13-pip-25.0.1",
@@ -1161,9 +1161,9 @@
     "version": "3.0"
   },
   "zlib": {
-    "name": "zlib-1.3.1",
+    "name": "zlib-1.3.2",
     "pname": "zlib",
-    "version": "1.3.1"
+    "version": "1.3.2"
   },
   "zsh": {
     "name": "zsh-5.9",
