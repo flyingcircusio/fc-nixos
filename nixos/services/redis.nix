@@ -41,7 +41,7 @@ let
 
   bind = bindAddrs: head (lib.splitString " " bindAddrs);
 
-  mkSensuCheck =
+  mkPingCheck =
     name: connArgs:
     let
       # If a Redis server requires password authentication (i.e. requirePass or requirePassFile
@@ -55,7 +55,7 @@ let
         else
           null;
     in
-    lib.nameValuePair (redisServiceName name) {
+    lib.nameValuePair "${(redisServiceName name)}-ping-check" {
       notification = "Redis" + lib.optionalString (name != "") " (instance ${name})" + " alive";
       command = ''
         ${pkgs.sensu-plugins-redis}/bin/check-redis-ping.rb \
@@ -63,17 +63,50 @@ let
       '';
     };
 
-  checks = lib.listToAttrs (
-    lib.forEach (serversByConnection.tcp or [ ]) (
-      name:
-      mkSensuCheck name "-h ${bind enabledServers.${name}.bind} -p ${
-        toString enabledServers.${name}.port
-      }"
-    )
-    ++ lib.forEach (serversByConnection.uds or [ ]) (
-      name: mkSensuCheck name "-s ${enabledServers.${name}.unixSocket}"
-    )
-  );
+  mkRDBCheck =
+    name: connArgs:
+    lib.nameValuePair "${(redisServiceName name)}-rdb-check" {
+      notification =
+        "Redis "
+        + lib.optionalString (name != "") " (instance ${name})"
+        + " failed to save persistence data to disk";
+      command = ''
+        ${
+          if enabledServers.${name}.requirePass != null then
+            "export REDISCLI_AUTH=${enabledServers.${name}.requirePass}"
+          else if enabledServers.${name}.requirePassFile != null then
+            "export REDISCLI_AUTH=$(sudo cat ${enabledServers.${name}.requirePassFile})"
+          else
+            ""
+        }
+        if ${cfg.package}/bin/redis-cli ${connArgs} INFO persistence | grep -i "bgsave_status:ok"; then
+          echo "last bgsave completed successfully"
+        else
+          echo "last bgsave for the redis server '${name}' did not complete successfully"
+          exit 2
+        fi
+      '';
+    };
+
+  checks =
+    let
+      mkChecks =
+        name: connArgs:
+        [
+          (mkPingCheck name connArgs)
+        ]
+        # don't enable this check if rdb persistence is disabled
+        ++ lib.optional (enabledServers.${name}.save != [ ]) (mkRDBCheck name connArgs);
+    in
+    lib.listToAttrs (
+      lib.concatMap (
+        name:
+        mkChecks name "-h ${bind enabledServers.${name}.bind} -p ${toString enabledServers.${name}.port}"
+      ) (serversByConnection.tcp or [ ])
+      ++ lib.concatMap (name: mkChecks name "-s ${enabledServers.${name}.unixSocket}") (
+        serversByConnection.uds or [ ]
+      )
+    );
 
   # Drop string fields. They are converted to labels in Prometheus
   # which blows up the number of metrics.

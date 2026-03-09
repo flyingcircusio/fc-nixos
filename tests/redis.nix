@@ -138,8 +138,10 @@ import ./make-test-python.nix (
             redis.succeed('sudo -u redis touch /etc/local/redis/password')
 
         with subtest("Sensu checks correctly configured"):
-            redis.succeed("${pkgs.writeShellScript "sensu-redis" sensuChecks.redis.command}")
-            redis.succeed("${pkgs.writeShellScript "sensu-redis-gitlab" sensuChecks.redis-gitlab.command}")
+            redis.succeed("${pkgs.writeShellScript "sensu-redis-ping" sensuChecks.redis-ping-check.command}")
+            redis.succeed("${pkgs.writeShellScript "sensu-redis-gitlab-ping" sensuChecks.redis-gitlab-ping-check.command}")
+            redis.succeed("${pkgs.writeShellScript "sensu-redis-rdb" sensuChecks.redis-rdb-check.command}")
+            redis.succeed("${pkgs.writeShellScript "sensu-redis-gitlab-rdb" sensuChecks.redis-gitlab-rdb-check.command}")
 
         with subtest("Metrics for servers are scraped by telegraf"):
             ret_val = query_prom('redis_uptime{port="6379"}')
@@ -173,8 +175,10 @@ import ./make-test-python.nix (
             t.assertNotEqual(password, from_pw_string)
             redis.succeed(f"redis-cli -a {from_pw_string} ping | grep PONG")
 
-            redis.succeed("${pkgs.writeShellScript "sensu-redis" sensuChecksWithPW.redis.command}")
-            redis.succeed("${pkgs.writeShellScript "sensu-redis-gitlab" sensuChecksWithPW.redis-gitlab.command}")
+            redis.succeed("${pkgs.writeShellScript "sensu-redis-ping" sensuChecksWithPW.redis-ping-check.command}")
+            redis.succeed("${pkgs.writeShellScript "sensu-redis-gitlab-ping" sensuChecksWithPW.redis-gitlab-ping-check.command}")
+            redis.succeed("${pkgs.writeShellScript "sensu-redis-rdb" sensuChecksWithPW.redis-rdb-check.command}")
+            redis.succeed("${pkgs.writeShellScript "sensu-redis-gitlab-rdb" sensuChecksWithPW.redis-gitlab-rdb-check.command}")
 
             # We don't generate a password if /etc/local/redis/password already
             # exists, even if there are no other settings.
