@@ -75,7 +75,7 @@ let
           if enabledServers.${name}.requirePass != null then
             "export REDISCLI_AUTH=${enabledServers.${name}.requirePass}"
           else if enabledServers.${name}.requirePassFile != null then
-            "export REDISCLI_AUTH=$(sudo cat ${enabledServers.${name}.requirePassFile})"
+            "export REDISCLI_AUTH=$(<${enabledServers.${name}.requirePassFile})"
           else
             ""
         }
