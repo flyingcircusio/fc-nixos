@@ -217,6 +217,7 @@ Supported packages:
 - `pkgs.lamp_php82`
 - `pkgs.lamp_php83`
 - `pkgs.lamp_php84` (default)
+- `pkgs.lamp_php85`
 
 The `lamp_php_*` packages provided by our platform include commonly used
 PHP extensions, currently:
