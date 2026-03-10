@@ -59,7 +59,7 @@ in
             locations."/".proxyPass = "http://[::1]:${haproxyPort}";
             extraConfig = ''
               proxy_max_temp_file_size 0;
-              client_max_body_size 1000m;
+              client_max_body_size 10000m;
               proxy_request_buffering off;
             '';
           }
@@ -67,7 +67,7 @@ in
       };
 
       security.acme.certs.${cfg.domain} = {
-        dnsProvider = "pdns";
+        dnsProvider = fclib.mkPlatform "pdns";
         credentialsFile = cfg.dns01CredFile;
         webroot = lib.mkForce null;
         group = "nginx";
@@ -100,6 +100,11 @@ in
           };
         };
       };
+      # We have >=2 object storage gateways per location. To have a redundant setup,
+      # only one of them should be in maintenance
+      flyingcircus.agent.maintenanceConstraints.machinesInService = map (
+        service: builtins.head (lib.splitString "." service.address)
+      ) (fclib.findServices "rgw-location-proxy-rgw-location-proxy");
     }
   );
 }
