@@ -165,9 +165,9 @@
     "version": "1.12.10"
   },
   "erlang": {
-    "name": "erlang-28.3.3",
+    "name": "erlang-28.4",
     "pname": "erlang",
-    "version": "28.3.3"
+    "version": "28.4"
   },
   "exif": {
     "name": "exif-0.6.22",
@@ -380,9 +380,9 @@
     "version": "1.33.8+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.5.4",
+    "name": "keycloak-26.5.5",
     "pname": "keycloak",
-    "version": "26.5.4"
+    "version": "26.5.5"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.75",
+    "name": "linux-6.12.76",
     "pname": "linux",
-    "version": "6.12.75"
+    "version": "6.12.76"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.75",
+    "name": "linux-6.12.76",
     "pname": "linux",
-    "version": "6.12.75"
+    "version": "6.12.76"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -530,9 +530,9 @@
     "version": "8.0.45"
   },
   "nfs-utils": {
-    "name": "nfs-utils-2.7.1",
+    "name": "nfs-utils-2.8.6",
     "pname": "nfs-utils",
-    "version": "2.7.1"
+    "version": "2.8.6"
   },
   "nginx": {
     "name": "nginx-1.28.2",
@@ -560,9 +560,9 @@
     "version": "22.22.0"
   },
   "nodejs_20": {
-    "name": "nodejs-20.20.0",
+    "name": "nodejs-20.20.1",
     "pname": "nodejs",
-    "version": "20.20.0"
+    "version": "20.20.1"
   },
   "nodejs_22": {
     "name": "nodejs-22.22.0",
