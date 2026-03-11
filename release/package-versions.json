@@ -865,7 +865,6 @@
     "pname": "python3",
     "version": "3.13.12"
   },
-  "python310": {},
   "python311": {
     "name": "python3-3.11.15",
     "pname": "python3",
