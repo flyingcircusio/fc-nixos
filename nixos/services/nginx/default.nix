@@ -29,7 +29,7 @@ let
   nginxCheckConfig = pkgs.writeScriptBin "nginx-check-config" ''
     #!${pkgs.runtimeShell}
     echo "Running built-in Nginx config validation (must pass in order to activate a config)..."
-    ${lib.getExe nginxCfg.package} -t || exit 2
+    ${lib.getExe nginxCfg.package} -c /etc/nginx/nginx.conf -g "user nginx;" -t || exit 2
     echo "Running gixy security checker (just informational)..."
     ${pkgs.gixy}/bin/gixy /etc/nginx/nginx.conf || exit 1
   '';

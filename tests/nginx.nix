@@ -158,6 +158,12 @@ import ./make-test-python.nix (
             server = "1.2.3.4";
             password = "foo";
           };
+
+          specialisation.brokenconfig.configuration = {
+            flyingcircus.services.nginx.virtualHosts.server.locations."/proxy".extraConfig = ''
+              not_existing_option true;
+            '';
+          };
         };
 
       server2 = mkFCServer {
@@ -309,6 +315,15 @@ import ./make-test-python.nix (
         sensuCheck = testlib.sensuCheckCmd nodes.server1;
       in
       ''
+        def switch_specialisation(name, expected_fail: bool):
+            path = "${nodes.server1.system.build.toplevel}/bin/switch-to-configuration" \
+              if name is None \
+              else f"${nodes.server1.system.build.toplevel}/specialisation/{name}/bin/switch-to-configuration"
+            if expected_fail:
+              server1.fail(f"{path} test")
+            else:
+              server1.succeed(f"{path} test")
+
         def prep(server):
           server.wait_for_unit('nginx.service')
           server.wait_for_open_port(81)
@@ -439,6 +454,21 @@ import ./make-test-python.nix (
           server1.succeed("${sensuCheck "nginx_config"}")
           server1.succeed("${sensuCheck "nginx_worker_age"}")
           server1.succeed("${sensuCheck "nginx_status"}")
+
+        with subtest("sensu checks should not mess with cache directory"):
+          # When running with a wrong user, nginx might change permissions of the directories in /var/cache/nginx.
+          # If running with a wrong config, it might create files in /tmp instead
+          files = server1.succeed("ls /var/cache/nginx").rstrip().split("\n")
+          for file in files:
+            assert_file_permissions("700:nginx:nginx", f"/var/cache/nginx/{file}")
+
+          # one of the files that would be created, see http-proxy-temp-path in nginx package
+          server1.fail("test -e /tmp/nginx_proxy")
+
+        with subtest("nginx_config check should be red when config is invalid"):
+          switch_specialisation("brokenconfig", True)
+          server1.fail("${sensuCheck "nginx_config"}")
+          switch_specialisation(None, False)
 
         with subtest("killing the nginx process should trigger an automatic restart"):
           server1.succeed("pkill -9 -F /run/nginx/nginx.pid");
