@@ -203,7 +203,12 @@ import ./make-test-python.nix (
         };
         flyingcircus.static.ceph.fsids.test.test = "d118a9a4-8be5-4703-84c1-87eada2e6b60";
         flyingcircus.services.ceph.extraSettings = {
-          monClockDriftAllowed = 1;
+          monClockDriftAllowed = 10;
+          # we do not bootstrap a fully redundant ceph cluster here -> relax replication requirements
+          osdPoolDefaultSize = 1;
+          osdPoolDefaultMinSize = 1;
+          monAllowPoolSizeOne = true;
+          monWarnOnPoolNoRedundancy = false;
         };
 
         # KVM
