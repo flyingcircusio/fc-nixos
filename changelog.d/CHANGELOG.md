@@ -1,3 +1,13 @@
+# Release 2026_009
+
+## NixOS XX.XX platform
+
+- rgw-location-proxy: fix for large files and add maintenance constraint to ensure redundancy (PL-128135)
+
+- Add a sensu check for redis that watches the status of the server's persistent background saves (FC-52192)
+
+
+
 # Release 2026_008
 
 ## NixOS XX.XX platform
