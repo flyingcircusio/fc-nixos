@@ -229,7 +229,10 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       applyBaselinePatches =
         cephPkg:
         cephPkg.overrideAttrs (oldAttrs: {
-          patches = (oldAttrs.patches or [ ]) ++ [ ./ceph/pacific/rgw-reduce-log-verbosity.patch ];
+          patches = (oldAttrs.patches or [ ]) ++ [
+            ./ceph/pacific/rgw-reduce-log-verbosity.patch
+            ./ceph/pacific/rbd-migration-status-poolname.patch
+          ];
         });
       patchedCeph = builtins.mapAttrs (_: applyBaselinePatches) {
         inherit (nixpkgs-ceph-pacific) ceph ceph-client;
