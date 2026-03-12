@@ -652,5 +652,51 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
         pname = "tcpdump-vxlan";
       });
 
+  # XXX: consider upstreaming these
+  writers = super.writers // {
+    /**
+       writePython3BinFromFile takes a path to a python file and an attributeset with some further options.
+       It outputs a directory with `bin/basename_of_python_file`.
+       Attrset options:
+       - dependencies: list of packages with executables that are added to PATH for the python program
+       - all other options are passed through to `writePython3Bin`.
+
+       # Examples
+       :::{.example}
+       ## `writePython3BinFromFile` usage example
+
+       ```nix
+       writePython3BinFromFile ./pkgs/test.py {
+         dependencies = [ pkgs.sl ];
+         libraries = [ pkgs.python3Packages.pyyaml ];
+       }
+       ```
+
+       :::
+    */
+    writePython3BinFromFile =
+      path:
+      {
+        dependencies ? [ ],
+        ...
+      }@args:
+      let
+        progname = lib.removeSuffix ".py" (builtins.baseNameOf path);
+        writerArgs = lib.removeAttrs args [ "dependencies" ];
+        python3Writer = self.writers.writePython3Bin progname writerArgs (lib.readFile path);
+        pathWrapper =
+          self.runCommand "wrap-${progname}"
+            {
+              nativeBuildInputs = [ self.makeBinaryWrapper ];
+              meta.mainProgram = progname;
+            }
+            ''
+              mkdir -p $out/bin
+              makeBinaryWrapper ${lib.getExe python3Writer} $out/bin/${progname} \
+                --prefix PATH : "${lib.makeBinPath dependencies}"
+            '';
+      in
+      if dependencies == [ ] then python3Writer else pathWrapper;
+  };
   xtrabackup = lib.warn "The `xtrabackup` package has been renamed to `percona-xtrabackup`." self.percona-xtrabackup;
 }

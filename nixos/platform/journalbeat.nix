@@ -10,7 +10,7 @@ with lib;
 let
   fclib = config.fclib;
   cfg = config.flyingcircus.journalbeat;
-  journalSetCursor = fclib.python3BinFromFile ./filebeat-journal-set-cursor.py { };
+  journalSetCursor = pkgs.writers.writePython3BinFromFile ./filebeat-journal-set-cursor.py { };
 
 in
 {
