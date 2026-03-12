@@ -28,11 +28,12 @@
       command = "${pkgs.check_md_raid}/bin/check_md_raid";
     };
 
-    # MegaRAID
-
     boot.initrd.kernelModules = [
+      # MegaRAID
       "megaraid_sas"
       "mpt3sas"
+      # md_raid
+      "dm-raid"
     ];
 
     environment.systemPackages = with pkgs; [
