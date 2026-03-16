@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-145.0.7632.159",
+    "name": "chromedriver-unwrapped-146.0.7680.71",
     "pname": "chromedriver-unwrapped",
-    "version": "145.0.7632.159"
+    "version": "146.0.7680.71"
   },
   "chromium": {
-    "name": "chromium-145.0.7632.159",
+    "name": "chromium-146.0.7680.71",
     "pname": "chromium",
-    "version": "145.0.7632.159"
+    "version": "146.0.7680.71"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-148.0",
+    "name": "firefox-148.0.2",
     "pname": "firefox",
-    "version": "148.0"
+    "version": "148.0.2"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
