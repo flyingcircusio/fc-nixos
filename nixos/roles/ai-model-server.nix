@@ -104,22 +104,14 @@ in
           options = {
             enable = lib.mkEnableOption "Enable Skvaider inference service";
 
-            port = lib.mkOption {
-              type = lib.types.int;
-              default = 8000;
-              description = "Port for Skvaider inference service";
-            };
-
-            host = lib.mkOption {
-              type = lib.types.str;
-              default = "0.0.0.0";
-              description = "Host for Skvaider inference service";
-            };
-
             settings = lib.mkOption {
               type = lib.types.attrsOf lib.types.anything;
               default = {
                 models_dir = "/var/lib/skvaider/model";
+                server = {
+                  port = 8000;
+                  host = "0.0.0.0";
+                };
               };
               description = "Additional Skvaider inference settings";
             };
@@ -147,7 +139,7 @@ in
 
         boot.kernelPackages = lib.mkForce (pkgs.linuxPackagesFor pkgs.linuxKernelGPU);
 
-        boot.kernelModules = [ "amdgpu" ];
+        boot.kernelModules = [ "nvidia" ];
 
         services.ollama = {
           enable = false;
@@ -176,16 +168,19 @@ in
           description = "Skvaider inference service";
           wantedBy = [ "multi-user.target" ];
           environment = {
-            PORT = toString cfg.skvaider-inference.port;
-            HOST = cfg.skvaider-inference.host;
-            MODELS_DIR = "${cfg.skvaider-inference.settings.models_dir}";
-            SKVAIDER_CONFIG_FILE =
-              (pkgs.formats.toml { }).generate "skvaider_inference_settings.toml"
-                cfg.skvaider-inference.settings;
+            HF_HUB_DISABLE_PROGRESS_BARS = "1";
+            HF_TOKEN = "xxx";
+            HOME = cfg.skvaider-inference.settings.models_dir;
           };
-          script = ''
-            ${lib.getExe' pkgs.fc.skvaider "gunicorn"} "skvaider.inference:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
-          '';
+          script =
+            let
+              configfile =
+                (pkgs.formats.toml { }).generate "skvaider_inference_settings.toml"
+                  cfg.skvaider-inference.settings;
+            in
+            ''
+              ${lib.getExe' pkgs.fc.skvaider "skvaider-inference"} -c ${configfile}
+            '';
           path = [
             pkgs.llama-cpp-rocm
             pkgs.rocmPackages.rocm-smi
@@ -323,7 +318,9 @@ in
       {
         flyingcircus.services.telegraf.inputs.prometheus = lib.mkIf cfg.skvaider-inference.enable [
           {
-            urls = [ "http://127.0.0.1:${toString cfg.skvaider-inference.port}/metrics" ];
+            urls = [
+              "http://{cfg.skvaider-inference.settings.server.host}:${toString cfg.skvaider-inference.settings.server.port}/metrics"
+            ];
           }
         ];
       }

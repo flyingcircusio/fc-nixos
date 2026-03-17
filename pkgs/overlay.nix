@@ -30,14 +30,26 @@ let
       };
 
   nixpkgs-nixos-unstable-src = fetchFromGitHub {
-    hash = "sha256-7VSRHbHJzvzQmxyGNoRlvRMAxXIaR0T/bNG/GUDzOsA=";
+    hash = "sha256-0NBlEBKkN3lufyvFegY4TYv5mCNHbi5OmBDrzihbBMQ=";
     owner = "NixOS";
     repo = "nixpkgs";
-    rev = "cb8a544767bd4150f622829f16ee368ab0d60ca7"; # nixos-unstable from 2026-02-02 for newer llama-cpp versions
+    # nixos-unstable for newer llama-cpp (which version?)
+    # vllm (0.15.1+)
+    rev = "0182a361324364ae3f436a63005877674cf45efb";
   };
-  nixpkgs-nixos-unstable = import nixpkgs-nixos-unstable-src {
+
+  nixpkgs-nixos-unstable-rocm = import nixpkgs-nixos-unstable-src {
     inherit (self) config;
     nixpkgs = nixpkgs-nixos-unstable-src;
+  };
+
+  nixpkgs-nixos-unstable-cuda = import nixpkgs-nixos-unstable-src {
+    nixpkgs = nixpkgs-nixos-unstable-src;
+    config = super.lib.recursiveUpdate self.config {
+      cudaSupport = true;
+      rocmSupport = false;
+      allowUnfree = true;
+    };
   };
 
   fc-nixos-21_05-src = fetchFromGitHub {
@@ -578,9 +590,9 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
     '';
   });
 
-  llama-cpp = nixpkgs-nixos-unstable.llama-cpp;
-  llama-cpp-rocm = nixpkgs-nixos-unstable.llama-cpp-rocm;
-  llama-cpp-vulkan = nixpkgs-nixos-unstable.llama-cpp-vulkan;
+  llama-cpp = nixpkgs-nixos-unstable-rocm.llama-cpp;
+  llama-cpp-rocm = nixpkgs-nixos-unstable-rocm.llama-cpp-rocm;
+  llama-cpp-vulkan = nixpkgs-nixos-unstable-rocm.llama-cpp-vulkan;
 
   mysql = super.mariadb;
 
@@ -738,6 +750,8 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
       (old: {
         pname = "tcpdump-vxlan";
       });
+
+  vllm-cuda = nixpkgs-nixos-unstable-cuda.vllm;
 
   # XXX: consider upstreaming these
   writers = super.writers // {
