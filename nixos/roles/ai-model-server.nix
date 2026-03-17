@@ -104,6 +104,11 @@ in
           options = {
             enable = lib.mkEnableOption "Enable Skvaider inference service";
 
+            hf_token = lib.mkOption {
+              type = lib.types.str;
+              description = "huggingface token";
+            };
+
             settings = lib.mkOption {
               type = lib.types.attrsOf lib.types.anything;
               default = {
@@ -169,7 +174,7 @@ in
           wantedBy = [ "multi-user.target" ];
           environment = {
             HF_HUB_DISABLE_PROGRESS_BARS = "1";
-            HF_TOKEN = "xxx";
+            HF_TOKEN = cfg.skvaider-inference.hf_token;
             HOME = cfg.skvaider-inference.settings.models_dir;
           };
           script =
