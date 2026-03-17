@@ -47,6 +47,16 @@ in
             default = enc.name;
             internal = true;
           };
+          server.host = lib.mkOption {
+            default = "127.0.0.1";
+            type = lib.types.str;
+            description = "IP to bind the server on";
+          };
+          server.port = lib.mkOption {
+            default = cfg.port;
+            type = lib.types.int;
+            description = "Port to bind the server on";
+          };
           backend = lib.mkOption {
             description = "Backends configured in skvaider";
             type = with lib.types; listOf (attrsOf str);
@@ -112,7 +122,7 @@ in
       after = [ "skvaider-config.service" ];
       # Currently, we only support one worker because we would otherwise have multiple aramaki connections with the same app ID
       script = ''
-        ${lib.getExe' pkgs.fc.skvaider "gunicorn"} -b "127.0.0.1:${toString cfg.port}" "skvaider:app_factory()" -w 1 -k uvicorn_worker.UvicornWorker
+        ${lib.getExe' pkgs.fc.skvaider "skvaider-proxy"} -c /var/lib/skvaider/config.toml
       '';
       environment = {
         SKVAIDER_CONFIG_FILE = "/var/lib/skvaider/config.toml";
