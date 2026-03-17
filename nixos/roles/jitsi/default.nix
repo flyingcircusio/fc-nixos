@@ -76,6 +76,8 @@ in
         description = ''
           Enable integration for recording and show the livestream button in the UI.
           Needs a separate Jibri installation which is not part of this role.
+
+          Note: currently live streaming doesn't work, please contact us if you need this feature.
         '';
         type = types.bool;
         default = false;
@@ -256,6 +258,7 @@ in
           startVideoMuted = 8;
           stunServers = [ ];
           recordingService.enabled = cfg.enableRecording;
+          # Live streaming currently is broken
           liveStreaming.enabled = cfg.enableLivestreaming;
         }
         // lib.optionalAttrs cfg.enableRoomAuthentication {
