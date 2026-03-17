@@ -12,7 +12,7 @@ let
   cfg = config.flyingcircus.services.consul;
   enc = config.flyingcircus.enc;
   secrets = enc.parameters.secrets;
-  client_secret_script = fclib.python3BinFromFile ./update-client-secrets.py { };
+  client_secret_script = pkgs.writers.writePython3BinFromFile ./update-client-secrets.py { };
 in
 {
   options = {
