@@ -198,13 +198,13 @@ in
 
   config = mkIf config.services.percona.enable {
 
-    users.extraUsers.mysql = {
+    users.extraUsers.mysql = lib.mkIf (cfg.user == "mysql") {
       description = "MySQL server user";
       group = "mysql";
       uid = config.ids.uids.mysql;
     };
 
-    users.extraGroups.mysql.gid = config.ids.gids.mysql;
+    users.extraGroups.mysql.gid = lib.mkIf (cfg.user == "mysql") config.ids.gids.mysql;
 
     environment.systemPackages = [ mysql ];
 
