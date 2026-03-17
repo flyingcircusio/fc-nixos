@@ -7,8 +7,9 @@ import sys
 
 import requests
 
-COMPLETION_MODEL = "gpt-oss:20b"
-EMBEDDING_MODEL = "Nomic-embed-text:v1.5"
+COMPLETION_MODEL = "gpt-oss:120b"  # XXX make configurable
+EMBEDDING_MODEL = "embeddinggemma:300m"  # XXX make configurable
+EXPECTED_MODELS = 2
 
 
 def is_model(choices, model):
@@ -22,8 +23,8 @@ def check_model_list(session, base, models):
     response = session.get(base + "/openai/v1/models")
     response.raise_for_status()
     models.update(response.json())
-    assert len(models["data"]) >= 4, (
-        f"too few models: {len(models['data'])} < 4"
+    assert len(models["data"]) >= EXPECTED_MODELS, (
+        f"too few models: {len(models['data'])} < {EXPECTED_MODELS}"
     )
     assert models["data"][0]["object"] == "model", (
         "object is not a model: models['data'][0]['object']"
