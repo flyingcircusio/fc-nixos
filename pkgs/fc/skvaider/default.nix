@@ -4,17 +4,17 @@
   pyproject-nix,
   pyproject-build-systems,
   python312,
-  callPackages,
   callPackage,
   fetchFromGitHub,
   ...
 }:
 let
+  # src = /home/ctheune/skvaider;
   src = fetchFromGitHub {
     owner = "flyingcircusio";
     repo = "skvaider";
-    rev = "bf19dba57a78284c3eeab2d2877d3cd09a54209e";
-    hash = "sha256-PLXfomcKa4inO4SOQZdo4fBe7KUz8YYHtfh3eQt0S3g=";
+    rev = "a3e688f48a0da144144831159cbc0c1e89bf0f8b";
+    hash = "sha256-QeS0bycqhqNjrUtWc7XZ6dWgWhhknpjZcIpZCZSxLYI=";
   };
 
   # Load a uv workspace from a workspace root.
