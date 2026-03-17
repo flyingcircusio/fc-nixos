@@ -220,6 +220,7 @@ in
         jicofo.enable = true;
         videobridge.enable = true;
         prosody.enable = true;
+        prosody.lockdown = true;
 
         secureDomain.enable = cfg.enableRoomAuthentication;
         hostName = cfg.hostName;
