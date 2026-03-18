@@ -76,12 +76,9 @@ in
         description = ''
           Enable integration for recording and show the livestream button in the UI.
           Needs a separate Jibri installation which is not part of this role.
-        '';
-        type = types.bool;
-        default = false;
-      };
 
-      enableXMPPWebsockets = mkOption {
+          Note: currently live streaming doesn't work, please contact us if you need this feature.
+        '';
         type = types.bool;
         default = false;
       };
@@ -213,17 +210,8 @@ in
         };
       };
 
-      networking.firewall.allowedUDPPorts = lib.optional cfg.enablePublicUDP 10000;
+      networking.firewall.allowedUDPPorts = [ 3478 ] ++ lib.optional cfg.enablePublicUDP 10000;
       networking.firewall.allowedTCPPorts = [ 3478 ];
-
-      services.jicofo.config =
-        lib.optionalAttrs cfg.enableRoomAuthentication {
-          "org.jitsi.jicofo.auth.URL" = "XMPP:${cfg.hostName}";
-        }
-        // lib.optionalAttrs enableJibri {
-          "org.jitsi.jicofo.jibri.BREWERY" = "jibribrewery@internal.${cfg.hostName}";
-          "org.jitsi.jicofo.jibri.PENDING_TIMEOUT" = "90";
-        };
 
       services.jitsi-meet = {
         enable = true;
@@ -232,7 +220,10 @@ in
         jicofo.enable = true;
         videobridge.enable = true;
         prosody.enable = true;
+        prosody.lockdown = true;
 
+        secureDomain.enable = cfg.enableRoomAuthentication;
+        hostName = cfg.hostName;
         config = {
           channelLastN = cfg.maxVideoSenders;
           constraints = {
@@ -267,20 +258,16 @@ in
           inherit (cfg) resolution;
           startVideoMuted = 8;
           stunServers = [ ];
-          fileRecordingsEnabled = cfg.enableRecording;
-          liveStreamingEnabled = cfg.enableLivestreaming;
+          recordingService.enabled = cfg.enableRecording;
+          # Live streaming currently is broken
+          liveStreaming.enabled = cfg.enableLivestreaming;
         }
         // lib.optionalAttrs cfg.enableRoomAuthentication {
           hosts.anonymousdomain = "guest.${cfg.hostName}";
         }
         // lib.optionalAttrs enableJibri {
           hiddenDomain = "recorder.${cfg.hostName}";
-        }
-        // lib.optionalAttrs cfg.enableXMPPWebsockets {
-          websocket = "wss://${cfg.hostName}/xmpp-websocket";
         };
-
-        hostName = cfg.hostName;
 
         interfaceConfig = {
           DISABLE_VIDEO_BACKGROUND = true;
@@ -289,7 +276,6 @@ in
           SHOW_JITSI_WATERMARK = false;
           SHOW_WATERMARK_FOR_GUESTS = false;
         };
-
       };
 
       services.nginx.virtualHosts = {
@@ -298,37 +284,6 @@ in
             cfg.listenAddress
             (fclib.quoteIPv6Address cfg.listenAddress6)
           ];
-
-          locations = {
-            "= /xmpp-websocket" = {
-              proxyPass = "http://127.0.0.1:5280/xmpp-websocket";
-              extraConfig = ''
-                proxy_buffer_size 128k;
-                proxy_buffers 4 256k;
-                proxy_busy_buffers_size  256k;
-                proxy_http_version 1.1;
-                proxy_set_header Connection "upgrade";
-                proxy_set_header Host $host;
-                proxy_set_header X-Forwarded-For $remote_addr;
-                tcp_nodelay on;
-              '';
-            };
-
-            "~ ^/colibri-ws/jvb1/(.*)" = {
-              proxyPass = "http://127.0.0.1:9090/colibri-ws/jvb1/$1$is_args$args";
-              extraConfig = ''
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection "upgrade";
-                tcp_nodelay on;
-              '';
-            };
-          }
-          // lib.optionalAttrs (pathExists /etc/local/jitsi/welcomePageAdditionalContent.html) {
-            "= /static/welcomePageAdditionalContent.html" = {
-              alias = "${/etc/local/jitsi/welcomePageAdditionalContent.html}";
-            };
-          };
         };
       };
 
@@ -363,35 +318,22 @@ in
       };
 
       services.prosody = {
-
-        modules = {
-          ping = true;
-          websocket = true;
-        };
-
         extraModules = [
           "pinger"
           "turncredentials"
         ];
+        extraPluginPaths = [
+          ./prosody-plugins
+        ];
 
         extraConfig = ''
           archive_expires_after = "10s";
-          cross_domain_websocket = true;
-          consider_websocket_secure = true;
-
+        ''
+        + (lib.optionalString cfg.coturn.enable ''
           -- `prosodyctl` also reads and executes this config file, but has no
           -- access to systemd credentials when running outside the service
           -- context. But it does not require that secret anyways.
-          local credentials_directory = os.getenv("CREDENTIALS_DIRECTORY")
-          if credentials_directory then
-            -- FIXME when prosody is updated to v13, use
-            --   turncredentials_secret = Credential("turncredentials_secret")
-            local secret = assert(io.open(credentials_directory .. "/turncredentials_secret", "r"))
-            turncredentials_secret = secret:read("*a"):gsub("\n*$", "")
-            secret:close()
-          else
-            print("Warning: Running outside of systemd service context, `turncredentials_secret` will not be set")
-          end
+          turncredentials_secret = Credential("turncredentials_secret")
           turncredentials = {
             { type = "turn",
               host = "${turnHostName}",
@@ -409,52 +351,30 @@ in
               transport = "tcp"
             }
           }
-        '';
+        '');
 
-        extraPluginPaths = [
-          ./prosody-plugins
-        ];
-
-        virtualHosts =
-          lib.optionalAttrs cfg.enableRoomAuthentication {
-
-            # Force authentication on default vhost which is used for room creation.
-            "${cfg.hostName}" = {
-              extraConfig = lib.mkForce ''
-                authentication = "internal_hashed"
-                c2s_require_encryption = false
-                admins = { "focus@auth.${cfg.hostName}" }
-              '';
-            };
-
-            # Define new vhost for anonymous guests in rooms.
-            "guest.${cfg.hostName}" = {
-              domain = "guest.${cfg.hostName}";
-              enabled = true;
-              extraConfig = ''
-                authentication = "anonymous"
-                c2s_require_encryption = false
-                smacks_max_unacked_stanzas = 5;
-                smacks_hibernation_time = 60;
-                smacks_max_hibernated_sessions = 1;
-                smacks_max_old_sessions = 1;
-              '';
-            };
-          }
-          // lib.optionalAttrs enableJibri {
-            # Jibri gets special rights and needs its own vhost for that.
-            # c2s encryption doesn't work for unknown reasons but both are on the
-            # same host, so it's ok.
-            "recorder.${cfg.hostName}" = {
-              domain = "recorder.${cfg.hostName}";
-              enabled = true;
-              extraConfig = ''
-                authentication = "internal_plain"
-                c2s_require_encryption = false
-              '';
-            };
+        virtualHosts = lib.optionalAttrs cfg.enableRoomAuthentication {
+          # Force authentication on default vhost which is used for room creation.
+          "${cfg.hostName}" = {
+            extraConfig = lib.mkForce ''
+              authentication = "internal_hashed"
+              c2s_require_encryption = false
+              admins = { "focus@auth.${cfg.hostName}" }
+            '';
           };
 
+          # Define new vhost for anonymous guests in rooms.
+          "guest.${cfg.hostName}" = {
+            domain = "guest.${cfg.hostName}";
+            enabled = true;
+            extraConfig = ''
+              smacks_max_unacked_stanzas = 5;
+              smacks_hibernation_time = 60;
+              smacks_max_hibernated_sessions = 1;
+              smacks_max_old_sessions = 1;
+            '';
+          };
+        };
       };
 
       services.jitsi-videobridge = {
@@ -487,6 +407,79 @@ in
         };
       };
 
+      # improve stability of jicofo + videobridge
+      # todo: upstream
+      #
+      services.jicofo.config.jicofo.health.enabled = true;
+
+      systemd.services.jitsi-videobridge2 =
+        let
+          toVarName =
+            s:
+            "XMPP_PASSWORD_"
+            + lib.stringAsChars (c: if builtins.match "[A-Za-z0-9]" c != null then c else "_") s;
+        in
+        {
+          serviceConfig = {
+            Type = fclib.mkOverrideUpstreamModule "notify";
+            WatchdogSec = 40;
+            WatchdogSignal = "SIGTERM";
+            Restart = "always";
+            NotifyAccess = "all";
+          };
+          script = fclib.mkOverrideUpstreamModule (
+            (lib.concatStrings (
+              lib.mapAttrsToList (name: xmppConfig: ''
+                ${toVarName name}=$(cat ${xmppConfig.passwordFile})
+                export ${toVarName name}
+              '') config.services.jitsi-videobridge.xmppConfigs
+            ))
+            + ''
+              watchdog() {
+                # Jicofo takes some seconds to see that the videobridge is not
+                # operational. Wait a bit before asking Jicofo about our status.
+                sleep 5
+                for count in {1..300}; do
+                  sleep 1
+                  out=$(${pkgs.curl}/bin/curl -s http://localhost:8888/about/health)
+                  if [[ $out != *"No operational bridges"* ]]; then
+                    break
+                  fi
+                  echo "Watchdog: waiting until Jicofo sees the videobridge, try: $count"
+                done
+
+                echo "Watchdog: videobridge is ready"
+                ${pkgs.systemd}/bin/systemd-notify READY=1
+
+                watchdog_sec=$((WATCHDOG_USEC / 1000000))
+                interval=$((watchdog_sec / 2))
+                echo "Watchdog: checking every $interval seconds, times out after $watchdog_sec seconds"
+                sleep $interval
+
+                while true; do
+                  echo "Watchdog: check..."
+                  out=$(${pkgs.curl}/bin/curl --max-time 3 -s http://localhost:8888/about/health)
+                  if [[ $out == *"No operational bridges"* ]]; then
+                    echo "Watchdog: check failed, Jicofo does not see the videobridge. Checking again..."
+                    echo "Watchdog: check output: $out"
+                    sleep 1
+                  else
+                    echo "Watchdog: ok"
+                    ${pkgs.systemd}/bin/systemd-notify WATCHDOG=1
+                    sleep $interval
+                  fi
+                done
+              }
+
+              watchdog $$ &
+
+              echo "Starting videobridge"
+
+              ${pkgs.jitsi-videobridge}/bin/jitsi-videobridge
+            ''
+          );
+        };
+
       systemd.services.jicofo = {
         after = [ "prosody.service" ];
         stopIfChanged = false;
@@ -518,6 +511,7 @@ in
         no-tcp = false;
         static-auth-secret-file = "/run/credentials/coturn.service/static-auth-secret";
         tls-listening-port = 443;
+        # We don't use it currently, so we can also disable it
         extraConfig = ''
           no-stun
         '';
