@@ -180,7 +180,7 @@ in
         notification = "Skvaider provides appropriate responses";
         interval = 300;
         timeout = 60;
-        command = "${pkgs.fc.check-skvaider}/bin/check_skvaider https://${cfg.hostname} /etc/local/sensu-client/skvaider.key";
+        command = "${lib.getExe' pkgs.fc.skvaider "check-skvaider"} https://${cfg.hostname} /etc/local/sensu-client/skvaider.key --config /var/lib/skvaider/config.toml";
       };
     };
 
