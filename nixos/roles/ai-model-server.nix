@@ -167,7 +167,7 @@ in
         };
 
         flyingcircus.roles.ai-model-server.skvaider-inference.settings.embedding_verification_file =
-          lib.mkDefault pkgs.fc.skvaider.embeddings-reference-json;
+          lib.mkDefault ./embeddings-reference.json;
 
         systemd.services.skvaider-inference = lib.mkIf cfg.skvaider-inference.enable {
           description = "Skvaider inference service";
