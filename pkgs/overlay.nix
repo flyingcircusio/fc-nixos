@@ -45,6 +45,17 @@ let
 
   nixpkgs-nixos-unstable-cuda = import nixpkgs-nixos-unstable-src {
     nixpkgs = nixpkgs-nixos-unstable-src;
+    # Prevent cuda_compat being enabled when building in Hydra due to
+    # allowUnsupportedSystem = true.
+    overlays = [
+      (unstableSelf: unstableSuper: {
+        _cuda = unstableSuper._cuda.extend (
+          _: prevAttrs: {
+            extensions = prevAttrs.extensions ++ [ (_: _: { cuda_compat = null; }) ];
+          }
+        );
+      })
+    ];
     config = super.lib.recursiveUpdate self.config {
       cudaSupport = true;
       rocmSupport = false;
