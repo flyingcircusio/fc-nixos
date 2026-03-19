@@ -1,3 +1,24 @@
+# Release 2026_010
+
+## Impact
+
+- A bullet item for the Impact category.
+
+
+## NixOS XX.XX platform
+
+- Adjusted the defaut threshold for k3s' automatic image garbage collection (FC-52143)
+
+- flyingcircus.raid: ensure dm-raid module is loaded (PL-135206)
+
+- webgateway: fix nginx_config sensu check (PL-135234)
+
+- jitsi: fix role and simplify it (PL-135075)
+
+- Add package lamp_php85 (FC-52201)
+
+
+
 # Release 2026_009
 
 ## NixOS XX.XX platform
