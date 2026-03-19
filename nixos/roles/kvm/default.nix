@@ -21,9 +21,6 @@ let
   virtualGatewayV6 = "fe80::1";
 
   vrfInterfaces = lib.filterAttrs (n: v: v.routed or false) fclib.network;
-  locationNameserverV4 = head config.flyingcircus.static.nameservers."${location}";
-  locationNameserverV6 = head config.flyingcircus.static.nameservers6."${location}";
-
   vrfV6Resolvers = iface: map (net: "${net.network}1") iface.v6.networkAttrs;
 
   ubuntuUpdateScript = pkgs.writeShellApplication {
@@ -79,6 +76,19 @@ in
         default = fclib.network.sto;
         defaultText = "The `sto` network";
         description = "Network to use for migration";
+      };
+
+      routedResolverV4 = lib.mkOption {
+        type = lib.types.str;
+        default = head config.flyingcircus.static.nameservers."${location}";
+        defaultText = "The platfrom default IPv4 resolver for this location";
+        description = "Routing destination for DNS queries received on the IPv4 virtual gateway address";
+      };
+      routedResolverV6 = lib.mkOption {
+        type = lib.types.str;
+        default = head config.flyingcircus.static.nameservers6."${location}";
+        defaultText = "The platform default IPv6 resolver for this location";
+        description = "Routing destination for DNS queries received on the IPv6 virtual resolver address(es)";
       };
 
       maintenanceEvacuationTimeout = lib.mkOption {
@@ -628,8 +638,8 @@ in
       # to the location-wide resolver
       ${lib.concatStringsSep "\n" (
         lib.mapAttrsToList (name: _: ''
-          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p udp --dport 53 -j DNAT --to-destination ${locationNameserverV4}
-          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p tcp --dport 53 -j DNAT --to-destination ${locationNameserverV4}
+          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p udp --dport 53 -j DNAT --to-destination ${cfg.routedResolverV4}
+          iptables -t nat -A nixos-nat-pre -i t${name}+ -d ${virtualGatewayV4} -p tcp --dport 53 -j DNAT --to-destination ${cfg.routedResolverV4}
         '') vrfInterfaces
       )}
       ${lib.concatStringsSep "\n" (
@@ -637,8 +647,8 @@ in
           name: iface:
           lib.concatStringsSep "\n" (
             map (gw: ''
-              ip6tables -t nat -A nixos-nat-pre -i t${name}+ -d ${gw} -p udp --dport 53 -j DNAT --to-destination ${locationNameserverV6}
-              ip6tables -t nat -A nixos-nat-pre -i t${name}+ -d ${gw} -p tcp --dport 53 -j DNAT --to-destination ${locationNameserverV6}
+              ip6tables -t nat -A nixos-nat-pre -i t${name}+ -d ${gw} -p udp --dport 53 -j DNAT --to-destination ${cfg.routedResolverV6}
+              ip6tables -t nat -A nixos-nat-pre -i t${name}+ -d ${gw} -p tcp --dport 53 -j DNAT --to-destination ${cfg.routedResolverV6}
             '') (vrfV6Resolvers iface)
           )
         ) vrfInterfaces
