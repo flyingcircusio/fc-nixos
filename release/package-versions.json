@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-146.0.7680.80",
+    "name": "chromedriver-unwrapped-146.0.7680.153",
     "pname": "chromedriver-unwrapped",
-    "version": "146.0.7680.80"
+    "version": "146.0.7680.153"
   },
   "chromium": {
-    "name": "chromium-146.0.7680.80",
+    "name": "chromium-146.0.7680.153",
     "pname": "chromium",
-    "version": "146.0.7680.80"
+    "version": "146.0.7680.153"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -250,9 +250,9 @@
     "version": "18.9.2"
   },
   "gitlab-runner": {
-    "name": "gitlab-runner-18.8.0",
+    "name": "gitlab-runner-18.9.0",
     "pname": "gitlab-runner",
-    "version": "18.8.0"
+    "version": "18.9.0"
   },
   "gitlab-workhorse": {
     "name": "gitlab-workhorse-18.9.2",
@@ -485,9 +485,9 @@
     "version": "4.5.7"
   },
   "matomo": {
-    "name": "matomo-5.5.2",
+    "name": "matomo-5.8.0",
     "pname": "matomo",
-    "version": "5.5.2"
+    "version": "5.8.0"
   },
   "matrix-synapse": {
     "name": "matrix-synapse-wrapped-1.149.1",
@@ -991,9 +991,9 @@
     "version": "1.8.0"
   },
   "roundcube": {
-    "name": "roundcube-1.6.13",
+    "name": "roundcube-1.6.14",
     "pname": "roundcube",
-    "version": "1.6.13"
+    "version": "1.6.14"
   },
   "rsync": {
     "name": "rsync-3.4.1",
