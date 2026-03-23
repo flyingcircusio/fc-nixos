@@ -71,6 +71,18 @@ using slim VMs on a single powerful, physical machine on our public infrastructu
    }
    ```
 
+5) Optional: Adjust VM shutdown/deletion timeouts.
+
+   ```Nix
+   { ... }:
+   {
+     flyingcircus.roles.devhost.virtualMachineOptions = {
+       shutdownDays = 14;  # default
+       deleteDays = 31;    # default
+     };
+   }
+   ```
+
 ## Configuring batou deployments
 
 batou (starting from 2.4) supports a specific provisioning mode that supports
