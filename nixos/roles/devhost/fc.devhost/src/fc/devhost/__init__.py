@@ -81,6 +81,18 @@ def main():
     )
     p.set_defaults(func="cleanup")
     p.add_argument("--location", help="location the VMs live in")
+    p.add_argument(
+        "--shutdown-days",
+        type=int,
+        default=14,
+        help="number of days after last deployment after which VMs should be shut down",
+    )
+    p.add_argument(
+        "--delete-days",
+        type=int,
+        default=31,
+        help="number of days after last deployment after which VMs should be deleted",
+    )
 
     # ---------------------------------
 
