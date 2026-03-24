@@ -99,6 +99,33 @@ in
           of the primary role to the NixOS test.";
       };
 
+      routerUplinkNetworks = mkOption {
+        type = types.listOf types.str;
+        default = static.routerUplinkNetworks."${location}" or [ ];
+        description = "Names of VLANs on which this router accepts connectivity to the outside world";
+      };
+      routerDownlinkNetworks = mkOption {
+        type = types.listOf types.str;
+        default = static.routerDownlinkNetworks."${location}" or [ ];
+        description = "Names of VLANs on which this router provides external connectivity to other routers";
+      };
+      routerGatewayNetworks = mkOption {
+        type = types.listOf types.str;
+        default = [
+          "mgm"
+          "srv"
+          "fe"
+        ]
+        ++ (static.additionalDhcpNetworks."${location}" or [ ]);
+        description = "Names of VLANs on which this router provides gateway services";
+      };
+      floatingGatewayNetworks = mkOption {
+        type = types.listOf types.str;
+        # TODO: in the future this should be a superset of routerGatewayNetworks
+        default = static.floatingGatewayNetworks."${location}" or [ ];
+        description = "Names of VLANs on which there are floating addresses shared between multiple routers";
+      };
+
       sourceAddressV4 = mkOption {
         type = types.nullOr (types.addCheck types.str fclib.isIp4);
         default = null;
@@ -138,6 +165,16 @@ in
   ];
 
   config = lib.mkIf role.enable {
+    assertions = [
+      {
+        assertion = (location != "standalone") -> (role.routerUplinkNetworks != [ ]);
+        message = "Router must have uplink networks configured";
+      }
+      {
+        assertion = (location != "standalone") -> (role.floatingGatewayNetworks != [ ]);
+        message = "Router must have floating gateway networks configured";
+      }
+    ];
 
     flyingcircus.networking.enableInterfaceDefaultRoutes = false;
     flyingcircus.networking.assignVrfRoutes = routedVrfsEnabled;
