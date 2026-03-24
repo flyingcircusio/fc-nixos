@@ -38,7 +38,7 @@ let
     '';
 
   uplinkInterfaces = map (network: fclib.network."${network}".interface) (
-    fclib.filterConfiguredNetworks static.routerUplinkNetworks."${location}"
+    fclib.filterConfiguredNetworks role.routerUplinkNetworks
   );
 
   gatewayInterfaces =
