@@ -57,7 +57,7 @@ let
 
   requiredInterfaces = map (
     network: fclib.network."${network}".interface
-  ) static.floatingGatewayNetworks."${location}";
+  ) role.floatingGatewayNetworks;
 
   addressDependencies = map (iface: "network-addresses-${iface}.service") requiredInterfaces;
   deviceDependencies = map (iface: "${iface}-netdev.service") requiredInterfaces;

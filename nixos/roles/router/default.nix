@@ -41,9 +41,8 @@ let
     fclib.filterConfiguredNetworks role.routerUplinkNetworks
   );
 
-  gatewayInterfaces =
-    map (network: fclib.network."${network}")
-      static.floatingGatewayNetworks."${location}";
+  # TODO: this should use routerGatewayNetworks in the future.
+  gatewayInterfaces = map (network: fclib.network."${network}") role.floatingGatewayNetworks;
 
   martianNetworks = lib.filter (n: n != "") (lib.splitString "\n" (lib.readFile ./martian_networks));
 
