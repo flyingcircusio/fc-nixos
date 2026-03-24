@@ -44,15 +44,13 @@ let
   # TODO: this should use routerGatewayNetworks in the future.
   gatewayInterfaces = map (network: fclib.network."${network}") role.floatingGatewayNetworks;
 
-  martianNetworks = lib.filter (n: n != "") (lib.splitString "\n" (lib.readFile ./martian_networks));
-
   martianIptablesInput = (
     lib.concatMapStringsSep "\n" (
       network:
       lib.concatMapStringsSep "\n" (
         iface: "${fclib.iptables network} -A nixos-fw -i ${iface} " + "-s ${network} -j DROP"
       ) uplinkInterfaces
-    ) martianNetworks
+    ) role.martianNetworks
   );
 
   martianIptablesForward = (
@@ -64,7 +62,7 @@ let
         ) uplinkInterfaces
       )
       # Also drop link-local addresses here.
-      (martianNetworks ++ [ "fe80::/10" ])
+      (role.martianNetworks ++ [ "fe80::/10" ])
   );
 
   locationSensuServer = lib.findFirst (
@@ -123,6 +121,13 @@ in
         # TODO: in the future this should be a superset of routerGatewayNetworks
         default = static.floatingGatewayNetworks."${location}" or [ ];
         description = "Names of VLANs on which there are floating addresses shared between multiple routers";
+      };
+
+      martianNetworks = mkOption {
+        type = types.listOf types.str;
+        default = import ./martian_networks.nix;
+        visible = false;
+        description = "Networks considered invalid as source addresses or as forwarding destinations";
       };
 
       sourceAddressV4 = mkOption {
