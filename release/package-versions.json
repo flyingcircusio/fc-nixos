@@ -380,9 +380,9 @@
     "version": "1.33.9+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.5.5",
+    "name": "keycloak-26.5.6",
     "pname": "keycloak",
-    "version": "26.5.5"
+    "version": "26.5.6"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.76",
+    "name": "linux-6.12.77",
     "pname": "linux",
-    "version": "6.12.76"
+    "version": "6.12.77"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.76",
+    "name": "linux-6.12.77",
     "pname": "linux",
-    "version": "6.12.76"
+    "version": "6.12.77"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -575,9 +575,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.121",
+    "name": "nss-3.122",
     "pname": "nss",
-    "version": "3.121"
+    "version": "3.122"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
