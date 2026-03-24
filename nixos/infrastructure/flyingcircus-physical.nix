@@ -215,7 +215,13 @@ mkIf (cfg.infrastructureModule == "flyingcircus-physical") (
       boot.loader.grub = {
         device = fclib.mkPlatform "/dev/sda";
         fsIdentifier = "provided";
-        gfxmodeBios = "text";
+        extraConfig = ''
+          # `console` output is sufficiently forwarded through IPMI SOL and even
+          # shows up on the graphics output as well.
+          # No need to configure the `serial` grub IO
+          terminal_output console
+          terminal_input console
+        '';
       };
     })
 
