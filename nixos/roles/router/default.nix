@@ -414,11 +414,6 @@ in
     ];
 
     flyingcircus.agent = {
-      extraPreCommands = ''
-        # Updates files in /etc/bind and /etc/bind/pri where also Nix-generated config exists.
-        fc-zones
-      '';
-
       maintenance.router = {
         enter =
           let
