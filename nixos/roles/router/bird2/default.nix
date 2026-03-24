@@ -72,8 +72,7 @@ in
     networking.firewall.extraCommands =
       let
         bgpNetworks =
-          (fclib.filterConfiguredNetworks role.routerUplinkNetworks)
-          ++ (static.routerDownlinkNetworks."${location}" or [ ]);
+          (fclib.filterConfiguredNetworks role.routerUplinkNetworks) ++ role.routerDownlinkNetworks;
         bgpInterfaces = map (network: fclib.network."${network}".interface) bgpNetworks;
       in
       ''
