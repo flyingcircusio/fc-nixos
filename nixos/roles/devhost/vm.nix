@@ -147,6 +147,22 @@ in
         type = types.attrsOf (types.submodule vmOptions);
         default = { };
       };
+      virtualMachineOptions = {
+        shutdownDays = mkOption {
+          description = ''
+            Number of days after last deployment after which VMs should be shut down.
+          '';
+          type = types.ints.unsigned;
+          default = 14;
+        };
+        deleteDays = mkOption {
+          description = ''
+            Number of days after last deployment after which VMs should be deleted.
+          '';
+          type = types.ints.unsigned;
+          default = 31;
+        };
+      };
     };
   };
   config = lib.mkIf (cfg.enable) {
@@ -249,7 +265,11 @@ in
         };
         serviceConfig = {
           Type = "oneshot";
-          ExecStart = "${manage_script}/bin/fc-devhost cleanup";
+          ExecStart = ''
+            ${manage_script}/bin/fc-devhost cleanup \
+              --shutdown-days ${toString cfg.virtualMachineOptions.shutdownDays} \
+              --delete-days ${toString cfg.virtualMachineOptions.deleteDays}
+          '';
         };
       };
     };

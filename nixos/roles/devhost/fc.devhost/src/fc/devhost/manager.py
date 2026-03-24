@@ -591,7 +591,7 @@ class Manager:
             for vm in vms:
                 print(vm["name"])
 
-    def cleanup(self, location=None):
+    def cleanup(self, shutdown_days, delete_days, location=None):
         fcntl.flock(self.lockfile, fcntl.LOCK_EX)
 
         print("Cleaning up the devhost now.")
@@ -610,14 +610,14 @@ class Manager:
             ).astimezone(datetime.UTC)
             if last_deploy_date_parsed < (
                 datetime.datetime.now(datetime.UTC)
-                - datetime.timedelta(days=31)
+                - datetime.timedelta(days=delete_days)
             ):
                 print(f"Deleting VM {vm_cfg['name']}.")
                 Manager(name=vm_cfg["name"]).destroy()
 
             elif last_deploy_date_parsed < (
                 datetime.datetime.now(datetime.UTC)
-                - datetime.timedelta(days=14)
+                - datetime.timedelta(days=shutdown_days)
             ):
                 if not vm_cfg["online"]:
                     continue
