@@ -14,15 +14,9 @@ let
   inherit (config.networking) hostName;
   suffix = "gocept.net";
 
-  dhcpNetworks' = [
-    "mgm"
-    "srv"
-    "fe"
-  ]
-  ++ (config.flyingcircus.static.additionalDhcpNetworks."${location}" or [ ]);
-
-  dhcpNetworks = [ "ipmi" ] ++ dhcpNetworks';
-  dhcpInterfaces = map (net: fclib.network."${net}".interface) dhcpNetworks';
+  # TODO: add role option for twinned networks with dhcp
+  dhcpNetworks = [ "ipmi" ] ++ role.routerGatewayNetworks;
+  dhcpInterfaces = map (net: fclib.network."${net}".interface) role.routerGatewayNetworks;
 
   bootServer = head fclib.network.mgm.v4.defaultGateways;
 
