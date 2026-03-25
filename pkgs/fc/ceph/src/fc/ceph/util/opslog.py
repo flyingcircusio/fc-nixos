@@ -51,7 +51,7 @@ class OpsLog:
         self.internal_networks = internal_networks
         self.rgw_location_proxy_ips = rgw_location_proxy_ips
         self.opslog_ptrn = re.compile(
-            r"^[\d]{4}-[\d]{2}-[\d]{2}-[\d]{2}-[A-Za-z0-9.-]+$"
+            r"^[\d]{4}-[\d]{2}-[\d]{2}-[\d]{2}-[A-Za-z0-9_.-]+$"
         )
         self._local_ips = {}
 
