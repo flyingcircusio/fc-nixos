@@ -9,15 +9,14 @@ let
   # collector process.
 
   prometheusServer = fclib.findOneService "statshost-master-collector";
-  prometheusHost = builtins.head prometheusServer.ips;
+  prometheusHost = lib.replaceStrings [ "gocept.net" ] [ "fcio.net" ] prometheusServer.address;
   prometheusPort = 9090;
 
   lokiServer = fclib.findOneService "loki-collector";
-  lokiHost = builtins.head lokiServer.ips;
+  tempoServer = fclib.findOneService "tempo-collector";
   lokiPort = 3100;
 
-  tempoServer = fclib.findOneService "tempo-collector";
-  tempoHost = builtins.head tempoServer.ips;
+  tempoHost = lib.replaceStrings [ "gocept.net" ] [ "fcio.net" ] tempoServer.address;
   tempoPort = 4317;
 in
 {
@@ -43,7 +42,7 @@ in
       environment.etc."alloy/loki.alloy".text = ''
         loki.write "fcio_rg_loki" {
           endpoint {
-            url = "http://${lokiHost}:${toString lokiPort}/loki/api/v1/push"
+            url = "http://${lokiServer.address}:${toString lokiPort}/loki/api/v1/push"
           }
 
           // there are server side limits to how many labels loki
