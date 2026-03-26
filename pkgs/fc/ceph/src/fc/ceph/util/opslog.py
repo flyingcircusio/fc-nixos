@@ -1,4 +1,6 @@
+import contextlib
 import json
+import logging
 import re
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -6,8 +8,11 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Generator
 
+import fc.ceph.util.lock
 import IPy
 from fc.ceph.util import run
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -16,15 +21,33 @@ class OpsLogState:
     last_gced_day: date
 
     @classmethod
-    def read_from(cls, file: Path):
-        with file.open("r") as f:
-            json_data = json.loads(f.read())
-            return OpsLogState(
-                last_gced_day=date.fromisoformat(json_data["last_gced_day"]),
-                last_processed_datetime=datetime.strptime(
-                    json_data["last_processed_datetime"], "%Y-%m-%dT%H"
-                ),
-            )
+    @contextlib.contextmanager
+    def open_locked(
+        cls, state_file: Path, lockdir: Path | str
+    ) -> Generator["OpsLogState", None, None]:
+        "Read state under an exclusive file lock, yield it, write back on success."
+        with fc.ceph.util.lock.locked(logger, lockdir, "fc-ceph-opslog.lock"):
+            if state_file.exists():
+                with state_file.open("r") as f:
+                    json_data = json.loads(f.read())
+                state = cls(
+                    last_gced_day=date.fromisoformat(
+                        json_data["last_gced_day"]
+                    ),
+                    last_processed_datetime=datetime.strptime(
+                        json_data["last_processed_datetime"],
+                        "%Y-%m-%dT%H",
+                    ),
+                )
+            else:
+                state = cls(
+                    datetime.today() - timedelta(days=1),
+                    date.today() - timedelta(days=2),
+                )
+
+            yield state
+
+            state.write_to(state_file)
 
     def write_to(self, file: Path):
         with file.open("w") as f:
@@ -44,25 +67,18 @@ class OpsLog:
     def __init__(
         self,
         state_file: Path,
+        lock_dir: Path,
         internal_networks: list[IPy.IP] | None = None,
         rgw_location_proxy_ips: list[IPy.IP] | None = None,
     ):
         self.state_file = state_file
+        self.lock_dir = lock_dir
         self.internal_networks = internal_networks
         self.rgw_location_proxy_ips = rgw_location_proxy_ips
         self.opslog_ptrn = re.compile(
             r"^[\d]{4}-[\d]{2}-[\d]{2}-[\d]{2}-[A-Za-z0-9_.-]+$"
         )
         self._local_ips = {}
-
-        if not self.state_file.exists():
-            self.opslog_state = OpsLogState(
-                datetime.today() - timedelta(days=1),
-                date.today() - timedelta(days=2),
-            )
-            self.opslog_state.write_to(self.state_file)
-        else:
-            self.opslog_state = OpsLogState.read_from(self.state_file)
 
     @contextmanager
     def get_pending_stats_by_day(
@@ -77,68 +93,70 @@ class OpsLog:
         exception is thrown, the processed days won't be saved for a retry.
         """
 
-        # Logs are recorded by hour
-        max_date = datetime.now(tz=UTC).replace(
-            microsecond=0, second=0, minute=0
-        )
-        start = self.opslog_state.last_processed_datetime + timedelta(hours=1)
+        with OpsLogState.open_locked(
+            self.state_file, self.lock_dir
+        ) as opslog_state:
+            # Logs are recorded by hour
+            max_date = datetime.now(tz=UTC).replace(
+                microsecond=0, second=0, minute=0
+            )
+            start = opslog_state.last_processed_datetime + timedelta(hours=1)
 
-        stats_by_day: dict[date, list[str]] = {}
+            stats_by_day: dict[date, list[str]] = {}
 
-        start_day = start.date()
-        end_day = max_date.date()
+            start_day = start.date()
+            end_day = max_date.date()
 
-        day = start_day
-        while day <= end_day:
-            logs_by_hour: list[list[str]] = [[] for _ in range(0, 24)]
-            for entry in run.json.radosgw_admin(
-                "log", "list", f"--date={day.strftime('%Y-%m-%d')}"
-            ):
-                if self.opslog_ptrn.match(entry):
-                    logs_by_hour[int(entry[11:13])].append(entry)
+            day = start_day
+            while day <= end_day:
+                logs_by_hour: list[list[str]] = [[] for _ in range(0, 24)]
+                for entry in run.json.radosgw_admin(
+                    "log", "list", f"--date={day.strftime('%Y-%m-%d')}"
+                ):
+                    if self.opslog_ptrn.match(entry):
+                        logs_by_hour[int(entry[11:13])].append(entry)
 
-            if day == end_day:
-                logs_by_hour = logs_by_hour[: max_date.hour]
-            if day == start_day:
-                logs_by_hour = logs_by_hour[start.hour :]
+                if day == end_day:
+                    logs_by_hour = logs_by_hour[: max_date.hour]
+                if day == start_day:
+                    logs_by_hour = logs_by_hour[start.hour :]
 
-            log_list = [obj for hour in logs_by_hour for obj in hour]
+                log_list = [obj for hour in logs_by_hour for obj in hour]
 
-            if log_list:
-                try:
-                    stats_by_day[day].extend(log_list)
-                except KeyError:
-                    stats_by_day[day] = log_list
+                if log_list:
+                    try:
+                        stats_by_day[day].extend(log_list)
+                    except KeyError:
+                        stats_by_day[day] = log_list
 
-            day += timedelta(days=1)
+                day += timedelta(days=1)
 
-        self.opslog_state.last_processed_datetime = max_date - timedelta(
-            hours=1
-        )
+            opslog_state.last_processed_datetime = max_date - timedelta(hours=1)
 
-        yield stats_by_day
-
-        self.opslog_state.write_to(self.state_file)
+            yield stats_by_day
 
     def gc_log_objects(self):
-        last_date = self.opslog_state.last_processed_datetime.date()
-        assert date.today() >= last_date, (
-            f"last_processed_datetime ({self.opslog_state.last_processed_datetime} must not be in the future)"
-        )
+        with OpsLogState.open_locked(
+            self.state_file, self.lock_dir
+        ) as opslog_state:
+            last_date = opslog_state.last_processed_datetime.date()
+            assert date.today() >= last_date, (
+                f"last_processed_datetime ({opslog_state.last_processed_datetime} must not be in the future)"
+            )
 
-        day = self.opslog_state.last_gced_day + timedelta(days=1)
-        end = last_date - timedelta(days=1)
+            day = opslog_state.last_gced_day + timedelta(days=1)
+            end = last_date - timedelta(days=1)
 
-        while day < end:
-            for obj in run.json.radosgw_admin(
-                "log", "list", f"--date={day.strftime('%Y-%m-%d')}"
-            ):
-                run.radosgw_admin("log", "rm", f"--object={obj}")
+            while day < end:
+                for obj in run.json.radosgw_admin(
+                    "log", "list", f"--date={day.strftime('%Y-%m-%d')}"
+                ):
+                    run.radosgw_admin("log", "rm", f"--object={obj}")
 
-            self.opslog_state.last_gced_day = day
-            self.opslog_state.write_to(self.state_file)
+                opslog_state.last_gced_day = day
+                opslog_state.write_to(self.state_file)
 
-            day += timedelta(days=1)
+                day += timedelta(days=1)
 
     def get_object(self, name: str):
         assert self.internal_networks is not None

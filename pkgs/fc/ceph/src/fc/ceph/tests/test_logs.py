@@ -49,7 +49,7 @@ def enc_empty_services_file(tmpdir) -> Path:
 
 
 def test_account_s3_traffic_when_directory_is_unavailable(
-    state_file, enc_file, enc_empty_services_file, monkeypatch
+    state_file, enc_file, enc_empty_services_file, monkeypatch, tmpdir
 ):
     class DirectoryCMMock:
         def lookup_networks(*args, **kwargs):
@@ -102,6 +102,6 @@ def test_account_s3_traffic_when_directory_is_unavailable(
     )
 
     with pytest.raises(RuntimeError):
-        LogTasks().account_s3_traffic(state_file, enc_file, enc_empty_services_file)
+        LogTasks().account_s3_traffic(state_file, enc_file, tmpdir, enc_empty_services_file)
 
     assert json.load(state_file.open())["last_processed_datetime"] == "2025-01-01T01"

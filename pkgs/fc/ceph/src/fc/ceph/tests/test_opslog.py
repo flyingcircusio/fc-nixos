@@ -26,20 +26,18 @@ def state_file(tmpdir) -> Path:
 
     return state_file
 
+def test_opslog_state_rw(state_file, tmpdir):
+    with OpsLogState.open_locked(state_file, tmpdir) as state:
+        assert state.last_gced_day.year == 2024
+        assert state.last_gced_day.month == 12
+        assert state.last_gced_day.day == 28
+        assert state.last_processed_datetime.year == 2025
+        assert state.last_processed_datetime.month == 1
+        assert state.last_processed_datetime.day == 1
+        assert state.last_processed_datetime.hour == 1
+        assert state.last_processed_datetime.minute == 0
 
-def test_opslog_state_rw(state_file):
-    state = OpsLogState.read_from(state_file)
-    assert state.last_gced_day.year == 2024
-    assert state.last_gced_day.month == 12
-    assert state.last_gced_day.day == 28
-    assert state.last_processed_datetime.year == 2025
-    assert state.last_processed_datetime.month == 1
-    assert state.last_processed_datetime.day == 1
-    assert state.last_processed_datetime.hour == 1
-    assert state.last_processed_datetime.minute == 0
-
-    state.last_gced_day = date(2025, 1, 2)
-    state.write_to(state_file)
+        state.last_gced_day = date(2025, 1, 2)
 
     with state_file.open("r") as f:
         raw = json.loads(f.read())
@@ -81,8 +79,8 @@ def rados_log_objects(monkeypatch):
 
 
 @freezegun.freeze_time("2025-01-03 04:00")
-def test_opslog_entries_by_day(state_file, rados_log_objects):
-    opslog = OpsLog(state_file, [], [])
+def test_opslog_entries_by_day(state_file, rados_log_objects, tmpdir):
+    opslog = OpsLog(state_file, tmpdir, [], [])
 
     with opslog.get_pending_stats_by_day() as log_objects:
         assert len(log_objects.keys()) == 3
@@ -118,8 +116,8 @@ def test_opslog_entries_by_day(state_file, rados_log_objects):
 
 
 @freezegun.freeze_time("2025-01-01 04:00")
-def test_start_end_same_day(state_file, rados_log_objects):
-    opslog = OpsLog(state_file, [], [])
+def test_start_end_same_day(state_file, rados_log_objects, tmpdir):
+    opslog = OpsLog(state_file,tmpdir, [], [])
 
     with opslog.get_pending_stats_by_day() as log_objects:
         assert len(log_objects.keys()) == 1
@@ -175,9 +173,9 @@ def rados_log_objects_day_wrap(monkeypatch):
     return mock
 
 
-def test_opslog_day_wrap(state_file, rados_log_objects_day_wrap):
+def test_opslog_day_wrap(state_file, rados_log_objects_day_wrap, tmpdir):
     rados_log_objects = rados_log_objects_day_wrap
-    opslog = OpsLog(state_file, [], [])
+    opslog = OpsLog(state_file, tmpdir, [], [])
 
     def test_log_objects(
         expected_processed_day: str, expected_processed_hour: str
@@ -259,9 +257,9 @@ def rados_log_objects_multiday(monkeypatch):
     return mock
 
 
-def test_opslog_multiday(state_file_multiday, rados_log_objects_multiday):
+def test_opslog_multiday(state_file_multiday, rados_log_objects_multiday, tmpdir):
     state_file = state_file_multiday
-    opslog = OpsLog(state_file, [], [])
+    opslog = OpsLog(state_file, tmpdir, [], [])
     rados_log_objects = rados_log_objects_multiday
 
     def test_log_objects(expected_date: datetime):
@@ -322,8 +320,8 @@ def test_opslog_multiday(state_file_multiday, rados_log_objects_multiday):
 
 
 @freezegun.freeze_time("2025-01-03 04:00")
-def test_opslog_entries_error_handling(state_file, rados_log_objects):
-    opslog = OpsLog(state_file, [], [])
+def test_opslog_entries_error_handling(state_file, rados_log_objects, tmpdir):
+    opslog = OpsLog(state_file, tmpdir, [], [])
 
     class SpecialException(Exception):
         pass
@@ -435,9 +433,9 @@ def get_object_mock(monkeypatch):
     return mock, internal_networks, rgw_location_proxy_ips
 
 
-def test_opslog_object_with_filtered_ips(get_object_mock, state_file):
+def test_opslog_object_with_filtered_ips(get_object_mock, state_file, tmpdir):
     mock, internal_networks, rgw_location_proxy_ips = get_object_mock
-    opslog = OpsLog(state_file, internal_networks, rgw_location_proxy_ips)
+    opslog = OpsLog(state_file,tmpdir, internal_networks, rgw_location_proxy_ips)
 
     result = opslog.get_object("foo")
     mock.assert_has_calls(
@@ -468,14 +466,14 @@ def test_opslog_object_with_filtered_ips(get_object_mock, state_file):
         entries[2]["http_x_headers"][0]["HTTP_X_REAL_IP"] == "2a01:4f8:f00::1"
     )
 
-def test_opslog_object_with_filtered_rgw_location_proxy(get_object_mock, state_file):
+def test_opslog_object_with_filtered_rgw_location_proxy(get_object_mock, state_file, tmpdir):
     mock, _, _ = get_object_mock
     internal_networks = []
     rgw_location_proxy_ips = [
         IPy.IP("10.0.1.2"),
         IPy.IP("fd42:23::abc")
     ]
-    opslog = OpsLog(state_file, internal_networks, rgw_location_proxy_ips)
+    opslog = OpsLog(state_file, tmpdir, internal_networks, rgw_location_proxy_ips)
 
     result = opslog.get_object("foo")
     mock.assert_has_calls(
