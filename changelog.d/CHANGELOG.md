@@ -1,3 +1,13 @@
+# Release 2026_011
+
+## NixOS XX.XX platform
+
+- devhost: Add a NixOS option to configure VM deletion/shutdown timeouts, see [`flyingcircus.roles.devhost.virtualMachineOptions`](https://search.flyingcircus.io/search/options?q=flyingcircus.roles.devhost.virtualMachineOptions&channel=fc-26.05-dev) (PL-135232)
+
+- fc-ceph: Fix accounting for buckets with _ in its name (PL-128135)
+
+
+
 # Release 2026_010
 
 ## Impact
