@@ -228,6 +228,7 @@
   "util-linux",
   "uv",
   "varnish",
+  "varnish80",
   "vim",
   "wget",
   "wireguard-tools",
