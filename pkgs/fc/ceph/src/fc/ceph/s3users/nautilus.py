@@ -1,57 +1,16 @@
-"""S3 user-oriented actions:
-
-- update users based on directory data
-- report accounting for usage
-
-"""
-
-import argparse
-import datetime
-import json
 import logging
 import subprocess
-import sys
 from dataclasses import dataclass
-from pathlib import Path
 from subprocess import CalledProcessError
 
-from fc.util.directory import connect
 from fc.util.runners import run
 
 log = logging.getLogger()
-
-STAMP_FILE_PATH = Path("/var/log/fc-ceph-rgw-users-stamp.log")
 
 
 def list_radosgw_users() -> list[str]:
     """List all uids of users known to the local radosgw"""
     return run.json.radosgw_admin("user", "list")
-
-
-def accounting(location: str, dir_conn):
-    """Uploads usage data from Ceph/RadosGW into the Directory"""
-    users = list_radosgw_users()
-
-    usage = dict()
-    for user in users:
-        try:
-            stats = run.json.radosgw_admin(
-                "user",
-                "stats",
-                "--uid",
-                user,
-                silent_errors=(
-                    lambda code, stdout, stderr: (
-                        code == 2
-                        and b"User has not been initialized or user does not exist"
-                        in stderr
-                    )
-                ),
-            )
-            usage[user] = str(stats["stats"]["total_bytes"])
-        except CalledProcessError as e:
-            logging.error(f"Could not get user statistics: {e.stderr}")
-    dir_conn.store_s3(location, usage)
 
 
 class RGWState:
@@ -350,49 +309,37 @@ class UserManager:
         self.report_local_users_to_directory()
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Flying Circus S3 user management and accounting"
-    )
-    parser.add_argument(
-        "-E",
-        "--enc",
-        default="/etc/nixos/enc.json",
-        help="Path to enc.json (default: %(default)s)",
-    )
+class RgwUserManager:
+    """small subsystem class, serving as abstraction entry points for the fc-ceph
+    VersionedSubsystem dispatching
+    """
 
-    args = parser.parse_args()
-    with open(args.enc) as f:
-        enc = json.load(f)
+    @staticmethod
+    def init_usermanager(
+        directory_connection, location: str, rg: str
+    ) -> UserManager:
+        return UserManager(directory_connection, location, rg)
 
-    directory = connect(enc, ring="max")
-    location = enc["parameters"]["location"]
+    @staticmethod
+    def accounting(location: str, dir_conn):
+        """Uploads usage data from Ceph/RadosGW into the Directory"""
+        users = list_radosgw_users()
 
-    # Accounting first, based on the currently existing users: ensure users
-    # that are deleted are accounted as accurately as possible. Users that
-    # are about to be created will be accounted in the next run - they can't
-    # possibly consume anything right now anyway.
-    got_errors = False
-    try:
-        accounting(location, directory)
-    except Exception:
-        log.exception("Error during accounting:")
-        got_errors = True
-        log.warning("Continuing user management despite accounting errors.")
-
-    user_manager = UserManager(
-        directory, location, enc["parameters"]["resource_group"]
-    )
-    user_manager.sync_users()
-    got_errors = got_errors or user_manager.processing_errors
-
-    if not got_errors:
-        STAMP_FILE_PATH.write_text(str(datetime.datetime.now()) + "\n")
-
-    # on errors, the service shall return a non-zero exit code to be caught by
-    # our monitoring
-    return 2 if got_errors else 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+        usage = dict()
+        for user in users:
+            try:
+                stats = run.json.radosgw_admin(
+                    "user",
+                    "stats",
+                    "--uid",
+                    user,
+                    silent_errors=(
+                        lambda code, stdout, stderr: code == 2
+                        and b"User has not been initialized or user does not exist"
+                        in stderr
+                    ),
+                )
+                usage[user] = str(stats["stats"]["total_bytes"])
+            except CalledProcessError as e:
+                logging.error(f"Could not get user statistics: {e.stderr}")
+        dir_conn.store_s3(location, usage)
