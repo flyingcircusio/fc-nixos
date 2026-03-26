@@ -27,9 +27,10 @@ dev = [
     "pytest",
 ]
 
-[project.entry-points.console_scripts]
+[project.scripts]
 fc-ceph="fc.ceph.main:ceph"
 fc-luks="fc.ceph.main:luks"
+fc-s3users = "fc.ceph.s3users_main:main"
 
 [tool.black]
 line-length = 80

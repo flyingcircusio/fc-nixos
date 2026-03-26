@@ -114,10 +114,16 @@ in
         }
       ];
 
-      flyingcircus.services.ceph.server = {
-        enable = true;
-        cephRelease = role.cephRelease;
-        # no fc-ceph settings necessary so far
+      flyingcircus.services.ceph = {
+        fc-ceph.settings.RgwUserManager = {
+          release = role.cephRelease;
+          path = cephPkgs.fc-ceph-path;
+        };
+        server = {
+          enable = true;
+          cephRelease = role.cephRelease;
+          # no fc-ceph settings necessary so far
+        };
       };
 
       systemd.tmpfiles.rules = [
@@ -240,7 +246,7 @@ in
         };
         wants = [ fclib.network."${role.rgwInterface}".addressUnit ];
         after = wants;
-        script = "${pkgs.fc.agent}/bin/fc-s3users --enc ${config.flyingcircus.encPath}";
+        script = "${cephPkgs.fc-ceph}/bin/fc-s3users --enc ${config.flyingcircus.encPath}";
       };
 
       flyingcircus.services.sensu-client.checks = {
