@@ -343,6 +343,14 @@ def ceph(args=sys.argv[1:]):
         type=Path,
         default=Path("/etc/nixos/enc.json"),
     )
+    (
+        account_s3_traffic.add_argument(
+            "--lock-dir",
+            default="/run/lock",
+            help="Directory where the lock file for exclusive operations should be "
+            "placed.",
+        ),
+    )
     account_s3_traffic.set_defaults(action="account_s3_traffic")
 
     gc_s3_traffic = logs_sub.add_parser(
@@ -355,6 +363,14 @@ def ceph(args=sys.argv[1:]):
         "--state-file",
         help="File which contains the state of the S3 traffic accounting (i.e. last accounted days)",
         type=Path,
+    )
+    (
+        gc_s3_traffic.add_argument(
+            "--lock-dir",
+            default="/run/lock",
+            help="Directory where the lock file for exclusive operations should be "
+            "placed.",
+        ),
     )
 
     slowreq_histogram = logs_sub.add_parser(

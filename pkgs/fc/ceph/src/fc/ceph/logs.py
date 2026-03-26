@@ -61,6 +61,7 @@ class LogTasks(object):
         self,
         state_file: Path,
         enc_file: Path,
+        lock_dir: Path,
         enc_services_file: Path = Path("/etc/nixos/services.json"),
     ):
         final_stats = []
@@ -82,7 +83,7 @@ class LogTasks(object):
                     internal_networks.append(IPy.IP(network))
 
             ops_log = OpsLog(
-                state_file, internal_networks, rgw_location_proxy_ips
+                state_file, lock_dir, internal_networks, rgw_location_proxy_ips
             )
 
             with ops_log.get_pending_stats_by_day() as logs:
@@ -114,5 +115,5 @@ class LogTasks(object):
                 print(f"Gathered {len(final_stats)} samples to account")
                 d.store_s3_traffic(final_stats)
 
-    def gc_s3_traffic(self, state_file: Path):
-        OpsLog(state_file).gc_log_objects()
+    def gc_s3_traffic(self, state_file: Path, lock_dir: Path):
+        OpsLog(state_file, lock_dir).gc_log_objects()
