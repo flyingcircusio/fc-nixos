@@ -63,7 +63,21 @@ let
       .port = "80";
     }
 
+    # https://vinyl-cache.org/security/VSV00018.html
+    # mitigate a deficiency in http 1.1 request parsing
+    sub vsv18 {
+      if (req.url == "*" && req.method == "OPTIONS") {
+        return;
+      }
+      # NB: we do not allow connect by default (see vcl_req_method)
+      if (req.url !~ "^/" && req.method != "CONNECT") {
+        return (synth(400));
+      }
+    }
+
     sub vcl_recv {
+      call vsv18;
+
       ${virtualHostSelection}
 
       return (synth(503, "Internal Error"));
