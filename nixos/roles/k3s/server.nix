@@ -15,7 +15,6 @@ let
 
   location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
   srvFQDN = "${config.networking.hostName}.fcio.net";
-
   lokiServer = fclib.findOneService "loki-collector";
 
   # We allow frontend access to the dashboard at the moment
@@ -232,7 +231,43 @@ let
             }
           ];
         })
-      ];
+      ]
+      ++ (lib.optionals (!builtins.isNull lokiServer) [
+        (serviceAccount "alloy")
+        (serviceAccountSecret "alloy")
+        (clusterRole {
+          metadata.name = "flyingcircus:alloy";
+          rules = [
+            {
+              apiGroups = [ "" ];
+              resources = [
+                "pods"
+                "pods/log"
+              ];
+              verbs = [
+                "get"
+                "list"
+                "watch"
+              ];
+            }
+          ];
+        })
+        (clusterRoleBinding {
+          metadata.name = "flyingcircus:alloy:viewer";
+          roleRef = {
+            apiGroup = "rbac.authorization.k8s.io";
+            kind = "ClusterRole";
+            name = "flyingcircus:alloy";
+          };
+          subjects = [
+            {
+              kind = "ServiceAccount";
+              name = "io.flyingcircus.service.alloy";
+              namespace = "kube-system";
+            }
+          ];
+        })
+      ]);
       renderedManifests = lib.concatStringsSep "\n" (
         lib.flatten (
           map (m: [
@@ -251,26 +286,18 @@ let
   authTokenScript = pkgs.writeShellScriptBin "kubernetes-write-auth-token" ''
     set -o pipefail
 
-    user="$1"
+    tokenname="$1"
     secretname="$2"
+    user="$3"
+    group="$4"
 
     tokendir=/var/lib/k3s/tokens
     export KUBECONFIG=${defaultKubeconfig}
 
-    if [ -z "$secretname" ]; then
-      echo 'missing kubernetes secret name' 2>&1
-      exit 1
-    fi
-
-    if [ -z "$user" ]; then
-      echo 'missing service account name' 2>&1
-      exit 1
-    fi
-
     mkdir -p "$tokendir"
-    install -o "$user" -g "$user" -m 600 /dev/null "$tokendir/$user.b64"
-    install -o "$user" -g "$user" -m 600 /dev/null "$tokendir/$user.tmp"
-    install -o "$user" -g "$user" -m 600 /dev/null "$tokendir/$user.cfg.tmp"
+    install -o "$user" -g "$group" -m 600 /dev/null "$tokendir/$tokenname.b64"
+    install -o "$user" -g "$group" -m 600 /dev/null "$tokendir/$tokenname.tmp"
+    install -o "$user" -g "$group" -m 600 /dev/null "$tokendir/$tokenname.cfg.tmp"
 
     # this service may race with k3s loading and processing the vendor
     # manifests from disk -- they are not present on first run, and k3s only
@@ -281,8 +308,8 @@ let
     rc=0
     for i in 1 2 3 4 5 6 7 8 9 10; do
       kubectl get -n kube-system -o jsonpath='{.data.token}' \
-        secret "$secretname" > "$tokendir/$user.b64" && \
-        test -s "$tokendir/$user.b64"
+        secret "$secretname" > "$tokendir/$tokenname.b64" && \
+        test -s "$tokendir/$tokenname.b64"
       rc="$?"
 
       if [ "$rc" = 0 ]; then
@@ -296,49 +323,56 @@ let
       exit 1
     fi
 
-    base64 -d "$tokendir/$user.b64" > "$tokendir/$user.tmp"
+    base64 -d "$tokendir/$tokenname.b64" > "$tokendir/$tokenname.tmp"
     if [ "$?" != 0 ]; then
       echo 'could not decode secret token' 2>&1
       exit 1
     fi
 
     remarshal "$KUBECONFIG" -if yaml -of json | \
-      jq --rawfile token "$tokendir/$user.tmp" \
+      jq --rawfile token "$tokendir/$tokenname.tmp" \
       '.users[0].user |= (del(."client-key-data", ."client-certificate-data") | .token = $token)' \
-      > "$tokendir/$user.cfg.tmp"
+      > "$tokendir/$tokenname.cfg.tmp"
     if [ "$?" != 0 ]; then
       echo 'could not generate kubeconfig from token' 2>&1
       exit 1
     fi
 
-    mv "$tokendir/$user.tmp" "$tokendir/$user"
-    mv "$tokendir/$user.cfg.tmp" "$tokendir/$user.cfg"
-    echo "Successfully initialised token for secret \"$secretname\" for user \"$user\"."
-    rm -f "$tokendir/$user.b64"
+    mv "$tokendir/$tokenname.tmp" "$tokendir/$tokenname"
+    mv "$tokendir/$tokenname.cfg.tmp" "$tokendir/$tokenname.cfg"
+    echo "Successfully initialised token with name \"$tokenname\" for secret \"$secretname\" for user \"$user\" in group \"$group\"."
+    rm -f "$tokendir/$tokennname.b64"
   '';
 
-  makeAuthTokenService = user: secret: {
-    wantedBy = [ "multi-user.target" ];
-    requires = [
-      "k3s.service"
-    ];
-    after = [
-      "k3s.service"
-    ];
-    path = with pkgs; [
-      coreutils
-      kubectl
-      remarshal
-      jq
-    ];
-    serviceConfig = {
-      RemainAfterExit = true;
-      Type = "oneshot";
-      Restart = "on-failure";
-      RestartSec = 10;
-      ExecStart = "${authTokenScript}/bin/kubernetes-write-auth-token ${user} ${secret}";
+  makeAuthTokenService =
+    {
+      user,
+      secret,
+      group ? user,
+      tokenname ? user,
+    }:
+    {
+      wantedBy = [ "multi-user.target" ];
+      requires = [
+        "k3s.service"
+      ];
+      after = [
+        "k3s.service"
+      ];
+      path = with pkgs; [
+        coreutils
+        kubectl
+        remarshal
+        jq
+      ];
+      serviceConfig = {
+        RemainAfterExit = true;
+        Type = "oneshot";
+        Restart = "on-failure";
+        RestartSec = 10;
+        ExecStart = "${authTokenScript}/bin/kubernetes-write-auth-token '${tokenname}' '${secret}' '${user}' '${group}'";
+      };
     };
-  };
 
   podPendingScript = pkgs.writeScriptBin "check-kube-pending-pods" ''
     set -euo pipefail
@@ -596,10 +630,24 @@ in
           "L+ /var/lib/k3s/server/manifests/flyingcircus/flyingcircus.yaml - - - - ${additionalManifests}/flyingcircus.yaml"
         ];
 
-        systemd.services.fc-k3s-token-telegraf = makeAuthTokenService "telegraf" "io.flyingcircus.service-token.telegraf";
-        systemd.services.fc-k3s-token-sensuclient = makeAuthTokenService "sensuclient" "io.flyingcircus.service-token.sensu-client";
+        systemd.services.fc-k3s-token-telegraf = makeAuthTokenService {
+          user = "telegraf";
+          secret = "io.flyingcircus.service-token.telegraf";
+        };
+        systemd.services.fc-k3s-token-sensuclient = makeAuthTokenService {
+          user = "sensuclient";
+          secret = "io.flyingcircus.service-token.sensu-client";
+        };
+        systemd.services.fc-k3s-token-alloy = lib.mkIf (!builtins.isNull lokiServer) (makeAuthTokenService {
+          user = "root";
+          tokenname = "alloy";
+          secret = "io.flyingcircus.service-token.alloy";
+        });
         systemd.services.telegraf.after = [ "fc-k3s-token-telegraf.service" ];
         systemd.services.sensu-client.after = [ "fc-k3s-token-sensuclient.service" ];
+        systemd.services.alloy.after = lib.optionals (!builtins.isNull lokiServer) [
+          "fc-k3s-token-alloy.service"
+        ];
 
         ### Dashboard
         flyingcircus.services.nginx.enable = true;
@@ -703,18 +751,6 @@ in
           "ip_vs_sh"
         ];
       }
-
-      (lib.mkIf (!builtins.isNull lokiServer) {
-        systemd.services.alloy = lib.mkIf config.services.alloy.enable {
-          reloadTriggers = [ config.environment.etc."alloy/k3s_events.alloy".source ];
-        };
-
-        environment.etc."alloy/k3s_events.alloy".text = ''
-          loki.source.kubernetes_events "k3s_events" {
-            forward_to = [loki.write.fcio_rg_loki.receiver]
-          }
-        '';
-      })
     ]
   );
 }
