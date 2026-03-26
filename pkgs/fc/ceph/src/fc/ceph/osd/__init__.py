@@ -3,7 +3,7 @@ import fc.ceph
 from . import nautilus
 
 DEFAULT_JOURNAL_SIZE = "10g"
-OBJECTSTORE_TYPES = ["filestore", "bluestore"]
+OBJECTSTORE_TYPES = ["bluestore"]
 
 
 class OSDManager(fc.ceph.VersionedSubsystem):
