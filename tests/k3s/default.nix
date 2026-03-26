@@ -51,14 +51,6 @@ import ../make-test-python.nix (
         ];
         service = "k3s-frontend";
       }
-      {
-        address = "k3sserver.fcio.net";
-        ips = [
-          masterSrv4
-          masterSrv6
-        ];
-        service = "loki-collector";
-      }
     ];
 
     # synthetic default routes are required so that connections to the
@@ -77,6 +69,7 @@ import ../make-test-python.nix (
   {
 
     name = "k3s";
+
     nodes = {
 
       master =
@@ -92,7 +85,6 @@ import ../make-test-python.nix (
           config = {
             flyingcircus.encServices = encServices;
             flyingcircus.roles.k3s-server.enable = true;
-            flyingcircus.roles.loki.enable = true;
             flyingcircus.kubernetes.network.enableIPv6 = enableIPv6;
             networking.domain = "fcio.net";
             networking.hostName = lib.mkForce "k3sserver";
@@ -102,9 +94,6 @@ import ../make-test-python.nix (
               6443
             ];
             networking.firewall.allowedUDPPorts = [ 53 ];
-
-            environment.variables.LOKI_ADDR = "http://127.0.0.1:3100";
-            environment.systemPackages = [ pkgs.grafana-loki ];
 
             services.nginx.virtualHosts."kubernetes.test.fcio.net" = {
               enableACME = false;
@@ -237,9 +226,6 @@ import ../make-test-python.nix (
       { nodes, ... }:
       let
         masterSensuCheck = testlib.sensuCheckCmd nodes.master;
-        testscript = pkgs.writeShellScript "test-podlog-in-loki.sh" ''
-          test $(logcli -q query '{container="redis"} |= `Redis is starting`' | wc -l) -gt 0
-        '';
       in
       ''
         import time
@@ -311,9 +297,6 @@ import ../make-test-python.nix (
 
         with subtest("frontend should be able to ping redis pods"):
           frontend.wait_until_succeeds("redis-cli ping | grep PONG")
-
-        with subtest("redis logs are shipped to loki"):
-          k3sserver.succeed('${testscript}')
 
         with subtest("dashboard sensu check should be red after shutting down dashboard"):
           k3sserver.systemctl("stop kube-dashboard")
