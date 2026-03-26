@@ -10,38 +10,6 @@ with builtins;
 let
   fclib = config.fclib;
   cfg = config.flyingcircus.roles.ai-model-server;
-  scfg = config.services.ollama;
-
-  checkOllamaCpuOffload = pkgs.writeShellApplication {
-    name = "check_ollama_cpu_offload";
-    runtimeInputs = [
-      pkgs.curl
-      pkgs.jq
-    ];
-    text = ''
-      url="http://${scfg.host}:${toString scfg.port}/api/ps"
-
-      if ! response=$(curl -s --fail "$url"); then
-        echo "CRITICAL: Failed to connect to Ollama at $url"
-        exit 2
-      fi
-
-      # Check for models loaded into CPU
-      # We look for models where size > size_vram
-      # We output the names of such models
-
-      offloaded_models=$(echo "$response" | jq -r '.models[] | select(.size > .size_vram) | "\(.name) (size: \(.size), vram: \(.size_vram))"')
-
-      if [ -n "$offloaded_models" ]; then
-        echo "WARNING: Some models are partially or fully loaded into CPU:"
-        echo "$offloaded_models"
-        exit 1
-      else
-        echo "OK: All models are fully loaded into GPU"
-        exit 0
-      fi
-    '';
-  };
 
 in
 {
@@ -71,7 +39,7 @@ in
 
               name = lib.mkOption {
                 type = lib.types.str;
-                description = "Model name for ollama";
+                description = "Model name";
               };
             };
           }
@@ -140,34 +108,26 @@ in
           pkgs.nvtopPackages.full
         ];
 
-        environment.variables.OLLAMA_HOST = "${scfg.host}:${toString scfg.port}";
-
         boot.kernelPackages = lib.mkForce (pkgs.linuxPackagesFor pkgs.linuxKernelGPU);
 
         boot.kernelModules = [ "nvidia" ];
 
-        services.ollama = {
-          enable = false;
-          host = fclib.mkPlatform config.networking.hostName;
-          environmentVariables = {
-            OLLAMA_DEBUG = "1";
-            OLLAMA_NUM_PARALLEL = "10";
-            OLLAMA_FLASH_ATTENTION = "1";
-            OLLAMA_SCHED_SPREAD = "0";
-            OLLAMA_MULTIUSER_CACHE = "1";
-            OLLAMA_NEW_ENGINE = "1";
-            OLLAMA_NEW_ESTIMATES = "1";
-            OLLAMA_KEEP_ALIVE = "-1"; # infinite, expire if needed
-          };
-          loadModels =
-            let
-              enabledModels = lib.filterAttrs (n: v: v.enable) cfg.models;
-            in
-            lib.mapAttrsToList (n: v: v.name) enabledModels;
-        };
-
         flyingcircus.roles.ai-model-server.skvaider-inference.settings.embedding_verification_file =
           lib.mkDefault ./embeddings-reference.json;
+
+        flyingcircus.passwordlessSudoPackages = [
+          # Allow applying config and restarting services to service users
+          {
+            commands = [
+              "bin/systemctl start"
+              "bin/systemctl stop"
+            ];
+            package = pkgs.systemd;
+            users = [
+              "skvaider"
+            ];
+          }
+        ];
 
         systemd.services.skvaider-inference = lib.mkIf cfg.skvaider-inference.enable {
           description = "Skvaider inference service";
@@ -198,7 +158,13 @@ in
             User = "skvaider";
             Group = "service";
             StateDirectoryMode = "0755";
-            CapabilityBoundingSet = [ "" ];
+            CapabilityBoundingSet = [
+              # sudo needs those:
+              "CAP_SETUID"
+              "CAP_SETGID"
+              "CAP_DAC_READ_SEARCH"
+              "CAP_SYS_RESOURCE"
+            ];
             DeviceAllow = [
               # CUDA
               # https://docs.nvidia.com/dgx/pdf/dgx-os-5-user-guide.pdf
@@ -233,21 +199,6 @@ in
           "d ${cfg.skvaider-inference.settings.models_dir} 0755 skvaider service -"
         ];
 
-        systemd.services.ollama.serviceConfig.Restart = "always";
-
-        flyingcircus.services.sensu-client.checks = lib.mkIf scfg.enable {
-          ollama_health = {
-            notification = "Ollama service health check";
-            command = "check_http -H ${scfg.host} -p ${toString scfg.port} -u /api/tags";
-            interval = 300;
-          };
-
-          ollama_cpu_offload = {
-            notification = "Ollama CPU offload check";
-            command = "${checkOllamaCpuOffload}/bin/check_ollama_cpu_offload";
-            interval = 300;
-          };
-        };
       }
 
       # ROCM specific config
@@ -298,14 +249,6 @@ in
           [
             "L+  /opt/rocm  - - - -  ${rocmEnv}"
           ];
-
-        # AMD specific ollama setup
-        services.ollama = {
-          package = pkgs.ollama-rocm;
-          acceleration = "rocm";
-          # Pin to gfx1100 LLVM target for Radeon PRO W7900 GPUs
-          rocmOverrideGfx = "11.0.0";
-        };
 
         services.telegraf.extraConfig.inputs.amd_rocm_smi = [
           {
