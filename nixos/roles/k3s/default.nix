@@ -11,6 +11,8 @@
 }:
 let
   inherit (config.flyingcircus.kubernetes.network) enableIPv6;
+  location = lib.attrByPath [ "parameters" "location" ] "standalone" config.flyingcircus.enc;
+  lokiServer = config.fclib.findOneService "loki-collector";
 in
 {
   imports = with lib; [
@@ -134,6 +136,87 @@ in
             ];
           }
         ];
+      })
+
+      (lib.mkIf (server && (!builtins.isNull lokiServer)) {
+        systemd.services.alloy = lib.mkIf config.services.alloy.enable {
+          requires = [ "k3s.service" ];
+          after = [ "k3s.service" ];
+
+          serviceConfig.LoadCredential = "bearer_token_file:/var/lib/k3s/tokens/alloy";
+          environment.BEARER_TOKEN_FILE = "%d/bearer_token_file";
+          environment.API_SERVER = "https://127.0.0.1:6443";
+          environment.CLUSTER_LOCATION = location;
+          reloadTriggers = [
+            config.environment.etc."alloy/k3s_events.alloy".source
+            config.environment.etc."alloy/pod_logs.alloy".source
+          ];
+        };
+
+        environment.etc."alloy/pod_logs.alloy".text = ''
+          discovery.kubernetes "pods" {
+            role = "pod"
+            selectors {
+              role = "pod"
+            }
+            api_server = sys.env("API_SERVER")
+            bearer_token_file = sys.env("BEARER_TOKEN_FILE")
+            tls_config {
+              insecure_skip_verify = true
+            }
+          }
+
+          discovery.relabel "pods" {
+            targets = discovery.kubernetes.pods.targets
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_container_name"]
+              action = "replace"
+              target_label = "container"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_phase"]
+              action = "replace"
+              target_label = "phase"
+            }
+          }
+
+          loki.source.kubernetes "pod_logs" {
+            targets    = discovery.relabel.pods.output
+            forward_to = [loki.process.pod_logs.receiver]
+            client {
+              api_server = sys.env("API_SERVER")
+              bearer_token_file = sys.env("BEARER_TOKEN_FILE")
+              tls_config {
+                insecure_skip_verify = true
+              }
+            }
+          }
+
+          loki.process "pod_logs" {
+            stage.static_labels {
+                values = {
+                  cluster = sys.env("CLUSTER_LOCATION"),
+                }
+            }
+
+            forward_to = [loki.write.fcio_rg_loki.receiver]
+          }
+        '';
+
+        environment.etc."alloy/k3s_events.alloy".text = ''
+          loki.source.kubernetes_events "k3s_events" {
+            forward_to = [loki.write.fcio_rg_loki.receiver]
+            client {
+              api_server = sys.env("API_SERVER")
+              bearer_token_file = sys.env("BEARER_TOKEN_FILE")
+              tls_config {
+                insecure_skip_verify = true
+              }
+            }
+          }
+        '';
       })
     ];
 }
