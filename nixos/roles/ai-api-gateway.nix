@@ -175,6 +175,15 @@ in
       }
     ];
 
+    flyingcircus.passwordlessSudoRules = [
+      {
+        commands = [
+          "${lib.getExe' pkgs.fc.skvaider "check-skvaider"} https://${cfg.hostname} /etc/local/sensu-client/skvaider.key --config /var/lib/skvaider/config.toml"
+        ];
+        groups = [ "sensuclient" ];
+      }
+    ];
+
     flyingcircus.services.sensu-client.checks = {
       skvaider = {
         notification = "Skvaider provides appropriate responses";
