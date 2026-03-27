@@ -178,7 +178,7 @@ in
 
     flyingcircus.passwordlessSudoRules = [
       {
-        commands = [ checkSkvaiderCmd ];
+        commands = [ (lib.getExe' pkgs.fc.skvaider "check-skvaider") ];
         groups = [ "sensuclient" ];
       }
     ];
