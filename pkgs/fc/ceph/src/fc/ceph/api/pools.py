@@ -37,7 +37,7 @@ class Pools(object):
         """Returns all pool names."""
         if self._names:
             return self._names
-        out, _err = self.cluster.ceph_osd(["lspools"], ignore_dry_run=True)
+        out, _err = self.cluster.ceph_osd(["lspools"])
         pools = json.loads(out.strip())
         self._names = set(p["poolname"] for p in pools)
         return self._names
@@ -107,7 +107,6 @@ class Pool(object):
         stdout, stderr, returncode = self.cluster.rbd(
             ["--format=json", "ls", "-l", self.name],
             accept_failure=True,
-            ignore_dry_run=True,
         )
         if returncode == 0:
             return stdout
@@ -125,9 +124,7 @@ class Pool(object):
     def pg_num(self):
         if self._pg_num:
             return self._pg_num
-        out = self.cluster.ceph_osd(
-            ["pool", "get", self.name, "pg_num"], ignore_dry_run=True
-        )
+        out = self.cluster.ceph_osd(["pool", "get", self.name, "pg_num"])
         pginfo = json.loads(out[0])
         self._pg_num = int(pginfo["pg_num"])
         return self._pg_num
@@ -149,9 +146,7 @@ class Pool(object):
     def pgp_num(self):
         if self._pgp_num:
             return self._pgp_num
-        out = self.cluster.ceph_osd(
-            ["pool", "get", self.name, "pgp_num"], ignore_dry_run=True
-        )
+        out = self.cluster.ceph_osd(["pool", "get", self.name, "pgp_num"])
         pginfo = json.loads(out[0])
         self._pgp_num = int(pginfo["pgp_num"])
         return self._pgp_num

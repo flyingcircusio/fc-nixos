@@ -3,7 +3,6 @@
 import configparser
 import socket
 import subprocess
-import sys
 
 CEPH_ID = socket.gethostname()
 CEPH_CONF = "/etc/ceph/ceph.conf"
@@ -20,13 +19,11 @@ class Cluster(object):
         self,
         ceph_conf=CEPH_CONF,
         ceph_id=CEPH_ID,
-        dry_run=False,
         default_encoding="utf-8",
     ):
         self.ceph_conf = ceph_conf
         self.config = None  # lazy ConfigParser init
         self.ceph_id = ceph_id
-        self.dry_run = dry_run
         self.default_encoding = default_encoding
 
     def parse_config(self):
@@ -53,9 +50,7 @@ class Cluster(object):
             # ceph default value
             return 8
 
-    def generic_ceph_cmd(
-        self, base_args, more_args, accept_failure=False, ignore_dry_run=False
-    ):
+    def generic_ceph_cmd(self, base_args, more_args, accept_failure=False):
         """Generic command wrapper for Ceph command line tools.
 
         Executes a command line constructed from a static prefix
@@ -64,14 +59,6 @@ class Cluster(object):
         is returned. If we do not accept failures anyway, only a tuple
         is return if the command invocation succeeds.
         """
-        if self.dry_run and not ignore_dry_run:
-            print(
-                "*** dry-run: {}".format(base_args + list(more_args)),
-                file=sys.stderr,
-            )
-            if accept_failure:
-                return ("", "", 0)
-            return ("", "")
         p = subprocess.Popen(
             base_args + list(more_args),
             stdout=subprocess.PIPE,
@@ -90,16 +77,15 @@ class Cluster(object):
             )
         return (stdout, stderr)
 
-    def rbd(self, args, accept_failure=False, ignore_dry_run=False):
+    def rbd(self, args, accept_failure=False):
         """RBD command line wrapper."""
         return self.generic_ceph_cmd(
             ["rbd", "--id", self.ceph_id, "-c", self.ceph_conf],
             args,
             accept_failure,
-            ignore_dry_run,
         )
 
-    def ceph_osd(self, args, accept_failure=False, ignore_dry_run=False):
+    def ceph_osd(self, args, accept_failure=False):
         """Ceph OSD command line wrapper."""
         return self.generic_ceph_cmd(
             [
@@ -113,5 +99,4 @@ class Cluster(object):
             ],
             args,
             accept_failure,
-            ignore_dry_run,
         )

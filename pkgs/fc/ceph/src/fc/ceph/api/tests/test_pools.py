@@ -43,7 +43,7 @@ class TestPools(object):
         setattr(
             cluster,
             "ceph_osd",
-            lambda args, ignore_dry_run: (
+            lambda args: (
                 '[{"poolnum":0,"poolname":"data"},{"poolnum":1,"poolname":'
                 '"metadata"},{"poolnum":2,"poolname":"rbd"},{"poolnum":161,'
                 '"poolname":"test"}]\n',
@@ -58,7 +58,7 @@ class TestPools(object):
         setattr(
             cluster,
             "ceph_osd",
-            lambda args, ignore_dry_run: (
+            lambda args: (
                 '[{"poolnum":0,"poolname":"data"},'
                 '{"poolnum":161,"poolname":"test"}]\n',
                 "",
@@ -81,7 +81,7 @@ class TestPools(object):
         setattr(
             cluster,
             "ceph_osd",
-            lambda args, ignore_dry_run: (
+            lambda args: (
                 '[{"poolnum":0,"poolname":"data"},'
                 '{"poolnum":161,"poolname":"test"}]',
                 "",
@@ -97,7 +97,7 @@ class TestPools(object):
         setattr(
             cluster,
             "ceph_osd",
-            lambda args, ignore_dry_run: (
+            lambda args: (
                 '[{"poolnum":0,"poolname":"data"},'
                 '{"poolnum":161,"poolname":"test"}]\n',
                 "",
@@ -145,7 +145,7 @@ class TestPool(object):
         setattr(
             cluster,
             "rbd",
-            lambda args, accept_failure, ignore_dry_run: (
+            lambda args, accept_failure: (
                 "",
                 "rbd: error opening pool test2: (2) No such file or "
                 "directory\n",
@@ -159,7 +159,7 @@ class TestPool(object):
         setattr(
             cluster,
             "rbd",
-            lambda args, accept_failure, ignore_dry_run: (
+            lambda args, accept_failure: (
                 "",
                 "rbd: pool t3 doesn't contain rbd images\n",
                 2,
@@ -171,7 +171,7 @@ class TestPool(object):
         setattr(
             cluster,
             "ceph_osd",
-            lambda args, ignore_dry_run: (
+            lambda args: (
                 '{"pool":"test","pool_id":161,"pg_num":512}',
                 "",
             ),
@@ -196,7 +196,7 @@ class TestPool(object):
         setattr(
             cluster,
             "ceph_osd",
-            lambda args, ignore_dry_run: (
+            lambda args: (
                 '{"pool":"test","pool_id":161,"pgp_num":128}',
                 "",
             ),
