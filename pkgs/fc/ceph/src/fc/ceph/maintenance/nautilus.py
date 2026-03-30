@@ -19,7 +19,7 @@ from fc.ceph.util import run
 class ResourcegroupPoolEquivalence(object):
     """Ensure that required Ceph pools exist."""
 
-    REQUIRED_POOLS = ["rbd", "data", "metadata", "rbd.hdd"]
+    REQUIRED_POOLS = ["rbd", "rbd.hdd"]
 
     def __init__(self, directory, cluster):
         self.directory = directory
