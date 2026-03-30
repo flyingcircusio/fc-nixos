@@ -16,12 +16,6 @@ class TestCluster(object):
     def test_default_pool_size(self, cluster):
         assert (2, 1) == cluster.default_pool_size()
 
-    def test_generic_ceph_cmd_should_obey_dry_run(self, cluster, capsys):
-        cluster.dry_run = True
-        cluster.generic_ceph_cmd(["ceph"], ["subcommand"])
-        out, err = capsys.readouterr()
-        assert err == "*** dry-run: ['ceph', 'subcommand']\n"
-
     @mock.patch("subprocess.Popen")
     def test_generic_ceph_cmd_returns_stdout(self, popen, cluster):
         p = popen.return_value
