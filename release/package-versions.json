@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-146.0.7680.153",
+    "name": "chromedriver-unwrapped-146.0.7680.164",
     "pname": "chromedriver-unwrapped",
-    "version": "146.0.7680.153"
+    "version": "146.0.7680.164"
   },
   "chromium": {
-    "name": "chromium-146.0.7680.153",
+    "name": "chromium-146.0.7680.164",
     "pname": "chromium",
-    "version": "146.0.7680.153"
+    "version": "146.0.7680.164"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -135,9 +135,9 @@
     "version": "5.3.28"
   },
   "discourse": {
-    "name": "discourse-2025.12.2",
+    "name": "discourse-2026.1.2",
     "pname": "discourse",
-    "version": "2025.12.2"
+    "version": "2026.1.2"
   },
   "dnsmasq": {
     "name": "dnsmasq-2.91",
@@ -195,9 +195,9 @@
     "version": "7.17.27"
   },
   "firefox": {
-    "name": "firefox-148.0.2",
+    "name": "firefox-149.0",
     "pname": "firefox",
-    "version": "148.0.2"
+    "version": "149.0"
   },
   "gcc": {
     "name": "gcc-wrapper-14.3.0",
@@ -380,9 +380,9 @@
     "version": "1.33.9+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.5.5",
+    "name": "keycloak-26.5.6",
     "pname": "keycloak",
-    "version": "26.5.5"
+    "version": "26.5.6"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.76",
+    "name": "linux-6.12.77",
     "pname": "linux",
-    "version": "6.12.76"
+    "version": "6.12.77"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.76",
+    "name": "linux-6.12.77",
     "pname": "linux",
-    "version": "6.12.76"
+    "version": "6.12.77"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -575,9 +575,9 @@
     "version": "4.38.2"
   },
   "nss_latest": {
-    "name": "nss-3.121",
+    "name": "nss-3.122",
     "pname": "nss",
-    "version": "3.121"
+    "version": "3.122"
   },
   "nvme-cli": {
     "name": "nvme-cli-2.15",
@@ -724,6 +724,11 @@
     "name": "php-with-extensions-8.4.19",
     "pname": "php-with-extensions",
     "version": "8.4.19"
+  },
+  "php85": {
+    "name": "php-with-extensions-8.5.4",
+    "pname": "php-with-extensions",
+    "version": "8.5.4"
   },
   "phpPackages.composer": {
     "name": "composer-2.8.12",
@@ -1116,9 +1121,9 @@
     "version": "2.41.3"
   },
   "uv": {
-    "name": "uv-0.9.29",
+    "name": "uv-0.9.30",
     "pname": "uv",
-    "version": "0.9.29"
+    "version": "0.9.30"
   },
   "varnish": {
     "name": "varnish-7.7.3",
