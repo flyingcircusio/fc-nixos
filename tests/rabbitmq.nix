@@ -17,6 +17,7 @@ import ./make-test-python.nix (
           location = "test";
           password = "baz";
           service = "rabbitmq-node";
+          ips = [ ipv4 ];
         }
       ];
     };
