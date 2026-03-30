@@ -25,6 +25,10 @@ import ./make-test-python.nix (
           {
             address = "127.0.0.1";
             service = "loki-collector";
+            ips = [
+              (testlib.fcIP.srv4 1)
+              (testlib.fcIP.srv6 1)
+            ];
           }
         ];
 

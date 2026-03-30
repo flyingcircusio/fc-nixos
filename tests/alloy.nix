@@ -24,6 +24,10 @@ import ./make-test-python.nix (
           {
             address = "alloy.gocept.net"; # gocept.net due to PL-133063
             service = "loki-collector";
+            ips = [
+              (testlib.fcIP.srv4 1)
+              (testlib.fcIP.srv6 1)
+            ];
           }
         ];
       };
