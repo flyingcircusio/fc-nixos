@@ -1,16 +1,15 @@
 """Configure pools on Ceph storage servers according to the directory."""
 
-import json
 import re
 import socket
 import subprocess
 import sys
 import time
 import traceback
+from subprocess import CalledProcessError
 
 import fc.util.directory
 from fc.ceph.api import Cluster, Pools
-from fc.ceph.api.cluster import CephCmdError
 from fc.ceph.maintenance.images_nautilus import (
     load_vm_images as load_vm_images_task,
 )
@@ -37,7 +36,7 @@ class ResourcegroupPoolEquivalence(object):
             print("creating pool {}".format(pool))
             try:
                 self.pools.create(pool)
-            except CephCmdError:
+            except CalledProcessError:
                 print(
                     "The following error occured at pool creation:",
                     file=sys.stderr,
@@ -85,7 +84,7 @@ class VolumeDeletions(object):
                         )
                         try:
                             pool.snap_rm(rbd_image)
-                        except CephCmdError:
+                        except CalledProcessError:
                             print(
                                 "The following error occured at snapshot deletion:",
                                 file=sys.stderr,
@@ -99,7 +98,7 @@ class VolumeDeletions(object):
                     print("Purging volume {}/{}".format(pool.name, image))
                     try:
                         pool.image_rm(base_image)
-                    except CephCmdError:
+                    except CalledProcessError:
                         print(
                             "The following error occured at volume deletion:",
                             file=sys.stderr,
@@ -199,7 +198,7 @@ class MaintenanceTasks(object):
                     )
                     try:
                         pool.snap_rm(image)
-                    except CephCmdError:
+                    except CalledProcessError:
                         print(
                             "The following error occured at snapshot deletion:",
                             file=sys.stderr,

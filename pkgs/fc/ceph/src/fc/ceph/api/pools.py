@@ -1,6 +1,9 @@
 import json
 import random
 import time
+from subprocess import CalledProcessError
+
+from fc.ceph.util import run
 
 from .rbdimage import RBDImage
 
@@ -37,8 +40,7 @@ class Pools(object):
         """Returns all pool names."""
         if self._names:
             return self._names
-        out, _err = self.cluster.ceph_osd(["lspools"])
-        pools = json.loads(out.strip())
+        pools = run.json.ceph("-c", self.cluster.ceph_conf, "osd", "lspools")
         self._names = set(p["poolname"] for p in pools)
         return self._names
 
@@ -56,8 +58,14 @@ class Pools(object):
 
     def create(self, pool):
         """Adds new pool to the Ceph cluster."""
-        self.cluster.ceph_osd(
-            ["pool", "create", pool, str(self.cluster.default_pg_num())]
+        run.ceph(
+            "-c",
+            self.cluster.ceph_conf,
+            "osd",
+            "pool",
+            "create",
+            pool,
+            str(self.cluster.default_pg_num()),
         )
         if self._names:
             self._names.add(pool)
@@ -97,35 +105,50 @@ class Pool(object):
     def load(self):
         """Loads all images found in this pool."""
         images = {}
-        poollist = json.loads(self._rbd_query())
+        poollist = self._rbd_query()
         for i in poollist:
             image = RBDImage.from_dict(i)
             images[image.name] = image
         return images
 
     def _rbd_query(self):
-        stdout, stderr, returncode = self.cluster.rbd(
-            ["--format=json", "ls", "-l", self.name],
-            accept_failure=True,
-        )
-        if returncode == 0:
-            return stdout
-        if returncode == 2 and "error opening pool" in stderr:
-            raise KeyError(self.name, stdout)
-        if returncode == 2 and "doesn't contain rbd images" in stderr:
-            return "[]"
-        raise RuntimeError("rbd execution failed", stdout, stderr, returncode)
+        try:
+            return run.json.rbd(
+                "-c", self.cluster.ceph_conf, "ls", "-l", self.name
+            )
+        except CalledProcessError as e:
+            if e.returncode == 2 and "error opening pool" in e.stderr:
+                raise KeyError(self.name, e.output)
+            if e.returncode == 2 and "doesn't contain rbd images" in e.stderr:
+                return []
+            raise
 
     def fix_options(self):
         """Adapt important pool properties to most up-to-date values."""
-        self.cluster.ceph_osd(["pool", "set", self.name, "hashpspool", "1"])
+        run.ceph(
+            "-c",
+            self.cluster.ceph_conf,
+            "osd",
+            "pool",
+            "set",
+            self.name,
+            "hashpspool",
+            "1",
+        )
 
     @property
     def pg_num(self):
         if self._pg_num:
             return self._pg_num
-        out = self.cluster.ceph_osd(["pool", "get", self.name, "pg_num"])
-        pginfo = json.loads(out[0])
+        pginfo = run.json.ceph(
+            "-c",
+            self.cluster.ceph_conf,
+            "osd",
+            "pool",
+            "get",
+            self.name,
+            "pg_num",
+        )
         self._pg_num = int(pginfo["pg_num"])
         return self._pg_num
 
@@ -138,7 +161,16 @@ class Pool(object):
         that you can only increase the number of PGs and never decrease
         it again. Note that this method may take a while to complete.
         """
-        self.cluster.ceph_osd(["pool", "set", self.name, "pg_num", str(value)])
+        run.ceph(
+            "-c",
+            self.cluster.ceph_conf,
+            "osd",
+            "pool",
+            "set",
+            self.name,
+            "pg_num",
+            str(value),
+        )
         self._pg_num = int(value)
         self.pgp_num = value
 
@@ -146,8 +178,15 @@ class Pool(object):
     def pgp_num(self):
         if self._pgp_num:
             return self._pgp_num
-        out = self.cluster.ceph_osd(["pool", "get", self.name, "pgp_num"])
-        pginfo = json.loads(out[0])
+        pginfo = run.json.ceph(
+            "-c",
+            self.cluster.ceph_conf,
+            "osd",
+            "pool",
+            "get",
+            self.name,
+            "pgp_num",
+        )
         self._pgp_num = int(pginfo["pgp_num"])
         return self._pgp_num
 
@@ -157,14 +196,23 @@ class Pool(object):
         max_retries = 40
         while retry < max_retries:
             time.sleep(min([30, 1.2**retry]))
-            out, err, returncode = self.cluster.ceph_osd(
-                ["pool", "set", self.name, "pgp_num", str(value)],
-                accept_failure=True,
-            )
-            if returncode == 0:
+
+            try:
+                run.ceph(
+                    "-c",
+                    self.cluster.ceph_conf,
+                    "osd",
+                    "pool",
+                    "set",
+                    self.name,
+                    "pgp_num",
+                    str(value),
+                )
+            except CalledProcessError:
+                retry += 1
+            else:
                 self._pgp_num = int(value)
                 return
-            retry += 1
         raise RuntimeError("max retries exceeded while setting pgp_num")
 
     @property
@@ -172,18 +220,20 @@ class Pool(object):
         return sum(i.size_gb for i in self.images if not i.snapshot)
 
     def snap_rm(self, rbdimage):
-        self.cluster.rbd(
-            [
-                "snap",
-                "rm",
-                "{}/{}@{}".format(self.name, rbdimage.image, rbdimage.snapshot),
-            ]
+        run.rbd(
+            "-c",
+            self.cluster.ceph_conf,
+            "snap",
+            "rm",
+            f"{self.name}/{rbdimage.image}@{rbdimage.snapshot}",
         )
         self._images = None
 
     def image_rm(self, rbdimage):
         assert rbdimage.snapshot is None
-        self.cluster.rbd(["rm", "{}/{}".format(self.name, rbdimage.image)])
+        run.rbd(
+            "-c", self.cluster.ceph_conf, "rm", f"{self.name}/{rbdimage.image}"
+        )
         self._images = None
 
     def delete(self):
@@ -193,12 +243,13 @@ class Pool(object):
                     self.name
                 )
             )
-        self.cluster.ceph_osd(
-            [
-                "pool",
-                "delete",
-                self.name,
-                self.name,
-                "--yes-i-really-really-mean-it",
-            ]
+        run.ceph(
+            "-c",
+            self.cluster.ceph_conf,
+            "osd",
+            "pool",
+            "delete",
+            self.name,
+            self.name,
+            "--yes-i-really-really-mean-it",
         )
