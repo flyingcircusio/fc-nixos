@@ -10,7 +10,7 @@ let
   enc = config.flyingcircus.enc;
   settingsFormat = pkgs.formats.toml { };
   baseConfigFile = settingsFormat.generate "skvaider-config.toml" cfg.settings;
-  checkSkvaiderCmd = "${lib.getExe' pkgs.fc.skvaider "check-skvaider"} https://${cfg.hostname} /etc/local/sensu-client/skvaider.key --config /var/lib/skvaider/config.toml";
+  checkSkvaiderCmd = "check-skvaider https://${cfg.hostname} /etc/local/sensu-client/skvaider.key --config /var/lib/skvaider/config.toml";
 in
 {
   options.flyingcircus.roles.ai-api-gateway = {
@@ -178,8 +178,10 @@ in
 
     flyingcircus.passwordlessSudoRules = [
       {
-        commands = [ (lib.getExe' pkgs.fc.skvaider "check-skvaider") ];
+        package = pkgs.fc.skvaider;
+        commands = [ "bin/${checkSkvaiderCmd}" ];
         groups = [ "sensuclient" ];
+        runAs = "skvaider";
       }
     ];
 
@@ -188,7 +190,7 @@ in
         notification = "Skvaider provides appropriate responses";
         interval = 300;
         timeout = 60;
-        command = "sudo ${checkSkvaiderCmd}";
+        command = "sudo -u skvaider ${pkgs.fc.skvaider}/bin/${checkSkvaiderCmd}";
       };
     };
 
