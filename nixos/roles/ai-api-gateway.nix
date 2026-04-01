@@ -10,6 +10,7 @@ let
   enc = config.flyingcircus.enc;
   settingsFormat = pkgs.formats.toml { };
   baseConfigFile = settingsFormat.generate "skvaider-config.toml" cfg.settings;
+  checkSkvaiderCmdSudoers = "${pkgs.fc.skvaider}/bin/check-skvaider https\\://${cfg.hostname} /etc/local/sensu-client/skvaider.key --config /var/lib/skvaider/config.toml";
   checkSkvaiderCmd = "${pkgs.fc.skvaider}/bin/check-skvaider https://${cfg.hostname} /etc/local/sensu-client/skvaider.key --config /var/lib/skvaider/config.toml";
 in
 {
@@ -178,7 +179,7 @@ in
 
     flyingcircus.passwordlessSudoRules = [
       {
-        commands = [ "${checkSkvaiderCmd}" ];
+        commands = [ checkSkvaiderCmdSudoers ];
         groups = [ "sensuclient" ];
         runAs = "skvaider";
       }
