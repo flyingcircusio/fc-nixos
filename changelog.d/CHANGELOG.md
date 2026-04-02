@@ -1,3 +1,34 @@
+# Release 2026_012
+
+## Impact
+
+- A bullet item for the Impact category.
+
+- varnish-7.x is still default for the `webproxy` role but has known vulnerabilities. Consider updating to varnish-8.0 by setting `services.varnish.package = varnish80;`. Note the [breaking changes](https://vinyl-cache.org/docs/8.0/whats-new/upgrading-8.0.html) of that updated.
+  - Vulnerability VSV00018 is already mitigated by additional config in our webproxy role.
+  - Nonetheless, other upcoming security vulnerabilities will not be fixed for varnish-7.x.
+
+-
+
+
+## NixOS XX.XX platform
+
+- gitlab: run container registry migrations for instances that use a database as backend (PL-135270)
+
+- flyingcircus-physical: show grub-bios bootloader menu over serial console as well (PL-130728)
+
+- Hotfix upgrade for skvaider (AI API). (PL-135254)
+
+- provide `varnish80` package (PL-135243)
+
+- Add extra configuration to Varnish's default VCL that mitigates VSV00018 (FC-52533)
+
+- fc-ceph: Add locking to internal object storage accounting to prevent race conditions (PL-128135)
+
+- backy: make whole object diff configurable and disable by default. (PL-134246)
+
+
+
 # Release 2026_011
 
 ## NixOS XX.XX platform
