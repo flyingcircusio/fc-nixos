@@ -351,6 +351,24 @@ in
         };
       };
 
+      # The container registry needs to run migrations, Nixpkgs currently does not do that because of the
+      # docker registry indirection.
+      # Can be removed as soon as this is fixed in Nixpkgs.
+      # PL-135270
+      systemd.services.docker-registry =
+        let
+          cfgRegistry = config.services.dockerRegistry;
+        in
+        (lib.mkIf cfgRegistry.extraConfig.database.enabled or false) {
+          # split the migration in two parts
+          # https://docs.gitlab.com/18.10/administration/packages/container_registry_metadata_database/#apply-database-migrations
+          preStart = ''
+            ${cfgRegistry.package}/bin/registry database migrate up ${cfgRegistry.configFile} --skip-post-deployment
+          '';
+          postStart = ''
+            ${cfgRegistry.package}/bin/registry database migrate up ${cfgRegistry.configFile}
+          '';
+        };
     })
 
     (lib.mkIf (cfg.enable && cfg.generateSecrets) {
