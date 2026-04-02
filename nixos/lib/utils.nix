@@ -104,6 +104,15 @@ rec {
     }:
     "install -d -o ${user} -g ${group} -m ${permissions} ${dir}";
 
+  /*
+    basic plausibility check whether something is a valid hostname. Might not enforce
+    all restrictions (like total length), due to limits of ERE syntax.
+  */
+  isHostname =
+    str:
+    builtins.match "^([[:alnum:]]([[:alnum:]-]{0,61}[[:alnum:]])?\.)*[[:alnum:]]([[:alnum:]-]{0,61}[[:alnum:]])?$" str
+    != null;
+
   # Allow overrides with default priority (100)
   mkPlatform = lib.mkOverride 900;
   # Allow overrides with default priority (100) but override mkPlatform
