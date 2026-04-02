@@ -14,7 +14,7 @@ let
     owner = "flyingcircusio";
     repo = "skvaider";
     rev = "3d15223a0d485dd32354305821fc126046708485";
-    hash = "sha256-DcGrPRmeoHOD8ShovvUz1kXTy6wCxgXoj1AVbZ9gO3Y=";
+    hash = "sha256-/J1Ahztef5Xnqfi7Yc4KaJe8VSxjmnLdQ+IIPtS3lBk=";
   };
 
   # Load a uv workspace from a workspace root.
