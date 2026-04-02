@@ -56,7 +56,10 @@ let
       },
       "checks": ${
         builtins.toJSON (
-          mapAttrs (name: value: filterAttrs (name: value: name != "_module") value) cfg.checks
+          lib.pipe cfg.checks [
+            (filterAttrs (_: v: v.enable))
+            (mapAttrs (name: value: filterAttrs (name: value: name != "_module") value))
+          ]
         )
       }
     }
@@ -76,6 +79,12 @@ let
 
   checkOptions = {
     options = {
+      enable = lib.mkOption {
+        type = types.bool;
+        default = true;
+        description = "While enabled by default, checks can be explicitly disabled, removing them from the sensu config file as well.";
+      };
+
       notification = mkOption {
         type = types.str;
         description = "The notification on events.";

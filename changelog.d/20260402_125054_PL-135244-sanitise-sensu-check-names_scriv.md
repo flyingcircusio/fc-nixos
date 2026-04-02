@@ -30,3 +30,4 @@ branches.
 
 - webgateway: Only generate certificate checks for vhosts defining a single valid hostname (PL-135244)
 - `flyingcircus.services.sensu-client.checks`: Prevent illegal check names that would crash the client service (PL-135244)
+- `flyingcircus.services.sensu-client.checks.enable`: introduce new option to explicitly disable checks
