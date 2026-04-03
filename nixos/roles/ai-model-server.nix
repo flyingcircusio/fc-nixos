@@ -85,6 +85,9 @@ in
                   port = 8000;
                   host = "0.0.0.0";
                 };
+                # Per-model subprocess logs land in this directory as
+                # inference-<model-id>.log (one file per model engine).
+                logging.log_dir = "/var/log/skvaider";
               };
               description = "Additional Skvaider inference settings";
             };
@@ -309,7 +312,10 @@ in
         ];
         services.logrotate.settings.skvaider-inference = {
           create = "0640 skvaider service";
-          files = [ "/var/log/skvaider/inference.log" ];
+          files = [
+            "/var/log/skvaider/inference.log"
+            "/var/log/skvaider/inference-*.log"
+          ];
           frequency = "daily";
           su = "skvaider service";
           rotate = 7;
