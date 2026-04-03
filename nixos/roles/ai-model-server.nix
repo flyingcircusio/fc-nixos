@@ -98,6 +98,35 @@ in
     lib.mkMerge [
       # Fixed shared config for CPU and AMD
       {
+        # nvtopPackages.nvidia links against the CUDA toolkit. All packages
+        # below carry lib.licenses.nvidiaCudaRedist (CUDA Toolkit EULA,
+        # redistributable). Listed explicitly instead of allowUnfree = true.
+        flyingcircus.allowedUnfreePackageNames = [
+          # lib.licenses.nvidiaCudaRedist — CUDA Toolkit End User License Agreement (redistributable)
+          "cuda-merged"
+          "cuda_cuobjdump"
+          "cuda_gdb"
+          "cuda_nvcc"
+          "cuda_nvdisasm"
+          "cuda_nvprune"
+          "cuda_cccl"
+          "cuda_cudart"
+          "cuda_cupti"
+          "cuda_cuxxfilt"
+          "cuda_nvml_dev"
+          "cuda_nvrtc"
+          "cuda_nvtx"
+          "cuda_profiler_api"
+          "cuda_sanitizer_api"
+          "libcublas"
+          "libcufft"
+          "libcurand"
+          "libcusolver"
+          "libnvjitlink"
+          "libcusparse"
+          "libnpp"
+        ];
+
         environment.systemPackages = [
           (pkgs.writeShellScriptBin "nvtop-nvidia" ''
             exec ${pkgs.nvtopPackages.nvidia}/bin/nvtop "$@"
@@ -196,6 +225,7 @@ in
         };
         systemd.tmpfiles.rules = [
           "d /var/lib/skvaider 0755 skvaider service -"
+          "d /var/log/skvaider 0755 skvaider service -"
           "d ${cfg.skvaider-inference.settings.models_dir} 0755 skvaider service -"
         ];
 
