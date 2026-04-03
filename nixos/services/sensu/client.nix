@@ -56,7 +56,10 @@ let
       },
       "checks": ${
         builtins.toJSON (
-          mapAttrs (name: value: filterAttrs (name: value: name != "_module") value) cfg.checks
+          lib.pipe cfg.checks [
+            (filterAttrs (_: v: v.enable))
+            (mapAttrs (name: value: filterAttrs (name: value: name != "_module") value))
+          ]
         )
       }
     }
@@ -76,6 +79,12 @@ let
 
   checkOptions = {
     options = {
+      enable = lib.mkOption {
+        type = types.bool;
+        default = true;
+        description = "While enabled by default, checks can be explicitly disabled, removing them from the sensu config file as well.";
+      };
+
       notification = mkOption {
         type = types.str;
         description = "The notification on events.";
@@ -125,6 +134,12 @@ let
     name = "sensu-check-env";
     paths = cfg.checkEnvPackages;
   };
+
+  /*
+    > Validated with Ruby regex /^[\w\.-]+$/.match("check-name")
+    https://github.com/sensu/sensu-docs/blob/3a7a04dc7c5b7c96d4e94e806b29d5ce0b47cd22/content/sensu-core/1.9/reference/checks.md#check-naming-check-names
+  */
+  isValidSensuCheckname = str: (builtins.match "[-[:alnum:]._]+" str) != null;
 
 in
 {
@@ -581,6 +596,17 @@ in
     {
       # Config that should always be available to allow deployments to
       # succeed even if no real sensu environment is available.
+
+      assertions =
+        let
+          invalidNames = lib.filter (name: !isValidSensuCheckname name) (lib.attrNames cfg.checks);
+        in
+        [
+          {
+            assertion = invalidNames == [ ];
+            message = "Invalid sensu check names (must match regex ^[\\w.-]+$): ${lib.concatStringsSep ", " invalidNames}";
+          }
+        ];
 
       environment.etc."local/sensu-client/README.txt".text = ''
         Put local sensu checks here.

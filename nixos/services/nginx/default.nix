@@ -421,36 +421,50 @@ in
             interval = 60;
           };
         }
-        // (lib.mapAttrs' (
-          n: vhost:
+        // (lib.foldl' (
+          acc: n:
           let
+            vhost = vhostsWithTLS.${n};
             host = if vhost.serverName != null then vhost.serverName else n;
           in
-          lib.nameValuePair "nginx_https_${n}" {
-            notification = "HTTPS certificate check failed for vhost ${n}";
-            # We're using a timeout of 15 seconds because 10 seconds is the timeout
-            # that will trigger if DNS issues occur and giving the check a higher
-            # timeout allows us to see those. Otherwise they get hidden behind
-            # a generic timeout message.
-            # Note that we assume that the certificate is reachable via port 443.
-            # Other configurations might need overrides for the sensu check command.
-            command = "check_http -p 443 -S --sni -C 25,14 -H ${host} -t 15";
-            interval = 600;
-          }
-        ) vhostsWithTLS)
+          if fclib.utils.isHostname host then
+            acc
+            // {
+              "nginx_https_${n}" = {
+                notification = "HTTPS certificate check failed for vhost ${n}";
+                # We're using a timeout of 15 seconds because 10 seconds is the timeout
+                # that will trigger if DNS issues occur and giving the check a higher
+                # timeout allows us to see those. Otherwise they get hidden behind
+                # a generic timeout message.
+                # Note that we assume that the certificate is reachable via port 443.
+                # Other configurations might need overrides for the sensu check command.
+                command = "check_http -p 443 -S --sni -C 25,14 -H ${host} -t 15";
+                interval = 600;
+              };
+            }
+          else
+            lib.warn "Informational: nginx vhost '${n}' does not declare a plain hostname. No HTTPS certificate check is added. This warning will be removed after 2 releases." acc
+        ) { } (lib.attrNames vhostsWithTLS))
         # Add certificate file checks for non-ACME hosts specified in nginx config.
         # ACME certificates in general (nginx enableACME or others) are covered in platform/acme.nix.
-        // (lib.mapAttrs' (
-          n: vhost:
+        // (lib.foldl' (
+          acc: n:
           let
+            vhost = nonAcmeVhostsWithTLS.${n};
             host = if vhost.serverName != null then vhost.serverName else n;
           in
-          lib.nameValuePair "ssl_cert_nginx_${n}" {
-            notification = "SSL certificate for non-ACME nginx vhost ${n} is invalid or will expire soon";
-            command = "sudo ${checkCert} ${vhost.sslCertificate} ${host}";
-            interval = 3600;
-          }
-        ) nonAcmeVhostsWithTLS);
+          if fclib.utils.isHostname host then
+            acc
+            // {
+              "ssl_cert_nginx_${n}" = {
+                notification = "SSL certificate for non-ACME nginx vhost ${n} is invalid or will expire soon";
+                command = "sudo ${checkCert} ${vhost.sslCertificate} ${host}";
+                interval = 3600;
+              };
+            }
+          else
+            lib.warn "Informational: nginx vhost '${n}' does not declare a plain hostname. No TLS certificate check is added. This warning will be removed after 2 releases." acc
+        ) { } (lib.attrNames nonAcmeVhostsWithTLS));
 
         networking.firewall.allowedTCPPorts = [
           80
