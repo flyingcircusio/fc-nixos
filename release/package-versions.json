@@ -40,9 +40,9 @@
     "version": "5.3p3"
   },
   "bind": {
-    "name": "bind-9.20.18",
+    "name": "bind-9.20.21",
     "pname": "bind",
-    "version": "9.20.18"
+    "version": "9.20.21"
   },
   "binutils": {
     "name": "binutils-wrapper-2.44",
@@ -75,14 +75,14 @@
     "version": "14.2.22"
   },
   "chromedriver": {
-    "name": "chromedriver-unwrapped-146.0.7680.164",
+    "name": "chromedriver-unwrapped-146.0.7680.177",
     "pname": "chromedriver-unwrapped",
-    "version": "146.0.7680.164"
+    "version": "146.0.7680.177"
   },
   "chromium": {
-    "name": "chromium-146.0.7680.164",
+    "name": "chromium-146.0.7680.177",
     "pname": "chromium",
-    "version": "146.0.7680.164"
+    "version": "146.0.7680.177"
   },
   "cifs-utils": {
     "name": "cifs-utils-7.4",
@@ -120,9 +120,9 @@
     "version": "4.9.0"
   },
   "curl": {
-    "name": "curl-8.18.0",
+    "name": "curl-8.19.0",
     "pname": "curl",
-    "version": "8.18.0"
+    "version": "8.19.0"
   },
   "cyrus_sasl": {
     "name": "cyrus-sasl-2.1.28",
@@ -275,9 +275,9 @@
     "version": "2.4.9"
   },
   "go": {
-    "name": "go-1.25.7",
+    "name": "go-1.25.8",
     "pname": "go",
-    "version": "1.25.7"
+    "version": "1.25.8"
   },
   "grafana": {
     "name": "grafana-12.3.6",
@@ -295,9 +295,9 @@
     "version": "3.2.9"
   },
   "imagemagick": {
-    "name": "imagemagick-7.1.2-13",
+    "name": "imagemagick-7.1.2-18",
     "pname": "imagemagick",
-    "version": "7.1.2-13"
+    "version": "7.1.2-18"
   },
   "imagemagick6": {
     "name": "imagemagick-6.9.13-38",
@@ -380,9 +380,9 @@
     "version": "1.33.9+k3s1"
   },
   "keycloak": {
-    "name": "keycloak-26.5.6",
+    "name": "keycloak-26.5.7",
     "pname": "keycloak",
-    "version": "26.5.6"
+    "version": "26.5.7"
   },
   "kubernetes-helm": {
     "name": "kubernetes-helm-3.19.1",
@@ -445,14 +445,14 @@
     "version": "0.2.5"
   },
   "linuxKernelStable": {
-    "name": "linux-6.12.78",
+    "name": "linux-6.12.80",
     "pname": "linux",
-    "version": "6.12.78"
+    "version": "6.12.80"
   },
   "linuxKernelVerify": {
-    "name": "linux-6.12.78",
+    "name": "linux-6.12.80",
     "pname": "linux",
-    "version": "6.12.78"
+    "version": "6.12.80"
   },
   "logrotate": {
     "name": "logrotate-3.22.0",
@@ -505,9 +505,9 @@
     "version": "1.6.39"
   },
   "mongodb": {
-    "name": "mongodb-7.0.30",
+    "name": "mongodb-7.0.31",
     "pname": "mongodb",
-    "version": "7.0.30"
+    "version": "7.0.31"
   },
   "monitoring-plugins": {
     "name": "monitoring-plugins-2.4.0",
@@ -550,14 +550,14 @@
     "version": "1.28.3"
   },
   "nix": {
-    "name": "nix-2.31.2",
+    "name": "nix-2.31.3",
     "pname": "nix",
-    "version": "2.31.2"
+    "version": "2.31.3"
   },
   "nodejs": {
-    "name": "nodejs-22.22.0",
+    "name": "nodejs-22.22.2",
     "pname": "nodejs",
-    "version": "22.22.0"
+    "version": "22.22.2"
   },
   "nodejs_20": {
     "name": "nodejs-20.20.2",
@@ -565,9 +565,9 @@
     "version": "20.20.2"
   },
   "nodejs_22": {
-    "name": "nodejs-22.22.0",
+    "name": "nodejs-22.22.2",
     "pname": "nodejs",
-    "version": "22.22.0"
+    "version": "22.22.2"
   },
   "nspr": {
     "name": "nspr-4.38.2",
@@ -876,14 +876,14 @@
     "version": "3.10.19"
   },
   "python311": {
-    "name": "python3-3.11.14",
+    "name": "python3-3.11.15",
     "pname": "python3",
-    "version": "3.11.14"
+    "version": "3.11.15"
   },
   "python312": {
-    "name": "python3-3.12.12",
+    "name": "python3-3.12.13",
     "pname": "python3",
-    "version": "3.12.12"
+    "version": "3.12.13"
   },
   "python38": {
     "name": "python3-3.8.11",
@@ -996,9 +996,9 @@
     "version": "1.8.0"
   },
   "roundcube": {
-    "name": "roundcube-1.6.14",
+    "name": "roundcube-1.6.15",
     "pname": "roundcube",
-    "version": "1.6.14"
+    "version": "1.6.15"
   },
   "rsync": {
     "name": "rsync-3.4.1",
@@ -1071,9 +1071,9 @@
     "version": "12.7.7"
   },
   "systemd": {
-    "name": "systemd-258.3",
+    "name": "systemd-258.5",
     "pname": "systemd",
-    "version": "258.3"
+    "version": "258.5"
   },
   "tcpdump": {
     "name": "tcpdump-vxlan-4.99.5",
