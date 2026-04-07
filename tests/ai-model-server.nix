@@ -53,12 +53,6 @@ import ./make-test-python.nix (
         systemd.services.skvaider-inference.path = lib.mkAfter [ vllm-cpu ];
 
         flyingcircus.roles.ai-model-server.skvaider-inference.settings = {
-          models_dir = "/var/lib/skvaider/model";
-          server = {
-            host = "0.0.0.0";
-            port = 8000;
-          };
-          logging = { };
           openai.models = [
             {
               id = "tiny-gpt2";
