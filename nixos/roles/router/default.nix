@@ -38,14 +38,11 @@ let
     '';
 
   uplinkInterfaces = map (network: fclib.network."${network}".interface) (
-    fclib.filterConfiguredNetworks static.routerUplinkNetworks."${location}"
+    fclib.filterConfiguredNetworks role.routerUplinkNetworks
   );
 
-  gatewayInterfaces =
-    map (network: fclib.network."${network}")
-      static.floatingGatewayNetworks."${location}";
-
-  martianNetworks = lib.filter (n: n != "") (lib.splitString "\n" (lib.readFile ./martian_networks));
+  # TODO: this should use routerGatewayNetworks in the future.
+  gatewayInterfaces = map (network: fclib.network."${network}") role.floatingGatewayNetworks;
 
   martianIptablesInput = (
     lib.concatMapStringsSep "\n" (
@@ -53,7 +50,7 @@ let
       lib.concatMapStringsSep "\n" (
         iface: "${fclib.iptables network} -A nixos-fw -i ${iface} " + "-s ${network} -j DROP"
       ) uplinkInterfaces
-    ) martianNetworks
+    ) role.martianNetworks
   );
 
   martianIptablesForward = (
@@ -65,7 +62,7 @@ let
         ) uplinkInterfaces
       )
       # Also drop link-local addresses here.
-      (martianNetworks ++ [ "fe80::/10" ])
+      (role.martianNetworks ++ [ "fe80::/10" ])
   );
 
   locationSensuServer = lib.findFirst (
@@ -97,6 +94,40 @@ in
         };
         description = "Internal helper for exposing the specialisation config
           of the primary role to the NixOS test.";
+      };
+
+      routerUplinkNetworks = mkOption {
+        type = types.listOf types.str;
+        default = static.routerUplinkNetworks."${location}" or [ ];
+        description = "Names of VLANs on which this router accepts connectivity to the outside world";
+      };
+      routerDownlinkNetworks = mkOption {
+        type = types.listOf types.str;
+        default = static.routerDownlinkNetworks."${location}" or [ ];
+        description = "Names of VLANs on which this router provides external connectivity to other routers";
+      };
+      routerGatewayNetworks = mkOption {
+        type = types.listOf types.str;
+        default = [
+          "mgm"
+          "srv"
+          "fe"
+        ]
+        ++ (static.additionalDhcpNetworks."${location}" or [ ]);
+        description = "Names of VLANs on which this router provides gateway services";
+      };
+      floatingGatewayNetworks = mkOption {
+        type = types.listOf types.str;
+        # TODO: in the future this should be a superset of routerGatewayNetworks
+        default = static.floatingGatewayNetworks."${location}" or [ ];
+        description = "Names of VLANs on which there are floating addresses shared between multiple routers";
+      };
+
+      martianNetworks = mkOption {
+        type = types.listOf types.str;
+        default = import ./martian_networks.nix;
+        visible = false;
+        description = "Networks considered invalid as source addresses or as forwarding destinations";
       };
 
       sourceAddressV4 = mkOption {
@@ -138,6 +169,16 @@ in
   ];
 
   config = lib.mkIf role.enable {
+    assertions = [
+      {
+        assertion = (location != "standalone") -> (role.routerUplinkNetworks != [ ]);
+        message = "Router must have uplink networks configured";
+      }
+      {
+        assertion = (location != "standalone") -> (role.floatingGatewayNetworks != [ ]);
+        message = "Router must have floating gateway networks configured";
+      }
+    ];
 
     flyingcircus.networking.enableInterfaceDefaultRoutes = false;
     flyingcircus.networking.assignVrfRoutes = routedVrfsEnabled;
@@ -373,11 +414,6 @@ in
     ];
 
     flyingcircus.agent = {
-      extraPreCommands = ''
-        # Updates files in /etc/bind and /etc/bind/pri where also Nix-generated config exists.
-        fc-zones
-      '';
-
       maintenance.router = {
         enter =
           let
@@ -398,11 +434,5 @@ in
         '';
       };
     };
-
-    # BBB: can be removed in 25.05
-    system.activationScripts.removeISCDHCPConfig = ''
-      rm -f /etc/nixos/localconfig-dhcpd4.conf
-      rm -f /etc/nixos/localconfig-dhcpd6.conf
-    '';
   };
 }

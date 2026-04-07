@@ -32,7 +32,7 @@ lib.mkIf role.enable {
 
   networking.firewall.extraCommands =
     let
-      uplinkNetworks = fclib.filterConfiguredNetworks (static.routerUplinkNetworks."${location}");
+      uplinkNetworks = fclib.filterConfiguredNetworks (role.routerUplinkNetworks);
       uplinkIfaces = map (network: fclib.network."${network}".interface) uplinkNetworks;
     in
     (lib.concatMapStringsSep "\n" (

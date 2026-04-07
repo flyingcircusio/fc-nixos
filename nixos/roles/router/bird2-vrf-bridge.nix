@@ -24,7 +24,7 @@ let
   # provides reverse path routes pointing back to all the places we
   # otherwise have machines running which might want to reach services
   # hosted inside a VRF.
-  sourceNetworks = config.flyingcircus.static.floatingGatewayNetworks."${location}";
+  sourceNetworks = role.floatingGatewayNetworks;
   sourceInterfaces = map (net: fclib.network."${net}".interface) sourceNetworks;
 
   configText = ''
@@ -41,11 +41,10 @@ let
     }
 
   ''
-  # As well as copying the default route from the main routing
-  # table, we also copy over routes managed by the main Bird
-  # instance. This handles cases like WHQ where keepalived manages
-  # the active default route instead of Bird and Bird manages routes
-  # to DEV.
+  # As well as copying the default route from the main routing table,
+  # we also copy over routes managed by the main Bird instance. This
+  # handles routes learned from downstream networks, e.g. DEV from the
+  # perspective of WHQ.
   + ''
     protocol kernel kernel_host_v4 {
       ipv4 {
