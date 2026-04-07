@@ -79,16 +79,7 @@ in
 
             settings = lib.mkOption {
               type = lib.types.attrsOf lib.types.anything;
-              default = {
-                models_dir = "/var/lib/skvaider/model";
-                server = {
-                  port = 8000;
-                  host = "0.0.0.0";
-                };
-                # Per-model subprocess logs land in this directory as
-                # inference-<model-id>.log (one file per model engine).
-                logging.log_dir = "/var/log/skvaider";
-              };
+              default = { };
               description = "Additional Skvaider inference settings";
             };
           };
@@ -101,6 +92,21 @@ in
     lib.mkMerge [
       # Fixed shared config for CPU and AMD
       {
+        # Settings defaults at lib.mkDefault priority (1000) rather than the
+        # option's default priority (1500). This ensures that when a caller
+        # sets other keys in settings = { ... } (at priority 100), these
+        # per-key defaults are not silently dropped by attrsOf's priority
+        # resolution — they survive as long as the caller's definition
+        # doesn't explicitly include the same key.
+        flyingcircus.roles.ai-model-server.skvaider-inference.settings = lib.mkDefault {
+          models_dir = "/var/lib/skvaider/model";
+          server.port = 8000;
+          server.host = "0.0.0.0";
+          # Per-model subprocess logs land in this directory as
+          # inference-<model-id>.log (one file per model engine).
+          logging.log_dir = "/var/log/skvaider";
+        };
+
         # nvtopPackages.nvidia links against the CUDA toolkit. All packages
         # below carry lib.licenses.nvidiaCudaRedist (CUDA Toolkit EULA,
         # redistributable). Listed explicitly instead of allowUnfree = true.
