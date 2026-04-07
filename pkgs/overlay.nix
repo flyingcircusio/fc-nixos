@@ -115,6 +115,14 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
           hash = "sha256-4i1s9YAs0JtnTDB8yeA4cLjDfFA+vsPSW4byzoxTXcc=";
         };
       });
+      pymongo4_13 = python-super.pymongo.overridePythonAttrs (old: {
+        version = "4.13.2";
+        src = python-self.fetchPypi {
+          inherit (old) pname;
+          version = "4.13.2";
+          hash = "sha256-D2TGRpwjYpYubOlyWK4Tkau6FWapU6SSVi0pJLRIFcI=";
+        };
+      });
     })
   ];
 
