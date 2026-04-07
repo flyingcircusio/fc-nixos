@@ -105,6 +105,7 @@ in
           # Per-model subprocess logs land in this directory as
           # inference-<model-id>.log (one file per model engine).
           logging.log_dir = "/var/log/skvaider";
+          embedding_verification_file = lib.mkDefault ./embeddings-reference.json;
         };
 
         # nvtopPackages.nvidia links against the CUDA toolkit. All packages
@@ -149,9 +150,6 @@ in
         boot.kernelPackages = lib.mkForce (pkgs.linuxPackagesFor pkgs.linuxKernelGPU);
 
         boot.kernelModules = [ "nvidia" ];
-
-        flyingcircus.roles.ai-model-server.skvaider-inference.settings.embedding_verification_file =
-          lib.mkDefault ./embeddings-reference.json;
 
         flyingcircus.passwordlessSudoPackages = [
           # Allow applying config and restarting services to service users
