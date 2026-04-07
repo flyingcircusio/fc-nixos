@@ -102,9 +102,6 @@ in
           models_dir = "/var/lib/skvaider/model";
           server.port = 8000;
           server.host = "0.0.0.0";
-          # Per-model subprocess logs land in this directory as
-          # inference-<model-id>.log (one file per model engine).
-          logging.log_dir = "/var/log/skvaider";
           embedding_verification_file = lib.mkDefault ./embeddings-reference.json;
         };
 
@@ -177,7 +174,14 @@ in
             let
               configfile =
                 (pkgs.formats.toml { }).generate "skvaider_inference_settings.toml"
-                  cfg.skvaider-inference.settings;
+                  # log_dir is module-owned (ties to tmpfiles + logrotate);
+                  # inject after user settings so it is never clobbered by a
+                  # partial logging = { ... } override in /etc/local/nixos/.
+                  (
+                    lib.recursiveUpdate cfg.skvaider-inference.settings {
+                      logging.log_dir = "/var/log/skvaider";
+                    }
+                  );
             in
             ''
               ${lib.getExe' pkgs.fc.skvaider "skvaider-inference"} -c ${configfile}
