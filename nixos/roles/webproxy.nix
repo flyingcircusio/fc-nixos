@@ -50,7 +50,7 @@ in
         "local/varnish/README.txt".text =
           let
             listen_str = lib.concatMapStringsSep ", " (
-              listenCfg: ''${listenCfg.proto} ${listenCfg.address}:${toString (listenCfg.port or "n/a")}''
+              listenCfg: "${listenCfg.proto} ${listenCfg.address}:${toString (listenCfg.port or "n/a")}"
             ) config.services.varnish.listen;
           in
           ''

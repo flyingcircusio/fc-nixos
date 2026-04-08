@@ -242,14 +242,14 @@ in
       wantedBy = [ "multi-user.target" ];
       environment =
         let
-          javaHeap = ''${
+          javaHeap = "${
             toString (
               fclib.max [
                 ((fclib.currentMemory 1024) * cfg.heapPercentage / 100)
                 768
               ]
             )
-          }m'';
+          }m";
 
           javaOpts = [
             "-Djava.library.path=${cfg.package}/lib/sigar"

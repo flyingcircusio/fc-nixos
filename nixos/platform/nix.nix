@@ -14,7 +14,7 @@ in
   options.flyingcircus = {
     nix.useUnstableNix = lib.mkOption {
       default = production == false;
-      defaultText = lib.literalExpression ''production == false'';
+      defaultText = lib.literalExpression "production == false";
       type = lib.types.bool;
       description = ''
         This option is used to roll out newer Nix versions earlier for gradual testing.
