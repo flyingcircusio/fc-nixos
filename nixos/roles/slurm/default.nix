@@ -129,14 +129,14 @@ in
         type = types.ints.positive;
         default = params.cores or 1;
         defaultText = "*number of VM cores*";
-        description = ''Number of CPU cores used by a slurm compute node.'';
+        description = "Number of CPU cores used by a slurm compute node.";
       };
 
       realMemory = mkOption {
         type = types.ints.positive;
         default = floor ((params.memory or 1024) * 0.98) - 500;
         defaultText = "*98% of physical RAM minus 500 MiB*";
-        description = ''Memory in MiB used by a slurm compute node.'';
+        description = "Memory in MiB used by a slurm compute node.";
       };
 
       mungeKeyFile = mkOption {

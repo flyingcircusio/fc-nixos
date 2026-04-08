@@ -42,7 +42,7 @@ in
 
       extraSecrets = mkOption {
         type = types.listOf types.str;
-        description = '''';
+        description = "";
         default = [ ];
         example = ''[ "incoming_mail_password" ]'';
       };
@@ -105,7 +105,7 @@ in
 
       secretsDir = mkOption {
         type = types.str;
-        description = '''';
+        description = "";
         default = "/srv/gitlab/secrets";
         example = "/srv/s-gitlab/deployment/work/gitlab";
       };
@@ -119,7 +119,7 @@ in
       flyingcircus.roles.redis.enable = true;
 
       environment.systemPackages = with pkgs; [
-        (writeScriptBin "gitlab-show-config" ''sudo -u gitlab jq '.' /srv/gitlab/state/config/gitlab.yml'')
+        (writeScriptBin "gitlab-show-config" "sudo -u gitlab jq '.' /srv/gitlab/state/config/gitlab.yml")
       ];
 
       flyingcircus.passwordlessSudoRules = [

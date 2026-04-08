@@ -30,7 +30,7 @@ import ./make-test-python.nix (
           coll.find({test: "helloferret"}).forEach(printjson)
         '';
 
-        check = ipaddr: '''';
+        check = ipaddr: "";
 
         sensuCheck = testlib.sensuCheckCmd nodes.machine;
       in
