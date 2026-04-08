@@ -550,9 +550,9 @@
     "version": "1.28.3"
   },
   "nix": {
-    "name": "nix-2.31.3",
+    "name": "nix-2.31.4",
     "pname": "nix",
-    "version": "2.31.3"
+    "version": "2.31.4"
   },
   "nodejs": {
     "name": "nodejs-22.22.2",
