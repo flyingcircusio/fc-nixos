@@ -654,9 +654,6 @@ builtins.mapAttrs (_: patchPhps phpLogPermissionPatch) {
         pname = "tcpdump-vxlan";
       });
 
-  varnish = lib.warn "varnish-7.x is end-of-life and still default for the `webproxy` role but has known vulnerabilities. Consider updating to varnish-8.0 by setting `services.varnish.package = varnish80;`. Note the breaking changes in https://vinyl-cache.org/docs/8.0/whats-new/upgrading-8.0.html" super.varnish;
-  varnish77 = lib.warn "varnish-7.x is end-of-life and still default for the `webproxy` role but has known vulnerabilities. Consider updating to varnish-8.0 by setting `services.varnish.package = varnish80;`. Note the breaking changes in https://vinyl-cache.org/docs/8.0/whats-new/upgrading-8.0.html" super.varnish77;
-
   xtrabackup = lib.warn "The `xtrabackup` package has been renamed to `percona-xtrabackup`." self.percona-xtrabackup;
 }
 // lib.genAttrs [ "imagemagick6" "imagemagick6Big" "imagemagick6_light" ] (
