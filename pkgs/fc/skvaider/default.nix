@@ -43,5 +43,9 @@ in
     "*"
   ];
   passthru.src = src;
-  passthru.testEnv = pythonSet.mkVirtualEnv "skvaider-test-env" workspace.deps.all;
+  passthru.testEnv =
+    (pythonSet.mkVirtualEnv "skvaider-test-env" workspace.deps.all).overrideAttrs
+      (_: {
+        venvIgnoreCollisions = [ "*" ];
+      });
 })
