@@ -1,3 +1,24 @@
+# Release 2026_013
+
+## Impact
+
+- webgateway: TLS- or ACME-enabled vhosts that do not define a single valid hostname do not receive an automatic certificate check anymore (PL-135244)
+
+  An evaluation warning informs about that behaviour change. The warning will be removed after 2 releases.
+
+
+## NixOS XX.XX platform
+
+- fix Nix security vulnerability CVE-2026-39860 / GHSA-g3g9-5vj6-r3gj (FC-52786)
+
+- webgateway: Only generate certificate checks for vhosts defining a single valid hostname (PL-135244)
+
+- `flyingcircus.services.sensu-client.checks`: Prevent illegal check names that would crash the client service (PL-135244)
+
+- `flyingcircus.services.sensu-client.checks.enable`: introduce new option to explicitly disable checks
+
+
+
 # Release 2026_012
 
 ## Impact
